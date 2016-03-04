@@ -14,5 +14,10 @@ Following is required:
    - http://www.bioinformatics.babraham.ac.uk/projects/fastqc/
   - snpeff (add -c Config to executable)
    - http://snpeff.sourceforge.net
+  - igvtools
+   - https://www.broadinstitute.org/igv/igvtools
+  - snpsift
+   - Comes in same package as snpeff
  - GATK resource bundle
+ - common_dbs (where does this come from!??)
  - Reference genome (indexed)
