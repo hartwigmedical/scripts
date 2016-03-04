@@ -7,7 +7,8 @@ RUN_MARKDUP=false
 RUN_INDEL_REALIGN=false
 RUN_POSTSTATS=false
 RUN_VARIANT_CALLING=false
-RUN_VARIANT_FILTER=true
+RUN_VARIANT_FILTER=false
+RUN_VARIANT_ANNOTATION=true
 
 # Reading params from input arguments
 fastqpath=$1
@@ -62,11 +63,18 @@ fi
 
 if [ ${RUN_VARIANT_CALLING} == true ]; then
 	calling_dbsnp=${resourcepath}/common_scripts/GATK_v2.7/bundle/dbsnp_137.b37.vcf
-	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/haplotype_call.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF
+	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/haplotype_call.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF -stand_call_conf 30 -stand_emit_conf 15 -ploidy 2
 	gatk -T GenotypeGVCFs -R ${ref} --variant ${out}/haplotype_call.g.vcf -o ${out}/variants_raw.vcf --dbsnp ${calling_dbsnp}
 fi
 
 if [ ${RUN_VARIANT_FILTER} == true ]; then
 	gatk -T SelectVariants -R ${ref} -V ${out}/variants_raw.vcf -o ${out}/variants_raw_snp.vcf -selectType SNP -selectType NO_VARIATION
 	gatk -T VariantFiltration -R ${ref} -V ${out}/variants_raw_snp.vcf -o ${out}/variants_filtered_snp.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName MappingQuality --filterExpression "MQ < 40.0" --filterName StrandBias --filterExpression "FS > 60.0" --filterName HaplotypeScoreHigh --filterExpression "HaplotypeScore > 13.0" --filterName MQRankSumLow --filterExpression "MQRankSum < -12.5" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -8.0" -cluster 3 -window 35
+	gatk -T SelectVariants -R ${ref} -V ${out}/variants_raw.vcf -o ${out}/variants_raw_indel.vcf -selectType INDEL
+	gatk -T VariantFiltration -R ${ref} -V ${out}/variants_raw_indel.vcf -o ${out}/variants_filtered_indel.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName StrandBias --filterExpression "FS > 200.0" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -20.0"
+    gatk -T CombineVariants -R ${ref} -V ${out}/variants_filtered_snp.vcf -V ${out}/variants_filtered_indel.vcf -o ${out}/variants_filtered.vcf --assumeIdenticalSamples
+fi
+
+if [ ${RUN_VARIANT_ANNOTATION} == true ]; then
+    snpeff GRCh37.75 -v ${out}/variants_filtered.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/variants_filtered_snpEff.vcf
 fi
