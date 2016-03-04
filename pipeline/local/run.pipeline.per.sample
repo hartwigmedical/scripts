@@ -1,0 +1,72 @@
+#!/bin/bash
+# Script to run all pipeline jobs for a single sample
+
+# Control parameters
+RUN_PIPELINE_PER_LANE=false
+RUN_MARKDUP=false
+RUN_INDEL_REALIGN=false
+RUN_POSTSTATS=false
+RUN_VARIANT_CALLING=false
+RUN_VARIANT_FILTER=true
+
+# Reading params from input arguments
+fastqpath=$1
+resourcepath=$2
+out=$3
+qc=$4
+
+sample=$5
+flowcell=$6
+index=$7
+
+ref=${resourcepath}/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+# Actual pipeline starts now!
+
+if [ ${RUN_PIPELINE_PER_LANE} == true ]; then
+	# Expected output: ${out}/{sample}_{lane}.bam
+	run.pipeline.per.lane ${fastqpath} ${ref} ${out} ${qc} ${sample} ${flowcell} ${index} L001
+fi
+
+if [ ${RUN_MARKDUP} == true ]; then
+	echo -e "\nMark duplicates\n"
+	sambamba markdup -p ${out}/${sample}_L001.bam ${out}/sambamba_markdup_${sample}.bam
+	echo -e "\nRun flagstat on markdup'ed BAM file\n"
+	sambamba flagstat -p ${out}/sambamba_markdup_${sample}.bam
+fi
+
+if [ ${RUN_INDEL_REALIGN} == true ]; then
+	known_indel_vcf1=${resourcepath}/common_scripts/GATK_v2.7/bundle/1000G_phase1.indels.b37.vcf
+	known_indel_vcf2=${resourcepath}/common_scripts/GATK_v2.7/bundle/Mills_and_1000G_gold_standard.indels.b37.vcf
+
+	echo -e "\nRunning GATK Indel-Realignment\n"
+	targetIntervals=${out}/forIndelRealignment.intervals.list
+	gatk -T RealignerTargetCreator -R ${ref} -I ${out}/sambamba_markdup_${sample}.bam -known ${known_indel_vcf1} -known ${known_indel_vcf2} -o ${targetIntervals}
+	gatk -T IndelRealigner -R ${ref} -I ${out}/sambamba_markdup_${sample}.bam -targetIntervals ${targetIntervals} -o ${out}/gatk_indel_realign_${sample}.bam
+	
+	echo -e "\nRun flagstat on realigned BAM file\n"
+	sambamba flagstat -p ${out}/gatk_indel_realign_${sample}.bam
+	
+	cp ${out}/gatk_indel_realign_${sample}.bam ${out}/${sample}.bam
+	cp ${out}/gatk_indel_realign_${sample}.bai ${out}/${sample}.bai
+fi
+
+bam=${out}/${sample}.bam
+
+if [ ${RUN_POSTSTATS} == true ]; then
+	echo -e "\nRunning PostStats\n"
+	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
+	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/library_complexity.txt
+	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
+fi
+
+if [ ${RUN_VARIANT_CALLING} == true ]; then
+	calling_dbsnp=${resourcepath}/common_scripts/GATK_v2.7/bundle/dbsnp_137.b37.vcf
+	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/haplotype_call.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF
+	gatk -T GenotypeGVCFs -R ${ref} --variant ${out}/haplotype_call.g.vcf -o ${out}/variants_raw.vcf --dbsnp ${calling_dbsnp}
+fi
+
+if [ ${RUN_VARIANT_FILTER} == true ]; then
+	gatk -T SelectVariants -R ${ref} -V ${out}/variants_raw.vcf -o ${out}/variants_raw_snp.vcf -selectType SNP -selectType NO_VARIATION
+	gatk -T VariantFiltration -R ${ref} -V ${out}/variants_raw_snp.vcf -o ${out}/variants_filtered_snp.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName MappingQuality --filterExpression "MQ < 40.0" --filterName StrandBias --filterExpression "FS > 60.0" --filterName HaplotypeScoreHigh --filterExpression "HaplotypeScore > 13.0" --filterName MQRankSumLow --filterExpression "MQRankSum < -12.5" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -8.0" -cluster 3 -window 35
+fi
