@@ -1,18 +1,18 @@
 #!/bin/bash
 
 # Definition of tools used
-sullivan=/home/korneel/tools/sullivan/sullivan.sh
-picard=/home/korneel/tools/picard/picard.sh
+sullivan=</path/to/sullivan.sh>
+picard=</path/to/picard.sh>
 
 # Params
-hmfreg=HMFreg0001
-externalid=NGS150023
-internalid=A7600998_HFCH5CCXX
+hmfreg=<HMFregXXXX>
+externalid=<CPCTxxxxxxxxR/T>
+internalid=<FRxxxxxxxx>
 
-sequencerrun1=151007_ST-E00288_0035_AHFCH5CCXX
-sequencerrun2=
-mergerun=false
-appendreg=false
+sequencerrun1=<DATE_RUNNAME1_FLOWCELL>
+sequencerrun2=<DATE_RUNNAME2_FLOWCELL>
+mergerun=<true/false>
+appendreg=<true/false>
 
 if [ ${mergerun} == true ]; then
 	pipelinerun=${sequencerrun1}_merge_${sequencerrun2}
