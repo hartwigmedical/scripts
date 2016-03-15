@@ -2,7 +2,7 @@
 # KODU local pipeline for running tumor/normal algo's.
 
 # Control parameters
-RESET_OUTPUT_DIR_BEFORE_RUN=true
+RESET_OUTPUT_DIR_BEFORE_RUN=false
 RUN_PIPELINE_PER_SAMPLE=true
 RUN_SOMATIC_CALLING=false
 
