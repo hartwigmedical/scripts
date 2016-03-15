@@ -2,13 +2,14 @@
 # KODU local pipeline for running tumor/normal algo's.
 
 # Control parameters
-RESET_OUTPUT_DIR_BEFORE_RUN=false
+RESET_OUTPUT_DIR_BEFORE_RUN=true
 RUN_PIPELINE_PER_SAMPLE=true
 RUN_SOMATIC_CALLING=false
 
 # Definitions
-fastqpath=~/hmf/code/testdata/cancerPanel
-resourcepath=~/hmf/data
+fastqpath=~/hmf/repos/testdata/cancerPanel
+dbspath=~/hmf/data/dbs
+ref=~/hmf/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 out=~/hmf/out
 qc=${out}/qc
 tmp=${out}/tmp
@@ -21,8 +22,6 @@ tumorsample=CPCT12345678T
 tumorflowcell=HJJLGCCXX
 tumorindex=S1
 
-ref=${resourcepath}/GENOMES/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-
 # Actual pipeline starts now!
 if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
 	rm -r ${out}/*
@@ -31,8 +30,8 @@ if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
 fi
 
 if [ ${RUN_PIPELINE_PER_SAMPLE} == true ]; then
-	run.pipeline.per.sample ${fastqpath} ${resourcepath} ${out} ${qc} ${bloodsample} ${bloodflowcell} ${bloodindex}
-	# run.pipeline.per.sample ${fastqpath} ${resourcepath} ${out} ${qc} ${tumorsample} ${tumorflowcell} ${tumorindex}	
+	run.pipeline.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${bloodsample} ${bloodflowcell} ${bloodindex}
+	# run.pipeline.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${tumorsample} ${tumorflowcell} ${tumorindex}
 fi 
 
 if [ ${RUN_SOMATIC_CALLING} == true ]; then
