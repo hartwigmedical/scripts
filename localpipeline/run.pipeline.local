@@ -4,8 +4,9 @@
 # Control parameters
 RESET_OUTPUT_DIR_BEFORE_RUN=false
 RUN_ALGOS_PER_SAMPLE=true
-RUN_STRELKA=true
+RUN_STRELKA=false
 RUN_VARSCAN=false
+RUN_FREEBAYES=true
 
 # Definitions
 fastqpath=~/hmf/repos/testdata/cancerPanel
@@ -75,5 +76,12 @@ if [ ${RUN_VARSCAN} == true ]; then
     # KODU: For mac OS, the backup extension (".bak") is mandatory when calling sed
     # This find-and-replace is supposedly done to differentiate varscan from freebayes eventually.
     sed -i .bak 's/SSC/VS_SSC/' ${varscanoutput}.merged.Somatic.hc.vcf
+fi
+
+if [ ${RUN_FREEBAYES} == true ]; then
+    echo -e "\nRunning freebayes\n"
+    freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${bloodbam} > ${out}/freebayes.vcf
+
+    #my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
 fi
 
