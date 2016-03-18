@@ -1,0 +1,74 @@
+#!/bin/bash
+# KODU local pipeline for running tumor/normal algo's.
+
+# Control parameters
+RESET_OUTPUT_DIR_BEFORE_RUN=false
+RUN_PIPELINE_PER_SAMPLE=true
+RUN_STRELKA=true
+RUN_VARSCAN=false
+
+# Definitions
+fastqpath=~/hmf/repos/testdata/cancerPanel
+dbspath=~/hmf/data/dbs
+ref=~/hmf/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+out=~/hmf/out
+qc=${out}/qc
+tmp=${out}/tmp
+
+bloodsample=CPCT12345678R
+bloodflowcell=HJJLGCCXX
+bloodindex=S1
+
+tumorsample=CPCT12345678T
+tumorflowcell=HJJLGCCXX
+tumorindex=S1
+
+# Actual pipeline starts now!
+if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
+	rm -r ${out}/*
+	mkdir ${qc}
+	mkdir ${tmp}	
+fi
+
+if [ ${RUN_PIPELINE_PER_SAMPLE} == true ]; then
+    # KODU: This generates a bam file ${bloodsample}.bam
+	run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${bloodsample} ${bloodflowcell} ${bloodindex}
+	# run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${tumorsample} ${tumorflowcell} ${tumorindex}
+fi 
+
+bloodbam=${out}/${bloodsample}.bam
+
+if [ ${RUN_STRELKA} == true ]; then
+    echo -e "\nRunning Strelka\n"
+    strelkapath=${out}/strelka
+    rm -r ${strelkapath}
+    prefix=`dirname $(readlink $0 || echo $0)`
+    strelkaconfig=${prefix}/strelka.ini
+    strelka --tumor ${bloodbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
+
+    curpath=`pwd`
+    cd ${strelkapath}
+    make
+    cd ${curpath}
+fi
+
+if [ ${RUN_VARSCAN} == true ]; then
+	echo -e "\nRunning pileup to prepare input for varscan\n"
+	bloodpileup=${out}/${bloodsample}.pileup
+	# KODU: In production we pipe the pileup to tabix/bgzip and then uncompress it when feeding to varscan.
+	# We don't do that here since we don't run varscan per chromosome  and the pileup file isn't large for test data
+	sambamba mpileup --tmpdir=${tmp} ${bloodbam} --samtools "-q 1 -f ${ref}" > ${bloodpileup}
+    tabix -s 1 -b 2 -e 2 ${bloodpileup}
+
+	echo -e "\nRunning varscan\n"
+	varscanoutput=${out}/varscan
+	varscan somatic ${bloodpileup} ${bloodpileup} ${varscanoutput} --min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 --output-vcf 1
+	varscan processSomatic ${varscanoutput}.snp.vcf -max-normal-freq 0.02 --p-value 0.05
+	varscan processSomatic ${varscanoutput}.indel.vcf -max-normal-freq 0.02 --p-value 0.05
+
+    gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${varscanoutput}.merged.Somatic.hc.vcf -V ${varscanoutput}.snp.Somatic.hc.vcf -V ${varscanoutput}.indel.Somatic.hc.vcf
+    # KODU: For mac OS, the backup extension (".bak") is mandatory when calling sed
+    # This find-and-replace is supposedly done to differentiate varscan from freebayes eventually.
+    sed -i .bak 's/SSC/VS_SSC/' ${varscanoutput}.merged.Somatic.hc.vcf
+fi
+

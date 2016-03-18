@@ -8,7 +8,7 @@ RUN_INDEL_REALIGN=false
 RUN_POSTSTATS=false
 RUN_VARIANT_CALLING=false
 RUN_VARIANT_FILTER=false
-RUN_VARIANT_ANNOTATION=true
+RUN_VARIANT_ANNOTATION=false
 
 # Reading params from input arguments
 fastqpath=$1
@@ -25,7 +25,7 @@ index=$8
 
 if [ ${RUN_PIPELINE_PER_LANE} == true ]; then
 	# Expected output: ${out}/{sample}_{lane}.bam
-	run.pipeline.per.lane ${fastqpath} ${ref} ${out} ${qc} ${sample} ${flowcell} ${index} L001
+	run.algos.per.lane ${fastqpath} ${ref} ${out} ${qc} ${sample} ${flowcell} ${index} L001
 fi
 
 if [ ${RUN_MARKDUP} == true ]; then
