@@ -2,7 +2,7 @@
 # Script to run all pipeline jobs for a single sample
 
 # Control parameters
-RUN_PIPELINE_PER_LANE=false
+RUN_ALGOS_PER_LANE=false
 RUN_MARKDUP=false
 RUN_INDEL_REALIGN=false
 RUN_POSTSTATS=false
@@ -23,7 +23,7 @@ index=$8
 
 # Actual pipeline starts now!
 
-if [ ${RUN_PIPELINE_PER_LANE} == true ]; then
+if [ ${RUN_ALGOS_PER_LANE} == true ]; then
 	# Expected output: ${out}/{sample}_{lane}.bam
 	run.algos.per.lane ${fastqpath} ${ref} ${out} ${qc} ${sample} ${flowcell} ${index} L001
 fi

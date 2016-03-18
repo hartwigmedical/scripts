@@ -3,7 +3,7 @@
 
 # Control parameters
 RESET_OUTPUT_DIR_BEFORE_RUN=false
-RUN_PIPELINE_PER_SAMPLE=true
+RUN_ALGOS_PER_SAMPLE=true
 RUN_STRELKA=true
 RUN_VARSCAN=false
 
@@ -30,7 +30,7 @@ if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
 	mkdir ${tmp}	
 fi
 
-if [ ${RUN_PIPELINE_PER_SAMPLE} == true ]; then
+if [ ${RUN_ALGOS_PER_SAMPLE} == true ]; then
     # KODU: This generates a bam file ${bloodsample}.bam
 	run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${bloodsample} ${bloodflowcell} ${bloodindex}
 	# run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${tumorsample} ${tumorflowcell} ${tumorindex}
@@ -41,15 +41,20 @@ bloodbam=${out}/${bloodsample}.bam
 if [ ${RUN_STRELKA} == true ]; then
     echo -e "\nRunning Strelka\n"
     strelkapath=${out}/strelka
+
     rm -r ${strelkapath}
+    if [ -d "${strelkapath}" ]; then
+        rm -r ${strelkapath}
+    fi
+
     prefix=`dirname $(readlink $0 || echo $0)`
     strelkaconfig=${prefix}/strelka.ini
     strelka --tumor ${bloodbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
+    make -C ${strelkapath}
 
-    curpath=`pwd`
-    cd ${strelkapath}
-    make
-    cd ${curpath}
+    gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkapath}/results/passed.somatic.snvs.vcf -V ${strelkapath}/results/passed.somatic.indels.vcf
+    perl -p -e 's/\t([A-Z][A-Z]:)/\tGT:$1/g' ${out}/strelka.passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\t/$1\t0\/0:/g' | perl -p -e 's/(:\d+,\d+)\t/$1\t0\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\n$1/g' > ${tmp}/temp.vcf
+    mv ${tmp}/temp.vcf ${out}/strelka.passed.somatic.merged.final.vcf
 fi
 
 if [ ${RUN_VARSCAN} == true ]; then
