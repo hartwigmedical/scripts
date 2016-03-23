@@ -82,6 +82,6 @@ if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
     freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${bloodbam} > ${out}/freebayes.vcf
 
-    #my $sort_uniq_filter_command = "$opt{VCFTOOLS_PATH}/vcf-sort -c -t $freebayes_tmp_dir $freebayes_out_dir/$output_name.vcf | $opt{VCFLIB_PATH}/vcfuniq > $freebayes_out_dir/$output_name.sorted_uniq.vcf";
+    vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
 fi
 
