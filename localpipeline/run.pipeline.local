@@ -80,8 +80,28 @@ fi
 
 if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
-    freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${bloodbam} > ${out}/freebayes.vcf
+    freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${bloodbam} > ${out}/freebayes.raw.vcf
 
-    vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
+    # KODU: Below command is run per CHR in production
+    vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
+
+    # KODU: This command is run on the merged vcfs in production.
+    uniq ${out}/freebayes.sorted_uniq.vcf > ${out}/freebayes.vcf
+
+    sampleR=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 10`
+	sampleT=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 11`
+
+    # KODU: This line is there to compensate for the fact we run blood vs blood
+    sampleT=${sampleR}
+
+	vcflib vcfsamplediff VT ${sampleR} ${sampleT} ${out}/freebayes.vcf > ${out}/freebayes.VTannot.vcf
+	sed -i .bak 's/SSC/FB_SSC/' ${out}/freebayes.VTannot.vcf
+	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.germline.vcf
+	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.somatic.vcf
+	grep -i "VT=germline" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.germline.vcf
+	grep -i "VT=somatic" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.somatic.vcf
+
+	cat ${out}/freebayes.somatic.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10) & (FB_SSC>=20)" > ${out}/freebayes.filtered.somatic.vcf
+	cat ${out}/freebayes.germline.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10)" > ${out}/freebayes.filtered.germline.vcf
 fi
 
