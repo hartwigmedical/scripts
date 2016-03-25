@@ -6,7 +6,8 @@ RESET_OUTPUT_DIR_BEFORE_RUN=false
 RUN_ALGOS_PER_SAMPLE=true
 RUN_STRELKA=false
 RUN_VARSCAN=false
-RUN_FREEBAYES=true
+RUN_FREEBAYES=false
+RUN_MUTECT=true
 
 # Definitions
 fastqpath=~/hmf/repos/testdata/cancerPanel
@@ -103,5 +104,11 @@ if [ ${RUN_FREEBAYES} == true ]; then
 
 	cat ${out}/freebayes.somatic.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10) & (FB_SSC>=20)" > ${out}/freebayes.filtered.somatic.vcf
 	cat ${out}/freebayes.germline.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10)" > ${out}/freebayes.filtered.germline.vcf
+fi
+
+if [ ${RUN_MUTECT} == true ]; then
+    cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+    dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+    mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
 fi
 
