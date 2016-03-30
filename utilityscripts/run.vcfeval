@@ -1,0 +1,11 @@
+out=~/hmf/out
+ref=~/hmf/data/refgenomes/chr17/chr17.fasta
+vcf=variants_raw.vcf
+
+rm -r ${out}/${vcf}compare/
+
+rtgtools format -o SDF $ref
+bgzip ${out}/${vcf}
+tabix ${out}/${vcf}.gz
+
+rtgtools vcfeval -b ${vcf}.gz -c ${vcf}.gz -o ${out}/${vcf}compare -t SDF --ref-overlap
