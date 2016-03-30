@@ -9,6 +9,8 @@ RUN_VARSCAN=false
 RUN_FREEBAYES=false
 RUN_MUTECT=true
 
+RUN_SOMATIC_POSTPROCESS=true
+
 # Definitions
 fastqpath=~/hmf/repos/testdata/cancerPanel
 dbspath=~/hmf/data/dbs
@@ -22,6 +24,8 @@ bloodflowcell=HJJLGCCXX
 bloodindex=S1
 
 tumorsample=CPCT12345678T
+# KODU: Temporary:
+tumorsample=${bloodsample}
 tumorflowcell=HJJLGCCXX
 tumorindex=S1
 
@@ -33,12 +37,14 @@ if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
 fi
 
 if [ ${RUN_ALGOS_PER_SAMPLE} == true ]; then
-    # KODU: This generates a bam file ${bloodsample}.bam
+    # KODU: This generates a bam file ${out}/${bloodsample}.bam
 	run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${bloodsample} ${bloodflowcell} ${bloodindex}
+	# KODU: This generates a bam file ${out}/${tumorsample}.bam
 	# run.algos.per.sample ${fastqpath} ${dbspath} ${ref} ${out} ${qc} ${tumorsample} ${tumorflowcell} ${tumorindex}
 fi 
 
 bloodbam=${out}/${bloodsample}.bam
+tumorbam=${out}/${tumorsample}.bam
 
 if [ ${RUN_STRELKA} == true ]; then
     echo -e "\nRunning Strelka\n"
@@ -51,13 +57,15 @@ if [ ${RUN_STRELKA} == true ]; then
 
     prefix=`dirname $(readlink $0 || echo $0)`
     strelkaconfig=${prefix}/strelka.ini
-    strelka --tumor ${bloodbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
+    strelka --tumor ${tumorbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
     make -C ${strelkapath}
 
     gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkapath}/results/passed.somatic.snvs.vcf -V ${strelkapath}/results/passed.somatic.indels.vcf
     perl -p -e 's/\t([A-Z][A-Z]:)/\tGT:$1/g' ${out}/strelka.passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\t/$1\t0\/0:/g' | perl -p -e 's/(:\d+,\d+)\t/$1\t0\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\n$1/g' > ${tmp}/temp.vcf
     mv ${tmp}/temp.vcf ${out}/strelka.passed.somatic.merged.final.vcf
 fi
+
+strelka=${out}/strelka.passed.somatic.merged.final.vcf
 
 if [ ${RUN_VARSCAN} == true ]; then
 	echo -e "\nRunning pileup to prepare input for varscan\n"
@@ -67,9 +75,15 @@ if [ ${RUN_VARSCAN} == true ]; then
 	sambamba mpileup --tmpdir=${tmp} ${bloodbam} --samtools "-q 1 -f ${ref}" > ${bloodpileup}
     tabix -s 1 -b 2 -e 2 ${bloodpileup}
 
+    tumorpileup=${out}/${tumorsample}.pileup
+    # KODU: In production we pipe the pileup to tabix/bgzip and then uncompress it when feeding to varscan.
+    # We don't do that here since we don't run varscan per chromosome  and the pileup file isn't large for test data
+    sambamba mpileup --tmpdir=${tmp} ${tumorbam} --samtools "-q 1 -f ${ref}" > ${tumorpileup}
+    tabix -s 1 -b 2 -e 2 ${tumorpileup}
+
 	echo -e "\nRunning varscan\n"
 	varscanoutput=${out}/varscan
-	varscan somatic ${bloodpileup} ${bloodpileup} ${varscanoutput} --min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 --output-vcf 1
+	varscan somatic ${bloodpileup} ${tumorpileup} ${varscanoutput} --min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 --output-vcf 1
 	varscan processSomatic ${varscanoutput}.snp.vcf -max-normal-freq 0.02 --p-value 0.05
 	varscan processSomatic ${varscanoutput}.indel.vcf -max-normal-freq 0.02 --p-value 0.05
 
@@ -79,9 +93,11 @@ if [ ${RUN_VARSCAN} == true ]; then
     sed -i .bak 's/SSC/VS_SSC/' ${varscanoutput}.merged.Somatic.hc.vcf
 fi
 
+varscan=${varscanoutput}.merged.Somatic.hc.vcf
+
 if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
-    freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${bloodbam} > ${out}/freebayes.raw.vcf
+    freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${bloodbam} ${tumorbam} > ${out}/freebayes.raw.vcf
 
     # KODU: Below command is run per CHR in production
     vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
@@ -106,9 +122,36 @@ if [ ${RUN_FREEBAYES} == true ]; then
 	cat ${out}/freebayes.germline.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10)" > ${out}/freebayes.filtered.germline.vcf
 fi
 
+freebayes=${out}/freebayes.filtered.somatic.vcf
+
 if [ ${RUN_MUTECT} == true ]; then
+    echo -e "\nRunning MuTect\n"
     cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
     dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
-    mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
+
+    # KODU: Temp code to fool mutect into thinking it gets 2 different samples.
+    cp ${out}/${bloodsample}.bam ${out}/${bloodsample}2.bam
+    cp ${out}/${bloodsample}.bai ${out}/${bloodsample}2.bai
+    bloodbam2=${out}/${bloodsample}2.bam
+
+    mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam2} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
+
+    cat ${out}/mutect.vcf | snpsift filter \"( na FILTER ) | (FILTER = 'PASS')\" > ${out}/mutect_passed.vcf
+fi
+
+mutect=${out}/mutect_passed.vcf
+
+if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
+    echo -e "\nRunning somatic postprocessing (merge & annotate)\n"
+    gatk -T CombineVariants -R ${ref} -o ${out}/merged_somatics.vcf --genotypemergeoption uniquify -V:strelka ${strelka} -V:varscan ${varscan} -V:freebayes ${freebayes} -V:mutect ${mutect}
+
+    cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+    dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+
+    snpeff GRCh37.74 -v ${out}/merged_somatics.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/merged_somatics_snpEff.vcf
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP.vcf --variant ${out}/merged_somatics_snpEff.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf --variant ${out}/merged_somatics_snpEff_dbSNP.vcf --dbsnp ${cosmic} --alwaysAppendDbsnpId
+
+    python melt_somatic_vcf.py -t ${tumorsample} -v -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf
 fi
 
