@@ -11,23 +11,38 @@ RUN_MUTECT=true
 
 RUN_SOMATIC_POSTPROCESS=true
 
-# Definitions
-fastqpath=~/hmf/repos/testdata/cancerPanel
-dbspath=~/hmf/data/dbs
-ref=~/hmf/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-out=~/hmf/out
+SAMPLE_ID=chr17testdata   #'cancerPanel' or 'chr17testdata'
+
 qc=${out}/qc
 tmp=${out}/tmp
+out=~/hmf/out
 
-bloodsample=CPCT12345678R
-bloodflowcell=HJJLGCCXX
-bloodindex=S1
+if [ ${SAMPLE_ID} == cancerPanel ]; then
+	fastqpath=~/hmf/repos/testdata/cancerPanel
+	ref=~/hmf/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+	
+	bloodsample=CPCT12345678R
+	bloodflowcell=HJJLGCCXX
+	bloodindex=S1
 
-tumorsample=CPCT12345678T
-# KODU: Temporary:
-tumorsample=${bloodsample}
-tumorflowcell=HJJLGCCXX
-tumorindex=S1
+	tumorsample=${bloodsample} #CPCT12345678T
+	tumorflowcell=HJJLGCCXX
+	tumorindex=S1
+elif [ ${SAMPLE_ID} == chr17testdata ]; then
+	fastqpath=~/hmf/repos/testdata/12878-chr17-fq/12878-chr17-200k
+	ref=~/hmf/data/refgenomes/chr17/chr17.fasta
+	
+	bloodsample=12878
+	bloodflowcell=chr17
+	bloodindex=200k  #'200k' '1M' or 'ALL'
+	
+	tumorsample={bloodsample}
+	tumorflowcell={bloodflowCell}
+	tumorindex={bloodindex}
+else
+	exit "Error: Invalid Sample Id"
+fi
+
 
 # Actual pipeline starts now!
 if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
