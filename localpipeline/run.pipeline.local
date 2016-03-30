@@ -2,20 +2,20 @@
 # KODU local pipeline for running tumor/normal algo's.
 
 # Control parameters
-RESET_OUTPUT_DIR_BEFORE_RUN=false
+RESET_OUTPUT_DIR_BEFORE_RUN=true
 RUN_ALGOS_PER_SAMPLE=true
-RUN_STRELKA=false
-RUN_VARSCAN=false
+RUN_STRELKA=true
+RUN_VARSCAN=true
 RUN_FREEBAYES=false
 RUN_MUTECT=true
 
 RUN_SOMATIC_POSTPROCESS=true
 
-SAMPLE_ID=chr17testdata   #'cancerPanel' or 'chr17testdata'
+SAMPLE_ID=cancerPanel   #'cancerPanel' or 'chr17testdata'
 
+out=~/hmf/out
 qc=${out}/qc
 tmp=${out}/tmp
-out=~/hmf/out
 
 if [ ${SAMPLE_ID} == cancerPanel ]; then
 	fastqpath=~/hmf/repos/testdata/cancerPanel
@@ -151,7 +151,7 @@ if [ ${RUN_MUTECT} == true ]; then
 
     mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam2} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
 
-    cat ${out}/mutect.vcf | snpsift filter \"( na FILTER ) | (FILTER = 'PASS')\" > ${out}/mutect_passed.vcf
+    #cat ${out}/mutect.vcf | snpsift filter \"( na FILTER ) | (FILTER = 'PASS')\" > ${out}/mutect_passed.vcf
 fi
 
 mutect=${out}/mutect_passed.vcf
