@@ -19,5 +19,4 @@ Following is required:
   - snpsift
    - Comes in same package as snpeff
  - GATK resource bundle
- - common_dbs (where does this come from!??)
  - Reference genome (indexed)
