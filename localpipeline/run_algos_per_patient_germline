@@ -1,0 +1,52 @@
+#!/bin/bash
+
+config=$1
+source ${config}
+
+if [ ${RUN_GERMLINE_GENOTYPER} == true ]; then
+    echo -e "\nRunning germline genotyper"
+    normalgvcf=${out}/${normalsample}.g.vcf
+    tumorgvcf=${out}/${tumorsample}.g.vcf
+
+    gatk -T GenotypeGVCFs -R ${ref} --variant ${normalgvcf} --variant ${tumorgvcf} -o ${out}/germline.variants.raw.vcf --dbsnp ${calling_dbsnp}
+fi
+
+if [ ${RUN_GERMLINE_FILTER} == true ]; then
+    echo -e "\nRunning variant filtration on genotyped germline variants"
+	gatk -T SelectVariants -R ${ref} -V ${out}/germline.variants.raw.vcf -o ${out}/germline.variants.raw.snp.vcf -selectType SNP -selectType NO_VARIATION
+	gatk -T VariantFiltration -R ${ref} -V ${out}/germline.variants.raw.snp.vcf -o ${out}/germline.variants.filtered.snp.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName MappingQuality --filterExpression "MQ < 40.0" --filterName StrandBias --filterExpression "FS > 60.0" --filterName HaplotypeScoreHigh --filterExpression "HaplotypeScore > 13.0" --filterName MQRankSumLow --filterExpression "MQRankSum < -12.5" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -8.0" -cluster 3 -window 35
+	gatk -T SelectVariants -R ${ref} -V ${out}/germline.variants.raw.vcf -o ${out}/germline.variants.raw.indel.vcf -selectType INDEL
+	gatk -T VariantFiltration -R ${ref} -V ${out}/germline.variants.raw.indel.vcf -o ${out}/germline.variants.filtered.indel.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName StrandBias --filterExpression "FS > 200.0" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -20.0"
+    gatk -T CombineVariants -R ${ref} -V ${out}/germline.variants.filtered.snp.vcf -V ${out}/germline.variants.filtered.indel.vcf -o ${out}/germline.variants.filtered.vcf --assumeIdenticalSamples
+fi
+
+if [ ${RUN_GERMLINE_ANNOTATION} == true ]; then
+    echo -e "\nRunning germline SnpEff annotation\n"
+    snpeff GRCh37.74 -v ${out}/germline.variants.filtered.vcf -s ${out}/germline.snpEff_summary.html -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/germline.variants.annotated.snpEff.vcf
+    igvtools index ${out}/germline.variants.annotated.snpEff.vcf
+
+    echo -e "\nRunning germline SnpSift annotation\n"
+    snpsiftfields=hg38_chr,hg38_pos,genename,Uniprot_acc,Uniprot_id,Uniprot_aapos,Interpro_domain,cds_strand,refcodon,SLR_test_statistic,codonpos,fold-degenerate,Ancestral_allele,Ensembl_geneid,Ensembl_transcriptid,aapos,aapos_SIFT,aapos_FATHMM,SIFT_score,SIFT_converted_rankscore,SIFT_pred,Polyphen2_HDIV_score,Polyphen2_HDIV_rankscore,Polyphen2_HDIV_pred,Polyphen2_HVAR_score,Polyphen2_HVAR_rankscore,Polyphen2_HVAR_pred,LRT_score,LRT_converted_rankscore,LRT_pred,MutationTaster_score,MutationTaster_converted_rankscore,MutationTaster_pred,MutationAssessor_score,MutationAssessor_rankscore,MutationAssessor_pred,FATHMM_score,FATHMM_rankscore,FATHMM_pred,MetaSVM_score,MetaSVM_rankscore,MetaSVM_pred,MetaLR_score,MetaLR_rankscore,MetaLR_pred,Reliability_index,VEST3_score,VEST3_rankscore,PROVEAN_score,PROVEAN_converted_rankscore,PROVEAN_pred,CADD_raw,CADD_raw_rankscore,CADD_phred,GERP++_NR,GERP++_RS,GERP++_RS_rankscore,phyloP46way_primate,phyloP46way_primate_rankscore,phyloP46way_placental,phyloP46way_placental_rankscore,phyloP100way_vertebrate,phyloP100way_vertebrate_rankscore,phastCons46way_primate,phastCons46way_primate_rankscore,phastCons46way_placental,phastCons46way_placental_rankscore,phastCons100way_vertebrate,phastCons100way_vertebrate_rankscore,SiPhy_29way_pi,SiPhy_29way_logOdds,SiPhy_29way_logOdds_rankscore,LRT_Omega,UniSNP_ids,1000Gp1_AC,1000Gp1_AF,1000Gp1_AFR_AC,1000Gp1_AFR_AF,1000Gp1_EUR_AC,1000Gp1_EUR_AF,1000Gp1_AMR_AC,1000Gp1_AMR_AF,1000Gp1_ASN_AC,1000Gp1_ASN_AF,ESP6500_AA_AF,ESP6500_EA_AF,ARIC5606_AA_AC,ARIC5606_AA_AF,ARIC5606_EA_AC,ARIC5606_EA_AF,ExAC_AC,ExAC_AF,ExAC_Adj_AC,ExAC_Adj_AF,ExAC_AFR_AC,ExAC_AFR_AF,ExAC_AMR_AC,ExAC_AMR_AF,ExAC_EAS_AC,ExAC_EAS_AF,ExAC_FIN_AC,ExAC_FIN_AF,ExAC_NFE_AC,ExAC_NFE_AF,ExAC_SAS_AC,ExAC_SAS_AF,clinvar_rs,clinvar_clnsig,clinvar_trait,COSMIC_ID,COSMIC_CNT
+    snpsiftdb=${dbspath}/dbNSFP_v2.9/dbNSFP2.9.txt.gz
+    snpsift dbnsfp -v -f ${snpsiftfields} -db ${snpsiftdb} ${out}/germline.variants.annotated.snpEff.vcf > ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf
+    igvtools index ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf
+
+    echo -e "\nAnnotating on ID field in germline variants\n"
+    dnsbp=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.vcf --variant ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf --dbsnp ${dnsbp} --alwaysAppendDbsnpId
+
+    echo -e "\nAnnotating frequencies in germline variants\n"
+    freqdb=${dbspath}/GoNL_v5/gonl.snps_indels.r5.sorted.vcf.gz
+    snpsift annotate -tabix -name GoNLv5_ -info AF,AN,AC ${freqdb} ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.vcf > ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.GoNLv5.vcf
+    igvtools index ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.GoNLv5.vcf
+fi
+
+if [ ${RUN_KINSHIP} == true ]; then
+    echo -e "\nRunning kinship test\n"
+
+    cd ${tmp}
+	vcftools vcftools --vcf ${out}/germline.variants.filtered.vcf --plink
+	plink --file out --make-bed --noweb
+	king -b plink.bed --kinship
+	cp king.kin0 ${out}/${tumorsample}.kinship
+fi

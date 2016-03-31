@@ -3,17 +3,6 @@
 config=$1
 source ${config}
 
-if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
-	rm -r ${out}/*
-	mkdir ${qc}
-	mkdir ${tmp}
-fi
-
-# KODU: This generates a bam file ${out}/${normalsample}.bam
-run.algos.per.sample ${config} ${normalsample} ${normalflowcell} ${normalindex}
-# KODU: This generates a bam file ${out}/${tumorsample}.bam
-run.algos.per.sample ${config} ${tumorsample} ${tumorflowcell} ${tumorindex}
-
 normalbam=${out}/${normalsample}.bam
 tumorbam=${out}/${tumorsample}.bam
 
@@ -97,13 +86,8 @@ if [ ${RUN_MUTECT} == true ]; then
     cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
     dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
 
-    # KODU: Temp code to fool mutect into thinking it gets 2 different samples.
-    cp ${out}/${normalsample}.bam ${out}/${normalsample}2.bam
-    cp ${out}/${normalsample}.bai ${out}/${normalsample}2.bai
-    normalbam2=${out}/${normalsample}2.bam
-
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
-    mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${normalbam2} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
+    mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
     # KODU: Add filter NA.
     cat ${out}/mutect.vcf | snpsift filter "(FILTER = 'PASS')" > ${mutectvcf}
@@ -142,19 +126,4 @@ if [ ${RUN_FREEC} == true ]; then
     cat ${abspath}/code/makeGraph.R | R --slave --args 2 ${freecoutput}/${tumorsample}.bam_ratio.txt
     cat ${abspath}/code/makeKaryotype.R | R --slave --args 2 24 4 500000 ${freecoutput}/${tumorsample}.bam_ratio.txt
 fi
-
-if [ ${RUN_KINSHIP} == true ]; then
-    # KODU:
-    # In production we call on all samples at once, hence one VCF contains all variants for blood and tumor.
-    # As input we take the filtered variants.
-
-    mergedvcf=?
-
-    # cd ${tmp}
-	# vcftools vcftools --vcf ${mergedvcf}  --plink
-	# plink --file out --make-bed --noweb
-	# king -b plink.bed --kinship
-	# cp king.kin0 ${out}/${tumorsample}.kinship
-fi
-
 

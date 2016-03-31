@@ -1,0 +1,55 @@
+#!/bin/bash
+
+config=$1
+sample=$2
+flowcell=$3
+index=$4
+
+source ${config}
+
+# Output: ${out}/{sample}_{lane}.bam
+run_algos_per_lane ${config} ${sample} ${flowcell} ${index} L001
+
+if [ ${RUN_MARKDUP} == true ]; then
+	echo -e "\nMark duplicates\n"
+	sambamba markdup -p ${out}/${sample}_L001.bam ${out}/${sample}.sambamba_markdup.bam
+	echo -e "\nRun flagstat on markdup'ed BAM file\n"
+	sambamba flagstat -p ${out}/${sample}.sambamba_markdup.bam
+fi
+
+bam=${out}/${sample}.bam
+bai=${out}/${sample}.bai
+
+gvcf=${out}/${sample}.g.vcf
+
+if [ ${RUN_INDEL_REALIGN} == true ]; then
+	echo -e "\nRunning GATK Indel-Realignment on ${sample}\n"
+
+	known_indel_vcf1=${dbspath}/GATK_bundle_v2.8/1000G_phase1.indels.b37.vcf
+	known_indel_vcf2=${dbspath}/GATK_bundle_v2.8/Mills_and_1000G_gold_standard.indels.b37.vcf
+    targetIntervals=${out}/${sample}.forIndelRealignment.intervals.list
+
+	gatk -T RealignerTargetCreator -R ${ref} -I ${out}/${sample}.sambamba_markdup.bam -known ${known_indel_vcf1} -known ${known_indel_vcf2} -o ${targetIntervals}
+	gatk -T IndelRealigner -R ${ref} -I ${out}/${sample}.sambamba_markdup.bam -targetIntervals ${targetIntervals} -o ${out}/${sample}.gatk_indel_realign.bam
+	
+	echo -e "\nRun flagstat on realigned BAM file for ${sample}\n"
+	sambamba flagstat -p ${out}/${sample}.gatk_indel_realign.bam
+	
+	cp ${out}/${sample}.gatk_indel_realign.bam ${bam}
+	cp ${out}/${sample}.gatk_indel_realign.bai ${bai}
+fi
+
+if [ ${RUN_POSTSTATS} == true ]; then
+	echo -e "\nRunning PostStats on ${sample}\n"
+	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
+	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/library_complexity.txt
+	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
+fi
+
+if [ ${RUN_HAPLOTYPE_GVCF} == true ]; then
+    echo -e "\nRunning haplotype variant calling on ${sample}\n"
+	calling_dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/${sample}.gatk_haplotype_caller.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF -stand_call_conf 30 -stand_emit_conf 15 -ploidy 2
+
+	cp ${out}/${sample}.gatk_haplotype_caller.g.vcf ${gvcf}
+fi
