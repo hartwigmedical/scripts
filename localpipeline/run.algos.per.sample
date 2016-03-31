@@ -1,72 +1,57 @@
 #!/bin/bash
-# Script to run all pipeline jobs for a single sample
 
-# Control parameters
-RUN_ALGOS_PER_LANE=false
-RUN_MARKDUP=false
-RUN_INDEL_REALIGN=false
-RUN_POSTSTATS=false
-RUN_VARIANT_CALLING=false
-RUN_VARIANT_FILTER=false
-RUN_VARIANT_ANNOTATION=false
+config=$1
+sample=$2
+flowcell=$3
+index=$4
 
-# Reading params from input arguments
-fastqpath=$1
-dbspath=$2
-ref=$3
-out=$4
-qc=$5
+source ${config}
 
-sample=$6
-flowcell=$7
-index=$8
-
-# Actual pipeline starts now!
-
-if [ ${RUN_ALGOS_PER_LANE} == true ]; then
-	# Expected output: ${out}/{sample}_{lane}.bam
-	run.algos.per.lane ${fastqpath} ${ref} ${out} ${qc} ${sample} ${flowcell} ${index} L001
-fi
+# Output: ${out}/{sample}_{lane}.bam
+run.algos.per.lane ${config} ${sample} ${flowcell} ${index} L001
 
 if [ ${RUN_MARKDUP} == true ]; then
 	echo -e "\nMark duplicates\n"
-	sambamba markdup -p ${out}/${sample}_L001.bam ${out}/sambamba_markdup_${sample}.bam
+	sambamba markdup -p ${out}/${sample}_L001.bam ${out}/${sample}.sambamba_markdup.bam
 	echo -e "\nRun flagstat on markdup'ed BAM file\n"
-	sambamba flagstat -p ${out}/sambamba_markdup_${sample}.bam
-fi
-
-if [ ${RUN_INDEL_REALIGN} == true ]; then
-	known_indel_vcf1=${dbspath}/GATK_bundle_v2.8/1000G_phase1.indels.b37.vcf
-	known_indel_vcf2=${dbspath}/GATK_bundle_v2.8/Mills_and_1000G_gold_standard.indels.b37.vcf
-
-	echo -e "\nRunning GATK Indel-Realignment\n"
-	targetIntervals=${out}/forIndelRealignment.intervals.list
-	gatk -T RealignerTargetCreator -R ${ref} -I ${out}/sambamba_markdup_${sample}.bam -known ${known_indel_vcf1} -known ${known_indel_vcf2} -o ${targetIntervals}
-	gatk -T IndelRealigner -R ${ref} -I ${out}/sambamba_markdup_${sample}.bam -targetIntervals ${targetIntervals} -o ${out}/gatk_indel_realign_${sample}.bam
-	
-	echo -e "\nRun flagstat on realigned BAM file\n"
-	sambamba flagstat -p ${out}/gatk_indel_realign_${sample}.bam
-	
-	cp ${out}/gatk_indel_realign_${sample}.bam ${out}/${sample}.bam
-	cp ${out}/gatk_indel_realign_${sample}.bai ${out}/${sample}.bai
+	sambamba flagstat -p ${out}/${sample}.sambamba_markdup.bam
 fi
 
 bam=${out}/${sample}.bam
+bai=${out}/${sample}.bai
+if [ ${RUN_INDEL_REALIGN} == true ]; then
+	echo -e "\nRunning GATK Indel-Realignment on ${sample}\n"
+
+	known_indel_vcf1=${dbspath}/GATK_bundle_v2.8/1000G_phase1.indels.b37.vcf
+	known_indel_vcf2=${dbspath}/GATK_bundle_v2.8/Mills_and_1000G_gold_standard.indels.b37.vcf
+    targetIntervals=${out}/${sample}.forIndelRealignment.intervals.list
+
+	gatk -T RealignerTargetCreator -R ${ref} -I ${out}/${sample}.sambamba_markdup.bam -known ${known_indel_vcf1} -known ${known_indel_vcf2} -o ${targetIntervals}
+	gatk -T IndelRealigner -R ${ref} -I ${out}/${sample}.sambamba_markdup.bam -targetIntervals ${targetIntervals} -o ${out}/${sample}.gatk_indel_realign.bam
+	
+	echo -e "\nRun flagstat on realigned BAM file for ${sample}\n"
+	sambamba flagstat -p ${out}/${sample}.gatk_indel_realign.bam
+	
+	cp ${out}/${sample}.gatk_indel_realign.bam ${bam}
+	cp ${out}/${sample}.gatk_indel_realign.bai ${bai}
+fi
 
 if [ ${RUN_POSTSTATS} == true ]; then
-	echo -e "\nRunning PostStats\n"
+	echo -e "\nRunning PostStats on ${sample}\n"
 	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
 	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/library_complexity.txt
 	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
 fi
 
 if [ ${RUN_VARIANT_CALLING} == true ]; then
+    echo -e "\nRunning germline variant calling on ${sample}\n"
 	calling_dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
-	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/haplotype_call.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF -stand_call_conf 30 -stand_emit_conf 15 -ploidy 2
-	gatk -T GenotypeGVCFs -R ${ref} --variant ${out}/haplotype_call.g.vcf -o ${out}/variants_raw.vcf --dbsnp ${calling_dbsnp}
+	gatk -T HaplotypeCaller -R ${ref} -I ${bam} -o ${out}/${sampple}.gatk_aplotype_caller.g.vcf --dbsnp ${calling_dbsnp} --emitRefConfidence GVCF -stand_call_conf 30 -stand_emit_conf 15 -ploidy 2
+	gatk -T GenotypeGVCFs -R ${ref} --variant ${out}/${sample}.gatk_haplotype_caller.g.vcf -o ${out}/variants_raw.vcf --dbsnp ${calling_dbsnp}
 fi
 
 if [ ${RUN_VARIANT_FILTER} == true ]; then
+    echo -e "\nRunning variant filtration on germline variants for ${sample}"
 	gatk -T SelectVariants -R ${ref} -V ${out}/variants_raw.vcf -o ${out}/variants_raw_snp.vcf -selectType SNP -selectType NO_VARIATION
 	gatk -T VariantFiltration -R ${ref} -V ${out}/variants_raw_snp.vcf -o ${out}/variants_filtered_snp.vcf --filterName LowQualityDepth --filterExpression "QD < 2.0" --filterName MappingQuality --filterExpression "MQ < 40.0" --filterName StrandBias --filterExpression "FS > 60.0" --filterName HaplotypeScoreHigh --filterExpression "HaplotypeScore > 13.0" --filterName MQRankSumLow --filterExpression "MQRankSum < -12.5" --filterName ReadPosRankSumLow --filterExpression "ReadPosRankSum < -8.0" -cluster 3 -window 35
 	gatk -T SelectVariants -R ${ref} -V ${out}/variants_raw.vcf -o ${out}/variants_raw_indel.vcf -selectType INDEL

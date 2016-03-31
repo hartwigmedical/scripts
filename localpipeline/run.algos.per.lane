@@ -1,19 +1,12 @@
 #!/bin/bash
-# Script to run mapping and sorting / indexing per lane
 
-# Control parameters
-RUN_PRESTATS=true
-RUN_MAPPING=true
+config=$1
+sample=$2
+flowcell=$3
+index=$4
+lane=$5
 
-# Reading params from input arguments.
-fastqpath=$1
-ref=$2
-out=$3
-qc=$4
-sample=$5
-flowcell=$6
-index=$7
-lane=$8
+source ${config}
 
 # Various utility variables:
 corename=${sample}_${flowcell}_${index}_${lane}
@@ -33,16 +26,16 @@ if [ ${RUN_MAPPING} == true ]; then
 	rg="@RG\tID:${corename}\tSM:${sample}\tPL:ILLUMINA\tLB:${sample}\tPU:${flowcell}"
 
 	echo -e "\nRunning BWA for ${id}\n"
-	bwa mem -t 4 -c 100 -M -R ${rg} ${ref} ${r1} ${r2} > ${out}/bwa_${id}.sam
+	bwa mem -t 4 -c 100 -M -R ${rg} ${ref} ${r1} ${r2} > ${out}/${id}.bwa.sam
 	echo -e "\nRunning Sambamba View for ${id}\n"
-	sambamba view -p --format=bam -S -o ${out}/sambamba_view_${id}.bam ${out}/bwa_${id}.sam
+	sambamba view -p --format=bam -S -o ${out}/${id}.sambamba_view.bam ${out}/${id}.bwa.sam
 	echo -e "\nRunning Sambamba Sort for ${id}\n"
-	sambamba sort -p ${out}/sambamba_view_${id}.bam
+	sambamba sort -p ${out}/${id}.sambamba_view.bam
 	echo -e "\nRunning Sambamba FlagStat for ${id}\n"
-	sambamba flagstat -p ${out}/sambamba_view_${id}.sorted.bam
+	sambamba flagstat -p ${out}/${id}.sambamba_view.sorted.bam
 	echo -e "\nRunning Sambamba Index for ${id}}\n"
-	sambamba index -p ${out}/sambamba_view_${id}.sorted.bam ${out}/sambamba_view_${id}.sorted.bai
+	sambamba index -p ${out}/${id}.sambamba_view.sorted.bam ${out}/${id}.sambamba_view.sorted.bai
 
-	cp ${out}/sambamba_view_${id}.sorted.bam ${out}/${id}.bam
-	cp ${out}/sambamba_view_${id}.sorted.bai ${out}/${id}.bai
+	cp ${out}/${id}.sambamba_view.sorted.bam ${out}/${id}.bam
+	cp ${out}/${id}.sambamba_view.sorted.bai ${out}/${id}.bai
 fi
