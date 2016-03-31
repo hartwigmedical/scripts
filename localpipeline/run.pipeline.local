@@ -8,10 +8,9 @@ RUN_STRELKA=false
 RUN_VARSCAN=false
 RUN_FREEBAYES=false
 RUN_MUTECT=false
-
 RUN_SOMATIC_POSTPROCESS=false
-
-RUN_FREEC=true
+RUN_FREEC=false
+RUN_KINSHIP=true
 
 SAMPLE_ID=cancerPanel   #'cancerPanel' or 'chr17testdata'
 
@@ -187,13 +186,26 @@ if [ ${RUN_FREEC} == true ]; then
     prefix=`dirname $(readlink $0 || echo $0)`
     freecconfig=${prefix}/config/freec.txt
 
-    freec -conf ${freecconfig}
-    #cd ${freecoutput}
+    # freec -conf ${freecconfig}
 
-    #cat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_bam_name."_CNVs ".$sample_bam_name."_ratio.txt
-    #cat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_bam_name."_ratio.txt
-    #cat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt
+    prefix=`dirname $(readlink $0 || echo $0)`
+    cat ${prefix}/code/assess_significance.R | R --slave --args ${freecoutput}/${tumorsample}.bam_CNVs ${freecoutput}/${tumorsample}.bam_ratio.txt
+    cat ${prefix}/code/makeGraph.R | R --slave --args 2 ${freecoutput}/${tumorsample}.bam_ratio.txt
+    cat ${prefix}/code/makeKaryotype.R | R --slave --args 2 24 4 500000 ${freecoutput}/${tumorsample}.bam_ratio.txt
 fi
 
+if [ ${RUN_KINSHIP} == true ]; then
+    # KODU:
+    # In production we call on all samples at once, hence one VCF contains all variants for blood and tumor.
+    # As input we take the filtered variants.
+
+    mergedvcf=?
+
+    # cd ${tmp}
+	# vcftools vcftools --vcf ${mergedvcf}  --plink
+	# plink --file out --make-bed --noweb
+	# king -b plink.bed --kinship
+	# cp king.kin0 ${out}/${tumorsample}.kinship
+fi
 
 
