@@ -6,13 +6,14 @@ RESET_OUTPUT_DIR_BEFORE_RUN=true
 RUN_ALGOS_PER_SAMPLE=true
 RUN_STRELKA=true
 RUN_VARSCAN=true
-RUN_FREEBAYES=false
+RUN_FREEBAYES=true
 RUN_MUTECT=true
 
 RUN_SOMATIC_POSTPROCESS=true
 
-SAMPLE_ID=cancerPanel   #'cancerPanel' or 'chr17testdata'
+SAMPLE_ID=chr17testdata   #'cancerPanel' or 'chr17testdata'
 
+dbspath=~/hmf/data/dbs
 out=~/hmf/out
 qc=${out}/qc
 tmp=${out}/tmp
@@ -36,9 +37,9 @@ elif [ ${SAMPLE_ID} == chr17testdata ]; then
 	bloodflowcell=chr17
 	bloodindex=200k  #'200k' '1M' or 'ALL'
 	
-	tumorsample={bloodsample}
-	tumorflowcell={bloodflowCell}
-	tumorindex={bloodindex}
+	tumorsample=${bloodsample}
+	tumorflowcell=${bloodflowCell}
+	tumorindex=${bloodindex}
 else
 	exit "Error: Invalid Sample Id"
 fi
@@ -69,7 +70,7 @@ if [ ${RUN_STRELKA} == true ]; then
     if [ -d "${strelkapath}" ]; then
         rm -r ${strelkapath}
     fi
-
+    
     prefix=`dirname $(readlink $0 || echo $0)`
     strelkaconfig=${prefix}/strelka.ini
     strelka --tumor ${tumorbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
@@ -108,7 +109,7 @@ if [ ${RUN_VARSCAN} == true ]; then
     sed -i .bak 's/SSC/VS_SSC/' ${varscanoutput}.merged.Somatic.hc.vcf
 fi
 
-varscan=${varscanoutput}.merged.Somatic.hc.vcf
+varscan=${out}/varscan.merged.Somatic.hc.vcf
 
 if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
@@ -149,24 +150,28 @@ if [ ${RUN_MUTECT} == true ]; then
     cp ${out}/${bloodsample}.bai ${out}/${bloodsample}2.bai
     bloodbam2=${out}/${bloodsample}2.bam
 
+    export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
     mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam2} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
-
-    #cat ${out}/mutect.vcf | snpsift filter \"( na FILTER ) | (FILTER = 'PASS')\" > ${out}/mutect_passed.vcf
+    export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+    cat ${out}/mutect.vcf | snpsift filter "(FILTER = 'PASS')" > ${out}/mutect_passed.vcf
 fi
 
 mutect=${out}/mutect_passed.vcf
 
 if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
     echo -e "\nRunning somatic postprocessing (merge & annotate)\n"
-    gatk -T CombineVariants -R ${ref} -o ${out}/merged_somatics.vcf --genotypemergeoption uniquify -V:strelka ${strelka} -V:varscan ${varscan} -V:freebayes ${freebayes} -V:mutect ${mutect}
+    
+    #Temporarily removing freebayes
+    #gatk -T CombineVariants -R ${ref} -o ${out}/merged_somatics.vcf --genotypemergeoption uniquify -V:strelka ${strelka} -V:varscan ${varscan} -V:freebayes ${freebayes} -V:mutect ${mutect}
+    gatk -T CombineVariants -R ${ref} -o ${out}/merged_somatics.vcf --genotypemergeoption uniquify -V:strelka ${strelka} -V:varscan ${varscan} -V:mutect ${mutect}
 
     cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
     dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
 
-    snpeff GRCh37.74 -v ${out}/merged_somatics.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/merged_somatics_snpEff.vcf
+    snpeff GRCh37.74 -s ${out}/somatics_snpEff_summary.html  -v ${out}/merged_somatics.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/merged_somatics_snpEff.vcf
     gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP.vcf --variant ${out}/merged_somatics_snpEff.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
     gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf --variant ${out}/merged_somatics_snpEff_dbSNP.vcf --dbsnp ${cosmic} --alwaysAppendDbsnpId
 
-    python melt_somatic_vcf.py -t ${tumorsample} -v -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf
+    python melt_somatic_vcf.py -t ${tumorsample} -v ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76_melt.vcf
 fi
 
