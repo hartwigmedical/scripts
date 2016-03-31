@@ -12,7 +12,7 @@ fi
 # KODU: This generates a bam file ${out}/${normalsample}.bam and a gvcf file ${out}/${normalsample}.g.vcf
 run_algos_per_sample ${config} ${normalsample} ${normalflowcell} ${normalindex}
 # KODU: This generates a bam file ${out}/${tumorsample}.bam and a gvcf file ${out}/${tumorsample}.g.vcf
-# run_algos_per_sample ${config} ${tumorsample} ${tumorflowcell} ${tumorindex}
+run_algos_per_sample ${config} ${tumorsample} ${tumorflowcell} ${tumorindex}
 
 run_algos_per_patient_germline ${config}
 run_algos_per_patient_somatic ${config}

@@ -3,10 +3,10 @@
 if [ $# -eq 1 ]; then
     config=$1
 else
-    config=kodu.config
+    config=kodu.ini
 fi
 
 abspath=`dirname $(readlink $0 || echo $0)`
-config=${abspath}/${config}
+config=${abspath}/ini/${config}
 
-run.algos.per.patient ${config}
+run_algos_per_patient ${config}

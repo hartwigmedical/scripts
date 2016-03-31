@@ -32,8 +32,8 @@ if [ ${RUN_GERMLINE_ANNOTATION} == true ]; then
     igvtools index ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf
 
     echo -e "\nAnnotating on ID field in germline variants\n"
-    dnsbp=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
-    gatk -T VariantAnnotator -R ${ref} -o ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.vcf --variant ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf --dbsnp ${dnsbp} --alwaysAppendDbsnpId
+    dbsnp=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/germline.variants.annotated.snpEff.dbNSFP.cosmic.vcf --variant ${out}/germline.variants.annotated.snpEff.dbNSFP.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
 
     echo -e "\nAnnotating frequencies in germline variants\n"
     freqdb=${dbspath}/GoNL_v5/gonl.snps_indels.r5.sorted.vcf.gz
