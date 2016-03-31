@@ -154,6 +154,7 @@ if [ ${RUN_MUTECT} == true ]; then
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
     mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${bloodbam} --input_file:tumor ${bloodbam2} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+    # KODU: Add filter NA.
     cat ${out}/mutect.vcf | snpsift filter "(FILTER = 'PASS')" > ${out}/mutect_passed.vcf
 fi
 
