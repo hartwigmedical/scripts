@@ -2,16 +2,18 @@
 # KODU local pipeline for running tumor/normal algo's.
 
 # Control parameters
-RESET_OUTPUT_DIR_BEFORE_RUN=true
+RESET_OUTPUT_DIR_BEFORE_RUN=false
 RUN_ALGOS_PER_SAMPLE=true
-RUN_STRELKA=true
-RUN_VARSCAN=true
-RUN_FREEBAYES=true
-RUN_MUTECT=true
+RUN_STRELKA=false
+RUN_VARSCAN=false
+RUN_FREEBAYES=false
+RUN_MUTECT=false
 
-RUN_SOMATIC_POSTPROCESS=true
+RUN_SOMATIC_POSTPROCESS=false
 
-SAMPLE_ID=chr17testdata   #'cancerPanel' or 'chr17testdata'
+RUN_FREEC=true
+
+SAMPLE_ID=cancerPanel   #'cancerPanel' or 'chr17testdata'
 
 dbspath=~/hmf/data/dbs
 out=~/hmf/out
@@ -64,19 +66,18 @@ tumorbam=${out}/${tumorsample}.bam
 
 if [ ${RUN_STRELKA} == true ]; then
     echo -e "\nRunning Strelka\n"
-    strelkapath=${out}/strelka
+    strelkaoutput=${out}/strelka
 
-    rm -r ${strelkapath}
-    if [ -d "${strelkapath}" ]; then
-        rm -r ${strelkapath}
+    if [ -d "${strelkaoutput}" ]; then
+        rm -r ${strelkaoutput}
     fi
     
     prefix=`dirname $(readlink $0 || echo $0)`
-    strelkaconfig=${prefix}/strelka.ini
-    strelka --tumor ${tumorbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkapath};
-    make -C ${strelkapath}
+    strelkaconfig=${prefix}/config/strelka.ini
+    strelka --tumor ${tumorbam} --normal ${bloodbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkaoutput};
+    make -C ${strelkaoutput}
 
-    gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkapath}/results/passed.somatic.snvs.vcf -V ${strelkapath}/results/passed.somatic.indels.vcf
+    gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkaoutput}/results/passed.somatic.snvs.vcf -V ${strelkaoutput}/results/passed.somatic.indels.vcf
     perl -p -e 's/\t([A-Z][A-Z]:)/\tGT:$1/g' ${out}/strelka.passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\t/$1\t0\/0:/g' | perl -p -e 's/(:\d+,\d+)\t/$1\t0\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\n$1/g' > ${tmp}/temp.vcf
     mv ${tmp}/temp.vcf ${out}/strelka.passed.somatic.merged.final.vcf
 fi
@@ -172,6 +173,26 @@ if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
     gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP.vcf --variant ${out}/merged_somatics_snpEff.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
     gatk -T VariantAnnotator -R ${ref} -o ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf --variant ${out}/merged_somatics_snpEff_dbSNP.vcf --dbsnp ${cosmic} --alwaysAppendDbsnpId
 
-    python melt_somatic_vcf.py -t ${tumorsample} -v ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76_melt.vcf
+    prefix=`dirname $(readlink $0 || echo $0)`
+    python ${prefix}/code/melt_somatic_vcf.py -t ${tumorsample} -v ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf
 fi
+
+if [ ${RUN_FREEC} == true ]; then
+    freecoutput=${out}/copyNumber
+    if [ ! -d "${freecoutput}" ]; then
+        mkdir ${freecoutput}
+    fi
+
+    prefix=`dirname $(readlink $0 || echo $0)`
+    freecconfig=${prefix}/config/freec.txt
+
+    freec -conf ${freecconfig}
+    #cd ${freecoutput}
+
+    #cat $opt{FREEC_PATH}/assess_significance.R | R --slave --args ".$sample_bam_name."_CNVs ".$sample_bam_name."_ratio.txt
+    #cat $opt{FREEC_PATH}/makeGraph.R | R --slave --args 2 ".$sample_bam_name."_ratio.txt
+    #cat $opt{IAP_PATH}/scripts/makeKaryotype.R | R --slave --args 2 24 4 500000 ".$sample_bam_name."_ratio.txt
+fi
+
+
 
