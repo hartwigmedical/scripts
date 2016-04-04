@@ -10,9 +10,14 @@ if [ ${RESET_OUTPUT_DIR_BEFORE_RUN} == true ]; then
 fi
 
 # KODU: This generates a bam file ${out}/${normalsample}.bam and a gvcf file ${out}/${normalsample}.g.vcf
-run_algos_per_sample ${config} ${normalsample} ${normalflowcell} ${normalindex}
+if [ ${RUN_NORMAL_SAMPLE} == true ]; then
+    run_algos_per_sample ${config} ${normalsample} ${normalflowcell} ${normalindex}
+fi
+
 # KODU: This generates a bam file ${out}/${tumorsample}.bam and a gvcf file ${out}/${tumorsample}.g.vcf
-run_algos_per_sample ${config} ${tumorsample} ${tumorflowcell} ${tumorindex}
+if [ ${RUN_TUMOR_SAMPLE} == true ]; then
+    run_algos_per_sample ${config} ${tumorsample} ${tumorflowcell} ${tumorindex}
+fi
 
 run_algos_per_patient_germline ${config}
 run_algos_per_patient_somatic ${config}

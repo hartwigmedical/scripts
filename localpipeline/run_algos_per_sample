@@ -41,9 +41,9 @@ fi
 
 if [ ${RUN_POSTSTATS} == true ]; then
 	echo -e "\nRunning PostStats on ${sample}\n"
-	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
-	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/library_complexity.txt
-	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
+	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/${sample}.metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
+	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/${sample}.library_complexity.txt
+	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/${sample}.wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
 fi
 
 if [ ${RUN_HAPLOTYPE_GVCF} == true ]; then
