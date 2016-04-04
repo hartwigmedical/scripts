@@ -42,7 +42,7 @@ if [ ${RUN_VARSCAN} == true ]; then
 
 	echo -e "\nRunning varscan\n"
 	varscanoutput=${out}/varscan
-	varscan somatic ${bloodpileup} ${tumorpileup} ${varscanoutput} --min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 --output-vcf 1
+	varscan somatic ${normalpileup} ${tumorpileup} ${varscanoutput} --min-coverage 20 --min-var-freq 0.1 --tumor-purity 0.8 --output-vcf 1
 	varscan processSomatic ${varscanoutput}.snp.vcf -max-normal-freq 0.02 --p-value 0.05
 	varscan processSomatic ${varscanoutput}.indel.vcf -max-normal-freq 0.02 --p-value 0.05
 
