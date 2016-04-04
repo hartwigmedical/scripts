@@ -5,6 +5,7 @@ source ${config}
 
 if [ ${RUN_GERMLINE_GENOTYPER} == true ]; then
     echo -e "\nRunning germline genotyper"
+    calling_dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
     normalgvcf=${out}/${normalsample}.g.vcf
     tumorgvcf=${out}/${tumorsample}.g.vcf
 
