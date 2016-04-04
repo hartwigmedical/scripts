@@ -49,5 +49,5 @@ if [ ${RUN_KINSHIP} == true ]; then
 	vcftools vcftools --vcf ${out}/germline.variants.filtered.vcf --plink
 	plink --file out --make-bed --noweb
 	king -b plink.bed --kinship
-	cp king.kin0 ${out}/${tumorsample}.kinship
+	cp king.kin0 ${out}/${normalsample}_${tumorsample}.kinship
 fi
