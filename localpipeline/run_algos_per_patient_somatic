@@ -67,9 +67,6 @@ if [ ${RUN_FREEBAYES} == true ]; then
     sampleR=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 10`
 	sampleT=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 11`
 
-    # KODU: This line is there to compensate for the fact we run blood vs blood
-    sampleT=${sampleR}
-
 	vcflib vcfsamplediff VT ${sampleR} ${sampleT} ${out}/freebayes.vcf > ${out}/freebayes.VTannot.vcf
 	sed -i .bak 's/SSC/FB_SSC/' ${out}/freebayes.VTannot.vcf
 	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.germline.vcf
