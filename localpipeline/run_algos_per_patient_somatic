@@ -56,9 +56,10 @@ freebayesvcf=${out}/freebayes.filtered.somatic.vcf
 if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
     freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
-
+    
     # KODU: Below command is run per CHR in production
-    vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
+    # PEPR: Needed to remove vcftools on my machine. 
+    vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
 
     # KODU: This command is run on the merged vcfs in production.
     uniq ${out}/freebayes.sorted_uniq.vcf > ${out}/freebayes.vcf
@@ -76,6 +77,7 @@ if [ ${RUN_FREEBAYES} == true ]; then
 	grep -i "VT=germline" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.germline.vcf
 	grep -i "VT=somatic" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.somatic.vcf
 
+    #PEPR: This is risky -> if there are no mutations, produces an empty file which causes CombineVariants to fail downstream
 	cat ${out}/freebayes.somatic.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10) & (FB_SSC>=20)" > ${freebayesvcf}
 	cat ${out}/freebayes.germline.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10)" > ${out}/freebayes.filtered.germline.vcf
 fi
@@ -89,14 +91,14 @@ if [ ${RUN_MUTECT} == true ]; then
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
     mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
-    # KODU: Add filter NA.
-    cat ${out}/mutect.vcf | snpsift filter "(FILTER = 'PASS')" > ${mutectvcf}
+    
+    cat ${out}/mutect.vcf | snpsift filter "( na FILTER ) | (FILTER = 'PASS')"  > ${mutectvcf}
 fi
 
 if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
     echo -e "\nRunning somatic postprocessing (merge & annotate)\n"
 
-    # PEPR: Temporarily removing freebayes
+    #PEPR: temporarily skip freebayes as work around
     #gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
     gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:mutect ${mutectvcf}
 
