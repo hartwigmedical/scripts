@@ -19,9 +19,16 @@ else
 
 	rm -r ${genomePath}/chr${chromosome}
 	mkdir ${genomePath}/chr${chromosome}
+	mkdir ${genomePath}/chr${chromosome}/chr_files
 
 	echo -e "\nSlicing Chromosome\n"
 	samtools faidx ${genomePath}/${refGenome}/${refGenome}.fasta ${chromosome} > ${genomePath}/chr${chromosome}/chr${chromosome}.fasta
+
+	echo -e "\nCreating len file\n"
+        grep chr${chromosome}  ${genomePath}/${refGenome}/${refGenome}.len > ${genomePath}/chr${chromosome}/chr${chromosome}.len
+
+	echo -e "\nCopying chr_files"
+	cp ${genomePath}/${refGenome}/chr_files/chr${chromosome}.fa ${genomePath}/chr${chromosome}/chr_files/chr${chromosome}.fa
 
 	echo -e "\nGenerating Dict.\n"
 	picard CreateSequenceDictionary R= ${genomePath}/chr${chromosome}/chr${chromosome}.fasta O= ${genomePath}/chr${chromosome}/chr${chromosome}.dict
