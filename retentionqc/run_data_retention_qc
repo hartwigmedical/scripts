@@ -19,7 +19,6 @@ fi
 
 appendreg=true
 
-
 if [ ${mergerun} == true ]; then
 	pipelinerun=${sequencerrun1}_merge_${sequencerrun2}
 else
