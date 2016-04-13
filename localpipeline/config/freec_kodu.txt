@@ -11,7 +11,7 @@ outputDir=/Users/kduyvesteyn/hmf/out/copyNumber
 gemMappabilityFile=~/hmf/data/dbs/hg19_mappability_tracks/out100m1_hg19.gem
 gemMappabilityFile=~/hmf/data/dbs/hg19_mappability_tracks/out100m2_hg19.gem
 [sample]
-mateFile=/Users/kduyvesteyn/hmf/out/CPCT12345678R.bam
+mateFile=/Users/kduyvesteyn/hmf/out/CPCT12345678T.bam
 inputFormat=BAM
 mateOrientation=FR
 [control]
