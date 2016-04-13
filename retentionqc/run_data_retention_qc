@@ -12,7 +12,7 @@ sampleid=$5
 sequencerrun1=$6
 sequencerrun2=
 mergerun=false
-if [ "$#" ne 7 ]; then
+if [ "$#" -eq 7 ]; then
      sequencerrun2=$7
      mergerun=true
 fi
