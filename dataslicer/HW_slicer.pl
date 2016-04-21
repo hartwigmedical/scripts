@@ -41,7 +41,7 @@ my $run = basename($rundir);
 my @bams = glob("$rundir/*/mapping/*dedup.realigned.bam");
 foreach my $bam ( @bams ){
     my $outbam = $bam;
-    $outbam =~ s/\_realigned/\_realigned_sliced/;
+    $outbam =~ s/\realigned/\realigned_sliced/;
     if ( ! -e $outbam ){
 	print "[INFO] Intersecting BAM files...\n";
 	my $cmd = "$sambamba view -f bam -o $outbam -L $slices $bam";
@@ -54,7 +54,6 @@ foreach my $bam ( @bams ){
 	system( $cmd ) unless $debug;
     }
 }
-
 
 ## VCFs
 my $annotVCF = (glob("$rundir/\*snpEff*.vcf"))[0]; #use annotated vcf
