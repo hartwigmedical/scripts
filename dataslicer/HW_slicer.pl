@@ -41,7 +41,7 @@ my $run = basename($rundir);
 my @bams = glob("$rundir/*/mapping/*dedup.realigned.bam");
 foreach my $bam ( @bams ){
     my $outbam = $bam;
-    $outbam =~ s/\_dedup/\_sliced_dedup/;
+    $outbam =~ s/\_realigned/\_realigned_sliced/;
     my $outbai = "$outbam.bai";
     if ( ! -e $outbam ){
 	print "[INFO] Intersecting BAM files...\n";
