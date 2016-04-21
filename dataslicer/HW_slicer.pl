@@ -43,7 +43,7 @@ foreach my $bam ( @bams ){
     my $outbam = $bam;
     $outbam =~ s/\.realigned.bam/\.realigned.sliced.bam/;
     if ( ! -e $outbam ){
-	print "[INFO] Intersecting BAM files...\n";
+	print "[INFO] Intersecting BAM file $bam\n";
 	my $cmd = "$sambamba view -f bam -o $outbam -L $slices $bam";
 	system( $cmd ) unless $debug;
     }
@@ -61,7 +61,7 @@ my $intersect_vcf = $annotVCF;
 $intersect_vcf =~ s/\.vcf/\_sliced.vcf/;
 
 if ( ! -e $intersect_vcf ){
-    print "[INFO] Intersecting VCF file...\n";
+    print "[INFO] Intersecting VCF file $annotVCF\n";
     my $cmd = "java -Xmx$javaMem -jar $snpsift intervals $slices -i $annotVCF > $intersect_vcf";
     system( $cmd ) unless $debug;
 }
