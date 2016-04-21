@@ -12,7 +12,7 @@ my $help;
 my $rundir;
 my $debug;
 my $javaMem = '8g';
-my $slices = '/data/commmon/repos/scripts/dataslicer/CHPv2_OAv2_BRCA_nochr_merged.bed';
+my $slices = '/data/common/repos/scripts/dataslicer/CHPv2_OAv2_BRCA_nochr_merged.bed';
 my $sambamba = '/data/common/tools/sambamba_v0.5.8/sambamba';
 my $snpsift = '/data/common/tools/snpEff_v4.1h/SnpSift.jar';
 
