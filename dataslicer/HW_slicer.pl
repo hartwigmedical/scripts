@@ -57,7 +57,7 @@ foreach my $bam ( @bams ){
 
 
 ## VCFs
-my $annotVCF = (glob("$rundir/$run\*snpEff*.vcf"))[0]; #use annotated vcf
+my $annotVCF = (glob("$rundir/\*snpEff*.vcf"))[0]; #use annotated vcf
 my $intersect_vcf = $annotVCF;
 $intersect_vcf =~ s/\.vcf/\_sliced.vcf/;
 
