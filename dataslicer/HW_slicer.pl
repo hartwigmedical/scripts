@@ -42,12 +42,12 @@ my @bams = glob("$rundir/*/mapping/*dedup.realigned.bam");
 foreach my $bam ( @bams ){
     my $outbam = $bam;
     $outbam =~ s/\_realigned/\_realigned_sliced/;
-    my $outbai = "$outbam.bai";
     if ( ! -e $outbam ){
 	print "[INFO] Intersecting BAM files...\n";
 	my $cmd = "$sambamba view -f bam -o $outbam -L $slices $bam";
 	system( $cmd ) unless $debug;
     }
+    my $outbai = "$outbam.bai";
     if ( ! -e $outbai ){
 	print "[INFO] Indexing sliced BAM files...\n";
 	my $cmd = "$sambamba index $outbam $outbai";
