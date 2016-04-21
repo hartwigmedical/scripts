@@ -9,12 +9,14 @@ tmpfastqdir=/data/tmp/fastq
 
 ${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=true RC=true
 
-sequencerrun1=$4
+fastqpath1=$4
 if [ "$#" -eq 4 ]; then
-    ${sullivan} -fastqpath1 ${sequencerrun1} -recreated ${tmpfastqdir}
+    ${sullivan} -fastqpath1 ${fastqpath1} -recreated ${tmpfastqdir}
 fi
 
 if [ "$#" -eq 5 ]; then
-     sequencerrun2=$5
-     ${sullivan} -fastqpath1 ${sequencerrun1} -fastqpath2 ${sequencerrun2} -recreated ${tmpfastqdir}
+     fastqpath2=$5
+     ${sullivan} -fastqpath1 ${fastqpath1} -fastqpath2 ${fastqpath2} -recreated ${tmpfastqdir}
 fi
+
+rm ${tmpfastqdir}/*.fastq
