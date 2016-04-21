@@ -7,7 +7,9 @@ bamfile=$3
 
 tmpfastqdir=/data/tmp/fastq
 
-${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=true RC=true
+# KODU: The silent validation stringency suppresses errors for pairs without a mate, which is needed for sliced bam
+# but should not be needed for full BAM!
+${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=true RC=true VALIDATION_STRINGENCY=SILENT
 
 fastqpath1=$4
 if [ "$#" -eq 4 ]; then
