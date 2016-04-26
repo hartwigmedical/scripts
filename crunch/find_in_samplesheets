@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+if [ $# -eq 0 ]; then
+    echo "---"
+    echo " Descr: Search SampleSheets for string (non-exact match)"
+    echo " Usage: `basename $0` <string> [<string2 <stringn>]"
+    echo "        `basename $0` CPCT02020000T"
+    echo "        `basename $0` FR12345678"
+    echo "        `basename $0` CPCT02021234R CPCT02021234T"
+    echo "---"
+    exit 1
+fi
+
+SEARCH_STRINGS=( "$@" )
+
+echo ""
+
+for SEARCH in "${SEARCH_STRINGS[@]}"; do
+  #echo $SEARCH
+  FOUND=0
+  for sheet in /data/sequencer_archive/*/SampleSheet.csv; do
+    #echo "SAMP SHEET: $sheet" 
+    if [[ `grep $SEARCH $sheet` ]]; then
+      HMFRUN=`grep -o -P "X\d{2}\-\d{4}" $sheet`; 
+      SAMPLEID=`cat $sheet | grep $SEARCH | cut -d"," -f 2 | head -1`; 
+      SAMPLENAME=`cat $sheet | grep $SEARCH | cut -d"," -f 3 | head -1`; 
+      SUBM=`cat $sheet | grep $SEARCH | cut -f 8 -d "," | head -1`; 
+      FOUND=1
+      HMFRUNDIR=`dirname $sheet`
+      echo "$HMFRUN $SAMPLEID $SAMPLENAME $SUBM: ($HMFRUNDIR/Data/Intensities/BaseCalls/$SUBM/$SAMPLEID/)"; 
+    fi; 
+  done
+  if [[ $FOUND == 0 ]]; then
+      echo "$SEARCH not found in any samplesheet"
+  fi  
+done
+
+echo ""
