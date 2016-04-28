@@ -43,27 +43,36 @@ foreach my $bam ( @bams ){
     my $outbam = $bam;
     $outbam =~ s/\.realigned.bam/\.realigned.sliced.bam/;
     if ( ! -e $outbam ){
-	print "[INFO] Intersecting BAM file $bam\n";
-	my $cmd = "$sambamba view -f bam -o $outbam -L $slices $bam";
-	system( $cmd ) unless $debug;
+        print "[INFO] Intersecting BAM file $bam\n";
+        my $cmd = "$sambamba view -f bam -o $outbam -L $slices $bam";
+        system( $cmd ) unless $debug;
+    }
+    else {
+        print "[INFO] Sliced BAM file already exists: $outbam\n";
     }
     my $outbai = "$outbam.bai";
     if ( ! -e $outbai ){
-	print "[INFO] Indexing sliced BAM files...\n";
-	my $cmd = "$sambamba index $outbam $outbai";
-	system( $cmd ) unless $debug;
+        print "[INFO] Indexing sliced BAM files...\n";
+        my $cmd = "$sambamba index $outbam $outbai";
+        system( $cmd ) unless $debug;
     }
 }
 
 ## VCFs
-my $annotVCF = (glob("$rundir/\*snpEff*.vcf"))[0]; #use annotated vcf
-my $intersect_vcf = $annotVCF;
-$intersect_vcf =~ s/\.vcf/\_sliced.vcf/;
+my $annotVCFs = (glob("$rundir/\*snpEff*.vcf"));
+if ($annotVCFs) {}
+    my $intersect_vcf = annotVCFs[0];
+    $intersect_vcf =~ s/\.vcf/\_sliced.vcf/;
 
-if ( ! -e $intersect_vcf ){
-    print "[INFO] Intersecting VCF file $annotVCF\n";
-    my $cmd = "java -Xmx$javaMem -jar $snpsift intervals $slices -i $annotVCF > $intersect_vcf";
-    system( $cmd ) unless $debug;
+    if ( ! -e $intersect_vcf ){
+        print "[INFO] Intersecting VCF file $annotVCF\n";
+        my $cmd = "java -Xmx$javaMem -jar $snpsift intervals $slices -i $annotVCF > $intersect_vcf";
+        system( $cmd ) unless $debug;
+    } else {
+        print "[INFO] Sliced VCF file already exists: $intersect_vcf\n";
+    }
+} else {
+    print "[WARN] Could not find annotated vcf in $rundir\n";
 }
 
 ## ======================================
