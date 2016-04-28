@@ -59,7 +59,7 @@ foreach my $bam ( @bams ){
 
 ## VCFs
 my $annotVCFs = (glob("$rundir/\*snpEff*.vcf"));
-if ($annotVCFs) {
+if ((glob("$rundir/\*snpEff*.vcf"))) {
     my $annotVCF = (glob("$rundir/\*snpEff*.vcf"))[0];
     my $intersect_vcf = $annotVCF;
     $intersect_vcf =~ s/\.vcf/\_sliced.vcf/;
