@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+if [ $# -eq 0 ]; then
+    echo "---"
+    echo " Descr: Search run dirs for sample-dir matching string (exact match)"
+    echo " Usage: `basename $0` CPCT11111111T"
+    echo "        `basename $0` CPCT11111111T CPCT22222222R"
+    echo "---"
+    exit 1
+fi
+
+SEARCH_STRINGS=( "$@" )
+SEARCH=$1; 
+
+echo ""
+
+for SEARCH in "${SEARCH_STRINGS[@]}"; do
+  echo "[INFO] Searching for $SEARCH"
+  
+  RUNS_DIR='/data/processed_archive/'
+  find $RUNS_DIR -mindepth 2 -maxdepth 2 -type d -iname $SEARCH | xargs -I{} dirname {}
+  
+  RUNS_DIR='/data/schuberg/'
+  find $RUNS_DIR -mindepth 2 -maxdepth 2 -type d -iname $SEARCH | xargs -I{} dirname {}
+  
+  RUNS_DIR='/data/fromies/'
+  find $RUNS_DIR -mindepth 2 -maxdepth 2 -type d -iname $SEARCH | xargs -I{} dirname {}
+
+done
+
+echo ""

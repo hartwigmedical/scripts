@@ -6,7 +6,7 @@ for sheet in /data1/illumina_data/*/SampleSheet.csv; do
 	echo ""
 	#echo "# ----- HMFreg";
 	echo "# "$currHost;
-	echo "# [SSHEET] "$sheet;
+	echo "# [SSHEET] "$runBase;
 	
 	## check images presence
 	if [ -d "$runBase/Thumbnail_Images/L001" ]; then

@@ -1,58 +1,24 @@
 #!/bin/bash
 
-# Definition of tools used
 sullivan=$1
 picard=$2
 
-# Params
-hmfreg=$3
-externalid=$4
-sampleid=$5
+bamfile=$3
 
-sequencerrun1=$6
-sequencerrun2=
-mergerun=false
-if [ "$#" -eq 7 ]; then
-     sequencerrun2=$7
-     mergerun=true
-fi
-
-appendreg=true
-
-if [ ${mergerun} == true ]; then
-	pipelinerun=${sequencerrun1}_merge_${sequencerrun2}
-else
-	pipelinerun=${sequencerrun1}
-fi
-
-if [ ${appendreg} == true ]; then
-	pipelinerun=${pipelinerun}_${hmfreg}
-fi
-
-# Paths
-bamfile=/data/processed_archive/${pipelinerun}/${externalid}/mapping/${externalid}_dedup.realigned.bam
-sequencerundir=/data/sequencer_archive/${sequencerrun1}/Data/Intensities/BaseCalls/${hmfreg}/${sampleid}
-if [ ${mergerun} == true ]; then
-	sequencerundirmerge=/data/sequencer_archive/${sequencerrun2}/Data/Intensities/BaseCalls/${hmfreg}/${sampleid}
-fi
 tmpfastqdir=/data/tmp/fastq
 
-# Parameters
-numRecords=1000000
+# KODU: The silent validation stringency suppresses errors for pairs without a mate, which is needed for sliced bam
+# but should not be needed for full BAM!
+${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=true RC=true VALIDATION_STRINGENCY=SILENT
 
-# Run tools
-rm ${tmpfastqdir}/*
-${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=true RC=true
-if [ ${mergerun}  == true ]; then
-	${sullivan} -origpath ${sequencerundir} -recpath ${tmpfastqdir} -mergeorigpath ${sequencerundirmerge} -n ${numRecords} -d
-else
-	${sullivan} -origpath ${sequencerundir} -recpath ${tmpfastqdir} -n ${numRecords} -d -a
+fastqpath1=$4
+if [ "$#" -eq 4 ]; then
+    ${sullivan} -fastqpath1 ${fastqpath1} -recreated ${tmpfastqdir}
 fi
 
-# For easy check whether everything looks sane:
-ls -lah ${tmpfastqdir}
-# Add the commands to clean up to the screen, should be executed in case QC succeeded based on manual inspection
-echo "cd ${sequencerundir}/*.fastq.gz"
-if [ ${mergerun} == true ]; then
-	echo "cd ${sequencerundirmerge}/*.fastq.gz"
+if [ "$#" -eq 5 ]; then
+     fastqpath2=$5
+     ${sullivan} -fastqpath1 ${fastqpath1} -fastqpath2 ${fastqpath2} -recreated ${tmpfastqdir}
 fi
+
+rm ${tmpfastqdir}/*.fastq
