@@ -9,9 +9,11 @@ VCFFile = "combined.vcf"
 
 class genotype:
 
-    variantCountNormal = {}
+    variantCountSubTypeNormal = {}
     variantCountTumor = {}
     variantCountTumorPrivate = {}
+    variantCountSubTypeTumor = {}
+    variantCountSubTypeTumorPrivate = {}
 
     def __init__(self,caller,ref,alt,inputGenotype):
         self.private = False
@@ -22,6 +24,7 @@ class genotype:
         self.tumorVariantSubType = ""
         self.normalVariantSubType = ""
 
+        #TUMOR SAMPLE
         if self.genotypeTumor == "./.":
             self.tumorVariantType = "Missing Genotype"
         elif self.genotypeTumor == "0/0":
@@ -38,11 +41,18 @@ class genotype:
                 elif len(self.alleleTumor1) >= len(ref) and len(self.alleleTumor2) >= len(ref):
                     self.tumorVariantSubType = "Insert"
 
-        if genotype.variantCountTumor.has_key(self.tumorVariantType + self.tumorVariantSubType + " " + self.caller):
-            genotype.variantCountTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] += 1
+        if genotype.variantCountSubTypeTumor.has_key(self.tumorVariantType + self.tumorVariantSubType + " " + self.caller):
+            genotype.variantCountSubTypeTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] += 1
         else:
-            genotype.variantCountTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] = 1
+            genotype.variantCountSubTypeTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] = 1
 
+        if genotype.variantCountTumor.has_key(self.tumorVariantType + " " + self.caller):
+            genotype.variantCountTumor[self.tumorVariantType + " " + self.caller] += 1
+        else:
+            genotype.variantCountTumor[self.tumorVariantType + " " + self.caller] = 1
+
+
+        # NORMAL SAMPLE
         if self.genotypeNormal == "./.":
             self.normalVariantType = "Missing Genotype"
         elif self.genotypeNormal == "0/0" or self.genotypeNormal[1] != "/":  # Mutect Normal Case
@@ -59,17 +69,25 @@ class genotype:
                 elif len(self.alleleNormal1) >= len(ref) and len(self.alleleNormal2) >= len(ref):
                     self.normalVariantSubType = "Insert"
 
-        if genotype.variantCountNormal.has_key(self.normalVariantType + self.normalVariantSubType + " " + self.caller):
-            genotype.variantCountNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] += 1
+        if genotype.variantCountSubTypeNormal.has_key(self.normalVariantType + self.normalVariantSubType + " " + self.caller):
+            genotype.variantCountSubTypeNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] += 1
         else:
-            genotype.variantCountNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] = 1
+            genotype.variantCountSubTypeNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] = 1
+
 
     def markPrivate(self):
         self.private = True
+        if genotype.variantCountSubTypeTumorPrivate.has_key(self.tumorVariantType + self.tumorVariantSubType + " " + self.caller):
+            genotype.variantCountSubTypeTumorPrivate[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] += 1
+        else:
+            genotype.variantCountSubTypeTumorPrivate[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] = 1
+
         if genotype.variantCountTumorPrivate.has_key(self.tumorVariantType + " " + self.caller):
             genotype.variantCountTumorPrivate[self.tumorVariantType + " " + self.caller] += 1
         else:
             genotype.variantCountTumorPrivate[self.tumorVariantType + " " + self.caller] = 1
+
+
 
 class somaticVariant:
     variantCountSNPTotal = 0
@@ -77,18 +95,9 @@ class somaticVariant:
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
 
-    #####DEBUG##########
-    countSNPIndelOverlap = 0
-    varscanGenotypeCount = {}
-    #####DEBUGEND#######
-
-    #def __init__(self, chrom,pos, id, ref,alt,filter,format,freebayesNormalGenotype,mutectNormalGenotype, \
-    #             freebayesTumorGenotype,mutectTumorGenotype,strelkaNormalGenotype,varscanNormalGenotype, \
-    #             strelkaTumorGenotype,varscanTumorGenotype):
-    #def __init__(self, chrom,pos, id, ref,alt,filter,format,varscanNormalGenotype, varscanTumorGenotype):
     def __init__(self, chrom, pos, id, ref, alt, filter, format, inputGenotypes):
 
-        if filter == "PASS" or filter == "." or True:
+        if filter == "PASS" or filter == ".":
             self.tumorCallerCountSNP = 0
             self.tumorCallerCountIndel = 0
             self.chrom = chrom
@@ -101,15 +110,8 @@ class somaticVariant:
                 self.variantGenotypes[key] = genotype(key, ref, alt, inputGenotypes[key])
 
             #####DEBUG#########
-            # if self.variantGenotypes['varscan'].tumorVariantType == "SNP" and self.variantGenotypes['strelka'].tumorVariantType == "SNP":
-            #   if varscanTumorGenotype != strelkaTumorGenotype:
-            if filter != "PASS" and filter != ".":
-                print filter, chrom, pos, id, ref, alt
-            #if self.variantGenotypes['varscan'].normalVariantSubType == "Insert":
-            #    if somaticVariant.varscanGenotypeCount.has_key(chrom + " " + pos):
-            #        somaticVariant.varscanGenotypeCount[chrom + " " + pos] += 1
-            #    else:
-             #       somaticVariant.varscanGenotypeCount[chrom + " " + pos] = 1
+            #if self.chrom == "1" and self.pos == "170993444":
+            #    print filter, chrom, pos, id, ref, alt, inputGenotypes
             #####DEBUG END#####
 
             for key, value in self.variantGenotypes.items():
@@ -142,14 +144,10 @@ class somaticVariant:
             if self.tumorCallerCountIndel > 0:
                 somaticVariant.variantCountIndelTotal += 1
 
-            if self.tumorCallerCountSNP > 0 and self.tumorCallerCountIndel > 0:
-                somaticVariant.countSNPIndelOverlap += 1
-
 
 def loadVaraintsFromVCF(aPath, aVCFFile,aVariants):
     print "reading vcf file. . .\n"
     with open(aPath + aVCFFile, 'r') as f:
-        i=0
         for line in f:
             myGenotypes = {}
             a = [x for x in line.split('\t')]
@@ -159,9 +157,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVariants):
                 myGenotypes['strelka'] = [a[13][:3], a[15][:3]]
                 myGenotypes['varscan'] = [a[14][:3], a[16][:3]]
                 aVariants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[8],myGenotypes))
-                i=i+1
-                if i > 1000000:
-                    return 1
+
     return 1
 
 
@@ -170,59 +166,31 @@ loadVaraintsFromVCF(Path,VCFFile,variants)
 
 
 print "NORMAL VARIANTS"
-for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountNormal.items()):
+for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeNormal.items()):
     print "%s: %s" % (key, value)
 print "\nTUMOR VARIANTS"
-for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountTumor.items()):
+for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumor.items()):
     print "%s: %s" % (key, value)
+
+indelTruthSet = variants[0].variantCountIndelTotal - variants[0].variantCountIndelNumberCallers[1]
+snpTruthSet = variants[0].variantCountSNPTotal - variants[0].variantCountSNPNumberCallers[1]
 print "\nIndel Total: ",variants[0].variantCountIndelTotal
 print "SNP Total: ",variants[0].variantCountSNPTotal
-print "SNP-INDEL Overlap: ",variants[0].countSNPIndelOverlap
-print "\nPRIVATE VARIANTS"
-for key,value in sorted(variants[0].variantGenotypes['varscan'].variantCountTumorPrivate.items()):
-        print "%s: %s" % (key, value)
+print "\nIndel 'Truth Set': ",indelTruthSet
+print "SNP 'Truth Set': ",snpTruthSet
+print "\nSENSITIVITY"
+for key,value in sorted(variants[0].variantGenotypes['varscan'].variantCountTumor.items()):
+            if key[:3] == 'SNP':
+                print key,":",round(float(value-variants[0].variantGenotypes['varscan'].variantCountTumorPrivate[key])/snpTruthSet,4)
+            elif key[:5]  == 'Indel':
+                print key,":",round(float(value-variants[0].variantGenotypes['varscan'].variantCountTumorPrivate[key])/indelTruthSet,4)
+print "\nPRECISION"
+for key,value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumorPrivate.items()):
+            print key,":",round(1-float(value)/float(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumor[key]),4)
 print "\nNumber of Callers SNP: ",variants[0].variantCountSNPNumberCallers
 print "Number of Callers Indel: ", variants[0].variantCountIndelNumberCallers
-print "\nVARSCAN DEBUG:"
-for key, value in sorted(variants[0].varscanGenotypeCount.items()):
-    print "%s: %s" % (key, value)
-
-#NOTES ON VCF STAT
-#SNP
-    # LEN(GT1) = LEN(GT2) = LEN(REF)
-    # Could potentially be a SNP for 1 and a INDEL for another but in practice NOT.
-    # RTGTOOLS counts this as an SNP
-        #REF =CTTTTTTTTTTTTTTA  ; ALT = CTTTTTTTTTTTTTTT ;   GT: 1/1
-# INDELS
-    # If one allele of a genotype is an INDEL, then gets counted as an indel
-    # If one allele is an insert and one is a delete then neither insert or delete, just indel
-# MISSING GENOTYPE = ./.
-    # Same count
-    # Exception: Freebayes has 13 samples with missing Genotype for blood but tumor
-        # Occurs when Tumor has 2 different heterozygous mutations to ref
-# Same as Reference = 0/0 or just 0 for Mutect
-    # Others use for Normal sample only
-# notes
-    # Freebayes has a small number of SNPs and indels in Normal sample.
-        # The tumor and normal sample are always different in these cases and both mutated from ref
-        # Presumably the reference is the refGenome and the indels are shown.
-    # Varscan has a large number of indels (inserts + deletes) in Normal sample
-        # COULD BE KNOWN VARSCAN BUG???
-    # Failed filters in Varscan cause # of tumors not to reconcile:
-        # Varscan input file has 13037 failed filters
-        # All due to str10 filter (>90% of supporting reads on 1 strand).
-        # 3736 PASS in combine VCF because they are not filtered in other SOMATICS! (3606 tumor SNP, 64 tumor insert, 66 tumor delete)
-        # remaining 9301 Varscan mutations continue to FAIL in combined VCF
-# Compare actual genotype!
-    # Where multiple callers find an SNP or INDEL, how often is it the same?   SNP appears to be 99%+
 
 
-#Variant
-#SNPs
-#Freebayes {'0/0|0/1': 199125, './.|./.': 1064230, '0/1|1/1': 53, '0/0|1/1': 1}
-#Strelka {'0/0|0/1': 1160332, './.|./.': 103077}
-#varscan {'./.|./.': 210232, '0/0|0/1': 1053172, '0/0|1/1': 5}
-#mutect {'./.|./.': 136749, './.|0/1': 1126660}
 
 # FORMAT INFO
 #GT:AD:BQ:DP:FA:SS     Mutect
@@ -252,7 +220,3 @@ for key, value in sorted(variants[0].varscanGenotypeCount.items()):
 ##FORMAT=<ID=SUBDP,Number=1,Type=Integer,Description="Number of reads below tier1 mapping quality threshold aligned across this site">
 ##FORMAT=<ID=TU,Number=2,Type=Integer,Description="Number of 'T' alleles used in tiers 1,2">
 
-
-#Freebayes
-#SNP  199305    (199392)   87!!
-#Indel 14413    (14326)
