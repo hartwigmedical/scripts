@@ -1,11 +1,19 @@
 #!/usr/local/bin/python
-#import math
-import numpy as np
-from array import array
 
 ROUNDING_PRECISION = 4
 Path = "/Users/peterpriestley/hmf/70-30sample/"
 VCFFile = "combined.vcf"
+
+class variantType():
+    sameAsRef = "Same as Ref"
+    missingGenotype = "Missing Genotype"
+    indel = "INDEL"
+    SNP = "SNP"
+
+class subVariantType():
+    none = ""
+    insert = "INSERT"
+    delete = "DELETE"
 
 class genotype:
 
@@ -16,76 +24,71 @@ class genotype:
     variantCountSubTypeTumorPrivate = {}
 
     def __init__(self,caller,ref,alt,inputGenotype):
-        self.private = False
-        self.caller = caller
-        self.genotypeTumor = inputGenotype[1]
-        self.genotypeNormal = inputGenotype[0]
-        self.altsplit = (ref + ","+ alt).split(',')
-        self.tumorVariantSubType = ""
-        self.normalVariantSubType = ""
+        altsplit = (ref + ","+ alt).split(',')
+        self.tumorVariantSubType = subVariantType.none
+        self.normalVariantSubType = subVariantType.none
 
         #TUMOR SAMPLE
-        if self.genotypeTumor == "./.":
-            self.tumorVariantType = "Missing Genotype"
-        elif self.genotypeTumor == "0/0":
-            self.tumorVariantType = "Same As Ref"
+        if inputGenotype[1] == "./.":
+            self.tumorVariantType = variantType.missingGenotype
+        elif inputGenotype[1] == "0/0":
+            self.tumorVariantType = variantType.sameAsRef
         else:
-            self.alleleTumor1 = self.altsplit[int(self.genotypeTumor[0])]
-            self.alleleTumor2 = self.altsplit[int(self.genotypeTumor[2])]
-            if len(self.alleleTumor1) == len(self.alleleTumor2) and len(self.alleleTumor1) == len(ref):
-                self.tumorVariantType = "SNP"
+            alleleTumor1 = altsplit[int(inputGenotype[1][0])]
+            alleleTumor2 = altsplit[int(inputGenotype[1][2])]
+            if len(alleleTumor1) == len(alleleTumor2) and len(alleleTumor1) == len(ref):
+                self.tumorVariantType = variantType.SNP
             else:
-                self.tumorVariantType = "Indel"
-                if len(self.alleleTumor1) <= len(ref) and len(self.alleleTumor2) <= len(ref):
-                    self.tumorVariantSubType = "Delete"
-                elif len(self.alleleTumor1) >= len(ref) and len(self.alleleTumor2) >= len(ref):
-                    self.tumorVariantSubType = "Insert"
+                self.tumorVariantType = variantType.indel
+                if len(alleleTumor1) <= len(ref) and len(alleleTumor2) <= len(ref):
+                    self.tumorVariantSubType = subVariantType.delete
+                elif len(alleleTumor1) >= len(ref) and len(alleleTumor2) >= len(ref):
+                    self.tumorVariantSubType = subVariantType.insert
 
-        if genotype.variantCountSubTypeTumor.has_key(self.tumorVariantType + self.tumorVariantSubType + " " + self.caller):
-            genotype.variantCountSubTypeTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] += 1
+        if genotype.variantCountSubTypeTumor.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
+            genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
         else:
-            genotype.variantCountSubTypeTumor[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] = 1
+            genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] = 1
 
-        if genotype.variantCountTumor.has_key(self.tumorVariantType + " " + self.caller):
-            genotype.variantCountTumor[self.tumorVariantType + " " + self.caller] += 1
+        if genotype.variantCountTumor.has_key(str(self.tumorVariantType) + " " + caller):
+            genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] += 1
         else:
-            genotype.variantCountTumor[self.tumorVariantType + " " + self.caller] = 1
+            genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
 
 
         # NORMAL SAMPLE
-        if self.genotypeNormal == "./.":
-            self.normalVariantType = "Missing Genotype"
-        elif self.genotypeNormal == "0/0" or self.genotypeNormal[1] != "/":  # Mutect Normal Case
-            self.normalVariantType = "Same As Ref"
+        if inputGenotype[0] == "./.":
+            self.normalVariantType = variantType.missingGenotype
+        elif inputGenotype[0] == "0/0" or inputGenotype[0][1] != "/":  # Mutect Normal Case
+            self.normalVariantType = variantType.sameAsRef
         else:
-            self.alleleNormal1 = self.altsplit[int(self.genotypeNormal[0])]
-            self.alleleNormal2 = self.altsplit[int(self.genotypeNormal[2])]
-            if len(self.alleleNormal1) == len(self.alleleNormal2) and len(self.alleleNormal1) == len(ref):
-                self.normalVariantType = "SNP"
+            alleleNormal1 = altsplit[int(inputGenotype[0][0])]
+            alleleNormal2 = altsplit[int(inputGenotype[0][2])]
+            if len(alleleNormal1) == len(alleleNormal2) and len(alleleNormal1) == len(ref):
+                self.normalVariantType = variantType.SNP
             else:
-                self.normalVariantType = "Indel"
-                if len(self.alleleNormal1) <= len(ref) and len(self.alleleNormal2) <= len(ref):
-                    self.normalVariantSubType = "Delete"
-                elif len(self.alleleNormal1) >= len(ref) and len(self.alleleNormal2) >= len(ref):
-                    self.normalVariantSubType = "Insert"
+                self.normalVariantType = variantType.indel
+                if len(alleleNormal1) <= len(ref) and len(alleleNormal2) <= len(ref):
+                    self.normalVariantSubType = subVariantType.delete
+                elif len(alleleNormal1) >= len(ref) and len(alleleNormal2) >= len(ref):
+                    self.normalVariantSubType = subVariantType.insert
 
-        if genotype.variantCountSubTypeNormal.has_key(self.normalVariantType + self.normalVariantSubType + " " + self.caller):
-            genotype.variantCountSubTypeNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] += 1
+        if genotype.variantCountSubTypeNormal.has_key(str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller):
+            genotype.variantCountSubTypeNormal[str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller] += 1
         else:
-            genotype.variantCountSubTypeNormal[self.normalVariantType + self.normalVariantSubType + " " + self.caller] = 1
+            genotype.variantCountSubTypeNormal[str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller] = 1
 
 
-    def markPrivate(self):
-        self.private = True
-        if genotype.variantCountSubTypeTumorPrivate.has_key(self.tumorVariantType + self.tumorVariantSubType + " " + self.caller):
-            genotype.variantCountSubTypeTumorPrivate[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] += 1
+    def markPrivate(self,caller):
+        if genotype.variantCountSubTypeTumorPrivate.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
+            genotype.variantCountSubTypeTumorPrivate[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
         else:
-            genotype.variantCountSubTypeTumorPrivate[self.tumorVariantType + self.tumorVariantSubType + " " + self.caller] = 1
+            genotype.variantCountSubTypeTumorPrivate[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] = 1
 
-        if genotype.variantCountTumorPrivate.has_key(self.tumorVariantType + " " + self.caller):
-            genotype.variantCountTumorPrivate[self.tumorVariantType + " " + self.caller] += 1
+        if genotype.variantCountTumorPrivate.has_key(str(self.tumorVariantType) + " " + caller):
+            genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] += 1
         else:
-            genotype.variantCountTumorPrivate[self.tumorVariantType + " " + self.caller] = 1
+            genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] = 1
 
 
 
@@ -95,53 +98,52 @@ class somaticVariant:
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
 
-    def __init__(self, chrom, pos, id, ref, alt, filter, format, inputGenotypes):
+    def __init__(self, chrom, pos, id, ref, alt, filter, inputGenotypes):
 
         if filter == "PASS" or filter == ".":
-            self.tumorCallerCountSNP = 0
-            self.tumorCallerCountIndel = 0
-            self.chrom = chrom
-            self.pos = pos
-            self.id = id
-            self.format = format
-            self.variantGenotypes = {}
+            tumorCallerCountSNP = 0
+            tumorCallerCountIndel = 0
+            #self.chrom = chrom
+            #self.pos = pos
+            #self.id = id
+            variantGenotypes = {}
 
             for key in inputGenotypes.iterkeys():
-                self.variantGenotypes[key] = genotype(key, ref, alt, inputGenotypes[key])
+                variantGenotypes[key] = genotype(key, ref, alt, inputGenotypes[key])
 
             #####DEBUG#########
             #if self.chrom == "1" and self.pos == "170993444":
             #    print filter, chrom, pos, id, ref, alt, inputGenotypes
             #####DEBUG END#####
 
-            for key, value in self.variantGenotypes.items():
-                if value.tumorVariantType == "SNP":
-                    self.tumorCallerCountSNP += 1
-                if value.tumorVariantType == "Indel":
-                    self.tumorCallerCountIndel += 1
+            for key, value in variantGenotypes.items():
+                if value.tumorVariantType == variantType.SNP:
+                    tumorCallerCountSNP += 1
+                if value.tumorVariantType == variantType.indel:
+                    tumorCallerCountIndel += 1
 
-            if self.tumorCallerCountSNP > 0:
-                if somaticVariant.variantCountSNPNumberCallers.has_key(self.tumorCallerCountSNP):
-                    somaticVariant.variantCountSNPNumberCallers[self.tumorCallerCountSNP] += 1
+            if tumorCallerCountSNP > 0:
+                if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
+                    somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] += 1
                 else:
-                    somaticVariant.variantCountSNPNumberCallers[self.tumorCallerCountSNP] = 1
+                    somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] = 1
 
-            if self.tumorCallerCountIndel > 0:
-                if somaticVariant.variantCountIndelNumberCallers.has_key(self.tumorCallerCountIndel):
-                    somaticVariant.variantCountIndelNumberCallers[self.tumorCallerCountIndel] += 1
+            if tumorCallerCountIndel > 0:
+                if somaticVariant.variantCountIndelNumberCallers.has_key(tumorCallerCountIndel):
+                    somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] += 1
                 else:
-                    somaticVariant.variantCountIndelNumberCallers[self.tumorCallerCountIndel] = 1
+                    somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] = 1
 
-            for caller, variantGenotype in self.variantGenotypes.items():
-                if variantGenotype.tumorVariantType == "SNP" and self.tumorCallerCountSNP == 1:
-                    variantGenotype.markPrivate()
-                if variantGenotype.tumorVariantType == "Indel" and self.tumorCallerCountIndel == 1:
-                    variantGenotype.markPrivate()
+            for caller, variantGenotype in variantGenotypes.items():
+                if variantGenotype.tumorVariantType == variantType.SNP and tumorCallerCountSNP == 1:
+                    variantGenotype.markPrivate(caller)
+                if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
+                    variantGenotype.markPrivate(caller)
 
-            if self.tumorCallerCountSNP > 0:
+            if tumorCallerCountSNP > 0:
                 somaticVariant.variantCountSNPTotal += 1
 
-            if self.tumorCallerCountIndel > 0:
+            if tumorCallerCountIndel > 0:
                 somaticVariant.variantCountIndelTotal += 1
 
 
@@ -156,7 +158,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVariants):
                 myGenotypes['mutect'] = [a[10][:3], a[12][:3]]
                 myGenotypes['strelka'] = [a[13][:3], a[15][:3]]
                 myGenotypes['varscan'] = [a[14][:3], a[16][:3]]
-                aVariants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[8],myGenotypes))
+                aVariants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], myGenotypes))
 
     return 1
 
@@ -166,57 +168,25 @@ loadVaraintsFromVCF(Path,VCFFile,variants)
 
 
 print "NORMAL VARIANTS"
-for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeNormal.items()):
+for key, value in sorted(genotype.variantCountSubTypeNormal.items()):
     print "%s: %s" % (key, value)
 print "\nTUMOR VARIANTS"
-for key, value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumor.items()):
+for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
     print "%s: %s" % (key, value)
-
-indelTruthSet = variants[0].variantCountIndelTotal - variants[0].variantCountIndelNumberCallers[1]
-snpTruthSet = variants[0].variantCountSNPTotal - variants[0].variantCountSNPNumberCallers[1]
-print "\nIndel Total: ",variants[0].variantCountIndelTotal
-print "SNP Total: ",variants[0].variantCountSNPTotal
+indelTruthSet = somaticVariant.variantCountIndelTotal - somaticVariant.variantCountIndelNumberCallers[1]
+snpTruthSet = somaticVariant.variantCountSNPTotal - somaticVariant.variantCountSNPNumberCallers[1]
+print "\nIndel Total: ",somaticVariant.variantCountIndelTotal
+print "SNP Total: ",somaticVariant.variantCountSNPTotal
 print "\nIndel 'Truth Set': ",indelTruthSet
 print "SNP 'Truth Set': ",snpTruthSet
 print "\nSENSITIVITY"
-for key,value in sorted(variants[0].variantGenotypes['varscan'].variantCountTumor.items()):
-            if key[:3] == 'SNP':
-                print key,":",round(float(value-variants[0].variantGenotypes['varscan'].variantCountTumorPrivate[key])/snpTruthSet,4)
-            elif key[:5]  == 'Indel':
-                print key,":",round(float(value-variants[0].variantGenotypes['varscan'].variantCountTumorPrivate[key])/indelTruthSet,4)
+for myVariantType,myTumorCount in sorted(genotype.variantCountTumor.items()):
+            if myVariantType[:3] == 'SNP':
+                print myVariantType,":",round(float(myTumorCount-genotype.variantCountTumorPrivate[myVariantType])/snpTruthSet,ROUNDING_PRECISION)
+            elif myVariantType[:5]  == 'INDEL':
+                print myVariantType,":",round(float(myTumorCount-genotype.variantCountTumorPrivate[myVariantType])/indelTruthSet,ROUNDING_PRECISION)
 print "\nPRECISION"
-for key,value in sorted(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumorPrivate.items()):
-            print key,":",round(1-float(value)/float(variants[0].variantGenotypes['varscan'].variantCountSubTypeTumor[key]),4)
-print "\nNumber of Callers SNP: ",variants[0].variantCountSNPNumberCallers
-print "Number of Callers Indel: ", variants[0].variantCountIndelNumberCallers
-
-
-
-# FORMAT INFO
-#GT:AD:BQ:DP:FA:SS     Mutect
-#GT:AU:CU:DP:FDP:GU:SDP:SUBDP:TU    Strelka
-#GT:AD:DP:DP4:FREQ:RD     Varscan
-#GT:AO:DP:GQ:PL:QA:QR:RO   Freebayes
-##FORMAT=<ID=AD,Number=.,Type=Integer,Description="Allelic depths for the ref and alt alleles in the order listed">
-##FORMAT=<ID=AO,Number=A,Type=Integer,Description="Alternate allele observation count">
-##FORMAT=<ID=AU,Number=2,Type=Integer,Description="Number of 'A' alleles used in tiers 1,2">
-##FORMAT=<ID=BQ,Number=A,Type=Float,Description="Average base quality for reads supporting alleles">
-##FORMAT=<ID=CU,Number=2,Type=Integer,Description="Number of 'C' alleles used in tiers 1,2">
-##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
-##FORMAT=<ID=DP4,Number=1,Type=String,Description="Strand read counts: ref/fwd, ref/rev, var/fwd, var/rev">
-##FORMAT=<ID=FA,Number=A,Type=Float,Description="Allele fraction of the alternate allele with regard to reference">
-##FORMAT=<ID=FDP,Number=1,Type=Integer,Description="Number of basecalls filtered from original read depth for tier1">
-##FORMAT=<ID=FREQ,Number=1,Type=String,Description="Variant allele frequency">
-##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality">
-##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-##FORMAT=<ID=GU,Number=2,Type=Integer,Description="Number of 'G' alleles used in tiers 1,2">
-##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">
-##FORMAT=<ID=QA,Number=A,Type=Integer,Description="Sum of quality of the alternate observations">
-##FORMAT=<ID=QR,Number=1,Type=Integer,Description="Sum of quality of the reference observations">
-##FORMAT=<ID=RD,Number=1,Type=Integer,Description="Depth of reference-supporting bases (reads1)">
-##FORMAT=<ID=RO,Number=1,Type=Integer,Description="Reference allele observation count">
-##FORMAT=<ID=SDP,Number=1,Type=Integer,Description="Number of reads with deletions spanning this site at tier1">
-##FORMAT=<ID=SS,Number=1,Type=Integer,Description="Variant status relative to non-adjacent Normal,0=wildtype,1=germline,2=somatic,3=LOH,4=post-transcriptional modification,5=unknown">
-##FORMAT=<ID=SUBDP,Number=1,Type=Integer,Description="Number of reads below tier1 mapping quality threshold aligned across this site">
-##FORMAT=<ID=TU,Number=2,Type=Integer,Description="Number of 'T' alleles used in tiers 1,2">
-
+for myVariantType,myTumorCount in sorted(genotype.variantCountSubTypeTumorPrivate.items()):
+            print myVariantType,":",round(1-float(myTumorCount)/float(genotype.variantCountSubTypeTumor[myVariantType]),ROUNDING_PRECISION)
+print "\nNumber of Callers SNP: ",somaticVariant.variantCountSNPNumberCallers
+print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
