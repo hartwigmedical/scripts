@@ -4,6 +4,33 @@ ROUNDING_PRECISION = 4
 Path = "/Users/peterpriestley/hmf/70-30sample/"
 VCFFile = "combined.vcf"
 
+class chromosomeLength():
+    chr1 = 249250622
+    chr10 = 135534749
+    chr11 = 135006518
+    chr12 = 133851897
+    chr13 = 115169880
+    chr14 = 107349541
+    chr15 = 102531394
+    chr16 = 90354755
+    chr17 = 81195212
+    chr18 = 78077250
+    chr19 = 59128985
+    chr2 = 243199374
+    chr20 = 63025522
+    chr21 = 48129897
+    chr22 = 51304568
+    chr3 = 198022431
+    chr4 = 191154277
+    chr5 = 180915261
+    chr6 = 171115068
+    chr7 = 159138664
+    chr8 = 146364023
+    chr9 = 141213432
+    chrMT = 16571
+    chrX = 155270561
+    chrY = 59373567
+
 class variantType():
     sameAsRef = "Same as Ref"
     missingGenotype = "Missing Genotype"
@@ -22,6 +49,7 @@ class genotype:
     variantCountTumorPrivate = {}
     variantCountSubTypeTumor = {}
     variantCountSubTypeTumorPrivate = {}
+
 
     def __init__(self,caller,ref,alt,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
@@ -54,7 +82,6 @@ class genotype:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] += 1
         else:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
-
 
         # NORMAL SAMPLE
         if inputGenotype[0] == "./.":
@@ -158,6 +185,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVariants):
                 myGenotypes['mutect'] = [a[10][:3], a[12][:3]]
                 myGenotypes['strelka'] = [a[13][:3], a[15][:3]]
                 myGenotypes['varscan'] = [a[14][:3], a[16][:3]]
+                #myGenotypes['melted'] = [a[9][:3], a[9][:3]]
                 aVariants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], myGenotypes))
 
     return 1
