@@ -3,8 +3,7 @@ import pandas as pd
 
 ROUNDING_PRECISION = 4
 POS_PERCENTILE_BUCKET = 0.1
-RUN_VENN = False
-RUN_PANDAS = False
+RUN_PANDAS = True
 Path = "/Users/peterpriestley/hmf/70-30sample/"
 VCFFile = "combined.vcf"
 vcfMelted = 'False'
@@ -182,7 +181,6 @@ class somaticVariant:
     variantCountSNPNumberCallers = {}
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
-    variantCountVenn = {}
 
     def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes):
 
@@ -225,21 +223,6 @@ class somaticVariant:
                 if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
                     variantGenotype.markPrivate(caller)
 
-
-            ######### VENN Calcuations################################
-            if RUN_VENN == True:
-                tumorCallerType = ""
-                posPercentile = str(round(float(pos) / chromosomeLength[chrom] / POS_PERCENTILE_BUCKET,0) * POS_PERCENTILE_BUCKET)
-                if tumorCallerCountSNP > 0:
-                    tumorCallerType = tumorCallerType + "SNP"
-                if tumorCallerCountIndel > 0:
-                    tumorCallerType = tumorCallerType + "Indel"
-                if somaticVariant.variantCountVenn.has_key(tumorCallerType + " " + vennSegment):
-                    somaticVariant.variantCountVenn[tumorCallerType + " " + vennSegment] += 1
-                else:
-                    somaticVariant.variantCountVenn[tumorCallerType + " " + vennSegment] = 1
-            ###########################################################
-
             if tumorCallerCountSNP > 0:
                 somaticVariant.variantCountSNPTotal += 1
 
@@ -251,7 +234,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVCFMelted):
     print "reading vcf file. . .\n"
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
-        i=0
+        #i=0
         for line in f:
             myGenotypes = {}
             a = [x for x in line.split('\t')]
@@ -265,18 +248,21 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVCFMelted):
                     myGenotypes['mutect'] = [a[10], a[12]]
                     myGenotypes['strelka'] = [a[13], a[15]]
                     myGenotypes['varscan'] = [a[14], a[16]]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
-                i += 1
-                if i > 10000000:
-                    break
-    df = pd.DataFrame(genotype.variantInfo)
-    df.columns = (['chrom', 'pos', 'chromFrac', 'caller', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
-                   'variantSubType','allelicFreq'])
+                    variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
+                #i += 1
+                #if i > 100000:
+                #    break
     print "data frame loaded\n"
-    return df
+    if RUN_PANDAS == True:
+        df = pd.DataFrame(genotype.variantInfo)
+        df.columns = (['chrom', 'pos', 'chromFrac', 'caller', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
+                   'variantSubType','allelicFreq'])
+        return df
+    else:
+        return 0
+
 
 def printStatistics():
-    print genotype.variantFreebayesSNP
     print "NORMAL VARIANTS"
     for key, value in sorted(genotype.variantCountSubTypeNormal.items()):
         print "%s: %s" % (key, value)
@@ -305,11 +291,10 @@ def printStatistics():
             1 - float(myTumorCount) / float(genotype.variantCountSubTypeTumor[myVariantType]), ROUNDING_PRECISION)
     print "\nNumber of Callers SNP: ", somaticVariant.variantCountSNPNumberCallers
     print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
-    for venn, vennCount in sorted(somaticVariant.variantCountVenn.items()):
-        print venn, ": ", vennCount
 
 
 if __name__ == "__main__":
-    df = loadVaraintsFromVCF(Path,VCFFile,vcfMelted)
+    RUN_PANDAS == False
+    loadVaraintsFromVCF(Path,VCFFile,vcfMelted)
     printStatistics()
 #print df.head()
