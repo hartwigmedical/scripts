@@ -1,13 +1,10 @@
 #!/usr/local/bin/python
-import pandas as pd
 
 ROUNDING_PRECISION = 4
 POS_PERCENTILE_BUCKET = 0.1
-RUN_VENN = False
-RUN_PANDAS = False
+CALCULATE_VENN = False
 Path = "/Users/peterpriestley/hmf/70-30sample/"
 VCFFile = "combined.vcf"
-vcfMelted = 'False'
 #VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
 
 #DEFINE CHR LENGTH
@@ -38,45 +35,6 @@ chromosomeLength['MT'] = 16571
 chromosomeLength['X'] = 155270561
 chromosomeLength['Y'] = 59373567
 
-def intChrom(chrom):
-    if chrom == 'X':
-        return 23
-    elif chrom == 'Y':
-        return 24
-    elif chrom == 'MT':
-        return 25
-    else:
-        return int(chrom)
-
-
-def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
-    infoSplit = info.split(':')
-    genotypeSplit = genotype.split(':')
-    if caller == 'mutect':
-        return float(genotypeSplit[infoSplit.index('FA')])
-    elif caller == 'varscan':
-        return float(genotypeSplit[infoSplit.index('FREQ')].split('%')[0])/100
-    else:
-        if caller == 'freebayes':
-            ad = genotypeSplit[infoSplit.index('AO')].split(',')[0]  #NB - does not take into account 2nd allele if exists
-            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]  # NB - does not take into account 2nd allele if exists
-        elif caller == 'strelka' and tumorVariantType == variantType.SNP:
-            ad, rd = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')  # NB - does not take into account genotype
-        elif caller == 'strelka' and tumorVariantType == variantType.indel:
-            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]  # NB - does not take into account 2nd allele if exists
-            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists
-            return float(ad) / (float(rd) + float(ad))
-        elif caller == 'melted':
-            ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')
-        else:
-            return -1
-
-        if float(ad) == 0:
-            return 0
-        else:
-            return float(ad) / (float(rd) + float(ad))
-
-
 
 class variantType():
     sameAsRef = "Same as Ref"
@@ -97,39 +55,33 @@ class genotype:
     variantCountSubTypeTumor = {}
     variantCountSubTypeTumorPrivate = {}
     variantFreebayesSNP=0
-    df = pd.DataFrame()
-    variantInfo = []
 
-
-    def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
+    def __init__(self,caller,ref,alt,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
         self.normalVariantSubType = subVariantType.none
 
         #TUMOR SAMPLE
-        if inputGenotype[1][:3] == "./.":
+        if inputGenotype[1] == "./.":
             self.tumorVariantType = variantType.missingGenotype
-        elif inputGenotype[1][:3] == "0/0":
+        elif inputGenotype[1] == "0/0":
             self.tumorVariantType = variantType.sameAsRef
         else:
             alleleTumor1 = altsplit[int(inputGenotype[1][0])]
             alleleTumor2 = altsplit[int(inputGenotype[1][2])]
             if len(alleleTumor1) == len(alleleTumor2) and len(alleleTumor1) == len(ref):
                 self.tumorVariantType = variantType.SNP
+                #DEBUG
+                #if len(ref) > 1 and len(altsplit)>2:
+                #    print caller,ref,alt,inputGenotype
+                #    genotype.variantFreebayesSNP += 1
+                #END DEBUG
             else:
                 self.tumorVariantType = variantType.indel
                 if len(alleleTumor1) <= len(ref) and len(alleleTumor2) <= len(ref):
                     self.tumorVariantSubType = subVariantType.delete
                 elif len(alleleTumor1) >= len(ref) and len(alleleTumor2) >= len(ref):
                     self.tumorVariantSubType = subVariantType.insert
-
-            ############### Pandas ##################
-            if RUN_PANDAS == True:
-                allelicFreq = calculateAllelicFreq(info,inputGenotype[1],caller,self.tumorVariantType,alt)
-                posPercent = float(pos) / chromosomeLength[chrom]
-                genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, alleleTumor1, alleleTumor2, \
-                                             vennSegment,self.tumorVariantType,self.tumorVariantSubType,allelicFreq))
-            #########################################
 
         if genotype.variantCountSubTypeTumor.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
             genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
@@ -142,9 +94,9 @@ class genotype:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
 
         # NORMAL SAMPLE
-        if inputGenotype[0][:3] == "./.":
+        if inputGenotype[0] == "./.":
             self.normalVariantType = variantType.missingGenotype
-        elif inputGenotype[0][:3] == "0/0" or inputGenotype[0][1] != "/":  # Mutect Normal Case
+        elif inputGenotype[0] == "0/0" or inputGenotype[0][1] != "/":  # Mutect Normal Case
             self.normalVariantType = variantType.sameAsRef
         else:
             alleleNormal1 = altsplit[int(inputGenotype[0][0])]
@@ -183,23 +135,23 @@ class somaticVariant:
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
     variantCountVenn = {}
+    variantCountVennByChromPos = {}
 
-    def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes):
+    def __init__(self, chrom, pos, id, ref, alt, filter, format, inputGenotypes):
 
         if filter == "PASS" or filter == ".":
             tumorCallerCountSNP = 0
             tumorCallerCountIndel = 0
             variantGenotypes = {}
-            vennSegment = ""
 
-            formatSplit = format.split(';')
-            for i in range(len(formatSplit)):
-                formatItem = formatSplit[i].split('=')
-                if formatItem[0] == "set":
-                    vennSegment = formatItem[1]
 
             for key in inputGenotypes.iterkeys():
-                variantGenotypes[key] = genotype(chrom, pos, key, ref, alt,info,vennSegment, inputGenotypes[key])
+                variantGenotypes[key] = genotype(key, ref, alt, inputGenotypes[key])
+
+            #####DEBUG#########
+            #if self.chrom == "1" and self.pos == "170993444":
+            #    print filter, chrom, pos, id, ref, alt, inputGenotypes
+            #####DEBUG END#####
 
             for key, value in variantGenotypes.items():
                 if value.tumorVariantType == variantType.SNP:
@@ -225,20 +177,29 @@ class somaticVariant:
                 if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
                     variantGenotype.markPrivate(caller)
 
-
-            ######### VENN Calcuations################################
-            if RUN_VENN == True:
+            # VENN
+            if CALCULATE_VENN == True:
                 tumorCallerType = ""
                 posPercentile = str(round(float(pos) / chromosomeLength[chrom] / POS_PERCENTILE_BUCKET,0) * POS_PERCENTILE_BUCKET)
                 if tumorCallerCountSNP > 0:
                     tumorCallerType = tumorCallerType + "SNP"
                 if tumorCallerCountIndel > 0:
                     tumorCallerType = tumorCallerType + "Indel"
-                if somaticVariant.variantCountVenn.has_key(tumorCallerType + " " + vennSegment):
-                    somaticVariant.variantCountVenn[tumorCallerType + " " + vennSegment] += 1
-                else:
-                    somaticVariant.variantCountVenn[tumorCallerType + " " + vennSegment] = 1
-            ###########################################################
+                formatSplit = format.split(';')
+                for i in range(len(formatSplit)):
+                    formatItem = formatSplit[i].split('=')
+                    if formatItem[0] == "set":
+                        if somaticVariant.variantCountVenn.has_key(tumorCallerType + " " + formatItem[1]):
+                            somaticVariant.variantCountVenn[tumorCallerType + " " + formatItem[1]] += 1
+                        else:
+                            somaticVariant.variantCountVenn[tumorCallerType + " " + formatItem[1]] = 1
+                        if somaticVariant.variantCountVennByChromPos.has_key(
+                                                                chrom + " " + posPercentile + " " + formatItem[1]):
+                            somaticVariant.variantCountVennByChromPos[
+                                chrom + " " + posPercentile + " " + formatItem[1]] += 1
+                        else:
+                            somaticVariant.variantCountVennByChromPos[
+                                chrom + " " + posPercentile + " " + formatItem[1]] = 1
 
             if tumorCallerCountSNP > 0:
                 somaticVariant.variantCountSNPTotal += 1
@@ -247,69 +208,51 @@ class somaticVariant:
                 somaticVariant.variantCountIndelTotal += 1
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,aVCFMelted):
+def loadVaraintsFromVCF(aPath, aVCFFile,aVariants):
     print "reading vcf file. . .\n"
-    variants = []
     with open(aPath + aVCFFile, 'r') as f:
-        i=0
         for line in f:
             myGenotypes = {}
             a = [x for x in line.split('\t')]
-
             if a[0][:1] != '#':
-                #TO DO: populate from #CHROM header (like melt script)
-                if aVCFMelted == True:
-                    myGenotypes['melted'] = [a[9], a[9]]
-                else:
-                    myGenotypes['freebayes']=[a[9],a[11]]
-                    myGenotypes['mutect'] = [a[10], a[12]]
-                    myGenotypes['strelka'] = [a[13], a[15]]
-                    myGenotypes['varscan'] = [a[14], a[16]]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
-                i += 1
-                if i > 10000000:
-                    break
-    df = pd.DataFrame(genotype.variantInfo)
-    df.columns = (['chrom', 'pos', 'chromFrac', 'caller', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
-                   'variantSubType','allelicFreq'])
-    print "data frame loaded\n"
-    return df
+                myGenotypes['freebayes']=[a[9][:3],a[11][:3]]
+                myGenotypes['mutect'] = [a[10][:3], a[12][:3]]
+                myGenotypes['strelka'] = [a[13][:3], a[15][:3]]
+                myGenotypes['varscan'] = [a[14][:3], a[16][:3]]
+                #myGenotypes['melted'] = [a[9][:3], a[9][:3]]
+                aVariants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], myGenotypes))
 
-def printStatistics():
-    print genotype.variantFreebayesSNP
-    print "NORMAL VARIANTS"
-    for key, value in sorted(genotype.variantCountSubTypeNormal.items()):
-        print "%s: %s" % (key, value)
-    print "\nTUMOR VARIANTS"
-    for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
-        print "%s: %s" % (key, value)
-    indelTruthSet = somaticVariant.variantCountIndelTotal - somaticVariant.variantCountIndelNumberCallers[1]
-    snpTruthSet = somaticVariant.variantCountSNPTotal - somaticVariant.variantCountSNPNumberCallers[1]
-    print "\nIndel Total: ", somaticVariant.variantCountIndelTotal
-    print "SNP Total: ", somaticVariant.variantCountSNPTotal
-    print "\nIndel 'Truth Set': ", indelTruthSet
-    print "SNP 'Truth Set': ", snpTruthSet
-    print "\nSENSITIVITY"
-    for myVariantType, myTumorCount in sorted(genotype.variantCountTumor.items()):
-        if myVariantType[:3] == 'SNP':
-            print myVariantType, ":", round(
-                float(myTumorCount - genotype.variantCountTumorPrivate[myVariantType]) / snpTruthSet,
-                ROUNDING_PRECISION)
-        elif myVariantType[:5] == 'INDEL':
-            print myVariantType, ":", round(
-                float(myTumorCount - genotype.variantCountTumorPrivate[myVariantType]) / indelTruthSet,
-                ROUNDING_PRECISION)
-    print "\nPRECISION"
-    for myVariantType, myTumorCount in sorted(genotype.variantCountSubTypeTumorPrivate.items()):
-        print myVariantType, ":", round(
-            1 - float(myTumorCount) / float(genotype.variantCountSubTypeTumor[myVariantType]), ROUNDING_PRECISION)
-    print "\nNumber of Callers SNP: ", somaticVariant.variantCountSNPNumberCallers
-    print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
-    for venn, vennCount in sorted(somaticVariant.variantCountVenn.items()):
-        print venn, ": ", vennCount
+    return 1
 
 
-if __name__ == "__main__":
-    df = loadVaraintsFromVCF(Path,VCFFile,vcfMelted)
-    printStatistics()
-#print df.head()
+variants = []
+loadVaraintsFromVCF(Path,VCFFile,variants)
+
+print genotype.variantFreebayesSNP
+print "NORMAL VARIANTS"
+for key, value in sorted(genotype.variantCountSubTypeNormal.items()):
+    print "%s: %s" % (key, value)
+print "\nTUMOR VARIANTS"
+for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
+    print "%s: %s" % (key, value)
+indelTruthSet = somaticVariant.variantCountIndelTotal - somaticVariant.variantCountIndelNumberCallers[1]
+snpTruthSet = somaticVariant.variantCountSNPTotal - somaticVariant.variantCountSNPNumberCallers[1]
+print "\nIndel Total: ",somaticVariant.variantCountIndelTotal
+print "SNP Total: ",somaticVariant.variantCountSNPTotal
+print "\nIndel 'Truth Set': ",indelTruthSet
+print "SNP 'Truth Set': ",snpTruthSet
+print "\nSENSITIVITY"
+for myVariantType,myTumorCount in sorted(genotype.variantCountTumor.items()):
+    if myVariantType[:3] == 'SNP':
+        print myVariantType,":",round(float(myTumorCount-genotype.variantCountTumorPrivate[myVariantType])/snpTruthSet,ROUNDING_PRECISION)
+    elif myVariantType[:5]  == 'INDEL':
+        print myVariantType,":",round(float(myTumorCount-genotype.variantCountTumorPrivate[myVariantType])/indelTruthSet,ROUNDING_PRECISION)
+print "\nPRECISION"
+for myVariantType,myTumorCount in sorted(genotype.variantCountSubTypeTumorPrivate.items()):
+            print myVariantType,":",round(1-float(myTumorCount)/float(genotype.variantCountSubTypeTumor[myVariantType]),ROUNDING_PRECISION)
+print "\nNumber of Callers SNP: ",somaticVariant.variantCountSNPNumberCallers
+print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
+for venn,vennCount in sorted(somaticVariant.variantCountVenn.items()):
+    print venn,": ",vennCount
+for vennDecile,vennDecileCount in sorted(somaticVariant.variantCountVennByChromPos.items()):
+    print vennDecile,": ",vennDecileCount
