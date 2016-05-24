@@ -4,9 +4,13 @@ import pandas as pd
 ROUNDING_PRECISION = 4
 POS_PERCENTILE_BUCKET = 0.1
 RUN_PANDAS = True
-Path = "/Users/peterpriestley/hmf/70-30sample/"
+Path = "/Users/peterpriestley/hmf/70-30sample/160401Schuberg/"
 VCFFile = "combined.vcf"
 vcfMelted = 'False'
+SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
+                'CPCT11111111T.freebayes': 'freebayes', \
+                'TUMOR.strelka': 'strelka', \
+                'TUMOR.varscan': 'varscan'}
 #VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
 
 #DEFINE CHR LENGTH
@@ -90,7 +94,6 @@ class subVariantType():
 
 class genotype:
 
-    variantCountSubTypeNormal = {}
     variantCountTumor = {}
     variantCountTumorPrivate = {}
     variantCountSubTypeTumor = {}
@@ -103,16 +106,14 @@ class genotype:
     def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
-        self.normalVariantSubType = subVariantType.none
 
-        #TUMOR SAMPLE
-        if inputGenotype[1][:3] == "./.":
+        if inputGenotype[:3] == "./.":
             self.tumorVariantType = variantType.missingGenotype
-        elif inputGenotype[1][:3] == "0/0":
+        elif inputGenotype[:3] == "0/0":
             self.tumorVariantType = variantType.sameAsRef
         else:
-            alleleTumor1 = altsplit[int(inputGenotype[1][0])]
-            alleleTumor2 = altsplit[int(inputGenotype[1][2])]
+            alleleTumor1 = altsplit[int(inputGenotype[0])]
+            alleleTumor2 = altsplit[int(inputGenotype[2])]
             if len(alleleTumor1) == len(alleleTumor2) and len(alleleTumor1) == len(ref):
                 self.tumorVariantType = variantType.SNP
             else:
@@ -124,7 +125,7 @@ class genotype:
 
             ############### Pandas ##################
             if RUN_PANDAS == True:
-                allelicFreq = calculateAllelicFreq(info,inputGenotype[1],caller,self.tumorVariantType,alt)
+                allelicFreq = calculateAllelicFreq(info,inputGenotype,caller,self.tumorVariantType,alt)
                 posPercent = float(pos) / chromosomeLength[chrom]
                 genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, alleleTumor1, alleleTumor2, \
                                              vennSegment,self.tumorVariantType,self.tumorVariantSubType,allelicFreq))
@@ -139,29 +140,6 @@ class genotype:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] += 1
         else:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
-
-        # NORMAL SAMPLE
-        if inputGenotype[0][:3] == "./.":
-            self.normalVariantType = variantType.missingGenotype
-        elif inputGenotype[0][:3] == "0/0" or inputGenotype[0][1] != "/":  # Mutect Normal Case
-            self.normalVariantType = variantType.sameAsRef
-        else:
-            alleleNormal1 = altsplit[int(inputGenotype[0][0])]
-            alleleNormal2 = altsplit[int(inputGenotype[0][2])]
-            if len(alleleNormal1) == len(alleleNormal2) and len(alleleNormal1) == len(ref):
-                self.normalVariantType = variantType.SNP
-            else:
-                self.normalVariantType = variantType.indel
-                if len(alleleNormal1) <= len(ref) and len(alleleNormal2) <= len(ref):
-                    self.normalVariantSubType = subVariantType.delete
-                elif len(alleleNormal1) >= len(ref) and len(alleleNormal2) >= len(ref):
-                    self.normalVariantSubType = subVariantType.insert
-
-        if genotype.variantCountSubTypeNormal.has_key(str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller):
-            genotype.variantCountSubTypeNormal[str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller] += 1
-        else:
-            genotype.variantCountSubTypeNormal[str(self.normalVariantType) + str(self.normalVariantSubType) + " " + caller] = 1
-
 
     def markPrivate(self,caller):
         if genotype.variantCountSubTypeTumorPrivate.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
@@ -230,25 +208,34 @@ class somaticVariant:
                 somaticVariant.variantCountIndelTotal += 1
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,aVCFMelted):
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
     print "reading vcf file. . .\n"
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
         #i=0
         for line in f:
+            line = line.strip('\n')
             myGenotypes = {}
             a = [x for x in line.split('\t')]
-
+            if a[0] == '#CHROM':
+                headers = a[9:]
+                header_index = {}
+                for sampleName,sampleLabel in sampleNames.iteritems():
+                    for index, header in enumerate(headers):
+                        if sampleName == header:
+                            header_index[sampleLabel] = index
+                            break
+                    if not header_index.has_key(sampleLabel):
+                        print 'Error - missing sample inputs'
+                        return -1
+                print header_index
             if a[0][:1] != '#':
-                #TO DO: populate from #CHROM header (like melt script)
-                if aVCFMelted == True:
-                    myGenotypes['melted'] = [a[9], a[9]]
-                else:
-                    myGenotypes['freebayes']=[a[9],a[11]]
-                    myGenotypes['mutect'] = [a[10], a[12]]
-                    myGenotypes['strelka'] = [a[13], a[15]]
-                    myGenotypes['varscan'] = [a[14], a[16]]
-                    variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
+
+                variant_calls = a[9:]
+                for caller,index in header_index.iteritems():
+                    myGenotypes[caller] = variant_calls[index]
+
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
                 #i += 1
                 #if i > 100000:
                 #    break
@@ -263,9 +250,6 @@ def loadVaraintsFromVCF(aPath, aVCFFile,aVCFMelted):
 
 
 def printStatistics():
-    print "NORMAL VARIANTS"
-    for key, value in sorted(genotype.variantCountSubTypeNormal.items()):
-        print "%s: %s" % (key, value)
     print "\nTUMOR VARIANTS"
     for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
         print "%s: %s" % (key, value)
@@ -292,9 +276,8 @@ def printStatistics():
     print "\nNumber of Callers SNP: ", somaticVariant.variantCountSNPNumberCallers
     print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
 
-
 if __name__ == "__main__":
-    RUN_PANDAS == False
-    loadVaraintsFromVCF(Path,VCFFile,vcfMelted)
-    printStatistics()
+    RUN_PANDAS = False
+    if loadVaraintsFromVCF(Path,VCFFile,SAMPLE_NAMES) != -1:
+        printStatistics()
 #print df.head()
