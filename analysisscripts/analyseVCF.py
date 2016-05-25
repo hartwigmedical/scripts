@@ -11,6 +11,12 @@ SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
                 'CPCT11111111T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
                 'TUMOR.varscan': 'varscan'}
+sampleNamesTruth = {'NA12878':'70-30truth'}
+PathTruth = "/Users/peterpriestley/hmf/70-30sample/truthsets/"
+VCFFileTruth = "na12878-na24385-somatic-truth-hg19.vcf"
+SAMPLE_NAMES = sampleNamesTruth
+Path = PathTruth
+VCFFile = VCFFileTruth
 #VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
 
 #DEFINE CHR LENGTH
@@ -126,6 +132,8 @@ class genotype:
             ############### Pandas ##################
             if RUN_PANDAS == True:
                 allelicFreq = calculateAllelicFreq(info,inputGenotype,caller,self.tumorVariantType,alt)
+                if chrom[:3] == 'chr':
+                    chrom = chrom[3:]
                 posPercent = float(pos) / chromosomeLength[chrom]
                 genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, alleleTumor1, alleleTumor2, \
                                              vennSegment,self.tumorVariantType,self.tumorVariantSubType,allelicFreq))
@@ -230,11 +238,9 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
                         return -1
                 print header_index
             if a[0][:1] != '#':
-
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-
                 variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
                 #i += 1
                 #if i > 100000:
