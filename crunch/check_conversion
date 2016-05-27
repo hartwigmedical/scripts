@@ -35,8 +35,8 @@ echo "$SEPSTR conversionError tail"
 cat $CONV_E | tail -1; 
 #echo ""
 
-echo "$SEPSTR NAS NAME"
-echo $RUNNAS
+echo "$SEPSTR NAS CMD"
+echo "rsync -ahn --stats ./Data/Intensities/BaseCalls/Reports/html/* nas:/volume1/web/testwebsite/qc/conversion/$RUNNAS"
 
 ## print readme file path if present
 README_FILE=$RUNDIR"/README"
