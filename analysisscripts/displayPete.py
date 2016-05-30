@@ -1,11 +1,11 @@
 __author__ = 'dhowe'
 
-from enum import Enum, unique
+from enum import Enum#, unique
 from IPython.core.display import HTML, display
 import numpy as np
 
 
-@unique
+#@unique
 class FormatType(Enum):
     billions_2 = 1
     billions_1 = 5
@@ -105,8 +105,8 @@ def formatter_pete(x, format_type):
                                                                                                   suffix)
 
 formatter_dict = dict()
-for format_type in FormatType:
-    formatter_dict[format_type] = lambda x, format_type=format_type: formatter_pete(x, format_type)
+#for format_type in FormatType:
+#    formatter_dict[format_type] = lambda x, format_type=format_type: formatter_pete(x, format_type)
 
 
 def display_for_pete(df, format_type_list, return_html_string=False):

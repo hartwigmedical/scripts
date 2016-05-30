@@ -11,13 +11,13 @@ SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
                 'CPCT11111111T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
                 'TUMOR.varscan': 'varscan'}
-sampleNamesTruth = {'NA12878':'70-30truth'}
-PathTruth = "/Users/peterpriestley/hmf/70-30sample/truthsets/"
-VCFFileTruth = "na12878-na24385-somatic-truth-hg19.vcf"
-SAMPLE_NAMES = sampleNamesTruth
-Path = PathTruth
-VCFFile = VCFFileTruth
-#VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
+# sampleNamesTruth = {'NA12878':'70-30truth'}
+# PathTruth = "/Users/peterpriestley/hmf/70-30sample/truthsets/"
+# VCFFileTruth = "na12878-na24385-somatic-truth-hg19.vcf"
+# SAMPLE_NAMES = sampleNamesTruth
+# Path = PathTruth
+# VCFFile = VCFFileTruth
+# VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
 
 #DEFINE CHR LENGTH
 chromosomeLength = {}
@@ -76,7 +76,8 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
             rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists
             return float(ad) / (float(rd) + float(ad))
         elif caller == 'melted':
-            ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')
+            #print genotypeSplit
+            ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')[:2]
         else:
             return -1
 
@@ -135,7 +136,7 @@ class genotype:
                 if chrom[:3] == 'chr':
                     chrom = chrom[3:]
                 posPercent = float(pos) / chromosomeLength[chrom]
-                genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, alleleTumor1, alleleTumor2, \
+                genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, ref, alleleTumor1, alleleTumor2, \
                                              vennSegment,self.tumorVariantType,self.tumorVariantSubType,allelicFreq))
             #########################################
 
@@ -248,7 +249,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
     print "data frame loaded\n"
     if RUN_PANDAS == True:
         df = pd.DataFrame(genotype.variantInfo)
-        df.columns = (['chrom', 'pos', 'chromFrac', 'caller', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
+        df.columns = (['chrom', 'pos', 'chromFrac', 'caller','ref', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
                    'variantSubType','allelicFreq'])
         return df
     else:
