@@ -1,0 +1,26 @@
+echo "Copying samples"
+cp $1  ~/sample1.vcf
+cp $2 ~/sample2.vcf
+
+echo "zipping samples"
+/data/common/tools/tabix_v0.2.6/bgzip sample1.vcf
+
+/data/common/tools/tabix_v0.2.6/bgzip sample2.vcf
+echo "indexing samples"
+rtg index -f vcf sample1.vcf.gz
+rtg index -f vcf sample2.vcf.gz
+
+echo "merging samples"
+rtg vcfmerge -o mergedSample.vcf sample1.vcf.gz sample2.vcf.gz
+
+echo "unzipping merged sample"
+/data/common/tools/tabix_v0.2.6/bgzip -d mergedSample.vcf.gz
+
+echo "creating plink file"
+vcftools --vcf  mergedSample.vcf --plink
+
+echo "running kinship" 
+plink --file out --make-bed --noweb 
+king -b plink.bed --kinship
+cat king.kin0
+
