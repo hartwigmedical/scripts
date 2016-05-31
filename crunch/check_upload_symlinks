@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+symlinksDir='/data/schuberg/uploadsymlinks'
+
+if [[ "$1" == "-h" ]]; then
+    echo "---"
+    echo " Descr: Print information about each rundir"
+    echo "        in ${symlinksDir}"
+    echo " Usage: `basename $0` "
+    echo "---"
+    exit 1
+fi
+#PARAMS=( "$@" )
+
+echo "[INFO] Start checking ${symlinksDir} content"
+
+for runDir in ${symlinksDir}/*; do 
+  echo "";
+  echo "--- `echo ${runDir} | grep -Po "CPCT\d{8}"` ---"
+  for sampleDir in ${runDir}/*; do
+    firstFile=`ls ${sampleDir}/* | head -1`;
+    du -hL ${sampleDir};
+    echo `basename $firstFile`;
+  done
+done
+
+echo ""
