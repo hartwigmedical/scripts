@@ -47,7 +47,7 @@ def generateRandomFasta(aPath, aFilename,aLength):
 if __name__ == "__main__":
     kmers = {}
     kmersRandom = {}
-    kmerLength = 5
+    kmerLength = 7
     kmers = countKmers(refgenome,kmers,kmerLength)
     for kmer, kmerCount in sorted(kmers.items()):
         print kmer, ":REAL:", kmerCount

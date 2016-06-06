@@ -4,20 +4,16 @@ import pandas as pd
 ROUNDING_PRECISION = 4
 POS_PERCENTILE_BUCKET = 0.1
 RUN_PANDAS = True
-Path = "/Users/peterpriestley/hmf/70-30sample/160401Schuberg/"
+Path = "/Users/peterpriestley/hmf/analyses/70-30sample/160401Schuberg/"
 VCFFile = "combined.vcf"
 vcfMelted = 'False'
 SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
                 'CPCT11111111T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
                 'TUMOR.varscan': 'varscan'}
-# sampleNamesTruth = {'NA12878':'70-30truth'}
-# PathTruth = "/Users/peterpriestley/hmf/70-30sample/truthsets/"
-# VCFFileTruth = "na12878-na24385-somatic-truth-hg19.vcf"
-# SAMPLE_NAMES = sampleNamesTruth
-# Path = PathTruth
-# VCFFile = VCFFileTruth
-# VCFFile = "CPCT11111111R_CPCT11111111T_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf"
+BED_PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/truthset/"
+BED_FILE_NAME = "union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed"
+
 
 #DEFINE CHR LENGTH
 chromosomeLength = {}
@@ -56,7 +52,6 @@ def intChrom(chrom):
         return 25
     else:
         return int(chrom)
-
 
 def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
     infoSplit = info.split(':')
@@ -168,60 +163,74 @@ class somaticVariant:
     variantCountSNPNumberCallers = {}
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
+    bedItem = []
 
-    def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes):
+    def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes,useBed,aBedReverse):
 
-        if filter == "PASS" or filter == ".":
-            tumorCallerCountSNP = 0
-            tumorCallerCountIndel = 0
-            variantGenotypes = {}
-            vennSegment = ""
+        #Find the 1st Bed region with maxPos > variantPos
+        if aBedReverse:
+            if not somaticVariant.bedItem:
+                somaticVariant.bedItem = aBedReverse.pop()
+            while intChrom(chrom) > intChrom(somaticVariant.bedItem[0]) or (intChrom(chrom) == intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2])):
+                somaticVariant.bedItem = aBedReverse.pop()
+        else:
+            somaticVariant.bedItem = []
 
-            formatSplit = format.split(';')
-            for i in range(len(formatSplit)):
-                formatItem = formatSplit[i].split('=')
-                if formatItem[0] == "set":
-                    vennSegment = formatItem[1]
+        #Only use if inside the next BED region
+        if (somaticVariant.bedItem and somaticVariant.bedItem[1]<=pos and somaticVariant.bedItem[0]==chrom) or not useBed:
+            if filter == "PASS" or filter == ".":
+                tumorCallerCountSNP = 0
+                tumorCallerCountIndel = 0
+                variantGenotypes = {}
+                vennSegment = ""
 
-            for key in inputGenotypes.iterkeys():
-                variantGenotypes[key] = genotype(chrom, pos, key, ref, alt,info,vennSegment, inputGenotypes[key])
+                formatSplit = format.split(';')
+                for i in range(len(formatSplit)):
+                    formatItem = formatSplit[i].split('=')
+                    if formatItem[0] == "set":
+                        vennSegment = formatItem[1]
 
-            for key, value in variantGenotypes.items():
-                if value.tumorVariantType == variantType.SNP:
-                    tumorCallerCountSNP += 1
-                if value.tumorVariantType == variantType.indel:
-                    tumorCallerCountIndel += 1
+                for key in inputGenotypes.iterkeys():
+                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, info, vennSegment, inputGenotypes[key])
 
-            if tumorCallerCountSNP > 0:
-                if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
-                    somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] += 1
-                else:
-                    somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] = 1
+                for key, value in variantGenotypes.items():
+                    if value.tumorVariantType == variantType.SNP:
+                        tumorCallerCountSNP += 1
+                    if value.tumorVariantType == variantType.indel:
+                        tumorCallerCountIndel += 1
 
-            if tumorCallerCountIndel > 0:
-                if somaticVariant.variantCountIndelNumberCallers.has_key(tumorCallerCountIndel):
-                    somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] += 1
-                else:
-                    somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] = 1
+                if tumorCallerCountSNP > 0:
+                    if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
+                        somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] += 1
+                    else:
+                        somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] = 1
 
-            for caller, variantGenotype in variantGenotypes.items():
-                if variantGenotype.tumorVariantType == variantType.SNP and tumorCallerCountSNP == 1:
-                    variantGenotype.markPrivate(caller)
-                if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
-                    variantGenotype.markPrivate(caller)
+                if tumorCallerCountIndel > 0:
+                    if somaticVariant.variantCountIndelNumberCallers.has_key(tumorCallerCountIndel):
+                        somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] += 1
+                    else:
+                        somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] = 1
 
-            if tumorCallerCountSNP > 0:
-                somaticVariant.variantCountSNPTotal += 1
+                for caller, variantGenotype in variantGenotypes.items():
+                    if variantGenotype.tumorVariantType == variantType.SNP and tumorCallerCountSNP == 1:
+                        variantGenotype.markPrivate(caller)
+                    if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
+                        variantGenotype.markPrivate(caller)
 
-            if tumorCallerCountIndel > 0:
-                somaticVariant.variantCountIndelTotal += 1
+                if tumorCallerCountSNP > 0:
+                    somaticVariant.variantCountSNPTotal += 1
+
+                if tumorCallerCountIndel > 0:
+                    somaticVariant.variantCountIndelTotal += 1
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
+
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,useBed=False,aBedReverse=[]):
     print "reading vcf file. . .\n"
+
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
-        #i=0
+        i=0
         for line in f:
             line = line.strip('\n')
             myGenotypes = {}
@@ -237,15 +246,18 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
                     if not header_index.has_key(sampleLabel):
                         print 'Error - missing sample inputs'
                         return -1
-                print header_index
             if a[0][:1] != '#':
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes))
-                #i += 1
-                #if i > 100000:
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes,useBed,aBedReverse))
+                i += 1
+                if i% 100000 == 0:
+                    print "reading VCF File line:",i
+                #if i > 1000000000:
                 #    break
+        #Need to reset bed item
+        somaticVariant.bedItem = []
     print "data frame loaded\n"
     if RUN_PANDAS == True:
         df = pd.DataFrame(genotype.variantInfo)
@@ -255,6 +267,16 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames):
     else:
         return 0
 
+def loadBEDFile(aPath, aBEDFile):
+    print "reading BED file. . .\n"
+    myBed = []
+    with open(aPath + aBEDFile, 'r') as f:
+        for line in f:
+            line = line.strip('\n')
+            splitLine = line.split('\t')
+            if splitLine[0] != 'chrom':
+                myBed.append(splitLine)
+    return myBed
 
 def printStatistics():
     print "\nTUMOR VARIANTS"
@@ -285,6 +307,11 @@ def printStatistics():
 
 if __name__ == "__main__":
     RUN_PANDAS = False
-    if loadVaraintsFromVCF(Path,VCFFile,SAMPLE_NAMES) != -1:
+    bed = loadBEDFile(BED_PATH,BED_FILE_NAME)
+    bed.reverse()
+    if loadVaraintsFromVCF(Path,VCFFile,SAMPLE_NAMES,True,bed) != -1:
         printStatistics()
-#print df.head()
+
+
+
+
