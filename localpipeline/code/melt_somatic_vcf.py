@@ -18,7 +18,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
     else:
         with f:
             for line in f:
-                line = line.strip('\n')
+                    line = line.strip('\n')
 
                 if line.startswith('##'):
                     '''Print original vcf meta-information lines '''
