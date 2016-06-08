@@ -94,7 +94,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
 
                         caller_count += 1
 
-                        altNum = int(variant_call[gt_index].split('/')[1])
+                        altNum = int(variant_call[gt_index].split('/')[1])   # Always choose allele B for genotype A/B
                         variant_dp = float(variant_call[dp_index])
 
                         #Populate Variant info for each caller
@@ -165,16 +165,15 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
 
                     # Create "INFO" string if there is a caller with a different allele
                     if diffAlleleVariants:
-                        diffAlleleString = "diffAllele="
+                        diffAlleleString = ";diffAllele="
                         for diffAlleleVariant in diffAlleleVariants:
                             if diffAlleleString[-1] != '=':
                                 diffAlleleString += "-"
                             diffAlleleString += diffAlleleVariant[0]
-                        diffAlleleString += ";"
                     else:
                         diffAlleleString = ""
 
-                    print "{var_data};CC={cc};{diffAllele}\t{gt_format}\t{gt}:{ad}:{dp}".format(
+                    print "{var_data};CC={cc}{diffAllele}\t{gt_format}\t{gt}:{ad}:{dp}".format(
                         var_data = "\t".join(variant[:8]),
                         cc = caller_count,
                         diffAllele = diffAlleleString,
