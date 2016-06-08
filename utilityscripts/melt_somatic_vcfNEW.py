@@ -163,6 +163,7 @@ def melt_somatic_vcf(vcf_file, remove_filtered, tumor_sample):
                     RD = int(round(sum(calledVariant[3] for calledVariant in calledVariants) / len(calledVariants)))
                     AD = int(round(sum(calledVariant[4] for calledVariant in calledVariants) / len(calledVariants)))
 
+                    # Create "INFO" string if there is a caller with a different allele
                     if diffAlleleVariants:
                         diffAlleleString = "diffAllele="
                         for diffAlleleVariant in diffAlleleVariants:
@@ -194,6 +195,3 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     melt_somatic_vcf(args.vcf_file, args.remove_filtered, args.tumor_sample)
-
-#    melt_somatic_vcf("/Users/peterpriestley/hmf/analyses/70-30sample/160524/CPCT11111111R_CPCT11111111T_merged_somatics.vcf", \
-#                     True,'CPCT11111111T')
