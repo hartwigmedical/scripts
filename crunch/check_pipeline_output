@@ -34,6 +34,10 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   somaticsDir=$runDir/somaticVariants/
   copynumberDir=$runDir/copyNumber/
 
+  echo "$TITLE_STRING DirsizeCheck"
+  DIRSIZE=`du -sh $runDir | cut -f 1`
+  echo $DIRSIZE
+
   echo "$TITLE_STRING PipelineCheckLogCheck"
   echo "Version: `cat ${checkFile} | grep 'Pipeline version'`"
   if [[ `tail -1 ${checkFile} | grep 'pipeline completed successfully'` ]]; then echo "OK"
