@@ -177,7 +177,7 @@ class somaticVariant:
             somaticVariant.bedItem = []
 
         #Only use if inside the next BED region
-        if (somaticVariant.bedItem and somaticVariant.bedItem[1]<=pos and somaticVariant.bedItem[0]==chrom) or not useBed:
+        if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<int(pos) and somaticVariant.bedItem[0]==chrom) or not useBed:
             if filter == "PASS" or filter == ".":
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
