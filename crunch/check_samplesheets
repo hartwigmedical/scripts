@@ -3,14 +3,27 @@ for sheet in /data1/illumina_data/*/SampleSheet.csv; do
 	currHost=`hostname`
 	runBase=`dirname $sheet`
 	readmeFile=$runBase"/README"
+        conversionLogFile=$runBase"/conversionLog.txt"
+	sampleSheetFile=$runBase"/SampleSheet.csv"
+
 	echo ""
 	#echo "# ----- HMFreg";
 	echo "# "$currHost;
-	echo "# [SSHEET] "$runBase;
+	echo "# [Rund] "$runBase;
+	echo "# [Samp] "$sampleSheetFile;
 	
+        ## check conversion status
+        if [ ! -e $conversionLogFile ]; then
+		echo "# [NOTE] CONVERSION not started yet";
+	elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
+		echo "# [NOTE] CONVERSION appears to be FINISHED";
+	else
+		echo "# [NOTE] CONVERSION appears to be RUNNING";
+	fi
+
 	## check images presence
 	if [ -d "$runBase/Thumbnail_Images/L001" ]; then
-		echo "# [NOTE] IMAGES still present";
+		echo "# [NOTE] IMAGES are still present";
 	fi
 
 	## print readme file path if present
