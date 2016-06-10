@@ -276,6 +276,7 @@ def loadBEDFile(aPath, aBEDFile):
             splitLine = line.split('\t')
             if splitLine[0] != 'chrom':
                 myBed.append(splitLine)
+    print "\n"
     return myBed
 
 def printStatistics():
