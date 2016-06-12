@@ -7,6 +7,7 @@ RUN_PANDAS = True
 Path = "/Users/peterpriestley/hmf/analyses/70-30sample/160401Schuberg/"
 VCFFile = "combined.vcf"
 vcfMelted = 'False'
+PATIENT_NAME = 'CPCT11111111'
 SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
                 'CPCT11111111T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
@@ -62,16 +63,15 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
         return float(genotypeSplit[infoSplit.index('FREQ')].split('%')[0])/100
     else:
         if caller == 'freebayes':
-            ad = genotypeSplit[infoSplit.index('AO')].split(',')[0]  #NB - does not take into account 2nd allele if exists
-            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]  # NB - does not take into account 2nd allele if exists
+            ad = genotypeSplit[infoSplit.index('AO')].split(',')[0]  #NB - does not take into account 2nd allele if exists.  FIX as per melt
+            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
         elif caller == 'strelka' and tumorVariantType == variantType.SNP:
             ad, rd = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')  # NB - does not take into account genotype
         elif caller == 'strelka' and tumorVariantType == variantType.indel:
-            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]  # NB - does not take into account 2nd allele if exists
-            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists
+            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
+            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
             return float(ad) / (float(rd) + float(ad))
         elif caller == 'melted':
-            #print genotypeSplit
             ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')[:2]
         else:
             return -1
@@ -81,18 +81,18 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
         else:
             return float(ad) / (float(rd) + float(ad))
 
-
-
 class variantType():
     sameAsRef = "Same as Ref"
     missingGenotype = "Missing Genotype"
     indel = "INDEL"
     SNP = "SNP"
+    mixed = "MIXED"
 
 class subVariantType():
     none = ""
     insert = "INSERT"
     delete = "DELETE"
+    indel = "INDEL"
 
 class genotype:
 
@@ -100,10 +100,6 @@ class genotype:
     variantCountTumorPrivate = {}
     variantCountSubTypeTumor = {}
     variantCountSubTypeTumorPrivate = {}
-    variantFreebayesSNP=0
-    df = pd.DataFrame()
-    variantInfo = []
-
 
     def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
@@ -125,15 +121,9 @@ class genotype:
                 elif len(alleleTumor1) >= len(ref) and len(alleleTumor2) >= len(ref):
                     self.tumorVariantSubType = subVariantType.insert
 
-            ############### Pandas ##################
-            if RUN_PANDAS == True:
-                allelicFreq = calculateAllelicFreq(info,inputGenotype,caller,self.tumorVariantType,alt)
-                if chrom[:3] == 'chr':
-                    chrom = chrom[3:]
-                posPercent = float(pos) / chromosomeLength[chrom]
-                genotype.variantInfo.append((chrom, pos, intChrom(chrom)+posPercent,caller, ref, alleleTumor1, alleleTumor2, \
-                                             vennSegment,self.tumorVariantType,self.tumorVariantSubType,allelicFreq))
-            #########################################
+            #Calcs for PANDAS
+            self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt)
+            self.allele = alleleTumor2
 
         if genotype.variantCountSubTypeTumor.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
             genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
@@ -163,6 +153,7 @@ class somaticVariant:
     variantCountSNPNumberCallers = {}
     variantCountIndelNumberCallers = {}
     variantCountIndelTotal = 0
+    variantInfo = []
     bedItem = []
 
     def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes,useBed,aBedReverse):
@@ -181,6 +172,8 @@ class somaticVariant:
             if filter == "PASS" or filter == ".":
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
+                tumorCallerCountDelete = 0
+                tumorCallerCountInsert = 0
                 variantGenotypes = {}
                 vennSegment = ""
 
@@ -198,6 +191,10 @@ class somaticVariant:
                         tumorCallerCountSNP += 1
                     if value.tumorVariantType == variantType.indel:
                         tumorCallerCountIndel += 1
+                        if value.tumorVariantSubType == subVariantType.delete:
+                            tumorCallerCountDelete += 1
+                        if value.tumorVariantSubType == subVariantType.insert:
+                            tumorCallerCountInsert += 1
 
                 if tumorCallerCountSNP > 0:
                     if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
@@ -223,10 +220,45 @@ class somaticVariant:
                 if tumorCallerCountIndel > 0:
                     somaticVariant.variantCountIndelTotal += 1
 
+                ############### Pandas ##################
+                if RUN_PANDAS == True:
+                    #PREPARE FIELDS:
+                    if chrom[:3] == 'chr':
+                        chrom = chrom[3:]
+                    posPercent = float(pos) / chromosomeLength[chrom]
+                    numCallers = tumorCallerCountSNP + tumorCallerCountIndel
+                    mySubVariantType = ""
+                    if tumorCallerCountIndel > 0:
+                        if tumorCallerCountSNP == 0:
+                            myVariantType = variantType.indel
+                        else:
+                            myVariantType = variantType.mixed
+                        if tumorCallerCountDelete > 0:
+                            if tumorCallerCountInsert > 0:
+                                mySubVariantType = subVariantType.indel
+                            else:
+                                mySubVariantType = subVariantType.delete
+                        elif tumorCallerCountInsert > 0:
+                            mySubVariantType = subVariantType.insert
+                    elif tumorCallerCountSNP > 0:
+                        myVariantType = variantType.SNP
+                    else:
+                        myVariantType = variantType.missingGenotype
+
+                    #Append to list
+                    somaticVariant.variantInfo.append([chrom, pos, chrom+pos,intChrom(chrom)+posPercent,ref,vennSegment,numCallers, \
+                                                 myVariantType,mySubVariantType])
+                    for caller, variantGenotype in variantGenotypes.items():
+                        if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
+                            callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq]
+                        else:
+                            callerSpecificFields = ['','']
+                        somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
+                #########################################
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,useBed=False,aBedReverse=[]):
-    print "reading vcf file. . .\n"
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aBedReverse=[]):
+    print "reading vcf file:",aVCFFile
 
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
@@ -250,25 +282,31 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,useBed=False,aBedReverse=[])
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes,useBed,aBedReverse))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useBed,aBedReverse))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
-                #if i > 1000000000:
-                #    break
-        #Need to reset bed item
-        somaticVariant.bedItem = []
-    print "data frame loaded\n"
+
+    #Reset bed item
+    somaticVariant.bedItem = []
+
+    print "Number variants loaded:",len(somaticVariant.variantInfo)
+
     if RUN_PANDAS == True:
-        df = pd.DataFrame(genotype.variantInfo)
-        df.columns = (['chrom', 'pos', 'chromFrac', 'caller','ref', 'alleleTumor1', 'alleleTumor2','vennSegment','variantType', \
-                   'variantSubType','allelicFreq'])
+        df = pd.DataFrame(somaticVariant.variantInfo)
+        myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
+        for caller in header_index.iterkeys():
+            myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq']
+        df.columns = (myColumnList)
+        df['patientName'] = aPatientName
+        # Need to empty genotype.variantInfo in case we need to load multiple files
+        del somaticVariant.variantInfo[:]
         return df
     else:
         return 0
 
 def loadBEDFile(aPath, aBEDFile):
-    print "reading BED file. . .\n"
+    print "reading BED file"
     myBed = []
     with open(aPath + aBEDFile, 'r') as f:
         for line in f:
@@ -276,7 +314,7 @@ def loadBEDFile(aPath, aBEDFile):
             splitLine = line.split('\t')
             if splitLine[0] != 'chrom':
                 myBed.append(splitLine)
-    print "\n"
+    print "Bed File Loaded"
     return myBed
 
 def printStatistics():
@@ -308,9 +346,7 @@ def printStatistics():
 
 if __name__ == "__main__":
     RUN_PANDAS = False
-    bed = loadBEDFile(BED_PATH,BED_FILE_NAME)
-    bed.reverse()
-    if loadVaraintsFromVCF(Path,VCFFile,SAMPLE_NAMES,True,bed) != -1:
+    if loadVaraintsFromVCF(Path, VCFFile, SAMPLE_NAMES,PATIENT_NAME) != -1:
         printStatistics()
 
 
