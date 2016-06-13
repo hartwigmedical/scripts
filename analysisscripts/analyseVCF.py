@@ -1,20 +1,7 @@
 #!/usr/local/bin/python
 import pandas as pd
 
-ROUNDING_PRECISION = 4
-POS_PERCENTILE_BUCKET = 0.1
 RUN_PANDAS = True
-Path = "/Users/peterpriestley/hmf/analyses/70-30sample/160401Schuberg/"
-VCFFile = "combined.vcf"
-vcfMelted = 'False'
-PATIENT_NAME = 'CPCT11111111'
-SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
-                'CPCT11111111T.freebayes': 'freebayes', \
-                'TUMOR.strelka': 'strelka', \
-                'TUMOR.varscan': 'varscan'}
-BED_PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/truthset/"
-BED_FILE_NAME = "union13callableMQonlymerged_addcert_nouncert_excludesimplerep_excludesegdups_excludedecoy_excludeRepSeqSTRs_noCNVs_v2.19_2mindatasets_5minYesNoRatio.bed"
-
 
 #DEFINE CHR LENGTH
 chromosomeLength = {}
@@ -96,10 +83,12 @@ class subVariantType():
 
 class genotype:
 
+    ###### LEGACY STAT VARIABLES ########
     variantCountTumor = {}
     variantCountTumorPrivate = {}
     variantCountSubTypeTumor = {}
     variantCountSubTypeTumorPrivate = {}
+    ####################################
 
     def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
@@ -120,11 +109,15 @@ class genotype:
                     self.tumorVariantSubType = subVariantType.delete
                 elif len(alleleTumor1) >= len(ref) and len(alleleTumor2) >= len(ref):
                     self.tumorVariantSubType = subVariantType.insert
+                else:
+                    self.tumorVariantSubType = subVariantType.indel
 
-            #Calcs for PANDAS
+            #####Calcs for PANDAS####
             self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt)
             self.allele = alleleTumor2
+            #########################
 
+        ########### LEGACY STATS CALC ############
         if genotype.variantCountSubTypeTumor.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
             genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
         else:
@@ -134,7 +127,9 @@ class genotype:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] += 1
         else:
             genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
+        #########################################
 
+    ############ LEGACY STATS CALC #############
     def markPrivate(self,caller):
         if genotype.variantCountSubTypeTumorPrivate.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
             genotype.variantCountSubTypeTumorPrivate[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
@@ -145,16 +140,19 @@ class genotype:
             genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] += 1
         else:
             genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] = 1
-
+    ############################################
 
 
 class somaticVariant:
-    variantCountSNPTotal = 0
     variantCountSNPNumberCallers = {}
     variantCountIndelNumberCallers = {}
-    variantCountIndelTotal = 0
     variantInfo = []
     bedItem = []
+
+    #### LEGACY STATS VARIABLES ###
+    variantCountSNPTotal = 0
+    variantCountIndelTotal = 0
+    ###############################
 
     def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes,useBed,aBedReverse):
 
@@ -196,6 +194,7 @@ class somaticVariant:
                         if value.tumorVariantSubType == subVariantType.insert:
                             tumorCallerCountInsert += 1
 
+                ####### LEGACY STATISTICS CALC #############
                 if tumorCallerCountSNP > 0:
                     if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
                         somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] += 1
@@ -219,8 +218,9 @@ class somaticVariant:
 
                 if tumorCallerCountIndel > 0:
                     somaticVariant.variantCountIndelTotal += 1
+                ###########################################
 
-                ############### Pandas ##################
+                ############### Pandas ####################
                 if RUN_PANDAS == True:
                     #PREPARE FIELDS:
                     if chrom[:3] == 'chr':
@@ -246,7 +246,7 @@ class somaticVariant:
                         myVariantType = variantType.missingGenotype
 
                     #Append to list
-                    somaticVariant.variantInfo.append([chrom, pos, chrom+pos,intChrom(chrom)+posPercent,ref,vennSegment,numCallers, \
+                    somaticVariant.variantInfo.append([chrom, pos, chrom+':'+pos,intChrom(chrom)+posPercent,ref,vennSegment,numCallers, \
                                                  myVariantType,mySubVariantType])
                     for caller, variantGenotype in variantGenotypes.items():
                         if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
@@ -318,6 +318,8 @@ def loadBEDFile(aPath, aBEDFile):
     return myBed
 
 def printStatistics():
+    ROUNDING_PRECISION = 4
+    POS_PERCENTILE_BUCKET = 0.1
     print "\nTUMOR VARIANTS"
     for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
         print "%s: %s" % (key, value)
@@ -345,8 +347,15 @@ def printStatistics():
     print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
 
 if __name__ == "__main__":
+    PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/160401Schuberg/"
+    VCF_FILE_NAME = "combined.vcf"
+    PATIENT_NAME = 'CPCT11111111'
+    SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
+                    'CPCT11111111T.freebayes': 'freebayes', \
+                    'TUMOR.strelka': 'strelka', \
+                    'TUMOR.varscan': 'varscan'}
     RUN_PANDAS = False
-    if loadVaraintsFromVCF(Path, VCFFile, SAMPLE_NAMES,PATIENT_NAME) != -1:
+    if loadVaraintsFromVCF(PATH, VCF_FILE_NAME, SAMPLE_NAMES,PATIENT_NAME) != -1:
         printStatistics()
 
 
