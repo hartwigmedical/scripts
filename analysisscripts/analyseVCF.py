@@ -1,5 +1,6 @@
 #!/usr/local/bin/python
 import pandas as pd
+import numpy as np
 
 RUN_PANDAS = True
 
@@ -41,6 +42,13 @@ def intChrom(chrom):
     else:
         return int(chrom)
 
+def calculateReadDepth(info,genotype):
+    infoSplit = info.split(':')
+    genotypeSplit = genotype.split(':')
+    if 'DP' in infoSplit:
+        return int(genotypeSplit[infoSplit.index('DP')])
+    else:
+        return 1
 def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
     infoSplit = info.split(':')
     genotypeSplit = genotype.split(':')
@@ -114,6 +122,7 @@ class genotype:
 
             #####Calcs for PANDAS####
             self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt)
+            self.readDepth = calculateReadDepth(info,inputGenotype)
             self.allele = alleleTumor2
             #########################
 
@@ -170,6 +179,7 @@ class somaticVariant:
             if filter == "PASS" or filter == ".":
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
+                tumorCallerCountIndel = 0
                 tumorCallerCountDelete = 0
                 tumorCallerCountInsert = 0
                 variantGenotypes = {}
@@ -193,6 +203,8 @@ class somaticVariant:
                             tumorCallerCountDelete += 1
                         if value.tumorVariantSubType == subVariantType.insert:
                             tumorCallerCountInsert += 1
+                        if value.tumorVariantSubType == subVariantType.insert:
+                            tumorCallerCountIndel += 1
 
                 ####### LEGACY STATISTICS CALC #############
                 if tumorCallerCountSNP > 0:
@@ -233,13 +245,15 @@ class somaticVariant:
                             myVariantType = variantType.indel
                         else:
                             myVariantType = variantType.mixed
-                        if tumorCallerCountDelete > 0:
+                        if tumorCallerCountDelete > 0:    #this logic still needs work
                             if tumorCallerCountInsert > 0:
                                 mySubVariantType = subVariantType.indel
                             else:
                                 mySubVariantType = subVariantType.delete
                         elif tumorCallerCountInsert > 0:
                             mySubVariantType = subVariantType.insert
+                        elif tumorCallerCountIndel > 0:
+                            mySubVariantType = subVariantType.indel
                     elif tumorCallerCountSNP > 0:
                         myVariantType = variantType.SNP
                     else:
@@ -250,9 +264,10 @@ class somaticVariant:
                                                  myVariantType,mySubVariantType])
                     for caller, variantGenotype in variantGenotypes.items():
                         if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
-                            callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq]
+                            readDepthBucket = 2 ** int(np.log2(variantGenotype.readDepth))
+                            callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq,variantGenotype.readDepth,readDepthBucket]
                         else:
-                            callerSpecificFields = ['','']
+                            callerSpecificFields = ['','','','']
                         somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
@@ -296,7 +311,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aB
         df = pd.DataFrame(somaticVariant.variantInfo)
         myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
         for caller in header_index.iterkeys():
-            myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq']
+            myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'readDepthBucket']
         df.columns = (myColumnList)
         df['patientName'] = aPatientName
         # Need to empty genotype.variantInfo in case we need to load multiple files
