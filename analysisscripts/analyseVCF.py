@@ -274,8 +274,8 @@ def loadBEDFile(aPath, aBEDFile):
     return myBed
 
 def printStatistics(df):
+    #Calculate 2+_caller precision and sensitivity
     outputdata = []
-
     for columnName in list(df):
         if columnName.endswith('allele'):
             myCaller = columnName[:-6]
@@ -296,6 +296,11 @@ def printStatistics(df):
     outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives', \
                          'precision_2+_callers','sensitivity_2+_callers'])
     print outputDF.sort_values(['variantType', 'caller'])
+
+    # calculate # of callers
+    df_pivot = df[['numCallers', 'pos', 'variantType']].groupby(['variantType', 'numCallers', ]).agg('count')
+    print df_pivot.groupby(level=0).transform(lambda x: x / x.sum())
+
 
 if __name__ == "__main__":
     df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,VCF_SAMPLE,False)
