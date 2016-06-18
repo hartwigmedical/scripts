@@ -2,7 +2,8 @@
 import pandas as pd
 import numpy as np
 
-# COMBINED VCF CONFIG
+###############################################
+# VCF CONFIG
 VCF_SAMPLE = "CPCT11111111"
 VCF_PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/160524/"
 VCF_FILE_NAME = VCF_SAMPLE + "R_" + VCF_SAMPLE + "T_merged_somatics.vcf"
@@ -10,6 +11,7 @@ SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect', \
                 VCF_SAMPLE + 'T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
                 'TUMOR.varscan': 'varscan'}
+###############################################
 
 #DEFINE CHR LENGTH
 chromosomeLength = {}
@@ -174,7 +176,7 @@ class somaticVariant:
                         if value.tumorVariantSubType == subVariantType.indel:
                             tumorCallerCountSubTypeIndel += 1
 
-                ############### Pandas ####################
+                ############### Pandas Prep ####################
                 #PREPARE FIELDS:
                 if chrom[:3] == 'chr':
                     chrom = chrom[3:]
@@ -250,7 +252,6 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aB
 
     print "Number variants loaded:",len(somaticVariant.variantInfo)
 
-    ##### PANDAS #####
     df = pd.DataFrame(somaticVariant.variantInfo)
     myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
     for caller in header_index.iterkeys():
@@ -295,10 +296,16 @@ def printStatistics(df):
     outputDF = pd.DataFrame(outputdata)
     outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives', \
                          'precision_2+_callers','sensitivity_2+_callers'])
+    print '\n2+ caller precision and sensitivity\n'
     print outputDF.sort_values(['variantType', 'caller'])
 
+    # calculate # of variants by variant type
+    print '\n# of variants by sub type\n'
+    print df[['pos', 'variantSubType']].groupby(['variantSubType']).agg('count')
+
     # calculate # of callers
-    df_pivot = df[['numCallers', 'pos', 'variantType']].groupby(['variantType', 'numCallers', ]).agg('count')
+    print '\n# of variants by number of callers and variant type\n'
+    df_pivot = df[['numCallers', 'pos', 'variantType']].groupby(['variantType', 'numCallers' ]).agg('count')
     print df_pivot.groupby(level=0).transform(lambda x: x / x.sum())
 
 
