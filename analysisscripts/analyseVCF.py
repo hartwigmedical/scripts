@@ -2,7 +2,14 @@
 import pandas as pd
 import numpy as np
 
-RUN_PANDAS = True
+# COMBINED VCF CONFIG
+VCF_SAMPLE = "CPCT11111111"
+VCF_PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/160524/"
+VCF_FILE_NAME = VCF_SAMPLE + "R_" + VCF_SAMPLE + "T_merged_somatics.vcf"
+SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect', \
+                VCF_SAMPLE + 'T.freebayes': 'freebayes', \
+                'TUMOR.strelka': 'strelka', \
+                'TUMOR.varscan': 'varscan'}
 
 #DEFINE CHR LENGTH
 chromosomeLength = {}
@@ -32,6 +39,19 @@ chromosomeLength['MT'] = 16571
 chromosomeLength['X'] = 155270561
 chromosomeLength['Y'] = 59373567
 
+class variantType():
+    sameAsRef = "Same as Ref"
+    missingGenotype = "Missing Genotype"
+    indel = "INDEL"
+    SNP = "SNP"
+    mixed = "MIXED"
+
+class subVariantType():
+    none = ""
+    insert = "INSERT"
+    delete = "DELETE"
+    indel = "INDEL"
+
 def intChrom(chrom):
     if chrom == 'X':
         return 23
@@ -49,6 +69,7 @@ def calculateReadDepth(info,genotype):
         return int(genotypeSplit[infoSplit.index('DP')])
     else:
         return 1
+
 def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
     infoSplit = info.split(':')
     genotypeSplit = genotype.split(':')
@@ -76,27 +97,7 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
         else:
             return float(ad) / (float(rd) + float(ad))
 
-class variantType():
-    sameAsRef = "Same as Ref"
-    missingGenotype = "Missing Genotype"
-    indel = "INDEL"
-    SNP = "SNP"
-    mixed = "MIXED"
-
-class subVariantType():
-    none = ""
-    insert = "INSERT"
-    delete = "DELETE"
-    indel = "INDEL"
-
 class genotype:
-
-    ###### LEGACY STAT VARIABLES ########
-    variantCountTumor = {}
-    variantCountTumorPrivate = {}
-    variantCountSubTypeTumor = {}
-    variantCountSubTypeTumorPrivate = {}
-    ####################################
 
     def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
@@ -120,48 +121,15 @@ class genotype:
                 else:
                     self.tumorVariantSubType = subVariantType.indel
 
-            #####Calcs for PANDAS####
             self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt)
             self.readDepth = calculateReadDepth(info,inputGenotype)
             self.allele = alleleTumor2
-            #########################
-
-        ########### LEGACY STATS CALC ############
-        if genotype.variantCountSubTypeTumor.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
-            genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
-        else:
-            genotype.variantCountSubTypeTumor[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] = 1
-
-        if genotype.variantCountTumor.has_key(str(self.tumorVariantType) + " " + caller):
-            genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] += 1
-        else:
-            genotype.variantCountTumor[str(self.tumorVariantType) + " " + caller] = 1
-        #########################################
-
-    ############ LEGACY STATS CALC #############
-    def markPrivate(self,caller):
-        if genotype.variantCountSubTypeTumorPrivate.has_key(str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller):
-            genotype.variantCountSubTypeTumorPrivate[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] += 1
-        else:
-            genotype.variantCountSubTypeTumorPrivate[str(self.tumorVariantType) + str(self.tumorVariantSubType) + " " + caller] = 1
-
-        if genotype.variantCountTumorPrivate.has_key(str(self.tumorVariantType) + " " + caller):
-            genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] += 1
-        else:
-            genotype.variantCountTumorPrivate[str(self.tumorVariantType) + " " + caller] = 1
-    ############################################
 
 
 class somaticVariant:
-    variantCountSNPNumberCallers = {}
-    variantCountIndelNumberCallers = {}
+
     variantInfo = []
     bedItem = []
-
-    #### LEGACY STATS VARIABLES ###
-    variantCountSNPTotal = 0
-    variantCountIndelTotal = 0
-    ###############################
 
     def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes,useBed,aBedReverse):
 
@@ -179,9 +147,9 @@ class somaticVariant:
             if filter == "PASS" or filter == ".":
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
-                tumorCallerCountIndel = 0
-                tumorCallerCountDelete = 0
-                tumorCallerCountInsert = 0
+                tumorCallerCountSubTypeIndel = 0
+                tumorCallerCountSubTypeDelete = 0
+                tumorCallerCountSubTypeInsert = 0
                 variantGenotypes = {}
                 vennSegment = ""
 
@@ -200,75 +168,50 @@ class somaticVariant:
                     if value.tumorVariantType == variantType.indel:
                         tumorCallerCountIndel += 1
                         if value.tumorVariantSubType == subVariantType.delete:
-                            tumorCallerCountDelete += 1
+                            tumorCallerCountSubTypeDelete += 1
                         if value.tumorVariantSubType == subVariantType.insert:
-                            tumorCallerCountInsert += 1
-                        if value.tumorVariantSubType == subVariantType.insert:
-                            tumorCallerCountIndel += 1
-
-                ####### LEGACY STATISTICS CALC #############
-                if tumorCallerCountSNP > 0:
-                    if somaticVariant.variantCountSNPNumberCallers.has_key(tumorCallerCountSNP):
-                        somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] += 1
-                    else:
-                        somaticVariant.variantCountSNPNumberCallers[tumorCallerCountSNP] = 1
-
-                if tumorCallerCountIndel > 0:
-                    if somaticVariant.variantCountIndelNumberCallers.has_key(tumorCallerCountIndel):
-                        somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] += 1
-                    else:
-                        somaticVariant.variantCountIndelNumberCallers[tumorCallerCountIndel] = 1
-
-                for caller, variantGenotype in variantGenotypes.items():
-                    if variantGenotype.tumorVariantType == variantType.SNP and tumorCallerCountSNP == 1:
-                        variantGenotype.markPrivate(caller)
-                    if variantGenotype.tumorVariantType == variantType.indel and tumorCallerCountIndel == 1:
-                        variantGenotype.markPrivate(caller)
-
-                if tumorCallerCountSNP > 0:
-                    somaticVariant.variantCountSNPTotal += 1
-
-                if tumorCallerCountIndel > 0:
-                    somaticVariant.variantCountIndelTotal += 1
-                ###########################################
+                            tumorCallerCountSubTypeInsert += 1
+                        if value.tumorVariantSubType == subVariantType.indel:
+                            tumorCallerCountSubTypeIndel += 1
 
                 ############### Pandas ####################
-                if RUN_PANDAS == True:
-                    #PREPARE FIELDS:
-                    if chrom[:3] == 'chr':
-                        chrom = chrom[3:]
-                    posPercent = float(pos) / chromosomeLength[chrom]
-                    numCallers = tumorCallerCountSNP + tumorCallerCountIndel
-                    mySubVariantType = ""
-                    if tumorCallerCountIndel > 0:
-                        if tumorCallerCountSNP == 0:
-                            myVariantType = variantType.indel
-                        else:
-                            myVariantType = variantType.mixed
-                        if tumorCallerCountDelete > 0:    #this logic still needs work
-                            if tumorCallerCountInsert > 0:
-                                mySubVariantType = subVariantType.indel
-                            else:
-                                mySubVariantType = subVariantType.delete
-                        elif tumorCallerCountInsert > 0:
-                            mySubVariantType = subVariantType.insert
-                        elif tumorCallerCountIndel > 0:
-                            mySubVariantType = subVariantType.indel
-                    elif tumorCallerCountSNP > 0:
-                        myVariantType = variantType.SNP
+                #PREPARE FIELDS:
+                if chrom[:3] == 'chr':
+                    chrom = chrom[3:]
+                posPercent = float(pos) / chromosomeLength[chrom]
+                numCallers = tumorCallerCountSNP + tumorCallerCountIndel
+                mySubVariantType = ""
+                if tumorCallerCountIndel > 0:
+                    if tumorCallerCountSNP == 0:
+                        myVariantType = variantType.indel
                     else:
-                        myVariantType = variantType.missingGenotype
-
-                    #Append to list
-                    somaticVariant.variantInfo.append([chrom, pos, chrom+':'+pos,intChrom(chrom)+posPercent,ref,vennSegment,numCallers, \
-                                                 myVariantType,mySubVariantType])
-                    for caller, variantGenotype in variantGenotypes.items():
-                        if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
-                            readDepthBucket = 2 ** int(np.log2(variantGenotype.readDepth))
-                            callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq,variantGenotype.readDepth,readDepthBucket]
+                        myVariantType = variantType.mixed
+                    if tumorCallerCountSubTypeDelete > 0:  # this logic still needs work
+                        if tumorCallerCountSubTypeInsert > 0:
+                            mySubVariantType = subVariantType.indel
                         else:
-                            callerSpecificFields = ['','','','']
-                        somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
+                            mySubVariantType = subVariantType.delete
+                    elif tumorCallerCountSubTypeInsert > 0:
+                        mySubVariantType = subVariantType.insert
+                    elif tumorCallerCountIndel > 0:
+                        mySubVariantType = subVariantType.indel
+                elif tumorCallerCountSNP > 0:
+                    myVariantType = variantType.SNP
+                else:
+                    myVariantType = variantType.missingGenotype
+
+                # Append to list
+                somaticVariant.variantInfo.append(
+                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + posPercent, ref, vennSegment, numCallers, \
+                     myVariantType, mySubVariantType])
+                for caller, variantGenotype in variantGenotypes.items():
+                    if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
+                        readDepthBucket = 2 ** int(np.log2(variantGenotype.readDepth))
+                        callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq,
+                                                variantGenotype.readDepth, readDepthBucket]
+                    else:
+                        callerSpecificFields = ['', '', '', '']
+                    somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
 
@@ -307,18 +250,16 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aB
 
     print "Number variants loaded:",len(somaticVariant.variantInfo)
 
-    if RUN_PANDAS == True:
-        df = pd.DataFrame(somaticVariant.variantInfo)
-        myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
-        for caller in header_index.iterkeys():
-            myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'readDepthBucket']
-        df.columns = (myColumnList)
-        df['patientName'] = aPatientName
-        # Need to empty genotype.variantInfo in case we need to load multiple files
-        del somaticVariant.variantInfo[:]
-        return df
-    else:
-        return 0
+    ##### PANDAS #####
+    df = pd.DataFrame(somaticVariant.variantInfo)
+    myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
+    for caller in header_index.iterkeys():
+        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'readDepthBucket']
+    df.columns = (myColumnList)
+    df['patientName'] = aPatientName
+    # Need to empty genotype.variantInfo in case we need to load multiple files
+    del somaticVariant.variantInfo[:]
+    return df
 
 def loadBEDFile(aPath, aBEDFile):
     print "reading BED file"
@@ -332,46 +273,33 @@ def loadBEDFile(aPath, aBEDFile):
     print "Bed File Loaded"
     return myBed
 
-def printStatistics():
-    ROUNDING_PRECISION = 4
-    POS_PERCENTILE_BUCKET = 0.1
-    print "\nTUMOR VARIANTS"
-    for key, value in sorted(genotype.variantCountSubTypeTumor.items()):
-        print "%s: %s" % (key, value)
-    indelTruthSet = somaticVariant.variantCountIndelTotal - somaticVariant.variantCountIndelNumberCallers[1]
-    snpTruthSet = somaticVariant.variantCountSNPTotal - somaticVariant.variantCountSNPNumberCallers[1]
-    print "\nIndel Total: ", somaticVariant.variantCountIndelTotal
-    print "SNP Total: ", somaticVariant.variantCountSNPTotal
-    print "\nIndel 'Truth Set': ", indelTruthSet
-    print "SNP 'Truth Set': ", snpTruthSet
-    print "\nSENSITIVITY"
-    for myVariantType, myTumorCount in sorted(genotype.variantCountTumor.items()):
-        if myVariantType[:3] == 'SNP':
-            print myVariantType, ":", round(
-                float(myTumorCount - genotype.variantCountTumorPrivate[myVariantType]) / snpTruthSet,
-                ROUNDING_PRECISION)
-        elif myVariantType[:5] == 'INDEL':
-            print myVariantType, ":", round(
-                float(myTumorCount - genotype.variantCountTumorPrivate[myVariantType]) / indelTruthSet,
-                ROUNDING_PRECISION)
-    print "\nPRECISION"
-    for myVariantType, myTumorCount in sorted(genotype.variantCountSubTypeTumorPrivate.items()):
-        print myVariantType, ":", round(
-            1 - float(myTumorCount) / float(genotype.variantCountSubTypeTumor[myVariantType]), ROUNDING_PRECISION)
-    print "\nNumber of Callers SNP: ", somaticVariant.variantCountSNPNumberCallers
-    print "Number of Callers Indel: ", somaticVariant.variantCountIndelNumberCallers
+def printStatistics(df):
+    outputdata = []
+
+    for columnName in list(df):
+        if columnName.endswith('allele'):
+            myCaller = columnName[:-6]
+            variantTypes = df[(df[myCaller + 'allele'] != '')].variantType.unique()
+            for variantType in variantTypes:
+                truePositives = len(
+                    df[(df[myCaller + 'allele'] != '') & (df['numCallers'] >= 2) & (df['variantType'] == variantType)])
+                falseNegatives = len(
+                    df[(df[myCaller + 'allele'] == '') & (df['numCallers'] >= 2) & (df['variantType'] == variantType)])
+                positives = len(df[(df[myCaller + 'allele'] != '') & (df['variantType'] == variantType)])
+                truthSet = truePositives + falseNegatives
+                if positives > 0:
+                    outputdata.append(
+                        [variantType, myCaller, truthSet, truePositives, positives - truePositives, falseNegatives, \
+                         round(truePositives / float(positives), 4), round(truePositives / float(truthSet), 4)])
+
+    outputDF = pd.DataFrame(outputdata)
+    outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives', \
+                         'precision_2+_callers','sensitivity_2+_callers'])
+    print outputDF.sort_values(['variantType', 'caller'])
 
 if __name__ == "__main__":
-    PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/160401Schuberg/"
-    VCF_FILE_NAME = "combined.vcf"
-    PATIENT_NAME = 'CPCT11111111'
-    SAMPLE_NAMES = {'CPCT11111111T.mutect': 'mutect', \
-                    'CPCT11111111T.freebayes': 'freebayes', \
-                    'TUMOR.strelka': 'strelka', \
-                    'TUMOR.varscan': 'varscan'}
-    RUN_PANDAS = False
-    if loadVaraintsFromVCF(PATH, VCF_FILE_NAME, SAMPLE_NAMES,PATIENT_NAME) != -1:
-        printStatistics()
+    df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,VCF_SAMPLE,False)
+    printStatistics(df)
 
 
 
