@@ -54,7 +54,7 @@ if [ ${RUN_HAPLOTYPE_GVCF} == true ]; then
 	cp ${out}/${sample}.gatk_haplotype_caller.g.vcf ${gvcf}
 fi
 
-if [ ${RUN_BAF_ANALYSIS} == true]; then
+if [ ${RUN_BAF_ANALYSIS} == true ]; then
     echo -e "\nRunning BAF analysis on ${sample}\n"
     abspath=`dirname $(readlink $0 || echo $0)`
     baf_snps=${dbspath}/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
