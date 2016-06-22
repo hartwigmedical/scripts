@@ -53,3 +53,17 @@ if [ ${RUN_HAPLOTYPE_GVCF} == true ]; then
 
 	cp ${out}/${sample}.gatk_haplotype_caller.g.vcf ${gvcf}
 fi
+
+if [ ${RUN_BAF_ANALYSIS} == true ]; then
+    echo -e "\nRunning BAF analysis on ${sample}\n"
+    abspath=`dirname $(readlink $0 || echo $0)`
+    baf_snps=${dbspath}/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
+    baf_genotype=${out}/${sample}.baf_genotype.vcf
+    baf_output=${out}/${sample}.baf
+
+    gatk -T UnifiedGenotyper -R ${ref} -I ${bam} -L ${baf_snps} -o ${baf_genotype} --output_mode EMIT_ALL_SITES
+
+    cat ${baf_genotype} | bio-vcf --num-threads 1 -i --sfilter '!s.empty? and s.dp>=20' --eval '[r.chrom,r.pos,r.ref+">"+r.alt[0]]' --seval 'tot=s.ad.reduce(:+) ; ((tot-s.ad[0].to_f)/tot).round(2)' > ${baf_output}
+
+    Rscript ${abspath}/code/makeBAFPlot.R ${tmp} ${baf_output}
+fi
