@@ -33,6 +33,39 @@ def countKmers(aRefGenome,aKmers,aKmerLength):
 
     return aKmers
 
+
+# LOGIC FOR COUNTING REPEATS
+# keep kmer of length = maxRepeatLength * 2
+# For each base processed
+    # For j = 1 to maxRepeatLength
+        # repeatTracker(j) = [sequence of kmer len = j, # of repeats observed (0+), current pos in repeat sequence]
+        # if base = next expected base in repeat
+            # if current pos < j
+                # then increment currentPos
+            # else
+                # increment # of repeats
+        # else
+            # pop sequence + append to sequence
+            # reset # of repeats = 0
+            # Write to repeate dictionary:   [len, # of repeats] += 1
+
+def countRepeats(aRefGenome,aRepeats,aMaxRepeatLength):
+    print 'reading:',aRefGenome,"for repeats"
+    with open(aRefGenome, 'r') as f:
+        myKmer = ""
+        while True:
+            ch = f.read(1)
+            if not ch: break
+            if ch == '>':
+                f.readline()
+            elif ch != 'N':
+                pass  # NEED TO ADD LOGIC HERE
+            elif ch != "\n" and ch != 'N':
+                pass  # NEED TO ADD LOGIC HERE
+    return aRepeats
+
+
+
 def generateRandomFasta(aPath, aFilename,aLength):
     print 'Creating random Fasta file'
     with open(aPath + aFilename,'w') as f:
@@ -55,3 +88,7 @@ if __name__ == "__main__":
     kmersRandom = countKmers(randomPath + randomFileName,kmersRandom,kmerLength)
     for kmer, kmerCount in sorted(kmersRandom.items()):
         print kmer, ":RAND:", kmerCount
+
+    repeats = {}
+    maxRepeatLength = 10
+    repeats = countRepeats(refgenome,repeats,maxRepeatLength)
