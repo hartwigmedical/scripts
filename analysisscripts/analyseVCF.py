@@ -11,6 +11,7 @@ SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect', \
                 VCF_SAMPLE + 'T.freebayes': 'freebayes', \
                 'TUMOR.strelka': 'strelka', \
                 'TUMOR.varscan': 'varscan'}
+
 ###############################################
 
 #DEFINE CHR LENGTH
@@ -88,7 +89,6 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
         elif caller == 'strelka' and tumorVariantType == variantType.indel:
             ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
             rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
-            return float(ad) / (float(rd) + float(ad))
         elif caller == 'melted':
             ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')[:2]
         else:
@@ -97,7 +97,7 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
         if float(ad) == 0:
             return 0
         else:
-            return float(ad) / (float(rd) + float(ad))
+            return float(ad) / (float(rd) + float(ad))   #is this correct, or should it be /DP?
 
 class genotype:
 
@@ -147,6 +147,7 @@ class somaticVariant:
         #Only use if inside the next BED region
         if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<int(pos) and somaticVariant.bedItem[0]==chrom) or not useBed:
             if filter == "PASS" or filter == ".":
+
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
                 tumorCallerCountSubTypeIndel = 0
