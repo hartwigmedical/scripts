@@ -73,7 +73,7 @@ def calculateReadDepth(info,genotype):
     else:
         return 1
 
-def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
+def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt,ref):
     infoSplit = info.split(':')
     genotypeSplit = genotype.split(':')
     if caller == 'mutect':
@@ -83,12 +83,13 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt):
     else:
         if caller == 'freebayes':
             ad = genotypeSplit[infoSplit.index('AO')].split(',')[0]  #NB - does not take into account 2nd allele if exists.  FIX as per melt
-            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
+            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.SNP:
-            ad, rd = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')  # NB - does not take into account genotype
+            ad = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')[0]
+            rd = genotypeSplit[infoSplit.index(ref + 'U')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.indel:
-            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
-            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]  # NB - does not take into account 2nd allele if exists. FIX as per melt
+            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]
+            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]
         elif caller == 'melted':
             ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')[:2]
         else:
@@ -123,7 +124,7 @@ class genotype:
                 else:
                     self.tumorVariantSubType = subVariantType.indel
 
-            self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt)
+            self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt, ref)
             self.readDepth = calculateReadDepth(info,inputGenotype)
             self.allele = alleleTumor2
 
