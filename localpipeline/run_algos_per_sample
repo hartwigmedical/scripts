@@ -17,10 +17,16 @@ if [ ${RUN_MARKDUP} == true ]; then
 	sambamba flagstat -p ${out}/${sample}.sambamba_markdup.bam
 fi
 
+if [ ${RUN_POSTSTATS} == true ]; then
+	echo -e "\nRunning PostStats on ${sample}\n"
+	inputbam=${out}/${sample}.sambamba_markdup.bam
+	picard CollectMultipleMetrics R=${ref} INPUT=${inputbam} OUTPUT=${qc}/${sample}.metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
+	picard EstimateLibraryComplexity INPUT=${inputbam} OUTPUT=${qc}/${sample}.library_complexity.txt
+	picard CollectWgsMetrics R=${ref} INPUT=${inputbam} OUTPUT=${qc}/${sample}.wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
+fi
+
 bam=${out}/${sample}.bam
 bai=${out}/${sample}.bai
-
-gvcf=${out}/${sample}.g.vcf
 
 if [ ${RUN_INDEL_REALIGN} == true ]; then
 	echo -e "\nRunning GATK Indel-Realignment on ${sample}\n"
@@ -39,12 +45,7 @@ if [ ${RUN_INDEL_REALIGN} == true ]; then
 	cp ${out}/${sample}.gatk_indel_realign.bai ${bai}
 fi
 
-if [ ${RUN_POSTSTATS} == true ]; then
-	echo -e "\nRunning PostStats on ${sample}\n"
-	picard CollectMultipleMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/${sample}.metrics PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics PROGRAM=QualityScoreDistribution PROGRAM=CollectGcBiasMetrics
-	picard EstimateLibraryComplexity INPUT=${bam} OUTPUT=${qc}/${sample}.library_complexity.txt
-	picard CollectWgsMetrics R=${ref} INPUT=${bam} OUTPUT=${qc}/${sample}.wgs_metrics.txt MINIMUM_MAPPING_QUALITY=20 MINIMUM_BASE_QUALITY=10 COVERAGE_CAP=250
-fi
+gvcf=${out}/${sample}.g.vcf
 
 if [ ${RUN_HAPLOTYPE_GVCF} == true ]; then
     echo -e "\nRunning haplotype variant calling on ${sample}\n"
