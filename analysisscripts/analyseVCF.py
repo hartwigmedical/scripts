@@ -7,9 +7,9 @@ import numpy as np
 VCF_SAMPLE = "CPCT11111111"
 VCF_PATH = "/Users/peterpriestley/hmf/analyses/70-30sample/160524/"
 VCF_FILE_NAME = VCF_SAMPLE + "R_" + VCF_SAMPLE + "T_merged_somatics.vcf"
-SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect', \
-                VCF_SAMPLE + 'T.freebayes': 'freebayes', \
-                'TUMOR.strelka': 'strelka', \
+SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect',
+                VCF_SAMPLE + 'T.freebayes': 'freebayes',
+                'TUMOR.strelka': 'strelka',
                 'TUMOR.varscan': 'varscan'}
 
 ###############################################
@@ -73,6 +73,16 @@ def calculateReadDepth(info,genotype):
     else:
         return 1
 
+def calculateQualityScore(info,caller,qual,variantType):
+    if caller == 'strelka':
+        return 1    #QSS (snv) or QSI (indel)
+    elif caller == 'varscan':
+        return 1    #VS_SSC OR SSC
+    elif caller == 'freebayes':
+        return 1   #FB_SSC OR SSC
+    else:   # Mutect has no qual score
+        return 0
+
 def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt,ref):
     infoSplit = info.split(':')
     genotypeSplit = genotype.split(':')
@@ -82,10 +92,11 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt,ref):
         return float(genotypeSplit[infoSplit.index('FREQ')].split('%')[0])/100
     else:
         if caller == 'freebayes':
-            ad = genotypeSplit[infoSplit.index('AO')].split(',')[0]  #NB - does not take into account 2nd allele if exists.  FIX as per melt
+            ao_split = genotypeSplit[infoSplit.index('AO')].split(',')
+            ad = ao_split[min(int(genotype[2]),len(ao_split))-1]  #NB - Assume B if GT = A/B
             rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.SNP:
-            ad = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')[0]
+            ad = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')[0]  #will break in strelka unfiltered
             rd = genotypeSplit[infoSplit.index(ref + 'U')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.indel:
             ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]
@@ -111,8 +122,12 @@ class genotype:
         elif inputGenotype[:3] == "0/0":
             self.tumorVariantType = variantType.sameAsRef
         else:
-            alleleTumor1 = altsplit[int(inputGenotype[0])]
-            alleleTumor2 = altsplit[int(inputGenotype[2])]
+            if inputGenotype[1] != '/':  #STRELKA unfiltered
+                alleleTumor1 = altsplit[0]
+                alleleTumor2 = altsplit[0]
+            else:
+                alleleTumor1 = altsplit[int(inputGenotype[0])]
+                alleleTumor2 = altsplit[int(inputGenotype[2])]
             if len(alleleTumor1) == len(alleleTumor2) and len(alleleTumor1) == len(ref):
                 self.tumorVariantType = variantType.SNP
             else:
@@ -134,7 +149,7 @@ class somaticVariant:
     variantInfo = []
     bedItem = []
 
-    def __init__(self, chrom, pos, id, ref, alt, filter, format,info,inputGenotypes,useBed,aBedReverse):
+    def __init__(self, chrom, pos, id, ref, alt, qual, filter, format,info,inputGenotypes,useFilter,useBed,aBedReverse):
 
         #Find the 1st Bed region with maxPos > variantPos
         if aBedReverse:
@@ -147,7 +162,7 @@ class somaticVariant:
 
         #Only use if inside the next BED region
         if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<int(pos) and somaticVariant.bedItem[0]==chrom) or not useBed:
-            if filter == "PASS" or filter == ".":
+            if filter == "PASS" or filter == "." or useFilter == False:
 
                 tumorCallerCountSNP = 0
                 tumorCallerCountIndel = 0
@@ -206,20 +221,19 @@ class somaticVariant:
 
                 # Append to list
                 somaticVariant.variantInfo.append(
-                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + posPercent, ref, vennSegment, numCallers, \
-                     myVariantType, mySubVariantType])
+                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + posPercent, ref, vennSegment, numCallers,
+                     myVariantType, mySubVariantType,filter])
                 for caller, variantGenotype in variantGenotypes.items():
                     if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
-                        readDepthBucket = 2 ** int(np.log2(variantGenotype.readDepth))
-                        callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq,
-                                                variantGenotype.readDepth, readDepthBucket]
+                        callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
+                                                calculateQualityScore(info,caller,qual,variantGenotype.tumorVariantType)]
                     else:
-                        callerSpecificFields = ['', '', '', '']
+                        callerSpecificFields = ['', '', '','']
                     somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aBedReverse=[]):
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBedReverse=[]):
     print "reading vcf file:",aVCFFile
 
     variants = []
@@ -244,7 +258,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aB
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useBed,aBedReverse))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5],a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBedReverse))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
@@ -255,9 +269,10 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useBed=False,aB
     print "Number variants loaded:",len(somaticVariant.variantInfo)
 
     df = pd.DataFrame(somaticVariant.variantInfo)
-    myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType','variantSubType']
+    myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType',
+                    'variantSubType','filter']
     for caller in header_index.iterkeys():
-        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'readDepthBucket']
+        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'qualityScore']
     df.columns = (myColumnList)
     df['patientName'] = aPatientName
     # Need to empty genotype.variantInfo in case we need to load multiple files
@@ -292,11 +307,11 @@ def printStatistics(df):
                 truthSet = truePositives + falseNegatives
                 if positives > 0:
                     outputdata.append(
-                        [variantType, myCaller, truthSet, truePositives, positives - truePositives, falseNegatives, \
+                        [variantType, myCaller, truthSet, truePositives, positives - truePositives, falseNegatives,
                          round(truePositives / float(positives), 4), round(truePositives / float(truthSet), 4)])
 
     outputDF = pd.DataFrame(outputdata)
-    outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives', \
+    outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives',
                          'precision_2+_callers','sensitivity_2+_callers'])
     print '\n2+ caller precision and sensitivity\n'
     print outputDF.sort_values(['variantType', 'caller'])
@@ -312,7 +327,7 @@ def printStatistics(df):
 
 
 if __name__ == "__main__":
-    df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,VCF_SAMPLE,False)
+    df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,True,VCF_SAMPLE,False)
     printStatistics(df)
 
 
