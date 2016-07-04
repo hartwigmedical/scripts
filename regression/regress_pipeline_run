@@ -17,17 +17,19 @@ mkdir ${out}
 # KODU: Step 1: Assess final BAMs are identical. Same version of BWA with same nr of threads should yield identical mapping
 echo -e "  Diffing reference BAMs"
 refbam=${refsample}/mapping/${refsample}_dedup.realigned.bam
-diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
+#diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
 
 echo -e "  Diffing tumor BAMs"
 tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
-diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
+#diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
 
 # KODU: Step 2: Assess final somatic variant files are identical, after removing the headers (lines starting with "#")
-grep -v "#” ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/run_headerless_somatics.vcf
-grep -v "#” ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/truthrun_headerless_somatics.vcf
+grep -v "#" ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/run_headerless_somatics.vcf
+grep -v "#" ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/truthrun_headerless_somatics.vcf
 echo -e "  Diffing headerless somatic VCFs"
 diff ${out}/run_headerless_somatics.vcf ${out}/truthrun_headerless_somatics.vcf > ${out}/somaticvariantdiff
+
+exit
 
 # KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
 # This tool has a known issue with evaluating overlapping variant regions so has to be called multiple times.
