@@ -26,21 +26,18 @@ tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
 # KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
 # This tool has a known issue with evaluating overlapping variant regions so has to be called twice.
 
-runvcf=${run}/GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
-runvcfgz=${runvcf}.gz
-truthrunvcf=${truthrun}/GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
-truthrunvcfgz=${truthrunvcf}.gz
+germlinevcf=GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
 
 # KODU: Step 3.1: Generate gz and tbi needed for rtg tools
 
-${TABIX_PATH}/bgzip -c ${runvcf} > ${runvcfgz}
-${TABIX_PATH}/tabix ${runvcfgz}
+${TABIX_PATH}/bgzip -c ${run}/${germlinevcf} > ${out}/run_${germlinevcf}.gz
+${TABIX_PATH}/tabix ${out}/run_${germlinevcf}.gz
 
 
-${TABIX_PATH}/bgzip -c ${truthrunvcf} > ${truthrunvcfgz}
-${TABIX_PATH}/tabix ${truthrunvcfgz}
+${TABIX_PATH}/bgzip -c ${truthrun}/${germlinevcf} > ${out}/truthrun_${germlinevcf}.gz
+${TABIX_PATH}/tabix ${out}/truthrun_${germlinevcf}.gz
 
-${RTG_PATH}/rtg vcfeval -b ${runvcfgz} -c ${truthrunvcfgz} -o ${out}/Round1${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round1_rtg_vcfeval_log
+${RTG_PATH}/rtg vcfeval -b ${out}/run_${germlinevcf}.gz -c ${out}/truthrun_${germlinevcf}.gz -o ${out}/Round1${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round1_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round2_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round3_rtg_vcfeval_log
 
