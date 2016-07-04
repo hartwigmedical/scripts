@@ -60,7 +60,12 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   fi
 
   echo "$TITLE_STRING BamSliceCheck"
-  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*sliced*.bam" | head -1` ]; then echo "OK";
+  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*realigned.sliced*.bam" | head -1` ]; then echo "OK";
+  else echo "[WARNING] No BAM slice found!";
+  fi
+
+  echo "$TITLE_STRING PrePostRealignDiffCheck"
+  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*prepostrealign.diff" | head -1` ]; then echo "OK";
   else echo "[WARNING] No BAM slice found!";
   fi
 
