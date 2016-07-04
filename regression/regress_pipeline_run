@@ -26,9 +26,9 @@ tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
 # KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
 # This tool has a known issue with evaluating overlapping variant regions so has to be called twice.
 
-runvcf=${run}/GIAB-SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
+runvcf=${run}/GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
 runvcfgz=${runvcf}.gz
-truthrunvcf=${truthrun}/GIAB-SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
+truthrunvcf=${truthrun}/GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
 truthrunvcfgz=${truthrunvcf}.gz
 
 # KODU: Step 3.1: Generate gz and tbi needed for rtg tools
