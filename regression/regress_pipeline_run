@@ -24,7 +24,7 @@ tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
 #diff ${out}/${run}_headerless_somatics.vcf ${out}/${truthrun}_headerless_somatics.vcf > ${out}/somaticvariantdiff
 
 # KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
-# This tool has a known issue with evaluating overlapping variant regions so has to be called twice.
+# This tool has a known issue with evaluating overlapping variant regions so has to be called multiple times.
 
 germlinevcf=GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
 
@@ -33,13 +33,17 @@ germlinevcf=GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.v
 ${TABIX_PATH}/bgzip -c ${run}/${germlinevcf} > ${out}/run_${germlinevcf}.gz
 ${TABIX_PATH}/tabix ${out}/run_${germlinevcf}.gz
 
-
 ${TABIX_PATH}/bgzip -c ${truthrun}/${germlinevcf} > ${out}/truthrun_${germlinevcf}.gz
 ${TABIX_PATH}/tabix ${out}/truthrun_${germlinevcf}.gz
+
+# KODU: Step 3.2: Run RTG vcfeval 3 times.
 
 ${RTG_PATH}/rtg vcfeval -b ${out}/run_${germlinevcf}.gz -c ${out}/truthrun_${germlinevcf}.gz -o ${out}/Round1${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round1_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round2_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round3_rtg_vcfeval_log
 
+${RTG_PATH}/rtg vcfeval -b ${out}/run_${germlinevcf}.gz -c ${out}/truthrun_${germlinevcf}.gz -o ${out}/Round1${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round1_rtg_vcfeval_log
+${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round2_rtg_vcfeval_log
+${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round3_rtg_vcfeval_log
 
 
