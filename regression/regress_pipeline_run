@@ -1,5 +1,9 @@
 #!/bin/bash
 
+TABIX_PATH=/data/common/tools/tabix_v0.2.6
+RTG_PATH=/data/common/software/rtg-tools_v3.6.2/installation/rtg-tools-3.6.2-bc71ee0
+SDF_PATH=/data/common/software/dbs/RTGSDF_GRCh37
+
 run=$1
 truthrun=$2
 
@@ -7,16 +11,37 @@ refsample=$3
 tumorsample=$4
 out=$5
 
+# KODU: Step 1: Assess final BAMs are identical. Same version of BWA with same nr of threads should yield identical mapping
 refbam=${refsample}/mapping/${refsample}_dedup.realigned.bam
-diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
+#diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
 
 tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
-diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
+#diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
 
-#/data/common/tools/tabix_v0.2.6/bgzip -c GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf > GIAB_SOMATIC-MIX.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf.gz
+# KODU: Step 2: Assess final somatic variant files are identical, after removing the headers (lines starting with "#")
+#grep -v "#” ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/${run}_headerless_somatics.vcf
+#grep -v "#” ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/${truthrun}_headerless_somatics.vcf
+#diff ${out}/${run}_headerless_somatics.vcf ${out}/${truthrun}_headerless_somatics.vcf > ${out}/somaticvariantdiff
 
-grep -v "#” ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/${run}_filtered_somatics.vcf
-grep -v "#” ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76_melted.vcf > ${out}/${run}_filtered_somatics.vcf
+# KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
+# This tool has a known issue with evaluating overlapping variant regions so has to be called twice.
+
+runvcf=${run}/${run}.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
+runvcfgz=${runvcf}.gz
+truthrunvcf=${truthrun}/${truthrun}.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
+truthrunvcfgz=${truthrunvcf}.gz
+
+# KODU: Step 3.1: Generate gz and tbi needed for rtg tools
+
+${TABIX_PATH}/bgzip -c ${runvcf} > ${runvcfgz}
+${TABIX_PATH}/tabix ${runvcfgz}
+
+${TABIX_PATH}/bgzip -c ${truthrunvcf} > ${truthrunvcfgz}
+${TABIX_PATH}/tabix ${truthrunvcfgz}
+
+${RTG_PATH}/rtg vcfeval -b ${runvcfgz} -c ${truthrunvcfgz} -o ${out}/Round1${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round1_rtg_vcfeval_log
+${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round2_rtg_vcfeval_log
+${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round3_rtg_vcfeval_log
 
 
 
