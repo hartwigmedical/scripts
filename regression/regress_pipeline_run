@@ -36,6 +36,7 @@ truthrunvcfgz=${truthrunvcf}.gz
 ${TABIX_PATH}/bgzip -c ${runvcf} > ${runvcfgz}
 ${TABIX_PATH}/tabix ${runvcfgz}
 
+
 ${TABIX_PATH}/bgzip -c ${truthrunvcf} > ${truthrunvcfgz}
 ${TABIX_PATH}/tabix ${truthrunvcfgz}
 
