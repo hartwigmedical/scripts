@@ -1,0 +1,19 @@
+#!/bin/bash
+
+run=$1
+truthrun=$2
+
+refsample=$3
+tumorsample=$4
+out=$5
+
+refbam=${refsample}/mapping/${refsample}_dedup.realigned.bam
+diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
+
+tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
+diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
+
+
+
+
+

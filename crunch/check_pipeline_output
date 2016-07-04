@@ -84,11 +84,6 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   else echo "[WARNING] No kinship file found!";
   fi
   
-  echo ""
-  echo "$TITLE_STRING Various CMD for quick access"
-  echo "===> CMD to copy QCStats to NAS webserver location"
-  echo "rsync -ahPn --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
-
   ## print readme file path if present
   if [ -e $readmeFile ]; then
     echo "===> README file found"
