@@ -12,6 +12,7 @@ tumorsample=$4
 out=$5
 
 echo -e "Starting regression check between ${run} and ${truthrun}"
+mkdir ${out}
 
 # KODU: Step 1: Assess final BAMs are identical. Same version of BWA with same nr of threads should yield identical mapping
 echo -e "  Diffing reference BAMs"
