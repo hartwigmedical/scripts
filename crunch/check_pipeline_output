@@ -44,14 +44,9 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   else echo "[WARNING] Pipeline Error"; cat $checkFile
   fi
 
-  echo "$TITLE_STRING CopynumberDirPresenceCheck"
-  if [ -e $copynumberDir ]; then echo "OK"
-  else echo "[WARNING] no copynumber dir present"
-  fi  
-
-  echo "$TITLE_STRING SomaticsDirPresenceCheck"
-  if [ -e $somaticsDir ]; then echo "OK"
-  else echo "[WARNING] no somatics dir present"
+  echo "$TITLE_STRING FreecPngCheck"
+  if [ `find $copynumberDir/*/freec/ -mindepth 1 -maxdepth 1 -iname "*.png"` ]; then echo "OK" 
+  else echo "[WARNING] no Freec copynumber png present"
   fi
 
   echo "$TITLE_STRING SomaticsMergedCheck"
