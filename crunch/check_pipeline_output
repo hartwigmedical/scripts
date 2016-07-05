@@ -95,6 +95,14 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
     echo "cat $readmeFile";
   fi
 
+  if [ ! `hostname` == "hmf_datastore" ]; then
+    echo ""
+    echo "$TITLE_STRING Various CMD for quick access"
+    echo "===> CMD to copy QCStats to NAS webserver location"
+    echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
+  fi
+
+
   echo ""
 
 done
