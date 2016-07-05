@@ -19,15 +19,27 @@ echo -e "  Diffing reference BAMs"
 refbam=${refsample}/mapping/${refsample}_dedup.realigned.bam
 diff ${run}/${refbam} ${truthrun}/${refbam} > ${out}/refsamplediff
 
+if [ -s ${out}/refsamplediff ]; then
+    echo -e "    WARN: Ref samples are different!"
+fi
+
 echo -e "  Diffing tumor BAMs"
 tumorbam=${tumorsample}/mapping/${tumorsample}_dedup.realigned.bam
-diff ${run}/${tumorsample} ${truthrun}/${tumorsample} > ${out}/tumorsamplediff
+diff ${run}/${tumorbam} ${truthrun}/${tumorbam} > ${out}/tumorsamplediff
+
+if [ -s ${out}/tumorsamplediff ]; then
+    echo -e "    WARN: Tumor samples are different!"
+fi
 
 # KODU: Step 2: Assess final somatic variant files are identical, after removing the headers (lines starting with "#")
 grep -v "#" ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/run_headerless_somatics.vcf
 grep -v "#" ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/truthrun_headerless_somatics.vcf
 echo -e "  Diffing headerless somatic VCFs"
 diff ${out}/run_headerless_somatics.vcf ${out}/truthrun_headerless_somatics.vcf > ${out}/somaticvariantdiff
+
+if [ -s ${out}/somaticvariantdiff ]; then
+    echo -e "    WARN: Somatic variants are different!"
+fi
 
 # KODU: Step 3: Assess germline variant files are identical using rtg vcfeval.
 # This tool has a known issue with evaluating overlapping variant regions so has to be called multiple times.
@@ -51,9 +63,13 @@ ${RTG_PATH}/rtg vcfeval -b ${out}/run_${germlinevcf}.gz -c ${out}/truthrun_${ger
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round2_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${refsample} -t ${SDF_PATH} --ref-overlap --sample=${refsample} > ${out}/${refsample}_round3_rtg_vcfeval_log
 
+cat ${out}/${refsample}_round3_rtg_vcfeval_log
+cat ${out}/${refsample}_round1_rtg_vcfeval_log
+
 echo -e "  Starting RTG vcfeval for ${tumorsample}"
 ${RTG_PATH}/rtg vcfeval -b ${out}/run_${germlinevcf}.gz -c ${out}/truthrun_${germlinevcf}.gz -o ${out}/Round1${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round1_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round1${refsample}/fp.vcf.gz -c ${out}/Round1${refsample}/fn.vcf.gz -o ${out}/Round2${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round2_rtg_vcfeval_log
 ${RTG_PATH}/rtg vcfeval -b ${out}/Round2${refsample}/fp.vcf.gz -c ${out}/Round2${refsample}/fn.vcf.gz -o ${out}/Round3${tumorsample} -t ${SDF_PATH} --ref-overlap --sample=${tumorsample} > ${out}/${tumorsample}_round3_rtg_vcfeval_log
 
-
+cat ${out}/${tumorsample}_round3_rtg_vcfeval_log
+cat ${out}/${tumorsample}_round1_rtg_vcfeval_log
