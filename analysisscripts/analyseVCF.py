@@ -266,9 +266,8 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     print "reading vcf file:",aVCFFile
 
     if useBed == True:
-        aBedReverse = aBed.reverse()
-    else
-        aBedReverse = []
+        aBed.reverse()
+
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
         i=0
@@ -291,7 +290,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBedReverse))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
