@@ -65,44 +65,71 @@ def intChrom(chrom):
     else:
         return int(chrom)
 
-def calculateReadDepth(info,genotype):
-    infoSplit = info.split(':')
+def calculateReadDepth(format,genotype):
+    formatSplit = format.split(':')
     genotypeSplit = genotype.split(':')
-    if 'DP' in infoSplit:
-        return int(genotypeSplit[infoSplit.index('DP')])
+    if 'DP' in formatSplit:
+        return int(genotypeSplit[formatSplit.index('DP')])
     else:
         return 1
 
-def calculateQualityScore(info,caller,qual,variantType):
-    if caller == 'strelka':
-        return 1    #QSS (snv) or QSI (indel)
-    elif caller == 'varscan':
-        return 1    #VS_SSC OR SSC
-    elif caller == 'freebayes':
-        return 1   #FB_SSC OR SSC
-    else:   # Mutect has no qual score
-        return 0
+def calculateSomaticGenotype(infoSplit,caller,aVariantType):
+    #Ideally both Normal (ref, hom, het) and somatic (ref,hom,het).
+    infoHeaders = [x.split('=')[0] for x in infoSplit]
+    if caller == 'strelka' and aVariantType == variantType.indel:
+        return infoSplit[infoHeaders.index("SGT")].split('=')[1]
+    elif caller == 'strelka' and aVariantType == variantType.SNP:
+        return infoSplit[infoHeaders.index("NT")].split('=')[1]
+    elif caller == 'varscan':  # VARSCAN - 'SS=1,2,3,4' germline,somatic,LOH, unknown
+        return infoSplit[infoHeaders.index("SS")].split('=')[1]
+    elif caller == 'freebayes' and 'VT' in infoHeaders :  # FREEBAYES - Better would be GT(Normal)  0/0 = ref;  X/X = het;  X/Y = hom;
+        return infoSplit[infoHeaders.index("VT")].split('=')[1]
+    elif caller =='mutect':  # Mutect is always het ?
+        return "ref-het"
+    else:
+        return 'unknown'
 
-def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt,ref):
-    infoSplit = info.split(':')
+
+def calculateQualityScore(infoSplit,caller,aVariantType):
+    infoHeaders = [x.split('=')[0] for x in infoSplit]
+    if caller == 'strelka' and aVariantType == variantType.indel:
+        return infoSplit[infoHeaders.index("QSI_NT")].split('=')[1]
+    elif caller == 'strelka' and aVariantType == variantType.SNP:
+        return infoSplit[infoHeaders.index("QSS_NT")].split('=')[1]
+    elif caller == 'varscan':
+        if "VS_SSC" in infoHeaders:
+            return infoSplit[infoHeaders.index("VS_SSC")].split('=')[1]
+        else:
+            return infoSplit[infoHeaders.index("SSC")].split('=')[1]
+    elif caller == 'freebayes':
+        if "FB_SSC" in infoHeaders:
+            return infoSplit[infoHeaders.index("FB_SSC")].split('=')[1]
+        else:
+            return infoSplit[infoHeaders.index("SSC")].split('=')[1]
+    else:  # Mutect has no quality score
+        return -1
+
+
+def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor2):
+    formatSplit = format.split(':')
     genotypeSplit = genotype.split(':')
     if caller == 'mutect':
-        return float(genotypeSplit[infoSplit.index('FA')])
+        return float(genotypeSplit[formatSplit.index('FA')])
     elif caller == 'varscan':
-        return float(genotypeSplit[infoSplit.index('FREQ')].split('%')[0])/100
+        return float(genotypeSplit[formatSplit.index('FREQ')].split('%')[0])/100
     else:
         if caller == 'freebayes':
-            ao_split = genotypeSplit[infoSplit.index('AO')].split(',')
+            ao_split = genotypeSplit[formatSplit.index('AO')].split(',')
             ad = ao_split[min(int(genotype[2]),len(ao_split))-1]  #NB - Assume B if GT = A/B
-            rd = genotypeSplit[infoSplit.index('RO')].split(',')[0]
+            rd = genotypeSplit[formatSplit.index('RO')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.SNP:
-            ad = genotypeSplit[infoSplit.index(alt.split(',')[int(genotype[0])] + 'U')].split(',')[0]  #will break in strelka unfiltered
-            rd = genotypeSplit[infoSplit.index(ref + 'U')].split(',')[0]
+            ad = genotypeSplit[formatSplit.index(alleleTumor2 + 'U')].split(',')[0]  #NB - Assume B if GT = A/B
+            rd = genotypeSplit[formatSplit.index(ref + 'U')].split(',')[0]
         elif caller == 'strelka' and tumorVariantType == variantType.indel:
-            ad = genotypeSplit[infoSplit.index('TIR')].split(',')[0]
-            rd = genotypeSplit[infoSplit.index('TAR')].split(',')[0]
+            ad = genotypeSplit[formatSplit.index('TIR')].split(',')[0]
+            rd = genotypeSplit[formatSplit.index('TAR')].split(',')[0]
         elif caller == 'melted':
-            ad, rd = genotypeSplit[infoSplit.index('AD')].split(',')[:2]
+            ad, rd = genotypeSplit[formatSplit.index('AD')].split(',')[:2]
         else:
             return -1
 
@@ -113,18 +140,18 @@ def calculateAllelicFreq(info,genotype,caller,tumorVariantType,alt,ref):
 
 class genotype:
 
-    def __init__(self,chrom,pos,caller,ref,alt,info,vennSegment,inputGenotype):
+    def __init__(self,chrom,pos,caller,ref,alt,info,format,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
 
         if inputGenotype[:3] == "./.":
             self.tumorVariantType = variantType.missingGenotype
-        elif inputGenotype[:3] == "0/0":
+        elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
             self.tumorVariantType = variantType.sameAsRef
         else:
-            if inputGenotype[1] != '/':  #STRELKA unfiltered
-                alleleTumor1 = altsplit[0]
-                alleleTumor2 = altsplit[0]
+            if inputGenotype[1] != '/':  #STRELKA unfiltered case
+                alleleTumor1 = altsplit[1]
+                alleleTumor2 = altsplit[1]
             else:
                 alleleTumor1 = altsplit[int(inputGenotype[0])]
                 alleleTumor2 = altsplit[int(inputGenotype[2])]
@@ -139,17 +166,19 @@ class genotype:
                 else:
                     self.tumorVariantSubType = subVariantType.indel
 
-            self.allelicFreq = calculateAllelicFreq(info, inputGenotype, caller, self.tumorVariantType, alt, ref)
-            self.readDepth = calculateReadDepth(info,inputGenotype)
+            self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
+            self.readDepth = calculateReadDepth(format,inputGenotype)
+            infoSplit = info.split(';')
+            self.qualityScore = float(calculateQualityScore(infoSplit,caller,self.tumorVariantType))
+            self.somaticGenotype = calculateSomaticGenotype(infoSplit,caller,self.tumorVariantType)
             self.allele = alleleTumor2
-
 
 class somaticVariant:
 
     variantInfo = []
     bedItem = []
 
-    def __init__(self, chrom, pos, id, ref, alt, qual, filter, format,info,inputGenotypes,useFilter,useBed,aBedReverse):
+    def __init__(self, chrom, pos, id, ref, alt, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse):
 
         #Find the 1st Bed region with maxPos > variantPos
         if aBedReverse:
@@ -179,7 +208,7 @@ class somaticVariant:
                         vennSegment = formatItem[1]
 
                 for key in inputGenotypes.iterkeys():
-                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, info, vennSegment, inputGenotypes[key])
+                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, info,format, vennSegment, inputGenotypes[key])
 
                 for key, value in variantGenotypes.items():
                     if value.tumorVariantType == variantType.SNP:
@@ -226,16 +255,20 @@ class somaticVariant:
                 for caller, variantGenotype in variantGenotypes.items():
                     if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
                         callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
-                                                calculateQualityScore(info,caller,qual,variantGenotype.tumorVariantType)]
+                                                variantGenotype.qualityScore,variantGenotype.somaticGenotype]
                     else:
-                        callerSpecificFields = ['', '', '','']
+                        callerSpecificFields = ['', '', '','','']
                     somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBedReverse=[]):
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[]):
     print "reading vcf file:",aVCFFile
 
+    if useBed == True:
+        aBedReverse = aBed.reverse()
+    else
+        aBedReverse = []
     variants = []
     with open(aPath + aVCFFile, 'r') as f:
         i=0
@@ -258,7 +291,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5],a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBedReverse))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBedReverse))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
@@ -272,7 +305,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType',
                     'variantSubType','filter']
     for caller in header_index.iterkeys():
-        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'qualityScore']
+        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'qualityScore',caller+'somaticGenotype']
     df.columns = (myColumnList)
     df['patientName'] = aPatientName
     # Need to empty genotype.variantInfo in case we need to load multiple files
