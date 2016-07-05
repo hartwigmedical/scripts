@@ -44,14 +44,9 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   else echo "[WARNING] Pipeline Error"; cat $checkFile
   fi
 
-  echo "$TITLE_STRING CopynumberDirPresenceCheck"
-  if [ -e $copynumberDir ]; then echo "OK"
-  else echo "[WARNING] no copynumber dir present"
-  fi  
-
-  echo "$TITLE_STRING SomaticsDirPresenceCheck"
-  if [ -e $somaticsDir ]; then echo "OK"
-  else echo "[WARNING] no somatics dir present"
+  echo "$TITLE_STRING FreecPngCheck"
+  if [ `find $copynumberDir/*/freec/ -mindepth 1 -maxdepth 1 -iname "*.png"` ]; then echo "OK" 
+  else echo "[WARNING] no Freec copynumber png present"
   fi
 
   echo "$TITLE_STRING SomaticsMergedCheck"
@@ -65,8 +60,13 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   fi
 
   echo "$TITLE_STRING BamSliceCheck"
-  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*sliced*.bam" | head -1` ]; then echo "OK";
+  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*realigned.sliced*.bam" | head -1` ]; then echo "OK";
   else echo "[WARNING] No BAM slice found!";
+  fi
+
+  echo "$TITLE_STRING PrePostRealignDiffCheck"
+  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*prepostrealign.diff" | head -1` ]; then echo "OK";
+  else echo "[WARNING] No PrePostRealignDiff found!";
   fi
 
   echo "$TITLE_STRING VcfSliceCheck"
@@ -89,16 +89,19 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   else echo "[WARNING] No kinship file found!";
   fi
   
-  echo ""
-  echo "$TITLE_STRING Various CMD for quick access"
-  echo "===> CMD to copy QCStats to NAS webserver location"
-  echo "rsync -ahPn --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
-
   ## print readme file path if present
   if [ -e $readmeFile ]; then
     echo "===> README file found"
     echo "cat $readmeFile";
   fi
+
+  if [ ! `hostname` == "hmf_datastore" ]; then
+    echo ""
+    echo "$TITLE_STRING Various CMD for quick access"
+    echo "===> CMD to copy QCStats to NAS webserver location"
+    echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
+  fi
+
 
   echo ""
 

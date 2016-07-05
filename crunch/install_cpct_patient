@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Prints code to set CPCT patient dir (move, chown, symlink)"
+    echo " Usage: `basename $0` /path/to/pipeline/output/dir/"
+    echo "    Eg: `basename $0` /data/schuberg/160101_HMFreg0000_FR123_FR456_CPCT12345678/"
+    echo "        `basename $0` ./160101_HMFreg0000_FR123_FR456_CPCT12345678/"
+    echo "---"
+    exit 1
+fi
+
+runDir=$1
+runName=`basename $runDir`
+archive='/data/processed_archive/'
+newRunDir="${archive}${runName}"
+runDate=`echo $runName | cut -d'_' -f1`
+runSubm=`echo $runName | cut -d'_' -f2`
+refSamp=`echo $runName | cut -d'_' -f3`
+tumSamp=`echo $runName | cut -d'_' -f4`
+patient=`echo $runName | cut -d'_' -f5`
+submDataDir="/data/submissions/${runSubm}_CPCT/data/"
+
+echo ""
+
+## the dir to move must exist 
+if [ ! -d $runDir ]; then
+  echo "[ERROR] Rundir does not exist ($runDir)"
+  exit 1;
+fi
+
+## check submissions data dir
+if [ ! -d $submDataDir ]; then 
+  echo "[ERROR] Submission data dir does not exist ($submDataDir)"
+  exit 1;
+fi
+
+## moves dir to processed archive
+echo "sudo mv $runDir $archive"
+
+## sets permissions to root
+echo "sudo chown -R root:root $newRunDir"
+
+## symlink code
+echo "ln -s $newRunDir $submDataDir"
+
+echo ""
+
