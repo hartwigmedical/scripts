@@ -304,7 +304,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType',
                     'variantSubType','filter']
     for caller in header_index.iterkeys():
-        myColumnList = myColumnList + [caller + 'allele',caller+ 'allelicFreq',caller+'readDepth',caller+'qualityScore',caller+'somaticGenotype']
+        myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'somaticGT']
     df.columns = (myColumnList)
     df['patientName'] = aPatientName
     # Need to empty genotype.variantInfo in case we need to load multiple files
@@ -357,8 +357,6 @@ def printStatistics(df):
     df_pivot = df[['numCallers', 'pos', 'variantType']].groupby(['variantType', 'numCallers' ]).agg('count')
     print df_pivot.groupby(level=0).transform(lambda x: x / x.sum())
 
-
-if __name__ == "__main__":
     df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,True,VCF_SAMPLE,False)
     printStatistics(df)
 
