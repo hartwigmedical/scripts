@@ -1,20 +1,11 @@
 #!/usr/bin/env python
 
 """
-melt_somatic_vcfNEW.py
-Melts / merges somatic vcf files coming from the IAP.
-Supported somatic callers: Freebayes, Mutect, Strelka and Varscan.
-
-KEY CHANGES:
-* Select the allele with the most allelic depth support rather than always choosing the first
-* Only average AD, RD & DP for callers which support the variant allele
-* Handle unhandled corner cases / bugs in calculation of AD/RD
-    * Mutect - when AD does not exist use FA*DP
-    * Varscan - when AD does not exist use FREQ*DP
-    * Freebayes - chose the AO for the selected allele instead of the 1st
-    * Strelka - choose the AD for the selected allele only instead of all alternates
-* Add 'diffAllele' field to "INFO" to indicate if any callers disagree with the allele
-
+filterFreebayes.py
+Applies BCBIO developed filters to the freebayes somatic output.
+2 main filters applied:
+1. LOD Tumor, LOD Normal > 3.5
+2. Freq of Tumor / Freq Normal > 2.7
 """
 
 import argparse
