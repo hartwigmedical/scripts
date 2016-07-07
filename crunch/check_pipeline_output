@@ -55,8 +55,12 @@ for runDir in "${RUN_DIR_PATHS[@]}"; do
   fi
 
   echo "$TITLE_STRING SomaticsMeltedCheck"
-  if [ `find $somaticsDir -mindepth 2 -maxdepth 2 -wholename "*_melted.vcf" | head -1` ]; then echo "OK";
-  else echo "[WARNING] No melted somatics VCF found!";
+  MELTED_FILE=`find $somaticsDir -mindepth 2 -maxdepth 2 -wholename "*_melted.vcf" | head -1`
+  if [ ${MELTED_FILE} ]; then
+    MELTED_COUNT=`wc -l ${MELTED_FILE} | cut -d" " -f1`;
+    echo "OK (${MELTED_COUNT} lines in file)";
+  else 
+    echo "[WARNING] No melted somatics VCF found!";
   fi
 
   echo "$TITLE_STRING BamSliceCheck"
