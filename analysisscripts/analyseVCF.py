@@ -90,7 +90,7 @@ def calculateSomaticGenotype(infoSplit,caller,aVariantType):
         return 'unknown'
 
 
-def calculateQualityScore(infoSplit,caller,aVariantType):
+def calculateQualityScore(infoSplit,caller,qual,aVariantType):
     infoHeaders = [x.split('=')[0] for x in infoSplit]
     if caller == 'strelka' and aVariantType == variantType.indel:
         return infoSplit[infoHeaders.index("QSI_NT")].split('=')[1]
@@ -102,10 +102,7 @@ def calculateQualityScore(infoSplit,caller,aVariantType):
         else:
             return infoSplit[infoHeaders.index("SSC")].split('=')[1]
     elif caller == 'freebayes':
-        if "FB_SSC" in infoHeaders:
-            return infoSplit[infoHeaders.index("FB_SSC")].split('=')[1]
-        else:
-            return infoSplit[infoHeaders.index("SSC")].split('=')[1]
+        return qual
     else:  # Mutect has no quality score
         return -1
 
@@ -140,7 +137,7 @@ def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor
 
 class genotype:
 
-    def __init__(self,chrom,pos,caller,ref,alt,info,format,vennSegment,inputGenotype):
+    def __init__(self,chrom,pos,caller,ref,alt,qual,info,format,vennSegment,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
 
@@ -169,7 +166,7 @@ class genotype:
             self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
             self.readDepth = calculateReadDepth(format,inputGenotype)
             infoSplit = info.split(';')
-            self.qualityScore = float(calculateQualityScore(infoSplit,caller,self.tumorVariantType))
+            self.qualityScore = float(calculateQualityScore(infoSplit,caller,qual,self.tumorVariantType))
             self.somaticGenotype = calculateSomaticGenotype(infoSplit,caller,self.tumorVariantType)
             self.allele = alleleTumor2
 
@@ -178,7 +175,7 @@ class somaticVariant:
     variantInfo = []
     bedItem = []
 
-    def __init__(self, chrom, pos, id, ref, alt, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse):
+    def __init__(self, chrom, pos, id, ref, alt, qual, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse):
 
         #Find the 1st Bed region with maxPos > variantPos
         if aBedReverse:
@@ -208,7 +205,7 @@ class somaticVariant:
                         vennSegment = formatItem[1]
 
                 for key in inputGenotypes.iterkeys():
-                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, info,format, vennSegment, inputGenotypes[key])
+                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, qual,info,format, vennSegment, inputGenotypes[key])
 
                 for key, value in variantGenotypes.items():
                     if value.tumorVariantType == variantType.SNP:
@@ -290,7 +287,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
