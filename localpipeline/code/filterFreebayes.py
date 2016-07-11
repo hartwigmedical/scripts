@@ -9,42 +9,26 @@ Applies BCBIO developed filters to the freebayes somatic output.
 """
 
 import argparse
-from itertools import izip_longest
 import re
 
 TUMOR_PARTS_INDEX = 10
 NORMAL_PARTS_INDEX = 9
 
-def customFilterFreebayes(vcf_file):
+# Thresholds are like phred scores, so 3.5 = phred35
+TUMOR_THRESHOLD = 3.5
+NORMAL_THRESHOLD = 3.5
 
-    try:
-        f = open(vcf_file, 'r')
-    except IOError:
-        print "Can't open vcf file: {0}".format(vcf_file)
-    else:
-        with f:
-            for line in f:
-                line = line.strip('\n')
-                # Code copied from BCBIO Freebayes pipeline.
-                # Thresholds are like phred scores, so 3.5 = phred35
-                tumor_thresh, normal_thresh = 3.5, 3.5
-                if line.startswith("#CHROM"):
-                    headers = [('##FILTER=<ID=REJECT,Description="Not somatic due to normal call frequency '
-                                'or phred likelihoods: tumor: %s, normal %s.">')
-                               % (int(tumor_thresh * 10), int(normal_thresh * 10))]
-                    print "\n".join(headers) + "\n" + line
-                elif line.startswith("#"):
+# Code copied from BCBIO Freebayes pipeline.
+def customFilterFreebayes(vcf_file):
+    with open(vcf_file, 'r') as f:
+        for line in f:
+            line = line.strip('\n')
+            if line.startswith("#"):
+                print line
+            else:
+                parts = line.split("\t")
+                if _check_lods(parts, TUMOR_THRESHOLD, NORMAL_THRESHOLD) and _check_freqs(parts):
                     print line
-                else:
-                    parts = line.split("\t")
-                    if not (_check_lods(parts, tumor_thresh, normal_thresh) and _check_freqs(parts)):
-                        if parts[6] in set([".", "PASS"]):
-                            parts[6] = "REJECT"
-                        else:
-                            parts[6] += ";REJECT"
-                    else:
-                        line = "\t".join(parts)
-                        print line
 
 ### Filtering
 
@@ -108,7 +92,6 @@ def _check_freqs(parts):
         return freq
     tumor_freq, normal_freq = _calc_freq(parts[TUMOR_PARTS_INDEX]), _calc_freq(parts[NORMAL_PARTS_INDEX])
     return normal_freq <= 0.001 or normal_freq <= tumor_freq / thresh_ratio
-
 
 
 if __name__ == "__main__":
