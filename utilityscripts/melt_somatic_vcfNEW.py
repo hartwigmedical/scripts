@@ -7,7 +7,7 @@ Supported somatic callers: Freebayes, Mutect, Strelka and Varscan.
 
 KEY CHANGES:
 * Select the allele with the most allelic depth support rather than always choosing the first
-* Only average AD, RD & DP for callers which AGREE on variant allele
+* Only average AD, RD & DP for callers which support the variant allele
 * Handle unhandled corner cases / bugs in calculation of AD/RD
     * Mutect - when AD does not exist use FA*DP
     * Varscan - when AD does not exist use FREQ*DP
