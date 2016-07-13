@@ -1,6 +1,7 @@
 #!/usr/local/bin/python
 import pandas as pd
 import numpy as np
+import difflib as dl
 
 ###############################################
 # VCF CONFIG
@@ -64,6 +65,21 @@ def intChrom(chrom):
         return 25
     else:
         return int(chrom)
+
+def indelDiff(ref,variantAllele):
+    #LOGIC - MATCH 1st char and then use strDiff in the reverse direction
+    if ref[0]==variantAllele[0]: i=1
+    else: i = 0
+    reverseRef = ref[i:][::-1]
+    reverseVariantAllele = variantAllele[i:][::-1]
+    strdiff = dl.SequenceMatcher(None, reverseRef, reverseVariantAllele)
+    myIndelString = ""
+    for item in strdiff.get_opcodes():
+        if item[0] == 'delete':
+            myIndelString = myIndelString + "-" + reverseRef[item[1]:item[2]]
+        elif item[0] == 'insert':
+            myIndelString = myIndelString + "+" + reverseVariantAllele[item[3]:item[4]]
+    return myIndelString[::-1]
 
 def calculateReadDepth(format,genotype):
     formatSplit = format.split(':')
@@ -169,6 +185,7 @@ class genotype:
             self.qualityScore = float(calculateQualityScore(infoSplit,caller,qual,self.tumorVariantType))
             self.somaticGenotype = calculateSomaticGenotype(infoSplit,caller,self.tumorVariantType)
             self.allele = alleleTumor2
+            self.indelDiff = indelDiff(ref,self.allele)
 
 class somaticVariant:
 
@@ -252,9 +269,9 @@ class somaticVariant:
                 for caller, variantGenotype in variantGenotypes.items():
                     if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
                         callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
-                                                variantGenotype.qualityScore,variantGenotype.somaticGenotype]
+                                                variantGenotype.qualityScore,variantGenotype.somaticGenotype,variantGenotype.indelDiff]
                     else:
-                        callerSpecificFields = ['', '', '','','']
+                        callerSpecificFields = ['', '', '','','','']
                     somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
@@ -301,7 +318,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     myColumnList = ['chrom', 'pos', 'chromPos','chromFrac', 'ref', 'vennSegment','numCallers','variantType',
                     'variantSubType','filter']
     for caller in header_index.iterkeys():
-        myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'somaticGT']
+        myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'somaticGT',caller+'indelDiff']
     df.columns = (myColumnList)
     df['patientName'] = aPatientName
     # Need to empty genotype.variantInfo in case we need to load multiple files
