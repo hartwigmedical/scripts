@@ -12,6 +12,10 @@ for sheet in /data1/illumina_data/*/SampleSheet.csv; do
 	echo "# [Rund] "$runBase;
 	echo "# [Samp] "$sampleSheetFile;
 	
+	## check cycle status
+	cycleCount=`ls $runBase/Logs/ | grep -Pc "Cycle "`
+	echo "# [NOTE] CYCLE log count: $cycleCount"
+		
         ## check conversion status
         if [ ! -e $conversionLogFile ]; then
 		echo "# [NOTE] CONVERSION not started yet";
