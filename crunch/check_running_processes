@@ -13,4 +13,8 @@ ps aux | grep "[r]etention" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' 
 echo "===> RSYNC"
 ps aux | grep "[r]sync" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
 
+echo "===> MD5SUM"
+ps aux | grep "[m]d5sum" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
+
+
 echo ""
