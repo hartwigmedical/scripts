@@ -1,11 +1,14 @@
 #!/bin/bash
 for sheet in /data1/illumina_data/*/SampleSheet.csv; do 
 	currHost=`hostname`
+	currHostShort=`echo $currHost | sed 's/hmf_crunch00/c/g'`
 	runBase=`dirname $sheet`
+	runName=`basename $runBase`
 	readmeFile=$runBase"/README"
         conversionLogFile=$runBase"/conversionLog.txt"
 	sampleSheetFile=$runBase"/SampleSheet.csv"
-
+	experimentName=`cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2`
+	
 	echo ""
 	#echo "# ----- HMFreg";
 	echo "# "$currHost;
@@ -35,8 +38,9 @@ for sheet in /data1/illumina_data/*/SampleSheet.csv; do
 		echo "# [README] $readmeFile";
 	fi
 
-	## print internal HMF run-name
-	cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 1,2
+	## print line that can be pasted directly into RunOverview sheet
+	echo -e "# $experimentName\t$runName\tseq\t$currHostShort";
+
 	## print sample-id, sample_name, submission-id, description
 	cat $sheet | sed -e '1,/Lane,Sample_ID/d' | cut -d',' --output-delimiter " " -f2,3,8,9 | sort | uniq; 
 done
