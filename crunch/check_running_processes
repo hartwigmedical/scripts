@@ -7,7 +7,7 @@ echo ""
 echo "===> AWS"
 ps aux | grep "[a]ws" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
 
-echo "===> Rentention QC"
+echo "===> Retention QC"
 ps aux | grep "[r]etention" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
 
 echo "===> RSYNC"
