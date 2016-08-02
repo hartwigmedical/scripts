@@ -27,7 +27,7 @@ for SEARCH in "${SEARCH_STRINGS[@]}"; do
       SUBM=`cat $sheet | grep $SEARCH | cut -f 8 -d "," | head -1`; 
       FOUND=1
       HMFRUNDIR=`dirname $sheet`
-      echo "$HMFRUN $SAMPLEID $SAMPLENAME $SUBM: ($HMFRUNDIR/Data/Intensities/BaseCalls/$SUBM/$SAMPLEID/)"; 
+      echo "$HMFRUN $SAMPLEID $SAMPLENAME $SUBM ($HMFRUNDIR/Data/Intensities/BaseCalls/$SUBM/$SAMPLEID/)"; 
     fi; 
   done
   if [[ $FOUND == 0 ]]; then
