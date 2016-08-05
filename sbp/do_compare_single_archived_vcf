@@ -35,8 +35,6 @@ then
 else
     echo "[INFO] OK: no differences found"
     echo "[INFO] CMD to backup/cleanup"
-    echo " sudo mv $RUN_PATH /data/backup/cpct_runs/"
-    echo " sudo chown -R korneel:korneel $BACKUP_DIR/$RUN_NAME"
-    echo " cd $BACKUP_DIR/$RUN_NAME"
+    echo " archive_run $RUN_NAME"
 fi
 
