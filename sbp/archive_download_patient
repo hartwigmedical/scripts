@@ -1,0 +1,6 @@
+#!/bin/bash
+
+BUCKET=$1
+RUN_NAME=$2
+
+sbp s3 sync s3://${BUCKET}/${RUN_NAME}/ /data/schuberg/${RUN_NAME}/ --profile download

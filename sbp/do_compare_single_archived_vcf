@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+SBP_DIR=$1
+BACKUP_DIR=/data/backup/cpct_runs
+VCF_FILE=`ls ./*.filtered_variants.vcf`
+
+if [[ ! -f $VCF_FILE ]]; then
+    echo "[ERR] No filtered_variants.vcf file found in current dir"
+    exit 1
+else
+    echo "[INFO] HMF vcf found ($VCF_FILE)"
+fi
+
+VCF_PATH=`readlink -f $VCF_FILE`
+VCF_NAME=`basename $VCF_PATH`
+RUN_PATH=`dirname $VCF_PATH`
+RUN_NAME=`basename $RUN_PATH`
+VCF_PATH_SBP=$SBP_DIR/$VCF_NAME
+#RUNDIR=`dirname $VCFHMF`
+#RUNNAM=`basename $RUNDIR`
+
+if [[ ! -f $VCF_PATH_SBP ]]; then
+    echo "[EXIT] No vcf file with same name in $SBP_DIR"
+    exit 1
+else
+    echo "[INFO] SBP vcf found ($VCF_PATH_SBP)"
+fi
+
+echo "[INFO] Both VCF files found, starting diff"
+VCF_DIFF=$(diff $VCF_PATH $VCF_PATH_SBP) 
+if [ "$VCF_DIFF" != "" ] 
+then
+    echo "[EXIT]"
+    exit 1
+else
+    echo "[INFO] OK: no differences found"
+    echo "[INFO] CMD to backup/cleanup"
+    echo " sudo mv $RUN_PATH /data/backup/cpct_runs/"
+    echo " sudo chown -R korneel:korneel $BACKUP_DIR/$RUN_NAME"
+    echo " cd $BACKUP_DIR/$RUN_NAME"
+fi
+

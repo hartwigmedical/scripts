@@ -1,0 +1,9 @@
+#!/bin/bash
+cd /data/schuberg/uploadsymlinks
+for patient in *; do
+	upload_patient ${patient}
+done
+
+## slack msg to ext-hartwig
+curl -X POST -H 'Content-type: application/json' --data '{"username": "HMFbot", "text":"Upload completed"}' https://hooks.slack.com/services/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
+

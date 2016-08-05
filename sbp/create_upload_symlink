@@ -1,0 +1,25 @@
+#!/bin/bash
+# KODU: Script to create a base upload symlink. Supports only one sequence run.
+
+Date=$1
+Reg=$2
+RSample=$3
+TSample=$4
+CPCTID=$5
+RSequenceDir=$6
+TSequenceDir=$7
+
+run=${Date}_${Reg}_${RSample}_${TSample}_${CPCTID}
+
+cd /data/schuberg/uploadsymlinks
+mkdir ${run}
+cd ${run}
+mkdir ${RSample}
+cd ${RSample}
+create_fastq_symlinks /data/sequencer_archive/${RSequenceDir}/Data/Intensities/BaseCalls/${Reg}/${RSample}
+ls -al
+cd ..
+mkdir ${TSample}
+cd ${TSample}
+create_fastq_symlinks /data/sequencer_archive/${TSequenceDir}/Data/Intensities/BaseCalls/${Reg}/${TSample}
+ls -al

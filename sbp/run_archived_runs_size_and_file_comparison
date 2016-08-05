@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for RUN_PATH in /data/schuberg/archivesymlinks/*; do
+    RUN_NAME=`basename ${RUN_PATH}`
+    do_display_single_archive_run $RUN_NAME
+done

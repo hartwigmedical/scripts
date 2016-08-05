@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "---"
+RUN_NAME=$1 # eg 160101_HMFregCPCT_FR123_FR456_CPCT01010001
+RUN_DIR=/data/processed_archive/${RUN_NAME}
+BACKUP_DIR=/data/backup/cpct_runs/
+PATIENT=`echo ${RUN_NAME} | grep -Po "CPCT\d+"`
+
+SBP_FILE_COUNT=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download --recursive --summarize --human-readable | tail -2 | grep "Total Objects" | grep -Po "[\d]+"`
+SBP_FILE_SIZE=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download --recursive --summarize --human-readable | tail -2 | grep "Total Size" | grep -Po "[\d\.]+ ?(GiB)?"`
+
+HMF_FILE_COUNT=`find ${RUN_DIR} -type f | wc -l`
+HMF_FILE_SIZE=`du -sh ${RUN_DIR} | awk '{ print $1 }' `
+
+echo "# Run: ${RUN_NAME}"
+echo "# Bucket: ${ARCHIVE_BUCKET}"
+echo "# SBP: ${SBP_FILE_COUNT} files | ${SBP_FILE_SIZE}"
+echo "# HMF: ${HMF_FILE_COUNT} files | ${HMF_FILE_SIZE}"
+
+#echo "# if all is ok"
+#echo " * Check if patient has been reported (${PATIENT})"
+#echo " * sudo mv ${RUN_DIR} ${BACKUP_DIR}"
+#echo " * sudo chown -R $USER:$USER ${BACKUP_DIR}/${RUN_NAME}"
+#echo " * cd ${BACKUP_DIR}/${RUN_NAME}"
+#echo " * Run cleanup script"
+#echo "---"
