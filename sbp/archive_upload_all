@@ -1,4 +1,6 @@
+#!/bin/bash
+
 cd /data/schuberg/archivesymlinks
 for i in *; do
-	archive_upload_patient ${i}
+	do_archive_upload_patient ${i}
 done
