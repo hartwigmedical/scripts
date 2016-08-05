@@ -1,3 +1,5 @@
+#!/bin/bash
+
 tmppath=/data/schuberg/tmp_archived_vcf_check
 do_download_archived_vcfs ${tmppath}
 cd /data/schuberg/archivesymlinks

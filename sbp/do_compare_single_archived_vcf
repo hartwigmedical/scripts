@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
 SBP_DIR=$1
 BACKUP_DIR=/data/backup/cpct_runs
