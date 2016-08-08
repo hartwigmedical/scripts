@@ -25,7 +25,8 @@ for sheet in /data1/illumina_data/*/SampleSheet.csv; do
 	elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
 		echo "# [NOTE] CONVERSION appears to be FINISHED";
 	else
-		echo "# [NOTE] CONVERSION appears to be RUNNING";
+		currLane=`ls $runBase/Data/Intensities/BaseCalls/Undetermined*gz | grep -Po "L\d{3}" | sort | uniq | tail -1`
+		echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
 	fi
 
 	## check images presence
