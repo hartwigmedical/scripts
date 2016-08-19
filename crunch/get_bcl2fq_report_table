@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+currhost=`hostname`
 scriptname=`basename $0`
 parsescript='do_parse_bcl2fqreporthtml.pl'
 
 if [[ ! $1 || $1 == "-h" ]]; then 
     echo "-----"
+    echo " @$currhost"
     echo " Usage: $scriptname <SeqRunDirName>"
     echo "        $scriptname 160812_ST-E00290_0091_AHTW73CCXX"
     echo "        $scriptname /path/to/160812_ST-E00290_0091_AHTW73CCXX"
@@ -18,8 +20,11 @@ seqRunName=$1
 ## allow absolute path as param
 if [[ $seqRunName =~ ^\/ ]]; then
     runDir=$seqRunName
+elif [[ $currhost == "hmf_datastore" ]]
+then
+    runDir=/data/sequencer_archive/$seqRunName 
 else
-    runDir=/data/sequencer_archive/$seqRunName
+    runDir=/data1/illumina_data/$seqRunName
 fi
 
 reportDir=$runDir/Data/Intensities/BaseCalls/Reports/
