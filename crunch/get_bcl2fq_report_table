@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+scriptname=`basename $0`
+parsescript='do_parse_bcl2fqreporthtml.pl'
+
+if [[ ! $1 || $1 == "-h" ]]; then 
+    echo "-----"
+    echo " Usage: $scriptname <SeqRunDirName>"
+    echo "        $scriptname 160812_ST-E00290_0091_AHTW73CCXX"
+    echo "        $scriptname /path/to/160812_ST-E00290_0091_AHTW73CCXX"
+    echo "-----"
+    exit 1
+fi
+
+seqRunName=$1
+
+
+## allow absolute path as param
+if [[ $seqRunName =~ ^\/ ]]; then
+    runDir=$seqRunName
+else
+    runDir=/data/sequencer_archive/$seqRunName
+fi
+
+reportDir=$runDir/Data/Intensities/BaseCalls/Reports/
+if [[ ! -e $reportDir ]]; then echo "[ERROR] reportDir does not exist ($reportDir)"; exit 1; fi
+
+echo ""
+echo "## ==> Conversion results for $seqRunName"
+$parsescript -d $reportDir;
+## print a summary (only those with fastq files present!!)
+echo "## PerSampleInfo summary (for direct pasting in SampleOverview)"
+$parsescript -d $reportDir | grep -P "HMFreg|project" | awk '{print $1"\t"$13"\t"$11"\t"$10 }'
+echo ""
