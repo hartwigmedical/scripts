@@ -13,6 +13,12 @@ CONV_E=$RUNDIR'/conversionError.txt'
 RUNHMF=`cat $SSHEET | grep 'ExperimentName' | cut -d',' --output-delimiter ': ' -f 2`
 RUNNAS=$RUNHMF'__'$RUNNAM
 
+## if SampleSheet csv was made on windows then
+## might have different line endings causing trouble
+if awk '/\r$/{exit 0;} 1{exit 1;}' $SSHEET; 
+then 
+  echo "[ERROR] $SSHEET seems dos formatting (maybe dos2unix first?)"; 
+fi
 
 echo "";
 echo "$SEPSTR currentDirectory pwd"

@@ -137,11 +137,13 @@ close FILE;
 my $seqrunName = 'NA';
 my $seqrunDate = 'NA';
 my $machine = 'NA';
+my $fcid = 'NA';
 ## eg: 160115_ST-E00278_0021_BHJKHGCCXX
-if ( $html_file =~ m/.*\/((\d{6})_(.*)_\d{4}_[AB]{1}.{9})\/.*/i ){
+if ( $html_file =~ m/.*\/((\d{6})_(.*)_\d{4}_[AB]{1}(.{9}))\/.*/i ){
 	$seqrunName = $1;
 	$seqrunDate = $2;
 	$machine = $3;
+        $fcid = $4;
 	print( "## [INFO] seqRun date found in html code: $seqrunDate ($machine)\n")
 }
 
@@ -149,13 +151,13 @@ if ( $html_file =~ m/.*\/((\d{6})_(.*)_\d{4}_[AB]{1}.{9})\/.*/i ){
 ## ----------
 ## grep the flowcell name
 ## ----------
-my $fcid = 'NA';
-if ( $raw_html =~ m/.*\/(.+XX)\/all\/all/i ){
-	$fcid = $1;
-	print( "## [INFO] flowcell ID found in html code: $fcid\n")
-}else{
-	die "[ERROR] EXIT: unable to find flowcell id in html file ($html_file)\n";
-}
+#my $fcid = 'NA';
+#if ( $raw_html =~ m/(.+)\/all\/all/i ){
+#	$fcid = $1;
+#	print( "## [INFO] flowcell ID found in html code: $fcid\n")
+#}else{
+#	die "[ERROR] EXIT: unable to find flowcell id in html file ($html_file)\n";
+#}
 
 ## ----------
 ## output of an earlier version of bcl2fq converter is not supported
