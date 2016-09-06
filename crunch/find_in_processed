@@ -22,8 +22,8 @@ for SEARCH in "${SEARCH_STRINGS[@]}"; do
   
   RUNS_DIR='/data/schuberg/'
   find $RUNS_DIR -mindepth 2 -maxdepth 2 -type d -iname $SEARCH | xargs -I{} dirname {}
-  
-  RUNS_DIR='/data/fromies/'
+
+  RUNS_DIR='/data/backup/cpct_runs/'
   find $RUNS_DIR -mindepth 2 -maxdepth 2 -type d -iname $SEARCH | xargs -I{} dirname {}
 
 done
