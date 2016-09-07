@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2155
+
+set -o errexit
+set -o nounset
+shopt -s globstar
+shopt -s nullglob
+
+# There are several modes of operation:
+#
+# 1) no parameters => run cancel panel test into an automatic personal output directory (shortcut; can do this explicitly with input/output directories).
+# 2) one parameter => re-run pipeline on - and into - a named, existing folder structure (e.g. for re-running somatics).
+# 3) two parameters => re-run pipeline on - and into - a named, existing folder but using different INI file (no .ini suffix necessary)
+# 4) three parameters => run pipeline from an input folder into an output folder. FASTQ/BAM mode is chosen according to folder contents.
+# 5) four parameters => run pipeline from an input folder into an output folder but choose the pipeline repo to use (e.g. pipeline vs pipeline-test).
+#
+# parameters must be supplied in order listed below, intended to prioritise common use-cases
+# this means that it is currently not possible to re-run on an existing folder and specify a non-pipeline-test repo.
+# input folder can be anything, all output (including re-runs) is relative to /data2/processed.
+
+# shellcheck disable=SC2015
+function main() {
+    local output_name=${1:-} && shift || true
+    local config=${1:-CPCT} && shift || true
+    local input=${1:-} && shift || true
+    local pipeline=${1:-pipeline-test} && shift || true
+
+    local output_root=/data2/processed
+    local email=${EMAIL:?Make sure \$EMAIL is defined (e.g. in your .bashrc)}
+
+    # with no parameters, run the cancer panel test
+    if [ -z "${output_name}" ]; then
+        output_name=${USER}_${pipeline/-/_}
+        input=/data/repos/testdata/cancerPanel
+    fi
+
+    local output=${output_root}/${output_name}
+    mkdir -p "${output}"
+
+    echoerr "PIPELINE: ${pipeline}"
+    echoerr "CONFIG: ${config}"
+    echoerr "INPUT: ${input}"
+    echoerr "OUTPUT: ${output}"
+
+    # only replace settings.config if providing an input folder
+    if [ -n "${input}" ]; then
+        local mode_flag
+        mode_flag=$(choose_input_mode) || exit
+        "/data/repos/${pipeline}/illumina_createConfig.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+    fi
+
+    cd "${output}"
+
+    # if there was no input folder, we are re-running a previous settings.config, and want to leave filenames in place
+    perl -pi -e "s#(INIFILE\s+).*#\1/data/repos/${pipeline}/settings/${config}.ini#" settings.config
+    perl -pi -e "s#(OUTPUT_DIR\s+).*#\1${output}#" settings.config
+    perl -pi -e "s#(MAIL\s+).*#\1${email/@/\\@}#" settings.config
+
+    # especially useful for repeated somatics runs on existing data
+    if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_PILEUP" settings.config
+    then
+        echo "FINALIZE_KEEP_PILEUP  yes" >> settings.config
+    fi
+
+    write_metadata "${input}" "${output}"
+
+    "/data/repos/${pipeline}/illumina_pipeline.pl" settings.config > submitlog_test
+}
+
+function choose_input_mode() {
+    local fastq_files=$(find ${input} -type f -name '*.fastq*')
+    local bam_files=$(find ${input} -type f -name '*.bam*')
+
+    if [ -n "${fastq_files}" ] && [ -z "${bam_files}" ]; then
+        echoerr "INPUT MODE: FASTQ"
+        local mode_flag="-f"
+    elif [ -z "${fastq_files}" ] && [ -n "${bam_files}" ]; then
+        echoerr "INPUT MODE: BAM"
+        local mode_flag="-b"
+    else
+        echoerr "ERROR: could not choose between FASTQ and BAM MODE"
+        echoerr "   FASTQ files:"
+        echoerr "${fastq_files}"
+        echoerr "   BAM files:"
+        echoerr "${bam_files}"
+        exit 1
+    fi
+    echo $mode_flag
+}
+
+function write_metadata() {
+    local input=$1 && shift
+    local output=$1 && shift
+    local metadata_file="${output}/metadata"
+    declare -A samples=()
+
+    # ignore it if it already exists
+    if [ -e "${metadata_file}" ]; then
+        echoerr "WARN: not generating ${metadata_file}, already exists"
+        return
+    fi
+
+    for path in "${input}"/*/; do
+        local dir=$(basename "${path}")
+        if [[ ${dir} =~ ^(CPCT[0-9]{8})([RT])$ ]]; then
+            samples[${BASH_REMATCH[2]}]=${BASH_REMATCH[1]}
+        fi
+    done
+
+    if [ ${#samples[@]} -eq 2 ] && [ "${samples[R]}" == "${samples[T]}" ]; then
+        cat <<-EOF > "${metadata_file}"
+		{
+		    "ref_sample": "${samples[R]}R",
+		    "tumor_sample": "${samples[T]}T"
+		}
+		EOF
+    else
+        echoerr "failed to identify two CPCT samples and write metadata (found: ${!samples[*]} => ${samples[*]})"
+        echoerr "create ${metadata_file} manually and retry (just touch the file if un-needed)"
+        exit 1
+    fi
+}
+
+function echoerr() {
+    echo "$@" 1>&2
+}
+
+main "$@"
