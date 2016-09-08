@@ -115,7 +115,7 @@ function write_metadata() {
 		}
 		EOF
     else
-        echoerr "failed to identify two CPCT samples and write metadata (found: ${!samples[*]} => ${samples[*]})"
+        echoerr "failed to identify two CPCT samples and write metadata (found: ${!samples[*]} => ${samples[*]+${samples[*]}})"
         echoerr "create ${metadata_file} manually and retry (just touch the file if un-needed)"
         exit 1
     fi
