@@ -35,5 +35,5 @@ echo "## ==> Conversion results for $seqRunName"
 $parsescript -d $reportDir;
 ## print a summary (only those with fastq files present!!)
 echo "## PerSampleInfo summary (for direct pasting in SampleOverview)"
-$parsescript -d $reportDir | grep -P "HMFreg|project" | awk '{print $1"\t"$13"\t"$11"\t"$10 }'
+$parsescript -d $reportDir | grep -P "HMFreg|project" | awk '{print $1"\t"$13"\t"$11"\t"$10"\t"$15 }'
 echo ""
