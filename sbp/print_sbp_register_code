@@ -1,0 +1,94 @@
+#! /usr/bin/perl
+use strict;
+use warnings;
+use File::Basename;
+use POSIX qw(strftime);
+my $script = basename($0);
+my $uploaddir = '/data/schuberg/uploadsymlinks';
+
+sub usage{
+    print "Descr: prints the code to register sets at SBP\n";
+    print "Usage: $script (output based on contents $uploaddir)\n";
+    print "       $script /path/to/161231_HMFregCPCT_FR123_FR456_CPCT02010001\n";
+    exit 1;
+}
+
+my $api_script = 'register_sets.sh';
+my $cpct_entities_file = '/home/sbp/hmfupload/cpct_entities.tsv';
+my $regex_cpct = '^(\d{6})_(.+)_(.+)_(.+)_(.+)$';
+my @sets_dirs = `ls -d $uploaddir/*`;
+chomp @sets_dirs;
+if ( $ARGV[0] ){
+    @sets_dirs = @ARGV; # allow input for flexibility
+    usage() and exit if $ARGV[0] =~ /\-h|\-\-help/; # allow input for flexibility
+}
+
+## read in CPCT entities
+my %centerid2entity = ();
+open IN, "<", $cpct_entities_file or die "$!: Unable to open file ($cpct_entities_file)\n";
+while ( <IN> ){
+    next if $_ =~ /^#/;
+    chomp;
+    my ( $id, $name, $entity ) = split( "\t", $_ );
+    $centerid2entity{ $id } = $entity;
+}
+close IN;
+
+my $counter = 0;
+my @toprint = ();
+
+foreach my $setpath ( @sets_dirs ){
+    $setpath =~ s/\/$//g; # remove trainling slash
+    my ( $setname ) = fileparse( $setpath );
+
+    if ( $setname =~ m/$regex_cpct/ ){
+    
+        my ( $date, $group, $bcref, $bctum, $patient ) =  ($1, $2, $3, $4, $5 );
+        my $ini = 'CPCT.ini';
+        my $entityname = 'NA';
+        
+        ## use study id in patient id to get entity
+        if ( $patient =~ m/^CPCT(\d{2})(\d{2})(\d{4})$/ ){
+            my ( $study_id, $center_id, $patient_id ) = ( $1, $2, $3 );
+            die "[ERROR] center id not found in hash ($center_id)\n" unless exists $centerid2entity{$center_id};
+            $entityname = $centerid2entity{$center_id};
+        }
+        else{
+            die "[ERROR] CPCT patient regex cannot find ids ($patient)\n";
+        }
+        
+        ## read first fastq files to get sample name
+        my $refsample = `ls $setpath/$bcref/ | head -1 | grep -Po "^[^_]+"`;
+        my $tumsample = `ls $setpath/$bctum/ | head -1 | grep -Po "^[^_]+"`;
+        chomp( $refsample, $tumsample );
+
+        my $cmd = join( " ", 
+	    $api_script, 
+	    '-s', $setname, 
+	    '-r', $refsample, 
+	    '-t', $tumsample, 
+	    '-i', $ini, 
+            '-e', $entityname,
+        ); 
+        push( @toprint, $cmd );
+	$counter++;
+    }    
+    else{
+        die "[ERROR] regex cannot parse the setname ($setname)\n";
+    }
+}
+
+## ------
+## output
+## ------
+my $datestring = strftime "%y%m%d", localtime;
+my $jobname = $datestring."_register_".$counter."_sets";
+
+print "## ==========\n";
+print "## NOTE: check if all expected are present below\n";
+print "## NOTE: copy or print this code to bash file and execute\n";
+print "##   $script > /home/sbp/jobs/$jobname\n";
+print "##   /home/sbp/jobs/$jobname > /home/sbp/logs/$jobname.log\n";
+print "## TotalSetCount: $counter\n";
+print "## ==========\n";
+print join( "\n", @toprint )."\n";
