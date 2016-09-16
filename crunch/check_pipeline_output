@@ -5,9 +5,9 @@ function main() {
     local runDirs=("$@");
     echo
     for runDir in "${runDirs[@]}"; do
-        info "------------------"
-        info " Checking Rundir path: ${runDir}"
-        info "------------------"
+        info "-----------------------"
+        info " Checking Rundir path:  ${runDir}"
+        info "-----------------------"
 
         DirsizeCheck "${runDir}"
         PipelineCheckLogCheck "${runDir}"
@@ -17,9 +17,9 @@ function main() {
             SomaticsMergedCheck "${runDir}"
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
             SomaticsMeltedCheck "${runDir}"
-        iniEnabled INDELREALIGNMENT "{$runDir}" &&
+        iniEnabled INDELREALIGNMENT "${runDir}" &&
             BamSliceCheck "${runDir}"
-        iniEnabled INDELREALIGNMENT "{$runDir}" &&
+        iniEnabled INDELREALIGNMENT "${runDir}" &&
             PrePostRealignDiffCheck "${runDir}"
         iniEnabled ANNOTATE_VARIANTS "${runDir}" &&
             VcfSliceCheck "${runDir}"
@@ -36,13 +36,13 @@ function iniEnabled() {
     local key=$1 && shift
     local runDir=$1 && shift
     local logsDir=${runDir}/logs
-    local iniFile=$(find "${logsDir}" -name "*.ini")
+    local iniFile=$(find "${logsDir}" -maxdepth 1 -name "*.ini")
     local iniFileCount=$(echo "${iniFile}" | wc -l)
     if [[ ${iniFileCount} -ne 1 ]]; then
         error "No (unique) INI file found!"
     else
         local value=$(grep "^${key}\s+" "${iniFile}" | cut -f2)
-        [[ ${value} == "yes" ]] || return 1
+        [[ ${value} == "yes" ]] || info "${key} disabled" && return 1
     fi
 }
 
