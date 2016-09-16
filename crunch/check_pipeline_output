@@ -115,7 +115,7 @@ function WGSMetricsCheck() {
     local qcstatsDir=${runDir}/QCStats
     local wgsmetricsFile="${qcstatsDir}/WGSMetrics_summary.txt"
     if [[ -e ${wgsmetricsFile} ]]; then
-        maybeOk "$(cut -f 1,3,4,5,8,13 "${wgsmetricsFile}")"
+        maybeOk "$(cut -f 1,3,4,5,8,13 "${wgsmetricsFile}" | column -t)"
     else
         fail "No WGSMetrics file found!"
     fi
@@ -125,7 +125,7 @@ function KinshipCheck() {
     local runDir=$1 && shift
     local kinshipFile=$(find "${runDir}" -maxdepth 1 -mindepth 1 -type f -iname "*.kinship")
     if [[ -n ${kinshipFile} ]]; then
-        maybeOk "$(cut -f 2,4,6,7,8 "${kinshipFile}")"
+        maybeOk "$(cut -f 2,4,6,7,8 "${kinshipFile}" | column -t)"
     else
         fail "No kinship file found!"
     fi
@@ -165,7 +165,7 @@ function error() {
 }
 
 function warn() {
-    log "WARNING" "$1"
+    log "WARN" "$1"
 }
 
 function info() {
