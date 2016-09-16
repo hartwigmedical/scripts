@@ -42,12 +42,7 @@ function iniEnabled() {
         error "No (unique) INI file found!"
     else
         local value=$(grep -E "^${key}\s+" "${iniFile}" | cut -f2)
-        if [[ ${value} == "yes" ]]; then
-            info "${key} disabled"
-            return 1
-        else
-            return 0
-        fi
+        [[ ${value} != "yes" ]] && info "${key} disabled" && return 1 
     fi
 }
 
