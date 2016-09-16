@@ -11,18 +11,39 @@ function main() {
 
         DirsizeCheck "${runDir}"
         PipelineCheckLogCheck "${runDir}"
-        FreecPngCheck "${runDir}"
-        SomaticsMergedCheck "${runDir}"
-        SomaticsMeltedCheck "${runDir}"
-        BamSliceCheck "${runDir}"
-        PrePostRealignDiffCheck "${runDir}"
-        VcfSliceCheck "${runDir}"
+        iniEnabled CNV_FREEC "${runDir}" &&
+            FreecPngCheck "${runDir}"
+        iniEnabled SOMATIC_VARIANTS "${runDir}" &&
+            SomaticsMergedCheck "${runDir}"
+        iniEnabled SOMATIC_VARIANTS "${runDir}" &&
+            SomaticsMeltedCheck "${runDir}"
+        iniEnabled INDELREALIGNMENT "{$runDir}" &&
+            BamSliceCheck "${runDir}"
+        iniEnabled INDELREALIGNMENT "{$runDir}" &&
+            PrePostRealignDiffCheck "${runDir}"
+        iniEnabled ANNOTATE_VARIANTS "${runDir}" &&
+            VcfSliceCheck "${runDir}"
         WGSMetricsCheck "${runDir}"
-        KinshipCheck "${runDir}"
+        iniEnabled KINSHIP "${runDir}" &&
+            KinshipCheck "${runDir}"
         ReadMeCheck "${runDir}"
         echo
     done
     ShowCommands "${runDir}"
+}
+
+function iniEnabled() {
+    local key=$1 && shift
+    local runDir=$1 && shift
+    local logsDir=${runDir}/logs
+    local iniFile=$(find "${logsDir}" -name "*.ini")
+    local iniFileCount=$(echo "${iniFile}" | wc -l)
+    if [[ ${iniFileCount} -ne 1 ]]; then
+        error "No (unique) INI file found!"
+    else
+        local value=$(grep "^${key}\s+" "${iniFile}" | cut -f2)
+        [[ ${value} == "yes" ]] || return 1
+    fi
 }
 
 function FreecPngCheck() {
