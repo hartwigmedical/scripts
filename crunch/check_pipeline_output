@@ -1,112 +1,200 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2155
 
-if [ $# -eq 0 ]; then
+function main() {
+    local runDirs=("$@");
+    echo
+    for runDir in "${runDirs[@]}"; do
+        info "------------------"
+        info " Checking Rundir path: ${runDir}"
+        info "------------------"
+
+        DirsizeCheck "${runDir}"
+        PipelineCheckLogCheck "${runDir}"
+        FreecPngCheck "${runDir}"
+        SomaticsMergedCheck "${runDir}"
+        SomaticsMeltedCheck "${runDir}"
+        BamSliceCheck "${runDir}"
+        PrePostRealignDiffCheck "${runDir}"
+        VcfSliceCheck "${runDir}"
+        WGSMetricsCheck "${runDir}"
+        KinshipCheck "${runDir}"
+        ReadMeCheck "${runDir}"
+        echo
+    done
+    ShowCommands "${runDir}"
+}
+
+function FreecPngCheck() {
+    local runDir=$1 && shift
+    local copynumberDir=${runDir}/copyNumber
+    if [[ -n $(find "${copynumberDir}/*/freec/" -mindepth 1 -maxdepth 1 -iname "*.png" 2>/dev/null) ]]; then
+        ok
+    else
+        fail "No Freec copy number PNG present!"
+    fi
+}
+
+function DirsizeCheck() {
+    local runDir=$1 && shift
+    if [[ ! -d "${runDir}" ]]; then
+        error "Rundir does not exist (${runDir})"
+    else
+        local dirSize=$(du -sh "${runDir}" | cut -f 1)
+        maybeOk "${dirSize}"
+    fi
+}
+
+function PipelineCheckLogCheck() {
+    local runDir=$1 && shift
+    local logsDir=${runDir}/logs
+    local checkFile=${logsDir}/PipelineCheck.log
+    if [[ ! -s "${checkFile}" ]]; then
+        error "${checkFile} does not exist"
+    else
+        info "Version: $(grep "Pipeline version" "${checkFile}" 2>/dev/null)"
+        if tail -1 "${checkFile}" 2>/dev/null | grep -q "pipeline completed successfully"; then
+            ok
+        else
+            fail "Pipeline Error!"
+            cat "${checkFile}"
+        fi
+    fi
+}
+
+function SomaticsMergedCheck() {
+    local runDir=$1 && shift
+    local somaticsDir=${runDir}/somaticVariants
+    if [[ -n $(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -wholename "*_merged_somatics.vcf" 2>/dev/null) ]]; then
+        ok
+    else
+        fail "No merged somatics VCF found!"
+    fi
+}
+
+function SomaticsMeltedCheck() {
+    local runDir=$1 && shift
+    local meltedFile=$(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -wholename "*_melted.vcf" 2>/dev/null | head -1)
+    if [[ -n ${meltedFile} ]]; then
+        local meltedCount=$(wc -l "${meltedFile}" | cut -d" " -f 1)
+        ok "(${meltedCount} lines in file)"
+    else
+        fail "No melted somatics VCF found!"
+    fi
+}
+
+function BamSliceCheck() {
+    local runDir=$1 && shift
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -wholename "*/mapping/*realigned.sliced*.bam" 2>/dev/null) ]]; then
+        ok
+    else
+        fail "No BAM slice found!"
+    fi
+}
+
+function PrePostRealignDiffCheck() {
+    local runDir=$1 && shift
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -wholename "*/mapping/*prepostrealign.diff" 2>/dev/null) ]]; then
+        ok
+    else
+        fail "No PrePostRealignDiff found!"
+    fi
+}
+
+function VcfSliceCheck() {
+    local runDir=$1 && shift
+    if [[ -n $(find "${runDir}" -maxdepth 1 -iname "*sliced*.vcf") ]]; then
+        ok
+    else
+        fail "No VCF slice found!"
+    fi
+}
+
+function WGSMetricsCheck() {
+    local runDir=$1 && shift
+    local qcstatsDir=${runDir}/QCStats
+    local wgsmetricsFile="${qcstatsDir}/WGSMetrics_summary.txt"
+    if [[ -e ${wgsmetricsFile} ]]; then
+        maybeOk "$(cut -f 1,3,4,5,8,13 "${wgsmetricsFile}")"
+    else
+        fail "No WGSMetrics file found!"
+    fi
+}
+
+function KinshipCheck() {
+    local runDir=$1 && shift
+    local kinshipFile=$(find "${runDir}" -maxdepth 1 -mindepth 1 -type f -iname "*.kinship")
+    if [[ -n ${kinshipFile} ]]; then
+        maybeOk "$(cut -f 2,4,6,7,8 "${kinshipFile}")"
+    else
+        fail "No kinship file found!"
+    fi
+}
+
+function ReadMeCheck() {
+    local runDir=$1 && shift
+    local readmeFile=${runDir}/README
+    if [[ -s ${readmeFile} ]]; then
+        maybeOk "$(cat "${readmeFile}")"
+    fi
+}
+
+function ShowCommands() {
+    local runDir=$1 && shift
+    if [[ $(hostname) != "hmf_datastore" ]]; then
+        echo
+        info "Various commands for quick access"
+        info "Commands to copy QCStats to NAS webserver location:"
+        for runDir in "${runDirs[@]}"; do
+            local runName=$(basename "${runDir}")
+            local qcstatsDir=${runDir}/QCStats
+            echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
+        done
+    fi
+}
+
+function log() {
+    local level=$1 && shift
+    local msg=$1 && shift
+    echo "[${level}] ${msg}"
+}
+
+function error() {
+    log "ERROR" "$1"
+    exit 1
+}
+
+function warn() {
+    log "WARNING" "$1"
+}
+
+function info() {
+    log "INFO" "$1"
+}
+
+function ok() {
+    local note=${1+" $1"}
+    info "${FUNCNAME[1]} OK${note}"
+}
+
+function maybeOk() {
+    local data=$1 && shift
+    info "${FUNCNAME[1]}"
+    echo "$data"
+}
+
+function fail() {
+    local cause=$1 && shift
+    warn "${FUNCNAME[1]}: ${cause}"
+}
+
+if [[ $# -eq 0 ]]; then
     echo "---"
     echo " Descr: Performs some checks on certain output files and prints all to screen"
-    echo " Usage: `basename $0` /path/to/pipeline/output/dir/"
-    echo "        `basename $0` /path1 /path2"
+    echo " Usage: $(basename "$0") /path/to/pipeline/output/dir/"
+    echo "        $(basename "$0") /path1 /path2"
     echo "---"
     exit 1
+else
+    main "$@"
 fi
-
-RUN_DIR_PATHS=( "$@" )
-TITLE_STRING='[INFO]'
-
-echo ""
-
-for runDir in "${RUN_DIR_PATHS[@]}"; do
-  echo "------------------"
-  echo " Checking Rundir path: $runDir"
-  echo "------------------"
-  if [ ! -d $runDir ]; then
-    echo "[ERROR] Rundir does not exist ($runDir)"
-    exit 1;
-  fi
-  
-  ## define paths / files
-  runName=`basename $runDir`
-  readmeFile=$runDir/README
-  qcstatsDir=$runDir/QCStats/
-  wgsmetricsFile=$qcstatsDir/WGSMetrics_summary.txt
-  logsDir=$runDir/logs
-  checkFile=$logsDir/PipelineCheck.log
-  kinshipFile=`find $runDir -maxdepth 1 -mindepth 1 -type f -iname "*.kinship"`
-  somaticsDir=$runDir/somaticVariants/
-  copynumberDir=$runDir/copyNumber/
-
-  echo "$TITLE_STRING DirsizeCheck"
-  DIRSIZE=`du -sh $runDir | cut -f 1`
-  echo $DIRSIZE
-
-  echo "$TITLE_STRING PipelineCheckLogCheck"
-  echo "Version: `cat ${checkFile} | grep 'Pipeline version'`"
-  if [[ `tail -1 ${checkFile} | grep 'pipeline completed successfully'` ]]; then echo "OK"
-  else echo "[WARNING] Pipeline Error"; cat $checkFile
-  fi
-
-  echo "$TITLE_STRING FreecPngCheck"
-  if [ `find $copynumberDir/*/freec/ -mindepth 1 -maxdepth 1 -iname "*.png"` ]; then echo "OK" 
-  else echo "[WARNING] no Freec copynumber png present"
-  fi
-
-  echo "$TITLE_STRING SomaticsMergedCheck"
-  if [ `find $somaticsDir -mindepth 2 -maxdepth 2 -wholename "*_merged_somatics.vcf" | head -1` ]; then echo "OK";
-  else echo "[WARNING] No merged somatics VCF found!";
-  fi
-
-  echo "$TITLE_STRING SomaticsMeltedCheck"
-  MELTED_FILE=`find $somaticsDir -mindepth 2 -maxdepth 2 -wholename "*_melted.vcf" | head -1`
-  if [ ${MELTED_FILE} ]; then
-    MELTED_COUNT=`wc -l ${MELTED_FILE} | cut -d" " -f1`;
-    echo "OK (${MELTED_COUNT} lines in file)";
-  else 
-    echo "[WARNING] No melted somatics VCF found!";
-  fi
-
-  echo "$TITLE_STRING BamSliceCheck"
-  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*realigned.sliced*.bam" | head -1` ]; then echo "OK";
-  else echo "[WARNING] No BAM slice found!";
-  fi
-
-  echo "$TITLE_STRING PrePostRealignDiffCheck"
-  if [ `find $runDir -mindepth 3 -maxdepth 3 -wholename "*/mapping/*prepostrealign.diff" | head -1` ]; then echo "OK";
-  else echo "[WARNING] No PrePostRealignDiff found!";
-  fi
-
-  echo "$TITLE_STRING VcfSliceCheck"
-  if [ `find $runDir -maxdepth 1 -iname "*sliced*.vcf" | head -1` ]; then echo "OK";
-  else echo "[WARNING] No VCF slice found!";
-  fi
-  
-  ## prints coverage / duplicates etc (and sample-names)
-  echo "$TITLE_STRING WGSMetricsCheck"
-  if [ -e $wgsmetricsFile ]; then
-    cat $wgsmetricsFile | cut -f 1,3,4,5,8,13
-    #cat $wgsmetricsFile | awk -v OFS='\t' '{print $3,$5,$8,$1}'
-  else echo "[WARNING] No WGSMetrics file found!";
-  fi
-  
-  ## print readme file path if present
-  echo "$TITLE_STRING KinshipCheck"
-  if [[ ! $kinshipFile == '' ]]; then
-    cat $kinshipFile | cut -f 2,4,6,7,8
-  else echo "[WARNING] No kinship file found!";
-  fi
-  
-  ## print readme file path if present
-  if [ -e $readmeFile ]; then
-    echo "===> README file found"
-    echo "cat $readmeFile";
-  fi
-
-  if [ ! `hostname` == "hmf_datastore" ]; then
-    echo ""
-    echo "$TITLE_STRING Various CMD for quick access"
-    echo "===> CMD to copy QCStats to NAS webserver location"
-    echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
-  fi
-
-
-  echo ""
-
-done
