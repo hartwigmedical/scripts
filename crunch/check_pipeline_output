@@ -6,7 +6,6 @@ function main() {
     local totalFailures=0
 
     echo
-    # shellcheck disable=SC2015
     for runDir in "${runDirs[@]}"; do
         info "-----------------------"
         info " Checking Rundir path:  ${runDir}"
@@ -15,20 +14,20 @@ function main() {
         DirsizeCheck "${runDir}" || ((failures++))
         PipelineCheckLogCheck "${runDir}" || ((failures++))
         iniEnabled CNV_FREEC "${runDir}" &&
-            FreecPngCheck "${runDir}" || ((failures++))
+            { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
-            SomaticsMergedCheck "${runDir}" || ((failures++))
+            { SomaticsMergedCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
-            SomaticsMeltedCheck "${runDir}" || ((failures++))
+            { SomaticsMeltedCheck "${runDir}" || ((failures++)); }
         iniEnabled INDELREALIGNMENT "${runDir}" &&
-            BamSliceCheck "${runDir}" || ((failures++))
+            { BamSliceCheck "${runDir}" || ((failures++)); }
         iniEnabled INDELREALIGNMENT "${runDir}" &&
-            PrePostRealignDiffCheck "${runDir}" || ((failures++))
+            { PrePostRealignDiffCheck "${runDir}" || ((failures++)); }
         iniEnabled ANNOTATE_VARIANTS "${runDir}" &&
-            VcfSliceCheck "${runDir}" || ((failures++))
+            { VcfSliceCheck "${runDir}" || ((failures++)); }
         WGSMetricsCheck "${runDir}" || ((failures++))
         iniEnabled KINSHIP "${runDir}" &&
-            KinshipCheck "${runDir}" || ((failures++))
+            { KinshipCheck "${runDir}" || ((failures++)); }
         ReadMeCheck "${runDir}" || ((failures++))
 
         echo
