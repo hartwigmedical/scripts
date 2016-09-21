@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+
+ALIAS_FILE=~/tool_aliases
+TOOL_DIR=/data/tools
+
+function main() {
+    local temp_file="${ALIAS_FILE}.tmp"
+    while IFS= read -r -d '' tool_bin; do
+        local tool_name=$(basename "${tool_bin}")
+        if [[ ${tool_name} == "configure" ]]; then
+            echo "ignoring ${tool_bin}"
+        else
+            echo "alias ${tool_name}='${tool_bin}'" >> "${temp_file}"
+        fi
+    done < <(find "${TOOL_DIR}" -maxdepth 3 -type f -executable -print0)
+    local dups=$(cut -d= -f1 "${temp_file}" | sort | uniq -d)
+    if [[ -n $dups ]]; then
+        echo "WARN: duplicate tools found (not replacing ${ALIAS_FILE}):"
+        echo
+        echo "$dups"
+    else
+        mv "${temp_file}" "${ALIAS_FILE}"
+    fi
+    rm -f "${temp_file}"
+}
+
+main "$@"
