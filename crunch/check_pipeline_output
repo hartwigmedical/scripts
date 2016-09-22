@@ -199,7 +199,7 @@ function ShowCommands() {
         for runDir in "${runDirs[@]}"; do
             local runName=$(basename "${runDir}")
             local qcstatsDir=${runDir}/QCStats
-            echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
+            echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/qc/pipeline/${runName}_QCStats"
         done
     fi
 }
