@@ -1,6 +1,6 @@
 #!/bin/bash
 
-retention-checker=$1
+retentionchecker=$1
 picard=$2
 
 bamfile=$3
@@ -13,12 +13,12 @@ ${picard} SamToFastq I=${bamfile} ODIR=${tmpfastqdir} OPRG=true RGT=ID NON_PF=tr
 
 fastqpath1=$4
 if [ "$#" -eq 4 ]; then
-    ${retention-checker} -fastqpath1 ${fastqpath1} -recreated ${tmpfastqdir}
+    ${retentionchecker} -fastqpath1 ${fastqpath1} -recreated ${tmpfastqdir}
 fi
 
 if [ "$#" -eq 5 ]; then
      fastqpath2=$5
-     ${retention-checker} -fastqpath1 ${fastqpath1} -fastqpath2 ${fastqpath2} -recreated ${tmpfastqdir}
+     ${retentionchecker} -fastqpath1 ${fastqpath1} -fastqpath2 ${fastqpath2} -recreated ${tmpfastqdir}
 fi
 
 rm ${tmpfastqdir}/*.fastq
