@@ -1,5 +1,13 @@
 #!/bin/bash
-for sheet in /data1/illumina_data/*/SampleSheet.csv; do 
+run=$1
+
+if [[ ! $run == "" ]]; then
+    sheets=$run"/SampleSheet.csv"
+else
+    sheets="/data1/illumina_data/*/SampleSheet.csv"
+fi
+    
+for sheet in $sheets; do 
 	currHost=`hostname`
 	currHostShort=`echo $currHost | sed 's/hmf_crunch00/c/g'`
 	runBase=`dirname $sheet`
