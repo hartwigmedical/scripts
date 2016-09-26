@@ -246,11 +246,16 @@ foreach my $row ( $lane_table->rows ) {
 ## Setup output-data per Sample and Lane
 ## --------------------
 my $samplesYield = getAggregateValue( 'yield', $stats{ 'yield' }{ 'totals' } );
+my $samplesQ30 = getAggregateValue( 'q30', $stats{ 'q30' }{ 'totals' } );
 my $undetYield = $flowcellYield - $samplesYield;
 print "## [INFO] Flowcell Total Yield = $flowcellYield\n";
-print "## [INFO] Samples Total Yield = $samplesYield\n";
+#print "## [INFO] Samples Total Yield = $samplesYield\n";
 print "## [INFO] Undetermined Yield = $undetYield\n";
+print "## [INFO] Samples Av Q30 = $samplesQ30\n";
 print "## [INFO] Passing Filter Clusters % = $flowcellPercClustersPF\n";
+my @runOverviewVals = ( $flowcellYield, $undetYield, $samplesQ30, $flowcellPercClustersPF );
+print "## [INFO] Next line can be pasted into runOverview sheet:\n";
+print "## [INFO] ".join( "\t", @runOverviewVals )."\n";
 
 my %meanStatsPerSample = ();
 my %meanStatsPerLane = ();
