@@ -1,0 +1,4 @@
+# From Ies, the definition to extract all non-synonymous mutations from our melted VCF.
+# Descriptive definition: The non-synonymous calls should be single nucleotide changes which changes an amino acid code. So no indels, STOPS, splice etc.
+
+java -Xmx4g -jar SnpSift.jar filter -f somatic_melted.vcf "ANN[*].EFFECT has 'missense_variant'" | grep -cv '#'
