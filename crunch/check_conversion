@@ -35,7 +35,7 @@ cat $CONV_E | tail -1;
 #echo ""
 
 echo "$SEPSTR NAS CMD"
-echo "rsync -ah --stats ./Data/Intensities/BaseCalls/Reports/html/* nas:/volume1/web/testwebsite/qc/conversion/$RUNNAS"
+echo "rsync -ah --stats ./Data/Intensities/BaseCalls/Reports/html/* nas:/volume1/web/qc/conversion/$RUNNAS"
 
 ## print readme file path if present
 README_FILE=$RUNDIR"/README"

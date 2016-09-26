@@ -83,7 +83,8 @@ function PipelineCheckLogCheck() {
     local logsDir=${runDir}/logs
     local checkFile=${logsDir}/PipelineCheck.log
     if [[ ! -s "${checkFile}" ]]; then
-        error "${checkFile} does not exist"
+        fail "${checkFile} does not exist"
+        return 1
     else
         info "Version: $(grep "Pipeline version" "${checkFile}" 2>/dev/null)"
         if tail -1 "${checkFile}" 2>/dev/null | grep -q "pipeline completed successfully"; then
@@ -199,7 +200,7 @@ function ShowCommands() {
         for runDir in "${runDirs[@]}"; do
             local runName=$(basename "${runDir}")
             local qcstatsDir=${runDir}/QCStats
-            echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/testwebsite/qc/pipeline/${runName}_QCStats"
+            echo "rsync -ahP --stats ${qcstatsDir} nas:/volume1/web/qc/pipeline/${runName}_QCStats"
         done
     fi
 }
