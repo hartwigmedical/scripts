@@ -106,7 +106,8 @@ function CoreDumpCheck() {
         ok
         return 0
     else
-        fail "Found core dump(s): ${coreDumpFiles}"
+        # remove newlines via echo
+        fail "Found core dump(s): $(echo ${coreDumpFiles})"
         return 1
     fi
 }
