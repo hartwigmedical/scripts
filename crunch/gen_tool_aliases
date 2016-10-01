@@ -5,8 +5,8 @@ set -o pipefail
 set -o nounset
 
 function main() {
-    local tool_dir=${1:-/data/tools} && shift
-    local alias_file=${1:-~/tool_aliases} && shift
+    local tool_dir=${1:-/data/tools}
+    local alias_file=${2:-~/tool_aliases}
 
     if [[ ! -d "${tool_dir}" ]]; then
         echo "ERROR: ${tool_dir} is not a directory"
