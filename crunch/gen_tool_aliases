@@ -27,12 +27,12 @@ function main() {
         else
             echo "alias ${tool_name}='${tool_bin}'" >> "${temp_file}"
         fi
-    done < <(find "${tool_dir}" -maxdepth 3 -type f -executable -printf '%T@\t%p\0' | sort -zk 1nr | awk 'BEGIN { RS = "\0" } { print $2 }')
+    done < <(find "${tool_dir}" -maxdepth 3 -type f -executable -printf '%T@\t%p\0' | sort -zk 1nr | awk 'BEGIN { RS = "\0"; ORS = "\0" } { print $2 }')
 
     if [[ -s "${temp_file}" ]]; then
         local dups
         dups=$(cut -d= -f1 "${temp_file}" | sort | uniq -d)
-        if [[ -z "$force" && -n $dups ]]; then
+        if [[ -z "${force:-}" && -n "${dups}" ]]; then
             echo "WARN: duplicate tools found (not replacing ${alias_file}):"
             echo
             echo "$dups"
