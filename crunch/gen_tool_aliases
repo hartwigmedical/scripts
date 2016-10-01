@@ -23,7 +23,7 @@ function main() {
         local tool_name
         tool_name=$(basename "${tool_bin}")
         if [[ ${tool_name} == "configure" ]]; then
-            echo "ignoring ${tool_bin}"
+            echo "INFO: ignoring ${tool_bin}"
         else
             echo "alias ${tool_name}='${tool_bin}'" >> "${temp_file}"
         fi
