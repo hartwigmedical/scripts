@@ -6,6 +6,11 @@ set -o nounset
 
 function main() {
     local tool_dir=${1:-/data/tools}
+    if [[ "$tool_dir" == "-f" ]]; then
+           local force=true
+           shift
+           tool_dir=${1:-/data/tools}
+    fi
     local alias_file=${2:-~/tool_aliases}
 
     if [[ ! -d "${tool_dir}" ]]; then
@@ -22,15 +27,17 @@ function main() {
         else
             echo "alias ${tool_name}='${tool_bin}'" >> "${temp_file}"
         fi
-    done < <(find "${tool_dir}" -maxdepth 3 -type f -executable -print0)
+    done < <(find "${tool_dir}" -maxdepth 3 -type f -executable -printf '%T@\t%p\0' | sort -zk 1nr | awk 'BEGIN { RS = "\0" } { print $2 }')
 
     if [[ -s "${temp_file}" ]]; then
         local dups
         dups=$(cut -d= -f1 "${temp_file}" | sort | uniq -d)
-        if [[ -n $dups ]]; then
+        if [[ -z "$force" && -n $dups ]]; then
             echo "WARN: duplicate tools found (not replacing ${alias_file}):"
             echo
             echo "$dups"
+            echo
+            echo "INFO: supply -f as first argument to force most recently modified file to be used"
         else
             mv "${temp_file}" "${alias_file}"
         fi
