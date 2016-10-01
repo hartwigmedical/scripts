@@ -7,7 +7,7 @@ set -o nounset
 ALIAS_FILE=~/tool_aliases
 
 function main() {
-    if [[ "$1" == "-f" ]]; then
+    if [[ "${1:-}" == "-f" ]]; then
            local force=true
            shift
     fi
@@ -47,7 +47,7 @@ function main() {
         fi
         rm -f "${temp_file}"
     else
-        echo "WARN: no tools found"
+        echo "WARN: no tools found (did you specify a directory?)"
     fi
 }
 
