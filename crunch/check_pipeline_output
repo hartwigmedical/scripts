@@ -13,6 +13,7 @@ function main() {
 
         DirsizeCheck "${runDir}" || ((failures++))
         PipelineCheckLogCheck "${runDir}" || ((failures++))
+        CoreDumpCheck "${runDir}" || ((failures++))
         iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
@@ -95,6 +96,19 @@ function PipelineCheckLogCheck() {
             cat "${checkFile}"
             return 1
         fi
+    fi
+}
+
+function CoreDumpCheck() {
+    local runDir=$1 && shift
+    local coreDumpFiles=$(find "${runDir}" -type f -name "core.*" 2>/dev/null)
+    if [[ -z "${coreDumpFiles}" ]]; then
+        ok
+        return 0
+    else
+        # remove newlines via echo
+        fail "Found core dump(s): $(echo ${coreDumpFiles})"
+        return 1
     fi
 }
 

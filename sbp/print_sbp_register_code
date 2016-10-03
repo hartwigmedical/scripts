@@ -41,6 +41,7 @@ foreach my $setpath ( @sets_dirs ){
     $setpath =~ s/\/$//g; # remove trainling slash
     my ( $setname ) = fileparse( $setpath );
 
+    ## Case: CPCT patient
     if ( $setname =~ m/$regex_cpct/ ){
     
         my ( $date, $group, $bcref, $bctum, $patient ) =  ($1, $2, $3, $4, $5 );
@@ -61,6 +62,10 @@ foreach my $setpath ( @sets_dirs ){
         my $refsample = `ls $setpath/$bcref/ | head -1 | grep -Po "^[^_]+"`;
         my $tumsample = `ls $setpath/$bctum/ | head -1 | grep -Po "^[^_]+"`;
         chomp( $refsample, $tumsample );
+
+        ## sanity checks
+        die "[ERROR] Ref and Tum bc cannot be the same! ($setname)\n" if ( $bcref eq $bctum );
+        die "[ERROR] Ref and Tum sample cannot be the same! ($refsample)\n" if ( $refsample eq $tumsample );
 
         my $cmd = join( " ", 
 	    $api_script, 
