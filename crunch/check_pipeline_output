@@ -14,7 +14,7 @@ function main() {
         DirsizeCheck "${runDir}" || ((failures++))
         PipelineCheckLogCheck "${runDir}" || ((failures++))
         CoreDumpCheck "${runDir}" || ((failures++))
-        UnhandledErrorsCheck "${runDir}" || ((failures++))
+        UnhandledJobErrorsCheck "${runDir}" || ((failures++))
         iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
@@ -114,7 +114,7 @@ function CoreDumpCheck() {
     fi
 }
 
-function CoreDumpCheck() {
+function UnhandledJobErrorsCheck() {
     local runDir=$1 && shift
     local unhandledErrorLog=${runDir}/log/unhandled_job_errors
     if [[ -s "${unhandledErrorLog}" ]]; then
