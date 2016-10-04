@@ -116,9 +116,10 @@ function CoreDumpCheck() {
 
 function UnhandledJobErrorsCheck() {
     local runDir=$1 && shift
-    local unhandledErrorLog=${runDir}/log/unhandled_job_errors
+    local unhandledErrorLog=${runDir}/logs/unhandled_job_errors
     if [[ -s "${unhandledErrorLog}" ]]; then
-        fail "Found unhandled errors in ${unhandledErrorLog}"
+        local errorLineCount=$(wc -l "${unhandledErrorLog}" | cut -d" " -f 1)
+        fail "Found unhandled errors in ${unhandledErrorLog} (${errorLineCount} lines in file)"
         return 1
     else
         ok
