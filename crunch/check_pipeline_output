@@ -14,6 +14,7 @@ function main() {
         DirsizeCheck "${runDir}" || ((failures++))
         PipelineCheckLogCheck "${runDir}" || ((failures++))
         CoreDumpCheck "${runDir}" || ((failures++))
+        UnhandledErrorsCheck "${runDir}" || ((failures++))
         iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
@@ -110,6 +111,18 @@ function CoreDumpCheck() {
         # remove newlines via echo
         fail "Found core dump(s): $(echo ${coreDumpFiles})"
         return 1
+    fi
+}
+
+function CoreDumpCheck() {
+    local runDir=$1 && shift
+    local unhandledErrorLog=${runDir}/log/unhandled_job_errors
+    if [[ -s "${unhandledErrorLog}" ]]; then
+        fail "Found unhandled errors in ${unhandledErrorLog}"
+        return 1
+    else
+        ok
+        return 0
     fi
 }
 
