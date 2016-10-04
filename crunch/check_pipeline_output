@@ -45,13 +45,14 @@ function iniEnabled() {
     local key=$1 && shift
     local runDir=$1 && shift
     local logsDir=${runDir}/logs
-    local iniFile=$(find "${logsDir}" -maxdepth 1 -name "*.ini")
-    local iniFileCount=$(echo "${iniFile}" | wc -l)
-    if [[ ${iniFileCount} -ne 1 ]]; then
-        error "No (unique) INI file found!"
+    local iniFiles=$(find "${logsDir}" -maxdepth 1 -type f -name "*.ini")
+    if [[ -z "${iniFiles}" ]]; then
+        error "No INI file found!"
     else
-        local value=$(grep -E "^${key}\s+" "${iniFile}" | cut -f2)
-        [[ ${value} != "yes" ]] && info "${key} disabled" && return 1
+        local values=$(grep -hE "^${key}\s+" ${iniFiles} | cut -f2 | sort | uniq)
+        local valueCount=$(echo "${values}" | wc -l)
+        [[ ${valueCount} -ne 1 ]] && error "${key} has multiple values: $(echo ${values})"
+        [[ ${values} != "yes" ]] && info "${key} disabled" && return 1
         return 0
     fi
 }
@@ -59,7 +60,7 @@ function iniEnabled() {
 function FreecPngCheck() {
     local runDir=$1 && shift
     local copynumberDir=${runDir}/copyNumber
-    if [[ -n $(find "${copynumberDir}"/*/freec/ -mindepth 1 -maxdepth 1 -iname "*.png" -size +0 2>/dev/null) ]]; then
+    if [[ -n $(find "${copynumberDir}"/*/freec/ -mindepth 1 -maxdepth 1 -type f -iname "*.png" -size +0 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -115,7 +116,7 @@ function CoreDumpCheck() {
 function SomaticsMergedCheck() {
     local runDir=$1 && shift
     local somaticsDir=${runDir}/somaticVariants
-    if [[ -n $(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -wholename "*_merged_somatics.vcf" -size +0 2>/dev/null) ]]; then
+    if [[ -n $(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -type f -wholename "*_merged_somatics.vcf" -size +0 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -127,7 +128,7 @@ function SomaticsMergedCheck() {
 function SomaticsMeltedCheck() {
     local runDir=$1 && shift
     local somaticsDir=${runDir}/somaticVariants
-    local meltedFile=$(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -wholename "*_melted.vcf" -size +0 2>/dev/null | head -1)
+    local meltedFile=$(find "${somaticsDir}" -mindepth 2 -maxdepth 2 -type f -wholename "*_melted.vcf" -size +0 2>/dev/null | head -1)
     if [[ -n ${meltedFile} ]]; then
         local meltedCount=$(wc -l "${meltedFile}" | cut -d" " -f 1)
         ok "(${meltedCount} lines in file)"
@@ -140,7 +141,7 @@ function SomaticsMeltedCheck() {
 
 function BamSliceCheck() {
     local runDir=$1 && shift
-    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -wholename "*/mapping/*realigned.sliced*.bam" -size +0 2>/dev/null) ]]; then
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*realigned.sliced*.bam" -size +0 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -151,7 +152,7 @@ function BamSliceCheck() {
 
 function PrePostRealignDiffCheck() {
     local runDir=$1 && shift
-    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -wholename "*/mapping/*prepostrealign.diff" 2>/dev/null) ]]; then
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*prepostrealign.diff" 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -162,7 +163,7 @@ function PrePostRealignDiffCheck() {
 
 function VcfSliceCheck() {
     local runDir=$1 && shift
-    if [[ -n $(find "${runDir}" -maxdepth 1 -iname "*sliced*.vcf" -size +0 2>/dev/null) ]]; then
+    if [[ -n $(find "${runDir}" -maxdepth 1 -type f -iname "*sliced*.vcf" -size +0 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -260,7 +261,7 @@ if [[ $# -eq 0 ]]; then
     echo " Usage: $(basename "$0") /path/to/pipeline/output/dir/"
     echo "        $(basename "$0") /path1 /path2"
     echo "---"
-    exit 1
+#    exit 1
 else
     main "$@"
 fi
