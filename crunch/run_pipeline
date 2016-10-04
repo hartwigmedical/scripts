@@ -64,7 +64,7 @@ function main() {
 
     write_metadata "${input}" "${output}"
 
-    "/data/repos/${pipeline}/illumina_pipeline.pl" settings.config > submitlog_test
+    "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
 }
 
 function choose_input_mode() {
