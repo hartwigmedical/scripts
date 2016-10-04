@@ -207,7 +207,7 @@ function ReadMeCheck() {
 
 function ShowCommands() {
     local runDir=$1 && shift
-    if [[ $(hostname) != "hmf_datastore" ]]; then
+    if [[ $(hostname) =~ "hmf_crunch" ]]; then
         echo
         info "Various commands for quick access"
         info "Commands to copy QCStats to NAS webserver location:"
