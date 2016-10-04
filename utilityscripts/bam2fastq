@@ -1,0 +1,54 @@
+#!/bin/bash
+
+MEM_USE=50
+PIGZ_THREADS=8
+PICARD_DIR=/data/common/tools/picard-tools_v1.135
+OUT_DIR=./fastq
+IN_BAM=$1
+
+if [[ ${IN_BAM} == "" || ${IN_BAM} == "-h" || ${IN_BAM} == "--help" ]]; then
+    echo "-----"
+    echo " Usage: `basename $0` <BAM_FILE>"
+    echo " Output will be in ${OUT_DIR}"
+    echo " Using Picard dir ${PICARD_DIR}"
+    echo "-----"
+    exit 1
+fi
+
+IN_BAM_NAME=`basename ${IN_BAM}`
+OUT_BASE=`dirname ${OUT_DIR}`
+
+## ---------------
+## sanity checks
+if [[ ! -d ${PICARD_DIR} ]]; then echo "[ERROR] Picard dir not found (${PICARD_DIR})"; exit 1; fi
+if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${BAM_FILE})"; exit 1; fi
+if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
+
+## ---------------
+if [[ -d ${OUT_DIR} ]]; then
+    echo "[ERROR] output dir exists, will not overwrite"
+    exit 1
+else
+    echo "[INFO] Creating output dir (${OUT_DIR})"; 
+    mkdir ${OUT_DIR}; 
+fi
+
+echo "[INFO] Running SamToFastq for bam file: $IN_BAM_NAME"
+java -Xmx${MEM_USE}g -jar ${PICARD_DIR}/picard.jar SamToFastq ODIR=${OUT_DIR} OPRG=true RGT=ID NON_PF=true RC=true I=${IN_BAM}
+
+echo "[INFO] About to rename fastq files"
+for fastq_path in ${OUT_DIR}/*fastq; do 
+
+    fastq_old=`basename ${fastq_path}`
+    fastq_new=`echo ${fastq_old} | sed 's#\.fastq##g' - | awk 'BEGIN { FS = "_" } ; { print $1"_"$2"_"$3"_"$4"_R"$6"_"$5".fastq" }'`
+   
+    mv ${fastq_path} ${OUT_DIR}/${fastq_new}
+    echo "[INFO] ${fastq_old} renamed to ${fastq_new}"
+
+done
+
+echo "[INFO] gzipping fastq files...(using pigz)"
+pigz -p ${PIGZ_THREADS} ${OUT_DIR}/*.fastq
+
+echo "[INFO] Output fastq can be found in ${OUT_DIR}"
+ls ${OUT_DIR}
