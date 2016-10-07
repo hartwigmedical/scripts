@@ -15,7 +15,8 @@ sub usage{
 
 my $api_script = 'register_sets.sh';
 my $cpct_entities_file = '/home/sbp/hmfupload/cpct_entities.tsv';
-my $regex_cpct = '^(\d{6})_(.+)_(.+)_(.+)_(.+)$';
+my $setname_regex_cpct = '^(\d{6})_(.+)_(.+)_(.+)_(CPCT.+)$';
+my $setname_regex_giab = '^(\d{6})_(VAL.+)_(.+)_(.+)$';
 my @sets_dirs = `ls -d $uploaddir/*`;
 chomp @sets_dirs;
 if ( $ARGV[0] ){
@@ -42,7 +43,7 @@ foreach my $setpath ( @sets_dirs ){
     my ( $setname ) = fileparse( $setpath );
 
     ## Case: CPCT patient
-    if ( $setname =~ m/$regex_cpct/ ){
+    if ( $setname =~ m/$setname_regex_cpct/ ){
     
         my ( $date, $group, $bcref, $bctum, $patient ) =  ($1, $2, $3, $4, $5 );
         my $ini = 'CPCT.ini';
@@ -73,13 +74,32 @@ foreach my $setpath ( @sets_dirs ){
 	    '-r', $refsample, 
 	    '-t', $tumsample, 
 	    '-i', $ini, 
+        '-e', $entityname,
+        ); 
+        push( @toprint, $cmd );
+        $counter++;
+    }
+    elsif ( $setname =~ m/$setname_regex_giab/ ){
+        my ( $date, $svalid, $pipelineversion, $settingsname ) =  ($1, $2, $3, $4 );
+        my $ini = 'SingleSample.ini';
+        my $entityname = 'HMF_VALIDATION';
+        
+        my $refsample = `ls $setpath/*/ | head -1 | grep -Po "^[^_]+"`;
+        chomp( $refsample );
+        
+        my $cmd = join( " ", 
+	    $api_script, 
+	    '-s', $setname, 
+	    '-r', $refsample, 
+	    '-t', 'NA', 
+	    '-i', $ini, 
             '-e', $entityname,
         ); 
         push( @toprint, $cmd );
-	$counter++;
-    }    
+        $counter++;
+	}  
     else{
-        die "[ERROR] regex cannot parse the setname ($setname)\n";
+        die "[ERROR] regexes cannot parse the setname ($setname)\n";
     }
 }
 
