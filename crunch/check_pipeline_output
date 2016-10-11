@@ -15,7 +15,8 @@ function main() {
         PipelineCheckLogCheck "${runDir}" || ((failures++))
         CoreDumpCheck "${runDir}" || ((failures++))
         UnhandledJobErrorsCheck "${runDir}" || ((failures++))
-        iniEnabled CNV_FREEC "${runDir}" &&
+        iniEnabled COPY_NUMBER "${runDir}" &&
+            iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
             { SomaticsMergedCheck "${runDir}" || ((failures++)); }
@@ -170,7 +171,7 @@ function PrePostRealignDiffCheck() {
         ok
         return 0
     else
-        fail "No PrePostRealignDiff found!"
+        fail "No prepostrealign.diff found!"
         return 1
     fi
 }
