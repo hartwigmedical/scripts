@@ -19,13 +19,20 @@ function main() {
             iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
-            { SomaticsMergedCheck "${runDir}" || ((failures++)); }
-        iniEnabled SOMATIC_VARIANTS "${runDir}" &&
-            { SomaticsMeltedCheck "${runDir}" || ((failures++)); }
+            {
+                SomaticsMergedCheck "${runDir}" || ((failures++));
+                SomaticsMeltedCheck "${runDir}" || ((failures++));
+            }
         iniEnabled INDELREALIGNMENT "${runDir}" &&
-            { BamSliceCheck "${runDir}" || ((failures++)); }
-        iniEnabled INDELREALIGNMENT "${runDir}" &&
-            { PrePostRealignDiffCheck "${runDir}" || ((failures++)); }
+            {
+                BamSliceCheck "${runDir}" "realigned" || ((failures++));
+                PrePostDiffCheck "${runDir}" "realign" || ((failures++));
+            }
+        iniEnabled BASEQUALITYRECAL "${runDir}" &&
+            {
+                BamSliceCheck "${runDir}" "recalibrated" || ((failures++));
+                PrePostDiffCheck "${runDir}" "recal" || ((failures++));
+            }
         iniEnabled ANNOTATE_VARIANTS "${runDir}" &&
             { VcfSliceCheck "${runDir}" || ((failures++)); }
         WGSMetricsCheck "${runDir}" || ((failures++))
@@ -156,7 +163,8 @@ function SomaticsMeltedCheck() {
 
 function BamSliceCheck() {
     local runDir=$1 && shift
-    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*realigned.sliced*.bam" -size +0 2>/dev/null) ]]; then
+    local type=$1 && shift
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*${type}.sliced*.bam" -size +0 2>/dev/null) ]]; then
         ok
         return 0
     else
@@ -165,13 +173,14 @@ function BamSliceCheck() {
     fi
 }
 
-function PrePostRealignDiffCheck() {
+function PrePostDiffCheck() {
     local runDir=$1 && shift
-    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*prepostrealign.diff" 2>/dev/null) ]]; then
+    local type=$1 && shift
+    if [[ -n $(find "${runDir}" -mindepth 3 -maxdepth 3 -type f -wholename "*/mapping/*prepost${type}.diff" 2>/dev/null) ]]; then
         ok
         return 0
     else
-        fail "No prepostrealign.diff found!"
+        fail "No prepost${type}.diff found!"
         return 1
     fi
 }
