@@ -6,7 +6,7 @@ from xml.dom.minidom import parse
 
 DATA_DIRS=[
     '/data1/illumina_data/',
-    #'/data1/illumina_data/NextSeqData/'
+    '/data1/illumina_data/NextSeqData/'
 ]
 
 
