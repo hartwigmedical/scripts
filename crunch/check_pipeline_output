@@ -15,6 +15,7 @@ function main() {
         PipelineCheckLogCheck "${runDir}" || ((failures++))
         CoreDumpCheck "${runDir}" || ((failures++))
         UnhandledJobErrorsCheck "${runDir}" || ((failures++))
+        SubmitLogErrorsCheck "${runDir}" || ((failures++))
         iniEnabled COPY_NUMBER "${runDir}" &&
             iniEnabled CNV_FREEC "${runDir}" &&
             { FreecPngCheck "${runDir}" || ((failures++)); }
@@ -133,6 +134,21 @@ function UnhandledJobErrorsCheck() {
         ok
         return 0
     fi
+}
+
+function SubmitLogErrorsCheck() {
+    local runDir=$1 && shift
+    local logsDir=${runDir}/logs
+    local submitErrorLogs=$(find "${logsDir}" -maxdepth 1 -type f -name "submitlog*.err")
+    for submitErrorLog in $submitErrorLogs; do
+        if [[ -s "${submitErrorLog}" ]]; then
+            local errorLineCount=$(wc -l "${submitErrorLog}" | cut -d" " -f 1)
+            fail "Found submitlog errors in ${submitErrorLog} (${errorLineCount} lines in file)"
+            return 1
+        fi
+    done
+    ok
+    return 0
 }
 
 function SomaticsMergedCheck() {
