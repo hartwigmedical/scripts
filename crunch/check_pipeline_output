@@ -17,8 +17,12 @@ function main() {
         UnhandledJobErrorsCheck "${runDir}" || ((failures++))
         SubmitLogErrorsCheck "${runDir}" || ((failures++))
         iniEnabled COPY_NUMBER "${runDir}" &&
-            iniEnabled CNV_FREEC "${runDir}" &&
-            { FreecPngCheck "${runDir}" || ((failures++)); }
+            {
+                iniEnabled CNV_FREEC "${runDir}" &&
+                    { FreecPngCheck "${runDir}" || ((failures++)); };
+                iniEnabled CNV_QDNASEQ "${runDir}" &&
+                    { QdnaSeqPngCheck "${runDir}" || ((failures++)); };
+            }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
             {
                 SomaticsMergedCheck "${runDir}" || ((failures++));
@@ -69,13 +73,38 @@ function iniEnabled() {
 
 function FreecPngCheck() {
     local runDir=$1 && shift
-    local copynumberDir=${runDir}/copyNumber
-    if [[ -n $(find "${copynumberDir}"/*/freec/ -mindepth 1 -maxdepth 1 -type f -iname "*.png" -size +0 2>/dev/null) ]]; then
+    if PngCheck "$runDir" "freec" 1
+    then
         ok
         return 0
     else
-        fail "No non-empty Freec copy number PNG present!"
+        fail "Found $((255 - $?)) non-empty Freec copy number PNGs!"
         return 1
+    fi
+}
+
+function QDnaSeqPngCheck() {
+    local runDir=$1 && shift
+    if PngCheck "$runDir" "qdnaseq" 1
+    then
+        ok
+        return 0
+    else
+        fail "Found $((255 - $?)) non-empty QDnaSeq copy number PNGs!"
+        return 1
+    fi
+}
+
+function PngCheck() {
+    local runDir=$1 && shift
+    local cnv_name=$1 && shift
+    local wanted=$1 &&shift
+    local copynumberDir=${runDir}/copyNumber
+    local count=$(find "${copynumberDir}"/*/"${cnv_name}"/ -mindepth 1 -maxdepth 1 -type f -iname "*.png" -size +0 2>/dev/null | wc -l)
+    if [[ ${count} -eq ${wanted} ]]; then
+        return 0
+    else
+        return $((255 - count))
     fi
 }
 
