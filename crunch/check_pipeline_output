@@ -85,7 +85,7 @@ function FreecPngCheck() {
 
 function QDnaSeqPngCheck() {
     local runDir=$1 && shift
-    if PngCheck "$runDir" "qdnaseq" 1
+    if PngCheck "$runDir" "qdnaseq" 2
     then
         ok
         return 0
