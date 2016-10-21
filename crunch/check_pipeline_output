@@ -21,7 +21,7 @@ function main() {
                 iniEnabled CNV_FREEC "${runDir}" &&
                     { FreecPngCheck "${runDir}" || ((failures++)); };
                 iniEnabled CNV_QDNASEQ "${runDir}" &&
-                    { QdnaSeqPngCheck "${runDir}" || ((failures++)); };
+                    { QDnaSeqPngCheck "${runDir}" || ((failures++)); };
             }
         iniEnabled SOMATIC_VARIANTS "${runDir}" &&
             {
