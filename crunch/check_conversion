@@ -10,7 +10,7 @@ RUNNAM=`basename $RUNDIR`
 SSHEET=$RUNDIR'/SampleSheet.csv'
 CONV_L=$RUNDIR'/conversionLog.txt'
 CONV_E=$RUNDIR'/conversionError.txt'
-RUNHMF=`cat $SSHEET | grep 'ExperimentName' | cut -d',' --output-delimiter ': ' -f 2`
+RUNHMF=`cat $SSHEET | grep -P '^Experiment' | cut -d',' --output-delimiter ': ' -f 2`
 RUNNAS=$RUNHMF'__'$RUNNAM
 
 echo "";
