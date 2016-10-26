@@ -23,7 +23,7 @@ for designFile in "${designs[@]}";
 do 
     designName=$( echo $designFile | sed 's/_design\.vcf//' )
     designPath=${DESIGN_DIR}'/'${designFile}
-    outFile="${sampleName}_${designName}.vcf"
+    outFile="${sampleName}_${designName}_snpcheck.vcf"
     echo "[INFO] Genotying by ${designName} for ${sampleName} to ${outFile}"
     java -Xms2g -Xmx9g -jar ${GATK_JAR} -T UnifiedGenotyper -R ${REF_FASTA} -L ${designPath} --output_mode EMIT_ALL_SITES -I ${bamPath} -o ${outFile}
 done
