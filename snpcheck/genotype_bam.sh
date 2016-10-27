@@ -5,8 +5,8 @@ REF_FASTA='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 DESIGN_DIR=$( dirname $0 )
 
 designs=( 
-    '32SNPtaqman_design.vcf'
-    '64SNPtaqman_design.vcf'
+    '32SNPtaq_design.vcf'
+    '64SNPtaq_design.vcf'
     '81SNPmip_design.vcf'
 )
 
