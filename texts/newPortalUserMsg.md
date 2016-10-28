@@ -18,7 +18,7 @@ The HMF Team
 ### What to do after successful login:
 Once logged in you will have access to data from your group or center. For each sample/patient certain files can be downloaded by creating links (valid for 24 hours). The links can be used to download (via browser or standard tools like WGET/cURL) or directly read into a program like IGV (Integrative Genome Browser).
 
-### Example download using WGET:
+**Example download using WGET:**
 - create the links (by clicking the most right icon next to a run)
 - copy the links into a new text file (eg download.txt)
 - use the following command to download: 
@@ -26,7 +26,7 @@ Once logged in you will have access to data from your group or center. For each 
 wget --content-disposition -i download.txt
 ```
 
-### Example loading BAM file in IGV:
+**Example loading BAM file in IGV:**
 - create the links for the BAM and accompanying BAI file (by clicking the most right icon next to a run)
 - open the IGV program and choose "Load from URL"
 - paste the BAM file link at "File URL"
