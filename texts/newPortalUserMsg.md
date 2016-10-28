@@ -4,7 +4,7 @@ Dear client,
 
 We are about to setup an account for you at our download portal. This email provides you with information to have a quick start.
 
-Regards,
+Regards,  
 The HMF Team
 
 
