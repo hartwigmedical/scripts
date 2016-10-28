@@ -16,6 +16,8 @@ function main() {
         CoreDumpCheck "${runDir}" || ((failures++))
         UnhandledJobErrorsCheck "${runDir}" || ((failures++))
         SubmitLogErrorsCheck "${runDir}" || ((failures++))
+        WGSMetricsCheck "${runDir}" || ((failures++))
+
         iniEnabled COPY_NUMBER "${runDir}" &&
             {
                 iniEnabled CNV_FREEC "${runDir}" &&
@@ -40,9 +42,11 @@ function main() {
             }
         iniEnabled ANNOTATE_VARIANTS "${runDir}" &&
             { VcfSliceCheck "${runDir}" || ((failures++)); }
-        WGSMetricsCheck "${runDir}" || ((failures++))
+        iniEnabled EXONCALLCOV "$runDir" &&
+            { ExonCovCheck "$runDir" || ((failures++)); }
         iniEnabled KINSHIP "${runDir}" &&
             { KinshipCheck "${runDir}" || ((failures++)); }
+
         ReadMeCheck "${runDir}" || ((failures++))
 
         echo
@@ -250,6 +254,25 @@ function WGSMetricsCheck() {
         return 0
     else
         fail "No non-empty WGSMetrics file found!"
+        return 1
+    fi
+}
+
+function ExonCovCheck() {
+    local runDir=$1 && shift
+    local exonCovDir=${runDir}/QCStats/exoncov
+    # TODO: should also include error_file.out, or combine files, but currently always contains errors
+    if [ -s "${exonCovDir}/error_collection_run" ]; then
+        fail "ExonCov had errors"
+        return 1
+    fi
+
+    local exonCovCount=$(find "${exonCovDir}" -maxdepth 1 -type f -name "*.html" -size +0 2>/dev/null | wc -l)
+    if [[ ${exonCovCount} -gt 0 ]]; then
+        maybeOk "Found ${exonCovCount} ExonCov HTML files"
+        return 0
+    else
+        fail "No non-empty ExonCov files found!"
         return 1
     fi
 }
