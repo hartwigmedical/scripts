@@ -6,7 +6,7 @@ DESIGN_DIR=$( dirname $0 )
 
 designs=( 
     '32SNPtaq_design.vcf'
-    '64SNPtaq_design.vcf'
+    '59SNPtaq_design.vcf'
     '81SNPmip_design.vcf'
 )
 
