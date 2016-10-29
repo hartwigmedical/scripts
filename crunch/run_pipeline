@@ -100,9 +100,9 @@ function write_metadata() {
         return
     fi
 
-    for path in "${input}"/*/; do
+    for path in $(find "${input}" -name "*.fastq.gz"); do
         local dir=$(basename "${path}")
-        if [[ ${dir} =~ ^(CPCT[0-9]{8})([RT])$ ]]; then
+        if [[ ${dir} =~ ^(CPCT[0-9]{8})([RT])_ ]]; then
             samples[${BASH_REMATCH[2]}]=${BASH_REMATCH[1]}
         fi
     done
