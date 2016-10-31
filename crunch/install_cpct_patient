@@ -29,12 +29,6 @@ if [ ! -d $runDir ]; then
   exit 1;
 fi
 
-## check submissions data dir
-if [ ! -d $submDataDir ]; then 
-  echo "[ERROR] Submission data dir does not exist ($submDataDir)"
-  exit 1;
-fi
-
 ## moves dir to processed archive
 echo "sudo mv $runDir $archive"
 
@@ -42,7 +36,11 @@ echo "sudo mv $runDir $archive"
 echo "sudo chown -R root:root $newRunDir"
 
 ## symlink code
-echo "ln -s $newRunDir $submDataDir"
+if [ -d $submDataDir ]; then
+    echo "ln -s $newRunDir $submDataDir"
+else
+    echo "[WARNING] Submission data dir does not exist ($submDataDir)"
+fi
 
 echo ""
 
