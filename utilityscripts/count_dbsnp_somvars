@@ -1,0 +1,23 @@
+#!/bin/bash
+
+searchDirs=($@)
+
+echo -e "#patient\ttotal\tdbsnpCount\tnoCosmicCount\tinputDir"
+
+for searchDir in "${searchDirs[@]}"; 
+do
+  patient=$( echo ${searchDir} | grep -Po 'CPCT\d{8}' )
+  dirName=$( basename ${searchDir} )
+  meltedFile=$( find $searchDir -name "*_melted.vcf" | head -1 )
+ 
+  if [[ ! -f ${meltedFile} ]]; then echo "[WARNING] Melted file not found for ${dirName}"; continue; fi
+
+  total=$( cat ${meltedFile} | grep -v "^#" | wc -l )
+  yesDbsnp=$( cat ${meltedFile} | grep -v "^#" | cut -f3 | grep 'rs' | wc -l )
+  noCosmic=$( cat ${meltedFile} | grep -v "^#" | cut -f3 | grep 'rs' | grep -v 'COSM' | wc -l )
+  
+  yesDbsnpPerc=$( echo "scale=0;($yesDbsnp*100/$total)" | bc )
+  noCosmicPerc=$( echo "scale=0;($noCosmic*100/$total)" | bc )
+  
+  echo -e "${patient}\t${total}\t${yesDbsnp} (${yesDbsnpPerc}%)\t${noCosmic} (${noCosmicPerc}%)\t${dirName}"
+done
