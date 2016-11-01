@@ -20,8 +20,9 @@ do
       dbsnp=$( cat ${meltedFile} | grep -v "^#" | awk '$3 ~ /rs/ && $3 !~ /COSM/' | wc -l )
   dbsnpPASS=$( cat ${meltedFile} | grep -v "^#" | awk '$3 ~ /rs/ && $3 !~ /COSM/ && $7 ~ /PASS|\./' | wc -l )
   
+       PASSPerc=$( echo "scale=0;($totalPASS*100/$total)" | bc )
       dbsnpPerc=$( echo "scale=0;($dbsnp*100/$total)" | bc )
   dbsnpPASSPerc=$( echo "scale=0;($dbsnpPASS*100/$totalPASS)" | bc )
   
-  echo -e "${patient}\t${total}\t${totalPASS}\t${dbsnp} (${dbsnpPerc}%)\t${dbsnpPASS} (${dbsnpPASSPerc}%)\t${dirName}"
+  echo -e "${patient}\t${total}\t${totalPASS} (${PASSPerc}%)\t${dbsnp} (${dbsnpPerc}%)\t${dbsnpPASS} (${dbsnpPASSPerc}%)\t${dirName}"
 done
