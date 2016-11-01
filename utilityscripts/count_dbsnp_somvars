@@ -6,7 +6,7 @@
 
 searchDirs=($@)
 
-echo -e "#patient\ttotal\tdbsnpCount\tnoCosmicCount\tinputDir"
+echo -e "#patient\ttotal\ttotalPASS\tdbsnpCount\tdbsnpCountPASS\tinputDir"
 for searchDir in "${searchDirs[@]}"; 
 do
   patient=$( echo ${searchDir} | grep -Po 'CPCT\d{8}' )
@@ -15,12 +15,13 @@ do
  
   if [[ ! -f ${meltedFile} ]]; then echo "[WARNING] Melted file not found for ${dirName}"; continue; fi
 
-  total=$( cat ${meltedFile} | grep -v "^#" | wc -l )
-  yesDbsnp=$( cat ${meltedFile} | grep -v "^#" | cut -f3 | grep 'rs' | wc -l )
-  noCosmic=$( cat ${meltedFile} | grep -v "^#" | cut -f3 | grep 'rs' | grep -v 'COSM' | wc -l )
+      total=$( cat ${meltedFile} | grep -v "^#" | wc -l )
+  totalPASS=$( cat ${meltedFile} | grep -v "^#" | cut -f7 | grep -P 'PASS|\.' | wc -l )
+      dbsnp=$( cat ${meltedFile} | grep -v "^#" | awk '$3 ~ /rs/ && $3 !~ /COSM/' | wc -l )
+  dbsnpPASS=$( cat ${meltedFile} | grep -v "^#" | awk '$3 ~ /rs/ && $3 !~ /COSM/ && $7 ~ /PASS|\./' | wc -l )
   
-  yesDbsnpPerc=$( echo "scale=0;($yesDbsnp*100/$total)" | bc )
-  noCosmicPerc=$( echo "scale=0;($noCosmic*100/$total)" | bc )
+      dbsnpPerc=$( echo "scale=0;($dbsnp*100/$total)" | bc )
+  dbsnpPASSPerc=$( echo "scale=0;($dbsnpPASS*100/$totalPASS)" | bc )
   
-  echo -e "${patient}\t${total}\t${yesDbsnp} (${yesDbsnpPerc}%)\t${noCosmic} (${noCosmicPerc}%)\t${dirName}"
+  echo -e "${patient}\t${total}\t${totalPASS}\t${dbsnp} (${dbsnpPerc}%)\t${dbsnpPASS} (${dbsnpPASSPerc}%)\t${dirName}"
 done
