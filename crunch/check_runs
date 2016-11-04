@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
 function main() {
-    qstat | head -$((LINES / 2))
+    local lines=$(stty size | awk '{ print $1 }')
+    qstat | head -$((lines / 2))
     echo
 
     for run in $(find /data2/processed -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/run.lock" ';' -print); do
         basename "$run"
-        errors=${run}/logs/unhandled_job_errors
-        lock=${run}/run.lock
+        local errors=${run}/logs/unhandled_job_errors
+        local lock=${run}/run.lock
         if [ -s "${errors}" ] && [ "${errors}" -nt "${lock}" ]; then
             echo
             cat "${errors}"
