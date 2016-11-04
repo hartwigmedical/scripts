@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+function main() {
+    qstat | head -$((LINES / 2))
+    echo
+
+    for run in $(find /data2/processed -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/run.lock" ';' -print); do
+        basename "$run"
+        errors=${run}/logs/unhandled_job_errors
+        lock=${run}/run.lock
+        if [ -s "${errors}" ] && [ "${errors}" -nt "${lock}" ]; then
+            echo
+            cat "${errors}"
+            echo
+        fi
+    done
+}
+
+main "$@"
