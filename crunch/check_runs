@@ -2,7 +2,8 @@
 
 function main() {
     local lines=$(stty size | awk '{ print $1 }')
-    qstat | head -$((lines / 2))
+    local columns=$(stty size | awk '{ print $2 }')
+    qstat | head -$((lines / 2)) | cut -c -${columns}
     echo
 
     for run in $(find /data2/processed -mindepth 1 -maxdepth 1 -type d -exec test -e "{}/run.lock" ';' -print); do
