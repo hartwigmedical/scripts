@@ -2,4 +2,4 @@
 
 RUN_NAME=$1
 
-sbp s3 sync s3://${OUTPUT_BUCKET}/${RUN_NAME}/ /data/schuberg/${RUN_NAME}/ --profile download
+sbp_rf2 s3 sync s3://${OUTPUT_BUCKET}/${RUN_NAME}/ /data/schuberg/${RUN_NAME}/ --profile download
