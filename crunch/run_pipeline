@@ -46,7 +46,11 @@ function main() {
     if [ -n "${input}" ]; then
         local mode_flag
         mode_flag=$(choose_input_mode) || exit
-        "/data/repos/${pipeline}/illumina_createConfig.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        if [ -x "/data/repos/${pipeline}/illumina_createConfig.pl" ]; then
+            "/data/repos/${pipeline}/illumina_createConfig.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        else
+            "/data/repos/${pipeline}/bin/create_config.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        fi
     fi
 
     cd "${output}"
@@ -64,7 +68,11 @@ function main() {
 
     write_metadata "${input}" "${output}"
 
-    "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
+    if [ -x "/data/repos/${pipeline}/illumina_pipeline.pl" ]; then
+        "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
+    else
+        "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > submitlog_test
+    fi
 }
 
 function choose_input_mode() {
