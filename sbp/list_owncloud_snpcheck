@@ -1,8 +1,8 @@
 #!/bin/bash
 
-CHECK_DIR='s3://owncloud/snpcheck/files/ArrayResultFiles/'
+CHECK_DIR='s3://hmf_owncloud/snpcheck/files/ArrayResultFiles/'
 S3_PROFILE='hmf_owncloud'
 
 echo "# Checking dir ${CHECK_DIR} with profile ${S3_PROFILE}"
-sbp_rf2 s3 ls ${CHECK_DIR} --profile ${S3_PROFILE}
+sbp s3 ls ${CHECK_DIR} --profile ${S3_PROFILE}
 
