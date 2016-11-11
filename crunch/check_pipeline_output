@@ -17,6 +17,7 @@ function main() {
         UnhandledJobErrorsCheck "${runDir}" || ((failures++))
         SubmitLogErrorsCheck "${runDir}" || ((failures++))
         WGSMetricsCheck "${runDir}" || ((failures++))
+        LinksCheck "${runDir}" || ((failures++))
 
         iniEnabled COPY_NUMBER "${runDir}" &&
             {
@@ -255,6 +256,28 @@ function WGSMetricsCheck() {
     else
         fail "No non-empty WGSMetrics file found!"
         return 1
+    fi
+}
+
+function LinksCheck() {
+    local runDir=$1 && shift
+    local linksFile=${runDir}/logs/links.json
+
+    local failures=0
+    if [[ -f ${linksFile} ]]; then
+        for artefact in $(awk -F: '{ print $2 }' "$linksFile" | tr -d '",'); do
+            [ ! -f "$artefact" ] && warn "Linked artefact $artefact does not exist" && ((failures++))
+        done
+        if [ $failures -gt 0 ]; then
+            fail "$linksFile has $failures missing links"
+            return 1
+        else
+            ok
+            return 0
+        fi
+    else
+        maybeOk "No $linksFile"
+        return 0
     fi
 }
 
