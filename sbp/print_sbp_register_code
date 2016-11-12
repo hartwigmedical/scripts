@@ -128,12 +128,14 @@ foreach my $setpath ( @sets_dirs ){
 ## ------
 my $datestring = strftime "%y%m%d", localtime;
 my $jobname = $datestring."_register_".$counter."_sets";
+my $jobbash = "home/sbp/jobs/$jobname";
 
 print "## ==========\n";
 print "## NOTE: check if all expected are present below\n";
 print "## NOTE: copy or print this code to bash file and execute\n";
-print "##   $script > /home/sbp/jobs/$jobname\n";
-print "##   /home/sbp/jobs/$jobname > /home/sbp/logs/$jobname.log\n";
+print "##   $script > $jobbash\n";
+print "##   chmod $jobbash\n";
+print "##   $jobbash > /home/sbp/logs/$jobname.log\n";
 print "## TotalSetCount: $counter\n";
 print "## ==========\n";
 print join( "\n", @toprint )."\n";
