@@ -15,8 +15,9 @@ sub usage{
 
 my $api_script = 'register_sets.sh';
 my $cpct_entities_file = '/home/sbp/hmfupload/cpct_entities.tsv';
-my $setname_regex_cpct = '^(\d{6})_(.+)_(.+)_(.+)_(CPCT.+)$';
+my $setname_regex_cpct = '^(\d{6})_(HMFregCPCT)_(.+)_(.+)_(CPCT.+)$';
 my $setname_regex_giab = '^(\d{6})_(VAL.+)_(.+)_(.+)$';
+my $setname_regex_sngl = '^(\d{6})_(HMFreg.+)_(.+)_(.+)$';
 my @sets_dirs = `ls -d $uploaddir/*`;
 chomp @sets_dirs;
 if ( $ARGV[0] ){
@@ -97,7 +98,26 @@ foreach my $setpath ( @sets_dirs ){
         ); 
         push( @toprint, $cmd );
         $counter++;
-	}  
+    }
+    elsif ( $setname =~ m/$setname_regex_sngl/ ){
+        my ( $date, $submission, $sampleid, $samplename ) =  ($1, $2, $3, $4 );
+        my $ini = 'SingleSample.ini';
+        my $entity = $submission;
+
+        my $refsample = `ls $setpath/*/ | head -1 | grep -Po "^[^_]+"`;
+        chomp( $refsample );
+
+        my $cmd = join( " ",
+            $api_script,
+            '-s', $setname,
+            '-r', $samplename,
+            '-t', 'NA',
+            '-i', $ini,
+            '-e', $entity,
+        );
+        push( @toprint, $cmd );
+        $counter++;
+    }  
     else{
         die "[ERROR] regexes cannot parse the setname ($setname)\n";
     }
@@ -108,12 +128,14 @@ foreach my $setpath ( @sets_dirs ){
 ## ------
 my $datestring = strftime "%y%m%d", localtime;
 my $jobname = $datestring."_register_".$counter."_sets";
+my $jobbash = "/home/sbp/jobs/$jobname";
 
 print "## ==========\n";
 print "## NOTE: check if all expected are present below\n";
 print "## NOTE: copy or print this code to bash file and execute\n";
-print "##   $script > /home/sbp/jobs/$jobname\n";
-print "##   /home/sbp/jobs/$jobname > /home/sbp/logs/$jobname.log\n";
+print "##   $script > $jobbash\n";
+print "##   chmod 755 $jobbash\n";
+print "##   $jobbash > /home/sbp/logs/$jobname.log\n";
 print "## TotalSetCount: $counter\n";
 print "## ==========\n";
 print join( "\n", @toprint )."\n";

@@ -2,4 +2,4 @@
 
 RUN_NAME=$1
 
-sbp s3 sync /data/schuberg/uploadsymlinks/${RUN_NAME} s3://input/${RUN_NAME}/ --profile upload --grants read=id=${SBP_DOWNLOAD_CANONICAL}
+sbp s3 sync /data/schuberg/uploadsymlinks/${RUN_NAME} s3://${INPUT_BUCKET}/${RUN_NAME}/ --profile upload --grants read=id=${SBP_DOWNLOAD_CANONICAL} readacl=id=${SBP_DOWNLOAD_CANONICAL}

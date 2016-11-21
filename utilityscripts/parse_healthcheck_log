@@ -1,0 +1,48 @@
+#!/bin/bash
+HC_LOG_FILE=$1
+
+if [[ ! -f ${HC_LOG_FILE} ]]; then
+    echo "Provided file not found"
+    exit 1
+fi
+
+PATIENT=$(echo ${HC_LOG_FILE} | grep -Po "CPCT[^_]+")
+
+echo "===== ${PATIENT} ====="; 
+
+## ---------------
+## print parts of the health check groups
+## ---------------
+GREP_TERMS=( 
+#    'COPYNUMBER_GENOME_|SOMATIC_SNP_|SOMATIC_AF_'
+    'SOMATIC_SNP_COUNT' 
+    'SOMATIC.*MEDIAN' 
+)
+for i in "${GREP_TERMS[@]}"
+do
+    echo "## [${PATIENT}] grep term \"${i}\""
+    cat ${HC_LOG_FILE} | grep -P $i
+done
+
+## ---------------
+## perform actual checks
+## ---------------
+SOMATIC_SNP_COUNT=$(cat $HC_LOG_FILE | grep "'SOMATIC_SNP_COUNT'" | grep -Po "(?<=has value ').+(?=')")
+SOMATIC_SNP_PROPORTION_VARIANTS_3_CALLERS=$(cat $HC_LOG_FILE | grep "'SOMATIC_SNP_PROPORTION_VARIANTS_3_CALLERS'" | grep -Po "(?<=has value ').+(?=')")
+SOMATIC_SNP_PROPORTION_VARIANTS_4_CALLERS=$(cat $HC_LOG_FILE | grep "'SOMATIC_SNP_PROPORTION_VARIANTS_4_CALLERS'" | grep -Po "(?<=has value ').+(?=')")
+
+CHECK_VAL1=$(perl -e "print ${SOMATIC_SNP_PROPORTION_VARIANTS_3_CALLERS}+${SOMATIC_SNP_PROPORTION_VARIANTS_4_CALLERS}" )
+CHECK_VAL2=$(perl -e "print ${SOMATIC_SNP_COUNT} * (1 - ${SOMATIC_SNP_PROPORTION_VARIANTS_3_CALLERS}+${SOMATIC_SNP_PROPORTION_VARIANTS_4_CALLERS})" )
+CHECK1=$(perl -e "print $CHECK_VAL1 < 0.5" )
+CHECK2=$(perl -e "print $CHECK_VAL2 > 20000" )
+
+echo "(Check1:$CHECK_VAL1, Check2:$CHECK_VAL2)"
+#if [[ $CHECK1 < 0.5 ]]; then echo "CHECK1 fail"; fi
+#if [[ $CHECK2 -gt 20000 ]]; then echo "CHECK2 fail"; fi
+
+if [[ ($CHECK1 -eq 1) && ($CHECK2 -eq 1) ]]; 
+    then echo "HEALTH CHECK FAILED"; 
+else 
+    echo "HEALTH CHECK OK"; 
+fi
+

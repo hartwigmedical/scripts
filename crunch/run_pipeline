@@ -21,7 +21,7 @@ shopt -s nullglob
 # shellcheck disable=SC2015
 function main() {
     local output_name=${1:-} && shift || true
-    local config=${1:-CPCT} && shift || true
+    local config=${1:-Somatic} && shift || true
     local input=${1:-} && shift || true
     local pipeline=${1:-pipeline-test} && shift || true
 
@@ -46,7 +46,11 @@ function main() {
     if [ -n "${input}" ]; then
         local mode_flag
         mode_flag=$(choose_input_mode) || exit
-        "/data/repos/${pipeline}/illumina_createConfig.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        if [ -x "/data/repos/${pipeline}/illumina_createConfig.pl" ]; then
+            "/data/repos/${pipeline}/illumina_createConfig.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        else
+            "/data/repos/${pipeline}/bin/create_config.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        fi
     fi
 
     cd "${output}"
@@ -64,7 +68,11 @@ function main() {
 
     write_metadata "${input}" "${output}"
 
-    "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
+    if [ -x "/data/repos/${pipeline}/illumina_pipeline.pl" ]; then
+        "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
+    else
+        "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > submitlog_test
+    fi
 }
 
 function choose_input_mode() {
@@ -100,9 +108,9 @@ function write_metadata() {
         return
     fi
 
-    for path in "${input}"/*/; do
+    for path in $(find "${input}" -name "*.fastq.gz"); do
         local dir=$(basename "${path}")
-        if [[ ${dir} =~ ^(CPCT[0-9]{8})([RT])$ ]]; then
+        if [[ ${dir} =~ ^(CPCT[0-9]{8})([RT])_ ]]; then
             samples[${BASH_REMATCH[2]}]=${BASH_REMATCH[1]}
         fi
     done

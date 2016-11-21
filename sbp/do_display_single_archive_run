@@ -6,8 +6,8 @@ RUN_DIR=/data/processed_archive/${RUN_NAME}
 BACKUP_DIR=/data/backup/cpct_runs/
 PATIENT=`echo ${RUN_NAME} | grep -Po "CPCT\d+"`
 
-SBP_FILE_COUNT=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download --recursive --summarize --human-readable | tail -2 | grep "Total Objects" | grep -Po "[\d]+"`
-SBP_FILE_SIZE=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download --recursive --summarize --human-readable | tail -2 | grep "Total Size" | grep -Po "[\d\.]+ ?(GiB)?"`
+SBP_FILE_COUNT=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download_rf3 --recursive --summarize --human-readable | tail -2 | grep "Total Objects" | grep -Po "[\d]+"`
+SBP_FILE_SIZE=`sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download_rf3 --recursive --summarize --human-readable | tail -2 | grep "Total Size" | grep -Po "[\d\.]+ ?(GiB)?"`
 
 HMF_FILE_COUNT=`find ${RUN_DIR} -type f | wc -l`
 HMF_FILE_SIZE=`du -sh ${RUN_DIR} | awk '{ print $1 }' `
