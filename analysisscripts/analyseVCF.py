@@ -156,6 +156,20 @@ def calculateQualityScore(infoSplit,caller,qual,aVariantType):
     else:  # Mutect has no quality score
         return -1
 
+def calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel):
+    if tumorCallerCountIndel > 0 and tumorCallerCountSNP > 0:
+        return variantType.mixed, ""
+    elif tumorCallerCountIndel > 0:
+        if tumorCallerCountSubTypeDelete > 0 and tumorCallerCountSubTypeIndel == 0 and tumorCallerCountSubTypeInsert == 0:
+            return variantType.indel, subVariantType.delete
+        elif tumorCallerCountSubTypeInsert > 0 and tumorCallerCountSubTypeIndel == 0 and tumorCallerCountSubTypeDelete == 0:
+            return variantType.indel, subVariantType.insert
+        else:
+            return variantType.indel,subVariantType.indel
+    elif tumorCallerCountSNP > 0:
+        return variantType.SNP,""
+    else:
+        return variantType.missingGenotype,""
 
 def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor2):
     formatSplit = format.split(':')
@@ -271,6 +285,7 @@ class somaticVariant:
                 for key in inputGenotypes.iterkeys():
                     variantGenotypes[key] = genotype(key, ref, alt, qual,info,format,inputGenotypes[key])
 
+                #CALLER COUNTS
                 for key, value in variantGenotypes.items():
                     if value.tumorVariantType == variantType.SNP:
                         tumorCallerCountSNP += 1
@@ -284,32 +299,11 @@ class somaticVariant:
                             tumorCallerCountSubTypeIndel += 1
 
                 ############### Pandas Prep ####################
-                #PREPARE FIELDS:
-                if chrom[:3] == 'chr':
-                    chrom = chrom[3:]
-
                 #NUM_CALLERS_CALCULATION
                 numCallers = calculateNumCallers(infoSplit,tumorCallerCountSNP + tumorCallerCountIndel)
 
-                mySubVariantType = ""
-                if tumorCallerCountIndel > 0:
-                    if tumorCallerCountSNP == 0:
-                        myVariantType = variantType.indel
-                    else:
-                        myVariantType = variantType.mixed
-                    if tumorCallerCountSubTypeDelete > 0:  # this logic still needs work
-                        if tumorCallerCountSubTypeInsert > 0:
-                            mySubVariantType = subVariantType.indel
-                        else:
-                            mySubVariantType = subVariantType.delete
-                    elif tumorCallerCountSubTypeInsert > 0:
-                        mySubVariantType = subVariantType.insert
-                    elif tumorCallerCountIndel > 0:
-                        mySubVariantType = subVariantType.indel
-                elif tumorCallerCountSNP > 0:
-                    myVariantType = variantType.SNP
-                else:
-                    myVariantType = variantType.missingGenotype
+                myVariantType,mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,\
+                                                tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel)
 
                 # APPEND NORMAL FIELDS
                 somaticVariant.variantInfo.append(
@@ -356,7 +350,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed,loadRegionsOutsideBed))
+                variants.append(somaticVariant(a[0].lstrip("chr"), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed,loadRegionsOutsideBed))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
