@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 use strict;
+use Cwd qw(realpath);
+use File::Basename qw(fileparse);
 use Getopt::Long;
 use Data::Dumper;
 use HTML::TableExtract;
@@ -60,15 +62,14 @@ if ( $sampleSheetFile eq '' ){
 }
 
 ## get the full run name
-my $shtPath = `readlink -f $sampleSheetFile`;
-my $runPath = `dirname $shtPath`;
-my $runName = `basename $runPath`;
+my $shtPath = realpath $sampleSheetFile;
+my ($runName, $runPath) = fileparse $shtPath;
 chomp( $shtPath );
 chomp( $runPath );
 chomp( $runName );
 
 if ( $sampleSheetFile ne '' ){
-	open FILE, $sampleSheetFile or die "Couldn't open file ($sampleSheetFile): $!"; 
+	open FILE, $sampleSheetFile or die "Couldn't open file ($sampleSheetFile): $!";
 	while ( my $line = <FILE> ) {
 		chomp($line);
 		## any whitespace not allowed in csv

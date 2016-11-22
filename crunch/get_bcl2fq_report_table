@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-currhost=`hostname`
-scriptname=`basename $0`
-parsescript='do_parse_bcl2fqreporthtml.pl'
+currhost=$(hostname)
+scriptname=$(basename $0)
+parsescript="$(dirname $0)/do_parse_bcl2fqreporthtml.pl"
 
 if [[ ! $1 || $1 == "-h" ]]; then 
     echo "-----"
