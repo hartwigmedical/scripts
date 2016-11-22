@@ -16,6 +16,7 @@ Distribution and/or sharing of these data is not allowed without prior approval 
 Please be aware that these data are for internal use only.
 
 **Scope of the CPCT-02 protocol**
+
 The primary objective of this study is to analyze the individual cancer genome in cancer patients to develop future predictors for response to systemic treatment in individual patients with cancer.
 
 Secondary objectives of this study are:
