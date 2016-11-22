@@ -106,6 +106,15 @@ def calculateReadDepth(format,genotype):
     else:
         return 1
 
+def calculateNumCallers(infoSplit,internalCount):
+    infoHeaders = [x.split('=')[0] for x in infoSplit]
+    if "CSP" in infoHeaders:
+        return infoSplit[infoHeaders.index("CSP")].split('=')[1]
+    elif "CC" in infoHeaders:
+        return infoSplit[infoHeaders.index("CC")].split('=')[1]
+    else:
+        return internalCount
+
 def calculateSomaticGenotype(infoSplit,caller,aVariantType):
     #Ideally both Normal (ref, hom, het) and somatic (ref,hom,het).
     infoHeaders = [x.split('=')[0] for x in infoSplit]
@@ -178,7 +187,7 @@ def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor
 
 class genotype:
 
-    def __init__(self,chrom,pos,caller,ref,alt,qual,info,format,vennSegment,inputGenotype):
+    def __init__(self,caller,ref,alt,qual,info,format,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
 
@@ -219,23 +228,28 @@ class somaticVariant:
     variantInfo = []
     bedItem = []
 
-    def __init__(self, chrom, pos, id, ref, alt, qual, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse):
+    def __init__(self, chrom, pos, id, ref, alt, qual, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse,loadRegionsOutsideBed):
+
+        bedRegion = ""
 
         #Find the 1st Bed region with maxPos > variantPos
         if aBedReverse:
             if not somaticVariant.bedItem:
                 somaticVariant.bedItem = aBedReverse.pop()
             while intChrom(chrom) > intChrom(somaticVariant.bedItem[0]) or (intChrom(chrom) == intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2])) and aBedReverse:
-                #try:
                 somaticVariant.bedItem = aBedReverse.pop()
-                #except:
-                #    print chrom,intChrom(chrom),pos, somaticVariant.bedItem
-                #    break
         else:
             somaticVariant.bedItem = []
 
-        #Only use if inside the next BED region
-        if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<=int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom) or not useBed:
+        #Label the BED region
+        if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<=int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom):
+            try:
+                bedRegion = somaticVariant.bedItem[3]
+            except IndexError:
+                bedRegion = "Default"
+
+        #Process if in Bed region or not using BED or if loading whole file
+        if bedRegion <> "" or not useBed or loadRegionsOutsideBed:
             if filter == "PASS" or filter == "." or useFilter == False:
 
                 tumorCallerCountSNP = 0
@@ -246,14 +260,16 @@ class somaticVariant:
                 variantGenotypes = {}
                 vennSegment = ""
 
+                #Extract INFO field
                 infoSplit = info.split(';')
                 for i in range(len(infoSplit)):
                     infoItem = infoSplit[i].split('=')
                     if infoItem[0] == "set":
                         vennSegment = infoItem[1]
 
+                #CALLER SPECIFIC FIELDS
                 for key in inputGenotypes.iterkeys():
-                    variantGenotypes[key] = genotype(chrom, pos, key, ref, alt, qual,info,format, vennSegment, inputGenotypes[key])
+                    variantGenotypes[key] = genotype(key, ref, alt, qual,info,format,inputGenotypes[key])
 
                 for key, value in variantGenotypes.items():
                     if value.tumorVariantType == variantType.SNP:
@@ -271,15 +287,9 @@ class somaticVariant:
                 #PREPARE FIELDS:
                 if chrom[:3] == 'chr':
                     chrom = chrom[3:]
-                try:
-                    posPercent = float(pos) / chromosomeLength[chrom]
-                except KeyError:
-                    posPercent = 0
-                if 'melted' in inputGenotypes.keys():
-                    infoHeaders = [x.split('=')[0] for x in infoSplit]
-                    numCallers = infoSplit[infoHeaders.index("CSP")].split('=')[1]
-                else:
-                    numCallers = tumorCallerCountSNP + tumorCallerCountIndel
+
+                #NUM_CALLERS_CALCULATION
+                numCallers = calculateNumCallers(infoSplit,tumorCallerCountSNP + tumorCallerCountIndel)
 
                 mySubVariantType = ""
                 if tumorCallerCountIndel > 0:
@@ -301,10 +311,12 @@ class somaticVariant:
                 else:
                     myVariantType = variantType.missingGenotype
 
-                # Append to list
+                # APPEND NORMAL FIELDS
                 somaticVariant.variantInfo.append(
-                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + posPercent, id, ref, vennSegment, numCallers,
-                     myVariantType, mySubVariantType,filter])
+                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + float(pos) / chromosomeLength[chrom], id, ref, vennSegment, numCallers,
+                     myVariantType, mySubVariantType,filter,bedRegion])
+
+                #APPEND CALLER SPECIFIC FIELDS
                 for caller, variantGenotype in variantGenotypes.items():
                     if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
                         callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
@@ -316,7 +328,7 @@ class somaticVariant:
                 #########################################
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[]):
+def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[],loadRegionsOutsideBed=False):
     print "reading vcf file:",aVCFFile
 
     if useBed == True:
@@ -344,7 +356,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 variant_calls = a[9:]
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
-                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed))
+                variants.append(somaticVariant(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed,loadRegionsOutsideBed))
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
@@ -357,7 +369,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     df = pd.DataFrame(somaticVariant.variantInfo)
     if len(df)>0:
         myColumnList = ['chrom', 'pos', 'chromPos','chromFrac','id', 'ref', 'vennSegment','numCallers','variantType',
-                    'variantSubType','filter']
+                    'variantSubType','filter','bedRegion']
         for caller in header_index.iterkeys():
             myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff',caller+'indelPos']
         df.columns = (myColumnList)
@@ -372,6 +384,7 @@ def loadBEDFile(aPath, aBEDFile):
     with open(aPath + aBEDFile, 'r') as f:
         for line in f:
             line = line.strip('\n')
+            line = line.strip('\r')
             splitLine = line.split('\t')
             if splitLine[0] != 'chrom':
                 myBed.append(splitLine)
