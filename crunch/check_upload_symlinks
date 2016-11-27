@@ -15,7 +15,7 @@ echo "[INFO] Start checking ${symlinksDir} content"
 
 for runDir in ${symlinksDir}/*; do 
   echo "";
-  echo "--- `echo ${runDir} | grep -Po "CPCT\d{8}"` ---"
+  echo "--- `echo ${runDir} | grep -Po "(CPCT|DRUP)\d{8}"` ---"
   for sampleDir in ${runDir}/*; do
     firstFile=`ls ${sampleDir}/* | head -1`;
     du -hL ${sampleDir};
