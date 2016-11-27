@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import difflib as dl
+import chromosomeDefinition as cd
 
 ###############################################
 # VCF CONFIG
@@ -15,33 +16,6 @@ SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect',
 
 ###############################################
 
-#DEFINE CHR LENGTH
-chromosomeLength = {}
-chromosomeLength['1'] = 249250622
-chromosomeLength['10'] = 135534749
-chromosomeLength['11'] = 135006518
-chromosomeLength['12'] = 133851897
-chromosomeLength['13'] = 115169880
-chromosomeLength['14'] = 107349541
-chromosomeLength['15'] = 102531394
-chromosomeLength['16'] = 90354755
-chromosomeLength['17'] = 81195212
-chromosomeLength['18'] = 78077250
-chromosomeLength['19'] = 59128985
-chromosomeLength['2'] = 243199374
-chromosomeLength['20'] = 63025522
-chromosomeLength['21'] = 48129897
-chromosomeLength['22'] = 51304568
-chromosomeLength['3'] = 198022431
-chromosomeLength['4'] = 191154277
-chromosomeLength['5'] = 180915261
-chromosomeLength['6'] = 171115068
-chromosomeLength['7'] = 159138664
-chromosomeLength['8'] = 146364023
-chromosomeLength['9'] = 141213432
-chromosomeLength['MT'] = 16571
-chromosomeLength['X'] = 155270561
-chromosomeLength['Y'] = 59373567
 
 
 class variantType():
@@ -57,19 +31,7 @@ class subVariantType():
     delete = "DELETE"
     indel = "INDEL"
 
-def intChrom(chrom):
-    if chrom == 'X':
-        return 23
-    elif chrom == 'Y':
-        return 24
-    elif chrom == 'MT':
-        return 25
-    elif chrom[:2] == 'GL':
-        return 100
-    elif chrom[:2] == 'NC':
-        return 100
-    else:
-        return int(chrom)
+
 
 def indelDiffAndRelativePos(ref,variantAllele):
     #LOGIC - MATCH 1st char and then use strDiff in the reverse direction
@@ -106,18 +68,16 @@ def calculateReadDepth(format,genotype):
     else:
         return 1
 
-def calculateNumCallers(infoSplit,internalCount):
-    infoHeaders = [x.split('=')[0] for x in infoSplit]
+def calculateNumCallers(infoSplit,infoHeaders,internalCount):
     if "CSP" in infoHeaders:
-        return infoSplit[infoHeaders.index("CSP")].split('=')[1]
+        return int(infoSplit[infoHeaders.index("CSP")].split('=')[1])
     elif "CC" in infoHeaders:
-        return infoSplit[infoHeaders.index("CC")].split('=')[1]
+        return int(infoSplit[infoHeaders.index("CC")].split('=')[1])
     else:
         return internalCount
 
-def calculateSomaticGenotype(infoSplit,caller,aVariantType):
+def calculateSomaticGenotype(infoSplit,infoHeaders,caller,aVariantType):
     #Ideally both Normal (ref, hom, het) and somatic (ref,hom,het).
-    infoHeaders = [x.split('=')[0] for x in infoSplit]
     if caller == 'strelka' and aVariantType == variantType.indel:
         return infoSplit[infoHeaders.index("SGT")].split('=')[1]
     elif caller == 'strelka' and aVariantType == variantType.SNP:
@@ -131,9 +91,7 @@ def calculateSomaticGenotype(infoSplit,caller,aVariantType):
     else:
         return 'unknown'
 
-
-def calculateQualityScore(infoSplit,caller,qual,aVariantType):
-    infoHeaders = [x.split('=')[0] for x in infoSplit]
+def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType):
     if caller == 'strelka' and aVariantType == variantType.indel:
         try:
             return infoSplit[infoHeaders.index("QSI_NT")].split('=')[1]
@@ -201,7 +159,7 @@ def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor
 
 class genotype:
 
-    def __init__(self,caller,ref,alt,qual,info,format,inputGenotype):
+    def __init__(self,caller,ref,alt,qual,infoSplit,infoHeaders,format,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
 
@@ -229,9 +187,8 @@ class genotype:
 
             self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
             self.readDepth = calculateReadDepth(format,inputGenotype)
-            infoSplit = info.split(';')
-            self.qualityScore = float(calculateQualityScore(infoSplit,caller,qual,self.tumorVariantType))
-            self.somaticGenotype = calculateSomaticGenotype(infoSplit,caller,self.tumorVariantType)
+            self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType))
+            self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
             if self.somaticGenotype == 'unknown':
                 self.somaticGenotype = inputGenotype[:3]
             self.allele = alleleTumor2
@@ -244,18 +201,17 @@ class somaticVariant:
 
     def __init__(self, chrom, pos, id, ref, alt, qual, filter, info,format,inputGenotypes,useFilter,useBed,aBedReverse,loadRegionsOutsideBed):
 
-        bedRegion = ""
-
         #Find the 1st Bed region with maxPos > variantPos
         if aBedReverse:
             if not somaticVariant.bedItem:
                 somaticVariant.bedItem = aBedReverse.pop()
-            while intChrom(chrom) > intChrom(somaticVariant.bedItem[0]) or (intChrom(chrom) == intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2])) and aBedReverse:
+            while cd.intChrom(chrom) > cd.intChrom(somaticVariant.bedItem[0]) or (cd.intChrom(chrom) == cd.intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2])) and aBedReverse:
                 somaticVariant.bedItem = aBedReverse.pop()
         else:
             somaticVariant.bedItem = []
 
         #Label the BED region
+        bedRegion = ""
         if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<=int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom):
             try:
                 bedRegion = somaticVariant.bedItem[3]
@@ -272,18 +228,14 @@ class somaticVariant:
                 tumorCallerCountSubTypeDelete = 0
                 tumorCallerCountSubTypeInsert = 0
                 variantGenotypes = {}
-                vennSegment = ""
 
-                #Extract INFO field
+                #Split info fields
                 infoSplit = info.split(';')
-                for i in range(len(infoSplit)):
-                    infoItem = infoSplit[i].split('=')
-                    if infoItem[0] == "set":
-                        vennSegment = infoItem[1]
+                infoHeaders = [x.split('=')[0] for x in infoSplit]
 
                 #CALLER SPECIFIC FIELDS
                 for key in inputGenotypes.iterkeys():
-                    variantGenotypes[key] = genotype(key, ref, alt, qual,info,format,inputGenotypes[key])
+                    variantGenotypes[key] = genotype(key, ref, alt, qual,infoSplit,infoHeaders,format,inputGenotypes[key])
 
                 #CALLER COUNTS
                 for key, value in variantGenotypes.items():
@@ -298,17 +250,39 @@ class somaticVariant:
                         if value.tumorVariantSubType == subVariantType.indel:
                             tumorCallerCountSubTypeIndel += 1
 
-                ############### Pandas Prep ####################
-                #NUM_CALLERS_CALCULATION
-                numCallers = calculateNumCallers(infoSplit,tumorCallerCountSNP + tumorCallerCountIndel)
-
+                # META DATA
+                if "set" in infoHeaders:
+                    vennSegment = infoSplit[infoHeaders.index("set")].split('=')[1]
+                else:
+                    vennSegment = "test"   # to do - calculate somatic, LOH, or germline
+                numCallers = calculateNumCallers(infoSplit,infoHeaders,tumorCallerCountSNP + tumorCallerCountIndel)
+                if "filter" in vennSegment:
+                    numCallers=numCallers -1
                 myVariantType,mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,\
                                                 tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel)
+                inDBSNP = any(['rs' in x for x in id.split(';')])
+                inCOSMIC = any(['COSM' in x for x in id.split(';')])
 
+                #ANNOTATIONS
+                annWorstEffect = ""
+                annAllEffects = ""
+                annWorstImpact = ""
+                annGene = ""
+                if 'ANN' in infoHeaders:
+                    annSplit = infoSplit[infoHeaders.index("ANN")].split('=')[1].split(',')
+                    annWorstImpact = annSplit[0].split('|')[2]
+                    annWorstEffect = annSplit[0].split('|')[1]
+                    annAllEffects = '|'.join([annAllEffects + x.split('|')[1] for x in annSplit])
+                    annGene = annSplit[0].split('|')[3]
+
+                #CONSENSUS RULE
+                consensus = int(numCallers) >= 3 or (int(numCallers) == 2 and bedRegion <> "" and (not inDBSNP or inCOSMIC))
+
+                ############### Pandas Prep ####################
                 # APPEND NORMAL FIELDS
                 somaticVariant.variantInfo.append(
-                    [chrom, pos, chrom + ':' + pos, intChrom(chrom) + float(pos) / chromosomeLength[chrom], id, ref, vennSegment, numCallers,
-                     myVariantType, mySubVariantType,filter,bedRegion])
+                    [chrom, pos, chrom + ':' + pos, cd.intChrom(chrom) + float(pos) / cd.chromosomeLength[chrom], id, ref, vennSegment, numCallers,
+                     myVariantType, mySubVariantType,filter,bedRegion,inDBSNP,inCOSMIC,annGene,annWorstImpact,annWorstEffect,annAllEffects,consensus])
 
                 #APPEND CALLER SPECIFIC FIELDS
                 for caller, variantGenotype in variantGenotypes.items():
@@ -323,18 +297,20 @@ class somaticVariant:
 
 
 def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[],loadRegionsOutsideBed=False):
-    print "reading vcf file:",aVCFFile
+
+    variants = []
+    i = 0
 
     if useBed == True:
         aBed.reverse()
 
-    variants = []
+    print "reading vcf file:", aVCFFile
     with open(aPath + aVCFFile, 'r') as f:
-        i=0
         for line in f:
+
             line = line.strip('\n')
-            myGenotypes = {}
             a = [x for x in line.split('\t')]
+
             if a[0] == '#CHROM':
                 headers = a[9:]
                 header_index = {}
@@ -344,10 +320,12 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                             header_index[sampleLabel] = index
                             break
                     if not header_index.has_key(sampleLabel):
-                        print 'Error - missing sample inputs'
+                        print 'Error - missing sample input: ',sampleLabel
                         return -1
+
             if a[0][:1] != '#':
                 variant_calls = a[9:]
+                myGenotypes = {}
                 for caller,index in header_index.iteritems():
                     myGenotypes[caller] = variant_calls[index]
                 variants.append(somaticVariant(a[0].lstrip("chr"), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed,loadRegionsOutsideBed))
@@ -360,14 +338,17 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
 
     print "Number variants loaded:",len(somaticVariant.variantInfo)
 
+    ###### PANDAS ##############
     df = pd.DataFrame(somaticVariant.variantInfo)
     if len(df)>0:
-        myColumnList = ['chrom', 'pos', 'chromPos','chromFrac','id', 'ref', 'vennSegment','numCallers','variantType',
-                    'variantSubType','filter','bedRegion']
+        myColumnList = ['chrom', 'pos', 'chromPos','chromFrac','id', 'ref', 'vennSegment','numCallers','variantType','variantSubType','filter',
+                        'bedRegion','inDBSNP','inCOSMIC','annGene','annWorstImpact','annWorstEffect','annAllEffects','consensus']
         for caller in header_index.iterkeys():
             myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff',caller+'indelPos']
         df.columns = (myColumnList)
         df['patientName'] = aPatientName
+    ###### END PANDAS ###########
+
     # Need to empty genotype.variantInfo in case we need to load multiple files
     del somaticVariant.variantInfo[:]
     return df
