@@ -1,6 +1,7 @@
 #! /usr/bin/perl
 use strict;
 use warnings;
+use 5.16.0;
 use File::Basename;
 use POSIX qw(strftime);
 my $script = basename($0);
@@ -14,10 +15,12 @@ sub usage{
 }
 
 my $api_script = 'register_sets.sh';
-my $cpct_entities_file = '/home/sbp/hmfupload/cpct_entities.tsv';
-my $setname_regex_cpct = '^(\d{6})_(HMFregCPCT)_(.+)_(.+)_(CPCT.+)$';
+my $entities_file = '/data/common/dbs/sbp/center2entity.tsv';
+my $setname_regex_cpct = '^(\d{6})_HMFreg(CPCT|DRUP)_(.+)_(.+)_((CPCT|DRUP).+)$';
 my $setname_regex_giab = '^(\d{6})_(VAL.+)_(.+)_(.+)$';
 my $setname_regex_sngl = '^(\d{6})_(HMFreg.+)_(.+)_(.+)$';
+
+## all directories from uploaddir are read
 my @sets_dirs = `ls -d $uploaddir/*`;
 chomp @sets_dirs;
 if ( $ARGV[0] ){
@@ -25,9 +28,9 @@ if ( $ARGV[0] ){
     usage() and exit if $ARGV[0] =~ /\-h|\-\-help/; # allow input for flexibility
 }
 
-## read in CPCT entities
+## read in entities
 my %centerid2entity = ();
-open IN, "<", $cpct_entities_file or die "$!: Unable to open file ($cpct_entities_file)\n";
+open IN, "<", $entities_file or die "$!: Unable to open file ($entities_file)\n";
 while ( <IN> ){
     next if $_ =~ /^#/;
     chomp;
@@ -46,13 +49,13 @@ foreach my $setpath ( @sets_dirs ){
     ## Case: CPCT patient
     if ( $setname =~ m/$setname_regex_cpct/ ){
     
-        my ( $date, $group, $bcref, $bctum, $patient ) =  ($1, $2, $3, $4, $5 );
+        my ( $date, $group, $bcref, $bctum, $patient, $study ) =  ($1, $2, $3, $4, $5, $6 );
         my $ini = 'CPCT.ini';
         my $entityname = 'NA';
         
         ## use study id in patient id to get entity
-        if ( $patient =~ m/^CPCT(\d{2})(\d{2})(\d{4})$/ ){
-            my ( $study_id, $center_id, $patient_id ) = ( $1, $2, $3 );
+        if ( $patient =~ m/^(CPCT|DRUP)(\d{2})(\d{2})(\d{4})$/ ){
+            my ( $umbrella_study, $study_id, $center_id, $patient_id ) = ( $1, $2, $3 );
             die "[ERROR] center id not found in hash ($center_id)\n" unless exists $centerid2entity{$center_id};
             $entityname = $centerid2entity{$center_id};
         }
@@ -64,10 +67,11 @@ foreach my $setpath ( @sets_dirs ){
         my $refsample = `ls $setpath/$bcref/ | head -1 | grep -Po "^[^_]+"`;
         my $tumsample = `ls $setpath/$bctum/ | head -1 | grep -Po "^[^_]+"`;
         chomp( $refsample, $tumsample );
-
+        
         ## sanity checks
-        die "[ERROR] Ref and Tum bc cannot be the same! ($setname)\n" if ( $bcref eq $bctum );
-        die "[ERROR] Ref and Tum sample cannot be the same! ($refsample)\n" if ( $refsample eq $tumsample );
+        warn "[WARNING] Possibly incorrect ref, does not end with R ($refsample)\n" unless $refsample =~ /R$/;
+        die "[ERROR] Ref and Tum sample id cannot be the same! ($setname)\n" if ( $bcref eq $bctum );
+        die "[ERROR] Ref and Tum sample name cannot be the same! ($refsample)\n" if ( $refsample eq $tumsample );
 
         my $cmd = join( " ", 
 	    $api_script, 
@@ -80,6 +84,7 @@ foreach my $setpath ( @sets_dirs ){
         push( @toprint, $cmd );
         $counter++;
     }
+    ## Case: GIAB sample analysis
     elsif ( $setname =~ m/$setname_regex_giab/ ){
         my ( $date, $svalid, $pipelineversion, $settingsname ) =  ($1, $2, $3, $4 );
         my $ini = 'SingleSample.ini';
@@ -99,6 +104,7 @@ foreach my $setpath ( @sets_dirs ){
         push( @toprint, $cmd );
         $counter++;
     }
+    ## Case: Other single samples
     elsif ( $setname =~ m/$setname_regex_sngl/ ){
         my ( $date, $submission, $sampleid, $samplename ) =  ($1, $2, $3, $4 );
         my $ini = 'SingleSample.ini';
@@ -129,6 +135,7 @@ foreach my $setpath ( @sets_dirs ){
 my $datestring = strftime "%y%m%d", localtime;
 my $jobname = $datestring."_register_".$counter."_sets";
 my $jobbash = "/home/sbp/jobs/$jobname";
+warn "## [WARNING] Script file already exists!\n" if -f $jobbash;
 
 print "## ==========\n";
 print "## NOTE: check if all expected are present below\n";
