@@ -1,0 +1,175 @@
+#!/usr/bin/env python
+
+from __future__ import division
+from __future__ import print_function
+
+import sys
+import os
+import traceback
+import posixpath as urlpath
+import argparse
+import hashlib
+import math
+import boto3
+import json
+try:
+    import urllib.parse as urlparse
+except:
+    import urlparse
+
+
+DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL")
+DEFAULT_S3_PROFILE = "download"
+ONE_MEGABYTE = 1024 * 1024
+
+
+def validate_links_md5s(local_base_path, remote_base_url, aws_profile, s3_endpoint, user_chunk_size):
+    local_base_path = os.path.normpath(os.path.expanduser(local_base_path))
+    run_name = os.path.basename(local_base_path)
+    local_links_path = os.path.join(local_base_path, "logs", "links.json")
+    remote_base_url = urlpath.join(urlparse.urlunparse(remote_base_url), run_name)
+    with open(local_links_path) as f:
+        local_links = json.load(f)
+        valid = []
+        for link_path in local_links.values():
+            relative_path = path_suffix_after(link_path, run_name)
+            local_path = os.path.join(local_base_path, relative_path)
+            remote_url = urlparse.urlparse(urlpath.join(remote_base_url, relative_path))
+            try:
+                result = validate_md5(local_path, remote_url, aws_profile, s3_endpoint, user_chunk_size)
+            except Exception:
+                result = False
+                print("Error validating {}/{}:".format(local_path, remote_url), file=sys.stderr)
+                traceback.print_exc(file=sys.stderr)
+            valid.append(result)
+    return all(valid)
+
+
+def validate_md5(local_path, remote_url, aws_profile, s3_endpoint, user_chunk_size):
+    if remote_url:
+        stored_md5, chunk_size = header_md5(aws_profile, s3_endpoint, remote_url)
+        print("{} {}".format(stored_md5, urlparse.urlunparse(remote_url)))
+    elif not user_chunk_size:
+        chunk_size = os.path.getsize(local_path) + 1
+
+    if user_chunk_size:
+        chunk_size = user_chunk_size
+
+    calculated_md5 = local_md5(local_path, chunk_size)
+    print("{} {}".format(calculated_md5, local_path))
+    return stored_md5 == calculated_md5 if remote_url else True
+
+
+# replicate the S3 algorithm described below, restricting memory usage
+def local_md5(path, chunk_size):
+    path = os.path.expanduser(path)
+    md5sum = hashlib.md5()
+    chunk_md5s = []
+    bytes_seen = 0
+    with open(path, "rb") as f:
+        READ_SIZE = 4096
+        for chunk in iter(lambda: f.read(READ_SIZE), b""):
+            md5sum.update(chunk)
+            bytes_seen += READ_SIZE
+            if bytes_seen % chunk_size == 0:
+                chunk_md5s.append(md5sum.digest())
+                md5sum = hashlib.md5()
+                bytes_seen = 0
+        if bytes_seen:
+            chunk_md5s.append(md5sum.digest())
+    if len(chunk_md5s) == 1:
+        return md5sum.hexdigest()
+    else:
+        md5sum = hashlib.md5()
+        md5sum.update(b"".join(chunk_md5s))
+        return "{}-{}".format(md5sum.hexdigest(), len(chunk_md5s))
+
+
+# S3 object header ETag:
+# * for single-part uploads is a plain MD5
+# * for multi-part uploads it is the MD5 of the concatenation of MD5s of the chunks
+#   with a suffix indicating the number of parts
+def header_md5(profile, endpoint_url, remote_url):
+    session = boto3.Session(profile_name=profile)
+    s3 = session.resource("s3", endpoint_url=urlparse.urlunparse(endpoint_url))
+    remote_object = s3.Object(bucket_name=remote_url.netloc, key=remote_url.path.lstrip("/"))
+    # bizarrely, surrounded by double quotes
+    etag = remote_object.e_tag.strip('"')
+    md5, _, num_parts = etag.partition("-")
+    return etag, guess_chunk_size(remote_object.content_length, num_parts)
+
+
+# spec says >= 8MB and byte-granularity. in practice people/tools tend
+# to pick multiples of a megabyte and do not always observe the
+# minimum. if the chunk size is large relative to the content length,
+# it's impossible to be sure. could compute potential values for each
+# MB chunk size between the two limits (without having to re-compute
+# the MD5 - extension of existing technique above). then compare all
+# of them for a match (false positive matches would remain almost
+# impossible).
+def guess_chunk_size(content_length, num_parts):
+    if num_parts:
+        num_parts = int(num_parts)
+        min_size = int(math.ceil(content_length / num_parts / ONE_MEGABYTE))
+        max_size = int(math.floor(content_length / (num_parts - 1) / ONE_MEGABYTE))
+        if min_size == max_size:
+            # chunk size is small relative to content length
+            # if MB granularity was used we can be sure we are correct
+            return min_size * ONE_MEGABYTE
+        else:
+            # we are not sure. multiples of 10 seems most common.
+            return (max_size // 10 * 10) * ONE_MEGABYTE
+    else:
+        return content_length + 1
+
+
+def path_suffix_after(link_path, run_name):
+    if run_name not in link_path:
+        raise Exception("run name '{}' not in link path '{}'".format(run_name, link_path))
+    link_path, relative_path = os.path.split(link_path)
+    link_path, basename = os.path.split(link_path)
+    while basename != run_name:
+        relative_path = os.path.join(basename, relative_path)
+        link_path, basename = os.path.split(link_path)
+    return relative_path
+
+
+def parse_args(argv):
+    parser = argparse.ArgumentParser(
+        description="Compare a file's MD5 to an ETag in S3, accounting for multi-part uploads",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    parser.add_argument("--local-path", required=True, help="The local file downloaded from S3, or the run directory if using --check-links.")
+    parser.add_argument("--remote-url", help="The S3 URL of the file's remote equivalent (including bucket).")
+    parser.add_argument("--check-links", action="store_true", help="Check all files in links.json. Local path should be the run directory, remote URL should be its parent.")
+    parser.add_argument("--chunk-size", type=int, default=0, help="Chunk size in megabytes for local file, 0 for no chunks. Guessed from S3 content length and number of chunks by default.")
+    parser.add_argument("--s3-endpoint", default=DEFAULT_S3_ENDPOINT, help="S3 endpoint to use if not $SBP_ENDPOINT_URL.")
+    parser.add_argument("--aws-profile", default=DEFAULT_S3_PROFILE, help="AWS profile to use.")
+
+    args = parser.parse_args(argv)
+    if args.remote_url:
+        args.remote_url = valid_url(args.remote_url, "s3")
+        args.s3_endpoint = valid_url(args.s3_endpoint)
+    args.chunk_size *= ONE_MEGABYTE
+
+    return args
+
+
+def valid_url(arg, required_scheme=None):
+    try:
+        url = urlparse.urlparse(arg)
+    except:
+        url = None
+    if not url or not url.netloc or not url.scheme or (required_scheme and url.scheme != required_scheme):
+        scheme_name = " {}".format(required_scheme) if required_scheme else ""
+        raise argparse.ArgumentTypeError("{} is not a valid URL with scheme {}".format(arg, scheme_name))
+    return url
+
+
+if __name__ == "__main__":
+    args = parse_args(sys.argv[1:])
+    if args.check_links:
+        success = validate_links_md5s(args.local_path, args.remote_url, args.aws_profile, args.s3_endpoint, args.chunk_size)
+    else:
+        success = validate_md5(args.local_path, args.remote_url, args.aws_profile, args.s3_endpoint, args.chunk_size)
+    sys.exit(0 if success else 1)
