@@ -29,13 +29,13 @@ if ( $ARGV[0] ){
 }
 
 ## read in entities
-my %centerid2entity = ();
+my %centerid2centername = ();
 open IN, "<", $entities_file or die "$!: Unable to open file ($entities_file)\n";
 while ( <IN> ){
     next if $_ =~ /^#/;
     chomp;
-    my ( $id, $name, $entity ) = split( "\t", $_ );
-    $centerid2entity{ $id } = $entity;
+    my ( $id, $descr, $name ) = split( "\t", $_ );
+    $centerid2centername{ $id } = $name;
 }
 close IN;
 
@@ -51,13 +51,13 @@ foreach my $setpath ( @sets_dirs ){
     
         my ( $date, $group, $bcref, $bctum, $patient, $study ) =  ($1, $2, $3, $4, $5, $6 );
         my $ini = 'CPCT.ini';
-        my $entityname = 'NA';
+        my $entity = 'NA';
         
         ## use study id in patient id to get entity
         if ( $patient =~ m/^(CPCT|DRUP)(\d{2})(\d{2})(\d{4})$/ ){
             my ( $umbrella_study, $study_id, $center_id, $patient_id ) = ( $1, $2, $3 );
-            die "[ERROR] center id not found in hash ($center_id)\n" unless exists $centerid2entity{$center_id};
-            $entityname = $centerid2entity{$center_id};
+            die "[ERROR] center id not found in hash ($center_id)\n" unless exists $centerid2centername{$center_id};
+            $entity = $umbrella_study."_".$centerid2centername{$center_id};
         }
         else{
             die "[ERROR] CPCT patient regex cannot find ids ($patient)\n";
@@ -79,7 +79,7 @@ foreach my $setpath ( @sets_dirs ){
 	    '-r', $refsample, 
 	    '-t', $tumsample, 
 	    '-i', $ini, 
-        '-e', $entityname,
+            '-e', $entity,
         ); 
         push( @toprint, $cmd );
         $counter++;
@@ -88,7 +88,7 @@ foreach my $setpath ( @sets_dirs ){
     elsif ( $setname =~ m/$setname_regex_giab/ ){
         my ( $date, $svalid, $pipelineversion, $settingsname ) =  ($1, $2, $3, $4 );
         my $ini = 'SingleSample.ini';
-        my $entityname = 'HMF_VALIDATION';
+        my $entity = 'HMF_VALIDATION';
         
         my $refsample = `ls $setpath/*/ | head -1 | grep -Po "^[^_]+"`;
         chomp( $refsample );
@@ -99,7 +99,7 @@ foreach my $setpath ( @sets_dirs ){
 	    '-r', $refsample, 
 	    '-t', 'NA', 
 	    '-i', $ini, 
-            '-e', $entityname,
+            '-e', $entity,
         ); 
         push( @toprint, $cmd );
         $counter++;
