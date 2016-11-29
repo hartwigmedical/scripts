@@ -34,7 +34,7 @@ if [ -s ${out}/tumorsamplediff ]; then
 fi
 
 # KODU: Step 2: Assess final somatic variant files are identical, after removing the headers (lines starting with "#")
-grep -v "#" ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/run_headerless_somatics.vcf
+grep -v "#" ${run}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_annotated.vcf > ${out}/run_headerless_somatics.vcf
 grep -v "#" ${truthrun}/somaticVariants/${refsample}_${tumorsample}/${refsample}_${tumorsample}_merged_somatics_snpEff_dbSNP_Cosmicv76.vcf > ${out}/truthrun_headerless_somatics.vcf
 echo -e "  Diffing headerless somatic VCFs"
 diff ${out}/run_headerless_somatics.vcf ${out}/truthrun_headerless_somatics.vcf > ${out}/somaticvariantdiff
