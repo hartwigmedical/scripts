@@ -33,7 +33,7 @@ class subVariantType():
 
 
 
-def indelDiffAndRelativePos(ref,variantAllele):
+def indelDiff(ref,variantAllele):
     #LOGIC - MATCH 1st char and then use strDiff in the reverse direction
     if ref[0]==variantAllele[0]: i=1
     else: i = 0
@@ -48,14 +48,14 @@ def indelDiffAndRelativePos(ref,variantAllele):
             myIndelString = myIndelString + "+" + reverseVariantAllele[item[3]:item[4]]
     myIndelString = myIndelString[::-1]
     #Find IndelPOs
-    if len(variantAllele)>len(ref):
-        myRelativePos = variantAllele[i:].find(myIndelString)- i
-    elif len(ref)>len(variantAllele):
-        myRelativePos = ref[i:].find(myIndelString) - i
-    else:
-        myRelativePos = -1
+    #if len(variantAllele)>len(ref):
+    #    myRelativePos = variantAllele[i:].find(myIndelString)- i
+    #elif len(ref)>len(variantAllele):
+    #    myRelativePos = ref[i:].find(myIndelString) - i
+    #else:
+    #    myRelativePos = -1
 
-    return myIndelString,myRelativePos
+    return myIndelString
 
 def calculateReadDepth(format,genotype):
     formatSplit = format.split(':')
@@ -192,7 +192,7 @@ class genotype:
             if self.somaticGenotype == 'unknown':
                 self.somaticGenotype = inputGenotype[:3]
             self.allele = alleleTumor2
-            self.indelDiff,self.indelRelativePos = indelDiffAndRelativePos(ref,self.allele)
+            self.indelDiff = indelDiff(ref,self.allele)
 
 class somaticVariant:
 
@@ -289,9 +289,9 @@ class somaticVariant:
                     if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
                         callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
                                                 variantGenotype.qualityScore,variantGenotype.somaticGenotype,
-                                                variantGenotype.indelDiff,variantGenotype.indelRelativePos]
+                                                variantGenotype.indelDiff]
                     else:
-                        callerSpecificFields = ['', '', '','','','','']
+                        callerSpecificFields = ['', '', '','','','']
                     somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
@@ -344,7 +344,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
         myColumnList = ['chrom', 'pos', 'chromPos','chromFrac','id', 'ref', 'vennSegment','numCallers','variantType','variantSubType','filter',
                         'bedRegion','inDBSNP','inCOSMIC','annGene','annWorstImpact','annWorstEffect','annAllEffects','consensus']
         for caller in header_index.iterkeys():
-            myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff',caller+'indelPos']
+            myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff']
         df.columns = (myColumnList)
         df['patientName'] = aPatientName
     ###### END PANDAS ###########
