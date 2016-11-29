@@ -103,8 +103,6 @@ if [ ${RUN_MUTECT} == true ]; then
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
     #PROD
     mutect -T MuTect -R ${ref} --intervals 17 --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
-    #EXPT
-    #mutect -T MuTect -R ${ref}  --intervals 17 --max_alt_alleles_in_normal_qscore_sum 33 --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
 
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
     
