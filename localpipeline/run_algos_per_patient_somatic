@@ -8,19 +8,19 @@ tumorbam=${out}/${tumorsample}.bam
 
 strelkavcf=${out}/strelka.passed.somatic.merged.final.vcf
 if [ ${RUN_STRELKA} == true ]; then
-    #echo -e "\nRunning Strelka\n"
-    #strelkaoutput=${out}/strelka
+    echo -e "\nRunning Strelka\n"
+    strelkaoutput=${out}/strelka
 
-    #if [ -d "${strelkaoutput}" ]; then
-    #    rm -r ${strelkaoutput}
-    #fi
+    if [ -d "${strelkaoutput}" ]; then
+        rm -r ${strelkaoutput}
+    fi
 
-    #abspath=`dirname $(readlink $0 || echo $0)`
-    #strelkaconfig=${abspath}/config/strelka.ini
-    #strelka --tumor ${tumorbam} --normal ${normalbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkaoutput};
-    #make -C ${strelkaoutput}
+    abspath=`dirname $(readlink $0 || echo $0)`
+    strelkaconfig=${abspath}/config/strelka.ini
+    strelka --tumor ${tumorbam} --normal ${normalbam} --ref ${ref} --config ${strelkaconfig} --output-dir ${strelkaoutput};
+    make -C ${strelkaoutput}
 
-    #gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkaoutput}/results/passed.somatic.snvs.vcf -V ${strelkaoutput}/results/passed.somatic.indels.vcf
+    gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${out}/strelka.passed.somatic.merged.vcf -V ${strelkaoutput}/results/passed.somatic.snvs.vcf -V ${strelkaoutput}/results/passed.somatic.indels.vcf
     perl -p -e 's/\t([A-Z][A-Z]:)/\tGT:$1/g' ${out}/strelka.passed.somatic.merged.vcf | perl -p -e 's/(:T[UO]R?)\t/$1\t0\/0:/g' | perl -p -e 's/(:\d+,\d+)\t/$1\t0\/1:/g' | perl -p -e 's/(#CHROM.*)/##StrelkaGATKCompatibility=Added GT fields to strelka calls for gatk compatibility.\n$1/g' > ${tmp}/temp.vcf
     mv ${tmp}/temp.vcf ${strelkavcf}
 fi
@@ -50,14 +50,14 @@ if [ ${RUN_VARSCAN} == true ]; then
 	varscanoutput=${out}/varscan
 
 	# EXPT
-	varscan somatic ${normalpileup} ${tumorpileup} ${varscanoutput} --min-var-freq 0.09 --output-vcf 1
+	varscan somatic ${normalpileup} ${tumorpileup} ${varscanoutput} --min-var-freq 0.1 --output-vcf 1
 
 	#PROD
 	#varscan processSomatic ${varscanoutput}.snp.vcf -max-normal-freq 0.02 --p-value 0.05
 	#varscan processSomatic ${varscanoutput}.indel.vcf -max-normal-freq 0.02 --p-value 0.05
     #EXPT
-	varscan processSomatic ${varscanoutput}.snp.vcf --p-value 0.19 --min-tumor-freq 0.09
-	varscan processSomatic ${varscanoutput}.indel.vcf --p-value 0.19 --min-tumor-freq 0.09
+	varscan processSomatic ${varscanoutput}.snp.vcf
+	varscan processSomatic ${varscanoutput}.indel.vcf
 
     gatk -T CombineVariants -R ${ref} --genotypemergeoption unsorted -o ${varscanvcf} -V ${varscanoutput}.snp.Somatic.hc.vcf -V ${varscanoutput}.indel.Somatic.hc.vcf
     # KODU: For mac OS, the backup extension (".bak") is mandatory when calling sed
@@ -70,24 +70,28 @@ if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
     # KODU: Below command is run per CHR in production
     #freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
+    #freebayes -f ${ref} --min-alternate-fraction 0.1 -C 2 --min-repeat-entropy 1 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
     freebayes -f ${ref} --min-alternate-fraction 0.1 -C 2 --min-repeat-entropy 1 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
     vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
 
     # KODU: This command is run on the merged vcfs in production.
     uniq ${out}/freebayes.sorted_uniq.vcf > ${out}/freebayes.vcf
 
-    sampleR=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 10`
-	sampleT=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 11`
+    #sampleR=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 10`
+	#sampleT=`grep -P "^#CHROM" ${out}/freebayes.vcf | cut -f 11`
 
-	vcflib vcfsamplediff VT ${sampleR} ${sampleT} ${out}/freebayes.vcf > ${out}/freebayes.VTannot.vcf
-	sed -i .bak 's/SSC/FB_SSC/' ${out}/freebayes.VTannot.vcf
-	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.germline.vcf
-	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.somatic.vcf
-	grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.somatic.vcf
-	grep -i "VT=germline" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.germline.vcf
-	grep -i "VT=somatic" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.somatic.vcf
+	#vcflib vcfsamplediff VT ${sampleR} ${sampleT} ${out}/freebayes.vcf > ${out}/freebayes.VTannot.vcf
+	#sed -i .bak 's/SSC/FB_SSC/' ${out}/freebayes.VTannot.vcf
+	#grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.germline.vcf
+	#grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.somatic.vcf
+	#grep -P "^#" ${out}/freebayes.VTannot.vcf > ${out}/freebayes.somatic.vcf
+	#grep -i "VT=germline" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.germline.vcf
+	#grep -i "VT=somatic" ${out}/freebayes.VTannot.vcf >> ${out}/freebayes.somatic.vcf
 
-	cat ${out}/freebayes.somatic.vcf | snpsift filter " (FB_SSC>=0.0002)" > ${freebayesvcf}
+    abspath=`dirname $(readlink $0 || echo $0)`
+    python ${abspath}/code/filterFreebayes.py -v ${out}/freebayes.vcf > ${freebayesvcf}
+    #python ${abspath}/code/filterFreebayes.py -v ${out}/freebayes.somatic.vcf > ${freebayesvcf}
+	#cat ${out}/freebayes.somatic.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10) & (FB_SSC>=20)" > ${freebayesvcf}
 	#cat ${out}/freebayes.germline.vcf | snpsift filter "(GEN[ALL].DP>=20) & (GEN[ALL].GQ>=15) & (QUAL>=10)" > ${out}/freebayes.filtered.germline.vcf
 fi
 
@@ -99,9 +103,9 @@ if [ ${RUN_MUTECT} == true ]; then
 
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.7)
     #PROD
-    #mutect -T MuTect -R ${ref} --cosmic ${cosmic} --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
+    mutect -T MuTect -R ${ref} --intervals 17 --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
     #EXPT
-    mutect -T MuTect -R ${ref}  --intervals 17 --max_alt_alleles_in_normal_qscore_sum 33 --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
+    #mutect -T MuTect -R ${ref}  --intervals 17 --max_alt_alleles_in_normal_qscore_sum 33 --dbsnp ${dbsnp} --input_file:normal ${normalbam} --input_file:tumor ${tumorbam} --out ${out}/mutect.out --vcf ${out}/mutect.vcf
 
     export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
     
@@ -111,7 +115,8 @@ fi
 if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
     echo -e "\nRunning somatic postprocessing (merge & annotate)\n"
 
-    gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
+    #gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
+    gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
 
     #TEMP DISABLE FOR EXPERIMENTS TO SAVE TIME
     #cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
