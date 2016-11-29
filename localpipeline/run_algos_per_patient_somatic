@@ -70,7 +70,6 @@ if [ ${RUN_FREEBAYES} == true ]; then
     echo -e "\nRunning freebayes\n"
     # KODU: Below command is run per CHR in production
     #freebayes -f ${ref} -C 3 --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
-    #freebayes -f ${ref} --min-alternate-fraction 0.1 -C 2 --min-repeat-entropy 1 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
     freebayes -f ${ref} --min-alternate-fraction 0.1 -C 2 --min-repeat-entropy 1 --no-partial-observation --pooled-continuous --report-genotype-likelihood-max --allele-balance-priors-off --pooled-discrete --genotype-qualities --min-coverage 5 --no-mnps --no-complex ${normalbam} ${tumorbam} > ${out}/freebayes.raw.vcf
     vcftools vcf-sort -c -t ${tmp} ${out}/freebayes.raw.vcf | vcflib vcfuniq > ${out}/freebayes.sorted_uniq.vcf
 
@@ -115,19 +114,17 @@ fi
 if [ ${RUN_SOMATIC_POSTPROCESS} == true ]; then
     echo -e "\nRunning somatic postprocessing (merge & annotate)\n"
 
-    #gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
-    gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
+    gatk -T CombineVariants -R ${ref} -o ${out}/somatics.merged.vcf --genotypemergeoption uniquify -V:strelka ${strelkavcf} -V:varscan ${varscanvcf} -V:freebayes ${freebayesvcf} -V:mutect ${mutectvcf}
 
-    #TEMP DISABLE FOR EXPERIMENTS TO SAVE TIME
-    #cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
-    #dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+    cosmic=${dbspath}/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+    dbsnp=${dbspath}/GATK_bundle_v2.8/dbsnp_137.b37.vcf
 
-    #snpeff GRCh37.74 -s ${out}/somatics_snpEff_summary.html -v ${out}/somatics.merged.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/somatics.merged.snpEff.vcf
-    #gatk -T VariantAnnotator -R ${ref} -o ${out}/somatics.merged.snpEff.dbSNP.vcf --variant ${out}/somatics.merged.snpEff.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
-    #gatk -T VariantAnnotator -R ${ref} -o ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.vcf --variant ${out}/somatics.merged.snpEff.dbSNP.vcf --dbsnp ${cosmic} --alwaysAppendDbsnpId
+    snpeff GRCh37.74 -s ${out}/somatics_snpEff_summary.html -v ${out}/somatics.merged.vcf -hgvs -lof -no-downstream -no-upstream -no-intergenic > ${out}/somatics.merged.snpEff.vcf
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/somatics.merged.snpEff.dbSNP.vcf --variant ${out}/somatics.merged.snpEff.vcf --dbsnp ${dbsnp} --alwaysAppendDbsnpId
+    gatk -T VariantAnnotator -R ${ref} -o ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.vcf --variant ${out}/somatics.merged.snpEff.dbSNP.vcf --dbsnp ${cosmic} --alwaysAppendDbsnpId
 
-    #abspath=`dirname $(readlink $0 || echo $0)`
-    #python ${abspath}/code/melt_somatic_vcf.py -t ${tumorsample} -v ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.vcf > ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.melted.vcf
+    abspath=`dirname $(readlink $0 || echo $0)`
+    python ${abspath}/code/melt_somatic_vcf.py -t ${tumorsample} -v ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.vcf > ${out}/somatics.merged.snpEff.dbSNP.Cosmicv76.melted.vcf
 fi
 
 if [ ${RUN_FREEC} == true ]; then
