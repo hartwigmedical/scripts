@@ -354,7 +354,6 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
     return df
 
 def loadBEDFile(aPath, aBEDFile):
-    print "reading BED file"
     myBed = []
     with open(aPath + aBEDFile, 'r') as f:
         for line in f:
@@ -363,7 +362,6 @@ def loadBEDFile(aPath, aBEDFile):
             splitLine = line.split('\t')
             if splitLine[0] != 'chrom':
                 myBed.append(splitLine)
-    print "Bed File Loaded"
     return myBed
 
 def printStatistics(df):
