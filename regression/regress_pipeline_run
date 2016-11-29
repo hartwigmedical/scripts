@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TABIX_PATH=/data/common/tools/tabix_v0.2.6
-RTG_PATH=/data/common/software/rtg
+RTG_PATH=/data/common/software
 SDF_PATH=/data/common/dbs/RTGSDF_GRCh37
 
 run=$1
