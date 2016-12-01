@@ -13,7 +13,7 @@ import math
 
 READ_SIZE = 4096
 DECOMPRESSOR_OPTIONS = zlib.MAX_WBITS | 16  # max window, gzip header/trailer
-GZIP_HEADER = "\037\213"
+GZIP_MAGIC = "\037\213"
 
 
 def optimistic_decompress_zlib(input_path, output_path):
@@ -21,50 +21,53 @@ def optimistic_decompress_zlib(input_path, output_path):
         num_chunks = int(math.ceil(os.path.getsize(input_path) / READ_SIZE))
         decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
         unused = b""
-        searching = False
-        for chunk_num, chunk in enumerate(iter(lambda: in_fh.read(READ_SIZE), b""), start=1):
-            if searching:
-                next_part = chunk.find(GZIP_HEADER)
-                if next_part != -1:
-                    chunk = chunk[next_part:]
-                    decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
-                    searching = False
-                else:
-                    continue
+        chunks = enumerate(iter(lambda: in_fh.read(READ_SIZE), b""), start=1)
+        for chunk_num, chunk in chunks:
             try:
                 bam_chunk = decompressor.decompress(unused + chunk)
                 out_fh.write(bam_chunk)
             except Exception:
-                print(file=sys.stderr)
-                error_offset = chunk_num * READ_SIZE - len(decompressor.unconsumed_tail)
-                print("decompression error at offset {} (unused data: {})".format(error_offset, len(decompressor.unused_data)), file=sys.stderr)
-                traceback.print_exc(file=sys.stderr)
-                next_part = decompressor.unconsumed_tail.find(GZIP_HEADER)
-                if next_part != -1:
-                    unused = decompressor.unconsumed_tail[next_part:]
-                    decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
-                else:
-                    unused = b""
-                    searching = True
-                    continue
+                print_exception(chunk_num, decompressor)
+                unused = find_next_member(chunks, decompressor)
+                decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
+                continue
 
             if decompressor.unconsumed_tail:
-                print("unexpected unconsumed tail of length {}".format(len(decompressor.unconsumed_tail)))
+                print("unexpected unconsumed tail of length {}".format(len(decompressor.unconsumed_tail)), file=sys.stderr)
 
             unused = decompressor.unused_data
             if unused:
-                # new part
                 decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
 
             if chunk_num % 1000 == 0:
                 print_progress(chunk_num, num_chunks)
 
         bam_chunk = decompressor.flush()
-        if bam_chunk:
-            out_fh.write(bam_chunk)
+        out_fh.write(bam_chunk)
         print_progress(num_chunks, num_chunks)
         print()
         print("Done.")
+
+
+def print_exception(chunk_num, decompressor):
+    error_offset = chunk_num * READ_SIZE - len(decompressor.unconsumed_tail)
+    print(file=sys.stderr)
+    print("decompression error at offset {} (unused data: {})".format(error_offset, len(decompressor.unused_data)), file=sys.stderr)
+    traceback.print_exc(file=sys.stderr)
+
+
+def find_next_member(chunks, decompressor):
+    next_part = decompressor.unconsumed_tail.find(GZIP_MAGIC)
+    unused = b""
+    if next_part != -1:
+        unused = decompressor.unconsumed_tail[next_part:]
+    else:
+        for chunk_num, chunk in chunks:
+            next_part = chunk.find(GZIP_MAGIC)
+            if next_part != -1:
+                unused = chunk[next_part:]
+                break
+    return unused
 
 
 # library internal state fails to deal with error properly
