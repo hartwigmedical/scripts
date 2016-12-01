@@ -6,7 +6,6 @@ from __future__ import division
 import sys
 import traceback
 import zlib
-import gzip
 import os
 import math
 
@@ -16,7 +15,7 @@ DECOMPRESSOR_OPTIONS = zlib.MAX_WBITS | 16  # max window, gzip header/trailer
 GZIP_MAGIC = "\037\213"
 
 
-def optimistic_decompress_zlib(input_path, output_path):
+def optimistic_decompress(input_path, output_path):
     with open(input_path, "rb") as in_fh, open(output_path, "wb") as out_fh:
         num_chunks = int(math.ceil(os.path.getsize(input_path) / READ_SIZE))
         decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
@@ -70,30 +69,6 @@ def find_next_member(chunks, decompressor):
     return unused
 
 
-# library internal state fails to deal with error properly
-def optimistic_decompress_gzip(input_path, output_path):
-    def try_reader(fh):
-        def try_read():
-            try:
-                return in_fh.read(READ_SIZE)
-            except Exception:
-                traceback.print_exc(file=sys.stderr)
-        return try_read
-
-    num_chunks = int(math.ceil(os.path.getsize(input_path) / READ_SIZE))
-    with gzip.GzipFile(input_path, "rb") as in_fh, open(output_path, "wb") as out_fh:
-        chunk_num = 1
-        for chunk in iter(try_reader(in_fh), b""):
-            if chunk:
-                out_fh.write(chunk)
-                chunk_num += 1
-            if chunk_num % 100 == 0:
-                print_progress(chunk_num, num_chunks)
-        print_progress(num_chunks, num_chunks)
-        print()
-        print("Done.")
-
-
 def print_progress(chunk_num, num_chunks):
     percent_complete = chunk_num / num_chunks
     print("Decompressed chunk {:{width}}/{:{width}} ({:.1%})".format(
@@ -106,4 +81,4 @@ def print_progress(chunk_num, num_chunks):
 
 
 if __name__ == "__main__":
-    optimistic_decompress_zlib(sys.argv[1], sys.argv[2])
+    optimistic_decompress(sys.argv[1], sys.argv[2])
