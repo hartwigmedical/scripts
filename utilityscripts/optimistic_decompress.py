@@ -8,6 +8,7 @@ import traceback
 import zlib
 import os
 import math
+import contextlib
 
 
 READ_SIZE = 4096
@@ -16,7 +17,7 @@ GZIP_MAGIC = "\037\213"
 
 
 def optimistic_decompress(input_path, output_path):
-    with open(input_path, "rb") as in_fh, open(output_path, "wb") as out_fh:
+    with open(input_path, "rb") as in_fh, smart_open(output_path, sys.stdout, "wb") as out_fh:
         num_chunks = int(math.ceil(os.path.getsize(input_path) / READ_SIZE))
         decompressor = zlib.decompressobj(DECOMPRESSOR_OPTIONS)
         unused = b""
@@ -41,11 +42,11 @@ def optimistic_decompress(input_path, output_path):
             if chunk_num % 1000 == 0:
                 print_progress(chunk_num, num_chunks)
 
+        # gzip module only does this at the end, not on new members
         bam_chunk = decompressor.flush()
         out_fh.write(bam_chunk)
+
         print_progress(num_chunks, num_chunks)
-        print()
-        print("Done.")
 
 
 def print_exception(chunk_num, decompressor):
@@ -76,9 +77,27 @@ def print_progress(chunk_num, num_chunks):
         num_chunks,
         percent_complete,
         width=len(str(num_chunks))),
-          end="\r")
-    sys.stdout.flush()
+          end="\r",
+          file=sys.stderr)
+    if chunk_num == num_chunks:
+        print(file=sys.stderr)
+        print("Done.", file=sys.stderr)
+    sys.stderr.flush()
+
+
+@contextlib.contextmanager
+def smart_open(path, fallback, mode="r"):
+    if path and path != "-":
+        fh = open(path, mode)
+    else:
+        fh = fallback
+
+    try:
+        yield fh
+    finally:
+        if fh is not fallback:
+            fh.close()
 
 
 if __name__ == "__main__":
-    optimistic_decompress(sys.argv[1], sys.argv[2])
+    optimistic_decompress(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
