@@ -50,7 +50,7 @@ foreach my $setpath ( @sets_dirs ){
     if ( $setname =~ m/$setname_regex_cpct/ ){
     
         my ( $date, $group, $bcref, $bctum, $patient, $study ) =  ($1, $2, $3, $4, $5, $6 );
-        my $ini = 'CPCT.ini';
+        my $ini = 'Somatic.ini';
         my $entity = 'NA';
         
         ## use study id in patient id to get entity
@@ -135,7 +135,7 @@ foreach my $setpath ( @sets_dirs ){
 my $datestring = strftime "%y%m%d", localtime;
 my $jobname = $datestring."_register_".$counter."_sets";
 my $jobbash = "/home/sbp/jobs/$jobname";
-warn "## [WARNING] Script file already exists!\n" if -f $jobbash;
+#warn "## [WARNING] Script file already exists!\n" if -f $jobbash;
 
 print "## ==========\n";
 print "## NOTE: check if all expected are present below\n";
