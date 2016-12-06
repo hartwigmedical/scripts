@@ -16,5 +16,7 @@ ps aux | grep "[r]sync" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cu
 echo "===> MD5SUM"
 ps aux | grep "[m]d5sum" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
 
+echo "===> bam2fastq"
+ps aux | grep "[b]am2fastq" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
 
 echo ""
