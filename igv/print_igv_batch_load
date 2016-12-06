@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+if [ $# -eq 0 ]; then
+    echo "---"
+    echo " Descr: Prints the links to load in IGV for a pipeline run"
+    echo " Usage: `basename $0` <absolute_path_to_pipeline_dir>"
+    echo "        `basename $0` /data/processed_archive/123456_HMFreg0000_sample1"
+    echo "---"
+    exit 1
+fi
+
+RUN_PATHS=( "$@" )
+
+echo ""
+
+out=""
+out="${out}## save (or write) this output to config txt file and load in IGV eg like\n"
+out="${out}##   ./igv.sh -b <config_file>\n"
+out="${out}## for the paths to work please create a mount like:\n"
+out="${out}##   sshfs <USER>@<IP_OF_DATASTORE>:/data/ /mnt/datastore/ -o reconnect\n"
+out="${out}new\n"
+out="${out}genome hg19\n"
+
+## find relevant BAM files for each run
+## and add them to the output string
+for RUN in "${RUN_PATHS[@]}"; do
+  FOUND=0
+  for bam in `find $RUN -wholename "*/mapping/*.bam"`; do
+    #echo "BAM: $bam" 
+
+    ## skip small sliced BAMs
+    if [[ $bam == *sliced* ]]; then continue; fi;
+
+    bamLink=`echo $bam | sed 's#/data/processed_archive/#file:///mnt/datastore/processed_archive/#g'`
+    bamLink=`echo $bamLink | sed 's#/data/schuberg/#file:///mnt/datastore/schuberg/#g'`
+    out="${out}load ${bamLink}\ncollapse\n"
+    FOUND=1
+  done
+  if [[ $FOUND == 0 ]]; then echo "## No BAMs found in run $RUN"; fi;
+done
+
+## move focus to BRAF V600 position
+out="${out}goto chr7:140,453,085-140,453,186\n"
+
+printf "${out}"
+
+## ---------------
+## possible options:
+#snapshotDirectory mySnapshotDirectory
+#sort position(|base|etc)
+#snapshot
+#collapse
+#snapshot
