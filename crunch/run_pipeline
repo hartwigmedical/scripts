@@ -63,7 +63,7 @@ function main() {
     # especially useful for repeated somatics runs on existing data
     if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_PILEUP" settings.config
     then
-        echo "FINALIZE_KEEP_PILEUP  yes" >> settings.config
+        echo "FINALIZE_KEEP_PILEUP	yes" >> settings.config
     fi
 
     write_metadata "${input}" "${output}"
