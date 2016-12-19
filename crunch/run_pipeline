@@ -63,15 +63,15 @@ function main() {
     # especially useful for repeated somatics runs on existing data
     if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_PILEUP" settings.config
     then
-        echo "FINALIZE_KEEP_PILEUP  yes" >> settings.config
+        echo "FINALIZE_KEEP_PILEUP	yes" >> settings.config
     fi
 
     write_metadata "${input}" "${output}"
 
     if [ -x "/data/repos/${pipeline}/illumina_pipeline.pl" ]; then
-        "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > submitlog_test
+        "/data/repos/${pipeline}/illumina_pipeline.pl" "${output}/settings.config" > /dev/null
     else
-        "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > submitlog_test
+        "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > /dev/null
     fi
 }
 

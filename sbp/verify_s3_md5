@@ -19,6 +19,7 @@ except:
 
 
 DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL")
+DEFAULT_S3_BUCKET = os.environ.get("OUTPUT_BUCKET")
 DEFAULT_S3_PROFILE = "download"
 ONE_MEGABYTE = 1024 * 1024
 
@@ -149,6 +150,9 @@ def parse_args(argv):
     args = parser.parse_args(argv)
     if args.remote_url:
         args.remote_url = valid_url(args.remote_url, "s3")
+        args.s3_endpoint = valid_url(args.s3_endpoint)
+    elif args.check_links:
+        args.remote_url = valid_url("s3://{}/".format(DEFAULT_S3_BUCKET), "s3")
         args.s3_endpoint = valid_url(args.s3_endpoint)
     args.chunk_size *= ONE_MEGABYTE
 

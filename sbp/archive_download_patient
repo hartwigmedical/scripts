@@ -1,6 +1,21 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 BUCKET=$1
 RUN_NAME=$2
+LOCAL_ROOT=/data/schuberg
+LOCAL_DIR=${LOCAL_ROOT}/${RUN_NAME}
 
-sbp_old s3 sync s3://${BUCKET}/${RUN_NAME}/ /data/schuberg/${RUN_NAME}/ --profile download_old
+sbp_old s3 sync "s3://${BUCKET}/${RUN_NAME}/" "${LOCAL_DIR}/" --profile download_old
+
+VERIFY_LOGFILE="${LOCAL_DIR}/logs/verify_s3_md5.log"
+
+# only verify on the second run to avoid running twice and ensure error message goes to check file
+if [ -f "${VERIFY_LOGFILE}" ] && [ ! -s "${VERIFY_LOGFILE}" ]; then
+    while IFS= read -r -d '' artefact; do
+        REMOTE_URL="s3://${BUCKET}/${artefact##$LOCAL_ROOT/}"
+        verify_s3_md5 --local-path "${artefact}" --remote-url "${REMOTE_URL}" --aws-profile download_old --s3-endpoint https://s3.storage.schubergphilis.com >> "${VERIFY_LOGFILE}" 2>&1 \
+            || echo "ERROR: verify_s3_md5 failed for ${artefact}, check ${VERIFY_LOGFILE}"
+    done < <(find "${LOCAL_DIR}" -type f -name "*.bam" -not -name "*.sliced.*" -print0)
+else
+    touch "${VERIFY_LOGFILE}"
+fi
