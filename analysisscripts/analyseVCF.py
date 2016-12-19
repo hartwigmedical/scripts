@@ -16,8 +16,6 @@ SAMPLE_NAMES = {VCF_SAMPLE + 'T.mutect': 'mutect',
 
 ###############################################
 
-
-
 class variantType():
     sameAsRef = "Same as Ref"
     missingGenotype = "Missing Genotype"
@@ -63,6 +61,8 @@ def calculateReadDepth(format,genotype):
     if 'DP' in formatSplit:
         try:
             return int(genotypeSplit[formatSplit.index('DP')])
+        except IndexError:
+            return -1
         except ValueError:
             return -1
     else:
@@ -132,6 +132,7 @@ def calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,tumo
 def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor2):
     formatSplit = format.split(':')
     genotypeSplit = genotype.split(':')
+
     if caller == 'mutect':
         return float(genotypeSplit[formatSplit.index('FA')])
     elif caller == 'varscan':
@@ -162,7 +163,7 @@ class genotype:
     def __init__(self,caller,ref,alt,qual,infoSplit,infoHeaders,format,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
         self.tumorVariantSubType = subVariantType.none
-
+        alleleTumor2 = ""
         if inputGenotype[:3] == "./.":
             self.tumorVariantType = variantType.missingGenotype
         elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
@@ -185,14 +186,17 @@ class genotype:
                 else:
                     self.tumorVariantSubType = subVariantType.indel
 
+            self.allele = alleleTumor2
+            self.indelDiff = indelDiff(ref, self.allele)
+
             self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
             self.readDepth = calculateReadDepth(format,inputGenotype)
             self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType))
             self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
             if self.somaticGenotype == 'unknown':
                 self.somaticGenotype = inputGenotype[:3]
-            self.allele = alleleTumor2
-            self.indelDiff = indelDiff(ref,self.allele)
+
+
 
 class somaticVariant:
 
@@ -401,6 +405,43 @@ def printStatistics(df):
     df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,True,VCF_SAMPLE,False)
     printStatistics(df)
 
+def poolOfNormals(fileandSampleNames):
+
+    PONs = {}
+    for fileandSampleName in fileandSampleNames:
+        with open(fileandSampleName[0], 'r') as f:
+            for line in f:
+
+                line = line.strip('\n')
+                a = [x for x in line.split('\t')]
+
+                if a[0] == '#CHROM':
+                    try:
+                        header_index = a[9:].index(fileandSampleName[1])
+                    except IndexError:
+                        print 'Error - missing sample input: ', fileandSampleName[1]
+                        return -1
+
+                if a[0][:1] != '#':
+                    myGenotypes = {}
+                    myGenotypes['GATK'] = a[9:][header_index]
+                    somaticVariant(a[0].lstrip("chr"), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], myGenotypes,False, False,"",True)
+
+            #for variant in somaticVariant.variantInfo:
+            from collections import Counter
+            myDict = Counter([(x[0],x[1],x[5],x[8],x[19]) for x in somaticVariant.variantInfo])
+            #print myDict
 
 
+            myDict2 = {k: v for k, v in myDict.iteritems() if v > 1}
+            print len(myDict2)
 
+            import csv
+            with open('/Users/peterpriestley/Documents/dict.csv', 'wb') as csv_file:
+                writer = csv.writer(csv_file)
+                for key, value in myDict.items():
+                    writer.writerow([key[0],key[1],key[2],key[3],key[4], value])
+
+#mylist=[['/Users/peterpriestley/hmf/analyses/ensembleRuleTesting/160922_HMFregCPCT_FR10302782_FR12251860_CPCT02060023.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5_sliced.vcf','CPCT02060023R']]
+#mylist=[['/Users/peterpriestley/hmf/analyses/2016SEP-OCTTestRuns/160922_GIABDIFF_NA12878_NA12878_NA12878.filtered_variants.vcf','12878R'],['/Users/peterpriestley/hmf/analyses/2016SEP-OCTTestRuns/160922_GIABDIFF_NA12878_NA12878_NA12878.filtered_variants.vcf','12878T']]
+#poolOfNormals(mylist)
