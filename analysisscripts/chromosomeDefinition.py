@@ -34,9 +34,9 @@ def intChrom(chrom):
         return 24
     elif chrom == 'MT':
         return 25
-    elif chrom[:2] == 'GL':
+    elif str(chrom)[:2] == 'GL':
         return 100
-    elif chrom[:2] == 'NC':
+    elif str(chrom)[:2] == 'NC':
         return 100
     else:
         return int(chrom)
