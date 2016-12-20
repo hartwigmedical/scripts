@@ -9,8 +9,11 @@
 #     | xargs grep -hE '^(Start|End)' \
 #     > /tmp/timeline.log
 #
-# Some corrupt lines appear in the files; not clear why (each line should be written somewhat
-# atomically). The above should remove such lines for now.
+# Some corrupt lines appear in the files. The above should remove such lines for now but
+# some jobs will be missing start and/or end times. These are displayed as extending the
+# length of the pipeline lifetime. This corruption shouldn't happen, see:
+#
+# http://unix.stackexchange.com/questions/68146/what-are-guarantees-for-concurrent-writes-into-a-named-pipe
 #
 # At *least* until v1.12 there is not a consistent tab-separated format and manual fix-up
 # is required. The script fixes the missing tab between Start/End and the job name but
