@@ -1,0 +1,6 @@
+bucket=$1
+run=$2
+path=$3
+filter=$4
+
+sbp s3 sync ${bucket}/${run}/${path} /data/experiments/health_checks/health_check_data/${run}/${path} --exclude "*" --include "${filter}" --profile download
