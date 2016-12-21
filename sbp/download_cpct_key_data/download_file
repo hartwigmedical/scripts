@@ -2,4 +2,4 @@ bucket=$1
 run=$2
 path=$3
 
-sbp s3 cp ${bucket}/${run}/${path} /data/experiments/health_checks/health_check_data/${run}/${path} --profile download
+sbp s3 cp ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --profile download
