@@ -265,8 +265,10 @@ function LinksCheck() {
 
     local failures=0
     if [[ -f ${linksFile} ]]; then
+        local runName=$(basename "${runDir}")
         for artefact in $(awk -F: '{ print $2 }' "$linksFile" | tr -d '",'); do
-            [ ! -f "$artefact" ] && warn "Linked artefact $artefact does not exist" && ((failures++))
+            local localArtefact=${runDir}/${artefact##*/$runName/}
+            [ ! -f "${localArtefact}" ] && warn "Linked artefact $localArtefact does not exist" && ((failures++))
         done
         if [ $failures -gt 0 ]; then
             fail "$linksFile has $failures missing links"
