@@ -9,11 +9,10 @@
 #     | xargs grep -hE '^(Start|End)' \
 #     > /tmp/timeline.log
 #
-# Some corrupt lines appear in the files. The above should remove such lines for now but
-# some jobs will be missing start and/or end times. These are displayed as extending the
-# length of the pipeline lifetime. This corruption shouldn't happen, see:
-#
-# http://unix.stackexchange.com/questions/68146/what-are-guarantees-for-concurrent-writes-into-a-named-pipe
+# Some corrupt lines appear in the files. The above should filter them out, resulting in
+# some jobs missing start and end times and thus extending over the whole duration. This
+# would not happen on a local filesystem (you can write concurrently to the same file from
+# different processes if the write is small) but Schuberg put output on NFS.
 #
 # At *least* until v1.12 there is not a consistent tab-separated format and manual fix-up
 # is required. The script fixes the missing tab between Start/End and the job name but
@@ -21,6 +20,10 @@
 #
 # Jobs need to use the same step and host to match up start and end properly. Also not the
 # case for all jobs :( Could discard host. Step names should be fixed after v1.12.
+#
+# It is obviously quite easy to run this script from a more reliable source by taking
+# database logs or any other centralised format and writing it to a file in the same
+# format as expected here.
 #
 # Time-zone and strptime format are hard-coded for now, need altering when format changes
 # for different locales. lubridate package can help with this.
