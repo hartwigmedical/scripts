@@ -45,14 +45,6 @@ def indelDiff(ref,variantAllele):
         elif item[0] == 'insert':
             myIndelString = myIndelString + "+" + reverseVariantAllele[item[3]:item[4]]
     myIndelString = myIndelString[::-1]
-    #Find IndelPOs
-    #if len(variantAllele)>len(ref):
-    #    myRelativePos = variantAllele[i:].find(myIndelString)- i
-    #elif len(ref)>len(variantAllele):
-    #    myRelativePos = ref[i:].find(myIndelString) - i
-    #else:
-    #    myRelativePos = -1
-
     return myIndelString
 
 def calculateReadDepth(format,genotype):
@@ -105,14 +97,6 @@ def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,
         else:
             return infoSplit[infoHeaders.index("SSC")].split('=')[1]
     elif caller == 'freebayes' or caller == 'normal':
-        #formatSplit = format.split(':')
-        #genotypeSplit = genotype.split(':')
-        #try:
-        #    return sorted([float(x) for x in genotypeSplit[formatSplit.index('GL')].split(',')])[-2]
-        #except IndexError:
-        #    return -1
-        #except ValueError:
-        #    return -1
         return qual
     elif caller == 'Set1GIAB12878':
         try:
