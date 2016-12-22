@@ -1,0 +1,27 @@
+bucket=$1
+run=$2
+ref_sample=$3
+tum_sample=$4
+
+path=`dirname $(readlink $0 || echo $0)`
+
+${path}/download_file ${bucket} ${run} ${ref_sample}/mapping/${ref_sample}_dedup.realigned.flagstat
+${path}/download_file ${bucket} ${run} ${ref_sample}/mapping/${ref_sample}_dedup.qc.postrealign.sliced.flagstat
+${path}/download_file ${bucket} ${run} ${ref_sample}/mapping/${ref_sample}_dedup.qc.prepostrealign.diff
+${path}/download_file ${bucket} ${run} ${tum_sample}/mapping/${tum_sample}_dedup.realigned.flagstat
+${path}/download_file ${bucket} ${run} ${tum_sample}/mapping/${tum_sample}_dedup.qc.postrealign.sliced.flagstat
+${path}/download_file ${bucket} ${run} ${tum_sample}/mapping/${tum_sample}_dedup.qc.prepostrealign.diff
+${path}/download_path ${bucket} ${run} ${ref_sample}/QCStats/ *.zip
+${path}/download_path ${bucket} ${run} ${tum_sample}/QCStats/ *.zip
+${path}/download_path ${bucket} ${run} QCStats *.alignment_summary_metrics
+${path}/download_path ${bucket} ${run} QCStats *.insert_size_metrics
+${path}/download_path ${bucket} ${run} QCStats *_WGSMetrics.txt
+${path}/download_path ${bucket} ${run} somaticVariants *_melted.vcf
+# GoNLv5 is for all runs up till v1.9
+${path}/download_root_path ${bucket} ${run} *_GoNLv5.vcf
+# Annotated is for runs from v1.10 onwards
+${path}/download_root_path ${bucket} ${run} *_annotated.vcf
+${path}/download_root_path ${bucket} ${run} *_GoNLv5_sliced.vcf
+${path}/download_root_path ${bucket} ${run} *.kinship
+${path}/download_path ${bucket} ${run} copyNumber *.realigned.bam_CNVs
+${path}/download_path ${bucket} ${run} logs *.log
