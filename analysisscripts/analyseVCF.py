@@ -91,7 +91,7 @@ def calculateSomaticGenotype(infoSplit,infoHeaders,caller,aVariantType):
     else:
         return 'unknown'
 
-def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType):
+def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,genotype):
     if caller == 'strelka' and aVariantType == variantType.indel:
         try:
             return infoSplit[infoHeaders.index("QSI_NT")].split('=')[1]
@@ -104,7 +104,15 @@ def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType):
             return infoSplit[infoHeaders.index("VS_SSC")].split('=')[1]
         else:
             return infoSplit[infoHeaders.index("SSC")].split('=')[1]
-    elif caller == 'freebayes':
+    elif caller == 'freebayes' or caller == 'normal':
+        #formatSplit = format.split(':')
+        #genotypeSplit = genotype.split(':')
+        #try:
+        #    return sorted([float(x) for x in genotypeSplit[formatSplit.index('GL')].split(',')])[-2]
+        #except IndexError:
+        #    return -1
+        #except ValueError:
+        #    return -1
         return qual
     elif caller == 'Set1GIAB12878':
         try:
@@ -191,7 +199,7 @@ class genotype:
 
             self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
             self.readDepth = calculateReadDepth(format,inputGenotype)
-            self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType))
+            self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType,format,inputGenotype))
             self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
             if self.somaticGenotype == 'unknown':
                 self.somaticGenotype = inputGenotype[:3]
@@ -216,7 +224,7 @@ class somaticVariant:
 
         #Label the BED region
         bedRegion = ""
-        if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<=int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom):
+        if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom):
             try:
                 bedRegion = somaticVariant.bedItem[3]
             except IndexError:
@@ -336,6 +344,7 @@ def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                 i += 1
                 if i% 100000 == 0:
                     print "reading VCF File line:",i
+                    #break
 
     #Reset bed item
     somaticVariant.bedItem = []
