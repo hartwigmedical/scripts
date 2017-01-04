@@ -171,7 +171,7 @@ EOF
     wget -q ${github_base_url}/storcli.py -O ${install_base_dir}/storcli.py
     chmod +x ${install_base_dir}/storcli.py
     cat << EOF > /etc/cron.d/prometheus-storcli
-*/5 * * * * root ${install_base_dir}/storcli.py > ${data_dir}/storcli.prom.\$\$ && echo storcli_completion_time \$\(date +\%s\) >> ${data_dir}/storcli.prom.\$\$ && mv ${data_dir}/storcli.prom.\$\$ ${data_dir}/storcli.prom
+*/5 * * * * root ${install_base_dir}/storcli.py > ${data_dir}/storcli.prom.\$\$ && echo storcli_completion_time \$(date +\%s) >> ${data_dir}/storcli.prom.\$\$ && mv ${data_dir}/storcli.prom.\$\$ ${data_dir}/storcli.prom
 EOF
 }
 
