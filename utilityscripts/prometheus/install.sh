@@ -46,20 +46,6 @@ EOF
     wget -q ${github_base_url}/tunnel_node_exporters -O ${install_base_dir}/tunnel_node_exporters
     chmod +x ${install_base_dir}/tunnel_node_exporters
 
-    service=tunnel_node_exporters.service
-    cat << EOF > /usr/lib/systemd/system/${service}
-[Unit]
-Description=Tunnel Prometheus' node_exporter ports for metrics collection
-
-[Service]
-Type=oneshot
-ExecStart=${install_base_dir}/tunnel_node_exporters
-
-[Install]
-WantedBy=multi-user.target
-EOF
-    systemd_enable ${service}
-
     cat <<EOF > ${prometheus_dir}/prometheus.yml
 global:
   scrape_interval: 15s
