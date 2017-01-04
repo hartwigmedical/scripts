@@ -272,7 +272,12 @@ class somaticVariant:
                     annGene = annSplit[0].split('|')[3]
 
                 #CONSENSUS RULE
-                consensus = int(numCallers) >= 3 or (int(numCallers) == 2 and bedRegion <> "" and (not inDBSNP or inCOSMIC))
+                if myVariantType == variantType.SNP:
+                    consensus = int(numCallers) >= 3 or (int(numCallers) == 2 and bedRegion <> "" and (not inDBSNP or inCOSMIC))
+                elif myVariantType == variantType.indel:
+                    consensus = (int(numCallers) >= 2)
+                else:
+                    consensus = False
 
                 ############### Pandas Prep ####################
                 # APPEND NORMAL FIELDS
