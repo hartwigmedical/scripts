@@ -1,0 +1,102 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.16.0;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp; 
+use JSON;
+
+my $SNPCHECK_DB = '/data/common/dbs/snpcheck/latest';
+my $run_path;
+my $verbose;
+my $help;
+my $SCRIPT = basename($0);
+my $USAGE = <<USAGE;
+
+  Descr:   Perform the SNP check (prints to screen)
+  Usage:   $SCRIPT -run <path to pipeline run dir>
+  Example: $SCRIPT -run 161228_HMFregCPCT_FR123_FR456_CPCT123
+  Options: 
+           -h: print this message
+  Notes:
+    File used for SNP fingerprint/array = $SNPCHECK_DB
+    
+USAGE
+
+GetOptions (
+	"run|r=s" => \$run_path,
+    "help|h"  => \$help
+) or die("[ERROR] Incorrect command line arguments\n");
+print $USAGE and exit(0) if ($help or not $run_path);
+die "[ERROR] Run path does not exist ($run_path)\n" unless -e $run_path;
+
+my $set_name = basename $run_path;
+my $meta_path = $run_path.'/metadata';
+die "[ERROR] Metadata file not found ($meta_path)" unless -f $meta_path;
+my $meta_text = read_file( $meta_path ); 
+my $meta_info = decode_json $meta_text; 
+
+my $ref = $meta_info->{ref_sample};
+my $tum = $meta_info->{tumor_sample};
+my $set = $meta_info->{set_name};
+my $ini = $meta_info->{ini_name};
+my @samples = ();
+push( @samples, $ref );
+push( @samples, $tum ) if ($tum ne 'NA' and $tum ne '' );
+
+say "[INFO] SNPcheck started for set: $set_name"; 
+say "[INFO] Samples found in metadata: ".join(', ', @samples);
+my $is_failed = performSNPcheck( \@samples, $SNPCHECK_DB );
+exit (1) if $is_failed;
+
+## ----------
+
+sub performSNPcheck{
+    my ($samples, $snpcheck_file) = @_;
+    my $test = 'SNPCHECK';
+    my $is_fail = '';
+    
+    foreach my $sample ( @$samples ){
+        my $snpcheck_cmd = "cat $snpcheck_file | grep -P \"$sample\"";
+        say "[INFO] SNPcheck $sample ($snpcheck_cmd)"; 
+        my @snpcheck_lines = `$snpcheck_cmd`;
+        chomp @snpcheck_lines;
+        my $lineCount = scalar( @snpcheck_lines );
+        
+        if ( $lineCount > 0 ){
+            parseSnpCheckLines( \@snpcheck_lines );
+        }
+        elsif( $lineCount == 1 ){
+            parseSnpCheckLines( \@snpcheck_lines );
+            printMsg( 'FAIL', "Test $test failed (only one measurement found)" );
+            $is_fail = 'FAIL';
+        }
+        else{
+            printMsg( 'FAIL', "Test $test failed (no data found for any of the samples)" );
+            $is_fail = 'FAIL';
+        }
+    }
+    return( $is_fail );
+}
+
+sub parseSnpCheckLines{
+    my ($lines) = @_;
+    
+    foreach my $line ( @$lines ){
+        my @fields = split( "\t", $line );
+        my $sample = $fields[0];
+        my @calls = @fields[1..32];
+        my $cluster = $fields[33];
+        my $status = $fields[34]; # eg: identified
+        my $call_string = join( " ", map( sprintf("%-2s", $_), @calls ) );
+        say "[INFO]   Calls: $call_string in cluster $cluster for $sample ";
+    }
+    
+}
+
+sub printMsg{
+    my ($type, $msg) = @_;
+    if ( $type =~ /ERR|WARN|FAIL/ ){ warn "[$type] $msg\n"; }
+    else{ say "[$type] $msg"; }
+}
