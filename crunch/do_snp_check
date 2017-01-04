@@ -25,7 +25,7 @@ my $USAGE = <<USAGE;
 USAGE
 
 GetOptions (
-	"run|r=s" => \$run_path,
+    "run|r=s" => \$run_path,
     "help|h"  => \$help
 ) or die("[ERROR] Incorrect command line arguments\n");
 print $USAGE and exit(0) if ($help or not $run_path);
@@ -34,23 +34,30 @@ die "[ERROR] Run path does not exist ($run_path)\n" unless -e $run_path;
 my $set_name = basename $run_path;
 my $meta_path = $run_path.'/metadata';
 die "[ERROR] Metadata file not found ($meta_path)" unless -f $meta_path;
-my $meta_text = read_file( $meta_path ); 
-my $meta_info = decode_json $meta_text; 
+my $meta_info = parseMetadataFile( $meta_path );
 
-my $ref = $meta_info->{ref_sample};
-my $tum = $meta_info->{tumor_sample};
-my $set = $meta_info->{set_name};
-my $ini = $meta_info->{ini_name};
-my @samples = ();
-push( @samples, $ref );
-push( @samples, $tum ) if ($tum ne 'NA' and $tum ne '' );
-
-say "[INFO] SNPcheck started for set: $set_name"; 
-say "[INFO] Samples found in metadata: ".join(', ', @samples);
-my $is_failed = performSNPcheck( \@samples, $SNPCHECK_DB );
+say "[INFO] SNPcheck started for set: $meta_info->{ set }"; 
+say "[INFO] Samples found in metadata: ".join(', ', @{$meta_info->{ samples}} );
+my $is_failed = performSNPcheck( $meta_info->{ samples}, $SNPCHECK_DB );
 exit (1) if $is_failed;
 
 ## ----------
+sub parseMetadataFile{
+    my ($json) = @_;
+    my $text = read_file( $json );
+    my $meta = decode_json $text;
+    
+    my $ref = $meta->{ref_sample};
+    my $tum = $meta->{tumor_sample};
+    my $set = $meta->{set_name};
+    my @samples = ();
+    push( @samples, $ref );
+    push( @samples, $tum ) if ($tum ne 'NA' and $tum ne '' );
+    die "[ERROR] No samples found in metadata file ($meta_path)" unless scalar @samples;
+    my %info = ( set => $set, samples => \@samples );
+
+    return( \%info );
+}
 
 sub performSNPcheck{
     my ($samples, $snpcheck_file) = @_;
@@ -64,7 +71,7 @@ sub performSNPcheck{
         chomp @snpcheck_lines;
         my $lineCount = scalar( @snpcheck_lines );
         
-        if ( $lineCount > 0 ){
+        if ( $lineCount > 1 ){
             parseSnpCheckLines( \@snpcheck_lines );
         }
         elsif( $lineCount == 1 ){
