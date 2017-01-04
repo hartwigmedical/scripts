@@ -83,6 +83,13 @@ alerting:
 EOF
 
     cat <<EOF > ${prometheus_dir}/node.rules
+ALERT InstanceDown
+  IF up == 0
+  FOR 5m
+  ANNOTATIONS {
+    summary = "Instance {{ \$labels.instance }} down",
+    description = "{{ \$labels.instance }} has been down for more than 5 minutes.",
+  }
 ALERT AlertingAlive
   IF day_of_month() <= 7 and day_of_week() == 1 and hour() == 10 and minute() >= 00 and minute() < 01
   ANNOTATIONS {
