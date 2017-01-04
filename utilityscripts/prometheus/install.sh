@@ -43,8 +43,8 @@ WantedBy=multi-user.target
 EOF
     systemd_enable ${service}
 
-    wget -q ${github_base_url}/tunnel_node_exporters -O /usr/local/bin/tunnel_node_exporters
-    chmod +x /usr/local/bin/tunnel_node_exporters
+    wget -q ${github_base_url}/tunnel_node_exporters -O ${install_base_dir}/tunnel_node_exporters
+    chmod +x ${install_base_dir}/tunnel_node_exporters
 
     service=tunnel_node_exporters.service
     cat << EOF > /usr/lib/systemd/system/${service}
@@ -53,7 +53,7 @@ Description=Tunnel Prometheus' node_exporter ports for metrics collection
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/bin/tunnel_node_exporters
+ExecStart=${install_base_dir}/tunnel_node_exporters
 
 [Install]
 WantedBy=multi-user.target
