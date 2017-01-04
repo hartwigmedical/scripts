@@ -109,8 +109,7 @@ ALERT RAIDDegraded
     description = "{{ \$labels.instance }} has a RAID degradation.",
   }
 ALERT StorCLINotCompleted
-  IF min(time() - storcli_completion_time{job="node"}) > 60 * 60
-  FOR 10m
+  IF max(time() - storcli_completion_time{job="node"}) > 60 * 60
   ANNOTATIONS {
     summary = "{{ \$labels.instance }} storcli not running",
     description = "{{ \$labels.instance }} storcli has not completed successfully in over an hour.",
