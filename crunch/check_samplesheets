@@ -9,7 +9,7 @@ fi
     
 for sheet in $sheets; do 
 	currHost=`hostname`
-	currHostShort=`echo $currHost | sed 's/hmf_crunch00/c/g'`
+	currHostShort=`echo $currHost | sed 's/crunch00/c/g'`
 	runBase=`dirname $sheet`
 	runName=`basename $runBase`
 	readmeFile=$runBase"/README"
