@@ -33,7 +33,6 @@ User=prometheus
 WorkingDirectory=${prometheus_dir}
 ExecStart=${prometheus_dir}/prometheus \\
           -storage.local.path=${data_dir} \\
-          -web.external-url=http://localhost:9090 \\
           \$PROMETHEUS_OPTS
 ExecReload=/bin/kill -HUP \$MAINPID
 Restart=on-failure
