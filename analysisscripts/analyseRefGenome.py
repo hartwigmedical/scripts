@@ -1,8 +1,12 @@
 #!/usr/local/bin/python
 import random
+import chromosomeDefinition
 
 randomFastaLength = 40000000
 refgenome = "/Users/peterpriestley/hmf/data/refgenomes/chr21/chr21.fasta"
+refgenome = "/Users/peterpriestley/hmf/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+
 #refgenome = "/Users/peterpriestley/hmf/testGenome"
 
 randomPath = "/Users/peterpriestley/"
@@ -109,6 +113,63 @@ def generateRandomFasta(aPath, aFilename,aLength):
                 f.write("\n")
     print 'File created:',aPath+aFilename
 
+def GCContent(aRefGenome,windowSize):
+    print 'reading:',aRefGenome,"trinucleotide frequencies"
+    trinucleotides = {}
+    myPos = 0
+    with open(aRefGenome, 'r') as f:
+        myKmer = ""
+        while True:
+            ch = f.read(1)
+            if not ch: break
+            if ch == '>':
+                myChrom = (f.readline()[:-1])
+                myPos = 0
+            elif ch != "\n":
+                myKmer = myKmer + ch
+                if len(myKmer) > windowSize:
+                    myKmer = ch
+                    myPos = myPos + windowSize
+                if len(myKmer) == windowSize:
+                    if myKmer.count('N') < windowSize:
+                        myGCContent =float((myKmer.count('G')+ myKmer.count('C')))/(windowSize - myKmer.count('N'))
+                    else:
+                        myGCContent = -1
+                    print myChrom, myPos, myGCContent
+
+
+
+def trinucleotideFrequencies(aRefGenome):
+    print 'reading:',aRefGenome,"trinucleotide frequencies"
+    trinucleotides = {}
+    with open(aRefGenome, 'r') as f:
+        myKmer = ""
+        while True:
+            ch = f.read(1)
+            if not ch: break
+            if ch == '>':
+                f.readline()
+                myKmer = ""
+            elif ch == 'N':
+                myKmer = ""
+            elif ch != "\n":
+                myKmer = myKmer + ch
+                if len(myKmer) > 3:
+                    myKmer = myKmer[1:]
+                if len(myKmer) == 3:
+                    if myKmer[1]=="C" or myKmer[1]=="T":
+                        if trinucleotides.has_key(myKmer):  # add to aRepeats if numRepeats > 1
+                            trinucleotides[myKmer] += 1
+                        else:
+                            trinucleotides[myKmer] = 1
+    print len(trinucleotides)
+    for trinucleotide,count in sorted(trinucleotides.items()):
+        print trinucleotide,":",count
+
+GCContent(refgenome,2000000)
+#trinucleotideFrequencies(refgenome)
+
+
 if __name__ == "__main__":
     kmers = {}
     kmersRandom = {}
@@ -121,12 +182,12 @@ if __name__ == "__main__":
     #for kmer, kmerCount in sorted(kmersRandom.items()):
     #    print kmer, ":RAND:", kmerCount
 
-    repeats = {}   # {(kmerLength,repeatLength):count}
-    maxRepeatLength = 100
-    repeats = countRepeats(refgenome,repeats,maxRepeatLength)
+    #repeats = {}   # {(kmerLength,repeatLength):count}
+    #maxRepeatLength = 100
+    #repeats = countRepeats(refgenome,repeats,maxRepeatLength)
 
-    for repeat, repeatCount in sorted(repeats.items()):
-        print repeat[0],":",repeat[1],":",repeatCount
-    repeats = removeSubRepeats(repeats)
-    for repeat, repeatCount in sorted(repeats.items()):
-        print repeat[0], ":", repeat[1], ":", repeatCount
+    #for repeat, repeatCount in sorted(repeats.items()):
+    #    print repeat[0],":",repeat[1],":",repeatCount
+    #repeats = removeSubRepeats(repeats)
+    #for repeat, repeatCount in sorted(repeats.items()):
+    #    print repeat[0], ":", repeat[1], ":", repeatCount
