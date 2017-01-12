@@ -26,7 +26,7 @@ function main() {
     local pipeline=${1:-pipeline-test} && shift || true
 
     local output_root=/data2/processed
-    local email=${EMAIL:?Make sure \$EMAIL is defined (e.g. in your .bashrc)}
+    local email=${PIPELINE_EMAIL:?Make sure \$PIPELINE_EMAIL is defined (e.g. in your .bashrc)}
 
     # with no parameters, run the cancer panel test
     if [ -z "${output_name}" ]; then
