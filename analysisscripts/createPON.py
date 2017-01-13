@@ -2,9 +2,8 @@
 import heapq
 import os
 
-
-#### TO DO
-# Add AFs of each file
+#### TO DO ###########
+# Min, Max and Median AF?
 # Look for exact SNP MATCH instead of just pos?
 
 class vcfMerge():
@@ -14,7 +13,6 @@ class vcfMerge():
     def __init__(self,path):
 
         try:
-            #1. create priority queue
             self._heap = []
             self._output_file = open(path+'PON.tsv', 'w+')
 
@@ -23,7 +21,6 @@ class vcfMerge():
 
     def merge(self, input_files):
         try:
-            # open all files
             open_files = []
             [open_files.append(open(file__, 'r')) for file__ in input_files]
 
