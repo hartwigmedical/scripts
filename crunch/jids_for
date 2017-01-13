@@ -17,13 +17,13 @@ function main() {
     local run_dir=${1%%/} && shift
 
     [ ! -d "${run_dir}" ] && [ -d "${DEFAULT_RUN_BASE}/${run_dir}" ] && run_dir="${DEFAULT_RUN_BASE}/${run_dir}"
-    [ ! -d "${run_dir}" ] && echo "${run_dir} is not a directory" >&2 && exit 1
+    [ ! -d "${run_dir}" ] && echo "${run_dir} is not a directory or run name" >&2 && exit 1
     run_dir=$(readlink -f "${run_dir}")
 
     local jids num_jids
     jids=$(qstat_jids)
     num_jids=$(echo "${jids}" | wc -l)
-    echo "Searching ${num_jids} job IDs for ${run_dir}, this may take a while" >&2
+    echo "Searching ${num_jids} job IDs for ${run_dir}, this may take a while..." >&2
 
     local jid qstat_data work_dir
     for jid in ${jids}; do
