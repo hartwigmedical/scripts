@@ -22,7 +22,7 @@ function main() {
     for jid in ${jids}; do
         qstat=$(qstat -j "${jid}")
         work_dir=$(qstat_field "sge_o_workdir" "${qstat}")
-        if [ "${work_dir}" == "${run_dir}" ] || [ "${work_dir%%${run_dir}/}" != "${work_dir}" ]; then
+        if [ "${work_dir}" == "${run_dir}" ] || [ "${work_dir##${run_dir}/}" != "${work_dir}" ]; then
             job_number=$(qstat_field "job_number" "${qstat}")
             echo "${job_number}"
         fi
