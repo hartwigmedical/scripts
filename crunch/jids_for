@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+DEFAULT_RUN_BASE=/data2/processed
+
 function qstat_jids() {
     qstat | tail -n +3 | awk '{ print $1 }'
 }
@@ -13,6 +15,9 @@ function qstat_field() {
 
 function main() {
     local run_dir=${1%%/} && shift
+
+    [ ! -d "${run_dir}" ] && [ -d "${DEFAULT_RUN_BASE}/${run_dir}" ] && run_dir="${DEFAULT_RUN_BASE}/${run_dir}"
+    [ ! -d "${run_dir}" ] && echo "${run_dir} is not a directory" >&2 && exit 1
 
     local jids num_jids jid qstat work_dir
     jids=$(qstat_jids)
