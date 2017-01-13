@@ -9,14 +9,14 @@ import os
 
 class vcfMerge():
 
-    minCountThreshold = 2
+    minCountThreshold = 1
 
     def __init__(self,path):
 
         try:
             #1. create priority queue
             self._heap = []
-            self._output_file = open(path+'outputfile.out', 'w+')
+            self._output_file = open(path+'PON.tsv', 'w+')
 
         except Exception, err_msg:
             print "Error while creating Merger: %s" % str(err_msg)
