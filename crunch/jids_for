@@ -18,17 +18,19 @@ function main() {
 
     [ ! -d "${run_dir}" ] && [ -d "${DEFAULT_RUN_BASE}/${run_dir}" ] && run_dir="${DEFAULT_RUN_BASE}/${run_dir}"
     [ ! -d "${run_dir}" ] && echo "${run_dir} is not a directory" >&2 && exit 1
+    run_dir=$(readlink -f "${run_dir}")
 
-    local jids num_jids jid qstat work_dir
+    local jids num_jids
     jids=$(qstat_jids)
     num_jids=$(echo "${jids}" | wc -l)
-    echo "Searching ${num_jids} job IDs, this may take a while" >&2
+    echo "Searching ${num_jids} job IDs for ${run_dir}, this may take a while" >&2
 
+    local jid qstat_data work_dir
     for jid in ${jids}; do
-        qstat=$(qstat -j "${jid}")
-        work_dir=$(qstat_field "sge_o_workdir" "${qstat}")
+        qstat_data=$(qstat -j "${jid}")
+        work_dir=$(qstat_field "sge_o_workdir" "${qstat_data}")
         if [ "${work_dir}" == "${run_dir}" ] || [ "${work_dir##${run_dir}/}" != "${work_dir}" ]; then
-            job_number=$(qstat_field "job_number" "${qstat}")
+            job_number=$(qstat_field "job_number" "${qstat_data}")
             echo "${job_number}"
         fi
     done    
