@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+DEFAULT_RUN_BASE=/data2/processed
+
+function qstat_jids() {
+    qstat | tail -n +3 | awk '{ print $1 }'
+}
+
+function qstat_field() {
+    local field_name=$1 && shift
+    local qstat_data=$1 && shift
+
+    echo "${qstat_data}" | awk -v field_name="${field_name}:" '$1 == field_name { print $2 }'
+}
+
+function main() {
+    local run_dir=${1%%/} && shift
+
+    [ ! -d "${run_dir}" ] && [ -d "${DEFAULT_RUN_BASE}/${run_dir}" ] && run_dir="${DEFAULT_RUN_BASE}/${run_dir}"
+    [ ! -d "${run_dir}" ] && echo "${run_dir} is not a directory or run name" >&2 && exit 1
+    run_dir=$(readlink -f "${run_dir}")
+
+    local jids num_jids
+    jids=$(qstat_jids)
+    num_jids=$(echo "${jids}" | wc -l)
+    echo "Searching ${num_jids} job IDs for ${run_dir}, this may take a while..." >&2
+
+    local jid qstat_data work_dir
+    for jid in ${jids}; do
+        qstat_data=$(qstat -j "${jid}")
+        work_dir=$(qstat_field "sge_o_workdir" "${qstat_data}")
+        if [ "${work_dir}" == "${run_dir}" ] || [ "${work_dir##${run_dir}/}" != "${work_dir}" ]; then
+            job_number=$(qstat_field "job_number" "${qstat_data}")
+            echo "${job_number}"
+        fi
+    done    
+}
+
+main "$@"
