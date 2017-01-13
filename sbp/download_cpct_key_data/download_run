@@ -20,7 +20,7 @@ ${path}/download_path ${bucket} ${run} somaticVariants *_melted.vcf
 # GoNLv5 is for all runs up till v1.9
 ${path}/download_root_path ${bucket} ${run} *_GoNLv5.vcf
 # Annotated is for runs from v1.10 onwards
-${path}/download_root_path ${bucket} ${run} *_annotated.vcf
+${path}/download_root_path ${bucket} ${run} *annotated.vcf
 ${path}/download_root_path ${bucket} ${run} *_GoNLv5_sliced.vcf
 ${path}/download_root_path ${bucket} ${run} *.kinship
 ${path}/download_path ${bucket} ${run} copyNumber *.realigned.bam_CNVs

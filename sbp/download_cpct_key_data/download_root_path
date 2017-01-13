@@ -2,4 +2,4 @@ bucket=$1
 run=$2
 filter=$3
 
-sbp s3 sync ${bucket}/${run}/ /data/cpct/runs/${run} --exclude "*" --include "${filter}" --profile download
+sbp_old s3 sync ${bucket}/${run}/ /data/cpct/runs/${run} --exclude "*" --include "${filter}" --profile download_old

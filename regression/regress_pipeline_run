@@ -48,7 +48,7 @@ fi
 # After 3 iterations, we accept a precision and sensitivity of at minimum 0.9998
 
 rungermlinevcf=${runvcf}.filtered_variants.annotated.vcf
-truthrungermlinevcf=${truthrunvcf}.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5.vcf
+truthrungermlinevcf=${truthrunvcf}.filtered_variants.annotated.vcf
 
 # KODU: Step 3.1: Generate gz and tbi needed for rtg tools
 

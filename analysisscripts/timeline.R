@@ -15,8 +15,7 @@
 # different processes if the write is small) but Schuberg put output on NFS.
 #
 # At *least* until v1.12 there is not a consistent tab-separated format and manual fix-up
-# is required. The script fixes the missing tab between Start/End and the job name but
-# nothing else. After v1.12 remove the marked line below and add a column.
+# is required. Some minor automation of this in previous Git version.
 #
 # Jobs need to use the same step and host to match up start and end properly. Also not the
 # case for all jobs :( Could discard host. Step names should be fixed after v1.12.
@@ -89,19 +88,11 @@ setAs("character", "myDate", function(from) as.POSIXct(str_c(str_sub(from, 0, -9
                                                              str_sub(from, -4, -1)),
                                                        format = "%a %b %e %H:%M:%S %Y",
                                                        tz = "CET"))
-df <- read.csv("/tmp/timeline-clean.log",
+df <- read.csv("/tmp/timeline.log",
                sep = "\t",
                header = FALSE,
-               # enable after v1.12
-               # col.names = c("event", "job", "time", "step", "host"),
-               # colClasses = c("factor", "factor", "myDate", "factor", "factor")) %>%
-               # enable after v1.12
-               # remove this after v1.12
-               col.names = c("event", "time", "step", "host"),
-               colClasses = c("factor", "myDate", "factor", "factor")) %>%
-    separate(event, c("event", "job"), " ", extra = "merge") %>%
-    mutate(job = as.factor(job)) %>%
-    # remove this after v1.12
+               col.names = c("event", "job", "time", "step", "host"),
+               colClasses = c("factor", "factor", "myDate", "factor", "factor")) %>%
     spread(event, time) %>%
     arrange(Start)
 

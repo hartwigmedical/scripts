@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+# this script is used to setup SSH tunnels from datastore to crunches
+# for Prometheus to monitor the node_exporter instances on them. The
+# processes need to be killed manually to break the connection.
+
+ssh -fN -L 9101:localhost:9100 crunch001
+ssh -fN -L 9102:localhost:9100 crunch002
+ssh -fN -L 9103:localhost:9100 crunch003
