@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+function queue_jids() {
+    qstat | tail -n +3 | awk '{ print $1 }'
+}
+
+function qstat_field() {
+    local field_name=$1 && shift
+    local qstat_data=$1 && shift
+
+    echo "${qstat_data}" | awk -v field_name="${field_name}:" '$1 == field_name { print $2 }'
+}
+
+function main() {
+    local run_dir=$1 && shift
+
+    for jid in $(queue_jids); do
+        qstat=$(qstat -j "${jid}")
+        workdir=$(qstat_field "sge_o_workdir" "${qstat}")
+        if [[ "${workdir}" == "${run_dir}" ]]; then
+            job_number=$(qstat_field "job_number" "${qstat}")
+            echo "${job_number}"
+        fi
+    done    
+}
+
+main "$@"
