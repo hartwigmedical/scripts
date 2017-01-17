@@ -16,13 +16,27 @@ print <<'HEADER';
 #
 
 [% INCLUDE ErrorHandling.tt mode=opt.JOB_ERROR_MODE %]
+[% INCLUDE Logging.tt %]
 
 export JOB_NAME JOB_SET JOB_START
 JOB_NAME=
 JOB_SET="[% opt.RUN_NAME %]"
 JOB_START=$(date +%s)
 
-[% INCLUDE Status.tt step= status="processing" %]
+log_start "" "[% %].log"
+
+[% INCLUDE Status.tt step="" status="processing" %]
+
+# you still need to:
+# 1)
+#  a) update JOB_NAME (match template name)
+#  b) add Status.tt step name (all usages)
+#  c) correct success/failure test/messages/step names
+#  d) update log_start/end step name and log file name
+# 2) template variables inside control structures are potentially double [% %] escaped and should be fixed manually
+# 3) inspect manually and convert constructs like \$command, \$mv_command, \$rm_command to that hurts eyes less
+# 4) tidy up silly logic, add quoting of paths, formatting into readable multi-line commands etc.
+
 HEADER
 
 while (<>) {
@@ -44,6 +58,8 @@ while (<>) {
     s/\\n/\n/g;
     s/\\"/"/g;
     s/\\\$/\$/g;
+    s/"\.//g;
+    s/\."//g;
 
     # also convert (escaped) backticks to $()
 
@@ -55,9 +71,10 @@ while (<>) {
 
     # update directory usage
 
-    s#\$opt(?:->)?{OUTPUT_DIR}/(\$[^/]+/)*?([^/]+)#[% dirs.$1 %]#g;
+    s#\$opt(?:->)?{OUTPUT_DIR}/(?:\$?[^/\s]+/)*?([^\./\s\$;]+)[\s/"]#[% dirs.$1 %]#g;
     s/\$([a-zA-Z0-9_]+?)_?[dD]ir/[% dirs.$1 %]/g;
     # TODO: fix those underscores
+    s#\$opt(?:->)?{OUTPUT_DIR}/#[% dirs.out %]/#g;
 
     # hash variables first then simple ones
 
@@ -77,7 +94,16 @@ while (<>) {
     say;
 }
 
-say STDERR "you still need to tidy up quoting of filenames, logic etc.";
-say STDERR "variables inside control structures are double [% %] escaped and should be fixed";
-say STDERR "update JOB_NAME, add Status.tt step and success/failure lines";
-say STDERR "inspect manually and convert constructs like \$command, \$mv_command, \$rm_command";
+print <<'FOOTER';
+
+if false
+then
+    [% INCLUDE Status.tt step="" status="failed" %]
+    fail ""
+else
+    touch "[% done_file %]"
+    [% INCLUDE Status.tt step="" status="success" %]
+fi
+
+log_end "" "[% %].log"
+FOOTER
