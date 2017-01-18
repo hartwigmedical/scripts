@@ -11,7 +11,7 @@ Via this portal you have access to molecular data from your group or center. For
 - Files can be very large (up to 300GB) so please check before starting a download!
 - The session time is 2 hours, after this period you will have to login again
 - Links are valid for 24 hours, after this period you will have to create new links
-- This portal contains "molecular" data, no clinical information (for data requests that require clinical information please see our [Data Policy](https://www.hartwigmedicalfoundation.nl/databeleid/)
+- This portal contains "molecular" data, no clinical information (for data requests that require clinical information please see our [Data Policy](https://www.hartwigmedicalfoundation.nl/databeleid/))
 - Examples of available data formats are BAM, gVCF and VCF
 - See below for some usage examples
 
