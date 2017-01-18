@@ -10,13 +10,9 @@ Via this portal you have access to molecular data from your group or center. For
 - The session time is 2 hours, after this period you will have to login again
 - This portal contains "molecular" data, no clinical data (for data requests that require clinical information please see our [Data Policy](http://www.hartwigmedicalfoundation.nl/databeleid/)
 - Examples of data formats currently available are BAM, gVCF and VCF
-- You can see some usage examples below
+- See below for some usage examples
 
-For more information and contact please visit our [website](https://www.hartwigmedicalfoundation.nl). 
-
-Please let us know if you have comments or want to share your portal experience.
-
-Team Hartwig Medical Foundation
+Please let us know if you have comments or want to share your portal experience. For more information and contact please visit our [website](https://www.hartwigmedicalfoundation.nl).
 
 -----
 ### Usage examples
@@ -27,7 +23,7 @@ Team Hartwig Medical Foundation
 - paste the BAM file link at field "File URL"
 - paste the BAI file link at field "Index URL"
 
-Note: same procedure aplies to VCF files
+Note: same procedure applies to VCF files
 
 **Example download using WGET:**
 - create the links (by clicking the most right icon next to a run)
@@ -38,5 +34,5 @@ Note: same procedure aplies to VCF files
 wget --content-disposition -i download.txt
 ```
 
-Note: we also recommend to check out the [aria2 download tool](https://aria2.github.io/). This will allow you to download with mutiple streams speeding up the download significantly!
+Note: we also recommend to check out the [aria2 download tool](https://aria2.github.io/). This will allow you to download with mutiple streams speeding up the download significantly.
 
