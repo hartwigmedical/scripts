@@ -4,11 +4,13 @@
 
 Via this portal you have access to molecular data from your group or center. For each sample/patient certain files can be downloaded by creating links (valid for 24 hours). The links can be used to download (via browser or standard tools like WGET/cURL) or, in the case of indexed files like the BAM format, directly read ("stream") into a program like IGV (Integrative Genome Browser) so you don not have to download large files completely just to check a small part of them.
 
+[https://portal.hartwigmedicalfoundation.nl/](https://portal.hartwigmedicalfoundation.nl/)
+
 **Good to know**
 
 - Files can be very large (up to 300GB) so please check before starting a download!
 - The session time is 2 hours, after this period you will have to login again
-- This portal contains "molecular" data, no clinical data (for data requests that require clinical information please see our [Data Policy](http://www.hartwigmedicalfoundation.nl/databeleid/)
+- This portal contains "molecular" data, no clinical data (for data requests that require clinical information please see our [Data Policy](https://www.hartwigmedicalfoundation.nl/databeleid/)
 - Examples of data formats currently available are BAM, gVCF and VCF
 - See below for some usage examples
 
