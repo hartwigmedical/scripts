@@ -2,7 +2,7 @@
 
 **The portal**
 
-Via this portal you have access to molecular data from your group or center. For each sample/patient certain files can be downloaded by creating links (valid for 24 hours). The links can be used to download (via browser or standard tools like WGET/cURL) or, in the case of indexed files like the BAM format, directly read ("stream") into a program like IGV (Integrative Genome Browser) so you don not have to download large files completely just to check a small part of them.
+Via this portal you have access to molecular data from your group or center. For each sample/patient certain files can be downloaded by creating links (valid for 24 hours). The links can be used to download (via browser or standard tools like WGET/cURL) or, in the case of indexed files like the BAM format, directly read ("stream") into a program like IGV (Integrative Genome Browser) so you do not have to download large files completely just to check a small part of them.
 
 [https://portal.hartwigmedicalfoundation.nl/](https://portal.hartwigmedicalfoundation.nl/)
 
