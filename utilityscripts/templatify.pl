@@ -11,28 +11,17 @@ use warnings;
 print <<'HEADER';
 #!/usr/bin/env bash
 # -*- TT -*-
-#
-# Template used by the Template Toolkit. See: http://template-toolkit.org/
-#
 
-[% INCLUDE ErrorHandling.tt mode=opt.JOB_ERROR_MODE %]
-[% INCLUDE Logging.tt %]
-
-export JOB_NAME JOB_SET JOB_START
-JOB_NAME=
-JOB_SET="[% opt.RUN_NAME %]"
-JOB_START=$(date +%s)
-
-log_start "" "[% %].log"
-
-[% INCLUDE Status.tt step="" status="processing" %]
+[% INCLUDE ErrorHandling.tt %]
+[% INCLUDE Logging.tt job_name="" main_step= log_name="${step}.log" %]
 
 # you still need to:
-# 1)
-#  a) update JOB_NAME (match template name)
-#  b) add Status.tt step name (all usages)
-#  c) correct success/failure test/messages/step names
-#  d) update log_start/end step name and log file name
+# 1) update INCLUDE Logging.tt:
+#  a) add job_name (must match template name)
+#  b) add "main" step name
+#  c) add log file name
+#  d) correct success/failure logic
+#  e) optionally add sub-steps with start_step "NAME"/finish_step
 # 2) template variables inside control structures are potentially double [% %] escaped and should be fixed manually
 # 3) inspect manually and convert constructs like \$command, \$mv_command, \$rm_command to that hurts eyes less
 # 4) tidy up silly logic, add quoting of paths, formatting into readable multi-line commands etc.
@@ -96,14 +85,6 @@ while (<>) {
 
 print <<'FOOTER';
 
-if false
-then
-    [% INCLUDE Status.tt step="" status="failed" %]
-    fail ""
-else
-    touch "[% done_file %]"
-    [% INCLUDE Status.tt step="" status="success" %]
-fi
-
-log_end "" "[% %].log"
+assert_not_empty "[% output_path %]"
+success
 FOOTER
