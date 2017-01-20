@@ -78,7 +78,9 @@ function iniEnabled() {
 
 function FreecPngCheck() {
     local runDir=$1 && shift
-    if PngCheck "$runDir" "freec" 1
+    local numExpected=1
+    iniEnabled FREEC_BAF "${runDir}" && ((numExpected++))
+    if PngCheck "${runDir}" "freec" ${numExpected}
     then
         ok
         return 0
@@ -90,7 +92,7 @@ function FreecPngCheck() {
 
 function QDnaSeqPngCheck() {
     local runDir=$1 && shift
-    if PngCheck "$runDir" "qdnaseq" 2
+    if PngCheck "${runDir}" "qdnaseq" 2
     then
         ok
         return 0
@@ -102,10 +104,10 @@ function QDnaSeqPngCheck() {
 
 function PngCheck() {
     local runDir=$1 && shift
-    local cnv_name=$1 && shift
+    local cnvName=$1 && shift
     local wanted=$1 &&shift
     local copynumberDir=${runDir}/copyNumber
-    local count=$(find "${copynumberDir}"/*/"${cnv_name}"/ -mindepth 1 -maxdepth 1 -type f -iname "*.png" -size +0 2>/dev/null | wc -l)
+    local count=$(find "${copynumberDir}"/*/"${cnvName}"/ -mindepth 1 -maxdepth 1 -type f -iname "*.png" -size +0 2>/dev/null | wc -l)
     if [[ ${count} -eq ${wanted} ]]; then
         return 0
     else
