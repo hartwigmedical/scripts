@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+function process_args() {
+    local opt opts
+    while getopts ":rhm" opt; do
+        opts+=$opt
+        case $opt in
+            r)
+                echo "Raw output mode." >&2
+                ;;
+            h)
+                echo "Showing column (row) header." >&2
+                ;;
+            m)
+                echo "Allowing multiple matches." >&2
+                ;;
+            \?)
+                echo "Invalid option: -$OPTARG." >&2
+                exit 1
+                ;;
+            :)
+                echo "Option -$OPTARG requires an argument." >&2
+                exit 1
+                ;;
+        esac
+    done
+    echo "$opts"
+}
+
+function format() {
+    local opts=$1 && shift
+    
+    if [[ ! "$opts" =~ r ]]; then
+        tr '\t:' '\n\t'
+    else
+        cat
+    fi
+}
+
+function main() {
+    local opts
+    opts=$(process_args "$@")
+    shift ${#opts}
+    if [ $# -lt 2 ]; then
+        echo "Missing chromosome and/or position regexen." >&2
+        exit 1
+    fi
+    local chromosome=$1 && shift
+    local position=$1 && shift
+
+    local position_regex="${chromosome}\t${position}\t"
+    local header_regex="#CHROM"
+    
+    local num_matches regex match_param
+    if [[ "$opts" =~ h ]]; then
+        num_matches=2
+        regex="^(${header_regex}|${position_regex})"
+    else
+        num_matches=1
+        regex="^${position_regex}"
+    fi
+
+    if [[ "$opts" =~ m ]]; then
+        match_param=""
+    else
+        match_param="-m${num_matches}"
+    fi
+
+    grep -P "${match_param}" "${regex}" "$@" | format "$opts" 
+}
+
+main "$@"
