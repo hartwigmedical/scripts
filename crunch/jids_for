@@ -22,7 +22,7 @@ function main() {
 
     local jids num_jids
     jids=$(qstat_jids)
-    num_jids=$(echo "${jids}" | wc -l)
+    num_jids=$(echo -n "${jids}" | wc -l)
     echo "Searching ${num_jids} job IDs for ${run_dir}, this may take a while..." >&2
 
     local jid qstat_data work_dir

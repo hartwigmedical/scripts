@@ -272,27 +272,34 @@ class somaticVariant:
                     annGene = annSplit[0].split('|')[3]
 
                 #CONSENSUS RULE
-                consensus = int(numCallers) >= 3 or (int(numCallers) == 2 and bedRegion <> "" and (not inDBSNP or inCOSMIC))
+                if myVariantType == variantType.SNP:
+                    consensus = int(numCallers) >= 3 or (int(numCallers) == 2 and bedRegion <> "" and (not inDBSNP or inCOSMIC))
+                elif myVariantType == variantType.indel:
+                    consensus = (int(numCallers) >= 2)
+                else:
+                    consensus = False
 
                 ############### Pandas Prep ####################
-                # APPEND NORMAL FIELDS
-                somaticVariant.variantInfo.append(
-                    [chrom, pos, chrom + ':' + pos, cd.intChrom(chrom) + float(pos) / cd.chromosomeLength[chrom], id, ref, vennSegment, numCallers,
-                     myVariantType, mySubVariantType,filter,bedRegion,inDBSNP,inCOSMIC,annGene,annWorstImpact,annWorstEffect,annAllEffects,consensus])
 
-                #APPEND CALLER SPECIFIC FIELDS
-                for caller, variantGenotype in variantGenotypes.items():
-                    if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
-                        callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
+                if(cd.intChrom(chrom)) < 25:
+                    # APPEND NORMAL FIELDS
+                    somaticVariant.variantInfo.append(
+                        [chrom, pos, chrom + ':' + pos, cd.intChrom(chrom) + float(pos) / cd.chromosomeLength[chrom], id, ref, vennSegment, numCallers,
+                        myVariantType, mySubVariantType,filter,bedRegion,inDBSNP,inCOSMIC,annGene,annWorstImpact,annWorstEffect,annAllEffects,consensus])
+
+                    #APPEND CALLER SPECIFIC FIELDS
+                    for caller, variantGenotype in variantGenotypes.items():
+                        if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
+                            callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
                                                 variantGenotype.qualityScore,variantGenotype.somaticGenotype,
                                                 variantGenotype.indelDiff]
-                    else:
-                        callerSpecificFields = ['', '', '','','','']
-                    somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
+                        else:
+                            callerSpecificFields = ['', '', '','','','']
+                        somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
                 #########################################
 
 
-def loadVaraintsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[],loadRegionsOutsideBed=False):
+def loadVariantsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBed=False,aBed=[],loadRegionsOutsideBed=False):
 
     variants = []
     i = 0
@@ -398,43 +405,4 @@ def printStatistics(df):
     df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,True,VCF_SAMPLE,False)
     printStatistics(df)
 
-def poolOfNormals(fileandSampleNames):
 
-    PONs = {}
-    for fileandSampleName in fileandSampleNames:
-        with open(fileandSampleName[0], 'r') as f:
-            for line in f:
-
-                line = line.strip('\n')
-                a = [x for x in line.split('\t')]
-
-                if a[0] == '#CHROM':
-                    try:
-                        header_index = a[9:].index(fileandSampleName[1])
-                    except IndexError:
-                        print 'Error - missing sample input: ', fileandSampleName[1]
-                        return -1
-
-                if a[0][:1] != '#':
-                    myGenotypes = {}
-                    myGenotypes['GATK'] = a[9:][header_index]
-                    somaticVariant(a[0].lstrip("chr"), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], myGenotypes,False, False,"",True)
-
-            #for variant in somaticVariant.variantInfo:
-            from collections import Counter
-            myDict = Counter([(x[0],x[1],x[5],x[8],x[19]) for x in somaticVariant.variantInfo])
-            #print myDict
-
-
-            myDict2 = {k: v for k, v in myDict.iteritems() if v > 1}
-            print len(myDict2)
-
-            import csv
-            with open('/Users/peterpriestley/Documents/dict.csv', 'wb') as csv_file:
-                writer = csv.writer(csv_file)
-                for key, value in myDict.items():
-                    writer.writerow([key[0],key[1],key[2],key[3],key[4], value])
-
-#mylist=[['/Users/peterpriestley/hmf/analyses/ensembleRuleTesting/160922_HMFregCPCT_FR10302782_FR12251860_CPCT02060023.filtered_variants_snpEff_snpSift_Cosmicv76_GoNLv5_sliced.vcf','CPCT02060023R']]
-#mylist=[['/Users/peterpriestley/hmf/analyses/2016SEP-OCTTestRuns/160922_GIABDIFF_NA12878_NA12878_NA12878.filtered_variants.vcf','12878R'],['/Users/peterpriestley/hmf/analyses/2016SEP-OCTTestRuns/160922_GIABDIFF_NA12878_NA12878_NA12878.filtered_variants.vcf','12878T']]
-#poolOfNormals(mylist)
