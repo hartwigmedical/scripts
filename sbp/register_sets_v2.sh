@@ -56,7 +56,7 @@ done
   --cert-type pem \
   --cert $CRT_DIR/hmf.crt \
   --key $CRT_DIR/hmf.key \
-  https://api.hartwigmedicalfoundation.nl/api/hmf/v1/sets \
+  https://api.hartwigmedicalfoundation.nl/hmf/v1/sets \
   -XPOST \
   -H "Content-Type: application/json" \
   -d '{"entity": "'$ENTITY_NAME'", "ini": "'$INI_NAME'", "name": "'$SET_NAME'", "ref_sample": "'$REF_SAMPLE'", "tumor_sample": "'$TUMOR_SAMPLE'"}'
