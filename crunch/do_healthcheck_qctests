@@ -16,7 +16,7 @@ GetOptions (
     "warn_instead-of-die|w" => \$warn_instead_of_die,
 )
 or die("Error in command line arguments\n");
-say "Run with: -healthcheck_log_file <pathToFile>" and exit(1) unless $healthcheck_log_file;
+say "Run with: --healthcheck-log-file <pathToFile>" and exit(1) unless $healthcheck_log_file;
 die "[ERROR] Provided healthcheck log file does not exist\n" unless -f $healthcheck_log_file;
 
 ## ----------
