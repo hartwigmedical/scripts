@@ -8,7 +8,7 @@ import os
 
 class vcfMerge():
 
-    minCountThreshold = 1
+    minCountThreshold = 2
 
     def __init__(self,path):
 
@@ -55,10 +55,25 @@ class vcfMerge():
         return "\n"
 
     def posToNumber(self,split):
-        return int(split[0]) * 1e9 + int(split[1])
+        if split[0] == 'X':
+            chrom = 23
+        elif split[0] == 'Y':
+            chrom = 24
+        elif split[0] == 'MT':
+            chrom = 25
+        else:
+            chrom = int(split[0])
+        return chrom * 1e9 + int(split[1])
 
     def numberToPos(self, number):
-        return str(int(number/1e9)) + "\t" + str(int(number%1e9))
+        if int(number/1e9) == 23:
+            return "X\t"+ str(int(number%1e9))
+        elif int(number/1e9) == 24:
+            return "Y\t" + str(int(number % 1e9))
+        elif int(number / 1e9) == 25:
+            return "MT\t" + str(int(number % 1e9))
+        else:
+            return str(int(number/1e9)) + "\t" + str(int(number%1e9))
 
     def readFirstVariant(self,file__):
         read_line = file__.readline()
@@ -69,6 +84,7 @@ class vcfMerge():
     def pushVariantToHeap(self,read_line,file__):
         if(len(read_line) != 0):
             heapq.heappush(self._heap, (self.posToNumber(read_line.split("\t")), file__))
+
 
     def writeToOutput(self,posNumber,count):
         if count >= self.minCountThreshold:
@@ -82,7 +98,8 @@ def getVCFList(path):
     return files
 
 if __name__ == '__main__':
-    path = "/Users/peterpriestley/hmf/analyses/PON/"
+    #path = "/Users/peterpriestley/hmf/analyses/PON/"
+    path = "/Users/peterpriestley/hmf/analyses/170117_PMC_analysis/"
     files = getVCFList(path)
     merger = vcfMerge(path)
     merger.merge(files)
