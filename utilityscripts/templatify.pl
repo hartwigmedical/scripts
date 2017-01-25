@@ -11,18 +11,21 @@ use warnings;
 print <<'HEADER';
 #!/usr/bin/env bash
 # -*- TT -*-
-#
-# Template used by the Template Toolkit. See: http://template-toolkit.org/
-#
 
-[% INCLUDE ErrorHandling.tt mode=opt.JOB_ERROR_MODE %]
+[% INCLUDE ErrorHandling.tt %]
+[% INCLUDE Logging.tt job_name="" main_step= log_name="${step}.log" %]
 
-export JOB_NAME JOB_SET JOB_START
-JOB_NAME=
-JOB_SET="[% opt.RUN_NAME %]"
-JOB_START=$(date +%s)
+# you still need to:
+# 1) update INCLUDE Logging.tt:
+#  a) add job_name (must match template name)
+#  b) add "main" step name
+#  c) add log file name
+#  d) correct success/failure logic
+#  e) optionally add sub-steps with start_step "NAME"/finish_step
+# 2) template variables inside control structures are potentially double [% %] escaped and should be fixed manually
+# 3) inspect manually and convert constructs like \$command, \$mv_command, \$rm_command to that hurts eyes less
+# 4) tidy up silly logic, add quoting of paths, formatting into readable multi-line commands etc.
 
-[% INCLUDE Status.tt step= status="processing" %]
 HEADER
 
 while (<>) {
@@ -44,6 +47,8 @@ while (<>) {
     s/\\n/\n/g;
     s/\\"/"/g;
     s/\\\$/\$/g;
+    s/"\.//g;
+    s/\."//g;
 
     # also convert (escaped) backticks to $()
 
@@ -55,9 +60,10 @@ while (<>) {
 
     # update directory usage
 
-    s#\$opt(?:->)?{OUTPUT_DIR}/(\$[^/]+/)*?([^/]+)#[% dirs.$1 %]#g;
+    s#\$opt(?:->)?{OUTPUT_DIR}/(?:\$?[^/\s]+/)*?([^\./\s\$;]+)[\s/"]#[% dirs.$1 %]#g;
     s/\$([a-zA-Z0-9_]+?)_?[dD]ir/[% dirs.$1 %]/g;
     # TODO: fix those underscores
+    s#\$opt(?:->)?{OUTPUT_DIR}/#[% dirs.out %]/#g;
 
     # hash variables first then simple ones
 
@@ -77,7 +83,8 @@ while (<>) {
     say;
 }
 
-say STDERR "you still need to tidy up quoting of filenames, logic etc.";
-say STDERR "variables inside control structures are double [% %] escaped and should be fixed";
-say STDERR "update JOB_NAME, add Status.tt step and success/failure lines";
-say STDERR "inspect manually and convert constructs like \$command, \$mv_command, \$rm_command";
+print <<'FOOTER';
+
+assert_not_empty "[% output_path %]"
+success
+FOOTER

@@ -14,7 +14,7 @@ sub usage{
     exit 1;
 }
 
-my $api_script = 'register_sets.sh';
+my $api_script = 'register_sets_v2.sh';
 my $entities_file = '/data/common/dbs/sbp/center2entity.tsv';
 my $setname_regex_cpct = '^(\d{6})_HMFreg(CPCT|DRUP|PMC)_(.+)_(.+)_((CPCT|DRUP|PMC).+)$';
 my $setname_regex_giab = '^(\d{6})_(VAL.+)_(.+)_(.+)$';

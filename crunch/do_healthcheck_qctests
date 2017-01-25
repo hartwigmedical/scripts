@@ -1,0 +1,312 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.16.0;
+use Getopt::Long;
+use File::Basename;
+use Data::Dumper;
+
+my $SCRIPT = basename $0;
+
+my $healthcheck_log_file;
+my $warn_instead_of_die;
+
+GetOptions (
+    "healthcheck-log-file|f=s" => \$healthcheck_log_file,
+    "warn_instead-of-die|w" => \$warn_instead_of_die,
+)
+or die("Error in command line arguments\n");
+say "Run with: --healthcheck-log-file <pathToFile>" and exit(1) unless $healthcheck_log_file;
+die "[ERROR] Provided healthcheck log file does not exist\n" unless -f $healthcheck_log_file;
+
+## ----------
+## MAIN
+## ----------
+
+my $hcdata = parseHealthcheckLog( $healthcheck_log_file );
+my $sampleCount = $hcdata->{'sampleCount'};
+
+if ( $sampleCount == 1 ){ 
+    doSingleSampleTests( $hcdata ); 
+}
+elsif( $sampleCount == 2 ){ 
+    doSomaticTests( $hcdata ); 
+}
+else{ 
+    die "[ERROR] Incompatible number of samples ($sampleCount)\n"; 
+}
+
+## ----------
+## SUBROUTINES
+## ----------
+
+sub doSingleSampleTests{
+    my ($hcdata) = @_;    
+    
+    my $sample = $hcdata->{ 'refsample' };
+    die "[ERROR] REF sample not determined\n" unless $sample;
+    
+    ## retrieve all required variables
+    my $PIPELINE_VERSION    = getValueBySample( $hcdata, $sample, 'PIPELINE_VERSION' );
+    my $PIPELINE_RUN_NAME   = getValueBySample( $hcdata, $sample, 'RUN_NAME' );
+    my $CN_GAIN_COUNT       = getValueBySample( $hcdata, $sample, 'COPYNUMBER_GENOME_GAIN' );
+    my $CN_LOSS_COUNT       = getValueBySample( $hcdata, $sample, 'COPYNUMBER_GENOME_LOSS' );
+    my $COV_MEAN_R          = getValueBySample( $hcdata, $sample, 'COVERAGE_MEAN' );
+    my $GRM_SNP_COUNT_R     = getValueBySample( $hcdata, $sample, 'VARIANTS_GERMLINE_SNP' );
+    my $COV_PCT_10X_R       = getValueBySample( $hcdata, $sample, 'COVERAGE_10X' );
+    my $COV_PCT_20X_R       = getValueBySample( $hcdata, $sample, 'COVERAGE_20X' );
+    
+    ## print some general info
+    say "[INFO] Info Summary:";
+    say "[INFO]   SAMPLES = $sample";
+    say "[INFO]   PIPELINE = $PIPELINE_RUN_NAME ($PIPELINE_VERSION)";
+    say "[INFO]   GERMLINE_SNP_COUNT_R = ".commify( $GRM_SNP_COUNT_R );
+    
+    ## Start actual QC tests
+    say "[INFO] QC Tests:";
+    
+    ## keep track of fail and warn counts
+    my $fails = 0;
+    my $warns = 0;
+    
+    ifLowerFail( \$fails, \$warns, 'NA', 30.0, $COV_MEAN_R, 'COVERAGE_MEAN_REF' );
+    ifLowerFail( \$fails, \$warns, 0.90, 0.95, $COV_PCT_10X_R, 'COVERAGE_10X_R' );
+    ifLowerFail( \$fails, \$warns, 0.70, 0.85, $COV_PCT_20X_R, 'COVERAGE_20X_R' );
+    ifHigherFail( \$fails, \$warns, 'NA', 2500000000, $CN_GAIN_COUNT, 'COPYNUMBER_GAIN' );
+    ifHigherFail( \$fails, \$warns, 'NA', 2500000000, $CN_LOSS_COUNT, 'COPYNUMBER_LOSS' );
+    
+    ## Final result message
+    generateFinalResultMessage( $sample, $fails, $warns);
+}
+
+
+sub doSomaticTests{
+    my ($hcdata) = @_;
+    
+    my @samples = @{ $hcdata->{ 'sampleNames' } };
+    my $refsample = $hcdata->{ 'refsample' };
+    my $tumsample = $hcdata->{ 'tumsample' };
+    die "[ERROR] REF sample not determined\n" unless $refsample;
+    die "[ERROR] TUM sample not determined\n" unless $tumsample;
+    
+    ## retrieve all required variables
+    my $SAMPLE_NAMES        = join( ", ", @samples );
+    my $PIPELINE_VERSION    = getValueBySample( $hcdata, $tumsample, 'PIPELINE_VERSION' );
+    my $PIPELINE_RUN_NAME   = getValueBySample( $hcdata, $tumsample, 'RUN_NAME' );
+    my $CN_GAIN_COUNT       = getValueBySample( $hcdata, $tumsample, 'COPYNUMBER_GENOME_GAIN' );
+    my $CN_LOSS_COUNT       = getValueBySample( $hcdata, $tumsample, 'COPYNUMBER_GENOME_LOSS' );
+    my $SOM_SNP_COUNT       = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_COUNT' );
+    my $SOM_IND_COUNT       = getValueBySample( $hcdata, $tumsample, 'SOMATIC_INDEL_COUNT' );
+    my $SOM_SNP_DBSNP_COUNT = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_DBSNP_COUNT' );
+    my $SOM_SNP_PROP_VAR_1C = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_PROPORTION_VARIANTS_1_CALLERS' );
+    my $SOM_SNP_PROP_VAR_2C = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_PROPORTION_VARIANTS_2_CALLERS' );
+    my $SOM_SNP_PROP_VAR_3C = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_PROPORTION_VARIANTS_3_CALLERS' );
+    my $SOM_SNP_PROP_VAR_4C = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_PROPORTION_VARIANTS_4_CALLERS' );
+    my $SOM_SNP_COUNT_FB    = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_COUNT_FREEBAYES' );
+    my $SOM_SNP_COUNT_MU    = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_COUNT_MUTECT' );
+    my $SOM_SNP_COUNT_VS    = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_COUNT_VARSCAN' );
+    my $SOM_SNP_COUNT_ST    = getValueBySample( $hcdata, $tumsample, 'SOMATIC_SNP_COUNT_STRELKA' );
+    my $COV_MEAN_R          = getValueBySample( $hcdata, $refsample, 'COVERAGE_MEAN' );
+    my $COV_MEAN_T          = getValueBySample( $hcdata, $tumsample, 'COVERAGE_MEAN' );
+    my $KINSHIP_TEST        = getValueBySample( $hcdata, $tumsample, 'KINSHIP_TEST' );
+    my $GRM_SNP_COUNT_R     = getValueBySample( $hcdata, $refsample, 'VARIANTS_GERMLINE_SNP' );
+    my $GRM_SNP_COUNT_T     = getValueBySample( $hcdata, $tumsample, 'VARIANTS_GERMLINE_SNP' );
+    my $COV_PCT_10X_R       = getValueBySample( $hcdata, $refsample, 'COVERAGE_10X' );
+    my $COV_PCT_20X_R       = getValueBySample( $hcdata, $refsample, 'COVERAGE_20X' );
+    my $COV_PCT_30X_T       = getValueBySample( $hcdata, $tumsample, 'COVERAGE_30X' );
+    my $COV_PCT_60X_T       = getValueBySample( $hcdata, $tumsample, 'COVERAGE_60X' );
+    
+    ## construct required variables not present in health check output
+    my $SOM_SNP_COUNT_1C = $SOM_SNP_PROP_VAR_1C * $SOM_SNP_COUNT;
+    my $SOM_SNP_COUNT_2C = $SOM_SNP_PROP_VAR_2C * $SOM_SNP_COUNT;
+    my $SOM_SNP_COUNT_3C = $SOM_SNP_PROP_VAR_3C * $SOM_SNP_COUNT;
+    my $SOM_SNP_COUNT_4C = $SOM_SNP_PROP_VAR_4C * $SOM_SNP_COUNT;
+    my $SOM_SNP_COUNT_1C_2C = $SOM_SNP_COUNT_1C + $SOM_SNP_COUNT_2C;
+    my $SOM_SNP_COUNT_3C_4C = $SOM_SNP_COUNT_3C + $SOM_SNP_COUNT_4C;
+    my $SOM_SNP_DBSNP_PROP = $SOM_SNP_DBSNP_COUNT / $SOM_SNP_COUNT;
+    my $SOM_SNP_DBSNP_PCT = roundNumber( $SOM_SNP_DBSNP_COUNT*100 / $SOM_SNP_COUNT );
+    
+    ## setup check booleans
+    my $som_check1_fail = $SOM_SNP_COUNT_1C_2C > 1000000;
+    my $high_12caller_count = $SOM_SNP_COUNT_1C_2C > 1000000;
+    my $som_check2_fail = $SOM_SNP_DBSNP_COUNT / $SOM_SNP_COUNT < 0.2;
+    my $low_dbsnp_prop = $SOM_SNP_DBSNP_COUNT / $SOM_SNP_COUNT < 0.2;
+    my $som_check3_fail = $SOM_SNP_DBSNP_COUNT > 250000;
+    my $high_dbsnp_count = $SOM_SNP_DBSNP_COUNT > 250000;
+    my $som_check3_warn = $SOM_SNP_DBSNP_COUNT > 40000;
+    my $som_check4_a    = $SOM_SNP_COUNT_FB > $SOM_SNP_COUNT_MU;
+    my $som_check4_b    = $SOM_SNP_COUNT_FB > $SOM_SNP_COUNT_VS;
+    my $som_check4_c    = $SOM_SNP_COUNT_FB > $SOM_SNP_COUNT_ST;
+    my $som_check4_fail = ($som_check4_a and $som_check4_b and $som_check4_c);
+
+    ## output to screen
+    say "[INFO] Info Summary:";
+    say "[INFO]   SAMPLES = $SAMPLE_NAMES";
+    say "[INFO]   PIPELINE = $PIPELINE_RUN_NAME ($PIPELINE_VERSION)";
+    say "[INFO]   SOMATIC_SNP_COUNT = ".commify( $SOM_SNP_COUNT );
+    say "[INFO]   SOMATIC_SNP_DBSNP_COUNT = ".commify( $SOM_SNP_DBSNP_COUNT )." (".$SOM_SNP_DBSNP_PCT."% of all SOMATIC_SNP)";
+    say "[INFO]   SOMATIC_INDELS_COUNT = ".commify( $SOM_IND_COUNT );
+    say "[INFO]   GERMLINE_SNP_COUNT_R = ".commify( $GRM_SNP_COUNT_R );
+    say "[INFO]   GERMLINE_SNP_COUNT_T = ".commify( $GRM_SNP_COUNT_T );
+    say "[INFO] QC Tests:";
+    
+    ## keep track of fail and warn counts
+    my $fails = 0;
+    my $warns = 0;
+    
+    ## perform tests one by one
+    my $test = 'UNKNOWN_VARIANTS_CONTAMINATION';
+    if ( $som_check1_fail and $som_check2_fail ){ printMsg( 'FAIL', $test ) and $fails++;    }
+    else{ printMsg( 'INFO', "  [OK] $test" ); }
+
+    $test = 'DBSNP_REF_CONTAMINATION';
+    if ( $som_check3_fail and $som_check4_fail ){ printMsg( 'FAIL', $test ) and $fails++;    }
+    elsif ( $som_check3_warn and $som_check4_fail ){ printMsg( 'WARN', $test ) and $warns++; }
+    else{ printMsg( 'INFO', "  [OK] $test" ); }
+    
+    $test = 'DBSNP_TUM_CONTAMINATION';
+    if ( $som_check3_fail and not $som_check4_fail ){ printMsg( 'FAIL', $test ) and $fails++; }
+    elsif ( not $som_check4_fail and $som_check3_warn ){ printMsg( 'WARN', $test ) and $warns++; }
+    else{ printMsg( 'INFO', "  [OK] $test" ); }
+    
+    ifLowerFail( \$fails, \$warns, 'NA', 30.0, $COV_MEAN_R, 'COVERAGE_MEAN_REF' );
+    ifLowerFail( \$fails, \$warns, 'NA', 90.0, $COV_MEAN_T, 'COVERAGE_MEAN_TUM' );
+    ifLowerFail( \$fails, \$warns, 0.90, 0.95, $COV_PCT_10X_R, 'COVERAGE_10X_R' );
+    ifLowerFail( \$fails, \$warns, 0.70, 0.85, $COV_PCT_20X_R, 'COVERAGE_20X_R' );
+    ifLowerFail( \$fails, \$warns, 0.80, 0.97, $COV_PCT_30X_T, 'COVERAGE_30X_T' );
+    ifLowerFail( \$fails, \$warns, 0.65, 0.93, $COV_PCT_60X_T, 'COVERAGE_60X_T' );
+    ifLowerFail( \$fails, \$warns, 0.35, 'NA', $KINSHIP_TEST, 'KINSHIP' );
+    ifHigherFail( \$fails, \$warns, 'NA', 2500000000, $CN_GAIN_COUNT, 'COPYNUMBER_GAIN' );
+    ifHigherFail( \$fails, \$warns, 'NA', 2500000000, $CN_LOSS_COUNT, 'COPYNUMBER_LOSS' );
+    
+    generateFinalResultMessage( $tumsample, $fails, $warns);
+}
+
+sub generateFinalResultMessage{
+    my ($sample, $fails, $warns) = @_;
+    
+    my $final_status = 'FAIL';
+    $final_status = 'OK' if $fails == 0;
+    my $final_msg = "TEST RESULT for $sample (fails:$fails, warnings:$warns) = $final_status";
+    
+    if ( $final_status ne 'OK' ){ warn ( "[FAIL] $final_msg\n" ) and exit(1); }
+    else{ say ( "[INFO] $final_msg" ); }
+}
+
+sub ifLowerFail{
+    my ($failCount, $warnCount, $failLimit, $warnLimit, $checkValue, $testName) = @_;
+    my $printValue = commify( roundNumber( $checkValue ) );
+    my ($fail, $warn) = (0, 0);
+    $fail = $checkValue < $failLimit unless $failLimit eq 'NA';
+    $warn = $checkValue < $warnLimit unless $warnLimit eq 'NA';
+    
+    if    ( $fail ){ printMsg( 'FAIL', "$testName: $printValue < $failLimit" ) and $$failCount ++; }
+    elsif ( $warn ){ printMsg( 'WARN', "  [OK] $testName: $printValue > $failLimit but < $warnLimit" ) and $$warnCount ++; }
+    else           { printMsg( 'INFO', "  [OK] $testName: $printValue > $failLimit (and also > $warnLimit)" ); }
+}
+
+sub ifHigherFail{
+    my ($failCount, $warnCount, $failLimit, $warnLimit, $checkValue, $testName) = @_;
+    my $printValue = commify( roundNumber( $checkValue ) );
+    my ($fail, $warn) = (0, 0);
+    $fail = $checkValue > $failLimit unless $failLimit eq 'NA';
+    $warn = $checkValue > $warnLimit unless $warnLimit eq 'NA';
+    
+    if    ( $fail ){ printMsg( 'FAIL', "$testName: $printValue > $failLimit" ) and $$failCount ++; }
+    elsif ( $warn ){ printMsg( 'WARN', "  [OK] $testName: $printValue < $failLimit but > $warnLimit" ) and $$warnCount ++; }
+    else           { printMsg( 'INFO', "  [OK] $testName: $printValue < $failLimit (and also < $warnLimit)" ); }
+    
+    return( $fail );
+}
+
+
+sub getValueBySample{
+    my ($hcdata, $sample, $key ) = @_;
+    if ( defined $hcdata->{ $sample }{ $key } ){
+        my $return = $hcdata->{ $sample }{ $key };
+        die "[ERROR] Key \"$key\" found for sample \"$sample\" but is ERROR\n" if $return eq 'ERROR'; 
+        return( $return );
+    }
+    else{
+        if ( $warn_instead_of_die ){
+            warn "[WARNING] Key \"$key\" not found for sample \"$sample\"\n"; 
+        }else{
+            die "[ERROR] Key \"$key\" not found for sample \"$sample\"\n"; 
+        }
+    }
+}
+
+sub printMsg{
+    my ($type, $msg) = @_;
+    if ( $type =~ /ERR|FAIL/ ){
+        warn "[$type] $msg\n";
+    }
+    else{
+        say "[$type] $msg";
+    }
+}
+
+sub parseHealthcheckLog{
+    my %hcdata = ();
+    my ($file) = @_;
+    open FILE, "<", $file or die "Unable to open \"$file\"\n";
+    while ( <FILE> ){
+        chomp;
+        if ( $_ =~ /Check '([^']+)' for sample '([^']+)' has value '([^']+)'/ ){
+            my $key = $1;
+            my $sam = $2;
+            my $val = $3;
+            $hcdata{ $sam }{ $key } = $val;
+        }
+    }
+    close FILE;
+    my @samples = keys %hcdata;
+    my $sampleCount = scalar @samples;
+    
+    $hcdata{ sampleNames } = \@samples;
+    $hcdata{ sampleCount } = $sampleCount;
+    
+    die "[ERROR] no samples detected in log file ($file)\n" if $sampleCount == 0;
+    
+    ## if somatic run: determine tum and ref sample 
+    ## (perhaps better to define in healthcheck output?)
+    if ( $sampleCount == 2 ){
+        my $refsample;
+        my $tumsample;
+        foreach my $sample ( @samples ){
+            if ( $sample =~ /^(CPCT|DRUP)\d{8}(T|R)[IVX]*$/ ){
+                my $r_or_t = $2;
+                $refsample = $sample if ( $r_or_t eq 'R' );
+                $tumsample = $sample if ( $r_or_t eq 'T' );
+            }
+            elsif ( $sample =~ /^(PMC)\d{6}(T|R)[IVX]*$/ ){
+                my $r_or_t = $2; 
+                $refsample = $sample if ( $r_or_t eq 'R' );
+                $tumsample = $sample if ( $r_or_t eq 'T' );
+            }
+            else{
+                die "[ERROR] Somatic mode because multiple samples found, but sample name ($sample) is not in somatics format\n";
+            }
+        }
+        $hcdata{ refsample } = $refsample;
+        $hcdata{ tumsample } = $tumsample;
+    }
+    elsif( $sampleCount == 1 ){
+        $hcdata{ refsample } = $samples[0];
+    }
+    
+    return( \%hcdata );
+}
+
+sub roundNumber{
+    my ($number) = @_;
+    my $rounded = sprintf("%.".'2'."f", $number);
+    return( $rounded );
+}
+
+sub commify {
+    local $_ = shift;
+    1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+    return $_;
+}
+

@@ -1,5 +1,7 @@
-bucket=$1
-run=$2
-path=$3
+command=$1
+profile=$2
+bucket=$3
+run=$4
+path=$5
 
-sbp_old s3 cp ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --profile download_old
+${command} s3 cp ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --profile ${profile}

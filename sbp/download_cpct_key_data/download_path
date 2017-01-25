@@ -1,6 +1,8 @@
-bucket=$1
-run=$2
-path=$3
-filter=$4
+command=$1
+profile=$2
+bucket=$3
+run=$4
+path=$5
+filter=$6
 
-sbp_old s3 sync ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --exclude "*" --include "${filter}" --profile download_old
+${command} s3 sync ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --exclude "*" --include "${filter}" --profile ${profile}
