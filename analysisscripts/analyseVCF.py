@@ -22,6 +22,7 @@ class variantType():
     indel = "INDEL"
     SNP = "SNP"
     mixed = "MIXED"
+    SV = "SV"
 
 class subVariantType():
     none = ""
@@ -83,6 +84,25 @@ def calculateSomaticGenotype(infoSplit,infoHeaders,caller,aVariantType):
     else:
         return 'unknown'
 
+def calculateSVLengthAndStart(pos,infoSplit,infoHeaders):
+    # NOT SURE WHAT TO DO WITH BND => diff chromosome
+    # ALSO CHECK INS.
+    svLen = [0,0]
+    svStart = [pos,pos]
+    for i in range(2):
+        if "SVLEN" in infoHeaders:
+            svLen[i] = int(infoSplit[infoHeaders.index("SVLEN")].split('=')[1])
+        elif "END" in infoHeaders:
+            svLen[i] = int(infoSplit[infoHeaders.index("END")].split('=')[1]) - pos
+        else:
+            return svLen,svStart
+        if "CIPOS" in infoHeaders:
+            svLen[i] = svLen[i] - int(infoSplit[infoHeaders.index("CIPOS")].split('=')[1].split(",")[i])
+            svStart[i] = svStart[i] + int(infoSplit[infoHeaders.index("CIPOS")].split('=')[1].split(",")[1-i])
+        if "CIEND" in infoHeaders:
+            svLen[i] = svLen[i] + int(infoSplit[infoHeaders.index("CIEND")].split('=')[1].split(",")[1-i])
+    return svLen,svStart
+
 def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,genotype):
     if caller == 'strelka' and aVariantType == variantType.indel:
         try:
@@ -96,7 +116,7 @@ def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,
             return infoSplit[infoHeaders.index("VS_SSC")].split('=')[1]
         else:
             return infoSplit[infoHeaders.index("SSC")].split('=')[1]
-    elif caller == 'freebayes' or caller == 'normal':
+    elif caller == 'freebayes':
         return qual
     elif caller == 'Set1GIAB12878':
         try:
@@ -106,7 +126,7 @@ def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,
     else:  # Mutect has no quality score
         return -1
 
-def calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel):
+def calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountSV,tumorCallerCountIndel,tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel):
     if tumorCallerCountIndel > 0 and tumorCallerCountSNP > 0:
         return variantType.mixed, ""
     elif tumorCallerCountIndel > 0:
@@ -118,6 +138,8 @@ def calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,tumo
             return variantType.indel,subVariantType.indel
     elif tumorCallerCountSNP > 0:
         return variantType.SNP,""
+    elif tumorCallerCountSV > 0:
+        return variantType.SV, ""
     else:
         return variantType.missingGenotype,""
 
@@ -152,14 +174,25 @@ def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor
 
 class genotype:
 
-    def __init__(self,caller,ref,alt,qual,infoSplit,infoHeaders,format,inputGenotype):
+    def __init__(self,caller,pos,ref,alt,qual,infoSplit,infoHeaders,format,inputGenotype):
         altsplit = (ref + ","+ alt).split(',')
-        self.tumorVariantSubType = subVariantType.none
-        alleleTumor2 = ""
-        if inputGenotype[:3] == "./.":
-            self.tumorVariantType = variantType.missingGenotype
+
+        #self.tumorVariantSubType = subVariantType.none
+        self.indelDiff = ""
+        self.svStart = ["",""]
+        self.svLen = ["", ""]
+
+        if inputGenotype[:3] == "./." or inputGenotype[1]<>"/":
+            if alt[0]== "<":   #SV case
+                self.tumorVariantType = variantType.SV
+                self.allele = alt[1:-1]
+                self.svLen,self.svStart = calculateSVLengthAndStart(int(pos),infoSplit,infoHeaders)
+            else:
+                self.tumorVariantType = variantType.missingGenotype
+                self.allele = ""
         elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
             self.tumorVariantType = variantType.sameAsRef
+            self.allele = ref
         else:
             if inputGenotype[1] != '/':  #STRELKA unfiltered case
                 alleleTumor1 = altsplit[1]
@@ -181,12 +214,12 @@ class genotype:
             self.allele = alleleTumor2
             self.indelDiff = indelDiff(ref, self.allele)
 
-            self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,alleleTumor2)
-            self.readDepth = calculateReadDepth(format,inputGenotype)
-            self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType,format,inputGenotype))
-            self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
-            if self.somaticGenotype == 'unknown':
-                self.somaticGenotype = inputGenotype[:3]
+        self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,self.allele)
+        self.readDepth = calculateReadDepth(format,inputGenotype)
+        self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType,format,inputGenotype))
+        self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
+        if self.somaticGenotype == 'unknown':
+            self.somaticGenotype = inputGenotype[:3]
 
 
 
@@ -219,6 +252,7 @@ class somaticVariant:
             if filter == "PASS" or filter == "." or useFilter == False:
 
                 tumorCallerCountSNP = 0
+                tumorCallerCountSV = 0
                 tumorCallerCountIndel = 0
                 tumorCallerCountSubTypeIndel = 0
                 tumorCallerCountSubTypeDelete = 0
@@ -231,7 +265,7 @@ class somaticVariant:
 
                 #CALLER SPECIFIC FIELDS
                 for key in inputGenotypes.iterkeys():
-                    variantGenotypes[key] = genotype(key, ref, alt, qual,infoSplit,infoHeaders,format,inputGenotypes[key])
+                    variantGenotypes[key] = genotype(key, pos, ref, alt, qual,infoSplit,infoHeaders,format,inputGenotypes[key])
 
                 #CALLER COUNTS
                 for key, value in variantGenotypes.items():
@@ -245,6 +279,8 @@ class somaticVariant:
                             tumorCallerCountSubTypeInsert += 1
                         if value.tumorVariantSubType == subVariantType.indel:
                             tumorCallerCountSubTypeIndel += 1
+                    if value.tumorVariantType == variantType.SV:
+                        tumorCallerCountSV += 1
 
                 # META DATA
                 if "set" in infoHeaders:
@@ -254,7 +290,7 @@ class somaticVariant:
                 numCallers = calculateNumCallers(infoSplit,infoHeaders,tumorCallerCountSNP + tumorCallerCountIndel)
                 if "filter" in vennSegment:
                     numCallers=numCallers -1
-                myVariantType,mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountIndel,\
+                myVariantType,mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountSV,tumorCallerCountIndel,\
                                                 tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel)
                 inDBSNP = any(['rs' in x for x in id.split(';')])
                 inCOSMIC = any(['COSM' in x for x in id.split(';')])
@@ -289,10 +325,10 @@ class somaticVariant:
 
                     #APPEND CALLER SPECIFIC FIELDS
                     for caller, variantGenotype in variantGenotypes.items():
-                        if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP:
+                        if variantGenotype.tumorVariantType == variantType.indel or variantGenotype.tumorVariantType == variantType.SNP or True:
                             callerSpecificFields = [variantGenotype.allele, variantGenotype.allelicFreq, variantGenotype.readDepth,
                                                 variantGenotype.qualityScore,variantGenotype.somaticGenotype,
-                                                variantGenotype.indelDiff]
+                                                variantGenotype.indelDiff,variantGenotype.svLen[1],variantGenotype.svLen[0],variantGenotype.svStart[1],variantGenotype.svStart[0]]
                         else:
                             callerSpecificFields = ['', '', '','','','']
                         somaticVariant.variantInfo[-1] = somaticVariant.variantInfo[-1] + callerSpecificFields
@@ -348,7 +384,7 @@ def loadVariantsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
         myColumnList = ['chrom', 'pos', 'chromPos','chromFrac','id', 'ref', 'vennSegment','numCallers','variantType','variantSubType','filter',
                         'bedRegion','inDBSNP','inCOSMIC','annGene','annWorstImpact','annWorstEffect','annAllEffects','consensus']
         for caller in header_index.iterkeys():
-            myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff']
+            myColumnList = myColumnList + [caller + 'allele',caller+ 'AF',caller+'DP',caller+'QS',caller+'SGT',caller+'indelDiff',caller+'SVLenMin',caller+'SVLenMax',caller+'SVStartMin',caller+'SVStartMax']
         df.columns = (myColumnList)
         df['patientName'] = aPatientName
     ###### END PANDAS ###########
@@ -368,41 +404,5 @@ def loadBEDFile(aPath, aBEDFile):
                 myBed.append(splitLine)
     return myBed
 
-def printStatistics(df):
-    #Calculate 2+_caller precision and sensitivity
-    outputdata = []
-    for columnName in list(df):
-        if columnName.endswith('allele'):
-            myCaller = columnName[:-6]
-            variantTypes = df[(df[myCaller + 'allele'] != '')].variantType.unique()
-            for variantType in variantTypes:
-                truePositives = len(
-                    df[(df[myCaller + 'allele'] != '') & (df['numCallers'] >= 2) & (df['variantType'] == variantType)])
-                falseNegatives = len(
-                    df[(df[myCaller + 'allele'] == '') & (df['numCallers'] >= 2) & (df['variantType'] == variantType)])
-                positives = len(df[(df[myCaller + 'allele'] != '') & (df['variantType'] == variantType)])
-                truthSet = truePositives + falseNegatives
-                if positives > 0:
-                    outputdata.append(
-                        [variantType, myCaller, truthSet, truePositives, positives - truePositives, falseNegatives,
-                         round(truePositives / float(positives), 4), round(truePositives / float(truthSet), 4)])
-
-    outputDF = pd.DataFrame(outputdata)
-    outputDF.columns = (['variantType', 'caller', 'truthSet', 'truePositives', 'falsePositives', 'falseNegatives',
-                         'precision_2+_callers','sensitivity_2+_callers'])
-    print '\n2+ caller precision and sensitivity\n'
-    print outputDF.sort_values(['variantType', 'caller'])
-
-    # calculate # of variants by variant type
-    print '\n# of variants by sub type\n'
-    print df[['pos', 'variantSubType']].groupby(['variantSubType']).agg('count')
-
-    # calculate # of callers
-    print '\n# of variants by number of callers and variant type\n'
-    df_pivot = df[['numCallers', 'pos', 'variantType']].groupby(['variantType', 'numCallers' ]).agg('count')
-    print df_pivot.groupby(level=0).transform(lambda x: x / x.sum())
-
-    df = loadVaraintsFromVCF(VCF_PATH,VCF_FILE_NAME,SAMPLE_NAMES,True,VCF_SAMPLE,False)
-    printStatistics(df)
 
 
