@@ -1,3 +1,3 @@
 #!/bin/bash
 
-sbp_old s3 ls s3://${ARCHIVE_BUCKET}/ --profile download_old "$@"
+sbp_new s3 ls s3://${ARCHIVE_BUCKET}/ --profile download_new "$@"

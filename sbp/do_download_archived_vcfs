@@ -5,5 +5,5 @@ for runpath in /data/schuberg/archivesymlinks/*; do
     run=`basename ${runpath}`
     s3path="s3://${ARCHIVE_BUCKET}/${run}"
     echo "Getting vcf from ${s3path}"
-    sbp_old s3 sync ${s3path} ${tmppath}/ --profile download_old --exclude "*" --include "*filtered_variants.vcf"
+    sbp_new s3 sync ${s3path} ${tmppath}/ --profile download_new --exclude "*" --include "*filtered_variants.vcf"
 done

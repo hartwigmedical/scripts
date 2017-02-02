@@ -2,4 +2,4 @@
 
 RUN_NAME=$1
 
-sbp_old s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download_old --recursive --summarize --human-readable $2
+sbp_new s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download_new --recursive --summarize --human-readable $2
