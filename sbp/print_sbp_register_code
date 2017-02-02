@@ -90,7 +90,7 @@ foreach my $setpath ( @sets_dirs ){
     ## Case: GIAB sample analysis
     elsif ( $setname =~ m/$setname_regex_giab/ ){
         my ( $date, $svalid, $pipelineversion, $settingsname ) =  ($1, $2, $3, $4 );
-        my $ini = 'SingleSample.ini';
+        my $ini = 'KG.ini';
         my $entity = 'HMF_VALIDATION';
         
         my $refsample = `ls $setpath/*/ | head -1 | grep -Po "^[^_]+"`;
@@ -110,7 +110,7 @@ foreach my $setpath ( @sets_dirs ){
     ## Case: Other single samples
     elsif ( $setname =~ m/$setname_regex_sngl/ ){
         my ( $date, $submission, $sampleid, $samplename ) =  ($1, $2, $3, $4 );
-        my $ini = 'SingleSample.ini';
+        my $ini = 'KG.ini';
         my $entity = $submission;
 
         my $refsample = `ls $setpath/*/ | head -1 | grep -Po "^[^_]+"`;

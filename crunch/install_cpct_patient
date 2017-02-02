@@ -37,7 +37,7 @@ echo "sudo chown -R root:root $newRunDir"
 
 ## symlink code
 if [ -d $submDataDir ]; then
-    echo "ln -s $newRunDir $submDataDir"
+    echo "# [reporting now done by HMF] ln -s $newRunDir $submDataDir"
 else
     echo "[WARNING] Submission data dir does not exist ($submDataDir)"
 fi
