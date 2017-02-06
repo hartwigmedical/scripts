@@ -35,7 +35,10 @@ cat $CONV_E | tail -1;
 #echo ""
 
 echo "$SEPSTR NAS CMD"
-echo "rsync -ah --stats ./Data/Intensities/BaseCalls/Reports/html/* nas:/volume1/web/qc/conversion/$RUNNAS"
+echo "rsync -ah ./Data/Intensities/BaseCalls/Reports/html/* nas:/volume1/web/qc/conversion/$RUNNAS"
+
+echo "$SEPSTR print bcl2fastq conversion report"
+echo "get_bcl2fq_report_table $RUNDIR"
 
 ## print readme file path if present
 README_FILE=$RUNDIR"/README"
