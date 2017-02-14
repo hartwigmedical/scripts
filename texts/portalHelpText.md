@@ -30,12 +30,17 @@ Note: same procedure applies to VCF files
 
 **Example download using WGET:**
 - create the links (by clicking the most right icon next to a run)
-- copy the links into a new text file (eg download.txt)
+- copy the links into a new text file (eg links.txt)
 - use the following command to download: 
 
 ```sh
-wget --content-disposition -i download.txt
+wget --content-disposition -i links.txt
 ```
 
 Note: we also recommend to check out the [aria2 download tool](https://aria2.github.io/). This will allow you to download with mutiple streams speeding up the download significantly.
+
+**Example download using aria2 (with 5 connections):**
+```sh
+aria2c -x 5 -c -i links.txt
+```
 

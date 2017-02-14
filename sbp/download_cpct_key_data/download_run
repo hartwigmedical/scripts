@@ -4,8 +4,8 @@ ref_sample=$3
 tum_sample=$4
 
 path=`dirname $(readlink $0 || echo $0)`
-command=sbp
-profile=download
+command=sbp_new
+profile=download_new
 
 ${path}/download_file ${command} ${profile} ${bucket} ${run} ${ref_sample}/mapping/${ref_sample}_dedup.realigned.flagstat
 ${path}/download_file ${command} ${profile} ${bucket} ${run} ${ref_sample}/mapping/${ref_sample}_dedup.qc.postrealign.sliced.flagstat

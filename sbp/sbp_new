@@ -1,0 +1,3 @@
+#!/bin/bash
+
+aws "$@" --endpoint-url ${SBP_ENDPOINT_URL_NEW}
