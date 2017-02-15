@@ -8,7 +8,7 @@ shopt -s nullglob
 
 # There are several modes of operation:
 #
-# 1) no parameters => run cancel panel test into an automatic personal output directory (shortcut; can do this explicitly with input/output directories).
+# 1) no parameters => run cancer panel test into an automatic personal output directory (shortcut; can do this explicitly with input/output directories).
 # 2) one parameter => re-run pipeline on - and into - a named, existing folder structure (e.g. for re-running somatics).
 # 3) two parameters => re-run pipeline on - and into - a named, existing folder but using different INI file (no .ini suffix necessary)
 # 4) three parameters => run pipeline from an input folder into an output folder. FASTQ/BAM mode is chosen according to folder contents.
