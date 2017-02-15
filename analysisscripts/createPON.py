@@ -4,7 +4,7 @@ import os
 
 #### TO DO ###########
 # Min, Max and Median AF?
-# Look for exact SNP MATCH instead of just pos?
+# Look for exact SNP MATCH instead of just pos???
 
 class vcfMerge():
 

@@ -29,7 +29,11 @@ class subVariantType():
     insert = "INSERT"
     delete = "DELETE"
     indel = "INDEL"
-
+    DEL = "DEL"
+    INV = "INV"
+    DUP = "DUP"
+    INS = "INS"
+    BND = "BND"
 
 
 def indelDiff(ref,variantAllele):
@@ -90,12 +94,13 @@ def calculateSVLengthAndStart(pos,infoSplit,infoHeaders):
     svLen = [0,0]
     svStart = [pos,pos]
     for i in range(2):
-        if "SVLEN" in infoHeaders:
-            svLen[i] = int(infoSplit[infoHeaders.index("SVLEN")].split('=')[1])
+        if 'LEFT_SVINSSEQ' in infoHeaders and 'RIGHT_SVINSSEQ' in infoHeaders:   #MANTA - <INS> Case
+            svLen[i] = len(infoSplit[infoHeaders.index("LEFT_SVINSSEQ")].split('=')[1])+len(infoSplit[infoHeaders.index("RIGHT_SVINSSEQ")].split('=')[1])
+            svStart[i] = svStart[i] - len(infoSplit[infoHeaders.index("LEFT_SVINSSEQ")].split('=')[1])
+        elif "SVLEN" in infoHeaders:
+            svLen[i] = abs(int(infoSplit[infoHeaders.index("SVLEN")].split('=')[1]))
         elif "END" in infoHeaders:
             svLen[i] = int(infoSplit[infoHeaders.index("END")].split('=')[1]) - pos
-        else:
-            return svLen,svStart
         if "CIPOS" in infoHeaders:
             svLen[i] = svLen[i] - int(infoSplit[infoHeaders.index("CIPOS")].split('=')[1].split(",")[i])
             svStart[i] = svStart[i] + int(infoSplit[infoHeaders.index("CIPOS")].split('=')[1].split(",")[1-i])
@@ -118,9 +123,9 @@ def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,
             return infoSplit[infoHeaders.index("SSC")].split('=')[1]
     elif caller == 'freebayes':
         return qual
-    elif caller == 'Set1GIAB12878':
+    elif caller == 'tumor':
         try:
-            return infoSplit[infoHeaders.index("MQ")].split('=')[1]
+            return infoSplit[infoHeaders.index("QD")].split('=')[1]
         except ValueError:
             return -1
     else:  # Mutect has no quality score
@@ -147,7 +152,12 @@ def calculateAllelicFreq(format,genotype,caller,tumorVariantType,ref,alleleTumor
     formatSplit = format.split(':')
     genotypeSplit = genotype.split(':')
 
-    if caller == 'mutect':
+    if tumorVariantType == variantType.SV and "PR" in formatSplit :
+        try:
+            return float(genotypeSplit[formatSplit.index('PR')].split(',')[1])/(float(genotypeSplit[formatSplit.index('PR')].split(',')[1])+float(genotypeSplit[formatSplit.index('PR')].split(',')[0]))
+        except ZeroDivisionError:
+            return -1
+    elif caller == 'mutect':
         return float(genotypeSplit[formatSplit.index('FA')])
     elif caller == 'varscan':
         return float(genotypeSplit[formatSplit.index('FREQ')].split('%')[0])/100
@@ -182,14 +192,24 @@ class genotype:
         self.svStart = ["",""]
         self.svLen = ["", ""]
 
-        if inputGenotype[:3] == "./." or inputGenotype[1]<>"/":
-            if alt[0]== "<":   #SV case
-                self.tumorVariantType = variantType.SV
-                self.allele = alt[1:-1]
-                self.svLen,self.svStart = calculateSVLengthAndStart(int(pos),infoSplit,infoHeaders)
+        if "SVTYPE" in infoHeaders:   #SV case
+            self.tumorVariantType = variantType.SV
+            self.tumorVariantSubType = infoSplit[infoHeaders.index("SVTYPE")].split('=')[1]
+            self.allele = alt
+            if alt.find('[') >= 0 or alt.find(']') >= 0:  # MANTA BND
+                pass
+                #self.tumorVariantSubType = subVariantType.BND
             else:
-                self.tumorVariantType = variantType.missingGenotype
-                self.allele = ""
+                #self.tumorVariantSubType = alt[1:4]
+                if self.tumorVariantSubType == 'INV' and "CT" in infoHeaders:   # DELLY exclude
+                    if infoSplit[infoHeaders.index("CT")].split('=')[1] == '5to5':
+                        self.tumorVariantSubType = 'IGN'
+                if self.tumorVariantSubType == 'INV' and 'INV5' in infoHeaders:   # temp workaround for MANTA CASE - INV5s are duplicates...
+                    self.tumorVariantSubType = 'IGN'
+            self.svLen, self.svStart = calculateSVLengthAndStart(int(pos), infoSplit, infoHeaders)
+        elif inputGenotype[:3] == "./." or inputGenotype[1]<>"/" :
+            self.tumorVariantType = variantType.missingGenotype
+            self.allele = ""
         elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
             self.tumorVariantType = variantType.sameAsRef
             self.allele = ref
@@ -214,10 +234,18 @@ class genotype:
             self.allele = alleleTumor2
             self.indelDiff = indelDiff(ref, self.allele)
 
-        self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,self.allele)
-        self.readDepth = calculateReadDepth(format,inputGenotype)
-        self.qualityScore = float(calculateQualityScore(infoSplit,infoHeaders,caller,qual,self.tumorVariantType,format,inputGenotype))
-        self.somaticGenotype = calculateSomaticGenotype(infoSplit,infoHeaders,caller,self.tumorVariantType)
+        if self.tumorVariantType <> variantType.missingGenotype:
+            self.allelicFreq = calculateAllelicFreq(format, inputGenotype, caller, self.tumorVariantType, ref,self.allele)
+            self.qualityScore = float(
+                calculateQualityScore(infoSplit, infoHeaders, caller, qual, self.tumorVariantType, format,
+                                      inputGenotype))
+            self.somaticGenotype = calculateSomaticGenotype(infoSplit, infoHeaders, caller, self.tumorVariantType)
+            self.readDepth = calculateReadDepth(format, inputGenotype)
+        else:
+            self.allelicFreq = -1
+            self.qualityScore = ""
+            self.somaticGenotype = ""
+            self.readDepth = ""
         if self.somaticGenotype == 'unknown':
             self.somaticGenotype = inputGenotype[:3]
 
@@ -251,6 +279,7 @@ class somaticVariant:
         if bedRegion <> "" or not useBed or loadRegionsOutsideBed:
             if filter == "PASS" or filter == "." or useFilter == False:
 
+                myVariantType = ""
                 tumorCallerCountSNP = 0
                 tumorCallerCountSV = 0
                 tumorCallerCountIndel = 0
@@ -281,8 +310,17 @@ class somaticVariant:
                             tumorCallerCountSubTypeIndel += 1
                     if value.tumorVariantType == variantType.SV:
                         tumorCallerCountSV += 1
+                        myVariantType = variantType.SV  # TEMP WORKAROUND FOR SV
+                        mySubVariantType = value.tumorVariantSubType   # TEMP WORKAROUND FOR SV
 
                 # META DATA
+                if myVariantType <> variantType.SV:  # TEMP WORKAROUND FOR SV
+                    myVariantType, mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP, tumorCallerCountSV,
+                                                                                tumorCallerCountIndel, \
+                                                                                tumorCallerCountSubTypeDelete,
+                                                                                tumorCallerCountSubTypeInsert,
+                                                                                tumorCallerCountSubTypeIndel)
+
                 if "set" in infoHeaders:
                     vennSegment = infoSplit[infoHeaders.index("set")].split('=')[1]
                 else:
@@ -290,8 +328,7 @@ class somaticVariant:
                 numCallers = calculateNumCallers(infoSplit,infoHeaders,tumorCallerCountSNP + tumorCallerCountIndel)
                 if "filter" in vennSegment:
                     numCallers=numCallers -1
-                myVariantType,mySubVariantType = calculateConsensusVariantType(tumorCallerCountSNP,tumorCallerCountSV,tumorCallerCountIndel,\
-                                                tumorCallerCountSubTypeDelete,tumorCallerCountSubTypeInsert,tumorCallerCountSubTypeIndel)
+
                 inDBSNP = any(['rs' in x for x in id.split(';')])
                 inCOSMIC = any(['COSM' in x for x in id.split(';')])
 
@@ -369,7 +406,7 @@ def loadVariantsFromVCF(aPath, aVCFFile,sampleNames,aPatientName,useFilter,useBe
                     myGenotypes[caller] = variant_calls[index]
                 variants.append(somaticVariant(a[0].lstrip("chr"), a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8],myGenotypes, useFilter, useBed,aBed,loadRegionsOutsideBed))
                 i += 1
-                if i% 100000 == 0:
+                if i% 200000 == 1:
                     print "reading VCF File line:",i
                     #break
 
@@ -405,4 +442,14 @@ def loadBEDFile(aPath, aBEDFile):
     return myBed
 
 
+def loadPON(aPath,aPONFile):
+    myPON = []
+    with open(aPath + aPONFile, 'r') as f:
+        for line in f:
+            line = line.strip('\n')
+            splitLine = line.split('\t')
+            myPON.append(splitLine)
+    dfPON = pd.DataFrame(myPON)
+    dfPON.columns = ['chrom','pos','PONCount']
+    return dfPON
 

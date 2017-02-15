@@ -61,6 +61,10 @@ function main() {
     then
         echo "FINALIZE_KEEP_PILEUP	yes" >> settings.config
     fi
+    if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_BSQR" settings.config
+    then
+        echo "FINALIZE_KEEP_BQSR	yes" >> settings.config
+    fi
 
     write_metadata "${input}" "${output}"
 
