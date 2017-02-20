@@ -85,19 +85,20 @@ function FreecPngCheck() {
         ok
         return 0
     else
-        fail "Found $((255 - $?)) non-empty Freec copy number PNGs!"
+        fail "Found $((255 - $?)) non-empty Freec copy number PNGs (expected $numExpected)!"
         return 1
     fi
 }
 
 function QDnaSeqPngCheck() {
     local runDir=$1 && shift
-    if PngCheck "${runDir}" "qdnaseq" 2
+    local numExpected=2
+    if PngCheck "${runDir}" "qdnaseq" $numExpected
     then
         ok
         return 0
     else
-        fail "Found $((255 - $?)) non-empty QDnaSeq copy number PNGs!"
+        fail "Found $((255 - $?)) non-empty QDnaSeq copy number PNGs (expected $numExpected)!"
         return 1
     fi
 }
