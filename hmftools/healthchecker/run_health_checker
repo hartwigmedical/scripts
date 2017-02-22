@@ -1,0 +1,3 @@
+#!/bin/bash
+
+exec java -Xmx32000m -Xms8000m -jar /data/common/tools/healthchecker_v1.1/health-checker.jar -checktype all -reporttype json "$@"

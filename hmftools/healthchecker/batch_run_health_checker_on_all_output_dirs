@@ -1,7 +1,9 @@
 #!/bin/bash
 
 output=~/health_check_results
-command=/data/common/tools/healthchecker_v1.1/base-checker.sh -reportout ${output} -rundir
+prefix=`dirname $(readlink $0 || echo $0)`
+
+command="$prefix"/run_health_checker -reportout ${output}
 
 for run in /data/cpct/runs/*; do
 	${command} -rundir ${run}
