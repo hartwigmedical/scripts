@@ -1,0 +1,4 @@
+#!/bin/bash
+
+
+/data/common/tools/healthchecker_v1.1/base-checker.sh -reportout /data/cpct/health_checker_output -rundir "$@"

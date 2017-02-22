@@ -1,0 +1,14 @@
+#!/bin/bash
+
+output=~/health_check_results
+command=/data/common/tools/healthchecker_v1.1/base-checker.sh -reportout ${output} -rundir
+
+for run in /data/cpct/runs/*; do
+	${command} -rundir ${run}
+done;
+for run in /data/processed_archive/*; do
+	${command} -rundir ${run}
+done;
+for run in /data/schuberg/*; do
+	${command} -rundir ${run}
+done;

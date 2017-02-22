@@ -1,0 +1,6 @@
+#!/bin/bash
+
+run_dir=$1
+out_vcf=$2
+
+/data/common/tools/consensusrulefilter_v1.0/base-filter.sh -run_dir ${run_dir} -out_vcf ${out_vcf}
