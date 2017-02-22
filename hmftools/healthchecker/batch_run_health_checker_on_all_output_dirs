@@ -3,14 +3,15 @@
 output=~/health_check_results
 prefix=`dirname $(readlink $0 || echo $0)`
 
-command="$prefix"/run_health_checker -reportout ${output}
+program="$prefix/run_health_checker -reportout ${output}"
 
 for run in /data/cpct/runs/*; do
-	${command} -rundir ${run}
+	$program -rundir ${run}
 done;
 for run in /data/processed_archive/*; do
-	${command} -rundir ${run}
+	$program -rundir ${run}
 done;
 for run in /data/schuberg/*; do
-	${command} -rundir ${run}
+	$program -rundir ${run}
 done;
+
