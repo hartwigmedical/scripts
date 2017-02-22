@@ -1,3 +1,4 @@
 # Ignore intellij project files
 *.iml
 .idea/*
+.Rproj.user

@@ -207,7 +207,7 @@ class genotype:
                 if self.tumorVariantSubType == 'INV' and 'INV5' in infoHeaders:   # temp workaround for MANTA CASE - INV5s are duplicates...
                     self.tumorVariantSubType = 'IGN'
             self.svLen, self.svStart = calculateSVLengthAndStart(int(pos), infoSplit, infoHeaders)
-        elif inputGenotype[:3] == "./." or inputGenotype[1]<>"/" :
+        elif inputGenotype[:3] == "./." or (inputGenotype[1]<>"/" and inputGenotype[1]<>"|" ):
             self.tumorVariantType = variantType.missingGenotype
             self.allele = ""
         elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
