@@ -14,10 +14,10 @@ getCOSMICSignatures<-function(vcfDir){
 
 cancer_signatures = getCOSMICSignatures()
 
-####### Find Data, Load VCFs and ###########
-searchDir = "/Users/peterpriestley/hmf/analyses/mutPatternsTest/temp/" #"/data/cpct/runs"
-fileNamePattern = ".vcf"#"melted.vcf"
-patientlistFile = "/Users/peterpriestley/hmf/analyses/mutPatternsTest/tumor_data.csv"#"/home/peter/tumor_data.csv"
+searchDir = "/data/cpct/runs/"
+fileNamePattern = "melted.vcf"
+patientlistFile = "/home/peter/tumor_data.csv"
+
 tumor_data <- read.csv(file=patientlistFile, header=TRUE, sep=",",strip.white=TRUE)[,1:2]
 my_tumor_list <- split(tumor_data,tumor_data[2])
 allVCFFiles<-list.files(path=searchDir,pattern=fileNamePattern,recursive=TRUE)
