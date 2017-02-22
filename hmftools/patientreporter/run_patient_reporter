@@ -1,0 +1,9 @@
+#!/bin/sh
+
+cpct_ecrf=/data/ecrf/cpct_ecrf.xml
+patient_reporter_dir=/data/common/tools/patientreporter_v1.0
+tumor_percentage_csv="$patient_reporter_dir"/lims/tumor_percentages.csv
+report_logo="$patient_reporter_dir"/images/hartwig_logo.jpg
+report_dir=/data/cpct/patient_reports
+
+exec java -Xmx32000m -Xms8000m -jar "$patient_reporter_dir"/patient-reporter.jar -cpct_ecrf "$cpct_ecrf" -tumor_percentage_csv "$tumor_percentage_csv" -report_logo "$report_logo" -report_dir "$report_dir" "$@"
