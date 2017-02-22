@@ -2,16 +2,6 @@ library(MutationalPatterns)
 library(BSgenome)
 ref_genome = "BSgenome.Hsapiens.UCSC.hg19"
 library(ref_genome, character.only = TRUE)
-library("NMF")
-
-loadVCFsAndFilterforAutosomes<-function(vcfDir){
-  vcf_files = list.files(vcfDir, pattern = ".vcf", full.names = TRUE)
-  sample_names<-tools::file_path_sans_ext(basename(vcf_files))
-  vcfs = read_vcfs_as_granges(vcf_files, sample_names, genome = "hg19")### GENOME??????########
-  auto = extractSeqlevelsByGroup(species="Homo_sapiens",style="UCSC",group="auto")
-  vcfs = lapply(vcfs, function(x) keepSeqlevels(x, auto))
-  vcfs
-}
 
 getCOSMICSignatures<-function(vcfDir){
   sp_url = "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
@@ -25,16 +15,17 @@ getCOSMICSignatures<-function(vcfDir){
 cancer_signatures = getCOSMICSignatures()
 
 ####### Find Data, Load VCFs and ###########
-searchDir = "/data/cpct/runs"
-fileNamePattern = "melted.vcf"
-patientlistFile = "/home/peter/tumor_data.csv"
+searchDir = "/Users/peterpriestley/hmf/analyses/mutPatternsTest/temp/" #"/data/cpct/runs"
+fileNamePattern = ".vcf"#"melted.vcf"
+patientlistFile = "/Users/peterpriestley/hmf/analyses/mutPatternsTest/tumor_data.csv"#"/home/peter/tumor_data.csv"
 tumor_data <- read.csv(file=patientlistFile, header=TRUE, sep=",",strip.white=TRUE)[,1:2]
 my_tumor_list <- split(tumor_data,tumor_data[2])
 allVCFFiles<-list.files(path=searchDir,pattern=fileNamePattern,recursive=TRUE)
 for (name in names(my_tumor_list)) {
   if (name != "") {
     vcf_files<-allVCFFiles[grepl((paste(my_tumor_list[[name]][,1],collapse="|")),allVCFFiles)]
-    if (length(vcf_files)>0 & length(vcf_files)<10){
+    print(paste(name,length(vcf_files)))
+    if (length(vcf_files)>0 & length(vcf_files)<10){   #ONLY DO SMALL COHORTS FOR TESTING
       print(paste(name,length(vcf_files)))
       #print(vcf_files)
       vcf_files<-paste(searchDir,vcf_files,sep="")
