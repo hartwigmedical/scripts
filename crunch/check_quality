@@ -2,7 +2,8 @@
 
 setpath=$1
 HEALTHCHECKLOGS_DIR=/data/common/dbs/healthchecklogs/
-SNPCHECK_SCRIPT=do_snp_check
+SNPCHECK_VCFS_DIR=/data/common/dbs/snpcheck/32SNPtaq/samplevcfs/
+SNPCHECK_SCRIPT=snpcheck_compare_vcfs
 CHECKPIPELINE_SCRIPT=check_pipeline_output
 HEALTHTESTS_SCRIPT=do_healthcheck_qctests
 
@@ -33,7 +34,25 @@ function main() {
 
 function runSnpCheck() {
     local setpath=$1 && shift
-    if $SNPCHECK_SCRIPT -r ${setpath}
+    local setname=$( basename ${setpath} )
+
+    ## dirty: get unique ref sample id by parsing setname
+    local sampleid=$( echo $setname | cut -d"_" -f3 )
+
+    ## get snpcheck file in rundir
+    ## should be done using metadata json but does not contain barcode yet
+    local wgsvcf=$( find ${setpath} -name "*_32SNPtaq.vcf" | head -1 )
+    if [[ -z ${wgsvcf} ]]; then fail "[ERROR] No wgs snpcheck vcf found" && return 1; fi
+
+    ## get file to compare with
+    local arrvcf=$( find ${SNPCHECK_VCFS_DIR} -name "*${sampleid}*_OpenArrayCalls.vcf" | head -1 ) 
+    if [[ -z ${arrvcf} ]]; then fail "[ERROR] No array snpcheck vcf found" && return 1; fi
+
+    #echo "sampleid = ${sampleid}"
+    #echo "wgs vcf = ${wgsvcf}"
+    #echo "arr vcf = ${arrvcf}"
+
+    if $SNPCHECK_SCRIPT "$wgsvcf" "$arrvcf"
     then
         ok
         return 0
