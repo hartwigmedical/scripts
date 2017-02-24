@@ -39,11 +39,11 @@ getCOSMICSignatures<-function(vcfDir){
 
 cancer_signatures = getCOSMICSignatures()
 
-#searchDir = "~/hmf/analyses/mutPatternsTest/temp/"
-searchDir = "/data/experiments/consensus_filtered/"
+searchDir = "~/hmf/analyses/mutPatternsTest/breastPatients/"
+#searchDir = "/data/experiments/consensus_filtered/"
 fileNamePattern = ".vcf"
-#patientlistFile = "~/hmf/analyses/mutPatternsTest/tumor_data.csv"#/home/peter/tmp/ecrf_dump_for_patients.csv"
-patientlistFile = "/home/peter/tmp/ecrf_dump_for_patients.csv"
+patientlistFile = "~/hmf/analyses/mutPatternsTest/tumor_data.csv"#/home/peter/tmp/ecrf_dump_for_patients.csv"
+#patientlistFile = "/home/peter/tmp/ecrf_dump_for_patients.csv"
 
 #Load patients and tumor types from ECRF
 tumor_data <- read.csv(file=patientlistFile, header=TRUE, sep=",",strip.white=TRUE)[,1:2]
@@ -75,6 +75,7 @@ for (name in names(my_tumor_list)) {
       select = which(rowSums(fit_res$contribution) > 0.02 * sum(fit_res$contribution))  #2% contribution cutoff
       
       # Plot to PDF
+      plot_96_profile(mutMatrix)
       pc<-plot_contribution(fit_res$contribution[select,,drop=FALSE], cancer_signatures[,select], coord_flip = F, mode = "absolute")+ggtitle(name)+theme(axis.text.x = element_text(angle = 90, hjust = 1))
       pdf(file=paste(name,".pdf",sep=""),width=10)#, width=10, height=2, pointsize=6, useDingbats=FALSE)
       print(pc)
@@ -82,4 +83,6 @@ for (name in names(my_tumor_list)) {
     }
   }
 }
+
+
 
