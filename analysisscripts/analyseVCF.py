@@ -450,6 +450,6 @@ def loadPON(aPath,aPONFile):
             splitLine = line.split('\t')
             myPON.append(splitLine)
     dfPON = pd.DataFrame(myPON)
-    dfPON.columns = ['chrom','pos','PONCount']
+    dfPON.columns = ['chrom','pos','alt','PONCount']
     return dfPON
 

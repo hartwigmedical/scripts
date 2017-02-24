@@ -1,20 +1,16 @@
-
+#!/usr/bin/env python
 import heapq
 import os
-
-#### TO DO ###########
-# Min, Max and Median AF?
-# Look for exact SNP MATCH instead of just pos???
+import argparse
 
 class vcfMerge():
 
-    minCountThreshold = 2
-
-    def __init__(self,path):
+    def __init__(self,outputFile, minCountThreshold):
 
         try:
             self._heap = []
-            self._output_file = open(path+'PON.tsv', 'w+')
+            self._output_file = open(outputFile, 'w+')
+            self.minCountThreshold = minCountThreshold
 
         except Exception, err_msg:
             print "Error while creating Merger: %s" % str(err_msg)
@@ -52,7 +48,7 @@ class vcfMerge():
             print "Error while merging: %s" % str(err_msg)
 
     def _delimiter_value(self):
-        return "\n"
+        return "\t"
 
     def posToNumber(self,split):
         if split[0] == 'X':
@@ -83,25 +79,34 @@ class vcfMerge():
 
     def pushVariantToHeap(self,read_line,file__):
         if(len(read_line) != 0):
-            heapq.heappush(self._heap, (self.posToNumber(read_line.split("\t")), file__))
+            read_line_split = read_line.split("\t")
+            heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+"\t"+read_line_split[4], file__))
 
 
-    def writeToOutput(self,posNumber,count):
+    def writeToOutput(self,positionAlt,count):
         if count >= self.minCountThreshold:
-            self._output_file.write(self.numberToPos(posNumber) + "\t" + str(count) + self._delimiter_value())
+            self._output_file.write(self.numberToPos(float(positionAlt.split("\t")[0])) + self._delimiter_value() \
+                                    + positionAlt.split("\t")[1]+ self._delimiter_value() + str(count) + "\n")
 
-def getVCFList(path):
-    files = []
-    for x in os.listdir(path):
-        if x[-4:] == ".vcf":
-            files.append(path + x)
-    return files
+def getVCFList(path,suffixMatch):
+    vcfList = []
+    for path, subdirs, files in os.walk(path):
+        for name in files:
+            if name[-len(suffixMatch):] == suffixMatch:
+                vcfList.append(os.path.join(path, name))
+    return vcfList
 
 if __name__ == '__main__':
-    #path = "/Users/peterpriestley/hmf/analyses/PON/"
-    path = "/Users/peterpriestley/hmf/analyses/170117_PMC_analysis/"
-    files = getVCFList(path)
-    merger = vcfMerge(path)
+    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200))
+    required_named = parser.add_argument_group('required named arguments')
+    required_named.add_argument('-s', '--suffixMatch', help="file suffix to match eg: 'xxx.vcf'", required=True)
+    required_named.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True)
+    required_named.add_argument('-p', '--path', help='directory to search for matching files', required=True)
+    required_named.add_argument('-o', '--outputFile', help='output file name', required=True)
+    args = parser.parse_args()
+
+    files = getVCFList(args.path,args.suffixMatch)
+    merger = vcfMerge(args.outputFile,int(args.minCountThreshold))
     merger.merge(files)
 
 
