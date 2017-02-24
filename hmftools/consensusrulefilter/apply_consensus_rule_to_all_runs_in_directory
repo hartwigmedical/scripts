@@ -3,4 +3,6 @@
 in_dir=$1
 out_dir=$2
 
-/data/common/tools/consensusrulefilter_v1.0/base-filter.sh -batch_mode -batch_mode_in_dir ${in_dir} -batch_mode_out_dir ${out_dir}
+prefix=`dirname $(readlink $0 || echo $0)`
+
+"$prefix"/run_consensus_rule_filter -batch_mode -batch_mode_in_dir ${in_dir} -batch_mode_out_dir ${out_dir}
