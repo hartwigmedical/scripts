@@ -81,8 +81,10 @@ class vcfMerge():
     def pushVariantToHeap(self,read_line,file__):
         if(len(read_line) != 0):
             read_line_split = read_line.split("\t")
+            #NB - ONLY PUSHING The 1st ALT into PON file (ignoring the 2nd ALT if multipe are found - seems reasonable to me)
             heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+self._delimiter_value()+read_line_split[3]+ \
                                         self._delimiter_value()+read_line_split[4].split(",")[0], file__))
+
 
 
     def writeToOutput(self,positionAlt,count):
