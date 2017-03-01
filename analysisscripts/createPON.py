@@ -59,17 +59,18 @@ class vcfMerge():
             chrom = 25
         else:
             chrom = int(split[0])
-        return chrom * 1e9 + int(split[1])
+        return chrom * 1e9 + int(split[1]) + 1e10   #add 1e9 so that all positions are >10BN)
 
     def numberToPos(self, number):
-        if int(number/1e9) == 23:
+        myChrom = int((number - 1e10)/1e9)
+        if myChrom == 23:
             return "X\t"+ str(int(number%1e9))
-        elif int(number/1e9) == 24:
+        elif myChrom == 24:
             return "Y\t" + str(int(number % 1e9))
-        elif int(number / 1e9) == 25:
+        elif myChrom == 25:
             return "MT\t" + str(int(number % 1e9))
         else:
-            return str(int(number/1e9)) + "\t" + str(int(number%1e9))
+            return str(myChrom) + self._delimiter_value() + str(int(number%1e9))
 
     def readFirstVariant(self,file__):
         read_line = file__.readline()
@@ -80,20 +81,26 @@ class vcfMerge():
     def pushVariantToHeap(self,read_line,file__):
         if(len(read_line) != 0):
             read_line_split = read_line.split("\t")
-            heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+"\t"+read_line_split[4], file__))
+            heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+self._delimiter_value()+read_line_split[3]+ \
+                                        self._delimiter_value()+read_line_split[4].split(",")[0], file__))
 
 
     def writeToOutput(self,positionAlt,count):
         if count >= self.minCountThreshold:
-            self._output_file.write(self.numberToPos(float(positionAlt.split("\t")[0])) + self._delimiter_value() \
-                                    + positionAlt.split("\t")[1]+ self._delimiter_value() + str(count) + "\n")
+            self._output_file.write(self.numberToPos(float(positionAlt.split(self._delimiter_value())[0])) + self._delimiter_value() \
+                                    + positionAlt.split(self._delimiter_value())[1]+ self._delimiter_value() + \
+                                    positionAlt.split(self._delimiter_value())[2]+ self._delimiter_value() + str(count) + "\n")
 
-def getVCFList(path,suffixMatch):
+def getVCFList(path,suffixMatches):
     vcfList = []
     for path, subdirs, files in os.walk(path):
         for name in files:
-            if name[-len(suffixMatch):] == suffixMatch:
-                vcfList.append(os.path.join(path, name))
+            for suffixMatch in suffixMatches:
+                if name[-len(suffixMatch):] == suffixMatch:
+                    print name
+                    vcfList.append(os.path.join(path, name))
+                    break
+    print "# of input files = ",len(vcfList)
     return vcfList
 
 if __name__ == '__main__':
@@ -105,7 +112,7 @@ if __name__ == '__main__':
     required_named.add_argument('-o', '--outputFile', help='output file name', required=True)
     args = parser.parse_args()
 
-    files = getVCFList(args.path,args.suffixMatch)
+    files = getVCFList(args.path,args.suffixMatch.split("|"))
     merger = vcfMerge(args.outputFile,int(args.minCountThreshold))
     merger.merge(files)
 
