@@ -1,0 +1,14 @@
+dir=$1
+patient=$2
+region=$3
+
+mkdir ~/${patient}T
+#/data/common/tools/sambamba_v0.5.8/sambamba slice -o ~/${patient}.bam  /data/processed_archive/${dir}/${patient}R/mapping/${patient}R_dedup.realigned.bam ${region}
+/data/common/tools/sambamba_v0.5.8/sambamba slice -o ~/${patient}T/${patient}T.bam  /data/processed_archive/${dir}/${patient}T/mapping/${patient}T_dedup.realigned.bam ${region}
+#/data/common/tools/sambamba_v0.5.8/sambamba index  ~/${patient}T/${patient}.bam 
+/data/common/tools/sambamba_v0.5.8/sambamba index  ~/${patient}T/${patient}T.bam 
+perl ~/damage-estimator/split_mapped_reads.pl --bam ~/${patient}T/${patient}T.bam -genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta -mpileup1 ~/${patient}T/${patient}1.pileup -mpileup2 ~/${patient}T/${patient}2.pileup
+perl ~/damage-estimator/estimate_damage.pl --mpileup1 ~/${patient}T/${patient}1.pileup --mpileup2 ~/${patient}T/${patient}2.pileup --id ${patient}T  > ~/${patient}T/damageEstimate${patient}T
+perl ~/damage-estimator/estimate_damage_location.pl --mpileup1 ~/${patient}T/${patient}1.pileup --mpileup2 ~/${patient}T/${patient}2.pileup --out ~/${patient}T/damageEstimateByPosition${patient}T --id ${patient}T --max_coverage_limit 150 --min_coverage_limit 10
+
+
