@@ -106,7 +106,7 @@ def getVCFList(path,suffixMatches):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200))
     required_named = parser.add_argument_group('required named arguments')
-    required_named.add_argument('-s', '--suffixMatch', help="file suffix to match eg: 'xxx.vcf'", required=True)
+    required_named.add_argument('-s', '--suffixMatch', help="file suffix to match eg: 'xxx.vcf'. can use multiple suffixes:'abc.vcf|cde.vcf'", required=True)
     required_named.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True)
     required_named.add_argument('-p', '--path', help='directory to search for matching files', required=True)
     required_named.add_argument('-o', '--outputFile', help='output file name', required=True)
