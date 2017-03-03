@@ -1,0 +1,161 @@
+#!/bin/bash
+
+setpath=$1
+HEALTHCHECKLOGS_DIR=/data/common/dbs/healthchecklogs/
+SNPCHECK_VCFS_DIR=/data/common/dbs/snpcheck/32SNPtaq/samplevcfs/
+SNPCHECK_SCRIPT=snpcheck_compare_vcfs
+CHECKPIPELINE_SCRIPT=check_pipeline_output
+HEALTHTESTS_SCRIPT=do_healthcheck_qctests
+
+function main() {
+    local failures=0
+    setname=$( basename $setpath )
+    
+    echo
+    echo '----- General Info -----'
+    info "Starting QC check on set: "$setname
+    
+    echo '----- Technical Check -----'
+    runCheckPipelineOutput $setpath || ((failures++))
+    
+    ## echo '----- SNP Check -----'
+    ## runSnpCheck $setpath || ((failures++))
+    
+    echo '----- Health Tests -----'
+    runHealthTests $setpath || ((failures++))
+    
+    ## echo '----- verify s3 md5 -----'
+    ## runVerifyMd5 $setpath || ((failures++))
+    
+    [[ $failures -gt 0 ]] && error "${failures} FAILURES IN ${setname}"
+    echo 
+    
+}
+
+function runSnpCheck() {
+    local setpath=$1 && shift
+    local setname=$( basename ${setpath} )
+
+    ## dirty: get unique ref sample id by parsing setname
+    local sampleid=$( echo $setname | cut -d"_" -f3 )
+
+    ## get snpcheck file in rundir
+    ## should be done using metadata json but does not contain barcode yet
+    local wgsvcf=$( find ${setpath} -name "*_32SNPtaq.vcf" | head -1 )
+    if [[ -z ${wgsvcf} ]]; then fail "[ERROR] No wgs snpcheck vcf found" && return 1; fi
+
+    ## get file to compare with
+    local arrvcf=$( find ${SNPCHECK_VCFS_DIR} -name "*${sampleid}*_OpenArrayCalls.vcf" | head -1 ) 
+    if [[ -z ${arrvcf} ]]; then fail "[ERROR] No array snpcheck vcf found" && return 1; fi
+
+    #echo "sampleid = ${sampleid}"
+    #echo "wgs vcf = ${wgsvcf}"
+    #echo "arr vcf = ${arrvcf}"
+
+    if $SNPCHECK_SCRIPT "$wgsvcf" "$arrvcf"
+    then
+        ok
+        return 0
+    else
+        fail "[ERROR] $?"
+        return 1
+    fi
+}
+
+function runCheckPipelineOutput() {
+    local setpath=$1 && shift
+    if $CHECKPIPELINE_SCRIPT ${setpath} > /dev/null
+    then
+        ok
+        return 0
+    else
+        fail "[ERROR] $?"
+        return 1
+    fi
+}
+
+function runHealthTests() {
+    local setpath=$1 && shift
+    setname=$( basename $setpath )
+    hclogfile=${HEALTHCHECKLOGS_DIR}/${setname}"_healthcheck"
+    if $HEALTHTESTS_SCRIPT --healthcheck-log-file ${hclogfile}
+    then
+        ok
+        return 0
+    else
+        fail "[ERROR] $?"
+        return 1
+    fi
+}
+
+function runVerifyMd5() {
+    local setpath=$1 && shift
+    verifyLogFile=${setpath}/logs/verify_s3_md5.log
+    
+    ## check if file exists
+    if [[ ! -f $verifyLogFile ]]; 
+    then
+        fail "[FAIL] No verify log file found ($verifyLogFile)"
+        return 1
+    fi
+    
+    ## check if file has content
+    if [[ $( cat ${verifyLogFile} | wc -l ) -eq 0 ]]; 
+    then 
+        fail "[FAIL] No lines in verifyLog ($verifyLogFile)"
+        return 1
+    fi
+           
+    ## check if all md5sums in file occur twice (for local and remote)
+    cat ${verifyLogFile} | grep -Po "(^[^\s]+)" | while read checksum; 
+    do 
+        foundCount=$( grep -c ${checksum} ${verifyLogFile}; )
+        if [[ ! ${foundCount} -eq 2 ]]; then
+            fail "[FAIL] ${checksum} not found twice in ${verifyLogFile}"
+            fail "  check manually: grep ${checksum} ${verifyLogFile}"
+            return 1
+        fi
+    done
+    
+    ok
+    return 0
+}
+
+function log() {
+    local level=$1 && shift
+    local msg=$1 && shift
+    echo "[${level}] ${msg}"
+}
+
+function error() {
+    log "ERROR" "$1"
+    exit 1
+}
+
+function warn() {
+    log "WARN" "$1"
+}
+
+function info() {
+    log "INFO" "$1"
+}
+
+function ok() {
+    local note=${1+" $1"}
+    info "${FUNCNAME[1]} OK${note}"
+}
+
+function fail() {
+    local cause=$1 && shift
+    warn "${FUNCNAME[1]}: ${cause}"
+}
+
+if [[ $# -eq 0 ]] || [[ $1 == "-h" ]]; then
+    echo "---"
+    echo " Descr: Performs some qc checks on set"
+    echo " Usage: $(basename "$0") /path/to/pipeline/output/dir/"
+    echo "        $(basename "$0") /path1 /path2"
+    echo "---"
+else
+    main "$@"
+fi

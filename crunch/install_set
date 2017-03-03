@@ -1,0 +1,10 @@
+#!/bin/bash
+
+setpath=$1
+setname=$( basename ${setpath} )
+
+echo ""
+echo "sudo mv ${setpath} /data/processed_archive/"
+echo "sudo chown -R root:root /data/processed_archive/${setname}"
+echo ""
+
