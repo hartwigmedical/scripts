@@ -19,13 +19,13 @@ function main() {
     runCheckPipelineOutput $setpath || ((failures++))
     
     ## echo '----- SNP Check -----'
-    ## runSnpCheck $setpath || ((failures++))
+    runSnpCheck $setpath || ((failures++))
     
     echo '----- Health Tests -----'
     runHealthTests $setpath || ((failures++))
     
     ## echo '----- verify s3 md5 -----'
-    ## runVerifyMd5 $setpath || ((failures++))
+    runVerifyMd5 $setpath || ((failures++))
     
     [[ $failures -gt 0 ]] && error "${failures} FAILURES IN ${setname}"
     echo 
@@ -45,7 +45,7 @@ function runSnpCheck() {
     if [[ -z ${wgsvcf} ]]; then fail "[ERROR] No wgs snpcheck vcf found" && return 1; fi
 
     ## get file to compare with
-    local arrvcf=$( find ${SNPCHECK_VCFS_DIR} -name "*${sampleid}*_OpenArrayCalls.vcf" | head -1 ) 
+    local arrvcf=$( find ${SNPCHECK_VCFS_DIR} -name "*${sampleid}*OpenArrayCalls.vcf" | head -1 ) 
     if [[ -z ${arrvcf} ]]; then fail "[ERROR] No array snpcheck vcf found" && return 1; fi
 
     #echo "sampleid = ${sampleid}"
