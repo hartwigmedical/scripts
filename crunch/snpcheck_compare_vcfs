@@ -19,7 +19,7 @@ my $HELP_TEXT = <<EOF;
      criterium: minimal informative pos = $MIN_INFORMATIVE
      criterium: maximum samples distance = $MAX_DISTANCE
  Run with:
-   $SCRIPT_NAME -vcf \${file1} -vcf \${file2}
+   $SCRIPT_NAME \${file1} \${file2}
  Notes:
    When less or more than 2 vcfs are provided only a call table is printed.
    Criteria are now based on 32SNP panel
