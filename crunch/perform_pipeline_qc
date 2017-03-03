@@ -18,13 +18,13 @@ function main() {
     echo '----- Technical Check -----'
     runCheckPipelineOutput $setpath || ((failures++))
     
-    ## echo '----- SNP Check -----'
+    echo '----- SNP Check -----'
     runSnpCheck $setpath || ((failures++))
     
     echo '----- Health Tests -----'
     runHealthTests $setpath || ((failures++))
     
-    ## echo '----- verify s3 md5 -----'
+    echo '----- verify s3 md5 -----'
     runVerifyMd5 $setpath || ((failures++))
     
     [[ $failures -gt 0 ]] && error "${failures} FAILURES IN ${setname}"
