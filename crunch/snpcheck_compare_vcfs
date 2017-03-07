@@ -12,6 +12,7 @@ my $MIN_INFORMATIVE = 24; # min amount of called positions
 my $MAX_DISTANCE = 4; # max distance between samples (HOM ref > HOM alt counts as 2)
 my %GENOTYPE_CONVERSION = ( './.'=>'-', '0/0'=>'0', '1/0'=>'1', '0/1'=>'1', '1/1'=>'2' );
 my $OUTPUT_DELIM = ' ';
+my $PRINT_FULL_NAME;
 
 my $HELP_TEXT = <<EOF;
  ---
@@ -22,7 +23,8 @@ my $HELP_TEXT = <<EOF;
  Run with:
    $SCRIPT_NAME \${file1} \${file2}
  Options:
-   -delim (s) output delimiter for calls [$OUTPUT_DELIM]
+   -delim (s)      output delimiter for calls [$OUTPUT_DELIM]
+   -printFullName  add full name to end of printed table
  Notes:
    When less or more than 2 vcfs are provided only a call table is printed.
    Criteria are now based on 32SNP panel
@@ -38,6 +40,7 @@ GetOptions (
     "help|h" => \$help,
     "verbose" => \$verbose,
     "delim=s" => \$OUTPUT_DELIM,
+    "printFullName" => \$PRINT_FULL_NAME,
 ) or die("Error in command line arguments\n");
 print $HELP_TEXT and exit(0) if $help;
 
@@ -54,13 +57,16 @@ foreach my $inputFile ( @vcfs ){
 ## -----
 my %store = ();
 my @shortNames = ();
+my %shortName2fullName = ();
 my $idx = 1;    
-foreach my $vcfFile ( @vcfs ){
-    my $vcfName = 'vcf'.sprintf( "%02s", $idx);
-    push( @shortNames, $vcfName );
+foreach my $vcfPath ( @vcfs ){
+    my $vcfShortName = 'vcf'.sprintf( "%02s", $idx);
+    my $vcfName = fileparse( $vcfPath );
+    $shortName2fullName{ $vcfShortName } = $vcfName;
+    push( @shortNames, $vcfShortName );
     $idx++;
-    say "[INFO] ShortName $vcfName for input file: $vcfFile";
-    parseVcf( $vcfFile, $vcfName, \%store );
+    say "[INFO] ShortName $vcfShortName for input file: $vcfPath";
+    parseVcf( $vcfPath, $vcfShortName, \%store );
 }
 
 if ( $vcfCount == 2 ){
@@ -83,6 +89,8 @@ sub printCallTable{
     
     foreach my $vcfName ( @$vcfNames ){
         my @calls = map( $storeObject->{ $_ }{ $vcfName }, @regions );
+        my $fullName = $shortName2fullName{ $vcfName };
+        push( @calls, $fullName ) if $PRINT_FULL_NAME;
         say join( "$OUTPUT_DELIM", "[INFO] $vcfName:", map( sprintf( "%2s", $_ ), @calls ) );
     }
 }
