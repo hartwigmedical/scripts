@@ -3,7 +3,7 @@
 RUN_NAME=$1
 LOCAL_DIR=/data/schuberg/${RUN_NAME}
 
-sbp s3 sync "s3://${OUTPUT_BUCKET}/${RUN_NAME}/" "${LOCAL_DIR}/" --profile download
+sbp_new s3 sync "s3://${OUTPUT_BUCKET}/${RUN_NAME}/" "${LOCAL_DIR}/" --profile download_new
 
 VERIFY_LOGFILE="${LOCAL_DIR}/logs/verify_s3_md5.log"
 
