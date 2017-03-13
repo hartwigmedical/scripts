@@ -18,9 +18,9 @@ except:
     import urlparse
 
 
-DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL")
+DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL_NEW")
 DEFAULT_S3_BUCKET = os.environ.get("OUTPUT_BUCKET")
-DEFAULT_S3_PROFILE = "download"
+DEFAULT_S3_PROFILE = "download_new"
 ONE_MEGABYTE = 1024 * 1024
 
 
@@ -33,7 +33,8 @@ def validate_links_md5s(local_base_path, remote_base_url, aws_profile, s3_endpoi
         local_links = json.load(f)
         valid = []
         for link_path in local_links.values():
-            relative_path = path_suffix_after(link_path, run_name)
+            #relative_path = path_suffix_after(link_path, run_name)
+            relative_path = link_path
             local_path = os.path.join(local_base_path, relative_path)
             remote_url = urlparse.urlparse(urlpath.join(remote_base_url, relative_path))
             try:
