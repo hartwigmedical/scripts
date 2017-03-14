@@ -1,0 +1,69 @@
+#!/bin/bash
+
+script=$( basename $0 )
+awscmd='sbp_new'
+awsprofile='download_new'
+storepath='/data/schuberg/fromweekly'
+
+usage() { 
+    echo "---"
+    echo "Usage: $script -s <setname> -b <bucket> [-l <localpath> -c <awscmd> -p <awsprofile>]" 1>&2;
+    echo "       $script -s 170101_HMFreg0000_etc -b hmf-output-2017-11 [-l ${storepath} -c ${awscmd} -p ${awsprofile}]" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:b:l:c:p:" o; do
+    case "${o}" in
+        s)
+            setname=${OPTARG} || usage
+            ;;
+        b)
+            bucket=${OPTARG}
+            ;;
+        l)
+            storepath=${OPTARG}
+            ;;
+        c)
+            awscmd=${OPTARG}
+            ;;
+        p)
+            awsprofile=${OPTARG}
+            ;;
+
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+## check required params
+if [[ -z "${setname}" || -z "${bucket}" ]]; then
+    usage
+fi
+
+## making sure no slashes are present
+bucket=$( basename ${bucket} )
+setname=$( basename ${setname} )
+
+## build path from current archive bucket
+s3path="s3://${bucket}/${setname}"
+localpath="${storepath}/${setname}"
+
+## print feedback and run
+#echo "## [INFO] Starting sync for ${setname}"
+#echo "## [INFO] From: ${s3path}"
+#echo "## [INFO] To: ${localpath}"
+
+## actual sync
+${awscmd} s3 sync ${s3path} ${localpath} --profile ${awsprofile} \
+--exclude "*.bam" \
+--include "*sliced.bam" \
+--exclude "*.g.vcf.gz" \
+--exclude "*.vcf" \
+--include "*annotated.vcf" \
+--include "*sliced.vcf" \
+--include "*melted.vcf" \
+--include "*snpcheck*.vcf"
+
