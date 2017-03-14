@@ -1,5 +1,5 @@
 #!/bin/bash
 
-fields=BASELINE.CARCINOMA.CARCINOMA.PTUMLOC,AFTERBIOPT.TRTAFTER.TRTAFTER.SYSTYPEPOST
+fields=BASELINE.CARCINOMA.CARCINOMA.PTUMLOC,AFTERBIOPT.TRTAFTER.TRTAFTER.SYSTYPEPOST,AFTERBIOPT.TRTAFTER.TRTAFTER.PLANNEDTRT,AFTERBIOPT.TRTAFTER.TRTAFTER.SYSREGPOST
 
 exec java -Xmx3200m -Xms800m -jar /data/common/tools/ecrfanalyser_v1.0/ecrf-analyser.jar -csv_out ~/tmp/ecrf_dump_for_patients.csv -patient_as_row -ecrf /data/ecrf/cpct_ecrf.xml -fields ${fields} -patients "$@"
