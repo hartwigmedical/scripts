@@ -153,8 +153,12 @@ sub compareCalls{
         
     }
     my $totalInformative = $equal + $unequal;
-    my $equalPerc = sprintf( "%.2f", ($equal*100 / $totalInformative) );
-    my $unequalPerc = sprintf( "%.2f", ($unequal*100 / $totalInformative) );
+    my $equalPerc = sprintf( "%.2f", 0 );
+    my $unequalPerc = sprintf( "%.2f", 0 );
+    if ( $totalInformative > 0 ){
+        $equalPerc = sprintf( "%.2f", ($equal*100 / $totalInformative) );
+        $unequalPerc = sprintf( "%.2f", ($unequal*100 / $totalInformative) );
+    }
     
     say "[INFO] Total skipped = $skipped";
     say "[INFO] Total failed = $failed";
