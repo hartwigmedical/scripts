@@ -1,7 +1,0 @@
-command=$1
-profile=$2
-bucket=$3
-run=$4
-path=$5
-
-${command} s3 cp ${bucket}/${run}/${path} /data/cpct/runs/${run}/${path} --profile ${profile}

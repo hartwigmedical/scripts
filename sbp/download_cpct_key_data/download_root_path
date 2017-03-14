@@ -1,7 +1,0 @@
-command=$1
-profile=$2
-bucket=$3
-run=$4
-filter=$5
-
-${command} s3 sync ${bucket}/${run}/ /data/cpct/runs/${run} --exclude "*" --include "${filter}" --profile ${profile}
