@@ -10,8 +10,6 @@ read_vcfs_as_granges <-function (vcf_files, sample_names, genome = "-", style = 
   if (length(vcf_files) != length(sample_names)) 
     stop("Provide the same number of sample names as VCF files")
   vcf_list <- GRangesList(lapply(vcf_files, function(file) {
-    print(paste(file,"check1"))
-    print(Sys.time())
     vcf <- rowRanges(readVcf(file, genome))
     seqlevelsStyle(vcf) <- style
     rem <- which(all(!(!is.na(match(vcf$ALT, DNA_BASES)) & 
@@ -20,8 +18,7 @@ read_vcfs_as_granges <-function (vcf_files, sample_names, genome = "-", style = 
     if (length(rem) > 0) {
       vcf = vcf[-rem]
     }
-    print(paste(file,"check2"))
-    print(Sys.time())
+    print(paste(file,"read",Sys.time()))
     return(vcf)
   }))
   names(vcf_list) <- sample_names
@@ -39,11 +36,11 @@ getCOSMICSignatures<-function(vcfDir){
 
 cancer_signatures = getCOSMICSignatures()
 
-searchDir = "~/hmf/analyses/mutPatternsTest/breastPatients/"
-#searchDir = "/data/experiments/consensus_filtered/"
+#searchDir = "~/hmf/analyses/mutPatternsTest/breastPatients/"
+searchDir = "/data/experiments/consensus_filtered/"
 fileNamePattern = ".vcf"
-patientlistFile = "~/hmf/analyses/mutPatternsTest/tumor_data.csv"#/home/peter/tmp/ecrf_dump_for_patients.csv"
-#patientlistFile = "/home/peter/tmp/ecrf_dump_for_patients.csv"
+#patientlistFile = "~/hmf/analyses/mutPatternsTest/tumor_data.csv"#/home/peter/tmp/ecrf_dump_for_patients.csv"
+patientlistFile = "/home/peter/tmp/ecrf_dump_for_patients.csv"
 
 #Load patients and tumor types from ECRF
 tumor_data <- read.csv(file=patientlistFile, header=TRUE, sep=",",strip.white=TRUE)[,1:2]
@@ -62,25 +59,32 @@ for (name in names(my_tumor_list)) {
       print(vcf_files)
       # Load VCFs
       vcf_files<-paste(searchDir,vcf_files,sep="")
-      #print(Sys.time())
       vcfs = read_vcfs_as_granges(vcf_files, tools::file_path_sans_ext(basename(vcf_files)), genome = "hg19")### GENOME??????########
-      #print(Sys.time())
       auto = extractSeqlevelsByGroup(species="Homo_sapiens",style="UCSC",group="auto")
       vcfs = lapply(vcfs, function(x) keepSeqlevels(x, auto))
       
       # Fitting
       mutMatrix<-mut_matrix(vcf_list = vcfs, ref_genome = ref_genome)
+      mutMatrix<-mutMatrix[, order(colSums(mutMatrix),decreasing=F),drop=FALSE]
       dimnames(mutMatrix)[[2]]<-substr(dimnames(mutMatrix)[[2]],1,12)
       fit_res = fit_to_signatures(mutMatrix, cancer_signatures)
-      select = which(rowSums(fit_res$contribution) > 0.02 * sum(fit_res$contribution))  #2% contribution cutoff
       
       # Plot to PDF
-      plot_96_profile(mutMatrix)
-      pc<-plot_contribution(fit_res$contribution[select,,drop=FALSE], cancer_signatures[,select], coord_flip = F, mode = "absolute")+ggtitle(name)+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      fit_res$contribution<-fit_res$contribution[, order(colSums(fit_res$contribution),decreasing=F),drop=FALSE]
+      myfitres <-list(fit_res$contribution[,colSums(fit_res$contribution)>=100000,drop=FALSE],fit_res$contribution[,(colSums(fit_res$contribution)>=10000)&(colSums(fit_res$contribution)<100000),drop=FALSE],fit_res$contribution[,colSums(fit_res$contribution)<10000,drop=FALSE])
       pdf(file=paste(name,".pdf",sep=""),width=10)#, width=10, height=2, pointsize=6, useDingbats=FALSE)
-      print(pc)
+      i = 1
+      for (fitres in myfitres){
+        #plot_96_profile(mutMatrix)
+        if (dim(fitres)[2] > 0) { 
+          select = which(rowSums(fitres) > 0.01x * sum(fitres))  #2% contribution cutoff - MAY MISS SOMETHING MAJOR FOR A LOW MUTATION COUNT CANCER
+          pc<-plot_contribution(fitres[select,,drop=FALSE], cancer_signatures[,select], coord_flip = F, mode = "absolute")+ggtitle(paste(name,"page",i))+theme(axis.text.x = element_text(angle = 90, hjust = 1))
+          print(pc)
+          i = i + 1
+        }
+      }
       dev.off()
-    }
+    }  
   }
 }
 
