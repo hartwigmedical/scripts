@@ -1,7 +1,8 @@
 #!/bin/sh
 
-cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 patient_reporter_dir=/data/common/tools/patientreporter_v1.0
+
+cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 tumor_percentage_csv="$patient_reporter_dir"/lims/tumor_percentages.csv
 report_logo="$patient_reporter_dir"/images/hartwig_logo.jpg
 report_dir=/data/cpct/patient_reports
