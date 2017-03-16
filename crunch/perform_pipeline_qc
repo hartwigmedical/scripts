@@ -15,8 +15,8 @@ function main() {
     echo '----- General Info -----'
     info "Starting QC check on set: "$setname
     
-    echo '----- Technical Check -----'
-    runCheckPipelineOutput $setpath || ((failures++))
+    #echo '----- Technical Check -----'
+    #runCheckPipelineOutput $setpath || ((failures++))
     
     echo '----- SNP Check -----'
     runSnpCheck $setpath || ((failures++))
@@ -24,11 +24,10 @@ function main() {
     echo '----- Health Tests -----'
     runHealthTests $setpath || ((failures++))
     
-    echo '----- verify s3 md5 -----'
-    runVerifyMd5 $setpath || ((failures++))
+    #echo '----- verify s3 md5 -----'
+    #runVerifyMd5 $setpath || ((failures++))
     
-    [[ $failures -gt 0 ]] && error "${failures} FAILURES IN ${setname}"
-    echo 
+    [[ $failures -gt 0 ]] && error "${failures} FAILURES IN ${setname}" || echo -e "---\nFINAL RESULT: all checks OK"
     
 }
 
