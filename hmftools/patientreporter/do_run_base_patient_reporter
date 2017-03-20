@@ -7,4 +7,4 @@ tumor_percentage_csv="$patient_reporter_dir"/lims/tumor_percentages.csv
 report_logo="$patient_reporter_dir"/images/hartwig_logo.jpg
 report_dir=/data/cpct/patient_reports
 
-exec java -Xmx32000m -Xms8000m -jar "$patient_reporter_dir"/patient-reporter.jar -cpct_ecrf "$cpct_ecrf" -tumor_percentage_csv "$tumor_percentage_csv" -report_logo "$report_logo" -report_dir "$report_dir" "$@"
+exec java -Xmx16G -Xms4G -jar "$patient_reporter_dir"/patient-reporter.jar -cpct_ecrf "$cpct_ecrf" -tumor_percentage_csv "$tumor_percentage_csv" -report_logo "$report_logo" -report_dir "$report_dir" "$@"
