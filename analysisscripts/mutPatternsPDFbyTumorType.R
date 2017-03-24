@@ -77,7 +77,7 @@ for (name in names(my_tumor_list)) {
       for (fitres in myfitres){
         #plot_96_profile(mutMatrix)
         if (dim(fitres)[2] > 0) { 
-          select = which(rowSums(fitres) > 0.01x * sum(fitres))  #2% contribution cutoff - MAY MISS SOMETHING MAJOR FOR A LOW MUTATION COUNT CANCER
+          select = which(rowSums(fitres) > 0.01 * sum(fitres))  #1% contribution cutoff - MAY MISS SOMETHING MAJOR FOR A LOW MUTATION COUNT CANCER
           pc<-plot_contribution(fitres[select,,drop=FALSE], cancer_signatures[,select], coord_flip = F, mode = "absolute")+ggtitle(paste(name,"page",i))+theme(axis.text.x = element_text(angle = 90, hjust = 1))
           print(pc)
           i = i + 1

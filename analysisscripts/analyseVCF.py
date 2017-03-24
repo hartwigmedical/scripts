@@ -262,7 +262,7 @@ class somaticVariant:
         if aBedReverse:
             if not somaticVariant.bedItem:
                 somaticVariant.bedItem = aBedReverse.pop()
-            while cd.intChrom(chrom) > cd.intChrom(somaticVariant.bedItem[0]) or (cd.intChrom(chrom) == cd.intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2])) and aBedReverse:
+            while (cd.intChrom(chrom) > cd.intChrom(somaticVariant.bedItem[0]) or (cd.intChrom(chrom) == cd.intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2]))) and aBedReverse:
                 somaticVariant.bedItem = aBedReverse.pop()
         else:
             somaticVariant.bedItem = []
