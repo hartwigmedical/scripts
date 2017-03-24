@@ -1,0 +1,8 @@
+#!/bin/bash
+
+in_dir=$1
+out_dir=$2
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+"$prefix"/do_run_consensus_rule_filter -batch_mode -batch_mode_in_dir ${in_dir} -batch_mode_out_dir ${out_dir} -use_filter_flag
