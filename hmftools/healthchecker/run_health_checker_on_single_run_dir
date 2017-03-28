@@ -2,4 +2,4 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-"$prefix"/run_health_checker -reportout /data/cpct/health_checker_output -rundir "$@"
+"$prefix"/run_health_checker -report_output_path /data/cpct/health_checker_output -run_dir "$@"
