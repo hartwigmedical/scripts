@@ -1,7 +1,6 @@
 #!/bin/bash
 
 SBP_DIR=$1
-BACKUP_DIR=/data/backup/cpct_runs
 VCF_FILE=`ls ./*.filtered_variants.vcf`
 
 if [[ ! -f $VCF_FILE ]]; then

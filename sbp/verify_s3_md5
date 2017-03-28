@@ -18,11 +18,10 @@ except:
     import urlparse
 
 
-DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL_NEW")
+DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL")
 DEFAULT_S3_BUCKET = os.environ.get("OUTPUT_BUCKET")
-DEFAULT_S3_PROFILE = "download_new"
+DEFAULT_S3_PROFILE = "download"
 ONE_MEGABYTE = 1024 * 1024
-
 
 def validate_links_md5s(local_base_path, remote_base_url, aws_profile, s3_endpoint, user_chunk_size):
     local_base_path = os.path.normpath(os.path.expanduser(local_base_path))

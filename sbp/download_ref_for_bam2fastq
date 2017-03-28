@@ -6,4 +6,4 @@ setname=$( basename ${s3path} )
 dspath="/data/schuberg/bam2fastq/bam2fastq_${setname}"
 
 echo "[INFO] Getting REF bam from ${s3path}"
-sbp_old s3 sync ${s3path}/ ${dspath}/ --profile download_old --exclude "*" --include "*/mapping/*R_dedup.realigned.bam*"
+sbp s3 sync ${s3path}/ ${dspath}/ --profile download --exclude "*" --include "*/mapping/*R_dedup.realigned.bam*"
