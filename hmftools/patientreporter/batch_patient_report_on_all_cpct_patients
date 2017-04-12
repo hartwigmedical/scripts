@@ -2,4 +2,4 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-"$prefix"/do_run_patient_reporter -batch_mode -batch_directory /data/cpct/runs -batch_stats ~/batch_patient_run_stats.csv
+"$prefix"/do_run_patient_reporter -batch_mode -batch_directory /data/cpct/runs -batch_stats ~/batch_stats.csv -batch_variant_findings ~/batch_variant_findings.csv -batch_cnv_findings ~/batch_cnv_findings.csv
