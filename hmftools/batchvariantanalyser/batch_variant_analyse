@@ -1,8 +1,8 @@
 #!/bin/bash
 
-input=$1
-output=$2
+vcf_input_dir=$1
+output_csv=$2
 
 tooldir=/data/common/tools/batchvariantanalyser_v1.0
 
-exec java -Xmx8G -Xms4G -jar "$tooldir"/batch-variant-analyser.jar -input "$input" -output "$output"
+exec java -Xmx8G -Xms4G -jar "$tooldir"/batch-variant-analyser.jar -vcf_input_dir "vcf_input_dir" -output_csv "output_csv" -variants_per_sample 6
