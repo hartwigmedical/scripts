@@ -5,4 +5,4 @@ output=$2
 
 tooldir=/data/common/tools/batchvariantanalyser_v1.0
 
-exec java -Xmx8G -Xms4G -jar "$tooldir"/batch_variant_analyser.jar -input "$input" -output "$output"
+exec java -Xmx8G -Xms4G -jar "$tooldir"/batch-variant-analyser.jar -input "$input" -output "$output"
