@@ -41,7 +41,7 @@ echo "$SEPSTR print bcl2fastq conversion report"
 echo "get_bcl2fq_report_table $RUNDIR"
 
 ## check conversion status
-if [ ! -e $RUNDIR'/SBP_Upload.done' ]; then
+if [ ! -e $RUNDIR'/SBP_Uploaded.done' ]; then
     echo -e "\n# [WARNING] UPLOAD to SBP is NOT DONE YET!\n";
 else
     echo "# [NOTE] UPLOAD to SBP has finished";
