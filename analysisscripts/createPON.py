@@ -2,12 +2,14 @@
 
 import heapq
 import re
+from collections import namedtuple
 
 TAB = '\t'
 FORMAT_SEP = ':'
 ALT_SEP = ','
 
 REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
+REQUIRED_VCF_HEADERS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
 # TODO perhaps a bit heavy handed
 GT_MATCH = re.compile('[1-9]+')
@@ -15,6 +17,25 @@ def GenotypeFilter(vcf, variant):
     assert variant.FORMAT.startswith('GT')
     gt = vcf.getReferenceSampleFromVariant(variant).split(FORMAT_SEP, 1)[0]
     return GT_MATCH.search(gt) is not None
+
+# basic helper for writing valid VCF files
+class VCFWriter():
+    def __init__(self, file):
+        self.file = file
+        self.tuple = namedtuple('VCFWriterVariant', REQUIRED_VCF_HEADERS)
+        self.writeFileHeader()
+        # TODO write custom info headers
+        self.writeVariantHeader()
+
+    def writeFileHeader(self):
+        self.file.write('##fileformat=VCFv4.1\n')
+
+    def writeVariantHeader(self):
+        self.file.write('#' + TAB.join(REQUIRED_VCF_HEADERS) + '\n')
+
+    def writeVariant(self, variant):
+        assert type(variant) is self.tuple
+        self.file.write(TAB.join(variant) + '\n')
 
 # basic helper for reading and validating a VCF file
 class VCFReader():
@@ -42,12 +63,11 @@ class VCFReader():
 
     def processVariantHeader(self, line):
         self.headers = line[1:].split(TAB)
-        assert self.headers[:8] == ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+        assert self.headers[:8] == list(REQUIRED_VCF_HEADERS)
         if len(self.headers) > 8:
             assert self.headers[8] == 'FORMAT'
             self.samples = self.headers[9:]
-        from collections import namedtuple
-        self.tuple = namedtuple('Variant', self.headers)
+        self.tuple = namedtuple('VCFReaderVariant', self.headers)
 
     def readVariant(self):
         line = self.file.readline()
@@ -126,14 +146,17 @@ class PONGenerator():
     def writeToOutput(self, variant, count):
         if count < self._minCountThreshold:
             return
-        self._outputFile.write(
-            TAB.join((
-                variant.CHROM,
-                variant.POS,
-                variant.REF,
-                variant.ALT.split(ALT_SEP)[0], # NB - only pushing The 1st ALT into PON file
-                str(count)
-            )) + '\n'
+        self._outputFile.writeVariant(
+            self._outputFile.tuple(
+                CHROM = variant.CHROM,
+                POS = variant.POS,
+                ID = "",
+                REF = variant.REF,
+                ALT = variant.ALT,
+                QUAL = "", # TODO is a blank quality ok?
+                FILTER = 'PASS',
+                INFO = 'PON_COUNT=%i' % count
+            )
         )
 
 if __name__ == '__main__':
@@ -150,7 +173,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        generator = PONGenerator(args.outputFile, args.minCountThreshold)
+        generator = PONGenerator(VCFWriter(args.outputFile), args.minCountThreshold)
         generator.merge([ VCFReader(f) for f in args.inputFiles ])
     finally: # be a good citizen
         args.outputFile.close()
