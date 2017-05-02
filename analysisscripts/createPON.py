@@ -1,122 +1,154 @@
 #!/usr/bin/env python
+
 import heapq
-import os
-import argparse
+import re
 
-class vcfMerge():
+TAB = '\t'
+FORMAT_SEP = ':'
 
-    def __init__(self,outputFile, minCountThreshold):
+REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
 
-        try:
-            self._heap = []
-            self._output_file = open(outputFile, 'w+')
-            self.minCountThreshold = minCountThreshold
+# TODO perhaps a bit heavy handed
+GT_MATCH = re.compile('[1-9]+')
+def GenotypeFilter(vcf, variant):
+    assert variant.FORMAT.startswith('GT')
+    gt = vcf.getReferenceSampleFromVariant(variant).split(FORMAT_SEP, 1)[0]
+    return GT_MATCH.search(gt) is not None
 
-        except Exception, err_msg:
-            print "Error while creating Merger: %s" % str(err_msg)
+# basic helper for reading and validating a VCF file
+class VCFReader():
+    def __init__(self, file):
+        self.file = file
+        self.headers = []
+        self.samples = []
+        self.processHeaders()
 
-    def merge(self, input_files):
-        try:
-            open_files = []
-            [open_files.append(open(file__, 'r')) for file__ in input_files]
+    def processHeaders(self):
+        assert self.file.readline().startswith('##fileformat=VCFv4.')
+        while True:
+            line = self.file.readline().rstrip()
+            assert len(line)
+            if line[0:2] == "##":
+                self.processMetaInformation(line)
+            elif line[0] == "#":
+                self.processVariantHeader(line)
+                return
+            else:
+                raise Exception("VCF format derailment")
 
-            [self.readFirstVariant(file__) for file__ in open_files]
+    def processMetaInformation(self, line):
+        pass
 
-            previousCount = 0
-            smallest = self._heap[0]
+    def processVariantHeader(self, line):
+        self.headers = line[1:].split(TAB)
+        assert self.headers[:8] == ['CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO']
+        if len(self.headers) > 8:
+            assert self.headers[8] == 'FORMAT'
+            self.samples = self.headers[9:]
+        from collections import namedtuple
+        self.tuple = namedtuple('Variant', self.headers)
 
-            while(self._heap):
+    def getSamples(self):
+        return self.samples
 
-                previous = smallest[0]
-                smallest = heapq.heappop(self._heap)
+    def setReferenceSample(self, sample):
+        self.reference_idx = self.headers.index(sample)
 
-                if previous < smallest[0]:
-                    self.writeToOutput(previous,previousCount)
-                    previousCount = 1
-                else:
-                    previousCount += 1
+    def getReferenceSampleFromVariant(self, variant):
+        return variant[self.reference_idx]
 
-                read_line = smallest[1].readline()
-                self.pushVariantToHeap(read_line, smallest[1])
+    def readVariant(self):
+        line = self.file.readline()
+        return self.tuple._make(line.split(TAB)) if line else None
 
-            self.writeToOutput(smallest[0], previousCount)
+    def readVariantMatchingFilter(self, filter):
+        variant = self.readVariant()
+        while variant and not filter(variant):
+            variant = self.readVariant()
+        return variant
 
-            [file__.close() for file__ in open_files]
-            self._output_file.close()
+class PONGenerator():
 
-        except Exception, err_msg:
-            print "Error while merging: %s" % str(err_msg)
+    def __init__(self, outputFile, minCountThreshold):
+        self._heap = []
+        self._outputFile = outputFile
+        self._minCountThreshold = minCountThreshold
 
-    def _delimiter_value(self):
-        return "\t"
+    def merge(self, vcf_readers):
 
-    def posToNumber(self,split):
-        if split[0] == 'X':
-            chrom = 23
-        elif split[0] == 'Y':
-            chrom = 24
-        elif split[0] == 'MT':
-            chrom = 25
-        else:
-            chrom = int(split[0])
-        return chrom * 1e9 + int(split[1]) + 1e10   #add 1e9 so that all positions are >10BN)
+        for vcf in vcf_readers:
+            # find the reference sample
+            reference = next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix))
+            vcf.setReferenceSample(reference)
+            # prime the heap
+            self.pushVariantToHeap(vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf)
 
-    def numberToPos(self, number):
-        myChrom = int((number - 1e10)/1e9)
-        if myChrom == 23:
-            return "X\t"+ str(int(number%1e9))
-        elif myChrom == 24:
-            return "Y\t" + str(int(number % 1e9))
-        elif myChrom == 25:
-            return "MT\t" + str(int(number % 1e9))
-        else:
-            return str(myChrom) + self._delimiter_value() + str(int(number%1e9))
+        previousCount = 0
+        currentIdx, variant, vcf = self._heap[0]
 
-    def readFirstVariant(self,file__):
-        read_line = file__.readline()
-        while read_line[0] == "#":
-            read_line = file__.readline()
-        self.pushVariantToHeap(read_line,file__)
+        while self._heap:
 
-    def pushVariantToHeap(self,read_line,file__):
-        if(len(read_line) != 0):
-            read_line_split = read_line.split("\t")
-            #NB - ONLY PUSHING The 1st ALT into PON file (ignoring the 2nd ALT if multipe are found - seems reasonable to me)
-            heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+self._delimiter_value()+read_line_split[3]+ \
-                                        self._delimiter_value()+read_line_split[4].split(",")[0], file__))
+            previousIdx, previousVariant = currentIdx, variant
+            currentIdx, variant, vcf = heapq.heappop(self._heap)
 
+            if previousIdx < currentIdx:
+                self.writeToOutput(previousVariant, previousCount)
+                previousCount = 1
+            else:
+                previousCount += 1
 
+            self.pushVariantToHeap(vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf)
 
-    def writeToOutput(self,positionAlt,count):
-        if count >= self.minCountThreshold:
-            self._output_file.write(self.numberToPos(float(positionAlt.split(self._delimiter_value())[0])) + self._delimiter_value() \
-                                    + positionAlt.split(self._delimiter_value())[1]+ self._delimiter_value() + \
-                                    positionAlt.split(self._delimiter_value())[2]+ self._delimiter_value() + str(count) + "\n")
+        self.writeToOutput(variant, previousCount)
 
-def getVCFList(path,suffixMatches):
-    vcfList = []
-    for path, subdirs, files in os.walk(path):
-        for name in files:
-            for suffixMatch in suffixMatches:
-                if name[-len(suffixMatch):] == suffixMatch:
-                    print name
-                    vcfList.append(os.path.join(path, name))
-                    break
-    print "# of input files = ",len(vcfList)
-    return vcfList
+    def pushVariantToHeap(self, variant, vcf):
+        def chromosomeToNumber(chromosome):
+            if chromosome == 'X':
+                return 23
+            elif chromosome == 'Y':
+                return 24
+            elif chromosome == 'MT':
+                return 25
+            else:
+                return int(chromosome)
+        if variant:
+            heapq.heappush(self._heap,
+                (
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # sorted on this field
+                    variant,
+                    vcf
+                )
+            )
+
+    def writeToOutput(self, variant, count):
+        if count < self._minCountThreshold:
+            return
+        self._outputFile.write(
+            TAB.join((
+                variant.CHROM,
+                variant.POS,
+                variant.REF,
+                variant.ALT[0], # NB - only pushing The 1st ALT into PON file
+                str(count)
+            )) + '\n'
+        )
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200))
-    required_named = parser.add_argument_group('required named arguments')
-    required_named.add_argument('-s', '--suffixMatch', help="file suffix to match eg: 'xxx.vcf'. can use multiple suffixes:'abc.vcf|cde.vcf'", required=True)
-    required_named.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True)
-    required_named.add_argument('-p', '--path', help='directory to search for matching files', required=True)
-    required_named.add_argument('-o', '--outputFile', help='output file name', required=True)
+
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Generates a Panel of Normals (PON) file",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200)
+    )
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True, type=int)
+    required.add_argument('-o', '--outputFile', help='output file name', required=True, type=argparse.FileType('w'))
+    required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge, use bash ', required=True, type=argparse.FileType('r'))
     args = parser.parse_args()
 
-    files = getVCFList(args.path,args.suffixMatch.split("|"))
-    merger = vcfMerge(args.outputFile,int(args.minCountThreshold))
-    merger.merge(files)
-
-
-
+    try:
+        generator = PONGenerator(args.outputFile, args.minCountThreshold)
+        generator.merge([ VCFReader(f) for f in args.inputFiles ])
+    finally: # be a good citizen
+        args.outputFile.close()
+        for f in args.inputFiles: f.close()
