@@ -5,6 +5,7 @@ import re
 
 TAB = '\t'
 FORMAT_SEP = ':'
+ALT_SEP = ','
 
 REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
 
@@ -48,15 +49,6 @@ class VCFReader():
         from collections import namedtuple
         self.tuple = namedtuple('Variant', self.headers)
 
-    def getSamples(self):
-        return self.samples
-
-    def setReferenceSample(self, sample):
-        self.reference_idx = self.headers.index(sample)
-
-    def getReferenceSampleFromVariant(self, variant):
-        return variant[self.reference_idx]
-
     def readVariant(self):
         line = self.file.readline()
         return self.tuple._make(line.split(TAB)) if line else None
@@ -67,6 +59,15 @@ class VCFReader():
             variant = self.readVariant()
         return variant
 
+    def getSamples(self):
+        return self.samples
+
+    def setReferenceSample(self, sample):
+        self.reference_idx = self.headers.index(sample)
+
+    def getReferenceSampleFromVariant(self, variant):
+        return variant[self.reference_idx]
+
 class PONGenerator():
 
     def __init__(self, outputFile, minCountThreshold):
@@ -75,29 +76,31 @@ class PONGenerator():
         self._minCountThreshold = minCountThreshold
 
     def merge(self, vcf_readers):
+        def readAndPushVariant(vcf):
+            self.pushVariantToHeap( vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf )
 
         for vcf in vcf_readers:
             # find the reference sample
             reference = next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix))
             vcf.setReferenceSample(reference)
             # prime the heap
-            self.pushVariantToHeap(vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf)
+            readAndPushVariant(vcf)
 
         previousCount = 0
-        currentIdx, variant, vcf = self._heap[0]
+        location, variant, vcf = self._heap[0]
 
         while self._heap:
 
-            previousIdx, previousVariant = currentIdx, variant
-            currentIdx, variant, vcf = heapq.heappop(self._heap)
+            previousLocation, previousVariant = location, variant
+            location, variant, vcf = heapq.heappop(self._heap)
 
-            if previousIdx < currentIdx:
+            if location > previousLocation:
                 self.writeToOutput(previousVariant, previousCount)
                 previousCount = 1
             else:
                 previousCount += 1
 
-            self.pushVariantToHeap(vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf)
+            readAndPushVariant(vcf)
 
         self.writeToOutput(variant, previousCount)
 
@@ -114,7 +117,7 @@ class PONGenerator():
         if variant:
             heapq.heappush(self._heap,
                 (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # sorted on this field
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # location tuple, sorted on this field
                     variant,
                     vcf
                 )
@@ -128,7 +131,7 @@ class PONGenerator():
                 variant.CHROM,
                 variant.POS,
                 variant.REF,
-                variant.ALT[0], # NB - only pushing The 1st ALT into PON file
+                variant.ALT.split(ALT_SEP)[0], # NB - only pushing The 1st ALT into PON file
                 str(count)
             )) + '\n'
         )
@@ -141,9 +144,9 @@ if __name__ == '__main__':
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200)
     )
     required = parser.add_argument_group('required arguments')
-    required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True, type=int)
+    required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output. eg: 2', required=True, type=int)
     required.add_argument('-o', '--outputFile', help='output file name', required=True, type=argparse.FileType('w'))
-    required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge, use bash ', required=True, type=argparse.FileType('r'))
+    required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge', required=True, type=argparse.FileType('r'))
     args = parser.parse_args()
 
     try:
