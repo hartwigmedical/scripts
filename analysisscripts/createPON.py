@@ -29,7 +29,6 @@ class VCFWriter():
 
     VARIANT_MISSING_FIELD = '.'
     REQUIRED_INFO_DESCRIPTORS = ('ID', 'Number', 'Type', 'Description')
-    OPTIONAL_INFO_DESCRIPTORS = ('Source', 'Version')
     VALID_INFO_TYPES = ('Integer', 'Float', 'Flag', 'Character', 'String')
 
     InformationField = namedtuple('InformationField', REQUIRED_INFO_DESCRIPTORS)
@@ -48,13 +47,8 @@ class VCFWriter():
         self.file.write('##source=%s\n' % ScriptName())
 
     def writeInfoHeader(self, **kwargs):
-        source, version = kwargs.pop('Source', None), kwargs.pop('Version', None)
         kwargs['Description'] = '"%s"' % kwargs['Description']
-
-        self.file.write( '##INFO=<%s' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
-        if source: self.file.write(',Source="%s"' % source)
-        if version: self.file.write(',Version="%s"' % version)
-        self.file.write('>\n')
+        self.file.write( '##INFO=<%s>\n' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
 
     def writeVariantHeader(self):
         self.file.write('#%s\n' % TAB.join(REQUIRED_VARIANT_FIELDS))
@@ -120,13 +114,7 @@ class PONGenerator():
         self._heap = []
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
-        self._outputFile.writeInfoHeader(
-            ID="PON_COUNT",
-            Number=1,
-            Type="Integer",
-            Description="how many samples had the variant",
-            Source=ScriptName()
-        )
+        self._outputFile.writeInfoHeader(ID="PON_COUNT", Number=1, Type="Integer", Description="how many samples had the variant")
         self._outputFile.writeVariantHeader()
 
     def merge(self, vcf_readers):
