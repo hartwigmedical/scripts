@@ -5,37 +5,63 @@ import re
 from collections import namedtuple
 
 TAB = '\t'
-FORMAT_SEP = ':'
-ALT_SEP = ','
+COLON = ':'
+COMMA = ','
+EQUALS = '='
 
 REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
-REQUIRED_VCF_HEADERS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
+
+REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
 # TODO perhaps a bit heavy handed
 GT_MATCH = re.compile('[1-9]+')
 def GenotypeFilter(vcf, variant):
     assert variant.FORMAT.startswith('GT')
-    gt = vcf.getReferenceSampleFromVariant(variant).split(FORMAT_SEP, 1)[0]
+    gt = vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
     return GT_MATCH.search(gt) is not None
 
-# basic helper for writing valid VCF files
+def ScriptName():
+    from os import path
+    return path.basename(__file__)
+
+# basic helper for writing valid VCF files with no samples
 class VCFWriter():
+
+    VARIANT_MISSING_FIELD = '.'
+    REQUIRED_INFO_DESCRIPTORS = ('ID', 'Number', 'Type', 'Description')
+    OPTIONAL_INFO_DESCRIPTORS = ('Source', 'Version')
+    VALID_INFO_TYPES = ('Integer', 'Float', 'Flag', 'Character', 'String')
+
+    InformationField = namedtuple('InformationField', REQUIRED_INFO_DESCRIPTORS)
+    OptionalInformation = namedtuple('OptionalInformationField', OPTIONAL_INFO_DESCRIPTORS)
+    Variant = namedtuple('Variant', REQUIRED_VARIANT_FIELDS)
+
     def __init__(self, file):
         self.file = file
-        self.tuple = namedtuple('VCFWriterVariant', REQUIRED_VCF_HEADERS)
         self.writeFileHeader()
-        # TODO write custom info headers
-        self.writeVariantHeader()
+        self.writeSourceHeader()
 
     def writeFileHeader(self):
         self.file.write('##fileformat=VCFv4.1\n')
 
-    def writeVariantHeader(self):
-        self.file.write('#' + TAB.join(REQUIRED_VCF_HEADERS) + '\n')
+    def writeSourceHeader(self):
+        self.file.write('##source=%s\n' % ScriptName())
 
-    def writeVariant(self, variant):
-        assert type(variant) is self.tuple
-        self.file.write(TAB.join(variant) + '\n')
+    def writeInfoHeader(self, **kwargs):
+        source, version = kwargs.pop('Source', None), kwargs.pop('Version', None)
+        kwargs['Description'] = '"%s"' % kwargs['Description']
+
+        self.file.write( '##INFO=<%s' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
+        if source: self.file.write(',Source="%s"' % source)
+        if version: self.file.write(',Version="%s"' % version)
+        self.file.write('>\n')
+
+    def writeVariantHeader(self):
+        self.file.write('#%s\n' % TAB.join(REQUIRED_VARIANT_FIELDS))
+
+    def writeVariant(self, **kwargs):
+        for field in REQUIRED_VARIANT_FIELDS: kwargs.setdefault(field, self.VARIANT_MISSING_FIELD)
+        self.file.write(TAB.join(self.Variant(**kwargs)) + '\n')
 
 # basic helper for reading and validating a VCF file
 class VCFReader():
@@ -63,7 +89,7 @@ class VCFReader():
 
     def processVariantHeader(self, line):
         self.headers = line[1:].split(TAB)
-        assert self.headers[:8] == list(REQUIRED_VCF_HEADERS)
+        assert self.headers[:8] == list(REQUIRED_VARIANT_FIELDS)
         if len(self.headers) > 8:
             assert self.headers[8] == 'FORMAT'
             self.samples = self.headers[9:]
@@ -94,6 +120,14 @@ class PONGenerator():
         self._heap = []
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
+        self._outputFile.writeInfoHeader(
+            ID="PON_COUNT",
+            Number=1,
+            Type="Integer",
+            Description="how many samples had the variant",
+            Source=ScriptName()
+        )
+        self._outputFile.writeVariantHeader()
 
     def merge(self, vcf_readers):
         def readAndPushVariant(vcf):
@@ -101,8 +135,7 @@ class PONGenerator():
 
         for vcf in vcf_readers:
             # find the reference sample
-            reference = next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix))
-            vcf.setReferenceSample(reference)
+            vcf.setReferenceSample( next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix)) )
             # prime the heap
             readAndPushVariant(vcf)
 
@@ -147,23 +180,19 @@ class PONGenerator():
         if count < self._minCountThreshold:
             return
         self._outputFile.writeVariant(
-            self._outputFile.tuple(
-                CHROM = variant.CHROM,
-                POS = variant.POS,
-                ID = "",
-                REF = variant.REF,
-                ALT = variant.ALT,
-                QUAL = "", # TODO is a blank quality ok?
-                FILTER = 'PASS',
-                INFO = 'PON_COUNT=%i' % count
-            )
+            CHROM = variant.CHROM,
+            POS = variant.POS,
+            REF = variant.REF,
+            ALT = variant.ALT.split(COMMA, 1)[0], # TODO only first alt (why?)
+            FILTER = 'PASS',
+            INFO = 'PON_COUNT=%i' % count
         )
 
 if __name__ == '__main__':
 
     import argparse
     parser = argparse.ArgumentParser(
-        description="Generates a Panel of Normals (PON) file",
+        description="Generates a Panel of Normals (PON) VCF file",
         formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200)
     )
     required = parser.add_argument_group('required arguments')
@@ -173,8 +202,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     try:
-        generator = PONGenerator(VCFWriter(args.outputFile), args.minCountThreshold)
-        generator.merge([ VCFReader(f) for f in args.inputFiles ])
+        generator = PONGenerator( VCFWriter(args.outputFile), args.minCountThreshold )
+        generator.merge( VCFReader(f) for f in args.inputFiles )
     finally: # be a good citizen
         args.outputFile.close()
         for f in args.inputFiles: f.close()
