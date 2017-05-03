@@ -1,122 +1,209 @@
 #!/usr/bin/env python
+
 import heapq
-import os
-import argparse
+import re
+from collections import namedtuple
 
-class vcfMerge():
+TAB = '\t'
+COLON = ':'
+COMMA = ','
+EQUALS = '='
 
-    def __init__(self,outputFile, minCountThreshold):
+REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
 
-        try:
-            self._heap = []
-            self._output_file = open(outputFile, 'w+')
-            self.minCountThreshold = minCountThreshold
+REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
-        except Exception, err_msg:
-            print "Error while creating Merger: %s" % str(err_msg)
+# TODO perhaps a bit heavy handed
+GT_MATCH = re.compile('[1-9]+')
+def GenotypeFilter(vcf, variant):
+    assert variant.FORMAT.startswith('GT')
+    gt = vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
+    return GT_MATCH.search(gt) is not None
 
-    def merge(self, input_files):
-        try:
-            open_files = []
-            [open_files.append(open(file__, 'r')) for file__ in input_files]
+def ScriptName():
+    from os import path
+    return path.basename(__file__)
 
-            [self.readFirstVariant(file__) for file__ in open_files]
+# basic helper for writing valid VCF files with no samples
+class VCFWriter():
 
-            previousCount = 0
-            smallest = self._heap[0]
+    VARIANT_MISSING_FIELD = '.'
+    REQUIRED_INFO_DESCRIPTORS = ('ID', 'Number', 'Type', 'Description')
+    OPTIONAL_INFO_DESCRIPTORS = ('Source', 'Version')
+    VALID_INFO_TYPES = ('Integer', 'Float', 'Flag', 'Character', 'String')
 
-            while(self._heap):
+    InformationField = namedtuple('InformationField', REQUIRED_INFO_DESCRIPTORS)
+    OptionalInformation = namedtuple('OptionalInformationField', OPTIONAL_INFO_DESCRIPTORS)
+    Variant = namedtuple('Variant', REQUIRED_VARIANT_FIELDS)
 
-                previous = smallest[0]
-                smallest = heapq.heappop(self._heap)
+    def __init__(self, file):
+        self.file = file
+        self.writeFileHeader()
+        self.writeSourceHeader()
 
-                if previous < smallest[0]:
-                    self.writeToOutput(previous,previousCount)
-                    previousCount = 1
-                else:
-                    previousCount += 1
+    def writeFileHeader(self):
+        self.file.write('##fileformat=VCFv4.1\n')
 
-                read_line = smallest[1].readline()
-                self.pushVariantToHeap(read_line, smallest[1])
+    def writeSourceHeader(self):
+        self.file.write('##source=%s\n' % ScriptName())
 
-            self.writeToOutput(smallest[0], previousCount)
+    def writeInfoHeader(self, **kwargs):
+        source, version = kwargs.pop('Source', None), kwargs.pop('Version', None)
+        kwargs['Description'] = '"%s"' % kwargs['Description']
 
-            [file__.close() for file__ in open_files]
-            self._output_file.close()
+        self.file.write( '##INFO=<%s' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
+        if source: self.file.write(',Source="%s"' % source)
+        if version: self.file.write(',Version="%s"' % version)
+        self.file.write('>\n')
 
-        except Exception, err_msg:
-            print "Error while merging: %s" % str(err_msg)
+    def writeVariantHeader(self):
+        self.file.write('#%s\n' % TAB.join(REQUIRED_VARIANT_FIELDS))
 
-    def _delimiter_value(self):
-        return "\t"
+    def writeVariant(self, **kwargs):
+        for field in REQUIRED_VARIANT_FIELDS: kwargs.setdefault(field, self.VARIANT_MISSING_FIELD)
+        self.file.write(TAB.join(self.Variant(**kwargs)) + '\n')
 
-    def posToNumber(self,split):
-        if split[0] == 'X':
-            chrom = 23
-        elif split[0] == 'Y':
-            chrom = 24
-        elif split[0] == 'MT':
-            chrom = 25
-        else:
-            chrom = int(split[0])
-        return chrom * 1e9 + int(split[1]) + 1e10   #add 1e9 so that all positions are >10BN)
+# basic helper for reading and validating a VCF file
+class VCFReader():
+    def __init__(self, file):
+        self.file = file
+        self.headers = []
+        self.samples = []
+        self.processHeaders()
 
-    def numberToPos(self, number):
-        myChrom = int((number - 1e10)/1e9)
-        if myChrom == 23:
-            return "X\t"+ str(int(number%1e9))
-        elif myChrom == 24:
-            return "Y\t" + str(int(number % 1e9))
-        elif myChrom == 25:
-            return "MT\t" + str(int(number % 1e9))
-        else:
-            return str(myChrom) + self._delimiter_value() + str(int(number%1e9))
+    def processHeaders(self):
+        assert self.file.readline().startswith('##fileformat=VCFv4.')
+        while True:
+            line = self.file.readline().rstrip()
+            assert len(line)
+            if line[0:2] == "##":
+                self.processMetaInformation(line)
+            elif line[0] == "#":
+                self.processVariantHeader(line)
+                return
+            else:
+                raise Exception("VCF format derailment")
 
-    def readFirstVariant(self,file__):
-        read_line = file__.readline()
-        while read_line[0] == "#":
-            read_line = file__.readline()
-        self.pushVariantToHeap(read_line,file__)
+    def processMetaInformation(self, line):
+        pass
 
-    def pushVariantToHeap(self,read_line,file__):
-        if(len(read_line) != 0):
-            read_line_split = read_line.split("\t")
-            #NB - ONLY PUSHING The 1st ALT into PON file (ignoring the 2nd ALT if multipe are found - seems reasonable to me)
-            heapq.heappush(self._heap, (str(self.posToNumber(read_line_split))+self._delimiter_value()+read_line_split[3]+ \
-                                        self._delimiter_value()+read_line_split[4].split(",")[0], file__))
+    def processVariantHeader(self, line):
+        self.headers = line[1:].split(TAB)
+        assert self.headers[:8] == list(REQUIRED_VARIANT_FIELDS)
+        if len(self.headers) > 8:
+            assert self.headers[8] == 'FORMAT'
+            self.samples = self.headers[9:]
+        self.tuple = namedtuple('VCFReaderVariant', self.headers)
 
+    def readVariant(self):
+        line = self.file.readline()
+        return self.tuple._make(line.split(TAB)) if line else None
 
+    def readVariantMatchingFilter(self, filter):
+        variant = self.readVariant()
+        while variant and not filter(variant):
+            variant = self.readVariant()
+        return variant
 
-    def writeToOutput(self,positionAlt,count):
-        if count >= self.minCountThreshold:
-            self._output_file.write(self.numberToPos(float(positionAlt.split(self._delimiter_value())[0])) + self._delimiter_value() \
-                                    + positionAlt.split(self._delimiter_value())[1]+ self._delimiter_value() + \
-                                    positionAlt.split(self._delimiter_value())[2]+ self._delimiter_value() + str(count) + "\n")
+    def getSamples(self):
+        return self.samples
 
-def getVCFList(path,suffixMatches):
-    vcfList = []
-    for path, subdirs, files in os.walk(path):
-        for name in files:
-            for suffixMatch in suffixMatches:
-                if name[-len(suffixMatch):] == suffixMatch:
-                    print name
-                    vcfList.append(os.path.join(path, name))
-                    break
-    print "# of input files = ",len(vcfList)
-    return vcfList
+    def setReferenceSample(self, sample):
+        self.reference_idx = self.headers.index(sample)
+
+    def getReferenceSampleFromVariant(self, variant):
+        return variant[self.reference_idx]
+
+class PONGenerator():
+
+    def __init__(self, outputFile, minCountThreshold):
+        self._heap = []
+        self._outputFile = outputFile
+        self._minCountThreshold = minCountThreshold
+        self._outputFile.writeInfoHeader(
+            ID="PON_COUNT",
+            Number=1,
+            Type="Integer",
+            Description="how many samples had the variant",
+            Source=ScriptName()
+        )
+        self._outputFile.writeVariantHeader()
+
+    def merge(self, vcf_readers):
+        def readAndPushVariant(vcf):
+            self.pushVariantToHeap( vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf )
+
+        for vcf in vcf_readers:
+            # find the reference sample
+            vcf.setReferenceSample( next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix)) )
+            # prime the heap
+            readAndPushVariant(vcf)
+
+        previousCount = 0
+        location, variant, vcf = self._heap[0]
+
+        while self._heap:
+
+            previousLocation, previousVariant = location, variant
+            location, variant, vcf = heapq.heappop(self._heap)
+
+            if location > previousLocation:
+                self.writeToOutput(previousVariant, previousCount)
+                previousCount = 1
+            else:
+                previousCount += 1
+
+            readAndPushVariant(vcf)
+
+        self.writeToOutput(variant, previousCount)
+
+    def pushVariantToHeap(self, variant, vcf):
+        def chromosomeToNumber(chromosome):
+            if chromosome == 'X':
+                return 23
+            elif chromosome == 'Y':
+                return 24
+            elif chromosome == 'MT':
+                return 25
+            else:
+                return int(chromosome)
+        if variant:
+            heapq.heappush(self._heap,
+                (
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # location tuple, sorted on this field
+                    variant,
+                    vcf
+                )
+            )
+
+    def writeToOutput(self, variant, count):
+        if count < self._minCountThreshold:
+            return
+        self._outputFile.writeVariant(
+            CHROM = variant.CHROM,
+            POS = variant.POS,
+            REF = variant.REF,
+            ALT = variant.ALT.split(COMMA, 1)[0], # TODO only first alt (why?)
+            FILTER = 'PASS',
+            INFO = 'PON_COUNT=%i' % count
+        )
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200))
-    required_named = parser.add_argument_group('required named arguments')
-    required_named.add_argument('-s', '--suffixMatch', help="file suffix to match eg: 'xxx.vcf'. can use multiple suffixes:'abc.vcf|cde.vcf'", required=True)
-    required_named.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output.  eg: 2', required=True)
-    required_named.add_argument('-p', '--path', help='directory to search for matching files', required=True)
-    required_named.add_argument('-o', '--outputFile', help='output file name', required=True)
+
+    import argparse
+    parser = argparse.ArgumentParser(
+        description="Generates a Panel of Normals (PON) VCF file",
+        formatter_class=lambda prog: argparse.HelpFormatter(prog, max_help_position=100, width=200)
+    )
+    required = parser.add_argument_group('required arguments')
+    required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output. eg: 2', required=True, type=int)
+    required.add_argument('-o', '--outputFile', help='output file name', required=True, type=argparse.FileType('w'))
+    required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge', required=True, type=argparse.FileType('r'))
     args = parser.parse_args()
 
-    files = getVCFList(args.path,args.suffixMatch.split("|"))
-    merger = vcfMerge(args.outputFile,int(args.minCountThreshold))
-    merger.merge(files)
-
-
-
+    try:
+        generator = PONGenerator( VCFWriter(args.outputFile), args.minCountThreshold )
+        generator.merge( VCFReader(f) for f in args.inputFiles )
+    finally: # be a good citizen
+        args.outputFile.close()
+        for f in args.inputFiles: f.close()
