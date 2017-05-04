@@ -131,7 +131,8 @@ class PONGenerator():
         for vcf in vcf_readers:
             # find the reference sample
             sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
-            assert sample not in samples # check it is unique
+            if sample in samples: # check it is unique
+                continue
             samples.add(sample)
             vcf.setReferenceSample( sample )
             # prime the heap
