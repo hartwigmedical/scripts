@@ -32,7 +32,6 @@ class VCFWriter():
     VALID_INFO_TYPES = ('Integer', 'Float', 'Flag', 'Character', 'String')
 
     InformationField = namedtuple('InformationField', REQUIRED_INFO_DESCRIPTORS)
-    OptionalInformation = namedtuple('OptionalInformationField', OPTIONAL_INFO_DESCRIPTORS)
     Variant = namedtuple('Variant', REQUIRED_VARIANT_FIELDS)
 
     def __init__(self, file):
@@ -121,9 +120,13 @@ class PONGenerator():
         def readAndPushVariant(vcf):
             self.pushVariantToHeap( vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf )
 
+        samples = set()
         for vcf in vcf_readers:
             # find the reference sample
-            vcf.setReferenceSample( next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix)) )
+            sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
+            assert samples not in samples # check it is unique
+            samples.add(sample)
+            vcf.setReferenceSample( sample )
             # prime the heap
             readAndPushVariant(vcf)
 
