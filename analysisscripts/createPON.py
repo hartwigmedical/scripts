@@ -37,10 +37,15 @@ class VCFWriter():
     def __init__(self, file):
         self.file = file
         self.writeFileHeader()
+        self.writeFileDateHeader()
         self.writeSourceHeader()
 
     def writeFileHeader(self):
         self.file.write('##fileformat=VCFv4.1\n')
+
+    def writeFileDateHeader(self):
+        from datetime import date
+        self.file.write('##fileDate=%s\n' % date.today().strftime("%Y%m%d"))
 
     def writeSourceHeader(self):
         self.file.write('##source=%s\n' % ScriptName())
@@ -48,6 +53,9 @@ class VCFWriter():
     def writeInfoHeader(self, **kwargs):
         kwargs['Description'] = '"%s"' % kwargs['Description']
         self.file.write( '##INFO=<%s>\n' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
+
+    def writeCustomHeader(self, name, value):
+        self.file.write( '##%s=%s\n' % (name, value) )
 
     def writeVariantHeader(self):
         self.file.write('#%s\n' % TAB.join(REQUIRED_VARIANT_FIELDS))
@@ -114,7 +122,6 @@ class PONGenerator():
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
         self._outputFile.writeInfoHeader(ID="PON_COUNT", Number=1, Type="Integer", Description="how many samples had the variant")
-        self._outputFile.writeVariantHeader()
 
     def merge(self, vcf_readers):
         def readAndPushVariant(vcf):
@@ -124,11 +131,15 @@ class PONGenerator():
         for vcf in vcf_readers:
             # find the reference sample
             sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
-            assert samples not in samples # check it is unique
+            assert sample not in samples # check it is unique
             samples.add(sample)
             vcf.setReferenceSample( sample )
             # prime the heap
             readAndPushVariant(vcf)
+
+        # finalise headers
+        self._outputFile.writeCustomHeader("PonInputSamples", COMMA.join(samples))
+        self._outputFile.writeVariantHeader()
 
         previousCount = 0
         location, variant, vcf = self._heap[0]
