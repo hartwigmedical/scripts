@@ -2,5 +2,5 @@
 
 for i in {1,2,3}; do 
     echo "--- Checking crunch${i} -----"
-    ssh c${i} check_samplesheets | grep "^#" | grep -P "Rund|CONVERSION|CYCLE"
+    ssh crunch00${i} check_samplesheets | grep "^#" | grep -P "Rund|CONVERSION|CYCLE"
 done
