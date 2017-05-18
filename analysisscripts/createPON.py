@@ -173,7 +173,7 @@ class PONGenerator():
         if variant:
             heapq.heappush(self._heap,
                 (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # location tuple, sorted on this field
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, variant.ALT.split(COMMA, 1)[0]), # location tuple, sorted on this field
                     variant,
                     vcf
                 )
