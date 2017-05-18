@@ -143,22 +143,22 @@ class PONGenerator():
         self._outputFile.writeVariantHeader()
 
         previousCount = 0
-        location, variant, vcf = self._heap[0]
+        location, variant, alt, vcf = self._heap[0]
 
         while self._heap:
 
-            previousLocation, previousVariant = location, variant
-            location, variant, vcf = heapq.heappop(self._heap)
+            previousLocation, previousVariant, previousAlt = location, variant, alt
+            location, variant, alt, vcf = heapq.heappop(self._heap)
 
             if location > previousLocation:
-                self.writeToOutput(previousVariant, previousCount)
+                self.writeToOutput(previousVariant, previousAlt, previousCount)
                 previousCount = 1
             else:
                 previousCount += 1
 
             readAndPushVariant(vcf)
 
-        self.writeToOutput(variant, previousCount)
+        self.writeToOutput(variant, alt, previousCount)
 
     def pushVariantToHeap(self, variant, vcf):
         def chromosomeToNumber(chromosome):
@@ -171,22 +171,27 @@ class PONGenerator():
             else:
                 return int(chromosome)
         if variant:
-            heapq.heappush(self._heap,
-                (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, variant.ALT.split(COMMA, 1)[0]), # location tuple, sorted on this field
-                    variant,
-                    vcf
+            for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1):
+                # check that reference sample shows the alt in GT field
+                if str(alt_idx) not in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]:
+                    continue
+                heapq.heappush(self._heap,
+                    (
+                        (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, alt), # location tuple, sorted on this field
+                        variant,
+                        alt,
+                        vcf
+                    )
                 )
-            )
 
-    def writeToOutput(self, variant, count):
+    def writeToOutput(self, variant, alt, count):
         if count < self._minCountThreshold:
             return
         self._outputFile.writeVariant(
             CHROM = variant.CHROM,
             POS = variant.POS,
             REF = variant.REF,
-            ALT = variant.ALT.split(COMMA, 1)[0], # TODO only first alt (why?)
+            ALT = alt,
             FILTER = 'PASS',
             INFO = 'PON_COUNT=%i' % count
         )
