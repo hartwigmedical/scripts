@@ -14,7 +14,7 @@ sub usage{
     exit 1;
 }
 
-my $api_script = 'register_sets_v2.sh';
+my $api_script = 'register_set';
 my $entities_file = '/data/common/dbs/sbp/center2entity.tsv';
 my $setname_regex_cpct = '^(\d{6})_HMFreg(CPCT|DRUP|PMC)_(.+)_(.+)_((CPCT|DRUP|PMC).+)$';
 my $setname_regex_giab = '^(\d{6})_(VAL.+)_(.+)_(.+)$';
@@ -145,7 +145,7 @@ print "## NOTE: check if all expected are present below\n";
 print "## NOTE: copy or print this code to bash file and execute\n";
 print "##   $script > $jobbash\n";
 print "##   chmod 755 $jobbash\n";
-print "##   $jobbash > /home/sbp/logs/$jobname.log\n";
+print "##   $jobbash > /home/sbp/logs/$jobname\n";
 print "## TotalSetCount: $counter\n";
 print "## ==========\n";
 print join( "\n", @toprint )."\n";
