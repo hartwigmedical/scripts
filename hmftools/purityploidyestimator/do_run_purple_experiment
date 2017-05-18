@@ -1,0 +1,35 @@
+#!/bin/bash
+
+run_dir=$1
+run=${run_dir: 16}
+patient=${run: -12}
+
+base_output="/data/experiments/PURPLE"
+purple_output=${base_output}/${patient}
+
+full_vcf_file=${run_dir}/${run}.annotated.vcf
+sliced_vcf_file=${purple_output}/${run}.annotatedSLICED.vcf
+fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.decoys/hs37d5.fasta
+bed_file=/data/common/dbs/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
+
+if [[ ! -e ${full_vcf_file} ]]; then
+    echo "Unable to locate VCF file" ${full_vcf_file}
+    exit 1
+fi
+
+mkdir -p ${purple_output}
+
+if [[ ! -e ${sliced_vcf_file} ]]; then
+    echo "Creating sliced file" ${sliced_vcf_file}
+    java -jar /data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar -T SelectVariants -V ${full_vcf_file} -selectType SNP -o ${sliced_vcf_file} -R ${fasta_file} -L ${bed_file}
+else
+	echo "Using existing sliced file" ${sliced_vcf_file}    
+fi
+
+cp ${run_dir}/copyNumber/*/freec/*CNVs ${purple_output}/
+cp ${run_dir}/copyNumber/*/freec/*ratio.txt ${purple_output}/
+
+java -Xmx8G -Xms4G -jar /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar -run_dir $purple_output  -vcf_extension annotatedSLICED.vcf -freec_dir $purple_output
+
+rm ${purple_output}/*CNVs
+rm ${purple_output}/*ratio.txt

@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+verbose=false
+dirPath='' # directory that contains fastq files
+oldName='' # string of current sample name
+newName='' # string of new sample name
+doRenameFiles=''
+commandLine=$( basename ${0} )" $@"
+
+if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Descr: Renames fastq files in provided dir (by default only prints action)"
+    echo " Usage: $(basename ${0}) -o <oldname> -n <newname> -d <fastqdir>"
+    echo "        $(basename ${0}) -o CPCT12345678R -n DRUP12345678R -d \$PWD"
+    echo "        add option \"-r\" do perform the actual renaming of files"
+    echo " Notes:"
+    echo "    - searches for *fastq.gz files only"
+    echo "---"
+    exit 1
+fi
+
+while getopts ":o:n:d:r" opt; do
+  case $opt in
+    o)
+      oldName=$OPTARG
+      ;;
+    n)
+      newName=$OPTARG
+      ;;
+    d)
+      dirPath=$OPTARG
+      ;;
+    r)
+      doRenameFiles='true'
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+## store rest of params as files to rename
+filesToRename=()
+while IFS=  read -r -d $'\0'; do
+    filesToRename+=("$REPLY")
+done < <(find "${dirPath}" -name "*fastq.gz" -print0)
+
+## sanity checks
+if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found" && exit 1; fi
+if [[ -z ${oldName} ]]; then echo "[EXIT] Param oldName (-o) not set" && exit 1; fi
+if [[ -z ${newName} ]]; then echo "[EXIT] Param newName (-n) not set" && exit 1; fi
+if [[ -z ${dirPath} ]]; then echo "[EXIT] Param dirPath (-d) not set" && exit 1; fi
+if [[ ! -d ${dirPath} ]]; then echo "[EXIT] dirPath (${dirPath}) does not exist?" && exit 1; fi
+
+## print info
+echo "[INFO] Setting FastqDirectory: ${dirPath}"
+echo "[INFO] Setting OldName: \"${oldName}\""
+echo "[INFO] Setting NewName: \"${newName}\""
+
+## renaming action
+for oldFile in "${filesToRename[@]}"; do
+    if [[ ! ${doRenameFiles} ]]; then
+        newFile=$( echo $oldFile | sed "s/${oldName}/${newName}/" )
+        echo "[INFO] Would rename $( basename ${oldFile} ) to $( basename ${newFile} )"
+    else
+        newFile=$( echo $oldFile | sed "s/${oldName}/${newName}/" )
+        echo "[INFO] Renaming $( basename ${oldFile} ) to $( basename ${newFile} )"
+        mv ${oldFile} ${newFile}
+    fi
+done
+
+if [[ ! ${doRenameFiles} ]]; then
+    logFilePath="${dirPath}/fastqrename.log"
+    echo "[INFO] Option -r not set so only printed the potential rename actions"
+    echo "[INFO] Cmd to rename: ${commandLine} -r > ${logFilePath}"
+    if [[ -f ${lofFilePath} ]]; then echo "[WARN] Logfile (${logFilePath}) already exists!"; fi
+fi
+

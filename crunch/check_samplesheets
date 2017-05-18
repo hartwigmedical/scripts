@@ -8,14 +8,15 @@ else
 fi
     
 for sheet in $sheets; do 
-	currHost=`hostname`
-	currHostShort=`echo $currHost | sed 's/crunch00/c/g'`
-	runBase=`dirname $sheet`
-	runName=`basename $runBase`
+	currHost=$( hostname )
+	currHostShort=$( echo $currHost | sed 's/crunch00/c/g' )
+	runBase=$( dirname $sheet )
+        baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
+	runName=$( basename $runBase )
 	readmeFile=$runBase"/README"
         conversionLogFile=$runBase"/conversionLog.txt"
 	sampleSheetFile=$runBase"/SampleSheet.csv"
-	experimentName=`cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2`
+	experimentName=$( cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
 	
 	echo ""
 	#echo "# ----- HMFreg";
@@ -33,7 +34,8 @@ for sheet in $sheets; do
 	elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
 		echo "# [NOTE] CONVERSION appears to be FINISHED";
 	else
-		currLane=`ls $runBase/Data/Intensities/BaseCalls/Undetermined*gz | grep -Po "L\d{3}" | sort | uniq | tail -1`
+                localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
+		currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
 		echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
 	fi
 

@@ -1,0 +1,12 @@
+
+## SBP upload check
+SBP_UPLOAD_DONE_FILE='./SBP_Uploaded.done'
+if [ ! -e ${SBP_UPLOAD_DONE_FILE} ]; then
+    echo -e "[EXIT] upload to SBP has not finished (no ${SBP_UPLOAD_DONE_FILE} found)!";
+    exit 1
+else
+    echo "[INFO] Cleaning started";
+    rm -r ./Thumbnail_Images/L00*
+    rm -r ./Data/Intensities/BaseCalls/L00*
+    rm ./Data/Intensities/BaseCalls/Undetermined_*
+fi
