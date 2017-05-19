@@ -26,6 +26,10 @@ else
 	echo "Using existing sliced file" ${sliced_vcf_file}    
 fi
 
+rm ${purple_output}/*.fitted
+rm ${purple_output}/*.purity
+rm ${purple_output}/*.regions
+
 cp ${run_dir}/copyNumber/*/freec/*CNVs ${purple_output}/
 cp ${run_dir}/copyNumber/*/freec/*ratio.txt ${purple_output}/
 
