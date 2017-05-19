@@ -25,8 +25,8 @@ splice_donor_variant, stop_gained, frameshift_variant, stop_lost, initiator_codo
   
 **Mutational Load**  
 The total number of missense variants in the genome is reported as the "mutational load". The definition of missense is as follows: a sequence variant, that changes one or more bases, resulting in a different amino acid sequence but where the length is preserved. For all consequence definitions see the [calculated variant consequences table](http://www.ensembl.org/info/genome/variation/predicted_data.html) at Ensembl.
-  
-  
+<br /> 
+<br />
 **Relevant Code**  
 [Source code Consensus Rule Filter](https://github.com/hartwigmedical/hmftools/tree/master/consensus-rule-filter)  
 [Source code Patient Reporter](https://github.com/hartwigmedical/hmftools/tree/master/patient-reporter)
