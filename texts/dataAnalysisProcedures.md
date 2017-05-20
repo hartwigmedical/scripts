@@ -16,8 +16,8 @@ For a variant to be reported **any** of the following needs to be true:
 
 **Details Consequence Rule**  
 In addition to the consensus rule, **all** of the following have to be true:
-- variant is located within one of 118 chosen canonical transcripts of genes (15.5 MBases), the list of genes can be found in any patient report
-- variant has one of the following consequences/effects on the [canonical transcript](http://www.ensembl.org/Help/Glossary?id=346): transcript ablation, transcript_amplification, splice_acceptor_variant,
+- variant is located within one of 118 chosen [canonical transcripts](http://www.ensembl.org/Help/Glossary?id=346) of genes (15.5 MBases), the list of genes can be found in any patient report
+- variant has one of the following consequences/effects on canonical transcript: transcript ablation, transcript_amplification, splice_acceptor_variant,
 splice_donor_variant, splice_region_variant, stop_gained, stop_lost, start_lost, frameshift_variant, inframe_insertion, inframe_deletion, missense_variant.
 
 **Mutational Load**  
