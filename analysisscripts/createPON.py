@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import heapq
-import re
 from collections import namedtuple
 
 TAB = '\t'
@@ -12,13 +11,6 @@ EQUALS = '='
 REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
 
 REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
-
-# TODO perhaps a bit heavy handed
-GT_MATCH = re.compile('[1-9]+')
-def GenotypeFilter(vcf, variant):
-    assert variant.FORMAT.startswith('GT')
-    gt = vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
-    return GT_MATCH.search(gt) is not None
 
 def ScriptName():
     from os import path
@@ -125,7 +117,11 @@ class PONGenerator():
 
     def merge(self, vcf_readers):
         def readAndPushVariant(vcf):
-            self.pushVariantToHeap( vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf )
+            done = False
+            while not done:
+                var = vcf.readVariant()
+                if var is None: return
+                done = self.pushVariantToHeap(var, vcf)
 
         samples = set()
         for vcf in vcf_readers:
@@ -155,8 +151,9 @@ class PONGenerator():
                 previousCount = 1
             else:
                 previousCount += 1
-
-            readAndPushVariant(vcf)
+            
+            if vcf:
+                readAndPushVariant(vcf)
 
         self.writeToOutput(variant, alt, previousCount)
 
@@ -170,19 +167,19 @@ class PONGenerator():
                 return 25
             else:
                 return int(chromosome)
-        if variant:
-            for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1):
-                # check that reference sample shows the alt in GT field
-                if str(alt_idx) not in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]:
-                    continue
-                heapq.heappush(self._heap,
-                    (
-                        (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, alt), # location tuple, sorted on this field
-                        variant,
-                        alt,
-                        vcf
-                    )
+
+        # check that reference sample shows the alt in GT field
+        alts = sorted(alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0])
+        for idx, alt in enumerate(alts):
+            heapq.heappush(self._heap,
+                (
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, alt), # location tuple, sorted on this field
+                    variant,
+                    alt,
+                    vcf if idx==len(alts)-1 else None
                 )
+            )
+        return len(alts) > 0
 
     def writeToOutput(self, variant, alt, count):
         if count < self._minCountThreshold:
