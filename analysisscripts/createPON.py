@@ -173,12 +173,13 @@ class PONGenerator():
         for idx, alt in enumerate(alts):
             heapq.heappush(self._heap,
                 (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS), variant.REF, alt), # location tuple, sorted on this field
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)), # location tuple, sorted on this field
                     variant,
                     alt,
                     vcf if idx==len(alts)-1 else None
                 )
             )
+
         return len(alts) > 0
 
     def writeToOutput(self, variant, alt, count):
