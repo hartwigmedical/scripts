@@ -169,7 +169,7 @@ class PONGenerator():
                 return int(chromosome)
 
         # check that reference sample shows the alt in GT field
-        alts = sorted(alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0])
+        alts = alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
         for idx, alt in enumerate(alts):
             heapq.heappush(self._heap,
                 (
