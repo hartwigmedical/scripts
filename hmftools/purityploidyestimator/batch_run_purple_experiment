@@ -1,9 +1,10 @@
 #!/bin/bash
-starts_with=$1
+db_user=$1
+starts_with=$2
 prefix=`dirname $(readlink $0 || echo $0)`
 
 for file in /data/cpct/runs/*; do
     if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
-        "$prefix"/do_run_purple_experiment $file
+        "$prefix"/do_run_purple_experiment $db_user $file
     fi
 done
