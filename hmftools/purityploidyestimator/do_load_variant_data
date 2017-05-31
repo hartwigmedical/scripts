@@ -1,0 +1,8 @@
+#!/bin/bash
+db_pass=$1
+vcf_file=$2
+
+db_user=hmf
+db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+
+java -cp /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${vcf_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
