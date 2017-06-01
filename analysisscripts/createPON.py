@@ -91,7 +91,7 @@ class VCFReader():
 
     def readVariant(self):
         line = self.file.readline()
-        return self.tuple._make(line.split(TAB)) if line else None
+        return self.tuple._make(line.rstrip().split(TAB)) if line else None
 
     def readVariantMatchingFilter(self, filter):
         variant = self.readVariant()
@@ -122,7 +122,6 @@ class PONGenerator():
             while not done:
                 var = vcf.readVariant()
                 if var is None: return
-                if var.FILTER != 'PASS': continue
                 done = self.pushVariantToHeap(var, vcf)
 
         samples = set()
