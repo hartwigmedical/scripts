@@ -70,7 +70,7 @@ class VCFReader():
 
     def readVariant(self):
         line = self.file.readline()
-        return self.tuple._make(line.split(TAB)) if line else None
+        return self.tuple._make(line.rstrip().split(TAB)) if line else None
 
     def getSamples(self):
         return self.samples
