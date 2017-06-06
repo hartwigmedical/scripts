@@ -29,7 +29,7 @@ pon_filtered_dir="/data/experiments/consensus_filtered_pon/pon_filtered"
 pon_filtered_file=${pon_filtered_dir}"/"${sample}"_consensus_filtered_pon.vcf"
 if [[ ! -e ${pon_filtered_file} ]]; then
     echo "Creating pon filtered file:" ${pon_filtered_file}	
-	bcftools filter -e "MIN(PON_COUNT) > 5" -s PON -m+ $pon_annotated_file > $pon_filtered_file
+	bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ $pon_annotated_file > $pon_filtered_file
 else
 	echo "Pon filtered file" ${pon_filtered_file} "already exists"
 fi
