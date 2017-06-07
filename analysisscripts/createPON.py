@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import heapq
-import re
 from collections import namedtuple
 
 TAB = '\t'
@@ -13,13 +12,6 @@ REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line ar
 
 REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
-# TODO perhaps a bit heavy handed
-GT_MATCH = re.compile('[1-9]+')
-def GenotypeFilter(vcf, variant):
-    assert variant.FORMAT.startswith('GT')
-    gt = vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
-    return GT_MATCH.search(gt) is not None
-
 def ScriptName():
     from os import path
     return path.basename(__file__)
@@ -29,32 +21,34 @@ class VCFWriter():
 
     VARIANT_MISSING_FIELD = '.'
     REQUIRED_INFO_DESCRIPTORS = ('ID', 'Number', 'Type', 'Description')
-    OPTIONAL_INFO_DESCRIPTORS = ('Source', 'Version')
     VALID_INFO_TYPES = ('Integer', 'Float', 'Flag', 'Character', 'String')
 
     InformationField = namedtuple('InformationField', REQUIRED_INFO_DESCRIPTORS)
-    OptionalInformation = namedtuple('OptionalInformationField', OPTIONAL_INFO_DESCRIPTORS)
     Variant = namedtuple('Variant', REQUIRED_VARIANT_FIELDS)
 
     def __init__(self, file):
         self.file = file
         self.writeFileHeader()
+        self.writeFileDateHeader()
         self.writeSourceHeader()
 
     def writeFileHeader(self):
         self.file.write('##fileformat=VCFv4.1\n')
 
+    def writeFileDateHeader(self):
+        from datetime import date
+        self.file.write('##fileDate=%s\n' % date.today().strftime("%Y%m%d"))
+
     def writeSourceHeader(self):
         self.file.write('##source=%s\n' % ScriptName())
 
     def writeInfoHeader(self, **kwargs):
-        source, version = kwargs.pop('Source', None), kwargs.pop('Version', None)
         kwargs['Description'] = '"%s"' % kwargs['Description']
+        assert kwargs['Type'] in VALID_INFO_TYPES
+        self.file.write( '##INFO=<%s>\n' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
 
-        self.file.write( '##INFO=<%s' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
-        if source: self.file.write(',Source="%s"' % source)
-        if version: self.file.write(',Version="%s"' % version)
-        self.file.write('>\n')
+    def writeCustomHeader(self, name, value):
+        self.file.write( '##%s=%s\n' % (name, value) )
 
     def writeVariantHeader(self):
         self.file.write('#%s\n' % TAB.join(REQUIRED_VARIANT_FIELDS))
@@ -97,7 +91,7 @@ class VCFReader():
 
     def readVariant(self):
         line = self.file.readline()
-        return self.tuple._make(line.split(TAB)) if line else None
+        return self.tuple._make(line.rstrip().split(TAB)) if line else None
 
     def readVariantMatchingFilter(self, filter):
         variant = self.readVariant()
@@ -120,42 +114,49 @@ class PONGenerator():
         self._heap = []
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
-        self._outputFile.writeInfoHeader(
-            ID="PON_COUNT",
-            Number=1,
-            Type="Integer",
-            Description="how many samples had the variant",
-            Source=ScriptName()
-        )
-        self._outputFile.writeVariantHeader()
+        self._outputFile.writeInfoHeader(ID="PON_COUNT", Number=1, Type="Integer", Description="how many samples had the variant")
 
     def merge(self, vcf_readers):
         def readAndPushVariant(vcf):
-            self.pushVariantToHeap( vcf.readVariantMatchingFilter(lambda x : GenotypeFilter(vcf, x)), vcf )
+            done = False
+            while not done:
+                var = vcf.readVariant()
+                if var is None: return
+                done = self.pushVariantToHeap(var, vcf)
 
+        samples = set()
         for vcf in vcf_readers:
             # find the reference sample
-            vcf.setReferenceSample( next(sample for sample in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if sample.endswith(suffix)) )
+            sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
+            if sample in samples: # check it is unique
+                continue
+            samples.add(sample)
+            vcf.setReferenceSample( sample )
             # prime the heap
             readAndPushVariant(vcf)
 
+        # finalise headers
+        self._outputFile.writeCustomHeader("PonInputSamples", COMMA.join(samples))
+        self._outputFile.writeVariantHeader()
+
         previousCount = 0
-        location, variant, vcf = self._heap[0]
+        location, variant, alt, vcf = self._heap[0]
 
         while self._heap:
 
-            previousLocation, previousVariant = location, variant
-            location, variant, vcf = heapq.heappop(self._heap)
+            previousLocation, previousVariant, previousAlt = location, variant, alt
+            location, variant, alt, vcf = heapq.heappop(self._heap)
 
             if location > previousLocation:
-                self.writeToOutput(previousVariant, previousCount)
+                self.writeToOutput(previousVariant, previousAlt, previousCount)
                 previousCount = 1
             else:
                 previousCount += 1
+            
+            if vcf:
+                readAndPushVariant(vcf)
 
-            readAndPushVariant(vcf)
-
-        self.writeToOutput(variant, previousCount)
+        self.writeToOutput(variant, alt, previousCount)
 
     def pushVariantToHeap(self, variant, vcf):
         def chromosomeToNumber(chromosome):
@@ -167,23 +168,29 @@ class PONGenerator():
                 return 25
             else:
                 return int(chromosome)
-        if variant:
+
+        # check that reference sample shows the alt in GT field
+        alts = [ alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0] ]
+        for idx, alt in enumerate(alts):
             heapq.heappush(self._heap,
                 (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS)), # location tuple, sorted on this field
+                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)), # location tuple, sorted on this field
                     variant,
-                    vcf
+                    alt,
+                    vcf if idx==len(alts)-1 else None
                 )
             )
 
-    def writeToOutput(self, variant, count):
+        return len(alts) > 0
+
+    def writeToOutput(self, variant, alt, count):
         if count < self._minCountThreshold:
             return
         self._outputFile.writeVariant(
             CHROM = variant.CHROM,
             POS = variant.POS,
             REF = variant.REF,
-            ALT = variant.ALT.split(COMMA, 1)[0], # TODO only first alt (why?)
+            ALT = alt,
             FILTER = 'PASS',
             INFO = 'PON_COUNT=%i' % count
         )

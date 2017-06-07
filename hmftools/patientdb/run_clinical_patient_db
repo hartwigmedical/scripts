@@ -1,0 +1,7 @@
+#!/bin/bash
+db_user=$1
+db_pass=$2
+
+patient_db_dir=/data/common/tools/patient-db_v1.0
+
+java -jar "$patient_db_dir"/patient-db.jar -clinical -ecrf /data/ecrf/cpct_ecrf.xml -runs_dir /data/cpct/runs/ -db_user $db_user -db_pass $db_pass -db_url mysql://localhost:3306/hmfpatients?serverTimezone=CET -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv -lims_csv "$patient_db_dir"/csv/lims.csv -lims_old_csv "$patient_db_dir"/csv/lims-old.csv -lims_umcu_csv "$patient_db_dir"/csv/lims-umcu.csv

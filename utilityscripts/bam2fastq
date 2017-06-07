@@ -2,7 +2,7 @@
 
 MEM_USE=50
 PIGZ_THREADS=8
-PICARD_DIR=/data/common/tools/picard-tools_v1.135
+PICARD_DIR=/data/tools/picard-tools_v1.141
 OUT_DIR=./fastq
 IN_BAM=$1
 

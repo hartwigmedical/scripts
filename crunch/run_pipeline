@@ -72,8 +72,8 @@ function main() {
 }
 
 function choose_input_mode() {
-    local fastq_files=$(find ${input} -type f -name '*.fastq*')
-    local bam_files=$(find ${input} -type f -name '*.bam*')
+    local fastq_files=$(find -L ${input} -type f -name '*.fastq*')
+    local bam_files=$(find -L ${input} -type f -name '*.bam*')
 
     if [ -n "${fastq_files}" ] && [ -z "${bam_files}" ]; then
         echoerr "INPUT MODE: FASTQ"

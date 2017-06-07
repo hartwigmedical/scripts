@@ -1,0 +1,11 @@
+#!/bin/bash
+db_pass=$1
+starts_with=$2
+prefix=`dirname $(readlink $0 || echo $0)`
+
+for file in /data/cpct/runs/*; do
+    if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
+        "$prefix"/do_run_purple_experiment $db_pass $file
+        "$prefix"/do_load_somatic_variants $db_pass $file
+    fi
+done
