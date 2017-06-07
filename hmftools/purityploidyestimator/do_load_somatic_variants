@@ -2,6 +2,10 @@
 db_pass=$1
 run_dir=$2
 
+db_user=hmf
+db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
+
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 echo "Loading variant data for sample:" $sample
 
@@ -34,7 +38,4 @@ else
 	echo "Pon filtered file" ${pon_filtered_file} "already exists"
 fi
 
-
-db_user=hmf
-db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
-java -cp /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_filtered_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} 
+java -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_filtered_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} 

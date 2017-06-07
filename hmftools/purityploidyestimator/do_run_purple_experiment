@@ -5,6 +5,7 @@ run_dir=$2
 
 db_user=hmf
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 
 run=${run_dir: 16}
 patient=${run: -12}
@@ -34,6 +35,6 @@ fi
 rm ${purple_output}/*.purple*
 cp ${run_dir}/copyNumber/*/freec/*ratio.txt ${purple_output}/
 
-java -Xmx8G -Xms4G -jar /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar -run_dir $purple_output  -vcf_extension annotatedSLICED.vcf -freec_dir $purple_output -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+java -Xmx8G -Xms4G -jar ${purple_jar} -run_dir $purple_output  -vcf_extension annotatedSLICED.vcf -freec_dir $purple_output -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
 
 rm ${purple_output}/*ratio.txt

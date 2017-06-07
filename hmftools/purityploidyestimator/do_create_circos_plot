@@ -4,11 +4,12 @@ sample=$2
 
 db_user=hmf
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 output_dir=/data/experiments/circos
-circos_bin=/data/common/tools/circos-0.69-5/bin
+circos_bin=/data/common/tools/circos_v0.69.5/bin
 
 echo "Generating circos data"
-java -cp /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar com.hartwig.hmftools.purple.GenerateCircosData -output_dir ${output_dir}/data -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} -sample ${sample}
+java -cp ${purple_jar} com.hartwig.hmftools.purple.GenerateCircosData -output_dir ${output_dir}/data -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} -sample ${sample}
 
 echo "Substituting SAMPLE name for" ${sample}
 sed "s/SAMPLE/${sample}/g" ${output_dir}/etc/circos.template > ${output_dir}/etc/${sample}.circos.conf
