@@ -1,6 +1,6 @@
 #!/bin/sh
 
-patient_reporter_dir=/data/common/tools/patientreporter_v1.0
+patient_reporter_dir=/data/common/tools/patientreporter_v2.0
 
 cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 lims_csv=/data/lims/lims_data.csv
