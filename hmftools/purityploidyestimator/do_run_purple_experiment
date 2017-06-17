@@ -2,12 +2,12 @@
 
 db_pass=$1
 run_dir=$2
+run=$3
 
 db_user=hmf
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 
-run=${run_dir: 16}
 patient=${run: -12}
 
 purple_output=${run_dir}/purple
