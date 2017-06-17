@@ -1,9 +1,4 @@
 #!/bin/bash
 
-db_pass=$1
-run_dir=$2
-
 prefix=`dirname $(readlink $0 || echo $0)`
-do_run_purple_experiment $1 $2
-"$prefix"/do_run_patient_reporter -run_dir $2
-do_load_somatic_variants $1 $2
+"$prefix"/do_run_patient_reporter -run_dir "$@"
