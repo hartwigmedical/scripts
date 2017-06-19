@@ -1,8 +1,10 @@
 #!/bin/bash
-db_pass=$1
-run_dir=$2
+run_dir=$1
 
-db_user=hmf
+# Database details
+credentials=/data/common/tools/patient-db_v1.0/credentials
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 
@@ -38,4 +40,4 @@ else
 	echo "Pon filtered file" ${pon_filtered_file} "already exists"
 fi
 
-java -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_filtered_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} 
+java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_filtered_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
