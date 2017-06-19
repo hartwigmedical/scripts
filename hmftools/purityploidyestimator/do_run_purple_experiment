@@ -1,7 +1,7 @@
 #!/bin/bash
 
 run_dir=$1 && shift
-run=basename ${run_dir}
+run=$(basename ${run_dir})
 
 credentials=/data/common/tools/patient-db_v1.0/credentials
 db_user=$(awk '/^user/ {print $2}' ${credentials})
