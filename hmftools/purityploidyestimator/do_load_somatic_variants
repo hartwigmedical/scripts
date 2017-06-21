@@ -8,36 +8,32 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 
-sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
-echo "Loading variant data for sample:" $sample
+# Files
+vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
+vcf_base=${vcf_in%.vcf}
 
-consensus_dir="/data/experiments/consensus_filtered"
-consensus_file=${consensus_dir}"/"${sample}"_consensus_filtered.vcf"
-if [[ ! -e ${consensus_file} ]]; then
-    echo "Creating consensus_file:" ${consensus_file}
-    apply_consensus_rule_to_run ${run_dir} ${consensus_file}
-else
-    echo "Consensus file" ${consensus_file} "already exists"
-fi
+sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+echo "Loading variant data for sample: ${sample}"
+
 
 PON=/data/common/dbs/PON_v1.0/PON.vcf
-pon_annotated_dir="/data/experiments/consensus_filtered_pon/pon_annotated"
-pon_annotated_file=${pon_annotated_dir}"/"${sample}"_consensus_filtered.vcf"
-if [[ ! -e ${pon_annotated_file} ]]; then
-    echo "Creating pon annotated file:" ${pon_annotated_file}	
-	pypy /data/common/repos/scripts/analysisscripts/annotatePON.py -i $consensus_file -o $pon_annotated_file -p $PON
+pon_file=${vcf_base}_consensus_filtered_pon.vcf
+if [[ ! -e ${pon_file} ]]; then
 
+    consensus_file=${vcf_base}_consensus_filtered.vcf
+    tmp_file=${vcf_base}_tmp.vcf
+
+    echo "Applying consensus rule"
+    apply_consensus_rule_to_file ${vcf_in} ${consensus_file}
+
+    echo "Creating pon file: ${pon_file}"
+    pypy /data/common/repos/scripts/analysisscripts/annotatePON.py -i $consensus_file -p $PON -o $tmp_file
+    bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ $tmp_file > $pon_file
+
+    rm $tmp_file
+    rm $consensus_file
 else
-	echo "Pon annotated file" ${pon_annotated_file} "already exists"
+	echo "Pon file ${pon_file} already exists"
 fi
 
-pon_filtered_dir="/data/experiments/consensus_filtered_pon/pon_filtered"
-pon_filtered_file=${pon_filtered_dir}"/"${sample}"_consensus_filtered_pon.vcf"
-if [[ ! -e ${pon_filtered_file} ]]; then
-    echo "Creating pon filtered file:" ${pon_filtered_file}	
-	bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ $pon_annotated_file > $pon_filtered_file
-else
-	echo "Pon filtered file" ${pon_filtered_file} "already exists"
-fi
-
-java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_filtered_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
