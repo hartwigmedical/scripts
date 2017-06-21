@@ -1,5 +1,5 @@
 #!/bin/bash
-vcf_file=$1
+run_dir=$1
 
 # Database details
 credentials=/data/common/tools/patient-db_v1.0/credentials
@@ -8,7 +8,10 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
 
+zipped=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
+unzipped=${zipped%.vcf.gz}.unzipped.vcf
 
-java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.sv.LoadStructuralVariants -vcf_file ${vcf_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
-
+gunzip -c $zipped > $unzipped
+java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.sv.LoadStructuralVariants -vcf_file ${unzipped} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+rm $unzipped
 

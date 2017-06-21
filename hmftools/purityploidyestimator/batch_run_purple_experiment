@@ -6,5 +6,6 @@ for file in /data/cpct/runs/*; do
     if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
         "$prefix"/do_run_purple_experiment $file $@
         "$prefix"/do_load_somatic_variants $file
+        "$prefix"/do_load_structural_variants $file
     fi
 done
