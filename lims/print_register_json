@@ -1,0 +1,312 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp;
+use JSON;
+use 5.010.000;
+
+my $DATETIME = localtime;
+my $SCRIPT = basename $0;
+my $OUT_SEP = "\t";
+my $NA_CHAR = "NA";
+
+my $GER_INI = "KG.ini";
+my $SOM_INI = "Somatic.ini";
+
+my $Q30_LIM = 75; # q30 limit is currently same for all samples
+my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
+
+my $LIMS_IN_FILE = '/data/lims/lims.json';
+my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
+
+## -----
+## Gather input
+## -----
+my %opt = ();
+GetOptions (
+  "samplesheet=s"  => \$opt{ samplesheet },
+  "outdir=s"       => \$JSON_BASE_DIR,
+  "limsjson=s"     => \$LIMS_IN_FILE,
+  "debug"          => \$opt{ debug },
+  "help|h"         => \$opt{ help },
+  "verbose"        => \$opt{ verbose }
+) or die "Error in command line arguments\n";
+my @ids = @ARGV;
+
+my $JSON_DONE_DIR = $JSON_BASE_DIR.'/registered';
+
+my $HELP =<<HELP;
+
+  Description
+    Parses LIMS JSON file and writes JSON(s) to perform 
+    registering at SBP. It does check whether the to be 
+    written JSON already exists in either the output location
+    or the "register done" location (see below).
+    
+  Usage
+    $SCRIPT -samplesheet \${samplesheetpath}
+      eg: $SCRIPT -samplesheet /data/run/SampleSheet.csv
+    
+    $SCRIPT \${sample_id} [\${sample_id2} \${sample_id_n}]
+      eg: $SCRIPT FR12345678
+      eg: $SCRIPT FR11111111 FR22222222 FR33333333
+    
+  Options
+    -outdir   [$JSON_BASE_DIR]
+    -limsjson [$LIMS_IN_FILE] 
+
+HELP
+
+print $HELP and exit(0) if $opt{ help };
+print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
+die "[EXIT] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
+
+## -----
+## MAIN
+## -----
+say "[INFO] START of script $SCRIPT";
+say "[INFO] DateTime: $DATETIME";
+
+if ( defined $opt{ samplesheet } ){
+  say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
+  my $ssheet_ids = addSamplesFromSamplesheet( $opt{ samplesheet } );
+  push( @ids, @$ssheet_ids );
+}
+
+say "[INFO] InputCount: ".scalar(@ids);
+say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
+my $lims = readJson( $LIMS_IN_FILE );
+my $samples = $lims->{ 'samples' };
+my %stats = ();
+my @toprint = ();
+
+foreach my $sample_id ( @ids ){
+    say "[INFO] -----> working on $sample_id";
+    my $return = processSample( $sample_id, $samples, \%stats, \@toprint );
+    $stats{ $return }++;
+}
+
+say "[STAT] -----";
+say "[STAT] Result Stats:";
+
+foreach my $reason ( keys %stats ){
+    my $count = $stats{ $reason };
+    say "[STAT]   $reason = $count";
+}
+
+say "[INFO] -----";
+say "[INFO] Info for data lims (check if samples already exist in gdoc!):";
+  print join( "\t", @$_ )."\n" foreach @toprint;
+say "[INFO] DONE with script $SCRIPT";
+
+## -----
+## /MAIN
+## -----
+    
+sub addSamplesFromSamplesheet{
+    my ($file) = @_;
+    
+    my %head = ();
+    my %data = ();
+    my $currblock = '';
+    
+    open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
+    while ( <$samplesheet_fh> ){
+        chomp;
+        next if $_ eq '' or $_ =~ /^\,+$/;
+        if ( $_ =~ /^\[(Header|Reads|Settings|Data)\]/ ){
+            $currblock = $1;
+        }
+        elsif ( $currblock eq 'Header' ){
+            my ($field, $content) = split /\,/;
+            $head{ $field } = $content;
+        }
+        elsif ( $currblock eq 'Data' ){
+            my ($lane, $id, $name, $plate, $well, $bcname, $bcseq, $project, $desc) = split( ',', $_ );
+            next if $id eq 'Sample_ID'; # skip data header line 
+            $data{ $id }{ 'name' } = $name;
+        }
+    }
+    close $samplesheet_fh;
+    
+    my $hmfRunName = $head{ 'ExperimentName' } || $NA_CHAR;
+    say "[INFO] Found run $hmfRunName in SampleSheet";
+    my @out = sort keys %data;
+    return( \@out );
+}
+
+sub processSample{
+    my ($sample_id, $lims, $stats, $toprint) = @_;
+    if ( not exists $lims->{ $sample_id } ){
+        warn "[WARN] Sample not present in LIMS ($sample_id)\n";
+        return "NoJsonMade_sampleDoesNotExistsInLims";
+    }
+    my $sample = $lims->{ $sample_id };
+    
+    my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
+    my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
+    my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
+    #my $barcode    = $sample_id; # eg FR12345678
+    my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
+    my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
+    my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic
+    my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
+    my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
+    
+    my @data_for_itlims = ( $label, $submission, $barcode, $name, "BFX: Json registration" );
+    push( @$toprint, \@data_for_itlims );
+    
+    ## init the json info
+    my %json_data = ();
+    
+    say "[INFO] INPUT:  $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
+    
+    ## fill json based on analysis type
+    if ( $analysis eq 'NoAnalysis' ){
+        my $set = join( "_", $submission, $barcode, $name );
+        say "[INFO] SET: $set";
+        $json_data{ 'set_name' } = $set;
+        $json_data{ 'entity' } = $entity;
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
+    }
+    elsif ( $analysis eq 'RnaAnalysis' ){
+        warn "[WARN] RESULT: Type $analysis not yet supported\n";
+        return "NoJsonMade_rnaTypeNotSupported";
+    }
+    elsif ( $analysis eq 'Somatic_T' ){
+        
+        my $name_ref = $patient.'R';
+        my $ref_obj  = getSampleByStringForField( $lims, $name_ref, 'sample_name' );
+
+        if ( not defined $ref_obj ){
+            warn "[WARN] RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)\n";
+            return "NoJsonMade_RnotFoundForSomaticT";
+        }
+        my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
+        my $yield_ref   = getValueByKey( $ref_obj, 'yield' );
+        my $set = join( "_", $submission, $barcode_ref, $barcode, $patient );
+        say "[INFO] SET: $set";
+        
+        $json_data{ 'ini' } = $SOM_INI;
+        $json_data{ 'set_name' } = $set;
+        $json_data{ 'entity' } = $entity;
+        
+        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F );
+    }
+    elsif( $analysis eq 'Germline' ){
+        my $set = join( "_", $submission, $barcode, $name );
+        say "[INFO] SET: $set";
+        $json_data{ 'ini' } = $GER_INI;
+        $json_data{ 'set_name' } = $set;
+        $json_data{ 'entity' } = $entity;
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
+    }
+    elsif ( $analysis eq 'Somatic_R' ){
+        warn "[WARN] RESULT: SKIPPING ($sample_id) because is somatic ref sample ($name)\n";
+        return "NoJsonMade_isSomaticR";
+    }
+    else{
+        warn "[WARN] RESULT: Somehow no (correct) analysis type was defined for input ($sample_id). Fix it.\n";
+        return "NoJsonMade_hasWrongAnalsisType";
+    }
+
+    ## output json
+    my $json_file = $json_data{ 'set_name' }.'.json';
+    my $json_path = $JSON_BASE_DIR.'/'.$json_file;
+    my $json_done_path = $JSON_DONE_DIR.'/'.$json_file;
+    if ( -f $json_path ){
+        warn "[WARN] RESULT: SKIPPING ($sample_id) because file exists ($json_path)\n";
+        return "NoJsonMade_alreadyExists" ;
+    }
+    if ( -f $json_done_path ){
+        warn "[WARN] RESULT: SKIPPING ($sample_id) because file exists ($json_done_path)\n";
+        return "NoJsonMade_alreadyExists" 
+    }
+    
+    printSetJson( \%json_data, $json_path );
+    say "[INFO] RESULT: OK";
+    return "OK_JSON_MADE";
+}
+
+sub printSetJson{
+    my ($data, $out_path) = @_;
+    my $json_obj = JSON->new->allow_nonref;
+    my $json_txt = $json_obj->pretty->encode( $data );
+    say "[INFO] JSON: $out_path";
+    open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
+        print OUT $json_txt;
+    close OUT;
+}
+
+sub readJson{
+    my ($json_file) = @_;
+    my $json_txt = read_file( $json_file );
+    my $json_obj = decode_json( $json_txt );
+    return( $json_obj );
+}
+
+sub getSampleByStringForField{
+    my ($info, $search_string, $search_field) = @_;
+    
+    foreach my $sample_id ( keys %$info ){
+        my $field_value = $info->{ $sample_id }{ $search_field };
+        if ( $field_value eq $search_string ){
+            return $info->{ $sample_id };
+        }
+    }
+    warn "[WARN] $search_string not found in field $search_field of any record\n";
+}
+
+sub getValueByKey{
+    my ($info, $key) = @_;
+    if ( not defined $info->{ $key } ){
+        say "[EXIT] Cannot find field \"$key\" in datastructure:";
+        print Dumper( $info );
+        die "[EXIT] Unable to get field $key\n"
+    }
+    else{
+        return( $info->{ $key } );
+    }
+}
+
+sub addEntityToJsonData{
+    my ($json_data, $submission, $patient, $dict1, $dict2) = @_;
+    
+    ## CPCT and DRUP are continues: create entity by centerid
+    if ( $patient =~ m/^(CPCT|DRUP)(\d{2})(\d{2})(\d{4})$/ ){
+        my ( $umbrella_study, $study_id, $center_id, $patient_id ) = ( $1, $2, $3, $4 );
+        if ( exists $dict1->{$center_id} ){
+            my $center_name = $dict1->{$center_id};
+            $json_data->{ 'entity' } = $umbrella_study."_".$center_name;
+        }
+        else{
+            die "[EXIT] center id not found in hash ($center_id)\n"; 
+        }
+    }
+    ## otherwise entity must have been set by LAB team in $SUBMISSION_TO_ENTITY_FILE
+    elsif( exists $dict2->{$submission} ){
+        my $entity = $dict2->{$submission};
+        $json_data->{ 'entity' } = $entity;
+    }
+    ## no entity found: should not happen
+    else{
+        die "[EXIT] entity not found for submission ($submission) of patient ($patient)\n"; 
+    }
+}
+
+sub addSampleToJsonData{
+    my ($store, $submission, $barcode, $type, $q30, $yield) = @_;
+    my %tmp = (
+        'barcode'    => $barcode,
+        'submission' => $submission,
+        'type'       => $type,
+        'q30_req'    => $q30,
+        'yld_req'    => $yield,
+    );
+    push( @{$store->{ 'samples' }}, \%tmp );
+}
+
