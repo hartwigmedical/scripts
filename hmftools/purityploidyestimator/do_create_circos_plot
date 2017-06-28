@@ -16,4 +16,4 @@ mkdir -p ${output_dir}/etc
 java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.GenerateCircosData -output_dir ${output_dir} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} -sample ${sample}
 
 echo "Generating plot"
-${circos_bin}/circos -conf ${output_dir}/etc/${sample}.circos.conf -outputdir ${output_dir}/ -outputfile ${sample}.circos.png -debug_group summary,timer > ${output_dir}/log/run.out
+${circos_bin}/circos -conf ${output_dir}/etc/${sample}.circos.conf -nosvg -outputdir ${output_dir}/ -outputfile ${sample}.circos.png -debug_group summary,timer > ${output_dir}/log/run.out
