@@ -323,6 +323,7 @@ sub parseLimsCPCT{
             die "[EXIT] Sample $sample_name from CPCT lims cannot be read by somatic regex\n";
             next;
         }
+        $row_info{ 'project_name' } = $row_info{ 'submission' };
         
         my $unique = $row_info{ 'sample_id' };
         my $isSkipValue = isValueToSkip( $unique );
