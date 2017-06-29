@@ -1,0 +1,23 @@
+#!/bin/bash
+
+credentials=/data/common/tools/patient-db_v1.0/credentials
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+
+query="
+  SELECT p.sampleId
+    FROM purity p, comprehensiveSomaticVariant v
+   WHERE p.sampleId = v.sampleId
+   GROUP BY 1
+  HAVING count(v.sampleId) < 70000"
+echo ${query}
+
+
+cmd="mysql -u ${db_user} -p${db_pass} -D hmfpatients -se \"${query}\""
+myresult=$(eval $cmd)
+for result in $myresult; do
+  echo ${result}
+  do_create_circos_plot ${result}
+done
+
