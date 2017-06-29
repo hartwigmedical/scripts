@@ -37,7 +37,9 @@ ${SCRIPT} --out ${vcfOutDir} --des ${DESIGN} --csv ${csvFile}
 vcfCount=$( ls ${vcfOutDir} | wc -l )
 echo "[INFO] Total of ${vcfCount} VCFs created"
 echo "[INFO] You might want to run the following:"
-echo " snpcheck_compare_vcfs ${vcfOutDir}/*vcf"
+echo "  snpcheck_compare_vcfs ${vcfOutDir}/*vcf"
 echo "[INFO] Or with tab delim and extra info"
-echo " snpcheck_compare_vcfs -tab -print ${vcfOutDir}/*vcf"
+echo "  snpcheck_compare_vcfs -tab -print ${vcfOutDir}/*vcf"
+echo "[INFO] Also copy the results to SBP dir (and dont forget to sync to SBP)"
+echo "  sudo cp -r ${vcfOutDir} /data/schuberg/snpcheckvcfupload/"
 
