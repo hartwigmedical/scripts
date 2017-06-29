@@ -36,3 +36,8 @@ mkdir ${vcfOutDir}
 ${SCRIPT} --out ${vcfOutDir} --des ${DESIGN} --csv ${csvFile}
 vcfCount=$( ls ${vcfOutDir} | wc -l )
 echo "[INFO] Total of ${vcfCount} VCFs created"
+echo "[INFO] You might want to run the following:"
+echo " snpcheck_compare_vcfs ${vcfOutDir}/*vcf"
+echo "[INFO] Or with tab delim and extra info"
+echo " snpcheck_compare_vcfs -tab -print ${vcfOutDir}/*vcf"
+
