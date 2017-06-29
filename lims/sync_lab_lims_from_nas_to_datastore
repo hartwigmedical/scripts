@@ -11,7 +11,7 @@ limsRestFrom=$NAS_DIR/HMF-FOR-001*xlsx
 limsRestTo=$OUT_DIR/backup/$DATESTR"_LimsReceivedSamp.xlsx"
 
 ## retrieve file
-echo "[INFP] About to sync files from nas to datastore"
+echo "[INFO] About to sync files from nas to datastore"
 scp nas:$limsCpctFrom $limsCpctTo
 scp nas:$limsRestFrom $limsRestTo
 chmod -R 664 $OUT_DIR/backup/*
