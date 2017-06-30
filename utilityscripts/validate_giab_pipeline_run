@@ -1,0 +1,99 @@
+#!/bin/bash
+
+thisScript=$( basename $0 )
+valBase='/data/giab/validation/sets'
+gatkPath='/data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar'
+refFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
+truthVersion='NIST_v3.2.2';
+truthDirPath="/data/giab/truth/"${truthVersion}"/"
+truthBedName='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed'
+truthBedPath=${truthDirPath}/${truthBedName}
+truthVcfName='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.vcf.gz'
+truthVcfPath=${truthDirPath}/${truthVcfName}
+truthVcfPathSnv=$( echo ${truthVcfPath} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/' )
+truthVcfPathInd=$( echo ${truthVcfPath} | sed 's/\.vcf\.gz/_IND\.vcf.\gz/' )
+
+## init checks
+if [[ ! -w ${valBase} ]]; then echo "[EXIT] validation base not writable (${valBase})"; exit 1; fi
+if [[ ! -f ${gatkPath} ]]; then echo "[EXIT] GATK JAR not available (${gatkPath})"; exit 1; fi
+if [[ ! -f ${refFasta} ]]; then echo "[EXIT] Ref fasta not available (${refFasta})"; exit 1; fi
+if [[ ! -f ${truthVcfPath} ]]; then echo "[EXIT] truth VCF not available (${truthVcfPath})"; exit 1; fi
+if [[ ! -f ${truthBedPath} ]]; then echo "[EXIT] truth BED not available (${truthBedPath})"; exit 1; fi
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Validate GIAB run"
+    echo " Usage: $thisScript <path-to-pipeline-dir>"
+    echo "        $thisScript /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG/"
+    echo "-----"
+    exit 1
+fi
+runPath=$1
+
+## -----
+## Checks and Setup
+## -----
+if [[ ! -d ${runPath} ]]; then echo "[EXIT] Provided run path does not exist?"; exit 1; fi
+
+germlineVcf=$( find $runPath -name "*.filtered_variants.vcf" )
+if [[ ! -f ${germlineVcf} ]]; then echo "[EXIT] No germline filtered variants VCF in run ($runPath)?"; exit 1; fi
+
+vcfBaseName=$( basename $germlineVcf )
+runName=$( basename $runPath )
+outputDir=${valBase}/${runName}_Validation
+if [[ -d ${outputDir} ]]; then echo "[EXIT] OutputDir already exists ($outputDir)?"; exit 1; fi
+
+tmpDir=${outputDir}/tmp
+echo "[INFO] Creating output dir (${outputDir})"
+mkdir -p ${outputDir}
+mkdir -p ${tmpDir}
+echo "[INFO] Copying germline vcf"
+cp ${germlineVcf} $outputDir
+
+## -----
+## VCF preparation
+## -----
+startVcfPath=${outputDir}/${vcfBaseName}
+startVcfName=$( basename $startVcfPath )
+echo "[INFO] Running RTGTools bgzip on ${startVcfName}"
+rtg bgzip ${startVcfPath}
+startVcfPath=${startVcfPath}'.gz'
+startVcfName=${startVcfName}'.gz'
+echo "[INFO] Running RTGTools index on ${startVcfName}"
+rtg index -f vcf ${startVcfPath}
+
+## -----
+## Use GATK SelectVariants to separate SNVs and INDELs
+## -----
+snpVcfPath=${outputDir}"/SNP_"${startVcfName}
+snpVcfName=$( basename $snpVcfPath )
+indVcfPath=${outputDir}"/IND_"${startVcfName}
+indVcfName=$( basename $indVcfPath )
+
+if [[ -f ${snpVcfPath} ]]; then
+    echo "[INFO] SNP vcf already exist, skipping (${snpVcfPath})"
+else
+    echo "[INFO] Running GATK to create SNP vcf (${snpVcfName})"
+    java -Djava.io.tmpdir=${tmpDir} -jar ${gatkPath} -T SelectVariants -R ${refFasta} -L ${truthBedPath} --excludeNonVariants --removeUnusedAlternates -V ${startVcfPath} -selectType SNP -o ${snpVcfPath}
+fi
+
+## no INDELs for now
+#if [[ -f ${indVcfPath} ]]; then
+#    echo "[INFO] INDEL vcf already exist, skipping (${indVcfPath})"
+#else
+#    echo "[INFO] Running GATK to create INDEL vcf (${indVcfName})"
+#    java -jar ${gatkPath} -T SelectVariants -R ${refFasta} -L ${truthBedPath} --excludeNonVariants --removeUnusedAlternates -V ${startVcfPath} -selectType INDEL -o ${indVcfPath}
+#fi
+
+
+## -----
+## run RTGtools vcfeval
+## -----
+callName=$( echo ${snpVcfName} | sed 's/\.filtered_variants\.vcf\.gz//' )
+rtgOutName=${truthVersion}'_vs_'${callName}'_truthBed';
+rtgOutPath=${outputDir}/${rtgOutName}
+echo "[INFO] Running RTGtools vcfeval (${rtgOutName})"
+rtg vcfeval -t ${rtgSdfPath} -T 8 --baseline=${truthVcfPathSnv} --calls=${snpVcfPath} --bed-regions=${truthBedPath} -o ${rtgOutPath}
+cat ${rtgOutPath}/summary.txt | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold,"$2; print "True-pos,"$3; print "False-pos,"$4; print "False-neg,"$5; print "Precision,"$6; print "Sensitivity,"$7; print "F-measure,"$8 }' > ${rtgOutPath}/summary_transposed.csv
+echo "[INFO] DONE: Output should be in ${rtgOutPath}"
+cat ${rtgOutPath}/summary_transposed.csv 
