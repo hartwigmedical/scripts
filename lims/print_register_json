@@ -166,11 +166,10 @@ sub processSample{
     say "[INFO] INPUT:  $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
 
     my $date = localtime->strftime('%y%m%d');
-    print $date;
 
     ## fill json based on analysis type
     if ( $analysis eq 'NoAnalysis' ){
-        my $set = join( "_", $submission, $barcode, $name );
+        my $set = join("_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
         $json_data{ 'set_name' } = $set;
         $json_data{ 'entity' } = $entity;
@@ -191,7 +190,7 @@ sub processSample{
         }
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $yield_ref   = getValueByKey( $ref_obj, 'yield' );
-        my $set = join( "_", $submission, $barcode_ref, $barcode, $patient );
+        my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
         say "[INFO] SET: $set";
         
         $json_data{ 'ini' } = $SOM_INI;
@@ -202,7 +201,7 @@ sub processSample{
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F );
     }
     elsif( $analysis eq 'Germline' ){
-        my $set = join( "_", $submission, $barcode, $name );
+        my $set = join( "_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
         $json_data{ 'ini' } = $GER_INI;
         $json_data{ 'set_name' } = $set;
