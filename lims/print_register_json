@@ -5,6 +5,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use File::Slurp;
+use Time::Piece;
 use JSON;
 use 5.010.000;
 
@@ -163,7 +164,10 @@ sub processSample{
     my %json_data = ();
     
     say "[INFO] INPUT:  $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
-    
+
+    my $date = localtime->strftime('%y%m%d');
+    print $date;
+
     ## fill json based on analysis type
     if ( $analysis eq 'NoAnalysis' ){
         my $set = join( "_", $submission, $barcode, $name );
