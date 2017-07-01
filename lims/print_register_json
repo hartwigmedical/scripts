@@ -152,7 +152,7 @@ sub processSample{
     #my $barcode    = $sample_id; # eg FR12345678
     my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
     my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
-    my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic
+    my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
     
@@ -254,7 +254,7 @@ sub getSomaticRSampleByStringForField{
     
     foreach my $sample_id ( keys %$info ){
         my $field_value = $info->{ $sample_id }{ $search_field };
-        if (( $field_value eq $search_string ) and ( $info->{ $sample_id }( 'analysis_type' ) eq 'Somatic_R')){
+        if (( $field_value eq $search_string ) and ( $info->{ $sample_id }{ 'analysis_type' } eq 'Somatic_R')){
             return $info->{ $sample_id };
         }
     }
