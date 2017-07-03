@@ -392,7 +392,9 @@ sub parseLimsRest{
         h_col => 1,
     );
     my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
-    
+
+    print "parseLimsRest";
+
     foreach my $row ( $config{ h_row }+1 .. $max_row ) {
 
         my %row_info = ();
@@ -441,6 +443,7 @@ sub parseLimsRest{
         
         ## fix excel epoch time
         my @date_fields = qw ( arrival_date );
+
         $row_info{ $_ } = fixExcelDateFormat( $row_info{ $_ } ) foreach @date_fields;
         
         ## store sample info at uniqe id
