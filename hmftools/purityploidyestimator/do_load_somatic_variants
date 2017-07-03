@@ -7,6 +7,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
+high_confidence_bed=/data/common/tools/purple_v1.0/bed/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed
 
 # Files
 vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
@@ -36,4 +37,4 @@ else
 	echo "Pon file ${pon_file} already exists"
 fi
 
-java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -vcf_file ${pon_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -high_confidence_bed ${high_confidence_bed} -vcf_file ${pon_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
