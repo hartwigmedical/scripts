@@ -393,8 +393,6 @@ sub parseLimsRest{
     );
     my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
 
-    print "parseLimsRest";
-
     foreach my $row ( $config{ h_row }+1 .. $max_row ) {
 
         my %row_info = ();
@@ -454,7 +452,6 @@ sub parseLimsRest{
 
 sub fixExcelDateFormat{
     my ($old_format) = @_;
-    print $old_format;
     my $datetime = DateTime::Format::Excel->parse_datetime( $old_format );
     my $new_format = $datetime->dmy(); # eg 28-02-2003
     return $new_format;
