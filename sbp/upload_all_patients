@@ -1,5 +1,0 @@
-#!/bin/bash
-cd /data/schuberg/uploadsymlinks
-for patient in *; do
-	do_upload_patient ${patient}
-done

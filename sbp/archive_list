@@ -1,3 +1,0 @@
-#!/bin/bash
-
-sbp s3 ls s3://${ARCHIVE_BUCKET}/ --profile download "$@"

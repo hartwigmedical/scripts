@@ -1,3 +1,0 @@
-#!/bin/bash
-
-sbp s3 ls s3://${INPUT_BUCKET}/ --profile upload "$@"

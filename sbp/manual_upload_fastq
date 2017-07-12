@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sbp s3 sync /data/schuberg/fastq_upload/*.fastq.gz s3://hmf_fastq_storage/ --profile upload --grants read=id=${SBP_DOWNLOAD_CANONICAL} readacl=id=${SBP_DOWNLOAD_CANONICAL}

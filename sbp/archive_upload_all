@@ -1,6 +1,0 @@
-#!/bin/bash
-
-cd /data/schuberg/archivesymlinks
-for i in *; do
-	do_archive_upload_patient ${i}
-done
