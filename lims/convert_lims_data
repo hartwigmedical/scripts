@@ -80,7 +80,6 @@ my %SHIP_TRANSLATIONS = (
   "Material storage status" => 'lab_storage_status',
   "TAT(lab)"                => 'turn_around_time',
   "pull down options"       => NOTINUSESTRING,
-  'NA'                      => NOTINUSESTRING,
 );
 
 ## columns samples sheet in rest lims
@@ -139,7 +138,6 @@ my %CPCT_TRANSLATIONS = (
   'maand'                   => NOTINUSESTRING,
   'drup '                   => NOTINUSESTRING,
   '#'                       => NOTINUSESTRING,
-  'NA'                      => NOTINUSESTRING,
   'Biopsy material '        => NOTINUSESTRING,
 );
 
@@ -182,10 +180,13 @@ say "[INFO] DONE with script \"$SCRIPT\"";
 ## ----------
 sub printLimsToJson{
     my ($samples, $submissions, $out_file) = @_;
+    my $samples_count = scalar keys %$samples;
+    my $submissions_count = scalar keys %$submissions;
+
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
     my $json_obj = JSON->new->allow_nonref;
     my $json_txt = $json_obj->pretty->encode( \%lims );
-    say "[INFO] Writing output to \"$out_file\"";
+    say "[INFO] Writing output to \"$out_file\" ($submissions_count submissions and $samples_count samples)";
     open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         print $lims_json_fh $json_txt;
     close $lims_json_fh;
@@ -229,14 +230,6 @@ sub printLimsDateTumPercCsv{
     open my $fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         say $fh $output_text;
     close $fh;
-}
-
-sub fixDateString{
-    my ($datestring) = @_;
-    if ( $datestring =~ /^(\d{2})\-(\d{2})\-(\d{4})$/ ){
-        $datestring = join( '-', $3, $2, $1 );
-    }
-    return $datestring;
 }
 
 sub parseDictFile{
@@ -287,7 +280,7 @@ sub parseLimsCPCT{
             my $cell = $sheet_obj->get_cell( $row, $col );
             my $val = NACHAR;
             $val = $cell->unformatted() if defined $cell;
-            $val = fixDateString( $val ) if $header_name =~ /_date/;
+            $val = $translations->{ $val } if defined $translations->{ $val };
             $row_info{ $header_name } = $val;
         }
         
@@ -344,7 +337,10 @@ sub parseLimsCPCT{
         ## some completeness checks
         die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        die "[EXIT] Found existing key in CPCT lims for unique id ($unique)\n" if exists $store->{ $unique };
+        die "[EXIT] Found existing key in CPCT lims for unique id ($unique) of sample $sample_name\n" if exists $store->{ $unique };
+        
+        ## fix certain fields 
+        fixDateFields( \%row_info );
         
         ## store sample info at first uniqe id
         $store->{ $unique } = \%row_info;
@@ -408,6 +404,7 @@ sub parseLimsRest{
         my $sample_name = $row_info{ 'sample_name' } or die "No sample_name in row_info";
         my $submission = $row_info{ 'submission' } or die "No submission in row_info";
         next if isValueToSkip( $sample_name );
+        
         $row_info{ 'label' } = 'RESEARCH';
         $row_info{ 'patient' } = $row_info{ 'sample_name' };
         $row_info{ 'entity' } = $row_info{ 'submission' };
@@ -436,25 +433,15 @@ sub parseLimsRest{
         die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
         die "[EXIT] No project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
-        die "[EXIT] Found existing key for unique id ($unique)\n" if exists $store->{ $unique };
+        die "[EXIT] Found existing key for unique id ($unique) of sample $sample_name\n" if exists $store->{ $unique };
         
-        
-        ## fix excel epoch time
-        my @date_fields = qw ( arrival_date );
-
-        $row_info{ $_ } = fixExcelDateFormat( $row_info{ $_ } ) foreach @date_fields;
+        ## fix certain fields 
+        fixDateFields( \%row_info );
         
         ## store sample info at uniqe id
         $store->{ $unique } = \%row_info;
         
     }
-}
-
-sub fixExcelDateFormat{
-    my ($old_format) = @_;
-    my $datetime = DateTime::Format::Excel->parse_datetime( $old_format );
-    my $new_format = $datetime->dmy(); # eg 28-02-2003
-    return $new_format;
 }
 
 sub parseLimsShip{
@@ -482,15 +469,57 @@ sub parseLimsShip{
             $val = $translations->{ $val } if defined $translations->{ $val };
             $row_info{ $header_name } = $val;
         }
-    
+        
         my $unique = $row_info{ 'submission' };
         next if isValueToSkip( $unique );
         
-        my @date_fields = qw ( arrival_date );
-        $row_info{ $_ } = fixExcelDateFormat( $row_info{ $_ } ) foreach @date_fields;
+        ## fix certain fields 
+        fixDateFields( \%row_info );
         
         ## store shipment info at uniqe id
         $store->{ $unique } = \%row_info;
+    }
+}
+
+sub fixDateFields{
+    my ($sample_hashref) = @_;
+    
+    my @date_fields = qw( arrival_date sampling_date );
+    
+    foreach my $date_field ( @date_fields ){
+        
+        next unless exists $sample_hashref->{ $date_field };
+        my $new_date = "DATE_WAS_NOT_PARSED";
+        my $old_date = $sample_hashref->{ $date_field };
+        my $identifier = $sample_hashref->{ 'sample_name' };
+        
+        ## date is not always filled in so skip NA fields
+        next if isValueToSkip( $old_date );
+        
+        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
+        if ( $old_date =~ /^(\d{2})-(\d{2})-(\d{2})$/ ){
+            ## have to assume that this format always puts day first
+            ## but we can at least check that month is not > 12
+            die "[EXIT] Month higher than 12 not possible\n" if $2 > 12;
+            $new_date = join( "-", "20".$3, $2, $1 );
+        }
+        elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
+            $new_date = join( "-", $1, $2, $3 );
+        }
+        elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
+            $new_date = join( "-", $3, $2, $1 );
+        }
+        elsif ( $old_date =~ /^\d+$/ ){
+            my $datetime = DateTime::Format::Excel->parse_datetime( $old_date );
+            $new_date = $datetime->ymd(); ## eg 2017-01-31
+        }
+        else{
+            warn "[WARN] Date format in field ($date_field) not recognized for sample ($identifier) so kept string as-is ($old_date)\n";
+            $new_date = $old_date;
+        }
+        
+        ## store new format using reference to original location
+        $sample_hashref->{ $date_field } = $new_date;
     }
 }
 
