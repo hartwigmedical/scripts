@@ -195,7 +195,8 @@ sub printLimsToJson{
 sub printLimsDateTumPercCsv{
     my ($lims, $out_file) = @_;
     
-    my $output_text = '';
+    #my $output_text = '';
+    my @output_lines = ();
     my $sort_field1 = 'arrival_date';
     my $sort_field2 = 'sample_name';
     
@@ -222,13 +223,15 @@ sub printLimsDateTumPercCsv{
             $s_date = ($s_date =~ /^[\d\-]+$/) ? $s_date : '';
             
             ## add to the final output
-            $output_text .= join( ',', $s_name, $s_date, $a_date, $t_perc )."\n";
+            #$output_text .= join( ',', $s_name, $s_date, $a_date, $t_perc )."\n";
+            push( @output_lines, join( ',', $s_name, $s_date, $a_date, $t_perc ) );
         }
     }
     
     say "[INFO] Writing output to \"$out_file\"";
     open my $fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
-        say $fh $output_text;
+        #say $fh $output_text;
+        say $fh join( "\n", @output_lines );
     close $fh;
 }
 
