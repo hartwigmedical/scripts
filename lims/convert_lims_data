@@ -496,25 +496,24 @@ sub fixDateFields{
         ## date is not always filled in so skip NA fields
         next if isValueToSkip( $old_date );
         
-        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
-        if ( $old_date =~ /^(\d{2})-(\d{2})-(\d{2})$/ ){
-            ## have to assume that this format always puts day first
-            ## but we can at least check that month is not > 12
-            die "[EXIT] Month higher than 12 not possible\n" if $2 > 12;
-            $new_date = join( "-", "20".$3, $2, $1 );
-        }
-        elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
-            $new_date = join( "-", $1, $2, $3 );
+        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)        
+        if ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
+            ## case yyyy-mm-dd already ok
+            die "[EXIT] Month higher than 12 not possible ($old_date) for sample ($identifier): fix this first\n" if $2 > 12;
+            $new_date = $old_date;
         }
         elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
+            ## dd-mm-yyyy
+            die "[EXIT] Month higher than 12 not possible ($old_date) for sample ($identifier): fix this first\n" if $2 > 12;
             $new_date = join( "-", $3, $2, $1 );
         }
         elsif ( $old_date =~ /^\d+$/ ){
+            ## epoch time
             my $datetime = DateTime::Format::Excel->parse_datetime( $old_date );
             $new_date = $datetime->ymd(); ## eg 2017-01-31
         }
         else{
-            warn "[WARN] Date format in field ($date_field) not recognized for sample ($identifier) so kept string as-is ($old_date)\n";
+            warn "[WARN] Date in field ($date_field) in unexpexted format for sample ($identifier): kept string as-is \"$old_date\"\n";
             $new_date = $old_date;
         }
         
