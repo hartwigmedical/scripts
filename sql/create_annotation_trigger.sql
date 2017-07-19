@@ -20,8 +20,8 @@ SELECT
     xref2.display_label as bp2_gene,
     (CASE WHEN sv.startOrientation > 0 THEN ex1_left.exon_id ELSE ex1_right.exon_id END) AS bp1_exon_id,
     (CASE WHEN sv.endOrientation > 0 THEN ex2_right.exon_id ELSE ex2_left.exon_id END) AS bp2_exon_id,
-    (ex1_left.exon_id = ex1_right.exon_id) AS bp1_is_exonic,
-    (ex2_left.exon_id = ex2_right.exon_id) AS bp2_is_exonic,
+    COALESCE(ex1_left.exon_id = ex1_right.exon_id, FALSE) AS bp1_is_exonic,
+    COALESCE(ex2_left.exon_id = ex2_right.exon_id, FALSE) AS bp2_is_exonic,
     transcript1.transcript_id AS bp1_transcript_id,
     transcript2.transcript_id AS bp2_transcript_id
 FROM
