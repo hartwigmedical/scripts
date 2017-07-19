@@ -163,7 +163,7 @@ sub processSample{
     ## init the json info
     my %json_data = ();
     
-    say "[INFO] INPUT:  $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
+    say "[INFO] INPUT: $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
 
     my $date = localtime->strftime('%y%m%d');
 
@@ -173,6 +173,10 @@ sub processSample{
         say "[INFO] SET: $set";
         $json_data{ 'set_name' } = $set;
         $json_data{ 'entity' } = $entity;
+        
+        ## assume all NoAnalysis samples need fastq in portal
+        $json_data{ 'fastq_portal' } = 'true';
+        
         addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
     }
     elsif ( $analysis eq 'RnaAnalysis' ){
