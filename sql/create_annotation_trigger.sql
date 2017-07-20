@@ -1,3 +1,4 @@
+USE hmfpatients;
 DROP TRIGGER trigger_sv_annotation;
 CREATE TRIGGER trigger_sv_annotation AFTER INSERT ON structuralVariant
 FOR EACH ROW
@@ -6,11 +7,11 @@ SELECT
 	m.*,
     COALESCE(et1.rank, 0) as bp1_exon_rank,
     COALESCE(et2.rank, 0) as bp2_exon_rank,
-    (transcript1.transcript_id = gene1.canonical_transcript_id) as bp1_is_canonical_transcript,
-    (transcript2.transcript_id = gene2.canonical_transcript_id) as bp2_is_canonical_transcript,
-    (ex1.seq_region_strand * startOrientation = ex2.seq_region_strand * endOrientation) as is_strand_compatible,
-    (ex1.seq_region_strand * startOrientation > 0) as bp1_is_upstream,
-    (ex2.seq_region_strand * endOrientation < 0) as bp2_is_upstream
+    COALESCE(transcript1.transcript_id = gene1.canonical_transcript_id, 0) as bp1_is_canonical_transcript,
+    COALESCE(transcript2.transcript_id = gene2.canonical_transcript_id, 0) as bp2_is_canonical_transcript,
+    COALESCE(ex1.seq_region_strand * startOrientation = ex2.seq_region_strand * endOrientation, 0) as is_strand_compatible,
+    COALESCE(ex1.seq_region_strand * startOrientation > 0, 1) as bp1_is_upstream,
+    COALESCE(ex2.seq_region_strand * endOrientation < 0, 1) as bp2_is_upstream
 FROM (
 SELECT 
     sv.id AS sv_id,

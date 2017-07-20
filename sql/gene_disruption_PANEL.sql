@@ -6,6 +6,7 @@ SELECT
     m.svType,
 	count(DISTINCT m.sampleID) as num_samples,
 	group_concat(DISTINCT m.sampleID SEPARATOR ',') as samples
+
 FROM (
 
 	SELECT
