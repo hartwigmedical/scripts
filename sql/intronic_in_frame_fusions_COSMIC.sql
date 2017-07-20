@@ -19,5 +19,5 @@ WHERE
 	(CASE WHEN bp1_is_upstream THEN ex1.end_phase = ex2.phase ELSE ex1.phase = ex2.end_phase END) and
     # one end in COSMIC
 	(EXISTS (SELECT 1 FROM census.ensembl_census WHERE ensembl_gene_id = bp1_gene_id) OR EXISTS (SELECT 1 FROM census.ensembl_census WHERE ensembl_gene_id = bp2_gene_id))
-GROUP BY bp1_gene, bp2_gene
+GROUP BY 1,2
 ORDER BY 3 DESC;
