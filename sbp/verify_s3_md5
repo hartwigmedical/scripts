@@ -19,7 +19,7 @@ except:
 
 
 DEFAULT_S3_ENDPOINT = os.environ.get("SBP_ENDPOINT_URL")
-DEFAULT_S3_BUCKET = os.environ.get("OUTPUT_BUCKET")
+DEFAULT_S3_BUCKET = os.environ.get("REJECT_BUCKET")
 DEFAULT_S3_PROFILE = "download"
 ONE_MEGABYTE = 1024 * 1024
 
