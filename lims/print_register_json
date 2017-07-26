@@ -45,7 +45,9 @@ my $HELP =<<HELP;
     Parses LIMS JSON file and writes JSON(s) to perform 
     registering at SBP. It does check whether the to be 
     written JSON already exists in either the output location
-    or the "register done" location (see below).
+    or the "register done" location.
+    
+    Done location: $JSON_DONE_DIR
     
   Usage
     $SCRIPT -samplesheet \${samplesheetpath}
@@ -142,7 +144,7 @@ sub addSamplesFromSamplesheet{
 sub processSample{
     my ($sample_id, $lims, $stats, $toprint) = @_;
     if ( not exists $lims->{ $sample_id } ){
-        warn "[WARN] Sample not present in LIMS ($sample_id)\n";
+        warn "[WARN] RESULT: Sample not present in LIMS ($sample_id)\n";
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims->{ $sample_id };
@@ -150,7 +152,6 @@ sub processSample{
     my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
     my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
     my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
-    #my $barcode    = $sample_id; # eg FR12345678
     my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
     my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
     my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
@@ -224,16 +225,21 @@ sub processSample{
     ## output json
     my $json_file = $json_data{ 'set_name' }.'.json';
     my $json_path = $JSON_BASE_DIR.'/'.$json_file;
-    my $json_done_path = $JSON_DONE_DIR.'/'.$json_file;
-    if ( -f $json_path ){
-        warn "[WARN] RESULT: SKIPPING ($sample_id) because file exists ($json_path)\n";
-        return "NoJsonMade_alreadyExists" ;
-    }
-    if ( -f $json_done_path ){
-        warn "[WARN] RESULT: SKIPPING ($sample_id) because file exists ($json_done_path)\n";
-        return "NoJsonMade_alreadyExists" 
+    
+    ## check if set was already registered earlier
+    my $setname_wo_date = $json_data{ 'set_name' };
+    $setname_wo_date =~ s/^\d{6}_//;
+    my @base_jsons = glob( "$JSON_BASE_DIR/*json" );
+    my @done_jsons = glob( "$JSON_DONE_DIR/*json" );
+    
+    foreach my $existing_json ( @base_jsons, @done_jsons ){
+        if ( $existing_json =~ /$setname_wo_date/ ){
+            warn "[WARN] RESULT: SKIPPING ($sample_id) because set json exists ($existing_json)\n";
+            return "NoJsonMade_setJsonalreadyExists";
+        }
     }
     
+    ## all checks were OK: print config file
     printSetJson( \%json_data, $json_path );
     say "[INFO] RESULT: OK";
     return "OK_JSON_MADE";
