@@ -32,8 +32,11 @@ UNION
     LEFT JOIN treatment on treatment.biopsyId = biopsy.id
     WHERE NOT(isnull(treatment.id))
 
-    
+UNION
 
-    
-    
-    
+	SELECT count(*), 'with matched biopsy, treatment and response' 
+    FROM sample INNER JOIN patient ON sample.patientId = patient.id
+    LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
+    LEFT JOIN treatment on treatment.biopsyId = biopsy.id
+    LEFT JOIN firstMatchedTreatmentResponse on treatment.id = firstMatchedTreatmentResponse.treatmentId
+    WHERE NOT(isnull(firstMatchedTreatmentResponse.id))
