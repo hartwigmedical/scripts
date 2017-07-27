@@ -4,7 +4,7 @@ DROP VIEW IF EXISTS firstMatchedTreatmentResponse;
 
 CREATE VIEW firstMatchedTreatmentResponse AS 
 	SELECT *
-	FROM treatmentResponse as tr
+	FROM treatmentResponse AS tr
 	WHERE NOT EXISTS (
 		SELECT * 
 		FROM treatmentResponse AS tr1 
