@@ -1,6 +1,6 @@
 USE hmfpatients;
 
-	SELECT count(*) as findings, 'any' as level, 'any' as item, 'any' as locked FROM clinicalFindings
+	SELECT count(*) AS findings, 'any' AS level, 'any' AS item, 'any' AS locked FROM clinicalFindings
 
 UNION
 

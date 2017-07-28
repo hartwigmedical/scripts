@@ -1,7 +1,7 @@
 USE hmfpatients;
 
 	SELECT 
-    count(*) as samples, 'all' as category
+    count(*) AS samples, 'all' AS category
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
     
 UNION
