@@ -2,4 +2,4 @@
 
 RUN_NAME=$1
 
-sbp s3 sync /data/processed/${RUN_NAME} s3://${ARCHIVE_BUCKET}/${RUN_NAME}/ --profile ${ARCHIVE_PROFILE} --grants read=id=${HMF_DOWNLOAD_CANONICAL},id=${SBP_PORTAL_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
+sbp s3 sync /data/processed_archive/${RUN_NAME} s3://${ARCHIVE_BUCKET}/${RUN_NAME}/ --profile ${ARCHIVE_PROFILE} --grants read=id=${HMF_DOWNLOAD_CANONICAL},id=${SBP_PORTAL_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
