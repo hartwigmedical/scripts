@@ -212,18 +212,17 @@ sub printLimsDateTumPercCsv{
         my $type = $sample->{ 'analysis_type' };
         
         if ( $type =~ m/Somatic/i ){
-            my $s_name = $sample->{ sample_name };
-            my $t_perc = $sample->{ tumor_perc };
-            my $a_date = $sample->{ arrival_date };
-            my $s_date = $sample->{ sampling_date };
-            
+            my $s_name = getValueFromHashByKey( $sample, 'sample_name' );
+            my $t_perc = getValueFromHashByKey( $sample, 'tumor_perc' );
+            my $a_date = getValueFromHashByKey( $sample, 'arrival_date' );
+            my $s_date = getValueFromHashByKey( $sample, 'sampling_date' );
+
             ## need to fix unexpected field contents
             $t_perc = ($t_perc =~ /^\d+$/) ? $t_perc : '';
             $a_date = ($a_date =~ /^[\d\-]+$/) ? $a_date : '';
             $s_date = ($s_date =~ /^[\d\-]+$/) ? $s_date : '';
             
             ## add to the final output
-            #$output_text .= join( ',', $s_name, $s_date, $a_date, $t_perc )."\n";
             push( @output_lines, join( ',', $s_name, $s_date, $a_date, $t_perc ) );
         }
     }
@@ -433,9 +432,11 @@ sub parseLimsRest{
         next if isValueToSkip( $unique );
 
         ## checks before storing
-        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
-        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        die "[EXIT] No project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
+        my $regex = "^[0-9a-zA-z\-]*\$";
+        die "[EXIT] FIX IN LAB LIMS: sample-name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
+        die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
+        die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
+        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
         die "[EXIT] Found existing key for unique id ($unique) of sample $sample_name\n" if exists $store->{ $unique };
         
         ## fix certain fields 
@@ -569,6 +570,15 @@ sub isValueToSkip{
         return 1 if $value eq $_;
     }
     return 0;
+}
+
+sub getValueFromHashByKey{
+    my ($hashref, $key) = @_;
+    my $out = "";
+    if ( defined $hashref->{ $key } ){
+        $out = $hashref->{ $key };
+    }
+    return $out;
 }
 
 sub debugHash{
