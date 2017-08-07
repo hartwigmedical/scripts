@@ -186,8 +186,19 @@ sub processSample{
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
-        my $name_ref = $patient.'R';
-        my $ref_obj  = getSomaticRSampleByStringForField( $lims, $name_ref, 'sample_name' );
+        my $ref_obj;
+        
+        ## need to find the ref sample of somatic pair
+        if ( exists $sample->{ partner_sample } ){
+            ## for research samples a partner needs to be defined in lab LIMS
+            my $ref_string = $sample->{ partner_sample };
+            $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_id' );
+	}
+	else{
+            ## for CPCT etc the partner can be found by patient name + R
+            my $ref_string = $patient.'R';
+            $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_name' );
+        }
 
         if ( not defined $ref_obj ){
             warn "[WARN] RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)\n";
