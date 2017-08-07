@@ -176,7 +176,7 @@ sub processSample{
         $json_data{ 'entity' } = $entity;
         
         ## assume all NoAnalysis samples need fastq in portal
-        $json_data{ 'fastq_portal' } = 'true';
+        $json_data{ 'fastq_portal' } = JSON::true;
         
         addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
     }
