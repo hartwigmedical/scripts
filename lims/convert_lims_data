@@ -16,10 +16,8 @@ use constant NOTINUSESTRING => 'COLUMNS_NOT_IN_USE_COLLAPSED';
 my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
 my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
-#my $LIMSOUTFILE = '/data/lims/lims.json';
-#my $LIMSCSVFILE = '/data/lims/lims.csv';
-my $LIMSOUTFILE = '/home/stef/lims.json';
-my $LIMSCSVFILE = '/home/stef/lims.csv';
+my $LIMSOUTFILE = '/data/lims/lims.json';
+my $LIMSCSVFILE = '/data/lims/lims.csv';
 
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP = <<"HELP";
