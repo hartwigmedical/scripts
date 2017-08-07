@@ -16,8 +16,10 @@ use constant NOTINUSESTRING => 'COLUMNS_NOT_IN_USE_COLLAPSED';
 my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
 my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
-my $LIMSOUTFILE = '/data/lims/lims.json';
-my $LIMSCSVFILE = '/data/lims/lims.csv';
+#my $LIMSOUTFILE = '/data/lims/lims.json';
+#my $LIMSCSVFILE = '/data/lims/lims.csv';
+my $LIMSOUTFILE = '/home/stef/lims.json';
+my $LIMSCSVFILE = '/home/stef/lims.csv';
 
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP = <<"HELP";
@@ -97,9 +99,9 @@ my %REST_TRANSLATIONS = (
   "Priority"                => 'has_prio', 
   "State"                   => 'state', 
   "Remarks"                 => 'remarks',
-  'GermlineBFX'             => 'Germline',
-  'SomaticsBFX'             => 'Somatic',
-  'NoBFX'                   => 'NoAnalysis',
+#  'GermlineBFX'             => 'Germline',
+#  'SomaticsBFX'             => 'Somatic',
+#  'NoBFX'                   => 'NoAnalysis',
 );
 
 
@@ -405,6 +407,7 @@ sub parseLimsRest{
         
         my $sample_name = $row_info{ 'sample_name' } or die "No sample_name in row_info";
         my $submission = $row_info{ 'submission' } or die "No submission in row_info";
+        my $analysis_type = $row_info{ 'analysis_type' } or die "No analysis_type in row_info";
         next if isValueToSkip( $sample_name );
         
         $row_info{ 'label' } = 'RESEARCH';
@@ -413,7 +416,31 @@ sub parseLimsRest{
         
         #debugHash( \%row_info );
         
-        ## submission info and parse KG
+        ## check data analysis type and set accordingly
+        if ( $analysis_type eq 'SomaticsBFX' ){
+            my $partner_id = $row_info{ 'partner_sample' } or die "No partner_sample field in row_info";
+            if ( $partner_id ne '' and $partner_id ne NACHAR ){
+                ## has partner so is somatic T
+                $row_info{ 'analysis_type' } = 'Somatic_T';
+            }
+            else{
+                ## has no partner so is somatic R
+                $row_info{ 'analysis_type' } = 'Somatic_R';
+            }
+        }
+        elsif ( $analysis_type eq 'GermlineBFX' ){
+            ## Single sample germline
+            $row_info{ 'analysis_type' } = 'Germline';
+        }
+        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
+            ## None
+            $row_info{ 'analysis_type' } = 'NoAnalysis';
+        }
+        else {
+            die "[EXIT] Sample ($sample_name) has unknown analysis type ($analysis_type)\n";
+        }
+        
+        ## add submission info and parse KG
         if ( exists $shipments->{ $submission } ){
             my $sub = $shipments->{ $submission };
             my $project_name = $sub->{ 'project_name' };
