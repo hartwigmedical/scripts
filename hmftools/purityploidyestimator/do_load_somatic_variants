@@ -13,6 +13,12 @@ ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 
 # Files
 vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
+if [ $? -ne 0 ]
+then
+	echo "Unable to locate VCF. Exiting"
+	exit 1
+fi
+
 vcf_base=${vcf_in%.vcf}
 
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
