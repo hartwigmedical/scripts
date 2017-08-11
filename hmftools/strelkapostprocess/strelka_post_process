@@ -28,6 +28,17 @@ function failure() {
     fail "${message}"
 }
 
+function assert_last_position_unchanged() {
+    local input_path=$1 && shift
+    local output_path=$1 && shift
+
+    assert_not_empty "${input_path}" "${output_path}"
+    local input_tail output_tail
+    input_tail="$(tail -n 1 "${input_path}" | cut -f 1,2)"
+    output_tail="$(tail -n 1 "${output_path}" | cut -f 1,2)"
+    [ "$input_tail" == "$output_tail" ] || failure "last position in ${output_path} differs from ${input_path}."
+}
+
 GATK_JAR="/data/common/tools/gatk_v3.4.46-hmf/GenomeAnalysisTK.jar"
 REFGENOME="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 
@@ -47,6 +58,12 @@ POST_PROCESSED_FILE="${OUTPUT_DIR}/strelka.post.processed.vcf"
 ANNOTATED_SNPEFF_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.vcf"
 ANNOTATED_DBSNP_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.vcf"
 ANNOTATED_COSMIC_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.cosmic.vcf"
+
+ANNOTATE_PON_SCRIPT=/data/common/repos/pipeline-test/scripts/annotatePON.py
+PON_VCF="/data/common/dbs/PON_v1.0/PON.vcf"
+BCF_TOOLS=/data/common/tools/bcftools_v1.3.1/bcftools
+ANNOTATED_PON_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.cosmic.pon.vcf"
+IGV_TOOLS=/data/common/tools/igvtools_v2.3.60/igvtools
 
 SAMPLE="TUMOR"
 
@@ -114,5 +131,19 @@ java -Xmx20G \
 assert_not_empty $ANNOTATED_COSMIC_FILE
 rm ${ANNOTATED_DBSNP_FILE}
 rm ${ANNOTATED_DBSNP_FILE}.idx
+rm ${ANNOTATED_COSMIC_FILE}.idx
 
-echo "Done."
+$ANNOTATE_PON_SCRIPT -p $PON_VCF -i $ANNOTATED_COSMIC_FILE -o - | $BCF_TOOLS filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ -o $ANNOTATED_PON_FILE
+
+# error handling
+if [ "$?" != "0" ];
+then
+        rm $ANNOTATED_PON_FILE
+        failure "annotatePON failed"
+fi
+
+$IGV_TOOLS index $ANNOTATED_PON_FILE
+
+assert_not_empty $ANNOTATED_PON_FILE
+assert_last_position_unchanged $POST_PROCESSED_FILE $ANNOTATED_PON_FILE
+rm ${ANNOTATED_PON_FILE}.idx
