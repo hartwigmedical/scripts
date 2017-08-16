@@ -1,5 +1,6 @@
 #!/bin/bash
 run_dir=$1
+prefix=`dirname $(readlink $0 || echo $0)`
 
 # Database details
 credentials=/data/common/tools/patient-db_v1.0/credentials
@@ -12,37 +13,14 @@ high_confidence_bed=/data/common/tools/purple_v1.0/bed/NA12878_GIAB_highconf_Ill
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 # Files
-vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
+vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf.vcf)
 if [ $? -ne 0 ]
 then
 	echo "Unable to locate VCF. Exiting"
 	exit 1
 fi
 
-vcf_base=${vcf_in%.vcf}
-
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 echo "Loading variant data for sample: ${sample}"
-
-
-PON=/data/common/dbs/PON_v1.0/PON.vcf
-pon_file=${vcf_base}_consensus_filtered_pon.vcf
-if [[ ! -e ${pon_file} ]]; then
-
-    consensus_file=${vcf_base}_consensus_filtered.vcf
-    tmp_file=${vcf_base}_tmp.vcf
-
-    echo "Applying consensus rule"
-    apply_consensus_rule_to_file ${vcf_in} ${consensus_file}
-
-    echo "Creating pon file: ${pon_file}"
-    pypy /data/common/repos/scripts/analysisscripts/annotatePON.py -i $consensus_file -p $PON -o $tmp_file
-    bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ $tmp_file > $pon_file
-
-    rm $tmp_file
-    rm $consensus_file
-else
-	echo "Pon file ${pon_file} already exists"
-fi
 
 java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.LoadSomaticVariants -ref_genome ${ref_genome} -high_confidence_bed ${high_confidence_bed} -vcf_file ${pon_file} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
