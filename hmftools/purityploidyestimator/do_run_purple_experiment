@@ -35,7 +35,7 @@ structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somat
 
 exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
-    -threads 3
+    -threads 3 \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
     -gc_profile ${gc_profile} \
