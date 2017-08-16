@@ -7,7 +7,8 @@ credentials=/data/common/tools/patient-db_v1.0/credentials
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
-purple_jar=/data/common/tools/purple_v1.0/purity-ploidy-estimator-1.0.jar
+purple_jar=/data/common/tools/purple_v1.0/purple-1.0.jar
+gc_profile=/data/common/tools/purple_v1.0/GC_profile.1000bp.cnp
 
 purple_output=${run_dir}/purple
 full_vcf_file=${run_dir}/${run}.annotated.vcf
@@ -29,4 +30,16 @@ else
 	echo "Using existing sliced file" ${sliced_vcf_file}    
 fi
 
-exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -jar ${purple_jar} -run_dir $run_dir  -vcf_extension annotated_sliced.vcf -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} $@
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
+structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
+
+exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+    -jar ${purple_jar} \
+    -threads 3
+    -somatic_vcf ${somatic_vcf} \
+    -structural_vcf ${structural_vcf} \
+    -gc_profile ${gc_profile} \
+    -run_dir $run_dir \
+    -vcf_extension annotated_sliced.vcf \
+    -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
