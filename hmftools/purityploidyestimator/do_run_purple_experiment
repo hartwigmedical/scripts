@@ -30,7 +30,7 @@ else
 	echo "Using existing sliced file" ${sliced_vcf_file}    
 fi
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
 structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
 
 exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
