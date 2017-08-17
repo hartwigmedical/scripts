@@ -115,7 +115,8 @@ function write_metadata() {
         cat <<-EOF > "${metadata_file}"
 		{
 		    "ref_sample": "${samples[R]}R",
-		    "tumor_sample": "${samples[T]}T"
+		    "tumor_sample": "${samples[T]}T",
+		    "set_name": "${samples[R]}R_${samples[T]}T" 
 		}
 		EOF
     else
