@@ -38,8 +38,8 @@ exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -threads 3 \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
+    -baf_vcf ${sliced_vcf_file} \
     -gc_profile ${gc_profile} \
     -run_dir $run_dir \
-    -vcf_extension annotated_sliced.vcf \
     -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
