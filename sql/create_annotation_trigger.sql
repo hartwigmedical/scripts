@@ -1,5 +1,5 @@
 USE hmfpatients;
-DROP TRIGGER trigger_sv_annotation;
+DROP TRIGGER IF EXISTS trigger_sv_annotation;
 CREATE TRIGGER trigger_sv_annotation AFTER INSERT ON structuralVariant
 FOR EACH ROW
 INSERT INTO sv_annotation2
@@ -9,9 +9,9 @@ SELECT
     COALESCE(et2.rank, 0) as bp2_exon_rank,
     COALESCE(transcript1.transcript_id = gene1.canonical_transcript_id, 0) as bp1_is_canonical_transcript,
     COALESCE(transcript2.transcript_id = gene2.canonical_transcript_id, 0) as bp2_is_canonical_transcript,
-    COALESCE(ex1.seq_region_strand * startOrientation = ex2.seq_region_strand * endOrientation, 0) as is_strand_compatible,
+    COALESCE(ex1.seq_region_strand * startOrientation <> ex2.seq_region_strand * endOrientation, 0) as is_strand_compatible,
     COALESCE(ex1.seq_region_strand * startOrientation > 0, 1) as bp1_is_upstream,
-    COALESCE(ex2.seq_region_strand * endOrientation < 0, 1) as bp2_is_upstream
+    COALESCE(ex2.seq_region_strand * endOrientation > 0, 1) as bp2_is_upstream
 FROM (
 SELECT 
     sv.id AS sv_id,
@@ -20,7 +20,7 @@ SELECT
     xref1.display_label as bp1_gene,
     xref2.display_label as bp2_gene,
     (CASE WHEN sv.startOrientation > 0 THEN ex1_left.exon_id ELSE ex1_right.exon_id END) AS bp1_exon_id,
-    (CASE WHEN sv.endOrientation > 0 THEN ex2_right.exon_id ELSE ex2_left.exon_id END) AS bp2_exon_id,
+    (CASE WHEN sv.endOrientation > 0 THEN ex2_left.exon_id ELSE ex2_right.exon_id END) AS bp2_exon_id,
     COALESCE(ex1_left.exon_id = ex1_right.exon_id, FALSE) AS bp1_is_exonic,
     COALESCE(ex2_left.exon_id = ex2_right.exon_id, FALSE) AS bp2_is_exonic,
     transcript1.transcript_id AS bp1_transcript_id,

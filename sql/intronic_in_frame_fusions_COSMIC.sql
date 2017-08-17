@@ -7,7 +7,7 @@ SELECT
 FROM hmfpatients.sv_annotation2
 	LEFT JOIN hmfpatients.structuralVariant as sv ON sv.id = sv_id
 	LEFT JOIN homo_sapiens_core_89_37.exon as ex1 ON ex1.exon_id = bp1_exon_id
-	LEFT JOIN homo_sapiens_core_89_37.exon as ex2 on ex2.exon_id = bp2_exon_id
+	LEFT JOIN homo_sapiens_core_89_37.exon as ex2 ON ex2.exon_id = bp2_exon_id
 WHERE
 	bp1_gene_id is not null and
 	bp2_gene_id is not null and
