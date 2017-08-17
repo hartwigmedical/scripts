@@ -1,0 +1,149 @@
+#!/usr/bin/env bash
+
+run=$1
+
+function assert_not_empty() {
+    local target_path
+    for target_path in "$@"
+    do
+        [ -s "${target_path}" ] || failure "${target_path} does not exist or is empty."
+    done
+}
+
+function assert_exists() {
+    local target_path
+    for target_path in "$@"
+    do
+        [ -f "${target_path}" ] || failure "${target_path} does not exist."
+    done
+}
+
+function fail() {
+    echo -e "ERROR: $*" >&2
+    exit 100
+}
+
+function failure() {
+    local message=$1 && shift
+    fail "${message}"
+}
+
+function assert_last_position_unchanged() {
+    local input_path=$1 && shift
+    local output_path=$1 && shift
+
+    assert_not_empty "${input_path}" "${output_path}"
+    local input_tail output_tail
+    input_tail="$(tail -n 1 "${input_path}" | cut -f 1,2)"
+    output_tail="$(tail -n 1 "${output_path}" | cut -f 1,2)"
+    [ "$input_tail" == "$output_tail" ] || failure "last position in ${output_path} differs from ${input_path}."
+}
+
+GATK_JAR="/data/common/tools/gatk_v3.4.46-hmf/GenomeAnalysisTK.jar"
+REFGENOME="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+STRELKA_POSTPROCESS_JAR="/data/common/tools/strelka_post_process_v1.0/strelka-post-process.jar"
+HIGHCONF_BED="/data/common/tools/patientreporter_v1.0/bed/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed"
+
+SNPEFF_JAR="/data/common/tools/snpEff_v4.1h/snpEff.jar"
+SNPEFF_CONFIG="/data/common/tools/snpEff_v4.1h/snpEff.config"
+SNPEFF_DB="GRCh37.74"
+
+DBSNP_DB="/data/common/dbs/GATK_bundle_v2.8/dbsnp_137.b37.vcf"
+COSMIC_DB="/data/common/dbs/cosmic_v76/CosmicCodingMuts_v76.vcf.gz"
+
+OUTPUT_DIR=post_process
+MERGED_FILE="${OUTPUT_DIR}/passed.somatic.merged.vcf"
+POST_PROCESSED_FILE="${OUTPUT_DIR}/strelka.post.processed.vcf"
+ANNOTATED_SNPEFF_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.vcf"
+ANNOTATED_DBSNP_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.vcf"
+ANNOTATED_COSMIC_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.cosmic.vcf"
+
+ANNOTATE_PON_SCRIPT=/data/common/repos/pipeline-test/scripts/annotatePON.py
+PON_VCF="/data/common/dbs/PON_v1.0/PON.vcf"
+BCF_TOOLS=/data/common/tools/bcftools_v1.3.1/bcftools
+ANNOTATED_PON_FILE="${OUTPUT_DIR}/strelka.post.processed.snpEff.dbsnp.cosmic.pon.vcf"
+IGV_TOOLS=/data/common/tools/igvtools_v2.3.60/igvtools
+
+SAMPLE="TUMOR"
+
+cd ${run}/strelka
+
+assert_not_empty "results/passed.somatic.snvs.vcf" "results/passed.somatic.indels.vcf"
+assert_exists $GATK_JAR $STRELKA_POSTPROCESS_JAR $HIGHCONF_BED $SNPEFF_JAR $SNPEFF_CONFIG $DBSNP_DB $COSMIC_DB
+
+mkdir ${OUTPUT_DIR}
+
+java -Xmx60G \
+-jar $GATK_JAR \
+-T CombineVariants \
+-R $REFGENOME \
+--genotypemergeoption unsorted \
+-V:snvs "results/passed.somatic.snvs.vcf" \
+-V:indels "results/passed.somatic.indels.vcf" \
+-o $MERGED_FILE
+
+assert_not_empty $MERGED_FILE
+
+java -jar $STRELKA_POSTPROCESS_JAR \
+-v $MERGED_FILE \
+-hc_bed $HIGHCONF_BED \
+-t $SAMPLE \
+-o $POST_PROCESSED_FILE
+
+assert_not_empty $POST_PROCESSED_FILE
+rm ${MERGED_FILE}*
+
+java -Xmx20G \
+-jar $SNPEFF_JAR \
+-c $SNPEFF_CONFIG \
+$SNPEFF_DB \
+-v $POST_PROCESSED_FILE \
+-hgvs -lof -no-downstream -no-upstream -no-intergenic \
+> $ANNOTATED_SNPEFF_FILE
+
+assert_not_empty $ANNOTATED_SNPEFF_FILE
+
+java -Xmx20G \
+-jar $GATK_JAR \
+-T VariantAnnotator \
+-nt 6 \
+-R $REFGENOME \
+-o $ANNOTATED_DBSNP_FILE \
+--variant $ANNOTATED_SNPEFF_FILE \
+--dbsnp $DBSNP_DB \
+--alwaysAppendDbsnpId
+
+assert_not_empty $ANNOTATED_DBSNP_FILE
+rm ${ANNOTATED_SNPEFF_FILE}
+rm ${ANNOTATED_SNPEFF_FILE}.idx
+
+java -Xmx20G \
+-jar $GATK_JAR \
+-T VariantAnnotator \
+-nt 6 \
+-R $REFGENOME \
+-o $ANNOTATED_COSMIC_FILE \
+--variant $ANNOTATED_DBSNP_FILE \
+--dbsnp $COSMIC_DB \
+--alwaysAppendDbsnpId
+
+assert_not_empty $ANNOTATED_COSMIC_FILE
+rm ${ANNOTATED_DBSNP_FILE}
+rm ${ANNOTATED_DBSNP_FILE}.idx
+rm ${ANNOTATED_COSMIC_FILE}.idx
+
+$ANNOTATE_PON_SCRIPT -p $PON_VCF -i $ANNOTATED_COSMIC_FILE -o - | $BCF_TOOLS filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 5' -s PON -m+ -o $ANNOTATED_PON_FILE
+
+# error handling
+if [ "$?" != "0" ];
+then
+        rm $ANNOTATED_PON_FILE
+        failure "annotatePON failed"
+fi
+
+$IGV_TOOLS index $ANNOTATED_PON_FILE
+
+assert_not_empty $ANNOTATED_PON_FILE
+assert_last_position_unchanged $POST_PROCESSED_FILE $ANNOTATED_PON_FILE
+rm ${ANNOTATED_PON_FILE}.idx

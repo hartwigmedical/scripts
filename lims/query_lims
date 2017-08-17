@@ -1,0 +1,158 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp;
+use JSON;
+use 5.010.000;
+
+## -----
+## Global variables
+## -----
+my $DATETIME = localtime;
+my $SCRIPT = basename $0;
+my $OUT_SEP = "\t";
+my $NA_CHAR = "NA";
+my $LIMS_JSON = '/data/lims/lims.json';
+my @OUT_FIELDS_1 = qw( submission sample_id sample_name label analysis_type entity project_name );
+my @OUT_FIELDS_2 = qw( submission sample_id sample_name label analysis_type yield tumor_perc entity primary_tum arrival_date );
+
+my $HELP =<<HELP;
+
+  Description
+    Parses LIMS JSON file and prints information about the
+    requested samples / submissions to screen.
+    
+  Usage
+    $SCRIPT -submission "HMFreg0000"
+    $SCRIPT -submission "HMFreg" -partial_match
+    $SCRIPT -sample_id "FR11111111"
+    $SCRIPT -sample_name "CPCT01010001T"
+    $SCRIPT -sample_name "CPCT01010001" -partial_match
+    $SCRIPT -sample_id "FR11111111" -full_output
+    
+  Output options
+    -full_output    (add more fields to output)
+    -partial_match  (match with regex)
+    -include_rna    (add rna samples in output)
+    -include_plasma (add plasma samples in output)
+    -delim <s>      (output delim)
+    
+  Files/locations that are used
+    LIMS input FILE: $LIMS_JSON
+    
+HELP
+print $HELP and exit(0) if scalar @ARGV == 0;
+
+## -----
+## Gather input
+## -----
+
+my %opt = (); # general options
+my %inc = (); # include filters
+GetOptions (
+  "submission=s@"   => \$inc{ submission },
+  "sample_id=s@"    => \$inc{ sample_id },
+  "sample_name=s@"  => \$inc{ sample_name },
+  "full_output"     => \$opt{ full_output },
+  "partial_match"   => \$opt{ partial_match },
+  "include_rna"     => \$opt{ include_rna },
+  "include_plasma"  => \$opt{ include_plasma },
+  "delim=s"         => \$OUT_SEP,
+  "debug"           => \$opt{ debug },
+  "help|h"          => \$opt{ help },
+) or die "Error in command line arguments\n";
+print $HELP and exit(0) if $opt{ help };
+
+## -----
+## MAIN
+## -----
+say "## Script: $SCRIPT";
+say "## DateTime: $DATETIME";
+
+my @out_fields = @OUT_FIELDS_1;
+@out_fields = @OUT_FIELDS_2 if $opt{ full_output };
+
+my $lims = readJson( $LIMS_JSON );
+my $samples = queryLims( $lims, \%inc, \%opt );
+printSampleInfo( $samples, \@out_fields );
+## -----
+## /MAIN
+## -----
+
+
+sub readJson{
+    my ($json_file) = @_;
+    my $json_txt = read_file( $json_file );
+    my $json_obj = decode_json( $json_txt );
+    return( $json_obj );
+}
+
+sub printSampleInfo{
+    my ($samples, $fields) = @_;
+    my $sample_count = scalar @$samples;
+    
+    @$samples = sort { 
+        $a->{submission} cmp $b->{submission} or 
+        $a->{sample_name} cmp $b->{sample_name} or
+        $a->{analysis_type} cmp $b->{analysis_type}
+    } @$samples;
+    
+    say "## SampleCount: $sample_count";
+    say join $OUT_SEP, @$fields;
+    
+    foreach my $sample ( @$samples ){
+        my @out = ();
+        push @out, getValueByKey( $sample, $_) foreach @$fields;
+        say join $OUT_SEP, @out;
+    }
+
+}
+
+sub queryLims{
+    my ($lims, $inc, $opt) = @_;
+    my @out = ();    
+    my @inc_type = keys %$inc;
+    my $samples = $lims->{ 'samples' };
+    my $submissions = $lims->{ 'submissions' };
+    
+    foreach my $sample_id ( keys %{$samples} ){
+        my $sample = $samples->{ $sample_id };
+        next if ( not $opt{ include_rna } ) and ($sample->{analysis_type} =~ /rna/i);
+        next if ( not $opt{ include_plasma } ) and ($sample->{analysis_type} =~ /plasma/i);
+        
+        foreach my $type ( @inc_type ){
+            next unless defined $inc->{ $type };
+            my @searches = @{$inc->{ $type }};
+            
+            foreach my $search ( @searches ){
+                my $sample_val = $sample->{ $type } or die "Sample does not have type ($type)\n";
+                
+                if ( $sample_val eq $search ){
+                    push @out, $sample;
+                }
+                elsif ( $opt->{ partial_match } and ($sample_val =~ m/$search/ ) ){
+                    push @out, $sample;
+                }
+            }
+        }
+    }
+    
+    warn "[WARN] No records left with input\n" if scalar @out == 0;
+    return \@out;
+}
+
+sub getValueByKey{
+    my ($info, $key) = @_;
+    
+    if ( not defined $info->{ $key } ){
+        say "[EXIT] Cannot find field \"$key\" in datastructure:";
+        print Dumper $info;
+        die "[EXIT] Unable to get field $key\n"
+    }
+    
+    return( $info->{ $key } );
+}
+

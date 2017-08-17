@@ -1,5 +1,0 @@
-#!/bin/bash
-
-RUN_NAME=$1
-
-sbp s3 ls s3://${ARCHIVE_BUCKET}/${RUN_NAME} --profile download --recursive --summarize --human-readable $2

@@ -1,0 +1,25 @@
+#!/bin/bash
+
+DATESTR=$( date "+%y%m%d" )
+OUT_DIR="/data/lims/labfiles"
+NAS_DIR="/volume1/machines/BFX/LIMS"
+
+## setup links
+limsCpctFrom=$NAS_DIR/HMF-FOR-006*xlsx
+limsCpctTo=$OUT_DIR/backup/$DATESTR"_LimsCPCTtracking.xlsx"
+limsRestFrom=$NAS_DIR/HMF-FOR-001*xlsx
+limsRestTo=$OUT_DIR/backup/$DATESTR"_LimsReceivedSamp.xlsx"
+
+## retrieve file
+echo "[INFO] About to sync files from nas to datastore"
+scp nas:$limsCpctFrom $limsCpctTo
+scp nas:$limsRestFrom $limsRestTo
+chmod -R 664 $OUT_DIR/backup/*
+
+## symlink the lims excel files
+ln -sfn $limsCpctTo $OUT_DIR/latest_lims_cpct
+ln -sfn $limsRestTo $OUT_DIR/latest_lims_rest
+
+## done
+echo "[INFO] Output files are in $OUT_DIR"
+echo "[INFO] You can now run \"convert_lims_data\" to update the lims json"

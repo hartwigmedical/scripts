@@ -1,0 +1,19 @@
+#!/bin/bash
+sample=$1
+
+credentials=/data/common/tools/patient-db_v1.0/credentials
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+purple_jar=/data/common/tools/purple_v1.0/purple-1.0.jar
+output_dir=/data/cpct/plot
+circos_bin=/data/common/tools/circos_v0.69.5/bin
+
+echo "Generating circos data"
+mkdir -p ${output_dir}/data
+mkdir -p ${output_dir}/plot
+mkdir -p ${output_dir}/etc
+java -Dorg.jooq.no-logo=true -cp ${purple_jar} com.hartwig.hmftools.purple.GenerateCircosData -output_dir ${output_dir} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} -sample ${sample}
+
+echo "Generating plot"
+${circos_bin}/circos -conf ${output_dir}/etc/${sample}.circos.conf -nosvg -outputdir ${output_dir}/ -outputfile ${sample}.circos.png -debug_group summary,timer > ${output_dir}/log/run.out

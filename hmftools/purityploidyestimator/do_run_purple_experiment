@@ -1,14 +1,18 @@
 #!/bin/bash
 
-run_dir=$1
-run=${run_dir: 16}
-patient=${run: -12}
+run_dir=$1 && shift
+run=$(basename ${run_dir})
 
-base_output="/data/experiments/PURPLE"
-purple_output=${base_output}/${patient}
+credentials=/data/common/tools/patient-db_v1.0/credentials
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+purple_jar=/data/common/tools/purple_v1.0/purple-1.0.jar
+gc_profile=/data/common/tools/purple_v1.0/GC_profile.1000bp.cnp
 
+purple_output=${run_dir}/purple
 full_vcf_file=${run_dir}/${run}.annotated.vcf
-sliced_vcf_file=${purple_output}/${run}.annotatedSLICED.vcf
+sliced_vcf_file=${run_dir}/${run}.annotated_sliced.vcf
 fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.decoys/hs37d5.fasta
 bed_file=/data/common/dbs/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
 
@@ -26,10 +30,27 @@ else
 	echo "Using existing sliced file" ${sliced_vcf_file}    
 fi
 
-cp ${run_dir}/copyNumber/*/freec/*CNVs ${purple_output}/
-cp ${run_dir}/copyNumber/*/freec/*ratio.txt ${purple_output}/
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
+if [ $? -ne 0 ]
+then
+	echo "Unable to locate somatic VCF. Exiting"
+	exit 1
+fi
 
-java -Xmx8G -Xms4G -jar /data/common/tools/purple-v1.0/purity-ploidy-estimator-1.0.jar -run_dir $purple_output  -vcf_extension annotatedSLICED.vcf -freec_dir $purple_output
+structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
+if [ $? -ne 0 ]
+then
+	echo "Unable to locate structural VCF. Exiting"
+	exit 1
+fi
 
-rm ${purple_output}/*CNVs
-rm ${purple_output}/*ratio.txt
+exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+    -jar ${purple_jar} \
+    -threads 3 \
+    -somatic_vcf ${somatic_vcf} \
+    -structural_vcf ${structural_vcf} \
+    -baf_vcf ${sliced_vcf_file} \
+    -gc_profile ${gc_profile} \
+    -run_dir $run_dir \
+    -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@

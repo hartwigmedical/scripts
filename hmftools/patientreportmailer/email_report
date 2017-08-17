@@ -1,0 +1,8 @@
+#!/bin/sh
+
+patientreport_mailer_dir=/data/common/tools/patientreportmailer_v1.0
+
+email_template=$patientreport_mailer_dir/template.txt
+centra_csv=$patientreport_mailer_dir/centra.csv
+
+java -jar /data/common/tools/patientreportmailer_v1.0/report-mailer.jar -centra "$centra_csv" -template "$email_template" "$@"

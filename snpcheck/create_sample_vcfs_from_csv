@@ -1,0 +1,45 @@
+#!/bin/bash
+DATESTRING=$( date +%y%m%d)
+CODEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+OUTBASE="/data/common/snpcheck"
+ SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
+ DESIGN="${CODEDIR}/32SNPtaq_design.vcf"
+ OUTDIR="${OUTBASE}/output/32SNPtaq"
+
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Reads the output of genotyping machine and converts to vcf"
+    echo " Usage: `basename $0` <path-to-snpgenotyping-csv-results-file"
+    echo "        `basename $0` /data/common/snpcheck/input/32SNPtaq/file.csv"
+    echo " Confg:"
+    echo "   CODEDIR = ${CODEDIR}"
+    echo "   OUTDIR  = ${OUTDIR}"
+    echo "-----"
+    exit 1
+fi
+
+csvFile=$1
+if [[   -z ${csvFile} ]]; then echo "[EXIT] No csv results file provided.."; exit 1; fi
+if [[ ! -f ${csvFile} ]]; then echo "[EXIT] Input csv file does not exist?"; exit 1; fi
+if [[ ! -f ${SCRIPT}  ]]; then echo "[EXIT] Script file does not exist?"; exit 1; fi
+if [[ ! -f ${DESIGN}  ]]; then echo "[EXIT] Design file does not exist?"; exit 1; fi
+
+experimentName=$( echo $( basename ${csvFile} ) | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//' )
+plateName=$( cat ${csvFile} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2 )
+vcfOutDir="${OUTDIR}/${experimentName}_${plateName}"
+
+if [[ -d ${vcfOutDir} ]]; then echo "[EXIT] Output dir already exists (${vcfOutDir})"; exit 1; fi
+
+echo "[INFO] Starting conversion from CSVs to VCFs"
+echo "[INFO] Output dir will be: ${vcfOutDir}"
+mkdir ${vcfOutDir}
+${SCRIPT} --out ${vcfOutDir} --des ${DESIGN} --csv ${csvFile}
+vcfCount=$( ls ${vcfOutDir} | wc -l )
+echo "[INFO] Total of ${vcfCount} VCFs created"
+echo "[INFO] You might want to run the following:"
+echo "  snpcheck_compare_vcfs ${vcfOutDir}/*vcf"
+echo "[INFO] Or with tab delim and extra info"
+echo "  snpcheck_compare_vcfs -tab -print ${vcfOutDir}/*vcf"
+echo "[INFO] Also copy the results to SBP dir (and dont forget to sync to SBP)"
+echo "  sudo cp -r ${vcfOutDir} /data/schuberg/snpcheckvcfupload/"
+

@@ -1,6 +1,0 @@
-#!/bin/bash
-
-base_output="/data/experiments/PURPLE"
-for sample in ${base_output}/*/; do
-    echo $sample `head -2 ${sample}*.purity | tail -1 ${purity} | cut -f1`
-done

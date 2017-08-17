@@ -75,7 +75,7 @@ def calculateNumCallers(infoSplit,infoHeaders,internalCount):
 
 def calculateSomaticGenotype(infoSplit,infoHeaders,caller,aVariantType):
     #Ideally both Normal (ref, hom, het) and somatic (ref,hom,het).
-    if caller == 'strelka' and aVariantType == variantType.indel:
+    if caller == 'strelka' and aVariantType == variantType.indel and 'SGT' in infoHeaders :
         return infoSplit[infoHeaders.index("SGT")].split('=')[1]
     elif caller == 'strelka' and aVariantType == variantType.SNP:
         return infoSplit[infoHeaders.index("NT")].split('=')[1]
@@ -263,6 +263,7 @@ class somaticVariant:
             if not somaticVariant.bedItem:
                 somaticVariant.bedItem = aBedReverse.pop()
             while (cd.intChrom(chrom) > cd.intChrom(somaticVariant.bedItem[0]) or (cd.intChrom(chrom) == cd.intChrom(somaticVariant.bedItem[0]) and int(pos) > int(somaticVariant.bedItem[2]))) and aBedReverse:
+
                 somaticVariant.bedItem = aBedReverse.pop()
         else:
             somaticVariant.bedItem = []

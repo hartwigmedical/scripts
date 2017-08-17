@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec java -Xmx4G -Xms1G -jar /data/common/tools/ecrfanalyser_v1.0/ecrf-analyser.jar -csv_out ~/tmp/patients.csv -ecrf /data/ecrf/cpct_ecrf.xml -patients "$@"
