@@ -66,7 +66,7 @@ function main() {
         echo "FINALIZE_KEEP_BQSR	yes" >> settings.config
     fi
 
-    write_metadata "${input}" "${output}"
+    write_metadata "${input}" "${output}" "${output_name}"
 
     "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > /dev/null
 }
@@ -95,6 +95,7 @@ function choose_input_mode() {
 function write_metadata() {
     local input=$1 && shift
     local output=$1 && shift
+    local output_name=$1 && shift
     local metadata_file="${output}/metadata"
     declare -A samples=()
 
@@ -116,7 +117,7 @@ function write_metadata() {
 		{
 		    "ref_sample": "${samples[R]}R",
 		    "tumor_sample": "${samples[T]}T",
-		    "set_name": "${samples[R]}R_${samples[T]}T" 
+		    "set_name": "${output_name}"
 		}
 		EOF
     else
