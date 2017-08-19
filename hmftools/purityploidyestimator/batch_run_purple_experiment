@@ -9,6 +9,5 @@ for file in /data/cpct/runs/*; do
         "$prefix"/do_apply_somatic_variant_pon $file $@
         "$prefix"/do_run_purple_experiment $file $@
         "$prefix"/do_load_somatic_variants $file
-        "$prefix"/do_create_circos_plot $sample
     fi
 done

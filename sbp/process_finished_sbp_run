@@ -7,5 +7,3 @@ download_set_partially_from_bucket -b ${bucket} -s ${set} -l ${path}
 do_apply_somatic_variant_pon ${path}/${set}
 do_run_purple_experiment ${path}/${set}
 do_load_somatic_variants ${path}/${set}
-sample=$(ls ${path}/${set} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
-do_create_circos_plot $sample
