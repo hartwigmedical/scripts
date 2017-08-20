@@ -44,7 +44,7 @@ class VCFWriter():
 
     def writeInfoHeader(self, **kwargs):
         kwargs['Description'] = '"%s"' % kwargs['Description']
-        assert kwargs['Type'] in VALID_INFO_TYPES
+        assert kwargs['Type'] in self.VALID_INFO_TYPES
         self.file.write( '##INFO=<%s>\n' % COMMA.join(EQUALS.join((k, str(v))) for k, v in zip(self.InformationField._fields, self.InformationField(**kwargs))) )
 
     def writeCustomHeader(self, name, value):
