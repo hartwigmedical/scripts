@@ -38,7 +38,8 @@ FROM (
         bp1_is_canonical_transcript and
         EXISTS (SELECT 1 FROM census.ensembl_panel WHERE ensembl_gene_id = bp1_gene_id) and
         NOT EXISTS (SELECT 1 FROM hmfpatients.sv_annotation2 as ann2 WHERE ann2.bp1_gene_id = ann2.bp2_gene_id and ann2.sv_id = ann1.sv_id
-        and abs(ann2.bp1_exon_rank-ann2.bp2_exon_rank)=ann2.is_strand_compatible and not ann2.bp1_is_exonic and not ann2.bp2_is_exonic)
+        and abs(ann2.bp1_exon_rank-ann2.bp2_exon_rank)=ann2.is_strand_compatible and not ann2.bp1_is_exonic and not ann2.bp2_is_exonic and ann2.bp2_is_canonical_transcript)
+        
 UNION
  
         SELECT
@@ -63,5 +64,6 @@ UNION
         bp2_is_canonical_transcript and
         EXISTS (SELECT 1 FROM census.ensembl_panel WHERE ensembl_gene_id = bp2_gene_id) and
         NOT EXISTS (SELECT 1 FROM hmfpatients.sv_annotation2 as ann2 WHERE ann2.bp1_gene_id = ann2.bp2_gene_id and ann2.sv_id = ann1.sv_id
-        and abs(ann2.bp1_exon_rank-ann2.bp2_exon_rank)=ann2.is_strand_compatible and not ann2.bp1_is_exonic and not ann2.bp2_is_exonic)
+        and abs(ann2.bp1_exon_rank-ann2.bp2_exon_rank)=ann2.is_strand_compatible and not ann2.bp1_is_exonic and not ann2.bp2_is_exonic and ann2.bp1_is_canonical_transcript)
+        
 ) as m;
