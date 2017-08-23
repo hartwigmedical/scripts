@@ -1,10 +1,12 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v1.0
+runs_dir=/data/cpct/runs/
 
-# Database details
-credentials="$patient_db_dir"/credentials
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
-
-java -jar "$patient_db_dir"/patient-db.jar -somatic -runs_dir /data/cpct/runs/ -db_user $db_user -db_pass $db_pass -db_url $db_url -high_confidence_bed "$patient_db_dir"/bed/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed -extreme_confidence_bed "$patient_db_dir"/bed/CPCT_Slicing.bed
+for file in ${runs_dir}; do
+    sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+    if [ $? -eq 0 ]
+    then
+    	echo "Processing sample" ${sample}
+    	do_apply_somatic_variant_pon $file
+    	do_load_somatic_variants $file
+    fi
+done
