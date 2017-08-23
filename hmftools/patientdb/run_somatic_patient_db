@@ -1,12 +1,13 @@
 #!/bin/bash
-runs_dir=/data/cpct/runs/
+runs_dir=/data/cpct/runs
 
-for file in ${runs_dir}; do
+for file in ${runs_dir}/*; do
     sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
     if [ $? -eq 0 ]
     then
     	echo "Processing sample" ${sample}
-    	do_apply_somatic_variant_pon $file
-    	do_load_somatic_variants $file
+    	# Disabled for the moment
+    	#do_apply_somatic_variant_pon $file
+    	#do_load_somatic_variants $file
     fi
 done
