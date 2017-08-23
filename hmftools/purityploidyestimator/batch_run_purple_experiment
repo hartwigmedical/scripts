@@ -1,13 +1,12 @@
 #!/bin/bash
 starts_with=$1 && shift
-prefix=`dirname $(readlink $0 || echo $0)`
 
 for file in /data/cpct/runs/*; do
     if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
-        "$prefix"/do_apply_somatic_variant_pon $file $@
-        "$prefix"/do_run_purple_experiment $file $@
-        "$prefix"/do_load_somatic_variants $file
+        do_apply_somatic_variant_pon $file $@
+        do_run_purple_experiment $file $@
+        do_load_somatic_variants $file
     fi
 done
