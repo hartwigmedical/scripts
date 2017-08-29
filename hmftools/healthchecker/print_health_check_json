@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec java -Xmx4G -Xms1G -jar /data/common/tools/batchhealthcheckreader_v1.0/batch-health-check-reader.jar -report "$@"

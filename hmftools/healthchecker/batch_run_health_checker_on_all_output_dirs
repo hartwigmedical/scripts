@@ -6,12 +6,12 @@ prefix=`dirname $(readlink $0 || echo $0)`
 program="$prefix/do_run_health_checker -report_output_path ${output}"
 
 for run in /data/cpct/runs/*; do
-	$program -run_dir ${run}
+	${program} -run_dir ${run}
 done;
 for run in /data/processed_archive/*; do
-	$program -run_dir ${run}
+	${program} -run_dir ${run}
 done;
 for run in /data/schuberg/*; do
-	$program -run_dir ${run}
+	${program} -run_dir ${run}
 done;
 
