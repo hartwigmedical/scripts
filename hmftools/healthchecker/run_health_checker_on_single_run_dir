@@ -2,4 +2,4 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-"$prefix"/do_run_health_checker -report_output_path /data/cpct/health_checker_output -run_dir "$@"
+exec java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_v1.4/health-checker.jar -report_type json -report_output_path /data/cpct/health_checker_output -run_dir "$@"

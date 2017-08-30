@@ -1,3 +1,0 @@
-#!/bin/bash
-
-exec java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_v1.4/health-checker.jar -report_type json "$@"
