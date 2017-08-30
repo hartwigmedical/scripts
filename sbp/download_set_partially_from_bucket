@@ -67,4 +67,5 @@ ${awscmd} s3 sync ${s3path} ${localpath} --profile ${awsprofile} \
 --include "*sliced.vcf" \
 --include "*melted.vcf" \
 --include "*snpcheck*.vcf" \
---include "*bpi.vcf"
+--include "*bpi.vcf" \
+--include "evidence.*.bam"
