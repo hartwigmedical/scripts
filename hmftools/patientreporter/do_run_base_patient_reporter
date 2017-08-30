@@ -3,6 +3,7 @@
 patient_reporter_dir=/data/common/tools/patientreporter_v3
 
 cpct_ecrf=/data/ecrf/cpct_ecrf.xml
+lims_json=/data/lims/lims.json
 report_dir=/data/cpct/patient_reports
 
-exec java -Xmx16G -Xms4G -jar "$patient_reporter_dir"/patient-reporter.jar -cpct_ecrf "$cpct_ecrf" -report_dir "$report_dir" "$@"
+exec java -Xmx16G -Xms4G -jar "$patient_reporter_dir"/patient-reporter.jar -lims_json "$lims_json" -cpct_ecrf "$cpct_ecrf" -report_dir "$report_dir" "$@"
