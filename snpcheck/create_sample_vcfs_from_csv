@@ -3,14 +3,14 @@ DATESTRING=$( date +%y%m%d)
 CODEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTBASE="/data/common/snpcheck"
  SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
- DESIGN="${CODEDIR}/32SNPtaq_design.vcf"
- OUTDIR="${OUTBASE}/output/32SNPtaq"
+ DESIGN="${CODEDIR}/26SNPtaq_design.vcf"
+ OUTDIR="${OUTBASE}/output/26SNPtaq"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Reads the output of genotyping machine and converts to vcf"
     echo " Usage: `basename $0` <path-to-snpgenotyping-csv-results-file"
-    echo "        `basename $0` /data/common/snpcheck/input/32SNPtaq/file.csv"
+    echo "        `basename $0` /data/common/snpcheck/input/<design>/file.csv"
     echo " Confg:"
     echo "   CODEDIR = ${CODEDIR}"
     echo "   OUTDIR  = ${OUTDIR}"
