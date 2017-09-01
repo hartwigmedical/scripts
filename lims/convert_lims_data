@@ -5,6 +5,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use JSON;
+use File::Copy;
 use Spreadsheet::XLSX;
 use DateTime::Format::Excel;
 use 5.01000;
@@ -18,6 +19,7 @@ my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
 my $LIMSOUTFILE = '/data/lims/lims.json';
 my $LIMSCSVFILE = '/data/lims/lims.csv';
+my $BACKUP_DIR  = '/data/lims/previous';
 
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP = <<"HELP";
@@ -58,11 +60,20 @@ GetOptions (
 ## ----------
 print $HELP and exit(0) if $opt{ help };
 print $HELP and exit(0) unless $opt{ execute };
+
+foreach ( $BACKUP_DIR ){
+    die "[EXIT] Dir does not exist ($_)\n" unless -d;
+}
 foreach ( $CENTER_FILE, $CPCTIN_FILE, $RESTIN_FILE ){
     die "[EXIT] File does not exist ($_)\n" unless -f;
 }
 $LIMSOUTFILE = $opt{ output } if $opt{ output };
 
+## start with backup of current lims files
+foreach ( $LIMSOUTFILE, $LIMSCSVFILE ){
+    #my $backup_path = "$BACKUP_DIR/$_";
+    copy( $_, "$BACKUP_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACKUP_DIR failed: $!";
+}
 
 ## columns shipments sheet in rest lims
 my %SHIP_TRANSLATIONS = (
@@ -542,7 +553,7 @@ sub fixDateFields{
             $new_date = $datetime->ymd(); ## eg 2017-01-31
         }
         else{
-            warn "[WARN] Date in field ($date_field) in unexpexted format for sample ($identifier): kept string as-is \"$old_date\"\n";
+            warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
             $new_date = $old_date;
         }
         
