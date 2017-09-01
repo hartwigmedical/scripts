@@ -415,6 +415,7 @@ sub parseLimsRest{
         }
         
         my $sample_name = $row_info{ 'sample_name' } or die "No sample_name in row_info";
+        my $sample_id = $row_info{ 'sample_id' } or die "No sample_id in row_info";
         my $submission = $row_info{ 'submission' } or die "No submission in row_info";
         my $analysis_type = $row_info{ 'analysis_type' } or die "No analysis_type in row_info";
         next if isValueToSkip( $sample_name );
@@ -468,8 +469,9 @@ sub parseLimsRest{
         next if isValueToSkip( $unique );
 
         ## checks before storing
-        my $regex = "^[0-9a-zA-z\-]*\$";
-        die "[EXIT] FIX IN LAB LIMS: sample-name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
+        my $regex = "^[0-9a-zA-Z\-]*\$";
+        die "[EXIT] FIX IN LAB LIMS: sample_name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
+        die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
         die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
         die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
