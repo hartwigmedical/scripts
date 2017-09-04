@@ -16,7 +16,7 @@ my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
 my $LIMS_JSON = '/data/lims/lims.json';
-my @OUT_FIELDS_1 = qw( submission sample_id sample_name label analysis_type entity project_name );
+my @OUT_FIELDS_1 = qw( submission sample_id sample_name arrival_date label analysis_type project_name );
 my @OUT_FIELDS_2 = qw( submission sample_id sample_name label analysis_type yield tumor_perc entity primary_tum arrival_date );
 
 my $HELP =<<HELP;
