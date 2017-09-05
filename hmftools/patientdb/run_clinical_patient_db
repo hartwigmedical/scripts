@@ -7,4 +7,4 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 
-java -jar "$patient_db_dir"/patient-db.jar -clinical -ecrf /data/ecrf/cpct_ecrf.xml -form_status /data/ecrf/cpct_form_status.csv -runs_dir /data/cpct/runs/ -db_user $db_user -db_pass $db_pass -db_url $db_url -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv -lims_csv "$patient_db_dir"/csv/lims.csv -lims_old_csv "$patient_db_dir"/csv/lims-old.csv -lims_umcu_csv "$patient_db_dir"/csv/lims-umcu.csv "$@"
+java -jar "$patient_db_dir"/patient-db.jar -clinical -raw_ecrf -ecrf /data/ecrf/cpct_ecrf.xml -form_status /data/ecrf/cpct_form_status.csv -runs_dir /data/cpct/runs/ -db_user $db_user -db_pass $db_pass -db_url $db_url -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv -lims_csv "$patient_db_dir"/csv/lims.csv -lims_old_csv "$patient_db_dir"/csv/lims-old.csv -lims_umcu_csv "$patient_db_dir"/csv/lims-umcu.csv
