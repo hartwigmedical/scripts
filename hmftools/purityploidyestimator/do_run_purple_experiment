@@ -8,7 +8,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 purple_jar=/data/common/tools/purple_v1.0/purple.jar
-gc_profile=/data/common/tools/purple_v1.0/GC_profile.1000bp.cnp
+gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
 
 purple_output=${run_dir}/purple
 full_vcf_file=${run_dir}/${run}.annotated.vcf
