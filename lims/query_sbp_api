@@ -1,0 +1,168 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp;
+use JSON;
+use Number::Format qw(:subs);
+use 5.010.000;
+
+## -----
+## Global variables
+## -----
+my $DATETIME = localtime;
+my $SCRIPT = basename $0;
+my $JSONS_HOME = '/data/lims/sbpfiles';
+
+my %out_field_settings = (
+  'samples'   => [ 'id', 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name' ],
+  'flowcells' => [ 'id', 'name', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status' ],
+  'fastq'     => [ 'id', 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld' ],
+  'runs'      => [ 'id', 'status', 'bucket' ],
+  'sets'      => [ 'id', 'name', 'ref_sample', 'tumor_sample', 'entity_id', '' ],
+  'entities'  => [ 'id', 'name', 'bucket' ],
+);
+my $tables_in_use_string = join( ", ", keys %out_field_settings );
+
+#print Dumper \%out_field_settings;
+
+my $delim = "\t";
+my $type;
+my $verbose;
+my @filters = ();
+
+my $HELP =<<HELP;
+
+  Description
+    Parses SBP api (based on static downloaded jsons)
+    Current Json files: $JSONS_HOME
+    You can update the jsons to latest by:
+    - becoming user "sbpext"
+    - executing "get_sbp_db_jsons"
+    
+  Usage
+    $SCRIPT -type <db-table-name>
+    $SCRIPT -type samples
+    $SCRIPT -type samples -filter "barcode=FR13825534"
+    $SCRIPT -type flowcells
+    $SCRIPT -type flowcells -filter "status=Pending"
+    
+  Output options
+    -delim <s>   (output delim)
+    -filter <s>  (format: \${fieldname}=\${term})
+  
+  Filter examples
+     -filter "submission=HMFreg0001"
+     -filter "barcode=FR12345678"
+
+  Tables in use: $tables_in_use_string
+    
+HELP
+print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq '--help';
+
+## -----
+## Gather input
+## -----
+GetOptions (
+    "type=s" => \$type,
+    "filter=s@" => \@filters,
+    "delim=s" => \$delim,
+	"verbose" => \$verbose,
+) or die "Error in command line arguments\n";
+warn "[EXIT] No type given?" and exit(0) unless $type;
+warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $out_field_settings{ $type };
+
+## -----
+## MAIN
+## -----
+say "## Script: $SCRIPT";
+say "## DateTime: $DATETIME";
+
+my $json_file = "$JSONS_HOME/$type.json";
+my $out_fields = $out_field_settings{ $type };
+
+my $objects = readJson( $json_file );
+$objects = filterObjects( $objects, \@filters );
+printOutput( $objects, $out_fields );
+## -----
+## /MAIN
+## -----
+
+## generic json reader
+sub readJson{
+    my ($json_file) = @_;
+    my $json_txt = read_file( $json_file );
+    my $json_obj = decode_json( $json_txt );
+    
+    ## optimize some fields for viewing
+    foreach my $obj ( @$json_obj ){
+        $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
+        $obj->{ 'yld' } = format_number( $obj->{ 'yld' } / 1000000, 0 ) if defined $obj->{ 'yld' };
+        $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
+        $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
+    }
+    
+    return( $json_obj );
+}
+
+sub filterObjects{
+    my ($objects, $filters) = @_;
+    
+    my @out = ();
+    my %filter_counts = ();
+    
+    foreach my $obj ( @$objects ){
+        my $do_skip_object = applyFiltersOnObject( $obj, $filters, \%filter_counts );
+        push( @out, $obj ) unless $do_skip_object;        
+    }
+    
+    foreach my $filter ( keys %filter_counts ){
+        my $count = $filter_counts{ $filter };
+        say "## FILTER: $count filtered away by filter \"$filter\"";
+    }
+    
+    return \@out;
+}
+
+sub applyFiltersOnObject{
+    my ($object, $filters, $counts) = @_;
+        
+    foreach my $filter_string ( @$filters ){
+        
+        my ($name, $include) = split( "=", $filter_string );
+                    
+        if ( not exists $object->{ $name } ){
+            $counts->{ $name.'=NOTEXISTS' }++;
+            return(1);
+        }
+        elsif ( not defined $object->{ $name } ){
+            $counts->{ $name.'=NOTDEFINED' }++;
+            return(1);
+        }
+        elsif ( $object->{ $name } !~ /$include/ ){
+            $counts->{ $filter_string }++;
+            return(1);
+        }
+    }
+    
+    ## all filters checked so include object
+    return 0;
+}
+
+## print output
+sub printOutput{
+    my ($objects, $out_fields) = @_;
+    my $object_count = scalar @$objects;
+    
+    say '## TotalCount: '.$object_count;
+    say '#'.join( $delim, @$out_fields );
+    foreach my $obj ( @$objects ){
+        my @out_values = map( $obj->{$_} || 'NA', @$out_fields );
+        say join( $delim, @out_values );
+    }
+}
+
+## trims whitespace on both ends of a string
+sub trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
