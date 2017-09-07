@@ -23,10 +23,9 @@ my %out_field_settings = (
   'runs'      => [ 'id', 'status', 'bucket' ],
   'sets'      => [ 'id', 'name', 'ref_sample', 'tumor_sample', 'entity_id', '' ],
   'entities'  => [ 'id', 'name', 'bucket' ],
+  'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
 );
-my $tables_in_use_string = join( ", ", keys %out_field_settings );
-
-#print Dumper \%out_field_settings;
+my $tables_in_use_string = join( ", ", sort keys %out_field_settings );
 
 my $delim = "\t";
 my $type;
@@ -36,11 +35,13 @@ my @filters = ();
 my $HELP =<<HELP;
 
   Description
-    Parses SBP api (based on static downloaded jsons)
+    Parses SBP api (for now based on static downloaded jsons!)
     Current Json files: $JSONS_HOME
+
     You can update the jsons to latest by:
     - becoming user "sbpext"
-    - executing "get_sbp_db_jsons"
+    - executing "sbp_api_get_db"
+    - [optional] executing "sbp_api_get_links" with required dates
     
   Usage
     $SCRIPT -type <db-table-name>
@@ -48,10 +49,11 @@ my $HELP =<<HELP;
     $SCRIPT -type samples -filter "barcode=FR13825534"
     $SCRIPT -type flowcells
     $SCRIPT -type flowcells -filter "status=Pending"
+    $SCRIPT -type linklog
     
   Output options
-    -delim <s>   (output delim)
-    -filter <s>  (format: \${fieldname}=\${term})
+    -delim  <s>  (output delim)
+    -filter <s>  (search string arg)
   
   Filter examples
      -filter "submission=HMFreg0001"
@@ -102,6 +104,7 @@ sub readJson{
         $obj->{ 'yld' } = format_number( $obj->{ 'yld' } / 1000000, 0 ) if defined $obj->{ 'yld' };
         $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
         $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
+        $obj->{ 'time' } =~ s/T.+$// if defined $obj->{ 'time' };
     }
     
     return( $json_obj );
