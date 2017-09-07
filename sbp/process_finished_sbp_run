@@ -6,4 +6,4 @@ path=/data/schuberg/fromweekly
 download_set_partially_from_bucket -b ${bucket} -s ${set} -l ${path}
 do_apply_somatic_variant_pon ${path}/${set}
 do_run_purple_prod ${path}/${set}
-do_load_somatic_variants ${path}/${set}
+do_load_somatic_variants_prod ${path}/${set}

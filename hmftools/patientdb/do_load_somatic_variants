@@ -1,15 +1,14 @@
 #!/bin/bash
 run_dir=$1
-prefix=`dirname $(readlink $0 || echo $0)`
+credentials=$2
+patient_jar=$3
 
 # Database details
-credentials=/data/common/tools/patient-db_v1.0/credentials
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # File Locations
-patient_jar=/data/common/tools/patient-db_v1.0/patient-db.jar
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
