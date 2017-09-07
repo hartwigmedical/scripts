@@ -58,5 +58,4 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
 
-echo "Removing intermediate ${purple_output}/*.pcf1 files"
 rm -f ${purple_output}/*.pcf1
