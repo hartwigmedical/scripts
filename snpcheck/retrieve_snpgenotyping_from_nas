@@ -1,7 +1,7 @@
 #!/bin/bash
 
 FROM_DIR="/volume1/machines/Experimenten/SNP\ check/"
-TO_DIR="/data/common/snpcheck/input/32SNPtaq/"
+TO_DIR="/data/common/snpcheck/input/"
 
 ## retrieve file
 echo "[INFO] Running scp from nas to datastore"
