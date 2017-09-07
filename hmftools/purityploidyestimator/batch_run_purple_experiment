@@ -6,7 +6,7 @@ for file in /data/cpct/runs/*; do
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
         do_apply_somatic_variant_pon $file $@
-        do_run_purple_experiment $file $@
+        do_run_purple_prod $file $@
         do_load_somatic_variants $file
     fi
 done
