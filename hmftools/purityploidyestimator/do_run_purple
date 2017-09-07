@@ -45,7 +45,7 @@ then
 	exit 1
 fi
 
-exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
     -threads 3 \
     -somatic_vcf ${somatic_vcf} \
@@ -58,4 +58,5 @@ exec java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
 
-rm -f ${purple_output}\*.pcf1
+echo "Removing intermediate ${purple_output}/*.pcf1 files"
+rm -f ${purple_output}/*.pcf1
