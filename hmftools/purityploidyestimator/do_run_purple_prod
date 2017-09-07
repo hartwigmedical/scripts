@@ -6,5 +6,5 @@ credentials=/data/common/tools/patient-db_v1.0/credentials
 purple_jar=/data/common/tools/purple_v1.0/purple.jar
 purple_output=${run_dir}/purple
 
-prefix/do_run_purple ${run_dir} ${credentials} ${purple_jar} ${purple_output} $@
+${prefix}/do_run_purple ${run_dir} ${credentials} ${purple_jar} ${purple_output} $@
 
