@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+SETNAME=$1
+BUCKET="hmf_experiments"
+LOCALDIR=/data/schuberg/experiments/${SETNAME}
+
+sbp s3 sync "s3://${BUCKET}/${SETNAME}/" "${LOCALDIR}/" --profile download
+
+VERIFY_LOGFILE="${LOCALDIR}/logs/verify_s3_md5.log"
+
+# only verify on the second run to avoid running twice and ensure error message goes to check file
+if [ -f "${VERIFY_LOGFILE}" ] && [ ! -s "${VERIFY_LOGFILE}" ]; then
+    verify_s3_md5 --local-path "${LOCAL_DIR}" --remote-url "s3://${BUCKET}" --check-links > "${VERIFY_LOGFILE}" 2>&1 \
+        || echo "ERROR: verify_s3_md5 failed, check ${VERIFY_LOGFILE}"
+else
+    touch "${VERIFY_LOGFILE}"
+fi
