@@ -16,16 +16,17 @@ my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $JSONS_HOME = '/data/lims/sbpfiles';
 
-my %out_field_settings = (
+my %OUT_FIELDS_PER_TYPE = (
   'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'id' ],
   'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'id' ],
   'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'id' ],
-  'runs'      => [ 'status', 'bucket', 'id' ],
-  'sets'      => [ 'name', 'ref_sample', 'tumor_sample', 'entity_id', 'id' ],
+  'sets'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'id' ],
+  'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', 'id' ],
   'entities'  => [ 'name', 'bucket', 'id' ],
+  'inis'      => [ 'name', 'id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
 );
-my $tables_in_use_string = join( ", ", sort keys %out_field_settings );
+my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
 my $delim = "\t";
 my $type;
@@ -36,19 +37,24 @@ my $HELP =<<HELP;
 
   Description
     Parses SBP api (for now based on static downloaded jsons!)
-    Current Json files: $JSONS_HOME
+    Current json files: $JSONS_HOME (updated every 30 min by sbpext cronjob)
 
-    You can update the jsons to latest by:
-    - becoming user "sbpext"
-    - executing "sbp_api_get_db"
-    - [optional] executing "sbp_api_get_links" with required dates
+    You can manually update the jsons to latest by:
+      - becoming user "sbpext"
+      - executing "sbp_api_get_db"
     
-  Usage
-    $SCRIPT -type <db-table-name>
+    Links (portal links created) are not updated in cronjob:
+      - executing "sbp_api_get_links" with required dates
+  
+  Available tables/types: 
+     $available_types
+  
+  Usage examples
     $SCRIPT -type samples
     $SCRIPT -type samples -filter "barcode=FR13825534"
     $SCRIPT -type flowcells
     $SCRIPT -type flowcells -filter "status=Pending"
+    $SCRIPT -type flowcells -filter "status=Pending|Sequencing"
     $SCRIPT -type linklog
     
   Output options
@@ -58,8 +64,10 @@ my $HELP =<<HELP;
   Filter examples
      -filter "submission=HMFreg0001"
      -filter "barcode=FR12345678"
-
-  Tables in use: $tables_in_use_string
+     -filter "entity=CPCT_AVL"
+     
+  Notes
+    - filter matches are perl regex based and case insensitive
     
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq '--help';
@@ -74,7 +82,7 @@ GetOptions (
 	"verbose" => \$verbose,
 ) or die "Error in command line arguments\n";
 warn "[EXIT] No type given?" and exit(0) unless $type;
-warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $out_field_settings{ $type };
+warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
 
 ## -----
 ## MAIN
@@ -82,24 +90,25 @@ warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $out_field_se
 say "## Script: $SCRIPT";
 say "## DateTime: $DATETIME";
 
-my $json_file = "$JSONS_HOME/$type.json";
-my $out_fields = $out_field_settings{ $type };
+my $objects = readJson( $type );
+my $filtered_objects = filterObjects( $objects, \@filters );
+my $out_fields = $OUT_FIELDS_PER_TYPE{ $type };
 
-my $objects = readJson( $json_file );
-$objects = filterObjects( $objects, \@filters );
-printOutput( $objects, $out_fields );
+printOutput( $filtered_objects, $out_fields );
 ## -----
 ## /MAIN
 ## -----
 
-## generic json reader
+## generic json reader for all types
 sub readJson{
-    my ($json_file) = @_;
+    my ($type) = @_;
+    my $json_file = "$JSONS_HOME/$type.json";
     my $json_txt = read_file( $json_file );
     my $json_obj = decode_json( $json_txt );
     
     ## optimize some fields for viewing
     foreach my $obj ( @$json_obj ){
+        $obj->{ 'id' } = join( "", 'SBPid=', $obj->{ 'id' } ) if defined $obj->{ 'id' };
         $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
         $obj->{ 'yld' } = format_number( $obj->{ 'yld' } / 1000000, 0 ) if defined $obj->{ 'yld' };
         $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
@@ -108,7 +117,39 @@ sub readJson{
         $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
     }
     
+    ## need to fix set info for runs (set info is situated one level deeper)
+    if ( $type eq 'runs' ){
+        foreach my $obj ( @$json_obj ){
+            my @keys_to_move = qw( name ref_sample tumor_sample entity_id );
+            foreach my $key ( @keys_to_move ){
+                $obj->{ $key } = $obj->{ 'set' }{ $key } if defined $obj->{ 'set' }{ $key };
+            }
+        }
+    }
+    
+    ## replace entity_id with entity_name
+    if ( $type eq 'sets' or $type eq 'runs' ){
+        my $entities_json_pth = "$JSONS_HOME/entities.json";
+        my $entities_json_txt = read_file( $entities_json_pth );
+        my $entities_json_obj = decode_json( $entities_json_txt );        
+        foreach my $obj ( @$json_obj ){
+            $obj->{ 'entity' } = getFieldValueByEntityId( $entities_json_obj, 'name', $obj->{ 'entity_id' } ) if defined $obj->{ 'entity_id' };     
+        }
+    }
+    
     return( $json_obj );
+}
+
+sub getFieldValueByEntityId{
+    my ($entity_objects, $request_field, $entity_id) = @_;
+    my $return = "NA";
+    foreach my $obj ( @$entity_objects ){
+        if ( $obj->{ 'id' } == $entity_id ){
+            $return = $obj->{ $request_field } if defined $obj->{ $request_field };
+        }
+    }
+    
+    return( $return );
 }
 
 sub filterObjects{
@@ -138,20 +179,20 @@ sub applyFiltersOnObject{
         my ($name, $include) = split( "=", $filter_string );
                     
         if ( not exists $object->{ $name } ){
-            $counts->{ $name.'=NOTEXISTS' }++;
+            $counts->{ $name.'=KeyNotExists' }++;
             return(1);
         }
         elsif ( not defined $object->{ $name } ){
-            $counts->{ $name.'=NOTDEFINED' }++;
+            $counts->{ $name.'=KeyNotDefined' }++;
             return(1);
         }
-        elsif ( $object->{ $name } !~ /$include/ ){
+        elsif ( $object->{ $name } !~ m/$include/i ){
             $counts->{ $filter_string }++;
             return(1);
         }
     }
     
-    ## all filters checked so include object
+    ## all filters applied and still here so return OK reponse
     return 0;
 }
 
