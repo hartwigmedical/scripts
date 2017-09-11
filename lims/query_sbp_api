@@ -17,12 +17,12 @@ my $SCRIPT = basename $0;
 my $JSONS_HOME = '/data/lims/sbpfiles';
 
 my %out_field_settings = (
-  'samples'   => [ 'id', 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name' ],
-  'flowcells' => [ 'id', 'name', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status' ],
-  'fastq'     => [ 'id', 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld' ],
-  'runs'      => [ 'id', 'status', 'bucket' ],
-  'sets'      => [ 'id', 'name', 'ref_sample', 'tumor_sample', 'entity_id', '' ],
-  'entities'  => [ 'id', 'name', 'bucket' ],
+  'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'id' ],
+  'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'id' ],
+  'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'id' ],
+  'runs'      => [ 'status', 'bucket', 'id' ],
+  'sets'      => [ 'name', 'ref_sample', 'tumor_sample', 'entity_id', 'id' ],
+  'entities'  => [ 'name', 'bucket', 'id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
 );
 my $tables_in_use_string = join( ", ", sort keys %out_field_settings );
@@ -105,6 +105,7 @@ sub readJson{
         $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
         $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
         $obj->{ 'time' } =~ s/T.+$// if defined $obj->{ 'time' };
+        $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
     }
     
     return( $json_obj );
