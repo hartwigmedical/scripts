@@ -1,7 +1,7 @@
 #!/bin/bash
-run_dir=$1
-credentials=$2
-patient_jar=$3
+run_dir=$1 && shift
+credentials=$1 && shift
+patient_jar=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -23,4 +23,9 @@ fi
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 echo "Loading variant data for sample: ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants -ref_genome ${ref_genome} -high_confidence_bed ${high_confidence_bed} -vcf_file ${somatic_vcf} -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
+java -Dorg.jooq.no-logo=true -cp ${patient_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
+    -ref_genome ${ref_genome} \
+    -high_confidence_bed ${high_confidence_bed} \
+    -vcf_file ${somatic_vcf} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
