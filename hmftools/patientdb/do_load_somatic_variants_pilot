@@ -15,4 +15,4 @@ if [[ ! -e ${gc_median} ]]; then
     exit 1
 fi
 
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} -gc_median ${gc_median} -gc_pilot ${gc_pilot}
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} -gc_median ${gc_median} -gc_profile ${gc_profile}
