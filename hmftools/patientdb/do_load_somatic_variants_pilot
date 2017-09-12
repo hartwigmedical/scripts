@@ -6,4 +6,13 @@ run_dir=$1 && shift
 credentials=/data/common/tools/patient-db_pilot/credentials
 patient_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} $@
+sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+gc_median=$(ls ${run_dir}/purple/${sample}.purple.gc.median)
+gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
+
+if [[ ! -e ${gc_median} ]]; then
+    echo "Unable to locate gc median file" ${gc_median}
+    exit 1
+fi
+
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} -gc_median ${gc_median} -gc_pilot ${gc_pilot}
