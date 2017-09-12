@@ -1,0 +1,7 @@
+#!/bin/bash
+
+ARCHIVE_PATH='/data/sequencer_archive'
+
+## finds all sequence run dirs not owned by root
+## and chowns dir recursive to root
+find ${ARCHIVE_PATH} -maxdepth 1 -name "*_*_*_*" \! -user root -exec sudo chown -R root:root {} +
