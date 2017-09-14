@@ -12,7 +12,7 @@ fi
 
 vcf_base=${vcf_in%.vcf}
 
-PON=/data/common/dbs/PON_v1.0/PON.vcf
+PON=/data/common/dbs/PON_v1.1/PON.vcf
 pon_file=${vcf_base}_consensus_filtered_pon.vcf
 if [[ ! -e ${pon_file} ]]; then
 
