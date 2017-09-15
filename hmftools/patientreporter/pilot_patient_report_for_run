@@ -8,6 +8,7 @@ high_confidence_bed="$patient_reporter_dir"/bed/NA12878_GIAB_highconf_IllFB-IllG
 
 drup_genes_csv="$patient_reporter_dir"/csv/drup_genes.csv
 cosmic_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
+fusion_csv=/data/common/dbs/cosmic_census/170915_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
 
@@ -15,4 +16,4 @@ cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/pilot_reports
 
-exec java -Xmx16G -Xms4G -jar "$patient_reporter_dir"/patient-reporter.jar -lims_json "$lims_json" -cpct_ecrf "$cpct_ecrf" -report_dir "$report_dir" -cpct_slicing_bed "$cpct_slicing_bed" -high_confidence_bed "$high_confidence_bed" -drup_genes_csv "$drup_genes_csv" -cosmic_csv "$cosmic_csv" -center_csv "$center_csv" -signature "$signature" -run_dir "$@"
+exec java -Xmx16G -Xms4G -jar "$patient_reporter_dir"/patient-reporter.jar -lims_json "$lims_json" -cpct_ecrf "$cpct_ecrf" -report_dir "$report_dir" -cpct_slicing_bed "$cpct_slicing_bed" -high_confidence_bed "$high_confidence_bed" -drup_genes_csv "$drup_genes_csv" -cosmic_csv "$cosmic_csv" -center_csv "$center_csv" -fusion_csv "$fusion_csv" -signature "$signature" -run_dir "$@"
