@@ -98,6 +98,7 @@ function write_metadata() {
     local output_name=$1 && shift
     local metadata_file="${output}/metadata"
     declare -A samples=()
+    declare -A samples_names=()
 
     # ignore it if it already exists
     if [ -e "${metadata_file}" ]; then
@@ -109,7 +110,16 @@ function write_metadata() {
         local filename=$(basename "${path}")
         if [[ ${filename} =~ ^((CPCT|DRUP)[0-9]{8})([RT])_ ]]; then
             samples[${BASH_REMATCH[3]}]=${BASH_REMATCH[1]}
+        elif [[ ${filename} =~ ^([a-zA-Z0-9\-]+)_ ]]; then
+            samples[R]=${BASH_REMATCH[1]}
         fi
+
+        ## store in extra associative array to 
+        ## keep complete sample name available
+        if [[ ${filename} =~ ^([a-zA-Z0-9\-]+)_ ]]; then
+            samples_names[${BASH_REMATCH[1]}]="dummy"
+        fi
+
     done
 
     if [ ${#samples[@]} -eq 2 ] && [ "${samples[R]}" == "${samples[T]}" ]; then
@@ -120,8 +130,17 @@ function write_metadata() {
 		    "set_name": "${output_name}"
 		}
 		EOF
+    elif [ ${#samples[@]} -eq 1 ]; then
+        sample_name=$( echo "${!samples_names[@]}" )
+        cat <<-EOF > "${metadata_file}"
+		{
+		    "ref_sample": "$sample_name",
+		    "tumor_sample": null,
+		    "set_name": "${output_name}"
+		}
+		EOF
     else
-        echoerr "failed to identify two CPCT/DRUP samples and write metadata (found: ${!samples[*]} => ${samples[*]+${samples[*]}})"
+        echoerr "failed to identify CPCT/DRUP somatic pair or single sample to create metadata (found: ${!samples[*]} => ${samples[*]+${samples[*]}})"
         echoerr "create ${metadata_file} manually and retry (just touch the file if un-needed)"
         exit 1
     fi
