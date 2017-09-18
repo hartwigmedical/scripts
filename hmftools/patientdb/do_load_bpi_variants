@@ -9,7 +9,7 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
-bpi_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/results/variants/*_somaticSV_bpi.vcf)
+bpi_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 
 echo "Loading purple data for sample: ${sample}"
 
