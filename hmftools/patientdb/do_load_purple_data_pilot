@@ -6,4 +6,4 @@ run_dir=$1 && shift
 credentials=/data/common/tools/patient-db_pilot/credentials
 patient_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar}
+${prefix}/do_load_purple_data ${run_dir} ${credentials} ${patient_jar}
