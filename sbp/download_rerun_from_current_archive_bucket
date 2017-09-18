@@ -1,0 +1,5 @@
+#!/bin/bash
+
+run=$1
+
+sbp s3 sync ${ARCHIVE_BUCKET}/$1/ /data/schuberg/reruns/$1/ --profile download
