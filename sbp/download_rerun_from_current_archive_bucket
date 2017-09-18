@@ -2,4 +2,4 @@
 
 run=$1
 
-sbp s3 sync ${ARCHIVE_BUCKET}/$1/ /data/schuberg/reruns/$1/ --profile download
+sbp s3 sync ${ARCHIVE_BUCKET}/${run}/ /data/schuberg/reruns/${run}/ --profile download
