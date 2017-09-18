@@ -1,0 +1,20 @@
+#!/bin/bash
+run_dir=$1 && shift
+credentials=$1 && shift
+patient_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+purple_dir=${run_dir}/purple
+sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+
+echo "Loading purple data for sample: ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
+    -sample ${sample} \
+    -purple_dir ${purple_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
