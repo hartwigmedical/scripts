@@ -13,11 +13,16 @@ high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllF
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 # Files
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
-	echo "Unable to locate VCF. Exiting"
-	exit 1
+	echo "Unable to locate post processed VCF. Reverting to manually PON filtered."
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate somatic variants. Exiting."
+        exit 1
+    fi
 fi
 
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
