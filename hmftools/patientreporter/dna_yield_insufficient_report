@@ -2,4 +2,7 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-"$prefix"/do_run_base_patient_reporter -not_sequenceable -not_sequenceable_reason low_dna_yield -not_sequenceable_sample "$@"
+"$prefix"/do_run_base_patient_reporter \
+    -not_sequenceable \
+    -not_sequenceable_reason low_dna_yield \
+    -not_sequenceable_sample "$@"
