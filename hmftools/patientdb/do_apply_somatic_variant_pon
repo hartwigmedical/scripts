@@ -1,6 +1,13 @@
 #!/bin/bash
 run_dir=$1
 
+# Check if pon filtering has been done by pipeline. If so, early exit.
+pipeline_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
+if [ $? -eq 0 ]
+then
+	echo "Pipeline pon file found. Exiting."
+	exit 0
+fi
 
 # Files
 vcf_in=$(ls ${run_dir}/somaticVariants/*/*melted.vcf)
