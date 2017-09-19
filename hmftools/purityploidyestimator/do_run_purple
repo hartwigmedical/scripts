@@ -53,7 +53,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -baf_vcf ${sliced_vcf_file} \
     -circos /data/common/tools/circos_v0.69.5/bin/circos \
     -gc_profile ${gc_profile} \
-    -run_dir $run_dir \
+    -run_dir ${run_dir} \
     -output_dir ${purple_output} \
     -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
