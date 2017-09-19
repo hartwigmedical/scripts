@@ -4,12 +4,16 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 drup_genes_csv=/data/common/tools/patientreporter_v3/csv/drup_genes.csv
 cosmic_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
+fusion_csv=/data/common/dbs/cosmic_census/170915_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
+ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
 
 "$prefix"/do_run_base_patient_reporter \
     -drup_genes_csv "$drup_genes_csv" \
     -cosmic_csv "$cosmic_csv" \
+    -fusion_csv "$fusion_csv" \
     -center_csv "$center_csv" \
     -signature "$signature" \
+    -ensembl_db "$ensembl_db" \
     -run_dir "$@"
