@@ -31,11 +31,16 @@ else
 	echo "Using existing sliced file" ${sliced_vcf_file}    
 fi
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
-	echo "Unable to locate somatic VCF. Exiting."
-	exit 1
+	echo "Unable to locate post processed VCF. Reverting to manually PON filtered."
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate somatic variants. Exiting."
+        exit 1
+    fi
 fi
 
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
@@ -49,8 +54,6 @@ then
     	exit 1
     fi
 fi
-
-
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
