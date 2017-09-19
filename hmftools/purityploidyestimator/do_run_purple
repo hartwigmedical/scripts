@@ -12,23 +12,30 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
-full_vcf_file=${run_dir}/${run}.annotated.vcf
-sliced_vcf_file=${run_dir}/${run}.annotated_sliced.vcf
 fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.decoys/hs37d5.fasta
 bed_file=/data/common/dbs/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
 
-if [[ ! -e ${full_vcf_file} ]]; then
-    echo "Unable to locate VCF file" ${full_vcf_file}
-    exit 1
-fi
-
 mkdir -p ${purple_output}
 
-if [[ ! -e ${sliced_vcf_file} ]]; then
-    echo "Creating sliced file" ${sliced_vcf_file}
-    java -jar /data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar -T SelectVariants -V ${full_vcf_file} -selectType SNP -o ${sliced_vcf_file} -R ${fasta_file} -L ${bed_file}
+baf_file=$(ls ${run_dir}/amber/*.amber.baf)
+if [ $? -eq 0 ]
+then
+    baf_argument="-baf ${baf_file}"
 else
-	echo "Using existing sliced file" ${sliced_vcf_file}    
+    echo "Amber BAF unavailable. Reverting to germline variants."
+    full_vcf_file=${run_dir}/${run}.annotated.vcf
+    sliced_vcf_file=${run_dir}/${run}.annotated_sliced.vcf
+    if [[ ! -e ${full_vcf_file} ]]; then
+        echo "Unable to locate VCF file" ${full_vcf_file}
+        exit 1
+    fi
+    if [[ ! -e ${sliced_vcf_file} ]]; then
+        echo "Creating sliced file" ${sliced_vcf_file}
+        java -jar /data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar -T SelectVariants -V ${full_vcf_file} -selectType SNP -o ${sliced_vcf_file} -R ${fasta_file} -L ${bed_file}
+    else
+    	echo "Using existing sliced file" ${sliced_vcf_file}
+    fi
+    baf_argument="-baf_vcf ${sliced_vcf_file}"
 fi
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
@@ -60,7 +67,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -threads 3 \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
-    -baf_vcf ${sliced_vcf_file} \
+    ${baf_argument} \
     -circos /data/common/tools/circos_v0.69.5/bin/circos \
     -gc_profile ${gc_profile} \
     -run_dir ${run_dir} \
