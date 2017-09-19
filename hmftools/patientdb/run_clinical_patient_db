@@ -1,7 +1,6 @@
 #!/bin/bash
 patient_db_dir=/data/common/tools/patient-db_v1.0
 
-# Database details
 credentials="$patient_db_dir"/credentials
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
