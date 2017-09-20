@@ -605,7 +605,7 @@ sub parseExcelSheet{
 sub isValueToSkip{
     my ($value) = @_;
     die "[EXIT] Value to check is not defined\n" if not defined $value;
-    my @to_skip = ( NACHAR, EMPTY, 'na', 'NA', 'INVALID', 'failed', 'nvt', 'NO' );
+    my @to_skip = ( NACHAR, EMPTY, 'na', 'naR', 'naT', 'NA', 'INVALID', 'failed', 'nvt', 'NO' );
     foreach ( @to_skip ){
         return 1 if $value eq $_;
     }
