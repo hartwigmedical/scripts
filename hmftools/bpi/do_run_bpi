@@ -1,0 +1,38 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+bpi_jar=$1 && shift
+bpi_output=$1 && shift
+
+run=$(basename ${run_dir})
+
+mkdir -p ${bpi_output}
+
+structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
+if [ $? -ne 0 ]
+then
+	echo "Unable to locate Manta structural variants. Exiting."
+	exit 1
+fi
+
+tumor_bam=$(ls ${run_dir}/structuralVariants/bpi/*/*T_sliced.bam)
+if [ $? -ne 0 ]
+then
+    echo "Unable to locate tumor bam. Exiting."
+    exit 1
+fi
+
+ref_bam=$(ls ${run_dir}/structuralVariants/bpi/*/*R_sliced.bam)
+if [ $? -ne 0 ]
+then
+    echo "Unable to locate ref bam. Exiting."
+    exit 1
+fi
+
+java -Xmx8G -Xms4G \
+    -jar ${bpi_jar} \
+    -vcf ${structural_vcf} \
+    -ref ${ref_bam} \
+    -tumor ${tumor_bam} \
+    -output_vcf ${bpi_output}/*/*.vcf \
+    > ${bpi_output}/*/*.tsv 
