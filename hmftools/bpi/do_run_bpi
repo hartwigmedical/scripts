@@ -3,8 +3,7 @@
 run_dir=$1 && shift
 bpi_jar=$1 && shift
 bpi_output=$1 && shift
-
-run=$(basename ${run_dir})
+samtools=/data/common/tools/samtools_v1.2/samtools
 
 mkdir -p ${bpi_output}
 
@@ -21,6 +20,7 @@ then
     echo "Unable to locate tumor bam. Exiting."
     exit 1
 fi
+${samtools} index ${tumor_bam}
 
 ref_bam=$(ls ${run_dir}/structuralVariants/bpi/*/*R_sliced.bam)
 if [ $? -ne 0 ]
@@ -28,6 +28,7 @@ then
     echo "Unable to locate ref bam. Exiting."
     exit 1
 fi
+${samtools} index ${ref_bam}
 
 java -Xmx8G -Xms4G \
     -jar ${bpi_jar} \
