@@ -2,7 +2,7 @@
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
-bpi_jar=/data/common/tools/break-point-inspector-v1.2/break-point-inspector.jar
+bpi_jar=/data/common/tools/break-point-inspector_v1.2/break-point-inspector.jar
 bpi_output=${run_dir}/structuralVariants/bpi/
 
 ${prefix}/do_run_bpi ${run_dir} ${bpi_jar} ${bpi_output}
