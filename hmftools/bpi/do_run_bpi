@@ -30,10 +30,17 @@ then
 fi
 ${samtools} index ${ref_bam}
 
+output_tsv=$(ls ${bpi_output}/*/*.tsv)
+if [ $? -ne 0 ]
+then
+    echo "Unable to locate original bpi tsv. Exiting."
+    exit 1
+fi
+
 java -Xmx8G -Xms4G \
     -jar ${bpi_jar} \
     -vcf ${structural_vcf} \
     -ref ${ref_bam} \
     -tumor ${tumor_bam} \
     -output_vcf ${bpi_output}/*/*.vcf \
-    > ${bpi_output}/*/*.tsv 
+    > ${output_tsv}
