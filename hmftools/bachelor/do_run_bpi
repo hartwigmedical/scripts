@@ -14,6 +14,5 @@ fi
 
 java -Xmx8G -Xms4G \
     -jar ${bachelor_jar} \
-    -configDirectory ${structural_vcf} \
-    -ref ${configs} \
+    -configDirectory ${configs} \
     -vcf ${annotated_germline_vcf}
