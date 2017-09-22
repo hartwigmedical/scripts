@@ -2,7 +2,7 @@
 
 bachelor_jar=/data/common/tools/bachelor_v1.0/bachelor.jar
 configs=/data/common/dbs/eligibility
-output=/data/common/experiments/eligibility
+output=/data/experiments/eligibility
 
 run_dir=$1 && shift
 run=$(basename ${run_dir})
