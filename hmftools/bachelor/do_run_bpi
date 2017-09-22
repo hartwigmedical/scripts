@@ -1,0 +1,19 @@
+#!/bin/bash
+
+bachelor_jar=/data/common/tools/bachelor_v1.0/bachelor.jar
+configs=/data/common/dbs/eligibility
+
+run_dir=$1 && shift
+
+annotated_germline_vcf=$(ls ${run_dir}/*.annotated.vcf)
+if [ $? -ne 0 ]
+then
+	echo "Unable to locate germline VCF. Exiting."
+	exit 1
+fi
+
+java -Xmx8G -Xms4G \
+    -jar ${bachelor_jar} \
+    -configDirectory ${structural_vcf} \
+    -ref ${configs} \
+    -vcf ${annotated_germline_vcf}
