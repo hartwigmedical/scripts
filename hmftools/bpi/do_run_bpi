@@ -14,7 +14,7 @@ then
 	exit 1
 fi
 
-tumor_bam=$(ls ${run_dir}/structuralVariants/bpi/*/*T_sliced.bam)
+tumor_bam=$(find ${run_dir}/structuralVariants/bpi/*/ -regex ".*T\(I\)*_sliced\.bam")
 if [ $? -ne 0 ]
 then
     echo "Unable to locate tumor bam. Exiting."
