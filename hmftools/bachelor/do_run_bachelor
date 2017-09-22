@@ -17,5 +17,5 @@ fi
 java -Xmx8G -Xms4G \
     -jar ${bachelor_jar} \
     -configDirectory ${configs} \
-    -vcf ${annotated_germline_vcf} \
-    -output ${output}/${run}.eligibility
+    -output ${output}/${run}.eligibility \
+    -vcf ${annotated_germline_vcf}
