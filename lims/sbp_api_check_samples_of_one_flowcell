@@ -1,0 +1,18 @@
+#!/bin/bash
+
+SAMPLESHEET=$1
+SAMPLESHEETFILE=$( basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )
+FLOWCELLID=${SAMPLESHEETFILE: -9}
+SEQRUN=$( query_sbp_api -type flowcells | grep ${FLOWCELLID} | cut -f 1 )
+
+## only proceed if flowcell actually done at SBP
+if [[ -z $SEQRUN ]]; then 
+    echo "[WARN] Flowcell ${FLOWCELLID} not present yet at schuberg"
+    exit 1
+fi
+
+## Flowcell done at SBP so get info per sample
+cat ${SAMPLESHEET} | grep -P "^\d{1}\," | cut -d"," -f 2 | sort | uniq | while read BARCODE; do
+    SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" | grep -v "^#" )
+    echo -e "${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
+done
