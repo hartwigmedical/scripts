@@ -17,6 +17,7 @@ use constant NOTINUSESTRING => 'COLUMNS_NOT_IN_USE_COLLAPSED';
 my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
 my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
+my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
 my $LIMSOUTFILE = '/data/lims/lims.json';
 my $LIMSCSVFILE = '/data/lims/lims.csv';
 my $BACKUP_DIR  = '/data/lims/previous';
@@ -33,12 +34,12 @@ my $HELP = <<"HELP";
     
   Usage
     $SCRIPT -execute
-      (prints this help msg without -execute)
     
   Input files that are used
        centers: $CENTER_FILE
      cpct lims: $CPCTIN_FILE
      rest lims: $RESTIN_FILE
+     proc lims: $PROCIN_FILE
 
   Output files:
     $LIMSOUTFILE (main json output)
@@ -115,6 +116,12 @@ my %REST_TRANSLATIONS = (
 #  'NoBFX'                   => 'NoAnalysis',
 );
 
+my %PROC_TRANSLATIONS = (
+  'SOP tracking code (concatenate)' => 'lab_sop_versions',
+  'Sample barcode (gDNA)' => 'sample_id', # eg FR12345678
+  'barcode 3Nm' => 'barcode_3nm', # eg FR12345678
+  'Sample ID' => 'sample_name', # eg CPCT1234567R
+);
 
 ## columns CPCT tracking sheet
 my %CPCT_TRANSLATIONS = (
@@ -171,12 +178,20 @@ say "[INFO] START with script \"$SCRIPT\"";
 
 my %dict_centers = ();
 my %lims_submiss = (); # will contain info from shipments sheet
-my %lims_samples = (); # will contain sample info from both excel files
+my %lims_inprocs = (); # will contain sample info from In Process sheet
+my %lims_samples = (); # will contain sample final info from all excel files comboined
 
+## parsing input
 parseDictFile( \%dict_centers, $CENTER_FILE, 'center2centername' );
 parseLimsShip( \%lims_submiss, $RESTIN_FILE, \%SHIP_TRANSLATIONS );
+parseLimsProc( \%lims_inprocs, $PROCIN_FILE, \%PROC_TRANSLATIONS );
 parseLimsRest( \%lims_samples, $RESTIN_FILE, \%REST_TRANSLATIONS, \%lims_submiss );
 parseLimsCPCT( \%lims_samples, $CPCTIN_FILE, \%CPCT_TRANSLATIONS, \%dict_centers );
+
+## add extra info per sample
+addLabSopString( \%lims_samples, \%lims_inprocs );
+
+## output
 printLimsToJson( \%lims_samples, \%lims_submiss, $LIMSOUTFILE );
 printLimsDateTumPercCsv( \%lims_samples, $LIMSCSVFILE );
 
@@ -191,6 +206,20 @@ say "[INFO] DONE with script \"$SCRIPT\"";
 ## ---------- 
 ## SUBs
 ## ----------
+sub addLabSopString{
+    my ($samples, $inprocessinfo) = @_;
+    my $sop_field_name = 'lab_sop_versions';
+    foreach my $id ( keys %$samples ){
+        if ( exists $inprocessinfo->{ $id } ){
+            ## format: PREP(\d+)V(\d+)-QC(\d+)V(\d+)-SEQ(\d+)V(\d+)
+            $samples->{ $id }{ $sop_field_name } = $inprocessinfo->{ $id }{ $sop_field_name };
+        }
+        else{
+            $samples->{ $id }{ $sop_field_name } = NACHAR;
+        }
+    }
+}
+
 sub printLimsToJson{
     my ($samples, $submissions, $out_file) = @_;
     my $samples_count = scalar keys %$samples;
@@ -488,6 +517,43 @@ sub parseLimsRest{
     }
 }
 
+sub parseLimsProc{
+    
+    my ($store, $file, $translations) = @_;
+    
+    my %config = (
+        excel => $file,
+        trans => $translations,
+        sheet => 'Sample in process, Results',
+        h_val => 'Sample barcode (gDNA)',
+        h_row => 4,
+        h_col => 1,
+    );
+    my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
+    
+    foreach my $row ( $config{ h_row }+1 .. $max_row ) {
+
+        my %row_info = ();
+        foreach my $col ( $config{ h_col } .. $max_col ){
+            my $header_name = $header->[$col-1];
+            my $cell = $sheet_obj->get_cell( $row, $col );
+            my $val = NACHAR;
+            $val = $cell->unformatted() if defined $cell;
+            $val = $translations->{ $val } if defined $translations->{ $val };
+            $row_info{ $header_name } = $val;
+        }
+        
+        my $unique = $row_info{ 'sample_id' };
+        next if isValueToSkip( $unique );
+        
+        ## fix certain fields 
+        #fixDateFields( \%row_info );
+        
+        ## store shipment info at uniqe id
+        $store->{ $unique } = \%row_info;
+    }
+}
+
 sub parseLimsShip{
     
     my ($store, $file, $translations) = @_;
@@ -517,7 +583,7 @@ sub parseLimsShip{
         my $unique = $row_info{ 'submission' };
         next if isValueToSkip( $unique );
         
-        ## fix certain fields 
+        ## have to get correct format for certain fields 
         fixDateFields( \%row_info );
         
         ## store shipment info at uniqe id
@@ -604,7 +670,7 @@ sub parseExcelSheet{
 
 sub isValueToSkip{
     my ($value) = @_;
-    die "[EXIT] Value to check is not defined\n" if not defined $value;
+    die "[EXIT] Value to check for skipping ($value) is not defined\n" if not defined $value;
     my @to_skip = ( NACHAR, EMPTY, 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no' );
     foreach my $skip_string ( @to_skip ){
         return 1 if $value =~ /^$skip_string$/i;
