@@ -9,16 +9,20 @@ limsCpctFrom=$NAS_DIR/HMF-FOR-006*xlsx
 limsCpctTo=$OUT_DIR/backup/$DATESTR"_LimsCPCTtracking.xlsx"
 limsRestFrom=$NAS_DIR/HMF-FOR-001*xlsx
 limsRestTo=$OUT_DIR/backup/$DATESTR"_LimsReceivedSamp.xlsx"
+limsProcFrom=$NAS_DIR/HMF-FOR-002*xlsx
+limsProcTo=$OUT_DIR/backup/$DATESTR"_LimsInProcess.xlsx"
 
 ## retrieve file
 echo "[INFO] About to sync files from nas to datastore"
 scp nas:$limsCpctFrom $limsCpctTo
 scp nas:$limsRestFrom $limsRestTo
+scp nas:$limsProcFrom $limsProcTo
 chmod -R 664 $OUT_DIR/backup/*
 
 ## symlink the lims excel files
 ln -sfn $limsCpctTo $OUT_DIR/latest_lims_cpct
 ln -sfn $limsRestTo $OUT_DIR/latest_lims_rest
+ln -sfn $limsProcTo $OUT_DIR/latest_lims_proc
 
 ## done
 echo "[INFO] Output files are in $OUT_DIR"
