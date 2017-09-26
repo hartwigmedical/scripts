@@ -117,7 +117,7 @@ sub printSampleInfo{
     } @$samples;
     
     say "## SampleCount: $sample_count";
-    say join $OUT_SEP, @$fields;
+    say "#".join( $OUT_SEP, @$fields);
     
     foreach my $sample ( @$samples ){
         my @out = ();
