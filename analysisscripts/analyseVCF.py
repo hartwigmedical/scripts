@@ -109,13 +109,16 @@ def calculateSVLengthAndStart(pos,infoSplit,infoHeaders):
     return svLen,svStart
 
 def calculateQualityScore(infoSplit,infoHeaders,caller,qual,aVariantType,format,genotype):
-    if caller == 'strelka' and aVariantType == variantType.indel:
+    if (caller == 'strelka' or caller == 'melted') and aVariantType == variantType.indel:
         try:
             return infoSplit[infoHeaders.index("QSI_NT")].split('=')[1]
         except ValueError:
             return -1
-    elif caller == 'strelka' and aVariantType == variantType.SNP:
-        return infoSplit[infoHeaders.index("QSS_NT")].split('=')[1]
+    elif (caller == 'strelka' or caller == 'melted') and aVariantType == variantType.SNP:
+        try:
+            return infoSplit[infoHeaders.index("QSS_NT")].split('=')[1]
+        except ValueError:
+            return -1
     elif caller == 'varscan':
         if "VS_SSC" in infoHeaders:
             return infoSplit[infoHeaders.index("VS_SSC")].split('=')[1]
@@ -207,7 +210,7 @@ class genotype:
                 if self.tumorVariantSubType == 'INV' and 'INV5' in infoHeaders:   # temp workaround for MANTA CASE - INV5s are duplicates...
                     self.tumorVariantSubType = 'IGN'
             self.svLen, self.svStart = calculateSVLengthAndStart(int(pos), infoSplit, infoHeaders)
-        elif inputGenotype[:3] == "./." or (inputGenotype[1]<>"/" and inputGenotype[1]<>"|" ):
+        elif (inputGenotype[0] == "." or inputGenotype[2] == "." ) or (inputGenotype[1]<>"/" and inputGenotype[1]<>"|" ):
             self.tumorVariantType = variantType.missingGenotype
             self.allele = ""
         elif inputGenotype[:3] == "0/0" or alt == ".":   #STRELKA unfiltered
@@ -271,10 +274,11 @@ class somaticVariant:
         #Label the BED region
         bedRegion = ""
         if (somaticVariant.bedItem and int(somaticVariant.bedItem[1])<int(pos) and int(somaticVariant.bedItem[2])>=int(pos) and somaticVariant.bedItem[0]==chrom):
+            bedRegion = "Default"
             try:
                 bedRegion = somaticVariant.bedItem[3]
             except IndexError:
-                bedRegion = "Default"
+                pass
 
         #Process if in Bed region or not using BED or if loading whole file
         if bedRegion <> "" or not useBed or loadRegionsOutsideBed:
