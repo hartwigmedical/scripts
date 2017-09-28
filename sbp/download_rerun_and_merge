@@ -1,0 +1,86 @@
+#!/bin/bash
+
+script=$( basename $0 )
+awscmd='sbp'
+awsprofile='download'
+storepath='/data/schuberg/rerun'
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <setname> -ob <original_bucket> -rb <rerun_bucket> [-l <localpath> -c <awscmd> -p <awsprofile>]" 1>&2;
+    echo "       $script -s 170101_HMFreg0000_etc -b hmf-output-2017-11 [-l ${storepath} -c ${awscmd} -p ${awsprofile}]" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:ob:rb:l:c:p:" o; do
+    case "${o}" in
+        s)
+            setname=${OPTARG} || usage
+            ;;
+        ob)
+            originalbucket=${OPTARG}
+            ;;
+        rb)
+            rerunbucket=${OPTARG}
+            ;;
+        l)
+            storepath=${OPTARG}
+            ;;
+        c)
+            awscmd=${OPTARG}
+            ;;
+        p)
+            awsprofile=${OPTARG}
+            ;;
+
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+## check required params
+if [[ -z "${setname}" || -z "${originalbucket}" || -z "${rerunbucket}" ]]; then
+    usage
+fi
+
+## making sure no slashes are present
+originalbucket=$( basename ${originalbucket} )
+rerunbucket=$( basename ${rerunbucket} )
+setname=$( basename ${setname} )
+
+## build path from current archive bucket
+originals3path="s3://${originalbucket}/${setname}"
+reruns3path="s3://${rerunbucket}/${setname}"
+localpath="${storepath}/${setname}"
+
+## print feedback and run
+#echo "## [INFO] Starting sync for ${setname}"
+#echo "## [INFO] To: ${localpath}"
+#echo "## [INFO] Original from: ${originals3path}"
+
+## original sync
+${awscmd} s3 sync ${originals3path} ${localpath} --dryrun --profile ${awsprofile} \
+--exclude "*" \
+--include "*annotated.vcf"
+
+#echo "## [INFO] Rerun from: ${reruns3path}"
+
+## rerun sync
+${awscmd} s3 sync ${reruns3path} ${localpath} --dryrun --profile ${awsprofile} \
+--exclude "*.bam" \
+--include "*sliced.bam" \
+--exclude "*.g.vcf.gz" \
+--exclude "*.vcf" \
+--include "*annotated.vcf" \
+--include "*_GoNLv5.vcf" \
+--include "*sliced.vcf" \
+--include "*post_processed.vcf" \
+--include "*melted.vcf" \
+--include "*snpcheck*.vcf" \
+--include "*bpi.vcf" \
+--include "evidence.*.bam"
+
+
