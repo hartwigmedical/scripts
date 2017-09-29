@@ -7,21 +7,21 @@ storepath='/data/schuberg/rerun'
 
 usage() {
     echo "---"
-    echo "Usage: $script -s <setname> -ob <original_bucket> -rb <rerun_bucket> [-l <localpath> -c <awscmd> -p <awsprofile>]" 1>&2;
-    echo "       $script -s 170101_HMFreg0000_etc -b hmf-output-2017-11 [-l ${storepath} -c ${awscmd} -p ${awsprofile}]" 1>&2;
+    echo "Usage: $script -s <setname> -o <original_bucket> -r <rerun_bucket> [-l <localpath> -c <awscmd> -p <awsprofile>]" 1>&2;
+    echo "       $script -s 170101_HMFreg0000_etc -o hmf-output-2016-11 -r hmf-output-2017-09 [-l ${storepath} -c ${awscmd} -p ${awsprofile}]" 1>&2;
     echo "---"
     exit 1
 }
 
-while getopts ":s:ob:rb:l:c:p:" o; do
+while getopts ":s:o:r:l:c:p:" o; do
     case "${o}" in
         s)
             setname=${OPTARG} || usage
             ;;
-        ob)
+        o)
             originalbucket=${OPTARG}
             ;;
-        rb)
+        r)
             rerunbucket=${OPTARG}
             ;;
         l)
