@@ -27,10 +27,10 @@ my $HELP =<<HELP;
     
   Usage
     $SCRIPT -submission "HMFreg0000"
-    $SCRIPT -submission "HMFreg" -regex
+    $SCRIPT -submission "HMFreg" -regex_match
     $SCRIPT -sample_id "FR11111111"
     $SCRIPT -sample_name "CPCT01010001T"
-    $SCRIPT -sample_name "CPCT01010001" -partial_match
+    $SCRIPT -sample_name "CPCT01010001" -regex_match
     $SCRIPT -sample_id "FR11111111" -full_output
     
   Output options
