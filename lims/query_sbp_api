@@ -21,7 +21,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'id' ],
   'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'id' ],
   'sets'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'id' ],
-  'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', "ini", 'id' ],
+  'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', "pipeline", "ini", 'id' ],
   'entities'  => [ 'name', 'bucket', 'id' ],
   'inis'      => [ 'name', 'id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
@@ -127,20 +127,25 @@ sub readJson{
         }
     }
     
-    ## replace entity_id with entity_name
+    ## add extra information for sets/runs from other jsons
     if ( $type eq 'sets' or $type eq 'runs' ){
-        my $entities_json_pth = "$JSONS_HOME/entities.json";
-        my $entities_json_txt = read_file( $entities_json_pth );
-        my $entities_json_obj = decode_json( $entities_json_txt );        
-        my $inis_json_pth = "$JSONS_HOME/inis.json";
-        my $inis_json_txt = read_file( $inis_json_pth );
-        my $inis_json_obj = decode_json( $inis_json_txt );        
+        my $entities = jsonFileToObject( "$JSONS_HOME/entities.json" );
+        my $inis = jsonFileToObject( "$JSONS_HOME/inis.json" );
+        my $stacks = jsonFileToObject( "$JSONS_HOME/stacks.json" );
         foreach my $obj ( @$json_obj ){
-            $obj->{ 'entity' } = getFieldValueById( $entities_json_obj, 'name', $obj->{ 'entity_id' } ) if defined $obj->{ 'entity_id' };
-            $obj->{ 'ini' } = getFieldValueById( $inis_json_obj, 'name', $obj->{ 'ini_id' } ) if defined $obj->{ 'ini_id' };
+            $obj->{ 'entity' } = getFieldValueById( $entities, 'name', $obj->{ 'entity_id' } ) if defined $obj->{ 'entity_id' };
+            $obj->{ 'ini' } = getFieldValueById( $inis, 'name', $obj->{ 'ini_id' } ) if defined $obj->{ 'ini_id' };
+            $obj->{ 'pipeline' } = getFieldValueById( $stacks, 'revision', $obj->{ 'stack_id' } ) if defined $obj->{ 'stack_id' };
         }
     }
     
+    return( $json_obj );
+}
+
+sub jsonFileToObject{
+    my ($json_file_path) = @_;
+    my $json_txt = read_file( $json_file_path );
+    my $json_obj = decode_json( $json_txt );
     return( $json_obj );
 }
 
