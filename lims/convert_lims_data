@@ -19,7 +19,6 @@ my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
 my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
 my $LIMSOUTFILE = '/data/lims/lims.json';
-my $LIMSCSVFILE = '/data/lims/lims.csv';
 my $BACKUP_DIR  = '/data/lims/previous';
 
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
@@ -43,7 +42,6 @@ my $HELP = <<"HELP";
 
   Output files:
     $LIMSOUTFILE (main json output)
-    $LIMSCSVFILE (summary with tumor percentage)
 
 HELP
 
@@ -71,8 +69,7 @@ foreach ( $CENTER_FILE, $CPCTIN_FILE, $RESTIN_FILE ){
 $LIMSOUTFILE = $opt{ output } if $opt{ output };
 
 ## start with backup of current lims files
-foreach ( $LIMSOUTFILE, $LIMSCSVFILE ){
-    #my $backup_path = "$BACKUP_DIR/$_";
+foreach ( $LIMSOUTFILE ){
     copy( $_, "$BACKUP_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACKUP_DIR failed: $!";
 }
 
@@ -111,9 +108,6 @@ my %REST_TRANSLATIONS = (
   "Priority"                => 'has_prio', 
   "State"                   => 'state', 
   "Remarks"                 => 'remarks',
-#  'GermlineBFX'             => 'Germline',
-#  'SomaticsBFX'             => 'Somatic',
-#  'NoBFX'                   => 'NoAnalysis',
 );
 
 my %PROC_TRANSLATIONS = (
@@ -193,7 +187,6 @@ addLabSopString( \%lims_samples, \%lims_inprocs );
 
 ## output
 printLimsToJson( \%lims_samples, \%lims_submiss, $LIMSOUTFILE );
-printLimsDateTumPercCsv( \%lims_samples, $LIMSCSVFILE );
 
 say "[INFO] DONE with script \"$SCRIPT\"";
 
@@ -232,48 +225,6 @@ sub printLimsToJson{
     open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         print $lims_json_fh $json_txt;
     close $lims_json_fh;
-}
-
-sub printLimsDateTumPercCsv{
-    my ($lims, $out_file) = @_;
-    
-    #my $output_text = '';
-    my @output_lines = ();
-    my $sort_field1 = 'arrival_date';
-    my $sort_field2 = 'sample_name';
-    
-    ## get the samples sorted by date and name
-    my @sorted_sample_ids = sort { 
-        $lims->{$a}->{$sort_field1} cmp $lims->{$b}->{$sort_field1} or 
-        $lims->{$a}->{$sort_field2} cmp $lims->{$b}->{$sort_field2} 
-    } keys %$lims;
-    
-    #foreach my $sample_id ( keys %$lims ){
-    foreach my $sample_id ( @sorted_sample_ids ){
-        my $sample = $lims->{ $sample_id };
-        my $type = $sample->{ 'analysis_type' };
-        
-        if ( $type =~ m/Somatic/i ){
-            my $s_name = getValueFromHashByKey( $sample, 'sample_name' );
-            my $t_perc = getValueFromHashByKey( $sample, 'tumor_perc' );
-            my $a_date = getValueFromHashByKey( $sample, 'arrival_date' );
-            my $s_date = getValueFromHashByKey( $sample, 'sampling_date' );
-
-            ## need to fix unexpected field contents
-            $t_perc = ($t_perc =~ /^\d+$/) ? $t_perc : '';
-            $a_date = ($a_date =~ /^[\d\-]+$/) ? $a_date : '';
-            $s_date = ($s_date =~ /^[\d\-]+$/) ? $s_date : '';
-            
-            ## add to the final output
-            push( @output_lines, join( ',', $s_name, $s_date, $a_date, $t_perc ) );
-        }
-    }
-    
-    say "[INFO] Writing output to \"$out_file\"";
-    open my $fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
-        #say $fh $output_text;
-        say $fh join( "\n", @output_lines );
-    close $fh;
 }
 
 sub parseDictFile{
