@@ -25,7 +25,7 @@ for sheet in $sheets; do
 	echo "# [Samp] "$sampleSheetFile;
 	
 	## check cycle status
-	cycleCount=`ls $runBase/Logs/ | grep -Pc "Cycle "`
+	cycleCount=$( ls $runBase/Logs/ | grep -Pc "Cycle[\W\_]{1}" )
 	echo "# [NOTE] CYCLE log count: $cycleCount"
 		
         ## check conversion status
