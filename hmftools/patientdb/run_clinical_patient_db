@@ -16,6 +16,6 @@ exec java \
     -db_pass $db_pass \
     -db_url $db_url \
     -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv \
-    -lims_csv "$patient_db_dir"/csv/lims.csv \
+    -lims_json /data/lims/lims.json \
     -lims_old_csv "$patient_db_dir"/csv/lims-old.csv \
     -lims_umcu_csv "$patient_db_dir"/csv/lims-umcu.csv
