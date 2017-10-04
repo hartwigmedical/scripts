@@ -12,54 +12,28 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
-fasta_file=/data/common/refgenomes/Homo_sapiens.GRCh37.decoys/hs37d5.fasta
-bed_file=/data/common/dbs/CytoScanHD/CytoScanHD_hg19_SNPs_sorted.bed
 
 mkdir -p ${purple_output}
 
 baf_file=$(ls ${run_dir}/amber/*.amber.baf)
-if [ $? -eq 0 ]
+if [ $? -ne 0 ]
 then
-    baf_argument="-baf ${baf_file}"
-else
-    echo "Amber BAF unavailable. Reverting to germline variants."
-    full_vcf_file=${run_dir}/${run}.annotated.vcf
-    sliced_vcf_file=${run_dir}/${run}.annotated_sliced.vcf
-    if [[ ! -e ${full_vcf_file} ]]; then
-        echo "Unable to locate VCF file" ${full_vcf_file}
-        exit 1
-    fi
-    if [[ ! -e ${sliced_vcf_file} ]]; then
-        echo "Creating sliced file" ${sliced_vcf_file}
-        java -jar /data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar -T SelectVariants -V ${full_vcf_file} -selectType SNP -o ${sliced_vcf_file} -R ${fasta_file} -L ${bed_file}
-    else
-    	echo "Using existing sliced file" ${sliced_vcf_file}
-    fi
-    baf_argument="-baf_vcf ${sliced_vcf_file}"
+    echo "Amber BAF unavailable. Exiting."
+    exit 1
 fi
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
-	echo "Unable to locate post processed VCF. Reverting to manually PON filtered."
-    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate somatic variants. Exiting."
-        exit 1
-    fi
+    echo "Unable to locate somatic variants. Exiting."
+    exit 1
 fi
 
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
-	echo "Unable to locate BPI VCF. Reverting to MANTA."
-	structural_vcf=$(ls ${run_dir}/structuralVariants/manta/*/results/variants/somaticSV.vcf.gz)
-    if [ $? -ne 0 ]
-    then
-    	echo "Unable to locate structural variants. Exiting."
-    	exit 1
-    fi
+    echo "Unable to locate bpi structural variants. Exiting."
+    exit 1
 fi
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
@@ -67,7 +41,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -threads 3 \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
-    ${baf_argument} \
+    -baf ${baf_file} \
     -circos /data/common/tools/circos_v0.69.5/bin/circos \
     -gc_profile ${gc_profile} \
     -run_dir ${run_dir} \
