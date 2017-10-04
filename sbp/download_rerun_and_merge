@@ -3,7 +3,7 @@
 script=$( basename $0 )
 awscmd='sbp'
 awsprofile='download'
-storepath='/data/schuberg/reruns'
+storepath='/data/schuberg/merged_runs'
 
 usage() {
     echo "---"
@@ -76,6 +76,7 @@ ${awscmd} s3 sync ${reruns3path} ${localpath} --profile ${awsprofile} \
 --include "cobalt/*" \
 --include "somaticVariants/*post_processed*" \
 --include "structuralVariants/manta/*somaticSV.vcf.gz*" \
---include "structuralVariants/bpi/*sliced.bam*"
+--include "structuralVariants/bpi/*sliced.bam*" \
+--include "structuralVariants/bpi/*.tsv"
 
 
