@@ -72,6 +72,7 @@ echo "## [INFO] Rerun from: ${reruns3path}"
 ## rerun sync
 ${awscmd} s3 sync ${reruns3path} ${localpath} --profile ${awsprofile} \
 --exclude "*" \
+--include "metadata" \
 --include "amber/*" \
 --include "cobalt/*" \
 --include "somaticVariants/*post_processed*" \
