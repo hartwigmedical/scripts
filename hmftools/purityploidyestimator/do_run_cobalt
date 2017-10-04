@@ -23,3 +23,5 @@ java -Xmx8G -Xms4G \
     -diploid \
     -output_dir ${output_dir} \
     -gc_profile ${gc_profile}
+
+rm -f ${output_dir}/*.pcf1
