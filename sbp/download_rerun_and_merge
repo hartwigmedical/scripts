@@ -71,16 +71,11 @@ echo "## [INFO] Rerun from: ${reruns3path}"
 
 ## rerun sync
 ${awscmd} s3 sync ${reruns3path} ${localpath} --profile ${awsprofile} \
---exclude "*.bam" \
---include "*sliced.bam" \
---exclude "*.g.vcf.gz" \
---exclude "*.vcf" \
---include "*_GoNLv5.vcf" \
---include "*sliced.vcf" \
---include "*post_processed.vcf" \
---include "*melted.vcf" \
---include "*snpcheck*.vcf" \
---include "*bpi.vcf" \
---include "evidence.*.bam"
+--exclude "*" \
+--include "amber/*" \
+--include "cobalt/*" \
+--include "somaticVariants/*post_processed*" \
+--include "structuralVariants/manta/*somaticSV.vcf.gz*" \
+--include "structuralVariants/bpi/*sliced.bam*"
 
 
