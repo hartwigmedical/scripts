@@ -16,13 +16,8 @@ ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
-	echo "Unable to locate post processed VCF. Reverting to manually PON filtered."
-    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*melted_consensus_filtered_pon.vcf)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate somatic variants. Exiting."
-        exit 1
-    fi
+    echo "Unable to locate post processed somatic variants. Exiting."
+    exit 1
 fi
 
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
