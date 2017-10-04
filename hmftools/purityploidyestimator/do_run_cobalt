@@ -1,0 +1,25 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+cobalt_jar=/data/common/tools/cobalt_v1.1/cobalt.jar
+gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
+output_dir=${run_dir}/cobalt
+metadata=${run_dir}/metadata
+
+tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+reference_sample=$(jq -r '.ref_sample' ${metadata})
+
+echo "Calculating cobalt ratios for tumor" ${tumor_sample}
+java -Xmx8G -Xms4G \
+    -jar ${cobalt_jar} \
+    -sample ${tumor_sample} \
+    -output_dir ${output_dir} \
+    -gc_profile ${gc_profile}
+
+echo "Calculating cobalt ratios for reference" ${reference_sample}
+java -Xmx8G -Xms4G \
+    -jar ${cobalt_jar} \
+    -sample ${reference_sample} \
+    -diploid \
+    -output_dir ${output_dir} \
+    -gc_profile ${gc_profile}
