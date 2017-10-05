@@ -1,7 +1,7 @@
 select patients.patientId, primaryTumorLocation, biopsyDate, biopsyLocation, biopsyLocationOther
 -- , treatmentGiven, treatmentStart, treatmentEnd, treatment
 -- , treatmentOther,
--- measurement, responseAsseddmentDate, responseDate, response
+-- measurement, responseAsseddmentDate, responseDate, response 
 from 
 	(select distinct patientId from ecrf) patients
 left join
