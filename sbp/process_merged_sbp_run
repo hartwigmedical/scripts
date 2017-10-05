@@ -1,0 +1,16 @@
+#!/bin/bash
+
+set=$1
+original_bucket=$2
+rerun_bucket=$3
+path=/data/schuberg/merged_runs
+download_rerun_and_merge -s ${set} -o ${original_bucket} -r ${rerun_bucket} -l ${path}
+
+structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
+if [ $? -ne 0 ]
+then
+    do_run_bpi_prod ${path}/${set}
+    do_run_cobalt ${path}/${set}
+    do_run_purple_prod ${path}/${set}
+    do_load_somatic_variants_prod ${path}/${set}
+fi
