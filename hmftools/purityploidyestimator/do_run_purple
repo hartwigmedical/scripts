@@ -11,10 +11,6 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
-
-mkdir -p ${purple_output}
-
 baf_file=$(ls ${run_dir}/amber/*.amber.baf)
 if [ $? -ne 0 ]
 then
@@ -36,6 +32,10 @@ then
     exit 1
 fi
 
+
+mkdir -p ${purple_output}
+rm -f ${purple_output}/*
+
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
     -threads 3 \
@@ -48,5 +48,3 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -output_dir ${purple_output} \
     -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
-
-rm -f ${purple_output}/*.pcf1
