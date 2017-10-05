@@ -32,9 +32,10 @@ then
     exit 1
 fi
 
-
 mkdir -p ${purple_output}
 rm -f ${purple_output}/*
+
+do_run_cobalt ${run_dir}
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
