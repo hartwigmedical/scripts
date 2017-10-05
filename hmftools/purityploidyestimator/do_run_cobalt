@@ -7,21 +7,29 @@ output_dir=${run_dir}/cobalt
 metadata=${run_dir}/metadata
 
 tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+tumor_ratio=$(ls ${run_dir}/cobalt/${tumor_sample}.cobalt.ratio)
+if [ $? -ne 0 ]
+then
+    echo "Calculating cobalt ratios for tumor" ${tumor_sample}
+    java -Xmx8G -Xms4G \
+        -jar ${cobalt_jar} \
+        -sample ${tumor_sample} \
+        -output_dir ${output_dir} \
+        -gc_profile ${gc_profile}
+fi
+
 reference_sample=$(jq -r '.ref_sample' ${metadata})
+reference_ratio=$(ls ${run_dir}/cobalt/${reference_sample}.cobalt.ratio)
+if [ $? -ne 0 ]
+then
+    echo "Calculating cobalt ratios for reference" ${reference_sample}
+    java -Xmx8G -Xms4G \
+        -jar ${cobalt_jar} \
+        -sample ${reference_sample} \
+        -diploid \
+        -output_dir ${output_dir} \
+        -gc_profile ${gc_profile}
+fi
 
-echo "Calculating cobalt ratios for tumor" ${tumor_sample}
-java -Xmx8G -Xms4G \
-    -jar ${cobalt_jar} \
-    -sample ${tumor_sample} \
-    -output_dir ${output_dir} \
-    -gc_profile ${gc_profile}
-
-echo "Calculating cobalt ratios for reference" ${reference_sample}
-java -Xmx8G -Xms4G \
-    -jar ${cobalt_jar} \
-    -sample ${reference_sample} \
-    -diploid \
-    -output_dir ${output_dir} \
-    -gc_profile ${gc_profile}
-
+echo "COBALT complete"
 rm -f ${output_dir}/*.pcf1
