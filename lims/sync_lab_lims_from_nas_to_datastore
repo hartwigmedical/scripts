@@ -17,7 +17,6 @@ echo "[INFO] About to sync files from nas to datastore"
 scp nas:$limsCpctFrom $limsCpctTo
 scp nas:$limsRestFrom $limsRestTo
 scp nas:$limsProcFrom $limsProcTo
-chmod -R 664 $OUT_DIR/backup/*
 
 ## symlink the lims excel files
 ln -sfn $limsCpctTo $OUT_DIR/latest_lims_cpct
