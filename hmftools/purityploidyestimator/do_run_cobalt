@@ -16,7 +16,7 @@ then
     java -Xmx8G -Xms4G \
         -jar ${cobalt_jar} \
         -threads 2 \
-        -reference ${tumor_sample} \
+        -reference ${reference_sample} \
         -tumor ${tumor_sample} \
         -output_dir ${output_dir} \
         -gc_profile ${gc_profile}
