@@ -55,4 +55,3 @@ left join
 (select patientId, group_concat(itemValue separator ', ') as response
 from ecrf where item ='FLD.TUMORMEASUREMENT.BESTRESPON' group by patientId) bestrespon
 on responsedtc.patientId = bestrespon.patientId
-where patients.patientId in ("CPCT02010003", "CPCT02010007", "CPCT02010008")
