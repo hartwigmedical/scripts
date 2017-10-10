@@ -1,5 +1,5 @@
 select patients.patientId, baselinedtc, icdtc, adconsent, adbiopsy, adgen, adtissues, addna, adpid, adtum, 
-adblood, ic1, ic2, ic3, ic4, amcons, amd17gr, tstam84,
+adblood, amcons, amd17gr, tstam84,
 tstam85, tstam86, tstam87,  tstam81, tstam82,
 tstam83, tstam88, tstam89
  
@@ -46,26 +46,9 @@ left join
 	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.ADBLOOD' group by patientId) ADBLOOD
 on ADTUM.patientId = ADBLOOD.patientId
 left join
-	(select patientId, group_concat(itemValue separator ', ') as ic1
-	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.IC1' group by patientId) IC1
-on ADBLOOD.patientId = IC1.patientId
-left join
-	(select patientId, group_concat(itemValue separator ', ') as ic2
-	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.IC2' group by patientId) IC2
-on IC1.patientId = IC2.patientId
-left join
-	(select patientId, group_concat(itemValue separator ', ') as ic3
-	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.IC3' group by patientId) IC3
-on IC2.patientId = IC3.patientId
-
-left join
-	(select patientId, group_concat(itemValue separator ', ') as ic4
-	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.IC4' group by patientId) IC4
-on IC3.patientId = IC4.patientId
-left join
 	(select patientId, group_concat(itemValue separator ', ') as amcons
 	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.AMCONS' group by patientId) AMCONS
-on IC4.patientId = AMCONS.patientId
+on ADBLOOD.patientId = AMCONS.patientId
 left join
 	(select patientId, group_concat(itemValue separator ', ') as amd17gr
 	from ecrf where fieldName ='BASELINE.INFORMEDCONSENT.INFORMEDCONSENT.AMD17GR' group by patientId) AMD17GR
