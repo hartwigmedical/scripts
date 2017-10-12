@@ -5,7 +5,6 @@ for file in /data/cpct/runs/*; do
     if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
-        do_apply_somatic_variant_pon $file $@
         do_run_purple_pilot $file $@
         do_load_somatic_variants_pilot $file
     fi
