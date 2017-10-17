@@ -10,6 +10,11 @@ structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
     do_run_bpi_prod ${run_dir}
+fi
+
+cobalt=$(ls ${run_dir}/cobalt/*.cobalt)
+if [ $? -ne 0 ]
+then
     do_run_cobalt ${run_dir}
     do_run_purple_prod ${run_dir}
     do_load_somatic_variants_prod ${run_dir}
