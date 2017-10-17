@@ -19,3 +19,5 @@ then
     do_run_purple_prod ${run_dir}
     do_load_somatic_variants_prod ${run_dir}
 fi
+
+rm -f ${run_dir}/cobalt/*.count
