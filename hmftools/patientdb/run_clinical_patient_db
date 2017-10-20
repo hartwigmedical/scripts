@@ -16,5 +16,5 @@ exec java \
     -db_url ${db_url} \
     -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv \
     -lims_json /data/lims/lims.json \
-    -pre_hmf_arrival_dates_csv /data/lims/pre_hmf_arrival_dates.csv \
+    -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -do_load_raw_ecrf
