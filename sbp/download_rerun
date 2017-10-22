@@ -63,8 +63,8 @@ ${awscmd} s3 sync ${reruns3path} ${localpath} --profile ${awsprofile} \
 --include "amber/*" \
 --include "cobalt/*" \
 --include "somaticVariants/*post_processed*" \
+--include "somaticVariants/*all.somatic.indels.vcf" \
+--include "somaticVariants/*all.somatic.snvs.vcf" \
 --include "structuralVariants/manta/*somaticSV.vcf.gz*" \
 --include "structuralVariants/bpi/*sliced.bam*" \
 --include "structuralVariants/bpi/*.tsv"
-
-
