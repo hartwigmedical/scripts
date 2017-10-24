@@ -1,3 +1,4 @@
+library(devtools)#; install_github("im3sanger/dndscv")
 library(MutationalPatterns)
 library(RMySQL)
 library(data.table)
@@ -45,6 +46,8 @@ create_empty_signature2<-function() {
   }
   return (DF)
 }
+
+
 
 create_empty_signature<-function() {
   DF <- data.frame(type=character(), context=character(), count=double(), stringsAsFactors=FALSE)
@@ -151,4 +154,25 @@ nmf_res <- extract_signatures(mutation_matrix, rank = 2)
 
 
 ######## RANDOM TESTING UNDER HERE
+library(MASS)
+library(dndscv)
 
+sample_mutations<-function(dbConnect, cohort)
+{
+  query = paste(
+    "select sv.sampleId, chromosome as chr, position as pos, ref,alt from somaticVariant sv,sample s,patient p ",
+    "where sv.sampleId = s.sampleId and s.patientId = p.id and p.primaryTumorLocation='",
+    cohort,
+    "' and length(alt) = length(ref) and filter = 'PASS' and gene <> '' limit 500000",
+    sep = "")
+  
+  raw_data = dbGetQuery(dbConnect, query)
+}
+
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+mutations<-sample_mutations(dbConnect,'Melanoma')
+dbDisconnect(dbConnect)
+dndscv(mutations)
+
+paste((cohort),collapse=" ")
+c(cohort)
