@@ -193,8 +193,8 @@ sub processSample{
             ## for research samples a partner needs to be defined in lab LIMS
             my $ref_string = $sample->{ partner_sample };
             $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_id' );
-	}
-	else{
+        }
+        else{
             ## for CPCT etc the partner can be found by patient name + R
             my $ref_string = $patient.'R';
             $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_name' );
@@ -283,6 +283,7 @@ sub getSomaticRSampleByStringForField{
         }
     }
     warn "[WARN] $search_string not found in field $search_field of any record\n";
+    return(undef);
 }
 
 sub getValueByKey{

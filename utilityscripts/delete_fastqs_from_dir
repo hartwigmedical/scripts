@@ -1,0 +1,17 @@
+#!/bin/bash
+
+FASTQDIR=$1
+
+if [[ "${FASTQDIR}" == "" || "${FASTQDIR}" == "-h" ]]; then
+    echo "Usage: `basename $0` <path-to-dir-with-fastq-files-to-delete> (needs sudo rights)"
+    exit 1
+elif [[ ! -d "${FASTQDIR}" ]]; then
+    echo "[EXIT] Dir not found (${FASTQDIR})"
+    exit 1
+elif [[ $(find "${FASTQDIR}" -maxdepth 1 -name "*.fastq.gz" | wc -l) == 0 ]]; then
+    echo "[EXIT] No fastq files found in dir (${FASTQDIR})"
+    exit 1
+else
+    echo "[INFO] Deleting all fastq files in dir (${FASTQDIR})"
+    sudo rm ${FASTQDIR}/*.fastq.gz
+fi

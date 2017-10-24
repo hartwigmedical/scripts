@@ -2,7 +2,7 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-drup_genes_csv=/data/common/tools/patientreporter_v3.15/csv/drup_genes.csv
+drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
 fusion_csv=/data/common/dbs/cosmic_census/170915_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv

@@ -7,7 +7,6 @@ for file in ${runs_dir}/*; do
     then
     	echo "Processing sample" ${sample}
     	# Disabled for the moment
-    	#do_apply_somatic_variant_pon $file
     	#do_load_somatic_variants $file
     fi
 done

@@ -308,7 +308,7 @@ sub parseLimsCPCT{
             $row_info{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         else{
-            die "[EXIT] Sample $sample_name from CPCT lims cannot be read by somatic regex\n";
+            warn "[WARN] Skipped sample $sample_name from CPCT lims because format is not as expected\n";
             next;
         }
         $row_info{ 'project_name' } = $row_info{ 'submission' };

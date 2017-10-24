@@ -12,6 +12,7 @@ fi
 echo "[INFO] Execute to start sync:"
 rsynccmd="nohup rsync -trhP"
 rsynccmd=${rsynccmd}" --exclude \"*.bcl.gz\""
+rsynccmd=${rsynccmd}" --exclude \"*.cbcl\""
 rsynccmd=${rsynccmd}" --exclude \"*Data/Intensities/BaseCalls/L0*\""
 rsynccmd=${rsynccmd}" --exclude \"*Undetermined_*fastq.gz\""
 rsynccmd=${rsynccmd}" --exclude \"*Thumbnail_Images*\""

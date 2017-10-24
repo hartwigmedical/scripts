@@ -37,10 +37,13 @@ then
     exit 1
 fi
 
+joint_name=$(realpath ${output_tsv} | awk -F/ '{print $8}')
+output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
+
 java -Xmx8G -Xms4G \
     -jar ${bpi_jar} \
     -vcf ${structural_vcf} \
     -ref ${ref_bam} \
     -tumor ${tumor_bam} \
-    -output_vcf ${bpi_output}/*/*.vcf \
+    -output_vcf ${output_vcf} \
     > ${output_tsv}

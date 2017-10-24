@@ -1,0 +1,9 @@
+#!/bin/bash
+
+s3path=$1 # eg s3://hmf-output-2016-23/<SETNAME>
+
+setname=$( basename ${s3path} )
+dspath="/data/schuberg/bam2fastq/bam2fastq_${setname}"
+
+echo "[INFO] Downloading BAMs from ${s3path}"
+sbp s3 sync ${s3path}/ ${dspath}/ --profile download --exclude "*" --include "*/mapping/*_dedup.realigned.bam*"
