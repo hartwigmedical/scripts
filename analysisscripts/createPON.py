@@ -6,9 +6,10 @@ from collections import namedtuple
 TAB = '\t'
 COLON = ':'
 COMMA = ','
+SEMI_COLON = ';'
 EQUALS = '='
 
-REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL' ) # TODO maybe make this command line argument
+REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL','NORMAL' ) # TODO maybe make this command line argument
 
 REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
 
@@ -110,10 +111,11 @@ class VCFReader():
 
 class PONGenerator():
 
-    def __init__(self, outputFile, minCountThreshold):
+    def __init__(self, outputFile, minCountThreshold,strelkaMode):
         self._heap = []
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
+        self._strelkaMode = strelkaMode
         self._outputFile.writeInfoHeader(ID="PON_COUNT", Number=1, Type="Integer", Description="how many samples had the variant")
 
     def merge(self, vcf_readers):
@@ -128,7 +130,7 @@ class PONGenerator():
         for vcf in vcf_readers:
             # find the reference sample
             sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
-            if sample in samples: # check it is unique
+            if sample in sample and not self._strelkaMode: # check it is unique
                 continue
             samples.add(sample)
             vcf.setReferenceSample( sample )
@@ -169,19 +171,51 @@ class PONGenerator():
             else:
                 return int(chromosome)
 
-        # check that reference sample shows the alt in GT field
-        alts = [ alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0] ]
-        for idx, alt in enumerate(alts):
-            heapq.heappush(self._heap,
-                (
-                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)), # location tuple, sorted on this field
-                    variant,
-                    alt,
-                    vcf if idx==len(alts)-1 else None
-                )
-            )
+        if self._strelkaMode:
+            refSampleSplit = vcf.getReferenceSampleFromVariant(variant).split(COLON)
+            formatSplit = variant.FORMAT.split(COLON)
 
-        return len(alts) > 0
+            if variant.ALT == ".":
+                return False
+            alt = variant.ALT.split(COMMA)[0]
+            if (len(variant.REF)==len(alt)):
+                if int(refSampleSplit[formatSplit.index(alt+ 'U')].split(',')[1]) > 1 or  int(refSampleSplit[formatSplit.index(alt+ 'U')].split(',')[0]) > 0:
+                    heapq.heappush(self._heap,
+                                (
+                                   (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
+                                   variant,
+                                   alt,
+                                   vcf
+                               )
+                               )
+                    return True
+            else:
+                if int(refSampleSplit[formatSplit.index('TAR')].split(',')[1]) > 1 or int(refSampleSplit[formatSplit.index('TAR')].split(',')[0]) >0 :
+                    heapq.heappush(self._heap,
+                                   (
+                                       (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
+                                       variant,
+                                       alt,
+                                       vcf
+                                   )
+                                   )
+                    return True
+
+            return False
+
+        # check that reference sample shows the alt in GT field
+        else:
+            alts = [ alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0] ]
+            for idx, alt in enumerate(alts):
+                heapq.heappush(self._heap,
+                    (
+                        (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)), # location tuple, sorted on this field
+                        variant,
+                        alt,
+                        vcf if idx==len(alts)-1 else None
+                    )
+                )
+            return len(alts) > 0
 
     def writeToOutput(self, variant, alt, count):
         if count < self._minCountThreshold:
@@ -206,10 +240,17 @@ if __name__ == '__main__':
     required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output. eg: 2', required=True, type=int)
     required.add_argument('-o', '--outputFile', help='output file name', required=True, type=argparse.FileType('w'))
     required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge', required=True, type=argparse.FileType('r'))
+
+    optional = parser.add_argument_group('optional arguments')
+    optional.add_argument('-s','--strelka', type=bool, nargs='?',
+                          const=True, default=False,
+                          help="Run for Strelka Somatic Output")
     args = parser.parse_args()
 
     try:
-        generator = PONGenerator( VCFWriter(args.outputFile), args.minCountThreshold )
+        if args.strelka == True:
+            print("Running in Strelka Mode")
+        generator = PONGenerator( VCFWriter(args.outputFile), args.minCountThreshold,args.strelka )
         generator.merge( VCFReader(f) for f in args.inputFiles )
     finally: # be a good citizen
         args.outputFile.close()
