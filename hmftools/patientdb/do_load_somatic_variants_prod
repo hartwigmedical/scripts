@@ -6,5 +6,13 @@ run_dir=$1 && shift
 credentials=/data/common/tools/patient-db_v1.0/credentials
 patient_jar=/data/common/tools/patient-db_v1.0/patient-db.jar
 
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} $@
+# Files
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
+if [ $? -ne 0 ]
+then
+    echo "Unable to locate post processed somatic variants. Exiting."
+    exit 1
+fi
+
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} ${somatic_vcf} $@
 
