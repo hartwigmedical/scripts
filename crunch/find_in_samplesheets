@@ -13,8 +13,6 @@ fi
 
 SEARCH_STRINGS=( "$@" )
 
-echo ""
-
 for SEARCH in "${SEARCH_STRINGS[@]}"; do
   #echo $SEARCH
   FOUND=0
@@ -34,5 +32,3 @@ for SEARCH in "${SEARCH_STRINGS[@]}"; do
       echo "$SEARCH not found in any samplesheet"
   fi  
 done
-
-echo ""
