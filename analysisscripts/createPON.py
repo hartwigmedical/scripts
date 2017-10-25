@@ -179,7 +179,7 @@ class PONGenerator():
                 return False
             alt = variant.ALT.split(COMMA)[0]
             if (len(variant.REF)==len(alt)):
-                if int(refSampleSplit[formatSplit.index(alt+ 'U')].split(',')[1]) > 1 or  int(refSampleSplit[formatSplit.index(alt+ 'U')].split(',')[0]) > 0:
+                if int(refSampleSplit[formatSplit.index(alt+ 'U')].split(',')[1]) > 1:
                     heapq.heappush(self._heap,
                                 (
                                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
@@ -190,7 +190,7 @@ class PONGenerator():
                                )
                     return True
             else:
-                if int(refSampleSplit[formatSplit.index('TAR')].split(',')[1]) > 1 or int(refSampleSplit[formatSplit.index('TAR')].split(',')[0]) >0 :
+                if int(refSampleSplit[formatSplit.index('TIR')].split(',')[1]) > 1:
                     heapq.heappush(self._heap,
                                    (
                                        (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
