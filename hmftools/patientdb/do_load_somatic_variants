@@ -2,6 +2,7 @@
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_jar=$1 && shift
+somatic_vcf=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -11,14 +12,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 # File Locations
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-
-# Files
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
-if [ $? -ne 0 ]
-then
-    echo "Unable to locate post processed somatic variants. Exiting."
-    exit 1
-fi
 
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 echo "Loading variant data for sample: ${sample}"

@@ -7,10 +7,10 @@ credentials=/data/common/tools/patient-db_pilot/credentials
 patient_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
 # Files
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_strelka_filtered.vcf)
 if [ $? -ne 0 ]
 then
-    echo "Unable to locate post processed somatic variants. Exiting."
+    echo "Unable to locate strelka somatic variants. Exiting."
     exit 1
 fi
 
