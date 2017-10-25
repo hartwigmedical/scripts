@@ -21,6 +21,13 @@ then
 fi
 
 do_run_purple_pilot ${run_dir}
+
+vcf_out=$(ls ${run_dir}/somaticVariants/*/*post_processed_strelka_filtered.vcf)
+if [ $? -eq 0 ]
+then
+	rm ${vcf_out}
+fi
+
 do_apply_strelka_pon ${run_dir}
 do_load_strelka_pon_pilot ${run_dir}
 
