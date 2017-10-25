@@ -20,6 +20,7 @@ then
     do_load_somatic_variants_prod ${run_dir}
 fi
 
+do_run_purple_pilot ${run_dir}
 do_apply_strelka_pon ${run_dir}
 do_load_strelka_pon_pilot ${run_dir}
 
