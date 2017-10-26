@@ -22,6 +22,7 @@ project=$( cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}.project_name
 if [[ -z ${project+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
 
 ## create dirs
+if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi
 mkdir -p ${outPath} || exit 1
 
 ## get all samples involved from LAB LIMS
