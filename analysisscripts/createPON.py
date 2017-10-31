@@ -130,7 +130,7 @@ class PONGenerator():
         for vcf in vcf_readers:
             # find the reference sample
             sample = next(s for s in vcf.getSamples() for suffix in REFERENCE_SAMPLE_SUFFIXES if s.endswith(suffix))
-            if sample in sample and not self._strelkaMode: # check it is unique
+            if sample in samples and not self._strelkaMode: # check it is unique
                 continue
             samples.add(sample)
             vcf.setReferenceSample( sample )
