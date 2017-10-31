@@ -36,22 +36,22 @@ left join
      from ecrf where item ='FLD.TRTAFTER.PLANNEDTRT' group by patientId) plannedtrt
 on sysendt.patientId = plannedtrt.patientId
 left join
-(select patientId, group_concat(itemValue separator ', ') as treatmentOther
-from ecrf where item ='FLD.TRTAFTER.SYSREGPOST' group by patientId) sysregpost
+    (select patientId, group_concat(itemValue separator ', ') as treatmentOther
+    from ecrf where item ='FLD.TRTAFTER.SYSREGPOST' group by patientId) sysregpost
 on plannedtrt.patientId = sysregpost.patientId
 left join
-(select patientId, group_concat(itemValue separator ', ') as measurement
-from ecrf where item ='FLD.TUMORMEASUREMENT.TMYN' group by patientId) tmyn
+    (select patientId, group_concat(itemValue separator ', ') as measurement
+    from ecrf where item ='FLD.TUMORMEASUREMENT.TMYN' group by patientId) tmyn
 on sysregpost.patientId = tmyn.patientId
 left join
-(select patientId, group_concat(itemValue separator ', ') as responseAsseddmentDate
-from ecrf where item ='FLD.TUMORMEASUREMENT.ASSDTC' group by patientId) assdtc
+    (select patientId, group_concat(itemValue separator ', ') as responseAsseddmentDate
+    from ecrf where item ='FLD.TUMORMEASUREMENT.ASSDTC' group by patientId) assdtc
 on tmyn.patientId = assdtc.patientId
 left join
-(select patientId, group_concat(itemValue separator ', ') as responseDate
-from ecrf where item ='FLD.TUMORMEASUREMENT.RESPONSEDTC' group by patientId) responsedtc
+    (select patientId, group_concat(itemValue separator ', ') as responseDate
+    from ecrf where item ='FLD.TUMORMEASUREMENT.RESPONSEDTC' group by patientId) responsedtc
 on assdtc.patientId = responsedtc.patientId
 left join
-(select patientId, group_concat(itemValue separator ', ') as response
-from ecrf where item ='FLD.TUMORMEASUREMENT.BESTRESPON' group by patientId) bestrespon
+    (select patientId, group_concat(itemValue separator ', ') as response
+    from ecrf where item ='FLD.TUMORMEASUREMENT.BESTRESPON' group by patientId) bestrespon
 on responsedtc.patientId = bestrespon.patientId

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+SUBMISSIONS_DIR="/data/submissions"
+HMF_QUERY_SCRIPT="query_lims"
+SBP_QUERY_SCRIPT="query_sbp_api"
+HMF_LIMS_JSON='/data/lims/lims.json'
+submission=$1
+
+## sanity checks
+if [[ $# -eq 0 ]] ; then echo "run with eg: $0 HMFreg0000"; exit 1; fi
+if [[ -z ${submission+x} ]]; then echo "Missing submission id as input"; exit 1; fi
+if [[ ! ${submission} =~ ^HMFreg ]]; then echo "Submission should start with \"HMFreg\""; exit 1; fi
+
+## setting up variables
+outPath=${SUBMISSIONS_DIR}'/'${submission}
+smpFile=${outPath}'/samples.txt'
+datFile=${outPath}'/data.txt'
+logFile=${outPath}'/log.txt'
+bcsFile=${outPath}'/barcodes.txt'
+dateString=$( date )
+project=$( cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}.project_name" )
+if [[ -z ${project+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
+
+## create dirs
+if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi
+mkdir -p ${outPath} || exit 1
+
+## get all samples involved from LAB LIMS
+echo "[INFO] Querying HMF LIMS to get sample list"
+${HMF_QUERY_SCRIPT} -submission ${submission} > ${smpFile}
+
+## get q30/yield data from SBP API
+echo "[INFO] Querying SBP API to get sample status"
+${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${datFile}
+
+## get counts to check completeness
+smpCount=$( cat ${smpFile} | grep -v "^#" | wc -l )
+datCount=$( cat ${datFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+
+## setup barcodes file (needed later for fastq file cleanup)
+cat ${datFile} | grep -v "^#" | cut -f2 > ${bcsFile}
+
+## logging
+echo "#        Date = ${dateString}" >> ${logFile}
+echo "#  Submission = ${submission}" >> ${logFile}
+echo "#     Project = ${project}"    >> ${logFile}
+echo "# SampleCount = ${smpCount}"   >> ${logFile}
+echo "#   DataCount = ${datCount}"   >> ${logFile}
+
+## stdout msg
+echo "[INFO] Log:"
+cat ${logFile}
+echo "[INFO] Inspect output files:"
+echo " cd ${outPath}"
+echo " cat ${smpFile}"
+echo " cat ${datFile}"
+
+## warn if not complete
+if [[ ${smpCount} -ne ${datCount} ]]; then 
+  echo "[WARNING] There might be missing samples!" 
+  exit 1
+fi
+
+exit 0

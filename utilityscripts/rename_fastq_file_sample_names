@@ -1,25 +1,33 @@
 #!/usr/bin/env bash
 
-verbose=false
+maxFindDepth=1
+
 dirPath='' # directory that contains fastq files
 oldName='' # string of current sample name
 newName='' # string of new sample name
 doRenameFiles=''
+doSymlinkFiles=''
 commandLine=$( basename ${0} )" $@"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Descr: Renames fastq files in provided dir (by default only prints action)"
-    echo " Usage: $(basename ${0}) -o <oldname> -n <newname> -d <fastqdir>"
-    echo "        $(basename ${0}) -o CPCT12345678R -n DRUP12345678R -d \$PWD"
-    echo "        add option \"-r\" do perform the actual renaming of files"
+    echo " Description: Renames (or symlinks to) fastq files"
+    echo " Usage:"
+    echo "   $(basename ${0}) -o <oldname> -n <newname> -d <fastqdir>"
+    echo "   $(basename ${0}) -o CPCT12345678R -n DRUP12345678R -d \$PWD"
+    echo ""
+    echo " Options:"
+    echo "   -r      Perform actual renaming"
+    echo "   -s      Symlink instead of rename"
+    echo "   -f <i>  Max depth for find to search "
+    echo ""
     echo " Notes:"
-    echo "    - searches for *fastq.gz files only"
+    echo "   - searches for *fastq.gz files only"
     echo "---"
     exit 1
 fi
 
-while getopts ":o:n:d:r" opt; do
+while getopts ":o:n:d:rsf:" opt; do
   case $opt in
     o)
       oldName=$OPTARG
@@ -32,6 +40,12 @@ while getopts ":o:n:d:r" opt; do
       ;;
     r)
       doRenameFiles='true'
+      ;;
+    s)
+      doSymlinkFiles='true'
+      ;;
+    f)
+      maxFindDepth=$OPTARG
       ;;
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -48,14 +62,15 @@ done
 filesToRename=()
 while IFS=  read -r -d $'\0'; do
     filesToRename+=("$REPLY")
-done < <(find "${dirPath}" -name "*fastq.gz" -print0)
+done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "*fastq.gz" -print0)
 
 ## sanity checks
-if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found" && exit 1; fi
+if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found (with find-depth ${maxFindDepth})" && exit 1; fi
 if [[ -z ${oldName} ]]; then echo "[EXIT] Param oldName (-o) not set" && exit 1; fi
 if [[ -z ${newName} ]]; then echo "[EXIT] Param newName (-n) not set" && exit 1; fi
 if [[ -z ${dirPath} ]]; then echo "[EXIT] Param dirPath (-d) not set" && exit 1; fi
 if [[ ! -d ${dirPath} ]]; then echo "[EXIT] dirPath (${dirPath}) does not exist?" && exit 1; fi
+
 
 ## print info
 echo "[INFO] Setting FastqDirectory: ${dirPath}"
@@ -64,13 +79,19 @@ echo "[INFO] Setting NewName: \"${newName}\""
 
 ## renaming action
 for oldFile in "${filesToRename[@]}"; do
-    if [[ ! ${doRenameFiles} ]]; then
-        newFile=$( echo $oldFile | sed "s/${oldName}/${newName}/" )
-        echo "[INFO] Would rename $( basename ${oldFile} ) to $( basename ${newFile} )"
+    fileDir=$( dirname ${oldFile} )
+    oldBase=$( basename ${oldFile} )
+    newBase=$( echo $oldBase | sed "s/${oldName}/${newName}/" )
+    newFile="${fileDir}/${newBase}" 
+
+    if [[ ${doSymlinkFiles} ]]; then
+        echo "[INFO] Symlinking ${oldBase} to ${newBase} )"
+        ln -s ${oldFile} ${newBase}
+    elif [[ ${doRenameFiles} ]]; then
+        echo "[INFO] Renaming ${oldBase} to ${newBase} in ${fileDir}"
+        mv ${oldFile} ${newFile} 
     else
-        newFile=$( echo $oldFile | sed "s/${oldName}/${newName}/" )
-        echo "[INFO] Renaming $( basename ${oldFile} ) to $( basename ${newFile} )"
-        mv ${oldFile} ${newFile}
+        echo "[INFO] Would rename $oldBase to $newBase in ${fileDir}"
     fi
 done
 

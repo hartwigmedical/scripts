@@ -1,0 +1,8 @@
+#!/bin/bash
+
+searchString=$1 # eg FR12345678
+
+LOC1='/data/common/snpcheck/'
+LOC2='/data/schuberg/snpcheckvcfupload/'
+
+find ${LOC1} ${LOC2} -name "*${searchString}*OpenArrayCalls.vcf"
