@@ -42,7 +42,9 @@ rm "${FINAL_VCF}.idx"
 
 java -jar $SNP_EFF \
     -c /data/common/tools/snpEff_v4.1h/snpEff.config "GRCh37.74" \
-    -v $FINAL_VCF > $ANNOTATED_VCF
+    -v $FINAL_VCF \
+    -hgvs -lof -no-downstream -no-upstream -no-intergenic \
+    > $ANNOTATED_VCF
 
 rm $FINAL_VCF
 rm snpEff_genes.txt
