@@ -11,8 +11,8 @@ then
     exit 1
 fi
 
-amber_pcf=$(ls ${run_dir}/amber/${tumor_sample}.amber.baf.pcf)
-if [ $? -ne 0 ]
+amber_pcf=${amber_output}.pcf
+if [[ ! -e ${amber_pcf} ]]
 then
     column=$(head -1 ${amber_output} | cut -f 4)
     echo "Executing PCF Segmentation with command: Rscript /data/common/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
