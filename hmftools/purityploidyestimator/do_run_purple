@@ -35,6 +35,7 @@ fi
 mkdir -p ${purple_output}
 rm -f ${purple_output}/*
 
+do_run_amber ${run_dir}
 do_run_cobalt ${run_dir}
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
