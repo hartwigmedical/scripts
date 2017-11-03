@@ -424,7 +424,7 @@ sub parseLimsRest{
             ## Single sample germline
             $row_info{ 'analysis_type' } = 'Germline';
         }
-        elsif ( $analysis_type eq 'SNP' ){
+        elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
             ## SNPgenotyping: not a sample so skip
             next;
         }
