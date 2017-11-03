@@ -1,0 +1,24 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+metadata=${run_dir}/metadata
+
+tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+amber_output=$(ls ${run_dir}/amber/${tumor_sample}.amber.baf)
+if [ $? -ne 0 ]
+then
+    echo "Amber BAF unavailable. Exiting."
+    exit 1
+fi
+
+amber_pcf=$(ls ${run_dir}/amber/${tumor_sample}.amber.baf.pcf)
+if [ $? -ne 0 ]
+then
+    column=$(head -1 ${amber_output} | cut -f 4)
+    echo "Executing PCF Segmentation with command: Rscript /data/common/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
+    Rscript /data/common/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
+    rm ${amber_pcf}1
+fi
+
+echo "Amber complete"
+
