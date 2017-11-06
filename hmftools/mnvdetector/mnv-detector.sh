@@ -24,27 +24,35 @@ MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
 FINAL_VCF="${VCF_NAME}.mnvs.vcf"
 ANNOTATED_VCF="${VCF_NAME}.mnvs.annotated.vcf"
 
-java -jar $MNV_DETECTOR \
+if ! java -jar $MNV_DETECTOR \
     -v $VCF \
     -bed_out $MNV_BED \
-    -vcf_out $MNV_VCF
+    -vcf_out $MNV_VCF ;
+then exit 1
+fi
 
 rm "${MNV_VCF}.idx"
 
-$BAM_SLICER_SCRIPT $SAMPLE $MNV_BED
+if ! $BAM_SLICER_SCRIPT $SAMPLE $MNV_BED ;
+then exit 1
+fi
 
-java -jar $MNV_VALIDATOR \
+if ! java -jar $MNV_VALIDATOR \
     -v $VCF \
     -b $SLICED_BAM \
-    -o $FINAL_VCF
+    -o $FINAL_VCF ;
+then exit 1
+fi
 
 rm "${FINAL_VCF}.idx"
 
-java -jar $SNP_EFF \
+if ! java -jar $SNP_EFF \
     -c /data/common/tools/snpEff_v4.1h/snpEff.config "GRCh37.74" \
     -v $FINAL_VCF \
     -hgvs -lof -no-downstream -no-upstream -no-intergenic \
-    > $ANNOTATED_VCF
+    > $ANNOTATED_VCF ;
+then exit 1
+fi
 
 rm $FINAL_VCF
 rm snpEff_genes.txt
