@@ -9,17 +9,30 @@ SNPEFF_FLAG=" -hgvs -lof -no-downstream -no-upstream -no-intergenic -noShiftHgvs
 SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
 SNPEFF_DB="GRCh37.75"
 
+RUN=$1
+#VCF=$1
+#SAMPLE=$2
 
-VCF=$1
-SAMPLE=$2
-
-if [ -z "$VCF" ] || [ -z "$SAMPLE" ];
+#if [ -z "$VCF" ] || [ -z "$SAMPLE" ];
+if [ -z "$RUN" ];
   then
-    echo "Usage: $ ./mnv_detector.sh vcf sample"
-    echo "   vcf        vcf input file"
-    echo "   sample     sample to search for. e.g CPCT11111111T"
+    echo "Usage: $ ./mnv_detector.sh <runpath>"
+    echo "   runpath = Path to pipeline run dir"
+    echo "Notes:"
+    echo "  - should have a ./metadata file in rundir"
+    echo "  - somatic vcf should meet format *_post_processed.vcf"
     exit 1
 fi
+
+VCF=$( find $RUN -wholename "*/somaticVariants/*_post_processed.vcf" )
+SAMPLE=$( cat $RUN/metadata | jq -r '.tumor_sample' )
+
+#echo "SAMPLE: $SAMPLE"
+
+## some sanity checks
+if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
+if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
+if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
 SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 VCF_FILE_NAME=`basename $VCF`
