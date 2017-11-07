@@ -3,7 +3,12 @@
 MNV_DETECTOR=/data/common/tools/mnvdetector_v1.0/mnv-detector.jar
 MNV_VALIDATOR=/data/common/tools/mnvdetector_v1.0/mnv-validator.jar
 BAM_SLICER_SCRIPT=/data/common/repos/scripts/hmftools/bamslicer/bam-slicer.sh
-SNP_EFF=/data/common/tools/snpEff_v4.1h/snpEff.jar
+
+SNPEFF_VRSN="v4.3s"
+SNPEFF_FLAG=" -hgvs -lof -no-downstream -no-upstream -no-intergenic -noShiftHgvs"
+SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
+SNPEFF_DB="GRCh37.75"
+
 
 VCF=$1
 SAMPLE=$2
@@ -46,10 +51,10 @@ fi
 
 rm "${FINAL_VCF}.idx"
 
-if ! java -jar $SNP_EFF \
-    -c /data/common/tools/snpEff_v4.1h/snpEff.config "GRCh37.74" \
+if ! java -jar ${SNPEFF_ROOT}/snpEff.jar \
+    -c "${SNPEFF_ROOT}/snpEff.config" "${SNPEFF_DB}" \
     -v $FINAL_VCF \
-    -hgvs -lof -no-downstream -no-upstream -no-intergenic \
+    ${SNPEFF_FLAG} \
     > $ANNOTATED_VCF ;
 then exit 1
 fi
