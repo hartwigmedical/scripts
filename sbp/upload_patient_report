@@ -1,0 +1,18 @@
+#!/bin/bash
+
+REPORT_PATH=$1
+SET_NAME=$2
+
+if [ -z "REPORT_PATH" ] || [ -z "SET_NAME" ] ;
+  then
+    echo "Usage: $ ./upload_patient_report report_path set_name"
+    echo "  report_path	The path towards the patient report to be uploaded"
+    echo "  set_name The name of the set to upload the report to."
+    exit 1
+fi
+
+REPORT_NAME=$(basename `${REPORT_PATH}`)
+
+sbp s3 cp ${REPORT_PATH} s3://${ARCHIVE_BUCKET}/${SET_NAME}/${REPORT_NAME} \
+    --profile ${ARCHIVE_PROFILE}
+    --grants read=id=${HMF_DOWNLOAD_CANONICAL},id=${SBP_PORTAL_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
