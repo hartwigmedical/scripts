@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v1.0
+patient_db_dir=/data/common/tools/patient-db_v1.1
 
 credentials="$patient_db_dir"/credentials
 db_user=$(awk '/^user/ {print $2}' ${credentials})
