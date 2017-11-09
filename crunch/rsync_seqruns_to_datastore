@@ -25,5 +25,5 @@ rsynccmd=${rsynccmd}" --stats"
 rsynccmd=${rsynccmd}" $@"
 rsynccmd=${rsynccmd}" ds:/data/sequencer_archive/ > \$RSYNC_LOG &"
 
-echo $rsynccmd
+echo ${rsynccmd}
 
