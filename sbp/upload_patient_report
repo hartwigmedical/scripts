@@ -11,8 +11,6 @@ if [ -z "$REPORT_PATH" ] || [ -z "$SET_NAME" ] ;
     exit 1
 fi
 
-REPORT_NAME=$(basename `${REPORT_PATH}`)
-
-sbp s3 cp ${REPORT_PATH} s3://${ARCHIVE_BUCKET}/${SET_NAME}/${REPORT_NAME} \
+sbp s3 cp ${REPORT_PATH} s3://${ARCHIVE_BUCKET}/${SET_NAME}/ \
     --profile ${ARCHIVE_PROFILE} \
     --grants read=id=${HMF_DOWNLOAD_CANONICAL},id=${SBP_PORTAL_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
