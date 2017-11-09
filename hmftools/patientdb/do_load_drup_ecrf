@@ -9,7 +9,7 @@ ecrf_file=$1
 
 exec java -Dorg.jooq.no-logo=true -cp "$patient_db_dir"/patient-db.jar com.hartwig.hmftools.patientdb.LoadDrupEcrfData \
     -runs_dir /data/cpct/runs/ \
-    -ecrf $ecrf_file \
+    -ecrf ${ecrf_file} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} 
