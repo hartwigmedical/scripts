@@ -9,8 +9,10 @@ library("NMF")
 sample_mutations_all_snv<-function(dbConnect)
 {
   query = paste(
-    "select sv.sampleId, chromosome as chr, position as pos, ref,alt  from somaticVariant sv where length(alt) = length(ref) and filter = 'PASS' and gene <> ''",
-    "and right(sv.sampleId,1) ='T'",
+    "select s.sampleId, chromosome as chr, position as pos, ref,alt  from somaticVariant s, purity p where s.sampleId = p.sampleId ",
+    "and length(alt) = length(ref) and filter = 'PASS' and gene <> '' ",
+    "and status <> 'NO_TUMOR' and qcstatus = 'PASS' ",
+    "and right(s.sampleId,1) ='T'",
     sep = "")
   print(query)
   raw_data = dbGetQuery(dbConnect, query)
@@ -30,7 +32,7 @@ sample_mutations<-function(dbConnect, cohort)
 
 ### TO DO - ENSURE WE ONLY GET 1 copy of each tumor!!!!
 
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 #mutations<-sample_mutations(dbConnect,'BREAST')
 mutations<-sample_mutations_all_snv(dbConnect)
 dbDisconnect(dbConnect)
