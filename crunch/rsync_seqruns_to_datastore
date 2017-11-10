@@ -11,7 +11,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 echo "[INFO] Execute to start sync:"
-rsynccmd="nohup rsync -trhP"
+rsynccmd="rsync -trhP"
 rsynccmd=${rsynccmd}" --exclude \"*.bcl.gz\""
 rsynccmd=${rsynccmd}" --exclude \"*.cbcl\""
 rsynccmd=${rsynccmd}" --exclude \"*Data/Intensities/BaseCalls/L0*\""
@@ -23,7 +23,7 @@ rsynccmd=${rsynccmd}" --exclude \"*RTALogs/*FileCopyLog*.tsv\""
 rsynccmd=${rsynccmd}" --exclude \"*RTALogs/*GlobalLog*.tsv\""
 rsynccmd=${rsynccmd}" --stats"
 rsynccmd=${rsynccmd}" $@"
-rsynccmd=${rsynccmd}" ds:/data/sequencer_archive/ > \$RSYNC_LOG &"
+rsynccmd=${rsynccmd}" ds:/data/sequencer_archive/"
 
 echo ${rsynccmd}
 
