@@ -31,6 +31,8 @@ my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 my $delim = "\t";
 my $type;
 my $verbose;
+my $match_by_regex;
+my $output_as_json;
 my @filters = ();
 
 my $HELP =<<HELP;
@@ -52,22 +54,25 @@ my $HELP =<<HELP;
   Usage examples
     $SCRIPT -type samples
     $SCRIPT -type samples -filter "barcode=FR13825534"
+    $SCRIPT -type samples -filter "tumor_sample=CPCT0201" -regex
+    $SCRIPT -type runs -filter "tumor_sample=CPCT0201" -regex -json
     $SCRIPT -type flowcells
     $SCRIPT -type flowcells -filter "status=Pending"
     $SCRIPT -type flowcells -filter "status=Pending|Sequencing"
     $SCRIPT -type linklog
     
-  Output options
-    -delim  <s>  (output delim)
-    -filter <s>  (search string arg)
+  Options
+    -delim    <s>  (output delim)
+    -filter   <s>  (search string arg)
+    -regex         (allow partial match with filter settings)
+    -json          (output as json instead of table)
   
   Filter examples
      -filter "submission=HMFreg0001"
      -filter "barcode=FR12345678"
      -filter "entity=CPCT_AVL"
-     
-  Notes
-    - filter matches are perl regex based and case insensitive
+     -filter "tumor_sample=CPCT02410001T"
+     -filter "tumor_sample=CPCT02410001" -regex
     
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq '--help';
@@ -79,6 +84,8 @@ GetOptions (
     "type=s" => \$type,
     "filter=s@" => \@filters,
     "delim=s" => \$delim,
+    "json" => \$output_as_json,
+    "regex" => \$match_by_regex,
 	"verbose" => \$verbose,
 ) or die "Error in command line arguments\n";
 warn "[EXIT] No type given?" and exit(0) unless $type;
@@ -87,14 +94,16 @@ warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_P
 ## -----
 ## MAIN
 ## -----
-say "## Script: $SCRIPT";
-say "## DateTime: $DATETIME";
-
 my $objects = readJson( $type );
 my $filtered_objects = filterObjects( $objects, \@filters );
 my $out_fields = $OUT_FIELDS_PER_TYPE{ $type };
 
-printOutput( $filtered_objects, $out_fields );
+if ( $output_as_json ){
+    printOutputAsJson( $filtered_objects );
+}else{
+    printOutput( $filtered_objects, $out_fields );
+}
+
 ## -----
 ## /MAIN
 ## -----
@@ -174,7 +183,7 @@ sub filterObjects{
     
     foreach my $filter ( keys %filter_counts ){
         my $count = $filter_counts{ $filter };
-        say "## FILTER: $count filtered away by filter \"$filter\"";
+        #say "## FILTER: $count filtered away by filter \"$filter\"";
     }
     
     return \@out;
@@ -195,9 +204,19 @@ sub applyFiltersOnObject{
             $counts->{ $name.'=KeyNotDefined' }++;
             return(1);
         }
-        elsif ( $object->{ $name } !~ m/$include/i ){
-            $counts->{ $filter_string }++;
-            return(1);
+        else{
+            my $to_match = $object->{ $name };
+            my $exact_match = $object->{ $name } eq $include;
+            my $regex_match = $object->{ $name } =~ m/$include/i;
+            
+            if ( not $exact_match and not $match_by_regex ){
+                $counts->{ $filter_string }++;
+                return(1);
+            }
+            elsif( not $regex_match ){
+                $counts->{ $filter_string }++;
+                return(1);
+            }
         }
     }
     
@@ -206,10 +225,18 @@ sub applyFiltersOnObject{
 }
 
 ## print output
+sub printOutputAsJson{
+    my ($objects) = @_;
+    my $json_text = encode_json( $objects );
+    say $json_text;
+}
+
+## print output
 sub printOutput{
     my ($objects, $out_fields) = @_;
     my $object_count = scalar @$objects;
-    
+    say "## Script: $SCRIPT";
+    say "## DateTime: $DATETIME";
     say '## TotalCount: '.$object_count;
     say '#'.join( $delim, @$out_fields );
     foreach my $obj ( @$objects ){
