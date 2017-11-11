@@ -1,0 +1,394 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use Data::Dumper;
+use File::Basename;
+use Getopt::Long;
+use File::Slurp;
+use JSON;
+use 5.010.000;
+
+## -----
+## Global variables
+## -----
+my $DATETIME = localtime;
+my $SCRIPT = basename $0;
+my $OUT_SEP = "\t";
+my $NA_CHAR = "NA";
+
+my $SSHT_LOC = 'SampleSheet.csv';
+my $JSON_LOC = 'Data/Intensities/BaseCalls/Stats/Stats.json';
+my $LANE_KEY = 'ConversionResults';
+my $SMPL_KEY = 'DemuxResults';
+my $READ_KEY = 'ReadMetrics';
+my $BARC_KEY = 'IndexMetrics';
+my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission );
+my @SUM_FIELDS = qw( submission id name yld q30 );
+
+my $MAX_UNDET = 3; # percentage
+my $MIN_Q30 = 75;
+my $YIELD_FACTOR = 1e9;
+my $MIN_YIELD_PER_SAMPLE = 3e9 / $YIELD_FACTOR;
+my $MIN_YIELD_PER_LANE = 100e9 / $YIELD_FACTOR;
+
+my $RUN_PATH;
+my $JSON_PATH;
+my $SSHT_PATH;
+
+my $HELP =<<HELP;
+
+  Description
+    Parses conversion output json and prints table with
+    flowcell/lane/sample/read metrics
+    
+  Usage
+    $SCRIPT -run \${run-path} -samplesheet \${samplesheet-path}
+    $SCRIPT -json \${json-path}
+    
+  Options
+    -sep <s>               Output sep (<TAB>)
+    -min_q30 <i>           Percentage ($MIN_Q30)
+    -max_undet_perc <i>    Percentage ($MAX_UNDET)
+    -min_lane_yield <i>    QC Lane Yield ($MIN_YIELD_PER_LANE) will be multiplied by $YIELD_FACTOR
+    -min_sample_yield <i>  QC Sample Yield ($MIN_YIELD_PER_SAMPLE) will be multiplied by $YIELD_FACTOR
+    -samplesheet <s>       Path to SampleSheet.csv file
+    -no_qc                 Skip QC checks
+    -summary               Prints extra sample summary table
+    -debug                 Prints complete datastructure
+    
+HELP
+print $HELP and exit(0) if scalar @ARGV == 0;
+
+## -----
+## Gather input
+## -----
+my %opt = ();
+GetOptions (
+  "run_dir=s"          => \$RUN_PATH,
+  "json_path=s"        => \$JSON_PATH,
+  "samplesheet=s"      => \$SSHT_PATH,
+  "sep=s"              => \$OUT_SEP,
+  "max_undet_perc=i"   => \$MAX_UNDET,
+  "min_sample_yield=i" => \$MIN_YIELD_PER_SAMPLE,
+  "min_lane_yield=i"   => \$MIN_YIELD_PER_LANE,
+  "min_q30=i"          => \$MIN_Q30,
+  "no_qc"              => \$opt{ no_qc },
+  "summary"            => \$opt{ print_summary },
+  "debug"              => \$opt{ debug },
+  "help|h"             => \$opt{ help },
+) or die "Error in command line arguments\n";
+print $HELP and exit(0) if $opt{ help };
+die "[EXIT] Provide either run-dir or json-path not both\n" if (defined $RUN_PATH and defined $JSON_PATH);
+die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_PATH or defined $JSON_PATH);
+die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" unless (-d $RUN_PATH);
+
+$MIN_YIELD_PER_SAMPLE = $MIN_YIELD_PER_SAMPLE * $YIELD_FACTOR;
+$MIN_YIELD_PER_LANE   = $MIN_YIELD_PER_LANE * $YIELD_FACTOR;
+$JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
+$SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_PATH);
+
+## -----
+## MAIN
+## -----
+
+my ($ssht_info, $run_name) = readSampleSheet( $SSHT_PATH );
+my $json_info = readJson( $JSON_PATH );
+my $parsed_info = parseJsonInfo( $json_info );
+
+addSamplesheetInfo( $parsed_info, $ssht_info );
+
+performQC( $parsed_info ) unless $opt{ no_qc };
+printTable( $parsed_info, \@OUT_FIELDS ) unless $opt{ print_summary };
+printSummaryTable( $parsed_info, \@SUM_FIELDS ) if $opt{ print_summary };
+
+if ( $opt{ debug } ){
+    say "[DEBUG] Samplesheet data structure";
+    print Dumper $ssht_info;
+    say "[DEBUG] Complete final data structure";
+    print Dumper $parsed_info;
+}
+
+## -----
+## /MAIN
+## -----
+
+sub addSamplesheetInfo{
+    my ($json_info, $ssht_info) = @_;
+    
+    my $samples = $json_info->{ 'samp' };
+    foreach my $sample_id ( keys %$samples ){
+        my $sample = $samples->{ $sample_id };
+        
+        my $submission = $NA_CHAR;
+        $submission = $ssht_info->{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{$sample_id}{ 'Sample_Project' };
+        $sample->{ 'submission_print' } = $submission;
+    }
+}
+
+sub readSampleSheet{
+    my ($csv_file) = @_;
+    
+    ## SampleSheet file has windows returns
+    my $return_str = $/;
+    $/ = "\r\n";
+    
+    my $run_name = 'NA';
+    my %output;
+    my @header;
+    
+    open FILE, "<", $csv_file or die "Couldn't open file ($csv_file): $!";
+    while ( <FILE> ) {
+        chomp($_);
+        next if $_ =~ /^[\[\,]/;
+        next if $_ eq "";
+        
+        #if ( $_ =~ m/\s+/ ){
+        #    ## no whitespace allowed anywhere
+        #    die "[EXIT] SampleSheet ($csv_file) contains whitespace in ($_)\n";
+        #}
+        my @fields = split( ",", $_);
+		
+        ## get hmf run id from config line
+        if ($fields[0] eq 'ExperimentName' ){
+            $run_name = $fields[1] || 'NA';
+        }
+        ## find header
+        elsif ( $_ =~ m/Sample_ID/ ){
+            @header = @fields;
+        }
+        ## read sample line if header seen before
+        elsif ( @header ){
+            my %tmp = ();
+            $tmp{ $_ } = shift @fields foreach @header;
+            my $sample_id = $tmp{ 'Sample_ID' };
+            $output{ $sample_id } = \%tmp;
+        }
+    }	
+    close FILE;
+    
+    ## reset return string
+    $/ = $return_str;
+    
+    return( \%output, $run_name );
+}
+
+sub readJson{
+    my ($json_file) = @_;
+    my $json_txt = read_file( $json_file );
+    my $json_obj = decode_json( $json_txt );
+    return( $json_obj );
+}
+
+sub performQC{
+    my ($info) = @_;
+    
+    my $stats = $info->{'stats'};
+    my $samps = $info->{'samp'};
+    my $lanes = $info->{'lane'};
+    my $fails = 0;
+    
+    ## flowcell checks
+    my $undet = $stats->{'undet_perc'};
+    if ( $undet > $MAX_UNDET ){
+        warn "## WARNING Percentage undetermined ($undet) too high (MAX=$MAX_UNDET%)\n";
+        $fails += 1;
+    }
+    
+    ## lane and sample checks
+    $fails += checkObjectField( $lanes, 'yield', $MIN_YIELD_PER_LANE );
+    $fails += checkObjectField( $lanes, 'q30',   $MIN_Q30 );
+    $fails += checkObjectField( $samps, 'yield', $MIN_YIELD_PER_SAMPLE );
+    $fails += checkObjectField( $samps, 'q30',   $MIN_Q30 );
+    
+    ## conclusion
+    if ( $fails == 0 ){
+        say "## FINAL QC RESULT: OK";
+    }
+    else{
+        warn "## WARNING Some checks failed, inspect before proceeding\n";
+        warn "## WARNING Final QC result: FAIL\n";
+    }
+}
+
+sub checkObjectField{
+    my ($objects, $field, $min) = @_;
+    my $fails = 0;
+    foreach my $obj ( values %$objects ){
+        my $name = $obj->{'name'};
+        next if $name eq 'UNDETERMINED';
+        my $value = $obj->{$field} or die "[EXIT] No $field key for $name";
+        if ( $value < $min ){
+            warn "## WARNING $field for $name too low: $value < $min\n";
+            $fails += 1;
+        }
+    }
+    return $fails;
+}
+
+sub parseJsonInfo{
+    my ($raw_json_info) = @_;    
+    my %info = ();
+    
+    ## Reading phase
+    my $fid = $raw_json_info->{ 'Flowcell' };
+    $info{ 'flow' }{ $fid }{ 'id' } = $fid;
+    $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
+    
+    my $lanes = $raw_json_info->{ $LANE_KEY };
+    foreach my $lane ( @$lanes ){
+        my $lid = join( "", "lane", $lane->{ LaneNumber } );
+        $info{ 'lane' }{ $lid }{ name } = $lid;
+        
+        $info{ 'flow' }{ $fid }{ clust_raw } += $lane->{ TotalClustersRaw };
+        $info{ 'flow' }{ $fid }{ clust_pf } += $lane->{ TotalClustersPF };
+        $info{ 'lane' }{ $lid }{ clust_raw } += $lane->{ TotalClustersRaw };
+        $info{ 'lane' }{ $lid }{ clust_pf } += $lane->{ TotalClustersPF };
+        
+        ## Undetermined info is stored separate from samples in json
+        my $undet_id = 'UNDETERMINED';
+        my $undet_obj = $lane->{ 'Undetermined' };
+        my $undet_reads = $undet_obj->{ $READ_KEY };
+        my $undet_info = \%{$info{ 'undt' }{ $undet_id }};
+        $undet_info->{ 'name' } = $undet_id;
+        foreach my $read ( @$undet_reads ){
+            $undet_info->{ 'yield' } += $read->{ Yield };
+            $undet_info->{ 'yield_q30' } += $read->{ YieldQ30 };
+        }
+        
+        ## sample info stored together at SMPL_KEY key
+        my $samples = $lane->{ $SMPL_KEY };
+        foreach my $sample ( @$samples ){
+            
+            my $sid = $NA_CHAR;
+            
+            ## Reset info for all real samples
+            $sid = $sample->{ SampleId } if exists $sample->{ SampleId };
+            $info{ 'samp' }{ $sid }{ name } = $sample->{ SampleName } if exists $sample->{ SampleName };
+            $info{ 'samp' }{ $sid }{ 'seq' } = $sample->{ $BARC_KEY }[0]{ 'IndexSequence' } || $NA_CHAR;
+            
+            my $reads = $sample->{ $READ_KEY };
+            foreach my $read ( @$reads ){
+                my $rid = join( "", "read", $read->{ ReadNumber } );
+                $info{ 'read' }{ $rid }{ 'name' } = $rid;
+                
+                $info{ 'flow' }{ $fid }{ 'yield' } += $read->{ Yield };
+                $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
+                $info{ 'samp' }{ $sid }{ 'yield' } += $read->{ Yield };
+                $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
+                
+                
+                $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
+                $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
+                $info{ 'samp' }{ $sid }{ 'yield_q30' } += $read->{ YieldQ30 };
+                $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            }
+            
+            ## mismatch info not available for Undetermined reads
+            #next if $sid eq "UNDETERMINED";
+            
+            my %bc_mismatch_counts = (
+                'mm0' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '0' },
+                'mm1' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '1' },
+            );
+            
+            my @types = keys %bc_mismatch_counts;
+            foreach my $mm ( @types ){
+                $info{ 'flow' }{ $fid }{ $mm } += $bc_mismatch_counts{ $mm };
+                $info{ 'lane' }{ $lid }{ $mm } += $bc_mismatch_counts{ $mm };
+                $info{ 'samp' }{ $sid }{ $mm } += $bc_mismatch_counts{ $mm };
+            }
+        }
+    }
+    
+    ## Create the info to print later
+    foreach my $type ( keys %info ){
+        foreach my $id ( keys %{$info{ $type }} ){
+            my $obj = $info{ $type }{ $id };
+            my $name = $obj->{ 'name' };
+                        
+            $obj->{ 'q30' } = $obj->{ 'yield_q30' }*100 / $obj->{ 'yield' };
+            $obj->{ 'yld_p' } = $obj->{ 'yield' } / $info{ 'flow' }{ $fid }{ 'yield' };
+            $obj->{ 'flowcell_print' } = $fid;
+
+            $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
+            $obj->{ 'yld_print' } = round( $obj->{ 'yield' } / $YIELD_FACTOR, 0 );
+            $obj->{ 'id_print' } = $id;
+            $obj->{ 'name_print' } = $obj->{ 'name' };
+            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }*100 );
+            
+            ## percentage filtered does not exist for samples
+            if ( exists $obj->{ 'clust_pf' } ){
+                $obj->{'pf_print'} = round( $obj->{'clust_pf'}*100 / $obj->{'clust_raw'} );
+            }
+            
+            next if $name =~ /read|UNDETERMINED/;
+            $obj->{ 'total_reads' } = $obj->{ 'mm0' } + $obj->{ 'mm1' };
+            $obj->{ 'mm0_print' } = round( $obj->{ 'mm0' }*100 / $obj->{ 'total_reads' } );
+            $obj->{ 'mm1_print' } = round( $obj->{ 'mm1' }*100 / $obj->{ 'total_reads' } );
+            
+        }
+    }
+    
+    ## Collect some general stats/info
+    $info{'stats'}{'undet_perc'} = round( $info{'undt'}{'UNDETERMINED'}{'yield'}*100 / $info{'flow'}{$fid}{'yield'} );
+    $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
+    $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
+    $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
+
+    return \%info;
+}
+
+sub printTable{
+    my ($info, $fields) = @_;
+
+    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+      $info->{'stats'}{'identifier'}, 
+      $info->{'stats'}{'lane_count'}, 
+      $info->{'stats'}{'samp_count'};
+    
+    say "#".join( $OUT_SEP, "level", @$fields );
+    printTableForLevel( $info->{'flow'}, $fields, "RUN" );
+    printTableForLevel( $info->{'lane'}, $fields, "LANE" );
+    printTableForLevel( $info->{'samp'}, $fields, "SAMPLE" );
+    printTableForLevel( $info->{'read'}, $fields, "READ" );
+    printTableForLevel( $info->{'undt'}, $fields, "UNDET" );
+}
+
+sub printSummaryTable{
+    my ($info, $fields) = @_;
+    
+    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+      $info->{'stats'}{'identifier'}, 
+      $info->{'stats'}{'lane_count'}, 
+      $info->{'stats'}{'samp_count'};
+      
+    say "#".join( $OUT_SEP, @$fields );
+    printTableForLevel( $info->{'samp'}, $fields );
+}
+
+sub printTableForLevel{
+    my ($info, $fields, $level) = @_;
+    foreach my $id ( sort keys %$info ){
+        my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
+        unshift @output, $level if defined $level;
+        say join( $OUT_SEP, @output );
+    }
+}
+
+## input "0.123" gives output "0.12"
+sub round{
+    my ($number, $decimal) = @_;
+    $decimal = 1 unless defined $decimal;
+    my $rounded = sprintf("%.".$decimal."f", $number);
+    return( $rounded );
+}
+
+## input "1000" gives output "1,000"
+sub commify {
+    local $_ = shift;
+    $_ = int($_);
+    1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
+    return $_;
+}
+
+
