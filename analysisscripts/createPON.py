@@ -10,12 +10,28 @@ SEMI_COLON = ';'
 EQUALS = '='
 
 REFERENCE_SAMPLE_SUFFIXES = ( 'R', 'BL','NORMAL' ) # TODO maybe make this command line argument
-
 REQUIRED_VARIANT_FIELDS = ('CHROM', 'POS', 'ID', 'REF', 'ALT', 'QUAL', 'FILTER', 'INFO')
+CSV_FIELDS = ('CHROM', 'POS', 'REF', 'ALT', 'TOTAL', 'HET', 'HOM')
 
 def ScriptName():
     from os import path
     return path.basename(__file__)
+
+# basic helper for writing PON as csv
+class CSVWriter():
+
+    def __init__(self, file):
+        self.file = file
+        
+    def writeCommentLine(self, sentence):
+        self.file.write( '## %s\n' % sentence )
+    
+    def writeHeaderLine(self):
+        self.file.write('#%s\n' % COMMA.join(CSV_FIELDS))
+
+    def writeDataLine(self, *args):
+        values = COMMA.join(str(v) for v in args)
+        self.file.write( values + '\n')
 
 # basic helper for writing valid VCF files with no samples
 class VCFWriter():
@@ -111,12 +127,22 @@ class VCFReader():
 
 class PONGenerator():
 
-    def __init__(self, outputFile, minCountThreshold,strelkaMode):
+    def __init__(self, outputFile, outputFileCsv, minCountThreshold,strelkaMode):
         self._heap = []
         self._outputFile = outputFile
         self._minCountThreshold = minCountThreshold
         self._strelkaMode = strelkaMode
+        
+        ## PON vcf file
         self._outputFile.writeInfoHeader(ID="PON_COUNT", Number=1, Type="Integer", Description="how many samples had the variant")
+        self._outputFile.writeInfoHeader(ID="PON_HET", Number=1, Type="Integer", Description="how many samples had genotype heterozygous alt")
+        self._outputFile.writeInfoHeader(ID="PON_HOM", Number=1, Type="Integer", Description="how many samples had genotype homozygous alt")
+        
+        ## additionally write data as CSV
+        self._outCsvFile = outputFileCsv
+        self._outCsvFile.writeCommentLine( "TOTAL: how many samples had alt" )
+        self._outCsvFile.writeCommentLine( "HET: how many samples had alt with heterozygous genotype alt" )
+        self._outCsvFile.writeCommentLine( "HOM: how many samples had alt with homozygous genotype" )
 
     def merge(self, vcf_readers):
         def readAndPushVariant(vcf):
@@ -138,27 +164,62 @@ class PONGenerator():
             readAndPushVariant(vcf)
 
         # finalise headers
-        self._outputFile.writeCustomHeader("PonInputSamples", COMMA.join(samples))
+        sampleCount = len(samples)
+        self._outputFile.writeCustomHeader("PonInputSampleCount", sampleCount)
         self._outputFile.writeVariantHeader()
+        self._outCsvFile.writeCommentLine("PonInputSampleCount: %i" % sampleCount)
+        self._outCsvFile.writeCommentLine("PonInputSamples: %s" % COMMA.join(samples))
+        self._outCsvFile.writeHeaderLine()
 
         previousCount = 0
-        location, variant, alt, vcf = self._heap[0]
+        prevHetCount  = 0
+        prevHomCount  = 0
+        prevOthCount  = 0
+        location, variant, alt, genotype_of_alt, vcf = self._heap[0]
 
         while self._heap:
 
             previousLocation, previousVariant, previousAlt = location, variant, alt
-            location, variant, alt, vcf = heapq.heappop(self._heap)
+            location, variant, alt, genotype_of_alt, vcf = heapq.heappop(self._heap)
 
             if location > previousLocation:
-                self.writeToOutput(previousVariant, previousAlt, previousCount)
-                previousCount = 1
+
+                self.writeToOutput(previousVariant, previousAlt, previousCount, prevHetCount, prevHomCount)
+                
+                ## re-init all counts
+                previousCount = 0
+                prevHetCount  = 0
+                prevHomCount  = 0
+                prevOthCount  = 0
+                
+                if genotype_of_alt == 'HetAlt':
+                    previousCount = 1
+                    prevHetCount = 1
+                elif genotype_of_alt == 'HomAlt':
+                    previousCount = 1
+                    prevHomCount = 1
+                elif genotype_of_alt == 'Other':
+                    prevOthCount = 1
+                else:
+                    raise Exception('WARNING Unexpected genotype_of_alt found: ' + str(genotype_of_alt) )
+                    
             else:
-                previousCount += 1
-            
+                
+                if genotype_of_alt == 'HetAlt':
+                    previousCount += 1
+                    prevHetCount += 1
+                elif genotype_of_alt == 'HomAlt':
+                    previousCount += 1
+                    prevHomCount += 1
+                elif genotype_of_alt == 'Other':
+                    prevOthCount += 1
+                else:
+                    raise Exception('WARNING Unexpected genotype_of_alt found: ' + str(genotype_of_alt) )
+           
             if vcf:
                 readAndPushVariant(vcf)
 
-        self.writeToOutput(variant, alt, previousCount)
+        self.writeToOutput(variant, alt, previousCount, prevHetCount, prevHomCount)
 
     def pushVariantToHeap(self, variant, vcf):
         def chromosomeToNumber(chromosome):
@@ -185,6 +246,7 @@ class PONGenerator():
                                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
                                    variant,
                                    alt,
+                                   'GENOTYPE',
                                    vcf
                                )
                                )
@@ -196,6 +258,7 @@ class PONGenerator():
                                        (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
                                        variant,
                                        alt,
+                                       'GENOTYPE',
                                        vcf
                                    )
                                    )
@@ -205,20 +268,36 @@ class PONGenerator():
 
         # check that reference sample shows the alt in GT field
         else:
-            alts = [ alt for alt_idx, alt in enumerate(variant.ALT.split(COMMA), start=1) if str(alt_idx) in vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0] ]
-            for idx, alt in enumerate(alts):
+            refSampleGenotypeString = vcf.getReferenceSampleFromVariant(variant).split(COLON, 1)[0]
+            altString = variant.ALT
+            alts = variant.ALT.split(COMMA)
+            
+            for idx, alt in enumerate(variant.ALT.split(COMMA)):
+                
+                alt_int = idx+1
+                alt_count = refSampleGenotypeString.count( str(alt_int) )
+                genotype_of_alt = 'NA'
+                
+                if alt_count == 2:
+                    genotype_of_alt = 'HomAlt'
+                elif alt_count == 1:
+                    genotype_of_alt = 'HetAlt'
+                else:
+                    genotype_of_alt = 'Other'
+                    
                 heapq.heappush(self._heap,
                     (
                         (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)), # location tuple, sorted on this field
                         variant,
                         alt,
+                        genotype_of_alt,
                         vcf if idx==len(alts)-1 else None
                     )
                 )
             return len(alts) > 0
 
-    def writeToOutput(self, variant, alt, count):
-        if count < self._minCountThreshold:
+    def writeToOutput(self, variant, alt, poncount, hetcount, homcount):
+        if poncount < self._minCountThreshold:
             return
         self._outputFile.writeVariant(
             CHROM = variant.CHROM,
@@ -226,7 +305,10 @@ class PONGenerator():
             REF = variant.REF,
             ALT = alt,
             FILTER = 'PASS',
-            INFO = 'PON_COUNT=%i' % count
+            INFO = 'PON_COUNT=%i;PON_HET=%i;PON_HOM=%i' % (poncount, hetcount, homcount)
+        )
+        self._outCsvFile.writeDataLine( 
+            variant.CHROM, variant.POS, variant.REF, alt, poncount, hetcount, homcount
         )
 
 if __name__ == '__main__':
@@ -238,7 +320,8 @@ if __name__ == '__main__':
     )
     required = parser.add_argument_group('required arguments')
     required.add_argument('-m', '--minCountThreshold', help='minCount to add to PON output. eg: 2', required=True, type=int)
-    required.add_argument('-o', '--outputFile', help='output file name', required=True, type=argparse.FileType('w'))
+    required.add_argument('-o', '--outputFile', help='output vcf file name', required=True, type=argparse.FileType('w'))
+    required.add_argument('-c', '--outCsvFile', help='output csv file name', required=True, type=argparse.FileType('w'))
     required.add_argument('-i', '--inputFiles', nargs='+', help='list of vcf files to merge', required=True, type=argparse.FileType('r'))
 
     optional = parser.add_argument_group('optional arguments')
@@ -250,7 +333,9 @@ if __name__ == '__main__':
     try:
         if args.strelka == True:
             print("Running in Strelka Mode")
-        generator = PONGenerator( VCFWriter(args.outputFile), args.minCountThreshold,args.strelka )
+        vcfFile = args.outputFile
+        csvFile = args.outCsvFile
+        generator = PONGenerator( VCFWriter(vcfFile), CSVWriter(csvFile), args.minCountThreshold,args.strelka )
         generator.merge( VCFReader(f) for f in args.inputFiles )
     finally: # be a good citizen
         args.outputFile.close()
