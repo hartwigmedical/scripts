@@ -7,13 +7,30 @@
  library(devtools)
  library("NMF")
 
- ############## QUERIES
+ ############## GENE PANEL & MAPPINGS ###############
  
- get_sample_data<-function(dbConnect)
+ PATH="hmf/repos/scripts/analysisscripts/"
+ genePanel<-read.table(paste(PATH,"genePanel.txt",sep=""), sep="\t",col.names="gene")
+ tumorMapping<-read.table(paste(PATH,"tumorMappings.txt",sep=""), sep="\t",col.names=c("primaryTumorLocation","category"))
+ geneString<-paste(shQuote(genePanel$gene),collapse=",")
+ 
+ ############## QUERIES #############
+ 
+ get_QCpass_samples<-function(dbConnect)
+ {
+   query = "SELECT sampleId from purity where qcstatus = 'PASS' and status <> 'NO_TUMOR'"
+   raw_data = dbGetQuery(dbConnect, query)
+ }
+ 
+ get_sample_data<-function(dbConnect,sampleString="")
  {
    query = paste("SELECT purity.*,hospital,clinical.gender as clinicalGender,",
           "primaryTumorLocation,biopsyLocation,treatment,biopsyDate,registrationDate,sampleArrivalDate   ",
-          "from purity left join clinical on purity.sampleId = clinical.sampleId;")
+          "from purity left join clinical on purity.sampleId = clinical.sampleId ")
+   
+   if (sampleString != ""){
+      query=paste(query,"WHERE purity.sampleId in (",sampleString,")" )
+   }
    raw_data = dbGetQuery(dbConnect, query)
  }
  
@@ -52,8 +69,10 @@
      "where c.chromosome = r.chromosome and c.start <= r.start and c.end >= r.end ",
      "and c.sampleId = r.sampleId and c.sampleId = '",sampleId,"' group by c.id;",
       sep = "")
-   print(query)
    raw_data = dbGetQuery(dbConnect, query)
+   chrOrder <-c((1:22),"X","Y")
+   raw_data$chromosome <- factor(raw_data$chromosome, chrOrder, ordered=TRUE)
+   raw_data
  }
 
  ############ PLOTTING ###############
@@ -104,7 +123,16 @@
    print(p)
  }
  
+ chart_purity_and_ploidy<-function(sampleData)
+ {
+   sampleData$purityBucket = round(sampleData$purity,1)
+   sampleData$ploidyBucket = round(sampleData$ploidy,1)
+   p1<-ggplot(sampleData,aes(purityBucket)) + geom_bar(aes(fill=category))
+   p2<-ggplot(sampleData,aes(ploidyBucket)) + geom_bar(aes(fill=category))
+   multiplot(p1,p2)
+ }
  ######### MULTIPLE BIOPSIES LOGIC  ########## 
+ 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
  for (i in (1:nrow(multipleBiopsies))) {
@@ -113,23 +141,23 @@
  }
  dbDisconnect(dbConnect)
  
- ######## PURITY & PLOIDY ###############
+ ########### SAMPLE DATA + PURITY & PLOIDY ###############
+
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
- sampleData<-get_sample_data(dbConnect)
- dbDisconnect(dbConnect) 
- sampleData %>% group_by(qcStatus,status) %>% summarise(count=n())
- out<-sampleData %>% filter(qcStatus=='PASS',status!='NO_TUMOR') %>% group_by(primaryTumorLocation) %>% summarise(sampleCount=n())
- out<-out[order(-out$sampleCount),]
- out$primaryTumorLocation <-factor(out$primaryTumorLocation, levels =  out$primaryTumorLocation[order(-out$sampleCount)])
- sampleData[sampleData$gender!=toupper(sampleData$clinicalGender) & !is.na(sampleData$clinicalGender), ]
- ggplot(out,aes(x=primaryTumorLocation,y=sampleCount)) + geom_bar(stat="identity") + theme_classic()
+ sampleString<-paste(shQuote(get_QCpass_samples(dbConnect)$sampleId),collapse=",")
+ sampleData<-get_sample_data(dbConnect,sampleString)
+ sampleData<-merge(x = sampleData, y = tumorMapping, by = "primaryTumorLocation", all.x = TRUE)
+ chart_purity_and_ploidy(sampleData)
+ 
+ #sampleData %>% group_by(qcStatus,status) %>% summarise(count=n())
+ #sampleData[sampleData$gender!=toupper(sampleData$clinicalGender) & !is.na(sampleData$clinicalGender), ]
  
  ######### CNV LOGIC  ##########
+ 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  CNV<-get_copy_number_data(dbConnect,"CPCT02010288T")
  dbDisconnect(dbConnect)
- chrOrder <-c((1:22),"X","Y")
- CNV$chromosome <- factor(CNV$chromosome, chrOrder, ordered=TRUE)
+
  chart_CNV_by_chromosome(CNV)
 
  # SCRATCH

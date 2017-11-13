@@ -1,0 +1,136 @@
+Bladder cancer	Bladder cancer
+Urothelial cell cancer of the bladder	Bladder cancer
+Urothelial cell cancer of the pyelum	Bladder cancer
+Urothelial cell cancer of the urethra	Bladder cancer
+Urothelial cell cancer: other	Bladder cancer
+Breast cancer	Breast cancer
+Breast Cancer: ER-negative/HER2-positive	Breast Cancer
+Breast Cancer: ER-positive/HER2-negative	Breast Cancer
+Breast Cancer: ER-positive/HER2-positive	Breast Cancer
+Breast Cancer: subtype unknown	Breast Cancer
+Breast Cancer: triple negative	Breast Cancer
+ER-positive / HER2 unknown	Breast Cancer
+Cervical cancer	Cervical cancer
+Colon and Rectal cancer	Colorectal Cancer
+colon ascendens	Colorectal Cancer
+Colorectal Cancer	Colorectal Cancer
+rectal	Colorectal Cancer
+sigmoidcarcinoma	Colorectal Cancer
+colon cancer	Colorectal Cancer
+Small intestinal	Colorectal Cancer
+adenocarcinoma characterised by an immunoprofile which could it a primary tumor in the colorectum, stomach or pancreas	CUP
+Carcinoma of unknown primary	CUP
+Primary tumor of uknown origin	CUP
+Urothelial cell cancer, but the origin is unknown	CUP
+primary tumor unknown	CUP
+unknown	CUP
+unknown primary	CUP
+Unknown primary	CUP
+unkown	CUP
+Esophageal cancer	Esophageal cancer
+Oesophagal cancer (at transition from oesophagus to stomach)	Esophageal cancer
+Oesophago-gastric cancer (junctional)	Esophageal cancer
+Gastrointestinal Stromal Tumors (GIST)	GIST
+Gastrointestinal tract cancer	GIST
+Glioma: Glioblastoma Multiforme	Glioma
+Glioma: low-grade astrocytoma	Glioma
+Glioma: low-grade oligodendroglioma	Glioma
+Glioma: other	Glioma
+Head and Neck cancer	Head and Neck Cancer
+Head and Neck Cancer: Hypopharyngeal Cancer	Head and Neck Cancer
+Head and Neck Cancer: Laryngeal cancer	Head and Neck Cancer
+Head and Neck Cancer: Lip and Oral Cavity Cancer	Head and Neck Cancer
+Head and Neck Cancer: Nasal cavity and paranasal sinuses cancer	Head and Neck Cancer
+Head and Neck Cancer: Oropharyngeal Cancer	Head and Neck Cancer
+Head and Neck Cancer: Salivary Gland Cancer	Head and Neck Cancer
+Larynxcarcinoma	Head and Neck Cancer
+Tongue carcinoma lateral side	Head and Neck Cancer
+tonsilcarcinoma	Head and Neck Cancer
+Hepatocellular Cancer	Hepatocellular Cancer
+Liver cancer	Hepatocellular Cancer
+mixed hepatocellular-cholangio carcinoma	Hepatocellular Cancer
+Kidney cancer	Kidney cancer
+kidneycel carcinoma	Kidney cancer
+adenoid cystic carcinoma	Lung Cancer
+Adenoid cystic carcinoma of left main bronchus	Lung Cancer
+Lung Cancer: Non-Small Cell	Lung Cancer
+Lung Cancer: Small Cell	Lung Cancer
+lung: adenocarcinoom	Lung Cancer
+lungca but non-small or small cell still unknown	Lung Cancer
+Non-small cell high grade neuroendocrine carcinoma	Lung Cancer
+Non-small cell NHL stomach stage I E	Lung Cancer
+First CT scan 24-05-2017 suspect clear cell RCC however, biopsy result 31-05-2017 = Melanoma	Melanoma
+Melanoma	Melanoma
+Skin cancer	Melanoma
+MISSING	MISSING
+NULL	MISSING
+Lung NET	NET
+NET	NET
+NET colon ascendens	NET
+NET unknown primary	NET
+NET unknown primary location	NET
+Neuro endocrine tumor	NET
+Neuro-endocriente tumor	NET
+Neuro-endocrine tumour	NET
+Neuro-endorine tumor	NET
+neuroendocrine carcinoma	NET
+Neuroendocrine tumor	NET
+Pancreatic NET	NET
+Small intestinal NET	NET
+Colon coecum NET	NET
+NET primary unknown	NET
+Neuro endocrine carcinoma	NET
+thymic NET	NET
+2008: Follicular NHL Stage IA (left ear) RT 8 GY; 2013: Stage IV follicular lymphoma (ww); 25Nov2015: Anal cancer	Other
+Adenocarcinoma cardia	Other
+adrenocortical carcinoma	Other
+Anal cancer	Other
+atypische fibroxanthoom	Other
+Basal Cell Carcinoma	Other
+Carcinoma NOS ex pleimorf adenoma	Other
+Cholangiocarcinoma	Other
+desmoïd tumor	Other
+Fechromocytoom	Other
+Gallbladder cancer	Other
+hemangiopericytoma	Other
+Hodgkin lymphoma	Other
+Lymphoma: other	Other
+Mesothelioma, Malignant	Other
+most likely high tractus digestive tumor	Other
+multipel myeloma	Other
+Non-Hodgkin lymphoma	Other
+Osteosarcoma (Bone Cancer)	Other
+Penile cancer	Other
+rectumcarcinoma	Other
+Suspicious desmoid tumors due to a gardner syndrome	Other
+Vulva cancer	Other
+desmo<ef>d tumor	Other
+esophageal or stomach cancer, differentiation not possible	Other
+meningeoom: anaplastic hemangiopericytoma gr 3	Other
+Vaginal cancer	Other
+Double carcinoma: endometrium and ovarium	Ovarian cancer
+extra ovarial sereus adenocarcinoom	Ovarian cancer
+Ovarian cancer	Ovarian cancer
+Pancreatic cancer	Pancreatic cancer
+Prostate cancer	Prostate cancer
+Renal Cell Cancer	Renal Cell Cancer
+angiosarcoma	Sarcoma
+carcinosarcoom of the uterus	Sarcoma
+Ewing sarcoma	Sarcoma
+Leiomyosarcoma	Sarcoma
+Leiomyosarcoom	Sarcoma
+Liposarcoma	Sarcoma
+Rhabdomyosarcoma	Sarcoma
+Sarcoma, soft tissue	Sarcoma
+Sarcoma: other	Sarcoma
+sarcomatoid or sarcoma (postradiation)	Sarcoma
+sarcomoatoid carcinoom	Sarcoma
+Undifferentiated sarcoma	Sarcoma
+Stomach (Gastric) Cancer	Stomach cancer
+Stomach cancer	Stomach cancer
+Testicular cancer	Testicular Caner
+Thymoma and Thymic Carcinoma	Thyroid Cancer
+Thyroid Cancer	Thyroid Cancer
+Carcinosarcoma of the uterus	Uterine Cancer
+carcinosarcoom endometrium	Uterine Cancer
+Endometrial cancer	Uterine Cancer
