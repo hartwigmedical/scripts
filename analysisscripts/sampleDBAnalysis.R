@@ -15,6 +15,39 @@
  geneString<-paste(shQuote(genePanel$gene),collapse=",")
  
  ############## QUERIES #############
+ select g.sampleId,minCopyNumber,maxCopyNumber,meanCopyNumber,regions from hmfpatients_pilot.geneCopyNumber g, hmfpatients.purity p where gene = @GENE and g.sampleId = p.sampleId;
+ 
+ #############
+ select gene,c.sampleId,minCopyNumber,maxCopyNumber,meanCopyNumber,regions,purity,ploidy,primaryTumorLocation from copyNumber c, purity p, patient pa 
+ where  ;
+ ######## SV DISRUPTIONS:
+ select v.* from gene_disruption_view v, purity p where gene in (select distinct gene from geneCopyNumber) and v.sampleId = p.sampleId
+ and p.qcstatus = 'PASS' and p.status <> 'NO_TUMOR';
+ 
+ get_HMF_panel<-function(dbConnect)
+ {
+   query = "SELECT distinct gene from geneCopyNumber"
+   print(query)
+   raw_data = dbGetQuery(dbConnect, query)
+ }
+ 
+ get_panel_somatics<-function(dbConnect,geneString,sampleString="")
+ {
+   query = paste("SELECT gene,sampleId,ref,alt,cosmicId,dbsnpId,effect,alleleReadCount,totalReadCount	",
+            ",adjustedVaf,adjustedCopyNumber , highConfidence,trinucleotideContext,	clonality, loh ",
+            "FROM somaticVariant ",
+            "WHERE gene in (",geneString,") ",
+            "AND effect NOT IN ('UTR variant','intron variant','sequence feature','synonymous variant') ",
+            "AND filter = 'PASS' ",
+            sep="")
+   
+   if (sampleString != ""){
+      query=paste(query,"AND sampleId in (",sampleString,")" )
+   }
+   print(query)
+   raw_data = dbGetQuery(dbConnect, query)
+ }
+
  
  get_QCpass_samples<-function(dbConnect)
  {
@@ -25,8 +58,8 @@
  get_sample_data<-function(dbConnect,sampleString="")
  {
    query = paste("SELECT purity.*,hospital,clinical.gender as clinicalGender,",
-          "primaryTumorLocation,biopsyLocation,treatment,biopsyDate,registrationDate,sampleArrivalDate   ",
-          "from purity left join clinical on purity.sampleId = clinical.sampleId ")
+          "primaryTumorLocation,biopsyLocation,treatment,biopsyDate,registrationDate,sampleArrivalDate ",
+          "FROM purity left join clinical on purity.sampleId = clinical.sampleId ")
    
    if (sampleString != ""){
       query=paste(query,"WHERE purity.sampleId in (",sampleString,")" )
@@ -148,6 +181,7 @@
  sampleData<-get_sample_data(dbConnect,sampleString)
  sampleData<-merge(x = sampleData, y = tumorMapping, by = "primaryTumorLocation", all.x = TRUE)
  chart_purity_and_ploidy(sampleData)
+ ggplot(sampleData,aes(purity,ploidy))+geom_point()+labs(title="Ploidy vs Purity Scatter")
  
  #sampleData %>% group_by(qcStatus,status) %>% summarise(count=n())
  #sampleData[sampleData$gender!=toupper(sampleData$clinicalGender) & !is.na(sampleData$clinicalGender), ]
@@ -157,9 +191,20 @@
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  CNV<-get_copy_number_data(dbConnect,"CPCT02010288T")
  dbDisconnect(dbConnect)
-
  chart_CNV_by_chromosome(CNV)
+ 
+ ########## DRIVERS ############
+ dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+ sampleString<-paste(shQuote(get_QCpass_samples(dbConnect)$sampleId),collapse=",")
+ geneString<-paste(shQuote(get_HMF_panel(dbConnect)$gene),collapse=",")
+ #SOMATICS
+ somatics<-get_panel_somatics(dbConnect,geneString,sampleString)
+ dbDisconnect(dbConnect)
 
+
+ head(genePanel)
+ get_HMF_panel(dbConnect)
+ #################################
  # SCRATCH
  CNV %>% group_by(segmentStartSupport,segmentEndSupport) %>% summarise(sumCount=sum(observedTumorRatioCount),medCount=median(observedTumorRatioCount),countChromosome=n())
  CNV %>% group_by(chromosome) %>% summarise(sumCount=sum(observedTumorRatioCount),count=n())
