@@ -1,7 +1,7 @@
 #!/bin/bash
 
-LOCAL_PATH='/data/sequencer_archive/'
-REMOTE_PATH='s3://hmf_archive/sequencer_archive'
+LOCAL_PATH='/data/data_archive/rna_seq'
+REMOTE_PATH='s3://hmf_archive/rna_seq'
 AWS_PROFILE='hmf_archive'
 
 sbp s3 sync "${LOCAL_PATH}" "${REMOTE_PATH}" \
