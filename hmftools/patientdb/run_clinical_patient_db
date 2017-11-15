@@ -14,7 +14,8 @@ exec java \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
-    -treatment_types_csv "$patient_db_dir"/csv/treatment_types.csv \
+    -treatment_mapping_csv "$patient_db_dir"/csv/treatment_mapping.csv \
+    -tumor_location_mapping_csv "$patient_db_dir"/csv/tumor_location_mapping.csv \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -do_load_raw_ecrf
