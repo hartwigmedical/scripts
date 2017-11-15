@@ -6,9 +6,9 @@ USE hmfpatients;
     
 UNION
 
-	SELECT count(*), 'known primary tumor location' 
+	SELECT count(*), 'with known cancer type' 
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    WHERE NOT(isnull(primaryTumorLocation))
+    WHERE NOT(isnull(primaryTumorCategory))
     
 UNION
 
@@ -19,10 +19,10 @@ UNION
 
 UNION
 
-    SELECT count(*), 'with matched biopsy and known biopsy location' 
+    SELECT count(*), 'with matched biopsy and known biopsy site' 
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-    WHERE NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsyLocation))
+    WHERE NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsySite))
     
 UNION
 
