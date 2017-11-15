@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sync_rna_to_sbp
+sync_sequencer_archive_to_sbp
+sync_snpcheck_to_sbp
+sync_patientreports_to_sbp
