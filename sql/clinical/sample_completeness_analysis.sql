@@ -8,7 +8,7 @@ UNION
 
 	SELECT count(*), 'with known cancer type' 
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    WHERE NOT(isnull(primaryTumorCategory))
+    WHERE NOT(isnull(cancerType))
     
 UNION
 
@@ -19,7 +19,7 @@ UNION
 
 UNION
 
-    SELECT count(*), 'with matched biopsy and known biopsy site' 
+SELECT count(*), 'with matched biopsy and known biopsy site' 
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     WHERE NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsySite))
