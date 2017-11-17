@@ -5,6 +5,7 @@ run_dir=$1 && shift
 credentials=/data/common/tools/patient-db_pilot/credentials
 purple_jar=/data/common/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple_pilot
+gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
 
-${prefix}/do_run_purple ${run_dir} ${credentials} ${purple_jar} ${purple_output} $@
+${prefix}/do_run_purple ${run_dir} ${credentials} ${purple_jar} ${purple_output} -gc_profile ${gc_profile} $@
 
