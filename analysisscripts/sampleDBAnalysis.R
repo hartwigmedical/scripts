@@ -189,7 +189,7 @@
    p2<-ggplot() + xlim(0,3.5)+ labs(title = multipleBiopsy$sampleId2,x='ploidy')  + 
      geom_histogram(aes(x=Sample2Ploidy),data=subset(variants,sampleCount == 2),fill = "blue", alpha = 0.6,binwidth = binsize) + 
      geom_histogram(aes(x=Sample2Ploidy),data=variants[variants$sampleCount==1 & variants$Sample2Ploidy>0,],fill = "blue", alpha = 0.2,binwidth = binsize)
-   p3<-ggplot(variants,aes(Sample1Ploidy,Sample2Ploidy))+geom_point() +xlim(0,3)+ylim(0,3)+labs(x=multipleBiopsy$SampleId1,y=multipleBiopsy$SampleId2)
+   p3<-ggplot()++labs(title=c(multipleBiopsy$SampleId1,multipleBiopsy$SampleId2))+geom_point(variants,aes(Sample1Ploidy,Sample2Ploidy)) +xlim(0,3)+ylim(0,3)
    multiplot(p1,p2,p3,cols=2)
  }
 
@@ -221,31 +221,43 @@
 
  ######### SINGLE BIOPSY SV PLOIDIES ########## 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- sampleId = "DRUP01090005T"
+ sampleId = "CPCT02070234T"
  PURITY<-as.double(get_sample_purity(dbConnect,sampleId))
  CNV<-as.data.table(get_copy_number_data(dbConnect,sampleId))
  CNV[, prevCopyNumber:=c(NA, copyNumber[-.N]), by=chromosome]
  CNV[, prevInferred:=c(NA, inferred[-.N]), by=chromosome]
  
+ # Plot min length
+ CNV$Length<-CNV$end-CNV$start
+ CNV$chCopyNumber<-CNV$copyNumber-CNV$prevCopyNumber
+ CNV[, prevLength:=c(NA, Length[-.N]), by=chromosome]
+ CNV<-transform(CNV, minLength = pmin(Length, prevLength))
+ ggplot(aes(chCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
+   facet_wrap( ~segmentStartSupport ) + xlim(-4,4)
+ ggplot(aes(minLength),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
+   scale_x_log10() + facet_wrap( ~segmentStartSupport )
+ CNV[, .(count=.N), by = segmentStartSupport]
+ 
+ # SV PLOIDY vs CopyNumber Change
  SV<-get_SV_ends(dbConnect,sampleId)
  SV<-merge(x = SV, y = CNV, by.x = c("chromosome","position"),by.y=c("chromosome","start"), all.x = TRUE)
  SV$ploidy<-ifelse(SV$orientation ==1, -(SV$prevCopyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY ,
-             -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)#*PURITY#+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY
- SV$chCopyNumber<-SV$copyNumber-SV$prevCopyNumber
+             -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)
  ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
    geom_histogram(aes(x=ploidy),data=SV,fill = "red", alpha = 0.6,binwidth = 0.1) 
  ggplot(SV[SV$inferred==0 & SV$prevInferred==0,],aes(ploidy,chCopyNumber))+geom_point()+labs(title="SV Ploidy vs ChCopyNumber Scatter")+ xlim(-4,4)+ylim(-4,4)
  dbDisconnect(dbConnect)
  
  ######### MULTIPLE BIOPSIES LOGIC  ########## 
- 
+
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
- multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
+ #multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
+ multipleBiopsies<-data.frame(sampleId1='CPCT02020192T',sampleId2='CPCT02020438T')
  for (i in (1:nrow(multipleBiopsies))) {
    variants<-get_multiple_biopsy_somatic_variants(dbConnect,multipleBiopsies[i,])
    chart_multiple_biopsies(variants,multipleBiopsies[i,])
  }
- dbDisconnect(dbConnect)
+  dbDisconnect(dbConnect)
  
  ########### SAMPLE DATA + PURITY & PLOIDY ###############
 
@@ -288,3 +300,16 @@
  
  df = data.frame(x = c(1, 14, 3, 21, 11), y = c(102, 500, 40, 101, 189)) 
  apply(df, 2, function(x) x - c(PURITY)) 
+ 
+ library(plyr)
+ d.f <- data.frame(
+   grp = as.factor( rep( c("A","B"), each=120 ) ) ,
+   grp2 = as.factor( rep( c("cat","dog","elephant"), 40 ) ) ,
+   val = c( sample(c(2:4,6:8,12),120,replace=TRUE), sample(1:4,120,replace=TRUE) )
+ )
+ d.f <- arrange(d.f,grp,grp2,val)
+ d.f.ecdf <- ddply(d.f, .(grp,grp2), transform, ecdf=ecdf(val)(val) )
+ 
+ ggplot( d.f.ecdf, aes(val, ecdf, colour = grp) ) + geom_step() + facet_wrap( ~grp2 )
+ 
+ d.f.ecdf
