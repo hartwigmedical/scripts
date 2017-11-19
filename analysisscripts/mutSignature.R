@@ -3,6 +3,7 @@ library(MutationalPatterns)
 library(RMySQL)
 library(data.table)
 library("NMF")
+library(ggplot2)
 
 standard_mutation<-function(types)
 {
@@ -72,21 +73,24 @@ create_empty_signature<-function() {
 select_cohort<-function(dbConnect, type)
 {
   query = paste(
-    "select s.sampleId from patient p, sample s where s.patientId = p.id and upper(primaryTumorLocation) like '%",
+    "select s.sampleId from clinical c, sample s where s.sampleId = c.sampleId and cancerType like '%",
     type,
     "%'",
     sep = "")
   return (dbGetQuery(dbConnect, query))
 }
 
-sample_signature<-function(dbConnect, sample, empty_signature)
+sample_signature<-function(dbConnect, sample, empty_signature,clonality="")
 {
   query = paste(
     "select sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, count(*) as count from somaticVariant where sampleId = '",
     sample,
-    "' and length(alt) = length(ref) and length(alt) = 1 group by 1, 2, 3",
+    "' and filter = 'PASS' and length(alt) = length(ref) and length(alt) = 1 and trinucleotideContext not like '%N%'",
     sep = "")
-
+  if (clonality!=""){
+    query=paste(query," AND clonality = '",clonality,"'",sep="")
+  }
+  query=paste(query," group by 1, 2, 3",sep="")
   raw_data = dbGetQuery(dbConnect, query)
   raw_types = raw_data$snv
   standard_types = standard_mutation(raw_types)
@@ -95,17 +99,16 @@ sample_signature<-function(dbConnect, sample, empty_signature)
 
   DT=data.table(type=standard_types, context=standard_context, count=raw_data$count)
   DT=rbind(DT, empty_signature)
-
   grouped=DT[, .(count=sum(count)), keyby=.(type,context)]
   return(grouped)
 }
 
-cohort_signature<-function(dbConnect, cohort)
+cohort_signature<-function(dbConnect, cohort,clonality="")
 {
   empty_signature = create_empty_signature()
   result = matrix(, nrow = 96, ncol = 0)
   for (sample in cohort) {
-    signature = sample_signature(dbConnect, sample, empty_signature)
+    signature = sample_signature(dbConnect, sample, empty_signature,clonality)
     total_count = sum(signature$count)
     if (total_count > 0)
     {
@@ -133,23 +136,30 @@ getCOSMICSignatures<-function(){
 
 # Create mutational matrix
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-cohort = select_cohort(dbConnect, "BREAST")
-mutation_matrix = cohort_signature(dbConnect, cohort[1:40,])
+cohort = select_cohort(dbConnect, "Lung")
+mutation_matrix = cohort_signature(dbConnect, cohort[1:nrow(cohort),])
+subclonal_mutation_matrix = cohort_signature(dbConnect, cohort[1:nrow(cohort),],clonality="SUBCLONAL")
 dbDisconnect(dbConnect)
-plot_96_profile(mutation_matrix)
+#plot_96_profile(mutation_matrix[1:10,])
 
 # Fit to cosmic signatures
 cancer_signatures = getCOSMICSignatures()
 fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
+#fit_res = fit_to_signatures(subclonal_mutation_matrix, cancer_signatures)
 fit_res$contribution<-fit_res$contribution[, order(colSums(fit_res$contribution),decreasing=F),drop=FALSE]
-select = which(rowSums(fit_res$contribution) > 0.01 * sum(fit_res$contribution))
-plot_contribution(fit_res$contribution[select, ], cancer_signatures[,select], mode = "relative")
+filteredContributions<- fit_res$contribution[,colSums(fit_res$contribution)>=0,drop=FALSE]
+selectRow = which(rowSums(filteredContributions) > 0.02 * sum(filteredContributions))
+plot_contribution(filteredContributions[selectRow,,drop=FALSE], cancer_signatures[,select],coord_flip = F, mode = "absolute")+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
+        legend.text=element_text(size=6),legend.title=element_text(size=8),
+        axis.title.y = element_text(size=6))
 
 # Non-negative matrix factorization
 mutation_matrix = mutation_matrix + 0.0001
 estimate = nmf(mutation_matrix, rank=2:5, method="brunet", nrun=100, seed=123456)
 plot(estimate)
-nmf_res <- extract_signatures(mutation_matrix, rank = 2)
+nmf_res <- extract_signatures(mutation_matrix, rank = 4)
+plot_96_profile(nmf_res$signatures)
 
 
 
@@ -176,3 +186,4 @@ dndscv(mutations)
 
 paste((cohort),collapse=" ")
 c(cohort)
+

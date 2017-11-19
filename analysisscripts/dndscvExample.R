@@ -5,6 +5,7 @@ library(MutationalPatterns)
 library(RMySQL)
 library(data.table)
 library("NMF")
+library(devtools)
 
 sample_mutations_all_snv<-function(dbConnect)
 {
