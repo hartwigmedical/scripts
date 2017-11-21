@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+CURR_HOST=$(hostname)
+SELF_SCRIPT=$(basename $0)
+PARSE_SCRIPT="$(dirname $0)/check_bcl2fastq_conversion_test"
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
+    echo "-----"
+    echo " @$CURR_HOST"
+    echo " Usage: $SELF_SCRIPT <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
+    echo "        $SELF_SCRIPT /path/to/160812_ST-E00290_0091_AHTW73CCXX"
+    echo "-----"
+    exit 1
+fi
+
+seqRuns=( "$@" )
+seqDirs=()
+
+## if needed contruct absolute path by host we are on
+for seqRun in "${seqRuns[@]}"; do
+    
+    if [[ $seqRun =~ ^\/ ]]; then
+        seqDirs+=(${seqRun})
+    elif [[ $CURR_HOST == "datastore" ]]; then
+        seqDirs+=("/data/sequencer_archive/${seqRun}" )
+    else
+        seqDirs+=("/data1/illumina_data/${seqRun}" )
+    fi
+    
+done
+
+## some checking before we start
+for seqDir in "${seqDirs[@]}"; do
+    if [[ ! -d $seqDir ]]; then echo "[ERROR] dir does not exist ($seqDir)"; exit 1; fi
+done
+
+## get info for RunOverview
+echo -e "## ----------\n## RUN LEVEL:\n## ----------"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## (Flowcell|RunOverview|FINAL QC)"
+done
+
+## get info for SampleOverview
+echo -e "## ----------\n## SAMPLE LEVEL:\n## ----------"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -v ^#
+done
+
+
