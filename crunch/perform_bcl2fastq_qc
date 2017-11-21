@@ -6,9 +6,9 @@ PARSE_SCRIPT="$(dirname $0)/check_bcl2fastq_conversion_test"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
-    echo " @$CURR_HOST"
     echo " Usage: $SELF_SCRIPT <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
-    echo "        $SELF_SCRIPT /path/to/160812_ST-E00290_0091_AHTW73CCXX"
+    echo "        $SELF_SCRIPT /path/to/171117_ST-E00287_0115_AHCFL5CCXY"
+    echo "        $SELF_SCRIPT 171117_ST-E00287_0115_AHCFL5CCXY 171117_ST-E00287_0116_BHCCVKCCXY"
     echo "-----"
     exit 1
 fi
