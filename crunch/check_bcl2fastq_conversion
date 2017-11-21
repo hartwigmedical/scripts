@@ -91,7 +91,7 @@ $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_P
 ## MAIN
 ## -----
 
-my ($ssht_info, $run_name) = readSampleSheet( $SSHT_PATH );
+my ($ssht_info) = readSampleSheet( $SSHT_PATH );
 my $json_info = readJson( $JSON_PATH );
 my $parsed_info = parseJsonInfo( $json_info );
 
@@ -119,12 +119,16 @@ if ( $opt{ debug } ){
 sub addSamplesheetInfo{
     my ($json_info, $ssht_info) = @_;
     
+    ## add run name: eg X17-0001
+    $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
+    
+    ## add submissions: eg HMFregCPCT
     my $samples = $json_info->{ 'samp' };
     foreach my $sample_id ( keys %$samples ){
         my $sample = $samples->{ $sample_id };
         
         my $submission = $NA_CHAR;
-        $submission = $ssht_info->{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{$sample_id}{ 'Sample_Project' };
+        $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
         $sample->{ 'submission_print' } = $submission;
     }
 }
@@ -178,7 +182,7 @@ sub checkObjectField{
         next if $name eq 'UNDETERMINED';
         my $value = $obj->{$field} or die "[EXIT] No $field key for $name";
         if ( $value < $min ){
-            say "## WARNING $field for $name too low: $value < $min\n";
+            say "## WARNING $field for $name too low: $value < $min";
             $fails += 1;
         }
     }
@@ -304,8 +308,9 @@ sub parseJsonInfo{
 sub printTable{
     my ($info, $fields) = @_;
 
-    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'identifier'}, 
+      $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
     
@@ -320,12 +325,14 @@ sub printTable{
 sub printSummaryTable{
     my ($info, $fields) = @_;
     
-    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
+      $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
         
-    say sprintf "## RunOverviewInfoLine: %s", 
+    say sprintf "## RunOverviewInfoLine: %s\t%s", 
+      $info->{'stats'}{'hmf_runname'},
       $info->{'stats'}{'run_overview_string'};
       
     say "#".join( $OUT_SEP, @$fields );
@@ -348,9 +355,15 @@ sub readSampleSheet{
     my $return_str = $/;
     $/ = "\r\n";
     
-    my $run_name = 'NA';
     my %output;
+    $output{ 'samples' } = {};
+    $output{ 'runname' } = 'NO_SAMPLESHEET_FOUND';
     my @header;
+    
+    if ( ! -e $csv_file ){
+        say "## WARNING skipping SampleSheet read: file not found ($csv_file)";
+        return( \%output );
+    }
     
     open FILE, "<", $csv_file or die "Couldn't open file ($csv_file): $!";
     while ( <FILE> ) {
@@ -361,7 +374,8 @@ sub readSampleSheet{
 		
         ## get hmf run id from config line
         if ($fields[0] eq 'ExperimentName' ){
-            $run_name = $fields[1] || 'NA';
+            my $run_name = $fields[1] || 'NA';
+            $output{ 'runname' } = $run_name;
         }
         ## find header
         elsif ( $_ =~ m/Sample_ID/ ){
@@ -372,7 +386,7 @@ sub readSampleSheet{
             my %tmp = ();
             $tmp{ $_ } = shift @fields foreach @header;
             my $sample_id = $tmp{ 'Sample_ID' };
-            $output{ $sample_id } = \%tmp;
+            $output{ 'samples' }{ $sample_id } = \%tmp;
         }
     }	
     close FILE;
@@ -380,7 +394,7 @@ sub readSampleSheet{
     ## reset return string
     $/ = $return_str;
     
-    return( \%output, $run_name );
+    return( \%output );
 }
 
 ## input "0.123" gives output "0.12"
