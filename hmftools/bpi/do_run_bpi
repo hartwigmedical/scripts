@@ -40,7 +40,7 @@ fi
 joint_name=$(realpath ${output_tsv} | awk -F/ '{print $8}')
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
 
-if grep -q bpiVersion=1.3 ${output_vcf}); then
+if grep -q bpiVersion=1.3 ${output_vcf}; then
     echo "BPI version 1.3 already run. Exiting."
     exit 1
 fi
