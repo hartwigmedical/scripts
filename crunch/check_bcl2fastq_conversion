@@ -91,15 +91,19 @@ $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_P
 ## MAIN
 ## -----
 
-my ($ssht_info, $run_name) = readSampleSheet( $SSHT_PATH );
+my ($ssht_info) = readSampleSheet( $SSHT_PATH );
 my $json_info = readJson( $JSON_PATH );
 my $parsed_info = parseJsonInfo( $json_info );
 
 addSamplesheetInfo( $parsed_info, $ssht_info );
-
 performQC( $parsed_info ) unless $opt{ no_qc };
-printTable( $parsed_info, \@OUT_FIELDS ) unless $opt{ print_summary };
-printSummaryTable( $parsed_info, \@SUM_FIELDS ) if $opt{ print_summary };
+
+if ( $opt{ print_summary } ){
+    printSummaryTable( $parsed_info, \@SUM_FIELDS );
+}
+else{
+    printTable( $parsed_info, \@OUT_FIELDS );
+}
 
 if ( $opt{ debug } ){
     say "[DEBUG] Samplesheet data structure";
@@ -115,61 +119,18 @@ if ( $opt{ debug } ){
 sub addSamplesheetInfo{
     my ($json_info, $ssht_info) = @_;
     
+    ## add run name: eg X17-0001
+    $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
+    
+    ## add submissions: eg HMFregCPCT
     my $samples = $json_info->{ 'samp' };
     foreach my $sample_id ( keys %$samples ){
         my $sample = $samples->{ $sample_id };
         
         my $submission = $NA_CHAR;
-        $submission = $ssht_info->{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{$sample_id}{ 'Sample_Project' };
+        $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
         $sample->{ 'submission_print' } = $submission;
     }
-}
-
-sub readSampleSheet{
-    my ($csv_file) = @_;
-    
-    ## SampleSheet file has windows returns
-    my $return_str = $/;
-    $/ = "\r\n";
-    
-    my $run_name = 'NA';
-    my %output;
-    my @header;
-    
-    open FILE, "<", $csv_file or die "Couldn't open file ($csv_file): $!";
-    while ( <FILE> ) {
-        chomp($_);
-        next if $_ =~ /^[\[\,]/;
-        next if $_ eq "";
-        
-        #if ( $_ =~ m/\s+/ ){
-        #    ## no whitespace allowed anywhere
-        #    die "[EXIT] SampleSheet ($csv_file) contains whitespace in ($_)\n";
-        #}
-        my @fields = split( ",", $_);
-		
-        ## get hmf run id from config line
-        if ($fields[0] eq 'ExperimentName' ){
-            $run_name = $fields[1] || 'NA';
-        }
-        ## find header
-        elsif ( $_ =~ m/Sample_ID/ ){
-            @header = @fields;
-        }
-        ## read sample line if header seen before
-        elsif ( @header ){
-            my %tmp = ();
-            $tmp{ $_ } = shift @fields foreach @header;
-            my $sample_id = $tmp{ 'Sample_ID' };
-            $output{ $sample_id } = \%tmp;
-        }
-    }	
-    close FILE;
-    
-    ## reset return string
-    $/ = $return_str;
-    
-    return( \%output, $run_name );
 }
 
 sub readJson{
@@ -187,10 +148,12 @@ sub performQC{
     my $lanes = $info->{'lane'};
     my $fails = 0;
     
+    my $identifier = $stats->{'identifier'};
+    
     ## flowcell checks
     my $undet = $stats->{'undet_perc'};
     if ( $undet > $MAX_UNDET ){
-        warn "## WARNING Percentage undetermined ($undet) too high (MAX=$MAX_UNDET%)\n";
+        say "## WARNING Percentage undetermined ($undet) too high (MAX=$MAX_UNDET%)";
         $fails += 1;
     }
     
@@ -205,20 +168,21 @@ sub performQC{
         say "## FINAL QC RESULT: OK";
     }
     else{
-        warn "## WARNING Some checks failed, inspect before proceeding\n";
-        warn "## WARNING Final QC result: FAIL\n";
+        warn "## WARNING Some checks failed, inspect before proceeding (for $identifier)\n";
+        say "## FINAL QC RESULT: FAIL (for $identifier)";
     }
 }
 
 sub checkObjectField{
     my ($objects, $field, $min) = @_;
     my $fails = 0;
-    foreach my $obj ( values %$objects ){
+    foreach my $obj_key ( sort { $objects->{$b}{'name'} cmp $objects->{$a}{'name'} } keys %$objects){
+        my $obj = $objects->{$obj_key};
         my $name = $obj->{'name'};
         next if $name eq 'UNDETERMINED';
         my $value = $obj->{$field} or die "[EXIT] No $field key for $name";
         if ( $value < $min ){
-            warn "## WARNING $field for $name too low: $value < $min\n";
+            say "## WARNING $field for $name too low: $value < $min";
             $fails += 1;
         }
     }
@@ -283,9 +247,6 @@ sub parseJsonInfo{
                 $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
             }
             
-            ## mismatch info not available for Undetermined reads
-            #next if $sid eq "UNDETERMINED";
-            
             my %bc_mismatch_counts = (
                 'mm0' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '0' },
                 'mm1' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '1' },
@@ -330,6 +291,12 @@ sub parseJsonInfo{
     }
     
     ## Collect some general stats/info
+    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s", 
+      round( $info{'flow'}{$fid}{'yield'} / 1e6, 0 ), 
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'} / 1e6, 0 ), 
+      $info{'flow'}{$fid}{'q30_print'},
+      $info{'flow'}{$fid}{'pf_print'};
+      
     $info{'stats'}{'undet_perc'} = round( $info{'undt'}{'UNDETERMINED'}{'yield'}*100 / $info{'flow'}{$fid}{'yield'} );
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
@@ -341,8 +308,9 @@ sub parseJsonInfo{
 sub printTable{
     my ($info, $fields) = @_;
 
-    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'identifier'}, 
+      $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
     
@@ -357,10 +325,15 @@ sub printTable{
 sub printSummaryTable{
     my ($info, $fields) = @_;
     
-    say sprintf '## Flowcell: %s (%d lanes, %d samples)', 
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
+      $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
+        
+    say sprintf "## RunOverviewInfoLine: %s\t%s", 
+      $info->{'stats'}{'hmf_runname'},
+      $info->{'stats'}{'run_overview_string'};
       
     say "#".join( $OUT_SEP, @$fields );
     printTableForLevel( $info->{'samp'}, $fields );
@@ -368,11 +341,60 @@ sub printSummaryTable{
 
 sub printTableForLevel{
     my ($info, $fields, $level) = @_;
-    foreach my $id ( sort keys %$info ){
+    foreach my $id ( sort { $info->{$b}{'name'} cmp $info->{$a}{'name'} } keys %$info){
         my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
         unshift @output, $level if defined $level;
         say join( $OUT_SEP, @output );
     }
+}
+
+sub readSampleSheet{
+    my ($csv_file) = @_;
+    
+    ## SampleSheet file has windows returns
+    my $return_str = $/;
+    $/ = "\r\n";
+    
+    my %output;
+    $output{ 'samples' } = {};
+    $output{ 'runname' } = 'NO_SAMPLESHEET_FOUND';
+    my @header;
+    
+    if ( ! -e $csv_file ){
+        say "## WARNING skipping SampleSheet read: file not found ($csv_file)";
+        return( \%output );
+    }
+    
+    open FILE, "<", $csv_file or die "Couldn't open file ($csv_file): $!";
+    while ( <FILE> ) {
+        chomp($_);
+        next if $_ =~ /^[\[\,]/;
+        next if $_ eq "";
+        my @fields = split( ",", $_);
+		
+        ## get hmf run id from config line
+        if ($fields[0] eq 'ExperimentName' ){
+            my $run_name = $fields[1] || 'NA';
+            $output{ 'runname' } = $run_name;
+        }
+        ## find header
+        elsif ( $_ =~ m/Sample_ID/ ){
+            @header = @fields;
+        }
+        ## read sample line if header seen before
+        elsif ( @header ){
+            my %tmp = ();
+            $tmp{ $_ } = shift @fields foreach @header;
+            my $sample_id = $tmp{ 'Sample_ID' };
+            $output{ 'samples' }{ $sample_id } = \%tmp;
+        }
+    }	
+    close FILE;
+    
+    ## reset return string
+    $/ = $return_str;
+    
+    return( \%output );
 }
 
 ## input "0.123" gives output "0.12"

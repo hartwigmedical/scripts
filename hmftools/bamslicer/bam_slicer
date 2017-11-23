@@ -14,7 +14,14 @@ if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ];
 fi
 
 # get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
-RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | grep Validated | sort -nrk7,7 | head -1`
+RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | sort -nrk7,7 | head -1`
+
+if [ -z "$RUN_ROW" ];
+  then
+    echo "No runs found with a Somatic/CPCT .ini file for sample ${SAMPLE}. Exiting."
+    exit 1
+fi
+
 RUN_NAME=`echo ${RUN_ROW} | cut -d ' ' -f1`
 RUN_BUCKET=`echo ${RUN_ROW} | cut -d ' ' -f5`
 BAM_KEY="$RUN_NAME/$SAMPLE/mapping/${SAMPLE}_dedup.realigned.bam"

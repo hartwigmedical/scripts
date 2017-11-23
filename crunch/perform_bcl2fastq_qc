@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+CURR_HOST=$(hostname)
+SELF_SCRIPT=$(basename $0)
+PARSE_SCRIPT="$(dirname $0)/check_bcl2fastq_conversion"
+ERRLOG_FILE="conversionError.txt"
+SSHEET_FILE="SampleSheet.csv"
+REPORT_ROOT="Data/Intensities/BaseCalls/Reports/html"
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
+    echo "-----"
+    echo " Usage: $SELF_SCRIPT <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
+    echo "        $SELF_SCRIPT /path/to/171117_ST-E00287_0115_AHCFL5CCXY"
+    echo "        $SELF_SCRIPT 171117_ST-E00287_0115_AHCFL5CCXY 171117_ST-E00287_0116_BHCCVKCCXY"
+    echo "-----"
+    exit 1
+fi
+
+seqRuns=( "$@" )
+seqDirs=()
+
+
+function printHeader() {
+    local fieldTitle=$1 && shift
+    echo -e "## ----------\n## ${fieldTitle}:\n## ----------"
+}
+
+## if needed contruct absolute path by host we are on
+for seqRun in "${seqRuns[@]}"; do
+    
+    if [[ $seqRun =~ ^\/ ]]; then
+        seqDirs+=(${seqRun})
+    elif [[ $CURR_HOST == "datastore" ]]; then
+        seqDirs+=("/data/sequencer_archive/${seqRun}" )
+    else
+        seqDirs+=("/data1/illumina_data/${seqRun}" )
+    fi
+    
+done
+
+## some checking before we start
+cmdsToExecute=()
+for seqDir in "${seqDirs[@]}"; do
+    
+    ssheet_path="${seqDir}/${SSHEET_FILE}"
+    errlog_path="${seqDir}/${ERRLOG_FILE}"
+    report_path="${seqDir}/${REPORT_ROOT}"
+    seqdir_name="$( basename $seqDir )"
+    hmfrun_name="$( cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' --output-delimiter ': ' -f 2 )"
+    nasrun_name="${hmfrun_name}__${seqdir_name}"
+    
+    ## anything wrong with any seqrun: exit the whole thing
+    if [[ ! -d $seqDir ]]; then 
+        echo "[ERROR] dir does not exist ($seqDir)" && exit 1; 
+    elif [[ ! $( cat ${errlog_path} | tail -1 | grep "0 errors and 0 warnings" ) ]]; then 
+        echo "[ERROR] Errlog does not contain required output (${errlog_path})" && exit 1; 
+    elif [[ -z $hmfrun_name ]]; then 
+        echo "[ERROR] Have not been able to parse hmfrun_name from sheet ($ssheet_path)" && exit 1; 
+    fi
+    
+    ## store further cmds so we can print all together at the end
+    rsync_cmd="rsync -ah ${report_path}/ nas:/volume1/web/qc/conversion/${nasrun_name}"
+    cmdsToExecute+=("${rsync_cmd}")
+done
+
+## get QC
+printHeader "RUN QC"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
+done
+
+## get info for RunOverview
+printHeader "RUN Info"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+done
+
+## get info for SampleOverview
+printHeader "Sample Info"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -v ^#
+done
+
+## Print further actions
+printHeader "Extra actions"
+for cmd in "${cmdsToExecute[@]}"; do
+    echo ${cmd}
+done
