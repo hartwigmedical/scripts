@@ -67,4 +67,5 @@ ${awscmd} s3 sync ${reruns3path} ${localpath} --profile ${awsprofile} \
 --include "somaticVariants/*all.somatic.snvs.vcf" \
 --include "structuralVariants/manta/*somaticSV.vcf.gz*" \
 --include "structuralVariants/bpi/*sliced.bam*" \
+--include "*damageEstimate" \
 --include "structuralVariants/bpi/*.tsv"
