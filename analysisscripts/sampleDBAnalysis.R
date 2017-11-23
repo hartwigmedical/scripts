@@ -41,9 +41,12 @@
    raw_data = dbGetQuery(dbConnect, query)
  }
 
- get_gene_copy_number<-function(dbConnect,sampleString="")
+ get_gene_copy_number<-function(dbConnect,sampleString="",minCopyNumber=-1e6,maxCopyNumber=1e6)
  {
-   query = "SELECT gene,minCopyNumber,regions FROM gene_copy_number"
+   query = paste("SELECT sampleId,gene,minCopyNumber,regions FROM gene_copy_number ",
+                 "WHERE minCopyNumber >",minCopyNumber," ",
+                 "AND minCopyNumber <",minCopyNumber," ",
+                 sep="")
    
    if (sampleString != ""){
      query=paste(query,"AND sampleId in (",sampleString,")" )
@@ -132,7 +135,8 @@
  get_copy_number_data<-function(dbConnect, sampleId)
  {
    query = paste(
-     "select c.*, sum(r.observedTumorRatioCount) as observedTumorRatioCount ",
+     "select c.*, sum(r.observedTumorRatioCount) as observedTumorRatioCount, ",
+     "sum(gcContent*r.observedTumorRatioCount)/sum(r.observedTumorRatioCount) as GCContent ",
      "from copyNumber c, copyNumberRegion r ",
      "where c.chromosome = r.chromosome and c.start <= r.start and c.end >= r.end ",
      "and c.sampleId = r.sampleId and c.sampleId = '",sampleId,"' group by c.id;",
@@ -142,8 +146,6 @@
    raw_data$chromosome <- factor(raw_data$chromosome, chrOrder, ordered=TRUE)
    raw_data
  }
- 
- head(CNV)
  
  get_SV_ends<-function(dbConnect, sampleId)
  {
@@ -189,7 +191,7 @@
    p2<-ggplot() + xlim(0,3.5)+ labs(title = multipleBiopsy$sampleId2,x='ploidy')  + 
      geom_histogram(aes(x=Sample2Ploidy),data=subset(variants,sampleCount == 2),fill = "blue", alpha = 0.6,binwidth = binsize) + 
      geom_histogram(aes(x=Sample2Ploidy),data=variants[variants$sampleCount==1 & variants$Sample2Ploidy>0,],fill = "blue", alpha = 0.2,binwidth = binsize)
-   p3<-ggplot()++labs(title=c(multipleBiopsy$SampleId1,multipleBiopsy$SampleId2))+geom_point(variants,aes(Sample1Ploidy,Sample2Ploidy)) +xlim(0,3)+ylim(0,3)
+   p3<-ggplot()+labs(title=c(multipleBiopsy$SampleId1,multipleBiopsy$SampleId2))+geom_point(data=variants,aes(Sample1Ploidy,Sample2Ploidy))+xlim(0,3)+ylim(0,3)
    multiplot(p1,p2,p3,cols=2)
  }
 
@@ -214,50 +216,69 @@
  }
  ######### SINGLE BIOPSY LOGIC  ########## 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- sampleId = "DRUP01090005T"
+ sampleId = "CPCT02230049T"
  variants<-get_somatic_variants(dbConnect,sampleId)
   ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
    geom_histogram(aes(x=ploidy),data=variants,fill = "red", alpha = 0.6,binwidth = 0.1) 
 
  ######### SINGLE BIOPSY SV PLOIDIES ########## 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- sampleId = "CPCT02070234T"
+ sampleId = "CPCT02020578T"
  PURITY<-as.double(get_sample_purity(dbConnect,sampleId))
  CNV<-as.data.table(get_copy_number_data(dbConnect,sampleId))
  CNV[, prevCopyNumber:=c(NA, copyNumber[-.N]), by=chromosome]
+ CNV[, prevGCContent:=c(NA, GCContent[-.N]), by=chromosome]
  CNV[, prevInferred:=c(NA, inferred[-.N]), by=chromosome]
- 
- # Plot min length
- CNV$Length<-CNV$end-CNV$start
  CNV$chCopyNumber<-CNV$copyNumber-CNV$prevCopyNumber
+ 
+ # LENGTH PLOTTING
+ CNV$Length<-CNV$end-CNV$start
+ CNV$chGCContent<-CNV$GCContent-CNV$prevGCContent
+ CNV<-transform(CNV, percentChCopyNumber = chCopyNumber/pmax(copyNumber, prevCopyNumber))
  CNV[, prevLength:=c(NA, Length[-.N]), by=chromosome]
  CNV<-transform(CNV, minLength = pmin(Length, prevLength))
  ggplot(aes(chCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
-   facet_wrap( ~segmentStartSupport ) + xlim(-4,4)
+   facet_wrap( ~segmentStartSupport ) + xlim(-4,4) + labs(title=sampleId)
+ ggplot(aes(percentChCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
+   facet_wrap( ~segmentStartSupport ) + xlim(-1,1) + labs(title=sampleId)
  ggplot(aes(minLength),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
-   scale_x_log10() + facet_wrap( ~segmentStartSupport )
+   scale_x_log10() + facet_wrap( ~segmentStartSupport )+ labs(title=sampleId)
  CNV[, .(count=.N), by = segmentStartSupport]
- 
+ PURITY
+ ggplot(CNV[segmentStartSupport=="NONE",],aes(minLength,chGCContent))+geom_point()+labs(title="Length vs GC Content Scatter") + scale_x_log10() + 
+   facet_wrap( ~segmentStartSupport )
+ ggplot(CNV,aes(minLength,percentChCopyNumber))+geom_point()+labs(title="Length vs GC Content Scatter") + scale_x_log10() + 
+   facet_wrap( ~segmentStartSupport )
+
  # SV PLOIDY vs CopyNumber Change
  SV<-get_SV_ends(dbConnect,sampleId)
  SV<-merge(x = SV, y = CNV, by.x = c("chromosome","position"),by.y=c("chromosome","start"), all.x = TRUE)
  SV$ploidy<-ifelse(SV$orientation ==1, -(SV$prevCopyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY ,
              -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)
  ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
-   geom_histogram(aes(x=ploidy),data=SV,fill = "red", alpha = 0.6,binwidth = 0.1) 
- ggplot(SV[SV$inferred==0 & SV$prevInferred==0,],aes(ploidy,chCopyNumber))+geom_point()+labs(title="SV Ploidy vs ChCopyNumber Scatter")+ xlim(-4,4)+ylim(-4,4)
+   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==0 & SV$prevInferred==0),],fill = "red", alpha = 0.6,binwidth = 0.1) 
+ ggplot(SV[(SV$inferred==0 & SV$prevInferred==0),],aes(ploidy,chCopyNumber))+geom_point()+
+  labs(title="SV Ploidy vs ChCopyNumber Scatter NORMAL")+ xlim(-4,4)+ylim(-4,4)+ 
+   facet_wrap( ~segmentStartSupport )
+ ggplot(SV[(SV$inferred==1 | SV$prevInferred==1),],aes(ploidy,chCopyNumber))+geom_point()+
+   labs(title="SV Ploidy vs ChCopyNumber Scatter INFERRED")+ xlim(-4,4)+ylim(-4,4)+ 
+   facet_wrap( ~segmentStartSupport )
  dbDisconnect(dbConnect)
  
+ nrow(SV)
  ######### MULTIPLE BIOPSIES LOGIC  ########## 
 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
- #multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
- multipleBiopsies<-data.frame(sampleId1='CPCT02020192T',sampleId2='CPCT02020438T')
+ multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
+ multipleBiopsies<-data.frame(sampleId1='CPCT02010255T',sampleId2='CPCT02010255TII')
  for (i in (1:nrow(multipleBiopsies))) {
    variants<-get_multiple_biopsy_somatic_variants(dbConnect,multipleBiopsies[i,])
    chart_multiple_biopsies(variants,multipleBiopsies[i,])
  }
-  dbDisconnect(dbConnect)
+ dbDisconnect(dbConnect)
+ multipleBiopsy=multipleBiopsies[1,]
+ head(variants[variants$sampleCount==2 & variants$Sample1Ploidy < 0.5 & variants$Sample2Ploidy > 0.7,],100)
+ ggplot()+labs(title=c(multipleBiopsy$SampleId1,multipleBiopsy$SampleId2))+geom_point(data=variants,aes(Sample1Ploidy,Sample2Ploidy))+ facet_wrap( ~chromosome)+xlim(0,3)+ylim(0,3)
  
  ########### SAMPLE DATA + PURITY & PLOIDY ###############
 
@@ -279,16 +300,22 @@
  chart_CNV_by_chromosome(CNV)
  
  ########## DRIVERS ############
- dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- 
- sampleString<-paste(shQuote(get_QCpass_samples(dbConnect)$sampleId),collapse=",")
+ dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
  geneString<-paste(shQuote(get_HMF_panel(dbConnect)$gene),collapse=",")
- 
+ dbDisconnect(dbConnect)
+ dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+ sampleString<-paste(shQuote(get_QCpass_samples(dbConnect)$sampleId),collapse=",")
+ dbDisconnect(dbConnect)
+
  #SOMATICS
+ dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  somatics<-get_panel_somatics(dbConnect,geneString,sampleString)
  dbDisconnect(dbConnect)
  
- #disruptions
+ #CNV DELETIONS
+ 
+ 
+ #disruptions - CURRENTLY NOT WORKING
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
  disruptions<-get_panel_disruptions(dbConnect,geneString,sampleString)
  dbDisconnect(dbConnect)

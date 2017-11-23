@@ -70,6 +70,12 @@ create_empty_signature<-function() {
   return(DF)
 }
 
+select_cancer_types<-function(dbConnect)
+{
+  query = "select distinct cancerType from clinical c where cancerType is not null;"
+  return (dbGetQuery(dbConnect, query))
+}
+
 select_cohort<-function(dbConnect, type)
 {
   query = paste(
@@ -79,6 +85,18 @@ select_cohort<-function(dbConnect, type)
     sep = "")
   return (dbGetQuery(dbConnect, query))
 }
+
+select_cohort_with_subclones<-function(dbConnect, type,minMutationCount=0,subclonalProportion=0)
+{
+  query = paste(
+    "select s.sampleId from clinical c, somaticVariant s where s.sampleId = c.sampleId and cancerType like '%",
+    type,"%' AND filter = 'PASS' ",
+    "group by s.sampleId having sum(if(clonality='SUBCLONAL',1,0))/count(*) >",subclonalProportion,
+    " and count(*) >",minMutationCount,
+    sep = "")
+  return (dbGetQuery(dbConnect, query))
+}
+
 
 sample_signature<-function(dbConnect, sample, empty_signature,clonality="")
 {
@@ -134,27 +152,82 @@ getCOSMICSignatures<-function(){
   cancer_signatures = as.matrix(cancer_signatures[,4:33])
 }
 
+clonal_vs_subclonal_signatures<-function(dbConnect, cohort,cancer_signatures,cancerType,chart_mode="absolute",writePDF=False){
+  fit_contribution=list()
+  i=1
+  plots=list()
+  for (clonality in c("CLONAL","SUBCLONAL")){
+    mutation_matrix= cohort_signature(dbConnect, cohort[1:nrow(cohort),],clonality)
+    fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
+    fit_contribution[[i]]<-fit_res$contribution[, order(colnames(fit_res$contribution),decreasing=F),drop=FALSE]
+    fit_contribution[[i]][prop.table(fit_contribution[[i]], margin=2)<0.05 | fit_contribution[[i]]<200]<-0
+    i=i+1
+  }
+  selectRow = which(rowSums(fit_contribution[[1]])+rowSums(fit_contribution[[2]])>0)
+  orderVector<-colSums(fit_contribution[[1]])#+colSums(fit_contribution[[2]])
+
+  myColors<-hcl(h = seq(15, 375, length =  31), l = 65, c = 100)[1:30]
+  for (i in 1:2){
+    fit_contribution[[i]]<-fit_contribution[[i]][, order(orderVector,decreasing=F),drop=FALSE]
+    plots[[i]]<-plot_contribution(fit_contribution[[i]][selectRow,,drop=F], cancer_signatures[,select],coord_flip = F, mode = chart_mode)+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
+            legend.text=element_text(size=6),legend.title=element_text(size=8),
+            axis.title.y = element_text(size=6))+
+      scale_fill_manual( values= myColors[selectRow])
+  }
+  if (writePDF){
+    pdf(file=paste(cancerType,".pdf",sep=""),width=10)
+    multiplot(plots[[1]],plots[[2]])
+    dev.off()
+  }
+  else {
+    multiplot(plots[[1]],plots[[2]])
+  }
+
+}
+
+###########################
 # Create mutational matrix
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-cohort = select_cohort(dbConnect, "Lung")
-mutation_matrix = cohort_signature(dbConnect, cohort[1:nrow(cohort),])
-subclonal_mutation_matrix = cohort_signature(dbConnect, cohort[1:nrow(cohort),],clonality="SUBCLONAL")
-dbDisconnect(dbConnect)
-#plot_96_profile(mutation_matrix[1:10,])
-
-# Fit to cosmic signatures
 cancer_signatures = getCOSMICSignatures()
-fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
-#fit_res = fit_to_signatures(subclonal_mutation_matrix, cancer_signatures)
-fit_res$contribution<-fit_res$contribution[, order(colSums(fit_res$contribution),decreasing=F),drop=FALSE]
-filteredContributions<- fit_res$contribution[,colSums(fit_res$contribution)>=0,drop=FALSE]
-selectRow = which(rowSums(filteredContributions) > 0.02 * sum(filteredContributions))
-plot_contribution(filteredContributions[selectRow,,drop=FALSE], cancer_signatures[,select],coord_flip = F, mode = "absolute")+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
-        legend.text=element_text(size=6),legend.title=element_text(size=8),
-        axis.title.y = element_text(size=6))
 
-# Non-negative matrix factorization
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+cancerTypes = select_cancer_types(dbConnect)
+dbDisconnect(dbConnect)
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+for (cancerType in cancerTypes$cancerType) {
+  print(paste("running for type:",cancerType))
+  cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.05)
+  print(paste("still running for type:",cancerType))
+  if (length(cohort)>0){
+    clonal_vs_subclonal_signatures(dbConnect,cohort,cancer_signatures,cancerType,"absolute",TRUE)
+    
+  }
+}
+dbDisconnect(dbConnect)
+
+###########################
+# ALL 
+maxMutations = 1000000
+fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
+fit_res$contribution<-fit_res$contribution[, order(colSums(fit_res$contribution),decreasing=F),drop=FALSE]
+fit_res$contribution<-fit_res$contribution[,colSums(fit_res$contribution)<maxMutations,drop=F]
+selectRow = which(rowSums(fit_res$contribution) > 0.02 * sum(fit_res$contribution))
+chart_mode = "absolute"
+p1<-plot_contribution(fit_res$contribution[selectRow,,drop=FALSE], cancer_signatures[,select],coord_flip = F, mode = chart_mode)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
+        legend.text=element_text(size=6),legend.title=element_text(size=8),axis.title.y = element_text(size=6))+
+  scale_fill_manual( values= myColors[selectRow])
+chart_mode = "relative"
+p2<-plot_contribution(fit_res$contribution[selectRow,,drop=FALSE], cancer_signatures[,select],coord_flip = F, mode = chart_mode)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
+        legend.text=element_text(size=6),legend.title=element_text(size=8),axis.title.y = element_text(size=6))+
+  scale_fill_manual( values= myColors[selectRow])
+multiplot(p1,p2)
+
+
+
+#######################
+
 mutation_matrix = mutation_matrix + 0.0001
 estimate = nmf(mutation_matrix, rank=2:5, method="brunet", nrun=100, seed=123456)
 plot(estimate)
@@ -186,4 +259,12 @@ dndscv(mutations)
 
 paste((cohort),collapse=" ")
 c(cohort)
+
+a=""
+i=1
+for (clonality in c("clonal","subclonal")) {
+  a[i]=clonality
+  i=i+1
+}
+a
 
