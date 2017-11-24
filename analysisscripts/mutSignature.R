@@ -5,6 +5,12 @@ library(data.table)
 library("NMF")
 library(ggplot2)
 
+
+myCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68a100","#e34bc9","#106b00","#d10073","#98d76a",
+            "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#00825b","#ff4791","#01837a",
+            "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
+            "#dea185","#a0729d","#8a392f")
+
 standard_mutation<-function(types)
 {
   types = gsub("G>T", "C>A", types)
@@ -133,7 +139,7 @@ cohort_signature<-function(dbConnect, cohort,clonality="")
       print(paste("Processing sample", sample))
       result = cbind(result, signature$count)
       rownames(result) <- signature$context
-      colnames(result)[ncol(result)] <- sample
+      colnames(result)[ncol(result)] <- paste(sample,total_count)
     }
     else
     {
@@ -160,20 +166,21 @@ clonal_vs_subclonal_signatures<-function(dbConnect, cohort,cancer_signatures,can
     mutation_matrix= cohort_signature(dbConnect, cohort[1:nrow(cohort),],clonality)
     fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
     fit_contribution[[i]]<-fit_res$contribution[, order(colnames(fit_res$contribution),decreasing=F),drop=FALSE]
-    fit_contribution[[i]][prop.table(fit_contribution[[i]], margin=2)<0.05 | fit_contribution[[i]]<200]<-0
+    fit_contribution[[i]][prop.table(fit_contribution[[i]], margin=2)<0.03 | fit_contribution[[i]]<100]<-0
     i=i+1
   }
   selectRow = which(rowSums(fit_contribution[[1]])+rowSums(fit_contribution[[2]])>0)
   orderVector<-colSums(fit_contribution[[1]])#+colSums(fit_contribution[[2]])
 
-  myColors<-hcl(h = seq(15, 375, length =  31), l = 65, c = 100)[1:30]
+  
+  #myColors<-hcl(h = seq(15, 375, length =  31), l = 65, c = 100)[1:30]
   for (i in 1:2){
     fit_contribution[[i]]<-fit_contribution[[i]][, order(orderVector,decreasing=F),drop=FALSE]
     plots[[i]]<-plot_contribution(fit_contribution[[i]][selectRow,,drop=F], cancer_signatures[,select],coord_flip = F, mode = chart_mode)+
       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=6),
             legend.text=element_text(size=6),legend.title=element_text(size=8),
             axis.title.y = element_text(size=6))+
-      scale_fill_manual( values= myColors[selectRow])
+      scale_fill_manual( values= myCOLORS[selectRow])
   }
   if (writePDF){
     pdf(file=paste(cancerType,".pdf",sep=""),width=10)
@@ -192,20 +199,23 @@ cancer_signatures = getCOSMICSignatures()
 
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 cancerTypes = select_cancer_types(dbConnect)
+#is.data.frame(cancerTypes)
+cancerTypes= data.frame(cancerType="Breast")
+
 dbDisconnect(dbConnect)
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
-  cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.05)
+  cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.10)
   print(paste("still running for type:",cancerType))
   if (length(cohort)>0){
-    clonal_vs_subclonal_signatures(dbConnect,cohort,cancer_signatures,cancerType,"absolute",TRUE)
+    clonal_vs_subclonal_signatures(dbConnect,cohort,cancer_signatures,cancerType,"relative",FALSE)
     
   }
 }
 dbDisconnect(dbConnect)
 
-###########################
+######## RANDOM TESTING UNDER HERE #############
 # ALL 
 maxMutations = 1000000
 fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
@@ -226,45 +236,4 @@ multiplot(p1,p2)
 
 
 
-#######################
-
-mutation_matrix = mutation_matrix + 0.0001
-estimate = nmf(mutation_matrix, rank=2:5, method="brunet", nrun=100, seed=123456)
-plot(estimate)
-nmf_res <- extract_signatures(mutation_matrix, rank = 4)
-plot_96_profile(nmf_res$signatures)
-
-
-
-######## RANDOM TESTING UNDER HERE
-library(MASS)
-library(dndscv)
-
-sample_mutations<-function(dbConnect, cohort)
-{
-  query = paste(
-    "select sv.sampleId, chromosome as chr, position as pos, ref,alt from somaticVariant sv,sample s,patient p ",
-    "where sv.sampleId = s.sampleId and s.patientId = p.id and p.primaryTumorLocation='",
-    cohort,
-    "' and length(alt) = length(ref) and filter = 'PASS' and gene <> '' limit 500000",
-    sep = "")
-  
-  raw_data = dbGetQuery(dbConnect, query)
-}
-
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-mutations<-sample_mutations(dbConnect,'Melanoma')
-dbDisconnect(dbConnect)
-dndscv(mutations)
-
-paste((cohort),collapse=" ")
-c(cohort)
-
-a=""
-i=1
-for (clonality in c("clonal","subclonal")) {
-  a[i]=clonality
-  i=i+1
-}
-a
 

@@ -214,29 +214,46 @@
    p2<-ggplot(sampleData,aes(ploidyBucket)) + geom_bar(aes(fill=category))
    multiplot(p1,p2)
  }
- ######### SINGLE BIOPSY LOGIC  ########## 
- dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- sampleId = "CPCT02230049T"
- variants<-get_somatic_variants(dbConnect,sampleId)
-  ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
-   geom_histogram(aes(x=ploidy),data=variants,fill = "red", alpha = 0.6,binwidth = 0.1) 
-
  ######### SINGLE BIOPSY SV PLOIDIES ########## 
+ sampleId = "CPCT02040164T"
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
- sampleId = "CPCT02020578T"
+ #somatics
+ variants<-get_somatic_variants(dbConnect,sampleId)
+ ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
+   geom_histogram(aes(x=ploidy),data=variants,fill = "red", alpha = 0.6,binwidth = 0.1) 
+ 
+ #CNV
  PURITY<-as.double(get_sample_purity(dbConnect,sampleId))
  CNV<-as.data.table(get_copy_number_data(dbConnect,sampleId))
  CNV[, prevCopyNumber:=c(NA, copyNumber[-.N]), by=chromosome]
  CNV[, prevGCContent:=c(NA, GCContent[-.N]), by=chromosome]
  CNV[, prevInferred:=c(NA, inferred[-.N]), by=chromosome]
  CNV$chCopyNumber<-CNV$copyNumber-CNV$prevCopyNumber
- 
- # LENGTH PLOTTING
  CNV$Length<-CNV$end-CNV$start
  CNV$chGCContent<-CNV$GCContent-CNV$prevGCContent
  CNV<-transform(CNV, percentChCopyNumber = chCopyNumber/pmax(copyNumber, prevCopyNumber))
  CNV[, prevLength:=c(NA, Length[-.N]), by=chromosome]
  CNV<-transform(CNV, minLength = pmin(Length, prevLength))
+
+
+ # SV PLOIDY vs CopyNumber Change
+ SV<-get_SV_ends(dbConnect,sampleId)
+ SV<-merge(x = SV, y = CNV, by.x = c("chromosome","position"),by.y=c("chromosome","start"), all.x = TRUE)
+ SV$ploidy<-ifelse(SV$orientation ==1, -(SV$prevCopyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY ,
+                   -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)
+ ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
+   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==0 & SV$prevInferred==0),],fill = "red", alpha = 0.8,binwidth = 0.1) +
+   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==1 | SV$prevInferred==1),],fill = "blue", alpha = 0.2,binwidth = 0.1) 
+ ggplot(SV[(SV$inferred==0 & SV$prevInferred==0),],aes(ploidy,chCopyNumber))+geom_point()+
+   labs(title="SV Ploidy vs ChCopyNumber Scatter NORMAL")+ xlim(-4,4)+ylim(-4,4)+ 
+   facet_wrap( ~segmentStartSupport )
+ ggplot(SV[(SV$inferred==1 | SV$prevInferred==1)&SV$minLength>300,],aes(ploidy,chCopyNumber))+geom_point()+
+   labs(title="SV Ploidy vs ChCopyNumber Scatter INFERRED")+ xlim(-4,4)+ylim(-4,4)+ 
+   facet_wrap( ~segmentStartSupport )
+ dbDisconnect(dbConnect)
+ 
+ # LENGTH PLOTTING
+
  ggplot(aes(chCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
    facet_wrap( ~segmentStartSupport ) + xlim(-4,4) + labs(title=sampleId)
  ggplot(aes(percentChCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
@@ -250,20 +267,6 @@
  ggplot(CNV,aes(minLength,percentChCopyNumber))+geom_point()+labs(title="Length vs GC Content Scatter") + scale_x_log10() + 
    facet_wrap( ~segmentStartSupport )
 
- # SV PLOIDY vs CopyNumber Change
- SV<-get_SV_ends(dbConnect,sampleId)
- SV<-merge(x = SV, y = CNV, by.x = c("chromosome","position"),by.y=c("chromosome","start"), all.x = TRUE)
- SV$ploidy<-ifelse(SV$orientation ==1, -(SV$prevCopyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY ,
-             -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)
- ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
-   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==0 & SV$prevInferred==0),],fill = "red", alpha = 0.6,binwidth = 0.1) 
- ggplot(SV[(SV$inferred==0 & SV$prevInferred==0),],aes(ploidy,chCopyNumber))+geom_point()+
-  labs(title="SV Ploidy vs ChCopyNumber Scatter NORMAL")+ xlim(-4,4)+ylim(-4,4)+ 
-   facet_wrap( ~segmentStartSupport )
- ggplot(SV[(SV$inferred==1 | SV$prevInferred==1),],aes(ploidy,chCopyNumber))+geom_point()+
-   labs(title="SV Ploidy vs ChCopyNumber Scatter INFERRED")+ xlim(-4,4)+ylim(-4,4)+ 
-   facet_wrap( ~segmentStartSupport )
- dbDisconnect(dbConnect)
  
  nrow(SV)
  ######### MULTIPLE BIOPSIES LOGIC  ########## 
