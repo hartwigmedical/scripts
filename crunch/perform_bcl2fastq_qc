@@ -73,13 +73,13 @@ done
 printHeader "RUN Info"
 for seqDir in "${seqDirs[@]}"; do
     $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
-done
+done | sort -r
 
 ## get info for SampleOverview
 printHeader "Sample Info"
 for seqDir in "${seqDirs[@]}"; do
-    $PARSE_SCRIPT -run ${seqDir} -summary | grep -v ^#
-done
+    $PARSE_SCRIPT -run ${seqDir} -summary | grep -v "^#"
+done | sort -k3 
 
 ## Print further actions
 printHeader "Extra actions"
