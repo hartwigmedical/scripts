@@ -6,7 +6,7 @@ patient_reporter_dir=/data/common/tools/patientreporter_pilot
 
 drup_genes_csv=${patient_reporter_dir}/csv/drup_genes.csv
 cosmic_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
-fusion_csv=/data/common/dbs/cosmic_census/171123_cosmic_gene_fusions.csv
+fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
