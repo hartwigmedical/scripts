@@ -75,21 +75,20 @@ foreach ( $LIMSOUTFILE ){
 
 ## columns shipments sheet in rest lims
 my %SHIP_TRANSLATIONS = (
-  "Arrived?"                => 'has_arrived',
   "Arrival_date"            => 'arrival_date',
+  "Arrived?"                => 'has_arrived',
   "HMF registration number" => 'submission',
   "Sample_count"            => 'sample_count',
   "Project name"            => 'project_name',
-  "Request"                 => 'request',
+  "Requested product"       => 'request',
   "Lab Finished"            => 'has_lab_finished',
-  "Category"                => 'project_type',
+  "Product category"        => 'project_type',
   "BFX"                     => 'bfx_analyis',
   "Remarks"                 => 'remarks',
+  "TAT(lab)"                => 'turn_around_time',
   "Contact name"            => 'contact_name',
   "Contact email (check SSF for second email if first contact does not respond)" => 'contact_email',
-  "Contact info"            => 'contact_info',
   "Material storage status" => 'lab_storage_status',
-  "TAT(lab)"                => 'turn_around_time',
   "pull down options"       => NOTINUSESTRING,
 );
 
