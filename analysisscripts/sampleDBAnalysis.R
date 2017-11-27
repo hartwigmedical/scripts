@@ -215,7 +215,7 @@
    multiplot(p1,p2)
  }
  ######### SINGLE BIOPSY SV PLOIDIES ########## 
- sampleId = "CPCT02040164T"
+ sampleId = "CPCT02230012T"
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  #somatics
  variants<-get_somatic_variants(dbConnect,sampleId)
@@ -227,7 +227,9 @@
  CNV<-as.data.table(get_copy_number_data(dbConnect,sampleId))
  CNV[, prevCopyNumber:=c(NA, copyNumber[-.N]), by=chromosome]
  CNV[, prevGCContent:=c(NA, GCContent[-.N]), by=chromosome]
- CNV[, prevInferred:=c(NA, inferred[-.N]), by=chromosome]
+ CNV$inferred<-(CNV$copyNumberMethod=="STRUCTURAL_VARIANT")
+ 
+ CNV[, prevCopy:=c(NA, inferred[-.N]), by=chromosome]
  CNV$chCopyNumber<-CNV$copyNumber-CNV$prevCopyNumber
  CNV$Length<-CNV$end-CNV$start
  CNV$chGCContent<-CNV$GCContent-CNV$prevGCContent
@@ -242,12 +244,12 @@
  SV$ploidy<-ifelse(SV$orientation ==1, -(SV$prevCopyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY ,
                    -(SV$copyNumber*PURITY+(1-PURITY)*2)*SV$orientation*SV$AF/PURITY)
  ggplot() + xlim(0,3.5)+ labs(title = sampleId,x='') + 
-   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==0 & SV$prevInferred==0),],fill = "red", alpha = 0.8,binwidth = 0.1) +
-   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==1 | SV$prevInferred==1),],fill = "blue", alpha = 0.2,binwidth = 0.1) 
- ggplot(SV[(SV$inferred==0 & SV$prevInferred==0),],aes(ploidy,chCopyNumber))+geom_point()+
+   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==F & SV$prevInferred==F),],fill = "red", alpha = 0.8,binwidth = 0.1) +
+   geom_histogram(aes(x=ploidy),data=SV[(SV$inferred==T | SV$prevInferred==T),],fill = "blue", alpha = 0.2,binwidth = 0.1) 
+ ggplot(SV[(SV$inferred==F & SV$prevInferred==F),],aes(ploidy,chCopyNumber))+geom_point()+
    labs(title="SV Ploidy vs ChCopyNumber Scatter NORMAL")+ xlim(-4,4)+ylim(-4,4)+ 
    facet_wrap( ~segmentStartSupport )
- ggplot(SV[(SV$inferred==1 | SV$prevInferred==1)&SV$minLength>300,],aes(ploidy,chCopyNumber))+geom_point()+
+ ggplot(SV[(SV$inferred==T | SV$prevInferred==T)&SV$minLength>300,],aes(ploidy,chCopyNumber))+geom_point()+
    labs(title="SV Ploidy vs ChCopyNumber Scatter INFERRED")+ xlim(-4,4)+ylim(-4,4)+ 
    facet_wrap( ~segmentStartSupport )
  dbDisconnect(dbConnect)
