@@ -4,7 +4,7 @@ library(RMySQL)
 library(data.table)
 library("NMF")
 library(ggplot2)
-library(deconstructSigs)
+#library(deconstructSigs)
 
 myCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68a100","#e34bc9","#106b00","#d10073","#98d76a",
             "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#00825b","#ff4791","#01837a",
@@ -82,7 +82,8 @@ select_cancer_types<-function(dbConnect){
 
 select_cohort<-function(dbConnect, type){
   query = paste(
-    "select s.sampleId from clinical c, sample s where s.sampleId = c.sampleId and cancerType like '%",
+    "select s.sampleId from clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,
     "%'",
     sep = "")
@@ -91,7 +92,9 @@ select_cohort<-function(dbConnect, type){
 
 select_cohort_with_subclones<-function(dbConnect, type,minMutationCount=0,subclonalProportion=0){
   query = paste(
-    "select s.sampleId from clinical c, somaticVariant s where s.sampleId = c.sampleId and cancerType like '%",
+    "select s.sampleId from clinical c, sample s, purity p,somaticVariant sv where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "and sv.sampleId = s.sampleId ",
+    "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,"%' AND filter = 'PASS' ",
     "group by s.sampleId having sum(if(clonality='SUBCLONAL',1,0))/count(*) >",subclonalProportion,
     " and count(*) >",minMutationCount,
@@ -249,8 +252,7 @@ dbDisconnect(dbConnect)
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
-  cohort = select_cohort_with_subclones(dbConnect, cancerType,0,0.10)
-  print(paste("still running for type:",cancerType))
+  cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.10)
   if (length(cohort)>0){
     clonal_vs_subclonal_signatures(dbConnect,cohort,cancer_signatures,cancerType,"relative",TRUE)
     
