@@ -2,7 +2,10 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
+rundir=$1
+
 exec java -Xmx8G -Xms4G \
     -jar /data/common/tools/healthchecker_v2.2/health-checker.jar \
-    -report_file_path ~/healthcheck.json \
-    -run_dir "$@"
+    -report_file_path ${rundir}/logs/healthcheck.json \
+    -run_dir ${rundir} \
+    > ${rundir}/logs/Healthcheck.out
