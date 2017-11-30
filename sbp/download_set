@@ -1,0 +1,37 @@
+#!/bin/bash
+
+set=$1
+run_bucket=$2
+rerun_bucket=$3
+destination_dir=$4
+
+sbp s3 sync s3://${run_bucket}/${set}/ ${destination_dir}/${set}/ \
+	--exclude "*" \
+	--include "*annotated.vcf*" \
+	--include "*filtered*GoNLv5.vcf*" \
+	--include "*snpcheck*" \
+	--include "*.kinship" \
+	--include "QCStats*" \
+	--include "*mapping*flagstat*" \
+	--include "settings.config" \
+	--profile download
+
+sbp s3 sync s3://${rerun_bucket}/${set}/ ${destination_dir}/${set}/ \
+	--exclude "*" \
+	--include "*mapping*flagstat*" \
+	--include "*recal_data*" \
+	--include "*damageEstimate*" \
+	--include "*amber*" \
+	--include "*cobalt*" \
+	--include "*purple*" \
+	--include "*somaticVariants*post_processed*" \
+	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*bpi*bpi_stats*" \
+	--include "*structuralVariants*bpi*somaticSV*" \
+	--include "*structuralVariants*bpi*sliced.bam*" \
+	--include "*structuralVariants*manta*somaticSV.vcf*" \
+	--include "*metadata*" \
+	--include "*logs*submitlog*" \
+	--include "*logs*PipelineCheck.log*" \
+	--include "*logs*perform_pipeline_qc*" \
+	--profile download
