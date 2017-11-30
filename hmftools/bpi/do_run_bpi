@@ -37,9 +37,8 @@ then
     exit 1
 fi
 
-joint_name=$(realpath ${output_tsv} | awk -F/ '{print $8}')
-echo realpath ${output_tsv}
-echo ${output_tsv}
+joint_name=$(basename $(dirname ${output_tsv} ) )
+echo $joint_name
 exit
 
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
