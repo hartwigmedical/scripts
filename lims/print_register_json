@@ -20,6 +20,10 @@ my $SOM_INI = "Somatic.ini";
 my $Q30_LIM = 75; # q30 limit is currently same for all samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
 
+## could make these more fine grained (lower number is higher prio)
+my $NO_PIPELINE_PRIO = 100;
+my $YES_PIPELINE_PRIO = 99;
+
 my $LIMS_IN_FILE = '/data/lims/lims.json';
 my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
 
@@ -157,12 +161,14 @@ sub processSample{
     my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
+    my $priority   = getPriority( $sample );
     
     my @data_for_itlims = ( $label, $submission, $barcode, $name, "BFX: Json registration" );
     push( @$toprint, \@data_for_itlims );
     
     ## init the json info
     my %json_data = ();
+    $json_data{ 'priority' } = $priority;
     
     say "[INFO] INPUT: $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
 
@@ -295,6 +301,18 @@ sub getValueByKey{
     }
     else{
         return( $info->{ $key } );
+    }
+}
+
+sub getPriority{
+    my ($info, $key) = @_;
+    ## unfortunately cannot err on key absence 
+    ## because not all samples have the prio property
+    if ( defined $info->{ 'priority' } and $info->{ 'priority' } =~ /yes/i ){
+        return $YES_PIPELINE_PRIO;
+    }
+    else{
+        return $NO_PIPELINE_PRIO;
     }
 }
 

@@ -104,7 +104,7 @@ my %REST_TRANSLATIONS = (
   "SNP required?"           => 'is_snp_required',
   "SNP experiment"          => 'snp_experiment_id',
   "Arival date"             => 'arrival_date',
-  "Priority"                => 'has_prio', 
+  "Priority"                => 'priority', 
   "State"                   => 'state', 
   "Remarks"                 => 'remarks',
 );
