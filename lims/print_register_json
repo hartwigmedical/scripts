@@ -178,8 +178,8 @@ sub processSample{
     if ( $analysis eq 'NoAnalysis' ){
         my $set = join("_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         
         ## assume all NoAnalysis samples need fastq in portal
         $json_data{ 'fastq_portal' } = JSON::true;
@@ -215,9 +215,9 @@ sub processSample{
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
         say "[INFO] SET: $set";
         
-        $json_data{ 'ini' } = $SOM_INI;
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'ini' } = "$SOM_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F );
@@ -225,9 +225,9 @@ sub processSample{
     elsif( $analysis eq 'Germline' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
-        $json_data{ 'ini' } = $GER_INI;
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'ini' } = "$GER_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
     }
     elsif ( $analysis eq 'Somatic_R' ){
@@ -344,9 +344,9 @@ sub addEntityToJsonData{
 sub addSampleToJsonData{
     my ($store, $submission, $barcode, $type, $q30, $yield) = @_;
     my %tmp = (
-        'barcode'    => $barcode,
-        'submission' => $submission,
-        'type'       => $type,
+        'barcode'    => "$barcode",
+        'submission' => "$submission",
+        'type'       => "$type",
         'q30_req'    => $q30,
         'yld_req'    => $yield,
     );
