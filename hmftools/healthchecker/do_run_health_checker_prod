@@ -9,5 +9,3 @@ exec java -Xmx8G -Xms4G \
     -report_file_path ${rundir}/logs/HealthCheck.json \
     -run_dir ${rundir} \
     > ${rundir}/logs/HealthCheck.out
-
-echo "HealthChecker Done"
