@@ -13,6 +13,7 @@ sbp s3 sync s3://${run_bucket}/${set}/ ${destination_dir}/${set}/ \
 	--include "*.kinship" \
 	--include "QCStats*" \
 	--include "*mapping*flagstat*" \
+	--include "*HealthCheck.out*" \
 	--include "settings.config" \
 	--profile download
 
