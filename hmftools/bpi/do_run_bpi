@@ -38,6 +38,10 @@ then
 fi
 
 joint_name=$(realpath ${output_tsv} | awk -F/ '{print $8}')
+echo realpath ${output_tsv}
+echo ${output_tsv}
+exit
+
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
 
 if grep -q bpiVersion=1.5 ${output_vcf}; then
