@@ -45,7 +45,7 @@ rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 
 exit
 
-sbp s3 sync s3://${run_bucket}/${set}/ ${destination_dir}/${set}/ \
+sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*annotated.vcf*" \
 	--include "*filtered*GoNLv5.vcf*" \
@@ -57,7 +57,7 @@ sbp s3 sync s3://${run_bucket}/${set}/ ${destination_dir}/${set}/ \
 	--include "settings.config" \
 	--profile download
 
-sbp s3 sync s3://${rerun_bucket}/${set}/ ${destination_dir}/${set}/ \
+sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*mapping*flagstat*" \
 	--include "*recal_data*" \
