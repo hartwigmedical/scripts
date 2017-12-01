@@ -1,0 +1,6 @@
+#!/bin/bash
+
+archive_rna_to_sbp
+archive_sequencer_archive_to_sbp
+archive_snpcheck_to_sbp
+archive_patientreports_to_sbp
