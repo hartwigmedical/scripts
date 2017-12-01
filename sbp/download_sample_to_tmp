@@ -10,4 +10,4 @@ fi
 
 set=`echo ${run_info} | cut -d ' ' -f1`
 
-echo ${set}
+download_set -s ${set} -p /data/schuberg/tmp
