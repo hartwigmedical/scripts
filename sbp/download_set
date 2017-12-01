@@ -42,7 +42,7 @@ if [ -z "$rerun_info" ]; then
         echo "No rerun info and original run is not v3. Exiting."
         exit 1
      else
-        rerun_info=run_info
+        rerun_info=${run_info}
      fi
 fi
 
@@ -52,7 +52,7 @@ rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 echo ${run_bucket}
 echo ${rerun_bucket}
 
-exit
+exit 1
 
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
