@@ -38,16 +38,16 @@ while getopts ":s:b:l:c:p:" o; do
 done
 shift $((OPTIND-1))
 
-## check required params
+## STLI: check required params
 if [[ -z "${setname}" || -z "${bucket}" ]]; then
     usage
 fi
 
-## making sure no slashes are present
+## STLI: making sure no slashes are present
 bucket=$( basename ${bucket} )
 setname=$( basename ${setname} )
 
-## build path from current archive bucket
+## STLI: build path from current archive bucket
 s3path="s3://${bucket}/${setname}"
 localpath="${storepath}/${setname}"
 
@@ -56,7 +56,7 @@ localpath="${storepath}/${setname}"
 #echo "## [INFO] From: ${s3path}"
 #echo "## [INFO] To: ${localpath}"
 
-## actual sync
+## STLI: actual sync
 ${awscmd} s3 sync ${s3path} ${localpath} --profile ${awsprofile} \
 --exclude "*.bam" \
 --include "*sliced.bam" \
