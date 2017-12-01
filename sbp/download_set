@@ -49,11 +49,6 @@ fi
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 
-echo ${run_bucket}
-echo ${rerun_bucket}
-
-exit 1
-
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*annotated.vcf*" \
