@@ -1,7 +1,7 @@
 #!/bin/bash
 
-FASTQ_DIR=$1
+fastq_dir=$1
 
-for file in ${FASTQ_DIR}/*.fastq.gz ; do
+for file in ${fastq_dir}/*.fastq.gz ; do
     ln -s ${file}
 done
