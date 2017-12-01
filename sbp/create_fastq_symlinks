@@ -3,5 +3,5 @@
 FASTQ_DIR=$1
 
 for file in ${FASTQ_DIR}/*.fastq.gz ; do
- ln -s ${file}
+    ln -s ${file}
 done

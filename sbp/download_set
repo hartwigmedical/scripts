@@ -30,7 +30,7 @@ fi
 
 run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
 if [ -z "$run_info" ]; then
-    echo "No runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
+    echo "[WARN] No runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
     exit 1
 fi
 
@@ -38,7 +38,7 @@ rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_ba
 if [ -z "$rerun_info" ]; then
     run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
     if [ -z "run_is_v3" ]; then
-        echo "No validated rerun found while original run is not v3. Exiting."
+        echo "[WARN] No validated rerun found while original run is not v3. Exiting."
         exit 1
      else
         rerun_info=${run_info}

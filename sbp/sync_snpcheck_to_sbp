@@ -5,7 +5,6 @@ REMOTE_PATH='s3://hmf_archive/snpcheckvcfs'
 AWS_PROFILE='hmf_archive'
 
 sbp s3 sync ${LOCAL_PATH} ${REMOTE_PATH} \
---delete \
---profile ${AWS_PROFILE} \
---grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
-
+    --delete \
+    --profile ${AWS_PROFILE} \
+    --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
