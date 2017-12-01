@@ -29,7 +29,7 @@ if [[ -z "${set}" || -z "${localpath}" ]]; then
 fi
 
 run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
-rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_Bam.ini" | grep "Validated" `
+rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
 
 if [ -z "$run_info" ]; then
     echo "No runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
