@@ -1,8 +1,6 @@
 #!/bin/bash
 
 script=$( basename $0 )
-set=$1
-localpath=$2
 
 usage() {
     echo "---"
