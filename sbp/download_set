@@ -37,7 +37,7 @@ if [ -z "$run_info" ]; then
 fi
 
 if [ -z "$rerun_info" ]; then
-    v3_run_info=`cat ${run_info} | grep "v3"`
+    v3_run_info=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
     if [ -z "$v3_run_info" ]; then
         echo "No rerun info and original run is not v3. Exiting."
         exit 1
