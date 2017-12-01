@@ -1,0 +1,13 @@
+#!/bin/bash
+
+sample=$1
+
+run_info=`query_sbp_api -type runs | grep -P "${sample}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
+if [ -z "$run_info" ]; then
+    echo "[WARN] No validated runs found with a Somatic/CPCT .ini file for sample ${sample}. Exiting."
+    exit 1
+fi
+
+set=`echo ${run_info} | cut -d ' ' -f1`
+
+echo ${set}

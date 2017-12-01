@@ -30,7 +30,7 @@ fi
 
 run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
 if [ -z "$run_info" ]; then
-    echo "[WARN] No runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
+    echo "[WARN] No validated runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
     exit 1
 fi
 
