@@ -3,7 +3,14 @@
 run_dir=$1 && shift
 bpi_jar=$1 && shift
 bpi_output=$1 && shift
-samtools=/data/common/tools/samtools_v1.2/samtools
+
+path_addition="common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+	path_addition=""
+fi
+
+samtools=/data/${path_addition}/tools/samtools_v1.2/samtools
 
 mkdir -p ${bpi_output}
 
