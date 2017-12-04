@@ -1,6 +1,5 @@
 library(RMySQL)
 library(plyr)
-LOG_QUERIES = FALSE
 LOAD_FROM_FILE = FALSE
 DATA_FILE = "~/hmf/purple.RData"
 
@@ -25,7 +24,7 @@ applySamples<-function(cohort, sampleFunction) {
 ####### PURITY #######
 query_purity<-function(dbConnect) {
   query = paste(
-    "SELECT p.sampleId, p.purity",
+    "SELECT p.sampleId, p.purity AS purplePurity, round(p.ploidy,2) as ploidy, gender",
     " FROM purity p",
     "WHERE qcStatus = 'PASS'",
     "AND status <> 'NO_TUMOR'",
@@ -33,35 +32,32 @@ query_purity<-function(dbConnect) {
   return (sampleIdRowNames(dbGetQuery(dbConnect, query), .drop = FALSE))
 }
 
-####### Cancer Types #######
-query_cancer_type<-function(dbConnect) {
+####### Sample Data #######
+query_sample_data<-function(dbConnect) {
   query = paste(
-    "SELECT s.sampleId, c.cancertype",
-    " FROM clinical c, sample s",
-    "WHERE s.sampleId = c.sampleId",
+    "SELECT sampleId, tumorPercentage AS pathologyPurity",
+    " FROM sample c",
     sep = " ")
   return (sampleIdRowNames(dbGetQuery(dbConnect, query)))
 }
 
-attach_cancerTypes<-function(dbConnect, samples) {
-  cancerTypes = query_cancer_type(dbConnect)
+attach_sample_data<-function(dbConnect, samples) {
+  cancerTypes = query_sample_data(dbConnect)
   return (leftJoin(samples, cancerTypes))
 }
 
-
-####### Structual Variants #######
-query_sv_count<-function(dbConnect) {
+####### Clinical Data #######
+query_clinical_data<-function(dbConnect) {
   query = paste(
-    "SELECT sampleId, count(*) as svCount",
-    " FROM structuralVariant",
-    "GROUP BY sampleId",
+    "SELECT c.sampleId, c.cancertype",
+    " FROM clinical c",
     sep = " ")
   return (sampleIdRowNames(dbGetQuery(dbConnect, query)))
 }
 
-attach_structural_variants<-function(dbConnect, samples) {
-    svCounts = query_sv_count(dbConnect)
-    return (leftJoin(samples, svCounts))
+attach_clinical_data<-function(dbConnect, samples) {
+  cancerTypes = query_clinical_data(dbConnect)
+  return (leftJoin(samples, cancerTypes))
 }
 
 ####### Microsatellite Instability #######
@@ -76,10 +72,6 @@ query_msi_sample<-function(dbConnect, sample) {
     "   AND sampleId = '", sample$sampleId, "'",
     " GROUP BY sampleId",
     sep = "")
-  if (LOG_QUERIES) {
-    cat(paste(query, "\n", sep = ""))
-  }
-
   score = dbGetQuery(dbConnect, query)
   return (score)
 }
@@ -92,18 +84,68 @@ attach_msi<-function(dbConnect, cohort) {
   return (leftJoin(cohort, score))
 }
 
+####### Structural Variants #######
+query_structural_variants<-function(dbConnect, sample) {
+  query = paste(
+    "SELECT sampleId, ",
+    "       SUM(1) AS svTotal, ",
+    "       SUM(IF (type ='DEL', 1, 0)) AS svDel, ",
+    "       SUM(IF (type ='DUP', 1, 0)) AS svDup, ",
+    "       SUM(IF (type ='INS', 1, 0)) AS svIns, ",
+    "       SUM(IF (type ='INV', 1, 0)) AS svInv, ",
+    "       SUM(IF (type ='BND', 1, 0)) AS svBnd ",
+    " FROM structuralVariant ",
+    "WHERE sampleId = '", sample$sampleId, "'",
+    " GROUP BY sampleId",
+    sep = "")
+  return (dbGetQuery(dbConnect, query))
+}
+
+attach_structural_variants<-function(dbConnect, cohort) {
+  cat("Attaching somatics....")
+  somatics = applySamples(cohort, function(x) {query_structural_variants(dbConnect, x)})
+  cat("Attaching somatics complete!")
+  return (leftJoin(cohort, somatics))
+}
+
+####### QC Score #######
+query_qc_score<-function(dbConnect, sample) {
+  query = paste(
+    "SELECT sampleId, count(*) as unsupportedSegments ",
+    " FROM copyNumber ",
+    "WHERE sampleId = '", sample$sampleId, "'",
+    "  AND segmentStartSupport = 'NONE'",
+    " GROUP BY sampleId",
+    sep = "")
+  return (dbGetQuery(dbConnect, query))
+}
+
+attach_qc_score<-function(dbConnect, cohort) {
+  cat("Attaching qc score")
+  qcScore = applySamples(cohort, function(x) {query_qc_score(dbConnect, x)})
+  result = leftJoin(cohort, qcScore) 
+  result$qcScore <- round(result$unsupportedSegments / result$ploidy,0)
+  result$unsupportedSegments <- NULL
+  cat("Attaching qc score!")
+  return (result)
+}
+
 ####### Somatics #######
 query_somatic_sample<-function(dbConnect, sample) {
   query = paste(
-    "SELECT sampleId, sum(if (clonality ='CLONAL', 1, 0)) as clonal, sum(if (clonality ='SUBCLONAL', 1, 0)) as subclonal",
+    "SELECT sampleId, ",
+    "       SUM(1) AS somaticVariants, ",
+    "       SUM(IF (clonality ='CLONAL', 1, 0)) AS clonal, ",
+    "       SUM(IF (clonality ='SUBCLONAL', 1, 0)) AS subclonal, ",
+    "       SUM(IF (clonality ='INCONSISTENT', 1, 0)) AS inconsistentClonality, ",
+    "       SUM(IF (length(ref) = 1 AND length(alt) = 1, 1, 0)) as snv, ",
+    "       SUM(IF (length(ref) <> length(alt), 1, 0)) as indels, ",
+    "       SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad ",
     " FROM somaticVariant ",
     "WHERE filter = 'PASS' ",
     "   AND sampleId = '", sample$sampleId, "'",
     " GROUP BY sampleId",
     sep = "")
-  if (LOG_QUERIES) {
-    cat(paste(query, "\n", sep = ""))
-  }
   return (dbGetQuery(dbConnect, query))
 }
 
@@ -121,13 +163,15 @@ if (LOAD_FROM_FILE) {
   dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
   allSamples = query_purity(dbConnect)
 
-  samples = allSamples[1:7, , drop = FALSE]
-  samples = attach_cancerTypes(dbConnect, samples)
-  samples = attach_structural_variants(dbConnect, samples)
-  samples = attach_msi(dbConnect, samples)
-  samples = attach_somatics(dbConnect, samples)
+  cohort = allSamples[1:7, , drop = FALSE]
+  cohort = attach_qc_score(dbConnect, cohort)
+  cohort = attach_sample_data(dbConnect, cohort)
+  cohort = attach_clinical_data(dbConnect, cohort)
+  cohort = attach_structural_variants(dbConnect, cohort)
+  cohort = attach_msi(dbConnect, cohort)
+  cohort = attach_somatics(dbConnect, cohort)
 
-  save(allSamples, samples, file = DATA_FILE)
+  save(allSamples, cohort, file = DATA_FILE)
   dbDisconnect(dbConnect)
 }
 
