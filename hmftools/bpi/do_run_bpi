@@ -52,6 +52,8 @@ if grep -q bpiVersion=1.5 ${output_vcf}; then
     exit 1
 fi
 
+echo "Running BPI on ${run_dir}"
+
 java -Xmx8G -Xms4G \
     -jar ${bpi_jar} \
     -contamination_fraction 0.03 \

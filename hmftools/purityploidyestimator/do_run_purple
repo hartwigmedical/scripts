@@ -5,12 +5,6 @@ credentials=$1 && shift
 purple_jar=$1 && shift
 purple_output=$1 && shift
 
-run=$(basename ${run_dir})
-
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
-
 baf_file=$(ls ${run_dir}/amber/*.amber.baf)
 if [ $? -ne 0 ]
 then
@@ -33,11 +27,15 @@ then
     exit 1
 fi
 
+do_run_amber ${run_dir}
+do_run_cobalt ${run_dir}
+
 mkdir -p ${purple_output}
 rm -f ${purple_output}/*
 
-do_run_amber ${run_dir}
-do_run_cobalt ${run_dir}
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \

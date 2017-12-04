@@ -1,8 +1,15 @@
 #!/bin/bash
 
 run_dir=$1 && shift
-cobalt_jar=/data/common/tools/cobalt_v1.2/cobalt.jar
-gc_profile=/data/common/dbs/gc/GC_profile.1000bp.cnp
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+    base_path="/data"
+fi
+
+cobalt_jar=${base_path}/tools/cobalt_v1.2/cobalt.jar
+gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 output_dir=${run_dir}/cobalt
 metadata=${run_dir}/metadata
 
