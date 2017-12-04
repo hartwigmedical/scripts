@@ -1,9 +1,9 @@
 #!/bin/bash
 
 run_dir=$1 && shift
-credentials=$1 && shift
 purple_jar=$1 && shift
 purple_output=$1 && shift
+credentials=$1 && shift
 
 baf_file=$(ls ${run_dir}/amber/*.amber.baf)
 if [ $? -ne 0 ]
@@ -33,11 +33,8 @@ do_run_cobalt ${run_dir}
 mkdir -p ${purple_output}
 rm -f ${purple_output}/*
 
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+if [ -z "${credentials}" ]; then
+    java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${purple_jar} \
     -threads 3 \
     -somatic_vcf ${somatic_vcf} \
@@ -45,6 +42,21 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -baf ${baf_file} \
     -circos /data/common/tools/circos_v0.69.5/bin/circos \
     -run_dir ${run_dir} \
-    -output_dir ${purple_output} \
-    -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    -output_dir ${purple_output}
+else
+    db_user=$(awk '/^user/ {print $2}' ${credentials})
+    db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+    db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+    java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+        -jar ${purple_jar} \
+        -threads 3 \
+        -somatic_vcf ${somatic_vcf} \
+        -structural_vcf ${structural_vcf} \
+        -baf ${baf_file} \
+        -circos /data/common/tools/circos_v0.69.5/bin/circos \
+        -run_dir ${run_dir} \
+        -output_dir ${purple_output} \
+        -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+        $@
+fi
