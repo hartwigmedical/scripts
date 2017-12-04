@@ -21,7 +21,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'id' ],
   'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'id' ],
   'sets'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'id' ],
-  'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', "pipeline", "ini", 'id' ],
+  'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', 'priority', "pipeline", "ini", 'id' ],
   'entities'  => [ 'name', 'bucket', 'id' ],
   'inis'      => [ 'name', 'id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
@@ -115,7 +115,7 @@ sub readJson{
     my $json_txt = read_file( $json_file );
     my $json_obj = decode_json( $json_txt );
     
-    ## optimize some fields for viewing
+    ## STLI: optimize some fields for viewing
     foreach my $obj ( @$json_obj ){
         $obj->{ 'id' } = join( "", 'SBPid=', $obj->{ 'id' } ) if defined $obj->{ 'id' };
         $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
@@ -126,7 +126,7 @@ sub readJson{
         $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
     }
     
-    ## need to fix set info for runs (set info is situated one level deeper)
+    ## STLI: need to fix set info for runs (set info is situated one level deeper)
     if ( $type eq 'runs' ){
         foreach my $obj ( @$json_obj ){
             my @keys_to_move = qw( name ref_sample tumor_sample entity_id );
@@ -136,7 +136,7 @@ sub readJson{
         }
     }
     
-    ## add extra information for sets/runs from other jsons
+    ## STLI: add extra information for sets/runs from other jsons
     if ( $type eq 'sets' or $type eq 'runs' ){
         my $entities = jsonFileToObject( "$JSONS_HOME/entities.json" );
         my $inis = jsonFileToObject( "$JSONS_HOME/inis.json" );
@@ -220,7 +220,7 @@ sub applyFiltersOnObject{
         }
     }
     
-    ## all filters applied and still here so return OK reponse
+    ## all filters applied and still here so return OK response
     return 0;
 }
 

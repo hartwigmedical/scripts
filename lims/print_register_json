@@ -20,6 +20,10 @@ my $SOM_INI = "Somatic.ini";
 my $Q30_LIM = 75; # q30 limit is currently same for all samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
 
+## could make these more fine grained (lower number is higher prio)
+my $NO_PIPELINE_PRIO = 100;
+my $YES_PIPELINE_PRIO = 99;
+
 my $LIMS_IN_FILE = '/data/lims/lims.json';
 my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
 
@@ -157,12 +161,14 @@ sub processSample{
     my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
+    my $priority   = getPriority( $sample );
     
     my @data_for_itlims = ( $label, $submission, $barcode, $name, "BFX: Json registration" );
     push( @$toprint, \@data_for_itlims );
     
     ## init the json info
     my %json_data = ();
+    $json_data{ 'priority' } = $priority;
     
     say "[INFO] INPUT: $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
 
@@ -172,8 +178,8 @@ sub processSample{
     if ( $analysis eq 'NoAnalysis' ){
         my $set = join("_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         
         ## assume all NoAnalysis samples need fastq in portal
         $json_data{ 'fastq_portal' } = JSON::true;
@@ -209,9 +215,9 @@ sub processSample{
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
         say "[INFO] SET: $set";
         
-        $json_data{ 'ini' } = $SOM_INI;
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'ini' } = "$SOM_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F );
@@ -219,9 +225,9 @@ sub processSample{
     elsif( $analysis eq 'Germline' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
         say "[INFO] SET: $set";
-        $json_data{ 'ini' } = $GER_INI;
-        $json_data{ 'set_name' } = $set;
-        $json_data{ 'entity' } = $entity;
+        $json_data{ 'ini' } = "$GER_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
     }
     elsif ( $analysis eq 'Somatic_R' ){
@@ -298,6 +304,18 @@ sub getValueByKey{
     }
 }
 
+sub getPriority{
+    my ($info, $key) = @_;
+    ## unfortunately cannot err on key absence 
+    ## because not all samples have the prio property
+    if ( defined $info->{ 'priority' } and $info->{ 'priority' } =~ /yes/i ){
+        return $YES_PIPELINE_PRIO;
+    }
+    else{
+        return $NO_PIPELINE_PRIO;
+    }
+}
+
 sub addEntityToJsonData{
     my ($json_data, $submission, $patient, $dict1, $dict2) = @_;
     
@@ -326,9 +344,9 @@ sub addEntityToJsonData{
 sub addSampleToJsonData{
     my ($store, $submission, $barcode, $type, $q30, $yield) = @_;
     my %tmp = (
-        'barcode'    => $barcode,
-        'submission' => $submission,
-        'type'       => $type,
+        'barcode'    => "$barcode",
+        'submission' => "$submission",
+        'type'       => "$type",
         'q30_req'    => $q30,
         'yld_req'    => $yield,
     );

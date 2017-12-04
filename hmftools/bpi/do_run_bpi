@@ -3,7 +3,14 @@
 run_dir=$1 && shift
 bpi_jar=$1 && shift
 bpi_output=$1 && shift
-samtools=/data/common/tools/samtools_v1.2/samtools
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+	base_path="/data"
+fi
+
+samtools=${base_path}/tools/samtools_v1.2/samtools
 
 mkdir -p ${bpi_output}
 
@@ -37,13 +44,15 @@ then
     exit 1
 fi
 
-joint_name=$(realpath ${output_tsv} | awk -F/ '{print $8}')
+joint_name=$(basename $(dirname ${output_tsv} ) )
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
 
 if grep -q bpiVersion=1.5 ${output_vcf}; then
     echo "BPI version 1.5 already run. Exiting."
     exit 1
 fi
+
+echo "Running BPI on ${run_dir}"
 
 java -Xmx8G -Xms4G \
     -jar ${bpi_jar} \

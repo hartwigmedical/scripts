@@ -14,9 +14,15 @@ fi
 amber_pcf=${amber_output}.pcf
 if [[ ! -e ${amber_pcf} ]]
 then
+    base_path="/data/common"
+    if [ -z "`hostname | grep datastore`" ]; then
+        # KODU: common folder does not exist on crunches...
+        base_path="/data"
+    fi
+
     column=$(head -1 ${amber_output} | cut -f 4)
-    echo "Executing PCF Segmentation with command: Rscript /data/common/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
-    Rscript /data/common/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
+    echo "Executing PCF Segmentation with command: Rscript ${base_path}/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
+    Rscript ${base_path}/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
     rm ${amber_pcf}1
 fi
 

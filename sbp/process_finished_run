@@ -1,0 +1,19 @@
+#!/bin/bash
+
+set=$1
+
+if [ -z "$set" ]; then
+    echo "[WARN] No set provided to process_finished_run. Exiting"
+    exit 1
+fi
+
+path=/data/schuberg/fromweekly
+echo "[INFO] Downloading set ${set}"
+download_set -s ${set} -p ${path}
+
+# KODU: Purple script also triggers reruns of BPI, amber and cobalt
+echo "[INFO] Rerunning purple on ${set}"
+do_run_purple_prod ${path}/${set}
+
+echo "[INFO] Loading somatics into database for ${set}"
+do_load_somatic_variants_prod ${path}/${set}

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+local_path='/data/sequencer_archive/'
+remote_path='s3://hmf_archive/sequencer_archive'
+aws_profile='hmf_archive'
+
+sbp s3 sync "${local_path}" "${remote_path}" \
+    --profile ${aws_profile} \
+    --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}

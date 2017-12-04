@@ -13,7 +13,7 @@ if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ];
     exit 1
 fi
 
-# get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
+# MIVO: get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
 RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | sort -nrk7,7 | head -1`
 
 if [ -z "$RUN_ROW" ];

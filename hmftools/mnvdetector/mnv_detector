@@ -10,10 +10,7 @@ SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
 SNPEFF_DB="GRCh37.75"
 
 RUN=$1
-#VCF=$1
-#SAMPLE=$2
 
-#if [ -z "$VCF" ] || [ -z "$SAMPLE" ];
 if [ -z "$RUN" ];
   then
     echo "Usage: $ ./mnv_detector <runpath>"
@@ -27,9 +24,7 @@ fi
 VCF=$( find ${RUN} -wholename "*/somaticVariants/*_post_processed.vcf" )
 SAMPLE=$( cat ${RUN}/metadata | jq -r '.tumor_sample' )
 
-#echo "SAMPLE: $SAMPLE"
-
-## some sanity checks
+## MIVO: some sanity checks
 if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
@@ -51,11 +46,11 @@ fi
 
 rm "${MNV_VCF}.idx"
 
-if ! ${BAM_SLICER_SCRIPT} $SAMPLE $MNV_BED ;
+if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ;
 then exit 1
 fi
 
-if ! java -jar $MNV_VALIDATOR \
+if ! java -jar ${MNV_VALIDATOR} \
     -v ${VCF} \
     -b ${SLICED_BAM} \
     -o ${FINAL_VCF} ;

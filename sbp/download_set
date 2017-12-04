@@ -1,0 +1,81 @@
+#!/bin/bash
+
+script=$( basename $0 )
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <set> -p <path>" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc -p /data/schuberg/fromweekly" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:p:" o; do
+    case "${o}" in
+        s)
+            set=${OPTARG} || usage
+            ;;
+        p)
+            localpath=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set}" || -z "${localpath}" ]]; then
+    usage
+fi
+
+run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
+if [ -z "$run_info" ]; then
+    echo "[WARN] No validated runs found with a Somatic/CPCT .ini file for set ${set}. Exiting."
+    exit 1
+fi
+
+rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
+if [ -z "$rerun_info" ]; then
+    run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
+    if [ -z "run_is_v3" ]; then
+        echo "[WARN] No validated rerun found while original run is not v3. Exiting."
+        exit 1
+     else
+        rerun_info=${run_info}
+     fi
+fi
+
+run_bucket=`echo ${run_info} | cut -d ' ' -f5`
+rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
+
+sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*annotated.vcf*" \
+	--include "*filtered*GoNLv5.vcf*" \
+	--include "*snpcheck*" \
+	--include "*.kinship" \
+	--include "QCStats*" \
+	--include "*mapping*flagstat*" \
+	--include "*HealthCheck.out*" \
+	--include "settings.config" \
+	--profile download
+
+sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*mapping*flagstat*" \
+	--include "*recal_data*" \
+	--include "*damageEstimate*" \
+	--include "*amber*" \
+	--include "*cobalt*" \
+	--include "*purple*" \
+	--include "*somaticVariants*post_processed*" \
+	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*bpi*bpi_stats*" \
+	--include "*structuralVariants*bpi*somaticSV*" \
+	--include "*structuralVariants*bpi*sliced.bam*" \
+	--include "*structuralVariants*manta*somaticSV.vcf*" \
+	--include "*metadata*" \
+	--include "*logs*submitlog*" \
+	--include "*logs*PipelineCheck.log*" \
+	--include "*logs*perform_pipeline_qc*" \
+	--profile download
