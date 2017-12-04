@@ -82,7 +82,7 @@ select_cancer_types<-function(dbConnect){
 
 select_cohort<-function(dbConnect, type){
   query = paste(
-    "select s.sampleId from clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "select s.sampleId,biopsySite from clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
     "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,
     "%'",
@@ -92,11 +92,11 @@ select_cohort<-function(dbConnect, type){
 
 select_cohort_with_subclones<-function(dbConnect, type,minMutationCount=0,subclonalProportion=0){
   query = paste(
-    "select s.sampleId from clinical c, sample s, purity p,somaticVariant sv where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "select s.sampleId,biopsySite from clinical c, sample s, purity p,somaticVariant sv where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
     "and sv.sampleId = s.sampleId ",
     "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,"%' AND filter = 'PASS' ",
-    "group by s.sampleId having sum(if(clonality='SUBCLONAL',1,0))/count(*) >",subclonalProportion,
+    "group by s.sampleId,biopsySite having sum(if(clonality='SUBCLONAL',1,0))/count(*) >",subclonalProportion,
     " and count(*) >",minMutationCount,
     sep = "")
   return (dbGetQuery(dbConnect, query))
@@ -127,7 +127,8 @@ sample_signature<-function(dbConnect, sample, empty_signature,clonality=""){
 cohort_signature<-function(dbConnect, cohort,clonality=""){
   empty_signature = create_empty_signature()
   result = matrix(, nrow = 96, ncol = 0)
-  for (sample in cohort) {
+  for (i in 1:nrow(cohort)) {
+    sample = cohort[i,]$sampleId
     signature = sample_signature(dbConnect, sample, empty_signature,clonality)
     total_count = sum(signature$count)
     if (total_count > 0)
@@ -135,7 +136,7 @@ cohort_signature<-function(dbConnect, cohort,clonality=""){
       print(paste("Processing sample", sample))
       result = cbind(result, signature$count)
       rownames(result) <- signature$context
-      colnames(result)[ncol(result)] <- paste(sample,total_count)
+      colnames(result)[ncol(result)] <- paste(sample,total_count,substr(cohort[i,]$biopsySite,1,8))
     }
     else
     {
@@ -163,8 +164,6 @@ calculate_signatures<-function(dbConnect,cohort,cancer_signatures){
   orderVector<-colSums(fit_contribution)
   fit_contribution[, order(orderVector,decreasing=F),drop=FALSE]
 }
-
-
 
 plot_fitted_signatures<-function(dbConnect, fit_contribution,cancer_signatures,cancerType,chart_mode="absolute",writePDF=False){
   plots=list()
@@ -204,7 +203,6 @@ plot_fitted_signatures<-function(dbConnect, fit_contribution,cancer_signatures,c
     dev.off()
   }
 }
-
 
 clonal_vs_subclonal_signatures<-function(dbConnect, cohort,cancer_signatures,cancerType,chart_mode="absolute",writePDF=False){
   fit_contribution=list()
@@ -250,6 +248,7 @@ dbDisconnect(dbConnect)
 
 # PLOT subclonal
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
   cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.10)
@@ -277,6 +276,14 @@ for (cancerType in cancerTypes$cancerType) {
 #cancerType
 dbDisconnect(dbConnect)
 
+##### LOCAL STORAGE ##################
+dataFile = "~/hmf/mutMatrix.RData"
+
+# SAVE TO FILE
+save(fitted_signatures, file = dataFile)
+
+# LOAD FROM FILE
+load(dataFile)
 
 
 ######## RANDOM TESTING UNDER HERE #############
@@ -335,3 +342,9 @@ makePie(test)
 #   }
 #   
 # }
+
+for (i in 1:nrow(cohort)) {
+  print(cohort[i,]$sampleId)
+}
+
+print left("Hello",4)
