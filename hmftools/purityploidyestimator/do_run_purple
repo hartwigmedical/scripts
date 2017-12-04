@@ -31,7 +31,13 @@ do_run_amber ${run_dir}
 do_run_cobalt ${run_dir}
 
 mkdir -p ${purple_output}
-rm -f ${purple_output}/*
+rm -rf ${purple_output}/*
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+	base_path="/data"
+fi
 
 if [ -z "${credentials}" ]; then
     java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
@@ -40,7 +46,7 @@ if [ -z "${credentials}" ]; then
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
     -baf ${baf_file} \
-    -circos /data/common/tools/circos_v0.69.5/bin/circos \
+    -circos ${base_path}/tools/circos_v0.69.5/bin/circos \
     -run_dir ${run_dir} \
     -output_dir ${purple_output}
 else
@@ -54,7 +60,7 @@ else
         -somatic_vcf ${somatic_vcf} \
         -structural_vcf ${structural_vcf} \
         -baf ${baf_file} \
-        -circos /data/common/tools/circos_v0.69.5/bin/circos \
+        -circos ${base_path}/tools/circos_v0.69.5/bin/circos \
         -run_dir ${run_dir} \
         -output_dir ${purple_output} \
         -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
