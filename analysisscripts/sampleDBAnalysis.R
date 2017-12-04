@@ -215,7 +215,7 @@
    multiplot(p1,p2)
  }
  ######### SINGLE BIOPSY SV PLOIDIES ########## 
- sampleId = "CPCT02010493T"
+ sampleId = "CPCT02090002T"
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
  #somatics
  variants<-get_somatic_variants(dbConnect,sampleId)
@@ -228,7 +228,6 @@
  CNV[, prevCopyNumber:=c(NA, copyNumber[-.N]), by=chromosome]
  CNV[, prevGCContent:=c(NA, GCContent[-.N]), by=chromosome]
  CNV$inferred<-(CNV$copyNumberMethod=="STRUCTURAL_VARIANT")
- 
  CNV[, prevInferred:=c(NA, inferred[-.N]), by=chromosome]
  CNV$chCopyNumber<-CNV$copyNumber-CNV$prevCopyNumber
  CNV$Length<-CNV$end-CNV$start
@@ -236,7 +235,6 @@
  CNV<-transform(CNV, percentChCopyNumber = chCopyNumber/pmax(copyNumber, prevCopyNumber))
  CNV[, prevLength:=c(NA, Length[-.N]), by=chromosome]
  CNV<-transform(CNV, minLength = pmin(Length, prevLength))
-
 
  # SV PLOIDY vs CopyNumber Change
  SV<-get_SV_ends(dbConnect,sampleId)
@@ -254,8 +252,9 @@
    facet_wrap( ~segmentStartSupport )
  dbDisconnect(dbConnect)
  
+ 
  # LENGTH PLOTTING
-
+ 
  ggplot(aes(chCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
    facet_wrap( ~segmentStartSupport ) + xlim(-4,4) + labs(title=sampleId)
  ggplot(aes(percentChCopyNumber),data=CNV) + stat_ecdf(geom = "step", pad = FALSE) +
@@ -268,6 +267,9 @@
    facet_wrap( ~segmentStartSupport )
  ggplot(CNV,aes(minLength,percentChCopyNumber))+geom_point()+labs(title="Length vs GC Content Scatter") + scale_x_log10() + 
    facet_wrap( ~segmentStartSupport )
+
+
+
 
  
  nrow(SV)
