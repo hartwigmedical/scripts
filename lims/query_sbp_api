@@ -25,12 +25,12 @@ my %OUT_FIELDS_PER_TYPE = (
   'entities'  => [ 'name', 'bucket', 'id' ],
   'inis'      => [ 'name', 'id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
+  'shares'    => [ 'entity_id', 'entity', 'set_id', 'set', 'start_time', 'end_time', 'id' ],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
 my $delim = "\t";
 my $type;
-my $verbose;
 my $match_by_regex;
 my $output_as_json;
 my @filters = ();
@@ -86,7 +86,6 @@ GetOptions (
     "delim=s" => \$delim,
     "json" => \$output_as_json,
     "regex" => \$match_by_regex,
-	"verbose" => \$verbose,
 ) or die "Error in command line arguments\n";
 warn "[EXIT] No type given?" and exit(0) unless $type;
 warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
@@ -126,7 +125,7 @@ sub readJson{
         $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
     }
     
-    ## STLI: need to fix set info for runs (set info is situated one level deeper)
+    ## STLI: add set info for runs (set info is situated one level deeper)
     if ( $type eq 'runs' ){
         foreach my $obj ( @$json_obj ){
             my @keys_to_move = qw( name ref_sample tumor_sample entity_id );
@@ -137,7 +136,7 @@ sub readJson{
     }
     
     ## STLI: add extra information for sets/runs from other jsons
-    if ( $type eq 'sets' or $type eq 'runs' ){
+    if ( $type eq 'sets' or $type eq 'runs' or $type eq 'shares' ){
         my $entities = jsonFileToObject( "$JSONS_HOME/entities.json" );
         my $inis = jsonFileToObject( "$JSONS_HOME/inis.json" );
         my $stacks = jsonFileToObject( "$JSONS_HOME/stacks.json" );
@@ -147,7 +146,14 @@ sub readJson{
             $obj->{ 'pipeline' } = getFieldValueById( $stacks, 'revision', $obj->{ 'stack_id' } ) if defined $obj->{ 'stack_id' };
         }
     }
-    
+
+    if ( $type eq 'shares' ){
+        my $sets = jsonFileToObject( "$JSONS_HOME/sets.json" );
+        foreach my $obj ( @$json_obj ){
+            $obj->{ 'set' } = getFieldValueById( $sets, 'name', $obj->{ 'set_id' } ) if defined $obj->{ 'set_id' };
+        }
+    }
+
     return( $json_obj );
 }
 
