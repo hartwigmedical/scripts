@@ -41,14 +41,14 @@ fi
 
 if [ -z "${credentials}" ]; then
     java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
-    -jar ${purple_jar} \
-    -threads 3 \
-    -somatic_vcf ${somatic_vcf} \
-    -structural_vcf ${structural_vcf} \
-    -baf ${baf_file} \
-    -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
-    -run_dir ${run_dir} \
-    -output_dir ${purple_output}
+        -jar ${purple_jar} \
+        -threads 3 \
+        -somatic_vcf ${somatic_vcf} \
+        -structural_vcf ${structural_vcf} \
+        -baf ${baf_file} \
+        -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
+        -run_dir ${run_dir} \
+        -output_dir ${purple_output}
 else
     db_user=$(awk '/^user/ {print $2}' ${credentials})
     db_pass=$(awk '/^pass/ {print $2}' ${credentials})
