@@ -49,7 +49,7 @@ attach_sample_data<-function(dbConnect, samples) {
 ####### Clinical Data #######
 query_clinical_data<-function(dbConnect) {
   query = paste(
-    "SELECT c.sampleId, c.cancertype",
+    "SELECT c.sampleId, c.cancertype, c.birthYear, c.biopsyDate",
     " FROM clinical c",
     sep = " ")
   return (sampleIdRowNames(dbGetQuery(dbConnect, query)))
@@ -166,7 +166,7 @@ if (LOAD_FROM_FILE) {
   allSamples = query_purity(dbConnect)
   
   cohort = allSamples
-  #cohort = allSamples[1:7, , drop = FALSE]
+  cohort = allSamples[1:7, , drop = FALSE]
   cohort = attach_qc_score(dbConnect, cohort)
   cohort = attach_sample_data(dbConnect, cohort)
   cohort = attach_structural_variants(dbConnect, cohort)
@@ -179,7 +179,8 @@ if (LOAD_FROM_FILE) {
   cohort = attach_clinical_data(prodDB, cohort)
   dbDisconnect(prodDB)
   
-  save(allSamples, cohort, file = DATA_FILE)
+  #backupSamples = cohort
+  save(allSamples, cohort,  file = DATA_FILE)
   dbDisconnect(dbConnect)
 }
 
