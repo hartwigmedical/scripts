@@ -78,6 +78,9 @@ mappedCancerTypes = unique(pcawgSomatics[!is.na(pcawgSomatics$cancerType), c("ca
 ggplot(data=subset(combined, cancerType %in% mappedCancerTypes), 
        aes(x=value)) + stat_ecdf(geom = "step", pad = FALSE, aes(color = source))  + facet_grid(cancerType ~ type, scales = "free")
 
+
+#############  EXPERIMENTAL RUBBISH BELOW
+
 ggplot(data=subset(combined, cancerType %in% c('Breast', 'Melanoma')), 
        aes(x=value)) + stat_ecdf(geom = "step", pad = FALSE, aes(color = source)) + labs(title="Breast")  + facet_wrap( ~type, scales = "free")
 
