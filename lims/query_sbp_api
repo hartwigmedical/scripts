@@ -54,8 +54,8 @@ my $HELP =<<HELP;
   Usage examples
     $SCRIPT -type samples
     $SCRIPT -type samples -filter "barcode=FR13825534"
-    $SCRIPT -type samples -filter "tumor_sample=CPCT0201" -regex
-    $SCRIPT -type runs -filter "tumor_sample=CPCT0201" -regex -json
+    $SCRIPT -type samples -filter "tumor_sample=CPCT0201"
+    $SCRIPT -type runs -filter "tumor_sample=CPCT0201" -json
     $SCRIPT -type flowcells
     $SCRIPT -type flowcells -filter "status=Pending"
     $SCRIPT -type flowcells -filter "status=Pending|Sequencing"
@@ -64,7 +64,7 @@ my $HELP =<<HELP;
   Options
     -delim    <s>  (output delim)
     -filter   <s>  (search string arg)
-    -exact         (do not allow partial/regex match for filters)
+    -exact         (only allow exact matches for filters)
     -json          (output as json instead of table)
   
   Filter examples
