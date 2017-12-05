@@ -11,4 +11,4 @@ fi
 set=`echo ${run_info} | cut -d ' ' -f1`
 
 echo "[INFO] Downloading set ${set} for sample ${sample}"
-download_set -s ${set} -p /data/schuberg/tmp
+download_set -s ${set} -p /data/schuberg/cpct_drup_downloads
