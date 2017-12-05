@@ -1,10 +1,11 @@
 library(ggplot2)
 
-
 ############# Load PURPLE DATA
-load("~/hmf/somatics.RData")
-purpleRaw = allSomatics
-rm(allSomatics)
+load("~/hmf/purple.RData")
+purpleRaw = cohort
+rm(allSamples)
+rm(cohort)
+rm(backupSamples)
 
 # TRANSFORM PURPLE into usable
 purpleSomatics = purpleRaw[!is.na(purpleRaw$cancerType), c("snv", "indels", "cancerType")]
@@ -76,7 +77,7 @@ rm(pcawgSnvs)
 
 mappedCancerTypes = unique(pcawgSomatics[!is.na(pcawgSomatics$cancerType), c("cancerType")])
 ggplot(data=subset(combined, cancerType %in% mappedCancerTypes), 
-       aes(x=value)) + stat_ecdf(geom = "step", pad = FALSE, aes(color = source))  + facet_grid(cancerType ~ type, scales = "free")
+       aes(x=value)) + stat_ecdf(geom = "step", pad = FALSE, aes(color = source))  + facet_grid(cancerType ~ type, scales = "free") + scale_x_log10()
 
 
 #############  EXPERIMENTAL RUBBISH BELOW

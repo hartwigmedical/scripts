@@ -1,6 +1,6 @@
 library(RMySQL)
 library(plyr)
-LOAD_FROM_FILE = FALSE
+LOAD_FROM_FILE = TRUE
 DATA_FILE = "~/hmf/purple.RData"
 
 leftJoin<-function(left, right) {
@@ -160,17 +160,25 @@ attach_somatics<-function(dbConnect, cohort) {
 if (LOAD_FROM_FILE) {
   load(DATA_FILE)
 } else {
+  
+  #Pilot
   dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
   allSamples = query_purity(dbConnect)
-
-  cohort = allSamples[1:7, , drop = FALSE]
+  
+  cohort = allSamples
+  #cohort = allSamples[1:7, , drop = FALSE]
   cohort = attach_qc_score(dbConnect, cohort)
   cohort = attach_sample_data(dbConnect, cohort)
-  cohort = attach_clinical_data(dbConnect, cohort)
   cohort = attach_structural_variants(dbConnect, cohort)
   cohort = attach_msi(dbConnect, cohort)
   cohort = attach_somatics(dbConnect, cohort)
-
+  dbDisconnect(dbConnect)
+  
+  #Production
+  prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+  cohort = attach_clinical_data(prodDB, cohort)
+  dbDisconnect(prodDB)
+  
   save(allSamples, cohort, file = DATA_FILE)
   dbDisconnect(dbConnect)
 }
