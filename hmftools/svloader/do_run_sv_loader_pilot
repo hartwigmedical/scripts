@@ -1,0 +1,9 @@
+#!/bin/bash
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+sample=$1 && shift
+
+credentials=/data/common/tools/patient-db_pilot/credentials
+sv_jar=~/variant-annotator.jar
+
+${prefix}/do_run_sv_loader ${run_dir} ${sample} ${credentials} ${sv_jar} $@
