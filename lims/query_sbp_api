@@ -31,9 +31,9 @@ my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
 my $delim = "\t";
 my $type;
-my $match_by_regex;
 my $output_as_json;
 my @filters = ();
+my $must_match_exact;
 
 my $HELP =<<HELP;
 
@@ -64,15 +64,15 @@ my $HELP =<<HELP;
   Options
     -delim    <s>  (output delim)
     -filter   <s>  (search string arg)
-    -regex         (allow partial match with filter settings)
+    -exact         (do not allow partial/regex match for filters)
     -json          (output as json instead of table)
   
   Filter examples
      -filter "submission=HMFreg0001"
      -filter "barcode=FR12345678"
      -filter "entity=CPCT_AVL"
-     -filter "tumor_sample=CPCT02410001T"
-     -filter "tumor_sample=CPCT02410001" -regex
+     -filter "tumor_sample=CPCT02410001T" -exact
+     -filter "tumor_sample=CPCT02410001"
     
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq '--help';
@@ -81,11 +81,11 @@ print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq 
 ## Gather input
 ## -----
 GetOptions (
-    "type=s" => \$type,
+    "type=s"    => \$type,
     "filter=s@" => \@filters,
-    "delim=s" => \$delim,
-    "json" => \$output_as_json,
-    "regex" => \$match_by_regex,
+    "delim=s"   => \$delim,
+    "json"      => \$output_as_json,
+    "exact"     => \$must_match_exact,
 ) or die "Error in command line arguments\n";
 warn "[EXIT] No type given?" and exit(0) unless $type;
 warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
@@ -215,7 +215,7 @@ sub applyFiltersOnObject{
             my $exact_match = $object->{ $name } eq $include;
             my $regex_match = $object->{ $name } =~ m/$include/i;
             
-            if ( not $exact_match and not $match_by_regex ){
+            if ( not $exact_match and $must_match_exact ){
                 $counts->{ $filter_string }++;
                 return(1);
             }
