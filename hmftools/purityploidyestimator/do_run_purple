@@ -46,7 +46,7 @@ if [ -z "${credentials}" ]; then
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
     -baf ${baf_file} \
-    -circos ${base_path}/tools/circos_v0.69.5/bin/circos \
+    -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
     -run_dir ${run_dir} \
     -output_dir ${purple_output}
 else
@@ -60,7 +60,7 @@ else
         -somatic_vcf ${somatic_vcf} \
         -structural_vcf ${structural_vcf} \
         -baf ${baf_file} \
-        -circos ${base_path}/tools/circos_v0.69.5/bin/circos \
+        -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
         -run_dir ${run_dir} \
         -output_dir ${purple_output} \
         -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
