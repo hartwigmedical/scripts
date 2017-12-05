@@ -7,4 +7,4 @@ for file in /data/cpct/runs/*; do
 
         do_run_sv_loader_pilot $file $sample $@
     fi
-done#
+done
