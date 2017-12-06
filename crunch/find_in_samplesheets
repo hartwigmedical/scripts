@@ -13,6 +13,8 @@ fi
 
 SEARCH_STRINGS=( "$@" )
 
+function print_join { local IFS="$1"; shift; echo "$*"; }
+
 for SEARCH in "${SEARCH_STRINGS[@]}"; do
   
   for sheet in $( grep -l $SEARCH /data/samplesheets/*_SampleSheet.csv ); do 
@@ -26,7 +28,7 @@ for SEARCH in "${SEARCH_STRINGS[@]}"; do
       SAMPLEID=$( echo $line | cut -d ',' -f 1 )
       SAMPLENAME=$( echo $line | cut -d ',' -f 2 )
       SUBM=$( echo $line | cut -d ',' -f 3 )
-      echo "$SAMPLENAME,$SAMPLEID,$SUBM,$HMFRUN,$HMFRUNDIR"
+      print_join " " $SAMPLENAME $SAMPLEID $SUBM $HMFRUN $HMFRUNDIR
     done
 
   done
