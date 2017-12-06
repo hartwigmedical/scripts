@@ -102,6 +102,13 @@ ggplot(data=subset(combined, cancerType %in% mappedCancerTypes & type %in% c('PC
   scale_y_log10()  + 
   labs(title="Indel count by age")
 
+#############  SNVs by age
+ggplot(data=subset(combined, cancerType %in% mappedCancerTypes & type %in% c('PCAWG SNVs', "Purple SNVs")),  aes(x=age, y=value, color = type)) + 
+  geom_point() + 
+  facet_grid(cancerType~.) + 
+  scale_y_log10()  + 
+  labs(title="SNVs by age")
+
 #ggplot(data=subset(combined, cancerType %in% mappedCancerTypes), 
 #       aes(x=value)) + stat_ecdf(geom = "step", pad = FALSE, aes(color = source))  + facet_grid(cancerType ~ type, scales = "free") + scale_x_log10()
 
