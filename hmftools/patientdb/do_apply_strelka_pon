@@ -1,14 +1,13 @@
 #!/bin/bash
 run_dir=$1
 
-# Check if pon filtering has been done by pipeline. If so, early exit.
+# JOBA: Check if pon filtering has been done by pipeline. If so, early exit.
 vcf_in=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
 	echo "Pipeline pon file not found. Exiting."
 	exit 0
 fi
-
 
 PON=/data/experiments/strelkaPON/strelkaPON.vcf
 vcf_base=${vcf_in%.vcf}
@@ -18,8 +17,8 @@ if [[ ! -e ${vcf_out} ]]; then
     tmp_file=${vcf_base}_strelka_annotated.vcf
 
     echo "Creating pon file: ${vcf_out}"
-    pypy /data/common/repos/scripts/analysisscripts/annotatePON.py -s -i $vcf_in -p $PON -o $tmp_file
-    bcftools filter -e 'PON_STRELKA_COUNT!="." && MIN(PON_STRELKA_COUNT) > 1' -s STRELKA_PON -m+ $tmp_file > $vcf_out
+    pypy /data/common/repos/scripts/analysisscripts/annotatePON.py -s -i ${vcf_in} -p ${PON} -o ${tmp_file}
+    bcftools filter -e 'PON_STRELKA_COUNT!="." && MIN(PON_STRELKA_COUNT) > 1' -s STRELKA_PON -m+ ${tmp_file} > $vcf_out
 
     rm $tmp_file
 else

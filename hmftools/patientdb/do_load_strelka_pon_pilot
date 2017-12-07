@@ -4,9 +4,9 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 credentials=/data/common/tools/patient-db_pilot/credentials
-patient_jar=/data/common/tools/patient-db_pilot/patient-db.jar
+patient_db_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
-# Files
+# JOBA: Files
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_strelka_filtered.vcf)
 if [ $? -ne 0 ]
 then
@@ -14,4 +14,4 @@ then
     exit 1
 fi
 
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_jar} ${somatic_vcf}
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf}

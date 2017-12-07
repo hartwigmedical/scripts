@@ -10,6 +10,6 @@ fi
 
 purple_jar=${base_path}/tools/purple_v1.4/purple.jar
 purple_output=${run_dir}/purple
-credentials=${base_path}/tools/patient-db_v1.0/credentials
+credentials=${base_path}/tools/patient-db_v1.4/credentials
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output} ${credentials} $@
