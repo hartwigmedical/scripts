@@ -11,7 +11,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 bpi_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 
-echo "Loading bpi data for sample: ${sample}"
+echo "[INFO] Loading bpi data for sample: ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
     -sample ${sample} \
