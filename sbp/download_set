@@ -31,11 +31,12 @@ fi
 run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
 if [ -z "$run_info" ]; then
     # KODU: For new sets it can happen that snpcheck cannot be performed @ SBP.
-    echo "[INFO] No validated set found for ${set}. Trying to find a SnpCheck set!"
     run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "SnpCheck"`
     if [ -z "$run_info" ]; then
         echo "[WARN] No validated or snpcheck runs found with a Somatic/CPCT .ini file for set ${set}."
         exit 1
+    else
+        echo "[INFO] No validated set found for ${set}. Using set with SnpCheck status instead."
     fi
 fi
 
