@@ -1,0 +1,5 @@
+#!/bin/bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+${prefix}/run_clinical_patient_db -do_load_raw_ecrf
