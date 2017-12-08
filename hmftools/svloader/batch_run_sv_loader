@@ -1,8 +1,8 @@
 #!/bin/bash
 starts_with=$1 && shift
 
-for file in /data/cpct/merged_runs/*; do
-    if [[ $file == /data/cpct/merged_runs/${starts_with}* ]]; then
+for file in /data/cpct/runs/*; do
+    if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
         do_run_sv_loader_prod $file $sample $@
