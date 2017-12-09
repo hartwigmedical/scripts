@@ -1,6 +1,13 @@
 #!/bin/bash
 
+echo "[INFO] Archiving RNA Data"
 archive_rna_to_sbp
+
+echo "[INFO] Archiving Sequencer Archive"
 archive_sequencer_archive_to_sbp
+
+echo "[INFO] Archiving SNP Check Data"
 archive_snpcheck_to_sbp
+
+echo "[INFO] Archiving Patient Reports"
 archive_patientreports_to_sbp
