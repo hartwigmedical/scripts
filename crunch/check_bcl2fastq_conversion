@@ -254,9 +254,11 @@ sub parseJsonInfo{
             
             my @types = keys %bc_mismatch_counts;
             foreach my $mm ( @types ){
-                $info{ 'flow' }{ $fid }{ $mm } += $bc_mismatch_counts{ $mm };
-                $info{ 'lane' }{ $lid }{ $mm } += $bc_mismatch_counts{ $mm };
-                $info{ 'samp' }{ $sid }{ $mm } += $bc_mismatch_counts{ $mm };
+                my $count = 0;
+                $count = $bc_mismatch_counts{ $mm } if defined $bc_mismatch_counts{ $mm };
+                $info{ 'flow' }{ $fid }{ $mm } += $count;
+                $info{ 'lane' }{ $lid }{ $mm } += $count;
+                $info{ 'samp' }{ $sid }{ $mm } += $count;
             }
         }
     }
@@ -284,8 +286,12 @@ sub parseJsonInfo{
             
             next if $name =~ /read|UNDETERMINED/;
             $obj->{ 'total_reads' } = $obj->{ 'mm0' } + $obj->{ 'mm1' };
-            $obj->{ 'mm0_print' } = round( $obj->{ 'mm0' }*100 / $obj->{ 'total_reads' } );
-            $obj->{ 'mm1_print' } = round( $obj->{ 'mm1' }*100 / $obj->{ 'total_reads' } );
+            $obj->{ 'mm0_print' } = 0;
+            $obj->{ 'mm1_print' } = 0;
+            if ( $obj->{ 'total_reads' } != 0 ){
+                $obj->{ 'mm0_print' } = round( $obj->{ 'mm0' }*100 / $obj->{ 'total_reads' } );
+                $obj->{ 'mm1_print' } = round( $obj->{ 'mm1' }*100 / $obj->{ 'total_reads' } );
+            }
             
         }
     }
