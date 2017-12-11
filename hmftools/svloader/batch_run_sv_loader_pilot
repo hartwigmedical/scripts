@@ -5,6 +5,6 @@ for file in /data/cpct/runs/*; do
     if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
-        do_run_sv_loader_pilot $file $sample $@
+        do_run_sv_loader_pilot $file $@
     fi
 done
