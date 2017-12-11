@@ -4,6 +4,7 @@
  library(ggplot2)
  library(dplyr)
  library(grid)
+ library(gridExtra)
  library(devtools)
  library("NMF")
  library(tidyverse)

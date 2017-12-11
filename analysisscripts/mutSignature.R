@@ -2,11 +2,16 @@ library(devtools)#; install_github("im3sanger/dndscv")
 library(MutationalPatterns)
 library(RMySQL)
 library(data.table)
+library(grid)
+library(gridExtra)
 library("NMF")
 library(ggplot2)
-#library(deconstructSigs)
 
-myCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68a100","#e34bc9","#106b00","#d10073","#98d76a",
+myCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
+             "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
+             "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
+             "#dea185","#a0729d","#8a392f")
+OLDmyCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68a100","#e34bc9","#106b00","#d10073","#98d76a",
             "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#00825b","#ff4791","#01837a",
             "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
             "#dea185","#a0729d","#8a392f")
@@ -82,7 +87,7 @@ select_cancer_types<-function(dbConnect){
 
 select_cohort<-function(dbConnect, type){
   query = paste(
-    "select s.sampleId,biopsySite from clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "select s.sampleId,biopsySite from hmfpatients.clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
     "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,
     "%'",
@@ -92,7 +97,7 @@ select_cohort<-function(dbConnect, type){
 
 select_cohort_with_subclones<-function(dbConnect, type,minMutationCount=0,subclonalProportion=0){
   query = paste(
-    "select s.sampleId,biopsySite from clinical c, sample s, purity p,somaticVariant sv where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
+    "select s.sampleId,biopsySite from hmfpatients.clinical c, sample s, purity p,somaticVariant sv where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
     "and sv.sampleId = s.sampleId ",
     "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
     type,"%' AND filter = 'PASS' ",
@@ -178,7 +183,7 @@ plot_fitted_signatures<-function(dbConnect, fit_contribution,cancer_signatures,c
   veryHighMutationLoadCutOff=40000
 
   if (writePDF){
-    pdf(file=paste(cancerType,"ALL.pdf",sep=""),width=10)
+    pdf(file=paste(cancerType,"ALLRelative.pdf",sep=""),width=10)
   }
   
   if (any(colSums(fit_contribution)<highMutationLoadCutOff)) {
@@ -238,6 +243,7 @@ clonal_vs_subclonal_signatures<-function(dbConnect, cohort,cancer_signatures,can
 }
 
 ###########################
+########################MAIN CODE###################
 # Create mutational matrix
 cancer_signatures = getCOSMICSignatures()
 
@@ -248,7 +254,6 @@ dbDisconnect(dbConnect)
 
 # PLOT subclonal
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
   cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.10)
@@ -262,6 +267,7 @@ dbDisconnect(dbConnect)
 # PLOT ALL
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 fitted_signatures=list()
+#cancerType="Brain"
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
   cohort = select_cohort(dbConnect, cancerType)
@@ -271,80 +277,70 @@ for (cancerType in cancerTypes$cancerType) {
   }
 }
 for (cancerType in cancerTypes$cancerType) {
-  plot_fitted_signatures(dbConnect,fitted_signatures[[cancerType]],cancer_signatures,cancerType,"absolute",T)
+  plot_fitted_signatures(dbConnect,fitted_signatures[[cancerType]],cancer_signatures,cancerType,"relative",T)
 }  
-#cancerType
+
 dbDisconnect(dbConnect)
+######################################################################
+#SINGLE SAMPLE
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+cancerType="Breast"
+cohort=data.frame(sampleId="CPCT02030265TII",biopsySite=cancerType)
+fitted_signatures[[cancerType]]<-calculate_signatures(dbConnect,cohort,cancer_signatures)
+fitted_signatures
+plot_contribution(fitted_signatures, cancer_signatures,coord_flip = F, mode = chart_mode)+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7),legend.text=element_text(size=5),axis.title.y = element_text(size=6))+
+  scale_fill_manual( values= myCOLORS[selectRow])+labs(fill="")
+#MUT_MATRIX
+mut_matrix=list()
+for (cancerType in cancerTypes$cancerType) {
+  print(paste("running for type:",cancerType))
+  cohort = select_cohort(dbConnect, cancerType)
+  if (length(cohort)>0){
+    mut_matrix[[cancerType]]<-cohort_signature(dbConnect, cohort[1:nrow(cohort),])
+    
+  }
+}
+
 
 ##### LOCAL STORAGE ##################
 dataFile = "~/hmf/mutMatrix.RData"
 
 # SAVE TO FILE
-save(fitted_signatures, file = dataFile)
+save(mut_matrix, file = dataFile)
 
 # LOAD FROM FILE
 load(dataFile)
 
 
 ######## RANDOM TESTING UNDER HERE #############
-# ALL 
-n=102
-for (i in 1:(n/25)){
-  print(i)
-}
-
-create_empty_signature()
 
 
-sampleId = 'CPCT02050050T'
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-query = paste("select sampleId as Sample,concat('chr',chromosome) as chr,position as pos,ref,alt from somaticVariant where sampleId = '",sampleId,"' and filter = 'PASS' and chromosome <> 'MT'",sep="")
-raw_data = dbGetQuery(dbConnect, query)
-head(raw_data)
-sigs.input <- mut.to.sigs.input(mut.ref = raw_data, 
-                                sample.id = "Sample", 
-                                chr = "chr", 
-                                pos = "pos", 
-                                ref = "ref", 
-                                alt = "alt")
-test = whichSignatures(tumor.ref = sigs.input, 
-                       signatures.ref = signatures.cosmic, 
-                       sample.id = sampleId,contexts.needed = TRUE,tri.counts.method = 'default',signature.cutoff = 0.03)
-makePie(test)
+
+mut_mat <- mut_matrix + 0.00001
+estimate <- nmf(mut_mat, rank=2:20, method="brunet", nrun=10, seed=123456)
+plot(estimate)
+nmf_res <- extract_signatures(mut_mat, rank = 20, nrun = 10)
+
+colnames(nmf_res$signatures) <- 1:20
+rownames(nmf_res$contribution) <- 1:20
+plot_96_profile(nmf_res$signatures)
+pc1 <- plot_contribution(nmf_res$contribution, nmf_res$signature,mode = "relative")
+pc2 <- plot_contribution(nmf_res$contribution, nmf_res$signature, mode = "absolute")
+grid.arrange(pc1, pc2)
 
 
-# OLDplot_signatures<-function(dbConnect, cohort,cancer_signatures,cancerType,chart_mode="absolute",writePDF=False){
-#   
-#   mutation_matrix= cohort_signature(dbConnect, cohort[1:nrow(cohort),])
-#   fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
-#   fit_contribution<-fit_res$contribution[, order(colnames(fit_res$contribution),decreasing=F),drop=FALSE]
-#   fit_contribution[prop.table(fit_contribution, margin=2)<0.03 | fit_contribution<100]<-0
-#   selectRow = which(rowSums(fit_contribution)>0)
-#   orderVector<-colSums(fit_contribution)
-# 
-#   fit_contribution<-fit_contribution[, order(orderVector,decreasing=F),drop=FALSE]
-# 
-#   plots=list()
-#   plots[[1]]<-plot_contribution(fit_contribution[selectRow,colSums(fit_contribution)<15000,drop=F], cancer_signatures[,selectRow],coord_flip = F, mode = chart_mode)+
-#       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=8),legend.text=element_text(size=5),axis.title.y = element_text(size=6))+
-#       scale_fill_manual( values= myCOLORS[selectRow])+labs(fill="")
-#   plots[[2]]<-plot_contribution(fit_contribution[selectRow,colSums(fit_contribution)>15000,drop=F], cancer_signatures[,selectRow],coord_flip = F, mode = chart_mode)+
-#     theme(axis.text.x = element_text(angle = 90, hjust = 1,size=8),legend.text=element_text(size=5),axis.title.y = element_text(size=6))+
-#     scale_fill_manual( values= myCOLORS[selectRow])+labs(fill="")
-# 
-#   if (writePDF){
-#     pdf(file=paste(cancerType,"ALL.pdf",sep=""),width=10)
-#     multiplot(plots)
-#     dev.off()
-#   }
-#   else {
-#     multiplot(plots)
-#   }
-#   
-# }
+ggplot(data=mutation_matrix), 
+      aes(x=CPCT02020412T) + stat_ecdf(geom = "step") + labs(title="Test")
 
-for (i in 1:nrow(cohort)) {
-  print(cohort[i,]$sampleId)
-}
 
-print left("Hello",4)
+library('proxy') # Library of similarity/dissimilarity measures for 'dist()'
+library(reshape2)
+tMatrix=t(mutation_matrix)
+sim_matrix = dist(tMatrix/rowSums(tMatrix),method="cosine",pairwise = TRUE,diag = TRUE,upper= TRUE,)
+View(as.matrix(sim_matrix))
+clusterOutput=hclust(sim_matrix,method="median")
+par(cex=0.6, mar=c(5, 8, 4, 1))
+plot(clusterOutput, xlab="", ylab="", main="", sub="", axes=FALSE)
+par(cex=1)
+axis(2)
