@@ -22,7 +22,7 @@ seqDirs=()
 
 function printHeader() {
     local fieldTitle=$1 && shift
-    echo -e "## ----------\n## ${fieldTitle}:\n## ----------"
+    echo -e "\n## ----------\n## ${fieldTitle}:\n## ----------"
 }
 
 ## if needed contruct absolute path by host we are on
@@ -86,3 +86,12 @@ printHeader "Extra actions"
 for cmd in "${cmdsToExecute[@]}"; do
     echo ${cmd}
 done
+
+## add flowcell rsync cmd
+if [[ ${currHost} != "datastore" ]]; then
+    printHeader "Get Rsync code for partial sync to datastore"
+    rsync_cmd="rsync_seqruns_to_datastore $@"
+    echo ${rsync_cmd}
+fi
+
+echo ""
