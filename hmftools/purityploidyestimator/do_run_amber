@@ -1,9 +1,11 @@
 #!/bin/bash
+source load_metadata
 
 run_dir=$1 && shift
-metadata=${run_dir}/metadata
 
-tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+# Load metadata
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
 amber_output=$(ls ${run_dir}/amber/${tumor_sample}.amber.baf)
 if [ $? -ne 0 ]
 then

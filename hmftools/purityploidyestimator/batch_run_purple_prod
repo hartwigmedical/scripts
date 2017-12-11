@@ -7,5 +7,6 @@ for file in /data/cpct/runs/*; do
 
         do_run_purple_prod $file $@
         do_load_somatic_variants_prod $file
+        do_run_sv_loader_prod $file
     fi
 done

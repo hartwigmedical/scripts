@@ -4,4 +4,4 @@ run_dir=$1
 
 do_load_purple_data_prod ${run_dir}
 do_load_somatic_variants_prod ${run_dir}
-do_load_bpi_variants_prod ${run_dir}
+do_run_sv_loader_prod ${run_dir}

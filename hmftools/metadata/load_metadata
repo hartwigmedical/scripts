@@ -1,0 +1,15 @@
+#!/bin/bash
+
+load_ref_sample_from_metadata() {
+    run_dir=$1
+    metadata=${run_dir}/metadata
+    echo $(jq -r '.ref_sample' ${metadata})
+}
+
+load_tumor_sample_from_metadata() {
+    local run_dir=$1
+    local metadata=${run_dir}/metadata
+    echo $(jq -r '.tumor_sample' ${metadata})
+}
+
+

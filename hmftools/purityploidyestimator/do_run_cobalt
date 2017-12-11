@@ -1,4 +1,5 @@
 #!/bin/bash
+source load_metadata
 
 run_dir=$1 && shift
 
@@ -13,8 +14,8 @@ gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 output_dir=${run_dir}/cobalt
 metadata=${run_dir}/metadata
 
-tumor_sample=$(jq -r '.tumor_sample' ${metadata})
-reference_sample=$(jq -r '.ref_sample' ${metadata})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 tumor_ratio=$(ls ${run_dir}/cobalt/${tumor_sample}.cobalt)
 if [ $? -ne 0 ]

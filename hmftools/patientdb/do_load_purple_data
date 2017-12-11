@@ -1,4 +1,6 @@
 #!/bin/bash
+source load_metadata
+
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -8,8 +10,11 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
+# JOBA: File Locations
 purple_dir=${run_dir}/purple
-sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+
+#JOBA: Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 echo "[INFO] Loading purple data for sample: ${sample}"
 

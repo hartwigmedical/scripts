@@ -1,19 +1,23 @@
 #!/bin/bash
+source load_metadata
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
 run_dir=$1 && shift
-sample=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
 
+# JOBA: Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
+#JOBA: Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# JOBA: File Locations
 fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
-
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then

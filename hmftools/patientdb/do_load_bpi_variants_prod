@@ -1,9 +1,0 @@
-#!/bin/bash
-
-prefix=`dirname $(readlink $0 || echo $0)`
-run_dir=$1 && shift
-
-credentials=/data/common/tools/patient-db_v1.4/credentials
-patient_db_jar=/data/common/tools/patient-db_v1.4/patient-db.jar
-
-${prefix}/do_load_bpi_variants ${run_dir} ${credentials} ${patient_db_jar} $@

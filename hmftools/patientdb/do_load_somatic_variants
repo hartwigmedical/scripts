@@ -1,4 +1,6 @@
 #!/bin/bash
+source load_metadata
+
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -13,7 +15,9 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-sample=$(ls ${run_dir} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+#JOBA: Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
 echo "[INFO] Loading somatic variant data for sample: ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
