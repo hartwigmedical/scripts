@@ -11,6 +11,5 @@ fi
 purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple_pilot
 credentials=${base_path}/tools/patient-db_pilot/credentials
-gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output} ${credentials} -gc_profile ${gc_profile} $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output} ${credentials} $@

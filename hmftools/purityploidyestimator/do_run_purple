@@ -39,6 +39,8 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
+gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
+
 if [ -z "${credentials}" ]; then
     java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
         -jar ${purple_jar} \
@@ -48,7 +50,9 @@ if [ -z "${credentials}" ]; then
         -baf ${baf_file} \
         -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
         -run_dir ${run_dir} \
-        -output_dir ${purple_output}
+        -gc_profile ${gc_profile} \
+        -output_dir ${purple_output} \
+        $@
 else
     db_user=$(awk '/^user/ {print $2}' ${credentials})
     db_pass=$(awk '/^pass/ {print $2}' ${credentials})
@@ -63,6 +67,7 @@ else
         -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
         -run_dir ${run_dir} \
         -output_dir ${purple_output} \
+        -gc_profile ${gc_profile} \
         -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
         $@
 fi
