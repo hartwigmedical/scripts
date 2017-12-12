@@ -3,7 +3,7 @@ source load_metadata
 
 run_dir=$1 && shift
 
-# Load metadata
+# JOBA: Load metadata
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 amber_output=$(ls ${run_dir}/amber/${tumor_sample}.amber.baf)
