@@ -8,7 +8,7 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-purple_jar=${base_path}/tools/purple_v2.0/purple.jar
+purple_jar=${base_path}/tools/purple_v2.1/purple.jar
 purple_output=${run_dir}/purple
 credentials=${base_path}/tools/patient-db_v1.4/credentials
 
