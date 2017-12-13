@@ -246,7 +246,7 @@ class PONGenerator():
                                    (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
                                    variant,
                                    alt,
-                                   'GENOTYPE',
+                                   'HetAlt',
                                    vcf
                                )
                                )
@@ -258,7 +258,7 @@ class PONGenerator():
                                        (chromosomeToNumber(variant.CHROM), int(variant.POS), hash(variant.REF), hash(alt)),
                                        variant,
                                        alt,
-                                       'GENOTYPE',
+                                       'HetAlt',
                                        vcf
                                    )
                                    )
