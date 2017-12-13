@@ -138,32 +138,27 @@ cohort_gene_structual_variants<-function(dbConnect, genes, cohort) {
 }
 
 ############# EXECUTION
-load("~/hmf/purple.RData")
+load("~/hmf/pilot.RData")
 rm(allSamples)
 rm(backupSamples)
-cohort = cohort[cohort$sampleId %in% c('CPCT02180005T', 'CPCT02080055T', 'CPCT02180008T'), ]
+#cohort = cohort[cohort$sampleId %in% c('CPCT02180005T', 'CPCT02080055T', 'CPCT02180008T'), ]
 
 pilotDB = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 genes = query_gene_panel(pilotDB)
+
+cohortGeneCopyNumbers = cohort_gene_copynumber(pilotDB, genes, cohort)
+cohortPositionSomatics = cohort_position_somatics(pilotDB, genes, cohort)
+cohortGeneStructuralVariants = cohort_gene_structual_variants(pilotDB, genes, cohort)
+cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
+
 dbDisconnect(pilotDB)
 rm(pilotDB)
-
-prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-
-cohortPositionSomatics = cohort_position_somatics(prodDB, genes, cohort)
-cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
-cohortGeneCopyNumbers = cohort_gene_copynumber(prodDB, genes, cohort)
-cohortGeneStructuralVariants = cohort_gene_structual_variants(prodDB, genes, cohort)
-
-dbDisconnect(prodDB)
-rm(prodDB)
-
 
 cohortGeneComplete = merge(cohortGeneSomatics, cohortGeneStructuralVariants, by=c('gene', 'sampleId'), all=TRUE)
 cohortGeneComplete = merge(cohortGeneComplete, cohortGeneCopyNumbers, by=c('gene', 'sampleId'), all=TRUE)
 rowsToKeep = !is.na(cohortGeneComplete$somatics) | !is.na(cohortGeneComplete$structuralVariants) | cohortGeneComplete$copyNumberDeletion | cohortGeneComplete$copyNumberAmplification
 cohortGeneComplete <- cohortGeneComplete[rowsToKeep]
+cohortGeneComplete$cancerType <- sapply(cohortGeneComplete$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("cancerType")] })
 
 
-
-
+save(cohortPositionSomatics, cohortGeneSomatics, cohortGeneCopyNumbers, cohortGeneStructuralVariants, cohortGeneComplete, file = "~/hmf/pilotGenes.RData")
