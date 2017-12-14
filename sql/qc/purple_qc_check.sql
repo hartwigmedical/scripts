@@ -1,0 +1,1 @@
+SELECT qcStatus FROM purity WHERE sampleId IN ('XXX');
