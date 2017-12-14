@@ -14,7 +14,7 @@ if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ];
 fi
 
 # MIVO: get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
-RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | sort -nrk7,7 | head -1`
+RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | sort -bnrk8.2,8 | head -1`
 
 if [ -z "$RUN_ROW" ];
   then
@@ -38,3 +38,4 @@ java -Dsamjdk.buffer_size=0 \
     -bed ${BED_FILE} \
     -output ${SLICED_BAM} \
     -max_chunks 2000
+

@@ -391,7 +391,12 @@ sub readSampleSheet{
         elsif ( @header ){
             my %tmp = ();
             $tmp{ $_ } = shift @fields foreach @header;
-            my $sample_id = $tmp{ 'Sample_ID' };
+
+            ## skip "empty" lines (where no sample was defined)
+            my $sample_id_column = 'Sample_ID';
+            next unless defined $tmp{ $sample_id_column } and $tmp{ $sample_id_column } ne '';
+
+            my $sample_id = $tmp{ $sample_id_column };
             $output{ 'samples' }{ $sample_id } = \%tmp;
         }
     }	
