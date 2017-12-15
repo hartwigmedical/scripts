@@ -7,6 +7,9 @@ library(gridExtra)
 library("NMF")
 library(ggplot2)
 
+install.packages("Bio")
+library(BiocInstaller)
+
 myCOLORS = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
              "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
              "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
@@ -85,12 +88,10 @@ select_cancer_types<-function(dbConnect){
   return (dbGetQuery(dbConnect, query))
 }
 
-select_cohort<-function(dbConnect, type){
+select_DRUP<-function(dbConnect, type){
   query = paste(
-    "select s.sampleId,biopsySite from hmfpatients.clinical c, sample s, purity p where s.sampleId = c.sampleId and s.sampleId = p.sampleId ",
-    "and qcStatus = 'PASS' and status <> 'NO_TUMOR' and cancerType like '%",
-    type,
-    "%'",
+    "select p.sampleId,'NONE' as biopsySite from purity p where ",
+    "qcStatus = 'PASS' and status <> 'NO_TUMOR' and sampleId like 'DRUP%'",
     sep = "")
   return (dbGetQuery(dbConnect, query))
 }
@@ -165,7 +166,6 @@ calculate_signatures<-function(dbConnect,cohort,cancer_signatures){
   fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
   fit_contribution<-fit_res$contribution[, order(colnames(fit_res$contribution),decreasing=F),drop=FALSE]
   fit_contribution[prop.table(fit_contribution, margin=2)<0.03 | fit_contribution<100]<-0
-  selectRow = which(rowSums(fit_contribution)>0)
   orderVector<-colSums(fit_contribution)
   fit_contribution[, order(orderVector,decreasing=F),drop=FALSE]
 }
@@ -185,7 +185,7 @@ plot_fitted_signatures<-function(dbConnect, fit_contribution,cancer_signatures,c
   if (writePDF){
     pdf(file=paste(cancerType,"ALLRelative.pdf",sep=""),width=10)
   }
-  
+  selectRow = which(rowSums(fit_contribution)>0)
   if (any(colSums(fit_contribution)<highMutationLoadCutOff)) {
     p1<-plot_contribution(fit_contribution[selectRow,colSums(fit_contribution)<=highMutationLoadCutOff,drop=F], cancer_signatures[,selectRow],coord_flip = F, mode = chart_mode)+
       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7),legend.text=element_text(size=5),axis.title.y = element_text(size=6))+
@@ -198,8 +198,8 @@ plot_fitted_signatures<-function(dbConnect, fit_contribution,cancer_signatures,c
       scale_fill_manual( values= myCOLORS[selectRow])+labs(fill="")+ggtitle(paste(cancerType,"# of mutations: ",highMutationLoadCutOff,"to",veryHighMutationLoadCutOff))
     print(p2)
   }
-  if (any((fit_contribution)>veryHighMutationLoadCutOff)) {
-    p3<-plot_contribution(fit_contribution[selectRow,colSums(fit_contribution)>veryHighMutationLoadCutOff,drop=F], cancer_signatures[,selectRow],coord_flip = F, mode = chart_mode)+
+  if (any(colSums(fit_contribution)>veryHighMutationLoadCutOff)) {
+    p3<-plot_contribution(fit_contribution[selectRow,colSums(fit_contribution)>=veryHighMutationLoadCutOff,drop=F], cancer_signatures[,selectRow],coord_flip = F, mode = chart_mode)+
       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7),legend.text=element_text(size=5),axis.title.y = element_text(size=6))+
       scale_fill_manual( values= myCOLORS[selectRow])+labs(fill="")+ggtitle(paste(cancerType,"# of mutations >",veryHighMutationLoadCutOff))
     print(p3)
@@ -254,6 +254,7 @@ dbDisconnect(dbConnect)
 
 # PLOT subclonal
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
   cohort = select_cohort_with_subclones(dbConnect, cancerType,3000,0.10)
@@ -264,10 +265,12 @@ for (cancerType in cancerTypes$cancerType) {
 }
 dbDisconnect(dbConnect)
 
+cohort
+
 # PLOT ALL
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 fitted_signatures=list()
-#cancerType="Brain"
+#cohort = select_DRUP(dbConnect, "none")
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
   cohort = select_cohort(dbConnect, cancerType)
@@ -279,6 +282,14 @@ for (cancerType in cancerTypes$cancerType) {
 for (cancerType in cancerTypes$cancerType) {
   plot_fitted_signatures(dbConnect,fitted_signatures[[cancerType]],cancer_signatures,cancerType,"relative",T)
 }  
+
+# PLOT 2 samples
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+fitted_signatures=list()
+cancerType="none"
+cohort = data.frame(sampleId=c("DRUP01050010T","CPCT02050172T"),biopsySite=c(cancerType,cancerType))
+fitted_signatures[[cancerType]]<-calculate_signatures(dbConnect,cohort,cancer_signatures)
+plot_fitted_signatures(dbConnect,fitted_signatures[[cancerType]],cancer_signatures,cancerType,"relative",T)
 
 dbDisconnect(dbConnect)
 ######################################################################

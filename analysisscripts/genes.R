@@ -54,10 +54,9 @@ query_position_somatics<-function(dbConnect, genes, sample) {
     "  FROM somaticVariant s ",
     " WHERE sampleId = '", sample$sampleId, "'",
     "   AND filter = 'PASS'",
-    "   AND effect not in ('non coding exon variant', 'synonymous variant', 'UTR variant', 'sequence feature')",
+    "   AND effect not in ('non coding exon variant', 'synonymous variant', 'UTR variant', 'sequence feature','intron variant')",
     "   AND gene in (", geneString, ")",
     sep = "")
-  
   return (dbGetQuery(dbConnect, query)) 
 }
 
@@ -156,28 +155,27 @@ gene_summary<-function(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohort
 
 
 ############# EXECUTION
-load("~/hmf/pilot.RData")
+load("~/hmf/purple.RData")
 rm(allSamples)
 rm(backupSamples)
-cohort = cohort[1:5, ]
+#cohort = cohort[1:5, ]
 
 pilotDB = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-
 genes = query_gene_panel(pilotDB)
-cohortGeneStructuralVariants = cohort_gene_structual_variants(pilotDB, genes, cohort)
-cohortGeneCopyNumbers = cohort_gene_copynumber(pilotDB, genes, cohort)
-
-cohortPositionSomatics = cohort_position_somatics(pilotDB, cohortGeneCopyNumbers, cohort)
-
-cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
-
 dbDisconnect(pilotDB)
-rm(pilotDB)
+
+prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+cohortGeneStructuralVariants = cohort_gene_structual_variants(prodDB, genes, cohort)
+cohortGeneCopyNumbers = cohort_gene_copynumber(prodDB, genes, cohort)
+cohortPositionSomatics = cohort_position_somatics(prodDB, cohortGeneCopyNumbers, cohort)
+cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
+dbDisconnect(prodDB)
+rm(prodDB)
 
 cohortGeneComplete = gene_summary(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohortGeneStructuralVariants)
 
 
 # save(cohort, cohortPositionSomatics, cohortGeneSomatics, cohortGeneCopyNumbers, cohortGeneStructuralVariants, cohortGeneComplete, file = "~/hmf/pilotGenes.RData")
 
-save(cohort, cohortGeneCopyNumbers, cohortGeneStructuralVariants, file = "~/hmf/pilotGenes2.RData")
+save(cohort, cohortGeneCopyNumbers, cohortGeneStructuralVariants, file = "~/hmf/prodGenes.RData")
 

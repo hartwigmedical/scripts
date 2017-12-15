@@ -1,6 +1,6 @@
 library(RMySQL)
 library(plyr)
-LOAD_FROM_FILE = TRUE
+LOAD_FROM_FILE = FALSE
 DATA_FILE = "~/hmf/purple.RData"
 
 leftJoin<-function(left, right) {
@@ -162,11 +162,11 @@ if (LOAD_FROM_FILE) {
 } else {
   
   #Pilot
-  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
   allSamples = query_purity(dbConnect)
   
   cohort = allSamples
-  cohort = allSamples[1:7, , drop = FALSE]
+  cohort = allSamples[1:100, , drop = FALSE]
   cohort = attach_qc_score(dbConnect, cohort)
   cohort = attach_sample_data(dbConnect, cohort)
   cohort = attach_structural_variants(dbConnect, cohort)
