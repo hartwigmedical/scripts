@@ -1,0 +1,66 @@
+#!/bin/bash
+source load_metadata
+
+run_dir=$1 && shift
+
+load_joint_name_from_metadata() {
+    local run_dir=$1
+    local metadata=${run_dir}/metadata
+    tumor=$(jq -r '.tumor_sample' ${metadata})
+    reference=$(jq -r '.ref_sample' ${metadata})
+    echo ${reference}_${tumor}
+}
+
+### Dependencies
+bcftools=/data/common/tools/bcftools_v1.3/bcftools
+hotspot=/data/common/dbs/somatic_hotspot/Hotspot.tsv.gz
+gatk=/data/common/tools/gatk_v3.4.46-hmf
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
+
+### Input Files
+indels=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*indels.vcf)
+snvs=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*snvs.vcf)
+
+### Output Directory
+output_dir=${run_dir}/somaticVariants/postStrelka
+mkdir -p ${output_dir}
+
+### Output Files
+indels_hotspot=${output_dir}/all.somatics.indels.hotspot.vcf
+indels_hotspot_filtered=${output_dir}/all.somatics.indels.hotspot.filtered.vcf
+indels_passed=${output_dir}/passed.somatics.indels.hotspot.vcf
+
+snvs_hotspot=${output_dir}/all.somatics.snvs.hotspot.vcf
+snvs_hotspot_filtered=${output_dir}/all.somatics.snvs.hotspot.filtered.vcf
+snvs_passed=${output_dir}/passed.somatics.snvs.hotspot.vcf
+
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+combined_processed=${output_dir}/${joint_name}.processed.vcf
+
+### Hotspots
+echo "Annotate and include hotspots"
+${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${indels} -o ${indels_hotspot}
+${bcftools} filter -e HOTSPOT=1 ${indels_hotspot} -s PASS -o ${indels_hotspot_filtered}
+${bcftools} filter -i 'FILTER="PASS"' ${indels_hotspot_filtered} -o ${indels_passed}
+
+${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} -o ${snvs_hotspot}
+${bcftools} filter -e HOTSPOT=1 ${snvs_hotspot} -s PASS -o ${snvs_hotspot_filtered}
+${bcftools} filter -i 'FILTER="PASS"' ${snvs_hotspot_filtered} -o ${snvs_passed}
+
+### Combine
+echo "Combine variants"
+java -jar "${gatk}/GenomeAnalysisTK.jar" \
+    -T CombineVariants \
+    -R ${ref_genome} \
+    --genotypemergeoption unsorted \
+    -V:snvs ${snvs_passed} \
+    -V:indels ${indels_passed} \
+    -o ${combined_processed}
+
+### Clean up
+rm -f ${indels_hotspot}
+rm -f ${indels_hotspot_filtered}
+rm -f ${indels_passed}
+rm -f ${snvs_hotspot}
+rm -f ${snvs_hotspot_filtered}
+rm -f ${snvs_passed}
