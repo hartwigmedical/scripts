@@ -37,11 +37,7 @@ query_sample_copynumber<-function(dbConnect, genes, sample) {
     "  AND gene in (", geneString, ")",
     sep = "")
  
-  result = (column_as_names(dbGetQuery(dbConnect, query), .drop = FALSE)) 
-  result$copyNumberAmplification <- ifelse(result$minCopyNumber > 8 | result$minCopyNumber > 2.2 * sample$ploidy, TRUE, FALSE)
-  result$copyNumberDeletion <- ifelse(result$minCopyNumber < 0.5, TRUE, FALSE)
-  
-  return (result)
+  return((column_as_names(dbGetQuery(dbConnect, query), .drop = FALSE))) 
 }
 
 cohort_gene_copynumber<-function(dbConnect, genes, cohort) {
@@ -65,8 +61,7 @@ query_position_somatics<-function(dbConnect, genes, sample) {
   return (dbGetQuery(dbConnect, query)) 
 }
 
-sample_position_somatics<-function(dbConnect, genes, sample) {
-  sampleGeneCopyNumbers = query_sample_copynumber(dbConnect, genes, sample)
+sample_position_somatics<-function(dbConnect, sampleGeneCopyNumbers, sample) {
   sampleSomatics = query_position_somatics(dbConnect, genes, sample)
   result = merge(sampleSomatics, sampleGeneCopyNumbers, by="gene",all.x=TRUE)
   result$biallelic <- ifelse(result$ploidy + 0.5 > result$minCopyNumber | result$loh, TRUE, FALSE)
@@ -74,23 +69,17 @@ sample_position_somatics<-function(dbConnect, genes, sample) {
   return (result)
 }
 
-cohort_position_somatics<-function(dbConnect, genes, cohort) {
-  return (applySamples(cohort, function(x) {sample_position_somatics(dbConnect, genes, x)}))
+cohort_position_somatics<-function(dbConnect, cohortGeneCopyNumbers, cohort) {
+  return (applySamples(cohort, function(x) {sample_position_somatics(dbConnect, cohortGeneCopyNumbers[cohortGeneCopyNumbers$sampleId == x$sampleId, ], x)}))
 }
 
 cohort_gene_somatics<-function(cohortPositionSomatics) {
   DT = data.table(cohortPositionSomatics)
   cohortGeneSomatics = DT[, .(somatics=length(loh),
-                                 minGeneCopyNumber=min(minCopyNumber), maxGeneCopyNumber = max(maxCopyNumber),
                                  minSomaticCopyNumber=min(copyNumber), maxSomaticCopyNumber = max(copyNumber),
                                  minSomaticPloidy=min(ploidy), maxSomaticPloidy=max(ploidy), sumSomaticPloidy=sum(ploidy),                                  
                                  somaticSingleHitBiallelic=any(biallelic)), 
                              by=list(gene, sampleId)]
-  
-  cohortGeneSomatics$somaticMultiHitBiallelic<-ifelse(cohortGeneSomatics$somatics > 1 & cohortGeneSomatics$sumSomaticPloidy + 0.5 > cohortGeneSomatics$minGeneCopyNumber, TRUE, FALSE)
-  cohortGeneSomatics$somaticSingleHitNoneBiallelic<-ifelse(cohortGeneSomatics$somatics == 1 & !cohortGeneSomatics$somaticSingleHitBiallelic, TRUE, FALSE)
-  cohortGeneSomatics$somaticMultiHitNonBiallelic<-ifelse(cohortGeneSomatics$somatics > 1 & !cohortGeneSomatics$somaticMultiHitBiallelic, TRUE, FALSE)
-  
   return (cohortGeneSomatics)
 }
 
@@ -126,10 +115,6 @@ sample_gene_structual_variants<-function(dbConnect, genes, sample) {
                       minSVCopyNumber=min(minCopyNumber), maxSVCopyNumber=max(maxCopyNumber), 
                       minSVPloidy=min(minPloidy), maxSVPloidy=max(maxPloidy), sumSVPloidy=sum(maxPloidy))
                   , by=list(gene, sampleId)]
-  
-  # THIS IS WRONG
-  sampleGene$svBiallelic <- ifelse(sampleGene$sumSVPloidy >  sampleGene$minSVPloidy, TRUE, FALSE )
-  
   return (sampleGene)
 }
 
@@ -137,28 +122,62 @@ cohort_gene_structual_variants<-function(dbConnect, genes, cohort) {
   return (applySamples(cohort, function(x) {sample_gene_structual_variants(dbConnect, genes, x)}))
 }
 
+############# COMBINE AND ADD FEATURES
+gene_summary<-function(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohortGeneStructuralVariants) {
+  
+  # Merge
+  result = merge(cohortGeneSomatics, cohortGeneStructuralVariants, by=c('gene', 'sampleId'), all=TRUE)
+  result = merge(result, cohortGeneCopyNumbers, by=c('gene', 'sampleId'), all=TRUE)
+  
+  #Add cohort data
+  result$ploidy <- sapply(result$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("ploidy")] })
+  result$cancerType <- sapply(result$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("cancerType")] })
+  
+  # Copy number features 
+  result$copyNumberAmplification <- ifelse(result$minCopyNumber > 8 | result$minCopyNumber > 2.2 * result$ploidy, TRUE, FALSE)
+  result$copyNumberDeletion <- ifelse(result$minCopyNumber < 0.5, TRUE, FALSE)
+  result$ploidy <- NULL
+  
+  # Filter out uninteresting rows
+  rowsToKeep = !is.na(result$somatics) | !is.na(result$structuralVariants) | result$copyNumberDeletion | result$copyNumberAmplification
+  result <- result[rowsToKeep]
+  
+  # Structural Variant Features
+  result$svBiallelic <- ifelse(result$sumSVPloidy >  result$minCopyNumber, TRUE, FALSE)
+  
+  # Somatic Features
+  result$somaticMultiHitBiallelic<-ifelse(result$somatics > 1 & result$sumSomaticPloidy + 0.5 > result$minCopyNumber, TRUE, FALSE)
+  result$somaticSingleHitNoneBiallelic<-ifelse(result$somatics == 1 & !result$somaticSingleHitBiallelic, TRUE, FALSE)
+  result$somaticMultiHitNonBiallelic<-ifelse(result$somatics > 1 & !result$somaticMultiHitBiallelic, TRUE, FALSE)
+  
+  return (result)
+}
+
+
+
 ############# EXECUTION
 load("~/hmf/pilot.RData")
 rm(allSamples)
 rm(backupSamples)
-#cohort = cohort[cohort$sampleId %in% c('CPCT02180005T', 'CPCT02080055T', 'CPCT02180008T'), ]
+cohort = cohort[1:5, ]
 
 pilotDB = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-genes = query_gene_panel(pilotDB)
 
-cohortGeneCopyNumbers = cohort_gene_copynumber(pilotDB, genes, cohort)
-cohortPositionSomatics = cohort_position_somatics(pilotDB, genes, cohort)
+genes = query_gene_panel(pilotDB)
 cohortGeneStructuralVariants = cohort_gene_structual_variants(pilotDB, genes, cohort)
+cohortGeneCopyNumbers = cohort_gene_copynumber(pilotDB, genes, cohort)
+
+cohortPositionSomatics = cohort_position_somatics(pilotDB, cohortGeneCopyNumbers, cohort)
+
 cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
 
 dbDisconnect(pilotDB)
 rm(pilotDB)
 
-cohortGeneComplete = merge(cohortGeneSomatics, cohortGeneStructuralVariants, by=c('gene', 'sampleId'), all=TRUE)
-cohortGeneComplete = merge(cohortGeneComplete, cohortGeneCopyNumbers, by=c('gene', 'sampleId'), all=TRUE)
-rowsToKeep = !is.na(cohortGeneComplete$somatics) | !is.na(cohortGeneComplete$structuralVariants) | cohortGeneComplete$copyNumberDeletion | cohortGeneComplete$copyNumberAmplification
-cohortGeneComplete <- cohortGeneComplete[rowsToKeep]
-cohortGeneComplete$cancerType <- sapply(cohortGeneComplete$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("cancerType")] })
+cohortGeneComplete = gene_summary(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohortGeneStructuralVariants)
 
 
-save(cohortPositionSomatics, cohortGeneSomatics, cohortGeneCopyNumbers, cohortGeneStructuralVariants, cohortGeneComplete, file = "~/hmf/pilotGenes.RData")
+# save(cohort, cohortPositionSomatics, cohortGeneSomatics, cohortGeneCopyNumbers, cohortGeneStructuralVariants, cohortGeneComplete, file = "~/hmf/pilotGenes.RData")
+
+save(cohort, cohortGeneCopyNumbers, cohortGeneStructuralVariants, file = "~/hmf/pilotGenes2.RData")
+
