@@ -31,12 +31,22 @@ sample_mutations<-function(dbConnect, cohort)
   raw_data = dbGetQuery(dbConnect, query)
 }
 
-### TO DO - ENSURE WE ONLY GET 1 copy of each tumor!!!!
+DNDSCV_DATA_FILE="~/hmf/dndscv.RData"
 
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+####### LOAD FROM DB ################
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 #mutations<-sample_mutations(dbConnect,'BREAST')
+### TO DO - ENSURE WE ONLY GET 1 copy of each tumor!!!!
 mutations<-sample_mutations_all_snv(dbConnect)
 dbDisconnect(dbConnect)
+save(mutations, cohort,  file = DNDSCV_DATA_FILE)
+
+###########  LOAD FROM FILE
+
+load(DNDSCV_DATA_FILE)
+
+########### RUN dndsCV #############
+
 output<-dndscv(mutations)
 output
 
