@@ -61,6 +61,3 @@ then
 else
        echo "${merged_passed} already exists!"
 fi
-
-#mappability_bed=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
-#/data/common/tools/bcftools_v1.3/bcftools annotate -a /data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  passed.somatics.merged.vcf -o passed.somatics.mappable.vcf

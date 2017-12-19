@@ -1,0 +1,47 @@
+#!/bin/bash
+source load_metadata
+run_dir=$1 && shift
+
+### Dependencies
+bcftools=/data/common/tools/bcftools_v1.3/bcftools
+gatk=/data/common/tools/gatk_v3.4.46-hmf
+strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-post-process.jar
+high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
+mappability_bed=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
+CALLING_DBSNP=/data/common/dbs/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+ANNOTATE_IDDB=/data/common/dbs/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+
+### Output Directory
+output_dir=${run_dir}/somaticVariants/postStrelka
+
+### Input
+snpEff=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.vcf
+
+### Output
+ann1=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann1.vcf
+ann2=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann2.vcf
+final=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.annotated.vcf
+
+java -jar "${gatk}/GenomeAnalysisTK.jar" \
+    -T VariantAnnotator \
+    -nt 4 \
+    -R "${ref_genome}" \
+    -o "${ann1}" \
+    --variant "${snpEff}" \
+    --dbsnp "${CALLING_DBSNP}" \
+    --alwaysAppendDbsnpId
+
+java -jar "${gatk}/GenomeAnalysisTK.jar" \
+    -T VariantAnnotator \
+    -nt 4 \
+    -R "${ref_genome}" \
+    -o "${ann2}" \
+    --variant "${ann1}" \
+    --dbsnp "${ANNOTATE_IDDB}" \
+    --alwaysAppendDbsnpId
+
+${bcftools} annotate -a ${mappability_bed} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${final}
+
+#rm ${ann1}
+#rm ${ann2}
