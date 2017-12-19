@@ -19,9 +19,6 @@ output_dir=${run_dir}/somaticVariants/postStrelka
 mkdir -p ${output_dir}
 
 ### Output Files
-joint_name=$(load_joint_name_from_metadata)
-tumor_sample=$(load_tumor_sample_from_metadata)
-
 merged_passed=${output_dir}/passed.somatics.merged.vcf
 
 if [[ ! -e ${merged_passed} ]]
