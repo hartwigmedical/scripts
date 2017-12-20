@@ -7,13 +7,8 @@ output_vcf=$1 && shift
 bcftools=/data/common/tools/bcftools_v1.3/bcftools
 tabix=/data/common/tools/tabix_v0.2.6/tabix
 
-echo $(date) "PON Filtering Variants"
+echo "PON Filtering Variants -" $(date)
 ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ -O u ${input_vcf} | \
 ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${output_vcf}
 
 ${tabix} -p vcf ${output_vcf}
-
-
-#do_strelka_pon_filter \
-#    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/postStrelka/annotated.vcf.gz \
-#    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/postStrelka/final.vcf.gz

@@ -40,11 +40,11 @@ echo "Annotating Somatic PON -" $(date)
 ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${ann4} -o ${output_vcf} -O z
 ${tabix} ${output_vcf} -p vcf
 
-### CLEAN UP
-#rm ${ann1}*
-#rm ${ann2}*
-#rm ${ann3}*
-#rm ${ann4}*
+### Clean up
+rm ${ann1}*
+rm ${ann2}*
+rm ${ann3}*
+rm ${ann4}*
 
 #do_strelka_annotation \
 #    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/postStrelka/passed.somatics.post_processed.mnvs.snpEff.vcf.gz \

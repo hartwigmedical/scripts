@@ -5,19 +5,9 @@ MNV_VALIDATOR=/data/common/tools/mnvdetector_v1.0/mnv-validator.jar
 BAM_SLICER_SCRIPT=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
 
 RUN=$1
-
-if [ -z "$RUN" ];
-  then
-    echo "Usage: $ ./mnv_detector <runpath>"
-    echo "   runpath = Path to pipeline run dir"
-    echo "Notes:"
-    echo "  - should have a ./metadata file in rundir"
-    echo "  - somatic vcf should meet format *_post_processed.vcf"
-    exit 1
-fi
-
-VCF=$( find ${RUN} -wholename "*/somaticVariants/*passed.somatics.post_processed.vcf" )
-SAMPLE=$( cat ${RUN}/metadata | jq -r '.tumor_sample' )
+SAMPLE=$1 && shift
+VCF=$1 && shift
+FINAL_VCF=$1 && shift
 
 ## MIVO: some sanity checks
 if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
@@ -29,7 +19,6 @@ VCF_FILE_NAME=`basename ${VCF}`
 VCF_NAME="${VCF_FILE_NAME%.*}"
 MNV_BED="${VCF_NAME}.mnvs.bed"
 MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
-FINAL_VCF="${VCF_NAME}.mnvs.vcf"
 
 if ! java -jar ${MNV_DETECTOR} \
     -v ${VCF} \
