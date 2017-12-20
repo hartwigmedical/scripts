@@ -8,7 +8,7 @@ credentials=/data/common/tools/patient-db_pilot/credentials
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 
 # Files
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
 if [ $? -ne 0 ]
 then
     echo "Unable to locate post processed somatic variants. Exiting."
