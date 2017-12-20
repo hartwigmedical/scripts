@@ -11,16 +11,16 @@ download_path=/data/schuberg/cpct_drup_downloads
 echo "[INFO] Downloading set ${set} to ${download_path}"
 download_set -s ${set} -p ${download_path}
 
-rerun_path=/data/schuberg/processed_runs
-echo "[INFO] Copying set ${set} to rerun path ${rerun_path}"
-cp -r ${download_path}/${set} ${rerun_path}/${set}
+processed_path=/data/schuberg/processed_runs
+echo "[INFO] Copying set ${set} to processed path ${processed_path}"
+cp -r ${download_path}/${set} ${processed_path}/${set}
 
 # KODU: Purple script also triggers reruns of BPI, amber and cobalt
 echo "[INFO] Rerunning algorithms on ${set}"
-do_run_purple_prod ${rerun_path}/${set}
+do_run_purple_prod ${processed_path}/${set}
 
 echo "[INFO] Loading somatics into database for ${set}"
-do_load_somatic_variants_prod ${rerun_path}/${set}
+do_load_somatic_variants_prod ${processed_path}/${set}
 
 echo "[INFO] Loading structural variants into database for ${set}"
-do_run_sv_loader_prod ${rerun_path}/${set}
+do_run_sv_loader_prod ${processed_path}/${set}
