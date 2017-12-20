@@ -27,7 +27,7 @@ then
     ${bcftools} filter -i 'FILTER="PASS"' -o ${indels_passed}
 
     echo "Annotate and filter SNV hotspots -" $(date)
-    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} - O u | \
+    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} -O u | \
     ${bcftools} filter -e HOTSPOT=1 -s PASS - O u | \
     ${bcftools} filter -i 'FILTER="PASS"' -o ${snvs_passed}
 
