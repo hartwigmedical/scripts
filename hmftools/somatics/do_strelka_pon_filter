@@ -1,0 +1,18 @@
+#!/bin/bash
+source load_metadata
+input_vcf=$1 && shift
+output_vcf=$1 && shift
+
+### Dependencies
+bcftools=/data/common/tools/bcftools_v1.3/bcftools
+tabix=/data/common/tools/tabix_v0.2.6/tabix
+
+echo $(date) "Filtering PON"
+${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ -Ou ${input} | \
+${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${output}
+
+${tabix} -p vcf ${output}
+
+
+
+#do_strelka_pon_filter /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/postStrelka/passed.somatics.post_processed.mnvs.snpEff.ann5.vcf.gz final.vcf.gz
