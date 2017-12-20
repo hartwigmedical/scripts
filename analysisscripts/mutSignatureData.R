@@ -9,10 +9,6 @@ library(grid)
 library(gridExtra)
 library(ggplot2)
 
-LOAD.FILE = TRUE
-
-########### FUNCTION DEFINITIONS ######################
-
 getCOSMICSignatures <- function() {
     sp_url = "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
     cancer_signatures = read.table(sp_url, sep = "\t", header = T)
@@ -100,6 +96,7 @@ process_variants <- function(variants) {
     result = list()
     for (s in samples) {
 
+        # slice for our variants
         sample_variants = variants[sample == s]
 
         # TODO: do we want to ignore unknown clonality??
@@ -118,11 +115,9 @@ process_variants <- function(variants) {
         tmp = merge(tmp, clonalA, all=TRUE)
         tmp = merge(tmp, clonalB, all=TRUE)
         tmp[is.na(tmp)] <- 0 # TODO check this works
-
-        result[[sample]] = tmp
-
         stopifnot(nrow(tmp) == 96)
-        gc(verbose = FALSE)
+
+        result[[s]] = tmp
     }
 
     return(result)
@@ -131,25 +126,23 @@ process_variants <- function(variants) {
 ### START -> DATA SETUP
 
 dataFile = "~/hmf/mutSignature2.RData"
-if (LOAD.FILE) {
-    load(dataFile)
-} else {
-    cancer_signatures = getCOSMICSignatures()
 
-    dbConnect = dbConnect(MySQL(), dbname = 'hmfpatients', groups = "RAnalysis")
-    cohort = select_cohort(dbConnect) # returns a DT
-    variants = query_variants(dbConnect) # returns a DT
-    dbDisconnect(dbConnect)
+cancer_signatures = getCOSMICSignatures()
 
-    # list of patients -> data.table of mutation counts
-    mutation_vectors = process_variants(variants)
+dbConnect = dbConnect(MySQL(), dbname = 'hmfpatients', groups = "RAnalysis")
+cohort = select_cohort(dbConnect) # returns a DT
+variants = query_variants(dbConnect) # returns a DT
+dbDisconnect(dbConnect)
 
-    save(cancer_signatures, cohort, mutation_vectors, file = dataFile)
+# list of patients -> data.table of mutation counts
+mutation_vectors = process_variants(variants)
+
+signatures = list()
+for (s in cohort$sampleId) {
+    if (!is.null(mutation_vectors[[s]])) {
+        res = fit_to_signatures(mutation_vectors[[s]][, - c(1, 2)], cancer_signatures)
+        signatures[[s]] <- res$contribution
+    }
 }
 
-# distinct cancer types, excluding NA
-cancer_types = na.omit(unique(cohort$cancerType))
-cancer_types = sort(cancer_types)
-
-### DATA SETUP -> END
-
+save(cancer_signatures, cohort, mutation_vectors, file = dataFile)
