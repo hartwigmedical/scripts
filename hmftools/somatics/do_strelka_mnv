@@ -12,8 +12,7 @@ FINAL_VCF=$1 && shift
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
-OUTPUT_DIR=`dirname ${VCF}`
-SLICED_BAM="${OUTPUT_DIR}/${SAMPLE}_dedup.realigned.sliced.bam"
+SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 VCF_NAME="${VCF%.*}"
 MNV_BED="${VCF_NAME}.mnvs.bed"
 MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
