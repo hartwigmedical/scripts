@@ -32,7 +32,7 @@ then
     ${bcftools} filter -i 'FILTER="PASS"' -o ${snvs_passed}
 
     ### Combine
-    echo "Combine variants"
+    echo "Combining Variants -" $(date)
     java -jar "${gatk}/GenomeAnalysisTK.jar" \
         -T CombineVariants \
         -R ${ref_genome} \
@@ -42,8 +42,8 @@ then
         -o ${output_vcf}
 
     ### Clean up
-    #rm -f ${indels_passed}*
-    #rm -f ${snvs_passed}*
+    rm -f ${indels_passed}*
+    rm -f ${snvs_passed}*
 else
-       echo "${output_vcf} already exists!"
+    echo "Combining variants already complete -" $(date)
 fi

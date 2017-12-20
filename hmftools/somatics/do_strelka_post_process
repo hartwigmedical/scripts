@@ -1,28 +1,21 @@
 #!/bin/bash
-source load_metadata
-run_dir=$1 && shift
+
+sample=$1 && shift
+input_vcf=$1 && shift
+output_vcf=$1 && shift
 
 ### Dependencies
 strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-post-process.jar
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 
-### Output Directory
-output_dir=${run_dir}/somaticVariants/postStrelka
-
-### Input
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-merged_passed=${output_dir}/passed.somatics.merged.vcf
-
-### Output
-post_processed=${output_dir}/passed.somatics.post_processed.vcf
-
-if [[ ! -e ${post_processed} ]]
+if [[ ! -e ${output_vcf} ]]
 then
+    echo "Post processing variants -" $(date)
     java -jar ${strelka_post_process_jar} \
-        -v ${merged_passed} \
+        -v ${input_vcf} \
         -hc_bed ${high_confidence_bed} \
-        -t ${tumor_sample} \
-        -o ${post_processed}
+        -t ${sample} \
+        -o ${output_vcf}
 else
-    echo "${post_processed} already exists!"
+    echo "Post processing variants already complete -" $(date)
 fi
