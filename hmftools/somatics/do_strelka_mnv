@@ -4,13 +4,11 @@ MNV_DETECTOR=/data/common/tools/mnvdetector_v1.0/mnv-detector.jar
 MNV_VALIDATOR=/data/common/tools/mnvdetector_v1.0/mnv-validator.jar
 BAM_SLICER_SCRIPT=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
 
-RUN=$1
 SAMPLE=$1 && shift
 VCF=$1 && shift
 FINAL_VCF=$1 && shift
 
 ## MIVO: some sanity checks
-if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
