@@ -9,7 +9,7 @@ tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 ### Dependencies
 MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
-CALLING_DBSNP=/data/common/dbs/GATK_bundle_v2.8/dbsnp_138.b37.vcf.gz
+CALLING_DBSNP=/data/common/dbs/GATK_bundle_v2.8/dbsnp_137.b37.vcf.gz
 ANNOTATE_IDDB=/data/common/dbs/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
 GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
 SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
