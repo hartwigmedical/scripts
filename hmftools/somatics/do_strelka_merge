@@ -15,7 +15,7 @@ strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-po
 indels=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*indels.vcf)
 snvs=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*snvs.vcf)
 
-if [[ ! -e ${merged_passed} ]]
+if [[ ! -e ${output_vcf} ]]
 then
     indels_passed=${output_vcf}.indels
     snvs_passed=${output_vcf}.snvs
@@ -39,11 +39,11 @@ then
         --genotypemergeoption unsorted \
         -V:snvs ${snvs_passed} \
         -V:indels ${indels_passed} \
-        -o ${merged_passed}
+        -o ${output_vcf}
 
     ### Clean up
     #rm -f ${indels_passed}*
     #rm -f ${snvs_passed}*
 else
-       echo "${merged_passed} already exists!"
+       echo "${output_vcf} already exists!"
 fi
