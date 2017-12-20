@@ -5,31 +5,13 @@ SNPEFF_FLAG=" -hgvs -lof -no-downstream -no-upstream -no-intergenic -noShiftHgvs
 SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
 SNPEFF_DB="GRCh37.75"
 
-RUN=$1
-
-if [ -z "$RUN" ];
-  then
-    echo "Usage: $ ./mnv_detector <runpath>"
-    echo "   runpath = Path to pipeline run dir"
-    echo "Notes:"
-    echo "  - should have a ./metadata file in rundir"
-    echo "  - somatic vcf should meet format *_post_processed.vcf"
-    exit 1
-fi
-
-VCF=$( find ${RUN} -wholename "*/somaticVariants/*passed.somatics.post_processed.vcf" )
-SAMPLE=$( cat ${RUN}/metadata | jq -r '.tumor_sample' )
+SAMPLE=$1 && shift
+FINAL_VCF=$1 && shift
+ANNOTATED_VCF=$1 && shift
 
 ## MIVO: some sanity checks
-if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
-if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
+if [[ ! -f "${FINAL_VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
-
-SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
-VCF_FILE_NAME=`basename ${VCF}`
-VCF_NAME="${VCF_FILE_NAME%.*}"
-FINAL_VCF="${VCF_NAME}.mnvs.vcf"
-ANNOTATED_VCF="${VCF_NAME}.mnvs.snpEff.vcf"
 
 if ! java -jar ${SNPEFF_ROOT}/snpEff.jar \
     -c "${SNPEFF_ROOT}/snpEff.config" "${SNPEFF_DB}" \
