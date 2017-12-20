@@ -20,23 +20,23 @@ ann2=${output_vcf}.tmp2
 ann3=${output_vcf}.tmp3
 ann4=${output_vcf}.tmp4
 
-echo $(date) "Annotating DBSNP"
+echo "Annotating DBSNP -" $(date)
 ${bcftools} annotate -a ${CALLING_DBSNP} -c ID ${input_vcf} -o ${ann1} -O z
 ${tabix} ${ann1} -p vcf
 
-echo $(date) "Annotating IDDB"
+echo "Annotating IDDB -" $(date)
 ${bcftools} annotate -a ${ANNOTATE_IDDB} -c =ID ${ann1} -o ${ann2} -O z
 ${tabix} ${ann2} -p vcf
 
-echo $(date) "Annotating Mappability"
-${bcftools} annotate -a ${mappability_bed} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${ann3} -O z
+echo "Annotating Mappability -" $(date)
+${bcftools} annotate -a ${MAPPABILITY_BED} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${ann3} -O z
 ${tabix} ${ann3} -p vcf
 
-echo $(date) "Annotating Germline PON"
+echo "Annotating Germline PON -" $(date)
 ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${ann3} -o ${ann4} -O z
 ${tabix} ${ann4} -p vcf
 
-echo $(date) "Annotating Somatic PON"
+echo "Annotating Somatic PON -" $(date)
 ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${ann4} -o ${output_vcf} -O z
 ${tabix} ${output_vcf} -p vcf
 
