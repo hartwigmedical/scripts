@@ -9,8 +9,12 @@ strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-po
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 mappability_bed=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
-CALLING_DBSNP=/data/common/dbs/GATK_bundle_v2.8/dbsnp_137.b37.vcf
+tabix=/data/common/tools/tabix_v0.2.6/tabix
+CALLING_DBSNP=/data/common/dbs/GATK_bundle_v2.8/dbsnp_138.b37.vcf.gz
 ANNOTATE_IDDB=/data/common/dbs/cosmic_v76/CosmicCodingMuts_v76.vcf.gz
+GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_POM.vcf.gz
+SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_POM.vcf.gz
+
 
 ### Output Directory
 output_dir=${run_dir}/somaticVariants/postStrelka
@@ -19,29 +23,66 @@ output_dir=${run_dir}/somaticVariants/postStrelka
 snpEff=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.vcf
 
 ### Output
-ann1=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann1.vcf
-ann2=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann2.vcf
-final=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.annotated.vcf
+ann1=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann1.vcf.gz
+ann2=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann2.vcf.gz
+ann3=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann3.vcf.gz
+ann4=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann4.vcf.gz
+ann5=${output_dir}/passed.somatics.post_processed.mnvs.snpEff.ann5.vcf.gz
 
-java -jar "${gatk}/GenomeAnalysisTK.jar" \
-    -T VariantAnnotator \
-    -nt 4 \
-    -R "${ref_genome}" \
-    -o "${ann1}" \
-    --variant "${snpEff}" \
-    --dbsnp "${CALLING_DBSNP}" \
-    --alwaysAppendDbsnpId
+#java -jar "${gatk}/GenomeAnalysisTK.jar" \
+#    -T VariantAnnotator \
+#    -nt 4 \
+#    -R "${ref_genome}" \
+#    -o "${ann1}" \
+#    --variant "${snpEff}" \
+#    --dbsnp "${CALLING_DBSNP}" \
+#    --alwaysAppendDbsnpId
 
-java -jar "${gatk}/GenomeAnalysisTK.jar" \
-    -T VariantAnnotator \
-    -nt 4 \
-    -R "${ref_genome}" \
-    -o "${ann2}" \
-    --variant "${ann1}" \
-    --dbsnp "${ANNOTATE_IDDB}" \
-    --alwaysAppendDbsnpId
+#java -jar "${gatk}/GenomeAnalysisTK.jar" \
+#    -T VariantAnnotator \
+#    -nt 4 \
+#    -R "${ref_genome}" \
+#    -o "${ann2}" \
+#    --variant "${ann1}" \
+#    --dbsnp "${ANNOTATE_IDDB}" \
+#    --alwaysAppendDbsnpId
 
-${bcftools} annotate -a ${mappability_bed} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${final}
 
+bgzip ${snpEff}
+${tabix} ${snpEff}.gz -p vcf
+
+echo "Annotating DBSNP"
+${bcftools} annotate -a ${CALLING_DBSNP} -c ID ${snpEff}.gz -o ${ann1} -O z
+${tabix} ${ann1} -p vcf
+
+echo "Annotating IDDB"
+${bcftools} annotate -a ${ANNOTATE_IDDB} -c =ID ${ann1} -o ${ann2} -O z
+${tabix} ${ann2} -p vcf
+
+echo "Annotating Mappability"
+${bcftools} annotate -a ${mappability_bed} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${ann3} -O z
+${tabix} ${ann3} -p vcf
+
+echo "Annotating GERMLINE PON"
+${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${ann3} -o ${ann4} -O z
+${tabix} ${ann4} -p vcf
+
+echo "Annotating SOAMTIC PON"
+${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${ann4} -o ${ann5} -O z
+${tabix} ${ann5} -p vcf
+
+
+echo "Annotations complete!"
 #rm ${ann1}
 #rm ${ann2}
+
+#/data/common/tools/bcftools_v1.3/bcftools annotate -a /data/experiments/strelkaPON/strelkaPON.vcf.gz -h ~/strelka/pon.hdr -c CHROM,POS,REF,ALT,PON_COUNT  -o passed.somatics.post_processed.mnvs.snpEff.annotated.pon.vcf passed.somatics.post_processed.mnvs.snpEff.annotated.vcf
+#PON
+#/data/common/tools/bcftools_v1.3/bcftools annotate -a /data/experiments/strelkaPON/strelkaPON.vcf.gz -c CHROM,POS,REF,ALT,PON_COUNT  -O z -o passed.somatics.post_processed.mnvs.snpEff.annotated.pon.vcf passed.somatics.post_processed.mnvs.snpEff.annotated.vcf.gz
+#DBSNP
+#/data/common/tools/bcftools_v1.3/bcftools annotate -a /data/common/dbs/GATK_bundle_v2.8/dbsnp_138.b37.vcf.gz -c ID passed.somatics.post_processed.mnvs.snpEff.vcf.gz -o jon.test.vcf.gz -O z
+#IDDB
+#/data/common/tools/bcftools_v1.3/bcftools annotate -a /data/common/dbs/cosmic_v76/CosmicCodingMuts_v76.vcf.gz -c =ID jon.test.vcf.gz -o jon.test2.vcf
+#bgzip passed.somatics.post_processed.mnvs.snpEff.vcf
+#/data/common/tools/tabix_v0.2.6/tabix -p vcf passed.somatics.post_processed.mnvs.snpEff.vcf.gz
+#/data/common/tools/tabix_v0.2.6/tabix -p vcf jon.test.vcf.gz
