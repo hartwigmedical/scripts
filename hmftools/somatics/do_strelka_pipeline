@@ -42,7 +42,7 @@ then
     do_strelka_snpeff ${sample} ${mnv_vcf} ${snpEff_vcf}
 fi
 
-bgzip ${snfEff_vcf}
+bgzip ${snpEff_vcf}
 ${tabix} -p vcf ${snpEff_vcf_gz}
 
 do_strelka_annotation ${snpEff_vcf_gz} ${annotated_vcf_gz}
