@@ -23,18 +23,22 @@ final_vcf_gz=${output_dir}/${joint_name}_post_processed.v2.vcf.gz
 
 #### Execution
 if [[ ! -e ${merged_vcf} ]]
+then
     do_strelka_merge ${run_dir} ${merged_vcf}
 fi
 
 if [[ ! -e ${post_processed_vcf} ]]
+then
     do_strelka_post_process ${sample} ${merged_vcf} ${post_processed_vcf}
 fi
 
 if [[ ! -e ${mnv_vcf} ]]
+then
     do_strelka_mnv ${sample} ${post_processed_vcf} ${mnv_vcf}
 fi
 
 if [[ ! -e ${snpEff_vcf} ]]
+then
     do_strelka_snpeff ${sample} ${mnv_vcf} ${snpEff_vcf}
 fi
 
