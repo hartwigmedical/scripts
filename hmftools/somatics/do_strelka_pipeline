@@ -22,10 +22,21 @@ annotated_vcf_gz=${working_dir}/annotated.vcf.gz
 final_vcf_gz=${output_dir}/${joint_name}_post_processed.v2.vcf.gz
 
 #### Execution
-do_strelka_merge ${run_dir} ${merged_vcf}
-do_strelka_post_process ${sample} ${merged_vcf} ${post_processed_vcf}
-do_strelka_mnv ${sample} ${post_processed_vcf} ${mnv_vcf}
-do_strelka_snpeff ${sample} ${mnv_vcf} ${snfEff_vcf}
+if [[ ! -e ${merged_vcf} ]]
+    do_strelka_merge ${run_dir} ${merged_vcf}
+fi
+
+if [[ ! -e ${post_processed_vcf} ]]
+    do_strelka_post_process ${sample} ${merged_vcf} ${post_processed_vcf}
+fi
+
+if [[ ! -e ${mnv_vcf} ]]
+    do_strelka_mnv ${sample} ${post_processed_vcf} ${mnv_vcf}
+fi
+
+if [[ ! -e ${snpEff_vcf} ]]
+    do_strelka_snpeff ${sample} ${mnv_vcf} ${snpEff_vcf}
+fi
 
 bgzip ${snfEff_vcf}
 ${tabix} -p vcf ${snpEff_vcf_gz}
@@ -62,3 +73,12 @@ echo "Complete -" $(date)
 #do_strelka_pon_filter \
 #    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/CPCT02290017R_CPCT02290017T/postStrelka/annotated.vcf.gz \
 #    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/CPCT02290017R_CPCT02290017T/CPCT02290017R_CPCT02290017T_post_processed.v2.vcf.gz
+
+
+do_strelka_pipeline /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233
+
+
+do_strelka_mnv \
+    CPCT02070233T \
+    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/post_processed.vcf \
+    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/mnv.vcf
