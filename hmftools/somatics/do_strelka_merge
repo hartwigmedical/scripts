@@ -2,6 +2,7 @@
 source load_metadata
 
 run_dir=$1 && shift
+output_vcf=$1 && shift
 
 ### Dependencies
 bcftools=/data/common/tools/bcftools_v1.3/bcftools
@@ -14,32 +15,21 @@ strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-po
 indels=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*indels.vcf)
 snvs=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*snvs.vcf)
 
-### Output Directory
-output_dir=${run_dir}/somaticVariants/postStrelka
-mkdir -p ${output_dir}
-
-### Output Files
-merged_passed=${output_dir}/passed.somatics.merged.vcf
-
 if [[ ! -e ${merged_passed} ]]
 then
-    indels_hotspot=${output_dir}/all.somatics.indels.hotspot.vcf
-    indels_hotspot_filtered=${output_dir}/all.somatics.indels.hotspot.filtered.vcf
-    indels_passed=${output_dir}/passed.somatics.indels.hotspot.vcf
-
-    snvs_hotspot=${output_dir}/all.somatics.snvs.hotspot.vcf
-    snvs_hotspot_filtered=${output_dir}/all.somatics.snvs.hotspot.filtered.vcf
-    snvs_passed=${output_dir}/passed.somatics.snvs.hotspot.vcf
+    indels_passed=${output_vcf}.indels
+    snvs_passed=${output_vcf}.snvs
 
     ### Hotspots
-    echo "Annotate and include hotspots"
-    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${indels} -o ${indels_hotspot}
-    ${bcftools} filter -e HOTSPOT=1 ${indels_hotspot} -s PASS -o ${indels_hotspot_filtered}
-    ${bcftools} filter -i 'FILTER="PASS"' ${indels_hotspot_filtered} -o ${indels_passed}
+    echo "Annotate and filter INDEL hotspots -" $(date)
+    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${indels} -O u | \
+    ${bcftools} filter -e HOTSPOT=1 -s PASS -O u | \
+    ${bcftools} filter -i 'FILTER="PASS"' -o ${indels_passed}
 
-    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} -o ${snvs_hotspot}
-    ${bcftools} filter -e HOTSPOT=1 ${snvs_hotspot} -s PASS -o ${snvs_hotspot_filtered}
-    ${bcftools} filter -i 'FILTER="PASS"' ${snvs_hotspot_filtered} -o ${snvs_passed}
+    echo "Annotate and filter SNV hotspots -" $(date)
+    ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} - O u | \
+    ${bcftools} filter -e HOTSPOT=1 -s PASS - O u | \
+    ${bcftools} filter -i 'FILTER="PASS"' -o ${snvs_passed}
 
     ### Combine
     echo "Combine variants"
@@ -51,13 +41,9 @@ then
         -V:indels ${indels_passed} \
         -o ${merged_passed}
 
-    ### Clean up hotspot
-    rm -f ${indels_hotspot}*
-    rm -f ${indels_hotspot_filtered}*
-    rm -f ${indels_passed}*
-    rm -f ${snvs_hotspot}*
-    rm -f ${snvs_hotspot_filtered}*
-    rm -f ${snvs_passed}*
+    ### Clean up
+    #rm -f ${indels_passed}*
+    #rm -f ${snvs_passed}*
 else
        echo "${merged_passed} already exists!"
 fi
