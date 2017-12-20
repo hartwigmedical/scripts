@@ -75,10 +75,10 @@ echo "Complete -" $(date)
 #    /data/cpct/runs/171029_HMFregCPCT_FR15414420_FR15414585_CPCT02290017/somaticVariants/CPCT02290017R_CPCT02290017T/CPCT02290017R_CPCT02290017T_post_processed.v2.vcf.gz
 
 
-do_strelka_pipeline /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233
+#do_strelka_pipeline /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233
 
 
-do_strelka_mnv \
-    CPCT02070233T \
-    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/post_processed.vcf \
-    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/mnv.vcf
+#do_strelka_mnv \
+#    CPCT02070233T \
+#    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/post_processed.vcf \
+#    /data/cpct/runs/171029_HMFregCPCT_FR15414621_FR15414587_CPCT02070233/somaticVariants/CPCT02070233R_CPCT02070233T/postStrelka/mnv.vcf
