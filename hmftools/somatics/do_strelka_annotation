@@ -29,7 +29,7 @@ ${bcftools} annotate -a ${ANNOTATE_IDDB} -c =ID ${ann1} -o ${ann2} -O z
 ${tabix} ${ann2} -p vcf
 
 echo "Annotating Mappability -" $(date)
-${bcftools} annotate -a ${MAPPABILITY_BED} -h ~/strelka/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${ann3} -O z
+${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${ann2} -o ${ann3} -O z
 ${tabix} ${ann3} -p vcf
 
 echo "Annotating Germline PON -" $(date)
