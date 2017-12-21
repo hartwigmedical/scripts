@@ -16,5 +16,4 @@ then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-mappability_bed=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf} -mappability_bed ${mappability_bed} -sample ${sample}
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf} -sample ${sample}
