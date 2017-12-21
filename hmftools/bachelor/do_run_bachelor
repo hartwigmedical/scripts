@@ -11,4 +11,4 @@ java -Xmx8G -Xms4G \
     -jar ${bachelor_jar} \
     -configDirectory ${configs} \
     -output ${output}/${run}.eligibility \
-    -runDirectory $(run_dir)
+    -runDirectory ${run_dir}
