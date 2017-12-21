@@ -7,15 +7,8 @@ output=/data/experiments/eligibility
 run_dir=$1 && shift
 run=$(basename ${run_dir})
 
-annotated_germline_vcf=$(ls ${run_dir}/*.annotated.vcf)
-if [ $? -ne 0 ]
-then
-	echo "Unable to locate germline VCF. Exiting."
-	exit 1
-fi
-
 java -Xmx8G -Xms4G \
     -jar ${bachelor_jar} \
     -configDirectory ${configs} \
     -output ${output}/${run}.eligibility \
-    -vcf ${annotated_germline_vcf}
+    -runDirectory $(run_dir)
