@@ -14,7 +14,7 @@ if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ];
 fi
 
 # MIVO: get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
-RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | sort -bnrk8.2,8 | head -1`
+RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "Somatic.ini\|CPCT.ini" | grep Validated | sort -bnrk8.2,8 | head -1`
 
 if [ -z "$RUN_ROW" ];
   then
@@ -28,14 +28,25 @@ BAM_KEY="$RUN_NAME/$SAMPLE/mapping/${SAMPLE}_dedup.realigned.bam"
 BAM_INDEX_KEY="${BAM_KEY}.bai"
 SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 
-java -Dsamjdk.buffer_size=0 \
-    -Xmx4G \
-    -jar ${BAM_SLICER} \
-    -s3 \
-    -bucket ${RUN_BUCKET} \
-    -input ${BAM_KEY} \
-    -index ${BAM_INDEX_KEY} \
-    -bed ${BED_FILE} \
-    -output ${SLICED_BAM} \
-    -max_chunks 2000
+run_bam_slicer() {
+   BAM_INDEX_PARAM=$1
+   java -Dsamjdk.buffer_size=0 \
+     -Xmx4G \
+     -jar ${BAM_SLICER} \
+     -s3 \
+     -bucket ${RUN_BUCKET} \
+     -input ${BAM_KEY} \
+     -index ${BAM_INDEX_PARAM} \
+     -bed ${BED_FILE} \
+     -output ${SLICED_BAM} \
+     -max_chunks 2000 \
+     -max_concurrent_requests 30
+}
 
+if ! run_bam_slicer ${BAM_INDEX_KEY};
+then
+     echo "slicing with index ${BAM_INDEX_KEY} failed"
+     BAM_INDEX_KEY="${BAM_KEY%.*}.bai"
+     echo "retrying with index ${BAM_INDEX_KEY}"
+     run_bam_slicer ${BAM_INDEX_KEY}
+fi
