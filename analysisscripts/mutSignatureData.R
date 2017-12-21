@@ -140,9 +140,14 @@ mutation_vectors = process_variants(variants)
 signatures = list()
 for (s in cohort$sampleId) {
     if (!is.null(mutation_vectors[[s]])) {
-        res = fit_to_signatures(mutation_vectors[[s]][, - c(1, 2)], cancer_signatures)
+        # we need to slice out only the mutation count columns (delete col 1 and 2)
+        res = fit_to_signatures(mutation_vectors[[s]][, -c(1, 2)], cancer_signatures)
         signatures[[s]] <- res$contribution
     }
 }
 
-save(cancer_signatures, cohort, mutation_vectors, file = dataFile)
+save(cancer_signatures,
+     cohort,
+     mutation_vectors,
+     signatures,
+     file = dataFile)

@@ -41,15 +41,6 @@ grid_arrange_shared_legend <- function(..., ncol = length(list(...)), nrow = 1, 
 
 }
 
-calculate_signatures <- function(dbConnect, cohort, cancer_signatures) {
-    mutation_matrix = cohort_signature(dbConnect, cohort[1:nrow(cohort),])
-    fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
-    fit_contribution <- fit_res$contribution[, order(colnames(fit_res$contribution), decreasing = F), drop = FALSE]
-    fit_contribution[prop.table(fit_contribution, margin = 2) < 0.03 | fit_contribution < 100] <- 0
-    orderVector <- colSums(fit_contribution)
-    fit_contribution[, order(orderVector, decreasing = F), drop = FALSE]
-}
-
 dataFile = "~/hmf/mutSignature2.RData"
 load(dataFile)
 
@@ -57,7 +48,9 @@ load(dataFile)
 cancer_types = na.omit(unique(cohort$cancerType))
 cancer_types = sort(cancer_types)
 
+# filter by cancerType
 samples_with_breast_cancer = cohort[cancerType == "Breast"]$sampleId
+
 for (s in samples_with_breast_cancer) {
-    signature[[s]]
+    signatures[[s]]
 }
