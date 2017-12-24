@@ -12,7 +12,7 @@ then
     exit 1
 fi
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
 if [ $? -ne 0 ]
 then
     echo "Unable to locate somatic variants. Exiting."
