@@ -24,6 +24,6 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -ref_genome ${ref_genome} \
     -high_confidence_bed ${high_confidence_bed} \
     -vcf_file ${somatic_vcf} \
-    -sample ${sample}
+    -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
