@@ -15,5 +15,4 @@ then
     exit 1
 fi
 
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf} -sample ${sample}
+${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf}

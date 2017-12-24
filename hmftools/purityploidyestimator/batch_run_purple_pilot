@@ -3,15 +3,8 @@ starts_with=$1 && shift
 
 for run_dir in /data/cpct/runs/*; do
     if [[ $run_dir == /data/cpct/runs/${starts_with}* ]]; then
-
-        somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
-        if [ $? -ne 0 ]
-        then
-            echo "Somatic V2 unavailable for run:" ${run_dir}
-        else
-                do_run_purple_pilot $run_dir $@
-                do_load_somatic_variants_pilot $run_dir
-                do_run_sv_loader_pilot $file
-        fi
+        do_run_purple_pilot $run_dir $@
+        do_load_somatic_variants_pilot $run_dir
+        do_run_sv_loader_pilot $file
     fi
 done
