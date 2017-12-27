@@ -180,7 +180,8 @@ sub checkObjectField{
         my $obj = $objects->{$obj_key};
         my $name = $obj->{'name'};
         next if $name eq 'UNDETERMINED';
-        my $value = $obj->{$field} or die "[EXIT] No $field key for $name";
+        my $value = 0;
+        $value = $obj->{$field} if exists $obj->{$field};
         if ( $value < $min ){
             say "## WARNING $field for $name too low: $value < $min";
             $fails += 1;
@@ -269,7 +270,7 @@ sub parseJsonInfo{
             my $obj = $info{ $type }{ $id };
             my $name = $obj->{ 'name' };
                         
-            $obj->{ 'q30' } = $obj->{ 'yield_q30' }*100 / $obj->{ 'yield' };
+            $obj->{ 'q30' } = $obj->{ 'yield_q30' }*100 / $obj->{ 'yield' } if $obj->{ 'yield' } > 0;
             $obj->{ 'yld_p' } = $obj->{ 'yield' } / $info{ 'flow' }{ $fid }{ 'yield' };
             $obj->{ 'flowcell_print' } = $fid;
 
@@ -411,6 +412,9 @@ sub readSampleSheet{
 ## input "0.123" gives output "0.12"
 sub round{
     my ($number, $decimal) = @_;
+    if ( not defined $number ){
+        return $NA_CHAR;
+    }
     $decimal = 1 unless defined $decimal;
     my $rounded = sprintf("%.".$decimal."f", $number);
     return( $rounded );
