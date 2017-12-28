@@ -41,7 +41,6 @@ sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
 	--include "*.kinship" \
 	--include "QCStats*" \
 	--include "*mapping*flagstat*" \
-	--include "*HealthCheck.out*" \
 	--include "settings.config" \
 	--include "*mapping*flagstat*" \
 	--include "*recal_data*" \
@@ -56,7 +55,5 @@ sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
 	--include "*structuralVariants*bpi*sliced.bam*" \
 	--include "*structuralVariants*manta*somaticSV.vcf*" \
 	--include "*metadata*" \
-	--include "*logs*submitlog*" \
-	--include "*logs*PipelineCheck.log*" \
-	--include "*logs*perform_pipeline_qc*" \
+	--include "*logs*" \
 	--profile ${awsprofile}
