@@ -1,0 +1,62 @@
+#!/bin/bash
+
+script=$( basename $0 )
+awsprofile="download"
+localpath="/data/schuberg/tmp/partial_runs"
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <setname> -b <bucket> -p <path>" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc -b hmf-output-2017-52 -p /data/schuberg/tmp/partial_runs" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:b:p:" o; do
+    case "${o}" in
+        s)
+            setname=${OPTARG} || usage
+            ;;
+        b)
+            bucket=${OPTARG}
+            ;;
+        p)
+            localpath=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${setname}" || -z "${bucket}"|| -z "${localpath}" ]]; then
+    usage
+fi
+
+sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
+	--exclude "*" \
+	--include "*annotated.vcf*" \
+	--include "*filtered*GoNLv5.vcf*" \
+	--include "*snpcheck*" \
+	--include "*.kinship" \
+	--include "QCStats*" \
+	--include "*mapping*flagstat*" \
+	--include "*HealthCheck.out*" \
+	--include "settings.config" \
+	--include "*mapping*flagstat*" \
+	--include "*recal_data*" \
+	--include "*damageEstimate*" \
+	--include "*amber*" \
+	--include "*cobalt*" \
+	--include "*purple*" \
+	--include "*somaticVariants*post_processed*" \
+	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*bpi*bpi_stats*" \
+	--include "*structuralVariants*bpi*somaticSV*" \
+	--include "*structuralVariants*bpi*sliced.bam*" \
+	--include "*structuralVariants*manta*somaticSV.vcf*" \
+	--include "*metadata*" \
+	--include "*logs*submitlog*" \
+	--include "*logs*PipelineCheck.log*" \
+	--include "*logs*perform_pipeline_qc*" \
+	--profile ${awsprofile}
