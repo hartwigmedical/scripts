@@ -26,6 +26,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'inis'      => [ 'name', 'sbp_id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
   'shares'    => [ 'entity_id', 'entity', 'set_id', 'set', 'start_time', 'end_time', 'sbp_id' ],
+  'stacks'    => [ 'name', 'revision', 'enabled', 'sbp_id' ],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
