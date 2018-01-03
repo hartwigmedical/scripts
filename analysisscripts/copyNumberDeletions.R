@@ -45,22 +45,24 @@ geneDistance<-function(topGeneName, geneCopyNumbers, chromosomeGenes) {
 
 adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
   
-  adjacent_to_deleted<-function(sample, distance, previous_distance, chromosomeCopyNumbers) {
-    return (nrow(chromosomeCopyNumbers[sampleId == sample & geneDistance == 0]) != 0)
+  adjacent_to_deleted<-function(previous_distance, copyNumbers) {
+    previouslyAdjacentSamples = copyNumbers[geneDistance == previous_distance & adjacent, .N, by = .(sampleId)]
+    result = !is.na(match(copyNumbers$sampleId, previouslyAdjacentSamples$sampleId))
+    return (result)
   }
   
   chromosomeCopyNumbers$geneDistance <- geneDistance(topGene, chromosomeCopyNumbers, chromosomeGenes)
   chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == 0, TRUE, FALSE)
   
   for(i in 1:30000) {
-    chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == i, adjacent_to_deleted(chromosomeCopyNumbers$sampleId, i, i-1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
+    chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == i, adjacent_to_deleted(i-1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
     if (nrow(chromosomeCopyNumbers[geneDistance == i & adjacent == TRUE]) == 0) {
       break
     }
   }
   
   for(i in 1:30000) {
-    chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == -i, adjacent_to_deleted(chromosomeCopyNumbers$sampleId, -i, -i+1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
+    chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == -i, adjacent_to_deleted(-i+1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
     if (nrow(chromosomeCopyNumbers[geneDistance == -i & adjacent == TRUE]) == 0) {
       break
     }
@@ -78,7 +80,7 @@ removed_summary<-function(removed) {
 }
 
 
-copy_number_deletions<-function(allGenes, allDeletes) {
+copy_number_deletions<-function(allGenes, allDeletes, removeSample = FALSE) {
   allGenes = data.table(allGenes)
   DT = data.table(allDeletes[!is.na(allDeletes$cancerType), ])
   
@@ -97,7 +99,7 @@ copy_number_deletions<-function(allGenes, allDeletes) {
       if (nrow(peakSummary) == 0) {
         break
       }
-      
+
       topGene = head(peakSummary[order(-N)], 1)
       genesWithSameCount = peakSummary[N >= topGene$N -1]
       
@@ -109,6 +111,8 @@ copy_number_deletions<-function(allGenes, allDeletes) {
       
       adjacent = adjacent_to_gene(topGene$gene,  peakCopyNumber, chromosomeGenes)
       removed = peakCopyNumber[c(adjacent)]
+      removed[sampleId == 'CPCT02110002T']
+      
       removedSummary = removed_summary(removed)
       peakCopyNumber = peakCopyNumber[!c(adjacent)]
       
@@ -140,6 +144,18 @@ load("~/hmf/copyNumberDeletions.RData")
 #cancerTypes = cancerTypes[!is.na(cancerTypes)]
 
 copyNumberDeletions = copy_number_deletions(allGenes, allDeletes)
+
+
+
+chrom9 = copyNumberDeletions[["9"]]
+chrom9[[7]]
+
+sum(chrom9[[1]]$removed$total)
+sum(chrom9[[2]]$removed$total)
+sum(chrom9[[3]]$removed$total)
+sum(chrom9[[4]]$removed$total)
+sum(chrom9[[5]]$removed$total)
+sum(removed$total)
 
 chrom13 = copyNumberDeletions[[13]]
 length(chrom13)
