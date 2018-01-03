@@ -4,7 +4,7 @@ library(data.table)
 ####### Queries #######
 query_gene_copy_number_deletes<-function(dbConnect) {
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.minCopyNumber",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.minCopyNumber, g.chromosomeBand",
     "  FROM geneCopyNumber g, purity p",
     "WHERE g.sampleId = p.sampleId",
     "AND p.qcStatus = 'PASS'",
@@ -74,32 +74,43 @@ adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
 removed_summary<-function(removed) {
   cancerTypes = unique(removed$cancerType)
   removedByCancerType = dcast(removed, ... ~ cancerType, fun.aggregate = length, value.var = c("cancerType"))
-  removedByCancerTypeSummary = removedByCancerType[, lapply(.SD, sum), by=list(gene, chromosome, start, end), .SDcols = cancerTypes]
-  removedByCancerTypeSummary$total <- rowSums(removedByCancerTypeSummary[, cancerTypes, with=FALSE])
-  return (removedByCancerTypeSummary)
+  removedByCancerTypeSummary = removedByCancerType[, c(lapply(.SD, sum), list(sd=sd(minCopyNumber), N=.N))  , by=list(gene, chromosome, start, end, chromosomeBand), .SDcols = as.character(cancerTypes)]
+  return (removedByCancerTypeSummary[order(-N)])
 }
 
 
 copy_number_deletions<-function(allGenes, allDeletes, removeSample = FALSE) {
   allGenes = data.table(allGenes)
-  DT = data.table(allDeletes[!is.na(allDeletes$cancerType), ])
+  allDeletes = data.table(allDeletes[!is.na(allDeletes$cancerType), ])
   
   copyNumberDeletions = list()
+  topGeneRemovals <- data.frame(sampleId=character(),
+                   chromosome=character(),
+                   start=integer(),
+                   end=integer(),
+                   gene=character(),
+                   minCopyNumber=double(),
+                   chromosomeBand=character(),
+                   cancerType=character())
+
+  
   for (currentChromosome in c(1:22, 'X')) {
+    #currentChromosome = 2
     cat("Processing chromosome:", currentChromosome, "\n")
     
     chromosomeGenes = allGenes[chromosome == currentChromosome][order(start)] 
-    chromosomeCopyNumbers = DT[chromosome == currentChromosome]
-    chromosomeSummary = chromosomeCopyNumbers[, .N, by=list(gene, chromosome, start, end)][order(start)]
-    peakCopyNumber = chromosomeCopyNumbers
+    chromosomeDeletes = allDeletes[chromosome == currentChromosome]
+    chromosomeSummary = chromosomeDeletes[, .(.N, sd = sd(minCopyNumber)), by=list(gene, chromosome, start, end, chromosomeBand)][order(start)]
+    
+    localDeletes = chromosomeDeletes
     
     chromosomeResult = list()
     for (i in 1:20) {
-      peakSummary = peakCopyNumber[, .N, by=list(gene, chromosome, start, end)][order(start)]
+      peakSummary = localDeletes[, .N, by=list(gene, chromosome, start, end, chromosomeBand)][order(start)]
       if (nrow(peakSummary) == 0) {
         break
       }
-
+      
       topGene = head(peakSummary[order(-N)], 1)
       genesWithSameCount = peakSummary[N >= topGene$N -1]
       
@@ -109,12 +120,12 @@ copy_number_deletions<-function(allGenes, allDeletes, removeSample = FALSE) {
       topGeneIndexTotalPeak = match(topGene$gene, chromosomeSummary$gene)
       totalPeak = chromosomeSummary[max(1,topGeneIndexTotalPeak-7):min(topGeneIndexTotalPeak+7, nrow(chromosomeSummary)),]
       
-      adjacent = adjacent_to_gene(topGene$gene,  peakCopyNumber, chromosomeGenes)
-      removed = peakCopyNumber[c(adjacent)]
-      removed[sampleId == 'CPCT02110002T']
-      
+      adjacent = adjacent_to_gene(topGene$gene,  localDeletes, chromosomeGenes)
+      removed = localDeletes[c(adjacent)]
+      topGeneRemovals = rbind(topGeneRemovals, removed[gene==topGene$gene])
+
       removedSummary = removed_summary(removed)
-      peakCopyNumber = peakCopyNumber[!c(adjacent)]
+      localDeletes = localDeletes[!c(adjacent)]
       
       peak = list(topGene = topGene, similarSizedGenes = genesWithSameCount, localPeak = localPeak, totalPeak = totalPeak, removed = removedSummary)
       chromosomeResult[[i]] <- peak
@@ -122,7 +133,7 @@ copy_number_deletions<-function(allGenes, allDeletes, removeSample = FALSE) {
     
     copyNumberDeletions[[currentChromosome]] <- chromosomeResult
   }
-  
+  copyNumberDeletions[["summary"]] <- removed_summary(topGeneRemovals)[order(chromosome, -N)]
   return (copyNumberDeletions)
 }
 
@@ -145,20 +156,11 @@ load("~/hmf/copyNumberDeletions.RData")
 
 copyNumberDeletions = copy_number_deletions(allGenes, allDeletes)
 
+allRemoved = copyNumberDeletions$summary
+topRemoved = allRemoved[allRemoved[, N==max(N), by=.(chromosome)]$V1]
 
+allRemovedWithLowSD = allRemoved[sd < 0.5]
+topRemovedWithLowSD = allRemovedWithLowSD[allRemovedWithLowSD[, N==max(N), by=.(chromosome)]$V1]
 
-chrom9 = copyNumberDeletions[["9"]]
-chrom9[[7]]
-
-sum(chrom9[[1]]$removed$total)
-sum(chrom9[[2]]$removed$total)
-sum(chrom9[[3]]$removed$total)
-sum(chrom9[[4]]$removed$total)
-sum(chrom9[[5]]$removed$total)
-sum(removed$total)
-
-chrom13 = copyNumberDeletions[[13]]
-length(chrom13)
-chrom13[[1]]
-chrom13[[1]]$topGene
-chrom13[[1]]$removed
+chrom1 = copyNumberDeletions[["1"]]
+chrom1[[1]]
