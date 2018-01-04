@@ -155,22 +155,19 @@ gene_summary<-function(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohort
 
 
 ############# EXECUTION
-load("~/hmf/purple.RData")
+load("~/hmf/pilot.RData")
 rm(allSamples)
 rm(backupSamples)
 #cohort = cohort[1:5, ]
 
 pilotDB = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
 genes = query_gene_panel(pilotDB)
-dbDisconnect(pilotDB)
-
-prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-cohortGeneStructuralVariants = cohort_gene_structual_variants(prodDB, genes, cohort)
-cohortGeneCopyNumbers = cohort_gene_copynumber(prodDB, genes, cohort)
-cohortPositionSomatics = cohort_position_somatics(prodDB, cohortGeneCopyNumbers, cohort)
+cohortGeneStructuralVariants = cohort_gene_structual_variants(pilotDB, genes, cohort)
+cohortGeneCopyNumbers = cohort_gene_copynumber(pilotDB, genes, cohort)
+cohortPositionSomatics = cohort_position_somatics(pilotDB, cohortGeneCopyNumbers, cohort)
 cohortGeneSomatics = cohort_gene_somatics(cohortPositionSomatics)
-dbDisconnect(prodDB)
-rm(prodDB)
+dbDisconnect(pilotDB)
+rm(pilotDB)
 
 cohortGeneComplete = gene_summary(cohort, cohortGeneCopyNumbers, cohortGeneSomatics, cohortGeneStructuralVariants)
 
