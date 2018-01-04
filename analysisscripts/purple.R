@@ -1,7 +1,7 @@
 library(RMySQL)
 library(plyr)
 LOAD_FROM_FILE = FALSE
-DATA_FILE = "~/hmf/purple.RData"
+DATA_FILE = "~/hmf/pilot.RData"
 
 leftJoin<-function(left, right) {
   jon = merge(x = left, y = right, by="row.names", all.x=TRUE)
@@ -27,7 +27,8 @@ query_purity<-function(dbConnect) {
     "SELECT p.sampleId, p.purity AS purplePurity, round(p.ploidy,2) as ploidy, gender",
     " FROM purity p",
     "WHERE qcStatus = 'PASS'",
-    "AND status <> 'NO_TUMOR'",
+    "  AND status <> 'NO_TUMOR'",
+    "  AND modified > '2017-12-21'",
     sep = " ")
   return (sampleIdRowNames(dbGetQuery(dbConnect, query), .drop = FALSE))
 }
@@ -162,7 +163,7 @@ if (LOAD_FROM_FILE) {
 } else {
   
   #Pilot
-  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
   allSamples = query_purity(dbConnect)
   
   cohort = allSamples
