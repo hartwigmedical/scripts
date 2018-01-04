@@ -1,1 +1,3 @@
-exportPattern("^[[:alpha:]]+")
+import(data.table)
+#exportPattern("^[[:alpha:]]+")
+export(copy_number_deletions)

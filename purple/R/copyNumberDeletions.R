@@ -1,5 +1,3 @@
-library(data.table)
-
 #topGene = "RB1"
 #chromosomeCopyNumbers = localDeletes
 #chromosomeGenes[chromosomeGenes$gene == topGene]
@@ -56,12 +54,11 @@ removed_summary<-function(removed) {
   return (removedByCancerTypeSummary[order(-N)])
 }
 
-
 copy_number_deletions<-function(allGenes, allDeletes) {
   library(data.table)
-  
-  allGenes = data.table(allGenes)
-  allDeletes = data.table(allDeletes[!is.na(allDeletes$cancerType), ])
+
+  allGenes = data.table::data.table(allGenes)
+  allDeletes = data.table::data.table(allDeletes[!is.na(allDeletes$cancerType), ])
 
   copyNumberDeletions = list()
   topGeneRemovals <- data.frame(sampleId=character(),
@@ -120,6 +117,7 @@ copy_number_deletions<-function(allGenes, allDeletes) {
   copyNumberDeletions[["summary"]] <- removed_summary(topGeneRemovals)[order(chromosome, -N)]
   return (copyNumberDeletions)
 }
+
 
 #load("~/hmf/copyNumberDeletions.RData")
 #copyNumberDeletions = copy_number_deletions(allGenes, allDeletes)
