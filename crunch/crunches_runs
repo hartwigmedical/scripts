@@ -3,5 +3,5 @@
 for i in {1,2,3}; do 
     #echo "--- Checking crunch${i} -----"
     #ssh crunch00${i} check_samplesheets | grep "^#" | grep -P "Rund|CONVERSION|CYCLE"
-    ssh crunch00${i} check_samplesheets | grep -Po "X17.+"
+    ssh crunch00${i} check_samplesheets | grep -Po "X18.+"
 done | sort -r
