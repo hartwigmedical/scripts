@@ -2,6 +2,8 @@
 #chromosomeCopyNumbers = localDeletes
 #chromosomeGenes[chromosomeGenes$gene == topGene]
 
+
+
 adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
 
   adjacent_to_deleted<-function(previous_distance, copyNumbers) {
@@ -47,18 +49,21 @@ adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
   return (chromosomeCopyNumbers$adjacent %in% TRUE)
 }
 
-removed_summary<-function(removed) {
-  cancerTypes = unique(removed$cancerType)
-  removedByCancerType = dcast(removed, ... ~ cancerType, fun.aggregate = length, value.var = c("cancerType"))
-  removedByCancerTypeSummary = removedByCancerType[, c(lapply(.SD, sum), list(sd=sd(minCopyNumber), somaticRegions=mean(somaticRegions), N=.N))  , by=list(gene, chromosome, start, end, chromosomeBand), .SDcols = as.character(cancerTypes)]
-  return (removedByCancerTypeSummary[order(-N)])
+aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
+  cancerTypes = unique(geneCopyNumbers$cancerType)
+  geneCopyNumbersByCancerType = dcast(geneCopyNumbers, ... ~ cancerType, fun.aggregate = length, value.var = c("cancerType"))
+  geneCopyNumbersByCancerTypeAggregation = geneCopyNumbersByCancerType[, c(lapply(.SD, sum), list(sd=sd(minCopyNumber), score=sum(score), N=length(score)))  , by=list(gene, chromosome, start, end, chromosomeBand), .SDcols = as.character(cancerTypes)]
+  return (geneCopyNumbersByCancerTypeAggregation[order(-score)])
 }
 
-copy_number_deletions<-function(allGenes, allDeletes) {
-  library(data.table)
+aggregate_gene_copy_numbers<-function(geneCopyNumbers) {
+  return (geneCopyNumbers[, .(score=sum(score), sd = sd(minCopyNumber)), by=list(gene, chromosome, start, end, chromosomeBand)][order(start)])
+}
 
-  allGenes = data.table::data.table(allGenes)
-  allDeletes = data.table::data.table(allDeletes[!is.na(allDeletes$cancerType), ])
+copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
+  allGenes = data.table(allGenes)
+  allGeneCopyNumbers = data.table(allGeneCopyNumbers)
+  allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
 
   copyNumberDeletions = list()
   topGeneRemovals <- data.frame(sampleId=character(),
@@ -67,35 +72,36 @@ copy_number_deletions<-function(allGenes, allDeletes) {
                    end=integer(),
                    gene=character(),
                    minCopyNumber=double(),
-                   somaticRegions=double(),
+                   score=double(),
                    chromosomeBand=character(),
                    cancerType=character())
 
 
   for (currentChromosome in c(1:22, 'X')) {
-    #currentChromosome = 13
+    #currentChromosome = 1
     cat("Processing chromosome:", currentChromosome, "\n")
 
     chromosomeGenes = allGenes[chromosome == currentChromosome][order(start)]
-    chromosomeDeletes = allDeletes[chromosome == currentChromosome]
-    chromosomeSummary = chromosomeDeletes[, .(.N, sd = sd(minCopyNumber)), by=list(gene, chromosome, start, end, chromosomeBand)][order(start)]
+    chromosomeGeneCopyNumbers = allGeneCopyNumbers[chromosome == currentChromosome]
+    chromosomeSummary = aggregate_gene_copy_numbers(chromosomeGeneCopyNumbers)
 
-    localDeletes = chromosomeDeletes
+    localDeletes = chromosomeGeneCopyNumbers
 
     chromosomeResult = list()
     for (i in 1:20) {
-      peakSummary = localDeletes[, .N, by=list(gene, chromosome, start, end, chromosomeBand)][order(start)]
+      peakSummary = aggregate_gene_copy_numbers(localDeletes)
       if (nrow(peakSummary) == 0) {
         break
       }
 
-      topGene = head(peakSummary[order(-N)], 1)
-      genesWithSameCount = peakSummary[N >= topGene$N -1]
+      topGene = head(peakSummary[order(-score)], 1)
+      genesWithSimilarScore = peakSummary[score >= topGene$score -1]
+      cat("    Isolating gene:", topGene$gene, "\n")
 
       topGeneIndexLocalPeak = match(topGene$gene, peakSummary$gene)
       localPeak = peakSummary[max(1,topGeneIndexLocalPeak-7):min(topGeneIndexLocalPeak+7, nrow(peakSummary)),]
-      localPeakLeft = peakSummary[max(1, topGeneIndexLocalPeak-1)]
-      localPeakRight = peakSummary[min(nrow(peakSummary), topGeneIndexLocalPeak+1)]
+      #localPeakLeft = peakSummary[max(1, topGeneIndexLocalPeak-1)]
+      #localPeakRight = peakSummary[min(nrow(peakSummary), topGeneIndexLocalPeak+1)]
 
       topGeneIndexTotalPeak = match(topGene$gene, chromosomeSummary$gene)
       totalPeak = chromosomeSummary[max(1,topGeneIndexTotalPeak-7):min(topGeneIndexTotalPeak+7, nrow(chromosomeSummary)),]
@@ -105,10 +111,10 @@ copy_number_deletions<-function(allGenes, allDeletes) {
       removed = localDeletes[c(adjacent)]
       topGeneRemovals = rbind(topGeneRemovals, removed[gene==topGene$gene])
 
-      removedSummary = removed_summary(removed)
+      removedSummary = aggregate_gene_copy_numbers_by_cancer_type(removed)
       localDeletes = localDeletes[!c(adjacent)]
 
-      peak = list(topGene = topGene, similarSizedGenes = genesWithSameCount, localPeak = localPeak, totalPeak = totalPeak, removed = removedSummary)
+      peak = list(topGene = topGene, similarScoredGenes = genesWithSimilarScore, localPeak = localPeak, totalPeak = totalPeak, removed = removedSummary)
       chromosomeResult[[i]] <- peak
     }
 
@@ -119,8 +125,12 @@ copy_number_deletions<-function(allGenes, allDeletes) {
 }
 
 
-#load("~/hmf/copyNumberDeletions.RData")
-#copyNumberDeletions = copy_number_deletions(allGenes, allDeletes)
+
+#load("~/hmf/geneCopyNumber.RData")
+#allGenes = genes
+#allGeneCopyNumbers = geneCopyNumberDeletes
+#allGeneCopyNumbers = geneCopyNumberAmplifactions
+#copyNumberDeletions = copy_number_deletions(allGenes, allGeneCopyNumbers)
 #jon = copyNumberDeletions$summary
 
 #detach("package:purple", unload=TRUE)
