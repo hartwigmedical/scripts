@@ -1,6 +1,6 @@
 import(data.table)
 #exportPattern("^[[:alpha:]]+")
-export(copy_number_deletions)
+export(copy_number_drivers)
 export(query_gene_copy_number_deletes)
 export(query_gene_copy_number_amplifications)
 export(query_clinical_data)

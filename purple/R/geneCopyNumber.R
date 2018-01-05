@@ -1,10 +1,5 @@
-#topGene = "RB1"
-#chromosomeCopyNumbers = localDeletes
-#chromosomeGenes[chromosomeGenes$gene == topGene]
 
-
-
-adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
+adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
 
   adjacent_to_deleted<-function(previous_distance, copyNumbers) {
     previouslyAdjacentSamples = copyNumbers[geneDistance == previous_distance & adjacent, .N, by = .(sampleId)]
@@ -12,21 +7,19 @@ adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
     return (result)
   }
 
-  chromosomeCopyNumbers$geneDistance <- ifelse(chromosomeCopyNumbers$gene == topGene, 0, NA)
-  chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$gene == topGene, TRUE, NA)
+  geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == topGene, 0, NA)
+  geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == topGene, TRUE, NA)
 
-  topGeneIndex = match(topGene, chromosomeGenes$gene)
-  if (topGeneIndex != nrow(chromosomeGenes)) {
-    for(neigbouringGeneIndex in (topGeneIndex+1):nrow(chromosomeGenes)) {
+  topGeneIndex = match(topGene, genes$gene)
+  if (topGeneIndex != nrow(genes)) {
+    for(neigbouringGeneIndex in (topGeneIndex+1):nrow(genes)) {
 
-      #cat(neigbouringGeneIndex)
+      neigbouringGene=genes[neigbouringGeneIndex, ]$gene
+      neighbouringGeneDistance=gene_distance_index(topGeneIndex, neigbouringGeneIndex, genes)
+      geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      neigbouringGene=chromosomeGenes[neigbouringGeneIndex, ]$gene
-      neighbouringGeneDistance=gene_distance_index(topGeneIndex, neigbouringGeneIndex, chromosomeGenes)
-      chromosomeCopyNumbers$geneDistance <- ifelse(chromosomeCopyNumbers$gene == neigbouringGene, neighbouringGeneDistance, chromosomeCopyNumbers$geneDistance)
-
-      chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == neighbouringGeneDistance, adjacent_to_deleted(neighbouringGeneDistance-1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
-      if (nrow(chromosomeCopyNumbers[geneDistance == neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == neighbouringGeneDistance, adjacent_to_deleted(neighbouringGeneDistance-1, geneCopyNumbers), geneCopyNumbers$adjacent)
+      if (nrow(geneCopyNumbers[geneDistance == neighbouringGeneDistance & adjacent == TRUE]) == 0) {
         break
       }
     }
@@ -35,19 +28,20 @@ adjacent_to_gene<-function(topGene, chromosomeCopyNumbers, chromosomeGenes) {
   if (topGeneIndex != 1) {
     for(neigbouringGeneIndex in (topGeneIndex-1):1) {
 
-      neigbouringGene=chromosomeGenes[neigbouringGeneIndex, ]$gene
-      neighbouringGeneDistance=gene_distance_index(neigbouringGeneIndex, topGeneIndex, chromosomeGenes)
-      chromosomeCopyNumbers$geneDistance <- ifelse(chromosomeCopyNumbers$gene == neigbouringGene, -neighbouringGeneDistance, chromosomeCopyNumbers$geneDistance)
+      neigbouringGene=genes[neigbouringGeneIndex, ]$gene
+      neighbouringGeneDistance=gene_distance_index(neigbouringGeneIndex, topGeneIndex, genes)
+      geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, -neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      chromosomeCopyNumbers$adjacent <- ifelse(chromosomeCopyNumbers$geneDistance == -neighbouringGeneDistance, adjacent_to_deleted(-neighbouringGeneDistance+1, chromosomeCopyNumbers), chromosomeCopyNumbers$adjacent)
-      if (nrow(chromosomeCopyNumbers[geneDistance == -neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == -neighbouringGeneDistance, adjacent_to_deleted(-neighbouringGeneDistance+1, geneCopyNumbers), geneCopyNumbers$adjacent)
+      if (nrow(geneCopyNumbers[geneDistance == -neighbouringGeneDistance & adjacent == TRUE]) == 0) {
         break
       }
     }
   }
 
-  return (chromosomeCopyNumbers$adjacent %in% TRUE)
+  return (geneCopyNumbers$adjacent %in% TRUE)
 }
+
 
 aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
   cancerTypes = unique(geneCopyNumbers$cancerType)
@@ -60,7 +54,13 @@ aggregate_gene_copy_numbers<-function(geneCopyNumbers) {
   return (geneCopyNumbers[, .(score=sum(score), sd = sd(minCopyNumber)), by=list(gene, chromosome, start, end, chromosomeBand)][order(start)])
 }
 
-copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
+candidates<-function(topGene, adjacentAggregate) {
+  candidates = c(adjacentAggregate[score >= topGene$score -2 | score >= 0.95*topGene$score]$gene)
+  candidatesDF = data.frame(gene=topGene$gene, candidates=I(list(candidates)), stringsAsFactors = FALSE)
+  return (candidatesDF)
+}
+
+copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
   allGenes = data.table(allGenes)
   allGeneCopyNumbers = data.table(allGeneCopyNumbers)
   allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
@@ -76,8 +76,9 @@ copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
                    chromosomeBand=character(),
                    cancerType=character())
 
+  allCanditates = data.frame(gene=character(), candidates=list(character()))
 
-  for (currentChromosome in c(1:22, 'X')) {
+  for (currentChromosome in chromosomes) {
     #currentChromosome = 1
     cat("Processing chromosome:", currentChromosome, "\n")
 
@@ -87,8 +88,9 @@ copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
 
     localDeletes = chromosomeGeneCopyNumbers
 
+
     chromosomeResult = list()
-    for (i in 1:20) {
+    for (i in 1:maxDriversPerChromosome) {
       peakSummary = aggregate_gene_copy_numbers(localDeletes)
       if (nrow(peakSummary) == 0) {
         break
@@ -96,7 +98,7 @@ copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
 
       topGene = head(peakSummary[order(-score)], 1)
       genesWithSimilarScore = peakSummary[score >= topGene$score -1]
-      cat("    Isolating gene:", topGene$gene, "\n")
+      cat("       Isolating gene:", topGene$gene, "\n")
 
       topGeneIndexLocalPeak = match(topGene$gene, peakSummary$gene)
       localPeak = peakSummary[max(1,topGeneIndexLocalPeak-7):min(topGeneIndexLocalPeak+7, nrow(peakSummary)),]
@@ -106,31 +108,36 @@ copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
       topGeneIndexTotalPeak = match(topGene$gene, chromosomeSummary$gene)
       totalPeak = chromosomeSummary[max(1,topGeneIndexTotalPeak-7):min(topGeneIndexTotalPeak+7, nrow(chromosomeSummary)),]
 
-      adjacent = adjacent_to_gene(topGene$gene,  localDeletes, chromosomeGenes)
+      isAdjacent = adjacent_to_gene(topGene$gene,  localDeletes, chromosomeGenes)
 
-      removed = localDeletes[c(adjacent)]
-      topGeneRemovals = rbind(topGeneRemovals, removed[gene==topGene$gene])
+      adjacent = localDeletes[c(isAdjacent)]
+      adjacentSummary = aggregate_gene_copy_numbers_by_cancer_type(adjacent)
 
-      removedSummary = aggregate_gene_copy_numbers_by_cancer_type(removed)
-      localDeletes = localDeletes[!c(adjacent)]
+      topGeneRemovals = rbind(topGeneRemovals, adjacent[gene==topGene$gene])
 
-      peak = list(topGene = topGene, similarScoredGenes = genesWithSimilarScore, localPeak = localPeak, totalPeak = totalPeak, removed = removedSummary)
+
+      geneCandidates = candidates(topGene, adjacentSummary)
+      allCanditates = rbind(allCanditates, geneCandidates)
+
+      localDeletes = localDeletes[!c(isAdjacent)]
+
+      peak = list(topGene = topGene, candidates = geneCandidates$candidates, localPeak = localPeak, totalPeak = totalPeak, adjacent = adjacentSummary)
       chromosomeResult[[i]] <- peak
     }
 
     copyNumberDeletions[[currentChromosome]] <- chromosomeResult
   }
-  copyNumberDeletions[["summary"]] <- aggregate_gene_copy_numbers_by_cancer_type(topGeneRemovals)[order(chromosome, -N)]
+
+  summary <- aggregate_gene_copy_numbers_by_cancer_type(topGeneRemovals)[order(chromosome, -N)]
+  summary$candidates <- allCanditates[match(summary$gene, allCanditates$gene), c("candidates")]
+  copyNumberDeletions[["summary"]] <- summary
   return (copyNumberDeletions)
 }
-
 
 
 #load("~/hmf/geneCopyNumber.RData")
 #allGenes = genes
 #allGeneCopyNumbers = geneCopyNumberDeletes
 #allGeneCopyNumbers = geneCopyNumberAmplifactions
-#copyNumberDeletions = copy_number_deletions(allGenes, allGeneCopyNumbers)
-#jon = copyNumberDeletions$summary
-
-#detach("package:purple", unload=TRUE)
+#copyNumberDeletions = copy_number_drivers(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 3, chromosomes = c(1:2))
+#summary = copyNumberDeletions$summary

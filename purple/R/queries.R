@@ -1,5 +1,3 @@
-library(RMySQL)
-
 query_gene_copy_number_deletes<-function(dbConnect) {
   query = paste(
     "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score",
