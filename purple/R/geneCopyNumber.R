@@ -60,84 +60,80 @@ candidates<-function(topGene, adjacentAggregate) {
   return (candidatesDF)
 }
 
+neighbours<-function(topGene, aggregatedCopyNumbers) {
+  index = match(topGene$gene, aggregatedCopyNumbers$gene)
+  neighbours = aggregatedCopyNumbers[max(1,index-7):min(index+7, nrow(aggregatedCopyNumbers)),]
+  return(neighbours)
+}
+
 copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
+
+  # Clean input
   allGenes = data.table(allGenes)
   allGeneCopyNumbers = data.table(allGeneCopyNumbers)
   allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
 
-  copyNumberDeletions = list()
-  topGeneRemovals <- data.frame(sampleId=character(),
-                   chromosome=character(),
-                   start=integer(),
-                   end=integer(),
-                   gene=character(),
-                   minCopyNumber=double(),
-                   score=double(),
-                   chromosomeBand=character(),
-                   cancerType=character())
-
-  allCanditates = data.frame(gene=character(), candidates=list(character()))
+  # Genome level variables
+  genomeDrivers = list()
+  genomeAdjacent <- data.frame()
+  genomeCandidates = data.frame()
 
   for (currentChromosome in chromosomes) {
     #currentChromosome = 1
+    genomeDrivers[[currentChromosome]] = list()
     cat("Processing chromosome:", currentChromosome, "\n")
 
+    # Chromosome level variables
     chromosomeGenes = allGenes[chromosome == currentChromosome][order(start)]
     chromosomeGeneCopyNumbers = allGeneCopyNumbers[chromosome == currentChromosome]
     chromosomeSummary = aggregate_gene_copy_numbers(chromosomeGeneCopyNumbers)
 
-    localDeletes = chromosomeGeneCopyNumbers
-
-
-    chromosomeResult = list()
+    driverGeneCopyNumbers = chromosomeGeneCopyNumbers
     for (i in 1:maxDriversPerChromosome) {
-      peakSummary = aggregate_gene_copy_numbers(localDeletes)
-      if (nrow(peakSummary) == 0) {
+      driverSummary = aggregate_gene_copy_numbers(driverGeneCopyNumbers)
+      if (nrow(driverSummary) == 0) {
         break
       }
 
-      topGene = head(peakSummary[order(-score)], 1)
-      genesWithSimilarScore = peakSummary[score >= topGene$score -1]
+      topGene = head(driverSummary[order(-score)], 1)
       cat("       Isolating gene:", topGene$gene, "\n")
 
-      topGeneIndexLocalPeak = match(topGene$gene, peakSummary$gene)
-      localPeak = peakSummary[max(1,topGeneIndexLocalPeak-7):min(topGeneIndexLocalPeak+7, nrow(peakSummary)),]
-      #localPeakLeft = peakSummary[max(1, topGeneIndexLocalPeak-1)]
-      #localPeakRight = peakSummary[min(nrow(peakSummary), topGeneIndexLocalPeak+1)]
+      driverNeighbours = neighbours(topGene, driverSummary)
+      chromosomeNeighbours = neighbours(topGene, chromosomeSummary)
 
-      topGeneIndexTotalPeak = match(topGene$gene, chromosomeSummary$gene)
-      totalPeak = chromosomeSummary[max(1,topGeneIndexTotalPeak-7):min(topGeneIndexTotalPeak+7, nrow(chromosomeSummary)),]
-
-      isAdjacent = adjacent_to_gene(topGene$gene,  localDeletes, chromosomeGenes)
-
-      adjacent = localDeletes[c(isAdjacent)]
+      # Determine adjacent
+      isAdjacent = adjacent_to_gene(topGene$gene,  driverGeneCopyNumbers, chromosomeGenes)
+      adjacent = driverGeneCopyNumbers[c(isAdjacent)]
       adjacentSummary = aggregate_gene_copy_numbers_by_cancer_type(adjacent)
-
-      topGeneRemovals = rbind(topGeneRemovals, adjacent[gene==topGene$gene])
-
-
       geneCandidates = candidates(topGene, adjacentSummary)
-      allCanditates = rbind(allCanditates, geneCandidates)
 
-      localDeletes = localDeletes[!c(isAdjacent)]
+      # Update genome variables
+      genomeAdjacent = rbind(genomeAdjacent, adjacent[gene==topGene$gene])
+      genomeCandidates = rbind(genomeCandidates, geneCandidates)
+      genomeDrivers[[currentChromosome]][[i]] <- list(topGene = topGene, candidates = geneCandidates$candidates, driverNeighbours = driverNeighbours, chromosomeNeighbours = chromosomeNeighbours, adjacent = adjacentSummary)
 
-      peak = list(topGene = topGene, candidates = geneCandidates$candidates, localPeak = localPeak, totalPeak = totalPeak, adjacent = adjacentSummary)
-      chromosomeResult[[i]] <- peak
+      # Remove adjacent copy numbers ready for next loop...
+      driverGeneCopyNumbers = driverGeneCopyNumbers[!c(isAdjacent)]
     }
-
-    copyNumberDeletions[[currentChromosome]] <- chromosomeResult
   }
 
-  summary <- aggregate_gene_copy_numbers_by_cancer_type(topGeneRemovals)[order(chromosome, -N)]
-  summary$candidates <- allCanditates[match(summary$gene, allCanditates$gene), c("candidates")]
-  copyNumberDeletions[["summary"]] <- summary
-  return (copyNumberDeletions)
+  genomeAdjacentSummary <- aggregate_gene_copy_numbers_by_cancer_type(genomeAdjacent)[order(chromosome, -N)]
+  genomeAdjacentSummary$candidates <- genomeCandidates[match(genomeAdjacentSummary$gene, genomeCandidates$gene), c("candidates")]
+  genomeDrivers[["summary"]] <- genomeAdjacentSummary
+
+  return (genomeDrivers)
 }
 
+#maxDriversPerChromosome = 3
+#chromosomes = c(1:2)
 
 #load("~/hmf/geneCopyNumber.RData")
 #allGenes = genes
 #allGeneCopyNumbers = geneCopyNumberDeletes
 #allGeneCopyNumbers = geneCopyNumberAmplifactions
-#copyNumberDeletions = copy_number_drivers(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 3, chromosomes = c(1:2))
+#driverAmplifications = copy_number_drivers(allGenes, geneCopyNumberAmplifactions)
+#driverDeletions = copy_number_drivers(allGenes, geneCopyNumberDeletes)
+
+#copyNumberDeletions[[1]][[1]]
+
 #summary = copyNumberDeletions$summary
