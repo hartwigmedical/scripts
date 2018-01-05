@@ -120,7 +120,7 @@ copy_number_deletions<-function(allGenes, allGeneCopyNumbers) {
 
     copyNumberDeletions[[currentChromosome]] <- chromosomeResult
   }
-  copyNumberDeletions[["summary"]] <- removed_summary(topGeneRemovals)[order(chromosome, -N)]
+  copyNumberDeletions[["summary"]] <- aggregate_gene_copy_numbers_by_cancer_type(topGeneRemovals)[order(chromosome, -N)]
   return (copyNumberDeletions)
 }
 
