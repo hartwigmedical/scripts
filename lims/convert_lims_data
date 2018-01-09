@@ -124,30 +124,31 @@ my %CPCT_TRANSLATIONS = (
   'Sampling_date'           => 'sampling_date',
   'Arrival_HMF'             => 'arrival_date',
   'Sample_barcode'          => 'nonisolated_sample_barcode',
-  'Patient_name'            => 'patient',
+  'Patient_name '           => 'patient',
   'Sample_name'             => 'sample_name',
   '#'                       => NOTINUSESTRING,
   'Source '                 => 'sample_source',
   'Yield'                   => 'yield',
   'Sample_ID_DNA'           => 'sample_id',
   'Sample_ID_RNA_or_plasma' => 'plasma_or_rna_sample_id',
-  'Pathologie_exp'          => 'patho_plate',
+  'Pathologie_exp'          => NOTINUSESTRING,
   'Qiasymphony_exp'         => NOTINUSESTRING,
   'Bioanalyser_exp'         => NOTINUSESTRING,
-  'Remarks'                 => 'remarks',
+  'Remarks'                 => NOTINUSESTRING,
   ## next block in sheet
-  'Primary_tumor_type'      => NOTINUSESTRING,
+  'Primary tumor type'      => 'primary_tum',
   'Biopsy_material '        => NOTINUSESTRING,
   'tumor_%'                 => 'tumor_perc',
-  'DNA_conc'                => 'dna_conc',  
-  'RNA_conc'                => 'rna_conc',
+  'DNA_conc'                => NOTINUSESTRING,
+  'RNA_conc'                => NOTINUSESTRING,
   'RIN_value'               => NOTINUSESTRING,
   'Coupes_barcode'          => NOTINUSESTRING,
+  'Biopsy_Remarks'          => NOTINUSESTRING,
   ## next block in sheet
   'Pathologie'              => NOTINUSESTRING,
   'Qiasymphony'             => NOTINUSESTRING,
-  'SNP'                     => 'snp_experiment_id',
-  'Patient_count'           => NOTINUSESTRING,
+  'SNP'                     => NOTINUSESTRING,
+  'Patient_count '          => NOTINUSESTRING,
   'Status '                 => 'status',
   'DNA_prep/reason_failed'  => NOTINUSESTRING,
   'RNA_prep'                => NOTINUSESTRING,
@@ -157,6 +158,7 @@ my %CPCT_TRANSLATIONS = (
   ## next block in sheet
   'maand'                   => NOTINUSESTRING,
   'drup '                   => NOTINUSESTRING,
+  'not CPCT/DRUP'           => NOTINUSESTRING,
   'Biobank (UMCU)'          => NOTINUSESTRING,
   'Biobank (NKI)'           => NOTINUSESTRING,
   'MAT'                     => NOTINUSESTRING,
@@ -309,9 +311,12 @@ sub parseLimsCPCT{
             $row_info{ $header_name } = $val;
         }
         
+        #print Dumper \%row_info;
+        #<>;
+        
         ## first we work on the dna sample
         my $sample_name = $row_info{ 'sample_name' };
-        my $patient_name = $row_info{ 'patient_name' };
+        my $patient_name = $row_info{ 'patient' };
         
         ## skip NA or empty values
         next if not $sample_name or isValueToSkip( $sample_name );
@@ -363,7 +368,7 @@ sub parseLimsCPCT{
         ## some completeness checks
         die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        die "[EXIT] Found existing key in CPCT lims for unique id ($unique) of sample $sample_name\n" if exists $store{ $unique };
+        next unless keyIsUnique( \%store, \%row_info, $unique );
         
         ## fix certain fields 
         fixDateFields( \%row_info );
@@ -381,8 +386,9 @@ sub parseLimsCPCT{
             my $source = $row_info{ 'sample_source' };
             my $unique = $row_info{ 'plasma_or_rna_sample_id' };
             next if isValueToSkip( $unique );
+            
             $row_info_copy{ 'sample_id' } = $unique;
-            die "[EXIT] Found existing key for unique id ($unique)\n" if exists $store{ $unique };
+            next unless keyIsUnique( \%store, \%row_info, $unique );
             
             if ( $source eq 'biopt' or $source eq 'Biopt' ){
                 $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
@@ -400,6 +406,19 @@ sub parseLimsCPCT{
 
     }
     return \%store;
+}
+
+sub keyIsUnique{
+    my ($objectStore, $newObject, $key) = @_;
+    if ( exists $objectStore->{ $key } ){
+        my $obj1_name = $objectStore->{ $key }{ 'sample_name' };
+        my $obj2_name = $newObject->{ 'sample_name' };
+        warn "[WARN] SKIPPING sample $obj2_name with unique key ($key) because key already exists for sample $obj1_name\n";
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
 sub parseLimsRest{
@@ -438,8 +457,6 @@ sub parseLimsRest{
         $row_info{ 'label' } = 'RESEARCH';
         $row_info{ 'patient' } = $row_info{ 'sample_name' };
         $row_info{ 'entity' } = $row_info{ 'submission' };
-        
-        #debugHash( \%row_info );
         
         ## check data analysis type and set accordingly
         if ( $analysis_type eq 'SomaticsBFX' ){
@@ -494,7 +511,8 @@ sub parseLimsRest{
         die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
         die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
-        die "[EXIT] Found existing key for unique id ($unique) of sample $sample_name\n" if exists $store{ $unique };
+        next unless keyIsUnique( \%store, \%row_info, $unique );
+        
         
         ## fix certain fields 
         fixDateFields( \%row_info );
@@ -536,6 +554,7 @@ sub parseLimsProc{
         
         my $unique = $row_info{ 'sample_id' };
         next if isValueToSkip( $unique );
+        next unless keyIsUnique( \%store, \%row_info, $unique );
         
         ## store shipment info at uniqe id
         $store{ $unique } = \%row_info;
