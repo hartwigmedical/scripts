@@ -54,4 +54,4 @@ then
     rm -rf ${working_dir}
 fi
 
-echo "Complete -" $(date)
+echo "[INFO] Complete -" $(date)

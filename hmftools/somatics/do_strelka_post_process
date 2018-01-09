@@ -10,12 +10,12 @@ high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllF
 
 if [[ ! -e ${output_vcf} ]]
 then
-    echo "Post processing variants -" $(date)
+    echo "[INFO] Post processing variants -" $(date)
     java -jar ${strelka_post_process_jar} \
         -v ${input_vcf} \
         -hc_bed ${high_confidence_bed} \
         -t ${sample} \
         -o ${output_vcf}
 else
-    echo "Post processing variants already complete -" $(date)
+    echo "[INFO] Post processing variants already complete -" $(date)
 fi

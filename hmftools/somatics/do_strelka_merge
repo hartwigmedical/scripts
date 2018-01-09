@@ -1,5 +1,4 @@
 #!/bin/bash
-source load_metadata
 
 run_dir=$1 && shift
 output_vcf=$1 && shift
@@ -20,18 +19,18 @@ then
     snvs_passed=${output_vcf}.snvs
 
     ### Hotspots
-    echo "Annotate and filter INDEL hotspots -" $(date)
+    echo "[INFO] Annotate and filter INDEL hotspots -" $(date)
     ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${indels} -O u | \
     ${bcftools} filter -e HOTSPOT=1 -s PASS -O u | \
     ${bcftools} filter -i 'FILTER="PASS"' -o ${indels_passed}
 
-    echo "Annotate and filter SNV hotspots -" $(date)
+    echo "[INFO] Annotate and filter SNV hotspots -" $(date)
     ${bcftools} annotate -a ${hotspot} -c CHROM,POS,REF,ALT -m +HOTSPOT ${snvs} -O u | \
     ${bcftools} filter -e HOTSPOT=1 -s PASS -O u | \
     ${bcftools} filter -i 'FILTER="PASS"' -o ${snvs_passed}
 
     ### Combine
-    echo "Combining Variants -" $(date)
+    echo "[INFO] Combining Variants -" $(date)
     java -jar "${gatk}/GenomeAnalysisTK.jar" \
         -T CombineVariants \
         -R ${ref_genome} \
@@ -44,5 +43,5 @@ then
     rm -f ${indels_passed}*
     rm -f ${snvs_passed}*
 else
-    echo "Combining variants already complete -" $(date)
+    echo "[INFO] Combining variants already complete -" $(date)
 fi

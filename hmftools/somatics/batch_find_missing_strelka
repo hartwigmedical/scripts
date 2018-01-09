@@ -2,12 +2,12 @@
 starts_with=$1 && shift
 
 for run_dir in /data/cpct/runs/*; do
-    if [[ $run_dir == /data/cpct/runs/${starts_with}* ]]; then
+    if [[ ${run_dir} == /data/cpct/runs/${starts_with}* ]]; then
 
         somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
         if [ $? -ne 0 ]
         then
-            echo "Somatic V2 unavailable for run:" ${run_dir}
+            echo "[WARN] Somatic V2 unavailable for run:" ${run_dir}
         fi
     fi
 done
