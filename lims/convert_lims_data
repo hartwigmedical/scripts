@@ -112,10 +112,10 @@ my %REST_TRANSLATIONS = (
 );
 
 my %PROC_TRANSLATIONS = (
-  'Sample_ID'       => 'sample_id', # eg FR12345678
-  'Sample_name'     => 'sample_name', # eg CPCT1234567R
-  'Diluted_library' => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
-  'SOP tracking code (concatenate)' => 'lab_sop_versions',
+  'Sample_ID'         => 'sample_id', # eg FR12345678
+  'Sample_name'       => 'sample_name', # eg CPCT1234567R
+  'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
+  'Sop_tracking_code' => 'lab_sop_versions',
 );
 
 ## columns CPCT tracking sheet
@@ -539,6 +539,7 @@ sub parseLimsProc{
         
         ## store shipment info at uniqe id
         $store{ $unique } = \%row_info;
+        
     }
     
     return \%store;
