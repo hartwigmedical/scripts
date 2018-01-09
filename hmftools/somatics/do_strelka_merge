@@ -9,7 +9,6 @@ bcftools=/data/common/tools/bcftools_v1.3/bcftools
 hotspot=/data/common/dbs/somatic_hotspot/Hotspot.tsv.gz
 gatk=/data/common/tools/gatk_v3.4.46-hmf
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
-strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.0/strelka-post-process.jar
 
 ### Input Files
 indels=$(ls ${run_dir}/somaticVariants/*/strelka/results/all*indels.vcf)
