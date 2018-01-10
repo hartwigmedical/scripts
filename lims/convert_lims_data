@@ -554,7 +554,7 @@ sub parseLimsProc{
         
         my $unique = $row_info{ 'sample_id' };
         next if isValueToSkip( $unique );
-        next unless keyIsUnique( \%store, \%row_info, $unique );
+        #next unless keyIsUnique( \%store, \%row_info, $unique );
         
         ## store shipment info at uniqe id
         $store{ $unique } = \%row_info;
