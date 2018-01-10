@@ -1,195 +1,64 @@
+detach("package:purple", unload=TRUE)
+library(purple)
 library(RMySQL)
-library(plyr)
-LOAD_FROM_FILE = FALSE
-DATA_FILE = "~/hmf/pilot.RData"
 
-leftJoin<-function(left, right) {
-  jon = merge(x = left, y = right, by="row.names", all.x=TRUE)
-  return (sqlColumnToRownames(jon, "Row.names"))
-}
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 
-sampleIdRowNames<-function(df, .drop = TRUE) {
-  row.names(df) <- df$sampleId
-  if (.drop) {
-    df$sampleId <- NULL
-  }
-  return (df)
-}
+# Query Cohort Data
+purity = query_purity(dbProd)
+sample = query_sample_data(dbProd)
+clinical = query_clinical_data(dbProd)
+clinical$ageAtBiopsyDate = year(clinical$biopsyDate) - clinical$birthYear
+cohort = purity[, c("sampleId","gender", "purity", "ploidy")]
 
-applySamples<-function(cohort, sampleFunction) {
-  result = ddply(cohort, 1, sampleFunction, .drop = FALSE, .progress = "text", .parallel = FALSE)
-  return (sampleIdRowNames(result))
-}
+cat("Querying microsatellite instability", "\n")
+msi = purple::apply_to_cohort(cohort, function(x) {purple::query_msi_sample(dbProd, x$sampleId)})
 
-####### PURITY #######
-query_purity<-function(dbConnect) {
-  query = paste(
-    "SELECT p.sampleId, p.purity AS purplePurity, round(p.ploidy,2) as ploidy, gender",
-    " FROM purity p",
-    "WHERE qcStatus = 'PASS'",
-    "  AND status <> 'NO_TUMOR'",
-    "  AND modified > '2017-12-21'",
-    sep = " ")
-  return (sampleIdRowNames(dbGetQuery(dbConnect, query), .drop = FALSE))
-}
+cat("Querying structural variants", "\n")
+svTypes = purple::apply_to_cohort(cohort, function(x) {purple::query_structural_variant_overview(dbProd, x$sampleId)})
 
-####### Sample Data #######
-query_sample_data<-function(dbConnect) {
-  query = paste(
-    "SELECT sampleId, tumorPercentage AS pathologyPurity",
-    " FROM sample c",
-    sep = " ")
-  return (sampleIdRowNames(dbGetQuery(dbConnect, query)))
-}
+cat("Querying unsupported copy number segments", "\n")
+unsupportedSegments = purple::apply_to_cohort(cohort, function(x) {purple::query_unsupported_segments(dbProd, x$sampleId)})
 
-attach_sample_data<-function(dbConnect, samples) {
-  cancerTypes = query_sample_data(dbConnect)
-  return (leftJoin(samples, cancerTypes))
-}
+cat("Querying somatic variants", "\n")
+somatics = purple::apply_to_cohort(cohort, function(x) {purple::query_somatic_overview(dbProd, x$sampleId)})
 
-####### Clinical Data #######
-query_clinical_data<-function(dbConnect) {
-  query = paste(
-    "SELECT c.sampleId, c.cancertype, c.birthYear, c.biopsyDate",
-    " FROM clinical c",
-    sep = " ")
-  return (sampleIdRowNames(dbGetQuery(dbConnect, query)))
-}
+cat("Querying patientIds", "\n")
+patientIdLookups = query_patient_id_lookup(dbProd)
+patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
+colnames(patientIds) <- c("sampleId", "patientId")
 
-attach_clinical_data<-function(dbConnect, samples) {
-  cancerTypes = query_clinical_data(dbConnect)
-  return (leftJoin(samples, cancerTypes))
-}
+cat("Querying duplicated autosomes", "\n")
+wholeGenomeDuplications = purple::apply_to_cohort(cohort, function(x) {purple::query_whole_genome_duplication(dbProd, x$sampleId)})
 
-####### Microsatellite Instability #######
-query_msi_sample<-function(dbConnect, sample) {
-  query = paste(
-    "SELECT count(*) as msiScore ",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS'",
-    "   AND length(alt) <> length(ref)",
-    "   AND length(alt) <= 50",
-    "   AND length(ref) <= 50",
-    "   AND sampleId = '", sample$sampleId, "'",
-    " GROUP BY sampleId",
-    sep = "")
-  score = dbGetQuery(dbConnect, query)
-  return (score)
-}
+# Save
+save(clinical, purity, sample, msi, svTypes, unsupportedSegments, somatics, patientIds, wholeGenomeDuplications, file="~/hmf/purpleCohortQueries.RData")
 
-attach_msi<-function(dbConnect, cohort) {
-  cat("Attaching microsatellite instability...")
-  score = applySamples(cohort, function(x) {query_msi_sample(dbConnect, x)})
-  score$msiStatus <-ifelse(score$msiScore > 3095, "UNSTABLE", "STABLE")
-  cat("Attaching microsatellite instability complete!")
-  return (leftJoin(cohort, score))
-}
+# Load
+load("~/hmf/purpleCohortQueries.RData")
 
-####### Structural Variants #######
-query_structural_variants<-function(dbConnect, sample) {
-  query = paste(
-    "SELECT sampleId, ",
-    "       SUM(1) AS svTotal, ",
-    "       SUM(IF (type ='DEL', 1, 0)) AS svDel, ",
-    "       SUM(IF (type ='DUP', 1, 0)) AS svDup, ",
-    "       SUM(IF (type ='INS', 1, 0)) AS svIns, ",
-    "       SUM(IF (type ='INV', 1, 0)) AS svInv, ",
-    "       SUM(IF (type ='BND', 1, 0)) AS svBnd ",
-    " FROM structuralVariant ",
-    "WHERE sampleId = '", sample$sampleId, "'",
-    " GROUP BY sampleId",
-    sep = "")
-  return (dbGetQuery(dbConnect, query))
-}
+# Attached queried data
+cohort = purity[purity$sampleId != "CPCT02010063T", c("sampleId","gender", "version", "purity", "ploidy")]
+cohort = left_join(cohort, clinical[, c("sampleId", "cancerType", "cancerSubtype", "biopsySite", "biopsyLocation", "treatment", "treatmentType", "ageAtBiopsyDate")])
+cohort = left_join(cohort, sample[, c("sampleId", "pathologyPurity")])
+cohort = left_join(cohort, msi)
+cohort = left_join(cohort, svTypes)
+cohort = left_join(cohort, somatics)
+cohort = left_join(cohort, patientIds)
+cohort = left_join(cohort, unsupportedSegments)
+cohort = left_join(cohort, wholeGenomeDuplications)
 
-attach_structural_variants<-function(dbConnect, cohort) {
-  cat("Attaching somatics....")
-  somatics = applySamples(cohort, function(x) {query_structural_variants(dbConnect, x)})
-  cat("Attaching somatics complete!")
-  return (leftJoin(cohort, somatics))
-}
 
-####### QC Score #######
-query_qc_score<-function(dbConnect, sample) {
-  query = paste(
-    "SELECT sampleId, count(*) as unsupportedSegments ",
-    " FROM copyNumber ",
-    "WHERE sampleId = '", sample$sampleId, "'",
-    "  AND segmentStartSupport = 'NONE'",
-    " GROUP BY sampleId",
-    sep = "")
-  return (dbGetQuery(dbConnect, query))
-}
+# Enrich
+cohort$qcScore <- round(cohort$unsupportedSegments / cohort$ploidy,0)
+cohort$unsupportedSegments <- NULL
+cohort$duplicatedAutosomes <- ifelse(is.na(cohort$duplicatedAutosomes), 0, cohort$duplicatedAutosomes)
+cohort$WGD <- ifelse(is.na(cohort$WGD), FALSE, cohort$WGD)
 
-attach_qc_score<-function(dbConnect, cohort) {
-  cat("Attaching qc score")
-  qcScore = applySamples(cohort, function(x) {query_qc_score(dbConnect, x)})
-  result = leftJoin(cohort, qcScore) 
-  result$qcScore <- round(result$unsupportedSegments / result$ploidy,0)
-  result$unsupportedSegments <- NULL
-  cat("Attaching qc score!")
-  return (result)
-}
+# Clean
+cohort["_CLONAL"] <- NULL
+cohort["_SUBCLONAL"] <- NULL
+cohort["_UNKNOWN"] <- NULL
 
-####### Somatics #######
-query_somatic_sample<-function(dbConnect, sample) {
-  query = paste(
-    "SELECT sampleId, ",
-    "       SUM(1) AS somaticVariants, ",
-    "       SUM(IF (clonality ='CLONAL', 1, 0)) AS clonal, ",
-    "       SUM(IF (clonality ='SUBCLONAL', 1, 0)) AS subclonal, ",
-    "       SUM(IF (clonality ='INCONSISTENT', 1, 0)) AS inconsistentClonality, ",
-    "       SUM(IF (length(ref) = 1 AND length(alt) = 1, 1, 0)) as snv, ",
-    "       SUM(IF (length(ref) <> length(alt), 1, 0)) as indels, ",
-    "       SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad ",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS' ",
-    "   AND sampleId = '", sample$sampleId, "'",
-    " GROUP BY sampleId",
-    sep = "")
-  return (dbGetQuery(dbConnect, query))
-}
 
-attach_somatics<-function(dbConnect, cohort) {
-  cat("Attaching somatics....")
-  somatics = applySamples(cohort, function(x) {query_somatic_sample(dbConnect, x)})
-  cat("Attaching somatics complete!")
-  return (leftJoin(cohort, somatics))
-}
-
-####### START OF EXECUTION #######
-if (LOAD_FROM_FILE) {
-  load(DATA_FILE)
-} else {
-  
-  #Pilot
-  dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-  allSamples = query_purity(dbConnect)
-  
-  cohort = allSamples
-  cohort = allSamples[1:100, , drop = FALSE]
-  cohort = attach_qc_score(dbConnect, cohort)
-  cohort = attach_sample_data(dbConnect, cohort)
-  cohort = attach_structural_variants(dbConnect, cohort)
-  cohort = attach_msi(dbConnect, cohort)
-  cohort = attach_somatics(dbConnect, cohort)
-  dbDisconnect(dbConnect)
-  
-  #Production
-  prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-  cohort = attach_clinical_data(prodDB, cohort)
-  dbDisconnect(prodDB)
-  
-  #backupSamples = cohort
-  save(allSamples, cohort,  file = DATA_FILE)
-  dbDisconnect(dbConnect)
-}
-
-### Missing Data
-#samplesMissingCancerTypes = samples[is.na(samples$cancerType),]
-#samplesMissingStructuralVariants = samples[samples$svCount == 0,]
-
-### Experiment
-#breastSamples = rownames(samples[samples$cancerType == "Breast",])
-
-jon = allSamples[1:5, 1, drop = FALSE]
+write.csv(cohort, file = '~/hmf/cohortOverview.csv')
