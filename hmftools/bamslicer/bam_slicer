@@ -31,7 +31,7 @@ SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 run_bam_slicer() {
    BAM_INDEX_PARAM=$1
    java -Dsamjdk.buffer_size=0 \
-     -Xmx4G \
+     -Xmx8G \
      -jar ${BAM_SLICER} \
      -s3 \
      -bucket ${RUN_BUCKET} \
