@@ -6,7 +6,7 @@ load_ref_sample_from_metadata() {
     echo $(jq -r '.ref_sample' ${metadata})
 }
 
-load_tumor_sample_from_metadata() {
+load_ref_sample_from_metadata() {
     local run_dir=$1
     local metadata=${run_dir}/metadata
     echo $(jq -r '.tumor_sample' ${metadata})

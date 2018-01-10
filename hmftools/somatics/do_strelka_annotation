@@ -1,5 +1,5 @@
 #!/bin/bash
-source load_metadata
+
 input_vcf=$1 && shift
 output_vcf=$1 && shift
 
