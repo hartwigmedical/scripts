@@ -227,13 +227,8 @@ sub printLimsToJson{
     my $submissions_count = scalar keys %$submissions;
 
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
-    #my $json_obj = JSON->new;
-    
-    #my $json_txt = $json_obj->pretty->encode( \%lims );
     my $json_txt = JSON->new->utf8->pretty->encode(\%lims);
     
-    #my $json_txt = encode_json \%lims;
-    #my $json_txt = $json_obj->encode( 'UTF-8', \%lims );
     say "[INFO] Writing output to \"$out_file\" ($submissions_count submissions and $samples_count samples)";
     open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         print $lims_json_fh $json_txt;
@@ -248,9 +243,10 @@ sub addLabSopString{
             ## format: PREP(\d+)V(\d+)-QC(\d+)V(\d+)-SEQ(\d+)V(\d+)
             $samples->{ $id }{ $sop_field_name } = $inprocessinfo->{ $id }{ $sop_field_name };
         }
-        else{
+        elsif( not exists $samples->{ $id }{ $sop_field_name } ){
             $samples->{ $id }{ $sop_field_name } = NACHAR;
         }
+        ## else: we keep whatever is already defined at sop_field_name
     }
 }
 
