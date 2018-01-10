@@ -1,5 +1,5 @@
 select patients.patientId, 
-BISLICENR, BISLICE, BISITERADI, BIOTHLESSITE, BIOTHIMAGE, BIOPTDT, BILESTYPE, BILESSITE, BILESNR, BILESLOC, BIIMAGE
+BISLICENR, BISLICE, BISITERADI, BIOTHLESSITE, CPCT, BIOTHIMAGE, BIOPTDT, BILESTYPE, BILESSITE, BILESNR, BILESLOC, BIIMAGE
 from 
 	(select distinct patientId from ecrf) patients
 left join
@@ -22,6 +22,10 @@ left join
     (select patientId, group_concat(itemValue separator ', ') as BIOTHIMAGE
      from ecrf where item ='FLD.BIOPS.BIOTHIMAGE' group by patientId) thimage
 on patients.patientId = thimage.patientId
+left join
+    (select patientId, group_concat(itemValue separator ', ') as CPCT
+    from ecrf where item ='FLD.BIOPS.CPCT' group by patientId) bt
+on patients.patientId = bt.patientId
 left join
     (select patientId, group_concat(itemValue separator ', ') as BIOPTDT
      from ecrf where item ='FLD.BIOPS.BIOPTDT' group by patientId) tdt
