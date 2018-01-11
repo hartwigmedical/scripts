@@ -52,7 +52,7 @@ then
     do_strelka_annotation ${snpEff_vcf_gz} ${annotated_vcf_gz}
     do_strelka_pon_filter ${annotated_vcf_gz} ${final_vcf_gz}
 
-    #rm -rf ${working_dir}
+    rm -rf ${working_dir}
 fi
 
 echo "[INFO] Complete -" $(date)
