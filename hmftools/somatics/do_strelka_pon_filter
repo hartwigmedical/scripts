@@ -8,7 +8,8 @@ bcftools=/data/common/tools/bcftools_v1.3/bcftools
 tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 echo "[INFO] PON Filtering Variants -" $(date)
-${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ -O u ${input_vcf} | \
-${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${output_vcf}
+${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${input_vcf} -O u | \
+${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O u | \
+${bcftools} filter -e HOTSPOT=1 -s PASS -O z -o ${output_vcf}
 
 ${tabix} -p vcf ${output_vcf}
