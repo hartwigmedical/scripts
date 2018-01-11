@@ -16,6 +16,7 @@ mkdir -p ${working_dir}
 merged_vcf=${working_dir}/merged.vcf
 post_processed_vcf=${working_dir}/post_processed.vcf
 mnv_bam=${working_dir}/mnv.bam
+mnv_bai=${working_dir}/mnv.bai
 snpEff_vcf=${working_dir}/snpEff.vcf
 snpEff_vcf_gz=${snpEff_vcf}.gz
 annotated_vcf_gz=${working_dir}/annotated.vcf.gz
@@ -32,7 +33,7 @@ then
 
     if [[ ! -e ${mnv_bam} ]]
     then
-        do_strelka_mnv_bam ${sample} ${merged_vcf} ${mnv_bam}
+        do_strelka_mnv_bam ${sample} ${merged_vcf} ${mnv_bam} ${mnv_bai}
     fi
 
     if [[ ! -e ${post_processed_vcf} ]]

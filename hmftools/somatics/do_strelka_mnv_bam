@@ -6,12 +6,14 @@ BAM_SLICER_SCRIPT=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
 SAMPLE=$1 && shift
 VCF=$1 && shift
 BAM=$1 && shift
+BAI=$1 && shift
 
 ## MIVO: some sanity checks
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
 SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
+SLICED_BAI="${SAMPLE}_dedup.realigned.sliced.bai"
 VCF_NAME="${VCF%.*}"
 MNV_BED="${VCF_NAME}.mnvs.bed"
 MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
@@ -31,5 +33,6 @@ then exit 1
 fi
 
 mv ${SLICED_BAM} ${BAM}
+mv ${SLICED_BAI} ${BAI}
 
 
