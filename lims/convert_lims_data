@@ -45,7 +45,7 @@ my $HELP = <<"HELP";
      cpct lims: $CPCTIN_FILE
      rest lims: $RESTIN_FILE
      proc lims: $PROCIN_FILE
-     proc 2017: $PROCIN_FILE
+     proc 2017: $PROCIN_2017
      lims 2017: $JSONIN_2017
 
   Output files:
