@@ -18,6 +18,7 @@ MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
 
 if ! java -cp ${MNV_DETECTOR} com.hartwig.hmftools.strelka.MNVDetectorApplication \
     -v ${VCF} \
+    -strelka \
     -bed_out ${MNV_BED} \
     -vcf_out ${MNV_VCF} ;
 then exit 1
