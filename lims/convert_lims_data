@@ -21,9 +21,13 @@ my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
 my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
 my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
-my $JSONIN_FILE = '/data/lims/labfiles/lims_2017.json';
-my $LIMSOUTFILE = '/data/lims/lims.json';
+my $LIMSOUTFILE = '/data/lims/lims_test.json';
 my $BACKUP_DIR  = '/data/lims/previous';
+
+## PROCIN_2017 contains 2017 samples SOP string
+## JSONIN_2017 contains 2017 samples complete (but only for non-CPCT)
+my $PROCIN_2017 = '/data/lims/labfiles/2017_lims_proc';
+my $JSONIN_2017 = '/data/lims/labfiles/lims_2017.json'; 
 
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP = <<"HELP";
@@ -41,7 +45,8 @@ my $HELP = <<"HELP";
      cpct lims: $CPCTIN_FILE
      rest lims: $RESTIN_FILE
      proc lims: $PROCIN_FILE
-     2017 lims: $JSONIN_FILE
+     proc 2017: $PROCIN_FILE
+     lims 2017: $JSONIN_2017
 
   Output files:
     $LIMSOUTFILE (main json output)
@@ -165,33 +170,26 @@ my %CPCT_TRANSLATIONS = (
 );
     
 ## ---------- 
-## DEBUG
-## ----------
-if ( $opt{ debug } ){
-    say "[DEBUG] Contents of CONSTANT hashes:";
-    print Dumper( $_ ) foreach (\%CPCT_TRANSLATIONS, \%REST_TRANSLATIONS, \%SHIP_TRANSLATIONS);
-}
-
-## ---------- 
 ## MAIN
 ## ----------
 
 say "[INFO] START with script \"$SCRIPT\"";
 
 ## init all objects that will hold various info
-my $dict_centers; # will be hashref with inffo about cpct/drup centers
-my $lims_submiss; # will be hashref with info from shipments sheet
-my $lims_inprocs; # will be hashref with info from In Process sheet
-my $lims_samples; # will be hashref with final info from all excel files comboined
+my $dict_centers = {}; # will be hashref with info about cpct/drup centers
+my $lims_submiss = {}; # will be hashref with info from shipments sheet
+my $lims_inprocs = {}; # will be hashref with info from In Process sheet
+my $lims_samples = {}; # will be hashref with info from all comboined
 
-## load initial 2017 lims data as basis
-my $lims_2017 = readJson( $JSONIN_FILE );
+## load initial 2017 lims data as basis for non-CPCT
+my $lims_2017 = readJson( $JSONIN_2017 );
 $lims_samples = $lims_2017->{ 'samples' };
 $lims_submiss = $lims_2017->{ 'submissions' };
 
 ## parsing input and add to existing 2017 lims data
 $dict_centers = parseDictFile( $CENTER_FILE, 'center2centername' );
-$lims_inprocs = parseLimsProc( $PROCIN_FILE, \%PROC_TRANSLATIONS );
+$lims_inprocs = parseLimsProc( $PROCIN_2017, \%PROC_TRANSLATIONS, $lims_inprocs );
+$lims_inprocs = parseLimsProc( $PROCIN_FILE, \%PROC_TRANSLATIONS, $lims_inprocs );
 $lims_submiss = parseLimsSubm( $RESTIN_FILE, \%SHIP_TRANSLATIONS, $lims_submiss );
 $lims_samples = parseLimsRest( $RESTIN_FILE, \%REST_TRANSLATIONS, $lims_submiss, $lims_samples );
 $lims_samples = parseLimsCPCT( $CPCTIN_FILE, \%CPCT_TRANSLATIONS, $dict_centers, $lims_samples );
@@ -307,9 +305,6 @@ sub parseLimsCPCT{
             $row_info{ $header_name } = $val;
         }
         
-        #print Dumper \%row_info;
-        #<>;
-        
         ## first we work on the dna sample
         my $sample_name = $row_info{ 'sample_name' };
         my $patient_name = $row_info{ 'patient' };
@@ -364,12 +359,12 @@ sub parseLimsCPCT{
         ## some completeness checks
         die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        next unless keyIsUnique( \%store, \%row_info, $unique );
         
         ## fix certain fields 
         fixDateFields( \%row_info );
         
-        ## store sample info at first uniqe id
+        ## store info at uniqe id
+        next unless keyIsUnique( \%store, \%row_info, $unique );
         $store{ $unique } = \%row_info;
         
         ## in case of BIOPT we also store rna sample
@@ -384,7 +379,6 @@ sub parseLimsCPCT{
             next if isValueToSkip( $unique );
             
             $row_info_copy{ 'sample_id' } = $unique;
-            next unless keyIsUnique( \%store, \%row_info, $unique );
             
             if ( $source eq 'biopt' or $source eq 'Biopt' ){
                 $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
@@ -396,7 +390,8 @@ sub parseLimsCPCT{
                 die "[EXIT] Unexpected value for source ($source) sould be Biopt of Blood?\n";
             }
             
-            ## store sample info at second uniqe id
+            ## store info at unique id
+            next unless keyIsUnique( \%store, \%row_info, $unique );
             $store{ $unique } = \%row_info_copy;
         }
 
@@ -506,14 +501,13 @@ sub parseLimsRest{
         die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
         die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
         die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };
-        next unless keyIsUnique( \%store, \%row_info, $unique );
-        
+        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };        
         
         ## fix certain fields 
         fixDateFields( \%row_info );
         
-        ## store sample info at uniqe id
+        ## store at uniqe id
+        next unless keyIsUnique( \%store, \%row_info, $unique );
         $store{ $unique } = \%row_info;
         
     }
@@ -522,7 +516,7 @@ sub parseLimsRest{
 
 sub parseLimsProc{
     
-    my ($file, $translations) = @_;
+    my ($file, $translations, $lims) = @_;
     
     my %config = (
         excel => $file,
@@ -534,7 +528,7 @@ sub parseLimsProc{
     );
     my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
     
-    my %store = ();
+    my %store = %{$lims};
     
     foreach my $row ( $config{ h_row }+1 .. $max_row ) {
 
@@ -550,9 +544,9 @@ sub parseLimsProc{
         
         my $unique = $row_info{ 'sample_id' };
         next if isValueToSkip( $unique );
-        #next unless keyIsUnique( \%store, \%row_info, $unique );
         
-        ## store shipment info at uniqe id
+        ## for "In Process" sheet no need for checking actual uniqueness
+        ## the last one to be read should always be the most up2date one
         $store{ $unique } = \%row_info;
         
     }
