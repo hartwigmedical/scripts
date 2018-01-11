@@ -7,7 +7,8 @@ for run_dir in /data/cpct/runs/*; do
         somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
         if [ $? -eq 0 ]
         then
-            echo "[WARN] Found incorrect V2 unavailable for run:" ${run_dir}
+            echo "[WARN] Found deprecated V2.0 run:" ${run_dir}
+            rm ${somatic_vcf}*
         fi
     fi
 done
