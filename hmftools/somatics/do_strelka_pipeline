@@ -38,7 +38,7 @@ then
 
     if [[ ! -e ${post_processed_vcf} ]]
     then
-        do_strelka_post_process_v2.1 ${sample} ${merged_vcf} ${post_processed_vcf} ${mnv_bam}
+        do_strelka_post_process ${sample} ${merged_vcf} ${post_processed_vcf} ${mnv_bam}
     fi
 
     if [[ ! -e ${snpEff_vcf} ]]

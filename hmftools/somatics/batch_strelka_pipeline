@@ -2,9 +2,9 @@
 starts_with=$1 && shift
 
 for file in /data/cpct/runs/*; do
-    if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
+    if [[ ${file} == /data/cpct/runs/${starts_with}* ]]; then
         sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
 
-        do_strelka_pipeline_v2.1 $file $@
+        do_strelka_pipeline ${file} $@
     fi
 done
