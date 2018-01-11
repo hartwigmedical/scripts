@@ -1,4 +1,5 @@
 #!/bin/bash
+source load_metadata
 
 run_dir=$1 && shift
 credentials=$1 && shift
