@@ -16,7 +16,7 @@ VCF_NAME="${VCF%.*}"
 MNV_BED="${VCF_NAME}.mnvs.bed"
 MNV_VCF="${VCF_NAME}.potential_mnvs.vcf"
 
-if ! java -cp com.hartwig.hmftools.strelka.MNVDetectorApplication ${MNV_DETECTOR} \
+if ! java -cp ${MNV_DETECTOR} com.hartwig.hmftools.strelka.MNVDetectorApplication \
     -v ${VCF} \
     -bed_out ${MNV_BED} \
     -vcf_out ${MNV_VCF} ;
