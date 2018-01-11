@@ -1,0 +1,23 @@
+#!/bin/bash
+
+sample=$1 && shift
+input_vcf=$1 && shift
+output_vcf=$1 && shift
+tumor_bam=$1 && shift
+
+### Dependencies
+strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.2/strelka-post-process.jar
+high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
+
+if [[ ! -e ${output_vcf} ]]
+then
+    echo "[INFO] Post processing variants -" $(date)
+    java -jar ${strelka_post_process_jar} \
+        -v ${input_vcf} \
+        -hc_bed ${high_confidence_bed} \
+        -t ${sample} \
+        -o ${output_vcf} \
+        -b ${tumor_bam}
+else
+    echo "[INFO] Post processing variants already complete -" $(date)
+fi
