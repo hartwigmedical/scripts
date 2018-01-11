@@ -21,7 +21,7 @@ my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
 my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
 my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
 my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
-my $LIMSOUTFILE = '/data/lims/lims_test.json';
+my $LIMSOUTFILE = '/data/lims/lims.json';
 my $BACKUP_DIR  = '/data/lims/previous';
 
 ## PROCIN_2017 contains 2017 samples SOP string
