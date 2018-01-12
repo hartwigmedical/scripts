@@ -2,59 +2,37 @@ library(RMySQL)
 library(dndscv)
 library(IRanges)
 
-query_clinical_data<-function(dbConnect) {
-  query = paste(
-    "SELECT c.sampleId, c.cancertype, c.birthYear, c.biopsyDate",
-    " FROM clinical c",
-    sep = " ")
-  return ((dbGetQuery(dbConnect, query)))
-}
+load(file="~/hmf/cohort.RData")
+distinctCohort = purple::highest_purity_patients(cohort)
 
-query_somatics<-function(dbConnect) {
-  query = paste(
-    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt ",
-    "  FROM somaticVariant s, purity p ",
-    " WHERE s.sampleId = p.sampleId",
-    "   AND status <> 'NO_TUMOR' AND qcstatus = 'PASS' ",
-    "   AND right(s.sampleId,1) ='T'",
-    "   AND p.modified > '2017-12-21'",
-    "   AND filter = 'PASS'",
-    "   AND type = 'SNP'",
-    "   AND gene <> ''",
-    # PETE - COMMENT OUT NEXT LINE FOR LOTS OF FUN :)
-    "   AND s.sampleId in ('CPCT02020213T','CPCT02030255T', 'CPCT02070012T')",
-    sep = "")
-  
-  return (dbGetQuery(dbConnect, query)) 
-}
-
-#Select clinical data
+#Select snps
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-clinicalData = query_clinical_data(dbProd)
+snps = query_snps(dbProd, distinctCohort[1:3,])
 dbDisconnect(dbProd)
 rm(dbProd)
 
-#Select somatics
-dbPilot = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-somatics = query_somatics(dbPilot)
-dbDisconnect(dbPilot)
-rm(dbPilot)
+#Enrich snps with cancer type
+snps = snps[,c("sampleId", "chromosome", "position", "ref", "alt")]
+colnames(snps) <- c("sampleId", "chr", "pos", "ref", "alt")
+snps$cancerType = slookup(jon, distinctCohort[, c("sampleId", "cancerType")])
 
-# Attach cancertype to somatics
-somatics$cancerType <- sapply(somatics$sampleId, function(x) {clinicalData[match(x, clinicalData$sampleId), c("cancerType")] })
 
-# Which cancer types to we have?
-unique(somatics$cancerType)
+panResults = dndscv(snps[, c("sampleId", "chr", "pos", "ref", "alt")])
+results = list()
 
-allInput = somatics[, c("sampleId", "chr", "pos", "ref", "alt")]
-allOutput<-dndscv(allInput)
+cancerTypes = unique(snps$cancerType)
+for (cancerType in cancerTypes) {
+  cat("Processing ", cancerType)
+  input = snps[snps$cancerType == cancerType, c("sampleId", "chr", "pos", "ref", "alt")]
+  output = dndscv(input)
+  results[[cancerType]] <- output
+}
 
-sarcomaInput = somatics[somatics$cancerType == 'Sarcoma', c("sampleId", "chr", "pos", "ref", "alt")];
-sarcomaOutput<-dndscv(sarcomaInput)
+# Example of writing globadnds to file...
+for (cancerType in cancerTypes) {
+  write.csv(results[[cancerType]]$globaldnds, paste('~/hmf/dnds_', cancerType, ".RData", sep=""))
+}
 
-prostateInput = somatics[somatics$cancerType == 'Prostate', c("sampleId", "chr", "pos", "ref", "alt")];
-prostateOutput<-dndscv(prostateInput)
-
-str(allOutput)
-allOutput$globaldnds
-allOutput$sel_cv
+# Accessing individual ones
+breastResults = results$Breast
+lungResults = results$Lung

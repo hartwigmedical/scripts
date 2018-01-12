@@ -225,3 +225,18 @@ query_whole_genome_duplication<-function(dbConnect, sampleId) {
   return (result)
 }
 
+query_snps<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT *",
+    "  FROM somaticVariant s ",
+    " WHERE filter = 'PASS'",
+    "   AND type = 'SNP'",
+    "   AND gene <> ''",
+    "   AND s.sampleId in (", sampleIdString, ")",
+    sep = "")
+
+  return (dbGetQuery(dbConnect, query))
+}
+
+
