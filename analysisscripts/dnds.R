@@ -10,15 +10,13 @@ distinctCohort = purple::highest_purity_patients(cohort)
 
 #Select snps
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-snps = query_snps(dbProd, distinctCohort[1:3,])
+snps = purple::query_snps_cohort(dbProd, distinctCohort[1:3,])
+### ALTERNATIVE WAY OF DOING IT: ONE BY ONE snps = purple::apply_to_cohort(distinctCohort[1:3,], function(x) {purple::query_snps_sample(dbProd, x$sampleId)})
 dbDisconnect(dbProd)
 rm(dbProd)
 
 #Enrich snps with cancer type
-snps = snps[,c("sampleId", "chromosome", "position", "ref", "alt")]
-colnames(snps) <- c("sampleId", "chr", "pos", "ref", "alt")
-snps$cancerType = slookup(jon, distinctCohort[, c("sampleId", "cancerType")])
-
+snps$cancerType = slookup(snps, distinctCohort[, c("sampleId", "cancerType")])
 
 panResults = dndscv(snps[, c("sampleId", "chr", "pos", "ref", "alt")])
 results = list()

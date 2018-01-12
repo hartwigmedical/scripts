@@ -225,10 +225,10 @@ query_whole_genome_duplication<-function(dbConnect, sampleId) {
   return (result)
 }
 
-query_snps<-function(dbConnect, cohort) {
+query_snps_cohort<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT *",
+    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
     "  FROM somaticVariant s ",
     " WHERE filter = 'PASS'",
     "   AND type = 'SNP'",
@@ -239,4 +239,27 @@ query_snps<-function(dbConnect, cohort) {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_snps_sample<-function(dbConnect, sample) {
+  query = paste(
+    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
+    "  FROM somaticVariant s ",
+    " WHERE filter = 'PASS'",
+    "   AND type = 'SNP'",
+    "   AND gene <> ''",
+    "   AND s.sampleId = '", sample, "'",
+    sep = "")
+
+  return (dbGetQuery(dbConnect, query))
+}
+
+
+query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
+  query = paste(
+    "SELECT gene ",
+    "  FROM genePanel ",
+    " WHERE panel='", panel, "'",
+    sep = "")
+
+  return (dbGetQuery(dbConnect, query))
+}
 
