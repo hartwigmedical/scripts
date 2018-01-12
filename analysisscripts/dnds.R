@@ -1,6 +1,9 @@
 library(RMySQL)
 library(dndscv)
 library(IRanges)
+detach("package:purple", unload=TRUE)
+library(purple)
+
 
 load(file="~/hmf/cohort.RData")
 distinctCohort = purple::highest_purity_patients(cohort)
