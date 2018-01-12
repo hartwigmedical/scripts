@@ -252,6 +252,22 @@ query_snps_sample<-function(dbConnect, sample) {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_somatic_drivers<-function(dbConnect, cohort, genes) {
+  geneString = paste("'", genes$gene, "'", collapse = ",", sep = "")
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT sampleId, gene, chromosome, position, adjustedCopyNumber as copyNumber, ",
+    "       ROUND(adjustedVAF * adjustedCopyNumber,2) as ploidy, ",
+    "       clonality, loh",
+    "  FROM somaticVariant s ",
+    " WHERE sampleId in (",sampleIdString, ")",
+    "   AND filter = 'PASS'",
+    "   AND effect not in ('non coding exon variant', 'synonymous variant', 'UTR variant', 'sequence feature','intron variant')",
+    "   AND gene in (", geneString, ")",
+    sep = "")
+  return (dbGetQuery(dbConnect, query))
+}
+
 
 query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   query = paste(

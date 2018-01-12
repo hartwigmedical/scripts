@@ -7,6 +7,10 @@ slookup<-function(df, lookup, on="sampleId") {
   return (sapply(df[[on]], function(x) {lookup[match(x, lookup[[on]]), -c(1)] }))
 }
 
+slookup2<-function(v, lookup, on="sampleId") {
+  return (sapply(v, function(x) {lookup[match(x, lookup[[on]]), -c(1)] }))
+}
+
 apply_to_cohort<-function(cohort, sampleFunction) {
   result = ddply(cohort, 1, sampleFunction, .drop = FALSE, .progress = "text", .parallel = FALSE)
   return (result)
