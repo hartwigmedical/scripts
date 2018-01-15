@@ -2,12 +2,12 @@
 
 script=$( basename $0 )
 awsprofile="download"
-localpath="/data/schuberg/tmp/partial_runs"
+localpath="/data/schuberg/qc_fail_runs"
 
 usage() {
     echo "---"
-    echo "Usage: $script -s <setname> -b <bucket> -p <path>" 1>&2;
-    echo "       $script -s 170101_HMFregCPCT_etc -b hmf-output-2017-52 -p /data/schuberg/tmp/partial_runs" 1>&2;
+    echo "Usage: $script -s <setname> -b <bucket>" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc -b hmf-output-2017-52" 1>&2;
     echo "---"
     exit 1
 }
@@ -19,9 +19,6 @@ while getopts ":s:b:p:" o; do
             ;;
         b)
             bucket=${OPTARG}
-            ;;
-        p)
-            localpath=${OPTARG}
             ;;
         *)
             usage
