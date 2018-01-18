@@ -1,11 +1,12 @@
 #!/bin/bash
 patient_db_dir=/data/common/tools/patient-db_v1.5
 
-credentials="$patient_db_dir"/credentials
+ecrf_file=$1
+
+credentials=/data/common/dbs/mysql_credentials/prod
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
-ecrf_file=$1
 
 exec java -Dorg.jooq.no-logo=true -cp "$patient_db_dir"/patient-db.jar com.hartwig.hmftools.patientdb.LoadDrupEcrfData \
     -runs_dir /data/cpct/runs/ \

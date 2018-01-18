@@ -12,7 +12,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-#JOBA: Load meta data
+# JOBA: Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # JOBA: File Locations

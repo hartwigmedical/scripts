@@ -10,6 +10,6 @@ fi
 
 purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple_pilot
-credentials=${base_path}/tools/patient-db_pilot/credentials
+credentials=${base_path}/dbs/mysql_credentials/pilot/
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output} ${credentials} $@
