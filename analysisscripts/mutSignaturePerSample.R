@@ -123,32 +123,35 @@ process_variants <- function(variants) {
 
 ##### START PROCESSING
 sampleIds = commandArgs(trailingOnly=TRUE)
-#sampleId = commandArgs(trailingOnly=TRUE)[1]
 cancer_signatures = getCOSMICSignatures()
 
 ## the DB params are set from /usr/lib64/R/etc/Rprofile.site
-#dbConnect = dbConnect(MySQL(), user=db_user, password=db_password, dbname = db_name, groups = "RAnalysis")
+dbConnect = dbConnect(MySQL(), user=db_user, password=db_password, dbname = db_name, groups = "RAnalysis")
 
-
-#pdf( "test.pdf" )
-## run analysis for all sampleIds
+## run analysis per sampleId
 for ( sampleId in sampleIds ){
     
-    dbConnect = dbConnect(MySQL(), user=db_user, password=db_password, dbname = db_name, groups = "RAnalysis")
-    outputPDF = paste( sampleId, "_mutSig.pdf", sep="" )
     cat( paste( "[INFO] Creating mutational signature for: ", sampleId, sep=""), "\n" )
     variants = query_sample_variants(dbConnect,sampleId) # returns a DT
     mutation_vectors = process_variants(variants)
     # we need to slice out only the mutation count columns (delete col 1 and 2)
     signatures = fit_to_signatures(mutation_vectors[[sampleId]][, -c(1, 2)], cancer_signatures)$contribution    
+
+    ## plotting    
+    outputPDF = paste( sampleId, "_mutSig.pdf", sep="" )
     pdf( outputPDF )
-    print( plot_contribution(signatures,cancerSignatures)+theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+scale_fill_manual( values= myCOLORS)+labs(fill="")+ggtitle(paste("Mutational signatures by clonality for",sampleId)) )
+    print( 
+      plot_contribution(signatures,cancerSignatures)+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
+      scale_fill_manual( values= myCOLORS)+
+      labs(fill="")+
+      ggtitle(paste("Mutational signatures by clonality for",sampleId)) 
+    )
     dev.off()
-    dbDisconnect(dbConnect)
+
     cat( paste( "[INFO] Output should be in: ", outputPDF, sep=""), "\n" )
 }
-#dev.off()
 
 ## finish up
-#dbDisconnect(dbConnect)
+dbDisconnect(dbConnect)
 
