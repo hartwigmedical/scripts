@@ -10,6 +10,7 @@ cosmic_fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 lims_json=/data/lims/lims.json
@@ -26,4 +27,5 @@ exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -center_csv "$center_csv" \
     -signature "$signature" \
     -ensembl_db "$ensembl_db" \
+    -fasta_file_location "$ref_genome" \
     -run_dir "$@"
