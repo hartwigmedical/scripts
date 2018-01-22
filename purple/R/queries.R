@@ -303,8 +303,6 @@ query_variant_trinucleotides <- function(dbConnect, cohort) {
     chromosome = raw_data$chromosome,
     position = raw_data$position)
 
-  DT$scope <- paste(substr(DT$sample, 1, 1), substring(DT$sample, 13), sep = "")
-
   return(DT)
 }
 

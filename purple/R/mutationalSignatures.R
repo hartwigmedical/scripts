@@ -35,13 +35,17 @@ create_empty_signature <- function() {
   return(DF)
 }
 
-signature_matrix_by_scope <- function() {
-  DT = data.table(variants)
+signature_matrix_by_scope <- function(variants) {
+
   empty = create_empty_signature()
+  DT = data.table(variants)
+
+  sampleIds = unique(DT$sample)
+  DT$scope <- paste("Private", match(DT$sample, sampleIds), sep ="")
 
   DT[DT[, .I[.N > 1], by=.(chromosome, position, type)]$V1, ]$scope <- "Shared"
   variantsByScope = dcast(DT, type + context ~ scope, value.var = "scope", fun.aggregate = length)
 
-  result = merge(empty, variantsByScope)
+  result = merge(empty, variantsByScope, all.x=TRUE)
   return (result)
 }
