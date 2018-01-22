@@ -23,7 +23,7 @@ for (patientId in multipleBiopsyPatientsId) {
   multipleBiopysySignatures[[patientId]] <- patientSignature
 }
 
-save(multipleBiopysySignatures, file="~hmf/multipleBiopysySignatures.RData")
+save(multipleBiopysySignatures, file="~/hmf/multipleBiopysySignatures.RData")
 
 ### Clean up
 dbDisconnect(dbProd)
