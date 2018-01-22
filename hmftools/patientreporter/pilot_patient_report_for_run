@@ -5,8 +5,8 @@ prefix=`dirname $(readlink $0 || echo $0)`
 patient_reporter_dir=/data/common/tools/patientreporter_pilot
 
 drup_genes_csv=${patient_reporter_dir}/csv/drup_genes.csv
-cosmic_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
-fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
+cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
+cosmic_fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
@@ -21,8 +21,8 @@ exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -cpct_ecrf "$cpct_ecrf" \
     -report_dir "$report_dir" \
     -drup_genes_csv "$drup_genes_csv" \
-    -cosmic_csv "$cosmic_csv" \
-    -fusion_csv "$fusion_csv" \
+    -cosmic_gene_csv "$cosmic_gene_csv" \
+    -cosmic_fusion_csv "$cosmic_fusion_csv" \
     -center_csv "$center_csv" \
     -signature "$signature" \
     -ensembl_db "$ensembl_db" \
