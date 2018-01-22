@@ -4,6 +4,10 @@ highest_purity_patients<-function(cohort) {
   return (cohort[dt[, .I[which.max(purity)], by=patientId]$V1, ])
 }
 
+multiple_biopsy<-function(cohort) {
+  dt = data.table(cohort)
+  return (cohort[dt[, .I[.N > 1], by=patientId]$V1, ])
+}
 
 cohort <-function(cohortRawData) {
   cohort = cohortRawData$purity[, c("sampleId","gender", "version", "purity", "ploidy")]

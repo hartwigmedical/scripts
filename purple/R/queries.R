@@ -279,3 +279,34 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_variant_trinucleotides <- function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT chromosome, position, sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy, clonality",
+    "FROM somaticVariant",
+    "WHERE filter = 'PASS' AND type = 'SNP' and trinucleotideContext not like '%N%'",
+    "  AND sampleId in (",sampleIdString, ")",
+    sep = " ")
+
+  raw_data = dbGetQuery(dbConnect, query)
+  raw_types = raw_data$snv
+  standard_types = standard_mutation(raw_types)
+  raw_context = raw_data$context
+  context = standard_context(raw_types, standard_types, raw_context)
+
+  DT = data.table(
+    sample = raw_data$sampleId,
+    type = standard_types,
+    context = context,
+    ploidy = raw_data$ploidy,
+    clonality = raw_data$clonality,
+    chromosome = raw_data$chromosome,
+    position = raw_data$position)
+
+  DT$scope <- paste(substr(DT$sample, 1, 1), substring(DT$sample, 13), sep = "")
+
+  return(DT)
+}
+
+
+
