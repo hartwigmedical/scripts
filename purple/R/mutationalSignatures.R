@@ -41,11 +41,13 @@ signature_matrix_by_scope <- function(variants) {
   DT = data.table(variants)
 
   sampleIds = unique(DT$sample)
-  DT$scope <- paste("Private", match(DT$sample, sampleIds), sep ="")
+  DT$scope <- DT$sample
 
   DT[DT[, .I[.N > 1], by=.(chromosome, position, type)]$V1, ]$scope <- "Shared"
   variantsByScope = dcast(DT, type + context ~ scope, value.var = "scope", fun.aggregate = length)
 
   result = merge(empty, variantsByScope, all.x=TRUE)
+  result[is.na(result)] <- 0
+
   return (result)
 }

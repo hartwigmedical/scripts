@@ -306,5 +306,17 @@ query_variant_trinucleotides <- function(dbConnect, cohort) {
   return(DT)
 }
 
+query_structural_variants <- function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT sampleId, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type",
+    "FROM structuralVariant",
+    "WHERE sampleId in (",sampleIdString, ")",
+    sep = " ")
+
+  return(dbGetQuery(dbConnect, query))
+}
+
+
 
 
