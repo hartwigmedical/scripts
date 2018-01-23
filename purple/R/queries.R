@@ -204,7 +204,7 @@ query_patient_id_lookup<-function(dbConnect) {
     sep = "")
 
   result = dbGetQuery(dbConnect, query)
-  return (rbind(manual_patient_id(), result))
+  return (result)
 }
 
 query_whole_genome_duplication<-function(dbConnect, sampleId) {
