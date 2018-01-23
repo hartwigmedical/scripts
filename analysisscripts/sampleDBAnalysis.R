@@ -119,6 +119,21 @@
    raw_data = dbGetQuery(dbConnect, query)
  }
 
+ 
+ get_multiple_biopsy_structural_variants<-function(dbConnect, multipleBiopsy)
+ {
+   query = paste(
+     "select startChromosome,startPosition,endChromosome,endPosition,type,count(*) as sampleCount,",
+     "round(sum(if(sampleId='",multipleBiopsy$sampleId1,"',ploidy,0)),2) as Sample1Ploidy, ",
+     "round(sum(if(sampleId='",multipleBiopsy$sampleId2,"',ploidy,0)),2) as Sample2Ploidy ",
+     "from hmfpatients.structuralVariant where sampleId in (",
+     paste(c(shQuote(multipleBiopsy$sampleId1),shQuote(multipleBiopsy$sampleId2)),collapse = ","),
+     ") group by 1,2,3,4,5",
+     sep = "")
+   #print(query)
+   raw_data = dbGetQuery(dbConnect, query)
+ } 
+ 
  get_multiple_biopsy_somatic_variants<-function(dbConnect, multipleBiopsy)
  {
    query = paste(
@@ -275,15 +290,15 @@
 
 
 
-
- nrow(SV)
  ######### MULTIPLE BIOPSIES LOGIC  ##########
 
  dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
  multipleBiopsies<-get_multiple_biopsy_samples(dbConnect)
- multipleBiopsies<-data.frame(sampleId1='DRUP01050010T',sampleId2='CPCT02050172T')
+ multipleBiopsies<-data.frame(sampleId1='CPCT02020506T',sampleId2='CPCT02020506TII')
  for (i in (1:nrow(multipleBiopsies))) {
-   variants<-get_multiple_biopsy_somatic_variants(dbConnect,multipleBiopsies[i,])
+   #variants<-get_multiple_biopsy_somatic_variants(dbConnect,multipleBiopsies[i,])
+   #chart_multiple_biopsies(variants,multipleBiopsies[i,])
+   variants<-get_multiple_biopsy_structural_variants(dbConnect,multipleBiopsies[i,])
    chart_multiple_biopsies(variants,multipleBiopsies[i,])
  }
 
