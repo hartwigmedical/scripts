@@ -239,6 +239,20 @@ query_snps_cohort<-function(dbConnect, cohort) {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_indel_signature<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
+    "  FROM somaticVariant s ",
+    " WHERE filter = 'PASS'",
+    "   AND type = 'INDEL'",
+    "   AND s.sampleId in (", sampleIdString, ")",
+    sep = "")
+
+  return (dbGetQuery(dbConnect, query))
+}
+
+
 query_snps_sample<-function(dbConnect, sample) {
   query = paste(
     "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
