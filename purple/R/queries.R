@@ -239,19 +239,6 @@ query_snps_cohort<-function(dbConnect, cohort) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_indel_signature<-function(dbConnect, cohort) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
-    "  FROM somaticVariant s ",
-    " WHERE filter = 'PASS'",
-    "   AND type = 'INDEL'",
-    "   AND s.sampleId in (", sampleIdString, ")",
-    sep = "")
-
-  return (dbGetQuery(dbConnect, query))
-}
-
 
 query_snps_sample<-function(dbConnect, sample) {
   query = paste(
@@ -293,37 +280,23 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_variant_trinucleotides <- function(dbConnect, cohort) {
+query_somatic_variants <- function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT chromosome, position, sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy, clonality",
+    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type",
     "FROM somaticVariant",
-    "WHERE filter = 'PASS' AND type = 'SNP' and trinucleotideContext not like '%N%'",
+    "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",
     sep = " ")
 
-  raw_data = dbGetQuery(dbConnect, query)
-  raw_types = raw_data$snv
-  standard_types = standard_mutation(raw_types)
-  raw_context = raw_data$context
-  context = standard_context(raw_types, standard_types, raw_context)
-
-  DT = data.table(
-    sample = raw_data$sampleId,
-    type = standard_types,
-    context = context,
-    ploidy = raw_data$ploidy,
-    clonality = raw_data$clonality,
-    chromosome = raw_data$chromosome,
-    position = raw_data$position)
-
-  return(DT)
+  return (dbGetQuery(dbConnect, query))
 }
+
 
 query_structural_variants <- function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT sampleId, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type",
+    "SELECT sampleId, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type, ploidy",
     "FROM structuralVariant",
     "WHERE sampleId in (",sampleIdString, ")",
     sep = " ")
