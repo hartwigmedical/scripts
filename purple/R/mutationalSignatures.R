@@ -1,5 +1,15 @@
+plot_cosmic_signature<-function(mutationalSignature, mode = "absolute") {
+  require(MutationalPatterns)
+  require(ggplot2)
 
+  contribution = fit_to_signatures(patientMutationalSignature[, -c(1, 2)], cosmicSignatures)$contribution
+  p1 <- plot_contribution(contribution, cosmicSignatures, mode = mode)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
+    scale_fill_manual( values= cosmicSignatureColours)+labs(fill="")+ggtitle("Mutational Signatures") +
+    labs(x = "", y = "Absolute contribution")
 
+  return (p1)
+}
 
 getCOSMICSignatures <- function() {
   sp_url = "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
@@ -87,3 +97,7 @@ cosmicSignatureColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e
                            "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
                            "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
                            "#dea185","#a0729d","#8a392f")
+
+
+
+

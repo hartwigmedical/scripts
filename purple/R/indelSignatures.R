@@ -1,3 +1,18 @@
+
+plot_indel_signature<-function(indelSignature) {
+  require(MutationalPatterns)
+  require(ggplot2)
+
+  indelSignatureColours = c(rev(redGradient), greenGradient);
+  p1 <- plot_absolute_contribution(indelSignature)+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
+    ggtitle("Indel Signatures")+
+    scale_fill_manual(name = "", values =indelSignatureColours)
+    #scale_fill_manual(name = "", values =indelSignatureColours, guide=guide_legend(ncol = 2))
+  return (p1)
+}
+
+
 indel_signature_by_scope <- function(somaticVariants) {
 
   ## scope

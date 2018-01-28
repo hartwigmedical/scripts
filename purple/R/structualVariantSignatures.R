@@ -1,3 +1,17 @@
+plot_sv_signature<-function(svSignature) {
+  require(MutationalPatterns)
+  require(ggplot2)
+
+  insYellow = "#e3d200"
+  bndBlue = "#6baed6"
+  svSignatureColours = c(insYellow, bndBlue, redGradient, greenGradient, blackGradient)
+  p1 <- plot_absolute_contribution(svSignature) +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
+    ggtitle("Structural Variant Signatures")+
+    scale_fill_manual(name = "", values = svSignatureColours, drop = FALSE)
+
+  return (p1)
+}
 
 sv_signature_by_scope <- function(variants) {
   DT = data.table(variants)
@@ -20,7 +34,7 @@ sv_length_buckets<-function() {
 }
 
 sv_type_length_buckets<-function() {
-  buckets = length_buckets()[-1]
+  buckets = sv_length_buckets()[-1]
   labels = c("INS_0","BND_0", paste("DEL", buckets, sep = "_"), paste("DUP", buckets, sep = "_"), paste("INV", buckets, sep = "_"))
   return (labels)
 }
