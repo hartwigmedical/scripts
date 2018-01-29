@@ -142,7 +142,7 @@ query_structural_variant_overview<-function(dbConnect, sampleId) {
   return (structuralVariants)
 }
 
-
+### REMOVE??
 query_somatic_overview_old<-function(dbConnect, sampleId) {
   query = paste(
     "SELECT sampleId, clonality, type, count(*) as count, SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad",
@@ -225,6 +225,7 @@ query_whole_genome_duplication<-function(dbConnect, sampleId) {
   return (result)
 }
 
+### NO LONGER USED???
 query_snps_cohort<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
@@ -280,7 +281,7 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_somatic_variants <- function(dbConnect, cohort) {
+query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
     "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type",
@@ -288,6 +289,10 @@ query_somatic_variants <- function(dbConnect, cohort) {
     "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",
     sep = " ")
+
+  if (filterEmptyGenes) {
+    query = paste(query, " AND gene <> ''", sep = " ")
+  }
 
   return (dbGetQuery(dbConnect, query))
 }
