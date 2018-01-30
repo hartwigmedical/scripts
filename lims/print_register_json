@@ -349,6 +349,7 @@ sub addSampleToJsonData{
         'type'       => "$type",
         'q30_req'    => $q30,
         'yld_req'    => $yield,
+        'use_existing_sample' => JSON::false,
     );
     push( @{$store->{ 'samples' }}, \%tmp );
 }
