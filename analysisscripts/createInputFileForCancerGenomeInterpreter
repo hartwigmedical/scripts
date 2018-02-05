@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# input file of select chromosome, position, ref, alt from somaticVariant where sampleId="XXXXX";
+
+changeHeader= cat SomaticVariants.csv | sed -e 's/chromosome,position,ref,alt/chr,pos,ref,alt/g' > changeHeader.txt
+finalData= cat changeHeader.txt | sed 's/,/ /g' | sed -e 's/^/chr/' | sed "1s/chrchr pos ref alt/chr pos ref alt/" > inputFileCancerGenomeInterpreter.txt
+
+rm changeHeader.txt
+rm SomaticVariants.csv
