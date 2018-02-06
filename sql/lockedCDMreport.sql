@@ -53,7 +53,7 @@ select distinct clinical.patientId, ecrf.status, ecrf.locked, ecrf.item, ecrf.it
 inner join treatment on sample.patientId = treatment.patientId 
 inner join clinical on clinical.sampleId = sample.sampleId
 inner join ecrf on ecrf.patientId = clinical.patientId
-where clinical.patientId in ('CPCT02050172','CPCT02140012','CPCT02080157','CPCT02080136') and ecrf.item like "FLD.TRTAFTER.SYSREGPOST" and ecrf.itemValue =''
+where clinical.patientId in ('XXX') and ecrf.item like "FLD.TRTAFTER.SYSREGPOST" and ecrf.itemValue =''
  and locked = 'true';
 
 # heeft start datum 
