@@ -105,4 +105,4 @@ select distinct clinical.patientId, hospital, ecrf.status, ecrf.locked, ecrf.ite
 inner join ecrf on ecrf.patientId = clinical.patientId
 where isnull(hospital) and ecrf.item = "FLD.SELCRIT.NHOSPITAL" and ecrf.locked='true';
 
-select * from ecrf where patientId = "CPCT02140007";
+
