@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v1.5
+patient_db_dir=/data/common/tools/patient-db_v1.6
 runs_dir=/data/cpct/runs
 
 credentials=/data/common/dbs/mysql_credentials/prod
