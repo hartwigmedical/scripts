@@ -1,12 +1,21 @@
 select patients.patientId, 
-primaryTumorLocation, biopsyDate, biopsyLocation, biopsyLocationOther, treatmentGiven, treatmentStart, treatmentEnd, treatment,
+informedConsent, primaryTumorLocation, entryStage, biopsyDate, biopsyLocation, biopsyLocationOther, 
+treatmentGiven, treatmentStart, treatmentEnd, treatment,
 treatmentOther, measurement, responseAsseddmentDate, responseDate, response
 from 
 	(select distinct patientId from ecrf) patients
 left join
+   (select patientId, group_concat(itemValue separator ', ') as informedConsent 
+    from ecrf where item = 'FLD.INFORMEDCONSENT.ICDTC' group by patientId) informed
+on patients.patientId = informed.patientId
+left join
    (select patientId, group_concat(itemValue separator ', ') as primaryTumorLocation 
     from ecrf where item = 'FLD.CARCINOMA.PTUMLOC' group by patientId) ptumloc
 on patients.patientId = ptumloc.patientId
+left join
+   (select patientId, group_concat(itemValue separator ', ') as entryStage 
+    from ecrf where item = 'FLD.CARCINOMA.ENTRYSTAGE' group by patientId) entryst
+on patients.patientId = entryst.patientId
 left join
     (select patientId, group_concat(itemValue separator ', ') as biopsyDate
      from ecrf where item ='FLD.BIOPS.BIOPTDT' group by patientId) bioptdt
