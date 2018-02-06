@@ -281,10 +281,10 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE) {
+query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE, gene = NA) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type",
+    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type, loh, gene, effect",
     "FROM somaticVariant",
     "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",
@@ -292,6 +292,10 @@ query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE) 
 
   if (filterEmptyGenes) {
     query = paste(query, " AND gene <> ''", sep = " ")
+  }
+
+  if (!is.na(gene)) {
+    query = paste(query, " AND gene = '", gene ,"'",sep = "")
   }
 
   return (dbGetQuery(dbConnect, query))
@@ -308,7 +312,4 @@ query_structural_variants <- function(dbConnect, cohort) {
 
   return(dbGetQuery(dbConnect, query))
 }
-
-
-
 

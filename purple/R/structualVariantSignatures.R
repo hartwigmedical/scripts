@@ -14,6 +14,24 @@ plot_sv_signature<-function(svSignature) {
 }
 
 sv_signature_by_scope <- function(variants) {
+  DT = sv_signature_data(variants)
+
+  result = dcast(DT, type ~ scope, value.var = "sampleId", fun.aggregate = length)
+  result = merge(create_empty_sv_signature(), result, all.x = TRUE)
+  result[is.na(result)] <- 0
+  return (result)
+}
+
+sv_signature_by_clonality <- function(variants) {
+  DT = sv_signature_data(variants)
+
+  result = DT[, .(sample=.N), by=type]
+  result = merge(create_empty_sv_signature(), result, all.x = TRUE)
+  result[is.na(result)] <- 0
+  return (result)
+}
+
+sv_signature_data <- function(variants) {
   DT = data.table(variants)
 
   ## Length
@@ -23,10 +41,7 @@ sv_signature_by_scope <- function(variants) {
   DT$length <- cut(DT$length, right = FALSE, breaks = c(-Inf, 1, 1000, 10000, 1e+05, 1e+06, Inf), labels = sv_length_buckets())
   DT$type <- factor(paste(DT$type, DT$length, sep="_"), levels=sv_type_length_buckets(), ordered = TRUE)
 
-  result = dcast(DT, type ~ scope, value.var = "sampleId", fun.aggregate = length)
-  result = merge(create_empty_sv_signature(), result, all.x = TRUE)
-  result[is.na(result)] <- 0
-  return (result)
+  return (DT)
 }
 
 sv_length_buckets<-function() {

@@ -16,6 +16,29 @@ plot_indel_signature<-function(indelSignature) {
 indel_signature_by_scope <- function(somaticVariants) {
 
   ## scope
+  DT = indel_signature_data_table(somaticVariants)
+
+  empty = create_empty_indel_signature()
+  result = dcast(DT, type ~ scope, value.var = "sampleId", fun.aggregate = length)
+  result = merge(create_empty_indel_signature(), result, all.x = TRUE)
+  result[is.na(result)] <- 0
+  return (result)
+}
+
+indel_signature_by_clonality <- function(somaticVariants) {
+
+  ## scope
+  DT = indel_signature_data_table(somaticVariants)
+
+  empty = create_empty_indel_signature()
+  result = dcast(DT, type ~ clonality, value.var = "sampleId", fun.aggregate = length)
+  result = merge(create_empty_indel_signature(), result, all.x = TRUE)
+  result[is.na(result)] <- 0
+  return (result)
+}
+
+indel_signature_data_table<-function(somaticVariants) {
+  ## scope
   DT = data.table(somaticVariants[somaticVariants$type == "INDEL", ])
 
   ## Length
@@ -24,11 +47,7 @@ indel_signature_by_scope <- function(somaticVariants) {
   DT$type <- ifelse(DT$type < -5, -5, DT$type)
   DT$type <- factor(DT$type, levels=indel_length_buckets(), ordered = TRUE)
 
-  empty = create_empty_indel_signature()
-  result = dcast(DT, type ~ scope, value.var = "sampleId", fun.aggregate = length)
-  result = merge(create_empty_indel_signature(), result, all.x = TRUE)
-  result[is.na(result)] <- 0
-  return (result)
+  return (DT)
 }
 
 indel_length_buckets<-function() {

@@ -2,7 +2,7 @@ plot_cosmic_signature<-function(mutationalSignature, mode = "absolute") {
   require(MutationalPatterns)
   require(ggplot2)
 
-  contribution = fit_to_signatures(patientMutationalSignature[, -c(1, 2)], cosmicSignatures)$contribution
+  contribution = fit_to_signatures(mutationalSignature[, -c(1, 2)], cosmicSignatures)$contribution
   p1 <- plot_contribution(contribution, cosmicSignatures, mode = mode)+
     theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
     scale_fill_manual( values= cosmicSignatureColours)+labs(fill="")+ggtitle("Mutational Signatures") +
@@ -57,7 +57,7 @@ create_empty_mutational_signature <- function() {
   return(DF)
 }
 
-extract_mutational_signature_data <- function(somaticVariants) {
+extract_mutational_signature_data <- function(somaticVariants, feature="scope") {
   raw_data = somaticVariants[somaticVariants$type == 'SNP', ]
   raw_data = raw_data[!(raw_data$trinucleotideContext %in% 'N'), ]
 
@@ -75,15 +75,25 @@ extract_mutational_signature_data <- function(somaticVariants) {
     clonality = raw_data$clonality,
     chromosome = raw_data$chromosome,
     position = raw_data$position,
-    scope = raw_data$scope)
+    scope = raw_data[[feature]])
 
   return (DT)
 }
 
+mutational_signature_by_clonality <- function(somaticVariants) {
+  empty = create_empty_mutational_signature()
+  DT = extract_mutational_signature_data(somaticVariants, feature="clonality")
+
+  result = dcast(DT, type + context ~ clonality, value.var = "clonality", fun.aggregate = length)
+  result = merge(empty, result, all.x=TRUE)
+  result[is.na(result)] <- 0
+
+  return (result)
+}
 
 mutational_signature_by_scope <- function(somaticVariants) {
   empty = create_empty_mutational_signature()
-  DT = extract_mutational_signature_data(somaticVariants)
+  DT = extract_mutational_signature_data(somaticVariants, feature="scope")
 
   result = dcast(DT, type + context ~ scope, value.var = "scope", fun.aggregate = length)
   result = merge(empty, result, all.x=TRUE)
