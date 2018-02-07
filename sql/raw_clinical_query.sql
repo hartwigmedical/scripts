@@ -1,5 +1,5 @@
 select patients.patientId, 
-informedConsentDate, regDate1, regDate2, hospital1, hospital2
+informedConsentDate, regDate1, regDate2, hospital1, hospital2,
 primaryTumorLocation, entryStage, 
 biopsyDate, biopsyLocation, biopsyLocationOther, 
 treatmentGiven, treatmentStart, treatmentEnd, treatment, treatmentOther, 
