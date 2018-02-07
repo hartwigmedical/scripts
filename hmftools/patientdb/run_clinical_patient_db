@@ -20,4 +20,5 @@ exec java -Xmx4G -Xms2G \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps \
+#    -cancer_types_symlink cancer_types \
     "$@"
