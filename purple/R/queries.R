@@ -195,7 +195,7 @@ query_somatic_overview<-function(dbConnect, sampleId) {
 
 query_patient_id_lookup<-function(dbConnect) {
   query = paste(
-    "SELECT CPCTCNT.patientId AS sampleId, concat('CPCT02',CPCTCNT.itemValue , IF(length(CPCTPN.itemValue) = 2, '00' + CPCTPN.itemValue, IF(left(CPCTPN.itemValue,1) = '-', right(CPCTPN.itemValue, 4), CPCTPN.itemValue ))) as patientId",
+    "SELECT CPCTCNT.patientId AS sampleId, concat('CPCT02', CPCTCNT.itemValue, LPAD(RIGHT(CPCTPN.itemValue,4), 4, '0')) as patientId",
     "  FROM drupEcrf CTCT2YN,  drupEcrf CPCTCNT, drupEcrf CPCTPN ",
     " WHERE CPCTCNT.patientId = CPCTPN.patientId AND CTCT2YN.patientId = CPCTCNT.patientId ",
     "   AND CPCTCNT.item = 'FLD.REG.CPCTCNT' AND CPCTCNT.itemValue != ''",
