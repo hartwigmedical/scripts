@@ -142,7 +142,7 @@ query_structural_variant_overview<-function(dbConnect, sampleId) {
   return (structuralVariants)
 }
 
-
+### REMOVE??
 query_somatic_overview_old<-function(dbConnect, sampleId) {
   query = paste(
     "SELECT sampleId, clonality, type, count(*) as count, SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad",
@@ -204,7 +204,7 @@ query_patient_id_lookup<-function(dbConnect) {
     sep = "")
 
   result = dbGetQuery(dbConnect, query)
-  return (rbind(manual_patient_id(), result))
+  return (result)
 }
 
 query_whole_genome_duplication<-function(dbConnect, sampleId) {
@@ -225,6 +225,7 @@ query_whole_genome_duplication<-function(dbConnect, sampleId) {
   return (result)
 }
 
+### NO LONGER USED???
 query_snps_cohort<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
@@ -238,6 +239,7 @@ query_snps_cohort<-function(dbConnect, cohort) {
 
   return (dbGetQuery(dbConnect, query))
 }
+
 
 query_snps_sample<-function(dbConnect, sample) {
   query = paste(
@@ -279,32 +281,35 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_variant_trinucleotides <- function(dbConnect, cohort) {
+query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE, gene = NA) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT chromosome, position, sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy, clonality",
+    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type, loh, gene, effect",
     "FROM somaticVariant",
-    "WHERE filter = 'PASS' AND type = 'SNP' and trinucleotideContext not like '%N%'",
+    "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",
     sep = " ")
 
-  raw_data = dbGetQuery(dbConnect, query)
-  raw_types = raw_data$snv
-  standard_types = standard_mutation(raw_types)
-  raw_context = raw_data$context
-  context = standard_context(raw_types, standard_types, raw_context)
+  if (filterEmptyGenes) {
+    query = paste(query, " AND gene <> ''", sep = " ")
+  }
 
-  DT = data.table(
-    sample = raw_data$sampleId,
-    type = standard_types,
-    context = context,
-    ploidy = raw_data$ploidy,
-    clonality = raw_data$clonality,
-    chromosome = raw_data$chromosome,
-    position = raw_data$position)
+  if (!is.na(gene)) {
+    query = paste(query, " AND gene = '", gene ,"'",sep = "")
+  }
 
-  return(DT)
+  return (dbGetQuery(dbConnect, query))
 }
 
 
+query_structural_variants <- function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT sampleId, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type, ploidy",
+    "FROM structuralVariant",
+    "WHERE sampleId in (",sampleIdString, ")",
+    sep = " ")
+
+  return(dbGetQuery(dbConnect, query))
+}
 

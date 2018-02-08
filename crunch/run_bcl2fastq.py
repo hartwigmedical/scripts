@@ -10,7 +10,7 @@ DATA_DIRS=[
     '/data1/illumina_data/NextSeqData/'
 ]
 
-BCL2FASTQ_TOOL='/data/fastqconversion/bcl2fastq_v2.19.1.403/bin/bcl2fastq'
+BCL2FASTQ_TOOL='/data/fastqconversion/bcl2fastq_v2.20.0.422/bin/bcl2fastq'
 
 ## DEFS
 def ConvertBcl(run_dir):
