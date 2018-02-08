@@ -35,11 +35,12 @@ sample_to_patient_id<-function(sampleId, lookup) {
 }
 
 manual_patient_id<-function() {
-  truncatedSampleIds  = c("CPCT02020192", "CPCT02030224", "DRUP01010044", "DRUP01070024", "DRUP01050008")
-  patientIds = c("CPCT02020438",  "CPCT02030292",  "DRUP01010044",  "CPCT02070110",  "CPCT02050116")
+  truncatedSampleIds  = c("CPCT02020192", "CPCT02030224", "DRUP01010007", "DRUP01070024", "DRUP01050008",
+                          "DRUP01010065", "DRUP01330002", "DRUP01340004", "DRUP01340003", "DRUP01340002", "DRUP01070008")
+  patientIds = c("CPCT02020438", "CPCT02030292", "DRUP01010044", "CPCT02070110", "CPCT02050116",
+                 "CPCT02010639", "CPCT02330049", "CPCT02340029", "CPCT02340014", "CPCT02340026", "CPCT02070023")
   return (data.frame(truncatedSampleIds, patientIds, stringsAsFactors = FALSE))
 }
-
 
 #this is a slow function - don't use!
 dflookup<-function(df, lookup, on="sampleId") {
