@@ -18,15 +18,15 @@ patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_pati
 cohort$patientId <- patientIds$V1
 multipleBiopsyCohort = purple::multiple_biopsy(cohort)
 multipleBiopsyPatientsId = unique(multipleBiopsyCohort$patientId)
-save(cohort, multipleBiopsyCohort, multipleBiopsyPatientsId, file="~/hmf/multipleBiopysyCohort.RData")
+save(cohort, multipleBiopsyCohort, multipleBiopsyPatientsId, file="~/hmf/RData/multipleBiopsyCohort.RData")
 
 ## Get somatic variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsySomaticVariants, file="~/hmf/multipleBiopsySomaticVariants.RData")
+save(multipleBiopsySomaticVariants, file="~/hmf/RData/multipleBiopsySomaticVariants.RData")
 
 ## Get structural variants
 multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsyStructuralVariants, file="~/hmf/multipleBiopsyStructuralVariants.RData")
+save(multipleBiopsyStructuralVariants, file="~/hmf/RData/multipleBiopsyStructuralVariants.RData")
 
 ### Clean up
 dbDisconnect(dbProd)

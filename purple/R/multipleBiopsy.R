@@ -49,7 +49,7 @@ ploidy_plots<-function(label, variants, by, size = 0.2) {
   p3Title = paste("Shared", label, "Ploidy", sep = " ")
   p3 <- ggplot()+labs(title=p3Title, x = patientSampleIds[1], y = patientSampleIds[2])+xlim(0,3)+ylim(0,3)
   if (nrow(sharedVariants) > 0 && length(patientSampleIds) == 2) {
-    sharedPloidy = sharedVariants[, lapply(.SD$ploidy, c), by=by,.SDcols = c("sampleId","ploidy")]
+    sharedPloidy = sharedVariants[, lapply(.SD$ploidy, c)[1:2], by=by,.SDcols = c("sampleId","ploidy")]
     p3 <- p3+geom_point(data=sharedPloidy,aes(V1,V2), size = size)
   }
 
