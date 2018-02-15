@@ -5,6 +5,7 @@ OUTBASE="/data/common/snpcheck"
  SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
  DESIGN="${CODEDIR}/26SNPtaq_design.vcf"
  OUTDIR="${OUTBASE}/output/26SNPtaq"
+ SBPDIR="/data/schuberg/snpcheckvcfupload"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
@@ -14,6 +15,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo " Confg:"
     echo "   CODEDIR = ${CODEDIR}"
     echo "   OUTDIR  = ${OUTDIR}"
+    echo "   SBPDIR  = ${SBPDIR}"
     echo "-----"
     exit 1
 fi
@@ -26,7 +28,8 @@ if [[ ! -f ${DESIGN}  ]]; then echo "[EXIT] Design file does not exist?"; exit 1
 
 experimentName=$( echo $( basename ${csvFile} ) | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//' )
 plateName=$( cat ${csvFile} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2 )
-vcfOutDir="${OUTDIR}/${experimentName}_${plateName}"
+combiName="${experimentName}_${plateName}"
+vcfOutDir="${OUTDIR}/${combiName}"
 
 if [[ -d ${vcfOutDir} ]]; then echo "[EXIT] Output dir already exists (${vcfOutDir})"; exit 1; fi
 
@@ -41,6 +44,7 @@ echo "[TODO] Run comparison script to get report info (remove -tab for just view
 echo "  snpcheck_compare_vcfs -tab -append -collapse ${vcfOutDir}/*vcf"
 echo ""
 echo "[TODO] Also copy the results to SBP dir (and dont forget to sync to SBP)"
-echo "  sudo cp -r ${vcfOutDir} /data/schuberg/snpcheckvcfupload/"
+echo "  sudo cp -r ${vcfOutDir} ${SBPDIR}"
+echo "  sudo chown -R sbp:sbp ${SBPDIR}/${combiName}"
 echo ""
 
