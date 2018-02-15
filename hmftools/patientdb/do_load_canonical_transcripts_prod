@@ -1,0 +1,9 @@
+#!/bin/bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+
+credentials=/data/common/dbs/mysql_credentials/prod
+purple_jar=/data/common/tools/purple_v2.6/purple.jar
+
+${prefix}/do_load_canonical_transcripts ${credentials} ${purple_jar}
