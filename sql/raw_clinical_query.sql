@@ -3,7 +3,7 @@ informedConsentDate, regDate1, regDate2, hospital1, hospital2,
 primaryTumorLocation, entryStage, 
 biopsyDate, biopsyLocation, biopsyLocationOther, 
 treatmentGiven, treatmentStart, treatmentEnd, treatment, treatmentOther, 
-measurement, responseAsseddmentDate, responseDate, response
+measurement, responseAssessmentDate, responseDate, response
 from 
 	(select distinct patientId from ecrf) patients
 left join

@@ -2,13 +2,13 @@
 patient_db_dir=/data/common/tools/patient-db_v1.9
 runs_dir=/data/cpct/runs
 
-credentials=/data/common/dbs/mysql_credentials/prod
+credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
+db_url=mysql://localhost:3306/hmfpatients_pilot?serverTimezone=CET
 
 exec java -Xmx4G -Xms2G \
-    -jar "$patient_db_dir"/patient-db.jar \
+    -jar /data/common/tools/patient-db_pilot/patient-db.jar \
     -runs_dir ${runs_dir} \
     -ecrf /data/ecrf/cpct_ecrf.xml \
     -form_status_csv /data/ecrf/cpct_form_status.csv \
@@ -19,6 +19,6 @@ exec java -Xmx4G -Xms2G \
     -tumor_location_mapping_csv "$patient_db_dir"/csv/tumor_location_mapping.csv \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
-    -csv_out_dir /data/common/dbs/ecrf_dumps \
+    -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
     -cancer_types_symlink cancer_types \
     "$@"

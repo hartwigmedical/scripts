@@ -80,7 +80,8 @@ GetOptions (
 print $HELP and exit(0) if $opt{ help };
 die "[EXIT] Provide either run-dir or json-path not both\n" if (defined $RUN_PATH and defined $JSON_PATH);
 die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_PATH or defined $JSON_PATH);
-die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" unless (-d $RUN_PATH);
+die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
+die "[EXIT] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
 
 $MIN_YIELD_PER_SAMPLE = $MIN_YIELD_PER_SAMPLE * $YIELD_FACTOR;
 $MIN_YIELD_PER_LANE   = $MIN_YIELD_PER_LANE * $YIELD_FACTOR;
@@ -91,7 +92,7 @@ $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_P
 ## MAIN
 ## -----
 
-my ($ssht_info) = readSampleSheet( $SSHT_PATH );
+my $ssht_info = readSampleSheet( $SSHT_PATH );
 my $json_info = readJson( $JSON_PATH );
 my $parsed_info = parseJsonInfo( $json_info );
 

@@ -6,18 +6,15 @@ library(MutationalPatterns)
 library(ggplot2)
 
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+
+# Create cohort
 purity = purple::query_purity(dbProd)
 clinical = purple::query_clinical_data(dbProd)[, c("sampleId", "cancerType")]
 sampleCohort = merge(purity, clinical, by=c("sampleId"), all.x = TRUE)
-
 patientIdLookups = query_patient_id_lookup(dbProd)
-patientIds = purple::apply_to_cohort(sampleCohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
-colnames(patientIds) <- c("sampleId", "patientId")
-
-sampleCohort = merge(sampleCohort, patientIds, by=c("sampleId"), all.x = TRUE)
+sampleCohort$patientId <- purple::apply_to_cohort(sampleCohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})$V1
 patientCohort = highest_purity_patients(sampleCohort)
 rm(purity)
-rm(patientIds)
 rm(patientIdLookups)
 rm(clinical)
 
@@ -78,6 +75,8 @@ recurrentPlot<-function(mutation, recurrentSnps, cohort) {
     annotation_logticks(sides = "l") + theme(legend.position = "none") 
 }
 
+recurrentPlot("C>A", recurrentSnps, patientCohort)
+
 purple::multiplot(
   recurrentPlot("C>A", recurrentSnps, patientCohort), 
   recurrentPlot("T>A", recurrentSnps, patientCohort), 
@@ -94,4 +93,3 @@ purple::multiplot(
   recurrentPlot("C/G insertion", recurrentSingleInserts, patientCohort),
   cols = 2)
 
-  

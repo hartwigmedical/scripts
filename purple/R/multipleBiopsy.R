@@ -40,16 +40,19 @@ ploidy_plots<-function(label, variants, by, size = 0.2) {
   patientSampleIds = unique(variants$sampleId)
 
   patient1Variants = variants[variants$scope == patientSampleIds[1], ]
+  patient1SharedVariants = variants[variants$scope == "Shared" & variants$sampleId == patientSampleIds[1], ]
+
   patient2Variants = variants[variants$scope == patientSampleIds[2], ]
+  patient2SharedVariants = variants[variants$scope == "Shared" & variants$sampleId == patientSampleIds[2], ]
+
+  p1 <- ploidy_histogram(label, patient1Variants, patient1SharedVariants)
+  p2 <- ploidy_histogram(label, patient2Variants, patient2SharedVariants)
+
   sharedVariants = variants[variants$scope == "Shared", ]
-
-  p1 <- ploidy_histogram(label, patient1Variants, sharedVariants)
-  p2 <- ploidy_histogram(label, patient2Variants, sharedVariants)
-
   p3Title = paste("Shared", label, "Ploidy", sep = " ")
   p3 <- ggplot()+labs(title=p3Title, x = patientSampleIds[1], y = patientSampleIds[2])+xlim(0,3)+ylim(0,3)
   if (nrow(sharedVariants) > 0 && length(patientSampleIds) == 2) {
-    sharedPloidy = sharedVariants[, lapply(.SD$ploidy, c), by=by,.SDcols = c("sampleId","ploidy")]
+    sharedPloidy = sharedVariants[, lapply(.SD$ploidy, c)[1:2], by=by,.SDcols = c("sampleId","ploidy")]
     p3 <- p3+geom_point(data=sharedPloidy,aes(V1,V2), size = size)
   }
 

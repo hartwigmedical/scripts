@@ -1,8 +1,9 @@
-detach("package:purple", unload=TRUE); library(purple);
+detach("package:purple", unload=TRUE); 
+library(purple);
 library(RMySQL)
 library(data.table)
 library(IRanges)
-library(devtools)
+#library(devtools)
 library("NMF")
 library(grid)
 library(gridExtra)
@@ -13,20 +14,22 @@ dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 
 ## Get cohort
 cohort = purple::query_purity(dbProd)
-patientIdLookups = query_patient_id_lookup(dbProd)
+patientIdLookups = purple::query_patient_id_lookup(dbProd)
 patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
 cohort$patientId <- patientIds$V1
 multipleBiopsyCohort = purple::multiple_biopsy(cohort)
 multipleBiopsyPatientsId = unique(multipleBiopsyCohort$patientId)
-save(cohort, multipleBiopsyCohort, multipleBiopsyPatientsId, file="~/hmf/multipleBiopysyCohort.RData")
+rm(patientIdLookups)
+rm(patientIds)
+save(cohort, multipleBiopsyCohort, multipleBiopsyPatientsId, file="~/hmf/RData/multipleBiopsyCohort.RData")
 
 ## Get somatic variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsySomaticVariants, file="~/hmf/multipleBiopsySomaticVariants.RData")
+save(multipleBiopsySomaticVariants, file="~/hmf/RData/multipleBiopsySomaticVariants.RData")
 
 ## Get structural variants
 multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsyStructuralVariants, file="~/hmf/multipleBiopsyStructuralVariants.RData")
+save(multipleBiopsyStructuralVariants, file="~/hmf/RData/multipleBiopsyStructuralVariants.RData")
 
 ### Clean up
 dbDisconnect(dbProd)
@@ -43,7 +46,7 @@ multipleBiopsyIndelSignature = list()
 multipleBiopsySVSignature = list()
 
 #patientId = multipleBiopsyPatientsId[71]
-#patientId = "CPCT02050172"
+patientId = "CPCT02100067"
 
 for (patientId in multipleBiopsyPatientsId) {
   cat("Processing", patientId, "\n")
@@ -71,7 +74,7 @@ for (patientId in multipleBiopsyPatientsId) {
   p8 <- plot_sv_signature(patientSVSignature)
   p9 <- plot_cosmic_signature(patientMutationalSignature)
 
-  pdf(file=paste("~/mb/",patientId, "MultipleBiopsies.pdf", sep = ""), height = 14, width = 20)    
+  pdf(file=paste("~/hmf/analysis/multipleBiopsy/",patientId, "MultipleBiopsies.pdf", sep = ""), height = 14, width = 20)    
   multiplot(somaticPloidyPlots[[1]], somaticPloidyPlots[[2]], somaticPloidyPlots[[3]],
             structuralPloidyPlots[[1]], structuralPloidyPlots[[2]], structuralPloidyPlots[[3]], 
             p7, p8, p9,

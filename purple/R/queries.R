@@ -284,7 +284,7 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
 query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE, gene = NA) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type, loh, gene, effect",
+    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type, biallelic, gene, effect, codingEffect",
     "FROM somaticVariant",
     "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",

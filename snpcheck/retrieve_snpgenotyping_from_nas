@@ -1,11 +1,18 @@
 #!/bin/bash
 
-FROM_DIR="/volume1/machines/Experimenten/SNP\ check/"
-TO_DIR="/data/common/snpcheck/input/"
+NAS_DIR='/volume1/machines/Experimenten/SNP\ check'
+DS_DIR='/data/common/snpcheck/input'
 
-## retrieve file
-echo "[INFO] Running scp from nas to datastore"
-scp "nas:${FROM_DIR}/*/*Results.csv" "${TO_DIR}"
-echo "[INFO] Any copied files will be in: ${TO_DIR}"
-echo "[INFO] Next step you might want is \"create_sample_vcfs_from_csv\""
+resultsFilePath=$( ssh nas ls "$NAS_DIR/*/*Results.csv" | head -1 )
+resultsFileName=$( basename "${resultsFilePath}" )
+resultsDirPath=$( dirname "${resultsFilePath}" )
+resultsDirName=$( basename "${resultsDirPath}" )
+
+echo "[INFO] Found following file on nas: ${resultsFilePath}"
+echo "[INFO] Copying file from nas to datastore"
+
+scp "nas:${NAS_DIR}/${resultsDirName}/${resultsFileName}" "${DS_DIR}"
+
+echo "[INFO] Probable next action:"
+echo " create_sample_vcfs_from_csv ${DS_DIR}/${resultsFileName}"
 

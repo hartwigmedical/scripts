@@ -12,14 +12,14 @@ signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-cpct_ecrf=/data/ecrf/cpct_ecrf.xml
+cancer_types_csv=/data/common/dbs/ecrf_dumps/cancer_types
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/pilot_reports
 
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -cpct_ecrf "$cpct_ecrf" \
+    -cancer_types_csv "$cancer_types_csv" \
     -report_dir "$report_dir" \
     -drup_genes_csv "$drup_genes_csv" \
     -cosmic_gene_csv "$cosmic_gene_csv" \

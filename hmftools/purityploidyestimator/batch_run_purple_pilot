@@ -5,6 +5,6 @@ for run_dir in /data/cpct/runs/*; do
     if [[ $run_dir == /data/cpct/runs/${starts_with}* ]]; then
         do_run_purple_pilot $run_dir $@
         do_load_somatic_variants_pilot $run_dir
-        do_run_sv_loader_pilot $file
+        do_run_sv_loader_pilot $run_dir
     fi
 done

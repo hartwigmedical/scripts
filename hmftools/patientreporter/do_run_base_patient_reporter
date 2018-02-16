@@ -1,17 +1,17 @@
 #!/bin/sh
 
-patient_reporter_dir=/data/common/tools/patientreporter_v4.3
+patient_reporter_dir=/data/common/tools/patientreporter_v4.5
 
-cpct_ecrf=/data/ecrf/cpct_ecrf.xml
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/patient_reports
+cancer_types_csv=/data/common/dbs/ecrf_dumps/cancer_types
 signature=/data/common/dbs/signature/signature.png
 center_csv=/data/common/dbs/center/center.csv
 
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -cpct_ecrf "$cpct_ecrf" \
+    -cancer_types_csv "$cancer_types_csv" \
     -report_dir "$report_dir" \
     -center_csv "$center_csv" \
     -signature "$signature" \
