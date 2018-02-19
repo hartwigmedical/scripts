@@ -1,0 +1,15 @@
+#!/bin/bash
+
+searchString=$1 # eg CPCT02010001
+namePattern="${searchString}*.pdf"
+
+LOC1='/data/cpct/old_cpct_reports'
+LOC2='/data/cpct/final_reports'
+
+COUNT=$( find ${LOC1} ${LOC2} -name "${namePattern}" | wc -l )
+
+if [[ ${COUNT} -eq 0 ]]; then
+    echo "Nothing found for: ${namePattern}"
+else
+    find ${LOC1} ${LOC2} -name "${namePattern}"
+fi
