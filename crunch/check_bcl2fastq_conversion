@@ -25,7 +25,7 @@ my $BARC_KEY = 'IndexMetrics';
 my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission );
 my @SUM_FIELDS = qw( submission id name yld q30 );
 
-my $MAX_UNDET = 3; # percentage
+my $MAX_UNDET = 4; # percentage
 my $MIN_Q30 = 75;
 my $YIELD_FACTOR = 1e9;
 my $MIN_YIELD_PER_SAMPLE = 3e9 / $YIELD_FACTOR;
