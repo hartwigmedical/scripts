@@ -46,7 +46,8 @@ query_sample_variants <- function(dbConnect,sampleId) {
     "SELECT s.sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy,clonality ",
     " FROM somaticVariant s inner join purity p on p.sampleId = s.sampleId ",
     " WHERE filter = 'PASS' and length(alt) = length(ref) and length(alt) = 1 and trinucleotideContext not like '%N%' ",
-    " and qcStatus = 'PASS' and status <> 'NO_TUMOR' and p.sampleId ='",
+    #" and qcStatus = 'PASS' and status <> 'NO_TUMOR' and p.sampleId ='",
+    " and p.sampleId ='",
     sampleId,
     "'",
     sep = "")
@@ -137,9 +138,13 @@ for ( sampleId in sampleIds ){
     # we need to slice out only the mutation count columns (delete col 1 and 2)
     signatures = fit_to_signatures(mutation_vectors[[sampleId]][, -c(1, 2)], cancer_signatures)$contribution    
 
+    ## table output
+    txtFileName = paste( sampleId, "_mutSig.tsv", sep="" )
+    write.table(data.frame("Signature" = rownames(signatures), signatures), txtFileName, row.names=FALSE, quote=FALSE, sep="\t")
+
     ## plotting    
-    outputPDF = paste( sampleId, "_mutSig.pdf", sep="" )
-    pdf( outputPDF )
+    pdfFileName = paste( sampleId, "_mutSig.pdf", sep="" )
+    pdf( pdfFileName )
     print( 
       plot_contribution(signatures,cancerSignatures)+
       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
@@ -149,7 +154,7 @@ for ( sampleId in sampleIds ){
     )
     dev.off()
 
-    cat( paste( "[INFO] Output should be in: ", outputPDF, sep=""), "\n" )
+    cat( paste( "[INFO] Output in: ", txtFileName, " and ", pdfFileName, sep=""), "\n" )
 }
 
 ## finish up

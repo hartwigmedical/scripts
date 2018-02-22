@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v1.9
+patient_db_dir=/data/common/tools/patient-db_v1.10
 runs_dir=/data/cpct/runs
 
 credentials=/data/common/dbs/mysql_credentials/prod
@@ -15,8 +15,6 @@ exec java -Xmx4G -Xms2G \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
-    -treatment_mapping_csv "$patient_db_dir"/csv/treatment_mapping.csv \
-    -tumor_location_mapping_csv "$patient_db_dir"/csv/tumor_location_mapping.csv \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps \

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+folder=$(ls /data/data_archive/rna_seq/)
+
+length=$(echo $folder | tr " " "\n" | wc -l)
+
+for ((x=1; x<=${length} ;x++))
+do
+	foldername=$(echo $folder | tr " " "\n" | sed -n ${x}p)
+	cat /data/data_archive/rna_seq/${foldername}/SampleSheet.csv | grep FR | awk -F , '{print $2}' >> IDs.txt
+done
