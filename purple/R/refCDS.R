@@ -1,10 +1,11 @@
 library(GenomicRanges)
-
-
+library(RMySQL)
+library(foreach)
+library(doParallel)
 library(seqinr)
 library(BSgenome.Hsapiens.UCSC.hg19)
 
-refGenome <- BSgenome.Hsapiens.UCSC.hg19
+
 interval_cds = KRAS$intervals_cds
 strand = KRAS$strand
 str(KRAS$seq_cds)
@@ -12,6 +13,13 @@ str(interval_cds)
 KRAS
 chromosome = "chr12"
 KRAS$seq_cds
+
+data("refcds_hg19", package="dndscv")
+RefCDSGenes = sapply(RefCDS, function (x) {x$gene_name})
+RefCDSGenesInd = setNames(1:length(RefCDSGenes), RefCDSGenes)
+RefCDSGenesInd[gene_name]
+RegCDSGene = RefCDS[[6]]
+RegCDSGene
 
 myKRASCDS = createExonCDS("chr12", KRAS$strand, KRAS$intervals_cds, refGenome)
 myKRASCDS$seq_cds1down
@@ -22,39 +30,162 @@ myAL606500 = createExonCDS("chr1", AL606500$strand, AL606500$intervals_cds, refG
 AL606500$intervals_cds
 myAL606500$intervals_splice
 
-KRAS$intervals_cds
+KRAS
+seqSplice
+
+KRAS$seq_splice1up
+seqSplice1up
+
 KRAS$intervals_splice
 intervals_splice
 
-createIntervalsSplice <-function(chromosome, strand, interval_cds, spliceOffsets = c(-2, -1, 1, 2, 5)) {
+intervalsSplice = intervals_splice
+
+createIntervalsCDS<-function() {
+  dbEnsembl = dbConnect(MySQL(), dbname='homo_sapiens_core_89_37', groups="RAnalysisWrite")
+  ensemblExons = query_exons_from_ensembl(dbEnsembl)
+  dbDisconnect(dbEnsembl)
+  rm(dbEnsembl)
+
+  #save(ensemblExons, file = "~/hmf/RData/ensemblExons.RData")
+
+  load(file = "~/hmf/RData/ensemblExons.RData")
+  refGenome <- BSgenome.Hsapiens.UCSC.hg19
+
+  genes = sort(unique(ensemblExons$gene_name))
+  geneInds = setNames(1:length(genes), genes)
+
+  HmfRefCDS = list()
+
+  gene_name = "KRAS"
+  for (gene_name in genes) {
+
+    geneEnsembl = ensemblExons[ensemblExons$gene_name == gene_name, ]
+    gene = createGeneRef(geneEnsembl, refGenome)
+  }
+}
+
+jon = createHmfRefCDS(ensemblExons, refGenome)
+allExons = ensemblExons
+
+createHmfRefCDS <- function(ensemblExons, refGenome) {
+  codingGenes = sort(unique(ensemblExons[!is.na(ensemblExons$coding_start), c("gene_name") ]))
+
+  no_cores <- detectCores() - 1
+  cl<-makeCluster(no_cores, type="FORK")
+  registerDoParallel(cl)
+
+  date()
+  HmfRefCDS = foreach(gene_name = codingGenes,
+          .combine = list,
+          .multicombine = TRUE)  %dopar%
+    {geneExons = ensemblExons[ensemblExons$gene_name == gene_name, ]; return (createGeneRef(geneExons, refGenome))}
+
+  date()
+
+  stopCluster()
+
+  return (HmfRefCDS)
+}
+
+
+createGeneRef<-function(geneExons, refGenome) {
+  firstRecord = geneExons[1,]
+  strand = firstRecord$strand
+  chromosome = firstRecord$chromosome
+  gene = list(gene_name = firstRecord$gene_name, gene_id = firstRecord$gene_id, transcript_id = firstRecord$transcript_id, chr = chromosome, strand = strand)
+
+  # Intervals CDS
+  exons = geneExons[, c("exon_start", "exon_end")]
+  codingStarts = pmax(exons$exon_start, firstRecord$coding_start)
+  codingEnds = pmin(exons$exon_end, firstRecord$coding_end)
+  codingExons = data.frame(start = codingStarts, end = codingEnds)
+  intervals_cds = as.matrix(codingExons[codingExons$start < codingExons$end, ])
+  dimnames(intervals_cds) <- NULL
+  gene$intervals_cds = intervals_cds
+
+  # Intervals Splice
+  refGenomeChromosome = paste("chr", chromosome, sep ="")
+  intervals_splice = createIntervalsSplice(strand, intervals_cds)
+  gene$intervals_splice = intervals_splice
+
+
+  # CDS
+  seq_cds = createSeqCDS(refGenomeChromosome, strand, intervals_cds, refGenome)
+  gene$CDS_length <- length(seq_cds[["seq_cds"]])
+  gene$seq_cds1up <- seq_cds[["seq_cds1up"]]
+  gene$seq_cds <- seq_cds[["seq_cds"]]
+  gene$seq_cds1down <- seq_cds[["seq_cds1down"]]
+
+  # Splice CDS
+  if (length(intervals_splice) > 0) {
+    splice_cds = createSpliceCDS(refGenomeChromosome, strand, intervals_splice, refGenome)
+    gene$seq_splice <- splice_cds[["seq_splice"]]
+    gene$seq_splice1up <- splice_cds[["seq_splice1up"]]
+    gene$seq_splice1down <- splice_cds[["seq_splice1down"]]
+  }
+
+  return (gene)
+}
+
+
+compareRefCDS <- function(old, new) {
+  allIndentical =
+    identical(old$gene_name, new$gene_name) &&
+    identical(old$CDS_length, new$CDS_length) &&
+    identical(old$chr, new$chr)  &&
+    identical(old$strand, new$strand) &&
+    identical(old$intervals_splice, new$intervals_splice) &&
+    identical(as.character(old$seq_cds), as.character(new$seq_cds)) &&
+    identical(as.character(old$seq_cds1up), as.character(new$seq_cds1up)) &&
+    identical(as.character(old$seq_cds1down), as.character(new$seq_cds1down)) &&
+    identical(as.character(old$seq_splice), as.character(new$seq_splice)) &&
+    identical(as.character(old$seq_splice1up), as.character(new$seq_splice1up)) &&
+    identical(as.character(old$seq_splice1down), as.character(new$seq_splice1down))
+
+  return (allIndentical)
+}
+
+
+createSpliceCDS<-function(chromosome, strand, intervals_splice, refGenome) {
+
+  allSequences = sapply(intervals_splice, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, strand = strand, IRanges(x-1, x+1))))})
+  allSequencesMatrix = sapply(strsplit(allSequences, ""), function(x) {x})
+
+  seq_splice1up = DNAString(paste(allSequencesMatrix[1, ], collapse = ""))
+  seq_splice = DNAString(paste(allSequencesMatrix[2, ], collapse = ""))
+  seq_splice1down = DNAString(paste(allSequencesMatrix[3, ], collapse = ""))
+
+  return (list(seq_splice1up = seq_splice1up, seq_splice = seq_splice, seq_splice1down = seq_splice1down))
+}
+
+createIntervalsSplice <-function(strand, intervals_cds, spliceOffsets = c(-2, -1, 1, 2, 5)) {
   correctedSpliceOffsets = strand * spliceOffsets
 
   positiveOffsets = correctedSpliceOffsets[correctedSpliceOffsets > 0]
-  positivePositions = unlist(lapply(interval_cds[,2], function (x) {x + positiveOffsets}))
+  positivePositions = unlist(lapply(intervals_cds[,2], function (x) {x + positiveOffsets}))
 
   negativeOffsets = correctedSpliceOffsets[correctedSpliceOffsets < 0]
-  negativePositions = unlist(lapply(interval_cds[,1], function (x) {x + negativeOffsets}))
+  negativePositions = unlist(lapply(intervals_cds[,1], function (x) {x + negativeOffsets}))
 
   allPositions = c(positivePositions, negativePositions)
-  intervalsSplice = sort(allPositions[allPositions > min(interval_cds) & allPositions < max(interval_cds)])
+  intervalsSplice = sort(allPositions[allPositions > min(intervals_cds) & allPositions < max(intervals_cds)])
+  return (intervalsSplice)
 }
 
 createSeqCDS <-function(chromosome, strand, interval_cds, refGenome) {
   priorPosition = min(interval_cds) - 1
   postPosition = max(interval_cds) + 1
 
-  sequence = DNAString(paste(apply(interval_cds, 1, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, IRanges(x[1],x[2]))))}), collapse = ""))
-  priorSequence = as.character(getSeq(refGenome, GRanges(chromosome, IRanges(priorPosition,priorPosition))))
-  postSequence = as.character(getSeq(refGenome, GRanges(chromosome, IRanges(postPosition,postPosition))))
+  seq_cds = DNAString(paste(apply(interval_cds, 1, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, IRanges(x[1],x[2]))))}), collapse = ""))
+  seq_cds1up = DNAString(paste(apply(interval_cds, 1, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, IRanges(x[1]+1,x[2]+1))))}), collapse = ""))
+  seq_cds1down = DNAString(paste(apply(interval_cds, 1, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, IRanges(x[1]-1,x[2]-1))))}), collapse = ""))
 
-  cds = DNAString(paste(priorSequence, sequence, postSequence, sep = ""))
   if (strand == -1) {
-    cds = reverseComplement(cds)
+    seq_cds = reverseComplement(seq_cds)
+    seq_cds1up = reverseComplement(seq_cds1up)
+    seq_cds1down = reverseComplement(seq_cds1down)
   }
-
-  seq_cds1up = cds[1:(length(cds)-2)]
-  seq_cds = cds[2:(length(cds)-1)]
-  seq_cds1down = cds[3:length(cds)]
 
   return (list(seq_cds1up = seq_cds1up, seq_cds = seq_cds, seq_cds1down = seq_cds1down))
 }
