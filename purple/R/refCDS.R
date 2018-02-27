@@ -1,4 +1,48 @@
+library(GenomicRanges)
+
+
 library(seqinr)
+library(BSgenome.Hsapiens.UCSC.hg19)
+
+refGenome <- BSgenome.Hsapiens.UCSC.hg19
+interval_cds = KRAS$intervals_cds
+strand = KRAS$strand
+str(KRAS$seq_cds)
+str(interval_cds)
+KRAS
+chromosome = "chr12"
+KRAS$seq_cds
+
+myKRASCDS = createExonCDS("chr12", KRAS$strand, KRAS$intervals_cds, refGenome)
+myKRASCDS$seq_cds1down
+KRAS$seq_cds1down
+
+AL606500$chr
+myAL606500 = createExonCDS("chr1", AL606500$strand, AL606500$intervals_cds, refGenome)
+AL606500$seq_cds
+myAL606500$seq_cds
+
+
+createExonCDS <-function(chromosome, strand, interval_cds, refGenome) {
+  priorPosition = min(interval_cds) - 1
+  postPosition = max(interval_cds) + 1
+
+  sequence = DNAString(paste(apply(interval_cds, 1, function (x) {as.character(getSeq(refGenome, GRanges(chromosome, IRanges(x[1],x[2]))))}), collapse = ""))
+  priorSequence = as.character(getSeq(refGenome, GRanges(chromosome, IRanges(priorPosition,priorPosition))))
+  postSequence = as.character(getSeq(refGenome, GRanges(chromosome, IRanges(postPosition,postPosition))))
+
+  cds = DNAString(paste(priorSequence, sequence, postSequence, sep = ""))
+  if (strand == -1) {
+    cds = reverseComplement(cds)
+  }
+
+  seq_cds1up = cds[1:(length(cds)-2)]
+  seq_cds = cds[2:(length(cds)-1)]
+  seq_cds1down = cds[3:length(cds)]
+
+  return (list(seq_cds1up = seq_cds1up, seq_cds = seq_cds, seq_cds1down = seq_cds1down))
+}
+
 
 createRefCDS <- function() {
   nt = c("A","C","G","T")
@@ -16,6 +60,8 @@ createRefCDS <- function() {
   KRAS = RefCDS[[9224]]
   AL606500=RefCDS[[940]]
   RP11 = RefCDS[[14756]]
+
+  AL606500$strand
 
   krasL = createLmatrix(KRAS, nt, trinucsubsind)
   AL606500L = createLmatrix(AL606500, nt, trinucsubsind)
@@ -132,8 +178,7 @@ chr2cds = function(pos,cds_int,strand) {
 }
 
 
-#library(BSgenome.Hsapiens.UCSC.hg19)
-#genome <- BSgenome.Hsapiens.UCSC.hg19
+
 
 
 
