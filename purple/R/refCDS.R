@@ -19,11 +19,27 @@ KRAS$seq_cds1down
 
 AL606500$chr
 myAL606500 = createExonCDS("chr1", AL606500$strand, AL606500$intervals_cds, refGenome)
-AL606500$seq_cds
-myAL606500$seq_cds
+AL606500$intervals_cds
+myAL606500$intervals_splice
 
+KRAS$intervals_cds
+KRAS$intervals_splice
+intervals_splice
 
-createExonCDS <-function(chromosome, strand, interval_cds, refGenome) {
+createIntervalsSplice <-function(chromosome, strand, interval_cds, spliceOffsets = c(-2, -1, 1, 2, 5)) {
+  correctedSpliceOffsets = strand * spliceOffsets
+
+  positiveOffsets = correctedSpliceOffsets[correctedSpliceOffsets > 0]
+  positivePositions = unlist(lapply(interval_cds[,2], function (x) {x + positiveOffsets}))
+
+  negativeOffsets = correctedSpliceOffsets[correctedSpliceOffsets < 0]
+  negativePositions = unlist(lapply(interval_cds[,1], function (x) {x + negativeOffsets}))
+
+  allPositions = c(positivePositions, negativePositions)
+  intervalsSplice = sort(allPositions[allPositions > min(interval_cds) & allPositions < max(interval_cds)])
+}
+
+createSeqCDS <-function(chromosome, strand, interval_cds, refGenome) {
   priorPosition = min(interval_cds) - 1
   postPosition = max(interval_cds) + 1
 
