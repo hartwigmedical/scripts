@@ -26,5 +26,5 @@ do
 done
 
 
-cat output.txt | tr ',' '\t' > output1.txt
+cat output.txt | tr ' ' '\t' > output1.txt
 
