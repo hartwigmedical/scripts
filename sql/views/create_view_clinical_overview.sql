@@ -1,5 +1,3 @@
-USE hmfpatients;
-
 DROP VIEW IF EXISTS clinical;
 
 CREATE VIEW clinical AS

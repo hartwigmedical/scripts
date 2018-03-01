@@ -1,5 +1,3 @@
-USE hmfpatients;
-
 	SELECT count(*) AS 'form count', concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND locked='TRUE') / count(*)) , '%') AS 'locked percentage', 'all' AS form
 	FROM formsMetadata
 	WHERE tableName != 'drug'
