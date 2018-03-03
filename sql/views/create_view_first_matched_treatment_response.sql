@@ -1,5 +1,3 @@
-USE hmfpatients;
-
 DROP VIEW IF EXISTS firstMatchedTreatmentResponse;
 
 CREATE VIEW firstMatchedTreatmentResponse AS 

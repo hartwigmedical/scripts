@@ -1,5 +1,3 @@
-USE hmfpatients;
-
 	SELECT count(*) AS findings, 'any' AS level, 'any' AS item, 'any' AS locked FROM clinicalFindings
 
 UNION

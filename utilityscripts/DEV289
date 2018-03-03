@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# cat lims.json | grep -C 4 -A 20 Biopt | grep -E 'tumor_perc|sample_name|dna_conc' > /home/lieke/DEV289.txt
+lims= cat DEV289.txt | tr -d '\n' | awk -v pattern="tumor_perc" '$0 ~ pattern {gsub(pattern, "\n"pattern)}1' | awk '{print $3 $6 $9}' | tr -d '"' | sed 1d > lims.txt
+
+echo -e 'sampleId\ttumor_percentage\tdna_yield\tSequenced\tstatus\tqcStatus\tpurity' > output.txt
+
+number=1
+cat 10 lims.txt | while read  line
+do
+	ID=$(echo ${line} | awk -F , '{print $2}')
+	matching=$(grep -n ${ID} purity.csv) # table purity select sampleId, status, qcStatus, purity from purity;
+	dataTablePurity=$(echo ${matching} | awk -F : '{print $2}' | awk -F ,  '{print $2, $3, $4, $5}')
+	dataDS=$(echo ${line} | awk -F , '{print $2, $1, $3}')
+	tumorpercentage=$(echo ${dataDS} | awk '{print $2}' | tr -d ' ')
+	purity=$(echo ${dataTablePurity} | awk '{print $3}')
+	if [ ! -z ${purity} ]
+	then
+		sequenced="Yes"
+	else
+		sequenced="No"
+	fi 
+	echo ${number} ${ID} ${tumorpercentage}
+	echo ${dataDS} ${sequenced} ${dataTablePurity} >> output.txt
+	number=$(expr ${number} + 1)
+done
+
+
+cat output.txt | tr ' ' '\t' > output1.txt
+

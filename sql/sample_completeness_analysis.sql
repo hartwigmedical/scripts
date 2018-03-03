@@ -1,6 +1,4 @@
-USE hmfpatients;
-
-	SELECT 
+	SELECT
     count(*) AS samples, 'all' AS category
     FROM sample INNER JOIN patient ON sample.patientId = patient.id
     

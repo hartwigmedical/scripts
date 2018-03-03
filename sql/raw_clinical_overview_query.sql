@@ -71,7 +71,7 @@ left join
     from ecrf where item ='FLD.TUMORMEASUREMENT.TMYN' group by patientId) tmyn
 on sysregpost.patientId = tmyn.patientId
 left join
-    (select patientId, group_concat(itemValue separator ', ') as responseAsseddmentDate
+    (select patientId, group_concat(itemValue separator ', ') as responseAssessmentDate
     from ecrf where item ='FLD.TUMORMEASUREMENT.ASSDTC' group by patientId) assdtc
 on tmyn.patientId = assdtc.patientId
 left join
