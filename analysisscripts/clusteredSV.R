@@ -99,10 +99,10 @@ clusterSummary = (cluster %>% filter(SampleId==sample,ClusterId==clusterNum)
 View(clusterSummary)
 
 
-############# Sample Overview #############
+############# All Sample Overview #############
 cohortSummary = (cluster %>% filter(PONCount==0) 
-                 %>% group_by(SampleId)#,len=ifelse(Type=='BND',0,round(PosEnd-PosStart,-6))) 
-     %>% summarise(count=n(),
+                 %>% group_by(SampleId)
+                 %>% summarise(count=n(),
                    countC=n_distinct(ClusterId),
                    countInSingleC=sum(ClusterCount<=1),
                    countInGT5C=sum(ClusterCount>=5),
