@@ -1,3 +1,8 @@
+detach("package:purple", unload=TRUE); 
+library(purple);
+library(RMySQL)
+library(data.table)
+library(IRanges)
 library(dplyr)
 library(tidyr)
 library(reshape2)
@@ -54,6 +59,13 @@ eval.string.dplyr = function(.data, .fun.name, ...) {
 cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V6.csv')
 cluster$ClusterCountBucket=2**(round(log(cluster$ClusterCount,2),0))
 cluster$PloidyBucket=2**(pmin(7,pmax(-3,round(log(cluster$Ploidy,2),0))))
+cluster$LengthBucket=ifelse(cluster$Type=='BND'|cluster$Type=='INS'|cluster$PosEnd-cluster$PosStart==0,
+                            0,2**(round(log(cluster$PosEnd-cluster$PosStart,2),0)))
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+clinical = purple::query_clinical_data(dbProd)[,c('sampleId','cancerType')]
+cluster = (merge(cluster,clinical,by.x="SampleId",by.y="sampleId",all.x=TRUE))
+
+
 
 ########### CLUSTER COUNT ANALYSIS #################
 
@@ -69,7 +81,7 @@ View(countSummary)
 ########## INDIVIDUAL SAMPLE ANALYSIS   ################
 
 # By Cluster
-sample = 'DRUP01050018T'
+sample = 'CPCT02080024T'
 sampleSummary = (cluster %>% filter(PONCount==0,SampleId==sample) 
                  %>% group_by(ClusterId)#,len=ifelse(Type=='BND',0,round(PosEnd-PosStart,-6))) 
                  %>% summarise(count=n(),
@@ -86,10 +98,10 @@ sampleSummary = (cluster %>% filter(PONCount==0,SampleId==sample)
 View(sampleSummary)
 
 # By Cluster Count
-countSummary = (cluster %>% filter(PONCount==0,SampleId==sample) 
-                %>% group_by(ClusterCount,Desc,Annotations) 
+countSummary = (cluster %>% filter(PONCount<2,SampleId==sample,Type=='INV') 
+                %>% group_by(ClusterCount=pmin(10,ClusterCount),LengthBucket) 
                 %>% summarise(count=n())
-                %>% spread(Annotations,count))
+                %>% spread(ClusterCount,count))
 View(countSummary)
 
 # Detailed Cluster Analysis
@@ -97,6 +109,63 @@ clusterNum = '5'
 clusterSummary = (cluster %>% filter(SampleId==sample,ClusterId==clusterNum) 
                  %>% arrange(ChrStart,PosStart) %>% as.data.frame)
 View(clusterSummary)
+
+###############  ANALYSIS OF PER CHROMOSOME COUNTS ##########
+
+###############  ANALYSIS OF HIGH DUP COUNT SAMPLES ##########
+sample = 'CPCT02030278T'
+
+cluster %>% filter(PONCount<2) %>% group_by(Type) %>% summarise(count=n())
+
+View(cluster %>% filter(SampleId==sample,PONCount<2) 
+                  %>% group_by(LengthBucket,Type)
+                  %>% summarise(count=n())
+                  %>% spread(Type,count,fill=0)
+                  %>% as.data.frame)
+
+temp =(cluster %>% filter(PONCount<2,LengthBucket>=100000,LengthBucket<10000000000,SampleId==sample) 
+       %>% group_by(cancerType,SampleId,ChrStart,ArmStart)
+       %>% summarise(count=n(),
+                     countC=n_distinct(ClusterId),
+                     countInSingleC=sum(ClusterCount<=1),
+                     countInGT5C=sum(ClusterCount>=5),
+                     countLE=sum(LEStart=='true'|LEEnd=='true'),
+                     countFS=sum(FSStart=='true'|FSEnd=='true'),
+                     countDupBE=sum(DupBEStart=='true'|DupBEEnd=='true'),
+                     countBND=sum(Type=='BND'),
+                     countINV=sum(Type=='INV'),
+                     countDEL=sum(Type=='DEL'),
+                     countDUP=sum(Type=='DUP'),
+                     countRegionPon=sum(PONRegionCount>0)) 
+       %>% arrange(SampleId) %>% as.data.frame)
+View(temp)
+temp =(cluster %>% filter(PONCount<2,LengthBucket>=0,LengthBucket<10000000000,CancerType=='Melanoma') 
+                 %>% group_by(cancerType,SampleId)
+                 %>% summarise(count=n(),
+                               countC=n_distinct(ClusterId),
+                               countInSingleC=sum(ClusterCount<=1),
+                               countInGT5C=sum(ClusterCount>=5),
+                               countLE=sum(LEStart=='true'|LEEnd=='true'),
+                               countFS=sum(FSStart=='true'|FSEnd=='true'),
+                               countDupBE=sum(DupBEStart=='true'|DupBEEnd=='true'),
+                               countBND=sum(Type=='BND'),
+                               countINV=sum(Type=='INV'),
+                               countDEL=sum(Type=='DEL'),
+                               countDUP=sum(Type=='DUP'),
+                               countRegionPon=sum(PONRegionCount>0)) 
+                 %>% arrange(SampleId) %>% as.data.frame)
+temp$PercentGT5Cluster = temp$countInGT5C / temp$countBND
+temp$excessDel = temp$countDEL-temp$countINV/2
+temp$excessDup = temp$countDUP-temp$countINV/2
+temp$excessInv = temp$countINV-temp$countDUP-temp$countDEL
+View(temp)
+write.csv(temp,'~/hmf/analyses/cluster/temp7.csv')
+col
+
+View(cluster %>% filter(PONCount<2) 
+     %>% group_by(cancerType)
+     %>% summarise(count=n())
+     %>% as.data.frame)
 
 
 ############# All Sample Overview #############
