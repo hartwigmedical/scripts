@@ -105,8 +105,8 @@ cohortSummary<-function(cluster,filterString = "",groupByString = "")
                            countIn2To5C=sum(ClusterCount>1 & ClusterCount<=5),
                            countIn5To20C=sum(ClusterCount>5 & ClusterCount<=20),
                            countInGT20C=sum(ClusterCount>20),
-                           countLE=sum(LEStart=='true'|LEEnd=='true'),
-                           countFS=sum(FSStart=='true'|FSEnd=='true'),
+                           countLE=sum(LEStart!='false'|LEEnd!='false'),
+                           countFS=sum(FSStart!='false'|FSEnd=='false'),
                            countDupBE=sum(DupBEStart=='true'|DupBEEnd=='true'),
                            countBND=sum(Type=='BND'),
                            countINV=sum(Type=='INV'),
@@ -280,7 +280,7 @@ signature_by_sample_and_type(filter,"Colorectal")
 ### 4. BE Analysis
 
 # Overall Counts of LE, FS, Duplicate BE
-View(cluster %>% group_by(hasLE=LEStart=='true'|LEEnd=='true',potentialhasLE=LEStart=='ident'|LEEnd=='ident',hasFS=FSStart=='true'|FSEnd=='true',Type)
+View(cluster %>% group_by(hasLE=LEStart='true'|LEEnd=='true',potentialhasLE=LEStart=='ident'|LEEnd=='ident',hasFS=FSStart=='true'|FSEnd=='true',Type)
      %>% summarise(count=n())
      %>% spread (Type,count,fill=0)
      %>% as.data.frame)
