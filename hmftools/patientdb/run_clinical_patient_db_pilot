@@ -18,4 +18,5 @@ exec java -Xmx4G -Xms2G \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
     -cancer_types_symlink cancer_types \
+    -portal_data_symlink portal_data \
     "$@"
