@@ -6,7 +6,8 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients_pilot?serverTimezone=CET
 
-exec java -Xmx4G -Xms2G \
+# KODU - Force UTF-8 to deal with non-standard characters, see DEV-275
+exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar /data/common/tools/patient-db_pilot/patient-db.jar \
     -runs_dir ${runs_dir} \
     -ecrf /data/ecrf/cpct_ecrf.xml \
@@ -18,4 +19,5 @@ exec java -Xmx4G -Xms2G \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
     -cancer_types_symlink cancer_types \
+    -portal_data_symlink portal_data \
     "$@"

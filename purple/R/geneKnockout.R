@@ -1,14 +1,20 @@
 
-adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
+adjacent_to_gene_knockout<-function(topGene, geneCopyNumbers, genes) {
 
-  adjacent_to_deleted<-function(previous_distance, copyNumbers) {
-    previouslyAdjacentSamples = copyNumbers[geneDistance == previous_distance & adjacent, .N, by = .(sampleId)]
-    result = !is.na(match(copyNumbers$sampleId, previouslyAdjacentSamples$sampleId))
-    return (result)
+  adjacent_to_deleted<-function(targetGene, previousDistance, targetCopyNumbers) {
+    result <- group_by(targetCopyNumbers, sampleId) %>%
+      filter((geneDistance == previousDistance & adjacent) | gene == targetGene)  %>%
+      summarise(priorDeleted = sum(ifelse(geneDistance == previousDistance, deleted, 0)) > 0,
+                priorLOH = sum(ifelse(geneDistance == previousDistance, loh, 0)) > 0,
+                currentDeleted = sum(ifelse(gene == targetGene, deleted, 0)) > 0,
+                currentLOH = sum(ifelse(gene == targetGene, loh, 0)) > 0) %>%
+      ungroup() %>%
+      filter(priorDeleted | (priorLOH & !currentDeleted))
+    return(result)
   }
 
   geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == topGene, 0, NA)
-  geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == topGene, TRUE, NA)
+  geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == topGene, geneCopyNumbers$deleted > 0 | geneCopyNumbers$biallelicVariant > 0, NA)
 
   topGeneIndex = match(topGene, genes$gene)
   if (topGeneIndex != nrow(genes)) {
@@ -17,8 +23,9 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
       neighbouringGeneDistance=gene_distance_index(topGeneIndex, neigbouringGeneIndex, genes)
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == neighbouringGeneDistance, adjacent_to_deleted(neighbouringGeneDistance-1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneDistance == neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      adjacent = adjacent_to_deleted(neigbouringGene, neighbouringGeneDistance - 1, geneCopyNumbers)
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == neigbouringGene, geneCopyNumbers$sampleId %in% adjacent$sampleId, geneCopyNumbers$adjacent)
+      if (nrow(adjacent) == 0) {
         break
       }
     }
@@ -31,8 +38,9 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
       neighbouringGeneDistance=gene_distance_index(neigbouringGeneIndex, topGeneIndex, genes)
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, -neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == -neighbouringGeneDistance, adjacent_to_deleted(-neighbouringGeneDistance+1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneDistance == -neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      adjacent = adjacent_to_deleted(neigbouringGene, -neighbouringGeneDistance + 1, geneCopyNumbers)
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == neigbouringGene, geneCopyNumbers$sampleId %in% adjacent$sampleId, geneCopyNumbers$adjacent)
+      if (nrow(adjacent) == 0) {
         break
       }
     }
@@ -41,30 +49,10 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
   return (geneCopyNumbers$adjacent %in% TRUE)
 }
 
-aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
-  aggregation = data.table(aggregate_gene_copy_numbers(geneCopyNumbers))[order(gene)]
-  aggregationsByCancerType = data.table(dcast(geneCopyNumbers,  gene ~ cancerType, fun.aggregate = length, value.var = c("cancerType")))[order(gene)]
-
-  return(cbind(aggregation, aggregationsByCancerType[, -c("gene")])[order(-score)])
-}
-
-
-aggregate_gene_copy_numbers<-function(geneCopyNumbers) {
+aggregate_gene_copy_number_knockouts<-function(geneCopyNumbers) {
   group_by(geneCopyNumbers, gene, chromosome, start, end, chromosomeBand) %>%
-    summarise(score=sum(score), sd = sd(minCopyNumber), N = n()) %>%
+    summarise(score=sum(score), sd = sd(minCopyNumber), N = n(), deleted = sum(deleted), loh = sum(loh), biallelicVariant = sum(biallelicVariant)) %>%
     arrange(start)
-}
-
-candidates<-function(driverGene, adjacentAggregate) {
-  candidates = c(adjacentAggregate[score >= driverGene$score -2 | score >= 0.95*driverGene$score]$gene)
-  candidatesDF = data.frame(gene=driverGene$gene, candidates=I(list(candidates)), stringsAsFactors = FALSE)
-  return (candidatesDF)
-}
-
-neighbours<-function(driverGene, aggregatedCopyNumbers) {
-  index = match(driverGene$gene, aggregatedCopyNumbers$gene)
-  neighbours = aggregatedCopyNumbers[max(1,index-7):min(index+7, nrow(aggregatedCopyNumbers)),]
-  return(neighbours)
 }
 
 copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
@@ -87,12 +75,12 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
     # Chromosome level variables
     chromosomeGenes = filter(allGenes, chromosome == currentChromosome) %>% arrange(start)
     chromosomeGeneCopyNumbers = filter(allGeneCopyNumbers, chromosome == currentChromosome)
-    chromosomeSummary = aggregate_gene_copy_numbers(chromosomeGeneCopyNumbers)
+    chromosomeSummary = aggregate_gene_copy_number_knockouts(chromosomeGeneCopyNumbers)
 
     driverGeneCopyNumbers = chromosomeGeneCopyNumbers
     for (i in 1:maxDriversPerChromosome) {
 
-      driverSummary = aggregate_gene_copy_numbers(driverGeneCopyNumbers)
+      driverSummary = aggregate_gene_copy_number_knockouts(driverGeneCopyNumbers)
       if (nrow(driverSummary) == 0) {
         break
       }
@@ -108,7 +96,7 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
       chromosomeNeighbours = neighbours(driverGene, chromosomeSummary)
 
       # Determine adjacent
-      isAdjacent = adjacent_to_gene(driverGene$gene,  driverGeneCopyNumbers, chromosomeGenes)
+      isAdjacent = adjacent_to_gene_knockout(driverGene$gene,  driverGeneCopyNumbers, chromosomeGenes)
       adjacent = driverGeneCopyNumbers[c(isAdjacent), ]
       adjacentSummary = aggregate_gene_copy_numbers_by_cancer_type(adjacent)
 
@@ -138,18 +126,3 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
 
   return (allDrivers)
 }
-
-#maxDriversPerChromosome = 3
-#chromosomes = c(1:2)
-
-#load("~/hmf/geneCopyNumber.RData")
-#allGenes = genes
-#allGeneCopyNumbers = geneCopyNumberDeletes
-#driverAmplifications = copy_number_drivers(genes, geneCopyNumberAmplifactions)
-#driverDeletions = copy_number_drivers(genes, geneCopyNumberDeletes)
-#driverDeletions = copy_number_drivers(allGenes, geneCopyNumberDeletes, maxDriversPerChromosome = 5, chromosomes = c(9:10))
-#copyNumberDeletions = driverDeletions$summary
-#copyNumberAmplifications = driverAmplifications$summary
-
-#save(copyNumberDeletions, copyNumberAmplifications, file = "~/hmf/copyNumberSummaries.RData")
-#save(driverAmplifications, driverDeletions, file = "~/hmf/copyNumberRaw.RData")

@@ -1,5 +1,6 @@
 import(data.table)
 import(plyr)
+import(dplyr)
 import(IRanges)
 exportPattern("^query+")
 exportPattern("^plot+")

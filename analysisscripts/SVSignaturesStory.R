@@ -106,7 +106,7 @@ cohortSummary<-function(cluster,filterString = "",groupByString = "")
                            countIn5To20C=sum(ClusterCount>5 & ClusterCount<=20),
                            countInGT20C=sum(ClusterCount>20),
                            countLE=sum(LEStart!='false'|LEEnd!='false'),
-                           countFS=sum(FSStart!='false'|FSEnd=='false'),
+                           countFS=sum(FSStart!='false'|FSEnd!='false'),
                            countDupBE=sum(DupBEStart=='true'|DupBEEnd=='true'),
                            countBND=sum(Type=='BND'),
                            countINV=sum(Type=='INV'),
@@ -120,7 +120,7 @@ cdfCounts<-function(countsData) {
   i = 1
   for (col in colnames(countsData)) {
     if (substr(col,1,5)=='count') {
-      plots[[i]]<-ggplot(aes_string(col),data=countsData) + stat_ecdf(geom = "step", pad = FALSE)+scale_x_log10()
+      plots[[i]]<-ggplot(aes_string(col),data=countsData) + stat_ecdf(geom = "step", pad = FALSE)
       i=i+1
     }
   }
@@ -160,7 +160,7 @@ signature_by_sample_and_type<-function(filter,signatureName){
 ### 0. LOAD Data
 
 #LOAD and ADD Buckets
-cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V7.csv')
+cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V6.csv')
 #cluster2 = cluster %>% separate(ChrArmStats,c('ArmStartBECount','ArmEndBECount','ArmMedianBECount'),sep=":")
 cluster$ClusterCountBucket=2**(round(log(cluster$ClusterCount,2),0))
 cluster$PloidyBucket=2**(pmin(7,pmax(-3,round(log(cluster$Ploidy,2),0))))
@@ -175,6 +175,7 @@ cluster = (merge(cluster,clinical,by.x="SampleId",by.y="sampleId",all.x=TRUE))
 
 ################################################################
 ### 1. PON ANALYSIS
+######## MAKE THIS CONSISTENT #############
 
 # The PON mainly removes short DELS
 View(cluster %>% group_by(LengthBucket,Type,inPONRegion=PONRegionCount>1) %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
@@ -214,7 +215,7 @@ summary = cohortSummary(cluster,'','LengthBucket,cancerType')
 plot_count_by_bucket_and_type(summary,'LengthBucket','cancerType')
 
 ##### DEL LENGTHS for FS by cancer Type
-summary = cohortSummary(cluster,"FSStart=='true'|FSEnd=='true'",'LengthBucket,cancerType')
+summary = cohortSummary(cluster,"FSStart!='false'|FSEnd!='false'",'LengthBucket,cancerType')
 plot_count_by_bucket_and_type(summary,'LengthBucket','cancerType')
 
 summary = cohortSummary(cluster,'cancerType=="Colorectal"',"LengthBucket,IsFS=FSStart=='true'|FSEnd=='true'")
@@ -228,11 +229,12 @@ head(cluster)
 filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>1e5&LengthBucket<5e6','SampleId,cancerType')
 filter$excessDUP = filter$countDUP - 0.5 * filter$countINV -0.5 * filter$countBND
 filter = filter %>% arrange (-excessDUP) %>% filter(row_number() <= 30) %>% .$SampleId
+#### TOPN(30)
 signature_by_sample_and_type(filter,"Long Dup")
 
 ##### Short DELS ############
 filter = cohortSummary(cluster,'Type=="BND"|LengthBucket<1e4','SampleId,cancerType')
-filter = filter %>% arrange (-countDEL) %>% filter(row_number() > 60,row_number() <=90) %>% .$SampleId
+filter = filter %>% arrange (-countDEL) %>% filter(row_number()<=30) %>% .$SampleId
 signature_by_sample_and_type(filter,"Short DEL")
 
 ##### BRCA RS3 ############
@@ -261,13 +263,13 @@ filter = filter %>% filter(countDEL/countDUP>3)  %>% arrange (-countDEL) %>% fil
 signature_by_sample_and_type(filter,"FS like DEL")
 
 ##### Esophagus ############
-filter = cohortSummary(cluster,'cancerType=="Esophagus"','SampleId,cancerType')
+filter = cohortSummary(cluster,'cancerType=="Ovary"','SampleId,cancerType')
 filter = filter %>% arrange (-count) %>% filter(row_number() <= 30) %>% .$SampleId
-signature_by_sample_and_type(filter,"Esophagus")
+signature_by_sample_and_type(filter,"Ovary")
 
 ##### Overall ############
 filter = cohortSummary(cluster,'','SampleId,cancerType')
-filter = filter %>% arrange (-count) %>% filter(row_number() <= 20) %>% .$SampleId
+filter = filter %>% arrange (-count) %>% filter(row_number() <= 30) %>% .$SampleId
 signature_by_sample_and_type(filter,"ALL")
 
 ##### Colorectal ############
@@ -280,10 +282,10 @@ signature_by_sample_and_type(filter,"Colorectal")
 ### 4. BE Analysis
 
 # Overall Counts of LE, FS, Duplicate BE
-View(cluster %>% group_by(hasLE=LEStart='true'|LEEnd=='true',potentialhasLE=LEStart=='ident'|LEEnd=='ident',hasFS=FSStart=='true'|FSEnd=='true',Type)
-     %>% summarise(count=n())
-     %>% spread (Type,count,fill=0)
-     %>% as.data.frame)
+View(cluster %>% group_by(hasLE=LEStart=='true'|LEEnd=='true',potentialhasLE=LEStart=='ident'|LEEnd=='ident',hasFS=FSStart=='true'|FSEnd=='true',Type) %>% 
+       summarise(count=n()) %>% 
+       spread (Type,count,fill=0) %>% 
+       as.data.frame)
 
 # Sites Enriched with Long DUP
 breakendSummary=(breakEnd_Analysis_By_Filter_And_Group("LEStart=='false',LEEnd=='false',FSStart=='false',FSEnd=='false',LengthBucket>1e5&LengthBucket<5e6",
@@ -296,7 +298,7 @@ breakendSummary=(breakEnd_Analysis_By_Filter_And_Group("LEStart=='false',LEEnd==
                                            "ChrStart,position=round(PosStart,-6)"))
 breakendSummary$excessDel = breakendSummary$countDEL-breakendSummary$countINV/2
 breakendSummary$excessDup = breakendSummary$countDUP-breakendSummary$countINV/2
-View(breakendSummary %>% arrange(countINV))
+View(breakendSummary %>% arrange(-countINV))
 
 
 # Long INV,DUP,DEL by Chr Arm
@@ -322,3 +324,7 @@ View(temp)
 summary = cohortSummary(cluster,'','ArmStartBECount')
 View(summary)
 head(cluster[order(cluster$ArmStartBECount),])
+
+temp = cohortSummary(cluster,'','SampleId,')
+cdfCounts(temp)
+

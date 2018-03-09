@@ -7,7 +7,8 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients?serverTimezone=CET
 
-exec java -Xmx4G -Xms2G \
+# KODU - Force UTF-8 to deal with non-standard characters, see DEV-275
+exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar "$patient_db_dir"/patient-db.jar \
     -runs_dir ${runs_dir} \
     -ecrf /data/ecrf/cpct_ecrf.xml \
