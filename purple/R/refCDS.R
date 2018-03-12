@@ -1,11 +1,15 @@
-rm(list=ls())
+#rm(list=ls())
 
-library(GenomicRanges)
-library(foreach)
-library(parallel)
-library(doParallel)
-library(seqinr)
-library(BSgenome.Hsapiens.UCSC.hg19)
+#library(GenomicRanges)
+#library(foreach)
+#library(parallel)
+#library(doParallel)
+#library(seqinr)
+#library(BSgenome.Hsapiens.UCSC.hg19)
+
+createLStats <- function(RefCDS) {
+  return(data.frame(t(sapply(RefCDS, function(x) {c(x$gene_name, as.numeric(x$CDS_length), unlist(colSums(x$L)))})), stringsAsFactors = F))
+}
 
 
 createGenomicRangesForRefCDS <- function(RefCDS) {
@@ -43,7 +47,7 @@ createGeneRef<-function(geneExons, refGenome) {
   codingStarts = pmax(exons$exon_start, firstRecord$coding_start)
   codingEnds = pmin(exons$exon_end, firstRecord$coding_end)
   codingExons = data.frame(start = codingStarts, end = codingEnds)
-  intervals_cds = as.matrix(codingExons[codingExons$start < codingExons$end, ])
+  intervals_cds = as.matrix(codingExons[codingExons$start <= codingExons$end, ])
   dimnames(intervals_cds) <- NULL
   gene$intervals_cds = intervals_cds
 
@@ -131,38 +135,6 @@ createSeqCDS <-function(chromosome, strand, interval_cds, refGenome) {
   }
 
   return (list(seq_cds1up = seq_cds1up, seq_cds = seq_cds, seq_cds1down = seq_cds1down))
-}
-
-
-createRefCDS <- function() {
-  nt = c("A","C","G","T")
-  trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
-  trinucinds = setNames(1:64, trinucs)
-
-  trinucsubs = NULL
-  for (j in 1:length(trinucs)) {
-    trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
-  }
-  trinucsubsind = setNames(1:192, trinucsubs)
-
-  ### DNDS
-  data("refcds_hg19", package="dndscv")
-  KRAS = RefCDS[[9224]]
-  AL606500=RefCDS[[940]]
-  RP11 = RefCDS[[14756]]
-
-  AL606500$strand
-
-  krasL = createLmatrix(KRAS, nt, trinucsubsind)
-  AL606500L = createLmatrix(AL606500, nt, trinucsubsind)
-  RP11L = createLmatrix(RP11, nt, trinucsubsind)
-
-  identical(krasL,KRAS$L)
-  identical(AL606500L,AL606500$L)
-  identical(RP11L,RP11$L)
-
-  all(krasL == AL606500$L)
-
 }
 
 createLmatrix <-function(geneRefCDS, nt, trinucsubsind) {
@@ -253,45 +225,8 @@ chr2cds = function(pos,cds_int,strand) {
   }
 }
 
-generateHmfRefCDS <- function(ensemblExons, refGenome) {
-  codingGenes = sort(unique(ensemblExons[!is.na(ensemblExons$coding_start), c("gene_name") ]))
-  no_cores <- detectCores() - 1
-  cl<-makeCluster(no_cores, type="FORK")
-  registerDoParallel(cl)
-  date()
-  HmfRefCDS = foreach(gene_name = codingGenes,
-                      .combine = list,
-                      .maxcombine = 50000,
-                      .multicombine = TRUE)  %dopar%
-                      {geneExons = ensemblExons[ensemblExons$gene_name == gene_name, ]; return (createGeneRef(geneExons, refGenome))}
-  date()
-  stopCluster(cl)
-  return(HmfRefCDS)
-}
 
-generateHmfRefCDSL <-function(HmfRefCDS) {
 
-  nt = c("A","C","G","T")
-  trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
-  trinucinds = setNames(1:64, trinucs)
-  trinucsubs = NULL
-  for (j in 1:length(trinucs)) {
-    trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
-  }
-  trinucsubsind = setNames(1:192, trinucsubs)
-
-  HmfRefCDSNames = sapply(HmfRefCDS, function (x) {x$gene_name})
-  HmfRefCDSInd = setNames(1:length(HmfRefCDSNames), HmfRefCDSNames)
-
-  date()
-  no_cores <- detectCores() - 1
-  cl<-makeCluster(no_cores, type="FORK")
-  HmfRefCDSL = parLapply(cl, HmfRefCDS, function (x) {(list(gene_name=x$gene_name, L = createLmatrix(HmfRefCDS[[HmfRefCDSInd[x$gene_name]]], nt, trinucsubsind)))})
-  stopCluster(cl)
-  date()
-
-  return (HmfRefCDSL)
-}
 
 attachLToRefCDS <- function(HmfRefCDS, HmfRefCDSL) {
 
@@ -317,11 +252,55 @@ createCleanRefCDS <-function(HmfRefCDS, HmfRefCDSL, HmfRefCDSL2) {
   result = attachLToRefCDS(HmfRefCDS, HmfRefCDSL)
   result = attachLToRefCDS(result, HmfRefCDSL2)
 
-  validCodons = sapply(result, function (x) {x$CDS_length %% 3 == 0})
-  result = result[validCodons]
+  #validCodons = sapply(result, function (x) {x$CDS_length %% 3 == 0})
+  #result = result[validCodons]
 
   validCovNames = sapply(result, function (x) {x$gene_name %in% covNames})
   result = result[validCovNames]
 
   return (result)
+}
+
+generateHmfRefCDS <- function() {
+  load(file="~/RData/ensemblExons.RData")
+  refGenome = BSgenome.Hsapiens.UCSC.hg19
+
+  codingGenes = sort(unique(ensemblExons[!is.na(ensemblExons$coding_start), c("gene_name") ]))
+  no_cores <- detectCores() - 1
+  cl<-makeCluster(no_cores, type="FORK")
+  registerDoParallel(cl)
+  date()
+  HmfRefCDS = foreach(gene_name = codingGenes,
+                      .combine = list,
+                      .maxcombine = 50000,
+                      .multicombine = TRUE)  %dopar%
+                      {geneExons = ensemblExons[ensemblExons$gene_name == gene_name, ]; return (createGeneRef(geneExons, refGenome))}
+  date()
+  stopCluster(cl)
+  save(HmfRefCDS, file="~/RData/HmfRefCDS.RData")
+}
+
+generateHmfRefCDSL <-function() {
+  load(file="~/RData/HmfRefCDS.RData")
+  nt = c("A","C","G","T")
+  trinucs = paste(rep(nt,each=16,times=1),rep(nt,each=4,times=4),rep(nt,each=1,times=16), sep="")
+  trinucinds = setNames(1:64, trinucs)
+  trinucsubs = NULL
+  for (j in 1:length(trinucs)) {
+    trinucsubs = c(trinucsubs, paste(trinucs[j], paste(substr(trinucs[j],1,1), setdiff(nt,substr(trinucs[j],2,2)), substr(trinucs[j],3,3), sep=""), sep=">"))
+  }
+  trinucsubsind = setNames(1:192, trinucsubs)
+
+  HmfRefCDSNames = sapply(HmfRefCDS, function (x) {x$gene_name})
+  HmfRefCDSInd = setNames(1:length(HmfRefCDSNames), HmfRefCDSNames)
+
+  date()
+  no_cores <- detectCores() - 1
+  cl<-makeCluster(no_cores, type="FORK")
+  #HmfRefCDSNonsense1 = parLapply(cl, HmfRefCDS[1:10000], function (x) {(list(gene_name=x$gene_name, L = createLmatrix(HmfRefCDS[[HmfRefCDSInd[x$gene_name]]], nt, trinucsubsind)))})
+  HmfRefCDNonsense2 = parLapply(cl, HmfRefCDS[10001:length(HmfRefCDSNames)], function (x) {(list(gene_name=x$gene_name, L = createLmatrix(HmfRefCDS[[HmfRefCDSInd[x$gene_name]]], nt, trinucsubsind)))})
+  stopCluster(cl)
+  date()
+  #save(HmfRefCDSNonsense1, file = "~/RData/HmfRefCDSLNonsense1.RData")
+  save(HmfRefCDSNonsense2, file = "~/RData/HmfRefCDSLNonsense2.RData")
 }
