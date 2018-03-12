@@ -1,0 +1,217 @@
+# Compares structural variant results.
+
+Setup and helper function
+```{r}
+library(purple)
+detach("package:purple", unload=TRUE)
+library(purple)
+library(RMySQL)
+source("../gridss/libgridss.R")
+library(tidyverse)
+library(Biostrings)
+dbExisting = dbConnect(MySQL(), dbname = "hmfpatients")
+#dbNew = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
+dbNew = dbConnect(MySQL(), dbname = "hmfpatients_gridss", host="localhost", port=3306, username="test", password="test")
+theme_set(theme_bw())
+```
+Match records
+```{r}
+common_sample_ids = query_structural_variants_samples(dbExisting)
+common_sample_ids <- common_sample_ids[common_sample_ids %in% query_structural_variants_samples(dbNew)]
+grex <- query_structural_variants_for_sample_as_granges(dbExisting, common_sample_ids)
+grnew <- query_structural_variants_for_sample_as_granges(dbNew, common_sample_ids)
+grex$transitive=transitive_of(grex, 2000, 300)
+grnew$transitive=transitive_of(grnew, 2000, 300)
+# make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
+grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
+grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
+fullmatchdf <- gr_join_to_df(grex, NULL, grnew, NULL, maxgap=500, sizemargin=2, suffix=c(".old", ".new"))
+
+fullmatchdf = fullmatchdf %>%
+	mutate(called=c("Neither", "Existing", "New", "Both")
+		[1+ifelse(!is.na(fullmatchdf$start.old), 1, 0) + ifelse(!is.na(fullmatchdf$start.new), 2, 0)]) %>%
+	mutate(transitive=c("Neither", "Existing", "New", "Both")
+		[1+ifelse(!is.na(fullmatchdf$transitive.old), 1, 0) + ifelse(!is.na(fullmatchdf$transitive.new), 2, 0)]) %>%
+	mutate(type=ifelse(!is.na(type.old), type.old, type.new),
+				 sampleId=ifelse(!is.na(sampleId.old), sampleId.old, sampleId.new),
+				 orientation=ifelse(!is.na(orientation.old), orientation.old, orientation.new)) %>%
+	mutate(svlen=ifelse(!is.na(svlen.new), svlen.new, svlen.old))
+				 
+```
+
+# Summary stats:
+
+```{r}
+matchdf <- fullmatchdf
+commondf <- matchdf %>% filter(called=="Both")
+
+ggplot(matchdf) + 
+	aes(x=called) +
+	geom_bar() +
+	facet_wrap(~ type) + 
+	labs("Overall call counts")
+
+ggplot(matchdf %>% filter(transitive != "Neither")) +
+	aes(x=transitive) +
+	geom_bar() +
+	labs("Overall transitive call counts")
+
+matchdf %>%
+	group_by(ifelse(is.na(sampleId), sampleId.new, sampleId), called) %>%
+	summarise(n=n())
+
+ggplot(matchdf %>% filter(called=="Both") %>% mutate(isSmall=abs(end.new-start.new) < 1000)) +
+	aes(x=ploidy.old, y=ploidy.new) +
+	scale_x_log10() + 
+	scale_y_log10() +
+	facet_wrap(~ type) +
+	geom_point(aes(color=isSmall), size=0.1) +
+	geom_density2d() +
+	labs("Ploidy correlation")
+
+ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old),
+								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new)) %>%
+			 	filter(!is.na(ploidy))) +
+	aes(x=ploidy, fill=called) +
+	geom_histogram(bins=90*2) +
+	facet_wrap(~ set, scales="free") +
+	scale_x_continuous(limits=c(-1,8)) +
+	labs("Ploidy distribution")
+
+ggplot(matchdf) +
+	aes(x=abs(svlen), fill=called) +
+	geom_histogram() +
+	scale_x_log10() +
+	facet_wrap(~ type, scales="free") +
+	labs("Call correlation by event size")
+
+# positional agreement:
+commondf <- commondf %>% 
+	mutate(hom_summary=
+		ifelse(homseq.new==homseq.old, "HOMSEQ match",
+		ifelse(homseq.new==as.character(reverseComplement(DNAStringSet(homseq.old))), "HOMSEQ revcomp",
+		ifelse(homseq.new==as.character(complement(DNAStringSet(homseq.old))), "HOMSEQ comp",
+		ifelse(homseq.new==as.character(reverse(DNAStringSet(homseq.old))), "HOMSEQ rev",
+		ifelse(str_length(homseq.new) == str_length(homseq.old), paste("length match", ifelse(start.old==start.new, "", "(diff call positions)")), "mismatch"))))))
+ggplot(commondf) +
+	aes(x=pmax(str_length(homseq.old), str_length(homseq.new)), fill=hom_summary) +
+	geom_histogram(bins=20) +
+	facet_wrap(~ type) +
+	scale_x_continuous(limits=c(1, 20)) +
+	labs("Sequence Homology correlation")
+```
+
+
+# 02100145 stats:
+```{r}
+matchdf <- fullmatchdf %>% filter(sampleId == "CPCT02100145T")
+# cut/pasted from above
+commondf <- matchdf %>% filter(called=="Both")
+
+ggplot(matchdf) + 
+	aes(x=called) +
+	geom_bar() +
+	facet_wrap(~ type) + 
+	labs("Overall call counts")
+
+ggplot(matchdf %>% filter(transitive != "Neither")) +
+	aes(x=transitive) +
+	geom_bar() +
+	labs("Overall transitive call counts")
+
+matchdf %>%
+	group_by(ifelse(is.na(sampleId), sampleId.new, sampleId), called) %>%
+	summarise(n=n())
+
+ggplot(matchdf %>% filter(called=="Both") %>% mutate(isSmall=abs(end.new-start.new) < 1000)) +
+	aes(x=ploidy.old, y=ploidy.new) +
+	scale_x_log10() + 
+	scale_y_log10() +
+	facet_wrap(~ type) +
+	geom_point(aes(color=isSmall), size=0.1) +
+	geom_density2d() +
+	labs("Ploidy correlation")
+
+ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old),
+								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new)) %>%
+			 	filter(!is.na(ploidy))) +
+	aes(x=ploidy, fill=called) +
+	geom_histogram(bins=90*2) +
+	facet_wrap(~ set, scales="free") +
+	scale_x_continuous(limits=c(-1,8)) +
+	labs("Ploidy distribution")
+
+ggplot(matchdf) +
+	aes(x=abs(svlen), fill=called) +
+	geom_histogram() +
+	scale_x_log10() +
+	facet_wrap(~ type, scales="free") +
+	labs("Call correlation by event size")
+
+# positional agreement:
+commondf <- commondf %>% 
+	mutate(hom_summary=
+		ifelse(homseq.new==homseq.old, "HOMSEQ match",
+		ifelse(homseq.new==as.character(reverseComplement(DNAStringSet(homseq.old))), "HOMSEQ revcomp",
+		ifelse(homseq.new==as.character(complement(DNAStringSet(homseq.old))), "HOMSEQ comp",
+		ifelse(homseq.new==as.character(reverse(DNAStringSet(homseq.old))), "HOMSEQ rev",
+		ifelse(str_length(homseq.new) == str_length(homseq.old), paste("length match", ifelse(start.old==start.new, "", "(diff call positions)")), "mismatch"))))))
+ggplot(commondf) +
+	aes(x=pmax(str_length(homseq.old), str_length(homseq.new)), fill=hom_summary) +
+	geom_histogram(bins=20) +
+	facet_wrap(~ type) +
+	scale_x_continuous(limits=c(1, 20)) +
+	labs("Sequence Homology correlation")
+```
+
+
+
+
+
+# Conclusions
+
+- Attempting to duplicate manta/BPI matching logic resulted in a relatively conservative GRIDS call set
+ - Alternatively stated (since GRIDSS ran only on sliced BAMs): GRIDSS disagreed with most manta subclonal calls
+ - subsetting, af, and somatic logic is located in scripts/gridss/gridss_somatic_filter.R
+   - this is designed to be run on the command-line as part of the pipeline immediately after GRIDSS
+   - GRIDSS performance can be improved by more closesly matching filtering criteria with the GRIDSS thresholds
+    - e.g configure GRIDSS's interal call quality threshold higher so the output file is less spammy and the reallocation of reads to variant calls will run much faster
+- GRIDSS AFs are more consisent with integer purple ploidy estimations
+- Multiple edge cases with GRIDSS identified:
+ - INS calls missing from released version (already in GRIDSS dev version)
+ - germline indels with 25bp of somatic breakpoint will misclassify the event as germline
+ 	- workaround: ignore assembly weighting if there is sufficient direct read support
+ 	- fix: https://github.com/PapenfussLab/gridss/issues/114
+ - RP support for small INS/DEL/DUP all go to the reference
+  - workaround: calculate AF for DEL/DUP < 1k from direct read support only
+  - fix: https://github.com/PapenfussLab/gridss/issues/116
+ - sequencing errors can misalign assembly anchor
+  - fix: https://github.com/PapenfussLab/gridss/issues/113
+- Small INV calls missing from GRIDSS
+ - Do these correspond to the sequencing artefacts Peter mention? If so, this is good.
+- GRIDSS does much better in the presense of complex rearrangements
+ - e.g. adjacent_inversion_missed_by_manta.png
+ - Some rearrangements are *very* complex
+  - e.g. complex_event_missed_by_manta.png
+- Transitive breakpoint calls make up ~3% of the prod call set
+ - reduced to 0.75% in GRIDSS call set (although this might go up with a less conservate call set)
+ - lack of both IMPRECISE annotations as well as actual call position intervals makes the transitive calculation overly liberal
+- Significant HOMSEQ disagreements between GRIDSS and manta
+ - Manual COLO829 inspection: [gridss_bpi_paired.xlsx]
+ 	- Manta calls HOMSEQ even if len(insseq) != 0. This only makes sense for microsatellites and even then is problematic
+ 	- Manta off-by-one in actual HOMSEQ (position and length ok, just off-by-one error in reported bases)
+  - Internally inconsistent manta breakpoint (breakend records report different breakpoints)
+  - GRIDS calls longer (correct) homology when phased&linked SNV within homology
+  - Manta calls of INS vs GRIDSS DUP. Same event, different notations
+  - 1 instance of GRIDSS homology incorrect due to incorrectly anchored assembly (#113)
+  - Manta not calling homseq since call is IMPRECISE
+
+
+
+
+
+
+
+
+
+
