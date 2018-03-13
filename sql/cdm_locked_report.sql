@@ -48,9 +48,9 @@ where clinical.preTreatments is null and clinical.hasSystemicPretreatment = 'yes
 select * from clinicalFindings where ecrfItem = 'FRM.BIOPS' and message ='less ecrf biopsies than biopsies sequenced.'
 and details='ecrf biopsies: 0; sequenced: 1' and formLocked = 'true';
 
-# 1 ingevulde ecrf formulier en 2 biopten gesequenced
+# 2+ biopten gesequenced met genoeg biopt formulieren?
 select * from clinicalFindings where ecrfItem = 'FRM.BIOPS' and message ='less ecrf biopsies than biopsies sequenced.'
-and details='ecrf biopsies: 1; sequenced: 2' and formLocked = 'true';
+and details like '%ecrf biopsies: 1%' and formLocked = 'true';
 
 # Heeft een unieke biopt match?
 select * from clinicalFindings where ecrfitem ='FRM.BIOPS' and message ='more than 1 possible clinical biopsy match for sequenced sample.' and formLocked = 'true';
