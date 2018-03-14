@@ -2,6 +2,7 @@
 adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
 
   adjacent_to_deleted<-function(previous_distance, copyNumbers) {
+    copyNumbers = data.table(copyNumbers)
     previouslyAdjacentSamples = copyNumbers[geneDistance == previous_distance & adjacent, .N, by = .(sampleId)]
     result = !is.na(match(copyNumbers$sampleId, previouslyAdjacentSamples$sampleId))
     return (result)
@@ -18,7 +19,7 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
       geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == neighbouringGeneDistance, adjacent_to_deleted(neighbouringGeneDistance-1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneDistance == neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      if (nrow(geneCopyNumbers[geneCopyNumbers$geneDistance == neighbouringGeneDistance & geneCopyNumbers$adjacent == TRUE, ]) == 0) {
         break
       }
     }
@@ -32,7 +33,7 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, -neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
       geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == -neighbouringGeneDistance, adjacent_to_deleted(-neighbouringGeneDistance+1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneDistance == -neighbouringGeneDistance & adjacent == TRUE]) == 0) {
+      if (nrow(geneCopyNumbers[geneCopyNumbers$geneDistance == -neighbouringGeneDistance & geneCopyNumbers$adjacent == TRUE, ]) == 0) {
         break
       }
     }
@@ -97,7 +98,7 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
         break
       }
 
-      driverGene = head(arrange(driverSummary, -score, -deleted), 1)
+      driverGene = head(arrange(driverSummary, -score), 1)
       if (driverGene$score == 0) {
         break
       }
