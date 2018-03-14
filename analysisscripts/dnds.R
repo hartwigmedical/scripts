@@ -21,6 +21,19 @@ createNullHypothesisFromSelCV <-function(sel_cv, RefCDS) {
   return (NullHypothesis)
 }
 
+loadPcawgNullHypothesis<-function(file, RefCDS) {
+  NullHypothesis = read.delim(file, stringsAsFactors = FALSE)[, c("gene_name", "wmis3", "wnon3", "wspl3", "wind")]
+  
+  RefCDSNames = sapply(RefCDS, function(x) {x$gene_name})
+  NullHypothesisNames = NullHypothesis$gene_name
+  NullHypothesInd = setNames(1:length(NullHypothesisNames), NullHypothesisNames)
+  
+  NullHypothesis = NullHypothesis[NullHypothesInd[RefCDSNames], ]
+  colnames(NullHypothesis) <- c("gene_name", "wmis","wnon","wspl","wind")
+  
+  return (NullHypothesis)
+}
+
 
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 cat("Querying purple")
@@ -96,15 +109,16 @@ for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
   cat("Processing", cancerType)
   cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
   input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
-  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = NullHypothesisAll)
   
   HmfRefCDSCvList[[cancerType]] <- output$sel_cv
   #save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList")
 }
 
-output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = NullHypothesisAll)
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
-save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList.Rdat")
+
+#save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList.Rdat")
 
 #Combine together into one big happy data frame
 HmfRefCDSCv = HmfRefCDSCvList[["All"]]
@@ -114,38 +128,137 @@ for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
   df$cancerType <- cancerType
   HmfRefCDSCv = rbind(HmfRefCDSCv, df)
 }
+
 save(HmfRefCDSCv, file="~/hmf/RData/HmfRefCDSCv.RData")
 
 # Create HmfAllNullHypothesis
 NullHypothesisAll = createNullHypothesisFromSelCV(HmfRefCDSCvList[["All"]], RefCDS)
 
 
+##### Create Cancer Map
+HmfCancerTypes = 
+  c("All", "Bladder", "Brain", "Breast", "Colorectal", "Esophagus", "Head and neck", "Kidney", "Liver", "Lung", "Melanoma", "Mesothelioma",
+    "Neuroendocrine", "Ovary", "Pancreas", "Prostate", "Sarcoma", "Stomach", "Testis", "Uterus")
+PcawgCancerTypes = 
+  c("PANCANCER","BLCA", "GBM","BRCA", "COREAD", "ESCA", "HNSC","KIRC","LIHC","LUAD","SKCM","MESO","THCA","OV","PAAD","PRAD","SARC","STAD","TGCT","UCEC")
+CancerMap = data.frame(hmf = HmfCancerTypes, pcawg = PcawgCancerTypes, stringsAsFactors = F)
+CancerMap[CancerMap$hmf %in% cancerTypes, ]
+CancerMap[1, 2]
 
+##### PCAWG NULL HYP
+HmfRefCDSCvNullPcawgList = list()
+for (i in 2:nrow(CancerMap)) {
+
+  cancerType = CancerMap[i, 1]
+  file = paste("~/hmf/dnds/dNdScv_output_", CancerMap[i, 2],".txt", sep = "")
+  null_hypothesis = loadPcawgNullHypothesis(file, RefCDS)
+  
+  cat(file, nrow(null_hypothesis), "\n")
+  cat("Processing", cancerType)
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
+  input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
+  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = null_hypothesis)
+  
+  HmfRefCDSCvNullPcawgList[[cancerType]] <- output$sel_cv
+}
+
+i = 1
+file = paste("~/hmf/dnds/dNdScv_output_", CancerMap[i, 2],".txt", sep = "")
+null_hypothesis = loadPcawgNullHypothesis(file, RefCDS)
+output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = null_hypothesis)
+HmfRefCDSCvNullPcawgList[["All"]] <- output$sel_cv
+
+HmfRefCDSCvNullPcawg = HmfRefCDSCvNullPcawgList[["All"]]
+HmfRefCDSCvNullPcawg$cancerType <- "All"
+for (cancerType in CancerMap[2:nrow(CancerMap), c("hmf")]) {
+  df = HmfRefCDSCvNullPcawgList[[cancerType]]
+  df$cancerType <- cancerType
+  HmfRefCDSCvNullPcawg = rbind(HmfRefCDSCvNullPcawg, df)
+}
+save(HmfRefCDSCvNullPcawg, file = "~/hmf/RData/HmfRefCDSCvNullPcawg.RData")
+
+##### PCAWG DNDS
+PcawgRefCDSCv = read.delim("~/hmf/dnds/dNdScv_output_PANCANCER.txt", stringsAsFactors = FALSE)
+PcawgRefCDSCv$cancerType <- "All"
+for (i in 2:nrow(CancerMap)) {
+  cancerType = CancerMap[i, 1]
+  file = paste("~/hmf/dnds/dNdScv_output_", CancerMap[i, 2],".txt", sep = "")
+  df = read.delim(file, stringsAsFactors = FALSE)
+  df$cancerType <- cancerType
+  PcawgRefCDSCv = rbind(PcawgRefCDSCv, df)
+}
+save(PcawgRefCDSCv, file = "~/hmf/RData/PcawgRefCDSCv.RData")
+
+#################### dNdS EXCLUDING Cancer Types #########################
+
+HmfRefCDSCvExcludingCancerTypeList = list()
+for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+  cat("Processing", cancerType)
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType != cancerType, c("sampleId")]
+  input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
+  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+  
+  HmfRefCDSCvExcludingCancerTypeList[[cancerType]] <- output$sel_cv
+}
+
+output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+
+HmfRefCDSExcludingCancerTypeCV = output$sel_cv
+HmfRefCDSExcludingCancerTypeCV$cancerType <- "All"
+for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+  df = HmfRefCDSCvExcludingCancerTypeList[[cancerType]]
+  df$cancerType <- cancerType
+  HmfRefCDSExcludingCancerTypeCV = rbind(HmfRefCDSExcludingCancerTypeCV, df)
+}
+save(HmfRefCDSExcludingCancerTypeCV, file = "~/hmf/RData/HmfRefCDSExcludingCancerTypeCV.RData")
+rm(HmfRefCDSCvExcludingCancerTypeList)
+
+#################### dNdS Global SANS cancertype  #########################
+load("~/hmf/RData/HmfRefCDSCv.RData")
+HmfRefCDSCvNullGlobalSansCancerType = list()
+for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+  cat("Processing", cancerType)
+  null_hypothesis = createNullHypothesisFromSelCV(HmfRefCDSExcludingCancerTypeCV[HmfRefCDSExcludingCancerTypeCV$cancerType == cancerType, ], RefCDS)
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
+  input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
+  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = null_hypothesis)
+  
+  HmfRefCDSCvNullGlobalSansCancerType[[cancerType]] <- output$sel_cv
+}
+
+null_hypothesis = createNullHypothesisFromSelCV(HmfRefCDSExcludingCancerTypeCV[HmfRefCDSExcludingCancerTypeCV$cancerType == "All", ], RefCDS)
+output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = null_hypothesis)
+
+
+HmfRefCDSNullGlobalSansCancerTypeCV = output$sel_cv
+HmfRefCDSNullGlobalSansCancerTypeCV$cancerType <- "All"
+for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+  df = HmfRefCDSCvNullGlobalSansCancerType[[cancerType]]
+  df$cancerType <- cancerType
+  HmfRefCDSNullGlobalSansCancerTypeCV = rbind(HmfRefCDSNullGlobalSansCancerTypeCV, df)
+}
+save(HmfRefCDSNullGlobalSansCancerTypeCV, file = "~/hmf/RData/HmfRefCDSNullGlobalSansCancerTypeCV.RData")
+
+HmfRefCDSNullGlobalSansCancerTypeCV[HmfRefCDSNullGlobalSansCancerTypeCV$qglobal_cv < 0.1, ]
+
+jon = HmfRefCDSNullGlobalSansCancerTypeCV %>% filter(qglobal_cv < 0.1)
 
 #################### MUCK AROUND #########################
-library(dplyr)
-library(tidyr)
-SignificanceMatrix = HmfRefCDSCv %>% filter(qglobal_cv < 0.1) %>% select(gene_name, cancerType, qglobal_cv) %>% spread(cancerType, qglobal_cv)
+library(ggplot2)
+load("~/hmf/RData/HmfRefCDSCv.RData")
+load("~/hmf/RData/HmfRefCDSCvNullGlobal.RData")
+load("~/hmf/RData/HmfRefCDSCvNullPcawg.RData")
+load("~/hmf/RData/PcawgRefCDSCv.RData")
 
-jon2 = dcast(HmfRefCDSCv[HmfRefCDSCv$qglobal_cv < 0.1, ], gene_name ~ cancerType, value.var = "qglobal_cv")
+#Attach pcawg score to hmf
+PcawgScore = PcawgRefCDSCv[, c("gene_name", "cancerType", "qglobal")]
+colnames(PcawgScore) <- c("gene_name", "cancerType", "pcawg_qglobal_cv")
 
+jon = left_join(HmfRefCDSCv, PcawgScore, by = c("gene_name", "cancerType"))
+jon$status = "Unchanged"
+jon$status = ifelse(jon$qglobal_cv < 0.1 & jon$pcawg_qglobal_cv > 0.1, "Added", jon$status)
+jon$status = ifelse(jon$qglobal_cv > 0.1 & jon$pcawg_qglobal_cv < 0.1, "Removed", jon$status)
 
-library(data.table)
-jon = HmfRefCDSCv[HmfRefCDSCv$qglobal_cv < 0.1, ]
-jon = dcast(jon, gene_name ~ cancerType, value.var = "qglobal_cv")
-
-
-
-
-loadPcawgNullHypothesis<-function(file = "~/hmf/dnds/dNdScv_output_PANCANCER.txt", RefCDS) {
-  NullHypothesis = read.delim(file, stringsAsFactors = FALSE)[, c("gene_name", "wmis3", "wnon3", "wspl3", "wind")]
-  
-  RefCDSNames = sapply(RefCDS, function(x) {x$gene_name})
-  NullHypothesisNames = NullHypothesis$gene_name
-  NullHypothesInd = setNames(1:length(NullHypothesisNames), NullHypothesisNames)
-  
-  NullHypothesis = NullHypothesis[NullHypothesInd[RefCDSNames], ]
-  colnames(NullHypothesis) <- c("gene_name", "wmis","wnon","wspl","wind")
-  
-  return (NullHypothesis)
-}
+significant = jon %>% filter(qglobal_cv < 0.1 | pcawg_qglobal_cv < 0.1) %>%select(gene_name, cancerType, status) %>% spread(cancerType, status)
+significant2 = jon %>% filter(qglobal_cv < 0.001 | pcawg_qglobal_cv < 0.001)
+ggplot(significant2, aes(x = cancerType, y = gene_name))+ geom_tile(aes(fill=status)) + theme(axis.text.x = element_text(angle = 45, hjust = 1))
