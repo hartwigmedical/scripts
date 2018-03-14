@@ -1,3 +1,10 @@
+############################################################################################################################################
+#
+# Much of this code has been taken or modified from the original dNdScv:
+#    https://github.com/im3sanger/dndscv
+#
+############################################################################################################################################
+
 #rm(list=ls())
 
 #library(GenomicRanges)
@@ -224,9 +231,6 @@ chr2cds = function(pos,cds_int,strand) {
     return(which(pos==rev(unlist(apply(cds_int, 1, function(x) x[1]:x[2])))))
   }
 }
-
-
-
 
 attachLToRefCDS <- function(HmfRefCDS, HmfRefCDSL) {
 
