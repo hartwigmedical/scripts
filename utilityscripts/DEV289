@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # cat lims.json | grep -C 4 -A 20 Biopt | grep -E 'tumor_perc|sample_name|dna_conc' > /home/lieke/DEV289.txt
-lims= cat DEV289.txt | tr -d '\n' | awk -v pattern="tumor_perc" '$0 ~ pattern {gsub(pattern, "\n"pattern)}1' | awk '{print $3 $6 $9 $12}' | tr -d '"' | sed 1d | tr -d ' ' | grep Somatic_T > lims.txt
+lims= cat DEV289.txt | tr -d '\n' | awk -v pattern="tumor_perc" '$0 ~ pattern {gsub(pattern, "\n"pattern)}1' | awk '{print $3 $6 $9 $12}' | tr -d '"' | sed 1d | tr -d ' ' | grep Somatic_T |
+awk -F , '{print $1, $2, $4}' | tr ' ' ',' > lims.txt
 
 
 echo -e 'sampleId\ttumor_percentage\tdna_yield\tSequenced\tmeanCoverage\tmedianCoverage\tstatus\tqcStatus\tpurity\tReasonNotSequenced' > output.csv
