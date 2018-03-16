@@ -16,6 +16,6 @@ if [ -z "`hostname | grep datastore`" ]; then
 fi
 
 exec java -Xmx8G -Xms4G \
-    -jar ${base_path}/tools/healthchecker_v2.2/health-checker.jar \
+    -jar ${base_path}/tools/healthchecker_v2.3/health-checker.jar \
     -report_file_path ${rundir}/logs/HealthCheck_v2.2.json \
     -run_dir ${rundir}
