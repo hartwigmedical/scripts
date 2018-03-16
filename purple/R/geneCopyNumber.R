@@ -1,12 +1,4 @@
-
 adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
-
-  adjacent_to_deleted<-function(previous_distance, copyNumbers) {
-    copyNumbers = data.table(copyNumbers)
-    previouslyAdjacentSamples = copyNumbers[geneDistance == previous_distance & adjacent, .N, by = .(sampleId)]
-    result = !is.na(match(copyNumbers$sampleId, previouslyAdjacentSamples$sampleId))
-    return (result)
-  }
 
   geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == topGene, 0, NA)
   geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$gene == topGene, TRUE, NA)
@@ -14,14 +6,17 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
   topGeneIndex = match(topGene, genes$gene)
   if (topGeneIndex != nrow(genes)) {
     for(neigbouringGeneIndex in (topGeneIndex+1):nrow(genes)) {
+
       neigbouringGene=genes[neigbouringGeneIndex, ]$gene
       neighbouringGeneDistance=gene_distance_index(topGeneIndex, neigbouringGeneIndex, genes)
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == neighbouringGeneDistance, adjacent_to_deleted(neighbouringGeneDistance-1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneCopyNumbers$geneDistance == neighbouringGeneDistance & geneCopyNumbers$adjacent == TRUE, ]) == 0) {
+      previouslyAdjacent = geneCopyNumbers %>% filter(geneDistance == neighbouringGeneDistance-1 & adjacent) %>% group_by(sampleId) %>% count();
+      if (nrow(previouslyAdjacent) == 0) {
         break
       }
+
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == neighbouringGeneDistance, geneCopyNumbers$sampleId %in% previouslyAdjacent$sampleId, geneCopyNumbers$adjacent)
     }
   }
 
@@ -32,33 +27,38 @@ adjacent_to_gene<-function(topGene, geneCopyNumbers, genes) {
       neighbouringGeneDistance=gene_distance_index(neigbouringGeneIndex, topGeneIndex, genes)
       geneCopyNumbers$geneDistance <- ifelse(geneCopyNumbers$gene == neigbouringGene, -neighbouringGeneDistance, geneCopyNumbers$geneDistance)
 
-      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == -neighbouringGeneDistance, adjacent_to_deleted(-neighbouringGeneDistance+1, geneCopyNumbers), geneCopyNumbers$adjacent)
-      if (nrow(geneCopyNumbers[geneCopyNumbers$geneDistance == -neighbouringGeneDistance & geneCopyNumbers$adjacent == TRUE, ]) == 0) {
+      previouslyAdjacent = geneCopyNumbers %>% filter(geneDistance == -neighbouringGeneDistance+1 & adjacent) %>% group_by(sampleId) %>% count();
+      if (nrow(previouslyAdjacent) == 0) {
         break
       }
+      geneCopyNumbers$adjacent <- ifelse(geneCopyNumbers$geneDistance == -neighbouringGeneDistance, geneCopyNumbers$sampleId %in% previouslyAdjacent$sampleId, geneCopyNumbers$adjacent)
     }
   }
 
   return (geneCopyNumbers$adjacent %in% TRUE)
 }
 
-aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
-  aggregation = data.table(aggregate_gene_copy_numbers(geneCopyNumbers))[order(gene)]
-  aggregationsByCancerType = data.table(dcast(geneCopyNumbers,  gene ~ cancerType, fun.aggregate = length, value.var = c("cancerType")))[order(gene)]
-
-  return(cbind(aggregation, aggregationsByCancerType[, -c("gene")])[order(-score)])
-}
-
-
 aggregate_gene_copy_numbers<-function(geneCopyNumbers) {
-  group_by(geneCopyNumbers, gene, chromosome, start, end, chromosomeBand) %>%
-    summarise(score=sum(score), sd = sd(minCopyNumber), N = n()) %>%
+  geneCopyNumbers %>%
+    mutate(unsupported = minRegionStartSupport == "NONE" & minRegionEndSupport == "NONE") %>%
+    mutate(telomereSupported = minRegionStartSupport == "TELOMERE" | minRegionEndSupport == "TELOMERE") %>%
+    mutate(centromereSupported = minRegionStartSupport == "CENTROMERE" | minRegionEndSupport == "CENTROMERE") %>%
+    group_by(gene, chromosome, start, end, chromosomeBand) %>%
+    summarise(score=sum(score), sd = sd(minCopyNumber), N = n(), unsupported = sum(unsupported), telomereSupported = sum(telomereSupported), centromereSupported = sum(centromereSupported)) %>%
     arrange(start)
 }
 
+aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
+  aggregation = aggregate_gene_copy_numbers(geneCopyNumbers)
+  aggregationByCancerType = geneCopyNumbers  %>%
+    group_by(gene, cancerType) %>%
+    summarise(count = n()) %>% spread(cancerType, count)
+
+  return(left_join(aggregation, aggregationByCancerType, by = "gene"))
+}
+
 candidates<-function(driverGene, adjacentAggregate) {
-  candidates = c(adjacentAggregate[score >= driverGene$score -2 | score >= 0.95*driverGene$score]$gene)
-  candidatesDF = data.frame(gene=driverGene$gene, candidates=I(list(candidates)), stringsAsFactors = FALSE)
+  candidates = c(adjacentAggregate[adjacentAggregate$score >= driverGene$score -2 | adjacentAggregate$score >= 0.95*driverGene$score, ]$gene)
   return (paste(candidates, collapse = ","))
 }
 
@@ -120,19 +120,28 @@ chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneC
 }
 
 
-copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
+copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X"), cl = NA) {
 
   # Clean input
   allGenes = data.table(allGenes)
   allGeneCopyNumbers = data.table(allGeneCopyNumbers)
   allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
 
-  chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, geneCopyNumberDeletes, maxDriversPerChromosome)})
+  if (is.na(cl)) {
+    chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, geneCopyNumberDeletes, maxDriversPerChromosome)})
+  } else {
+    cat("Going parallel")
+    chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, geneCopyNumberDeletes, maxDriversPerChromosome)})
+  }
 
   driverGeneCopyNumbers = lapply(chromosomeDrivers, function(x) {x$driverGeneCopyNumbers})
   driverGeneCopyNumbersSummary = aggregate_gene_copy_numbers_by_cancer_type(do.call(rbind, driverGeneCopyNumbers))
-  remainderSummary = data.frame(t(sapply(chromosomeDrivers, function(x) {c(gene=x$gene, globalPeak=x$globalPeak, localPeak = x$localPeak, candidates = x$candidates, neighbouringGenes = x$neighbouringGenes)})))
+  remainderSummary = data.frame(t(sapply(chromosomeDrivers, function(x) {c(gene=x$gene, globalPeak=x$globalPeak, localPeak = x$localPeak, neighbouringGenes = x$neighbouringGenes, candidates = x$candidates)})), stringsAsFactors = F)
+  remainderSummary[, 2:4] <- lapply(remainderSummary[, 2:4], as.numeric)
+
   summary = left_join(driverGeneCopyNumbersSummary, remainderSummary, by = "gene")
+  summary$chromosome = factor(summary$chromosome, levels = c(1:22,"X","Y"))
+
   chromosomeDrivers[["summary"]] <- summary
 
   return (chromosomeDrivers)
