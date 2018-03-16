@@ -58,7 +58,7 @@ aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
 }
 
 candidates<-function(driverGene, adjacentAggregate) {
-  candidates = c(adjacentAggregate[adjacentAggregate$score >= driverGene$score -2 | adjacentAggregate$score >= 0.95*driverGene$score, ]$gene)
+  candidates = c(adjacentAggregate[adjacentAggregate$score >= driverGene$score -2 | adjacentAggregate$score >= 0.85 * driverGene$score, ]$gene)
   return (paste(candidates, collapse = ","))
 }
 
@@ -110,7 +110,7 @@ chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneC
       chromosomeNeighbours = chromosomeNeighbours,
       driverGeneCopyNumbers = driverGeneCopyNumbers,
       adjacent = adjacentSummary,
-      neighbouringGenes = sum(adjacentSummary$score))
+      neighbouringGenes = sum(adjacentSummary$N))
 
     # Remove adjacent copy numbers ready for next loop...
     chromosomeGeneCopyNumbers = chromosomeGeneCopyNumbers[!isAdjacent, ]
@@ -128,10 +128,10 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
   allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
 
   if (is.na(cl)) {
-    chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, geneCopyNumberDeletes, maxDriversPerChromosome)})
+    chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome)})
   } else {
     cat("Going parallel")
-    chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, geneCopyNumberDeletes, maxDriversPerChromosome)})
+    chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome)})
   }
 
   driverGeneCopyNumbers = lapply(chromosomeDrivers, function(x) {x$driverGeneCopyNumbers})
@@ -147,4 +147,24 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
   return (chromosomeDrivers)
 }
 
+
+#### RUBBISH
+
+#maxDriversPerChromosome = 3
+#chromosomes = c(1:2)
+
+#load("~/hmf/geneCopyNumber.RData")
+#allGenes = genes
+#allGeneCopyNumbers = geneCopyNumberDeletes
+#driverAmplifications = copy_number_drivers(genes, geneCopyNumberAmplifactions)
+#driverDeletions = copy_number_drivers(genes, geneCopyNumberDeletes)
+#driverDeletions = copy_number_drivers(allGenes, geneCopyNumberDeletes, maxDriversPerChromosome = 5, chromosomes = c(9:10))
+#copyNumberDeletions = driverDeletions$summary
+#copyNumberAmplifications = driverAmplifications$summary
+
+#save(copyNumberDeletions, copyNumberAmplifications, file = "~/hmf/copyNumberSummaries.RData")
+#save(driverAmplifications, driverDeletions, file = "~/hmf/copyNumberRaw.RData")
+
+#currentChromosome = 9
+#allGeneCopyNumbers = geneCopyNumberAmplifications
 

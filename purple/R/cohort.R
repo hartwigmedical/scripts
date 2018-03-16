@@ -1,23 +1,3 @@
-highest_purity_cohort<-function(dbConnect) {
-
-  cohort = purple::query_purity(dbConnect)
-
-  # PatientIds
-  patientIdLookups = query_patient_id_lookup(dbConnect)
-  patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
-  cohort$patientId <- patientIds$V1
-
-  #Clinical Data
-  clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
-
-  # Cohort
-  highestPurityCohort = purple::highest_purity_patients(cohort)
-
-  return (highestPurityCohort)
-}
-
-
 highest_purity_patients<-function(cohort) {
   dt = data.table(cohort)
   return (cohort[dt[, .I[which.max(purity)], by=patientId]$V1, ])

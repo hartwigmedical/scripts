@@ -1,3 +1,23 @@
+query_highest_purity_cohort<-function(dbConnect) {
+
+  cohort = purple::query_purity(dbConnect)
+
+  # PatientIds
+  patientIdLookups = query_patient_id_lookup(dbConnect)
+  patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
+  cohort$patientId <- patientIds$V1
+
+  #Clinical Data
+  clinicalData = purple::query_clinical_data(dbConnect)
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+
+  # Cohort
+  highestPurityCohort = purple::highest_purity_patients(cohort)
+
+  return (highestPurityCohort)
+}
+
+
 query_gene_copy_number_knockout<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
@@ -38,7 +58,7 @@ query_gene_copy_number_loh<-function(dbConnect, cohort) {
 query_gene_copy_number_deletes<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
@@ -56,7 +76,7 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
 query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(g.minCopyNumber / p.ploidy / ", cutoff, ") as score",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
