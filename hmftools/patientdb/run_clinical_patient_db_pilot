@@ -20,10 +20,3 @@ exec java -Xmx4G -Xms2G -jar ${patient_db_jar} \
     -cancer_types_symlink cancer_types \
     -portal_data_symlink portal_data \
     "$@"
-
-exec java -Xmx4G -Xms2G -cp ${patient_db_jar} \
-    com.hartwig.hmftools.patientdb.LoadMetricsData \
-    -runs_dir ${runs_dir} \
-    -db_user ${db_user} \
-    -db_pass ${db_pass} \
-    -db_url ${db_url}
