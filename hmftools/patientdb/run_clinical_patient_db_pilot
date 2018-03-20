@@ -1,14 +1,13 @@
 #!/bin/bash
 runs_dir=/data/cpct/runs
+patient_db_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
 credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=mysql://localhost:3306/hmfpatients_pilot?serverTimezone=CET
 
-# KODU - Force UTF-8 to deal with non-standard characters, see DEV-275
-exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
-    -jar /data/common/tools/patient-db_pilot/patient-db.jar \
+exec java -Xmx4G -Xms2G -jar ${patient_db_jar} \
     -runs_dir ${runs_dir} \
     -ecrf /data/ecrf/cpct_ecrf.xml \
     -form_status_csv /data/ecrf/cpct_form_status.csv \
@@ -21,3 +20,10 @@ exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -cancer_types_symlink cancer_types \
     -portal_data_symlink portal_data \
     "$@"
+
+exec java -Xmx4G -Xms2G -cp ${patient_db_jar} \
+    com.hartwig.hmftools.patientdb.LoadMetricsData \
+    -runs_dir ${runs_dir} \
+    -db_user ${db_user} \
+    -db_pass ${db_pass} \
+    -db_url ${db_url}
