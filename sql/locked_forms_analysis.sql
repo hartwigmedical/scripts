@@ -4,34 +4,34 @@
 
 UNION
 
-	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'informedConsent' AND locked='TRUE') / count(*)), '%'), form
-	FROM formsMetadata
-	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'informedConsent'
-
-UNION
-
-	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'eligibility' AND locked='TRUE') / count(*)), '%'), form
-	FROM formsMetadata
-	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'eligibility'
-
-UNION
-
 	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'selectionCriteria' AND locked='TRUE') / count(*)), '%'), form
 	FROM formsMetadata
 	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'selectionCriteria'
 
 UNION
 
+	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'informedConsent' AND locked='TRUE') / count(*)), '%'), form
+	FROM formsMetadata
+	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'informedConsent'
+
+UNION
+
 	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'demography' AND locked='TRUE') / count(*)), '%'), form
 	FROM formsMetadata
 	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'demography'
-    
+
 UNION
 
 	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'primaryTumor' AND locked='TRUE') / count(*)), '%'), form
 	FROM formsMetadata
 	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'primaryTumor'
 
+UNION
+
+	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'eligibility' AND locked='TRUE') / count(*)), '%'), form
+	FROM formsMetadata
+	WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'eligibility'
+    
 UNION
 
 	SELECT count(*), concat(round(100 * (SELECT count(*) FROM formsMetadata WHERE tableName != 'drug' AND tableName != 'preTreatmentDrug' AND form = 'pretreatment' AND locked='TRUE') / count(*)), '%'), form
