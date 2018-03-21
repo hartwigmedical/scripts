@@ -55,7 +55,7 @@ aggregate_gene_copy_number_knockouts<-function(geneCopyNumbers) {
     arrange(start)
 }
 
-copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
+copy_number_knockouts<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X")) {
 
   # Clean input
   allGenes = data.table(allGenes)

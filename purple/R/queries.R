@@ -17,7 +17,6 @@ query_highest_purity_cohort<-function(dbConnect) {
   return (highestPurityCohort)
 }
 
-
 query_gene_copy_number_knockout<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
@@ -76,7 +75,7 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
 query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
@@ -85,7 +84,6 @@ query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
     "   AND g.germlineHetRegions = 0",
     "   AND g.germlineHomRegions = 0",
     "   AND g.minCopyNumber / p.ploidy > ", cutoff,
-    "   AND g.chromosome <> 'Y'",
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
   return (dbGetQuery(dbConnect, query))
