@@ -224,3 +224,8 @@ colnames(pcawgAmpsTelomere) <- c("telomere","pcawgTelomereCount")
 amps = left_join(amps, pcawgAmpsTelomere, by = "telomere")
 found = amps %>% filter(pcawgTelomereCount > 0) %>% select(telomere)
 missingPcawgAmpsTelomere = pcawgAmpsTelomere[!pcawgAmpsTelomere$telomere %in% found$telomere, ]
+
+rm(ol)
+
+save(amps, file = "~/hmf/RData/amps.RData")
+save(dels, file = "~/hmf/RData/dels.RData")
