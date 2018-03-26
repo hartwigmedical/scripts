@@ -1,3 +1,6 @@
+# count samples
+select patientId, group_concat(sampleId separator ', ') as sampleNames, count(sampleId) as countSamples from clinical group by patientId;
+
 # registratie datum
 select distinct patientId, registrationDate from clinical
 inner join patient on patient.cpctId=clinical.patientId order by 1;
