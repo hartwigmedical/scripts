@@ -4,43 +4,53 @@ library(dplyr)
 library(stringr)
 library(testthat)
 gridss.short_deldup_size_threshold = 1000
-gridss.allowable_normal_contamination=0.03
+gridss.allowable_normal_contamination_qual=0.03
+gridss.allowable_normal_contamination_af=0.05
 gridss.use_read_threshold=3
-gridss.min_breakpoint_depth = 10 # BPI default. This could be significantly lower
+gridss.min_breakpoint_depth = 5 # Half BPI default
+gridss.min_normal_depth = 8
 gridss.max_homology_length = 50
 
+#' sum of 
+.genosum <- function(genotypeField, columns) {
+	rowSums(genotypeField[,columns, drop=FALSE])
+}
 #' For each GRanges breakend, indicates whether the variant
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_filter = function(gr, vcf, somatic_filters=TRUE) {
+gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
 	isShort = is_short_deldup(gr)
 	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
 	ihomlen[is.na(ihomlen)] = 0
-	filtered = str_detect(gr$FILTER, "NO_ASSEMBLY") |
-		str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
-		ihomlen > gridss.max_homology_length |
-		# BPI.Filter.MinDepth
-		(i$SR + i$RP < gridss.min_breakpoint_depth) |
-		# BPI.Filter.PRSupportZero
-		(!isShort & i$RP == 0) |
-		# BPI.Filter.SRSupportZero
-		(isShort & i$SR == 0)
-	if (somatic_filters) {
-		# see https://github.com/PapenfussLab/gridss/issues/114 for why we can't default to using QUAL
-		support = g$SR
-		rpsupport = g$RP
-		rpsupport[as.logical(is_short_deldup(gr))] = 0
-		support = support + rpsupport
-		has_sufficient_read_support = rowSums(support) >= gridss.use_read_threshold
+	filtered = rep(FALSE, length(gr))
+	if (min_support_filters) {
 		filtered = filtered |
-			(has_sufficient_read_support & support[,1] > 0.03 * support[,2]) |
-			(!has_sufficient_read_support & g$QUAL[,1] > 0.03 * g$QUAL[,2])
-			# Filter.SRNormalSupport is already covered by above logic
-			#(isShort & g$SR[,1] != 0)
+			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold
+			str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
+			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
+			# BPI.Filter.MinDepth
+			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth) |
+			# BPI.Filter.PRSupportZero
+			# Added ASRP into filter otherwise breakpoint chains don't get called
+			(!isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0) |
+			# BPI.Filter.SRSupportZero
+			(isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
+	}
+	if (somatic_filters) {
+		# TODO fix https://github.com/PapenfussLab/gridss/issues/114
+		# TODO should we filter for low normal REF/REFPAIR coverage?
+		normalaf <- gridss_af(gr, vcf, normalOrdinal)
+		filtered = filtered |
+			.genosum(g$QUAL,normalOrdinal) > gridss.allowable_normal_contamination_qual * .genosum(g$QUAL,tumourOrdinal) |
+			# Filter.SRNormalSupport
+			(isShort & .genosum(g$SR, normalOrdinal) != 0) |
+			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) < gridss.min_normal_depth | 
+			# NAN in normal indicate no normal coverage at all
+			is.nan(normalaf) | normalaf > gridss.allowable_normal_contamination_af
 	}
 	return(as.logical(filtered))
 }
@@ -49,19 +59,21 @@ is_short_deldup = function(gr) {
 		seqnames(gr) == seqnames(partner(gr)) &
 		abs(start(gr)-start(partner(gr))) < gridss.short_deldup_size_threshold
 }
-gridss_af = function(gr, vcf, i=1) {
-	g = geno(vcf[names(gr)])
-	ref = g$REF[,i]
-	refpair = g$REFPAIR[,i]
+gridss_af = function(gr, vcf, i=c(1)) {
+	genotype = geno(vcf[names(gr)])
+	g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
+	names(g) <- names(genotype)
+	ref = g$REF
+	refpair = g$REFPAIR
 	# assembly counts must be halved for reciprocal assemblies since
-	# we independently eassemble the same reads on both sides
+	# we independently assemble the same reads on both sides
 	assembled_read_weight = ifelse(str_detect(gr$FILTER, "SINGLE_ASSEMBLY"), 1, 0.5)
-	assrrp_af = ((g$ASSR[,i] + g$ASRP[,i]) * assembled_read_weight)/((g$ASSR[,i] + g$ASRP[,i]) * assembled_read_weight + ref + refpair)
-	srrp_af = (g$SR[,i] + g$RP[,i]) / (g$SR[,i] + g$RP[,i] + ref + refpair)
-	assr_af = (g$ASSR[,i] * assembled_read_weight) / (g$ASSR[,i] * assembled_read_weight + ref)
+	assrrp_af = ((g$ASSR + g$ASRP) * assembled_read_weight)/((g$ASSR + g$ASRP) * assembled_read_weight + ref + refpair)
+	srrp_af = (g$SR + g$RP) / (g$SR + g$RP + ref + refpair)
+	assr_af = (g$ASSR * assembled_read_weight) / (g$ASSR * assembled_read_weight + ref)
 	# it is questionably whether we should incoproate BSC.
 	# It's definitely incorrect in the case of promiscuous breakpoints
-	sr_af = (g$SR[,i]+g$BSC[,i])/(g$SR[,i]+g$BSC[,i]+ref)
+	sr_af = (g$SR+g$BSC)/(g$SR+g$BSC+ref)
 
 	# a complete assembly will give the most accurate AF, but
 	# a fragmented assembly will underestimate
@@ -181,6 +193,22 @@ load_full_gridss_gr = function(filename, directory="", filter=c("somatic", "qual
 	mcols(gr) = bind_cols(as.data.frame(mcols(gr)), as.data.frame(info_df))
 	return(gr)
 }
+full_gridss_annotate_gr = function(gr, vcf, geno_suffix=c(".normal", ".tumour")) {
+	vcf = vcf[gr$vcfId,]
+	g = geno(vcf)
+	extra_df <- as.data.frame(as.data.frame(info(vcf)))
+	for (i in seq_along(geno_suffix)) {
+		if (!is.na(geno_suffix[i])) {
+			gdf = data.frame(QUAL=g$QUAL[,i])
+			for (col in names(g)) {
+				gdf[[paste0(col, geno_suffix[i])]] = g[[col]][,i]
+			}
+			extra_df <- bind_cols(extra_df, gdf)
+		}
+	}
+	mcols(gr) = bind_cols(as.data.frame(mcols(gr)), extra_df)
+}
+
 transitive_of = function(gr, max_traversal_length, max_positional_error, ...) {
 	paths = transitive_paths(gr, max_traversal_length, max_positional_error, ...)
 	result = rep(NA_character_, length(gr))

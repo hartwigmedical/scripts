@@ -1,0 +1,45 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+if [ ! -f $run_dir/metadata ] ; then
+        echo "Missing metadata file in run directory. Aborting" 1>&2
+        exit
+fi
+config_dir=$run_dir/../
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+        base_path="/data"
+fi
+
+export PATH=$PATH:$base_path/tools/bwa_v0.7.5a/
+GRIDSS_JAR=$base_path/tools/gridss_v1.5.1/gridss-1.5.1-jar-with-dependencies.jar
+
+R=$(load_ref_sample_from_metadata $run_dir)
+T=$(load_tumor_sample_from_metadata $run_dir)
+J=$(load_joint_name_from_metadata $run_dir)
+OUT=$run_dir/structuralVariants/gridss/$J/
+ASSEMBLY=$OUT/${J}.assembly.breakend.bam
+VCF=$OUT/${J}_gridss.vcf
+REFERENCE=$base_path/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+BLACKLIST=$config_dir/ENCFF001TDO.bed
+CONFIG_FILE=$config_dir/gridss.properties
+
+java -ea -Xmx31g \
+	-Dsamjdk.create_index=true \
+	-Dsamjdk.use_async_io_read_samtools=true \
+	-Dsamjdk.use_async_io_write_samtools=true \
+	-Dsamjdk.use_async_io_write_tribble=true \
+	-cp $GRIDSS_JAR gridss.CallVariants \
+	TMP_DIR=$OUT \
+	WORKING_DIR=$OUT \
+	REFERENCE_SEQUENCE="$REFERENCE" \
+	INPUT="$R" \
+	INPUT="$T" \
+	OUTPUT="$VCF" \
+	ASSEMBLY="$ASSEMBLY" \
+	BLACKLIST="$BLACKLIST" \
+	WORKER_THREADS=32 \
+	CONFIGURATION_FILE="$CONFIG_FILE" \
+	2>&1 | tee -a $OUT/gridss.$HOSTNAME.$$.log

@@ -25,8 +25,17 @@ grnew$transitive=transitive_of(grnew, 2000, 300)
 # make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
 grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
 grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
+simpleEventType <- function(gr) {
+  return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
+          ifelse(str_length(gr$insertSequence) >= abs(gr$svlen) * 0.7, "INS", # TODO: improve classification of complex events
+           ifelse(strand(gr) == strand(partner(gr)), "INV",
+            ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
+             "DUP")))))
+}
+grex$type = simpleEventType(grex)
+grnew$type = simpleEventType(grnew)
+	
 fullmatchdf <- gr_join_to_df(grex, NULL, grnew, NULL, maxgap=500, sizemargin=2, suffix=c(".old", ".new"))
-
 fullmatchdf = fullmatchdf %>%
 	mutate(called=c("Neither", "Existing", "New", "Both")
 		[1+ifelse(!is.na(fullmatchdf$start.old), 1, 0) + ifelse(!is.na(fullmatchdf$start.new), 2, 0)]) %>%
@@ -36,7 +45,7 @@ fullmatchdf = fullmatchdf %>%
 				 sampleId=ifelse(!is.na(sampleId.old), sampleId.old, sampleId.new),
 				 orientation=ifelse(!is.na(orientation.old), orientation.old, orientation.new)) %>%
 	mutate(svlen=ifelse(!is.na(svlen.new), svlen.new, svlen.old))
-				 
+
 ```
 
 # Summary stats:
@@ -46,7 +55,7 @@ matchdf <- fullmatchdf
 commondf <- matchdf %>% filter(called=="Both")
 
 ggplot(matchdf) + 
-	aes(x=called) +
+	aes(x=called, fill=transitive) +
 	geom_bar() +
 	facet_wrap(~ type) + 
 	labs("Overall call counts")
@@ -69,14 +78,14 @@ ggplot(matchdf %>% filter(called=="Both") %>% mutate(isSmall=abs(end.new-start.n
 	geom_density2d() +
 	labs("Ploidy correlation")
 
-ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old),
-								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new)) %>%
-			 	filter(!is.na(ploidy))) +
+ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old, transitive=matchdf$transitive),
+								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new, transitive=matchdf$transitive)) %>%
+			 	filter(!is.na(ploidy) & transitive=="Neither")) +
 	aes(x=ploidy, fill=called) +
 	geom_histogram(bins=90*2) +
-	facet_wrap(~ set, scales="free") +
+	facet_grid(transitive ~ set, scales="free") +
 	scale_x_continuous(limits=c(-1,8)) +
-	labs("Ploidy distribution")
+	labs(title="Ploidy distribution (transitive excluded)")
 
 ggplot(matchdf) +
 	aes(x=abs(svlen), fill=called) +

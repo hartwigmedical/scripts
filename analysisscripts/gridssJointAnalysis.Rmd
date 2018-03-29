@@ -1,0 +1,111 @@
+
+```{r}
+source("../gridss/libgridss.R")
+library(tidyverse)
+library(Biostrings)
+library(rtracklayer)
+```
+```{r}
+joint_file <- "../../down/CPCT02340036_DRUP01340006_joint_gridss.vcf"
+region_export_file <- "../../down/CPCT02340036_DRUP01340006_joint_slice.bed"
+```
+Load data
+```{r}
+vcf <- readVcf(joint_file, "hg19")
+gr <- breakpointRanges(vcf)
+```
+
+Compare GRIDSS filtered results to full results
+
+```{r}
+gr$is_somatic = rowSums(geno(vcf[gr$vcfId,])$QUAL[,c(1,3)]) == 0 & !is.nan(gridss_af(gr, vcf, c(1,3)))
+gr$is_somatic1 = !gridss_filter(gr, vcf, min_support_filters=FALSE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2)
+gr$is_somatic2 = !gridss_filter(gr, vcf, min_support_filters=FALSE, somatic_filters=TRUE, normalOrdinal=3, tumourOrdinal=4)
+gr$is_filtered1 = gridss_filter(gr, vcf, min_support_filters=TRUE, somatic_filters=FALSE, normalOrdinal=1, tumourOrdinal=2)
+gr$is_filtered2 = gridss_filter(gr, vcf, min_support_filters=TRUE, somatic_filters=FALSE, normalOrdinal=3, tumourOrdinal=4)
+gr$is_short_deldup = is_short_deldup(gr)
+gr$somaf1 = gridss_af(gr, vcf, 2)
+gr$noraf1 = gridss_af(gr, vcf, 1)
+gr$somaf2 = gridss_af(gr, vcf, 4)
+gr$noraf2 = gridss_af(gr, vcf, 3)
+
+fdf <- as.data.frame(gr) %>%
+	mutate(
+		norQUAL1 =geno(vcf[gr$vcfId,])$QUAL[,1] %na% 0,
+		norQUAL2 =geno(vcf[gr$vcfId,])$QUAL[,3] %na% 0,
+		somQUAL1 =geno(vcf[gr$vcfId,])$QUAL[,2] %na% 0,
+		somQUAL2 =geno(vcf[gr$vcfId,])$QUAL[,4] %na% 0) %>%
+	mutate(
+		norQUAL=norQUAL1+norQUAL2,
+		somQUAL=somQUAL1+somQUAL2)
+
+common_somatic_gr = gr[gr$is_somatic1 & gr$is_somatic2]
+common_somatic_vcf <- vcf[common_somatic_gr$vcfId,]
+csdf <- as.data.frame(common_somatic_gr) %>%
+	mutate(
+		somQUAL1 =geno(common_somatic_vcf)$QUAL[,2],
+		somQUAL2 =geno(common_somatic_vcf)$QUAL[,4]
+	)
+somatic_slice_gr <- IRanges::reduce(resize(common_somatic_gr, width=2000, fix="center"))
+start(somatic_slice_gr) = pmax(1, start(somatic_slice_gr))
+strand(somatic_slice_gr) = "*"
+export(con=region_export_file, object=somatic_slice_gr)
+ggplot(csdf) + 
+	aes(x=somQUAL1+1, y=somQUAL2+1, colour=interaction(is_filtered1, is_filtered2)) +
+	geom_point(size=0.5) +
+	scale_x_log10() +
+	scale_y_log10() + 
+	facet_wrap(~ is_short_deldup)
+
+```
+
+
+We can use the sample consistency as a 'truth' for generating filtering criteria.
+If a variant is somatic in both related samples then it's likely to be a TP.
+If it's not somatic in either then we want to filter it.
+
+```{r}
+fulldf1 <- full_gridss_annotate_gr(gr, vcf)
+fulldf2 <- full_gridss_annotate_gr(gr, vcf, c(NA, NA, ".normal", ".tumour"))
+ggplot(fulldf1 %>% filter(is_somatic1 & is_somatic2)) + 
+	aes(x=QUAL.tumour+1, y=QUAL.normal+1, colour=SR.tumour+SR.normal+RP.tumour+RP.normal>=10) +
+	geom_point(size=0.1) +
+	scale_x_log10() +
+	scale_y_log10() +
+	facet_wrap(~ !is.na(svLen) & abs(svLen) < 1000)
+
+ggplot(fulldf1 %>% filter(!is_short_deldup)) +
+	aes(x=QUAL.tumour+1, fill=is_somatic) +
+	geom_histogram() +
+	scale_x_log10() +
+	facet_wrap(is_somatic1 ~ is_somatic)
+
+ggplot(fulldf1 %>% filter((is.na(svLen) | svLen > 1000) & (is_somatic | is_somatic1))) +
+	aes(x=QUAL.tumour+1, y=QUAL.normal+1, colour=is_somatic) +
+	geom_point() +
+	scale_x_log10() +
+	scale_y_log10()
+
+ggplot(fulldf1 %>% filter((is.na(svLen) | svLen > 1000) & (is_somatic | is_somatic1))) +
+	aes(x=somaf1, y=noraf1, colour=is_somatic) +
+	geom_point()
+
+ggplot(fulldf1 %>% filter((is.na(svLen) | svLen > 1000) & (is_somatic | is_somatic1))) +
+	aes(x=SR.tumour+RP.tumour, y=SR.normal+SR.normal, colour=is_somatic) +
+	geom_point() +
+	scale_x_log10() +
+	scale_y_log10()
+
+ggplot(fulldf1 %>% filter(!fulldf1$is_filtered1 & fulldf1$is_somatic1)) +
+	aes(x=somaf1, fill=is_somatic2) +
+	geom_histogram(bins=100)
+ggplot(fulldf2 %>% filter(!fulldf2$is_filtered2 & fulldf2$is_somatic2)) +
+	aes(x=somaf2, fill=is_somatic1) +
+	geom_histogram(bins=100)
+```
+
+
+
+
+
+
