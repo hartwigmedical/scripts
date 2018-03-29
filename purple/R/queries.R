@@ -4,8 +4,7 @@ query_highest_purity_cohort<-function(dbConnect) {
 
   # PatientIds
   patientIdLookups = query_patient_id_lookup(dbConnect)
-  patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
-  cohort$patientId <- patientIds$V1
+  cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
 
   #Clinical Data
   clinicalData = purple::query_clinical_data(dbConnect)
@@ -17,6 +16,25 @@ query_highest_purity_cohort<-function(dbConnect) {
   return (highestPurityCohort)
 }
 
+query_multiple_biopsy_cohort<-function(dbConnect) {
+
+  cohort = purple::query_purity(dbConnect)
+
+  # PatientIds
+  patientIdLookups = query_patient_id_lookup(dbConnect)
+  cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
+
+
+  #Clinical Data
+  clinicalData = purple::query_clinical_data(dbConnect)
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+
+  # Cohort
+  multipleBiopsyCohort = purple::multiple_biopsy(cohort)
+
+  return (multipleBiopsyCohort)
+}
+
 query_gene_copy_number_knockout<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
@@ -26,7 +44,7 @@ query_gene_copy_number_knockout<-function(dbConnect, cohort) {
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
     "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity > 0.15",
+    "   AND p.purity >= 0.20",
     "   AND g.germlineHetRegions = 0",
     "   AND g.germlineHomRegions = 0",
     "   AND (g.minCopyNumber < 0.5 or g.minMinorAllelePloidy < 0.5 or nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0)" ,
@@ -44,7 +62,7 @@ query_gene_copy_number_loh<-function(dbConnect, cohort) {
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
     "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity > 0.15",
+    "   AND p.purity >= 0.20",
     "   AND g.germlineHetRegions = 0",
     "   AND g.germlineHomRegions = 0",
     "   AND g.minMinorAllelePloidy < 0.5",
@@ -62,7 +80,6 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
     "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity > 0.15",
     "   AND g.germlineHetRegions = 0",
     "   AND g.germlineHomRegions = 0",
     "   AND g.minCopyNumber < 0.5",
@@ -75,15 +92,30 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
 query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport, p.ploidy",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
     "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity > 0.15",
     "   AND g.germlineHetRegions = 0",
     "   AND g.germlineHomRegions = 0",
     "   AND g.minCopyNumber / p.ploidy > ", cutoff,
+    "   AND p.sampleId in (",sampleIdString, ")",
+    sep = " ")
+  return (dbGetQuery(dbConnect, query))
+}
+
+query_gene_copy_number_drivers<-function(dbConnect, cohort, cutoff = 3) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT g.*, p.ploidy",
+    "  FROM geneCopyNumber g, purity p",
+    " WHERE g.sampleId = p.sampleId",
+    "   AND p.qcStatus = 'PASS'",
+    "   AND p.status != 'NO_TUMOR'",
+    "   AND g.germlineHetRegions = 0",
+    "   AND g.germlineHomRegions = 0",
+    "   AND (g.minCopyNumber / p.ploidy > ", cutoff, " OR g.minCopyNumber < 0.5 OR g.minMinorAllelePloidy < 0.5)",
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
   return (dbGetQuery(dbConnect, query))
@@ -106,12 +138,13 @@ query_clinical_data<-function(dbConnect) {
   return ((dbGetQuery(dbConnect, query)))
 }
 
-query_purity<-function(dbConnect) {
+query_purity<-function(dbConnect, purityCutoff = 0.2) {
   query = paste(
     "SELECT p.*",
     " FROM purity p",
     "WHERE qcStatus = 'PASS'",
     "  AND status <> 'NO_TUMOR'",
+    "  AND p.purity >= ", purityCutoff,
     sep = " ")
   return (dbGetQuery(dbConnect, query))
 }

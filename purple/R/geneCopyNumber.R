@@ -124,7 +124,7 @@ chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneC
 }
 
 
-copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 20, chromosomes = c(1:22, "X"), cl = NA) {
+copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 0, chromosomes = c(1:22, "X"), cl = NA) {
 
   # Clean input
   allGenes = data.table(allGenes)
@@ -138,9 +138,10 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
     chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome)})
   }
 
-  driverGeneCopyNumbers = lapply(chromosomeDrivers, function(x) {x$driverGeneCopyNumbers})
+  allChromosomeDrivers = unlist(chromosomeDrivers, recursive = F)
+  driverGeneCopyNumbers = lapply(allChromosomeDrivers, function(x) {x$driverGeneCopyNumbers})
   driverGeneCopyNumbersSummary = aggregate_gene_copy_numbers_by_cancer_type(do.call(rbind, driverGeneCopyNumbers))
-  remainderSummary = data.frame(t(sapply(chromosomeDrivers, function(x) {c(gene=x$gene, globalPeak=x$globalPeak, localPeak = x$localPeak, neighbouringGenes = x$neighbouringGenes, candidates = x$candidates)})), stringsAsFactors = F)
+  remainderSummary = data.frame(t(sapply(allChromosomeDrivers, function(x) {c(gene=x$gene, globalPeak=x$globalPeak, localPeak = x$localPeak, neighbouringGenes = x$neighbouringGenes, candidates = x$candidates)})), stringsAsFactors = F)
   remainderSummary[, 2:4] <- lapply(remainderSummary[, 2:4], as.numeric)
 
   summary = left_join(driverGeneCopyNumbersSummary, remainderSummary, by = "gene")
@@ -152,23 +153,13 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
 }
 
 
-#### RUBBISH
-
-#maxDriversPerChromosome = 3
-#chromosomes = c(1:2)
-
-#load("~/hmf/geneCopyNumber.RData")
-#allGenes = genes
+#### WORKING
+#library(dplyr)
+#library(tidyr)
+#load("~/hmf/RData/geneCopyNumberDeletesData.RData")
+#chromosomes = c(1:22, "X")
 #allGeneCopyNumbers = geneCopyNumberDeletes
-#driverAmplifications = copy_number_drivers(genes, geneCopyNumberAmplifactions)
-#driverDeletions = copy_number_drivers(genes, geneCopyNumberDeletes)
-#driverDeletions = copy_number_drivers(allGenes, geneCopyNumberDeletes, maxDriversPerChromosome = 5, chromosomes = c(9:10))
-#copyNumberDeletions = driverDeletions$summary
-#copyNumberAmplifications = driverAmplifications$summary
-
-#save(copyNumberDeletions, copyNumberAmplifications, file = "~/hmf/copyNumberSummaries.RData")
-#save(driverAmplifications, driverDeletions, file = "~/hmf/copyNumberRaw.RData")
-
-#currentChromosome = 9
-#allGeneCopyNumbers = geneCopyNumberAmplifications
+#maxDriversPerChromosome = 0
+#cl = NA
+#jon = copy_number_drivers(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 0, chromosomes = c(22))
 
