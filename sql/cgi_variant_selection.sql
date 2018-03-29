@@ -1,4 +1,5 @@
 SELECT chromosome, position, ref, alt
 FROM somaticVariant
-WHERE filter = 'PASS' AND (effect LIKE '%protein%' OR effect LIKE '%structural%' OR effect LIKE '%missense%' OR effect LIKE '%frame%' OR effect LIKE '%stop%')
+WHERE filter = 'PASS' AND (canonicalEffect LIKE '%protein%' OR canonicalEffect LIKE '%structural%' OR canonicalEffect LIKE '%missense%' OR canonicalEffect
+LIKE '%frame%' OR canonicalEffect LIKE '%stop%')
 AND sampleId = 'XXX';

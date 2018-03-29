@@ -11,6 +11,7 @@ use JSON;
 use File::Copy;
 use Spreadsheet::XLSX;
 use DateTime::Format::Excel;
+use File::Basename;
 use 5.01000;
 
 use constant EMPTY => q{ };
@@ -24,8 +25,8 @@ my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
 my $LIMSOUTFILE = '/data/lims/lims.json';
 my $BACKUP_DIR  = '/data/lims/previous';
 
-## PROCIN_2017 contains 2017 samples SOP string
-## JSONIN_2017 contains 2017 samples complete (but only for non-CPCT)
+## PROCIN_2017: samples SOP string from 2017
+## JSONIN_2017: samples complete (non-CPCT) from 2017
 my $PROCIN_2017 = '/data/lims/labfiles/2017_lims_proc';
 my $JSONIN_2017 = '/data/lims/labfiles/lims_2017.json'; 
 
@@ -78,6 +79,7 @@ $LIMSOUTFILE = $opt{ output } if $opt{ output };
 
 ## start with backup of current lims files
 foreach ( $LIMSOUTFILE ){
+    next unless -f $LIMSOUTFILE;
     copy( $_, "$BACKUP_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACKUP_DIR failed: $!";
 }
 
@@ -224,13 +226,23 @@ sub printLimsToJson{
     my $samples_count = scalar keys %$samples;
     my $submissions_count = scalar keys %$submissions;
 
+    ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
     my $json_txt = JSON->new->utf8->pretty->encode(\%lims);
-    
     say "[INFO] Writing output to \"$out_file\" ($submissions_count submissions and $samples_count samples)";
     open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         print $lims_json_fh $json_txt;
     close $lims_json_fh;
+    
+    ## submissions json
+    my ($out_name,$out_path) = fileparse($out_file);
+    my $out_file_sub = $out_path . "submissions.json";
+    my $json_txt_sub = JSON->new->utf8->pretty->encode($submissions);
+    say "[INFO] Writing output to \"$out_file_sub\" ($submissions_count submissions)";
+    open my $sub_json_fh, '>', $out_file_sub or die "Unable to open output file ($out_file_sub): $!\n";
+        print $sub_json_fh $json_txt_sub;
+    close $sub_json_fh;
+    
 }
 
 sub addLabSopString{
@@ -490,6 +502,9 @@ sub parseLimsRest{
                 $row_info{ 'entity' } = 'KG_'.$center;
                 $row_info{ 'label' } = 'KG';
             }
+            ## assume that all samples of submission need same analysis
+            ## so will just overwrite analysis_type of submission
+            $sub->{ 'analysis_type' } = $analysis_type;
         }
 
         my $unique = $row_info{ 'sample_id' };

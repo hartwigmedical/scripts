@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v2.1
+patient_db_dir=/data/common/tools/patient-db_v2.3
 
 ecrf_file=$1
 
