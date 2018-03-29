@@ -7,23 +7,18 @@ library(ggplot2)
 
 #Excess
 load("~/hmf/RData/HmfRefCDSCv.RData")
-HmfRefCDSCv$excess_mis <- round(HmfRefCDSCv$n_mis * pmax(HmfRefCDSCv$wmis_cv-1, 0) / HmfRefCDSCv$wmis_cv)
-HmfRefCDSCv$excess_mis <- ifelse(is.nan(HmfRefCDSCv$excess_mis), 0, HmfRefCDSCv$excess_mis)
-HmfRefCDSCv$excess_non <- round(HmfRefCDSCv$n_non * pmax(HmfRefCDSCv$wnon_cv-1, 0) / HmfRefCDSCv$wnon_cv)
-HmfRefCDSCv$excess_non <- ifelse(is.nan(HmfRefCDSCv$excess_non), 0, HmfRefCDSCv$excess_non)
-HmfRefCDSCv$excess_spl <- round(HmfRefCDSCv$n_spl * pmax(HmfRefCDSCv$wspl_cv-1, 0) / HmfRefCDSCv$wspl_cv)
-HmfRefCDSCv$excess_spl <- ifelse(is.nan(HmfRefCDSCv$excess_spl), 0, HmfRefCDSCv$excess_spl)
-excess = HmfRefCDSCv[HmfRefCDSCv$cancerType == 'All', c("gene_name", "excess_mis","excess_non","excess_spl")]
-colnames(excess) <- c("gene", "ex_mis","ex_non","ex_spl")
+HmfRefCDSCvNullPcawg$gene_name <- as.character(HmfRefCDSCvNullPcawg$gene_name)
+HmfRefCDSCv$prob_mis = ifelse(HmfRefCDSCv$n_mis>0,pmax(0,(HmfRefCDSCv$wmis_cv-1)/HmfRefCDSCv$wmis_cv),0)
+HmfRefCDSCv$prob_non = ifelse(HmfRefCDSCv$n_non,pmax(0,(HmfRefCDSCv$wnon_cv-1)/HmfRefCDSCv$wnon_cv),0)
+HmfRefCDSCv$prob_spl = ifelse(HmfRefCDSCv$n_spl>0,pmax(0,(HmfRefCDSCv$wspl_cv-1)/HmfRefCDSCv$wspl_cv),0)
+HmfRefCDSCv$prob_ind = ifelse(HmfRefCDSCv$n_ind>0,pmax(0,(HmfRefCDSCv$wind_cv-1)/HmfRefCDSCv$wind_cv),0)
+HmfRefCDSCv$excess_mis = HmfRefCDSCv$prob_mis*HmfRefCDSCv$n_mis
+HmfRefCDSCv$excess_non = HmfRefCDSCv$prob_non*HmfRefCDSCv$n_non
+HmfRefCDSCv$excess_spl = HmfRefCDSCv$prob_spl*HmfRefCDSCv$n_spl
+HmfRefCDSCv$excess_ind = HmfRefCDSCv$prob_ind*HmfRefCDSCv$n_ind
 
-### or
 
-HmfRefCDSCv$probmis = ifelse(HmfRefCDSCv$n_mis>0,pmax(0,(HmfRefCDSCv$wmis_cv-1)/HmfRefCDSCv$wmis_cv),0)
-HmfRefCDSCv$probnon = ifelse(HmfRefCDSCv$n_non+HmfRefCDSCv$n_spl>0,pmax(0,(HmfRefCDSCv$wnon_cv-1)/HmfRefCDSCv$wnon_cv),0)
-HmfRefCDSCv$excess_mis = HmfRefCDSCv$probmis*HmfRefCDSCv$n_mis
-HmfRefCDSCv$excess_trunc = HmfRefCDSCv$probnon*(HmfRefCDSCv$n_non+HmfRefCDSCv$n_spl)
-HmfRefCDSCv$type = ifelse(HmfRefCDSCv$excess_trunc > 4 | HmfRefCDSCv$excess_trunc > 0.3 * HmfRefCDSCv$excess_mis, "TSG", "Oncogene")
-HmfRefCDSCv = merge(HmfRefCDSCv, knownCancerGenes[, c("gene_name","cosmic_type")], by = "gene_name", all.x = T)
+
 
 
 
@@ -57,7 +52,7 @@ tsGeneStatusPrimaryPositions <- function(pos, geneStatus, impact) {
     return (paste(multihit[1:2, c("pos")], collapse =","))
   }
   
-  return (df[1, c("pos")])
+  return (as.character(df[1, c("pos")]))
 }
 
 tsGeneStatusRedundant <- function(position, driverPositions) {
@@ -90,13 +85,33 @@ oncoGeneStatusPrimaryPosition <- function(pos, hotspot, nearHotspot, impact) {
   return (NA)
 }
 
+
+
+
+
+load(file = "~/hmf/RData/allHotspots.RData")
+allHotspots$hotspot <- 1
+colnames(allHotspots) <- c("chr", "pos", "ref", "mut", "hotspot")
+
 load(file="~/hmf/RData/mutations.RData")
+mutations$pid <- NULL
+mutations$hotspot <- NULL
+mutations = dplyr::left_join(mutations, allHotspots, by = c("chr", "pos", "ref", "mut"))
+mutations$hotspot <- ifelse(is.na(mutations$hotspot), 0, 1)
+
 mutations = mutations[!is.na(mutations$impact), ]
 mutations[mutations$type == "MNP", c("impact")] <- "MNV"
 mutations[mutations$type == "INDEL" & abs(nchar(mutations$ref) - nchar(mutations$mut)) %% 3 == 0 , c("impact")] <- "Inframe"
 mutations[mutations$type == "INDEL" & abs(nchar(mutations$ref) - nchar(mutations$mut)) %% 3 != 0 , c("impact")] <- "Frameshift"
 mutations$impact <- ifelse(mutations$impact == "Stop_loss", "Nonsense", mutations$impact)
 mutations$nearHotspot <- nearHotspot(mutations)
+
+# Copy Number
+load(file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
+
+load(file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
+geneCopyNumberDeletes = geneCopyNumberDeletes %>% select(sampleID = sampleId, gene) %>% mutate(del = T)
+#mutations = dplyr::left_join(mutations, geneCopyNumberDeletes, by = c("sampleID", "gene"))
 
 tsgByVariant = mutations %>% 
 #tsgByVariant = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
@@ -106,6 +121,7 @@ tsgByVariant = mutations %>%
   mutate(n = n(), geneStatus = tsGeneStatus(biallelic, n), geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, impact), redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
   select(-geneStatusPrimaryPositions) %>% ungroup()
 
+
 oncoByVariant = mutations %>% 
 #oncoByVariant = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
   filter(impact %in% c("MNV", "Frameshift", "Missense", "Inframe")) %>% 
@@ -114,8 +130,8 @@ oncoByVariant = mutations %>%
   mutate(n = n(), geneStatus =oncoGeneStatus(hotspot, nearHotspot, n), redundant = pos != oncoGeneStatusPrimaryPosition(pos, hotspot, nearHotspot, impact)) %>% 
   ungroup()
 
-
-
+save(tsgByVariant, file = "~/hmf/RData/tsgByVariantNewHotspots.RData")
+save(oncoByVariant, file = "~/hmf/RData/oncoByVariantNewHotspots.RData")
 
 View(tsgByVariant %>% unite(combined,c(driver,redundant, impact)) %>% group_by(gene,combined) %>% 
        summarise(count=n()) %>% 
@@ -149,3 +165,7 @@ knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$oncogene, "oncogene", "
 knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$tsg, "tsg", knownCancerGenes$cosmic_type)
 knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$tsg & knownCancerGenes$oncogene, "both", knownCancerGenes$cosmic_type)
 save(knownCancerGenes, file = "~/hmf/RData/knownCancerGenes.RData")
+
+
+
+

@@ -50,3 +50,76 @@ ggplot(significantCv[!is.na(significantCv$martincorena_null) & significantCv$mar
   scale_alpha_discrete(range=c(0.4,1)) + 
   scale_fill_manual(values=c("green", "red", "blue"), na.value = c("grey"))+ xlab("") + ylab("") + 
   guides(fill=guide_legend(title=NULL))
+
+##################### GENES
+
+load("~/hmf/RData/cosmicGenes.RData")
+
+hmfGenes =  HmfRefCDSCv %>% filter(qglobal_cv < absSignificance) %>% distinct(gene_name) %>% mutate(hmf = T)
+martincorenaGenes =  PcawgRefCDSCv %>% filter(qglobal < absSignificance) %>% distinct(gene_name)  %>% mutate(martincorena = T)
+genePanel = merge(hmfGenes, martincorenaGenes, by = "gene_name", all = T)
+genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
+genePanel[is.na(genePanel)] <- FALSE
+genePanel = genePanel %>% filter(hmf | martincorena | cosmicCurated)
+rm(hmfGenes, martincorenaGenes, cosmicGenes)
+
+
+
+##################### dNdS Classification
+genePanelCv = HmfRefCDSCv %>% filter(cancerType == 'All', gene_name %in% genePanel$gene_name) %>% select(gene_name, cancerType, wmis_cv, wnon_cv, prob_mis, prob_non, excess_mis, excess_non)
+genePanelCv = left_join(genePanelCv, genePanel[, c("gene_name", "cosmicTsg", "cosmicOncogene")], by = "gene_name")
+
+trainTsg = genePanelCv %>% filter(cosmicTsg, !cosmicOncogene) %>% mutate(tsg = 1) %>% select(wmis_cv, wnon_cv,  tsg)
+trainOnco = genePanelCv %>% filter(!cosmicTsg, cosmicOncogene) %>% mutate(tsg = 0) %>% select(wmis_cv, wnon_cv,  tsg)
+
+trainData = rbind(trainTsg, trainOnco)
+model <- glm(tsg ~.,family=binomial(link='logit'),data=trainData)
+
+summary(model)
+anova(model, test="Chisq")
+
+continuousClassification <- predict(model,newdata= genePanelCv %>% select(wmis_cv, wnon_cv),type='response')
+genePanelCv$classification = ifelse(continuousClassification > 0.5,"tsg","onco")
+genePanel = left_join(genePanel, genePanelCv[, c("gene_name","classification")], by = "gene_name")
+
+rm(trainTsg, trainOnco, trainData, model)
+
+ggplot(data=genePanelCv,aes(prob_mis,prob_non,label=gene_name))+
+  geom_point(aes(colour = factor(classification)))+
+  geom_text(size=2,hjust = 0, nudge_x = 0.01)
+
+ggplot(data=genePanelCv,aes(excess_mis+0.1,excess_non+0.1,label=gene_name))+
+  geom_point(aes(colour = factor(classification)))+
+  geom_text(size=2,hjust = 0, nudge_x = 0.01)+
+  scale_x_log10()+
+  scale_y_log10() 
+
+
+load("~/hmf/RData/cancerTypeColours.RData")
+
+oncoMutationsPerGene = HmfRefCDSCv %>% filter(cancerType != 'All', gene_name %in% oncoGenes$gene_name) %>% select(gene = gene_name, N = n_mis, cancerType)
+oncoMutationsPerGeneLevels = oncoMutationsPerGene %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
+oncoMutationsPerGene$gene <- factor(oncoMutationsPerGene$gene, levels = oncoMutationsPerGeneLevels$gene)
+ggplot(data=oncoMutationsPerGene, aes(gene, N)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") + 
+  ggtitle("Oncogene mutations per cancer type") + xlab("Genes") + ylab("Number of variants") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_manual( values= cancerTypeColours)
+
+
+
+oncoMutationsPerGene = oncoSomatics %>% filter(cancerType != 'All', gene_name %in% oncoGenes$gene_name) %>% select(gene = gene_name, N = n_mis, cancerType)
+oncoMutationsPerGeneLevels = oncoMutationsPerGene %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
+oncoMutationsPerGene$gene <- factor(oncoMutationsPerGene$gene, levels = oncoMutationsPerGeneLevels$gene)
+ggplot(data=oncoMutationsPerGene, aes(gene, N)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") + 
+  ggtitle("Oncogene mutations per cancer type") + xlab("Genes") + ylab("Number of variants") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_fill_manual( values= cancerTypeColours)
+
+
+
+
+plot_mutations_by_cancer_type( HmfRefCDSCv %>% filter(cancerType != 'All', gene_name %in% tsGenes$gene_name))
+
+
