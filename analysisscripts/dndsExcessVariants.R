@@ -4,24 +4,6 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-
-#Excess
-load("~/hmf/RData/HmfRefCDSCv.RData")
-HmfRefCDSCvNullPcawg$gene_name <- as.character(HmfRefCDSCvNullPcawg$gene_name)
-HmfRefCDSCv$prob_mis = ifelse(HmfRefCDSCv$n_mis>0,pmax(0,(HmfRefCDSCv$wmis_cv-1)/HmfRefCDSCv$wmis_cv),0)
-HmfRefCDSCv$prob_non = ifelse(HmfRefCDSCv$n_non,pmax(0,(HmfRefCDSCv$wnon_cv-1)/HmfRefCDSCv$wnon_cv),0)
-HmfRefCDSCv$prob_spl = ifelse(HmfRefCDSCv$n_spl>0,pmax(0,(HmfRefCDSCv$wspl_cv-1)/HmfRefCDSCv$wspl_cv),0)
-HmfRefCDSCv$prob_ind = ifelse(HmfRefCDSCv$n_ind>0,pmax(0,(HmfRefCDSCv$wind_cv-1)/HmfRefCDSCv$wind_cv),0)
-HmfRefCDSCv$excess_mis = HmfRefCDSCv$prob_mis*HmfRefCDSCv$n_mis
-HmfRefCDSCv$excess_non = HmfRefCDSCv$prob_non*HmfRefCDSCv$n_non
-HmfRefCDSCv$excess_spl = HmfRefCDSCv$prob_spl*HmfRefCDSCv$n_spl
-HmfRefCDSCv$excess_ind = HmfRefCDSCv$prob_ind*HmfRefCDSCv$n_ind
-
-
-
-
-
-
 ####### Variant Annotation
 nearHotspot <-function(mutations, distance = 10) { 
   hotspots = mutations %>% filter(hotspot > 0) %>% select(chr, pos) %>% distinct
@@ -34,14 +16,20 @@ nearHotspot <-function(mutations, distance = 10) {
   return (mutations$nearHotspot & !mutations$hotspot)
 }
 
-tsGeneStatus <-function(biallelic, n) {
+tsGeneStatus <-function(del, biallelic, n) {
   result = ifelse(n > 1, "MultiHit", "SingleHit")
   result = ifelse(biallelic, "Biallelic", result)
+  result = ifelse(del, "Del", result)
   return (result)
 }
 
 tsGeneStatusPrimaryPositions <- function(pos, geneStatus, impact) {
   df = data.frame(pos = pos, geneStatus = geneStatus, impact = impact)
+  del = df %>% filter(geneStatus == "Del") %>% arrange(impact)
+  if (nrow(del)) {
+    return (as.character(del[1, c("pos")]))
+  }
+  
   biallelic = df %>% filter(geneStatus == "Biallelic") %>% arrange(impact)
   if (nrow(biallelic)) {
     return (as.character(biallelic[1, c("pos")]))
@@ -68,25 +56,22 @@ tsGeneStatusRedundant <- function(position, driverPositions) {
   return (result)
 }
 
-oncoGeneStatus <-function(hotspot, nearHotspot, n) {
-  result = ifelse(n > 1, "MultiHit", "SingleHit")
-  result = ifelse(hotspot, "Hotspot", result)
+oncoGeneStatus <-function(hotspot, nearHotspot, amp, n) {
+  result = ifelse(hotspot, "Hotspot", "Hit")
   result = ifelse(nearHotspot, "NearHotspot", result)
+  result = ifelse(amp, "Amp", result)
   return (result)
 }
 
-oncoGeneStatusPrimaryPosition <- function(pos, hotspot, nearHotspot, impact) {
+oncoGeneStatusPrimaryPosition <- function(pos, hotspot, nearHotspot, amp, impact) {
   df = data.frame(pos = pos, hotspot = hotspot, nearHotspot = nearHotspot, impact = impact)
-  ordered = df %>% arrange(-hotspot, -nearHotspot, impact)
+  ordered = df %>% arrange(-hotspot, -nearHotspot, -amp, impact)
   if (nrow(ordered) > 0) {
     return (ordered[1, c("pos")])
   }
   
   return (NA)
 }
-
-
-
 
 
 load(file = "~/hmf/RData/allHotspots.RData")
@@ -108,64 +93,47 @@ mutations$nearHotspot <- nearHotspot(mutations)
 
 # Copy Number
 load(file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
+geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% select(sampleID = sampleId, gene) %>% mutate(amp = T)
+mutations = dplyr::left_join(mutations, geneCopyNumberAmplifications, by = c("sampleID", "gene"))
+mutations[is.na(mutations)] <- F
 
 load(file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
 geneCopyNumberDeletes = geneCopyNumberDeletes %>% select(sampleID = sampleId, gene) %>% mutate(del = T)
-#mutations = dplyr::left_join(mutations, geneCopyNumberDeletes, by = c("sampleID", "gene"))
+mutations = dplyr::left_join(mutations, geneCopyNumberDeletes, by = c("sampleID", "gene"))
+mutations[is.na(mutations)] <- F
 
-tsgByVariant = mutations %>% 
-#tsgByVariant = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
+tsgAnnotatedMutations = mutations %>% 
+#tsgAnnotatedMutations = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
   filter(impact != "Synonymous") %>% 
   mutate(impact = factor(impact, levels = c("MNV", "Frameshift", "Nonsense", "Essential_Splice", "Missense", "Inframe"))) %>%
   group_by(sampleID, gene) %>% 
-  mutate(n = n(), geneStatus = tsGeneStatus(biallelic, n), geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, impact), redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
+  mutate(n = n(), geneStatus = tsGeneStatus(del, biallelic, n), geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, impact), redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
   select(-geneStatusPrimaryPositions) %>% ungroup()
 
-
-oncoByVariant = mutations %>% 
-#oncoByVariant = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
+oncoAnnotatedMutations = mutations %>% 
+#oncoAnnotatedMutations = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
   filter(impact %in% c("MNV", "Frameshift", "Missense", "Inframe")) %>% 
   mutate(impact = factor(impact, levels = c("MNV", "Frameshift", "Missense", "Inframe"))) %>%
   group_by(sampleID, gene) %>% 
-  mutate(n = n(), geneStatus =oncoGeneStatus(hotspot, nearHotspot, n), redundant = pos != oncoGeneStatusPrimaryPosition(pos, hotspot, nearHotspot, impact)) %>% 
+  mutate(n = n(), geneStatus =oncoGeneStatus(hotspot, nearHotspot, amp, n), redundant = pos != oncoGeneStatusPrimaryPosition(pos, hotspot, nearHotspot, amp, impact)) %>% 
   ungroup()
 
-save(tsgByVariant, file = "~/hmf/RData/tsgByVariantNewHotspots.RData")
-save(oncoByVariant, file = "~/hmf/RData/oncoByVariantNewHotspots.RData")
+save(tsgAnnotatedMutations, file = "~/hmf/RData/tsgAnnotatedMutations.RData")
+save(oncoAnnotatedMutations, file = "~/hmf/RData/oncoAnnotatedMutations.RData")
 
-View(tsgByVariant %>% unite(combined,c(driver,redundant, impact)) %>% group_by(gene,combined) %>% 
-       summarise(count=n()) %>% 
-       spread(combined,count) )
+summarise_annotation <- function(annotatedMutations) {
+  annotatedMutations$geneStatus <- ifelse(annotatedMutations$redundant, "Redundant", annotatedMutations$geneStatus)
+  annotatedMutations$impact <- as.character(annotatedMutations$impact)
+  annotatedMutations$impact <- ifelse(annotatedMutations$type == "INDEL", "INDEL", annotatedMutations$impact)
+  annotatedMutations$impact <- ifelse(annotatedMutations$type == "MNV", "INDEL", annotatedMutations$impact)
+  annotatedMutations = annotatedMutations %>% group_by(gene, impact, geneStatus) %>% summarise(n = n()) %>% spread(geneStatus, n)
+  annotatedMutations[is.na(annotatedMutations)] <- 0
+  return (annotatedMutations)
+}
 
+tsgAnnotatedMutationsByGene = summarise_annotation(tsgAnnotatedMutations)
+oncoAnnotatedMutationsByGene = summarise_annotation(oncoAnnotatedMutations)
 
-
-
-# Signficant Genes
-library(RMySQL)
-pilotDB = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-genePanel = (dbGetQuery(pilotDB, "SELECT distinct gene as gene_name FROM genePanel"))
-dbDisconnect(pilotDB)
-rm(pilotDB)
-
-load("~/hmf/RData/HmfRefCDSCv.RData")
-load("~/hmf/RData/PcawgRefCDSCv.RData")
-HMFSigGenes = HmfRefCDSCv %>% filter(qglobal_cv < 0.05) %>% group_by(gene_name) %>% summarise() %>% as.data.frame
-PCAWGSigGenes = PcawgRefCDSCv %>% filter(qglobal < 0.05) %>% group_by(gene_name) %>% summarise() %>% as.data.frame
-genes = rbind(HMFSigGenes, PCAWGSigGenes)
-genes = rbind(genes, genePanel)
-genes = unique(genes)
-load(file = "~/hmf/RData/knownCancerGenes.RData")
-colnames(knownCancerGenes) <- c("gene_name","oncogene","tsg")
-GenePanel = merge(genes, knownCancerGenes, all.x = T)
-save(GenePanel, file = "~/hmf/RData/GenePanel.RData")
-
-load("~/hmf/RData/knownCancerGenes.RData")
-colnames(knownCancerGenes) <- c("gene_name", "oncogene","tsg")
-knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$oncogene, "oncogene", "neither")
-knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$tsg, "tsg", knownCancerGenes$cosmic_type)
-knownCancerGenes$cosmic_type <- ifelse (knownCancerGenes$tsg & knownCancerGenes$oncogene, "both", knownCancerGenes$cosmic_type)
-save(knownCancerGenes, file = "~/hmf/RData/knownCancerGenes.RData")
-
-
-
+save(tsgAnnotatedMutationsByGene, file = "~/hmf/RData/tsgAnnotatedMutationsByGene.RData")
+save(oncoAnnotatedMutationsByGene, file = "~/hmf/RData/oncoAnnotatedMutationsByGene.RData")
 

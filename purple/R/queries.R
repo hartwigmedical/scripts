@@ -105,21 +105,6 @@ query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_gene_copy_number_drivers<-function(dbConnect, cohort, cutoff = 3) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT g.*, p.ploidy",
-    "  FROM geneCopyNumber g, purity p",
-    " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND (g.minCopyNumber / p.ploidy > ", cutoff, " OR g.minCopyNumber < 0.5 OR g.minMinorAllelePloidy < 0.5)",
-    "   AND p.sampleId in (",sampleIdString, ")",
-    sep = " ")
-  return (dbGetQuery(dbConnect, query))
-}
 
 query_gene_copy_number<-function(dbConnect, sampleId) {
   query = paste(

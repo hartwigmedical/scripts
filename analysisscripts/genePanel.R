@@ -12,10 +12,13 @@ cosmicCensus = read.csv("~/Documents/CosmicCensus.csv", stringsAsFactors = F)
 colnames(cosmicCensus) <- c("gene_name", "cosmicOncogene", "cosmicTsg")
 cosmicCensus = cosmicCensus %>% filter(cosmicOncogene | cosmicTsg)
 
+cosmicGenes = merge(cosmicCurated, cosmicCensus, by = "gene_name", all = T)
+save(cosmicGenes, file = "~/hmf/RData/cosmicGenes.RData")
+
 #dNdS results
 load(file="~/hmf/RData/PcawgRefCDSCv.RData")
 load(file="~/hmf/RData/HmfRefCDSCv.RData")
-sig = 0.05
+sig = 0.02
 hmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig) %>% distinct(gene_name)
 hmfSignificant$hmf <- TRUE
 martincorenaSignificant =  PcawgRefCDSCv %>% filter(qglobal < sig) %>% distinct(gene_name)
