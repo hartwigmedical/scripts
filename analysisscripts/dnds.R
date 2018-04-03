@@ -1,5 +1,5 @@
 library(RMySQL)
-library(dndscv)
+
 library(IRanges)
 detach("package:purple", unload=TRUE); 
 library(purple);
@@ -7,6 +7,9 @@ library(Biostrings)
 library(GenomicRanges)
 library(MASS)
 library(seqinr)
+library(dplyr)
+detach("package:dndscv", unload=TRUE); 
+library(dndscv)
 
 createNullHypothesisFromSelCV <-function(sel_cv, RefCDS) {
   NullHypothesis = sel_cv[, c("gene_name", "wmis_cv","wnon_cv","wspl_cv","wind_cv")]
@@ -66,7 +69,10 @@ rm(rawCohort)
 
 load("~/hmf/RData/highestPurityCohort.RData")
 load("~/hmf/RData/allHighestPuritySomaticsProd.RData")
-somatics = highestPuritySomaticsProd[highestPuritySomaticsProd$type == "INDEL" | highestPuritySomaticsProd$type == "SNP", c("sampleId", "chromosome", "position", "ref", "alt")]
+somatics = highestPuritySomaticsProd %>% 
+  filter(type == "INDEL" | type == "SNP") %>%
+  select(sampleId, chr = chromosome, pos = position, ref = ref, alt = alt)
+#somatics = highestPuritySomaticsProd[highestPuritySomaticsProd$type == "INDEL" | highestPuritySomaticsProd$type == "SNP", c("sampleId", "chromosome", "position", "ref", "alt")]
 rm(highestPuritySomaticsProd)
 colnames(somatics) <- c("sampleId", "chr", "pos", "ref", "alt")
 
@@ -104,21 +110,30 @@ RefCDSNames = sapply(RefCDS, function (x) {x$gene_name})
 RefCDSInd = setNames(1:length(RefCDSNames), RefCDSNames)
 sum(RefCDS[[RefCDSInd["KRAS"]]]$L[1:192,3])
 
+HmfRefCDSGlobalList = list()
 HmfRefCDSCvList = list()
 for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
   cat("Processing", cancerType)
   cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
   input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
-  output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = NullHypothesisAll)
+  output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
   
   HmfRefCDSCvList[[cancerType]] <- output$sel_cv
+  HmfRefCDSGlobalList[[cancerType]] <- output$globaldnds
   #save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList")
 }
 
-output = jondndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = NullHypothesisAll)
+
+
+output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+names(output)
+globaldnds = output$globaldnds
+
+HmfRefCDSGlobalList[["All"]] <- output$globaldnds
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
 
 #save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList.Rdat")
+save(HmfRefCDSGlobalList, file="~/hmf/RData/HmfRefCDSGlobalList.RData")
 
 #Combine together into one big happy data frame
 HmfRefCDSCv = HmfRefCDSCvList[["All"]]

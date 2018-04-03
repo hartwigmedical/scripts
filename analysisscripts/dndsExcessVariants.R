@@ -3,6 +3,9 @@ library(GenomicRanges)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+detach("package:purple", unload=TRUE);
+library(purple)
+library(RMySQL)
 
 ####### Variant Annotation
 nearHotspot <-function(mutations, distance = 10) { 
@@ -73,6 +76,12 @@ oncoGeneStatusPrimaryPosition <- function(pos, hotspot, nearHotspot, amp, impact
   return (NA)
 }
 
+#load(file = "~/hmf/RData/allHighestPuritySomaticsProd.RData")
+#head(minorAllelePloidy)
+#minorAllelePloidy = highestPuritySomaticsProd %>% select(sampleId, chromosome, position, ref, alt, minorAllelePloidy)
+#mutations = left_join(mutations, minorAllelePloidy, by = c("sampleID" = "sampleId", "chr" = "chromosome", "pos" = "position", "ref", "mut" = "alt"))
+#save(mutations, file="~/hmf/RData/mutations.RData")
+
 
 load(file = "~/hmf/RData/allHotspots.RData")
 allHotspots$hotspot <- 1
@@ -91,16 +100,31 @@ mutations[mutations$type == "INDEL" & abs(nchar(mutations$ref) - nchar(mutations
 mutations$impact <- ifelse(mutations$impact == "Stop_loss", "Nonsense", mutations$impact)
 mutations$nearHotspot <- nearHotspot(mutations)
 
-# Copy Number
-load(file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
-geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% select(sampleID = sampleId, gene) %>% mutate(amp = T)
-mutations = dplyr::left_join(mutations, geneCopyNumberAmplifications, by = c("sampleID", "gene"))
-mutations[is.na(mutations)] <- F
+# Gene Panel
+load(file = "~/hmf/RData/GenePanel.RData")
+genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
+mutations = mutations %>% filter(gene %in% genePanel$gene_name)
 
-load(file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
-geneCopyNumberDeletes = geneCopyNumberDeletes %>% select(sampleID = sampleId, gene) %>% mutate(del = T)
-mutations = dplyr::left_join(mutations, geneCopyNumberDeletes, by = c("sampleID", "gene"))
-mutations[is.na(mutations)] <- F
+#prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+#geneCopyNumbers = purple::query_gene_copy_number_by_gene(prodDB, genePanel)
+#save(geneCopyNumbers, file = '~/hmf/RData/geneCopyNumbersByGene.RData')
+#dbDisconnect(prodDB)
+#rm(prodDB)
+
+load('~/hmf/RData/geneCopyNumbersByGene.RData')
+geneCopyNumbers[, c(1:3)] <- NULL
+minGeneCopyNumbers = geneCopyNumbers %>% 
+  filter(germlineHomRegions == 0, germlineHetRegions == 0) %>%
+  mutate(relativeMinCopyNumber = minCopyNumber/ploidy) %>%
+  select(sampleID = sampleId, gene, minCopyNumber, relativeMinCopyNumber)
+
+
+#minGeneCopyNumbers %>% filter(sampleID == 'DRUP01020012T')
+mutations = dplyr::left_join(mutations, minGeneCopyNumbers, by = c("sampleID", "gene"))
+mutations$del <- ifelse(!is.na(mutations$minCopyNumber) & mutations$minCopyNumber < 0.5, T, F)
+mutations$amp <-  ifelse(!is.na(mutations$relativeMinCopyNumber) & mutations$relativeMinCopyNumber >= 3, T, F)
+mutations$potentiallyBiallelic <-ifelse(!is.na(mutations$minCopyNumber) & mutations$minorAllelePloidy >  mutations$minCopyNumber, T, F)
+
 
 tsgAnnotatedMutations = mutations %>% 
 #tsgAnnotatedMutations = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
