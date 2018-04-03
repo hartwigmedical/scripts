@@ -1,11 +1,12 @@
 	SELECT
     count(*) AS samples, 'all' AS category
     FROM sample
-    
+	WHERE sampleId like '%CPCT%'
+
 UNION
 
-	SELECT count(*), 'with known cancer type' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
+	SELECT count(*), 'with known cancer type'
+    FROM baseline INNER JOIN patient ON baseline.patientId = patient.id
     WHERE NOT(isnull(cancerType))
     
 UNION
