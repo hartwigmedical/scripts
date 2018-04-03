@@ -6,8 +6,10 @@
 UNION
 
 	SELECT count(*), 'with known cancer type'
-    FROM baseline INNER JOIN patient ON baseline.patientId = patient.id
-    WHERE NOT(isnull(cancerType))
+	FROM sample
+	INNER JOIN patient ON sample.patientId = patient.id
+	INNER JOIN baseline ON baseline.patientId=patient.id
+	WHERE NOT(isnull(cancerType))
     
 UNION
 
