@@ -5,8 +5,8 @@ CREATE VIEW clinical AS
 	SELECT sample.sampleId, sample.arrivalDate as sampleArrivalDate, patient.patientIdentifier AS patientId, baseline.informedConsentDate, baseline.hospital, baseline.gender,
     baseline.birthYear, baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment, baseline.preTreatments, biopsy.biopsyDate,
 	treatment.startDate AS treatmentStartDate, treatment.endDate AS treatmentEndDate, firstMatchedTreatmentResponse.responseDate, baseline.deathDate,
-	baseline.cancerType, baseline.cancerSubtype, biopsy.biopsySite, biopsy.biopsyLocation, treatment.treatmentGiven, treatment.radiotherapyGiven,
-	treatment.name AS treatment, treatment.type AS treatmentType,
+	baseline.cancerType, baseline.cancerSubtype, biopsy.biopsyType, biopsy.biopsySite, biopsy.biopsyLocation,
+	treatment.treatmentGiven, treatment.radiotherapyGiven, treatment.name AS treatment, treatment.type AS treatmentType,
 	firstMatchedTreatmentResponse.measurementDone as responseMeasured, firstMatchedTreatmentResponse.response as firstResponse
 	FROM sample
 		INNER JOIN patient ON sample.patientId = patient.id
