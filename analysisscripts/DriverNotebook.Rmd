@@ -1,0 +1,535 @@
+---
+title: "SNV Driver Discovery"
+output:
+  html_notebook: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(purple)
+load("~/hmf/RData/HmfRefCDSCv.RData")
+load("~/hmf/RData/HmfRefCDSCvNullPcawg.RData")
+load("~/hmf/RData/PcawgRefCDSCv.RData")
+
+absSignificance = 0.02
+relSignificance = 0.05
+
+```
+
+
+
+```{r}
+HmfRefCDSCv$gene_name <- as.character(HmfRefCDSCv$gene_name)
+PcawgRefCDSCv$gene_name <- as.character(PcawgRefCDSCv$gene_name)
+HmfRefCDSCvNullPcawg$gene_name <- as.character(HmfRefCDSCvNullPcawg$gene_name)
+
+HmfRefCDSCv$prob_mis = ifelse(HmfRefCDSCv$n_mis>0,pmax(0,(HmfRefCDSCv$wmis_cv-1)/HmfRefCDSCv$wmis_cv),0)
+HmfRefCDSCv$prob_non = ifelse(HmfRefCDSCv$n_non,pmax(0,(HmfRefCDSCv$wnon_cv-1)/HmfRefCDSCv$wnon_cv),0)
+HmfRefCDSCv$prob_spl = ifelse(HmfRefCDSCv$n_spl>0,pmax(0,(HmfRefCDSCv$wspl_cv-1)/HmfRefCDSCv$wspl_cv),0)
+HmfRefCDSCv$prob_ind = ifelse(HmfRefCDSCv$n_ind>0,pmax(0,(HmfRefCDSCv$wind_cv-1)/HmfRefCDSCv$wind_cv),0)
+HmfRefCDSCv$excess_mis = HmfRefCDSCv$prob_mis*HmfRefCDSCv$n_mis
+HmfRefCDSCv$excess_non = HmfRefCDSCv$prob_non*HmfRefCDSCv$n_non
+HmfRefCDSCv$excess_spl = HmfRefCDSCv$prob_spl*HmfRefCDSCv$n_spl
+HmfRefCDSCv$excess_ind = HmfRefCDSCv$prob_ind*HmfRefCDSCv$n_ind
+
+HmfRefCDSCv$hmf = HmfRefCDSCv$qglobal < absSignificance
+PcawgRefCDSCv$martincorena = PcawgRefCDSCv$qglobal < absSignificance
+HmfRefCDSCvNullPcawg$martincorena_null = 
+  (HmfRefCDSCvNullPcawg$qmis_cv< relSignificance & HmfRefCDSCvNullPcawg$null_wmis_cv>0)|
+  (HmfRefCDSCvNullPcawg$qtrunc_cv< relSignificance & HmfRefCDSCvNullPcawg$null_wnon_cv+HmfRefCDSCvNullPcawg$null_wspl_cv>0)|
+  (HmfRefCDSCvNullPcawg$qind_cv< relSignificance & HmfRefCDSCvNullPcawg$null_wind_cv>0)
+
+combinedCv = left_join(HmfRefCDSCv, PcawgRefCDSCv[, c("gene_name", "cancerType", "martincorena")], by = c("gene_name", "cancerType"))
+combinedCv = left_join(combinedCv, HmfRefCDSCvNullPcawg[, c("gene_name", "cancerType", "martincorena_null")], by = c("gene_name", "cancerType"))
+
+significantCv = combinedCv %>% filter(hmf | martincorena)
+significantCv$status = "Unchanged"
+significantCv$status = ifelse(!significantCv$martincorena & significantCv$hmf, "Added", significantCv$status)
+significantCv$status = ifelse(significantCv$martincorena & ! significantCv$hmf, "Removed", significantCv$status)
+rm(combinedCv)
+
+```
+
+#### Significant variants in Martincorena et al and in HMF
+```{r fig1, fig.height = 5, fig.width = 3}
+ggplot(significantCv, aes(x = cancerType, y = gene_name, alpha = martincorena_null))+
+  geom_tile( aes(fill=factor(status))) + theme(axis.text.y = element_text(size = 4), axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_alpha_discrete(range=c(0.1,1)) + 
+  scale_fill_manual(values=c("green", "red", "blue"), na.value = c("grey")) + xlab("") + ylab("") +
+  guides(fill=guide_legend(title=NULL))
+
+```
+
+#### Significantly different dnds (Martincorena vs HMF)
+```{r}
+ggplot(significantCv[!is.na(significantCv$martincorena_null) & significantCv$martincorena_null, ], aes(x = cancerType, y = gene_name))+
+  geom_tile( aes(fill=factor(status))) + theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  scale_alpha_discrete(range=c(0.4,1)) + 
+  scale_fill_manual(values=c("green", "red", "blue"), na.value = c("grey"))+ xlab("") + ylab("") + 
+  guides(fill=guide_legend(title=NULL))
+```
+
+## Gene Panel
+```{r}
+load("~/hmf/RData/cosmicGenes.RData")
+
+hmfGenes =  HmfRefCDSCv %>% filter(qglobal_cv < absSignificance) %>% distinct(gene_name) %>% mutate(hmf = T)
+martincorenaGenes =  PcawgRefCDSCv %>% filter(qglobal < absSignificance) %>% distinct(gene_name)  %>% mutate(martincorena = T)
+genePanel = merge(hmfGenes, martincorenaGenes, by = "gene_name", all = T)
+genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
+genePanel[is.na(genePanel)] <- FALSE
+genePanel = genePanel %>% filter(hmf | martincorena | cosmicCurated)
+
+rm(hmfGenes, martincorenaGenes, cosmicGenes)
+
+```
+
+## Gene Classification
+
+```{r}
+genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% genePanel$gene_name) %>% select(gene_name, wmis_cv, wnon_cv, prob_mis, prob_non, excess_mis, excess_non)
+genePanelCv = left_join(genePanelCv, genePanel[, c("gene_name", "cosmicTsg", "cosmicOncogene")], by = "gene_name")
+
+trainTsg = genePanelCv %>% filter(cosmicTsg, !cosmicOncogene) %>% mutate(tsg = 1) %>% select(wmis_cv, wnon_cv,  tsg)
+trainOnco = genePanelCv %>% filter(cosmicOncogene, !cosmicTsg) %>% mutate(tsg = 0) %>% select(wmis_cv, wnon_cv,  tsg)
+trainData = rbind(trainTsg, trainOnco)
+model <- glm(tsg ~.,family=binomial(link='logit'),data=trainData)
+
+summary(model)
+anova(model, test="Chisq")
+
+continuousClassification <- predict(model,newdata= genePanelCv %>% select(wmis_cv, wnon_cv),type='response')
+genePanelCv$classification = ifelse(continuousClassification > 0.5,"tsg","onco")
+genePanel = left_join(genePanel, genePanelCv[, c("gene_name","classification")], by = "gene_name")
+
+rm(trainTsg, trainOnco, trainData, model)
+
+tsGenes = genePanel %>% filter(classification == "tsg")
+oncoGenes = genePanel %>% filter(classification == "onco")
+
+```
+
+```{r fig3, fig.height = 3}
+ggplot(data=genePanelCv,aes(prob_mis,prob_non,label=gene_name))+
+  geom_point(aes(colour = factor(classification)))+
+  geom_text(size=2,hjust = 0, nudge_x = 0.01)
+```
+
+
+```{r fig4, fig.height = 3}
+ggplot(data=genePanelCv,aes(excess_mis+0.1,excess_non+0.1,label=gene_name))+
+  geom_point(aes(colour = factor(classification)))+
+  geom_text(size=2,hjust = 0, nudge_x = 0.01)+
+  scale_x_log10()+
+  scale_y_log10() 
+
+```
+## Somatic Mutations by Cancer Type
+
+```{r}
+load("~/hmf/RData/cancerTypeColours.RData")
+
+plot_mutations_by_cancer_type <- function(data) {
+  data$N <- data$excess_mis + data$excess_non + data$excess_spl + data$excess_ind
+  dataLevels = data %>% group_by(gene_name) %>% summarise(N = sum(N)) %>% arrange(-N)
+  data$gene <- factor(data$gene_name, levels = dataLevels$gene_name)
+  ggplot(data=data, aes(x = gene, y = N)) +
+    geom_bar(aes(fill = cancerType), stat = "identity") + 
+    ggtitle("Oncogene mutations per cancer type") + xlab("Genes") + ylab("Excess variants") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4), legend.position="bottom") +
+    scale_fill_manual( values= cancerTypeColours)
+}
+```
+### Tumor Suppressor Genes
+
+```{r fig5, fig.height = 3, fig.width = 5}
+plot_mutations_by_cancer_type( HmfRefCDSCv %>% filter(cancerType != 'All', gene_name %in% tsGenes$gene_name)) +
+   ggtitle("Tumor supressor mutations per cancer type")
+
+```
+
+Without TP53 or APC:
+```{r fig6, fig.height = 3, fig.width = 5}
+plot_mutations_by_cancer_type( HmfRefCDSCv %>% filter(!gene_name %in% c("TP53","APC"), cancerType != 'All', gene_name %in% tsGenes$gene_name)) +
+   ggtitle("Tumor supressor mutations per cancer type")
+```
+
+
+### Oncogenes
+```{r fig7a, fig.height = 3, fig.width = 5}
+plot_mutations_by_cancer_type( HmfRefCDSCv %>% filter(cancerType != 'All', gene_name %in% oncoGenes$gene_name)) +
+   ggtitle("Oncogene mutations per cancer type")
+```
+
+Excluding PIK3CA and BRAF:
+```{r fig7b, fig.height = 3, fig.width = 5}
+plot_mutations_by_cancer_type( HmfRefCDSCv %>% filter(!gene_name %in% c("PIK3CA", "KRAS"), cancerType != 'All', gene_name %in% oncoGenes$gene_name)) +
+   ggtitle("Oncogene mutations per cancer type")
+```
+
+
+
+
+## TSG Somatics
+
+```{r}
+load("~/hmf/RData/canonicalTranscripts.RData")
+canonicalTranscripts$codons = round(canonicalTranscripts$codingBases/3)
+
+tsGenes = genePanel %>% filter(classification == "tsg")
+
+load(file = "~/hmf/RData/tsgAnnotatedMutationsByGene.RData")
+tsgAnnotatedMutationsByGene = tsgAnnotatedMutationsByGene %>% filter(gene %in% tsGenes$gene_name) 
+
+tsgExcess = HmfRefCDSCv %>% filter(gene_name %in% tsGenes$gene_name, cancerType == "All")  
+tsgExcess = left_join(tsgExcess, canonicalTranscripts %>% select(gene_name = gene, codons), by = "gene_name")
+
+combine_tsg_with_excess <- function(tsgCounts, excessSummary) {
+  tsgCounts$gene <- as.character(tsgCounts$gene)
+  excessSummary$gene <- as.character(excessSummary$gene)
+
+  combined = left_join(excessSummary, tsgCounts, by = "gene" ) %>% arrange(-Excess)
+  combined$Excess <- round(combined$Excess)
+  combined = combined %>% filter(Excess > 0)
+  combined$Unexplained <-  combined$Excess - combined$Biallelic - combined$MultiHit
+  combined$RequiredSingles <- pmax(0, combined$Unexplained)
+  combined$InsufficientSingles <- pmin(0, combined$SingleHit - combined$RequiredSingles)
+  combined$ExcessSingles <- pmax(0, combined$SingleHit - combined$RequiredSingles)
+  
+  combined = left_join(combined, canonicalTranscripts[, c("gene","codons")], by = "gene")
+  
+  
+  return (combined)
+}
+
+plot_tsg_excess <- function(data, title) {
+  data1 = data %>% group_by(gene) %>% gather("type", "N", Del, Biallelic, MultiHit, Unexplained)
+  data1 = data1 %>% unite(gene, gene, codons)
+  
+  dataGeneLevels = data1 %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
+  data1$gene <- factor(data1$gene, dataGeneLevels$gene)
+  
+  p1 = ggplot(data=data1, aes(gene, N)) +
+    geom_bar(aes(fill = type), stat = "identity") + 
+    ggtitle(paste0("TSG - ", title)) + xlab("Genes") + ylab("Variants") +
+    theme(axis.text.x = element_text(size = 4, angle = 90, hjust = 1)) 
+  
+  data2 = data %>% select(gene, codons, InsufficientSingles, ExcessSingles, RequiredSingles) %>% gather("type", "N", InsufficientSingles, ExcessSingles, RequiredSingles)
+  data2 = data2 %>% unite(gene, gene, codons)
+  
+  data2$gene <- factor(data2$gene, dataGeneLevels$gene)
+  
+  p2 = ggplot(data=data2, aes(gene, N)) +
+    geom_bar(aes(fill = type), stat = "identity") + 
+    ggtitle(paste0("TSG - Singles - ", title)) + xlab("Genes") + ylab("Variants") +
+    theme(axis.text.x = element_text(size = 4, angle = 90, hjust = 1)) 
+  
+  return(multiplot(p1, p2, cols = 1))
+}
+
+plot_onco_excess <- function(data, title) {
+  data1 = data %>% group_by(gene) %>% gather("type", "N", Amp, Hotspot, NearHotspot, Unexplained)
+  data1 = data1 %>% unite(gene, gene, codons)
+  
+  data1GeneLevels = data1 %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
+  data1$gene <- factor(data1$gene, data1GeneLevels$gene)
+  
+  p1 = ggplot(data=data1, aes(gene, N)) +
+    geom_bar(aes(fill = type), stat = "identity") + 
+    ggtitle(paste0("Onco - ", title)) + xlab("Genes") + ylab("Variants") +
+    theme(axis.text.x = element_text(size = 4, angle = 90, hjust = 1)) 
+
+  data2 = data %>% select(gene, codons, InsufficientHits, ExcessHits, RequiredHits) %>% gather("type", "N", InsufficientHits, ExcessHits, RequiredHits)
+  data2 = data2 %>% unite(gene, gene, codons)
+  
+  data2$gene <- factor(data2$gene, data1GeneLevels$gene)
+  
+  p2 = ggplot(data=data2, aes(gene, N)) +
+    geom_bar(aes(fill = type), stat = "identity") + 
+    ggtitle(paste0("Onco - Hits - ", title)) + xlab("Genes") + ylab("Variants") +
+    theme(axis.text.x = element_text(size = 4, angle = 90, hjust = 1)) 
+  
+  return (multiplot(p1, p2))
+}
+
+plot_excess_singles <- function (data, title) { 
+  data2 = data %>% select(gene, codons, InsufficientHits, ExcessHits, RequiredHits) %>% gather("type", "N", InsufficientHits, ExcessHits, RequiredHits)
+  data2 = data2 %>% unite(gene, gene, codons)
+  
+  data2GeneLevels = data2 %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
+  data2$gene <- factor(data2$gene, data2GeneLevels$gene)
+  
+  data2$gene <- factor(data2$gene, data1GeneLevels$gene)
+  
+  p2 = ggplot(data=data2, aes(gene, N)) +
+    geom_bar(aes(fill = type), stat = "identity") + 
+    ggtitle(title) + xlab("Genes") + ylab("Variants") +
+    theme(axis.text.x = element_text(size = 4, angle = 90, hjust = 1)) 
+  
+  return (p2)
+}
+
+```
+
+#### Missense
+```{r}
+tsgMissenseSummary = combine_tsg_with_excess(tsgAnnotatedMutationsByGene %>% filter(impact == "Missense"), tsgExcess %>% select(gene = gene_name, Excess = excess_mis))
+tsgMissenseLengths = tsgMissenseSummary %>% select(gene, codons, ExcessSingles, MultiHit) %>% arrange(-codons)  %>% gather(type, N, ExcessSingles, MultiHit)
+
+tsgNonsenseSummary = combine_tsg_with_excess(tsgAnnotatedMutationsByGene %>% filter(impact == "Nonsense"), tsgExcess %>% select(gene = gene_name, Excess = excess_non))
+tsgNonsenseLengths = tsgNonsenseSummary %>% select(gene, codons, ExcessSingles, MultiHit) %>% arrange(-codons)  %>% gather(type, N, ExcessSingles, MultiHit)
+
+tsgSpliceSummary = combine_tsg_with_excess(tsgAnnotatedMutationsByGene %>% filter(impact == "Essential_Splice"), tsgExcess %>% select(gene = gene_name, Excess = excess_spl))
+tsgSpliceLengths = tsgSpliceSummary %>% select(gene, codons, ExcessSingles, MultiHit) %>% arrange(-codons)  %>% gather(type, N, ExcessSingles, MultiHit)
+```
+
+```{r fig8,  fig.width = 5}
+plot_tsg_excess(tsgMissenseSummary[, ], "Missense")
+```
+
+
+Excluding TP53
+```{r fig9,  fig.width = 5}
+plot_tsg_excess(tsgMissenseSummary[2:nrow(tsgMissenseSummary), ], "Missense")
+```
+
+```{r fig10}
+ggplot(data=tsgMissenseLengths, aes(codons, N)) +
+  geom_point(aes(color = type), stat = "identity") + 
+  ggtitle(paste0("TSG - " ,"Missense")) + xlab("Codons") + ylab("")
+```
+
+#### Nonsense
+```{r fig11,  fig.width = 5}
+plot_tsg_excess(tsgNonsenseSummary[, ], "Nonsense")
+```
+
+Excluding TP53 and APC
+```{r fig12,  fig.width = 5}
+plot_tsg_excess(tsgNonsenseSummary[3:nrow(tsgNonsenseSummary), ], "Nonsense")
+```
+
+```{r fig13}
+ggplot(data=tsgNonsenseLengths, aes(codons, N)) +
+  geom_point(aes(color = type), stat = "identity") + 
+  ggtitle("TSG - Nonsense") + xlab("Codons") + ylab("")
+```
+
+Excluding APC
+```{r}
+ggplot(data=tsgNonsenseLengths %>% filter(gene != "APC"), aes(codons, N)) +
+  geom_point(aes(color = type), stat = "identity") + 
+  ggtitle("TSG - Nonsense") + xlab("Codons") + ylab("")
+```
+
+
+#### Splice
+```{r fig15,  fig.width = 5}
+plot_tsg_excess(tsgSpliceSummary, "Splice")
+```
+
+Excluding TP53
+```{r fig16,  fig.width = 5}
+plot_tsg_excess(tsgSpliceSummary[2:nrow(tsgSpliceSummary), ], "Splice")
+```
+
+```{r}
+ggplot(data=tsgSpliceLengths, aes(codons, N)) +
+  geom_point(aes(color = type), stat = "identity") + 
+  ggtitle("TSG - Splice") + xlab("Codons") + ylab("")
+```
+
+##Oncogene Somatics
+
+```{r fig17,  fig.width = 5}
+load(file = "~/hmf/RData/oncoAnnotatedMutationsByGene.RData")
+
+
+oncoExcess = HmfRefCDSCv %>% filter(gene_name %in% oncoGenes$gene_name, cancerType == "All")  
+oncoExcess = left_join(oncoExcess, canonicalTranscripts %>% select(gene_name = gene, codons), by = "gene_name")
+
+oncoMissense = oncoExcess  %>% select(gene = gene_name, excess_mis, codons) %>% filter(excess_mis > 0)
+oncoMissense = left_join(oncoMissense, oncoAnnotatedMutationsByGene, by = "gene" ) %>% filter(impact == "Missense") %>% arrange(-excess_mis)
+
+oncoMissense$impact <- NULL
+oncoMissense$excess_mis <- round(oncoMissense$excess_mis)
+oncoMissense$Unexplained <-  oncoMissense$excess_mis - oncoMissense$Hotspot - oncoMissense$NearHotspot
+oncoMissense$RequiredHits <- pmax(0, oncoMissense$Unexplained)
+oncoMissense$InsufficientHits <- pmin(0, oncoMissense$Hit - oncoMissense$RequiredHits)
+oncoMissense$ExcessHits <- pmax(0, oncoMissense$Hit - oncoMissense$RequiredHits)
+
+plot_onco_excess(oncoMissense, "Missense")
+
+```
+
+```{r fig18,  fig.width = 5}
+plot_onco_excess(oncoMissense[4:nrow(oncoMissense),], "Missense")
+```
+
+
+## Amplifications and Deletes
+```{r}
+extractCancerTypeCounts <- function(cancerTypes, copyNumberTargets) {
+  cancerTypeColumns = gsub(" ", ".", cancerTypes)
+  cancerTypeColumns = ifelse(is.na(cancerTypeColumns), "NA.", cancerTypeColumns)
+  availableCancerColumns = intersect(cancerTypeColumns, names(copyNumberTargets))
+  result = copyNumberTargets %>% select(availableCancerColumns)
+  result[is.na(result)] <- 0
+  return (result)
+}
+
+significantCNVByCancerType <- function(copyNumberTargets, maxRecords = 30) {
+  significantCNV = copyNumberTargets %>% arrange(-N)
+  significantCNV = significantCNV[1:maxRecords, ]
+  significantCNV[is.na(significantCNV)] = 0
+  
+  significantCNV$gene = factor(significantCNV$target, levels=significantCNV$target)
+  significantCNV$Other = significantCNV$NA. + significantCNV$Other + significantCNV$Unknown.primary
+  significantCNV$NA. <- NULL
+  significantCNV$Unknown.primary <- NULL
+  
+  names = names(significantCNV)
+  namesInd = setNames(1:ncol(significantCNV), names)
+  significantCNV = significantCNV %>% select(gene, N, c(namesInd["Bladder"]:namesInd["Uterus"]))
+  tidyCNV = significantCNV %>% gather(cancerType, N, c(3:ncol(significantCNV)))
+  tidyCNV$cancerType = gsub("\\.", " ", tidyCNV$cancerType)
+
+  return (tidyCNV %>% filter(N > 0))
+}
+
+load("~/hmf/RData/cancerTypeColours.RData")
+load("~/hmf/RData/geneCopyNumberDeleteTargets.RData")
+load("~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
+
+significantDels = significantCNVByCancerType(geneCopyNumberDeleteTargets)
+significantAmps = significantCNVByCancerType(geneCopyNumberAmplificationTargets, maxRecords = 40)
+```
+
+```{r fig19,  fig.width = 5}
+ggplot(data=significantAmps, aes(gene, N)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") + 
+  ggtitle("Top Gene Amplifications") + xlab("Genes") + ylab("Number of samples") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="bottom") +
+  scale_fill_manual( values= cancerTypeColours)
+
+```
+
+```{r fig20,  fig.width = 5}
+ggplot(data=significantDels, aes(gene, N)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") + 
+  ggtitle("Top Gene Deletions") + xlab("Genes") + ylab("Number of samples") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="bottom") + 
+  scale_fill_manual( values= cancerTypeColours) 
+
+```
+
+## Rates of Amps/Dels
+
+
+```{r}
+containsCandidate <- function(target, category) {
+  splitCategory = strsplit(category, ",")
+  result = rep(F, length(target))
+  for (i in 1: length(result)) {
+    result[i] = target[i] %in% splitCategory[[i]]
+  }
+  
+  return (result)
+}
+
+categoryStatus <- function(copyNumberTargets, del) {
+  copyNumberTargets$status <- NA
+  if (del) {
+    copyNumberTargets$status <- ifelse(containsCandidate(copyNumberTargets$target, copyNumberTargets$fragile), "Fragile", NA)
+    copyNumberTargets$status <- ifelse(is.na(copyNumberTargets$status) & containsCandidate(copyNumberTargets$target, copyNumberTargets$cosmicTsg), "Known", copyNumberTargets$status)
+  } else {
+    copyNumberTargets$status <- ifelse(is.na(copyNumberTargets$status) & containsCandidate(copyNumberTargets$target, copyNumberTargets$cosmicOncogene), "Known", copyNumberTargets$status)
+  }
+  copyNumberTargets$status <- ifelse(is.na(copyNumberTargets$status) & copyNumberTargets$method == "panel", "Significant", copyNumberTargets$status)
+  copyNumberTargets$status <- ifelse(is.na(copyNumberTargets$status), "Unknown", copyNumberTargets$status)
+}
+
+
+countByCancerType <- function(cohortByCancerType, copyNumberTargets, del) {
+  colnames(cohortByCancerType) <- c("cancerType", "cancerTypeSamples")
+  
+  cancerCounts = extractCancerTypeCounts(cohortByCancerType$cancerType, copyNumberTargets)
+  status = categoryStatus(copyNumberTargets, del)
+  copyNumberTargets = copyNumberTargets %>% select(gene, target, N)
+  copyNumberTargets = cbind(copyNumberTargets, status) 
+  copyNumberTargets = cbind(copyNumberTargets, cancerCounts) 
+  
+  tidyCopyNumberTargets = copyNumberTargets %>% gather(cancerType, N, c(5:ncol(copyNumberTargets))) %>% group_by(cancerType, status) %>% summarise(N = sum(N))
+  tidyCopyNumberTargets$cancerType = gsub("\\.", " ", tidyCopyNumberTargets$cancerType)
+  tidyCopyNumberTargets$cancerType = ifelse(tidyCopyNumberTargets$cancerType == "NA ", NA, tidyCopyNumberTargets$cancerType)
+  
+  tidyCopyNumberTargets = dplyr::inner_join(tidyCopyNumberTargets, cohortByCancerType, by = "cancerType")
+  tidyCopyNumberTargets$rate = tidyCopyNumberTargets$N / tidyCopyNumberTargets$cancerTypeSamples
+  
+  tidyCopyNumberCancerTypeLevels = tidyCopyNumberTargets %>% group_by(cancerType) %>% summarise(rate = sum(rate)) %>% arrange(-rate) %>% select(cancerType)
+  tidyCopyNumberTargets$cancerType = factor(tidyCopyNumberTargets$cancerType, levels = tidyCopyNumberCancerTypeLevels$cancerType)
+  
+  return (tidyCopyNumberTargets)
+}
+load('~/hmf/RData/cohortByCancerType.RData')
+```
+
+```{r fig21,  fig.width = 5}
+tidyAmpsByCancerType = countByCancerType(cohortByCancerType, geneCopyNumberAmplificationTargets %>% filter(N > 15), del = F)
+ggplot(data=tidyAmpsByCancerType, aes(cancerType, rate)) +
+  geom_bar(aes(fill = status), stat = "identity") + 
+  ggtitle("Gene amplifications") + xlab("Cancer Type") + ylab("Rate per sample") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+```
+
+```{r fig22,  fig.width = 5}
+load('~/hmf/RData/cohortByCancerType.RData')
+tidyDeletesByCancerType = countByCancerType(cohortByCancerType, geneCopyNumberDeleteTargets %>% filter(N >= 5), del = T)
+ggplot(data=tidyDeletesByCancerType, aes(cancerType, rate)) +
+  geom_bar(aes(fill = status), stat = "identity") + 
+  ggtitle("Gene deletions") + xlab("Cancer Type") + ylab("Rate per sample") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) 
+ 
+```
+
+
+
+```{r fig23,  fig.width = 5}
+load("~/hmf/RData/amps.RData")
+load("~/hmf/RData/dels.RData")
+
+ampsSharedWithPcawg = amps %>% filter(pcawgGeneCount > 0) %>% select(gene_name, hmfCount, pcawgGeneCount) %>% 
+  group_by(gene_name)  %>% summarise(hmfCount = sum(hmfCount), pcawgGeneCount = max(pcawgGeneCount)) %>% 
+  mutate(total = hmfCount + pcawgGeneCount) %>% arrange(-total)
+ampsSharedWithPcawg$hmfType <- "HMF"
+ampsSharedWithPcawg$pcawgType <- "PCAWG"
+ampsSharedWithPcawg$gene_name <- factor(ampsSharedWithPcawg$gene_name, levels = ampsSharedWithPcawg$gene_name)
+
+tidySharedAmps = rbind(ampsSharedWithPcawg %>% select(gene_name, count = pcawgGeneCount, type = pcawgType), ampsSharedWithPcawg %>% select(gene_name, count = hmfCount, type = hmfType))
+p1 = ggplot(data=tidySharedAmps, aes(gene_name, count)) +
+  geom_bar(aes(fill = type), stat = "identity") +
+  ggtitle("PCAWG Amplifications") + xlab("Genes") + ylab("Number of samples") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size= 10)) 
+
+delsSharedWithPcawg = dels %>% filter(pcawgGeneCount > 0) %>% select(gene_name, hmfCount, pcawgGeneCount) %>% 
+  group_by(gene_name)  %>% summarise(hmfCount = sum(hmfCount), pcawgGeneCount = max(pcawgGeneCount)) %>% 
+  mutate(total = hmfCount + pcawgGeneCount) %>% arrange(-total)
+delsSharedWithPcawg$hmfType <- "HMF"
+delsSharedWithPcawg$pcawgType <- "PCAWG"
+delsSharedWithPcawg$gene_name <- factor(delsSharedWithPcawg$gene_name, levels = delsSharedWithPcawg$gene_name)
+
+
+tidySharedDels = rbind(delsSharedWithPcawg %>% select(gene_name, count = pcawgGeneCount, type = pcawgType), delsSharedWithPcawg %>% select(gene_name, count = hmfCount, type = hmfType))
+p2 = ggplot(data=tidySharedDels, aes(gene_name, count)) +
+  geom_bar(aes(fill = type), stat = "identity") +
+  ggtitle("PCAWG Deletions") + xlab("Genes") + ylab("Number of samples") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4)) 
+
+multiplot(p1, p2, cols = 1)
+```
+
