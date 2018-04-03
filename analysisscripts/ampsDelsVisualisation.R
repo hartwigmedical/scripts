@@ -72,8 +72,6 @@ delsPlot = ggplot(data=significantDels, aes(gene, N)) +
   scale_fill_manual( values= cancerTypeColours) 
 
 
-ampsPlot
-
 purple::multiplot(ampsPlot, delsPlot, cols = 1)
 
 #cohortByCancerType = cohort %>% group_by(cancerType) %>% summarise(N = n())
@@ -104,7 +102,6 @@ categoryStatus <- function(copyNumberTargets, del) {
   copyNumberTargets$status <- ifelse(is.na(copyNumberTargets$status), "Unknown", copyNumberTargets$status)
 }
 
-copyNumberTargets = geneCopyNumberAmplificationTargets
 
 countByCancerType <- function(cohortByCancerType, copyNumberTargets, del) {
   colnames(cohortByCancerType) <- c("cancerType", "cancerTypeSamples")
@@ -128,12 +125,10 @@ countByCancerType <- function(cohortByCancerType, copyNumberTargets, del) {
   return (tidyCopyNumberTargets)
 }
 
-load("~/hmf/RData/cancerTypes.RData")
-load("~/hmf/RData/geneCopyNumberDeleteTargets.RData")
-load("~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
+#load("~/hmf/RData/cancerTypes.RData")
+#load("~/hmf/RData/geneCopyNumberDeleteTargets.RData")
+#load("~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
 load('~/hmf/RData/cohortByCancerType.RData')
-
-
 tidyDeletesByCancerType = countByCancerType(cohortByCancerType, geneCopyNumberDeleteTargets %>% filter(N >= 5), del = T)
 #tidyDeletesByCancerType = dplyr::inner_join(tidyDeletesByCancerType, cohortByCancerType, by = "cancerType")
 #tidyDeletesByCancerType$rate = tidyDeletesByCancerType$N / tidyDeletesByCancerType$cancerTypeSamples
