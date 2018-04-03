@@ -54,20 +54,15 @@ query_gene_copy_number_knockout<-function(dbConnect, cohort) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_gene_copy_number_loh<-function(dbConnect, cohort) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+query_gene_copy_number_by_gene<-function(dbConnect, genes) {
+  sampleIdString = paste("'", genes$gene_name, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score",
+    "SELECT g.*, p.*",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND p.qcStatus = 'PASS'",
     "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity >= 0.20",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND g.minMinorAllelePloidy < 0.5",
-    "   AND g.chromosome <> 'Y'",
-    "   AND p.sampleId in (",sampleIdString, ")",
+    "   AND gene in (",sampleIdString, ")",
     sep = " ")
   return (dbGetQuery(dbConnect, query))
 }

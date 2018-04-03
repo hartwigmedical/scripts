@@ -19,8 +19,9 @@ nearHotspot <-function(mutations, distance = 10) {
   return (mutations$nearHotspot & !mutations$hotspot)
 }
 
-tsGeneStatus <-function(del, biallelic, n) {
+tsGeneStatus <-function(del, biallelic, potentiallyBiallelic, n) {
   result = ifelse(n > 1, "MultiHit", "SingleHit")
+  result = ifelse(potentiallyBiallelic, "PotentiallyBiallelic", result)
   result = ifelse(biallelic, "Biallelic", result)
   result = ifelse(del, "Del", result)
   return (result)
@@ -36,6 +37,11 @@ tsGeneStatusPrimaryPositions <- function(pos, geneStatus, impact) {
   biallelic = df %>% filter(geneStatus == "Biallelic") %>% arrange(impact)
   if (nrow(biallelic)) {
     return (as.character(biallelic[1, c("pos")]))
+  }
+  
+  potentiallBiallelic = df %>% filter(geneStatus == "PotentiallyBiallelic") %>% arrange(impact)
+  if (nrow(potentiallBiallelic)) {
+    return (as.character(potentiallBiallelic[1, c("pos")]))
   }
   
   multihit = df %>% filter(geneStatus == "MultiHit") %>% arrange(impact)
@@ -131,7 +137,7 @@ tsgAnnotatedMutations = mutations %>%
   filter(impact != "Synonymous") %>% 
   mutate(impact = factor(impact, levels = c("MNV", "Frameshift", "Nonsense", "Essential_Splice", "Missense", "Inframe"))) %>%
   group_by(sampleID, gene) %>% 
-  mutate(n = n(), geneStatus = tsGeneStatus(del, biallelic, n), geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, impact), redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
+  mutate(n = n(), geneStatus = tsGeneStatus(del, biallelic, potentiallyBiallelic, n), geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, impact), redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
   select(-geneStatusPrimaryPositions) %>% ungroup()
 
 oncoAnnotatedMutations = mutations %>% 

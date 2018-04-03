@@ -208,7 +208,7 @@ combine_tsg_with_excess <- function(tsgCounts, excessSummary) {
 }
 
 plot_tsg_excess <- function(data, title) {
-  data1 = data %>% group_by(gene) %>% gather("type", "N", Del, Biallelic, MultiHit, Unexplained)
+  data1 = data %>% group_by(gene) %>% gather("type", "N", Del, Biallelic, MultiHit, Unexplained, PotentiallyBiallelic)
   data1 = data1 %>% unite(gene, gene, codons)
   
   dataGeneLevels = data1 %>% group_by(gene) %>% summarise(N = sum(N)) %>% arrange(-N)
