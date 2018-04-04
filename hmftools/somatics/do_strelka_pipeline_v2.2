@@ -14,6 +14,8 @@ mkdir -p ${working_dir}
 
 #### Output Files
 merged_vcf=${working_dir}/merged.vcf
+annotated_merged_vcf=${working_dir}/annotated_merged.vcf
+annotated_merged_vcf_gz=${annotated_merged_vcf}.gz
 post_processed_vcf=${working_dir}/post_processed.vcf
 mnv_bam=${working_dir}/mnv.bam
 mnv_bai=${working_dir}/mnv.bai
@@ -33,23 +35,26 @@ then
 
     if [[ ! -e ${mnv_bam} ]]
     then
-        do_strelka_mnv_bam ${sample} ${merged_vcf} ${mnv_bam} ${mnv_bai}
+        do_strelka_mnv_bam_v2.2 ${sample} ${merged_vcf} ${mnv_bam} ${mnv_bai}
     fi
+
+    do_strelka_annotation_mappability_pon ${merged_vcf} ${annotated_merged_vcf_gz}
+    gunzip -c ${annotated_merged_vcf_gz} > ${annotated_merged_vcf}
 
     if [[ ! -e ${post_processed_vcf} ]]
     then
-        do_strelka_post_process ${sample} ${merged_vcf} ${post_processed_vcf} ${mnv_bam}
+        do_strelka_post_process_v2.2 ${sample} ${annotated_merged_vcf} ${post_processed_vcf} ${mnv_bam}
     fi
 
     if [[ ! -e ${snpEff_vcf} ]]
     then
-        do_strelka_snpeff ${sample} ${post_processed_vcf} ${snpEff_vcf}
+        do_strelka_snpeff_v2.2 ${sample} ${post_processed_vcf} ${snpEff_vcf}
     fi
 
     bgzip ${snpEff_vcf}
     ${tabix} -p vcf ${snpEff_vcf_gz}
 
-    do_strelka_annotation ${snpEff_vcf_gz} ${annotated_vcf_gz}
+    do_strelka_annotation_dbs ${snpEff_vcf_gz} ${annotated_vcf_gz}
     do_strelka_pon_filter ${annotated_vcf_gz} ${final_vcf_gz}
 
     rm -rf ${working_dir}
