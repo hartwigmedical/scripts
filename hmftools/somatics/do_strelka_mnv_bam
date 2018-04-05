@@ -12,7 +12,6 @@ BAI=$1 && shift
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
-SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 SLICED_BAI="${SAMPLE}_dedup.realigned.sliced.bai"
 VCF_NAME="${VCF%.*}"
 MNV_BED="${VCF_NAME}.mnvs.bed"
@@ -28,11 +27,10 @@ fi
 
 rm "${MNV_VCF}.idx"
 
-if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ;
+if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ${BAM};
 then exit 1
 fi
 
-mv ${SLICED_BAM} ${BAM}
 mv ${SLICED_BAI} ${BAI}
 
 
