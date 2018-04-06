@@ -14,8 +14,9 @@ cosmicCensus = cosmicCensus %>% filter(cosmicOncogene | cosmicTsg)
 
 cosmicGenes = merge(cosmicCurated, cosmicCensus, by = "gene_name", all = T)
 save(cosmicGenes, file = "~/hmf/RData/cosmicGenes.RData")
+load("~/hmf/RData/cosmicGenes.RData")
 
-#dNdS results
+
 load(file="~/hmf/RData/PcawgRefCDSCv.RData")
 load(file="~/hmf/RData/HmfRefCDSCv.RData")
 sig = 0.02
