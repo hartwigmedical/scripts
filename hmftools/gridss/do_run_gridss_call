@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Performs GRIDSS preprocessing
+#
+source do_run_gridss_lib
+
+echo $(date) IdentifyVariants
+java -Xmx8G $gridss_jvm_args \
+	gridss.IdentifyVariants \
+	$gridss_common_args \
+	INPUT=$normal_bam \
+	INPUT=$tumor_bam \
+	OUTPUT_VCF=$gridss_raw_vcf.unannotated.vcf \
+	ASSEMBLY=$assembly_bam \
+	WORKER_THREADS=$threads \
+	BLACKLIST=$blacklist \
+	CONFIGURATION_FILE=$gridss_config_file \
+	2> $log_prefix.IdentifyVariants.log

@@ -1,0 +1,107 @@
+#!/bin/bash
+#
+# Performs GRIDSS preprocessing
+#
+source do_run_gridss_lib
+
+# BAM to process. "normal" and "tumor"
+tum_normal_arg=$1 && shift
+threads=$1 && shift
+
+if [[ "$threads" == "" ]] ; then
+	threads=$(nproc)
+fi
+
+if [[ "$tum_normal_arg" == "normal" ]] ; then
+	bam_sample=$ref_sample
+elif [[ "$tum_normal_arg" == "tumor" ]] ; then
+	bam_sample=$tumor_sample
+else
+	echo "Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
+	exit 1
+fi
+bam=$run_dir/$bam_sample/mapping/${bam_sample}_dedup.realigned.bam
+insert_size_metrics=$run_dir/QCStats/${bam_sample}_dedup/${bam_sample}_dedup_MultipleMetrics.txt.insert_size_metrics
+
+if [[ ! $bam.bai ]] ; then
+	samtools index $bam
+fi
+
+if [[ ! -f $insert_size_metrics ]] ; then
+	echo "Missing insert size metrics file $insert_size_metrics. Aborting" 1>&2
+	exit 1
+fi
+working_dir=$gridss_dir/$(basename $bam).gridss.working
+mkdir -p $working_dir
+sv_bam=$working_dir/$(basename $bam).sv.bam
+tmp_bam=$working_dir/gridss.tmp.querysorted.$(basename $bam).sv.bam
+# Since we already have insert size metrics, we can compute metrics in parallel
+if [[ ! -f $working_dir/$(basename $bam).idsv_metrics ]] ; then
+	echo $(date) CollectGridssMetrics
+	java -Xmx256M $gridss_jvm_args \
+		gridss.analysis.CollectGridssMetrics \
+		ASSUME_SORTED=true \
+		I=$bam \
+		O=$working_dir/$(basename $bam) \
+		THRESHOLD_COVERAGE=$gridss_threshold_coverage \
+		FILE_EXTENSION=null \
+		GRIDSS_PROGRAM=null \
+		GRIDSS_PROGRAM=CollectCigarMetrics \
+		GRIDSS_PROGRAM=CollectMapqMetrics \
+		GRIDSS_PROGRAM=CollectTagMetrics \
+		GRIDSS_PROGRAM=CollectIdsvMetrics \
+		GRIDSS_PROGRAM=ReportThresholdCoverage \
+		PROGRAM=null \
+		PROGRAM=CollectInsertSizeMetrics \
+		2> $log_prefix.$bam_sample.CollectGridssMetrics.log &
+fi
+java -Xmx256M $gridss_jvm_args \
+	gridss.ExtractSVReads \
+	$gridss_common_args \
+	I=$bam \
+	O=/dev/stdout \
+	COMPRESSION_LEVEL=0 \
+	METRICS_OUTPUT=$INPUT_WORKING_PREFIX.sv_metrics \
+	INSERT_SIZE_METRICS=$insert_size_metrics \
+	UNMAPPED_READS=false \
+	MIN_CLIP_LENGTH=5 \
+	INCLUDE_DUPLICATES=true \
+	2> $log_prefix.$bam_sample.ExtractSVReads.log | \
+samtools sort -n -l 0 -@ $threads -o $tmp_bam - && \
+java -Xmx256M $gridss_jvm_args \
+	gridss.ComputeSamTags \
+	$gridss_common_args \
+	COMPRESSION_LEVEL=0 \
+	I=$tmp_bam \
+	O=/dev/stdout \
+	RECALCULATE_SA_SUPPLEMENTARY=true \
+	SOFTEN_HARD_CLIPS=true \
+	FIX_MATE_INFORMATION=true \
+	FIX_DUPLICATE_FLAG=true \
+	TAGS=null \
+	TAGS=NM \
+	TAGS=SA \
+	TAGS=R2 \
+	TAGS=Q2 \
+	TAGS=MC \
+	TAGS=MQ \
+	ASSUME_SORTED=true \
+	2> $log_prefix.$bam_sample.ComputeSamTags.log | \
+java -Xmx3G $gridss_jvm_args \
+	gridss.SoftClipsToSplitReads \
+	$gridss_common_args \
+	COMPRESSION_LEVEL=0 \
+	I=/dev/stdin \
+	O=/dev/stdout \
+	ALIGNER_STREAMING=true \
+	WORKER_THREADS=$threads \
+	2> $log_prefix.$bam_sample.SoftClipsToSplitReads.log | \
+samtools sort -@ $threads -o ${sv_bam} - && \
+rm $tmp_bam
+if [[ ! -f $sv_bam.bai ]] ; then
+	samtools index $sv_bam
+fi
+# Wait for metric extraction to finish
+if [[ ! -f $working_dir/$(basename $bam).idsv_metrics ]] ; then
+	wait
+fi
