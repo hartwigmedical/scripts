@@ -46,7 +46,7 @@ fi
 
 rm "${MNV_VCF}.idx"
 
-if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ;
+if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ${SLICED_BAM};
 then exit 1
 fi
 

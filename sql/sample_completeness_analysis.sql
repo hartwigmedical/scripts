@@ -1,40 +1,41 @@
 	SELECT
     count(*) AS samples, 'all' AS category
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    
+    FROM sample
+	WHERE sample.sampleId like '%CPCT%'
+
 UNION
 
-	SELECT count(*), 'with known cancer type' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    WHERE NOT(isnull(cancerType))
+	SELECT count(*), 'with known cancer type'
+	FROM sample
+	INNER JOIN patient ON sample.patientId = patient.id
+	INNER JOIN baseline ON baseline.patientId = patient.id
+	WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(cancerType))
     
 UNION
 
     SELECT count(*), 'with matched biopsy' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-    WHERE NOT(isnull(biopsy.id))
+    FROM sample LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
+    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(biopsy.id))
 
 UNION
 
 SELECT count(*), 'with matched biopsy and known biopsy site' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
-    LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-    WHERE NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsySite))
+    FROM sample LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
+    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsySite))
     
 UNION
 
     SELECT count(*), 'with matched biopsy and treatment' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
+    FROM sample
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     LEFT JOIN treatment on treatment.biopsyId = biopsy.id
-    WHERE NOT(isnull(treatment.id))
+    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(treatment.id))
 
 UNION
 
 	SELECT count(*), 'with matched biopsy, treatment and response' 
-    FROM sample INNER JOIN patient ON sample.patientId = patient.id
+    FROM sample
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     LEFT JOIN treatment on treatment.biopsyId = biopsy.id
     LEFT JOIN firstMatchedTreatmentResponse on treatment.id = firstMatchedTreatmentResponse.treatmentId
-    WHERE NOT(isnull(firstMatchedTreatmentResponse.id))
+    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(firstMatchedTreatmentResponse.id))

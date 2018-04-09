@@ -2,12 +2,6 @@ redGradient = c("#fee5d9", "#fcae91", "#fb6a4a", "#de2d26", "#a50f15")
 greenGradient = c("#edf8e9", "#bae4b3", "#74c476", "#31a354", "#006d2c")
 blackGradient = c("#f7f7f7", "#cccccc", "#969696", "#636363", "#252525")
 
-
-left_join<-function(left, right, by="sampleId") {
-  tmp = merge(x = left, y = right, by=by, all.x=TRUE)
-  return (tmp)
-}
-
 slookup<-function(df, lookup, on="sampleId") {
   return (sapply(df[[on]], function(x) {lookup[match(x, lookup[[on]]), -c(1)] }))
 }

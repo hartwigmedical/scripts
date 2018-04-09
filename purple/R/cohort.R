@@ -1,4 +1,3 @@
-
 highest_purity_patients<-function(cohort) {
   dt = data.table(cohort)
   return (cohort[dt[, .I[which.max(purity)], by=patientId]$V1, ])

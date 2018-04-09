@@ -4,10 +4,11 @@ BAM_SLICER=/data/common/tools/bam-slicer_v1.1/bam-slicer.jar
 
 SAMPLE=$1
 BED_FILE=$2
+OUTPUT_FILE=$3
 
-if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ];
+if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ] || [ -z "$OUTPUT_FILE" ];
   then
-    echo "Usage: $ ./bam_slicer sample bed_file"
+    echo "Usage: $ ./bam_slicer sample bed_file output_file"
     echo "   sample	sample to search for. e.g CPCT11111111T"
     echo "   bed_file	bed file containing regions to be sliced"
     exit 1
@@ -26,7 +27,6 @@ RUN_NAME=`echo ${RUN_ROW} | cut -d ' ' -f1`
 RUN_BUCKET=`echo ${RUN_ROW} | cut -d ' ' -f5`
 BAM_KEY="$RUN_NAME/$SAMPLE/mapping/${SAMPLE}_dedup.realigned.bam"
 BAM_INDEX_KEY="${BAM_KEY}.bai"
-SLICED_BAM="${SAMPLE}_dedup.realigned.sliced.bam"
 
 run_bam_slicer() {
    BAM_INDEX_PARAM=$1
@@ -37,7 +37,7 @@ run_bam_slicer() {
      -input ${BAM_KEY} \
      -index ${BAM_INDEX_PARAM} \
      -bed ${BED_FILE} \
-     -output ${SLICED_BAM} \
+     -output ${OUTPUT_FILE} \
      -max_chunks 2000 \
      -max_concurrent_requests 30
 }

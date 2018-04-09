@@ -1,0 +1,33 @@
+#!/bin/bash
+
+echo -e 'Id\tmean\tmedian' > Coverages.csv
+cd /data/cpct/runs/
+number=1
+
+ls | while read  line
+do
+	echo $number
+	echo $line
+	cd $line/QCStats/
+	name=$(head -n 1 WGSMetrics_summary.transposed.txt | tr -d 'sample' | tr -d '_dedup' | tr ' ' '\n')
+	column1=$(echo ${name:13:1})
+	column2=$(echo ${name:27:1})
+	if [ ${column1} == T ]
+	then
+	    idColumn=1
+	    column=2
+	else
+	    idColumn=2
+	    column=3
+	fi
+	id=$(head -n 1 WGSMetrics_summary.transposed.txt | tr -d 'sample' | awk -v x=${idColumn} '{print $x}' | tr -d '_dedup')
+	median=$(cat WGSMetrics_summary.transposed.txt | awk -v x=${column} '{print $1 ,$x}' | grep MEDIAN_COVERAGE | awk '{print $2}')
+    mean=$(cat WGSMetrics_summary.transposed.txt | awk -v x=${column} '{print $1 ,$x}' | grep MEAN_COVERAGE | awk '{print $2}')
+ 	cd ../..
+	number=$(expr ${number} + 1)
+	echo ${id}
+ 	echo ${id} ${mean} ${median} >> ~/scripts/Coverages.csv
+done
+
+
+

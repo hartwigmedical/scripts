@@ -1,0 +1,63 @@
+#!/bin/bash
+source load_metadata
+run_dir=$1 && shift
+
+#### Tools
+tabix=/data/common/tools/tabix_v0.2.6/tabix
+
+#### Output Directories
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+output_dir=${run_dir}/somaticVariants/${joint_name}
+working_dir=${output_dir}/postStrelka
+mkdir -p ${working_dir}
+
+#### Output Files
+merged_vcf=${working_dir}/merged.vcf
+annotated_merged_vcf=${working_dir}/annotated_merged.vcf
+annotated_merged_vcf_gz=${annotated_merged_vcf}.gz
+post_processed_vcf=${working_dir}/post_processed.vcf
+mnv_bam=${working_dir}/mnv.bam
+mnv_bai=${working_dir}/mnv.bai
+snpEff_vcf=${working_dir}/snpEff.vcf
+snpEff_vcf_gz=${snpEff_vcf}.gz
+annotated_vcf_gz=${working_dir}/annotated.vcf.gz
+final_vcf_gz=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
+
+#### Execution
+if [[ ! -e ${final_vcf_gz} ]]
+then
+
+    if [[ ! -e ${merged_vcf} ]]
+    then
+        do_strelka_merge_v2.2 ${run_dir} ${merged_vcf}
+    fi
+
+    if [[ ! -e ${mnv_bam} ]]
+    then
+        do_strelka_mnv_bam_v2.2 ${sample} ${merged_vcf} ${mnv_bam} ${mnv_bai}
+    fi
+
+    do_strelka_annotation_mappability_pon ${merged_vcf} ${annotated_merged_vcf_gz}
+    gunzip -c ${annotated_merged_vcf_gz} > ${annotated_merged_vcf}
+
+    if [[ ! -e ${post_processed_vcf} ]]
+    then
+        do_strelka_post_process_v2.2 ${sample} ${annotated_merged_vcf} ${post_processed_vcf} ${mnv_bam}
+    fi
+
+    if [[ ! -e ${snpEff_vcf} ]]
+    then
+        do_strelka_snpeff_v2.2 ${sample} ${post_processed_vcf} ${snpEff_vcf}
+    fi
+
+    bgzip ${snpEff_vcf}
+    ${tabix} -p vcf ${snpEff_vcf_gz}
+
+    do_strelka_annotation_dbs ${snpEff_vcf_gz} ${annotated_vcf_gz}
+    do_strelka_pon_filter ${annotated_vcf_gz} ${final_vcf_gz}
+
+    rm -rf ${working_dir}
+fi
+
+echo "[INFO] Complete -" $(date)

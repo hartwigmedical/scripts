@@ -1,0 +1,21 @@
+#!/bin/bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+rundir=$1
+
+if [ -z "$rundir" ]; then
+    echo "[WARN] No rundir is provided to run_health_checker_prod. Exiting."
+    exit 1
+fi
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # KODU: common folder does not exist on crunches...
+    base_path="/data"
+fi
+
+exec java -Xmx8G -Xms4G \
+    -jar ${base_path}/tools/healthchecker_v2.3/health-checker.jar \
+    -report_file_path ${rundir}/logs/HealthCheck_v2.3.json \
+    -run_dir ${rundir}

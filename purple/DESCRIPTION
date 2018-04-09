@@ -2,7 +2,7 @@ Package: purple
 Type: Package
 Title: What the Package Does (Title Case)
 Version: 0.1.0
-Author: Who wrote it
+Author: Jonathan Baber
 Maintainer: The package maintainer <yourself@somewhere.net>
 Description: More about what it does (maybe more than one line)
     Use four spaces when indenting paragraphs within the Description.
@@ -14,4 +14,5 @@ RoxygenNote: 6.0.1
 Imports:
     data.table,
     RMySQL,
-    plyr
+    dplyr,
+    tidyr

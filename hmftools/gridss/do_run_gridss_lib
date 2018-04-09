@@ -1,0 +1,63 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+gridss_jar=$1 && shift
+threads=$1 && shift
+
+if [[ ! -f $run_dir/metadata ]] ; then
+	echo "Missing metadata file in run directory. Aborting" 1>&2
+	exit 1
+fi
+
+if [[ ! -f $gridss_jar ]] ; then
+	echo "Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
+	exit 1
+fi
+
+if [[ "$threads" == "" ]] ; then
+	threads=$(nproc)
+fi
+
+export PATH=$PATH:$base_path/tools/bwa_v0.7.5a/
+config_dir=$run_dir/../
+
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+	# KODU: common folder does not exist on crunches...
+	base_path="/data"
+fi
+
+ref_genome=$base_path/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+# TEMP local testing
+ref_genome=/mnt/d/hartwig/refdata/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+source load_metadata
+ref_sample=$(load_ref_sample_from_metadata $run_dir)
+tumor_sample=$(load_tumor_sample_from_metadata $run_dir)
+joint_sample_name=$(load_joint_name_from_metadata $run_dir)
+
+gridss_dir=${run_dir}/structuralVariants/gridss/$joint_sample_name/
+gridss_raw_vcf=$gridss_dir/${joint_sample_name}.gridss.vcf
+gridss_filtered_vcf=${tumor_sample}.gridss.somatic.vcf
+normal_bam=$run_dir/$ref_sample/mapping/${ref_sample}_dedup.realigned.bam
+tumor_bam=$run_dir/$tumor_sample/mapping/${tumor_sample}_dedup.realigned.bam
+assembly_bam=$gridss_dir/$joint_sample_name.assembly.bam
+log_dir=$gridss_dir/logs/
+log_prefix=$log_dir/$HOSTNAME.$$
+blacklist=$config_dir/ENCFF001TDO.bed
+gridss_config_file=$config_dir/gridss.properties
+
+gridss_threshold_coverage=10000
+gridss_jvm_args="
+	-ea
+	-Dsamjdk.create_index=true
+	-Dsamjdk.use_async_io_read_samtools=true
+	-Dsamjdk.use_async_io_write_samtools=true
+	-Dsamjdk.use_async_io_write_tribble=true
+	-cp $gridss_jar "
+gridss_common_args="
+	TMP_DIR=$gridss_dir 
+	WORKING_DIR=$gridss_dir
+	REFERENCE_SEQUENCE=$ref_genome "
+
+mkdir -p $gridss_dir $log_dir
