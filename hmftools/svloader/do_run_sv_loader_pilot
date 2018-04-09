@@ -5,4 +5,7 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
 
-${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} $@
+
+pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
+
+${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} $@ -sv_pon_file ${pon_csv}
