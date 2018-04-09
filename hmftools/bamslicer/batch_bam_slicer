@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BAM_SLICER_SCRIPT=/home/mircea/workspace/scripts/hmftools/bamslicer/bam_slicer
+BAM_SLICER_SCRIPT=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
 
 INPUT_FILE=$1
 
