@@ -1,0 +1,8 @@
+#!/bin/bash
+
+for run_dir in /data/cpct/runs/*; do
+    if [[ $run_dir == /data/cpct/runs/${starts_with}* ]]; then
+        median = $(grep ^X $run_dir/cobalt/*.cobalt | cut -f 5 | awk '{if ($1 != -1.0) print $1}' | sort -n | awk -f ~/median.awk)
+        echo $run_dir $median >> median.result
+    fi
+done
