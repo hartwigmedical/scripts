@@ -4,8 +4,13 @@
 #
 source do_run_gridss_lib
 
+echo $(date) Preprocessing normal
 { time do_run_gridss_preprocess $run_dir $gridss_jar $threads normal ; } > $log_prefix.time.preprocess.normal.log 2>&1
+echo $(date) Preprocessing tumor
 { time do_run_gridss_preprocess $run_dir $gridss_jar $threads tumor ; } > $log_prefix.time.preprocess.tumor.log 2>&1
+echo $(date) Assembling
 { time do_run_gridss_assemble $run_dir $gridss_jar $threads ; } > $log_prefix.time.assemble.log 2>&1
+echo $(date) Calling variants
 { time do_run_gridss_call $run_dir $gridss_jar $threads ; } > $log_prefix.time.call.log 2>&1
+echo $(date) Annotating variants
 { time do_run_gridss_annotate $run_dir $gridss_jar $threads ; } > $log_prefix.time.annotate.log 2>&1

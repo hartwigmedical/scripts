@@ -2,7 +2,6 @@ library(tidyverse)
 
 fdf = read.csv("D://hartwig//CPCT02100145.gridss.assembly.bam.events.csv", header=FALSE)
 names(fdf) = c("chunk", "direction", "op", "seqname", "start", "end", "records", "filtered", "usec")
-
 ldf = fdf %>% filter(op=="load")
 
 ggplot(ldf) +
@@ -22,3 +21,21 @@ ggplot(ldf %>%
 	geom_point() + 
 	scale_y_log10() +
 	facet_wrap(~ seqname)
+
+
+
+
+# binned timing
+ldfbin <- ldf %>% 
+	mutate(bin=round(start, -4)) %>%
+	group_by(chunk, direction, seqname, bin) %>%
+	summarise(
+		total_usec=sum(usec),
+		max_records=max(records))
+
+ggplot(ldfbin) +
+	aes(x=bin, y=total_usec) +
+	geom_point() + 
+	scale_y_log10() +
+	facet_wrap(~ seqname)
+
