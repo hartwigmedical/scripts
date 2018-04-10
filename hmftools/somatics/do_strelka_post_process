@@ -6,7 +6,7 @@ output_vcf=$1 && shift
 tumor_bam=$1 && shift
 
 ### Dependencies
-strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.2/strelka-post-process.jar
+strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.3/strelka-post-process.jar
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 
 if [[ ! -e ${output_vcf} ]]
