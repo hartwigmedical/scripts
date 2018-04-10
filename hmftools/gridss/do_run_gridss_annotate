@@ -4,16 +4,19 @@
 #
 source do_run_gridss_lib
 
-echo $(date) AnnotateVariants
-java -Xmx8G $gridss_jvm_args \
-	gridss.AnnotateVariants \
-	$gridss_common_args \
-	INPUT=$normal_bam \
-	INPUT=$tumor_bam \
-	INPUT_VCF=$gridss_raw_vcf.unannotated.vcf \
-	OUTPUT_VCF=$gridss_raw_vcf \
-	ASSEMBLY=$assembly_bam \
-	WORKER_THREADS=$threads \
-	BLACKLIST=$blacklist \
-	CONFIGURATION_FILE=$gridss_config_file \
-	2> $log_prefix.AnnotateVariants.log
+if [[ ! -f $gridss_raw_vcf ]] ; then
+	echo $(date) AnnotateVariants
+	java -Xmx8G $gridss_jvm_args \
+		-Dgridss.gridss.output_to_temp_file=true \
+		gridss.AnnotateVariants \
+		$gridss_common_args \
+		INPUT=$normal_bam \
+		INPUT=$tumor_bam \
+		INPUT_VCF=$gridss_raw_vcf.unannotated.vcf \
+		OUTPUT_VCF=$gridss_raw_vcf \
+		ASSEMBLY=$assembly_bam \
+		WORKER_THREADS=$threads \
+		BLACKLIST=$blacklist \
+		CONFIGURATION_FILE=$gridss_config_file \
+		2> $log_prefix.AnnotateVariants.log
+fi
