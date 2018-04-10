@@ -13,7 +13,7 @@ then
     exit 1
 fi
 
-if [ -z "$somatic_vcf" ]
+if [ ! -f "$somatic_vcf" ]
 then
     echo "Unable to locate somatic variants. Exiting."
     exit 1
