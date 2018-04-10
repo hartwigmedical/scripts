@@ -10,5 +10,6 @@ fi
 
 purple_jar=${base_path}/tools/purple_v2.9/purple.jar
 purple_output=${run_dir}/purple
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.1.vcf.gz)
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output}
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${purple_output}
