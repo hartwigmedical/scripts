@@ -9,7 +9,7 @@ if [ -z "`hostname | grep datastore`" ]; then
     base_path="/data"
 fi
 
-cobalt_jar=${base_path}/tools/cobalt_v1.2/cobalt.jar
+cobalt_jar=${base_path}/tools/cobalt_v1.4/cobalt.jar
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 output_dir=${run_dir}/cobalt
 metadata=${run_dir}/metadata
