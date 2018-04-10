@@ -6,7 +6,7 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.1.vcf.gz)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
 then
     echo "Unable to locate post processed somatic variants. Exiting."
