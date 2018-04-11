@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_dir=/data/common/tools/patient-db_v2.5
+patient_db_jar=/data/common/tools/patient-db_v2.6/patient-db.jar
 runs_dir=/data/cpct/runs
 
 credentials=/data/common/dbs/mysql_credentials/prod
@@ -9,15 +9,16 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # KODU - Force UTF-8 to deal with non-standard characters, see DEV-275
 exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
-    -jar "$patient_db_dir"/patient-db.jar \
+    -jar ${patient_db_jar} \
     -runs_dir ${runs_dir} \
-    -ecrf /data/ecrf/cpct_ecrf.xml \
-    -form_status_csv /data/ecrf/cpct_form_status.csv \
+    -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
+    -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
+    -drup_ecrf /data/ecrf/drup_ecrf.xml \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps \
-    -cancer_types_symlink cancer_types \
+    -tumor_location_symlink curated_tumor_locations \
     "$@"
