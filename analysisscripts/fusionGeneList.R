@@ -117,9 +117,9 @@ allKnownFusionsWide <- rbind(allFusionPairs, allPromiscuousFusions) %>% mutate(v
 allKnownFusions <- allKnownFusionsWide %>% select(H_gene, T_gene)
 knownPromiscuousH <- allKnownFusions %>% filter(is.na(T_gene)) %>% select(H_gene)
 knownPromiscuousT <- allKnownFusions %>% filter(is.na(H_gene)) %>% select(T_gene)
+knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene))
 write.csv(allKnownFusions, "~/data/r/allKnownFusions.csv", row.names = FALSE)
 write.csv(allKnownFusionsWide, "~/data/r/allKnownFusionsWide.csv", row.names = FALSE)
 write.csv(knownPromiscuousH, "~/data/r/knownPromiscuousH.csv", row.names = FALSE)
 write.csv(knownPromiscuousT, "~/data/r/knownPromiscuousT.csv", row.names = FALSE)
-
-
+write.csv(knownFusionPairs, "~/data/r/knownFusionPairs.csv", row.names = FALSE)
