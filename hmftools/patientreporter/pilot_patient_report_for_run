@@ -19,7 +19,7 @@ report_dir=/data/cpct/pilot_reports
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -tumor_location_csv "tumor_location_csv" \
+    -tumor_location_csv "$tumor_location_csv" \
     -report_dir "$report_dir" \
     -drup_genes_csv "$drup_genes_csv" \
     -cosmic_gene_csv "$cosmic_gene_csv" \

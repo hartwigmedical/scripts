@@ -11,7 +11,7 @@ center_csv=/data/common/dbs/center/center.csv
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -tumor_location_csv "tumor_location_csv" \
+    -tumor_location_csv "$tumor_location_csv" \
     -report_dir "$report_dir" \
     -center_csv "$center_csv" \
     -signature "$signature" \
