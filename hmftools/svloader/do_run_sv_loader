@@ -16,6 +16,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # JOBA: File Locations
+pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
 fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
@@ -31,5 +32,6 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -sample ${sample} \
     -ensembl_db ${ensembl_db} \
     -fusion_csv ${fusion_csv} \
+    -sv_pon_file ${pon_csv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
