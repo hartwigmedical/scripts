@@ -20,6 +20,6 @@ exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 -jar ${patient_db_jar} \
     -lims_json /data/lims/lims.json \
     -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
     -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
-    -cancer_types_symlink cancer_types \
+    -tumor_location_symlink curated_tumor_locations \
     -portal_data_symlink portal_data \
     "$@"
