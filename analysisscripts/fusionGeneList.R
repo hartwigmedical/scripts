@@ -67,7 +67,13 @@ removePair <- function(data, first, second){
   return(data %>% filter(H_gene != first | T_gene != second))
 }
 
+correctCivicVariant <- function(data, geneString, variantString, newVariantString){
+  rows <- data %>% filter(gene == geneString & variant == variantString) %>%  mutate(variant = newVariantString)
+  return(data %>% filter(gene != geneString | variant != variantString) %>% rbind(rows))
+}
+
 # -----------------
+civicFile <- civicFile %>% correctCivicVariant("KMT2A", "MLL-MLLT3", "KMT2A-MLLT3")
 
 oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration)) %>% rowwise() %>%
   mutate(H_gene = hGene(Gene, Alteration, separatorPattern), T_gene = tGene(Gene, Alteration, separatorPattern), Source ="oncoKb") %>%
