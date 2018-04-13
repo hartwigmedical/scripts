@@ -8,7 +8,7 @@ query_highest_purity_cohort<-function(dbConnect) {
 
   #Clinical Data
   clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   highestPurityCohort = purple::highest_purity_patients(cohort)
@@ -27,31 +27,12 @@ query_multiple_biopsy_cohort<-function(dbConnect) {
 
   #Clinical Data
   clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   multipleBiopsyCohort = purple::multiple_biopsy(cohort)
 
   return (multipleBiopsyCohort)
-}
-
-query_gene_copy_number_knockout<-function(dbConnect, cohort) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, if(minCopyNumber < 0.5 || nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0, 1, 0) as score, ",
-    "       g.minCopyNumber < 0.5 as deleted, g.minMinorAllelePloidy < 0.5 as loh, nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0 as biallelicVariant ",
-    "  FROM geneCopyNumber g, purity p",
-    " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity >= 0.20",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND (g.minCopyNumber < 0.5 or g.minMinorAllelePloidy < 0.5 or nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0)" ,
-    "   AND g.chromosome <> 'Y'",
-    "   AND p.sampleId in (",sampleIdString, ")",
-    sep = " ")
-  return (dbGetQuery(dbConnect, query))
 }
 
 query_gene_copy_number_by_gene<-function(dbConnect, genes) {
@@ -67,17 +48,13 @@ query_gene_copy_number_by_gene<-function(dbConnect, genes) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_gene_copy_number_deletes<-function(dbConnect, cohort) {
+query_gene_copy_number_deletes<-function(dbConnect, cohort, cutoff = 0.5) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetRegions, g.germlineHomRegions",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND g.minCopyNumber < 0.5",
+    "   AND g.minCopyNumber < ", cutoff,
     "   AND g.chromosome <> 'Y'",
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
@@ -87,13 +64,9 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
 query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport, p.ploidy",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, p.ploidy, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetRegions, g.germlineHomRegions",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
     "   AND g.minCopyNumber / p.ploidy > ", cutoff,
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
