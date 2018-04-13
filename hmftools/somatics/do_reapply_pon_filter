@@ -10,6 +10,7 @@ output_vcf=${output_dir}/${joint_name}_post_processed_v2.2_pon.vcf.gz
 
 ### Dependencies
 bcftools=/data/common/tools/bcftools_v1.3/bcftools
+tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 if [[ ! -e ${output_vcf} ]]
 then
@@ -18,3 +19,5 @@ then
 else
     echo "[INFO] Combining variants already complete -" $(date)
 fi
+
+${tabix} -p vcf ${output_vcf}
