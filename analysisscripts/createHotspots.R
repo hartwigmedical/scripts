@@ -64,7 +64,7 @@ hotspots = hotspots %>% distinct(chromosome, position, ref, alt) %>%
 rm(cgi,civic,onco,tert, mnvs, mnvInd, snvs)
 write.table(hotspots, file = "~/hmf/resources/Hotspot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
 
-#bgzip Hotspot.tsv.gz
+#bgzip Hotspot.tsv
 #tabix -f -s 1 -b 2 -e 2 -S 0 Hotspot.tsv.gz
 #tabix Hotspot.tsv.gz 1:9780851-9780853
 
