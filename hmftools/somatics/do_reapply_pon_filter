@@ -1,0 +1,20 @@
+#!/bin/bash
+source load_metadata
+run_dir=$1 && shift
+
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+output_dir=${run_dir}/somaticVariants/${joint_name}
+
+input_vcf=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
+output_vcf=${output_dir}/${joint_name}_post_processed_v2.2_pon.vcf.gz
+
+### Dependencies
+bcftools=/data/common/tools/bcftools_v1.3/bcftools
+
+if [[ ! -e ${output_vcf} ]]
+then
+   ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${input_vcf} -O u | \
+   ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${output_vcf}
+else
+    echo "[INFO] Combining variants already complete -" $(date)
+fi

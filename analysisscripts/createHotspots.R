@@ -74,21 +74,21 @@ write.table(hotspots, file = "~/hmf/resources/Hotspot.tsv", sep = "\t", col.name
 #/data/common/tools/bcftools_v1.3/bcftools annotate -a ./Hotspot.tsv.gz -c CHROM,POS,REF,ALT -m +HOTSPOT ./GERMLINE_PON.vcf.gz -o ./GERMLINE_PON_HOTSPOT.vcf
 #/data/common/tools/bcftools_v1.3/bcftools filter -i 'HOTSPOT=1' ./GERMLINE_PON_HOTSPOT.vcf -o GERMLINE_PON_HOTSPOT_FILTERED.vcf
 
-germline = read.table("~/hmf/analysis/hotspot/GERMLINE_PON_HOTSPOT_FILTERED.vcf",header=TRUE,sep='\t', stringsAsFactors = F)
-somatic = read.table("~/hmf/analysis/hotspot/SOMATIC_PON_HOTSPOT_FILTERED.vcf",header=TRUE,sep='\t', stringsAsFactors = F)
-combinedPon = merge(germline,somatic,by=c('CHROM','POS','ID','REF','ALT','FILTER','QUAL'),all=TRUE)  %>% 
-  separate(INFO.x,into=c('GTotal','a','b','c'),sep=';') %>% separate(GTotal,into=c('d','GPONCount'),sep='=') %>% 
-  separate(INFO.y,into=c('STotal','g','e','f'),sep=';') %>% separate(STotal,into=c('h','SPONCount'),sep='=') %>% 
-  mutate(GPONCount=as.numeric(GPONCount)) %>% 
-  mutate(SPONCount=as.numeric(SPONCount)) %>%
-  select(chromosome = CHROM,position = POS,ref = REF,alt = ALT,GPONCount,SPONCount)
-combinedPon$chromosome <- as.character(combinedPon$chromosome)
-rm(germline, somatic)
+#germline = read.table("~/hmf/analysis/hotspot/GERMLINE_PON_HOTSPOT_FILTERED.vcf",header=TRUE,sep='\t', stringsAsFactors = F)
+#somatic = read.table("~/hmf/analysis/hotspot/SOMATIC_PON_HOTSPOT_FILTERED.vcf",header=TRUE,sep='\t', stringsAsFactors = F)
+#combinedPon = merge(germline,somatic,by=c('CHROM','POS','ID','REF','ALT','FILTER','QUAL'),all=TRUE)  %>%
+#  separate(INFO.x,into=c('GTotal','a','b','c'),sep=';') %>% separate(GTotal,into=c('d','GPONCount'),sep='=') %>%
+#  separate(INFO.y,into=c('STotal','g','e','f'),sep=';') %>% separate(STotal,into=c('h','SPONCount'),sep='=') %>%
+#  mutate(GPONCount=as.numeric(GPONCount)) %>%
+#  mutate(SPONCount=as.numeric(SPONCount)) %>%
+#  select(chromosome = CHROM,position = POS,ref = REF,alt = ALT,GPONCount,SPONCount)
+#combinedPon$chromosome <- as.character(combinedPon$chromosome)
+#rm(germline, somatic)
 
-hotspots = merge(hotspots, combinedPon, c("chromosome", "position", "ref", "alt"), all = T)
-hotspots[is.na(hotspots)] <- 0
-hotspots = hotspots %>% filter(GPONCount <= 2) %>% select(chromosome, position, ref, alt)
-write.table(hotspots, file = "~/hmf/resources/Hotspot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
+#hotspots = merge(hotspots, combinedPon, c("chromosome", "position", "ref", "alt"), all = T)
+#hotspots[is.na(hotspots)] <- 0
+#hotspots = hotspots %>% filter(GPONCount <= 2) %>% select(chromosome, position, ref, alt)
+#write.table(hotspots, file = "~/hmf/resources/Hotspot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
 
 
 
