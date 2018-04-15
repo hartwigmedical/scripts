@@ -5,4 +5,6 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/prod
 sv_jar=/data/common/tools/variantannotator_v1.1/variant-annotator.jar
 
-${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} $@
+fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
+
+${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar}  -fusion_csv ${fusion_csv} $@
