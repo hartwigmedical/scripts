@@ -5,4 +5,8 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
 
-${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} $@
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+
+${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} -fusion_pairs_csv "$fusion_pairs_csv" -promiscuous_five_csv "$promiscuous_five_csv"  -promiscuous_three_csv "$promiscuous_three_csv" $@
