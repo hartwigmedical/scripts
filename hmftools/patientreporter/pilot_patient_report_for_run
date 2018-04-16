@@ -16,6 +16,10 @@ tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/pilot_reports
 
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
@@ -28,4 +32,7 @@ exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -signature "$signature" \
     -ensembl_db "$ensembl_db" \
     -fasta_file_location "$ref_genome" \
+    -fusion_pairs_csv "$fusion_pairs_csv" \
+    -promiscuous_five_csv "$promiscuous_five_csv" \
+    -promiscuous_three_csv "$promiscuous_three_csv" \
     -run_dir "$@"
