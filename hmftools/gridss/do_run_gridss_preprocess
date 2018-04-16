@@ -29,51 +29,47 @@ fi
 working_dir=$gridss_dir/$(basename $bam).gridss.working
 mkdir -p $working_dir
 sv_bam=$working_dir/$(basename $bam).sv.bam
-tmp_bam=$working_dir/gridss.tmp.querysorted.$(basename $bam).sv.bam
-# Since we already have insert size metrics, we can compute metrics in parallel
-if [[ ! -f $working_dir/$(basename $bam).idsv_metrics ]] ; then
-	echo $(date) CollectGridssMetrics
-	java -Xmx256M $gridss_jvm_args \
-		gridss.analysis.CollectGridssMetrics \
-		ASSUME_SORTED=true \
-		I=$bam \
-		O=$working_dir/$(basename $bam) \
-		THRESHOLD_COVERAGE=$gridss_threshold_coverage \
-		FILE_EXTENSION=null \
-		GRIDSS_PROGRAM=null \
-		GRIDSS_PROGRAM=CollectCigarMetrics \
-		GRIDSS_PROGRAM=CollectMapqMetrics \
-		GRIDSS_PROGRAM=CollectTagMetrics \
-		GRIDSS_PROGRAM=CollectIdsvMetrics \
-		GRIDSS_PROGRAM=ReportThresholdCoverage \
-		PROGRAM=null \
-		PROGRAM=CollectInsertSizeMetrics \
-		2> $log_prefix.$bam_sample.CollectGridssMetrics.log &
-fi
+extract_tmp_bam=$working_dir/gridss.tmp.querysorted.$(basename $bam).sv.bam
+tag_tmp_bam=$working_dir/gridss.tmp.withtags.$(basename $bam).sv.bam
 if [[ ! -f $sv_bam ]] ; then
-	if [[ ! -f $tmp_bam ]] ; then
-		echo $(date) ExtractSVReads
-		java -Xmx256M $gridss_jvm_args \
-			gridss.ExtractSVReads \
-			$gridss_common_args \
+	if [[ ! -f $extract_tmp_bam ]] ; then
+		# Since we already have insert size metrics, we can compute metrics and extract SV reads in a single pass
+		echo $(date) CollectGridssMetricsAndExtractSVReads
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.CollectGridssMetricsAndExtractSVReads.log java -Xmx512M $gridss_jvm_args \
+			gridss.CollectGridssMetricsAndExtractSVReads \
+			TMP_DIR=$gridss_dir \
+			ASSUME_SORTED=true \
 			I=$bam \
-			O=/dev/stdout \
+			O=$working_dir/$(basename $bam) \
+			THRESHOLD_COVERAGE=$gridss_threshold_coverage \
+			FILE_EXTENSION=null \
+			GRIDSS_PROGRAM=null \
+			GRIDSS_PROGRAM=CollectCigarMetrics \
+			GRIDSS_PROGRAM=CollectMapqMetrics \
+			GRIDSS_PROGRAM=CollectTagMetrics \
+			GRIDSS_PROGRAM=CollectIdsvMetrics \
+			GRIDSS_PROGRAM=ReportThresholdCoverage \
+			PROGRAM=null \
+			PROGRAM=CollectInsertSizeMetrics \
+			SV_OUTPUT=/dev/stdout \
 			COMPRESSION_LEVEL=0 \
 			METRICS_OUTPUT=$INPUT_WORKING_PREFIX.sv_metrics \
 			INSERT_SIZE_METRICS=$insert_size_metrics \
 			UNMAPPED_READS=false \
 			MIN_CLIP_LENGTH=5 \
-			INCLUDE_DUPLICATES=true \
-			2> $log_prefix.$bam_sample.ExtractSVReads.log | \
-		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $tmp_bam -  ||
+			INCLUDE_DUPLICATES=true | \
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.name.log \
+		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $extract_tmp_bam -  ||
 		exit 1
+		exit
 	fi
-	if [[ ! -f ${sv_bam}.tmp.bam ]] ; then
-		java -Xmx3G $gridss_jvm_args \
+	if [[ ! -f $tag_tmp_bam ]] ; then
+		echo $(date) ComputeSamTags
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.ComputeSamTags.log java -Xmx3G $gridss_jvm_args \
 			gridss.ComputeSamTags \
 			$gridss_common_args \
 			COMPRESSION_LEVEL=0 \
-			I=$tmp_bam \
+			I=$extract_tmp_bam \
 			O=/dev/stdout \
 			RECALCULATE_SA_SUPPLEMENTARY=true \
 			SOFTEN_HARD_CLIPS=true \
@@ -87,19 +83,20 @@ if [[ ! -f $sv_bam ]] ; then
 			TAGS=MC \
 			TAGS=MQ \
 			ASSUME_SORTED=true \
-			2> $log_prefix.$bam_sample.ComputeSamTags.log | \
-		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -@ $threads -o ${sv_bam}.tmp.bam - ||
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.coordinate.log \
+		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -@ $threads -o $tag_tmp_bam - ||
 		exit 1
 	fi
-	java -Xmx3G $gridss_jvm_args \
+	echo $(date) SoftClipsToSplitReads
+	/usr/bin/time -o ${log_prefix}.${bam_sample}.time.SoftClipsToSplitReads.log \
+	java -Xmx512M $gridss_jvm_args \
 		-Dgridss.gridss.output_to_temp_file=true \
 		gridss.SoftClipsToSplitReads \
 		$gridss_common_args \
-		I=${sv_bam}.tmp.bam \
+		I=$tag_tmp_bam \
 		O=${sv_bam} \
-		WORKER_THREADS=$threads \
-		2> $log_prefix.$bam_sample.SoftClipsToSplitReads.log && \
-	rm $tmp_bam ${sv_bam}.tmp.bam
+		WORKER_THREADS=$threads &&
+	rm $tmp_bam $tag_tmp_bam
 fi
 
 # Wait for metric extraction to finish

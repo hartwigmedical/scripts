@@ -36,6 +36,5 @@ ldfbin <- ldf %>%
 ggplot(ldfbin) +
 	aes(x=bin, y=total_usec) +
 	geom_point() + 
-	scale_y_log10() +
 	facet_wrap(~ seqname)
 

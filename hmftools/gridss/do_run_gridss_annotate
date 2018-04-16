@@ -6,6 +6,7 @@ source do_run_gridss_lib
 
 if [[ ! -f $gridss_raw_vcf ]] ; then
 	echo $(date) AnnotateVariants
+	/usr/bin/time -o ${log_prefix}.AnnotateVariants.log \
 	java -Xmx8G $gridss_jvm_args \
 		-Dgridss.gridss.output_to_temp_file=true \
 		gridss.AnnotateVariants \
@@ -17,6 +18,5 @@ if [[ ! -f $gridss_raw_vcf ]] ; then
 		ASSEMBLY=$assembly_bam \
 		WORKER_THREADS=$threads \
 		BLACKLIST=$blacklist \
-		CONFIGURATION_FILE=$gridss_config_file \
-		2> $log_prefix.AnnotateVariants.log
+		CONFIGURATION_FILE=$gridss_config_file
 fi

@@ -9,7 +9,7 @@ library(RMySQL)
 source("../gridss/libgridss.R")
 library(tidyverse)
 library(Biostrings)
-dbExisting = dbConnect(MySQL(), dbname = "hmfpatients")
+dbExisting = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
 #dbNew = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
 dbNew = dbConnect(MySQL(), dbname = "hmfpatients_sliced", host="localhost", port=3306, username="test", password="test")
 theme_set(theme_bw())
@@ -115,7 +115,7 @@ ggplot(commondf) +
 
 # 02100145 stats:
 ```{r}
-matchdf <- fullmatchdf %>% filter(sampleId == "CPCT02100145T")
+matchdf <- fullmatchdf %>% filter(sampleId == "CPCT02010708T")
 # cut/pasted from above
 commondf <- matchdf %>% filter(called=="Both")
 

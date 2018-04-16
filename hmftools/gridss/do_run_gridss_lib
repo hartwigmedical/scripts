@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ulimit -n $(ulimit -Hn)
+
 run_dir=$1 && shift
 gridss_jar=$1 && shift
 threads=$1 && shift
@@ -39,7 +41,7 @@ fi
 if which samtools > /dev/null ; then
 	echo -n
 else
-	echo "Missing bwa. Aborting"
+	echo "Missing samtools. Aborting"
 	exit 1
 fi
 
