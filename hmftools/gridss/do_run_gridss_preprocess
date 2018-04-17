@@ -61,7 +61,6 @@ if [[ ! -f $sv_bam ]] ; then
 		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.name.log \
 		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $extract_tmp_bam -  ||
 		exit 1
-		exit
 	fi
 	if [[ ! -f $tag_tmp_bam ]] ; then
 		echo $(date) ComputeSamTags
