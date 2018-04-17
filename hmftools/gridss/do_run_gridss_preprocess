@@ -53,13 +53,13 @@ if [[ ! -f $sv_bam ]] ; then
 			PROGRAM=CollectInsertSizeMetrics \
 			SV_OUTPUT=/dev/stdout \
 			COMPRESSION_LEVEL=0 \
-			METRICS_OUTPUT=$INPUT_WORKING_PREFIX.sv_metrics \
+			METRICS_OUTPUT=$working_dir/$(basename $bam).sv_metrics \
 			INSERT_SIZE_METRICS=$insert_size_metrics \
 			UNMAPPED_READS=false \
 			MIN_CLIP_LENGTH=5 \
 			INCLUDE_DUPLICATES=true | \
 		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.name.log \
-		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $extract_tmp_bam -  ||
+		samtools sort -O bam -T $gridss_dir/${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $extract_tmp_bam -  ||
 		exit 1
 	fi
 	if [[ ! -f $tag_tmp_bam ]] ; then
@@ -81,9 +81,9 @@ if [[ ! -f $sv_bam ]] ; then
 			TAGS=Q2 \
 			TAGS=MC \
 			TAGS=MQ \
-			ASSUME_SORTED=true \
+			ASSUME_SORTED=true | \
 		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.coordinate.log \
-		samtools sort -O bam -T ${bam_sample}.samtools.sort.tmp. -@ $threads -o $tag_tmp_bam - ||
+		samtools sort -O bam -T $gridss_dir/${bam_sample}.samtools.sort.tmp. -@ $threads -o $tag_tmp_bam - ||
 		exit 1
 	fi
 	echo $(date) SoftClipsToSplitReads
