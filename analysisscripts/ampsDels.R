@@ -10,6 +10,12 @@ collapseCandidates <- function(x) {
   return (paste(x, collapse = ","))
 }
 
+longestCandidate <- function(candidates, canonicalTranscripts) {
+  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F)
+  candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>%
+    filter(codingBases == max(codingBases), codingBases > 0) 
+  return (collapseCandidates(candidateVector$gene))
+}
 
 categoriseCandidates <-function(gene, candidates, genePanel) {
  
@@ -46,20 +52,16 @@ canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$rang
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
 #### ADD FRAGILE SITES TO GENE PANEL
-load("~/hmf/RData/fragileGenes.RData")
-load("~/hmf/RData/genePanel.RData")
-genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)
-rm(fragileGenes)
+load("~/hmf/RData/ampsDelsGenePanel.RData")
 
 #### DELETIONS
 load(file = "~/hmf/RData/geneCopyNumberDeletesDriverSummary.RData")
-dels = data.frame(geneCopyNumberDeletesDriverSummary)
-dels = dels[dels$unsupported < dels$N / 2, ]
-#dels = dels[dels$N > 3, ]
-
-dels$candidatesCount = sapply(dels[, c("candidates")], function(x) {length(unlist(strsplit(x, split = ",")))})
-dels$superCandidates = sapply(dels[, c("candidates")], function(x) {superSizedCandidates(x, superGenes)})
-dels$superCandidatesCount = sapply(dels[, c("superCandidates")], function(x) {length(unlist(strsplit(x, split = ",")))})
+dels = geneCopyNumberDeletesDriverSummary %>% 
+  group_by(gene) %>%
+  filter(score > 5, unsupported < N / 2) %>%
+  mutate(candidatesCount = length(unlist(strsplit(candidates, split = ",")))) %>%
+  mutate(superCandidates = superSizedCandidates(candidates, superGenes)) %>%
+  mutate(superCandidatesCount = length(unlist(strsplit(superCandidates, split = ",")))) 
 
 delCandidatesRange = apply(dels[, c("gene","superCandidates")], 1, function(x) {candidatesRange(x[1], x[2], canonicalTranscripts)})
 dels = merge(dels, do.call(rbind, delCandidatesRange), by = "gene")
@@ -67,17 +69,25 @@ dels = merge(dels, do.call(rbind, delCandidatesRange), by = "gene")
 delCandidates = apply(dels[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], genePanel)})
 dels = merge(dels, do.call(rbind, delCandidates), by = "gene")
 
+dels = dels %>% 
+  group_by(gene) %>%
+  mutate(longest = longestCandidate(remainders, canonicalTranscripts ))
+
+
 dels$method <- "panel"
 dels$target <- dels$hmf
 dels$target <- ifelse(is.na(dels$target), dels$martincorena, dels$target)
 dels$target <- ifelse(is.na(dels$target), dels$cosmicCurated, dels$target)
+dels$method <- ifelse(is.na(dels$target), "known", dels$method)
+dels$target <- ifelse(is.na(dels$target), dels$deletion, dels$target)
 dels$method <- ifelse(is.na(dels$target), "cosmic", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$cosmicTsg, dels$target)
-#dels$method <- ifelse(is.na(dels$target), "telomere", dels$method)
-#dels$target <- ifelse(is.na(dels$target) & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), dels$target)
+dels$method <- ifelse(is.na(dels$target), "longest", dels$method)
+dels$target <- ifelse(is.na(dels$target), dels$longest, dels$target)
 dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$gene, dels$target)
 dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
+
 
 geneCopyNumberDeleteTargets = dels
 save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/geneCopyNumberDeleteTargets.RData")
@@ -89,27 +99,34 @@ rm(canonicalTranscriptsOverlaps)
 rm(delCandidatesRange)
 
 #### AMPLIFICAIONS
-load(file = "~/hmf/RData/geneCopyNumberAmplificationSummary.RData")
-amps = data.frame(geneCopyNumberAmplificationSummary)
-amps$candidatesCount = sapply(amps[, c("candidates")], function(x) {length(unlist(strsplit(x, split = ",")))})
-amps$superCandidates = sapply(amps[, c("candidates")], function(x) {superSizedCandidates(x, superGenes)})
-amps$superCandidatesCount = sapply(amps[, c("superCandidates")], function(x) {length(unlist(strsplit(x, split = ",")))})
+load(file = "~/hmf/RData/geneCopyNumberAmplificationSummaryArm.RData")
+amps = geneCopyNumberAmplificationSummary %>% 
+  group_by(gene) %>%
+  filter(score > 20) %>%
+  mutate(candidatesCount = length(unlist(strsplit(candidates, split = ",")))) %>%
+  mutate(superCandidates = superSizedCandidates(candidates, superGenes)) %>%
+  mutate(superCandidatesCount = length(unlist(strsplit(superCandidates, split = ",")))) 
 
 ampCandidatesRange = apply(amps[, c("gene","superCandidates")], 1, function(x) {candidatesRange(x[1], x[2], canonicalTranscripts)})
 amps = merge(amps, do.call(rbind, ampCandidatesRange), by = "gene")
 
 ampCandidates = apply(amps[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], genePanel)})
-ampCandidates = do.call(rbind, ampCandidates)
-amps = merge(amps, ampCandidates, by = "gene")
+amps = merge(amps, do.call(rbind, ampCandidates), by = "gene")
+
+amps = amps %>% 
+  group_by(gene) %>%
+  mutate(longest = longestCandidate(remainders, canonicalTranscripts ))
 
 amps$method <- "panel"
 amps$target <- amps$hmf
 amps$target <- ifelse(is.na(amps$target), amps$martincorena, amps$target)
 amps$target <- ifelse(is.na(amps$target), amps$cosmicCurated, amps$target)
+amps$method <- ifelse(is.na(amps$target), "known", amps$method)
+amps$target <- ifelse(is.na(amps$target), amps$amplification, amps$target)
 amps$method <- ifelse(is.na(amps$target), "cosmic", amps$method)
 amps$target <- ifelse(is.na(amps$target), amps$cosmicOncogene, amps$target)
-#amps$method <- ifelse(is.na(amps$target), "telomere", amps$method)
-#amps$target <- ifelse(is.na(amps$target) & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), amps$target)
+amps$method <- ifelse(is.na(amps$target), "longest", amps$method)
+amps$target <- ifelse(is.na(amps$target), amps$longest, amps$target)
 amps$method <- ifelse(is.na(amps$target), "highest", amps$method)
 amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
 amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
