@@ -114,7 +114,8 @@ verifiedExternalPromiscuousH <- allExternalPromiscuous %>% merge(allFusionPairs,
   mutate(T_gene = NA_character_)
 
 knownPromiscuousH <- rbind(promiscuousHFusions, verifiedExternalPromiscuousH) %>% group_by(H_gene) %>% 
-  summarise(cgi = any(cgi), civic = any(civic), cosmic = any(cosmic), oncoKb = any(oncoKb))
+  summarise(cgi = any(cgi), civic = any(civic), cosmic = any(cosmic), oncoKb = any(oncoKb)) %>% mutate(gene = H_gene) %>%
+  select(gene, cgi, civic, cosmic, oncoKb)
 
 promiscuousTFusions <- allFusionPairs %>% group_by(T_gene) %>%
   summarise(oncoKb = any(oncoKb), civic = any(civic), cgi = any(cgi), cosmic = any(cosmic), count = n()) %>%
@@ -126,9 +127,11 @@ verifiedExternalPromiscuousT <- allExternalPromiscuous %>% mutate(T_gene = H_gen
   mutate(H_gene = NA_character_)
 
 knownPromiscuousT <- rbind(promiscuousTFusions, verifiedExternalPromiscuousT) %>% group_by(T_gene) %>%
-  summarise(cgi = any(cgi), civic = any(civic), cosmic = any(cosmic), oncoKb = any(oncoKb))
+  summarise(cgi = any(cgi), civic = any(civic), cosmic = any(cosmic), oncoKb = any(oncoKb)) %>% mutate(gene = T_gene) %>%
+  select(gene, cgi, civic, cosmic, oncoKb)
 
-allPromiscuousFusions <- rbind(knownPromiscuousH %>% mutate(T_gene = NA_character_), knownPromiscuousT %>% mutate(H_gene = NA_character_)) %>% ungroup()
+allPromiscuousFusions <- rbind(knownPromiscuousH %>% mutate(T_gene = NA_character_, H_gene = gene) %>% select(-gene),
+                               knownPromiscuousT %>% mutate(H_gene = NA_character_, T_gene = gene) %>% select(-gene))  %>% ungroup()
 
 # all fusion pairs + verified promiscuous + inferred promiscuous
 allKnownFusions <- rbind(allFusionPairs, allPromiscuousFusions) %>% arrange(H_gene, T_gene)
