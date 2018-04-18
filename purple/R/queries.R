@@ -121,6 +121,8 @@ query_somatic_variant_sample<-function(dbConnect, sampleId) {
   return (result)
 }
 
+
+#### NO LONGER NEEDED!
 query_msi_sample<-function(dbConnect, sampleId) {
   query = paste(
     "SELECT sampleId, count(*) as msiScore ",
@@ -140,6 +142,7 @@ query_msi_sample<-function(dbConnect, sampleId) {
   return (score)
 }
 
+#### NO LONGER NEEDED!
 query_msi<-function(dbConnect) {
   query = paste(
     "SELECT sampleId, count(*) as msiScore ",
@@ -215,6 +218,7 @@ query_somatic_overview_old<-function(dbConnect, sampleId) {
   return (somatics)
 }
 
+### REMOVE??
 query_somatic_overview<-function(dbConnect, sampleId) {
   query = paste(
     "SELECT sampleId, clonality, type, count(*) as count, SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad",
