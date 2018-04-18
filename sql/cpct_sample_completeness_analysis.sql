@@ -1,6 +1,8 @@
 	SELECT
     count(*) AS samples, 'all' AS category
     FROM sample
+    INNER JOIN patient on sample.patientId = patient.id
+    INNER JOIN baseline on baseline.patientId = patient.id
 	WHERE sample.sampleId like '%CPCT%'
 
 UNION
