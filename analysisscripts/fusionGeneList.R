@@ -140,7 +140,7 @@ write.csv(allKnownFusions, "~/data/r/allKnownFusions.csv", row.names = FALSE)
 knownPromiscuousFive <- knownPromiscuousH %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
 write.csv(knownPromiscuousFive, "~/data/r/knownPromiscuousFive.csv", row.names = FALSE)
 knownPromiscuousThree <- knownPromiscuousT %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
-write.csv(knownPromiscuousT, "~/data/r/knownPromiscuousThree.csv", row.names = FALSE)
+write.csv(knownPromiscuousThree, "~/data/r/knownPromiscuousThree.csv", row.names = FALSE)
 knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene)) %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>%
   select(H_gene, T_gene, OncoKB, COSMIC, CGI, CIViC)
 write.csv(knownFusionPairs, "~/data/r/knownFusionPairs.csv", row.names = FALSE)
