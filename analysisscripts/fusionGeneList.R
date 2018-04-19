@@ -135,8 +135,12 @@ allPromiscuousFusions <- rbind(knownPromiscuousH %>% mutate(T_gene = NA_characte
 
 # all fusion pairs + verified promiscuous + inferred promiscuous
 allKnownFusions <- rbind(allFusionPairs, allPromiscuousFusions) %>% arrange(H_gene, T_gene)
-knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene))
 write.csv(allKnownFusions, "~/data/r/allKnownFusions.csv", row.names = FALSE)
-write.csv(knownPromiscuousH, "~/data/r/knownPromiscuousH.csv", row.names = FALSE)
-write.csv(knownPromiscuousT, "~/data/r/knownPromiscuousT.csv", row.names = FALSE)
+
+knownPromiscuousFive <- knownPromiscuousH %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
+write.csv(knownPromiscuousFive, "~/data/r/knownPromiscuousFive.csv", row.names = FALSE)
+knownPromiscuousThree <- knownPromiscuousT %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
+write.csv(knownPromiscuousT, "~/data/r/knownPromiscuousThree.csv", row.names = FALSE)
+knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene)) %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>%
+  select(H_gene, T_gene, OncoKB, COSMIC, CGI, CIViC)
 write.csv(knownFusionPairs, "~/data/r/knownFusionPairs.csv", row.names = FALSE)
