@@ -30,10 +30,6 @@ select * from clinicalFindings where message = 'pre systemic treatment given emp
 # Radiotherapy pre-therapy is known?
 select * from clinicalFindings where message = 'pre radio treatment given empty' and patientId like '%CPCT%';
 
-# Can curate all pre-therapies?
-select * from clinicalFindings where
-message = 'failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level = "preTreatmentCuration" and patientId like '%CPCT%';
-
 # Has enough ECRF biopsy forms?
 select * from clinicalFindings where message = 'Not enough clinical biopsy forms to match for every sequenced sample' and patientId like '%CPCT%';
 
@@ -53,10 +49,10 @@ select * from clinicalFindings where message ='sampling date does not equal biop
 # All biopsy sites and biopsy location are empty?
 select * from clinicalFindings where message='Biopsy site and biopsy location are empty' and patientId like '%CPCT%';
 
-# Has enough ECRF treatment forms?
+# Can find treatment for every sequenced & matched biopsy?
 select * from clinicalFindings where message='Could not match treatment to matched biopsy' and patientId like '%CPCT%';
 
-# Can match every sequenced biopsy to a treatment?
+# Are all matched treatments correctly filled in?
 select * from clinicalFindings where message='Treatment given is yes, but no drugs are filled in' and patientId like '%CPCT%';
 
 select distinct patientId from clinicalFindings where message='treatment given field empty' and patientId like '%CPCT%';
@@ -73,28 +69,20 @@ select * from clinicalFindings where message='Treatment given is no, but drugs a
 
 select * from clinicalFindings where message='Drug start date is after drug end date' and patientId like '%CPCT%';
 
-# Can match treatment with biopsy?
+select * from clinicalFindings where message ='radio therapy given field empty' and patientId like '%CPCT%';
+
+# Are all treatments sequentially in time and after first biopsy?
 select * from clinicalFindings where message='First treatment prior to first biopsy' and patientId like '%CPCT%';
 
-select * from clinicalFindings where message='Could not find a biopsy match for a given treatment and having a start date!' and patientId like '%CPCT%';
-
-# Can curate all treatments?
-select * from clinicalFindings where
-message = 'failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level = "TreatmentCuration" and patientId like '%CPCT%';
-
-# Are all treatments sequentially in time?
 select * from clinicalFindings where message ='subsequent treatment starts before the end of previous treatment' and patientId like '%CPCT%';
-
-# Do we know whether radiotherapy was given for every treatment?
-select * from clinicalFindings where message ='radio therapy given field empty' and patientId like '%CPCT%';
 
 # Does the final treatment end before death date?
 select * from clinicalFindings where message ='death date before end of last treatment' and patientId like '%CPCT%';
 
-# Has every treatment at least 1 treatment response form?
+# Does every treatment >16 weeks have at least 1 treatment response form?
 select distinct patientId from clinicalFindings where message ='No treatment response for at least 1 matched treatment' and patientId like '%CPCT%';
 
-# Every treatment has at least 1 valid response?
+# Every response is valid and can be matched to a treatment?
 select distinct patientId from clinicalFindings where message ='measurement done field empty' and patientId like '%CPCT%';
 
 select distinct patientId from clinicalFindings where
@@ -111,7 +99,6 @@ select distinct patientId from clinicalFindings where message ='measurement done
 
 select distinct patientId from clinicalFindings where message ='measurement done is no, but assessment date or response date is filled in' and patientId like '%CPCT%';
 
-# Every response is valid and can be matched to a treatment?
 select distinct patientId from clinicalFindings where message ='treatments are overlapping. Cannot match any response.' and patientId like '%CPCT%';
 
 select distinct patientId from clinicalFindings where message ='response after new baseline and before next treatment' and patientId like '%CPCT%';
