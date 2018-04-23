@@ -2,11 +2,11 @@
 select patientId, count(sampleId) as countSamples from clinical where sampleId like '%CPCT%' group by patientId ;
 
 # Registration date of patient
-select distinct patientId, registrationDate from clinical where patientId like '%CPCT%' group by sampleId;
+select distinct patientId, registrationDate, informedConsentDate from clinical where patientId like '%CPCT%' group by sampleId;
 
 # Timeline starts with informed consent?
 select * from clinicalFindings where
-message ='at least 1 biopsy taken before informed consent date' and patientId like '%CPCT%' and formLocked = 'true';
+message ='At least 1 biopsy taken before informed consent date' and patientId like '%CPCT%' and formLocked = 'true';
 
 select * from clinicalFindings where message ='informed consent date empty or in wrong format' and patientId like '%CPCT%'  and formLocked = 'true';
 
