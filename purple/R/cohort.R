@@ -37,6 +37,37 @@ cohort <-function(cohortRawData) {
   return (cohort)
 }
 
+cohort_mutational_load <- function(somatics) {
+  result = somatics %>%
+    filter(worstCodingEffect == "MISSENSE") %>%
+    group_by(sampleId) %>%
+    summarise(mutationalLoad = n())
+
+  return (result)
+}
+
+cohort_somatics_by_type <- function(somatics) {
+  result = somatics %>%
+    filter(filter == 'PASS') %>%
+    group_by(sampleId, type) %>%
+    summarise(count = n()) %>%
+    spread(type, count)
+
+  return (result)
+}
+
+cohort_msi <- function(somatics) {
+  result = somatics %>%
+    filter(filter == 'PASS', type == 'INDEL', nchar(alt) <= 50, nchar(ref) <= 50, repeatCount >= 5) %>%
+    filter(nchar(repeatSequence) %in% c(2:4) | (nchar(repeatSequence) == 1 & repeatCount >= 5 )) %>%
+    group_by(sampleId) %>%
+    summarise(msiScore = n() / 3095) %>%
+    mutate(mscStatus = ifelse(msiScore > 0.909, "MSI","MSS"))
+
+  return (result)
+}
+
+
 
 cohort_raw_data<-function(dbConnect, limit = 0) {
   # Query Cohort Data

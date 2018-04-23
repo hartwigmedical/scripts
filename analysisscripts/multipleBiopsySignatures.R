@@ -3,51 +3,33 @@ library(purple);
 library(RMySQL)
 library(data.table)
 library(IRanges)
-#library(devtools)
-library("NMF")
 library(grid)
-library(gridExtra)
 library(MutationalPatterns)
 library(ggplot2)
+library(dplyr)
 
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 
 ## Get cohort
-cohort = purple::query_purity(dbProd)
-patientIdLookups = purple::query_patient_id_lookup(dbProd)
-patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
-cohort$patientId <- patientIds$V1
-multipleBiopsyCohort = purple::multiple_biopsy(cohort)
-multipleBiopsyPatientsId = unique(multipleBiopsyCohort$patientId)
-rm(patientIdLookups)
-rm(patientIds)
-save(cohort, multipleBiopsyCohort, multipleBiopsyPatientsId, file="~/hmf/RData/multipleBiopsyCohort.RData")
+multipleBiopsyCohort = purple::query_multiple_biopsy_cohort(dbProd)
 
-## Get somatic variants
+##### USE FOLLOWING LINE TO FILTER A PARTICULAR PATIENT ID
+#multipleBiopsyCohort = multipleBiopsyCohort %>% filter(patientId == "CPCT02020438")
+
+## Get somatic and structural variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsySomaticVariants, file="~/hmf/RData/multipleBiopsySomaticVariants.RData")
-
-## Get structural variants
 multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, multipleBiopsyCohort)
-save(multipleBiopsyStructuralVariants, file="~/hmf/RData/multipleBiopsyStructuralVariants.RData")
 
 ### Clean up
 dbDisconnect(dbProd)
 rm(dbProd)
-
-#### LOAD DATA
-load(file="~/hmf/multipleBiopysyCohort.RData")
-load(file="~/hmf/multipleBiopsySomaticVariants.RData")
-load(file="~/hmf/multipleBiopsyStructuralVariants.RData")
 
 ### Mutational Signatures
 multipleBiopsyMutationalSignature = list()
 multipleBiopsyIndelSignature = list()
 multipleBiopsySVSignature = list()
 
-#patientId = multipleBiopsyPatientsId[71]
-patientId = "CPCT02100067"
-
+multipleBiopsyPatientsId = unique(multipleBiopsyCohort$patientId)
 for (patientId in multipleBiopsyPatientsId) {
   cat("Processing", patientId, "\n")
   
@@ -66,7 +48,6 @@ for (patientId in multipleBiopsyPatientsId) {
   multipleBiopsyIndelSignature[[patientId]] <- patientIndelSignature
   multipleBiopsySVSignature[[patientId]] <- patientSVSignature  
 
-
   # Plots
   somaticPloidyPlots = somatic_ploidy_plots(patientSomaticVariants)
   structuralPloidyPlots = structural_ploidy_plots(patientStructuralVariants)
@@ -82,5 +63,14 @@ for (patientId in multipleBiopsyPatientsId) {
   dev.off()
 }
 
-save(multipleBiopsyMutationalSignature, multipleBiopsyIndelSignature, multipleBiopsySVSignature, file="~/hmf/multipleBiopsySignatures.RData")
+#save(multipleBiopsyCohort, file="~/hmf/RData/multipleBiopsyCohort.RData")
+#save(multipleBiopsyStructuralVariants, file="~/hmf/RData/multipleBiopsyStructuralVariants.RData")
+#save(multipleBiopsySomaticVariants, file="~/hmf/RData/multipleBiopsySomaticVariants.RData")
+#save(multipleBiopsyMutationalSignature, multipleBiopsyIndelSignature, multipleBiopsySVSignature, file="~/hmf/multipleBiopsySignatures.RData")
+
+
+#### LOAD INPUTS
+#load(file="~/hmf/multipleBiopysyCohort.RData")
+#load(file="~/hmf/multipleBiopsySomaticVariants.RData")
+#load(file="~/hmf/multipleBiopsyStructuralVariants.RData")
 

@@ -2,7 +2,8 @@ DROP VIEW IF EXISTS clinical;
 
 CREATE VIEW clinical AS
 
-	SELECT sample.sampleId, sample.arrivalDate as sampleArrivalDate, patient.patientIdentifier AS patientId, baseline.informedConsentDate, baseline.hospital, baseline.gender,
+	SELECT sample.sampleId, sample.arrivalDate as sampleArrivalDate, patient.patientIdentifier AS patientId,
+	baseline.registrationDate, baseline.informedConsentDate, baseline.hospital, baseline.gender,
     baseline.birthYear, baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment, baseline.preTreatments, baseline.preTreatmentsType, biopsy.biopsyDate,
 	treatment.startDate AS treatmentStartDate, treatment.endDate AS treatmentEndDate, firstMatchedTreatmentResponse.responseDate, baseline.deathDate,
 	baseline.primaryTumorLocation, baseline.cancerSubtype, biopsy.biopsyType, biopsy.biopsySite, biopsy.biopsyLocation,
