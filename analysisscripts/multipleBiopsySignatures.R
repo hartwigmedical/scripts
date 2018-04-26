@@ -54,7 +54,7 @@ for (patientId in multipleBiopsyPatientsId) {
   p8 <- plot_sv_signature(patientSVSignature)
   p9 <- plot_cosmic_signature(patientMutationalSignature)
 
-  pdf(file=paste("~/hmf/analysis/multipleBiopsy/",patientId, "MultipleBiopsies.pdf", sep = ""), height = 14, width = 20)    
+    pdf(file = paste(patientId, "MultipleBiopsies.pdf", sep = ""), height = 14, width = 20)
   multiplot(somaticPloidyPlots[[1]], somaticPloidyPlots[[2]], somaticPloidyPlots[[3]],
             structuralPloidyPlots[[1]], structuralPloidyPlots[[2]], structuralPloidyPlots[[3]], 
             p7, p8, p9,
