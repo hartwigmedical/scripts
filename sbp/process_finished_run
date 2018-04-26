@@ -20,7 +20,7 @@ do_strelka_pipeline ${processed_path}/${set}
 
 # KODU: Purple script also triggers reruns of BPI, amber and cobalt
 echo "[INFO] Rerunning algorithms on ${set}"
-do_run_purple_prod_no_db ${processed_path}/${set}
+do_run_purple_no_db ${processed_path}/${set}
 
 echo "[INFO] Loading purple into database for ${set}"
 do_load_purple_data_prod ${processed_path}/${set}
