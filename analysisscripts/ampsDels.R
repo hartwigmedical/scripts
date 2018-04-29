@@ -19,7 +19,6 @@ geneCopyNumberAmplifications$cancerType <- sapply(geneCopyNumberAmplifications$s
 #save(genes, geneCopyNumberDeletes, file = "~/hmf/RData/geneCopyNumberDeletes.RData")
 #save(genes, geneCopyNumberAmplifications, file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 
-
 ####### LOAD DATA FROM FILE #######
 load(file = "~/hmf/RData/geneCopyNumberDeletes.RData")
 load(file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
@@ -27,7 +26,6 @@ load(file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 ####### EXECUTE ALGORITHM #######
 geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
 geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
-
 
 library(doParallel)
 no_cores <- 7
