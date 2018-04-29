@@ -3,30 +3,30 @@ detach("package:purple", unload=TRUE)
 library(purple)
 library(dplyr)
 
+
 ####### LOAD DATA FROM DATABASE #######
-prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-cohort = purple::query_highest_purity_cohort(prodDB)
-genes = purple::query_canonical_transcript(prodDB) %>% select(gene, chromosome, start = geneStart, end = geneEnd)
-geneCopyNumberDeletes = purple::query_gene_copy_number_deletes(prodDB, cohort)
-geneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(prodDB, cohort)
-dbDisconnect(prodDB)
-rm(prodDB)
+dbPaper = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
+highestPurityCohort = purple::query_highest_purity_cohort(dbPaper)
+genes = purple::query_canonical_transcript(dbPaper) %>% select(gene, chromosome, start = geneStart, end = geneEnd)
+geneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbPaper, highestPurityCohort)
+geneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbPaper, highestPurityCohort)
+dbDisconnect(dbPaper)
+rm(dbPaper)
 
-geneCopyNumberDeletes$cancerType <- sapply(geneCopyNumberDeletes$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("primaryTumorLocation")] })
-geneCopyNumberAmplifications$cancerType <- sapply(geneCopyNumberAmplifications$sampleId, function(x) {cohort[match(x, cohort$sampleId), c("primaryTumorLocation")] })
+geneCopyNumberDeletes$cancerType <- sapply(geneCopyNumberDeletes$sampleId, function(x) {highestPurityCohort[match(x, highestPurityCohort$sampleId), c("primaryTumorLocation")] })
+geneCopyNumberAmplifications$cancerType <- sapply(geneCopyNumberAmplifications$sampleId, function(x) {highestPurityCohort[match(x, highestPurityCohort$sampleId), c("primaryTumorLocation")] })
 
-save(cohort, genes, geneCopyNumberDeletes, file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
-save(cohort, genes, geneCopyNumberAmplifications, file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
+#save(genes, geneCopyNumberDeletes, file = "~/hmf/RData/geneCopyNumberDeletes.RData")
+#save(genes, geneCopyNumberAmplifications, file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 
 
 ####### LOAD DATA FROM FILE #######
-load(file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
-load(file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
-
+load(file = "~/hmf/RData/geneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 
 ####### EXECUTE ALGORITHM #######
-geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions > 0, germlineHomRegions > 0)
-geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% filter(germlineHetRegions > 0, germlineHomRegions > 0)
+geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
+geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
 
 
 library(doParallel)

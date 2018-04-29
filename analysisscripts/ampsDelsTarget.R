@@ -99,7 +99,7 @@ rm(canonicalTranscriptsOverlaps)
 rm(delCandidatesRange)
 
 #### AMPLIFICAIONS
-load(file = "~/hmf/RData/geneCopyNumberAmplificationSummaryArm.RData")
+load(file = "~/hmf/RData/geneCopyNumberAmplificationSummary.RData")
 amps = geneCopyNumberAmplificationSummary %>% 
   group_by(gene) %>%
   filter(score > 20) %>%
@@ -138,6 +138,23 @@ rm(amps)
 rm(ampCandidates)
 rm(ampCandidatesRange)
 rm(geneCopyNumberAmplificationSummary)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ####### COMBINE WITH TRAVIS AND PCAWG - DELETES
