@@ -10,6 +10,11 @@ collapseCandidates <- function(x) {
   return (paste(x, collapse = ","))
 }
 
+firstCandidate <- function(candidates) {
+  candidateVector = unlist(strsplit(candidates, split = ","))
+  return (candidateVector[1])
+}
+
 longestCandidate <- function(candidates, canonicalTranscripts) {
   candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F)
   candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>%
@@ -51,7 +56,7 @@ canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(ca
 canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$range, canonicalTranscripts$range, type="within")) %>% filter(queryHits != subjectHits)
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
-#### ADD FRAGILE SITES TO GENE PANEL
+#### Load Amps and Dels Gene Panel
 load("~/hmf/RData/ampsDelsGenePanel.RData")
 
 #### DELETIONS
@@ -73,7 +78,6 @@ dels = dels %>%
   group_by(gene) %>%
   mutate(longest = longestCandidate(remainders, canonicalTranscripts ))
 
-
 dels$method <- "panel"
 dels$target <- dels$hmf
 dels$target <- ifelse(is.na(dels$target), dels$martincorena, dels$target)
@@ -88,6 +92,8 @@ dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$gene, dels$target)
 dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
 
+delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
+dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
 
 geneCopyNumberDeleteTargets = dels
 save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/geneCopyNumberDeleteTargets.RData")
@@ -130,6 +136,8 @@ amps$target <- ifelse(is.na(amps$target), amps$longest, amps$target)
 amps$method <- ifelse(is.na(amps$target), "highest", amps$method)
 amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
 amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
+
+ampsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
 
 geneCopyNumberAmplificationTargets = amps
 save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
