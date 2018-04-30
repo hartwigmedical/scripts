@@ -1,18 +1,19 @@
 #!/bin/bash
+source load_metadata
+
 run_dir=$1 && shift
 bpi_jar=$1 && shift
 bpi_output=$1 && shift
-metadata=$run_dir/metadata
+metadata=${run_dir}/metadata
 
 if [[ ! -f ${metadata} ]] ; then
     echo "Missing metadata file in run directory. Aborting" 1>&2
     exit 1
 fi
 
-source load_metadata
-ref_sample=$(load_ref_sample_from_metadata $run_dir)
-tumor_sample=$(load_tumor_sample_from_metadata $run_dir)
-joint_name=$(load_joint_name_from_metadata $run_dir)
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
 
 base_path="/data/common"
 if [ -z "`hostname | grep datastore`" ]; then
