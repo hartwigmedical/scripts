@@ -1,4 +1,3 @@
-detach("package:purple", unload=TRUE); 
 library(purple);
 library(RMySQL)
 library(data.table)
@@ -8,13 +7,14 @@ library(MutationalPatterns)
 library(ggplot2)
 library(dplyr)
 
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+ID = commandArgs(trailingOnly = TRUE)
+dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, groups = "RAnalysis")
 
 ## Get cohort
 multipleBiopsyCohort = purple::query_multiple_biopsy_cohort(dbProd)
 
 ##### USE FOLLOWING LINE TO FILTER A PARTICULAR PATIENT ID
-#multipleBiopsyCohort = multipleBiopsyCohort %>% filter(patientId == "CPCT02020438")
+multipleBiopsyCohort = multipleBiopsyCohort %>% filter(patientId == ID)
 
 ## Get somatic and structural variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
@@ -22,7 +22,6 @@ multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, mul
 
 ### Clean up
 dbDisconnect(dbProd)
-rm(dbProd)
 
 ### Mutational Signatures
 multipleBiopsyMutationalSignature = list()
@@ -55,7 +54,7 @@ for (patientId in multipleBiopsyPatientsId) {
   p8 <- plot_sv_signature(patientSVSignature)
   p9 <- plot_cosmic_signature(patientMutationalSignature)
 
-  pdf(file=paste("~/hmf/analysis/multipleBiopsy/",patientId, "MultipleBiopsies.pdf", sep = ""), height = 14, width = 20)    
+    pdf(file = paste(patientId, "MultipleBiopsies.pdf", sep = "_"), height = 14, width = 20)
   multiplot(somaticPloidyPlots[[1]], somaticPloidyPlots[[2]], somaticPloidyPlots[[3]],
             structuralPloidyPlots[[1]], structuralPloidyPlots[[2]], structuralPloidyPlots[[3]], 
             p7, p8, p9,

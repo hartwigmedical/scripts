@@ -55,7 +55,7 @@ aggregate_gene_copy_numbers<-function(geneCopyNumbers) {
     mutate(telomereSupported = minRegionStartSupport == "TELOMERE" | minRegionEndSupport == "TELOMERE") %>%
     mutate(centromereSupported = minRegionStartSupport == "CENTROMERE" | minRegionEndSupport == "CENTROMERE") %>%
     group_by(gene, chromosome, start, end, chromosomeBand) %>%
-    summarise(score=sum(score), sd = sd(minCopyNumber), N = n(), unsupported = sum(unsupported), telomereSupported = sum(telomereSupported), centromereSupported = sum(centromereSupported)) %>%
+    summarise(score=sum(score), sd = sd(minCopyNumber), N = n(), somaticRegions = sum(somaticRegions), unsupported = sum(unsupported), telomereSupported = sum(telomereSupported), centromereSupported = sum(centromereSupported)) %>%
     arrange(start)
 }
 

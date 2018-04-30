@@ -37,6 +37,16 @@ cohort <-function(cohortRawData) {
   return (cohort)
 }
 
+cohort_somatic_summary <- function(somatics) {
+
+  result = cohort_somatics_by_type(somatics) %>%
+    left_join(cohort_mutational_load(somatics), by = "sampleId") %>%
+    left_join(cohort_msi(somatics), by = "sampleId")
+
+  return (result)
+
+}
+
 cohort_mutational_load <- function(somatics) {
   result = somatics %>%
     filter(worstCodingEffect == "MISSENSE") %>%
@@ -62,7 +72,7 @@ cohort_msi <- function(somatics) {
     filter(nchar(repeatSequence) %in% c(2:4) | (nchar(repeatSequence) == 1 & repeatCount >= 5 )) %>%
     group_by(sampleId) %>%
     summarise(msiScore = n() / 3095) %>%
-    mutate(mscStatus = ifelse(msiScore > 0.909, "MSI","MSS"))
+    mutate(msiStatus = ifelse(msiScore > 0.909, "MSI","MSS"))
 
   return (result)
 }

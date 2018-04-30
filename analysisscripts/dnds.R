@@ -11,6 +11,17 @@ library(dplyr)
 detach("package:dndscv", unload=TRUE); 
 library(dndscv)
 
+create_data_frame <- function(cvList) {
+  result = data.frame(stringsAsFactors = F)
+  for (cancerType in names(cvList)) {
+    df = cvList[[cancerType]]
+    df$cancerType <- cancerType
+    result = rbind(result, df)  
+  }
+  return (result)
+}
+
+
 createNullHypothesisFromSelCV <-function(sel_cv, RefCDS) {
   NullHypothesis = sel_cv[, c("gene_name", "wmis_cv","wnon_cv","wspl_cv","wind_cv")]
   
@@ -37,63 +48,18 @@ loadPcawgNullHypothesis<-function(file, RefCDS) {
   return (NullHypothesis)
 }
 
+load(file = "~/hmf/RData/highestPurityCohort.RData")
+load(file = "~/hmf/RData/highestPurityExonicSomatics.RData")
 
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-cat("Querying purple")
-rawCohort = purple::query_purity(dbProd)
-cohort = rawCohort
 
-# PatientIds
-cat("Mapping samples to patients")
-patientIdLookups = query_patient_id_lookup(dbProd)
-patientIds = purple::apply_to_cohort(cohort, function(x) {purple::sample_to_patient_id(x$sampleId, patientIdLookups)})
-cohort$patientId <- patientIds$V1
 
-#Clinical Data
-cat("Querying clinical data")
-clinicalData = purple::query_clinical_data(dbProd)
-cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
-
-# Cohort
-highestPurityCohort = purple::highest_purity_patients(cohort)
-save(highestPurityCohort, file="~/hmf/RData/highestPurityCohort.RData")
-rm(cohort)
-rm(rawCohort)
-
-# Somatics 
-#cat("Querying somatics")
-#rawSomatics = purple::query_somatic_variants(dbProd, cohort, filterEmptyGenes = TRUE)
-#save(rawSomatics, file="/Users/jon/hmf/RData/dnds/dndsSomatics.RData")
-#somatics = rawSomatics[rawSomatics$type == "INDEL" | rawSomatics$type == "SNP", c("sampleId", "chromosome", "position", "ref", "alt")]
-#colnames(somatics) <- c("sampleId", "chr", "pos", "ref", "alt")
-
-load("~/hmf/RData/highestPurityCohort.RData")
-load("~/hmf/RData/allHighestPuritySomaticsProd.RData")
-somatics = highestPuritySomaticsProd %>% 
+somatics = highestPurityExonicSomatics %>% 
   filter(type == "INDEL" | type == "SNP") %>%
   select(sampleId, chr = chromosome, pos = position, ref = ref, alt = alt)
-#somatics = highestPuritySomaticsProd[highestPuritySomaticsProd$type == "INDEL" | highestPuritySomaticsProd$type == "SNP", c("sampleId", "chromosome", "position", "ref", "alt")]
-rm(highestPuritySomaticsProd)
 colnames(somatics) <- c("sampleId", "chr", "pos", "ref", "alt")
 
-# Takes AGES to annotate with cancer type... don't bother!
-#somatics$cancerType <- "UNKNOWN"
-#for (sampleId in unique(somatics$sampleId)) {
-#  matchedCancerType = cohort[match(sampleId, cohort$sampleId), c("cancerType")]
-#  cat("SampleId:", sampleId, ", cancerType:", matchedCancerType, "\n")
-#  somatics[somatics$sampleId == sampleId, ]$cancerType <- matchedCancerType
-#}
-
-# Clean up DB Connection
-dbDisconnect(dbProd)
-rm(dbProd)
-rm(patientIdLookups)
-rm(patientIds)
-rm(clinicalData)
-
-cancerTypes = unique(highestPurityCohort$cancerType)
+cancerTypes = unique(highestPurityCohort$primaryTumorLocation)
 cancerTypes = cancerTypes[!is.na(cancerTypes)]
-cancerTypes = cancerTypes[cancerTypes != "Unknown primary"]
 cancerTypes
 
 data("cancergenes_cgc81", package="dndscv")
@@ -106,15 +72,15 @@ cv = covs[oldgenes,]
 rownames(cv) = newgenes
 kc = newgenes[oldgenes %in% known_cancergenes]
 
-RefCDSNames = sapply(RefCDS, function (x) {x$gene_name})
-RefCDSInd = setNames(1:length(RefCDSNames), RefCDSNames)
-sum(RefCDS[[RefCDSInd["KRAS"]]]$L[1:192,3])
+#RefCDSNames = sapply(RefCDS, function (x) {x$gene_name})
+#RefCDSInd = setNames(1:length(RefCDSNames), RefCDSNames)
+#sum(RefCDS[[RefCDSInd["KRAS"]]]$L[1:192,3])
 
 HmfRefCDSGlobalList = list()
 HmfRefCDSCvList = list()
-for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+for (cancerType in cancerTypes) {
   cat("Processing", cancerType)
-  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$primaryTumorLocation) & highestPurityCohort$primaryTumorLocation == cancerType, c("sampleId")]
   input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
   output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
   
@@ -123,8 +89,6 @@ for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
   #save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList")
 }
 
-
-
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
 names(output)
 globaldnds = output$globaldnds
@@ -132,19 +96,18 @@ globaldnds = output$globaldnds
 HmfRefCDSGlobalList[["All"]] <- output$globaldnds
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
 
-#save(HmfRefCDSCvList, file="~/hmf/RData/HmfRefCDSCvList.Rdat")
-save(HmfRefCDSGlobalList, file="~/hmf/RData/HmfRefCDSGlobalList.RData")
-
-#Combine together into one big happy data frame
-HmfRefCDSCv = HmfRefCDSCvList[["All"]]
-HmfRefCDSCv$cancerType <- "All"
-for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
-  df = HmfRefCDSCvList[[cancerType]]
-  df$cancerType <- cancerType
-  HmfRefCDSCv = rbind(HmfRefCDSCv, df)
-}
-
+HmfRefCDSCv = create_data_frame(HmfRefCDSCvList)
 save(HmfRefCDSCv, file="~/hmf/RData/HmfRefCDSCv.RData")
+
+
+
+
+
+
+
+
+
+
 
 # Create HmfAllNullHypothesis
 NullHypothesisAll = createNullHypothesisFromSelCV(HmfRefCDSCvList[["All"]], RefCDS)
@@ -207,9 +170,9 @@ save(PcawgRefCDSCv, file = "~/hmf/RData/PcawgRefCDSCv.RData")
 #################### dNdS EXCLUDING Cancer Types #########################
 
 HmfRefCDSCvExcludingCancerTypeList = list()
-for (cancerType in cancerTypes[!is.na(cancerTypes)]) {
+for (cancerType in cancerTypes) {
   cat("Processing", cancerType)
-  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType != cancerType, c("sampleId")]
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$primaryTumorLocation) & highestPurityCohort$primaryTumorLocation != cancerType, c("sampleId")]
   input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
   output = jondndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
   

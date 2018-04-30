@@ -1,0 +1,119 @@
+<<include etc/colors_fonts_patterns.conf>>
+<<include ideogram.conf>>
+<<include ticks.conf>>
+
+<image>
+	<<include etc/image.conf>>
+</image>
+
+karyotype = data/karyotype/karyotype.human.txt
+
+chromosomes_units           = 1000000
+chromosomes_display_default = yes
+chromosomes                 = -EXCLUDE
+
+<highlights>
+
+	<highlight>
+		file       = gaps.txt
+		ideogram   = yes
+		fill_color = black_a3
+		z = 5
+	</highlight>
+
+</highlights>
+
+# Default is to clip the data to range min/max.
+<plots>
+
+	# -----------------------------------------------------------
+	# Amp 3+
+	<plot>
+
+		type = histogram
+		file = CANCER.amp2.circos
+		r0   = 0.675r
+		r1   = 0.975r
+		min  = 0
+		max  = 0.5
+		color = vdgreen
+		fill_color = vdgreen
+		glyph = circle
+
+		<axes>
+			<axis>
+				color     = lgreen
+				thickness = 1
+				spacing   = 0.20r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlgreen_a5
+			</background>
+		</backgrounds>
+	</plot>
+
+	# -----------------------------------------------------------
+	# Amp 2+
+	<plot>
+		type = histogram
+		file = CANCER.amp3.circos
+		r0   = 0.675r
+		r1   = 0.975r
+		min  = 0
+		max  = 0.5
+		color = orange
+		fill_color = orange
+		glyph = circle
+	</plot>
+
+	# -----------------------------------------------------------
+	# LOH
+	<plot>
+
+		type = histogram
+		file = CANCER.loh.circos
+		r0   = 0.250r
+		r1   = 0.650r
+		min  = 0
+		max  = 1
+		color = purple
+		fill_color = purple
+		glyph = circle
+
+		<axes>
+			<axis>
+				color     = lpurple
+				thickness = 1
+				spacing   = 0.1r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlpurple_a5
+			</background>
+		</backgrounds>
+	</plot>
+
+	# -----------------------------------------------------------
+	# Dels
+	<plot>
+
+		type = histogram
+		file = CANCER.del.circos
+		r0   = 0.250r
+		r1   = 0.650r
+		min  = 0
+		max  = 1
+		color = red
+		fill_color = red
+		glyph = circle
+	</plot>
+
+</plots>
+
+
+<<include etc/housekeeping.conf>>

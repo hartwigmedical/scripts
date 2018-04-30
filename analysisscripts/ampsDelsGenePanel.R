@@ -20,19 +20,20 @@ civic = read.table(file = "~/hmf/resources/civic_variants.tsv", stringsAsFactors
   filter(alteration %in% c("amplification", "deletion")) %>%
   distinct(gene, alteration)
 
-knownAmpsDels = rbind(rbind(cgi, onco), civic) %>% 
+manual = data.frame(gene = "ZNF703", alteration = "amplification")
+
+knownAmpsDels = bind_rows(cgi, onco) %>%
+  bind_rows(civic) %>%
+  bind_rows(manual) %>%
   select(gene_name = gene, alteration)  %>%
   distinct(gene_name = gene, alteration) %>% 
   mutate(value = T) %>% spread(alteration, value) 
 
-knownAmpsDels[is.na(knownAmpsDels)] <- F
-rm(cgi, onco, civic)
-
 load("~/hmf/RData/fragileGenes.RData")
 load("~/hmf/RData/genePanel.RData")
+
 genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene_name", all=T)
-rm(fragileGenes)
-
 
 save(genePanel, file = "~/hmf/RData/ampsDelsGenePanel.RData")
+rm(fragileGenes, cgi, onco, civic, manual, knownAmpsDels)
