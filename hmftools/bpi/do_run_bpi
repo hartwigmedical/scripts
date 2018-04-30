@@ -1,8 +1,18 @@
 #!/bin/bash
-
 run_dir=$1 && shift
 bpi_jar=$1 && shift
 bpi_output=$1 && shift
+metadata=$run_dir/metadata
+
+if [[ ! -f ${metadata} ]] ; then
+    echo "Missing metadata file in run directory. Aborting" 1>&2
+    exit 1
+fi
+
+source load_metadata
+ref_sample=$(load_ref_sample_from_metadata $run_dir)
+tumor_sample=$(load_tumor_sample_from_metadata $run_dir)
+joint_name=$(load_joint_name_from_metadata $run_dir)
 
 base_path="/data/common"
 if [ -z "`hostname | grep datastore`" ]; then
@@ -21,18 +31,18 @@ then
 	exit 1
 fi
 
-tumor_bam=$(find ${run_dir}/structuralVariants/bpi/*/ -regex ".*T\(I\)*_sliced\.bam")
-if [ $? -ne 0 ]
+tumor_bam=${run_dir}/structuralVariants/bpi/${joint_name}/${tumor_sample}_sliced.bam
+if [ ! -f ${tumor_bam} ]
 then
-    echo "Unable to locate tumor bam. Exiting."
+    echo "Unable to locate tumor bam (${tumor_bam}). Exiting."
     exit 1
 fi
 ${samtools} index ${tumor_bam}
 
-ref_bam=$(ls ${run_dir}/structuralVariants/bpi/*/*R_sliced.bam)
-if [ $? -ne 0 ]
+ref_bam=${run_dir}/structuralVariants/bpi/${joint_name}/${ref_sample}_sliced.bam
+if [ ! -f ${ref_bam} ]
 then
-    echo "Unable to locate ref bam. Exiting."
+    echo "Unable to locate ref bam (${ref_bam}). Exiting."
     exit 1
 fi
 ${samtools} index ${ref_bam}
@@ -44,7 +54,7 @@ then
     exit 1
 fi
 
-joint_name=$(basename $(dirname ${output_tsv} ) )
+#joint_name=$(basename $(dirname ${output_tsv} ) )
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
 
 if grep -q bpiVersion=1.5 ${output_vcf}; then
