@@ -9,9 +9,9 @@ library(RMySQL)
 
 ####### Variant Annotation
 nearHotspot <-function(mutations, distance = 10) { 
-  hotspots = mutations %>% filter(hotspot > 0) %>% select(chr, pos) %>% distinct
-  hrange <- GRanges(hotspots$chr, IRanges(hotspots$pos, hotspots$pos + distance))
-  mrange <- GRanges(mutations$chr, IRanges(mutations$pos, mutations$pos + distance))
+  hotspots = mutations %>% filter(hotspot > 0) %>% select(chromosome, position) %>% distinct
+  hrange <- GRanges(hotspots$chromosome, IRanges(hotspots$position, hotspots$position + distance))
+  mrange <- GRanges(mutations$chromosome, IRanges(mutations$position, mutations$position + distance))
   
   ol = as.matrix(findOverlaps(hrange, mrange, type="any", select="all"))
   mutations$nearHotspot <- FALSE
@@ -73,125 +73,108 @@ oncoGeneStatusPrimaryPosition <- function(pos, hotspot, nearHotspot, biallelic, 
   return (NA)
 }
 
-#load(file = "~/hmf/RData/allHighestPuritySomaticsProd.RData")
-#head(minorAllelePloidy)
-#minorAllelePloidy = highestPuritySomaticsProd %>% select(sampleId, chromosome, position, ref, alt, minorAllelePloidy)
-#mutations = left_join(mutations, minorAllelePloidy, by = c("sampleID" = "sampleId", "chr" = "chromosome", "pos" = "position", "ref", "mut" = "alt"))
-#save(mutations, file="~/hmf/RData/mutations.RData")
+tsg_mutations <- function(mutations) {
+  result = mutations %>%
+    #filter(gene %in% c("MET", "NRAS","CDKN2A", "KRAS")) %>%
+    filter(impact != "Synonymous") %>% 
+    group_by(sampleId, gene) %>% 
+    mutate(
+      n = n(), 
+      impact = factor(impact, levels = c("MNV", "Frameshift", "Nonsense", "Splice", "Missense", "Inframe")),
+      geneStatus = factor(tsGeneStatus(hotspot, biallelic, n),levels = c("Biallelic", "MultiHit", "SingleHit")),
+      geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(position, geneStatus, hotspot, impact),
+      redundant = tsGeneStatusRedundant(position, geneStatusPrimaryPositions)) %>%
+    select(-geneStatusPrimaryPositions) %>% 
+    ungroup() %>%
+    mutate(
+      impact = as.character(impact), 
+      geneStatus = as.character(geneStatus))
+  
+  return (result)
+}
 
+onco_mutations <- function(mutations) {
+  result = mutations %>% 
+    #oncoAnnotatedMutations = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
+    filter(impact %in% c("MNV", "Frameshift", "Missense", "Inframe")) %>% 
+    mutate(impact = factor(impact, levels = c("Inframe", "MNV", "Missense", "Frameshift"))) %>%
+    group_by(sampleId, gene) %>%
+    mutate(n = n(), geneStatus =oncoGeneStatus(hotspot, nearHotspot, n), redundant = position != oncoGeneStatusPrimaryPosition(position, hotspot, nearHotspot, biallelic, impact)) %>%
+    ungroup() %>%
+    mutate(
+      impact = as.character(impact), 
+      geneStatus = as.character(geneStatus))
+  
+  return (result)
+}
 
-load(file = "~/hmf/RData/allHotspots.RData")
-allHotspots$hotspot <- 1
-colnames(allHotspots) <- c("chr", "pos", "ref", "mut", "hotspot")
-
-load(file="~/hmf/RData/mutations.RData")
-mutations$pid <- NULL
-mutations$hotspot <- NULL
-mutations = dplyr::left_join(mutations, allHotspots, by = c("chr", "pos", "ref", "mut"))
-mutations$hotspot <- ifelse(is.na(mutations$hotspot), 0, 1)
-
-mutations = mutations[!is.na(mutations$impact), ]
-mutations[mutations$type == "MNP", c("impact")] <- "MNV"
-mutations[mutations$type == "INDEL" & abs(nchar(mutations$ref) - nchar(mutations$mut)) %% 3 == 0 , c("impact")] <- "Inframe"
-mutations[mutations$type == "INDEL" & abs(nchar(mutations$ref) - nchar(mutations$mut)) %% 3 != 0 , c("impact")] <- "Frameshift"
-mutations$impact <- ifelse(mutations$impact == "Stop_loss", "Nonsense", mutations$impact)
-mutations$nearHotspot <- nearHotspot(mutations)
-
-#View(tsgAnnotatedMutations %>% filter(sampleID == "CPCT02220030T", gene == "MET"))
+load(file = "~/hmf/RData/highestPurityExonicSomaticsFilteredImpact.RData")
+filteredMutations = highestPurityExonicSomaticsFilteredImpact
+filteredMutations$nearHotspot <- nearHotspot(filteredMutations)
 
 # Gene Panel
-load(file = "~/hmf/RData/GenePanel.RData")
+load(file = "~/hmf/RData/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
-mutations = mutations %>% filter(gene %in% genePanel$gene_name)
+filteredMutations = filteredMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
-#prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-#geneCopyNumbers = purple::query_gene_copy_number_by_gene(prodDB, genePanel)
-#save(geneCopyNumbers, file = '~/hmf/RData/geneCopyNumbersByGene.RData')
-#dbDisconnect(prodDB)
-#rm(prodDB)
-
-#load('~/hmf/RData/geneCopyNumbersByGene.RData')
-#geneCopyNumbers[, c(1:3)] <- NULL
-#minGeneCopyNumbers = geneCopyNumbers %>% 
-#  filter(germlineHomRegions == 0, germlineHetRegions == 0) %>%
-#  mutate(relativeMinCopyNumber = minCopyNumber/ploidy) %>%
-#  select(sampleID = sampleId, gene, minCopyNumber, relativeMinCopyNumber)
-
-#minGeneCopyNumbers %>% filter(sampleID == 'DRUP01020012T')
-#mutations = dplyr::left_join(mutations, minGeneCopyNumbers, by = c("sampleID", "gene"))
-#mutations$del <- ifelse(!is.na(mutations$minCopyNumber) & mutations$minCopyNumber < 0.5, T, F)
-#mutations$amp <-  ifelse(!is.na(mutations$relativeMinCopyNumber) & mutations$relativeMinCopyNumber >= 3, T, F)
-#mutations$potentiallyBiallelic <-ifelse(!is.na(mutations$minCopyNumber) & mutations$minorAllelePloidy >  mutations$minCopyNumber, T, F)
-
-tsgAnnotatedMutations = mutations %>%
-  #filter(gene %in% c("MET", "NRAS","CDKN2A", "KRAS")) %>%
-  filter(impact != "Synonymous") %>% 
-  group_by(sampleID, gene) %>% 
-  mutate(
-    n = n(), 
-    impact = factor(impact, levels = c("MNV", "Frameshift", "Nonsense", "Essential_Splice", "Missense", "Inframe")),
-    geneStatus = factor(tsGeneStatus(hotspot, biallelic, n),levels = c("Biallelic", "MultiHit", "SingleHit")),
-    geneStatusPrimaryPositions = tsGeneStatusPrimaryPositions(pos, geneStatus, hotspot, impact), 
-    redundant = tsGeneStatusRedundant(pos, geneStatusPrimaryPositions)) %>% 
-  select(-geneStatusPrimaryPositions) %>% 
-  ungroup() %>%
-  mutate(
-    impact = as.character(impact), 
-    geneStatus = as.character(geneStatus))
-
-oncoAnnotatedMutations = mutations %>% 
-#oncoAnnotatedMutations = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
-  filter(impact %in% c("MNV", "Frameshift", "Missense", "Inframe")) %>% 
-  mutate(impact = factor(impact, levels = c("Inframe", "MNV", "Missense", "Frameshift"))) %>%
-  group_by(sampleID, gene) %>% 
-  mutate(n = n(), geneStatus =oncoGeneStatus(hotspot, nearHotspot, n), redundant = pos != oncoGeneStatusPrimaryPosition(pos, hotspot, nearHotspot, biallelic, impact)) %>% 
-  ungroup() %>%
-  mutate(
-    impact = as.character(impact), 
-    geneStatus = as.character(geneStatus))
-
-save(tsgAnnotatedMutations, file = "~/hmf/RData/tsgAnnotatedMutations.RData")
-save(oncoAnnotatedMutations, file = "~/hmf/RData/oncoAnnotatedMutations.RData")
+filteredTsgMutations = tsg_mutations(filteredMutations)
+filteredOncoMutations = onco_mutations(filteredMutations)
 
 summarise_annotation <- function(annotatedMutations) {
+  annotatedMutations$impact <- ifelse(annotatedMutations$impact %in% c("Frameshift","Inframe"), "INDEL", annotatedMutations$impact)
   annotatedMutations$geneStatus <- ifelse(annotatedMutations$redundant, "Redundant", annotatedMutations$geneStatus)
   annotatedMutations$impact <- as.character(annotatedMutations$impact)
-  #annotatedMutations$impact <- ifelse(annotatedMutations$type == "INDEL", "INDEL", annotatedMutations$impact)
-  #annotatedMutations$impact <- ifelse(annotatedMutations$type == "MNV", "INDEL", annotatedMutations$impact)
   annotatedMutations = annotatedMutations %>% group_by(gene, impact, geneStatus) %>% summarise(n = n()) %>% spread(geneStatus, n)
   annotatedMutations[is.na(annotatedMutations)] <- 0
   return (annotatedMutations)
 }
 
-tsgAnnotatedMutationsByGene = summarise_annotation(tsgAnnotatedMutations)
-oncoAnnotatedMutationsByGene = summarise_annotation(oncoAnnotatedMutations)
-
-save(tsgAnnotatedMutationsByGene, file = "~/hmf/RData/tsgAnnotatedMutationsByGene.RData")
-save(oncoAnnotatedMutationsByGene, file = "~/hmf/RData/oncoAnnotatedMutationsByGene.RData")
+filteredTsgMutationsByGene = summarise_annotation(filteredTsgMutations)
+filteredOncoMutationsByGene = summarise_annotation(filteredOncoMutations)
 
 excessVariants = HmfRefCDSCv %>% 
   filter(cancerType == 'All') %>%
-  select(gene = gene_name, Missense = excess_mis, Nonsense = excess_non, Essential_Splice = excess_spl, INDEL = excess_ind) %>%
-  gather(impact, Excess, Missense, Nonsense, Essential_Splice, INDEL) %>%
+  select(gene = gene_name, Missense = excess_mis, Nonsense = excess_non, Splice = excess_spl, INDEL = excess_ind) %>%
+  gather(impact, Excess, Missense, Nonsense, Splice, INDEL) %>%
   mutate(Excess = round(Excess))
 
-excessTsgRates = left_join(tsgAnnotatedMutationsByGene, excessVariants, by = c("gene", "impact"))
+
+excessTsgRates = left_join(filteredTsgMutationsByGene, excessVariants, by = c("gene", "impact"))
 excessTsgRates$BiallelicDriverRate = pmax(0,pmin(1.0, (excessTsgRates$Excess) / excessTsgRates$Biallelic))
 excessTsgRates$MultiHitDriverRate = pmax(0,pmin(1.0, (excessTsgRates$Excess - excessTsgRates$Biallelic) / excessTsgRates$MultiHit))
 excessTsgRates$SingleHitDriverRate = pmax(0,pmin(1.0, (excessTsgRates$Excess - excessTsgRates$Biallelic - excessTsgRates$MultiHit) / (excessTsgRates$SingleHit)))
 excessTsgRates[is.na(excessTsgRates)] <- 0
+excessTsgInframeRates = excessTsgRates %>% ungroup() %>% filter(impact == "INDEL") %>% mutate(impact = "Inframe")
+excessTsgFrameshiftRates = excessTsgRates %>% ungroup() %>% filter(impact == "INDEL") %>% mutate(impact = "Frameshift")
+excessTsgRates = excessTsgRates %>% filter(impact != "INDEL") %>% bind_rows(excessTsgInframeRates) %>% bind_rows(excessTsgFrameshiftRates) %>% arrange(gene, impact) %>%
+  select(gene, impact, BiallelicDriverRate, MultiHitDriverRate, SingleHitDriverRate)
 
-excessOncoRates = left_join(oncoAnnotatedMutationsByGene, excessVariants, by = c("gene", "impact"))
+
+excessOncoRates = left_join(filteredOncoMutationsByGene, excessVariants, by = c("gene", "impact"))
 excessOncoRates$HotspotDriverRate = pmax(0,pmin(1.0, (excessOncoRates$Excess) / (excessOncoRates$Hotspot + excessOncoRates$NearHotspot)))
 excessOncoRates$HitDriverRate = pmax(0,pmin(1.0, (excessOncoRates$Excess - excessOncoRates$Hotspot - excessOncoRates$NearHotspot) / (excessOncoRates$Hit)))
 excessOncoRates[is.na(excessOncoRates)] <- 0
+excessOncoInframeRates = excessTsgRates %>% ungroup() %>% filter(impact == "INDEL") %>% mutate(impact = "Inframe")
+excessOncoFrameshiftRates = excessTsgRates %>% ungroup() %>% filter(impact == "INDEL") %>% mutate(impact = "Frameshift")
+excessOncoRates = excessOncoRates %>% filter(impact != "INDEL") %>% bind_rows(excessOncoInframeRates) %>% bind_rows(excessOncoFrameshiftRates) %>% arrange(gene, impact) %>%
+  select(gene, impact, HotspotDriverRate, HitDriverRate)
 
-save(excessTsgRates, excessOncoRates, file = "~/hmf/RData/ExcessRates.RData")
+save(excessTsgRates, excessOncoRates, file = "~/hmf/RData/excessRates.RData")
 
 
-load("~/hmf/RData/ExcessRates.RData")
-load(file = "~/hmf/RData/tsgAnnotatedMutations.RData")
-load(file = "~/hmf/RData/oncoAnnotatedMutations.RData")
+####### APPLY EXCESS RATES TO MUTATIONS
+load("~/hmf/RData/excessRates.RData")
+load(file = "~/hmf/RData/highestPurityExonicSomaticsImpact.RData")
+mutations = highestPurityExonicSomaticsImpact
+mutations$nearHotspot <- nearHotspot(mutations)
+
+# Gene Panel
+load(file = "~/hmf/RData/genePanel.RData")
+genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
+mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
+
+tsgAnnotatedMutations = tsg_mutations(mutations)
+oncoAnnotatedMutations = onco_mutations(mutations)
 load(file = "~/hmf/RData/driverGenes.RData")
 
 tsgAnnotatedMutations$geneStatus <- ifelse(tsgAnnotatedMutations$redundant, "Redundant", tsgAnnotatedMutations$geneStatus)
@@ -201,7 +184,6 @@ tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "Singl
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "MultiHit", tsgAnnotatedMutations$MultiHitDriverRate, tsgAnnotatedMutations$driver )
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "Biallelic", 1, tsgAnnotatedMutations$driver)
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$hotspot > 0, 1, tsgAnnotatedMutations$driver)
-
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$redundant, 0, tsgAnnotatedMutations$driver)
 
 tsgDrivers = tsgAnnotatedMutations %>% filter(gene %in% tsGenes$gene_name, driver > 0)
@@ -210,8 +192,8 @@ save(tsgDrivers, file = "~/hmf/RData/tsgDrivers.RData")
 oncoAnnotatedMutations$geneStatus <- as.character(oncoAnnotatedMutations$geneStatus)
 oncoAnnotatedMutations$geneStatus <- ifelse(oncoAnnotatedMutations$redundant, "Redundant", oncoAnnotatedMutations$geneStatus)
 oncoAnnotatedMutations$impact <- as.character(oncoAnnotatedMutations$impact)
-oncoAnnotatedMutations$impact <- ifelse(oncoAnnotatedMutations$type == "INDEL", "INDEL", oncoAnnotatedMutations$impact)
-oncoAnnotatedMutations$impact <- ifelse(oncoAnnotatedMutations$type == "MNV", "INDEL", oncoAnnotatedMutations$impact)
+#oncoAnnotatedMutations$impact <- ifelse(oncoAnnotatedMutations$type == "INDEL", "INDEL", oncoAnnotatedMutations$impact)
+#oncoAnnotatedMutations$impact <- ifelse(oncoAnnotatedMutations$type == "MNV", "INDEL", oncoAnnotatedMutations$impact)
 
 oncoAnnotatedMutations = left_join(oncoAnnotatedMutations, excessOncoRates %>% select(gene, impact, HitDriverRate), by = c("gene", "impact"))
 
@@ -225,30 +207,42 @@ save(oncoDrivers, file = "~/hmf/RData/oncoDrivers.RData")
 
 
 
-load(file = "~/hmf/RData/geneCopyNumberDeletesData.RData")
+
+
+
+load(file = "~/hmf/RData/geneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 load(file = "~/hmf/RData/geneCopyNumberDeleteTargets.RData")
-load(file = "~/hmf/RData/geneCopyNumberAmplificationsData.RData")
 load(file = "~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
-load(file = "~/hmf/RData/genePanel.RData")
-genePanel = genePanel %>% filter(hmf | martincorena | cosmicCurated)
+load(file = "~/hmf/RData/driverGenes.RData")
 
-geneCopyNumberAmplificationTargets = geneCopyNumberAmplificationTargets %>% filter(N >= 20)
-significantAmplifications = geneCopyNumberAmplifications %>%
+#load(file = "~/hmf/RData/genePanel.RData")
+#genePanel = genePanel %>% filter(hmf | martincorena | cosmicCurated)
+
+#geneCopyNumberAmplificationTargets = geneCopyNumberAmplificationTargets %>% filter(N >= 20)
+
+allAmplifications = geneCopyNumberAmplifications %>%
   filter(gene %in% genePanel$gene_name | gene %in% geneCopyNumberAmplificationTargets$target) %>%
-  select(sampleID = sampleId, gene) %>% mutate(amp = T)
+  select(sampleId = sampleId, gene) %>% mutate(amp = T)
 
-geneCopyNumberDeleteTargets = geneCopyNumberDeleteTargets %>% filter(N > 5)
-significantDeletions = geneCopyNumberDeletes %>%
+targetAmplifications = geneCopyNumberAmplifications %>%
+  filter(gene %in% geneCopyNumberAmplificationTargets$target) %>%
+  select(sampleId = sampleId, gene) %>% mutate(amp = T)
+
+#geneCopyNumberDeleteTargets = geneCopyNumberDeleteTargets %>% filter(N > 5)
+allDeletions = geneCopyNumberDeletes %>%
   filter(gene %in% genePanel$gene_name | gene %in% geneCopyNumberDeleteTargets$target) %>%
-  select(sampleID = sampleId, gene) %>% mutate(del = T)
+  select(sampleId = sampleId, gene) %>% mutate(del = T)
+
+targetDeletions = geneCopyNumberDeletes %>%
+  filter(gene %in% geneCopyNumberDeleteTargets$target) %>%
+  select(sampleId = sampleId, gene) %>% mutate(del = T)
 
 #significantCopyNumber = merge(significantAmplifications, significantDeletions, by = c("sampleId", "gene"))
-
-
 load(file = "~/hmf/RData/tsgDrivers.RData")
 tsgDriverByGene = tsgDrivers %>%
   mutate(driver = ifelse(hotspot, 1, driver)) %>%
-  group_by(sampleID, gene) %>%
+  group_by(sampleId, gene) %>%
   summarise(
     multihit = n() > 1,
     biallelic = sum(biallelic) > 0, 
@@ -256,14 +250,14 @@ tsgDriverByGene = tsgDrivers %>%
     nearHotspot = F,
     impact = paste(impact, collapse = ","),
     driver = max(driver)) %>%
-  full_join(significantDeletions, by = c("sampleID" ,"gene")) %>% 
-  left_join(significantAmplifications, by = c("sampleID" ,"gene")) %>% 
+  full_join(allDeletions, by = c("sampleId" ,"gene")) %>% 
+  left_join(targetAmplifications, by = c("sampleId" ,"gene")) %>% 
   mutate(driver = ifelse(!is.na(del), 1, driver)) %>%
   mutate(type = 'TSG')
 
 load(file = "~/hmf/RData/oncoDrivers.RData")
 oncoDriverByGene = oncoDrivers %>%
-  group_by(sampleID, gene) %>%
+  group_by(sampleId, gene) %>%
   summarise(
     multihit = F,
     biallelic = F,
@@ -271,52 +265,53 @@ oncoDriverByGene = oncoDrivers %>%
     nearHotspot = any(nearHotspot),
     impact = paste(impact, collapse = ","),
     driver = max(driver))  %>%
-  full_join(significantAmplifications, by = c("sampleID" ,"gene")) %>% 
-  left_join(significantDeletions, by = c("sampleID" ,"gene")) %>% 
+  full_join(allAmplifications, by = c("sampleId" ,"gene")) %>% 
+  left_join(targetDeletions, by = c("sampleId" ,"gene")) %>% 
   mutate(driver = ifelse(!is.na(amp), 1, driver)) %>%
   mutate(type = 'ONCO')
 
 driversByGene = rbind(oncoDriverByGene, tsgDriverByGene)
 
-cancerTypes = cohort %>% select(sampleID = sampleId, cancerType)
-driversByGene = left_join(driversByGene, cancerTypes, by = "sampleID")
+load(file = "~/hmf/RData/highestPurityCohort.RData")
+cancerTypes = highestPurityCohort %>% select(sampleId = sampleId, primaryTumorLocation)
+driversByGene = left_join(driversByGene, cancerTypes, by = "sampleId")
 save(driversByGene, file = "~/hmf/RData/driversByGene.RData")
 
+driversByGene %>% group_by(sampleId, gene) %>% filter(any(del) & any(amp)) 
 
-driversByGene %>% group_by(sampleID, gene) %>% filter(any(del) & any(amp)) 
 
 
 load("~/hmf/RData/driversByGene.RData")
-load("~/hmf/RData/cohortByCancerType.RData")
-load("~/hmf/RData/cancerTypeColours.RData")
+load("~/hmf/RData/cohortByPrimaryTumorLocation.RData")
+load("~/hmf/RData/PrimaryTumorLocationColours.RData")
 
 driversByGene$impact = ifelse(driversByGene$multihit, "MultiHit", driversByGene$impact)
 driversByGene$impact = ifelse(!is.na(driversByGene$amp), "Amp", driversByGene$impact)
 driversByGene$impact = ifelse(!is.na(driversByGene$del), "Del", driversByGene$impact)
 
-driversByGene = driversByGene %>% left_join(cohortByCancerType %>% select(cancerType, samples = N), by = "cancerType")
+driversByGene = driversByGene %>% left_join(cohortByPrimaryTumorLocation %>% select(primaryTumorLocation, samples = N), by = "primaryTumorLocation")
 driversByGene = driversByGene %>%  mutate(driverRate = driver / samples)
 
-tidyDriversByCancerType = driversByGene %>% group_by(cancerType, impact, type) %>% summarise(driver = sum(driverRate))
-tidyDriversByCancerTypeLevels = driversByGene %>% group_by(cancerType) %>% summarise(driver = sum(driverRate)) %>% arrange(-driver)
-tidyDriversByCancerType$cancerType = factor(tidyDriversByCancerType$cancerType, levels= tidyDriversByCancerTypeLevels$cancerType)
+tidyDriversByCancerType = driversByGene %>% group_by(primaryTumorLocation, impact, type) %>% summarise(driver = sum(driverRate))
+tidyDriversByCancerTypeLevels = driversByGene %>% group_by(primaryTumorLocation) %>% summarise(driver = sum(driverRate)) %>% arrange(-driver)
+tidyDriversByCancerType$primaryTumorLocation = factor(tidyDriversByCancerType$primaryTumorLocation, levels= tidyDriversByCancerTypeLevels$primaryTumorLocation)
 
-ggplot(data=tidyDriversByCancerType, aes(x = cancerType, y = driver)) +
+ggplot(data=tidyDriversByCancerType, aes(x = primaryTumorLocation, y = driver)) +
   geom_bar(aes(fill = impact), stat = "identity") + 
-  ggtitle("Drivers rate per cancer type") + xlab("Cancer Type") + ylab("Driver Rate") +
+  ggtitle("Drivers rate per cancer type") + xlab("Primary Tumor Location") + ylab("Driver Rate") +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 4), legend.position="bottom") + facet_wrap(~type)
 
-tidyDriversByGene = driversByGene %>% group_by(gene, cancerType, type, impact) %>% summarise(driver = sum(driver))
+tidyDriversByGene = driversByGene %>% group_by(gene, primaryTumorLocation, type, impact) %>% summarise(driver = sum(driver))
 tidyDriversByGeneLevels = driversByGene %>% group_by(gene, type) %>% summarise(driver = sum(driver)) %>% arrange(-driver)
 tidyDriversByGeneLevels = tidyDriversByGeneLevels[1:50, ]
 tidyDriversByGene = tidyDriversByGene %>% filter(gene %in% tidyDriversByGeneLevels$gene) %>% ungroup() %>%
   mutate(gene = factor(gene, levels= tidyDriversByGeneLevels$gene)) 
   
 typeColour <- ifelse(tidyDriversByGeneLevels$type == "ONCO", "red", "blue")
-ggplot(data=tidyDriversByGene %>% filter(!is.na(cancerType)), aes(x = gene, y = driver)) +
-  geom_bar(aes(fill = cancerType), stat = "identity") + 
+ggplot(data=tidyDriversByGene %>% filter(!is.na(primaryTumorLocation)), aes(x = gene, y = driver)) +
+  geom_bar(aes(fill = primaryTumorLocation), stat = "identity") + 
   ggtitle("Drivers per gene") + xlab("Gene") + ylab("Drivers") +
-  scale_fill_manual( values= cancerTypeColours) +
+  scale_fill_manual( values= primaryTumorLocationColours) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 10, colour = typeColour), legend.position="bottom")
 
 ggplot(data=tidyDriversByGene, aes(x = gene, y = driver)) +
@@ -326,13 +321,14 @@ ggplot(data=tidyDriversByGene, aes(x = gene, y = driver)) +
 
 
 
-View(driversByGene %>% group_by(sampleID) %>% summarise(n = sum(driver)))
+
+View(driversByGene %>% group_by(sampleId) %>% summarise(n = sum(driver)))
 
 
-data = (driversByGene %>% mutate(CNV = !is.na(amp) | !is.na(del)) %>% group_by(sampleID, cancerType, CNV) %>% summarise(n = sum(driver)))
-data = (driversByGene %>% mutate(CNV = !is.na(amp) | !is.na(del)) %>% group_by(sampleID, cancerType) %>% summarise(n = sum(driver)))
+data = (driversByGene %>% mutate(CNV = !is.na(amp) | !is.na(del)) %>% group_by(sampleId, cancerType, CNV) %>% summarise(n = sum(driver)))
+data = (driversByGene %>% mutate(CNV = !is.na(amp) | !is.na(del)) %>% group_by(sampleId, cancerType) %>% summarise(n = sum(driver)))
 
-View(driversByGene %>% filter(sampleID == "CPCT02220030T"))
+View(driversByGene %>% filter(sampleId == "CPCT02220030T"))
 
 sum(driversByGene$driver)
 sum(tsgDriverByGene$driver)
