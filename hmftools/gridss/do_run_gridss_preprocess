@@ -88,7 +88,7 @@ if [[ ! -f $sv_bam ]] ; then
 	fi
 	echo $(date) SoftClipsToSplitReads
 	/usr/bin/time -o ${log_prefix}.${bam_sample}.time.SoftClipsToSplitReads.log \
-	java -Xmx512M $gridss_jvm_args \
+	java -Xmx3G $gridss_jvm_args \
 		-Dgridss.gridss.output_to_temp_file=true \
 		gridss.SoftClipsToSplitReads \
 		$gridss_common_args \
