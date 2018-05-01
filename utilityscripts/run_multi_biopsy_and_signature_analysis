@@ -29,5 +29,5 @@ if [[ -z "${patientId}" || -z "${sampleId1}" || -z "${sampleId2}" ]]; then
     usage
 fi
 
-Rscript  /data/common/repos/scripts/analysisscripts/multipleBiopsySignatures.R ${patientId}
-Rscript /data/common/repos/scripts/analysisscripts/mutSignaturePerSample.R ${sampleId1} ${sampleId2}
+multipleBiopsySignatures.R ${patientId}
+mutSignaturePerSample.R ${sampleId1} ${sampleId2}
