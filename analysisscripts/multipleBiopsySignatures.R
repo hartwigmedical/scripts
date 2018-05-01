@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 library(purple);
 library(RMySQL)
 library(data.table)

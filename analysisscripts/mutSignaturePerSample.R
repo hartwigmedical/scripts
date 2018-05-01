@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 library(devtools) #; install_github("im3sanger/dndscv")
 library(MutationalPatterns)
 library(RMySQL)
