@@ -22,7 +22,6 @@ message = 'birth year could not be determined' and patientId like '%CPCT%';
 
 # Can curate the cancer type?
 select * from clinicalFindings where message ='primary tumor location empty' and patientId like '%CPCT%';
-select * from clinicalFindings where message ='failed to curate primary tumor location' and patientId like '%CPCT%';
 
 # Systemic pre-therapy is known?
 select * from clinicalFindings where message = 'pre systemic treatment given empty' and patientId like '%CPCT%';
