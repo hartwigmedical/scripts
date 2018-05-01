@@ -3,20 +3,20 @@
 script=$( basename $0 )
 usage() {
     echo "---"
-    echo "Usage: $script -p patientId -a sampleId1 -b sampleId2"
+    echo "Usage: $script -p patientId -s sampleId1 -S sampleId2"
     echo "---"
     exit 1
 }
 
-while getopts ":p:a:b:" o; do
+while getopts ":p:s:S:" o; do
     case "${o}" in
         p)
             patientId=${OPTARG} || usage
             ;;
-	a)
+	    s)
             sampleId1=${OPTARG} || usage
             ;;
-	b)
+	    S)
             sampleId2=${OPTARG} || usage
             ;;
         *)
@@ -29,5 +29,5 @@ if [[ -z "${patientId}" || -z "${sampleId1}" || -z "${sampleId2}" ]]; then
     usage
 fi
 
-multipleBiopsySignatures.R ${patientId}
-mutSignaturePerSample.R ${sampleId1} ${sampleId2}
+Rscript  /data/common/repos/scripts/analysisscripts/multipleBiopsySignatures.R ${patientId}
+Rscript /data/common/repos/scripts/analysisscripts/mutSignaturePerSample.R ${sampleId1} ${sampleId2}
