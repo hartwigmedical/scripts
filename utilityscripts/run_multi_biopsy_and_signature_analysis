@@ -1,8 +1,33 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-patientId=${1}
-sampleId1=${2}
-sampleId2=${3}
+script=$( basename $0 )
+usage() {
+    echo "---"
+    echo "Usage: $script -p patientId -a sampleId1 -b sampleId2"
+    echo "---"
+    exit 1
+}
 
-Rscript  /data/common/repos/scripts/analysisscripts/multipleBiopsySignatures.R ${patientId}
-Rscript /data/common/repos/scripts/analysisscripts/mutSignaturePerSample.R ${sampleId1} ${sampleId2}
+while getopts ":p:a:b:" o; do
+    case "${o}" in
+        p)
+            patientId=${OPTARG} || usage
+            ;;
+	a)
+            sampleId1=${OPTARG} || usage
+            ;;
+	b)
+            sampleId2=${OPTARG} || usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${patientId}" || -z "${sampleId1}" || -z "${sampleId2}" ]]; then
+    usage
+fi
+
+Rscript  /data/common/repos/scripts/analysisscripts/multipleBiopsySignatures.R ${patientId} > ./multipleBiopsySignatures.log
+Rscript /data/common/repos/scripts/analysisscripts/mutSignaturePerSample.R ${sampleId1} ${sampleId2} > ./mutSignaturePerSample.log
