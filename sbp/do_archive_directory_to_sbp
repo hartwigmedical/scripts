@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+do_cleanup_destination=0;
+
+usage() {
+    echo "---"
+    echo "Usage: do_archive_directory_to_sbp -l <localpath> -d <destination> [-cleanup]" 1>&2;
+    echo "       do_archive_directory_to_sbp -l /data/sequencer_archive/ -d sequencer_archive" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":l:d:cleanup:" o; do
+    case "${o}" in
+        l)
+            localpath=${OPTARG} || usage
+            ;;
+        d)
+            destination=${OPTARG} || usage
+            ;;
+        cleanup)
+            do_cleanup_destination=1 || usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${localpath}" || -z "${destination}" ]]; then
+    usage
+fi
+
+if
+
+bucket='hmf_archive'
+aws_profile='hmf_archive'
+
+#sbp s3 sync ${localpath} s3://${bucket}/${destination} \
+#    --profile ${aws_profile} \
+#    --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
