@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 
-do_cleanup_destination=0;
+do_cleanup_destination=false;
 
 usage() {
     echo "---"
-    echo "Usage: do_archive_directory_to_sbp -l <localpath> -d <destination> [-cleanup]" 1>&2;
+    echo "Usage: do_archive_directory_to_sbp -l <localpath> -d <destination> [-c]" 1>&2;
     echo "       do_archive_directory_to_sbp -l /data/sequencer_archive/ -d sequencer_archive" 1>&2;
     echo "---"
     exit 1
 }
 
-while getopts ":l:d:cleanup:" o; do
+while getopts ":l:d:c" o; do
     case "${o}" in
         l)
             localpath=${OPTARG} || usage
@@ -18,8 +18,8 @@ while getopts ":l:d:cleanup:" o; do
         d)
             destination=${OPTARG} || usage
             ;;
-        cleanup)
-            do_cleanup_destination=1 || usage
+        c)
+            do_cleanup_destination=true || usage
             ;;
         *)
             usage
@@ -31,11 +31,19 @@ if [[ -z "${localpath}" || -z "${destination}" ]]; then
     usage
 fi
 
-if
+if [ ${do_cleanup_destination} = true ]; then
+    potential_delete_command='--delete'
+fi
 
 bucket='hmf_archive'
 aws_profile='hmf_archive'
 
-#sbp s3 sync ${localpath} s3://${bucket}/${destination} \
-#    --profile ${aws_profile} \
-#    --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
+echo ${do_cleanup_destination}
+echo ${localpath}
+echo ${destination}
+echo ${potential_delete_command}
+
+sbp s3 sync ${localpath} s3://${bucket}/${destination} \
+    --profile ${aws_profile} \
+    --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL} \
+    ${potential_delete_command}
