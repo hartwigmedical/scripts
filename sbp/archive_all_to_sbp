@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 
+do_cleanup_destination=$1
+
+if [ "${do_cleanup_destination}" == "--cleanup_destination" ]; then
+    echo "[INFO] Destination will be cleaned up as part of the archive job!"
+    delete_flag="-c"
+fi
+
 echo "[INFO] Archiving RNA Data"
-archive_rna_to_sbp
+archive_rna_to_sbp ${delete_flag}
 
 echo "[INFO] Archiving Sequencer Archive"
-archive_sequencer_archive_to_sbp
-
-echo "[INFO] Archiving SNP Check Data"
-archive_snpcheck_to_sbp
+archive_sequencer_archive_to_sbp ${delete_flag}
 
 echo "[INFO] Archiving Patient Reports"
-archive_patientreports_to_sbp
+archive_patientreports_to_sbp ${delete_flag}
 
 echo "[INFO] Archiving Data Requests"
-archive_data_requests_to_sbp
+archive_data_requests_to_sbp ${delete_flag}
 
 echo "[INFO] Archiving Submissions"
-archive_submissions_to_sbp
+archive_submissions_to_sbp ${delete_flag}

@@ -4,7 +4,7 @@ do_cleanup_destination=false;
 
 usage() {
     echo "---"
-    echo "Usage: do_archive_directory_to_sbp -l <localpath> -d <destination> [-c]" 1>&2;
+    echo "Usage: do_archive_directory_to_sbp -l <local_path> -d <destination> [-c]" 1>&2;
     echo "       do_archive_directory_to_sbp -l /data/sequencer_archive/ -d sequencer_archive" 1>&2;
     echo "---"
     exit 1
@@ -13,7 +13,7 @@ usage() {
 while getopts ":l:d:c" o; do
     case "${o}" in
         l)
-            localpath=${OPTARG} || usage
+            local_path=${OPTARG} || usage
             ;;
         d)
             destination=${OPTARG} || usage
@@ -27,7 +27,7 @@ while getopts ":l:d:c" o; do
     esac
 done
 
-if [[ -z "${localpath}" || -z "${destination}" ]]; then
+if [[ -z "${local_path}" || -z "${destination}" ]]; then
     usage
 fi
 
@@ -38,12 +38,7 @@ fi
 bucket='hmf_archive'
 aws_profile='hmf_archive'
 
-echo ${do_cleanup_destination}
-echo ${localpath}
-echo ${destination}
-echo ${potential_delete_command}
-
-sbp s3 sync ${localpath} s3://${bucket}/${destination} \
+sbp s3 sync ${local_path} s3://${bucket}/${destination} \
     --profile ${aws_profile} \
     --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL} \
     ${potential_delete_command}
