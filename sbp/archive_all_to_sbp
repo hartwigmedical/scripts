@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "[INFO] Archiving RNA Data"
 archive_rna_to_sbp
@@ -11,3 +11,9 @@ archive_snpcheck_to_sbp
 
 echo "[INFO] Archiving Patient Reports"
 archive_patientreports_to_sbp
+
+echo "[INFO] Archiving Data Requests"
+archive_data_requests_to_sbp
+
+echo "[INFO] Archiving Submissions"
+archive_submissions_to_sbp

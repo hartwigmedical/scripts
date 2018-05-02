@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-local_path='/data/schuberg/snpcheckvcfupload'
-remote_path='s3://hmf_archive/snpcheckvcfs'
+local_path='/data/data_archive/datarequests'
+remote_path='s3://hmf_archive/data_requests'
 aws_profile='hmf_archive'
 
-sbp s3 sync ${local_path} ${remote_path} \
+sbp s3 sync "${local_path}" "${remote_path}" \
     --delete \
     --profile ${aws_profile} \
     --grants read=id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${HMF_DOWNLOAD_CANONICAL}
