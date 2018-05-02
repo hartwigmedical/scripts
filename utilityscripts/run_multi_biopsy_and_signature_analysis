@@ -4,6 +4,7 @@ script=$( basename $0 )
 usage() {
     echo "---"
     echo "Usage: $script -p patientId -s sampleId1 -S sampleId2"
+    echo "Usage: $script -p CPCT02080029 -s CPCT02080029T -S CPCT02080029TII"
     echo "---"
     exit 1
 }
