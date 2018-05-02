@@ -20,8 +20,8 @@ geneCopyNumberAmplifications$cancerType <- sapply(geneCopyNumberAmplifications$s
 #save(genes, geneCopyNumberAmplifications, file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
 
 ####### LOAD DATA FROM FILE #######
-load(file = "~/hmf/RData/geneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/input/geneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/input/geneCopyNumberAmplifications.RData")
 
 ####### EXECUTE ALGORITHM #######
 geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
@@ -38,5 +38,5 @@ date()
 geneCopyNumberAmplificationSummary = amplificationOutput$summary
 geneCopyNumberDeletesDriverSummary = deletionsOutput$summary
 
-save(geneCopyNumberAmplificationSummary, file = "~/hmf/RData/geneCopyNumberAmplificationSummary.RData")
-save(geneCopyNumberDeletesDriverSummary, file = "~/hmf/RData/geneCopyNumberDeletesDriverSummary.RData")
+save(geneCopyNumberAmplificationSummary, file = "~/hmf/RData/output/geneCopyNumberAmplificationSummary.RData")
+save(geneCopyNumberDeletesDriverSummary, file = "~/hmf/RData/output/geneCopyNumberDeletesDriverSummary.RData")

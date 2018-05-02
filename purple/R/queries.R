@@ -48,6 +48,15 @@ query_gene_copy_number_by_gene<-function(dbConnect, genes) {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_tert_promoters<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT * FROM somaticVariant where gene = 'TERT' and position in (1295242,1295228,1295250) AND canonicalEffect = 'upstream gene variant'",
+    "   AND sampleId in (",sampleIdString, ")",
+    sep = " ")
+  return (dbGetQuery(dbConnect, query))
+}
+
 query_gene_copy_number_deletes<-function(dbConnect, cohort, cutoff = 0.5) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(

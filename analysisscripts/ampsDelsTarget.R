@@ -51,16 +51,16 @@ candidatesRange <- function(gene, candidates, canonicalTranscripts) {
 }
 
 #### SUPER GENES
-load(file = "~/hmf/RData/canonicalTranscripts.RData")
+load(file = "~/hmf/RData/input/canonicalTranscripts.RData")
 canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(canonicalTranscripts$geneStart, canonicalTranscripts$geneEnd))
 canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$range, canonicalTranscripts$range, type="within")) %>% filter(queryHits != subjectHits)
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
 #### Load Amps and Dels Gene Panel
-load("~/hmf/RData/ampsDelsGenePanel.RData")
+load("~/hmf/RData/output/genePanel.RData")
 
 #### DELETIONS
-load(file = "~/hmf/RData/geneCopyNumberDeletesDriverSummary.RData")
+load(file = "~/hmf/RData/output/geneCopyNumberDeletesDriverSummary.RData")
 dels = geneCopyNumberDeletesDriverSummary %>% 
   group_by(gene) %>%
   filter(score > 5, unsupported < N / 2) %>%
@@ -96,7 +96,7 @@ delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(s
 dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
 
 geneCopyNumberDeleteTargets = dels
-save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/geneCopyNumberDeleteTargets.RData")
+save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/output/geneCopyNumberDeleteTargets.RData")
 
 rm(dels)
 rm(delCandidates)
@@ -105,7 +105,7 @@ rm(canonicalTranscriptsOverlaps)
 rm(delCandidatesRange)
 
 #### AMPLIFICAIONS
-load(file = "~/hmf/RData/geneCopyNumberAmplificationSummary.RData")
+load(file = "~/hmf/RData/output/geneCopyNumberAmplificationSummary.RData")
 amps = geneCopyNumberAmplificationSummary %>% 
   group_by(gene) %>%
   filter(score > 20) %>%
@@ -137,10 +137,11 @@ amps$method <- ifelse(is.na(amps$target), "highest", amps$method)
 amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
 amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
 
-ampsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
+ampsWithMultipleTargets = amps %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
+amps = amps %>% group_by(gene) %>% mutate(target = firstCandidate(target))
 
 geneCopyNumberAmplificationTargets = amps
-save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
+save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/output/geneCopyNumberAmplificationTargets.RData")
 
 rm(amps)
 rm(ampCandidates)

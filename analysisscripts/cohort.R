@@ -13,26 +13,26 @@ rm(dbProd)
 
 cat("Querying canonical transcripts")
 canonicalTranscripts = purple::query_canonical_transcript(dbProd)
-save(canonicalTranscripts, file = "~/hmf/RData/canonicalTranscripts.RData")
+save(canonicalTranscripts, file = "~/hmf/RData/input/canonicalTranscripts.RData")
 
 cat("Querying purple")
 highestPurityCohort = purple::query_highest_purity_cohort(dbProd)
-save(highestPurityCohort, file = "~/hmf/RData/highestPurityCohort.RData")
+save(highestPurityCohort, file = "~/hmf/RData/input/highestPurityCohort.RData")
 
 cat("Querying somatics")
 highestPuritySomatics_p1 = purple::query_somatic_variants(dbProd, highestPurityCohort[1:1000, ])
-save(highestPuritySomatics_p1, file = "~/hmf/RData/highestPuritySomatics_p1.RData")
+save(highestPuritySomatics_p1, file = "~/hmf/RData/input/highestPuritySomatics_p1.RData")
 highestPuritySomatics_p2 = purple::query_somatic_variants(dbProd, highestPurityCohort[1001:nrow(highestPurityCohort), ])
-save(highestPuritySomatics_p2, file = "~/hmf/RData/highestPuritySomatics_p2.RData")
+save(highestPuritySomatics_p2, file = "~/hmf/RData/input/highestPuritySomatics_p2.RData")
 
 cat("Find any missing somatics")
 somaticSamples = c(unique(highestPuritySomatics_p1$sampleId), unique(highestPuritySomatics_p2$sampleId))
 missingSomaticSamples = highestPurityCohort %>% filter(!sampleId %in% somaticSamples)
 highestPuritySomatics_p3 = purple::query_somatic_variants(dbProd, missingSomaticSamples)
-save(highestPuritySomatics_p3, file = "~/hmf/RData/highestPuritySomatics_p3.RData")
+save(highestPuritySomatics_p3, file = "~/hmf/RData/input/highestPuritySomatics_p3.RData")
 
 cat("Determing exonic somatics")
-load(file = "~/hmf/RData/HmfRefCDS.RData")
+load(file = "~/hmf/RData/input/HmfRefCDS.RData")
 exonicSomatics <- function(somatics, gr_genes) {
   gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position))
   ol = as.matrix(findOverlaps(gr_muts, gr_genes, type="any", select="all"))
@@ -42,7 +42,7 @@ exonic_p1 = exonic_somatics(highestPuritySomatics_p1, gr_genes)
 exonic_p2 = exonic_somatics(highestPuritySomatics_p2, gr_genes)
 exonic_p3 = exonic_somatics(highestPuritySomatics_p3, gr_genes)
 highestPurityExonicSomatics = rbind(rbind(exonic_p1, exonic_p2), exonic_p3)
-save(highestPurityExonicSomatics, file = "~/hmf/RData/highestPurityExonicSomatics.RData")
+save(highestPurityExonicSomatics, file = "~/hmf/RData/input/highestPurityExonicSomatics.RData")
 rm(exonic_p1, exonic_p2, exonic_p3)
 
 cat("Somatic cohort level stats")
@@ -50,16 +50,27 @@ somatics_summary_p1 = cohort_somatic_summary(highestPuritySomatics_p1)
 somatics_summary_p2 = cohort_somatic_summary(highestPuritySomatics_p2)
 somatics_summary_p3 = cohort_somatic_summary(highestPuritySomatics_p3)
 highestPuritySomaticSummary = rbind(rbind(somatics_summary_p1, somatics_summary_p2), somatics_summary_p3)
-save(highestPuritySomaticSummary, file = "~/hmf/RData/highestPuritySomaticSummary.RData")
+save(highestPuritySomaticSummary, file = "~/hmf/RData/input/highestPuritySomaticSummary.RData")
 rm(somatics_summary_p1, somatics_summary_p2, somatics_summary_p3)
 
 cat("Structual Variant Overview")
 highestPurityStructuralVariantSummary = query_structural_variant_summary(dbProd, highestPurityCohort)
-save(highestPurityStructuralVariantSummary, file = "~/hmf/RData/highestPurityStructuralVariantSummary.RData")
+save(highestPurityStructuralVariantSummary, file = "~/hmf/RData/input/highestPurityStructuralVariantSummary.RData")
 
 cat("Copy Numbers")
 highestPurityCopyNumbers = purple::query_copy_number(dbProd, highestPurityCohort)
-save(highestPurityCopyNumbers, file = "~/hmf/RData/highestPurityCopyNumbers.RData")
+save(highestPurityCopyNumbers, file = "~/hmf/RData/input/highestPurityCopyNumbers.RData")
+
+tertPromoters = purple::query_tert_promoters(dbProd, highestPurityCohort)
+save(tertPromoters, file = "~/hmf/RData/input/tertPromoters.RData")
+
+
+#### COMBINE
+load(file = "~/hmf/RData/input/highestPurityCohort.RData")
+load(file = "~/hmf/RData/input/highestPuritySomaticSummary.RData")
+load(file = "~/hmf/RData/input/highestPurityStructuralVariantSummary.RData")
+
+cohortSummary = left_join(highestPurityCohort, highestPuritySomaticSummary)
 
 
 #### VISUALISATION
