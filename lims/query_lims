@@ -5,7 +5,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use File::Slurp;
-use JSON;
+use JSON::XS;
 use 5.010.000;
 
 ## -----
@@ -40,6 +40,7 @@ my $HELP =<<HELP;
     -include_plasma (add plasma samples in output)
     -delim <s>      (output delim)
     -debug          (prints complete/raw json for selection)
+    -input_lims <s> (provide your own lims json file for testing)
     
   Files/locations that are used
     LIMS input FILE: $LIMS_JSON
@@ -62,10 +63,12 @@ GetOptions (
   "include_rna"     => \$opt{ include_rna },
   "include_plasma"  => \$opt{ include_plasma },
   "delim=s"         => \$OUT_SEP,
+  "lims_input=s"    => \$opt{ lims_input },
   "debug"           => \$opt{ debug },
   "help|h"          => \$opt{ help },
 ) or die "Error in command line arguments\n";
 print $HELP and exit(0) if $opt{ help };
+$LIMS_JSON = $opt{ lims_input } if $opt{ lims_input };
 
 ## -----
 ## MAIN
@@ -73,6 +76,7 @@ print $HELP and exit(0) if $opt{ help };
 
 say "## Script: $SCRIPT";
 say "## DateTime: $DATETIME";
+say "## LimsJson: $LIMS_JSON";
 
 ## prepare
 my @out_fields = @OUT_FIELDS_1;
