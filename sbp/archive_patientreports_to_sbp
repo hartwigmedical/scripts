@@ -3,5 +3,5 @@
 local_path='/data/cpct'
 destination='patientreports'
 
-do_archive_directory_to_sbp -l "${local_path}/final_reports" -d "${destination}/final/" "@$"
-do_archive_directory_to_sbp -l "${local_path}/old_cpct_reports" -d "${destination}/old/" "@$"
+do_archive_directory_to_sbp -l "${local_path}/final_reports" -d "${destination}/final/" "$@"
+do_archive_directory_to_sbp -l "${local_path}/old_cpct_reports" -d "${destination}/old/" "$@"
