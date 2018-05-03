@@ -1,128 +1,103 @@
 # Number of CPCT patients
-select patientId, count(sampleId) as countSamples from clinical where sampleId like '%CPCT%'group by patientId ;
+select patientId, count(sampleId) as countSamples from clinical where sampleId like '%CPCT%' group by patientId ;
 
 # Registration date of patient
-select patientIdentifier, registrationDate from baseline
-inner join patient on patient.id=baseline.patientId order by 1;
+select distinct patientId, registrationDate, informedConsentDate from clinical where patientId like '%CPCT%' group by sampleId;
 
 # Timeline starts with informed consent?
-select * from clinicalFindings where ecrfItem = 'FLD.INFORMEDCONSENT.ICDTC;FLD.BIOPS.BIOPTDT' and
-message ='at least 1 biopsy taken before informed consent date';
+select * from clinicalFindings where
+message ='At least 1 biopsy taken before informed consent date' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FLD.INFORMEDCONSENT.ICDTC' and message ='informed consent date empty or in wrong format';
+select * from clinicalFindings where message ='informed consent date empty or in wrong format' and patientId like '%CPCT%';
 
 # Hospital is known?
-select * from clinicalFindings where message like '%no hospital%';
+select * from clinicalFindings where message like '%Hospital could not be determined%' and patientId like '%CPCT%';
 
 # Gender is known?
-select * from clinicalFindings where ecrfItem ='FLD.DEMOGRAPHY.SEX' and message = 'gender empty';
+select * from clinicalFindings where message = 'Gender empty' and patientId like '%CPCT%';
 
 # Birthyear is known?
-select * from clinicalFindings where ecrfItem ='FLD.SELCRIT.NBIRTHYEAR;FLD.ELIGIBILITY.BIRTHYEAR;FLD.ELIGIBILITY.BIRTHDTCES' and
-message = 'birth year could not be determined';
+select * from clinicalFindings where
+message = 'birth year could not be determined' and patientId like '%CPCT%';
 
 # Can curate the cancer type?
-select * from clinicalFindings where ecrfitem ='FLD.CARCINOMA.PTUMLOC;FLD.CARCINOMA.PTUMLOCS' and message ='primary tumor location empty';
-select * from clinicalFindings where ecrfitem ='FLD.CARCINOMA.PTUMLOC;FLD.CARCINOMA.PTUMLOCS' and message ='failed to curate primary tumor location.';
+select * from clinicalFindings where message ='primary tumor location empty' and patientId like '%CPCT%';
 
 # Systemic pre-therapy is known?
-select * from clinicalFindings where ecrfitem ='FLD.PRETHERAPY.SYSTEMIC' and message = 'pre systemic treatment given empty';
+select * from clinicalFindings where message = 'pre systemic treatment given empty' and patientId like '%CPCT%';
 
 # Radiotherapy pre-therapy is known?
-select * from clinicalFindings where ecrfitem ='FLD.PRETHERAPY.RADIOTHER' and message = 'pre radio treatment given empty';
-
-# Can curate all pre-therapies?
-select * from clinicalFindings where ecrfitem ='FLD.PRETHERAPY.SYSTEMICREG' and message = 'failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous.';
+select * from clinicalFindings where message = 'pre radio treatment given empty' and patientId like '%CPCT%';
 
 # Has enough ECRF biopsy forms?
-select * from clinicalFindings where ecrfItem ='FRM.BIOPS' and message = 'no biopsies found';
-
-select * from clinicalFindings where ecrfItem = 'FRM.BIOPS' and message ='less ecrf biopsies than biopsies sequenced.'
-and details='ecrf biopsies: 0; sequenced: 1';
-
-select * from clinicalFindings where ecrfItem = 'FRM.BIOPS' and message ='less ecrf biopsies than biopsies sequenced.'
-and details like '%ecrf biopsies: 1%';
+select * from clinicalFindings where message = 'Not enough clinical biopsy forms to match for every sequenced sample' and patientId like '%CPCT%';
 
 # Can match every sequenced sample with an ECRF biopsy?
-select * from clinicalFindings where ecrfitem ='FLD.BIOPS.BIOPTDT' and message ='biopsy date empty or in wrong format';
+select * from clinicalFindings where message ='biopsy date empty or in wrong format' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FRM.BIOPS' and message ='could not match any clinical biopsy with sequenced sample.'
-and details not like '%ecrf biopsies: [].%';
+select * from clinicalFindings where message ='could not match any clinical biopsy with sequenced sample.'
+and details not like '%ecrf biopsies: [].%' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FRM.BIOPS' and message ='more than 1 possible clinical biopsy match for sequenced sample.';
+select * from clinicalFindings where message ='more than 1 possible clinical biopsy match for sequenced sample.' and patientId like '%CPCT%';
+
+select * from clinicalFindings where message = 'Undetermined match issue in biopsy matcher';
 
 # ECRF biopsy date matches with HMF sampling date?
-select * from clinicalFindings where ecrfitem ='FRM.BIOPS' and message ='sampling date does not equal biopsy date in matched biopsy';
+select * from clinicalFindings where message ='sampling date does not equal biopsy date in matched biopsy' and patientId like '%CPCT%';
 
-# All biopsy sites are known?
-select * from clinicalFindings where ecrfItem ='FLD.BIOPS.BILESSITE;FLD.BIOPS.BIOTHLESSITE' and message='biopsy site empty';
+# All biopsy sites and biopsy location are empty?
+select * from clinicalFindings where message='Biopsy site and biopsy location are empty' and patientId like '%CPCT%';
 
-# All biopsy locations are known?
-select * from clinicalFindings where ecrfItem ='FLD.BIOPS.BILESLOC' and message='biopsy location empty';
+# Can find treatment for every sequenced & matched biopsy?
+select * from clinicalFindings where message='Could not match treatment to matched biopsy' and patientId like '%CPCT%';
 
-# Has enough ECRF treatment forms?
-select * from clinicalFindings where ecrfItem ='FLD.TRTAFTER.SYSTEMICST' and message='treatment given field empty';
+# Are all matched treatments correctly filled in?
+select * from clinicalFindings where message='Treatment given is yes, but no drugs are filled in' and patientId like '%CPCT%';
 
-select * from clinicalFindings where message like '%treatment given is not yes/no%';
+select distinct patientId from clinicalFindings where message='treatment given field empty' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfItem ='FLD.TRTAFTER.SYSSTDT' and message='drug start date empty or in wrong format';
+select distinct patientId from clinicalFindings where message like '%treatment given is not yes/no%' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfItem ='FLD.TRTAFTER.PLANNEDTRT;FLD.TRTAFTER.SYSREGPOST' and message = 'drug name empty';
+select distinct patientId from clinicalFindings where message='drug start date empty or in wrong format' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER' and message ='end of at least 1 non-final treatment is missing';
+select distinct patientId from clinicalFindings where message = 'drug name empty' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfItem ='FLD.TRTAFTER.SYSTEMICST' and message='treatment given is no, but treatment data is filled in';
+select distinct patientId from clinicalFindings where message ='end of at least 1 non-final treatment is missing' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfItem ='FRM.TRTAFTER' and message = 'treatment given is yes, but no treatment data filled in';
+select * from clinicalFindings where message='Treatment given is no, but drugs are filled in' and patientId like '%CPCT%';
 
-# Can match every sequenced biopsy to a treatment?
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER' and message ='no biopsy match for treatment';
+select * from clinicalFindings where message='Drug start date is after drug end date' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfItem ='FLD.TRTAFTER.SYSSTDT;FLD.TRTAFTER.SYSENDT' and message='drug startDate is after drug endDate';
+select * from clinicalFindings where message ='radio therapy given field empty' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER' and message ='multiple biopsy matches for treatment';
+# Are all treatments sequentially in time and after first biopsy?
+select * from clinicalFindings where message='First treatment prior to first biopsy' and patientId like '%CPCT%';
 
-select * from clinicalFindings where message like '%treatment matched biopsy with null date%';
-
-# Can curate all treatments?
-select * from clinicalFindings where ecrfitem ='FLD.TRTAFTER.PLANNEDTRT;FLD.TRTAFTER.SYSREGPOST' and message = 'failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous.';
-
-# Are all treatments sequentially in time?
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER;FRM.BIOPS' and message ='first treatment start is before first biopsy date';
-
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER' and message ='subsequent treatment starts before the end of previous treatment';
-
-# Do we know whether radiotherapy was given for every treatment?
-select * from clinicalFindings where ecrfitem ='FLD.TRTAFTER.RADIOTHERST' and message ='radio therapy given field empty';
+select * from clinicalFindings where message ='subsequent treatment starts before the end of previous treatment' and patientId like '%CPCT%';
 
 # Does the final treatment end before death date?
-select * from clinicalFindings where ecrfitem ='FLD.DEATH.DDEATHDTC;FRM.TRTAFTER' and message ='death date before end of last treatment';
+select * from clinicalFindings where message ='death date before end of last treatment' and patientId like '%CPCT%';
 
-# Every treatment has at least 1 valid response?
-select * from cinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.TMYN' and message ='measurement done field empty';
+# Does every treatment >16 weeks have at least 1 treatment response form?
+select distinct patientId from clinicalFindings where message ='No treatment response for at least 1 matched treatment' and patientId like '%CPCT%';
+
+# Every response is valid and can be matched to a treatment?
+select distinct patientId from clinicalFindings where message ='measurement done field empty' and patientId like '%CPCT%';
+
+select distinct patientId from clinicalFindings where
+ message ='Response date and/or assessment date empty or in wrong format' and patientId like '%CPCT%';
+
+select distinct patientId from clinicalFindings where message ='measurement done is yes, but response is empty (non-first response)' and patientId like '%CPCT%';
+
+select distinct patientId from clinicalFindings where
+message ='response filled in, but no assessment date and response date found' and patientId like '%CPCT%';
 
 select * from clinicalFindings where message like '%measurement done is not yes/no%';
 
-select * from clinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.ASSDTC;FLD.TUMORMEASUREMENT.RESPONSEDTC' and
- message ='response date and assessment date empty or in wrong format';
+select distinct patientId from clinicalFindings where message ='measurement done is no, but response filled in' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.BESTRESPON' and message ='measurement done is yes, but response is empty (non-first response)';
+select distinct patientId from clinicalFindings where message ='measurement done is no, but assessment date or response date is filled in' and patientId like '%CPCT%';
 
-select * from clinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.ASSDTC;FLD.TUMORMEASUREMENT.RESPONSEDTC' and
-message ='response filled in, but no assessment date and response date found';
+select distinct patientId from clinicalFindings where message ='treatments are overlapping. Cannot match any response.' and patientId like '%CPCT%';
 
-# Every response is valid and can be matched to a treatment?
-select * from clinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.TMYN' and message ='measurement done is no, but response filled in';
-
-select * from clinicalFindings where ecrfitem ='FLD.TUMORMEASUREMENT.TMYN' and message ='measurement done is no, but assessment date or response date is filled in';
-
-select * from clinicalFindings where ecrfitem ='FRM.TUMORMEASUREMENT' and message ='treatments are overlapping. Cannot match any response.';
-
-select * from clinicalFindings where ecrfitem ='FRM.TUMORMEASUREMENT' and message ='response after new baseline and before next treatment';
-
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER;FRM.TUMORMEASUREMENT' and message ='first (baseline) measurement date is after first treatment start';
-
-select * from clinicalFindings where ecrfitem ='FRM.TRTAFTER' and message ='treatment response filled in, but treatment data missing';
-
-select * from clinicalFindings where ecrfitem ='FRM.TUMORMEASUREMENT' and message ='no treatment response for at least 1 treatment';
-
+select distinct patientId from clinicalFindings where message ='response after new baseline and before next treatment' and patientId like '%CPCT%';

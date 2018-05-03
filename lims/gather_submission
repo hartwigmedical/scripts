@@ -13,8 +13,9 @@ if [[ ! ${submission} =~ ^HMFreg ]]; then echo "Submission should start with \"H
 
 ## setting up variables
 outPath=${SUBMISSIONS_DIR}'/'${submission}
-smpFile=${outPath}'/samples.txt'
-datFile=${outPath}'/data.txt'
+lmsFile=${outPath}'/lims.txt'
+samFile=${outPath}'/samples.txt'
+runFile=${outPath}'/runs.txt'
 logFile=${outPath}'/log.txt'
 bcsFile=${outPath}'/barcodes.txt'
 dateString=$( date )
@@ -27,36 +28,43 @@ mkdir -p ${outPath} || exit 1
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
-${HMF_QUERY_SCRIPT} -submission ${submission} > ${smpFile}
+${HMF_QUERY_SCRIPT} -submission ${submission} > ${lmsFile}
 
 ## get q30/yield data from SBP API
 echo "[INFO] Querying SBP API to get sample status"
-${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${datFile}
+${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${samFile}
+${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > $( echo ${samFile} | sed 's/txt$/json/' )
+
+## get entity/run-status from SBP API
+echo "[INFO] Querying SBP API to get run status"
+${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
+${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > $( echo ${runFile} | sed 's/txt$/json/' )
 
 ## get counts to check completeness
-smpCount=$( cat ${smpFile} | grep -v "^#" | wc -l )
-datCount=$( cat ${datFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+hmfCount=$( cat ${lmsFile} | grep -v "^#" | wc -l )
+sbpCount=$( cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
-cat ${datFile} | grep -v "^#" | cut -f2 > ${bcsFile}
+cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
 
 ## logging
 echo "#        Date = ${dateString}" >> ${logFile}
 echo "#  Submission = ${submission}" >> ${logFile}
 echo "#     Project = ${project}"    >> ${logFile}
-echo "# SampleCount = ${smpCount}"   >> ${logFile}
-echo "#   DataCount = ${datCount}"   >> ${logFile}
+echo "# SampleCount = ${hmfCount}"   >> ${logFile}
+echo "#   DataCount = ${sbpCount}"   >> ${logFile}
 
 ## stdout msg
 echo "[INFO] Log:"
 cat ${logFile}
 echo "[INFO] Inspect output files:"
 echo " cd ${outPath}"
-echo " cat ${smpFile}"
-echo " cat ${datFile}"
+echo " cat ${lmsFile}"
+echo " cat ${samFile}"
+echo " cat ${runFile}"
 
 ## warn if not complete
-if [[ ${smpCount} -ne ${datCount} ]]; then 
+if [[ ${hmfCount} -ne ${sbpCount} ]]; then 
   echo "[WARNING] There might be missing samples!" 
   exit 1
 fi

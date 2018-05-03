@@ -1,7 +1,7 @@
 #!/bin/bash
 
 SNPEFF_VRSN="v4.3s"
-SNPEFF_FLAG=" -hgvs -lof -no-downstream -no-upstream -no-intergenic -noShiftHgvs"
+SNPEFF_FLAG=" -hgvs -lof -no-downstream -ud 1000 -no-intergenic -noShiftHgvs"
 SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
 SNPEFF_DB="GRCh37.75"
 

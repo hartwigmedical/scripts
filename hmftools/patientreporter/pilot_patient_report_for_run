@@ -6,26 +6,31 @@ patient_reporter_dir=/data/common/tools/patientreporter_pilot
 
 drup_genes_csv=${patient_reporter_dir}/csv/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
-cosmic_fusion_csv=/data/common/dbs/cosmic_census/171127_cosmic_gene_fusions.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-cancer_types_csv=/data/common/dbs/ecrf_dumps/cancer_types
+tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/pilot_reports
+
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -cancer_types_csv "$cancer_types_csv" \
+    -tumor_location_csv "$tumor_location_csv" \
     -report_dir "$report_dir" \
     -drup_genes_csv "$drup_genes_csv" \
     -cosmic_gene_csv "$cosmic_gene_csv" \
-    -cosmic_fusion_csv "$cosmic_fusion_csv" \
     -center_csv "$center_csv" \
     -signature "$signature" \
     -ensembl_db "$ensembl_db" \
     -fasta_file_location "$ref_genome" \
+    -fusion_pairs_csv "$fusion_pairs_csv" \
+    -promiscuous_five_csv "$promiscuous_five_csv" \
+    -promiscuous_three_csv "$promiscuous_three_csv" \
     -run_dir "$@"

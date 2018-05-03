@@ -4,8 +4,13 @@
 #
 source do_run_gridss_lib
 
-{ time do_run_gridss_preprocess $run_dir $gridss_jar $threads normal ; } > $log_prefix.time.preprocess.normal.log 2>&1
-{ time do_run_gridss_preprocess $run_dir $gridss_jar $threads tumor ; } > $log_prefix.time.preprocess.tumor.log 2>&1
-{ time do_run_gridss_assemble $run_dir $gridss_jar $threads ; } > $log_prefix.time.assemble.log 2>&1
-{ time do_run_gridss_call $run_dir $gridss_jar $threads ; } > $log_prefix.time.call.log 2>&1
-{ time do_run_gridss_annotate $run_dir $gridss_jar $threads ; } > $log_prefix.time.annotate.log 2>&1
+echo $(date) Preprocessing normal
+/usr/bin/time -o $log_prefix.time.preprocess.normal.log do_run_gridss_preprocess $run_dir $gridss_jar $threads normal
+echo $(date) Preprocessing tumor
+/usr/bin/time -o $log_prefix.time.preprocess.tumor.log do_run_gridss_preprocess $run_dir $gridss_jar $threads tumor
+echo $(date) Assembling
+/usr/bin/time -o $log_prefix.time.assemble.log do_run_gridss_assemble $run_dir $gridss_jar $threads
+echo $(date) Calling variants
+/usr/bin/time -o $log_prefix.time.call.log do_run_gridss_call $run_dir $gridss_jar $threads
+echo $(date) Annotating variants
+/usr/bin/time -o $log_prefix.time.annotate.log do_run_gridss_annotate $run_dir $gridss_jar $threads

@@ -1,0 +1,24 @@
+#!/bin/bash
+source load_metadata
+run_dir=$1 && shift
+
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+output_dir=${run_dir}/somaticVariants/${joint_name}
+
+input_vcf=${output_dir}/${joint_name}_post_processed_v2.2_pon.vcf.gz
+output_vcf=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
+
+### Dependencies
+bcftools=/data/common/tools/bcftools_v1.3/bcftools
+tabix=/data/common/tools/tabix_v0.2.6/tabix
+
+if [[ -e ${input_vcf} ]]
+then
+   rm ${output_vcf}*
+   mv ${input_vcf} ${output_vcf}
+
+   ${tabix} -p vcf ${output_vcf}
+else
+    echo "[INFO] Combining variants already complete -" $(date)
+fi
+

@@ -1,18 +1,24 @@
 #!/bin/sh
 
-patient_reporter_dir=/data/common/tools/patientreporter_v4.8
+patient_reporter_dir=/data/common/tools/patientreporter_v4.13
 
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/patient_reports
-cancer_types_csv=/data/common/dbs/ecrf_dumps/cancer_types
+tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 signature=/data/common/dbs/signature/signature.png
 center_csv=/data/common/dbs/center/center.csv
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
 exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar "$patient_reporter_dir"/patient-reporter.jar \
     -lims_json "$lims_json" \
-    -cancer_types_csv "$cancer_types_csv" \
+    -tumor_location_csv "$tumor_location_csv" \
     -report_dir "$report_dir" \
     -center_csv "$center_csv" \
     -signature "$signature" \
+    -fusion_pairs_csv "$fusion_pairs_csv" \
+    -promiscuous_five_csv "$promiscuous_five_csv" \
+    -promiscuous_three_csv "$promiscuous_three_csv" \
     "$@"

@@ -4,10 +4,10 @@ starts_with=$1 && shift
 for run_dir in /data/cpct/runs/*; do
     if [[ ${run_dir} == /data/cpct/runs/${starts_with}* ]]; then
 
-        somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.v2.vcf.gz)
+        somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.1.vcf.gz)
         if [ $? -eq 0 ]
         then
-            echo "[WARN] Found deprecated V2.0 run:" ${run_dir}
+            echo "[WARN] Found deprecated V2.1 run:" ${run_dir}
             rm ${somatic_vcf}*
         fi
     fi

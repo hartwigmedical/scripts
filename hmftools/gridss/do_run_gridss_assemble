@@ -4,21 +4,27 @@
 #
 source do_run_gridss_lib
 
-echo $(date) AssembleBreakends
-java -Xmx31G $gridss_jvm_args \
-	gridss.AssembleBreakends \
-	$gridss_common_args \
-	INPUT=$normal_bam \
-	INPUT=$tumor_bam \
-	OUTPUT=$assembly_bam \
-	WORKER_THREADS=$threads \
-	BLACKLIST=$blacklist \
-	CONFIGURATION_FILE=$gridss_config_file \
-	2> $log_prefix.assembly.log || exit 1
+if [[ ! -f $assembly_bam ]] ; then
+	echo $(date) AssembleBreakends
+	/usr/bin/time -o ${log_prefix}.AssembleBreakends.log \
+	java -Xmx31G $gridss_jvm_args \
+		-Dgridss.gridss.output_to_temp_file=true \
+		gridss.AssembleBreakends \
+		$gridss_common_args \
+		INPUT=$normal_bam \
+		INPUT=$tumor_bam \
+		OUTPUT=$assembly_bam \
+		WORKER_THREADS=$threads \
+		BLACKLIST=$blacklist \
+		CONFIGURATION_FILE=$gridss_config_file ||
+		exit 1
+fi
 
-echo $(date) CollectGridssMetrics
-# async metrics
-java -Xmx256M $gridss_jvm_args \
+if [[ ! -f $assembly_bam.gridss.working/$(basename $assembly_bam).idsv_metrics ]] ; then
+	# async metrics
+	echo $(date) CollectGridssMetrics
+	/usr/bin/time -o ${log_prefix}.assembly.CollectGridssMetrics.log \
+	java -Xmx256M $gridss_jvm_args \
 		gridss.analysis.CollectGridssMetrics \
 		ASSUME_SORTED=true \
 		I=$assembly_bam \
@@ -34,23 +40,21 @@ java -Xmx256M $gridss_jvm_args \
 		PROGRAM=null \
 		PROGRAM=CollectInsertSizeMetrics \
 		2> $log_prefix.assembly.CollectGridssMetrics.log &
+fi
 
 sv_bam=$assembly_bam.gridss.working/$(basename $assembly_bam).sv.bam
-echo $(date) SoftClipsToSplitReads
-java -Xmx3G $gridss_jvm_args \
-	gridss.SoftClipsToSplitReads \
-	$gridss_common_args \
-	I=$assembly_bam \
-	O=/dev/stdout \
-	REALIGN_ENTIRE_READ=true \
-	ALIGNER_STREAMING=true \
-	WORKER_THREADS=$threads \
-	VERBOSITY=DEBUG \
-	2> $log_prefix.assembly.SoftClipsToSplitReads.log | \
-samtools sort -@ $threads -o ${sv_bam} - || exit 1
-
-samtools index ${sv_bam} &
-
+if [[ ! -f $sv_bam ]] ; then
+	echo $(date) SoftClipsToSplitReads
+	/usr/bin/time -o ${log_prefix}.assembly.SoftClipsToSplitReads.log \
+	java -Xmx3G $gridss_jvm_args \
+		-Dgridss.gridss.output_to_temp_file=true \
+		gridss.SoftClipsToSplitReads \
+		$gridss_common_args \
+		I=$assembly_bam \
+		O=${sv_bam} \
+		REALIGN_ENTIRE_READ=true \
+		WORKER_THREADS=$threads
+fi
 # wait for metrics and indexing to finish
 wait
 

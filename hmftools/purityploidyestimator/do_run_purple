@@ -2,6 +2,7 @@
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
+somatic_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
 
@@ -12,8 +13,7 @@ then
     exit 1
 fi
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.1.vcf.gz)
-if [ $? -ne 0 ]
+if [ ! -f "$somatic_vcf" ]
 then
     echo "Unable to locate somatic variants. Exiting."
     exit 1

@@ -8,7 +8,7 @@ query_highest_purity_cohort<-function(dbConnect) {
 
   #Clinical Data
   clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   highestPurityCohort = purple::highest_purity_patients(cohort)
@@ -27,31 +27,12 @@ query_multiple_biopsy_cohort<-function(dbConnect) {
 
   #Clinical Data
   clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "cancerType")])
+  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   multipleBiopsyCohort = purple::multiple_biopsy(cohort)
 
   return (multipleBiopsyCohort)
-}
-
-query_gene_copy_number_knockout<-function(dbConnect, cohort) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, if(minCopyNumber < 0.5 || nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0, 1, 0) as score, ",
-    "       g.minCopyNumber < 0.5 as deleted, g.minMinorAllelePloidy < 0.5 as loh, nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0 as biallelicVariant ",
-    "  FROM geneCopyNumber g, purity p",
-    " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND p.purity >= 0.20",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND (g.minCopyNumber < 0.5 or g.minMinorAllelePloidy < 0.5 or nonsenseBiallelicVariants + missenseBiallelicVariants + spliceBiallelicVariants > 0)" ,
-    "   AND g.chromosome <> 'Y'",
-    "   AND p.sampleId in (",sampleIdString, ")",
-    sep = " ")
-  return (dbGetQuery(dbConnect, query))
 }
 
 query_gene_copy_number_by_gene<-function(dbConnect, genes) {
@@ -67,17 +48,13 @@ query_gene_copy_number_by_gene<-function(dbConnect, genes) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_gene_copy_number_deletes<-function(dbConnect, cohort) {
+query_gene_copy_number_deletes<-function(dbConnect, cohort, cutoff = 0.5) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetRegions, g.germlineHomRegions",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
-    "   AND g.minCopyNumber < 0.5",
+    "   AND g.minCopyNumber < ", cutoff,
     "   AND g.chromosome <> 'Y'",
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
@@ -87,13 +64,9 @@ query_gene_copy_number_deletes<-function(dbConnect, cohort) {
 query_gene_copy_number_amplifications<-function(dbConnect, cohort, cutoff = 3) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport, p.ploidy",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, p.ploidy, g.minCopyNumber, log2(2 * g.minCopyNumber / p.ploidy / ", cutoff, ") as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetRegions, g.germlineHomRegions",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
-    "   AND p.qcStatus = 'PASS'",
-    "   AND p.status != 'NO_TUMOR'",
-    "   AND g.germlineHetRegions = 0",
-    "   AND g.germlineHomRegions = 0",
     "   AND g.minCopyNumber / p.ploidy > ", cutoff,
     "   AND p.sampleId in (",sampleIdString, ")",
     sep = " ")
@@ -107,6 +80,16 @@ query_gene_copy_number<-function(dbConnect, sampleId) {
     "  FROM geneCopyNumber g",
     " WHERE g.sampleId = '", sampleId, "'",
     sep = "")
+  return (dbGetQuery(dbConnect, query))
+}
+
+query_copy_number<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+  "SELECT g.*",
+  "  FROM copyNumber g",
+  " WHERE g.sampleId in (",sampleIdString, ")",
+  sep = "")
   return (dbGetQuery(dbConnect, query))
 }
 
@@ -148,42 +131,45 @@ query_somatic_variant_sample<-function(dbConnect, sampleId) {
   return (result)
 }
 
-query_msi_sample<-function(dbConnect, sampleId) {
-  query = paste(
-    "SELECT sampleId, count(*) as msiScore ",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS'",
-    "   AND type = 'INDEL'",
-    "   AND length(alt) <= 50",
-    "   AND length(ref) <= 50",
-    "   AND repeatCount >= 4",
-    "   AND sampleId = '", sampleId, "'",
-    "   AND ((length(repeatSequence) BETWEEN 2 AND 4) OR (length(repeatSequence) = 1 AND repeatCount >= 5))",
-    " GROUP BY sampleId",
-    sep = "")
-  score = dbGetQuery(dbConnect, query)
-  score$msiScore = score$msiScore/3095
-  score$msiStatus = ifelse(score$msiScore > 0.909, "MSI", "MSS")
-  return (score)
-}
 
-query_msi<-function(dbConnect) {
-  query = paste(
-    "SELECT sampleId, count(*) as msiScore ",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS'",
-    "   AND type = 'INDEL'",
-    "   AND length(alt) <= 50",
-    "   AND length(ref) <= 50",
-    "   AND repeatCount >= 4",
-    "   AND ((length(repeatSequence) BETWEEN 2 AND 4) OR (length(repeatSequence) = 1 AND repeatCount >= 5))",
-    " GROUP BY sampleId",
-    sep = "")
-  score = dbGetQuery(dbConnect, query)
-  score$msiScore = score$msiScore/3095
-  score$msiStatus = ifelse(score$msiScore > 0.909, "MSI", "MSS")
-  return (score)
-}
+#### NO LONGER NEEDED!
+#query_msi_sample<-function(dbConnect, sampleId) {
+#  query = paste(
+#    "SELECT sampleId, count(*) as msiScore ",
+#    " FROM somaticVariant ",
+#    "WHERE filter = 'PASS'",
+#    "   AND type = 'INDEL'",
+#    "   AND length(alt) <= 50",
+#    "   AND length(ref) <= 50",
+#    "   AND repeatCount >= 4",
+#    "   AND sampleId = '", sampleId, "'",
+#    "   AND ((length(repeatSequence) BETWEEN 2 AND 4) OR (length(repeatSequence) = 1 AND repeatCount >= 5))",
+#    " GROUP BY sampleId",
+#    sep = "")
+#  score = dbGetQuery(dbConnect, query)
+#  score$msiScore = score$msiScore/3095
+#  score$msiStatus = ifelse(score$msiScore > 0.909, "MSI", "MSS")
+#  return (score)
+#}
+
+#### NO LONGER NEEDED!
+#query_msi<-function(dbConnect) {
+#  query = paste(
+#    "SELECT sampleId, count(*) as msiScore ",
+#    " FROM somaticVariant ",
+#    "WHERE filter = 'PASS'",
+#    "   AND type = 'INDEL'",
+#    "   AND length(alt) <= 50",
+#    "   AND length(ref) <= 50",
+#    "   AND repeatCount >= 4",
+#    "   AND ((length(repeatSequence) BETWEEN 2 AND 4) OR (length(repeatSequence) = 1 AND repeatCount >= 5))",
+#    " GROUP BY sampleId",
+#    sep = "")
+#  score = dbGetQuery(dbConnect, query)
+#  score$msiScore = score$msiScore/3095
+#  score$msiStatus = ifelse(score$msiScore > 0.909, "MSI", "MSS")
+#  return (score)
+#}
 
 query_unsupported_segments<-function(dbConnect, sampleId) {
   query = paste(
@@ -196,73 +182,18 @@ query_unsupported_segments<-function(dbConnect, sampleId) {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_structural_variant_overview<-function(dbConnect, sampleId) {
+query_structural_variant_summary<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
     "SELECT sampleId, type, count(*) as count",
     " FROM structuralVariant ",
-    "WHERE sampleId = '", sampleId, "'",
+    "WHERE sampleId in (",sampleIdString, ")",
     " GROUP BY sampleId, type",
     sep = "")
-  result = data.table(dbGetQuery(dbConnect, query))
-  structuralVariants = result[, list(structuralVariants=sum(count)), by=c("sampleId")]
-
-  types = dcast(result, sampleId ~ type, value.var = "count")
-  #colnames(types) <- paste("sv", colnames(types), sep="")
-  #colnames(types)[1] <- "sampleId"
-  structuralVariants = left_join(structuralVariants, types)
-
-  return (structuralVariants)
-}
-
-### REMOVE??
-query_somatic_overview_old<-function(dbConnect, sampleId) {
-  query = paste(
-    "SELECT sampleId, clonality, type, count(*) as count, SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS' ",
-    "   AND sampleId = '", sampleId, "'",
-    " GROUP BY sampleId, clonality, type",
-    sep = "")
-
-  result = data.table(dbGetQuery(dbConnect, query))
-
-  type = result[, list(count=sum(count)), by=c("sampleId","type")]
-  typeLong = dcast(type, sampleId ~ type, value.var="count")
-
-  clonality = result[, list(count=sum(count)), by=c("sampleId","clonality")]
-  clonalityLong = dcast(clonality, sampleId ~ clonality, value.var="count")
-
-  mutationalLoad = result[, list(mutationalLoad=sum(mutationalLoad)), by=c("sampleId")]
-
-  somatics = result[, list(somaticVariants=sum(count)), by=c("sampleId")]
-  somatics$mutationalLoad = mutationalLoad$mutationalLoad
-  somatics = left_join(somatics, typeLong)
-  somatics = left_join(somatics, clonalityLong)
-
-  return (somatics)
-}
-
-query_somatic_overview<-function(dbConnect, sampleId) {
-  query = paste(
-    "SELECT sampleId, clonality, type, count(*) as count, SUM(IF (effect like '%missense%', 1, 0)) AS mutationalLoad",
-    " FROM somaticVariant ",
-    "WHERE filter = 'PASS' ",
-    "   AND sampleId = '", sampleId, "'",
-    " GROUP BY sampleId, clonality, type",
-    sep = "")
-
-  result = data.table(dbGetQuery(dbConnect, query))
-
-  type = result[, list(count=sum(count)), by=c("sampleId","type", "clonality")]
-  typeLong = dcast(type, sampleId ~ type+clonality, value.var="count")
-
-  mutationalLoad = result[, list(mutationalLoad=sum(mutationalLoad)), by=c("sampleId")]
-
-  somatics = result[, list(somaticVariants=sum(count)), by=c("sampleId")]
-  somatics$mutationalLoad = mutationalLoad$mutationalLoad
-  somatics = left_join(somatics, typeLong)
-
-  return (somatics)
+  result = dbGetQuery(dbConnect, query)
+  result = result  %>% group_by(sampleId) %>% spread(type, count)
+  result[is.na(result)] <- 0
+  return (result)
 }
 
 query_patient_id_lookup<-function(dbConnect) {
@@ -297,50 +228,22 @@ query_whole_genome_duplication<-function(dbConnect, sampleId) {
   return (result)
 }
 
-### NO LONGER USED???
-query_snps_cohort<-function(dbConnect, cohort) {
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
-    "  FROM somaticVariant s ",
-    " WHERE filter = 'PASS'",
-    "   AND type = 'SNP'",
-    "   AND gene <> ''",
-    "   AND s.sampleId in (", sampleIdString, ")",
-    sep = "")
 
-  return (dbGetQuery(dbConnect, query))
-}
-
-
-query_snps_sample<-function(dbConnect, sample) {
-  query = paste(
-    "SELECT s.sampleId, chromosome as chr, position as pos, ref, alt",
-    "  FROM somaticVariant s ",
-    " WHERE filter = 'PASS'",
-    "   AND type = 'SNP'",
-    "   AND gene <> ''",
-    "   AND s.sampleId = '", sample, "'",
-    sep = "")
-
-  return (dbGetQuery(dbConnect, query))
-}
-
-query_somatic_drivers<-function(dbConnect, cohort, genes) {
-  geneString = paste("'", genes$gene, "'", collapse = ",", sep = "")
-  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
-  query = paste(
-    "SELECT sampleId, gene, chromosome, position, adjustedCopyNumber as copyNumber, ",
-    "       ROUND(adjustedVAF * adjustedCopyNumber,2) as ploidy, ",
-    "       clonality, loh",
-    "  FROM somaticVariant s ",
-    " WHERE sampleId in (",sampleIdString, ")",
-    "   AND filter = 'PASS'",
-    "   AND effect not in ('non coding exon variant', 'synonymous variant', 'UTR variant', 'sequence feature','intron variant')",
-    "   AND gene in (", geneString, ")",
-    sep = "")
-  return (dbGetQuery(dbConnect, query))
-}
+#query_somatic_drivers<-function(dbConnect, cohort, genes) {
+#  geneString = paste("'", genes$gene, "'", collapse = ",", sep = "")
+#  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+#  query = paste(
+#    "SELECT sampleId, gene, chromosome, position, adjustedCopyNumber as copyNumber, ",
+#    "       ROUND(adjustedVAF * adjustedCopyNumber,2) as ploidy, ",
+#    "       clonality, loh",
+#    "  FROM somaticVariant s ",
+#    " WHERE sampleId in (",sampleIdString, ")",
+#    "   AND filter = 'PASS'",
+#    "   AND effect not in ('non coding exon variant', 'synonymous variant', 'UTR variant', 'sequence feature','intron variant')",
+#    "   AND gene in (", geneString, ")",
+#    sep = "")
+#  return (dbGetQuery(dbConnect, query))
+#}
 
 
 query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
@@ -353,22 +256,14 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_somatic_variants <- function(dbConnect, cohort, filterEmptyGenes = FALSE, gene = NA) {
+query_somatic_variants <- function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT chromosome, position, sampleId, ref, alt, trinucleotideContext, adjustedVaf * adjustedCopyNumber as ploidy, clonality, type, biallelic, gene, canonicalEffect, canonicalCodingEffect",
+    "SELECT *",
     "FROM somaticVariant",
     "WHERE filter = 'PASS'",
     "  AND sampleId in (",sampleIdString, ")",
     sep = " ")
-
-  if (filterEmptyGenes) {
-    query = paste(query, " AND gene <> ''", sep = " ")
-  }
-
-  if (!is.na(gene)) {
-    query = paste(query, " AND gene = '", gene ,"'",sep = "")
-  }
 
   return (dbGetQuery(dbConnect, query))
 }

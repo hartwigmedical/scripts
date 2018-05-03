@@ -4,6 +4,6 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/prod
-patient_db_jar=/data/common/tools/purple_v2.9/purple.jar
+patient_db_jar=/data/common/tools/purple_v2.13/purple.jar
 
 ${prefix}/do_load_purple_data ${run_dir} ${credentials} ${patient_db_jar}

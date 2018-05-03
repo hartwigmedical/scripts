@@ -8,8 +8,9 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-purple_jar=${base_path}/tools/purple_v2.9/purple.jar
+purple_jar=${base_path}/tools/purple_v2.13/purple.jar
 purple_output=${run_dir}/purple
 credentials=${base_path}/dbs/mysql_credentials/prod
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${purple_output} ${credentials} $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${purple_output} ${credentials} $@

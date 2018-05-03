@@ -1,15 +1,17 @@
 	SELECT
     count(*) AS samples, 'all' AS category
     FROM sample
+    INNER JOIN patient on sample.patientId = patient.id
+    INNER JOIN baseline on baseline.patientId = patient.id
 	WHERE sample.sampleId like '%CPCT%'
 
 UNION
 
-	SELECT count(*), 'with known cancer type'
+	SELECT count(*), 'with curated primary tumor location'
 	FROM sample
 	INNER JOIN patient ON sample.patientId = patient.id
 	INNER JOIN baseline ON baseline.patientId = patient.id
-	WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(cancerType))
+	WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(primaryTumorLocation))
     
 UNION
 
@@ -19,9 +21,9 @@ UNION
 
 UNION
 
-SELECT count(*), 'with matched biopsy and known biopsy site' 
+SELECT count(*), 'with matched biopsy and curated biopsy type' 
     FROM sample LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsySite))
+    WHERE sample.sampleId like '%CPCT%' AND NOT(isnull(biopsy.id)) and NOT(isnull(biopsy.biopsyType))
     
 UNION
 
