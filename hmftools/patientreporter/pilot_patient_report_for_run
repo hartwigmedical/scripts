@@ -11,7 +11,7 @@ signature=/data/common/dbs/signature/signature.png
 ensembl_db=$(cat ${prefix}/ensembl_db_url | head -n 1)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
 lims_json=/data/lims/lims.json
 report_dir=/data/cpct/pilot_reports
 

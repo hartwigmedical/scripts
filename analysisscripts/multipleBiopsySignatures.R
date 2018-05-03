@@ -1,4 +1,5 @@
-library(purple);
+#!/usr/bin/Rscript
+library(purple)
 library(RMySQL)
 library(data.table)
 library(IRanges)
