@@ -1,0 +1,37 @@
+exportPattern("^[[:alpha:]]+")
+
+#import(data.table)
+#import(plyr)
+#import(IRanges)
+import(ggpubr)
+exportPattern("^query+")
+exportPattern("^plot+")
+
+# NMF preparation
+export(convert_summary_counts_to_nmf)
+export(get_bucket_names)
+export(remove_bucket_names)
+
+# bucket functions
+export(get_bucket_data)
+export(get_sig_bucket_stats)
+export(get_bucket_stats)
+export(get_top_buckets)
+export(get_least_contrib_buckets)
+export(get_bucket_signatures_plot)
+export(get_bucket_summary_plot)
+
+# signature functions
+export(plot_sig_samples)
+export(get_sig_data)
+export(get_sig_stats)
+export(plot_top_n_samples_by_sig)
+
+# misc functions
+export(get_chromosome_length)
+export(get_centromere_position)
+export(get_arm_length)
+export(get_poisson_prob)
+
+# run evaluation
+export(evaluate_run)
