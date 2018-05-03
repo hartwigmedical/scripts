@@ -8,7 +8,7 @@ if [[ ! -f $assembly_bam ]] ; then
 	echo $(date) AssembleBreakends
 	/usr/bin/time -o ${log_prefix}.AssembleBreakends.log \
 	java -Xmx31G $gridss_jvm_args \
-		-Dgridss.gridss.output_to_temp_file=true \
+		-Dgridss.output_to_temp_file=true \
 		gridss.AssembleBreakends \
 		$gridss_common_args \
 		INPUT=$normal_bam \
@@ -47,7 +47,7 @@ if [[ ! -f $sv_bam ]] ; then
 	echo $(date) SoftClipsToSplitReads
 	/usr/bin/time -o ${log_prefix}.assembly.SoftClipsToSplitReads.log \
 	java -Xmx3G $gridss_jvm_args \
-		-Dgridss.gridss.output_to_temp_file=true \
+		-Dgridss.output_to_temp_file=true \
 		gridss.SoftClipsToSplitReads \
 		$gridss_common_args \
 		I=$assembly_bam \
