@@ -68,11 +68,11 @@ cohort_somatics_by_type <- function(somatics) {
 
 cohort_msi <- function(somatics) {
   result = somatics %>%
-    filter(filter == 'PASS', type == 'INDEL', nchar(alt) <= 50, nchar(ref) <= 50, repeatCount >= 5) %>%
-    filter(nchar(repeatSequence) %in% c(2:4) | (nchar(repeatSequence) == 1 & repeatCount >= 5 )) %>%
+    filter(filter == 'PASS', type == 'INDEL', nchar(alt) <= 50, nchar(ref) <= 50) %>%
+    filter((nchar(repeatSequence) %in% c(2:4) & repeatCount >= 4) | (nchar(repeatSequence) == 1 & repeatCount >= 5 )) %>%
     group_by(sampleId) %>%
     summarise(msiScore = n() / 3095) %>%
-    mutate(msiStatus = ifelse(msiScore > 0.909, "MSI","MSS"))
+    mutate(msiStatus = ifelse(msiScore > 4.0, "MSI","MSS"))
 
   return (result)
 }
