@@ -4,24 +4,11 @@ library(purple)
 library(dplyr)
 
 
-####### LOAD DATA FROM DATABASE #######
-dbPaper = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
-highestPurityCohort = purple::query_highest_purity_cohort(dbPaper)
-genes = purple::query_canonical_transcript(dbPaper) %>% select(gene, chromosome, start = geneStart, end = geneEnd)
-geneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbPaper, highestPurityCohort)
-geneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbPaper, highestPurityCohort)
-dbDisconnect(dbPaper)
-rm(dbPaper)
-
-geneCopyNumberDeletes$cancerType <- sapply(geneCopyNumberDeletes$sampleId, function(x) {highestPurityCohort[match(x, highestPurityCohort$sampleId), c("primaryTumorLocation")] })
-geneCopyNumberAmplifications$cancerType <- sapply(geneCopyNumberAmplifications$sampleId, function(x) {highestPurityCohort[match(x, highestPurityCohort$sampleId), c("primaryTumorLocation")] })
-
-#save(genes, geneCopyNumberDeletes, file = "~/hmf/RData/geneCopyNumberDeletes.RData")
-#save(genes, geneCopyNumberAmplifications, file = "~/hmf/RData/geneCopyNumberAmplifications.RData")
-
 ####### LOAD DATA FROM FILE #######
-load(file = "~/hmf/RData/input/geneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/input/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/reference/geneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/reference/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
+genes = canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd)
 
 ####### EXECUTE ALGORITHM #######
 geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
@@ -36,7 +23,7 @@ stopCluster(cl)
 date()
 
 geneCopyNumberAmplificationSummary = amplificationOutput$summary
-geneCopyNumberDeletesDriverSummary = deletionsOutput$summary
+geneCopyNumberDeletionsSummary = deletionsOutput$summary
 
-save(geneCopyNumberAmplificationSummary, file = "~/hmf/RData/output/geneCopyNumberAmplificationSummary.RData")
-save(geneCopyNumberDeletesDriverSummary, file = "~/hmf/RData/output/geneCopyNumberDeletesDriverSummary.RData")
+save(geneCopyNumberAmplificationSummary, file = "~/hmf/RData/processed/geneCopyNumberAmplificationSummary.RData")
+save(geneCopyNumberDeletionsSummary, file = "~/hmf/RData/processed/geneCopyNumberDeletionsSummary.RData")
