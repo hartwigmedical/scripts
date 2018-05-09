@@ -5,7 +5,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use File::Slurp;
-use JSON;
+use JSON::XS;
 use Number::Format qw(:subs);
 use 5.010.000;
 
