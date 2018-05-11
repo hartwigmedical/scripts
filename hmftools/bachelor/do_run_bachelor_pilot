@@ -1,6 +1,6 @@
 #!/bin/bash
 
-bachelor_jar=/data/common/tools/bachelor_v1.0/bachelor.jar
+bachelor_jar=/data/common/tools/bachelor_pilot/bachelor_pilot_v1.2.jar
 configs=/data/common/dbs/eligibility
 output=/data/experiments/eligibility
 
