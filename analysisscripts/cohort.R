@@ -1,3 +1,11 @@
+############################################
+# How to run analysis for paper:
+# 1. cohortClinical.R
+# 2. cohort.R
+# 3. ampsDels.R
+# 4. dnds.R
+# 5. genePanel.R
+
 detach("package:purple", unload=TRUE)
 library(purple)
 library(RMySQL)
@@ -5,6 +13,8 @@ library(GenomicRanges)
 library(dplyr)
 library(tidyr)
 library(multidplyr)
+
+load(file = "~/hmf/RData/reference/clinicalData.RData")
 
 ### DATABASE
 dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
@@ -18,7 +28,12 @@ save(geneDeletes, file = '~/hmf/RData/reference/geneDeletes.RData')
 
 cat("Querying purity")
 highestPurityCohort = purple::query_highest_purity_cohort(dbProd, geneDeletes)
+highestPurityCohort = left_join(highestPurityCohort, clinicalData %>% select(sampleId, primaryTumorLocation), by = "sampleId") %>% filter(!is.na(primaryTumorLocation))
+highestPurityCohort$gender = ifelse(substr(highestPurityCohort$gender, 1, 4) == "MALE", "MALE", highestPurityCohort$gender)
 save(highestPurityCohort, file = "~/hmf/RData/reference/highestPurityCohort.RData")
+
+cohortPrimaryTumorLocations = highestPurityCohort %>% group_by(primaryTumorLocation) %>% summarise(N = n())
+save(cohortPrimaryTumorLocations, file = '~/hmf/RData/reference/cohortPrimaryTumorLocations.RData')
 
 cat("Copy Numbers")
 highestPurityCopyNumbers = purple::query_copy_number(dbProd, highestPurityCohort)
@@ -91,9 +106,6 @@ cat("Whole Genome Duplication")
 wgd = purple::query_whole_genome_duplication(dbProd, highestPurityCohort)
 save(wgd, file = "~/hmf/RData/reference/wholeGenomeDuplication.RData")
 
-clinicalData = purple::query_clinical_data(dbProd)
-save(clinicalData, file = "~/hmf/RData/reference/clinicalData.RData")
-
 sampleData = purple::query_sample_data(dbProd)
 save(sampleData, file = "~/hmf/RData/reference/sampleData.RData")
 
@@ -106,13 +118,20 @@ load(file = "~/hmf/RData/reference/highestPuritySomaticSummary.RData")
 load(file = "~/hmf/RData/reference/highestPurityStructuralVariantSummary.RData")
 
 clinicalSummary = clinicalData %>% select(sampleId, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear)
-cohortSummary = left_join(highestPurityCohort, clinicalSummary, by = "sampleId") %>%
+cohortSummary = highestPurityCohort %>%
+  select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, primaryTumorLocation) %>%
+  left_join(clinicalSummary, by = "sampleId") %>%
   left_join(sampleData, by = "sampleId") %>%
   left_join(highestPuritySomaticSummary, by = "sampleId") %>%
   left_join(highestPurityStructuralVariantSummary, by = "sampleId") %>%
   left_join(wgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD))
 
 save(cohortSummary, file = "~/hmf/RData/processed/cohortSummary.RData")  
+write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
+
+
+
+
 
 ############## MULTIPLE BIOPSY COHORT
 multipleBiopsyCohort = purple::query_multiple_biopsy_cohort(dbProd)
@@ -198,18 +217,6 @@ multipleBiopsySummary = multipleBiopsyCohort %>% select(patientId, sampleId, gen
 save(multipleBiopsySummary, file = "~/hmf/RData/processed/multipleBiopsySummary.RData")
 
 
+
+
 #### VISUALISATION
-load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
-cohortByPrimaryTumorLocation = highestPurityCohort %>% group_by(primaryTumorLocation) %>% summarise(N = n())
-save(cohortByPrimaryTumorLocation, file = '~/hmf/RData/reference/cohortByPrimaryTumorLocation.RData')
-primaryTumorLocations = unique(highestPurityCohort$primaryTumorLocation)
-primaryTumorLocations= primaryTumorLocations[!is.na(primaryTumorLocations)]
-
-cosmicSignatureColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
-                           "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
-                           "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
-                           "#dea185","#a0729d","#8a392f")
-primaryTumorLocationColours = setNames(cosmicSignatureColours[1:length(primaryTumorLocations)], primaryTumorLocations)
-save(primaryTumorLocationColours, file = "~/hmf/RData/reference/primaryTumorLocationColours.RData")
-
-
