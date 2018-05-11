@@ -6,10 +6,10 @@ library(ggplot2)
 library(purple)
 
 #### DRIVER TYPE CLASSIFICATION
-load("~/hmf/RData/output/genePanel.RData")
+load("~/hmf/RData/processed/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
 
-load("~/hmf/RData/output/HmfRefCDSCv.RData")
+load("~/hmf/RData/processed/HmfRefCDSCv.RData")
 HmfRefCDSCv$prob_mis = ifelse(HmfRefCDSCv$n_mis>0,pmax(0,(HmfRefCDSCv$wmis_cv-1)/HmfRefCDSCv$wmis_cv),0)
 HmfRefCDSCv$prob_non = ifelse(HmfRefCDSCv$n_non,pmax(0,(HmfRefCDSCv$wnon_cv-1)/HmfRefCDSCv$wnon_cv),0)
 HmfRefCDSCv$prob_spl = ifelse(HmfRefCDSCv$n_spl>0,pmax(0,(HmfRefCDSCv$wspl_cv-1)/HmfRefCDSCv$wspl_cv),0)
@@ -40,7 +40,7 @@ rm(trainTsg, trainOnco, trainData, model)
 
 tsGenes = genePanel %>% filter(classification == "tsg")
 oncoGenes = genePanel %>% filter(classification == "onco")
-save(tsGenes, oncoGenes, file = "~/hmf/RData/output/driverGenes.RData")
+save(tsGenes, oncoGenes, file = "~/hmf/RData/processed/driverGenes.RData")
 
 ggplot(data=genePanelCv,aes(prob_mis,prob_non,label=gene_name))+
   geom_point(aes(colour = factor(classification)))+

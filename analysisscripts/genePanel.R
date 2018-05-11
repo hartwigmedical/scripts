@@ -50,7 +50,7 @@ rm(cgi, onco, civic, manual)
 fragileSites = read.csv(file = "~/Downloads/FragileSite.csv")
 fragileSites$range = GRanges(fragileSites$chrom, IRanges(fragileSites$start, fragileSites$end))
 
-load(file = "~/hmf/RData/input/canonicalTranscripts.RData")
+load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(canonicalTranscripts$geneStart, canonicalTranscripts$geneEnd))
 ol = as.matrix(findOverlaps(fragileSites$range, canonicalTranscripts$range))
 fragileGenes = canonicalTranscripts[ol[,2], c("gene", "chromosome")]
@@ -60,8 +60,8 @@ colnames(fragileGenes) <- c("gene_name", "fragile")
 rm(canonicalTranscripts, ol, fragileSites)
 
 ########################### Gene Panel
-load(file="~/hmf/RData/output/PcawgRefCDSCv.RData")
-load(file="~/hmf/RData/output/HmfRefCDSCv.RData")
+load(file="~/hmf/RData/reference/PcawgRefCDSCv.RData")
+load(file="~/hmf/RData/processed/HmfRefCDSCv.RData")
 sig = 0.01
 hmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig) %>% distinct(gene_name)
 hmfSignificant$hmf <- TRUE
@@ -73,4 +73,5 @@ genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
 genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene_name", all=T)
 
-save(genePanel, file="~/hmf/RData/output/genePanel.RData")
+genePanel = genePanel %>% filter(!gene_name %in% c("POM121L12","TRIM49B"))
+save(genePanel, file="~/hmf/RData/processed/genePanel.RData")

@@ -84,7 +84,7 @@ dels = merge(dels, do.call(rbind, delCandidates), by = "gene")
 
 dels = dels %>% 
   group_by(gene) %>%
-  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts ))
+  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts )) 
 
 dels$method <- "panel"
 dels$target <- dels$hmf

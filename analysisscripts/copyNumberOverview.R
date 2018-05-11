@@ -128,6 +128,17 @@ for (location in primaryTumorLocations) {
               file = paste0("~/hmf/analysis/copyNumberSummary/", locationString, ".amp3_0.circos"), sep = "\t", row.names = F, col.names = F, quote = F)
 }
 
+load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
+
+relevantAmps = geneCopyNumberAmplificationTargets %>% select(gene, chromosome, start, end) %>% mutate(type = "Amp")
+relevantDels = geneCopyNumberDeleteTargets %>% select(gene, chromosome, start, end)%>% mutate(type = "Del")
+relevantGenes = bind_rows(relevantAmps, relevantDels) %>% mutate(chromosome = paste0("hs", chromosome))
+
+locationString  = 'All'
+
+write.table(relevantGenes %>% select(chromosome, start, end, gene),
+            file = paste0("~/hmf/analysis/copyNumberSummary/", locationString, ".genes.circos"), sep = "\t", row.names = F, col.names = F, quote = F)
 
 
 for (location in primaryTumorLocations) {

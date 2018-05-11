@@ -2,73 +2,82 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-load(file = "~/hmf/RData/input/geneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/input/geneCopyNumberAmplifications.RData")
-load(file = "~/hmf/RData/output/geneCopyNumberDeleteTargets.RData")
-load(file = "~/hmf/RData/output/geneCopyNumberAmplificationTargets.RData")
-load(file = "~/hmf/RData/output/driverGenes.RData")
-load(file = "~/hmf/RData/output/genePanel.RData")
-genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
+load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
+load(file = "~/hmf/RData/reference/fusions.RData")
+load(file = "~/hmf/RData/reference/tertPromoters.Rdata")
+load(file = "~/hmf/RData/reference/geneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/reference/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
+load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/RData/processed/driverGenes.RData")
+load(file = "~/hmf/RData/processed/tsgDrivers.RData")
+load(file = "~/hmf/RData/processed/oncoDrivers.RData")
+load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
+load(file = "~/hmf/RData/processed/genePanel.RData")
 
+intragenicFusions = fusions %>% filter(`5pGene` == `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "IntragenicFusion")
+threePrimeFusions = fusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `3pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "3PrimeFusion")
+fivePrimeFusions = fusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "5PrimeFusion")
+fusions = bind_rows(intragenicFusions, threePrimeFusions) %>% bind_rows(fivePrimeFusions) %>% mutate(driverLikelihood = 1, type = "FUSION")
+fusions$type = ifelse(fusions$gene %in% tsGenes$gene_name, "TSG", fusions$type)
+fusions$type = ifelse(fusions$gene %in% oncoGenes$gene_name, "ONCO", fusions$type)
+rm(intragenicFusions, threePrimeFusions, fivePrimeFusions)
 
-allAmplifications = geneCopyNumberAmplifications %>%
+amplifications = geneCopyNumberAmplifications %>%
   filter(gene %in% oncoGenes$gene_name | gene %in% geneCopyNumberAmplificationTargets$target) %>%
-  select(sampleId = sampleId, gene) %>% mutate(amp = T)
+  group_by(sampleId = sampleId, gene) %>% summarise(driver = "Amp") %>%
+  mutate(driverLikelihood = 1, type = ifelse(gene %in% tsGenes$gene, "TSG", "ONCO"))
 
-targetAmplifications = geneCopyNumberAmplifications %>%
-  filter(gene %in% geneCopyNumberAmplificationTargets$target) %>%
-  select(sampleId = sampleId, gene) %>% mutate(amp = T)
-
-allDeletions = geneCopyNumberDeletes %>%
+deletions = geneCopyNumberDeletes %>%
   filter(gene %in% tsGenes$gene_name | gene %in% geneCopyNumberDeleteTargets$target) %>%
-  select(sampleId = sampleId, gene) %>% mutate(del = T)
+  group_by(sampleId = sampleId, gene) %>% summarise(driver = "Del", partial = somaticRegions > 1) %>% 
+  left_join(genePanel %>% select(gene = gene_name, fragile), by = "gene") %>%
+  mutate(fragile = ifelse(is.na(fragile), F, T)) %>%
+  mutate(driverLikelihood = 1, type = ifelse(gene %in% oncoGenes$gene, "ONCO", "TSG"))%>%
+  mutate(driver = ifelse(partial, "PartialDel", driver), driver = ifelse(fragile, "FragileDel", driver))
 
-targetDeletions = geneCopyNumberDeletes %>%
-  filter(gene %in% geneCopyNumberDeleteTargets$target) %>%
-  select(sampleId = sampleId, gene) %>% mutate(del = T)
+tertPromoters = tertPromoters %>% 
+  group_by(sampleId, gene) %>% 
+  summarise(driver = "Promoter", driverLikelihood = 1, type = "TSG") 
 
-load(file = "~/hmf/RData/output/tsgDrivers.RData")
 tsgDriverByGene = tsgDrivers %>%
-  mutate(driver = ifelse(hotspot, 1, driver)) %>%
   group_by(sampleId, gene) %>%
   summarise(
     multihit = n() > 1,
     biallelic = sum(biallelic) > 0, 
     hotspot = sum(hotspot) > 0, 
-    nearHotspot = F,
     impact = paste(impact, collapse = ","),
-    driver = max(driver)) %>%
-  full_join(allDeletions, by = c("sampleId" ,"gene")) %>% 
-  left_join(targetAmplifications, by = c("sampleId" ,"gene")) %>% 
-  mutate(driver = ifelse(!is.na(del), 1, driver)) %>%
-  mutate(type = 'TSG')
+    driver = max(driver),
+    driverLikelihood = max(driver)) %>%
+  mutate(driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
+  select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic)
 
-load(file = "~/hmf/RData/output/oncoDrivers.RData")
 oncoDriverByGene = oncoDrivers %>%
   group_by(sampleId, gene) %>%
   summarise(
-    multihit = F,
-    biallelic = F,
     hotspot = sum(hotspot) > 0,
     nearHotspot = any(nearHotspot),
     impact = paste(impact, collapse = ","),
-    driver = max(driver))  %>%
-  full_join(allAmplifications, by = c("sampleId" ,"gene")) %>% 
-  left_join(targetDeletions, by = c("sampleId" ,"gene")) %>% 
-  mutate(driver = ifelse(!is.na(amp), 1, driver)) %>%
-  mutate(type = 'ONCO')
+    driver = max(driver),
+    driverLikelihood = max(driver))  %>%
+  mutate(driver = impact, type = 'ONCO') %>%
+  select(sampleId, gene, impact, driver, driverLikelihood, type)
 
-load(file = "~/hmf/RData/input/tertPromoters.Rdata")
-tertPromoters = tertPromoters %>% group_by(sampleId, gene) %>% summarise(promoter = T)
+driverFactors = c("IntragenicFusion","3PrimeFusion","5PrimeFusion","Del","PartialDel","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Amp")
+driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
+  bind_rows(amplifications) %>% 
+  bind_rows(deletions) %>% 
+  bind_rows(tertPromoters) %>% 
+  bind_rows(fusions) %>%
+  mutate(driver = factor(driver, driverFactors)) %>%
+  ungroup() %>% group_by(sampleId, gene) %>% 
+  top_n(1, driver)
 
-driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>%
-  full_join(tertPromoters, by = c("sampleId", "gene")) %>%
-  mutate(driver = ifelse(!is.na(promoter), 1, driver)) %>%
-  mutate(type = ifelse(is.na(type) & gene == 'TERT', "TSG", type))
+driversByGene%>%  ungroup() %>% group_by(sampleId, gene) %>% summarise(n = n()) %>% filter(n > 1)
 
-load(file = "~/hmf/RData/input/highestPurityCohort.RData")
 cancerTypes = highestPurityCohort %>% select(sampleId = sampleId, primaryTumorLocation)
 driversByGene = left_join(driversByGene, cancerTypes, by = "sampleId")
-save(driversByGene, file = "~/hmf/RData/output/driversByGene.RData")
 
-driversByGene %>% group_by(sampleId, gene) %>% filter(any(del) & any(amp)) 
+driversByGene = left_join(driversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")
+save(driversByGene, file = "~/hmf/RData/processed/driversByGene.RData")
+

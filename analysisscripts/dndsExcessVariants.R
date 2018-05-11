@@ -124,16 +124,16 @@ annotate_somatics <- function(annotmuts, somatics) {
   return (result) 
 }
 
-load(file = "~/hmf/RData/input/highestPurityExonicSomatics.RData")
+load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
 somatics = highestPurityExonicSomatics %>% 
   select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic)
 
-load(file = "~/hmf/RData/output/dndsFilteredAnnotatedMutations.RData")
+load(file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
 filteredMutations = annotate_somatics(dndsFilteredAnnotatedMutations, somatics)
 filteredMutations$nearHotspot <- nearHotspot(filteredMutations)
 
 # Gene Panel
-load(file = "~/hmf/RData/output/genePanel.RData")
+load(file = "~/hmf/RData/processed/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
 filteredMutations = filteredMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
@@ -179,29 +179,29 @@ excessOncoFrameshiftRates = excessOncoRates %>% ungroup() %>% filter(impact == "
 excessOncoRates = excessOncoRates %>% filter(impact != "INDEL") %>% bind_rows(excessOncoInframeRates) %>% bind_rows(excessOncoFrameshiftRates) %>% arrange(gene, impact) %>%
   select(gene, impact, HotspotDriverRate, HitDriverRate)
 
-save(excessTsgRates, excessOncoRates, file = "~/hmf/RData/output/excessRates.RData")
+save(excessTsgRates, excessOncoRates, file = "~/hmf/RData/processed/excessRates.RData")
 
 
 ####### APPLY EXCESS RATES TO MUTATIONS
-load("~/hmf/RData/output/excessRates.RData")
+load("~/hmf/RData/processed/excessRates.RData")
 
-load(file = "~/hmf/RData/input/highestPurityExonicSomatics.RData")
+load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
 somatics = highestPurityExonicSomatics %>% 
   select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic)
 
-load(file = "~/hmf/RData/output/dndsUnfilteredAnnotatedMutations.RData")
+load(file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
 mutations = annotate_somatics(dndsUnfilteredAnnotatedMutations, somatics)
 mutations$nearHotspot <- nearHotspot(mutations)
 
 # Gene Panel
-load(file = "~/hmf/RData/output/genePanel.RData")
+load(file = "~/hmf/RData/processed/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
 mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
 tsgAnnotatedMutations = tsg_mutations(mutations)
 oncoAnnotatedMutations = onco_mutations(mutations)
 
-load(file = "~/hmf/RData/output/driverGenes.RData")
+load(file = "~/hmf/RData/processed/driverGenes.RData")
 
 tsgAnnotatedMutations$geneStatus <- ifelse(tsgAnnotatedMutations$redundant, "Redundant", tsgAnnotatedMutations$geneStatus)
 tsgAnnotatedMutations = left_join(tsgAnnotatedMutations, excessTsgRates %>% select(gene, impact, MultiHitDriverRate, SingleHitDriverRate), by = c("gene", "impact"))
@@ -212,7 +212,7 @@ tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$hotspot > 0, 1, tsgA
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$redundant, 0, tsgAnnotatedMutations$driver)
 
 tsgDrivers = tsgAnnotatedMutations %>% filter(gene %in% tsGenes$gene_name, driver > 0)
-save(tsgDrivers, file = "~/hmf/RData/output/tsgDrivers.RData")
+save(tsgDrivers, file = "~/hmf/RData/processed/tsgDrivers.RData")
 
 oncoAnnotatedMutations$geneStatus <- as.character(oncoAnnotatedMutations$geneStatus)
 oncoAnnotatedMutations$geneStatus <- ifelse(oncoAnnotatedMutations$redundant, "Redundant", oncoAnnotatedMutations$geneStatus)
@@ -224,7 +224,7 @@ oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$geneStatus == "Nea
 oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$redundant, 0, oncoAnnotatedMutations$driver)
 
 oncoDrivers = oncoAnnotatedMutations %>% filter(gene %in% oncoGenes$gene_name, driver > 0)
-save(oncoDrivers, file = "~/hmf/RData/output/oncoDrivers.RData")
+save(oncoDrivers, file = "~/hmf/RData/processed/oncoDrivers.RData")
 
 
 

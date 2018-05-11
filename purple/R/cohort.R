@@ -1,6 +1,5 @@
 highest_purity_patients<-function(cohort) {
-  dt = data.table(cohort)
-  return (cohort[dt[, .I[which.max(purity)], by=patientId]$V1, ])
+  cohort %>% group_by(patientId, purity) %>% top_n(1, -score) %>% ungroup() %>% group_by(patientId) %>% top_n(1, purity) %>% ungroup()
 }
 
 multiple_biopsy<-function(cohort) {
@@ -37,6 +36,13 @@ cohort <-function(cohortRawData) {
   return (cohort)
 }
 
+cohort_deleted_genes <- function(geneCopyNumberDeletes) {
+  geneCopyNumberDeletes %>%
+    filter(chromosome != 'Y', germlineHomRegions == 0, germlineHetRegions == 0) %>%
+    group_by(sampleId) %>%
+    summarise(deletedGenes = n())
+}
+
 cohort_somatic_summary <- function(somatics) {
 
   result = cohort_somatics_by_type(somatics) %>%
@@ -59,8 +65,9 @@ cohort_mutational_load <- function(somatics) {
 cohort_somatics_by_type <- function(somatics) {
   result = somatics %>%
     filter(filter == 'PASS') %>%
-    group_by(sampleId, type) %>%
+    group_by(sampleId, type, clonality) %>%
     summarise(count = n()) %>%
+    unite(type, clonality, type) %>%
     spread(type, count)
 
   return (result)

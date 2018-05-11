@@ -1,14 +1,13 @@
-query_highest_purity_cohort<-function(dbConnect) {
+query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
 
-  cohort = purple::query_purity(dbConnect)
+  cohort = purple::query_purity(dbConnect) %>%
+    left_join(geneDeletes, by = "sampleId") %>%
+    mutate(genesDeleted = ifelse(is.na(genesDeleted), 0, genesDeleted)) %>%
+    filter(genesDeleted < 280)
 
   # PatientIds
   patientIdLookups = query_patient_id_lookup(dbConnect)
   cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
-
-  #Clinical Data
-  clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   highestPurityCohort = purple::highest_purity_patients(cohort)
@@ -35,6 +34,11 @@ query_multiple_biopsy_cohort<-function(dbConnect) {
   return (multipleBiopsyCohort)
 }
 
+query_gene_deletes <-function(dbConnect) {
+  query = "SELECT g.sampleId, count(*) as genesDeleted FROM geneCopyNumber g WHERE minCopyNumber < 0.50 AND chromosome <> 'Y' AND germlineHetRegions=0 AND germlineHomRegions = 0 GROUP BY 1 ORDER BY 2 DESC"
+  return (dbGetQuery(dbConnect, query))
+}
+
 query_gene_copy_number_by_gene<-function(dbConnect, genes) {
   sampleIdString = paste("'", genes$gene_name, "'", collapse = ",", sep = "")
   query = paste(
@@ -52,6 +56,17 @@ query_tert_promoters<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
     "SELECT * FROM somaticVariant where gene = 'TERT' and position in (1295242,1295228,1295250) AND canonicalEffect = 'upstream gene variant'",
+    "   AND sampleId in (",sampleIdString, ")",
+    sep = " ")
+  return (dbGetQuery(dbConnect, query))
+}
+
+query_fusions<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    " select sv.sampleId, 5p.gene as 5pGene, 3p.gene as 3pGene",
+    " from structuralVariantFusion f,structuralVariantBreakend 5p, structuralVariantBreakend 3p, structuralVariant sv",
+    " where 5p.id = f.fivePrimeBreakendId and 3p.id = f.threePrimeBreakEndId and isReported and 5p.structuralVariantId = sv.id ",
     "   AND sampleId in (",sampleIdString, ")",
     sep = " ")
   return (dbGetQuery(dbConnect, query))
@@ -219,13 +234,14 @@ query_patient_id_lookup<-function(dbConnect) {
   return (result)
 }
 
-query_whole_genome_duplication<-function(dbConnect, sampleId) {
+query_whole_genome_duplication<-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
     "SELECT sampleId, count(*) as duplicatedAutosomes",
     "  FROM ",
     " (select sampleId, chromosome, round(sum(bafCount*actualBaf*copyNumber)/sum(bafCount),1) as lwMajorAlleleAvg ",
     " from copyNumber ",
-    " where sampleId = '", sampleId, "' and chromosome not in ('X', 'Y') ",
+    " where sampleId in (", sampleIdString, ") and chromosome not in ('X', 'Y') ",
     " group by sampleId, chromosome ",
     " HAVING lwMajorAlleleAvg > 1.5) a ",
     " GROUP BY sampleId",

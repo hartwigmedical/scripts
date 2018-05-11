@@ -13,8 +13,8 @@ create_data_frame <- function(cvList) {
   return (result)
 }
 
-load(file = "~/hmf/RData/input/highestPurityCohort.RData")
-load(file = "~/hmf/RData/input/highestPurityExonicSomatics.RData")
+load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
+load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
 
 somatics = highestPurityExonicSomatics %>% 
   filter(type == "INDEL" | type == "SNP", repeatCount <= 8) %>%
@@ -22,7 +22,7 @@ somatics = highestPurityExonicSomatics %>%
 
 data("cancergenes_cgc81", package="dndscv")
 data("covariates_hg19", package="dndscv")
-refdb="~/hmf/RData/input/HmfRefCDS.RData"
+refdb="~/hmf/RData/reference/HmfRefCDS.RData"
 load(refdb)
 newgenes = sapply(RefCDS, function(x) x$gene_name) # New list of genes
 oldgenes = sapply(strsplit(newgenes,split=":"), function(x) x[1])
@@ -32,7 +32,7 @@ kc = newgenes[oldgenes %in% known_cancergenes]
 
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
 dndsFilteredAnnotatedMutations = output$annotmuts
-save(dndsFilteredAnnotatedMutations, file = "~/hmf/RData/output/dndsFilteredAnnotatedMutations.RData")
+save(dndsFilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
 rm(dndsFilteredAnnotatedMutations)
 
 HmfRefCDSCvList = list()
@@ -41,22 +41,22 @@ cancerTypes = unique(highestPurityCohort$primaryTumorLocation)
 cancerTypes = cancerTypes[!is.na(cancerTypes)]
 for (cancerType in cancerTypes) {
   cat("Processing", cancerType)
-  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$primaryTumorLocation) & highestPurityCohort$primaryTumorLocation == cancerType, c("sampleId")]
-  input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
+  cancerTypeSampleIds =  highestPurityCohort %>% filter(!is.na(primaryTumorLocation), primaryTumorLocation == cancerType) %>% select(sampleId)
+  input = somatics %>% filter(sampleId %in% cancerTypeSampleIds$sampleId)
   output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
   
   HmfRefCDSCvList[[cancerType]] <- output$sel_cv
 }
 
 HmfRefCDSCv = create_data_frame(HmfRefCDSCvList)
-save(HmfRefCDSCv, file="~/hmf/RData/output/HmfRefCDSCv.RData")
+save(HmfRefCDSCv, file="~/hmf/RData/processed/HmfRefCDSCv.RData")
 
 
 #################### Unfiltered Annotations #########################
 unfilteredSomatics = highestPurityExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
 unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
-save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/output/dndsUnfilteredAnnotatedMutations.RData")
+save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
 rm(unfilteredSomatics, unfilteredOutput, dndsUnfilteredAnnotatedMutations)
 
 
