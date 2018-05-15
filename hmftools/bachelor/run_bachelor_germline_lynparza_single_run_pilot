@@ -8,6 +8,6 @@ run=$(basename ${run_dir})
 java -Xmx8G -Xms4G \
     -jar ${bachelor_jar} \
     -configXml /data/experiments/eligibility/lynparza_20180503.xml \
-    -germline
+    -germline \
     -output /data/experiments/eligibility/${run}.germline_eligibility.csv \
     -runDirectory ${run_dir}
