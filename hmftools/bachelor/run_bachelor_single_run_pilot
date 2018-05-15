@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+bachelor_jar=/data/common/tools/bachelor_pilot/bachelor.jar
+config_dir=/data/experiments/eligibility/lynparza_20180503
+output=/data/experiments/eligibility
+
+run_dir=$1 && shift
+run=$(basename ${run_dir})
+
+java -Xmx8G -Xms4G \
+    -jar ${bachelor_jar} \
+    -configXml /data/experiments/eligibility/lynparza_20180503.xml \
+    -output /data/experiments/eligibility/${run}.eligibility.csv \
+    -runDirectory ${run_dir}
