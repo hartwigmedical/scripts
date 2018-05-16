@@ -70,8 +70,8 @@ martincorenaSignificant$martincorena <- TRUE
 
 genePanel = merge(martincorenaSignificant, hmfSignificant, by = "gene_name", all = T)
 genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
-genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene_name", all=T)
-
 genePanel = genePanel %>% filter(!gene_name %in% c("POM121L12","TRIM49B"))
 save(genePanel, file="~/hmf/RData/processed/genePanel.RData")
+
+#genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)
