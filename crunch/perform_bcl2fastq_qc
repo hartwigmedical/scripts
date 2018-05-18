@@ -25,15 +25,13 @@ function printHeader() {
     echo -e "\n## ----------\n## ${fieldTitle}:\n## ----------"
 }
 
-## if needed contruct absolute path by host we are on
+## make sure all are absolute paths
 for seqRun in "${seqRuns[@]}"; do
     
     if [[ $seqRun =~ ^\/ ]]; then
         seqDirs+=(${seqRun})
-    elif [[ $CURR_HOST == "datastore" ]]; then
-        seqDirs+=("/data/sequencer_archive/${seqRun}" )
     else
-        seqDirs+=("/data1/illumina_data/${seqRun}" )
+        seqDirs+=("$PWD/${seqRun}" )
     fi
     
 done

@@ -89,7 +89,7 @@ my $samples = queryLims( $lims, \%inc, \%opt );
 ## output
 if ( $opt{ debug } ){
     ## print complete objects to inspect all properties
-    my $json_obj = JSON->new->allow_nonref;
+    my $json_obj = JSON::XS->new->allow_nonref;
     my $json_txt = $json_obj->pretty->encode( $samples );
     print $json_txt."\n";
 }

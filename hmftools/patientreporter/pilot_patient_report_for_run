@@ -4,7 +4,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 patient_reporter_dir=/data/common/tools/patientreporter_pilot
 
-drup_genes_csv=${patient_reporter_dir}/csv/drup_genes.csv
+drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png

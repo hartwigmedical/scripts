@@ -69,8 +69,8 @@ aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
 }
 
 candidates<-function(driverGene, adjacentAggregate) {
-  candidates = c(adjacentAggregate[adjacentAggregate$score >= driverGene$score -2 | adjacentAggregate$score >= 0.85 * driverGene$score, ]$gene)
-  return (paste(candidates, collapse = ","))
+  candidates = adjacentAggregate %>% filter(score >= driverGene$score -2 | score >= 0.85 * driverGene$score) %>% arrange(-score)
+  return (paste(candidates$gene, collapse = ","))
 }
 
 neighbours<-function(driverGene, aggregatedCopyNumbers) {

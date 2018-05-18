@@ -22,6 +22,14 @@ longestCandidate <- function(candidates, canonicalTranscripts) {
   return (collapseCandidates(candidateVector$gene))
 }
 
+highestScoringCodingCandidate <- function(candidates, canonicalTranscripts) {
+  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% mutate(rank = row_number())
+  candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>% 
+    mutate(isCoding = codingBases > 0) %>%
+    arrange(-isCoding, rank) %>% slice(1)
+  return (collapseCandidates(candidateVector$gene))
+}
+
 categoriseCandidates <-function(gene, candidates, genePanel) {
  
   candidateVector = unlist(strsplit(candidates, split = ","))
@@ -51,17 +59,17 @@ candidatesRange <- function(gene, candidates, canonicalTranscripts) {
 }
 
 #### SUPER GENES
-load(file = "~/hmf/RData/canonicalTranscripts.RData")
+load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(canonicalTranscripts$geneStart, canonicalTranscripts$geneEnd))
 canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$range, canonicalTranscripts$range, type="within")) %>% filter(queryHits != subjectHits)
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
 #### Load Amps and Dels Gene Panel
-load("~/hmf/RData/ampsDelsGenePanel.RData")
+load("~/hmf/RData/processed/genePanel.RData")
 
 #### DELETIONS
-load(file = "~/hmf/RData/geneCopyNumberDeletesDriverSummary.RData")
-dels = geneCopyNumberDeletesDriverSummary %>% 
+load(file = "~/hmf/RData/processed/geneCopyNumberDeletionsSummary.RData")
+dels = geneCopyNumberDeletionsSummary %>% 
   group_by(gene) %>%
   filter(score > 5, unsupported < N / 2) %>%
   mutate(candidatesCount = length(unlist(strsplit(candidates, split = ",")))) %>%
@@ -76,7 +84,7 @@ dels = merge(dels, do.call(rbind, delCandidates), by = "gene")
 
 dels = dels %>% 
   group_by(gene) %>%
-  mutate(longest = longestCandidate(remainders, canonicalTranscripts ))
+  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts )) 
 
 dels$method <- "panel"
 dels$target <- dels$hmf
@@ -86,17 +94,15 @@ dels$method <- ifelse(is.na(dels$target), "known", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$deletion, dels$target)
 dels$method <- ifelse(is.na(dels$target), "cosmic", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$cosmicTsg, dels$target)
-dels$method <- ifelse(is.na(dels$target), "longest", dels$method)
-dels$target <- ifelse(is.na(dels$target), dels$longest, dels$target)
 dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
-dels$target <- ifelse(is.na(dels$target), dels$gene, dels$target)
+dels$target <- ifelse(is.na(dels$target), dels$highestScoring, dels$target)
 dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
 
 delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
 dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
 
 geneCopyNumberDeleteTargets = dels
-save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/geneCopyNumberDeleteTargets.RData")
+save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
 
 rm(dels)
 rm(delCandidates)
@@ -105,7 +111,7 @@ rm(canonicalTranscriptsOverlaps)
 rm(delCandidatesRange)
 
 #### AMPLIFICAIONS
-load(file = "~/hmf/RData/geneCopyNumberAmplificationSummary.RData")
+load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationSummary.RData")
 amps = geneCopyNumberAmplificationSummary %>% 
   group_by(gene) %>%
   filter(score > 20) %>%
@@ -121,7 +127,7 @@ amps = merge(amps, do.call(rbind, ampCandidates), by = "gene")
 
 amps = amps %>% 
   group_by(gene) %>%
-  mutate(longest = longestCandidate(remainders, canonicalTranscripts ))
+  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts ))
 
 amps$method <- "panel"
 amps$target <- amps$hmf
@@ -137,12 +143,14 @@ amps$method <- ifelse(is.na(amps$target), "highest", amps$method)
 amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
 amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
 
-ampsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
+ampsWithMultipleTargets = amps %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
+amps = amps %>% group_by(gene) %>% mutate(target = firstCandidate(target))
 
 geneCopyNumberAmplificationTargets = amps
-save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
+save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
 
 rm(amps)
 rm(ampCandidates)
 rm(ampCandidatesRange)
 rm(geneCopyNumberAmplificationSummary)
+

@@ -628,12 +628,12 @@ sub fixDateFields{
         ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)        
         if ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
             ## case yyyy-mm-dd already ok
-            die "[EXIT] Month higher than 12 not possible ($old_date) for sample ($identifier): fix this first\n" if $2 > 12;
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has incorrect month ($identifier): kept string as-is but please fix\n" if $2 > 12;
             $new_date = $old_date;
         }
         elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
             ## dd-mm-yyyy
-            die "[EXIT] Month higher than 12 not possible ($old_date) for sample ($identifier): fix this first\n" if $2 > 12;
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has incorrect month ($identifier): kept string as-is but please fix\n" if $2 > 12;
             $new_date = join( "-", $3, $2, $1 );
         }
         elsif ( $old_date =~ /^\d+$/ ){

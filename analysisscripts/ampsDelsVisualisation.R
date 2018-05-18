@@ -51,9 +51,9 @@ significantCNVByCancerType <- function(copyNumberTargets, maxRecords = 30) {
 
 ###################### PART 1 ###################### 
 
-load("~/hmf/RData/cancerTypeColours.RData")
-load("~/hmf/RData/geneCopyNumberDeleteTargets.RData")
-load("~/hmf/RData/geneCopyNumberAmplificationTargets.RData")
+load("~/hmf/RData/reference/cancerTypeColours.RData")
+load("~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
+load("~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
 
 
 significantDels = significantCNVByCancerType(geneCopyNumberDeleteTargets)
