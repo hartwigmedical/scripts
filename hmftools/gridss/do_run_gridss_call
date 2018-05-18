@@ -4,6 +4,9 @@
 #
 source do_run_gridss_lib
 
+assert_preprocessing_complete
+assert_assembly_complete
+
 if [[ ! -f $gridss_raw_vcf.unannotated.vcf ]] ; then
 	echo $(date) IdentifyVariants
 	/usr/bin/time -o ${log_prefix}.IdentifyVariants.log \

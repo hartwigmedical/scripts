@@ -5,7 +5,10 @@
 source do_run_gridss_lib
 
 if [[ ! -f $gridss_raw_vcf ]] ; then
+	assert_calling_complete
 	if [[ ! -f $gridss_raw_vcf.unannotated2.vcf ]] ; then
+		assert_preprocessing_complete
+		assert_assembly_complete
 		echo $(date) AnnotateVariants
 		/usr/bin/time -o ${log_prefix}.AnnotateVariants.log \
 		java -Xmx8G $gridss_jvm_args \
@@ -21,7 +24,7 @@ if [[ ! -f $gridss_raw_vcf ]] ; then
 			BLACKLIST=$blacklist \
 			CONFIGURATION_FILE=$gridss_config_file
 	fi
-	if [[ -f $gridss_raw_vcf.unannotated2.vcf ]] ; then
+	if [[ ! -f $gridss_raw_vcf ]] ; then
 		echo $(date) AnnotateUntemplatedSequence
 		/usr/bin/time -o ${log_prefix}.AnnotateUntemplatedSequence.log \
 		java -Xmx1G $gridss_jvm_args \
@@ -29,11 +32,9 @@ if [[ ! -f $gridss_raw_vcf ]] ; then
 			gridss.AnnotateUntemplatedSequence \
 			REFERENCE_SEQUENCE=$ref_genome \
 			INPUT=$gridss_raw_vcf.unannotated2.vcf \
-			OUTPUT=$gridss_raw_vcf.tmp.vcf \
+			OUTPUT=$gridss_raw_vcf \
 			WORKER_THREADS=$threads && \
-		mv $gridss_raw_vcf.tmp.vcf $gridss_raw_vcf && \
-		mv $gridss_raw_vcf.idx $gridss_raw_vcf.idx && \
-		rm $gridss_raw_vcf.unannotated*.vcf*
+		rm $gridss_raw_vcf.unannotated2.vcf*
 	fi
 fi
 # grep -ve '\[' $gridss_raw_vcf | grep -ve '\]' | grep -v BEALN | grep -v "#" | cut -f 3,5 | tr -d '.' | sed -e 's/^/>/' | tr '\t' '\n'

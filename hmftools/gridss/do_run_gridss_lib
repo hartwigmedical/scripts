@@ -79,3 +79,38 @@ gridss_common_args="
 	REFERENCE_SEQUENCE=$ref_genome "
 
 mkdir -p $gridss_dir $log_dir
+
+function assert_preprocessing_complete() {
+	if [[ ! -f $gridss_dir/$(basename $normal_bam).gridss.working/$(basename $normal_bam).sv.bam ]] ; then
+		echo "Normal bam preprocessing not complete. Terminating." 1>&2
+		exit 1
+	fi
+	if [[ ! -f $gridss_dir/$(basename $tumor_bam).gridss.working/$(basename $tumor_bam).sv.bam ]] ; then
+		echo "Tumor bam preprocessing not complete. Terminating." 1>&2
+		exit 1
+	fi
+}
+function assert_assembly_complete() {
+	if [[ ! -f $gridss_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_bam).sv.bam ]] ; then
+		echo "Assembly not complete. Terminating." 1>&2
+		exit 1
+	fi
+}
+function assert_calling_complete() {
+	if [[ ! -f $gridss_raw_vcf.unannotated.vcf ]] ; then
+		echo "Variant calling not complete. Terminating." 1>&2
+		exit 1
+	fi
+}
+
+
+
+
+
+
+
+
+
+
+
+
