@@ -110,7 +110,7 @@ onco_mutations <- function(mutations) {
 
 annotate_somatics <- function(annotmuts, somatics) {
   result = left_join(annotmuts, somatics, by = c("sampleID","chr","pos","ref", "mut")) %>% 
-    select(sampleId = sampleID, chromosome = chr, position = pos, ref = ref, alt = mut, gene, type, impact, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic)
+    select(sampleId = sampleID, chromosome = chr, position = pos, ref = ref, alt = mut, gene, type, impact, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
   
   result = result %>%
     mutate(impact = ifelse(impact == "Essential_Splice", "Splice", impact)) %>%
@@ -124,9 +124,9 @@ annotate_somatics <- function(annotmuts, somatics) {
   return (result) 
 }
 
-load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
-somatics = highestPurityExonicSomatics %>% 
-  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic)
+load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
+somatics = hpcExonicSomatics %>% 
+  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
 
 load(file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
 filteredMutations = annotate_somatics(dndsFilteredAnnotatedMutations, somatics)
@@ -151,6 +151,9 @@ summarise_annotation <- function(annotatedMutations) {
 
 filteredTsgMutationsByGene = summarise_annotation(filteredTsgMutations)
 filteredOncoMutationsByGene = summarise_annotation(filteredOncoMutations)
+
+load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
+HmfRefCDSCv = purple::dnds_excess(HmfRefCDSCv)
 
 excessVariants = HmfRefCDSCv %>% 
   filter(cancerType == 'All') %>%
@@ -185,9 +188,9 @@ save(excessTsgRates, excessOncoRates, file = "~/hmf/RData/processed/excessRates.
 ####### APPLY EXCESS RATES TO MUTATIONS
 load("~/hmf/RData/processed/excessRates.RData")
 
-load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
-somatics = highestPurityExonicSomatics %>% 
-  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic)
+load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
+somatics = hpcExonicSomatics %>% 
+  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
 
 load(file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
 mutations = annotate_somatics(dndsUnfilteredAnnotatedMutations, somatics)
@@ -202,7 +205,6 @@ tsgAnnotatedMutations = tsg_mutations(mutations)
 oncoAnnotatedMutations = onco_mutations(mutations)
 
 load(file = "~/hmf/RData/processed/driverGenes.RData")
-
 tsgAnnotatedMutations$geneStatus <- ifelse(tsgAnnotatedMutations$redundant, "Redundant", tsgAnnotatedMutations$geneStatus)
 tsgAnnotatedMutations = left_join(tsgAnnotatedMutations, excessTsgRates %>% select(gene, impact, MultiHitDriverRate, SingleHitDriverRate), by = c("gene", "impact"))
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "SingleHit", tsgAnnotatedMutations$SingleHitDriverRate, NA )
@@ -225,12 +227,3 @@ oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$redundant, 0, onco
 
 oncoDrivers = oncoAnnotatedMutations %>% filter(gene %in% oncoGenes$gene_name, driver > 0)
 save(oncoDrivers, file = "~/hmf/RData/processed/oncoDrivers.RData")
-
-
-
-
-
-
-
-
-
