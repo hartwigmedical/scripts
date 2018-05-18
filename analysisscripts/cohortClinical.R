@@ -3,9 +3,7 @@ library(dplyr)
 library(tidyr)
 
 #### Curated Data
-allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180512.csv", stringsAsFactors = F, header = T) %>%
-  select(-treatment, -treatmentType) 
-allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01020004T", "birthYear"] <- 1985
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180516.csv", stringsAsFactors = F, header = T)
 
 ### Database Data
 dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
@@ -34,7 +32,42 @@ cosmicSignatureColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e
 cancerTypeColours = setNames(cosmicSignatureColours[1:length(cancerTypes)], cancerTypes)
 save(cancerTypeColours, file = "~/hmf/RData/reference/cancerTypeColours.RData")
 
+############################## MANUAL MODIFICATIONS ##############################
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180512.csv", stringsAsFactors = F, header = T) %>%
+  select(-treatment, -treatmentType) 
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01020004T", "birthYear"] <- 1985
 
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02070029T", "primaryTumorLocation"] <- "Colon/Rectum"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02070029T", "cancerSubtype"] <- ""
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01070039T", "primaryTumorLocation"] <- "Colon/Rectum"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01070039T", "cancerSubtype"] <- ""
+
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02080086T", "primaryTumorLocation"] <- "NET"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02080086T", "cancerSubtype"] <- ""
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01080005T", "primaryTumorLocation"] <- "NET"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01080005T", "cancerSubtype"] <- ""
+
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050116T", "primaryTumorLocation"] <- "CNS"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050116T", "cancerSubtype"] <- "Neuroblastoma"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050008T", "primaryTumorLocation"] <- "CNS"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050008T", "cancerSubtype"] <- "Neuroblastoma"
+
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02030349T", "primaryTumorLocation"] <- "CUP"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02030349T", "cancerSubtype"] <- "Endometrial or Ovarium"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01030013T", "primaryTumorLocation"] <- "CUP"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01030013T", "cancerSubtype"] <- "Endometrial or Ovarium"
+
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050240T", "primaryTumorLocation"] <- "Skin"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050240T", "cancerSubtype"] <- "Atypical fibroxanthoma"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050021T", "primaryTumorLocation"] <- "Skin"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050021T", "cancerSubtype"] <- "Atypical fibroxanthoma"
+
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02230072T", "primaryTumorLocation"] <- "Skin"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02230072T", "cancerSubtype"] <- "Skin squamous cell carcinoma"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01230001T", "primaryTumorLocation"] <- "Skin"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01230001T", "cancerSubtype"] <- "Skin squamous cell carcinoma"
+
+write.csv(allClinicalDataCurated, file = "~/hmf/resources/ClinicalData20180516.csv", row.names = F)
 
 ############################## OLD ##############################
 clean_data <- function(vector) {
