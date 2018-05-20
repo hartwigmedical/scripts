@@ -58,6 +58,7 @@ fragileGenes$fragile <- TRUE
 fragileGenes$chromosome <- NULL
 colnames(fragileGenes) <- c("gene_name", "fragile")
 rm(canonicalTranscripts, ol, fragileSites)
+save(fragileGenes, file = "~/hmf/RData/Processed/fragileGenes.RData")
 
 ########################### Gene Panel
 load(file="~/hmf/RData/reference/PcawgRefCDSCv.RData")

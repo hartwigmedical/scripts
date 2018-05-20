@@ -15,18 +15,16 @@ query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
   return (highestPurityCohort)
 }
 
-query_multiple_biopsy_cohort<-function(dbConnect) {
+query_multiple_biopsy_cohort<-function(dbConnect, geneDeletes) {
 
-  cohort = purple::query_purity(dbConnect)
+  cohort = purple::query_purity(dbConnect) %>%
+    left_join(geneDeletes, by = "sampleId") %>%
+    mutate(genesDeleted = ifelse(is.na(genesDeleted), 0, genesDeleted)) %>%
+    filter(genesDeleted < 280)
 
   # PatientIds
   patientIdLookups = query_patient_id_lookup(dbConnect)
   cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
-
-
-  #Clinical Data
-  clinicalData = purple::query_clinical_data(dbConnect)
-  cohort = left_join(cohort, clinicalData[, c("sampleId", "primaryTumorLocation")])
 
   # Cohort
   multipleBiopsyCohort = purple::multiple_biopsy(cohort)

@@ -26,7 +26,7 @@ highestScoringCodingCandidate <- function(candidates, canonicalTranscripts) {
   candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% mutate(rank = row_number())
   candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>% 
     mutate(isCoding = codingBases > 0) %>%
-    arrange(-isCoding, rank) %>% slice(1)
+    arrange(-isCoding, rank)%>% dplyr::slice(1)
   return (collapseCandidates(candidateVector$gene))
 }
 
@@ -66,6 +66,12 @@ superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[
 
 #### Load Amps and Dels Gene Panel
 load("~/hmf/RData/processed/genePanel.RData")
+genePanel[is.na(genePanel)] <- F
+delGenePanel  = genePanel %>% select(-cosmicOncogene, -amplification) %>%
+  filter(martincorena| hmf | cosmicCurated | cosmicTsg | deletion)
+ampGenePanel  = genePanel %>% select(-cosmicTsg, -deletion) %>%
+  filter(martincorena| hmf | cosmicCurated | cosmicOncogene | amplification)
+rm(genePanel)
 
 #### DELETIONS
 load(file = "~/hmf/RData/processed/geneCopyNumberDeletionsSummary.RData")
@@ -79,10 +85,10 @@ dels = geneCopyNumberDeletionsSummary %>%
 delCandidatesRange = apply(dels[, c("gene","superCandidates")], 1, function(x) {candidatesRange(x[1], x[2], canonicalTranscripts)})
 dels = merge(dels, do.call(rbind, delCandidatesRange), by = "gene")
 
-delCandidates = apply(dels[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], genePanel)})
+delCandidates = apply(dels[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], delGenePanel)})
 dels = merge(dels, do.call(rbind, delCandidates), by = "gene")
 
-dels = dels %>% 
+dels =  dels %>% 
   group_by(gene) %>%
   mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts )) 
 
@@ -106,9 +112,9 @@ save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/processed/geneCopyNumberDe
 
 rm(dels)
 rm(delCandidates)
-rm(geneCopyNumberDeletesDriverSummary)
 rm(canonicalTranscriptsOverlaps)
 rm(delCandidatesRange)
+rm(geneCopyNumberDeletionsSummary)
 
 #### AMPLIFICAIONS
 load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationSummary.RData")
@@ -122,7 +128,7 @@ amps = geneCopyNumberAmplificationSummary %>%
 ampCandidatesRange = apply(amps[, c("gene","superCandidates")], 1, function(x) {candidatesRange(x[1], x[2], canonicalTranscripts)})
 amps = merge(amps, do.call(rbind, ampCandidatesRange), by = "gene")
 
-ampCandidates = apply(amps[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], genePanel)})
+ampCandidates = apply(amps[, c("gene","superCandidates")], 1, function(x) {categoriseCandidates(x[1], x[2], ampGenePanel)})
 amps = merge(amps, do.call(rbind, ampCandidates), by = "gene")
 
 amps = amps %>% 

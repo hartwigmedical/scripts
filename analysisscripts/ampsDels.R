@@ -4,14 +4,14 @@ library(dplyr)
 
 
 ####### LOAD DATA FROM FILE #######
-load(file = "~/hmf/RData/reference/geneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/reference/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/reference/hpcGeneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/reference/hpcGeneCopyNumberAmplifications.RData")
 load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 genes = canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd)
 
 ####### EXECUTE ALGORITHM #######
-geneCopyNumberDeletes = geneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
-geneCopyNumberAmplifications = geneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
+geneCopyNumberDeletes = hpcGeneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
+geneCopyNumberAmplifications = hpcGeneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
 
 deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, adjacent = "gene"); date()
 amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, adjacent = "arm"); date()

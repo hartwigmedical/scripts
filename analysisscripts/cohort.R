@@ -193,6 +193,7 @@ load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
 multipleBiopsySomatics = bind_rows(allSomatics_p1, allSomatics_p2) %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)
 save(multipleBiopsySomatics, file = "~/hmf/RData/reference/multipleBiopsySomatics.RData")
 
+
 multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
   group_by(patientId, startChromosome, endChromosome, startPosition,endPosition,startOrientation,endOrientation,type) %>%
   mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope))
@@ -208,9 +209,11 @@ multipleBiopsySomaticsWithScope = multipleBiopsySomatics %>%
   ungroup()
 save(multipleBiopsySomaticsWithScope, file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 
+mbExonicSomatics = exonic_somatics(multipleBiopsySomaticsWithScope, gr_genes)
+save(mbExonicSomatics, file = "~/hmf/RData/reference/mbExonicSomatics.RData")
+
 multipleBiopsyMSI = purple::cohort_msi(multipleBiopsySomaticsWithScope %>% ungroup())
 save(multipleBiopsyMSI, file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
-
 
 load(file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")

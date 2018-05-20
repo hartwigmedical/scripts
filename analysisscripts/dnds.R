@@ -14,9 +14,9 @@ create_data_frame <- function(cvList) {
 }
 
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
-load(file = "~/hmf/RData/reference/highestPurityExonicSomatics.RData")
+load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
 
-somatics = highestPurityExonicSomatics %>% 
+somatics = hpcExonicSomatics %>% 
   filter(type == "INDEL" | type == "SNP", repeatCount <= 8) %>%
   select(sampleId, chr = chromosome, pos = position, ref, alt)
 
@@ -37,15 +37,15 @@ rm(dndsFilteredAnnotatedMutations)
 
 HmfRefCDSCvList = list()
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
-cancerTypes = unique(highestPurityCohort$primaryTumorLocation)
+cancerTypes = unique(highestPurityCohort$cancerType)
 cancerTypes = cancerTypes[!is.na(cancerTypes)]
-for (cancerType in cancerTypes) {
-  cat("Processing", cancerType)
-  cancerTypeSampleIds =  highestPurityCohort %>% filter(!is.na(primaryTumorLocation), primaryTumorLocation == cancerType) %>% select(sampleId)
+for (selectedCancerType in cancerTypes) {
+  cat("Processing", selectedCancerType)
+  cancerTypeSampleIds =  highestPurityCohort %>% filter(!is.na(cancerType), cancerType == selectedCancerType) %>% select(sampleId)
   input = somatics %>% filter(sampleId %in% cancerTypeSampleIds$sampleId)
   output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
   
-  HmfRefCDSCvList[[cancerType]] <- output$sel_cv
+  HmfRefCDSCvList[[selectedCancerType]] <- output$sel_cv
 }
 
 HmfRefCDSCv = create_data_frame(HmfRefCDSCvList)
@@ -53,12 +53,18 @@ save(HmfRefCDSCv, file="~/hmf/RData/processed/HmfRefCDSCv.RData")
 
 
 #################### Unfiltered Annotations #########################
-unfilteredSomatics = highestPurityExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
+unfilteredSomatics = hpcExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
 unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
 save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
 rm(unfilteredSomatics, unfilteredOutput, dndsUnfilteredAnnotatedMutations)
 
+#################### Unfiltered Multiple Biopsy Annotations #########################
+load(file = "~/hmf/RData/reference/mbExonicSomatics.RData")
+mbUnfilteredSomatics = mbExonicSomatics  %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
+mbUnfilteredOutput = dndscv(mbUnfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
+dndsUnfilteredMultipleBiopsyMutations = mbUnfilteredOutput$annotmuts
+save(dndsUnfilteredMultipleBiopsyMutations, file = "~/hmf/RData/processed/dndsUnfilteredMultipleBiopsyMutations.RData")
 
 #################### PCAWG dNdS #########################
 PcawgRefCDSCv = read.delim("~/hmf/dnds/dNdScv_output_PANCANCER.txt", stringsAsFactors = FALSE)

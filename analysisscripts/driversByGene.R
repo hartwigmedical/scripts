@@ -3,10 +3,10 @@ library(tidyr)
 library(ggplot2)
 
 load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
-load(file = "~/hmf/RData/reference/fusions.RData")
-load(file = "~/hmf/RData/reference/tertPromoters.Rdata")
-load(file = "~/hmf/RData/reference/geneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/reference/geneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/reference/hpcFusions.RData")
+load(file = "~/hmf/RData/reference/hpcTertPromoters.Rdata")
+load(file = "~/hmf/RData/reference/hpcGeneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/reference/hpcGeneCopyNumberAmplifications.RData")
 load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
 load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
 load(file = "~/hmf/RData/processed/driverGenes.RData")
@@ -14,29 +14,32 @@ load(file = "~/hmf/RData/processed/tsgDrivers.RData")
 load(file = "~/hmf/RData/processed/oncoDrivers.RData")
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 load(file = "~/hmf/RData/processed/genePanel.RData")
+load(file = "~/hmf/RData/Processed/fragileGenes.RData")
 
-intragenicFusions = fusions %>% filter(`5pGene` == `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "IntragenicFusion")
-threePrimeFusions = fusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `3pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "3PrimeFusion")
-fivePrimeFusions = fusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "5PrimeFusion")
-fusions = bind_rows(intragenicFusions, threePrimeFusions) %>% bind_rows(fivePrimeFusions) %>% mutate(driverLikelihood = 1, type = "FUSION")
+
+intragenicFusions = hpcFusions %>% filter(`5pGene` == `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "IntragenicFusion")
+threePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `3pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "3PrimeFusion")
+fivePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "5PrimeFusion")
+fusions = bind_rows(intragenicFusions, threePrimeFusions) %>% bind_rows(fivePrimeFusions) %>% 
+  mutate(driverLikelihood = ifelse(driver == "IntragenicFusion", 1, 0.5), type = "FUSION")
 fusions$type = ifelse(fusions$gene %in% tsGenes$gene_name, "TSG", fusions$type)
 fusions$type = ifelse(fusions$gene %in% oncoGenes$gene_name, "ONCO", fusions$type)
 rm(intragenicFusions, threePrimeFusions, fivePrimeFusions)
 
-amplifications = geneCopyNumberAmplifications %>%
+amplifications = hpcGeneCopyNumberAmplifications %>%
   filter(gene %in% oncoGenes$gene_name | gene %in% geneCopyNumberAmplificationTargets$target) %>%
   group_by(sampleId = sampleId, gene) %>% summarise(driver = "Amp") %>%
   mutate(driverLikelihood = 1, type = ifelse(gene %in% tsGenes$gene, "TSG", "ONCO"))
 
-deletions = geneCopyNumberDeletes %>%
+deletions = hpcGeneCopyNumberDeletes %>%
   filter(gene %in% tsGenes$gene_name | gene %in% geneCopyNumberDeleteTargets$target) %>%
   group_by(sampleId = sampleId, gene) %>% summarise(driver = "Del", partial = somaticRegions > 1) %>% 
-  left_join(genePanel %>% select(gene = gene_name, fragile), by = "gene") %>%
+  left_join(fragileGenes %>% select(gene = gene_name, fragile), by = "gene") %>%
   mutate(fragile = ifelse(is.na(fragile), F, T)) %>%
   mutate(driverLikelihood = 1, type = ifelse(gene %in% oncoGenes$gene, "ONCO", "TSG"))%>%
-  mutate(driver = ifelse(partial, "PartialDel", driver), driver = ifelse(fragile, "FragileDel", driver))
+  mutate(driver = ifelse(fragile, "FragileDel", driver))
 
-tertPromoters = tertPromoters %>% 
+tertPromoters = hpcTertPromoters %>% 
   group_by(sampleId, gene) %>% 
   summarise(driver = "Promoter", driverLikelihood = 1, type = "TSG") 
 
@@ -75,7 +78,7 @@ driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>%
 
 driversByGene%>%  ungroup() %>% group_by(sampleId, gene) %>% summarise(n = n()) %>% filter(n > 1)
 
-cancerTypes = highestPurityCohort %>% select(sampleId = sampleId, primaryTumorLocation)
+cancerTypes = highestPurityCohort %>% select(sampleId = sampleId, cancerType)
 driversByGene = left_join(driversByGene, cancerTypes, by = "sampleId")
 
 driversByGene = left_join(driversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")
