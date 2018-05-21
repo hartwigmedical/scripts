@@ -5,4 +5,5 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/prod
 sv_jar=/data/common/tools/variantannotator_v1.3/variant-annotator.jar
 
+
 ${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar} $@
