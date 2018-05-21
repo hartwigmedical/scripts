@@ -10,8 +10,9 @@ gridss.use_read_threshold=3
 gridss.min_breakpoint_depth = 5 # Half BPI default
 gridss.min_normal_depth = 8
 gridss.max_homology_length = 50
+gridss.max_allowable_strand_bias = 0.95
 
-#' sum of 
+#' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
 	rowSums(genotypeField[,columns, drop=FALSE])
 }
@@ -19,7 +20,7 @@ gridss.max_homology_length = 50
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -27,6 +28,11 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
 	ihomlen[is.na(ihomlen)] = 0
 	filtered = rep(FALSE, length(gr))
+	if (support_quality_filters) {
+	  # TODO: update this to a binomial test so we don't filter low confidence
+	  # variants that are strand biased by chance
+	  filtered = filtered | pmax(i$SB, 1 - i$SB) > gridss.max_allowable_strand_bias
+	}
 	if (min_support_filters) {
 		filtered = filtered |
 			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold
@@ -48,7 +54,7 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 			.genosum(g$QUAL,normalOrdinal) > gridss.allowable_normal_contamination_qual * .genosum(g$QUAL,tumourOrdinal) |
 			# Filter.SRNormalSupport
 			(isShort & .genosum(g$SR, normalOrdinal) != 0) |
-			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) < gridss.min_normal_depth | 
+			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) < gridss.min_normal_depth |
 			# NAN in normal indicate no normal coverage at all
 			is.nan(normalaf) | normalaf > gridss.allowable_normal_contamination_af
 	}
@@ -154,9 +160,10 @@ hmf_structuralVariants_to_granges = function(df) {
 		adjustedaf=df$adjustedStartAF,
 		adjustedcn=df$adjustedStartCopyNumber,
 		adjustedcn_delta=df$adjustedStartCopyNumberChange,
-		partner=paste0(df$id, "h"),
+		partner=paste0(df$id, "h")[seq_along(df$id)],
+		name=paste0(df$id, "o")[seq_along(df$id)],
 		svlen=df$endPosition-df$startPosition)
-	names(gro)=paste0(df$id, "o")
+	names(gro)=gro$name
 	grh = GRanges(
 		seqnames=df$endChromosome,
 		ranges=IRanges(start=df$endPosition, width=1),
@@ -171,9 +178,10 @@ hmf_structuralVariants_to_granges = function(df) {
 		adjustedaf=df$adjustedEndAF,
 		adjustedcn=df$adjustedEndCopyNumber,
 		adjustedcn_delta=df$adjustedEndCopyNumberChange,
-		partner=paste0(df$id, "o"),
+		partner=paste0(df$id, "o")[seq_along(df$id)],
+		name=paste0(df$id, "h")[seq_along(df$id)],
 		svlen=df$endPosition-df$startPosition)
-	names(grh)=paste0(df$id, "h")
+	names(grh)=grh$name
 	c(gro, grh)
 }
 
@@ -297,7 +305,51 @@ test_that("transitive_paths", {
 	expect_equal(c("AC1", "AC2"), paths$name)
 })
 
+get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sampleIds=NULL, line_annotation_bed=NULL) {
+  if (is.null(sampleIds)) {
+    common_sample_ids = query_structural_variants_samples(dbExisting)
+    common_sample_ids <- common_sample_ids[common_sample_ids %in% query_structural_variants_samples(dbNew)]
+  } else {
+    common_sample_ids = sampleIds
+  }
+  grex <- query_structural_variants_for_sample_as_granges(dbExisting, common_sample_ids)
+  grnew <- query_structural_variants_for_sample_as_granges(dbNew, common_sample_ids)
+  grex$transitive=transitive_of(grex, 2000, 300)
+  grnew$transitive=transitive_of(grnew, 2000, 300)
+  # make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
+  grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
+  grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
+  simpleEventType <- function(gr) {
+    return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
+                  ifelse(str_length(gr$insertSequence) >= abs(gr$svlen) * 0.7, "INS", # TODO: improve classification of complex events
+                         ifelse(strand(gr) == strand(partner(gr)), "INV",
+                                ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
+                                       "DUP")))))
+  }
+  grex$type = simpleEventType(grex)
+  grnew$type = simpleEventType(grnew)
 
+  if (!is.null(line_annotation_bed)) {
+    grex$isline <- overlapsAny(grex, line_annotation_bed, maxgap=10000)
+    grnew$isline <- overlapsAny(grnew, line_annotation_bed, maxgap=10000)
+  }
+  fullmatchdf <- gr_join_to_df(grex, NULL, grnew, NULL, maxgap=500, sizemargin=2, suffix=suffix)
+  fullmatchdf = fullmatchdf %>%
+    mutate(called=c("Neither", "Existing", "New", "Both")
+           [1+ifelse(!is.na(fullmatchdf[[paste0("start", suffix[1])]]), 1, 0) + ifelse(!is.na(fullmatchdf[[paste0("start", suffix[2])]]), 2, 0)]) %>%
+    mutate(transitive=c("Neither", "Existing", "New", "Both")
+           [1+ifelse(!is.na(fullmatchdf[[paste0("transitive", suffix[1])]]), 1, 0) + ifelse(!is.na(fullmatchdf[[paste0("transitive", suffix[2])]]), 2, 0)]) %>%
+    mutate(type=ifelse(!is.na(fullmatchdf[[paste0("type", suffix[1])]]), fullmatchdf[[paste0("type", suffix[1])]], fullmatchdf[[paste0("type", suffix[2])]]),
+           sampleId=ifelse(!is.na(fullmatchdf[[paste0("sampleId", suffix[1])]]), fullmatchdf[[paste0("sampleId", suffix[1])]], fullmatchdf[[paste0("sampleId", suffix[2])]]),
+           orientation=ifelse(!is.na(fullmatchdf[[paste0("orientation", suffix[1])]]), fullmatchdf[[paste0("orientation", suffix[1])]], fullmatchdf[[paste0("orientation", suffix[2])]])) %>%
+    mutate(svlen=ifelse(!is.na(fullmatchdf[[paste0("svlen", suffix[2])]]), fullmatchdf[[paste0("svlen", suffix[2])]], fullmatchdf[[paste0("svlen", suffix[1])]]))
+  if (!is.null(line_annotation_bed)) {
+    line1 <- fullmatchdf[[paste0("isline", suffix[1])]]
+    line2 <- fullmatchdf[[paste0("isline", suffix[2])]]
+    fullmatchdf = fullmatchdf %>% mutate(isline=(!is.na(line1) & line1) | (!is.na(line2) & line2))
+  }
+  return(fullmatchdf)
+}
 
 
 

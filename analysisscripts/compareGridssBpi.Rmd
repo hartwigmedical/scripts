@@ -11,11 +11,11 @@ library(Biostrings)
 Load data
 ```{r}
 # Update to your VCF and sample of choice
-gridss_filename <- "CPCT02100145T.gridss.sv.vcf"
-sampleId <- "CPCT02100145T"
+gridss_filename <- "D:\\hartwig\\down\\170818_HMFregCPCT_FR13999443_FR15410927_CPCT02070034/structuralVariants/gridss/CPCT02070034R_CPCT02070034T/CPCT02070034R_CPCT02070034T.gridss.vcf"
+sampleId <- "CPCT02070034T"
 raw_gridss_vcf <- readVcf(gridss_filename, "hg19")
 raw_gridss_gr <- breakpointRanges(raw_gridss_vcf)
-dbProd = dbConnect(MySQL(), dbname = "hmfpatients")
+dbProd = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
 prodgr <- query_structural_variants_for_sample_as_granges(dbProd, sampleId)
 prodgr$QUAL <- ifelse(is.na(prodgr$ploidy), prodgr$af, prodgr$ploidy)
 raw_gridss_gr$somatic_af <- gridss_somatic_af(raw_gridss_gr, raw_gridss_vcf)
@@ -30,7 +30,7 @@ source("../gridss/libgridss.R") # reload the new definition (if changed)
 raw_gridss_gr$pass_qual <- !gridss_filter(raw_gridss_gr, raw_gridss_vcf, somatic_filters=FALSE)
 raw_gridss_gr$pass_qual_somatic <- !gridss_filter(raw_gridss_gr, raw_gridss_vcf, somatic_filters=TRUE)
 
-fdf <- gr_join_to_df(raw_gridss_gr, raw_gridss_vcf, prodgr, NULL, suffix=c("", ".bpi"))
+fdf <- gr_join_to_df(raw_gridss_gr, raw_gridss_vcf, prodgr, NULL, suffix=c("", ".bpi"), maxgap=500, sizemargin=1)
 
 ```
 
@@ -58,4 +58,9 @@ ggplot(fdf %>% filter(germline_af == 0)) +
 	scale_x_log10() +
 	facet_wrap(~ orientation + (svLen < 1000)) +
 	labs("BPI correspondence by event type and size")
+```
+
+Filtered calls:
+```{r}
+fdf %>% filter(!is.na(QUAL.bpi) & (!pass_qual | !pass_qual_somatic)) %>% as.data.frame()
 ```

@@ -2,18 +2,22 @@
 #
 # Filters a raw GRIDSS VCF to high quality somatic calls
 #
-usage <- "Usage: gridss_somatic_filter <input VCF> <output VCF>"
+library(stringr)
+usage <- "Usage: Rscript gridss_somatic_filter.R <input VCF> <output VCF>"
 args <- commandArgs(TRUE)
-if (length(args) != 3) {
+if (length(args) == 3 & str_detect(args[1], "gridss_somatic_filter")) {
+  args = args[-1]
+}
+if (length(args) != 2) {
   write(usage, stderr())
   q(save="no", status=1)
 }
-if (!file.exists(args[2])) {
-  write(paste(args[2], "not found"), stderr())
+if (!file.exists(args[1])) {
+  write(paste(args[1], "not found"), stderr())
   q(save="no", status=1)
 }
-input_vcf <- args[2]
-output_vcf <- args[3]
+input_vcf <- args[1]
+output_vcf <- args[2]
 source("libgridss.R")
 
 # Filter to somatic calls

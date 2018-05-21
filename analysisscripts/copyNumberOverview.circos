@@ -27,22 +27,22 @@ chromosomes                 = -EXCLUDE
 <plots>
 
 	# -----------------------------------------------------------
-	# Amp 3+
+	# Amp 1_4+
 	<plot>
 
 		type = histogram
-		file = CANCER.amp2.circos
+		file = CANCER.amp1_4.circos
 		r0   = 0.675r
 		r1   = 0.975r
 		min  = 0
 		max  = 0.5
-		color = vdgreen
-		fill_color = vdgreen
+		color = vlgreen
+		fill_color = vlgreen
 		glyph = circle
 
 		<axes>
 			<axis>
-				color     = lgreen
+				color     = vlgreen
 				thickness = 1
 				spacing   = 0.20r
 			</axis>
@@ -59,7 +59,22 @@ chromosomes                 = -EXCLUDE
 	# Amp 2+
 	<plot>
 		type = histogram
-		file = CANCER.amp3.circos
+		file = CANCER.amp2_0.circos
+		r0   = 0.675r
+		r1   = 0.975r
+		min  = 0
+		max  = 0.5
+		color = dgreen
+		fill_color = green
+		glyph = circle
+	</plot>
+
+
+	# -----------------------------------------------------------
+	# Amp 3+
+	<plot>
+		type = histogram
+		file = CANCER.amp3_0.circos
 		r0   = 0.675r
 		r1   = 0.975r
 		min  = 0
@@ -77,15 +92,15 @@ chromosomes                 = -EXCLUDE
 		file = CANCER.loh.circos
 		r0   = 0.250r
 		r1   = 0.650r
-		min  = 0
-		max  = 1
-		color = purple
-		fill_color = purple
+		min  = -1
+		max  = 0
+		color = blue
+		fill_color = blue
 		glyph = circle
 
 		<axes>
 			<axis>
-				color     = lpurple
+				color     = vlblue
 				thickness = 1
 				spacing   = 0.1r
 			</axis>
@@ -93,7 +108,7 @@ chromosomes                 = -EXCLUDE
 
 		<backgrounds>
 			<background>
-				color = vlpurple_a5
+				color = vlblue_a5
 			</background>
 		</backgrounds>
 	</plot>
@@ -103,15 +118,32 @@ chromosomes                 = -EXCLUDE
 	<plot>
 
 		type = histogram
-		file = CANCER.del.circos
+		file = CANCER.reldel.circos
 		r0   = 0.250r
 		r1   = 0.650r
-		min  = 0
-		max  = 1
+		min  = -1
+		max  = 0
+		color = dblue
+		fill_color = dblue
+		glyph = circle
+	</plot>
+
+	# -----------------------------------------------------------
+	# Dels
+	<plot>
+
+		type = histogram
+		file = CANCER.absdel.circos
+		r0   = 0.250r
+		r1   = 0.650r
+		min  = -1
+		max  = 0
 		color = red
 		fill_color = red
 		glyph = circle
 	</plot>
+
+
 
 </plots>
 

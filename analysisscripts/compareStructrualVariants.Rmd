@@ -11,7 +11,7 @@ library(tidyverse)
 library(Biostrings)
 dbExisting = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
 #dbNew = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
-dbNew = dbConnect(MySQL(), dbname = "hmfpatients_sliced", host="localhost", port=3306, username="test", password="test")
+dbNew = dbConnect(MySQL(), dbname = "hmfpatients_gridss", host="localhost", port=3306, username="test", password="test")
 theme_set(theme_bw())
 ```
 Match records
@@ -66,24 +66,24 @@ ggplot(matchdf %>% filter(transitive != "Neither")) +
 	labs("Overall transitive call counts")
 
 matchdf %>%
-	group_by(ifelse(is.na(sampleId), sampleId.new, sampleId), called) %>%
+	group_by(ifelse(is.na(sampleId.old), sampleId.new, sampleId.old), called) %>%
 	summarise(n=n())
 
 ggplot(matchdf %>% filter(called=="Both") %>% mutate(isSmall=abs(end.new-start.new) < 1000)) +
 	aes(x=ploidy.old, y=ploidy.new) +
 	scale_x_log10() + 
 	scale_y_log10() +
-	facet_wrap(~ type) +
+	facet_wrap(sampleId ~ type) +
 	geom_point(aes(color=isSmall), size=0.1) +
 	geom_density2d() +
 	labs("Ploidy correlation")
 
-ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old, transitive=matchdf$transitive),
-								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new, transitive=matchdf$transitive)) %>%
+ggplot(bind_rows(data.frame(set="Existing", sampleId=matchdf$sampleId, called=matchdf$called, ploidy=matchdf$ploidy.old, transitive=matchdf$transitive),
+								 data.frame(set="New", sampleId=matchdf$sampleId, called=matchdf$called, ploidy=matchdf$ploidy.new, transitive=matchdf$transitive)) %>%
 			 	filter(!is.na(ploidy) & transitive=="Neither")) +
 	aes(x=ploidy, fill=called) +
 	geom_histogram(bins=90*2) +
-	facet_grid(transitive ~ set, scales="free") +
+	facet_grid(sampleId ~ set, scales="free") +
 	scale_x_continuous(limits=c(-1,8)) +
 	labs(title="Ploidy distribution (transitive excluded)")
 
@@ -115,7 +115,7 @@ ggplot(commondf) +
 
 # 02100145 stats:
 ```{r}
-matchdf <- fullmatchdf %>% filter(sampleId == "CPCT02010708T")
+matchdf <- fullmatchdf %>% filter(sampleId == "COLO829T")
 # cut/pasted from above
 commondf <- matchdf %>% filter(called=="Both")
 
@@ -143,12 +143,12 @@ ggplot(matchdf %>% filter(called=="Both") %>% mutate(isSmall=abs(end.new-start.n
 	geom_density2d() +
 	labs("Ploidy correlation")
 
-ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old),
-								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new)) %>%
+ggplot(bind_rows(data.frame(set="Existing", called=matchdf$called, ploidy=matchdf$ploidy.old, type=matchdf$type),
+								 data.frame(set="New", called=matchdf$called, ploidy=matchdf$ploidy.new, type=matchdf$type)) %>%
 			 	filter(!is.na(ploidy))) +
 	aes(x=ploidy, fill=called) +
 	geom_histogram(bins=90*2) +
-	facet_wrap(~ set, scales="free") +
+	facet_grid(type ~ set, scales="free") +
 	scale_x_continuous(limits=c(-1,8)) +
 	labs("Ploidy distribution")
 
@@ -223,8 +223,12 @@ ggplot(commondf) +
 
 
 
+```{r}
+# Calls unique to GRIDSS DRUP:
 
-
-
+drup_gridss_unique <- matchdf %>%
+  filter(is.na(id.old)) %>%
+  filter(id.new %in% grnew$id[overlapsAny(grnew, grnew[grnew$sampleId=="CPCT02340036T"])])
+```
 
 

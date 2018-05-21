@@ -5,7 +5,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use File::Slurp;
-use JSON;
+use JSON::XS;
 use Number::Format qw(:subs);
 use 5.010.000;
 
@@ -19,7 +19,7 @@ my $JSONS_HOME = '/data/lims/sbpfiles';
 my %OUT_FIELDS_PER_TYPE = (
   'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'sbp_id' ],
   'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'sbp_id' ],
-  'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'sbp_id' ],
+  'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'bucket', 'sbp_id' ],
   'sets'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'sbp_id' ],
   'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', 'priority', "pipeline", "ini", 'sbp_id' ],
   'entities'  => [ 'name', 'bucket', 'sbp_id' ],

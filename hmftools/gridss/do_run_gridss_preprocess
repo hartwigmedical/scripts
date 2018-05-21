@@ -26,6 +26,12 @@ if [[ ! -f $insert_size_metrics ]] ; then
 	echo "Missing insert size metrics file $insert_size_metrics. Aborting" 1>&2
 	exit 1
 fi
+
+if [[ ! -f "$bam" ]] ; then
+	echo "Missing input bam $bam. Aborting" 1>&2
+	exit 1
+fi
+
 working_dir=$gridss_dir/$(basename $bam).gridss.working
 mkdir -p $working_dir
 sv_bam=$working_dir/$(basename $bam).sv.bam
@@ -89,7 +95,7 @@ if [[ ! -f $sv_bam ]] ; then
 	echo $(date) SoftClipsToSplitReads
 	/usr/bin/time -o ${log_prefix}.${bam_sample}.time.SoftClipsToSplitReads.log \
 	java -Xmx3G $gridss_jvm_args \
-		-Dgridss.gridss.output_to_temp_file=true \
+		-Dgridss.output_to_temp_file=true \
 		gridss.SoftClipsToSplitReads \
 		$gridss_common_args \
 		I=$tag_tmp_bam \
