@@ -13,77 +13,6 @@ detach("package:svnmf", unload=TRUE);
 library(svnmf)
 
 
-getSampleIdsStr<-function(samples)
-{
-  sampleIdsStr = ""
-
-  for(i in 1:nrow(samples))
-  {
-    sample <- samples[i,]
-
-    if(i > 1)
-      sampleIdStr = paste(",'", sample$SampleId, "'", sep="")
-    else
-      sampleIdStr = paste("'", sample$SampleId, "'", sep="")
-
-    # sampleIdStr = stringi::stri_replace_all_fixed(sampleIdStr, " ", "")
-    sampleIdsStr = paste(sampleIdsStr, sampleIdStr)
-  }
-
-  return (sampleIdsStr)
-}
-
-getCopyNumber<-function(dbConnect,sampleId,chromosome)
-{
-  sampleIdStr = paste("SampleId='", sampleId, "'")
-  sampleIdStr = stringi::stri_replace_all_fixed(sampleIdStr, " ", "")
-  sql = paste("select SampleId, SegmentStartSupport, SegmentEndSupport, CopyNumber from copyNumber where ", sampleIdStr, " and chromosome=",chromosome)
-  sql = paste(sql, " and (segmentStartSupport = 'CENTROMERE' or segmentStartSupport = 'TELOMERE' or segmentEndSupport = 'CENTROMERE' or segmentEndSupport = 'TELOMERE')")
-  # View(sql)
-  return ((dbGetQuery(dbConnect, sql)))
-}
-
-getCopyNumbers<-function(dbConnect,sampleIds)
-{
-  sql = paste("select SampleId, Chromosome, SegmentStartSupport, SegmentEndSupport, CopyNumber from copyNumber where SampleId in(", sampleIds, ")")
-  sql = paste(sql, " and (segmentStartSupport = 'CENTROMERE' or segmentStartSupport = 'TELOMERE' or segmentEndSupport = 'CENTROMERE' or segmentEndSupport = 'TELOMERE')")
-  return ((dbGetQuery(dbConnect, sql)))
-}
-
-annotateWithCopyNumber<-function(dbConnect,samples)
-{
-  samples$CopyNumberStart = 2
-  samples$CopyNumberEnd = 2
-
-  sampleIdsStr = getSampleIdsStr(samples)
-
-  cnResults = getCopyNumbers(dbConnect, sampleIdsStr)
-
-  for(i in 1:nrow(samples))
-  {
-    sample <- samples[i,]
-
-    cnSampleData = cnResults %>% filter(SampleId==sample$SampleId,Chromosome==sample$Chr)
-
-    cnStart = head(cnSampleData %>% filter(SegmentStartSupport=='TELOMERE'),1)
-
-    if(nrow(cnStart) == 1)
-    {
-      samples[i,]$CopyNumberStart = cnStart$CopyNumber
-    }
-
-    cnEnd = head(cnSampleData %>% filter(SegmentEndSupport=='TELOMERE'),1)
-
-    if(nrow(cnEnd) == 1)
-    {
-      samples[i,]$CopyNumberEnd = cnEnd$CopyNumber
-    }
-  }
-
-  return (samples)
-
-}
-
 ####################
 ### CODE STARTS HERE
 ####################
@@ -91,7 +20,7 @@ annotateWithCopyNumber<-function(dbConnect,samples)
 rm(svData)
 
 # SV data file
-svData = read.csv('~/logs/CLUSTER_V16.csv')
+svData = read.csv('~/logs/CLUSTER_V20.csv')
 
 # filter out multiple biopsy (approximately)
 svData = svData %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
@@ -121,6 +50,7 @@ View(svData)
 svData$IsStressed = ifelse(svData$ArmCountStart>=10 & svData$StressedPoissonProb <= 0.001,1,0)
 nrow(svData %>% filter(IsStressed==0))
 
+# TI length
 svData$TILengthBucket=ifelse(svData$IsTI==1&svData$NearestTILen>0,2**round(log(svData$NearestTILen,2),0),0)
 
 tiBucketed = (svData %>% filter(IsLINE==0 & IsStressed==0 & TILengthBucket > 0 & TILengthBucket <= 1e7) %>% group_by(TILengthBucket)
@@ -158,132 +88,61 @@ tiLenClusteredPlot = (ggplot(data = tiStressedBucketed %>% filter(TILengthBucket
 print(tiLenClusteredPlot)
 
 
-# templated insertions from cluster-count 2, back to same location
-cc2Data = svData %>% filter(ClusterCount==2)
-nrow(cc2Data)
-
-# group by clusterId and then look at the BE pairs
-cc2Clusters = (cc2Data %>% group_by(SampleId,ClusterId)
-               %>% summarise(Id1=first(Id),
-                             Id2=last(Id),
-                             ChrStart1=first(ChrStart),ChrEnd1=first(ChrEnd),
-                             ChrStart2=last(ChrStart),ChrEnd2=last(ChrEnd),
-                             CrossChr=ifelse(first(Type)=='BND'|last(Type)=='BND',1,0),
-                             IsStressed=ifelse(first(IsStressed)==1,1,0),
-                             SS_IsTI=ifelse(first(ChrStart)==last(ChrStart),ifelse((first(PosStart)<last(PosStart) & first(OrientStart)==-1 & last(OrientStart)==1)|(first(PosStart)>last(PosStart) & first(OrientStart)==1 & last(OrientStart)==-1),1,0),0),
-                             EE_IsTI=ifelse(first(ChrEnd)==last(ChrEnd),ifelse((first(PosEnd)<last(PosEnd) & first(OrientEnd)==-1 & last(OrientEnd)==1)|(first(PosEnd)>last(PosEnd) & first(OrientEnd)==1 & last(OrientEnd)==-1),1,0),0),
-                             SE_IsTI=ifelse(first(ChrStart)==last(ChrEnd),ifelse((first(PosStart)<last(PosEnd) & first(OrientStart)==-1 & last(OrientEnd)==1)|(first(PosStart)>last(PosEnd) & first(OrientStart)==1 & last(OrientEnd)==-1),1,0),0),
-                             ES_IsTI=ifelse(first(ChrEnd)==last(ChrStart),ifelse((first(PosEnd)<last(PosStart) & first(OrientEnd)==-1 & last(OrientStart)==1)|(first(PosEnd)>last(PosStart) & first(OrientEnd)==1 & last(OrientStart)==-1),1,0),0),
-                             SS_IsDB=ifelse(first(ChrStart)==last(ChrStart),ifelse((first(PosStart)<last(PosStart) & first(OrientStart)==1 & last(OrientStart)==-1)|(first(PosStart)>last(PosStart) & first(OrientStart)==-1 & last(OrientStart)==1),1,0),0),
-                             EE_IsDB=ifelse(first(ChrEnd)==last(ChrEnd),ifelse((first(PosEnd)<last(PosEnd) & first(OrientEnd)==1 & last(OrientEnd)==-1)|(first(PosEnd)>last(PosEnd) & first(OrientEnd)==-1 & last(OrientEnd)==1),1,0),0),
-                             SE_IsDB=ifelse(first(ChrStart)==last(ChrEnd),ifelse((first(PosStart)<last(PosEnd) & first(OrientStart)==1 & last(OrientEnd)==-1)|(first(PosStart)>last(PosEnd) & first(OrientStart)==-1 & last(OrientEnd)==1),1,0),0),
-                             ES_IsDB=ifelse(first(ChrEnd)==last(ChrStart),ifelse((first(PosEnd)<last(PosStart) & first(OrientEnd)==1 & last(OrientStart)==-1)|(first(PosEnd)>last(PosStart) & first(OrientEnd)==-1 & last(OrientStart)==1),1,0),0),
-                             SS_Len=ifelse(first(ChrStart)==last(ChrStart),abs(first(PosStart)-last(PosStart)),1e7),
-                             EE_Len=ifelse(first(ChrEnd)==last(ChrEnd),abs(first(PosEnd)-last(PosEnd)),1e7),
-                             SE_Len=ifelse(first(ChrStart)==last(ChrEnd),abs(first(PosStart)-last(PosEnd)),1e7),
-                             ES_Len=ifelse(first(ChrEnd)==last(ChrStart),abs(first(PosEnd)-last(PosStart)),1e7)
-                             )
-               %>% arrange(SampleId,ClusterId))
-
-View(cc2Clusters)
-nrow(cc2Clusters)
-
-cc2Clusters$SS_Len = ifelse(cc2Clusters$SS_IsTI==1|cc2Clusters$SS_IsDB==1,cc2Clusters$SS_Len,1e7)
-cc2Clusters$EE_Len = ifelse(cc2Clusters$EE_IsTI==1|cc2Clusters$EE_IsDB==1,cc2Clusters$EE_Len,1e7)
-cc2Clusters$SE_Len = ifelse(cc2Clusters$SE_IsTI==1|cc2Clusters$SE_IsDB==1,cc2Clusters$SE_Len,1e7)
-cc2Clusters$ES_Len = ifelse(cc2Clusters$ES_IsTI==1|cc2Clusters$ES_IsDB==1,cc2Clusters$ES_Len,1e7)
-
-# both ends must be near each other
-cc2Tmp2 = cc2Clusters %>% filter((SS_Len<=1e4&EE_Len<=1e4)|(SE_Len<=1e4&ES_Len<=1e4))
-nrow(cc2Tmp2)
-View(cc2Tmp2)
-
-cc2Tmp2$TICount = cc2Tmp2$SS_IsTI+cc2Tmp2$EE_IsTI+cc2Tmp2$SE_IsTI+cc2Tmp2$ES_IsTI
-cc2Tmp2$DBCount = cc2Tmp2$SS_IsDB+cc2Tmp2$EE_IsDB+cc2Tmp2$SE_IsDB+cc2Tmp2$ES_IsDB
-
-# must have a TI in one of the pairs and either a TI or DB in the other
-# cc2Clusters3 = cc2Clusters2 %>% filter(SS_IsTI==1|EE_IsTI==1|SE_IsTI==1|ES_IsTI==1)
-cc2Tmp3 = cc2Tmp2 %>% filter(TICount>1|(TICount==1&DBCount>0))
-nrow(cc2Tmp3)
-View(cc2Tmp3)
-
-# tangent to show DSBs (which cannot also be TIs)
-cc2DSBs = cc2Tmp2 %>% filter(DBCount==4)
-nrow(cc2DSBs)
-View(cc2DSBs)
-
-# use the shortest length to infer what sort of link is made (ie a TI or DB)
-
-# whether linked start-to-start or start-to-end positions
-cc2Tmp3$SS_EE = ifelse((cc2Tmp3$SS_IsTI==1|cc2Tmp3$SS_IsDB==1)&(cc2Tmp3$EE_IsTI==1|cc2Tmp3$EE_IsDB==1)&(cc2Tmp3$SS_Len+cc2Tmp3$EE_Len<cc2Tmp3$SE_Len+cc2Tmp3$ES_Len),1,0)
-
-# is this 2x templated insertions, or a TI and a DB
-cc2Tmp3$IsDoubleTI = ifelse(cc2Tmp3$SS_EE==1,ifelse(cc2Tmp3$SS_IsTI==1&cc2Tmp3$EE_IsTI==1,1,0),ifelse(cc2Tmp3$SE_IsTI==1&cc2Tmp3$ES_IsTI==1,1,0))
-
-# get the length of the templated insertion
-cc2Tmp3$TILen = ifelse(cc2Tmp3$IsDoubleTI==1,ifelse(cc2Tmp3$SS_EE==1,cc2Tmp3$SS_Len,cc2Tmp3$SE_Len),
-                       ifelse(cc2Tmp3$SS_EE==1,ifelse(cc2Tmp3$SS_IsTI==1,cc2Tmp3$SS_Len,cc2Tmp3$EE_Len),ifelse(cc2Tmp3$SE_IsTI==1,cc2Tmp3$SE_Len,cc2Tmp3$ES_Len)))
-
-# get the other length (either a DB or another TI)
-cc2Tmp3$OtherLen = ifelse(cc2Tmp3$IsDoubleTI==1,ifelse(cc2Tmp3$SS_EE==1,cc2Tmp3$EE_Len,cc2Tmp3$ES_Len),
-                          ifelse(cc2Tmp3$SS_EE==1,ifelse(cc2Tmp3$SS_IsTI==1,cc2Tmp3$EE_Len,cc2Tmp3$SS_Len),ifelse(cc2Tmp3$SE_IsTI==1,cc2Tmp3$ES_Len,cc2Tmp3$SE_Len)))
-
-cc2Tmp3$TILenBucket = 2**round(log(cc2Tmp3$TILen,2),0)
-cc2Tmp3$OtherLenBucket = 2**round(log(cc2Tmp3$OtherLen,2),0)
-
-View(cc2Tmp3)
-
-# overall stats
-cc2Stats = (cc2Tmp3 %>% group_by(IsStressed,CrossChr,IsDoubleTI)
-                      %>% summarise(Count=n(),
-                                    AvgTILen=round(sum(TILen)/n(),0),
-                                    TL_LT200=round(sum(TILen<=200)/n(),2),
-                                    TL_200_1K=round(sum(TILen>200&TILen<=1e3)/n(),2),
-                                    TL_GT1K=round(sum(TILen>1e3)/n(),2),
-                                    AvgOtherLen=round(sum(OtherLen)/n(),0),
-                                    OT_LT200=round(sum(OtherLen<=200)/n(),2),
-                                    OT_200_1K=round(sum(OtherLen>200&OtherLen<=1e3)/n(),2),
-                                    OT_GT1K=round(sum(OtherLen>1e3)/n(),2))
-                      %>% arrange(IsStressed,CrossChr,IsDoubleTI))
-
-View(cc2Stats)
-
-# distribution of TI lengths, by whether cross arm or not
-cc2StatsByTILength = (cc2Tmp3 %>% group_by(CrossChr,TILenBucket)
-            %>% summarise(Count=n(),
-                          AvgOtherLen=round(sum(OtherLen)/n(),0))
-            %>% arrange(CrossChr,TILenBucket))
-
-View(cc2StatsByTILength)
-
-# distribution of TI lengths, by whether stressed or not
-cc2StressedByTILength = (cc2Tmp3 %>% group_by(IsStressed,TILenBucket)
-                      %>% summarise(Count=n(),
-                                    AvgOtherLen=round(sum(OtherLen)/n(),0))
-                      %>% arrange(IsStressed,TILenBucket))
-
-View(cc2StressedByTILength)
-
-# distribution of DB lengths
-cc2StatsByDBLength = (cc2Tmp3 %>% filter(IsDoubleTI==0) %>% group_by(OtherLenBucket)
-                      %>% summarise(Count=n(),
-                                    AvgITLen=round(sum(TILen)/n(),0))
-                      %>% arrange(OtherLenBucket))
-
-View(cc2StatsByDBLength)
-
-
-cc2Stats = (cc2Tmp3 %>% group_by(IsDoubleTI,TILenBucket,OtherLenBucket)
-            %>% summarise(Count=n(),
-                        AvgLen1=round(sum(BridgeLen1)/n(),0),
-                        AvgLen2=round(sum(BridgeLen2)/n(),0))
-            %>% arrange(IsDoubleTI,TILenBucket,OtherLenBucket))
-
-View(cc2Stats)
 
 
 
-View(ssTmp1)
+
+# chain analysis and transitive analysis
+
+clusteredSvs = svData %>% filter(ClusterCount>1)
+
+clusterChaining = (clusteredSvs %>% group_by(SampleId,ClusterId)
+             %>% summarise(SvCount=n(),
+                           ClusterCount=first(ClusterCount),
+                           ChainCount=n_distinct(ChainId),
+                           ChainedPerc=round(sum(ChainCount>0)/n(),2),
+                           TICount=sum(ifelse(ChainId>0,ChainTICount/ChainCount,0)),
+                           DBCount=sum(ifelse(ChainId>0,ChainDBCount/ChainCount,0)),
+                           ShortTICount=sum(ChainId>0&((LnkStartType=='TI'&LnkStartLen<=500)|(LnkEndType=='TI'&LnkEndLen<=500)))/2,
+                           DupBECount=first(DupBECount),
+                           DupBESiteCount=first(DupBESiteCount),
+                           SpanDupBECount=sum(DupBEStart=='true'&DupBEEnd=='true'),
+                           LineCount=sum(LEStart!='false'|LEEnd!='false'))
+             %>% arrange(SampleId,ClusterId))
+
+clusterChaining = clusterChaining %>% filter(LineCount==0)
+
+View(clusterChaining)
+
+View(clusterChaining %>% filter(ClusterCount==3))
+
+# bucket by percent chained
+clusterChaining$ChainedBucket = round(clusterChaining$ChainedPerc/0.2)*0.2
+clusterChaining$ClusterSize = ifelse(clusterChaining$ClusterCount<=4,'Small','Large')
+
+chainedStats = (clusterChaining %>% group_by(ClusterSize,ChainedBucket)
+                %>% summarise(ClusterCount=n(),
+                              SvCount=sum(SvCount),
+                              TIPerc=round(sum(TICount/SvCount),2),
+                              DBPerc=round(sum(DBCount/SvCount),2),
+                              ShortTIPerc=round(sum(ShortTICount/SvCount),2))
+                %>% arrange(ClusterSize,ChainedBucket))
+
+View(chainedStats)
+
+chainData = (clusteredSvs %>% filter(ChainCount>0) %>% group_by(SampleId,ClusterId,ChainId)
+              %>% summarise(SvCount=n(),
+                            TICount=first(ChainTICount),
+                            TIPerc=round(first(ChainTICount)/first(ChainCount),2),
+                            DBCount=first(ChainDBCount),
+                            DBPerc=round(first(ChainDBCount)/first(ChainCount),2),
+                            ShortTICount=sum((LnkStartType=='TI'&LnkStartLen<=500)|(LnkEndType=='TI'&LnkEndLen<=500))/2
+              )
+             %>% arrange(SampleId,ClusterId,ChainId))
+
+
+View(chainData)
+
 
 
 # first group SVs by distinct chromosomal arm
@@ -725,6 +584,8 @@ stressedArms = (stressedArmsBySample %>% group_by(Chr, Arm)
 View(stressedArms)
 
 
+
+cl3Data = read.csv("")
 
 
 

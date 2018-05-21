@@ -38,6 +38,78 @@ plot_copy_number_section<-function(cnSection) {
 }
 
 
+# DB methods for accessing CN data
+getSampleIdsStr<-function(samples)
+{
+  sampleIdsStr = ""
+
+  for(i in 1:nrow(samples))
+  {
+    sample <- samples[i,]
+
+    if(i > 1)
+      sampleIdStr = paste(",'", sample$SampleId, "'", sep="")
+    else
+      sampleIdStr = paste("'", sample$SampleId, "'", sep="")
+
+    # sampleIdStr = stringi::stri_replace_all_fixed(sampleIdStr, " ", "")
+    sampleIdsStr = paste(sampleIdsStr, sampleIdStr)
+  }
+
+  return (sampleIdsStr)
+}
+
+getCopyNumber<-function(dbConnect,sampleId,chromosome)
+{
+  sampleIdStr = paste("SampleId='", sampleId, "'")
+  sampleIdStr = stringi::stri_replace_all_fixed(sampleIdStr, " ", "")
+  sql = paste("select SampleId, SegmentStartSupport, SegmentEndSupport, CopyNumber from copyNumber where ", sampleIdStr, " and chromosome=",chromosome)
+  sql = paste(sql, " and (segmentStartSupport = 'CENTROMERE' or segmentStartSupport = 'TELOMERE' or segmentEndSupport = 'CENTROMERE' or segmentEndSupport = 'TELOMERE')")
+  # View(sql)
+  return ((dbGetQuery(dbConnect, sql)))
+}
+
+getCopyNumbers<-function(dbConnect,sampleIds)
+{
+  sql = paste("select SampleId, Chromosome, SegmentStartSupport, SegmentEndSupport, CopyNumber from copyNumber where SampleId in(", sampleIds, ")")
+  sql = paste(sql, " and (segmentStartSupport = 'CENTROMERE' or segmentStartSupport = 'TELOMERE' or segmentEndSupport = 'CENTROMERE' or segmentEndSupport = 'TELOMERE')")
+  return ((dbGetQuery(dbConnect, sql)))
+}
+
+annotateWithCopyNumber<-function(dbConnect,samples)
+{
+  samples$CopyNumberStart = 2
+  samples$CopyNumberEnd = 2
+
+  sampleIdsStr = getSampleIdsStr(samples)
+
+  cnResults = getCopyNumbers(dbConnect, sampleIdsStr)
+
+  for(i in 1:nrow(samples))
+  {
+    sample <- samples[i,]
+
+    cnSampleData = cnResults %>% filter(SampleId==sample$SampleId,Chromosome==sample$Chr)
+
+    cnStart = head(cnSampleData %>% filter(SegmentStartSupport=='TELOMERE'),1)
+
+    if(nrow(cnStart) == 1)
+    {
+      samples[i,]$CopyNumberStart = cnStart$CopyNumber
+    }
+
+    cnEnd = head(cnSampleData %>% filter(SegmentEndSupport=='TELOMERE'),1)
+
+    if(nrow(cnEnd) == 1)
+    {
+      samples[i,]$CopyNumberEnd = cnEnd$CopyNumber
+    }
+  }
+
+  return (samples)
+
+}
+
 
 ## CODE STARTS HERE
 ###################
@@ -70,6 +142,7 @@ cnArmData$BndPercent = round(cnArmData$BndCount/cnArmData$SegCount,2)
 cnArmData$ConsistentCNLossPercent = ifelse(cnArmData$FlipCount>0,round(cnArmData$MaxFlips/cnArmData$FlipCount,2),0)
 cnArmData$NFlipCount = round(cnArmData$FlipCount * cnArmData$ArmLenRatio,1)
 cnArmData$NSegCount = round(cnArmData$SegCount * cnArmData$ArmLenRatio,1)
+View(cnArmData)
 
 # counts by flip count bucket
 cnFlipStats = (cnArmData %>% group_by(FlipCountBucket)

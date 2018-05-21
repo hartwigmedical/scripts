@@ -161,6 +161,13 @@ svData$ClusterNone=ifelse(svData$ClusterCount==1,1,0)
 svData$ClusterSmall=ifelse(svData$ClusterCount>1&svData$ClusterCount<=3,1,0)
 svData$ClusterLarge=ifelse(svData$ClusterCount>3,1,0)
 
+# run again but with ploidy >= 0.5
+ploidyCutoffData = svData %>% filter(Ploidy >= 0.5)
+nrow(ploidyCutoffData)
+svFullData = svData
+nrow(svFullData)
+svData = ploidyCutoffData
+
 # group all samples into relevant counts - for now lump all stressed-arm variants together
 svSummary = (svData %>% group_by(SampleId)
              %>% summarise(LINE=sum(IsLINE==1),
@@ -235,12 +242,14 @@ svSummary = (svData %>% group_by(SampleId)
 # inputSigNames[[runNumber]] = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
 # inputSigNamesNamed[[runNumber]] = c("01_LongDEL_INV", "02_Stressed", "03_LINE", "04_MidDEL", "05_BND_CN", "06_LongDUP", "07_BND_CL", "08_ShortINV", "09_ShortDEL", "10_DBs", "11_ShortDUP", "12_INV_CL")
 
-sigCount = 12
+sigCount = 11
 sampleCounts = svSummary
 sigNamesUnamed = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12")
+sigNamesUnamed = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11")
 sigNames = sigNamesUnamed
 # sigNamesNamed = c("01_LongDEL_INV", "02_Stressed", "03_LINE", "04_MidDEL", "05_BND_CN", "06_LongDUP", "07_BND_CL", "08_", "09_ShortDEL", "10_DBs", "11_ShortDUP", "12_INV_CL")
-sigNamesNamed = c("01_LINE", "02_BND_CL", "03_Stressed", "04_ShortINV", "05_LongDEL_INV", "06_DBs", "07_ShortDEL", "08_LongDUP", "09_ShortDUP", "10_BND_CN", "11_MidDEL", "12_INV_CL")
+# sigNamesNamed = c("01_LINE", "02_BND_CL", "03_Stressed", "04_ShortINV", "05_LongDEL_INV", "06_DBs", "07_ShortDEL", "08_LongDUP", "09_ShortDUP", "10_BND_CN", "11_MidDEL", "12_INV_CL")
+sigNamesNamed = c("01_LINE", "02_BND_CL", "03_Stressed", "04_ShortINV", "05_LongDEL_INV", "06_DBs", "07_ShortDEL", "08_LongDUP", "09_ShortDUP", "10_BND_CN", "11_MidDEL")
 
 
 # BUCKET AND SIGNATURE ANALYSIS
@@ -272,7 +281,7 @@ View(nmfMatrixData)
 
 # generate the actual NMF results
 nmfResult <- nmf(nmfMatrixData, rank=sigCount, method="brunet", nrun=5, seed=123456, .opt='vp6')
-save(nmfResult, file="~/logs/r_output/nmfResult_run2.RData")
+save(nmfResult, file="~/logs/r_output/nmfResult_all_ploidyGT05.RData")
 
 
 # extract the results
@@ -289,6 +298,7 @@ View(sampleNames)
 
 # begin evaluation routines
 # to fix
+View(sigCount)
 svnmf::evaluate_run(runNumber, sigCount, nmfMatrixData, sampleCounts, signatures, contribution, bucketNames, sigNames)
 
 # Bucket Evaluation
@@ -300,6 +310,8 @@ View(sigBucketStats)
 # Signature Discovery, by looking at relative contribution of buckets
 
 # report top contributing buckets to aid with signature naming
+sigNamesNamed = c("01_CL", "02_LINE", "03_LongDUP", "04_Stressed", "05_DBs", "06_ShortDUP", "07_BND_CN", "08_LongDEL_INV", "09_ShortDEL", "10_MidDUP", "11_MidDEL")
+
 sigBucketTopN = svnmf::get_top_buckets(sigBucketData, sigNamesUnamed, sigNamesNamed)
 View(sigBucketTopN)
 
@@ -375,7 +387,7 @@ grid.arrange(tableGrob(sigBucketStats, rows=NULL),
 
 # 3. default signature-bucket plot
 sigBucketsPlot = svnmf::get_bucket_signatures_plot(bucketNames, signatures, sigNames)
-# print(sigBucketsPlot)
+print(sigBucketsPlot)
 grid.arrange(sigBucketsPlot, ncol = 1, nrow = 1, newpage = TRUE)
 
 # 4. Signature data
