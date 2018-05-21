@@ -10,10 +10,15 @@ load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 genes = canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd)
 
 ####### EXECUTE ALGORITHM #######
-geneCopyNumberDeletes = hpcGeneCopyNumberDeletes %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
+geneCopyNumberDeletes = hpcGeneCopyNumberDeletes %>% filter(
+  germlineHetRegions == 0, 
+  germlineHomRegions == 0, 
+  !(minRegionStartSupport == "TELOMERE" & minRegionEndSupport == "CENTROMERE"),
+  !(minRegionStartSupport == "CENTROMERE" & minRegionEndSupport == "TELOMERE"))
+
 geneCopyNumberAmplifications = hpcGeneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
 
-deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, adjacent = "gene"); date()
+deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, adjacent = "arm"); date()
 amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, adjacent = "arm"); date()
 
 geneCopyNumberAmplificationSummary = amplificationOutput$summary
@@ -21,8 +26,6 @@ geneCopyNumberDeletionsSummary = deletionsOutput$summary
 
 save(geneCopyNumberAmplificationSummary, file = "~/hmf/RData/processed/geneCopyNumberAmplificationSummary.RData")
 save(geneCopyNumberDeletionsSummary, file = "~/hmf/RData/processed/geneCopyNumberDeletionsSummary.RData")
-
-
 
 ####### Can also be done in parallel #######
 library(doParallel)
@@ -32,4 +35,3 @@ deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, cl = cl, adj
 amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, cl = cl, adjacent = "arm"); date()
 stopCluster(cl)
 date()
-
