@@ -26,9 +26,11 @@ anova(model, test="Chisq")
 continuousClassification <- predict(model,newdata = genePanelCv %>% select(wmis_cv, wnon_cv),type='response')
 genePanelCv[is.na(genePanelCv)] <- F
 genePanelCv$classification = ifelse(continuousClassification > 0.5,"tsg","onco")
-genePanelCv$classification = ifelse(!genePanelCv$cosmicTsg & genePanelCv$cosmicOncogene, "onco", genePanelCv$classification)
-genePanelCv$classification = ifelse(genePanelCv$cosmicTsg & !genePanelCv$cosmicOncogene, "tsg", genePanelCv$classification)
+genePanelCv$classification = ifelse(!hmf & !martincorena & !genePanelCv$cosmicTsg & genePanelCv$cosmicOncogene, "onco", genePanelCv$classification)
+genePanelCv$classification = ifelse(!hmf & !martincorena & genePanelCv$cosmicTsg & !genePanelCv$cosmicOncogene, "tsg", genePanelCv$classification)
+
 genePanel = left_join(genePanel, genePanelCv[, c("gene_name","classification")], by = "gene_name")
+genePanel[genePanel$gene_name == "TERT", "classification"] <- "onco"
 
 rm(trainTsg, trainOnco, trainData, model)
 

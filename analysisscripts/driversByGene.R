@@ -41,7 +41,7 @@ deletions = hpcGeneCopyNumberDeletes %>%
 
 tertPromoters = hpcTertPromoters %>% 
   group_by(sampleId, gene) %>% 
-  summarise(driver = "Promoter", driverLikelihood = 1, type = "TSG") 
+  summarise(driver = "Promoter", driverLikelihood = 1, type = "ONCO") 
 
 tsgDriverByGene = tsgDrivers %>%
   group_by(sampleId, gene) %>%
