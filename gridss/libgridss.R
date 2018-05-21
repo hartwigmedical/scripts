@@ -3,9 +3,9 @@ library(StructuralVariantAnnotation)
 library(dplyr)
 library(stringr)
 library(testthat)
-gridss.short_deldup_size_threshold = 1000
-gridss.allowable_normal_contamination_qual=0.03
-gridss.allowable_normal_contamination_af=0.05
+gridss.short_event_size_threshold = 1000
+# 0.5% of the supporting fragments can come from the normal
+gridss.allowable_normal_contamination=0.005
 gridss.use_read_threshold=3
 gridss.min_breakpoint_depth = 5 # Half BPI default
 gridss.min_normal_depth = 8
@@ -48,22 +48,23 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 	}
 	if (somatic_filters) {
 		# TODO fix https://github.com/PapenfussLab/gridss/issues/114
-		# TODO should we filter for low normal REF/REFPAIR coverage?
 		normalaf <- gridss_af(gr, vcf, normalOrdinal)
 		filtered = filtered |
-			.genosum(g$QUAL,normalOrdinal) > gridss.allowable_normal_contamination_qual * .genosum(g$QUAL,tumourOrdinal) |
+	    .genosum(g$VF,normalOrdinal) > gridss.allowable_normal_contamination *  .genosum(g$VF,tumourOrdinal)
 			# Filter.SRNormalSupport
 			(isShort & .genosum(g$SR, normalOrdinal) != 0) |
-			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) < gridss.min_normal_depth |
-			# NAN in normal indicate no normal coverage at all
-			is.nan(normalaf) | normalaf > gridss.allowable_normal_contamination_af
+			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) + .genosum(g$VF) < gridss.min_normal_depth
 	}
 	return(as.logical(filtered))
 }
 is_short_deldup = function(gr) {
 	strand(gr) != strand(partner(gr)) &
 		seqnames(gr) == seqnames(partner(gr)) &
-		abs(start(gr)-start(partner(gr))) < gridss.short_deldup_size_threshold
+		abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
+}
+is_short_event = function(gr) {
+  seqnames(gr) == seqnames(partner(gr)) &
+    abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
 }
 gridss_af = function(gr, vcf, i=c(1)) {
 	genotype = geno(vcf[names(gr)])
@@ -83,7 +84,10 @@ gridss_af = function(gr, vcf, i=c(1)) {
 
 	# a complete assembly will give the most accurate AF, but
 	# a fragmented assembly will underestimate
-	ifelse(is_short_deldup(gr), pmax(assr_af, sr_af), pmax(assrrp_af, srrp_af))
+	component_af = ifelse(is_short_deldup(gr), pmax(assr_af, sr_af), pmax(assrrp_af, srrp_af))
+
+	vf_af = g$VF / (g$VF + ref + ifelse(is_short_deldup(gr), 0, refpair))
+	return(vf_af)
 }
 gridss_somatic_af = function(gr, vcf) {
 	return(gridss_af(gr, vcf, 2))
