@@ -3,7 +3,6 @@ library(tidyr)
 library(ggplot2)
 
 load(file = "~/hmf/RData/Reference/canonicalTranscripts.RData")
-load(file = "~/hmf/RData/Reference/hpcFusions.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 load(file = "~/hmf/RData/Reference/hpcGeneCopyNumberDeletes.RData")
 load(file = "~/hmf/RData/Reference/hpcGeneCopyNumberAmplifications.RData")
@@ -15,15 +14,11 @@ load(file = "~/hmf/RData/processed/oncoDrivers.RData")
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 load(file = "~/hmf/RData/processed/genePanel.RData")
 load(file = "~/hmf/RData/Processed/fragileGenes.RData")
+load(file = "~/hmf/RData/Processed/hpcFusions.RData")
 
-intragenicFusions = hpcFusions %>% filter(`5pGene` == `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "IntragenicFusion")
-threePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `3pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "3PrimeFusion")
-fivePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "5PrimeFusion")
-fusions = bind_rows(intragenicFusions, threePrimeFusions) %>% bind_rows(fivePrimeFusions) %>% 
-  mutate(driverLikelihood = ifelse(driver == "IntragenicFusion", 1, 0.5), type = "FUSION")
+fusions = hpcFusions %>% select(sampleId, gene = `3pGene`, driver) %>% mutate(type = "FUSION")
 fusions$type = ifelse(fusions$gene %in% tsGenes$gene_name, "TSG", fusions$type)
 fusions$type = ifelse(fusions$gene %in% oncoGenes$gene_name, "ONCO", fusions$type)
-rm(intragenicFusions, threePrimeFusions, fivePrimeFusions)
 
 amplifications = hpcGeneCopyNumberAmplifications %>%
   filter(gene %in% oncoGenes$gene_name | gene %in% geneCopyNumberAmplificationTargets$target) %>%
