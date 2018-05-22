@@ -18,8 +18,8 @@ geneCopyNumberDeletes = hpcGeneCopyNumberDeletes %>% filter(
 
 geneCopyNumberAmplifications = hpcGeneCopyNumberAmplifications %>% filter(germlineHetRegions == 0, germlineHomRegions == 0)
 
-deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, adjacent = "arm"); date()
-amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, adjacent = "arm"); date()
+deletionsOutput = copy_number_drivers(genes, geneCopyNumberDeletes, adjacent = "arm", absCandidateScore = 2, relativeCandidateScore = 0.85); date()
+amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, adjacent = "arm", absCandidateScore = 5, relativeCandidateScore = 0.75); date()
 
 geneCopyNumberAmplificationSummary = amplificationOutput$summary
 geneCopyNumberDeletionsSummary = deletionsOutput$summary
