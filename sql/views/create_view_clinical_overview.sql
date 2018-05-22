@@ -6,7 +6,7 @@ CREATE VIEW clinical AS
 	baseline.registrationDate, baseline.informedConsentDate, baseline.hospital, baseline.gender,
     baseline.birthYear, baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment, baseline.preTreatments, baseline.preTreatmentsType, biopsy.biopsyDate,
 	treatment.startDate AS treatmentStartDate, treatment.endDate AS treatmentEndDate, firstMatchedTreatmentResponse.responseDate, baseline.deathDate,
-	baseline.primaryTumorLocation AS tumorClassification, baseline.cancerSubtype AS tumorSubtype, biopsy.biopsyType, biopsy.biopsySite, biopsy.biopsyLocation,
+	baseline.primaryTumorLocation, baseline.cancerSubtype, biopsy.biopsyType, biopsy.biopsySite, biopsy.biopsyLocation,
 	treatment.treatmentGiven, treatment.radiotherapyGiven, treatment.name AS treatment, treatment.type AS treatmentType,
 	firstMatchedTreatmentResponse.measurementDone as responseMeasured, firstMatchedTreatmentResponse.response as firstResponse
 	FROM sample
