@@ -103,6 +103,7 @@ dels$target <- ifelse(is.na(dels$target), dels$cosmicTsg, dels$target)
 dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$highestScoring, dels$target)
 dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
+dels$centromere <- ifelse(dels$method == "highest" & dels$centromereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_centromere"), NA)
 
 delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
 dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
