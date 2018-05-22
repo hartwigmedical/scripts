@@ -51,6 +51,7 @@ tsgDriverByGene = tsgDrivers %>%
   select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic)
 
 oncoDriverByGene = oncoDrivers %>%
+  filter(impact != "Frameshift") %>%
   group_by(sampleId, gene) %>%
   summarise(
     hotspot = sum(hotspot) > 0,

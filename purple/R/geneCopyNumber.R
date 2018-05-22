@@ -68,8 +68,8 @@ aggregate_gene_copy_numbers_by_cancer_type<-function(geneCopyNumbers) {
   return(left_join(aggregation, aggregationByCancerType, by = "gene"))
 }
 
-candidates<-function(driverGene, adjacentAggregate) {
-  candidates = adjacentAggregate %>% filter(score >= driverGene$score -2 | score >= 0.85 * driverGene$score) %>% arrange(-score)
+candidates<-function(driverGene, adjacentAggregate, absCandidateScore, relativeCandidateScore) {
+  candidates = adjacentAggregate %>% filter(score >= driverGene$score - absCandidateScore | score >= relativeCandidateScore * driverGene$score) %>% arrange(-score)
   return (paste(candidates$gene, collapse = ","))
 }
 
@@ -80,7 +80,7 @@ neighbours<-function(driverGene, aggregatedCopyNumbers) {
 }
 
 
-chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneCopyNumbers,  maxDriversPerChromosome = 20, adjacent) {
+chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneCopyNumbers,  maxDriversPerChromosome = 20, adjacent, absCandidateScore, relativeCandidateScore) {
   result = list()
 
   chromosomeGenes = filter(allGenes, chromosome == currentChromosome) %>% arrange(start)
@@ -125,7 +125,7 @@ chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneC
       gene = driverGene$gene,
       localPeak =  summary[summary$gene == driverGene$gene, ]$score,
       globalPeak = chromosomeSummary[chromosomeSummary$gene == driverGene$gene, ]$score,
-      candidates = candidates(driverGene, adjacentSummary),
+      candidates = candidates(driverGene, adjacentSummary, absCandidateScore, relativeCandidateScore),
       driverNeighbours = driverNeighbours,
       chromosomeNeighbours = chromosomeNeighbours,
       driverGeneCopyNumbers = driverGeneCopyNumbers,
@@ -140,7 +140,7 @@ chromosome_copy_number_drivers <- function(currentChromosome, allGenes, allGeneC
 }
 
 
-copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 0, chromosomes = c(1:22, "X"), cl = NA, adjacent = "gene") {
+copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromosome = 0, chromosomes = c(1:22, "X"), cl = NA, adjacent = "gene", absCandidateScore, relativeCandidateScore) {
 
   if (!adjacent %in% c("gene","arm")) {
     stop("Argument adjacent must be one of: 'gene','arm'")
@@ -152,10 +152,10 @@ copy_number_drivers<-function(allGenes, allGeneCopyNumbers, maxDriversPerChromos
   allGeneCopyNumbers$cancerType = ifelse(is.na(allGeneCopyNumbers$cancerType), "NA", allGeneCopyNumbers$cancerType)
 
   if (is.na(cl)) {
-    chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome, adjacent)})
+    chromosomeDrivers = sapply(chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome, adjacent, absCandidateScore, relativeCandidateScore)})
   } else {
     cat("Going parallel")
-    chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome, adjacent)})
+    chromosomeDrivers = parSapply(cl, chromosomes, function(x) {chromosome_copy_number_drivers(x, allGenes, allGeneCopyNumbers, maxDriversPerChromosome, adjacent, absCandidateScore, relativeCandidateScore)})
   }
 
   allChromosomeDrivers = unlist(chromosomeDrivers, recursive = F)
