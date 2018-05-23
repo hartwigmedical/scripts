@@ -12,6 +12,7 @@ totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sampl
 cohortSize = nrow(highestPurityCohortSummary)
 
 tsgDriverByGene = tsgDrivers %>%
+  mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
   group_by(sampleId, gene) %>%
   summarise(
     multihit = n() > 1,
@@ -21,26 +22,33 @@ tsgDriverByGene = tsgDrivers %>%
     driver = max(driver),
     driverLikelihood = max(driver)) %>%
   mutate(driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-  select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic)
+  select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic) %>%
+  filter(driver > 0)
+
+tsgDriverByGene[tsgDriverByGene$driver == "Multithit" & !tsgDriverByGene$impact %in% c("Missense,Missense", "Indel,Indel"), "driverLikelihood"] <- 1
+tsgDriverByGene$firstImpact = sapply(tsgDriverByGene$impact, function (x) {unlist(strsplit(x, split = ","))[[1]]})
 
 tsgSingleHitsByGene = tsgDriverByGene %>% 
   filter(driverLikelihood < 1, driver != 'Multihit') %>%
   ungroup() %>% 
   group_by(gene, driver) %>% summarise(gene_single_drivers = sum(driverLikelihood), gene_single_non_drivers = sum(1 - driverLikelihood))
 
-tsgMultiHitsByGene = tsgDriverByGene %>% 
-  filter(driverLikelihood < 1, driver == 'Multihit') %>%
-  ungroup() %>% 
-  group_by(gene, driver) %>% summarise(gene_multihit_drivers = sum(driverLikelihood), gene_multihit_non_drivers = sum(1 - driverLikelihood))
+tsgDriverByGeneBayesian = tsgDriverByGene %>% 
+  left_join(tsgSingleHitsByGene, by = c("gene", "firstImpact" = "driver")) %>% 
+  left_join(sampleSomatics, by = "sampleId") %>%
+  ungroup()
 
-tsgDriverByGeneBayesian = tsgDriverByGene %>% left_join(tsgSingleHitsByGene, by = c("gene", "driver")) %>% left_join(tsgMultiHitsByGene, by = c("gene", "driver")) %>% left_join(sampleSomatics, by = "sampleId")
-tsgDriverByGeneBayesian$p_variant_nondriver = 1 - ppois(0, tsgDriverByGeneBayesian$sample_SNV / totalSomatics$total_SNV  * tsgDriverByGeneBayesian$gene_single_non_drivers)
-tsgDriverByGeneBayesian$p_variant_nondriver = ifelse(tsgDriverByGeneBayesian$driver %in% c("Frameshift","Inframe"), 1 - ppois(0, tsgDriverByGeneBayesian$sample_INDEL / totalSomatics$total_INDEL  * tsgDriverByGeneBayesian$gene_single_non_drivers), tsgDriverByGeneBayesian$p_variant_nondriver)
-tsgDriverByGeneBayesian$p_variant_nondriver = ifelse(tsgDriverByGeneBayesian$driver %in% c("Multihit"), 1 - ppois(1, tsgDriverByGeneBayesian$sample_SNV / totalSomatics$total_SNV  * (tsgDriverByGeneBayesian$gene_single_non_drivers + tsgDriverByGeneBayesian$gene_multihit_non_drivers)), tsgDriverByGeneBayesian$p_variant_nondriver)
+tsgDriverByGeneBayesian$p_variant_nondriver_snv = 1 - ppois(0, tsgDriverByGeneBayesian$sample_SNV / totalSomatics$total_SNV  * tsgDriverByGeneBayesian$gene_single_non_drivers)
+tsgDriverByGeneBayesian$p_variant_nondriver_multi = 1 - ppois(1, tsgDriverByGeneBayesian$sample_SNV / totalSomatics$total_SNV  * tsgDriverByGeneBayesian$gene_single_non_drivers)
+tsgDriverByGeneBayesian$p_variant_nondriver_indel = 1 - ppois(0, tsgDriverByGeneBayesian$sample_INDEL / totalSomatics$total_INDEL  * tsgDriverByGeneBayesian$gene_single_non_drivers)
+tsgDriverByGeneBayesian$p_variant_nondriver = ifelse(tsgDriverByGeneBayesian$driver %in% c("Indel"), tsgDriverByGeneBayesian$p_variant_nondriver_indel, tsgDriverByGeneBayesian$p_variant_nondriver_snv)
+tsgDriverByGeneBayesian$p_variant_nondriver = ifelse(tsgDriverByGeneBayesian$driver %in% c("Multihit"), tsgDriverByGeneBayesian$p_variant_nondriver_multi, tsgDriverByGeneBayesian$p_variant_nondriver)
+
 tsgDriverByGeneBayesian = tsgDriverByGeneBayesian %>%
-  mutate(p_driver = ifelse(driver == "Multihit", gene_multihit_drivers / cohortSize, gene_single_drivers / cohortSize),  p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver))) 
+  mutate(p_driver = gene_single_drivers / cohortSize,  p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver))) 
 
-tsgDriverByGeneBayesian$adjustedDriverLikelihood = ifelse(tsgDriverByGeneBayesian$driverLikelihood < 1, tsgDriverByGeneBayesian$p_driver_variant, tsgDriverByGeneBayesian$driverLikelihood)
+tsgDriverByGeneBayesian$adjustedDriverLikelihood = ifelse(tsgDriverByGeneBayesian$driverLikelihood < 1 & tsgDriverByGeneBayesian$driverLikelihood > 0, tsgDriverByGeneBayesian$p_driver_variant, tsgDriverByGeneBayesian$driverLikelihood)
+
 
 
 oncoDriverByGene = oncoDrivers %>%
@@ -52,17 +60,23 @@ oncoDriverByGene = oncoDrivers %>%
     driver = max(driver),
     driverLikelihood = max(driver))  %>%
   mutate(driver = impact, type = 'ONCO') %>%
-  select(sampleId, gene, impact, driver, driverLikelihood, type)
+  select(sampleId, gene, impact, driver, driverLikelihood, type) %>% 
+  filter(driver != 'Frameshift') %>%
+  mutate(driverLikelihood = ifelse(driver == "Inframe", 1, driverLikelihood)) %>%
+  filter(driver > 0)
 
 oncoHitsByGene = oncoDriverByGene %>% 
   filter(driverLikelihood < 1, driver == "Missense") %>%
   ungroup() %>% 
   group_by(gene, driver) %>% summarise(gene_single_drivers = sum(driverLikelihood), gene_single_non_drivers = sum(1 - driverLikelihood))
 
-oncoDriverByGeneBayesian = oncoDriverByGene %>% left_join(oncoHitsByGene, by = c("gene", "driver")) %>% left_join(sampleSomatics, by = "sampleId")
-oncoDriverByGeneBayesian$p_variant_nondriver = 1 - ppois(0, oncoDriverByGeneBayesian$sample_SNV / totalSomatics$total_SNV  * oncoDriverByGeneBayesian$gene_single_non_drivers)
-oncoDriverByGeneBayesian = oncoDriverByGeneBayesian %>% mutate(p_driver = gene_single_drivers / cohortSize,  p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver))) 
-oncoDriverByGeneBayesian$adjustedDriverLikelihood = ifelse(!is.na(oncoDriverByGeneBayesian$p_driver_variant) & oncoDriverByGeneBayesian$driverLikelihood < 1, oncoDriverByGeneBayesian$p_driver_variant, oncoDriverByGeneBayesian$driverLikelihood)
+oncoDriverByGeneBayesian = oncoDriverByGene %>% 
+  left_join(oncoHitsByGene, by = c("gene", "driver")) %>% 
+  left_join(sampleSomatics, by = "sampleId") %>%
+  mutate(p_variant_nondriver = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_single_non_drivers)) %>% 
+  mutate(p_driver = gene_single_drivers / cohortSize,  p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver))) 
+oncoDriverByGeneBayesian$adjustedDriverLikelihood = ifelse(oncoDriverByGeneBayesian$driverLikelihood < 1 & oncoDriverByGeneBayesian$driverLikelihood > 0, oncoDriverByGeneBayesian$p_driver_variant, oncoDriverByGeneBayesian$driverLikelihood)
 
 
+save(tsgDriverByGeneBayesian, oncoDriverByGeneBayesian, file = "~/hmf/RData/adjustedDriverLikelihood.RData")
 

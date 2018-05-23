@@ -10,7 +10,7 @@ library(RMySQL)
 ####### Variant Annotation
 load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
 somatics = hpcExonicSomatics %>% 
-  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
+   select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
 
 load(file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
 filteredMutations = dnds_annotate_somatics(dndsFilteredAnnotatedMutations, somatics)
@@ -73,7 +73,7 @@ load("~/hmf/RData/processed/excessRates.RData")
 
 load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
 somatics = hpcExonicSomatics %>% 
-  select(sampleID = sampleId, chr = chromosome, pos = position, ref = ref, mut = alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
 
 load(file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
 mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, somatics)
@@ -86,7 +86,7 @@ mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 tsgAnnotatedMutations = tsg_mutations(mutations)
 oncoAnnotatedMutations = onco_mutations(mutations)
 
-load(file = "~/hmf/RData/processed/driverGenes.RData")
+load(file = "~/hmf/RData/Processed/driverGenes.RData")
 tsgAnnotatedMutations$geneStatus <- ifelse(tsgAnnotatedMutations$redundant, "Redundant", tsgAnnotatedMutations$geneStatus)
 tsgAnnotatedMutations = left_join(tsgAnnotatedMutations, excessTsgRates %>% select(gene, impact, MultiHitDriverRate, SingleHitDriverRate), by = c("gene", "impact"))
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "SingleHit", tsgAnnotatedMutations$SingleHitDriverRate, NA )
@@ -95,8 +95,8 @@ tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$geneStatus == "Biall
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$hotspot > 0, 1, tsgAnnotatedMutations$driver)
 tsgAnnotatedMutations$driver = ifelse(tsgAnnotatedMutations$redundant, 0, tsgAnnotatedMutations$driver)
 
-tsgDrivers = tsgAnnotatedMutations %>% filter(gene %in% tsGenes$gene_name, driver > 0)
-save(tsgDrivers, file = "~/hmf/RData/processed/tsgDrivers.RData")
+tsgDrivers = tsgAnnotatedMutations %>% filter(gene %in% tsGenes$gene_name, redundant == F)
+save(tsgDrivers, file = "~/hmf/RData/Processed/tsgDrivers.RData")
 
 oncoAnnotatedMutations$geneStatus <- as.character(oncoAnnotatedMutations$geneStatus)
 oncoAnnotatedMutations$geneStatus <- ifelse(oncoAnnotatedMutations$redundant, "Redundant", oncoAnnotatedMutations$geneStatus)
@@ -107,5 +107,6 @@ oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$geneStatus == "Hot
 oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$geneStatus == "NearHotspot", 1, oncoAnnotatedMutations$driver )
 oncoAnnotatedMutations$driver = ifelse(oncoAnnotatedMutations$redundant, 0, oncoAnnotatedMutations$driver)
 
-oncoDrivers = oncoAnnotatedMutations %>% filter(gene %in% oncoGenes$gene_name, driver > 0)
-save(oncoDrivers, file = "~/hmf/RData/processed/oncoDrivers.RData")
+oncoDrivers = oncoAnnotatedMutations %>% filter(gene %in% oncoGenes$gene_name, redundant == F)
+save(oncoDrivers, file = "~/hmf/RData/Processed/oncoDrivers.RData")
+
