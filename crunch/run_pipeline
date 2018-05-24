@@ -26,9 +26,8 @@ function main() {
     local pipeline=${1:-pipeline-test} && shift || true
 
     local output_root=/data2/processed
-    local email=${PIPELINE_EMAIL:?Make sure \$PIPELINE_EMAIL is defined (e.g. in your .bashrc)}
 
-    # with no parameters, run the cancer panel test
+    # SABR: with no parameters, run the cancer panel test
     if [ -z "${output_name}" ]; then
         output_name=${USER}_${pipeline/-/_}
         input=/data/repos/testdata/cancerPanel
@@ -42,21 +41,20 @@ function main() {
     echoerr "INPUT: ${input}"
     echoerr "OUTPUT: ${output}"
 
-    # only replace settings.config if providing an input folder
+    # SABR: only replace settings.config if providing an input folder
     if [ -n "${input}" ]; then
         local mode_flag
         mode_flag=$(choose_input_mode) || exit
-        "/data/repos/${pipeline}/bin/create_config.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}" -m "${email}"
+        "/data/repos/${pipeline}/bin/create_config.pl" -i "${config}.ini" -o "${output}" "${mode_flag}" "${input}"
     fi
 
     cd "${output}"
 
-    # if there was no input folder, we are re-running a previous settings.config, and want to leave filenames in place
+    # SABR: if there was no input folder, we are re-running a previous settings.config, and want to leave filenames in place
     perl -pi -e "s#(INIFILE\s+).*#\1/data/repos/${pipeline}/settings/${config}.ini#" settings.config
     perl -pi -e "s#(OUTPUT_DIR\s+).*#\1${output}#" settings.config
-    perl -pi -e "s#(MAIL\s+).*#\1${email/@/\\@}#" settings.config
 
-    # especially useful for repeated somatics runs on existing data
+    # SABR: especially useful for repeated somatics runs on existing data
     if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_PILEUP" settings.config
     then
         echo "FINALIZE_KEEP_PILEUP	yes" >> settings.config
@@ -100,7 +98,7 @@ function write_metadata() {
     declare -A samples=()
     declare -A samples_names=()
 
-    # ignore it if it already exists
+    # SABR: ignore it if it already exists
     if [ -e "${metadata_file}" ]; then
         echoerr "WARN: not generating ${metadata_file}, already exists"
         return
@@ -114,8 +112,7 @@ function write_metadata() {
             samples[R]=${BASH_REMATCH[1]}
         fi
 
-        ## store in extra associative array to 
-        ## keep complete sample name available
+        # SABR: store in extra associative array to keep complete sample name available
         if [[ ${filename} =~ ^([a-zA-Z0-9\-]+)_ ]]; then
             samples_names[${BASH_REMATCH[1]}]="dummy"
         fi
