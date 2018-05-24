@@ -63,8 +63,8 @@ tsgDrivers = tsgDrivers %>%
   group_by(sampleId, gene) %>%
   summarise(
     multihit = n() > 1,
-    biallelic = sum(biallelic) > 0, 
-    hotspot = sum(hotspot) > 0, 
+    biallelic = any(biallelic), 
+    hotspot = any(hotspot), 
     impact = paste(impact, collapse = ","),
     knownDriver = any(knownDriver),
     driverLikelihood = max(driverLikelihood),
@@ -74,26 +74,6 @@ tsgDrivers = tsgDrivers %>%
   select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, knownDriver, driverLikelihood, driverLikelihoodAdjusted) %>%
   ungroup()  
 save(tsgDrivers, file = "~/hmf/RData/Processed/tsgDrivers.RData")
-
-
-
-#tsgDrivers = tsgMutations %>%
-#  filter(redundant == F) %>%
-#  left_join(tsgDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>% 
-#  mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood)) %>%
-#  group_by(sampleId, gene) %>%
-#  summarise(
-#    multihit = n() > 1,
-#    biallelic = sum(biallelic) > 0, 
-#    hotspot = sum(hotspot) > 0, 
-#    impact = paste(impact, collapse = ","),
-#    knownDriver = any(knownDriver),
-#    driverLikelihood = max(driverLikelihood)
-#    ) %>%
-#  mutate(driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-#  select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, knownDriver, driverLikelihood) %>%
-#  ungroup()  
-
 
 oncoMutations = onco_mutations(mutations)
 save(oncoMutations, file = "~/hmf/RData/Processed/oncoMutations.RData")
@@ -105,17 +85,34 @@ oncoDrivers = oncoMutations %>%
   filter(redundant == F) %>%
   left_join(oncoDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>% 
   mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood)) %>%
-  mutate(driverLikelihood = ifelse(impact == "Frameshift", 0, driverLikelihood)) %>%
+  mutate(driverLikelihood = ifelse(impact == "Frameshift", 0, driverLikelihood))
+
+oncoUnknownDriversTotals = oncoDrivers %>% 
+  group_by(gene, impact) %>%
+  filter(!knownDriver) %>% 
+  summarise(gene_drivers = sum(driverLikelihood), gene_non_drivers = sum(1 - driverLikelihood))
+save(oncoUnknownDriversTotals, file = "~/hmf/RData/Processed/oncoUnknownDriversTotals.RData")
+
+oncoDrivers = oncoDrivers %>%
+  left_join(sampleSomatics, by = "sampleId") %>%
+  left_join(oncoUnknownDriversTotals, by = c("gene","impact")) %>%
+  mutate(
+    p_variant_nondriver = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
+    p_driver = gene_drivers / cohortSize,  
+    p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
+    driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood)
+  ) %>%
   group_by(sampleId, gene) %>%
   summarise(
-    hotspot = sum(hotspot) > 0,
     nearHotspot = any(nearHotspot),
+    hotspot = sum(hotspot) > 0, 
     impact = paste(impact, collapse = ","),
     knownDriver = any(knownDriver),
-    driverLikelihood = max(driverLikelihood))  %>%
+    driverLikelihood = max(driverLikelihood),
+    driverLikelihoodAdjusted = max(driverLikelihoodAdjusted),
+    sample_SNV = max(sample_SNV)
+  ) %>%
   mutate(driver = impact, type = 'ONCO') %>%
-  select(sampleId, gene, driver, impact, type, knownDriver, driverLikelihood)
+  select(sampleId, gene, driver, impact, type, hotspot, nearHotspot, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
+  ungroup()  
 save(oncoDrivers, file = "~/hmf/RData/Processed/oncoDrivers.RData")
-
-
-

@@ -4,15 +4,157 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-load(file = "~/hmf/RData/reference/primaryTumorLocationColours.RData")
-load(file = '~/hmf/RData/reference/cohortByPrimaryTumorLocation.RData')
+#################### COLOURS #################### 
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n()) %>% arrange(-N)
+save(hpcCancerTypeCounts, file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
+cancerTypes = sort(unique(highestPurityCohortSummary$cancerType))
+cancerTypeColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
+                           "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#ff4791","#01837a",
+                           "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
+                           "#dea185","#a0729d","#8a392f")
+cancerTypeColours = setNames(cancerTypeColours[1:length(cancerTypes)], cancerTypes)
+save(cancerTypeColours, file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+
+#################### LOAD #################### 
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/Reference/hpcCancerTypeCounts.RData")
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+cancerTypeFactors =  factor(hpcCancerTypeCounts$cancerType, levels = hpcCancerTypeCounts$cancerType)
+
+#################### Counts of cancer type #################### 
+cancerTypeData = highestPurityCohortSummary  %>% group_by(cancerType) %>% summarise(n = n()) %>% arrange(-n)
+cancerTypeData$cancerType = factor(cancerTypeData$cancerType, levels = cancerTypeFactors)
+
+ggplot(data=cancerTypeData, aes(x = cancerType, y = n)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") +
+  scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
+  xlab("Cancer Type") + ylab("Number of samples") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="bottom")
+
+rm(cancerTypeData)
+
+#################### AGE Violin Plot by Cancer Type #################### 
+agePlotData = highestPurityCohortSummary %>% select(sampleId, ageAtBiopsy, cancerType) %>% arrange(cancerType, -ageAtBiopsy)
+agePlotData$cancerType = factor(agePlotData$cancerType, levels = cancerTypeFactors)
+
+ggplot(agePlotData, aes(factor(cancerType), ageAtBiopsy)) + 
+  geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") + 
+  scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
+  xlab("Cancer Type") + ylab("Age at Biopsy") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1), legend.position="bottom")
+
+rm(agePlotData)
+
+
+#################### HMF Mutational Load #################### 
+hmfMutationalLoad = highestPurityCohortSummary %>% select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNP"), ends_with("MNP"), BND, DEL, INS, INV, DUP)
+hmfMutationalLoad[is.na(hmfMutationalLoad)] <- 0
+hmfMutationalLoad = hmfMutationalLoad %>% mutate(
+  INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL,
+  MNP = INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+  SNP = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+  SV = BND + DEL + INS + INV + DUP)
+
+ggplot(data=hmfMutationalLoad) +
+  stat_ecdf(aes(SNP,color='SNP'), geom = "step", pad = FALSE)+
+  stat_ecdf(aes(INDEL,color='INDEL'),geom = "step", pad = FALSE)+
+  stat_ecdf(aes(SV,color='SV'),geom = "step", pad = FALSE)+
+  stat_ecdf(aes(MNP,color='MNP'),geom = "step", pad = FALSE)+
+  scale_x_log10() + facet_wrap(~cancerType)
+
+#################### PCAWG Mutational Load #################### 
+pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
+pcawg_histology_tier2 = sort(unique(pcawgRaw$histology_tier2))
+
+pcawgCancerTypeMapping = data.frame(histology_tier2 = pcawg_histology_tier2, cancerType = pcawg_histology_tier2, stringsAsFactors = F)
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Bladder", "cancerType"] = "Urinary tract"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Bone/SoftTissue", "cancerType"] = "Bone/Soft tissue"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Cervix", "cancerType"] = NA
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Head/Neck", "cancerType"] = "Head and neck"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Myeloid", "cancerType"] = NA
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Thyroid", "cancerType"] = NA
+pcawgCancerTypeMapping = pcawgCancerTypeMapping[!is.na(pcawgCancerTypeMapping$cancerType), ]
+
+pcawgMutationalLoad = pcawgRaw %>% left_join(pcawgCancerTypeMapping, by = "histology_tier2") %>%
+  filter(!is.na(cancerType)) %>% select(PCAWG_SNP = all.SNVs, PCAWG_INDEL = all.Indels, PCAWG_SV = SV.events, age, cancerType) %>%
+  mutate(source = "PCAWG")
+
+#################### Combined Mutational Load #################### 
+combinedMutationalLoad =  hmfMutationalLoad %>%
+  filter(cancerType %in% pcawgCancerTypeMapping$cancerType) %>% select(sampleId, cancerType, INDEL, SNP, SV) %>%
+  mutate(source = "HMF") %>%
+  bind_rows(pcawgMutationalLoad)
+
+
+ggplot(data=combinedMutationalLoad) +
+  stat_ecdf(aes(SNP,color='SNP'), geom = "step", pad = FALSE)+
+  stat_ecdf(aes(INDEL,color='INDEL'),geom = "step", pad = FALSE)+
+  stat_ecdf(aes(SV,color='SV'),geom = "step", pad = FALSE)+
+  stat_ecdf(aes(PCAWG_SNP,color='SNP'),geom = "step", linetype = "dashed", pad = FALSE)+
+  stat_ecdf(aes(PCAWG_INDEL,color='INDEL'),geom = "step", linetype = "dashed", pad = FALSE)+
+  stat_ecdf(aes(PCAWG_SV,color='SV'),geom = "step", linetype = "dashed", pad = FALSE)+
+  scale_x_log10() + facet_wrap(~cancerType)
+
+
+#################### SNPS #################### 
+load(file = "~/hmf/RData/Reference/allSNPSummary.RData")
+allSNPSummary = allSNPSummary %>% 
+  filter(nchar(alt) == 1) %>% 
+  mutate(type = standard_mutation(paste(ref, alt, sep = '>'))) %>%
+  ungroup() %>%
+  group_by(sampleId, type) %>%
+  summarise(n = sum(n)) %>%
+  left_join(highestPurityCohortSummary %>% select(sampleId, cancerType), by = "sampleId")
+
+allSNPSummarySampleTotals = allSNPSummary %>% ungroup() %>% group_by(sampleId) %>% summarise(sampleTotal = sum(n))
+allSNPSummaryCancerTypeTotals = allSNPSummary %>% ungroup() %>% group_by(cancerType) %>% summarise(cancerTypeTotal = sum(n))
+
+hpcSNP = allSNPSummary %>% filter(sampleId %in% highestPurityCohortSummary$sampleId) %>%
+  left_join(allSNPSummarySampleTotals, by = "sampleId") %>%
+  left_join(allSNPSummaryCancerTypeTotals, by = "cancerType") %>%
+  mutate(sampleRelativeN = n / sampleTotal) %>%
+  mutate(cancerTypeRelativeN = n / cancerTypeTotal)
+
+ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
+  geom_bar(aes(fill = type), stat = "identity") +
+#  scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
+  xlab("Samples") + ylab("Base substitution") + 
+  theme(axis.ticks.x = element_blank(), axis.text.x = element_blank(), legend.position="bottom")
+
+
+
+private static final String PINK = "233,187,184";
+private static final String BLUE = "20,176,239";
+private static final String BLACK = "6,8,9";
+private static final String RED = "224,7,20";
+private static final String GREY = "191,190,191";
+private static final String GREEN = "144,202,75";
+
+
+private static String color(PurityAdjustedSomaticVariant variant) {
+  
+  if (signature("C", "A", variant)) return BLUE;
+  if (signature("C", "G", variant)) return BLACK;
+  if (signature("C", "T", variant)) return RED;
+  if (signature("T", "A", variant)) return GREY;
+  if (signature("T", "C", variant)) return GREEN;
+  if (signature("T", "G", variant)) return PINK;
+  
+  return "purple";
+}
+
+
+########################### RUBBISH ###########################
+
+
 
 #load(file = "~/hmf/RData/reference/highestPuritySomaticSummary.RData")
 #hmfSomatics = highestPuritySomaticSummary
 #hmfSomatics[is.na(hmfSomatics)] = 0
 #hmfSomatics = hmfSomatics %>% mutate(INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL, SNP = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP)
 
-load(file = "~/hmf/RData/processed/cohortSummary.RData")
+
 cohortSummary[is.na(cohortSummary)] <- 0
 cohortSummary$age <- ifelse(is.na(cohortSummary$biopsyDate), NA, as.numeric(substr(cohortSummary$biopsyDate,0,4)) - cohortSummary$birthYear)
 cohortSummary$primaryTumorLocation <- ifelse(cohortSummary$primaryTumorLocation == 0, NA, cohortSummary$primaryTumorLocation)
@@ -51,24 +193,11 @@ ggplot(data=hmfMutationalLoad) +
   scale_x_log10() + facet_wrap(~primaryTumorLocation)
 
 
-pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
-pcawg_histology_tier2 = sort(unique(pcawgRaw$histology_tier2))
 
-primaryTumorLocationMapping = data.frame(histology_tier2 = pcawg_histology_tier2, primaryTumorLocation = pcawg_histology_tier2, stringsAsFactors = F)
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Bladder", "primaryTumorLocation"] = "Urinary tract"
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Bone/SoftTissue", "primaryTumorLocation"] = "Bone/Soft tissue"
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Cervix", "primaryTumorLocation"] = NA
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Head/Neck", "primaryTumorLocation"] = "Head and neck"
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Myeloid", "primaryTumorLocation"] = NA
-primaryTumorLocationMapping[primaryTumorLocationMapping$histology_tier2 == "Thyroid", "primaryTumorLocation"] = NA
-primaryTumorLocationMapping = primaryTumorLocationMapping[!is.na(primaryTumorLocationMapping$primaryTumorLocation), ]
 
-pcawgMutationalLoad = pcawgRaw %>% left_join(primaryTumorLocationMapping, by = "histology_tier2") %>%
-  filter(!is.na(primaryTumorLocation)) %>% select(PCAWG_SNP = all.SNVs, PCAWG_INDEL = all.Indels, PCAWG_SV = SV.events, age, primaryTumorLocation) %>%
-  mutate(source = "PCAWG")
 
-combinedMutationalLoad =  hmfMutationalLoad %>% filter(!is.na(primaryTumorLocation), primaryTumorLocation %in% primaryTumorLocationMapping$primaryTumorLocation) %>% mutate(source = "HMF") %>%
-  bind_rows(pcawgMutationalLoad)
+
+
 
 
 ggplot(data=cohortSummary ) +
@@ -78,14 +207,6 @@ ggplot(data=cohortSummary ) +
   scale_x_log10() + facet_wrap(~primaryTumorLocation)
 
 
-ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(SNP,color='SNP'), geom = "step", pad = FALSE)+
-  stat_ecdf(aes(INDEL,color='INDEL'),geom = "step", pad = FALSE)+
-  stat_ecdf(aes(SV,color='SV'),geom = "step", pad = FALSE)+
-  stat_ecdf(aes(PCAWG_SNP,color='SNP'),geom = "step", linetype = "dashed", pad = FALSE)+
-  stat_ecdf(aes(PCAWG_INDEL,color='INDEL'),geom = "step", linetype = "dashed", pad = FALSE)+
-  stat_ecdf(aes(PCAWG_SV,color='SV'),geom = "step", linetype = "dashed", pad = FALSE)+
-  scale_x_log10() + facet_wrap(~primaryTumorLocation)
 
 
 pcawgSomatics = pcawgRaw[!is.na(pcawgRaw$cancerType), c("all.SNVs", "all.Indels", "SV.events", "age", "cancerType")]

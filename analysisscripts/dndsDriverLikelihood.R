@@ -11,21 +11,9 @@ totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sampl
 
 cohortSize = nrow(highestPurityCohortSummary)
 
-tsgDriverByGene = tsgDrivers %>%
-  mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
-  group_by(sampleId, gene) %>%
-  summarise(
-    multihit = n() > 1,
-    biallelic = sum(biallelic) > 0, 
-    hotspot = sum(hotspot) > 0, 
-    impact = paste(impact, collapse = ","),
-    driver = max(driver),
-    driverLikelihood = max(driver)) %>%
-  mutate(driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-  select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic) %>%
-  filter(driver > 0)
 
-tsgDriverByGene[tsgDriverByGene$driver == "Multithit" & !tsgDriverByGene$impact %in% c("Missense,Missense", "Indel,Indel"), "driverLikelihood"] <- 1
+
+tsgDriverByGene = tsgDrivers %>%  filter(driver > 0)
 tsgDriverByGene$firstImpact = sapply(tsgDriverByGene$impact, function (x) {unlist(strsplit(x, split = ","))[[1]]})
 
 tsgSingleHitsByGene = tsgDriverByGene %>% 

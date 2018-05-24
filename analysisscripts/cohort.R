@@ -75,6 +75,16 @@ cat("Querying canonical transcripts")
 canonicalTranscripts = purple::query_canonical_transcript(dbProd)
 save(canonicalTranscripts, file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 
+allSNPSummary_p1 = allSomatics_p1 %>% filter(filter == 'PASS', type == 'SNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allSNPSummary_p2 = allSomatics_p2 %>% filter(filter == 'PASS', type == 'SNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allSNPSummary = bind_rows(allSNPSummary_p1, allSNPSummary_p2)
+save(allSNPSummary, file = "~/hmf/RData/Reference/allSNPSummary.RData")
+
+allMNPSummary_p1 = allSomatics_p1 %>% filter(filter == 'PASS', type == 'MNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allMNPSummary_p2 = allSomatics_p2 %>% filter(filter == 'PASS', type == 'MNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allMNPSummary = bind_rows(allMNPSummary_p1, allMNPSummary_p2)
+save(allMNPSummary, file = "~/hmf/RData/Reference/allMNPSummary.RData")
+
 #### COMBINE
 load(file = "~/hmf/RData/reference/allPurity.RData")
 load(file = "~/hmf/RData/reference/allWgd.RData")
@@ -106,9 +116,6 @@ highestPurityCohort = purple::query_highest_purity_cohort(dbProd, allGeneDeletes
 highestPurityCohort = left_join(highestPurityCohort, allClinicalData %>% select(sampleId, cancerType), by = "sampleId") %>% filter(!is.na(cancerType))
 highestPurityCohort$gender = ifelse(substr(highestPurityCohort$gender, 1, 4) == "MALE", "MALE", highestPurityCohort$gender)
 save(highestPurityCohort, file = "~/hmf/RData/reference/highestPurityCohort.RData")
-
-hpcCancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% summarise(N = n()) %>% arrange(-N)
-save(hpcCancerTypeCounts, file = '~/hmf/RData/reference/hpcCancerTypeCounts.RData')
 
 cat("Copy Numbers")
 hpcCopyNumbers = purple::query_copy_number(dbProd, highestPurityCohort)

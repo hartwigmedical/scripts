@@ -16,7 +16,7 @@ load(file = "~/hmf/RData/processed/genePanel.RData")
 load(file = "~/hmf/RData/Processed/fragileGenes.RData")
 load(file = "~/hmf/RData/Processed/hpcFusions.RData")
 
-fusions = hpcFusions %>% select(sampleId, gene = `3pGene`, driver) %>% mutate(type = "FUSION")
+fusions = hpcFusions %>% select(sampleId, gene = `3pGene`, driver) %>% mutate(type = "FUSION") %>% mutate(driver = ifelse(driver == "Intragenic", "Fusion-Intragenic", driver))
 fusions$type = ifelse(fusions$gene %in% tsGenes$gene_name, "TSG", fusions$type)
 fusions$type = ifelse(fusions$gene %in% oncoGenes$gene_name, "ONCO", fusions$type)
 
@@ -27,7 +27,7 @@ amplifications = hpcGeneCopyNumberAmplifications %>%
 
 deletions = hpcGeneCopyNumberDeletes %>%
   filter(gene %in% tsGenes$gene_name | gene %in% geneCopyNumberDeleteTargets$target) %>%
-  filter(germlineHetRegions == 0, germlineHomRegions == 0)
+  filter(germlineHetRegions == 0, germlineHomRegions == 0) %>%
   group_by(sampleId = sampleId, gene) %>% summarise(driver = "Del", partial = somaticRegions > 1) %>% 
   left_join(fragileGenes %>% select(gene = gene_name, fragile), by = "gene") %>%
   mutate(fragile = ifelse(is.na(fragile), F, T)) %>%
@@ -62,7 +62,7 @@ oncoDriverByGene = oncoDrivers %>%
   mutate(driver = impact, type = 'ONCO') %>%
   select(sampleId, gene, impact, driver, driverLikelihood, type)
 
-driverFactors = c("IntragenicFusion","3PrimeFusion","5PrimeFusion","Del","PartialDel","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Amp")
+driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Del","PartialDel","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Amp")
 driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
   bind_rows(amplifications) %>% 
   bind_rows(deletions) %>% 
