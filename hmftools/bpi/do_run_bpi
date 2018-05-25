@@ -55,7 +55,6 @@ then
     exit 1
 fi
 
-#joint_name=$(basename $(dirname ${output_tsv} ) )
 output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
 
 if grep -q bpiVersion=1.5 ${output_vcf}; then
