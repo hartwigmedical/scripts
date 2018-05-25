@@ -1,35 +1,39 @@
 select patients.patientId, 
 informedConsentDate, regDate1, regDate2, hospital1, hospital2,
-primaryTumorLocation, entryStage, 
-biopsyDate, biopsyLocation, biopsyLocationOther, 
-treatmentGiven, treatmentStart, treatmentEnd, treatment, treatmentOther, 
+primaryTumorLocation, primaryTumorLocationOther, entryStage,
+biopsyDate, biopsyLocation, biopsyLocationOther,
+treatmentGiven, treatmentStart, treatmentEnd, treatment, treatmentOther,
 measurement, responseAssessmentDate, responseDate, response
-from 
+from
 	(select distinct patientId from ecrf) patients
 left join
    (select patientId, group_concat(itemValue separator ', ') as informedConsentDate
     from ecrf where item = 'FLD.INFORMEDCONSENT.ICDTC' group by patientId) informed
 on patients.patientId = informed.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as regDate1 
+   (select patientId, group_concat(itemValue separator ', ') as regDate1
     from ecrf where item = 'FLD.ELIGIBILITY.REGDTC' group by patientId) reg1
 on patients.patientId = reg1.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as regDate2 
+   (select patientId, group_concat(itemValue separator ', ') as regDate2
     from ecrf where item = 'FLD.SELCRIT.NREGDTC' group by patientId) reg2
 on patients.patientId = reg2.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as hospital1 
+   (select patientId, group_concat(itemValue separator ', ') as hospital1
     from ecrf where item = 'FLD.ELIGIBILITY.HOSPITAL' group by patientId) hosp1
 on patients.patientId = hosp1.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as hospital2 
+   (select patientId, group_concat(itemValue separator ', ') as hospital2
     from ecrf where item = 'FLD.SELCRIT.NHOSPITAL' group by patientId) hosp2
 on patients.patientId = hosp2.patientId
 left join
-   (select patientId, group_concat(itemValue separator ', ') as primaryTumorLocation 
+   (select patientId, group_concat(itemValue separator ', ') as primaryTumorLocation
     from ecrf where item = 'FLD.CARCINOMA.PTUMLOC' group by patientId) ptumloc
 on patients.patientId = ptumloc.patientId
+left join
+   (select patientId, group_concat(itemValue separator ', ') as primaryTumorLocationOther
+    from ecrf where item = 'FLD.CARCINOMA.PTUMLOCS' group by patientId) ptumlocother
+on patients.patientId = ptumlocother.patientId
 left join
    (select patientId, group_concat(itemValue separator ', ') as entryStage 
     from ecrf where item = 'FLD.CARCINOMA.ENTRYSTAGE' group by patientId) entryst

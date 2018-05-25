@@ -10,11 +10,6 @@ collapseCandidates <- function(x) {
   return (paste(x, collapse = ","))
 }
 
-firstCandidate <- function(candidates) {
-  candidateVector = unlist(strsplit(candidates, split = ","))
-  return (candidateVector[1])
-}
-
 longestCandidate <- function(candidates, canonicalTranscripts) {
   candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F)
   candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>%
@@ -44,18 +39,25 @@ categoriseCandidates <-function(gene, candidates, genePanel) {
 }
 
 superSizedCandidates <-function(candidates, superGenes) {
-
-  candidateVector = unlist(strsplit(candidates, split = ","))
-  supers = superGenes %>% filter(sub %in% candidateVector) %>% select(super)
-  union = sort(unique(c(supers$super, candidateVector)))
-  
-  return(collapseCandidates(union))
+  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% 
+    mutate(rank = row_number())
+  candidateSupers = inner_join(candidateVector, superGenes, by = c("gene" = "sub")) %>% select(gene = super, rank)
+  result = bind_rows(candidateVector, candidateSupers) %>% arrange(rank)
+  return(collapseCandidates(unique(result$gene)))
 }
 
 candidatesRange <- function(gene, candidates, canonicalTranscripts) {
   candidateVector = unlist(strsplit(candidates, split = ","))
   candidateTranscripts = canonicalTranscripts[canonicalTranscripts$gene %in% candidateVector, ]
   return (data.frame(gene, superCandidatesStart = as.numeric(min(candidateTranscripts$geneStart)), superCandidatesEnd = max(candidateTranscripts$geneEnd)))
+}
+
+
+singleTarget <- function(targets, superCandidates) {
+  targetVector = unlist(strsplit(targets, split = ","))
+  superCandidateDF = data.frame(gene = unlist(strsplit(superCandidates, split = ",")), stringsAsFactors = F)  %>% mutate(rank = row_number()) %>%
+    filter(gene %in% targetVector) %>% arrange(rank)
+  return (superCandidateDF[1, "gene"])
 }
 
 #### SUPER GENES
@@ -103,9 +105,10 @@ dels$target <- ifelse(is.na(dels$target), dels$cosmicTsg, dels$target)
 dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
 dels$target <- ifelse(is.na(dels$target), dels$highestScoring, dels$target)
 dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
+dels$centromere <- ifelse(dels$method == "highest" & dels$centromereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_centromere"), NA)
 
 delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
-dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
+dels = dels %>% group_by(gene) %>% mutate(target = singleTarget(target, superCandidates))
 
 geneCopyNumberDeleteTargets = dels
 save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
@@ -150,7 +153,7 @@ amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
 amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
 
 ampsWithMultipleTargets = amps %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
-amps = amps %>% group_by(gene) %>% mutate(target = firstCandidate(target))
+amps = amps %>% group_by(gene) %>% mutate(target = singleTarget(target, superCandidates))
 
 geneCopyNumberAmplificationTargets = amps
 save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")

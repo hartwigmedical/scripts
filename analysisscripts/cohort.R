@@ -1,15 +1,16 @@
 ############################################
 # How to run analysis for paper:
-# 1. cohortClinical.R
-# 2. cohort.R
-# 3. dnds.R
-# 4. genePanel.R
-# 5. dndsClassification.R
-# 6. dndsExcessVariants.R
-# 7. ampsDels.R
-# 8. ampsDelsTarget.R
-# 9. driversByGene.R
-# 10. driversByGeneVisualisation.R
+# 01. cohortClinical.R
+# 02. cohort.R
+# 03. cohortFusions.R
+# 04. dnds.R
+# 05. genePanel.R
+# 06. dndsClassification.R
+# 07. dndsExcessVariants.R
+# 08. ampsDels.R
+# 09. ampsDelsTarget.R
+# 10. driversByGene.R
+# 11. driversByGeneVisualisation.R
 
 detach("package:purple", unload=TRUE)
 library(purple)
@@ -142,9 +143,6 @@ cat("Tert promoters")
 hpcTertPromoters = purple::query_tert_promoters(dbProd, highestPurityCohort)
 save(hpcTertPromoters, file = "~/hmf/RData/reference/hpcTertPromoters.RData")
 
-cat("Fusions")
-hpcFusions = purple::query_fusions(dbProd, highestPurityCohort)
-save(hpcFusions, file = "~/hmf/RData/reference/hpcFusions.RData")
 
 #### COMBINE
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
@@ -192,7 +190,6 @@ load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
 multipleBiopsySomatics = bind_rows(allSomatics_p1, allSomatics_p2) %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)
 save(multipleBiopsySomatics, file = "~/hmf/RData/reference/multipleBiopsySomatics.RData")
-
 
 multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
   group_by(patientId, startChromosome, endChromosome, startPosition,endPosition,startOrientation,endOrientation,type) %>%
