@@ -56,3 +56,12 @@ bpgr$af = gridss_af(bpgr, vcf, 2)
 info(vcf)$BPI_AF = paste(bpgr$af, partner(bpgr)$af, sep=",")
 VariantAnnotation::fixed(vcf)$FILTER = "PASS"
 writeVcf(vcf, output_vcf)
+
+
+# TODO output breakends
+# - somatic filter
+# - strand bias
+# - filter to only decent length assemblies?
+
+
+

@@ -31,7 +31,9 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 	if (support_quality_filters) {
 	  # TODO: update this to a binomial test so we don't filter low confidence
 	  # variants that are strand biased by chance
-	  filtered = filtered | pmax(i$SB, 1 - i$SB) > gridss.max_allowable_strand_bias
+	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
+	  # is fully strand biased when originating from one side of a breakend
+	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_strand_bias)
 	}
 	if (min_support_filters) {
 		filtered = filtered |
