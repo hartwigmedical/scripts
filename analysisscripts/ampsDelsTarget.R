@@ -17,13 +17,13 @@ collapseCandidates <- function(x) {
 #  return (collapseCandidates(candidateVector$gene))
 #}
 
+#candidates = "ZBTB10,MIR5708,TPD52,FABP5"
+
 highestScoringCodingCandidate <- function(candidates, canonicalTranscripts) {
-  str(canonicalTranscripts)
-  
   candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% mutate(rank = row_number())
   candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>% 
     mutate(isCoding = codingBases > 0) %>%
-    arrange(isCoding, rank) %>% dplyr::slice(1)
+    arrange(!isCoding, rank) %>% dplyr::slice(1)
   return (collapseCandidates(candidateVector$gene))
 }
 
