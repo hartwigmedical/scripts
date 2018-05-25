@@ -31,9 +31,9 @@ rownames(cv) = newgenes
 kc = newgenes[oldgenes %in% known_cancergenes]
 
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
-dndsFilteredAnnotatedMutations = output$annotmuts
-save(dndsFilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
-rm(dndsFilteredAnnotatedMutations)
+#dndsFilteredAnnotatedMutations = output$annotmuts
+#save(dndsFilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsFilteredAnnotatedMutations.RData")
+#rm(dndsFilteredAnnotatedMutations)
 
 HmfRefCDSCvList = list()
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
@@ -56,7 +56,7 @@ save(HmfRefCDSCv, file="~/hmf/RData/processed/HmfRefCDSCv.RData")
 unfilteredSomatics = hpcExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
 unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
-save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/processed/dndsUnfilteredAnnotatedMutations.RData")
+save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/processed/hpcExonicSomaticsDndsAnnotated.RData")
 rm(unfilteredSomatics, unfilteredOutput, dndsUnfilteredAnnotatedMutations)
 
 #################### Unfiltered Multiple Biopsy Annotations #########################
@@ -64,7 +64,7 @@ load(file = "~/hmf/RData/reference/mbExonicSomatics.RData")
 mbUnfilteredSomatics = mbExonicSomatics  %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
 mbUnfilteredOutput = dndscv(mbUnfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredMultipleBiopsyMutations = mbUnfilteredOutput$annotmuts
-save(dndsUnfilteredMultipleBiopsyMutations, file = "~/hmf/RData/processed/dndsUnfilteredMultipleBiopsyMutations.RData")
+save(dndsUnfilteredMultipleBiopsyMutations, file = "~/hmf/RData/processed/mbExonicSomaticsDndsAnnotated.RData")
 
 #################### PCAWG dNdS #########################
 PcawgRefCDSCv = read.delim("~/hmf/dnds/dNdScv_output_PANCANCER.txt", stringsAsFactors = FALSE)

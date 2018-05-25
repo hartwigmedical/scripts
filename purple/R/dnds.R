@@ -56,10 +56,10 @@ tsg_mutations <- function(mutations) {
   # Add knownDriver field: Hotspot, Biallelic, or Multihit (excluding 2xMissense & 2xIndel)
   result = result %>%
     mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
-    group_by(sampleId, gene, impact) %>%
-    mutate(knownDriver = ifelse(n() > 1 & impact %in% c("Missense", "Indel"), T, F))%>%
-    ungroup() %>%
-    mutate(knownDriver = ifelse(biallelic | hotspot | driverType == "MultiHit", T, knownDriver)) %>%
+    #group_by(sampleId, gene, impact) %>%
+    #mutate(knownDriver = ifelse(n() > 1 & impact %in% c("Missense", "Indel"), T, F))%>%
+    #ungroup() %>%
+    mutate(knownDriver = ifelse(biallelic | hotspot, T, F)) %>%
     mutate(knownDriver = ifelse(redundant, F, knownDriver))
 
   return (result)

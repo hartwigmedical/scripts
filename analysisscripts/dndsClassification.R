@@ -10,9 +10,7 @@ load("~/hmf/RData/processed/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
 
 load("~/hmf/RData/processed/HmfRefCDSCv.RData")
-HmfRefCDSCv = purple::dnds_excess(HmfRefCDSCv)
-
-genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% genePanel$gene_name) %>% select(gene_name, wmis_cv, wnon_cv, prob_mis, prob_non, excess_mis, excess_non)
+genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% genePanel$gene_name) %>% select(gene_name, wmis_cv, wnon_cv)
 genePanelCv = left_join(genePanelCv, genePanel[, c("gene_name", "cosmicTsg", "cosmicOncogene", "hmf", "martincorena")], by = "gene_name")
 
 trainTsg = genePanelCv %>% filter(cosmicTsg, !cosmicOncogene) %>% mutate(tsg = 1) %>% select(wmis_cv, wnon_cv,  tsg)
@@ -38,13 +36,10 @@ tsGenes = genePanel %>% filter(classification == "tsg")
 oncoGenes = genePanel %>% filter(classification == "onco")
 save(tsGenes, oncoGenes, file = "~/hmf/RData/processed/driverGenes.RData")
 
-ggplot(data=genePanelCv,aes(prob_mis,prob_non,label=gene_name))+
+ggplot(data=genePanelCv,aes(wmis_cv+0.1,wnon_cv+0.1,label=gene_name))+
   geom_point(aes(colour = factor(classification)))+
-  geom_text(size=2,hjust = 0, nudge_x = 0.01)
-
-ggplot(data=genePanelCv,aes(excess_mis+0.1,excess_non+0.1,label=gene_name))+
-  geom_point(aes(colour = factor(classification)))+
-  geom_text(size=2,hjust = 0, nudge_x = 0.01)+
   scale_x_log10()+
-  scale_y_log10() 
+  scale_y_log10() +
+  geom_text(size=2,hjust = 0, nudge_x = 0.01) 
+
 
