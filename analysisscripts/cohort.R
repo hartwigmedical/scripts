@@ -152,12 +152,12 @@ save(hpcTertPromoters, file = "~/hmf/RData/reference/hpcTertPromoters.RData")
 
 
 #### COMBINE
-load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
-load(file = "~/hmf/RData/reference/allWgd.RData")
-load(file = "~/hmf/RData/reference/allClinicalData.RData")
-load(file = "~/hmf/RData/reference/allSampleData.RData")
-load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
-load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
+load(file = "~/hmf/RData/Reference/highestPurityCohort.RData")
+load(file = "~/hmf/RData/Reference/allWgd.RData")
+load(file = "~/hmf/RData/Reference/allClinicalData.RData")
+load(file = "~/hmf/RData/Reference/allSampleData.RData")
+load(file = "~/hmf/RData/Reference/allSomaticsSummary.RData")
+load(file = "~/hmf/RData/Reference/allStructuralVariantSummary.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
@@ -169,7 +169,7 @@ highestPurityCohortSummary = highestPurityCohort %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
   left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD))
 
-save(highestPurityCohortSummary, file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")  
+save(highestPurityCohortSummary, file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")  
 write.csv(highestPurityCohortSummary, file = "~/hmf/RData/HighestPurityCohortSummary.csv", row.names = F) 
 
 

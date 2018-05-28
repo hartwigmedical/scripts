@@ -74,14 +74,15 @@ hpcTsgDrivers = hpcTsgDrivers %>%
     sameImpact = any(sameImpact),
     p_variant_nondriver = ifelse(sameImpact, max(p_variant_nondriver), prod(p_variant_nondriver)),
     gene_drivers = max(gene_drivers),
-    sample_SNV = max(sample_SNV)
+    sample_SNV = max(sample_SNV),
+    clonality = first(clonality)
   ) %>%
   mutate(
     p_driver = gene_drivers / cohortSize,  
     p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
     driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood),
     driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-  select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
+  select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, clonality, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
   ungroup()  
 save(hpcTsgDrivers, file = "~/hmf/RData/Processed/hpcTsgDrivers.RData")
 
@@ -122,9 +123,10 @@ hpcOncoDrivers = hpcOncoDrivers %>%
     knownDriver = any(knownDriver),
     driverLikelihood = max(driverLikelihood),
     driverLikelihoodAdjusted = max(driverLikelihoodAdjusted),
-    sample_SNV = max(sample_SNV)
+    sample_SNV = max(sample_SNV),
+    clonality = first(clonality)
   ) %>%
   mutate(driver = impact, type = 'ONCO') %>%
-  select(sampleId, gene, driver, impact, type, hotspot, nearHotspot, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
+  select(sampleId, gene, driver, impact, type, hotspot, nearHotspot, clonality, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
   ungroup()  
 save(hpcOncoDrivers, file = "~/hmf/RData/Processed/hpcOncoDrivers.RData")

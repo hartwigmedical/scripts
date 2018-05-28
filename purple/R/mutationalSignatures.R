@@ -20,6 +20,22 @@ getCOSMICSignatures <- function() {
   cancer_signatures = as.matrix(cancer_signatures[, 4:33])
 }
 
+standard_double_mutation <- function(types) {
+  result = ifelse(types %in% c("CC>AA", "GG>TT"), "CC>AA", NA)
+  result = ifelse(is.na(result) & types %in% c("CC>TT", "GG>AA"), "CC>TT", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("CC", "GGT"), "CC>Other", result)
+
+  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("TC", "AG"), "TC", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("TT", "AA"), "TT", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("CT", "GA"), "CT", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) == "TG", "TG", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) == "AC", "AC", result)
+  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("GC", "CG"), "GC", result)
+  result = ifelse(is.na(result), "Other", result)
+
+  return(result)
+}
+
 standard_mutation <- function(types) {
   types = gsub("G>T", "C>A", types)
   types = gsub("G>C", "C>G", types)

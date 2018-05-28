@@ -34,7 +34,7 @@ fusions = allFusions %>%
   select(-`3pPosition`, -`3pCodingStart`, -`3pCodingEnd`) %>%
   mutate(intragenic = `5pGene` == `3pGene`) %>%
   filter(`3pPostCoding` == F, is.na(`5pPostCoding`) | `5pPostCoding` == F, !(intragenic & `5pPhase` == -1)) %>%
-  mutate(driver = "Fusion-Coding", driver = ifelse(is.na(`5pPreCoding`) | `5pPreCoding`, "Fusion-UTR", driver), driver = ifelse(intragenic, "Intragenic", driver)) %>%
+  mutate(driver = "Fusion-Coding", driver = ifelse(is.na(`5pPreCoding`) | `5pPreCoding`, "Fusion-UTR", driver), driver = ifelse(intragenic, "Fusion-Intragenic", driver)) %>%
   select(-ends_with("IsStartEnd"),  -ends_with("Coding"), -filter, -intragenic)
 
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
