@@ -20,7 +20,7 @@ gridss.max_allowable_strand_bias = 0.95
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -37,7 +37,7 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 	}
 	if (min_support_filters) {
 		filtered = filtered |
-			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold
+			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 			str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
 			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
 			# BPI.Filter.MinDepth
@@ -49,15 +49,39 @@ gridss_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE
 			(isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
 	}
 	if (somatic_filters) {
-		# TODO fix https://github.com/PapenfussLab/gridss/issues/114
-		normalaf <- gridss_af(gr, vcf, normalOrdinal)
+		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
 		filtered = filtered |
 	    .genosum(g$VF,normalOrdinal) > gridss.allowable_normal_contamination *  .genosum(g$VF,tumourOrdinal)
 			# Filter.SRNormalSupport
 			(isShort & .genosum(g$SR, normalOrdinal) != 0) |
-			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) + .genosum(g$VF) < gridss.min_normal_depth
+			.genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) + .genosum(g$VF, normalOrdinal) < gridss.min_normal_depth
 	}
 	return(as.logical(filtered))
+}
+#' For each GRanges breakend, indicates whether the variant
+#' should be filtered
+#' @param somatic_filters apply somatic filters.
+#' Assumes the normal and tumour samples are the first and second respectively
+gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+  vcf = vcf[names(gr)]
+  i = info(vcf)
+  g = geno(vcf)
+  filtered = rep(FALSE, length(gr))
+  if (min_support_filters) {
+    filtered = filtered |
+      str_detect(gr$FILTER, "NO_ASSEMBLY") |
+      str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
+      # BPI.Filter.MinDepth
+      .genosum(g$BVF,c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth |
+      # require some sort of breakend anchoring
+      i$IMPRECISE
+  }
+  if (somatic_filters) {
+    filtered = filtered |
+      .genosum(g$BVF,normalOrdinal) > gridss.allowable_normal_contamination * .genosum(g$BVF,tumourOrdinal) |
+    .genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) + .genosum(g$BVF, normalOrdinal) < gridss.min_normal_depth
+  }
+  return(as.logical(filtered))
 }
 is_short_deldup = function(gr) {
 	strand(gr) != strand(partner(gr)) &
