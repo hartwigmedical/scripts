@@ -5,4 +5,4 @@ sample=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 
-${prefix}/delete_sampleID_of_database ${sample} ${credentials} ${patient_db_jar}
+${prefix}/delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}

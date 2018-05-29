@@ -9,10 +9,9 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
+echo "[INFO] Deleting data for ${sample}"
 
-echo "[INFO] Deleting data of ${sample}"
-
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.DeleteSampleOfDatabase \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.DeleteSampleFromDatabase \
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
 
