@@ -85,6 +85,25 @@ allMNPSummary_p2 = allSomatics_p2 %>% filter(filter == 'PASS', type == 'MNP') %>
 allMNPSummary = bind_rows(allMNPSummary_p1, allMNPSummary_p2)
 save(allMNPSummary, file = "~/hmf/RData/Reference/allMNPSummary.RData")
 
+indel_summary <- function(somatics) {
+  result = somatics %>% filter(filter == 'PASS', type == 'INDEL') %>%
+    mutate(isRepeat = repeatCount > 3, isMicrohomology = microhomology != "") %>% 
+    mutate(
+      category1 = ifelse(nchar(ref) > nchar(alt), "DEL", "INS"),  
+      category2 = ifelse(category1 == "DEL" & isMicrohomology, "MH", "other"),
+      category2 = ifelse(isRepeat, "repeat", category2),
+      category = paste(category1, category2, sep = "-")
+    ) %>%
+    group_by(sampleId, category)  %>% 
+    summarise(n = n()) 
+}
+
+allIndelSummary_p1 = indel_summary(allSomatics_p1)
+allIndelSummary_p2 = indel_summary(allSomatics_p2)
+allIndelSummary = bind_rows(allIndelSummary_p1, allIndelSummary_p2)
+save(allIndelSummary, file = "~/hmf/RData/Reference/allIndelSummary.RData")
+
+
 #### COMBINE
 load(file = "~/hmf/RData/reference/allPurity.RData")
 load(file = "~/hmf/RData/reference/allWgd.RData")

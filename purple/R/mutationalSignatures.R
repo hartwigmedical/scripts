@@ -20,18 +20,99 @@ getCOSMICSignatures <- function() {
   cancer_signatures = as.matrix(cancer_signatures[, 4:33])
 }
 
-standard_double_mutation <- function(types) {
-  result = ifelse(types %in% c("CC>AA", "GG>TT"), "CC>AA", NA)
-  result = ifelse(is.na(result) & types %in% c("CC>TT", "GG>AA"), "CC>TT", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("CC", "GGT"), "CC>Other", result)
 
-  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("TC", "AG"), "TC", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("TT", "AA"), "TT", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("CT", "GA"), "CT", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) == "TG", "TG", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) == "AC", "AC", result)
-  result = ifelse(is.na(result) & substr(types, 1, 2) %in% c("GC", "CG"), "GC", result)
-  result = ifelse(is.na(result), "Other", result)
+
+base_complements <- function(bases) {
+  complements = setNames(c("A", "C", "G","T"), c("T", "G", "C","A"))
+
+  point_complement <- function(base) {
+    paste(rev(sapply(strsplit(base, split = ""), function (x) {complements[x]})), collapse = "")
+  }
+
+  sapply(bases, point_complement)
+}
+
+
+standard_double_mutation <- function(types) {
+
+  single_standard_mutation <- function(type) {
+    if (type %in% c("CC>AA","GG>TT")) {
+      return ("CC>AA")
+    }
+
+    if (type %in% c("CC>TT","GG>AA")) {
+      return ("CC>TT")
+    }
+
+    if (substr(type, 3, 3) != '>' | nchar(type) != 5) {
+      return ("Other")
+    }
+
+    if (substr(type, 1, 2) %in% c("AC","GT")) {return ("AC>NN")}
+    if (substr(type, 1, 2) %in% c("AT","AT")) {return ("AT>NN")}
+    if (substr(type, 1, 2) %in% c("CC","GG")) {return ("CC>NN")}
+    if (substr(type, 1, 2) %in% c("CG","CG")) {return ("CG>NN")}
+    if (substr(type, 1, 2) %in% c("CT","AG")) {return ("CT>NN")}
+    if (substr(type, 1, 2) %in% c("GC","GC")) {return ("GC>NN")}
+    if (substr(type, 1, 2) %in% c("TA","TA")) {return ("TA>NN")}
+    if (substr(type, 1, 2) %in% c("TC","GA")) {return ("TC>NN")}
+    if (substr(type, 1, 2) %in% c("TG","CA")) {return ("TG>NN")}
+    if (substr(type, 1, 2) %in% c("TT","AA")) {return ("TT>NN")}
+  }
+
+  sapply(types, single_standard_mutation)
+}
+
+#single_standard_mutation("AC>AC")
+#standard_double_mutation(c("CC>TA", "AT>AC"))
+
+standard_double_mutation3 <- function(types) {
+
+  lookup = data.frame(base = c("AC", "AT", "CC", "CG", "CT", "GC", "TA","TC", "TG", "TT"), stringsAsFactors = F)
+  lookup$complement = base_complements(lookup$base)
+
+  df = data.frame(type = types, stringsAsFactors = F)
+  df = df %>% mutate(ref = substr(type, 1, 2), refComplement = base_complements(ref)) %>%
+    left_join(lookup %>% select(ref = base, refMatch = complement), by = "ref") %>%
+    left_join(lookup %>% select(refComplement = base, refComplementMatch = complement), by = "refComplement") %>%
+    mutate(
+      match = coalesce(refMatch, refComplementMatch),
+      match = ifelse(is.na(match), "Other", paste0(match, ">NN")))
+
+  df$match = ifelse(nchar(types) != 5, "Other", df$match)
+  df$match = ifelse(types %in% c("CC>AA", "GG>TT"), "CC>AA", df$match)
+  df$match = ifelse(types %in% c("CC>TT", "GG>AA"), "CC>TT", df$match)
+
+  return(df$match)
+}
+
+
+
+standard_double_mutation2 <- function(types) {
+
+  isMatch <- function(type, base) {
+    return (type == base | type == base_complements(base))
+  }
+
+  result = ifelse(substr(types, 3, 3) != '>', "Other", NA)
+
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CC"), "CC>Other", NA)
+  result = ifelse(is.na(result) & types %in% c("CC>AA", "GG>TT"), "CC>AA", NA)
+  result = ifelse(is.na(result) & types %in% c("CC>TT", "GG>AA"), "CC>TT", NA)
+
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "AC"), "AC>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "AT"), "AT>NN", NA)
+
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CC"), "CC>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CG"), "CG>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CT"), "CT>NN", NA)
+
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "GC"), "GC>NN", NA)
+
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TA"), "TA>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TC"), "TC>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TG"), "TG>NN", NA)
+  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TT"), "TT>NN", NA)
 
   return(result)
 }
