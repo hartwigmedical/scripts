@@ -10,6 +10,6 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 
-echo "[INFO] Loading metrics data for ${sample}"
+echo "[INFO] Deleting data of ${sample}"
 
 
