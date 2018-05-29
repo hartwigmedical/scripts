@@ -12,4 +12,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Deleting data of ${sample}"
 
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.DeleteSampleOfDatabase \
+    -sample ${sample} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
 
