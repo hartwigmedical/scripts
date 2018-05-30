@@ -10,7 +10,10 @@
 # 08. ampsDels.R
 # 09. ampsDelsTarget.R
 # 10. driversByGene.R
-# 11. driversByGeneVisualisation.R
+
+# 11. cohortVisualisation.R
+# 12. copyNumberOverview.R
+# 13. driversByGeneVisualisation.R
 
 detach("package:purple", unload=TRUE)
 library(purple)
