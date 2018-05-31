@@ -6,7 +6,7 @@
 # 04. dnds.R
 # 05. genePanel.R
 # 06. dndsClassification.R
-# 07. dndsExcessVariants.R
+# 07. dndsDrivers.R
 # 08. ampsDels.R
 # 09. ampsDelsTarget.R
 # 10. driversByGene.R
