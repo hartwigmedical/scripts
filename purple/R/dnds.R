@@ -1,5 +1,60 @@
+nearHotspot <-function(mutations, distance = 10) {
+  hotspots = mutations %>% filter(hotspot > 0) %>% select(chromosome, position) %>% distinct
+  hrange <- GRanges(hotspots$chromosome, IRanges(hotspots$position, hotspots$position + distance))
+  mrange <- GRanges(mutations$chromosome, IRanges(mutations$position, mutations$position + distance))
 
+  ol = as.matrix(findOverlaps(hrange, mrange, type="any", select="all"))
+  mutations$nearHotspot <- FALSE
+  mutations[ol[,2], c("nearHotspot")] <- TRUE
+  return (mutations$nearHotspot & !mutations$hotspot)
+}
 
+tsGeneStatus <-function(hotspot, biallelic, n) {
+  levels = c("Biallelic", "MultiHit", "SingleHit")
+  result = ifelse(n > 1, "MultiHit" , "SingleHit")
+  result = ifelse(biallelic, "Biallelic", result)
+  return (factor(result, levels))
+}
+
+tsGeneStatusPrimaryPositions <- function(pos, geneStatus, hotspot, impact) {
+  df = data.frame(pos = pos, geneStatus = geneStatus, hotspot = hotspot, impact = impact) %>%
+    arrange(geneStatus, -hotspot, impact)
+
+  if (df[1, "geneStatus"] == "MultiHit") {
+    return (paste(df[1:2, c("pos")], collapse =","))
+  }
+
+  return (as.character(df[1, c("pos")]))
+}
+
+tsGeneStatusRedundant <- function(position, driverPositions) {
+  result = vector(mode = "character", length = length(position))
+  for (i in 1:length(position)) {
+    drivers = as.integer(strsplit(driverPositions[i], ",")[[1]])
+    if (position[i] %in% drivers) {
+      result[i] <- FALSE
+    } else {
+      result[i] <- TRUE
+    }
+  }
+  return (result)
+}
+
+oncoGeneStatus <-function(hotspot, nearHotspot, n) {
+  result = ifelse(nearHotspot, "NearHotspot", "Hit")
+  result = ifelse(hotspot, "Hotspot", result)
+  return (result)
+}
+
+oncoGeneStatusPrimaryRowNumber <- function(pos, hotspot, nearHotspot, biallelic, impact) {
+  df = data.frame(pos = pos, hotspot = hotspot, nearHotspot = nearHotspot, biallelic = biallelic, impact = impact)
+  ordered = df %>% arrange(-hotspot, -nearHotspot, -biallelic, impact)
+  if (nrow(ordered) > 0) {
+    return (ordered[1, c("pos")])
+  }
+
+  return (NA)
+}
 
 
 onco_mutations <- function(mutations) {
@@ -83,7 +138,6 @@ dnds_driver_likelihood <- function(mutations, expectedDriversPerGene) {
 
 
 dnds_expected_drivers <- function(HmfRefCDSCv, annotmuts, somatics) {
-
   geneImpactCount = dnds_annotate_somatics(annotmuts, somatics, distinguishIndels = F) %>%
     group_by(gene, impact) %>%
     summarise(n = n()) %>%
@@ -110,19 +164,6 @@ dnds_expected_drivers <- function(HmfRefCDSCv, annotmuts, somatics) {
   return (result)
 }
 
-
-#dnds_excess <- function(HmfRefCDSCv) {
-#
-#
-#  HmfRefCDSCv$excess_mis = HmfRefCDSCv$prob_mis*HmfRefCDSCv$n_mis
-#  HmfRefCDSCv$excess_non = HmfRefCDSCv$prob_non*HmfRefCDSCv$n_non
-#  HmfRefCDSCv$excess_spl = HmfRefCDSCv$prob_spl*HmfRefCDSCv$n_spl
-#  HmfRefCDSCv$excess_ind = HmfRefCDSCv$prob_ind*HmfRefCDSCv$n_ind
-#
-#  return (HmfRefCDSCv)
-#}
-
-
 dnds_annotate_somatics <- function(annotmuts, somatics, distinguishIndels = T) {
   result = annotmuts %>% select(sampleId = sampleID, chromosome = chr, position = pos, ref = ref, alt = mut, gene, impact) %>%  left_join(somatics, by = c("sampleId","chromosome","position","ref", "alt"))
 
@@ -141,3 +182,127 @@ dnds_annotate_somatics <- function(annotmuts, somatics, distinguishIndels = T) {
 
   return (result)
 }
+
+dnds_tsg_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) {
+  result = list()
+  cohortSize = nrow(sampleSomatics)
+  totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sample_SNV), total_INDEL = sum(sample_INDEL))
+
+  tsgMutations = tsg_mutations(mutations)
+  result[["tsgMutations"]] <- tsgMutations
+
+  tsgDriverRates = dnds_driver_likelihood(tsgMutations, expectedDriversPerGene)
+  result[["tsgDriverRates"]] <- tsgDriverRates
+
+  tsgDrivers = tsgMutations %>%
+    filter(redundant == F) %>%
+    left_join(tsgDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>%
+    mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood))
+
+  tsgUnknownDriversTotals = tsgDrivers %>%
+    group_by(gene, impact) %>%
+    filter(!knownDriver) %>%
+    summarise(gene_drivers = sum(driverLikelihood), gene_non_drivers = sum(1 - driverLikelihood))
+  result[["tsgUnknownDriversTotals"]] <- tsgUnknownDriversTotals
+
+  tsgDrivers = tsgDrivers %>%
+    left_join(sampleSomatics, by = "sampleId") %>%
+    left_join(tsgUnknownDriversTotals, by = c("gene","impact")) %>%
+    mutate(
+      p_variant_nondriver_snv_single = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
+      p_variant_nondriver_snv_multi = 1 - ppois(1, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
+      p_variant_nondriver_indel_single = 1 - ppois(0, sample_INDEL / totalSomatics$total_INDEL  * gene_non_drivers),
+      p_variant_nondriver_indel_multi = 1 - ppois(1, sample_INDEL / totalSomatics$total_INDEL  * gene_non_drivers),
+      p_variant_nondriver_single = ifelse(impact == "Indel", p_variant_nondriver_indel_single, p_variant_nondriver_snv_single),
+      p_variant_nondriver_multi = ifelse(impact == "Indel", p_variant_nondriver_indel_multi, p_variant_nondriver_snv_multi)
+    ) %>%
+    group_by(sampleId, gene, impact) %>%
+    mutate(
+      sameImpact = n() > 1,
+      p_variant_nondriver = ifelse(sameImpact, p_variant_nondriver_multi, p_variant_nondriver_single)
+    )%>%
+    ungroup() %>%
+    group_by(sampleId, gene) %>%
+    summarise(
+      multihit = n() > 1,
+      biallelic = any(biallelic),
+      hotspot = any(hotspot),
+      impact = paste(impact, collapse = ","),
+      knownDriver = any(knownDriver),
+      driverLikelihood = max(driverLikelihood),
+      sameImpact = any(sameImpact),
+      p_variant_nondriver = ifelse(sameImpact, max(p_variant_nondriver), prod(p_variant_nondriver)),
+      gene_drivers = max(gene_drivers),
+      sample_SNV = max(sample_SNV),
+      clonality = first(clonality),
+      shared = any(shared)
+    ) %>%
+    mutate(
+      p_driver = gene_drivers / cohortSize,
+      p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
+      driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood),
+      driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
+    select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, clonality, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
+    ungroup()
+  result[["tsgDrivers"]] <- tsgDrivers
+
+  return (result)
+}
+
+dnds_onco_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) {
+  result = list()
+  cohortSize = nrow(sampleSomatics)
+  totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sample_SNV), total_INDEL = sum(sample_INDEL))
+
+  oncoMutations = onco_mutations(mutations)
+  result[["oncoMutations"]] <- oncoMutations
+
+  oncoDriverRates = dnds_driver_likelihood(oncoMutations, expectedDriversPerGene)
+  result[["oncoDriverRates"]] <- oncoDriverRates
+
+  oncoDrivers = oncoMutations %>%
+    filter(redundant == F) %>%
+    left_join(oncoDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>%
+    mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood)) %>%
+    mutate(driverLikelihood = ifelse(impact == "Frameshift", 0, driverLikelihood))
+
+  oncoUnknownDriversTotals = oncoDrivers %>%
+    group_by(gene, impact) %>%
+    filter(!knownDriver) %>%
+    summarise(gene_drivers = sum(driverLikelihood), gene_non_drivers = sum(1 - driverLikelihood))
+  result[["oncoUnknownDriversTotals"]] <- oncoUnknownDriversTotals
+
+  oncoDrivers = oncoDrivers %>%
+    left_join(sampleSomatics, by = "sampleId") %>%
+    left_join(oncoUnknownDriversTotals, by = c("gene","impact")) %>%
+    mutate(
+      p_variant_nondriver = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
+      p_driver = gene_drivers / cohortSize,
+      p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
+      driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood)
+    ) %>%
+    group_by(sampleId, gene) %>%
+    summarise(
+      nearHotspot = any(nearHotspot),
+      hotspot = sum(hotspot) > 0,
+      impact = paste(impact, collapse = ","),
+      knownDriver = any(knownDriver),
+      driverLikelihood = max(driverLikelihood),
+      driverLikelihoodAdjusted = max(driverLikelihoodAdjusted),
+      sample_SNV = max(sample_SNV),
+      clonality = first(clonality),
+      shared = any(shared)
+    ) %>%
+    mutate(driver = impact, type = 'ONCO') %>%
+    select(sampleId, gene, driver, impact, type, hotspot, nearHotspot, clonality, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
+    ungroup()
+  result[["oncoDrivers"]] <- oncoDrivers
+
+  return (result)
+}
+
+
+
+
+
+

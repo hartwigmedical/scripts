@@ -10,10 +10,12 @@
 # 08. ampsDels.R
 # 09. ampsDelsTarget.R
 # 10. driversByGene.R
+# 11. multipleBiopsyDrivers.R
 
-# 11. cohortVisualisation.R
-# 12. copyNumberOverview.R
-# 13. driversByGeneVisualisation.R
+
+# 12. cohortVisualisation.R
+# 13. copyNumberOverview.R
+# 14. driversByGeneVisualisation.R
 
 detach("package:purple", unload=TRUE)
 library(purple)
@@ -241,9 +243,32 @@ save(mbExonicSomatics, file = "~/hmf/RData/reference/mbExonicSomatics.RData")
 multipleBiopsyMSI = purple::cohort_msi(multipleBiopsySomaticsWithScope %>% ungroup())
 save(multipleBiopsyMSI, file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 
+cat("Tert promoters")
+mbTertPromoters = purple::query_tert_promoters(dbProd, multipleBiopsyCohort)
+save(mbTertPromoters, file = "~/hmf/RData/reference/mbTertPromoters.RData")
+
+cat("Querying gene copy number amplifications")
+mbGeneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbProd, multipleBiopsyCohort)
+mbGeneCopyNumberAmplifications = left_join(mbGeneCopyNumberAmplifications, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  group_by(patientId, gene) %>%
+  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
+  ungroup()
+save(mbGeneCopyNumberAmplifications, file = "~/hmf/RData/reference/mbGeneCopyNumberAmplifications.RData")
+
+cat("Querying gene copy number deletes")
+mbGeneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbProd, multipleBiopsyCohort)
+mbGeneCopyNumberDeletes = left_join(mbGeneCopyNumberDeletes, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  group_by(patientId, gene) %>%
+  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
+  ungroup()
+save(mbGeneCopyNumberDeletes, file = "~/hmf/RData/reference/mbGeneCopyNumberDeletes.RData")
+
+
+load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
-load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 load(file = "~/hmf/RData/reference/multipleBiopsyStructuralVariantsWithScope.RData")
 

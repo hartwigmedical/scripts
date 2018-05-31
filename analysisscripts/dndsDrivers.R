@@ -7,13 +7,13 @@ detach("package:purple", unload=TRUE);
 library(purple)
 library(RMySQL)
 
+############################################   HIGHEST PURITY COHORT ############################################   
 load(file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")
-cohortSize = nrow(highestPurityCohortSummary)
-sampleSomatics = highestPurityCohortSummary %>% select(sampleId, ends_with("SNP"), ends_with("INDEL"))
-sampleSomatics[is.na(sampleSomatics)] <- 0
-sampleSomatics = sampleSomatics %>% mutate(sample_SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP, sample_INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL) %>%
+hpcSomaticCounts = highestPurityCohortSummary %>% select(sampleId, ends_with("SNP"), ends_with("INDEL"))
+hpcSomaticCounts[is.na(hpcSomaticCounts)] <- 0
+hpcSomaticCounts = hpcSomaticCounts %>% 
+  mutate(sample_SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP, sample_INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL) %>%
   select(starts_with("sample"))
-totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sample_SNV), total_INDEL = sum(sample_INDEL))
 
 load(file = "~/hmf/RData/processed/driverGenes.RData")
 genePanel = bind_rows(oncoGenes, tsGenes)
@@ -21,112 +21,63 @@ genePanel = bind_rows(oncoGenes, tsGenes)
 load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
 load(file = "~/hmf/RData/processed/hpcExonicSomaticsDndsAnnotated.RData")
 load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
-somatics = hpcExonicSomatics %>% 
-  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality)
-expectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, somatics)
-save(expectedDriversPerGene, file = "~/hmf/RData/Processed/expectedDriversPerGene.RData")
+hpcSomatics = hpcExonicSomatics %>% 
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality) %>%
+  mutate(shared = F)
+hpcDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, hpcSomatics)
+save(hpcDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/hpcDndsExpectedDriversPerGene.RData")
 
-mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, somatics)
-mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
+hpcMutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, hpcSomatics)
+hpcMutations = hpcMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
-hpcTsgMutations = tsg_mutations(mutations %>% filter(gene %in% tsGenes$gene_name))
-save(hpcTsgMutations, file = "~/hmf/RData/Processed/hpcTsgMutations.RData")
+hpcDndsTsgDriversOutput = dnds_tsg_drivers(hpcSomaticCounts, hpcMutations %>% filter(gene %in% tsGenes$gene_name), hpcDndsExpectedDriversPerGene)
+hpcDndsTsgMutations = hpcDndsTsgDriversOutput[["tsgMutations"]]; save(hpcDndsTsgMutations, file = "~/hmf/RData/Processed/hpcDndsTsgMutations.RData")
+hpcDndsTsgDriverRates = hpcDndsTsgDriversOutput[["tsgDriverRates"]]; save(hpcDndsTsgDriverRates, file = "~/hmf/RData/Processed/hpcDndsTsgDriverRates.RData")
+hpcDndsTsgUnknownDriversTotals = hpcDndsTsgDriversOutput[["tsgUnknownDriversTotals"]]; save(hpcDndsTsgUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcDndsTsgUnknownDriversTotals.RData")
+hpcDndsTsgDrivers = hpcDndsTsgDriversOutput[["tsgDrivers"]]; save(hpcDndsTsgDrivers, file = "~/hmf/RData/Processed/hpcDndsTsgDrivers.RData")
 
-hpcTsgDriverRates = dnds_driver_likelihood(hpcTsgMutations, expectedDriversPerGene)
-save(hpcTsgDriverRates, file = "~/hmf/RData/Processed/hpcTsgDriverRates.RData")
+hpcDndsOncoDriversOutput = dnds_onco_drivers(hpcSomaticCounts, hpcMutations %>% filter(gene %in% oncoGenes$gene_name), hpcDndsExpectedDriversPerGene)
+hpcDndsOncoMutations = hpcDndsOncoDriversOutput[["oncoMutations"]]; save(hpcDndsOncoMutations, file = "~/hmf/RData/Processed/hpcDndsOncoMutations.RData")
+hpcDndsOncoDriverRates = hpcDndsOncoDriversOutput[["oncoDriverRates"]]; save(hpcDndsOncoDriverRates, file = "~/hmf/RData/Processed/hpcDndsOncoDriverRates.RData")
+hpcDndsOncoUnknownDriversTotals = hpcDndsOncoDriversOutput[["oncoUnknownDriversTotals"]]; save(hpcDndsOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcDndsOncoUnknownDriversTotals.RData")
+hpcDndsOncoDrivers = hpcDndsOncoDriversOutput[["oncoDrivers"]]; save(hpcDndsOncoDrivers, file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 
-hpcTsgDrivers = hpcTsgMutations %>%
-  filter(redundant == F) %>%
-  left_join(hpcTsgDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>% 
-  mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood))
-  
-hpcTsgUnknownDriversTotals = hpcTsgDrivers %>% 
-  group_by(gene, impact) %>%
-  filter(!knownDriver) %>% 
-  summarise(gene_drivers = sum(driverLikelihood), gene_non_drivers = sum(1 - driverLikelihood))
-save(hpcTsgUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcTsgUnknownDriversTotals.RData")
+############################################ MULTIPLE BIOPYSY COHORT ############################################   
+rm(ls())
 
-hpcTsgDrivers = hpcTsgDrivers %>%
-  left_join(sampleSomatics, by = "sampleId") %>%
-  left_join(hpcTsgUnknownDriversTotals, by = c("gene","impact")) %>%
-  mutate(
-    p_variant_nondriver_snv_single = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
-    p_variant_nondriver_snv_multi = 1 - ppois(1, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
-    p_variant_nondriver_indel_single = 1 - ppois(0, sample_INDEL / totalSomatics$total_INDEL  * gene_non_drivers),
-    p_variant_nondriver_indel_multi = 1 - ppois(1, sample_INDEL / totalSomatics$total_INDEL  * gene_non_drivers),
-    p_variant_nondriver_single = ifelse(impact == "Indel", p_variant_nondriver_indel_single, p_variant_nondriver_snv_single),
-    p_variant_nondriver_multi = ifelse(impact == "Indel", p_variant_nondriver_indel_multi, p_variant_nondriver_snv_multi)
-  ) %>%
-  group_by(sampleId, gene, impact) %>%
-  mutate(
-    sameImpact = n() > 1,
-    p_variant_nondriver = ifelse(sameImpact, p_variant_nondriver_multi, p_variant_nondriver_single)
-  )%>%
-  ungroup() %>%
-  group_by(sampleId, gene) %>%
-  summarise(
-    multihit = n() > 1,
-    biallelic = any(biallelic), 
-    hotspot = any(hotspot), 
-    impact = paste(impact, collapse = ","),
-    knownDriver = any(knownDriver),
-    driverLikelihood = max(driverLikelihood),
-    sameImpact = any(sameImpact),
-    p_variant_nondriver = ifelse(sameImpact, max(p_variant_nondriver), prod(p_variant_nondriver)),
-    gene_drivers = max(gene_drivers),
-    sample_SNV = max(sample_SNV),
-    clonality = first(clonality)
-  ) %>%
-  mutate(
-    p_driver = gene_drivers / cohortSize,  
-    p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
-    driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood),
-    driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-  select(sampleId, gene, driver, impact, type, multihit, biallelic, hotspot, clonality, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
-  ungroup()  
-save(hpcTsgDrivers, file = "~/hmf/RData/Processed/hpcTsgDrivers.RData")
+load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
+mbSomaticCounts = multipleBiopsySomaticsWithScope %>%
+  ungroup() %>% 
+  group_by(sampleId, type) %>%
+  summarise(count = n()) %>%
+  spread(type, count) %>%
+  mutate(sample_SNV = SNP + MNP, sample_INDEL = INDEL)
+
+load(file = "~/hmf/RData/processed/driverGenes.RData")
+genePanel = bind_rows(oncoGenes, tsGenes)
+
+load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
+load(file = "~/hmf/RData/processed/mbExonicSomaticsDndsAnnotated.RData")
+load(file = "~/hmf/RData/reference/mbExonicSomatics.RData")
+mbSomatics = mbExonicSomatics %>% 
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality, scope) %>%
+  mutate(shared = scope == "Shared")
+mbDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredMultipleBiopsyMutations, mbSomatics)
+save(mbDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/mbDndsExpectedDriversPerGene.RData")
+
+mbMutations = dnds_annotate_somatics(dndsUnfilteredMultipleBiopsyMutations, mbSomatics)
+mbMutations = mbMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
+
+mbDndsTsgDriversOutput = dnds_tsg_drivers(mbSomaticCounts, mbMutations %>% filter(gene %in% tsGenes$gene_name), mbDndsExpectedDriversPerGene)
+mbDndsTsgMutations = mbDndsTsgDriversOutput[["tsgMutations"]]; save(mbDndsTsgMutations, file = "~/hmf/RData/Processed/mbDndsTsgMutations.RData")
+mbDndsTsgDriverRates = mbDndsTsgDriversOutput[["tsgDriverRates"]]; save(mbDndsTsgDriverRates, file = "~/hmf/RData/Processed/mbDndsTsgDriverRates.RData")
+mbDndsTsgUnknownDriversTotals = mbDndsTsgDriversOutput[["tsgUnknownDriversTotals"]]; save(mbDndsTsgUnknownDriversTotals, file = "~/hmf/RData/Processed/mbDndsTsgUnknownDriversTotals.RData")
+mbDndsTsgDrivers = mbDndsTsgDriversOutput[["tsgDrivers"]]; save(mbDndsTsgDrivers, file = "~/hmf/RData/Processed/mbDndsTsgDrivers.RData")
+
+mbDndsOncoDriversOutput = dnds_onco_drivers(mbSomaticCounts, mbMutations %>% filter(gene %in% oncoGenes$gene_name), mbDndsExpectedDriversPerGene)
+mbDndsOncoMutations = mbDndsOncoDriversOutput[["oncoMutations"]]; save(mbDndsOncoMutations, file = "~/hmf/RData/Processed/mbDndsOncoMutations.RData")
+mbDndsOncoDriverRates = mbDndsOncoDriversOutput[["oncoDriverRates"]]; save(mbDndsOncoDriverRates, file = "~/hmf/RData/Processed/mbDndsOncoDriverRates.RData")
+mbDndsOncoUnknownDriversTotals = mbDndsOncoDriversOutput[["oncoUnknownDriversTotals"]]; save(mbDndsOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/mbDndsOncoUnknownDriversTotals.RData")
+mbDndsOncoDrivers = mbDndsOncoDriversOutput[["oncoDrivers"]]; save(mbDndsOncoDrivers, file = "~/hmf/RData/Processed/mbDndsOncoDrivers.RData")
 
 
-
-hpcOncoMutations = onco_mutations(mutations %>% filter(gene %in% oncoGenes$gene_name))
-save(hpcOncoMutations, file = "~/hmf/RData/Processed/hpcOncoMutations.RData")
-
-hpcOncoDriverRates = dnds_driver_likelihood(hpcOncoMutations, expectedDriversPerGene)
-save(hpcOncoDriverRates, file = "~/hmf/RData/Processed/hpcOncoDriverRates.RData")
-
-hpcOncoDrivers = hpcOncoMutations %>%
-  filter(redundant == F) %>%
-  left_join(hpcOncoDriverRates %>% select(gene, impact, driverLikelihood), by = c("gene","impact")) %>% 
-  mutate(driverLikelihood = ifelse(knownDriver, 1, driverLikelihood)) %>%
-  mutate(driverLikelihood = ifelse(impact == "Frameshift", 0, driverLikelihood))
-
-hpcOncoUnknownDriversTotals = hpcOncoDrivers %>% 
-  group_by(gene, impact) %>%
-  filter(!knownDriver) %>% 
-  summarise(gene_drivers = sum(driverLikelihood), gene_non_drivers = sum(1 - driverLikelihood))
-save(hpcOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcOncoUnknownDriversTotals.RData")
-
-hpcOncoDrivers = hpcOncoDrivers %>%
-  left_join(sampleSomatics, by = "sampleId") %>%
-  left_join(hpcOncoUnknownDriversTotals, by = c("gene","impact")) %>%
-  mutate(
-    p_variant_nondriver = 1 - ppois(0, sample_SNV / totalSomatics$total_SNV  * gene_non_drivers),
-    p_driver = gene_drivers / cohortSize,  
-    p_driver_variant = p_driver / (p_driver + p_variant_nondriver * (1-p_driver)),
-    driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood)
-  ) %>%
-  group_by(sampleId, gene) %>%
-  summarise(
-    nearHotspot = any(nearHotspot),
-    hotspot = sum(hotspot) > 0, 
-    impact = paste(impact, collapse = ","),
-    knownDriver = any(knownDriver),
-    driverLikelihood = max(driverLikelihood),
-    driverLikelihoodAdjusted = max(driverLikelihoodAdjusted),
-    sample_SNV = max(sample_SNV),
-    clonality = first(clonality)
-  ) %>%
-  mutate(driver = impact, type = 'ONCO') %>%
-  select(sampleId, gene, driver, impact, type, hotspot, nearHotspot, clonality, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV) %>%
-  ungroup()  
-save(hpcOncoDrivers, file = "~/hmf/RData/Processed/hpcOncoDrivers.RData")
