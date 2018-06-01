@@ -245,6 +245,12 @@ save(multipleBiopsyMSI, file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 
 cat("Tert promoters")
 mbTertPromoters = purple::query_tert_promoters(dbProd, multipleBiopsyCohort)
+mbTertPromoters = mbTertPromoters %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  group_by(patientId, gene) %>%
+  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
+  ungroup()
+
 save(mbTertPromoters, file = "~/hmf/RData/reference/mbTertPromoters.RData")
 
 cat("Querying gene copy number amplifications")

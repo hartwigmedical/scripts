@@ -21,7 +21,7 @@ load(file = "~/hmf/RData/Processed/mbDndsOncoDrivers.RData")
 fusions = purple::driver_fusions(mbFusions %>% mutate(shared = scope == 'Shared'), tsGenes, oncoGenes)
 amplifications = purple::driver_amplifications(mbGeneCopyNumberAmplifications %>% mutate(shared = scope == 'Shared'), tsGenes, oncoGenes, geneCopyNumberAmplificationTargets)
 deletions = purple::driver_deletions(mbGeneCopyNumberDeletes %>% mutate(shared = scope == 'Shared'), tsGenes, oncoGenes, geneCopyNumberDeleteTargets, fragileGenes)
-tertPromoters = purple::driver_promoters(mbTertPromoters)
+tertPromoters = purple::driver_promoters(mbTertPromoters %>% mutate(shared = scope == 'Shared'))
 tsgDriverByGene = mbDndsTsgDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, biallelic, hotspot, clonality, shared)
 oncoDriverByGene = mbDndsOncoDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, clonality, shared)
 
@@ -35,7 +35,7 @@ mbDriversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>%
   ungroup() %>% group_by(sampleId, gene) %>% 
   top_n(1, driver)
 
-cancerTypes = multipleBiopsyCohort %>% select(sampleId = sampleId, cancerType)
+cancerTypes = multipleBiopsyCohort %>% select(sampleId = sampleId, cancerType, patientId)
 mbDriversByGene = left_join(mbDriversByGene, cancerTypes, by = "sampleId")
 
 mbDriversByGene = left_join(mbDriversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")

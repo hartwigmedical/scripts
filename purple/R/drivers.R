@@ -60,8 +60,13 @@ driver_deletions <- function(dels, tsGenes, oncoGenes, delTargets, fragileGenes)
 }
 
 driver_promoters <- function(promoters) {
+
+  if (!"shared" %in% colnames(promoters)) {
+    promoters$shared <- F
+  }
+
   result = promoters %>%
-    group_by(sampleId, gene) %>%
+    group_by(sampleId, gene, shared) %>%
     summarise(
       driver = "Promoter",
       driverLikelihood = 1,
