@@ -29,7 +29,7 @@ cancerTypeColours = setNames(cancerTypeColours[1:length(cancerTypes)], cancerTyp
 save(cancerTypeColours, file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 
 somaticColours = c("#a6611a","#dfc27d","#80cdc1","#018571")
-somaticColours = setNames(somaticColours, c("HMF SNP","PCAWG SNP", "PCAWG MNP", "HMF MNP"))
+somaticColours = setNames(somaticColours, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
 
 indelSVColours = c("#d01c8b","#f1b6da","#b8e186","#4dac26")
 indelSVColours = setNames(indelSVColours, c("HMF INDEL","PCAWG INDEL", "PCAWG SV", "HMF SV"))
@@ -69,8 +69,8 @@ hmfMutationalLoad = highestPurityCohortSummary %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   mutate(
     INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL,
-    MNP = INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
-    SNP = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+    MNV = INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+    SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
     SV = BND + DEL + INS + INV + DUP) 
 
 pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
@@ -87,10 +87,10 @@ pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Thyroid", "can
 pcawgCancerTypeMapping = pcawgCancerTypeMapping[!is.na(pcawgCancerTypeMapping$cancerType), ]
 
 pcawgMutationalLoad = pcawgRaw %>% left_join(pcawgCancerTypeMapping, by = "histology_tier2") %>%
-  filter(!is.na(cancerType)) %>% select(PCAWG_SNP = all.SNVs, PCAWG_INDEL = all.Indels, PCAWG_SV = SV.events, age,PCAWG_MNP = all.MNVs,  cancerType) %>%
+  filter(!is.na(cancerType)) %>% select(PCAWG_SNV = all.SNVs, PCAWG_INDEL = all.Indels, PCAWG_SV = SV.events, age,PCAWG_MNV = all.MNVs,  cancerType) %>%
   mutate(source = "PCAWG")
 
-combinedMutationalLoad =  hmfMutationalLoad %>% select(sampleId, cancerType, INDEL, SNP, MNP, SV) %>%
+combinedMutationalLoad =  hmfMutationalLoad %>% select(sampleId, cancerType, INDEL, SNV, MNV, SV) %>%
   mutate(source = "HMF") %>%
   bind_rows(pcawgMutationalLoad) %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
@@ -99,10 +99,10 @@ combinedMutationalLoad =  hmfMutationalLoad %>% select(sampleId, cancerType, IND
 combinedMutationalLoad = combinedMutationalLoad %>% 
   group_by(cancerType) %>% 
   mutate(
-    medianSNP = median(SNP, na.rm = T), 
-    medianMNP = median(MNP, na.rm = T), 
-    medianPCAWG_SNP = median(PCAWG_SNP, na.rm = T),
-    medianPCAWG_MNP = median(PCAWG_MNP, na.rm = T),
+    medianSNV = median(SNV, na.rm = T), 
+    medianMNV = median(MNV, na.rm = T), 
+    medianPCAWG_SNV = median(PCAWG_SNV, na.rm = T),
+    medianPCAWG_MNV = median(PCAWG_MNV, na.rm = T),
     medianINDEL = median(INDEL, na.rm = T), 
     medianSV = median(SV, na.rm = T), 
     medianPCAWG_INDEL = median(PCAWG_INDEL, na.rm = T),
@@ -189,10 +189,10 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
   facet_grid(~cancerType)
 
 p3 = ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(SNP,color='HMF SNP'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNP, xend = medianSNP, y = 0.25, yend = 0.75, color='HMF SNP'), show.legend = F) + 
-  stat_ecdf(aes(MNP,color='HMF MNP'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNP, xend = medianMNP, y = 0.25, yend = 0.75, color='HMF MNP'), show.legend = F) + 
-  stat_ecdf(aes(PCAWG_SNP,color='PCAWG SNP'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SNP, xend = medianPCAWG_SNP, y = 0.25, yend = 0.75, color='PCAWG SNP'), show.legend = F) + 
-  stat_ecdf(aes(PCAWG_MNP,color='PCAWG MNP'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_MNP, xend = medianPCAWG_MNP, y = 0.25, yend = 0.75, color='PCAWG MNP'), show.legend = F) + 
+  stat_ecdf(aes(SNV,color='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) + 
+  stat_ecdf(aes(MNV,color='HMF MNV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='HMF MNV'), show.legend = F) + 
+  stat_ecdf(aes(PCAWG_SNV,color='PCAWG SNV'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) + 
+  stat_ecdf(aes(PCAWG_MNV,color='PCAWG MNV'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) + 
   scale_x_log10() + facet_grid(~cancerType) +
   scale_colour_manual(values=somaticColours) + 
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 

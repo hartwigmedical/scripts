@@ -251,3 +251,129 @@ oncoPrint(mat_list,
   ), col = driverColours)
 
 
+
+######### COMPLEX HEATMAP ATTEMPT 3
+library(ComplexHeatmap)
+library(circlize)
+library(dplyr)
+library(tidyr)
+
+load()
+load("~/hmf/RData/processed/hpcDriversByGene.RData")
+load("~/hmf/RData/processed/driverGenes.RData")
+load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
+
+
+hpcDriversByGeneTotals = hpcDriversByGene %>% filter(driverLikelihood > 0.5) %>% group_by(type, gene) %>% count() %>% ungroup()
+topTsgGenes = hpcDriversByGeneTotals %>% filter(type == 'TSG') %>% top_n(30, n) %>% arrange(-n)
+topOncoGenes = hpcDriversByGeneTotals %>% filter(type == 'ONCO') %>% top_n(30, n)  %>% arrange(-n)
+topCancerTypes = hpcDriversByGene %>% filter(driverLikelihood > 0.5) %>% group_by(cancerType) %>% count() %>% arrange(-n)
+
+drivers = sort(unique(hpcDriversByGene$driver))
+driverColours = setNames(cosmicSignatureColours[1:length(drivers)], as.character(drivers))
+
+oncoDrivers = hpcDriversByGene %>% ungroup() %>% filter(type == 'ONCO', driverLikelihood > 0.5, gene %in% topOncoGenes$gene) %>% distinct(driver)
+oncoDrivers = as.character(sort(oncoDrivers$driver))
+oncoDriverColurs = c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00") 
+oncoDriverColurs = rev(c("#b3e2cd","#fdcdac","#cbd5e8","#f4cae4","#e6f5c9","#fff2ae","#f1e2cc","#cccccc"))
+oncoDriverColurs = setNames(oncoDriverColurs, oncoDrivers)
+
+oncoDrivers = c("Fusion", "Del","Promoter","Missense","Inframe","Amp")
+oncoDrivers = factor(oncoDrivers, levels = oncoDrivers)
+oncoDriverColurs = c("#fdb462","#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3")
+oncoDriverColurs = setNames(oncoDriverColurs, oncoDrivers)
+
+tsgDrivers = hpcDriversByGene %>% ungroup() %>% filter(type == 'TSG', driverLikelihood > 0.5, gene %in% topTsgGenes$gene) %>% distinct(driver)
+tsgDrivers = as.character(sort(tsgDrivers$driver))
+tsgDriverColurs = driverColours[tsgDrivers]
+
+sourceData = hpcDriversByGene %>% 
+  filter(type == 'ONCO', driverLikelihood > 0.5, gene %in% topOncoGenes$gene) %>% 
+  distinct(cancerType, gene, sampleId, driver) %>% 
+  ungroup()
+
+
+heatmapData = sourceData %>%
+  group_by(cancerType, gene) %>% count() %>%
+  left_join(hpcCancerTypeCounts %>% select(cancerType, cancerTypeSamples = N), by = "cancerType") %>%
+  mutate(proportion = round(n / cancerTypeSamples, 2)) %>%
+  select(-n, -cancerTypeSamples) %>%
+  spread(cancerType, proportion, fill = 0)
+rownames(heatmapData) <- heatmapData$gene
+heatmapData$gene <- NULL
+
+annotationData1 = sourceData %>% 
+  group_by(gene) %>% count() %>% 
+  mutate(proportion = round(n / sum(hpcCancerTypeCounts$N), 3)) %>% select(-n)
+rownames(annotationData1) <- annotationData1$gene
+annotationData1$gene <- NULL
+
+annotationData2 = sourceData %>% 
+  mutate(driver = as.character(driver)) %>%
+  mutate(driver = ifelse(driver %in% c("Fusion-Coding","Fusion-UTR", "Fusion-Intragenic"), "Fusion", driver)) %>%
+  mutate(driver = factor(driver, oncoDrivers)) %>%
+  group_by(gene, driver) %>% count() %>% 
+  group_by(gene) %>% mutate(total = sum(n)) %>% ungroup() %>%
+  mutate(proportion = n / total) %>%
+  select(-n, -total) %>%
+  spread(driver, proportion, fill = 0)
+rownames(annotationData2) <- annotationData2$gene
+annotationData2$gene <- NULL
+
+hotspotData = hpcDriversByGene %>% 
+  filter(type == 'ONCO', driverLikelihood > 0.5, gene %in% topOncoGenes$gene) %>%
+  mutate(hotspot = ifelse(is.na(hotspot), F, hotspot)) %>%
+  ungroup() %>% 
+  group_by(gene, hotspot) %>% 
+  summarise(n = sum(driverLikelihood)) %>% 
+  mutate(hotspot = ifelse(hotspot, "hotspot", "notHotspot")) %>%
+  spread(hotspot, n, fill = 0) %>%
+  mutate(hotspotPercentage = hotspot / (hotspot + notHotspot) ) %>%  
+  select(gene, hotspotPercentage)
+rownames(hotspotData) <- hotspotData$gene
+hotspotData$gene <- NULL
+
+mat = (data.matrix(heatmapData))
+
+
+h1 = Heatmap(
+  column_title = "  ",
+  mat, 
+  row_order = topOncoGenes$gene,
+  column_order = topCancerTypes$cancerType,
+  cluster_rows = FALSE, 
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("white", "lightblue", "blue", "darkblue")),
+  cell_fun = function(j, i, x, y, w, h, col) {
+    myColor = "black"
+    if (mat[i, j] > 0.15) {
+      myColor = "white"
+    }
+    grid.text(100*mat[i, j], x, y, gp=gpar(fontsize=8, col = myColor))
+  }
+)
+
+ha1 = rowAnnotation(
+  `Samples %` = row_anno_barplot(annotationData1, axis = T, axis_side = "top", ylim = c(0,0.25), gp = gpar(fill = "blue"), border = F), 
+  width = unit(2, "cm"),
+  show_annotation_name = T,
+  annotation_name_rot = 0
+)
+ha2 = rowAnnotation(
+  boxplot = row_anno_barplot(annotationData2, axis = F, ylim = c(0,1), gp = gpar(fill = oncoDriverColurs), border = F), 
+  width = unit(2, "cm")
+)
+ha3 = rowAnnotation(
+  df = data.frame(driver = oncoDrivers),
+  col = list(driver = oncoDriverColurs),
+  width = unit(0, "cm")
+)
+ha4 = rowAnnotation(
+  show_annotation_name = T,
+  annotation_name_rot = 0,
+  `Hotspot %` = row_anno_barplot(hotspotData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = "blue"), border = F), 
+  width = unit(2, "cm")
+)
+
+h1 + ha1 + ha4 + ha2 + ha3
