@@ -281,17 +281,20 @@ nrow(saNmfTemp1)
 
 saNmfTemp2 = saNmfTemp1
 
-for(i in 1:nrow(saNmfTemp2))
-{
-  for(j in 2:ncol(saNmfTemp2))
-  {
-    if(is.na(saNmfTemp2[i,j]))
-    {
-      saNmfTemp2[i,j] = 0
-    }
-  }
-}
-nrow(saNmfTemp2)
+# try this instead:
+sampleResult[is.na(sampleResult)] <- 0
+
+# for(i in 1:nrow(saNmfTemp2))
+# {
+#   for(j in 2:ncol(saNmfTemp2))
+#   {
+#     if(is.na(saNmfTemp2[i,j]))
+#     {
+#       saNmfTemp2[i,j] = 0
+#     }
+#   }
+# }
+# nrow(saNmfTemp2)
 
 # View(saNmfTemp2)
 # write.csv(saNmfTemp2, "~/logs/r_output/saNMF2.csv")
