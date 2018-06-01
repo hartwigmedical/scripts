@@ -27,15 +27,41 @@ chromosomes                 = -EXCLUDE
 <plots>
 
 	# -----------------------------------------------------------
+	# Gene Labels (PART 1)
+	<plot>
+		type             = text
+		color            = black
+		file             = CANCER.genes.circos
+
+		r0   = 0.600r
+		r1   = 0.975r
+
+		show_links     = yes
+		link_dims      = 4p,4p,260p,20p,0p
+		link_thickness = 2p
+		link_color     = black
+
+		label_size   = 40p
+		label_font   = condensed
+		label_snuggle=yes
+
+		padding  = 0p
+		rpadding = 0p
+
+	</plot>
+
+
+
+	# -----------------------------------------------------------
 	# Amp 1_4+
 	<plot>
 
 		type = histogram
 		file = CANCER.amp1_4.circos
-		r0   = 0.675r
+		r0   = 0.625r
 		r1   = 0.975r
 		min  = 0
-		max  = 0.5
+		max  = 1
 		color = vlgreen
 		fill_color = vlgreen
 		glyph = circle
@@ -44,7 +70,7 @@ chromosomes                 = -EXCLUDE
 			<axis>
 				color     = vlgreen
 				thickness = 1
-				spacing   = 0.20r
+				spacing   = 0.10r
 			</axis>
 		</axes>
 
@@ -56,14 +82,35 @@ chromosomes                 = -EXCLUDE
 	</plot>
 
 	# -----------------------------------------------------------
+	# Gene Labels (PART 2)
+	<plot>
+		type             = text
+		color            = black
+		file             = CANCER.genes.circos
+
+		r0   = 0.600r
+		r1   = 0.975r
+
+		show_links     = no
+
+		label_size   = 40p
+		label_font   = condensed
+		label_snuggle=yes
+
+		padding  = 0p
+		rpadding = 288p
+
+	</plot>
+
+	# -----------------------------------------------------------
 	# Amp 2+
 	<plot>
 		type = histogram
 		file = CANCER.amp2_0.circos
-		r0   = 0.675r
+		r0   = 0.625r
 		r1   = 0.975r
 		min  = 0
-		max  = 0.5
+		max  = 1
 		color = dgreen
 		fill_color = green
 		glyph = circle
@@ -75,10 +122,10 @@ chromosomes                 = -EXCLUDE
 	<plot>
 		type = histogram
 		file = CANCER.amp3_0.circos
-		r0   = 0.675r
+		r0   = 0.625r
 		r1   = 0.975r
 		min  = 0
-		max  = 0.5
+		max  = 1
 		color = orange
 		fill_color = orange
 		glyph = circle
@@ -91,7 +138,7 @@ chromosomes                 = -EXCLUDE
 		type = histogram
 		file = CANCER.loh.circos
 		r0   = 0.250r
-		r1   = 0.650r
+		r1   = 0.600r
 		min  = -1
 		max  = 0
 		color = blue
@@ -120,7 +167,7 @@ chromosomes                 = -EXCLUDE
 		type = histogram
 		file = CANCER.reldel.circos
 		r0   = 0.250r
-		r1   = 0.650r
+		r1   = 0.600r
 		min  = -1
 		max  = 0
 		color = dblue
@@ -135,7 +182,7 @@ chromosomes                 = -EXCLUDE
 		type = histogram
 		file = CANCER.absdel.circos
 		r0   = 0.250r
-		r1   = 0.650r
+		r1   = 0.600r
 		min  = -1
 		max  = 0
 		color = red

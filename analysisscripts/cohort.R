@@ -1,15 +1,21 @@
 ############################################
 # How to run analysis for paper:
-# 1. cohortClinical.R
-# 2. cohort.R
-# 3. dnds.R
-# 4. genePanel.R
-# 5. dndsClassification.R
-# 6. dndsExcessVariants.R
-# 7. ampsDels.R
-# 8. ampsDelsTarget.R
-# 9. driversByGene.R
-# 10. driversByGeneVisualisation.R
+# 01. cohortClinical.R
+# 02. cohort.R
+# 03. cohortFusions.R
+# 04. dnds.R
+# 05. genePanel.R
+# 06. dndsClassification.R
+# 07. dndsDrivers.R
+# 08. ampsDels.R
+# 09. ampsDelsTarget.R
+# 10. driversByGene.R
+# 11. multipleBiopsyDrivers.R
+
+
+# 12. cohortVisualisation.R
+# 13. copyNumberOverview.R
+# 14. driversByGeneVisualisation.R
 
 detach("package:purple", unload=TRUE)
 library(purple)
@@ -74,6 +80,35 @@ cat("Querying canonical transcripts")
 canonicalTranscripts = purple::query_canonical_transcript(dbProd)
 save(canonicalTranscripts, file = "~/hmf/RData/reference/canonicalTranscripts.RData")
 
+allSNPSummary_p1 = allSomatics_p1 %>% filter(filter == 'PASS', type == 'SNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allSNPSummary_p2 = allSomatics_p2 %>% filter(filter == 'PASS', type == 'SNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allSNPSummary = bind_rows(allSNPSummary_p1, allSNPSummary_p2)
+save(allSNPSummary, file = "~/hmf/RData/Reference/allSNPSummary.RData")
+
+allMNPSummary_p1 = allSomatics_p1 %>% filter(filter == 'PASS', type == 'MNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allMNPSummary_p2 = allSomatics_p2 %>% filter(filter == 'PASS', type == 'MNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allMNPSummary = bind_rows(allMNPSummary_p1, allMNPSummary_p2)
+save(allMNPSummary, file = "~/hmf/RData/Reference/allMNPSummary.RData")
+
+indel_summary <- function(somatics) {
+  result = somatics %>% filter(filter == 'PASS', type == 'INDEL') %>%
+    mutate(isRepeat = repeatCount > 3, isMicrohomology = microhomology != "") %>% 
+    mutate(
+      category1 = ifelse(nchar(ref) > nchar(alt), "DEL", "INS"),  
+      category2 = ifelse(category1 == "DEL" & isMicrohomology, "MH", "other"),
+      category2 = ifelse(isRepeat, "repeat", category2),
+      category = paste(category1, category2, sep = "-")
+    ) %>%
+    group_by(sampleId, category)  %>% 
+    summarise(n = n()) 
+}
+
+allIndelSummary_p1 = indel_summary(allSomatics_p1)
+allIndelSummary_p2 = indel_summary(allSomatics_p2)
+allIndelSummary = bind_rows(allIndelSummary_p1, allIndelSummary_p2)
+save(allIndelSummary, file = "~/hmf/RData/Reference/allIndelSummary.RData")
+
+
 #### COMBINE
 load(file = "~/hmf/RData/reference/allPurity.RData")
 load(file = "~/hmf/RData/reference/allWgd.RData")
@@ -105,9 +140,6 @@ highestPurityCohort = purple::query_highest_purity_cohort(dbProd, allGeneDeletes
 highestPurityCohort = left_join(highestPurityCohort, allClinicalData %>% select(sampleId, cancerType), by = "sampleId") %>% filter(!is.na(cancerType))
 highestPurityCohort$gender = ifelse(substr(highestPurityCohort$gender, 1, 4) == "MALE", "MALE", highestPurityCohort$gender)
 save(highestPurityCohort, file = "~/hmf/RData/reference/highestPurityCohort.RData")
-
-hpcCancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% summarise(N = n()) %>% arrange(-N)
-save(hpcCancerTypeCounts, file = '~/hmf/RData/reference/hpcCancerTypeCounts.RData')
 
 cat("Copy Numbers")
 hpcCopyNumbers = purple::query_copy_number(dbProd, highestPurityCohort)
@@ -142,17 +174,14 @@ cat("Tert promoters")
 hpcTertPromoters = purple::query_tert_promoters(dbProd, highestPurityCohort)
 save(hpcTertPromoters, file = "~/hmf/RData/reference/hpcTertPromoters.RData")
 
-cat("Fusions")
-hpcFusions = purple::query_fusions(dbProd, highestPurityCohort)
-save(hpcFusions, file = "~/hmf/RData/reference/hpcFusions.RData")
 
 #### COMBINE
-load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
-load(file = "~/hmf/RData/reference/allWgd.RData")
-load(file = "~/hmf/RData/reference/allClinicalData.RData")
-load(file = "~/hmf/RData/reference/allSampleData.RData")
-load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
-load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
+load(file = "~/hmf/RData/Reference/highestPurityCohort.RData")
+load(file = "~/hmf/RData/Reference/allWgd.RData")
+load(file = "~/hmf/RData/Reference/allClinicalData.RData")
+load(file = "~/hmf/RData/Reference/allSampleData.RData")
+load(file = "~/hmf/RData/Reference/allSomaticsSummary.RData")
+load(file = "~/hmf/RData/Reference/allStructuralVariantSummary.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
@@ -164,7 +193,7 @@ highestPurityCohortSummary = highestPurityCohort %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
   left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD))
 
-save(highestPurityCohortSummary, file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")  
+save(highestPurityCohortSummary, file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")  
 write.csv(highestPurityCohortSummary, file = "~/hmf/RData/HighestPurityCohortSummary.csv", row.names = F) 
 
 
@@ -193,7 +222,6 @@ load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
 multipleBiopsySomatics = bind_rows(allSomatics_p1, allSomatics_p2) %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)
 save(multipleBiopsySomatics, file = "~/hmf/RData/reference/multipleBiopsySomatics.RData")
 
-
 multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
   group_by(patientId, startChromosome, endChromosome, startPosition,endPosition,startOrientation,endOrientation,type) %>%
   mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope))
@@ -215,9 +243,32 @@ save(mbExonicSomatics, file = "~/hmf/RData/reference/mbExonicSomatics.RData")
 multipleBiopsyMSI = purple::cohort_msi(multipleBiopsySomaticsWithScope %>% ungroup())
 save(multipleBiopsyMSI, file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 
+cat("Tert promoters")
+mbTertPromoters = purple::query_tert_promoters(dbProd, multipleBiopsyCohort)
+save(mbTertPromoters, file = "~/hmf/RData/reference/mbTertPromoters.RData")
+
+cat("Querying gene copy number amplifications")
+mbGeneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbProd, multipleBiopsyCohort)
+mbGeneCopyNumberAmplifications = left_join(mbGeneCopyNumberAmplifications, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  group_by(patientId, gene) %>%
+  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
+  ungroup()
+save(mbGeneCopyNumberAmplifications, file = "~/hmf/RData/reference/mbGeneCopyNumberAmplifications.RData")
+
+cat("Querying gene copy number deletes")
+mbGeneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbProd, multipleBiopsyCohort)
+mbGeneCopyNumberDeletes = left_join(mbGeneCopyNumberDeletes, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  group_by(patientId, gene) %>%
+  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
+  ungroup()
+save(mbGeneCopyNumberDeletes, file = "~/hmf/RData/reference/mbGeneCopyNumberDeletes.RData")
+
+
+load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
-load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 load(file = "~/hmf/RData/reference/multipleBiopsyStructuralVariantsWithScope.RData")
 

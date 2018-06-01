@@ -2,25 +2,6 @@ library(RMySQL)
 library(ggplot2)
 library(dplyr)
 
-#prodDB = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-#cancerTypes = purple::query_clinical_data(prodDB)
-#cancerTypes = unique(cancerTypes$cancerType)
-#cancerTypes = cancerTypes[!is.na(cancerTypes)]
-#cosmicSignatureColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
-#                           "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
-#                           "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
-#                           "#dea185","#a0729d","#8a392f")
-#cancerTypeColours = setNames(cosmicSignatureColours[1:length(cancerTypes)], cancerTypes)
-#save(cancerTypeColours, file = "~/hmf/RData/cancerTypeColours.RData")
-#dbDisconnect(prodDB)
-#rm(prodDB)
-
-
-
-#copyNumberTargets = geneCopyNumberDeleteTargets
-#maxRecords = 30
-
-
 extractCancerTypeCounts <- function(cancerTypes, copyNumberTargets) {
   cancerTypeColumns = gsub(" ", ".", cancerTypes)
   cancerTypeColumns = ifelse(is.na(cancerTypeColumns), "NA.", cancerTypeColumns)
@@ -30,23 +11,22 @@ extractCancerTypeCounts <- function(cancerTypes, copyNumberTargets) {
   return (result)
 }
 
-significantCNVByCancerType <- function(copyNumberTargets, maxRecords = 30) {
-  significantCNV = copyNumberTargets %>% arrange(-N)
-  significantCNV = significantCNV[1:maxRecords, ]
-  significantCNV[is.na(significantCNV)] = 0
-  
-  significantCNV$gene = factor(significantCNV$target, levels=significantCNV$target)
-  significantCNV$Other = significantCNV$NA. + significantCNV$Other + significantCNV$Unknown.primary
-  significantCNV$NA. <- NULL
-  significantCNV$Unknown.primary <- NULL
-  
-  names = names(significantCNV)
-  namesInd = setNames(1:ncol(significantCNV), names)
-  significantCNV = significantCNV %>% select(gene, N, c(namesInd["Bladder"]:namesInd["Uterus"]))
-  tidyCNV = significantCNV %>% gather(cancerType, N, c(3:ncol(significantCNV)))
-  tidyCNV$cancerType = gsub("\\.", " ", tidyCNV$cancerType)
+tidyTargets <- function(copyNumberTargets, maxTargets = 30) {
+  names = names(copyNumberTargets)
+  namesInd = setNames(1:ncol(copyNumberTargets), names)
 
-  return (tidyCNV %>% filter(N > 0))
+  topTargets = copyNumberTargets %>% group_by(target) %>% summarise(N = sum(N)) %>% top_n(maxRecords, N) %>% arrange(-N)
+  tidyCopyNumberTargets = copyNumberTargets %>% 
+    ungroup() %>%
+    filter(target %in% topTargets$target) %>%
+    mutate(gene = factor(target, levels=topTargets$target)) %>% 
+    select(gene, c(namesInd["Biliary"]:namesInd["Uterus"])) %>%
+    gather(cancerType, N, -gene) %>%
+    filter(!is.na(N)) %>%
+    group_by(gene, cancerType) %>%
+    summarise(N = sum(N))
+
+  return (tidyCopyNumberTargets)
 }
 
 ###################### PART 1 ###################### 
@@ -56,8 +36,8 @@ load("~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
 load("~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
 
 
-significantDels = significantCNVByCancerType(geneCopyNumberDeleteTargets)
-significantAmps = significantCNVByCancerType(geneCopyNumberAmplificationTargets, maxRecords = 40)
+significantDels = tidyTargets(geneCopyNumberDeleteTargets)
+significantAmps = tidyTargets(geneCopyNumberAmplificationTargets, maxTargets = 40)
 
 ampsPlot = ggplot(data=significantAmps, aes(gene, N)) +
   geom_bar(aes(fill = cancerType), stat = "identity") + 

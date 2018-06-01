@@ -1,0 +1,427 @@
+---
+title: "GRIDSS comparison"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+## Overview
+
+Hartwig Medical Foundation has been extensively investigating calling 
+switching from Manta+BPI to GRISS for the detection of structural variants.
+
+Conceptually, the key difference between GRIDSS and manta is that GRIDSS
+performs genome-wide breakend assembly prior to identifying candidate SV
+locations whereas manta performs targeted breakpoint assembly on candidate
+SVs identified by direct read support. Although more computationally expensive,
+the GRIDSS assembly approach it has two distinct advantages. Firstly, the
+assembly is more robust to presence of repeative sequence, and secondly, it
+allows the detection and calling of dangling breakends when the other side
+of the breakpoint cannot be uniquely identified.
+
+The GRIDSS paper can be found at https://genome.cshlp.org/content/early/2017/11/02/gr.222109.117.abstract
+
+A high level overview of the software components of GRIDSS can be found at https://github.com/PapenfussLab/gridss/
+
+
+```{r, message=FALSE, warnings = FALSE}
+# Load libraries and dependencies
+library(purple)
+detach("package:purple", unload=TRUE)
+library(purple)
+library(data.table)
+library(tidyverse)
+library(stringr)
+source("../gridss/libgridss.R")
+library(RMySQL)
+library(Biostrings)
+dbmanta = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
+dbgridss = dbConnect(MySQL(), dbname = "hmfpatients_gridss", host="localhost", port=3306, username="test", password="test")
+theme_set(theme_bw())
+```
+
+## LINE element comparison
+
+```{r}
+# Load list of active LINE elements
+line_csv = read.csv("line_elements.csv")
+linegr = GRanges(seqnames=line_csv$Chromosome, ranges=IRanges(start=line_csv$PosStart, end=line_csv$PosEnd), source=line_csv$Type)
+line_sampleIds = c("CPCT02070034T")
+# sample with LINE re-activation
+full_line_df = get_db_comparision_df(dbmanta, dbgridss, suffix=c(".manta", ".gridss"), sampleIds=line_sampleIds, line_annotation_bed=linegr) %>%
+  mutate(called = str_replace(str_replace(called, "Existing", "manta"), "New", "gridss")) %>%
+  mutate(seqnames=ifelse(is.na(seqnames.gridss), seqnames.manta, seqnames.gridss)) %>%
+  mutate(position=ifelse(is.na(start.gridss), start.manta, start.gridss)) %>%
+  mutate(strand=ifelse(is.na(strand.gridss), strand.manta, strand.gridss)) %>%
+  # simple 100k bins
+  mutate(bin=paste(seqnames,  round(position, -5), sep=":"))
+line_df = full_line_df %>%
+  filter(isline) # just the LINE breakend
+
+```
+
+
+```{r}
+ggplot(line_df %>% filter(isline)) +
+  aes(x=ifelse(!is.na(af.gridss), af.gridss, af.manta), fill=called) +
+  geom_histogram() +
+  labs(title="AF of LINE calls")
+ggplot(line_df %>% filter(isline)) +
+  aes(x=ifelse(!is.na(ploidy.gridss), ploidy.gridss, ploidy.manta), fill=called) +
+  geom_histogram() +
+  labs(title="Ploidy of LINE calls")
+```
+
+Overall, GRIDSS LINE calls are higher AF, with many low AF calls not included in the GRIDSS call set.
+
+Lets break these results down per locus:
+
+```{r}
+# simple 100k bins
+line_df %>%
+  group_by(bin, called) %>%
+  summarise(n=n()) %>%
+  spread(called, n) %>%
+  replace_na(list("Both"=0,"manta"=0,"gridss"=0)) %>%
+  arrange(desc(Both+gridss+manta))
+```
+
+Whilst there is broad agreement on the loci involved, the manta tail is longer.
+Such low AF calls in non-hotspot locations indicate 
+
+----
+
+How balanced are the start/end call counts? Each LINE insertion should have a + and - orientation breakend at the source LINE site:
+```{r}
+line_df_strand <- bind_rows(
+    line_df %>% filter(!is.na(strand.manta)) %>% mutate(caller="manta"),
+    line_df %>% filter(!is.na(strand.gridss)) %>% mutate(caller="gridss")
+  ) %>%
+  group_by(bin, caller, strand) %>% 
+  summarise(n=n()) %>%
+  spread(strand, n) %>%
+  replace_na(list("1"=0, "2"=0)) %>%
+  mutate(strand_bias=`1`/(`1`+`2`))
+ggplot(line_df_strand) +
+  aes(x=`1`, y=`2`, colour=caller) +
+  geom_jitter() +
+  labs("LINE site breakend orientation counts", x="'+' orientation", y="'-' orientation")
+```
+```{r}
+line_df_strand %>%
+  group_by(caller) %>% do({
+ data.frame(cor=cor(.$`1`, .$`2`))
+})
+max_templated_insertion_size=10000
+max_templated_insertion_site_del_dup=100
+isSimpleTemplateInsertion = function (gr, max_templated_insertion_size=10000, max_templated_insertion_site_del_dup=1000) {
+  gr$isSmall = as.logical(seqnames(gr) == seqnames(partner(gr)) & abs(start(gr) - start(partner(gr))) <= max_templated_insertion_size)
+  hits = findBreakpointOverlaps(gr, gr, ignore.strand=TRUE, maxgap=max_templated_insertion_size) %>%
+    filter(!gr$isSmall[queryHits] & !gr$isSmall[subjectHits]) %>%
+    filter(queryHits != subjectHits) %>%
+    filter(names(gr)[queryHits] != names(partner(gr))[subjectHits]) %>%
+    filter(as.logical(strand(gr)[queryHits] != strand(gr)[subjectHits])) %>%
+    filter((localbperror < max_templated_insertion_site_del_dup & remotebperror < max_templated_insertion_size) | 
+           (remotebperror < max_templated_insertion_site_del_dup & localbperror < max_templated_insertion_size)) %>%
+    filter(!duplicated(queryHits)) %>% 
+    filter(!duplicated(subjectHits))
+  gr$simpleTemplateInsertion = FALSE
+  gr$simpleTemplateInsertion[hits$queryHits] = TRUE
+  return(gr$simpleTemplateInsertion)
+}
+matching_calls = function(gr, togr, maxgap=200) {
+  gr$match = NA_character_
+  hits = findBreakpointOverlaps(gr, togr, maxgap=maxgap)
+  gr$match[hits$queryHits] = names(togr)[hits$subjectHits]
+  return(gr$match)
+}
+gridss_gr = query_structural_variants_for_sample_as_granges(dbgridss, line_sampleIds)
+manta_gr = query_structural_variants_for_sample_as_granges(dbmanta, line_sampleIds)
+gridss_gr$lineInsert = isSimpleTemplateInsertion(gridss_gr)
+manta_gr$lineInsert = isSimpleTemplateInsertion(manta_gr)
+gridss_gr$match = matching_calls(gridss_gr, manta_gr)
+manta_gr$match = matching_calls(manta_gr, gridss_gr)
+data.frame(
+  caller=c("manta", "gridss"),
+  breakends=c(length(manta_gr), length(gridss_gr)),
+  template_ins=c(sum(manta_gr$lineInsert), sum(gridss_gr$lineInsert)),
+  unique_tmpl_ins=c(sum(manta_gr$lineInsert & !is.na(manta_gr$match)), sum(gridss_gr$lineInsert & !is.na(gridss_gr$match))))
+```
+For simple LINE element translocations, two breakpoints should be detected - one for each end of the insertion.
+For a given active LINE location, this means that there should be the same number of breakpoint calls in each orientation.
+Aggregating across the genome,  Manta has a slightly better correlation between the per loci breakpoint orientation counts
+Manual inspection of GRIDSS calls indicates that there is indeed preferential drop-out on the poly-A side.
+This is a known issue with the GRIDSS assembly algorithm which takes a conservate approach of truncating contigs in the presence of ambiguous assembly graphs.
+With poly-A runs longer than the GRIDSS assembly k-mer size present at the LINE sites, breakends on one side of the LINE are more likely to be truncated thus be filtered from the GRIDSS call set.
+An improved OLC-based assembler for GRIDSS has been designed, it has not yet been implemented.
+
+Another sanity check on the LINE translocation is that the site of insertion should have the appropriate pair of adjacent breakpoints.
+Looking for insertions of less than 10kbp into a location with less than 1000bp between the breakpoints indicates that manta finds more paired insertion breakpoints than gridss.
+Of those insertion calls, GRIDSS finds one side for almost half of them, whereas the GRIDSS calls manta finds just under 25% of the GRIDSS calls.
+
+
+```{r}
+paste("GRIDSS found", sum(full_line_df$isline.gridss, na.rm=TRUE), "LINE breakends.", sum(full_line_df$isline.gridss & full_line_df$called=="gridss", na.rm=TRUE), "unique to GRIDSS.")
+paste("manta found", sum(full_line_df$isline.manta, na.rm=TRUE), "LINE breakends.", sum(full_line_df$isline.manta & full_line_df$called=="manta", na.rm=TRUE), "unique to manta")
+gridss_file = "D:/hartwig/down/CPCT02070034R_CPCT02070034T.gridss.vcf"
+#gridss_file = "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf"
+# Find how many manta hits GRIDSS considers somatic but too low confidence to call 
+line_gridss_vcf = readVcf(gridss_file, "")
+VariantAnnotation::fixed(line_gridss_vcf)$ALT = CharacterList(lapply(fread(file=gridss_file, sep="\t", sep2=NULL, header=FALSE, stringsAsFactors=FALSE, select=5, skip=120)$V5, function(x) x))
+full_gridss_gr = suppressWarnings({breakpointRanges(line_gridss_vcf)})
+line_gridss_gr = full_gridss_gr[!gridss_breakpoint_filter(full_gridss_gr, line_gridss_vcf, min_support_filters=FALSE)]
+line_gridss_gr = line_gridss_gr[line_gridss_gr$partner %in% names(line_gridss_gr)]
+lmodf = full_line_df %>%
+  filter(called=="manta") %>%
+  filter(id.manta %in% (full_line_df %>% filter(isline))$id.manta)
+lmogr = GRanges(seqnames=lmodf$seqnames.manta, ranges=IRanges(start=lmodf$start.manta, end=lmodf$end.manta), strand=lmodf$strand.manta, partner=lmodf$partner.manta)
+names(lmogr) = lmodf$name.manta
+paste("GRIDSS identified but filtered", length(unique(findBreakpointOverlaps(lmogr, line_gridss_gr)$queryHits)) / 2, "of", length(lmogr) / 2, "manta somatic LINE breakpoints not included in the GRIDSS call set")
+
+low_qual_som_gr = full_gridss_gr
+low_qual_som_gr = low_qual_som_gr[!gridss_breakpoint_filter(low_qual_som_gr, line_gridss_vcf, min_support_filters=FALSE, support_quality_filters=FALSE, somatic_filters=TRUE)]
+low_qual_som_gr = low_qual_som_gr[low_qual_som_gr$partner %in% names(low_qual_som_gr)]
+low_qual_som_gr$isQualFiltered = gridss_breakpoint_filter(low_qual_som_gr, line_gridss_vcf, min_support_filters=TRUE, support_quality_filters=TRUE, somatic_filters=FALSE)
+low_qual_som_gr = low_qual_som_gr[low_qual_som_gr$isQualFiltered | partner(low_qual_som_gr)$isQualFiltered]
+# filter out small events
+low_qual_som_gr = low_qual_som_gr[!(seqnames(low_qual_som_gr) == seqnames(partner(low_qual_som_gr)) & abs(start(low_qual_som_gr) - start(partner(low_qual_som_gr))) <= max_templated_insertion_size)]
+hits = findBreakpointOverlaps(low_qual_som_gr, gridss_gr, ignore.strand=TRUE, maxgap=max_templated_insertion_size) %>%
+  filter(as.logical(strand(low_qual_som_gr)[queryHits] != strand(gridss_gr)[subjectHits])) %>%
+  filter((localbperror < max_templated_insertion_site_del_dup & remotebperror < max_templated_insertion_size) | 
+           (remotebperror < max_templated_insertion_site_del_dup & localbperror < max_templated_insertion_size)) %>%
+  mutate(qual=low_qual_som_gr$QUAL[queryHits]) %>%
+  arrange(desc(qual)) %>%
+  # Take the best hit if there are multiple
+  filter(!duplicated(queryHits)) %>% 
+  filter(!duplicated(subjectHits))
+rescued_gr = low_qual_som_gr[hits$queryHits]
+paste("Found", length(rescued_gr), "filtered pairing breakpoints that complete a simple templated insertion")
+```
+
+If we look at the somatic GRIDSS calls that were filtered due to insufficient support we find that we can rescue a significant number of additional breakpoints.
+
+If we look into some of the filtered GRIDSS calls, we can we rescue the matching breakpoints for some of the simple translocations.
+
+Digging further into GRIDSS call set, I have identified a L1-mediated translocation for which the mediating L1 element cannot be uniquely placed.
+This is represented as a breakpoint with inserted sequence corresponding to the (truncated) L1 element with a BEALN attribute indicating the inserted sequence maps equally well to multiple LINE element due to the short length of the inserted sequence.
+
+
+### Conclusion
+
+Overall, GRIDSS and manta appears to have comparable LINE element reactivation detection performance.
+As currently configured, GRIDSS is more conservative than manta with fewer low AF calls, but it does detect more events at higher AF.
+The low level of overlap between the two call sets is somewhat concerning.
+One possible explaination is that there are many subclonal LINE retrotranspositions and that each caller is only detecting a subset of them.
+
+Without actual validation data (such as orthogonal long read support), the repetative nature of the LINE elements makes it difficult to manually identify which calls are false positives.
+Lacking orthogonal validation, it is difficult to ascertain the relative FP and FN rate of the callers.
+
+
+## Insertions
+
+GRIDSS does not currently report (novel) inserted sequences longer than appoximately half the library fragment size.
+Manta contains logic to call an "imprecise long insertion" if two contigs fall within 35bp of each other in opposing orientations.
+Although GRIDSS can report such situations as two breakends, it does not yet make the assumption that these breakends form a long insertion.
+
+How many manta insertions does GRIDSS call somatic breakends for?
+
+```{r}
+full_insbegr = suppressWarnings({breakpointRanges(line_gridss_vcf, unpartneredBreakends=TRUE)})
+insbegr = full_insbegr[!gridss_breakend_filter(full_insbegr, line_gridss_vcf, min_support_filters=FALSE, somatic_filters=TRUE)]
+mantainsgr = manta_gr[manta_gr$type == "INS"]
+
+insHits = findOverlaps(insbegr, mantainsgr, maxgap=50) %>%
+  as.data.frame() %>%
+  mutate(queryQUAL=insbegr$QUAL[queryHits]) %>%
+  group_by(subjectHits) %>%
+  arrange(desc(queryQUAL)) %>%
+  top_n(1) %>%
+  ungroup()
+
+mantainsgr$match=NA_character_
+mantainsgr$matchQUAL=NA_real_
+mantainsgr$match[insHits$subjectHits] = names(insbegr)[insHits$queryHits]
+mantainsgr$matchQUAL[insHits$subjectHits] = insHits$queryQUAL
+mantainsgr$partnerQUAL = partner(mantainsgr)$matchQUAL
+
+ggplot(as.data.frame(mantainsgr) %>% filter(str_detect(partner, "h"))) +
+  aes(x=matchQUAL %na% 0, y = partnerQUAL %na% 0) +
+  geom_point() +
+  labs(title="GRIDSS breakend quality score of manta long somatic insertion\n0 indicates missed by GRIDSS. QUAL less than 500 would be filtered by GRIDSS.",
+    x="Left breakend QUAL",
+    y="Right breakend QUAL")
+
+# Putative insertions found by GRIDSS
+
+longinsbpgr = full_insbegr[!gridss_breakend_filter(full_insbegr, line_gridss_vcf, min_support_filters=TRUE, somatic_filters=TRUE)]
+gridssInsHits = findOverlaps(longinsbpgr, longinsbpgr, ignore.strand=TRUE, maxgap=35) %>%
+  as.data.frame() %>%
+  filter(as.logical(strand(longinsbpgr)[queryHits] != strand(longinsbpgr)[subjectHits])) %>%
+  mutate(
+    queryQUAL=longinsbpgr$QUAL[queryHits],
+    subjectQUAL=longinsbpgr$QUAL[subjectHits]) %>%
+  group_by(subjectHits) %>%
+  arrange(desc(queryQUAL)) %>%
+  top_n(1) %>%
+  group_by(queryHits) %>%
+  arrange(desc(subjectQUAL)) %>%
+  top_n(1)
+longinsbpgr$partner = NA_character_
+longinsbpgr$partner[gridssInsHits$queryHits] = names(longinsbpgr)[gridssInsHits$subjectHits]
+longinsbpgr = longinsbpgr[!is.na(longinsbpgr$partner)]
+#longinsbpgr = longinsbpgr[names(longinsbpgr) %in% longinsbpgr$partner]
+
+# To call an insertion, we require an assembled RP on both sides (otherwise get get over 14,000 insertions - mostly in microsatellites)
+longinsbpgr$BASRP = info(line_gridss_vcf[names(longinsbpgr)])$BASRP
+longinsbpgr = longinsbpgr[longinsbpgr$BASRP > 0 & partner(longinsbpgr)$BASRP > 0]
+
+mantainsgr %>% as.data.frame() %>%
+  mutate(status=ifelse(is.na(matchQUAL) & is.na(partnerQUAL), "missed by GRIDSS", ifelse(is.na(matchQUAL) | is.na(partnerQUAL), "One side missed by GRIDSS", "Found by GRIDSS"))) %>%
+  group_by(status) %>%
+  summarise(n=n() / 2) %>% # /2 to convert from breakend back to breakpoint counts
+  as.data.frame() %>%
+  bind_rows(data.frame(status="Total insertion-like GRIDSS breakend pairs", n=length(longinsbpgr) / 2))
+
+```
+
+GRIDSS finds most of the manta insertion sites. Manual analysis of the manta insertion sites missed by GRIDSS indicates resulted in the following:
+
+- 1:192416375 1 germline read included in assembly (1:74 germline)
+
+- 2:21514721 insertion sequence placed at 4:19080312
+
+- 2:189617873 1 germline read included in assembly (1:26 germline)
+
+- 4:35555792 1 germline read included in assembly (1:64 germline)
+
+- 4:135790824 1 germline read included in assembly (1:39 germline)
+
+- 4:141511304 One of the two breakends placed. Calls fail LOW_QUAL filter
+
+- 5:29325864 1 germline read included in assembly (1:39 germline) other side placed
+
+- 5:85421993 placed insertion sequence
+
+- 5:161304284 Both breakend assembles found but neither called. Assemblies indicate that the variant is a simple 65bp insertion.
+
+- 7:87703951 placed insertion sequence. ASSEMBLY_ONLY support
+
+- 7:153146820 placed insertion sequence
+
+- 8:137451039 not called. MAPQ of supporting reads < 10
+
+- 8:137739508 (1:38 germline)
+
+- 8:140208498 placed insertion sequence.
+
+- 11:96534346 placed insertion sequence
+
+- 11:128391953 placed insertion sequence
+
+- 12:77342352 (1:37 germline)
+
+- 13:38103883 placed insertion sequence. One side below current GRIDSS calling treshold
+
+- 13:78975357 called as simple insertion. ASSEMBLY_ONLY support
+
+- 13:84545529 (1:30 germline)
+
+- 15:47387211 (1:42 germline)
+
+- 15:83297347 called as simple insertion
+
+- 16:54737628 placed insertion sequence
+
+- 17:52941437 (1:39 germline)
+
+- 18:2032064 placed insertion sequence
+
+- 18:37142918 (2:46 germline)
+
+- x:125942304 placed insertion sequence
+
+In all cases, GRIDSS assemblies exist at both breakends, but either a) GRIDSS identified the templated location of the inserted sequence, b) 1 or 2 germline reads were included in an assembly, or c) the downstream variant identification and filtering results in one or both of the breakend being filtered from the final call set.
+Around a third of the assemblies on the poly-A breakend side were a short (possibly truncated) assembly that did not extend past the poly-A sequence.
+This compare favourably to the manta assemblies for which most of the assemblies are truncated at the polyA.
+For example: 7:153146820 manta AAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA vs gridss CAAACAGTGGCTTAGCTTTGGAGAGAAGAAAACTAATTCTCAGTTAGAAAACTTGTCTGTAATCCTAGCACTTTGGGAGGCCAAGCGGCCTGTTTATTTTTAAATTCGGTTGTCCTTTTATCATTGCATAGTAAGTTATTAATATATTCTGAATAATAAGTCCTTTAACAAATATAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.
+
+```{r}
+insseq = DNAStringSet(longinsbpgr$insSeq)
+names(insseq) = names(longinsbpgr)
+writeXStringSet(insseq, "longinsbpgr.fasta")
+
+#Uploaded to http://www.repeatmasker.org/cgi-bin/WEBRepeatMasker
+#Reheader with SW_score,div,del,ins,query,query_begin,query_end,query_left,strand,repeat,class,repeat_begin,repeat_end,id
+# convert to csv
+
+rm_file = "D:/hartwig/temp/RM2_longinsbpgr.fasta_1527570158/RM2_longinsbpgr.fasta_1527570158.fixed.out"
+rmdf = read_delim(rm_file, ",", skip=1, col_names=c("SW_score","div","del","ins","query","query_begin","query_end","query_left","strand","repeat","class","repeat_begin","repeat_end","id"))
+rmdf$query = as.character(rmdf$query)
+rmdf = rmdf %>% group_by(query) %>%
+  filter(query %in% names(longinsbpgr)) %>%
+  mutate(len=abs(query_end-query_begin)) %>%
+  arrange(desc(len)) %>%
+  top_n(1)
+longinsbpgr$repeatLength = 0
+longinsbpgr$repeatClass = NA_character_
+longinsbpgr[as.character(rmdf$query)]$repeatLength = rmdf$len
+longinsbpgr[as.character(rmdf$query)]$repeatClass = rmdf$class
+longinsbpgr$percRepeat = longinsbpgr$repeatLength / longinsbpgr$insLen
+longinsbpgr$partnerRepeatClass = partner(longinsbpgr)$repeatClass
+
+ggplot(longinsbpgr %>% as.data.frame()) +
+  aes(x=insLen, y=repeatLength) +
+  facet_wrap(~ repeatClass) +
+  geom_point()
+longinsbpgr %>% as.data.frame() %>%
+  group_by(repeatClass) %>%
+  summarise(breakends=n())
+longinsbpgr %>% as.data.frame() %>%
+  filter(as.logical(strand(longinsbpgr) == "+")) %>%
+  group_by(repeatClass, partnerRepeatClass) %>%
+  summarise(n=n())
+
+
+mcols(longinsbpgr) = NULL
+mcols(mantainsgr) = NULL
+export(c(longinsbpgr, mantainsgr), "manta_gridss_ins.bed")
+
+```
+
+GRIDSS identified 180 somatic L1 insertions, with 104 of them having one breakend sequence containing more simple repeat bases than L1 bases.
+This indicates that, with appropriate filtering, GRIDSS can recover more insertion site sequences than manta.
+This is not a particularly surprising result given that GRIDSS successfully assembled all the manta insertions.
+
+### COLO829
+
+Repeating the same analysis on COLO829 results in 0 paired breakend insertion-like calls.
+Manually inspecting the 2 insertion calls made by manta show 7:6791872 is a germline event and 12:129771777 is a compound event for which GRIDSS identified the first and second locations on one side.
+
+
+### Conclusion
+
+GRIDSS assembly succeeded at both breakend of all the manta insertion calls except 1 in which the supporting reads has low mapq.
+Both GRIDSS and manta produced truncated assemblies on the poly-A side of the insertions but, due to the positional de Bruijn graph assembly algorithm used in GRIDSS, GRIDSS was able to assemble across some of long poly-A sequences that manta could not.
+In 11 cases, GRIDSS identified the location of the templated insertion and called the more meaningful pair of translocation breakpoints instead.
+A handful of the insertions called by manta were filtered by GRIDSS.
+
+In conclusion, GRIDSS assembly outperforms manta for large insertion but more downstream work is required to translate the GRIDSS results into clean event calls.
+
+----
+
+## Outstanding concerns
+
+### File handles
+
+GRIDSS will temporarily leak file handles until the next full GC.
+In certain situations, these unused file handles can acculate until the file handle ulimit is reached and GRIDSS is killed byt he OS.
+GRIDSS using htsjdk to handle SAM/BAM IO which memory maps BAM index files.
+Due to security concerns, Java does not provide an API to explicitly close memory mapping.
+As a result, unsed file handles are not closed until a GC disposes of the underlying channel.
+
+The workaround for this behaviour is to increase the file handle ulimit on the OS (ulimit -n).
+
+
+
+
+

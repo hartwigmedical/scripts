@@ -10,23 +10,20 @@ collapseCandidates <- function(x) {
   return (paste(x, collapse = ","))
 }
 
-firstCandidate <- function(candidates) {
-  candidateVector = unlist(strsplit(candidates, split = ","))
-  return (candidateVector[1])
-}
+#longestCandidate <- function(candidates, canonicalTranscripts) {
+#  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F)
+#  candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>%
+#    filter(codingBases == max(codingBases), codingBases > 0) 
+#  return (collapseCandidates(candidateVector$gene))
+#}
 
-longestCandidate <- function(candidates, canonicalTranscripts) {
-  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F)
-  candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>%
-    filter(codingBases == max(codingBases), codingBases > 0) 
-  return (collapseCandidates(candidateVector$gene))
-}
+#candidates = "ZBTB10,MIR5708,TPD52,FABP5"
 
 highestScoringCodingCandidate <- function(candidates, canonicalTranscripts) {
   candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% mutate(rank = row_number())
   candidateVector = left_join(candidateVector, canonicalTranscripts %>% select(gene, codingBases), by = "gene") %>% 
     mutate(isCoding = codingBases > 0) %>%
-    arrange(-isCoding, rank)%>% dplyr::slice(1)
+    arrange(!isCoding, rank) %>% dplyr::slice(1)
   return (collapseCandidates(candidateVector$gene))
 }
 
@@ -44,18 +41,43 @@ categoriseCandidates <-function(gene, candidates, genePanel) {
 }
 
 superSizedCandidates <-function(candidates, superGenes) {
-
-  candidateVector = unlist(strsplit(candidates, split = ","))
-  supers = superGenes %>% filter(sub %in% candidateVector) %>% select(super)
-  union = sort(unique(c(supers$super, candidateVector)))
-  
-  return(collapseCandidates(union))
+  candidateVector = data.frame(gene = unlist(strsplit(candidates, split = ",")), stringsAsFactors = F) %>% 
+    mutate(rank = row_number())
+  candidateSupers = inner_join(candidateVector, superGenes, by = c("gene" = "sub")) %>% select(gene = super, rank)
+  result = bind_rows(candidateVector, candidateSupers) %>% arrange(rank)
+  return(collapseCandidates(unique(result$gene)))
 }
 
 candidatesRange <- function(gene, candidates, canonicalTranscripts) {
   candidateVector = unlist(strsplit(candidates, split = ","))
   candidateTranscripts = canonicalTranscripts[canonicalTranscripts$gene %in% candidateVector, ]
   return (data.frame(gene, superCandidatesStart = as.numeric(min(candidateTranscripts$geneStart)), superCandidatesEnd = max(candidateTranscripts$geneEnd)))
+}
+
+
+singleTarget <- function(targets, superCandidates) {
+  targetVector = unlist(strsplit(targets, split = ","))
+  superCandidateDF = data.frame(gene = unlist(strsplit(superCandidates, split = ",")), stringsAsFactors = F)  %>% mutate(rank = row_number()) %>%
+    filter(gene %in% targetVector) %>% arrange(rank)
+  return (superCandidateDF[1, "gene"])
+}
+
+attach_target <- function(copyNumberSummary, cosmic, known) {
+  copyNumberSummary$method <- "panel"
+  copyNumberSummary$target <- copyNumberSummary$hmf
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$martincorena, copyNumberSummary$target)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$cosmicCurated, copyNumberSummary$target)
+  copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "known", copyNumberSummary$method)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary[[known]], copyNumberSummary$target)
+  copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "cosmic", copyNumberSummary$method)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary[[cosmic]], copyNumberSummary$target)
+  copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "highest", copyNumberSummary$method)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$highestScoring, copyNumberSummary$target)
+  copyNumberSummary$telomere <- ifelse(copyNumberSummary$method == "highest" & copyNumberSummary$telomereSupported > copyNumberSummary$N / 2, paste0(copyNumberSummary$chromosome, substr(copyNumberSummary$chromosomeBand,1,1), "_telomere"), NA)
+  copyNumberSummary$centromere <- ifelse(copyNumberSummary$method == "highest" & copyNumberSummary$centromereSupported > copyNumberSummary$N / 2, paste0(copyNumberSummary$chromosome, substr(copyNumberSummary$chromosomeBand,1,1), "_centromere"), NA)  
+  
+  copyNumberSummary = copyNumberSummary %>% group_by(gene) %>% mutate(target = singleTarget(target, superCandidates))
+  return(copyNumberSummary)
 }
 
 #### SUPER GENES
@@ -90,22 +112,9 @@ dels = merge(dels, do.call(rbind, delCandidates), by = "gene")
 
 dels =  dels %>% 
   group_by(gene) %>%
-  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts )) 
+  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts)) 
 
-dels$method <- "panel"
-dels$target <- dels$hmf
-dels$target <- ifelse(is.na(dels$target), dels$martincorena, dels$target)
-dels$target <- ifelse(is.na(dels$target), dels$cosmicCurated, dels$target)
-dels$method <- ifelse(is.na(dels$target), "known", dels$method)
-dels$target <- ifelse(is.na(dels$target), dels$deletion, dels$target)
-dels$method <- ifelse(is.na(dels$target), "cosmic", dels$method)
-dels$target <- ifelse(is.na(dels$target), dels$cosmicTsg, dels$target)
-dels$method <- ifelse(is.na(dels$target), "highest", dels$method)
-dels$target <- ifelse(is.na(dels$target), dels$highestScoring, dels$target)
-dels$telomere <- ifelse(dels$method == "highest" & dels$telomereSupported > dels$N / 2, paste0(dels$chromosome, substr(dels$chromosomeBand,1,1), "_telomere"), NA)
-
-delsWithMultipleTargets = dels %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
-dels = dels %>% group_by(gene) %>% mutate(target = firstCandidate(target))
+dels = attach_target(dels, "cosmicTsg", "deletion")
 
 geneCopyNumberDeleteTargets = dels
 save(geneCopyNumberDeleteTargets, file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
@@ -133,24 +142,9 @@ amps = merge(amps, do.call(rbind, ampCandidates), by = "gene")
 
 amps = amps %>% 
   group_by(gene) %>%
-  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts), longest = longestCandidate(remainders, canonicalTranscripts ))
+  mutate(highestScoring = highestScoringCodingCandidate(remainders, canonicalTranscripts))
 
-amps$method <- "panel"
-amps$target <- amps$hmf
-amps$target <- ifelse(is.na(amps$target), amps$martincorena, amps$target)
-amps$target <- ifelse(is.na(amps$target), amps$cosmicCurated, amps$target)
-amps$method <- ifelse(is.na(amps$target), "known", amps$method)
-amps$target <- ifelse(is.na(amps$target), amps$amplification, amps$target)
-amps$method <- ifelse(is.na(amps$target), "cosmic", amps$method)
-amps$target <- ifelse(is.na(amps$target), amps$cosmicOncogene, amps$target)
-amps$method <- ifelse(is.na(amps$target), "longest", amps$method)
-amps$target <- ifelse(is.na(amps$target), amps$longest, amps$target)
-amps$method <- ifelse(is.na(amps$target), "highest", amps$method)
-amps$target <- ifelse(is.na(amps$target), amps$gene, amps$target)
-amps$telomere <- ifelse(amps$method == "highest" & amps$telomereSupported > amps$N / 2, paste0(amps$chromosome, substr(amps$chromosomeBand,1,1), "_telomere"), NA)
-
-ampsWithMultipleTargets = amps %>% group_by(gene) %>% mutate(n = length(unlist(strsplit(target, split = ",")))) %>% filter(n > 1)
-amps = amps %>% group_by(gene) %>% mutate(target = firstCandidate(target))
+amps = attach_target(amps, "cosmicOncogene", "amplification")
 
 geneCopyNumberAmplificationTargets = amps
 save(geneCopyNumberAmplificationTargets, file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")

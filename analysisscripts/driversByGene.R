@@ -2,72 +2,29 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 
-load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
-load(file = "~/hmf/RData/reference/hpcFusions.RData")
-load(file = "~/hmf/RData/reference/hpcTertPromoters.Rdata")
-load(file = "~/hmf/RData/reference/hpcGeneCopyNumberDeletes.RData")
-load(file = "~/hmf/RData/reference/hpcGeneCopyNumberAmplifications.RData")
-load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
-load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
-load(file = "~/hmf/RData/processed/driverGenes.RData")
-load(file = "~/hmf/RData/processed/tsgDrivers.RData")
-load(file = "~/hmf/RData/processed/oncoDrivers.RData")
-load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
+load(file = "~/hmf/RData/Reference/canonicalTranscripts.RData")
+load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
+load(file = "~/hmf/RData/Reference/hpcGeneCopyNumberDeletes.RData")
+load(file = "~/hmf/RData/Reference/hpcGeneCopyNumberAmplifications.RData")
+load(file = "~/hmf/RData/Processed/geneCopyNumberDeleteTargets.RData")
+load(file = "~/hmf/RData/Processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/RData/Processed/driverGenes.RData")
+load(file = "~/hmf/RData/Reference/highestPurityCohort.RData")
 load(file = "~/hmf/RData/processed/genePanel.RData")
 load(file = "~/hmf/RData/Processed/fragileGenes.RData")
+load(file = "~/hmf/RData/Processed/hpcFusions.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsTsgDrivers.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 
+fusions = purple::driver_fusions(hpcFusions, tsGenes, oncoGenes)
+amplifications = purple::driver_amplifications(hpcGeneCopyNumberAmplifications, tsGenes, oncoGenes, geneCopyNumberAmplificationTargets)
+deletions = purple::driver_deletions(hpcGeneCopyNumberDeletes, tsGenes, oncoGenes, geneCopyNumberDeleteTargets, fragileGenes)
+tertPromoters = purple::driver_promoters(hpcTertPromoters)
+tsgDriverByGene = hpcDndsTsgDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, biallelic, hotspot, clonality, shared)
+oncoDriverByGene = hpcDndsOncoDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, clonality, shared)
 
-intragenicFusions = hpcFusions %>% filter(`5pGene` == `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "IntragenicFusion")
-threePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `3pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "3PrimeFusion")
-fivePrimeFusions = hpcFusions %>% filter(`5pGene` != `3pGene`) %>% mutate(gene = `5pGene`) %>% group_by(sampleId, gene) %>% summarise(driver = "5PrimeFusion")
-fusions = bind_rows(intragenicFusions, threePrimeFusions) %>% bind_rows(fivePrimeFusions) %>% 
-  mutate(driverLikelihood = ifelse(driver == "IntragenicFusion", 1, 0.5), type = "FUSION")
-fusions$type = ifelse(fusions$gene %in% tsGenes$gene_name, "TSG", fusions$type)
-fusions$type = ifelse(fusions$gene %in% oncoGenes$gene_name, "ONCO", fusions$type)
-rm(intragenicFusions, threePrimeFusions, fivePrimeFusions)
-
-amplifications = hpcGeneCopyNumberAmplifications %>%
-  filter(gene %in% oncoGenes$gene_name | gene %in% geneCopyNumberAmplificationTargets$target) %>%
-  group_by(sampleId = sampleId, gene) %>% summarise(driver = "Amp") %>%
-  mutate(driverLikelihood = 1, type = ifelse(gene %in% tsGenes$gene, "TSG", "ONCO"))
-
-deletions = hpcGeneCopyNumberDeletes %>%
-  filter(gene %in% tsGenes$gene_name | gene %in% geneCopyNumberDeleteTargets$target) %>%
-  group_by(sampleId = sampleId, gene) %>% summarise(driver = "Del", partial = somaticRegions > 1) %>% 
-  left_join(fragileGenes %>% select(gene = gene_name, fragile), by = "gene") %>%
-  mutate(fragile = ifelse(is.na(fragile), F, T)) %>%
-  mutate(driverLikelihood = 1, type = ifelse(gene %in% oncoGenes$gene, "ONCO", "TSG"))%>%
-  mutate(driver = ifelse(fragile, "FragileDel", driver))
-
-tertPromoters = hpcTertPromoters %>% 
-  group_by(sampleId, gene) %>% 
-  summarise(driver = "Promoter", driverLikelihood = 1, type = "TSG") 
-
-tsgDriverByGene = tsgDrivers %>%
-  group_by(sampleId, gene) %>%
-  summarise(
-    multihit = n() > 1,
-    biallelic = sum(biallelic) > 0, 
-    hotspot = sum(hotspot) > 0, 
-    impact = paste(impact, collapse = ","),
-    driver = max(driver),
-    driverLikelihood = max(driver)) %>%
-  mutate(driver = ifelse(multihit, "Multihit", impact), type = 'TSG') %>%
-  select(sampleId, gene, impact, driver, driverLikelihood, type, biallelic)
-
-oncoDriverByGene = oncoDrivers %>%
-  group_by(sampleId, gene) %>%
-  summarise(
-    hotspot = sum(hotspot) > 0,
-    nearHotspot = any(nearHotspot),
-    impact = paste(impact, collapse = ","),
-    driver = max(driver),
-    driverLikelihood = max(driver))  %>%
-  mutate(driver = impact, type = 'ONCO') %>%
-  select(sampleId, gene, impact, driver, driverLikelihood, type)
-
-driverFactors = c("IntragenicFusion","3PrimeFusion","5PrimeFusion","Del","PartialDel","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Amp")
-driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
+driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Del","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Indel","Amp")
+hpcDriversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
   bind_rows(amplifications) %>% 
   bind_rows(deletions) %>% 
   bind_rows(tertPromoters) %>% 
@@ -76,11 +33,11 @@ driversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>%
   ungroup() %>% group_by(sampleId, gene) %>% 
   top_n(1, driver)
 
-driversByGene%>%  ungroup() %>% group_by(sampleId, gene) %>% summarise(n = n()) %>% filter(n > 1)
+hpcDriversByGene%>%  ungroup() %>% group_by(sampleId, gene) %>% summarise(n = n()) %>% filter(n > 1)
 
 cancerTypes = highestPurityCohort %>% select(sampleId = sampleId, cancerType)
-driversByGene = left_join(driversByGene, cancerTypes, by = "sampleId")
+hpcDriversByGene = left_join(hpcDriversByGene, cancerTypes, by = "sampleId")
 
-driversByGene = left_join(driversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")
-save(driversByGene, file = "~/hmf/RData/processed/driversByGene.RData")
+hpcDriversByGene = left_join(hpcDriversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")
+save(hpcDriversByGene, file = "~/hmf/RData/processed/hpcDriversByGene.RData")
 

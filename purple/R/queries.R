@@ -62,10 +62,30 @@ query_tert_promoters<-function(dbConnect, cohort) {
 query_fusions<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    " select sv.sampleId, 5p.gene as 5pGene, 3p.gene as 3pGene",
-    " from structuralVariantFusion f,structuralVariantBreakend 5p, structuralVariantBreakend 3p, structuralVariant sv",
-    " where 5p.id = f.fivePrimeBreakendId and 3p.id = f.threePrimeBreakEndId and isReported and 5p.structuralVariantId = sv.id ",
+    "select sv.sampleId, startChromosome, startPosition, endChromosome, endPosition, ",
+    "5p.transcriptId as 5pTranscript, 5p.gene as 5pGene, 5p.strand as 5pStrand, 5p.isStartEnd as 5pIsStartEnd, 5p.exonPhaseUpstream as 5pPhase, 5p.exonRankUpstream as 5pExonRankUpstream, 5p.exonMax as 5pExonMax, ",
+    "3p.transcriptId as 3pTranscript, 3p.gene as 3pGene, 3p.strand as 3pStrand, 3p.isStartEnd as 3pIsStartEnd, 3p.exonPhaseUpstream as 3pPhase, 3p.exonRankDownstream as 3pExonRankDownstream, 3p.exonMax as 3pExonMax, filter",
+    "from structuralVariantFusion f,structuralVariantBreakend 5p, structuralVariantBreakend 3p, structuralVariant sv ",
+    "where 5p.id = f.fivePrimeBreakendId and 3p.id = f.threePrimeBreakEndId and isReported and 5p.structuralVariantId = sv.id ",
     "   AND sampleId in (",sampleIdString, ")",
+    sep = " ")
+  return (dbGetQuery(dbConnect, query))
+}
+
+query_coding_regions <- function(dbConnect, transcriptIds) {
+  sampleIdString = paste("'", transcriptIds, "'", collapse = ",", sep = "")
+  query = paste(
+    "select ",
+    "t.stable_id as transcriptId, ",
+    "t.seq_region_strand as strand, ",
+    "if(t.seq_region_strand = -1, ce.seq_region_end - tl.seq_end + 1, cs.seq_region_start + tl.seq_start - 1) as coding_start, ",
+    "if(t.seq_region_strand = -1, cs.seq_region_end - tl.seq_start + 1, ce.seq_region_start + tl.seq_end - 1) as coding_end ",
+    "from ",
+    "transcript t ",
+    "left join translation tl on tl.transcript_id = t.transcript_id ",
+    "left join exon cs on cs.exon_id = tl.start_exon_id ",
+    "left join exon ce on ce.exon_id = tl.end_exon_id ",
+    "where t.stable_id in (",sampleIdString, ")",
     sep = " ")
   return (dbGetQuery(dbConnect, query))
 }

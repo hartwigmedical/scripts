@@ -7,7 +7,7 @@ use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
 use File::Slurp;
-use JSON;
+use JSON::XS;
 use File::Copy;
 use Spreadsheet::XLSX;
 use DateTime::Format::Excel;
@@ -228,7 +228,7 @@ sub printLimsToJson{
 
     ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
-    my $json_txt = JSON->new->utf8->pretty->encode(\%lims);
+    my $json_txt = JSON::XS->new->utf8->pretty->encode(\%lims);
     say "[INFO] Writing output to \"$out_file\" ($submissions_count submissions and $samples_count samples)";
     open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
         print $lims_json_fh $json_txt;
@@ -237,7 +237,7 @@ sub printLimsToJson{
     ## submissions json
     my ($out_name,$out_path) = fileparse($out_file);
     my $out_file_sub = $out_path . "submissions.json";
-    my $json_txt_sub = JSON->new->utf8->pretty->encode($submissions);
+    my $json_txt_sub = JSON::XS->new->utf8->pretty->encode($submissions);
     say "[INFO] Writing output to \"$out_file_sub\" ($submissions_count submissions)";
     open my $sub_json_fh, '>', $out_file_sub or die "Unable to open output file ($out_file_sub): $!\n";
         print $sub_json_fh $json_txt_sub;

@@ -22,15 +22,6 @@ allClinicalData = left_join(allClinicalDataCurated, allClinicalDataDatabase, by 
 save(allClinicalData, file = "~/hmf/RData/Reference/allClinicalData.RData")
 rm(allClinicalDataCurated, allClinicalDataDatabase)
 
-### Cancer Type Colours
-load(file = "~/hmf/RData/reference/allClinicalData.RData")
-cancerTypes = sort(unique(allClinicalData$cancerType))
-cosmicSignatureColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
-                           "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
-                           "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
-                           "#dea185","#a0729d","#8a392f")
-cancerTypeColours = setNames(cosmicSignatureColours[1:length(cancerTypes)], cancerTypes)
-save(cancerTypeColours, file = "~/hmf/RData/reference/cancerTypeColours.RData")
 
 ############################## MANUAL MODIFICATIONS ##############################
 allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180512.csv", stringsAsFactors = F, header = T) %>%
