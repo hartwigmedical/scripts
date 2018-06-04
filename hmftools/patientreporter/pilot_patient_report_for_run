@@ -6,7 +6,7 @@ drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
