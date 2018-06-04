@@ -1,4 +1,4 @@
-nearHotspot <-function(mutations, distance = 10) {
+nearHotspot <-function(mutations, distance = 5) {
   hotspots = mutations %>% filter(hotspot > 0) %>% select(chromosome, position) %>% distinct
   hrange <- GRanges(hotspots$chromosome, IRanges(hotspots$position, hotspots$position + distance))
   mrange <- GRanges(mutations$chromosome, IRanges(mutations$position, mutations$position + distance))
