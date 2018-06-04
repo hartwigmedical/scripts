@@ -20,14 +20,13 @@ if [[ "$threads" == "" ]] ; then
 	threads=$(nproc)
 fi
 
-
-config_dir=$run_dir/../
-
 base_path="/data/common"
 if [ -z "`hostname | grep datastore`" ]; then
 	# KODU: common folder does not exist on crunches...
 	base_path="/data"
 fi
+
+config_dir=$base_path/dbs/gridss
 
 export PATH=$PATH:$base_path/tools/bwa_v0.7.5a/
 export PATH=$PATH:$base_path/tools/samtools_v1.2/
