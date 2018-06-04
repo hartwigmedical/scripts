@@ -62,7 +62,9 @@ assembly_bam=$gridss_dir/$joint_sample_name.assembly.bam
 log_dir=$gridss_dir/logs/
 log_prefix=$log_dir/$HOSTNAME.$$
 blacklist=$config_dir/ENCFF001TDO.bed
-gridss_config_file=$config_dir/gridss.properties
+
+prefix=`dirname $(readlink $0 || echo $0)`
+gridss_config_file=$prefix/gridss.properties
 
 gridss_threshold_coverage=10000
 gridss_jvm_args="
