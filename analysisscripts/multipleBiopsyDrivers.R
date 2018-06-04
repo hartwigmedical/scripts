@@ -23,7 +23,9 @@ amplifications = purple::driver_amplifications(mbGeneCopyNumberAmplifications %>
 deletions = purple::driver_deletions(mbGeneCopyNumberDeletes %>% mutate(shared = scope == 'Shared'), tsGenes, oncoGenes, geneCopyNumberDeleteTargets, fragileGenes)
 tertPromoters = purple::driver_promoters(mbTertPromoters %>% mutate(shared = scope == 'Shared'))
 tsgDriverByGene = mbDndsTsgDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, biallelic, hotspot, clonality, shared)
-oncoDriverByGene = mbDndsOncoDrivers %>% select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, clonality, shared)
+oncoDriverByGene = mbDndsOncoDrivers %>% 
+  mutate(hotspot = hotspot | nearHotspot) %>%
+  select(sampleId, gene, impact, driver, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, clonality, shared)
 
 driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Del","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Indel","Amp")
 mbDriversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
