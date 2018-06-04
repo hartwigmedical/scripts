@@ -6,6 +6,7 @@ use File::Basename;
 use Getopt::Long;
 use File::Slurp;
 use JSON::XS;
+use File::Find::Rule;
 use 5.010.000;
 
 ## -----
@@ -16,6 +17,7 @@ my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
 my $LIMS_JSON = '/data/lims/lims.json';
+my $REPORTS_LOC = '/data/cpct/final_reports';
 my @OUT_FIELDS_1 = qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions );
 my @OUT_FIELDS_2 = qw( submission sample_id sample_name label analysis_type yield tumor_perc entity primary_tum arrival_date );
 
@@ -32,6 +34,7 @@ my $HELP =<<HELP;
     $SCRIPT -sample_name "CPCT01010001T"
     $SCRIPT -sample_name "CPCT01010001" -regex_match
     $SCRIPT -sample_id "FR11111111" -full_output
+    $SCRIPT -unreported (prints a list of biopsies without report)
     
   Output options
     -full_output    (add more fields to output: only for CPCT etc)
@@ -64,6 +67,7 @@ GetOptions (
   "include_plasma"  => \$opt{ include_plasma },
   "delim=s"         => \$OUT_SEP,
   "lims_input=s"    => \$opt{ lims_input },
+  "unreported"      => \$opt{ unreported },
   "debug"           => \$opt{ debug },
   "help|h"          => \$opt{ help },
 ) or die "Error in command line arguments\n";
@@ -81,21 +85,15 @@ say "## LimsJson: $LIMS_JSON";
 ## prepare
 my @out_fields = @OUT_FIELDS_1;
 @out_fields = @OUT_FIELDS_2 if $opt{ full_output };
-
-## input + selection
 my $lims = readJson( $LIMS_JSON );
-my $samples = queryLims( $lims, \%inc, \%opt );
 
-## output
-if ( $opt{ debug } ){
-    ## print complete objects to inspect all properties
-    my $json_obj = JSON::XS->new->allow_nonref;
-    my $json_txt = $json_obj->pretty->encode( $samples );
-    print $json_txt."\n";
+## perform selection or action
+if ( $opt{ unreported } ){
+    printUnreportedBiopsies( $lims, \%opt );
 }
 else{
-    ## print normal viewing table
-    printSampleInfo( $samples, \@out_fields );
+    my $samples = queryLims( $lims, \%inc, \%opt );
+    printSampleInfo( $samples, \@out_fields, $opt{ debug } );
 }
 
 ## -----
@@ -111,7 +109,7 @@ sub readJson{
 }
 
 sub printSampleInfo{
-    my ($samples, $fields) = @_;
+    my ($samples, $fields, $debug) = @_;
     my $sample_count = scalar @$samples;
     
     @$samples = sort { 
@@ -123,12 +121,56 @@ sub printSampleInfo{
     say "## SampleCount: $sample_count";
     say "#".join( $OUT_SEP, @$fields);
     
-    foreach my $sample ( @$samples ){
-        my @out = ();
-        push @out, getValueByKey( $sample, $_) foreach @$fields;
-        say join $OUT_SEP, @out;
+    if ( $debug ){
+        my $json_obj = JSON::XS->new->allow_nonref;
+        my $json_txt = $json_obj->pretty->encode( $samples );
+        print $json_txt."\n";
     }
+    else{
+        foreach my $sample ( @$samples ){
+            my @out = ();
+            push @out, getValueByKey( $sample, $_) foreach @$fields;
+            say join $OUT_SEP, @out;
+        }
+    }
+}
 
+sub printUnreportedBiopsies{
+    my ($lims, $opt) = @_;
+    my @out_samples = ();
+    my $samples = $lims->{ 'samples' };
+    
+    foreach my $sample_id ( keys %{$samples} ){
+        my $sample = $samples->{ $sample_id };
+        my $sample_name = $sample->{'sample_name'};
+        
+        ## skip if not non-research biopsy
+        next unless defined $sample->{'analysis_type'} and $sample->{'analysis_type'} eq 'Somatic_T';
+        next unless defined $sample->{'status'} and $sample->{'status'} !~ /^(storage|In process)$/;
+        next unless defined $sample->{'arrival_date'} and $sample->{'arrival_date'} !~ /^(2015|2016|2018)/;
+        
+        ## skip unless R is finished
+        my $ref_sample_id = $sample->{ 'ref_sample_id' };
+        next unless exists $samples->{ $ref_sample_id };
+        my $ref_sample = $samples->{ $ref_sample_id };
+        next unless $ref_sample->{ 'status' } eq 'finished';
+        
+        ## skip if report exists
+        next if biopsyReportExists( $sample_name );
+        
+        ## include
+        push @out_samples, $sample;
+    }
+    
+    my @out_fields = qw( sample_name status tumor_perc arrival_date sample_id ref_sample_id );
+    printSampleInfo( \@out_samples, \@out_fields, $opt{ debug } );
+}
+
+sub biopsyReportExists{
+    my ($sample_name) = @_;
+    my @files = glob( $REPORTS_LOC . '/' . $sample_name . "_*.pdf" );
+    return 1 if scalar @files;
+    return 0;
 }
 
 sub queryLims{
@@ -145,10 +187,11 @@ sub queryLims{
         
         foreach my $type ( @inc_type ){
             next unless defined $inc->{ $type };
+            next unless defined $sample->{ $type };
             my @searches = @{$inc->{ $type }};
             
             foreach my $search ( @searches ){
-                my $sample_val = $sample->{ $type } or die "Sample does not have type ($type)\n";
+                my $sample_val = $sample->{ $type } or die "Sample does not have type ($type):\n".Dumper($sample)."\n";
                 
                 if ( $sample_val eq $search ){
                     push @out, $sample;
