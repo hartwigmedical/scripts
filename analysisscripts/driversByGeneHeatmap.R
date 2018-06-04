@@ -17,9 +17,9 @@ hpcDriversByGene = hpcDriversByGene  %>%
   ) %>%
   ungroup()
 
-sortedTsgGenes = hpcDriversByGene %>% filter(type == 'TSG') %>% group_by(gene) %>% count() %>% ungroup() %>% top_n(30, n) %>% arrange(-n)
-sortedOncoGenes = hpcDriversByGene %>% filter(type == 'ONCO') %>% group_by(gene) %>% count() %>% ungroup() %>% top_n(30, n) %>% arrange(-n)
-sortedCancerTypes = hpcDriversByGene %>% group_by(cancerType) %>% count() %>% arrange(-n)
+sortedTsgGenes = hpcDriversByGene %>% filter(type == 'TSG') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(30, n) %>% arrange(-n)
+sortedOncoGenes = hpcDriversByGene %>% filter(type == 'ONCO') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(30, n) %>% arrange(-n)
+sortedCancerTypes = hpcDriversByGene %>% group_by(cancerType) %>% summarise(n = sum(driverLikelihood)) %>% arrange(-n)
 
 oncoDrivers = c("Fusion", "Del","Promoter","Missense","Indel","Amp")
 oncoDrivers = factor(oncoDrivers, levels = oncoDrivers)
@@ -31,16 +31,13 @@ tsgDrivers = factor(tsgDrivers, levels = tsgDrivers)
 tsgDriverColours = c("#fdb462","#8dd3c7","#fccde5","#b3de69", "#80b1d3","#ffffb3","#bebada","#fb8072")
 tsgDriverColours = setNames(tsgDriverColours, tsgDrivers)
 
-
-
 oncoDriversByGene = hpcDriversByGene %>% filter(type == 'ONCO', gene %in% sortedOncoGenes$gene) %>% mutate(driver = factor(driver, oncoDrivers))
 tsgDriversByGene = hpcDriversByGene %>% filter(type == 'TSG', gene %in% sortedTsgGenes$gene)  %>% mutate(driver = factor(driver, tsgDrivers))
 
 main_heatmap_data <- function(sourceData, cancerTypeSamples) {
   heatmapData = sourceData %>%
-    group_by(cancerType, gene) %>% count() %>%
+    group_by(cancerType, gene) %>% summarise(n = sum(driverLikelihood)) %>%
     left_join(hpcCancerTypeCounts %>% select(cancerType, cancerTypeSamples = N), by = "cancerType") %>%
-    #mutate(proportion = round(n / cancerTypeSamples, 3)) %>%
     mutate(proportion = n / cancerTypeSamples) %>%
     select(-n, -cancerTypeSamples) %>%
     spread(cancerType, proportion, fill = 0)
@@ -49,11 +46,10 @@ main_heatmap_data <- function(sourceData, cancerTypeSamples) {
   return (heatmapData)
 }
 
-samples_annotation <- function(sourceData, max = 1) {
+samples_annotation <- function(sourceData) {
   annotationData1 = sourceData %>% 
-    group_by(gene) %>% count() %>% 
-    mutate(proportion = round(n / sum(hpcCancerTypeCounts$N), 3)) %>% select(-n) %>%
-    mutate(nonProportion = max - proportion)
+    group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% 
+    mutate(proportion = round(n / sum(hpcCancerTypeCounts$N), 3)) %>% select(-n) 
   rownames(annotationData1) <- annotationData1$gene
   annotationData1$gene <- NULL
   return (annotationData1)
@@ -91,15 +87,23 @@ biallelic_annotation <- function(sourceData) {
 
 
 tsgHeatmapData = main_heatmap_data(tsgDriversByGene, cancerTypeSamples)
-tsgSamplesAnnotationData = samples_annotation(tsgDriversByGene, max = 0.6)
+tsgSamplesAnnotationData = samples_annotation(tsgDriversByGene)
 tsgDriversAnnotationData = driver_annotation(tsgDriversByGene)
-tsgHotspotAnnotationData = hotspot_annotation(tsgDriversByGene)
 tsgBiallelicAnnotationData = biallelic_annotation(tsgDriversByGene)
-tsgBiallelicAnnotationData
 
 oncoHeatmapData = main_heatmap_data(oncoDriversByGene, cancerTypeSamples)
-oncoSamplesAnnotationData = samples_annotation(oncoDriversByGene, max = 0.2)
+oncoSamplesAnnotationData = samples_annotation(oncoDriversByGene)
 oncoDriversAnnotationData = driver_annotation(oncoDriversByGene)
+
+
+heat_map_text <- function(value) {
+  value = round(100*value, 1)
+  if (value > 0) {
+    return (sprintf(fmt='%.1f', value))
+  }
+  return ("")
+}
+
 
 oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
@@ -108,20 +112,19 @@ oncoHeatmap = Heatmap(
   row_order = sortedOncoGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
-  col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("white", "pink", "red", "darkred")),
+  col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("#fff5eb","#fdbe85","#fd8d3c","#d94701")),
   #col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("white", "lightblue", "blue", "darkblue")),
   cell_fun = function(j, i, x, y, w, h, col) {
     myColor = "black"
     if (oncoMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(sprintf(fmt='%.1f', 100*oncoMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
+    grid.text(heat_map_text(oncoMat[i, j]), x, y, gp=gpar(fontsize=9, col = myColor))
   }
 )
 
-oncoSamplesAnnotationColours = setNames(c("red","white"), c("proportion", "nonProportion"))
 oncoSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = oncoSamplesAnnotationColours), border = F), 
+  `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = "#bc80bd"), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
   annotation_name_rot = 0
@@ -144,8 +147,6 @@ oncoDriversAnnotationIndex = rowAnnotation(
 
 oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
 
-
-
 tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
   column_title = "  ",
@@ -153,25 +154,24 @@ tsgHeatmap = Heatmap(
   row_order = sortedTsgGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
-  col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("white", "lightblue", "blue", "darkblue")),
+  col = colorRamp2(c(0, 0.1, 0.2, 0.6), c("#f7fbff","#bdd7e7","#6baed6","#2171b5")),
   cell_fun = function(j, i, x, y, w, h, col) {
     myColor = "black"
     if (tsgMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(sprintf(fmt='%.1f', 100*tsgMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
+    grid.text(heat_map_text(tsgMat[i, j]), x, y, gp=gpar(fontsize=9, col = myColor))
   }
 )
 
-tsgSamplesAnnotationColours = setNames(c("blue","white"), c("proportion", "nonProportion"))
 tsgSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = tsgSamplesAnnotationColours), border = F), 
+  `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = "#bc80bd"), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
   annotation_name_rot = 0
 )
 
-tsgBiallelicAnnotationColours = setNames(c("blue","white"), c("biallelicPercentage", "nonBiallelicPercentage"))
+tsgBiallelicAnnotationColours = setNames(c("#ccebc5","white"), c("biallelicPercentage", "nonBiallelicPercentage"))
 tsgBiallelicAnnotation = rowAnnotation(
   show_annotation_name = T,
   annotation_name_rot = 0,
