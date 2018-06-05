@@ -57,6 +57,10 @@ allPurity = left_join(allPurity, allClinicalData %>% select(sampleId, cancerType
 allPurity$gender = ifelse(substr(allPurity$gender, 1, 4) == "MALE", "MALE", allPurity$gender)
 save(allPurity, file = '~/hmf/RData/reference/allPurity.RData' )
 
+cat("Querying metrics")
+allMetrics = purple::query_metrics(dbProd, allPurity)
+save(allMetrics, file = "~/hmf/RData/Reference/allMetrics.RData")
+
 cat("Querying somatics")
 allSomatics_p1 = purple::query_somatic_variants(dbProd, allPurity[1:1500, ])
 save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
@@ -117,6 +121,7 @@ load(file = "~/hmf/RData/reference/allClinicalData.RData")
 load(file = "~/hmf/RData/reference/allSampleData.RData")
 load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
+load(file = "~/hmf/RData/reference/allMetrics.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
@@ -127,7 +132,8 @@ cohortSummary = allPurity %>%
   left_join(allSampleData, by = "sampleId") %>%
   left_join(allSomaticsSummary, by = "sampleId") %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
-  left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD))
+  left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD)) %>%
+  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId")
 write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
 rm(cohortSummary)
 
@@ -192,7 +198,8 @@ highestPurityCohortSummary = highestPurityCohort %>%
   left_join(allSampleData, by = "sampleId") %>%
   left_join(allSomaticsSummary, by = "sampleId") %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
-  left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD))
+  left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD)) %>%
+  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId")
 
 save(highestPurityCohortSummary, file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")  
 write.csv(highestPurityCohortSummary, file = "~/hmf/RData/HighestPurityCohortSummary.csv", row.names = F) 
@@ -278,6 +285,16 @@ load(file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 load(file = "~/hmf/RData/reference/multipleBiopsyStructuralVariantsWithScope.RData")
+load(file = "~/hmf/RData/reference/allMetrics.RData")
+
+multipleBiopsyMetrics = allMetrics %>% 
+  filter(sampleId %in% multipleBiopsyScope$sampleId) %>%
+  select(sampleId, refMeanCoverage, tumorMeanCoverage) %>%
+  left_join(multipleBiopsyScope, by = "sampleId") %>%
+  gather(type, value, refMeanCoverage, tumorMeanCoverage) %>%
+  unite(type, scope, type) %>%
+  select(-sampleId) %>%
+  spread(type, value)
 
 multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithScope %>%
   ungroup() %>% 
@@ -325,11 +342,11 @@ multipleBiopsyCohortSummary = multipleBiopsyCohort %>% left_join(allClinicalData
   left_join(multipleBiopsyPurity, by = "patientId") %>%
   left_join(multipleBiopsyPatientMsi, by = "patientId") %>%
   left_join(multipleBiopsyStructuralVariantSummary, by = "patientId") %>%
-  left_join(multipleBiopsySomaticVariantSummary, by = "patientId")
+  left_join(multipleBiopsySomaticVariantSummary, by = "patientId") %>%
+  left_join(multipleBiopsyMetrics, by = "patientId") 
   
 save(multipleBiopsyCohortSummary, file = "~/hmf/RData/processed/multipleBiopsyCohortSummary.RData")
 write.csv(multipleBiopsyCohortSummary, file = "~/hmf/RData/MultipleBiopsyCohortSummary.csv", row.names = F) 
-
 
 
 ################### SANITY CHECKS
