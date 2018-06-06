@@ -5,12 +5,12 @@ library(GenomicRanges)
 
 
 ########################### Cosmic Genes
-cosmicCurated = read.csv("~/Documents/CosmicCurated.csv", stringsAsFactors = F)
+cosmicCurated = read.csv("~/hmf/resources/CosmicCurated.csv", stringsAsFactors = F)
 cosmicCurated$cosmicCurated <- TRUE
 cosmicCurated = cosmicCurated[, c("Genes","cosmicCurated")]
 colnames(cosmicCurated) <- c("gene_name", "cosmicCurated")
 
-cosmicCensus = read.csv("~/Documents/CosmicCensus.csv", stringsAsFactors = F)
+cosmicCensus = read.csv("~/hmf/resources/CosmicCensus.csv", stringsAsFactors = F)
 colnames(cosmicCensus) <- c("gene_name", "cosmicOncogene", "cosmicTsg")
 cosmicCensus = cosmicCensus %>% filter(cosmicOncogene | cosmicTsg)
 
