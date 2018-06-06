@@ -47,7 +47,7 @@ rm(cgi, onco, civic, manual)
 
 
 ########################### Fragile Sites
-fragileSites = read.csv(file = "~/Downloads/FragileSite.csv")
+fragileSites = read.csv(file = "~/hmf/resources/FragileSite.csv")
 fragileSites$range = GRanges(fragileSites$chrom, IRanges(fragileSites$start, fragileSites$end))
 
 load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
