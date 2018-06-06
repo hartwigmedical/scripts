@@ -42,3 +42,4 @@ mbDriversByGene = left_join(mbDriversByGene, cancerTypes, by = "sampleId")
 
 mbDriversByGene = left_join(mbDriversByGene, canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd), by  = "gene")
 save(mbDriversByGene, file = "~/hmf/RData/processed/mbDriversByGene.RData")
+

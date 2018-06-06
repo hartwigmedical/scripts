@@ -80,7 +80,7 @@ onco_mutations <- function(mutations) {
     filter()
 
   result = result %>%
-    mutate(knownDriver = hotspot | nearHotspot | impact == "Inframe") %>%
+    mutate(knownDriver = hotspot | nearHotspot | (impact == "Inframe" & repeatCount < 8)) %>%
     mutate(knownDriver = ifelse(redundant, F, knownDriver))
 
   return (result)
