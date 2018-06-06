@@ -33,8 +33,9 @@ mbDriversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>%
   bind_rows(deletions) %>% 
   bind_rows(tertPromoters) %>% 
   bind_rows(fusions) %>%
-  mutate(driver = factor(driver, driverFactors)) %>%
+  mutate(driver = factor(driver, rev(driverFactors))) %>%
   ungroup() %>% group_by(sampleId, gene) %>% 
+  top_n(1, driverLikelihood) %>% 
   top_n(1, driver)
 
 cancerTypes = multipleBiopsyCohort %>% select(sampleId = sampleId, cancerType, patientId)
