@@ -250,4 +250,3 @@ oncoPrint(mat_list,
     "Amp" = function(x, y, w, h) grid.rect(x, y, w*0.9, h*0.9, gp = gpar(fill = driverColours["Amp"], col = NA))
   ), col = driverColours)
 
-

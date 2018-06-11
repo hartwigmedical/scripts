@@ -7,11 +7,11 @@ detach("package:purple", unload=TRUE);
 library(purple)
 library(RMySQL)
 
-############################################   HIGHEST PURITY COHORT ############################################   
+############################################   HIGHEST PURITY COHORT ############################################
 load(file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")
 hpcSomaticCounts = highestPurityCohortSummary %>% select(sampleId, ends_with("SNP"), ends_with("INDEL"))
 hpcSomaticCounts[is.na(hpcSomaticCounts)] <- 0
-hpcSomaticCounts = hpcSomaticCounts %>% 
+hpcSomaticCounts = hpcSomaticCounts %>%
   mutate(sample_SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP, sample_INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL) %>%
   select(starts_with("sample"))
 
@@ -21,8 +21,8 @@ genePanel = bind_rows(oncoGenes, tsGenes)
 load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
 load(file = "~/hmf/RData/processed/hpcExonicSomaticsDndsAnnotated.RData")
 load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
-hpcSomatics = hpcExonicSomatics %>% 
-  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality) %>%
+hpcSomatics = hpcExonicSomatics %>%
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality, repeatCount) %>%
   mutate(shared = F)
 hpcDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, hpcSomatics)
 save(hpcDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/hpcDndsExpectedDriversPerGene.RData")
@@ -42,12 +42,10 @@ hpcDndsOncoDriverRates = hpcDndsOncoDriversOutput[["oncoDriverRates"]]; save(hpc
 hpcDndsOncoUnknownDriversTotals = hpcDndsOncoDriversOutput[["oncoUnknownDriversTotals"]]; save(hpcDndsOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcDndsOncoUnknownDriversTotals.RData")
 hpcDndsOncoDrivers = hpcDndsOncoDriversOutput[["oncoDrivers"]]; save(hpcDndsOncoDrivers, file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 
-############################################ MULTIPLE BIOPYSY COHORT ############################################   
-rm(ls())
-
+############################################ MULTIPLE BIOPYSY COHORT ############################################
 load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 mbSomaticCounts = multipleBiopsySomaticsWithScope %>%
-  ungroup() %>% 
+  ungroup() %>%
   group_by(sampleId, type) %>%
   summarise(count = n()) %>%
   spread(type, count) %>%
@@ -59,8 +57,8 @@ genePanel = bind_rows(oncoGenes, tsGenes)
 load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
 load(file = "~/hmf/RData/processed/mbExonicSomaticsDndsAnnotated.RData")
 load(file = "~/hmf/RData/reference/mbExonicSomatics.RData")
-mbSomatics = mbExonicSomatics %>% 
-  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality, scope) %>%
+mbSomatics = mbExonicSomatics %>%
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality, scope, repeatCount) %>%
   mutate(shared = scope == "Shared")
 mbDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredMultipleBiopsyMutations, mbSomatics)
 save(mbDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/mbDndsExpectedDriversPerGene.RData")

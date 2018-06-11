@@ -1,4 +1,4 @@
-nearHotspot <-function(mutations, distance = 10) {
+nearHotspot <-function(mutations, distance = 5) {
   hotspots = mutations %>% filter(hotspot > 0) %>% select(chromosome, position) %>% distinct
   hrange <- GRanges(hotspots$chromosome, IRanges(hotspots$position, hotspots$position + distance))
   mrange <- GRanges(mutations$chromosome, IRanges(mutations$position, mutations$position + distance))
@@ -80,7 +80,7 @@ onco_mutations <- function(mutations) {
     filter()
 
   result = result %>%
-    mutate(knownDriver = hotspot | nearHotspot | impact == "Inframe") %>%
+    mutate(knownDriver = hotspot | nearHotspot | (impact == "Inframe" & repeatCount < 8)) %>%
     mutate(knownDriver = ifelse(redundant, F, knownDriver))
 
   return (result)

@@ -59,6 +59,15 @@ query_tert_promoters<-function(dbConnect, cohort) {
   return (dbGetQuery(dbConnect, query))
 }
 
+query_metrics <-function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "select * from metric ",
+    "   WHERE sampleId in (",sampleIdString, ")",
+    sep = " ")
+  return (dbGetQuery(dbConnect, query))
+}
+
 query_fusions<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(

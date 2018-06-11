@@ -5,12 +5,12 @@ library(GenomicRanges)
 
 
 ########################### Cosmic Genes
-cosmicCurated = read.csv("~/Documents/CosmicCurated.csv", stringsAsFactors = F)
+cosmicCurated = read.csv("~/hmf/resources/CosmicCurated.csv", stringsAsFactors = F)
 cosmicCurated$cosmicCurated <- TRUE
 cosmicCurated = cosmicCurated[, c("Genes","cosmicCurated")]
 colnames(cosmicCurated) <- c("gene_name", "cosmicCurated")
 
-cosmicCensus = read.csv("~/Documents/CosmicCensus.csv", stringsAsFactors = F)
+cosmicCensus = read.csv("~/hmf/resources/CosmicCensus.csv", stringsAsFactors = F)
 colnames(cosmicCensus) <- c("gene_name", "cosmicOncogene", "cosmicTsg")
 cosmicCensus = cosmicCensus %>% filter(cosmicOncogene | cosmicTsg)
 
@@ -47,7 +47,7 @@ rm(cgi, onco, civic, manual)
 
 
 ########################### Fragile Sites
-fragileSites = read.csv(file = "~/Downloads/FragileSite.csv")
+fragileSites = read.csv(file = "~/hmf/resources/FragileSite.csv")
 fragileSites$range = GRanges(fragileSites$chrom, IRanges(fragileSites$start, fragileSites$end))
 
 load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
@@ -72,7 +72,7 @@ martincorenaSignificant$martincorena <- TRUE
 genePanel = merge(martincorenaSignificant, hmfSignificant, by = "gene_name", all = T)
 genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene_name", all=T)
-genePanel = genePanel %>% filter(!gene_name %in% c("POM121L12","TRIM49B"))
+genePanel = genePanel %>% filter(!gene_name %in% c("POM121L12","TRIM49B","LPCAT2"))
 save(genePanel, file="~/hmf/RData/processed/genePanel.RData")
 
 #genePanel = merge(genePanel, fragileGenes, by = "gene_name", all=T)

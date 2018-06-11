@@ -183,8 +183,8 @@ for (location in primaryTumorLocations) {
   locationString = gsub(" ", "", location, fixed = TRUE)
   locationString = gsub("/", "", locationString, fixed = TRUE)
   
-  targetDel = tidyDelTargets %>% ungroup() %>% filter(N >= 2, cancerType == location) %>% top_n(10, N)
-  targetAmp = tidyAmpTargets %>% ungroup() %>% filter(N >= 2, cancerType == location) %>% top_n(10, N)
+  targetDel = tidyDelTargets %>% ungroup() %>% filter(N >= 3, cancerType == location) %>% top_n(10, N)
+  targetAmp = tidyAmpTargets %>% ungroup() %>% filter(N >= 3, cancerType == location) %>% top_n(10, N)
   genes = bind_rows(targetDel, targetAmp)
   genes = genes %>% mutate(size = label_size(gene)) %>%
     mutate(info = paste(info, size, sep = ","))
