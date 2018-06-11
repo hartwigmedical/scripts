@@ -350,6 +350,7 @@ View(ggFinalProbs)
 ggFinalProbs$QValue = ggFinalProbs$PValue * (ggFinalProbs$GeneCount*ggFinalProbs$GeneCount)/2 / ggFinalProbs$Rank
 write.csv(ggFinalProbs, "~/logs/r_output/genePairPValues.csv")
 
+rm(ggAllProbs2)
 
 # calculate a FDR
 

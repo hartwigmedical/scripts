@@ -9,7 +9,7 @@ library(grid)
 library(gridExtra)
 library(ggplot2)
 
-getCOSMICSignatures <- function() 
+getCOSMICSignatures <- function()
 {
   sp_url = "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
   cancer_signatures = read.table(sp_url, sep = "\t", header = T)
@@ -17,7 +17,7 @@ getCOSMICSignatures <- function()
   cancer_signatures = cancer_signatures[order(cancer_signatures[, 1]),]
   # only signatures in matrix
   cancer_signatures = as.matrix(cancer_signatures[, 4:33])
-  
+
   return (cancer_signatures)
 }
 
@@ -106,191 +106,6 @@ getSampleIdsStr<-function(samples)
 }
 
 ## NMF functions
-sigColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
-               "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
-               "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
-               "#dea185", "#a0729d", "#8a392f")
-
-plot_top_snv_samples_by_sig<-function(sampleSigData, sigNames, topN = 50)
-{
-  sigSamplePlots = list()
-  plotIndex = 1
-  
-  # merge cancer type with sampleId
-  sampleSigData = unite(sampleSigData, "SampleId", SampleId, CancerType, sep='_')
-  
-  for(sigName in sigNames)
-  {
-    topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName) %>% arrange(-SnvCount),topN)
-    
-    # now grab all sig data for these top-N samples
-    topNSampleSigData = sampleSigData %>% filter(SampleId %in% topNSamplesBySig$SampleId)
-    
-    title = paste("Top Samples for Signature ", sigName, sep="")
-    
-    sampleSigPlot <- (ggplot(topNSampleSigData, aes(x = reorder(SampleId, -SnvCount), y = SnvCount, fill = SigName))
-                      + geom_bar(stat = "identity", colour = "black")
-                      + labs(x = "", y = "SNV Count by Sample")
-                      + scale_fill_manual(values = sigColours)
-                      + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-                      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7))
-                      + ggtitle(title))
-    
-    if(plotIndex > 1)
-    {
-      # remove legend after the first plot
-      sampleSigPlot <- sampleSigPlot + theme(legend.position="none")
-    }
-    
-    sigSamplePlots[[plotIndex]] <- sampleSigPlot
-    
-    if(plotIndex >=4)
-    {
-      multiplot(plotlist = sigSamplePlots, cols = 2)
-      sigSamplePlots = list()
-      plotIndex = 1
-    }
-    else
-    {
-      plotIndex = plotIndex + 1
-    }
-  }
-  
-  if(plotIndex > 1)
-  {
-    # now print all plots for this cancer type
-    multiplot(plotlist = sigSamplePlots, cols = 2)
-  }
-}
-
-get_snv_sig_stats<-function(sampleSigData) {
-  
-  # key stats per signature
-  sigStats = (sampleSigData %>% group_by(SigName)
-              %>% summarise(SampleCount=sum(SnvCount>0),
-                            SamplePerc=round(sum(SnvCount>0)/n_distinct(SampleId),2),
-                            SnvCount=sum(SnvCount),
-                            MaxPercent=round(max(SigPercent),3),
-                            AvgPercent=round(sum(ifelse(SigPercent>0.001,SigPercent,0))/sum(SigPercent>0),3),
-                            PercGT75=sum(SigPercent>0.75),
-                            Perc50_75=sum(SigPercent>0.5&SigPercent<=0.75),
-                            Perc25_50=sum(SigPercent>0.25&SigPercent<=0.5),
-                            Perc10_25=sum(SigPercent>0.1&SigPercent<=0.25),
-                            Perc5_10=sum(SigPercent>0.05&SigPercent<=0.1),
-                            PercLT5=sum(SigPercent>0.001&SigPercent<=0.05))
-              %>% arrange(-SampleCount))
-  
-  return (sigStats)
-}
-
-plot_snv_sig_samples<-function(sampleSigData, cancerType)
-{
-  cancerSigData = sampleSigData
-  
-  if(cancerType != "")
-  {
-    cancerSigData = cancerSigData %>% filter(CancerType==cancerType)
-  }
-  
-  cancerSampleSigData = cancerSigData %>% arrange(-SampleSnvCount, SampleId) %>% select('SampleId', 'SigName', 'SnvCount')
-  
-  sigCancerPlots = list()
-  plotIndex = 1
-  
-  cancerSigStats = get_snv_sig_stats(cancerSigData)
-  
-  if(nrow(cancerSigStats) > 0) {
-    
-    if(cancerType == "")
-    {
-      title = "Signature SNV Counts"
-    }
-    else
-    {
-      title = paste("Signature SNV Counts for ", cancerType, sep="")
-    }
-    
-    sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = SnvCount, group = 1), fill = SigName)
-                    + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                    + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                    + ylab("SV Count") + xlab("Signature") + ggtitle(title)
-                    + theme(legend.position="none"))
-    
-    axisRatio = max(cancerSigStats$SnvCount) / max(cancerSigStats$SampleCount) * 0.6
-    
-    sigStatsPlot <- (sigStatsPlot + geom_line(aes(y = SampleCount*axisRatio, color = "red"))
-                     + scale_y_continuous(sec.axis = sec_axis(~.*(1/axisRatio), name = "Sample Count")))
-    
-    sigCancerPlots[[plotIndex]] <- sigStatsPlot
-    plotIndex = plotIndex + 1
-  }
-  
-  if(nrow(cancerSampleSigData) > 0) {
-    
-    # only plot 50 samples at a time
-    numSamples = n_distinct(cancerSampleSigData$SampleId)
-    numSigs = n_distinct(cancerSampleSigData$SigName)
-    samplesPerPlot = 50
-    rowsPerPlot = samplesPerPlot * numSigs
-    plotCount = ceiling(numSamples/samplesPerPlot)
-    
-    for (n in 1:plotCount) {
-      rowStart = ((n-1) * rowsPerPlot + 1)
-      rowEnd = min((n * rowsPerPlot), numSamples * numSigs)
-      
-      if(cancerType == "")
-      {
-        title = "Sig SNV Counts by Sample"
-      }
-      else
-      {
-        title = paste("Sig SNV Counts by Sample for ", cancerType, sep="")
-      }
-      
-      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SnvCount), y = SnvCount, fill = SigName))
-                        + geom_bar(stat = "identity", colour = "black")
-                        + labs(x = "", y = "SNV Count by Sample")
-                        + scale_fill_manual(values = sigColours)
-                        + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-                        + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                        + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
-      
-      if(n == 1)
-      {
-        sampleSigPlot <- sampleSigPlot + ggtitle(title)
-      }
-      if(n > 1)
-      {
-        # remove legend after the first plot
-        sampleSigPlot <- sampleSigPlot + theme(legend.position="none")
-      }
-      
-      sigCancerPlots[[plotIndex]] <- sampleSigPlot
-      
-      if(plotIndex >=4)
-      {
-        multiplot(plotlist = sigCancerPlots, cols = 2)
-        sigCancerPlots = list()
-        plotIndex = 1
-      }
-      else
-      {
-        plotIndex = plotIndex + 1
-      }
-    }
-    
-    if(plotIndex > 1)
-    {
-      # now print all plots for this cancer type
-      multiplot(plotlist = sigCancerPlots, cols = 2)
-    }
-  }
-}
-
-
-
-### START -> DATA SETUP
 
 load("~/data/highestPurityCohortSummary.RData")
 View(highestPurityCohortSummary)
@@ -327,12 +142,13 @@ rm(snvVariants)
 
 # now reload these same variants from file into a single massive set
 allSnvVariants = data.frame(matrix(ncol = 5, nrow = 0))
-allSnvVariants = setNames(allSnvVariants, c("sampleId", "context", "snv", "ploidy", "clonality"))
+allSnvVariants = setNames(allSnvVariants, c("SampleId", "Context", "SNV", "Ploidy", "Clonality"))
 
+# View(cancerTypes)
 for(i in 1:nrow(cancerTypes))
 {
   cancerTypeRow = cancerTypes[i,]
-  cancerTypeStr = cancerTypeRow$cancerType
+  cancerTypeStr = cancerTypeRow$CancerType
   print(paste(i, ": loading SNVs for cancer=", cancerTypeStr, sep=''))
 
   ctStr = stringi::stri_replace_all_fixed(cancerTypeStr, '/', '')
@@ -342,6 +158,7 @@ for(i in 1:nrow(cancerTypes))
 }
 
 nrow(allSnvVariants)
+# rm(allSnvVariants)
 
 svnSampleStats = allSnvVariants %>% group_by(sample) %>% summarise(Count=n())
 View(svnSampleStats)
@@ -374,17 +191,20 @@ for(s in samplesList)
 }
 
 save(sampleCountResults, file="~/logs/r_output/snvSampleCounts2.RData")
+load("~/logs/r_output/snvSampleCounts2.RData")
+
+View(sampleCountResults)
 
 # release the mammoth
 rm(allSnvVariants)
 
 # fit the samples counts to the cosmic signatures
 sampleSigs = list()
-for(s in samplesList)
+for(s in sampleCountResults)
 {
   print(paste("fitting signatures for ", s, sep=''))
 
-  if (!is.null(result[[s]]))
+  if (!is.null(sampleCountResults[[s]]))
   {
     # we need to slice out only the mutation count columns (delete col 1 and 2)
     res = fit_to_signatures(sampleCountResults[[s]][, -c(1, 2)], cosmicSignatures)
@@ -394,12 +214,6 @@ for(s in samplesList)
 
 View(sampleSigs)
 View(cosmicSignatures)
-
-# required format:
-# contribution - sigs on the rows (no row numbers?), sampleIds on the column names, data being the contribution value, nothing else
-# signatures - as-is I think, 30x sigs for the columns, 96 buckets for the rows
-# sigNames - just 1 -> 30 is fine
-# sampleIds - ensure naming is the same
 
 contributionTotal = data.frame(matrix(ncol = 0, nrow = 30))
 contributionClonal = data.frame(matrix(ncol = 0, nrow = 30))
@@ -429,154 +243,348 @@ contributionClonal = setNames(contributionClonal, samplesList)
 # View(contributionTotal)
 
 
-# should now be ready to run through NMF
-sampleNames = colnames(contributionTotal)
-sigNames = c("01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30")
-View(sampleNames)
+# SNV NMF Standard Routine
 
-sampleSigData = svnmf::get_sig_data(cosmicSignatures, contributionTotal, sigNames, sampleNames)
-names(sampleSigData)[names(sampleSigData) == 'SvCount'] <- 'SnvCount'
-View(sampleSigData)
+# Signature Creation (ie independently from COSMIC)
 
-sigStats = get_snv_sig_stats(sampleSigData)
-View(sigStats)
+# create bucket names
+snvBucketNames = create_empty_signature()
+snvBucketNames = unite(snvBucketNames, "Bucket", type, context, sep='_')
+View(snvBucketNames)
 
-# cancerTypes = highestPurityCohortSummary %>% group_by(cancerType) %>% count()
-# View(cancerTypes)
+# create sample counts per bucket
+bucketCount = nrow(snvBucketNames)
+# print(bucketCount)
 
-sampleCancerTypes = highestPurityCohortSummary %>% select(sampleId, cancerType)
-View(sampleCancerTypes)
+snvMatrixData = data.frame(matrix(ncol = 0, nrow = 96))
+snvSampleTotals = data.frame(matrix(ncol = 2, nrow = 0))
+snvSampleTotals = setNames(snvSampleTotals, c("SampleId", "SampleCount"))
+snvSampleCounts = data.frame(matrix(ncol = 3, nrow = 0))
 
-sampleSigData = merge(sampleSigData, sampleCancerTypes, by.x="SampleId", by.y="sampleId", all.x=TRUE)
-names(sampleSigData)[names(sampleSigData) == 'cancerType'] <- 'CancerType'
+totalColIndex = 3 # (could check on the fly)
 
-sampleSnvCounts = sampleSigData %>% group_by(SampleId) %>% summarise(SampleSnvCount=sum(SnvCount))
-sampleSigData = merge(sampleSigData, sampleSnvCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
-View(sampleSigData)
+sampleNames = samplesList
 
-# save for use in gene-correlations
-save(sampleSigData, file="~/logs/r_output/snvSampleSigData.RData")
-
-# bucket and estimate analysis
-bucketNames = create_empty_signature()
-bucketNames = unite(bucketData, "Bucket", type, context, sep='_')
-View(bucketNames)
-View(cosmicSignatures)
-
-# get back to raw counts by sample and bucket
-sampleBucketCounts = data.frame(matrix(ncol = 0, nrow = 96))
-
-# index = 1
-for(s in samplesList)
+for(s in sampleNames)
 {
   # print(paste("extracting sig data for ", s, sep=''))
   sampleCounts = sampleCountResults[[s]]
-  sampleBucketCounts = cbind(sampleBucketCounts, sampleCounts[,3])
+
+  snvMatrixData = cbind(snvMatrixData, sampleCounts[,totalColIndex])
+
+  sampleCountData = data.frame(matrix(ncol = 0, nrow=bucketCount))
+  sampleCountData$SampleId = s
+  sampleCountData = cbind(sampleCountData, snvBucketNames)
+  sampleCountData = cbind(sampleCountData, sampleCounts[,totalColIndex])
+  snvSampleCounts = rbind(snvSampleCounts, sampleCountData)
+
+  rowIndex = nrow(snvSampleTotals)+1
+  snvSampleTotals[rowIndex,1] = s
+  snvSampleTotals[rowIndex,2] = sum(sampleCounts[,totalColIndex])
   # index = index + 1
   # if(index > 10)
   #   break
 }
 
-sampleBucketCounts = setNames(sampleBucketCounts, samplesList)
+snvMatrixData = setNames(snvMatrixData, sampleNames)
+snvSampleCounts = setNames(snvSampleCounts, c("SampleId", "Bucket", "Count"))
 
-View(sampleCounts)
-View(sampleBucketCounts)
+snvSampleTotals = snvSampleTotals %>% arrange(-SampleCount)
+View(snvSampleTotals)
+View(snvSampleCounts)
 
-# nmfMatrixData = svnmf::convert_summary_counts_to_nmf(sampleCounts)
-# bucketNames = svnmf::get_bucket_names(nmfMatrixData)
-# nmfMatrixData = svnmf::remove_bucket_names(nmfMatrixData)
-# View(nmfMatrixData)
+# View(sampleBucketCounts)
+View(snvMatrixData[,1:10])
+nrow(snvMatrixData)
+ncol(snvMatrixData)
 
-nmfEstimate <- nmf(sampleBucketCounts, rank=20:35, method="brunet", nrun=4, seed=123456, .opt='vp6')
-plot(nmfEstimate)
-svnNmfEstimate = nmfEstimate
-save(svnNmfEstimate, file="~/logs/r_output/snvNmfEstimate.RData")
-rm(nmfEstimate)
+write.csv(snvMatrixData, file="~/logs/r_output/snv_nmf_counts.csv", row.names=F, quote=F)
 
-# View(contributionTotal)
-# sigBucketData = svnmf::get_bucket_data(cosmicSignatures, contributionTotal, bucketNames)
-# View(sigBucketData)
-# sigBucketStats = svnmf::get_sig_bucket_stats(sigBucketData)
-# View(sigBucketStats)
+# repeat high and low mutational loads
+highMutLoadSamples = head(snvSampleTotals,nrow(snvSampleTotals)*0.1)
+View(highMutLoadSamples)
 
-# report top contributing buckets to aid with signature naming
-sigNamesNamed = c("01_CL", "02_LINE", "03_LongDUP", "04_Stressed", "05_DBs", "06_ShortDUP", "07_BND_CN", "08_LongDEL_INV", "09_ShortDEL", "10_MidDUP", "11_MidDEL")
+snvHighMatrixData = data.frame(matrix(ncol = 0, nrow = 96))
 
-sigBucketTopN = svnmf::get_top_buckets(sigBucketData, sigNamesUnamed, sigNamesNamed)
-View(sigBucketTopN)
-
-# key bucket stats
-bucketSummaryData = svnmf::get_bucket_stats(sigBucketData)
-View(bucketSummaryData)
-
-# least contributing 10 buckets
-leastContribBuckets = svnmf::get_least_contrib_buckets(bucketSummaryData)
-View(leastContribBuckets)
-
-
-## Data Output to PDF
-
-pdf(file=paste("~/logs/r_output/snvNmf_01.pdf", sep = ""), height = 14, width = 20)
-par(mar=c(1,1,1,1))
-
-# 5. Top 50 samples by signature, but include all other signatures as well
-plot_top_snv_samples_by_sig(sampleSigData, sigNames)
-
-# 6. Sigs with Samples by cancer type
-plot_snv_sig_samples(sampleSigData, "") # all samples
-
-for(cancerType in cancerTypes$cancerType)
+for(s in highMutLoadSamples$SampleId)
 {
-  plot_snv_sig_samples(sampleSigData, cancerType)
+  sampleCounts = sampleCountResults[[s]]
+  snvHighMatrixData = cbind(snvHighMatrixData, sampleCounts[,totalColIndex])
 }
 
-dev.off()
+colnames(snvHighMatrixData) <- highMutLoadSamples$SampleId
+View(snvHighMatrixData[,1:20])
+
+sum(snvHighMatrixData$CPCT02010503TII)
+lowMutLoadSamples = tail(snvSampleTotals,nrow(snvSampleTotals)*0.5)
+View(lowMutLoadSamples)
+
+snvLowMatrixData = data.frame(matrix(ncol = 0, nrow = 96))
+
+for(s in lowMutLoadSamples$SampleId)
+{
+  sampleCounts = sampleCountResults[[s]]
+  snvLowMatrixData = cbind(snvLowMatrixData, sampleCounts[,totalColIndex])
+}
+
+snvLowMatrixData = setNames(snvLowMatrixData, highMutLoadSamples$SampleId)
+
+View(snvLowMatrixData[,1:20])
+
+write.csv(snvHighMatrixData, file="~/logs/r_output/snv_nmf_high_counts.csv", row.names=F, quote=F)
+write.csv(snvLowMatrixData, file="~/logs/r_output/snv_nmf_low_counts.csv", row.names=F, quote=F)
+
+load("~/data/snvNmfResult_sig30.RData")
+View(snvNmfResult)
+
+sigNamesUnamed = get_signame_list(30, F)
+sigNamesNamed = get_signame_list(30, T)
+
+snvSigCount = 30
+bucketCounts = snvSampleCounts %>% group_by(Bucket) %>% count()
+
+evaluate_nmf_run("SNV", "sig30", snvSigCount, snvNmfResult, snvSampleCounts, sampleCancerTypes, snvBucketNames,
+                 sigNamesUnamed, sigNamesNamed, TRUE, FALSE)
+
+print(get_signame_list(10, F))
+
+# estimates
+load("~/data/snvNmfEstimate_highML_10_15.RData")
+View(snvNmfHighEstimate)
+plot(snvNmfHighEstimate)
+
+load("~/data/snvNmfResult_highML_sig13.RData")
+#load("~/data/snvNmfResult_highML_sig30.RData")
+#load("~/data/snvNmfResult_lowML_sig30.RData")
+View(snvNmfHighResult)
+
+snvHighSigCount = 13
+sig13NamesNums = get_signame_list(13, F)
+sig13NamesStr = get_signame_list(13, T)
+
+highMLSampleCounts = snvSampleCounts %>% filter(SampleId %in% highMutLoadSamples$SampleId)
+highMLSampleCancerTypes = sampleCancerTypes %>% filter(SampleId %in% highMutLoadSamples$SampleId)
+
+evaluate_nmf_run(
+  "SNV", "sig13_highML", snvHighSigCount, snvNmfHighResult, highMLSampleCounts, highMLSampleCancerTypes,
+  snvBucketNames, sig13NamesNums, sig13NamesStr, TRUE, FALSE)
+
+View(sampleNames)
+
+signatures = NMF::basis(snvNmfHighResult)
+contribution = NMF::coef(snvNmfHighResult)
+sampleNames = colnames(contribution)
+
+View(snvBucketNames)
+
+snvHighMLResiduals = calc_sample_residuals(contribution, signatures, snvBucketNames, highMLSampleCounts)
+write.csv(snvHighMLResiduals, "~/logs/r_output/snvHighMLResiduals.csv", row.names=F, quote=F)
+View(snvHighMLResiduals)
+sum(snvHighMLResiduals$Count)
+sum(snvHighMLResiduals$ResidualTotal)
+print(residuals(snvNmfHighResult))
+
+
+# TMP: testing plotting residuals
+sampleSigData = get_sig_data(signatures, contribution, sig13NamesStr, sampleNames)
+sampleResiduals = snvHighMLResiduals %>% select(SampleId,ResidualTotal)
+colnames(sampleResiduals) <- c("SampleId","Count")
+sampleResiduals$Count = round(sampleResiduals$Count,0)
+sampleResiduals$SigName = "Residual"
+sampleResiduals$SigPercent = 0
+sampleResiduals$PercBucket = 0
+View(sampleResiduals)
+sampleSigData2 = rbind(sampleSigData, sampleResiduals %>% select(SampleId,SigName,SigPercent,PercBucket,Count))
+sampleSigData2 = merge(sampleSigData2, highMLSampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+
+sampleSigCounts = sampleSigData2 %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
+sampleSigData2 = merge(sampleSigData2, sampleSigCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+View(sampleSigData2)
+
+plot_sig_samples(sampleSigData2, "", get_sig_colours(snvHighSigCount), 'SNV') # all samples
 
 
 
 
+# Cosine Simarity
 
-tmp1 = read.csv("~/logs/r_output/snv_CNS.csv")
-nrow(tmp1)
-View(head(tmp1,10))
+numSamples = ncol(snvHighMatrixData)
+snvHighMLSampleNames = colnames(snvHighMatrixData)
+View(snvHighMLSampleNames)
 
-snvData = tmp1 %>% filter(clonality!='UNKNOWN')
-nrow(snvData)
-n_distinct(snvData$sample)
+View(snvBucketNames)
+
+cosineSimResults = data.frame(matrix(ncol = 3, nrow = 0))
+colnames(cosineSimResults) <- c("Sample1", "Sample2", "CosineSim")
+
+cssRCount = 100
+cssRInv = 1/cssRCount
+cssResultGroups = data.frame(matrix(ncol = 2, nrow = cssRCount))
+colnames(cssResultGroups) <- c("CSSBand", "Count")
+
+for(i in 1:nrow(cssResultGroups))
+{
+  cssResultGroups[i,1] = i*cssRInv
+  # cssResultGroups[i,2] = 0
+}
+
+for(i in 1:numSamples)
+{
+  sam1Data = snvHighMatrixData[,i]
+
+  for(j in i+1:numSamples)
+  {
+    if(j>numSamples)
+      break
+
+    sam2Data = snvHighMatrixData[,j]
+
+    css = cosine_sim(sam1Data,sam2Data)
+
+    # print(paste("s1=", snvHighMLSampleNames[i], ", count=", sum(sam1Data), ", s2=", snvHighMLSampleNames[j], ", count=", sum(sam2Data), sep=''))
+    # print(paste(i, j, css, sep=', '))
+
+    if(css >= 0.8)
+    {
+      # print(paste("s1=", snvHighMLSampleNames[i], ", count=", sum(sam1Data), ", s2=", snvHighMLSampleNames[j], ", count=", sum(sam2Data), sep=''))
+      # print(paste(i, j, css, sep=', '))
+      rowIndex = nrow(cosineSimResults)+1
+      cosineSimResults[rowIndex,1] = snvHighMLSampleNames[i]
+      cosineSimResults[rowIndex,2] = snvHighMLSampleNames[j]
+      cosineSimResults[rowIndex,3] = round(css,6)
+    }
+
+    cssRounded = round(css/cssRInv)
+    cssResultGroups[cssRounded,2] = cssResultGroups[cssRounded,2]+1
+  }
+}
+
+View(cssResultGroups)
 
 
-# for (s in samples) {
-#
-#   # slice for our variants
-#   sample_variants = variants[sample == s]
-#
-#   # TODO: do we want to ignore unknown clonality??
-#   total = sample_variants[clonality != 'UNKNOWN', .(total = .N), keyby = .(type, context)]
-#   subclonal = sample_variants[clonality == 'SUBCLONAL', .(subclonal = .N), keyby = .(type, context)]
-#   clonal = sample_variants[clonality == 'CLONAL', .(clonal = .N), keyby = .(type, context)]
-#   clonalA = sample_variants[clonality == 'CLONAL' & ploidy < 1.5, .(clonalLowPloidy = .N), keyby = .(type, context)]
-#   clonalB = sample_variants[clonality == 'CLONAL' & ploidy >= 1.5, .(clonalHighPloidy = .N), keyby = .(type, context)]
-#
-#   # cleanup
-#   rm(sample_variants)
-#
-#   tmp = merge(empty, total, all=TRUE)
-#   tmp = merge(tmp, subclonal, all=TRUE)
-#   tmp = merge(tmp, clonal, all=TRUE)
-#   tmp = merge(tmp, clonalA, all=TRUE)
-#   tmp = merge(tmp, clonalB, all=TRUE)
-#   tmp[is.na(tmp)] <- 0 # TODO check this works
-#   stopifnot(nrow(tmp) == 96)
-#
-#   result[[s]] = tmp
-# }
+print(cosine_sim(snvHighMatrixData$CPCT02060041T, snvHighMatrixData$DRUP01230001T))
+
+View(cosineSimResults)
+
+View(snvHighMatrixData %>% select(CPCT02060041T,DRUP01230001T))
+View(highMLSampleCancerTypes %>% filter(SampleId=="CPCT02060041T"|SampleId=="DRUP01230001T"))
+View(sampleSigData %>% filter(SampleId=="CPCT02060041T"|SampleId=="DRUP01230001T"))
+
+View(sampleSigData)
+
+View(snvHighMatrixData)
+
+# same again but for buckets
+
+cssBucketResults = data.frame(matrix(ncol = 3, nrow = 0))
+colnames(cssBucketResults) <- c("Bucket1", "Bucket2", "CSS")
+
+cssRCount = 100
+cssRInv = 1/cssRCount
+cssBucketResultGroups = data.frame(matrix(ncol = 2, nrow = cssRCount))
+colnames(cssBucketResultGroups) <- c("CSSBand", "Count")
+
+for(i in 1:nrow(cssBucketResultGroups))
+{
+  cssBucketResultGroups[i,1] = i*cssRInv
+  cssBucketResultGroups[i,2] = 0
+}
+
+numBuckets = nrow(snvBucketNames)
+snvHighMatrixDataTrans = t(snvHighMatrixData)
+# ncol(snvHighMatrixDataTrans)
+# nrow(snvHighMatrixDataTrans)
+# View(snvHighMatrixDataTrans[,1:10])
+rownames(snvHighMatrixDataTrans) <- NULL
+
+View(snvBucketNames)
+snvBucketNamesVec = snvBucketNames$Bucket
+
+for(i in 1:numBuckets)
+{
+  data1 = snvHighMatrixDataTrans[,i]
+
+  for(j in i+1:numBuckets)
+  {
+    if(j>numBuckets)
+      break
+
+    data2 = snvHighMatrixDataTrans[,j]
+
+    css = cosine_sim(data1,data2)
+
+    # print(paste("s1=", snvHighMLSampleNames[i], ", count=", sum(sam1Data), ", s2=", snvHighMLSampleNames[j], ", count=", sum(sam2Data), sep=''))
+    # print(paste(i, j, css, sep=', '))
+
+    if(css >= 0.8)
+    {
+      print(paste("b1=", snvBucketNamesVec[i], ", count=", sum(data1), ", b2=", snvBucketNamesVec[j], ", count=", sum(data2), sep=''))
+      print(paste(i, j, css, sep=', '))
+      rowIndex = nrow(cssBucketResults)+1
+      cssBucketResults[rowIndex,1] = snvBucketNamesVec[i]
+      cssBucketResults[rowIndex,2] = snvBucketNamesVec[j]
+      cssBucketResults[rowIndex,3] = round(css,6)
+    }
+
+    cssRounded = round(css/cssRInv)
+    cssBucketResultGroups[cssRounded,2] = cssBucketResultGroups[cssRounded,2]+1
+  }
+}
+
+View(cssBucketResultGroups)
+View(cssBucketResults)
+
+View(t(data1))
+View(data2)
+td1 = t(data1)
+rownames(td1) <- NULL
+colnames(td1) <- NULL
+td2 = t(data2)
+rownames(td2) <- NULL
+colnames(td2) <- NULL
+tmp1 = td1 %*% td2
+
+tmpTrans = t(snvHighMatrixData)
+View(tmpTrans)
+
+View(td2)
+
+View(sam1Data)
 
 
-# list of patients -> data.table of mutation counts
-# mutation_vectors = process_variants(snvVariants)
+View(cssBucketResults)
 
-save(cancer_signatures,
-     cohort,
-     mutation_vectors,
-     signatures,
-     file = dataFile)
+
+View(snvHighMatrixData)
+tmpSamples = snvHighMatrixData %>% select(CPCT02060041T,DRUP01230001T)
+colnames(tmpSamples) <- c("A", "B")
+View(tmpSamples)
+
+sam1Values = tmpSamples[,1]
+sam2Values = tmpSamples[,2]
+
+
+sam3Values = round(sam1Values * 0.1,0)
+sam4Values = round(sam2Values * 0.1,0)
+
+
+print(cosine_sim(sam1Values,sam2Values))
+print(cosine_sim(sam3Values,sam4Values))
+print(cosine_sim(sam4Values,sam3Values))
+
+abDP = sam1Values %*% sam2Values
+aaDP = sam1Values %*% sam1Values
+bbDP = sam2Values %*% sam2Values
+cosSim2 = abDP/(sqrt(aaDP)*sqrt(bbDP))
+print(cosSim2)
+print(aaDP)
+
+cosine_sim<-function(vec1, vec2)
+{
+  cosineSim = (vec1 %*% vec2) / (sqrt(vec1 %*% vec1)*sqrt(vec2 %*% vec2))
+  return (cosineSim)
+}
+
+cosSim3 = (tmpSamples$A %*% tmpSamples$B) / (sqrt(tmpSamples$A %*% tmpSamples$A)*sqrt(tmpSamples$B %*% tmpSamples$B))
+print(cosSim3)
+

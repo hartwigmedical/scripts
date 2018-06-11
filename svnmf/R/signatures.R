@@ -1,3 +1,102 @@
+get_sig_colours<-function(sigCount = 10)
+{
+  if(sigCount <= 10)
+  {
+    sigColours = c("#ff994b","#463ec0","#d10073","#996ffb","#68b1c0","#e34bd9","#106b00","#8a392f","#98d76a","#6b3a9d","#d5c94e","#c6c0fb",
+                   "#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a", "#ff748a","#777700","#ff86be")
+  }
+  else if(sigCount <= 20)
+  {
+    sigColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
+                   "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
+                   "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
+                   "#dea185", "#a0729d", "#8a392f")
+  }
+  else
+  {
+    sigColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
+                   "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
+                   "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
+                   "#dea185", "#a0729d", "#8a392f")
+  }
+
+  return (sigColours)
+}
+
+get_signame_list<-function(sigCount, asStrings)
+{
+  sigs = c()
+  for(i in 1:sigCount)
+  {
+    if(asStrings & i <= 9)
+    {
+      sigs[i] = paste("0", i, sep='')
+    }
+    else
+    {
+      sigs[i] = i
+    }
+  }
+
+  return (sigs)
+}
+
+calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBucketCounts)
+{
+  # contribution is sample in the columns and sig in the rows
+  sigCount = ncol(signatures)
+  contribTrans = t(contribution) %>% as.data.frame()
+  sampleNames = colnames(contribution)
+  sampleSigContribs = cbind(sampleNames, contribTrans)
+  rownames(sampleSigContribs) <- NULL
+
+  # merge with bucket-sig data
+  sigContribs = cbind(signatures, bucketNames)
+
+  # give col names so the sig coluns dont merge in the next step
+  colNames = c()
+  for(i in 1:sigCount)
+  {
+    colNames[i] = i
+  }
+  colNames[sigCount+1] = "Bucket"
+
+  colnames(sigContribs) <- colNames
+
+  # initially don't merge on any common fields
+  samSigContribs2 = merge(sampleSigContribs, sigContribs, all.x=TRUE)
+  names(samSigContribs2)[names(samSigContribs2) == 'sampleNames'] <- 'SampleId'
+
+  # finally merge with actual bucket counts
+  sampleSigContribs3 = merge(samSigContribs2, sampleBucketCounts, by.x=c("SampleId","Bucket"),by.y=c("SampleId","Bucket"),all.x=TRUE)
+  sampleSigContribs3[is.na(sampleSigContribs3)] <- 0
+
+  # convert all sig columns back to numerics
+  colStart = 3
+  colEnd = colStart + (sigCount*2) - 1
+
+  sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.character)
+  sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.numeric)
+
+  sampleSigContribs3$SigAlloc = 0
+  for(i in 1:sigCount)
+  {
+    sigAlloc = apply(sampleSigContribs3[,c(i+2,i+2+sigCount)], 1, function(x) x[1]*x[2])
+    sampleSigContribs3$SigAlloc = sampleSigContribs3$SigAlloc + sigAlloc
+  }
+
+  sampleSigContribs3$ResidualDiff = abs(sampleSigContribs3$Count-sampleSigContribs3$SigAlloc)
+
+  # return (sampleSigContribs3)
+
+  sampleResidualData = (sampleSigContribs3 %>% group_by(SampleId)
+                        %>% summarise(Count=sum(Count),
+                                      ResidualTotal=round(sum(ResidualDiff),0),
+                                      ResidualPerc=round(sum(ResidualDiff)/sum(Count),2)))
+
+  return (sampleResidualData)
+}
+
 get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
 
   # get contributions by sample in percentage terms (ie each sample split across the signatures)
@@ -26,10 +125,10 @@ get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
   sampleSigPercData$PercBucket = round(sampleSigPercData$SigPercent/0.1)*0.1
 
   # do same for counts then add together
-  sampleSigCountData = sigCountsBySample %>% gather(SigName, SvCount, -SampleId) %>% arrange(SampleId, SigName)
+  sampleSigCountData = sigCountsBySample %>% gather(SigName, Count, -SampleId) %>% arrange(SampleId, SigName)
 
   # ensure both are order by sample and sig
-  sampleSigData = cbind(sampleSigPercData, SvCount = sampleSigCountData$SvCount)
+  sampleSigData = cbind(sampleSigPercData, Count = sampleSigCountData$Count)
 
   return (sampleSigData)
 }
@@ -38,9 +137,9 @@ get_sig_stats<-function(sampleSigData) {
 
   # key stats per signature
   sigStats = (sampleSigData %>% group_by(SigName)
-              %>% summarise(SampleCount=sum(SvCount>0),
-                            SamplePerc=round(sum(SvCount>0)/n_distinct(SampleId),2),
-                            SvCount=sum(SvCount),
+              %>% summarise(SampleCount=sum(Count>0),
+                            SamplePerc=round(sum(Count>0)/n_distinct(SampleId),2),
+                            Count=sum(Count),
                             MaxPercent=round(max(SigPercent),3),
                             AvgPercent=round(sum(ifelse(SigPercent>0.001,SigPercent,0))/sum(SigPercent>0),3),
                             PercGT75=sum(SigPercent>0.75),
@@ -55,7 +154,25 @@ get_sig_stats<-function(sampleSigData) {
 }
 
 
-plot_sig_samples<-function(sampleSigData, cancerType)
+plot_cancer_sigs<-function(sampleSigData, sigColours, varType = "SV")
+{
+  cancerSigData = sampleSigData %>% group_by(CancerType,SigName) %>% summarise(Count=sum(Count))
+  cancerTotals = sampleSigData %>% group_by(CancerType) %>% summarise(TotalCount=sum(Count))
+  cancerSigData = merge(cancerSigData, cancerTotals, by.x="CancerType", by.y="CancerType", all.x=TRUE)
+  cancerSigData$Percent = cancerSigData$Count / cancerSigData$TotalCount
+
+  cancerSigPlot <- (ggplot(cancerSigData, aes(x = CancerType, y = Percent, fill = SigName))
+                    + geom_bar(stat = "identity", colour = "black")
+                    + labs(x = "", y = paste(varType, " % by Signature", sep=''))
+                    + scale_fill_manual(values = sigColours)
+                    + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+                    + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+                    + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
+
+  print(cancerSigPlot)
+}
+
+plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV")
 {
   cancerSigData = sampleSigData
 
@@ -63,34 +180,31 @@ plot_sig_samples<-function(sampleSigData, cancerType)
     cancerSigData = cancerSigData %>% filter(CancerType==cancerType)
   }
 
-  sigColours = c("#ff994b","#463ec0","#d10073","#996ffb","#68b1c0","#e34bd9","#106b00","#8a392f","#98d76a","#6b3a9d","#d5c94e","#c6c0fb",
-                 "#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a", "#ff748a","#777700","#ff86be")
-
-  cancerSampleSigData = cancerSigData %>% arrange(-SampleSvCount, SampleId) %>% select('SampleId', 'SigName', 'SvCount')
+  cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'SigName', 'Count')
 
   sigCancerPlots = list()
   plotIndex = 1
 
-  cancerSigStats = svnmf::get_sig_stats(cancerSigData)
+  cancerSigStats = get_sig_stats(cancerSigData)
 
   if(nrow(cancerSigStats) > 0) {
 
     if(cancerType == "")
     {
-      title = "Signature SV Counts"
+      title = "Signature Counts All Cancer Types"
     }
     else
     {
-      title = paste("Signature SV Counts for ", cancerType, sep="")
+      title = paste("Signature Counts for ", cancerType, sep="")
     }
 
-    sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = SvCount, group = 1), fill = SigName)
+    sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = Count, group = 1), fill = SigName)
                     + geom_bar(stat = "identity", colour = "black", size = 0.2)
                     + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                    + ylab("SV Count") + xlab("Signature") + ggtitle(title)
+                    + ylab(paste(varType, " Count", sep='')) + xlab("Signature") + ggtitle(title)
                     + theme(legend.position="none"))
 
-    axisRatio = max(cancerSigStats$SvCount) / max(cancerSigStats$SampleCount) * 0.6
+    axisRatio = max(cancerSigStats$Count) / max(cancerSigStats$SampleCount) * 0.6
 
     sigStatsPlot <- (sigStatsPlot + geom_line(aes(y = SampleCount*axisRatio, color = "red"))
                      + scale_y_continuous(sec.axis = sec_axis(~.*(1/axisRatio), name = "Sample Count")))
@@ -101,45 +215,83 @@ plot_sig_samples<-function(sampleSigData, cancerType)
 
   if(nrow(cancerSampleSigData) > 0) {
 
+    # log the top N samples separately if they significantly higher counts
+    cancerSampleData = cancerSigData %>% group_by(SampleId) %>% summarise(SampleCount=first(SampleCount)) %>% arrange(-SampleCount)
+
+    topNIndex = 6
+
+    logTopNSamples = F
+    if(nrow(cancerSampleData) > topNIndex)
+    {
+      maxCount = max(cancerSampleData$SampleCount)
+      nthCount = nth(cancerSampleData$SampleCount, topNIndex)
+
+      if(maxCount > 3 * nthCount)
+      {
+        logTopNSamples = T
+      }
+    }
+
     # only plot 50 samples at a time
     numSamples = n_distinct(cancerSampleSigData$SampleId)
     numSigs = n_distinct(cancerSampleSigData$SigName)
     samplesPerPlot = 50
     rowsPerPlot = samplesPerPlot * numSigs
-    plotCount = ceiling(numSamples/samplesPerPlot)
+    # plotCount = ceiling(numSamples/samplesPerPlot)
 
-    for (n in 1:plotCount) {
-      rowStart = ((n-1) * rowsPerPlot + 1)
-      rowEnd = min((n * rowsPerPlot), numSamples * numSigs)
+    rowEnd = 0
+    maxRows = nrow(cancerSampleSigData)
+    plotCount = 0
 
-      if(cancerType == "")
+    # for (n in 1:plotCount)
+    # {
+    #   rowStart = ((n-1) * rowsPerPlot + 1)
+    #   rowEnd = min((n * rowsPerPlot), numSamples * numSigs)
+
+    while(rowEnd < maxRows)
+    {
+      if(plotCount == 0 & logTopNSamples)
       {
-        title = "Sig SV Counts by Sample"
+        rowStart = 1
+        rowEnd = min(rowStart + topNIndex*numSigs - 1, maxRows)
       }
       else
       {
-        title = paste("Sig SV Counts by Sample for ", cancerType, sep="")
+        rowStart = rowEnd + 1
+        rowEnd = min(rowStart + rowsPerPlot - 1, maxRows)
       }
 
-      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SvCount), y = SvCount, fill = SigName))
+      # print(paste(plotCount, ": rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
+
+      if(cancerType == "")
+      {
+        title = "Sig Counts by Sample"
+      }
+      else
+      {
+        title = paste("Sig Counts by Sample for ", cancerType, sep="")
+      }
+
+      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -Count), y = Count, fill = SigName))
                         + geom_bar(stat = "identity", colour = "black")
-                        + labs(x = "", y = "SV Count by Sample")
+                        + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
                         + scale_fill_manual(values = sigColours)
                         + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
                         + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
                         + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
 
-      if(n == 1)
+      if(plotCount == 0)
       {
         sampleSigPlot <- sampleSigPlot + ggtitle(title)
       }
-      if(n > 1)
+      else
       {
         # remove legend after the first plot
         sampleSigPlot <- sampleSigPlot + theme(legend.position="none")
       }
 
       sigCancerPlots[[plotIndex]] <- sampleSigPlot
+      plotCount = plotCount + 1
 
       if(plotIndex >=4)
       {
@@ -161,12 +313,8 @@ plot_sig_samples<-function(sampleSigData, cancerType)
   }
 }
 
-plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50)
+plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColours, varType = "SV")
 {
-
-  sigColours = c("#ff994b","#463ec0","#d10073","#996ffb","#68b1c0","#e34bd9","#106b00","#8a392f","#98d76a","#6b3a9d","#d5c94e","#c6c0fb",
-                 "#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a", "#ff748a","#777700","#ff86be")
-
   sigSamplePlots = list()
   plotIndex = 1
 
@@ -175,7 +323,7 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50)
 
   for(sigName in sigNames)
   {
-    topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName) %>% arrange(-SvCount),topN)
+    topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName) %>% arrange(-Count),topN)
     # View(topNSamplesBySig)
 
     # now grab all sig data for these top-N samples
@@ -184,9 +332,9 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50)
 
     title = paste("Top Samples for Signature ", sigName, sep="")
 
-    sampleSigPlot <- (ggplot(topNSampleSigData, aes(x = reorder(SampleId, -SvCount), y = SvCount, fill = SigName))
+    sampleSigPlot <- (ggplot(topNSampleSigData, aes(x = reorder(SampleId, -Count), y = Count, fill = SigName))
                       + geom_bar(stat = "identity", colour = "black")
-                      + labs(x = "", y = "SV Count by Sample")
+                      + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
                       + scale_fill_manual(values = sigColours)
                       + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
                       + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())

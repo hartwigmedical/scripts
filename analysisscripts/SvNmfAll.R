@@ -299,7 +299,7 @@ View(sampleNames)
 # begin evaluation routines
 # to fix
 View(sigCount)
-svnmf::evaluate_run(runNumber, sigCount, nmfMatrixData, sampleCounts, signatures, contribution, bucketNames, sigNames)
+# svnmf::evaluate_run(runNumber, sigCount, nmfMatrixData, sampleCounts, signatures, contribution, bucketNames, sigNames)
 
 # Bucket Evaluation
 sigBucketData = svnmf::get_bucket_data(signatures, contribution, bucketNames)
