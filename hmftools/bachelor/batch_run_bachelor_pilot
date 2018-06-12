@@ -1,0 +1,10 @@
+#!/bin/bash
+starts_with=$1 && shift
+
+for file in /data/cpct/runs/*; do
+    if [[ ${file} == /data/cpct/runs/${starts_with}* ]]; then
+        sample=$(ls ${file} | grep -E '^(CPCT|DRUP)[0-9]{8}[^R]')
+
+        do_run_bachelor_pilot ${file} $@
+    fi
+done
