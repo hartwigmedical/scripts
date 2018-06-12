@@ -123,14 +123,17 @@ process_variants <- function(variants) {
 
 ##### START PROCESSING
 cancer_signatures = getCOSMICSignatures()
+sampleId = 'CPCT02030349T'
+chart_mode= 'absolute'
 
 dbConnect = dbConnect(MySQL(), dbname = 'hmfpatients', groups = "RAnalysis")
-sampleId = 'CPCT02020271T'
+
 variants = query_sample_variants(dbConnect,sampleId) # returns a DT
 dbDisconnect(dbConnect)
 mutation_vectors = process_variants(variants)
 
 # we need to slice out only the mutation count columns (delete col 1 and 2)
 signatures = fit_to_signatures(mutation_vectors[[sampleId]][, -c(1, 2)], cancer_signatures)$contribution
-plot_contribution(signatures,cancerSignatures)+theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
+plot_contribution(contribution = signatures,signatures=cancer_signatures,mode = chart_mode)+theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
   scale_fill_manual( values= myCOLORS)+labs(fill="")+ggtitle(paste("Mutational signatures by clonality for",sampleId))
+
