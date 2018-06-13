@@ -11,6 +11,7 @@ gridss.min_breakpoint_depth = 5 # Half BPI default
 gridss.min_normal_depth = 8
 gridss.max_homology_length = 50
 gridss.max_allowable_strand_bias = 0.95
+gridss.min_qual = 250
 
 #' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
@@ -38,7 +39,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	if (min_support_filters) {
 		filtered = filtered |
 			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
-			str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
+		  rowRanges(vcf)$QUAL < gridss.min_qual |
 			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
 			# BPI.Filter.MinDepth
 			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth) |
@@ -70,11 +71,16 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   if (min_support_filters) {
     filtered = filtered |
       str_detect(gr$FILTER, "NO_ASSEMBLY") |
-      str_detect(gr$FILTER, "LOW_QUAL") | # exactly the same as QUAL >= 500
+      str_detect(gr$FILTER, "ASSEMBLY_ONLY") |
+      rowRanges(vcf)$QUAL < gridss.min_qual |
       # BPI.Filter.MinDepth
       .genosum(g$BVF,c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth |
       # require some sort of breakend anchoring
-      i$IMPRECISE
+      i$IMPRECISE |
+      # require at least one read pair included in the assembly
+      # this is a relatively strict filter but does filter out most of the
+      # noise from microsatellite sequences
+      i$BASRP == 0
   }
   if (somatic_filters) {
     filtered = filtered |
@@ -84,39 +90,44 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   return(as.logical(filtered))
 }
 is_short_deldup = function(gr) {
-	strand(gr) != strand(partner(gr)) &
-		seqnames(gr) == seqnames(partner(gr)) &
-		abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
+  is_deldup = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr <- gr[isbp]
+  	bp_short_deldup = strand(bpgr) != strand(partner(bpgr)) &
+  		seqnames(bpgr) == seqnames(partner(bpgr)) &
+  		abs(start(bpgr)-start(partner(bpgr))) < gridss.short_event_size_threshold
+  	is_deldup[isbp] = bp_short_deldup
+  }
+	return(is_deldup)
 }
 is_short_event = function(gr) {
   seqnames(gr) == seqnames(partner(gr)) &
     abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
 }
-gridss_af = function(gr, vcf, i=c(1)) {
+gridss_bp_af = function(gr, vcf, i=c(1)) {
 	genotype = geno(vcf[names(gr)])
 	g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
 	names(g) <- names(genotype)
 	ref = g$REF
 	refpair = g$REFPAIR
-	# assembly counts must be halved for reciprocal assemblies since
-	# we independently assemble the same reads on both sides
-	assembled_read_weight = ifelse(str_detect(gr$FILTER, "SINGLE_ASSEMBLY"), 1, 0.5)
-	assrrp_af = ((g$ASSR + g$ASRP) * assembled_read_weight)/((g$ASSR + g$ASRP) * assembled_read_weight + ref + refpair)
-	srrp_af = (g$SR + g$RP) / (g$SR + g$RP + ref + refpair)
-	assr_af = (g$ASSR * assembled_read_weight) / (g$ASSR * assembled_read_weight + ref)
-	# it is questionably whether we should incoproate BSC.
-	# It's definitely incorrect in the case of promiscuous breakpoints
-	sr_af = (g$SR+g$BSC)/(g$SR+g$BSC+ref)
-
-	# a complete assembly will give the most accurate AF, but
-	# a fragmented assembly will underestimate
-	component_af = ifelse(is_short_deldup(gr), pmax(assr_af, sr_af), pmax(assrrp_af, srrp_af))
-
 	vf_af = g$VF / (g$VF + ref + ifelse(is_short_deldup(gr), 0, refpair))
 	return(vf_af)
 }
-gridss_somatic_af = function(gr, vcf) {
-	return(gridss_af(gr, vcf, 2))
+gridss_somatic_bp_af = function(gr, vcf) {
+	return(gridss_bp_af(gr, vcf, 2))
+}
+gridss_be_af = function(gr, vcf, i=c(1)) {
+  genotype = geno(vcf[names(gr)])
+  g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
+  names(g) <- names(genotype)
+  ref = g$REF
+  refpair = g$REFPAIR
+  vf_af = g$BVF / (g$BVF + ref + ifelse(is_short_deldup(gr), 0, refpair))
+  return(vf_af)
+}
+gridss_somatic_be_af = function(gr, vcf) {
+  return(gridss_be_af(gr, vcf, 2))
 }
 annotate_overlaps = function(query, subject, ..., group_by_col_name="sampleId") {
 	hits = findBreakpointOverlaps(query, subject, ...)

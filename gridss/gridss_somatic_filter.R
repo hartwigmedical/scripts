@@ -23,9 +23,9 @@ source("libgridss.R")
 
 # Filter to somatic calls
 full_vcf = readVcf(input_vcf, "hg19")
-# work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
 library(data.table)
-fixed(full_vcf)$ALT = fread(file=input_vcf, sep="\t", sep2=NULL, header=FALSE, stringsAsFactors=FALSE, select=5, skip=120)
+# work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
+VariantAnnotation::fixed(full_vcf)$ALT = CharacterList(lapply(fread(file=input_vcf, sep="\t", sep2=NULL, header=FALSE, stringsAsFactors=FALSE, select=5, skip=120)$V5, function(x) x))
 # TODO fix error message
 #fixed(full_vcf)$ALT = CharacterList(lapply(read_delim(input_vcf, delim="\t", comment="#", col_names=c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"), col_types=cols_only(ALT=col_character()), progress=NULL)$ALT, function(x) x))
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
@@ -49,7 +49,7 @@ bestOverlap = findOverlaps(bpgr, combinedgr) %>%
   summarise(beQUAL = max(beQUAL))
 bpgr$overlapQUAL = 0
 bpgr$overlapQUAL[bestOverlap$queryHits] = bestOverlap$beQUAL
-i <- info(vcf[bpgr$vcfId])
+i <- info(full_vcf[bpgr$vcfId])
 better_call_filter = !is_short_event(bpgr) &
   bpgr$overlapQUAL > 3 * bpgr$QUAL &
   i$BANSRQ + i$BANRPQ > i$ASQ
@@ -59,11 +59,17 @@ bpfiltered = bpfiltered | better_call_filter
 # - filter to only decent length assemblies?
 begr$calls_1k_window = countOverlaps(begr, rowRanges(full_vcf), ignore.strand=TRUE, maxgap=1000)
 
-vcf = vcf[names(bpgr)[as.logical(!bpfiltered)]]
-bpgr = breakpointRanges(vcf)
-vcf = vcf[names(bpgr)] # sanity reordering in case of asymetrical filtering
-bpgr$af = gridss_af(bpgr, vcf, 2)
-info(vcf)$BPI_AF = paste(bpgr$af, partner(bpgr)$af, sep=",")
+bp_vcf = full_vcf[names(bpgr)[as.logical(!bpfiltered)]]
+bpgr = breakpointRanges(bp_vcf) # fix any asymetrical filtering
+begr = begr[!befiltered]
+vcf = full_vcf[names(full_vcf) %in% c(names(bpgr), names(begr))]
+bpgr$af = gridss_somatic_bp_af(bpgr, vcf)
+bpgr$af_str = paste(bpgr$af, partner(bpgr)$af, sep=",")
+begr$af = gridss_somatic_be_af(begr, vcf)
+begr$af_str = as.character(begr$af)
+info(vcf)$BPI_AF = rep("", length(vcf))
+info(vcf[names(bpgr)])$BPI_AF = bpgr$af_str
+info(vcf[names(begr)])$BPI_AF = begr$af_str
 VariantAnnotation::fixed(vcf)$FILTER = "PASS"
 writeVcf(vcf, output_vcf)
 
