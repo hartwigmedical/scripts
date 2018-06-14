@@ -271,3 +271,18 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
 
 plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 
+
+#################
+### COVERAGE PLOT @@@@@@@@
+coverageData = highestPurityCohortSummary %>% 
+  select(sampleId, tumorMeanCoverage, refMeanCoverage ) %>% 
+  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T),) %>%
+  arrange(cancerType, -tumorMeanCoverage)
+
+ggplot(data=coverageData)+
+  stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
+  stat_ecdf(aes(refMeanCoverage*2,color='Ref (RHS'),geom = "step", pad = FALSE) +
+  scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage")) +
+  coord_flip() + 
+  labs(x = "Tumor Mean Coverage")+
+  theme(axis.title.x =  element_blank())
