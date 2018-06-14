@@ -19,6 +19,7 @@ my $NA_CHAR = "NA";
 my $LIMS_JSON = '/data/lims/lims.json';
 my $PDF_DIR = '/data/cpct/final_reports';
 my @OUT_FIELDS = qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions );
+my @LAB_SAMPLE_DONE_STATUS = qw( finished failed );
 
 my $HELP =<<HELP;
 
@@ -131,6 +132,7 @@ sub printUnreportedBiopsies{
     my ($lims, $opt) = @_;
     my @out_samples = ();
     my $samples = $lims->{ 'samples' };
+    my $final_status_regex = join( "|", @LAB_SAMPLE_DONE_STATUS );
     
     foreach my $sample_id ( keys %{$samples} ){
         my $sample = $samples->{ $sample_id };
@@ -149,7 +151,7 @@ sub printUnreportedBiopsies{
         
         ## skip if lab not ready yet
         next unless defined $sample->{'status'};
-        next unless $sample->{'status'} !~ /(storage|process)$/;
+        next unless $sample->{'status'} =~ /$final_status_regex/;
         
         ## skip if is pre-2017 sample
         next unless defined $sample->{'arrival_date'};
@@ -159,7 +161,9 @@ sub printUnreportedBiopsies{
         my $ref_sample_id = getValueByKey( $sample, 'ref_sample_id' );
         next unless exists $samples->{ $ref_sample_id };
         my $ref_sample = $samples->{ $ref_sample_id };
-        next unless $ref_sample->{ 'status' } eq 'finished';
+        my $ref_status = getValueByKey( $ref_sample, 'status' );
+        next unless $ref_status =~ /$final_status_regex/;
+        $sample->{ ref_status } = $ref_status;
         
         ## skip if patient report does exist
         next if biopsyReportExists( $sample_name );
@@ -169,8 +173,7 @@ sub printUnreportedBiopsies{
         push @out_samples, $sample;
     }
     
-    #my @out_fields = qw( sample_name status tumor_perc arrival_date sample_id ref_sample_id sbp_info );
-    my @out_fields = qw( sample_name status sample_id ref_sample_id sbp_info );
+    my @out_fields = qw( sample_name status ref_status sample_id ref_sample_id arrival_date sbp_info );
     printSampleInfo( \@out_samples, \@out_fields, 'status', $opt{ debug } );
 }
 
