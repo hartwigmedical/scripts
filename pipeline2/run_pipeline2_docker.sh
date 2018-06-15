@@ -6,6 +6,8 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 WORKING_DIRECTORY=`pwd`
+PATIENT_DIR="/data/repos/testdata/cancerPanel/"
+REFERENCE_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
 
 print_usage(){
     echo "Usage: run_pipeline_docker -p patientdir -r referencedir -v version [-c confdir]"
