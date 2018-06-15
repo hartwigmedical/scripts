@@ -319,3 +319,14 @@ ggplot(biopsyTypeCount, aes(x="",y=n, fill=`Biopsy Type`)) +
           panel.grid.minor = element_blank())
   
 head(highestPurityCohortSummary)
+
+
+###########@@@@@@@@@@@@@@@
+####### WGD
+### TO DO:   Sort, make easy to read and display %s on charts.
+ggplot(data=highestPurityCohortSummary , aes(x = cancerType, y = factor(1))) +
+  geom_bar(aes(fill = WGD), stat = "identity") +
+  ggtitle("WGD by Cancer Type") + xlab("Cancer TYpe") + ylab("Count of Samples")+ 
+  coord_flip()+
+  theme(axis.text.x =  element_blank(), legend.position="bottom",panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),panel.border = element_blank())
