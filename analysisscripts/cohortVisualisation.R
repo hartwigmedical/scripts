@@ -330,3 +330,19 @@ ggplot(data=highestPurityCohortSummary , aes(x = cancerType, y = factor(1))) +
   coord_flip()+
   theme(axis.text.x =  element_blank(), legend.position="bottom",panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),panel.border = element_blank())
+
+###########################
+###### SNV vs INDEL
+### To do:  get cancerType colours work properly
+# INDEL SNV by MSI
+ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=msiStatus))+geom_point() + 
+  scale_x_log10() + scale_y_log10()
+
+# INDEL SNV by CancerType
+ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=cancerType))+geom_point() + 
+  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+
+# MNV SNV by Cancer Type
+ggplot(highestPurityCohortSummary, aes(CLONAL_SNP,CLONAL_MNP,color=cancerType))+geom_point() + 
+  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+

@@ -164,7 +164,7 @@ signature_by_sample_and_type<-function(cluster,filter,signatureName,bucket='Leng
 ### 0. LOAD Data
 
 #LOAD and ADD Buckets
-cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V16.csv')
+cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V24.csv')
 #cluster2 = cluster %>% separate(ChrArmStats,c('ArmStartBECount','ArmEndBECount','ArmMedianBECount'),sep=":")
 cluster$ClusterCountBucket=2**(round(log(cluster$ClusterCount,2),0))
 cluster$ArmCountBucket=2**(round(log(cluster$ArmCountStart,2),0))
@@ -173,9 +173,9 @@ cluster$stressedArm=(cluster$ArmCountStart>1.3*cluster$ArmExpStart+6|cluster$Arm
 cluster$CNStartChBucket=2**(pmin(7,pmax(-3,round(log(cluster$AdjCNChgStart,2),0))))
 cluster$CNEndChBucket=2**(pmin(7,pmax(-3,round(log(cluster$AdjCNChgEnd,2),0))))
 cluster$PloidyBucket=2**(pmin(7,pmax(-3,round(log(cluster$Ploidy,2),0))))
-cluster$NearestLengthBucket=2**(pmin(20,pmax(0,round(log(cluster$NearestLen,2),0))))
-cluster$NearestTILengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestTILen,2),0))))
-cluster$NearestDBLengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestDBLen,2),0))))
+#cluster$NearestLengthBucket=2**(pmin(20,pmax(0,round(log(cluster$NearestLen,2),0))))
+#cluster$NearestTILengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestTILen,2),0))))
+#cluster$NearestDBLengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestDBLen,2),0))))
 
 cluster$LengthBucket=ifelse(cluster$Type=='BND'|cluster$Type=='INS'|cluster$PosEnd-cluster$PosStart==0|cluster$ArmEnd!=cluster$ArmStart,
                             0,2**(round(log(cluster$PosEnd-cluster$PosStart,2),0)))
@@ -224,8 +224,8 @@ scatterCounts(summary,'LengthBucket')
 ### 3. By Cancer Type
 
 ##### Lengths by cancer Type
-summary = cohortSummary(cluster,'','LengthBucket,cancerType')
-plot_count_by_bucket_and_type(summary,'LengthBucket','cancerType')
+summary = cohortSummary(cluster,'','LengthBucket,primaryTumorLocation')
+plot_count_by_bucket_and_type(summary,'LengthBucket','primaryTumorLocation',useLogX = T)
 
 ##### DEL LENGTHS for FS by cancer Type
 summary = cohortSummary(cluster,"FSStart!='false'|FSEnd!='false'",'LengthBucket,cancerType')
