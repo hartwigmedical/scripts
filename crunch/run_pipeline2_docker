@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ $EUID -ne 0 ]]; then
-   echo "To run the pipeline2 docker container you must be root. Try [sudo run_pipeline2_docker.sh]"
+   echo "To run the pipeline2 docker container you must be root. Try [sudo run_pipeline2_docker]"
    exit 1
 fi
 
