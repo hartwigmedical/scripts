@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-if [[ $EUID -ne 0 ]]; then
-   echo "To run the pipeline2 docker container you must be root. Try [sudo run_pipeline2_docker]"
-   exit 1
-fi
-
 WORKING_DIRECTORY=`pwd`
 PATIENT_DIR="/data/repos/testdata/cancerPanel/"
 REFERENCE_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
@@ -41,4 +36,4 @@ then
     volumes="-v ${CONF_DIR}:/conf/ ${volumes}"
 fi
 
-docker run $volumes hartwigmedicalfoundation/pipeline2:${VERSION}
+sudo docker run $volumes hartwigmedicalfoundation/pipeline2:${VERSION}
