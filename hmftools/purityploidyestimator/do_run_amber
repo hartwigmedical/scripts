@@ -23,8 +23,8 @@ then
     fi
 
     column=$(head -1 ${amber_output} | cut -f 4)
-    echo "Executing PCF Segmentation with command: Rscript ${base_path}/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
-    Rscript ${base_path}/repos/scripts/analysisscripts/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
+    echo "Executing PCF Segmentation with command: Rscript ${base_path}/repos/scripts/hmftools/amber/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
+    Rscript ${base_path}/repos/scripts/hmftools/amber/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
     rm ${amber_pcf}1
 fi
 
