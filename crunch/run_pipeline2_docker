@@ -9,7 +9,7 @@ print_usage(){
     echo "  -v version          Version of Pipeline2 docker container (Mandatory)"
     echo "  -p patientdir       Directory containing patient data for docker to mount (Optional default = ${PATIENT_DIR})"
     echo "  -r referencedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_DIR})"
-    echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image"
+    echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
     exit 1
 }
 
