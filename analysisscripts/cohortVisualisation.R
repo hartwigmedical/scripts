@@ -272,7 +272,7 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
 plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 
 
-#################
+####################################
 ### COVERAGE PLOT @@@@@@@@
 coverageData = highestPurityCohortSummary %>% 
   select(sampleId, tumorMeanCoverage, refMeanCoverage ) %>% 
@@ -286,3 +286,36 @@ ggplot(data=coverageData)+
   coord_flip() + 
   labs(x = "Tumor Mean Coverage")+
   theme(axis.title.x =  element_blank())
+
+####################################
+### Purity PLOT @@@@@@@@
+purityData = highestPurityCohortSummary %>% 
+  select(sampleId, purity,cancerType ) %>% 
+  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
+  arrange(cancerType, -purity)
+
+ggplot(data=purityData)+
+  stat_ecdf(aes(purity,color='Purity'),geom = "step", pad = FALSE) + 
+  coord_flip() + 
+  labs(x = "Purity")+
+  theme(axis.title.x =  element_blank())
+
+###################################
+##### Biopsy Location
+#### To do: order properly (largerst to smallest with other at top)
+biopsyColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
+               "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
+               "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
+               "#dea185", "#a0729d", "#8a392f")
+head(highestPurityCohortSummary)
+
+biopsyTypeCount = highestPurityCohortSummary  %>% group_by(biopsyType) %>% count() %>% mutate(`Biopsy Type`=ifelse(n<30,'Other',biopsyType)) %>% group_by(`Biopsy Type`) %>% summarise(n=sum(n))
+
+ggplot(biopsyTypeCount, aes(x="",y=n, fill=`Biopsy Type`)) + 
+  geom_bar(width = 1, stat = "identity") +
+  scale_fill_manual(values=biopsyColours) + 
+  theme(axis.title.x =  element_blank(),axis.title.y =  element_blank(),axis.text.x =  element_blank()) +
+  theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank())
+  
+head(highestPurityCohortSummary)
