@@ -200,7 +200,7 @@ tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotatio
 
 
 ####################
-### Drivers per sample
+### Drivers per sample by driver Type
 #### TO DO: Make colours consistent
 head(hpcDriversByGene)
 hpcDriversByGene = hpcDriversByGene %>% left_join(hpcCancerTypeCounts %>% select(cancerType, samples = N), by = "cancerType")
