@@ -8,8 +8,8 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
+bpi_jar=${base_path}/tools/break-point-inspector_pilot/break-point-inspector.jar
+bpi_output=${run_dir}/structuralVariants/bpi_pilot
 bpi_version=1.5
-bpi_jar=${base_path}/tools/break-point-inspector_v${bpi_version}/break-point-inspector.jar
-bpi_output=${run_dir}/structuralVariants/bpi
 
 ${prefix}/do_run_bpi ${run_dir} ${bpi_jar} ${bpi_output} ${bpi_version}
