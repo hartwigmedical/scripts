@@ -13,4 +13,4 @@ bpi_jar=${base_path}/tools/break-point-inspector_pilot/break-point-inspector.jar
 bpi_output=${run_dir}/structuralVariants/bpi
 bpi_version=1.5
 
-${prefix}/do_run_bpi_pilot_new ${run_dir} ${bpi_jar} ${bpi_output} ${bpi_version}
+${prefix}/do_run_new_bpi ${run_dir} ${bpi_jar} ${bpi_output} ${bpi_version}
