@@ -1,23 +1,26 @@
 #!/usr/bin/env bash
 
-WORKING_DIRECTORY=`pwd`
+WORKING_DIR=`pwd`
 PATIENT_DIR="/data/repos/testdata/cancerPanel/"
 REFERENCE_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
+OUTPUT_DIR="${WORKING_DIR}/results"
 
 print_usage(){
-    echo "Usage: run_pipeline_docker -v version [-p patientdir] [-r referencedir] [-c confdir]"
+    echo "Usage: run_pipeline_docker -v version [-p patientdir] [-r referencedir] [-o outputdir] [-c confdir]"
     echo "  -v version          Version of Pipeline2 docker container (Mandatory)"
     echo "  -p patientdir       Directory containing patient data for docker to mount (Optional default = ${PATIENT_DIR})"
     echo "  -r referencedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_DIR})"
+    echo "  -o outputdir     Directory containing reference genome data for docker to mount (Optional default = ${OUTPUT_DIR})"
     echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
     exit 1
 }
 
-while getopts ':p:r:v:c:' flag; do
+while getopts ':p:r:v:c:o:' flag; do
   case "${flag}" in
     p) PATIENT_DIR=$OPTARG ;;
     r) REFERENCE_DIR=$OPTARG ;;
     c) CONF_DIR=$OPTARG;;
+    o) OUTPUT_DIR=$OPTARG;;
     v) VERSION=$OPTARG ;;
     *) print_usage
        exit 1 ;;
@@ -29,7 +32,7 @@ then
     print_usage
 fi
 
-volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_DIR}:/reference/ -v ${WORKING_DIRECTORY}/results:/results"
+volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_DIR}:/reference/ -v ${OUTPUT_DIR}:/results"
 
 if ! [ -z $CONF_DIR ]
 then
