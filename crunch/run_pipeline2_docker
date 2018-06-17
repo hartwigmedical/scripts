@@ -32,7 +32,7 @@ then
     print_usage
 fi
 
-volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_DIR}:/reference/ -v ${OUTPUT_DIR}:/results -v ${OUTPUT_DIR}/tmp:/tmp"
+volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_DIR}:/reference/ -v ${OUTPUT_DIR}:/results -v ${OUTPUT_DIR}/tmp:/tmp -v ${OUTPUT_DIR}/logs:/logs"
 
 if ! [ -z $CONF_DIR ]
 then
