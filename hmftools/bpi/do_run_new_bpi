@@ -36,7 +36,7 @@ fi
 tumor_bam=${run_dir}/structuralVariants/bpi/${joint_name}/${tumor_sample}_sliced.bam
 if [ ! -f ${tumor_bam} ]
 then
-    echo "Unable to locate tumor bam (${tumor_bam}). Exiting."
+    echo "Unable to locate sliced tumor bam (${tumor_bam}). Exiting."
     exit 1
 fi
 ${samtools} index ${tumor_bam}
@@ -44,7 +44,7 @@ ${samtools} index ${tumor_bam}
 ref_bam=${run_dir}/structuralVariants/bpi/${joint_name}/${ref_sample}_sliced.bam
 if [ ! -f ${ref_bam} ]
 then
-    echo "Unable to locate ref bam (${ref_bam}). Exiting."
+    echo "Unable to locate sliced ref bam (${ref_bam}). Exiting."
     exit 1
 fi
 ${samtools} index ${ref_bam}
@@ -65,11 +65,10 @@ fi
 
 echo "Running BPI on ${run_dir}"
 
-java -Xmx8G -Xms4G \
-    -jar ${bpi_jar} \
-    -contamination_fraction 0.03 \
-    -vcf ${structural_vcf} \
-    -ref ${ref_bam} \
-    -tumor ${tumor_bam} \
+java -Xmx8G -Xms4G -jar ${bpi_jar} \
+    -ref_bam ${ref_bam} \
+    -tumor_bam ${tumor_bam} \
+    -input_vcf ${structural_vcf} \
     -output_vcf ${output_vcf} \
-    > ${output_tsv}
+    -output_tsv ${output_tsv} \
+    -contamination_fraction 0.03

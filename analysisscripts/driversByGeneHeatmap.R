@@ -196,3 +196,29 @@ tsgDriversAnnotationIndex = rowAnnotation(
 )
 
 tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation + tsgDriversAnnotationIndex
+
+
+
+####################
+### Drivers per sample by driver Type
+#### TO DO: Make colours consistent
+head(hpcDriversByGene)
+hpcDriversByGene = hpcDriversByGene %>% left_join(hpcCancerTypeCounts %>% select(cancerType, samples = N), by = "cancerType")
+hpcDriversByGene = hpcDriversByGene %>%  mutate(driverRate = driverLikelihood / samples)
+
+tidyDriversByCancerType = hpcDriversByGene %>% group_by(cancerType, driver, type) %>% summarise(driverLikelihood = sum(driverRate))
+tidyDriversByCancerTypeLevels = hpcDriversByGene %>% group_by(cancerType) %>% summarise(driverLikelihood = sum(driverRate)) %>% arrange(-driverLikelihood)
+tidyDriversByCancerType$cancerType = factor(tidyDriversByCancerType$cancerType, levels= tidyDriversByCancerTypeLevels$cancerType)
+
+allDrivers = c("Fusion", "Del","FragileDel","Multihit","Nonsense","Splice","Promoter","Missense","Indel","Amp")
+allDrivers = factor(allDrivers, levels = allDrivers)
+allDriverColours = c("#fdb462","#8dd3c7","#fccde5","#b3de69","#80b1d3","#ffffb3","#ffffb3","#bebada","#fb8072","#80b1d3")
+allDriverColours = setNames(allDriverColours, allDrivers)
+
+ggplot(data=tidyDriversByCancerType, aes(x = cancerType, y = driverLikelihood)) +
+  geom_bar(aes(fill = driver), stat = "identity") +
+  xlab("Cancer Type") + ylab("Mean Driver Count Per Sample") +
+  scale_color_manual(values=allDriverColours) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8), legend.position="bottom",
+        panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank()) +
+  coord_flip()# + facet_wrap(~type)

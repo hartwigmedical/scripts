@@ -253,7 +253,8 @@ cancerTypes = select_cancer_types(dbConnect)
 dbDisconnect(dbConnect)
 
 # PLOT subclonal
-dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+dbConnect = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+
 
 for (cancerType in cancerTypes$cancerType) {
   print(paste("running for type:",cancerType))
@@ -295,7 +296,7 @@ dbDisconnect(dbConnect)
 ######################################################################
 #SINGLE SAMPLE
 dbConnect = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-cancerType="Breast"
+cancerType="Brain"
 cohort=data.frame(sampleId="CPCT02030265TII",biopsySite=cancerType)
 fitted_signatures[[cancerType]]<-calculate_signatures(dbConnect,cohort,cancer_signatures)
 fitted_signatures
@@ -355,3 +356,28 @@ par(cex=0.6, mar=c(5, 8, 4, 1))
 plot(clusterOutput, xlab="", ylab="", main="", sub="", axes=FALSE)
 par(cex=1)
 axis(2)
+
+
+#########################
+
+load("~/Dropbox/HMF Australia team folder/RData/mutSignature2.RData")
+
+
+# Fit the signature for all samples and clonalities
+# For each cancerType:
+# S
+
+calculate_signatures<-function(dbConnect,cohort,cancer_signatures){
+  mutation_matrix= cohort_signature(dbConnect, cohort[1:nrow(cohort),])
+  fit_res = fit_to_signatures(mutation_matrix, cancer_signatures)
+  fit_contribution<-fit_res$contribution[, order(colnames(fit_res$contribution),decreasing=F),drop=FALSE]
+  fit_contribution[prop.table(fit_contribution, margin=2)<0.03 | fit_contribution<100]<-0
+  orderVector<-colSums(fit_contribution)
+  fit_contribution[, order(orderVector,decreasing=F),drop=FALSE]
+}
+
+mutation_matrix
+
+
+?fit_to_signatures
+
