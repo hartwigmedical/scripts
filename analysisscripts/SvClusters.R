@@ -18,8 +18,9 @@ library(svnmf)
 rm(svData)
 
 # SV data file
-svData = read.csv('~/logs/CLUSTER_V23.csv')
+svData = read.csv('~/logs/CLUSTER_V25.csv')
 nrow(svData)
+View(head(svData,100))
 
 # filter out multiple biopsy (approximately)
 svData = svData %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
@@ -431,9 +432,6 @@ lnksByType = (svData %>% filter(ClusterSize!='None'&Type!='INS') %>% group_by(Ty
 lnksByType$TransRemoved = round(lnksByType$TransCount/lnksByType$Count,3)
 lnksByType$SpansPercent = round(lnksByType$SpanCount/lnksByType$Count,3)
 
-View(lnksByType)
-write.csv(lnksByType, "~/logs/r_output/linksSummary.csv")
-
 # length of TIs and DBs
 startLinks = svData %>% filter(LnkTypeStart=='TI'|LnkTypeStart=='DB')
 startLinks$LinkType = startLinks$LnkTypeStart
@@ -442,28 +440,90 @@ endLinks = svData %>% filter(LnkTypeEnd=='TI'|LnkTypeEnd=='DB')
 endLinks$LinkType = endLinks$LnkTypeEnd
 endLinks$LinkLen = endLinks$LnkLenEnd
 combinedLinks = rbind(startLinks, endLinks)
+
+# switch short TIs back from negative DBs
+combinedLinks$DubiousShortTI = ifelse(combinedLinks$LinkLen<0,1,0)
+combinedLinks$LinkType = ifelse(combinedLinks$DubiousShortTI==1,"TI",ifelse(combinedLinks$LinkType=="DB","DB","TI"))
+combinedLinks$LinkLen = ifelse(combinedLinks$DubiousShortTI==1,-combinedLinks$LinkLen,combinedLinks$LinkLen)
+
+View(combinedLinks %>% filter(DubiousShortTI==1))
+nrow(combinedLinks %>% filter(LinkType=="DB"))
+View(combinedLinks %>% filter(LinkType=="DB"))
+
 nrow(combinedLinks)
 
-combinedLinks$LenBucketLog = 2**round(log(combinedLinks$LinkLen,2),0)
-# combinedLinks$LenBucket = 2**round(log(combinedLinks$LinkLen,2),0)
+combinedLinks$LenBucketLog = ifelse(combinedLinks$LinkLen==0,0,
+                              ifelse(combinedLinks$LinkLen>0,2**round(log(combinedLinks$LinkLen,2),0),
+                                   -(2**round(log(-combinedLinks$LinkLen,2),0))))
 
-linkLengthStats = (combinedLinks %>% group_by(LenBucketLog)
-                            %>% summarise(TICount=sum(LinkType=='TI'), DBCount=sum(LinkType=='DB'))
-                            %>% arrange(LenBucketLog))
+nrow(combinedLinks %>% filter(LinkLen==0))
+
+combinedLinks$LenBucket = ifelse(combinedLinks$LinkLen<28,combinedLinks$LinkLen,2**round(log(combinedLinks$LinkLen,2),0))
+
+linkLengthStats = (combinedLinks %>% group_by(LenBucket)
+                   %>% summarise(TICount=sum(LinkType=='TI'), DBCount=sum(LinkType=='DB'))
+                   %>% arrange(LenBucket))
+
+
+View(linkLengthStats)
+
+linkLenPlot2 = (ggplot(data = linkLengthStats, aes(x = LenBucket))
+               + geom_line(aes(y=TICount, colour='TI'))
+               + geom_line(aes(y=DBCount, colour='DB'))
+               + scale_x_log10()
+               # + coord_cartesian(xlim = c(-1e4, 1e6))
+               + ylab("SV Count") + labs(title = "Link Lengths - TIs and DBs"))
+
+print(linkLenPlot2)
+
+linkLengthActualStats = (combinedLinks %>% filter(LinkLen <= 500) %>% group_by(LinkLen)
+                   %>% summarise(TICount=sum(LinkType=='TI'), DBCount=sum(LinkType=='DB'))
+                   %>% arrange(LinkLen))
+
+linkLenPlot3 = (ggplot(data = linkLengthActualStats, aes(x = LinkLen))
+                + geom_line(aes(y=TICount, colour='TI'))
+                + geom_line(aes(y=DBCount, colour='DB'))
+                # + scale_x_log10()
+                # + coord_cartesian(xlim = c(-1e4, 1e6))
+                + scale_x_continuous()
+                + ylab("SV Count") + labs(title = "Link Lengths - TIs and DBs"))
+
+print(linkLenPlot3)
+
+
+# linkLengthStats = (combinedLinks %>% group_by(LenBucketLog)
+#                             %>% summarise(TICount=sum(LinkType=='TI'), DBCount=sum(LinkType=='DB'))
+#                             %>% arrange(LenBucketLog))
 View(linkLengthStats)
 
 linkLenPlot = (ggplot(data = linkLengthStats %>% filter(LenBucketLog < 1e8), aes(x = LenBucketLog))
                       + geom_line(aes(y=TICount, colour='TI'))
                       + geom_line(aes(y=DBCount, colour='DB'))
-                      + scale_x_log10()
+                      # + scale_x_log10()
+                      # + coord_cartesian(xlim = c(-1e4, 1e6))
+                      + scale_x_continuous()
                       # + facet_wrap(as.formula(paste("~", facetWrap)))
                       + ylab("SV Count") + labs(title = "Link Lengths - TIs and DBs")
 )
 
 print(linkLenPlot)
 
+combinedLinks$LenBucketFixed = round(combinedLinks$LinkLen/10)*10
 
+linkLengthFixedStats = (combinedLinks %>% filter(LenBucketFixed>=-1000&LenBucketFixed<=1000) %>% group_by(LenBucketFixed)
+                   %>% summarise(TICount=sum(LinkType=='TI'), DBCount=sum(LinkType=='DB'))
+                   %>% arrange(LenBucketFixed))
 
+View(linkLengthFixedStats)
+
+linkFixedLenPlot = (ggplot(data = linkLengthFixedStats, aes(x = LenBucketFixed))
+               + geom_line(aes(y=TICount, colour='TI'))
+               + geom_line(aes(y=DBCount, colour='DB'))
+               + scale_x_continuous()
+               # + facet_wrap(as.formula(paste("~", facetWrap)))
+               + ylab("SV Count") + labs(title = "Link Lengths - TIs and DBs"))
+               
+print(linkFixedLenPlot)
 
 View(clusterData %>% filter(SampleId=='CPCT02060039T'))
 
@@ -506,10 +566,17 @@ max(svData$ChainTICount)
 max(svData$ChainDBCount)
 
 View(svData)
-                
+
+nrow(svData %>% filter(SingleDupBE==1&IsTI==0&IsDB==0))           
+nrow(svData %>% filter(SingleDupBE==1&IsTI==0&IsDB==0&IsLINE==0))           
+nrow(svData %>% filter(SingleDupBE==1&IsTI==0&IsDB==0&IsStressed==1))           
 
 svData$ChainCount = ifelse(svData$ChainId==0,0,svData$ChainCount+1) # since the count is of links
 View(svData %>% filter(ChainId==0&ChainCount>0))
+
+lineClusters = clusterChaining %>% filter(LineCount>0)
+sum(lineClusters$SvCount - lineClusters$LineCount)
+sum(lineClusters$LineCount)
 
 
 clusterChaining = (svData %>% filter(ClusterCount>1) %>% group_by(SampleId,ClusterId)
@@ -524,6 +591,7 @@ clusterChaining = (svData %>% filter(ClusterCount>1) %>% group_by(SampleId,Clust
                                  TICount=sum(IsTI==1),
                                  SpanDupBECount=sum(DoubleDupBE==1),
                                  SpanCount=sum(IsSpan==1),
+                                 SingleDupBENoLinkCount=sum(SingleDupBE==1&IsTI==0&IsDB==0),
                                  DelCount=sum(Type=='DEL'),
                                  DupCount=sum(Type=='DUP'),
                                  InsCount=sum(Type=='INS'),
@@ -563,9 +631,28 @@ View(clusteredChainStats %>% spread(ClusterSize,Count))
 View(clusteredChains %>% group_by(ChainedPercBucket,ClusterSize) %>% summarise(SvCount=sum(SvCount)) %>% spread(ClusterSize,SvCount))
 View(clusteredChains %>% group_by(LinkedPercBucket,ClusterSize) %>% summarise(SvCount=sum(SvCount)) %>% spread(ClusterSize,SvCount))
 
+# remove unresolved single duplicate BEs and repeat
+nrow(clusteredChains %>% filter(SingleDupBENoLinkCount==RevClusterCount))
+cleanClusteredChains = clusteredChains %>% filter(SingleDupBENoLinkCount<RevClusterCount)
+
+cleanClusteredChains$CleanLinkedPerc = round(cleanClusteredChains$LinkedCount/(cleanClusteredChains$RevClusterCount-cleanClusteredChains$SingleDupBENoLinkCount),4)
+cleanClusteredChains$CleanLinkedPercBucket = round(cleanClusteredChains$CleanLinkedPerc/0.1)*0.1
+View(cleanClusteredChains %>% group_by(CleanLinkedPercBucket,ClusterSize) %>% summarise(SvCount=sum(SvCount)) %>% spread(ClusterSize,SvCount))
+
+
 View(clusteredChains %>% filter(RevClusterCount==4))
 
 View(svData %>% filter(ClusterId==85&SampleId=='CPCT02010050T'))
+
+# cosine similarity
+
+vector1 = svData$AdjCNChgEnd
+vector1 = svData$AdjCNChgEnd
+
+
+cosine.similarity(.alpha, .beta,)
+
+
 
 
 # bucket by percent chained

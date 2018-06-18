@@ -113,12 +113,29 @@ annotateWithCopyNumber<-function(dbConnect,samples)
 ## LOH Analysis
 
 cnLohData = read.csv('~/logs/CN_LOH_ANALYSIS_V1.csv')
-View(cnLohData)
+View(head(cnLohData,1000))
 
+nrow(cnLohData)
+n_distinct(cnLohData$SampleId)
+cbLohSamples = n_distinct(cnLohData$SampleId)
+
+cnLohData = cnLohData %>% filter(SampleId %in% hpcDriversByGene$sampleId)
+cnLohData2 = cnLohData %>% filter(SampleId %in% svData$SampleId)
+nrow(cnLohData)
+n_distinct(cnLohData$SampleId)
 
 cnLohData$NoneMatched = cnLohData$StartSV==0 & cnLohData$EndSV==0
 cnLohData$BothMatched = cnLohData$StartSV>0 & cnLohData$EndSV>0
 cnLohData$SameSV = cnLohData$StartSV>0 & cnLohData$EndSV==cnLohData$StartSV
+
+nrow(cnLohData %>% filter(SegStart=="CENTROMERE"|SegEnd=="CENTROMERE"|SegEnd=="TELOMERE"|SegEnd=="TELOMERE"))
+
+cnLohStatsMinusTandC = (cnLohData %>% filter(SegStart!="CENTROMERE"&SegEnd!="CENTROMERE"&SegEnd!="TELOMERE"&SegEnd!="TELOMERE") 
+                        %>%  group_by(NoneMatched,BothMatched,SameSV)
+                        %>% summarise(Count=n())
+                        %>% arrange(NoneMatched,BothMatched,SameSV))
+
+View(cnLohStatsMinusTandC)
 
 cnLohStats = (cnLohData %>% group_by(NoneMatched,BothMatched,SameSV)
               %>% summarise(Count=n())
@@ -439,3 +456,24 @@ sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = SvCount, grou
                 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
                 + ylab("SV Count") + xlab("Signature") + ggtitle(title)
                 + theme(legend.position="none"))
+
+
+
+
+
+# segments with high copy number change
+hcnData = svData %>% filter(AdjCNChgStart>=3&AdjCNChgEnd>=3)
+hcnData$CNChgBucket = 2**round(log((hcnData$AdjCNChgStart+hcnData$AdjCNChgEnd)*0.5,2),0)
+nrow(hcnData)
+View(hcnData)
+
+hcnStats = hcnData %>% group_by(CNChgBucket) %>% summarise(Count=n())
+View(hcnStats)
+
+linkInfo = svData %>% filter(ClusterCount>1)
+nrow(linkInfo)
+nrow(linkInfo %>% filter(IsTI==1))
+nrow(linkInfo %>% filter(IsDB==1))
+
+
+

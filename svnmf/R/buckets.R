@@ -112,7 +112,7 @@ plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN)
         s3 = s2+1
         s4 = s3 + rowsPerColumn-1
 
-        print(paste(i, ", topNRows=", topNRows, ", s1=", s1, ", s2=", s2, ", s3=", s3, ", s4=", s4, sep=''))
+        # print(paste(i, ", topNRows=", topNRows, ", s1=", s1, ", s2=", s2, ", s3=", s3, ", s4=", s4, sep=''))
 
         grid.arrange(tableGrob(slice(sigBucketTopN, s1:s2), rows=NULL),
                      tableGrob(slice(sigBucketTopN, s3:s4), rows=NULL),
@@ -141,18 +141,45 @@ get_bucket_signatures_plot<-function(bucketNames, signatures, sigNames) {
   df2 = cbind(df, sigPercents)
   sigPlotData = melt(df2, id.vars = c("Bucket"))
 
-  ymax = 1.0
+  ymax = min(1.0, max(sigPlotData$value)+0.1)
+  bucketCount = nrow(bucketNames)
+  dataCount = nrow(sigPlotData)
+  sigCount = ncol(signatures)
+  bucketsPerPage = 10
+  rowsPerPage = bucketCount * bucketsPerPage
+  rowStart = 1
 
-  sigBucketsPlot = (ggplot(data = sigPlotData, aes(x = Bucket, y = value, fill = Bucket))
-                    + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                    + facet_wrap(~ variable,ncol = 1)
-                    + ylab("Relative contribution")
-                    + coord_cartesian(ylim = c(0, ymax))
-                    + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                    + ggtitle("Signatures by Bucket")
-                    + guides(fill = FALSE))
+  sigBucketPlots = list()
+  plotIndex = 1
 
-  return (sigBucketsPlot)
+  while(rowStart < dataCount)
+  {
+    if(sigCount >= 15)
+    {
+      rowEnd = min(rowStart + rowsPerPage - 1, dataCount)
+    }
+    else
+    {
+      rowEnd = dataCount
+    }
+
+    sigBucketPlot = (ggplot(data = sigPlotData[rowStart:rowEnd,], aes(x = Bucket, y = value, fill = Bucket))
+                      + geom_bar(stat = "identity", colour = "black", size = 0.2)
+                      + facet_wrap(~ variable,ncol = 1)
+                      + ylab("Relative contribution")
+                      + coord_cartesian(ylim = c(0, ymax))
+                      + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+                      + ggtitle("Signatures by Bucket")
+                      + guides(fill = FALSE))
+
+    sigBucketPlots[[plotIndex]] = sigBucketPlot
+    plotIndex = plotIndex + 1
+
+    rowStart = rowEnd + 1
+  }
+
+
+  return (sigBucketPlots)
 }
 
 get_bucket_summary_plot<-function(bucketSummaryData, varType = "SV") {
@@ -174,20 +201,43 @@ get_bucket_summary_plot<-function(bucketSummaryData, varType = "SV") {
   return (bucketSummaryPlot)
 }
 
+get_sample_bucket_data<-function(matrixData, origSampleCounts, sampleCancerTypes, bucketNames)
+{
+  data1 = t(matrixData)
+  data2 = t(data1)
+  data3 = cbind(Bucket = bucketNames, data2)
+  data4 = gather(data3, SampleId, Count, -Bucket)
+
+  data4 = merge(data4, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+  data4 = merge(data4, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+  colnames(data4) <- c("SampleId", "Bucket", "Count", "SampleCount", "CancerType")
+  data4$Percent = round(data4$Count/data4$SampleCount,4)
+
+  data4[is.na(data4)] = 0
+
+  return (data4)
+}
+
 get_top_buckets_by_sample<-function(sampleCounts, origSampleCounts, sampleCancerTypes, topNBuckets = 20)
 {
   sampleBucketData = merge(sampleCounts, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
   sampleBucketData = merge(sampleBucketData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
   sampleBucketData = setNames(sampleBucketData, c("SampleId", "Bucket", "Count", "SampleCount", "CancerType"))
 
+  sampleBucketData$Percent = round(sampleBucketData$Count/sampleBucketData$SampleCount,4)
+
   # collect the top N buckets by count for each sample
   sampleBucketData = sampleBucketData %>% arrange(SampleId,-Count)
+
+  if(topNBuckets == 0)
+  {
+    return (sampleBucketData)
+  }
 
   sampleBucketTopN = data.frame()
   for(sampleId in sampleCancerTypes$SampleId)
   {
     samBucketData = head(sampleBucketData %>% filter(SampleId==sampleId),topNBuckets)
-    samBucketData$Percent = round(samBucketData$Count/sum(samBucketData$Count),4)
     sampleBucketTopN = rbind(sampleBucketTopN,samBucketData)
   }
 
@@ -210,29 +260,13 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
                    "#ff86be", "#4a7822", "#ffabe4", "#6a9e03", "#c4c0fb", "#ff7571", "#878659", "#de3185", "#a0429d", "#8a492f")
 
 
-  cancerData = sampleBucketData
+  cancerData = sampleBucketData %>% filter(SampleCount>0)
 
   if(cancerType != "") {
     cancerData = cancerData %>% filter(CancerType==cancerType)
   }
 
-  # log the top N samples separately if they significantly higher counts
-  cancerSampleData = cancerData %>% group_by(SampleId) %>% summarise(SampleCount=first(SampleCount)) %>% arrange(-SampleCount)
-
-  topNIndex = 6
-  logTopNSamples = F
-  if(nrow(cancerSampleData) > topNIndex)
-  {
-    maxCount = max(cancerSampleData$SampleCount)
-    nthCount = nth(cancerSampleData$SampleCount, topNIndex)
-
-    if(maxCount > 3 * nthCount)
-    {
-      logTopNSamples = T
-    }
-  }
-
-  cancerData = cancerData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent')
+  cancerData = cancerData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent', "SampleCount")
 
   bucketPlots = list()
   plotIndex = 1
@@ -240,7 +274,6 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
   if(nrow(cancerData) > 0)
   {
     # only plot 50 samples at a time
-    numSamples = n_distinct(cancerData$SampleId)
     samplesPerPlot = 100
     rowsPerPlot = samplesPerPlot * bucketCount
 
@@ -250,15 +283,22 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
 
     while(rowEnd < maxRows)
     {
-      if(plotCount == 0 & logTopNSamples)
+      if(plotCount == 0)
       {
         rowStart = 1
-        rowEnd = min(rowStart + topNIndex*bucketCount - 1, maxRows)
+        rowEnd = min(rowStart + 80*bucketCount - 1, maxRows) # less to leave space for the legend
       }
       else
       {
         rowStart = rowEnd + 1
         rowEnd = min(rowStart + rowsPerPlot - 1, maxRows)
+
+        # combine stragglers onto the last graph
+        if(rowEnd < maxRows & maxRows - rowEnd < rowsPerPlot * 0.4)
+        {
+          # print(paste(plotCount, ": rowEnd=", rowEnd, " close to maxRows=", maxRows, sep=''))
+          rowEnd = maxRows
+        }
       }
 
       # print(paste(plotCount, ": rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
@@ -272,8 +312,8 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
         title = paste("Bucket % by Sample for ", cancerType, sep="")
       }
 
-      sampleBucketPlot <- (ggplot(cancerData[rowStart:rowEnd,], aes(x = reorder(SampleId, -Percent), y = Percent, fill = Bucket))
-                        + geom_bar(stat = "identity", colour = "black", size=0.25)
+      sampleBucketPlot <- (ggplot(cancerData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Percent, fill = Bucket))
+                        + geom_bar(stat = "identity", colour = "black", size=0.01)
                         + labs(x = "", y = paste("Bucket % by Sample", sep=''))
                         + scale_fill_manual(values = bucketColours)
                         + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
@@ -304,7 +344,7 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
         plotIndex = plotIndex + 1
       }
 
-      if(plotCount >= maxPlots)
+      if(maxPlots > 0 && plotCount >= maxPlots)
         break
     }
 

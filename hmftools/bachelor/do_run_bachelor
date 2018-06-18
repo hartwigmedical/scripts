@@ -51,6 +51,11 @@ echo "Slicing BAM files"
 bamFiles="${sample}*b*"
 mv ${bamFiles} ${bach_output_dir}
 
+if [ ! -f "${bach_output_dir}/*bam" ]; then
+    echo "BAM slicing failed"
+    exit
+fi
+
 echo "Creating Pile-ups"
 
 # /data/common/tools/sambamba_v0.6.5/sambamba mpileup -t 1 CPCT02070218T_13_32915121_32915122.bam --samtools "-q 1 -f /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta" -L bachelor_bed.csv > CPCT02070218T_001.mpu

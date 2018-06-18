@@ -69,8 +69,6 @@ View(driversByGene %>% group_by(gene) %>% summarise(Count=n()))
 cancerTypes = driversByGene %>% group_by(cancerType) %>% summarise(Count=n())
 View(cancerTypes)
 
-svData = svData %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
-
 # Correlation between genes using a probability of co-occurence
 
 getSampleGeneList<-function(dgData)
@@ -684,161 +682,195 @@ View(gwPPResults)
 write.csv(gwPPResults %>% filter(CancerType!='All'), "~/logs/r_output/geneWGDCorrelations.csv", row.names=F, quote=F)
 
 
-## Gene and NMF Signatures Correlation
+## Gene and NMF SV Signatures Correlation
 # NMF SV Signatures linked with Driver Genes
 
+# svHpcData = svData %>% filter(SampleId in )&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
+
+
 # bring in NMF data to combine at sample level- append SV and Signature counts to driver genes
-nmfSampleSigData = read.csv("~/logs/r_output/nmf_all_11_sampleSigData.csv")
-View(nmfSampleSigData)
+svSampleSigData = read.csv("~/logs/r_output/svSampleSigData.csv")
 
-sampleSvCounts = nmfSampleSigData %>% group_by(SampleId)%>% summarise(SampleCount=first(SampleSvCount))
-driverGenesWithSigs = (merge(driversByGene, sampleSvCounts, by.x="sampleId", by.y="SampleId", all.x=TRUE))
-samSigSpread = nmfSampleSigData %>% select(SampleId,SigName,SvCount) %>% spread(SigName,SvCount)
-driverGenesWithSigs = merge(driverGenesWithSigs, samSigSpread, by.x="sampleId", by.y="SampleId", all.x=TRUE)
-View(driverGenesWithSigs)
+View(svSampleSigData)
 
-# now calculate a Poisson probability of each gene occuring within each signature
-load("~/logs/r_output/snvSampleSigData.RData")
-nrow(sampleSigData) # 30*2405
+sampleCancerTypes = hpcDriversByGene %>% group_by(sampleId) %>% summarise(CancerType=first(cancerType))
+
+
+# make drive-gene & signature correlation logic generic
+rm(svSampleSigData)
+sampleSigData = read.csv("~/logs/r_output/svSampleSigData.csv")
+sampleSigData = read.csv("~/logs/r_output/indelSampleSigData.csv")
+sampleSigData = read.csv("~/logs/r_output/mnvSampleSigData.csv")
+sampleSigData = read.csv("~/logs/r_output/snvSampleSigData.csv")
+
+sampleSigData = sampleSigData %>% filter(SampleId %in% driversNonFusions$sampleId)
+
+View(sampleCancerTypes)
+sampleSigData = merge(sampleSigData, sampleCancerTypes, by.x="SampleId", by.y="sampleId", all.x=T)
+sampleSigData = within(sampleSigData, rm(SampleCount))
+
+# required fields: SampleId, SigName, CancerType and Count
 View(sampleSigData)
-sampleCount = n_distinct(sampleSigData$SampleId)
-print(sampleCount)
 
-# first determine a level of significance for each signature (ie SNV count above which a sample would be enriched for this signature)
-sigNames = unique(sampleSigData$SigName)
-print(sigNames)
-nrow(sigNames)
+allGeneSigProbs = calc_sig_gene_probs(cancerTypesList, driversNonFusions, sampleSigData)
+View(allGeneSigProbs)
+#write.csv(allGeneSigProbs, "~/logs/r_output/SV_geneSigCorrel.csv", row.names=F, quote=F)
+write.csv(allGeneSigProbs, "~/logs/r_output/INDEL_geneSigCorrel.csv", row.names=F, quote=F)
+#write.csv(allGeneSigProbs, "~/logs/r_output/MNV_geneSigCorrel.csv", row.names=F, quote=F)
+#write.csv(allGeneSigProbs, "~/logs/r_output/SNV_geneSigCorrel.csv", row.names=F, quote=F)
 
-topNPercent = 0.1
-# topNIndex = round(topNPercent * sampleCount) 
-# print(topNIndex)
 
-# this data gives SNV Count by signature (and a total SNV count per sample)
-# from which we can calculate a signature rate for each sample
+# sampleCounts = sampleSigData %>% group_by(SampleId)%>% summarise(SampleCount=sum(Count))
+# driverGenesWithSigs = merge(hpcDriversByGene, sampleCounts, by.x="sampleId", by.y="SampleId", all.x=TRUE)
+# samSigSpread = sampleSigData %>% select(SampleId,SigName,Count) %>% spread(SigName,Count)
+# driverGenesWithSigs = merge(driverGenesWithSigs, samSigSpread, by.x="sampleId", by.y="SampleId", all.x=TRUE)
+# View(driverGenesWithSigs)
+# driverGenesWithSigs[is.na(driverGenesWithSigs)] = 0
 
-allGeneSnvSigProbs = data.frame(matrix(ncol = 10, nrow = 0))
+cancerTypesList = unique(driversNonFusions$cancerType)
+View(cancerTypesList)
 
-for(i in 1:nrow(cancerTypes))
+cancerTypesSubList = c("Prostate")
+cancerTypesList = cancerTypesSubList
+
+calc_sig_gene_probs<-function(cancerTypesList, geneSampleList, sampleSigData, topNPercent = 0.02)
 {
-  cancerRow = cancerTypes[i,]
-  cancerTypeStr = cancerRow$cancerType
-  dgData = driversNonFusions %>% filter(cancerType==cancerTypeStr)
-  cancerSampleSigData = sampleSigData %>% filter(CancerType==cancerTypeStr)
-  cancerSC = n_distinct(dgData$sampleId)
-  
-  gsCounts = dgData %>% group_by(gene) %>% summarise(SampleCount=n())
+  allGeneSigProbs = data.frame(matrix(ncol = 14, nrow = 0))
+  sigNames = unique(sampleSigData$SigName)
 
-  print(paste(i, ": cancerType=", cancerTypeStr, ", sampleCount=", cancerSC, sep=''))
-  
-  geneSnvSigProbs = data.frame(matrix(ncol = 7, nrow = 0))
-  geneSnvSigProbs = setNames(geneSnvSigProbs, c("SigName", "Gene", "SigSC", "GeneSC", "SigAndGeneSC", "SigAndGeneExp", "Binomial"))
-
-  for(sigName in sigNames)
+  for(cancerTypeStr in cancerTypesList)
   {
-    # ssData = sampleSigData %>% filter(SigName==sigName) %>% arrange(-SnvCount) # samples with highest SNV count for this sig first
-    # samplesAboveSigThreshold = head(ssData, topNIndex)
-    # ssDataNth = slice(ssData, topNIndex:topNIndex+1)
-    # thresSnvCount = ssDataNth$SnvCount
-  
-    # take samples above 10% by signature contribution
-    samplesAboveSigThreshold = cancerSampleSigData %>% filter(SigName==sigName & SigPercent>=topNPercent) # samples with significant contribution from this sig
-    scAboveSigThreshold = nrow(samplesAboveSigThreshold)
-  
-    print(paste("sigName=", sigName, ", SC Above Threshold=", scAboveSigThreshold, sep=''))
+    dgData = geneSampleList %>% filter(cancerType==cancerTypeStr)
+    cancerSampleSigData = sampleSigData %>% filter(CancerType==cancerTypeStr)
+    cancerSC = n_distinct(dgData$sampleId)
     
-    dgSamplesWithSig = dgData %>% filter(sampleId %in% samplesAboveSigThreshold$SampleId)
+    gsCounts = dgData %>% group_by(gene) %>% summarise(SampleCount=n())
+    geneCount = nrow(gsCounts)
   
-    for(j in 1:nrow(gsCounts))
+    print(paste("cancerType=", cancerTypeStr, ", sampleCount=", cancerSC, sep=''))
+    
+    geneSigProbs = data.frame(matrix(ncol = 8, nrow = 0))
+    colnames(geneSigProbs) = c("SigName", "Gene", "SigSC", "GeneSC", "SigAndGeneSC", "SigAndGeneExp", "Binomial", "FisherET")
+  
+    for(sigName in sigNames)
     {
-      geneData = gsCounts[j,]
-      geneName = geneData$gene
-      scWithGene = geneData$SampleCount
+      # take samples above X% by signature contribution
+      samplesAboveSigThreshold = cancerSampleSigData %>% filter(SigName==sigName & SigPercent>=topNPercent) # samples with significant contribution from this sig
+      scWithSig = nrow(samplesAboveSigThreshold)
+    
+      print(paste("sigName=", sigName, ", SC Above Threshold=", scWithSig, sep=''))
       
-      geneSamplesPerc = round(scWithGene/cancerSC,4) # % of samples with this gene driver
+      dgSamplesWithSig = dgData %>% filter(sampleId %in% samplesAboveSigThreshold$SampleId)
+    
+      for(j in 1:geneCount)
+      {
+        geneData = gsCounts[j,]
+        geneName = geneData$gene
+        scWithGene = geneData$SampleCount
+        
+        geneSamplesPerc = round(scWithGene/cancerSC,4) # % of samples with this gene driver
+    
+        # how many samples have enriched sig and this gene
+        scWithSigAndGene = nrow(dgSamplesWithSig %>% filter(gene==geneName))
+        
+        # expected count of this gene within samples with WGD
+        geneSigExpected = round(scWithSig * geneSamplesPerc,2)
+          
+        if(scWithSigAndGene > 0 & scWithSigAndGene > geneSigExpected)
+        {
+          # ie prob of not getting 1 less than the actual count or lower
+          binomialProb = 1 - pbinom(scWithSigAndGene-1, scWithSig, geneSamplesPerc)
+        }
+        else
+        {
+          # ie prob of getting the actual count or higher
+          binomialProb = pbinom(scWithSigAndGene, scWithSig, geneSamplesPerc)
+        }
+        
+        scSigNoGene = scWithSig - scWithSigAndGene
+        svNoSigWithGene = scWithGene-scWithSigAndGene
+        scNoGene = cancerSC - scWithGene
+        svNoGeneNoSig = scNoGene - scSigNoGene
+        fishMatrix = rbind(c(scWithSigAndGene,svNoSigWithGene), c(scSigNoGene,svNoGeneNoSig))
+        
+        if(scWithSigAndGene < geneSigExpected)
+          fetProb = fisher.test(fishMatrix, alternative="less")$p.value
+        else
+          fetProb = fisher.test(fishMatrix, alternative="greater")$p.value
+        
+        if(binomialProb <= 0.2 | fetProb <= 0.2)
+        {
+          if(binomialProb < 0.01 | fetProb < 0.01)
+          {
+            print(paste("sigName=", sigName, ", gene=", geneName, ", geneSC=", scWithGene, ", actualBothSC=", scWithSigAndGene, ", expectedBothSC=", geneSigExpected,
+                        ", binProb=", round(binomialProb,6), ", fetProb=", round(fetProb,6), sep=''))
+    
+            print(paste("sigName=", sigName, ", gene=", geneName, ", cancerSC=", cancerSC, ", geneSC=", scWithGene, ", withSig=", scWithSig, 
+                        ", withSigWithGene=", scWithSigAndGene, ", sigNoGene=", scSigNoGene, ", noGene=", scNoGene, ", noGeneNoSig=", svNoGeneNoSig, 
+                        ", fetProb=", round(fetProb,6), sep=''))
   
-      # how many samples have enriched sig and this gene
-      scWithSigAndGene = nrow(dgSamplesWithSig %>% filter(gene==geneName))
+            rowIndex = nrow(geneSigProbs)+1
+            geneSigProbs[rowIndex,1] = sigName
+            geneSigProbs[rowIndex,2] = geneName
+            geneSigProbs[rowIndex,3] = scWithSig
+            geneSigProbs[rowIndex,4] = scWithGene
+            geneSigProbs[rowIndex,5] = scWithSigAndGene
+            geneSigProbs[rowIndex,6] = geneSigExpected
+            geneSigProbs[rowIndex,7] = binomialProb
+            geneSigProbs[rowIndex,8] = fetProb
+          }
+        }
+      }
+    }
+    
+    if(nrow(geneSigProbs) > 0)
+    {
+      geneSigProbs$Count_GT_Exp = geneSigProbs$SigAndGeneSC > geneSigProbs$SigAndGeneExp
+      geneSigProbs = geneSigProbs %>% arrange(FisherET)
+    
+      # set ranking values
+      rowIndex = data.frame(as.numeric(as.character(rownames(geneSigProbs))))
+      colnames(rowIndex) <- c("Rank")
+      geneSigProbs = cbind(geneSigProbs, rowIndex)
       
-      # expected count of this gene within samples with WGD
-      geneSigExpected = round(scAboveSigThreshold * geneSamplesPerc,2)
-        
-      if(scWithSigAndGene > 0 & scWithSigAndGene > geneSigExpected)
-      {
-        # ie prob of not getting 1 less than the actual count or lower
-        binomialProb = 1 - pbinom(scWithSigAndGene-1, scAboveSigThreshold, geneSamplesPerc)
-      }
-      else
-      {
-        # ie prob of getting the actual count or lower
-        binomialProb = pbinom(scWithSigAndGene, scAboveSigThreshold, geneSamplesPerc)
-      }
-      
-      if(binomialProb <= 0.2)
-      {
-        if(binomialProb < 0.01)
-          print(paste("sigName=", sigName, ", gene=", geneName, ", geneSC=", scWithGene, ", actualBothSC=", scWithSigAndGene, ", expectedBothSC=", geneSigExpected, ", binProb=", round(binomialProb,6), sep=''))
-        
-        rowIndex = nrow(geneSnvSigProbs)+1
-        geneSnvSigProbs[rowIndex,1] = sigName
-        geneSnvSigProbs[rowIndex,2] = geneName
-        geneSnvSigProbs[rowIndex,3] = scAboveSigThreshold
-        geneSnvSigProbs[rowIndex,4] = scWithGene
-        geneSnvSigProbs[rowIndex,5] = scWithSigAndGene
-        geneSnvSigProbs[rowIndex,6] = geneSigExpected
-        geneSnvSigProbs[rowIndex,7] = binomialProb
-      }
+      geneSigProbs$TestCount = length(sigNames) * geneCount
+      geneSigProbs$FDR = geneSigProbs$FisherET*geneSigProbs$TestCount/geneSigProbs$Rank
+    
+      geneSigProbs$CancerType = cancerTypeStr
+    
+      allGeneSigProbs = rbind(allGeneSigProbs, geneSigProbs)
     }
   }
   
-  geneSnvSigProbs$Count_GT_Exp = geneSnvSigProbs$SigAndGeneSC > geneSnvSigProbs$SigAndGeneExp
-  geneSnvSigProbs = geneSnvSigProbs %>% arrange(Binomial)
-
-  # set ranking values
-  geneSnvSigProbs$Rank = 0
-  colIndex = length(colnames(geneSnvSigProbs))
-  
-  for(j in 1:nrow(geneSnvSigProbs))
-  {
-    geneSnvSigProbs[j,colIndex] = j
-  }
-  
-  numTests = cancerSC
-
-  geneSnvSigProbs$CancerType = cancerTypeStr
-  allGeneSnvSigProbs = rbind(allGeneSnvSigProbs, geneSnvSigProbs)
+  return (allGeneSigProbs)
 }
-
-length(sigNames)
-
-View(allGeneSnvSigProbs)
 
 View(samplesAboveSigThreshold)
-View(geneSnvSigProbs)
-nrow(geneSnvSigProbs)
+View(geneSigProbs)
+nrow(geneSigProbs)
 
-View(driversNonFusions %>% filter(gene=='TP53'&sampleId %in% samplesAboveSigThreshold$SampleId))
 
-View(driversNonFusions)
 
-# validate
-View(sampleSigData %>% filter(SigName=="01"&SigPercent>=0.1))
+# experimenting with Fisher's exact test
 
-padjust
+a <- matrix(c(1,11,9,3),2,2)
+print(a)
+View(a)
 
-geneSnvSigProbs$Count_GT_Exp = geneSnvSigProbs$SigAndGeneSC > geneSnvSigProbs$SigAndGeneExp
-geneSnvSigProbs = geneSnvSigProbs %>% arrange(Binomial)
-geneSnvSigProbs$Rank = 0
-colIndex = length(colnames(geneSnvSigProbs))
+fetResult = fisher.test(a, alternative = "two.sided")
+print(fetResult$p.value)
 
-# set ranking BH values
-for(i in 1:nrow(geneSnvSigProbs))
-{
-  geneSnvSigProbs[i,colIndex] = i
-}
+fetResult = fisher.test(a, alternative = "less")
+print(fetResult$p.value)
 
-View(geneSnvSigProbs)
+fet2 = fisher.test(rbind(c(1,9),c(11,3)), alternative="less")
+print(fet2$p.value)
 
-write.csv(geneSnvSigProbs, "~/logs/r_output/geneSigCor_All.csv", row.names=F, quote=F)
+fet2 = fisher.test(rbind(c(5,9),c(7,3)), alternative="less")
+print(fet2$p.value)
+
+fet2 = fisher.test(rbind(c(5,9),c(7,3)), alternative="greater")
+print(fet2$p.value)
 
 
 
@@ -1141,501 +1173,4 @@ bePositionPlot = (ggplot(data = beStats[1:100,], aes(x = reorder(Chr_Pos, -SvCou
 
 print(bePositionPlot)
 
-# and plot all by cancer type
-plotIndex = 1
-chrPosPlotList = list()
-for(cancerType in cancerTypes$CancerType)
-{
-  bePerCancerStats = (beData %>% filter(CancerType==cancerType) %>% group_by(Chr, PositionBucket)
-             %>% summarise(SvCount=n())
-             %>% arrange(-SvCount))
 
-  bePerCancerStats = unite(bePerCancerStats, "Chr_Pos", Chr, PositionBucket, sep="_")
-
-  title = paste("Position by 10M Buckets: ", cancerType, sep="")
-
-  bePositionPlot = (ggplot(data = bePerCancerStats[1:topNPosCount,], aes(x = reorder(Chr_Pos, -SvCount), y = SvCount), fill = Chr_Pos)
-                    + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                    + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                    + ylab("SV Count") + xlab("Chr_Pos") + ggtitle(title)
-                    + theme(legend.position="none"))
-
-  chrPosPlotList[[plotIndex]] <- bePositionPlot
-
-  if(plotIndex >= 4)
-  {
-    multiplot(plotlist = chrPosPlotList, cols = 2)
-    chrPosPlotList = list()
-    plotIndex = 1
-  }
-  else
-  {
-    plotIndex = plotIndex + 1
-  }
-}
-
-if(plotIndex > 1)
-{
-  # now print all plots for this cancer type
-  multiplot(plotlist = chrPosPlotList, cols = 2)
-}
-
-
-# additionally plot positions which are dominated by specific cancer types
-topNPosCount = 20
-topNPositions = head(beStats,topNPosCount)
-View(topNPositions$Chr_Pos)
-
-beCancerStats = (beData %>% group_by(CancerType, Chr, PositionBucket)
-           %>% summarise(SvCount=n())
-           %>% arrange(CancerType, Chr, PositionBucket))
-
-beCancerStats = unite(beCancerStats, "Chr_Pos", Chr, PositionBucket, sep="_")
-beCancerStats = beCancerStats %>% filter(Chr_Pos %in% topNPositions$Chr_Pos)
-View(beCancerStats)
-
-title = paste("SV Count by cancer for top ", topNPosCount, " positions", sep='')
-
-beCancerTopNPlot <- (ggplot(beCancerStats, aes(x = reorder(Chr_Pos, -SvCount), y = SvCount, fill = CancerType))
-                  + geom_bar(stat = "identity", colour = "black")
-                  + labs(x = "", y = "SV count by Chromosomal Position")
-                  + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-                  + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                  + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7))
-                  + ggtitle(title))
-
-print(beCancerTopNPlot)
-
-
-dev.off()
-
-
-
-
-
-
-
-
-# determine IsStressed using poisson distribution using expected vs actual SV counts per arm
-# combinedArmData$ArmExpected = ifelse(combinedArmData$ArmExpected>0,combinedArmData$ArmExpected,0.1)
-# combinedArmData$StressedPoissonProb = round(1 - ppois(combinedArmData$ArmCount - 1, combinedArmData$ArmExpected),4)
-# combinedArmData$IsStressedOld = ifelse(combinedArmData$ArmCount>=10 & combinedArmData$ArmCount >= 2.5 * combinedArmData$ArmExpected,1,0)
-# combinedArmData$IsStressed = ifelse(combinedArmData$StressedPoissonProb <= 0.001 & combinedArmData$ArmCount >= 10,1,0)
-
-
-# prepare arm stats
-armStats = (combinedArmData %>% group_by(SampleId, Chr, Arm)
-            %>% summarise(SvCount=n(),
-                          MaxCN=round(max((AdjCNStart+AdjCNEnd)*0.5),2),
-                          AvgCN=round(sum((AdjCNStart+AdjCNEnd)*0.5)/n(),2),
-                          AvgPloidy=round(sum(Ploidy)/n(),2),
-                          MaxInvCN=round(max(ifelse(Type=='INV',(AdjCNStart+AdjCNEnd)*0.5,0)),2),
-                          InvMinPosStart=min(ifelse(Type=='INV'&AdjCNStart>=50&AdjCNEnd>=50&NearestTILen>=0,PosStart,3e8)),
-                          InvMaxPosEnd=max(ifelse(Type=='INV'&AdjCNStart>=50&AdjCNEnd>=50&NearestTILen>=0,PosEnd,-1)),
-                          ClusteredPerc=round(sum(ClusterCount>1)/n(),2),
-                          MaxClusterCount=max(ClusterCount),
-                          AvgClusterCount=round(sum(ClusterCount)/n(),0),
-                          LEPerc=round(sum(IsLINE=='true')/n(),3),
-                          FSPerc=round(sum(IsFS=='true')/n(),3),
-                          BndCount=sum(Type=='BND'),
-                          BndPerc=round(sum(Type=='BND')/n(),2),
-                          IsStressed=max(IsStressed))
-            %>% arrange(SampleId, Chr, Arm))
-
-View(armStats)
-
-
-
-
-
-
-
-##########################
-## bucket and arm analysis
-
-library("svnmf")
-
-chr = "17"
-arm = 'P'
-chrLen = get_chromosome_length(chr)
-centroPos = get_centromere_position(chr, arm)
-armLen = get_arm_length(chr,  arm)
-View(chrLen)
-View(centroPos)
-View(get_centromere_position(chr, 'Q'))
-View(armLen)
-View(get_arm_length(chr,  'Q'))
-
-
-combinedArmData$ClusterNone=ifelse(combinedArmData$ClusterCount==1,1,0)
-combinedArmData$ClusterSmall=ifelse(combinedArmData$ClusterCount>1&combinedArmData$ClusterCount<=3,1,0)
-combinedArmData$ClusterLarge=ifelse(combinedArmData$ClusterCount>3,1,0)
-
-armBucketSummary = (combinedArmData %>% group_by(SampleId, Chr, Arm)
-                    %>% summarise(LINE=sum(IsLINE==1),
-                                  Stressed=sum(IsLINE==0&IsStressed==1),
-                                  Del_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterNone==1),
-                                  Del_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Del_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Del_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterLarge==1),
-                                  Del_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Del_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Del_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Del_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Del_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Del_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Del_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Del_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Del_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Del_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Del_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Del_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Del_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterNone==1),
-                                  Del_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Del_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Del_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterLarge==1),
-                                  Dup_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterNone==1),
-                                  Dup_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Dup_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Dup_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterLarge==1),
-                                  Dup_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Dup_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Dup_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Dup_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Dup_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Dup_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Dup_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Dup_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Dup_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Dup_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Dup_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Dup_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Dup_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterNone==1),
-                                  Dup_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Dup_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Dup_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterLarge==1),
-                                  Inv_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterNone==1),
-                                  Inv_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Inv_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Inv_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterLarge==1),
-                                  Inv_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Inv_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Inv_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Inv_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Inv_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Inv_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Inv_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Inv_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Inv_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Inv_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Inv_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Inv_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Inv_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterNone==1),
-                                  Inv_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Inv_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Inv_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterLarge==1),
-                                  Bnd_CN=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterNone==1),
-                                  Bnd_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterSmall==1&IsDB==1),
-                                  Bnd_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterSmall==1&IsTI==1),
-                                  Bnd_CL=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterLarge==1)))
-
-View(armBucketSummary)
-armBucketSummary = armSummary
-
-# convert to stats for each arm regardless of sample
-
-armBucketStats = (armBucketSummary %>% group_by(Chr,Arm)
-                  %>% summarise(LINE=sum(LINE),
-                                Stressed=sum(Stressed),
-                                Del_LT10K_CN=sum(Del_LT10K_CN),
-                                Del_LT10K_CS_DB=sum(Del_LT10K_CS_DB),
-                                Del_LT10K_CS_TI=sum(Del_LT10K_CS_TI),
-                                Del_LT10K_CL=sum(Del_LT10K_CL),
-                                Del_10Kto100K_CN=sum(Del_10Kto100K_CN),
-                                Del_10Kto100K_CS_DB=sum(Del_10Kto100K_CS_DB),
-                                Del_10Kto100K_CS_TI=sum(Del_10Kto100K_CS_TI),
-                                Del_10Kto100K_CL=sum(Del_10Kto100K_CL),
-                                Del_100Kto500K_CN=sum(Del_100Kto500K_CN),
-                                Del_100Kto500K_CS_DB=sum(Del_100Kto500K_CS_DB),
-                                Del_100Kto500K_CS_TI=sum(Del_100Kto500K_CS_TI),
-                                Del_100Kto500K_CL=sum(Del_100Kto500K_CL),
-                                Del_500Kto5M_CN=sum(Del_500Kto5M_CN),
-                                Del_500Kto5M_CS_DB=sum(Del_500Kto5M_CS_DB),
-                                Del_500Kto5M_CS_TI=sum(Del_500Kto5M_CS_TI),
-                                Del_500Kto5M_CL=sum(Del_500Kto5M_CL),
-                                Del_GT5M_CN=sum(Del_GT5M_CN),
-                                Del_GT5M_CS_DB=sum(Del_GT5M_CS_DB),
-                                Del_GT5M_CS_TI=sum(Del_GT5M_CS_TI),
-                                Del_GT5M_CL=sum(Del_GT5M_CL),
-                                Dup_LT10K_CN=sum(Dup_LT10K_CN),
-                                Dup_LT10K_CS_DB=sum(Dup_LT10K_CS_DB),
-                                Dup_LT10K_CS_TI=sum(Dup_LT10K_CS_TI),
-                                Dup_LT10K_CL=sum(Dup_LT10K_CL),
-                                Dup_10Kto100K_CN=sum(Dup_10Kto100K_CN),
-                                Dup_10Kto100K_CS_DB=sum(Dup_10Kto100K_CS_DB),
-                                Dup_10Kto100K_CS_TI=sum(Dup_10Kto100K_CS_TI),
-                                Dup_10Kto100K_CL=sum(Dup_10Kto100K_CL),
-                                Dup_100Kto500K_CN=sum(Dup_100Kto500K_CN),
-                                Dup_100Kto500K_CS_DB=sum(Dup_100Kto500K_CS_DB),
-                                Dup_100Kto500K_CS_TI=sum(Dup_100Kto500K_CS_TI),
-                                Dup_100Kto500K_CL=sum(Dup_100Kto500K_CL),
-                                Dup_500Kto5M_CN=sum(Dup_500Kto5M_CN),
-                                Dup_500Kto5M_CS_DB=sum(Dup_500Kto5M_CS_DB),
-                                Dup_500Kto5M_CS_TI=sum(Dup_500Kto5M_CS_TI),
-                                Dup_500Kto5M_CL=sum(Dup_500Kto5M_CL),
-                                Dup_GT5M_CN=sum(Dup_GT5M_CN),
-                                Dup_GT5M_CS_DB=sum(Dup_GT5M_CS_DB),
-                                Dup_GT5M_CS_TI=sum(Dup_GT5M_CS_TI),
-                                Dup_GT5M_CL=sum(Dup_GT5M_CL),
-                                Inv_LT10K_CN=sum(Inv_LT10K_CN),
-                                Inv_LT10K_CS_DB=sum(Inv_LT10K_CS_DB),
-                                Inv_LT10K_CS_TI=sum(Inv_LT10K_CS_TI),
-                                Inv_LT10K_CL=sum(Inv_LT10K_CL),
-                                Inv_10Kto100K_CN=sum(Inv_10Kto100K_CN),
-                                Inv_10Kto100K_CS_DB=sum(Inv_10Kto100K_CS_DB),
-                                Inv_10Kto100K_CS_TI=sum(Inv_10Kto100K_CS_TI),
-                                Inv_10Kto100K_CL=sum(Inv_10Kto100K_CL),
-                                Inv_100Kto500K_CN=sum(Inv_100Kto500K_CN),
-                                Inv_100Kto500K_CS_DB=sum(Inv_100Kto500K_CS_DB),
-                                Inv_100Kto500K_CS_TI=sum(Inv_100Kto500K_CS_TI),
-                                Inv_100Kto500K_CL=sum(Inv_100Kto500K_CL),
-                                Inv_500Kto5M_CN=sum(Inv_500Kto5M_CN),
-                                Inv_500Kto5M_CS_DB=sum(Inv_500Kto5M_CS_DB),
-                                Inv_500Kto5M_CS_TI=sum(Inv_500Kto5M_CS_TI),
-                                Inv_500Kto5M_CL=sum(Inv_500Kto5M_CL),
-                                Inv_GT5M_CN=sum(Inv_GT5M_CN),
-                                Inv_GT5M_CS_DB=sum(Inv_GT5M_CS_DB),
-                                Inv_GT5M_CS_TI=sum(Inv_GT5M_CS_TI),
-                                Inv_GT5M_CL=sum(Inv_GT5M_CL),
-                                Bnd_CN=sum(Bnd_CN),
-                                Bnd_CS_DB=sum(Bnd_CS_DB),
-                                Bnd_CS_TI=sum(Bnd_CS_TI),
-                                Bnd_CL=sum(Bnd_CL)))
-
-View(armBucketStats)
-
-bucketNames = tail(colnames(armBucketStats), length(colnames(armBucketStats))-2)
-View(bucketNames)
-
-armBucketRelStats = armBucketStats
-
-for(i in 1:nrow(armBucketStats))
-{
-  chr = armBucketStats[i,1]
-  arm = armBucketStats[i,2]
-
-  armLen = get_arm_length(chr, arm)
-
-  for(j in 1:length(bucketNames))
-  {
-    armBucketRelStats[i,j+2] = armBucketRelStats[i,j+2] / armLen * 1000000
-  }
-}
-
-armBucketRelStats = unite(armBucketRelStats, "Chr_Arm", Chr, Arm, sep="_")
-View(armBucketRelStats)
-
-armBucketPlot = (ggplot(data = armBucketRelStats, aes(x = reorder(Chr_Arm, -Del_LT10K_CN), y = Del_LT10K_CN), fill = Chr_Arm)
-                 + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                 + ylab("Norm. SV Count") + xlab("Chr_Arm")
-                 + theme(legend.position="none"))
-
-print(armBucketPlot)
-
-
-# DATA OUTPUT TO PDF
-pdf(file="~/logs/r_output/bucket_by_arm.pdf", height = 14, width = 20)
-par(mar=c(1,1,1,1))
-
-plotIndex = 1
-armBucketPlotList = list()
-for(bucketName in bucketNames)
-{
-  selCols = armBucketRelStats %>% select(Chr_Arm, bucketName)
-  colnames(selCols) <- c("Chr_Arm", "Count")
-
-  armBucketPlot = (ggplot(data = selCols, aes(x = reorder(Chr_Arm, -Count), y = Count), fill = Chr_Arm)
-                   + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                   + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                   + ylab(paste("Norm. SV Count: ", bucketName, sep="")) + xlab("Chr_Arm")
-                   + theme(legend.position="none"))
-
-  armBucketPlotList[[plotIndex]] <- armBucketPlot
-  # print(armBucketPlot)
-
-  if(plotIndex >= 4)
-  {
-    multiplot(plotlist = armBucketPlotList, cols = 2)
-    armBucketPlotList = list()
-    plotIndex = 1
-  }
-  else
-  {
-    plotIndex = plotIndex + 1
-  }
-}
-
-if(plotIndex > 1)
-{
-  # now print all plots for this cancer type
-  multiplot(plotlist = armBucketPlotList, cols = 2)
-}
-
-dev.off()
-
-
-svData$HomologyLen = nchar(as.character(svData$Homology))
-svData$HomologyLen = ifelse(svData$HomologyLen <= 8, svData$HomologyLen, min(round(svData$HomologyLen/10)*10,100))
-View(svData)
-
-
-# now for homology
-homBucketSummary = (svData %>% group_by(SampleId, HomologyLen)
-                    %>% summarise(LINE=sum(IsLINE==1),
-                                  Stressed=sum(IsLINE==0&IsStressed==1),
-                                  Del_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterNone==1),
-                                  Del_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Del_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Del_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length<=1e4&ClusterLarge==1),
-                                  Del_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Del_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Del_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Del_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Del_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Del_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Del_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Del_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Del_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Del_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Del_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Del_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Del_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterNone==1),
-                                  Del_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Del_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Del_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DEL'&Length>5e6&ClusterLarge==1),
-                                  Dup_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterNone==1),
-                                  Dup_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Dup_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Dup_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length<=1e4&ClusterLarge==1),
-                                  Dup_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Dup_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Dup_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Dup_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Dup_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Dup_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Dup_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Dup_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Dup_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Dup_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Dup_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Dup_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Dup_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterNone==1),
-                                  Dup_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Dup_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Dup_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='DUP'&Length>5e6&ClusterLarge==1),
-                                  Inv_LT10K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterNone==1),
-                                  Inv_LT10K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterSmall==1&IsDB==1),
-                                  Inv_LT10K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterSmall==1&IsTI==1),
-                                  Inv_LT10K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length<=1e4&ClusterLarge==1),
-                                  Inv_10Kto100K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterNone==1),
-                                  Inv_10Kto100K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterSmall==1&IsDB==1),
-                                  Inv_10Kto100K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterSmall==1&IsTI==1),
-                                  Inv_10Kto100K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e4&Length<=1e5&ClusterLarge==1),
-                                  Inv_100Kto500K_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterNone==1),
-                                  Inv_100Kto500K_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterSmall==1&IsDB==1),
-                                  Inv_100Kto500K_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterSmall==1&IsTI==1),
-                                  Inv_100Kto500K_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>1e5&Length<=5e5&ClusterLarge==1),
-                                  Inv_500Kto5M_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterNone==1),
-                                  Inv_500Kto5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterSmall==1&IsDB==1),
-                                  Inv_500Kto5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterSmall==1&IsTI==1),
-                                  Inv_500Kto5M_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e5&Length<=5e6&ClusterLarge==1),
-                                  Inv_GT5M_CN=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterNone==1),
-                                  Inv_GT5M_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterSmall==1&IsDB==1),
-                                  Inv_GT5M_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterSmall==1&IsTI==1),
-                                  Inv_GT5M_CL=sum(IsLINE==0&IsStressed==0&Type=='INV'&Length>5e6&ClusterLarge==1),
-                                  Bnd_CN=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterNone==1),
-                                  Bnd_CS_DB=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterSmall==1&IsDB==1),
-                                  Bnd_CS_TI=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterSmall==1&IsTI==1),
-                                  Bnd_CL=sum(IsLINE==0&IsStressed==0&Type=='BND'&ClusterLarge==1)))
-
-View(homBucketSummary)
-
-# convert to stats for each arm regardless of sample
-
-homBucketStats = (homBucketSummary %>% group_by(HomologyLen)
-                  %>% summarise(LINE=sum(LINE),
-                                Stressed=sum(Stressed),
-                                Del_LT10K_CN=sum(Del_LT10K_CN),
-                                Del_LT10K_CS_DB=sum(Del_LT10K_CS_DB),
-                                Del_LT10K_CS_TI=sum(Del_LT10K_CS_TI),
-                                Del_LT10K_CL=sum(Del_LT10K_CL),
-                                Del_10Kto100K_CN=sum(Del_10Kto100K_CN),
-                                Del_10Kto100K_CS_DB=sum(Del_10Kto100K_CS_DB),
-                                Del_10Kto100K_CS_TI=sum(Del_10Kto100K_CS_TI),
-                                Del_10Kto100K_CL=sum(Del_10Kto100K_CL),
-                                Del_100Kto500K_CN=sum(Del_100Kto500K_CN),
-                                Del_100Kto500K_CS_DB=sum(Del_100Kto500K_CS_DB),
-                                Del_100Kto500K_CS_TI=sum(Del_100Kto500K_CS_TI),
-                                Del_100Kto500K_CL=sum(Del_100Kto500K_CL),
-                                Del_500Kto5M_CN=sum(Del_500Kto5M_CN),
-                                Del_500Kto5M_CS_DB=sum(Del_500Kto5M_CS_DB),
-                                Del_500Kto5M_CS_TI=sum(Del_500Kto5M_CS_TI),
-                                Del_500Kto5M_CL=sum(Del_500Kto5M_CL),
-                                Del_GT5M_CN=sum(Del_GT5M_CN),
-                                Del_GT5M_CS_DB=sum(Del_GT5M_CS_DB),
-                                Del_GT5M_CS_TI=sum(Del_GT5M_CS_TI),
-                                Del_GT5M_CL=sum(Del_GT5M_CL),
-                                Dup_LT10K_CN=sum(Dup_LT10K_CN),
-                                Dup_LT10K_CS_DB=sum(Dup_LT10K_CS_DB),
-                                Dup_LT10K_CS_TI=sum(Dup_LT10K_CS_TI),
-                                Dup_LT10K_CL=sum(Dup_LT10K_CL),
-                                Dup_10Kto100K_CN=sum(Dup_10Kto100K_CN),
-                                Dup_10Kto100K_CS_DB=sum(Dup_10Kto100K_CS_DB),
-                                Dup_10Kto100K_CS_TI=sum(Dup_10Kto100K_CS_TI),
-                                Dup_10Kto100K_CL=sum(Dup_10Kto100K_CL),
-                                Dup_100Kto500K_CN=sum(Dup_100Kto500K_CN),
-                                Dup_100Kto500K_CS_DB=sum(Dup_100Kto500K_CS_DB),
-                                Dup_100Kto500K_CS_TI=sum(Dup_100Kto500K_CS_TI),
-                                Dup_100Kto500K_CL=sum(Dup_100Kto500K_CL),
-                                Dup_500Kto5M_CN=sum(Dup_500Kto5M_CN),
-                                Dup_500Kto5M_CS_DB=sum(Dup_500Kto5M_CS_DB),
-                                Dup_500Kto5M_CS_TI=sum(Dup_500Kto5M_CS_TI),
-                                Dup_500Kto5M_CL=sum(Dup_500Kto5M_CL),
-                                Dup_GT5M_CN=sum(Dup_GT5M_CN),
-                                Dup_GT5M_CS_DB=sum(Dup_GT5M_CS_DB),
-                                Dup_GT5M_CS_TI=sum(Dup_GT5M_CS_TI),
-                                Dup_GT5M_CL=sum(Dup_GT5M_CL),
-                                Inv_LT10K_CN=sum(Inv_LT10K_CN),
-                                Inv_LT10K_CS_DB=sum(Inv_LT10K_CS_DB),
-                                Inv_LT10K_CS_TI=sum(Inv_LT10K_CS_TI),
-                                Inv_LT10K_CL=sum(Inv_LT10K_CL),
-                                Inv_10Kto100K_CN=sum(Inv_10Kto100K_CN),
-                                Inv_10Kto100K_CS_DB=sum(Inv_10Kto100K_CS_DB),
-                                Inv_10Kto100K_CS_TI=sum(Inv_10Kto100K_CS_TI),
-                                Inv_10Kto100K_CL=sum(Inv_10Kto100K_CL),
-                                Inv_100Kto500K_CN=sum(Inv_100Kto500K_CN),
-                                Inv_100Kto500K_CS_DB=sum(Inv_100Kto500K_CS_DB),
-                                Inv_100Kto500K_CS_TI=sum(Inv_100Kto500K_CS_TI),
-                                Inv_100Kto500K_CL=sum(Inv_100Kto500K_CL),
-                                Inv_500Kto5M_CN=sum(Inv_500Kto5M_CN),
-                                Inv_500Kto5M_CS_DB=sum(Inv_500Kto5M_CS_DB),
-                                Inv_500Kto5M_CS_TI=sum(Inv_500Kto5M_CS_TI),
-                                Inv_500Kto5M_CL=sum(Inv_500Kto5M_CL),
-                                Inv_GT5M_CN=sum(Inv_GT5M_CN),
-                                Inv_GT5M_CS_DB=sum(Inv_GT5M_CS_DB),
-                                Inv_GT5M_CS_TI=sum(Inv_GT5M_CS_TI),
-                                Inv_GT5M_CL=sum(Inv_GT5M_CL),
-                                Bnd_CN=sum(Bnd_CN),
-                                Bnd_CS_DB=sum(Bnd_CS_DB),
-                                Bnd_CS_TI=sum(Bnd_CS_TI),
-                                Bnd_CL=sum(Bnd_CL)))
-
-View(homBucketStats)
-
-write.csv(homBucketStats, "~/logs/r_output/hom_bucket_stats.csv")
-
-
-
-
-# position bucketing to nearest 1M bases by cancer type

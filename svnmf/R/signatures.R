@@ -41,6 +41,37 @@ get_signame_list<-function(sigCount, asStrings)
   return (sigs)
 }
 
+# library(pracma)
+
+apply_signatures<-function(matrixData, signatures, bucketCount)
+{
+  n_samples = dim(matrixData)[2]
+  n_signatures = dim(signatures)[2]
+  lsq_contribution = matrix(NA, nrow = n_signatures, ncol = n_samples)
+  # lsq_reconstructed = matrix(NA, nrow = bucketCount, ncol = n_samples)
+
+  for(i in 1:ncol(matrixData))
+  {
+    # print(paste("calc LSQ for i=", i, sep=''))
+    y = matrixData[, i]
+    y = apply(y, 1, function(x) x * 1.0) # to force it to a numeric type
+    lsq = calc_lsqnonneg(signatures, y)
+    lsq_contribution[, i] = lsq$x
+    # lsq_reconstructed[, i] = signatures %*% as.matrix(lsq$x)
+  }
+  sample_names = colnames(matrixData)
+  signature_names = colnames(signatures)
+  mut_type_names = rownames(signatures)
+  colnames(lsq_contribution) = sample_names
+  rownames(lsq_contribution) = signature_names
+  #colnames(lsq_reconstructed) = sample_names
+  #rownames(lsq_reconstructed) = mut_type_names
+  # res = list(lsq_contribution, lsq_reconstructed)
+  # names(res) = c("contribution", "reconstructed")
+
+  return(lsq_contribution)
+}
+
 calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBucketCounts)
 {
   # contribution is sample in the columns and sig in the rows
@@ -54,11 +85,7 @@ calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBuc
   sigContribs = cbind(signatures, bucketNames)
 
   # give col names so the sig coluns dont merge in the next step
-  colNames = c()
-  for(i in 1:sigCount)
-  {
-    colNames[i] = i
-  }
+  colNames = get_signame_list(sigCount,F)
   colNames[sigCount+1] = "Bucket"
 
   colnames(sigContribs) <- colNames
@@ -75,6 +102,7 @@ calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBuc
   colStart = 3
   colEnd = colStart + (sigCount*2) - 1
 
+  # sampleSigContribs3[, c(colStart:colEnd)] <- apply(sampleSigContribs3[, c(colStart:colEnd)], 1, function(x) x * 1.0)
   sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.character)
   sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.numeric)
 
@@ -91,7 +119,7 @@ calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBuc
 
   sampleResidualData = (sampleSigContribs3 %>% group_by(SampleId)
                         %>% summarise(Count=sum(Count),
-                                      ResidualTotal=round(sum(ResidualDiff),0),
+                                      ResidualTotal=round(sum(ResidualDiff),2),
                                       ResidualPerc=round(sum(ResidualDiff)/sum(Count),2)))
 
   return (sampleResidualData)
@@ -114,7 +142,7 @@ get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
   sigCountsBySample = transposedContrib
   for (i in 1:ncol(sigCountsBySample))
   {
-    sigCountsBySample[i] = round(sigCountsBySample[i]* colSums(signatures)[i],0)
+    sigCountsBySample[i] = sigCountsBySample[i]* colSums(signatures)[i]
   }
 
   sigCountsBySample = cbind(data.frame(SampleId = sampleNames), sigCountsBySample)
@@ -131,6 +159,22 @@ get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
   sampleSigData = cbind(sampleSigPercData, Count = sampleSigCountData$Count)
 
   return (sampleSigData)
+}
+
+append_residuals<-function(contribution, signatures, bucketNames, sampleBucketCounts, sampleSigData)
+{
+  residuals = calc_sample_residuals(contribution, signatures, bucketNames, sampleBucketCounts)
+
+  sampleResiduals = residuals %>% select(SampleId,ResidualTotal)
+  colnames(sampleResiduals) <- c("SampleId","Count")
+  sampleResiduals$Count = sampleResiduals$Count * -1.0
+  sampleResiduals$SigName = "Residual"
+  sampleResiduals$SigPercent = 0
+  sampleResiduals$PercBucket = 0
+
+  sampleSigData2 = rbind(sampleSigData, sampleResiduals %>% select(SampleId,SigName,SigPercent,PercBucket,Count))
+
+  return (sampleSigData2)
 }
 
 get_sig_stats<-function(sampleSigData) {
@@ -163,16 +207,17 @@ plot_cancer_sigs<-function(sampleSigData, sigColours, varType = "SV")
 
   cancerSigPlot <- (ggplot(cancerSigData, aes(x = CancerType, y = Percent, fill = SigName))
                     + geom_bar(stat = "identity", colour = "black")
+                    + ggtitle("Signatures % by Cancer")
                     + labs(x = "", y = paste(varType, " % by Signature", sep=''))
                     + scale_fill_manual(values = sigColours)
                     + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
                     + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                    + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
+                    + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=15)))
 
   print(cancerSigPlot)
 }
 
-plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV")
+plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV", maxPlots = 0)
 {
   cancerSigData = sampleSigData
 
@@ -180,7 +225,7 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     cancerSigData = cancerSigData %>% filter(CancerType==cancerType)
   }
 
-  cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'SigName', 'Count')
+  cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId','SigName','Count','SampleCount')
 
   sigCancerPlots = list()
   plotIndex = 1
@@ -243,11 +288,6 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     maxRows = nrow(cancerSampleSigData)
     plotCount = 0
 
-    # for (n in 1:plotCount)
-    # {
-    #   rowStart = ((n-1) * rowsPerPlot + 1)
-    #   rowEnd = min((n * rowsPerPlot), numSamples * numSigs)
-
     while(rowEnd < maxRows)
     {
       if(plotCount == 0 & logTopNSamples)
@@ -259,9 +299,14 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
       {
         rowStart = rowEnd + 1
         rowEnd = min(rowStart + rowsPerPlot - 1, maxRows)
-      }
 
-      # print(paste(plotCount, ": rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
+        # combine stragglers onto the last graph
+        if(rowEnd < maxRows & maxRows - rowEnd <= rowsPerPlot * 0.4)
+        {
+          # print(paste(plotCount, ": cancer=", cancerType, ", rowEnd=", rowEnd, " close to maxRows=", maxRows, sep=''))
+          rowEnd = maxRows
+        }
+      }
 
       if(cancerType == "")
       {
@@ -272,7 +317,8 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
         title = paste("Sig Counts by Sample for ", cancerType, sep="")
       }
 
-      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -Count), y = Count, fill = SigName))
+      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
+      #sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = SampleId, y = Count, fill = SigName))
                         + geom_bar(stat = "identity", colour = "black")
                         + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
                         + scale_fill_manual(values = sigColours)
@@ -303,6 +349,9 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
       {
         plotIndex = plotIndex + 1
       }
+
+      if(maxPlots > 0 & plotIndex > maxPlots)
+        break
     }
 
     if(plotIndex > 1)
@@ -366,4 +415,61 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
     # now print all plots for this cancer type
     multiplot(plotlist = sigSamplePlots, cols = 2)
   }
+}
+
+calc_lsqnonneg<-function(C, d)
+{
+  stopifnot(is.numeric(C), is.numeric(d))
+  if (!is.matrix(C) || !is.vector(d))
+    stop("Argument 'C' must be a matrix, 'd' a vector.")
+  m <- nrow(C); n <- ncol(C)
+  if (m != length(d))
+    stop("Arguments 'C' and 'd' have nonconformable dimensions.")
+
+  tol = 10 * eps() * norm(C, type = "2") * (max(n, m) + 1)
+
+  x  <- rep(0, n)             # initial point
+  P  <- logical(n); Z <- !P   # non-active / active columns
+
+  resid <- d - C %*% x
+  w <- t(C) %*% resid
+  wz <- numeric(n)
+
+  # iteration parameters
+  outeriter <- 0; it <- 0
+  itmax <- 5 * n; exitflag <- 1
+
+  while (any(Z) && any(w[Z] > tol))
+  {
+    outeriter <- outeriter + 1
+    z <- numeric(n)
+    wz <- rep(-Inf, n)
+    wz[Z] <- w[Z]
+    im <- which.max(wz)
+    P[im] <- TRUE; Z[im] <- FALSE
+    z[P] <- qr.solve(C[, P], d)
+
+    while (any(z[P] <= 0))
+    {
+      it <- it + 1
+      if(it > itmax)
+      {
+        print(paste("iteration count exceed at i=", i, sep=''))
+        break;
+        # stop("Iteration count exceeded")
+      }
+
+      Q <- (z <= 0) & P
+      alpha <- min(x[Q] / (x[Q] - z[Q]))
+      x <- x + alpha*(z - x)
+      Z <- ((abs(x) < tol) & P) | Z
+      P <- !Z
+      z <- numeric(n)
+      z[P] <- qr.solve(C[, P], d)
+    }
+    x <- z
+    resid <- d - C %*% x
+    w <- t(C) %*% resid
+  }
+  return(list(x = x, resid.norm = sum(resid*resid)))
 }
