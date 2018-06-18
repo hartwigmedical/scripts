@@ -65,7 +65,7 @@ fi
 
 echo "Running BPI on ${run_dir}"
 
-java -Xmx8G -Xms4G -jar ${bpi_jar} \
+java -Xmx8G -Xms4G -Djava.io.tmpdir=/data/tmp -jar ${bpi_jar} \
     -ref_bam ${ref_bam} \
     -tumor_bam ${tumor_bam} \
     -input_vcf ${structural_vcf} \
