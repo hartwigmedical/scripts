@@ -129,7 +129,7 @@ rm(geneCopyNumberDeletionsSummary)
 load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationSummary.RData")
 amps = geneCopyNumberAmplificationSummary %>% 
   group_by(gene) %>%
-  filter(score > 20) %>%
+  filter(score > 29) %>%
   mutate(candidatesCount = length(unlist(strsplit(candidates, split = ",")))) %>%
   mutate(superCandidates = superSizedCandidates(candidates, superGenes)) %>%
   mutate(superCandidatesCount = length(unlist(strsplit(superCandidates, split = ",")))) 
