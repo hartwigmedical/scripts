@@ -381,5 +381,134 @@ get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sa
   return(fullmatchdf)
 }
 
+linked_asm <- function(vcf) {
+  asm_linked_df <- data.frame(
+    event=info(vcf)$EVENT,
+    beid=sapply(info(vcf)$BEID, function(x) paste0(c("", unlist(x)), collapse=";"))) %>%
+    separate_rows(beid, sep=";") %>%
+    filter(!is.na(beid) & nchar(beid) > 0) %>%
+    group_by(event, beid) %>%
+    distinct() %>%
+    group_by(beid) %>%
+    filter(n() > 1) %>%
+    mutate(linked_by=beid) %>%
+    dplyr::select(event, linked_by=beid)
+  return (asm_linked_df)
+}
+
+#' @description Determines which A-C transitives calls can be explained by an A-B-C.
+#' Transitive calls are caused by fragments that completely span the B fragment.
+#' For paired end sequencing, transitive calls will be IMPRECISE as all split reads
+#' support the A-B and B-C breakpoints.
+#' @param gr input breakpoint GRanges object
+#' @param max_traversed_length maximum length of sequence in the traversed breakpoint chain.
+#' @param min_segment_length minimum length of traversed sequence. Aligners typically cannot align less than around 20 bases.
+#' @param allow_loops allow breakpoints to be traversed multiple times
+#' @param max_hops maximum number of breakends to traverse
+#' @param report When report is "shortest", only the shortest transitive breakpoint chain is reported.
+#' @return id of the
+transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_length=0, transitive_call_slop=100, allow_loops=FALSE, max_hops=8, report=c("shortest", "all")) {
+  ordinal_lookup = seq_len(length(gr))
+  names(ordinal_lookup) = names(gr)
+  partner_lookup = ordinal_lookup[gr$partner]
+  next_df = .traversal_next_breakpoint(gr, max_traversed_length, min_segment_length) %>%
+    # prevent self-intersections
+    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
+    # incorporate breakpoint inserted sequence into the traversal length
+    mutate(
+      min_traversed=min_traversed + gr$insLen[subjectHits],
+      max_traversed=max_traversed + gr$insLen[subjectHits],
+      source_from=partner_lookup[queryHits],
+      source_to=queryHits,
+      dest_from=subjectHits,
+      dest_to=partner_lookup[subjectHits]) %>%
+    dplyr::select(-queryHits, -subjectHits)
+  terminal_df = .adjacent_breakends(gr, gr, maxgap=transitive_call_slop, allowed_orientation=c("--", "++")) %>%
+    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
+    # [min_traversed, max_traversed] overlaps [-transitive_call_slop, transitive_call_slop]
+    filter(min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop)
+
+  result_df = NULL
+  # start with the first traversal away from the putative transitive call
+  active_df = terminal_df %>%
+    mutate(
+      terminal_start=queryHits,
+      terminal_end=partner_lookup[queryHits],
+      current_to=partner_lookup[subjectHits],
+      path=names(gr)[subjectHits],
+      min_length=min_traversed + gr$insLen[subjectHits],
+      max_length=max_traversed + gr$insLen[subjectHits]) %>%
+    dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length)
+  i = 0
+  while (nrow(active_df) > 0 & i < max_hops) {
+    # continue traversing
+    active_df = active_df %>%
+      dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length) %>%
+      inner_join(next_df, by=c("current_to"="source_to")) %>%
+      filter(allow_loops | !str_detect(path, stringr::fixed(names(gr)[dest_from]))) %>%
+      mutate(
+        path=paste0(path, ";", names(gr)[dest_from]),
+        current_to=dest_to,
+        min_length=min_length + min_traversed,
+        max_length=max_length + max_traversed) %>%
+      dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length) %>%
+      filter(min_length < max_traversed_length)
+    # check for terminal completion
+    active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
+    result_df = active_df %>%
+      filter(!is.na(min_traversed)) %>%
+      mutate(min_length=min_length + min_traversed,
+             max_length=max_length + max_traversed,
+             transitive=names(gr)[terminal_start]) %>%
+      dplyr::select(transitive, path, min_length, max_length) %>%
+      bind_rows(result_df)
+    if (report == "shortest") {
+      # any further solutions will be longer so we don't need to consider them
+      active_df = active_df %>% filter(is.na(min_traversed))
+      best_min = result_df
+    }
+    i = i + 1
+  }
+  if (report == "shortest") {
+    # Just the shortest result for each transitive call
+    result_df = result_df %>%
+      group_by(transitive) %>%
+      top_n(1, min_length) %>%
+      ungroup()
+  }
+  return(result_df)
+}
+.traversal_next_breakpoint <- function(gr, max_traversed_length, min_segment_length) {
+  .traversal_adjacent_breakends(gr, gr, max_traversed_length, allowed_orientation=c("-+", "+-")) %>%
+    filter(max_traversed > min_segment_length) %>%
+    mutate(min_traversed=pmax(min_segment_length, min_traversed))
+}
+#' @description determines which breakends are near the given breakend
+#' @param maxgap maximum distance between adjacent breakends
+#' @param allowed_orientation allowed breakend orientation of the query then subject breakends
+#' @return adjacent breakends of the given orientations.
+#' Traversal distances are defined as the number of number of bases traversed into the DNA segment
+#' arriving from the query breakend until the subject breakend position is reached.
+#' Note that the subject breakend orientation does not affect the traversal distance.
+.adjacent_breakends <- function(query, subject, maxgap, allowed_orientation=c("--", "-+", "+-", "++")) {
+  allowed_orientation = match.arg(allowed_orientation, several.ok=TRUE)
+  findOverlaps(query, subject, maxgap=maxgap, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    dplyr::filter(paste0(strand(query[queryHits]), strand(subject[subjectHits])) %in% allowed_orientation) %>%
+    dplyr::mutate(
+      start_end_traversed=(end(subject[subjectHits]) - start(query[queryHits])) * ifelse(as.logical(strand(query[queryHits])=="-"), 1, -1),
+      end_start_traversed=(start(subject[subjectHits]) - end(query[queryHits])) * ifelse(as.logical(strand(query[queryHits])=="-"), 1, -1)) %>%
+    dplyr::mutate(min_traversed=pmin(start_end_traversed, end_start_traversed)) %>%
+    dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
+    dplyr::select(-start_end_traversed, -end_start_traversed)
+}
+simple_transitive_completions <- function(vcf) {
+
+}
+
+
+
+
+
 
 

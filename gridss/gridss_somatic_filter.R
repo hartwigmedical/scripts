@@ -25,9 +25,7 @@ source("libgridss.R")
 full_vcf = readVcf(input_vcf, "hg19")
 # work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
 library(data.table)
-fixed(full_vcf)$ALT = fread(file=input_vcf, sep="\t", sep2=NULL, header=FALSE, stringsAsFactors=FALSE, select=5, skip=120)
-# TODO fix error message
-#fixed(full_vcf)$ALT = CharacterList(lapply(read_delim(input_vcf, delim="\t", comment="#", col_names=c("CHROM","POS","ID","REF","ALT","QUAL","FILTER","INFO","FORMAT"), col_types=cols_only(ALT=col_character()), progress=NULL)$ALT, function(x) x))
+fixed(full_vcf)$ALT = CharacterList(lapply(fread(file=input_vcf, sep="\t", sep2=NULL, header=FALSE, stringsAsFactors=FALSE, select=5, skip=120)$V5, function(x) x))
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf)
@@ -49,7 +47,7 @@ bestOverlap = findOverlaps(bpgr, combinedgr) %>%
   summarise(beQUAL = max(beQUAL))
 bpgr$overlapQUAL = 0
 bpgr$overlapQUAL[bestOverlap$queryHits] = bestOverlap$beQUAL
-i <- info(vcf[bpgr$vcfId])
+i <- info(full_vcf[bpgr$vcfId])
 better_call_filter = !is_short_event(bpgr) &
   bpgr$overlapQUAL > 3 * bpgr$QUAL &
   i$BANSRQ + i$BANRPQ > i$ASQ
@@ -59,12 +57,39 @@ bpfiltered = bpfiltered | better_call_filter
 # - filter to only decent length assemblies?
 begr$calls_1k_window = countOverlaps(begr, rowRanges(full_vcf), ignore.strand=TRUE, maxgap=1000)
 
-vcf = vcf[names(bpgr)[as.logical(!bpfiltered)]]
+vcf = full_vcf[names(bpgr)[as.logical(!bpfiltered)]]
 bpgr = breakpointRanges(vcf)
 vcf = vcf[names(bpgr)] # sanity reordering in case of asymetrical filtering
 bpgr$af = gridss_af(bpgr, vcf, 2)
 info(vcf)$BPI_AF = paste(bpgr$af, partner(bpgr)$af, sep=",")
 VariantAnnotation::fixed(vcf)$FILTER = "PASS"
 writeVcf(vcf, output_vcf)
+
+
+# Assembly-based event linking
+asm_linked_df <- data.frame(
+  event=info(vcf)$EVENT,
+  beid=sapply(info(vcf)$BEID, function(x) paste0(c("", unlist(x)), collapse=";"))) %>%
+  separate_rows(beid, sep=";") %>%
+  filter(!is.na(beid) & nchar(beid) > 0) %>%
+  group_by(event, beid) %>%
+  distinct() %>%
+  group_by(beid) %>%
+  filter(n() > 1) %>%
+  mutate(linked_by=beid) %>%
+  dplyr::select(event, linked_by=beid)
+
+# TODO:
+# transitive calling reduction
+
+
+# event completion
+
+# Simple insertion events
+
+
+
+
+
 
 
