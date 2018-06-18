@@ -42,4 +42,4 @@ fi
 if [[ $EUID -ne 0 ]]; then
    echo "Docker must be run as root. Please enter password for sudo..."
 fi
-sudo docker run $volumes hartwigmedicalfoundation/pipeline2:${VERSION}
+sudo docker run --network="host" $volumes hartwigmedicalfoundation/pipeline2:${VERSION}
