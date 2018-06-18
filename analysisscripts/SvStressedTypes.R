@@ -20,7 +20,7 @@ library(svnmf)
 rm(svData)
 
 # SV data file
-svData = read.csv('~/logs/CLUSTER_V20.csv')
+svData = read.csv('~/logs/CLUSTER_V23.csv')
 
 # filter out multiple biopsy (approximately)
 svData = svData %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))

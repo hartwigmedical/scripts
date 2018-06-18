@@ -1,80 +1,144 @@
-evaluate_run<-function(runNumber, sigCount, nmfMatrixData, summaryCounts, signatures, contribution, bucketNames, sigNames, runEstimates = FALSE) {
+evaluate_nmf_run<-function(runType, runId, sigCount, nmfResult, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                           sigNamesUnamed, sigNamesNamed, plotByCancerType = T, viewResults = F, calcResiduals = F)
+{
+  # use this version when the NMF result is not available (eg when using external signatures like COSMIC)
+  signatures = NMF::basis(nmfResult)
+  contribution = NMF::coef(nmfResult)
 
-  # prepare PDF for output
-  pdf(file=paste("~/logs/r_output/svnmf_", runNumber, ".pdf", sep = ""), height = 14, width = 20)
+  evaluate_nmf_data(runType, runId, sigCount, signatures, contribution, matrixData, summaryCounts,
+                    sampleCancerTypes, bucketNames, sigNamesUnamed, sigNamesNamed, plotByCancerType, viewResults, calcResiduals)
+}
 
-  sampleIds = summaryCounts[,1]
+evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                            sigNamesUnamed, sigNamesNamed, plotByCancerType = T, viewResults = F, calcResiduals = T)
+{
+  print(paste("evaluating run: type=", runType, ", id=", runId, ", sigCount=", sigCount, sep=''))
 
-  if(runEstimates == TRUE) {
-    # estimate functions
-    nmfEstimate <- nmf(nmfMatrixData, rank=6:12, method="brunet", nrun=4, seed=123456)
-    plot(nmfEstimate)
-  }
+  sampleNames = colnames(contribution)
 
-  # Bucket Evaluation
-  sigBucketData = svnmf::get_bucket_data(signatures, contribution, bucketNames)
+  origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
 
-  sigBucketStats = svnmf::get_sig_bucket_stats(sigBucketData)
+  print("evaluating buckets")
+
+  # 1. Bucket Evaluation
+  sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+  sigBucketStats = get_sig_bucket_stats(sigBucketData)
 
   # Signature Discovery, by looking at relative contribution of buckets
-
-  # report on top 3 contributing buckets only
-  sigBucketTop3 = svnmf::get_top_buckets(sigBucketData, 3)
+  sigBucketTopN = get_top_buckets(sigBucketData, sigNamesUnamed, sigNamesNamed)
 
   # key bucket stats
-  bucketSummaryData = svnmf::get_bucket_stats(sigBucketData)
+  bucketSummaryData = get_bucket_stats(sigBucketData)
 
   # least contributing 10 buckets
-  leastContribBuckets = svnmf::get_least_contrib_buckets(bucketSummaryData)
+  # leastContribBuckets = get_least_contrib_buckets(bucketSummaryData)
+  # leastContribBuckets = head(leastContribBuckets, 10)
 
-  # output all bucket-related analysis
-  ggarrange(ggtexttable(sigBucketStats, rows = NULL),
-            ggtexttable(sigBucketTop3, rows = NULL),
-            ggtexttable(bucketSummaryData, rows = NULL),
-            ggtexttable(leastContribBuckets, rows = NULL),
-            ncol = 1, nrow = 4, heights = c(1, 1, 1, 1))
+  if(viewResults)
+  {
+    # View(sigBucketData)
+    View(sigBucketStats)
+    View(sigBucketTopN)
+  }
 
-
-  # compare to signature graphs
-
-  # plot as a bar chart - first put the data back into the required format and add bucket names
-  df = data.frame(bucket = bucketNames)
-  df2 = cbind(df, sigPercents)
-  sigPlotData = melt(df2, id.vars = c("bucket"))
-
-  ymax = 1.0
-
-  sigBucketsPlot = (ggplot(data = sigPlotData, aes(x = bucket, y = value, fill = bucket))
-                  + geom_bar(stat = "identity", colour = "black", size = 0.2)
-                  + facet_wrap(~ variable,ncol = 1) + ylab("Relative contribution")
-                  + coord_cartesian(ylim = c(0, ymax))
-                  + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-                  + scale_y_continuous(breaks = seq(0, ymax, 0.1))
-                  + ggtitle("Signatures by Bucket")
-                  + guides(fill = FALSE))
-
-  ggarrange(sigBucketsPlot, ncol = 1, nrow = 1)
+  # Top Bucket Counts per Sample - for now get all buckets
+  # sampleBucketTopN = get_top_buckets_by_sample(summaryCounts, origSampleCounts, sampleCancerTypes, 0)
+  sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, sampleCancerTypes, bucketNames)
 
   # 2 Signature Evaluation
-  sampleSigData = svnmf::get_sig_data(signatures, contribution, sigNames, sampleNames)
+  print("evaluating signatures")
+
+  # optionally name signatues for subsequent output
+  sigNames = sigNamesNamed
+
+  sampleSigData = get_sig_data(signatures, contribution, sigNames, sampleNames)
 
   # key stats per signature
-  sigStats = svnmf::get_sig_stats(sampleSigData)
+  sigStats = get_sig_stats(sampleSigData)
 
+  # calculate and factor in residuals
+  if(calcResiduals)
+  {
+    sampleSigData = append_residuals(contribution, signatures, bucketNames, summaryCounts, sampleSigData)
+  }
 
-  ggarrange(ggtexttable(sigStats, rows = NULL), ncol = 1, nrow = 1)
+  # run again, this time bucketing samples into mutational load and cancer types
 
-  # run again, this time bucketing samples into mutational load
+  # get cancer type and SV Count
+  sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+  sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
 
+  sampleSigCounts = sampleSigData %>% filter(SigName!="Residual") %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
+  sampleSigData = merge(sampleSigData, sampleSigCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
 
+  sampleSigDataNoRes = sampleSigData %>% filter(SigName!="Residual")
 
-  # grid.table(sigStats, rows = NULL)
+  if(viewResults)
+  {
+    View(sigStats)
+    View(sampleSigData)
+  }
+
+  outputFile = paste("~/logs/r_output/", runType, "_", runId, ".pdf", sep = "")
+  print(paste("writing output to file: ", outputFile, sep=''))
+
+  # DATA OUTPUT TO PDF
+  pdf(file=outputFile, height = 14, width = 20)
+
+  par(mar=c(1,1,1,1))
+
+  # 1. Bucket data
+  title = textGrob("Bucket Summary Data & Top-N Buckets", gp=gpar(fontface="bold", fontsize=16))
+  plot_bucket_summary_data(bucketSummaryData, sigBucketTopN)
+
+  sigColours = get_sig_colours(sigCount)
+
+  sigColoursPlusRes = sigColours
+  sigColoursPlusRes[sigCount+1] = "#000000"
+
+  bucketSummaryPlot = get_bucket_summary_plot(bucketSummaryData, runType)
+  grid.arrange(bucketSummaryPlot, ncol = 1, nrow = 1, newpage = TRUE)
+
+  title = textGrob("Signature-Bucket Stats", gp=gpar(fontface="bold", fontsize=16)) #  & Least Important Buckets
+  grid.arrange(tableGrob(sigBucketStats, rows=NULL),
+               # tableGrob(leastContribBuckets, rows = NULL),
+               widths = c(2, 1), ncol = 2, newpage = TRUE, top=title)
+
+  # 2. Default signature-bucket plot
+  sigBucketsPlots = get_bucket_signatures_plot(bucketNames, signatures, sigNames)
+  for(i in 1:length(sigBucketsPlots))
+  {
+    grid.arrange(sigBucketsPlots[[i]], ncol=1, nrow=1, newpage = TRUE)
+  }
+
+  # 3. Plot of Bucket Contribution for each Sample
+  plot_sample_bucket_contrib(sampleBucketData, "", nrow(bucketNames), runType, 0) # sampleBucketTopN
+
+  # 4. Signature data
+  title = textGrob("Signature Stats", gp=gpar(fontface="bold", fontsize=16))
+  grid.arrange(tableGrob(sigStats, rows = NULL), ncol = 1, nrow = 1, top=title, newpage = TRUE)
+
+  # 5. Relative Signature contributions by Cancer Type
+  plot_cancer_sigs(sampleSigDataNoRes, sigColours, runType)
+
+  # 6. Top 50 samples by signature, but include all other signatures as well
+  plot_top_n_samples_by_sig(sampleSigDataNoRes, sigNames, 50, sigColours, runType)
+
+  # 7. Sigs with Samples by cancer type
+  plot_sig_samples(sampleSigData, "", sigColoursPlusRes, runType) # all samples
+
+  cancerTypes = sampleCancerTypes %>% group_by(CancerType) %>% count()
+
+  if(plotByCancerType)
+  {
+    for(cancerType in cancerTypes$CancerType)
+    {
+      if(!is.na(cancerType))
+      {
+        plot_sig_samples(sampleSigData, cancerType, sigColoursPlusRes, runType)
+      }
+    }
+  }
 
   dev.off()
-
-
-
-  # other NMF output
-
-
 }

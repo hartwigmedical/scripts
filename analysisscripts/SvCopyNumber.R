@@ -110,10 +110,82 @@ annotateWithCopyNumber<-function(dbConnect,samples)
 
 }
 
+## LOH Analysis
 
-## CODE STARTS HERE
-###################
+cnLohData = read.csv('~/logs/CN_LOH_ANALYSIS_V1.csv')
+View(head(cnLohData,1000))
 
+nrow(cnLohData)
+n_distinct(cnLohData$SampleId)
+cbLohSamples = n_distinct(cnLohData$SampleId)
+
+cnLohData = cnLohData %>% filter(SampleId %in% hpcDriversByGene$sampleId)
+cnLohData2 = cnLohData %>% filter(SampleId %in% svData$SampleId)
+nrow(cnLohData)
+n_distinct(cnLohData$SampleId)
+
+cnLohData$NoneMatched = cnLohData$StartSV==0 & cnLohData$EndSV==0
+cnLohData$BothMatched = cnLohData$StartSV>0 & cnLohData$EndSV>0
+cnLohData$SameSV = cnLohData$StartSV>0 & cnLohData$EndSV==cnLohData$StartSV
+
+nrow(cnLohData %>% filter(SegStart=="CENTROMERE"|SegEnd=="CENTROMERE"|SegEnd=="TELOMERE"|SegEnd=="TELOMERE"))
+
+cnLohStatsMinusTandC = (cnLohData %>% filter(SegStart!="CENTROMERE"&SegEnd!="CENTROMERE"&SegEnd!="TELOMERE"&SegEnd!="TELOMERE") 
+                        %>%  group_by(NoneMatched,BothMatched,SameSV)
+                        %>% summarise(Count=n())
+                        %>% arrange(NoneMatched,BothMatched,SameSV))
+
+View(cnLohStatsMinusTandC)
+
+cnLohStats = (cnLohData %>% group_by(NoneMatched,BothMatched,SameSV)
+              %>% summarise(Count=n())
+              %>% arrange(NoneMatched,BothMatched,SameSV))
+
+View(cnLohStats)
+
+cnLohStatsByType = (cnLohData %>% group_by(BothMatched,SameSV,SegStart,SegEnd)
+              %>% summarise(Count=n())
+              %>% arrange(BothMatched,SameSV,SegStart,SegEnd))
+
+View(cnLohStatsByType)
+
+# join to SV data (may move to Java in time)
+cnLohMinData = cnLohData %>% select(CnIdStart,StartSV,EndSV)
+nrow(cnLohMinData)
+nrow(cnLohMinData %>% filter(StartSV>0))
+
+lohSvData = (merge(svData, cnLohMinData %>% filter(StartSV>0), by.x="Id", by.y="StartSV", all.x=TRUE))
+lohSvData = (merge(lohSvData, cnLohMinData, by.x="Id", by.y="EndSV", all.x=TRUE))
+
+# merge the other way, just looking at LOH segements matching 2 different SVs
+lohDiffSVs = cnLohData %>% filter(BothMatched&!SameSV)
+lohDiffSVs = lohDiffSVs %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
+
+nrow(lohDiffSVs)
+lohSvData2 = (merge(lohDiffSVs, svData, by.x="StartSV", by.y="Id", all.x=TRUE))
+lohSvData2 = (merge(lohSvData2, svData, by.x="EndSV", by.y="Id", all.x=TRUE))
+nrow(lohSvData2) # validation only
+View(lohSvData2)
+
+lohSvData2$SameCluster = lohSvData2$ClusterId.x==lohSvData2$ClusterId.y
+
+lohSvStats = lohSvData2 %>% group_by(SameCluster) %>% summarise(Count=n())
+View(lohSvStats)
+
+#lohSvData2$ClusterCount1Bucket = ifelse(lohSvData2$ClusterCount.x<=10,lohSvData2$ClusterCount.x,round(lohSvData2$ClusterCount.x/10)*10)
+#lohSvData2$ClusterCount2Bucket = ifelse(lohSvData2$ClusterCount.y<=10,lohSvData2$ClusterCount.y,round(lohSvData2$ClusterCount.y/10)*10)
+lohSvData2$ClusterCount1Bucket = ifelse(lohSvData2$ClusterCount.x==1,'None',ifelse(lohSvData2$ClusterCount.x<4,'Small','Large'))
+lohSvData2$ClusterCount2Bucket = ifelse(lohSvData2$ClusterCount.y==1,'None',ifelse(lohSvData2$ClusterCount.y<4,'Small','Large'))
+
+lohSvClusterSizes = lohSvData2 %>% filter(SameCluster==F) %>% group_by(ClusterCount1Bucket,ClusterCount2Bucket) %>% summarise(Count=n())
+View(lohSvClusterSizes)
+
+
+nrow(lohSvData %>% filter(!is.na(CnIdStart)))
+nrow(lohSvData %>% filter(is.na(Id)))
+nrow(svData)
+
+## CN Flip / Chromothripsis Analysis
 cnArmData = read.csv('~/logs/CN_ANALYSIS_V4.csv')
 View(cnArmData)
 
@@ -246,9 +318,7 @@ dbLenPlot = (ggplot(data = dbLenBucketed, aes(x = LengthBucket))
                       + ylab("DB Count") + labs(title = "Deletion Bridge Lengths")
 )
 
-print(dbLenPlot)
-
-dbLenPlot = (ggplot(data = dbLenBucketed, aes(x=LengthBucket, y=Count), fill=LengthBucket)
+print(dbLenPlotdbLenPlot = (ggplot(data = dbLenBucketed, aes(x=LengthBucket, y=Count), fill=LengthBucket)
                 + geom_bar(stat = "identity", colour = "black", size=2)
                 + ylab("Count") + xlab("DB Length")
                 + theme(legend.position="none"))
@@ -386,3 +456,24 @@ sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = SvCount, grou
                 + theme(axis.text.x = element_text(angle = 90, hjust = 1))
                 + ylab("SV Count") + xlab("Signature") + ggtitle(title)
                 + theme(legend.position="none"))
+
+
+
+
+
+# segments with high copy number change
+hcnData = svData %>% filter(AdjCNChgStart>=3&AdjCNChgEnd>=3)
+hcnData$CNChgBucket = 2**round(log((hcnData$AdjCNChgStart+hcnData$AdjCNChgEnd)*0.5,2),0)
+nrow(hcnData)
+View(hcnData)
+
+hcnStats = hcnData %>% group_by(CNChgBucket) %>% summarise(Count=n())
+View(hcnStats)
+
+linkInfo = svData %>% filter(ClusterCount>1)
+nrow(linkInfo)
+nrow(linkInfo %>% filter(IsTI==1))
+nrow(linkInfo %>% filter(IsDB==1))
+
+
+

@@ -8,8 +8,9 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-bpi_version=1.5
-bpi_jar=${base_path}/tools/break-point-inspector_v${bpi_version}/break-point-inspector.jar
+bpi_jar=${base_path}/tools/break-point-inspector_pilot/break-point-inspector.jar
+# KODU: BPI generally assumes it runs on top of an already run BPI
 bpi_output=${run_dir}/structuralVariants/bpi
+bpi_version=1.5
 
-${prefix}/do_run_bpi ${run_dir} ${bpi_jar} ${bpi_output} ${bpi_version}
+${prefix}/do_run_new_bpi ${run_dir} ${bpi_jar} ${bpi_output} ${bpi_version}

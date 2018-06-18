@@ -30,6 +30,17 @@ my $BACKUP_DIR  = '/data/lims/previous';
 my $PROCIN_2017 = '/data/lims/labfiles/2017_lims_proc';
 my $JSONIN_2017 = '/data/lims/labfiles/lims_2017.json'; 
 
+## get and check input
+my %opt = ();
+GetOptions (
+    "out|o=s" => \$opt{ output },
+    "execute" => \$opt{ execute },
+    "debug"   => \$opt{ debug },
+    "help|h"  => \$opt{ help },
+) or die("Error in command line arguments\n");
+$LIMSOUTFILE = $opt{ output } if $opt{ output };
+
+## setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP = <<"HELP";
 
@@ -54,15 +65,6 @@ my $HELP = <<"HELP";
 
 HELP
 
-## get and check input
-my %opt = ();
-GetOptions (
-    "out|o=s" => \$opt{ output },
-    "execute" => \$opt{ execute },
-    "debug"   => \$opt{ debug },
-    "help|h"  => \$opt{ help },
-) or die("Error in command line arguments\n");
-
 ## ---------- 
 ## INPUT CHECK
 ## ----------
@@ -75,7 +77,6 @@ foreach ( $BACKUP_DIR ){
 foreach ( $CENTER_FILE, $CPCTIN_FILE, $RESTIN_FILE ){
     die "[EXIT] File does not exist ($_)\n" unless -f;
 }
-$LIMSOUTFILE = $opt{ output } if $opt{ output };
 
 ## start with backup of current lims files
 foreach ( $LIMSOUTFILE ){
@@ -301,6 +302,7 @@ sub parseLimsCPCT{
     );
     
     my %store = %{$lims};
+    my %name2id = ();
     
     ## read the excel sheet in question
     my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
@@ -319,6 +321,7 @@ sub parseLimsCPCT{
         
         ## first we work on the dna sample
         my $sample_name = $row_info{ 'sample_name' };
+        my $sample_id = $row_info{ 'sample_id' };
         my $patient_name = $row_info{ 'patient' };
         
         ## skip NA or empty values
@@ -379,6 +382,13 @@ sub parseLimsCPCT{
         next unless keyIsUnique( \%store, \%row_info, $unique );
         $store{ $unique } = \%row_info;
         
+        ## store link between name and id in map for later use
+        if ( exists $name2id{ $sample_name } ){
+            my $existing_id = $name2id{ $sample_name };
+            warn "[WARN] Sample $sample_name ($existing_id) will be overwritten by $sample_name ($sample_id): check with LAB to fix\n";
+        }
+        $name2id{ $sample_name } = $sample_id;
+        
         ## in case of BIOPT we also store rna sample
         ## in case of BLOOD we also store plasma sample
         ## both are set in same field "plasma_or_rna_sample_id"
@@ -408,6 +418,24 @@ sub parseLimsCPCT{
         }
 
     }
+    
+    ## add R sample_id for each CPCT/DRUP biopsy
+    foreach my $sample_id ( keys %store ){
+        my $sample = $store{ $sample_id };
+        next unless $sample->{ analysis_type } eq 'Somatic_T';
+        next unless $sample->{ label } =~ /^(CPCT|DRUP)$/;
+        
+        my $patient = $sample->{ 'patient' };
+        my $ref_sample_name = $patient . 'R';
+        my $ref_sample_id = '';
+        
+        #say "[DEBUG] looking for $ref_sample_name at search $sample_id";
+        if ( exists $name2id{ $ref_sample_name } ){
+            $ref_sample_id = $name2id{ $ref_sample_name };
+        }
+        $sample->{ 'ref_sample_id' } = $ref_sample_id;
+    }
+    
     return \%store;
 }
 

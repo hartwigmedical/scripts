@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+setname=$1 && shift
+purity_pathology=$1 && shift
+
+java -jar ${purity_pathology} \
+    -runs_dir ${setname}
