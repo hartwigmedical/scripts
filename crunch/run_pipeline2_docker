@@ -43,11 +43,8 @@ fi
 
 if [ -z $LOCAL_MODE ]
 then
-    echo "not local mode"
     network="--network=host"
 fi
-
-echo $network
 
 if [[ $EUID -ne 0 ]]; then
    echo "Docker must be run as root. Please enter password for sudo..."
