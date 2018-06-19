@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(cowplot)
+library(scales)
 theme_set(theme_grey())
 theme_set(theme_bw())
 
@@ -323,13 +324,37 @@ head(highestPurityCohortSummary)
 
 ###########@@@@@@@@@@@@@@@
 ####### WGD
-### TO DO:   Sort, make easy to read and display %s on charts.
-ggplot(data=highestPurityCohortSummary , aes(x = cancerType, y = factor(1))) +
+wgdPlotData = highestPurityCohortSummary %>% 
+  select(cancerType, WGD) %>%  
+  group_by(cancerType, WGD) %>% count() %>%
+  group_by(cancerType) %>% mutate(total = sum(n), percentage = n / total) %>%
+  ungroup()
+
+wgdPlotDataTotal = wgdPlotData %>% filter(WGD) %>% summarise(percentage = sum(n) / sum(total))
+wgdPlotData = wgdPlotData %>%
+  mutate(totalPercentage = wgdPlotDataTotal$percentage) %>%
+  filter(cancerType != "Other")
+
+wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
+wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
+wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
+wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
+
+p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
-  ggtitle("WGD by Cancer Type") + xlab("Cancer TYpe") + ylab("Count of Samples")+ 
-  coord_flip()+
-  theme(axis.text.x =  element_blank(), legend.position="bottom",panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),panel.border = element_blank())
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
+  annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
+  annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
+  scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
+  ggtitle("Whole Genome Duplication") + 
+  xlab("Cancer Type") + ylab("% Samples")+ 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") +
+  coord_flip()
+
+plot_grid(p1, labels="AUTO")
+
 
 ###########################
 ###### SNV vs INDEL
