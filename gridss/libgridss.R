@@ -1,17 +1,9 @@
 library(VariantAnnotation)
 library(StructuralVariantAnnotation)
-library(dplyr)
+library(tidyverse)
 library(stringr)
 library(testthat)
-gridss.short_event_size_threshold = 1000
-# 0.5% of the supporting fragments can come from the normal
-gridss.allowable_normal_contamination=0.005
-gridss.use_read_threshold=3
-gridss.min_breakpoint_depth = 5 # Half BPI default
-gridss.min_normal_depth = 8
-gridss.max_homology_length = 50
-gridss.max_allowable_strand_bias = 0.95
-gridss.min_qual = 250
+source("gridss.config.R")
 
 #' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
@@ -34,12 +26,11 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # variants that are strand biased by chance
 	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
 	  # is fully strand biased when originating from one side of a breakend
-	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_strand_bias)
+	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_shot_event_strand_bias)
 	}
 	if (min_support_filters) {
 		filtered = filtered |
 			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
-		  rowRanges(vcf)$QUAL < gridss.min_qual |
 			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
 			# BPI.Filter.MinDepth
 			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth) |
@@ -72,7 +63,6 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
     filtered = filtered |
       str_detect(gr$FILTER, "NO_ASSEMBLY") |
       str_detect(gr$FILTER, "ASSEMBLY_ONLY") |
-      rowRanges(vcf)$QUAL < gridss.min_qual |
       # BPI.Filter.MinDepth
       .genosum(g$BVF,c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth |
       # require some sort of breakend anchoring
@@ -490,7 +480,7 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
   return(result_df)
 }
 .traversal_next_breakpoint <- function(gr, max_traversed_length, min_segment_length) {
-  .traversal_adjacent_breakends(gr, gr, max_traversed_length, allowed_orientation=c("-+", "+-")) %>%
+  .adjacent_breakends(gr, gr, max_traversed_length, allowed_orientation=c("-+", "+-")) %>%
     filter(max_traversed > min_segment_length) %>%
     mutate(min_traversed=pmax(min_segment_length, min_traversed))
 }
@@ -513,12 +503,6 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
     dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
     dplyr::select(-start_end_traversed, -end_start_traversed)
 }
-simple_transitive_completions <- function(vcf) {
-
-}
-
-
-
 
 
 
