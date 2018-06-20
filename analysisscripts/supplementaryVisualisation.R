@@ -19,6 +19,32 @@ highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice") 
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9")
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
+save(simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDriverColours.RData")
+
+######### Hotspots
+#genesWithHotspot = hpcDriversByGene %>% ungroup() %>% filter(type == 'ONCO', !is.na(hotspot), hotspot) %>% distinct(gene)
+
+hotspotData = hpcDriversByGene %>% 
+  filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0) %>%
+  group_by(gene, hotspot) %>%
+  summarise(driverLikelihood = sum(driverLikelihood)) %>%
+  group_by(gene) %>%
+  mutate(total = sum(driverLikelihood), percentage = driverLikelihood / total) %>%
+  ungroup()
+
+hotspotLevels = hotspotData %>% arrange(-total) %>% distinct(gene)
+hotspotData = mutate(hotspotData, gene = factor(gene, hotspotLevels$gene))
+
+p_hotspot = ggplot(data = hotspotData, aes(x = gene, y = driverLikelihood)) +
+  geom_bar(aes(fill = hotspot), stat = "identity") +
+  scale_fill_manual(values = c("#fee5d9", "#de2d26")) +
+  ggtitle("Oncogene Hotspots") + 
+  xlab("Gene") + ylab("Drivers")+ 
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") +
+  coord_flip()
+
+plot_grid(p_hotspot, labels="AUTO")
 
 
 ########## Driver rates by type in WGD vs non WGD
@@ -165,7 +191,10 @@ driverData = hpcDriversByGene %>%
   mutate(driversPerSample = driverLikelihood/ N) %>%
   arrange(-driversPerSample)
 driverDataLevels = driverData %>% group_by(cancerType) %>% summarise(driversPerSample = sum(driversPerSample)) %>% arrange(-driversPerSample)
-driverData = driverData %>% mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
+driverData = driverData %>% 
+  mutate(cancerType = factor(cancerType, driverDataLevels$cancerType)) %>%
+  group_by(cancerType) %>% 
+  mutate(percentage = driversPerSample / sum(driversPerSample))
 
 driverViolinData = hpcDriversByGene %>%
   group_by(cancerType, sampleId) %>%
@@ -174,11 +203,8 @@ driverViolinData = hpcDriversByGene %>%
   mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
 
 p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
-  geom_violin(trim = F, color = "#6baed6", fill = "#6baed6", scale = "area") +
-  #stat_summary(fun.y = mean, geom = "pointrange", color = "black") + 
-  #stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2, color = "red")+
-  geom_boxplot(width = 0.2, outlier.shape = NA, fill  = "#deebf7") +
-  #stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "pointrange", color = "black", size = 0.1)+
+  geom_violin( fill = "#6baed6", scale = "area") +
+  stat_summary(fun.y=mean, geom="point", shape=20, size=2) +
   xlab("Cancer Type") + ylab("Drivers") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
@@ -186,16 +212,17 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
   scale_y_continuous(expand=c(0.01, 0.01)) +
   theme(legend.position="none") +
   coord_flip() 
+p1
 
-p2 = ggplot(driverData, aes(cancerType, driversPerSample)) +
-  geom_bar(stat = "identity", aes(fill = driver)) +
+p2 = ggplot(driverData, aes(cancerType, percentage)) +
+  geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
   scale_fill_manual(values = simplifiedDriverColours) +
   ggtitle("") + xlab("") + ylab("Average drivers per sample") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank()) +
-  scale_y_continuous(expand=c(0.0, 0.0)) +
+  scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1)) +
   coord_flip()
 
-plot_grid(p1,p2, ncol = 2, rel_widths =  c(1,2), labels = "AUTO")
+plot_grid(p1,p2, ncol = 2, rel_widths =  c(2,3), labels = "AUTO")
 
 
 
