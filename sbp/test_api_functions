@@ -4,6 +4,8 @@ source api_functions
 set=$1
 echo "run info -"
 run_info=$(load_run_info_for_set ${set})
+bucket=`echo ${run_info} | cut -d ' ' -f5`
+echo ${bucket}
 echo ${run_info}
 echo "rerun info -"
 echo $(load_rerun_info_for_set ${set})
