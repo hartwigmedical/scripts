@@ -70,6 +70,7 @@ driver_promoters <- function(promoters) {
     summarise(
       driver = "Promoter",
       driverLikelihood = 1,
+      hotspot = "Hotspot",
       type = "ONCO")
 
   return (result)

@@ -8,7 +8,6 @@ library(scales)
 theme_set(theme_bw())
 
 
-
 load("~/hmf/RData/processed/driverGenes.RData")
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
@@ -22,27 +21,32 @@ simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
 save(simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDriverColours.RData")
 
 ######### Hotspots
-#genesWithHotspot = hpcDriversByGene %>% ungroup() %>% filter(type == 'ONCO', !is.na(hotspot), hotspot) %>% distinct(gene)
+hotspotGenes = hpcDriversByGene %>% 
+  filter(type == 'ONCO', !is.na(hotspot)) %>% 
+  group_by(gene) %>% 
+  summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(30, driverLikelihood) %>% arrange(-driverLikelihood)
 
 hotspotData = hpcDriversByGene %>% 
-  filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0) %>%
-  group_by(gene, hotspot) %>%
+  filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
+  mutate(driver = as.character(driver),
+         driver = ifelse(driver == "Promoter", "Missense", driver),
+         driver = factor(driver, c("Missense", "Inframe"))) %>%
+  group_by(gene, driver, hotspot) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   group_by(gene) %>%
   mutate(total = sum(driverLikelihood), percentage = driverLikelihood / total) %>%
-  ungroup()
-
-hotspotLevels = hotspotData %>% arrange(-total) %>% distinct(gene)
-hotspotData = mutate(hotspotData, gene = factor(gene, hotspotLevels$gene))
+  ungroup() %>%
+  mutate(gene = factor(gene, hotspotGenes$gene))
 
 p_hotspot = ggplot(data = hotspotData, aes(x = gene, y = driverLikelihood)) +
   geom_bar(aes(fill = hotspot), stat = "identity") +
-  scale_fill_manual(values = c("#fee5d9", "#de2d26")) +
+  scale_fill_manual(values = c("#fee0d2", "#fb6a4a", "#de2d26")) +
   ggtitle("Oncogene Hotspots") + 
   xlab("Gene") + ylab("Drivers")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="none") +
-  coord_flip()
+  theme(axis.ticks = element_blank(), legend.position="bottom") +
+  coord_flip()+ 
+  facet_grid(~driver, scales = "free_x")
 
 plot_grid(p_hotspot, labels="AUTO")
 
