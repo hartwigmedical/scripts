@@ -36,7 +36,7 @@ fi
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 
 s3path="s3://${run_bucket}/${set}"
-dspath="/data/schuberg/bam_downloads/${set}"
+dspath="/data/schuberg/bam_downloads/bams_${set}"
 
 echo "[INFO] Getting REF bam from ${s3path}"
 sbp s3 sync ${s3path}/ ${dspath}/ \
