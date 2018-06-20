@@ -5,18 +5,15 @@ script=$( basename $0 )
 usage() {
     echo "---"
     echo "Usage: $script -s <set> -p <path>" 1>&2;
-    echo "       $script -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc" 1>&2;
     echo "---"
     exit 1
 }
 
-while getopts ":s:p:" o; do
+while getopts ":s:" o; do
     case "${o}" in
         s)
             set=${OPTARG} || usage
-            ;;
-        p)
-            localpath=${OPTARG}
             ;;
         *)
             usage
@@ -24,32 +21,45 @@ while getopts ":s:p:" o; do
     esac
 done
 
-if [[ -z "${set}" || -z "${localpath}" ]]; then
+if [[ -z "${set}" ]]; then
     usage
 fi
 
-run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
+run_info=$(load_run_info_for_set ${set})
 if [ -z "$run_info" ]; then
-    # KODU: For new sets it can happen that snpcheck cannot be performed @ SBP.
-    run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "SnpCheck"`
-    if [ -z "$run_info" ]; then
-        echo "[WARN] No validated or snpcheck runs found with a Somatic/CPCT .ini file for set ${set}."
-        exit 1
-    else
-        echo "[INFO] No validated set found for ${set}. Using set with SnpCheck status instead."
-    fi
+    echo "[WARN] No run info found for set ${set}. Exiting"
+    exit 1
 fi
 
-rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
+rerun_info=$(load_rerun_info_for_set ${set})
 if [ -z "$rerun_info" ]; then
-    run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
-    if [ -z "run_is_v3" ]; then
-        echo "[WARN] No validated rerun found while original run is not v3. Exiting."
-        exit 1
-     else
-        rerun_info=${run_info}
-     fi
+    echo "[WARN] No rerun found for set ${set}. Exiting."
+    exit 1
 fi
 
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
+
+localpath=/data/schuberg/tmp/reruns_test/
+
+sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*annotated.vcf*" \
+	--include "*filtered*GoNLv5.vcf*" \
+	--include "*/mapping/*R_dedup.realigned.bam*" \
+	--include "*/mapping/*T[IVX_]*dedup.realigned.bam*" \
+	--include "QCStats*" \
+	--profile download
+
+sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*amber*" \
+	--include "*cobalt*" \
+	--include "*purple*" \
+	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*bpi*bpi_stats*" \
+	--include "*structuralVariants*bpi*somaticSV*" \
+	--include "*structuralVariants*bpi*sliced.bam*" \
+	--include "*structuralVariants*manta*somaticSV.vcf*" \
+	--include "*metadata*" \
+	--profile download
