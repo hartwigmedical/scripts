@@ -3,6 +3,9 @@
 source api_functions
 set=$1
 echo "run info -"
-echo $(load_run_info_for_set ${set})
+run_info=$(load_run_info_for_set ${set})
+echo ${run_info}
 echo "rerun info -"
 echo $(load_rerun_info_for_set ${set})
+echo "bucket info -"
+echo $(extract_bucket_from_run_info ${run_info})
