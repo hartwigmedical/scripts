@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source api_functions
+
 script=$( basename $0 )
 
 usage() {
