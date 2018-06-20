@@ -50,7 +50,7 @@ fi
 
 if ! [ -z $MAX_HEAP ]
 then
-    environment_variables="-e JAVA_OPTS='-Xmx${MAX_HEAP}'"
+    environment_variables="-e JAVA_OPTS=-Xmx${MAX_HEAP}"
 fi
 
 if [[ $EUID -ne 0 ]]; then
