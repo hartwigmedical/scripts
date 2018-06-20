@@ -42,8 +42,8 @@ if [ -z "$rerun_info" ]; then
     exit 1
 fi
 
-run_bucket=$(extract_bucket_from_run_info ${run_info})
-rerun_bucket=$(extract_bucket_from_run_info ${rerun_info})
+run_bucket=`echo ${run_info} | cut -d ' ' -f5`
+rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
