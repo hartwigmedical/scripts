@@ -10,19 +10,21 @@ print_usage(){
     echo "  -v version          Version of Pipeline2 docker container (Mandatory)"
     echo "  -p patientdir       Directory containing patient data for docker to mount (Optional default = ${PATIENT_DIR})"
     echo "  -r refgenomedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_DIR})"
-    echo "  -o outputdir     Directory containing reference genome data for docker to mount (Optional default = ${OUTPUT_DIR})"
+    echo "  -o outputdir        Directory containing reference genome data for docker to mount (Optional default = ${OUTPUT_DIR})"
     echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
+    echo "  -h maxheap size     The max heap size to use within the docker container. For example -h 128G will use a 128 gig heap"
     echo "  -l                  Run in local mode, which means no host networking as this does not work for Docker for Mac"
     exit 1
 }
 
-while getopts ':p:r:v:c:o:l' flag; do
+while getopts ':p:r:v:c:o:h:l' flag; do
   case "${flag}" in
     p) PATIENT_DIR=$OPTARG ;;
     r) REFERENCE_GENOME_DIR=$OPTARG ;;
     c) CONF_DIR=$OPTARG;;
     o) OUTPUT_DIR=$OPTARG;;
     v) VERSION=$OPTARG ;;
+    h) MAX_HEAP=$OPTARG ;;
     l) LOCAL_MODE="true" ;;
     *) print_usage
        exit 1 ;;
@@ -46,8 +48,13 @@ then
     network="--network=host"
 fi
 
+if ! [ -z $MAX_HEAP ]
+then
+    environment_variables="-e JAVA_OPTS='-Xmx${MAX_HEAP}'"
+fi
+
 if [[ $EUID -ne 0 ]]; then
    echo "Docker must be run as root. Please enter password for sudo..."
 fi
 
-sudo docker run $network $volumes hartwigmedicalfoundation/pipeline2:${VERSION}
+sudo docker run $network $volumes $environment_variables hartwigmedicalfoundation/pipeline2:${VERSION}
