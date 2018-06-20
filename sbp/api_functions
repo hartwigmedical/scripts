@@ -24,3 +24,8 @@ load_rerun_info_for_set() {
     fi
     echo ${rerun_info}
 }
+
+extract_bucket_from_run_info() {
+    run_info=$1
+    `echo ${run_info} | cut -d ' ' -f5`
+}

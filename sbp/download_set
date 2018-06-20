@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source api_functions
+
 script=$( basename $0 )
 
 usage() {
@@ -28,31 +30,20 @@ if [[ -z "${set}" || -z "${localpath}" ]]; then
     usage
 fi
 
-run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
+run_info=$(load_run_info_for_set ${set})
 if [ -z "$run_info" ]; then
-    # KODU: For new sets it can happen that snpcheck cannot be performed @ SBP.
-    run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "SnpCheck"`
-    if [ -z "$run_info" ]; then
-        echo "[WARN] No validated or snpcheck runs found with a Somatic/CPCT .ini file for set ${set}."
-        exit 1
-    else
-        echo "[INFO] No validated set found for ${set}. Using set with SnpCheck status instead."
-    fi
+    echo "[WARN] No run info found for set ${set}. Exiting"
+    exit 1
 fi
 
-rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
+rerun_info=$(load_rerun_info_for_set ${set})
 if [ -z "$rerun_info" ]; then
-    run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
-    if [ -z "run_is_v3" ]; then
-        echo "[WARN] No validated rerun found while original run is not v3. Exiting."
-        exit 1
-     else
-        rerun_info=${run_info}
-     fi
+    echo "[WARN] No rerun found for set ${set}. Exiting."
+    exit 1
 fi
 
-run_bucket=`echo ${run_info} | cut -d ' ' -f5`
-rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
+run_bucket=$(extract_bucket_from_run_info ${run_info})
+rerun_bucket=$(extract_bucket_from_run_info ${rerun_info})
 
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
