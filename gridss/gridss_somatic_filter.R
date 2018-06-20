@@ -114,7 +114,7 @@ link_df = asm_linked_df %>%
   dplyr::select(vcfid, linked_by) %>%
   bind_rows(transitive_df) %>%
   group_by(vcfid) %>%
-  summarise(linked_by=paste0(linked_by, collapse=";"))
+  summarise(linked_by=paste0(linked_by, collapse=","))
 
 
 #####
