@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+load_run_info_for_set() {
+    local set=$1
+    local run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated" `
+    if [ -z "${run_info}" ]; then
+        # KODU: For new sets it can happen that snpcheck cannot be performed @ SBP.
+        run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "SnpCheck"`
+    fi
+    echo ${run_info}
+}
+
+load_rerun_info_for_set() {
+    set=$1
+    rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
+    if [ -z "${rerun_info}" ]; then
+        run_info=$(load_run_info_for_set ${set})
+        run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
+        if [ -z "run_is_v3" ]; then
+            rerun_info=""
+        else
+            rerun_info=${run_info}
+        fi
+    fi
+    echo ${rerun_info}
+}
