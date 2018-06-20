@@ -27,5 +27,6 @@ load_rerun_info_for_set() {
 
 extract_bucket_from_run_info() {
     run_info=$1
-    echo `echo ${run_info} | cut -d ' ' -f5`
+    bucket=`echo ${run_info} | cut -d ' ' -f5`
+    echo ${bucket}
 }
