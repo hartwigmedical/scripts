@@ -91,23 +91,29 @@ asm_linked_df = data.frame(
 transitive_df = transitive_breakpoints(bpgr, min_segment_length=20, report="all")
 transitive_df = transitive_df %>%
   filter(info(vcf[transitive_df$transitive])$IMPRECISE) %>%
-  mutate(full_path=path) %>%
-  separate_rows(path, sep=";") %>%
-  mutate(imprecise=info(vcf[path])$IMPRECISE) %>%
-  group_by(transitive, full_path) %>%
-  summarise(
-    imprecise=sum(imprecise),
-    hops=n(),
-    min_length=min(min_length),
-    max_length=max(max_length)) %>%
-  # for now we just link imprecise transitive events
-  # via precise calls
-  filter(imprecise == 0) %>%
-  group_by(transitive) %>%
-  top_n(1, min_length) %>%
-  ungroup() %>%
-  dplyr::select(linked_by = transitive, vcfid = full_path) %>%
-  separate_rows(vcfid, sep=";")
+  mutate(full_path=bp_path)
+if (nrow(transitive_df) != 0) {
+  transitive_df = transitive_df %>%
+    separate_rows(bp_path, sep=";") %>%
+    mutate(imprecise=info(vcf[bp_path])$IMPRECISE) %>%
+    group_by(transitive, full_path) %>%
+    summarise(
+      imprecise=sum(imprecise),
+      hops=n(),
+      min_length=min(min_length),
+      max_length=max(max_length)) %>%
+    # for now we just link imprecise transitive events
+    # via precise calls
+    filter(imprecise == 0) %>%
+    group_by(transitive) %>%
+    top_n(1, min_length) %>%
+    ungroup() %>%
+    dplyr::select(linked_by = transitive, vcfid = full_path) %>%
+    separate_rows(vcfid, sep=";")
+} else {
+  # work-around for https://github.com/tidyverse/tidyr/issues/470
+  transitive_df = data.frame(linked_by="placeholder", vcfid="placeholder") %>% filter(FALSE)
+}
 
 link_df = asm_linked_df %>%
   inner_join(data.frame(vcfid=names(vcf), event=info(vcf)$EVENT), by="event") %>%

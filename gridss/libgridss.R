@@ -251,7 +251,7 @@ full_gridss_annotate_gr = function(gr, vcf, geno_suffix=c(".normal", ".tumour"))
 transitive_of = function(gr, max_traversal_length, max_positional_error, ...) {
 	paths = transitive_paths(gr, max_traversal_length, max_positional_error, ...)
 	result = rep(NA_character_, length(gr))
-	result[paths$ordinal] = paths$path
+	result[paths$ordinal] = paths$bp_path
 	return(result)
 }
 #' Calculates all transitive paths for the given set of breakpoints
@@ -296,10 +296,10 @@ transitive_paths = function(gr, max_traversal_length, max_positional_error, max_
 		dplyr::inner_join(terminal_hits, by=c("ordinal"="current"), suffix=c("", ".first")) %>%
 		mutate(
 			distance=-terminal_distance,
-			path=names(gr)[terminal_ordinal.first],
+			bp_path=names(gr)[terminal_ordinal.first],
 			current=partner(gr)$ordinal[terminal_ordinal.first],
 			path_length=1) %>%
-		dplyr::select(ordinal, current, path, path_length, terminal_ordinal, distance)
+		dplyr::select(ordinal, current, bp_path, path_length, terminal_ordinal, distance)
 
 	resultdf = NULL
 	while(nrow(activedf) > 0 & max_depth > 0) {
@@ -307,16 +307,16 @@ transitive_paths = function(gr, max_traversal_length, max_positional_error, max_
 			mutate(
 				distance = distance + transitive_distance,
 				current=transitive_end,
-				path=paste(path, path_name),
+				bp_path=paste(bp_path, path_name),
 				path_length=path_length + 1) %>%
-			dplyr::select(ordinal, current, path, path_length, terminal_ordinal, distance) %>%
+			dplyr::select(ordinal, current, bp_path, path_length, terminal_ordinal, distance) %>%
 			filter(distance <= max_traversal_length + max_positional_error & distance >= -max_positional_error) %>%
 			filter(current != ordinal & current != terminal_ordinal) # don't follow loops
 		current_terminal = activedf %>%
 			dplyr::inner_join(terminal_hits, by=c("current"="current", "terminal_ordinal"="terminal_ordinal")) %>%
 			mutate(distance = distance + terminal_distance,
 						 name=names(gr)[ordinal]) %>%
-			dplyr::select(ordinal, name, path, path_length, distance)
+			dplyr::select(ordinal, name, bp_path, path_length, distance)
 		resultdf = bind_rows(resultdf, current_terminal)
 		max_depth = max_depth - 1
 	}
@@ -436,23 +436,23 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
       terminal_start=queryHits,
       terminal_end=partner_lookup[queryHits],
       current_to=partner_lookup[subjectHits],
-      path=names(gr)[subjectHits],
+      bp_path=names(gr)[subjectHits],
       min_length=min_traversed + gr$insLen[subjectHits],
       max_length=max_traversed + gr$insLen[subjectHits]) %>%
-    dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length)
+    dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length)
   i = 0
   while (nrow(active_df) > 0 & i < max_hops) {
     # continue traversing
     active_df = active_df %>%
-      dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length) %>%
+      dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
       inner_join(next_df, by=c("current_to"="source_to")) %>%
-      filter(allow_loops | !str_detect(path, stringr::fixed(names(gr)[dest_from]))) %>%
+      filter(allow_loops | !str_detect(bp_path, stringr::fixed(names(gr)[dest_from]))) %>%
       mutate(
-        path=paste0(path, ";", names(gr)[dest_from]),
+        bp_path=paste0(bp_path, ";", names(gr)[dest_from]),
         current_to=dest_to,
         min_length=min_length + min_traversed,
         max_length=max_length + max_traversed) %>%
-      dplyr::select(terminal_start, terminal_end, current_to, path, min_length, max_length) %>%
+      dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
       filter(min_length < max_traversed_length)
     # check for terminal completion
     active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
@@ -461,7 +461,7 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
       mutate(min_length=min_length + min_traversed,
              max_length=max_length + max_traversed,
              transitive=names(gr)[terminal_start]) %>%
-      dplyr::select(transitive, path, min_length, max_length) %>%
+      dplyr::select(transitive, bp_path, min_length, max_length) %>%
       bind_rows(result_df)
     if (report == "shortest") {
       # any further solutions will be longer so we don't need to consider them
