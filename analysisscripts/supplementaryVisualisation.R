@@ -16,6 +16,10 @@ load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 
+simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice") 
+simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9")
+simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
+
 
 ########## Driver rates by type in WGD vs non WGD
 wgdDriverSampleCount = highestPurityCohortSummary %>% group_by(WGD) %>% summarise(total=n())
@@ -52,7 +56,6 @@ p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
 
 plot_grid(p1, labels="AUTO")
 
-
 #############  Drivers vs Mutational Load
 mutationalLoad = highestPurityCohortSummary %>%
   filter(msiStatus == "MSS") %>%
@@ -77,7 +80,7 @@ snvDrivers =  hpcDriversByGene %>%
   mutate(
     driver = as.character(driver),
     driver = ifelse(driver %in% c("Missense", "Nonsense","Splice"), "SNV", driver),
-    driver = ifelse(grepl("Missense", impact) | grepl("Nonsense", impact) | grepl("MSpliceissense", impact), "SNV", driver)
+    driver = ifelse(grepl("Missense", impact) | grepl("Nonsense", impact) | grepl("Splice", impact), "SNV", driver)
   ) %>%
   filter(driverLikelihood > 0, driver == "SNV") %>%
   group_by(sampleId, cancerType) %>% summarise(drivers = sum(driverLikelihood, na.rm = T))
@@ -148,39 +151,55 @@ legend <- g_legend(p4)
 plot_grid(p1,p2,p3,legend, ncol = 1, rel_heights = c(3,3,3,2), labels = c("A","B","C"))
 
 
-
-
-
-
-
-
-#############  Violin driver by cancer type
+#############  Driver Per CancerType
 
 driverData = hpcDriversByGene %>%
-  group_by(cancerType, sampleId) %>%
-  summarise(driverLikelihood = sum(driverLikelihood))
-str(hpcDriversByGene)
+  mutate(driver = as.character(driver), 
+         driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
+         driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
+         driver = factor(driver, simplifiedDrivers)
+  ) %>%
+  group_by(driver, cancerType) %>%
+  summarise(driverLikelihood = sum(driverLikelihood)) %>%
+  left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType") %>%
+  mutate(driversPerSample = driverLikelihood/ N) %>%
+  arrange(-driversPerSample)
+driverDataLevels = driverData %>% group_by(cancerType) %>% summarise(driversPerSample = sum(driversPerSample)) %>% arrange(-driversPerSample)
+driverData = driverData %>% mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
 
-ggplot(driverData, aes(cancerType, driverLikelihood)) + 
-  geom_violin(scale = "area", draw_quantiles = c(0.5)) +
+driverViolinData = hpcDriversByGene %>%
+  group_by(cancerType, sampleId) %>%
+  summarise(driverLikelihood = sum(driverLikelihood)) %>%
+  ungroup() %>%
+  mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
+
+p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
+  geom_violin(trim = F, color = "#6baed6", fill = "#6baed6", scale = "area") +
+  #stat_summary(fun.y = mean, geom = "pointrange", color = "black") + 
+  #stat_summary(fun.y = mean, geom = "point", shape = 23, size = 2, color = "red")+
+  geom_boxplot(width = 0.2, outlier.shape = NA, fill  = "#deebf7") +
+  #stat_summary(fun.data = "mean_sdl", fun.args = list(mult = 1), geom = "pointrange", color = "black", size = 0.1)+
   xlab("Cancer Type") + ylab("Drivers") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
-  scale_colour_manual(values=cancerTypeColours, guide=FALSE) +
+  ggtitle("") + xlab("") + ylab("Drivers per sample") + 
+  scale_y_continuous(expand=c(0.01, 0.01)) +
+  theme(legend.position="none") +
   coord_flip() 
 
+p2 = ggplot(driverData, aes(cancerType, driversPerSample)) +
+  geom_bar(stat = "identity", aes(fill = driver)) +
+  scale_fill_manual(values = simplifiedDriverColours) +
+  ggtitle("") + xlab("") + ylab("Average drivers per sample") +  
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank()) +
+  scale_y_continuous(expand=c(0.0, 0.0)) +
+  coord_flip()
+
+plot_grid(p1,p2, ncol = 2, rel_widths =  c(1,2), labels = "AUTO")
 
 
 
-
-
-
-
-
-
-
-#########################
+######################################################
 
 #Violin - Rounded total  Indel Drivers vs median Indel count
 indelCount = highestPurityCohortSummary %>%
