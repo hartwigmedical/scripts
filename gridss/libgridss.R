@@ -175,7 +175,13 @@ query_structural_variants_for_sample_as_granges = function(dbConnect, sampleId) 
 	df = dbGetQuery(dbConnect, query)
 	hmf_structuralVariants_to_granges(df)
 }
-
+simpleEventType <- function(gr) {
+  return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
+                ifelse(str_length(gr$insertSequence) >= abs(start(gr)-start(partner(gr))) * 0.7, "INS", # TODO: improve classification of complex events
+                       ifelse(strand(gr) == strand(partner(gr)), "INV",
+                              ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
+                                     "DUP")))))
+}
 hmf_structuralVariants_to_granges = function(df) {
 	gro = GRanges(
 		seqnames=df$startChromosome,
@@ -335,7 +341,6 @@ test_that("transitive_paths", {
 	expect_equal(rep(1000-100, 2), paths$distance)
 	expect_equal(c("AC1", "AC2"), paths$name)
 })
-
 get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sampleIds=NULL, line_annotation_bed=NULL) {
   if (is.null(sampleIds)) {
     common_sample_ids = query_structural_variants_samples(dbExisting)
@@ -350,13 +355,6 @@ get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sa
   # make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
   grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
   grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
-  simpleEventType <- function(gr) {
-    return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
-                  ifelse(str_length(gr$insertSequence) >= abs(gr$svlen) * 0.7, "INS", # TODO: improve classification of complex events
-                         ifelse(strand(gr) == strand(partner(gr)), "INV",
-                                ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
-                                       "DUP")))))
-  }
   grex$type = simpleEventType(grex)
   grnew$type = simpleEventType(grnew)
 
@@ -503,7 +501,36 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
     dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
     dplyr::select(-start_end_traversed, -end_start_traversed)
 }
-
+#' Assumes the input is sorted
+#' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
+#' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
+align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+  align = match.arg(align)
+  nominal_start = start(rowRanges(vcf))
+  if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
+    stop("CIPOS not specified for all variants.")
+  }
+  cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
+  ciwdith = cipos[,2] - cipos[,1]
+  if (align == "centre") {
+    adjust_by = cipos[,1] + ciwdith / 2.0
+    adjust_by = ifelse(round(adjust_by) != adjust_by, adjust_by + ifelse(is_higher_breakend, -0.5, 0.5), adjust_by)
+  } else {
+    stop("Only centre alignment is currently implemented.")
+  }
+  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(is.na(adjust_by), 0, adjust_by))
+  info(vcf)$CIPOS = info(vcf)$CIPOS - adjust_by
+  if (!is.null(info(vcf)$CIEND)) {
+    info(vcf)$CIEND = info(vcf)$CIEND - adjust_by
+  }
+  if (!is.null(info(vcf)$IHOMPOS)) {
+    info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
+  }
+  info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
+  # left align lower breakend (forces right alignment of the partner if they're in the same orientation)
+  #info(vcf[names(gr)])$CIPOS = relist(c(rbind(ifelse(left_align, 0, -bp_width), ifelse(left_align, bp_width, 0))), PartitioningByEnd(seq(2, 2*length(gr), 2)))
+  return(vcf)
+}
 
 
 

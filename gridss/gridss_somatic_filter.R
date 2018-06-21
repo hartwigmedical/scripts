@@ -112,7 +112,7 @@ if (nrow(transitive_df) != 0) {
     separate_rows(vcfid, sep=";")
 } else {
   # work-around for https://github.com/tidyverse/tidyr/issues/470
-  transitive_df = data.frame(linked_by="placeholder", vcfid="placeholder") %>% filter(FALSE)
+  transitive_df = data.frame(linked_by="placeholder", vcfid="placeholder", stringsAsFactors=FALSE) %>% filter(FALSE)
 }
 
 link_df = asm_linked_df %>%
@@ -147,6 +147,7 @@ vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]
 # ggplot(as.data.frame(begr)) + aes(x=QUAL, fill=info(vcf[names(begr)])$LINKED_BY == "") + geom_histogram(bins=100) + scale_x_log10()
 # TODO: filter breakends within 100bp of microsatellites; we don't want purple to segment at every one
 
+vcf = align_breakpoints(vcf)
 writeVcf(vcf, output_vcf)
 
 

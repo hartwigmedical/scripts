@@ -9,6 +9,7 @@ gridss.min_normal_depth = 8
 gridss.min_breakpoint_depth = 1
 gridss.max_homology_length = 50
 gridss.max_allowable_shot_event_strand_bias = 0.95
+gridss.min_direct_read_support = 4
 
 # final output filters
 gridss.min_breakpoint_qual = 500
