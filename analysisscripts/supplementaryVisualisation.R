@@ -24,13 +24,14 @@ save(simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDriverColo
 hotspotGenes = hpcDriversByGene %>% 
   filter(type == 'ONCO', !is.na(hotspot)) %>% 
   group_by(gene) %>% 
-  summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(30, driverLikelihood) %>% arrange(-driverLikelihood)
+  summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(40, driverLikelihood) %>% arrange(driverLikelihood)
 
 hotspotData = hpcDriversByGene %>% 
   filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
   mutate(driver = as.character(driver),
          driver = ifelse(driver == "Promoter", "Missense", driver),
-         driver = factor(driver, c("Missense", "Inframe"))) %>%
+         driver = ifelse(driver == "Inframe", "Inframe Indel", driver),
+         driver = factor(driver, c("Missense", "Inframe Indel"))) %>%
   group_by(gene, driver, hotspot) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   group_by(gene) %>%
