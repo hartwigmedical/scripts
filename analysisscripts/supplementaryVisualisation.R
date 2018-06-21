@@ -44,7 +44,7 @@ p_hotspot = ggplot(data = hotspotData, aes(x = gene, y = driverLikelihood)) +
   ggtitle("Oncogene Hotspots") + 
   xlab("Gene") + ylab("Drivers")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom") +
+  theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank(), legend.title=element_blank()) +
   coord_flip()+ 
   facet_grid(~driver, scales = "free_x")
 

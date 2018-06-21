@@ -276,8 +276,8 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 
 ####################################
 ### COVERAGE PLOT @@@@@@@@
 coverageData = highestPurityCohortSummary %>% 
-  select(sampleId, tumorMeanCoverage, refMeanCoverage ) %>% 
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T),) %>%
+  select(sampleId, tumorMeanCoverage, refMeanCoverage, cancerType) %>%
+  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
   arrange(cancerType, -tumorMeanCoverage)
 
 ggplot(data=coverageData)+
@@ -286,20 +286,22 @@ ggplot(data=coverageData)+
   scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage")) +
   coord_flip() + 
   labs(x = "Tumor Mean Coverage")+
-  theme(axis.title.x =  element_blank())
+  theme(axis.title.x =  element_blank()) +
+  scale_y_continuous(labels = percent)
 
 ####################################
 ### Purity PLOT @@@@@@@@
 purityData = highestPurityCohortSummary %>% 
   select(sampleId, purity,cancerType ) %>% 
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   arrange(cancerType, -purity)
 
 ggplot(data=purityData)+
   stat_ecdf(aes(purity,color='Purity'),geom = "step", pad = FALSE) + 
   coord_flip() + 
   labs(x = "Purity")+
-  theme(axis.title.x =  element_blank())
+  theme(axis.title.x =  element_blank()) +
+  scale_x_continuous(labels = percent) + 
+  scale_y_continuous(labels = percent)
 
 ###################################
 ##### Biopsy Location
@@ -354,6 +356,17 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   coord_flip()
 
 plot_grid(p1, labels="AUTO")
+
+wgdPDFPlotData = highestPurityCohortSummary %>% 
+  select(sampleId, WGD, ploidy)
+
+ggplot(data=wgdPDFPlotData) +
+  stat_ecdf(aes(ploidy,color=WGD), geom = "step", pad = FALSE) +
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  xlab("Ploidy") + ylab("")+ 
+  theme( panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  coord_flip()
+
 
 
 ###########################
