@@ -53,8 +53,5 @@ then
     environment_variables="-e JAVA_OPTS=-Xmx${MAX_HEAP}"
 fi
 
-if [[ $EUID -ne 0 ]]; then
-   echo "Docker must be run as root. Please enter password for sudo..."
-fi
-
-sudo docker run $network $volumes $environment_variables hartwigmedicalfoundation/pipeline2:${VERSION}
+echo "Running pipeline2 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline2.log to see the progress."
+sudo docker run -d $network $volumes $environment_variables hartwigmedicalfoundation/pipeline2:${VERSION}
