@@ -347,7 +347,8 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
   annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
   annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
-  scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
+  #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
+  scale_fill_manual(values = c("#deebf7", "#3182bd")) +
   ggtitle("Whole Genome Duplication") + 
   xlab("Cancer Type") + ylab("% Samples")+ 
   scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
@@ -355,19 +356,18 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   theme(axis.ticks = element_blank(), legend.position="none") +
   coord_flip()
 
-plot_grid(p1, labels="AUTO")
-
 wgdPDFPlotData = highestPurityCohortSummary %>% 
   select(sampleId, WGD, ploidy)
+  
+p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
+  geom_histogram(position = "identity", binwidth = 0.1) + 
+  scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#3182bd", 0.8))) +
+  ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
+  theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
+  scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
 
-ggplot(data=wgdPDFPlotData) +
-  stat_ecdf(aes(ploidy,color=WGD), geom = "step", pad = FALSE) +
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  xlab("Ploidy") + ylab("")+ 
-  theme( panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  coord_flip()
-
-
+plot_grid(p1, p2, labels="AUTO")
+#deebf7
 
 ###########################
 ###### SNV vs INDEL
