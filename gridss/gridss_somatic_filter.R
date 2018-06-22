@@ -137,8 +137,8 @@ link_df = asm_linked_df %>%
 info(vcf)$LINKED_BY = ""
 info(vcf[link_df$vcfid])$LINKED_BY = link_df$linked_by
 vcf = vcf[!(names(vcf) %in% transitive_df$linked_by)] # remove transitive calls
-vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_breakpoint_qual | info(vcf)$LINKED_BY != ""]
-vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_breakend_qual | info(vcf)$LINKED_BY != ""]
+vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_qual | info(vcf)$LINKED_BY != ""]
+vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_qual * gridss.single_breakend_multiplier | info(vcf)$LINKED_BY != ""]
 
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)

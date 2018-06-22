@@ -26,14 +26,14 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # variants that are strand biased by chance
 	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
 	  # is fully strand biased when originating from one side of a breakend
-	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_shot_event_strand_bias)
+	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_short_event_strand_bias)
 	}
 	if (min_support_filters) {
 		filtered = filtered |
 			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
-			# BPI.Filter.MinDepth
-			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth) |
+			# Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
+			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support) |
 			# BPI.Filter.PRSupportZero
 			# Added ASRP into filter otherwise breakpoint chains don't get called
 			(!isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0) |
@@ -61,12 +61,11 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   filtered = rep(FALSE, length(gr))
   if (min_support_filters) {
     filtered = filtered |
-      str_detect(gr$FILTER, "NO_ASSEMBLY") |
-      str_detect(gr$FILTER, "ASSEMBLY_ONLY") |
-      # BPI.Filter.MinDepth
-      .genosum(g$BVF,c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth |
-      # require some sort of breakend anchoring
       i$IMPRECISE |
+      # require assembly
+      str_detect(gr$FILTER, "NO_ASSEMBLY") |
+      # require direct read support as well
+      (.genosum(g$BSC,c(normalOrdinal, tumourOrdinal)) + .genosum(g$BUM, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support * gridss.single_breakend_multiplier) |
       # require at least one read pair included in the assembly
       # this is a relatively strict filter but does filter out most of the
       # noise from microsatellite sequences

@@ -6,11 +6,10 @@ gridss.allowable_normal_contamination=0.005 # 0.5% of the supporting fragments c
 gridss.min_normal_depth = 8
 
 # initial consideration filters
-gridss.min_breakpoint_depth = 1
+gridss.min_direct_read_support = 5
 gridss.max_homology_length = 50
-gridss.max_allowable_shot_event_strand_bias = 0.95
-gridss.min_direct_read_support = 4
+gridss.max_allowable_short_event_strand_bias = 0.95
+gridss.single_breakend_multiplier = 2 # Require this much more support for single breakends
 
 # final output filters
-gridss.min_breakpoint_qual = 500
-gridss.min_breakend_qual = 1000
+gridss.min_qual = 500
