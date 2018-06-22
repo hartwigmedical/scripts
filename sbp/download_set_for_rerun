@@ -57,7 +57,6 @@ sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*amber*" \
 	--include "*cobalt*" \
-	--include "*purple*" \
 	--include "*somaticVariants*strelka*" \
 	--include "*structuralVariants*bpi*bpi_stats*" \
 	--include "*structuralVariants*bpi*somaticSV*" \
