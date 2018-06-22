@@ -58,9 +58,6 @@ sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--include "*amber*" \
 	--include "*cobalt*" \
 	--include "*somaticVariants*strelka*" \
-	--include "*structuralVariants*bpi*bpi_stats*" \
-	--include "*structuralVariants*bpi*somaticSV*" \
-	--include "*structuralVariants*bpi*sliced.bam*" \
 	--include "*structuralVariants*manta*somaticSV.vcf*" \
 	--include "*metadata*" \
 	--profile download
