@@ -42,7 +42,7 @@ fi
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 
 if [ -z "${credentials}" ]; then
-    java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+    java -Xmx8G -Xms4G \
         -jar ${purple_jar} \
         -threads 3 \
         -somatic_vcf ${somatic_vcf} \
