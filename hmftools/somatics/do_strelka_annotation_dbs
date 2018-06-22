@@ -4,7 +4,7 @@ input_vcf=$1 && shift
 output_vcf=$1 && shift
 
 ### Tools
-bcftools=/data/common/tools/bcftools_v1.3/bcftools
+bcftools=/data/common/tools/bcftools_v1.3.1/bcftools
 tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 ### Dependencies

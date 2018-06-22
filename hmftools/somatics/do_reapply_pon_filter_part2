@@ -9,7 +9,7 @@ input_vcf=${output_dir}/${joint_name}_post_processed_v2.2_pon.vcf.gz
 output_vcf=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
 
 ### Dependencies
-bcftools=/data/common/tools/bcftools_v1.3/bcftools
+bcftools=/data/common/tools/bcftools_v1.3.1/bcftools
 tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 if [[ -e ${input_vcf} ]]
