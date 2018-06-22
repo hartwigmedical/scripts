@@ -306,7 +306,7 @@ transitive_paths = function(gr, max_traversal_length, max_positional_error, max_
 			path_length=1) %>%
 		dplyr::select(ordinal, current, bp_path, path_length, terminal_ordinal, distance)
 
-	resultdf = NULL
+	resultdf = data.frame(ordinal=integer(), name=character(), bp_path=character(), path_length=integer(), distance=integer(), stringsAsFactors=FALSE)
 	while(nrow(activedf) > 0 & max_depth > 0) {
 		activedf = activedf %>% dplyr::inner_join(transitive_hits, by=c("current"="transitive_start")) %>%
 			mutate(

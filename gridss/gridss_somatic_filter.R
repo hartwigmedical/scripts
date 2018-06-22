@@ -112,7 +112,7 @@ if (nrow(transitive_df) != 0) {
     separate_rows(vcfid, sep=";")
 } else {
   # work-around for https://github.com/tidyverse/tidyr/issues/470
-  transitive_df = data.frame(linked_by="placeholder", vcfid="placeholder", stringsAsFactors=FALSE) %>% filter(FALSE)
+  transitive_df = data.frame(linked_by=character(), vcfid=character(), stringsAsFactors=FALSE)
 }
 
 link_df = asm_linked_df %>%
