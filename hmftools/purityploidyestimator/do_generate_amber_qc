@@ -14,13 +14,13 @@ if [[ ! -e ${amber_pcf} ]]
 then
     meanBaf=$(grep -v X ${amber_output} | grep -v Y | grep -v Chromo | cut -f 3 | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }')
     qcStatus=PASS
-    if [ ${meanBaf} -gt 0.51 ]; then
+    if (( $(echo "$meanBaf > 0.51" | bc -l) )); then
         qcStatus=FAIL
-    elif [ ${meanBaf} -gt 0.50 ]; then
+    elif (( $(echo "$meanBaf > 0.50" | bc -l) )); then
         qcStatus=WARN
-    elif [ ${meanBaf} -lt 0.48 ]; then
+    elif (( $(echo "$meanBaf < 0.48" | bc -l) )); then
         qcStatus=FAIL
-    elif [ ${meanBaf} -lt 0.507 ]; then
+    elif (( $(echo "$meanBaf < 0.487" | bc -l) )); then
         qcStatus=WARN
     fi
 
