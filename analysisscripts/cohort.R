@@ -137,6 +137,28 @@ cohortSummary = allPurity %>%
 write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
 rm(cohortSummary)
 
+##### GENERATE PATIENT/SAMPLEID
+load(file = "~/hmf/RData/reference/allClinicalData.RData")
+load(file = "~/hmf/RData/reference/allPurity.RData")
+cpctPatientIds =  unique(allPurity$patientId)
+hmfPatientIds = paste0("HMF", formatC(c(1:2781), width = 5, format = "d", flag = "0"))
+patientIdMap = data.frame(cpctPatientId = cpctPatientIds, hmfPatientId = hmfPatientIds, stringsAsFactors = F)
+rm(cpctPatientIds, hmfPatientIds)
+
+sampleIdMap = allPurity %>% select(sampleId, patientId) %>% 
+  left_join(patientIdMap, by = c("patientId" = "cpctPatientId")) %>%
+  left_join(allClinicalData %>% select(sampleId, sampleArrivalDate), by = "sampleId") %>%
+  arrange(hmfPatientId, sampleArrivalDate) %>%
+  group_by(hmfPatientId) %>%
+  mutate(
+    sample = row_number(),
+    sample = chartr("12345", "ABCDE", sample)) %>%
+  mutate(hmfSampleId = paste0(hmfPatientId, sample))
+
+
+#sampleIdMap$insert = paste0("(\'", sampleIdMap$hmfSampleId, "\',\'", sampleIdMap$patientId, "\',\'", sampleIdMap$sampleId, "\')")
+#cat(paste0(sampleIdMap$insert, collapse = ","))
+
 
 ############################################ HIGHEST PURITY
 load(file = '~/hmf/RData/reference/allGeneDeletes.RData')
@@ -218,7 +240,7 @@ multipleBiopsyScope = multipleBiopsyCohort %>%
   arrange(patientId, sampleArrivalDate) %>%
   select(patientId, sampleId) %>% 
   group_by(patientId) %>% 
-  mutate(scope = paste0("Sample",row_number()) ) %>%
+  mutate(scope = paste0("Sample",row_number())) %>%
   ungroup()
 save(multipleBiopsyScope, file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
 
@@ -306,9 +328,14 @@ multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithSco
 multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
   ungroup() %>% 
   distinct(patientId, scope, chromosome, position, ref, alt, type, clonality) %>% 
+  mutate(
+    type = ifelse(type == 'SNP', 'SNV', type),
+    type = ifelse(type == 'MNP', 'MNV', type),
+    clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
   group_by(patientId, scope, type, clonality) %>%
   summarise(count = n()) %>%
-  unite(type, scope, type, clonality, sep = "_") %>% spread(type, count)
+  unite(type, scope, type, clonality, sep = "_") %>% 
+  spread(type, count, fill = 0)
 
 multipleBiopsyPatientMsi = multipleBiopsyMSI %>% left_join(multipleBiopsyScope, by = "sampleId") %>%
   gather(type, value, msiScore, msiStatus) %>%
