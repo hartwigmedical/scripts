@@ -1,17 +1,9 @@
 library(VariantAnnotation)
 library(StructuralVariantAnnotation)
-library(dplyr)
+library(tidyverse)
 library(stringr)
 library(testthat)
-gridss.short_event_size_threshold = 1000
-# 0.5% of the supporting fragments can come from the normal
-gridss.allowable_normal_contamination=0.005
-gridss.use_read_threshold=3
-gridss.min_breakpoint_depth = 5 # Half BPI default
-gridss.min_normal_depth = 8
-gridss.max_homology_length = 50
-gridss.max_allowable_strand_bias = 0.95
-gridss.min_qual = 250
+source("gridss.config.R")
 
 #' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
@@ -34,15 +26,14 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # variants that are strand biased by chance
 	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
 	  # is fully strand biased when originating from one side of a breakend
-	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_strand_bias)
+	  filtered = filtered | (isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_short_event_strand_bias)
 	}
 	if (min_support_filters) {
 		filtered = filtered |
 			# str_detect(gr$FILTER, "NO_ASSEMBLY") | # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
-		  rowRanges(vcf)$QUAL < gridss.min_qual |
 			# ihomlen > gridss.max_homology_length | # homology FPs handled by normal and/or PON
-			# BPI.Filter.MinDepth
-			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth) |
+			# Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
+			(.genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support) |
 			# BPI.Filter.PRSupportZero
 			# Added ASRP into filter otherwise breakpoint chains don't get called
 			(!isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0) |
@@ -70,13 +61,11 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   filtered = rep(FALSE, length(gr))
   if (min_support_filters) {
     filtered = filtered |
-      str_detect(gr$FILTER, "NO_ASSEMBLY") |
-      str_detect(gr$FILTER, "ASSEMBLY_ONLY") |
-      rowRanges(vcf)$QUAL < gridss.min_qual |
-      # BPI.Filter.MinDepth
-      .genosum(g$BVF,c(normalOrdinal, tumourOrdinal)) < gridss.min_breakpoint_depth |
-      # require some sort of breakend anchoring
       i$IMPRECISE |
+      # require assembly
+      str_detect(gr$FILTER, "NO_ASSEMBLY") |
+      # require direct read support as well
+      (.genosum(g$BSC,c(normalOrdinal, tumourOrdinal)) + .genosum(g$BUM, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support * gridss.single_breakend_multiplier) |
       # require at least one read pair included in the assembly
       # this is a relatively strict filter but does filter out most of the
       # noise from microsatellite sequences
@@ -185,7 +174,13 @@ query_structural_variants_for_sample_as_granges = function(dbConnect, sampleId) 
 	df = dbGetQuery(dbConnect, query)
 	hmf_structuralVariants_to_granges(df)
 }
-
+simpleEventType <- function(gr) {
+  return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
+                ifelse(str_length(gr$insertSequence) >= abs(start(gr)-start(partner(gr))) * 0.7, "INS", # TODO: improve classification of complex events
+                       ifelse(strand(gr) == strand(partner(gr)), "INV",
+                              ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
+                                     "DUP")))))
+}
 hmf_structuralVariants_to_granges = function(df) {
 	gro = GRanges(
 		seqnames=df$startChromosome,
@@ -261,7 +256,7 @@ full_gridss_annotate_gr = function(gr, vcf, geno_suffix=c(".normal", ".tumour"))
 transitive_of = function(gr, max_traversal_length, max_positional_error, ...) {
 	paths = transitive_paths(gr, max_traversal_length, max_positional_error, ...)
 	result = rep(NA_character_, length(gr))
-	result[paths$ordinal] = paths$path
+	result[paths$ordinal] = paths$bp_path
 	return(result)
 }
 #' Calculates all transitive paths for the given set of breakpoints
@@ -306,27 +301,27 @@ transitive_paths = function(gr, max_traversal_length, max_positional_error, max_
 		dplyr::inner_join(terminal_hits, by=c("ordinal"="current"), suffix=c("", ".first")) %>%
 		mutate(
 			distance=-terminal_distance,
-			path=names(gr)[terminal_ordinal.first],
+			bp_path=names(gr)[terminal_ordinal.first],
 			current=partner(gr)$ordinal[terminal_ordinal.first],
 			path_length=1) %>%
-		dplyr::select(ordinal, current, path, path_length, terminal_ordinal, distance)
+		dplyr::select(ordinal, current, bp_path, path_length, terminal_ordinal, distance)
 
-	resultdf = NULL
+	resultdf = data.frame(ordinal=integer(), name=character(), bp_path=character(), path_length=integer(), distance=integer(), stringsAsFactors=FALSE)
 	while(nrow(activedf) > 0 & max_depth > 0) {
 		activedf = activedf %>% dplyr::inner_join(transitive_hits, by=c("current"="transitive_start")) %>%
 			mutate(
 				distance = distance + transitive_distance,
 				current=transitive_end,
-				path=paste(path, path_name),
+				bp_path=paste(bp_path, path_name),
 				path_length=path_length + 1) %>%
-			dplyr::select(ordinal, current, path, path_length, terminal_ordinal, distance) %>%
+			dplyr::select(ordinal, current, bp_path, path_length, terminal_ordinal, distance) %>%
 			filter(distance <= max_traversal_length + max_positional_error & distance >= -max_positional_error) %>%
 			filter(current != ordinal & current != terminal_ordinal) # don't follow loops
 		current_terminal = activedf %>%
 			dplyr::inner_join(terminal_hits, by=c("current"="current", "terminal_ordinal"="terminal_ordinal")) %>%
 			mutate(distance = distance + terminal_distance,
 						 name=names(gr)[ordinal]) %>%
-			dplyr::select(ordinal, name, path, path_length, distance)
+			dplyr::select(ordinal, name, bp_path, path_length, distance)
 		resultdf = bind_rows(resultdf, current_terminal)
 		max_depth = max_depth - 1
 	}
@@ -345,7 +340,6 @@ test_that("transitive_paths", {
 	expect_equal(rep(1000-100, 2), paths$distance)
 	expect_equal(c("AC1", "AC2"), paths$name)
 })
-
 get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sampleIds=NULL, line_annotation_bed=NULL) {
   if (is.null(sampleIds)) {
     common_sample_ids = query_structural_variants_samples(dbExisting)
@@ -360,13 +354,6 @@ get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sa
   # make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
   grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
   grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
-  simpleEventType <- function(gr) {
-    return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
-                  ifelse(str_length(gr$insertSequence) >= abs(gr$svlen) * 0.7, "INS", # TODO: improve classification of complex events
-                         ifelse(strand(gr) == strand(partner(gr)), "INV",
-                                ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
-                                       "DUP")))))
-  }
   grex$type = simpleEventType(grex)
   grnew$type = simpleEventType(grnew)
 
@@ -390,6 +377,158 @@ get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sa
     fullmatchdf = fullmatchdf %>% mutate(isline=(!is.na(line1) & line1) | (!is.na(line2) & line2))
   }
   return(fullmatchdf)
+}
+
+linked_asm <- function(vcf) {
+  asm_linked_df <- data.frame(
+    event=info(vcf)$EVENT,
+    beid=sapply(info(vcf)$BEID, function(x) paste0(c("", unlist(x)), collapse=";"))) %>%
+    separate_rows(beid, sep=";") %>%
+    filter(!is.na(beid) & nchar(beid) > 0) %>%
+    group_by(event, beid) %>%
+    distinct() %>%
+    group_by(beid) %>%
+    filter(n() > 1) %>%
+    mutate(linked_by=beid) %>%
+    dplyr::select(event, linked_by=beid)
+  return (asm_linked_df)
+}
+
+#' @description Determines which A-C transitives calls can be explained by an A-B-C.
+#' Transitive calls are caused by fragments that completely span the B fragment.
+#' For paired end sequencing, transitive calls will be IMPRECISE as all split reads
+#' support the A-B and B-C breakpoints.
+#' @param gr input breakpoint GRanges object
+#' @param max_traversed_length maximum length of sequence in the traversed breakpoint chain.
+#' @param min_segment_length minimum length of traversed sequence. Aligners typically cannot align less than around 20 bases.
+#' @param allow_loops allow breakpoints to be traversed multiple times
+#' @param max_hops maximum number of breakends to traverse
+#' @param report When report is "shortest", only the shortest transitive breakpoint chain is reported.
+#' @return id of the
+transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_length=0, transitive_call_slop=100, allow_loops=FALSE, max_hops=8, report=c("shortest", "all")) {
+  ordinal_lookup = seq_len(length(gr))
+  names(ordinal_lookup) = names(gr)
+  partner_lookup = ordinal_lookup[gr$partner]
+  next_df = .traversal_next_breakpoint(gr, max_traversed_length, min_segment_length) %>%
+    # prevent self-intersections
+    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
+    # incorporate breakpoint inserted sequence into the traversal length
+    mutate(
+      min_traversed=min_traversed + gr$insLen[subjectHits],
+      max_traversed=max_traversed + gr$insLen[subjectHits],
+      source_from=partner_lookup[queryHits],
+      source_to=queryHits,
+      dest_from=subjectHits,
+      dest_to=partner_lookup[subjectHits]) %>%
+    dplyr::select(-queryHits, -subjectHits)
+  terminal_df = .adjacent_breakends(gr, gr, maxgap=transitive_call_slop, allowed_orientation=c("--", "++")) %>%
+    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
+    # [min_traversed, max_traversed] overlaps [-transitive_call_slop, transitive_call_slop]
+    filter(min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop)
+
+  result_df = NULL
+  # start with the first traversal away from the putative transitive call
+  active_df = terminal_df %>%
+    mutate(
+      terminal_start=queryHits,
+      terminal_end=partner_lookup[queryHits],
+      current_to=partner_lookup[subjectHits],
+      bp_path=names(gr)[subjectHits],
+      min_length=min_traversed + gr$insLen[subjectHits],
+      max_length=max_traversed + gr$insLen[subjectHits]) %>%
+    dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length)
+  i = 0
+  while (nrow(active_df) > 0 & i < max_hops) {
+    # continue traversing
+    active_df = active_df %>%
+      dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
+      inner_join(next_df, by=c("current_to"="source_to")) %>%
+      filter(allow_loops | !str_detect(bp_path, stringr::fixed(names(gr)[dest_from]))) %>%
+      mutate(
+        bp_path=paste0(bp_path, ";", names(gr)[dest_from]),
+        current_to=dest_to,
+        min_length=min_length + min_traversed,
+        max_length=max_length + max_traversed) %>%
+      dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
+      filter(min_length < max_traversed_length)
+    # check for terminal completion
+    active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
+    result_df = active_df %>%
+      filter(!is.na(min_traversed)) %>%
+      mutate(min_length=min_length + min_traversed,
+             max_length=max_length + max_traversed,
+             transitive=names(gr)[terminal_start]) %>%
+      dplyr::select(transitive, bp_path, min_length, max_length) %>%
+      bind_rows(result_df)
+    if (report == "shortest") {
+      # any further solutions will be longer so we don't need to consider them
+      active_df = active_df %>% filter(is.na(min_traversed))
+      best_min = result_df
+    }
+    i = i + 1
+  }
+  if (report == "shortest") {
+    # Just the shortest result for each transitive call
+    result_df = result_df %>%
+      group_by(transitive) %>%
+      top_n(1, min_length) %>%
+      ungroup()
+  }
+  return(result_df)
+}
+.traversal_next_breakpoint <- function(gr, max_traversed_length, min_segment_length) {
+  .adjacent_breakends(gr, gr, max_traversed_length, allowed_orientation=c("-+", "+-")) %>%
+    filter(max_traversed > min_segment_length) %>%
+    mutate(min_traversed=pmax(min_segment_length, min_traversed))
+}
+#' @description determines which breakends are near the given breakend
+#' @param maxgap maximum distance between adjacent breakends
+#' @param allowed_orientation allowed breakend orientation of the query then subject breakends
+#' @return adjacent breakends of the given orientations.
+#' Traversal distances are defined as the number of number of bases traversed into the DNA segment
+#' arriving from the query breakend until the subject breakend position is reached.
+#' Note that the subject breakend orientation does not affect the traversal distance.
+.adjacent_breakends <- function(query, subject, maxgap, allowed_orientation=c("--", "-+", "+-", "++")) {
+  allowed_orientation = match.arg(allowed_orientation, several.ok=TRUE)
+  findOverlaps(query, subject, maxgap=maxgap, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    dplyr::filter(paste0(strand(query[queryHits]), strand(subject[subjectHits])) %in% allowed_orientation) %>%
+    dplyr::mutate(
+      start_end_traversed=(end(subject[subjectHits]) - start(query[queryHits])) * ifelse(as.logical(strand(query[queryHits])=="-"), 1, -1),
+      end_start_traversed=(start(subject[subjectHits]) - end(query[queryHits])) * ifelse(as.logical(strand(query[queryHits])=="-"), 1, -1)) %>%
+    dplyr::mutate(min_traversed=pmin(start_end_traversed, end_start_traversed)) %>%
+    dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
+    dplyr::select(-start_end_traversed, -end_start_traversed)
+}
+#' Assumes the input is sorted
+#' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
+#' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
+align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+  align = match.arg(align)
+  nominal_start = start(rowRanges(vcf))
+  if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
+    stop("CIPOS not specified for all variants.")
+  }
+  cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
+  ciwdith = cipos[,2] - cipos[,1]
+  if (align == "centre") {
+    adjust_by = cipos[,1] + ciwdith / 2.0
+    adjust_by = ifelse(round(adjust_by) != adjust_by, adjust_by + ifelse(is_higher_breakend, -0.5, 0.5), adjust_by)
+  } else {
+    stop("Only centre alignment is currently implemented.")
+  }
+  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(is.na(adjust_by), 0, adjust_by))
+  info(vcf)$CIPOS = info(vcf)$CIPOS - adjust_by
+  if (!is.null(info(vcf)$CIEND)) {
+    info(vcf)$CIEND = info(vcf)$CIEND - adjust_by
+  }
+  if (!is.null(info(vcf)$IHOMPOS)) {
+    info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
+  }
+  info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
+  # left align lower breakend (forces right alignment of the partner if they're in the same orientation)
+  #info(vcf[names(gr)])$CIPOS = relist(c(rbind(ifelse(left_align, 0, -bp_width), ifelse(left_align, bp_width, 0))), PartitioningByEnd(seq(2, 2*length(gr), 2)))
+  return(vcf)
 }
 
 

@@ -15,4 +15,6 @@ Imports:
     data.table,
     RMySQL,
     dplyr,
-    tidyr
+    tidyr,
+    GenomicRanges,
+    IRanges

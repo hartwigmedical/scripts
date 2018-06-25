@@ -4,6 +4,7 @@ library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(cowplot)
+library(scales)
 theme_set(theme_grey())
 theme_set(theme_bw())
 
@@ -275,8 +276,8 @@ plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 
 ####################################
 ### COVERAGE PLOT @@@@@@@@
 coverageData = highestPurityCohortSummary %>% 
-  select(sampleId, tumorMeanCoverage, refMeanCoverage ) %>% 
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T),) %>%
+  select(sampleId, tumorMeanCoverage, refMeanCoverage, cancerType) %>%
+  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
   arrange(cancerType, -tumorMeanCoverage)
 
 ggplot(data=coverageData)+
@@ -285,20 +286,22 @@ ggplot(data=coverageData)+
   scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage")) +
   coord_flip() + 
   labs(x = "Tumor Mean Coverage")+
-  theme(axis.title.x =  element_blank())
+  theme(axis.title.x =  element_blank()) +
+  scale_y_continuous(labels = percent)
 
 ####################################
 ### Purity PLOT @@@@@@@@
 purityData = highestPurityCohortSummary %>% 
   select(sampleId, purity,cancerType ) %>% 
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   arrange(cancerType, -purity)
 
 ggplot(data=purityData)+
   stat_ecdf(aes(purity,color='Purity'),geom = "step", pad = FALSE) + 
   coord_flip() + 
   labs(x = "Purity")+
-  theme(axis.title.x =  element_blank())
+  theme(axis.title.x =  element_blank()) +
+  scale_x_continuous(labels = percent) + 
+  scale_y_continuous(labels = percent)
 
 ###################################
 ##### Biopsy Location
@@ -323,13 +326,48 @@ head(highestPurityCohortSummary)
 
 ###########@@@@@@@@@@@@@@@
 ####### WGD
-### TO DO:   Sort, make easy to read and display %s on charts.
-ggplot(data=highestPurityCohortSummary , aes(x = cancerType, y = factor(1))) +
+wgdPlotData = highestPurityCohortSummary %>% 
+  select(cancerType, WGD) %>%  
+  group_by(cancerType, WGD) %>% count() %>%
+  group_by(cancerType) %>% mutate(total = sum(n), percentage = n / total) %>%
+  ungroup()
+
+wgdPlotDataTotal = wgdPlotData %>% filter(WGD) %>% summarise(percentage = sum(n) / sum(total))
+wgdPlotData = wgdPlotData %>%
+  mutate(totalPercentage = wgdPlotDataTotal$percentage) %>%
+  filter(cancerType != "Other")
+
+wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
+wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
+wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
+wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
+
+p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
-  ggtitle("WGD by Cancer Type") + xlab("Cancer TYpe") + ylab("Count of Samples")+ 
-  coord_flip()+
-  theme(axis.text.x =  element_blank(), legend.position="bottom",panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),panel.border = element_blank())
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
+  annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
+  annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
+  #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
+  scale_fill_manual(values = c("#deebf7", "#3182bd")) +
+  ggtitle("Whole Genome Duplication") + 
+  xlab("Cancer Type") + ylab("% Samples")+ 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") +
+  coord_flip()
+
+wgdPDFPlotData = highestPurityCohortSummary %>% 
+  select(sampleId, WGD, ploidy)
+  
+p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
+  geom_histogram(position = "identity", binwidth = 0.1) + 
+  scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#3182bd", 0.8))) +
+  ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
+  theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
+  scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
+
+plot_grid(p1, p2, labels="AUTO")
+#deebf7
 
 ###########################
 ###### SNV vs INDEL

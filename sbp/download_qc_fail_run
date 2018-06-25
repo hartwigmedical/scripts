@@ -1,8 +1,6 @@
 #!/bin/bash
 
 script=$( basename $0 )
-awsprofile="download"
-localpath="/data/schuberg/qc_fail_runs"
 
 usage() {
     echo "---"
@@ -26,9 +24,11 @@ while getopts ":s:b:p:" o; do
     esac
 done
 
-if [[ -z "${setname}" || -z "${bucket}"|| -z "${localpath}" ]]; then
+if [[ -z "${setname}" || -z "${bucket}" ]]; then
     usage
 fi
+
+localpath="/data/schuberg/qc_fail_runs"
 
 sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
 	--exclude "*" \
@@ -53,4 +53,4 @@ sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
 	--include "*structuralVariants*manta*somaticSV.vcf*" \
 	--include "*metadata*" \
 	--include "*logs*" \
-	--profile ${awsprofile}
+	--profile download

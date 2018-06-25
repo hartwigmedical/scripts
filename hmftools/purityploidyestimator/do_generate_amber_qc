@@ -1,0 +1,30 @@
+#!/bin/bash
+run_dir=$1 && shift
+
+
+amber_output=$(find -L ${run_dir}/amber/ -type f -name *.amber.baf)
+if [ -z ${amber_output} ]
+then
+    echo "Amber BAF unavailable. Exiting."
+    exit 1
+fi
+
+amber_qc=$(basename ${amber_output} .baf).qc
+if [[ ! -e ${amber_qc} ]]
+then
+    meanBaf=$(grep -v X ${amber_output} | grep -v Y | grep -v Chromo | cut -f 3 | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }')
+    qcStatus=PASS
+    if (( $(echo "$meanBaf > 0.51" | bc -l) )); then
+        qcStatus=FAIL
+    elif (( $(echo "$meanBaf > 0.50" | bc -l) )); then
+        qcStatus=WARN
+    elif (( $(echo "$meanBaf < 0.48" | bc -l) )); then
+        qcStatus=FAIL
+    elif (( $(echo "$meanBaf < 0.487" | bc -l) )); then
+        qcStatus=WARN
+    fi
+
+    echo -e 'QCStatus\t'${meanBaf} > ${amber_qc}
+    echo -e 'MeanBAF\t'${meanBaf} >> ${amber_qc}
+fi
+

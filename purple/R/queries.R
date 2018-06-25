@@ -332,6 +332,81 @@ query_structural_variants <- function(dbConnect, cohort) {
   return(dbGetQuery(dbConnect, query))
 }
 
+query_structural_variants_as_GRanges <- function(dbConnect, cohort) {
+  sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  query = paste(
+    "SELECT id,sampleId,startChromosome,endChromosome,startPosition,endPosition,startOrientation,endOrientation,
+      startHomologySequence, endHomologySequence, startAF, endAF, ploidy, adjustedStartAF, adjustedEndAF,adjustedStartCopyNumber,adjustedStartCopyNumberChange,adjustedEndCopyNumberChange,
+      insertSequence,type,filter,somaticScore,imprecise,qualScore,event,
+      startTumourVariantFragmentCount,startTumourReferenceFragmentCount,startNormalVariantFragmentCount,startNormalReferenceFragmentCount,
+      endTumourVariantFragmentCount,endTumourReferenceFragmentCount,endNormalVariantFragmentCount,endNormalReferenceFragmentCount,
+      startIntervalOffsetStart,startIntervalOffsetEnd,endIntervalOffsetStart,endIntervalOffsetEnd,inexactHomologyOffsetStart,inexactHomologyOffsetEnd,
+      linkedBy,vcfId",
+    "FROM structuralVariant",
+    "WHERE sampleId in (",sampleIdString, ")",
+    sep = " ")
+  dbdf = dbGetQuery(dbConnect, query)
+  grs = GRanges(
+    seqnames=dbdf$startChromosome,
+    ranges=IRanges(start=dbdf$startPosition + ifelse(is.na(dbdf$startIntervalOffsetStart), 0, dbdf$startIntervalOffsetStart),
+                   end=dbdf$startPosition + ifelse(is.na(dbdf$startIntervalOffsetEnd), 0, dbdf$startIntervalOffsetEnd)),
+    strand=ifelse(dbdf$startOrientation == 1, "+", "-"),
+    QUAL=dbdf$qualScore,
+    FILTER=dbdf$filter,
+    sampleId=dbdf$sampleId,
+    ploidy=dbdf$ploidy,
+    insertSequence=dbdf$insertSequence,
+    type=dbdf$type,
+    af=dbdf$startAF,
+    homseq=dbdf$startHomologySequence,
+    adjustedaf=dbdf$adjustedStartAF,
+    adjustedcn=dbdf$adjustedStartCopyNumber,
+    adjustedcn_delta=dbdf$adjustedStartCopyNumberChange,
+    partner=ifelse(is.na(dbdf$endChromosome), NA_character_, paste0(dbdf$id, "h")),
+    tumourVariantFragmentCount=dbdf$startTumourVariantFragmentCount,
+    tumourReferenceFragmentCount=dbdf$startTumourReferenceFragmentCount,
+    normalVariantFragmentCount=dbdf$startNormalVariantFragmentCount,
+    normalReferenceFragmentCount=dbdf$startNormalReferenceFragmentCount,
+    ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
+    somaticScore=dbdf$somaticScore,
+    imprecise=dbdf$imprecise != 0,
+    event=dbdf$event,
+    id=dbdf$id,
+    vcfid=dbdf$vcfId)
+  names(grs)=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o"))
+  dbdf = dbdf %>% filter(!is.na(endChromosome))
+  grh = GRanges(
+    seqnames=dbdf$endChromosome,
+    ranges=IRanges(start=dbdf$endPosition + ifelse(is.na(dbdf$endIntervalOffsetStart), 0, dbdf$endIntervalOffsetStart),
+                   end=dbdf$endPosition + ifelse(is.na(dbdf$endIntervalOffsetEnd), 0, dbdf$endIntervalOffsetEnd)),
+    strand=ifelse(dbdf$endOrientation == 1, "+", "-"),
+    QUAL=dbdf$qualScore,
+    FILTER=dbdf$filter,
+    sampleId=dbdf$sampleId,
+    ploidy=dbdf$ploidy,
+    insertSequence=dbdf$insertSequence,
+    type=dbdf$type,
+    af=dbdf$endAF,
+    homseq=dbdf$endHomologySequence,
+    adjustedaf=dbdf$adjustedEndAF,
+    adjustedcn=dbdf$adjustedEndCopyNumber,
+    adjustedcn_delta=dbdf$adjustedEndCopyNumberChange,
+    partner=paste0(dbdf$id, "o"),
+    tumourVariantFragmentCount=dbdf$endTumourVariantFragmentCount,
+    tumourReferenceFragmentCount=dbdf$endTumourReferenceFragmentCount,
+    normalVariantFragmentCount=dbdf$endNormalVariantFragmentCount,
+    normalReferenceFragmentCount=dbdf$endNormalReferenceFragmentCount,
+    ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
+    somaticScore=dbdf$somaticScore,
+    imprecise=dbdf$imprecise != 0,
+    event=dbdf$event,
+    id=dbdf$id,
+    vcfid=dbdf$vcfId)
+  names(grh)=paste0(dbdf$id, "h")
+  return(c(grs, grh))
+}
+
+
 query_canonical_transcript <-function(dbConnect) {
   query = paste(
     "SELECT *",
