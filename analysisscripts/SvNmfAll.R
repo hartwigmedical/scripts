@@ -196,6 +196,11 @@ View(svSampleSigData)
 write.csv(svSampleSigData, "~/logs/r_output/svSampleSigData.csv", row.names=F, quote=F)
 
 
+# multiple biopsy data
+load(file="~/data/multipleBiopsyStructuralVariantsWithScope.RData")
+View(multipleBiopsyStructuralVariantsWithScope)
+
+
 
 
 

@@ -201,7 +201,7 @@ get_bucket_summary_plot<-function(bucketSummaryData, varType = "SV") {
   return (bucketSummaryPlot)
 }
 
-get_sample_bucket_data<-function(matrixData, origSampleCounts, sampleCancerTypes, bucketNames)
+get_sample_bucket_data<-function(matrixData, origSampleCounts, bucketNames)
 {
   data1 = t(matrixData)
   data2 = t(data1)
@@ -209,8 +209,7 @@ get_sample_bucket_data<-function(matrixData, origSampleCounts, sampleCancerTypes
   data4 = gather(data3, SampleId, Count, -Bucket)
 
   data4 = merge(data4, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
-  data4 = merge(data4, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
-  colnames(data4) <- c("SampleId", "Bucket", "Count", "SampleCount", "CancerType")
+  colnames(data4) <- c("SampleId", "Bucket", "Count", "SampleCount")
   data4$Percent = round(data4$Count/data4$SampleCount,4)
 
   data4[is.na(data4)] = 0
@@ -244,7 +243,7 @@ get_top_buckets_by_sample<-function(sampleCounts, origSampleCounts, sampleCancer
   return (sampleBucketTopN)
 }
 
-plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, varType = "SV", maxPlots = 4)
+plot_sample_bucket_contrib<-function(sampleBucketData, bucketCount, varType = "SV", maxPlots = 4)
 {
   bucketColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a", "#6b3a9d",
                    "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a", "#ff748a", "#777700",
@@ -260,25 +259,21 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
                    "#ff86be", "#4a7822", "#ffabe4", "#6a9e03", "#c4c0fb", "#ff7571", "#878659", "#de3185", "#a0429d", "#8a492f")
 
 
-  cancerData = sampleBucketData %>% filter(SampleCount>0)
+  sbData = sampleBucketData %>% filter(SampleCount>0)
 
-  if(cancerType != "") {
-    cancerData = cancerData %>% filter(CancerType==cancerType)
-  }
-
-  cancerData = cancerData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent', "SampleCount")
+  sbData = sbData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent', "SampleCount")
 
   bucketPlots = list()
   plotIndex = 1
 
-  if(nrow(cancerData) > 0)
+  if(nrow(sbData) > 0)
   {
     # only plot 50 samples at a time
     samplesPerPlot = 100
     rowsPerPlot = samplesPerPlot * bucketCount
 
     rowEnd = 0
-    maxRows = nrow(cancerData)
+    maxRows = nrow(sbData)
     plotCount = 0
 
     while(rowEnd < maxRows)
@@ -301,18 +296,9 @@ plot_sample_bucket_contrib<-function(sampleBucketData, cancerType, bucketCount, 
         }
       }
 
-      # print(paste(plotCount, ": rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
+      title = "Bucket % by Sample"
 
-      if(cancerType == "")
-      {
-        title = "Bucket % by Sample"
-      }
-      else
-      {
-        title = paste("Bucket % by Sample for ", cancerType, sep="")
-      }
-
-      sampleBucketPlot <- (ggplot(cancerData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Percent, fill = Bucket))
+      sampleBucketPlot <- (ggplot(sbData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Percent, fill = Bucket))
                         + geom_bar(stat = "identity", colour = "black", size=0.01)
                         + labs(x = "", y = paste("Bucket % by Sample", sep=''))
                         + scale_fill_manual(values = bucketColours)

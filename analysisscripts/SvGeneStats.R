@@ -112,10 +112,10 @@ getSampleGeneList<-function(dgData)
   return (sgList)
 }
 
-calcGeneProbabilities<-function(gsCounts, sgList, sampleCount)
+calc_gene_pairing_probs<-function(gsCounts, sgList, sampleCount, logCalcs = T)
 {
   ggPPResults = data.frame(matrix(ncol = 10, nrow = 0))
-  ggPPResults = setNames(ggPPResults, c("Gene1", "Gene2", "Gene1SC", "Gene2SC", "BothGenesSC", "BothGenesExpected", "Binomial", "Poisson", "GeneChr1", "GeneChr2"))
+  ggPPResults = setNames(ggPPResults, c("Gene1", "Gene2", "Gene1SC", "Gene2SC", "BothGenesSC", "BothGenesExpected", "Binomial", "Fisher", "GeneChr1", "GeneChr2"))
 
   geneCount = n_distinct(gsCounts$gene)
 
@@ -148,25 +148,45 @@ calcGeneProbabilities<-function(gsCounts, sgList, sampleCount)
       # expected count of gene 2 in samples with gene 1
       ggExpectedCount = round(sampleCount *gene1SamplesPerc * gene2SamplesPerc,4)
 
+      scWithGene1NoGene2 = scWithGene1 - scWithGene1And2
+      scNoGene1WithGene2 = scWithGene2 - scWithGene1And2
+      scNoGene2 = sampleCount - scWithGene2
+      scNoGene1NoGene2 = scNoGene2 - scWithGene1NoGene2
+      
+      if(scWithGene1And2 < 0 | scNoGene1WithGene2 < 0 | scWithGene1NoGene2 < 0 | scNoGene1NoGene2 < 0)
+      {
+        stop(paste("Invalid inputs: gene1=", gene1, ", gene2=", gene2, ", sampleCount=", sampleCount, ", withGene1=", scWithGene1, ", withGene2=", scWithGene2, 
+                    ", withGene1AndGene2=", scWithGene1And2, ", noGene1WithGene2=", scNoGene1WithGene2, ", withGene1NoGene2=", scWithGene1NoGene2, ", noGene1NoGene2=", scNoGene1NoGene2, sep=''))
+      }
+      
+      fishMatrix = rbind(c(scWithGene1And2,scNoGene1WithGene2), c(scWithGene1NoGene2,scNoGene1NoGene2))
+      
+      if(scWithGene1And2 < ggExpectedCount)
+        ggFisherProb = fisher.test(fishMatrix, alternative="less")$p.value
+      else
+        ggFisherProb = fisher.test(fishMatrix, alternative="greater")$p.value
+      
       if(scWithGene1And2 > 0 & scWithGene1And2 > ggExpectedCount)
       {
         # ie prob of not getting 1 less than the actual count or power
         ggBinProb = 1-pbinom(scWithGene1And2-1, scWithGene2, gene1SamplesPerc)
-        ggPoisProb = 1 - ppois(scWithGene1And2-1, ggExpectedCount)
       }
       else
       {
         # ie prob ofgetting the actual count or lower
         ggBinProb = pbinom(scWithGene1And2, scWithGene2, gene1SamplesPerc)
-        ggPoisProb = ppois(scWithGene1And2, ggExpectedCount)
       }
 
-      # print(paste("Gene1=", gene1, ", Gene2=", gene2, ", gene1SC=", scWithGene1, ", gene2SC=", scWithGene2, ", actualBothSC=", scWithGene1And2, ", expectedBothSC=", ggExpectedCount, ", binProb=", ggBinProb, ", poisProb=", ggPoisProb, sep=''))
-
-      if(ggPoisProb <= 0.2 || ggBinProb <= 0.2)
+      if(binomialProb < 0.001 | ggFisherProb < 0.001)
       {
-        if(ggPoisProb < 0.001 || ggBinProb < 0.001)
-          print(paste("Gene1=", gene1, ", Gene2=", gene2, ", gene1SC=", scWithGene1, ", gene2SC=", scWithGene2, ", actualBothSC=", scWithGene1And2, ", expectedBothSC=", ggExpectedCount, ", binProb=", round(ggBinProb,6), ", poisProb=", round(ggPoisProb,6), sep=''))
+        if(logCalcs)
+        {
+          print(paste("gene1=", gene1, ", gene2=", gene2, ", gene1SC=", scWithGene1, ", gene2SC=", scWithGene2, ", actualBothSC=", scWithGene1And2, ", expectedBothSC=", ggExpectedCount, ", binProb=", round(ggBinProb,6), sep=''))
+          
+          print(paste("gene1=", gene1, ", gene2=", gene2, ", sampleCount=", sampleCount, ", withGene1=", scWithGene1, ", withGene2=", scWithGene2, 
+                      ", withGene1AndGene2=", scWithGene1And2, ", noGene1WithGene2=", scNoGene1WithGene2, ", withGene1NoGene2=", scWithGene1NoGene2, ", noGene1NoGene2=", scNoGene1NoGene2, 
+                      ", fetProb=", round(ggFisherProb,6), sep=''))
+        }
 
         rowIndex = nrow(ggPPResults)+1
         ggPPResults[rowIndex,1] = gene1
@@ -176,31 +196,40 @@ calcGeneProbabilities<-function(gsCounts, sgList, sampleCount)
         ggPPResults[rowIndex,5] = scWithGene1And2
         ggPPResults[rowIndex,6] = ggExpectedCount
         ggPPResults[rowIndex,7] = ggBinProb
-        ggPPResults[rowIndex,8] = ggPoisProb
+        ggPPResults[rowIndex,8] = ggFisherProb
         ggPPResults[rowIndex,9] = geneRow$Chromosome
         ggPPResults[rowIndex,10] = gene2Row$Chromosome
       }
     }
   }
 
-  ggPPResults$Count_GT_Exp = ggPPResults$BothGenesSC > ggPPResults$BothGenesExpected
-
-  ggPPResults = ggPPResults %>% arrange(Binomial)
-
-  ggPPResults$Rank = 0
-  colIndex = length(colnames(ggPPResults))
-
-  # set ranking values (for use in BH tests)
-  for(i in 1:nrow(ggPPResults))
+  if(nrow(ggPPResults) > 0)
   {
-    ggPPResults[i,colIndex] = i
+    ggPPResults$Count_GT_Exp = ggPPResults$BothGenesSC > ggPPResults$BothGenesExpected
+    ggPPResults = ggPPResults %>% arrange(Fisher)
+    
+    # set ranking values
+    rowIndex = data.frame(as.numeric(as.character(rownames(ggPPResults))))
+    colnames(rowIndex) <- c("Rank")
+    ggPPResults = cbind(ggPPResults, rowIndex)
+    
+    ggPPResults$TestCount = geneCount*geneCount/2
+    ggPPResults$FDR = ggPPResults$Fisher*ggPPResults$TestCount/ggPPResults$Rank
   }
-
-  # ggPPResults$RankPerc = ggPPResults$Rank/geneCountSq
-  ggPPResults$GeneCount = geneCount
-
+    
   return (ggPPResults)
 }
+
+# test out method
+tmpDriveGenes = driversNonFusions %>% filter(cancerType=="Prostate")
+sampleGeneList = getSampleGeneList(tmpDriveGenes)
+View(sampleGeneList)
+View(tmpDriveGenes)
+sgList = tmpDriveGenes %>% group_by(gene) %>% summarise(SampleCount=n(), Chromosome=first(chromosome))
+sampleCount = n_distinct(tmpDriveGenes$sampleId)
+ggProbs = calc_gene_pairing_probs(sgList, sampleGeneList, sampleCount, T)
+View(ggProbs)
+
 
 driversNonFusions = driversByGene %>% filter(type!='FUSION'&driverLikelihood>=0.5) %>% arrange(sampleId)
 nrow(driversNonFusions)
@@ -208,59 +237,86 @@ nrow(driversNonFusions)
 View(driversNonFusions %>% group_by(gene) %>% count())
 n_distinct(driversNonFusions$gene)
 
-ggAllProbs = data.frame(matrix(ncol = 12, nrow = 0))
+tmpCancerTypesList = c("Prostate")
+genePairProbs = calc_gene_cooccurence(tmpCancerTypesList, driversNonFusions, T)
+View(genePairProbs)
 
-for(i in 1:nrow(cancerTypes)+1)
+# View(cancerTypesList)
+allGenePairProbs = calc_gene_cooccurence(cancerTypesList, driversNonFusions, F)
+View(allGenePairProbs)
+
+# add cancer sample counts back in
+cancerSampleCounts = driversNonFusions %>% group_by(cancerType,sampleId) %>% summarise(Count=n())
+cancerSampleCounts = cancerSampleCounts %>% group_by(cancerType) %>% summarise(SampleCount=n())
+View(cancerSampleCounts)
+sum(cancerSampleCounts$Count)
+
+allGenePairProbs = merge(allGenePairProbs, cancerSampleCounts, by.x="CancerType", by.y="cancerType", all.x=T)
+colnames(allGenePairProbs)
+allGenePairProbs2 = allGenePairProbs %>% select(-Binomial,-TestCount,-BothGenesExpected)
+View(allGenePairProbs2)
+write.csv(allGenePairProbs2, "~/logs/r_output/genePairCo-occurence.csv", row.names=F, quote=F)
+
+# new column names
+# CancerType   (eg. Colon/Rectum)
+# Driver1
+# Driver2
+# SamplesInCohort
+# SamplesWithDriver1Only
+# SamplesWithDriver2Only
+# SamplesWithBothDrivers
+# PositivelyCorrelated  (T/F)
+# FisherExactTestPValue
+# SignificanceRankInCohort
+# QValue
+
+calc_gene_cooccurence<-function(cancerTypesList, driverGeneList, logCalcs = T)
 {
-  if(i > nrow(cancerTypes))
-  {
-    cancerTypeStr = "All"
-    dgData = driversNonFusions
-  }
-  else
-  {
-    cancerRow = cancerTypes[i,]
-    cancerTypeStr = cancerRow$cancerType
-    dgData = driversNonFusions %>% filter(cancerType==cancerTypeStr)
-  }
+  ggAllProbs = data.frame(matrix(ncol = 14, nrow = 0))
 
-  if(TRUE) # cancerTypeStr == 'All'
-  #if(cancerTypeStr == 'CNS')
-    {
+  for(cancerTypeStr in cancerTypesList)
+  {
+    if(cancerTypeStr == "All")
+      dgData = driverGeneList
+    else
+      dgData = driverGeneList %>% filter(cancerType==cancerTypeStr)
+    
     sampleGeneList = getSampleGeneList(dgData)
-
-    sgList = dgData %>% group_by(gene) %>% summarise(SampleCount=n(), Chromosome=first(chromosome), Type=first())
+    
+    sgList = dgData %>% group_by(gene) %>% summarise(SampleCount=n(), Chromosome=first(chromosome))
     sampleCount = n_distinct(dgData$sampleId)
-
+    
     print(paste(i, ": cancer=", cancerTypeStr, ", sampleCount=", sampleCount, ", geneRecords=", nrow(dgData), sep=''))
-
-    ggProbs = calcGeneProbabilities(sgList, sampleGeneList, sampleCount)
-
-    ctStr = stringi::stri_replace_all_fixed(cancerTypeStr, '/', '')
-    ggFilename = paste("~/logs/r_output/ggProb_", ctStr, ".csv", sep='')
-    write.csv(ggProbs, ggFilename)
-
-    ggProbs$CancerType = cancerTypeStr
-    ggProbs$GeneCount = n_distinct(sgList)
-
-    ggAllProbs = rbind(ggAllProbs, ggProbs)
+    
+    ggProbs = calc_gene_pairing_probs(sgList, sampleGeneList, sampleCount, logCalcs)
+    
+    if(nrow(ggProbs) > 0)
+    {
+      # ctStr = stringi::stri_replace_all_fixed(cancerTypeStr, '/', '')
+      # ggFilename = paste("~/logs/r_output/ggProb_", ctStr, ".csv", sep='')
+      # write.csv(ggProbs, ggFilename)
+      
+      ggProbs$CancerType = cancerTypeStr
+      ggProbs$GeneCount = n_distinct(sgList)
+      
+      ggAllProbs = rbind(ggAllProbs, ggProbs)
+    }
   }
-
-  # if(i > 2)
-  #   break
+  
+  return (ggAllProbs)
 }
+
+
+
 
 pValueThreshold = 0.05
 
 # geneCountSq = geneCount*geneCount/2
-# ggAllProbs$RankPerc = ggAllProbs$BHValue*2
-# ggAllProbs$BHValue = ggAllProbs$RankPerc*pValueThreshold
 
 # View(ggProbs)
 nrow(ggAllProbs)
 View(ggAllProbs)
 write.csv(ggAllProbs, "~/logs/r_output/ggProb_all_by_type2.csv", row.names=F, quote=F)
-# ggAllProbs = read.csv("~/logs/r_output/ggProb_all_by_type.csv")
 
 
 # filter for significant results
@@ -705,35 +761,25 @@ sampleSigData = read.csv("~/logs/r_output/snvSampleSigData.csv")
 
 sampleSigData = sampleSigData %>% filter(SampleId %in% driversNonFusions$sampleId)
 
-View(sampleCancerTypes)
+# View(sampleCancerTypes)
 sampleSigData = merge(sampleSigData, sampleCancerTypes, by.x="SampleId", by.y="sampleId", all.x=T)
-sampleSigData = within(sampleSigData, rm(SampleCount))
 
 # required fields: SampleId, SigName, CancerType and Count
 View(sampleSigData)
 
-allGeneSigProbs = calc_sig_gene_probs(cancerTypesList, driversNonFusions, sampleSigData)
+
+topNPercent = 0.2
+allGeneSigProbs = calc_sig_gene_probs(cancerTypesList, driversNonFusions, sampleSigData, topNPercent, F)
 View(allGeneSigProbs)
-#write.csv(allGeneSigProbs, "~/logs/r_output/SV_geneSigCorrel.csv", row.names=F, quote=F)
-write.csv(allGeneSigProbs, "~/logs/r_output/INDEL_geneSigCorrel.csv", row.names=F, quote=F)
-#write.csv(allGeneSigProbs, "~/logs/r_output/MNV_geneSigCorrel.csv", row.names=F, quote=F)
-#write.csv(allGeneSigProbs, "~/logs/r_output/SNV_geneSigCorrel.csv", row.names=F, quote=F)
-
-
-# sampleCounts = sampleSigData %>% group_by(SampleId)%>% summarise(SampleCount=sum(Count))
-# driverGenesWithSigs = merge(hpcDriversByGene, sampleCounts, by.x="sampleId", by.y="SampleId", all.x=TRUE)
-# samSigSpread = sampleSigData %>% select(SampleId,SigName,Count) %>% spread(SigName,Count)
-# driverGenesWithSigs = merge(driverGenesWithSigs, samSigSpread, by.x="sampleId", by.y="SampleId", all.x=TRUE)
-# View(driverGenesWithSigs)
-# driverGenesWithSigs[is.na(driverGenesWithSigs)] = 0
-
+write.csv(allGeneSigProbs, "~/logs/r_output/SV_geneSigCorrel_20P.csv", row.names=F, quote=F)
+write.csv(allGeneSigProbs, "~/logs/r_output/INDEL_geneSigCorrel_10P.csv", row.names=F, quote=F)
+write.csv(allGeneSigProbs, "~/logs/r_output/MNV_geneSigCorrel_10P.csv", row.names=F, quote=F)
+write.csv(allGeneSigProbs, "~/logs/r_output/SNV_geneSigCorrel_10P.csv", row.names=F, quote=F)
+  
 cancerTypesList = unique(driversNonFusions$cancerType)
 View(cancerTypesList)
 
-cancerTypesSubList = c("Prostate")
-cancerTypesList = cancerTypesSubList
-
-calc_sig_gene_probs<-function(cancerTypesList, geneSampleList, sampleSigData, topNPercent = 0.02)
+calc_sig_gene_probs<-function(cancerTypesList, geneSampleList, sampleSigData, topNPercent = 0.05, logCalcs = T)
 {
   allGeneSigProbs = data.frame(matrix(ncol = 14, nrow = 0))
   sigNames = unique(sampleSigData$SigName)
@@ -750,15 +796,22 @@ calc_sig_gene_probs<-function(cancerTypesList, geneSampleList, sampleSigData, to
     print(paste("cancerType=", cancerTypeStr, ", sampleCount=", cancerSC, sep=''))
     
     geneSigProbs = data.frame(matrix(ncol = 8, nrow = 0))
-    colnames(geneSigProbs) = c("SigName", "Gene", "SigSC", "GeneSC", "SigAndGeneSC", "SigAndGeneExp", "Binomial", "FisherET")
+    colnames(geneSigProbs) = c("SigName", "Gene", "CohortCount", "SigSC", "GeneSC", "SigAndGeneSC", "SigAndGeneExp", "FisherET")
   
     for(sigName in sigNames)
     {
       # take samples above X% by signature contribution
-      samplesAboveSigThreshold = cancerSampleSigData %>% filter(SigName==sigName & SigPercent>=topNPercent) # samples with significant contribution from this sig
+      samplesAboveSigThreshold = cancerSampleSigData %>% filter(SigName==sigName) %>% arrange(-Count)
+      sampleSigTopN = round(nrow(samplesAboveSigThreshold)*topNPercent,0)
+      samplesAboveSigThreshold = head(samplesAboveSigThreshold,sampleSigTopN)
+      
+      # samplesAboveSigThreshold = cancerSampleSigData %>% filter(SigName==sigName & SigPercent>=topNPercent) # samples with significant contribution from this sig
       scWithSig = nrow(samplesAboveSigThreshold)
     
-      print(paste("sigName=", sigName, ", SC Above Threshold=", scWithSig, sep=''))
+      if(logCalcs)
+      {
+        print(paste("sigName=", sigName, ", SC Above Threshold=", scWithSig, sep=''))
+      }
       
       dgSamplesWithSig = dgData %>% filter(sampleId %in% samplesAboveSigThreshold$SampleId)
     
@@ -798,27 +851,27 @@ calc_sig_gene_probs<-function(cancerTypesList, geneSampleList, sampleSigData, to
         else
           fetProb = fisher.test(fishMatrix, alternative="greater")$p.value
         
-        if(binomialProb <= 0.2 | fetProb <= 0.2)
+        if(fetProb < 0.01)
         {
-          if(binomialProb < 0.01 | fetProb < 0.01)
+          if(logCalcs)
           {
             print(paste("sigName=", sigName, ", gene=", geneName, ", geneSC=", scWithGene, ", actualBothSC=", scWithSigAndGene, ", expectedBothSC=", geneSigExpected,
-                        ", binProb=", round(binomialProb,6), ", fetProb=", round(fetProb,6), sep=''))
+                        ", binProb=", round(binomialProb,6), ", fetProb=", round(fetProb,10), sep=''))
     
-            print(paste("sigName=", sigName, ", gene=", geneName, ", cancerSC=", cancerSC, ", geneSC=", scWithGene, ", withSig=", scWithSig, 
-                        ", withSigWithGene=", scWithSigAndGene, ", sigNoGene=", scSigNoGene, ", noGene=", scNoGene, ", noGeneNoSig=", svNoGeneNoSig, 
+            print(paste("sigName=", sigName, ", gene=", geneName, ", cancerSC=", cancerSC, ", withGene=", scWithGene, ", withSig=", scWithSig, 
+                        ", withSigWithGene=", scWithSigAndGene, ", withSigNoGene=", scSigNoGene, ", noGene=", scNoGene, ", noGeneNoSig=", svNoGeneNoSig, 
                         ", fetProb=", round(fetProb,6), sep=''))
-  
-            rowIndex = nrow(geneSigProbs)+1
-            geneSigProbs[rowIndex,1] = sigName
-            geneSigProbs[rowIndex,2] = geneName
-            geneSigProbs[rowIndex,3] = scWithSig
-            geneSigProbs[rowIndex,4] = scWithGene
-            geneSigProbs[rowIndex,5] = scWithSigAndGene
-            geneSigProbs[rowIndex,6] = geneSigExpected
-            geneSigProbs[rowIndex,7] = binomialProb
-            geneSigProbs[rowIndex,8] = fetProb
           }
+
+          rowIndex = nrow(geneSigProbs)+1
+          geneSigProbs[rowIndex,1] = sigName
+          geneSigProbs[rowIndex,2] = geneName
+          geneSigProbs[rowIndex,3] = cancerSC
+          geneSigProbs[rowIndex,4] = scWithSig
+          geneSigProbs[rowIndex,5] = scWithGene
+          geneSigProbs[rowIndex,6] = scWithSigAndGene
+          geneSigProbs[rowIndex,7] = geneSigExpected
+          geneSigProbs[rowIndex,8] = fetProb
         }
       }
     }
@@ -850,6 +903,22 @@ View(geneSigProbs)
 nrow(geneSigProbs)
 
 
+tmpCancerTypesList = c("Colon/Rectum")
+tmpGeneSigProbs = calc_sig_gene_probs(tmpCancerTypesList, driversNonFusions, sampleSigData)
+View(tmpGeneSigProbs)
+
+cancerSampleSigData = sampleSigData %>% filter(CancerType=="Colon/Rectum")
+View(cancerSampleSigData)
+print(n_distinct(cancerSampleSigData$SampleId))
+
+sampleSigOrdered = cancerSampleSigData %>% filter(SigName==4) %>% arrange(-Count)
+View(sampleSigOrdered)
+sampleSigCount = nrow(cancerSampleSigData %>% filter(SigName==4))
+sampleSigTopN = round(sampleSigCount*topNPercent,0)
+sampleSigTopSet = head(sampleSigOrdered,sampleSigTopN)
+nrow(sampleSigTopSet)
+View(sampleSigTopSet)
+
 
 # experimenting with Fisher's exact test
 
@@ -874,6 +943,15 @@ print(fet2$p.value)
 
 
 
+# Barnard's test
+install.packages("Exact")
+library(Exact)
+
+data <- matrix(c(7, 8, 12, 3), 2, 2, byrow=TRUE)
+betRes = exact.test(data, alternative="less")
+
+betRes = exact.test(rbind(c(1,9),c(11,3)), alternative="less")
+print(betRes$p.value)
 
 # Gene Info and Prevalence info for reference purposes
 driverGeneInfo = (driversByGene %>% group_by(gene,cancerType) 
@@ -935,7 +1013,6 @@ write.csv(driverGeneRefInfo, "~/logs/r_output/driverGeneInfo.csv", row.names=F, 
 
 
 # Retrieve Gene Copy Number data for each driver gene
-dbProd = dbConnect(MySQL(), user='hmf', password='HMFhmf@1', dbname='hmfpatients', groups = "RAnalysis")
 
 # first TSGs
 tsgSamples = driversByGene %>% filter(type=='TSG') %>% select(sampleId,gene)
