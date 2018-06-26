@@ -48,8 +48,8 @@ sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*annotated.vcf*" \
 	--include "*filtered*GoNLv5.vcf*" \
-	--include "*/mapping/*R_dedup.realigned.bam*" \
-	--include "*/mapping/*T[IVX_]*dedup.realigned.bam*" \
+	#--include "*/mapping/*R_dedup.realigned.bam*" \
+	#--include "*/mapping/*T[IVX_]*dedup.realigned.bam*" \
 	--include "QCStats*" \
 	--profile download
 
