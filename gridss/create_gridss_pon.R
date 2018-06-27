@@ -3,8 +3,9 @@
 # Incorporates the given VCF files into the Panel Of Normals
 #
 library(tidyverse)
-library(readr)
 library(stringr)
+library(rtracklayer)
+source("libgridss.R")
 usage = "Usage: Rscript add_to_pon.R <pon directory> <input VCFs>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "add_to_pon")) {
@@ -27,12 +28,11 @@ if (!any(file.exists(vcf_list))) {
   write(usage, stderr())
   q(save="no", status=1)
 }
-source("libgridss.R")
-pon_dir = "C:/hartwig/pon"
-vcf_list = c(
-"C:/hartwig/down/COLO829R_COLO829T.gridss.vcf",
-"C:/hartwig/down/CPCT02100013R_CPCT02100013T.gridss.vcf",
-"C:/hartwig/down/CPCT02100013R_CPCT02100013TII.gridss.vcf")
+#pon_dir = "C:/hartwig/pon"
+#vcf_list = c(
+#"C:/hartwig/down/COLO829R_COLO829T.gridss.vcf",
+#"C:/hartwig/down/CPCT02100013R_CPCT02100013T.gridss.vcf",
+#"C:/hartwig/down/CPCT02100013R_CPCT02100013TII.gridss.vcf")
 
 full_bp = list()
 full_be = list()

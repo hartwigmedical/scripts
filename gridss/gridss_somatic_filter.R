@@ -22,8 +22,8 @@ if (!file.exists(args[2])) {
   write(paste(args[2], "not found"), stderr())
   q(save="no", status=1)
 }
-input_vcf = args[1]
-pon_dir = args[2]
+pon_dir = args[1]
+input_vcf = args[2]
 output_vcf = args[3]
 source("libgridss.R")
 
