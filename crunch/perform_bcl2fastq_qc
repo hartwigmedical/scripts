@@ -43,8 +43,8 @@ for seqDir in "${seqDirs[@]}"; do
     ssheet_path="${seqDir}/${SSHEET_FILE}"
     errlog_path="${seqDir}/${ERRLOG_FILE}"
     report_path="${seqDir}/${REPORT_ROOT}"
-    seqdir_name="$( basename $seqDir )"
-    hmfrun_name="$( cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' --output-delimiter ': ' -f 2 )"
+    seqdir_name="$( basename $seqDir | tr -d '\r' )"
+    hmfrun_name="$( cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r' )"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
     
     ## anything wrong with any seqrun: exit the whole thing

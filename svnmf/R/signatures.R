@@ -43,6 +43,27 @@ get_signame_list<-function(sigCount, asStrings)
 
 # library(pracma)
 
+add_missing_buckets<-function(matrixData, definedBuckets)
+{
+  sampleCount = ncol(matrixData)-1
+  missingBuckets = definedBuckets %>% filter(!Bucket %in% matrixData$Bucket)
+
+  for(missingBucket in missingBuckets$Bucket)
+  {
+    print(paste("adding missing bucket: ", missingBucket, sep=''))
+
+    rowIndex = nrow(matrixData)+1
+    matrixData[rowIndex,1] = missingBucket
+
+    for(i in 1:sampleCount)
+    {
+      matrixData[rowIndex,i+1] = 0
+    }
+  }
+
+  return (matrixData)
+}
+
 apply_signatures<-function(matrixData, signatures, bucketCount)
 {
   n_samples = dim(matrixData)[2]

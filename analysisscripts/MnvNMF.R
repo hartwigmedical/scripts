@@ -57,7 +57,6 @@ hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sa
 # hpcSamples = highestPurityCohortSummary
 nrow(hpcSamples)
 
-# dbProd = dbConnect(MySQL(), user='hmf', password='HMFhmf@1', dbname='hmfpatients', groups = "RAnalysis")
 # dbDisconnect(dbProd)
 
 cancerTypes = hpcSamples %>% group_by(cancerType) %>% count()
@@ -82,12 +81,6 @@ mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
 mnvData = mnvData %>% filter(SampleId %in% hpcSamples$sampleId)
 nrow(mnvData) # 864K at last count 796K within HPC & DR022
 
-
-# create Buckets
-View(head(mnvData,10))
-
-mnvData$Length = stringi::stri_length(mnvData$Alt)
-mnvData$Mutation = ifelse(mnvData$Length==2,paste(mnvData$Ref, mnvData$Alt, sep='>'), ifelse(mnvData$Length==3,"3Bases","4+Bases"))
 
 baseConvert<-function(base)
 {
@@ -142,11 +135,23 @@ setMutationAdjusted<-function(ref, alt)
   }
 }
 
-# print(setMutationAdjusted("AT", "GA"))
+create_mnv_fields<-function(mnvData)
+{
+  mnvData$Length = stringi::stri_length(mnvData$Alt)
+  mnvData$Mutation = ifelse(mnvData$Length==2,paste(mnvData$Ref, mnvData$Alt, sep='>'), ifelse(mnvData$Length==3,"3Bases","4+Bases"))
+  mnvData$Bucket = apply(mnvData[,c('Ref','Alt')], 1, function(x) setMutationAdjusted(x[1],x[2]))
 
+  return (mnvData)
+}
+
+mnvData = create_mnv_fields(mnvData)
+mnvData$Bucket = mnvData$MutationAdj
 View(mnvData)
 
-mnvData$MutationAdj = apply(mnvData[,c('Ref','Alt')], 1, function(x) setMutationAdjusted(x[1],x[2]))
+# create and store Buckets
+mnvBuckets = mnvData %>% group_by(Bucket) %>% count()
+View(mnvBuckets)
+write.csv(mnvBuckets, "~/data/r_data/mnv_buckets.csv", row.names=F, quote=F)
 
 print(n_distinct((mnvData %>% filter(Length==2))$Mutation))
 print(n_distinct(mnvData$MutationAdj))
@@ -158,6 +163,7 @@ allMnvData = mnvData
 mnvData = allMnvData
 nrow(mnvData %>% filter(Clonality=="SUBCLONAL"))
 mnvData = mnvData %>% filter(Clonality=="SUBCLONAL")
+# mnvData = mnvMBData # use multiple biopsy samples only
 nrow(mnvData)
 
 mnvSampleCounts = mnvData %>% group_by(SampleId,MutationAdj) %>% summarise(Count=n())
@@ -198,11 +204,11 @@ evaluate_nmf_run("MNV", "sig08_DR22", mnvSigCount, mnvNmfResult, mnvMatrixData, 
                  sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, TRUE, FALSE, TRUE)
 
 
-# Subclonal evalaution
+# Subclonal Evalaution
 load("~/data/mnvNmfResult_sig8_subc_dr22.RData")
 
 evaluate_nmf_run("MNV_Subclonal", "sig08_DR22", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
-                 sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, TRUE, FALSE, TRUE)
+                 sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, FALSE, FALSE, TRUE)
 
 
 # using Clonal signatures
@@ -229,12 +235,15 @@ View(mnvSampleSigData)
 write.csv(mnvSampleSigData, "~/logs/r_output/mnvSampleSigData.csv", row.names=F, quote=F)
 
 
-View(mnvSampleCounts)
-bucketNames = mnvBucketNames
-View(bucketNames)
-View(mnvSampleCounts %>% select(Bucket))
-mnvResiduals = calc_sample_residuals(contribution, signatures, mnvBucketNames, mnvSampleCounts)
-View(mnvResiduals)
+
+
+
+# View(mnvSampleCounts)
+# bucketNames = mnvBucketNames
+# View(bucketNames)
+# View(mnvSampleCounts %>% select(Bucket))
+# mnvResiduals = calc_sample_residuals(contribution, signatures, mnvBucketNames, mnvSampleCounts)
+# View(mnvResiduals)
 
 sum(mnvResiduals$Count)
 sum(mnvResiduals$ResidualTotal)
@@ -256,48 +265,51 @@ indelData = indelData %>% filter(SampleId %in% hpcSamples$sampleId)
 nrow(indelData)
 
 
-# indelData2 = read.csv("~/data/indel_prod_all_v2.csv")
-# indelData2$HasSplit = ifelse(indelData2$Clonality!="CLONAL"&indelData2$Clonality!="SUBCLONAL"&indelData2$Clonality!="INCONSISTENT",1,0)
-# indelSplitData = indelData2 %>% filter(HasSplit==1)
-# indelNonSplitData = indelData2 %>% filter(!HasSplit==0)
-#
-# View(indelSplitData)
-# indelSplitData$AltTest = paste(indelSplitData$Alt,indelSplitData$Microhomology, sep=';')
-# indelSplitData$Alt = indelSplitData$AltTest
-# indelSplitData$Microhomology = indelSplitData$RepeatCount
-# indelSplitData$RepeatCount = indelSplitData$Clonality
-# nrow(indelSplitData)
-#
-# indelSplitData2 = indelSplitData %>% filter(RepeatCount!=""&!grepl("A",RepeatCount)&!grepl("C",RepeatCount)&!grepl("G",RepeatCount)&!grepl("T",RepeatCount))
-# View(indelSplitData %>% filter(RepeatCount==""|grepl("A",RepeatCount)))
-# nrow(indelSplitData2)
-# indelSplitData2 = within(indelSplitData2, rm(AltTest))
-# View(indelSplitData2)
 
 
-calcSplitAltLength<-function(ref, alt)
+calcSplitAltLength<-function(alt, patternChar)
 {
-  commaIndex = stri_locate(pattern=';', alt, fixed = TRUE)[1,1]
-  altFirst = substr(alt,1,commaIndex-1)
-  altLen = stri_length(altFirst)
-  # print(paste("alt: ", alt, ", altFirst: ", altFirst, ", commaIndex: ", commaIndex, ", altLen: ", altLen, sep=''))
+  if(grepl(',', alt))
+  {
+    commaIndex = stri_locate(pattern=patternChar, alt, fixed = TRUE)[1,1]
+    altFirst = substr(alt,1,commaIndex-1)
+    altLen = stri_length(altFirst)
+  }
+  else
+  {
+    altLen = stri_length(alt)
+  }
   return (altLen)
 }
 
-# indelSplitData2$AltLength = apply(indelSplitData2[,c('Ref', 'Alt')], 1, function(x) calcSplitAltLength(x[1], x[2]))
+create_indel_fields<-function(indelData)
+{
+  indelData$SubType = ifelse(indelData$AltLength > stringi::stri_length(indelData$Ref),'INS','DEL')
 
+  indelData$Length = ifelse(indelData$SubType=='INS',indelData$AltLength-stringi::stri_length(indelData$Ref),
+                            stringi::stri_length(indelData$Ref)-indelData$AltLength)
 
-# # join back together
-# View(indelSplitData2)
-# View(head(indelNonSplitData,10))
-# indelSplitData2 = within(indelSplitData2, rm(Spare))
-# indelData3 = rbind(indelSplitData2, indelNonSplitData)
-# indelData3 = within(indelData3, rm(Spare))
-# indelData3 = within(indelData3, rm(HasSplit))
-# nrow(indelData3)
+  indelData$LengthGrp = ifelse(indelData$Length<=3,indelData$Length,4)
+
+  indelData$RepeatCountHigh = ifelse(indelData$RepeatCount>=4,T,F)
+
+  indelData$MH = ifelse(indelData$SubType=='DEL'&!is.na(indelData$Microhomology)&stringi::stri_length(indelData$Microhomology)>0,T,F)
+
+  return (indelData)
+}
+
+# make a combined bucket name: DEL vs INS, LengthGroup, RepeatCount high and for DELs whether has MH or not
+create_indel_bucket<-function(indelSampleCounts)
+{
+  indelSampleCounts$Bucket = paste(indelSampleCounts$SubType, indelSampleCounts$LengthGrp, sep="_")
+  indelSampleCounts$Bucket = ifelse(indelSampleCounts$RepeatCountHigh, paste(indelSampleCounts$Bucket, "REP", sep="_"), indelSampleCounts$Bucket)
+  indelSampleCounts$Bucket = ifelse(!indelSampleCounts$RepeatCountHigh&indelSampleCounts$MH, paste(indelSampleCounts$Bucket, "MH", sep="_"), indelSampleCounts$Bucket)
+
+  return (indelSampleCounts)
+}
+
 # write.csv(indelData3, "~/data/indel_prod_all_v3.csv", row.names=F, quote=F)
 
-indelData = indelData3
 rm(indelData3)
 nrow(indelData)
 
@@ -310,42 +322,29 @@ indelData = allIndelData
 indelData = indelData %>% filter(Clonality=="SUBCLONAL")
 # nrow(indelData %>% filter(Clonality=="SUBCLONAL"))
 nrow(indelData)
+View(head(indelData,1000))
 
-indelData$SubType = ifelse(indelData$AltLength > stringi::stri_length(indelData$Ref),'INS','DEL')
 
-indelData$Length = ifelse(indelData$SubType=='INS',indelData$AltLength-stringi::stri_length(indelData$Ref),
-                          stringi::stri_length(indelData$Ref)-indelData$AltLength)
-
-indelData$LengthGrp = ifelse(indelData$Length<=3,indelData$Length,4)
-
-indelData$RepeatCountHigh = ifelse(indelData$RepeatCount>=4,T,F)
-# indelData[, 5] <- sapply(indelData[,5], as.character)
-# indelData[, 6] <- sapply(indelData[,6], as.integer)
-
-indelData$MH = ifelse(indelData$SubType=='DEL'&!is.na(indelData$Microhomology)&stringi::stri_length(indelData$Microhomology)>0,T,F)
+# note: allIndelData already has the additional bucket fields
+indelData$AltLength = apply(indelData[,c('Alt')], 1, function(x) calcSplitAltLength(x[1], ';'))
+indelData = create_indel_fields(indelData)
 
 # View(head(indelData,1000))
-# View(indelData %>% filter(SubType=='DEL'&Length==1))
-# View(indelData %>% group_by(RepeatCount) %>% count())
-# View(indelData)
-# View(indelData %>% filter(Length==0))
-
-# indelTmpGrps = indelData %>% group_by(SubType,LengthGrp,MH,RepeatCountHigh) %>% summarise(Count=n())
-# View(indelTmpGrps)
 
 indelSampleCounts = indelData %>% group_by(SampleId,SubType,LengthGrp,MH,RepeatCountHigh) %>% summarise(Count=n())
 
-# make a combined bucket name: DEL vs INS, LengthGroup, RepeatCount high and for DELs whether has MH or not
-indelSampleCounts$Bucket = paste(indelSampleCounts$SubType, indelSampleCounts$LengthGrp, sep="_")
-indelSampleCounts$Bucket = ifelse(indelSampleCounts$RepeatCountHigh, paste(indelSampleCounts$Bucket, "REP", sep="_"), indelSampleCounts$Bucket)
-indelSampleCounts$Bucket = ifelse(!indelSampleCounts$RepeatCountHigh&indelSampleCounts$MH, paste(indelSampleCounts$Bucket, "MH", sep="_"), indelSampleCounts$Bucket)
+indelSampleCounts = create_indel_bucket(indelSampleCounts)
+View(indelSampleCounts)
 
-# check bucket groupings
-# indelTmpGrps2 = indelSampleCounts %>% group_by(Bucket) %>% summarise(MnvCount=sum(Count))
-# View(indelTmpGrps2)
+
+# create and store Buckets
+indelBuckets = indelSampleCounts %>% group_by(Bucket) %>% count() %>% arrange(indelBuckets)
+View(indelBuckets)
+write.csv(indelBuckets, "~/data/r_data/indel_buckets.csv", row.names=F, quote=F)
+
 
 indelSampleBucketCounts = indelSampleCounts %>% group_by(SampleId,Bucket) %>% summarise(Count=sum(Count))
-# View(indelSampleBucketCounts)
+View(indelSampleBucketCounts)
 
 indelMatrixData = indelSampleBucketCounts %>% spread(SampleId, Count) # %>% select(SampleId,BucketName,Count)
 indelMatrixData[is.na(indelMatrixData)] = 0
@@ -357,6 +356,8 @@ indelBucketNames = data.frame(indelMatrixData$Bucket)
 colnames(indelBucketNames) <- c("Bucket")
 View(indelBucketNames)
 
+# ordering is critical for when signatures and then applying to new samples
+indelMatrixData = indelMatrixData %>% arrange(Bucket)
 indelMatrixData = within(indelMatrixData, rm(Bucket))
 
 write.csv(indelMatrixData, file="~/logs/r_output/indel_nmf_counts_dr22.csv", row.names=F, quote=F)
@@ -378,6 +379,7 @@ load(file="~/data/indelNmfResult_sig5.RData")
 load(file="~/data/indelNmfResult_sig5_dr22.RData")
 load(file="~/data/indelNmfResult_sig5_subc_dr22.RData")
 View(indelNmfResult)
+
 
 indelSigNamesNum = get_signame_list(indelSigCount, F)
 indelSigNamesStr = get_signame_list(indelSigCount, T)
@@ -408,10 +410,34 @@ svSignatures = NMF::basis(indelNmfResult)
 indelContribution = NMF::coef(indelNmfResult)
 svSampleNames = colnames(svContribution)
 
+View(indelNmfResult)
+sum(indelSampleBucketCounts$Count)
+
 indelSampleSigData = get_sig_data(NMF::basis(indelNmfResult), NMF::coef(indelNmfResult), indelSigNamesStr, colnames(NMF::coef(indelNmfResult)))
 indelSampleSigData$Count = round(indelSampleSigData$Count,0)
 View(indelSampleSigData)
 write.csv(indelSampleSigData, "~/logs/r_output/indelSampleSigData.csv", row.names=F, quote=F)
+
+
+
+
+# indelData2 = read.csv("~/data/indel_prod_all_v2.csv")
+# indelData2$HasSplit = ifelse(indelData2$Clonality!="CLONAL"&indelData2$Clonality!="SUBCLONAL"&indelData2$Clonality!="INCONSISTENT",1,0)
+# indelSplitData = indelData2 %>% filter(HasSplit==1)
+# indelNonSplitData = indelData2 %>% filter(!HasSplit==0)
+#
+# View(indelSplitData)
+# indelSplitData$AltTest = paste(indelSplitData$Alt,indelSplitData$Microhomology, sep=';')
+# indelSplitData$Alt = indelSplitData$AltTest
+# indelSplitData$Microhomology = indelSplitData$RepeatCount
+# indelSplitData$RepeatCount = indelSplitData$Clonality
+# nrow(indelSplitData)
+#
+# indelSplitData2 = indelSplitData %>% filter(RepeatCount!=""&!grepl("A",RepeatCount)&!grepl("C",RepeatCount)&!grepl("G",RepeatCount)&!grepl("T",RepeatCount))
+# View(indelSplitData %>% filter(RepeatCount==""|grepl("A",RepeatCount)))
+# nrow(indelSplitData2)
+# indelSplitData2 = within(indelSplitData2, rm(AltTest))
+# View(indelSplitData2)
 
 
 

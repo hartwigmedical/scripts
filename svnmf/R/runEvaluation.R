@@ -43,7 +43,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
 
   # Top Bucket Counts per Sample - for now get all buckets
   # sampleBucketTopN = get_top_buckets_by_sample(summaryCounts, origSampleCounts, sampleCancerTypes, 0)
-  sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, sampleCancerTypes, bucketNames)
+  sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, bucketNames)
 
   # 2 Signature Evaluation
   print("evaluating signatures")
@@ -79,7 +79,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
     View(sampleSigData)
   }
 
-  outputFile = paste("~/logs/r_output/", runType, "_", runId, ".pdf", sep = "")
+  outputFile = paste("~/logs/r_output/pdfs/", runType, "_", runId, ".pdf", sep = "")
   print(paste("writing output to file: ", outputFile, sep=''))
 
   # DATA OUTPUT TO PDF
@@ -112,7 +112,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
   }
 
   # 3. Plot of Bucket Contribution for each Sample
-  plot_sample_bucket_contrib(sampleBucketData, "", nrow(bucketNames), runType, 0) # sampleBucketTopN
+  plot_sample_bucket_contrib(sampleBucketData, nrow(bucketNames), runType, 0) # sampleBucketTopN
 
   # 4. Signature data
   title = textGrob("Signature Stats", gp=gpar(fontface="bold", fontsize=16))
@@ -142,3 +142,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
 
   dev.off()
 }
+
+
+
+

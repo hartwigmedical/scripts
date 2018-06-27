@@ -157,7 +157,6 @@ View(highestPurityCohortSummary)
 cancer_signatures = getCOSMICSignatures()
 View(cancer_signatures)
 
-dbProd = dbConnect(MySQL(), user='hmf', password='HMFhmf@1', dbname='hmfpatients', groups = "RAnalysis")
 # dbConnect = dbConnect(MySQL(), dbname = 'hmfpatients', groups = "RAnalysis")
 # cohort = select_cohort(dbProd) # returns a DT
 # variants = query_variants(dbConnect) # returns a DT

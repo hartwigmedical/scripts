@@ -117,7 +117,6 @@ nrow(hpcSamples)
 cosmicSignatures = getCOSMICSignatures()
 View(cosmicSignatures)
 
-dbProd = dbConnect(MySQL(), user='hmf', password='HMFhmf@1', dbname='hmfpatients', groups = "RAnalysis")
 # dbDisconnect(dbProd)
 
 cancerTypes = hpcSamples %>% group_by(cancerType) %>% count()
@@ -268,8 +267,8 @@ subclonalColIndex = 4
 snvSampleNames = hpcSamples$sampleId
 View(snvSampleNames)
 
-# colIndex = totalColIndex
-colIndex = subclonalColIndex
+colIndex = totalColIndex
+# colIndex = subclonalColIndex
 for(s in snvSampleNames)
 {
   # print(paste("extracting sig data for ", s, sep=''))
@@ -318,7 +317,6 @@ for(s in highMutLoadSamples$SampleId)
 colnames(snvHighMatrixData) <- highMutLoadSamples$SampleId
 View(snvHighMatrixData[,1:20])
 
-sum(snvHighMatrixData$CPCT02010503TII)
 lowMutLoadSamples = tail(snvSampleTotals,nrow(snvSampleTotals)*0.5)
 View(lowMutLoadSamples)
 
@@ -356,9 +354,10 @@ rownames(snvContribsSubclonal) <- NULL
 
 View(snvSampleCounts)
 
-# write.csv(snvMatrixData, file="~/logs/r_output/snv_nmf_matrix_data.csv", row.names=F, quote=F)
+write.csv(snvMatrixData, file="~/logs/r_output/snv_nmf_matrix_data.csv", row.names=F, quote=F)
+write.csv(snvSampleCounts, file="~/logs/r_output/snv_nmf_sample_counts.csv", row.names=F, quote=F)
+
 # write.csv(snvMatrixData, file="~/logs/r_output/snv_nmf_subc_matrix_data.csv", row.names=F, quote=F)
-# write.csv(snvSampleCounts, file="~/logs/r_output/snv_nmf_sample_counts.csv", row.names=F, quote=F)
 # write.csv(snvContribsTotal, file="~/logs/r_output/snv_nmf_contribs.csv", row.names=F, quote=F)
 # write.csv(snvSampleCounts, file="~/logs/r_output/snv_nmf_subc_sample_counts.csv", row.names=F, quote=F)
 # write.csv(snvContribsSubclonal, file="~/logs/r_output/snv_nmf_subc_contribs.csv", row.names=F, quote=F)
@@ -381,16 +380,6 @@ View(snvSampleSigData)
 write.csv(snvSampleSigData, "~/logs/r_output/snvSampleSigData.csv", row.names=F, quote=F)
 
 
-View(snvContribsSubclonal[,1:10])
-
-sampleNames = colnames(snvContribsSubclonal)
-View(sampleNames)
-origSampleCounts = snvSampleCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
-View(origSampleCounts)
-sampleBucketData = get_sample_bucket_data(snvMatrixData, origSampleCounts, sampleCancerTypes, snvBucketNames)
-View(sampleBucketData)
-
-plot_sample_bucket_contrib(sampleBucketData, "", snvBucketCount, "SNV", 0)
 
 
 
@@ -417,47 +406,6 @@ evaluate_nmf_run(
   "SNV", "sig13_highML", snvHighSigCount, snvNmfHighResult, highMLSampleCounts, highMLSampleCancerTypes,
   snvBucketNames, sig13NamesNums, sig13NamesStr, TRUE, FALSE)
 
-signatures = NMF::basis(snvNmfHighResult)
-contribution = NMF::coef(snvNmfHighResult)
-
-# TMP: bucket count plot:
-
-# snvBucketData = get_bucket_data(signatures, contribution, snvBucketNames)
-# View(snvBucketData)
-#
-# origSampleCounts = highMLSampleCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
-# View(origSampleCounts)
-# View(highMLSampleCancerTypes)
-#
-# sampleBucketTopN = get_top_buckets_by_sample(highMLSampleCounts, origSampleCounts, highMLSampleCancerTypes, 0)
-# View(sampleBucketTopN)
-# tmp1 = sampleBucketTopN %>% filter(SampleId=="CPCT02030213T")
-# sum(tmp1$Count)
-
-plot_sample_bucket_contrib(sampleBucketTopN, "", 96, "SNV", 2)
-
-print(plot_contribution(snvHMLContribution, snvNmfHighResult$signature, mode = "relative"))
-print(plot_contribution(snvHMLContribution, signatures, mode = "absolute"))
-
-snvHMLContribution = contribution
-row.names(snvHMLContribution) <- sig13NamesStr
-View(snvHMLContribution)
-
-plot_contribution_heatmap(snvHMLContribution, cluster_samples = TRUE, method = "complete")
-
-plot_compare_profiles(snvHighMatrixData[,1], snvNmfHighResult$reconstructed[,1], profile_names = c("Original", "Reconstructed"), condensed = TRUE)
-
-View(snvNmfHighResult)
-View(snvNmfHighResult$reconstructed)
-
-View(snvBucketNames)
-
-snvHighMLResiduals = calc_sample_residuals(contribution, signatures, snvBucketNames, highMLSampleCounts)
-write.csv(snvHighMLResiduals, "~/logs/r_output/snvHighMLResiduals.csv", row.names=F, quote=F)
-View(snvHighMLResiduals)
-sum(snvHighMLResiduals$Count)
-sum(snvHighMLResiduals$ResidualTotal)
-print(residuals(snvNmfHighResult))
 
 
 ###################
@@ -512,6 +460,108 @@ calc_cosine_sims<-function(dataMatrix, cssCutoff, itemName, logMatches=F)
 
   return (cssResults)
 }
+
+
+# snvSampleCounts = read.csv("~/data/r_data/snv_nmf_counts.csv")
+
+# append bucket names back on, or just keep them handy
+View(snvBucketNames)
+
+nrow(snvSampleCounts)
+ncol(snvSampleCounts)
+View(snvSampleCounts)
+nrow(snvMatrixData)
+ncol(snvMatrixData)
+
+# order each bucket's counts from lowest to highest to get idea of distribution
+snvBucketCount = nrow(snvMatrixData)
+
+medianIndex = round(snvSampleCount*0.5,0)
+topXBucketSize = 0.05
+topXBucketCount = 1/topXBucketSize
+
+bsColNames = c("Bucket", "Min", "Max")
+for(j in 1:topXBucketCount)
+{
+  bsColNames[3+j] = j*topXBucketSize
+}
+
+View(bsColNames)
+colnames(snvBucketSummary) = bsColNames
+snvBucketSummary = data.frame(matrix(ncol = 3+topXBucketCount, nrow = 0))
+
+for(i in 1:snvBucketCount)
+{
+  bucketData = snvSampleCounts[i,]
+  bucketData = data.frame(t(bucketData))
+  colnames(bucketData) = c("BucketCount")
+  bucketData = bucketData %>% arrange(BucketCount)
+
+  snvBucketSummary[i,1] = snvBucketNames[i,1]
+  snvBucketSummary[i,2] = min(bucketData$BucketCount)
+  snvBucketSummary[i,3] = max(bucketData$BucketCount)
+
+  for(j in 1:topXBucketCount)
+  {
+    topIndex = j*topXBucketSize*snvSampleCount
+    snvBucketSummary[i,3+j] = bucketData[topIndex,1]
+  }
+}
+
+View(snvBucketSummary)
+
+
+# then test bucket-pairing CSS
+
+snvMatrixDataTrans = t(snvMatrixData)
+colnames(snvMatrixDataTrans) = snvBucketNames$Bucket
+snvBucketCss = calc_cosine_sims(snvMatrixDataTrans, 0.8, "Bucket", T)
+View(snvBucketCss)
+
+
+# check for bucket pairings excluding the top 10% of samples
+View(snvSampleTotals)
+snvBottomXPerc = tail(snvSampleTotals, nrow(snvSampleTotals)*0.95)
+View(snvBottomXPerc)
+
+snvLowestXPCounts = snvSampleCounts %>% filter(SampleId %in% snvBottomXPerc$SampleId)
+snvLowestXPMatrixData = snvLowestXPCounts %>% spread(SampleId,Count)
+snvLowestXPMatrixData[is.na(snvLowestXPMatrixData)] = 0
+View(snvLowestXPMatrixData[,1:10]) # check a subset
+ncol(snvLowestXPMatrixData)
+snvLowestXPMatrixData = within(snvLowestXPMatrixData, rm(Bucket))
+snvLowestXPMdt = t(snvLowestXPMatrixData)
+View(snvLowestXPMdt[,1:10])
+ncol(snvLowestXPMdt)
+
+colnames(snvLowestXPMdt) = snvBucketNames$Bucket
+snvLowestXPCss = calc_cosine_sims(snvLowestXPMdt, 0.8, "Bucket", T)
+View(snvLowestXPCss)
+
+# top10% of samples - should be very low due to lack of correlation and fewer samples
+snvHighestXPerc = head(snvSampleTotals, nrow(snvSampleTotals)*0.10)
+View(snvHighestXPerc)
+
+snvHighestXPCounts = snvSampleCounts %>% filter(SampleId %in% snvHighestXPerc$SampleId)
+snvHighestXPMatrixData = snvHighestXPCounts %>% spread(SampleId,Count)
+snvHighestXPMatrixData[is.na(snvHighestXPMatrixData)] = 0
+View(snvHighestXPMatrixData[,1:10]) # check a subset
+ncol(snvHighestXPMatrixData)
+snvHighestXPMatrixData = within(snvHighestXPMatrixData, rm(Bucket))
+snvHighestXPMdt = t(snvHighestXPMatrixData)
+View(snvHighestXPMdt[,1:10])
+ncol(snvHighestXPMdt)
+
+colnames(snvHighestXPMdt) = snvBucketNames$Bucket
+snvHighestXPCss = calc_cosine_sims(snvHighestXPMdt, 0.8, "Bucket", T)
+View(snvHighestXPCss)
+
+
+
+
+# View(cssBucketResultGroups)
+View(cssBucketResults)
+
 
 # all samples, all CSS values - note this will be 2400^2/2 entries
 snvAllCssResults = calc_cosine_sims(snvMatrixData, 0.5, "Sample", F)

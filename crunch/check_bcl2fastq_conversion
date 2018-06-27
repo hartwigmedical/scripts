@@ -381,7 +381,7 @@ sub readSampleSheet{
         my @fields = split( ",", $_);
 		
         ## get hmf run id from config line
-        if ($fields[0] eq 'ExperimentName' ){
+        if ($fields[0] =~ /Experiment(.)*Name/ ){
             my $run_name = $fields[1] || 'NA';
             $output{ 'runname' } = $run_name;
         }

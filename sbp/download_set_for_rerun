@@ -44,12 +44,14 @@ rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 
 localpath=/data/schuberg/tmp/reruns_test/
 
+# KODU: Add below includes to also grab the actual BAMs
+#--include "*/mapping/*R_dedup.realigned.bam*" \
+#--include "*/mapping/*T[IVX_]*dedup.realigned.bam*" \
+
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*annotated.vcf*" \
 	--include "*filtered*GoNLv5.vcf*" \
-	--include "*/mapping/*R_dedup.realigned.bam*" \
-	--include "*/mapping/*T[IVX_]*dedup.realigned.bam*" \
 	--include "QCStats*" \
 	--profile download
 

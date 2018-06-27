@@ -24,7 +24,7 @@ then
         qcStatus=WARN
     fi
 
-    echo -e 'QCStatus\t'${meanBaf} > ${amber_qc}
+    echo -e 'QCStatus\t'${qcStatus} > ${amber_qc}
     echo -e 'MeanBAF\t'${meanBaf} >> ${amber_qc}
 fi
 
