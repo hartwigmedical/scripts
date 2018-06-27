@@ -29,17 +29,16 @@ source("libgridss.R")
 
 # Filter to somatic calls
 full_vcf = readVcf(input_vcf, "hg19")
-# work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
-read_alt_directly_from_vcf = function() {
-  alt = read_tsv(input_vcf, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(full_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
-  return(CharacterList(lapply(as.character(alt), function(x) x)))
-}
-VariantAnnotation::fixed(full_vcf)$ALT = read_alt_directly_from_vcf()
+# hard filter variants that are over the final calling threshold in the normal - they're definitely not somatic
+full_vcf = full_vcf[geno(full_vcf)$QUAL[,1] < gridss.min_qual]
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf, pon_dir=pon_dir)
 befiltered = gridss_breakend_filter(begr, full_vcf, pon_dir=pon_dir)
 bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
+
+#bpfiltered = .addFilter(bpfiltered, "LOW_Qual", bpgr$QUAL < gridss.min_qual)
+#som_llr = gridss_breakpoint_somatic_llr(full_vcf, bpgr=bpgr, contamination_rate=gridss.allowable_normal_contamination)
 
 # - filter to only decent length assemblies?
 #begr$calls_1k_window = countOverlaps(begr, rowRanges(full_vcf), ignore.strand=TRUE, maxgap=1000)
@@ -47,7 +46,7 @@ bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, f
 bpfiltered = bpfiltered != ""
 befiltered = befiltered != ""
 
-bp_vcf = full_vcf[names(bpgr)[as.logical(!bpfiltered)]]
+bp_vcf = full_vcf[names(bpgr)[!bpfiltered]]
 bpgr = breakpointRanges(bp_vcf) # fix any asymetrical filtering
 begr = begr[!befiltered]
 vcf = full_vcf[names(full_vcf) %in% c(names(bpgr), names(begr))]
@@ -63,7 +62,7 @@ VariantAnnotation::fixed(vcf)$FILTER = "PASS"
 # Assembly-based event linking
 asm_linked_df = linked_assemblies(vcf)
 # transitive calling reduction
-transitive_df = linked_assemblies(vcf, bpgr)
+transitive_df = transitive_calls(vcf, bpgr)
 link_df = asm_linked_df %>%
   inner_join(data.frame(vcfid=names(vcf), event=info(vcf)$EVENT), by="event") %>%
   dplyr::select(vcfid, linked_by) %>%
@@ -81,7 +80,7 @@ link_df = asm_linked_df %>%
 #####
 # Final filtering
 #
-info(vcf)$LINKED_BY = linked_events(vcf, bpgr)
+info(vcf)$LINKED_BY = ""
 info(vcf[link_df$vcfid])$LINKED_BY = link_df$linked_by
 vcf = vcf[!(names(vcf) %in% transitive_df$linked_by)] # remove transitive calls
 vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_qual | info(vcf)$LINKED_BY != ""]
