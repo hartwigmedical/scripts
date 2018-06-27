@@ -2,7 +2,7 @@
 
 thisScript=$( basename $0 )
 valBase='/data/giab/validation/sets'
-gatkPath='/data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar'
+gatkPath='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
 refFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
 rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
 truthVersion='NIST_v3.2.2';
