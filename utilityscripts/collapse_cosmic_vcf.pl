@@ -42,7 +42,7 @@ die "[EXIT] Output VCF $output_file(.gz) already exists\n" if -f $output_file or
 ## -----
 ## MAIN
 say "[INFO] Parsing transcript input TSV";
-my $gene2transcript = parseTrancripts($csm_tra_tsv);
+my $gene2transcript = parseTranscripts($csm_tra_tsv);
 
 say "[INFO] Opening tmp output file";
 open OUT, ">", $output_file or die "[EXIT] Unable to open output filehandle: $!\n";
@@ -147,12 +147,11 @@ sub collapseByRefAltAndPrint{
             say $output_filehandle join("\t", $chr, $pos, $ids, $ref, $alt, '.', '.', join( "=", $OUT_INFO_KEY, $ann));
         }
     }
-    
 }
 
-sub parseTrancripts{
+sub parseTranscripts{
     my ($tsv) = @_;
-    my %gene2transcipt = ();
+    my %gene2transcript = ();
     
     ## Assume 3 columns: GeneID GeneName TranscriptID
     open(my $fh, "zcat $tsv |") or die $!;
@@ -163,12 +162,12 @@ sub parseTrancripts{
         next if $_ eq "";
         next if $_ =~ /Gene ID/;
         my ($gene_id,$gene_name,$transcript_id) = split( "\t", $_ );
-        if ( exists $gene2transcipt{ $gene_name } ){
+        if ( exists %gene2transcript{ $gene_name } ){
             die "[EXIT] Should not occur: gene \"$gene_name\" key already present\n";
         }
-        push( @{$gene2transcipt{ $gene_name }}, $transcript_id );
+        push( @{%gene2transcript{ $gene_name }}, $transcript_id );
     }
-    return(\%gene2transcipt);
+    return(\%gene2transcript);
 }
 
 sub printAdjustedVcfHeader{
