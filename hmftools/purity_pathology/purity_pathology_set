@@ -5,5 +5,5 @@ countSet=$1 && shift
 purity_pathology=$1 && shift
 
 java -jar ${purity_pathology} \
-    -runs_dir ${setname}
+    -runs_dir ${setname} \
     -count_set ${countSet}
