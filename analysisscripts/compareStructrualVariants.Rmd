@@ -25,13 +25,6 @@ grnew$transitive=transitive_of(grnew, 2000, 300)
 # make a proxy QUAL since gr_join_to_df needs it to resolve matches in favour of the 'better' one
 grex$QUAL <- ifelse(is.na(grex$ploidy), grex$af, grex$ploidy)
 grnew$QUAL <- ifelse(is.na(grnew$ploidy), grnew$af, grnew$ploidy)
-simpleEventType <- function(gr) {
-  return(ifelse(seqnames(gr) != seqnames(partner(gr)), "ITX", # inter-chromosomosal
-          ifelse(str_length(gr$insertSequence) >= abs(gr$svlen) * 0.7, "INS", # TODO: improve classification of complex events
-           ifelse(strand(gr) == strand(partner(gr)), "INV",
-            ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL",
-             "DUP")))))
-}
 grex$type = simpleEventType(grex)
 grnew$type = simpleEventType(grnew)
 	

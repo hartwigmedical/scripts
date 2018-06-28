@@ -9,9 +9,11 @@ then
     exit 1
 fi
 
-amber_qc=$(basename ${amber_output} .baf).qc
+amber_qc=${run_dir}/amber/$(basename ${amber_output} .baf).qc
+
 if [[ ! -e ${amber_qc} ]]
 then
+    echo "[INFO] - Writing Amber QC to ${amber_qc} - $(date)"
     meanBaf=$(grep -v X ${amber_output} | grep -v Y | grep -v Chromo | cut -f 3 | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }')
     qcStatus=PASS
     if (( $(echo "$meanBaf > 0.51" | bc -l) )); then
@@ -24,7 +26,9 @@ then
         qcStatus=WARN
     fi
 
-    echo -e 'QCStatus\t'${meanBaf} > ${amber_qc}
+    echo -e 'QCStatus\t'${qcStatus} > ${amber_qc}
     echo -e 'MeanBAF\t'${meanBaf} >> ${amber_qc}
+else
+    echo "[INFO] - Skipping Amber QC writing as it already exists for ${run_dir}"
 fi
 

@@ -11,9 +11,8 @@ for i in {1,2,3}; do
     ssh ${crunchName} find ${crunchSeqRunsDir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
     while read sheetPath; do
       runPath=$( dirname ${sheetPath} )
-      runName=$( basename $runPath )
-      #hmfRunName=$( ssh ${crunchName} cat ${sheetPath} | grep Experiment | cut -d"," -f2 )
-      #echo "HMF: $hmfRunName"
+      runName=$( basename ${runPath} )
+
       runSheetName="${runName}_SampleSheet.csv"
       destPath="${datastoreSheetsDir}/${runSheetName}"
       echo " Creating ${destPath}"
