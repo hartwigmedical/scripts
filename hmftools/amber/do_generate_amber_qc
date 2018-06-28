@@ -10,6 +10,8 @@ then
 fi
 
 amber_qc=$(basename ${amber_output} .baf).qc
+echo ${amber_qc}
+exit
 if [[ ! -e ${amber_qc} ]]
 then
     meanBaf=$(grep -v X ${amber_output} | grep -v Y | grep -v Chromo | cut -f 3 | awk '{ sum += $1; n++ } END { if (n > 0) print sum / n; }')
