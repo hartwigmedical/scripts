@@ -518,6 +518,151 @@ colnames(snvMatrixDataTrans) = snvBucketNames$Bucket
 snvBucketCss = calc_cosine_sims(snvMatrixDataTrans, 0.8, "Bucket", T)
 View(snvBucketCss)
 
+View(snvMatrixData[,1:10])
+
+snvMatrixDataWithBuckets = cbind(snvBucketNames$Bucket,snvMatrixData)
+View(snvMatrixDataWithBuckets[,1:10])
+
+names(snvMatrixDataWithBuckets)[names(snvMatrixDataWithBuckets) == 'snvBucketNames$Bucket'] <- 'Bucket'
+
+snvBucketSS = snvMatrixDataWithBuckets %>% filter(grepl("C>G",Bucket))
+View(snvBucketSS[,1:10])
+
+snvBucketSampleCtoG = gather(snvBucketSS, "SampleId", "Count", -Bucket)
+View(snvBucketSampleCtoG)
+
+snvBucketSampleCtoGSpec = snvBucketSampleCtoG %>% filter(Bucket=="C>G_TCT"|Bucket=="C>G_TCA")
+View(snvBucketSampleCtoGSpec)
+snvTmp1 = snvBucketSampleCtoGSpec %>% spread(Bucket,Count)
+View(snvTmp1)
+
+snvTmp1$Ratio = ifelse(snvTmp1$`C>G_TCT`>0,snvTmp1$`C>G_TCA` / snvTmp1$`C>G_TCT`,0)
+snvTmp1$RatioBucket = round(snvTmp1$Ratio/0.01,0)*0.01
+
+snvTmpBucketRatioStats = snvTmp1 %>% group_by(RatioBucket) %>% summarise(Count=n()) %>% arrange(RatioBucket)
+View(snvTmpBucketRatioStats)
+
+sam1 = snvTmp1$`C>G_TCT`
+sam2 = snvTmp1$`C>G_TCA`
+tmp1CSS = cosine_sim(sam1, sam2)
+print(tmp1CSS)
+
+# write.csv(snvMatrixDataWithBuckets, "~/logs/r_output/snv_c_to_g")
+
+
+View(snvSampleCounts)
+
+snvBucketCountSize = 100
+snvSampleCounts$CountBucket = round(snvSampleCounts$Count/snvBucketCountSize)*snvBucketCountSize
+snvSampleCounts$CountBucket_20 = round(snvSampleCounts$Count/20)*20
+snvSampleCounts$CountBucket_5 = round(snvSampleCounts$Count/5)*5
+
+View(snvSampleCounts %>%group_by(Bucket) %>% summarise(Count=sum(Count)))
+
+View(snvSampleCounts %>% filter(Bucket=="C>G_TCT") %>% group_by(CountBucket) %>% summarise(Count=n()))
+View(snvSampleCounts %>% filter(Bucket=="C>G_TCT"&CountBucket_20<=10000) %>% group_by(CountBucket_20) %>% summarise(Count=n()))
+
+View(snvSampleCounts %>% filter(Bucket=="C>T_TCT") %>% group_by(CountBucket) %>% summarise(Count=n()))
+View(snvSampleCounts %>% filter(Bucket=="T>G_GTC") %>% group_by(CountBucket_2) %>% summarise(Count=n()))
+
+View(snvSampleCounts %>% filter(CountBucket_5<=10000) %>% group_by(CountBucket_5) %>% summarise(Count=n()))
+
+View(snvSampleCounts %>% filter(Bucket=="C>T_ACG"|Bucket=="C>T_GCG"|Bucket=="C>T_CCG"|Bucket=="C>T_TCG")
+     %>% group_by(CountBucket_5) %>% summarise(Count=n()))
+
+snvTmpBCs = (snvSampleCounts %>% filter(Bucket=="C>T_ACG"|Bucket=="C>T_GCG"|Bucket=="C>T_CCG"|Bucket=="C>T_TCG")
+              %>% group_by(CountBucket_5) %>% summarise(Count=n()))
+
+View(snvTmpBCs)
+View(snvBucketNames)
+
+i = 0
+for(bucketName in snvBucketNames$Bucket)
+{
+  bucketCountData = snvSampleCounts %>% filter(Bucket==bucketName)
+  bucketCounts = bucketCountData$Count
+
+  print(paste("testing bucket=", bucketName, ", count=", sum(bucketCounts), sep=''))
+  pdFit = plfit(bucketCounts)
+  print(paste("result: bucket=", bucketName, ", alpha=", pdFit$alpha, ", xmin=", pdFit$xmin, ", D=", pdFit$D, sep=''))
+  i = i + 1
+
+  if(i > 10)
+    break
+}
+
+
+
+
+TPL=function(par,x,y)
+  {
+  C=par[1]
+  beta=par[2]
+  xo=par[3]
+
+  est=(C*x^(-beta))*exp(-x/xo)
+  sum((log(y) - log(est))^2)
+}
+
+f = optim(par=c(0.1,0.9,700),TPL,x=snvTmpBCs$CountBucket_5, y=snvTmpBCs$Count)
+print(f)
+
+x1=c(seq(0.1,1,0.1),seq(1,10000,1))
+y1=(f$par[1]*x1^(-f$par[2]))*exp(-x1/f$par[3])
+
+plot(x1,y1,log="xy",type="l",lwd=3,col="#CC6666",xlab="",ylab="",las=1,xaxt="n",yaxt="n",xlim=c(min(x),max(x)),ylim=c(min(y),max(y)))
+
+dev.off()
+
+hist(snvTmpBCs$Count, breaks=5)
+
+dev.off()
+
+h=hist(as.matrix(snvTmpBCs), breaks=5, plot=FALSE)
+x=h$mids
+y=h$density
+
+plot(x, y, log="xy", pch=16, type="p", cex=2,col="steelblue3",xlab="",ylab="",las=1,xaxt="n",yaxt="n")
+
+
+brea=seq(5,log(10000),10000)
+brea=c(0, exp(brea))
+h=hist(as.matrix(snvTmpBCs), breaks=brea, plot=FALSE)
+x=h$mids
+y=h$density
+
+par(mar=c(5,6,2,2))
+plot(x,y,log="xy",pch=16,type="p",cex=2,col="steelblue3",xlab="",ylab="",las=1,xaxt="n",yaxt="n"))
+mtext(quote(X),1,line=3,cex=2)
+mtext(quote(P(X)),2,line=4,cex=2)
+eaxis(1,at=c(1,10,10^2,10^3,10^4),cex.axis=1.5)
+eaxis(2,at=c(10^-9,10^-8,10^-7,10^-6,10^-5,10^-4,10^-3,10^-2,10^-1,10^0),cex.axis=1.5)
+
+View(snvTmpBCs)
+
+plot = pwrdist(snvTmpBCs2)
+
+# age-related: C>T_ACG, C>T_GCG, C>T_CCG, C>T_TCG
+
+
+
+
+
+pwrdist<-function(u,...)
+{
+  # u is vector of event counts
+  fx <- table(u)
+  i <- as.numeric(names(fx))
+  y <- rep(0,max(i))
+  y[i] <- fx
+  m0 <- glm(y~log(1:max(i)),family=quasipoisson())
+  print(summary(m0))
+  sub <- paste("s=",round(m0$coef[2],2),"lambda=",sum(u),"/",length(u))
+  plot(i,fx,log="xy",xlab="x",sub=sub,ylab="counts",...)
+  grid()
+  lines(1:max(i),(fitted(m0)),type="b")
+  return(m0)
+}
 
 # check for bucket pairings excluding the top 10% of samples
 View(snvSampleTotals)

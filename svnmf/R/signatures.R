@@ -105,7 +105,7 @@ calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBuc
   # merge with bucket-sig data
   sigContribs = cbind(signatures, bucketNames)
 
-  # give col names so the sig coluns dont merge in the next step
+  # give col names so the sig columns dont merge in the next step
   colNames = get_signame_list(sigCount,F)
   colNames[sigCount+1] = "Bucket"
 
@@ -136,12 +136,37 @@ calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBuc
 
   sampleSigContribs3$ResidualDiff = abs(sampleSigContribs3$Count-sampleSigContribs3$SigAlloc)
 
+  View(sampleSigContribs3)
+
   # return (sampleSigContribs3)
 
   sampleResidualData = (sampleSigContribs3 %>% group_by(SampleId)
                         %>% summarise(Count=sum(Count),
                                       ResidualTotal=round(sum(ResidualDiff),2),
                                       ResidualPerc=round(sum(ResidualDiff)/sum(Count),2)))
+
+  return (sampleResidualData)
+}
+
+calc_sample_residuals_v2<-function(contributions, signatures, matrixData, bucketNames)
+{
+  sampleBucketNmfFit = signatures %*% contributions
+
+  sampleBucketNmfFit = cbind(bucketNames,sampleBucketNmfFit)
+  sampleBucketCounts = cbind(bucketNames,matrixData)
+
+  gatherIndex = ncol(sampleBucketCounts)
+  sampleBucketCounts2 = gather(sampleBucketCounts, "SampleId", "ActualCount", 2:gatherIndex)
+  sampleBucketNmfFit2 = gather(sampleBucketNmfFit, "SampleId", "FitCount", 2:gatherIndex)
+
+  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleBucketNmfFit2, by=c("SampleId","Bucket"), all=T)
+
+  sampleBucketFitVsActuals$ResidualDiff = abs(sampleBucketFitVsActuals$ActualCount-sampleBucketFitVsActuals$FitCount)
+
+  sampleResidualData = (sampleBucketFitVsActuals %>% group_by(SampleId)
+                        %>% summarise(Count=sum(ActualCount),
+                                      ResidualTotal=round(sum(ResidualDiff),2),
+                                      ResidualPerc=round(sum(ResidualDiff)/sum(ActualCount),2)))
 
   return (sampleResidualData)
 }
@@ -182,9 +207,9 @@ get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
   return (sampleSigData)
 }
 
-append_residuals<-function(contribution, signatures, bucketNames, sampleBucketCounts, sampleSigData)
+append_residuals<-function(contribution, signatures, matrixData, bucketNames, sampleSigData)
 {
-  residuals = calc_sample_residuals(contribution, signatures, bucketNames, sampleBucketCounts)
+  residuals = calc_sample_residuals_v2(contribution, signatures, matrixData, bucketNames)
 
   sampleResiduals = residuals %>% select(SampleId,ResidualTotal)
   colnames(sampleResiduals) <- c("SampleId","Count")

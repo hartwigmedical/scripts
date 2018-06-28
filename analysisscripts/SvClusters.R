@@ -19,8 +19,15 @@ rm(svData)
 
 # SV data file
 svData = read.csv('~/logs/CLUSTER_V25.csv')
+svData = read.csv('~/logs/CLUSTER_GRIDSS_V3.csv')
 nrow(svData)
 View(head(svData,100))
+
+# filter to match the current set of GRIDSS samples
+svGridssMatched = svData %>% filter(SampleId %in% gridssSamples$SampleId)
+View(svGridssMatched %>% group_by(SampleId) %>% summarise(Count=n()))
+svData = svGridssMatched
+svAllData = svData
 
 # filter out multiple biopsy (approximately)
 svData = svData %>% filter(!grepl("DRUP", SampleId)&!grepl("TIII", SampleId)&!grepl("TII", SampleId))
@@ -53,6 +60,7 @@ svData$ChainCount = ifelse(svData$ChainCount>0,svData$ChainCount,ifelse(svData$I
 
 View(svData)
 
+View(svData %>% filter(ClusterCount==76) %>% arrange(-IsSpan,-IsTrans))
 
 # set stressed state
 svData$ArmExpStart = ifelse(svData$ArmExpStart>0,svData$ArmExpStart,0.1)
@@ -61,7 +69,6 @@ svData$ArmExpEnd = ifelse(svData$ArmExpEnd>0,svData$ArmExpEnd,0.1)
 svData$StressedPPEnd = round(1 - ppois(svData$ArmCountEnd - 1, svData$ArmExpEnd),4)
 svData$IsStressed = ifelse((svData$StressedPPStart<=0.001&svData$ArmCountStart>=10)|(svData$StressedPPEnd<=0.001&svData$ArmCountEnd>=10),1,0)
 nrow(svData %>% filter(IsStressed==1))
-View(svData %>% filter(ClusterCount==10))
 
 # allocation of known / resolved types
 svData$ResolvedType = 'NONE'
@@ -72,12 +79,11 @@ svData$ResolvedType = ifelse(svData$ClusterCount==1&(svData$Type=='DEL'|svData$T
 svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$ClusterCount==1&svData$Type=='DEL','NC_DEL',svData$ResolvedType)
 svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$ClusterCount==1&svData$Type=='DUP','NC_DUP',svData$ResolvedType)
 svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$ClusterCount==1&svData$Type=='INS','NC_INS',svData$ResolvedType)
-svData$IsResolved = ifelse(svData$ResolvedType=='NONE',0,1)
 View(svData %>% group_by(ResolvedType,IsStressed) %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed)%>% spread(IsStressed,Count))
 View(svData %>% group_by(IsResolved,IsStressed) %>% summarise(Count=n()) %>% arrange(IsResolved,IsStressed) )
 View(svData %>% group_by(ResolvedType) %>% summarise(Count=n()) %>% arrange(ResolvedType))
 View(svData %>% group_by(ResolvedType,IsStressed,ClusterSize) %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed,ClusterSize) %>% spread(IsStressed,Count))
-
+View(svData)
 
 # RESOLVED TYPE: non-clustered SVs, dubious INVs and BNDs
 dubiousNCSingleSVs = (svData %>% filter(ResolvedType=='NONE'&ClusterCount==1&(Type=='BND'|Type=='INV')&IsStressed==0&IsConsistent==0)
@@ -94,12 +100,6 @@ View(svData %>% filter(ResolvedType=='NONE'&ClusterCount==1) %>% group_by(Type,I
 svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$IsSpan==1,'SPAN',svData$ResolvedType)
 svData$IsResolved = ifelse(svData$ResolvedType=='NONE',0,1)
 View(svData %>% group_by(ResolvedType,IsStressed) %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed))
-
-
-# svData$ArmExpStart = ifelse(svData$ArmExpStart>0,svData$ArmExpStart,0.1)
-# svData$StressedPoissonProb = round(1 - ppois(svData$ArmCountStart - 1, svData$ArmExpStart),4)
-# svData$IsStressed = ifelse(svData$ArmCountStart>=10 & svData$StressedPoissonProb <= 0.001,1,0)
-# nrow(svData %>% filter(IsStressed==0))
 
 # TI and DB analysis
 
@@ -123,7 +123,7 @@ nrow(clusteredSvs)
 
 allClusterData = (clusteredSvs %>% group_by(SampleId,ClusterId)
                    %>% summarise(SvCount=n(),
-                                 SampleClusterId=first(ClusterId),
+                                 SampleClusterId=first(SampleClusterId),
                                  ClusterCount=first(ClusterCount),
                                  ClusterDesc=first(ClusterDesc),
                                  Consistency=first(Consistency),
@@ -152,6 +152,8 @@ allClusterData = (clusteredSvs %>% group_by(SampleId,ClusterId)
                                  LineCount=sum(IsLINE))
                    %>% arrange(SampleId,ClusterId))
 
+View(allClusterData)
+
 # RESOLVED TYPE: LINE and SVs in LINE clusters
 lineClusters = allClusterData %>% filter(LineCount>0)
 nrow(lineClusters)
@@ -161,7 +163,6 @@ sum(lineClusters$LineCount)
 # translate LINE info back to svData
 svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$SampleClusterId %in% lineClusters$SampleClusterId,'LINE',svData$ResolvedType)
 svData$ResolvedType = ifelse(svData$ResolvedType=='LINE'&svData$IsLINE==0,'LINE_CLUST',svData$ResolvedType)
-svData$IsResolved = ifelse(svData$ResolvedType=='NONE',0,1)
 View(svData %>% group_by(ResolvedType) %>% summarise(Count=n()) %>% arrange(ResolvedType))
 
 # all other clusters
@@ -182,8 +183,8 @@ View(svData %>% filter(IsRecipInv==1))
 View(svData %>% filter(IsRecipInv==1&ClusterCount==2) %>% group_by(ClusterDesc) %>% summarise(Count=n()))
 reciprocals = clusterData %>% filter(ClusterCount==2&(BndCount==2|InvCount==2)&DBCount==2&IsConsistent==1)
 View(reciprocals)
-svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$Type=='BND'&svData$SampleClusterId %in% reciprocals%SampleClusterId,'RECIP_TRANS',svData$ResolvedType)
-svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$Type!='BND'&svData$SampleClusterId %in% reciprocals%SampleClusterId,'RECIP_INV',svData$ResolvedType)
+svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$Type=='BND'&svData$SampleClusterId %in% reciprocals$SampleClusterId,'RECIP_TRANS',svData$ResolvedType)
+svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$Type!='BND'&svData$SampleClusterId %in% reciprocals$SampleClusterId,'RECIP_INV',svData$ResolvedType)
 clusterData$ResolvedType = ifelse(clusterData$ResolvedType=='NONE'&clusterData$BndCount==2&clusterData$SampleClusterId %in% reciprocals$SampleClusterId,'RECIP_TRANS',clusterData$ResolvedType)
 clusterData$ResolvedType = ifelse(clusterData$ResolvedType=='NONE'&clusterData$InvCount==2&clusterData$SampleClusterId %in% reciprocals$SampleClusterId,'RECIP_INV',clusterData$ResolvedType)
 
@@ -283,6 +284,133 @@ cc2Unres = clusterData %>% filter(ClusterCount==2&Consistency==0)
 
 
 # TAKING STOCK
+svResolvedSummary = (svData %>% group_by(ResolvedType,IsStressed,ClusterSize)
+                            %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed,ClusterSize))
+
+View(svResolvedSummary)
+
+svGridssResolvedSummary = (gridssSvData %>% group_by(ResolvedType,IsStressed,ClusterSize)
+                     %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed,ClusterSize))
+
+# nrow(svData %>% filter(SampleId=="CPCT02050018T"))
+
+svData$Source = "MANTA"
+gridssSvData$Source = "GRIDSS"
+svGridsAndManta = rbind(svData,gridssSvData)
+nrow(svGridsAndManta)
+
+svCompareResolvedSummary = (svGridsAndManta %>% group_by(Source,ResolvedType,ClusterSize)
+                     %>% summarise(Count=n()) %>% arrange(Source,ResolvedType,ClusterSize))
+
+View(svCompareResolvedSummary)
+
+svCompareResolvedSum2 = svCompareResolvedSummary %>% spread(Source,Count)
+View(svCompareResolvedSum2)
+svCompareResolvedSum2[is.na(svCompareResolvedSum2)] = 0
+svCompareResolvedSum2$Diff = svCompareResolvedSum2$MANTA - svCompareResolvedSum2$GRIDSS
+View(svCompareResolvedSum2)
+
+svCompareResolvedSum3 = (svGridsAndManta %>% group_by(Source,SampleId,ResolvedType,ClusterSize)
+                            %>% summarise(Count=n()) %>% arrange(Source,SampleId,ResolvedType,ClusterSize) %>% spread(Source,Count))
+
+svCompareResolvedSum3[is.na(svCompareResolvedSum3)] = 0
+svCompareResolvedSum3$Diff = abs(svCompareResolvedSum3$MANTA - svCompareResolvedSum3$GRIDSS)
+View(svCompareResolvedSum3)
+
+# matching SVs where possible
+svGridsAndMantaMatched = (svGridsAndManta %>% group_by(SampleId,Type,ChrStart,ChrEnd,PosStart,PosEnd) 
+                          %>% summarise(Count=n(),
+                                        NGCount=sum(Source=="MANTA"),
+                                        GCount=sum(Source=="GRIDSS"),
+                                        Source1=first(Source),
+                                        Source2=last(Source),
+                                        Id1=first(Id),
+                                        Id2=last(Id)))
+
+svGridsAndMantaMatched = svGridsAndMantaMatched %>% filter(Count==2&NGCount==1&GCount==1)
+View(svGridsAndMantaMatched)
+exactMatchedIds = svGridsAndMantaMatched %>% ungroup() %>% select(Source1,Source2,Id1,Id2) 
+exactMatchedIds$MatchType = "Exact"
+rowIndex = data.frame(as.numeric(as.character(rownames(exactMatchedIds))))
+colnames(rowIndex) <- c("RowIndex")
+exactMatchedIds = cbind(exactMatchedIds, rowIndex)
+
+View(exactMatchedIds)
+
+svGridsAndManta$MatchType = "None"
+svGridsAndManta = within(svGridsAndManta, rm(MatchType))
+View(svGridsAndManta)
+svGridsAndManta2 = merge(svGridsAndManta, exactMatchedIds %>% select(Id1,Id2,RowIndex,MatchType), by.x="Id", by.y="Id1", all.x=T)
+View(svGridsAndManta2)
+svGridsAndManta2 = merge(svGridsAndManta2, exactMatchedIds %>% select(Id1,Id2,RowIndex,MatchType), by.x="Id", by.y="Id2", all.x=T)
+
+svGridsAndManta2$MatchSvId = ifelse(!is.na(svGridsAndManta2$Id1),svGridsAndManta2$Id1,svGridsAndManta2$Id2)
+svGridsAndManta2$MatchId = ifelse(!is.na(svGridsAndManta2$RowIndex.x),svGridsAndManta2$RowIndex.x,svGridsAndManta2$RowIndex.y)
+svGridsAndManta2$Match = ifelse(!is.na(svGridsAndManta2$MatchId),"Exact","None")
+View(svGridsAndManta2)
+svGridsAndManta = svGridsAndManta2 %>% select(-RowIndex.x,-RowIndex.y,-Id1,-Id2,-MatchType.x,-MatchType.y)
+
+View(exactMatchedIds %>% group_by(Id1) %>% count())
+View(svGridsAndManta %>% group_by(Id) %>% count())
+
+
+View(svGridsAndManta %>% group_by(MatchType) %>% count())
+
+# match based on proximity
+svGridsAndManta$PosApproxStart = round(svGridsAndManta$PosStart/10)*10
+svGridsAndManta$PosApproxEnd = round(svGridsAndManta$PosEnd/10)*10
+
+svGnMMatchApprox = (svGridsAndManta %>% filter(Match=="None") 
+                              %>% group_by(SampleId,Type,ChrStart,ChrEnd,PosApproxStart,PosApproxEnd) 
+                              %>% summarise(Count=n(),
+                                        NGCount=sum(Source=="MANTA"),
+                                        GCount=sum(Source=="GRIDSS"),
+                                        Source1=first(Source),
+                                        Source2=last(Source),
+                                        Id1=first(Id),
+                                        Id2=last(Id)))
+
+svGnMMatchApprox = svGnMMatchApprox %>% filter(Count==2&NGCount==1&GCount==1)
+View(svGnMMatchApprox)
+
+approxMatchedIds = svGnMMatchApprox %>% ungroup() %>% select(Source1,Source2,Id1,Id2) 
+approxMatchedIds$MatchType = "Approx"
+rowIndex = data.frame(as.numeric(as.character(rownames(approxMatchedIds))))
+colnames(rowIndex) <- c("RowIndex")
+approxMatchedIds = cbind(approxMatchedIds, rowIndex)
+View(approxMatchedIds)
+
+svGridsAndManta2 = merge(svGridsAndManta, approxMatchedIds %>% select(Id1,Id2,RowIndex,MatchType), by.x="Id", by.y="Id1", all.x=T)
+svGridsAndManta2 = merge(svGridsAndManta2, approxMatchedIds %>% select(Id1,Id2,RowIndex,MatchType), by.x="Id", by.y="Id2", all.x=T)
+View(svGridsAndManta2)
+
+svGridsAndManta2$MatchSvId = ifelse(!is.na(svGridsAndManta2$Id1),svGridsAndManta2$Id1,ifelse(!is.na(svGridsAndManta2$Id2), svGridsAndManta2$Id2, svGridsAndManta2$MatchSvId))
+svGridsAndManta2$MatchId = ifelse(!is.na(svGridsAndManta2$RowIndex.x),svGridsAndManta2$RowIndex.x,ifelse(!is.na(svGridsAndManta2$RowIndex.y),svGridsAndManta2$RowIndex.y, svGridsAndManta2$MatchId))
+svGridsAndManta2$Match = ifelse(svGridsAndManta2$Match=="None"&!is.na(svGridsAndManta2$MatchId),"Approx",svGridsAndManta2$Match)
+
+svGridsAndManta = svGridsAndManta2 %>% select(-RowIndex.x,-RowIndex.y,-Id1,-Id2,-MatchType.x,-MatchType.y)
+nrow(svGridsAndManta %>% filter(Match=="Exact"))
+nrow(svGridsAndManta %>% filter(Match=="Approx"))
+nrow(svGridsAndManta %>% filter(Match=="None"))
+View(svGridsAndManta)
+
+save(svGridsAndManta, file="~/logs/r_output/svGridsAndManta.RData")
+
+
+
+svGridsAndMantaById = svGridsAndManta %>% group_by(Id) %>% count()
+View(svGridsAndMantaById)
+
+
+
+
+
+gridssSvData = svData
+gridssSamples = svData %>% group_by(SampleId) %>% summarise(Count=n())
+View(gridssSamples)
+write.csv(gridssSvData, "~/logs/r_output/sv_gridss.csv", row.names=F, quote=F)
+
+
 View(svData %>% group_by(ResolvedType,IsStressed,ClusterSize)
      %>% summarise(Count=n()) %>% arrange(ResolvedType,IsStressed,ClusterSize))
 

@@ -59,7 +59,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
   # calculate and factor in residuals
   if(calcResiduals)
   {
-    sampleSigData = append_residuals(contribution, signatures, bucketNames, summaryCounts, sampleSigData)
+    sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
   }
 
   # run again, this time bucketing samples into mutational load and cancer types
@@ -89,7 +89,7 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
 
   # 1. Bucket data
   title = textGrob("Bucket Summary Data & Top-N Buckets", gp=gpar(fontface="bold", fontsize=16))
-  plot_bucket_summary_data(bucketSummaryData, sigBucketTopN)
+  plot_bucket_summary_data(bucketSummaryData, sigBucketTopN, title)
 
   sigColours = get_sig_colours(sigCount)
 
