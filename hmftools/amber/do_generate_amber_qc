@@ -9,7 +9,7 @@ then
     exit 1
 fi
 
-amber_qc=${run_dir}/$(basename ${amber_output} .baf).qc
+amber_qc=${run_dir}/amber/$(basename ${amber_output} .baf).qc
 echo ${amber_qc}
 exit
 if [[ ! -e ${amber_qc} ]]
