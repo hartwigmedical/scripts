@@ -3,7 +3,7 @@ library(dplyr)
 library(tidyr)
 
 #### Curated Data
-allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180625.csv", stringsAsFactors = F, header = T)
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180627.csv", stringsAsFactors = F, header = T)
 
 ### Database Data
 dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
@@ -19,8 +19,17 @@ allClinicalData = left_join(allClinicalDataCurated, allClinicalDataDatabase, by 
   mutate(cancerType = ifelse(primaryTumorLocationSamples > 15, primaryTumorLocation, "Other")) %>%
   ungroup() %>%
   select(-primaryTumorLocationSamples)
+
 save(allClinicalData, file = "~/hmf/RData/Reference/allClinicalData.RData")
 rm(allClinicalDataCurated, allClinicalDataDatabase)
+
+############################## More Manual Adjustments ##############################
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180625.csv", stringsAsFactors = F, header = T)
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01080005T", "primaryTumorLocation"] <- "CUP"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050008T", "primaryTumorLocation"] <- "Head and neck"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01030013T", "primaryTumorLocation"] <- "Other"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050240T", "primaryTumorLocation"] <- "Bone/Soft tissue"
+write.csv(allClinicalDataCurated, file = "~/hmf/resources/ClinicalData20180627.csv", row.names = F)
 
 ############################## FINAL CURATION ##############################
 finalCuration = read.csv(file = "~/hmf/resources/FinalCuration.csv", stringsAsFactors = F, header = T)

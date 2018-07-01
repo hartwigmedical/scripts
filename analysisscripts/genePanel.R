@@ -40,8 +40,8 @@ manual = data.frame(gene = "ZNF703", alteration = "amplification")
 knownAmpsDels = bind_rows(cgi, onco) %>%
   bind_rows(civic) %>%
   bind_rows(manual) %>%
-  select(gene_name = gene, alteration)  %>%
-  distinct(gene_name = gene, alteration) %>% 
+  select(gene_name = gene, alteration) %>%
+  distinct(gene_name, alteration) %>% 
   mutate(value = T) %>% spread(alteration, value) 
 rm(cgi, onco, civic, manual)
 

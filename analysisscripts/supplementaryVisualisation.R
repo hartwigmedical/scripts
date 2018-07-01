@@ -109,8 +109,6 @@ p2 = ggplot(data = clonalityDrivers, aes(x = cancerType, y = percentage, width =
   annotate("text", x = 19, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = sprintf(fmt='(%.1f%%)', 100*clonalityDriverTotal$panCancerPercentage), size = 3, hjust = 1) +
   coord_flip()
 
-plot_grid(p1, p2, rel_widths = c(2, 2), labels="AUTO")
-
 
 p3 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
   geom_violin( fill = "#31a354", scale = "width") +
@@ -135,25 +133,30 @@ p4 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = percentage, widt
   #annotate("text", x = 19, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = sprintf(fmt='(%.1f%%)', 100*clonalityDriverTotal$panCancerPercentage), size = 3, hjust = 1) +
   coord_flip()
 
-plot_grid(p3, p4, rel_widths = c(2, 2), labels="AUTO")
-
+pdf(file='~/hmf/supplementaryVisualisaion.pdf', onefile=T, paper='A4') 
 plot_grid(p1,p2, p3, p4, ncol = 2, rel_heights = c(4, 2), labels="AUTO")
 
-max(nchar(highestPurityCohortSummary$cancerType))
-
 ######### Hotspots
-hotspotGenes = hpcDriversByGene %>% 
+load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
+
+hotspotGenes = hpcDndsOncoDrivers %>% 
   filter(type == 'ONCO', !is.na(hotspot)) %>% 
   group_by(gene) %>% 
   summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(40, driverLikelihood) %>% arrange(driverLikelihood)
 
-hotspotData = hpcDriversByGene %>% 
+variantFactors = c("INDEL","MNV","SNV")
+hotspotFactors = c("Hotspot","NearHotspot","NoHotspot")
+hotspotData = hpcDndsOncoDrivers %>% 
   filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
-  mutate(driver = as.character(driver),
-         driver = ifelse(driver == "Promoter", "Missense", driver),
-         driver = ifelse(driver == "Inframe", "Inframe Indel", driver),
-         driver = factor(driver, c("Missense", "Inframe Indel"))) %>%
-  group_by(gene, driver, hotspot) %>%
+  mutate(hotspot = ifelse(hotspot, "Hotspot", "NoHotspot"),
+         hotspot = ifelse(nearHotspot, "NearHotspot", hotspot),
+         hotspot = factor(hotspot, rev(hotspotFactors)),
+         variant = factor(variant, rev(variantFactors)),
+         impact = as.character(impact),
+         impact = ifelse(impact == "Promoter", "Missense", impact),
+         impact = ifelse(impact == "Inframe", "Inframe Indel", impact),
+         impact = factor(impact, c("Missense", "Inframe Indel"))) %>%
+  group_by(gene, impact, variant, hotspot) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   group_by(gene) %>%
   mutate(total = sum(driverLikelihood), percentage = driverLikelihood / total) %>%
@@ -168,7 +171,7 @@ p_hotspot = ggplot(data = hotspotData, aes(x = gene, y = driverLikelihood)) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank(), legend.title=element_blank()) +
   coord_flip()+ 
-  facet_grid(~driver, scales = "free_x")
+  facet_grid(~variant, scales = "free_x")
 
 plot_grid(p_hotspot, labels="AUTO")
 
@@ -338,7 +341,6 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
   scale_y_continuous(expand=c(0.01, 0.01)) +
   theme(legend.position="none") +
   coord_flip() 
-p1
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
   geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
@@ -349,6 +351,8 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
   coord_flip()
 
 plot_grid(p1,p2, ncol = 2, rel_widths =  c(2,3), labels = "AUTO")
+
+dev.off()
 
 
 
@@ -376,8 +380,6 @@ indelData = left_join(indelCount, indelDrivers, by = "sampleId")
 indelData[is.na(indelData)] <- 0
 indelData = mutate(indelData, driverLikelihood = factor(driverLikelihood))
 indelData$indel <- ifelse(indelData$indel > 10000, 10000, indelData$indel)
-
-str(indelData)
 
 ggplot(indelData, aes(driverLikelihood, indel)) + 
   geom_violin(scale = "count", draw_quantiles = c(0.5)) +

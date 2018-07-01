@@ -15,7 +15,7 @@ hpcCancerTypeCounts = highestPurityCohortSummary %>%
   group_by(cancerType) %>% 
   summarise(
     N = n(), 
-    medianMutationalLoad = median(CLONAL_SNP + SUBCLONAL_SNP + CLONAL_MNP + SUBCLONAL_MNP + CLONAL_INDEL + SUBCLONAL_INDEL )) %>% 
+    medianMutationalLoad = median(TOTAL_SNV + TOTAL_MNV + TOTAL_INDEL )) %>% 
   arrange(medianMutationalLoad)
 cancerTypeFactors =  factor(hpcCancerTypeCounts$cancerType, levels = hpcCancerTypeCounts$cancerType)
 
@@ -66,12 +66,12 @@ cancerTypeData = highestPurityCohortSummary %>%
   filter(cancerType != "Other")
 
 hmfMutationalLoad = highestPurityCohortSummary %>% 
-  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNP"), ends_with("MNP"), BND, DEL, INS, INV, DUP) %>%
+  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNV"), ends_with("MNV"), BND, DEL, INS, INV, DUP) %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   mutate(
-    INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL,
-    MNV = INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
-    SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+    INDEL = TOTAL_INDEL,
+    MNV = TOTAL_MNV,
+    SNV = TOTAL_SNV,
     SV = BND + DEL + INS + INV + DUP) 
 
 pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
@@ -270,6 +270,7 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   guides(fill = guide_legend(nrow = 1)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
 
+
 plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 
 
@@ -280,6 +281,7 @@ coverageData = highestPurityCohortSummary %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
   arrange(cancerType, -tumorMeanCoverage)
 
+pdf(file='~/hmf/cohortVisualisaion.pdf', onefile=T, paper='A4r') 
 ggplot(data=coverageData)+
   stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
   stat_ecdf(aes(refMeanCoverage*2,color='Ref (RHS'),geom = "step", pad = FALSE) +
@@ -321,8 +323,6 @@ ggplot(biopsyTypeCount, aes(x="",y=n, fill=`Biopsy Type`)) +
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
           panel.grid.minor = element_blank())
   
-head(highestPurityCohortSummary)
-
 
 ###########@@@@@@@@@@@@@@@
 ####### WGD
@@ -369,18 +369,20 @@ p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
 plot_grid(p1, p2, labels="AUTO")
 #deebf7
 
+dev.off()
+
 ###########################
 ###### SNV vs INDEL
 ### To do:  get cancerType colours work properly
 # INDEL SNV by MSI
-ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=msiStatus))+geom_point() + 
-  scale_x_log10() + scale_y_log10()
+#ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=msiStatus))+geom_point() + 
+#  scale_x_log10() + scale_y_log10()
 
 # INDEL SNV by CancerType
-ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=cancerType))+geom_point() + 
-  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+#ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=cancerType))+geom_point() + 
+#  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
 
 # MNV SNV by Cancer Type
-ggplot(highestPurityCohortSummary, aes(CLONAL_SNP,CLONAL_MNP,color=cancerType))+geom_point() + 
-  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+#ggplot(highestPurityCohortSummary, aes(CLONAL_SNP,CLONAL_MNP,color=cancerType))+geom_point() + 
+#  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
 
