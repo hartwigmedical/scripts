@@ -184,6 +184,7 @@ calc_gene_cooccurence<-function(cancerTypesList, driverGeneList, logCalcs = T)
 # load("~/data/driversByGene.RData")
 # View(driversByGene)
 
+#load("~/hmf/RData/Processed/hpcDriversByGene.RData")
 load("~/data/hpcDriversByGene_20180628.RData")
 View(hpcDriversByGene)
 driversByGene = hpcDriversByGene
@@ -200,9 +201,10 @@ driversNonFusions = driversByGene %>% filter(type!='FUSION'&driverLikelihood>=0.
 # nrow(driversNonFusions)
 
 # run the co-occurrence logic for each cancer type
-allGenePairProbs = calc_gene_cooccurence(cancerTypesList, driversNonFusions, F)
+allGenePairProbs = calc_gene_cooccurence(cancerTypes$cancerType, driversNonFusions, F)
 
 write.csv(allGenePairProbs, "~/logs/r_output/genePairCo-occurence_20180628.csv", row.names=F, quote=F)
+save(allGenePairProbs, file = "~/hmf/RData/Processed/allGenePairProbs.RDat")
 
 View(allGenePairProbs)
 
@@ -237,4 +239,35 @@ nrow(ggAllProbs %>% filter(PositivelyCorrelated==F&Fisher<pValueThreshold))
 # are there any positively correctly oncogenes and TSGs?
 nrow(ggAllProbs2 %>% filter(PositivelyCorrelated==T&Fisher<0.01&Gene1Type!=Gene2Type))
 View(ggAllProbs2 %>% filter(PositivelyCorrelated==T&Fisher<0.001&Gene1Type!=Gene2Type))
+
+
+################################## PLOT RESULTS ##################################
+library(ggrepel)
+
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+load(file = "~/hmf/RData/Processed/allGenePairProbs.RDat")
+qValueThreshold = 0.05
+cooccurenceData = allGenePairProbs %>% 
+  filter(QValue<qValueThreshold, GeneChr1!=GeneChr2) %>%
+  mutate(
+    correlation = ifelse(PositivelyCorrelated, 1, -1),
+    label = paste(Gene1, Gene2, sep = "|"),
+    nudge = correlation * 0.1,
+    hjust = ifelse(correlation > 0, 0, 1),
+    facet = ifelse(QValue < 3e-06, T, F)
+    )
+
+ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
+  geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
+  geom_point(aes(color = CancerType), size = 4, alpha = 1 ) + 
+  geom_text(aes(label = label), size = 2.5, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  scale_color_manual(values = cancerTypeColours) +
+  scale_x_continuous(trans="log10") + 
+  scale_y_continuous(limits = c(-2,2)) +
+  facet_grid(facet ~ ., scales="free", space="free") +
+  theme(strip.background = element_blank(), strip.text = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.ticks = element_blank(), axis.title.x = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+  coord_flip()
+
 
