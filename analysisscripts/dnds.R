@@ -59,6 +59,15 @@ dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
 save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/RData/processed/hpcExonicSomaticsDndsAnnotated.RData")
 rm(unfilteredSomatics, unfilteredOutput, dndsUnfilteredAnnotatedMutations)
 
+#################### SmallIntestine NET #########################
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")  
+netSampleIds =  highestPurityCohortSummary %>% filter(!is.na(cancerType), cancerType == "NET", cancerSubtype == 'Small intestine') %>% select(sampleId)
+
+netSomatics = somatics %>% filter(sampleId %in% netSampleIds$sampleId)
+netSomaticsOutput = dndscv(netSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+netSmallIntestineCV = netSomaticsOutput$sel_cv
+save(netSmallIntestineCV, file = "~/hmf/RData/processed/netSmallIntestineCV.RData")
+
 #################### Unfiltered Multiple Biopsy Annotations #########################
 load(file = "~/hmf/RData/reference/mbExonicSomatics.RData")
 mbUnfilteredSomatics = mbExonicSomatics  %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
