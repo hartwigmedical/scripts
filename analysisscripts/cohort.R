@@ -103,6 +103,22 @@ save(allIndelsNearPON, file = "~/hmf/RData/reference/allIndelsNearPON.RData")
 
 allSomatics_p1 = allSomatics_p1 %>% left_join(allIndelsNearPON %>% select(id, nearPon), by = "id") %>% filter(is.na(nearPon))
 allSomatics_p2 = allSomatics_p2 %>% left_join(allIndelsNearPON %>% select(id, nearPon), by = "id") %>% filter(is.na(nearPon))
+
+fix_splice_effect <- function(input) {
+  result = input %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant","NONE",canonicalCodingEffect) ) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion","MISSENSE",canonicalCodingEffect))
+}
+
+allSomatics_p1 = fix_splice_effect(allSomatics_p1)
+allSomatics_p2 = fix_splice_effect(allSomatics_p2)
+
 save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
 save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
 
@@ -225,8 +241,9 @@ cat("Determing exonic somatics")
 load(file = "~/hmf/RData/reference/HmfRefCDS.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
+
 exonic_somatics <- function(somatics, gr_genes) {
-  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position))
+  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position + nchar(somatics$ref) - 1))
   ol = as.matrix(findOverlaps(gr_muts, gr_genes, type="any", select="all"))
   return (somatics[unique(ol[, 1]), ])
 }
@@ -247,6 +264,7 @@ load(file = "~/hmf/RData/Reference/allWgd.RData")
 load(file = "~/hmf/RData/Reference/allClinicalData.RData")
 load(file = "~/hmf/RData/Reference/allSampleData.RData")
 load(file = "~/hmf/RData/Reference/allSomaticsSummary.RData")
+load(file = "~/hmf/RData/Reference/allMetrics.RData")
 load(file = "~/hmf/RData/Reference/allStructuralVariantSummary.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
@@ -286,7 +304,7 @@ save(multipleBiopsyStructuralVariants, file = "~/hmf/RData/reference/multipleBio
 
 load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
-multipleBiopsySomatics = bind_rows(allSomatics_p1, allSomatics_p2) %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)
+multipleBiopsySomatics = bind_rows(allSomatics_p1 %>% filter(sampleId %in% multipleBiopsyCohort$sampleId), allSomatics_p2 %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)) 
 save(multipleBiopsySomatics, file = "~/hmf/RData/reference/multipleBiopsySomatics.RData")
 
 multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
