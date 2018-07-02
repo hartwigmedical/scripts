@@ -1,21 +1,22 @@
-
 require(maftools)
 detach("cowplot", unload=TRUE)
 library(cowplot)
-
 
 cancerTypeColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
                       "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#ff4791","#01837a",
                       "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
                       "#dea185","#a0729d","#8a392f")
 
-
-
 ##### ACTUAL DATA
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsTsgMutations.RData")
+load(file = "~/hmf/RData/Processed/driverGenes.RData")
+
 load("~/hmf/RData/Reference/canonicalTranscripts.RData")
 load(file = "~/hmf/RData/Reference/highestPurityCohort.RData")
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+
+
 
 
 extract_position <- function(AAChange) {
@@ -36,6 +37,7 @@ hotspot_category <- function(hotspot, nearHotspot) {
   return (result)
 }
 
+
 lollipopData = hpcDndsOncoDrivers %>%
   mutate(
     hotspot = hotspot_category(hotspot, nearHotspot),
@@ -45,25 +47,13 @@ lollipopData = hpcDndsOncoDrivers %>%
   summarise(driverLikelihood = n())
 
 
-selectedGene = "ERBB2"
 variantShape = c(23, 21, 22)
 variantShape = setNames(variantShape, c("INDEL", "SNV", "MNV"))
 
 hotspotColor = c("#de2d26","#fb6a4a","#3182bd")
 hotspotColor = setNames(hotspotColor, c("OnHotspot","NearHotspot","OffHotspot"))
 
-a1 = lollipop("PIK3CA")
-a2 = lollipop("KRAS")
-a3 = lollipop("BRAF")
-a4 = lollipop("NRAS")
-a5 = lollipop("ESR1")
-a6 = lollipop("KIT")
-a7 = lollipop("FGFR1")
-a8 = lollipop("ERBB2")
-a9 = lollipop("MUC6")
 
-lollipop("NRAS")
-genes = c("PIK3CA","KRAS","BRAF","NRAS","ESR1","KIT","FGFR1","MUC6","ERBB2")
 
 g_legend <- function(a.gplot){ 
   tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
@@ -72,6 +62,7 @@ g_legend <- function(a.gplot){
   return(legend)
 } 
 
+### TODO: Make sure x-axis covers all codons. 
 lollipop <- function(selectedGene) {
   lollipopDataGene = lollipopData %>% filter(gene == selectedGene)
   p1 = ggplot(data = lollipopDataGene) +
@@ -121,5 +112,61 @@ for(selectedGene in genes) {
 pdf(file='~/hmf/lollipop2.pdf', onefile=T, width = 20, height = 7) 
 for(selectedGene in genes) {
   print(jon[[selectedGene]])
+}
+dev.off()
+
+
+
+########################################################################### TSG
+
+tsgData = hpcDndsTsgMutations %>%
+  ungroup() %>%
+  filter(pHGVS != '') %>%
+  mutate(
+    pos = extract_position(pHGVS),
+    status = ifelse(biallelic, "Biallelic", NA),
+    status = ifelse(is.na(status) & driverType == "MultiHit", "MultiHit", status),
+    status = ifelse(is.na(status) & driverType == "SingleHit", "SingleHit", status),
+    status = ifelse(is.na(status) & driverType == "Redundant", "Redundant", status),
+    type = ifelse(type == 'SNP', 'SNV', type),
+    type = ifelse(type == 'MNP', 'MNV', type)
+  ) %>%
+  group_by(gene, type, pHGVS, pos, status) %>%
+  summarise(driverLikelihood = n())
+
+selectedGene = "TP53"
+tsgDataGene = tsgData %>% filter(gene == selectedGene)
+
+ggplot(data = tsgDataGene) +
+  geom_segment(aes(x = pos, xend = pos, y = 0, yend = driverLikelihood, color = status), size = 0.5) +
+  geom_point(aes(x = pos, y = driverLikelihood, color = status, fill = status, shape = type), size = 4, alpha = 1) +
+  scale_shape_manual(values = variantShape) + #scale_color_manual(values = hotspotColor)  + scale_fill_manual(values = hotspotColor) 
+  ylab("Variants") + xlab("Codon") + ggtitle(selectedGene) + 
+  scale_x_continuous(limits = c(0, max(tsgDataGene$pos) + 10), expand = c(0,0)) +
+  scale_y_continuous(breaks = c(1,2,4,8,16,32,64,128), trans="log2", limits = c(NA, max(1.1, max(tsgDataGene$driverLikelihood))))+
+  #scale_y_continuous(trans=log2_trans()) +
+  #scale_y_sqrt() +
+  theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank(), legend.position = "bottom") #, panel.border = element_blank())
+
+tsg_lollipop <- function(selectedGene) {
+  tsgDataGene = tsgData %>% filter(gene == selectedGene)
+  
+  ggplot(data = tsgDataGene) +
+    geom_segment(aes(x = pos, xend = pos, y = 0, yend = driverLikelihood, color = status), size = 0.5) +
+    geom_point(aes(x = pos, y = driverLikelihood, color = status, fill = status, shape = type), size = 4, alpha = 1) +
+    scale_shape_manual(values = variantShape) + #scale_color_manual(values = hotspotColor)  + scale_fill_manual(values = hotspotColor) 
+    ylab("Variants") + xlab("Codon") + ggtitle(selectedGene) + 
+    scale_x_continuous(limits = c(0, max(tsgDataGene$pos) + 10), expand = c(0,0)) +
+    scale_y_continuous(breaks = c(1,2,4,8,16,32,64,128), trans="log2", limits = c(NA, max(1.1, max(tsgDataGene$driverLikelihood))))+
+    #scale_y_continuous(trans=log2_trans()) +
+    #scale_y_sqrt() +
+    theme(panel.grid.minor = element_blank(), panel.grid.major.x = element_blank(), legend.position = "bottom") #, panel.border = element_blank())
+}
+
+tsg_lollipop("APC")
+
+pdf(file='~/hmf/lollipopTSG.pdf', onefile=T, width = 20, height = 7) 
+for (selected in unique(tsgData$gene)) {
+  print(tsg_lollipop(selected))
 }
 dev.off()
