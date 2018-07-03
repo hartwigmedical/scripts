@@ -7,6 +7,12 @@ library(ggplot2)
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load("~/hmf/RData/processed/driverGenes.RData")
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
+load(file = "~/hmf/RData/reference/simplifiedDrivers.RData")
+
+tsgDrivers = c("Del","FragileDel","Indel","Missense","Multihit","Nonsense","Splice")
+oncoDrivers = c("Amp","Del","Fusion","Indel","Missense","Promoter")
+tsgDriverColours = simplifiedDriverColours[tsgDrivers]
+oncoDriverColours = simplifiedDriverColours[oncoDrivers]
 
 hpcDriversByGene = hpcDriversByGene  %>% 
   filter(driverLikelihood > 0) %>%
@@ -22,18 +28,8 @@ sortedTsgGenes = hpcDriversByGene %>% filter(type == 'TSG') %>% group_by(gene) %
 sortedOncoGenes = hpcDriversByGene %>% filter(type == 'ONCO') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(30, n) %>% arrange(-n)
 sortedCancerTypes = hpcDriversByGene %>% group_by(cancerType) %>% summarise(n = sum(driverLikelihood)) %>% arrange(-n)
 
-oncoDrivers = c("Fusion", "Del","Promoter","Missense","Indel","Amp")
-oncoDrivers = factor(oncoDrivers, levels = oncoDrivers)
-oncoDriverColours = c("#fdb462","#8dd3c7","#ffffb3","#bebada","#fb8072","#80b1d3")
-oncoDriverColours = setNames(oncoDriverColours, oncoDrivers)
-
-tsgDrivers = c("Fusion","Del","FragileDel","Multihit","Nonsense","Splice","Missense","Indel")
-tsgDrivers = factor(tsgDrivers, levels = tsgDrivers)
-tsgDriverColours = c("#fdb462","#8dd3c7","#fccde5","#b3de69", "#80b1d3","#ffffb3","#bebada","#fb8072")
-tsgDriverColours = setNames(tsgDriverColours, tsgDrivers)
-
-oncoDriversByGene = hpcDriversByGene %>% filter(type == 'ONCO', gene %in% sortedOncoGenes$gene) %>% mutate(driver = factor(driver, oncoDrivers))
-tsgDriversByGene = hpcDriversByGene %>% filter(type == 'TSG', gene %in% sortedTsgGenes$gene)  %>% mutate(driver = factor(driver, tsgDrivers))
+oncoDriversByGene = hpcDriversByGene %>% filter(type == 'ONCO', gene %in% sortedOncoGenes$gene) %>% mutate(driver = factor(driver, simplifiedDrivers))
+tsgDriversByGene = hpcDriversByGene %>% filter(type == 'TSG', gene %in% sortedTsgGenes$gene)  %>% mutate(driver = factor(driver, simplifiedDrivers))
 
 main_heatmap_data <- function(sourceData, cancerTypeSamples) {
   heatmapData = sourceData %>%
@@ -110,6 +106,8 @@ oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
   column_title = "  ",
   oncoMat, 
+  row_names_gp = gpar(fontsize = 9),
+  column_names_gp = gpar(fontsize = 9),
   row_order = sortedOncoGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
@@ -120,7 +118,7 @@ oncoHeatmap = Heatmap(
     if (oncoMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(heat_map_text(oncoMat[i, j]), x, y, gp=gpar(fontsize=9, col = myColor))
+    grid.text(heat_map_text(oncoMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
   }
 )
 
@@ -139,11 +137,10 @@ oncoDriversAnnotation = rowAnnotation(
 )
 
 oncoDriversAnnotationIndex = rowAnnotation(
-  df = data.frame(Driver = oncoDrivers),
-  col = list(Driver = oncoDriverColours),
+  df = data.frame(Driver = simplifiedDrivers),
+  col = list(Driver = simplifiedDriverColours),
   width = unit(0, "cm"),
   annotation_legend_param = list(title = "")
-
 )
 
 oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
@@ -152,6 +149,8 @@ tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
   column_title = "  ",
   tsgMat, 
+  row_names_gp = gpar(fontsize = 9),
+  column_names_gp = gpar(fontsize = 9),
   row_order = sortedTsgGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
@@ -161,7 +160,7 @@ tsgHeatmap = Heatmap(
     if (tsgMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(heat_map_text(tsgMat[i, j]), x, y, gp=gpar(fontsize=9, col = myColor))
+    grid.text(heat_map_text(tsgMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
   }
 )
 
@@ -180,7 +179,6 @@ tsgBiallelicAnnotation = rowAnnotation(
   width = unit(2, "cm")
 )
 
-
 tsgDriversAnnotation = rowAnnotation(
   Drivers = row_anno_barplot(tsgDriversAnnotationData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgDriverColours), border = F), 
   width = unit(3, "cm"),
@@ -196,6 +194,7 @@ tsgDriversAnnotationIndex = rowAnnotation(
   
 )
 
+tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation
 tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation + tsgDriversAnnotationIndex
 
 
@@ -211,15 +210,10 @@ tidyDriversByCancerType = hpcDriversByGene %>% group_by(cancerType, driver, type
 tidyDriversByCancerTypeLevels = hpcDriversByGene %>% group_by(cancerType) %>% summarise(driverLikelihood = sum(driverRate)) %>% arrange(-driverLikelihood)
 tidyDriversByCancerType$cancerType = factor(tidyDriversByCancerType$cancerType, levels= tidyDriversByCancerTypeLevels$cancerType)
 
-allDrivers = c("Fusion", "Del","FragileDel","Multihit","Nonsense","Splice","Promoter","Missense","Indel","Amp")
-allDrivers = factor(allDrivers, levels = allDrivers)
-allDriverColours = c("#fdb462","#8dd3c7","#fccde5","#b3de69","#80b1d3","#ffffb3","#ffffb3","#bebada","#fb8072","#80b1d3")
-allDriverColours = setNames(allDriverColours, allDrivers)
-
 ggplot(data=tidyDriversByCancerType, aes(x = cancerType, y = driverLikelihood)) +
   geom_bar(aes(fill = driver), stat = "identity") +
   xlab("Cancer Type") + ylab("Mean Driver Count Per Sample") +
-  scale_color_manual(values=allDriverColours) +
+  scale_color_manual(values=simplifiedDriverColours) +
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 8), legend.position="bottom",
         panel.grid.major = element_blank(),panel.grid.minor = element_blank(),panel.border = element_blank()) +
   coord_flip()# + facet_wrap(~type)
