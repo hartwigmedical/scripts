@@ -194,7 +194,7 @@ tsgDriversAnnotationIndex = rowAnnotation(
   
 )
 
-tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation
+tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
 tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation + tsgDriversAnnotationIndex
 
 
