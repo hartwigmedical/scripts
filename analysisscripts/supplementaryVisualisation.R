@@ -18,7 +18,7 @@ highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice") 
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9")
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
-save(simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDriverColours.RData")
+save(simplifiedDrivers, simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDrivers.RData")
 
 
 ########################################### Clonality
@@ -353,6 +353,69 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
 plot_grid(p1,p2, ncol = 2, rel_widths =  c(2,3), labels = "AUTO")
 
 dev.off()
+
+##################################################### MSI ##################################################### 
+
+load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+msiData = highestPurityCohortSummary %>% select(sampleId, cancerType, msiScore, msiStatus)
+msiRelativeData = msiData %>% group_by(cancerType, msiStatus) %>% count() %>% group_by(cancerType) %>% mutate(percentage = n / sum(n)) 
+msiRelativeData = msiData %>% filter(cancerType != 'Other') %>% group_by(cancerType, msiStatus) %>% count() %>% spread(msiStatus, n, fill = 0) %>% mutate(percentage = MSI /(MSS + MSI)) %>% arrange(percentage)
+msiRelativeData = msiRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiRelativeData$cancerType))
+
+p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
+  geom_bar(stat = "identity", aes(fill = cancerType)) + ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
+  scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
+  scale_fill_manual(values = cancerTypeColours) +
+  theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.ticks = element_blank()) +
+  theme(legend.position = "none") +
+  coord_flip()
+
+p2 = ggplot(data = msiData) +
+  stat_ecdf(geom = "point", aes(msiScore), shape = 4) +
+  annotate("text", x = 7, y = 0, label = "MSI Cutoff", size = 3, hjust = 0) +
+  geom_segment(aes(x = 4, xend = 4, y = 0, yend = 1), linetype = 2) +
+  coord_cartesian(xlim = c(0, 10)) +
+  scale_y_continuous(labels = percent)+#, expand=c(0.02, 0.001)) +
+  xlab("Indels Per Mb") + ylab("% Samples") + ggtitle("") +
+  theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.ticks = element_blank()) +
+  coord_flip()
+
+
+plot_grid(p1, p2, ncol = 2, labels = "AUTO")
+
+
+##################################################### TMB ##################################################### 
+
+load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+tmbData = highestPurityCohortSummary %>% select(sampleId, cancerType, TOTAL_SNV) %>% mutate(TMBScore = TOTAL_SNV / 3095, Burden = TMBScore >= 10)
+tmbRelativeData = msiData %>% group_by(cancerType, msiStatus) %>% count() %>% group_by(cancerType) %>% mutate(percentage = n / sum(n)) 
+tmbRelativeData = msiData %>% filter(cancerType != 'Other') %>% group_by(cancerType, msiStatus) %>% count() %>% spread(msiStatus, n, fill = 0) %>% mutate(percentage = MSI /(MSS + MSI)) %>% arrange(percentage)
+tmbRelativeData = msiRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiRelativeData$cancerType))
+
+p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
+  geom_bar(stat = "identity", aes(fill = cancerType)) + ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
+  scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
+  scale_fill_manual(values = cancerTypeColours) +
+  theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.ticks = element_blank()) +
+  theme(legend.position = "none") +
+  coord_flip()
+
+p2 = ggplot(data = msiData) +
+  stat_ecdf(geom = "point", aes(msiScore), shape = 4) +
+  annotate("text", x = 7, y = 0, label = "MSI Cutoff", size = 3, hjust = 0) +
+  geom_segment(aes(x = 4, xend = 4, y = 0, yend = 1), linetype = 2) +
+  coord_cartesian(xlim = c(0, 10)) +
+  scale_y_continuous(labels = percent)+#, expand=c(0.02, 0.001)) +
+  xlab("Indels Per Mb") + ylab("% Samples") + ggtitle("") +
+  theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
+  theme(axis.ticks = element_blank()) +
+  coord_flip()
+
+
+plot_grid(p1, p2, ncol = 2, labels = "AUTO")
 
 
 
