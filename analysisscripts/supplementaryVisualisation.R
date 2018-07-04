@@ -52,89 +52,53 @@ clonalityLoad2 = highestPurityCohortSummary %>%
   gather(clonality, value, CLONAL, SUBCLONAL) %>%
   mutate(percentage = value / total) %>%
   filter(clonality == 'CLONAL') %>%
-  mutate(clonality = factor(clonality, clonalityFactor), type = 'All')
+  mutate(
+    clonality = factor(clonality, clonalityFactor), 
+    type = 'All')
 
-clonalityLevels = clonalityLoad %>% group_by(cancerType) %>% summarise(percentage = mean(percentage)) %>% arrange(-percentage)
-clonalityLoad = clonalityLoad %>% 
-  ungroup() %>% 
-  mutate(cancerType = factor(cancerType, clonalityLevels$cancerType))
-
-clonalityDrivers = hpcDriversByGene %>%
-  filter(!is.na(clonality)) %>%
-  mutate(clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
-  group_by(cancerType, clonality) %>%
-  summarise(driverLikelihood = sum(driverLikelihood)) %>%
-  group_by(cancerType) %>%
-  mutate(total = sum(driverLikelihood)) %>%
-  mutate(percentage = driverLikelihood / total)%>%
-  mutate(clonality = factor(clonality, clonalityFactor), type = 'Drivers') %>%
-  ungroup() %>%
-  mutate(cancerType = factor(cancerType, clonalityLevels$cancerType))
-clonalityDriverTotal = clonalityDrivers %>% filter(clonality == 'CLONAL') %>% ungroup() %>% summarise(driverLikelihood = sum(driverLikelihood), total = sum(total), panCancerPercentage = driverLikelihood / total)
-clonalityDrivers = clonalityDrivers %>% mutate(panCancerPercentage = clonalityDriverTotal$panCancerPercentage) %>% filter(cancerType != 'Other')
-
+samplesPerPurityBucket = clonalityLoad2 %>% group_by(purityBucket) %>% count()
 
 clonalityDrivers2 = hpcDriversByGene %>%
   left_join(highestPurityCohortSummary %>% select(sampleId, purityBucket), by = "sampleId") %>%
   filter(!is.na(clonality)) %>%
   mutate(clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
   group_by(purityBucket, clonality) %>%
-  summarise(driverLikelihood = sum(driverLikelihood)) %>%
-  group_by(purityBucket) %>%
-  mutate(total = sum(driverLikelihood)) %>%
-  mutate(percentage = driverLikelihood / total)%>%
-  mutate(clonality = factor(clonality, clonalityFactor), type = 'Drivers') %>%
-  ungroup()
-
-p1 = ggplot(clonalityLoad, aes(cancerType, percentage)) + 
-  geom_violin( fill = "#31a354", scale = "width") +
-  stat_summary(fun.y=mean, geom="point", shape=20, size=2) +
+  summarise(driverLikelihood = sum(driverLikelihood)) %>% 
+  spread(clonality, driverLikelihood) %>%
+  mutate(subclonalPercentage = SUBCLONAL / (CLONAL + SUBCLONAL))
+  
+p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) + 
+  geom_bar(fill = "#31a354", stat = "identity") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  ggtitle("") + xlab("Cancery Type") + ylab("% of variants clonal") + 
-  scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.01, 0.01)) +
+  ggtitle("") + xlab("Tumor Purity") + ylab("Count of samples") + 
+  scale_y_continuous(expand=c(0.01, 0.01)) +
   theme(legend.position="none") +
   coord_flip() 
 
-p2 = ggplot(data = clonalityDrivers, aes(x = cancerType, y = percentage, width = 0.7)) +
-  geom_bar(aes(fill = clonality), stat = "identity") + 
-  xlab("") + ylab("% of driver variants clonal") + ggtitle("") + 
-  theme(legend.position="none", legend.title = element_blank()) +
-  scale_fill_manual(values = c("#e5f5e0", "#31a354")) +
-  #scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  scale_y_continuous(labels = percent, expand=c(0.02, 0.02), limits = c(0, 1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
-  geom_line(aes(x = as.numeric(cancerType), y = panCancerPercentage), linetype = 2) +
-  annotate("text", x = 20, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = "Pan Cancer", size = 3, hjust = 1) +
-  annotate("text", x = 19, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = sprintf(fmt='(%.1f%%)', 100*clonalityDriverTotal$panCancerPercentage), size = 3, hjust = 1) +
-  coord_flip()
-
-
-p3 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
-  geom_violin( fill = "#31a354", scale = "width") +
+p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
+  geom_violin(fill = "#31a354", scale = "width") +
   stat_summary(fun.y=mean, geom="point", shape=20, size=2) +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  ggtitle("") + xlab("Tumor Purity") + ylab("% of variants clonal") + 
+  ggtitle("") + xlab("") + ylab("% of variants clonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.01, 0.01)) +
   theme(legend.position="none") +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip() 
 
-p4 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = percentage, width = 0.7)) +
-  geom_bar(aes(fill = clonality), stat = "identity") + 
-  xlab("") + ylab("% of driver variants clonal") + ggtitle("") + 
-  theme(legend.position="none", legend.title = element_blank()) +
-  scale_fill_manual(values = c("#e5f5e0", "#31a354")) +
-  #scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  scale_y_continuous(labels = percent, expand=c(0.02, 0.02), limits = c(0, 1)) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.text.y=element_blank(), axis.ticks.y=element_blank()) +
-  #geom_line(aes(x = as.numeric(purityBucket), y = panCancerPercentage), linetype = 2) +
-  #annotate("text", x = 20, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = "Pan Cancer", size = 3, hjust = 1) +
-  #annotate("text", x = 19, y = clonalityDriverTotal$panCancerPercentage - 0.01, label = sprintf(fmt='(%.1f%%)', 100*clonalityDriverTotal$panCancerPercentage), size = 3, hjust = 1) +
+p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
+  geom_bar(fill = "#31a354", stat = "identity") + 
+  xlab("") + ylab("% of driver variants subclonal") + ggtitle("") + 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 0.06)) +
+  theme(legend.position="none") +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip()
+
+plot_grid(p1,p2, p3, ncol = 3, labels="AUTO")
+
 
 pdf(file='~/hmf/supplementaryVisualisaion.pdf', onefile=T, paper='A4') 
-plot_grid(p1,p2, p3, p4, ncol = 2, rel_heights = c(4, 2), labels="AUTO")
 
 ######### Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
@@ -425,8 +389,8 @@ plot_grid(p1,p2, p3, p4, ncol = 2, nrow = 2, labels = "AUTO")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 
 ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Cutoff", size = 3, hjust = 0) +
-  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB Cutoff", size = 3, hjust = 0) +
+  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
+  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB = 10 per Mb", size = 3, hjust = 0) +
   geom_point(aes(shape = msiStatus, color = cancerType)) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
