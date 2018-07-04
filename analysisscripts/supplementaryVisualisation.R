@@ -377,9 +377,10 @@ p2 = ggplot(data = msiData) +
   geom_segment(aes(x = 4, xend = 4, y = 0, yend = 1), linetype = 2) +
   coord_cartesian(xlim = c(0, 10)) +
   scale_y_continuous(labels = percent)+#, expand=c(0.02, 0.001)) +
-  xlab("Indels Per Mb") + ylab("% Samples") + ggtitle("") +
+  xlab("MSI Score") + ylab("% Samples") + ggtitle("") +
   theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
   theme(axis.ticks = element_blank()) +
+  #scale_x_log10() +
   coord_flip()
 
 
@@ -389,35 +390,57 @@ plot_grid(p1, p2, ncol = 2, labels = "AUTO")
 ##################################################### TMB ##################################################### 
 
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
-tmbData = highestPurityCohortSummary %>% select(sampleId, cancerType, TOTAL_SNV) %>% mutate(TMBScore = TOTAL_SNV / 3095, Burden = TMBScore >= 10)
-tmbRelativeData = msiData %>% group_by(cancerType, msiStatus) %>% count() %>% group_by(cancerType) %>% mutate(percentage = n / sum(n)) 
-tmbRelativeData = msiData %>% filter(cancerType != 'Other') %>% group_by(cancerType, msiStatus) %>% count() %>% spread(msiStatus, n, fill = 0) %>% mutate(percentage = MSI /(MSS + MSI)) %>% arrange(percentage)
-tmbRelativeData = msiRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiRelativeData$cancerType))
+tmbData = highestPurityCohortSummary %>% select(sampleId, cancerType, TOTAL_SNV) %>% mutate(TMBScore = TOTAL_SNV / 3095, Burden = ifelse(TMBScore >= 10, "Burdened","Unburdened"))
+tmbRelativeData = tmbData %>% filter(cancerType != 'Other') %>% group_by(cancerType, Burden) %>% count() %>% spread(Burden, n, fill = 0) %>% mutate(percentage = Burdened /(Burdened + Unburdened)) %>% arrange(percentage)
+tmbRelativeData = tmbRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, tmbRelativeData$cancerType))
 
-p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
-  geom_bar(stat = "identity", aes(fill = cancerType)) + ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
-  scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
+p3 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) + 
+  geom_bar(stat = "identity", aes(fill = cancerType)) + ylab("% of samples with TMB > 10/Mb") + xlab("Cancer Type") + ggtitle("") +
+  scale_y_continuous(limits = c(0, 0.7), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
   theme(axis.ticks = element_blank()) +
   theme(legend.position = "none") +
   coord_flip()
 
-p2 = ggplot(data = msiData) +
-  stat_ecdf(geom = "point", aes(msiScore), shape = 4) +
-  annotate("text", x = 7, y = 0, label = "MSI Cutoff", size = 3, hjust = 0) +
-  geom_segment(aes(x = 4, xend = 4, y = 0, yend = 1), linetype = 2) +
-  coord_cartesian(xlim = c(0, 10)) +
+p4 = ggplot(data = tmbData) +
+  stat_ecdf(geom = "point", aes(TMBScore), shape = 4) +
+  annotate("text", x = 23, y = 0, label = "TMB Cutoff", size = 3, hjust = 0) +
+  geom_segment(aes(x = 10, xend = 10, y = 0, yend = 1), linetype = 2) +
   scale_y_continuous(labels = percent)+#, expand=c(0.02, 0.001)) +
-  xlab("Indels Per Mb") + ylab("% Samples") + ggtitle("") +
+  xlab("SNVs Per Mb") + ylab("% Samples") + ggtitle("") +
   theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
   theme(axis.ticks = element_blank()) +
+  #scale_x_log10() +
   coord_flip()
 
 
-plot_grid(p1, p2, ncol = 2, labels = "AUTO")
+plot_grid(p3, p4, ncol = 2, labels = "AUTO")
+
+plot_grid(p1,p2, p3, p4, ncol = 2, nrow = 2, labels = "AUTO")
+
+###################################################### INDELS V SNV
 
 
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+
+ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
+  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Cutoff", size = 3, hjust = 0) +
+  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB Cutoff", size = 3, hjust = 0) +
+  geom_point(aes(shape = msiStatus, color = cancerType)) + 
+  scale_color_manual(values = cancerTypeColours) + 
+  scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
+  scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
+  xlab("SNVs") + ylab("Indels")
+
+
+ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV)) +
+  stat_ecdf(geom = "point", pad = FALSE, aes(shape = msiStatus)) 
+
+
+
+
+highestPurityCohortSummary[highestPurityCohortSummary$msiStatus == T, ]
 
 ######################################################
 
