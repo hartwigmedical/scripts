@@ -2,29 +2,29 @@ library(dplyr)
 library(tidyr)
 library(scales)
 
-
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 actionableVariants = read.table('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t')
-treatmentTypeFactors = rev(c("MSI", "A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel"))
-treatmentTypeColors = setNames(c("#fff7bc","#fee391","#fe9929","#993404","green"), treatmentTypeFactors)
-treatmentTypeColors = setNames(c("#f0f9e8","#bae4bc","#7bccc4","#43a2ca","#0868ac"), treatmentTypeFactors)
+treatmentTypeFactors = rev(c("A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel"))
+treatmentTypeColors = setNames(c("#fff7bc","#fee391","#fe9929","#993404"), treatmentTypeFactors)
+treatmentTypeColors = setNames(c("#f0f9e8","#bae4bc","#43a2ca","#0868ac"), treatmentTypeFactors)
 
-#jon = factor(c("B_OnLabel", "B_OnLabel", "B_OffLabel", "A_OnLabel", "A_OffLabel", "MSI"), treatmentTypeFactors)
-#data.frame(jon = jon) %>% top_n(1, jon)
+unique(actionableVariants$source)
+#actionableVariants = actionableVariants %>% filter(source == 'oncoKb')
 
 msiResponsive = highestPurityCohortSummary %>% 
   filter(msiStatus == 'MSI', cancerType != 'Other') %>% 
   select(sampleId, patientCancerType = cancerType) %>% 
-  mutate(drug = "MSI", treatmentType = factor("MSI", treatmentTypeFactors))
+  mutate(drug = "MSI", treatmentType = factor("A_OnLabel", treatmentTypeFactors))
 
-responsive = actionableVariants %>% 
+responsiveDrugs = actionableVariants %>% 
   filter(
+   !gene %in% c('PTEN','KRAS'),
     hmfLevel %in% c('A','B'),
     !level %in% c('Early trials'),
     hmfResponse %in% c('Responsive')) %>%
   mutate(
-    treatmentType = ifelse(treatmentType == "On-label","OnLabel", "OffLabel")) %>%
+    treatmentType = ifelse(treatmentType == "On-label", "OnLabel", "OffLabel")) %>%
   group_by(sampleId,patientCancerType, drug, treatmentType, hmfLevel) %>%
   count() %>% 
   unite(treatmentType, hmfLevel, treatmentType) %>%
@@ -34,8 +34,26 @@ responsive = actionableVariants %>%
   select(-n) %>%
   bind_rows(msiResponsive)
 
-resistant = actionableVariants %>% 
+responsiveDrugGenes = actionableVariants %>% 
   filter(
+    !gene %in% c('PTEN','KRAS'),
+    hmfLevel %in% c('A','B'),
+    !level %in% c('Early trials'),
+    hmfResponse %in% c('Responsive')) %>%
+  mutate(
+    treatmentType = ifelse(treatmentType == "On-label", "OnLabel", "OffLabel")) %>%
+  group_by(sampleId,patientCancerType, drug, gene, treatmentType, hmfLevel) %>%
+  count() %>% 
+  unite(treatmentType, hmfLevel, treatmentType) %>%
+  mutate(treatmentType = factor(treatmentType, treatmentTypeFactors)) %>%
+  group_by(sampleId,patientCancerType, drug, gene) %>%
+  top_n(1, treatmentType) %>% 
+  select(-n) %>%
+  bind_rows(msiResponsive)
+
+resistantDrugs = actionableVariants %>% 
+  filter(
+    #!gene %in% c('TP53','RB1'),
     hmfLevel %in% c('A','B'),
     !level %in% c('Early trials'),
     hmfResponse %in% c('Resistant')) %>%
@@ -49,7 +67,7 @@ resistant = actionableVariants %>%
   top_n(1, treatmentType) %>% 
   select(-n)
 
-actionable = merge(responsive,resistant,by=c('sampleId','patientCancerType','drug'),all=T,suffixes=c('_Response','_Resistance'), fill=0) %>%
+actionableDrugs = merge(responsiveDrugs,resistantDrugs,by=c('sampleId','patientCancerType','drug'),all=T,suffixes=c('_Response','_Resistance'), fill=0) %>%
   mutate(
     responsive = !is.na(treatmentType_Response) & is.na(treatmentType_Resistance),
     resistant = is.na(treatmentType_Response) & !is.na(treatmentType_Resistance),  
@@ -58,14 +76,24 @@ actionable = merge(responsive,resistant,by=c('sampleId','patientCancerType','dru
     status = ifelse(inconsistent, "Inconsistent", status)
     ) 
 
-actionableSummary = actionable %>%
-  group_by(sampleId, patientCancerType, status) %>% count() %>%
+actionableDrugsSummary = actionableDrugs %>%
+  group_by(sampleId, patientCancerType, drug, status) %>% count() %>%
   spread(status, n) 
 
-inconsistent = actionable %>% filter(status == "Inconsistent")
+actionableSampleSummary = actionableDrugs %>%
+  group_by(sampleId, patientCancerType, status) %>% count() %>%
+  spread(status, n) %>% arrange(Inconsistent, Responsive)
+  
 
-actionablePlotData = actionable %>%
-  filter(status == "Responsive") %>%
+drugResponseSummary = actionableDrugs %>% filter(responsive) %>% distinct(sampleId, drug) %>% group_by(drug) %>% count()
+geneResponseSummary = inner_join(responsiveDrugGenes, actionableDrugs %>% filter(responsive) %>% select(sampleId, drug, responsive), by = c("sampleId","drug")) %>%
+  ungroup() %>%
+  distinct(sampleId, gene) %>%
+  group_by(gene) %>%
+  count()
+
+actionablePlotData = actionableDrugs %>%
+  filter(responsive) %>%
   group_by(patientCancerType, sampleId) %>%
   top_n(1, treatmentType_Response) %>%
   summarise(treatmentType_Response = dplyr::first(treatmentType_Response)) %>%
@@ -81,7 +109,7 @@ actionablePlotDataFactors= actionablePlotData %>%
   group_by(patientCancerType) %>% 
   spread(treatmentType_Response, n, fill = 0) %>%
   mutate(
-    APercent = (A_OffLabel + A_OnLabel + MSI) / N,
+    APercent = (A_OffLabel + A_OnLabel) / N,
     BPercent = B_OnLabel / N) %>%
   arrange(APercent, BPercent)
 
@@ -98,4 +126,10 @@ ggplot(data = actionablePlotData, aes(x = patientCancerType, y = percentage)) +
   theme(legend.position = "bottom", legend.title = element_blank()) +
   theme(axis.ticks = element_blank()) +
   coord_flip()
+
+
+plot_grid(pAll, pCivic, pCgi, pOnco)
+
+
+ 
 
