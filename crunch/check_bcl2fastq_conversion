@@ -27,9 +27,9 @@ my @SUM_FIELDS = qw( submission id name yld q30 );
 
 my $MAX_UNDET = 4; # percentage
 my $MIN_Q30 = 75;
-my $YIELD_FACTOR = 1e9;
-my $MIN_YIELD_PER_SAMPLE = 3e9 / $YIELD_FACTOR;
-my $MIN_YIELD_PER_LANE = 100e9 / $YIELD_FACTOR;
+my $YIELD_FACTOR = 1e6;
+my $MIN_YIELD_PER_SAMPLE = 3e9;
+my $MIN_YIELD_PER_LANE = 100e9;
 
 my $RUN_PATH;
 my $JSON_PATH;
@@ -46,11 +46,11 @@ my $HELP =<<HELP;
     $SCRIPT -json \${json-path}
     
   Options
-    -sep <s>               Output sep (<TAB>)
+    -sep <s>               Output sep (default = <TAB>)
     -min_q30 <i>           Percentage ($MIN_Q30)
     -max_undet_perc <i>    Percentage ($MAX_UNDET)
-    -min_lane_yield <i>    QC Lane Yield ($MIN_YIELD_PER_LANE) will be multiplied by $YIELD_FACTOR
-    -min_sample_yield <i>  QC Sample Yield ($MIN_YIELD_PER_SAMPLE) will be multiplied by $YIELD_FACTOR
+    -min_lane_yield <i>    QC Lane Yield ($MIN_YIELD_PER_LANE)
+    -min_sample_yield <i>  QC Sample Yield ($MIN_YIELD_PER_SAMPLE)
     -samplesheet <s>       Path to SampleSheet.csv file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
@@ -83,8 +83,6 @@ die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_
 die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
 die "[EXIT] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
 
-$MIN_YIELD_PER_SAMPLE = $MIN_YIELD_PER_SAMPLE * $YIELD_FACTOR;
-$MIN_YIELD_PER_LANE   = $MIN_YIELD_PER_LANE * $YIELD_FACTOR;
 $JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
 $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_PATH);
 
@@ -316,6 +314,7 @@ sub parseJsonInfo{
 sub printTable{
     my ($info, $fields) = @_;
 
+    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'hmf_runname'}, 
@@ -332,7 +331,8 @@ sub printTable{
 
 sub printSummaryTable{
     my ($info, $fields) = @_;
-    
+   
+    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'identifier'}, 
@@ -410,7 +410,6 @@ sub readSampleSheet{
     return( \%output );
 }
 
-## input "0.123" gives output "0.12"
 sub round{
     my ($number, $decimal) = @_;
     if ( not defined $number ){
@@ -428,5 +427,3 @@ sub commify {
     1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
     return $_;
 }
-
-
