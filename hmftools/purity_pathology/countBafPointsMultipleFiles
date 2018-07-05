@@ -1,0 +1,12 @@
+#!/bin/bash
+
+count=0
+cd /data/cpct/runs/
+sets=$( ls | tail -100 | tr "\n" " " )
+for set in ${sets}
+do
+	count=$[${count}+1]
+	echo ${count}
+	echo ${set}
+	purity_pathology_pilot ${set} ${count}
+done
