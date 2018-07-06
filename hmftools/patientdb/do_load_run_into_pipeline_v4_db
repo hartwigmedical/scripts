@@ -26,5 +26,5 @@ ${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} $
 sv_jar=/data/common/tools/variantannotator_v1.3/variant-annotator.jar
 
 echo "[INFO] Loading sv variants"
-${prefix}../svloader/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar}
+${prefix}/../svloader/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar}
 
