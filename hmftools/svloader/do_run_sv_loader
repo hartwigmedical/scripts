@@ -22,8 +22,13 @@ ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
-    echo "Unable to locate bpi structural variants. Exiting."
-    exit 1
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
 fi
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
