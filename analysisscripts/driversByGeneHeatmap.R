@@ -143,7 +143,11 @@ oncoDriversAnnotationIndex = rowAnnotation(
   annotation_legend_param = list(title = "")
 )
 
-oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
+pOnco = oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
+png(file = "~/hmf/RPlot/Figure 3 - Onco.png", width = 10, height = 7, units = "in", res = 217)
+pOnco
+dev.off()
+
 
 tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
@@ -194,10 +198,12 @@ tsgDriversAnnotationIndex = rowAnnotation(
   
 )
 
-tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
+pTSG = tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
 tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation + tsgDriversAnnotationIndex
 
-
+png(file = "~/hmf/RPlot/Figure 3 - TSG.png", width = 10, height = 7, units = "in", res = 217)
+pTSG
+dev.off()
 
 ####################
 ### Drivers per sample by driver Type
