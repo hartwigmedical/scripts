@@ -34,7 +34,7 @@ exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -center_csv "$center_csv" \
     -signature "$signature" \
     -ensembl_db "$ensembl_db" \
-    -ensembl_db_local \
+    -local_ensembl \
     -db_user "$db_user" \
     -db_pass "$db_pass" \
     -fasta_file_location "$ref_genome" \
