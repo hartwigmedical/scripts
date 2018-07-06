@@ -3,6 +3,7 @@
 
 detach("package:purple", unload=TRUE)
 library(purple)
+library(tidyr)
 library(dplyr)
 library(multidplyr)
 library(doParallel)
@@ -54,7 +55,7 @@ olCopyNumbers = cbind(bin = ol[, 1], highestPurityCopyNumbers[ol[, 2], c("sample
 no_cores <- 7
 cl<-makeCluster(no_cores, type="FORK"); date()
 binSampleSummary = olCopyNumbers %>% partition(bin, sampleId, cluster = cl) %>%
-  summarise(cancerType = first(cancerType),
+  summarise(cancerType = dplyr::first(cancerType),
             loh = any(loh), absDel = any(absDel), relDel = any(relDel), amp1_4 = any(amp1_4), amp2_0 = any(amp2_0), amp3_0 = any(amp3_0))  %>%
   collect() %>%
   as_tibble()
@@ -199,8 +200,8 @@ for (location in primaryTumorLocations) {
   locationString = gsub(" ", "", location, fixed = TRUE)
   locationString = gsub("/", "", locationString, fixed = TRUE)
 
-  #cmd = paste0("sed 's/CANCER/", locationString,"/g' circos.template > ",locationString,".conf\n")
-  cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
+  cmd = paste0("sed 's/CANCER/", locationString,"/g' circos.template > ",locationString,".conf\n")
+  #cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
   cat(cmd)
 }
 
