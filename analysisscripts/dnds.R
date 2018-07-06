@@ -75,19 +75,28 @@ mbUnfilteredOutput = dndscv(mbUnfilteredSomatics, refdb=refdb, kc=kc, cv=cv, sto
 dndsUnfilteredMultipleBiopsyMutations = mbUnfilteredOutput$annotmuts
 save(dndsUnfilteredMultipleBiopsyMutations, file = "~/hmf/RData/processed/mbExonicSomaticsDndsAnnotated.RData")
 
+
 #################### PCAWG dNdS #########################
+HmfCancerTypes = 
+  c("All", "Urinary tract", "CNS", "Breast", "Colon/Rectum", "Esophagus", "Head and neck", "Kidney", "Liver", "Lung", "Skin", "Mesothelioma", "Ovary", "Pancreas",
+    "Prostate", "Bone/Soft tissue", "Stomach", "Uterus")
+PcawgCancerTypes = 
+  c("PANCANCER","BLCA", "GBM","BRCA", "COREAD", "ESCA", "HNSC","KIRC","LIHC","LUAD","SKCM","MESO","OV","PAAD","PRAD","SARC","STAD","UCEC")
+CancerMap = data.frame(hmf = HmfCancerTypes, pcawg = PcawgCancerTypes, stringsAsFactors = F)
+CancerMap[!CancerMap$hmf %in% cancerTypes, ]
+
 PcawgRefCDSCv = read.delim("~/hmf/dnds/dNdScv_output_PANCANCER.txt", stringsAsFactors = FALSE)
 PcawgRefCDSCv$cancerType <- "All"
-for (i in 2:nrow(CancerMap)) {
+for (i in 1:nrow(CancerMap)) {
+
   cancerType = CancerMap[i, 1]
+  cat("Processing ", cancerType, "\n")
   file = paste("~/hmf/dnds/dNdScv_output_", CancerMap[i, 2],".txt", sep = "")
   df = read.delim(file, stringsAsFactors = FALSE)
   df$cancerType <- cancerType
   PcawgRefCDSCv = rbind(PcawgRefCDSCv, df)
 }
-save(PcawgRefCDSCv, file = "~/hmf/RData/output/PcawgRefCDSCv.RData")
-
-
+save(PcawgRefCDSCv, file = "~/hmf/RData/Reference/PcawgRefCDSCv.RData")
 
 #################### PCAWG Null Hypothosis #########################
 loadPcawgNullHypothesis<-function(file, RefCDS) {
@@ -103,28 +112,19 @@ loadPcawgNullHypothesis<-function(file, RefCDS) {
   return (NullHypothesis)
 }
 
-
-HmfCancerTypes = 
-  c("All", "Urinary tract", "CNS", "Breast", "Colon/Rectum", "Esophagus", "Head and neck", "Kidney", "Liver", "Lung", "Skin", "Mesothelioma", "Ovary", "Pancreas",
-    "Prostate", "Bone/Soft tissue", "Stomach", "Uterus")
-PcawgCancerTypes = 
-  c("PANCANCER","BLCA", "GBM","BRCA", "COREAD", "ESCA", "HNSC","KIRC","LIHC","LUAD","SKCM","MESO","OV","PAAD","PRAD","SARC","STAD","UCEC")
-CancerMap = data.frame(hmf = HmfCancerTypes, pcawg = PcawgCancerTypes, stringsAsFactors = F)
-CancerMap[!CancerMap$hmf %in% cancerTypes, ]
-
 HmfRefCDSCvNullPcawgList = list()
-for (i in 1:nrow(CancerMap)) {
+for (i in 2:nrow(CancerMap)) {
   cancerType = CancerMap[i, 1]
   file = paste("~/hmf/dnds/dNdScv_output_", CancerMap[i, 2],".txt", sep = "")
   null_hypothesis = loadPcawgNullHypothesis(file, RefCDS)
   
   cat(file, nrow(null_hypothesis), "\n")
   cat("Processing", cancerType)
-  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$primaryTumorLocation) & highestPurityCohort$primaryTumorLocation == cancerType, c("sampleId")]
+  cancerTypeSampleIds = highestPurityCohort[!is.na(highestPurityCohort$cancerType) & highestPurityCohort$cancerType == cancerType, c("sampleId")]
   if (cancerType == "All") {
     input = somatics
   } else {
-    input = somatics[somatics$sampleId %in% cancerTypeSampleIds, c("sampleId", "chr", "pos", "ref", "alt")]
+    input = somatics[somatics$sampleId %in% cancerTypeSampleIds$sampleId, c("sampleId", "chr", "pos", "ref", "alt")]
   }
   output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, null_hypothesis = null_hypothesis)
   
@@ -132,7 +132,7 @@ for (i in 1:nrow(CancerMap)) {
 }
 
 HmfRefCDSCvNullPcawg = create_data_frame(HmfRefCDSCvNullPcawgList)
-save(HmfRefCDSCvNullPcawg, file = "~/hmf/RData/output/HmfRefCDSCvNullPcawg.RData")
+save(HmfRefCDSCvNullPcawg, file = "~/hmf/RData/Processed/HmfRefCDSCvNullPcawg.RData")
 
 
 #################### HmfRefCDSCv Excluding Cancer Type #########################
