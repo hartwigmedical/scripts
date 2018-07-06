@@ -25,7 +25,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'entities'  => [ 'name', 'bucket', 'sbp_id' ],
   'inis'      => [ 'name', 'sbp_id' ],
   'linklog'   => [ 'time', 'username', 'entity', 'set', 'portal_name' ],
-  'shares'    => [ 'entity_id', 'entity', 'set_id', 'set', 'start_time', 'end_time', 'sbp_id' ],
+  'shares'    => [ 'entity_id', 'entity', 'set_id', 'set', 'start_time', 'end_time', 'filter', 'sbp_id' ],
   'stacks'    => [ 'name', 'revision', 'enabled', 'sbp_id' ],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
