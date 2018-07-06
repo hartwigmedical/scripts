@@ -8,8 +8,9 @@ actionableVariants = read.table('~/hmf/resources/actionableVariantsPerSample.tsv
 treatmentTypeFactors = rev(c("A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel"))
 treatmentTypeColors = setNames(c("#fff7bc","#fee391","#fe9929","#993404"), treatmentTypeFactors)
 treatmentTypeColors = setNames(c("#f0f9e8","#bae4bc","#43a2ca","#0868ac"), treatmentTypeFactors)
+treatmentTypeColors = setNames(rev(c("#2171b5","#6baed6","#bdd7e7","#eff3ff")), treatmentTypeFactors)
 
-unique(actionableVariants$source)
+#unique(actionableVariants$source)
 #actionableVariants = actionableVariants %>% filter(source == 'oncoKb')
 
 msiResponsive = highestPurityCohortSummary %>% 
@@ -117,19 +118,20 @@ actionablePlotData = actionablePlotData %>%
   ungroup() %>%
   mutate(patientCancerType = factor(patientCancerType, actionablePlotDataFactors$patientCancerType))
 
-ggplot(data = actionablePlotData, aes(x = patientCancerType, y = percentage)) +
+p1 = ggplot(data = actionablePlotData, aes(x = patientCancerType, y = percentage)) +
   geom_bar(stat = "identity", aes(fill = treatmentType_Response)) + 
   scale_fill_manual(values = treatmentTypeColors) +
-  ggtitle("Actionability") + xlab("Cancer Type") + ylab("% samples with treatment options") +
+  ggtitle("") + xlab("") + ylab("% Samples with treatment options") +
   scale_y_continuous(labels = percent, limits = c(0, 1), expand = c(0.02,0)) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(legend.position = "bottom", legend.title = element_blank()) +
   theme(axis.ticks = element_blank()) +
   coord_flip()
 
+pActionability = plot_grid(p1, labels = "AUTO")
+pActionability
 
-plot_grid(pAll, pCivic, pCgi, pOnco)
-
+save_plot("~/hmf/RPlot/Figure 8 - Actionable.png", pActionability, base_width = 6, base_height = 6)
 
  
 
