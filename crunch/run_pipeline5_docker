@@ -3,13 +3,15 @@
 WORKING_DIR=`pwd`
 PATIENT_DIR="/data/repos/testdata/cancerPanel/"
 REFERENCE_GENOME_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
+KNOWN_INDELS_DIR="/data/dbs/GATK_bundle_v2.8/"
 OUTPUT_DIR="${WORKING_DIR}/results"
 
 print_usage(){
     echo "Usage: run_pipeline_docker -v version [-p patientdir] [-r refgenomedir] [-o outputdir] [-c confdir] [-l]"
     echo "  -v version          Version of Pipeline2 docker container (Mandatory)"
     echo "  -p patientdir       Directory containing patient data for docker to mount (Optional default = ${PATIENT_DIR})"
-    echo "  -r refgenomedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_DIR})"
+    echo "  -r refgenomedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_GENOME_DIR})"
+    echo "  -r knownindelsdir   Directory containing known indels for docker to mount (Optional default = ${KNOWN_INDELS_DIR})"
     echo "  -o outputdir        Directory containing reference genome data for docker to mount (Optional default = ${OUTPUT_DIR})"
     echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
     echo "  -h maxheap size     The max heap size to use within the docker container. For example -h 128G will use a 128 gig heap"
@@ -17,10 +19,11 @@ print_usage(){
     exit 1
 }
 
-while getopts ':p:r:v:c:o:h:l' flag; do
+while getopts ':p:r:k:v:c:o:h:l' flag; do
   case "${flag}" in
     p) PATIENT_DIR=$OPTARG ;;
     r) REFERENCE_GENOME_DIR=$OPTARG ;;
+    k) KNOWN_INDELS_DIR=$OPTARG ;;
     c) CONF_DIR=$OPTARG;;
     o) OUTPUT_DIR=$OPTARG;;
     v) VERSION=$OPTARG ;;
@@ -36,7 +39,7 @@ then
     print_usage
 fi
 
-volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_GENOME_DIR}:/reference_genome/ -v ${OUTPUT_DIR}:/results -v ${OUTPUT_DIR}/tmp:/tmp -v ${OUTPUT_DIR}/logs:/logs"
+volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_GENOME_DIR}:/reference_genome/ -v ${KNOWN_INDELS_DIR}:/known_indels/ -v ${OUTPUT_DIR}:/results -v ${OUTPUT_DIR}/tmp:/tmp -v ${OUTPUT_DIR}/logs:/logs"
 
 if ! [ -z $CONF_DIR ]
 then
