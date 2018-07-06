@@ -2,7 +2,7 @@
 
 count=0
 cd /data/cpct/runs/
-sets=$( ls | tail -100 | tr "\n" " " )
+sets=$( ls | tail -n 125 | tr "\n" " " )
 for set in ${sets}
 do
 	count=$[${count}+1]
