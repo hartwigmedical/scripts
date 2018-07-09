@@ -86,7 +86,7 @@ get_least_contrib_buckets<-function(bucketSummaryData, worstN = 20) {
   return (top_n(bucketSummaryData, worstN, -Count) %>% arrange(Count))
 }
 
-plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN)
+plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN, title)
 {
   topNRows = nrow(sigBucketTopN)
   rowsPerColumn = 40
@@ -203,6 +203,8 @@ get_bucket_summary_plot<-function(bucketSummaryData, varType = "SV") {
 
 get_sample_bucket_data<-function(matrixData, origSampleCounts, bucketNames)
 {
+  # convert the matrix back into a dataframe organise by SampleId and Bucket
+  # and ensure that every bucket is in every sample, even if the count is zero
   data1 = t(matrixData)
   data2 = t(data1)
   data3 = cbind(Bucket = bucketNames, data2)

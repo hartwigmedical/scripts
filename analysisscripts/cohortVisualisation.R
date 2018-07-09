@@ -15,7 +15,7 @@ hpcCancerTypeCounts = highestPurityCohortSummary %>%
   group_by(cancerType) %>% 
   summarise(
     N = n(), 
-    medianMutationalLoad = median(CLONAL_SNP + SUBCLONAL_SNP + CLONAL_MNP + SUBCLONAL_MNP + CLONAL_INDEL + SUBCLONAL_INDEL )) %>% 
+    medianMutationalLoad = median(TOTAL_SNV + TOTAL_MNV + TOTAL_INDEL )) %>% 
   arrange(medianMutationalLoad)
 cancerTypeFactors =  factor(hpcCancerTypeCounts$cancerType, levels = hpcCancerTypeCounts$cancerType)
 
@@ -31,14 +31,18 @@ save(cancerTypeColours, file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 
 somaticColours = c("#a6611a","#dfc27d","#80cdc1","#018571")
 somaticColours = setNames(somaticColours, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
+somaticLinetypes = c("solid","dashed","dashed","solid")
+somaticLinetypes = setNames(somaticLinetypes, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
 
 indelSVColours = c("#d01c8b","#f1b6da","#b8e186","#4dac26")
 indelSVColours = setNames(indelSVColours, c("HMF INDEL","PCAWG INDEL", "PCAWG SV", "HMF SV"))
+indelSVLinetypes = c("solid","dashed","dashed","solid")
+indelSVLinetypes = setNames(indelSVLinetypes, c("HMF INDEL","PCAWG INDEL", "PCAWG SV", "HMF SV"))
 
 singleSubstitutionColours = c("#14B0EF","#060809","#E00714","#BFBEBF","#90CA4B","#E9BBB8")
 singleSubstitutionColours = setNames(singleSubstitutionColours, c("C>A", "C>G", "C>T", "T>A", "T>C", "T>G"))
 
-doubleSubstitutions = c("CC>TT","CC>AA","CC>NN","TC>NN","TT>NN","AC>NN","GC>NN","TG>NN","CT>NN","TA>NN","CG>NN","AT>NN","Other")
+doubleSubstitutions = c("CC>TT","CC>AA","CC>NN","TC>NN","TT>NN","AC>NN","GC>NN","TG>NN","CT>NN","TA>NN","CG>NN","AT>NN","3+Substitutions")
 doubleSubstitutionColours = c("#a6cee3","#1f78b4","#b2df8a","#33a02c","#fb9a99","#e31a1c","#fdbf6f","#ff7f00","#cab2d6","#6a3d9a","#ffff99","#b15928", "#060809")
 doubleSubstitutionColours = setNames(doubleSubstitutionColours, doubleSubstitutions)
 
@@ -66,12 +70,12 @@ cancerTypeData = highestPurityCohortSummary %>%
   filter(cancerType != "Other")
 
 hmfMutationalLoad = highestPurityCohortSummary %>% 
-  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNP"), ends_with("MNP"), BND, DEL, INS, INV, DUP) %>%
+  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNV"), ends_with("MNV"), BND, DEL, INS, INV, DUP) %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   mutate(
-    INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL,
-    MNV = INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
-    SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP + INCONSISTENT_MNP + SUBCLONAL_MNP + CLONAL_MNP,
+    INDEL = TOTAL_INDEL,
+    MNV = TOTAL_MNV,
+    SNV = TOTAL_SNV,
     SV = BND + DEL + INS + INV + DUP) 
 
 pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
@@ -131,8 +135,10 @@ hpcSNP$sampleId = factor(hpcSNP$sampleId, levels = unique(hpcSNP$sampleId))
 load(file = "~/hmf/RData/Reference/allMNPSummary.RData")
 hpcMNP = allMNPSummary %>%
   filter(sampleId %in% highestPurityCohortSummary$sampleId) %>%
-  mutate(type = standard_double_mutation(paste(ref, alt, sep = '>'))) %>%
-  mutate(type = factor(type, levels = doubleSubstitutions)) %>%
+  mutate(
+    type = standard_double_mutation(paste(ref, alt, sep = '>')),
+    type = ifelse(type == 'Other', '3+Substitutions', type),
+    type = factor(type, levels = doubleSubstitutions)) %>%
   ungroup() %>%
   group_by(sampleId, type) %>%
   summarise(n = sum(n)) %>%
@@ -177,7 +183,7 @@ p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
   geom_text(aes(label=paste0("(", percentage, "%)")), vjust=-0.5, size = 2) +
   #geom_text(aes(label=n), vjust=-2, size = 3) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 5)) +  
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 5, face = "bold")) +  
   ylab("Samples") + 
   coord_cartesian(ylim = c(0, 600)) + facet_grid(~cancerType)
 
@@ -190,26 +196,27 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
   facet_grid(~cancerType)
 
 p3 = ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(SNV,color='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) + 
-  stat_ecdf(aes(MNV,color='HMF MNV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='HMF MNV'), show.legend = F) + 
-  stat_ecdf(aes(PCAWG_SNV,color='PCAWG SNV'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) + 
-  stat_ecdf(aes(PCAWG_MNV,color='PCAWG MNV'), geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) + 
+  stat_ecdf(aes(SNV,color='HMF SNV',linetype='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) + 
+  stat_ecdf(aes(MNV,color='HMF MNV',linetype='HMF MNV') ,geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='HMF MNV'), show.legend = F) + 
+  stat_ecdf(aes(PCAWG_SNV,color='PCAWG SNV',linetype='PCAWG SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) + 
+  stat_ecdf(aes(PCAWG_MNV,color='PCAWG MNV',linetype='PCAWG MNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) + 
   scale_x_log10() + facet_grid(~cancerType) +
-  scale_colour_manual(values=somaticColours) + 
+  scale_colour_manual(name = "Combined", values=somaticColours) + 
+  scale_linetype_manual(name = "Combined", values = somaticLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
         panel.grid.minor.x = element_blank(),
         strip.background = element_blank(), strip.text = element_blank(), legend.position="top", legend.title = element_blank()) + 
   xlab("Somatic Variants") +
   coord_flip()
 
-
 p4 = ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(INDEL,color='HMF INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='HMF INDEL'), show.legend = F) + 
-  stat_ecdf(aes(SV,color='HMF SV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='HMF SV'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_INDEL,color='PCAWG INDEL'),geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_SV,color='PCAWG SV'),geom = "step", linetype = "dashed", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
+  stat_ecdf(aes(INDEL, color='HMF INDEL', linetype = 'HMF INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='HMF INDEL'), show.legend = F) + 
+  stat_ecdf(aes(SV,color='HMF SV',linetype='HMF SV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='HMF SV'), show.legend = F) +
+  stat_ecdf(aes(PCAWG_INDEL,color='PCAWG INDEL',linetype='PCAWG INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
+  stat_ecdf(aes(PCAWG_SV,color='PCAWG SV', linetype='PCAWG SV'),geom = "step",  pad = FALSE) + geom_segment(aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
   scale_x_log10() + facet_grid(~cancerType) +
-  scale_colour_manual(values=indelSVColours) + 
+  scale_colour_manual(name = "Combined", values=indelSVColours) + 
+  scale_linetype_manual(name = "Combined", values = indelSVLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
         panel.grid.minor.x = element_blank(),
         strip.background = element_blank(), strip.text = element_blank(), legend.position="bottom", legend.title = element_blank()) + 
@@ -270,8 +277,10 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   guides(fill = guide_legend(nrow = 1)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
 
-plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 
+pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
+pFigure1
+save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1, base_width = 14, base_height = 20)
 
 ####################################
 ### COVERAGE PLOT @@@@@@@@
@@ -280,6 +289,7 @@ coverageData = highestPurityCohortSummary %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
   arrange(cancerType, -tumorMeanCoverage)
 
+pdf(file='~/hmf/cohortVisualisaion.pdf', onefile=T, paper='A4r') 
 ggplot(data=coverageData)+
   stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
   stat_ecdf(aes(refMeanCoverage*2,color='Ref (RHS'),geom = "step", pad = FALSE) +
@@ -321,66 +331,58 @@ ggplot(biopsyTypeCount, aes(x="",y=n, fill=`Biopsy Type`)) +
   theme(panel.border = element_blank(), panel.grid.major = element_blank(),
           panel.grid.minor = element_blank())
   
-head(highestPurityCohortSummary)
 
 
-###########@@@@@@@@@@@@@@@
-####### WGD
-wgdPlotData = highestPurityCohortSummary %>% 
-  select(cancerType, WGD) %>%  
-  group_by(cancerType, WGD) %>% count() %>%
-  group_by(cancerType) %>% mutate(total = sum(n), percentage = n / total) %>%
-  ungroup()
-
-wgdPlotDataTotal = wgdPlotData %>% filter(WGD) %>% summarise(percentage = sum(n) / sum(total))
-wgdPlotData = wgdPlotData %>%
-  mutate(totalPercentage = wgdPlotDataTotal$percentage) %>%
-  filter(cancerType != "Other")
-
-wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
-wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
-wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
-wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
-
-p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
-  geom_bar(aes(fill = WGD), stat = "identity") +
-  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
-  #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
-  scale_fill_manual(values = c("#deebf7", "#3182bd")) +
-  ggtitle("Whole Genome Duplication") + 
-  xlab("Cancer Type") + ylab("% Samples")+ 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="none") +
-  coord_flip()
-
-wgdPDFPlotData = highestPurityCohortSummary %>% 
-  select(sampleId, WGD, ploidy)
-  
-p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
-  geom_histogram(position = "identity", binwidth = 0.1) + 
-  scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#3182bd", 0.8))) +
-  ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
-  theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
-  scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
-
-plot_grid(p1, p2, labels="AUTO")
 #deebf7
+
+dev.off()
 
 ###########################
 ###### SNV vs INDEL
 ### To do:  get cancerType colours work properly
 # INDEL SNV by MSI
-ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=msiStatus))+geom_point() + 
-  scale_x_log10() + scale_y_log10()
+#ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=msiStatus))+geom_point() + 
+#  scale_x_log10() + scale_y_log10()
 
 # INDEL SNV by CancerType
-ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=cancerType))+geom_point() + 
-  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+#ggplot(highestPurityCohortSummary,aes(CLONAL_SNP,CLONAL_INDEL,color=cancerType))+geom_point() + 
+#  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
 
 # MNV SNV by Cancer Type
-ggplot(highestPurityCohortSummary, aes(CLONAL_SNP,CLONAL_MNP,color=cancerType))+geom_point() + 
-  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+#ggplot(highestPurityCohortSummary, aes(CLONAL_SNP,CLONAL_MNP,color=cancerType))+geom_point() + 
+#  scale_x_log10() + scale_y_log10() + scale_fill_manual(values=cancerTypeColours)
+
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+
+pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
+pcawg_histology_tier2 = sort(unique(pcawgRaw$histology_tier2))
+pcawgCancerTypeMapping = data.frame(histology_tier2 = pcawg_histology_tier2, cancerType = pcawg_histology_tier2, stringsAsFactors = F)
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Bladder", "cancerType"] = "Urinary tract"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Bone/SoftTissue", "cancerType"] = "Bone/Soft tissue"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Cervix", "cancerType"] = NA
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Head/Neck", "cancerType"] = "Head and neck"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Myeloid", "cancerType"] = "Other"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Lymphoid", "cancerType"] = "Other"
+pcawgCancerTypeMapping[pcawgCancerTypeMapping$histology_tier2 == "Thyroid", "cancerType"] = "Other"
+pcawgCancerTypeMapping = pcawgCancerTypeMapping[!is.na(pcawgCancerTypeMapping$cancerType), ]
+
+pcawgMutationalLoad = pcawgRaw %>% left_join(pcawgCancerTypeMapping, by = "histology_tier2") %>%
+  filter(!is.na(cancerType)) %>% select(TOTAL_SNV = all.SNVs, TOTAL_INDEL = all.Indels, TOTAL_SV = SV.events, age, TOTAL_MNV = all.MNVs,  cancerType) %>%
+  mutate(source = "PCAWG")
+
+variantTypes = c("TOTAL_SNV","TOTAL_INDEL","TOTAL_SV","TOTAL_MNV")
+cancerTypes = unique(pcawgMutationalLoad$cancerType)
+selectedCancerType = "Biliary"
+
+result = data.frame(cancerType = cancerTypes, stringsAsFactors = F)
+for (selectedCancerType in cancerTypes) {
+  for (selectedVariant in variantTypes) {
+    temp1 = pcawgMutationalLoad[pcawgMutationalLoad$cancerType == selectedCancerType, selectedVariant]
+    temp2 = data.frame(highestPurityCohortSummary)[highestPurityCohortSummary$cancerType == selectedCancerType, selectedVariant]
+    
+    w = wilcox.test(temp1,temp2,conf.int = T)
+    result[result$cancerType == selectedCancerType, selectedVariant] <- w[["p.value"]]
+  }
+}
+
 

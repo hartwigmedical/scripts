@@ -4,12 +4,21 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
+credentials=/data/common/dbs/mysql_credentials/prod
+
+# JOBA: Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 "$prefix"/do_run_base_patient_reporter \
     -drup_genes_csv "$drup_genes_csv" \
     -cosmic_gene_csv "$cosmic_gene_csv" \
     -ensembl_db "$ensembl_db" \
+    -local_ensembl \
+    -db_user "$db_user" \
+    -db_pass "$db_pass" \
     -fasta_file_location "$ref_genome" \
     -run_dir "$@"

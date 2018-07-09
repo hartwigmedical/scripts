@@ -308,13 +308,18 @@ query_gene_panel<-function(dbConnect, panel = "HMF Paper") {
   return (dbGetQuery(dbConnect, query))
 }
 
-query_somatic_variants <- function(dbConnect, cohort) {
+query_somatic_variants <- function(dbConnect, cohort, passOnly = T) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
+  if (passOnly) {
+    filter = " AND filter = 'PASS' "
+  } else {
+    filter = " AND TRUE"
+  }
   query = paste(
     "SELECT *",
     "FROM somaticVariant",
-    "WHERE filter = 'PASS'",
-    "  AND sampleId in (",sampleIdString, ")",
+    "WHERE sampleId in (",sampleIdString, ")",
+    filter,
     sep = " ")
 
   return (dbGetQuery(dbConnect, query))

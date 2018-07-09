@@ -1,6 +1,6 @@
 #!/bin/bash
 
-GATK_JAR='/data/common/tools/gatk_v3.4.46/GenomeAnalysisTK.jar'
+GATK_JAR='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
 REF_FASTA='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
 DESIGN_DIR=$( dirname $0 )
 

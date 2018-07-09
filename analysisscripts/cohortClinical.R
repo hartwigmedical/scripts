@@ -3,7 +3,7 @@ library(dplyr)
 library(tidyr)
 
 #### Curated Data
-allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180516.csv", stringsAsFactors = F, header = T)
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180627.csv", stringsAsFactors = F, header = T)
 
 ### Database Data
 dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
@@ -19,8 +19,62 @@ allClinicalData = left_join(allClinicalDataCurated, allClinicalDataDatabase, by 
   mutate(cancerType = ifelse(primaryTumorLocationSamples > 15, primaryTumorLocation, "Other")) %>%
   ungroup() %>%
   select(-primaryTumorLocationSamples)
+
 save(allClinicalData, file = "~/hmf/RData/Reference/allClinicalData.RData")
 rm(allClinicalDataCurated, allClinicalDataDatabase)
+
+############################## More Manual Adjustments ##############################
+allClinicalDataCurated = read.csv(file = "~/hmf/resources/ClinicalData20180625.csv", stringsAsFactors = F, header = T)
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01080005T", "primaryTumorLocation"] <- "CUP"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01050008T", "primaryTumorLocation"] <- "Head and neck"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "DRUP01030013T", "primaryTumorLocation"] <- "Other"
+allClinicalDataCurated[allClinicalDataCurated$sampleId == "CPCT02050240T", "primaryTumorLocation"] <- "Bone/Soft tissue"
+write.csv(allClinicalDataCurated, file = "~/hmf/resources/ClinicalData20180627.csv", row.names = F)
+
+############################## FINAL CURATION ##############################
+finalCuration = read.csv(file = "~/hmf/resources/FinalCuration.csv", stringsAsFactors = F, header = T)
+previous = read.csv(file = "~/hmf/resources/ClinicalData20180516.csv", stringsAsFactors = F, header = T)
+
+curatedClinicalData = previous %>% left_join(finalCuration, by = "sampleId", suffix = c("20180516", "20180625")) %>%
+  mutate(
+    primaryTumorLocation = coalesce(primaryTumorLocation20180625, primaryTumorLocation20180516),
+    cancerSubtype = coalesce(cancerSubtype20180625, cancerSubtype20180516)) %>%
+  select(-ends_with("20180625"), -ends_with("20180516"))
+
+write.csv(curatedClinicalData, file = "~/hmf/resources/ClinicalData20180625.csv", row.names = F)
+
+############################## COMPARING AGAIN ##############################
+
+#### Curated Data
+curatedClinicalData = read.csv(file = "~/hmf/resources/ClinicalData20180516.csv", stringsAsFactors = F, header = T)
+
+### Frozen Data
+dbFrozen = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
+frozenClinicalData = purple::query_clinical_data(dbFrozen)
+frozenClinicalData = frozenClinicalData[, names(curatedClinicalData)]
+dbDisconnect(dbFrozen)
+rm(dbFrozen)
+
+### Production Data
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+prodClinicalData = purple::query_clinical_data(dbProd) %>% filter(sampleId %in% frozenClinicalData$sampleId) 
+prodClinicalData = prodClinicalData[, names(curatedClinicalData)]
+dbDisconnect(dbProd)
+rm(dbProd)
+
+compareClinical = left_join(frozenClinicalData, prodClinicalData, by = "sampleId", suffix = c(".frozen",".prod")) %>%
+  left_join(curatedClinicalData, by = "sampleId") %>%
+  mutate(inProd = !is.na(primaryTumorLocation.prod) & !is.na(birthYear.prod))
+save(compareClinical, file = "~/hmf/RData/compareClinical.RData")
+
+disagree <- function(database, curated) {
+  (is.na(database) & !is.na(curated)) | (!is.na(database) & is.na(curated)) | (tolower(database) != tolower(curated))
+}
+
+diff = compareClinical %>% filter(inProd) %>%
+  filter(disagree(primaryTumorLocation.prod,primaryTumorLocation)) %>%
+  select(sampleId, primaryTumorLocation.prod, primaryTumorLocation)
+
 
 
 ############################## MANUAL MODIFICATIONS ##############################

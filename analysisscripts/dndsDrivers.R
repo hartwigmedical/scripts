@@ -9,10 +9,10 @@ library(RMySQL)
 
 ############################################   HIGHEST PURITY COHORT ############################################
 load(file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")
-hpcSomaticCounts = highestPurityCohortSummary %>% select(sampleId, ends_with("SNP"), ends_with("INDEL"))
+hpcSomaticCounts = highestPurityCohortSummary %>% select(sampleId, ends_with("SNV"), ends_with("INDEL"))
 hpcSomaticCounts[is.na(hpcSomaticCounts)] <- 0
 hpcSomaticCounts = hpcSomaticCounts %>%
-  mutate(sample_SNV = INCONSISTENT_SNP + SUBCLONAL_SNP + CLONAL_SNP, sample_INDEL = INCONSISTENT_INDEL + SUBCLONAL_INDEL + CLONAL_INDEL) %>%
+  mutate(sample_SNV = TOTAL_SNV, sample_INDEL = TOTAL_INDEL) %>%
   select(starts_with("sample"))
 
 load(file = "~/hmf/RData/processed/driverGenes.RData")
@@ -27,8 +27,15 @@ hpcSomatics = hpcExonicSomatics %>%
 hpcDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, hpcSomatics)
 save(hpcDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/hpcDndsExpectedDriversPerGene.RData")
 
+phgvs = read.csv("~/hmf/resources/phgvs.csv", stringsAsFactors = F) %>%
+  select(patient = SAMPLEID, chromosome = CHROM, position = POS, ref = REF, alt = ALTS, pHGVS = HGVS_PROTEIN) %>%
+  mutate(ref = gsub("\\*","", ref))
+
 hpcMutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, hpcSomatics)
-hpcMutations = hpcMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
+hpcMutations = hpcMutations %>% filter(gene %in% genePanel$gene_name, impact != "") %>%
+  mutate(patient = substr(sampleId, 1,12)) %>%
+  left_join(phgvs, by = c("patient","chromosome","position","ref","alt")) %>% 
+  select(-patient)
 
 hpcDndsTsgDriversOutput = dnds_tsg_drivers(hpcSomaticCounts, hpcMutations %>% filter(gene %in% tsGenes$gene_name), hpcDndsExpectedDriversPerGene)
 hpcDndsTsgMutations = hpcDndsTsgDriversOutput[["tsgMutations"]]; save(hpcDndsTsgMutations, file = "~/hmf/RData/Processed/hpcDndsTsgMutations.RData")

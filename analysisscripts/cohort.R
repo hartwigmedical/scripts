@@ -50,12 +50,15 @@ query_entire_cohort <- function(dbConnect, purityCutoff = 0.2) {
 allPurity = query_entire_cohort(dbProd) %>%
   left_join(allGeneDeletes, by = "sampleId") %>%
   mutate(genesDeleted = ifelse(is.na(genesDeleted), 0, genesDeleted)) %>%
-  mutate(qcStatus = ifelse(genesDeleted > 280, "FAIL_DELETED_GENES", qcStatus))
+  mutate(qcStatus = ifelse(genesDeleted > 280, "FAIL_DELETED_GENES", qcStatus)) %>%
+  filter(sampleId != 'CPCT02050303T')
 patientIdLookups = query_patient_id_lookup(dbProd)
 allPurity$patientId <- sapply(allPurity$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
 allPurity = left_join(allPurity, allClinicalData %>% select(sampleId, cancerType), by = "sampleId")
 allPurity$gender = ifelse(substr(allPurity$gender, 1, 4) == "MALE", "MALE", allPurity$gender)
 save(allPurity, file = '~/hmf/RData/reference/allPurity.RData' )
+write.table(allPurity %>% select(patientId), file = "~/hmf/resources/cpctPatientIds.csv", row.names = F, quote = F, col.names = F)
+rm(allGeneDeletes, patientIdLookups)
 
 cat("Querying metrics")
 allMetrics = purple::query_metrics(dbProd, allPurity)
@@ -65,6 +68,58 @@ cat("Querying somatics")
 allSomatics_p1 = purple::query_somatic_variants(dbProd, allPurity[1:1500, ])
 save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
 allSomatics_p2 = purple::query_somatic_variants(dbProd, allPurity[1501:nrow(allPurity), ])
+save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
+
+allIndelsInPONQuery = "select * from somaticVariant where type = 'INDEL' and filter <> 'PASS' and abs(length(ref) - length(alt)) >= 3"
+allIndelsInPON = dbGetQuery(dbProd, allIndelsInPONQuery)
+save(allIndelsInPON, file = "~/hmf/RData/reference/allIndelsInPON.RData")
+
+nearPon <- function(samplePon, sampleIndels, distance = 10) {
+  hrange <- GRanges(samplePon$chromosome, IRanges(samplePon$position, samplePon$position + nchar(samplePon$ref) + distance - 1))
+  mrange <- GRanges(sampleIndels$chromosome, IRanges(sampleIndels$position, sampleIndels$position + nchar(sampleIndels$ref) + distance - 1))
+  
+  ol = as.matrix(findOverlaps(hrange, mrange, type="any", select="all"))
+  sampleIndels$nearPon <- FALSE
+  sampleIndels[ol[,2], c("nearPon")] <- TRUE
+  return (sampleIndels)
+}
+
+nearPonIndel <- function(pon, indels) {
+  result = data.frame()
+  for (selectedSample in unique(indels$sampleId)) {
+    cat("Processing ", selectedSample, "\n")
+    samplePon = pon %>% filter(sampleId == selectedSample)
+    sampleIndels = indels %>% filter(sampleId == selectedSample)
+    result = bind_rows(nearPon(samplePon, sampleIndels), result)
+  }
+  return (result %>% filter(nearPon))
+}
+
+allIndelsNearPON_p1 = nearPonIndel(allIndelsInPON, allSomatics_p1 %>% filter(type == 'INDEL', abs(nchar(ref) - nchar(alt)) >= 3))
+allIndelsNearPON_p2 = nearPonIndel(allIndelsInPON, allSomatics_p2 %>% filter(type == 'INDEL', abs(nchar(ref) - nchar(alt)) >= 3))
+allIndelsNearPON = bind_rows(allIndelsNearPON_p1, allIndelsNearPON_p2)
+rm(allIndelsNearPON_p1, allIndelsNearPON_p2, allIndelsInPON)
+save(allIndelsNearPON, file = "~/hmf/RData/reference/allIndelsNearPON.RData")
+
+allSomatics_p1 = allSomatics_p1 %>% left_join(allIndelsNearPON %>% select(id, nearPon), by = "id") %>% filter(is.na(nearPon))
+allSomatics_p2 = allSomatics_p2 %>% left_join(allIndelsNearPON %>% select(id, nearPon), by = "id") %>% filter(is.na(nearPon))
+
+fix_splice_effect <- function(input) {
+  result = input %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant","NONE",canonicalCodingEffect) ) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion","MISSENSE",canonicalCodingEffect))
+}
+
+allSomatics_p1 = fix_splice_effect(allSomatics_p1)
+allSomatics_p2 = fix_splice_effect(allSomatics_p2)
+
+save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
 save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
 
 somatics_summary_p1 = cohort_somatic_summary(allSomatics_p1)
@@ -123,20 +178,66 @@ load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 load(file = "~/hmf/RData/reference/allMetrics.RData")
 
-clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
+clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
 
+acceptableStatus = c('NORMAL','SOMATIC','HIGHLY_DIPLOID')
+
 cohortSummary = allPurity %>%
-  select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, cancerType) %>%
+  select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, cancerType, score) %>%
   left_join(clinicalSummary, by = "sampleId") %>%
   left_join(allSampleData, by = "sampleId") %>%
   left_join(allSomaticsSummary, by = "sampleId") %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
   left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD)) %>%
-  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId")
+  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId") %>%
+  mutate(
+    purity = ifelse(status == 'NO_TUMOR', 0, purity),
+    status = ifelse(status == 'NO_TUMOR', 'FAIL_TUMOR', status),
+    status = ifelse(status %in% acceptableStatus & qcStatus != 'PASS', qcStatus, status),
+    status = ifelse(status %in% acceptableStatus & purity < 0.2, 'FAIL_PURITY', status),
+    status = ifelse(status %in% acceptableStatus, 'PASS',status)) %>%
+  group_by(patientId) %>% 
+  arrange(arrivalDate) %>% mutate(patientSample = row_number())
+
+maxPassPuritySampleIds = cohortSummary %>% 
+  filter(qcStatus == 'PASS') %>% 
+  group_by(patientId, purity) %>% top_n(1, -score) %>% ungroup() %>% group_by(patientId) %>% top_n(1, purity) %>% ungroup() %>% pull(sampleId)
+
+cohortSummary = cohortSummary %>%
+  ungroup() %>%
+  mutate(patientHighestPurityPassingSample = sampleId %in% maxPassPuritySampleIds) %>%
+  select(-qcStatus, -score, -genesDeleted)
+
+cohortSummary %>% group_by(status) %>% count()
+cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% count() %>% filter(n  > 1) %>% arrange(-n)
+
+cohortSummary %>% filter(sample  > 1)
+
 write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
+
 rm(cohortSummary)
 
+##### GENERATE PATIENT/SAMPLEID
+#load(file = "~/hmf/RData/reference/allClinicalData.RData")
+#load(file = "~/hmf/RData/reference/allPurity.RData")
+#cpctPatientIds =  unique(allPurity$patientId)
+#hmfPatientIds = paste0("HMF", formatC(c(1:2781), width = 5, format = "d", flag = "0"))
+#patientIdMap = data.frame(cpctPatientId = cpctPatientIds, hmfPatientId = hmfPatientIds, stringsAsFactors = F)
+#rm(cpctPatientIds, hmfPatientIds)
+
+#sampleIdMap = allPurity %>% select(sampleId, patientId) %>% 
+#  left_join(patientIdMap, by = c("patientId" = "cpctPatientId")) %>%
+#  left_join(allClinicalData %>% select(sampleId, sampleArrivalDate), by = "sampleId") %>%
+#  arrange(hmfPatientId, sampleArrivalDate) %>%
+#  group_by(hmfPatientId) %>%
+#  mutate(
+#    sample = row_number(),
+#    sample = chartr("12345", "ABCDE", sample)) %>%
+#  mutate(hmfSampleId = paste0(hmfPatientId, sample))
+
+#sampleIdMap$insert = paste0("(\'", sampleIdMap$hmfSampleId, "\',\'", sampleIdMap$patientId, "\',\'", sampleIdMap$sampleId, "\')")
+#cat(paste0(sampleIdMap$insert, collapse = ","))
 
 ############################################ HIGHEST PURITY
 load(file = '~/hmf/RData/reference/allGeneDeletes.RData')
@@ -166,8 +267,9 @@ cat("Determing exonic somatics")
 load(file = "~/hmf/RData/reference/HmfRefCDS.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
+
 exonic_somatics <- function(somatics, gr_genes) {
-  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position))
+  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position + nchar(somatics$ref) - 1))
   ol = as.matrix(findOverlaps(gr_muts, gr_genes, type="any", select="all"))
   return (somatics[unique(ol[, 1]), ])
 }
@@ -188,6 +290,7 @@ load(file = "~/hmf/RData/Reference/allWgd.RData")
 load(file = "~/hmf/RData/Reference/allClinicalData.RData")
 load(file = "~/hmf/RData/Reference/allSampleData.RData")
 load(file = "~/hmf/RData/Reference/allSomaticsSummary.RData")
+load(file = "~/hmf/RData/Reference/allMetrics.RData")
 load(file = "~/hmf/RData/Reference/allStructuralVariantSummary.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
@@ -218,7 +321,7 @@ multipleBiopsyScope = multipleBiopsyCohort %>%
   arrange(patientId, sampleArrivalDate) %>%
   select(patientId, sampleId) %>% 
   group_by(patientId) %>% 
-  mutate(scope = paste0("Sample",row_number()) ) %>%
+  mutate(scope = paste0("Sample",row_number())) %>%
   ungroup()
 save(multipleBiopsyScope, file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
 
@@ -227,7 +330,7 @@ save(multipleBiopsyStructuralVariants, file = "~/hmf/RData/reference/multipleBio
 
 load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
-multipleBiopsySomatics = bind_rows(allSomatics_p1, allSomatics_p2) %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)
+multipleBiopsySomatics = bind_rows(allSomatics_p1 %>% filter(sampleId %in% multipleBiopsyCohort$sampleId), allSomatics_p2 %>% filter(sampleId %in% multipleBiopsyCohort$sampleId)) 
 save(multipleBiopsySomatics, file = "~/hmf/RData/reference/multipleBiopsySomatics.RData")
 
 multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
@@ -306,9 +409,14 @@ multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithSco
 multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
   ungroup() %>% 
   distinct(patientId, scope, chromosome, position, ref, alt, type, clonality) %>% 
+  mutate(
+    type = ifelse(type == 'SNP', 'SNV', type),
+    type = ifelse(type == 'MNP', 'MNV', type),
+    clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
   group_by(patientId, scope, type, clonality) %>%
   summarise(count = n()) %>%
-  unite(type, scope, type, clonality, sep = "_") %>% spread(type, count)
+  unite(type, scope, type, clonality, sep = "_") %>% 
+  spread(type, count, fill = 0)
 
 multipleBiopsyPatientMsi = multipleBiopsyMSI %>% left_join(multipleBiopsyScope, by = "sampleId") %>%
   gather(type, value, msiScore, msiStatus) %>%
@@ -357,6 +465,8 @@ load(file = "~/hmf/RData/processed/multipleBiopsyCohortSummary.RData")
 inconsistentData = multipleBiopsyCohort %>% select(patientId, sampleId, gender, cancerType) %>% group_by(patientId) %>%
   mutate(n_gender = n_distinct(gender), n_cancerType = n_distinct(cancerType)) %>% 
   filter(n_gender > 1 |  n_cancerType > 1)
+
+jon = allClinicalData %>% filter(patientId %in% inconsistentData$patientId)
 
 clinicalDatabaseSummary = purple::query_clinical_data(dbProd)
 clinicalDatabaseSummary = clinicalDatabaseSummary %>% filter(sampleId %in% inconsistentData$sampleId) %>% select(sampleId, primaryTumorLocation)

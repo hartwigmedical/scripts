@@ -1,0 +1,11 @@
+#!/bin/bash
+
+count=0
+cd /data/cpct/runs/
+sets=$( ls | tail -n 125 | tr "\n" " " )
+for set in ${sets}
+do
+	count=$[${count}+1]
+	purity_pathology_pilot ${set} ${count}
+done
+echo "Finished calculations on different sets!"

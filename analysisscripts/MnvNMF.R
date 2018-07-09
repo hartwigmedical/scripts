@@ -73,12 +73,16 @@ View(cancerTypes)
 mnvData = query_indels_mnvs(dbProd, "", "MNP")
 View(mnvData)
 nrow(mnvData)
-# write.csv(mnvData, "~/logs/r_output/mnv_prod_all.csv", row.names=F, quote=F)
-mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
+write.csv(mnvData, "~/logs/r_output/mnv_prod_all_20180418.csv", row.names=F, quote=F)
+#mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
+mnvData = read.csv("~/logs/r_output/mnv_prod_all_20180418.csv") # with 3-base PON fix
 #mnvData = within(mnvData, rm(X))
 
 # limit to samples in the high-confidence set
+nrow(hpcSamples)
 mnvData = mnvData %>% filter(SampleId %in% hpcSamples$sampleId)
+mnvData = mnvData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
+
 nrow(mnvData) # 864K at last count 796K within HPC & DR022
 
 
@@ -145,31 +149,32 @@ create_mnv_fields<-function(mnvData)
 }
 
 mnvData = create_mnv_fields(mnvData)
-mnvData$Bucket = mnvData$MutationAdj
 View(mnvData)
 
 # create and store Buckets
-mnvBuckets = mnvData %>% group_by(Bucket) %>% count()
+mnvBuckets = mnvData %>% group_by(Bucket) %>% count() %>% arrange(Bucket)
+nrow(mnvBuckets)
 View(mnvBuckets)
 write.csv(mnvBuckets, "~/data/r_data/mnv_buckets.csv", row.names=F, quote=F)
 
-print(n_distinct((mnvData %>% filter(Length==2))$Mutation))
-print(n_distinct(mnvData$MutationAdj))
-
 View(mnvData %>% group_by(Length) %>% count())
-View(mnvData %>% group_by(Mutation) %>% count())
+View(mnvData %>% group_by(Bucket) %>% count())
 
-allMnvData = mnvData
+allMnvData = mnvData # last set to full cohort (HPC, 2405 samples)
 mnvData = allMnvData
 nrow(mnvData %>% filter(Clonality=="SUBCLONAL"))
 mnvData = mnvData %>% filter(Clonality=="SUBCLONAL")
 # mnvData = mnvMBData # use multiple biopsy samples only
 nrow(mnvData)
 
-mnvSampleCounts = mnvData %>% group_by(SampleId,MutationAdj) %>% summarise(Count=n())
-colnames(mnvSampleCounts) <- c("SampleId","Bucket","Count")
+mnvSampleCounts = mnvData %>% group_by(SampleId,Bucket) %>% summarise(Count=n()) %>% arrange(SampleId,Bucket)
+# colnames(mnvSampleCounts) <- c("SampleId","Bucket","Count")
 View(mnvSampleCounts)
 n_distinct(mnvSampleCounts$SampleId)
+
+# mnvBucketCounts = mnvData %>% group_by(Bucket) %>% summarise(Count=n()) %>% arrange(Bucket)
+# View(mnvBucketCounts)
+
 
 mnvMatrixData = mnvSampleCounts %>% spread(SampleId, Count)
 mnvMatrixData[is.na(mnvMatrixData)] = 0
@@ -178,11 +183,11 @@ View(mnvMatrixData[,1:10]) # check a subset
 mnvBucketNames = mnvMatrixData$Bucket
 mnvBucketNames = data.frame(mnvBucketNames)
 colnames(mnvBucketNames) <- c("Bucket")
-
 View(mnvBucketNames)
 mnvMatrixData = within(mnvMatrixData, rm(Bucket))
 
-write.csv(mnvMatrixData, file="~/logs/r_output/mnv_nmf_subc_counts_dr22.csv", row.names=F, quote=F)
+# write.csv(mnvMatrixData, file="~/logs/r_output/mnv_nmf_subc_counts_dr22.csv", row.names=F, quote=F)
+write.csv(mnvMatrixData, file="~/logs/r_output/mnv_nmf_matrix_data.csv", row.names=F, quote=F)
 
 # run estimations
 mnvNmfEstimate <- nmf(mnvMatrixData, rank=8:14, method="brunet", nrun=4, seed=123456, .opt='vp4')
@@ -192,16 +197,47 @@ plot(mnvNmfEstimate)
 
 # generate the actual NMF results
 mnvSigCount = 8
-mnvNmfResult <- nmf(mnvMatrixData, rank=mnvSigCount, method="brunet", nrun=10, seed=123456, .opt='vp5')
+mnvNmfResult <- nmf(mnvMatrixData, rank=mnvSigCount, method="brunet", nrun=10, seed=123456, .opt='vp1')
 save(mnvNmfResult, file="~/logs/r_output/mnvNmfResult_sig8_dr22.RData")
-load("~/data/mnvNmfResult_sig8_dr22.RData")
+# load("~/data/mnvNmfResult_sig8_dr22.RData")
+load("~/data/r_data/mnvNmfResult_sig8.RData")
 View(mnvNmfResult)
 
 mnvSigNamesNum = get_signame_list(8, F)
 mnvSigNamesStr = get_signame_list(8, T)
 
-evaluate_nmf_run("MNV", "sig08_DR22", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
+View(mnvBucketNames)
+
+evaluate_nmf_run("MNV", "sig08", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
                  sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, TRUE, FALSE, TRUE)
+
+
+View(mnvSampleCounts %>% group_by(Bucket) %>% summarise(Count=sum(Count)))
+
+mnvSignatures = NMF::basis(mnvNmfResult)
+mnvContributions = NMF::coef(mnvNmfResult)
+View(mnvSignatures)
+View(mnvContributions[,1:10])
+nrow(mnvContributions)
+ncol(mnvContributions)
+nrow(mnvSignatures)
+ncol(mnvSignatures)
+View(mnvBucketNames)
+View(mnvMatrixData[,1:10])
+ncol(mnvMatrixData)
+
+View(mnvSampleCounts)
+
+mnvResiduals2 = calc_sample_residuals_v2(mnvContributions, mnvSignatures, mnvMatrixData, mnvBucketNames)
+View(mnvResiduals2)
+
+sum(mnvResiduals2$Count)
+sum(mnvResiduals2$ResidualTotal)
+
+sampleSigData = get_sig_data(mnvSignatures, mnvContributions, mnvSigNamesStr, colnames(mnvContributions))
+sampleSigData = append_residuals(mnvContributions, mnvSignatures, mnvBucketNames, mnvSampleCounts, sampleSigData)
+
+
 
 
 # Subclonal Evalaution
@@ -264,6 +300,8 @@ nrow(indelData)
 indelData = indelData %>% filter(SampleId %in% hpcSamples$sampleId)
 nrow(indelData)
 
+View(head(indelData,100))
+
 
 
 
@@ -310,10 +348,7 @@ create_indel_bucket<-function(indelSampleCounts)
 
 # write.csv(indelData3, "~/data/indel_prod_all_v3.csv", row.names=F, quote=F)
 
-rm(indelData3)
 nrow(indelData)
-
-View(head(indelData3,1000))
 
 View(indelData %>% group_by(Clonality) %>% count())
 
@@ -323,6 +358,7 @@ indelData = indelData %>% filter(Clonality=="SUBCLONAL")
 # nrow(indelData %>% filter(Clonality=="SUBCLONAL"))
 nrow(indelData)
 View(head(indelData,1000))
+nrow(indelData %>% group_by(SampleId) %>% count())
 
 
 # note: allIndelData already has the additional bucket fields
@@ -335,10 +371,11 @@ indelSampleCounts = indelData %>% group_by(SampleId,SubType,LengthGrp,MH,RepeatC
 
 indelSampleCounts = create_indel_bucket(indelSampleCounts)
 View(indelSampleCounts)
+write.csv(indelSampleCounts, "~/data/r_data/indel_sample_counts.csv", row.names=F, quote=F)
 
 
 # create and store Buckets
-indelBuckets = indelSampleCounts %>% group_by(Bucket) %>% count() %>% arrange(indelBuckets)
+indelBuckets = indelSampleCounts %>% group_by(Bucket) %>% summarise(VarCount=sum(Count)) %>% arrange(Bucket)
 View(indelBuckets)
 write.csv(indelBuckets, "~/data/r_data/indel_buckets.csv", row.names=F, quote=F)
 
@@ -360,8 +397,12 @@ View(indelBucketNames)
 indelMatrixData = indelMatrixData %>% arrange(Bucket)
 indelMatrixData = within(indelMatrixData, rm(Bucket))
 
+write.csv(indelMatrixData, file="~/data/r_data/indel_nmf_matrix_data.csv", row.names=F, quote=F)
 write.csv(indelMatrixData, file="~/logs/r_output/indel_nmf_counts_dr22.csv", row.names=F, quote=F)
 #write.csv(indelMatrixData, file="~/logs/r_output/indel_nmf_subc_counts_dr22.csv", row.names=F, quote=F)
+
+
+indelMatrixData = read.csv("~/data/r_data/indel_nmf_counts.csv")
 
 
 # run estimations
@@ -375,7 +416,7 @@ plot(indelNmfEstimate)
 indelSigCount = 5
 indelNmfResult <- nmf(indelMatrixData, rank=indelSigCount, method="brunet", nrun=5, seed=123456, .opt='vp5')
 save(indelNmfResult, file="~/logs/r_output/indelNmfResult_sig12.RData")
-load(file="~/data/indelNmfResult_sig5.RData")
+load(file="~/data/r_data/indelNmfResult_sig5.RData")
 load(file="~/data/indelNmfResult_sig5_dr22.RData")
 load(file="~/data/indelNmfResult_sig5_subc_dr22.RData")
 View(indelNmfResult)
@@ -389,6 +430,31 @@ View(indelSampleCounts)
 
 evaluate_nmf_run("INDEL", "sig5_DR22", indelSigCount, indelNmfResult, indelMatrixData, indelSampleBucketCounts,
                  sampleCancerTypes, indelBucketNames, indelSigNamesNum, indelSigNamesStr, TRUE, FALSE, TRUE)
+
+
+ # using external fitting, yeah baby
+indelExtSignatures = as.matrix(read.csv("~/logs/nmf_signatures.csv"))
+indelExtContributions = read.csv("~/logs/nmf_contributions.csv")
+colnames(indelExtSignatures) <- NULL
+View(indelExtSignatures)
+View(indelExtContributions[,1:10])
+indelExtTotals = indelExtSignatures %*% as.matrix(indelExtContributions)
+nrow(indelExtTotals)
+ncol(indelExtTotals)
+sum(indelExtTotals)
+sum(indelMatrixData)
+sum(indelMatrixData[,2])
+
+indelSignatures = NMF::basis(indelNmfResult)
+indelContributions = NMF::coef(indelNmfResult)
+
+View(indelSignatures)
+View(indelContributions[,1:10])
+
+evaluate_nmf_data("INDEL", "sig5_ext2", indelSigCount, indelExtSignatures, indelExtContributions, indelMatrixData, indelSampleBucketCounts,
+                 sampleCancerTypes, indelBucketNames, indelSigNamesNum, indelSigNamesStr, FALSE, FALSE, TRUE)
+
+
 
 # evaluate_nmf_run("INDEL_Subclonal", "sig5_DR22", indelSigCount, indelNmfResult, indelMatrixData, indelSampleCounts,
 #                  sampleCancerTypes, indelBucketNames, indelSigNamesNum, indelSigNamesStr, TRUE, FALSE)
