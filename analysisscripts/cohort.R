@@ -178,18 +178,44 @@ load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 load(file = "~/hmf/RData/reference/allMetrics.RData")
 
-clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, treatment, treatmentType, birthYear) %>%
+clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
 
+acceptableStatus = c('NORMAL','SOMATIC','HIGHLY_DIPLOID')
+
 cohortSummary = allPurity %>%
-  select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, cancerType) %>%
+  select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, cancerType, score) %>%
   left_join(clinicalSummary, by = "sampleId") %>%
   left_join(allSampleData, by = "sampleId") %>%
   left_join(allSomaticsSummary, by = "sampleId") %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
   left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD)) %>%
-  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId")
+  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId") %>%
+  mutate(
+    purity = ifelse(status == 'NO_TUMOR', 0, purity),
+    status = ifelse(status == 'NO_TUMOR', 'FAIL_TUMOR', status),
+    status = ifelse(status %in% acceptableStatus & qcStatus != 'PASS', qcStatus, status),
+    status = ifelse(status %in% acceptableStatus & purity < 0.2, 'FAIL_PURITY', status),
+    status = ifelse(status %in% acceptableStatus, 'PASS',status)) %>%
+  group_by(patientId) %>% 
+  arrange(arrivalDate) %>% mutate(patientSample = row_number())
+
+maxPassPuritySampleIds = cohortSummary %>% 
+  filter(qcStatus == 'PASS') %>% 
+  group_by(patientId, purity) %>% top_n(1, -score) %>% ungroup() %>% group_by(patientId) %>% top_n(1, purity) %>% ungroup() %>% pull(sampleId)
+
+cohortSummary = cohortSummary %>%
+  ungroup() %>%
+  mutate(patientHighestPurityPassingSample = sampleId %in% maxPassPuritySampleIds) %>%
+  select(-qcStatus, -score, -genesDeleted)
+
+cohortSummary %>% group_by(status) %>% count()
+cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% count() %>% filter(n  > 1) %>% arrange(-n)
+
+cohortSummary %>% filter(sample  > 1)
+
 write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
+
 rm(cohortSummary)
 
 ##### GENERATE PATIENT/SAMPLEID
