@@ -106,14 +106,14 @@ allSomatics_p2 = allSomatics_p2 %>% left_join(allIndelsNearPON %>% select(id, ne
 
 fix_splice_effect <- function(input) {
   result = input %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant","NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant","NONE",canonicalCodingEffect) ) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant","NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion","MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant","MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion","MISSENSE",canonicalCodingEffect))
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant,NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant,NONE",canonicalCodingEffect) ) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant,NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion,MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant,MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion,MISSENSE",canonicalCodingEffect))
 }
 
 allSomatics_p1 = fix_splice_effect(allSomatics_p1)
@@ -179,66 +179,71 @@ load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 load(file = "~/hmf/RData/reference/allMetrics.RData")
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, birthYear) %>%
-  mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear)
+  mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear) %>% select(-birthYear, -biopsyDate)
 
 acceptableStatus = c('NORMAL','SOMATIC','HIGHLY_DIPLOID')
 
 cohortSummary = allPurity %>%
   select(sampleId, patientId, gender, status, qcStatus, purity, ploidy, genesDeleted, cancerType, score) %>%
   left_join(clinicalSummary, by = "sampleId") %>%
-  left_join(allSampleData, by = "sampleId") %>%
+  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId") %>%
+  left_join(allSampleData %>% select(-arrivalDate), by = "sampleId") %>%
   left_join(allSomaticsSummary, by = "sampleId") %>%
   left_join(allStructuralVariantSummary, by = "sampleId") %>%
   left_join(allWgd, by = "sampleId") %>%  mutate(duplicatedAutosomes = ifelse(is.na(duplicatedAutosomes), 0, duplicatedAutosomes), WGD = ifelse(is.na(WGD), F, WGD)) %>%
-  left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId") %>%
   mutate(
+    ploidy = round(ploidy, 2),
     purity = ifelse(status == 'NO_TUMOR', 0, purity),
-    status = ifelse(status == 'NO_TUMOR', 'FAIL_TUMOR', status),
+    status = ifelse(status == 'NO_TUMOR', 'FAIL_NO_TUMOR', status),
     status = ifelse(status %in% acceptableStatus & qcStatus != 'PASS', qcStatus, status),
     status = ifelse(status %in% acceptableStatus & purity < 0.2, 'FAIL_PURITY', status),
     status = ifelse(status %in% acceptableStatus, 'PASS',status)) %>%
-  group_by(patientId) %>% 
-  arrange(arrivalDate) %>% mutate(patientSample = row_number())
+  select(-qcStatus, -genesDeleted)
 
 maxPassPuritySampleIds = cohortSummary %>% 
-  filter(qcStatus == 'PASS') %>% 
+  filter(status == 'PASS') %>% 
   group_by(patientId, purity) %>% top_n(1, -score) %>% ungroup() %>% group_by(patientId) %>% top_n(1, purity) %>% ungroup() %>% pull(sampleId)
 
 cohortSummary = cohortSummary %>%
   ungroup() %>%
   mutate(patientHighestPurityPassingSample = sampleId %in% maxPassPuritySampleIds) %>%
-  select(-qcStatus, -score, -genesDeleted)
+  select(-score)
 
-cohortSummary %>% group_by(status) %>% count()
-cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% count() %>% filter(n  > 1) %>% arrange(-n)
+sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
+cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
+  select(-sampleId, -patientId) %>%
+  mutate(
+    patientId = substr(hmfSampleId, 1, 9),
+    sample = substring(hmfSampleId, 10)) %>%
+  select(patientId, sample, sampleId = hmfSampleId, gender, status,
+         cancerType, primaryTumorLocation, cancerSubtype, biopsySite, biopsyType, biopsyLocation, ageAtBiopsy, refMeanCoverage,
+         tumorMeanCoverage, pathologyPurity, samplingDate, 
+         purity, ploidy, 
+         SUBCLONAL_INDEL,SUBCLONAL_MNV,SUBCLONAL_SNV,TOTAL_INDEL,TOTAL_SNV,TOTAL_MNV,
+         mutationalLoad,msiScore,msiStatus,
+         BND,DEL,DUP,INS,INV,
+         duplicatedAutosomes,WGD,patientHighestPurityPassingSample)
 
-cohortSummary %>% filter(sample  > 1)
+names(cohortSummary)
+
+
+hpc = cohortSummary %>% filter(patientHighestPurityPassingSample)
+mbc = cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% mutate(n = n()) %>% filter(n > 1)
 
 write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
 
-rm(cohortSummary)
-
-##### GENERATE PATIENT/SAMPLEID
-#load(file = "~/hmf/RData/reference/allClinicalData.RData")
-#load(file = "~/hmf/RData/reference/allPurity.RData")
-#cpctPatientIds =  unique(allPurity$patientId)
-#hmfPatientIds = paste0("HMF", formatC(c(1:2781), width = 5, format = "d", flag = "0"))
-#patientIdMap = data.frame(cpctPatientId = cpctPatientIds, hmfPatientId = hmfPatientIds, stringsAsFactors = F)
-#rm(cpctPatientIds, hmfPatientIds)
-
-#sampleIdMap = allPurity %>% select(sampleId, patientId) %>% 
-#  left_join(patientIdMap, by = c("patientId" = "cpctPatientId")) %>%
-#  left_join(allClinicalData %>% select(sampleId, sampleArrivalDate), by = "sampleId") %>%
-#  arrange(hmfPatientId, sampleArrivalDate) %>%
-#  group_by(hmfPatientId) %>%
+#### GENERATE PATIENT/SAMPLEID
+#patientIds = unique(cohortSummary$patientId)
+#write.csv(patientIds, file = "/Users/jon/hmf/resources/cpctPatientIds.csv", row.names = F, quote = F) 
+#patientIdMap = read.csv(file = "/Users/jon/hmf/secure/PatientIdMap.csv", stringsAsFactors = F) %>% 
+#  select(patientId = OriginalId, hmfPatientId = AnonymousId)
+#sampleIdMap = cohortSummary %>% select(patientId, sampleId, patientSample) %>%
+#  left_join(patientIdMap, by = "patientId") %>%
 #  mutate(
-#    sample = row_number(),
-#    sample = chartr("12345", "ABCDE", sample)) %>%
-#  mutate(hmfSampleId = paste0(hmfPatientId, sample))
-
-#sampleIdMap$insert = paste0("(\'", sampleIdMap$hmfSampleId, "\',\'", sampleIdMap$patientId, "\',\'", sampleIdMap$sampleId, "\')")
-#cat(paste0(sampleIdMap$insert, collapse = ","))
-
+#    patientSample = chartr("12345", "ABCDE", patientSample),
+#    hmfSampleId = paste0(hmfPatientId, patientSample)) %>%
+#  select(sampleId, hmfSampleId)
+#write.csv(sampleIdMap, file ="/Users/jon/hmf/secure/SampleIdMap.csv", row.names = F, quote = F) 
 ############################################ HIGHEST PURITY
 load(file = '~/hmf/RData/reference/allGeneDeletes.RData')
 load(file = "~/hmf/RData/reference/allClinicalData.RData")
