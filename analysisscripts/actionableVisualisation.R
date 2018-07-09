@@ -63,8 +63,6 @@ actionableDrugs = merge(responsiveDrugs,resistantDrugs,by=c('sampleId','patientC
 
 responsiveVariants = actionableDrugs %>% select(sampleId, drug) %>%
   left_join(actionableVariants, by = c("sampleId","drug")) %>%
-  mutate(treatmentType = ifelse(treatmentType == "On-label", "OnLabel", "OffLabel")) %>%
-  filter(hmfLevel %in% c('A','B'), !level %in% c('Early trials')) %>%
   select(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
   group_by(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
   distinct() %>%
