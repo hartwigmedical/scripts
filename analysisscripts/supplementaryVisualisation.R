@@ -24,6 +24,12 @@ simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
 save(simplifiedDrivers, simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDrivers.RData")
 
+g_legend <- function(a.gplot){ 
+  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
+  legend <- tmp$grobs[[leg]] 
+  return(legend)} 
+
 
 ########################################### Figure 2 - WGD
 wgdPlotData = highestPurityCohortSummary %>% 
@@ -115,7 +121,7 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
   geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
   scale_fill_manual(values = simplifiedDriverColours) +
-  ggtitle("") + xlab("") + ylab("Average drivers per sample") +  
+  ggtitle("") + xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
   coord_flip()
@@ -125,9 +131,14 @@ save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_w
 
 ########################################### Figure 5 - Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
+load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
-hotspotGenes = hpcDndsOncoDrivers %>% 
-  filter(type == 'ONCO', !is.na(hotspot)) %>% 
+tertData = hpcTertPromoters %>% select(sampleId, gene) %>% mutate(variant = "SNV", hotspot = T, nearHotspot = F, driverLikelihood = 1)
+hotspotDataInter = hpcDndsOncoDrivers %>% select(sampleId, gene, variant,  hotspot, nearHotspot, driverLikelihood) %>%
+  bind_rows(tertData)
+
+hotspotGenes = hotspotData %>% 
+  filter(!is.na(hotspot)) %>% 
   group_by(gene) %>% 
   summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(40, driverLikelihood) %>% arrange(driverLikelihood)
 
@@ -135,35 +146,53 @@ variantFactors = c("INDEL","MNV","SNV")
 hotspotFactors = c("Hotspot","NearHotspot","NoHotspot")
 hotspotColours = setNames(c("#d94701","#fd8d3c", "#fdbe85"), hotspotFactors)
 
-hotspotData = hpcDndsOncoDrivers %>% 
-  filter(type == 'ONCO', !is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
+hotspotData = hotspotDataInter %>% 
+  filter(!is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
   mutate(hotspot = ifelse(hotspot, "Hotspot", "NoHotspot"),
          hotspot = ifelse(nearHotspot, "NearHotspot", hotspot),
          hotspot = factor(hotspot, rev(hotspotFactors)),
-         variant = factor(variant, rev(variantFactors)),
-         impact = as.character(impact),
-         impact = ifelse(impact == "Promoter", "Missense", impact),
-         impact = ifelse(impact == "Inframe", "Inframe Indel", impact),
-         impact = factor(impact, c("Missense", "Inframe Indel"))) %>%
-  group_by(gene, impact, variant, hotspot) %>%
+         variant = factor(variant, rev(variantFactors))) %>%
+  group_by(gene,  variant, hotspot) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
-  group_by(gene) %>%
-  mutate(total = sum(driverLikelihood), percentage = driverLikelihood / total) %>%
   ungroup() %>%
-  mutate(gene = factor(gene, hotspotGenes$gene))
+  mutate(gene = factor(gene, hotspotGenes$gene)) %>% 
+  group_by(gene, hotspot) %>% spread(variant, driverLikelihood, fill = 0)  %>% gather(variant, driverLikelihood, 3:5)
 
-p_hotspot = ggplot(data = hotspotData, aes(x = gene, y = driverLikelihood)) +
+p_hotspot1 = ggplot(data = hotspotData %>% filter(variant == 'SNV'), aes(x = gene, y = driverLikelihood)) +
   geom_bar(aes(fill = hotspot), stat = "identity") +
   scale_fill_manual(values = hotspotColours) +
-  ggtitle("") + 
-  xlab("Gene") + ylab("Drivers")+ 
+  ggtitle("SNV") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank(), legend.title=element_blank()) +
-  coord_flip()+ 
-  facet_grid(~variant, scales = "free_x")
+  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  coord_flip()
 
-pHotspots = plot_grid(p_hotspot, labels="AUTO")
-save_plot("~/hmf/RPlot/Figure 5 - Hotspots.png", pHotspots, base_width = 5, base_height = 6)
+legend = g_legend(p_hotspot1)
+p_hotspot1 = p_hotspot1 + theme(legend.position="none")
+
+p_hotspot2 = ggplot(data = hotspotData %>% filter(variant == 'MNV'), aes(x = gene, y = driverLikelihood)) +
+  geom_bar(aes(fill = hotspot), stat = "identity") +
+  scale_fill_manual(values = hotspotColours) +
+  ggtitle("MNV") + xlab("") + ylab("")+ 
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(),  legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  coord_flip()
+
+p_hotspot3 = ggplot(data = hotspotData  %>% filter(variant == 'INDEL'), aes(x = gene, y = driverLikelihood)) +
+  geom_bar(aes(fill = hotspot), stat = "identity") +
+  scale_fill_manual(values = hotspotColours) +
+  ggtitle("Indel") + xlab("") + ylab("")+ 
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), axis.text.y = element_blank(), legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  coord_flip()
+
+
+pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1), ncol = 3, labels=c("A"))
+pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(6,1)) + draw_label("Drivers", x = 0.52, y = 0.15, size = 11)
+pHotspots2 
+save_plot("~/hmf/RPlot/Figure 5 - Hotspots.png", pHotspots2, base_width = 5, base_height = 6)
 
 
 ########################################### Figure 6 - Clonality
@@ -269,121 +298,36 @@ p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
 
 plot_grid(p1, labels="AUTO")
 
-#############  Drivers vs Mutational Load
-mutationalLoad = highestPurityCohortSummary %>%
-  filter(msiStatus == "MSS") %>%
-  mutate(
-    indel =TOTAL_INDEL,
-    snv = TOTAL_SNV + TOTAL_MNV,
-    sv = BND + DEL + DUP + INV + INS) %>%
-  select(sampleId, cancerType, indel, snv, sv) 
-
-indelDrivers =  hpcDriversByGene %>%   
-  ungroup() %>%
-  mutate(
-    driver = as.character(driver),
-    driver = ifelse(driver %in% c("Frameshift", "Inframe"), "Indel", driver),
-    driver = ifelse(grepl("Indel", impact), "Indel", driver)
-  ) %>%
-  filter(driverLikelihood > 0, driver == "Indel") %>%
-  group_by(sampleId, cancerType) %>% summarise(drivers = sum(driverLikelihood, na.rm = T))
-
-snvDrivers =  hpcDriversByGene %>%   
-  ungroup() %>%
-  mutate(
-    driver = as.character(driver),
-    driver = ifelse(driver %in% c("Missense", "Nonsense","Splice"), "SNV", driver),
-    driver = ifelse(grepl("Missense", impact) | grepl("Nonsense", impact) | grepl("Splice", impact), "SNV", driver)
-  ) %>%
-  filter(driverLikelihood > 0, driver == "SNV") %>%
-  group_by(sampleId, cancerType) %>% summarise(drivers = sum(driverLikelihood, na.rm = T))
-
-cnaDrivers =  hpcDriversByGene %>%   
-  ungroup() %>%
-  mutate(
-    driver = as.character(driver),
-    driver = ifelse(driver %in% c("Amp", "Del","FragileDel"), "CNA", driver)) %>%
-  filter(driverLikelihood > 0, driver == "CNA") %>%
-  group_by(sampleId, cancerType) %>% summarise(drivers = sum(driverLikelihood, na.rm = T))
-
-indelData = left_join(mutationalLoad %>% select(sampleId, cancerType, indel), indelDrivers, by = c("sampleId","cancerType"))
-indelData[is.na(indelData)] <- 0
-indelDataGlobal = indelData %>% ungroup() %>% summarise(load = mean(indel, na.rm = T), drivers = mean(drivers, na.rm = T)) %>% mutate(gradient = drivers/load) 
-indelData = indelData %>% group_by(cancerType) %>% summarise(load = mean(indel, na.rm = T), drivers = mean(drivers, na.rm = T))
-
-svData = left_join(mutationalLoad %>% select(sampleId, cancerType, sv), cnaDrivers, by = c("sampleId","cancerType"))
-svData[is.na(svData)] <- 0
-svDataGlobal = svData %>% ungroup() %>% summarise(load = mean(sv, na.rm = T), drivers = mean(drivers, na.rm = T)) %>% mutate(gradient = drivers/load) 
-svData = svData %>% group_by(cancerType) %>% summarise(load = mean(sv, na.rm = T), drivers = mean(drivers, na.rm = T))
-
-snvData = left_join(mutationalLoad %>% select(sampleId, cancerType, snv), snvDrivers, by = c("sampleId","cancerType"))
-snvData[is.na(snvData)] <- 0
-snvDataGlobal = snvData %>% ungroup() %>% summarise(load = mean(snv, na.rm = T), drivers = mean(drivers, na.rm = T)) %>% mutate(gradient = drivers/load) 
-snvData = snvData %>% group_by(cancerType) %>% summarise(load = mean(snv, na.rm = T), drivers = mean(drivers, na.rm = T))
-
-p1 = ggplot(svData, aes(x=load, y=drivers, color=cancerType)) + 
-  geom_point() +
-  #geom_segment(aes(x = 0, xend = 1000, y = 0, yend = 1000 * svDataGlobal$gradient), linetype = 2, color = "black") +
-  #geom_point(aes(x = svDataGlobal$load, y = svDataGlobal$drivers), shape = 25, size = 2, color= "blue", fill="blue") +
-  coord_cartesian(xlim= c(0,500), ylim=c(0,5))+
-  ylab("CNA Drivers") + xlab("SV Mutational Load") + ggtitle("") + 
-  theme(legend.position="none", legend.title = element_blank()) +
-  scale_color_manual(values=cancerTypeColours, guide=FALSE)
-
-p2 = ggplot(snvData, aes(x=load, y=drivers, color=cancerType)) + 
-  geom_point() +
-  #geom_segment(aes(x = 0, xend = 100000, y = 0, yend = 100000 * snvDataGlobal$gradient), linetype = 2, color = "black") +
-  #geom_point(aes(x = snvDataGlobal$load, y = snvDataGlobal$drivers), shape = 25, size = 2, color= "blue", fill="blue") +
-  coord_cartesian(xlim= c(0,82000), ylim=c(0,4))+
-  ylab("SNV Drivers") + xlab("SNV Mutational Load") + ggtitle("") + 
-  theme(legend.position="none", legend.title = element_blank()) +
-  scale_color_manual(values=cancerTypeColours, guide=FALSE)
-
-p3 = ggplot(indelData, aes(x=load, y=drivers, color=cancerType)) + 
-  geom_point() +
-  #geom_segment(aes(x = 0, xend = 10000, y = 0, yend = 10000 * indelDataGlobal$gradient), linetype = 2, color = "black") +
-  #geom_point(aes(x = indelDataGlobal$load, y = indelDataGlobal$drivers), shape = 25, size = 2, color= "blue", fill="blue") +
-  coord_cartesian(xlim= c(0,3000), ylim=c(0,1.5))+
-  ylab("Indel Drivers") + xlab("Indel Mutational Load") + ggtitle("") +
-  theme(legend.position="none", legend.title = element_blank()) +
-  scale_color_manual(values=cancerTypeColours, guide=FALSE)
-
-p4 = ggplot(indelData, aes(x=load, y=drivers, color=cancerType)) + geom_point() +
-  theme(legend.position="bottom", legend.title = element_blank()) + 
-  guides(color = guide_legend(nrow = 3)) +
-  scale_color_manual(values=cancerTypeColours)
-
-g_legend <- function(a.gplot){ 
-  tmp <- ggplot_gtable(ggplot_build(a.gplot)) 
-  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
-  legend <- tmp$grobs[[leg]] 
-  return(legend)} 
-
-legend <- g_legend(p4) 
-
-plot_grid(p1,p2,p3,legend, ncol = 1, rel_heights = c(3,3,3,2), labels = c("A","B","C"))
-
-
 
 
 ########################################### Extended Figure 2 - MSI / TMB
-
+load("~/hmf/RData/processed/hpcDriversByGene.RData")
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+
 msiData = highestPurityCohortSummary %>% select(sampleId, cancerType, msiScore, msiStatus)
 msiRelativeData = msiData %>% group_by(cancerType, msiStatus) %>% count() %>% group_by(cancerType) %>% mutate(percentage = n / sum(n)) 
 msiRelativeData = msiData %>% filter(cancerType != 'Other') %>% group_by(cancerType, msiStatus) %>% count() %>% spread(msiStatus, n, fill = 0) %>% mutate(percentage = MSI /(MSS + MSI)) %>% arrange(percentage)
 msiRelativeData = msiRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiRelativeData$cancerType))
+msiGlobalData = msiRelativeData %>% summarise(MSI = sum(MSI), MSS = sum(MSS)) %>% mutate(percentage = MSI /(MSS + MSI))
+msiRelativeData$globalPercentage = msiGlobalData$percentage
+msiRelativeData[msiRelativeData$cancerType == "CNS", "globalPercentage"] <- NA
+msiRelativeData[msiRelativeData$cancerType == "Uterus", "globalPercentage"] <- NA
 
 tmbData = highestPurityCohortSummary %>% select(sampleId, cancerType, TOTAL_SNV) %>% mutate(TMBScore = TOTAL_SNV / 3095, Burden = ifelse(TMBScore >= 10, "Burdened","Unburdened"))
 tmbRelativeData = tmbData %>% filter(cancerType != 'Other') %>% group_by(cancerType, Burden) %>% count() %>% spread(Burden, n, fill = 0) %>% mutate(percentage = Burdened /(Burdened + Unburdened)) %>% arrange(percentage)
 tmbRelativeData = tmbRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, tmbRelativeData$cancerType))
+tmbGlobalData = tmbRelativeData %>% summarise(Burdened = sum(Burdened), Unburdened = sum(Unburdened)) %>% mutate(percentage = Burdened /(Burdened + Unburdened))
+tmbRelativeData$globalPercentage = tmbGlobalData$percentage
+tmbRelativeData[tmbRelativeData$cancerType == "Skin", "globalPercentage"] <- NA
+tmbRelativeData[tmbRelativeData$cancerType == "Lung", "globalPercentage"] <- NA
 
-#msiTmbSorting = left_join(msiRelativeData, tmbRelativeData, by = "cancerType", suffix = c(".msi",".tmb")) %>% arrange(percentage.msi, percentage.tmb)
-#msiRelativeData = msiRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiTmbSorting$cancerType))
-#tmbRelativeData = tmbRelativeData %>% ungroup() %>% mutate(cancerType = factor(cancerType, msiTmbSorting$cancerType))
-  
 p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
-  geom_bar(stat = "identity", fill = singleBlue) + ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
+  geom_bar(stat = "identity", fill = singleBlue) + 
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
+  annotate("text", x = 20, y = msiGlobalData$percentage, label = "Pan Cancer", size = 3) +
+  annotate("text", x = 19, y = msiGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*msiGlobalData$percentage), size = 3) +
+  ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
@@ -393,14 +337,17 @@ p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) +
 
 
 p2 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) + 
-  geom_bar(stat = "identity",fill = singleBlue) + ylab("% Samples TMB High") + xlab("Cancer Type") + ggtitle("") +
+  geom_bar(stat = "identity",fill = singleBlue) + 
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
+  annotate("text", x = 20, y = tmbGlobalData$percentage, label = "Pan Cancer", size = 3) +
+  annotate("text", x = 19, y = tmbGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*tmbGlobalData$percentage), size = 3) +
+  ylab("% Samples TMB High") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.7), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(panel.border = element_blank(), panel.grid.major.y = element_blank(), panel.grid.minor = element_blank()) +
   theme(axis.ticks = element_blank(), axis.title.y = element_blank()) +
   theme(legend.position = "none") +
   coord_flip()
-
 
 p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
   geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
@@ -412,10 +359,75 @@ p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)
   theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
   xlab("SNVs") + ylab("Indels") + ggtitle("")
 
-
 p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("A","B"))
-pMsiTMB = plot_grid(p12, p3, ncol = 1, rel_heights = c(2, 3), labels = c("","C"))
-save_plot("~/hmf/RPlot/Extended Figure 2 - MSI.png", pMsiTMB, base_width = 7, base_height = 9)
+pMsiTMB = plot_grid(p12, p3, ncol = 1, rel_heights = c(1, 2), labels = c("","C"))
+
+########### Part 2
+mutationalLoad = highestPurityCohortSummary %>%
+  filter(msiStatus == "MSS") %>%
+  mutate(
+    indelMutLoad =TOTAL_INDEL,
+    snvMutLoad = TOTAL_SNV + TOTAL_MNV,
+    svMutLoad = BND + DEL + DUP + INV + INS) %>%
+  select(sampleId, cancerType, indelMutLoad, snvMutLoad, svMutLoad) 
+
+driverLoad =  hpcDriversByGene %>%   
+  ungroup() %>%
+  mutate(
+    driver = as.character(driver),
+    driver = ifelse(driver %in% c("Frameshift", "Inframe"), "indelDriverLoad", driver),
+    driver = ifelse(grepl("Indel", impact), "indelDriverLoad", driver),
+    driver = ifelse(driver %in% c("Missense", "Nonsense", "Splice"), "snvDriverLoad", driver),
+    driver = ifelse(grepl("Missense", impact) | grepl("Nonsense", impact) | grepl("Splice", impact), "snvDriverLoad", driver),
+    driver = ifelse(driver %in% c("Amp", "Del","FragileDel"), "cnaDriverLoad", driver)
+  ) %>%
+  filter(driver %in% c('indelDriverLoad', "snvDriverLoad", "cnaDriverLoad")) %>%
+  group_by(sampleId, cancerType, driver) %>% summarise(drivers = sum(driverLikelihood, na.rm = T)) %>%
+  spread(driver, drivers, fill = 0)
+
+combinedDriverAndMutationalLoad = merge(mutationalLoad, driverLoad, by = c("sampleId","cancerType"), all.x = T)
+combinedDriverAndMutationalLoad[is.na(combinedDriverAndMutationalLoad)] <- 0
+combinedDriverAndMutationalLoad = combinedDriverAndMutationalLoad %>%
+  group_by(cancerType) %>%
+  summarise(
+    indelMutLoad = mean(indelMutLoad),
+    snvMutLoad = mean(snvMutLoad),
+    svMutLoad = mean(svMutLoad),
+    indelDriverLoad = mean(indelDriverLoad),
+    snvDriverLoad = mean(snvDriverLoad),
+    cnaDriverLoad = mean(cnaDriverLoad)
+  )
+
+
+p4 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, color=cancerType)) + 
+  geom_point() +
+  coord_cartesian(xlim= c(0,500), ylim=c(0,5))+
+  ylab("CNA Drivers") + xlab("SV Mutational Load") + ggtitle("") + 
+  theme(legend.position="none", legend.title = element_blank()) +
+  scale_color_manual(values=cancerTypeColours, guide=FALSE)
+
+
+p5 = ggplot(combinedDriverAndMutationalLoad, aes(x=snvMutLoad, y=snvDriverLoad, color=cancerType)) + 
+  geom_point() +
+  coord_cartesian(xlim= c(0,82000), ylim=c(0,4))+
+  ylab("SNV Drivers") + xlab("SNV Mutational Load") + ggtitle("") + 
+  theme(legend.position="none", legend.title = element_blank()) +
+  scale_color_manual(values=cancerTypeColours, guide=FALSE)
+
+p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLoad, color=cancerType)) + 
+  geom_point() +
+  coord_cartesian(xlim= c(0,3000), ylim=c(0,1.5))+
+  ylab("Indel Drivers") + xlab("Indel Mutational Load") + ggtitle("") +
+  theme(legend.position="none", legend.title = element_blank()) +
+  scale_color_manual(values=cancerTypeColours, guide=FALSE)
+
+
+pLoads = plot_grid(p4,p5,p6, nrow = 1, labels = c("D","E","F"))
+
+pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(3, 1))
+pComplete
+
+save_plot("~/hmf/RPlot/Extended Figure 2 - Loads.png", pComplete, base_width = 10, base_height = 14)
 
 ########################################### Extended Figure 4 - SMG tile chart
 
