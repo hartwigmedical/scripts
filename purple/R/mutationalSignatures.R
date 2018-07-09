@@ -12,15 +12,13 @@ plot_cosmic_signature<-function(mutationalSignature, mode = "absolute") {
 }
 
 getCOSMICSignatures <- function() {
-  sp_url = "http://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
+  sp_url = "https://cancer.sanger.ac.uk/cancergenome/assets/signatures_probabilities.txt"
   cancer_signatures = read.table(sp_url, sep = "\t", header = T)
   # reorder (to make the order of the trinucleotide changes the same)
   cancer_signatures = cancer_signatures[order(cancer_signatures[, 1]),]
   # only signatures in matrix
   cancer_signatures = as.matrix(cancer_signatures[, 4:33])
 }
-
-
 
 base_complements <- function(bases) {
   complements = setNames(c("A", "C", "G","T"), c("T", "G", "C","A"))
@@ -32,6 +30,15 @@ base_complements <- function(bases) {
   sapply(bases, point_complement)
 }
 
+standard_mutation <- function(types) {
+  types = gsub("G>T", "C>A", types)
+  types = gsub("G>C", "C>G", types)
+  types = gsub("G>A", "C>T", types)
+  types = gsub("A>T", "T>A", types)
+  types = gsub("A>G", "T>C", types)
+  types = gsub("A>C", "T>G", types)
+  return(types)
+}
 
 standard_double_mutation <- function(types) {
 
@@ -63,70 +70,6 @@ standard_double_mutation <- function(types) {
   sapply(types, single_standard_mutation)
 }
 
-#single_standard_mutation("AC>AC")
-#standard_double_mutation(c("CC>TA", "AT>AC"))
-
-standard_double_mutation3 <- function(types) {
-
-  lookup = data.frame(base = c("AC", "AT", "CC", "CG", "CT", "GC", "TA","TC", "TG", "TT"), stringsAsFactors = F)
-  lookup$complement = base_complements(lookup$base)
-
-  df = data.frame(type = types, stringsAsFactors = F)
-  df = df %>% mutate(ref = substr(type, 1, 2), refComplement = base_complements(ref)) %>%
-    left_join(lookup %>% select(ref = base, refMatch = complement), by = "ref") %>%
-    left_join(lookup %>% select(refComplement = base, refComplementMatch = complement), by = "refComplement") %>%
-    mutate(
-      match = coalesce(refMatch, refComplementMatch),
-      match = ifelse(is.na(match), "Other", paste0(match, ">NN")))
-
-  df$match = ifelse(nchar(types) != 5, "Other", df$match)
-  df$match = ifelse(types %in% c("CC>AA", "GG>TT"), "CC>AA", df$match)
-  df$match = ifelse(types %in% c("CC>TT", "GG>AA"), "CC>TT", df$match)
-
-  return(df$match)
-}
-
-
-
-standard_double_mutation2 <- function(types) {
-
-  isMatch <- function(type, base) {
-    return (type == base | type == base_complements(base))
-  }
-
-  result = ifelse(substr(types, 3, 3) != '>', "Other", NA)
-
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CC"), "CC>Other", NA)
-  result = ifelse(is.na(result) & types %in% c("CC>AA", "GG>TT"), "CC>AA", NA)
-  result = ifelse(is.na(result) & types %in% c("CC>TT", "GG>AA"), "CC>TT", NA)
-
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "AC"), "AC>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "AT"), "AT>NN", NA)
-
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CC"), "CC>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CG"), "CG>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "CT"), "CT>NN", NA)
-
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "GC"), "GC>NN", NA)
-
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TA"), "TA>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TC"), "TC>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TG"), "TG>NN", NA)
-  result = ifelse(is.na(result) & isMatch(substr(types, 1, 2), "TT"), "TT>NN", NA)
-
-  return(result)
-}
-
-standard_mutation <- function(types) {
-  types = gsub("G>T", "C>A", types)
-  types = gsub("G>C", "C>G", types)
-  types = gsub("G>A", "C>T", types)
-  types = gsub("A>T", "T>A", types)
-  types = gsub("A>G", "T>C", types)
-  types = gsub("A>C", "T>G", types)
-  return(types)
-}
-
 standard_context <- function(raw_type, standard_type, context) {
   x = which(raw_type != standard_type)
   context[x] = reverse(chartr("ATGC", "TACG", context[x]))
@@ -154,48 +97,39 @@ create_empty_mutational_signature <- function() {
   return(DF)
 }
 
-extract_mutational_signature_data <- function(somaticVariants, feature="scope") {
-  raw_data = somaticVariants[somaticVariants$type == 'SNP', ]
-  raw_data = raw_data[!(raw_data$trinucleotideContext %in% 'N'), ]
-
-  raw_types <- paste(raw_data$ref, raw_data$alt, sep = ">")
-  standard_types = standard_mutation(raw_types)
-
-  raw_context = raw_data$trinucleotideContext
-  context = standard_context(raw_types, standard_types, raw_context)
-
-  DT = data.table(
-    sampleId = raw_data$sampleId,
-    type = standard_types,
-    context = context,
-    ploidy = raw_data$ploidy,
-    clonality = raw_data$clonality,
-    chromosome = raw_data$chromosome,
-    position = raw_data$position,
-    scope = raw_data[[feature]])
-
-  return (DT)
-}
-
-mutational_signature_by_clonality <- function(somaticVariants) {
-  empty = create_empty_mutational_signature()
-  DT = extract_mutational_signature_data(somaticVariants, feature="clonality")
-
-  result = dcast(DT, type + context ~ clonality, value.var = "clonality", fun.aggregate = length)
-  result = merge(empty, result, all.x=TRUE)
-  result[is.na(result)] <- 0
-
+extract_mutational_signature_data <- function(somatics) {
+  result = somatics %>%
+    filter(type == 'SNP', !grepl('N', trinucleotideContext)) %>%
+    mutate(
+      raw_types = paste(ref, alt, sep = ">"),
+      type = standard_mutation(raw_types),
+      context = standard_context(raw_types, type, trinucleotideContext)) %>%
+    select(-raw_types)
   return (result)
 }
 
+mutational_signature <- function(somaticVariants) {
+  signature_data = extract_mutational_signature_data(somaticVariants)
+  signature = signature_data %>% group_by(type, context) %>% count()
+  return (ensure_96_types(signature))
+}
+
 mutational_signature_by_scope <- function(somaticVariants) {
+  signature_data = extract_mutational_signature_data(somaticVariants)
+  signature = signature_data %>% group_by(type, context, scope) %>% count() %>% spread(scope, n, fill = 0)
+  return (ensure_96_types(signature))
+}
+
+mutational_signature_by_clonality <- function(somaticVariants) {
+  signature_data = extract_mutational_signature_data(somaticVariants)
+  signature = signature_data %>% group_by(type, context, clonality) %>% count() %>% spread(scope, n, fill = 0)
+  return (ensure_96_types(signature))
+}
+
+ensure_96_types <- function(signature) {
   empty = create_empty_mutational_signature()
-  DT = extract_mutational_signature_data(somaticVariants, feature="scope")
-
-  result = dcast(DT, type + context ~ scope, value.var = "scope", fun.aggregate = length)
-  result = merge(empty, result, all.x=TRUE)
+  result = merge(empty, signature, all.x=TRUE)
   result[is.na(result)] <- 0
-
   return (result)
 }
 
