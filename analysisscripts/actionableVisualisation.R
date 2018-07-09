@@ -17,10 +17,8 @@ levelTreatmentFactors = rev(c("A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel")
 levelTreatmentColors = setNames(rev(c("#2171b5","#6baed6","#bdd7e7","#eff3ff")), levelTreatmentFactors)
 
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
-actionableVariants = read.table('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t', stringsAsFactors = F) %>%
-  filter(!startsWith(sampleEvent, "Synonymous"), 
-         !gene %in% c('PTEN','KRAS'),
-         !level %in% c('Early trials'),
+actionableVariants = read.csv('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t', stringsAsFactors = F) %>%
+  filter(!gene %in% c('PTEN','KRAS'),
          hmfLevel %in% c('A','B')) %>%
   mutate(
     drug = ifelse(drug == "Fluvestrant", "Fulvestrant", drug),
@@ -29,7 +27,6 @@ actionableVariants = read.table('~/hmf/resources/actionableVariantsPerSample.tsv
     drug = ifelse(drug == "AZD5363", "AZD-5363", drug),
     drug = ifelse(drug == "BGJ398", "BGJ-398", drug),
     drug = alphabetical_drug(drug),
-    treatmentType = ifelse(treatmentType == "On-label", "OnLabel", "OffLabel"),
     levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors))
 
 ########################################### Supplementary Data
