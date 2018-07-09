@@ -5,8 +5,9 @@
 library(tidyverse)
 library(stringr)
 library(rtracklayer)
+library(R.cache)
 source("libgridss.R")
-usage = "Usage: Rscript add_to_pon.R <pon directory> <input VCFs>"
+usage = "Usage: Rscript create_gridss_pon.R <pon directory> <input VCFs>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "add_to_pon")) {
   args = args[-1]
@@ -34,10 +35,9 @@ if (!any(file.exists(vcf_list))) {
 #"C:/hartwig/down/CPCT02100013R_CPCT02100013T.gridss.vcf",
 #"C:/hartwig/down/CPCT02100013R_CPCT02100013TII.gridss.vcf")
 
-full_bp = list()
-full_be = list()
-for (vcf_file in vcf_list) {
-  sampleId = str_replace(basename(vcf_file), ".gridss.vcf", "")
+setCacheRootPath(paste0(pon_dir, "/Rcache"))
+options("R.cache.compress"=TRUE)
+load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
   full_vcf = readVcf(vcf_file, "hg19")
   bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
   begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
@@ -58,9 +58,17 @@ for (vcf_file in vcf_list) {
   minimal_begr$IMPRECISE = info(full_vcf[names(minimal_begr)])$IMPRECISE
   names(minimal_begr) = NULL
 
-  full_bp[[sampleId]] = minimal_bpgr
-  full_be[[sampleId]] = minimal_begr
+  return(list(bp=minimal_bpgr, be=minimal_begr))
+})
+full_bp = list()
+full_be = list()
+for (vcf_file in vcf_list) {
+  sampleId = str_replace(basename(vcf_file), ".gridss.vcf", "")
+  calls = load_germline_pon_calls(vcf_file, sampleId)
+  full_bp[[sampleId]] = calls$bp
+  full_be[[sampleId]] = calls$be
 }
+
 bpdf = bind_rows(lapply(full_bp, function(x) {
   data.frame(
     seqnames = seqnames(x),
@@ -73,7 +81,7 @@ bpdf = bind_rows(lapply(full_bp, function(x) {
     IMPRECISE = x$IMPRECISE
   )})) %>%
   # preferentially call the precise call with the largest homology
-  # name included purely forto ensure stable sort order
+  # name included purely to ensure stable sort order
   arrange(IMPRECISE, desc(end - start), name)
 bpgr = GRanges(
   seqnames=bpdf$seqnames,
@@ -93,8 +101,8 @@ hits = findBreakpointOverlaps(bpgr, bpgr) %>%
   summarise(n=n()) %>%
   filter(n >= 2)
 ponbp = bpgr[hits$queryHits]
-
-bedpe <- data.frame(
+ponbp$hits = hits$n
+bedpe = data.frame(
   chrom1=seqnames(ponbp),
   start1=start(ponbp) - 1,
   end1=end(ponbp),
@@ -105,8 +113,10 @@ bedpe <- data.frame(
   score=".",
   strand1=strand(ponbp),
   strand2=strand(partner(bpgr)[hits$queryHits]),
-  IMPRECISE=ponbp$IMPRECISE
-)
+  IMPRECISE=ponbp$IMPRECISE,
+  hits=ponbp$hits
+) %>% filter(as.numeric(chrom1) < as.numeric(chrom2) | (chrom1 == chrom2 & start1 <= start2)) %>%
+  arrange(chrom1, start1, chrom2, start2)
 write.table(bedpe, paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)
 
 
@@ -119,7 +129,7 @@ bedf = bind_rows(lapply(full_be, function(x) {
     vcf = x$vcf,
     IMPRECISE = x$IMPRECISE
   )})) %>%
-  arrange(IMPRECISE, desc(end - start), vcf, seqnames, start)
+  arrange(vcf, seqnames, start, desc(end - start))
 begr = GRanges(
   seqnames=bedf$seqnames,
   ranges=IRanges(
