@@ -298,7 +298,26 @@ p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
 
 plot_grid(p1, labels="AUTO")
 
+########################################### Extended Figure 1c - coverage
+load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+coverageData = highestPurityCohortSummary %>% 
+  select(sampleId, tumorMeanCoverage, refMeanCoverage, cancerType) %>%
+  mutate(medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
+  arrange(cancerType, -tumorMeanCoverage)
 
+pCoverage = ggplot(data=coverageData)+
+  stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
+  stat_ecdf(aes(refMeanCoverage*2,color='Reference (RHS)'),geom = "step", pad = FALSE) +
+  scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage", breaks = c(25, 50, 75, 100))) +
+  coord_flip() + ggtitle("") +
+  labs(x = "Tumor Mean Coverage")+
+  theme(axis.title.x =  element_blank(), axis.ticks = element_blank()) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), legend.position = "bottom", legend.title = element_blank()) +
+  scale_y_continuous(labels = percent)
+
+pCoverage = plot_grid(pCoverage, labels = "C")
+pCoverage
+save_plot("~/hmf/RPlot/Extended Figure 1 - Coverage.png", pCoverage, base_width = 5, base_height = 5)
 
 ########################################### Extended Figure 2 - MSI / TMB
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
