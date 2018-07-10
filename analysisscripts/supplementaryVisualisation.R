@@ -264,16 +264,18 @@ pClonality
 save_plot("~/hmf/RPlot/Figure 6 - Subclonal.png", pClonality, base_width = 10, base_height = 2.5)
 
 
-########################################### Extended Figure 1c - coverage
+########################################### Extended Figure 1c - Coverage
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 coverageData = highestPurityCohortSummary %>% 
   select(sampleId, tumorMeanCoverage, refMeanCoverage, cancerType) %>%
-  mutate(medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
+  mutate(
+    medianTC = median(tumorMeanCoverage, na.rm = T),
+    medianRC = median(refMeanCoverage, na.rm = T)) %>%
   arrange(cancerType, -tumorMeanCoverage)
 
 pCoverage = ggplot(data=coverageData)+
-  stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
-  stat_ecdf(aes(refMeanCoverage*2,color='Reference (RHS)'),geom = "step", pad = FALSE) +
+  stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianTC, xend = medianTC, y = 0.375, yend = 0.625, color='Tumor (LHS)'), show.legend = F) +  
+  stat_ecdf(aes(refMeanCoverage*2,color='Reference (RHS)'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianRC*2, xend = medianRC*2, y = 0.375, yend = 0.625, color='Reference (RHS)'), show.legend = F) + 
   scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage", breaks = c(25, 50, 75, 100))) +
   coord_flip() + ggtitle("") +
   labs(x = "Tumor Mean Coverage")+
