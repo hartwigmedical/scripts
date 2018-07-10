@@ -21,6 +21,7 @@ actionableVariants = read.csv('~/hmf/resources/actionableVariantsPerSample.tsv',
   filter(!gene %in% c('PTEN','KRAS'),
          hmfLevel %in% c('A','B')) %>%
   mutate(
+    treatmentType = ifelse(treatmentType == "Unknown", "OffLabel", treatmentType),
     drug = ifelse(drug == "Fluvestrant", "Fulvestrant", drug),
     drug = ifelse(drug == "Ado-trastuzumab Emtansine", "Ado-Trastuzumab Emtansine", drug),
     drug = ifelse(drug == "AZD4547", "AZD-4547", drug),
@@ -28,6 +29,9 @@ actionableVariants = read.csv('~/hmf/resources/actionableVariantsPerSample.tsv',
     drug = ifelse(drug == "BGJ398", "BGJ-398", drug),
     drug = alphabetical_drug(drug),
     levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors))
+
+#actionableGenes = actionableVariants %>% select(gene) %>% distinct()
+#save(actionableGenes, file = "~/hmf/resources/actionableGenes.RData")
 
 ########################################### Supplementary Data
 drugResponse <- function(actionableVariants, response) {
@@ -58,19 +62,24 @@ actionableDrugs = merge(responsiveDrugs,resistantDrugs,by=c('sampleId','patientC
   ) %>%
   filter(responsive)
 
-responsiveVariants = actionableDrugs %>% select(sampleId, drug) %>%
+responsiveVariants = actionableDrugs %>% select(sampleId, drug) %>% filter(drug != 'MSI') %>%
   left_join(actionableVariants, by = c("sampleId","drug")) %>%
-  select(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
-  group_by(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
+  select(sampleId, cancerType = patientCancerType, gene, drug, event, eventType, pHgvs, levelTreatment) %>%
+  mutate(levelTreatment = factor(levelTreatment, rev(levelTreatmentFactors))) %>%
+  group_by(sampleId, cancerType, gene, drug, event, eventType, pHgvs, levelTreatment) %>%
   distinct() %>%
-  group_by(sampleId, gene, drug, eventType, sampleEvent) %>%
-  top_n(1, levelTreatment) %>%
-  select(-levelTreatment) %>%
-  group_by(sampleId, gene, eventType, sampleEvent) %>%
-  mutate(variantTreatmentOptions = n()) %>%
+  group_by(sampleId, cancerType, gene, event, eventType, pHgvs, levelTreatment) %>%
+  summarise(drug = paste(drug, collapse = ";")) %>%
+  spread(levelTreatment, drug, fill = "") %>%
   ungroup()
 save(responsiveVariants, file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
+
+sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
+actionability = responsiveVariants %>% left_join(sampleIdMap, by = "sampleId") %>%
+  select(-sampleId) %>%
+  select(sampleId = hmfSampleId, everything())
+write.csv(actionability, file = "~/hmf/RData/Actionability.csv", row.names = F) 
 
 geneResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, gene) %>% group_by(gene) %>% count()
 drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, drug) %>% group_by(drug) %>% count()
