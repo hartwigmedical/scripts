@@ -134,7 +134,7 @@ load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
 tertData = hpcTertPromoters %>% select(sampleId, gene) %>% mutate(variant = "SNV", hotspot = T, nearHotspot = F, driverLikelihood = 1)
-hotspotDataInter = hpcDndsOncoDrivers %>% select(sampleId, gene, variant,  hotspot, nearHotspot, driverLikelihood) %>%
+hotspotData = hpcDndsOncoDrivers %>% select(sampleId, gene, variant,  hotspot, nearHotspot, driverLikelihood) %>%
   bind_rows(tertData)
 
 hotspotGenes = hotspotData %>% 
@@ -143,13 +143,13 @@ hotspotGenes = hotspotData %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>% top_n(40, driverLikelihood) %>% arrange(driverLikelihood)
 
 variantFactors = c("INDEL","MNV","SNV")
-hotspotFactors = c("Hotspot","NearHotspot","NoHotspot")
+hotspotFactors = c("Hotspot","Near Hotspot","Non Hotspot")
 hotspotColours = setNames(c("#d94701","#fd8d3c", "#fdbe85"), hotspotFactors)
 
-hotspotData = hotspotDataInter %>% 
+hotspotData = hotspotData %>% 
   filter(!is.na(hotspot), driverLikelihood > 0, gene %in% hotspotGenes$gene) %>%
-  mutate(hotspot = ifelse(hotspot, "Hotspot", "NoHotspot"),
-         hotspot = ifelse(nearHotspot, "NearHotspot", hotspot),
+  mutate(hotspot = ifelse(hotspot, "Hotspot", "Non Hotspot"),
+         hotspot = ifelse(nearHotspot, "Near Hotspot", hotspot),
          hotspot = factor(hotspot, rev(hotspotFactors)),
          variant = factor(variant, rev(variantFactors))) %>%
   group_by(gene,  variant, hotspot) %>%
@@ -207,7 +207,6 @@ highestPurityCohortSummary$purityBucket =
 
 clonalityFactor = c('SUBCLONAL','CLONAL')
 
-
 clonalityLoad2 = highestPurityCohortSummary %>%
   mutate(total = TOTAL_INDEL + TOTAL_SNV + TOTAL_MNV, 
          subclonal = SUBCLONAL_INDEL + SUBCLONAL_SNV + SUBCLONAL_MNV) %>%
@@ -218,7 +217,8 @@ clonalityLoad2 = highestPurityCohortSummary %>%
   filter(clonality == 'SUBCLONAL') %>%
   mutate(
     clonality = factor(clonality, clonalityFactor), 
-    type = 'All')
+    type = 'All') %>%
+  group_by(purityBucket) %>% mutate(bucketMean = sum(value) / sum(total))
 
 samplesPerPurityBucket = clonalityLoad2 %>% group_by(purityBucket) %>% count()
 
@@ -242,7 +242,7 @@ p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) +
 
 p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
   geom_violin(fill = singleBlue, scale = "width") +
-  stat_summary(fun.y=mean, geom="point", shape=20, size=1.5) +
+  geom_point(aes(y = bucketMean), shape=20, size=1.5) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
   theme(legend.position="none") +
@@ -263,40 +263,6 @@ pClonality = plot_grid(p1,p2, p3, ncol = 3, labels="AUTO")
 pClonality
 save_plot("~/hmf/RPlot/Figure 6 - Subclonal.png", pClonality, base_width = 10, base_height = 2.5)
 
-
-########## Driver rates by type in WGD vs non WGD
-wgdDriverSampleCount = highestPurityCohortSummary %>% group_by(WGD) %>% summarise(total=n())
-wgdDriverRates = hpcDriversByGene %>%
-  filter(driverLikelihood > 0) %>%
-  mutate(
-    driver = as.character(driver),
-    driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
-    driver = ifelse(driver %in% c("Frameshift", "Inframe"), "Indel", driver),
-    driver = ifelse(driver %in% c("FragileDel"), "Del", driver),
-    driver = ifelse(driver %in% c("Missense","Nonsense","Splice"), "SNV/MNV", driver)
-    ) %>%
-  group_by(sampleId, driver) %>%
-  summarise(n = sum(driverLikelihood)) %>%
-  left_join(highestPurityCohortSummary %>% select(sampleId, WGD), by = "sampleId") %>%
-  group_by(driver, WGD) %>%
-  summarise(n = sum(n)) %>%
-  left_join(wgdDriverSampleCount, by = "WGD") %>%
-  mutate(n = n / total) %>%
-  ungroup()
-wgdDriverLevels = wgdDriverRates %>% filter(WGD) %>% arrange(-n)
-wgdDriverRates = mutate(wgdDriverRates, driver = factor(driver, wgdDriverLevels$driver))
-
-p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
-  geom_bar(aes(fill = WGD), stat = "identity", position="dodge") +
-  scale_fill_manual(values = c("#fd8d3c", singleBlue)) +
-  ggtitle("") + 
-  xlab("Driver") + ylab("Average drivers per sample") +
-  coord_flip() +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  scale_y_continuous(expand=c(0.01, 0.01))
-
-plot_grid(p1, labels="AUTO")
 
 ########################################### Extended Figure 1c - coverage
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
@@ -441,7 +407,7 @@ p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLo
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
 
-pLoads = plot_grid(p4,p5,p6, nrow = 1, labels = c("D","E","F"))
+pLoads = plot_grid(p5,p6, p4, nrow = 1, labels = c("D","E","F"))
 
 pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(3, 1))
 pComplete
@@ -498,6 +464,85 @@ pTile
 
 save_plot("~/hmf/RPlot/Extended Figure 4 - Tile.png", pTile, base_width = 6, base_height = 10)
 
+
+########################################### Extended Figure 5
+
+load("~/hmf/RData/processed/hpcDriversByGene.RData")
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+
+wgdDriverSampleCount = highestPurityCohortSummary %>% group_by(WGD) %>% summarise(total=n())
+wgdDriverRates = hpcDriversByGene %>%
+  filter(driverLikelihood > 0) %>%
+  mutate(
+    driver = as.character(driver),
+    driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
+    driver = ifelse(driver %in% c("Frameshift", "Inframe"), "Indel", driver),
+    driver = ifelse(driver %in% c("FragileDel"), "Del", driver),
+    driver = ifelse(driver %in% c("Missense","Nonsense","Splice"), "SNV/MNV", driver)
+  ) %>%
+  group_by(sampleId, driver) %>%
+  summarise(n = sum(driverLikelihood)) %>%
+  left_join(highestPurityCohortSummary %>% select(sampleId, WGD), by = "sampleId") %>%
+  group_by(driver, WGD) %>%
+  summarise(n = sum(n)) %>%
+  left_join(wgdDriverSampleCount, by = "WGD") %>%
+  mutate(n = n / total) %>%
+  ungroup()
+wgdDriverLevels = wgdDriverRates %>% filter(WGD) %>% arrange(n)
+wgdDriverRates = mutate(wgdDriverRates, driver = factor(driver, wgdDriverLevels$driver))
+
+p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
+  geom_bar(aes(fill = WGD), stat = "identity", position="dodge") +
+  scale_fill_manual(values = c("#fd8d3c", singleBlue)) +
+  ggtitle("") + 
+  xlab("") + ylab("Drivers per sample") +
+  coord_flip() +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="right") + 
+  scale_y_continuous(expand=c(0.01, 0.01))
+
+ampDriversPerGene = hpcDriversByGene %>%
+  filter(driver == 'Amp') %>%
+  group_by(gene, cancerType) %>% count() %>%
+  ungroup()
+
+ampDriversPerGeneLevels = ampDriversPerGene %>% group_by(gene) %>% summarise(n = sum(n)) %>% top_n(30, n) %>% arrange(n) %>% pull(gene)
+ampDriversPerGene = ampDriversPerGene %>%
+  filter(gene %in% ampDriversPerGeneLevels) %>%
+  mutate(gene = factor(gene, ampDriversPerGeneLevels))
+
+p2 = ggplot(data = ampDriversPerGene, aes(x = gene, y = n)) +
+  geom_bar(aes(fill = cancerType), stat = "identity") + 
+  scale_fill_manual(values = cancerTypeColours) +
+  scale_x_discrete(expand = c(0,0)) +
+  scale_y_continuous(expand = c(0,0)) +
+  ylab("Amplification drivers") + ggtitle("") + xlab("") +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.title = element_blank()) +
+  coord_flip()
+
+load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
+ampDriversCancerType = hpcDriversByGene %>%
+  filter(driver == 'Amp') %>%
+  group_by(driver, cancerType) %>% count() %>%
+  ungroup() %>% arrange(-n)
+
+ampDriversCancerType = merge(ampDriversCancerType, hpcCancerTypeCounts, by = "cancerType", all = T)
+ampDriversCancerType[ampDriversCancerType$cancerType == "Mesothelioma", "n"] <- 0
+ampDriversCancerType = ampDriversCancerType %>% mutate(mean = n/N) %>% arrange(mean)
+ampDriversCancerType = ampDriversCancerType %>% mutate(cancerType = factor(cancerType, ampDriversCancerType$cancerType))
+
+
+p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
+  geom_bar(fill = singleBlue, stat = "Identity") + ggtitle("") + xlab("") + ylab("Amplification drivers per sample") +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.title = element_blank()) +
+  coord_flip()
+
+pAmps = plot_grid(p0, p2, p1, labels="AUTO", nrow = 1)
+pAmps
+save_plot("~/hmf/RPlot/Extended Figure 5 - Amps.png", pAmps, nrow = 1, base_width = 15, base_height = 5)
 
 ######################################################
 
