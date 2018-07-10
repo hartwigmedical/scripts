@@ -217,10 +217,10 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
     sample = substring(hmfSampleId, 10)) %>%
   select(patientId, sample, sampleId = hmfSampleId, gender, status,
          cancerType, primaryTumorLocation, cancerSubtype, biopsySite, biopsyType, biopsyLocation, ageAtBiopsy, refMeanCoverage,
-         tumorMeanCoverage, pathologyPurity, samplingDate, 
+         tumorMeanCoverage,  
          purity, ploidy, 
          SUBCLONAL_INDEL,SUBCLONAL_MNV,SUBCLONAL_SNV,TOTAL_INDEL,TOTAL_SNV,TOTAL_MNV,
-         mutationalLoad,msiScore,msiStatus,
+         msiScore,msiStatus,
          BND,DEL,DUP,INS,INV,
          duplicatedAutosomes,WGD,patientHighestPurityPassingSample)
 
