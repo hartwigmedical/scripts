@@ -5,5 +5,5 @@ purity_pathology_jar=$1 && shift
 
 echo ${purity_pathology_jar}
 
-java -jar ${purity_pathology_jar} \
+java -jar ${purity_pathology_jar} com.hartwig.hmftools.puritypatho.CoveragesFastqApplication \
     -fastq_dir ${fastqDir}
