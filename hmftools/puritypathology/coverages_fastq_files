@@ -4,4 +4,4 @@ fastqDir=$1 && shift
 purity_pathology_jar=$1 && shift
 
 java -jar ${purity_pathology_jar} \
-    -runs_dir ${fastqDir}
+    -fastq_dir ${fastqDir}
