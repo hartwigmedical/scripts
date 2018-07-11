@@ -31,7 +31,7 @@ actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSam
 
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 pembrolizumabVariants = highestPurityCohortSummary %>% 
-  filter(msiStatus == 'MSI', cancerType != 'Other') %>% 
+  filter(msiStatus == 'MSI') %>% 
   select(sampleId, patientCancerType = cancerType) %>% 
   mutate(
     drug = "Pembrolizumab", 
@@ -39,7 +39,7 @@ pembrolizumabVariants = highestPurityCohortSummary %>%
     gene = "",eventType = "MSI", pHgvs = "", hmfResponse= "Responsive")
 
 nivolumabVariants = highestPurityCohortSummary %>% 
-  filter(msiStatus == 'MSI', cancerType != 'Other') %>% 
+  filter(msiStatus == 'MSI') %>% 
   select(sampleId, patientCancerType = cancerType) %>% 
   mutate(
     drug = "Nivolumab", 
