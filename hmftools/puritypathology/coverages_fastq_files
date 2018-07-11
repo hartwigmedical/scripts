@@ -3,5 +3,7 @@
 fastqDir=$1 && shift
 purity_pathology_jar=$1 && shift
 
+echo ${purity_pathology_jar}
+
 java -jar ${purity_pathology_jar} \
     -fastq_dir ${fastqDir}
