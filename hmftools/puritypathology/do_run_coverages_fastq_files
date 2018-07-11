@@ -5,4 +5,4 @@ fastqDir=$1 && shift
 
 purity_pathology=/data/common/tools/purity-pathology_pilot/purity-pathology.jar
 
-${prefix}/purity_pathology_set ${fastqDir} ${purity_pathology}
+${prefix}/coverages_fastq_files ${fastqDir} ${purity_pathology}
