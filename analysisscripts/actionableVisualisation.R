@@ -1,6 +1,8 @@
+library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(scales)
+library(cowplot)
 
 ########################################### Prepare Data
 alphabetical_drug <- function(drugs) {
@@ -13,8 +15,8 @@ alphabetical_drug <- function(drugs) {
   return (result)
 }
 
-levelTreatmentFactors = rev(c("A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel"))
-levelTreatmentColors = setNames(rev(c("#2171b5","#6baed6","#bdd7e7","#eff3ff")), levelTreatmentFactors)
+levelTreatmentFactors = c("None","B_OffLabel","B_OnLabel","A_OffLabel","A_OnLabel")
+levelTreatmentColors = setNames(c("black", "#eff3ff", "#bdd7e7","#6baed6", "#2171b5"), levelTreatmentFactors)
 
 actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t', stringsAsFactors = F) %>%
   filter(!gene %in% c('PTEN','KRAS'),
@@ -27,7 +29,9 @@ actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSam
     drug = ifelse(drug == "AZD5363", "AZD-5363", drug),
     drug = ifelse(drug == "BGJ398", "BGJ-398", drug),
     drug = alphabetical_drug(drug),
-    levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors))
+    eventType = ifelse(eventType == "SNP", "SNV", eventType),
+    eventType = ifelse(eventType == "MNP", "MNV", eventType),
+    levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors, ordered = T))
 
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 pembrolizumabVariants = highestPurityCohortSummary %>% 
@@ -35,7 +39,7 @@ pembrolizumabVariants = highestPurityCohortSummary %>%
   select(sampleId, patientCancerType = cancerType) %>% 
   mutate(
     drug = "Pembrolizumab", 
-    levelTreatment = factor("A_OnLabel", levelTreatmentFactors),
+    levelTreatment = factor("A_OnLabel", levelTreatmentFactors, ordered = T),
     gene = "",eventType = "MSI", pHgvs = "", hmfResponse= "Responsive")
 
 nivolumabVariants = highestPurityCohortSummary %>% 
@@ -43,52 +47,39 @@ nivolumabVariants = highestPurityCohortSummary %>%
   select(sampleId, patientCancerType = cancerType) %>% 
   mutate(
     drug = "Nivolumab", 
-    levelTreatment = factor(ifelse(patientCancerType == "Colon/Rectum", "A_OnLabel", "A_OffLabel"), levelTreatmentFactors),
+    levelTreatment = factor(ifelse(patientCancerType == "Colon/Rectum", "A_OnLabel", "A_OffLabel"), levelTreatmentFactors, ordered = T),
     gene = "",eventType = "MSI", pHgvs = "", hmfResponse= "Responsive")
 
 actionableVariants = actionableVariantsPerSample %>% select(sampleId, patientCancerType, drug, levelTreatment, gene, eventType, pHgvs, hmfResponse) %>%
   bind_rows(pembrolizumabVariants) %>%
   bind_rows(nivolumabVariants)
   
-#actionableGenes = actionableVariants %>% select(gene) %>% distinct()
-#save(actionableGenes, file = "~/hmf/resources/actionableGenes.RData")
-
 ########################################### Supplementary Data
 drugResponse <- function(actionableVariants, response) {
   actionableVariants %>% 
     filter(hmfResponse == response) %>%
-    group_by(sampleId,patientCancerType, drug, levelTreatment) %>%
-    count() %>% 
     group_by(sampleId,patientCancerType, drug) %>%
-    top_n(1, levelTreatment) %>% 
-    select(-n) 
+    summarise(levelTreatment = max(levelTreatment)) %>%
+  ungroup()
 }
 
-responsiveDrugs = drugResponse(actionableVariants, 'Responsive')
-resistantDrugs = drugResponse(actionableVariants, 'Resistant')
+responsiveDrugs = drugResponse(actionableVariants, 'Responsive') %>% mutate(response = levelTreatment) %>% select(-levelTreatment)
+resistantDrugs = drugResponse(actionableVariants, 'Resistant') %>% mutate(resistance = levelTreatment) %>% select(-levelTreatment)
 
 actionableDrugs = merge(responsiveDrugs,resistantDrugs,by=c('sampleId','patientCancerType','drug'),all=T,suffixes=c('_Response','_Resistance'), fill=0) %>%
-  mutate(
-    responsive = !is.na(levelTreatment_Response) & is.na(levelTreatment_Resistance),
-    resistant = is.na(levelTreatment_Response) & !is.na(levelTreatment_Resistance),  
-    inconsistent = !is.na(levelTreatment_Response) & !is.na(levelTreatment_Resistance),
-    status = ifelse(responsive, "Responsive", "Resistance"),
-    status = ifelse(inconsistent, "Inconsistent", status)
-  ) %>%
-  filter(responsive)
+  filter(is.na(resistance) | response > resistance) %>% 
+  replace_na(list(resistance = "None"))
 
-responsiveVariants = actionableDrugs %>% select(sampleId, patientCancerType, drug) %>%
+responsiveVariants = actionableDrugs %>% 
   left_join(actionableVariants, by = c("sampleId", "patientCancerType","drug")) %>%
-  select(sampleId, cancerType = patientCancerType, gene, drug, eventType, pHgvs, levelTreatment) %>%
-  group_by(sampleId, cancerType, gene, drug, eventType) %>% top_n(1, levelTreatment) %>%
-  group_by(sampleId, cancerType, gene, drug, eventType, pHgvs, levelTreatment) %>%
-  distinct() %>%
-  ungroup() %>%
-  mutate(levelTreatment = factor(levelTreatment, rev(levelTreatmentFactors))) %>%
+  filter(levelTreatment > resistance) %>%
+  mutate(cancerType = patientCancerType) %>%
+  group_by(sampleId, cancerType, gene, eventType, pHgvs, drug) %>%
+  summarise(levelTreatment = max(levelTreatment)) %>%
   group_by(sampleId, cancerType, gene, eventType, pHgvs, levelTreatment) %>%
   summarise(drug = paste(drug, collapse = ";")) %>%
   spread(levelTreatment, drug, fill = "") %>%
-  ungroup()
+  ungroup() 
 save(responsiveVariants, file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
