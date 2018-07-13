@@ -9,7 +9,7 @@ library(R.cache)
 source("libgridss.R")
 usage = "Usage: Rscript create_gridss_pon.R <pon directory> <input VCFs>"
 args = commandArgs(TRUE)
-if (str_detect(args[1], "add_to_pon")) {
+if (str_detect(args[1], "create_gridss_pon")) {
   args = args[-1]
 }
 if (length(args) < 2) {
