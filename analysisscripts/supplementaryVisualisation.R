@@ -71,8 +71,9 @@ p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
   scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
 
-pWGD = plot_grid(p1, p2, labels="AUTO")
-save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 7, base_height = 3)
+pWGD = plot_grid(p1, p2)
+pWGD
+save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 14, base_height = 6)
 
 ########################################### Figure 4 - Driver Per Sample
 driverData = hpcDriversByGene %>%
@@ -542,12 +543,79 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
   coord_flip()
 
-pAmps = plot_grid(p0, p2, p1, labels="AUTO", nrow = 1)
+pAmps = plot_grid(p0, p2, p1, labels="AUTO")
 pAmps
-save_plot("~/hmf/RPlot/Extended Figure 5 - Amps.png", pAmps, nrow = 1, base_width = 15, base_height = 5)
+save_plot("~/hmf/RPlot/Extended Figure 5 - Amps.png", pAmps, base_width = 10, base_height = 10)
 
-######################################################
+###################################################### Determining Clonality
 
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
+somatics = query_somatic_variant_sample(dbProd, "DRUP01140001T")
+somatics$ploidy <- pmax(0, somatics$adjustedCopyNumber * somatics$adjustedVaf)
+dbDisconnect(dbProd)
+rm(dbProd)
+
+densityData = somatics %>% filter(ploidy < 1.5) %>% pull(ploidy)
+d <- density(densityData, n = 100)
+d$x[28]
+d$y
+
+
+pSubclonal = ggplot(data = somatics %>% filter(ploidy < 1.5), aes(ploidy)) + 
+  geom_histogram(aes(y =..density..), bins = 50, fill=singleBlue, col=singleBlue,  alpha = .4) + 
+  geom_density(n = 100) +
+  geom_segment(aes(x = 0.457, xend = 0.457, y = 0, yend = 1.9), linetype = 2) +
+  geom_segment(aes(x = 0.457, xend = 0.457, y = 2.1, yend = 2.57), linetype = 2) +
+  geom_segment(aes(x = 0.19, xend = 0.19, y = 0, yend = 1.4), linetype = 3) +
+  annotate("text", x = 0.457, y = 2, label = "Largest Trough < 1", hjust = 0.5) +
+  annotate("text", x = 0.19, y = 1.6, label = "0.1% clonality cutoff", hjust = 0.5) +
+  annotate("text", x = 0.19, y = 1.5, label = "for variant read depth", hjust = 0.5) +
+  annotate("text", x = 0.30, y = 2.5, label = "Sub-Clonal", hjust = 1) +
+  annotate("text", x = 0.60, y = 2.5, label = "Clonal", hjust = 0) +
+  scale_x_continuous(breaks = c(0.25, 0.5, 0.75, 1, 1.25), expand = c(0,0), limits = c(0, 1.5)) +
+  xlab("Ploidy") + ylab("") +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) + 
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank())
+
+pSubclonal
+
+save_plot("~/hmf/RPlot/Methods Figure 1 - Subclonal.png", pSubclonal, base_width = 7, base_height = 5)
+
+
+###################################################### Determining WGD
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+
+pWGD = ggplot(data = highestPurityCohortSummary, aes(duplicatedAutosomes)) + 
+  geom_histogram(aes(y =..density..), binwidth = 1, fill=singleBlue, col=singleBlue,  alpha = .4) + 
+  #geom_density(n = 24) +
+  geom_segment(aes(x = 11, xend = 11, y = 0, yend = 0.20), linetype = 2) +
+  annotate("text", x = 11, y = 0.21, label = "WGD Cutoff", hjust = 0.5) +
+  xlab("Duplicated Autosomes") + ylab("") +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) +
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank())
+pWGD
+
+save_plot("~/hmf/RPlot/Methods Figure 2 - WGD.png", pWGD, base_width = 7, base_height = 5)
+
+###################################################### Determining MSI
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+
+pMSI = ggplot(data = highestPurityCohortSummary, aes(msiScore)) + 
+  geom_histogram(aes(y =..density..), bins = 200, fill=singleBlue, col=singleBlue,  alpha = .4) + 
+  geom_density(n = 200) +
+  geom_segment(aes(x = 4, xend = 4, y = 0, yend = 1.1), linetype = 2) +
+  annotate("text", x = 4, y = 1.15, label = "MSI Cutoff", hjust = 0.5) +
+  xlab("MSI Score") + ylab("") +
+  scale_x_continuous(trans="log10", limits = c(0.003, 110), breaks = c(0, 0.01, 0.1, 1, 100)) + 
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) +
+  theme(axis.text.y = element_blank(), axis.ticks = element_blank())
+pMSI
+
+save_plot("~/hmf/RPlot/Methods Figure 3 - MSI.png", pMSI, base_width = 7, base_height = 5)
+
+
+#######################################################
 #Violin - Rounded total  Indel Drivers vs median Indel count
 indelCount = highestPurityCohortSummary %>%
   mutate(indel = CLONAL_INDEL + SUBCLONAL_INDEL + INCONSISTENT_INDEL) %>%
