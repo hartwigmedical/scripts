@@ -1,0 +1,120 @@
+#!/bin/bash
+runDir=$1
+
+thisScript=$( basename $0 )
+valBase='/data/giab/validation/mixin'
+gatkJar='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
+rtgExec='/data/common/tools/rtg-tools_v3.7/rtg'
+#rtgExec='/data/common/tools/rtg-tools_v3.9.1/rtg'
+rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
+genomeFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+truthVersion='giab_mixin_truth_set_160628';
+truthDirPath="/data/giab/truth/"${truthVersion}"/"
+truthVcfName='na12878-na24385-somatic-truth.vcf.gz'
+truthVcfPath=${truthDirPath}/${truthVcfName}
+truthBedName='na12878-na24385-somatic-truth-regions.bed'
+truthBedPath=${truthDirPath}/${truthBedName}
+
+## init checks
+if [[ ! -w ${valBase} ]]; then echo "[EXIT] validation base not writable (${valBase})"; exit 1; fi
+if [[ ! -f ${truthVcfPath} ]]; then echo "[EXIT] truth VCF not available (${truthVcfPath})"; exit 1; fi
+if [[ ! -f ${truthBedPath} ]]; then echo "[EXIT] truth BED not available (${truthBedPath})"; exit 1; fi
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Validate GIAB run"
+    echo " Usage: $thisScript <path-to-pipeline-dir-or-vcf>"
+    echo "        $thisScript /data/experiments/giab-mixin/mixin-run/"
+    echo "-----"
+    exit 1
+fi
+
+## -----
+## Find input VCF if rundir given
+if [[ $runDir =~ .vcf.gz$ || $runDir =~ .vcf$ ]]; then
+    runSomVcfPath=${runDir}
+else
+    runLinksJson="${runDir}/logs/links.json"
+    if [[ ! -f ${runLinksJson} ]]; then echo "[EXIT] Not found ${runLinksJson}" && exit 1; fi
+    runSomVcfLink=$( cat $runLinksJson | jq -r '.somatic_variant_vcf')
+    runSomVcfPath="${runDir}/${runSomVcfLink}"
+fi
+
+runSomVcfName=$( basename $runSomVcfPath )
+
+## -----
+## Prepare
+echo "[INFO] Using input VCF (${runSomVcfName})"
+echo "[INFO]  input VCF (${runSomVcfName})"
+runName="$( basename $runDir )"
+outName="${truthVersion}_vs_${runName}"
+outPath="${valBase}/${outName}"
+tmpPath="${outPath}/vcfeval"
+if [[ -e $outPath ]]; then 
+    echo "[EXIT] Output dir exists remove first: ${outPath}" && exit 1
+else 
+    echo "[INFO] Creating output dir (${outPath})"
+    mkdir $outPath
+fi
+
+## -----
+## Copy final input VCF to keep track
+cp "${runSomVcfPath}" $outPath
+cp "${runSomVcfPath}.tbi" $outPath
+runSomVcfPath="${outPath}/${runSomVcfName}"
+if [[ $runSomVcfPath =~ .vcf$ ]]; then
+    echo "[INFO] Running bgzip"
+    bgzip $runSomVcfPath
+    echo "[INFO] Running tabix"
+    tabix "${runSomVcfPath}.gz"
+    runSomVcfPath="${runSomVcfPath}.gz"
+fi 
+
+## -----
+## Remove FILTERS from VCF
+#unfilteredVcf="${outPath}/input.vcf.gz"
+#java -jar $gatkJar -T VariantFiltration -R $genomeFasta --invalidatePreviousFilters \
+#  --variant ${runSomVcfPath} -o ${unfilteredVcf} 
+
+## -----
+## Run variant evaluation
+echo "[INFO] Running RTGtools vcfeval"
+$rtgExec vcfeval \
+  -t ${rtgSdfPath} \
+  -T 8 \
+  --baseline=${truthVcfPath} \
+  --calls=${runSomVcfPath} \
+  --evaluation-regions=${truthBedPath} \
+  -o ${tmpPath} \
+  --ref-overlap \
+  --all-records
+
+## --all-records
+## --calls=${unfilteredVcf}
+## --bed-regions 
+
+## -----
+## Create the sub VCFs
+metricsOutFile="${outPath}/classification_counts.tsv"
+printf "#%s\t%s\t%s\n" "class" "vartype" "count" >> $metricsOutFile
+for callType in "tp" "fp" "fn"; do 
+    rtgVcf="${tmpPath}/${callType}.vcf.gz"
+    allCount=$( zcat $rtgVcf | grep -cv "^#" ) 
+    printf "%s\t%s\t%i\n" "${callType}" "INPUT" "${allCount}" >> $metricsOutFile
+    callTypeSum=0
+    for variantType in "SNP" "INDEL" "MNP" "MIXED" "SYMBOLIC" "NO_VARIATION"; do
+        outVcf="${tmpPath}/${variantType}_${callType}.vcf.gz"
+        echo "[INFO] Creating $callType $variantType sub VCF"
+        java -jar $gatkJar -T SelectVariants --variant $rtgVcf -o $outVcf -R $genomeFasta -selectType $variantType
+        variantCount=$( zcat $outVcf | grep -cv "^#" )
+        callTypeSum=$((callTypeSum + variantCount))
+        printf "%s\t%s\t%i\n" "${callType}" "${variantType}" "${variantCount}" >> $metricsOutFile
+    done
+    printf "%s\t%s\t%i\n" "${callType}" "SUM" "${callTypeSum}" >> $metricsOutFile
+done
+
+## -----
+## Gather metrics
+cat ${tmpPath}/summary.txt | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold,"$2; print "True-pos,"$3; print "False-pos,"$4; print "False-neg,"$5; print "Precision,"$6; print "Sensitivity,"$7; print "F-measure,"$8 }' | tr "," "\t" > ${outPath}/rtg_summary.tsv
+echo "[INFO] DONE: Output should be in ${outPath}"
+
