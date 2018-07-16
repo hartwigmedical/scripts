@@ -4,12 +4,13 @@ PICARD_DIR=/data/tools/picard-tools_v1.141
 OUT_BAM=$2
 IN_BAM=$1
 KEEPING_DATA=$3
+MEM_USE=50
 
 echo "Input bam file: " ${IN_BAM}
 echo "output bam file: " ${OUT_BAM}
 echo "Keeping data between 0 and 1: " ${KEEPING_DATA}
 
-java -jar ${PICARD_DIR}/picard.jar DownsampleSam \
+java -Xmx${MEM_USE}g ${PICARD_DIR}/picard.jar DownsampleSam \
 I=${IN_BAM} \
 O=${OUT_BAM} \
 P=${KEEPING_DATA}
