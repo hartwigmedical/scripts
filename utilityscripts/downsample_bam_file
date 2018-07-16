@@ -5,9 +5,9 @@ OUT_BAM=$2
 IN_BAM=$1
 KEEPING_DATA=$3
 
-echo ${}
-echo ${}
-echo ${}
+echo "Input date: " ${IN_BAM}
+echo "output date: " ${OUT_BAM}
+echo "Keeping data: " ${KEEPING_DATA}
 
 java -jar ${PICARD_DIR}/picard.jar DownsampleSam \
 I=${IN_BAM} \
