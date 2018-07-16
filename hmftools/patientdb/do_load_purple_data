@@ -10,9 +10,6 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-#JOBA: Load meta data
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-
 echo "[INFO] Loading purple data for sample: ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
