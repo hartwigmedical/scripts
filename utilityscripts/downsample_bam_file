@@ -1,0 +1,12 @@
+#!/bin/bash
+
+PICARD_DIR=/data/tools/picard-tools_v1.141
+OUT_BAM=$2
+IN_BAM=$1
+KEEPING_DATA=$3
+
+java -jar ${PICARD_DIR}/picard.jar DownsampleSam \
+I=${IN_BAM} \
+O=${OUT_BAM} \
+P=${KEEPING_DATA}
+
