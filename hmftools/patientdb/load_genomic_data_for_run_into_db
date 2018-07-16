@@ -16,14 +16,14 @@ then
     exit 1
 fi
 
-echo "[INFO] Loading purple data for sample ${sample} from run_dir ${run_dir}"
+echo "[INFO] Loading purple data"
 ${prefix}/do_load_purple_data ${run_dir} ${credentials} ${patient_db_jar} ${sample} $@
 
 echo "[INFO] Loading somatic variants"
 ${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf} ${sample}
 
 #echo "[INFO] Loading metrics"
-#${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
+${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
 
 # KODU: Skip loading SV until sv loader can use local ensembl db
 #sv_jar=/data/common/tools/variantannotator_v1.3/variant-annotator.jar
