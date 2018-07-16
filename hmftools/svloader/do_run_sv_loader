@@ -18,7 +18,7 @@ pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
 fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
@@ -41,4 +41,5 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -promiscuous_three_csv "$promiscuous_three_csv" \
     -sv_pon_file ${pon_csv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -local_ensembl \
     $@
