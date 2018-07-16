@@ -2,6 +2,13 @@ library(RMySQL)
 library(dplyr)
 library(tidyr)
 
+#http://colorbrewer2.org/#type=sequential&scheme=Purples&n=4
+singlePurple = "#9e9ac8"
+garvanPurple = rgb(101,47,136, maxColorValue = 255) 
+garvanPurple = "#652F88"
+garvanBlue = rgb(18,50,96, maxColorValue = 255) 
+garvanBlue = "#123260"
+
 query_purity<-function(dbConnect, purityCutoff = 0.2) {
   query = paste(
     "SELECT p.*",

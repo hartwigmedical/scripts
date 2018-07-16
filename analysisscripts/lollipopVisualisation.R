@@ -2,10 +2,6 @@ require(maftools)
 detach("cowplot", unload=TRUE)
 library(cowplot)
 
-cancerTypeColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
-                      "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#ff4791","#01837a",
-                      "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
-                      "#dea185","#a0729d","#8a392f")
 
 ##### ACTUAL DATA
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")

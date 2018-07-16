@@ -205,3 +205,38 @@ for (location in primaryTumorLocations) {
   cat(cmd)
 }
 
+
+for (location in sort(primaryTumorLocations)) {
+  
+  locationString = gsub(" ", "", location, fixed = TRUE)
+  locationString = gsub("/", "", locationString, fixed = TRUE)
+  cmd = paste0("convert -pointsize 100 -fill black -draw 'text 100,150 \"",location,"\"' ~/hmf/analysis/copyNumberSummary/",locationString,".png ~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString ,".png")
+  
+  cat(cmd, "\n")
+}
+
+primaryTumorLocations = sort(primaryTumorLocations)
+
+x <- primaryTumorLocations[which(primaryTumorLocations!="Other")] 
+i = 2
+while (i < length(x)) {
+
+  locationString1 = gsub(" ", "", x[i], fixed = TRUE)
+  locationString1 = gsub("/", "", locationString1, fixed = TRUE)
+  
+  locationString2 = gsub(" ", "", x[i + 1], fixed = TRUE)
+  locationString2 = gsub("/", "", locationString2, fixed = TRUE)
+  
+  first = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString1 ,".png")
+  second = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString2 ,".png")
+  output = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\", i, ".png")
+  
+  #cat(first, "\n" )
+  #cat(second, "\n")
+  cat("convert", first, second, "-append", output, "\n")
+  
+  i = i + 2
+}
+
+primaryTumorLocations
+

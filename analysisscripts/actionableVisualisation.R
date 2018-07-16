@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(scales)
 library(cowplot)
+theme_set(theme_bw())
 
 ########################################### Prepare Data
 alphabetical_drug <- function(drugs) {
