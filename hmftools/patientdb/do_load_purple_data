@@ -1,17 +1,14 @@
 #!/bin/bash
-source load_metadata
 
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
+sample=$1 && shift
 
 # JOBA: Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-# JOBA: File Locations
-purple_dir=${run_dir}/purple
 
 #JOBA: Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -20,6 +17,6 @@ echo "[INFO] Loading purple data for sample: ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
     -sample ${sample} \
-    -purple_dir ${purple_dir} \
+    -purple_dir ${run_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
