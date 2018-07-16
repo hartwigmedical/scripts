@@ -10,7 +10,7 @@ echo "Input bam file: " ${IN_BAM}
 echo "output bam file: " ${OUT_BAM}
 echo "Keeping data between 0 and 1: " ${KEEPING_DATA}
 
-java -Xmx${MEM_USE}g ${PICARD_DIR}/picard.jar DownsampleSam \
+java -Xmx${MEM_USE}g -jar ${PICARD_DIR}/picard.jar DownsampleSam \
 I=${IN_BAM} \
 O=${OUT_BAM} \
 P=${KEEPING_DATA}
