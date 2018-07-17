@@ -31,7 +31,7 @@ fi
 
 ## -----
 ## Find input VCF if rundir given
-if [[ $runDir =~ .vcf.gz$ || $runDir =~ .vcf$ ]]; then
+if [[ ${runDir} =~ .vcf.gz$ || ${runDir} =~ .vcf$ ]]; then
     runSomVcfPath=${runDir}
 else
     runLinksJson="${runDir}/logs/links.json"
@@ -40,7 +40,7 @@ else
     runSomVcfPath="${runDir}/${runSomVcfLink}"
 fi
 
-runSomVcfName=$( basename $runSomVcfPath )
+runSomVcfName=$( basename ${runSomVcfPath} )
 
 ## -----
 ## Prepare
@@ -50,7 +50,7 @@ runName="$( basename $runDir )"
 outName="${truthVersion}_vs_${runName}"
 outPath="${valBase}/${outName}"
 tmpPath="${outPath}/vcfeval"
-if [[ -e $outPath ]]; then 
+if [[ -e ${outPath} ]]; then
     echo "[EXIT] Output dir exists remove first: ${outPath}" && exit 1
 else 
     echo "[INFO] Creating output dir (${outPath})"
@@ -62,9 +62,9 @@ fi
 cp "${runSomVcfPath}" $outPath
 cp "${runSomVcfPath}.tbi" $outPath
 runSomVcfPath="${outPath}/${runSomVcfName}"
-if [[ $runSomVcfPath =~ .vcf$ ]]; then
+if [[ ${runSomVcfPath} =~ .vcf$ ]]; then
     echo "[INFO] Running bgzip"
-    bgzip $runSomVcfPath
+    bgzip ${runSomVcfPath}
     echo "[INFO] Running tabix"
     tabix "${runSomVcfPath}.gz"
     runSomVcfPath="${runSomVcfPath}.gz"
@@ -79,7 +79,7 @@ fi
 ## -----
 ## Run variant evaluation
 echo "[INFO] Running RTGtools vcfeval"
-$rtgExec vcfeval \
+${rtgExec} vcfeval \
   -t ${rtgSdfPath} \
   -T 8 \
   --baseline=${truthVcfPath} \
@@ -96,17 +96,17 @@ $rtgExec vcfeval \
 ## -----
 ## Create the sub VCFs
 metricsOutFile="${outPath}/classification_counts.tsv"
-printf "#%s\t%s\t%s\n" "class" "vartype" "count" >> $metricsOutFile
+printf "#%s\t%s\t%s\n" "class" "vartype" "count" >> ${metricsOutFile}
 for callType in "tp" "fp" "fn"; do 
     rtgVcf="${tmpPath}/${callType}.vcf.gz"
     allCount=$( zcat $rtgVcf | grep -cv "^#" ) 
-    printf "%s\t%s\t%i\n" "${callType}" "INPUT" "${allCount}" >> $metricsOutFile
+    printf "%s\t%s\t%i\n" "${callType}" "INPUT" "${allCount}" >> ${metricsOutFile}
     callTypeSum=0
     for variantType in "SNP" "INDEL" "MNP" "MIXED" "SYMBOLIC" "NO_VARIATION"; do
         outVcf="${tmpPath}/${variantType}_${callType}.vcf.gz"
         echo "[INFO] Creating $callType $variantType sub VCF"
-        java -jar $gatkJar -T SelectVariants --variant $rtgVcf -o $outVcf -R $genomeFasta -selectType $variantType
-        variantCount=$( zcat $outVcf | grep -cv "^#" )
+        java -jar ${gatkJar} -T SelectVariants --variant ${rtgVcf} -o ${outVcf} -R ${genomeFasta} -selectType ${variantType}
+        variantCount=$( zcat ${outVcf} | grep -cv "^#" )
         callTypeSum=$((callTypeSum + variantCount))
         printf "%s\t%s\t%i\n" "${callType}" "${variantType}" "${variantCount}" >> $metricsOutFile
     done
