@@ -26,7 +26,7 @@ ${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} $
 ${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
 
 # KODU: Skip loading SV until sv loader can use local ensembl db
-#sv_jar=/data/common/tools/variantannotator_v1.3/variant-annotator.jar
+#sv_jar=/data/common/tools/variantannotator_v1.4/variant-annotator.jar
 #
 #echo "[INFO] Loading sv variants"
 #${prefix}/../svloader/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar}
