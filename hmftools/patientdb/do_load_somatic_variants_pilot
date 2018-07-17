@@ -15,4 +15,4 @@ then
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-${prefix}/do_load_somatic_variants ${run_dir} ${credentials} ${patient_db_jar} ${somatic_vcf} ${sample} $@
+${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} $@

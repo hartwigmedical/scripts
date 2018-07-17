@@ -1,10 +1,9 @@
 #!/bin/bash
 
-run_dir=$1 && shift
+sample=$1 && shift
+somatic_vcf=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
-somatic_vcf=$1 && shift
-sample=$1 && shift
 
 # JOBA: Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
