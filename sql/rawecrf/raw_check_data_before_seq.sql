@@ -1,10 +1,10 @@
 select patients.patientId,
-INFORMED_CONSTENT_DATE, PLANNED_TREATMENT, PRIMARY_TUMOR_LOCATION, PRIMARY_TUMOR_LOCATION_OTHER,
+INFORMED_CONSENT_DATE, PLANNED_TREATMENT, PRIMARY_TUMOR_LOCATION, PRIMARY_TUMOR_LOCATION_OTHER,
 BIOPT_TAKEN, BIOPT_DATE, BIOPSY_SITE, BIOPSY_SITE_OTHER, BIOPSY_LOCATION, BIOPSY_EVALUABLE
 from
 	(select distinct patientId from ecrf) patients
 left join
-   (select patientId, group_concat(itemValue separator ', ') as INFORMED_CONSTENT_DATE
+   (select patientId, group_concat(itemValue separator ', ') as INFORMED_CONSENT_DATE
     from ecrf where item = 'FLD.INFORMEDCONSENT.ICDTC' group by patientId) icdtc
 on patients.patientId = icdtc.patientId
 left join
