@@ -7,6 +7,8 @@ sample=$1 && shift
 prefix=`dirname $(readlink $0 || echo $0)`
 
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
+sv_jar=/data/common/tools/variantannotator_v1.4/variant-annotator.jar
+
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
 somatic_vcf=$(ls ${run_dir}/*post_processed_v2.2.vcf.gz)
@@ -16,18 +18,26 @@ then
     exit 1
 fi
 
+# TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf)
+if [ $? -ne 0 ]
+then
+    structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
+fi
+
 echo "[INFO] Loading purple data"
 ${prefix}/do_load_purple_data ${run_dir} ${credentials} ${patient_db_jar} ${sample} $@
 
 echo "[INFO] Loading somatic variants"
 ${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} $@
 
+echo "[INFO] Loading sv variants"
+${prefix}/../svloader/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar}
+
 #echo "[INFO] Loading metrics"
 ${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
-
-# KODU: Skip loading SV until sv loader can use local ensembl db
-#sv_jar=/data/common/tools/variantannotator_v1.4/variant-annotator.jar
-#
-#echo "[INFO] Loading sv variants"
-#${prefix}/../svloader/do_run_sv_loader ${sample} ${run_dir} ${credentials} ${sv_jar}
-

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 sample=$1 && shift
-run_dir=$1 && shift
+structural_vcf=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
 
@@ -16,17 +16,6 @@ fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
-structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
-if [ $? -ne 0 ]
-then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate bpi structural variants. Exiting."
-        exit 1
-    fi
-fi
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${sv_jar} \
