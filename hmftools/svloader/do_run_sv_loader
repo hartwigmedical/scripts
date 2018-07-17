@@ -1,6 +1,6 @@
 #!/bin/bash
-source load_metadata
 
+sample=$1 && shift
 run_dir=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
@@ -9,9 +9,6 @@ sv_jar=$1 && shift
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-# JOBA: Load meta data
-sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # JOBA: File Locations
 pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
