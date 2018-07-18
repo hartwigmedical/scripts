@@ -13,7 +13,7 @@ print_usage(){
     echo "  -r refgenomedir     Directory containing reference genome data for docker to mount (Optional default = ${REFERENCE_GENOME_DIR})"
     echo "  -r knownindelsdir   Directory containing known indels for docker to mount (Optional default = ${KNOWN_INDELS_DIR})"
     echo "  -o outputdir        Directory containing reference genome data for docker to mount (Optional default = ${OUTPUT_DIR})"
-    echo "  -c confdir          Directory containing confiruration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
+    echo "  -c confdir          Directory containing configuration (pipeline.yaml) (Optional default = pipeline.yaml of docker image)"
     echo "  -h maxheap size     The max heap size to use within the docker container. For example -h 128G will use a 128 gig heap"
     echo "  -l                  Run in local mode, which means no host networking as this does not work for Docker for Mac"
     exit 1
@@ -56,5 +56,5 @@ then
     environment_variables="-e JAVA_OPTS=-Xmx${MAX_HEAP}"
 fi
 
-echo "Running pipeline2 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline2.log to see the progress."
+echo "Running pipeline5 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline.log to see the progress."
 sudo docker run -d $network $volumes $environment_variables hartwigmedicalfoundation/pipeline5:${VERSION}
