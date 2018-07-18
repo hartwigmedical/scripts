@@ -551,7 +551,7 @@ save_plot("~/hmf/RPlot/Extended Figure 5 - Amps.png", pAmps, base_width = 10, ba
 
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
-somatics = query_somatic_variant_sample(dbProd, "DRUP01140001T")
+somatics = query_somatic_variant_sample(dbProd, "CPCT02020514T")
 somatics$ploidy <- pmax(0, somatics$adjustedCopyNumber * somatics$adjustedVaf)
 dbDisconnect(dbProd)
 rm(dbProd)
@@ -565,14 +565,14 @@ d$y
 pSubclonal = ggplot(data = somatics %>% filter(ploidy < 1.5), aes(ploidy)) + 
   geom_histogram(aes(y =..density..), bins = 50, fill=singleBlue, col=singleBlue,  alpha = .4) + 
   geom_density(n = 100) +
-  geom_segment(aes(x = 0.457, xend = 0.457, y = 0, yend = 1.9), linetype = 2) +
-  geom_segment(aes(x = 0.457, xend = 0.457, y = 2.1, yend = 2.57), linetype = 2) +
+  geom_segment(aes(x = 0.628, xend = 0.628, y = 0, yend = 1.9), linetype = 2) +
+  geom_segment(aes(x = 0.628, xend = 0.628, y = 2.1, yend = 2.57), linetype = 2) +
   geom_segment(aes(x = 0.19, xend = 0.19, y = 0, yend = 1.4), linetype = 3) +
-  annotate("text", x = 0.457, y = 2, label = "Largest Trough < 1", hjust = 0.5) +
+  annotate("text", x = 0.628, y = 2, label = "Largest Trough < 1", hjust = 0.5) +
   annotate("text", x = 0.19, y = 1.6, label = "0.1% clonality cutoff", hjust = 0.5) +
   annotate("text", x = 0.19, y = 1.5, label = "for variant read depth", hjust = 0.5) +
-  annotate("text", x = 0.30, y = 2.5, label = "Sub-Clonal", hjust = 1) +
-  annotate("text", x = 0.60, y = 2.5, label = "Clonal", hjust = 0) +
+  annotate("text", x = 0.40, y = 2.5, label = "Sub-Clonal", hjust = 1) +
+  annotate("text", x = 0.80, y = 2.5, label = "Clonal", hjust = 0) +
   scale_x_continuous(breaks = c(0.25, 0.5, 0.75, 1, 1.25), expand = c(0,0), limits = c(0, 1.5)) +
   xlab("Ploidy") + ylab("") +
   theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) + 
