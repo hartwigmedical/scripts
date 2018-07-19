@@ -39,7 +39,8 @@ s3path="s3://${run_bucket}/${set}"
 dspath="/data/schuberg/bam_downloads/bams_${set}"
 
 echo "[INFO] Getting REF bam from ${s3path}"
-sbp s3 sync ${s3path}/ ${dspath}/ \
+sbp s3 cp ${s3path}/ ${dspath}/ \
+    --recursive \
     --exclude "*" \
     --include "*/mapping/*R_dedup.realigned.bam*" \
     --profile download
