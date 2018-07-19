@@ -39,8 +39,5 @@ s3path="s3://${run_bucket}/${set}"
 dspath="/data/schuberg/bam_downloads/bams_${set}"
 
 echo "[INFO] Getting REF bam from ${s3path}"
-sbp s3 cp ${s3path}/ ${dspath}/ \
-    --recursive \
-    --exclude "*" \
-    --include "*/mapping/*R_dedup.realigned.bam*" \
-    --profile download
+bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*R_dedup.realigned.bam$" )
+sbp s3 cp "s3://${run_bucket}/${bampath_in_bucket}" "${dspath}/" --profile download
