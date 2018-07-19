@@ -57,4 +57,4 @@ then
 fi
 
 echo "Running pipeline5 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline.log to see the progress."
-sudo docker run -d $network $volumes $environment_variables hartwigmedicalfoundation/pipeline5:${VERSION}
+docker run -d $network $volumes $environment_variables hartwigmedicalfoundation/pipeline5:${VERSION}
