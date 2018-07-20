@@ -1,5 +1,6 @@
 #!/bin/bash
 runDir=$1
+outName=$2 # optional
 
 thisScript=$( basename $0 )
 valBase='/data/giab/validation/mixin'
@@ -24,10 +25,14 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
     echo " Usage: $thisScript <path-to-pipeline-dir-or-vcf>"
+    echo "        $thisScript <path-to-pipeline-dir-or-vcf> [<output-name>]"
     echo "        $thisScript /data/experiments/giab-mixin/mixin-run/"
+    echo "        $thisScript /data/experiments/giab-mixin/mixin-run/ \"hmf-mixin-v4-final\""
     echo "-----"
     exit 1
 fi
+
+echo "[INFO] START with ${thisScript}"
 
 ## -----
 ## Find somatic VCF
@@ -36,7 +41,7 @@ if [[ ${runDir} =~ .vcf.gz$ || ${runDir} =~ .vcf$ ]]; then
 else
     runLinksJson="${runDir}/logs/links.json"
     legacyPath="${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf"
-    if [[ ! -f ${runLinksJson} ]]; then 
+    if [[ -f ${runLinksJson} ]]; then 
         runSomVcfLink=$( cat $runLinksJson | jq -r '.somatic_variant_vcf')
         runSomVcfPath="${runDir}/${runSomVcfLink}"
     elif [[ -f "${legacyPath}" ]]; then
@@ -51,7 +56,12 @@ runSomVcfName=$( basename ${runSomVcfPath} )
 ## Prepare
 echo "[INFO] Using input VCF (${runSomVcfName})"
 runName="$( basename $runDir )"
-outName="${truthVersion}_vs_${runName}"
+if [[ ! -z ${outName} ]]; then
+    outName="${truthVersion}__vs__${outName}"
+else    
+    outName="${truthVersion}__vs__${runName}"
+fi
+
 outPath="${valBase}/${outName}"
 tmpPath="${outPath}/vcfeval"
 if [[ -e ${outPath} ]]; then
@@ -90,10 +100,10 @@ ${rtgExec} vcfeval \
 ## Create the sub VCFs
 callClasses=( tp fp fn )
 variantTypes=( SNP INDEL MNP MIXED SYMBOLIC NO_VARIATION )
-metricsOutFile="${outPath}/classification_counts.tsv"
+metricsOutFile="${outPath}/final_counts.tsv"
 touch ${metricsOutFile}
-printf "##INPUT=variant_count_of_input_vcf" >> ${metricsOutFile}
-printf "##SUM=variant_count_sum_of_all_variant_types" >> ${metricsOutFile}
+printf "##INPUT=variant_count_of_input_vcf\n" >> ${metricsOutFile}
+printf "##SUM=variant_count_sum_of_all_variant_types\n" >> ${metricsOutFile}
 printf "#%s\t%s\t%s\n" "class" "type" "count" >> ${metricsOutFile}
 
 for callType in "${callClasses[@]}"; do 
@@ -113,7 +123,7 @@ for callType in "${callClasses[@]}"; do
 done
 
 ## -----
-## Gather metrics 
+## Parse RTGtools vcfeval produced metrics
 ## SVL: vcfeval not the most parse-able format so need some sed magic
 cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
     thres=$( echo $line | cut -d" " -f1 )
@@ -129,5 +139,6 @@ cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while
 done > ${outPath}/rtg_summary.tsv
 
 echo "[INFO] Output in ${outPath}"
-echo "[INFO] DONE ${thisScript}"
+echo "[INFO] Counts in ${metricsOutFile}"
+echo "[INFO] DONE with ${thisScript}"
 
