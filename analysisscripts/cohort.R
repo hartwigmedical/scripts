@@ -409,7 +409,7 @@ multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithSco
   distinct(patientId, scope, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type) %>% 
   group_by(patientId, type, scope) %>% summarise(count = n()) %>% 
   unite(type, scope, type, sep = "_") %>% 
-  spread(type, count)
+  spread(type, count, fill = 0)
 
 multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
   ungroup() %>% 
@@ -459,7 +459,9 @@ multipleBiopsyCohortSummary = multipleBiopsyCohort %>% left_join(allClinicalData
   left_join(multipleBiopsyMetrics, by = "patientId") 
   
 save(multipleBiopsyCohortSummary, file = "~/hmf/RData/processed/multipleBiopsyCohortSummary.RData")
-write.csv(multipleBiopsyCohortSummary, file = "~/hmf/RData/MultipleBiopsyCohortSummary.csv", row.names = F) 
+
+
+#write.csv(multipleBiopsyCohortSummary, file = "~/hmf/RData/MultipleBiopsyCohortSummary.csv", row.names = F) 
 
 
 ################### SANITY CHECKS
