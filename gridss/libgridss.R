@@ -37,6 +37,9 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
 	  # is fully strand biased when originating from one side of a breakend
 	  filtered = .addFilter(filtered, "strand_bias", isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_short_event_strand_bias)
+
+
+	  #filtered = .addFilter(filtered, "FlankingHighQualIndel", str_detect(gridss_gr$FILTER, "SINGLE_ASSEMBLY") & (i$RP + i$SR) / i%VF < 0.1 & i$RP >= 2 & i$SR >= 2 # fixed in GRIDSSv1.8.0
 	}
 	if (min_support_filters) {
 	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
@@ -130,22 +133,29 @@ is_short_event = function(gr) {
     abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
 }
 gridss_bp_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, !is_short_deldup(gr)))
+  return(.gridss_af(gr, vcf, i, !is_short_deldup(gr), includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE))
 }
 gridss_somatic_bp_af = function(gr, vcf) {
 	return(gridss_bp_af(gr, vcf, 2))
 }
 gridss_be_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, TRUE))
+  return(.gridss_af(gr, vcf, i, TRUE, includeBreakpointSupport=FALSE, includeBreakendSupport=TRUE))
 }
 gridss_somatic_be_af = function(gr, vcf) {
   return(gridss_be_af(gr, vcf, 2))
 }
-.gridss_af = function(gr, vcf, i, includeRefPair, no_coverage_af=0) {
+.gridss_af = function(gr, vcf, i, includeRefPair, no_coverage_af=0, includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE) {
   genotype = geno(vcf[names(gr)])
   g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
   names(g) <- names(genotype)
-  vf_af = g$VF / (g$VF + g$REF + ifelse(!includeRefPair, 0, g$REFPAIR))
+  support = rep(0, length(gr))
+  if (includeBreakpointSupport) {
+    support = support + g$VF
+  }
+  if (includeBreakendSupport) {
+    support = support + g$BVF
+  }
+  vf_af = support / (support + g$REF + ifelse(!includeRefPair, 0, g$REFPAIR))
   vf_af[is.nan(vf_af)] = no_coverage_af
   return(vf_af)
 }
@@ -581,8 +591,8 @@ readVcf = function(file, ...) {
 
 read_gridss_breakpoint_pon = function(file) {
   df = read_tsv(file,
-                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE"),
-                col_types="ciiciiccccl")
+                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE", "samples"),
+                col_types="ciiciiccccli")
   gro = GRanges(
     seqnames=df$chr1,
     ranges=IRanges(
@@ -590,7 +600,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end1),
     strand=df$strand1,
     partner=paste0(seq_len(nrow(df)), "h"),
-    IMPRECISE = df$IMPRECISE)
+    IMPRECISE = df$IMPRECISE,
+    samples=df$samples)
   names(gro) = paste0(seq_len(nrow(df)), "o")
   grh = GRanges(
     seqnames=df$chr2,
@@ -599,7 +610,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end2),
     strand=df$strand2,
     partner=paste0(seq_len(nrow(df)), "o"),
-    IMPRECISE = df$IMPRECISE)
+    IMPRECISE = df$IMPRECISE,
+    samples=df$samples)
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }
