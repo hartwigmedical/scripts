@@ -29,13 +29,20 @@ save(hpcDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/hpcDndsExpecte
 
 phgvs = read.csv("~/hmf/resources/phgvs.csv", stringsAsFactors = F) %>%
   select(patient = SAMPLEID, chromosome = CHROM, position = POS, ref = REF, alt = ALTS, pHGVS = HGVS_PROTEIN) %>%
-  mutate(ref = gsub("\\*","", ref))
+  mutate(ref = gsub("\\*","", ref)) %>%
+  distinct()
 
-hpcMutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, hpcSomatics)
-hpcMutations = hpcMutations %>% filter(gene %in% genePanel$gene_name, impact != "") %>%
+hpcMutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, hpcSomatics) %>%
   mutate(patient = substr(sampleId, 1,12)) %>%
   left_join(phgvs, by = c("patient","chromosome","position","ref","alt")) %>% 
   select(-patient)
+
+#load(file = "~/hmf/RData/Reference/canonicalTranscripts.RData")
+#hpcMutations = hpcMutations %>% left_join(canonicalTranscripts %>% select(gene, transcriptId), by = "gene")
+#save(hpcMutations, file = "~/hmf/RData/Processed/hpcMutations.RData")
+#load(file = "~/hmf/RData/Processed/hpcMutations.RData")
+
+hpcMutations = hpcMutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
 hpcDndsTsgDriversOutput = dnds_tsg_drivers(hpcSomaticCounts, hpcMutations %>% filter(gene %in% tsGenes$gene_name), hpcDndsExpectedDriversPerGene)
 hpcDndsTsgMutations = hpcDndsTsgDriversOutput[["tsgMutations"]]; save(hpcDndsTsgMutations, file = "~/hmf/RData/Processed/hpcDndsTsgMutations.RData")
@@ -84,5 +91,3 @@ mbDndsOncoMutations = mbDndsOncoDriversOutput[["oncoMutations"]]; save(mbDndsOnc
 mbDndsOncoDriverRates = mbDndsOncoDriversOutput[["oncoDriverRates"]]; save(mbDndsOncoDriverRates, file = "~/hmf/RData/Processed/mbDndsOncoDriverRates.RData")
 mbDndsOncoUnknownDriversTotals = mbDndsOncoDriversOutput[["oncoUnknownDriversTotals"]]; save(mbDndsOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/mbDndsOncoUnknownDriversTotals.RData")
 mbDndsOncoDrivers = mbDndsOncoDriversOutput[["oncoDrivers"]]; save(mbDndsOncoDrivers, file = "~/hmf/RData/Processed/mbDndsOncoDrivers.RData")
-
-

@@ -50,8 +50,8 @@ for seqDir in "${seqDirs[@]}"; do
     ## anything wrong with any seqrun: exit the whole thing
     if [[ ! -d $seqDir ]]; then 
         echo "[ERROR] dir does not exist ($seqDir)" && exit 1; 
-    elif [[ ! $( cat ${errlog_path} | tail -1 | grep "0 errors and 0 warnings" ) ]]; then 
-        echo "[ERROR] Errlog does not contain required output (${errlog_path})" && exit 1; 
+    elif [[ ! $( cat ${errlog_path} | tail -1 | grep "with 0 errors and" ) ]]; then 
+        echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
     elif [[ -z $hmfrun_name ]]; then 
         echo "[ERROR] Have not been able to parse hmfrun_name from sheet ($ssheet_path)" && exit 1; 
     fi

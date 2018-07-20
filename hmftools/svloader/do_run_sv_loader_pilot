@@ -1,8 +1,23 @@
 #!/bin/bash
+source load_metadata
+
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
+sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-${prefix}/do_run_sv_loader ${run_dir} ${credentials} ${sv_jar}  $@
+structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
+if [ $? -ne 0 ]
+then
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
+fi
+
+${prefix}/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar} $@

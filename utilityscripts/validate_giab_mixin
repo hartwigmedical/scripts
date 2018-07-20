@@ -1,0 +1,133 @@
+#!/bin/bash
+runDir=$1
+
+thisScript=$( basename $0 )
+valBase='/data/giab/validation/mixin'
+gatkJar='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
+rtgExec='/data/common/tools/rtg-tools_v3.9.1/rtg'
+rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
+rtgThreads=8
+genomeFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+truthVersion='giab_mixin_truth_set_160628'
+truthVcfName='na12878-na24385-somatic-truth.vcf.gz'
+truthBedName='na12878-na24385-somatic-truth-regions.bed'
+truthDirPath="/data/giab/truth/${truthVersion}"
+truthVcfPath="${truthDirPath}/${truthVcfName}"
+truthBedPath="${truthDirPath}/${truthBedName}"
+
+## init checks
+if [[ ! -w ${valBase} ]]; then echo "[EXIT] validation base not writable (${valBase})"; exit 1; fi
+if [[ ! -f ${truthVcfPath} ]]; then echo "[EXIT] truth VCF not available (${truthVcfPath})"; exit 1; fi
+if [[ ! -f ${truthBedPath} ]]; then echo "[EXIT] truth BED not available (${truthBedPath})"; exit 1; fi
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Validate GIAB run"
+    echo " Usage: $thisScript <path-to-pipeline-dir-or-vcf>"
+    echo "        $thisScript /data/experiments/giab-mixin/mixin-run/"
+    echo "-----"
+    exit 1
+fi
+
+## -----
+## Find somatic VCF
+if [[ ${runDir} =~ .vcf.gz$ || ${runDir} =~ .vcf$ ]]; then
+    runSomVcfPath=${runDir}
+else
+    runLinksJson="${runDir}/logs/links.json"
+    legacyPath="${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf"
+    if [[ ! -f ${runLinksJson} ]]; then 
+        runSomVcfLink=$( cat $runLinksJson | jq -r '.somatic_variant_vcf')
+        runSomVcfPath="${runDir}/${runSomVcfLink}"
+    elif [[ -f "${legacyPath}" ]]; then
+        runSomVcfPath="${legacyPath}"
+    else
+        echo "[EXIT] Unable to find somatic VCF" && exit 1; 
+    fi
+fi
+runSomVcfName=$( basename ${runSomVcfPath} )
+
+## -----
+## Prepare
+echo "[INFO] Using input VCF (${runSomVcfName})"
+runName="$( basename $runDir )"
+outName="${truthVersion}_vs_${runName}"
+outPath="${valBase}/${outName}"
+tmpPath="${outPath}/vcfeval"
+if [[ -e ${outPath} ]]; then
+    echo "[EXIT] Output dir exists remove first: ${outPath}" && exit 1
+else 
+    echo "[INFO] Using output dir (${outPath})"
+    mkdir $outPath
+fi
+
+## -----
+## Copy final input VCF
+cp "${runSomVcfPath}"* $outPath
+runSomVcfPath="${outPath}/${runSomVcfName}"
+if [[ ${runSomVcfPath} =~ .vcf$ ]]; then
+    echo "[INFO] Running bgzip"
+    bgzip ${runSomVcfPath}
+    echo "[INFO] Running tabix"
+    tabix "${runSomVcfPath}.gz"
+    runSomVcfPath="${runSomVcfPath}.gz"
+fi 
+
+## -----
+## Run variant evaluation
+echo "[INFO] Running RTGtools vcfeval"
+${rtgExec} vcfeval \
+  --template=${rtgSdfPath} \
+  --threads=${rtgThreads} \
+  --baseline=${truthVcfPath} \
+  --calls=${runSomVcfPath} \
+  --evaluation-regions=${truthBedPath} \
+  --output=${tmpPath} \
+  --ref-overlap \
+  --all-records
+
+## -----
+## Create the sub VCFs
+callClasses=( tp fp fn )
+variantTypes=( SNP INDEL MNP MIXED SYMBOLIC NO_VARIATION )
+metricsOutFile="${outPath}/classification_counts.tsv"
+touch ${metricsOutFile}
+printf "##INPUT=variant_count_of_input_vcf" >> ${metricsOutFile}
+printf "##SUM=variant_count_sum_of_all_variant_types" >> ${metricsOutFile}
+printf "#%s\t%s\t%s\n" "class" "type" "count" >> ${metricsOutFile}
+
+for callType in "${callClasses[@]}"; do 
+    rtgVcf="${tmpPath}/${callType}.vcf.gz"
+    allCount=$( zcat ${rtgVcf} | grep -cv "^#" ) 
+    printf "%s\t%s\t%i\n" "${callType}" "INPUT" "${allCount}" >> ${metricsOutFile}
+    callTypeSum=0
+    for variantType in "${variantTypes[@]}"; do
+        outVcf="${tmpPath}/${variantType}_${callType}.vcf.gz"
+        echo "[INFO] Creating $callType $variantType sub VCF"
+        java -jar ${gatkJar} -T SelectVariants --variant ${rtgVcf} -o ${outVcf} -R ${genomeFasta} -selectType ${variantType}
+        variantCount=$( zcat ${outVcf} | grep -cv "^#" )
+        callTypeSum=$((callTypeSum + variantCount))
+        printf "%s\t%s\t%i\n" "${callType}" "${variantType}" "${variantCount}" >> ${metricsOutFile}
+    done
+    printf "%s\t%s\t%i\n" "${callType}" "SUM" "${callTypeSum}" >> ${metricsOutFile}
+done
+
+## -----
+## Gather metrics 
+## SVL: vcfeval not the most parse-able format so need some sed magic
+cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
+    thres=$( echo $line | cut -d" " -f1 )
+       tp=$( echo $line | cut -d" " -f3 )
+       fp=$( echo $line | cut -d" " -f4 )
+       fn=$( echo $line | cut -d" " -f5 )
+     prec=$( echo $line | cut -d" " -f6 )
+     sens=$( echo $line | cut -d" " -f7 )
+    score=$( echo $line | cut -d" " -f8 )
+    printf \
+        "Threshold\t%s\nTruePositive\t%s\nFalsePositive\t%i\nFalseNegative\t%s\nPrecision\t%s\nSensitivity\t%s\nFmeasure\t%s\n" \
+        "${thres}" "${tp}" "${fp}" "${fn}" "${prec}" "${sens}" "${score}"
+done > ${outPath}/rtg_summary.tsv
+
+echo "[INFO] Output in ${outPath}"
+echo "[INFO] DONE ${thisScript}"
+

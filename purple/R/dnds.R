@@ -1,3 +1,11 @@
+collapsePHGVS <- function(x) {
+  x = x[!is.na(x) & x != ""]
+  if (length(x) == 0) {
+    return ("")
+  }
+  return (paste(x, collapse = ","))
+}
+
 hotspot_category <- function(hotspot, nearhotspot) {
   result = ifelse(hotspot, "OnHotspot", "OffHotspot")
   result = ifelse(nearHotspot, "NearHotspot", result)
@@ -254,7 +262,7 @@ dnds_tsg_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) 
       sample_SNV = max(sample_SNV),
       clonality = first(clonality),
       shared = any(shared),
-      pHGVS = paste0(pHGVS, collapse = ",")
+      pHGVS = collapsePHGVS(pHGVS)
     ) %>%
     mutate(
       p_driver = gene_drivers / cohortSize,
@@ -321,7 +329,7 @@ dnds_onco_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene)
       sample_SNV = max(sample_SNV),
       clonality = first(clonality),
       shared = any(shared),
-      pHGVS = paste0(pHGVS, collapse = ",")
+      pHGVS = collapsePHGVS(pHGVS)
     ) %>%
     mutate(driver = impact, type = 'ONCO') %>%
     select(sampleId, gene, coordinate, chromosome, position, ref, alt, variant, driver, impact, type, hotspot, nearHotspot, clonality, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV, pHGVS) %>%

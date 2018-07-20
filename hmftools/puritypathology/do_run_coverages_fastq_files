@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+fastqDir=$1 && shift
+
+purity_pathology=/data/common/tools/purity-pathology_pilot/purity-pathology.jar
+
+${prefix}/coverages_fastq_files ${fastqDir} ${purity_pathology}

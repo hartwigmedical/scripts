@@ -1,6 +1,9 @@
+library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(scales)
+library(cowplot)
+theme_set(theme_bw())
 
 ########################################### Prepare Data
 alphabetical_drug <- function(drugs) {
@@ -13,67 +16,78 @@ alphabetical_drug <- function(drugs) {
   return (result)
 }
 
-levelTreatmentFactors = rev(c("A_OnLabel","A_OffLabel","B_OnLabel","B_OffLabel"))
-levelTreatmentColors = setNames(rev(c("#2171b5","#6baed6","#bdd7e7","#eff3ff")), levelTreatmentFactors)
+levelTreatmentFactors = c("None","B_OffLabel","B_OnLabel","A_OffLabel","A_OnLabel")
+levelTreatmentColors = setNames(c("black", "#eff3ff", "#bdd7e7","#6baed6", "#2171b5"), levelTreatmentFactors)
 
-load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
-actionableVariants = read.table('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t', stringsAsFactors = F) %>%
-  filter(!startsWith(sampleEvent, "Synonymous"), 
-         !gene %in% c('PTEN','KRAS'),
-         !level %in% c('Early trials'),
+actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSample.tsv',header=T,sep = '\t', stringsAsFactors = F) %>%
+  filter(!gene %in% c('PTEN','KRAS'),
          hmfLevel %in% c('A','B')) %>%
   mutate(
+    treatmentType = ifelse(treatmentType == "Unknown", "OffLabel", treatmentType),
     drug = ifelse(drug == "Fluvestrant", "Fulvestrant", drug),
     drug = ifelse(drug == "Ado-trastuzumab Emtansine", "Ado-Trastuzumab Emtansine", drug),
     drug = ifelse(drug == "AZD4547", "AZD-4547", drug),
     drug = ifelse(drug == "AZD5363", "AZD-5363", drug),
     drug = ifelse(drug == "BGJ398", "BGJ-398", drug),
     drug = alphabetical_drug(drug),
-    treatmentType = ifelse(treatmentType == "On-label", "OnLabel", "OffLabel"),
-    levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors))
+    eventType = ifelse(eventType == "SNP", "SNV", eventType),
+    eventType = ifelse(eventType == "MNP", "MNV", eventType),
+    levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors, ordered = T))
 
+load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+pembrolizumabVariants = highestPurityCohortSummary %>% 
+  filter(msiStatus == 'MSI') %>% 
+  select(sampleId, patientCancerType = cancerType) %>% 
+  mutate(
+    drug = "Pembrolizumab", 
+    levelTreatment = factor("A_OnLabel", levelTreatmentFactors, ordered = T),
+    gene = "",eventType = "MSI", pHgvs = "", hmfResponse= "Responsive")
+
+nivolumabVariants = highestPurityCohortSummary %>% 
+  filter(msiStatus == 'MSI') %>% 
+  select(sampleId, patientCancerType = cancerType) %>% 
+  mutate(
+    drug = "Nivolumab", 
+    levelTreatment = factor(ifelse(patientCancerType == "Colon/Rectum", "A_OnLabel", "A_OffLabel"), levelTreatmentFactors, ordered = T),
+    gene = "",eventType = "MSI", pHgvs = "", hmfResponse= "Responsive")
+
+actionableVariants = actionableVariantsPerSample %>% select(sampleId, patientCancerType, drug, levelTreatment, gene, eventType, pHgvs, hmfResponse) %>%
+  bind_rows(pembrolizumabVariants) %>%
+  bind_rows(nivolumabVariants)
+  
 ########################################### Supplementary Data
 drugResponse <- function(actionableVariants, response) {
   actionableVariants %>% 
     filter(hmfResponse == response) %>%
-    group_by(sampleId,patientCancerType, drug, levelTreatment) %>%
-    count() %>% 
     group_by(sampleId,patientCancerType, drug) %>%
-    top_n(1, levelTreatment) %>% 
-    select(-n) 
+    summarise(levelTreatment = max(levelTreatment)) %>%
+  ungroup()
 }
 
-msiResponsive = highestPurityCohortSummary %>% 
-  filter(msiStatus == 'MSI', cancerType != 'Other') %>% 
-  select(sampleId, patientCancerType = cancerType) %>% 
-  mutate(drug = "MSI", levelTreatment = factor("A_OnLabel", levelTreatmentFactors))
-
-responsiveDrugs = drugResponse(actionableVariants, 'Responsive') %>% bind_rows(msiResponsive)
-resistantDrugs = drugResponse(actionableVariants, 'Resistant')
+responsiveDrugs = drugResponse(actionableVariants, 'Responsive') %>% mutate(response = levelTreatment) %>% select(-levelTreatment)
+resistantDrugs = drugResponse(actionableVariants, 'Resistant') %>% mutate(resistance = levelTreatment) %>% select(-levelTreatment)
 
 actionableDrugs = merge(responsiveDrugs,resistantDrugs,by=c('sampleId','patientCancerType','drug'),all=T,suffixes=c('_Response','_Resistance'), fill=0) %>%
-  mutate(
-    responsive = !is.na(levelTreatment_Response) & is.na(levelTreatment_Resistance),
-    resistant = is.na(levelTreatment_Response) & !is.na(levelTreatment_Resistance),  
-    inconsistent = !is.na(levelTreatment_Response) & !is.na(levelTreatment_Resistance),
-    status = ifelse(responsive, "Responsive", "Resistance"),
-    status = ifelse(inconsistent, "Inconsistent", status)
-  ) %>%
-  filter(responsive)
+  filter(is.na(resistance) | response > resistance) %>% 
+  replace_na(list(resistance = "None"))
 
-responsiveVariants = actionableDrugs %>% select(sampleId, drug) %>%
-  left_join(actionableVariants, by = c("sampleId","drug")) %>%
-  select(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
-  group_by(sampleId, gene, drug, eventType, sampleEvent, levelTreatment, hmfLevel, treatmentType) %>%
-  distinct() %>%
-  group_by(sampleId, gene, drug, eventType, sampleEvent) %>%
-  top_n(1, levelTreatment) %>%
-  select(-levelTreatment) %>%
-  group_by(sampleId, gene, eventType, sampleEvent) %>%
-  mutate(variantTreatmentOptions = n()) %>%
-  ungroup()
+responsiveVariants = actionableDrugs %>% 
+  left_join(actionableVariants, by = c("sampleId", "patientCancerType","drug")) %>%
+  filter(levelTreatment > resistance) %>%
+  mutate(cancerType = patientCancerType) %>%
+  group_by(sampleId, cancerType, gene, eventType, pHgvs, drug) %>%
+  summarise(levelTreatment = max(levelTreatment)) %>%
+  group_by(sampleId, cancerType, gene, eventType, pHgvs, levelTreatment) %>%
+  summarise(drug = paste(drug, collapse = ";")) %>%
+  spread(levelTreatment, drug, fill = "") %>%
+  ungroup() 
 save(responsiveVariants, file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
+sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
+actionability = responsiveVariants %>% left_join(sampleIdMap, by = "sampleId") %>%
+  select(-sampleId) %>%
+  select(sampleId = hmfSampleId, everything())
+write.csv(actionability, file = "~/hmf/RData/Actionability.csv", row.names = F) 
 
 geneResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, gene) %>% group_by(gene) %>% count()
 drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, drug) %>% group_by(drug) %>% count()
@@ -86,21 +100,22 @@ drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, dr
 ########################################### Visualise
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 
-actionablePlotData = actionableDrugs %>%
-  group_by(patientCancerType, sampleId) %>%
-  top_n(1, levelTreatment_Response) %>%
-  summarise(levelTreatment_Response = dplyr::first(levelTreatment_Response)) %>%
-  group_by(patientCancerType, levelTreatment_Response) %>% 
-  count() %>%
-  left_join(hpcCancerTypeCounts %>% select(patientCancerType = cancerType, N), by = "patientCancerType" ) %>%
+actionablePlotData = responsiveVariants %>% filter(cancerType != 'Other') %>%
+  mutate(
+    response = ifelse(B_OnLabel != "", "B_OnLabel", "B_OffLabel"),
+    response = ifelse(A_OffLabel != "", "A_OffLabel", response),
+    response = ifelse(A_OnLabel != "", "A_OnLabel", response),
+    response = factor(response, levelTreatmentFactors)) %>%
+  group_by(sampleId, cancerType) %>% arrange(response) %>% summarise(response = last(response)) %>%
+  group_by(cancerType, response) %>% count() %>% arrange(cancerType, response) %>%
+  left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType" ) %>% 
   mutate(percentage = n/N) %>%
-  filter(!is.na(percentage)) %>% 
-  arrange(percentage)
+  arrange(cancerType, response)
 
 actionablePlotDataFactors = actionablePlotData %>% 
-  select(patientCancerType, levelTreatment_Response, n, N) %>%
-  group_by(patientCancerType) %>% 
-  spread(levelTreatment_Response, n, fill = 0) %>%
+  select(cancerType, response, n, N) %>%
+  group_by(cancerType) %>% 
+  spread(response, n, fill = 0) %>%
   mutate(
     APercent = (A_OffLabel + A_OnLabel) / N,
     BPercent = B_OnLabel / N) %>%
@@ -108,10 +123,10 @@ actionablePlotDataFactors = actionablePlotData %>%
 
 actionablePlotData = actionablePlotData %>% 
   ungroup() %>%
-  mutate(patientCancerType = factor(patientCancerType, actionablePlotDataFactors$patientCancerType))
+  mutate(cancerType = factor(cancerType, actionablePlotDataFactors$cancerType))
 
-p1 = ggplot(data = actionablePlotData, aes(x = patientCancerType, y = percentage)) +
-  geom_bar(stat = "identity", aes(fill = levelTreatment_Response)) + 
+p1 = ggplot(data = actionablePlotData, aes(x = cancerType, y = percentage)) +
+  geom_bar(stat = "identity", aes(fill = response)) + 
   scale_fill_manual(values = levelTreatmentColors) +
   ggtitle("") + xlab("") + ylab("% Samples with treatment options") +
   scale_y_continuous(labels = percent, limits = c(0, 1), expand = c(0.02,0)) +

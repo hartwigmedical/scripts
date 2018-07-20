@@ -154,3 +154,17 @@ rm(ampCandidates)
 rm(ampCandidatesRange)
 rm(geneCopyNumberAmplificationSummary)
 
+load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
+load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
+
+CopyNumberAmplifications = geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(arm = coalesce(telomere, centromere)) %>%
+  select(gene = target, chromosome, score, N, globalPeak, localPeak, neighbouringGenes, candidates = superCandidates, martincorena, hmf, cosmicCurated, cosmicOncogene,
+         amplification, method, arm)
+
+CopyNumberDeletions = geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(arm = coalesce(telomere, centromere)) %>%
+  select(gene = target, chromosome, score, N, globalPeak, localPeak, neighbouringGenes, candidates = superCandidates, martincorena, hmf, cosmicCurated, cosmicTsg, deletion, method, arm) %>%
+  group_by(gene) %>% top_n(1, score) %>% ungroup()
+
+
+write.csv(CopyNumberAmplifications, file = "~/hmf/RData/CopyNumberAmplificationTargets.CSV", row.names = F) 
+write.csv(CopyNumberDeletions, file = "~/hmf/RData/CopyNumberDeletionTargets.CSV", row.names = F) 

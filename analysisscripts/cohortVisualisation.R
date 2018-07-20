@@ -282,22 +282,6 @@ pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heig
 pFigure1
 save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1, base_width = 14, base_height = 20)
 
-####################################
-### COVERAGE PLOT @@@@@@@@
-coverageData = highestPurityCohortSummary %>% 
-  select(sampleId, tumorMeanCoverage, refMeanCoverage, cancerType) %>%
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors), medianTC = median(tumorMeanCoverage, na.rm = T)) %>%
-  arrange(cancerType, -tumorMeanCoverage)
-
-pdf(file='~/hmf/cohortVisualisaion.pdf', onefile=T, paper='A4r') 
-ggplot(data=coverageData)+
-  stat_ecdf(aes(tumorMeanCoverage,color='Tumor (LHS)'),geom = "step", pad = FALSE) + 
-  stat_ecdf(aes(refMeanCoverage*2,color='Ref (RHS'),geom = "step", pad = FALSE) +
-  scale_x_continuous(sec.axis = sec_axis(~./2, name = "Ref Mean Coverage")) +
-  coord_flip() + 
-  labs(x = "Tumor Mean Coverage")+
-  theme(axis.title.x =  element_blank()) +
-  scale_y_continuous(labels = percent)
 
 ####################################
 ### Purity PLOT @@@@@@@@

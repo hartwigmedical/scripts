@@ -50,6 +50,7 @@ for (selectedCancerType in cancerTypes) {
 
 HmfRefCDSCv = create_data_frame(HmfRefCDSCvList)
 save(HmfRefCDSCv, file="~/hmf/RData/processed/HmfRefCDSCv.RData")
+#write.csv(HmfRefCDSCv, file = "~/hmf/RData/HmfRefCDSCv.csv", row.names = F)
 
 
 #################### Unfiltered Annotations #########################

@@ -1,7 +1,7 @@
 #!/bin/bash
-source load_metadata
 
-run_dir=$1 && shift
+sample=$1 && shift
+structural_vcf=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
 
@@ -10,32 +10,18 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-# JOBA: Load meta data
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-
 # JOBA: File Locations
 pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
 fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
-structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
-if [ $? -ne 0 ]
-then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate bpi structural variants. Exiting."
-        exit 1
-    fi
-fi
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${sv_jar} \
     -vcf_file ${structural_vcf} \
     -sample ${sample} \
-    -ensembl_db ${ensembl_db} \
+    -local_ensembl -ensembl_db ${ensembl_db} \
     -fusion_pairs_csv "$fusion_pairs_csv" \
     -promiscuous_five_csv "$promiscuous_five_csv" \
     -promiscuous_three_csv "$promiscuous_three_csv" \
