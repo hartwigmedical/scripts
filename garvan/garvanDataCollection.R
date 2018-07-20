@@ -3,6 +3,7 @@ library(dplyr)
 library(tidyr)
 library(configr)
 
+### Queries
 query_sample<-function(dbConnect) {
   query=paste("select patient_id,sample_id,cancer_type,age_at_sample from lkcgp_sample")
   return (dbGetQuery(dbConnect, query))
@@ -99,14 +100,15 @@ query_whole_genome_duplication<-function(dbConnect, cohort) {
   return (result)
 }
 
-### VALUES TO CHANGE IF YOU WANT
+### Parameters to change
 purityCutoff = 0.1
 outputDir = "~/Documents/LKCGP_projects/RData/"
+resourceDir = "/Users/marwo2/Documents/LKCGP_projects/RData/Resources/"
+dbConf = read.config("~/.mysql/credentials")
 
 ### START OF REFERENCE DATA COLLECTION
 referenceDir = paste0(outputDir, "reference/")
 processedDir = paste0(outputDir, "processed/")
-dbConf = read.config("~/.mysql/credentials")
 dbProd = dbConnect(MySQL(), user=dbConf$lkcgp_select$user, password=dbConf$lkcgp_select$password, dbname=dbConf$lkcgp_select$database, host=dbConf$lkcgp_select$host)
 
 samples = query_sample(dbProd)
@@ -146,6 +148,12 @@ dbDisconnect(dbProd)
 rm(dbProd)
 
 ### START OF DATA PROCESSING
+exonic_somatics <- function(somatics, gr_genes) {
+  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position + nchar(somatics$ref) - 1))
+  ol = as.matrix(findOverlaps(gr_muts, gr_genes, type="any", select="all"))
+  return (somatics[unique(ol[, 1]), ])
+}
+
 cohort_somatic_summary <- function(somatics) {
   result = cohort_somatics_by_type(somatics) %>%
     left_join(cohort_mutational_load(somatics), by = "sampleId") %>%
@@ -214,3 +222,7 @@ indel_summary <- function(somatics) {
 
 cohortIndelSummary = indel_summary(cohortSomatics)
 save(cohortIndelSummary, file = paste0(processedDir, "cohortIndelSummary.RData"))
+
+load(paste0(resourceDir, "HmfRefCDS.RData"))
+cohortExonicSomatics = exonic_somatics(cohortSomatics, gr_genes)
+save(cohortExonicSomatics, file = paste0(processedDir, "cohortExonicSomatics.RData"))
