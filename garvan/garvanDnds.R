@@ -7,9 +7,10 @@ outputDir = "~/garvan/RData/"
 resourceDir = "~/hmf/RData/reference/"
 
 outputDir = "~/Documents/LKCGP_projects/RData/"
+resourceDir = "/Users/marwo2/Documents/LKCGP_projects/RData/Resources/"
+
 referenceDir = paste0(outputDir, "reference/")
 processedDir = paste0(outputDir, "processed/")
-resourceDir = "/Users/marwo2/Documents/LKCGP_projects/RData/Resources/"
 
 load(paste0(referenceDir, "cohortExonicSomatics.RData"))
 load(paste0(processedDir, "highestPurityCohortSummary.RData"))
@@ -50,7 +51,7 @@ save(dndsUnfilteredAnnotatedMutations, file=paste0(processedDir, "dndsUnfiltered
 #### Standard dNdS for PANCANCER
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
 HmfRefCDSCvList = list()
-HmfRefCDSCvList[["PanCancer"]]  <- output$sel_cv
+HmfRefCDSCvList[["All"]]  <- output$sel_cv
 HmfRefCDSCv = create_data_frame(HmfRefCDSCvList)
 save(HmfRefCDSCv, file=paste0(processedDir, "HmfRefCDSCv.RData"))
 

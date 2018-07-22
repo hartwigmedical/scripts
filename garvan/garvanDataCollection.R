@@ -141,6 +141,12 @@ save(cohortWGD, file = paste0(referenceDir, "cohortWGD.RData"))
 cohortFusions = purple::query_fusions(dbProd, cohort)
 save(cohortFusions, file = paste0(referenceDir, "cohortFusions.RData"))
 
+dbEnsemble = dbConnect(MySQL(), dbname='homo_sapiens_core_89_37', groups="RAnalysis")
+cohortFusionCodingRegions = purple::query_coding_regions(dbEnsemble, unique(c(cohortFusions$`5pTranscript`, cohortFusions$`3pTranscript`)))
+save(cohortFusionCodingRegions, file = paste0(referenceDir, "cohortFusionCodingRegions.RData"))
+dbDisconnect(dbEnsemble)
+rm(dbEnsemble)
+
 canonicalTranscripts = purple::query_canonical_transcript(dbProd)
 save(canonicalTranscripts, file = paste0(referenceDir, "canonicalTranscripts.RData"))
 

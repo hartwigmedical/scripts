@@ -97,14 +97,13 @@ load(file = paste0(processedDir,"HmfRefCDSCv.RData"))
 sig = 0.05
 hmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig) %>% distinct(gene_name)
 hmfSignificant$dnds <- TRUE
-
 garvanPanel$garvan <- TRUE
 
 genePanel = merge(garvanPanel, hmfSignificant, by = "gene_name", all = T)
 genePanel = merge(genePanel, cosmicGenes, by = "gene_name", all = T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene_name", all=T)
 #genePanel = genePanel %>% filter(!gene_name %in% c("POM121L12","TRIM49B","LPCAT2"))
-save(fragileGenes, file = paste0(processedDir,"genePanel.RData"))
+save(genePanel, file = paste0(processedDir,"genePanel.RData"))
 
 oncoGenes = genePanel %>% filter(cosmicOncogene | is.na(cosmicTsg)) %>% mutate(classification = "onco")
 tsGenes = genePanel %>% filter(cosmicTsg | is.na(cosmicOncogene)) %>% mutate(classification = "tsg")
