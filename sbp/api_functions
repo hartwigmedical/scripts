@@ -30,8 +30,8 @@ load_rerun_v4_info_for_set() {
     rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_v4.ini" | grep "Validated" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})
-        run_is_v3=`echo ${run_info} | cut -d ' ' -f8 | grep "v3"`
-        if [ -z "run_is_v3" ]; then
+        run_is_v4=`echo ${run_info} | cut -d ' ' -f8 | grep "v4"`
+        if [ -z "run_is_v4" ]; then
             rerun_info=""
         else
             rerun_info=${run_info}
