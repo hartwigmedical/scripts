@@ -14,8 +14,12 @@ sv_jar=/data/common/tools/variantannotator_v1.4/variant-annotator.jar
 somatic_vcf=$(ls ${run_dir}/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
 then
-    echo "Unable to locate post processed somatic variants. Exiting."
-    exit 1
+    somatic_vcf=$(ls ${run_dir}/*post_processed.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate post processed somatic variants. Exiting."
+        exit 1
+    fi
 fi
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
