@@ -14,7 +14,7 @@ my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
 
-my $GER_INI = "KG.ini";
+my $GER_INI = "SingleSample.ini";
 my $SOM_INI = "Somatic.ini";
 
 my $Q30_LIM = 75; # q30 limit is currently same for all samples

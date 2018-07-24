@@ -28,7 +28,7 @@ my @SUM_FIELDS = qw( submission id name yld q30 );
 my $MAX_UNDET = 4; # percentage
 my $MIN_Q30 = 75;
 my $YIELD_FACTOR = 1e6;
-my $MIN_YIELD_PER_SAMPLE = 3e9;
+my $MIN_YIELD_PER_SAMPLE = 1e9;
 my $MIN_YIELD_PER_LANE = 100e9;
 
 my $RUN_PATH;
