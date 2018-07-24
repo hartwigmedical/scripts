@@ -205,16 +205,6 @@ query_structural_variants_samples = function(dbConnect) {
 	df = dbGetQuery(dbConnect, query)
 	return(df$sampleId)
 }
-query_structural_variants_for_sample_as_granges = function(dbConnect, sampleId) {
-	sampleIdString = paste("'", sampleId, "'", collapse = ",", sep = "")
-	query = paste(
-		"SELECT *",
-		"FROM structuralVariant",
-		"WHERE sampleId in (", sampleIdString, ")",
-		sep = " ")
-	df = dbGetQuery(dbConnect, query)
-	hmf_structuralVariants_to_granges(df)
-}
 simpleEventType <- function(gr) {
   same_chr = as.logical(seqnames(gr) != seqnames(partner(gr)))
   insSeq = rep("", length(gr))
@@ -230,45 +220,6 @@ simpleEventType <- function(gr) {
           ifelse(more_ins_than_length, "INS", # TODO: improve classification of complex events
             ifelse(same_strand, "INV",
               ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL", "DUP")))))
-}
-hmf_structuralVariants_to_granges = function(df) {
-	gro = GRanges(
-		seqnames=df$startChromosome,
-		ranges=IRanges(start=df$startPosition, width=1),
-		strand=ifelse(df$startOrientation == 1, "+", "-"),
-		id=df$id,
-		sampleId=df$sampleId,
-		ploidy=df$ploidy,
-		insertSequence=df$insertSequence,
-		type=df$type,
-		af=df$startAF,
-		homseq=df$startHomologySequence,
-		adjustedaf=df$adjustedStartAF,
-		adjustedcn=df$adjustedStartCopyNumber,
-		adjustedcn_delta=df$adjustedStartCopyNumberChange,
-		partner=paste0(df$id, "h")[seq_along(df$id)],
-		name=paste0(df$id, "o")[seq_along(df$id)],
-		svlen=df$endPosition-df$startPosition)
-	names(gro)=gro$name
-	grh = GRanges(
-		seqnames=df$endChromosome,
-		ranges=IRanges(start=df$endPosition, width=1),
-		strand=ifelse(df$endOrientation == 1, "+", "-"),
-		id=df$id,
-		sampleId=df$sampleId,
-		ploidy=df$ploidy,
-		insertSequence=df$insertSequence,
-		type=df$type,
-		af=df$startAF,
-		homseq=df$endHomologySequence,
-		adjustedaf=df$adjustedEndAF,
-		adjustedcn=df$adjustedEndCopyNumber,
-		adjustedcn_delta=df$adjustedEndCopyNumberChange,
-		partner=paste0(df$id, "o")[seq_along(df$id)],
-		name=paste0(df$id, "h")[seq_along(df$id)],
-		svlen=df$endPosition-df$startPosition)
-	names(grh)=grh$name
-	c(gro, grh)
 }
 
 load_full_gridss_gr = function(filename, directory="", filter=c("somatic", "qual")) {
