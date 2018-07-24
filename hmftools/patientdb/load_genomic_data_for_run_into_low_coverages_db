@@ -11,7 +11,7 @@ sv_jar=/data/common/tools/variantannotator_v1.4/variant-annotator.jar
 
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf)
 if [ $? -ne 0 ]
 then
     somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
