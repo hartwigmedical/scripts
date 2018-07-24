@@ -23,10 +23,10 @@ then
 fi
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf)
+structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
-    structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf.gz)
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
     if [ $? -ne 0 ]
     then
         echo "Unable to locate bpi structural variants. Exiting."
