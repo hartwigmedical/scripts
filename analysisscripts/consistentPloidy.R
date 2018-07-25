@@ -7,7 +7,7 @@ library(StructuralVariantAnnotation)
 library(testthat)
 
 dbConn = dbConnect(MySQL(), dbname = "gridss_test")
-sampleId = "COLO829T"
+currentSampleId = "COLO829T"
 
 query_all_segments = function(dbConnect, sampleId) {
   query = paste(
@@ -102,13 +102,6 @@ sv_x_ordinal = function(cnv_gr, sv_gr, id, subclone_ordinal, total_subclones) {
   return(snv_start_offset - 1 + subclone_ordinal + (name_ordinal - 1) * total_subclones)
 }
 
-#' Determines copy number segments that should be the same
-#'
-#' Simple deletion:
-equivalent_cn_segments = function(cnv_gr, sv_gr) {
-  cnv_gr
-}
-
 test_that("x_ordinal", {
   test_cnv = c("a", "b", "c")
   names(test_cnv) = test_cnv
@@ -129,16 +122,137 @@ test_that("x_ordinal", {
   expect_that(sv_x_ordinal(test_cnv, test_sv, "bb", 2, 3), equals(13))
 })
 
+annotate_reference_fragment_count = function(induced_sv_gr, sv_gr) {
+  as.data.frame(induced_sv_gr) %>% dplyr::select(strand, cnv_id) %>%
+    left_join(as.data.frame(sv_gr) %>% dplyr::select(strand, cnv_id, tumourReferenceFragmentCount),
+      by = c("strand", "cnv_id")) %>%
+    distinct(strand, cnv_id, .keep_all=TRUE) %>%
+    pull(tumourReferenceFragmentCount)
+}
 
-cnv_gr = query_cnv_gr(dbConn, sampleId)
-sv_gr = query_structural_variants_as_GRanges(dbConn, data.frame(sampleId=sampleId))
+
+cnv_gr = query_cnv_gr(dbConn, currentSampleId)
+sv_gr = query_structural_variants_as_GRanges(dbConn, data.frame(sampleId=currentSampleId))
 sv_gr$cnv_id = annotate_sv_with_cnv_id(cnv_gr, sv_gr, maxgap=1000)
 if (any(is.na(sv_gr$cnv_id))) {
   stop("Missing CNV end point for SV")
 }
 induced_sv_gr = induced_edge_gr(cnv_gr)
+induced_sv_gr$fragment_count = annotate_reference_fragment_count(induced_sv_gr, sv_gr)
 
 
+cndf = data.frame(
+  name=paste0("cn", names(cnv_gr)),
+  # TODO: do we need to reverse the purity adjustment?
+  depth=cnv_gr$copyNumber,
+  length=end(cnv_gr)-start(cnv_gr),
+  baf=cnv_gr$observedBaf,
+  baf_count=cnv_gr$bafCount,
+  start=cnv_gr$segmentStartSupport,
+  end=cnv_gr$segmentEndSupport)
+
+svdf = data.frame(
+  name = paste0("sv", names(sv_gr)),
+  cnv_id = sv_gr$cnv_id,
+  partner = sv_gr$partner,
+  fragment_count = sv_gr$tumourReferenceFragmentCount) %>%
+  bind_rows(data.frame(
+    name = names(induced_sv_gr),
+    cnv_id = induced_sv_gr$cnv_id,
+    partner = induced_sv_gr$partner,
+    fragment_count = induced_sv_gr$fragment_count)
+  )
+
+# Generate LP file
+writeLPmodel = function(file, cndf, subclones=2) {
+  model = list(
+    clones = c("normal", paste0("c", seq(subclones))),
+    alleles = c("J", "n"))
+  model$ascn = expand.grid(allele=paste0("_", model$alleles), subclone = paste0("_", model$clones)) %>%
+      mutate(ordinal = seq(nrow(.)))
+  model$q_ascn = df_cross_product(model$ascn, model$ascn, suffix=c("", "2"))
+
+  # BAF must be minor allele frequency
+  cndf$baf = pmin(cndf$baf, 1-cndf$baf)
+
+  # need normalisation multipliers between read depth and coverage
+  # and fragment counts and coverage
+  # that is, read counts to effective coverage
+  # for each segment:
+  #   normalisation * sum(purity * ploidy) = observed read depth
+  # and we have a circular definition since the normalisation factor
+  # actually depends on the solution estimate.
+  # need to do an initial estimate: assume ploidy = 2 then re-estimate
+
+  # KISS!
+  "Minimise"
+  # segment read depth error
+  # segment BAF error
+  # edge fragment count error
+  "Subject To"
+  # sum ploidy = 1
+  # normal ASCN = 1
+  # for each segment
+  #   sum edge ASCN in = ASCN (if start != telemore/centromere)
+  #   sum edge ASCN out = ASCN (if end != telemore/centromere)
+
+  "Bounds"
+  # ploidy <= 1
+  # Variables:
+  # total cn depth
+  # total edge depth
+  # add null edges
+  # segment ASCN
+  # edge ASCN
+  # Variables
+  # ploidy
+  "Integers"
+  # segment ASCN
+  # edge ASCN
+
+  # relative weightings
+  cndf = cndf %>%
+    mutate(
+      read_depth_weight = sqrt(length),
+      baf_weight = baf_count)
+
+  "Minimize"
+   cndf %>% mutate(
+    objname = paste0("OBJ_rd_", name),
+    weight = 1)
+
+   # ploidies sum to 1
+   paste(paste(paste0(c("normal", model$clones), sep="_ploidy"), collapse=" + "), "= 1")
+}
+df_cross_product = function(df1, df2, ...) {
+  full_join(df1 %>% mutate(df_cross_product_placeholder=1), df2 %>% mutate(df_cross_product_placeholder=1), by="df_cross_product_placeholder", ...) %>%
+    dplyr::select(-df_cross_product_placeholder)
+}
+segment_read_depth_objective_function = function(model, cndf, ascn) {
+  # (depth - depth_hat) ^ 2
+  # = depth ^ 2 - 2 * depth_hat * depth + (constant we can ignore)
+  # depth = sum over i in subclones ploidy(i) * (depth(i, major) + depth(i, minor))
+  # + normal_ploidy) * 2
+  quartic_terms = cndf %>% top_n(1) %>%
+    mutate(weight = read_depth_weight) %>%
+    df_cross_product(model$q_ascn) %>%
+    mutate(
+      p1=paste0("ploidy", subclone),
+      p2=paste0("ploidy", subclone2),
+      cn1=paste0(name, subclone, allele),
+      cn2=paste0(name, subclone2, allele2)) %>%
+    dplyr::select(weight, p1, p2, cn1, cn2)
 
 
+  quadradic_terms = cndf %>% mutate(weight = - 2 * read_depth_weight * depth) %>%
+    df_cross_product(model$ascn) %>%
+    mutate(
+      ploidy=paste0("ploidy", subclone),
+      cn=paste0(name, subclone, allele)) %>%
+    dplyr::select(weight, ploidy, allele)
+}
+
+fileConn = file(paste0(currentSampleId, ".model.lp"))
+writeLines(writeLPmodel(cndf, svdf), fileConn)
+close(fileConn)
 
