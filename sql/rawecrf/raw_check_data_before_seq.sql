@@ -43,4 +43,4 @@ left join
    (select patientId, group_concat(itemValue separator ', ') as BIOPSY_EVALUABLE
     from ecrf where item = 'FLD.BIOPS.BIOPEFS' group by patientId) biopefs
 on patients.patientId = biopefs.patientId
-where patients.patientId in (select distinct patientId from clinical) and patients.patientId IN ("XXX") order by patients.patientId
+where patients.patientId IN ("XXX") order by patients.patientId
