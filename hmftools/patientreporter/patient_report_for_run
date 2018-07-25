@@ -13,12 +13,12 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-"$prefix"/do_run_base_patient_reporter \
-    -drup_genes_csv "$drup_genes_csv" \
-    -cosmic_gene_csv "$cosmic_gene_csv" \
-    -ensembl_db "$ensembl_db" \
+${prefix}/do_run_base_patient_reporter \
+    -drup_genes_csv ${drup_genes_csv} \
+    -cosmic_gene_csv ${cosmic_gene_csv} \
+    -ensembl_db ${ensembl_db} \
     -local_ensembl \
-    -db_user "$db_user" \
-    -db_pass "$db_pass" \
-    -fasta_file_location "$ref_genome" \
-    -run_dir "$@"
+    -db_user ${db_user} \
+    -db_pass ${db_pass} \
+    -fasta_file_location ${ref_genome} \
+    -run_dir $@
