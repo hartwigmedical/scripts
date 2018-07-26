@@ -240,7 +240,6 @@ sub parseJsonInfo{
                 $info{ 'samp' }{ $sid }{ 'yield' } += $read->{ Yield };
                 $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
                 
-                
                 $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
                 $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
                 $info{ 'samp' }{ $sid }{ 'yield_q30' } += $read->{ YieldQ30 };
@@ -269,19 +268,19 @@ sub parseJsonInfo{
             my $obj = $info{ $type }{ $id };
             my $name = $obj->{ 'name' };
                         
-            $obj->{ 'q30' } = $obj->{ 'yield_q30' }*100 / $obj->{ 'yield' } if $obj->{ 'yield' } > 0;
-            $obj->{ 'yld_p' } = $obj->{ 'yield' } / $info{ 'flow' }{ $fid }{ 'yield' };
+            $obj->{ 'q30' } = getPerc( $obj->{ 'yield_q30' }, $obj->{ 'yield' } );
+            $obj->{ 'yld_p' } = getPerc( $obj->{ 'yield' }, $info{ 'flow' }{ $fid }{ 'yield' } );
             $obj->{ 'flowcell_print' } = $fid;
 
             $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
-            $obj->{ 'yld_print' } = round( $obj->{ 'yield' } / $YIELD_FACTOR, 0 );
+            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, 0, $YIELD_FACTOR );
             $obj->{ 'id_print' } = $id;
             $obj->{ 'name_print' } = $obj->{ 'name' };
-            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }*100 );
+            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' } );
             
             ## percentage filtered does not exist for samples
             if ( exists $obj->{ 'clust_pf' } ){
-                $obj->{'pf_print'} = round( $obj->{'clust_pf'}*100 / $obj->{'clust_raw'} );
+                $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ) );
             }
             
             next if $name =~ /read|UNDETERMINED/;
@@ -289,8 +288,8 @@ sub parseJsonInfo{
             $obj->{ 'mm0_print' } = 0;
             $obj->{ 'mm1_print' } = 0;
             if ( $obj->{ 'total_reads' } != 0 ){
-                $obj->{ 'mm0_print' } = round( $obj->{ 'mm0' }*100 / $obj->{ 'total_reads' } );
-                $obj->{ 'mm1_print' } = round( $obj->{ 'mm1' }*100 / $obj->{ 'total_reads' } );
+                $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ) );
+                $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ) );
             }
             
         }
@@ -298,17 +297,37 @@ sub parseJsonInfo{
     
     ## Collect some general stats/info
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'} / 1e6, 0 ), 
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'} / 1e6, 0 ), 
+      round( $info{'flow'}{$fid}{'yield'}, 0, 1e6 ), 
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, 1e6 ), 
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'};
       
-    $info{'stats'}{'undet_perc'} = round( $info{'undt'}{'UNDETERMINED'}{'yield'}*100 / $info{'flow'}{$fid}{'yield'} );
+    $info{'stats'}{'undet_perc'} = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
 
     return \%info;
+}
+
+sub getPerc{
+    my ($value, $total) = @_;
+    
+    if ( not defined($value) or not defined($total) ){
+       return 0;
+    }
+    elsif ($value < 0 or $total < 0){
+       exit "[EXIT] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
+    }
+    elsif ($value > $total){
+       exit "[EXIT] value ($value) should never be higher than total ($total)\n";
+    }
+    elsif ( $total == 0 and $value == 0){
+       return 0;
+    }
+    else{
+       return $value*100/$total;
+    }
 }
 
 sub printTable{
@@ -411,12 +430,13 @@ sub readSampleSheet{
 }
 
 sub round{
-    my ($number, $decimal) = @_;
+    my ($number, $decimal, $factor) = @_;
     if ( not defined $number ){
         return $NA_CHAR;
     }
     $decimal = 1 unless defined $decimal;
-    my $rounded = sprintf("%.".$decimal."f", $number);
+    $factor = 1 unless defined $factor;
+    my $rounded = sprintf("%.".$decimal."f", $number/$factor);
     return( $rounded );
 }
 
