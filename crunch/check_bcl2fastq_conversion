@@ -25,11 +25,14 @@ my $BARC_KEY = 'IndexMetrics';
 my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission );
 my @SUM_FIELDS = qw( submission id name yld q30 );
 
-my $MAX_UNDET = 4; # percentage
-my $MIN_Q30 = 75;
 my $YIELD_FACTOR = 1e6;
-my $MIN_YIELD_PER_SAMPLE = 1e9;
-my $MIN_YIELD_PER_LANE = 100e9;
+my %QC_LIMITS = (
+    'lane_yld' => undef,
+    'lane_q30' => undef,
+    'samp_yld' => undef,
+    'samp_q30' => undef,
+    'max_undt' => undef
+);
 
 my $RUN_PATH;
 my $JSON_PATH;
@@ -47,10 +50,11 @@ my $HELP =<<HELP;
     
   Options
     -sep <s>               Output sep (default = <TAB>)
-    -min_q30 <i>           Percentage ($MIN_Q30)
-    -max_undet_perc <i>    Percentage ($MAX_UNDET)
-    -min_lane_yield <i>    QC Lane Yield ($MIN_YIELD_PER_LANE)
-    -min_sample_yield <i>  QC Sample Yield ($MIN_YIELD_PER_SAMPLE)
+    -max_undet_perc <i>    Percentage
+    -min_lane_q30 <i>      Percentage
+    -min_sample_q30 <i>    Percentage
+    -min_lane_yield <i>    Bases
+    -min_sample_yield <i>  Bases
     -samplesheet <s>       Path to SampleSheet.csv file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
@@ -68,10 +72,11 @@ GetOptions (
   "json_path=s"        => \$JSON_PATH,
   "samplesheet=s"      => \$SSHT_PATH,
   "sep=s"              => \$OUT_SEP,
-  "max_undet_perc=i"   => \$MAX_UNDET,
-  "min_sample_yield=i" => \$MIN_YIELD_PER_SAMPLE,
-  "min_lane_yield=i"   => \$MIN_YIELD_PER_LANE,
-  "min_q30=i"          => \$MIN_Q30,
+  "max_undet_perc=i"   => \$QC_LIMITS{ 'max_undt' },
+  "min_sample_yield=i" => \$QC_LIMITS{ 'samp_yld' },
+  "min_lane_yield=i"   => \$QC_LIMITS{ 'lane_yld' },
+  "min_sample_q30=i"   => \$QC_LIMITS{ 'samp_q30' },
+  "min_lane_q30=i"     => \$QC_LIMITS{ 'samp_q30' },
   "no_qc"              => \$opt{ no_qc },
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
@@ -120,6 +125,7 @@ sub addSamplesheetInfo{
     
     ## add run name: eg X17-0001
     $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
+    $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     
     ## add submissions: eg HMFregCPCT
     my $samples = $json_info->{ 'samp' };
@@ -141,26 +147,74 @@ sub readJson{
 
 sub performQC{
     my ($info) = @_;
-    
+   
     my $stats = $info->{'stats'};
     my $samps = $info->{'samp'};
     my $lanes = $info->{'lane'};
     my $fails = 0;
     
     my $identifier = $stats->{'identifier'};
+    my $platform = $stats->{'platform'};
     
+    ## setup qc limit by platform unless provided by user
+    my %platform_qc_limits = (
+        'HiSeq' => {
+            'lane_yld' => 100e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'NextSeq' => {
+            'lane_yld' => 8e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'NovaSeq' => {
+            'lane_yld' => 100e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'ISeq' => {
+            'lane_yld' => 0,
+            'lane_q30' => 75,
+            'samp_yld' => 0,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        }
+    );
+       
+    ## determine actual platform in use
+    my @possible_platforms = keys %platform_qc_limits;
+    my $limit_to_use = ();
+    foreach my $platform_name ( @possible_platforms ){
+        if ( $platform =~ /$platform_name/ ){
+            say "## Setting QC limit for platform $platform_name";
+            my $limits = $platform_qc_limits{ $platform_name };
+            foreach my $limit_name ( keys %$limits ){
+                next if defined $QC_LIMITS{ $limit_name };
+                $QC_LIMITS{ $limit_name } = $limits->{ $limit_name };
+            }
+        }
+    }
+
     ## flowcell checks
     my $undet = $stats->{'undet_perc'};
-    if ( $undet > $MAX_UNDET ){
-        say "## WARNING Percentage undetermined ($undet) too high (MAX=$MAX_UNDET%)";
+    my $max_undet = $QC_LIMITS{ 'max_undt' };
+    if ( $undet > $max_undet ){
+        say "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
         $fails += 1;
     }
-    
+        
     ## lane and sample checks
-    $fails += checkObjectField( $lanes, 'yield', $MIN_YIELD_PER_LANE );
-    $fails += checkObjectField( $lanes, 'q30',   $MIN_Q30 );
-    $fails += checkObjectField( $samps, 'yield', $MIN_YIELD_PER_SAMPLE );
-    $fails += checkObjectField( $samps, 'q30',   $MIN_Q30 );
+    $fails += checkObjectField( $lanes, 'yield', $QC_LIMITS{ 'lane_yld' } );
+    $fails += checkObjectField( $lanes, 'q30',   $QC_LIMITS{ 'lane_q30' } );
+    $fails += checkObjectField( $samps, 'yield', $QC_LIMITS{ 'samp_yld' } );
+    $fails += checkObjectField( $samps, 'q30',   $QC_LIMITS{ 'samp_q30' } );
     
     ## conclusion
     if ( $fails == 0 ){
@@ -384,7 +438,8 @@ sub readSampleSheet{
     
     my %output;
     $output{ 'samples' } = {};
-    $output{ 'runname' } = 'NO_SAMPLESHEET_FOUND';
+    $output{ 'runname' } = 'NO_RUNNAME_FROM_SAMPLESHEET';
+    $output{ 'platform' } = 'NO_PLATFORM_FROM_SAMPLESHEET';
     my @header;
     
     if ( ! -e $csv_file ){
@@ -404,6 +459,11 @@ sub readSampleSheet{
             my $run_name = $fields[1] || 'NA';
             $output{ 'runname' } = $run_name;
         }
+        elsif ($fields[0] =~ /Application/ ){
+            my $platform = $fields[1] || 'NA';
+            $output{ 'platform' } = $platform;
+        }
+
         ## find header
         elsif ( $_ =~ m/Sample_ID/ ){
             @header = @fields;
