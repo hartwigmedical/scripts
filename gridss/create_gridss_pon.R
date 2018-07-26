@@ -38,6 +38,7 @@ if (!any(file.exists(vcf_list))) {
 setCacheRootPath(paste0(pon_dir, "/Rcache"))
 options("R.cache.compress"=TRUE)
 load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
+  write(paste("Start load", vcf_file), stderr())
   full_vcf = readVcf(vcf_file, "hg19")
   bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
   begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
@@ -57,7 +58,7 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
   minimal_begr$vcf = sampleId
   minimal_begr$IMPRECISE = info(full_vcf[names(minimal_begr)])$IMPRECISE
   names(minimal_begr) = NULL
-
+  write(paste("End load", vcf_file), stderr())
   return(list(bp=minimal_bpgr, be=minimal_begr))
 })
 full_bp = list()

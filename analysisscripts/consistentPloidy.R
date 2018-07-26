@@ -142,25 +142,30 @@ induced_sv_gr$fragment_count = annotate_reference_fragment_count(induced_sv_gr, 
 
 
 cndf = data.frame(
-  name=paste0("cn", names(cnv_gr)),
+  seg_id=names(cnv_gr),
   # TODO: do we need to reverse the purity adjustment?
   depth=cnv_gr$copyNumber,
   length=end(cnv_gr)-start(cnv_gr),
   baf=cnv_gr$observedBaf,
   baf_count=cnv_gr$bafCount,
   start=cnv_gr$segmentStartSupport,
-  end=cnv_gr$segmentEndSupport)
+  end=cnv_gr$segmentEndSupport,
+  stringsAsFactors = FALSE)
 
 svdf = data.frame(
-  name = paste0("sv", names(sv_gr)),
-  cnv_id = sv_gr$cnv_id,
+  sv_id = names(sv_gr),
+  orientation=as.character(strand(sv_gr)),
+  seg_id = sv_gr$cnv_id,
   partner = sv_gr$partner,
-  fragment_count = sv_gr$tumourReferenceFragmentCount) %>%
+  fragment_count = sv_gr$tumourReferenceFragmentCount,
+  stringsAsFactors = FALSE) %>%
   bind_rows(data.frame(
-    name = names(induced_sv_gr),
-    cnv_id = induced_sv_gr$cnv_id,
+    sv_id = names(induced_sv_gr),
+    orientation=as.character(strand(induced_sv_gr)),
+    seg_id = induced_sv_gr$cnv_id,
     partner = induced_sv_gr$partner,
-    fragment_count = induced_sv_gr$fragment_count)
+    fragment_count = induced_sv_gr$fragment_count,
+    stringsAsFactors = FALSE)
   )
 
 # Generate LP file
@@ -173,7 +178,42 @@ writeLPmodel = function(file, cndf, subclones=2) {
   model$q_ascn = df_cross_product(model$ascn, model$ascn, suffix=c("", "2"))
 
   # BAF must be minor allele frequency
-  cndf$baf = pmin(cndf$baf, 1-cndf$baf)
+  cndf = cndf %>% mutate(baf = pmin(baf, 1 - baf))
+
+  # add null placeholder
+  cndf_with_null = data.frame(
+      seg_id="NULL",
+      depth=NA,
+      length=NA,
+      baf=NA,
+      baf_count=NA,
+      start="NULL",
+      end="NULL",
+      stringsAsFactors = FALSE) %>%
+    bind_rows(cndf)
+  svdf_with_null = bind_rows(svdf,
+    cndf %>% dplyr::select(seg_id) %>% mutate(
+      partner=paste0("null_to_start", seg_id),
+      sv_id=paste0("start_to_null", seg_id),
+      orientation="-",
+      fragment_count=NA),
+    cndf %>% dplyr::select(seg_id) %>% mutate(
+      partner=paste0("start_to_null", seg_id),
+      sv_id=paste0("null_to_start", seg_id),
+      seg_id="NULL",
+      orientation="*",
+      fragment_count=NA),
+    cndf %>% dplyr::select(seg_id) %>% mutate(
+      partner=paste0("null_to_end", seg_id),
+      sv_id=paste0("end_to_null", seg_id),
+      orientation="+",
+      fragment_count=NA),
+    cndf %>% dplyr::select(seg_id) %>% mutate(
+      partner=paste0("end_to_null", seg_id),
+      sv_id=paste0("null_to_end", seg_id),
+      seg_id="NULL",
+      orientation="*",
+      fragment_count=NA))
 
   # need normalisation multipliers between read depth and coverage
   # and fragment counts and coverage
@@ -187,17 +227,73 @@ writeLPmodel = function(file, cndf, subclones=2) {
   # KISS!
   "Minimise"
   # segment read depth error
+  cndf %>% mutate(
+      var = paste0("rd_delta_seg", seg_id),
+      weight = sqrt(length)) %>%
+    filter(!is.na(weight)) %>%
+    mutate(
+      eqn = paste(weight, var)
+    ) %>%
+    pull(eqn) %>%
+    paste0(collapse = " + ")
   # segment BAF error
   # edge fragment count error
   "Subject To"
   # sum ploidy = 1
-  # normal ASCN = 1
+  paste0("total_ploidy: ", model$ascn %>%
+    mutate(var=paste0("ploidy", subclone, allele)) %>%
+    pull(var) %>%
+    paste0(collapse = " + ") %>%
+    paste(" - 1 = 0", collapse = ""))
+  # total cn = sum purity * ploidy
+  cndf %>% mutate(
+      eqn = model$ascn %>%
+        mutate(
+          var1=paste0("purity", subclone),
+          var2=paste0("ploidy_seg", "[SEG_ID]", subclone, allele)) %>%
+        mutate(
+          eqn=paste0(var1, " * ", var2)
+        ) %>%
+        pull(eqn) %>%
+        paste0(collapse = " + ") %>%
+        paste0(" - cn_[SEG_ID] = 0", collapse = "") %>%
+        str_replace_all(stringr::fixed("[SEG_ID]"), seg_id)) %>%
+    mutate(eqn=paste0("copy_number_seg", seg_id, ": ", eqn)) %>%
+    pull(eqn)
+  # sum edge ASCN in = segment ASCN (if start != telemore/centromere)
+  cndf %>% filter(!(start %in% c("TELOMERE", "NULL"))) %>%
+    left_join(svdf_with_null %>% filter(orientation=="-"), by=c("seg_id"), suffix=c("", ".sv")) %>%
+    df_cross_product(model$ascn) %>%
+    mutate(eqn = paste("ploidy_sv", sv_id, subclone, allele, sep="")) %>%
+    group_by(seg_id, subclone, allele) %>%
+    summarise(eqn = paste0(eqn, collapse=" + ")) %>%
+    ungroup() %>%
+    mutate(eqn = paste0(eqn, " - ", "ploidy_seg", seg_id, subclone, allele, " = 0"))
+  # sum edge ASCN out = segment ASCN (if start != telemore/centromere)
+  cndf %>% filter(!(start %in% c("TELOMERE", "NULL"))) %>%
+    left_join(svdf_with_null %>% filter(orientation=="+"), by=c("seg_id"), suffix=c("", ".sv")) %>%
+    df_cross_product(model$ascn) %>%
+    mutate(eqn = paste("ploidy_sv", sv_id, subclone, allele, sep="")) %>%
+    group_by(seg_id, subclone, allele) %>%
+    summarise(eqn = paste0(eqn, collapse=" + ")) %>%
+    ungroup() %>%
+    mutate(eqn = paste0(eqn, " - ", "ploidy_seg", seg_id, subclone, allele, " = 0"))
+  #TODO: SV_ID must be common for both breakends (need a second id or can we get away with 1 and no partner?)
+
+  # NULL ASCNs are a special case since they don't have a direction
+  # we could constrain the NULL copy number based on how confident we are that we have all/most SVs
+
+  # TODO: since we can get centromeric swaps, we can instead constrain
+  cndf %>% mutate(
+    eqn =
+  )
+
   # for each segment
-  #   sum edge ASCN in = ASCN (if start != telemore/centromere)
+
   #   sum edge ASCN out = ASCN (if end != telemore/centromere)
 
   "Bounds"
-  # ploidy <= 1
+  # ploidies <= 1
   # Variables:
   # total cn depth
   # total edge depth
@@ -206,9 +302,13 @@ writeLPmodel = function(file, cndf, subclones=2) {
   # edge ASCN
   # Variables
   # ploidy
+
   "Integers"
+  # segment total CN
   # segment ASCN
   # edge ASCN
+
+  # General Constraints
 
   # relative weightings
   cndf = cndf %>%

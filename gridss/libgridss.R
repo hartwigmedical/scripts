@@ -537,6 +537,29 @@ readVcf = function(file, ...) {
   # work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
   alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
   VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  # Work-around for https://github.com/PapenfussLab/gridss/issues/156
+  # since we don't have all the info, we'll just pro-rata
+  bp_pro_rata = (geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP) / rowSums(geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP)
+  be_pro_rata = (geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP) / rowSums(geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP)
+  bp_pro_rata[is.nan(bp_pro_rata)] = 0
+  be_pro_rata[is.nan(be_pro_rata)] = 0
+  geno(raw_vcf)$ASQ[is.na(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.na(geno(raw_vcf)$ASQ)]
+  geno(raw_vcf)$RASQ[is.na(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.na(geno(raw_vcf)$RASQ)]
+  geno(raw_vcf)$CASQ[is.na(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.na(geno(raw_vcf)$CASQ)]
+  geno(raw_vcf)$BASQ[is.na(geno(raw_vcf)$BASQ)] = (info(raw_vcf)$BASQ * be_pro_rata)[is.na(geno(raw_vcf)$BASQ)]
+  geno(raw_vcf)$QUAL[is.na(geno(raw_vcf)$QUAL)] = (
+    geno(raw_vcf)$ASQ +
+    geno(raw_vcf)$RASQ +
+    geno(raw_vcf)$CASQ +
+    geno(raw_vcf)$RPQ +
+    geno(raw_vcf)$SRQ +
+    geno(raw_vcf)$IQ
+  )[is.na(geno(raw_vcf)$QUAL)]
+  geno(raw_vcf)$BQ[is.na(geno(raw_vcf)$BQ)] = (
+    geno(raw_vcf)$BASQ +
+    geno(raw_vcf)$BUMQ +
+    geno(raw_vcf)$BSCQ
+  )[is.na(geno(raw_vcf)$BQ)]
   return(raw_vcf)
 }
 
