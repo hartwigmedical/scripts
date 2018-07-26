@@ -54,16 +54,6 @@ function main() {
     perl -pi -e "s#(INIFILE\s+).*#\1/data/repos/${pipeline}/settings/${config}.ini#" settings.config
     perl -pi -e "s#(OUTPUT_DIR\s+).*#\1${output}#" settings.config
 
-    # SABR: especially useful for repeated somatics runs on existing data
-    if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_PILEUP" settings.config
-    then
-        echo "FINALIZE_KEEP_PILEUP	yes" >> settings.config
-    fi
-    if [ -z "${input}" ] && ! grep -q "^FINALIZE_KEEP_BSQR" settings.config
-    then
-        echo "FINALIZE_KEEP_BQSR	yes" >> settings.config
-    fi
-
     write_metadata "${input}" "${output}" "${output_name}"
 
     "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > /dev/null
