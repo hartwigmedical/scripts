@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+ini=$1
+pip=$2
+
+if [[ -z ${ini} ]]; then echo "[EXIT] No ini given" & exit 1; fi
+if [[ -z ${pip} ]]; then echo "[EXIT] No pipeline version given" & exit 1; fi
+
+## param check
+iniCount=$( query_sbp_api -type inis -filter "name=${ini}" -exact | grep -v "^#" | wc -l )
+if [[ ${iniCount} != 1 ]]; then
+    echo "[EXIT] Error: incorrect ini ${ini})?" && exit 1
+fi
+pipCount=$( query_sbp_api -type stacks -filter "revision=${pip}" -exact | grep -v "^#" | wc -l )
+if [[ ${pipCount} < 1 ]]; then
+    echo "[EXIT] Error: incorrect pipeline version (${pip})?" && exit 1
+fi
+
+## define setting by ini
+findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/"
+downloadScript="download_v4_set"
+if [[ ${ini} =~ Rerun ]]; then
+    findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
+    downloadScript="download_rerun_v4_set"
+fi
+
+## perform job
+echo "## Running with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Validated|Failed" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
+        if [[ ${COUNT} == 0 ]]
+        then
+            echo "${downloadScript} -s ${setName}"
+        else
+            echo "# No action for ${setName}: already exists"
+        fi
+    done | sort -r | uniq

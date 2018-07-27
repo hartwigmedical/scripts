@@ -1,17 +1,3 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-query_sbp_api \
-  -type runs \
-  -filter "ini=Somatic_Rerun_v4" \
-  -filter "bucket=hmf-output" \
-  -json | jq -r '.[].name' | \
-  while read setName; do
-    COUNT=$( find /data/cpct/reruns_v4/ /data/schuberg/reruns_v4/ -maxdepth 1 -type d -name "$setName" | wc -l);
-    if [[ ${COUNT} == 0 ]]
-    then
-      echo "download_rerun_v4_set -s $setName"
-    else
-      echo "# $setName already exists"
-    fi
-  done | \
-sort
+check_v4_status "Somatic_Rerun_v4.ini" "v4.0"
