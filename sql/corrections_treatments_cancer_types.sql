@@ -2,12 +2,10 @@
 select * from clinicalFindings where message ='failed to curate primary tumor location';
 
 # LISC: curation pre-treatment
-select * from clinicalFindings where
-message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='preTreatmentCuration';
+select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='preTreatmentCuration';
 
 # LISC: curation treatment
-select * from clinicalFindings where
-message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='treatmentCuration';
+select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='treatmentCuration';
 
 # KODU: unused search terms.
 select * from clinicalFindings where message ='tumor location search term not used' and level='tumorLocationCuration';
