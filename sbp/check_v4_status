@@ -17,7 +17,7 @@ if [[ ${pipCount} < 1 ]]; then
 fi
 
 ## define setting by ini
-findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/"
+findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/ /data/schuberg/cpct_drup_downloads_v4/"
 downloadScript="download_v4_set"
 if [[ ${ini} =~ Rerun ]]; then
     findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
