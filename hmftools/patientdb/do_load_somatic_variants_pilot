@@ -10,6 +10,7 @@ patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
 then
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
     somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
     if [ $? -ne 0 ]
     then
