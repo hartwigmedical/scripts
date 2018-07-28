@@ -39,5 +39,4 @@ fi
 
 rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
 
-sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
-	--profile download
+sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ --profile download

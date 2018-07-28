@@ -36,43 +36,53 @@ if [ -z "$run_info" ]; then
     exit 1
 fi
 
-rerun_info=$(load_rerun_info_for_set ${set})
-if [ -z "$rerun_info" ]; then
-    echo "[WARN] No rerun found for set ${set}. Exiting."
+rerun_v3_info=$(load_rerun_v3_info_for_set ${set})
+if [ -z "rerun_v3_info" ]; then
+    echo "[WARN] No v3 rerun found for set ${set}. Exiting."
+    exit 1
+fi
+
+rerun_v4_info=$(load_rerun_v4_info_for_set ${set})
+if [ -z "rerun_v4_info" ]; then
+    echo "[WARN] No v4 rerun found for set ${set}. Exiting."
     exit 1
 fi
 
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
-rerun_bucket=`echo ${rerun_info} | cut -d ' ' -f5`
+v3_rerun_bucket=`echo ${rerun_v3_info} | cut -d ' ' -f5`
+v4_rerun_bucket=`echo ${rerun_v4_info} | cut -d ' ' -f5`
 
 sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
-	--include "*annotated.vcf*" \
-	--include "*filtered*GoNLv5.vcf*" \
 	--include "*snpcheck*" \
-	--include "*.kinship" \
-	--include "QCStats*" \
 	--include "*mapping*flagstat*" \
-	--include "*HealthCheck.out*" \
 	--include "settings.config" \
 	--profile download
 
-sbp s3 sync s3://${rerun_bucket}/${set}/ ${localpath}/${set}/ \
+sbp s3 sync s3://${v3_rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--exclude "*" \
 	--include "*mapping*flagstat*" \
 	--include "*recal_data*" \
 	--include "*damageEstimate*" \
+	--profile download
+
+sbp s3 sync s3://${v4_rerun_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*annotated.vcf.gz*" \
+	--include "*QCStats*" \
 	--include "*amber*" \
 	--include "*cobalt*" \
 	--include "*purple*" \
 	--include "*somaticVariants*post_processed*" \
 	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*gridss*gridss.vcf.gz*" \
 	--include "*structuralVariants*bpi*bpi_stats*" \
 	--include "*structuralVariants*bpi*somaticSV*" \
 	--include "*structuralVariants*bpi*sliced.bam*" \
 	--include "*structuralVariants*manta*somaticSV.vcf*" \
 	--include "*metadata*" \
 	--include "*logs*submitlog*" \
+	--include "*HealthCheck.out*" \
 	--include "*logs*PipelineCheck.log*" \
-	--include "*logs*perform_pipeline_qc*" \
+	--include "*logs*Pipeline.success" \
 	--profile download

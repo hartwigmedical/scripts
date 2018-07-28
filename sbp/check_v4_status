@@ -6,7 +6,7 @@ pip=$2
 if [[ -z ${ini} ]]; then echo "[EXIT] No ini given" & exit 1; fi
 if [[ -z ${pip} ]]; then echo "[EXIT] No pipeline version given" & exit 1; fi
 
-## param check
+## STLI: param check
 iniCount=$( query_sbp_api -type inis -filter "name=${ini}" -exact | grep -v "^#" | wc -l )
 if [[ ${iniCount} != 1 ]]; then
     echo "[EXIT] Error: incorrect ini ${ini})?" && exit 1
@@ -16,7 +16,7 @@ if [[ ${pipCount} < 1 ]]; then
     echo "[EXIT] Error: incorrect pipeline version (${pip})?" && exit 1
 fi
 
-## define setting by ini
+## STLI: define setting by ini
 findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/ /data/schuberg/cpct_drup_downloads_v4/"
 downloadScript="download_v4_set"
 if [[ ${ini} =~ Rerun ]]; then
@@ -24,7 +24,7 @@ if [[ ${ini} =~ Rerun ]]; then
     downloadScript="download_rerun_v4_set"
 fi
 
-## perform job
+## STLI: perform job
 echo "## Running with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
