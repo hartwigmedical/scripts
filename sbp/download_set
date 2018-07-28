@@ -85,4 +85,5 @@ sbp s3 sync s3://${v4_rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--include "*HealthCheck.out*" \
 	--include "*logs*PipelineCheck.log*" \
 	--include "*logs*Pipeline.success" \
+	--include "*logs*unhandled_job_errors" \
 	--profile download
