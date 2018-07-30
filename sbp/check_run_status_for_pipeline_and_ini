@@ -18,10 +18,10 @@ fi
 
 ## STLI: define setting by ini
 findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/ /data/schuberg/cpct_drup_downloads_v4/"
-downloadScript="process_finished_run"
+downloadScript="process_finished_run "
 if [[ ${ini} =~ Rerun ]]; then
     findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
-    downloadScript="download_rerun_v4_set"
+    downloadScript="download_rerun_v4_set -s "
 fi
 
 ## STLI: perform job
@@ -37,7 +37,7 @@ query_sbp_api \
         COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
         if [[ ${COUNT} == 0 ]]
         then
-            echo "${downloadScript} -s ${setName}"
+            echo "${downloadScript} ${setName}"
         else
             echo "# No action for ${setName}: already exists"
         fi
