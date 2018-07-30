@@ -178,6 +178,8 @@ load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 load(file = "~/hmf/RData/reference/allMetrics.RData")
 
+allStructuralVariantSummary = allStructuralVariantSummary %>% mutate(TRL = BND) %>% select(-BND)
+
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear) %>% select(-birthYear, -biopsyDate)
 
@@ -223,9 +225,6 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
          msiScore,msiStatus,
          BND,DEL,DUP,INS,INV,
          duplicatedAutosomes,WGD,patientHighestPurityPassingSample)
-
-names(cohortSummary)
-
 
 hpc = cohortSummary %>% filter(patientHighestPurityPassingSample)
 mbc = cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% mutate(n = n()) %>% filter(n > 1)
