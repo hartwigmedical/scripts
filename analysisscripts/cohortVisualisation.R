@@ -178,14 +178,39 @@ hpcSV = highestPurityCohortSummary %>% select(sampleId, cancerType, BND, DEL, DU
 hpcSV$sampleId = factor(hpcSV$sampleId, levels = unique(hpcSV$sampleId)) 
 
 #################### Cancer Type Summary FACETED #################### 
+display_cancer_types <- function(cancerTypes) {
+  for (i in 1:length(cancerTypes)) {
+    if (cancerTypes[i] == "Mesothelioma") {
+      cancerTypes[i]= "Meso- thelioma"
+    }
+    if (cancerTypes[i] == "Esophagus") {
+      cancerTypes[i]= "Esoph- agus"
+    }
+    if (cancerTypes[i] == "Colon/Rectum") {
+      cancerTypes[i]= "Colon/ Rectum"
+    }
+    if (cancerTypes[i] == "Head and neck") {
+      cancerTypes[i]= "Head & Neck"
+    }
+    if (cancerTypes[i] == "Bone/Soft tissue") {
+      cancerTypes[i]= "Bone/Soft Tissue"
+    }
+    if (cancerTypes[i] == "Urinary tract") {
+      cancerTypes[i]= "Urinary Tract"
+    }
+  }
+  
+  return (label_wrap_gen(10)(cancerTypes))
+}
+
 p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   geom_bar(aes(fill = cancerType), stat = "identity") +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
   geom_text(aes(label=paste0("(", percentage, "%)")), vjust=-0.5, size = 2) +
   #geom_text(aes(label=n), vjust=-2, size = 3) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 5, face = "bold")) +  
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 9.2)) +  
   ylab("Samples") + 
-  coord_cartesian(ylim = c(0, 600)) + facet_grid(~cancerType)
+  coord_cartesian(ylim = c(0, 600)) + facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types))
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
   geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") + 
@@ -232,9 +257,9 @@ p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     #strip.background = element_blank(), 
-    strip.text.x = element_text(size = 5), 
+    strip.text.x = element_text(size = 9.2), 
     legend.position="bottom", legend.title = element_blank()) + 
-  facet_grid(~cancerType, scales = "free_x") + 
+  facet_grid(~cancerType, scales = "free_x", labeller = labeller(cancerType = display_cancer_types)) + 
   guides(fill = guide_legend(nrow = 1)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
 
@@ -279,7 +304,7 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
 
 
 pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
-pFigure1
+#pFigure1
 save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1, base_width = 14, base_height = 20)
 
 
