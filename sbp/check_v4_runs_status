@@ -1,3 +1,0 @@
-#!/bin/bash
-
-check_v4_status "Somatic.ini" "v4.0"

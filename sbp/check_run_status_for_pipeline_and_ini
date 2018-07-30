@@ -43,11 +43,11 @@ query_sbp_api \
         fi
     done | sort -r | uniq
 
+echo ""
 echo "## Processing/pending runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
-    -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
     -filter "status=Processing|Pending" \
     -json | jq -r '.[].name' | \

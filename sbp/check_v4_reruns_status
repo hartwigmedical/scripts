@@ -1,3 +1,3 @@
 #!/bin/bash
 
-check_v4_status "Somatic_Rerun_v4.ini" "v4.0"
+check_run_status_for_pipeline_and_ini "Somatic_Rerun_v4.ini" "v4.0"
