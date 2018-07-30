@@ -18,20 +18,20 @@ fi
 
 ## STLI: define setting by ini
 findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/ /data/schuberg/cpct_drup_downloads_v4/"
-downloadScript="download_v4_set"
+downloadScript="process_finished_run"
 if [[ ${ini} =~ Rerun ]]; then
     findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
     downloadScript="download_rerun_v4_set"
 fi
 
 ## STLI: perform job
-echo "## Running with ini ${ini} and pipeline ${pip}"
+echo "## Finished runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
-    -filter "status=Validated|Failed" \
+    -filter "status=Validated|SnpCheck|Failed" \
     -json | jq -r '.[].name' | \
     while read setName; do
         COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
@@ -41,4 +41,16 @@ query_sbp_api \
         else
             echo "# No action for ${setName}: already exists"
         fi
+    done | sort -r | uniq
+
+echo "## Processing/pending runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Processing|Pending" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        echo "${setName} is processing or pending on ${pip}"
     done | sort -r | uniq
