@@ -3,6 +3,7 @@
 
 detach("package:purple", unload=TRUE)
 library(purple)
+library(tidyr)
 library(dplyr)
 library(multidplyr)
 library(doParallel)
@@ -54,7 +55,7 @@ olCopyNumbers = cbind(bin = ol[, 1], highestPurityCopyNumbers[ol[, 2], c("sample
 no_cores <- 7
 cl<-makeCluster(no_cores, type="FORK"); date()
 binSampleSummary = olCopyNumbers %>% partition(bin, sampleId, cluster = cl) %>%
-  summarise(cancerType = first(cancerType),
+  summarise(cancerType = dplyr::first(cancerType),
             loh = any(loh), absDel = any(absDel), relDel = any(relDel), amp1_4 = any(amp1_4), amp2_0 = any(amp2_0), amp3_0 = any(amp3_0))  %>%
   collect() %>%
   as_tibble()
@@ -199,8 +200,43 @@ for (location in primaryTumorLocations) {
   locationString = gsub(" ", "", location, fixed = TRUE)
   locationString = gsub("/", "", locationString, fixed = TRUE)
 
-  #cmd = paste0("sed 's/CANCER/", locationString,"/g' circos.template > ",locationString,".conf\n")
-  cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
+  cmd = paste0("sed 's/CANCER/", locationString,"/g' circos.template > ",locationString,".conf\n")
+  #cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
   cat(cmd)
 }
+
+
+for (location in sort(primaryTumorLocations)) {
+  
+  locationString = gsub(" ", "", location, fixed = TRUE)
+  locationString = gsub("/", "", locationString, fixed = TRUE)
+  cmd = paste0("convert -pointsize 100 -fill black -draw 'text 100,150 \"",location,"\"' ~/hmf/analysis/copyNumberSummary/",locationString,".png ~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString ,".png")
+  
+  cat(cmd, "\n")
+}
+
+primaryTumorLocations = sort(primaryTumorLocations)
+
+x <- primaryTumorLocations[which(primaryTumorLocations!="Other")] 
+i = 2
+while (i < length(x)) {
+
+  locationString1 = gsub(" ", "", x[i], fixed = TRUE)
+  locationString1 = gsub("/", "", locationString1, fixed = TRUE)
+  
+  locationString2 = gsub(" ", "", x[i + 1], fixed = TRUE)
+  locationString2 = gsub("/", "", locationString2, fixed = TRUE)
+  
+  first = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString1 ,".png")
+  second = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\ -\\ ",locationString2 ,".png")
+  output = paste0("~/hmf/analysis/copyNumberSummary/Extended\\ Figure\\ 3\\", i, ".png")
+  
+  #cat(first, "\n" )
+  #cat(second, "\n")
+  cat("convert", first, second, "-append", output, "\n")
+  
+  i = i + 2
+}
+
+primaryTumorLocations
 

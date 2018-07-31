@@ -1,3 +1,5 @@
+#### This file used to create the hotspot list for our HMF pipeline.
+
 library(tidyr)
 library(dplyr)
 
@@ -28,18 +30,18 @@ mnv_to_svn <- function(mnvs) {
 
 chromosomeLevels = c(1:22, "X","Y")
 
-cgi = read.csv("~/Downloads/cgi_variant_list", sep ="\t", stringsAsFactors = F)
+cgi = read.csv("~/hmf/resources/cgi_variant_list", sep ="\t", stringsAsFactors = F)
 cgi = cgi %>% 
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, cgiGene = GENE) %>%
   group_by(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt)
 
-onco = read.csv("~/Downloads/oncoKb_variant_list", sep ="\t", stringsAsFactors = F)
+onco = read.csv("~/hmf/resources/oncoKb_variant_list", sep ="\t", stringsAsFactors = F)
 onco = onco %>% 
   filter(INFO %in% c("Likely Oncogenic", "Oncogenic")) %>%
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, oncoGene = GENE) %>%
   group_by(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt)
 
-civic = read.csv("~/Downloads/civic_variant_list", sep ="\t", stringsAsFactors = F)
+civic = read.csv("~/hmf/resources/civic_variant_list", sep ="\t", stringsAsFactors = F)
 civic = civic %>% 
   filter(INFO == "true") %>%
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, civicGene = GENE) %>%

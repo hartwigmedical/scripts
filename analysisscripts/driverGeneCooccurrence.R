@@ -207,7 +207,9 @@ driversNonFusions = driversByGene %>% filter(type!='FUSION'&driverLikelihood>=0.
 # nrow(driversNonFusions)
 
 # run the co-occurrence logic for each cancer type
-allGenePairProbs = calc_gene_cooccurence(cancerTypesList, driversNonFusions, F)
+allGenePairProbs = calc_gene_cooccurence(cancerTypes$cancerType, driversNonFusions, F)
+
+
 nrow(allGenePairProbs)
 View(allGenePairProbs)
 write.csv(allGenePairProbs, "~/logs/r_output/genePairCo-occurence_20180702_all.csv", row.names=F, quote=F)
@@ -247,6 +249,102 @@ nrow(ggAllProbs2 %>% filter(PositivelyCorrelated==T&Fisher<0.01&Gene1Type!=Gene2
 View(ggAllProbs2 %>% filter(PositivelyCorrelated==T&Fisher<0.001&Gene1Type!=Gene2Type))
 
 
+################################## PLOT RESULTS ##################################
+library(cowplot)
+library("scales")
+theme_set(theme_bw())
 
-ctSamples = cnArmData %>% filter(FlipCount >= 6&FlipPercent >= 0.25)
-View(ctSamples)
+reverselog_trans <- function(base = exp(1)) {
+  trans <- function(x) -log(x, base)
+  inv <- function(x) base^(-x)
+  trans_new(paste0("reverselog-", format(base)), trans, inv,
+            log_breaks(base = base),
+            domain = c(1e-100, Inf))
+}
+
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+load(file = "~/hmf/RData/Processed/allGenePairProbs.RData")
+qValueThreshold = 0.05
+cooccurenceData = allGenePairProbs %>%
+  filter(QValue<qValueThreshold, GeneChr1!=GeneChr2) %>%
+  mutate(
+    correlation = ifelse(PositivelyCorrelated, 0.3, -0.3),
+    label = paste(Gene1, Gene2, sep = "|"),
+    nudge = ifelse(PositivelyCorrelated, 0.1, -0.1),
+    hjust = ifelse(correlation > 0, 0, 1),
+    facet = ifelse(QValue < 3e-06, T, F),
+    jon = log10(1 / QValue)
+    )
+
+p1 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
+  geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
+  geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
+  geom_text(aes(label = label), size = 2.5, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  scale_color_manual(values = cancerTypeColours) +
+  scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-11, 1e-12), limits = c(1e-1,1e-6), position = "bottom") +
+  scale_y_continuous(limits = c(0,2), breaks = c(0), expand = c(0,0)) +
+  theme(legend.position = "none", legend.title = element_blank()) + ggtitle(" ") + ylab("") +
+  theme(axis.title.y = element_blank(), axis.title.x = element_text(size = 10)) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_text(margin = margin(r = 10))) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_line(colour = "black", size = 1)) +
+  #theme(panel.background = element_rect(fill = "#f7fcf5"))+ panel.grid.major.y = element_blank(),
+  coord_flip()
+
+p2 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
+  geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
+  geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
+  geom_text(aes(label = label), size = 2.5, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  scale_color_manual(values = cancerTypeColours) +
+  scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-11, 1e-12), limits = c(1e-1,1e-6), position = "top") +
+  scale_y_continuous(limits = c(-2,0), breaks = c(0), expand = c(0,0)) +
+  theme(legend.position = "bottom", legend.title = element_blank()) + ggtitle(" ") + ylab("") +
+  theme(axis.title.y = element_blank(), axis.title.x = element_text(size = 10)) +
+  theme(axis.text = element_blank(), axis.ticks.x = element_blank()) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_line(colour = "black", size = 1)) +
+  #theme(panel.background = element_rect(fill = "#fff5eb"))+
+  coord_flip()
+
+g_legend <- function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+legend <- g_legend(p2)
+p2 = p2 + theme(legend.position = "none")
+
+p3 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
+  geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
+  geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
+  geom_text(aes(label = label), size = 2.5, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  annotate("text", y = -0.3, x = 1.5e-12, label = "Negative Correlation" , size = 3, hjust = 1) +
+  scale_color_manual(values = cancerTypeColours) +
+  scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-10,1e-11,1e-12, 1e-13), limits = c(1e-11,1e-12), position = "top") +
+  scale_y_continuous(limits = c(-1.8,0), breaks = c(-3,0,3), expand = c(0,0)) +
+  theme(legend.position = "none", legend.title = element_blank()) + ggtitle(" ") + ylab("") +
+  theme(axis.title.y = element_blank(), axis.title.x = element_blank()) +
+  theme(axis.text = element_blank(), axis.ticks.x = element_blank()) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_line(colour = "black", size = 1)) +
+  coord_flip()
+
+
+
+p4 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
+  geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
+  geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
+  geom_text(aes(label = label), size = 2.5, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  annotate("text", y = 0.3, x = 1.5e-12, label = "Postive Correlation" , size = 3, hjust = 0) +
+  scale_color_manual(values = cancerTypeColours) +
+  scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-10,1e-11,1e-12, 1e-13), limits = c(1e-11,1e-12)) +
+  scale_y_continuous(limits = c(0,2), breaks = c(-3,0,3), expand = c(0,0)) +
+  theme(legend.position = "none", legend.title = element_blank()) + ggtitle(" ") + ylab("") +
+  theme(axis.title.y = element_blank(), axis.title.x = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_text(margin = margin(r = 10))) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_line(colour = "black", size = 1)) +
+  coord_flip()
+
+pMain = plot_grid(p3, p4, p2, p1, nrow = 2, ncol = 2, rel_heights = c(1, 6))
+pCooccurence = plot_grid(pMain, legend, ncol = 1, rel_heights = c(7, 1), labels = c("A"))
+
+save_plot("~/hmf/RPlot/Figure 7 - Driver Cooccurrence.png", pCooccurence, base_width = 4, base_height = 7)
+

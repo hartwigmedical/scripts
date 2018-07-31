@@ -33,7 +33,7 @@ if [ -z "$run_info" ]; then
     exit 1
 fi
 
-rerun_info=$(load_rerun_info_for_set ${set})
+rerun_info=$(load_rerun_v3_info_for_set ${set})
 if [ -z "$rerun_info" ]; then
     echo "[WARN] No rerun found for set ${set}. Exiting."
     exit 1

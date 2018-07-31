@@ -1,4 +1,4 @@
-	SELECT count(*) AS findings, 'any' AS level, 'any' AS item, 'any' AS locked FROM clinicalFindings
+	SELECT count(*) AS findings, 'any' AS level, 'any' AS message, 'any' AS locked FROM clinicalFindings
 
 UNION
 
@@ -14,6 +14,6 @@ UNION
 
 UNION
 
-	SELECT count(*), 'any', ecrfItem, 'any'
+	SELECT count(*), 'any', message, 'any'
 	FROM clinicalFindings
-	GROUP BY level, ecrfItem
+	GROUP BY level, message

@@ -37,6 +37,9 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
 	  # is fully strand biased when originating from one side of a breakend
 	  filtered = .addFilter(filtered, "strand_bias", isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_short_event_strand_bias)
+
+
+	  #filtered = .addFilter(filtered, "FlankingHighQualIndel", str_detect(gridss_gr$FILTER, "SINGLE_ASSEMBLY") & (i$RP + i$SR) / i%VF < 0.1 & i$RP >= 2 & i$SR >= 2 # fixed in GRIDSSv1.8.0
 	}
 	if (min_support_filters) {
 	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
@@ -130,22 +133,29 @@ is_short_event = function(gr) {
     abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
 }
 gridss_bp_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, !is_short_deldup(gr)))
+  return(.gridss_af(gr, vcf, i, !is_short_deldup(gr), includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE))
 }
 gridss_somatic_bp_af = function(gr, vcf) {
 	return(gridss_bp_af(gr, vcf, 2))
 }
 gridss_be_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, TRUE))
+  return(.gridss_af(gr, vcf, i, TRUE, includeBreakpointSupport=FALSE, includeBreakendSupport=TRUE))
 }
 gridss_somatic_be_af = function(gr, vcf) {
   return(gridss_be_af(gr, vcf, 2))
 }
-.gridss_af = function(gr, vcf, i, includeRefPair, no_coverage_af=0) {
+.gridss_af = function(gr, vcf, i, includeRefPair, no_coverage_af=0, includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE) {
   genotype = geno(vcf[names(gr)])
   g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
   names(g) <- names(genotype)
-  vf_af = g$VF / (g$VF + g$REF + ifelse(!includeRefPair, 0, g$REFPAIR))
+  support = rep(0, length(gr))
+  if (includeBreakpointSupport) {
+    support = support + g$VF
+  }
+  if (includeBreakendSupport) {
+    support = support + g$BVF
+  }
+  vf_af = support / (support + g$REF + ifelse(!includeRefPair, 0, g$REFPAIR))
   vf_af[is.nan(vf_af)] = no_coverage_af
   return(vf_af)
 }
@@ -195,16 +205,6 @@ query_structural_variants_samples = function(dbConnect) {
 	df = dbGetQuery(dbConnect, query)
 	return(df$sampleId)
 }
-query_structural_variants_for_sample_as_granges = function(dbConnect, sampleId) {
-	sampleIdString = paste("'", sampleId, "'", collapse = ",", sep = "")
-	query = paste(
-		"SELECT *",
-		"FROM structuralVariant",
-		"WHERE sampleId in (", sampleIdString, ")",
-		sep = " ")
-	df = dbGetQuery(dbConnect, query)
-	hmf_structuralVariants_to_granges(df)
-}
 simpleEventType <- function(gr) {
   same_chr = as.logical(seqnames(gr) != seqnames(partner(gr)))
   insSeq = rep("", length(gr))
@@ -220,45 +220,6 @@ simpleEventType <- function(gr) {
           ifelse(more_ins_than_length, "INS", # TODO: improve classification of complex events
             ifelse(same_strand, "INV",
               ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL", "DUP")))))
-}
-hmf_structuralVariants_to_granges = function(df) {
-	gro = GRanges(
-		seqnames=df$startChromosome,
-		ranges=IRanges(start=df$startPosition, width=1),
-		strand=ifelse(df$startOrientation == 1, "+", "-"),
-		id=df$id,
-		sampleId=df$sampleId,
-		ploidy=df$ploidy,
-		insertSequence=df$insertSequence,
-		type=df$type,
-		af=df$startAF,
-		homseq=df$startHomologySequence,
-		adjustedaf=df$adjustedStartAF,
-		adjustedcn=df$adjustedStartCopyNumber,
-		adjustedcn_delta=df$adjustedStartCopyNumberChange,
-		partner=paste0(df$id, "h")[seq_along(df$id)],
-		name=paste0(df$id, "o")[seq_along(df$id)],
-		svlen=df$endPosition-df$startPosition)
-	names(gro)=gro$name
-	grh = GRanges(
-		seqnames=df$endChromosome,
-		ranges=IRanges(start=df$endPosition, width=1),
-		strand=ifelse(df$endOrientation == 1, "+", "-"),
-		id=df$id,
-		sampleId=df$sampleId,
-		ploidy=df$ploidy,
-		insertSequence=df$insertSequence,
-		type=df$type,
-		af=df$startAF,
-		homseq=df$endHomologySequence,
-		adjustedaf=df$adjustedEndAF,
-		adjustedcn=df$adjustedEndCopyNumber,
-		adjustedcn_delta=df$adjustedEndCopyNumberChange,
-		partner=paste0(df$id, "o")[seq_along(df$id)],
-		name=paste0(df$id, "h")[seq_along(df$id)],
-		svlen=df$endPosition-df$startPosition)
-	names(grh)=grh$name
-	c(gro, grh)
 }
 
 load_full_gridss_gr = function(filename, directory="", filter=c("somatic", "qual")) {
@@ -576,13 +537,36 @@ readVcf = function(file, ...) {
   # work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
   alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
   VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  # Work-around for https://github.com/PapenfussLab/gridss/issues/156
+  # since we don't have all the info, we'll just pro-rata
+  bp_pro_rata = (geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP) / rowSums(geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP)
+  be_pro_rata = (geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP) / rowSums(geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP)
+  bp_pro_rata[is.nan(bp_pro_rata)] = 0
+  be_pro_rata[is.nan(be_pro_rata)] = 0
+  geno(raw_vcf)$ASQ[is.na(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.na(geno(raw_vcf)$ASQ)]
+  geno(raw_vcf)$RASQ[is.na(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.na(geno(raw_vcf)$RASQ)]
+  geno(raw_vcf)$CASQ[is.na(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.na(geno(raw_vcf)$CASQ)]
+  geno(raw_vcf)$BASQ[is.na(geno(raw_vcf)$BASQ)] = (info(raw_vcf)$BASQ * be_pro_rata)[is.na(geno(raw_vcf)$BASQ)]
+  geno(raw_vcf)$QUAL[is.na(geno(raw_vcf)$QUAL)] = (
+    geno(raw_vcf)$ASQ +
+    geno(raw_vcf)$RASQ +
+    geno(raw_vcf)$CASQ +
+    geno(raw_vcf)$RPQ +
+    geno(raw_vcf)$SRQ +
+    geno(raw_vcf)$IQ
+  )[is.na(geno(raw_vcf)$QUAL)]
+  geno(raw_vcf)$BQ[is.na(geno(raw_vcf)$BQ)] = (
+    geno(raw_vcf)$BASQ +
+    geno(raw_vcf)$BUMQ +
+    geno(raw_vcf)$BSCQ
+  )[is.na(geno(raw_vcf)$BQ)]
   return(raw_vcf)
 }
 
 read_gridss_breakpoint_pon = function(file) {
   df = read_tsv(file,
-                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE"),
-                col_types="ciiciiccccl")
+                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE", "samples"),
+                col_types="ciiciiccccli")
   gro = GRanges(
     seqnames=df$chr1,
     ranges=IRanges(
@@ -590,7 +574,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end1),
     strand=df$strand1,
     partner=paste0(seq_len(nrow(df)), "h"),
-    IMPRECISE = df$IMPRECISE)
+    IMPRECISE = df$IMPRECISE,
+    samples=df$samples)
   names(gro) = paste0(seq_len(nrow(df)), "o")
   grh = GRanges(
     seqnames=df$chr2,
@@ -599,7 +584,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end2),
     strand=df$strand2,
     partner=paste0(seq_len(nrow(df)), "o"),
-    IMPRECISE = df$IMPRECISE)
+    IMPRECISE = df$IMPRECISE,
+    samples=df$samples)
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }

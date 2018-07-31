@@ -1,0 +1,77 @@
+#!/bin/bash
+
+MAX_DF_PERC=95
+
+function main {
+    if [[ ! "$( hostname )" =~ datastore ]]; then
+        echo "[EXIT] Only run this script at datastore!" && exit 1
+    fi
+
+    title "SYSTEMS CHECK"
+    header "datastore"
+    diskUsage "/data"
+    diskUsage "/home"
+    crunches
+    echo ""
+}
+
+function crunches {
+    for crunch in crunch00{1,2,3}; do 
+        header $crunch
+        diskUsage "/home"  "ssh $crunch"
+        diskUsage "/data1" "ssh $crunch"
+        diskUsage "/data2" "ssh $crunch"
+        gitRepVsn "/data/repos/pipeline" "ssh $crunch"
+        gitRepVsn "/data/repos/pipeline-test" "ssh $crunch"
+        gridUsage "ssh $crunch"
+    done
+}
+
+function title {
+    local msg=$1
+    echo "=== ${msg} ==="
+}
+
+function header {
+    local msg=$1
+    echo -e "\n[${msg}]"
+}
+
+function gitRepVsn {
+    local reposDir=$1
+    local cmdPrefix=$2
+    local version=$( ${cmdPrefix} "cd ${reposDir}; git describe --tags" )
+    echo "GIT: $reposDir is version $version"
+}
+
+function diskUsage {
+    local mount=$1
+    local cmdPrefix=$2
+    local available=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4 )
+    local percentageString=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5 )
+    local percentage=$( echo ${percentageString} | sed 's/\%//g' )
+    echo "${percentageString} used with ${available} space left for mount ${mount}"
+    if [ "${percentage}" -gt "${MAX_DF_PERC}" ]; then
+        warn "Disk usage (${percentageString}) for mount $mount higher than ${MAX_DF_PERC}!"
+    fi
+}
+
+function log {
+    local level=$1
+    local msg=$2
+    echo "[${level}] ${msg}"
+}
+
+function warn {
+    log "WARN" "$1"
+}
+
+
+function gridUsage {
+    local prefix=$1
+    local jobCount=$( ${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | wc -l" )
+    echo "SGE job count: ${jobCount}"
+}
+
+main
+

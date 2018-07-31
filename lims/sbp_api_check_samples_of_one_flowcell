@@ -13,6 +13,6 @@ fi
 
 ## Flowcell done at SBP so get info per sample
 cat ${SAMPLESHEET} | grep -P "^\d{1}\," | cut -d"," -f 2 | sort | uniq | while read BARCODE; do
-    SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" | grep -v "^#" )
+    SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
     echo -e "${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
 done

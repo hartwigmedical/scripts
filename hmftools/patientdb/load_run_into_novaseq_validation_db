@@ -1,0 +1,8 @@
+#!/bin/bash
+source load_metadata
+
+run_dir=$1 && shift
+credentials=/data/common/dbs/mysql_credentials/novaseq_validation
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+load_genomic_data_for_run_into_db ${run_dir} ${credentials} ${sample}

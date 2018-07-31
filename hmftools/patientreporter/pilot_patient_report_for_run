@@ -6,8 +6,16 @@ drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
 center_csv=/data/common/dbs/center/center.csv
 signature=/data/common/dbs/signature/signature.png
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_url | head -n 1)
+
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
+credentials=/data/common/dbs/mysql_credentials/pilot
+
+# JOBA: Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 
 tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
 lims_json=/data/lims/lims.json
@@ -17,18 +25,21 @@ fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
-exec java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
-    -jar "$patient_reporter_dir"/patient-reporter.jar \
-    -lims_json "$lims_json" \
-    -tumor_location_csv "$tumor_location_csv" \
-    -report_dir "$report_dir" \
-    -drup_genes_csv "$drup_genes_csv" \
-    -cosmic_gene_csv "$cosmic_gene_csv" \
-    -center_csv "$center_csv" \
-    -signature "$signature" \
-    -ensembl_db "$ensembl_db" \
-    -fasta_file_location "$ref_genome" \
-    -fusion_pairs_csv "$fusion_pairs_csv" \
-    -promiscuous_five_csv "$promiscuous_five_csv" \
-    -promiscuous_three_csv "$promiscuous_three_csv" \
-    -run_dir "$@"
+java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
+    -lims_json ${lims_json} \
+    -tumor_location_csv ${tumor_location_csv} \
+    -report_dir ${report_dir} \
+    -drup_genes_csv ${drup_genes_csv} \
+    -cosmic_gene_csv ${cosmic_gene_csv} \
+    -center_csv ${center_csv} \
+    -signature ${signature} \
+    -ensembl_db ${ensembl_db} \
+    -local_ensembl \
+    -db_user ${db_user} \
+    -db_pass ${db_pass} \
+    -fasta_file_location ${ref_genome} \
+    -high_confidence_bed ${high_confidence_bed} \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -run_dir $@

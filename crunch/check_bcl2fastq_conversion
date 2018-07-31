@@ -25,11 +25,14 @@ my $BARC_KEY = 'IndexMetrics';
 my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission );
 my @SUM_FIELDS = qw( submission id name yld q30 );
 
-my $MAX_UNDET = 4; # percentage
-my $MIN_Q30 = 75;
-my $YIELD_FACTOR = 1e9;
-my $MIN_YIELD_PER_SAMPLE = 3e9 / $YIELD_FACTOR;
-my $MIN_YIELD_PER_LANE = 100e9 / $YIELD_FACTOR;
+my $YIELD_FACTOR = 1e6;
+my %QC_LIMITS = (
+    'lane_yld' => undef,
+    'lane_q30' => undef,
+    'samp_yld' => undef,
+    'samp_q30' => undef,
+    'max_undt' => undef
+);
 
 my $RUN_PATH;
 my $JSON_PATH;
@@ -46,11 +49,12 @@ my $HELP =<<HELP;
     $SCRIPT -json \${json-path}
     
   Options
-    -sep <s>               Output sep (<TAB>)
-    -min_q30 <i>           Percentage ($MIN_Q30)
-    -max_undet_perc <i>    Percentage ($MAX_UNDET)
-    -min_lane_yield <i>    QC Lane Yield ($MIN_YIELD_PER_LANE) will be multiplied by $YIELD_FACTOR
-    -min_sample_yield <i>  QC Sample Yield ($MIN_YIELD_PER_SAMPLE) will be multiplied by $YIELD_FACTOR
+    -sep <s>               Output sep (default = <TAB>)
+    -max_undet_perc <i>    Percentage
+    -min_lane_q30 <i>      Percentage
+    -min_sample_q30 <i>    Percentage
+    -min_lane_yield <i>    Bases
+    -min_sample_yield <i>  Bases
     -samplesheet <s>       Path to SampleSheet.csv file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
@@ -68,10 +72,11 @@ GetOptions (
   "json_path=s"        => \$JSON_PATH,
   "samplesheet=s"      => \$SSHT_PATH,
   "sep=s"              => \$OUT_SEP,
-  "max_undet_perc=i"   => \$MAX_UNDET,
-  "min_sample_yield=i" => \$MIN_YIELD_PER_SAMPLE,
-  "min_lane_yield=i"   => \$MIN_YIELD_PER_LANE,
-  "min_q30=i"          => \$MIN_Q30,
+  "max_undet_perc=i"   => \$QC_LIMITS{ 'max_undt' },
+  "min_sample_yield=i" => \$QC_LIMITS{ 'samp_yld' },
+  "min_lane_yield=i"   => \$QC_LIMITS{ 'lane_yld' },
+  "min_sample_q30=i"   => \$QC_LIMITS{ 'samp_q30' },
+  "min_lane_q30=i"     => \$QC_LIMITS{ 'samp_q30' },
   "no_qc"              => \$opt{ no_qc },
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
@@ -83,8 +88,6 @@ die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_
 die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
 die "[EXIT] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
 
-$MIN_YIELD_PER_SAMPLE = $MIN_YIELD_PER_SAMPLE * $YIELD_FACTOR;
-$MIN_YIELD_PER_LANE   = $MIN_YIELD_PER_LANE * $YIELD_FACTOR;
 $JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
 $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_PATH);
 
@@ -122,6 +125,7 @@ sub addSamplesheetInfo{
     
     ## add run name: eg X17-0001
     $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
+    $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     
     ## add submissions: eg HMFregCPCT
     my $samples = $json_info->{ 'samp' };
@@ -143,26 +147,74 @@ sub readJson{
 
 sub performQC{
     my ($info) = @_;
-    
+   
     my $stats = $info->{'stats'};
     my $samps = $info->{'samp'};
     my $lanes = $info->{'lane'};
     my $fails = 0;
     
     my $identifier = $stats->{'identifier'};
+    my $platform = $stats->{'platform'};
     
+    ## setup qc limit by platform unless provided by user
+    my %platform_qc_limits = (
+        'HiSeq' => {
+            'lane_yld' => 100e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'NextSeq' => {
+            'lane_yld' => 8e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'NovaSeq' => {
+            'lane_yld' => 100e9,
+            'lane_q30' => 75,
+            'samp_yld' => 1e9,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        },
+        'ISeq' => {
+            'lane_yld' => 0,
+            'lane_q30' => 75,
+            'samp_yld' => 0,
+            'samp_q30' => 75,
+            'max_undt' => 4
+        }
+    );
+       
+    ## determine actual platform in use
+    my @possible_platforms = keys %platform_qc_limits;
+    my $limit_to_use = ();
+    foreach my $platform_name ( @possible_platforms ){
+        if ( $platform =~ /$platform_name/ ){
+            say "## Setting QC limit for platform $platform_name";
+            my $limits = $platform_qc_limits{ $platform_name };
+            foreach my $limit_name ( keys %$limits ){
+                next if defined $QC_LIMITS{ $limit_name };
+                $QC_LIMITS{ $limit_name } = $limits->{ $limit_name };
+            }
+        }
+    }
+
     ## flowcell checks
     my $undet = $stats->{'undet_perc'};
-    if ( $undet > $MAX_UNDET ){
-        say "## WARNING Percentage undetermined ($undet) too high (MAX=$MAX_UNDET%)";
+    my $max_undet = $QC_LIMITS{ 'max_undt' };
+    if ( $undet > $max_undet ){
+        say "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
         $fails += 1;
     }
-    
+        
     ## lane and sample checks
-    $fails += checkObjectField( $lanes, 'yield', $MIN_YIELD_PER_LANE );
-    $fails += checkObjectField( $lanes, 'q30',   $MIN_Q30 );
-    $fails += checkObjectField( $samps, 'yield', $MIN_YIELD_PER_SAMPLE );
-    $fails += checkObjectField( $samps, 'q30',   $MIN_Q30 );
+    $fails += checkObjectField( $lanes, 'yield', $QC_LIMITS{ 'lane_yld' } );
+    $fails += checkObjectField( $lanes, 'q30',   $QC_LIMITS{ 'lane_q30' } );
+    $fails += checkObjectField( $samps, 'yield', $QC_LIMITS{ 'samp_yld' } );
+    $fails += checkObjectField( $samps, 'q30',   $QC_LIMITS{ 'samp_q30' } );
     
     ## conclusion
     if ( $fails == 0 ){
@@ -242,7 +294,6 @@ sub parseJsonInfo{
                 $info{ 'samp' }{ $sid }{ 'yield' } += $read->{ Yield };
                 $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
                 
-                
                 $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
                 $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
                 $info{ 'samp' }{ $sid }{ 'yield_q30' } += $read->{ YieldQ30 };
@@ -271,19 +322,19 @@ sub parseJsonInfo{
             my $obj = $info{ $type }{ $id };
             my $name = $obj->{ 'name' };
                         
-            $obj->{ 'q30' } = $obj->{ 'yield_q30' }*100 / $obj->{ 'yield' } if $obj->{ 'yield' } > 0;
-            $obj->{ 'yld_p' } = $obj->{ 'yield' } / $info{ 'flow' }{ $fid }{ 'yield' };
+            $obj->{ 'q30' } = getPerc( $obj->{ 'yield_q30' }, $obj->{ 'yield' } );
+            $obj->{ 'yld_p' } = getPerc( $obj->{ 'yield' }, $info{ 'flow' }{ $fid }{ 'yield' } );
             $obj->{ 'flowcell_print' } = $fid;
 
             $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
-            $obj->{ 'yld_print' } = round( $obj->{ 'yield' } / $YIELD_FACTOR, 0 );
+            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, 0, $YIELD_FACTOR );
             $obj->{ 'id_print' } = $id;
             $obj->{ 'name_print' } = $obj->{ 'name' };
-            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }*100 );
+            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' } );
             
             ## percentage filtered does not exist for samples
             if ( exists $obj->{ 'clust_pf' } ){
-                $obj->{'pf_print'} = round( $obj->{'clust_pf'}*100 / $obj->{'clust_raw'} );
+                $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ) );
             }
             
             next if $name =~ /read|UNDETERMINED/;
@@ -291,8 +342,8 @@ sub parseJsonInfo{
             $obj->{ 'mm0_print' } = 0;
             $obj->{ 'mm1_print' } = 0;
             if ( $obj->{ 'total_reads' } != 0 ){
-                $obj->{ 'mm0_print' } = round( $obj->{ 'mm0' }*100 / $obj->{ 'total_reads' } );
-                $obj->{ 'mm1_print' } = round( $obj->{ 'mm1' }*100 / $obj->{ 'total_reads' } );
+                $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ) );
+                $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ) );
             }
             
         }
@@ -300,12 +351,12 @@ sub parseJsonInfo{
     
     ## Collect some general stats/info
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'} / 1e6, 0 ), 
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'} / 1e6, 0 ), 
+      round( $info{'flow'}{$fid}{'yield'}, 0, 1e6 ), 
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, 1e6 ), 
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'};
       
-    $info{'stats'}{'undet_perc'} = round( $info{'undt'}{'UNDETERMINED'}{'yield'}*100 / $info{'flow'}{$fid}{'yield'} );
+    $info{'stats'}{'undet_perc'} = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
@@ -313,9 +364,30 @@ sub parseJsonInfo{
     return \%info;
 }
 
+sub getPerc{
+    my ($value, $total) = @_;
+    
+    if ( not defined($value) or not defined($total) ){
+       return 0;
+    }
+    elsif ($value < 0 or $total < 0){
+       exit "[EXIT] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
+    }
+    elsif ($value > $total){
+       exit "[EXIT] value ($value) should never be higher than total ($total)\n";
+    }
+    elsif ( $total == 0 and $value == 0){
+       return 0;
+    }
+    else{
+       return $value*100/$total;
+    }
+}
+
 sub printTable{
     my ($info, $fields) = @_;
 
+    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'hmf_runname'}, 
@@ -332,7 +404,8 @@ sub printTable{
 
 sub printSummaryTable{
     my ($info, $fields) = @_;
-    
+   
+    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'identifier'}, 
@@ -365,7 +438,8 @@ sub readSampleSheet{
     
     my %output;
     $output{ 'samples' } = {};
-    $output{ 'runname' } = 'NO_SAMPLESHEET_FOUND';
+    $output{ 'runname' } = 'NO_RUNNAME_FROM_SAMPLESHEET';
+    $output{ 'platform' } = 'NO_PLATFORM_FROM_SAMPLESHEET';
     my @header;
     
     if ( ! -e $csv_file ){
@@ -385,6 +459,11 @@ sub readSampleSheet{
             my $run_name = $fields[1] || 'NA';
             $output{ 'runname' } = $run_name;
         }
+        elsif ($fields[0] =~ /Application/ ){
+            my $platform = $fields[1] || 'NA';
+            $output{ 'platform' } = $platform;
+        }
+
         ## find header
         elsif ( $_ =~ m/Sample_ID/ ){
             @header = @fields;
@@ -410,14 +489,14 @@ sub readSampleSheet{
     return( \%output );
 }
 
-## input "0.123" gives output "0.12"
 sub round{
-    my ($number, $decimal) = @_;
+    my ($number, $decimal, $factor) = @_;
     if ( not defined $number ){
         return $NA_CHAR;
     }
     $decimal = 1 unless defined $decimal;
-    my $rounded = sprintf("%.".$decimal."f", $number);
+    $factor = 1 unless defined $factor;
+    my $rounded = sprintf("%.".$decimal."f", $number/$factor);
     return( $rounded );
 }
 
@@ -428,5 +507,3 @@ sub commify {
     1 while s/^([-+]?\d+)(\d{3})/$1,$2/;
     return $_;
 }
-
-
