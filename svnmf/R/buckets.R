@@ -1,9 +1,10 @@
-get_bucket_data<-function(signatures, contribution, bucketNames) {
-
+get_bucket_data<-function(signatures, contribution, bucketNames)
+{
   # work out percentage for each bucket's contribution
   sigPercents = apply(signatures, 2, function(x) x/sum(x))
-  sigPercentsByBuckets = melt(cbind(data.frame(bucket = bucketNames), sigPercents), id.vars = c("Bucket"))
-  colnames(sigPercentsByBuckets) <- c('Bucket', 'Signature', 'Percent')
+
+  sigPercents = cbind(bucketNames,sigPercents)
+  sigPercentsByBuckets = gather(as.data.frame(sigPercents), "Signature", "Percent", -Bucket)
 
   # use signature counts to turn contributions into counts
   sigBucketCounts = signatures
@@ -12,17 +13,17 @@ get_bucket_data<-function(signatures, contribution, bucketNames) {
     sigBucketCounts[,i] = round(sigBucketCounts[,i]* rowSums(contribution)[i],0)
   }
 
-  sigByBuckets = melt(cbind(data.frame(bucket = bucketNames), sigBucketCounts), id.vars = c("Bucket"))
-  colnames(sigByBuckets) <- c('Bucket', 'Signature', 'Count')
+  sigBucketCounts = cbind(bucketNames,sigBucketCounts)
+  sigCountsByBuckets = gather(as.data.frame(sigBucketCounts), "Signature", "Count", -Bucket)
 
-  # merge counts and percentages into a single signature by bucket dataframe
-  sigBucketData = cbind(sigPercentsByBuckets, Count = round(sigByBuckets$Count,0))
+  # finally merge the sig percents and counts by bucket
+  sigBucketData = merge(sigPercentsByBuckets,sigCountsByBuckets,by=c("Signature","Bucket"),all.x=T)
   return(sigBucketData)
 }
 
 get_sig_bucket_stats<-function(sigBucketData) {
 
-  sigBucketStats = (sigBucketData %>% group_by(Signature)
+  sigBucketStats = (sigBucketData %>% group_by(SigName)
                     %>% summarise(BucketCount=sum(Count>0),
                                   BucketPerc=round(sum(Count>0)/n_distinct(Bucket),2),
                                   Count=sum(Count),
@@ -34,15 +35,16 @@ get_sig_bucket_stats<-function(sigBucketData) {
                                   Perc10_25=sum(Percent>0.1&Percent<=0.25),
                                   Perc5_10=sum(Percent>0.05&Percent<=0.1),
                                   PercLT5=sum(Percent>0.001&Percent<=0.05))
-                    %>% arrange(-BucketCount))
+                    %>% arrange(SigName))
 
   return (sigBucketStats)
 }
 
-get_top_buckets<-function(sigBucketData, sigNames, sigNamesNamed, maxN = 4, reqPercent = 0.85)
+get_top_buckets<-function(sigBucketData, maxN = 4, reqPercent = 0.85)
 {
   sigBucketTopN = data.frame()
-  for(i in 1:length(sigNames))
+  sigCount = n_distinct(sigBucketData$Signature)
+  for(i in 1:sigCount)
   {
     # take top 3 entries for each signature in turn, and append them to the result
     sigData = sigBucketData %>% filter(Signature==i) %>% arrange(-Percent) # sig-agnostic version
@@ -63,10 +65,9 @@ get_top_buckets<-function(sigBucketData, sigNames, sigNamesNamed, maxN = 4, reqP
 
   sigBucketTopN$Percent = round(sigBucketTopN$Percent, 3)
 
-  # meld on named sigs
-  sigNamesCombined = cbind(sigNames, sigNamesNamed)
-  colnames(sigNamesCombined) <- c("Signature", "SigName")
-  sigBucketTopN = merge(sigBucketTopN, sigNamesCombined, by.x="Signature", by.y="Signature", all.x=TRUE) %>% arrange(SigName,-Percent)
+  # merge on named sigs
+  sigBucketTopN = sigBucketTopN %>% arrange(SigName,-Percent)
+  # sigBucketTopN = merge(sigBucketTopN, sigNamesCombined, by.x="Signature", by.y="Signature", all.x=T) %>% arrange(SigName,-Percent)
   return (sigBucketTopN)
 }
 
@@ -86,10 +87,9 @@ get_least_contrib_buckets<-function(bucketSummaryData, worstN = 20) {
   return (top_n(bucketSummaryData, worstN, -Count) %>% arrange(Count))
 }
 
-plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN, title)
+plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN, title, rowsPerColumn)
 {
   topNRows = nrow(sigBucketTopN)
-  rowsPerColumn = 40
   if(topNRows <= rowsPerColumn)
   {
     grid.arrange(tableGrob(head(bucketSummaryData, rowsPerColumn), rows=NULL),
@@ -245,7 +245,7 @@ get_top_buckets_by_sample<-function(sampleCounts, origSampleCounts, sampleCancer
   return (sampleBucketTopN)
 }
 
-plot_sample_bucket_contrib<-function(sampleBucketData, bucketCount, varType = "SV", maxPlots = 4)
+plot_sample_bucket_contrib<-function(sampleBucketData, bucketCount, varType = "SV", maxPlots = 4, extTitle = "", isAbsolute = F)
 {
   bucketColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a", "#6b3a9d",
                    "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a", "#ff748a", "#777700",
@@ -263,7 +263,7 @@ plot_sample_bucket_contrib<-function(sampleBucketData, bucketCount, varType = "S
 
   sbData = sampleBucketData %>% filter(SampleCount>0)
 
-  sbData = sbData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent', "SampleCount")
+  sbData = sbData %>% arrange(-SampleCount, SampleId) %>% select('SampleId', 'Bucket', 'Percent', "Count", "SampleCount")
 
   bucketPlots = list()
   plotIndex = 1
@@ -298,15 +298,28 @@ plot_sample_bucket_contrib<-function(sampleBucketData, bucketCount, varType = "S
         }
       }
 
-      title = "Bucket % by Sample"
+      if(extTitle == "")
+        title = "Bucket % by Sample"
+      else
+        title = extTitle
 
-      sampleBucketPlot <- (ggplot(sbData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Percent, fill = Bucket))
-                        + geom_bar(stat = "identity", colour = "black", size=0.01)
-                        + labs(x = "", y = paste("Bucket % by Sample", sep=''))
-                        + scale_fill_manual(values = bucketColours)
-                        + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-                        + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                        + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
+      if(isAbsolute)
+      {
+        sampleBucketPlot <- ggplot(sbData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Count, fill = Bucket))
+      }
+      else
+      {
+        sampleBucketPlot <- ggplot(sbData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Percent, fill = Bucket))
+      }
+
+      sampleBucketPlot <- (sampleBucketPlot
+                         + geom_bar(stat = "identity", colour = "black", size=0.01)
+                         + geom_bar(stat = "identity", colour = "black", size=0.01)
+                         + labs(x = "", y = paste("Bucket % by Sample", sep=''))
+                         + scale_fill_manual(values = bucketColours)
+                         + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+                         + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+                         + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
 
       if(plotCount == 0)
       {

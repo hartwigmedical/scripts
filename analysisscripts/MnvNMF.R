@@ -44,48 +44,6 @@ query_indels_mnvs<-function(dbConnect, sampleIdStr, typeStr) {
   return(queryResults)
 }
 
-
-
-load("~/data/highestPurityCohortSummary.RData")
-View(highestPurityCohortSummary)
-
-dr022Samples = read.csv("~/data/DR-022_metadata.tsv", sep='\t')
-nrow(dr022Samples)
-View(dr022Samples)
-
-hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sampleId)
-# hpcSamples = highestPurityCohortSummary
-nrow(hpcSamples)
-
-# dbDisconnect(dbProd)
-
-cancerTypes = hpcSamples %>% group_by(cancerType) %>% count()
-cancerTypes = setNames(cancerTypes, c("CancerType", "Count"))
-sampleCancerTypes = hpcSamples %>% select(sampleId, cancerType)
-sampleCancerTypes = setNames(sampleCancerTypes, c("SampleId", "CancerType"))
-View(sampleCancerTypes)
-View(cancerTypes)
-
-
-# MNV Handling
-
-# download from prod around 1.1M (Jun 18)
-mnvData = query_indels_mnvs(dbProd, "", "MNP")
-View(mnvData)
-nrow(mnvData)
-write.csv(mnvData, "~/logs/r_output/mnv_prod_all_20180418.csv", row.names=F, quote=F)
-#mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
-mnvData = read.csv("~/logs/r_output/mnv_prod_all_20180418.csv") # with 3-base PON fix
-#mnvData = within(mnvData, rm(X))
-
-# limit to samples in the high-confidence set
-nrow(hpcSamples)
-mnvData = mnvData %>% filter(SampleId %in% hpcSamples$sampleId)
-mnvData = mnvData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
-
-nrow(mnvData) # 864K at last count 796K within HPC & DR022
-
-
 baseConvert<-function(base)
 {
   if(base=="A")
@@ -148,6 +106,50 @@ create_mnv_fields<-function(mnvData)
   return (mnvData)
 }
 
+
+load("~/data/highestPurityCohortSummary.RData")
+View(highestPurityCohortSummary)
+
+dr022Samples = read.csv("~/data/DR-022_metadata.tsv", sep='\t')
+nrow(dr022Samples)
+View(dr022Samples)
+
+hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sampleId)
+# hpcSamples = highestPurityCohortSummary
+nrow(hpcSamples)
+
+# dbDisconnect(dbProd)
+
+cancerTypes = hpcSamples %>% group_by(cancerType) %>% count()
+cancerTypes = setNames(cancerTypes, c("CancerType", "Count"))
+sampleCancerTypes = hpcSamples %>% select(sampleId, cancerType)
+sampleCancerTypes = setNames(sampleCancerTypes, c("SampleId", "CancerType"))
+View(sampleCancerTypes)
+View(cancerTypes)
+
+
+# MNV Handling
+
+# download from prod around 1.1M (Jun 18)
+mnvData = query_indels_mnvs(dbProd, "", "MNP")
+View(mnvData)
+nrow(mnvData)
+write.csv(mnvData, "~/logs/r_output/mnv_prod_all_20180418.csv", row.names=F, quote=F)
+#mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
+mnvData = read.csv("~/logs/r_output/mnv_prod_all_20180418.csv") # with 3-base PON fix
+#mnvData = within(mnvData, rm(X))
+nrow(mnvData)
+
+# limit to samples in the high-confidence set
+nrow(hpcSamples)
+mnvData = mnvData %>% filter(SampleId %in% hpcSamples$sampleId)
+mnvData = mnvData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
+
+nrow(mnvData) # 864K at last count 796K within HPC & DR022
+View(mnvData)
+
+
+
 mnvData = create_mnv_fields(mnvData)
 View(mnvData)
 
@@ -186,8 +188,8 @@ colnames(mnvBucketNames) <- c("Bucket")
 View(mnvBucketNames)
 mnvMatrixData = within(mnvMatrixData, rm(Bucket))
 
-# write.csv(mnvMatrixData, file="~/logs/r_output/mnv_nmf_subc_counts_dr22.csv", row.names=F, quote=F)
-write.csv(mnvMatrixData, file="~/logs/r_output/mnv_nmf_matrix_data.csv", row.names=F, quote=F)
+write.csv(mnvMatrixData, file="~/data/r_data/mnv_nmf_matrix_data_dr22.csv", row.names=F, quote=F)
+# write.csv(mnvMatrixData, file="~/data/r_data/mnv_nmf_subc_matrix_data_dr22.csv", row.names=F, quote=F)
 
 # run estimations
 mnvNmfEstimate <- nmf(mnvMatrixData, rank=8:14, method="brunet", nrun=4, seed=123456, .opt='vp4')
@@ -198,53 +200,45 @@ plot(mnvNmfEstimate)
 # generate the actual NMF results
 mnvSigCount = 8
 mnvNmfResult <- nmf(mnvMatrixData, rank=mnvSigCount, method="brunet", nrun=10, seed=123456, .opt='vp1')
-save(mnvNmfResult, file="~/logs/r_output/mnvNmfResult_sig8_dr22.RData")
-# load("~/data/mnvNmfResult_sig8_dr22.RData")
-load("~/data/r_data/mnvNmfResult_sig8.RData")
-View(mnvNmfResult)
+# save(mnvNmfResult, file="~/logs/r_output/mnvNmfResult_sig8_dr22.RData")
 
-mnvSigNamesNum = get_signame_list(8, F)
-mnvSigNamesStr = get_signame_list(8, T)
+rm(nmfResult)
+rm(mnvNmfResult)
+load("~/data/r_data/mnvNmfResult_sig8_dr22.RData")
+# load("~/data/r_data/mnvNmfResult_sig8.RData")
+View(nmfResult)
+mnvNmfResult = nmfResult
+
+mnvSigCount = 8
+mnvSigNamesNum = get_signame_list(mnvSigCount, F)
+mnvSigNamesStr = get_signame_list(mnvSigCount, T)
 
 View(mnvBucketNames)
 
-evaluate_nmf_run("MNV", "sig08", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
+evaluate_nmf_run("MNV", "sig08_DR22", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
                  sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, TRUE, FALSE, TRUE)
 
 
 View(mnvSampleCounts %>% group_by(Bucket) %>% summarise(Count=sum(Count)))
 
-mnvSignatures = NMF::basis(mnvNmfResult)
-mnvContributions = NMF::coef(mnvNmfResult)
-View(mnvSignatures)
-View(mnvContributions[,1:10])
-nrow(mnvContributions)
-ncol(mnvContributions)
-nrow(mnvSignatures)
-ncol(mnvSignatures)
-View(mnvBucketNames)
-View(mnvMatrixData[,1:10])
-ncol(mnvMatrixData)
+# using own NMF
+mnvSimSignatures = as.matrix(read.csv("~/dev/nmf/logs/mnv_nmf_sigs.csv"))
+colnames(mnvSimSignatures) = mnvSigNamesNum
+mnvSimContribs = as.matrix(read.csv("~/dev/nmf/logs/mnv_nmf_contribs.csv"))
 
-View(mnvSampleCounts)
-
-mnvResiduals2 = calc_sample_residuals_v2(mnvContributions, mnvSignatures, mnvMatrixData, mnvBucketNames)
-View(mnvResiduals2)
-
-sum(mnvResiduals2$Count)
-sum(mnvResiduals2$ResidualTotal)
-
-sampleSigData = get_sig_data(mnvSignatures, mnvContributions, mnvSigNamesStr, colnames(mnvContributions))
-sampleSigData = append_residuals(mnvContributions, mnvSignatures, mnvBucketNames, mnvSampleCounts, sampleSigData)
-
+evaluate_nmf_data("MNV", "nmf_sf_sig08_dr22", mnvSigCount, mnvSimSignatures, mnvSimContribs, mnvMatrixData, mnvSampleCounts,
+                 sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, FALSE, FALSE, TRUE)
 
 
 
 # Subclonal Evalaution
-load("~/data/mnvNmfResult_sig8_subc_dr22.RData")
+rm(nmfResult)
+load("~/data/r_data/mnvNmfResult_subc_sig8_dr22.RData")
+View(nmfResult)
+mnvNmfResult = nmfResult
 
 evaluate_nmf_run("MNV_Subclonal", "sig08_DR22", mnvSigCount, mnvNmfResult, mnvMatrixData, mnvSampleCounts,
-                 sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, FALSE, FALSE, TRUE)
+                 sampleCancerTypes, mnvBucketNames, mnvSigNamesNum, mnvSigNamesStr, TRUE, FALSE, TRUE)
 
 
 # using Clonal signatures
@@ -253,11 +247,7 @@ load("~/data/mnvNmfResult_sig8_dr22.RData")
 mnvSignatures = NMF::basis(mnvNmfResult)
 View(mnvSignatures)
 mnvBucketCount = nrow(mnvBucketNames)
-mnvContributions = apply_signatures(mnvMatrixData, mnvSignatures, mnvBucketCount)
-# View(mnvMatrixData[,1:10])
-# nrow(mnvMatrixData)
-# ncol(mnvMatrixData)
-# View(mnvContributions[,1:10])
+mnvContributions = apply_signatures(mnvMatrixData, mnvSignatures)
 
 # sum(mnvSampleCounts$Count)
 
@@ -270,6 +260,21 @@ mnvSampleSigData$Count = round(mnvSampleSigData$Count,0)
 View(mnvSampleSigData)
 write.csv(mnvSampleSigData, "~/logs/r_output/mnvSampleSigData.csv", row.names=F, quote=F)
 
+
+
+mnvSignatures = NMF::basis(mnvNmfResult)
+mnvContributions = NMF::coef(mnvNmfResult)
+
+View(mnvSampleCounts)
+
+mnvResiduals2 = calc_sample_residuals_v2(mnvContributions, mnvSignatures, mnvMatrixData, mnvBucketNames)
+View(mnvResiduals2)
+
+sum(mnvResiduals2$Count)
+sum(mnvResiduals2$ResidualTotal)
+
+sampleSigData = get_sig_data(mnvSignatures, mnvContributions, mnvSigNamesStr, colnames(mnvContributions))
+sampleSigData = append_residuals(mnvContributions, mnvSignatures, mnvBucketNames, mnvSampleCounts, sampleSigData)
 
 
 

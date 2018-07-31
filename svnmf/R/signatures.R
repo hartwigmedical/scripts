@@ -1,23 +1,21 @@
 get_sig_colours<-function(sigCount = 10)
 {
-  if(sigCount <= 10)
+  allColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
+                 "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
+                 "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
+                 "#ff494b", "#464ec0", "#885928", "#991ffb", "#6811c0", "#e38bd9", "#101b00", "#d12073", "#98176a",
+                 "#6b4a9d", "#d5494e", "#0052e2", "#ff162c", "#31128d", "#d7803a", "#321233", "#ff2791", "#01137a",
+                 "#ff448a", "#774700", "#ff56be", "#4a1822", "#ff1be4", "#6a8e03", "#c610fb", "#ff2571", "#871659",
+                 "#ff294b", "#465ec0", "#886928", "#992ffb", "#6821c0", "#e37bd9", "#102b00", "#d13073", "#98276a",
+                 "#6b2a9d", "#d5594e", "#0062e2", "#ff262c", "#31228d", "#d7703a", "#322233", "#ff3791", "#01237a",
+                 "#ff248a", "#775700", "#ff66be", "#4a2822", "#ff2be4", "#6a7e03", "#c620fb", "#ff3571", "#872659",
+                 "#dea185", "#a0629d", "#8a792f", "#4a3822", "#ff3be4", "#6a6e03", "#c630fb", "#ff4571", "#877659")
+
+  sigColours = c()
+
+  for(i in 1:sigCount)
   {
-    sigColours = c("#ff994b","#463ec0","#d10073","#996ffb","#68b1c0","#e34bd9","#106b00","#8a392f","#98d76a","#6b3a9d","#d5c94e","#c6c0fb",
-                   "#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a", "#ff748a","#777700","#ff86be")
-  }
-  else if(sigCount <= 20)
-  {
-    sigColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
-                   "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
-                   "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
-                   "#dea185", "#a0729d", "#8a392f")
-  }
-  else
-  {
-    sigColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
-                   "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
-                   "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
-                   "#dea185", "#a0729d", "#8a392f")
+    sigColours[i] = allColours[i]
   }
 
   return (sigColours)
@@ -64,18 +62,17 @@ add_missing_buckets<-function(matrixData, definedBuckets)
   return (matrixData)
 }
 
-apply_signatures<-function(matrixData, signatures, bucketCount)
+apply_signatures<-function(matrixData, signatures)
 {
   n_samples = dim(matrixData)[2]
   n_signatures = dim(signatures)[2]
   lsq_contribution = matrix(NA, nrow = n_signatures, ncol = n_samples)
-  # lsq_reconstructed = matrix(NA, nrow = bucketCount, ncol = n_samples)
 
   for(i in 1:ncol(matrixData))
   {
     # print(paste("calc LSQ for i=", i, sep=''))
-    y = matrixData[, i]
-    y = apply(y, 1, function(x) x * 1.0) # to force it to a numeric type
+    y = matrixData[, i, drop=F]
+    y = apply(y, 1, function(x) as.numeric(x) * 1.0) # to force it to a numeric type
     lsq = calc_lsqnonneg(signatures, y)
     lsq_contribution[, i] = lsq$x
     # lsq_reconstructed[, i] = signatures %*% as.matrix(lsq$x)
@@ -229,7 +226,7 @@ get_sig_stats<-function(sampleSigData) {
   sigStats = (sampleSigData %>% group_by(SigName)
               %>% summarise(SampleCount=sum(Count>0),
                             SamplePerc=round(sum(Count>0)/n_distinct(SampleId),2),
-                            Count=sum(Count),
+                            Count=round(sum(Count),0),
                             MaxPercent=round(max(SigPercent),3),
                             AvgPercent=round(sum(ifelse(SigPercent>0.001,SigPercent,0))/sum(SigPercent>0),3),
                             PercGT75=sum(SigPercent>0.75),
@@ -238,7 +235,7 @@ get_sig_stats<-function(sampleSigData) {
                             Perc10_25=sum(SigPercent>0.1&SigPercent<=0.25),
                             Perc5_10=sum(SigPercent>0.05&SigPercent<=0.1),
                             PercLT5=sum(SigPercent>0.001&SigPercent<=0.05))
-              %>% arrange(-SampleCount))
+              %>% arrange(SigName))
 
   return (sigStats)
 }
@@ -463,9 +460,11 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
   }
 }
 
+library("pracma")
+
 calc_lsqnonneg<-function(C, d)
 {
-  stopifnot(is.numeric(C), is.numeric(d))
+  # stopifnot(is.numeric(C), is.numeric(d))
   if (!is.matrix(C) || !is.vector(d))
     stop("Argument 'C' must be a matrix, 'd' a vector.")
   m <- nrow(C); n <- ncol(C)

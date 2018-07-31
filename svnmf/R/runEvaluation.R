@@ -1,31 +1,47 @@
-evaluate_nmf_run<-function(runType, runId, sigCount, nmfResult, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
-                           sigNamesUnamed, sigNamesNamed, plotByCancerType = T, viewResults = F, calcResiduals = F)
+evaluate_nmf_run<-function(runType, runId, nmfResult, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                           sigNamesNamed, plotByCancerType = T, viewResults = F, calcResiduals = F)
 {
   # use this version when the NMF result is not available (eg when using external signatures like COSMIC)
   signatures = NMF::basis(nmfResult)
   contribution = NMF::coef(nmfResult)
 
-  evaluate_nmf_data(runType, runId, sigCount, signatures, contribution, matrixData, summaryCounts,
-                    sampleCancerTypes, bucketNames, sigNamesUnamed, sigNamesNamed, plotByCancerType, viewResults, calcResiduals)
+  evaluate_nmf_data(runType, runId, signatures, contribution, matrixData, summaryCounts,
+                    sampleCancerTypes, bucketNames, sigNamesNamed, plotByCancerType, viewResults, calcResiduals)
 }
 
-evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
-                            sigNamesUnamed, sigNamesNamed, plotByCancerType = T, viewResults = F, calcResiduals = T)
+evaluate_nmf_data<-function(runType, runId, signatures, contribution, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                            sigNamesNamed, plotByCancerType = T, viewResults = F)
 {
+  sigCount = nrow(contribution)
+
   print(paste("evaluating run: type=", runType, ", id=", runId, ", sigCount=", sigCount, sep=''))
 
   sampleNames = colnames(contribution)
 
   origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
 
+  sigNamesUnamed = get_signame_list(sigCount, F)
+  colnames(signatures) = sigNamesUnamed
+
+  sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+  colnames(sigNamesCombined) <- c("Signature", "SigName")
+
   print("evaluating buckets")
+
+  bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
+  colnames(bucketIndex) <- c("BucketIndex")
+  bucketNamesIndexed = cbind(bucketNames, bucketIndex)
+  bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
 
   # 1. Bucket Evaluation
   sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+  sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
+  sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
+
   sigBucketStats = get_sig_bucket_stats(sigBucketData)
 
   # Signature Discovery, by looking at relative contribution of buckets
-  sigBucketTopN = get_top_buckets(sigBucketData, sigNamesUnamed, sigNamesNamed)
+  sigBucketTopN = get_top_buckets(sigBucketData)
 
   # key bucket stats
   bucketSummaryData = get_bucket_stats(sigBucketData)
@@ -49,18 +65,13 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
   print("evaluating signatures")
 
   # optionally name signatues for subsequent output
-  sigNames = sigNamesNamed
-
-  sampleSigData = get_sig_data(signatures, contribution, sigNames, sampleNames)
+  sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
 
   # key stats per signature
   sigStats = get_sig_stats(sampleSigData)
 
   # calculate and factor in residuals
-  if(calcResiduals)
-  {
-    sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
-  }
+  sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
 
   # run again, this time bucketing samples into mutational load and cancer types
 
@@ -87,9 +98,11 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
 
   par(mar=c(1,1,1,1))
 
+  maxRowsPerPage = 40
+
   # 1. Bucket data
   title = textGrob("Bucket Summary Data & Top-N Buckets", gp=gpar(fontface="bold", fontsize=16))
-  plot_bucket_summary_data(bucketSummaryData, sigBucketTopN, title)
+  plot_bucket_summary_data(bucketSummaryData, sigBucketTopN, title, maxRowsPerPage)
 
   sigColours = get_sig_colours(sigCount)
 
@@ -99,13 +112,17 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
   bucketSummaryPlot = get_bucket_summary_plot(bucketSummaryData, runType)
   grid.arrange(bucketSummaryPlot, ncol = 1, nrow = 1, newpage = TRUE)
 
-  title = textGrob("Signature-Bucket Stats", gp=gpar(fontface="bold", fontsize=16)) #  & Least Important Buckets
-  grid.arrange(tableGrob(sigBucketStats, rows=NULL),
-               # tableGrob(leastContribBuckets, rows = NULL),
-               widths = c(2, 1), ncol = 2, newpage = TRUE, top=title)
+  title = textGrob("Signature-Bucket Stats", gp=gpar(fontface="bold", fontsize=16))
+  pagesReqd = ceil(nrow(sigBucketStats)/maxRowsPerPage)
+  for(i in 1:pagesReqd)
+  {
+    rowStart = (i-1)*maxRowsPerPage + 1
+    rowEnd = min(rowStart+maxRowsPerPage-1,nrow(sigBucketStats))
+    grid.arrange(tableGrob(sigBucketStats[rowStart:rowEnd,], rows=NULL), ncol=1, newpage = TRUE, top=title)
+  }
 
   # 2. Default signature-bucket plot
-  sigBucketsPlots = get_bucket_signatures_plot(bucketNames, signatures, sigNames)
+  sigBucketsPlots = get_bucket_signatures_plot(bucketNames, signatures, sigNamesNamed)
   for(i in 1:length(sigBucketsPlots))
   {
     grid.arrange(sigBucketsPlots[[i]], ncol=1, nrow=1, newpage = TRUE)
@@ -116,13 +133,19 @@ evaluate_nmf_data<-function(runType, runId, sigCount, signatures, contribution, 
 
   # 4. Signature data
   title = textGrob("Signature Stats", gp=gpar(fontface="bold", fontsize=16))
-  grid.arrange(tableGrob(sigStats, rows = NULL), ncol = 1, nrow = 1, top=title, newpage = TRUE)
+  pagesReqd = ceil(nrow(sigStats)/maxRowsPerPage)
+  for(i in 1:pagesReqd)
+  {
+    rowStart = (i-1)*maxRowsPerPage + 1
+    rowEnd = min(rowStart+maxRowsPerPage-1,nrow(sigStats))
+    grid.arrange(tableGrob(sigStats[rowStart:rowEnd,], rows = NULL), ncol=1, nrow=1, top=title, newpage = TRUE)
+  }
 
   # 5. Relative Signature contributions by Cancer Type
   plot_cancer_sigs(sampleSigDataNoRes, sigColours, runType)
 
   # 6. Top 50 samples by signature, but include all other signatures as well
-  plot_top_n_samples_by_sig(sampleSigDataNoRes, sigNames, 50, sigColours, runType)
+  plot_top_n_samples_by_sig(sampleSigDataNoRes, sigNamesNamed, 50, sigColours, runType)
 
   # 7. Sigs with Samples by cancer type
   plot_sig_samples(sampleSigData, "", sigColoursPlusRes, runType) # all samples

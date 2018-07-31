@@ -1,5 +1,4 @@
 library(purple);
-library(RMySQL)
 library(data.table)
 library(IRanges)
 library(dplyr)
@@ -130,7 +129,7 @@ cnLohData$SameSV = cnLohData$StartSV>0 & cnLohData$EndSV==cnLohData$StartSV
 
 nrow(cnLohData %>% filter(SegStart=="CENTROMERE"|SegEnd=="CENTROMERE"|SegEnd=="TELOMERE"|SegEnd=="TELOMERE"))
 
-cnLohStatsMinusTandC = (cnLohData %>% filter(SegStart!="CENTROMERE"&SegEnd!="CENTROMERE"&SegEnd!="TELOMERE"&SegEnd!="TELOMERE") 
+cnLohStatsMinusTandC = (cnLohData %>% filter(SegStart!="CENTROMERE"&SegEnd!="CENTROMERE"&SegEnd!="TELOMERE"&SegEnd!="TELOMERE")
                         %>%  group_by(NoneMatched,BothMatched,SameSV)
                         %>% summarise(Count=n())
                         %>% arrange(NoneMatched,BothMatched,SameSV))
@@ -311,20 +310,7 @@ dbLenBucketed = (dbLengths %>% group_by(LengthBucket)
 View(dbLenBucketed)
 
 
-dbLenPlot = (ggplot(data = dbLenBucketed, aes(x = LengthBucket))
-                      + geom_line(aes(y=Count, colour='LengthBucket'))
-                      + scale_x_log10()
-                      # + facet_wrap(as.formula(paste("~", facetWrap)))
-                      + ylab("DB Count") + labs(title = "Deletion Bridge Lengths")
-)
-
-print(dbLenPlotdbLenPlot = (ggplot(data = dbLenBucketed, aes(x=LengthBucket, y=Count), fill=LengthBucket)
-                + geom_bar(stat = "identity", colour = "black", size=2)
-                + ylab("Count") + xlab("DB Length")
-                + theme(legend.position="none"))
-
-print(dbLenPlot)
-
+View(cnArmData)
 
 # by chromosomal arm
 cnChrArmFlipStats = (cnArmData %>% group_by(Chromosome,Arm,FlipCountBucket)
@@ -363,6 +349,8 @@ topNCount = 200
 topNSamples = head(cnArmData %>% arrange(-FlipCount), topNCount)
 View(topNSamples)
 
+print(10 + 4)
+
 
 # Chromothripsis Criteria
 # FlipCount >= 10
@@ -372,7 +360,11 @@ View(topNSamples)
 # some presence of DBs
 # start CN and max CN? not critical since may be other events, although max CN > 8 may be suspicious
 # ratio of INVs, DUPs and DELs
-ctSamples = cnArmData %>% filter(FlipCount >= 6&FlipPercent >= 0.25)
+ctSamples = cnArmData %>% filter(FlipCount >= 10&FlipPercent >= 0.25)
+
+View(ctSamples %>% group_by(SampleId) %>% count())
+
+
 # nrow(cnArmData)
 nrow(ctSamples)
 View(ctSamples)
