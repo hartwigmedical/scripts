@@ -39,7 +39,7 @@ query_sbp_api \
         then
             echo "${downloadScript} ${setName}"
         else
-            echo "# No action for ${setName}: already exists"
+            echo "# No action for ${setName}: already exists on datastore"
         fi
     done | sort -r | uniq
 
