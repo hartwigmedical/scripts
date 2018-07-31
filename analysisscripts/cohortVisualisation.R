@@ -49,10 +49,9 @@ doubleSubstitutionColours = setNames(doubleSubstitutionColours, doubleSubstituti
 indelColours = c("#e41a1c","#377eb8","#4daf4a","#984ea3","#ff7f00")
 indelColours = setNames(indelColours, c("INS-repeat","INS-other","DEL-repeat", "DEL-other", "DEL-MH"))
 
-svTypes = c("DUP","DEL","BND","INS","INV")
+svTypes = c("DUP","DEL","TRL","INS","INV")
 svColours = c("#33a02c","#e31a1c","#1f78b4","#ffff33","#060809","#984ea3")
 svColours = setNames(svColours, svTypes)
-
 
 #################### PREPARE DATA #################### 
 agePlotData = highestPurityCohortSummary %>% 
@@ -70,13 +69,13 @@ cancerTypeData = highestPurityCohortSummary %>%
   filter(cancerType != "Other")
 
 hmfMutationalLoad = highestPurityCohortSummary %>% 
-  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNV"), ends_with("MNV"), BND, DEL, INS, INV, DUP) %>%
+  select(sampleId, cancerType, ends_with("INDEL"), ends_with("SNV"), ends_with("MNV"), TRL, DEL, INS, INV, DUP) %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   mutate(
     INDEL = TOTAL_INDEL,
     MNV = TOTAL_MNV,
     SNV = TOTAL_SNV,
-    SV = BND + DEL + INS + INV + DUP) 
+    SV = TRL + DEL + INS + INV + DUP) 
 
 pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
 pcawg_histology_tier2 = sort(unique(pcawgRaw$histology_tier2))
@@ -165,8 +164,8 @@ hpcINDEL = allIndelSummary %>%
   filter(cancerType != "Other")
 hpcINDEL$sampleId = factor(hpcINDEL$sampleId, levels = unique(hpcINDEL$sampleId))      
                        
-hpcSV = highestPurityCohortSummary %>% select(sampleId, cancerType, BND, DEL, DUP, INS, INV) %>%
-  gather(type, n, BND, DEL, DUP, INS, INV) %>%
+hpcSV = highestPurityCohortSummary %>% select(sampleId, cancerType, TRL, DEL, DUP, INS, INV) %>%
+  gather(type, n, TRL, DEL, DUP, INS, INV) %>%
   group_by(sampleId, cancerType, type) %>%
   summarise(n = sum(n)) %>%
   group_by(sampleId) %>%
@@ -301,7 +300,6 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   facet_grid(~cancerType, scales = "free_x") + 
   guides(fill = guide_legend(nrow = 1)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
-
 
 pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 #pFigure1

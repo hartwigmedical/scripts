@@ -128,6 +128,7 @@ allSomaticsSummary = rbind(somatics_summary_p1, somatics_summary_p2)
 save(allSomaticsSummary, file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 
 allStructuralVariantSummary = query_structural_variant_summary(dbProd, allPurity)
+allStructuralVariantSummary = allStructuralVariantSummary %>% mutate(TRL = BND) %>% select(-BND)
 save(allStructuralVariantSummary, file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 
 allWgd = purple::query_whole_genome_duplication(dbProd, allPurity)
@@ -177,8 +178,6 @@ load(file = "~/hmf/RData/reference/allSampleData.RData")
 load(file = "~/hmf/RData/reference/allSomaticsSummary.RData")
 load(file = "~/hmf/RData/reference/allStructuralVariantSummary.RData")
 load(file = "~/hmf/RData/reference/allMetrics.RData")
-
-allStructuralVariantSummary = allStructuralVariantSummary %>% mutate(TRL = BND) %>% select(-BND)
 
 clinicalSummary = allClinicalData %>% select(sampleId, primaryTumorLocation, cancerSubtype, biopsyDate, biopsySite, biopsyType, biopsyLocation, birthYear) %>%
   mutate(ageAtBiopsy = as.numeric(substr(biopsyDate, 1, 4)) - birthYear) %>% select(-birthYear, -biopsyDate)
@@ -309,7 +308,7 @@ highestPurityCohortSummary = highestPurityCohort %>%
   left_join(allMetrics %>% select(sampleId, refMeanCoverage, tumorMeanCoverage), by = "sampleId")
 
 save(highestPurityCohortSummary, file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")  
-write.csv(highestPurityCohortSummary, file = "~/hmf/RData/HighestPurityCohortSummary.csv", row.names = F) 
+#write.csv(highestPurityCohortSummary, file = "~/hmf/RData/HighestPurityCohortSummary.csv", row.names = F) 
 
 
 ############## MULTIPLE BIOPSY COHORT
