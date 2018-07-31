@@ -14,6 +14,8 @@
 
 
 # 12. cohortVisualisation.R
+# 13. supplementaryVisualisation.R
+# 13. actionableVisualation.R
 # 13. copyNumberOverview.R
 # 15. driversByGeneHeatmap.R
 
