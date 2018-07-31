@@ -15,7 +15,6 @@
 
 # 12. cohortVisualisation.R
 # 13. copyNumberOverview.R
-# 14. driversByGeneVisualisation.R
 # 15. driversByGeneHeatmap.R
 
 detach("package:purple", unload=TRUE)
