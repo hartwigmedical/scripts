@@ -23,7 +23,6 @@ create_empty_sv_signature<-function() {
 }
 
 sv_overlaps <- function(query, subject, maxgap = -1) {
-
   require(tidyr)
   require(dplyr)
   require(GenomicRanges)
