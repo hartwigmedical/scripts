@@ -9,9 +9,9 @@ gridss.min_normal_depth = 8
 gridss.max_homology_length = 50
 gridss.max_allowable_short_event_strand_bias = 0.95
 gridss.single_breakend_multiplier = 2 # Require this much more support for single breakends
-gridss.min_af = 0.025
+gridss.min_af = 0.01
 # How much better a single breakend call has to be for
 # associated breakpoints to be considered shadow calls
 gridss.shadow_breakend_multiple = 3
 # final output filters
-gridss.min_qual = 500
+gridss.min_qual = 350

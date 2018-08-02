@@ -11,7 +11,7 @@ library(tidyverse)
 library(Biostrings)
 dbExisting = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
 #dbNew = dbConnect(MySQL(), dbname = "hmfpatients_pilot")
-dbNew = dbConnect(MySQL(), dbname = "hmfpatients_gridss", host="localhost", port=3306, username="test", password="test")
+dbNew = dbConnect(MySQL(), dbname = "gridss_test", host="localhost", port=3306, username="test", password="test")
 theme_set(theme_bw())
 ```
 Match records

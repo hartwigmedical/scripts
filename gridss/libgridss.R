@@ -20,7 +20,7 @@ gridss_overlaps_breakpoint_pon = function(gr,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    hasHit[findBreakpointOverlaps(gr, pongr, ...)$queryHits] = TRUE
+    hasHit[findBreakpointOverlaps(gr, pongr, sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
   }
   return(hasHit)
 }

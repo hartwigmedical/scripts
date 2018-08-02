@@ -51,7 +51,7 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
 
   minimal_bpgr = bpgr
   mcols(minimal_bpgr) = NULL
-  minimal_bpgr$vcf = sampleId
+  minimal_bpgr$vcf = rep(sampleId, length(bpgr))
   minimal_bpgr$IMPRECISE = info(full_vcf[names(minimal_bpgr)])$IMPRECISE
   names(minimal_bpgr) = paste(minimal_bpgr$vcf, names(minimal_bpgr), sep="_")
   minimal_bpgr$partner = paste(minimal_bpgr$vcf, bpgr$partner, sep="_")
