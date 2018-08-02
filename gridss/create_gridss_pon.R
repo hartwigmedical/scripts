@@ -7,6 +7,9 @@ library(stringr)
 library(rtracklayer)
 library(R.cache)
 source("libgridss.R")
+
+min_pon_normal_qual = 150
+
 usage = "Usage: Rscript create_gridss_pon.R <pon directory> <input VCFs>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "create_gridss_pon")) {
@@ -43,8 +46,8 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
   bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
   begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 
-  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > gridss.min_qual / 2 | geno(full_vcf[bpgr$partner])$QUAL[,1] > gridss.min_qual / 2]
-  begr = begr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > gridss.min_qual * gridss.single_breakend_multiplier / 2]
+  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > min_pon_normal_qual | geno(full_vcf[bpgr$partner])$QUAL[,1] > min_pon_normal_qual]
+  begr = begr[geno(full_vcf[begr$vcfId])$BQ[,1] > min_pon_normal_qual * gridss.single_breakend_multiplier]
 
   minimal_bpgr = bpgr
   mcols(minimal_bpgr) = NULL
@@ -55,7 +58,7 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
 
   minimal_begr = begr
   mcols(minimal_begr) = NULL
-  minimal_begr$vcf = sampleId
+  minimal_begr$vcf = rep(sampleId, length(begr))
   minimal_begr$IMPRECISE = info(full_vcf[names(minimal_begr)])$IMPRECISE
   names(minimal_begr) = NULL
   write(paste("End load", vcf_file), stderr())
