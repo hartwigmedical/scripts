@@ -33,8 +33,8 @@ full_vcf = readVcf(input_vcf, "hg19")
 full_vcf = full_vcf[geno(full_vcf)$QUAL[,1] < gridss.min_qual]
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
-bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf, pon_dir=pon_dir)
-befiltered = gridss_breakend_filter(begr, full_vcf, pon_dir=pon_dir)
+bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf)
+befiltered = gridss_breakend_filter(begr, full_vcf)
 bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
 
 #bpfiltered = .addFilter(bpfiltered, "LOW_Qual", bpgr$QUAL < gridss.min_qual)
@@ -58,6 +58,8 @@ info(vcf)$BPI_AF = rep("", length(vcf))
 info(vcf[names(bpgr)])$BPI_AF = bpgr$af_str
 info(vcf[names(begr)])$BPI_AF = begr$af_str
 VariantAnnotation::fixed(vcf)$FILTER = "PASS"
+VariantAnnotation::fixed(vcf[names(bpgr)][gridss_overlaps_breakpoint_pon(bpgr, pon_dir=pon_dir)])$FILTER = "PON"
+VariantAnnotation::fixed(vcf[names(begr)][gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)])$FILTER = "PON"
 
 # Assembly-based event linking
 asm_linked_df = linked_assemblies(vcf)

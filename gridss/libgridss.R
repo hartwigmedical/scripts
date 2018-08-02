@@ -14,13 +14,32 @@ source("gridss.config.R")
   existing[appliesTo] = paste(existing[appliesTo], filterName, sep=";")
   return(existing)
 }
+gridss_overlaps_breakpoint_pon = function(gr,
+    pon_dir=NULL,
+    pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
+    ...) {
+  hasHit = rep(FALSE, length(gr))
+  if (!is.null(pongr)) {
+    hasHit[findBreakpointOverlaps(gr, pongr, ...)$queryHits] = TRUE
+  }
+  return(hasHit)
+}
+gridss_overlaps_breakend_pon = function(gr,
+                                        pon_dir=NULL,
+                                        pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/")),
+                                        ...) {
+  hasHit = rep(FALSE, length(gr))
+  if (!is.null(pongr)) {
+    hasHit[queryHits(findOverlaps(gr, pongr, ...))] = TRUE
+  }
+  return(hasHit)
+}
+
 #' For each GRanges breakend, indicates whether the variant
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2,
-                                    pon_dir=NULL,
-                                    pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"))) {
+gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -28,9 +47,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
 	ihomlen[is.na(ihomlen)] = 0
 	filtered = rep("", length(gr))
-	if (!is.null(pongr)) {
-	  filtered = .addFilter(filtered, "pon", findBreakpointOverlaps(gr, pongr)$queryHits)
-	}
+
 	if (support_quality_filters) {
 	  # TODO: update this to a binomial test so we don't filter low confidence
 	  # variants that are strand biased by chance
@@ -65,16 +82,11 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2,
-                                  pon_dir=NULL,
-                                  pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"))) {
+gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
   vcf = vcf[names(gr)]
   i = info(vcf)
   g = geno(vcf)
   filtered = rep("", length(gr))
-  if (!is.null(pongr)) {
-    filtered = .addFilter(filtered, "pon", queryHits(findOverlaps(gr, pongr)))
-  }
   if (min_support_filters) {
     filtered = .addFilter(filtered, "af", gridss_somatic_be_af(gr, vcf) < gridss.min_af)
     filtered = .addFilter(filtered, "imprecise", i$IMPRECISE)
