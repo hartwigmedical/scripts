@@ -40,40 +40,39 @@ combined_signature <- function(GT1, GT2, MT1, MT2) {
 
 combined_scope <- function(GT1, GT2, MT1, MT2) {
   result = list()
+
+  GT1 = GT1 %>% mutate(GT1 = "GT1", GT2 = NA, MT1 = NA, MT2 = NA, GT1ClusterCount = ClusterCount, GT2ClusterCount = NA, MT1ClusterCount = NA, MT2ClusterCount = NA)
+  GT2 = GT2 %>% mutate(GT1 = NA, GT2 = "GT2", MT1 = NA, MT2 = NA, GT1ClusterCount = NA, GT2ClusterCount = ClusterCount, MT1ClusterCount = NA, MT2ClusterCount = NA)
+  MT1 = MT1 %>% mutate(GT1 = NA, GT2 = NA, MT1 = "MT1", MT2 = NA, GT1ClusterCount = NA, GT2ClusterCount = NA, MT1ClusterCount = ClusterCount, MT2ClusterCount = NA)
+  MT2 = MT2 %>% mutate(GT1 = NA, GT2 = NA, MT1 = NA, MT2 = "MT2", GT1ClusterCount = NA, GT2ClusterCount = NA, MT1ClusterCount = NA, MT2ClusterCount = ClusterCount)
   
-  GT1 = GT1 %>% mutate(GT1 = "GT1", GT2 = NA, MT1 = NA, MT2 = NA)
-  GT2 = GT2 %>% mutate(GT1 = NA, GT2 = "GT2", MT1 = NA, MT2 = NA)
-  MT1 = MT1 %>% mutate(GT1 = NA, GT2 = NA, MT1 = "MT1", MT2 = NA)
-  MT2 = MT2 %>% mutate(GT1 = NA, GT2 = NA, MT1 = NA, MT2 = "MT2")
-  
-  GT1_GT2 = sv_overlaps(GT1, GT2, maxgap = 100)
-  GT1[GT1_GT2$queryHits, "GT2"] <- "GT2"
-  GT2[GT1_GT2$subjectHits, "GT1"] <- "GT1"
-  
-  GT1_MT1 = sv_overlaps(GT1, MT1, maxgap = 100)
-  GT1[GT1_MT1$queryHits, "MT1"] <- "MT1"
-  MT1[GT1_MT1$subjectHits, "GT1"] <- "GT1"
-  
-  GT1_MT2 = sv_overlaps(GT1, MT2, maxgap = 100)
-  GT1[GT1_MT2$queryHits, "MT2"] <- "MT2"
-  MT2[GT1_MT2$subjectHits, "GT1"] <- "GT1"
-  
-  GT2_MT1 = sv_overlaps(GT2, MT1, maxgap = 100)
-  GT2[GT2_MT1$queryHits, "MT1"] <- "MT1"
-  MT1[GT2_MT1$subjectHits, "GT2"] <- "GT2"
-  
-  GT2_MT2 = sv_overlaps(GT2, MT2, maxgap = 100)
-  GT2[GT2_MT2$queryHits, "MT2"] <- "MT2"
-  MT2[GT2_MT2$subjectHits, "GT2"] <- "GT2"
-  
-  MT1_MT2 = sv_overlaps(MT1, MT2, maxgap = 100)
-  MT1[MT1_MT2$queryHits, "MT2"] <- "MT2"
-  MT2[MT1_MT2$subjectHits, "MT1"] <- "MT1"
-  
+  scope = append_scope("GT1", "GT2", GT1, GT2); GT1 = scope[["S1"]]; GT2 = scope[["S2"]]
+  scope = append_scope("GT1", "MT1", GT1, MT1); GT1 = scope[["S1"]]; MT1 = scope[["S2"]]
+  scope = append_scope("GT1", "MT2", GT1, MT2); GT1 = scope[["S1"]]; MT2 = scope[["S2"]]
+  scope = append_scope("GT2", "MT1", GT2, MT1); GT2 = scope[["S1"]]; MT1 = scope[["S2"]]
+  scope = append_scope("GT2", "MT2", GT2, MT2); GT2 = scope[["S1"]]; MT2 = scope[["S2"]]
+  scope = append_scope("MT1", "MT2", MT1, MT2); MT1 = scope[["S1"]]; MT2 = scope[["S2"]]
+
   result[["GT1"]] <- GT1
   result[["GT2"]] <- GT2
   result[["MT1"]] <- MT1
   result[["MT2"]] <- MT2
+  
+  return (result)
+}
+
+append_scope <- function(sample1Name, sample2Name, S1, S2) {
+  S1_S2 = sv_overlaps(S1, S2, maxgap = 100)
+  
+  S1[S1_S2$queryHits, sample2Name] <- sample2Name
+  S1[S1_S2$queryHits, paste0(sample2Name, "ClusterCount")] <- S2[S1_S2$subjectHits, "ClusterCount"]
+  
+  S2[S1_S2$subjectHits, sample1Name] <- sample1Name
+  S2[S1_S2$subjectHits, paste0(sample1Name, "ClusterCount")] <- S1[S1_S2$queryHits, "ClusterCount"]
+  
+  result = list()
+  result[["S1"]] <- S1
+  result[["S2"]] <- S2
   
   return (result)
 }
@@ -102,13 +101,12 @@ gridssCohort = gridssCohortVariants %>%
   group_by(patientId) %>% 
   filter(n() > 1)
 
-### RUN THIS TO SAVE LOTS OF LOADING TIME
-#prodVariants = read.csv('/Users/jon/hmf/gridss/clustering/CLUSTER_V24.csv', header = T, stringsAsFactors = F)
-#prodVariants = prodVariants %>% filter(sampleId %in% gridssCohort$sampleId)
-#write.csv(prodVariants, file = '/Users/jon/hmf/gridss/clustering/CLUSTER_V24_COMPACT.csv')
-
-prodCohortVariants = old_column_names(read.csv('/Users/jon/hmf/gridss/clustering/CLUSTER_V24_COMPACT.csv', header = T, stringsAsFactors = F)) %>% 
+prodCohortVariants = old_column_names(read.csv('/Users/jon/hmf/gridss/clustering/CLUSTER_V23.csv', header = T, stringsAsFactors = F)) %>% 
   filter(sampleId %in% gridssCohort$sampleId)
+#save(prodCohortVariants, file = "/Users/jon/hmf/gridss/RData/mantaVariants.RData")
+#load(file = "/Users/jon/hmf/gridss/RData/mantaVariants.RData")
+#prodCohortVariants = old_column_names(read.csv('/Users/jon/hmf/gridss/clustering/CLUSTER_V24_COMPACT.csv', header = T, stringsAsFactors = F)) %>% 
+#  filter(sampleId %in% gridssCohort$sampleId)
 prodCohort = prodCohortVariants %>% 
   select(sampleId) %>% 
   distinct() %>% 
@@ -126,8 +124,12 @@ cohort = inner_join(gridssCohort, prodCohort, by = c("patientId", "sampleId")) %
 rm(gridssCohort, prodCohort)
 
 ######## START PROCESSING SINGLE PATIENT
+annotatedGT1 = data.frame(stringsAsFactors = F)
+annotatedGT2 = data.frame(stringsAsFactors = F)
+annotatedMT1 = data.frame(stringsAsFactors = F)
+annotatedMT2 = data.frame(stringsAsFactors = F)
 
-for (i in 1:1) {
+for (i in 1:nrow(cohort)) {
   patient = cohort[i, ]
   GT1 = gridssCohortVariants %>% filter(sampleId == patient$Sample1)
   GT2 = gridssCohortVariants %>% filter(sampleId == patient$Sample2)
@@ -135,8 +137,22 @@ for (i in 1:1) {
   MT2 = prodCohortVariants %>% filter(sampleId == patient$Sample2)
   
   combinedScope = combined_scope(GT1, GT2, MT1, MT2)
-  signature = combined_signature(combinedScope[["GT1"]], combinedScope[["GT2"]], combinedScope[["MT1"]], combinedScope[["MT1"]])
-  plot_sv_signature(signature) + ggtitle(patient$patientId)
+  GT1 = combinedScope[["GT1"]]
+  GT2 = combinedScope[["GT2"]]
+  MT1 = combinedScope[["MT1"]]
+  MT2 = combinedScope[["MT2"]]
+  
+  #signature = combined_signature(GT1, GT2, MT1, MT2)
+  #sigPlot = plot_sv_signature(signature) + ggtitle(patient$patientId)
+  #save_plot(paste0("/Users/jon/hmf/gridss/vsManta/", patient$patientId, ".png"), sigPlot, base_width = 18, base_height = 6)
+  
+  annotatedGT1 = bind_rows(GT1, annotatedGT1)
+  annotatedGT2 = bind_rows(GT2, annotatedGT2)
+  annotatedMT1 = bind_rows(MT1, annotatedMT1)
+  annotatedMT2 = bind_rows(MT2, annotatedMT2)
+  
 }
 
+
+save(annotatedGT1, annotatedGT2, annotatedMT1, annotatedMT2, file = "/Users/jon/hmf/gridss/RData/annotatedVariants.RData")
 
