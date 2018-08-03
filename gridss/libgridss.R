@@ -280,7 +280,7 @@ transitive_of = function(gr, max_traversal_length, max_positional_error, ...) {
 #' Highly connected breakpoint sets are O(e^max_depth)
 #' @param group_by_col_name column name to separate GRanges by.
 #' The default of sampleId causes each sample to calculated independently
-transitive_paths = function(gr, max_traversal_length, max_positional_error, max_depth=4, group_by_col_name="sampleId") {
+transitive_paths = function(gr, max_traversal_length, max_positional_error, max_depth=5, group_by_col_name="sampleId") {
 	gr$ordinal = seq(length(gr))
 	hits = as.data.frame(findOverlaps(gr, gr, maxgap=max_traversal_length, ignore.strand=TRUE))
 	hits = hits %>% filter(hits$subjectHits != hits$queryHits)
@@ -416,9 +416,20 @@ linked_asm <- function(vcf) {
 #' @param min_segment_length minimum length of traversed sequence. Aligners typically cannot align less than around 20 bases.
 #' @param allow_loops allow breakpoints to be traversed multiple times
 #' @param max_hops maximum number of breakends to traverse
-#' @param report When report is "shortest", only the shortest transitive breakpoint chain is reported.
+#' @param report When report is "shortest", only the shortest transitive breakpoint chain is reported,
+#' "all" reports all chains,
+#' and "max2" reports the two chains with the least number of hops
 #' @return id of the
-transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_length=0, transitive_call_slop=100, allow_loops=FALSE, max_hops=8, report=c("shortest", "all")) {
+transitive_breakpoints <- function(
+    gr,
+    find_transitive_for=rep(TRUE, length(gr)),
+    can_traverse_through=rep(TRUE, length(gr)),
+    max_traversed_length=1000,
+    min_segment_length=0,
+    transitive_call_slop=100,
+    allow_loops=FALSE,
+    max_hops=5,
+    report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
   partner_lookup = ordinal_lookup[gr$partner]
@@ -433,7 +444,13 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
       source_to=queryHits,
       dest_from=subjectHits,
       dest_to=partner_lookup[subjectHits]) %>%
-    dplyr::select(-queryHits, -subjectHits)
+    dplyr::select(-queryHits, -subjectHits) %>%
+    filter(
+      can_traverse_through[source_from] &
+      can_traverse_through[source_to] &
+      can_traverse_through[dest_from] &
+      can_traverse_through[dest_to])
+
   terminal_df = .adjacent_breakends(gr, gr, maxgap=transitive_call_slop, allowed_orientation=c("--", "++")) %>%
     filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
     # [min_traversed, max_traversed] overlaps [-transitive_call_slop, transitive_call_slop]
@@ -449,7 +466,8 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
       bp_path=names(gr)[subjectHits],
       min_length=min_traversed + gr$insLen[subjectHits],
       max_length=max_traversed + gr$insLen[subjectHits]) %>%
-    dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length)
+    dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
+    filter(find_transitive_for[terminal_start])
   i = 0
   while (nrow(active_df) > 0 & i < max_hops) {
     # continue traversing
@@ -478,10 +496,24 @@ transitive_breakpoints <- function(gr, max_traversed_length=1000, min_segment_le
       active_df = active_df %>% filter(is.na(min_traversed))
       best_min = result_df
     }
+    if (report == "max2") {
+      found2 = result_df %>%
+        group_by(terminal_start) %>%
+        summarise(n=n()) %>%
+        filter(n >= 2) %>%
+        pull(terminal_start)
+      active_df = active_df %>% filter(!(terminal_start %in% found2))
+    }
     i = i + 1
   }
   if (report == "shortest") {
     # Just the shortest result for each transitive call
+    result_df = result_df %>%
+      group_by(transitive) %>%
+      top_n(1, min_length) %>%
+      ungroup()
+  }
+  if (report == "max2") {
     result_df = result_df %>%
       group_by(transitive) %>%
       top_n(1, min_length) %>%
@@ -551,27 +583,28 @@ readVcf = function(file, ...) {
   VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
   # Work-around for https://github.com/PapenfussLab/gridss/issues/156
   # since we don't have all the info, we'll just pro-rata
+  is.nanan = function(x) is.na(x) | is.nan(x)
   bp_pro_rata = (geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP) / rowSums(geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP)
   be_pro_rata = (geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP) / rowSums(geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP)
-  bp_pro_rata[is.nan(bp_pro_rata)] = 0
-  be_pro_rata[is.nan(be_pro_rata)] = 0
-  geno(raw_vcf)$ASQ[is.na(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.na(geno(raw_vcf)$ASQ)]
-  geno(raw_vcf)$RASQ[is.na(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.na(geno(raw_vcf)$RASQ)]
-  geno(raw_vcf)$CASQ[is.na(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.na(geno(raw_vcf)$CASQ)]
-  geno(raw_vcf)$BASQ[is.na(geno(raw_vcf)$BASQ)] = (info(raw_vcf)$BASQ * be_pro_rata)[is.na(geno(raw_vcf)$BASQ)]
-  geno(raw_vcf)$QUAL[is.na(geno(raw_vcf)$QUAL)] = (
+  bp_pro_rata[is.nanan(bp_pro_rata)] = 0
+  be_pro_rata[is.nanan(be_pro_rata)] = 0
+  geno(raw_vcf)$ASQ[is.nanan(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$ASQ)]
+  geno(raw_vcf)$RASQ[is.nanan(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$RASQ)]
+  geno(raw_vcf)$CASQ[is.nanan(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$CASQ)]
+  geno(raw_vcf)$BAQ[is.nanan(geno(raw_vcf)$BAQ)] = (info(raw_vcf)$BAQ * be_pro_rata)[is.nanan(geno(raw_vcf)$BAQ)]
+  geno(raw_vcf)$QUAL[is.nanan(geno(raw_vcf)$QUAL)] = (
     geno(raw_vcf)$ASQ +
     geno(raw_vcf)$RASQ +
     geno(raw_vcf)$CASQ +
     geno(raw_vcf)$RPQ +
     geno(raw_vcf)$SRQ +
     geno(raw_vcf)$IQ
-  )[is.na(geno(raw_vcf)$QUAL)]
-  geno(raw_vcf)$BQ[is.na(geno(raw_vcf)$BQ)] = (
-    geno(raw_vcf)$BASQ +
+  )[is.nanan(geno(raw_vcf)$QUAL)]
+  geno(raw_vcf)$BQ[is.nanan(geno(raw_vcf)$BQ)] = (
+    geno(raw_vcf)$BAQ +
     geno(raw_vcf)$BUMQ +
     geno(raw_vcf)$BSCQ
-  )[is.na(geno(raw_vcf)$BQ)]
+  )[is.nanan(geno(raw_vcf)$BQ)]
   return(raw_vcf)
 }
 
@@ -617,32 +650,43 @@ linked_assemblies = function(vcf) {
   return (asm_linked_df)
 }
 transitive_calls = function(vcf, bpgr) {
+  is_imprecise = info(vcf[names(bpgr)])$IMPRECISE
+  is_imprecise[is.na(is_imprecise)] = FALSE
   # transitive calling reduction
-  transitive_df = transitive_breakpoints(bpgr, min_segment_length=20, report="all")
+  transitive_df = transitive_breakpoints(
+    # only find transitive paths for the imprecise calls
+    find_transitive_for=is_imprecise,
+    # only traverse through precise paths
+    # TODO: should we relax this criterion?
+    can_traverse_through=!is_imprecise,
+    bpgr,
+    min_segment_length=20,
+    report="all")
   transitive_df = transitive_df %>%
-    filter(info(vcf[transitive_df$transitive])$IMPRECISE) %>%
+    #filter(info(vcf[transitive_df$transitive])$IMPRECISE) %>%
     mutate(full_path=bp_path)
   if (nrow(transitive_df) != 0) {
     transitive_df = transitive_df %>%
       separate_rows(bp_path, sep=";") %>%
-      mutate(imprecise=info(vcf[bp_path])$IMPRECISE) %>%
+      #mutate(imprecise=info(vcf[bp_path])$IMPRECISE) %>%
       group_by(transitive, full_path) %>%
       summarise(
-        imprecise=sum(imprecise),
+        #imprecise=sum(imprecise),
         hops=n(),
         min_length=min(min_length),
         max_length=max(max_length)) %>%
       # for now we just link imprecise transitive events
       # via precise calls
-      filter(imprecise == 0) %>%
+      #filter(imprecise == 0) %>%
       group_by(transitive) %>%
+      mutate(has_multiple_paths=n() > 1) %>%
       top_n(1, min_length) %>%
       ungroup() %>%
-      dplyr::select(linked_by = transitive, vcfid = full_path) %>%
+      dplyr::select(linked_by = transitive, vcfid = full_path, has_multiple_paths) %>%
       separate_rows(vcfid, sep=";")
   } else {
     # work-around for https://github.com/tidyverse/tidyr/issues/470
-    transitive_df = data.frame(linked_by=character(), vcfid=character(), stringsAsFactors=FALSE)
+    transitive_df = data.frame(linked_by=character(), vcfid=character(), has_multiple_paths=logical(), stringsAsFactors=FALSE)
   }
 }
 #' @description Calculates a somatic score for the given variant.

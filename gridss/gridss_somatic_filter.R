@@ -68,7 +68,7 @@ transitive_df = transitive_calls(vcf, bpgr)
 link_df = asm_linked_df %>%
   inner_join(data.frame(vcfid=names(vcf), event=info(vcf)$EVENT), by="event") %>%
   dplyr::select(vcfid, linked_by) %>%
-  bind_rows(transitive_df) %>%
+  bind_rows(transitive_df %>% filter(!has_multiple_paths)) %>%
   group_by(vcfid) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 
