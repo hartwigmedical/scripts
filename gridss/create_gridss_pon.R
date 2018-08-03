@@ -8,8 +8,6 @@ library(rtracklayer)
 library(R.cache)
 source("libgridss.R")
 
-min_pon_normal_qual = 150
-
 usage = "Usage: Rscript create_gridss_pon.R <pon directory> <input VCFs>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "create_gridss_pon")) {
@@ -46,8 +44,8 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
   bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
   begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 
-  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > min_pon_normal_qual | geno(full_vcf[bpgr$partner])$QUAL[,1] > min_pon_normal_qual]
-  begr = begr[geno(full_vcf[begr$vcfId])$BQ[,1] > min_pon_normal_qual * gridss.single_breakend_multiplier]
+  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > gridss.pon.min_normal_qual | geno(full_vcf[bpgr$partner])$QUAL[,1] > gridss.pon.min_normal_qual]
+  begr = begr[geno(full_vcf[begr$vcfId])$BQ[,1] > gridss.pon.min_normal_qual * gridss.single_breakend_multiplier]
 
   minimal_bpgr = bpgr
   mcols(minimal_bpgr) = NULL
@@ -75,52 +73,47 @@ for (vcf_file in vcf_list) {
 
 bpdf = bind_rows(lapply(full_bp, function(x) {
   data.frame(
-    seqnames = seqnames(x),
+    seqnames = as.character(seqnames(x)),
     start = start(x),
     end = end(x),
-    strand = strand(x),
-    vcf = x$vcf,
+    strand = as.character(strand(x)),
     name = names(x),
+    score=1,
     partner = x$partner,
-    IMPRECISE = x$IMPRECISE
+    IMPRECISE = x$IMPRECISE,
+    stringsAsFactors=FALSE
   )})) %>%
   # preferentially call the precise call with the largest homology
   # name included purely to ensure stable sort order
   arrange(IMPRECISE, desc(end - start), name)
-bpgr = GRanges(
-  seqnames=bpdf$seqnames,
-  ranges=IRanges(
-    start=bpdf$start,
-    end=bpdf$end),
-  strand=bpdf$strand,
-  vcf=bpdf$vcf,
-  partner=bpdf$partner,
-  IMPRECISE = bpdf$IMPRECISE)
+bpgr = as(bpdf, "GRanges")
 names(bpgr) = bpdf$name
-# PON requires two or more hits
 hits = findBreakpointOverlaps(bpgr, bpgr) %>%
-  filter(queryHits < subjectHits) %>%
-  filter(bpdf$vcf[queryHits] != bpdf$vcf[subjectHits]) %>%
   group_by(queryHits) %>%
-  summarise(n=n()) %>%
-  filter(n >= 2)
-ponbp = bpgr[hits$queryHits]
-ponbp$hits = hits$n
-bedpe = data.frame(
-  chrom1=seqnames(ponbp),
-  start1=start(ponbp) - 1,
-  end1=end(ponbp),
-  chrom2=seqnames(partner(bpgr)[hits$queryHits]),
-  start2=start(partner(bpgr)[hits$queryHits]) - 1,
-  end2=end(partner(bpgr)[hits$queryHits]),
-  name=".",
-  score=".",
-  strand1=strand(ponbp),
-  strand2=strand(partner(bpgr)[hits$queryHits]),
-  IMPRECISE=ponbp$IMPRECISE,
-  hits=ponbp$hits
-) %>% filter(as.numeric(chrom1) < as.numeric(chrom2) | (chrom1 == chrom2 & start1 <= start2)) %>%
-  arrange(chrom1, start1, chrom2, start2)
+  summarise(n=n())
+bpdf$score[hits$queryHits] = hits$n
+bedpe = bpdf %>% mutate(
+    chrom1=seqnames,
+    start1=start,
+    end1=end,
+    chrom2=as.character(GenomeInfoDb::seqnames(partner(bpgr))),
+    start2=BiocGenerics::start(partner(bpgr)),
+    end2=BiocGenerics::end(partner(bpgr)),
+    score=score,
+    strand1=strand,
+    strand2=as.character(BiocGenerics::strand(partner(bpgr))),
+    IMPRECISE=IMPRECISE) %>%
+  mutate(
+    # switch from 1-based [ ] to BED 0-based [ ) indexing
+    start1=start1 - 1,
+    start2=start2 - 1) %>%
+  group_by(chrom1, start1, end1, strand1, IMPRECISE, chrom2, start2, end2, strand2) %>%
+  summarise(score=max(score)) %>%
+  filter(score >= gridss.pon.min_samples) %>%
+  filter(chrom1 < chrom2 | (chrom1 == chrom2 & start1 <= start2)) %>%
+  arrange(chrom1, start1, chrom2, start2) %>%
+  mutate(name=".") %>%
+  dplyr::select(chrom1, start1, end1, chrom2, start2, end2, name, score, strand1, strand2, IMPRECISE)
 write.table(bedpe, paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)
 
 
@@ -139,16 +132,18 @@ begr = GRanges(
   ranges=IRanges(
     start=bedf$start,
     end=bedf$end),
-  strand=bedf$strand,
-  vcf=bedf$vcf,
-  IMPRECISE = bedf$IMPRECISE)
-behits = findOverlaps(begr, begr) %>%
-  as.data.frame() %>%
-  filter(queryHits < subjectHits) %>%
-  filter(begr$vcf[queryHits] != begr$vcf[subjectHits]) %>%
-  group_by(queryHits) %>%
-  summarise(n=n()) %>%
-  filter(n >= 2)
-ponbe = begr[behits$queryHits]
-
+  strand=bedf$strand)
+bedf$score = countOverlaps(begr, begr)
+bedf = bedf %>%
+  group_by(seqnames, start, end, strand, IMPRECISE) %>%
+  summarise(score=max(score)) %>%
+  filter(score >= gridss.pon.min_samples)
+ponbe = GRanges(
+    seqnames=bedf$seqnames,
+    ranges=IRanges(
+      start=bedf$start,
+      end=bedf$end),
+    strand=bedf$strand,
+    score=bedf$score,
+    IMPRECISE=bedf$IMPRECISE)
 export(ponbe, con=paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"), format="bed")
