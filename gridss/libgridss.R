@@ -218,7 +218,7 @@ query_structural_variants_samples = function(dbConnect) {
 	return(df$sampleId)
 }
 simpleEventType <- function(gr) {
-  same_chr = as.logical(seqnames(gr) != seqnames(partner(gr)))
+  same_chr = as.character(seqnames(gr)) == as.character(seqnames(partner(gr)))
   insSeq = rep("", length(gr))
   if (!is.null(gr$insSeq)) {
     insSeq = gr$insSeq
