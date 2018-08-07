@@ -53,5 +53,5 @@ for sheet in $sheets; do
 	echo -e "# $experimentName\t$runName\tseq\t$currHostShort";
 
 	## print sample-id, sample_name, submission-id, description
-	cat $sheet | sed -e '1,/Lane,Sample_ID/d' | cut -d',' --output-delimiter " " -f2,3,8,9 | sort | uniq; 
+	cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f2,3,11,12 | sort | uniq
 done
