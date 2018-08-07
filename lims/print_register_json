@@ -123,7 +123,7 @@ sub addSamplesFromSamplesheet{
     open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$samplesheet_fh> ){
         chomp;
-        next if $_ eq '' or $_ =~ /^\,+$/;
+        next if $_ eq '' or $_ =~ /^[\,\s]+$/;
         if ( $_ =~ /^\[(Header|Reads|Settings|Data)\]/ ){
             $currblock = $1;
         }
