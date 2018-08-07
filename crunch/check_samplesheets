@@ -4,7 +4,8 @@ run=$1
 if [[ ! $run == "" ]]; then
     sheets=$run"/SampleSheet.csv"
 else
-    sheets="/data1/illumina_data/*/SampleSheet.csv"
+    #sheets="/data1/illumina_data/*/SampleSheet.csv"
+    sheets=$( find /data1/illumina_data/ -maxdepth 2 -mindepth 2 -name "SampleSheet.csv" | tr "\n" " " )
 fi
     
 for sheet in $sheets; do 
