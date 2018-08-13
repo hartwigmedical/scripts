@@ -18,7 +18,7 @@ my $DELIM = "\t";
 my $NA_CHAR = "NA";
 my $LIMS_JSON = '/data/lims/lims.json';
 my $PDF_DIR = '/data/cpct/final_reports';
-my @OUT_FIELDS = qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions );
+my @OUT_FIELDS = qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status );
 my @LAB_SAMPLE_DONE_STATUS = qw( finished failed storage );
 
 my $HELP =<<HELP;
