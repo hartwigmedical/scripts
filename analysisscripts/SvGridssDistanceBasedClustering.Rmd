@@ -1,0 +1,192 @@
+---
+title: "GRIDSS clustering"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+#library(purple)
+library(RMySQL)
+library(tidyverse)
+library(Biostrings)
+library(StructuralVariantAnnotation)
+library(testthat)
+tmpwd=getwd()
+setwd("../gridss/")
+source("libgridss.R")
+setwd(tmpwd)
+remove(tmpwd)
+source("libSvAnalyser.R")
+```
+
+Load clustering data from file and GRIDSS calls from DB
+```{r}
+svData = read.csv('../../cluster/CLUSTER_GRIDSS_v2.csv') %>%
+  mutate(source="proximity")
+```
+
+Load GRIDSS calls from DB
+
+```{r}
+dbgridss = dbConnect(MySQL(), dbname='gridss_test')
+cndf = query_all_copy_numer(dbgridss)
+cngr = to_cn_gr(cndf)
+svdf = query_somatic_structuralVariants(dbgridss)
+svgr = to_sv_gr(svdf)
+svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
+if (any(is.na(svgr$cnid))) {
+  bad_svid = svgr$id[is.na(svgr$cnid)]
+  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
+  svdf = svdf %>% filter(!(id %in% bad_svid))
+  svData = svData %>% filter(!(Id %in% bad_svid))
+  svgr = svgr[!(svgr$id %in% bad_svid)]
+}
+```
+
+
+Compare clustering to GRIDSS linkages
+```{r}
+gridss_links = gridss_sv_links(svdf)
+svdf$gridss_cluster = cluster_from_links(svdf, gridss_links)
+svdf = svdf %>% group_by(gridss_cluster) %>%
+  mutate(source="gridss") %>%
+  mutate(ClusterCount=n()) %>%
+  ungroup()
+
+gridss_clustered_sv_pairs = svdf %>% dplyr::select(sampleId, gridss_cluster, id) %>%
+  inner_join(
+    svdf %>% dplyr::select(sampleId, gridss_cluster, id),
+    by=c("sampleId"="sampleId", "gridss_cluster"="gridss_cluster"),
+    suffix=c("", "2")) %>%
+  filter(id != id2)
+proximity_clustered_sv_pairs = svData %>% dplyr::select(SampleId, ClusterId, Id) %>%
+  inner_join(
+    svData %>% dplyr::select(SampleId, ClusterId, Id),
+    by=c("SampleId"="SampleId", "ClusterId"="ClusterId"),
+    suffix=c("", "2")) %>%
+  filter(Id != Id2)
+
+gridss_unique_clustered_sv_pairs = anti_join(gridss_clustered_sv_pairs, proximity_clustered_sv_pairs,
+  by=c("id"="Id", "id2"="Id2"))
+
+svdf %>% dplyr::select(SampleId=sampleId, ClusterCount, source) %>%
+  bind_rows(svData %>% dplyr::select(SampleId, ClusterCount, source)) %>%
+ggplot() +
+  aes(x=ClusterCount) +
+  geom_histogram() +
+  facet_wrap(~ source) +
+  scale_y_log10() +
+  scale_x_log10() +
+  labs(title="Size of cluster", x="cluster size", y="SV count")
+
+svData = svData %>% mutate(missing_gridss_link=paste0(SampleId,"-", ClusterId) %in% (svData %>%
+  group_by(SampleId, ClusterId) %>%
+  summarise(has_missing = any(Id %in% gridss_unique_clustered_sv_pairs$id)) %>%
+  filter(has_missing) %>%
+  mutate(temp=paste0(SampleId, "-", ClusterId)) %>%
+  pull(temp)))
+
+data.frame(
+  gridss_unique_clustered_breakpoints=svdf %>% filter(!is.na(endChromosome)) %>% filter(id %in% gridss_unique_clustered_sv_pairs$id) %>% nrow(),
+  gridss_unique_clustered_breakends=svdf %>% filter(is.na(endChromosome)) %>% filter(id %in% gridss_unique_clustered_sv_pairs$id) %>% nrow(),
+  gridss_clusters=svdf %>% group_by(gridss_cluster) %>% summarise() %>% nrow(),
+  proxmity_clusters=svData %>% group_by(SampleId, ClusterId) %>% summarise() %>% nrow())
+
+
+```
+
+
+
+Visualise sample
+```{r}
+library(visNetwork)
+sample = "CPCT02010255T"
+segmentSupportShape = function(support) {
+  ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
+    ifelse(support == "BND", "square",
+      ifelse(support == "MULTIPLE", "circle",
+        "star")))
+}
+nodes = bind_rows(
+  # start
+  cndf %>% 
+    filter(sampleId == sample) %>%
+    mutate(
+      label=round(copyNumber, 1),
+      size=pmax(1, copyNumber),
+      id=paste0(id, "-"),
+      shape=segmentSupportShape(segmentStartSupport)),
+  # end
+  cndf %>%
+    filter(sampleId == sample) %>%
+    mutate(
+      size=copyNumber,
+      id=paste0(id, "+"),
+      shape=segmentSupportShape(segmentEndSupport))
+  ) %>% mutate(
+    color="lightblue")
+edges = bind_rows(
+  # internal segment edges
+  cndf %>%
+    filter(sampleId == sample) %>%
+    mutate(
+      from=paste0(paste0(id, "-")),
+      to=paste0(paste0(id, "+")),
+      color="lightblue",
+      width=copyNumber,
+      length=log10(end - start) + 1,
+      title=paste0(chromosome, ":", start, "-", end, " (", end - start, "bp)"),
+      smooth=FALSE
+      ) %>%
+    dplyr::select(from, to, color, width, length, title, smooth),
+  # Reference edges
+  cndf %>%
+    filter(sampleId == sample) %>%
+    group_by(sampleId, chromosome) %>%
+    arrange(start) %>%
+    mutate(nextid=lead(id)) %>%
+    ungroup() %>%
+    filter(!is.na(nextid)) %>%
+    mutate(color=ifelse(segmentEndSupport == "CENTROMERE", "lightgreen", "green"),
+      from=paste0(paste0(id, "+")),
+      to=paste0(paste0(nextid, "-")),
+      label=NA,
+      width=2,
+      length=NA,
+      title=NA,
+      smooth=FALSE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth),
+  #
+  svgr %>% as.data.frame() %>%
+    filter(sampleId == sample) %>%
+    group_by(sampleId, id) %>%
+    arrange(seqnames, start) %>%
+    mutate(
+      partner_orientation=lead(strand),
+      partner_cnid=lead(cnid)) %>%
+    ungroup() %>%
+    filter(!is.na(partner_cnid)) %>%
+    mutate(
+      color="red",
+      from=paste0(paste0(cnid, strand)),
+      to=paste0(paste0(partner_cnid, partner_orientation)),
+      label=round(ploidy, 1),
+      width=ploidy,
+      length=NA,
+      title=NA,
+      smooth=TRUE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth))
+
+rescaling = list(width=5, length=3, size=1)
+visNetwork(
+    nodes %>% mutate(size=size * rescaling$size),
+    edges %>% mutate(width=width * rescaling$width, length=length * rescaling$length),
+    height = "1000px", width = "100%") %>%
+  visLayout(randomSeed = 12)
+
+``
+
+
+
+

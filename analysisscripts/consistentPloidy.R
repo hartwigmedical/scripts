@@ -6,7 +6,9 @@ library(StructuralVariantAnnotation)
 library(testthat)
 
 dbConn = dbConnect(MySQL(), dbname = "hmfpatients", port=3307)
-currentSampleId = "CPCT02010382T"
+currentSampleId = "CPCT02140004T"
+#currentSampleId = "COLO829T"
+
 
 query_manta_structural_variants_as_GRanges <- function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
@@ -147,50 +149,6 @@ induced_edge_gr = function (cnv_gr, ...) {
   return( c(induced_gr_left, induced_gr_right))
 }
 
-#' 1-based ordinal of the given allele specific ploidy for the given subclone
-cnv_x_ordinal = function(cnv_gr, id, subclone_ordinal, total_subclones) {
-  name_ordinal = match(id, names(cnv_gr))
-  return(subclone_ordinal + (name_ordinal - 1) * total_subclones)
-}
-test_that("cnv_x_ordinal", {
-  test_cnv = c("a", "b", "c")
-  names(test_cnv) = test_cnv
-  expect_that(cnv_x_ordinal(test_cnv, "a", 1, 3), equals(1))
-  expect_that(cnv_x_ordinal(test_cnv, "a", 2, 3), equals(2))
-  expect_that(cnv_x_ordinal(test_cnv, "a", 3, 3), equals(3))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 1, 3), equals(4))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 2, 3), equals(5))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 3, 3), equals(6))
-  expect_that(cnv_x_ordinal(test_cnv, "c", 1, 3), equals(7))
-  expect_that(cnv_x_ordinal(test_cnv, "c", 2, 3), equals(8))
-})
-#' 1-based ordinal of the given allele specific ploidy for the given subclone
-sv_x_ordinal = function(cnv_gr, sv_gr, id, subclone_ordinal, total_subclones) {
-  snv_start_offset = total_subclones * length(cnv_gr)
-  name_ordinal = match(id, names(sv_gr))
-  return(snv_start_offset - 1 + subclone_ordinal + (name_ordinal - 1) * total_subclones)
-}
-
-test_that("x_ordinal", {
-  test_cnv = c("a", "b", "c")
-  names(test_cnv) = test_cnv
-  expect_that(cnv_x_ordinal(test_cnv, "a", 1, 3), equals(1))
-  expect_that(cnv_x_ordinal(test_cnv, "a", 2, 3), equals(2))
-  expect_that(cnv_x_ordinal(test_cnv, "a", 3, 3), equals(3))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 1, 3), equals(4))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 2, 3), equals(5))
-  expect_that(cnv_x_ordinal(test_cnv, "b", 3, 3), equals(6))
-  expect_that(cnv_x_ordinal(test_cnv, "c", 1, 3), equals(7))
-  expect_that(cnv_x_ordinal(test_cnv, "c", 2, 3), equals(8))
-  test_sv = c("aa", "bb", "cc", "dd")
-  names(test_sv) = test_sv
-  expect_that(sv_x_ordinal(test_cnv, test_sv, "aa", 1, 3), equals(9))
-  expect_that(sv_x_ordinal(test_cnv, test_sv, "aa", 2, 3), equals(10))
-  expect_that(sv_x_ordinal(test_cnv, test_sv, "aa", 3, 3), equals(11))
-  expect_that(sv_x_ordinal(test_cnv, test_sv, "bb", 1, 3), equals(12))
-  expect_that(sv_x_ordinal(test_cnv, test_sv, "bb", 2, 3), equals(13))
-})
-
 annotate_reference_fragment_count = function(induced_sv_gr, sv_gr) {
   as.data.frame(induced_sv_gr) %>% dplyr::select(strand, cnv_id) %>%
     left_join(as.data.frame(sv_gr) %>% dplyr::select(strand, cnv_id, tumourReferenceFragmentCount),
@@ -246,6 +204,43 @@ svdf = data.frame(
     stringsAsFactors = FALSE)
   )
 source("D:/dev/flowcnsv/libGurobi.R")
-writeLPmodel_for_fixed_purity(paste0(currentSampleId, ".model.lp"), cndf, svdf, subclonal_purity=c(0.1))
-
-
+library(gurobi)
+library(ggplot2)
+results = list()
+for (c1purity in seq(0, 1, 0.05)) {
+  if (is.null(results[[paste0("purity", c1purity)]])) {
+    model_filename = paste0(currentSampleId, ".model.lp")
+    writeLPmodel_for_fixed_purity(model_filename, cndf, svdf, subclonal_purity=c(c1purity))
+    model = gurobi_read(model_filename)
+    results[[paste0("purity", c1purity)]] = run_model(model_filename, params=list(TimeLimit=600))
+  }
+}
+resultdf = data.frame(
+  name=names(results),
+  purity=as.numeric(str_replace(names(results), "purity", "")),
+  objval=unlist(lapply(results, function(x) ifelse(is.null(x$objval), NA_real_, x$objval))),
+  cn_c1=unlist(lapply(results, function(x) ifelse(is.null(x$x), NA_real_, x$x[which(model$varnames == "avg_ploidy_c1")])))
+)
+ggplot(resultdf) + aes(x=purity, y=objval) + geom_point()
+resultdf %>% group_by(purity) %>% filter(!is.na(objval)) %>% do({
+  fit = results[[.$name]]
+  cndf %>% mutate(
+    c1_ploidy = fit$x[match(paste0("ploidy_seg", seg_id, "_c1_major"), model$varnames)]  +
+      fit$x[match(paste0("ploidy_seg", seg_id, "_c1_minor"), model$varnames)],
+    cn_delta = fit$x[match(paste0("cn_delta_seg_", seg_id), model$varnames)],
+    start=cumsum(as.numeric(length)) - length,
+    end=cumsum(as.numeric(length)))
+}) %>%
+  mutate(total_cn = 2 * (1 - purity) + purity * c1_ploidy) %>%
+  mutate(fit_depth = total_cn * sum(as.numeric(depth * length)) / sum(as.numeric(total_cn * length))) %>%
+  mutate(depth_delta = fit_depth - depth) %>%
+  mutate(purple_copy_number=cnv_gr$copyNumber) %>%
+ggplot() +
+  aes(x=start) +
+  geom_step(aes(y=purple_copy_number), colour="grey") +
+  geom_step(aes(y=c1_ploidy)) +
+  #geom_step(aes(y=cn_delta), colour="blue") +
+  #geom_step(aes(y=fit_depth), colour="red") +
+  #geom_step(aes(y=depth), colour="green") +
+  coord_cartesian(ylim=c(0, 5)) +
+  facet_wrap(~ purity, scales="free")
