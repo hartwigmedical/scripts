@@ -51,9 +51,9 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	if (support_quality_filters) {
 	  # TODO: update this to a binomial test so we don't filter low confidence
 	  # variants that are strand biased by chance
-	  # long variants we expect to be heavily strand biased as RP support (including via assembly)
-	  # is fully strand biased when originating from one side of a breakend
-	  filtered = .addFilter(filtered, "strand_bias", isShort & pmax(i$SB, 1 - i$SB) > gridss.max_allowable_short_event_strand_bias)
+	  # strand bias can be NA as it is calculated from SR/SC support only
+	  strandbias = pmax(i$SB, 1 - i$SB)
+	  filtered = .addFilter(filtered, "strand_bias", !is.na(strandbias) & isShort & strandbias > gridss.max_allowable_short_event_strand_bias)
 
 
 	  #filtered = .addFilter(filtered, "FlankingHighQualIndel", str_detect(gridss_gr$FILTER, "SINGLE_ASSEMBLY") & (i$RP + i$SR) / i%VF < 0.1 & i$RP >= 2 & i$SR >= 2 # fixed in GRIDSSv1.8.0
