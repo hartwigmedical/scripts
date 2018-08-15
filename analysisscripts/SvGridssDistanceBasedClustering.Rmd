@@ -39,7 +39,7 @@ if (any(is.na(svgr$cnid))) {
   bad_svid = svgr$id[is.na(svgr$cnid)]
   warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
   svdf = svdf %>% filter(!(id %in% bad_svid))
-  svData = svData %>% filter(!(Id %in% bad_svid))
+  #svData = svData %>% filter(!(Id %in% bad_svid))
   svgr = svgr[!(svgr$id %in% bad_svid)]
 }
 ```
@@ -101,7 +101,7 @@ data.frame(
 Visualise sample
 ```{r}
 library(visNetwork)
-sample = "CPCT02010255T"
+sample = "CPCT02020245T"
 segmentSupportShape = function(support) {
   ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
     ifelse(support == "BND", "square",
@@ -137,9 +137,9 @@ edges = bind_rows(
       width=copyNumber,
       length=log10(end - start) + 1,
       title=paste0(chromosome, ":", start, "-", end, " (", end - start, "bp)"),
-      smooth=FALSE
-      ) %>%
-    dplyr::select(from, to, color, width, length, title, smooth),
+      smooth=FALSE,
+      dashes=FALSE) %>%
+    dplyr::select(from, to, color, width, length, title, smooth, dashes),
   # Reference edges
   cndf %>%
     filter(sampleId == sample) %>%
@@ -155,8 +155,9 @@ edges = bind_rows(
       width=2,
       length=NA,
       title=NA,
-      smooth=FALSE) %>%
-    dplyr::select(from, to, color, label, width, length, title, smooth),
+      smooth=FALSE,
+      dashes=TRUE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
   #
   svgr %>% as.data.frame() %>%
     filter(sampleId == sample) %>%
@@ -175,15 +176,17 @@ edges = bind_rows(
       width=ploidy,
       length=NA,
       title=NA,
-      smooth=TRUE) %>%
-    dplyr::select(from, to, color, label, width, length, title, smooth))
+      smooth=TRUE,
+      dashes=FALSE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth, dashes))
 
-rescaling = list(width=5, length=3, size=1)
+rescaling = list(width=5, length=3, size=3)
 visNetwork(
     nodes %>% mutate(size=size * rescaling$size),
     edges %>% mutate(width=width * rescaling$width, length=length * rescaling$length),
     height = "1000px", width = "100%") %>%
-  visLayout(randomSeed = 12)
+  visLayout(improvedLayout=TRUE) %>%
+  visSave(file=paste0("breakpointgraph.", sample, ".html"))
 
 ``
 
