@@ -162,7 +162,10 @@ induced_edge_gr = function (cnv_gr, ...) {
 gridss_sv_links = function(svdf) {
   linkdf = svdf %>% dplyr::select(sampleId, id, linkedBy) %>%
     dplyr::filter(linkedBy != "" & linkedBy != "." ) %>%
-    dplyr::mutate(linkedBy = strsplit(as.character(linkedBy), ",")) %>%
+    # remove suffix from transitive calls
+    dplyr::mutate(linkedBy = str_replace_all(linkedBy, "o", "")) %>%
+    dplyr::mutate(linkedBy = str_replace_all(linkedBy, "h", "")) %>%
+    dplyr::mutate(linkedBy = str_split(as.character(linkedBy), stringr::fixed(","))) %>%
     tidyr::unnest(linkedBy)
   linkedsvs = linkdf %>% inner_join(linkdf, by=c("sampleId"="sampleId", "linkedBy"="linkedBy"), suffix=c("1", "2")) %>%
     filter(id1 != id2) %>%
