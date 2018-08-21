@@ -52,6 +52,30 @@ svData = svData %>% filter(SampleId %in% svdf$sampleId)
 Compare clustering to GRIDSS linkages
 ```{r}
 gridss_links = gridss_sv_links(svdf)
+gridss_nearby_events = findOverlaps(svgr, svgr, maxgap=2000, ignore.strand=TRUE) %>%
+  as.data.frame() %>%
+  filter(!is.na(svgr$partner[queryHits]) & !is.na(svgr$partner[subjectHits])) %>%
+  filter(svgr$sampleId[queryHits] == svgr$sampleId[subjectHits]) %>%
+  filter(as.logical(strand(svgr)[queryHits] != strand(svgr)[subjectHits])) %>%
+  mutate(len=ifelse(start(svgr)[queryHits] < start(svgr)[subjectHits],
+         start(svgr)[subjectHits] - start(svgr)[queryHits],
+         start(svgr)[queryHits] - start(svgr)[subjectHits])) %>%
+  filter(len >= 0) %>%
+  mutate(
+    partners_on_same_chr=as.logical(seqnames(svgr[as.character(svgr$partner[queryHits])]) == seqnames(svgr[as.character(svgr$partner[subjectHits])])),
+    left_opposite_orientation=as.logical(strand(svgr[as.character(svgr$partner[queryHits])]) != strand(svgr[as.character(svgr$partner[subjectHits])])),
+    right_opposite_orientation=as.logical(strand(svgr[as.character(svgr$partner[queryHits])]) != strand(svgr[as.character(svgr$partner[subjectHits])])),
+    type=ifelse(partners_on_same_chr & left_opposite_orientation & right_opposite_orientation, "DB", "TI"),
+    id1=as.character(svgr$id[queryHits]),
+    id2=as.character(svgr$id[subjectHits])) %>%
+  dplyr::select(id1, id2, len, type)
+
+gridss_annotated_links = gridss_links %>%
+  left_join(gridss_nearby_events, by=c("id1"="id1", "id2"="id2"))
+
+
+
+
 svdf$gridss_cluster = cluster_from_links(svdf, gridss_links)
 svdf = svdf %>% group_by(gridss_cluster) %>%
   mutate(source="gridss") %>%
