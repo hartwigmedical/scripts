@@ -223,7 +223,7 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
          purity, ploidy, 
          SUBCLONAL_INDEL,SUBCLONAL_MNV,SUBCLONAL_SNV,TOTAL_INDEL,TOTAL_SNV,TOTAL_MNV,
          msiScore,msiStatus,
-         BND,DEL,DUP,INS,INV,
+         TRL,DEL,DUP,INS,INV,
          duplicatedAutosomes,WGD,patientHighestPurityPassingSample)
 
 hpc = cohortSummary %>% filter(patientHighestPurityPassingSample)
