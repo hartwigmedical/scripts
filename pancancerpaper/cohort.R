@@ -1,22 +1,21 @@
 ############################################
 # How to run analysis for paper:
-# 01. cohortClinical.R
-# 02. cohort.R
-# 03. cohortFusions.R
-# 04. dnds.R
-# 05. genePanel.R
-# 06. dndsClassification.R
-# 07. dndsDrivers.R
-# 08. ampsDels.R
-# 09. ampsDelsTarget.R
-# 10. driversByGene.R
-# 11. multipleBiopsyDrivers.R
+# 01. cohort.R
+# 02. cohortFusions.R
+# 03. dnds.R
+# 04. genePanel.R
+# 05. dndsClassification.R
+# 06. dndsDrivers.R
+# 07. ampsDels.R
+# 08. ampsDelsTarget.R
+# 09. driversByGene.R
+# 10. multipleBiopsyDrivers.R
 
 
-# 12. cohortVisualisation.R
-# 13. supplementaryVisualisation.R
+# 11. cohortVisualisation.R
+# 12. supplementaryVisualisation.R
 # 13. actionableVisualation.R
-# 13. copyNumberOverview.R
+# 14. copyNumberOverview.R
 # 15. driversByGeneHeatmap.R
 
 detach("package:purple", unload=TRUE)
