@@ -62,8 +62,6 @@ VariantAnnotation::fixed(vcf)$FILTER = "PASS"
 VariantAnnotation::fixed(vcf[names(bpgr)][gridss_overlaps_breakpoint_pon(bpgr, pon_dir=pon_dir)])$FILTER = "PON"
 VariantAnnotation::fixed(vcf[names(begr)][gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)])$FILTER = "PON"
 
-writeVcf(align_breakpoints(vcf), output_full_vcf)
-
 # Assembly-based event linking
 asm_linked_df = linked_assemblies(vcf)
 # transitive calling reduction
@@ -129,11 +127,16 @@ linked_vcfIds = c(link_summary_df$vcfId,
 #####
 # Final QUAL filtering
 #
-info(vcf)$LINKED_BY = ""
-info(vcf[link_df$vcfId])$LINKED_BY = link_df$linked_by
-vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls
-vcf = vcf[passes_final_QUAL_check(vcf) | names(vcf) %in% linked_vcfIds]
+info(vcf)$LOCAL_LINKED_BY = ""
+info(vcf)$REMOTE_LINKED_BY = ""
+info(vcf[link_df$vcfId])$LOCAL_LINKED_BY = link_df$linked_by
+info(vcf[!is.na(info(vcf)$PARID)])$REMOTE_LINKED_BY = info(vcf[info(vcf[!is.na(info(vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 
+vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls
+
+writeVcf(align_breakpoints(vcf), output_full_vcf)
+
+vcf = vcf[passes_final_QUAL_check(vcf) | names(vcf) %in% linked_vcfIds]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 

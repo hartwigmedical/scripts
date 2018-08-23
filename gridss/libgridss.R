@@ -709,7 +709,7 @@ transitive_calls = function(vcf, bpgr) {
       distinct()
   } else {
     # work-around for https://github.com/tidyverse/tidyr/issues/470
-    transitive_df = data.frame(linked_by=character(), vcfid=character(), has_multiple_paths=logical(), pathid=numeric(), stringsAsFactors=FALSE)
+    transitive_df = data.frame(linked_by=character(), vcfId=character(), has_multiple_paths=logical(), pathid=numeric(), stringsAsFactors=FALSE)
   }
 }
 #' @description Calculates a somatic score for the given variant.
