@@ -20,7 +20,8 @@ gridss.pon.min_normal_qual = 75
 gridss.pon.min_samples = 1
 
 #' Maximum gap between breakends for GRIDSS to consider the event an insertion
-gridss.insertion.maxgap=35
-gridss.inversion.maxgap=35
+gridss.dsb.maxgap=35
+gridss.insertion.maxgap=gridss.dsb.maxgap
+gridss.inversion.maxgap=gridss.dsb.maxgap
 #' Maximum size of an translocation/templated insertion
 gridss.templatedinsertion.maxgap=10000

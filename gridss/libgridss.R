@@ -804,6 +804,7 @@ linked_by_breakpoint_breakend_insertion_classification = function(bpgr, begr, ma
 }
 linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversion.maxgap) {
   bpgr = bpgr[strand(bpgr) == strand(partner(bpgr))]
+  bpgr = bpgr[seqnames(bpgr) == seqnames(partner(bpgr))]
   if (is.null(bpgr$sampleId)) {
     bpgr$sampleId = "placeholder"
   }
@@ -826,4 +827,27 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
       hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by),
       hits %>% mutate(vcfId=bpgr[subjectHits]$partner) %>% dplyr::select(vcfId, linked_by)
     ) %>% distinct())
+}
+linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap) {
+  if (is.null(bpgr$sampleId)) {
+    bpgr$sampleId = "placeholder"
+  }
+  hits = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
+    filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits])) %>% # opposite strand
+    # matching pairs with the best qual
+    mutate(qqual=bpgr$QUAL[queryHits], squal=bpgr$QUAL[subjectHits]) %>%
+    group_by(queryHits) %>%
+    mutate(nQueryPartners=n()) %>%
+    group_by(subjectHits) %>%
+    mutate(nSubjectPartners=n()) %>%
+    ungroup() %>%
+    filter(queryHits < subjectHits) %>% # remove symmetry
+    filter(nQueryPartners == 1 & nSubjectPartners == 1) %>%
+    mutate(linked_by=paste0("dbs", row_number()))
+  return( bind_rows(
+    hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+    hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)
+  ) %>% distinct())
 }

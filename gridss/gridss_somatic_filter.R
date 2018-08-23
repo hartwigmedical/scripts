@@ -105,12 +105,19 @@ inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
 # finds the focal events, not because the model is correct.
 # TODO: show this by modelling additional focal DSBs
 
+dsb_link_df = linked_by_dsb(bpgr) %>%
+  group_by(linked_by) %>%
+  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass)
 
 link_df = bind_rows(
   link_df,
   bebeins_link_df,
   bebpins_link_df,
-  inv_link_df)
+  inv_link_df,
+  dsb_link_df)
 
 link_summary_df = link_df %>%
   group_by(vcfId) %>%
