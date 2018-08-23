@@ -392,21 +392,6 @@ get_db_comparision_df = function(dbExisting, dbNew, suffix=c(".old", ".new"), sa
   return(fullmatchdf)
 }
 
-linked_asm <- function(vcf) {
-  asm_linked_df <- data.frame(
-    event=info(vcf)$EVENT,
-    beid=sapply(info(vcf)$BEID, function(x) paste0(c("", unlist(x)), collapse=";"))) %>%
-    separate_rows(beid, sep=";") %>%
-    filter(!is.na(beid) & nchar(beid) > 0) %>%
-    group_by(event, beid) %>%
-    distinct() %>%
-    group_by(beid) %>%
-    filter(n() > 1) %>%
-    mutate(linked_by=beid) %>%
-    dplyr::select(event, linked_by=beid)
-  return (asm_linked_df)
-}
-
 #' @description Determines which A-C transitives calls can be explained by an A-B-C.
 #' Transitive calls are caused by fragments that completely span the B fragment.
 #' For paired end sequencing, transitive calls will be IMPRECISE as all split reads
@@ -488,8 +473,9 @@ transitive_breakpoints <- function(
       filter(!is.na(min_traversed)) %>%
       mutate(min_length=min_length + min_traversed,
              max_length=max_length + max_traversed,
-             transitive=names(gr)[terminal_start]) %>%
-      dplyr::select(transitive, bp_path, min_length, max_length) %>%
+             transitive_start=names(gr)[terminal_start],
+             transitive_end=names(gr)[terminal_end]) %>%
+      dplyr::select(transitive_start, transitive_end, bp_path, min_length, max_length) %>%
       bind_rows(result_df)
     if (report == "shortest") {
       # any further solutions will be longer so we don't need to consider them
@@ -509,13 +495,13 @@ transitive_breakpoints <- function(
   if (report == "shortest") {
     # Just the shortest result for each transitive call
     result_df = result_df %>%
-      group_by(transitive) %>%
+      group_by(transitive_start) %>%
       top_n(1, min_length) %>%
       ungroup()
   }
   if (report == "max2") {
     result_df = result_df %>%
-      group_by(transitive) %>%
+      group_by(transitive_start) %>%
       top_n(1, min_length) %>%
       ungroup()
   }
@@ -583,28 +569,28 @@ readVcf = function(file, ...) {
   VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
   # Work-around for https://github.com/PapenfussLab/gridss/issues/156
   # since we don't have all the info, we'll just pro-rata
-  is.nanan = function(x) is.na(x) | is.nan(x)
-  bp_pro_rata = (geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP) / rowSums(geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP)
-  be_pro_rata = (geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP) / rowSums(geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP)
-  bp_pro_rata[is.nanan(bp_pro_rata)] = 0
-  be_pro_rata[is.nanan(be_pro_rata)] = 0
-  geno(raw_vcf)$ASQ[is.nanan(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$ASQ)]
-  geno(raw_vcf)$RASQ[is.nanan(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$RASQ)]
-  geno(raw_vcf)$CASQ[is.nanan(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$CASQ)]
-  geno(raw_vcf)$BAQ[is.nanan(geno(raw_vcf)$BAQ)] = (info(raw_vcf)$BAQ * be_pro_rata)[is.nanan(geno(raw_vcf)$BAQ)]
-  geno(raw_vcf)$QUAL[is.nanan(geno(raw_vcf)$QUAL)] = (
-    geno(raw_vcf)$ASQ +
-    geno(raw_vcf)$RASQ +
-    geno(raw_vcf)$CASQ +
-    geno(raw_vcf)$RPQ +
-    geno(raw_vcf)$SRQ +
-    geno(raw_vcf)$IQ
-  )[is.nanan(geno(raw_vcf)$QUAL)]
-  geno(raw_vcf)$BQ[is.nanan(geno(raw_vcf)$BQ)] = (
-    geno(raw_vcf)$BAQ +
-    geno(raw_vcf)$BUMQ +
-    geno(raw_vcf)$BSCQ
-  )[is.nanan(geno(raw_vcf)$BQ)]
+  # is.nanan = function(x) is.na(x) | is.nan(x)
+  # bp_pro_rata = (geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP) / rowSums(geno(raw_vcf)$ASSR + geno(raw_vcf)$ASRP)
+  # be_pro_rata = (geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP) / rowSums(geno(raw_vcf)$BASSR + geno(raw_vcf)$BASRP)
+  # bp_pro_rata[is.nanan(bp_pro_rata)] = 0
+  # be_pro_rata[is.nanan(be_pro_rata)] = 0
+  # geno(raw_vcf)$ASQ[is.nanan(geno(raw_vcf)$ASQ)] = (info(raw_vcf)$ASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$ASQ)]
+  # geno(raw_vcf)$RASQ[is.nanan(geno(raw_vcf)$RASQ)] = (info(raw_vcf)$RASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$RASQ)]
+  # geno(raw_vcf)$CASQ[is.nanan(geno(raw_vcf)$CASQ)] = (info(raw_vcf)$CASQ * bp_pro_rata)[is.nanan(geno(raw_vcf)$CASQ)]
+  # geno(raw_vcf)$BAQ[is.nanan(geno(raw_vcf)$BAQ)] = (info(raw_vcf)$BAQ * be_pro_rata)[is.nanan(geno(raw_vcf)$BAQ)]
+  # geno(raw_vcf)$QUAL[is.nanan(geno(raw_vcf)$QUAL)] = (
+  #   geno(raw_vcf)$ASQ +
+  #   geno(raw_vcf)$RASQ +
+  #   geno(raw_vcf)$CASQ +
+  #   geno(raw_vcf)$RPQ +
+  #   geno(raw_vcf)$SRQ +
+  #   geno(raw_vcf)$IQ
+  # )[is.nanan(geno(raw_vcf)$QUAL)]
+  # geno(raw_vcf)$BQ[is.nanan(geno(raw_vcf)$BQ)] = (
+  #   geno(raw_vcf)$BAQ +
+  #   geno(raw_vcf)$BUMQ +
+  #   geno(raw_vcf)$BSCQ
+  # )[is.nanan(geno(raw_vcf)$BQ)]
   return(raw_vcf)
 }
 
@@ -634,19 +620,47 @@ read_gridss_breakpoint_pon = function(file) {
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }
-linked_assemblies = function(vcf) {
-  # Assembly-based event linking
-  asm_linked_df = data.frame(
-    event=info(vcf)$EVENT,
-    beid=sapply(info(vcf)$BEID, function(x) paste0(c("", unlist(x)), collapse=";"))) %>%
-    separate_rows(beid, sep=";") %>%
-    filter(!is.na(beid) & nchar(beid) > 0) %>%
-    group_by(event, beid) %>%
+#' takes two lists of lists of the same shape
+#' zips each corresponding element using ZIP_FUN
+#' Then for each original list, applies AGGREGATE_FUN to the result of the zip
+#' ZIP_FUN must be a vectorised function and is applied once
+#' AGGREGATE_FUN is applied once for each non-empty nested list
+#' @return a vector of the same length as the input lists.
+#' If the input list has no elements,
+#' the resultant vector returns NA without applying AGGREGATE_FUN to the empty list
+zip_aggregate_pair_of_list_of_list = function(list1, list2, ZIP_FUN, AGGREGATE_FUN) {
+  if (any(elementNROWS(list1) != elementNROWS(list2))) {
+    stop("Lists are not of the same shape")
+  }
+  vec1 = unlist(list1)
+  vec2 = unlist(list2)
+  zipped = ZIP_FUN(vec1, vec2)
+  result = rep(NA, length(list1))
+  aggregatedf = data.frame(
+      ordinal = rep(1:length(list1), times=elementNROWS(list1)),
+      value = zipped) %>%
+    group_by(ordinal) %>%
+    summarise(value = AGGREGATE_FUN(value))
+  result[aggregatedf$ordinal] = aggregatedf$value
+  return(result)
+}
+linked_assemblies <- function(vcf) {
+  asm_linked_df <- data.frame(
+    vcfId=names(vcf),
+    asm=zip_aggregate_pair_of_list_of_list(
+      info(vcf)$BEID,
+      info(vcf)$BEIDL,
+      ZIP_FUN = function(x, y) paste(x, y, sep="/"),
+      AGGREGATE_FUN = function(x) paste(x, collapse=";"))
+  ) %>%
+    separate_rows(asm, sep=";") %>%
+    filter(asm != "") %>%
+    group_by(vcfId, asm) %>%
     distinct() %>%
-    group_by(beid) %>%
+    group_by(asm) %>%
     filter(n() > 1) %>%
-    mutate(linked_by=beid) %>%
-    dplyr::select(event, linked_by=beid)
+    mutate(linked_by=asm) %>%
+    dplyr::select(vcfId, linked_by=asm)
   return (asm_linked_df)
 }
 transitive_calls = function(vcf, bpgr) {
@@ -667,26 +681,35 @@ transitive_calls = function(vcf, bpgr) {
     mutate(full_path=bp_path)
   if (nrow(transitive_df) != 0) {
     transitive_df = transitive_df %>%
-      separate_rows(bp_path, sep=";") %>%
-      #mutate(imprecise=info(vcf[bp_path])$IMPRECISE) %>%
-      group_by(transitive, full_path) %>%
-      summarise(
-        #imprecise=sum(imprecise),
-        hops=n(),
-        min_length=min(min_length),
-        max_length=max(max_length)) %>%
-      # for now we just link imprecise transitive events
-      # via precise calls
-      #filter(imprecise == 0) %>%
-      group_by(transitive) %>%
+      filter(str_detect(transitive_start, "o$")) %>%
+      group_by(transitive_start) %>%
       mutate(has_multiple_paths=n() > 1) %>%
-      top_n(1, min_length) %>%
-      ungroup() %>%
-      dplyr::select(linked_by = transitive, vcfid = full_path, has_multiple_paths) %>%
-      separate_rows(vcfid, sep=";")
+      mutate(pathid=row_number()) %>%
+      separate_rows(bp_path, sep=";") %>%
+      group_by(transitive_start, full_path) %>%
+      mutate(ordinal=row_number()) %>%
+      mutate(
+        remote_vcfid=bpgr[bp_path]$partner,
+        prev_vcfid=ifelse(is.na(lag(remote_vcfid)), transitive_start, lag(remote_vcfid)),
+        next_vcfid=ifelse(is.na(lead(bp_path)), transitive_end, lead(bp_path))) %>%
+      ungroup()
+    transitive_df = bind_rows(
+      transitive_df %>%
+        mutate(linked_by=paste(transitive_start, ordinal, sep="/"), vcfId=bp_path) %>%
+        dplyr::select(vcfId, linked_by, has_multiple_paths, pathid, transitive_start, transitive_end),
+      transitive_df %>%
+        mutate(linked_by=paste(transitive_start, ordinal, sep="/"), vcfId=prev_vcfid) %>%
+        dplyr::select(vcfId, linked_by, has_multiple_paths, pathid, transitive_start, transitive_end),
+      transitive_df %>%
+        mutate(linked_by=paste(transitive_start, ordinal+1, sep="/"), vcfId=remote_vcfid) %>%
+        dplyr::select(vcfId, linked_by, has_multiple_paths, pathid, transitive_start, transitive_end),
+      transitive_df %>%
+        mutate(linked_by=paste(transitive_start, ordinal+1, sep="/"), vcfId=next_vcfid) %>%
+        dplyr::select(vcfId, linked_by, has_multiple_paths, pathid, transitive_start, transitive_end)) %>%
+      distinct()
   } else {
     # work-around for https://github.com/tidyverse/tidyr/issues/470
-    transitive_df = data.frame(linked_by=character(), vcfid=character(), has_multiple_paths=logical(), stringsAsFactors=FALSE)
+    transitive_df = data.frame(linked_by=character(), vcfid=character(), has_multiple_paths=logical(), pathid=numeric(), stringsAsFactors=FALSE)
   }
 }
 #' @description Calculates a somatic score for the given variant.
@@ -724,4 +747,83 @@ gridss_breakpoint_somatic_llr = function(vcf, normalOrdinal=1, tumourOrdinal=2, 
     contamination_log_p = dbinom(n_var, n_ref + n_var, contamination_af, log=TRUE)
   )
   return (df$contamination_log_p - df$germline_het_log_p)
+}
+
+passes_final_QUAL_check = function(vcf) {
+  ifelse(is.na(info(vcf)$PARID),
+         rowRanges(vcf)$QUAL >= gridss.min_qual * gridss.single_breakend_multiplier,
+         rowRanges(vcf)$QUAL >= gridss.min_qual)
+}
+
+linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gridss.insertion.maxgap) {
+  if (is.null(begr$sampleId)) {
+    begr$sampleId = "placeholder"
+  }
+  hits = findOverlaps(begr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    filter(begr$sampleId[queryHits] == begr$sampleId[subjectHits]) %>% # intra-sample
+    filter(as.logical(strand(begr)[queryHits] != strand(begr)[subjectHits])) %>% # opposite strand
+    # matching pairs with the best qual
+    mutate(qqual=begr$QUAL[queryHits], squal=begr$QUAL[subjectHits]) %>%
+    group_by(queryHits) %>%
+    top_n(1, squal) %>%
+    group_by(subjectHits) %>%
+    top_n(1, qqual) %>%
+    ungroup() %>%
+    filter(queryHits %in% subjectHits & subjectHits %in% queryHits) %>%
+    filter(queryHits < subjectHits) %>% # remove symmetry
+    mutate(linked_by=paste0("bebeins", row_number()))
+  return( bind_rows(
+    hits %>% mutate(vcfId=names(begr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+    hits %>% mutate(vcfId=names(begr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)
+  ) %>% distinct())
+}
+linked_by_breakpoint_breakend_insertion_classification = function(bpgr, begr, maxgap=gridss.insertion.maxgap) {
+  if (is.null(begr$sampleId)) {
+    begr$sampleId = "placeholder"
+  }
+  if (is.null(bpgr$sampleId)) {
+    bpgr$sampleId = "placeholder"
+  }
+  hits = findOverlaps(bpgr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    filter(bpgr$sampleId[queryHits] == begr$sampleId[subjectHits]) %>% # intra-sample
+    filter(as.logical(strand(bpgr)[queryHits] != strand(begr)[subjectHits])) %>% # opposite strand
+    # matching pairs with the best qual
+    mutate(qqual=bpgr$QUAL[queryHits], squal=begr$QUAL[subjectHits]) %>%
+    group_by(queryHits) %>%
+    top_n(1, squal) %>%
+    group_by(subjectHits) %>%
+    top_n(1, qqual) %>%
+    ungroup() %>%
+    mutate(linked_by=paste0("bpbeins", row_number()))
+  return( bind_rows(
+    hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+    hits %>% mutate(vcfId=names(begr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)
+  ) %>% distinct())
+}
+linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversion.maxgap) {
+  bpgr = bpgr[strand(bpgr) == strand(partner(bpgr))]
+  if (is.null(bpgr$sampleId)) {
+    bpgr$sampleId = "placeholder"
+  }
+  hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
+    filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
+    filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits])) %>% # opposite strand
+    # matching pairs with the best qual
+    mutate(qqual=bpgr$QUAL[queryHits], squal=begr$QUAL[subjectHits]) %>%
+    group_by(queryHits) %>%
+    top_n(1, squal) %>%
+    group_by(subjectHits) %>%
+    top_n(1, qqual) %>%
+    ungroup() %>%
+    filter(queryHits < subjectHits) %>%
+    filter(queryHits < match(bpgr[queryHits]$partner, names(bpgr))) %>%
+    mutate(linked_by=paste0("inv", row_number()))
+    return( bind_rows(
+      hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+      hits %>% mutate(vcfId=bpgr[queryHits]$partner) %>% dplyr::select(vcfId, linked_by),
+      hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by),
+      hits %>% mutate(vcfId=bpgr[subjectHits]$partner) %>% dplyr::select(vcfId, linked_by)
+    ) %>% distinct())
 }
