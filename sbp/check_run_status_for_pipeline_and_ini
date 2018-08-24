@@ -25,13 +25,27 @@ if [[ ${ini} =~ Rerun ]]; then
 fi
 
 ## STLI: perform job
-echo "## Finished runs with ini ${ini} and pipeline ${pip}"
+echo "## Failed runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
-    -filter "status=Validated|SnpCheck|Failed" \
+    -filter "status=Failed" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        echo "${setName} has failed on ${pip}"
+    done | sort -r | uniq
+
+echo ""
+
+echo "## Validated (or SnpCheck) runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Validated|SnpCheck" \
     -json | jq -r '.[].name' | \
     while read setName; do
         COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
