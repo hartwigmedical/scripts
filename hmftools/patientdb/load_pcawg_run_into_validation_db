@@ -2,7 +2,7 @@
 
 run_dir=$1 && shift
 
-purity_file=$(ls ${run_dir}/*.purple.purity)
+purity_file=$(ls ${run_dir}/purple/*.purple.purity)
 sample=$(basename ${purity_file} .purple.purity)
 
 credentials=/data/common/dbs/mysql_credentials/landscape_paper_validation
