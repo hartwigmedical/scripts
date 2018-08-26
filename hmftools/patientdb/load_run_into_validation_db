@@ -2,7 +2,7 @@
 source load_metadata
 
 run_dir=$1 && shift
-credentials=/data/common/dbs/mysql_credentials/downsample_validation
+credentials=/data/common/dbs/mysql_credentials/landscape_paper_validation
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 load_genomic_data_for_run_into_low_coverages_db ${run_dir} ${credentials} ${sample}
