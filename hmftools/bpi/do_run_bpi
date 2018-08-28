@@ -56,7 +56,7 @@ then
     exit 1
 fi
 
-output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf
+output_vcf=$(dirname ${output_tsv})/${joint_name}_somaticSV_bpi.vcf.gz
 
 if grep -q bpiVersion=${bpi_version} ${output_vcf}; then
     echo "BPI version ${bpi_version} already run. Exiting."
