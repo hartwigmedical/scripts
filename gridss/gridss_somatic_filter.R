@@ -58,9 +58,9 @@ begr$af_str = as.character(begr$af)
 info(vcf)$BPI_AF = rep("", length(vcf))
 info(vcf[names(bpgr)])$BPI_AF = bpgr$af_str
 info(vcf[names(begr)])$BPI_AF = begr$af_str
-VariantAnnotation::fixed(vcf)$FILTER = "PASS"
-VariantAnnotation::fixed(vcf[names(bpgr)][gridss_overlaps_breakpoint_pon(bpgr, pon_dir=pon_dir)])$FILTER = "PON"
-VariantAnnotation::fixed(vcf[names(begr)][gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)])$FILTER = "PON"
+VariantAnnotation::fixed(vcf)$FILTER = ifelse(names(vcf) %in% c(
+  names(bpgr)[gridss_overlaps_breakpoint_pon(bpgr, pon_dir=pon_dir)],
+  names(begr)[gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)]), "PON", "PASS")
 
 # Assembly-based event linking
 asm_linked_df = linked_assemblies(vcf)
@@ -69,7 +69,7 @@ transitive_df = transitive_calls(vcf, bpgr)
 
 link_df = bind_rows(asm_linked_df, transitive_df) %>%
   mutate(linking_group=str_replace(linked_by, "/.*$", "")) %>%
-  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   group_by(linking_group) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
@@ -78,20 +78,20 @@ link_df = bind_rows(asm_linked_df, transitive_df) %>%
 # Insertion linkage
 bebeins_link_df = linked_by_breakend_breakend_insertion_classification(begr) %>%
   group_by(linked_by) %>%
-  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
   filter(pass)
 bebpins_link_df = linked_by_breakpoint_breakend_insertion_classification(bpgr, begr) %>%
   group_by(linked_by) %>%
-  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
   filter(pass)
 # Inversion linkage
 inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
   group_by(linked_by) %>%
-  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
   filter(pass)
@@ -107,7 +107,7 @@ inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
 
 dsb_link_df = linked_by_dsb(bpgr) %>%
   group_by(linked_by) %>%
-  mutate(pass=passes_final_QUAL_check(vcf[vcfId])) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
   filter(pass)
@@ -143,7 +143,7 @@ vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$tran
 
 writeVcf(align_breakpoints(vcf), output_full_vcf)
 
-vcf = vcf[passes_final_QUAL_check(vcf) | names(vcf) %in% linked_vcfIds]
+vcf = vcf[passes_final_filters(vcf) | names(vcf) %in% linked_vcfIds]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 

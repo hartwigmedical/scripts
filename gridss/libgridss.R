@@ -20,17 +20,17 @@ gridss_overlaps_breakpoint_pon = function(gr,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    hasHit[findBreakpointOverlaps(gr, pongr, sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
+    hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
   }
   return(hasHit)
 }
 gridss_overlaps_breakend_pon = function(gr,
-                                        pon_dir=NULL,
-                                        pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/")),
-                                        ...) {
+    pon_dir=NULL,
+    pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/")),
+    ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    hasHit[queryHits(findOverlaps(gr, pongr, ...))] = TRUE
+    hasHit[queryHits(findOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], ...))] = TRUE
   }
   return(hasHit)
 }
@@ -596,8 +596,8 @@ readVcf = function(file, ...) {
 
 read_gridss_breakpoint_pon = function(file) {
   df = read_tsv(file,
-                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE", "samples"),
-                col_types="ciiciiccccli")
+                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE"),
+                col_types="ciiciiccccl")
   gro = GRanges(
     seqnames=df$chr1,
     ranges=IRanges(
@@ -605,8 +605,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end1),
     strand=df$strand1,
     partner=paste0(seq_len(nrow(df)), "h"),
-    IMPRECISE = df$IMPRECISE,
-    samples=df$samples)
+    score=df$score,
+    IMPRECISE = df$IMPRECISE)
   names(gro) = paste0(seq_len(nrow(df)), "o")
   grh = GRanges(
     seqnames=df$chr2,
@@ -615,8 +615,8 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end2),
     strand=df$strand2,
     partner=paste0(seq_len(nrow(df)), "o"),
-    IMPRECISE = df$IMPRECISE,
-    samples=df$samples)
+    score=df$score,
+    IMPRECISE = df$IMPRECISE)
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }
@@ -647,22 +647,62 @@ zip_aggregate_pair_of_list_of_list = function(list1, list2, ZIP_FUN, AGGREGATE_F
 linked_assemblies <- function(vcf) {
   asm_linked_df <- data.frame(
     vcfId=names(vcf),
+    parid=info(vcf)$PARID,
+    start=start(rowRanges(vcf)),
     asm=zip_aggregate_pair_of_list_of_list(
       info(vcf)$BEID,
       info(vcf)$BEIDL,
       ZIP_FUN = function(x, y) paste(x, y, sep="/"),
-      AGGREGATE_FUN = function(x) paste(x, collapse=";"))
+      AGGREGATE_FUN = function(x) paste(x, collapse=";")),
+    stringsAsFactors = FALSE
   ) %>%
     separate_rows(asm, sep=";") %>%
-    filter(asm != "") %>%
-    group_by(vcfId, asm) %>%
-    distinct() %>%
-    group_by(asm) %>%
-    filter(n() > 1) %>%
-    mutate(linked_by=asm) %>%
-    dplyr::select(vcfId, linked_by=asm)
-  return (asm_linked_df)
+    filter(asm != "")
+
+  asm_paired_df = .linked_assemblies_fix_indels(asm_linked_df)
+  return (asm_paired_df %>% dplyr::select(vcfId, linked_by=asm))
 }
+#' assemblies spanning SV indels will have the same asm
+#' linking id as the flanking variants as well as having
+#' the same id on both sides of the indel
+#' we need to split these up so asm identifiers are unique
+.linked_assemblies_fix_indels = function(asm_linked_df) {
+  asm_linked_df %>%
+    group_by(asm) %>%
+    arrange(start) %>%
+    mutate(
+      is_indel_start = (lead(parid) == vcfId) %na% FALSE,
+      is_indel_end = (lag(parid) == vcfId) %na% FALSE,
+      requires_asm_renaming=n() > 2,
+      paired_with_next=row_number() == 1 | is_indel_end) %>%
+    # trim starting indel bound
+    filter(!(is_indel_start & is.na(lag(vcfId)))) %>%
+    # trim ending indel bound
+    filter(!(is_indel_end & is.na(lead(vcfId)))) %>%
+    mutate(asm_new=
+      ifelse(!requires_asm_renaming, asm,
+      paste(asm, (row_number() + ifelse(paired_with_next, 1, 0)) / 2, sep="-"))) %>%
+    ungroup() %>%
+    dplyr::select(vcfId, asm=asm_new)
+}
+require(testthat)
+test_that(".linked_assemblies_fix_indels corrects indels", {
+  asm_linked_df = data.frame(
+    vcfId=c("in", "indel1o", "indel1h","indel2o", "indel2h", "out", "indel3o", "indel3h", "other_left", "other_right"),
+    parid=c("a", "indel1h", "indel1o","indel2h", "indel2o", NA, "indel3h", "indel3o", "b", "c"),
+    start=c(1, 2, 3, 4, 5, 6, 2, 4, 3, 4),
+    asm=c(rep("asm1", 6), rep("asm2", 2), rep("asm3", 2)),
+    stringsAsFactors=FALSE)
+  result = .linked_assemblies_fix_indels(asm_linked_df)
+  # should remove isolated indel
+  expect_that(nrow(result), equals(8))
+  # should now have 4 links due to:
+  # - removing asm2
+  # - splitting asm1
+  expect_that(length(unique(result$asm)), equals(4))
+})
+
+
 transitive_calls = function(vcf, bpgr) {
   is_imprecise = info(vcf[names(bpgr)])$IMPRECISE
   is_imprecise[is.na(is_imprecise)] = FALSE
@@ -749,10 +789,12 @@ gridss_breakpoint_somatic_llr = function(vcf, normalOrdinal=1, tumourOrdinal=2, 
   return (df$contamination_log_p - df$germline_het_log_p)
 }
 
-passes_final_QUAL_check = function(vcf) {
-  ifelse(is.na(info(vcf)$PARID),
+passes_final_filters = function(vcf, include.existing.filters=TRUE) {
+  return(
+    (!include.existing.filters | rowRanges(vcf)$FILTER %in% c(".", "PASS")) &
+    ifelse(is.na(info(vcf)$PARID),
          rowRanges(vcf)$QUAL >= gridss.min_qual * gridss.single_breakend_multiplier,
-         rowRanges(vcf)$QUAL >= gridss.min_qual)
+         rowRanges(vcf)$QUAL >= gridss.min_qual))
 }
 
 linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gridss.insertion.maxgap) {
@@ -845,7 +887,7 @@ linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap) {
     ungroup() %>%
     filter(queryHits < subjectHits) %>% # remove symmetry
     filter(nQueryPartners == 1 & nSubjectPartners == 1) %>%
-    mutate(linked_by=paste0("dbs", row_number()))
+    mutate(linked_by=paste0("dsb", row_number()))
   return( bind_rows(
     hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
     hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)
