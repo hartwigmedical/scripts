@@ -40,7 +40,7 @@ my $HELP =<<HELP;
     -include_rna    (add rna samples in output)
     -include_plasma (add plasma samples in output)
     -delim <s>      (output delim)
-    -input_lims <s> (provide your own lims json file for testing)
+    -lims_input <s> (provide your own lims json file for testing)
     -debug          (prints complete/raw json for selection)
     
   Files/locations that are used
