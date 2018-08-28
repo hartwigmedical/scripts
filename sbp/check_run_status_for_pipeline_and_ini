@@ -35,7 +35,7 @@ query_sbp_api \
     -filter "status=Failed" \
     -json | jq -r '.[].tumor_sample' | \
     while read failedTumorSample; do
-        foundValue=$( echo $AllValidatedRuns | tr " " "\n" | grep $failedTumorSample | wc -l)
+        foundValue=$( echo $AllValidatedRuns | tr " " "\n" | grep -w  $failedTumorSample | wc -l)
         if [[ $foundValue == 0 ]]
         then
             patientId=$(echo $failedTumorSample | awk '{print substr($0,0,12)}')
