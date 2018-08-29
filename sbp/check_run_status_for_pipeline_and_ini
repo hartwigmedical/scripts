@@ -40,12 +40,12 @@ query_sbp_api \
         foundValue=$( echo ${allValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
         if [[ ${foundValue} == 0 ]]
         then
-             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].name' )
+             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].name' | tail -n 1 )
              COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
 		     CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${failedSet}" | wc -l)
 		     if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
 		     then
-			    bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].bucket' )
+			    bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].bucket' | tail -n 1)
                 echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSet}"
 		     elif [[ ${COUNT} == 0 ]]
              then
