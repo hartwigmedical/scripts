@@ -35,31 +35,22 @@ query_sbp_api \
     -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
     -filter "status=Failed" \
-    -json | jq -r '.[].tumor_sample' | \
+    -json | jq -r '.[].tumor_sample' | uniq | \
     while read failedTumorSample; do
         foundValue=$( echo ${allValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
         if [[ ${foundValue} == 0 ]]
         then
-            patientId=$(echo ${failedTumorSample} | awk '{print substr($0,0,12)}')
-            query_sbp_api \
-                -type runs \
-                -filter "ini=${ini}" \
-                -filter "bucket=hmf-output" \
-                -filter "pipeline=${pip}" \
-                -filter "status=Failed" \
-                -json | jq -r '.[].name' | grep ${patientId} | \
-            while read setName; do
-                COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
-		        CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${setName}" | wc -l)
-		        if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
-		        then
-			        bucketSet=$( query_sbp_api -type runs -filter "ini=${ini}" --filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.' | grep -A 1 "${setName}" | grep "bucket" | awk '{print $2}' | tr -d '"' | tr -d , )
-                    echo "${downloadScriptFail} -s ${setName} -b ${bucketSet}"
-		        elif [[ ${COUNT} == 0 ]]
-                then
-                    echo "${setName} has failed on ${pip} and is already on datastore ${findDirsFail}"
-                fi
-            done
+             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].name' )
+             COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
+		     CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${failedSet}" | wc -l)
+		     if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
+		     then
+			    bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].bucket' )
+                echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSet}"
+		     elif [[ ${COUNT} == 0 ]]
+             then
+                echo "${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
+             fi
         fi
     done | sort -r | uniq
 
