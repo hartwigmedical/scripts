@@ -33,7 +33,7 @@ dbgridss = dbConnect(MySQL(), dbname='gridss_test')
 cndf = query_all_copy_numer(dbgridss)
 cngr = to_cn_gr(cndf)
 svdf = query_somatic_structuralVariants(dbgridss)
-svgr = to_sv_gr(svdf)
+svgr = to_sv_gr(svdf, include.homology=FALSE)
 svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
 if (any(is.na(svgr$cnid))) {
   bad_svid = svgr$id[is.na(svgr$cnid)]
@@ -51,6 +51,9 @@ svData = svData %>% filter(SampleId %in% svdf$sampleId)
 
 Compare clustering to GRIDSS linkages
 ```{r}
+
+loh_links = find_sv_loh_links(cndf, cngr, svgr)
+
 gridss_links = gridss_sv_links(svdf)
 gridss_nearby_events = findOverlaps(svgr, svgr, maxgap=2000, ignore.strand=TRUE) %>%
   as.data.frame() %>%

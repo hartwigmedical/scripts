@@ -40,12 +40,12 @@ to_cn_gr = function(df) {
   names(gr) = df$id
   return(gr)
 }
-to_sv_gr <- function(svdf) {
+to_sv_gr <- function(svdf, include.homology=TRUE) {
   dbdf = svdf
   grs = GRanges(
     seqnames=dbdf$startChromosome,
-    ranges=IRanges(start=dbdf$startPosition + ifelse(is.na(dbdf$startIntervalOffsetStart), 0, dbdf$startIntervalOffsetStart),
-                   end=dbdf$startPosition + ifelse(is.na(dbdf$startIntervalOffsetEnd), 0, dbdf$startIntervalOffsetEnd)),
+    ranges=IRanges(start=dbdf$startPosition + ifelse(include.homology, ifelse(is.na(dbdf$startIntervalOffsetStart), 0, dbdf$startIntervalOffsetStart), 0),
+                   end=dbdf$startPosition + ifelse(include.homology, ifelse(is.na(dbdf$startIntervalOffsetEnd), 0, dbdf$startIntervalOffsetEnd), 0)),
     strand=ifelse(dbdf$startOrientation == 1, "+", "-"),
     QUAL=dbdf$qualScore,
     FILTER=dbdf$filter,
@@ -68,13 +68,14 @@ to_sv_gr <- function(svdf) {
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId)
-  names(grs)=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o"))
+    vcfid=dbdf$vcfId,
+    beid=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o")))
+  names(grs)=grs$beid
   dbdf = dbdf %>% filter(!is.na(endChromosome))
   grh = GRanges(
     seqnames=dbdf$endChromosome,
-    ranges=IRanges(start=dbdf$endPosition + ifelse(is.na(dbdf$endIntervalOffsetStart), 0, dbdf$endIntervalOffsetStart),
-                   end=dbdf$endPosition + ifelse(is.na(dbdf$endIntervalOffsetEnd), 0, dbdf$endIntervalOffsetEnd)),
+    ranges=IRanges(start=dbdf$endPosition + ifelse(include.homology, ifelse(is.na(dbdf$endIntervalOffsetStart), 0, dbdf$endIntervalOffsetStart), 0),
+                   end=dbdf$endPosition + ifelse(include.homology, ifelse(is.na(dbdf$endIntervalOffsetEnd), 0, dbdf$endIntervalOffsetEnd), 0)),
     strand=ifelse(dbdf$endOrientation == 1, "+", "-"),
     QUAL=dbdf$qualScore,
     FILTER=dbdf$filter,
@@ -97,8 +98,9 @@ to_sv_gr <- function(svdf) {
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId)
-  names(grh)=paste0(dbdf$id, "h")
+    vcfid=dbdf$vcfId,
+    beid=paste0(dbdf$id, "h"))
+  names(grh)=grh$beid
   return(c(grs, grh))
 }
 annotate_sv_with_cnv_id = function(cnv_gr, sv_gr, ...) {
@@ -108,14 +110,14 @@ annotate_sv_with_cnv_id = function(cnv_gr, sv_gr, ...) {
     mutate(
       distance=abs((start(sv_gr[queryHits]) + end(sv_gr[queryHits])) / 2 - start(cnv_gr[subjectHits])),
       qual=sv_gr$QUAL[queryHits]) %>%
-    # match to closest (randomly select one if there are multiple matching candidates)
+    # match the closest SV
     group_by(queryHits) %>%
-    top_n(1, -distance) %>%
+    arrange(distance, -qual) %>%
     filter(row_number() == 1) %>%
     # only match the best hit
-    group_by(subjectHits) %>%
-    top_n(1, qual) %>%
-    filter(row_number() == 1) %>%
+    #group_by(subjectHits) %>%
+    #top_n(1, qual) %>%
+    #filter(row_number() == 1) %>%
     ungroup()
   ehits = as.data.frame(findOverlaps(query=sv_gr, subject=cnv_gr, type="end", select="all", ignore.strand=TRUE, ...)) %>%
     filter(sv_gr$sampleId[queryHits] == cnv_gr$sampleId[subjectHits] &
@@ -124,11 +126,11 @@ annotate_sv_with_cnv_id = function(cnv_gr, sv_gr, ...) {
       distance=abs((start(sv_gr[queryHits]) + end(sv_gr[queryHits])) / 2 - end(cnv_gr[subjectHits])),
       qual=sv_gr$QUAL[queryHits]) %>%
     group_by(queryHits) %>%
-    top_n(1, -distance) %>%
+    arrange(distance, -qual) %>%
     filter(row_number() == 1) %>%
-    group_by(subjectHits) %>%
-    top_n(1, qual) %>%
-    filter(row_number() == 1) %>%
+    #group_by(subjectHits) %>%
+    #top_n(1, qual) %>%
+    #filter(row_number() == 1) %>%
     ungroup()
   sv_gr$cnv_id = NA_character_
   sv_gr$cnv_id[shits$queryHits] = names(cnv_gr)[shits$subjectHits]
@@ -188,19 +190,53 @@ cluster_from_links = function(svdf, links) {
   return(id_cluster)
 }
 
-# Q: why no min bafCount on the LOH segment?
-annotate_loh = function(cndf) {
-  cndf %>% group_by(sampleId, chromosome) %>%
-    arrange(start) %>%
+
+find_cn_loh_links = function(cndf) {
+  loh_bounds_df = cndf %>% group_by(sampleId, chromosome) %>%
+    arrange(sampleId, chromosome, start) %>%
+    # Q: why no min bafCount on the LOH segment in svanalyser?
+    filter(bafCount > 0) %>%
     mutate(
       minorCN = (1 - actualBaf) * copyNumber,
       is_loh = minorCN < MIN_LOH_CN,
-      is_loh_start = is_loh & (lag(!is_loh) | segmentStartSupport=="TELOMERE"),
-      is_loh_end =  is_loh & (lead(!is_loh) | segmentEndSupport=="TELOMERE"),
-      loh_block = ifelse(!is_loh, NA, cumsum(ifelse(is_loh_start, 1, 0))),
-      loh_id=ifelse(!is_loh, NA, paste0("loh_", chromosome, "_", loh_block))) %>%
-    dplyr::select(-loh_block) %>%
-    ungroup()
+      is_loh_start_flank = !is_loh & lead(is_loh) & !is.na(lead(is_loh)),
+      is_loh_end_flank = !is_loh & lag(is_loh) & !is.na(lag(is_loh))) %>%
+    # just the bounding non-LOH segments - these should have the SV breakpoints
+    filter(is_loh_start_flank | is_loh_end_flank) %>%
+    # Remove start/end indicator if we don't pair up
+    # this happens when a LOH continues to the  start/end of the chromosome
+    mutate(
+      is_loh_start_flank=is_loh_start_flank & lead(is_loh_end_flank) & !is.na(lead(is_loh_end_flank)),
+      is_loh_end_flank=is_loh_end_flank & lag(is_loh_start_flank) & !is.na(lag(is_loh_start_flank)))
+  loh_cn_pair_df = data.frame(
+      cnid_start_flank = loh_bounds_df %>% filter(is_loh_start_flank) %>% pull(id) %>% as.character(),
+      cnid_end_flank = loh_bounds_df %>% filter(is_loh_end_flank) %>% pull(id)  %>% as.character(),
+      stringsAsFactors=TRUE) %>%
+    mutate(linked_by=paste0("loh", row_number()))
+  return(loh_cn_pair_df)
+}
+find_sv_loh_links = function(cndf, cngr, svgr, maxgap=1000, ...) {
+  loh_cn_pair_df = find_cn_loh_links(cndf) %>%
+    mutate(
+      beid_start_flank = find_closest_sv_to_segment(cnid_start_flank, cngr, svgr, "end", maxgap=maxgap, ...),
+      beid_end_flank = find_closest_sv_to_segment(cnid_end_flank, cngr, svgr, "start", maxgap=maxgap, ...))
+  return(loh_cn_pair_df)
+}
+find_closest_sv_to_segment = function(cnid, cngr, svgr, position, ...) {
+  result = rep(NA, length(cnid))
+  cngr = cngr[as.character(cnid)]
+  expected_sv_strand = ifelse(position=="start", "-", "+")
+  hits = findOverlaps(query=cngr, subject=svgr, type=position, select="all", ignore.strand=TRUE, ...) %>%
+    as.data.frame() %>%
+    filter(as.logical(strand(svgr)[queryHits] == expected_sv_strand)) %>%
+    mutate(
+      distance=abs((start(svgr[subjectHits]) + end(svgr[subjectHits])) / 2 - ifelse(position=="start", start(cngr[queryHits]), end(cngr[queryHits]))),
+      QUAL=svgr$QUAL[subjectHits]) %>%
+    group_by(queryHits) %>%
+    arrange(distance, -QUAL) %>%
+    filter(row_number() == 1)
+  result[hits$queryHits] = svgr$beid[hits$subjectHits]
+  return(result)
 }
 loh_sv_links = function(cndf, svdf) {
   cndf = cndf %>%
