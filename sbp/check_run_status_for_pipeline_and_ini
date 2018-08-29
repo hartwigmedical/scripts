@@ -25,8 +25,8 @@ if [[ ${ini} =~ Rerun ]]; then
 fi
 
 ## STLI: perform job
-echo "## Failed runs with ini ${ini} and pipeline ${pip}"
-AllValidatedRuns=$(query_sbp_api -type runs -filter "ini=${ini}" --filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Validated" -json | jq -r '.[].tumor_sample')
+echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
+allValidatedRuns=$(query_sbp_api -type runs -filter "ini=${ini}" --filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Validated" -json | jq -r '.[].tumor_sample')
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
@@ -35,7 +35,7 @@ query_sbp_api \
     -filter "status=Failed" \
     -json | jq -r '.[].tumor_sample' | \
     while read failedTumorSample; do
-        foundValue=$( echo ${AllValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
+        foundValue=$( echo ${allValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
         if [[ ${foundValue} == 0 ]]
         then
             patientId=$(echo ${failedTumorSample} | awk '{print substr($0,0,12)}')
