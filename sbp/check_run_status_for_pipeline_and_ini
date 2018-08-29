@@ -38,15 +38,16 @@ query_sbp_api \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read failedTumorSample; do
         foundValue=$( echo ${allValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
+        bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
         if [[ ${foundValue} == 0 ]]
         then
-             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].name' | tail -n 1 )
+             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].name' | tail -n 1 )
              COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
 		     CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${failedSet}" | wc -l)
 		     if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
 		     then
-			    bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Failed" -json | jq -r '.[].bucket' | tail -n 1)
-                echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSet}"
+			    bucketSetFail=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | tail -n 1)
+                echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSetFail}"
 		     elif [[ ${COUNT} == 0 ]]
              then
                 echo "${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
