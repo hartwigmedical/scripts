@@ -46,10 +46,9 @@ query_sbp_api \
                 -filter "ini=${ini}" \
                 -filter "bucket=hmf-output" \
                 -filter "pipeline=${pip}" \
-                -filter "status=Failed|Validated" \
+                -filter "status=Failed" \
                 -json | jq -r '.[].name' | grep ${patientId} | \
             while read setName; do
-                countSetName=$(echo ${setName} | wc -l)
                 COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
 		        CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${setName}" | wc -l)
 		        if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
