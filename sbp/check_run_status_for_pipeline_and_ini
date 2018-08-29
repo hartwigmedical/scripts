@@ -35,23 +35,23 @@ query_sbp_api \
     -filter "status=Failed" \
     -json | jq -r '.[].tumor_sample' | \
     while read failedTumorSample; do
-        foundValue=$( echo $AllValidatedRuns | tr " " "\n" | grep -w  $failedTumorSample | wc -l)
-        if [[ $foundValue == 0 ]]
+        foundValue=$( echo ${AllValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
+        if [[ ${foundValue} == 0 ]]
         then
-            patientId=$(echo $failedTumorSample | awk '{print substr($0,0,12)}')
+            patientId=$(echo ${failedTumorSample} | awk '{print substr($0,0,12)}')
             query_sbp_api \
                 -type runs \
                 -filter "ini=${ini}" \
                 -filter "bucket=hmf-output" \
                 -filter "pipeline=${pip}" \
                 -filter "status=Failed|Validated" \
-                -json | jq -r '.[].name' | grep $patientId | \
+                -json | jq -r '.[].name' | grep ${patientId} | \
             while read setName; do
-                countSetName=$(echo $setName | wc -l)
+                countSetName=$(echo ${setName} | wc -l)
                 COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
                 if [[ ${COUNT} == 0 ]]
                 then
-                    echo "$setName has failed on ${pip}"
+                    echo "${setName} has failed on ${pip}"
                 fi
             done
         fi
