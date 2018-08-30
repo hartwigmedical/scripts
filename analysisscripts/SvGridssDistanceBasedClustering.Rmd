@@ -52,6 +52,7 @@ svData = svData %>% filter(SampleId %in% svdf$sampleId)
 Compare clustering to GRIDSS linkages
 ```{r}
 
+loh_links = find_sv_loh_links(cndf[cndf$sampleId=="COLO829T",], cngr[cngr$sampleId=="COLO829T"], svgr[svgr$sampleId=="COLO829T"])
 loh_links = find_sv_loh_links(cndf, cngr, svgr)
 
 gridss_links = gridss_sv_links(svdf)

@@ -886,10 +886,11 @@ linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap) {
     mutate(nSubjectPartners=n()) %>%
     ungroup() %>%
     filter(queryHits < subjectHits) %>% # remove symmetry
+    filter(bpgr$partner[queryHits] != names(bpgr)[subjectHits]) %>% # remove self-intersection
     filter(nQueryPartners == 1 & nSubjectPartners == 1) %>%
     mutate(linked_by=paste0("dsb", row_number()))
-  return( bind_rows(
-    hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
-    hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)
-  ) %>% distinct())
+  return(bind_rows(
+      hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+      hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)) %>%
+    distinct())
 }

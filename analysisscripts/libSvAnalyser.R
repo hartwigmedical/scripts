@@ -219,7 +219,11 @@ find_sv_loh_links = function(cndf, cngr, svgr, maxgap=1000, ...) {
   loh_cn_pair_df = find_cn_loh_links(cndf) %>%
     mutate(
       beid_start_flank = find_closest_sv_to_segment(cnid_start_flank, cngr, svgr, "end", maxgap=maxgap, ...),
-      beid_end_flank = find_closest_sv_to_segment(cnid_end_flank, cngr, svgr, "start", maxgap=maxgap, ...))
+      beid_end_flank = find_closest_sv_to_segment(cnid_end_flank, cngr, svgr, "start", maxgap=maxgap, ...)) %>%
+    filter(is.na(beid_start_flank) | is.na(beid_end_flank) |
+             # ifelse is just a placeholder so we don't index by NA
+             svgr[ifelse(is.na(beid_start_flank), names(svgr)[1], beid_start_flank)]$partner !=
+             names(svgr[ifelse(is.na(beid_end_flank), names(svgr)[1], beid_end_flank)]))
   return(loh_cn_pair_df)
 }
 find_closest_sv_to_segment = function(cnid, cngr, svgr, position, ...) {
@@ -228,7 +232,7 @@ find_closest_sv_to_segment = function(cnid, cngr, svgr, position, ...) {
   expected_sv_strand = ifelse(position=="start", "-", "+")
   hits = findOverlaps(query=cngr, subject=svgr, type=position, select="all", ignore.strand=TRUE, ...) %>%
     as.data.frame() %>%
-    filter(as.logical(strand(svgr)[queryHits] == expected_sv_strand)) %>%
+    filter(as.logical(strand(svgr)[subjectHits] == expected_sv_strand)) %>%
     mutate(
       distance=abs((start(svgr[subjectHits]) + end(svgr[subjectHits])) / 2 - ifelse(position=="start", start(cngr[queryHits]), end(cngr[queryHits]))),
       QUAL=svgr$QUAL[subjectHits]) %>%
