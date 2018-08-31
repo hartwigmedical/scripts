@@ -52,23 +52,23 @@ downsamplingComparison = downsamplingComparison %>%
 plot_changes <- function(data, multiplier, percentageOffset, title) {
   colnames(data) <- c("sampleId", "prod", "down")
   totalAverage = data %>% ungroup() %>% summarise(prod = sum(prod), down = sum(down)) %>% mutate(change = (prod - down) / prod) %>% pull(change)
-  tidyData = data %>% mutate(change = (prod - down) / prod) %>% gather(variable, value, 2, 3) %>% ungroup() %>% mutate(variable = ifelse(variable == "prod", "100x","50x"))
+  tidyData = data %>% mutate(change = (prod - down) / prod) %>% gather(variable, value, 2, 3) %>% ungroup() %>% mutate(variable = ifelse(variable == "prod", "Normal Depth","Downsampled"))
   tidyData$average = totalAverage
   
-  sampleFactor = tidyData %>% filter(variable == "100x") %>% arrange(-value) %>% pull(sampleId)
-  variableFactor = c("100x","50x")
+  sampleFactor = tidyData %>% filter(variable == "Normal Depth") %>% arrange(-value) %>% pull(sampleId)
+  variableFactor = c("Normal Depth","Downsampled")
   variableFactorColours = setNames(c("#6baed6", "#d94701"), variableFactor)
   tidyData = tidyData %>% mutate(sampleId = factor(sampleId, sampleFactor), variable = factor(variable, variableFactor))
   
   ggplot(tidyData, aes(x = sampleId)) + 
     geom_bar(alpha = 0.8, aes(x = sampleId, y = value, fill = variable), stat = "identity", position = "dodge") +
     geom_point(aes(y = multiplier * (percentageOffset + change) )) +
-    geom_line(aes(y = multiplier * (percentageOffset + change), group = 1)) +
+    #geom_line(aes(y = multiplier * (percentageOffset + change), group = 1)) +
     geom_line(aes(y = multiplier * (percentageOffset + average)), group = 1, linetype = "dashed") + 
     xlab("Samples") + ylab("Count") + ggtitle(title) + 
     scale_y_continuous(expand = c(0,0), sec.axis = sec_axis(~./multiplier - percentageOffset, name = " % difference", labels = percent)) +
     scale_fill_manual(name = "", values = variableFactorColours) +
-    theme(panel.border = element_blank(), axis.ticks = element_blank(), axis.text.x = element_blank(), legend.position = c(0.80,0.9), panel.grid.major.x = element_blank())
+    theme(panel.border = element_blank(), axis.ticks = element_blank(), axis.text.x = element_blank(), legend.position = c(0.7,0.9), panel.grid.major.x = element_blank())
 }
 
 
@@ -83,18 +83,15 @@ pMNV = plot_changes(downsamplingComparison %>% select(sampleId, prod = TOTAL_MNV
 pIndel = plot_changes(downsamplingComparison %>% select(sampleId, prod = TOTAL_INDEL.prod, downsample = TOTAL_INDEL.down), 500000, 0.15, "Indel")
 
 pPurity = ggplot(downsamplingComparison, aes(x = purity.prod, y = purity.down)) + geom_point() + 
-  xlab("100x Depth Samples") + ylab("50x Depth Samples") + ggtitle("Purity") + 
+  xlab("Normal Depth") + ylab("Downsampled") + ggtitle("Purity") + 
   scale_y_continuous(labels = percent) + scale_x_continuous(labels = percent) + 
   theme(panel.border = element_blank(), axis.ticks = element_blank())
 
 
 pPloidy = ggplot(downsamplingComparison, aes(x = ploidy.prod, y = ploidy.down)) + geom_point() + 
-  xlab("100x Depth Samples") + ylab("50x Depth Samples") + ggtitle("Ploidy") + 
+  xlab("Normal Depth") + ylab("Downsampled") + ggtitle("Ploidy") + 
   #scale_y_continuous(labels = percent) + scale_x_continuous(labels = percent) + 
   theme(panel.border = element_blank(), axis.ticks = element_blank())
 
 p = plot_grid(pPurity, pSNV, pSV, pPloidy, pMNV, pIndel, ncol = 3, labels = "AUTO")
-save_plot("~/hmf/RPlot/Extended Figure 6 - Downsampling.png", p, base_width = 10, base_height = 6)
-
-
-                                          
+save_plot("~/hmf/RPlot/Extended Figure 3 - Downsampling.png", p, base_width = 10, base_height = 6)
