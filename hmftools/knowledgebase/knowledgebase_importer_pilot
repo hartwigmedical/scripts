@@ -18,6 +18,7 @@ output_dir=/data/common/dbs/knowledgebases/output_180822
 db_credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
+db_url=$(awk '/^url/ {print $2}' ${db_credentials})
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 
 java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
@@ -33,6 +34,7 @@ java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -civic_evidence_location ${civic_evidence_file} \
     -cosmic_fusions_location ${cosmic_fusions_file} \
     -ensembl_db ${ensembl_db} \
+    -hmfpatients_db ${db_url} \
     -db_user ${db_user} \
     -db_password ${db_pass} \
     -output_dir ${output_dir}
