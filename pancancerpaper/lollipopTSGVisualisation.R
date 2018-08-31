@@ -44,7 +44,7 @@ variantAlpha = setNames(variantAlpha, inactivationMechanism)
 
 tsgDriverLikelihoods = hpcDndsTsgDrivers %>% select(sampleId, gene, driverLikelihoodAdjusted)
 tsgDriverCombinedData = hpcDndsTsgMutations %>% 
-  filter(pHGVS != "", redundant == F) %>%
+  filter(pHGVS != "", redundant == F, impact != 'Splice') %>%
   select(sampleId, gene, pHGVS, biallelic, hotspot, type, inactivation = driverType, impact, canonicalCodingEffect) %>%
   mutate(
     impact = ifelse(type == "INDEL" & canonicalCodingEffect == "NONSENSE_OR_FRAMESHIFT", "Nonsense", impact),
