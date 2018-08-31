@@ -1,6 +1,6 @@
 #!/bin/bash
 
-knowledgebase_importer_jar=/data/common/tools/knowledgebase_importer_v1.0/knowledgebase-importer.jar
+knowledgebase_importer_jar=/data/common/tools/knowledgebase_importer_pilot/knowledgebase-importer.jar
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 cgi_biomarkers_file=/data/common/dbs/knowledgebases/input_180822/cgi_biomarkers_per_variant_180822.tsv
