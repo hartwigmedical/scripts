@@ -52,10 +52,25 @@ svData = svData %>% filter(SampleId %in% svdf$sampleId)
 Compare clustering to GRIDSS linkages
 ```{r}
 
-loh_links = find_sv_loh_links(cndf[cndf$sampleId=="COLO829T",], cngr[cngr$sampleId=="COLO829T"], svgr[svgr$sampleId=="COLO829T"])
+gridss_links = gridss_sv_links(svdf, svgr)
 loh_links = find_sv_loh_links(cndf, cngr, svgr)
 
-gridss_links = gridss_sv_links(svdf)
+linked_breakends = bind_rows(
+  gridss_links,
+  loh_links %>%
+    filter(!is.na(beid_start_flank), !is.na(beid_end_flank)) %>%
+    mutate(
+      sampleId=svgr[beid_start_flank]$sampleId,
+      id1=svgr[beid_start_flank]$id,
+      id2=svgr[beid_end_flank]$id) %>%
+    dplyr::select(sampleId, linkedBy=linked_by, id1, id2, beid1=beid_start_flank, beid2=beid_end_flank))
+svid_to_cluster_lookup = cluster_links(svdf, linked_breakends)
+
+svdf$cluster = svid_to_cluster_lookup[svdf$id]
+svgr$cluster = svid_to_cluster_lookup[svgr$id]
+
+
+
 gridss_nearby_events = findOverlaps(svgr, svgr, maxgap=2000, ignore.strand=TRUE) %>%
   as.data.frame() %>%
   filter(!is.na(svgr$partner[queryHits]) & !is.na(svgr$partner[subjectHits])) %>%

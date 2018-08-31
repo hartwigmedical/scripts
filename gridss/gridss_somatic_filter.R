@@ -136,7 +136,7 @@ linked_vcfIds = c(link_summary_df$vcfId,
 #
 info(vcf)$LOCAL_LINKED_BY = ""
 info(vcf)$REMOTE_LINKED_BY = ""
-info(vcf[link_df$vcfId])$LOCAL_LINKED_BY = link_df$linked_by
+info(vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
 info(vcf[!is.na(info(vcf)$PARID)])$REMOTE_LINKED_BY = info(vcf[info(vcf[!is.na(info(vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 
 vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls

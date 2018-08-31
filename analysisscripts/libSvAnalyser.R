@@ -11,7 +11,8 @@ query_all_copy_numer = function(dbConnect) {
     "SELECT * ",
     " FROM copyNumber ",
     sep = "")
-  return (DBI::dbGetQuery(dbConnect, query))
+  return (DBI::dbGetQuery(dbConnect, query) %>%
+    mutate(id=as.character(id)))
 }
 query_somatic_structuralVariants = function(dbConnect) {
   query = paste(
@@ -19,7 +20,8 @@ query_somatic_structuralVariants = function(dbConnect) {
     " FROM structuralVariant ",
     " WHERE filter = 'PASS'",
     sep = "")
-  return (DBI::dbGetQuery(dbConnect, query))
+  return (DBI::dbGetQuery(dbConnect, query) %>%
+    mutate(id=as.character(id)))
 }
 to_cn_gr = function(df) {
   gr = with(df, GRanges(
@@ -69,7 +71,8 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     event=dbdf$event,
     id=dbdf$id,
     vcfid=dbdf$vcfId,
-    beid=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o")))
+    beid=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o")),
+    linkedBy=dbdf$startLinkedBy)
   names(grs)=grs$beid
   dbdf = dbdf %>% filter(!is.na(endChromosome))
   grh = GRanges(
@@ -99,7 +102,8 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     event=dbdf$event,
     id=dbdf$id,
     vcfid=dbdf$vcfId,
-    beid=paste0(dbdf$id, "h"))
+    beid=paste0(dbdf$id, "h"),
+    linkedBy=dbdf$endLinkedBy)
   names(grh)=grh$beid
   return(c(grs, grh))
 }
@@ -161,33 +165,56 @@ induced_edge_gr = function (cnv_gr, ...) {
   return( c(induced_gr_left, induced_gr_right))
 }
 
-gridss_sv_links = function(svdf) {
-  linkdf = svdf %>% dplyr::select(sampleId, id, linkedBy) %>%
-    dplyr::filter(linkedBy != "" & linkedBy != "." ) %>%
-    # remove suffix from transitive calls
-    dplyr::mutate(linkedBy = str_replace_all(linkedBy, "o", "")) %>%
-    dplyr::mutate(linkedBy = str_replace_all(linkedBy, "h", "")) %>%
-    dplyr::mutate(linkedBy = str_split(as.character(linkedBy), stringr::fixed(","))) %>%
-    tidyr::unnest(linkedBy)
-  linkedsvs = linkdf %>% inner_join(linkdf, by=c("sampleId"="sampleId", "linkedBy"="linkedBy"), suffix=c("1", "2")) %>%
-    filter(id1 != id2) %>%
-    mutate(
-      id1=as.character(id1),
-      id2=as.character(id2))
-  #pairwise = linkedsvs %>% group_by(sampleId, id1, id2) %>%
-  #  summarise(linkedBy=paste(linkedBy, collapse=","))
-  return(linkedsvs)
+gridss_sv_links = function(svdf, svgr) {
+  bind_rows(
+    # gridss links
+    svgr %>% as.data.frame() %>%
+      dplyr::select(sampleId, id, beid, linkedBy) %>%
+      filter(!is.na(linkedBy) & linkedBy != "." & linkedBy != "") %>%
+      dplyr::mutate(linkedBy = str_split(as.character(linkedBy), stringr::fixed(","))) %>%
+      tidyr::unnest(linkedBy) %>%
+      group_by(sampleId, linkedBy) %>%
+      filter(n() == 2) %>%
+      arrange(beid) %>%
+      summarise(
+        id1=paste0(ifelse(row_number() == 1, id, ""), collapse=""),
+        id2=paste0(ifelse(row_number() == 2, id, ""), collapse=""),
+        beid1=paste0(ifelse(row_number() == 1, beid, ""), collapse=""),
+        beid2=paste0(ifelse(row_number() == 2, beid, ""), collapse="")),
+    # breakpoint partner links
+    svdf %>%
+      filter(!is.na(endChromosome)) %>%
+      mutate(
+        linkedBy=paste0("partner", id),
+        id1=id,
+        id2=id,
+        beid1=paste0(id, "o"),
+        beid2=paste0(id, "h")) %>%
+      dplyr::select(sampleId, linkedBy, id1, id2, beid1, beid2)) %>%
+    ungroup()
 }
 
-cluster_from_links = function(svdf, links) {
-  id_cluster = seq_len(nrow(svdf))
-  names(id_cluster) = svdf$id
-  last_id_cluster = -1
-  while (any(last_id_cluster != id_cluster)) {
-    last_id_cluster = id_cluster
-    id_cluster[links$id1] = pmin(id_cluster[links$id1], id_cluster[links$id2])
+cluster_links = function(svdf, linked_breakends) {
+  linkdf = linked_breakends %>% ungroup() %>% dplyr::select(id1, id2)
+  cluster_id = 1:nrow(svdf)
+  names(cluster_id) = svdf$id
+  last_cluster_id = -1
+  while (any(cluster_id != last_cluster_id)) {
+    last_cluster_id = cluster_id
+    # update cluster_id
+    linkdf = linkdf %>%
+      mutate(
+        cid1 = cluster_id[id1],
+        cid2 = cluster_id[id2],
+        cid=pmin(cluster_id[id1], cluster_id[id2]))
+    update_ids = bind_rows(
+        linkdf %>% filter(cid1 > cid) %>% dplyr::select(id=id1, cid),
+        linkdf %>% filter(cid2 > cid) %>% dplyr::select(id=id2, cid)) %>%
+      group_by(id) %>%
+      mutate(cid=min(cid))
+    cluster_id[update_ids$id] = update_ids$cid
   }
-  return(id_cluster)
+  return(cluster_id)
 }
 
 

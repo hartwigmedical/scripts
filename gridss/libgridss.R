@@ -109,12 +109,12 @@ is_short_deldup = function(gr) {
   if (!is.null(gr$partner)) {
     isbp <- gr$partner %in% names(gr)
     bpgr <- gr[isbp]
-  	bp_short_deldup = strand(bpgr) != strand(partner(bpgr)) &
-  		seqnames(bpgr) == seqnames(partner(bpgr)) &
-  		abs(start(bpgr)-start(partner(bpgr))) < gridss.short_event_size_threshold
-  	is_deldup[isbp] = bp_short_deldup
+    bp_short_deldup = strand(bpgr) != strand(partner(bpgr)) &
+      seqnames(bpgr) == seqnames(partner(bpgr)) &
+      abs(start(bpgr)-start(partner(bpgr))) < gridss.short_event_size_threshold
+    is_deldup[isbp] = bp_short_deldup
   }
-	return(is_deldup)
+  return(is_deldup)
 }
 #' @description filter out 'shadow' calls of strong multi-mapping calls
 #' bwa overestimates the MAPQ of some multimapping reads
