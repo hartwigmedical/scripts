@@ -106,14 +106,14 @@ allSomatics_p2 = allSomatics_p2 %>% left_join(allIndelsNearPON %>% select(id, ne
 
 fix_splice_effect <- function(input) {
   result = input %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant,NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant,NONE",canonicalCodingEffect) ) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant,NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion,MISSENSE",canonicalCodingEffect))
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant","NONE",canonicalCodingEffect) ) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion","MISSENSE",canonicalCodingEffect))
 }
 
 allSomatics_p1 = fix_splice_effect(allSomatics_p1)
