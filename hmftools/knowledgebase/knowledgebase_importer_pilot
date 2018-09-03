@@ -1,5 +1,10 @@
 #!/bin/bash
 
+iclusion_client_id=$1
+iclusion_client_secret=$2
+iclusion_user=$3
+iclusion_password=$4
+
 knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
@@ -33,6 +38,10 @@ java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -civic_variants_location ${civic_variants_file} \
     -civic_evidence_location ${civic_evidence_file} \
     -cosmic_fusions_location ${cosmic_fusions_file} \
+    -iclusion_client_id ${iclusion_client_id} \
+    -iclusion_client_secret ${iclusion_client_secret} \
+    -iclusion_user ${iclusion_user} \
+    -iclusion_password ${iclusion_password} \
     -ensembl_db ${ensembl_db} \
     -hmfpatients_db ${db_url} \
     -db_user ${db_user} \
