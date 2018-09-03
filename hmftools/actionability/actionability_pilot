@@ -1,6 +1,6 @@
 #!/bin/bash
 
-actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer-1.0.jar
+actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer.jar
 
 output_dir="/data/common/dbs/knowledgebases/actionability/"
 SAMPLE_ID=$1 && shift
