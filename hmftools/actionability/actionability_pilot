@@ -10,7 +10,7 @@ db_user=$(awk '/^user/ {print $2}' ${db_credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
 db_url=$(awk '/^url/ {print $2}' ${db_credentials})
 
-java -Dorg.jooq.no-logo=true -jar ${actionability_analyzer_application_jar}
+java -Dorg.jooq.no-logo=true -jar ${actionability_analyzer_application_jar} \
     -sample_ID ${SAMPLE_ID} \
     -hmfpatients_db ${db_url} \
     -db_user ${db_user} \
