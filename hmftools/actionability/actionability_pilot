@@ -2,7 +2,7 @@
 
 actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer-1.0.jar
 
-output_dir="/data/common/dbs/knowledgebases/actionability"
+output_dir="/data/common/dbs/knowledgebases/actionability/"
 SAMPLE_ID=$1 && shift
 echo ${SAMPLE_ID}
 db_credentials=/data/common/dbs/mysql_credentials/pilot
