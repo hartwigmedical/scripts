@@ -870,27 +870,86 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
       hits %>% mutate(vcfId=bpgr[subjectHits]$partner) %>% dplyr::select(vcfId, linked_by)
     ) %>% distinct())
 }
-linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap) {
+linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
+  linked_by_adjacency(svgr, maxgap=maxgap, select="unique", link_label="dsb")
+}
+#' Links breakends by their proximity
+#'
+#' @param bpgr breakpoint GRanges to link
+#' @param maxgap maximum distance between breakends
+#' @param strand strands to match
+#' @param require_segment require that breakends can be directly joined by a DNA segment between the breakend positions
+#' @param select which matching breakend pairs to report
+#' @param allow_self_intersection report breakpoints where the two breakends satisfy the adjacency matching criteria
+linked_by_adjacency = function(
+    bpgr,
+    maxgap,
+   strand=c("opposite"),
+   require_segment=FALSE,
+   select=c("closest", "bestqual", "unique", "all"),
+   link_label="adj",
+   allow_self_intersection=FALSE) {
+  strand = match.arg(strand)
+  select = match.arg(select)
   if (is.null(bpgr$sampleId)) {
     bpgr$sampleId = "placeholder"
   }
-  hits = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
+  hitdf = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
-    filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
-    filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits])) %>% # opposite strand
-    # matching pairs with the best qual
-    mutate(qqual=bpgr$QUAL[queryHits], squal=bpgr$QUAL[subjectHits]) %>%
+    # intra-sample
+    filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits])
+  if (strand == "opposite") {
+    hitdf = hitdf %>% filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits]))
+  }
+  if (require_segment) {
+    if (strand != "opposite") {
+      stop("NYI: segment between breakends not possible unless breakends have differen orientations")
+    }
+    # breakpoints point away from each other
+    hitdf = hitdf %>%
+      filter((start(bpgr)[queryHits] <= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "-") |
+               (start(bpgr)[queryHits] >= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "+"))
+  }
+  hitdf = hitdf %>%
+    mutate(
+      distance=abs(start(bpgr)[queryHits] - start(bpgr)[subjectHits]),
+      qqual=bpgr$QUAL[queryHits],
+      squal=bpgr$QUAL[subjectHits]) %>%
     group_by(queryHits) %>%
-    mutate(nQueryPartners=n()) %>%
+    mutate(
+      is_closest_query = distance == min(distance),
+      is_best_qual_query = qqual == min(qqual),
+      partners_query = n()) %>%
     group_by(subjectHits) %>%
-    mutate(nSubjectPartners=n()) %>%
+    mutate(
+      is_closest_subject = distance == min(distance),
+      is_best_qual_subject = qqual == min(squal),
+      partners_subject = n()) %>%
     ungroup() %>%
+    mutate(
+      is_closest = is_closest_query & is_closest_subject,
+      is_best_qual = is_best_qual_query & is_best_qual_subject,
+      is_unique = partners_query == 1 & partners_subject == 1) %>%
+    dplyr::select(
+      -is_closest_query, --is_closest_subject,
+      -is_best_qual_query, -is_best_qual_subject,
+      -partners_query, -partners_subject)
+  hitdf = switch(select,
+    closest = hitdf %>% filter(is_closest),
+    bestqual = hitdf %>% filter(is_best_qual_query),
+    unique = hitdf %>% filter(is_unique),
+    all = hitdf)
+  if (!allow_self_intersection) {
+    # remove self-intersection
+    hitdf = hitdf %>% filter(bpgr$partner[queryHits] != names(bpgr)[subjectHits])
+  }
+  hitdf = hitdf %>%
     filter(queryHits < subjectHits) %>% # remove symmetry
-    filter(bpgr$partner[queryHits] != names(bpgr)[subjectHits]) %>% # remove self-intersection
-    filter(nQueryPartners == 1 & nSubjectPartners == 1) %>%
-    mutate(linked_by=paste0("dsb", row_number()))
+    mutate(linked_by=paste0(link_label, row_number()))
   return(bind_rows(
-      hits %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
-      hits %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)) %>%
-    distinct())
+    hitdf %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
+    hitdf %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)) %>%
+      distinct())
 }
+
+

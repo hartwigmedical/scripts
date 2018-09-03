@@ -297,5 +297,58 @@ loh_sv_links = function(cndf, svdf) {
     spread(bound, sv_id)
 }
 
+hg19_centromeres = function() {
+  GRanges(
+    seqnames=c(1:22, "X", "Y"),
+    ranges=IRanges(start=c(121535434, 92326171, 90504854, 49660117, 46405641, 58830166, 58054331, 43838887, 47367679, 39254935,
+                           51644205, 34856694, 16000000, 16000000, 17000000, 35335801, 22263006, 15460898, 24681782, 26369569, 11288129, 13000000, 58632012, 10104553),
+                   end=c(124535434, 95326171, 93504854, 52660117, 49405641, 61830166, 61054331, 46838887, 50367679, 42254935,
+                         54644205, 37856694, 19000000, 19000000, 20000000, 38335801, 25263006, 18460898, 27681782, 29369569, 14288129, 16000000, 61632012, 13104553)))
+}
+hg19_primary_seqinfo = function() {
+  require(R.cache)
+  seqinfo = addMemoization(SeqinfoForUCSCGenome)("hg19")
+  seqlevelsStyle(seqinfo) = "NCBI"
+  seqinfo = seqinfo[c(1:22, "X", "Y")]
+  return(seqinfo)
+}
+hg19_arms = function() {
+  centomeres = hg19_centromeres()
+  parm = GRanges(seqnames=seqnames(centomeres), IRanges(start=1, end=start(centomeres) - 1))
+  qarm = GRanges(seqnames=seqnames(centomeres), IRanges(start=end(centomeres) + 1, end=seqlengths(hg19_primary_seqinfo())))
+  centomeres$arm = paste0(seqnames(centomeres), "C")
+  parm$arm = paste0(seqnames(parm), "P") # short arm, and lower position
+  qarm$arm = paste0(seqnames(qarm), "Q")
+  return(c(parm, qarm, centomeres))
+}
+on_hg19_arm = function(gr) {
+  hg19_arms()$arm[findOverlaps(gr, hg19_arms(), select="first", ignore.strand=TRUE)]
+}
+line_elements = function()
 
+cluster_consistency = function(svgr) {
+  svgr$arm = on_hg19_arm(svgr)
+  svgr %>% as.data.frame() %>%
+    mutate(towardsCentromere = (str_detect(arm, "P") & strand == "+") | (str_detect(arm, "Q") & strand == "-")) %>%
+    group_by(sampleId, cluster, arm) %>%
+    # overall cluster info
+    mutate(cluster_calls=length(unique(id)),
+           cluster_breakend_call=sum(str_detect(beid, "b"))) %>%
+    group_by(sampleId, cluster, arm, cluster_calls, cluster_breakend_call) %>%
+    # arm-level consistency
+    summarise(
+      toward_centromere_count=sum(towardsCentromere),
+      toward_telomere_count=n() - toward_centromere_count,
+      toward_centromere_ploidy=sum(towardsCentromere * ploidy),
+      toward_telomere_ploidy=sum(ploidy) - toward_centromere_ploidy)
+}
+find_sv_proximity_links = function(svgr, maxgap) {
+  findOverlaps(svgr, svgr, maxgap=maxgap, ignore.strand=TRUE) %>% as.data.frame() %>%
+}
+get_line_elements = function(file) {
+
+}
+is_line_element = function(svgr) {
+
+}
 
