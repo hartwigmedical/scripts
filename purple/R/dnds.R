@@ -260,7 +260,7 @@ dnds_tsg_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) 
       p_variant_nondriver = ifelse(sameImpact, max(p_variant_nondriver), prod(p_variant_nondriver)),
       gene_drivers = max(gene_drivers),
       sample_SNV = max(sample_SNV),
-      clonality = first(clonality),
+      subclonalLikelihood = min(subclonalLikelihood),
       shared = any(shared),
       pHGVS = collapsePHGVS(pHGVS)
     ) %>%
@@ -270,7 +270,7 @@ dnds_tsg_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) 
       driverLikelihoodAdjusted = ifelse(driverLikelihood > 0 & driverLikelihood < 1, p_driver_variant, driverLikelihood),
       driver = ifelse(multihit, "Multihit", impact),
       type = 'TSG') %>%
-    select(sampleId, gene, coordinate, variant, driver, impact, type, multihit, biallelic, hotspot, clonality, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV, pHGVS) %>%
+    select(sampleId, gene, coordinate, variant, driver, impact, type, multihit, biallelic, hotspot, subclonalLikelihood, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV, pHGVS) %>%
     ungroup()
   result[["tsgDrivers"]] <- tsgDrivers
 
@@ -327,12 +327,12 @@ dnds_onco_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene)
       driverLikelihood = max(driverLikelihood),
       driverLikelihoodAdjusted = max(driverLikelihoodAdjusted),
       sample_SNV = max(sample_SNV),
-      clonality = first(clonality),
+      subclonalLikelihood = min(subclonalLikelihood),
       shared = any(shared),
       pHGVS = collapsePHGVS(pHGVS)
     ) %>%
     mutate(driver = impact, type = 'ONCO') %>%
-    select(sampleId, gene, coordinate, chromosome, position, ref, alt, variant, driver, impact, type, hotspot, nearHotspot, clonality, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV, pHGVS) %>%
+    select(sampleId, gene, coordinate, chromosome, position, ref, alt, variant, driver, impact, type, hotspot, nearHotspot, subclonalLikelihood, shared, knownDriver, driverLikelihood, driverLikelihoodAdjusted, sample_SNV, pHGVS) %>%
     ungroup()
   result[["oncoDrivers"]] <- oncoDrivers
 

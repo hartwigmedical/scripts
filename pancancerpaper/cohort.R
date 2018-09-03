@@ -122,6 +122,9 @@ allSomatics_p2 = fix_splice_effect(allSomatics_p2)
 save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
 save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
 
+#load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
+#load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
+
 somatics_summary_p1 = cohort_somatic_summary(allSomatics_p1)
 somatics_summary_p2 = cohort_somatic_summary(allSomatics_p2)
 allSomaticsSummary = rbind(somatics_summary_p1, somatics_summary_p2)
@@ -403,19 +406,17 @@ multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithSco
 
 multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
   ungroup() %>% 
-  distinct(patientId, scope, chromosome, position, ref, alt, type, clonality) %>% 
+  distinct(patientId, scope, chromosome, position, ref, alt, type, subclonalLikelihood) %>% 
   mutate(
     type = ifelse(type == 'SNP', 'SNV', type),
-    type = ifelse(type == 'MNP', 'MNV', type),
-    clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
-  group_by(patientId, scope, type, clonality) %>%
-  summarise(count = n()) %>%
-  spread(clonality, count, fill = 0) %>%
-  mutate(TOTAL = CLONAL + SUBCLONAL) %>%
-  select(-CLONAL) %>%
-  gather(clonality, count, TOTAL, SUBCLONAL) %>%
-  unite(type, scope, clonality, type, sep = "_") %>% 
-  spread(type, count, fill = 0) 
+    type = ifelse(type == 'MNP', 'MNV', type)) %>%
+  group_by(patientId, scope, type) %>%
+  summarize(
+    SUBCLONAL = round(sum(subclonalLikelihood), 0),
+    TOTAL = n()) %>%
+  gather(clonality, value, SUBCLONAL, TOTAL) %>%
+  unite(type, scope, clonality, type) %>%
+  spread(type, value, fill = 0)
 
 #multipleBiopsySampleIds = multipleBiopsyScope %>% spread(scope, sampleId)
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)

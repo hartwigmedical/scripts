@@ -206,32 +206,21 @@ highestPurityCohortSummary$purityBucket =
     breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
     labels = c("0-10%", "10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","          90-100%"))
 
-clonalityFactor = c('SUBCLONAL','CLONAL')
-
 clonalityLoad2 = highestPurityCohortSummary %>%
-  mutate(total = TOTAL_INDEL + TOTAL_SNV + TOTAL_MNV, 
-         subclonal = SUBCLONAL_INDEL + SUBCLONAL_SNV + SUBCLONAL_MNV) %>%
+  mutate(total = TOTAL_INDEL + TOTAL_SNV + TOTAL_MNV, subclonal = SUBCLONAL_INDEL + SUBCLONAL_SNV + SUBCLONAL_MNV) %>%
   group_by(purityBucket, sampleId) %>%
   summarise(total = sum(total), SUBCLONAL = sum(subclonal), CLONAL = sum(total) - SUBCLONAL) %>%
-  gather(clonality, value, CLONAL, SUBCLONAL) %>%
-  mutate(percentage = value / total) %>%
-  filter(clonality == 'SUBCLONAL') %>%
-  mutate(
-    clonality = factor(clonality, clonalityFactor), 
-    type = 'All') %>%
-  group_by(purityBucket) %>% mutate(bucketMean = sum(value) / sum(total))
+  mutate(percentage = SUBCLONAL / total) %>%
+  group_by(purityBucket) %>% mutate(bucketMean = sum(SUBCLONAL) / sum(total))
 
 samplesPerPurityBucket = clonalityLoad2 %>% group_by(purityBucket) %>% count()
 
 clonalityDrivers2 = hpcDriversByGene %>%
+  filter(!is.na(subclonalLikelihood)) %>%
   left_join(highestPurityCohortSummary %>% select(sampleId, purityBucket), by = "sampleId") %>%
-  filter(!is.na(clonality)) %>%
-  mutate(clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
-  group_by(purityBucket, clonality) %>%
-  summarise(driverLikelihood = sum(driverLikelihood)) %>% 
-  spread(clonality, driverLikelihood) %>%
-  mutate(subclonalPercentage = SUBCLONAL / (CLONAL + SUBCLONAL))
-  
+  group_by(purityBucket) %>%
+  summarise(subclonalLikelihood = sum(driverLikelihood * subclonalLikelihood), driverLikelihood = sum(driverLikelihood), subclonalPercentage = subclonalLikelihood / driverLikelihood)
+
 p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) + 
   geom_bar(fill = singleBlue, stat = "identity") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
@@ -253,8 +242,8 @@ p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) +
 
 p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
   geom_bar(fill = singleBlue, stat = "identity") + 
-  xlab("") + ylab("% of driver variants subclonal") + ggtitle("") + 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 0.06)) +
+  xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 0.07)) +
   theme(legend.position="none") +
   theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +

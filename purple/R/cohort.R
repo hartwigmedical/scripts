@@ -67,17 +67,14 @@ cohort_somatics_by_type <- function(somatics) {
     filter(filter == 'PASS') %>%
     mutate(
       type = ifelse(type == 'SNP', 'SNV', type),
-      type = ifelse(type == 'MNP', 'MNV', type),
-      clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
-    group_by(sampleId, type, clonality) %>%
-    summarise(count = n()) %>%
+      type = ifelse(type == 'MNP', 'MNV', type)) %>%
+    group_by(sampleId, type) %>%
+    summarize(
+      SUBCLONAL = round(sum(subclonalLikelihood), 0),
+      TOTAL = n()) %>%
+    gather(clonality, value, SUBCLONAL, TOTAL) %>%
     unite(type, clonality, type) %>%
-    spread(type, count, fill = 0) %>%
-    mutate(
-      TOTAL_INDEL = CLONAL_INDEL + SUBCLONAL_INDEL,
-      TOTAL_SNV = CLONAL_SNV +  SUBCLONAL_SNV,
-      TOTAL_MNV = CLONAL_MNV +  SUBCLONAL_MNV) %>%
-    select( -starts_with("CLONAL"))
+    spread(type, value, fill = 0)
 
   return (result)
 }
