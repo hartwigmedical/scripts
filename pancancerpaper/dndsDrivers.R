@@ -22,7 +22,7 @@ load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
 load(file = "~/hmf/RData/processed/hpcExonicSomaticsDndsAnnotated.RData")
 load(file = "~/hmf/RData/reference/hpcExonicSomatics.RData")
 hpcSomatics = hpcExonicSomatics %>%
-  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, clonality, repeatCount) %>%
+  select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, subclonalLikelihood, repeatCount) %>%
   mutate(shared = F)
 hpcDndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, hpcSomatics)
 save(hpcDndsExpectedDriversPerGene, file = "~/hmf/RData/Processed/hpcDndsExpectedDriversPerGene.RData")

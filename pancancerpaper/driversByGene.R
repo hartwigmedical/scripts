@@ -25,11 +25,11 @@ deletions = purple::driver_deletions(hpcGeneCopyNumberDeletes, tsGenes, oncoGene
 tertPromoters = purple::driver_promoters(hpcTertPromoters) %>% mutate(category = "Promoter")
 tsgDriverByGene = hpcDndsTsgDrivers %>% 
   mutate(hotspot = ifelse(hotspot, "Hotspot", "NonHotspot")) %>%
-  select(sampleId, coordinate, gene, category = variant, driver, impact, driverLikelihood = driverLikelihoodAdjusted, type, biallelic, hotspot, clonality, shared, pHGVS)
+  select(sampleId, coordinate, gene, category = variant, driver, impact, driverLikelihood = driverLikelihoodAdjusted, type, biallelic, hotspot, subclonalLikelihood, shared, pHGVS)
 oncoDriverByGene = hpcDndsOncoDrivers %>% 
   mutate(hotspot = ifelse(hotspot, "Hotspot", "NonHotspot"),
          hotspot = ifelse(nearHotspot, "NearHotspot", hotspot)) %>%
-  select(sampleId, coordinate, gene, category = variant, driver, impact, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, clonality, shared, pHGVS)
+  select(sampleId, coordinate, gene, category = variant, driver, impact, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, subclonalLikelihood, shared, pHGVS)
 
 hotspotFactors = c("Hotspot","NearHotspot","NonHotspot")
 driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Del","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Indel","Amp")
@@ -55,14 +55,12 @@ save(hpcDriversByGene, file = "~/hmf/RData/processed/hpcDriversByGene.RData")
 
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
 driverCatalogue = hpcDriversByGene %>%
-  select(sampleId, cancerType, gene, geneType = type, coordinate, category, mutationClass = driver, driverLikelihood,  clonality, pHGVS, hotspot, biallelic) %>%
+  select(sampleId, cancerType, gene, geneType = type, coordinate, category, mutationClass = driver, driverLikelihood,  subclonalLikelihood, pHGVS, hotspot, biallelic) %>%
   mutate(
-    clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality),
     pHGVS = ifelse(pHGVS == ",","",pHGVS)) %>% 
   left_join(sampleIdMap, by = "sampleId") %>%
   select(-sampleId) %>%
   select(sampleId = hmfSampleId, everything()) 
-
 
 write.csv(driverCatalogue, file = "~/hmf/RData/DriverCatalogue.csv", row.names = F) 
 
