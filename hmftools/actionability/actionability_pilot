@@ -2,5 +2,16 @@
 
 actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer-1.0.jar
 
-# TODO sampleID and output dir argument
+output_dir="/data/common/dbs/knowledgebases/actionability"
+SAMPLE_ID=$1 && shift
+echo ${SAMPLE_ID}
+db_credentials=/data/common/dbs/mysql_credentials/pilot
+db_user=$(awk '/^user/ {print $2}' ${db_credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
+db_url=$(awk '/^url/ {print $2}' ${db_credentials})
+
 java -Dorg.jooq.no-logo=true -jar ${actionability_analyzer_application_jar}
+    -SAMPLE_ID ${SAMPLE_ID} \
+    -hmfpatients_db ${db_url} \
+    -db_user ${db_user} \
+    -db_password ${db_pass}
