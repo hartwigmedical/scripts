@@ -1,5 +1,6 @@
 #!/bin/bash
 
+# TODO (KODU): Read iclusion credentials from a file
 iclusion_client_id=$1
 iclusion_client_secret=$2
 iclusion_user=$3
