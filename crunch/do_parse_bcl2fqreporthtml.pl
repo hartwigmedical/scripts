@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 use strict;
+use warnings;
 use Cwd qw(realpath);
 use File::Basename qw(fileparse);
 use Getopt::Long;
