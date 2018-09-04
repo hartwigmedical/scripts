@@ -1,0 +1,6 @@
+#!/bin/bash
+
+for i in 1 2 3; do
+    echo "--- Checking crunch${i} -----"
+    ssh crunch00${i} check_samplesheets | grep -v "^#" | grep -vP "^\s*$" | sort -k2
+done
