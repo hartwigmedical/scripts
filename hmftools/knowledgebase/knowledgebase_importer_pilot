@@ -3,7 +3,6 @@
 knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
 api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
-
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
 iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${api_credentials})
@@ -11,22 +10,23 @@ iclusion_user=$(awk '/^username/ {print $2}' ${api_credentials})
 iclusion_password=$(awk '/^password/ {print $2}' ${api_credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-cgi_biomarkers_file=/data/common/dbs/knowledgebases/input_180822/cgi_biomarkers_per_variant_180822.tsv
-cgi_validated_file=/data/common/dbs/knowledgebases/input_180822/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
-onco_annotated_file=/data/common/dbs/knowledgebases/input_180822/onco_allAnnotatedVariants_180822.csv
-onco_actionable_file=/data/common/dbs/knowledgebases/input_180822/onco_allActionableVariants_180822.txt
-doid_file=/data/common/dbs/knowledgebases/input_180822/doid_180830.owl
+cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_180822.tsv
+cgi_validated_file=/data/common/dbs/knowledgebases/input/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
+onco_annotated_file=/data/common/dbs/knowledgebases/input/onco_allAnnotatedVariants_180822.csv
+onco_actionable_file=/data/common/dbs/knowledgebases/input/onco_allActionableVariants_180822.txt
+doid_file=/data/common/dbs/knowledgebases/input/doid_180830.owl
 cosmic_fusions_file=/data/common/dbs/knowledgebases/input/171127_cosmic_gene_fusions.csv
-civic_evidence_file=/data/common/dbs/knowledgebases/input_180822/civic_01-Aug-2018-ClinicalEvidenceSummaries_180822.tsv
-civic_variants_file=/data/common/dbs/knowledgebases/input_180822/civic_01-Aug-2018-VariantSummaries_180822.tsv
+civic_evidence_file=/data/common/dbs/knowledgebases/input/civic_01-Aug-2018-ClinicalEvidenceSummaries_180822.tsv
+civic_variants_file=/data/common/dbs/knowledgebases/input/civic_01-Aug-2018-VariantSummaries_180822.tsv
 transvar_command=transvar
-treatment_type_mapping_file=/data/common/dbs/knowledgebases/output_180822/treatmentTypes.tsv
-output_dir=/data/common/dbs/knowledgebases/output_180822
+treatment_type_mapping_file=/data/common/dbs/knowledgebases/output/treatmentTypes.tsv
+output_dir=/data/common/dbs/knowledgebases/output
 
 db_credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
 db_url=$(awk '/^url/ {print $2}' ${db_credentials})
+
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 
 java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
@@ -41,6 +41,7 @@ java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -civic_variants_location ${civic_variants_file} \
     -civic_evidence_location ${civic_evidence_file} \
     -cosmic_fusions_location ${cosmic_fusions_file} \
+    -iclusion_endpiint ${iclusion_endpoint} \
     -iclusion_client_id ${iclusion_client_id} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_user ${iclusion_user} \
