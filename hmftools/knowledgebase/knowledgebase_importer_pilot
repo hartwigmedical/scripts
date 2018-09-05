@@ -10,14 +10,17 @@ iclusion_user=$(awk '/^username/ {print $2}' ${api_credentials})
 iclusion_password=$(awk '/^password/ {print $2}' ${api_credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_180822.tsv
-cgi_validated_file=/data/common/dbs/knowledgebases/input/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
-onco_annotated_file=/data/common/dbs/knowledgebases/input/onco_allAnnotatedVariants_180822.csv
-onco_actionable_file=/data/common/dbs/knowledgebases/input/onco_allActionableVariants_180822.txt
-doid_file=/data/common/dbs/knowledgebases/input/doid_180830.owl
-cosmic_fusions_file=/data/common/dbs/knowledgebases/input/171127_cosmic_gene_fusions.csv
-civic_evidence_file=/data/common/dbs/knowledgebases/input/civic_01-Aug-2018-ClinicalEvidenceSummaries_180822.tsv
-civic_variants_file=/data/common/dbs/knowledgebases/input/civic_01-Aug-2018-VariantSummaries_180822.tsv
+
+input_dir=/data/common/dbs/knowledgebases/input
+cgi_biomarkers_file=${input_dir}/cgi_biomarkers_per_variant_180822.tsv
+cgi_validated_file=${input_dir}/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
+onco_annotated_file=${input_dir}/onco_allAnnotatedVariants_180822.csv
+onco_actionable_file=${input_dir}/onco_allActionableVariants_180822.txt
+doid_file=${input_dir}/doid_180830.owl
+cosmic_fusions_file=${input_dir}/171127_cosmic_gene_fusions.csv
+civic_evidence_file=${input_dir}/civic_01-Aug-2018-ClinicalEvidenceSummaries_180822.tsv
+civic_variants_file=${input_dir}/civic_01-Aug-2018-VariantSummaries_180822.tsv
+
 transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/output/treatmentTypes.tsv
 output_dir=/data/common/dbs/knowledgebases/output
