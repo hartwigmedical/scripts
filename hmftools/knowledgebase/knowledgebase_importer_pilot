@@ -41,7 +41,7 @@ java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -civic_variants_location ${civic_variants_file} \
     -civic_evidence_location ${civic_evidence_file} \
     -cosmic_fusions_location ${cosmic_fusions_file} \
-    -iclusion_endpiint ${iclusion_endpoint} \
+    -iclusion_endpoint ${iclusion_endpoint} \
     -iclusion_client_id ${iclusion_client_id} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_user ${iclusion_user} \
