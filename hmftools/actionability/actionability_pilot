@@ -1,12 +1,12 @@
 #!/bin/bash
 
-sampleId=$1 && shift
+sample_id=$1 && shift
 
 actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer.jar
 
-outputDir="/data/experiments/actionability_assessments"
+output_dir="/data/experiments/actionability_assessments"
 
-echo "Extracting actionability of sample ${sampleId}"
+echo "Extracting actionability for sample ${sample_id}"
 
 db_credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
@@ -14,7 +14,7 @@ db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
 db_url=$(awk '/^url/ {print $2}' ${db_credentials})
 
 java -Dorg.jooq.no-logo=true -jar ${actionability_analyzer_application_jar} \
-    -sample_ID ${sampleId} \
+    -sample_ID ${sample_id} \
     -hmfpatients_db ${db_url} \
     -db_user ${db_user} \
     -db_password ${db_pass}
