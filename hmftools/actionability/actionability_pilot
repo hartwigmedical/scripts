@@ -7,6 +7,8 @@ knowledgebase=$1 && shift
 actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer.jar
 
 echo "Extracting actionability for sample ${sample_id}"
+echo "Using the knowledgebase from ${knowledgebase}"
+echo "output files are writing to ${output_dir}"
 
 db_credentials=/data/common/dbs/mysql_credentials/prod
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
