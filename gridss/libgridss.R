@@ -62,6 +62,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
 	  # Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
 	  #filtered = .addFilter(filtered, "minRead", .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support)
+	  filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
 	  # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 	  #filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
 	  # homology FPs handled by normal and/or PON
@@ -871,7 +872,7 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
     ) %>% distinct())
 }
 linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
-  linked_by_adjacency(svgr, maxgap=maxgap, select="unique", link_label="dsb")
+  linked_by_adjacency(bpgr, maxgap=maxgap, select="unique", link_label="dsb")
 }
 #' Links breakends by their proximity
 #'
