@@ -25,7 +25,7 @@ load_rerun_v3_info_for_set() {
 load_rerun_v4_info_for_set() {
     set=$1
     # Allow for failure of v4 rerun since v4 rerun runs the health checks.
-    rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_v4.ini" | grep "Validated\|Failed" `
+    rerun_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic_Rerun_v4.ini" | grep "v4.3" | grep "Validated\|Failed" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})
         run_is_v4=`echo ${run_info} | cut -d ' ' -f8 | grep "v4"`
