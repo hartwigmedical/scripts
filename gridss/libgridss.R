@@ -908,8 +908,8 @@ linked_by_adjacency = function(
     }
     # breakpoints point away from each other
     hitdf = hitdf %>%
-      filter((start(bpgr)[queryHits] <= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "-") |
-               (start(bpgr)[queryHits] >= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "+"))
+      filter(as.logical((start(bpgr)[queryHits] <= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "-") |
+               (start(bpgr)[queryHits] >= start(bpgr)[subjectHits] & strand(bpgr)[queryHits] == "+")))
   }
   hitdf = hitdf %>%
     mutate(

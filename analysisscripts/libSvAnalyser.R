@@ -342,13 +342,93 @@ cluster_consistency = function(svgr) {
       toward_centromere_ploidy=sum(towardsCentromere * ploidy),
       toward_telomere_ploidy=sum(ploidy) - toward_centromere_ploidy)
 }
-find_sv_proximity_links = function(svgr, maxgap) {
-  findOverlaps(svgr, svgr, maxgap=maxgap, ignore.strand=TRUE) %>% as.data.frame() %>%
+load_line_elements = function(file) {
+  linedf = readr::read_csv(file)
+  linegr = with(linedf, GRanges(
+    seqnames=Chromosome,
+    ranges=IRanges(start=PosStart, end=PosEnd),
+    type=Type))
 }
-get_line_elements = function(file) {
+load_fragile_sites = function(file) {
+  df = readr::read_csv(file)
+  with(df, GRanges(
+    seqnames=Chromosome,
+    ranges=IRanges(start=PosStart, end=PosEnd),
+    type=Type,
+    gene_name=GeneName,
+    cfs_name=CFSName))
+}
+svids_of_overlap = function(gr, annotation_gr, maxgap=1, ignore.strand=TRUE) {
+  unique(gr$id[overlapsAny(gr, annotation_gr, maxgap=maxgap, ignore.strand=ignore.strand)])
+}
+
+find_simple_events = function(cndf, svdf, svgr) {
 
 }
-is_line_element = function(svgr) {
-
+add_prev_next_cnid = function(cndf) {
+  cndf %>%
+    group_by(sampleId, chromosome) %>%
+    arrange(start) %>%
+    mutate(
+      next_cnid = lead(id),
+      prev_cnid = lag(id)) %>%
+    ungroup()
 }
+#    ------ CN1 -> CN3
+#   /      \
+# CN1  CN2  CN3
+find_simple_deletions = function(cndf, svdf, svgr) {
+  cndf = add_prev_next_cnid(cndf) %>% as.data.frame()
+  svdf = svdf %>% as.data.frame()
+  row.names(cndf) = cndf$id
+  row.names(svdf) = svdf$id
+  bpgr = with(mcols(svgr), svgr[!is.na(partner)])
+  dels = bpgr[strand(bpgr) == "+" & strand(partner(bpgr)) == "-" &
+      cndf[bpgr$cnid,]$next_cnid == cndf[partner(bpgr)$cnid,]$prev_cnid]
+  data.frame(
+      simple_event_type="DEL",
+      svid=dels$id,
+      left_flank_cnid=dels$cnid,
+      cnid=cndf[dels$cnid,]$next_cnid,
+      right_flank_cnid=partner(bpgr)[dels$partner]$cnid,
+      stringsAsFactors=FALSE) %>%
+    mutate(
+      left_flank_ploidy=cndf[left_flank_cnid,]$copyNumber,
+      right_flank_ploidy=cndf[right_flank_cnid,]$copyNumber,
+      ploidy=cndf[cnid,]$copyNumber,
+      svploidy=svdf[svid,]$ploidy) %>%
+    mutate(
+      flanking_ploidy_delta=left_flank_ploidy-right_flank_ploidy,
+      ploidy_inconsistency_delta=(left_flank_ploidy + right_flank_ploidy) / 2 - svploidy - ploidy)
+}
+#    ------ CN2 -> CN2
+#    \    /
+# CN1  CN2  CN3
+find_simple_duplications = function(cndf, svdf, svgr) {
+  cndf = add_prev_next_cnid(cndf) %>% as.data.frame()
+  svdf = svdf %>% as.data.frame()
+  row.names(cndf) = cndf$id
+  row.names(svdf) = svdf$id
+  bpgr = with(mcols(svgr), svgr[!is.na(partner)])
+  dups = bpgr[strand(bpgr) == "-" & strand(partner(bpgr)) == "+" & bpgr$cnid == partner(bpgr)$cnid]
+  data.frame(
+    simple_event_type="DUP",
+    svid=dups$id,
+    cnid=dups$cnid,
+    left_flank_cnid=cndf[dups$cnid,]$prev_cnid,
+    right_flank_cnid=cndf[dups$cnid,]$next_cnid,
+    stringsAsFactors=FALSE) %>%
+    mutate(
+      left_flank_ploidy=cndf[left_flank_cnid,]$copyNumber,
+      right_flank_ploidy=cndf[right_flank_cnid,]$copyNumber,
+      ploidy=cndf[cnid,]$copyNumber,
+      svploidy=svdf[svid,]$ploidy) %>%
+    mutate(
+      flanking_ploidy_delta=left_flank_ploidy-right_flank_ploidy,
+      ploidy_inconsistency_delta=(left_flank_ploidy + right_flank_ploidy) / 2 + svploidy - ploidy)
+}
+
+
+
+
 

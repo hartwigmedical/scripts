@@ -20,6 +20,13 @@ remove(tmpwd)
 source("libSvAnalyser.R")
 ```
 
+```{r}
+line_gr = load_line_elements("../../line_elements.csv")
+line_match_distance = 5000
+fragile_site_gr = load_fragile_sites("../../fragile_sites_supp.csv")
+  
+```
+
 Load clustering data from file and GRIDSS calls from DB
 ```{r}
 svData = read.csv('../../cluster/CLUSTER_GRIDSS_v2.csv') %>%
@@ -35,6 +42,11 @@ cngr = to_cn_gr(cndf)
 svdf = query_somatic_structuralVariants(dbgridss)
 svgr = to_sv_gr(svdf, include.homology=FALSE)
 svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
+svgr$is_line = svgr$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
+svdf$is_line = svdf$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
+svgr$is_fragile_site = svgr$id %in% svids_of_overlap(svgr, fragile_site_gr)
+svdf$is_fragile_site = svdf$id %in% svids_of_overlap(svgr, fragile_site_gr)
+
 if (any(is.na(svgr$cnid))) {
   bad_svid = svgr$id[is.na(svgr$cnid)]
   warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
@@ -54,7 +66,7 @@ Compare clustering to GRIDSS linkages
 
 gridss_links = gridss_sv_links(svdf, svgr)
 loh_links = find_sv_loh_links(cndf, cngr, svgr)
-loh_links = find_sv_proximity_links(svgr, maxgap=10000)
+proximity_links = linked_by_adjacency(svgr, maxgap = 10000, require_segment=TRUE, select="closest", link_label="TIadj")
 
 linked_breakends = bind_rows(
   gridss_links,
@@ -70,8 +82,69 @@ svid_to_cluster_lookup = cluster_links(svdf, linked_breakends)
 svdf$cluster = svid_to_cluster_lookup[svdf$id]
 svgr$cluster = svid_to_cluster_lookup[svgr$id]
 
+cluster_consistency
+```
+
+```{r}
+dels = find_simple_deletions(cndf, svdf, svgr)
+dups = find_simple_duplications(cndf, svdf, svgr)
+theme_set(theme_bw())
+library(ggExtra)
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 1 & abs(ploidy_inconsistency_delta) < 1) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta, y=ploidy_inconsistency_delta, colour=flankingMethod, size=svploidy) +
+  geom_point() +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_grid(simple_event_type ~ copyNumberMethod)
+
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 0.25) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta, fill=flankingMethod) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod, scales="free")
+
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(ploidy_inconsistency_delta) < 0.6) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=ploidy_inconsistency_delta, fill=flankingMethod) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod, scales="free")
 
 
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 0.25) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod + flankingMethod, scales="free")
+
+```
+
+```{r}
 proximity_clustered_sv_pairs = svData %>% dplyr::select(SampleId, ClusterId, Id) %>%
   inner_join(
     svData %>% dplyr::select(SampleId, ClusterId, Id),
