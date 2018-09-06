@@ -63,7 +63,7 @@ load_sv_file <- function(directory, fileName) {
   chromFactors = c(1:22, "X","Y")
   
   vcf <- read.vcfR(paste0(directory, fileName), verbose = F)
-  vcf  = vcfR2tidy(vcf, single_frame = F)$fix %>% filter(!is.na(MATEID)) %>% 
+  vcf  = vcfR2tidy(vcf, single_frame = F)$fix %>% filter(!is.na(MATEID), FILTER %in% c(".", "PASS")) %>% 
     mutate(CHROM = factor(CHROM, chromFactors)) %>%
     arrange(CHROM, POS)
   
@@ -139,7 +139,11 @@ for (i in c(1:nrow(vcfFilenames))) {
   sample = gsub("_somaticSV_bpi.vcf.gz", "", vcfFilenames[i, "hmfSv"])
   sample = gsub(".*_", "", sample)
   
-  hmfSv = hmfSVs %>% filter(sampleId == sample) %>% mutate(source = "hmf", scope = "Private")
+  hmfSv = hmfSVs %>% 
+    filter(
+      sampleId == sample, 
+      filter == 'PASS') %>% 
+    mutate(source = "hmf", scope = "Private") 
   
   pcawgVCFFile = vcfFilenames[i, "pcawgSv"]
   pcawgSv = load_sv_file(pcawgDirectory, pcawgVCFFile) %>%
@@ -147,7 +151,6 @@ for (i in c(1:nrow(vcfFilenames))) {
       startOrientation = ifelse(STRAND_start == "+", 1, -1),
       endOrientation = ifelse(STRAND_end == "+", 1, -1)) %>% 
     mutate(source = "pcawg", scope = "Private")
-  
   
   overlaps = sv_overlaps(hmfSv, pcawgSv, maxgap = 100)
   hmfSv[overlaps$queryHits, "scope"] <- "Shared"
@@ -159,12 +162,23 @@ for (i in c(1:nrow(vcfFilenames))) {
   combinedSV = bind_rows(combinedSV, combined)
 }
 
-load(file = "/Users/jon/hmf/analysis/pcawg/combinedSV.RData")
+#################### PRE FILTER STATS
+combinedSV %>% filter(source == 'hmf') %>% mutate(exclude = type == 'BND' & ploidy < 0.2) %>% group_by(exclude) %>% count() %>% ungroup() %>% mutate(percent = n / sum(n))
+combinedSV %>% filter(source == 'hmf', ploidy < 0.2) %>% group_by(type) %>% count() %>% ungroup() %>% mutate(percent = n / sum(n))
+
+### FILTER
+combinedSV = combinedSV %>% 
+  filter(
+    !(source == "hmf" & type == 'BND' & ploidy < 0.2), 
+    startChromosome != endChromosome | endPosition-startPosition>1000)
+
+#################### POST FILTER STATS
+combinedSV %>% group_by(source) %>% count()
+combinedSV %>% filter(source == 'pcawg') %>% group_by(scope) %>% count() %>% ungroup() %>% mutate(percent = n / sum(n))
+combinedSV %>% filter(source == 'hmf') %>% group_by(scope) %>% count() %>% ungroup() %>% mutate(percent = n / sum(n))
+
+
+
 save(combinedSV, file = "/Users/jon/hmf/analysis/pcawg/combinedSV.RData")
 
 
-View(combinedSV %>% filter(startChromosome==endChromosome) %>% unite(scope_source,scope,source) %>% group_by(scope_source,gt1kLen=endPosition-startPosition>1000,startOrientation,endOrientation) %>% count() %>% spread(scope_source,n))
-
-View(combinedSV %>% filter(ploidy>0.2|is.na(ploidy),startChromosome!=endChromosome) %>% unite(scope_source,scope,source) %>% group_by(scope_source,sampleId) %>% count() %>% spread(scope_source,n))
-
-View(combinedSV %>% filter(ploidy>0.2|is.na(ploidy),startChromosome!=endChromosome, sampleId=='EGAZ00001225528'))
