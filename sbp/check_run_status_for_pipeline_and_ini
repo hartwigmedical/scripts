@@ -81,7 +81,7 @@ query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "pipeline=${pip}" \
-    -filter "status=Processing|Pending" \
+    -filter "status=Processing|Pending|Downloading" \
     -json | jq -r '.[].name' | \
     while read setName; do
         echo "${setName} is processing or pending on ${pip}"
