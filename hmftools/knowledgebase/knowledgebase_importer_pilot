@@ -23,7 +23,7 @@ civic_variants_file=${input_dir}/civic_01-Aug-2018-VariantSummaries_180822.tsv
 
 transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
-output_dir=/data/common/dbs/knowledgebases/output
+output_dir=/data/common/dbs/knowledgebases/output_kodu_test
 
 db_credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
