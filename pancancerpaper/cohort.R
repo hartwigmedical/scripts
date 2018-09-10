@@ -427,7 +427,7 @@ multipleBiopsyCohortSummary = multipleBiopsyCohort %>% left_join(allClinicalData
   left_join(multipleBiopsyScope %>% select(sampleId, scope), by = "sampleId") %>% 
   filter(scope == "Sample1") %>% select(patientId, gender, primaryTumorLocation, cancerType) %>%
   left_join(multipleBiopsySampleIds, by = "patientId") %>%
-  left_join(multipleBiopsyStructuralVariantSummary, by = "patientId") %>%
+  #left_join(multipleBiopsyStructuralVariantSummary, by = "patientId") %>%
   left_join(multipleBiopsySomaticVariantSummary, by = "patientId") %>%
   mutate(patientId = substr(Sample1, 1, 9))
   
