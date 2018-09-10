@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+# KODU: There are 3 types of runs:
+#  - v4 run. In this case, the run info, v3 rerun and v4 rerun are all identical.
+#  - v3 run, with a v4 rerun. In this case, the run and v3 rerun are identical, the v4 rerun is separate.
+#  - pre-v3 run, with a v3 rerun and a v4 rerun. In this case all 3 run infos will be different.
+
 load_run_info_for_set() {
     local set=$1
     local run_info=`query_sbp_api -type runs | grep -P "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed" `
