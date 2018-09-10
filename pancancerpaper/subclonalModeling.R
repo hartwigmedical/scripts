@@ -213,11 +213,6 @@ annotate_somatics_with_clonality <- function(enrichedSomatics, subclonalRegions)
 
 
 ### TEST DATA
-#save(sampleDetails, enrichedProdSomatics, enrichedPilotSomatics, file = "~/hmf/analysis/fit/CPCT02110040T.RData")
-#load(file = "~/hmf/analysis/fit/CPCT02110040T.RData")
-#model_somatics(enrichedProdSomatics, 0.1)
-#sample = "CPCT02020197T"
-
 library(dplyr)
 library(tidyr)
 library(ggplot2)
@@ -236,9 +231,7 @@ binwidth = 0.05
 estimateWidth = 10
 i = 0
 for (sample in samples) {
-  #sample = samples[3:3]
-  #sample = "CPCT02010618T"
-  
+
   i = i + 1
   cat("Processing:", sample, " (",i,")", "\n")
   somatics = allSomatics_p2 %>% filter(sampleId == sample) %>% mutate(somaticPloidy = pmax(0, adjustedVaf * adjustedCopyNumber)) %>% 
@@ -319,3 +312,59 @@ allSomatics_p1 = annotate_somatics_with_clonality(allSomatics_p1, subclonalRegio
   select(-bucket, -somaticPloidy) 
 
 save(allSomatics_p1, file = "/Users/jon/hmf/RData/Reference/allSomatics_p1.RData")
+
+
+################# Methods Figure 1 - Subclonal.png 
+library(cowplot)
+library(scales)
+theme_set(theme_bw())
+
+singleBlue = "#6baed6"
+singleRed = "#d94701"
+
+binwidth = 0.05
+estimateWidth = 10
+query = "select * from somaticVariant where sampleId = 'xxxxx'"
+dbProd = dbConnect(MySQL(), dbname='hmfpatients_20180418', groups="RAnalysis")
+somatics = dbGetQuery(dbProd, query) %>% mutate(somaticPloidy = pmax(0, adjustedVaf * adjustedCopyNumber)) 
+dbDisconnect(dbProd)
+rm(dbProd)
+
+filteredSomatics = somatics %>% filter(!chromosome %in% c('X','Y'))
+samplePeakDistribution = model_somatics(filteredSomatics,binwidth, estimateWidth = estimateWidth)
+samplePeakDistribution2 = samplePeakDistribution %>% filter(!peak %in% c("2.7","5.97") )
+
+samplePeakDistributionTotal = samplePeakDistribution2 %>% group_by(bucket) %>% summarise(count = sum(count))
+
+pDistribution = ggplot() +
+  geom_histogram(data=filteredSomatics, aes(x = somaticPloidy), binwidth = binwidth, fill=singleBlue, col=singleBlue,  alpha = .4) +
+  geom_line(data=samplePeakDistributionTotal, aes(x = bucket, y = count), position = "identity", alpha = 0.8) +
+  geom_line(data=samplePeakDistribution2, aes(x = bucket, y = count, color = peak), position = "identity") +
+  geom_area(data=samplePeakDistribution2 %>% filter(subclonal), aes(x = bucket, y = count, fill = subclonal), position = "identity",  alpha = 0.3, color = singleRed) +
+  geom_segment(aes(x = 0.85, xend = 0.85, y = 0, yend = 1900), linetype = "dashed") +
+  geom_text(aes(label = "Subclonal Peaks", x = 0.8, y = 1900), size = 3.5, hjust = 1) +
+  geom_text(aes(label = "Clonal Peaks", x = 0.9, y = 1900), size = 3.5, hjust = 0) +
+  ggtitle("") + xlab("Ploidy") + ylab("") +
+  scale_y_continuous(expand=c(0.02, 0.02)) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), axis.ticks = element_blank(), legend.position="none") +
+  scale_x_continuous( expand=c(0.01, 0.01), limits = c(0, 3.5)) 
+
+
+jon = samplePeakDistribution %>% group_by(bucket, subclonal) %>% summarise(count = sum(count))%>% group_by(bucket) %>% mutate(percent = count / sum(count))
+
+pLikelihood = ggplot(data = jon %>% filter(subclonal)) +
+  geom_bar(width = 0.05, aes(x = bucket, y = percent), stat = "identity", fill=singleRed, col=singleRed,  alpha = 0.3) + 
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(), axis.ticks = element_blank()) +
+  xlab("") + ylab("") +
+  scale_y_continuous(labels = percent, expand=c(0.02, 0.02), limits = c(0, 1)) +
+  scale_x_continuous( expand=c(0.01, 0.01), limits = c(0, 3.5)) 
+
+pSubclonal = plot_grid(pDistribution, pLikelihood, nrow = 2, rel_heights = c(5, 1), labels = "AUTO")
+pSubclonal
+
+save_plot("~/hmf/RPlot/Methods Figure 1 - Subclonal.png", pSubclonal, base_width = 9, base_height = 7)  
+
+
+
+
+
