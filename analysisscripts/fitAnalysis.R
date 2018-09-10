@@ -61,9 +61,12 @@ somatic_enrichment <- function(purity, somatics) {
       majorAllelePloidy = adjustedCopyNumber - minorAllelePloidy,
       somaticPloidy = adjustedVaf * adjustedCopyNumber,
       subclonalProbability = samplePurity / (adjustedCopyNumber * samplePurity + 2 * (1 - samplePurity)),
-      majorAlleleProbability = pmax(majorAllelePloidy, 0) *  subclonalProbability,
+      majorAlleleVaf = pmax(majorAllelePloidy, 0) *  subclonalProbability,
       minConceivableAlleleCount = qbinom(0.01, 100000, totalReadCount * subclonalProbability / 100000, T),
-      maxConceivableAlleleCount = qbinom(0.99, 100000, totalReadCount * majorAlleleProbability / 100000, T),
+      maxConceivableAlleleCount = qbinom(0.99, 100000, totalReadCount * majorAlleleVaf / 100000, T),
+      maxConceivableVaf = pmin(1, maxConceivableAlleleCount / totalReadCount),
+      maxConceivablePloidy = (maxConceivableVaf * 2 * (1 - purity)) / (purity * (1 - maxConceivableVaf)),
+      somaticPenalty = pmax(0, somaticPloidy - maxConceivablePloidy),
       inconsistent = alleleReadCount > maxConceivableAlleleCount,
       subclonal = alleleReadCount < minConceivableAlleleCount,
       clonality = ifelse(subclonal, "SUBCLONAL", "CLONAL"),
@@ -94,7 +97,7 @@ somatic_summary <- function(somatics) {
   return (result)
 }
 
-#histo = myHist
+histo = myHist
 find_peak_from_histogram <- function(histo, binwidth) {
   histo = histo %>% filter(n > 0)
   
@@ -163,7 +166,7 @@ create_somatic_model <- function(purity, ploidy, depth, somatics, binwidth) {
       cat(i, " ", modelPeak["x"], " ", unexplainedSomatics / initialSomatics, " ",  modelPeak["y"] / initialHeightOfPeak, "\n")
     }
     i  = i + 1
-    exitLoop = unexplainedSomatics / initialSomatics < 0.05 || i > 10 || alreadyExists
+    exitLoop = unexplainedSomatics / initialSomatics < 0.05 || i > 10 || alreadyExists || !any(myHist$n > 1)
   }
   
   if (ncol(result) > 3) {
@@ -209,7 +212,7 @@ somatic_graph <- function(purity, ploidy, depth, somatics, binwidth = 0.05) {
 #dev.off()
 #somatic_graph(sampleDetails$purity.prod, sampleDetails$ploidy.prod,  sampleDetails$tumorCoverage, enrichedProdSomatics)
 #somatic_graph(sampleDetails$purity.prod, sampleDetails$ploidy.prod, sampleDetails$tumorCoverage, enrichedProdSomatics)
-somatic_graph(sampleDetails$purity.pilot, sampleDetails$ploidy.pilot, sampleDetails$tumorCoverage, enrichedPilotSomatics)
+#somatic_graph(sampleDetails$purity.pilot, sampleDetails$ploidy.pilot, sampleDetails$tumorCoverage, enrichedPilotSomatics)
 #sum(model$y1)
 
 
@@ -242,10 +245,10 @@ env_graph <- function(env, purity, ploidy, qcstatus, depth, copyNumberRegions, s
 }
 
 ##### ENVIRONMENT SETTINGS
-outputDir = "/Users/jon/hmf/analysis/lowcoverage/"
-pilotDbName = "low_coverages"
-#outputDir = "/Users/jon/hmf/analysis/fit/"
-#pilotDbName = "hmfpatients_pilot"
+#outputDir = "/Users/jon/hmf/analysis/lowcoverage/"
+#pilotDbName = "low_coverages"
+outputDir = "/Users/jon/hmf/analysis/fit/"
+pilotDbName = "hmfpatients_pilot"
 
 ### PRODUCTION COHORT
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
@@ -255,8 +258,19 @@ dbDisconnect(dbProd); rm(dbProd)
 
 ### PILOT COHORT
 dbPilot = dbConnect(MySQL(), dbname=pilotDbName, groups="RAnalysisWrite")
-#pilotCohort = dbGetQuery(dbPilot, "SELECT sampleId, purity, ploidy, status, qcStatus FROM purity WHERE version = 2.15 and modified > '2018-08-04'")
+pilotCohort = dbGetQuery(dbPilot, "SELECT sampleId, purity, ploidy, status, qcStatus FROM purity WHERE version = 2.15 and modified > '2018-08-23 09:19:04'")
 pilotCohort = dbGetQuery(dbPilot, "SELECT sampleId, purity, ploidy, status, qcStatus FROM purity")
+pilotCohort = dbGetQuery(dbPilot, "SELECT pilot.sampleId, pilot.purity, pilot.ploidy, pilot.status, pilot.qcStatus from hmfpatients_pilot.purity pilot, hmfpatients.purity prod
+                         WHERE pilot.sampleId = prod.sampleId 
+                         AND (pilot.qcStatus = 'PASS' OR prod.qcStatus = 'PASS')
+                         and (
+                         (pilot.qcstatus = 'FAIL_DELETED_GENES' OR prod.qcstatus = 'FAIL_DELETED_GENES') 
+                         OR (pilot.maxDiploidProportion >= 0.95 AND pilot.status <> prod.status)
+                         OR (pilot.purity > prod.purity + 0.1 AND pilot.ploidy > prod.ploidy + 0.2) 
+                         OR (pilot.purity > 0.97 and pilot.status <> 'NO_TUMOR') 	
+                         )
+                         order by abs(prod.ploidy - pilot.ploidy) desc")
+
 dbDisconnect(dbPilot); rm(dbPilot)
 
 #### COMPARE COHORTS
@@ -266,7 +280,8 @@ cohort = left_join(pilotCohort, prodCohort, by = "sampleId", suffix = c(".pilot"
     changeInPloidy = abs(ploidy.prod - ploidy.pilot)) %>%
   arrange(-changeInPloidy)
 cohort = left_join(cohort, prodMetrics, by = "sampleId")  
-cohortToRun = cohort
+cohortToRun = cohort 
+#cohortToRun = cohort %>% filter(changeInPloidy > 0.5)
 #cohortToRun = cohort %>% top_n(100, changeInPloidy) %>% mutate(patientId = substr(sampleId, 1, 12)) #%>% pull(patientId)
 save(cohort, cohortToRun, file = paste0(outputDir, "cohort.RData"))
 
@@ -279,9 +294,10 @@ dbPilot = dbConnect(MySQL(), dbname=pilotDbName, groups="RAnalysisWrite")
 enrichedPilotSomaticsSummary = data.frame()
 enrichedProdSomaticsSummary = data.frame()
 
-#sample = "CPCT02190002T"
+#sample = "CPCT02380013T"
 
 for (sample in cohortToRun$sampleId) {
+  cat("Processing", sample, "\n")
   sampleDetails = cohort %>% filter(sampleId == sample)
   
   #Collect Data
@@ -303,7 +319,7 @@ for (sample in cohortToRun$sampleId) {
   pilotStatus = paste0(sampleDetails$qcStatus.pilot,"|",sampleDetails$status.pilot)
   
   prod_graphs = env_graph("Production ", sampleDetails$purity.prod, sampleDetails$ploidy.prod, prodStatus, sampleDetails$tumorCoverage, prodRegions, enrichedProdSomatics)
-  pilot_graphs = env_graph("Low Coverage", sampleDetails$purity.pilot, sampleDetails$ploidy.pilot, pilotStatus, sampleDetails$tumorCoverage, pilotRegions, enrichedPilotSomatics)
+  pilot_graphs = env_graph("Pilot", sampleDetails$purity.pilot, sampleDetails$ploidy.pilot, pilotStatus, sampleDetails$tumorCoverage, pilotRegions, enrichedPilotSomatics)
   complete = plot_grid(prod_graphs, pilot_graphs, ncol = 1)
   save_plot(paste0(outputDir, sample, ".png"), complete, base_height = 10, base_width = 20)
 }
@@ -346,5 +362,21 @@ somatics = enrichedProdSomatics
 binwidth = 0.05
 somatics %>% count()
 
+jon = enrichedPilotSomatics %>% filter(inconsistent) %>%
+  select(sampleId, chromosome, position, alleleReadCount, totalReadCount, majorAllelePloidy, somaticPloidy, adjustedCopyNumber, maxConceivableAlleleCount, majorAlleleProbability)
+
+
+jon = somatic_enrichment(sampleDetails$purity.pilot, pilotSomatics)
+
+sampleDetails$purity.pilot
+sampleDetails
+
+jon[1, c("chromosome", "adjustedCopyNumber", "alleleReadCount","totalReadCount", "somaticPloidy", "majorAllelePloidy", "majorAlleleVaf", "maxConceivableAlleleCount", "maxConceivableVaf", "maxConceivablePloidy")]
+
+head(jon)
+sum(jon$somaticPenalty) / nrow(jon)
+
+
+jon %>% filter(bafC)
 
 
