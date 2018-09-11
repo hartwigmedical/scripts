@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+token=$1
+${prefix}/do_request_iclusion_object ${token} "studies"

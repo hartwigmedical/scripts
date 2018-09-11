@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+token=$1
+object=$2
+
+api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
+
+endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
+
+curl --request GET \
+  --url "${endpoint}/${object}" \
+  --header 'Accept: application/json' \
+  --header "Authorization: Bearer $token"
