@@ -17,7 +17,7 @@ if [[ ${pipCount} < 1 ]]; then
 fi
 
 ## STLI: define setting by ini
-findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads/ /data/schuberg/cpct_drup_downloads_v4/"
+findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/"
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
 downloadScriptFail="download_qc_fail_run"
