@@ -1,10 +1,10 @@
 #!/bin/bash
 
-actionability_analyzer_application_jar=/data/common/tools/actionability_pilot/actionability-analyzer.jar
+actionability_SOC_application_jar=/data/common/tools/actionability_SOC_pilot/actionability_for_SOC.jar
 
 db_credentials=/data/common/dbs/mysql_credentials/prod
 db_user=$(awk '/^user/ {print $2}' ${db_credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
 db_url=$(awk '/^url/ {print $2}' ${db_credentials})
 
-java -Dorg.jooq.no-logo=true -jar ${actionability_analyzer_application_jar}
+java -Dorg.jooq.no-logo=true -jar ${actionability_SOC_application_jar}
