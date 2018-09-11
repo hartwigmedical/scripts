@@ -9,7 +9,7 @@ credentials=/data/common/dbs/mysql_credentials/landscape_paper_validation
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-patient_db_jar=/data/common/tools/purple_v2.14/purple.jar
+patient_db_jar=/data/common/tools/purple_v2.15/purple.jar
 sv_jar=/data/common/tools/variantannotator_v1.5/variant-annotator.jar
 
 somatic_vcf=$(ls ${run_dir}/*post_processed.vcf.gz)
