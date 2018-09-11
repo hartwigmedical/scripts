@@ -7,6 +7,7 @@ gridss.min_normal_depth = 8
 
 # initial consideration filters
 gridss.max_homology_length = 50
+gridss.max_inexact_homology_length = 50
 gridss.max_allowable_short_event_strand_bias = 0.95
 gridss.single_breakend_multiplier = 2000/350 # Require this much more support for single breakends
 gridss.min_af = 0.005

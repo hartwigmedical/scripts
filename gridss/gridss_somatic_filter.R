@@ -63,9 +63,11 @@ VariantAnnotation::fixed(vcf)$FILTER = ifelse(names(vcf) %in% c(
   names(begr)[gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)]), "PON", "PASS")
 
 # Assembly-based event linking
-asm_linked_df = linked_assemblies(vcf)
+asm_linked_df = linked_assemblies(vcf) %>%
+  mutate(type="asm")
 # transitive calling reduction
-transitive_df = transitive_calls(vcf, bpgr)
+transitive_df = transitive_calls(vcf, bpgr) %>%
+  mutate(type="transitive")
 
 link_df = bind_rows(asm_linked_df, transitive_df) %>%
   mutate(linking_group=str_replace(linked_by, "/.*$", "")) %>%
@@ -81,20 +83,23 @@ bebeins_link_df = linked_by_breakend_breakend_insertion_classification(begr) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
-  filter(pass)
+  filter(pass) %>%
+  mutate(type="bebeins")
 bebpins_link_df = linked_by_breakpoint_breakend_insertion_classification(bpgr, begr) %>%
   group_by(linked_by) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
-  filter(pass)
+  filter(pass) %>%
+  mutate(type="bebpins")
 # Inversion linkage
 inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
   group_by(linked_by) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
-  filter(pass)
+  filter(pass) %>%
+  mutate(type="inv")
 # Deletion bridge linkage
 # TODO: do we want to do this?
 # I'm suspicious of the model used in ChainFinder PMC3690918
@@ -110,16 +115,36 @@ dsb_link_df = linked_by_dsb(bpgr) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
   mutate(pass=any(pass)) %>%
   ungroup() %>%
-  filter(pass)
+  filter(pass) %>%
+  mutate(type="dsb")
 
-link_df = bind_rows(
-  link_df,
+# linking priorities:
+# - asm independent of other linkages
+# - transitive independent of other linkages
+# - ins, inv, dsb linkages
+event_link_df = bind_rows(
   bebeins_link_df,
   bebpins_link_df,
   inv_link_df,
-  dsb_link_df)
+  dsb_link_df) %>%
+  dplyr::select(vcfId, linked_by) %>%
+  mutate(QUAL=rowRanges(vcf)[vcfId]$QUAL)
+# Only keep the best QUAL event linkage
+event_link_df = event_link_df %>%
+  group_by(linked_by) %>%
+  mutate(linkQUAL = pmin(QUAL)) %>%
+  group_by(vcfId) %>%
+  filter(QUAL == linkQUAL) %>%
+  group_by(linked_by)
+# Don't event link to PON filtered variants
+event_link_df = event_link_df %>%
+  filter(VariantAnnotation::fixed(vcf)[vcfId]$FILTER != "PON")
+# Fix up pairing
+event_link_df = event_link_df %>%
+  filter(n() == 2) %>%
+  ungroup()
 
-link_summary_df = link_df %>%
+link_summary_df = bind_rows(link_df, event_link_df) %>%
   group_by(vcfId) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 

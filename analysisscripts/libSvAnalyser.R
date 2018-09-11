@@ -427,7 +427,66 @@ find_simple_duplications = function(cndf, svdf, svgr) {
       flanking_ploidy_delta=left_flank_ploidy-right_flank_ploidy,
       ploidy_inconsistency_delta=(left_flank_ploidy + right_flank_ploidy) / 2 + svploidy - ploidy)
 }
+#    a    b     c   d
+#    -----------------
+#    |    |     |    |
+# CN1  CN2  CN3  CN4  CN5   (CN2 and CN4 can be 0bp in size)
+find_simple_inversions = function(cndf, svdf, svgr, max.breakend.gap=35) {
+  cndf = add_prev_next_cnid(cndf) %>% as.data.frame()
+  svdf = svdf %>% as.data.frame()
+  row.names(cndf) = cndf$id
+  row.names(svdf) = svdf$id
+  bpgr = svgr[!is.na(svgr$partner)]
+  bpgr = bpgr[seqnames(bpgr) == seqnames(partner(bpgr)) & strand(bpgr) == strand(partner(bpgr))]
+  findBreakpointOverlaps(bpgr, bpgr, maxgap=max.breakend.gap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL) %>%
+    filter(
+      bpgr[queryHits]$sampleId == bpgr[subjectHits]$sampleId &
+      as.logical(strand(bpgr[queryHits]) != strand(bpgr[subjectHits])) &
+      end(bpgr[queryHits]) < start(partner(bpgr)[queryHits]) &
+        end(bpgr[subjectHits]) < start(partner(bpgr)[subjectHits]) &
+      start(bpgr[queryHits]) < start(bpgr[subjectHits])) %>%
+    mutate(
+      beida=names(bpgr[queryHits]),
+      beidb=names(bpgr[subjectHits]),
+      beidc=ifelse(start(partner(bpgr)[queryHits]) <= start(partner(bpgr)[subjectHits]), bpgr$partner[queryHits], bpgr$partner[subjectHits]),
+      beidd=ifelse(start(partner(bpgr)[queryHits]) <= start(partner(bpgr)[subjectHits]), bpgr$partner[subjectHits], bpgr$partner[queryHits])) %>%
+    mutate(
+      cnid_left_a=ifelse(strand(bpgr[beida]) == "+", bpgr[beida]$cnid, cndf[bpgr[beida]$cnid,]$prev_cnid),
+      cnid_right_a=ifelse(strand(bpgr[beida]) == "-", bpgr[beida]$cnid, cndf[bpgr[beida]$cnid,]$next_cnid),
 
+      cnid_left_b=ifelse(strand(bpgr[beidb]) == "+", bpgr[beidb]$cnid, cndf[bpgr[beidb]$cnid,]$prev_cnid),
+      cnid_right_b=ifelse(strand(bpgr[beidb]) == "-", bpgr[beidb]$cnid, cndf[bpgr[beidb]$cnid,]$next_cnid),
+
+      cnid_left_c=ifelse(strand(bpgr[beidc]) == "+", bpgr[beidc]$cnid, cndf[bpgr[beidc]$cnid,]$prev_cnid),
+      cnid_right_c=ifelse(strand(bpgr[beidc]) == "-", bpgr[beidc]$cnid, cndf[bpgr[beidc]$cnid,]$next_cnid),
+
+      cnid_left_d=ifelse(strand(bpgr[beidd]) == "+", bpgr[beidd]$cnid, cndf[bpgr[beidd]$cnid,]$prev_cnid),
+      cnid_right_d=ifelse(strand(bpgr[beidd]) == "-", bpgr[beidd]$cnid, cndf[bpgr[beidd]$cnid,]$next_cnid)) %>%
+    mutate(
+      # simple inversions have nothing happening within the inversion
+      # ie: CN3 = right(b) == left(c)
+      simple_event_type="INV",
+      is_simple_inversion=cnid_right_b==cnid_left_c,
+      left_flank_cnid=cnid_left_a,
+      left_overlap_cnid=ifelse(cnid_right_a == cnid_left_b, cnid_right_a, NA_character_),
+      cnid=ifelse(cnid_right_b==cnid_left_c, cnid_right_b, NA_character_),
+      right_overlap_cnid=ifelse(cnid_right_c == cnid_left_d, cnid_right_c, NA_character_),
+      right_flank_cnid=cnid_right_d) %>%
+    mutate(
+      left_flank_ploidy=cndf[left_flank_cnid,]$copyNumber,
+      left_overlap_ploidy=cndf[left_overlap_cnid,]$copyNumber,
+      ploidy=cndf[cnid,]$copyNumber,
+      right_overlap_ploidy=cndf[right_overlap_cnid,]$copyNumber,
+      right_flank_ploidy=cndf[right_flank_cnid,]$copyNumber,
+      svploidy_a=bpgr[beida]$ploidy,
+      svploidy_b=bpgr[beidb]$ploidy) %>%
+    mutate(
+      sv_delta = svploidy_a - svploidy_b,
+      flanking_ploidy_delta=left_flank_ploidy-right_flank_ploidy,
+      ploidy_left_flank_delta=left_flank_ploidy - ploidy,
+      ploidy_right_flank_delta=left_flank_ploidy - ploidy,
+      ploidy_sv_delta = (svploidy_a + svploidy_b) / 2 - ploidy)
+}
 
 
 

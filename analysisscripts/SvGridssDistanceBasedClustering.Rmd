@@ -66,6 +66,7 @@ Compare clustering to GRIDSS linkages
 
 gridss_links = gridss_sv_links(svdf, svgr)
 loh_links = find_sv_loh_links(cndf, cngr, svgr)
+# TODO: transform output to match gridss_sv_links() format
 proximity_links = linked_by_adjacency(svgr, maxgap = 10000, require_segment=TRUE, select="closest", link_label="TIadj")
 
 linked_breakends = bind_rows(
@@ -88,6 +89,7 @@ cluster_consistency
 ```{r}
 dels = find_simple_deletions(cndf, svdf, svgr)
 dups = find_simple_duplications(cndf, svdf, svgr)
+invs =  find_simple_inversions(cndf, svdf, svgr, 100)
 theme_set(theme_bw())
 library(ggExtra)
 ggplot(bind_rows(dels, dups) %>%
@@ -128,7 +130,6 @@ ggplot(bind_rows(dels, dups) %>%
   labs(title="Simple event copy number consistency") + 
   facet_wrap(simple_event_type ~ copyNumberMethod, scales="free")
 
-
 ggplot(bind_rows(dels, dups) %>%
     filter(abs(flanking_ploidy_delta) < 0.25) %>%
     inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
@@ -141,6 +142,34 @@ ggplot(bind_rows(dels, dups) %>%
   #geom_rug(alpha=0.1, colour="black") +
   labs(title="Simple event copy number consistency") + 
   facet_wrap(simple_event_type ~ copyNumberMethod + flankingMethod, scales="free")
+
+ggplot(invs %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(
+    x=flanking_ploidy_delta,
+    y=(ploidy_right_flank_delta + ploidy_left_flank_delta) / 2,
+    shape=interaction(is.na(left_overlap_cnid), is.na(right_overlap_cnid)),
+    colour=paste0(copyNumberMethod.left, "/", copyNumberMethod, "/", copyNumberMethod.right)) + 
+  geom_point() +
+  labs(title="Simple event copy number consistency")
+
+ggplot(invs %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(
+    x=sv_delta,
+    y=ploidy_sv_delta,
+    shape=interaction(is.na(left_overlap_cnid), is.na(right_overlap_cnid)),
+    colour=paste0(copyNumberMethod.left, "/", copyNumberMethod, "/", copyNumberMethod.right)) + 
+  geom_point() +
+  labs(title="Simple event copy number consistency")
 
 ```
 

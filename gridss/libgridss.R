@@ -17,9 +17,13 @@ source("gridss.config.R")
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
     pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
+    include_pon_imprecise_calls=TRUE,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
+    if (!include_pon_imprecise_calls) {
+      pongr = pongr[!pongr$IMPRECISE]
+    }
     hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
   }
   return(hasHit)
@@ -46,6 +50,8 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	isShort = is_short_deldup(gr)
 	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
 	ihomlen[is.na(ihomlen)] = 0
+	homlen = elementExtract(info(vcf)$HOMLEN, 1)
+	homlen[is.na(homlen)] = 0
 	filtered = rep("", length(gr))
 
 	if (support_quality_filters) {
@@ -66,7 +72,8 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 	  #filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
 	  # homology FPs handled by normal and/or PON
-	  #filtered = .addFilter(filtered, "homologyLength", ihomlen > gridss.max_homology_length)
+	  filtered = .addFilter(filtered, "homlen", homlen > gridss.max_homology_length)
+	  filtered = .addFilter(filtered, "ihomlen", ihomlen > gridss.max_inexact_homology_length)
 		# Added ASRP into filter otherwise breakpoint chains don't get called
 	  filtered = .addFilter(filtered, "BPI.Filter.PRSupportZero", !isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0)
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
@@ -645,7 +652,7 @@ zip_aggregate_pair_of_list_of_list = function(list1, list2, ZIP_FUN, AGGREGATE_F
   result[aggregatedf$ordinal] = aggregatedf$value
   return(result)
 }
-linked_assemblies <- function(vcf) {
+linked_assemblies <- function(vcf, exclude_breakends_without_local_assembly=TRUE) {
   asm_linked_df <- data.frame(
     vcfId=names(vcf),
     parid=info(vcf)$PARID,
@@ -661,7 +668,15 @@ linked_assemblies <- function(vcf) {
     filter(asm != "")
 
   asm_paired_df = .linked_assemblies_fix_indels(asm_linked_df)
-  return (asm_paired_df %>% dplyr::select(vcfId, linked_by=asm))
+  if (exclude_breakends_without_local_assembly) {
+    asm_paired_df = .linked_assemblies_fix_breakends(vcf, asm_linked_df)
+  }
+  asm_paired_df = asm_paired_df %>%
+    dplyr::select(vcfId, linked_by=asm) %>%
+    group_by(linked_by) %>%
+    filter(n() != 2) %>%
+    ungroup()
+  return (asm_paired_df)
 }
 #' assemblies spanning SV indels will have the same asm
 #' linking id as the flanking variants as well as having
@@ -685,6 +700,14 @@ linked_assemblies <- function(vcf) {
       paste(asm, (row_number() + ifelse(paired_with_next, 1, 0)) / 2, sep="-"))) %>%
     ungroup() %>%
     dplyr::select(vcfId, asm=asm_new)
+}
+#' Linked breakends require an additional assembly to ensure
+#' we actually have a local assembly at the breakend
+.linked_assemblies_fix_breakends = function(vcf, asm_linked_df) {
+  i = info(vcf)
+  breakends_with_less_than_two_assemblies = names(vcf)[
+    is.na(i$PARID) & i$AS + i$RAS + i$CAS < 2]
+  asm_linked_df %>% filter(!(vcfId %in% breakends_with_less_than_two_assemblies))
 }
 require(testthat)
 test_that(".linked_assemblies_fix_indels corrects indels", {
@@ -851,7 +874,7 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
   if (is.null(bpgr$sampleId)) {
     bpgr$sampleId = "placeholder"
   }
-  hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
+  hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL) %>%
     filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
     filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits])) %>% # opposite strand
     # matching pairs with the best qual
@@ -894,6 +917,9 @@ linked_by_adjacency = function(
   select = match.arg(select)
   if (is.null(bpgr$sampleId)) {
     bpgr$sampleId = "placeholder"
+  }
+  if (is.null(bpgr$beid)) {
+    bpgr$beid = NA_character_
   }
   hitdf = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
@@ -948,9 +974,9 @@ linked_by_adjacency = function(
     filter(queryHits < subjectHits) %>% # remove symmetry
     mutate(linked_by=paste0(link_label, row_number()))
   return(bind_rows(
-    hitdf %>% mutate(vcfId=names(bpgr)[queryHits]) %>% dplyr::select(vcfId, linked_by),
-    hitdf %>% mutate(vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(vcfId, linked_by)) %>%
-      distinct())
+    hitdf %>% mutate(sampleId=bpgr$sampleId[queryHits],   beid=bpgr$beid[queryHits],   vcfId=names(bpgr)[queryHits]  ) %>% dplyr::select(sampleId, beid, vcfId, linked_by),
+    hitdf %>% mutate(sampleId=bpgr$sampleId[subjectHits], beid=bpgr$beid[subjectHits], vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(sampleId, beid, vcfId, linked_by)) %>%
+    distinct())
 }
 
 
