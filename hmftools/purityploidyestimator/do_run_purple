@@ -19,7 +19,6 @@ then
     exit 1
 fi
 
-do_run_bpi_prod ${run_dir}
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
