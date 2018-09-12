@@ -2,6 +2,9 @@
 #
 # Incorporates the given VCF files into the Panel Of Normals
 #
+
+# Rscript create_gridss_pon.R /data/experiments/gridss_full/pon $(find /data/cpct/reruns_v4 -name '*gridss*.vcf')
+
 library(tidyverse)
 library(stringr)
 library(rtracklayer)
@@ -114,8 +117,7 @@ bedpe = bpdf %>% mutate(
   arrange(chrom1, start1, chrom2, start2) %>%
   mutate(name=".") %>%
   dplyr::select(chrom1, start1, end1, chrom2, start2, end2, name, score, strand1, strand2, IMPRECISE)
-write.table(bedpe, paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE)
-
+withr::with_options(c(scipen = 10), write.table(bedpe, paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE))
 
 bedf = bind_rows(lapply(full_be, function(x) {
   data.frame(
