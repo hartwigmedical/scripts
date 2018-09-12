@@ -138,7 +138,7 @@ event_link_df = event_link_df %>%
   group_by(linked_by)
 # Don't event link to PON filtered variants
 event_link_df = event_link_df %>%
-  filter(VariantAnnotation::fixed(vcf)[vcfId]$FILTER != "PON")
+  filter(VariantAnnotation::fixed(vcf[vcfId])$FILTER != "PON")
 # Fix up pairing
 event_link_df = event_link_df %>%
   filter(n() == 2) %>%
