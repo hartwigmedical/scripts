@@ -10,12 +10,12 @@ fi
 
 purple_jar=${base_path}/tools/purple_v2.15/purple.jar
 purple_output=${run_dir}/purple
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
-if [ $? -ne 0 ]
+somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed_v2.2.vcf.gz)
+if [ -z ${somatic_vcf} ]
 then
     # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
-    if [ $? -ne 0 ]
+    somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
+    if [ -z ${somatic_vcf} ]
     then
         echo "Unable to locate post processed somatic variants. Exiting."
         exit 1
