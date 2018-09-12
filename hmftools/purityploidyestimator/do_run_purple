@@ -23,8 +23,13 @@ do_run_bpi_prod ${run_dir}
 structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
 if [ $? -ne 0 ]
 then
-    echo "Unable to locate bpi structural variants. Exiting."
-    exit 1
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
 fi
 
 do_run_amber ${run_dir}

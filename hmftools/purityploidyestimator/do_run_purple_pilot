@@ -12,5 +12,15 @@ purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple_pilot
 credentials=${base_path}/dbs/mysql_credentials/pilot
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
+if [ $? -ne 0 ]
+then
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        echo "Unable to locate post processed somatic variants. Exiting."
+        exit 1
+    fi
+fi
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${purple_output} ${credentials} $@
