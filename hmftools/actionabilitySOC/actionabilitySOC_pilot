@@ -1,8 +1,8 @@
 #!/bin/bash
 
 runDir=$1 && shift
-tumor_location_csv=$1 && shift
 actionability_SOC_application_jar=/data/common/tools/actionability_SOC_pilot/actionability_for_SOC.jar
+tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 
 java -Dorg.jooq.no-logo=true -jar ${actionability_SOC_application_jar} \
     -run_dir ${runDir} \
