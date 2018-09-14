@@ -674,9 +674,20 @@ linked_assemblies <- function(vcf, exclude_breakends_without_local_assembly=TRUE
   asm_paired_df = asm_paired_df %>%
     dplyr::select(vcfId, linked_by=asm) %>%
     group_by(linked_by) %>%
-    filter(n() != 2) %>%
+    filter(n() == 2) %>%
     ungroup()
-  return (asm_paired_df)
+  asm_paired_df = exclude_self_links(asm_paired_df, vcf)
+  return(asm_paired_df)
+}
+exclude_self_links = function(linked_df, vcf) {
+  self_links = linked_df %>% dplyr::select(vcfId, linked_by) %>%
+    mutate(parid = info(vcf[vcfId])$PARID) %>%
+    filter(!is.na(parid)) %>%
+    group_by(linked_by) %>%
+    filter(length(unique(c(vcfId, parid))) != 4) %>%
+    pull(linked_by)
+  return(linked_df %>% filter(!(linked_by %in% self_links)))
+
 }
 #' assemblies spanning SV indels will have the same asm
 #' linking id as the flanking variants as well as having
