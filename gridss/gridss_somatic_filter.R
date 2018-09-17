@@ -45,15 +45,14 @@ befiltered = gridss_breakend_filter(begr, full_vcf)
 
 # - filter to only decent length assemblies?
 #begr$calls_1k_window = countOverlaps(begr, rowRanges(full_vcf), ignore.strand=TRUE, maxgap=1000)
-
-bpfiltered = bpfiltered != ""
-befiltered = befiltered != ""
 if (!is.null(filter_reason_csv)) {
   readr::write_csv(
     x=data.frame(vcfId=c(names(bpgr), names(begr)), filters=c(bpfiltered, befiltered)),
     path=filter_reason_csv)
 }
 
+bpfiltered = bpfiltered != ""
+befiltered = befiltered != ""
 bp_vcf = full_vcf[names(bpgr)[!bpfiltered]]
 bpgr = breakpointRanges(bp_vcf) # fix any asymetrical filtering
 begr = begr[!befiltered]
