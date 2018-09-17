@@ -9,6 +9,6 @@ token=$( ${scriptDir}/do_request_iclusion_token ${api_credentials} | jq -r '.acc
 endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
 
 curl --request GET \
-  --url "${endpoint}${object}" \
+  --url "${endpoint}/${object}" \
   --header 'Accept: application/json' \
   --header "Authorization: Bearer $token"
