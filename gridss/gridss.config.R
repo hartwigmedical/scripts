@@ -2,7 +2,7 @@
 gridss.short_event_size_threshold = 1000
 
 # somatic filters
-gridss.allowable_normal_contamination=0.005 # 0.5% of the supporting fragments can come from the normal
+gridss.allowable_normal_contamination=0.03 # matches https://github.com/hartwigmedical/pipeline/settings/include/settings.ini:BPI_CONTAMINATION_FRACTION
 gridss.min_normal_depth = 8
 
 # initial consideration filters
