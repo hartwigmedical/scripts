@@ -1,13 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
-
-api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
-iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
-iclusion_client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
-iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${api_credentials})
-iclusion_user=$(awk '/^username/ {print $2}' ${api_credentials})
-iclusion_password=$(awk '/^password/ {print $2}' ${api_credentials})
+iclusion_api_credentials=$1
+iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
+iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
+iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_credentials})
+iclusion_user=$(awk '/^username/ {print $2}' ${iclusion_api_credentials})
+iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
@@ -31,6 +29,7 @@ db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
 db_url=$(awk '/^url/ {print $2}' ${db_credentials})
 
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
+knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
 java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -reference ${ref_genome} \
