@@ -5,12 +5,12 @@
 library(tidyverse)
 library(readr)
 library(stringr)
-usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF>"
+usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF> <filter reason CSV>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "gridss_somatic_filter")) {
   args = args[-1]
 }
-if (length(args) != 4) {
+if (length(args) != 4 & length(args) != 5) {
   write(usage, stderr())
   q(save="no", status=1)
 }
@@ -26,6 +26,7 @@ pon_dir = args[1]
 input_vcf = args[2]
 output_vcf = args[3]
 output_full_vcf = args[4]
+filter_reason_csv = args[5]
 source("libgridss.R")
 
 # Filter to somatic calls
@@ -46,6 +47,11 @@ bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, f
 
 bpfiltered = bpfiltered != ""
 befiltered = befiltered != ""
+if (!is.null(filter_reason_csv)) {
+  readr::write_csv(
+    x=data.frame(vcfId=c(names(bpgr), names(begr)), filters=c(bpfiltered, befiltered)),
+    path=filter_reason_csv)
+}
 
 bp_vcf = full_vcf[names(bpgr)[!bpfiltered]]
 bpgr = breakpointRanges(bp_vcf) # fix any asymetrical filtering
