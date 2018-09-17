@@ -38,7 +38,6 @@ gridss_overlaps_breakend_pon = function(gr,
   }
   return(hasHit)
 }
-
 #' For each GRanges breakend, indicates whether the variant
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
@@ -48,8 +47,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	i = info(vcf)
 	g = geno(vcf)
 	isShort = is_short_deldup(gr)
-	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
-	ihomlen[is.na(ihomlen)] = 0
+	ihomlen = gridss_inexact_homology_length(gr, vcf)
 	homlen = elementExtract(info(vcf)$HOMLEN, 1)
 	homlen[is.na(homlen)] = 0
 	filtered = rep("", length(gr))
@@ -111,6 +109,12 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
     filtered = .addFilter(filtered, "normalCoverage", .genosum(g$REF, normalOrdinal) + .genosum(g$REFPAIR, normalOrdinal) + .genosum(g$BVF, normalOrdinal) < gridss.min_normal_depth)
   }
   return(filtered)
+}
+gridss_inexact_homology_length = function(gr, vcf) {
+  ihommat = as.matrix(info(vcf[names(gr)])$IHOMPOS)
+  ihomlen = pmax(0, ihommat[,2] - ihommat[,1])
+  ihomlen[is.na(ihomlen)] = 0
+  return(ihomlen)
 }
 is_short_deldup = function(gr) {
   is_deldup = rep(FALSE, length(gr))
