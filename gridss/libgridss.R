@@ -73,7 +73,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  #filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
 	  # homology FPs handled by normal and/or PON
 	  filtered = .addFilter(filtered, "homlen", homlen > gridss.max_homology_length)
-	  filtered = .addFilter(filtered, "ihomlen", ihomlen > gridss.max_inexact_homology_length)
+	  filtered = .addFilter(filtered, "ihomlen", ihomlen > gridss.max_inexact_homology_length & !(is_short_dup(gr)))
 		# Added ASRP into filter otherwise breakpoint chains don't get called
 	  filtered = .addFilter(filtered, "BPI.Filter.PRSupportZero", !isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0)
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
@@ -123,6 +123,20 @@ is_short_deldup = function(gr) {
     is_deldup[isbp] = bp_short_deldup
   }
   return(is_deldup)
+}
+is_short_dup = function(gr) {
+  is_dup = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr <- gr[isbp]
+    bp_short_dup = strand(bpgr) != strand(partner(bpgr)) &
+      seqnames(bpgr) == seqnames(partner(bpgr)) &
+      abs(start(bpgr) - start(partner(bpgr))) < gridss.short_event_size_threshold &
+      ((start(bpgr) <= start(partner(bpgr)) & strand(bpgr) == "-") |
+        (start(bpgr) >= start(partner(bpgr)) & strand(bpgr) == "+"))
+    is_dup[isbp] = bp_short_dup
+  }
+  return(is_dup)
 }
 #' @description filter out 'shadow' calls of strong multi-mapping calls
 #' bwa overestimates the MAPQ of some multimapping reads
