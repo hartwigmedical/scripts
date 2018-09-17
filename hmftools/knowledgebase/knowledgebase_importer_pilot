@@ -2,7 +2,7 @@
 
 knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
-api_credentials=/data/common/dbs/api_credentials/iclusion_prod
+api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
 iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${api_credentials})
