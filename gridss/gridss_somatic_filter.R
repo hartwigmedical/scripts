@@ -37,7 +37,8 @@ bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf)
 befiltered = gridss_breakend_filter(begr, full_vcf)
-bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
+# shadow breakpoint removed due to initial mapq20 filter reducing FP rate
+# bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
 
 #bpfiltered = .addFilter(bpfiltered, "LOW_Qual", bpgr$QUAL < gridss.min_qual)
 #som_llr = gridss_breakpoint_somatic_llr(full_vcf, bpgr=bpgr, contamination_rate=gridss.allowable_normal_contamination)
