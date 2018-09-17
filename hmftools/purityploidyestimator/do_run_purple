@@ -19,12 +19,16 @@ then
     exit 1
 fi
 
-do_run_bpi_prod ${run_dir}
-structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
-if [ $? -ne 0 ]
+structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf)
+if [ -z ${structural_vcf} ]
 then
-    echo "Unable to locate bpi structural variants. Exiting."
-    exit 1
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf.gz)
+    if [ -z ${structural_vcf} ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
 fi
 
 do_run_amber ${run_dir}
@@ -44,7 +48,6 @@ gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 if [ -z "${credentials}" ]; then
     java -Xmx8G -Xms4G \
         -jar ${purple_jar} \
-        -threads 3 \
         -somatic_vcf ${somatic_vcf} \
         -structural_vcf ${structural_vcf} \
         -baf ${baf_file} \
@@ -60,7 +63,6 @@ else
 
     java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
         -jar ${purple_jar} \
-        -threads 3 \
         -somatic_vcf ${somatic_vcf} \
         -structural_vcf ${structural_vcf} \
         -baf ${baf_file} \

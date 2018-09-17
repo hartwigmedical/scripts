@@ -2,7 +2,26 @@
 source load_metadata
 
 run_dir=$1 && shift
-credentials=/data/common/dbs/mysql_credentials/low_coverages
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-load_genomic_data_for_run_into_low_coverages_db ${run_dir} ${credentials} ${sample}
+credentials=/data/common/dbs/mysql_credentials/low_coverages
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+patient_db_jar=/data/common/tools/purple_pilot/purple.jar
+sv_jar=/data/common/tools/variantannotator_v1.5/variant-annotator.jar
+
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
+structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+
+echo "[INFO] Loading purple data"
+${prefix}/do_load_purple_data ${run_dir}/purple/ ${credentials} ${patient_db_jar} ${sample} $@
+
+echo "[INFO] Loading somatic variants"
+${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+
+echo "[INFO] Loading sv variants"
+${prefix}/../svloader/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar}
+
+#echo "[INFO] Loading metrics"
+${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}

@@ -5,12 +5,12 @@
 library(tidyverse)
 library(readr)
 library(stringr)
-usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output VCF>"
+usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF>"
 args = commandArgs(TRUE)
-if (length(args) == 3 & str_detect(args[1], "gridss_somatic_filter")) {
+if (str_detect(args[1], "gridss_somatic_filter")) {
   args = args[-1]
 }
-if (length(args) != 3) {
+if (length(args) != 4) {
   write(usage, stderr())
   q(save="no", status=1)
 }
@@ -25,6 +25,7 @@ if (!file.exists(args[2])) {
 pon_dir = args[1]
 input_vcf = args[2]
 output_vcf = args[3]
+output_full_vcf = args[4]
 source("libgridss.R")
 
 # Filter to somatic calls
@@ -33,8 +34,8 @@ full_vcf = readVcf(input_vcf, "hg19")
 full_vcf = full_vcf[geno(full_vcf)$QUAL[,1] < gridss.min_qual]
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
-bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf, pon_dir=pon_dir)
-befiltered = gridss_breakend_filter(begr, full_vcf, pon_dir=pon_dir)
+bpfiltered = gridss_breakpoint_filter(bpgr, full_vcf)
+befiltered = gridss_breakend_filter(begr, full_vcf)
 bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
 
 #bpfiltered = .addFilter(bpfiltered, "LOW_Qual", bpgr$QUAL < gridss.min_qual)
@@ -57,35 +58,117 @@ begr$af_str = as.character(begr$af)
 info(vcf)$BPI_AF = rep("", length(vcf))
 info(vcf[names(bpgr)])$BPI_AF = bpgr$af_str
 info(vcf[names(begr)])$BPI_AF = begr$af_str
-VariantAnnotation::fixed(vcf)$FILTER = "PASS"
+VariantAnnotation::fixed(vcf)$FILTER = ifelse(names(vcf) %in% c(
+  names(bpgr)[gridss_overlaps_breakpoint_pon(bpgr, pon_dir=pon_dir)],
+  names(begr)[gridss_overlaps_breakend_pon(begr, pon_dir=pon_dir)]), "PON", "PASS")
 
 # Assembly-based event linking
-asm_linked_df = linked_assemblies(vcf)
+asm_linked_df = linked_assemblies(vcf) %>%
+  mutate(type="asm")
 # transitive calling reduction
-transitive_df = transitive_calls(vcf, bpgr)
-link_df = asm_linked_df %>%
-  inner_join(data.frame(vcfid=names(vcf), event=info(vcf)$EVENT), by="event") %>%
-  dplyr::select(vcfid, linked_by) %>%
-  bind_rows(transitive_df) %>%
-  group_by(vcfid) %>%
+transitive_df = transitive_calls(vcf, bpgr) %>%
+  mutate(type="transitive")
+
+link_df = bind_rows(asm_linked_df, transitive_df) %>%
+  mutate(linking_group=str_replace(linked_by, "/.*$", "")) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
+  group_by(linking_group) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass)
+
+# Insertion linkage
+bebeins_link_df = linked_by_breakend_breakend_insertion_classification(begr) %>%
+  group_by(linked_by) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass) %>%
+  mutate(type="bebeins")
+bebpins_link_df = linked_by_breakpoint_breakend_insertion_classification(bpgr, begr) %>%
+  group_by(linked_by) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass) %>%
+  mutate(type="bebpins")
+# Inversion linkage
+inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
+  group_by(linked_by) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass) %>%
+  mutate(type="inv")
+# Deletion bridge linkage
+# TODO: do we want to do this?
+# I'm suspicious of the model used in ChainFinder PMC3690918
+# Notably: I'm suspicous that "repair with major DNA loss" is actually a thing
+# given the catastrophic nature of chromo*, a more reasonable explaination is
+# an additional DSB with the subsequent loss of that DNA fragment.
+# Given the focal nature of chromoplexy, ChainFinder works because it just
+# finds the focal events, not because the model is correct.
+# TODO: show this by modelling additional focal DSBs
+
+dsb_link_df = linked_by_dsb(bpgr) %>%
+  group_by(linked_by) %>%
+  mutate(pass=passes_final_filters(vcf[vcfId])) %>%
+  mutate(pass=any(pass)) %>%
+  ungroup() %>%
+  filter(pass) %>%
+  mutate(type="dsb")
+
+# linking priorities:
+# - asm independent of other linkages
+# - transitive independent of other linkages
+# - ins, inv, dsb linkages
+event_link_df = bind_rows(
+  bebeins_link_df,
+  bebpins_link_df,
+  inv_link_df,
+  dsb_link_df) %>%
+  dplyr::select(vcfId, linked_by) %>%
+  mutate(QUAL=rowRanges(vcf)[vcfId]$QUAL)
+# Only keep the best QUAL event linkage
+event_link_df = event_link_df %>%
+  group_by(linked_by) %>%
+  mutate(linkQUAL = pmin(QUAL)) %>%
+  group_by(vcfId) %>%
+  filter(QUAL == linkQUAL) %>%
+  group_by(linked_by)
+# Don't event link to PON filtered variants
+event_link_df = event_link_df %>%
+  filter(VariantAnnotation::fixed(vcf[vcfId])$FILTER != "PON")
+# Fix up pairing
+event_link_df = event_link_df %>%
+  filter(n() == 2) %>%
+  ungroup()
+
+link_summary_df = bind_rows(link_df, event_link_df) %>%
+  group_by(vcfId) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 
+# include both breakends of any linked breakpoints
+# as linkage can be breakend specific (e.g. assembly, bpbeins)
+linked_vcfIds = c(link_summary_df$vcfId,
+  link_summary_df %>%
+    filter(vcfId %in% names(bpgr)) %>%
+    mutate(partner_vcfId=bpgr[vcfId]$partner) %>%
+    pull(partner_vcfId))
+
 #####
-# EVENT COMPLETION
+# Final QUAL filtering
 #
+info(vcf)$LOCAL_LINKED_BY = ""
+info(vcf)$REMOTE_LINKED_BY = ""
+info(vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
+info(vcf[!is.na(info(vcf)$PARID)])$REMOTE_LINKED_BY = info(vcf[info(vcf[!is.na(info(vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 
-# TODO: complete chains
-# TODO: simplify simple insertions
+vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls
 
-#####
-# Final filtering
-#
-info(vcf)$LINKED_BY = ""
-info(vcf[link_df$vcfid])$LINKED_BY = link_df$linked_by
-vcf = vcf[!(names(vcf) %in% transitive_df$linked_by)] # remove transitive calls
-vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_qual | info(vcf)$LINKED_BY != ""]
-vcf = vcf[rowRanges(vcf)$QUAL >= gridss.min_qual * gridss.single_breakend_multiplier | info(vcf)$LINKED_BY != ""]
+writeVcf(align_breakpoints(vcf), output_full_vcf)
 
+vcf = vcf[passes_final_filters(vcf) | names(vcf) %in% linked_vcfIds]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 

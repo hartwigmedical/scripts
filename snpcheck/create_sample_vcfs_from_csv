@@ -3,8 +3,8 @@ DATESTRING=$( date +%y%m%d)
 CODEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTBASE="/data/common/snpcheck"
  SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
- DESIGN="${CODEDIR}/26SNPtaq_design.vcf"
- OUTDIR="${OUTBASE}/output/26SNPtaq"
+ DESIGN="${CODEDIR}/60SNPtaq_design.vcf"
+ OUTDIR="${OUTBASE}/output/60SNPtaq"
  SBPDIR="/data/schuberg/snpcheckvcfupload"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then

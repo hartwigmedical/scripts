@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
+
+endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
+client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
+client_secret=$(awk '/^client_secret/ {print $2}' ${api_credentials})
+username=$(awk '/^username/ {print $2}' ${api_credentials})
+password=$(awk '/^password/ {print $2}' ${api_credentials})
+
+curl --request POST \
+  --url "${endpoint}/oauth/token" \
+  --header 'Accept: application/json' \
+  --header 'content-type: multipart/form-data;' \
+  --form grant_type=password \
+  --form client_id=${client_id} \
+  --form client_secret=${client_secret} \
+  --form username=${username} \
+  --form password=${password}

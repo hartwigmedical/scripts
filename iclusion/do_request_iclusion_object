@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+object=$1
+
+scriptDir=`dirname $(readlink $0 || echo $0)`
+token=$( ${scriptDir}/request_iclusion_token | jq -r '.access_token' )
+
+api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
+
+endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
+
+curl --request GET \
+  --url "${endpoint}/${object}" \
+  --header 'Accept: application/json' \
+  --header "Authorization: Bearer $token"

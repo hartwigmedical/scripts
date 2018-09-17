@@ -1,0 +1,56 @@
+#!/bin/bash
+
+knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+
+api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
+iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
+iclusion_client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
+iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${api_credentials})
+iclusion_user=$(awk '/^username/ {print $2}' ${api_credentials})
+iclusion_password=$(awk '/^password/ {print $2}' ${api_credentials})
+
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+input_dir=/data/common/dbs/knowledgebases/input
+cgi_biomarkers_file=${input_dir}/cgi_biomarkers_per_variant_180822.tsv
+cgi_validated_file=${input_dir}/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
+onco_annotated_file=${input_dir}/onco_allAnnotatedVariants_180822.csv
+onco_actionable_file=${input_dir}/onco_allActionableVariants_180822.txt
+doid_file=${input_dir}/doid_180830.owl
+cosmic_fusions_file=${input_dir}/171127_cosmic_gene_fusions.csv
+civic_evidence_file=${input_dir}/civic_01-Aug-2018-ClinicalEvidenceSummaries_180822.tsv
+civic_variants_file=${input_dir}/civic_01-Aug-2018-VariantSummaries_180822.tsv
+
+transvar_command=transvar
+treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
+output_dir=/data/common/dbs/knowledgebases/kodu_test_output
+
+db_credentials=/data/common/dbs/mysql_credentials/pilot
+db_user=$(awk '/^user/ {print $2}' ${db_credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
+db_url=$(awk '/^url/ {print $2}' ${db_credentials})
+
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
+
+java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
+    -reference ${ref_genome} \
+    -transvar_location ${transvar_command} \
+    -doid_owl_location ${doid_file} \
+    -onco_annotated_location ${onco_annotated_file} \
+    -onco_actionable_location ${onco_actionable_file} \
+    -cgi_validated_location ${cgi_validated_file} \
+    -cgi_biomarkers_location ${cgi_biomarkers_file} \
+    -treatment_type_mapping_location ${treatment_type_mapping_file} \
+    -civic_variants_location ${civic_variants_file} \
+    -civic_evidence_location ${civic_evidence_file} \
+    -cosmic_fusions_location ${cosmic_fusions_file} \
+    -iclusion_endpoint ${iclusion_endpoint} \
+    -iclusion_client_id ${iclusion_client_id} \
+    -iclusion_client_secret ${iclusion_client_secret} \
+    -iclusion_user ${iclusion_user} \
+    -iclusion_password ${iclusion_password} \
+    -ensembl_db ${ensembl_db} \
+    -hmfpatients_db ${db_url} \
+    -db_user ${db_user} \
+    -db_password ${db_pass} \
+    -output_dir ${output_dir}

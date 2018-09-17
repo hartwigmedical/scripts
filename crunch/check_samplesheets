@@ -1,10 +1,12 @@
 #!/bin/bash
 run=$1
 
+runRoot="/data1/illumina_data/"
+
 if [[ ! $run == "" ]]; then
-    sheets=$run"/SampleSheet.csv"
+    sheets="${run}/SampleSheet.csv"
 else
-    sheets="/data1/illumina_data/*/SampleSheet.csv"
+    sheets=$( find ${runRoot} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " " )
 fi
     
 for sheet in $sheets; do 
@@ -25,7 +27,7 @@ for sheet in $sheets; do
 	echo "# [Samp] "$sampleSheetFile;
 	
 	## check cycle status
-	cycleCount=$( ls $runBase/Logs/ | grep -Pc "Cycle[\W\_]{1}" )
+	cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
 	echo "# [NOTE] CYCLE log count: $cycleCount"
 		
         ## check conversion status
@@ -53,5 +55,5 @@ for sheet in $sheets; do
 	echo -e "# $experimentName\t$runName\tseq\t$currHostShort";
 
 	## print sample-id, sample_name, submission-id, description
-	cat $sheet | sed -e '1,/Lane,Sample_ID/d' | cut -d',' --output-delimiter " " -f2,3,8,9 | sort | uniq; 
+	cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f2,3,11,12 | sort | uniq
 done

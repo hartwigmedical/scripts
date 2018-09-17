@@ -1,22 +1,21 @@
 ############################################
 # How to run analysis for paper:
-# 01. cohortClinical.R
-# 02. cohort.R
-# 03. cohortFusions.R
-# 04. dnds.R
-# 05. genePanel.R
-# 06. dndsClassification.R
-# 07. dndsDrivers.R
-# 08. ampsDels.R
-# 09. ampsDelsTarget.R
-# 10. driversByGene.R
-# 11. multipleBiopsyDrivers.R
+# 01. cohort.R
+# 02. cohortFusions.R
+# 03. dnds.R
+# 04. genePanel.R
+# 05. dndsClassification.R
+# 06. dndsDrivers.R
+# 07. ampsDels.R
+# 08. ampsDelsTarget.R
+# 09. driversByGene.R
+# 10. multipleBiopsyDrivers.R
 
 
-# 12. cohortVisualisation.R
-# 13. supplementaryVisualisation.R
+# 11. cohortVisualisation.R
+# 12. supplementaryVisualisation.R
 # 13. actionableVisualation.R
-# 13. copyNumberOverview.R
+# 14. copyNumberOverview.R
 # 15. driversByGeneHeatmap.R
 
 detach("package:purple", unload=TRUE)
@@ -107,14 +106,14 @@ allSomatics_p2 = allSomatics_p2 %>% left_join(allIndelsNearPON %>% select(id, ne
 
 fix_splice_effect <- function(input) {
   result = input %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant,NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant,NONE",canonicalCodingEffect) ) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant,NONE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant,MISSENSE",canonicalCodingEffect)) %>%
-    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion,MISSENSE",canonicalCodingEffect))
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; intron variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant","NONE",canonicalCodingEffect) ) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; non coding transcript variant","NONE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "start lost; splice region variant; inframe deletion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; inframe insertion","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "missense variant; splice region variant","MISSENSE",canonicalCodingEffect)) %>%
+    mutate(canonicalCodingEffect=ifelse(type == 'INDEL' & canonicalCodingEffect == 'SPLICE' & canonicalEffect == "splice region variant; synonymous variant; inframe deletion","MISSENSE",canonicalCodingEffect))
 }
 
 allSomatics_p1 = fix_splice_effect(allSomatics_p1)
@@ -122,6 +121,9 @@ allSomatics_p2 = fix_splice_effect(allSomatics_p2)
 
 save(allSomatics_p1, file = "~/hmf/RData/reference/allSomatics_p1.RData")
 save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
+
+#load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
+#load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
 
 somatics_summary_p1 = cohort_somatic_summary(allSomatics_p1)
 somatics_summary_p2 = cohort_somatic_summary(allSomatics_p2)
@@ -223,7 +225,7 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
          purity, ploidy, 
          SUBCLONAL_INDEL,SUBCLONAL_MNV,SUBCLONAL_SNV,TOTAL_INDEL,TOTAL_SNV,TOTAL_MNV,
          msiScore,msiStatus,
-         BND,DEL,DUP,INS,INV,
+         TRL,DEL,DUP,INS,INV,
          duplicatedAutosomes,WGD,patientHighestPurityPassingSample)
 
 hpc = cohortSummary %>% filter(patientHighestPurityPassingSample)
@@ -404,19 +406,17 @@ multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithSco
 
 multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
   ungroup() %>% 
-  distinct(patientId, scope, chromosome, position, ref, alt, type, clonality) %>% 
+  distinct(patientId, scope, chromosome, position, ref, alt, type, subclonalLikelihood) %>% 
   mutate(
     type = ifelse(type == 'SNP', 'SNV', type),
-    type = ifelse(type == 'MNP', 'MNV', type),
-    clonality = ifelse(clonality == 'INCONSISTENT', 'CLONAL', clonality)) %>%
-  group_by(patientId, scope, type, clonality) %>%
-  summarise(count = n()) %>%
-  spread(clonality, count, fill = 0) %>%
-  mutate(TOTAL = CLONAL + SUBCLONAL) %>%
-  select(-CLONAL) %>%
-  gather(clonality, count, TOTAL, SUBCLONAL) %>%
-  unite(type, scope, clonality, type, sep = "_") %>% 
-  spread(type, count, fill = 0) 
+    type = ifelse(type == 'MNP', 'MNV', type)) %>%
+  group_by(patientId, scope, type) %>%
+  summarize(
+    SUBCLONAL = round(sum(subclonalLikelihood), 0),
+    TOTAL = n()) %>%
+  gather(clonality, value, SUBCLONAL, TOTAL) %>%
+  unite(type, scope, clonality, type) %>%
+  spread(type, value, fill = 0)
 
 #multipleBiopsySampleIds = multipleBiopsyScope %>% spread(scope, sampleId)
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
@@ -427,7 +427,7 @@ multipleBiopsyCohortSummary = multipleBiopsyCohort %>% left_join(allClinicalData
   left_join(multipleBiopsyScope %>% select(sampleId, scope), by = "sampleId") %>% 
   filter(scope == "Sample1") %>% select(patientId, gender, primaryTumorLocation, cancerType) %>%
   left_join(multipleBiopsySampleIds, by = "patientId") %>%
-  left_join(multipleBiopsyStructuralVariantSummary, by = "patientId") %>%
+  #left_join(multipleBiopsyStructuralVariantSummary, by = "patientId") %>%
   left_join(multipleBiopsySomaticVariantSummary, by = "patientId") %>%
   mutate(patientId = substr(Sample1, 1, 9))
   

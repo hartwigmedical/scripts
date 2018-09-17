@@ -64,10 +64,8 @@ union select patientId, message, details from clinicalFindings where message='Dr
 
 union select patientId, message, details from clinicalFindings where message ='radio therapy given field empty' and patientId like '%CPCT%';
 
-#  LISC: Are all treatments sequentially in time and after first biopsy?
-select patientId, message, details from clinicalFindings where message='First treatment prior to first biopsy' and patientId like '%CPCT%'
-
-union select patientId, message, details from clinicalFindings where message ='subsequent treatment starts before the end of previous treatment' and patientId like '%CPCT%';
+#  LISC: Are all treatments sequentially in time?
+select patientId, message, details from clinicalFindings where message ='subsequent treatment starts before the end of previous treatment' and patientId like '%CPCT%';
 
 #  LISC: Does the final treatment end before death date?
 select patientId, message, details from clinicalFindings where message ='death date before end of last treatment' and patientId like '%CPCT%';

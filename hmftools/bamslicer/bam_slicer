@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BAM_SLICER=/data/common/tools/bam-slicer_v1.1/bam-slicer.jar
+BAM_SLICER=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
 
 SAMPLE=$1
 BED_FILE=$2

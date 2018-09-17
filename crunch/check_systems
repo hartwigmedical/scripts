@@ -70,7 +70,10 @@ function warn {
 function gridUsage {
     local prefix=$1
     local jobCount=$( ${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | wc -l" )
-    echo "SGE job count: ${jobCount}"
+    local errCount=$( ${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | \
+      tr -s ' ' | tr \" \" \"\\t\" | awk '\$5 ~ \"E\"' | wc -l" 
+    )
+    echo "SGE job count: ${jobCount} (${errCount} in error state)"
 }
 
 main

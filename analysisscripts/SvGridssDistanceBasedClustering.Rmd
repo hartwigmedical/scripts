@@ -1,0 +1,337 @@
+---
+title: "GRIDSS clustering"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+#library(purple)
+library(RMySQL)
+library(tidyverse)
+library(Biostrings)
+library(StructuralVariantAnnotation)
+library(testthat)
+tmpwd=getwd()
+setwd("../gridss/")
+source("libgridss.R")
+setwd(tmpwd)
+remove(tmpwd)
+source("libSvAnalyser.R")
+```
+
+```{r}
+line_gr = load_line_elements("../../line_elements.csv")
+line_match_distance = 5000
+fragile_site_gr = load_fragile_sites("../../fragile_sites_supp.csv")
+  
+```
+
+Load clustering data from file and GRIDSS calls from DB
+```{r}
+svData = read.csv('../../cluster/CLUSTER_GRIDSS_v2.csv') %>%
+  mutate(source="proximity")
+```
+
+Load GRIDSS calls from DB
+
+```{r}
+dbgridss = dbConnect(MySQL(), dbname='gridss_test')
+cndf = query_all_copy_numer(dbgridss)
+cngr = to_cn_gr(cndf)
+svdf = query_somatic_structuralVariants(dbgridss)
+svgr = to_sv_gr(svdf, include.homology=FALSE)
+svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
+svgr$is_line = svgr$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
+svdf$is_line = svdf$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
+svgr$is_fragile_site = svgr$id %in% svids_of_overlap(svgr, fragile_site_gr)
+svdf$is_fragile_site = svdf$id %in% svids_of_overlap(svgr, fragile_site_gr)
+
+if (any(is.na(svgr$cnid))) {
+  bad_svid = svgr$id[is.na(svgr$cnid)]
+  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
+  svdf = svdf %>% filter(!(id %in% bad_svid))
+  #svData = svData %>% filter(!(Id %in% bad_svid))
+  svgr = svgr[!(svgr$id %in% bad_svid)]
+}
+# Restrict to samples in both
+svgr = svgr[svgr$sampleId %in% svData$SampleId]
+svdf = svdf %>% filter(sampleId %in% svData$SampleId)
+svData = svData %>% filter(SampleId %in% svdf$sampleId)
+```
+
+
+Compare clustering to GRIDSS linkages
+```{r}
+
+gridss_links = gridss_sv_links(svdf, svgr)
+loh_links = find_sv_loh_links(cndf, cngr, svgr)
+# TODO: transform output to match gridss_sv_links() format
+proximity_links = linked_by_adjacency(svgr, maxgap = 10000, require_segment=TRUE, select="closest", link_label="TIadj")
+
+linked_breakends = bind_rows(
+  gridss_links,
+  loh_links %>%
+    filter(!is.na(beid_start_flank), !is.na(beid_end_flank)) %>%
+    mutate(
+      sampleId=svgr[beid_start_flank]$sampleId,
+      id1=svgr[beid_start_flank]$id,
+      id2=svgr[beid_end_flank]$id) %>%
+    dplyr::select(sampleId, linkedBy=linked_by, id1, id2, beid1=beid_start_flank, beid2=beid_end_flank))
+svid_to_cluster_lookup = cluster_links(svdf, linked_breakends)
+
+svdf$cluster = svid_to_cluster_lookup[svdf$id]
+svgr$cluster = svid_to_cluster_lookup[svgr$id]
+
+cluster_consistency
+```
+
+```{r}
+dels = find_simple_deletions(cndf, svdf, svgr)
+dups = find_simple_duplications(cndf, svdf, svgr)
+invs =  find_simple_inversions(cndf, svdf, svgr, 100)
+theme_set(theme_bw())
+library(ggExtra)
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 1 & abs(ploidy_inconsistency_delta) < 1) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta, y=ploidy_inconsistency_delta, colour=flankingMethod, size=svploidy) +
+  geom_point() +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_grid(simple_event_type ~ copyNumberMethod)
+
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 0.25) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta, fill=flankingMethod) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod, scales="free")
+
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(ploidy_inconsistency_delta) < 0.6) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=ploidy_inconsistency_delta, fill=flankingMethod) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod, scales="free")
+
+ggplot(bind_rows(dels, dups) %>%
+    filter(abs(flanking_ploidy_delta) < 0.25) %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(x=flanking_ploidy_delta) +
+  geom_histogram(bins=200) +
+  #geom_rug(alpha=0.1, colour="black") +
+  labs(title="Simple event copy number consistency") + 
+  facet_wrap(simple_event_type ~ copyNumberMethod + flankingMethod, scales="free")
+
+ggplot(invs %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(
+    x=flanking_ploidy_delta,
+    y=(ploidy_right_flank_delta + ploidy_left_flank_delta) / 2,
+    shape=interaction(is.na(left_overlap_cnid), is.na(right_overlap_cnid)),
+    colour=paste0(copyNumberMethod.left, "/", copyNumberMethod, "/", copyNumberMethod.right)) + 
+  geom_point() +
+  labs(title="Simple event copy number consistency")
+
+ggplot(invs %>%
+    inner_join(cndf, by=c("cnid"="id"), suffix=c("", ".mid")) %>%
+    inner_join(cndf, by=c("left_flank_cnid"="id"), suffix=c("", ".left")) %>%
+    inner_join(cndf, by=c("right_flank_cnid"="id"), suffix=c("", ".right")) %>%
+    filter(copyNumberMethod != "UNKNOWN") %>%
+    mutate(flankingMethod=paste(copyNumberMethod.left, "/", copyNumberMethod.right))) +
+  aes(
+    x=sv_delta,
+    y=ploidy_sv_delta,
+    shape=interaction(is.na(left_overlap_cnid), is.na(right_overlap_cnid)),
+    colour=paste0(copyNumberMethod.left, "/", copyNumberMethod, "/", copyNumberMethod.right)) + 
+  geom_point() +
+  labs(title="Simple event copy number consistency")
+
+```
+
+```{r}
+proximity_clustered_sv_pairs = svData %>% dplyr::select(SampleId, ClusterId, Id) %>%
+  inner_join(
+    svData %>% dplyr::select(SampleId, ClusterId, Id),
+    by=c("SampleId"="SampleId", "ClusterId"="ClusterId"),
+    suffix=c("", "2")) %>%
+  filter(Id != Id2)
+
+gridss_unique_clustered_sv_pairs = anti_join(gridss_clustered_sv_pairs, proximity_clustered_sv_pairs,
+  by=c("id"="Id", "id2"="Id2")) %>%
+  left_join(svdf, by=c("id"="id"), suffix=c("", ".1")) %>%
+  left_join(svdf, by=c("id2"="id"), suffix=c("", ".2")) %>%
+  left_join(svData, by=c("id"="Id"), suffix=c("", ".prox1")) %>%
+  left_join(svData, by=c("id2"="Id"), suffix=c("", ".prox2"))
+
+svdf %>% dplyr::select(SampleId=sampleId, ClusterCount, source) %>%
+  bind_rows(svData %>% dplyr::select(SampleId, ClusterCount, source)) %>%
+ggplot() +
+  aes(x=ClusterCount) +
+  geom_histogram() +
+  facet_wrap(~ source) +
+  scale_y_log10() +
+  scale_x_log10() +
+  labs(title="Size of cluster", x="cluster size", y="SV count")
+
+svData = svData %>% mutate(missing_gridss_link=paste0(SampleId,"-", ClusterId) %in% (svData %>%
+  group_by(SampleId, ClusterId) %>%
+  summarise(has_missing = any(Id %in% gridss_unique_clustered_sv_pairs$id)) %>%
+  filter(has_missing) %>%
+  mutate(temp=paste0(SampleId, "-", ClusterId)) %>%
+  pull(temp)))
+
+data.frame(
+  gridss_unique_clustered_breakpoints=gridss_unique_clustered_sv_pairs %>%
+    filter(!is.na(endChromosome) & !is.na(endChromosome.2) & !is.na(ChrEnd) & !is.na(ChrEnd.prox2)) %>%
+    nrow(),
+  gridss_unique_clustered_breakends=svdf %>% filter(is.na(endChromosome)) %>% filter(id %in% gridss_unique_clustered_sv_pairs$id) %>% nrow(),
+  gridss_clusters=svdf %>% group_by(gridss_cluster) %>% summarise() %>% nrow(),
+  proxmity_clusters=svData %>% group_by(SampleId, ClusterId) %>% summarise() %>% nrow())
+
+
+```
+
+
+
+Visualise sample
+```{r}
+library(visNetwork)
+sample = "CPCT02050120T"
+segmentSupportShape = function(support) {
+  ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
+    ifelse(support == "BND", "square",
+      ifelse(support == "MULTIPLE", "circle",
+        "star")))
+}
+nodes = bind_rows(
+  # start
+  cndf %>% 
+    filter(sampleId == sample) %>%
+    mutate(
+      label=round(copyNumber, 1),
+      size=pmax(1, copyNumber),
+      id=paste0(id, "-"),
+      shape=segmentSupportShape(segmentStartSupport)),
+  # end
+  cndf %>%
+    filter(sampleId == sample) %>%
+    mutate(
+      size=copyNumber,
+      id=paste0(id, "+"),
+      shape=segmentSupportShape(segmentEndSupport))
+  ) %>% mutate(
+    color="lightblue")
+edges = bind_rows(
+  # internal segment edges
+  cndf %>%
+    filter(sampleId == sample) %>%
+    mutate(
+      from=paste0(paste0(id, "-")),
+      to=paste0(paste0(id, "+")),
+      color="lightblue",
+      width=copyNumber,
+      length=log10(end - start) + 1,
+      title=paste0(chromosome, ":", start, "-", end, " (", end - start, "bp)"),
+      smooth=FALSE,
+      dashes=FALSE) %>%
+    dplyr::select(from, to, color, width, length, title, smooth, dashes),
+  # Reference edges
+  cndf %>%
+    filter(sampleId == sample) %>%
+    group_by(sampleId, chromosome) %>%
+    arrange(start) %>%
+    mutate(nextid=lead(id)) %>%
+    ungroup() %>%
+    filter(!is.na(nextid)) %>%
+    mutate(color=ifelse(segmentEndSupport == "CENTROMERE", "lightgreen", "green"),
+      from=paste0(paste0(id, "+")),
+      to=paste0(paste0(nextid, "-")),
+      label=NA,
+      width=2,
+      length=NA,
+      title=NA,
+      smooth=FALSE,
+      dashes=TRUE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
+  #
+  svgr %>% as.data.frame() %>%
+    filter(sampleId == sample) %>%
+    inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
+    inner_join(svData, by=c("sampleId"="SampleId", "id"="Id"), suffix=c("", ".y")) %>%
+    group_by(sampleId, id) %>%
+    arrange(seqnames, start) %>%
+    mutate(
+      partner_orientation=lead(strand),
+      partner_cnid=lead(cnid)) %>%
+    ungroup() %>%
+    filter(!is.na(partner_cnid)) %>%
+    mutate(
+      color=ifelse(id %in% (gridss_unique_clustered_sv_pairs %>%
+          filter(!is.na(endChromosome) & !is.na(endChromosome.2) & !is.na(ChrEnd) & !is.na(ChrEnd.prox2)) %>%
+          pull(id)),
+        "red", ifelse(missing_gridss_link, "purple", "black")),
+      from=paste0(paste0(cnid, strand)),
+      to=paste0(paste0(partner_cnid, partner_orientation)),
+      label=round(ploidy, 1),
+      width=ploidy,
+      length=NA,
+      title=paste0("ClusterId=", ClusterId, " gridss_cluster=", gridss_cluster),
+      smooth=TRUE,
+      dashes=FALSE) %>%
+    dplyr::select(from, to, color, label, width, length, title, smooth, dashes))
+
+rescaling = list(width=5, length=3, size=3)
+visNetwork(
+    nodes %>% mutate(size=pmin(size, 10) * rescaling$size),
+    edges %>% mutate(width=pmin(width, 10) * rescaling$width, length=length * rescaling$length),
+    height = "1000px", width = "100%") %>%
+  visLayout(improvedLayout=TRUE) %>%
+  visSave(file=paste0("breakpointgraph.", sample, ".html"))
+
+```
+
+
+
+
+
+```{r}
+#Retro-viral insertions:
+#cat(file="single_breakend.fa", svdf %>%
+#  filter(is.na(endChromosome)) %>%
+#  mutate(fq=paste0(">", sampleId, "_", id, "\n", insertSequence, "\n")) %>%
+#  pull(fq) %>%
+#  paste0(collapse=""))
+# TODO: need to first align to human to filter out the multi-mapping breakends
+# tr " ," "__" < viral.1.1.genomic.fa > virus.fa
+# bwa index virus.fa
+# bwa mem -t $(nproc) virus.fa single_breakend.fa | samtools view - | grep "NC_" |
+```
+
+
+
+

@@ -75,7 +75,8 @@ hmfMutationalLoad = highestPurityCohortSummary %>%
     INDEL = TOTAL_INDEL,
     MNV = TOTAL_MNV,
     SNV = TOTAL_SNV,
-    SV = TRL + DEL + INS + INV + DUP) 
+    SV = TRL + DEL + INS + INV + DUP) %>% 
+  select(sampleId, cancerType, INDEL, SNV, MNV, SV)
 
 pcawgRaw = read.csv("~/hmf/resources/PCAWG_counts.txt", sep = '\t', stringsAsFactors = F)
 pcawg_histology_tier2 = sort(unique(pcawgRaw$histology_tier2))
