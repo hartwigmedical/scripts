@@ -98,6 +98,7 @@ plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN, title, rows
   }
   else
   {
+    # print the first 40 (or whatever RPC is) on the page with the bucket stats
     grid.arrange(tableGrob(head(bucketSummaryData, rowsPerColumn), rows=NULL),
                  tableGrob(head(sigBucketTopN,rowsPerColumn), rows=NULL),
                  ncol = 2, newpage = TRUE, top=title)
@@ -105,24 +106,28 @@ plot_bucket_summary_data<-function(bucketSummaryData, sigBucketTopN, title, rows
     i = rowsPerColumn+1
     while(i < topNRows)
     {
-      if(i + (rowsPerColumn*2) - 1 <= topNRows)
-      {
+      # if(i + (rowsPerColumn*2) - 1 <= topNRows)
+      if(topNRows > i + rowsPerColumn-1) # say i = 41 then 2 columns required iftopNRows > i + 40-1
+        {
+        # if 2 columns on the new page are required
         s1 = i
         s2 = s1 + rowsPerColumn-1
         s3 = s2+1
-        s4 = s3 + rowsPerColumn-1
+        s4 = min(s3 + rowsPerColumn-1, topNRows)
 
         # print(paste(i, ", topNRows=", topNRows, ", s1=", s1, ", s2=", s2, ", s3=", s3, ", s4=", s4, sep=''))
 
-        grid.arrange(tableGrob(slice(sigBucketTopN, s1:s2), rows=NULL),
-                     tableGrob(slice(sigBucketTopN, s3:s4), rows=NULL),
+        grid.arrange(tableGrob(sigBucketTopN[s1:s2,], rows=NULL),
+                     tableGrob(sigBucketTopN[s3:s4,], rows=NULL),
                      ncol = 2, newpage = TRUE, top=title)
         i = s4+1
       }
       else
       {
+        # otherwise only 1 page and column left to print
         maxRow = min(i+rowsPerColumn-1, topNRows)
-        grid.arrange(tableGrob(slice(sigBucketTopN, i:maxRow), rows=NULL),
+        # print(paste(i, ", topNRows=", topNRows, ", maxRow=", maxRow, sep=''))
+        grid.arrange(tableGrob(sigBucketTopN[i:maxRow,], rows=NULL),
                      ncol = 2, newpage = TRUE, top=title)
 
         i = topNRows

@@ -14,6 +14,7 @@ library("NMF")
 library(grid)
 library(gridExtra)
 library(ggplot2)
+library(cowplot)
 
 getCOSMICSignatures <- function()
 {
@@ -131,6 +132,7 @@ dr022Samples = read.csv("~/data/DR-022_metadata.tsv", sep='\t')
 hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sampleId)
 # hpcSamples = highestPurityCohortSummary
 nrow(hpcSamples)
+View(hpcSamples)
 
 View(highestPurityCohortSummary)
 
@@ -381,6 +383,8 @@ snvMatrixData = as.matrix(read.csv("~/data/r_data/snv_nmf_matrix_data.csv", stri
 snvSampleCounts = as.data.frame(read.csv("~/data/r_data/snv_nmf_sample_counts.csv", stringsAsFactors=F))
 sum(snvMatrixData) # check sum..
 sum(snvSampleCounts$Count)
+ncol(snvMatrixData)
+
 
 # write.csv(snvMatrixData, file="~/data/r_data/snv_nmf_subc_matrix_data.csv", row.names=F, quote=F)
 # write.csv(snvContribsTotal, file="~/data/r_data/snv_nmf_contribs.csv", row.names=F, quote=F)
@@ -511,6 +515,305 @@ write.csv(snv30Signatures, "~/dev/nmf/logs/snv_all_denovo_nmf_sigs_4proposed.csv
 
 evaluate_nmf_data("SNV", "denovo_sig30_all_30prop", snvSig30Count, snv30Signatures, snv30Contribs, snvMatrixData, snvSampleCounts,
                   sampleCancerTypes, snvBucketNames, snvSig30NamesNum, snvSig30NamesStr, T, F, T)
+
+
+# Bucket-Analyser sigs and contributions
+snvBaContribs = as.matrix(read.csv(file="~/dev/nmf/logs/snv_rr_ba_contribs.csv", stringsAsFactors=F))
+View(snvBaContribs[,50:70])
+nrow(snvBaContribs)
+snvBaSigs = as.matrix(read.csv(file="~/dev/nmf/logs/snv_rr_ba_sigs.csv", stringsAsFactors=F))
+View(snvBaSigs)
+snvBaSigNames = colnames(snvBaSigs)
+print(svnBaSigNames)
+ncol(snvBaContribs)
+snvBaSigCount = ncol(snvBaSigs)
+print(snvBaSigCount)
+
+snvBaSigNumList = get_signame_list(snvBaSigCount, F)
+snvBaSigStrList = get_signame_list(snvBaSigCount, T)
+colnames(snvBaSigs) <- snvBaSigNumList
+View(snvBaSigs)
+
+# trim sig names
+for(i in 1:snvBaSigCount)
+{
+  snvBaSigNames[i] = paste(snvBaSigStrList[i], snvBaSigNames[i], sep="_")
+  sigLen = stringi::stri_length(snvBaSigNames[i])
+
+  if(sigLen > 8)
+  {
+    catIndex = stri_locate_first_fixed(snvBaSigNames[i], "_cat")
+    if(!is.na(catIndex[1]))
+    {
+      snvBaSigNames[i] = substring(snvBaSigNames[i], 1, catIndex[1]-1)
+      # print(paste("sig name shorted: ", snvBaSigNames[i], sep=''))
+    }
+
+    snvBaSigNames[i] = stri_replace_all_fixed(snvBaSigNames[i], ".", "")
+  }
+}
+
+print(snvBaSigNames)
+
+bgSigCount = 20
+
+evaluate_nmf_data("SNV", "ba_denovo_all_RR", snvBaSigs, snvBaContribs, snvMatrixData, snvSampleCounts,
+                  sampleCancerTypes2, snvBucketNames, snvBaSigNames, T, F, bgSigCount, F)
+
+
+produce_signature_report("SNV", "ba_denovo_all_RR_30", "~/dev/nmf/logs/snv_rr_ba_sigs.csv", "~/dev/nmf/logs/snv_rr_ba_contribs.csv",
+                         "~/dev/nmf/logs/snv_rr_ba_group_data.csv", snvMatrixData, snvSampleCounts,
+                         sampleCancerTypes2, snvBucketNames, T, F, F)
+
+produce_signature_report("SNV", "ba_PCAWG_fit", "~/dev/nmf/logs/snv_pcwg_ba_sigs.csv", "~/dev/nmf/logs/snv_pcwg_ba_contribs.csv",
+                         "~/dev/nmf/logs/snv_pcwg_ba_group_data.csv", snvMatrixData, snvSampleCounts,
+                         sampleCancerTypes2, snvBucketNames, T, F, F)
+
+# baSigInfo = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_ba_group_data_test.csv", stringsAsFactors=F))
+baSigInfo = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_rr_ba_group_data.csv", stringsAsFactors=F))
+View(baSigInfo)
+sigCount = nrow(baSigInfo)
+
+sigInfo = baSigInfo %>% filter(Type!="BGRD") %>% select(Rank, BgId, Type, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
+sigInfo[is.na(sigInfo)] = ""
+sigInfo$Effects = ifelse(stri_length(sigInfo$Effects > 25), stri_sub(sigInfo$Effects,1,25), sigInfo$Effects)
+sigInfo$Effects = ifelse(stri_length(sigInfo$CancerType > 25), stri_sub(sigInfo$CancerType,1,25), sigInfo$CancerType)
+
+print(baSigCount)
+
+sigInfo$Colour = ""
+colourCol = ncol(sigInfo)
+for(i in 1:baSigCount)
+{
+  # sigInfoData = sigInfo[i,]
+  print(paste("setting sig ", i, " to colour ", newSigColours[i], sep=''))
+  sigInfo[i,colourCol] = newSigColours[i]
+}
+
+print(newSigColours)
+length(newSigColours)
+
+View(sigInfo)
+
+baseColours = get_base_colours()
+
+# look for links between the sigs
+backgroundSigCount = 0
+majorSigCount = 0
+newSigColours = sigColours
+
+for(i in 1:sigCount)
+{
+  sigInfo = baSigInfo[i,]
+
+  if(sigInfo$Type == "BGRD")
+  {
+    backgroundSigCount = backgroundSigCount + 1
+    newSigColours[i] = "grey60"
+  }
+  else if(sigInfo$Type == "MAJOR")
+  {
+    bgId = sigInfo$BgId
+    majorSigCount = majorSigCount + 1
+    newSigColours[i] = baseColours[majorSigCount]
+
+    # print(paste("searching for minors for major=", bgId, ", baseColour=", newSigColours[i], sep=''))
+
+        # set a related colour for all other minor sigs
+    minorColours = get_base_colour_extensions(newSigColours[i])
+    minorCount = 1
+
+    for(j in i+1:sigCount)
+    {
+      nextSigInfo = baSigInfo[j,]
+      # print(paste("testing sig: type=", nextSigInfo$Type, ", parentId=", nextSigInfo$ParentId, sep=''))
+
+      if(nextSigInfo$Type == "MINOR" && !is.na(nextSigInfo$ParentId) && nextSigInfo$ParentId == bgId)
+      {
+        newSigColours[j] = minorColours[minorCount]
+        minorCount = minorCount + 1
+      }
+    }
+  }
+}
+
+print(backgroundSigCount)
+print(newSigColours)
+print(length(newSigColours))
+
+singleBgColours = strip_multi_bg_colours(newSigColours, 20)
+print(singleBgColours)
+length(singleBgColours)
+
+View(hpcSamples)
+sampleCancerTypes2 = hpcSamples %>% select(sampleId, cancerType)
+colnames(sampleCancerTypes2) <- c("SampleId", "CancerType")
+View(sampleCancerTypes2)
+View(sampleCancerTypes)
+
+topBGType = head(sampleCancerTypes,1)$SampleId
+print(topBGType)
+
+View(sampleSigData %>% filter(Count>0))
+View(sampleSigData %>% filter((!grepl("BG_",SigName)|(grepl("BG_",SigName)&Count>0))))
+View(sampleSigData %>% filter(CancerType=='Ovary'&((!grepl("BG_",SigName)|(grepl("BG_",SigName)&Count>0)))))
+
+View(sigColours)
+plot_sig_samples(sampleSigData, "Ovary", sigColours, "SV", 4)
+
+baExtData = read.csv("~/dev/nmf/sample_ext_data2.csv")
+View(baExtData)
+
+View(hpcSamples)
+
+baExtData2 = merge(baExtData, hpcSamples %>% select(sampleId, cancerType), by.x="SampleId", by.y="sampleId", all.x=T)
+View(baExtData2)
+baExtData2$Cancer=baExtData2$cancerType
+baExtData2$Cancer = ifelse(baExtData2$Cancer=="Other","Minors")
+baExtData2 = within(baExtData2, rm(cancerType))
+write.csv(baExtData2, "~/dev/nmf/sample_ext_data3.csv", quote=F, row.names=F)
+
+
+
+snvBaSigsR25 = as.matrix(read.csv(file="~/dev/nmf/logs/snv_rr_ba_sigs.csv", stringsAsFactors=F))
+
+css = cosine_sim(snvBaSigsR25[,23], snvBaSigsR25[,34])
+css = cosine_sim(snvBaSigsR25[,23], snvBaSigsR25[,37])
+print(css)
+
+
+# DEBUG ONLY
+contribution = snvBaContribs
+signatures = snvBaSigs
+summaryCounts = snvSampleCounts
+bucketNames = snvBucketNames
+sigNamesNamed = snvBaSigNames
+matrixData = snvMatrixData
+
+sigCount = nrow(contribution)
+
+sampleNames = colnames(contribution)
+
+origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
+
+sigNamesUnamed = get_signame_list(sigCount, F)
+colnames(signatures) = sigNamesUnamed
+
+sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+colnames(sigNamesCombined) <- c("Signature", "SigName")
+
+bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
+colnames(bucketIndex) <- c("BucketIndex")
+bucketNamesIndexed = cbind(bucketNames, bucketIndex)
+bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
+
+sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
+sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
+
+sigBucketStats = get_sig_bucket_stats(sigBucketData)
+
+# Signature Discovery, by looking at relative contribution of buckets
+sigBucketTopN = get_top_buckets(sigBucketData)
+
+# key bucket stats
+bucketSummaryData = get_bucket_stats(sigBucketData)
+
+sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, bucketNames)
+# View(sampleBucketData)
+
+# optionally name signatues for subsequent output
+sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+View(sampleSigData)
+
+sigStats = get_sig_stats(sampleSigData)
+
+# calculate and factor in residuals
+sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
+
+sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
+
+# sampleSigCounts = sampleSigData %>% filter(SigName!="Residual") %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
+sampleSigData = merge(sampleSigData, sampleSigCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+# View(sigStats)
+
+View(sampleSigData %>% filter(Count != 0))
+
+View(origSampleCounts)
+
+testSigName = "01_BG_Stoma"
+topN = 50
+topNSamplesBySig = head(sampleSigData %>% filter(SigName==testSigName&Count>0) %>% arrange(-Count),topN)
+View(topNSamplesBySig)
+
+# now grab all sig data for these top-N samples
+topNSampleSigData = sampleSigData %>% filter(SampleId %in% topNSamplesBySig$SampleId)
+
+
+
+
+
+
+# TEMP: BG sig incorrectly set for some samples
+cancerSigData = sampleSigData %>% filter(CancerType=="Stomach")
+View(cancerSigData)
+
+# filter out irrelevant background sig data if present
+countsByBGSigType = cancerSigData %>% filter(grepl("BG_",SigName)) %>% group_by(SigName) %>% summarise(Count=sum(Count)) %>% arrange(-Count)
+
+if(nrow(countsByBGSigType) > 0 && head(countsByBGSigType,1)$Count > 0)
+{
+  topBGType = head(countsByBGSigType,1)$SigName
+  cancerSigData = cancerSigData %>% filter((!grepl("BG_",SigName)|(SigName==topBGType)))
+}
+
+
+
+
+
+
+
+# get contributions by sample in percentage terms (ie each sample split across the signatures)
+# contributionPercents = apply(contribution, 2, function(x) x/sum(x))
+# transposedPerc = t(contributionPercents) %>% as.data.frame()
+# colnames(transposedPerc) <- sigNames
+# sigPercentsBySample = cbind(data.frame(SampleId = sampleNames), transposedPerc)
+# rownames(sigPercentsBySample) <- NULL
+#
+# # get contributions by sample in raw count of SVs
+# transposedContrib = t(contribution) %>% as.data.frame()
+# colnames(transposedContrib) <- sigNames
+#
+# # use signature counts to turn contributions into counts
+# sigCountsBySample = transposedContrib
+# for (i in 1:ncol(sigCountsBySample))
+# {
+#   sigCountsBySample[i] = sigCountsBySample[i]* colSums(signatures)[i]
+# }
+#
+# sigCountsBySample = cbind(data.frame(SampleId = sampleNames), sigCountsBySample)
+# rownames(sigCountsBySample) <- NULL
+#
+# # now put percentages and raw counts together, and split columns into rows to help with sig-agnostic aggregation
+# sampleSigPercData = sigPercentsBySample %>% gather(SigName, SigPercent, -SampleId) %>% arrange(SampleId, SigName)
+# sampleSigPercData$PercBucket = round(sampleSigPercData$SigPercent/0.1)*0.1
+#
+# # do same for counts then add together
+# sampleSigCountData = sigCountsBySample %>% gather(SigName, Count, -SampleId) %>% arrange(SampleId, SigName)
+#
+# # ensure both are order by sample and sig
+# sampleSigData = cbind(sampleSigPercData, Count = sampleSigCountData$Count)
+
+
+
+
+
+
+
+
+
+
 
 
 # close comparison of sig 4 (smoking)
@@ -738,7 +1041,8 @@ View(sampleSigSuppData %>% filter(SigName=="06"&Count>0))
 
 
 nrow(highestPurityCohortSummary)
-hpcSampleData = highestPurityCohortSummary %>% select(sampleId, patientId, cancerType, cancerSubtype, ageAtBiopsy, msiStatus)
+# hpcSampleData = highestPurityCohortSummary %>% select(sampleId, patientId, cancerType, cancerSubtype, ageAtBiopsy, msiStatus)
+hpcSampleData = hpcSamples %>% select(sampleId, patientId, cancerType, cancerSubtype, ageAtBiopsy, msiStatus)
 colnames(hpcSampleData) = c("SampleId", "PatientId", "CancerType", "CancerSubtype", "Age", "MsiStatus")
 View(hpcSampleData)
 
@@ -746,9 +1050,13 @@ sampleSigSuppData = merge(sampleSigData, hpcSampleData, by="SampleId", all.x=T)
 cancerTypesList = unique(sampleSigSuppData$CancerType)
 View(cancerTypesList)
 
+View()
+View(sampleSigSuppData %>% filter(SigPercent > 0 & grepl("BG_",SigName)))
+
 testSigName = "05"
 
-outputFile = paste("~/logs/r_output/pdfs/snv_", "pcawg_sig", testSigName, "_age_correlations.pdf", sep='')
+outputFile = paste("~/logs/r_output/pdfs/snv_", "denovo_sigs", "_age_correlations.pdf", sep='')
+# outputFile = paste("~/logs/r_output/pdfs/snv_", "denovo_sig", testSigName, "new_bgs_age_correlations.pdf", sep='')
 pdf(file=outputFile, height = 14, width = 20)
 par(mar=c(1,1,1,1))
 
@@ -757,7 +1065,8 @@ plotCount = 1
 index = 1
 for(cancerType in cancerTypesList)
 {
-  sigAgeData = sampleSigSuppData %>% filter(SigName==testSigName&CancerType==cancerType&Count>0)
+  # sigAgeData = sampleSigSuppData %>% filter(SigName==testSigName&CancerType==cancerType&Count>0)
+  sigAgeData = sampleSigSuppData %>% filter(SigPercent>0&grepl("BG_",SigName)&CancerType==cancerType&Count>0)
 
   # cap any sample with a count-age ratio more than 2x the median ratio
   sigAgeData$Gradient = sigAgeData$Count / sigAgeData$Age

@@ -261,35 +261,91 @@ View(mnvSampleSigData)
 write.csv(mnvSampleSigData, "~/logs/r_output/mnvSampleSigData.csv", row.names=F, quote=F)
 
 
+# Bucket-Analyser sigs and contributions
+mnvMatrixData = read.csv("~/data/r_data/mnv_nmf_matrix_data_dr22.csv", stringsAsFactors=F)
 
-mnvSignatures = NMF::basis(mnvNmfResult)
-mnvContributions = NMF::coef(mnvNmfResult)
+mnvBaContribs = as.matrix(read.csv(file="~/dev/nmf/logs/mnv_ba_contribs.csv", stringsAsFactors=F))
+View(mnvBaContribs[,50:70])
+nrow(mnvBaContribs)
+mnvBaSigs = as.matrix(read.csv(file="~/dev/nmf/logs/mnv_ba_sigs.csv", stringsAsFactors=F))
+View(mnvBaSigs)
+mnvBaSigNames = colnames(mnvBaSigs)
+print(mnvBaSigNames)
+ncol(mnvBaContribs)
+mnvBaSigCount = ncol(mnvBaSigs)
+print(mnvBaSigCount)
 
-View(mnvSampleCounts)
+svnBaSigNumList = get_signame_list(mnvBaSigCount, F)
+mnvBaSigStrList = get_signame_list(mnvBaSigCount, T)
+colnames(mnvBaSigs) <- svnBaSigNumList
+View(mnvBaSigs)
 
-mnvResiduals2 = calc_sample_residuals_v2(mnvContributions, mnvSignatures, mnvMatrixData, mnvBucketNames)
-View(mnvResiduals2)
+# trim sig names
+for(i in 1:mnvBaSigCount)
+{
+  mnvBaSigNames[i] = paste(mnvBaSigStrList[i], mnvBaSigNames[i], sep="_")
+  sigLen = stringi::stri_length(mnvBaSigNames[i])
 
-sum(mnvResiduals2$Count)
-sum(mnvResiduals2$ResidualTotal)
+  if(sigLen > 8)
+  {
+    catIndex = stri_locate_first_fixed(mnvBaSigNames[i], "_cat")
+    if(!is.na(catIndex[1]))
+    {
+      mnvBaSigNames[i] = substring(mnvBaSigNames[i], 1, catIndex[1]-1)
+      # print(paste("sig name shorted: ", mnvBaSigNames[i], sep=''))
+    }
 
-sampleSigData = get_sig_data(mnvSignatures, mnvContributions, mnvSigNamesStr, colnames(mnvContributions))
-sampleSigData = append_residuals(mnvContributions, mnvSignatures, mnvBucketNames, mnvSampleCounts, sampleSigData)
+    mnvBaSigNames[i] = stri_replace_all_fixed(mnvBaSigNames[i], ".", "")
+  }
+}
+
+print(mnvBaSigNames)
+
+bgSigCount = 20
+
+evaluate_nmf_data("MNV", "ba_denovo_all_CT", mnvBaSigs, mnvBaContribs, mnvMatrixData, mnvSampleCounts,
+                  sampleCancerTypes2, mnvBucketNames, mnvBaSigNames, T, F, bgSigCount, F)
+
+mnvSampleTotals = mnvSampleCounts %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count)) %>% arrange(-SampleCount)
+View(mnvSampleTotals)
+
+# DEBUG
+contribution = mnvBaContribs
+signatures = mnvBaSigs
+summaryCounts = mnvSampleCounts
+bucketNames = mnvBucketNames
+sigNamesNamed = mnvBaSigNames
+matrixData = mnvMatrixData
+
+sigCount = nrow(contribution)
+
+sampleNames = colnames(contribution)
+
+origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
+
+sigNamesUnamed = get_signame_list(sigCount, F)
+colnames(signatures) = sigNamesUnamed
+
+sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+colnames(sigNamesCombined) <- c("Signature", "SigName")
+
+bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
+colnames(bucketIndex) <- c("BucketIndex")
+bucketNamesIndexed = cbind(bucketNames, bucketIndex)
+bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
+
+sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
+sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
+
+sigBucketStats = get_sig_bucket_stats(sigBucketData)
+sigBucketTopN = get_top_buckets(sigBucketData)
+View(sigBucketTopN)
+bucketSummaryData = get_bucket_stats(sigBucketData)
+
+plot_bucket_summary_data(bucketSummaryData, sigBucketTopN, "title", 40)
 
 
-
-
-# View(mnvSampleCounts)
-# bucketNames = mnvBucketNames
-# View(bucketNames)
-# View(mnvSampleCounts %>% select(Bucket))
-# mnvResiduals = calc_sample_residuals(contribution, signatures, mnvBucketNames, mnvSampleCounts)
-# View(mnvResiduals)
-
-sum(mnvResiduals$Count)
-sum(mnvResiduals$ResidualTotal)
-mnvResiduals$ResidualPerc = round(mnvResiduals$ResidualTotal/mnvResiduals$Count,2)
-print(residuals(mnvNmfResult))
 
 
 
@@ -307,8 +363,19 @@ nrow(indelData)
 
 View(head(indelData,100))
 
-
-
+getFirstAlt<-function(alt, patternChar)
+{
+  if(grepl(patternChar, alt))
+  {
+    commaIndex = stri_locate(pattern=patternChar, alt, fixed = TRUE)[1,1]
+    altFirst = substr(alt,1,commaIndex-1)
+    return (altFirst)
+  }
+  else
+  {
+    return (alt)
+  }
+}
 
 calcSplitAltLength<-function(alt, patternChar)
 {
@@ -335,31 +402,67 @@ create_indel_fields<-function(indelData)
   indelData$LengthGrp = ifelse(indelData$Length<=3,indelData$Length,4)
 
   indelData$RepeatCountHigh = ifelse(indelData$RepeatCount>=4,T,F)
+  indelData$RepeatCountType = ifelse(indelData$RepeatCountHigh,ifelse(indelData$RepeatCount>8,'High','Med'),'Low')
 
   indelData$MH = ifelse(indelData$SubType=='DEL'&!is.na(indelData$Microhomology)&stringi::stri_length(indelData$Microhomology)>0,T,F)
 
   return (indelData)
 }
 
-# make a combined bucket name: DEL vs INS, LengthGroup, RepeatCount high and for DELs whether has MH or not
-create_indel_bucket<-function(indelSampleCounts)
+get_base_ins_or_del<-function(ref,alt,length)
 {
-  indelSampleCounts$Bucket = paste(indelSampleCounts$SubType, indelSampleCounts$LengthGrp, sep="_")
-  indelSampleCounts$Bucket = ifelse(indelSampleCounts$RepeatCountHigh, paste(indelSampleCounts$Bucket, "REP", sep="_"), indelSampleCounts$Bucket)
-  indelSampleCounts$Bucket = ifelse(!indelSampleCounts$RepeatCountHigh&indelSampleCounts$MH, paste(indelSampleCounts$Bucket, "MH", sep="_"), indelSampleCounts$Bucket)
+  if(length != 1)
+    return ('')
 
-  return (indelSampleCounts)
+  longStr = ifelse(stri_length(ref) > stri_length(alt), ref, alt)
+  shortStr = ifelse(stri_length(ref) < stri_length(alt), ref, alt)
+  shortLen = stri_length(shortStr)
+
+  curLetter = ''
+  for(i in 1:stri_length(longStr))
+  {
+    curLetter = stri_sub(longStr, i, i)
+    if(i > shortLen)
+      break
+
+    if(curLetter != stri_sub(shortStr, i, i))
+      break
+  }
+
+  if(curLetter == 'G' || curLetter == 'C')
+    return ('C')
+  else
+    return ('T')
+}
+
+# make a combined bucket name: DEL vs INS, LengthGroup, RepeatCount high and type, C or T for 1-base ins and dels, and for DELs whether has MH or not
+create_indel_bucket<-function(indels)
+{
+  indels$Bucket = paste(indels$SubType, ifelse(indels$LengthGrp>3,3,indels$LengthGrp), sep="_")
+  indels$Bucket = ifelse(indels$RepeatCountHigh, paste(indels$Bucket, "REP", sep="_"), indels$Bucket)
+  indels$Bucket = ifelse(indels$LengthGrp==1&(indels$SubType=="DEL"|indels$RepeatCountHigh), paste(indels$Bucket, indels$BaseInsDel, sep="_"), indels$Bucket)
+  indels$Bucket = ifelse(!indels$RepeatCountHigh&indels$MH, paste(indels$Bucket, "MH", sep="_"), indels$Bucket)
+  indels$Bucket = ifelse(indels$LengthGrp==1&indels$RepeatCountHigh, paste(indels$Bucket, indels$RepeatCountType, sep="_"), indels$Bucket)
+
+  return (indels)
+}
+
+create_indel_bucket_old<-function(indels)
+{
+  indels$Bucket = paste(indels$SubType, indels$LengthGrp, sep="_")
+  indels$Bucket = ifelse(indels$RepeatCountHigh, paste(indels$Bucket, "REP", sep="_"), indels$Bucket)
+  indels$Bucket = ifelse(!indels$RepeatCountHigh&indels$MH, paste(indels$Bucket, "MH", sep="_"), indels$Bucket)
+
+  return (indels)
 }
 
 # write.csv(indelData3, "~/data/indel_prod_all_v3.csv", row.names=F, quote=F)
 
-nrow(indelData)
-
-View(indelData %>% group_by(Clonality) %>% count())
+# View(indelData %>% group_by(Clonality) %>% count())
 
 #allIndelData = indelData
-indelData = allIndelData
-indelData = indelData %>% filter(Clonality=="SUBCLONAL")
+#indelData = allIndelData
+#indelData = indelData %>% filter(Clonality=="SUBCLONAL")
 # nrow(indelData %>% filter(Clonality=="SUBCLONAL"))
 nrow(indelData)
 View(head(indelData,1000))
@@ -368,23 +471,39 @@ nrow(indelData %>% group_by(SampleId) %>% count())
 
 # note: allIndelData already has the additional bucket fields
 indelData$AltLength = apply(indelData[,c('Alt')], 1, function(x) calcSplitAltLength(x[1], ';'))
+indelData$AltFirst = apply(indelData[,c('Alt'),drop=F], 1, function(x) getFirstAlt(x[1], ';'))
+indelData$BaseInsDel = apply(indelData[,c('Ref','AltFirst'),drop=F], 1, function(x) getBaseInsertedDeleted(x[1], x[2]))
+
+
+# print(getBaseInsertedDeleted("ACGT","ACG"))
+
 indelData = create_indel_fields(indelData)
 
-# View(head(indelData,1000))
+View(head(indelData,1000))
 
-indelSampleCounts = indelData %>% group_by(SampleId,SubType,LengthGrp,MH,RepeatCountHigh) %>% summarise(Count=n())
+indelSampleCounts = indelData %>% group_by(SampleId,SubType,LengthGrp,MH,RepeatCountHigh,RepeatCountType,BaseInsDel) %>% summarise(Count=n())
+indelSampleCountsOld = indelData %>% group_by(SampleId,SubType,LengthGrp,MH,RepeatCountHigh) %>% summarise(Count=n())
 
-indelSampleCounts = create_indel_bucket(indelSampleCounts)
-View(indelSampleCounts)
+indelSampleCountsOld = create_indel_bucket(indelSampleCountsOld)
 write.csv(indelSampleCounts, "~/data/r_data/indel_sample_counts.csv", row.names=F, quote=F)
-
 
 # create and store Buckets
 indelBuckets = indelSampleCounts %>% group_by(Bucket) %>% summarise(VarCount=sum(Count)) %>% arrange(Bucket)
-View(indelBuckets)
-write.csv(indelBuckets, "~/data/r_data/indel_buckets.csv", row.names=F, quote=F)
+indelBucketsNew = indelBuckets
+sum(indelBuckets$VarCount)
 
+indelSampleCountsOld = create_indel_bucket_old(indelSampleCounts)
+View(indelSampleCountsOld)
+indelBucketsOld = indelSampleCountsOld %>% group_by(Bucket) %>% summarise(VarCount=sum(Count)) %>% arrange(Bucket)
+sum(indelBucketsOld$VarCount)
+View(indelBucketsOld)
+View(indelBucketsNew)
+# write.csv(indelBuckets, "~/data/r_data/indel_buckets.csv", row.names=F, quote=F)
 
+# filter for DR22 samples only
+indelSampleCounts = indelSampleCounts %>% filter(SampleId %in% hpcSamples$sampleId)
+
+# convert to sample and bucket counts for signature analysis
 indelSampleBucketCounts = indelSampleCounts %>% group_by(SampleId,Bucket) %>% summarise(Count=sum(Count))
 View(indelSampleBucketCounts)
 
@@ -403,11 +522,66 @@ indelMatrixData = indelMatrixData %>% arrange(Bucket)
 indelMatrixData = within(indelMatrixData, rm(Bucket))
 
 write.csv(indelMatrixData, file="~/data/r_data/indel_nmf_matrix_data.csv", row.names=F, quote=F)
-write.csv(indelMatrixData, file="~/logs/r_output/indel_nmf_counts_dr22.csv", row.names=F, quote=F)
+write.csv(indelMatrixData, file="~/data/r_data/indel_matrix_data_dr22_23bkts.csv", row.names=F, quote=F)
 #write.csv(indelMatrixData, file="~/logs/r_output/indel_nmf_subc_counts_dr22.csv", row.names=F, quote=F)
 
+# indelSampleCounts = read.csv("~/data/r_data/indel_sample_counts.csv")
+# nrow(indelSampleCounts)
+# ncol(indelSampleCounts)
+#
+# indelMatrixData = read.csv("~/data/r_data/indel_nmf_counts.csv")
+# nrow(indelMatrixData)
+# ncol(indelMatrixData)
 
-indelMatrixData = read.csv("~/data/r_data/indel_nmf_counts.csv")
+# using bucket analyser
+
+indBaContribs = as.matrix(read.csv(file="~/dev/nmf/logs/indel_ba_contribs.csv", stringsAsFactors=F))
+View(indBaContribs[,50:70])
+nrow(indBaContribs)
+indBaSigs = as.matrix(read.csv(file="~/dev/nmf/logs/indel_ba_sigs.csv", stringsAsFactors=F))
+View(indBaSigs)
+indBaSigNames = colnames(indBaSigs)
+print(indBaSigNames)
+ncol(indBaContribs)
+indBaSigCount = ncol(indBaSigs)
+print(indBaSigCount)
+
+indBaSigNumList = get_signame_list(indBaSigCount, F)
+indBaSigStrList = get_signame_list(indBaSigCount, T)
+colnames(indBaSigs) <- indBaSigNumList
+View(indBaSigs)
+
+# trim sig names
+for(i in 1:indBaSigCount)
+{
+  indBaSigNames[i] = paste(indBaSigStrList[i], indBaSigNames[i], sep="_")
+  sigLen = stringi::stri_length(indBaSigNames[i])
+
+  if(sigLen > 8)
+  {
+    catIndex = stri_locate_first_fixed(indBaSigNames[i], "_cat")
+    if(!is.na(catIndex[1]))
+    {
+      indBaSigNames[i] = substring(indBaSigNames[i], 1, catIndex[1]-1)
+      # print(paste("sig name shorted: ", indBaSigNames[i], sep=''))
+    }
+
+    indBaSigNames[i] = stri_replace_all_fixed(indBaSigNames[i], ".", "")
+  }
+}
+
+print(indBaSigNames)
+
+bgSigCount = 20
+
+evaluate_nmf_data("INDEL", "ba_denovo_all_CT_v2", indBaSigs, indBaContribs, indelMatrixData, indelSampleBucketCounts,
+                  sampleCancerTypes2, indelBucketNames, indBaSigNames, T, F, bgSigCount, F)
+
+
+origSampleCounts = indelSampleBucketCounts %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
+View(origSampleCounts)
+
+
 
 
 # run estimations
@@ -435,7 +609,6 @@ View(indelSampleCounts)
 
 evaluate_nmf_run("INDEL", "sig5_DR22", indelSigCount, indelNmfResult, indelMatrixData, indelSampleBucketCounts,
                  sampleCancerTypes, indelBucketNames, indelSigNamesNum, indelSigNamesStr, TRUE, FALSE, TRUE)
-
 
  # using external fitting, yeah baby
 indelExtSignatures = as.matrix(read.csv("~/logs/nmf_signatures.csv"))

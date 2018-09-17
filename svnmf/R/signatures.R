@@ -1,13 +1,19 @@
 get_sig_colours<-function(sigCount = 10)
 {
+  # original COSMIC
+  # allColours = c("#ff994b", "#463ec0", "#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
+  #              "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
+  #              "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
+  #              "#dea185","#a0729d","#8a392f")
+
   allColours = c("#ff994b", "#463ec0", "#88c928", "#996ffb", "#68b1c0", "#e34bd9", "#106b00", "#d10073", "#98d76a",
-                 "#6b3a9d", "#d5c94e", "#0072e2", "#ff862c", "#31528d", "#d7003a", "#323233", "#ff4791", "#01837a",
+                 "#6b3a9d", "#d5c94e", "#0072e2", "red3", "#31528d", "aquamarine", "tomato2", "#ff4791", "#01837a",
                  "#ff748a", "#777700", "#ff86be", "#4a5822", "#ffabe4", "#6a4e03", "#c6c0fb", "#ffb571", "#873659",
                  "#ff494b", "#464ec0", "#885928", "#991ffb", "#6811c0", "#e38bd9", "#101b00", "#d12073", "#98176a",
-                 "#6b4a9d", "#d5494e", "#0052e2", "#ff162c", "#31128d", "#d7803a", "#321233", "#ff2791", "#01137a",
+                 "#6b4a9d", "#d5494e", "#0052e2", "#ff162c", "#31128d", "#d7803a", "#421233", "#ff2791", "#01137a",
                  "#ff448a", "#774700", "#ff56be", "#4a1822", "#ff1be4", "#6a8e03", "#c610fb", "#ff2571", "#871659",
                  "#ff294b", "#465ec0", "#886928", "#992ffb", "#6821c0", "#e37bd9", "#102b00", "#d13073", "#98276a",
-                 "#6b2a9d", "#d5594e", "#0062e2", "#ff262c", "#31228d", "#d7703a", "#322233", "#ff3791", "#01237a",
+                 "#6b2a9d", "#d5594e", "#0062e2", "#ff262c", "#31228d", "#47703a", "#422233", "#ff3791", "#01237a",
                  "#ff248a", "#775700", "#ff66be", "#4a2822", "#ff2be4", "#6a7e03", "#c620fb", "#ff3571", "#872659",
                  "#dea185", "#a0629d", "#8a792f", "#4a3822", "#ff3be4", "#6a6e03", "#c630fb", "#ff4571", "#877659")
 
@@ -19,6 +25,58 @@ get_sig_colours<-function(sigCount = 10)
   }
 
   return (sigColours)
+}
+
+get_base_colours<-function()
+{
+  baseColours = c("yellow", "blue", "green", "red", "orange", "purple", "pink", "brown", "darkgreen", "deepskyblue", "tan")
+  # baseColours = c("yellow", "blue", "green", "red", "orange", "purple", "pink", "brown")
+  return (baseColours)
+}
+
+get_base_colour_extensions<-function(baseColour, extensionCount)
+{
+  if(baseColour == "yellow")
+    extnColours = c("gold1", "gold2", "gold3", "gold4")
+  else if(baseColour == "blue")
+    extnColours = c("royalblue1", "royalblue2", "royalblue3", "royalblue4")
+  else if(baseColour == "green")
+    extnColours = c("palegreen1", "palegreen2", "palegreen3", "palegreen4")
+  else if(baseColour == "red")
+    extnColours = c("firebrick1", "firebrick2", "firebrick3", "firebrick4")
+  else if(baseColour == "orange")
+    extnColours = c("orangered1", "orangered2", "orangered3", "orangered4")
+  else if(baseColour == "purple")
+    extnColours = c("magenta1", "magenta2", "magenta3", "magenta4")
+  else if(baseColour == "pink")
+    extnColours = c("deeppink1", "deeppink2", "deeppink3", "deeppink4")
+  else if(baseColour == "brown")
+    extnColours = c("chocolate1", "chocolate2", "chocolate3", "chocolate4")
+  else if(baseColour == "darkgreen")
+    extnColours = c("darkolivegreen1", "darkolivegreen2", "darkolivegreen3", "darkolivegreen4")
+  else if(baseColour == "deepskyblue")
+    extnColours = c("cyan1", "cyan2", "cyan3", "cyan4")
+  else if(baseColour == "tan")
+    extnColours = c("tan1", "tan2", "tan3", "tan4")
+
+  return (extnColours)
+}
+
+strip_multi_bg_colours<-function(sigColours, bgSigCount)
+{
+  # the background colour is repeated X times, strip back so it is only in there once
+  newSigColours = c()
+  sigCount = length(sigColours)
+
+  # newSigColours[1] = sigColours[1]
+
+  for(i in bgSigCount:sigCount)
+  {
+    # so if say BG count = 20, the 1st colour will be set to the 20th
+    newSigColours[i-bgSigCount+1] = sigColours[i]
+  }
+
+  return (newSigColours)
 }
 
 get_signame_list<-function(sigCount, asStrings)
@@ -90,80 +148,32 @@ apply_signatures<-function(matrixData, signatures)
   return(lsq_contribution)
 }
 
-calc_sample_residuals<-function(contribution, signatures, bucketNames, sampleBucketCounts)
-{
-  # contribution is sample in the columns and sig in the rows
-  sigCount = ncol(signatures)
-  contribTrans = t(contribution) %>% as.data.frame()
-  sampleNames = colnames(contribution)
-  sampleSigContribs = cbind(sampleNames, contribTrans)
-  rownames(sampleSigContribs) <- NULL
-
-  # merge with bucket-sig data
-  sigContribs = cbind(signatures, bucketNames)
-
-  # give col names so the sig columns dont merge in the next step
-  colNames = get_signame_list(sigCount,F)
-  colNames[sigCount+1] = "Bucket"
-
-  colnames(sigContribs) <- colNames
-
-  # initially don't merge on any common fields
-  samSigContribs2 = merge(sampleSigContribs, sigContribs, all.x=TRUE)
-  names(samSigContribs2)[names(samSigContribs2) == 'sampleNames'] <- 'SampleId'
-
-  # finally merge with actual bucket counts
-  sampleSigContribs3 = merge(samSigContribs2, sampleBucketCounts, by.x=c("SampleId","Bucket"),by.y=c("SampleId","Bucket"),all.x=TRUE)
-  sampleSigContribs3[is.na(sampleSigContribs3)] <- 0
-
-  # convert all sig columns back to numerics
-  colStart = 3
-  colEnd = colStart + (sigCount*2) - 1
-
-  # sampleSigContribs3[, c(colStart:colEnd)] <- apply(sampleSigContribs3[, c(colStart:colEnd)], 1, function(x) x * 1.0)
-  sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.character)
-  sampleSigContribs3[, c(colStart:colEnd)] <- sapply(sampleSigContribs3[, c(colStart:colEnd)], as.numeric)
-
-  sampleSigContribs3$SigAlloc = 0
-  for(i in 1:sigCount)
-  {
-    sigAlloc = apply(sampleSigContribs3[,c(i+2,i+2+sigCount)], 1, function(x) x[1]*x[2])
-    sampleSigContribs3$SigAlloc = sampleSigContribs3$SigAlloc + sigAlloc
-  }
-
-  sampleSigContribs3$ResidualDiff = abs(sampleSigContribs3$Count-sampleSigContribs3$SigAlloc)
-
-  View(sampleSigContribs3)
-
-  # return (sampleSigContribs3)
-
-  sampleResidualData = (sampleSigContribs3 %>% group_by(SampleId)
-                        %>% summarise(Count=sum(Count),
-                                      ResidualTotal=round(sum(ResidualDiff),2),
-                                      ResidualPerc=round(sum(ResidualDiff)/sum(Count),2)))
-
-  return (sampleResidualData)
-}
-
 calc_sample_residuals_v2<-function(contributions, signatures, matrixData, bucketNames)
 {
-  sampleBucketNmfFit = signatures %*% contributions
+  sampleBucketFit = signatures %*% contributions
 
-  sampleBucketNmfFit = cbind(bucketNames,sampleBucketNmfFit)
+  sampleBucketFit = cbind(bucketNames,sampleBucketFit)
   sampleBucketCounts = cbind(bucketNames,matrixData)
 
   gatherIndex = ncol(sampleBucketCounts)
   sampleBucketCounts2 = gather(sampleBucketCounts, "SampleId", "ActualCount", 2:gatherIndex)
-  sampleBucketNmfFit2 = gather(sampleBucketNmfFit, "SampleId", "FitCount", 2:gatherIndex)
+  sampleBucketFit2 = gather(sampleBucketFit, "SampleId", "FitCount", 2:gatherIndex)
 
-  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleBucketNmfFit2, by=c("SampleId","Bucket"), all=T)
+  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleBucketFit2, by=c("SampleId","Bucket"), all=T)
 
+  sampleBucketFitVsActuals$ResidualExcess = ifelse(sampleBucketFitVsActuals$FitCount > sampleBucketFitVsActuals$ActualCount, sampleBucketFitVsActuals$FitCount - sampleBucketFitVsActuals$ActualCount, 0)
+  sampleBucketFitVsActuals$ResidualUnalloc = ifelse(sampleBucketFitVsActuals$ActualCount > sampleBucketFitVsActuals$FitCount, sampleBucketFitVsActuals$ActualCount - sampleBucketFitVsActuals$FitCount, 0)
   sampleBucketFitVsActuals$ResidualDiff = abs(sampleBucketFitVsActuals$ActualCount-sampleBucketFitVsActuals$FitCount)
 
   sampleResidualData = (sampleBucketFitVsActuals %>% group_by(SampleId)
-                        %>% summarise(Count=sum(ActualCount),
+                        %>% summarise(ActualCount=sum(ActualCount),
+                                      FitCount=sum(FitCount),
                                       ResidualTotal=round(sum(ResidualDiff),2),
+                                      ExcessCount=round(sum(ResidualExcess),2),
+                                      UnallocCount=round(sum(ResidualUnalloc),2),
                                       ResidualPerc=round(sum(ResidualDiff)/sum(ActualCount),2)))
+
+  sampleResidualData$ResidualTotalManual = sampleResidualData$ActualCount - sampleResidualData$FitCount
 
   return (sampleResidualData)
 }
@@ -208,14 +218,22 @@ append_residuals<-function(contribution, signatures, matrixData, bucketNames, sa
 {
   residuals = calc_sample_residuals_v2(contribution, signatures, matrixData, bucketNames)
 
-  sampleResiduals = residuals %>% select(SampleId,ResidualTotal)
+  sampleResiduals = residuals %>% select(SampleId,UnallocCount)
   colnames(sampleResiduals) <- c("SampleId","Count")
-  sampleResiduals$Count = sampleResiduals$Count * -1.0
-  sampleResiduals$SigName = "Residual"
+
+  sampleResiduals$SigName = "Unalloc"
   sampleResiduals$SigPercent = 0
   sampleResiduals$PercBucket = 0
-
   sampleSigData2 = rbind(sampleSigData, sampleResiduals %>% select(SampleId,SigName,SigPercent,PercBucket,Count))
+
+  sampleResiduals = residuals %>% select(SampleId,ExcessCount)
+  colnames(sampleResiduals) <- c("SampleId","Count")
+
+  sampleResiduals$SigName = "Excess"
+  sampleResiduals$SigPercent = 0
+  sampleResiduals$PercBucket = 0
+  sampleResiduals$Count = sampleResiduals$Count * -1.0
+  sampleSigData2 = rbind(sampleSigData2, sampleResiduals %>% select(SampleId,SigName,SigPercent,PercBucket,Count))
 
   return (sampleSigData2)
 }
@@ -260,12 +278,33 @@ plot_cancer_sigs<-function(sampleSigData, sigColours, varType = "SV")
   print(cancerSigPlot)
 }
 
-plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV", maxPlots = 0)
+get_sig_plot_legend<-function(sampleSigData, sigColours)
+{
+  sampleSigPlot <- (ggplot(sampleSigData, aes(x = SampleId, y = Count, fill = SigName))
+                    + geom_bar(stat = "identity", colour = "black")
+                    + scale_fill_manual(values = sigColours)
+                    + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank()))
+
+  legend = get_legend(sampleSigPlot)
+  return (legend)
+}
+
+plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV", maxPlots = 0, dropLegend = F)
 {
   cancerSigData = sampleSigData
 
-  if(cancerType != "") {
+  if(cancerType != "")
+  {
     cancerSigData = cancerSigData %>% filter(CancerType==cancerType)
+
+    # filter out irrelevant background sig data if present
+    countsByBGSigType = cancerSigData %>% filter(grepl("BG_",SigName)) %>% group_by(SigName) %>% summarise(Count=sum(Count)) %>% arrange(-Count)
+
+    if(nrow(countsByBGSigType) > 0 && head(countsByBGSigType,1)$Count > 0)
+    {
+      topBGType = head(countsByBGSigType,1)$SigName
+      cancerSigData = cancerSigData %>% filter((!grepl("BG_",SigName)|(SigName==topBGType)))
+    }
   }
 
   cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId','SigName','Count','SampleCount')
@@ -301,8 +340,8 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     plotIndex = plotIndex + 1
   }
 
-  if(nrow(cancerSampleSigData) > 0) {
-
+  if(nrow(cancerSampleSigData) > 0)
+  {
     # log the top N samples separately if they significantly higher counts
     cancerSampleData = cancerSigData %>% group_by(SampleId) %>% summarise(SampleCount=first(SampleCount)) %>% arrange(-SampleCount)
 
@@ -331,6 +370,8 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     maxRows = nrow(cancerSampleSigData)
     plotCount = 0
 
+    # print(paste("cancer=", cancerType, ", numSamples=", numSamples, ", numSigs=", numSigs, ", maxRows=", maxRows, ", logTopN=", logTopNSamples, sep=''))
+
     while(rowEnd < maxRows)
     {
       if(plotCount == 0 & logTopNSamples)
@@ -350,6 +391,8 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
           rowEnd = maxRows
         }
       }
+
+      # print(paste("plotCount= ", plotCount, ", rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
 
       if(cancerType == "")
       {
@@ -371,7 +414,10 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
 
       if(plotCount == 0)
       {
-        sampleSigPlot <- sampleSigPlot + ggtitle(title)
+        # sampleSigPlot <- sampleSigPlot + ggtitle(title)
+
+        if(dropLegend)
+          sampleSigPlot <- sampleSigPlot + theme(legend.position="none")
       }
       else
       {
@@ -405,7 +451,7 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
   }
 }
 
-plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColours, varType = "SV")
+plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColours, varType = "SV", dropSigLegend = F)
 {
   sigSamplePlots = list()
   plotIndex = 1
@@ -415,7 +461,7 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
 
   for(sigName in sigNames)
   {
-    topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName) %>% arrange(-Count),topN)
+    topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName&Count>0) %>% arrange(-Count),topN)
     # View(topNSamplesBySig)
 
     # now grab all sig data for these top-N samples
@@ -433,7 +479,7 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
                       + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7))
                       + ggtitle(title))
 
-    if(plotIndex > 1)
+    if(plotIndex > 1 || dropSigLegend)
     {
       # remove legend after the first plot
       sampleSigPlot <- sampleSigPlot + theme(legend.position="none")
