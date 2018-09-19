@@ -66,14 +66,15 @@ driver_promoters <- function(promoters) {
   }
 
   result = promoters %>%
+    mutate(coordinate = genomic_coordinates(chromosome, position, ref, alt)) %>%
     group_by(sampleId, gene, shared) %>%
     summarise(
       driver = "Promoter",
+      coordinate = first(coordinate),
       driverLikelihood = 1,
       hotspot = "Hotspot",
       type = "ONCO")
 
   return (result)
 }
-
 
