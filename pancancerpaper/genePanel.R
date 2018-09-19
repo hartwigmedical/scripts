@@ -46,20 +46,6 @@ knownAmpsDels = bind_rows(cgi, onco) %>%
 rm(cgi, onco, civic, manual)
 
 
-########################### Fragile Sites
-fragileSites = read.csv(file = "~/hmf/resources/FragileSite.csv")
-fragileSites$range = GRanges(fragileSites$chrom, IRanges(fragileSites$start, fragileSites$end))
-
-load(file = "~/hmf/RData/reference/canonicalTranscripts.RData")
-canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(canonicalTranscripts$geneStart, canonicalTranscripts$geneEnd))
-ol = as.matrix(findOverlaps(fragileSites$range, canonicalTranscripts$range))
-fragileGenes = canonicalTranscripts[ol[,2], c("gene", "chromosome")]
-fragileGenes$fragile <- TRUE
-fragileGenes$chromosome <- NULL
-colnames(fragileGenes) <- c("gene_name", "fragile")
-rm(canonicalTranscripts, ol, fragileSites)
-save(fragileGenes, file = "~/hmf/RData/Processed/fragileGenes.RData")
-
 ########################### Gene Panel
 load(file="~/hmf/RData/reference/PcawgRefCDSCv.RData")
 load(file="~/hmf/RData/processed/HmfRefCDSCv.RData")

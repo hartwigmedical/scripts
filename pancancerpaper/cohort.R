@@ -8,15 +8,16 @@
 # 06. dndsDrivers.R
 # 07. ampsDels.R
 # 08. ampsDelsTarget.R
-# 09. driversByGene.R
-# 10. multipleBiopsyDrivers.R
+# 09. fragileSites.R
+# 10. driversByGene.R
+# 11. multipleBiopsyDrivers.R
 
 
-# 11. cohortVisualisation.R
-# 12. supplementaryVisualisation.R
-# 13. actionableVisualation.R
-# 14. copyNumberOverview.R
-# 15. driversByGeneHeatmap.R
+# 12. cohortVisualisation.R
+# 13. supplementaryVisualisation.R
+# 14. actionableVisualation.R
+# 15. copyNumberOverview.R
+# 16. driversByGeneHeatmap.R
 
 detach("package:purple", unload=TRUE)
 library(purple)
