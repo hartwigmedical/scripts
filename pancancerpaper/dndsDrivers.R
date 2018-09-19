@@ -56,6 +56,107 @@ hpcDndsOncoDriverRates = hpcDndsOncoDriversOutput[["oncoDriverRates"]]; save(hpc
 hpcDndsOncoUnknownDriversTotals = hpcDndsOncoDriversOutput[["oncoUnknownDriversTotals"]]; save(hpcDndsOncoUnknownDriversTotals, file = "~/hmf/RData/Processed/hpcDndsOncoUnknownDriversTotals.RData")
 hpcDndsOncoDrivers = hpcDndsOncoDriversOutput[["oncoDrivers"]]; save(hpcDndsOncoDrivers, file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 
+############################################ INDIVIDUAL SAMPLE CALCS ############################################
+load(file = "~/hmf/RData/processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsTsgDriverRates.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsTsgUnknownDriversTotals.RData")
+
+cohortSize = nrow(highestPurityCohortSummary)
+hpcSomaticCounts = highestPurityCohortSummary %>% select(sampleId, ends_with("SNV"), ends_with("INDEL"))
+hpcSomaticCounts[is.na(hpcSomaticCounts)] <- 0
+totalSomatics = sampleSomatics %>% ungroup() %>% summarise(total_SNV = sum(sample_SNV), total_INDEL = sum(sample_INDEL))
+
+totalSomatics = hpcSomaticCounts %>%
+  mutate(sample_SNV = TOTAL_SNV, sample_INDEL = TOTAL_INDEL) %>%
+  select(starts_with("sample")) %>% ungroup() %>% summarise(total_SNV = sum(sample_SNV), total_INDEL = sum(sample_INDEL))
+
+tsgDriverLikelihood = hpcDndsTsgDriverRates %>% select(gene, impact, driverLikelihood) %>% spread(impact, driverLikelihood, fill = 0) %>%
+  select(gene, dndsDriverLikelihoodMissense = Missense, dndsDriverLikelihoodNonsense = Nonsense, dndsDriverLikelihoodSplice = Splice, dndsDriverLikelihoodIndel = Indel)
+
+tsgPDrivers = hpcDndsTsgUnknownDriversTotals %>% select(gene, impact, gene_drivers) %>%
+  mutate(p_driver = gene_drivers / cohortSize) %>%
+  select(-gene_drivers) %>%
+  spread(impact, p_driver, fill = 0) %>%
+  select(gene, pDriverMissense = Missense, pDriverNonsense = Nonsense, pDriverSplice = Splice, pDriverIndel = Indel)
+
+tsgPVariantNonDriverFactor = hpcDndsTsgUnknownDriversTotals %>% select(gene, impact, gene_non_drivers) %>%
+  mutate(p_variant_nondriver_factor = ifelse(impact == 'Indel',  gene_non_drivers / totalSomatics$total_INDEL, gene_non_drivers / totalSomatics$total_SNV)) %>%
+  select(-gene_non_drivers) %>%
+  spread(impact, p_variant_nondriver_factor, fill = 0) %>%
+  select(gene, pVariantNonDriverFactorMissense = Missense, pVariantNonDriverFactorNonsense = Nonsense, pVariantNonDriverFactorSplice = Splice, pVariantNonDriverFactorIndel = Indel)
+
+tsg = tsgDriverLikelihood %>% left_join(tsgPDrivers, by = "gene") %>% left_join(tsgPVariantNonDriverFactor, by = "gene") %>%
+  select(gene,
+    dndsDriverLikelihoodMissense, pDriverMissense, pVariantNonDriverFactorMissense,
+    dndsDriverLikelihoodNonsense, pDriverNonsense, pVariantNonDriverFactorNonsense,
+    dndsDriverLikelihoodSplice, pDriverSplice, pVariantNonDriverFactorSplice,
+    dndsDriverLikelihoodIndel, pDriverIndel, pVariantNonDriverFactorIndel
+  )
+write.table(tsg, "~/hmf/RData/DndsDriverLikelihoodTsg.tsv", quote = F, row.names = F, sep = "\t")
+
+load(file = "~/hmf/RData/Processed/hpcDndsOncoDriverRates.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsOncoUnknownDriversTotals.RData")
+
+oncoDriverLikelihoodAdjustment = hpcDndsOncoUnknownDriversTotals %>%
+  filter(impact == 'Missense') %>%
+  mutate(
+    p_driver = gene_drivers / cohortSize,
+    p_variant_nondriver_factor = gene_non_drivers / totalSomatics$total_SNV 
+    ) %>% 
+  select(gene, pDriverMissense = p_driver, pVariantNonDriverFactorMissense = p_variant_nondriver_factor) 
+
+
+oncoDriverLikelihood = hpcDndsOncoDriverRates %>% select(gene, impact, driverLikelihood) %>% spread(impact, driverLikelihood, fill = 0) %>% 
+  #mutate(Indel = 0, Nonsense = 0, Splice = 0) %>% 
+  select(gene, dndsDriverLikelihoodMissense = Missense)
+
+onco = oncoDriverLikelihood %>% left_join(oncoDriverLikelihoodAdjustment, by = "gene") %>%
+  select(gene, dndsDriverLikelihoodMissense, pDriverMissense, pVariantNonDriverFactorMissense) %>%
+  mutate(dndsDriverLikelihoodNonsense = 0, pDriverNonsense = 0, pVariantNonDriverFactorNonsense = 0,
+         dndsDriverLikelihoodSplice = 0, pDriverSplice = 0, pVariantNonDriverFactorSplice = 0,
+         dndsDriverLikelihoodIndel = 0, pDriverIndel = 0, pVariantNonDriverFactorIndel = 0) 
+write.table(onco, "~/hmf/RData/DndsDriverLikelihoodOnco.tsv", quote = F, row.names = F, sep = "\t")
+
+############################################ Compare Implementation ############################################
+load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
+load(file = "~/hmf/RData/Processed/hpcDndsTsgDrivers.RData")
+
+
+### DATABASE
+dbProd = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
+pilotData = dbGetQuery(dbProd, "select sampleId, category, gene, driverLikelihood from driverCatalog")
+dbDisconnect(dbProd)
+rm(dbProd)
+
+
+tidyPilot = pilotData %>% spread(category, driverLikelihood)
+
+tidyOnco = hpcDndsOncoDrivers %>% group_by(sampleId, gene) %>% summarise(ONCO = sum(driverLikelihoodAdjusted))
+tidyTSG = hpcDndsTsgDrivers %>% group_by(sampleId, gene) %>% summarise(TSG = sum(driverLikelihoodAdjusted))
+
+tidyOnco = hpcDndsOncoDrivers %>% select(sampleId, gene, impact, ONCO = driverLikelihoodAdjusted)
+tidyTSG = hpcDndsTsgDrivers %>% select(sampleId, gene, impact, TSG = driverLikelihoodAdjusted)
+
+tidyPaper = full_join(tidyOnco, tidyTSG, by = c("sampleId", "gene"))
+#tidyPaper[is.na(tidyPaper)] <- 0
+
+tidyPaper = tidyPaper %>% filter(sampleId %in% tidyPilot$sampleId)
+tidyPilot = tidyPilot %>% filter(sampleId %in% tidyPaper$sampleId)
+
+compareDriverCataloges = full_join(tidyPilot, tidyPaper, by = c("sampleId", "gene"), suffix = c(".pilot",".paper")) %>%
+  mutate(
+    ONCO.missingPilot = !is.na(ONCO.paper) & is.na(ONCO.pilot),
+    ONCO.missingPaper = is.na(ONCO.paper) & !is.na(ONCO.pilot),
+    TSG.missingPilot = !is.na(TSG.paper) & is.na(TSG.pilot),
+    TSG.missingPaper = is.na(TSG.paper) & !is.na(TSG.pilot)
+    )
+
+missingGenes = compareDriverCataloges %>% filter(ONCO.missingPilot | ONCO.missingPaper | TSG.missingPilot | TSG.missingPaper)
+
+
+save(compareDriverCataloges, file = "~/hmf/RData/compareDriverCataloges.RData")
+
+
 ############################################ MULTIPLE BIOPYSY COHORT ############################################
 load(file = "~/hmf/RData/reference/multipleBiopsySomaticsWithScope.Rdata")
 mbSomaticCounts = multipleBiopsySomaticsWithScope %>%
