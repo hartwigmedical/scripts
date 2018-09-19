@@ -156,6 +156,7 @@ rm(geneCopyNumberAmplificationSummary)
 
 load(file = "~/hmf/RData/processed/geneCopyNumberDeleteTargets.RData")
 load(file = "~/hmf/RData/processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/RData/Processed/fragileGenes.RData")
 
 CopyNumberAmplifications = geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(arm = coalesce(telomere, centromere)) %>%
   select(gene = target, chromosome, score, N, globalPeak, localPeak, neighbouringGenes, candidates = superCandidates, martincorena, hmf, cosmicCurated, cosmicOncogene,
@@ -163,8 +164,9 @@ CopyNumberAmplifications = geneCopyNumberAmplificationTargets %>% ungroup() %>% 
 
 CopyNumberDeletions = geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(arm = coalesce(telomere, centromere)) %>%
   select(gene = target, chromosome, score, N, globalPeak, localPeak, neighbouringGenes, candidates = superCandidates, martincorena, hmf, cosmicCurated, cosmicTsg, deletion, method, arm) %>%
-  group_by(gene) %>% top_n(1, score) %>% ungroup()
+  group_by(gene) %>% top_n(1, score) %>% ungroup() %>%
+  left_join(fragileGenes, by = c("gene" = "gene_name"))
 
 
 write.csv(CopyNumberAmplifications, file = "~/hmf/RData/CopyNumberAmplificationTargets.CSV", row.names = F) 
-write.csv(CopyNumberDeletions, file = "~/hmf/RData/CopyNumberDeletionTargets.CSV", row.names = F) 
+write.csv(CopyNumberDeletions, file = "~/hmf/RData/Supplementary Table 4a_CopyNumberDeletionTargets.csv", row.names = F) 
