@@ -201,7 +201,7 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
 p3 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(aes(SNV,color='SNV',linetype='SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='SNV'), show.legend = F) + 
   stat_ecdf(aes(MNV,color='MNV',linetype='MNV') ,geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='MNV'), show.legend = F) + 
-  scale_x_log10() + facet_grid(~cancerType) +
+  scale_x_log10(labels = comma) + facet_grid(~cancerType) +
   scale_colour_manual(name = "Combined", values=somaticColours) + 
   scale_linetype_manual(name = "Combined", values = somaticLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
@@ -213,7 +213,7 @@ p3 = ggplot(data=combinedMutationalLoad) +
 p4 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(aes(INDEL, color='INDEL', linetype = 'INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='INDEL'), show.legend = F) + 
   stat_ecdf(aes(SV,color='SV',linetype='SV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='SV'), show.legend = F) +
-  scale_x_log10() + facet_grid(~cancerType) +
+  scale_x_log10(labels = comma) + facet_grid(~cancerType) +
   scale_colour_manual(name = "Combined", values=indelSVColours) + 
   scale_linetype_manual(name = "Combined", values = indelSVLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
