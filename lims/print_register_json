@@ -26,6 +26,7 @@ my $YES_PIPELINE_PRIO = 99;
 
 my $LIMS_IN_FILE = '/data/lims/lims.json';
 my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
+my $USE_EXISTING = 0;
 
 ## -----
 ## Gather input
@@ -35,6 +36,7 @@ GetOptions (
   "samplesheet=s"  => \$opt{ samplesheet },
   "outdir=s"       => \$JSON_BASE_DIR,
   "limsjson=s"     => \$LIMS_IN_FILE,
+  "useExisting"    => \$USE_EXISTING,
   "debug"          => \$opt{ debug },
   "help|h"         => \$opt{ help },
   "verbose"        => \$opt{ verbose }
@@ -62,8 +64,9 @@ my $HELP =<<HELP;
       eg: $SCRIPT FR11111111 FR22222222 FR33333333
     
   Options
-    -outdir   [$JSON_BASE_DIR]
-    -limsjson [$LIMS_IN_FILE] 
+    -outdir       [$JSON_BASE_DIR]
+    -limsjson     [$LIMS_IN_FILE] 
+    -useExisting  (adds the use_existing_sample flag to json)
 
 HELP
 
@@ -184,7 +187,7 @@ sub processSample{
         ## assume all NoAnalysis samples need fastq in portal
         $json_data{ 'fastq_portal' } = JSON::true;
         
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif ( $analysis eq 'RnaAnalysis' ){
         warn "[WARN] RESULT: Type $analysis not yet supported\n";
@@ -219,8 +222,8 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         
-        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F );
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F );
+        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif( $analysis eq 'Germline' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
@@ -228,7 +231,7 @@ sub processSample{
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif ( $analysis eq 'Somatic_R' ){
         warn "[WARN] RESULT: SKIPPING ($sample_id) because is somatic ref sample ($name)\n";
@@ -342,15 +345,17 @@ sub addEntityToJsonData{
 }
 
 sub addSampleToJsonData{
-    my ($store, $submission, $barcode, $type, $q30, $yield) = @_;
+    my ($store, $submission, $barcode, $type, $q30, $yield, $use_existing) = @_;
     my %tmp = (
         'barcode'    => "$barcode",
         'submission' => "$submission",
         'type'       => "$type",
         'q30_req'    => $q30,
         'yld_req'    => $yield,
-        #'use_existing_sample' => JSON::false,
     );
+    if ( $use_existing ){
+        $tmp{ 'use_existing_sample' } = JSON::true;
+    }
     push( @{$store->{ 'samples' }}, \%tmp );
 }
 
