@@ -66,7 +66,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
 	  # Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
 	  #filtered = .addFilter(filtered, "minRead", .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support)
-	  filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
+	  #filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
 	  # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 	  #filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
 	  # homology FPs handled by normal and/or PON
@@ -75,6 +75,8 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 		# Added ASRP into filter otherwise breakpoint chains don't get called
 	  filtered = .addFilter(filtered, "BPI.Filter.PRSupportZero", !isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0)
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
+
+	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -141,6 +143,21 @@ is_short_dup = function(gr) {
     is_dup[isbp] = bp_short_dup
   }
   return(is_dup)
+}
+is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=100, maxsize=800, minihomlen=6) {
+  result = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr = gr[isbp]
+    svlen = abs(start(bpgr) - start(partner(bpgr)))
+    ihomlen = gridss_inexact_homology_length(gr, vcf)
+    result[isbp] = simpleEventType(bpgr) == "DEL" &
+      svlen >= minsize & svlen <= maxsize &
+      #maxaf <= 0.25
+      ihomlen >= minihomlen
+  }
+  return(result)
+
 }
 #' @description filter out 'shadow' calls of strong multi-mapping calls
 #' bwa overestimates the MAPQ of some multimapping reads
@@ -244,20 +261,24 @@ query_structural_variants_samples = function(dbConnect) {
 	return(df$sampleId)
 }
 simpleEventType <- function(gr) {
-  same_chr = as.character(seqnames(gr)) == as.character(seqnames(partner(gr)))
-  insSeq = rep("", length(gr))
-  if (!is.null(gr$insSeq)) {
-    insSeq = gr$insSeq
+  isbp = !is.na(gr$partner)
+  result = rep("BE", length(gr))
+  bpgr = gr[isbp]
+  same_chr = as.character(seqnames(bpgr)) == as.character(seqnames(partner(bpgr)))
+  insSeq = rep("", length(bpgr))
+  if (!is.null(bpgr$insSeq)) {
+    insSeq = bpgr$insSeq
   }
-  if (!is.null(gr$insertSequence)) {
-    insSeq = gr$insertSequence
+  if (!is.null(bpgr$insertSequence)) {
+    insSeq = bpgr$insertSequence
   }
-  more_ins_than_length = str_length(insSeq) >= abs(start(gr)-start(partner(gr))) * 0.7
-  same_strand = strand(gr) == strand(partner(gr))
-  return(ifelse(!same_chr, "ITX", # inter-chromosomosal
+  more_ins_than_length = str_length(insSeq) >= abs(start(bpgr)-start(partner(bpgr))) * 0.7
+  same_strand = strand(bpgr) == strand(partner(bpgr))
+  result[isbp] = ifelse(!same_chr, "ITX", # inter-chromosomosal
           ifelse(more_ins_than_length, "INS", # TODO: improve classification of complex events
             ifelse(same_strand, "INV",
-              ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL", "DUP")))))
+              ifelse(xor(start(bpgr) < start(partner(bpgr)), strand(bpgr) == "-"), "DEL", "DUP"))))
+  return(result)
 }
 
 load_full_gridss_gr = function(filename, directory="", filter=c("somatic", "qual")) {
@@ -439,7 +460,7 @@ transitive_breakpoints <- function(
     min_segment_length=0,
     transitive_call_slop=100,
     allow_loops=FALSE,
-    max_hops=5,
+    max_hops=4,
     report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
@@ -463,9 +484,10 @@ transitive_breakpoints <- function(
       can_traverse_through[dest_to])
 
   terminal_df = .adjacent_breakends(gr, gr, maxgap=transitive_call_slop, allowed_orientation=c("--", "++")) %>%
-    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
-    # [min_traversed, max_traversed] overlaps [-transitive_call_slop, transitive_call_slop]
-    filter(min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop)
+    filter(
+      queryHits != subjectHits & queryHits != partner_lookup[subjectHits] &
+      min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop &
+      find_transitive_for[queryHits] & can_traverse_through[subjectHits])
 
   result_df = data.frame(transitive=character(), bp_path=character(), min_length=integer(), max_length=integer())
   # start with the first traversal away from the putative transitive call
@@ -510,11 +532,11 @@ transitive_breakpoints <- function(
     }
     if (report == "max2") {
       found2 = result_df %>%
-        group_by(terminal_start) %>%
+        group_by(transitive_start) %>%
         summarise(n=n()) %>%
         filter(n >= 2) %>%
-        pull(terminal_start)
-      active_df = active_df %>% filter(!(terminal_start %in% found2))
+        pull(transitive_start)
+      active_df = active_df %>% filter(!(names(gr)[terminal_start] %in% found2))
     }
     i = i + 1
   }
@@ -756,7 +778,9 @@ test_that(".linked_assemblies_fix_indels corrects indels", {
 })
 
 
-transitive_calls = function(vcf, bpgr) {
+transitive_calls = function(vcf, bpgr,
+  report=c("shortest", "max2", "all")
+  ) {
   is_imprecise = info(vcf[names(bpgr)])$IMPRECISE
   is_imprecise[is.na(is_imprecise)] = FALSE
   # transitive calling reduction
@@ -768,7 +792,7 @@ transitive_calls = function(vcf, bpgr) {
     can_traverse_through=!is_imprecise,
     bpgr,
     min_segment_length=20,
-    report="all")
+    report=report)
   transitive_df = transitive_df %>%
     #filter(info(vcf[transitive_df$transitive])$IMPRECISE) %>%
     mutate(full_path=bp_path)
