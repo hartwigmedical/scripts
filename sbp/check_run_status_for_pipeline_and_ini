@@ -52,7 +52,7 @@ query_sbp_api \
              then
                 echo "${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
              else
-                echo "Unclear situation wrt ${failedTumorSample}"
+                echo "${failedSet} has failed on ${pip} but seems to exist in succeeded runs"
              fi
         fi
     done | sort -r | uniq
