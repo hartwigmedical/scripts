@@ -50,9 +50,9 @@ query_sbp_api \
                 echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSetFail}"
 		     elif [[ ${COUNT} == 0 ]]
              then
-                echo "${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
+                echo "# ${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
              else
-                echo "${failedSet} has failed on ${pip} but seems to exist in succeeded runs"
+                echo "# ${failedSet} has failed on ${pip} but seems to exist in succeeded runs"
              fi
         fi
     done | sort -r | uniq
@@ -104,7 +104,7 @@ query_sbp_api \
     -filter "status=Processing|Downloading|Uploading" \
     -json | jq -r '.[].name' | \
     while read setName; do
-        echo "${setName} is processing (or downloading/uploading) on ${pip}"
+        echo "# ${setName} is processing (or downloading/uploading) on ${pip}"
     done | sort -r | uniq
 echo ""
 
@@ -116,6 +116,6 @@ query_sbp_api \
     -filter "status=Pending" \
     -json | jq -r '.[].name' | \
     while read setName; do
-        echo "${setName} is pending on ${pip}"
+        echo "# ${setName} is pending on ${pip}"
     done | sort -r | uniq
 echo ""
