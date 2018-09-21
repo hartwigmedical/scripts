@@ -34,7 +34,7 @@ then
 fi
 
 echo "[INFO] Loading purple data"
-${prefix}/do_load_purple_data ${run_dir} ${credentials} ${patient_db_jar} ${sample} $@
+${prefix}/do_load_purple_data ${run_dir}/purple ${credentials} ${patient_db_jar} ${sample} $@
 
 echo "[INFO] Loading somatic variants"
 ${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
