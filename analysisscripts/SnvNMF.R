@@ -9,6 +9,7 @@ library(MutationalPatterns)
 library(RMySQL)
 library(data.table)
 library("NMF")
+library("pracma")
 
 # plotting
 library(grid)
@@ -135,6 +136,16 @@ nrow(hpcSamples)
 View(hpcSamples)
 
 View(highestPurityCohortSummary)
+
+# set MSI status
+baSampleData = read.csv("~/dev/nmf/sample_ext_data3.csv")
+View(baSampleData)
+
+baSampleData = merge(baSampleData, hpcSamples %>% select (sampleId, msiStatus), by.x='SampleId', by.y='sampleId', all.x=T)
+baSampleData$msiStatus = ifelse(baSampleData$msiStatus=='MSI','MSI','')
+baSampleData$MSI = (baSampleData$msiStatus=='MSI')
+baSampleData = within(baSampleData, rm(msiStatus))
+write.csv(baSampleData, "~/dev/nmf/sample_ext_data4.csv", quote=F, row.names=F)
 
 highestPurityCohortSummary$IndelByMsiScore = highestPurityCohortSummary$TOTAL_INDEL/highestPurityCohortSummary$msiScore
 
@@ -529,40 +540,20 @@ ncol(snvBaContribs)
 snvBaSigCount = ncol(snvBaSigs)
 print(snvBaSigCount)
 
-snvBaSigNumList = get_signame_list(snvBaSigCount, F)
-snvBaSigStrList = get_signame_list(snvBaSigCount, T)
-colnames(snvBaSigs) <- snvBaSigNumList
-View(snvBaSigs)
-
-# trim sig names
-for(i in 1:snvBaSigCount)
-{
-  snvBaSigNames[i] = paste(snvBaSigStrList[i], snvBaSigNames[i], sep="_")
-  sigLen = stringi::stri_length(snvBaSigNames[i])
-
-  if(sigLen > 8)
-  {
-    catIndex = stri_locate_first_fixed(snvBaSigNames[i], "_cat")
-    if(!is.na(catIndex[1]))
-    {
-      snvBaSigNames[i] = substring(snvBaSigNames[i], 1, catIndex[1]-1)
-      # print(paste("sig name shorted: ", snvBaSigNames[i], sep=''))
-    }
-
-    snvBaSigNames[i] = stri_replace_all_fixed(snvBaSigNames[i], ".", "")
-  }
-}
-
+snvBaSigNames = colnames(snvBaSigs)
+snvBaSigNames = trim_ba_sig_names(snvBaSigNames)
 print(snvBaSigNames)
 
-bgSigCount = 20
 
 evaluate_nmf_data("SNV", "ba_denovo_all_RR", snvBaSigs, snvBaContribs, snvMatrixData, snvSampleCounts,
                   sampleCancerTypes2, snvBucketNames, snvBaSigNames, T, F, bgSigCount, F)
 
+produce_signature_report("SNV", "ba_denovo_all_RR_20", "~/dev/nmf/logs/snv_rr_ba_sigs.csv", "~/dev/nmf/logs/snv_rr_ba_contribs.csv",
+                         "~/dev/nmf/logs/snv_rr_ba_group_data.csv", "~/dev/nmf/logs/snv_rr_ba_sample_sig_allocs.csv",
+                         snvMatrixData, snvSampleCounts, sampleCancerTypes2, snvBucketNames, T, F, F)
 
-produce_signature_report("SNV", "ba_denovo_all_RR_30", "~/dev/nmf/logs/snv_rr_ba_sigs.csv", "~/dev/nmf/logs/snv_rr_ba_contribs.csv",
-                         "~/dev/nmf/logs/snv_rr_ba_group_data.csv", snvMatrixData, snvSampleCounts,
+produce_signature_report("SNV", "ba_denovo_no_MSI", "~/dev/nmf/logs/snv_no_msi_ba_sigs.csv", "~/dev/nmf/logs/snv_no_msi_ba_contribs.csv",
+                         "~/dev/nmf/logs/snv_no_msi_ba_group_data.csv", snvMatrixData, snvSampleCounts,
                          sampleCancerTypes2, snvBucketNames, T, F, F)
 
 produce_signature_report("SNV", "ba_PCAWG_fit", "~/dev/nmf/logs/snv_pcwg_ba_sigs.csv", "~/dev/nmf/logs/snv_pcwg_ba_contribs.csv",
@@ -574,72 +565,228 @@ baSigInfo = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_rr_ba_group_data.csv
 View(baSigInfo)
 sigCount = nrow(baSigInfo)
 
-sigInfo = baSigInfo %>% filter(Type!="BGRD") %>% select(Rank, BgId, Type, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
-sigInfo[is.na(sigInfo)] = ""
-sigInfo$Effects = ifelse(stri_length(sigInfo$Effects > 25), stri_sub(sigInfo$Effects,1,25), sigInfo$Effects)
-sigInfo$Effects = ifelse(stri_length(sigInfo$CancerType > 25), stri_sub(sigInfo$CancerType,1,25), sigInfo$CancerType)
 
-print(baSigCount)
 
-sigInfo$Colour = ""
-colourCol = ncol(sigInfo)
-for(i in 1:baSigCount)
+
+# DEBUG ONLY
+contribution = snvBaContribs
+signatures = snvBaSigs
+summaryCounts = snvSampleCounts
+bucketNames = snvBucketNames
+sigNamesNamed = snvBaSigNames
+matrixData = snvMatrixData
+
+sigCount = nrow(contribution)
+
+sampleNames = colnames(contribution)
+
+origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
+
+sigNamesUnamed = get_signame_list(sigCount, F)
+colnames(signatures) = sigNamesUnamed
+
+sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+colnames(sigNamesCombined) <- c("Signature", "SigName")
+print(sigNamesCombined)
+
+bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
+colnames(bucketIndex) <- c("BucketIndex")
+bucketNamesIndexed = cbind(bucketNames, bucketIndex)
+bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
+
+sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
+sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
+sigBucketStats = get_sig_bucket_stats(sigBucketData)
+sigBucketTopN = get_top_buckets(sigBucketData)
+bucketSummaryData = get_bucket_stats(sigBucketData)
+sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, bucketNames)
+sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+View(sampleSigData)
+
+
+
+sigStats = get_sig_stats(sampleSigData)
+
+# calculate and factor in residuals
+sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
+
+sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
+
+View(sampleSigData)
+
+nrow(sampleSigData %>% filter(Count > 0))
+View(sampleSigData %>% filter(Count > 0))
+
+
+sampleSigData = merge(sampleSigData, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+View(sampleSigData)
+allSamplesBySampleCount = sampleSigData %>% group_by(SampleId) %>% summarise(SampleCount=first(OrigSampleCount)) %>% arrange(-SampleCount)
+View(allSamplesBySampleCount)
+
+sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+
+names(sampleSigData)[names(sampleSigData) == 'OrigSampleCount.x'] <- 'SampleCount'
+
+sigColours = get_sig_colours(40)
+plot_sig_samples(sampleSigData, "Skin", sigColours, "SV", 0, T)
+
+print(sigColours)
+sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
+plot_top_n_samples_by_sig(sampleSigDataNoResiduals, sigNamesNamed, 50, sigColours, "SV", T)
+
+# try to match sampleSigData using external sig allocs data
+sigAllocs = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_rr_ba_sample_sig_allocs.csv", stringsAsFactors=F))
+colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
+sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
+View(sigAllocs)
+nrow(sigAllocs %>% filter(Count > 0))
+sampleSigData2 = sigAllocs
+sigCount = length(sigNamesCombined)
+sigNamesCombined = rbind(sigNamesCombined, c(sigCount+1,"Unalloc"))
+sigNamesCombined = rbind(sigNamesCombined, c(sigCount+2,"Excess"))
+View(sigNamesCombined)
+sampleSigData2$PercBucket = round(sampleSigData2$SigPercent/0.1)*0.1
+sampleSigData2 = merge(sampleSigData2, sigNamesCombined, by.x="Signature", by.y="Signature", all.x=TRUE)
+View(sampleSigData2)
+
+
+nrow(sampleSigData2 %>% filter(Count > 0))
+
+View(origSampleCounts)
+
+
+
+
+
+# ratio range data
+ratioRangeData = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_rr_ba_grp_ratio_ranges.csv", stringsAsFactors=F))
+View(ratioRangeData)
+
+
+print(plot_ratio_range_distribution(ratioRangeData, 443, T, 0.1, 0.02))
+
+tmpRR = ratioRangeData %>% filter(BgId == -1)
+bucketList = tmpRR %>% group_by(Bucket) %>% count()
+View(bucketList)
+bucketCount = nrow(bucketList)
+print(bucketCount)
+
+bucketPlotList = bucketList[1:20,]
+View(bucketPlotList)
+
+print(paste("pageCount=", pageCount, ", bucketCount=", bucketCount, ", start=", startBucketIndex, ", end=", endBucketIndex, sep=''))
+
+plotData = tmpRR %>% filter(Bucket %in% bucketPlotList$Bucket)
+View(plotData)
+
+# create PDF of ratio range distributions
+runType = "SNV"
+runId = "ratio_ranges"
+outputFile = paste("~/logs/r_output/pdfs/", runType, "_", runId, ".pdf", sep = "")
+pdf(file=outputFile, height = 14, width = 20)
+par(mar=c(1,1,1,1))
+
+#ratioRangeData = as.data.frame(read.csv(file="~/dev/nmf/logs/snv_rr_ba_grp_ratio_ranges.csv", stringsAsFactors=F))
+#ratioRangeData = within(ratioRangeData, rm(Type.1))
+
+bgRRSummary = ratioRangeData %>% group_by(BgId) %>% summarise(SampleCount=first(SampleCount))
+View(bgRRSummary)
+bgList = unique(ratioRangeData$BgId)
+
+for(bgId in bgList)
 {
-  # sigInfoData = sigInfo[i,]
-  print(paste("setting sig ", i, " to colour ", newSigColours[i], sep=''))
-  sigInfo[i,colourCol] = newSigColours[i]
+  minRatioSeg = 0.005
+  if(bgId == -1)
+    minRatioSeg = 0.02
+
+  print(plot_ratio_range_distribution(ratioRangeData, bgId, T, 0.05, minRatioSeg))
+  print(plot_ratio_range_distribution(ratioRangeData, bgId, F, 0.05, minRatioSeg))
 }
 
-print(newSigColours)
-length(newSigColours)
+dev.off()
 
-View(sigInfo)
 
-baseColours = get_base_colours()
 
-# look for links between the sigs
-backgroundSigCount = 0
-majorSigCount = 0
-newSigColours = sigColours
+print(plot_ratio_range_distribution(ratioRangeData, 443, F, 0.05))
+print(plot_ratio_range_distribution(ratioRangeData, 443, T, 0.05))
 
-for(i in 1:sigCount)
-{
-  sigInfo = baSigInfo[i,]
+print(plot_ratio_range_distribution(ratioRangeData, -1, T, 100, 0.1, 0.02))
 
-  if(sigInfo$Type == "BGRD")
-  {
-    backgroundSigCount = backgroundSigCount + 1
-    newSigColours[i] = "grey60"
-  }
-  else if(sigInfo$Type == "MAJOR")
-  {
-    bgId = sigInfo$BgId
-    majorSigCount = majorSigCount + 1
-    newSigColours[i] = baseColours[majorSigCount]
+colCount = ncol(ratioRangeData)
+print(colCount)
+freqColStart = colCount - 100 + 1
+weightColEnd = freqColStart -1
+weightColStart = weightColEnd - 100 + 1
 
-    # print(paste("searching for minors for major=", bgId, ", baseColour=", newSigColours[i], sep=''))
+nrow(ratioRangeData)
 
-        # set a related colour for all other minor sigs
-    minorColours = get_base_colour_extensions(newSigColours[i])
-    minorCount = 1
 
-    for(j in i+1:sigCount)
-    {
-      nextSigInfo = baSigInfo[j,]
-      # print(paste("testing sig: type=", nextSigInfo$Type, ", parentId=", nextSigInfo$ParentId, sep=''))
+tmpRRData = ratioRangeData %>% filter(BgId==443)
+tmpRRData = ratioRangeData %>% filter(BgId==-1)
+maxRatio = max(tmpRRData$SigRatio)
+tmpRRData = tmpRRData %>% filter(SigRatio >= maxRatio * 0.1)
+sampleFreqData = tmpRRData[,freqColStart:colCount]
+View(sampleFreqData)
 
-      if(nextSigInfo$Type == "MINOR" && !is.na(nextSigInfo$ParentId) && nextSigInfo$ParentId == bgId)
-      {
-        newSigColours[j] = minorColours[minorCount]
-        minorCount = minorCount + 1
-      }
-    }
-  }
-}
 
-print(backgroundSigCount)
-print(newSigColours)
-print(length(newSigColours))
+sampleWeightData = tmpRRData[,weightColStart:weightColEnd]
+xAxisValues = colnames(sampleWeightData)
+print(xAxisValues)
+ratioSegmentNames = stri_replace_all_fixed(xAxisValues,'X','')
+print(ratioSegmentNames)
+
+rsTmp = as.numeric(ratioSegmentNames)
+View(rsTmp)
+colnames(sampleWeightData) = ratioSegmentNames
+View(sampleWeightData)
+# sampleWeightData = cbind(tmpRRData$Bucket, sampleWeightData)
+
+swTrans = as.data.frame(t(sampleWeightData))
+colnames(swTrans) = tmpRRData$Bucket
+swTrans = cbind(ratioSegmentNames, swTrans)
+rownames(swTrans) = NULL
+View(swTrans)
+
+# sampleSigPercData = sigPercentsBySample %>% gather(SigName, SigPercent, -SampleId) %>% arrange(SampleId, SigName)
+# sampleBucketCounts = cbind(bucketNames,matrixData)
+# gatherIndex = ncol(sampleBucketCounts)
+# sampleBucketCounts2 = gather(sampleBucketCounts, "SampleId", "ActualCount", 2:gatherIndex)
+
+gatherIndex = ncol(swTrans)
+swTrans2 = gather(swTrans, "Bucket", "Weight", 2:gatherIndex)
+colnames(swTrans2) = c("RatioSegment", "Bucket", "Weight")
+View(swTrans2)
+
+weightPlot = (ggplot(data = swTrans2, aes(x=RatioSegment, y=Weight))
+              + geom_line(aes(group=Bucket, colour=Bucket))
+              + facet_wrap( ~ Bucket, ncol=3)
+              + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+              + labs(title="Sample Ratios by Weight", x="Ratio Segment", fill="Bucket"))
+
+print(weightPlot)
+
+# theme_set(theme_classic())
+
+weightPlot = (ggplot(data = swTrans2, aes(x=RatioSegment, y=Weight))
+              + stat_density(aes(group = Bucket, color = Bucket), position="identity", geom="line")
+              + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+              + labs(title="Sample Ratios by Weight", x="Ratio Segment", fill="Bucket"))
+
+print(weightPlot)
+
+weightPlot = (ggplot(data = swTrans2, aes(Weight))
+              + geom_density(aes(fill=factor(Bucket)), alpha=0.99)
+              + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+              + labs(title="Sample Ratios by Weight", x="Ratio Segment", fill="Bucket"))
+
+print(weightPlot)
+
+
+
+
+
 
 singleBgColours = strip_multi_bg_colours(newSigColours, 20)
 print(singleBgColours)
@@ -682,128 +829,8 @@ css = cosine_sim(snvBaSigsR25[,23], snvBaSigsR25[,37])
 print(css)
 
 
-# DEBUG ONLY
-contribution = snvBaContribs
-signatures = snvBaSigs
-summaryCounts = snvSampleCounts
-bucketNames = snvBucketNames
-sigNamesNamed = snvBaSigNames
-matrixData = snvMatrixData
-
-sigCount = nrow(contribution)
-
-sampleNames = colnames(contribution)
-
-origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(OrigSampleCount=sum(Count))
-
-sigNamesUnamed = get_signame_list(sigCount, F)
-colnames(signatures) = sigNamesUnamed
-
-sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
-colnames(sigNamesCombined) <- c("Signature", "SigName")
-
-bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
-colnames(bucketIndex) <- c("BucketIndex")
-bucketNamesIndexed = cbind(bucketNames, bucketIndex)
-bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
-
-sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
-sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
-sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
-
-sigBucketStats = get_sig_bucket_stats(sigBucketData)
-
-# Signature Discovery, by looking at relative contribution of buckets
-sigBucketTopN = get_top_buckets(sigBucketData)
-
-# key bucket stats
-bucketSummaryData = get_bucket_stats(sigBucketData)
-
-sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, bucketNames)
-# View(sampleBucketData)
-
-# optionally name signatues for subsequent output
-sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
-View(sampleSigData)
-
-sigStats = get_sig_stats(sampleSigData)
-
-# calculate and factor in residuals
-sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
-
-sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
-sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
-
-# sampleSigCounts = sampleSigData %>% filter(SigName!="Residual") %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
-sampleSigData = merge(sampleSigData, sampleSigCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
-# View(sigStats)
-
-View(sampleSigData %>% filter(Count != 0))
-
-View(origSampleCounts)
-
-testSigName = "01_BG_Stoma"
-topN = 50
-topNSamplesBySig = head(sampleSigData %>% filter(SigName==testSigName&Count>0) %>% arrange(-Count),topN)
-View(topNSamplesBySig)
-
-# now grab all sig data for these top-N samples
-topNSampleSigData = sampleSigData %>% filter(SampleId %in% topNSamplesBySig$SampleId)
 
 
-
-
-
-
-# TEMP: BG sig incorrectly set for some samples
-cancerSigData = sampleSigData %>% filter(CancerType=="Stomach")
-View(cancerSigData)
-
-# filter out irrelevant background sig data if present
-countsByBGSigType = cancerSigData %>% filter(grepl("BG_",SigName)) %>% group_by(SigName) %>% summarise(Count=sum(Count)) %>% arrange(-Count)
-
-if(nrow(countsByBGSigType) > 0 && head(countsByBGSigType,1)$Count > 0)
-{
-  topBGType = head(countsByBGSigType,1)$SigName
-  cancerSigData = cancerSigData %>% filter((!grepl("BG_",SigName)|(SigName==topBGType)))
-}
-
-
-
-
-
-
-
-# get contributions by sample in percentage terms (ie each sample split across the signatures)
-# contributionPercents = apply(contribution, 2, function(x) x/sum(x))
-# transposedPerc = t(contributionPercents) %>% as.data.frame()
-# colnames(transposedPerc) <- sigNames
-# sigPercentsBySample = cbind(data.frame(SampleId = sampleNames), transposedPerc)
-# rownames(sigPercentsBySample) <- NULL
-#
-# # get contributions by sample in raw count of SVs
-# transposedContrib = t(contribution) %>% as.data.frame()
-# colnames(transposedContrib) <- sigNames
-#
-# # use signature counts to turn contributions into counts
-# sigCountsBySample = transposedContrib
-# for (i in 1:ncol(sigCountsBySample))
-# {
-#   sigCountsBySample[i] = sigCountsBySample[i]* colSums(signatures)[i]
-# }
-#
-# sigCountsBySample = cbind(data.frame(SampleId = sampleNames), sigCountsBySample)
-# rownames(sigCountsBySample) <- NULL
-#
-# # now put percentages and raw counts together, and split columns into rows to help with sig-agnostic aggregation
-# sampleSigPercData = sigPercentsBySample %>% gather(SigName, SigPercent, -SampleId) %>% arrange(SampleId, SigName)
-# sampleSigPercData$PercBucket = round(sampleSigPercData$SigPercent/0.1)*0.1
-#
-# # do same for counts then add together
-# sampleSigCountData = sigCountsBySample %>% gather(SigName, Count, -SampleId) %>% arrange(SampleId, SigName)
-#
-# # ensure both are order by sample and sig
-# sampleSigData = cbind(sampleSigPercData, Count = sampleSigCountData$Count)
 
 
 

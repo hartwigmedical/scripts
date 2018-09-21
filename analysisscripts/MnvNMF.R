@@ -534,6 +534,10 @@ write.csv(indelMatrixData, file="~/data/r_data/indel_matrix_data_dr22_23bkts.csv
 # ncol(indelMatrixData)
 
 # using bucket analyser
+produce_signature_report("INDEL", "ba_denovo_all", "~/dev/nmf/logs/indel_ba_sigs.csv", "~/dev/nmf/logs/indel_ba_contribs.csv",
+                         "~/dev/nmf/logs/indel_ba_group_data.csv", indelMatrixData, indelSampleBucketCounts,
+                         sampleCancerTypes2, indelBucketNames, T, F, F)
+
 
 indBaContribs = as.matrix(read.csv(file="~/dev/nmf/logs/indel_ba_contribs.csv", stringsAsFactors=F))
 View(indBaContribs[,50:70])

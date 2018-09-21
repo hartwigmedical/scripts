@@ -64,7 +64,7 @@ set_sv_non_clustered_types<-function(svData)
 
   svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$Id %in% dubiousNCSingleSVs$Id,'NC_INVALID',svData$ResolvedType)
 
-  svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&ClusterCount==1,'NC_UNCLEAR',svData$ResolvedType)
+  svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$ClusterCount==1,'NC_UNCLEAR',svData$ResolvedType)
 
   # RESOLVED TYPE: span SVs
   svData$ResolvedType = ifelse(svData$ResolvedType=='NONE'&svData$IsSpan==1,'SPAN',svData$ResolvedType)
