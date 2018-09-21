@@ -42,5 +42,5 @@ ${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${pat
 echo "[INFO] Loading sv variants"
 ${prefix}/../svloader/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar}
 
-#echo "[INFO] Loading metrics"
+echo "[INFO] Loading metrics"
 ${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
