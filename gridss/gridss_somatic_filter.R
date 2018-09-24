@@ -75,7 +75,6 @@ begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 
-
 write(paste0("Calculating VAF ", input_vcf), stderr())
 bpgr$af = gridss_somatic_bp_af(bpgr, vcf)
 bpgr$af_str = paste(bpgr$af, partner(bpgr)$af, sep=",")

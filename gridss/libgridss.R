@@ -4,6 +4,7 @@ library(rtracklayer)
 library(tidyverse)
 library(stringr)
 library(testthat)
+library(stringdist)
 source("gridss.config.R")
 
 #' sum of genotype fields
@@ -876,7 +877,7 @@ passes_final_filters = function(vcf, include.existing.filters=TRUE) {
 
 linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gridss.insertion.maxgap) {
   if (is.null(begr$sampleId)) {
-    begr$sampleId = "placeholder"
+    begr$sampleId = rep("placeholder", length(begr))
   }
   hits = findOverlaps(begr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
@@ -899,10 +900,10 @@ linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gri
 }
 linked_by_breakpoint_breakend_insertion_classification = function(bpgr, begr, maxgap=gridss.insertion.maxgap) {
   if (is.null(begr$sampleId)) {
-    begr$sampleId = "placeholder"
+    begr$sampleId = rep("placeholder", length(begr))
   }
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   hits = findOverlaps(bpgr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
@@ -925,7 +926,7 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
   bpgr = bpgr[strand(bpgr) == strand(partner(bpgr))]
   bpgr = bpgr[seqnames(bpgr) == seqnames(partner(bpgr))]
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL) %>%
     filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
@@ -950,6 +951,50 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
 linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
   linked_by_adjacency(bpgr, maxgap=maxgap, select="unique", link_label="dsb")
 }
+linked_by_transitive_assembly = function(bpgr, maxfragmentsize=100, allowed_sequence_errors=4) {
+  bpgr = bpgr[!is.na(bpgr$partner)]
+  if (is.null(bpgr$sampleId)) {
+    bpgr$sampleId = rep("placeholder", length(bpgr))
+  }
+  insSeq = rep("", length(bpgr))
+  if (!is.null(bpgr$insSeq)) {
+    insSeq = bpgr$insSeq
+  }
+  if (!is.null(bpgr$insertSequence)) {
+    insSeq = bpgr$insertSequence
+  }
+  hits = findOverlaps(bpgr, bpgr) %>%
+    as.data.frame() %>%
+    filter(
+      queryHits != subjectHits &
+      bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>%
+    mutate(
+      queryIns=insSeq[queryHits],
+      subjectIns=insSeq[subjectHits],
+      spanned_fragment_length=str_length(queryIns) - str_length(subjectIns)) %>%
+    filter(spanned_fragment_length > 0) %>%
+    mutate(
+      queryLeft=str_sub(queryIns, end=str_length(subjectIns)),
+      queryRight=str_sub(queryIns, start=-str_length(subjectIns)),
+      queryCommon=ifelse(str_length(subjectIns)==0, "", ifelse(strand(bpgr)[queryHits]=="+", queryLeft, queryRight))) %>%
+    mutate(edit_distance=stringdist(queryCommon, subjectIns, method="lv")) %>%
+    filter(edit_distance <= allowed_sequence_errors) %>%
+    mutate(debug_orientation=as.character(strand(bpgr)[queryHits]),
+           sampleId=bpgr$sampleId[queryHits])
+  if (!is.null(bpgr$id)) {
+    hits = hits %>% mutate(
+      qid=bpgr$id[queryHits],
+      qbeid=bpgr$beid[queryHits],
+      sid=bpgr$id[subjectHits],
+      sbeid=bpgr$beid[subjectHits])
+    }
+  if (!is.null(bpgr$vcfId)) {
+    hits = hits %>% mutate(
+      qvcfId=begr$vcfId[queryHits],
+      sqvcfId=begr$vcfId[subjectHits])
+  }
+  return(hits)
+}
 #' Links breakends by their proximity
 #'
 #' @param bpgr breakpoint GRanges to link
@@ -969,7 +1014,7 @@ linked_by_adjacency = function(
   strand = match.arg(strand)
   select = match.arg(select)
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   if (is.null(bpgr$beid)) {
     bpgr$beid = NA_character_

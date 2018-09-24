@@ -49,7 +49,7 @@ svdf$is_fragile_site = svdf$id %in% svids_of_overlap(svgr, fragile_site_gr)
 
 if (any(is.na(svgr$cnid))) {
   bad_svid = svgr$id[is.na(svgr$cnid)]
-  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
+  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: confirm these are all ALT contigs, missing sex or missing short arm events"))
   svdf = svdf %>% filter(!(id %in% bad_svid))
   #svData = svData %>% filter(!(Id %in% bad_svid))
   svgr = svgr[!(svgr$id %in% bad_svid)]
@@ -333,5 +333,73 @@ visNetwork(
 ```
 
 
+# Small deletion FP analysis
 
+```{r}
+sdelgr = svgr[!is.na(svgr$partner)]
+sdelgr = sdelgr[simpleEventType(sdelgr) == "DEL"]
+sdelgr = sdelgr[abs(start(sdelgr) - start(partner(sdelgr))) < 1000]
+sdeldf = svdf %>% filter(id %in% sdelgr$id) %>%
+  mutate(
+    length = endPosition - startPosition,
+    inslen = str_length(insertSequence),
+    ihomlen = inexactHomologyOffsetEnd - inexactHomologyOffsetStart,
+    homlen = str_length(startHomologySequence)) %>%
+  #filter(sampleId=="CPCT02020506TII") %>%
+  dplyr::select(length, ihomlen, homlen, qualScore, inslen, ploidy, startAF, id, sampleId)
+
+sdelexportgr = sdelgr[sdelgr$sampleId == "CPCT02020506TII"]
+strand(sdelexportgr) = "*"
+export(reduce(flank(sdelexportgr, 2000, both=TRUE)), con="CPCT02020506TII.del.bed")
+
+# sample level insertion size
+# grep -A 1 MEDIAN_INSERT_SIZE $(find . -path '*/QCStats/*.insert_size_metrics') | grep -v MEDIAN_INSERT_SIZE | grep -v '\--' | tr "/_-" "\t\t\t" | cut -f 8,15 > ins.tsv
+inssizedf = read_tsv("D:/hartwig/down/ins.tsv", col_names=c("sampleId", "meaninsertsize"))
+
+ggplot(sdeldf) + 
+  aes(x=length, y=qualScore, color=ihomlen>6) +
+  geom_point(size=0.2) +
+  geom_vline(aes(xintercept=meaninsertsize), data=inssizedf) +
+  scale_y_log10() +
+  facet_wrap(~ sampleId) +
+  theme_bw()
+
+ggplot(sdeldf)  +
+  aes(x=ploidy, y=startAF, color=ihomlen>6) +
+  geom_point(size=0.2) +
+  theme_bw() +
+  coord_cartesian(xlim=c(0, 2), ylim=c(0, 0.25))
+
+ggplot(sdeldf %>%
+         group_by(sampleId) %>%
+         filter(ihomlen>6) %>%
+         summarise(meanihom6len=mean(length), count=n()) %>%
+         inner_join(inssizedf))  +
+  aes(x=meanihom6len, y=meaninsertsize, size=log10(count)) +
+  geom_point() +
+  theme_bw()
+
+# export to MEME for motif analysis
+svdf %>%
+  filter(id %in% (sdeldf %>% filter(ihomlen>6) %>% pull(id))) %>%
+  filter(str_length(startHomologySequence) >= 8) %>%
+  mutate(fa=paste0(">", row_number(), "\n",startHomologySequence))%>%
+  pull(fa) %>%
+  write("ihom6dels.sequences.fa")
+# meme ihom6dels.sequences.txt -o meme_output -dna -maxw 8 -p 4 -revcomp -nmotifs 16
+
+sdelpca <- sdeldf %>% dplyr::select(-id, -sampleId) %>% prcomp(scale. = TRUE)
+summary(sdelpca)
+biplot(sdelpca, scale = 0)
+
+```
+
+# Spanning calls 
+ 
+```{r}
+z = flank(bpgr[bpgr$id %in% c(linked_by_transitive_assembly(bpgr, allowed_sequence_errors=1000000)$qid, linked_by_transitive_assembly(bpgr, allowed_sequence_errors=1000000)$sid)], width=5000, both=TRUE)
+strand(z) = "*"
+z = reduce(z)
+export(z, con="CPCT02010503T.spanning.bed", format="bed")
+```
 

@@ -66,7 +66,6 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     normalVariantFragmentCount=dbdf$startNormalVariantFragmentCount,
     normalReferenceFragmentCount=dbdf$startNormalReferenceFragmentCount,
     ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
-    somaticScore=dbdf$somaticScore,
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
@@ -84,7 +83,7 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     FILTER=dbdf$filter,
     sampleId=dbdf$sampleId,
     ploidy=dbdf$ploidy,
-    insertSequence=dbdf$insertSequence,
+    insertSequence=ifelse(dbdf$startOrientation != dbdf$endOrientation, dbdf$insertSequence, as.character(reverseComplement(DNAStringSet(dbdf$insertSequence)))),
     type=dbdf$type,
     af=dbdf$endAF,
     homseq=dbdf$endHomologySequence,
@@ -97,7 +96,6 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     normalVariantFragmentCount=dbdf$endNormalVariantFragmentCount,
     normalReferenceFragmentCount=dbdf$endNormalReferenceFragmentCount,
     ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
-    somaticScore=dbdf$somaticScore,
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
@@ -487,7 +485,12 @@ find_simple_inversions = function(cndf, svdf, svgr, max.breakend.gap=35) {
       ploidy_right_flank_delta=left_flank_ploidy - ploidy,
       ploidy_sv_delta = (svploidy_a + svploidy_b) / 2 - ploidy)
 }
-
+chain_events = function(links) {
+  #chains = data.frame(
+   # beid=unique(links$beid
+    #index=1
+  stop("TODO")
+}
 
 
 
