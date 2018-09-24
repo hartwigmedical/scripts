@@ -6,18 +6,18 @@ CN_CHANGE_MIN = 0.8
 DB_MAX_LENGTH = 1000
 MIN_LOH_CN = 0.5
 
-query_all_copy_numer = function(dbConnect) {
+query_all_copy_numer = function(dbConnect, table="copyNumber") {
   query = paste(
     "SELECT * ",
-    " FROM copyNumber ",
+    " FROM ", table,
     sep = "")
   return (DBI::dbGetQuery(dbConnect, query) %>%
     mutate(id=as.character(id)))
 }
-query_somatic_structuralVariants = function(dbConnect) {
+query_somatic_structuralVariants = function(dbConnect, table="structuralVariant") {
   query = paste(
     "SELECT * ",
-    " FROM structuralVariant ",
+    " FROM ", table,
     " WHERE filter = 'PASS'",
     sep = "")
   return (DBI::dbGetQuery(dbConnect, query) %>%

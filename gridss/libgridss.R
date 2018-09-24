@@ -952,11 +952,98 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
 linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
   linked_by_adjacency(bpgr, maxgap=maxgap, select="unique", link_label="dsb")
 }
-sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4) {
-  gr = gr[!is.na(gr$partner)]
+
+linked_by_different_foldback_inversion_paths = function(gr, max_inversion_length = 1000) {
   if (is.null(gr$sampleId)) {
     gr$sampleId = rep("placeholder", length(gr))
   }
+  gr_foldback = gr[!is.na(gr$partner)]
+  gr_foldback = gr_foldback[abs(start(gr_foldback) - start(partner(gr_foldback))) < max_inversion_length]
+  gr_foldback = gr_foldback[seqnames(gr_foldback) == seqnames(partner(gr_foldback))]
+  gr_foldback = gr_foldback[strand(gr_foldback) == strand(partner(gr_foldback))]
+  gr_foldback = gr_foldback[findOverlaps(gr_foldback, gr_foldback, maxgap=max_inversion_length, ignore.strand=FALSE) %>%
+    as.data.frame() %>%
+    filter(
+      queryHits != subjectHits &
+      gr_foldback$sampleId[queryHits] == gr_foldback$sampleId[subjectHits] &
+      names(gr_foldback)[queryHits] == gr_foldback$partner[subjectHits]) %>%
+    pull(queryHits)]
+  insSeq = .insSeq(gr)
+
+  hitdf = findOverlaps(gr, gr_foldback) %>%
+    as.data.frame() %>%
+    filter(
+      #names(gr)[queryHits] != names(gr_foldback)[subjectHits]  &
+        gr$sampleId[queryHits] == gr_foldback$sampleId[subjectHits] &
+        str_length(insSeq[queryHits]) > 0) %>%
+    mutate(
+      spanningIns=insSeq[queryHits],
+      spanningAnchor="", # ignore the sequence past the inversion for now
+      foldbackIns=insSeq[names(gr_foldback)[subjectHits]],
+      foldbackLength=abs(start(gr_foldback[subjectHits]) - start(partner(gr_foldback)[subjectHits])),
+      foldbackAnchor=get_partner_anchor_sequence(gr_foldback[subjectHits], foldbackLength),
+      spanningSeq=ifelse(strand(gr[queryHits]) =="+", paste0(spanningIns, spanningAnchor), paste0(spanningAnchor, spanningIns)),
+      foldbackSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", paste0(foldbackIns, foldbackAnchor), paste0(foldbackAnchor, foldbackIns)),
+      foldbackInvertedSeq = ifelse(strand(gr_foldback[subjectHits]) =="+",
+        paste0(foldbackIns, as.character(reverseComplement(DNAStringSet(foldbackAnchor)))),
+        paste0(as.character(reverseComplement(DNAStringSet(foldbackAnchor))), foldbackIns)),
+      targetLength=pmin(str_length(spanningIns), str_length(foldbackIns) + foldbackLength)) %>%
+    mutate(
+      # normalise seq to be traversing from the left
+      spanningSeq = ifelse(strand(gr[queryHits])=="+", spanningSeq, as.character(reverseComplement(DNAStringSet((spanningSeq))))),
+      foldbackSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", foldbackSeq, as.character(reverseComplement(DNAStringSet((foldbackSeq))))),
+      foldbackInvertedSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", foldbackInvertedSeq, as.character(reverseComplement(DNAStringSet((foldbackInvertedSeq)))))) %>%
+    mutate(
+      spanningSeq = str_sub(spanningSeq, end=targetLength),
+      foldbackSeq = str_sub(foldbackSeq, end=targetLength),
+      foldbackInvertedSeq = str_sub(foldbackInvertedSeq, end=targetLength)) %>%
+    mutate(
+      editDistance=stringdist(spanningSeq, foldbackSeq, method="lv"),
+      invEditDistance=stringdist(spanningSeq, foldbackInvertedSeq, method="lv"))
+  return(hitdf)
+}
+sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4) {
+  if (is.null(gr$sampleId)) {
+    gr$sampleId = rep("placeholder", length(gr))
+  }
+  insSeq = .insSeq(gr)
+  anchor_sequence = get_partner_anchor_sequence(gr, max_length)
+  hitdf = findOverlaps(gr, gr) %>%
+    as.data.frame() %>%
+    filter(
+      queryHits != subjectHits &
+        gr$sampleId[queryHits] == gr$sampleId[subjectHits]) %>%
+    mutate(
+      queryIns=insSeq[queryHits],
+      subjectIns=insSeq[subjectHits],
+      queryAnchor=anchor_sequence[names(gr)[queryHits]],
+      subjectAnchor=anchor_sequence[names(gr)[subjectHits]],
+      querySeq = ifelse(strand(gr[queryHits]) =="+", paste0(queryIns, queryAnchor), paste0(queryAnchor, queryIns)),
+      subjectSeq = ifelse(strand(gr[subjectHits]) =="+", paste0(subjectIns, subjectAnchor), paste0(subjectAnchor, subjectIns))) %>%
+    mutate(
+      # normalise seq to be breakpoint on the left
+      querySeq = ifelse(strand(gr[queryHits])=="+", querySeq, as.character(reverseComplement(DNAStringSet((querySeq))))),
+      subjectSeq = ifelse(strand(gr[subjectHits])=="+", subjectSeq, as.character(reverseComplement(DNAStringSet((subjectSeq)))))) %>%
+    mutate(
+      maxBreakendLength=pmax(str_length(queryIns), str_length(subjectIns)),
+      querySeq = str_sub(querySeq, end=maxBreakendLength),
+      subjectSeq = str_sub(subjectSeq, end=maxBreakendLength)) %>%
+    mutate(edit_distance=stringdist(querySeq, subjectSeq, method="lv"))
+  if (!is.null(gr$id)) {
+    hitdf = hitdf %>% mutate(
+      qid=gr$id[queryHits],
+      qbeid=gr$beid[queryHits],
+      sid=gr$id[subjectHits],
+      sbeid=gr$beid[subjectHits])
+  }
+  if (!is.null(gr$vcfId)) {
+    hitdf = hitdf %>% mutate(
+      qvcfId=gr$vcfId[queryHits],
+      sqvcfId=gr$vcfId[subjectHits])
+  }
+  return(hitdf)
+}
+.insSeq = function(gr) {
   insSeq = rep("", length(gr))
   if (!is.null(gr$insSeq)) {
     insSeq = gr$insSeq
@@ -964,49 +1051,23 @@ sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4
   if (!is.null(gr$insertSequence)) {
     insSeq = gr$insertSequence
   }
-  hits = findOverlaps(gr, gr) %>%
-    as.data.frame() %>%
-    filter(
-      queryHits != subjectHits &
-      bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>%
-    mutate(
-      queryIns=insSeq[queryHits],
-      subjectIns=insSeq[subjectHits])
-
-      #spanned_fragment_length=str_length(queryIns) - str_length(subjectIns))
-
-    filter(spanned_fragment_length > 0) %>%
-    mutate(
-      queryLeft=str_sub(queryIns, end=str_length(subjectIns)),
-      queryRight=str_sub(queryIns, start=-str_length(subjectIns)),
-      queryCommon=ifelse(str_length(subjectIns)==0, "", ifelse(strand(bpgr)[queryHits]=="+", queryLeft, queryRight))) %>%
-    mutate(edit_distance=stringdist(queryCommon, subjectIns, method="lv")) %>%
-    filter(edit_distance <= allowed_sequence_errors) %>%
-    mutate(debug_orientation=as.character(strand(bpgr)[queryHits]),
-           sampleId=bpgr$sampleId[queryHits])
-  if (!is.null(bpgr$id)) {
-    hits = hits %>% mutate(
-      qid=bpgr$id[queryHits],
-      qbeid=bpgr$beid[queryHits],
-      sid=bpgr$id[subjectHits],
-      sbeid=bpgr$beid[subjectHits])
-    }
-  if (!is.null(bpgr$vcfId)) {
-    hits = hits %>% mutate(
-      qvcfId=begr$vcfId[queryHits],
-      sqvcfId=begr$vcfId[subjectHits])
-  }
-  return(hits)
+  names(insSeq) = names(gr)
+  return(insSeq)
 }
-get_remote_breakend_sequence_anchor = function(gr, anchor_length, genome=BSgenome.Hsapiens.UCSC.hg19) {
+#' Returns the sequence encountered at the other side of a breakpoint when traversing
+#' across it.
+get_partner_anchor_sequence = function(gr, anchor_length, genome=BSgenome.Hsapiens.UCSC.hg19) {
   seq = rep("", length(gr))
+  names(seq) = names(gr)
   isbp = !is.na(gr$partner)
   partnergr = partner(gr[isbp])
-  anchor_gr = GRranges(seqnames=seqnames(partnergr), ranges=IRanges(
-    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length, start(partnergr)),
-    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length)),
+  anchor_gr = GRanges(seqnames=seqnames(partnergr), ranges=IRanges(
+    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length + 1, start(partnergr)),
+    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length - 1)),
     strand=ifelse(strand(partnergr)=="+", "-", "+"))
-  getSeq(genome, anchor_gr, as.character=TRUE)
+  seqlevelsStyle(anchor_gr) = "UCSC"
+  seq[isbp] = getSeq(genome, anchor_gr, as.character=TRUE)
+  return(seq)
 }
 #' Links breakends by their proximity
 #'

@@ -37,9 +37,9 @@ Load GRIDSS calls from DB
 
 ```{r}
 dbgridss = dbConnect(MySQL(), dbname='gridss_test')
-cndf = query_all_copy_numer(dbgridss)
+cndf = query_all_copy_numer(dbgridss, "copyNumber190")
 cngr = to_cn_gr(cndf)
-svdf = query_somatic_structuralVariants(dbgridss)
+svdf = query_somatic_structuralVariants(dbgridss, "structuralVariant190")
 svgr = to_sv_gr(svdf, include.homology=FALSE)
 svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
 svgr$is_line = svgr$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
