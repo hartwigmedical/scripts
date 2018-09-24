@@ -69,7 +69,10 @@ transitive_df = transitive_calls(vcf, bpgr, report="max2") %>%
   mutate(type="transitive")
 # now we filter imprecise variants
 vcf = vcf[is.na(info(vcf)$IMPRECISE) | !info(vcf)$IMPRECISE]
-vcf = vcf[info(vcf)$ASSR + info(vcf)$SR + info(vcf)$IC > 0] # not unanchored
+vcf = vcf[
+  # not unanchored breakpoint
+  (!is.na(info(vcf)$PARID) & info(vcf)$ASSR + info(vcf)$SR + info(vcf)$IC > 0) |
+    (is.na(info(vcf)$PARID) & info(vcf)$BASSR + info(vcf)$BSC > 0)]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]

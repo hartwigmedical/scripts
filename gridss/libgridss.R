@@ -5,6 +5,7 @@ library(tidyverse)
 library(stringr)
 library(testthat)
 library(stringdist)
+library(BSgenome.Hsapiens.UCSC.hg19)
 source("gridss.config.R")
 
 #' sum of genotype fields
@@ -951,27 +952,29 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
 linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
   linked_by_adjacency(bpgr, maxgap=maxgap, select="unique", link_label="dsb")
 }
-linked_by_transitive_assembly = function(bpgr, maxfragmentsize=100, allowed_sequence_errors=4) {
-  bpgr = bpgr[!is.na(bpgr$partner)]
-  if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = rep("placeholder", length(bpgr))
+sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4) {
+  gr = gr[!is.na(gr$partner)]
+  if (is.null(gr$sampleId)) {
+    gr$sampleId = rep("placeholder", length(gr))
   }
-  insSeq = rep("", length(bpgr))
-  if (!is.null(bpgr$insSeq)) {
-    insSeq = bpgr$insSeq
+  insSeq = rep("", length(gr))
+  if (!is.null(gr$insSeq)) {
+    insSeq = gr$insSeq
   }
-  if (!is.null(bpgr$insertSequence)) {
-    insSeq = bpgr$insertSequence
+  if (!is.null(gr$insertSequence)) {
+    insSeq = gr$insertSequence
   }
-  hits = findOverlaps(bpgr, bpgr) %>%
+  hits = findOverlaps(gr, gr) %>%
     as.data.frame() %>%
     filter(
       queryHits != subjectHits &
       bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>%
     mutate(
       queryIns=insSeq[queryHits],
-      subjectIns=insSeq[subjectHits],
-      spanned_fragment_length=str_length(queryIns) - str_length(subjectIns)) %>%
+      subjectIns=insSeq[subjectHits])
+
+      #spanned_fragment_length=str_length(queryIns) - str_length(subjectIns))
+
     filter(spanned_fragment_length > 0) %>%
     mutate(
       queryLeft=str_sub(queryIns, end=str_length(subjectIns)),
@@ -994,6 +997,16 @@ linked_by_transitive_assembly = function(bpgr, maxfragmentsize=100, allowed_sequ
       sqvcfId=begr$vcfId[subjectHits])
   }
   return(hits)
+}
+get_remote_breakend_sequence_anchor = function(gr, anchor_length, genome=BSgenome.Hsapiens.UCSC.hg19) {
+  seq = rep("", length(gr))
+  isbp = !is.na(gr$partner)
+  partnergr = partner(gr[isbp])
+  anchor_gr = GRranges(seqnames=seqnames(partnergr), ranges=IRanges(
+    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length, start(partnergr)),
+    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length)),
+    strand=ifelse(strand(partnergr)=="+", "-", "+"))
+  getSeq(genome, anchor_gr, as.character=TRUE)
 }
 #' Links breakends by their proximity
 #'
