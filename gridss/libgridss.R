@@ -1002,16 +1002,16 @@ linked_by_different_foldback_inversion_paths = function(gr, max_inversion_length
       invEditDistance=stringdist(spanningSeq, foldbackInvertedSeq, method="lv"))
   return(hitdf)
 }
-sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4) {
+sequence_common_prefix = function(gr, anchor_bases=20, ...) {
   if (is.null(gr$sampleId)) {
     gr$sampleId = rep("placeholder", length(gr))
   }
   insSeq = .insSeq(gr)
   anchor_sequence = get_partner_anchor_sequence(gr, max_length)
-  hitdf = findOverlaps(gr, gr) %>%
+  hitdf = findOverlaps(gr, gr, ...) %>%
     as.data.frame() %>%
     filter(
-      queryHits != subjectHits &
+      queryHits < subjectHits &
         gr$sampleId[queryHits] == gr$sampleId[subjectHits]) %>%
     mutate(
       queryIns=insSeq[queryHits],
@@ -1025,10 +1025,13 @@ sequence_common_prefix = function(gr, max_length=1000, allowed_sequence_errors=4
       querySeq = ifelse(strand(gr[queryHits])=="+", querySeq, as.character(reverseComplement(DNAStringSet((querySeq))))),
       subjectSeq = ifelse(strand(gr[subjectHits])=="+", subjectSeq, as.character(reverseComplement(DNAStringSet((subjectSeq)))))) %>%
     mutate(
-      maxBreakendLength=pmax(str_length(queryIns), str_length(subjectIns)),
-      querySeq = str_sub(querySeq, end=maxBreakendLength),
-      subjectSeq = str_sub(subjectSeq, end=maxBreakendLength)) %>%
-    mutate(edit_distance=stringdist(querySeq, subjectSeq, method="lv"))
+      targetBreakendLength=pmax(str_length(queryIns), str_length(subjectIns), pmin(str_length(queryIns), str_length(subjectIns)) + anchor_bases),
+      actualBreakendLength=pmin(targetBreakendLength, str_length(querySeq), str_length(subjectSeq)),
+      querySeq = str_sub(querySeq, end=actualBreakendLength),
+      subjectSeq = str_sub(subjectSeq, end=actualBreakendLength)) %>%
+    mutate(
+      edit_distance=stringdist(querySeq, subjectSeq, method="lv"),
+      per_base_edit_distance=edit_distance/ actualBreakendLength)
   if (!is.null(gr$id)) {
     hitdf = hitdf %>% mutate(
       qid=gr$id[queryHits],
