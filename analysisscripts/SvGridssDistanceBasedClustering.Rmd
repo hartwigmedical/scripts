@@ -61,6 +61,16 @@ svData = svData %>% filter(SampleId %in% svdf$sampleId)
 ```
 
 
+# Similar calls
+```{r}
+similar_calls_df = sequence_common_prefix(svgr, maxgap=5)
+ggplot(similar_calls_df) +
+  aes(x=per_base_edit_distance, y=actualBreakendLength) +
+  geom_point() + 
+  labs(y="Bases compared") + 
+  theme_bw()
+```
+
 Compare clustering to GRIDSS linkages
 ```{r}
 

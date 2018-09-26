@@ -175,7 +175,9 @@ event_link_df = event_link_df %>%
   filter(n() == 2) %>%
   ungroup()
 
-link_summary_df = bind_rows(link_df, event_link_df) %>%
+eqv_link_df = linked_by_equivalent_variants(as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges"))
+
+link_summary_df = bind_rows(link_df, event_link_df, eqv_link_df) %>%
   group_by(vcfId) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 

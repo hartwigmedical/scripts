@@ -69,7 +69,7 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId,
+    vcfId=dbdf$vcfId,
     beid=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o")),
     linkedBy=dbdf$startLinkedBy)
   names(grs)=grs$beid
@@ -99,7 +99,7 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId,
+    vcfId=stringr::str_replace(dbdf$vcfId, "o", "h"),
     beid=paste0(dbdf$id, "h"),
     linkedBy=dbdf$endLinkedBy)
   names(grh)=grh$beid

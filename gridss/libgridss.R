@@ -1042,7 +1042,7 @@ sequence_common_prefix = function(gr, anchor_bases=20, ...) {
   if (!is.null(gr$vcfId)) {
     hitdf = hitdf %>% mutate(
       qvcfId=gr$vcfId[queryHits],
-      sqvcfId=gr$vcfId[subjectHits])
+      svcfId=gr$vcfId[subjectHits])
   }
   return(hitdf)
 }
@@ -1153,5 +1153,12 @@ linked_by_adjacency = function(
     hitdf %>% mutate(sampleId=bpgr$sampleId[subjectHits], beid=bpgr$beid[subjectHits], vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(sampleId, beid, vcfId, linked_by)) %>%
     distinct())
 }
-
+linked_by_equivalent_variants = function(gr, max_per_base_edit_distance=0.1) {
+  similar_calls_df = sequence_common_prefix(gr, maxgap=5) %>%
+    filter(per_base_edit_distance <= max_per_base_edit_distance) %>%
+    dplyr::select(svcfId, qvcfId) %>%
+    mutate(linked_by=paste0("eqv", row_number())) %>%
+    gather(sorq, vcfId, svcfId, qvcfId) %>%
+    dplyr::select(-sorq)
+}
 
