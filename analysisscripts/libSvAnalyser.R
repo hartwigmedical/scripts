@@ -1,4 +1,5 @@
 library(tidyverse)
+library(visNetwork)
 
 CN_ROUNDING= 0.2
 CN_DIFF_MARGIN = 0.25
@@ -491,6 +492,91 @@ chain_events = function(links) {
     #index=1
   stop("TODO")
 }
-
+export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpointgraph.", sampleId, ".html")) {
+  segmentSupportShape = function(support) {
+    ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
+           ifelse(support == "BND", "square",
+                  ifelse(support == "MULTIPLE", "circle",
+                         "star")))
+  }
+  sampleFilterId = sampleId
+  cndf = cndf %>% filter(sampleId == sampleFilterId)
+  svdf = svdf %>% filter(sampleId == sampleFilterId)
+  svgr = svgr[svgr$sampleId == sampleFilterId,]
+  nodes = bind_rows(
+    # start
+    cndf %>%
+      mutate(
+        label=round(copyNumber, 1),
+        size=pmax(1, copyNumber),
+        id=paste0(id, "-"),
+        shape=segmentSupportShape(segmentStartSupport)),
+    # end
+    cndf %>%
+      mutate(
+        size=copyNumber,
+        id=paste0(id, "+"),
+        shape=segmentSupportShape(segmentEndSupport))
+  ) %>% mutate(
+    color="lightblue")
+  edges = bind_rows(
+    # internal segment edges
+    cndf %>%
+      mutate(
+        from=paste0(paste0(id, "-")),
+        to=paste0(paste0(id, "+")),
+        color="lightblue",
+        width=copyNumber,
+        length=log10(end - start) + 1,
+        title=paste0(chromosome, ":", start, "-", end, " (", end - start, "bp)"),
+        smooth=FALSE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, width, length, title, smooth, dashes),
+    # Reference edges
+    cndf %>%
+      group_by(sampleId, chromosome) %>%
+      arrange(start) %>%
+      mutate(nextid=lead(id)) %>%
+      ungroup() %>%
+      filter(!is.na(nextid)) %>%
+      mutate(color=ifelse(segmentEndSupport == "CENTROMERE", "lightgreen", "green"),
+             from=paste0(paste0(id, "+")),
+             to=paste0(paste0(nextid, "-")),
+             label=NA,
+             width=2,
+             length=NA,
+             title=NA,
+             smooth=FALSE,
+             dashes=TRUE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
+    #
+    svgr %>% as.data.frame() %>%
+      inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
+      group_by(sampleId, id) %>%
+      arrange(seqnames, start) %>%
+      mutate(
+        partner_orientation=lead(strand),
+        partner_cnid=lead(cnid)) %>%
+      ungroup() %>%
+      filter(!is.na(partner_cnid)) %>%
+      mutate(
+        color="red",
+        from=paste0(paste0(cnid, strand)),
+        to=paste0(paste0(partner_cnid, partner_orientation)),
+        label=round(ploidy, 1),
+        width=ploidy,
+        length=NA,
+        title=id,
+        smooth=TRUE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes))
+  rescaling = list(width=5, length=3, size=3)
+  visNetwork(
+    nodes %>% mutate(size=pmin(size, 10) * rescaling$size),
+    edges %>% mutate(width=pmin(width, 10) * rescaling$width, length=length * rescaling$length),
+    height = "1000px", width = "100%") %>%
+    visLayout(improvedLayout=TRUE) %>%
+    visSave(file)
+}
 
 
