@@ -8,7 +8,7 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-purple_jar=${base_path}/tools/purple_v2.15/purple.jar
+purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple
 
 somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed_v2.2.vcf.gz)
@@ -23,16 +23,11 @@ then
     fi
 fi
 
-structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf)
+structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
 if [ -z ${structural_vcf} ]
 then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf.gz)
-    if [ -z ${structural_vcf} ]
-    then
-        echo "Unable to locate bpi structural variants. Exiting."
-        exit 1
-    fi
+    echo "Unable to locate gridss structural variants. Exiting."
+    exit 1
 fi
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} $@
