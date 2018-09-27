@@ -10,7 +10,7 @@ fi
 
 purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple
-
+credentials=${base_path}/dbs/mysql_credentials/gridss_test
 somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed_v2.2.vcf.gz)
 if [ -z ${somatic_vcf} ]
 then
@@ -38,4 +38,4 @@ then
 fi
 
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} -sv_recovery_vcf ${recovery_vcf} $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} ${credentials} -sv_recovery_vcf ${recovery_vcf} $@
