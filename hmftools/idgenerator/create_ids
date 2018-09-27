@@ -1,0 +1,7 @@
+#!/bin/bash
+
+id_generator_script=./run_id_generator
+password=$1
+
+$id_generator_script -create_ids -password $password
+
