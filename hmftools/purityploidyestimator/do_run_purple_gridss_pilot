@@ -30,4 +30,12 @@ then
     exit 1
 fi
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} $@
+recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.recovery.vcf.gz)
+if [ -z ${recovery_vcf} ]
+then
+    echo "Unable to locate gridss recovery vcf. Exiting."
+    exit 1
+fi
+
+
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} -sv_recovery_vcf ${recovery_vcf} $@
