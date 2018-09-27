@@ -354,9 +354,7 @@ sdeldf = svdf %>% filter(id %in% sdelgr$id) %>%
     length = endPosition - startPosition,
     inslen = str_length(insertSequence),
     ihomlen = inexactHomologyOffsetEnd - inexactHomologyOffsetStart,
-    homlen = str_length(startHomologySequence)) %>%
-  #filter(sampleId=="CPCT02020506TII") %>%
-  dplyr::select(length, ihomlen, homlen, qualScore, inslen, ploidy, startAF, id, sampleId)
+    homlen = str_length(startHomologySequence))
 
 sdelexportgr = sdelgr[sdelgr$sampleId == "CPCT02020506TII"]
 strand(sdelexportgr) = "*"
@@ -403,6 +401,44 @@ summary(sdelpca)
 biplot(sdelpca, scale = 0)
 
 ```
+
+# Small inverion FP analysis
+```{r}
+sinvgr = svgr[!is.na(svgr$partner)]
+sinvgr = sinvgr[simpleEventType(sinvgr) == "INV"]
+sinvgr = sinvgr[abs(start(sinvgr) - start(partner(sinvgr))) < 1000]
+sinvdf = svdf %>% filter(id %in% sinvgr$id) %>%
+  mutate(
+    length = endPosition - startPosition,
+    inslen = str_length(insertSequence),
+    ihomlen = inexactHomologyOffsetEnd - inexactHomologyOffsetStart,
+    homlen = str_length(startHomologySequence))
+
+sinvexportgr = sinvgr[sinvgr$sampleId == "CPCT02020245TII"]
+strand(sinvexportgr) = "*"
+export(reduce(flank(sinvexportgr, 2000, both=TRUE)), con="CPCT02020245TII.bed")
+export(n
+
+ggplot(sinvdf %>% bind_rows(sdeldf)) + 
+  aes(x=length, y=qualScore, color=ihomlen>6, shape=type) +
+  geom_point(aes(size=ifelse(type=="INV", 3, 0.2))) +
+  geom_vline(aes(xintercept=meaninsertsize), data=semi_join(inssizedf, sinvdf, by="sampleId")) +
+  scale_y_log10() +
+  facet_wrap(~ sampleId) +
+  theme_bw()
+
+ggplot(sinvdf %>% bind_rows(sdeldf) %>%
+    filter(ihomlen>=6) %>%
+    group_by(sampleId, type) %>%
+    summarise(n=n()) %>%
+    spread(type, n) %>%
+    replace_na(list(DEL=0, INV=0))) +
+  aes(x=DEL, y=INV) +
+  geom_point()
+# does not look like the correlation is strong
+```
+
+
 
 # Spanning calls 
  

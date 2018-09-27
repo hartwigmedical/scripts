@@ -175,19 +175,23 @@ event_link_df = event_link_df %>%
   filter(n() == 2) %>%
   ungroup()
 
-eqv_link_df = linked_by_equivalent_variants(as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges"))
+# include both breakends of any linked breakpoints
+# as linkage can be breakend specific (e.g. assembly, bpbeins)
+link_rescue = bind_rows(link_df, event_link_df) %>% pull(vcfId) %>% unique()
+link_rescue = c(link_rescue, bpgr[link_rescue[link_rescue %in% names(bpgr)]]$partner)
+
+# Note that we don't rescue equivalent events
+begr$partner = NA
+eqv_link_df = linked_by_equivalent_variants(as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges")) %>%
+  filter(passes_final_filters(vcf[vcfId]) | vcfId %in% link_rescue) %>%
+  group_by(linked_by) %>%
+  filter(n() == 2) %>%
+  ungroup() %>%
+  mutate(type="eqv")
 
 link_summary_df = bind_rows(link_df, event_link_df, eqv_link_df) %>%
   group_by(vcfId) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
-
-# include both breakends of any linked breakpoints
-# as linkage can be breakend specific (e.g. assembly, bpbeins)
-linked_vcfIds = c(link_summary_df$vcfId,
-  link_summary_df %>%
-    filter(vcfId %in% names(bpgr)) %>%
-    mutate(partner_vcfId=bpgr[vcfId]$partner) %>%
-    pull(partner_vcfId))
 
 #####
 # Final QUAL filtering
@@ -204,13 +208,11 @@ writeVcf(align_breakpoints(vcf), output_full_vcf)
 
 
 write(paste0("Writing ", output_vcf), stderr())
-vcf = vcf[passes_final_filters(vcf) | names(vcf) %in% linked_vcfIds]
+vcf = vcf[passes_final_filters(vcf) | names(vcf) %in% link_rescue]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 
 vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]
-# ggplot(as.data.frame(begr)) + aes(x=QUAL, fill=info(vcf[names(begr)])$LINKED_BY == "") + geom_histogram(bins=100) + scale_x_log10()
-# TODO: filter breakends within 100bp of microsatellites; we don't want purple to segment at every one
 
 vcf = align_breakpoints(vcf)
 writeVcf(vcf, output_vcf)

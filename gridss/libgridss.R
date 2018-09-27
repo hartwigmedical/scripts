@@ -79,6 +79,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
 
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
+	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -159,7 +160,20 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
       ihomlen >= minihomlen
   }
   return(result)
-
+}
+is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
+  result = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr = gr[isbp]
+    homlen = (as.integer(info(vcf[bpgr$vcfId])$HOMLEN) %na% 0)[isbp]
+    #ihomlen = gridss_inexact_homology_length(gr, vcf)
+    svlen = abs(start(bpgr) - start(partner(bpgr)))
+    result[isbp] = simpleEventType(bpgr) == "INV" &
+      svlen <= maxsize &
+      homlen >= minhomlen
+  }
+  return(result)
 }
 #' @description filter out 'shadow' calls of strong multi-mapping calls
 #' bwa overestimates the MAPQ of some multimapping reads
@@ -1007,11 +1021,12 @@ sequence_common_prefix = function(gr, anchor_bases=20, ...) {
     gr$sampleId = rep("placeholder", length(gr))
   }
   insSeq = .insSeq(gr)
-  anchor_sequence = get_partner_anchor_sequence(gr, max_length)
+  anchor_sequence = get_partner_anchor_sequence(gr, anchor_bases)
   hitdf = findOverlaps(gr, gr, ...) %>%
     as.data.frame() %>%
     filter(
       queryHits < subjectHits &
+        names(gr)[queryHits] != (gr$partner[subjectHits] %na% "NA_placeholder") &
         gr$sampleId[queryHits] == gr$sampleId[subjectHits]) %>%
     mutate(
       queryIns=insSeq[queryHits],
@@ -1160,5 +1175,6 @@ linked_by_equivalent_variants = function(gr, max_per_base_edit_distance=0.1) {
     mutate(linked_by=paste0("eqv", row_number())) %>%
     gather(sorq, vcfId, svcfId, qvcfId) %>%
     dplyr::select(-sorq)
+  return(similar_calls_df)
 }
 
