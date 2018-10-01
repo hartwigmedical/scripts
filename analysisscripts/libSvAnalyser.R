@@ -528,7 +528,7 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
         color="lightblue",
         width=copyNumber,
         length=log10(end - start) + 1,
-        title=paste0(chromosome, ":", start, "-", end, " (", end - start, "bp)"),
+        title=paste0(chromosome, ":", start, "-", end, " (", end - start + 1, "bp)"),
         smooth=FALSE,
         dashes=FALSE) %>%
       dplyr::select(from, to, color, width, length, title, smooth, dashes),

@@ -79,7 +79,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
 
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
-	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
+	  #filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
