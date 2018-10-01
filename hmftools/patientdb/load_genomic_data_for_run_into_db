@@ -10,10 +10,10 @@ patient_db_jar=/data/common/tools/purple_v2.15/purple.jar
 sv_jar=/data/common/tools/variantannotator_v1.5/variant-annotator.jar
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-somatic_vcf=$(ls ${run_dir}/*post_processed_v2.2.vcf.gz)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
 then
-    somatic_vcf=$(ls ${run_dir}/*post_processed.vcf.gz)
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
     if [ $? -ne 0 ]
     then
         echo "Unable to locate post processed somatic variants. Exiting."
@@ -22,10 +22,10 @@ then
 fi
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf)
+structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf )
 if [ $? -ne 0 ]
 then
-    structural_vcf=$(ls ${run_dir}/*_somaticSV_bpi.vcf.gz)
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
     if [ $? -ne 0 ]
     then
         echo "Unable to locate bpi structural variants. Exiting."

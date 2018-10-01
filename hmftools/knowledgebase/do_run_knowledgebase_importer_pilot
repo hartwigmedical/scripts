@@ -23,23 +23,17 @@ transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
 output_dir=/data/common/dbs/knowledgebases/kodu_test_output
 
-db_credentials=/data/common/dbs/mysql_credentials/pilot
-db_user=$(awk '/^user/ {print $2}' ${db_credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${db_credentials})
-db_url=$(awk '/^url/ {print $2}' ${db_credentials})
-
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
-java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
+java -jar ${knowledgebase_importer_jar} \
     -reference ${ref_genome} \
     -transvar_location ${transvar_command} \
     -doid_owl_location ${doid_file} \
+    -treatment_type_mapping_location ${treatment_type_mapping_file} \
     -onco_annotated_location ${onco_annotated_file} \
     -onco_actionable_location ${onco_actionable_file} \
     -cgi_validated_location ${cgi_validated_file} \
     -cgi_biomarkers_location ${cgi_biomarkers_file} \
-    -treatment_type_mapping_location ${treatment_type_mapping_file} \
     -civic_variants_location ${civic_variants_file} \
     -civic_evidence_location ${civic_evidence_file} \
     -cosmic_fusions_location ${cosmic_fusions_file} \
@@ -48,8 +42,4 @@ java -Dorg.jooq.no-logo=true -jar ${knowledgebase_importer_jar} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_user ${iclusion_user} \
     -iclusion_password ${iclusion_password} \
-    -ensembl_db ${ensembl_db} \
-    -hmfpatients_db ${db_url} \
-    -db_user ${db_user} \
-    -db_password ${db_pass} \
     -output_dir ${output_dir}
