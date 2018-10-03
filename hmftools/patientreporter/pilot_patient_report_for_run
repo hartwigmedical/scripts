@@ -3,6 +3,7 @@
 prefix=`dirname $(readlink $0 || echo $0)`
 
 drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
+hotspot_tsv=/data/common/dbs/somatic_hotspot_v2/Hotspot.tsv.gz
 
 # JOBA: Database details
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
@@ -19,6 +20,7 @@ promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
 ${prefix}/pilot_do_run_base_patient_reporter \
     -drup_genes_csv ${drup_genes_csv} \
+    -hotspot_tsv ${hotspot_tsv} \
     -ensembl_db ${ensembl_db} \
     -local_ensembl \
     -db_user ${db_user} \
