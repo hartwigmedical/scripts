@@ -1,25 +1,17 @@
 #!/bin/bash
 
 patient_reporter_dir=/data/common/tools/patientreporter_v4.17
+report_dir=/data/cpct/patient_reports
 
 lims_json=/data/lims/lims.json
-report_dir=/data/cpct/patient_reports
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 signature=/data/common/dbs/signature/signature.png
 center_csv=/data/common/dbs/center/center.csv
-high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
-fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
-promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
-promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
+    -report_dir ${report_dir} \
     -lims_json ${lims_json} \
     -tumor_location_csv ${tumor_location_csv} \
-    -report_dir ${report_dir} \
-    -center_csv ${center_csv} \
-    -high_confidence_bed ${high_confidence_bed} \
     -signature ${signature} \
-    -fusion_pairs_csv ${fusion_pairs_csv} \
-    -promiscuous_five_csv ${promiscuous_five_csv} \
-    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -center_csv ${center_csv} \
     "$@"

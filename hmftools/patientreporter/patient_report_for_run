@@ -4,14 +4,19 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
 cosmic_gene_csv=/data/common/dbs/cosmic_census/170529_grch37_cosmic_census.csv
-ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
-credentials=/data/common/dbs/mysql_credentials/prod
 
 # JOBA: Database details
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
+credentials=/data/common/dbs/mysql_credentials/prod
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
+
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
 ${prefix}/do_run_base_patient_reporter \
     -drup_genes_csv ${drup_genes_csv} \
@@ -21,4 +26,8 @@ ${prefix}/do_run_base_patient_reporter \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -fasta_file_location ${ref_genome} \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -high_confidence_bed ${high_confidence_bed} \
     -run_dir $@
