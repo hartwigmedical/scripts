@@ -26,3 +26,8 @@ gridss.insertion.maxgap=gridss.dsb.maxgap
 gridss.inversion.maxgap=gridss.dsb.maxgap
 #' Maximum size of an translocation/templated insertion
 gridss.templatedinsertion.maxgap=10000
+
+# These are excluded from the full VCF
+gridss.very_hard_filters = c("normalSupport", "SRNormalSupport")
+# These are included in the final VCF
+gridss.soft_filters = c("PON")

@@ -44,7 +44,7 @@ gridss_overlaps_breakend_pon = function(gr,
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -53,6 +53,10 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	homlen = elementExtract(info(vcf)$HOMLEN, 1)
 	homlen[is.na(homlen)] = 0
 	filtered = rep("", length(gr))
+
+	if (!is.null(pon_dir)) {
+	  filtered = .addFilter(filtered, "PON", gridss_overlaps_breakpoint_pon(gr, pon_dir))
+	}
 
 	if (support_quality_filters) {
 	  # TODO: update this to a binomial test so we don't filter low confidence
@@ -93,11 +97,14 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
   vcf = vcf[names(gr)]
   i = info(vcf)
   g = geno(vcf)
   filtered = rep("", length(gr))
+  if (!is.null(pon_dir)) {
+    filtered = .addFilter(filtered, "PON", gridss_overlaps_breakend_pon(gr, pon_dir))
+  }
   if (min_support_filters) {
     filtered = .addFilter(filtered, "af", gridss_somatic_be_af(gr, vcf) < gridss.min_af)
     filtered = .addFilter(filtered, "imprecise", i$IMPRECISE)
@@ -1176,5 +1183,19 @@ linked_by_equivalent_variants = function(gr, max_per_base_edit_distance=0.1) {
     gather(sorq, vcfId, svcfId, qvcfId) %>%
     dplyr::select(-sorq)
   return(similar_calls_df)
+}
+
+passes_very_hard_filters = function(filters) {
+  fails = rep(FALSE, length(filters))
+  for (vhf in gridss.very_hard_filters) {
+    fails = fails | str_detect(filters, stringr::fixed(paste0(";", vhf)))
+  }
+  return(!fails)
+}
+passes_soft_filters = function(filters) {
+  for (softFilter in gridss.soft_filters) {
+    filters = str_replace(filters, stringr::fixed(paste0(";", softFilter)), "")
+  }
+  return(filters == "" | filters == ";" | filters == "PASS")
 }
 
