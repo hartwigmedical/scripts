@@ -5,12 +5,12 @@
 library(tidyverse)
 library(readr)
 library(stringr)
-usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF> <filter reason CSV>"
+usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF>"
 args = commandArgs(TRUE)
 if (str_detect(args[1], "gridss_somatic_filter")) {
   args = args[-1]
 }
-if (length(args) != 4 & length(args) != 5) {
+if (length(args) != 4) {
   write(usage, stderr())
   q(save="no", status=1)
 }
@@ -26,15 +26,18 @@ pon_dir = args[1]
 input_vcf = args[2]
 output_vcf = args[3]
 output_full_vcf = args[4]
-filter_reason_csv = args[5]
 source("libgridss.R")
 
 # Filter to somatic calls
 write(paste0("Reading ", input_vcf), stderr())
 full_vcf = readVcf(input_vcf, "hg19")
 # hard filter variants that are over the final calling threshold in the normal - they're definitely not somatic
+# TODO: cehck if this is useful; it's not for COLO829
 full_vcf = full_vcf[geno(full_vcf)$QUAL[,1] < gridss.min_qual]
-write(paste0("Parsing ", input_vcf), stderr())
+# hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
+full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
+
+write(paste0("Parsing SVs in ", input_vcf), stderr())
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 write(paste0("Filtering pass 1 ", input_vcf), stderr())
@@ -48,12 +51,13 @@ befiltered = gridss_breakend_filter(begr, full_vcf)
 
 # - filter to only decent length assemblies?
 #begr$calls_1k_window = countOverlaps(begr, rowRanges(full_vcf), ignore.strand=TRUE, maxgap=1000)
-if (!is.null(filter_reason_csv)) {
-  write(paste0("Writing ", filter_reason_csv), stderr())
-  readr::write_csv(
-    x=data.frame(vcfId=c(names(bpgr), names(begr)), filters=c(bpfiltered, befiltered)),
-    path=filter_reason_csv)
-}
+
+filters_applied_longdf = data.frame(
+    vcfId = c(names(bpgr), names(begr)),
+    filters = c(bpfiltered, befiltered),
+    stringsAsFactors = FALSE) %>%
+  tidyr::separate_rows(filters, sep=";") %>%
+  filter(filters != "")
 bpfiltered = bpfiltered != ""
 befiltered = befiltered != ""
 bp_vcf = full_vcf[names(bpgr)[!bpfiltered]]
@@ -68,11 +72,20 @@ transitive_df = transitive_calls(vcf, bpgr, report="max2") %>%
   filter(!has_multiple_paths) %>%
   mutate(type="transitive")
 # now we filter imprecise variants
-vcf = vcf[is.na(info(vcf)$IMPRECISE) | !info(vcf)$IMPRECISE]
-vcf = vcf[
-  # not unanchored breakpoint
-  (!is.na(info(vcf)$PARID) & info(vcf)$ASSR + info(vcf)$SR + info(vcf)$IC > 0) |
-    (is.na(info(vcf)$PARID) & info(vcf)$BASSR + info(vcf)$BSC > 0)]
+is_imprecise = !(is.na(info(vcf)$IMPRECISE) | !info(vcf)$IMPRECISE) |
+  !((!is.na(info(vcf)$PARID) & info(vcf)$ASSR + info(vcf)$SR + info(vcf)$IC > 0) |
+      (is.na(info(vcf)$PARID) & info(vcf)$BASSR + info(vcf)$BSC > 0))
+filters_applied_longdf = bind_rows(filters_applied_longdf,
+    data.frame(
+      vcfId = names(vcf)[is_imprecise],
+      filters = rep("imprecise", sum(is_imprecise)),
+      stringsAsFactors = FALSE),
+    data.frame(
+      vcfId = unique(transitive_df$linked_by),
+      filters = rep("transitive", length(unique(transitive_df$linked_by))),
+      stringsAsFactors = FALSE))
+
+vcf = vcf[!is_imprecise]
 bpgr = breakpointRanges(vcf, unpartneredBreakends=FALSE)
 begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]
@@ -196,16 +209,13 @@ link_summary_df = bind_rows(link_df, event_link_df, eqv_link_df) %>%
 #####
 # Final QUAL filtering
 #
-write(paste0("Writing ", output_full_vcf), stderr())
+write(paste0("Writing ", output_vcf), stderr())
 info(vcf)$LOCAL_LINKED_BY = ""
 info(vcf)$REMOTE_LINKED_BY = ""
 info(vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
 info(vcf[!is.na(info(vcf)$PARID)])$REMOTE_LINKED_BY = info(vcf[info(vcf[!is.na(info(vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 
-vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls
-
-writeVcf(align_breakpoints(vcf), output_full_vcf)
-
+#All imprecise calls are now filtered #vcf = vcf[!(names(vcf) %in% c(transitive_df$transitive_start, transitive_df$transitive_end))] # remove transitive calls
 
 write(paste0("Writing ", output_vcf), stderr())
 vcf = vcf[passes_final_filters(vcf) | names(vcf) %in% link_rescue]
@@ -215,7 +225,29 @@ begr = breakpointRanges(vcf, unpartneredBreakends=TRUE)
 vcf = vcf[names(vcf) %in% c(names(bpgr), names(begr))]
 
 vcf = align_breakpoints(vcf)
-writeVcf(vcf, output_vcf)
+writeVcf(vcf, output_vcf, index=TRUE)
+
+full_annotated_vcf = full_vcf
+info(full_annotated_vcf)$LOCAL_LINKED_BY = ""
+info(full_annotated_vcf)$REMOTE_LINKED_BY = ""
+info(full_annotated_vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
+info(full_annotated_vcf[!is.na(info(full_annotated_vcf)$PARID)])$REMOTE_LINKED_BY = info(full_annotated_vcf[info(full_annotated_vcf[!is.na(info(full_annotated_vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
+
+filters_applied_df = bind_rows(filters_applied_longdf, data.frame(
+    vcfId = names(full_annotated_vcf)[!passes_final_filters(full_annotated_vcf)],
+    filter = rep("qual", sum(!passes_final_filters(full_annotated_vcf))),
+    stringsAsFactors = FALSE
+  )) %>%
+  group_by(vcfId) %>%
+  summarise(filters = paste0(filters, collapse=";"))
+
+VariantAnnotation::fixed(full_annotated_vcf)$FILTER = "."
+VariantAnnotation::fixed(full_annotated_vcf[filters_applied_df$vcfId])$FILTER = filters_applied_df$filters
+
+write(paste0("Writing ", output_full_vcf), stderr())
+writeVcf(align_breakpoints(full_annotated_vcf), output_full_vcf, index=TRUE)
+
+
 
 
 
