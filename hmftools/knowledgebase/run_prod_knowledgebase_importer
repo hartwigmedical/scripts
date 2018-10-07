@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-iclusion_api_credentials=$1
+iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_credentials})
@@ -20,10 +20,10 @@ civic_evidence_file=${input_dir}/civic_01-Aug-2018-ClinicalEvidenceSummaries_180
 civic_variants_file=${input_dir}/civic_01-Aug-2018-VariantSummaries_180822.tsv
 
 transvar_command=transvar
-treatment_type_mapping_file=/data/common/dbs/knowledgebases/pilot_treatmentTypes.tsv
-output_dir=/data/common/dbs/knowledgebases/pilot_output
+treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
+output_dir=/data/common/dbs/knowledgebases/output
 
-knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_v1.0/knowledgebase-importer.jar
 
 rm -rf ${output_dir}
 java -jar ${knowledgebase_importer_jar} \
