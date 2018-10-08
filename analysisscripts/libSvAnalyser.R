@@ -75,6 +75,8 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     linkedBy=dbdf$startLinkedBy)
   names(grs)=grs$beid
   dbdf = dbdf %>% filter(!is.na(endChromosome))
+  rc_insert_sequence = dbdf$insertSequence
+  rc_insert_sequence[!str_detect(rc_insert_sequence, "[^ACGTN]")] = as.character(reverseComplement(DNAStringSet(rc_insert_sequence[!str_detect(rc_insert_sequence, "[^ACGTN]")])))
   grh = GRanges(
     seqnames=dbdf$endChromosome,
     ranges=IRanges(start=dbdf$endPosition + ifelse(include.homology, ifelse(is.na(dbdf$endIntervalOffsetStart), 0, dbdf$endIntervalOffsetStart), 0),
@@ -84,7 +86,7 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     FILTER=dbdf$filter,
     sampleId=dbdf$sampleId,
     ploidy=dbdf$ploidy,
-    insertSequence=ifelse(dbdf$startOrientation != dbdf$endOrientation, dbdf$insertSequence, as.character(reverseComplement(DNAStringSet(dbdf$insertSequence)))),
+    insertSequence=ifelse(dbdf$startOrientation != dbdf$endOrientation, dbdf$insertSequence, rc_insert_sequence),
     type=dbdf$type,
     af=dbdf$endAF,
     homseq=dbdf$endHomologySequence,
@@ -510,15 +512,23 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
         label=round(copyNumber, 1),
         size=pmax(1, copyNumber),
         id=paste0(id, "-"),
-        shape=segmentSupportShape(segmentStartSupport)),
+        shape=segmentSupportShape(segmentStartSupport),
+        color="lightblue"),
     # end
     cndf %>%
       mutate(
         size=copyNumber,
         id=paste0(id, "+"),
-        shape=segmentSupportShape(segmentEndSupport))
-  ) %>% mutate(
-    color="lightblue")
+        shape=segmentSupportShape(segmentEndSupport),
+        color="lightblue"),
+    # unplaced single breakends
+    svdf %>% filter(is.na(endChromosome)) %>%
+      mutate(
+        label=round(ploidy, 1),
+        id=paste0("be_", id),
+        shape="diamond",
+        color="red")
+  )
   edges = bind_rows(
     # internal segment edges
     cndf %>%
@@ -549,7 +559,7 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
              smooth=FALSE,
              dashes=TRUE) %>%
       dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
-    #
+    # breakpoint edges
     svgr %>% as.data.frame() %>%
       inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
       group_by(sampleId, id) %>%
@@ -569,7 +579,23 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
         title=id,
         smooth=TRUE,
         dashes=FALSE) %>%
-      dplyr::select(from, to, color, label, width, length, title, smooth, dashes))
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
+    # breakend edges
+    svgr %>% as.data.frame() %>%
+      inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
+      filter(is.na(partner)) %>%
+      mutate(
+        color="red",
+        from=paste0(paste0(cnid, strand)),
+        to=paste0("be_", id),
+        label=round(ploidy, 1),
+        width=ploidy,
+        length=NA,
+        title=id,
+        smooth=TRUE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes)
+  )
   rescaling = list(width=5, length=3, size=3)
   visNetwork(
     nodes %>% mutate(size=pmin(size, 10) * rescaling$size),

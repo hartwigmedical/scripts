@@ -37,9 +37,9 @@ Load GRIDSS calls from DB
 
 ```{r}
 dbgridss = dbConnect(MySQL(), dbname='gridss_test')
-cndf = query_all_copy_numer(dbgridss, "copyNumber190")
+cndf = query_all_copy_numer(dbgridss, "copyNumber")
 cngr = to_cn_gr(cndf)
-svdf = query_somatic_structuralVariants(dbgridss, "structuralVariant190")
+svdf = query_somatic_structuralVariants(dbgridss, "structuralVariant")
 svgr = to_sv_gr(svdf, include.homology=FALSE)
 svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
 svgr$is_line = svgr$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
@@ -322,6 +322,8 @@ visNetwork(
     height = "1000px", width = "100%") %>%
   visLayout(improvedLayout=TRUE) %>%
   visSave(file=paste0("breakpointgraph.", sample, ".html"))
+
+#export_to_visNetwork(cndf, svdf, svgr, "CPCT02010337TII", file=paste0("breakpointgraph.", sample, "simplified.html"))
 
 ```
 

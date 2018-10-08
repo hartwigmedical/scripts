@@ -84,7 +84,7 @@ export_to_visjs = function(sample, graph_dir, cn_file_suffix="_cn_reduced.purple
   }
   tmpwd=getwd()
   setwd(graph_dir)
-  export_to_visNetwork(cndf, svdf, svgr, sample, file=paste0("breakpointgraph.", sample, "simplified.html"))
+  export_to_visNetwork(cndf, svdf, svgr, sample, file=paste0("breakpointgraph.", sample, ".simplified.html"))
   setwd(tmpwd)
 }
 
