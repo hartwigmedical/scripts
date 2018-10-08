@@ -1,0 +1,14 @@
+#!/bin/bash
+
+basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/run_basic_id_generator
+password=$1
+sample=$2
+sample_ids_file=$3
+patient_mapping_file=$4
+
+$basic_id_generator_script \
+    -anonymize_ids \
+    -password $password \
+    -sample_ids_file ${sample_ids_file} \
+    -patient_mapping_file ${patient_mapping_file}
+

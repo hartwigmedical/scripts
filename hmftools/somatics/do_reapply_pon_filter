@@ -14,6 +14,7 @@ tabix=/data/common/tools/tabix_v0.2.6/tabix
 
 if [[ ! -e ${output_vcf} ]]
 then
+   # Note of these numbers change, need to change corresponding values in NearIndelPonEnrichment.java
    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${input_vcf} -O u | \
    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${output_vcf}
 else

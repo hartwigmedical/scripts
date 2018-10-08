@@ -134,7 +134,13 @@ save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_w
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
-tertData = hpcTertPromoters %>% select(sampleId, gene) %>% mutate(variant = "SNV", hotspot = T, nearHotspot = F, driverLikelihood = 1)
+tertData = hpcTertPromoters %>% select(sampleId, gene, variant = type) %>% 
+  arrange(variant) %>%
+  group_by(sampleId, gene) %>%
+  summarise(variant = first(variant)) %>%
+  mutate(variant = ifelse(variant == "SNP", "SNV", "MNV"), hotspot = T, nearHotspot = F, driverLikelihood = 1)
+
+
 hotspotData = hpcDndsOncoDrivers %>% select(sampleId, gene, variant,  hotspot, nearHotspot, driverLikelihood) %>%
   bind_rows(tertData)
 
@@ -345,7 +351,7 @@ mutationalLoad = highestPurityCohortSummary %>%
   mutate(
     indelMutLoad =TOTAL_INDEL,
     snvMutLoad = TOTAL_SNV + TOTAL_MNV,
-    svMutLoad = BND + DEL + DUP + INV + INS) %>%
+    svMutLoad = TRL + DEL + DUP + INV + INS) %>%
   select(sampleId, cancerType, indelMutLoad, snvMutLoad, svMutLoad) 
 
 driverLoad =  hpcDriversByGene %>%   

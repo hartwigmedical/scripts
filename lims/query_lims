@@ -19,7 +19,8 @@ my $NA_CHAR = "NA";
 my $LIMS_JSON = '/data/lims/lims.json';
 my $PDF_DIR = '/data/cpct/final_reports';
 my @OUT_FIELDS = qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status );
-my @LAB_SAMPLE_DONE_STATUS = qw( finished failed storage );
+my @LAB_DONE_STATUS = qw( finished failed storage );
+my $MIN_TUM_PERC = 30;
 
 my $HELP =<<HELP;
 
@@ -132,49 +133,75 @@ sub printUnreportedBiopsies{
     my ($lims, $opt) = @_;
     my @out_samples = ();
     my $samples = $lims->{ 'samples' };
-    my $final_status_regex = join( "|", @LAB_SAMPLE_DONE_STATUS );
+    my $final_status_regex = join( "|", @LAB_DONE_STATUS );
+    
+    my %pdfs = ();
+    my @pdf_paths = glob( $PDF_DIR . '/*.pdf' );
+    foreach my $pdf_path ( @pdf_paths ){
+        my ($pdf_sample) = split( "_", basename( $pdf_path ) );
+        $pdfs{ $pdf_sample } = 1;
+    }
     
     foreach my $sample_id ( keys %{$samples} ){
+        
         my $sample = $samples->{ $sample_id };
         my $sample_name = getValueByKey( $sample, 'sample_name' );
+        my $submission = getValueByKey( $sample, 'submission' );
         
-        ## skip T0 biopsies (these should always have a T as well)
-        next if $sample_name =~ /T0$/;
+        ## skip if report already exists
+        next if exists $pdfs{ $sample_name };
         
         ## skip unless is biopsy
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} eq 'Somatic_T';
-        
-        ## skip unless is non-research non-experimental
+                
+        ## skip if not CPCT/DRUP production biopsy
         next unless defined $sample->{'submission'};
-        next unless $sample->{'submission'} =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
         
-        ## skip if lab not ready yet
-        next unless defined $sample->{'status'};
-        next unless $sample->{'status'} =~ /$final_status_regex/;
+        ## skip T0 biopsies (these should always have a T as well)
+        next if $sample_name =~ /T0$/;
         
-        ## skip if is pre-2017 sample
+        ## skip if sample is too old
         next unless defined $sample->{'arrival_date'};
         next if $sample->{'arrival_date'} =~ /(2015|2016|2017)/;
         
-        ## skip unless R present with lab status finished
-        my $ref_sample_id = getValueByKey( $sample, 'ref_sample_id' );
-        next unless exists $samples->{ $ref_sample_id };
-        my $ref_sample = $samples->{ $ref_sample_id };
-        my $ref_status = getValueByKey( $ref_sample, 'status' );
-        next unless $ref_status =~ /$final_status_regex/;
-        $sample->{ ref_status } = $ref_status;
+        ## skip if lab not ready yet
+        next unless defined $sample->{'lab_status'};
+        next unless $sample->{'lab_status'} =~ /$final_status_regex/i;
         
-        ## skip if patient report does exist
-        next if biopsyReportExists( $sample_name );
+        ## find and add R status
+        $sample->{ 'ref_status' } = $NA_CHAR;
+        if ( exists $sample->{ 'ref_sample_id' } ){
+            my $ref_sample_id = $sample->{ 'ref_sample_id' };
+            if ( exists $samples->{ $ref_sample_id } ){
+                my $ref_sample = $samples->{ $ref_sample_id };
+                my $ref_status = getValueByKey( $ref_sample, 'lab_status' );
+                $sample->{ ref_status } = $ref_status;
+            }
+        }
+        
+        ## tumor percentage specific filtering
+        my $tum_perc = getValueByKey( $sample, 'tumor_perc' );
+        if ( $tum_perc !~ /^\d+$/ ){
+            ## skip biopsies without integer tumor percentage
+            next;
+        }
+        elsif( $tum_perc < $MIN_TUM_PERC ){
+            ## keep any low tumor biopsy (these should always be reported)
+        }
+        elsif ( $submission eq 'HMFregCPCT' ){
+            ## skip further CPCT biopsies without ready ref sample
+            next if $sample->{'ref_status'} !~ /$final_status_regex/i;
+        }
         
         ## ok: ready to report with SBP info added
         addSbpInfoToSampleBySampleId( $sample, $sample_id );
         push @out_samples, $sample;
     }
     
-    my @out_fields = qw( sample_name status ref_status sample_id ref_sample_id arrival_date sbp_info );
-    printSampleInfo( \@out_samples, \@out_fields, 'status', $opt{ debug } );
+    my @out_fields = qw( sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date sbp_info );
+    printSampleInfo( \@out_samples, \@out_fields, 'lab_status', $opt{ debug } );
 }
 
 sub addSbpInfoToSampleBySampleId{
@@ -197,13 +224,6 @@ sub addSbpInfoToSampleBySampleId{
         $sample->{sbp_info} = "$setname ($status)";
     }
     return($sample);
-}
-
-sub biopsyReportExists{
-    my ($sample_name) = @_;
-    my @files = glob( $PDF_DIR . '/' . $sample_name . "_*.pdf" );
-    return 1 if scalar @files;
-    return 0;
 }
 
 sub queryLims{

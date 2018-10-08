@@ -28,7 +28,7 @@ fi
 
 config_dir=$base_path/dbs/gridss
 
-export PATH=$PATH:$base_path/tools/bwa_v0.7.5a/
+export PATH=$base_path/tools/bwa_v0.7.17/:$PATH
 export PATH=$PATH:$base_path/tools/samtools_v1.2/
 
 if which bwa > /dev/null ; then

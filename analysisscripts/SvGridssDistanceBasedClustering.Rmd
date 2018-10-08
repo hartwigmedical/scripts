@@ -37,9 +37,9 @@ Load GRIDSS calls from DB
 
 ```{r}
 dbgridss = dbConnect(MySQL(), dbname='gridss_test')
-cndf = query_all_copy_numer(dbgridss)
+cndf = query_all_copy_numer(dbgridss, "copyNumber")
 cngr = to_cn_gr(cndf)
-svdf = query_somatic_structuralVariants(dbgridss)
+svdf = query_somatic_structuralVariants(dbgridss, "structuralVariant")
 svgr = to_sv_gr(svdf, include.homology=FALSE)
 svgr$cnid = annotate_sv_with_cnv_id(cngr, svgr, maxgap=1000)
 svgr$is_line = svgr$id %in% svids_of_overlap(svgr, line_gr, maxgap = line_match_distance)
@@ -49,7 +49,7 @@ svdf$is_fragile_site = svdf$id %in% svids_of_overlap(svgr, fragile_site_gr)
 
 if (any(is.na(svgr$cnid))) {
   bad_svid = svgr$id[is.na(svgr$cnid)]
-  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: work out what happened to these bounds"))
+  warning(paste("Missing matching segment boundary for", length(bad_svid), "SVs. Removing from analysis. TODO: confirm these are all ALT contigs, missing sex or missing short arm events"))
   svdf = svdf %>% filter(!(id %in% bad_svid))
   #svData = svData %>% filter(!(Id %in% bad_svid))
   svgr = svgr[!(svgr$id %in% bad_svid)]
@@ -60,6 +60,16 @@ svdf = svdf %>% filter(sampleId %in% svData$SampleId)
 svData = svData %>% filter(SampleId %in% svdf$sampleId)
 ```
 
+
+# Similar calls
+```{r}
+similar_calls_df = sequence_common_prefix(svgr, maxgap=5)
+ggplot(similar_calls_df) +
+  aes(x=per_base_edit_distance, y=actualBreakendLength) +
+  geom_point() + 
+  labs(y="Bases compared") + 
+  theme_bw()
+```
 
 Compare clustering to GRIDSS linkages
 ```{r}
@@ -313,6 +323,8 @@ visNetwork(
   visLayout(improvedLayout=TRUE) %>%
   visSave(file=paste0("breakpointgraph.", sample, ".html"))
 
+#export_to_visNetwork(cndf, svdf, svgr, "CPCT02010337TII", file=paste0("breakpointgraph.", sample, "simplified.html"))
+
 ```
 
 
@@ -333,5 +345,109 @@ visNetwork(
 ```
 
 
+# Small deletion FP analysis
 
+```{r}
+sdelgr = svgr[!is.na(svgr$partner)]
+sdelgr = sdelgr[simpleEventType(sdelgr) == "DEL"]
+sdelgr = sdelgr[abs(start(sdelgr) - start(partner(sdelgr))) < 1000]
+sdeldf = svdf %>% filter(id %in% sdelgr$id) %>%
+  mutate(
+    length = endPosition - startPosition,
+    inslen = str_length(insertSequence),
+    ihomlen = inexactHomologyOffsetEnd - inexactHomologyOffsetStart,
+    homlen = str_length(startHomologySequence))
+
+sdelexportgr = sdelgr[sdelgr$sampleId == "CPCT02020506TII"]
+strand(sdelexportgr) = "*"
+export(reduce(flank(sdelexportgr, 2000, both=TRUE)), con="CPCT02020506TII.del.bed")
+
+# sample level insertion size
+# grep -A 1 MEDIAN_INSERT_SIZE $(find . -path '*/QCStats/*.insert_size_metrics') | grep -v MEDIAN_INSERT_SIZE | grep -v '\--' | tr "/_-" "\t\t\t" | cut -f 8,15 > ins.tsv
+inssizedf = read_tsv("D:/hartwig/down/ins.tsv", col_names=c("sampleId", "meaninsertsize"))
+
+ggplot(sdeldf) + 
+  aes(x=length, y=qualScore, color=ihomlen>6) +
+  geom_point(size=0.2) +
+  geom_vline(aes(xintercept=meaninsertsize), data=inssizedf) +
+  scale_y_log10() +
+  facet_wrap(~ sampleId) +
+  theme_bw()
+
+ggplot(sdeldf)  +
+  aes(x=ploidy, y=startAF, color=ihomlen>6) +
+  geom_point(size=0.2) +
+  theme_bw() +
+  coord_cartesian(xlim=c(0, 2), ylim=c(0, 0.25))
+
+ggplot(sdeldf %>%
+         group_by(sampleId) %>%
+         filter(ihomlen>6) %>%
+         summarise(meanihom6len=mean(length), count=n()) %>%
+         inner_join(inssizedf))  +
+  aes(x=meanihom6len, y=meaninsertsize, size=log10(count)) +
+  geom_point() +
+  theme_bw()
+
+# export to MEME for motif analysis
+svdf %>%
+  filter(id %in% (sdeldf %>% filter(ihomlen>6) %>% pull(id))) %>%
+  filter(str_length(startHomologySequence) >= 8) %>%
+  mutate(fa=paste0(">", row_number(), "\n",startHomologySequence))%>%
+  pull(fa) %>%
+  write("ihom6dels.sequences.fa")
+# meme ihom6dels.sequences.txt -o meme_output -dna -maxw 8 -p 4 -revcomp -nmotifs 16
+
+sdelpca <- sdeldf %>% dplyr::select(-id, -sampleId) %>% prcomp(scale. = TRUE)
+summary(sdelpca)
+biplot(sdelpca, scale = 0)
+
+```
+
+# Small inverion FP analysis
+```{r}
+sinvgr = svgr[!is.na(svgr$partner)]
+sinvgr = sinvgr[simpleEventType(sinvgr) == "INV"]
+sinvgr = sinvgr[abs(start(sinvgr) - start(partner(sinvgr))) < 1000]
+sinvdf = svdf %>% filter(id %in% sinvgr$id) %>%
+  mutate(
+    length = endPosition - startPosition,
+    inslen = str_length(insertSequence),
+    ihomlen = inexactHomologyOffsetEnd - inexactHomologyOffsetStart,
+    homlen = str_length(startHomologySequence))
+
+sinvexportgr = sinvgr[sinvgr$sampleId == "CPCT02020245TII"]
+strand(sinvexportgr) = "*"
+export(reduce(flank(sinvexportgr, 2000, both=TRUE)), con="CPCT02020245TII.bed")
+export(n
+
+ggplot(sinvdf %>% bind_rows(sdeldf)) + 
+  aes(x=length, y=qualScore, color=ihomlen>6, shape=type) +
+  geom_point(aes(size=ifelse(type=="INV", 3, 0.2))) +
+  geom_vline(aes(xintercept=meaninsertsize), data=semi_join(inssizedf, sinvdf, by="sampleId")) +
+  scale_y_log10() +
+  facet_wrap(~ sampleId) +
+  theme_bw()
+
+ggplot(sinvdf %>% bind_rows(sdeldf) %>%
+    filter(ihomlen>=6) %>%
+    group_by(sampleId, type) %>%
+    summarise(n=n()) %>%
+    spread(type, n) %>%
+    replace_na(list(DEL=0, INV=0))) +
+  aes(x=DEL, y=INV) +
+  geom_point()
+# does not look like the correlation is strong
+```
+
+
+
+# Spanning calls 
+ 
+```{r}
+z = flank(bpgr[bpgr$id %in% c(linked_by_transitive_assembly(bpgr, allowed_sequence_errors=1000000)$qid, linked_by_transitive_assembly(bpgr, allowed_sequence_errors=1000000)$sid)], width=5000, both=TRUE)
+strand(z) = "*"
+z = reduce(z)
+export(z, con="CPCT02010503T.spanning.bed", format="bed")
+```
 

@@ -23,4 +23,16 @@ then
     fi
 fi
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${purple_output} ${credentials} $@
+structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf)
+if [ -z ${structural_vcf} ]
+then
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf.gz)
+    if [ -z ${structural_vcf} ]
+    then
+        echo "Unable to locate bpi structural variants. Exiting."
+        exit 1
+    fi
+fi
+
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} ${credentials} $@

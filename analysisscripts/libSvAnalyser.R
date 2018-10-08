@@ -1,4 +1,5 @@
 library(tidyverse)
+library(visNetwork)
 
 CN_ROUNDING= 0.2
 CN_DIFF_MARGIN = 0.25
@@ -6,18 +7,18 @@ CN_CHANGE_MIN = 0.8
 DB_MAX_LENGTH = 1000
 MIN_LOH_CN = 0.5
 
-query_all_copy_numer = function(dbConnect) {
+query_all_copy_numer = function(dbConnect, table="copyNumber") {
   query = paste(
     "SELECT * ",
-    " FROM copyNumber ",
+    " FROM ", table,
     sep = "")
   return (DBI::dbGetQuery(dbConnect, query) %>%
     mutate(id=as.character(id)))
 }
-query_somatic_structuralVariants = function(dbConnect) {
+query_somatic_structuralVariants = function(dbConnect, table="structuralVariant") {
   query = paste(
     "SELECT * ",
-    " FROM structuralVariant ",
+    " FROM ", table,
     " WHERE filter = 'PASS'",
     sep = "")
   return (DBI::dbGetQuery(dbConnect, query) %>%
@@ -66,15 +67,16 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     normalVariantFragmentCount=dbdf$startNormalVariantFragmentCount,
     normalReferenceFragmentCount=dbdf$startNormalReferenceFragmentCount,
     ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
-    somaticScore=dbdf$somaticScore,
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId,
+    vcfId=dbdf$vcfId,
     beid=paste0(dbdf$id, ifelse(is.na(dbdf$endChromosome), "b",  "o")),
     linkedBy=dbdf$startLinkedBy)
   names(grs)=grs$beid
   dbdf = dbdf %>% filter(!is.na(endChromosome))
+  rc_insert_sequence = dbdf$insertSequence
+  rc_insert_sequence[!str_detect(rc_insert_sequence, "[^ACGTN]")] = as.character(reverseComplement(DNAStringSet(rc_insert_sequence[!str_detect(rc_insert_sequence, "[^ACGTN]")])))
   grh = GRanges(
     seqnames=dbdf$endChromosome,
     ranges=IRanges(start=dbdf$endPosition + ifelse(include.homology, ifelse(is.na(dbdf$endIntervalOffsetStart), 0, dbdf$endIntervalOffsetStart), 0),
@@ -84,7 +86,7 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     FILTER=dbdf$filter,
     sampleId=dbdf$sampleId,
     ploidy=dbdf$ploidy,
-    insertSequence=dbdf$insertSequence,
+    insertSequence=ifelse(dbdf$startOrientation != dbdf$endOrientation, dbdf$insertSequence, rc_insert_sequence),
     type=dbdf$type,
     af=dbdf$endAF,
     homseq=dbdf$endHomologySequence,
@@ -97,11 +99,10 @@ to_sv_gr <- function(svdf, include.homology=TRUE) {
     normalVariantFragmentCount=dbdf$endNormalVariantFragmentCount,
     normalReferenceFragmentCount=dbdf$endNormalReferenceFragmentCount,
     ihomlen=dbdf$inexactHomologyOffsetEnd-dbdf$inexactHomologyOffsetStart,
-    somaticScore=dbdf$somaticScore,
     imprecise=dbdf$imprecise != 0,
     event=dbdf$event,
     id=dbdf$id,
-    vcfid=dbdf$vcfId,
+    vcfId=stringr::str_replace(dbdf$vcfId, "o", "h"),
     beid=paste0(dbdf$id, "h"),
     linkedBy=dbdf$endLinkedBy)
   names(grh)=grh$beid
@@ -487,7 +488,121 @@ find_simple_inversions = function(cndf, svdf, svgr, max.breakend.gap=35) {
       ploidy_right_flank_delta=left_flank_ploidy - ploidy,
       ploidy_sv_delta = (svploidy_a + svploidy_b) / 2 - ploidy)
 }
-
-
+chain_events = function(links) {
+  #chains = data.frame(
+   # beid=unique(links$beid
+    #index=1
+  stop("TODO")
+}
+export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpointgraph.", sampleId, ".html")) {
+  segmentSupportShape = function(support) {
+    ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
+           ifelse(support == "BND", "square",
+                  ifelse(support == "MULTIPLE", "circle",
+                         "star")))
+  }
+  sampleFilterId = sampleId
+  cndf = cndf %>% filter(sampleId == sampleFilterId)
+  svdf = svdf %>% filter(sampleId == sampleFilterId)
+  svgr = svgr[svgr$sampleId == sampleFilterId,]
+  nodes = bind_rows(
+    # start
+    cndf %>%
+      mutate(
+        label=round(copyNumber, 1),
+        size=pmax(1, copyNumber),
+        id=paste0(id, "-"),
+        shape=segmentSupportShape(segmentStartSupport),
+        color="lightblue"),
+    # end
+    cndf %>%
+      mutate(
+        size=copyNumber,
+        id=paste0(id, "+"),
+        shape=segmentSupportShape(segmentEndSupport),
+        color="lightblue"),
+    # unplaced single breakends
+    svdf %>% filter(is.na(endChromosome)) %>%
+      mutate(
+        label=round(ploidy, 1),
+        id=paste0("be_", id),
+        shape="diamond",
+        color="red")
+  )
+  edges = bind_rows(
+    # internal segment edges
+    cndf %>%
+      mutate(
+        from=paste0(paste0(id, "-")),
+        to=paste0(paste0(id, "+")),
+        color="lightblue",
+        width=copyNumber,
+        length=log10(end - start) + 1,
+        title=paste0(chromosome, ":", start, "-", end, " (", end - start + 1, "bp)"),
+        smooth=FALSE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, width, length, title, smooth, dashes),
+    # Reference edges
+    cndf %>%
+      group_by(sampleId, chromosome) %>%
+      arrange(start) %>%
+      mutate(nextid=lead(id)) %>%
+      ungroup() %>%
+      filter(!is.na(nextid)) %>%
+      mutate(color=ifelse(segmentEndSupport == "CENTROMERE", "lightgreen", "green"),
+             from=paste0(paste0(id, "+")),
+             to=paste0(paste0(nextid, "-")),
+             label=NA,
+             width=2,
+             length=NA,
+             title=NA,
+             smooth=FALSE,
+             dashes=TRUE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
+    # breakpoint edges
+    svgr %>% as.data.frame() %>%
+      inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
+      group_by(sampleId, id) %>%
+      arrange(seqnames, start) %>%
+      mutate(
+        partner_orientation=lead(strand),
+        partner_cnid=lead(cnid)) %>%
+      ungroup() %>%
+      filter(!is.na(partner_cnid)) %>%
+      mutate(
+        color="red",
+        from=paste0(paste0(cnid, strand)),
+        to=paste0(paste0(partner_cnid, partner_orientation)),
+        label=round(ploidy, 1),
+        width=ploidy,
+        length=NA,
+        title=id,
+        smooth=TRUE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes),
+    # breakend edges
+    svgr %>% as.data.frame() %>%
+      inner_join(svdf, by=c("id"="id"), suffix=c("", ".df")) %>%
+      filter(is.na(partner)) %>%
+      mutate(
+        color="red",
+        from=paste0(paste0(cnid, strand)),
+        to=paste0("be_", id),
+        label=round(ploidy, 1),
+        width=ploidy,
+        length=NA,
+        title=id,
+        smooth=TRUE,
+        dashes=FALSE) %>%
+      dplyr::select(from, to, color, label, width, length, title, smooth, dashes)
+  )
+  rescaling = list(width=5, length=3, size=3)
+  visNetwork(
+    nodes %>% mutate(size=pmin(size, 10) * rescaling$size),
+    edges %>% mutate(width=pmin(width, 10) * rescaling$width, length=length * rescaling$length),
+    height = "1000px", width = "100%") %>%
+    visLayout(improvedLayout=TRUE) %>%
+    visSave(file)
+}
 
 

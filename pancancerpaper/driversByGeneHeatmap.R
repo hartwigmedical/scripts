@@ -144,7 +144,7 @@ oncoDriversAnnotationIndex = rowAnnotation(
 )
 
 pOnco = oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
-png(file = "~/hmf/RPlot/Figure 3 - Onco.png", width = 10, height = 7, units = "in", res = 217)
+png(file = "~/hmf/RPlot/Figure 3A - Onco.png", width = 10, height = 7, units = "in", res = 217)
 pOnco
 dev.off()
 
@@ -201,7 +201,7 @@ tsgDriversAnnotationIndex = rowAnnotation(
 pTSG = tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
 tsgHeatmap + tsgSamplesAnnotation + tsgBiallelicAnnotation + tsgDriversAnnotation + tsgDriversAnnotationIndex
 
-png(file = "~/hmf/RPlot/Figure 3 - TSG.png", width = 10, height = 7, units = "in", res = 217)
+png(file = "~/hmf/RPlot/Figure 3B - TSG.png", width = 10, height = 7, units = "in", res = 217)
 pTSG
 dev.off()
 

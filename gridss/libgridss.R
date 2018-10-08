@@ -4,6 +4,8 @@ library(rtracklayer)
 library(tidyverse)
 library(stringr)
 library(testthat)
+library(stringdist)
+library(BSgenome.Hsapiens.UCSC.hg19)
 source("gridss.config.R")
 
 #' sum of genotype fields
@@ -38,21 +40,23 @@ gridss_overlaps_breakend_pon = function(gr,
   }
   return(hasHit)
 }
-
 #' For each GRanges breakend, indicates whether the variant
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
 	isShort = is_short_deldup(gr)
-	ihomlen = rowSums(abs(as.matrix(info(vcf)$IHOMPOS)))
-	ihomlen[is.na(ihomlen)] = 0
+	ihomlen = gridss_inexact_homology_length(gr, vcf)
 	homlen = elementExtract(info(vcf)$HOMLEN, 1)
 	homlen[is.na(homlen)] = 0
 	filtered = rep("", length(gr))
+
+	if (!is.null(pon_dir)) {
+	  filtered = .addFilter(filtered, "PON", gridss_overlaps_breakpoint_pon(gr, pon_dir))
+	}
 
 	if (support_quality_filters) {
 	  # TODO: update this to a binomial test so we don't filter low confidence
@@ -68,15 +72,18 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
 	  # Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
 	  #filtered = .addFilter(filtered, "minRead", .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support)
-	  filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
+	  #filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
 	  # very high coverage hits assembly threshold; we also need to keep transitive calls so we reallocate them to get the correct VF
 	  #filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
 	  # homology FPs handled by normal and/or PON
 	  filtered = .addFilter(filtered, "homlen", homlen > gridss.max_homology_length)
-	  filtered = .addFilter(filtered, "ihomlen", ihomlen > gridss.max_inexact_homology_length)
+	  filtered = .addFilter(filtered, "ihomlen", ihomlen > gridss.max_inexact_homology_length & !(is_short_dup(gr)))
 		# Added ASRP into filter otherwise breakpoint chains don't get called
 	  filtered = .addFilter(filtered, "BPI.Filter.PRSupportZero", !isShort & .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$ASRP,c(normalOrdinal, tumourOrdinal)) == 0)
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
+
+	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
+	  #filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -90,11 +97,14 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2) {
+gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
   vcf = vcf[names(gr)]
   i = info(vcf)
   g = geno(vcf)
   filtered = rep("", length(gr))
+  if (!is.null(pon_dir)) {
+    filtered = .addFilter(filtered, "PON", gridss_overlaps_breakend_pon(gr, pon_dir))
+  }
   if (min_support_filters) {
     filtered = .addFilter(filtered, "af", gridss_somatic_be_af(gr, vcf) < gridss.min_af)
     filtered = .addFilter(filtered, "imprecise", i$IMPRECISE)
@@ -112,6 +122,12 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   }
   return(filtered)
 }
+gridss_inexact_homology_length = function(gr, vcf) {
+  ihommat = as.matrix(info(vcf[names(gr)])$IHOMPOS)
+  ihomlen = pmax(0, ihommat[,2] - ihommat[,1])
+  ihomlen[is.na(ihomlen)] = 0
+  return(ihomlen)
+}
 is_short_deldup = function(gr) {
   is_deldup = rep(FALSE, length(gr))
   if (!is.null(gr$partner)) {
@@ -123,6 +139,48 @@ is_short_deldup = function(gr) {
     is_deldup[isbp] = bp_short_deldup
   }
   return(is_deldup)
+}
+is_short_dup = function(gr) {
+  is_dup = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr <- gr[isbp]
+    bp_short_dup = strand(bpgr) != strand(partner(bpgr)) &
+      seqnames(bpgr) == seqnames(partner(bpgr)) &
+      abs(start(bpgr) - start(partner(bpgr))) < gridss.short_event_size_threshold &
+      ((start(bpgr) <= start(partner(bpgr)) & strand(bpgr) == "-") |
+        (start(bpgr) >= start(partner(bpgr)) & strand(bpgr) == "+"))
+    is_dup[isbp] = bp_short_dup
+  }
+  return(is_dup)
+}
+is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=100, maxsize=800, minihomlen=6) {
+  result = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr = gr[isbp]
+    svlen = abs(start(bpgr) - start(partner(bpgr)))
+    ihomlen = gridss_inexact_homology_length(gr, vcf)
+    result[isbp] = simpleEventType(bpgr) == "DEL" &
+      svlen >= minsize & svlen <= maxsize &
+      #maxaf <= 0.25
+      ihomlen >= minihomlen
+  }
+  return(result)
+}
+is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
+  result = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr = gr[isbp]
+    homlen = (as.integer(info(vcf[bpgr$vcfId])$HOMLEN) %na% 0)[isbp]
+    #ihomlen = gridss_inexact_homology_length(gr, vcf)
+    svlen = abs(start(bpgr) - start(partner(bpgr)))
+    result[isbp] = simpleEventType(bpgr) == "INV" &
+      svlen <= maxsize &
+      homlen >= minhomlen
+  }
+  return(result)
 }
 #' @description filter out 'shadow' calls of strong multi-mapping calls
 #' bwa overestimates the MAPQ of some multimapping reads
@@ -226,20 +284,24 @@ query_structural_variants_samples = function(dbConnect) {
 	return(df$sampleId)
 }
 simpleEventType <- function(gr) {
-  same_chr = as.character(seqnames(gr)) == as.character(seqnames(partner(gr)))
-  insSeq = rep("", length(gr))
-  if (!is.null(gr$insSeq)) {
-    insSeq = gr$insSeq
+  isbp = !is.na(gr$partner)
+  result = rep("BE", length(gr))
+  bpgr = gr[isbp]
+  same_chr = as.character(seqnames(bpgr)) == as.character(seqnames(partner(bpgr)))
+  insSeq = rep("", length(bpgr))
+  if (!is.null(bpgr$insSeq)) {
+    insSeq = bpgr$insSeq
   }
-  if (!is.null(gr$insertSequence)) {
-    insSeq = gr$insertSequence
+  if (!is.null(bpgr$insertSequence)) {
+    insSeq = bpgr$insertSequence
   }
-  more_ins_than_length = str_length(insSeq) >= abs(start(gr)-start(partner(gr))) * 0.7
-  same_strand = strand(gr) == strand(partner(gr))
-  return(ifelse(!same_chr, "ITX", # inter-chromosomosal
+  more_ins_than_length = str_length(insSeq) >= abs(start(bpgr)-start(partner(bpgr))) * 0.7
+  same_strand = strand(bpgr) == strand(partner(bpgr))
+  result[isbp] = ifelse(!same_chr, "ITX", # inter-chromosomosal
           ifelse(more_ins_than_length, "INS", # TODO: improve classification of complex events
             ifelse(same_strand, "INV",
-              ifelse(xor(start(gr) < start(partner(gr)), strand(gr) == "-"), "DEL", "DUP")))))
+              ifelse(xor(start(bpgr) < start(partner(bpgr)), strand(bpgr) == "-"), "DEL", "DUP"))))
+  return(result)
 }
 
 load_full_gridss_gr = function(filename, directory="", filter=c("somatic", "qual")) {
@@ -421,7 +483,7 @@ transitive_breakpoints <- function(
     min_segment_length=0,
     transitive_call_slop=100,
     allow_loops=FALSE,
-    max_hops=5,
+    max_hops=4,
     report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
@@ -445,9 +507,10 @@ transitive_breakpoints <- function(
       can_traverse_through[dest_to])
 
   terminal_df = .adjacent_breakends(gr, gr, maxgap=transitive_call_slop, allowed_orientation=c("--", "++")) %>%
-    filter(queryHits != subjectHits & queryHits != partner_lookup[subjectHits]) %>%
-    # [min_traversed, max_traversed] overlaps [-transitive_call_slop, transitive_call_slop]
-    filter(min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop)
+    filter(
+      queryHits != subjectHits & queryHits != partner_lookup[subjectHits] &
+      min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop &
+      find_transitive_for[queryHits] & can_traverse_through[subjectHits])
 
   result_df = data.frame(transitive=character(), bp_path=character(), min_length=integer(), max_length=integer())
   # start with the first traversal away from the putative transitive call
@@ -492,11 +555,11 @@ transitive_breakpoints <- function(
     }
     if (report == "max2") {
       found2 = result_df %>%
-        group_by(terminal_start) %>%
+        group_by(transitive_start) %>%
         summarise(n=n()) %>%
         filter(n >= 2) %>%
-        pull(terminal_start)
-      active_df = active_df %>% filter(!(terminal_start %in% found2))
+        pull(transitive_start)
+      active_df = active_df %>% filter(!(names(gr)[terminal_start] %in% found2))
     }
     i = i + 1
   }
@@ -674,9 +737,20 @@ linked_assemblies <- function(vcf, exclude_breakends_without_local_assembly=TRUE
   asm_paired_df = asm_paired_df %>%
     dplyr::select(vcfId, linked_by=asm) %>%
     group_by(linked_by) %>%
-    filter(n() != 2) %>%
+    filter(n() == 2) %>%
     ungroup()
-  return (asm_paired_df)
+  asm_paired_df = exclude_self_links(asm_paired_df, vcf)
+  return(asm_paired_df)
+}
+exclude_self_links = function(linked_df, vcf) {
+  self_links = linked_df %>% dplyr::select(vcfId, linked_by) %>%
+    mutate(parid = info(vcf[vcfId])$PARID) %>%
+    filter(!is.na(parid)) %>%
+    group_by(linked_by) %>%
+    filter(length(unique(c(vcfId, parid))) != 4) %>%
+    pull(linked_by)
+  return(linked_df %>% filter(!(linked_by %in% self_links)))
+
 }
 #' assemblies spanning SV indels will have the same asm
 #' linking id as the flanking variants as well as having
@@ -727,7 +801,9 @@ test_that(".linked_assemblies_fix_indels corrects indels", {
 })
 
 
-transitive_calls = function(vcf, bpgr) {
+transitive_calls = function(vcf, bpgr,
+  report=c("shortest", "max2", "all")
+  ) {
   is_imprecise = info(vcf[names(bpgr)])$IMPRECISE
   is_imprecise[is.na(is_imprecise)] = FALSE
   # transitive calling reduction
@@ -739,7 +815,7 @@ transitive_calls = function(vcf, bpgr) {
     can_traverse_through=!is_imprecise,
     bpgr,
     min_segment_length=20,
-    report="all")
+    report=report)
   transitive_df = transitive_df %>%
     #filter(info(vcf[transitive_df$transitive])$IMPRECISE) %>%
     mutate(full_path=bp_path)
@@ -823,7 +899,7 @@ passes_final_filters = function(vcf, include.existing.filters=TRUE) {
 
 linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gridss.insertion.maxgap) {
   if (is.null(begr$sampleId)) {
-    begr$sampleId = "placeholder"
+    begr$sampleId = rep("placeholder", length(begr))
   }
   hits = findOverlaps(begr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
@@ -846,10 +922,10 @@ linked_by_breakend_breakend_insertion_classification = function(begr, maxgap=gri
 }
 linked_by_breakpoint_breakend_insertion_classification = function(bpgr, begr, maxgap=gridss.insertion.maxgap) {
   if (is.null(begr$sampleId)) {
-    begr$sampleId = "placeholder"
+    begr$sampleId = rep("placeholder", length(begr))
   }
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   hits = findOverlaps(bpgr, begr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
@@ -872,7 +948,7 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
   bpgr = bpgr[strand(bpgr) == strand(partner(bpgr))]
   bpgr = bpgr[seqnames(bpgr) == seqnames(partner(bpgr))]
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL) %>%
     filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
@@ -897,6 +973,127 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
 linked_by_dsb = function(bpgr, maxgap=gridss.dsb.maxgap, ...) {
   linked_by_adjacency(bpgr, maxgap=maxgap, select="unique", link_label="dsb")
 }
+
+linked_by_different_foldback_inversion_paths = function(gr, max_inversion_length = 1000) {
+  if (is.null(gr$sampleId)) {
+    gr$sampleId = rep("placeholder", length(gr))
+  }
+  gr_foldback = gr[!is.na(gr$partner)]
+  gr_foldback = gr_foldback[abs(start(gr_foldback) - start(partner(gr_foldback))) < max_inversion_length]
+  gr_foldback = gr_foldback[seqnames(gr_foldback) == seqnames(partner(gr_foldback))]
+  gr_foldback = gr_foldback[strand(gr_foldback) == strand(partner(gr_foldback))]
+  gr_foldback = gr_foldback[findOverlaps(gr_foldback, gr_foldback, maxgap=max_inversion_length, ignore.strand=FALSE) %>%
+    as.data.frame() %>%
+    filter(
+      queryHits != subjectHits &
+      gr_foldback$sampleId[queryHits] == gr_foldback$sampleId[subjectHits] &
+      names(gr_foldback)[queryHits] == gr_foldback$partner[subjectHits]) %>%
+    pull(queryHits)]
+  insSeq = .insSeq(gr)
+
+  hitdf = findOverlaps(gr, gr_foldback) %>%
+    as.data.frame() %>%
+    filter(
+      #names(gr)[queryHits] != names(gr_foldback)[subjectHits]  &
+        gr$sampleId[queryHits] == gr_foldback$sampleId[subjectHits] &
+        str_length(insSeq[queryHits]) > 0) %>%
+    mutate(
+      spanningIns=insSeq[queryHits],
+      spanningAnchor="", # ignore the sequence past the inversion for now
+      foldbackIns=insSeq[names(gr_foldback)[subjectHits]],
+      foldbackLength=abs(start(gr_foldback[subjectHits]) - start(partner(gr_foldback)[subjectHits])),
+      foldbackAnchor=get_partner_anchor_sequence(gr_foldback[subjectHits], foldbackLength),
+      spanningSeq=ifelse(strand(gr[queryHits]) =="+", paste0(spanningIns, spanningAnchor), paste0(spanningAnchor, spanningIns)),
+      foldbackSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", paste0(foldbackIns, foldbackAnchor), paste0(foldbackAnchor, foldbackIns)),
+      foldbackInvertedSeq = ifelse(strand(gr_foldback[subjectHits]) =="+",
+        paste0(foldbackIns, as.character(reverseComplement(DNAStringSet(foldbackAnchor)))),
+        paste0(as.character(reverseComplement(DNAStringSet(foldbackAnchor))), foldbackIns)),
+      targetLength=pmin(str_length(spanningIns), str_length(foldbackIns) + foldbackLength)) %>%
+    mutate(
+      # normalise seq to be traversing from the left
+      spanningSeq = ifelse(strand(gr[queryHits])=="+", spanningSeq, as.character(reverseComplement(DNAStringSet((spanningSeq))))),
+      foldbackSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", foldbackSeq, as.character(reverseComplement(DNAStringSet((foldbackSeq))))),
+      foldbackInvertedSeq = ifelse(strand(gr_foldback[subjectHits]) =="+", foldbackInvertedSeq, as.character(reverseComplement(DNAStringSet((foldbackInvertedSeq)))))) %>%
+    mutate(
+      spanningSeq = str_sub(spanningSeq, end=targetLength),
+      foldbackSeq = str_sub(foldbackSeq, end=targetLength),
+      foldbackInvertedSeq = str_sub(foldbackInvertedSeq, end=targetLength)) %>%
+    mutate(
+      editDistance=stringdist(spanningSeq, foldbackSeq, method="lv"),
+      invEditDistance=stringdist(spanningSeq, foldbackInvertedSeq, method="lv"))
+  return(hitdf)
+}
+sequence_common_prefix = function(gr, anchor_bases=20, ...) {
+  if (is.null(gr$sampleId)) {
+    gr$sampleId = rep("placeholder", length(gr))
+  }
+  insSeq = .insSeq(gr)
+  anchor_sequence = get_partner_anchor_sequence(gr, anchor_bases)
+  hitdf = findOverlaps(gr, gr, ...) %>%
+    as.data.frame() %>%
+    filter(
+      queryHits < subjectHits &
+        names(gr)[queryHits] != (gr$partner[subjectHits] %na% "NA_placeholder") &
+        gr$sampleId[queryHits] == gr$sampleId[subjectHits]) %>%
+    mutate(
+      queryIns=insSeq[queryHits],
+      subjectIns=insSeq[subjectHits],
+      queryAnchor=anchor_sequence[names(gr)[queryHits]],
+      subjectAnchor=anchor_sequence[names(gr)[subjectHits]],
+      querySeq = ifelse(strand(gr[queryHits]) =="+", paste0(queryIns, queryAnchor), paste0(queryAnchor, queryIns)),
+      subjectSeq = ifelse(strand(gr[subjectHits]) =="+", paste0(subjectIns, subjectAnchor), paste0(subjectAnchor, subjectIns))) %>%
+    mutate(
+      # normalise seq to be breakpoint on the left
+      querySeq = ifelse(strand(gr[queryHits])=="+", querySeq, as.character(reverseComplement(DNAStringSet((querySeq))))),
+      subjectSeq = ifelse(strand(gr[subjectHits])=="+", subjectSeq, as.character(reverseComplement(DNAStringSet((subjectSeq)))))) %>%
+    mutate(
+      targetBreakendLength=pmax(str_length(queryIns), str_length(subjectIns), pmin(str_length(queryIns), str_length(subjectIns)) + anchor_bases),
+      actualBreakendLength=pmin(targetBreakendLength, str_length(querySeq), str_length(subjectSeq)),
+      querySeq = str_sub(querySeq, end=actualBreakendLength),
+      subjectSeq = str_sub(subjectSeq, end=actualBreakendLength)) %>%
+    mutate(
+      edit_distance=stringdist(querySeq, subjectSeq, method="lv"),
+      per_base_edit_distance=edit_distance/ actualBreakendLength)
+  if (!is.null(gr$id)) {
+    hitdf = hitdf %>% mutate(
+      qid=gr$id[queryHits],
+      qbeid=gr$beid[queryHits],
+      sid=gr$id[subjectHits],
+      sbeid=gr$beid[subjectHits])
+  }
+  if (!is.null(gr$vcfId)) {
+    hitdf = hitdf %>% mutate(
+      qvcfId=gr$vcfId[queryHits],
+      svcfId=gr$vcfId[subjectHits])
+  }
+  return(hitdf)
+}
+.insSeq = function(gr) {
+  insSeq = rep("", length(gr))
+  if (!is.null(gr$insSeq)) {
+    insSeq = gr$insSeq
+  }
+  if (!is.null(gr$insertSequence)) {
+    insSeq = gr$insertSequence
+  }
+  names(insSeq) = names(gr)
+  return(insSeq)
+}
+#' Returns the sequence encountered at the other side of a breakpoint when traversing
+#' across it.
+get_partner_anchor_sequence = function(gr, anchor_length, genome=BSgenome.Hsapiens.UCSC.hg19) {
+  seq = rep("", length(gr))
+  names(seq) = names(gr)
+  isbp = !is.na(gr$partner)
+  partnergr = partner(gr[isbp])
+  anchor_gr = GRanges(seqnames=seqnames(partnergr), ranges=IRanges(
+    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length + 1, start(partnergr)),
+    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length - 1)),
+    strand=ifelse(strand(partnergr)=="+", "-", "+"))
+  seqlevelsStyle(anchor_gr) = "UCSC"
+  seq[isbp] = getSeq(genome, anchor_gr, as.character=TRUE)
+  return(seq)
+}
 #' Links breakends by their proximity
 #'
 #' @param bpgr breakpoint GRanges to link
@@ -916,7 +1113,7 @@ linked_by_adjacency = function(
   strand = match.arg(strand)
   select = match.arg(select)
   if (is.null(bpgr$sampleId)) {
-    bpgr$sampleId = "placeholder"
+    bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   if (is.null(bpgr$beid)) {
     bpgr$beid = NA_character_
@@ -978,5 +1175,27 @@ linked_by_adjacency = function(
     hitdf %>% mutate(sampleId=bpgr$sampleId[subjectHits], beid=bpgr$beid[subjectHits], vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(sampleId, beid, vcfId, linked_by)) %>%
     distinct())
 }
+linked_by_equivalent_variants = function(gr, max_per_base_edit_distance=0.1) {
+  similar_calls_df = sequence_common_prefix(gr, maxgap=5) %>%
+    filter(per_base_edit_distance <= max_per_base_edit_distance) %>%
+    dplyr::select(svcfId, qvcfId) %>%
+    mutate(linked_by=paste0("eqv", row_number())) %>%
+    gather(sorq, vcfId, svcfId, qvcfId) %>%
+    dplyr::select(-sorq)
+  return(similar_calls_df)
+}
 
+passes_very_hard_filters = function(filters) {
+  fails = rep(FALSE, length(filters))
+  for (vhf in gridss.very_hard_filters) {
+    fails = fails | str_detect(filters, stringr::fixed(paste0(";", vhf)))
+  }
+  return(!fails)
+}
+passes_soft_filters = function(filters) {
+  for (softFilter in gridss.soft_filters) {
+    filters = str_replace(filters, stringr::fixed(paste0(";", softFilter)), "")
+  }
+  return(filters == "" | filters == ";" | filters == "PASS")
+}
 

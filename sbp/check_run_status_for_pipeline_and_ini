@@ -17,7 +17,7 @@ if [[ ${pipCount} < 1 ]]; then
 fi
 
 ## STLI: define setting by ini
-findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/"
+findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/ /data/cpct/reruns_v4/"
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
 downloadScriptFail="download_qc_fail_run"
@@ -50,20 +50,21 @@ query_sbp_api \
                 echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSetFail}"
 		     elif [[ ${COUNT} == 0 ]]
              then
-                echo "${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
+                echo "# ${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
+             else
+                echo "# ${failedSet} has failed on ${pip} but seems to exist in succeeded runs"
              fi
         fi
     done | sort -r | uniq
-
 echo ""
 
-echo "## Validated (or SnpCheck) runs with ini ${ini} and pipeline ${pip}"
+echo "## Validated runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
-    -filter "status=Validated|SnpCheck" \
+    -filter "status=Validated" \
     -json | jq -r '.[].name' | \
     while read setName; do
         COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
@@ -74,15 +75,47 @@ query_sbp_api \
             echo "# No action for ${setName}: already exists on datastore"
         fi
     done | sort -r | uniq
-
 echo ""
-echo "## Processing/pending runs with ini ${ini} and pipeline ${pip}"
+
+echo "## SnpCheck runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
+    -filter "status=SnpCheck" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
+        if [[ ${COUNT} == 0 ]]
+        then
+            echo "${downloadScript} ${setName}"
+        else
+            echo "# No action for ${setName}: already exists on datastore"
+        fi
+    done | sort -r | uniq
+echo ""
+
+echo "## Processing (or downloading/uploading) runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "pipeline=${pip}" \
-    -filter "status=Processing|Pending|Downloading" \
+    -filter "status=Processing|Downloading|Uploading" \
     -json | jq -r '.[].name' | \
     while read setName; do
-        echo "${setName} is processing or pending on ${pip}"
+        echo "# ${setName} is processing (or downloading/uploading) on ${pip}"
     done | sort -r | uniq
+echo ""
+
+echo "## Pending runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Pending" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        echo "# ${setName} is pending on ${pip}"
+    done | sort -r | uniq
+echo ""
