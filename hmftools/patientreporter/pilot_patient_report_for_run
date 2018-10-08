@@ -2,7 +2,7 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-drup_genes_csv=/data/common/dbs/drup/drup_genes.csv
+drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
 hotspot_tsv=/data/common/dbs/somatic_hotspot_v2/Hotspot.tsv
 
 # JOBA: Database details
