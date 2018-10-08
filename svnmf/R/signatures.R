@@ -87,18 +87,20 @@ strip_multi_bg_colours<-function(sigColours, bgSigCount)
   return (newSigColours)
 }
 
-get_signame_list<-function(sigCount, asStrings)
+get_signame_list<-function(sigCount, asStrings, zeroBased=F)
 {
   sigs = c()
   for(i in 1:sigCount)
   {
+    index = ifelse(zeroBased,i-1,i)
+
     if(asStrings & i <= 9)
     {
-      sigs[i] = paste("0", i, sep='')
+      sigs[i] = paste("0", index, sep='')
     }
     else
     {
-      sigs[i] = i
+      sigs[i] = index
     }
   }
 

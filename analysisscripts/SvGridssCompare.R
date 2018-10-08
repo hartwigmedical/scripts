@@ -23,24 +23,29 @@ svGridssMatched = within(svGridssMatched, rm(MantaPrecise))
 ncol(svGridssMatched)
 ncol(gridssSvData)
 
-print(colnames(svGridssMatched))
-print(colnames(gridssSvData))
-
 
 # GRIDSS Assembly vs SV-Analyser matching
 gridssSvData = sv_set_common_fields(gridssSvData)
+gridssSvData = set_sv_stressed_state(gridssSvData)
+gridssSvData$ResolvedType = 'NONE'
+gridssSvData = set_sv_non_clustered_types(gridssSvData)
+allClusterData = get_sv_clustered_data(gridssSvData)
+gridssSvData = set_sv_line_types(gridssSvData, allClusterData)
+gridssSvData = set_sv_clustered_types(gridssSvData, allClusterData)
+
 assemblyMatching = gridssSvData %>% filter(IsDB | IsTI | AsmbStart!="" | AsmbEnd!="")
 assemblyMatching = assemblyMatching %>% filter(Type!='SGL'&ClusterCount<100&ClusterCount>1)
 assemblyMatching = assemblyMatching %>% filter(grepl('asm',AsmbStart)|grepl('asm',AsmbEnd)|grepl('dsb',AsmbStart)|grepl('dsb',AsmbEnd))
 assemblyMatching = assemblyMatching %>% filter(IsLINE==F&ResolvedType!='LINE_CLUST')
 assemblyMatching = assemblyMatching %>% filter(SingleDupBE==F&DoubleDupBE==F)
 
-assemblyOnly = assemblyMatching %>% filter((AsmbMatchStart=="ASMB_ONLY"&(grepl('asm',AsmbStart)|grepl('dsb',AsmbStart)))
-                                           | (AsmbMatchEnd=="ASMB_ONLY"&(grepl('asm',AsmbEnd)|grepl('dsb',AsmbEnd))))
-
+assemblyOnly = assemblyMatching %>% filter((AsmbMatchStart=="ASMB_ONLY"&grepl('asm',AsmbStart)) | (AsmbMatchEnd=="ASMB_ONLY"&grepl('asm',AsmbEnd)))
 View(assemblyOnly)
 
 nrow(gridssSvData %>% filter(grepl('asm',AsmbStart)|grepl('asm',AsmbEnd)|grepl('dsb',AsmbStart)|grepl('dsb',AsmbEnd)))
+
+
+gridssCohortVariants = gridssCohortVariants %>%  filter(!(type=='DEL'&(InexactHOEnd-InexactHOStart>=6|nchar(Homology)<6)&endPosition-startPosition<1000))
 
 View(assemblyMatching)
 
@@ -67,16 +72,6 @@ View(multipleAssemblyGrouped %>% filter(Count==1))
 View(gridssSvData %>% filter(SampleId=='CPCT02010267TIII'&ClusterId==20))
 
 View(gridssSvData)
-
-gridssSvData = sv_set_common_fields(gridssSvData)
-gridssSvData = set_sv_stressed_state(gridssSvData)
-
-# allocation of known / resolved types
-gridssSvData$ResolvedType = 'NONE'
-gridssSvData = set_sv_non_clustered_types(gridssSvData)
-allClusterData = get_sv_clustered_data(gridssSvData)
-gridssSvData = set_sv_line_types(gridssSvData, allClusterData)
-gridssSvData = set_sv_clustered_types(gridssSvData, allClusterData)
 
 
 svResolvedSummary = (svData %>% group_by(ResolvedType,IsStressed,ClusterSize)

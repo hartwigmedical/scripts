@@ -632,6 +632,17 @@ names(sampleSigData)[names(sampleSigData) == 'OrigSampleCount.x'] <- 'SampleCoun
 sigColours = get_sig_colours(40)
 plot_sig_samples(sampleSigData, "Skin", sigColours, "SV", 0, T)
 
+View(sampleSigData %>% group_by(SigName) %>% count())
+
+topNSamplesBySig = head(sampleSigData %>% filter(SigName=="01_BG_Stoma"&Count>0) %>% arrange(-Count),50)
+View(topNSamplesBySig)
+topNSampleSigData = sampleSigData %>% filter(Count>0&SampleId %in% topNSamplesBySig$SampleId)
+View(topNSampleSigData)
+
+bgSigList = topNSampleSigData %>% filter(grepl("BG_",SigName)) %>% group_by(SigName) %>% count()
+View(bgSigList)
+bgSigCount = nrow(bgSigList)
+
 print(sigColours)
 sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
 plot_top_n_samples_by_sig(sampleSigDataNoResiduals, sigNamesNamed, 50, sigColours, "SV", T)
@@ -648,8 +659,18 @@ sigNamesCombined = rbind(sigNamesCombined, c(sigCount+1,"Unalloc"))
 sigNamesCombined = rbind(sigNamesCombined, c(sigCount+2,"Excess"))
 View(sigNamesCombined)
 sampleSigData2$PercBucket = round(sampleSigData2$SigPercent/0.1)*0.1
-sampleSigData2 = merge(sampleSigData2, sigNamesCombined, by.x="Signature", by.y="Signature", all.x=TRUE)
+sampleSigData2 = merge(sampleSigData2, sigNamesCombined, by.x="Signature", by.y="Signature", all=T)
+sampleSigData2 = merge(sampleSigData2, sampleSigFullSet, by=c("SampleId", "Signature"), all=T)
+sampleSigData2[is.na(sampleSigData2)] = 0
 View(sampleSigData2)
+
+sampleSigData2 = merge(sigAllocs, sampleSigFullSet, by=c("SampleId", "Signature"), all=T)
+sampleSigData2[is.na(sampleSigData2)] = 0
+
+
+sampleSigFullSet = merge(sampleNames, sigNamesCombined)
+colnames(sampleSigFullSet) = c("SampleId", "Signature", "SigName")
+View(sampleSigFullSet)
 
 
 nrow(sampleSigData2 %>% filter(Count > 0))

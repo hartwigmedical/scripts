@@ -40,33 +40,8 @@ trim_ba_sig_names<-function(baSigNames)
   return (baSigNames)
 }
 
-produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfoFile, sigAllocFile,
-                                   matrixData, summaryCounts, sampleCancerTypes, bucketNames,
-                                   plotByCancerType = T, viewResults = F, printAllPlots = T)
+get_ba_sig_colours<-function(baSigCount, baSigInfo)
 {
-  baContribs = as.matrix(read.csv(file=contribFile, stringsAsFactors=F))
-  baSigs = as.matrix(read.csv(file=sigFile, stringsAsFactors=F))
-  sigAllocs = as.data.frame(read.csv(file=sigAllocFile, stringsAsFactors=F))
-  colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
-
-  # TEMP until next java run
-  sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
-  sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
-
-  baSigNames = colnames(baSigs)
-  baSigCount = ncol(baSigs)
-
-  baSigNumList = get_signame_list(baSigCount, F)
-  colnames(baSigs) <- baSigNumList
-
-  # trim sig names
-  baSigNames = trim_ba_sig_names(baSigNames)
-
-  baSigInfo = as.data.frame(read.csv(file=sigInfoFile, stringsAsFactors=F))
-
-  # look for links between the sigs
-  baSigCount = nrow(baSigInfo)
-
   baseColours = get_base_colours()
   generalColours = get_unique_colours()
 
@@ -132,6 +107,42 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
       newSigColours[i] = generalColours[otherSigCount]
     }
   }
+
+  return (newSigColours)
+}
+
+produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfoFile, sigAllocFile,
+                                   matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                                   plotByCancerType = T, viewResults = F, printAllPlots = T)
+{
+  baContribs = as.matrix(read.csv(file=contribFile, stringsAsFactors=F))
+  baSigs = as.matrix(read.csv(file=sigFile, stringsAsFactors=F))
+  sigAllocs = as.data.frame(read.csv(file=sigAllocFile, stringsAsFactors=F))
+  colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
+
+  # TEMP until next java run
+  sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
+  sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
+
+  baSigNames = colnames(baSigs)
+  baSigCount = ncol(baSigs)
+
+  baSigNumList = get_signame_list(baSigCount, F)
+  colnames(baSigs) <- baSigNumList
+
+  # trim sig names
+  baSigNames = trim_ba_sig_names(baSigNames)
+
+  baSigInfo = as.data.frame(read.csv(file=sigInfoFile, stringsAsFactors=F))
+
+  # look for links between the sigs
+  baSigCount = nrow(baSigInfo)
+
+  # count up BG signatures
+  bgSigCount = nrow(baSigInfo %>%filter(Type=="BGRD"))
+
+  # set colours for BG, major, minor and other sig types
+  newSigColours = get_ba_sig_colours(baSigCount, baSigInfo)
 
   sigInfo = baSigInfo %>% select(Rank, BgId, Type, Discovery, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
 
@@ -339,7 +350,7 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   cancerTypes = sampleCancerTypes %>% group_by(CancerType) %>% count()
 
   # TEMP:
-  cancerTypes = cancerTypes %>% filter(CancerType=="Skin")
+  # cancerTypes = cancerTypes %>% filter(CancerType=="Skin")
 
   if(plotByCancerType)
   {

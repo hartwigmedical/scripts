@@ -534,57 +534,21 @@ write.csv(indelMatrixData, file="~/data/r_data/indel_matrix_data_dr22_23bkts.csv
 # ncol(indelMatrixData)
 
 # using bucket analyser
-produce_signature_report("INDEL", "ba_denovo_all", "~/dev/nmf/logs/indel_ba_sigs.csv", "~/dev/nmf/logs/indel_ba_contribs.csv",
-                         "~/dev/nmf/logs/indel_ba_group_data.csv", indelMatrixData, indelSampleBucketCounts,
-                         sampleCancerTypes2, indelBucketNames, T, F, F)
+produce_signature_report("INDEL", "ba_denovo_all_RR", "~/dev/nmf/logs/indel_ba_sigs.csv", "~/dev/nmf/logs/indel_ba_contribs.csv",
+                         "~/dev/nmf/logs/indel_ba_group_data.csv", "~/dev/nmf/logs/indel_ba_sample_sig_allocs.csv",
+                         indelMatrixData, indelSampleBucketCounts, sampleCancerTypes2, indelBucketNames, T, F, F)
 
 
 indBaContribs = as.matrix(read.csv(file="~/dev/nmf/logs/indel_ba_contribs.csv", stringsAsFactors=F))
 View(indBaContribs[,50:70])
-nrow(indBaContribs)
 indBaSigs = as.matrix(read.csv(file="~/dev/nmf/logs/indel_ba_sigs.csv", stringsAsFactors=F))
 View(indBaSigs)
 indBaSigNames = colnames(indBaSigs)
-print(indBaSigNames)
-ncol(indBaContribs)
 indBaSigCount = ncol(indBaSigs)
-print(indBaSigCount)
-
-indBaSigNumList = get_signame_list(indBaSigCount, F)
-indBaSigStrList = get_signame_list(indBaSigCount, T)
-colnames(indBaSigs) <- indBaSigNumList
-View(indBaSigs)
-
-# trim sig names
-for(i in 1:indBaSigCount)
-{
-  indBaSigNames[i] = paste(indBaSigStrList[i], indBaSigNames[i], sep="_")
-  sigLen = stringi::stri_length(indBaSigNames[i])
-
-  if(sigLen > 8)
-  {
-    catIndex = stri_locate_first_fixed(indBaSigNames[i], "_cat")
-    if(!is.na(catIndex[1]))
-    {
-      indBaSigNames[i] = substring(indBaSigNames[i], 1, catIndex[1]-1)
-      # print(paste("sig name shorted: ", indBaSigNames[i], sep=''))
-    }
-
-    indBaSigNames[i] = stri_replace_all_fixed(indBaSigNames[i], ".", "")
-  }
-}
-
-print(indBaSigNames)
-
 bgSigCount = 20
 
 evaluate_nmf_data("INDEL", "ba_denovo_all_CT_v2", indBaSigs, indBaContribs, indelMatrixData, indelSampleBucketCounts,
                   sampleCancerTypes2, indelBucketNames, indBaSigNames, T, F, bgSigCount, F)
-
-
-origSampleCounts = indelSampleBucketCounts %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
-View(origSampleCounts)
-
 
 
 
