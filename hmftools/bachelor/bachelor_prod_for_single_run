@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+run_dir=$1
+
+credentials=/data/common/dbs/mysql_credentials/prod
+bachelor_jar=/data/common/tools/bachelor_v1.0/bachelor.jar
+bachelor_pp_jar=/data/common/tools/bachelor_pp_pilot/bachelor_pp.jar
+
+${prefix}/do_run_bachelor ${run_dir} ${credentials} ${bachelor_jar} ${bachelor_pp_jar}

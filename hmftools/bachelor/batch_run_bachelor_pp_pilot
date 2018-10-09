@@ -8,3 +8,4 @@ for file in /data/cpct/runs/*; do
         do_run_bachelor_pp_pilot ${file} $@
     fi
 done
+

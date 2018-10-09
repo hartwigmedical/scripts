@@ -7,3 +7,4 @@ bachelor_jar=/data/common/tools/bachelor_pilot/bachelor.jar
 bachelor_pp_jar=/data/common/tools/bachelor_pp_pilot/bachelor_pp.jar
 
 ${prefix}/do_run_bachelor ${run_dir} ${credentials} ${bachelor_jar} ${bachelor_pp_jar} $@
+
