@@ -15,7 +15,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # CHSH: File Locations
-lynparza_config=/data/experiments/eligibility/lynparza_20180503.xml
+lynparza_config=/data/common/dbs/bachelor/lynparza_20180503.xml
 bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/bachelor/
 if [ $? -ne 0 ]
@@ -31,8 +31,7 @@ fi
 
 echo "[INFO] Running Bachelor"
 
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
-    -jar ${bachelor_jar} \
+java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
     -configXml "$lynparza_config" \
     -germline \
@@ -57,28 +56,26 @@ echo "[INFO] Creating Pile-ups"
 
 ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-# Run Mini Pileup on these bam files
-fileIndex=1
-for file in ${bach_output_dir}/*bam; do
-    #echo $file
+# CHSH: Run Mini Pileup on these bam files
+file_index=1
+for bam_file in ${bach_output_dir}/*bam; do
+    mpu_file="${bach_output_dir}${sample}_${file_index}.mpu"
+    echo "[INFO] Creating mini-pileup ${mpu_file} based on ${bam_file}"
 
-    mpuFile="${bach_output_dir}${sample}_${fileIndex}.mpu"
-    echo ${mpuFile}
-
-    /data/common/tools/sambamba_v0.6.5/sambamba mpileup \
-        -t 1 ${file} \
+    sambamba mpileup \
+        -t 1 ${bam_file} \
         --samtools "-q 1 -f ${ref_genome_file}" \
         -L ${bed_file} \
-        > ${mpuFile}
+        > ${mpu_file}
 
-    fileIndex=$(( $fileIndex + 1 ))
+    file_index=$(( file_index + 1 ))
 done
 
-echo "[INFO] Uploading germline variants"
+echo "[INFO] Post-processing germline variants"
 
 bach_data_file=${bach_output_dir}/bachelor_output.csv
 high_conf_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
-vcf_header=/data/experiments/eligibility/sample_bachelor_header.vcf
+vcf_header=/data/common/dbs/bachelor/sample_bachelor_header.vcf
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${bachelor_pp_jar} \
