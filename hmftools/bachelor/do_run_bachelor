@@ -48,14 +48,12 @@ echo "[INFO] Slicing BAM files and writing to ${bach_output_dir}"
 
 bed_based_bam_slicer ${bed_file} ${bach_output_dir}
 
-if [ ! -f "${bach_output_dir}/*bam" ]; then
+if [ ! "$(ls -A ${bach_output_dir}/*bam)" ]; then
     echo "[ERROR] BAM slicing failed"
     exit
 fi
 
 echo "[INFO] Creating Pile-ups"
-
-# /data/common/tools/sambamba_v0.6.5/sambamba mpileup -t 1 CPCT02070218T_13_32915121_32915122.bam --samtools "-q 1 -f /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta" -L bachelor_bed.csv > CPCT02070218T_001.mpu
 
 ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
@@ -65,10 +63,10 @@ for file in ${bach_output_dir}/*bam; do
     #echo $file
 
     mpuFile="${bach_output_dir}${sample}_${fileIndex}.mpu"
-    echo $mpuFile
+    echo ${mpuFile}
 
     /data/common/tools/sambamba_v0.6.5/sambamba mpileup \
-        -t 1 $file \
+        -t 1 ${file} \
         --samtools "-q 1 -f ${ref_genome_file}" \
         -L ${bed_file} \
         > ${mpuFile}
