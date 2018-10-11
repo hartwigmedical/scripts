@@ -1,0 +1,1 @@
+select count(*) from somaticVariant where filter = "PASS" and worstCodingEffect = "MISSENSE" and sampleId in ('XXX');
