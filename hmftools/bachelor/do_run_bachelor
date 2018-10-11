@@ -44,7 +44,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
 # CHSH: Slice BAM files using the bachelor bed file just created
 bed_file=${bach_output_dir}/bachelor_bed.csv
 
-echo "[INFO] Slicing BAM files"
+echo "[INFO] Slicing BAM files and writing to ${bach_output_dir}"
 
 bed_based_bam_slicer ${bed_file} ${bach_output_dir}
 
