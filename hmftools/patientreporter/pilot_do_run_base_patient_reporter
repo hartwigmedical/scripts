@@ -14,5 +14,5 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -center_csv ${center_csv} \
-    -comments "This is a pilot patient report, not validated"
+    -comments "This is a pilot patient report, not validated" \
     "$@"
