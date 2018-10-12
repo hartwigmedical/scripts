@@ -15,3 +15,4 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -signature ${signature} \
     -center_csv ${center_csv} \
     -comments "This is a pilot patient report, not validated"
+    "$@"
