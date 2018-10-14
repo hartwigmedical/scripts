@@ -269,10 +269,15 @@ sub parseJsonInfo{
         my $undet_info = \%{$info{ 'undt' }{ $undet_id }};
         $undet_info->{ 'name' } = $undet_id;
         foreach my $read ( @$undet_reads ){
+            my $rid = join( "", "read", $read->{ ReadNumber } );
             $undet_info->{ 'yield' } += $read->{ Yield };
             $undet_info->{ 'yield_q30' } += $read->{ YieldQ30 };
             $info{ 'flow' }{ $fid }{ 'yield' } += $read->{ Yield };
             $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
+            $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
+            $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
         }
         
         ## sample info stored together at SMPL_KEY key
