@@ -43,12 +43,18 @@ java -Xmx8G -Xms4G -jar ${bachelor_jar} \
 # CHSH: Slice BAM files using the bachelor bed file just created
 bed_file=${bach_output_dir}/bachelor_bed.csv
 
-echo "[INFO] Slicing BAM files and writing to ${bach_output_dir}"
+if [ -f ${bed_file} ]; then
+    echo "[INFO] Slicing BAM files and writing to ${bach_output_dir}"
 
-bed_based_bam_slicer ${bed_file} ${bach_output_dir}
+    bed_based_bam_slicer ${bed_file} ${bach_output_dir}
 
-if [ ! "$(ls -A ${bach_output_dir}/*bam)" ]; then
-    echo "[ERROR] BAM slicing failed"
+    if [ ! "$(ls -A ${bach_output_dir}/*bam)" ]; then
+        echo "[ERROR] BAM slicing failed"
+        exit
+    fi
+else
+    echo "[INFO] No bachelor eligible germline variants found. Exiting."
+    touch ${bach_output_dir}/bachelor_found_no_variants
     exit
 fi
 
