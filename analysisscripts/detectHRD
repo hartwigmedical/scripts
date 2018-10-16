@@ -33,7 +33,7 @@ then
 fi
 
 cd "/data/experiments/hrd_classifier_evaluation/output/${sample}/"
-HRD_sample ${somatic_vcf} ${structural_vcf} ${sample}
+extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample}
 
 sampleFile=sample.txt
-predict_HRD ${sampleFile}
+predictHRDsample.R ${sampleFile}
