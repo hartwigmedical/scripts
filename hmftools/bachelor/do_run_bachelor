@@ -17,17 +17,17 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 # CHSH: File Locations
 lynparza_config=/data/common/dbs/bachelor/lynparza_20180503.xml
 bach_run_dir=${run_dir}
-bach_output_dir=${run_dir}/bachelor
+bach_output_dir=${run_dir}/bachelor/
 if [ $? -ne 0 ]
 then
     echo "[ERROR] Unable to locate germline variants. Exiting."
     exit 1
 fi
 
-echo "[INFO] (Re)creating Bachelor output dir"
-
-rm -r ${bach_output_dir}
-mkdir -p ${bach_output_dir}
+if [ ! -d "${bach_output_dir}" ]; then
+    echo "[INFO] Creating Bachelor output dir"
+    mkdir ${bach_output_dir}
+fi
 
 echo "[INFO] Running Bachelor"
 
