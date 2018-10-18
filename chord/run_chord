@@ -4,9 +4,9 @@ source load_metadata
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-path="/data/experiments/hrd_classifier_evaluation/output/${sample}/"
 
-mkdir ${path}
+working_dir="/data/experiments/hrd_classifier_evaluation/output/${sample}/"
+mkdir -p ${working_dir}
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
@@ -32,7 +32,8 @@ then
     fi
 fi
 
-extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample} ${path}
+# KODU: Below creates "sample_mut_signatures.txt in the working_dir that is passed.
+extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample} ${working_dir}
 
 sample_mut_signatures=sample_mut_signatures.txt
-predictHRDsample.R ${sample_mut_signatures} ${path}
+predictHRDsample.R ${working_dir} ${sample_mut_signatures}
