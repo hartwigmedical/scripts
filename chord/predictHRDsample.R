@@ -3,7 +3,7 @@ library(randomForest)
 args <- commandArgs(TRUE)
 
 base_dir <- '/data/experiments/hrd_classifier_evaluation/hrdetect_v2/'
-
+setwd(args[2])
 hmf_patients_mut_sigs <- read.table(args[1])
 
 rf_model <- readRDS(paste0(base_dir, 'rf_hrd_predict.rds'))
