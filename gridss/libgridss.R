@@ -1023,7 +1023,7 @@ linked_by_different_foldback_inversion_paths = function(gr, max_inversion_length
       invEditDistance=stringdist(spanningSeq, foldbackInvertedSeq, method="lv"))
   return(hitdf)
 }
-sequence_common_prefix = function(gr, anchor_bases=20, ...) {
+sequence_common_prefix = function(gr, anchor_bases, ...) {
   if (is.null(gr$sampleId)) {
     gr$sampleId = rep("placeholder", length(gr))
   }
@@ -1047,13 +1047,14 @@ sequence_common_prefix = function(gr, anchor_bases=20, ...) {
       querySeq = ifelse(strand(gr[queryHits])=="+", querySeq, as.character(reverseComplement(DNAStringSet((querySeq))))),
       subjectSeq = ifelse(strand(gr[subjectHits])=="+", subjectSeq, as.character(reverseComplement(DNAStringSet((subjectSeq)))))) %>%
     mutate(
-      targetBreakendLength=pmax(str_length(queryIns), str_length(subjectIns), pmin(str_length(queryIns), str_length(subjectIns)) + anchor_bases),
-      actualBreakendLength=pmin(targetBreakendLength, str_length(querySeq), str_length(subjectSeq)),
-      querySeq = str_sub(querySeq, end=actualBreakendLength),
-      subjectSeq = str_sub(subjectSeq, end=actualBreakendLength)) %>%
+      breakendLength=pmin(str_length(querySeq), str_length(subjectSeq)),
+      querySeq = str_sub(querySeq, end=breakendLength),
+      subjectSeq = str_sub(subjectSeq, end=breakendLength)) %>%
+    filter(
+      breakendLength > 0) %>%
     mutate(
       edit_distance=stringdist(querySeq, subjectSeq, method="lv"),
-      per_base_edit_distance=edit_distance/ actualBreakendLength)
+      per_base_edit_distance=edit_distance/ breakendLength)
   if (!is.null(gr$id)) {
     hitdf = hitdf %>% mutate(
       qid=gr$id[queryHits],
@@ -1093,6 +1094,17 @@ get_partner_anchor_sequence = function(gr, anchor_length, genome=BSgenome.Hsapie
   seqlevelsStyle(anchor_gr) = "UCSC"
   seq[isbp] = getSeq(genome, anchor_gr, as.character=TRUE)
   return(seq)
+}
+get_anchor_support_width = function(vcf, gr) {
+  # Does not take into account breakpoint interval encoded by the XNX CIGAR elements
+  return(GenomicAlignments::cigarWidthAlongReferenceSpace(info(vcf[names(gr)])$SC, N.regions.removed=TRUE) - 1)
+}
+get_partner_anchor_support_width = function(vcf, gr) {
+  result = get_anchor_support_width(vcf, gr)
+  names(result) = names(gr)
+  isbp = !is.na(gr$partner)
+  result[isbp] = result[gr[isbp]$partner]
+  return(result)
 }
 #' Links breakends by their proximity
 #'
@@ -1175,8 +1187,10 @@ linked_by_adjacency = function(
     hitdf %>% mutate(sampleId=bpgr$sampleId[subjectHits], beid=bpgr$beid[subjectHits], vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(sampleId, beid, vcfId, linked_by)) %>%
     distinct())
 }
-linked_by_equivalent_variants = function(gr, max_per_base_edit_distance=0.1) {
-  similar_calls_df = sequence_common_prefix(gr, maxgap=5) %>%
+linked_by_equivalent_variants = function(vcf, gr, min_anchor_bases=20, max_per_base_edit_distance=0.1) {
+  # go as far as we have support on the other side for when comparing
+  anchor_bases = pmax(min_anchor_bases, get_partner_anchor_support_width(vcf, gr))
+  similar_calls_df = sequence_common_prefix(gr, anchor_bases=anchor_bases, maxgap=5) %>%
     filter(per_base_edit_distance <= max_per_base_edit_distance) %>%
     dplyr::select(svcfId, qvcfId) %>%
     mutate(linked_by=paste0("eqv", row_number())) %>%

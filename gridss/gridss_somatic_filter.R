@@ -180,7 +180,7 @@ link_rescue = c(link_rescue, bpgr[link_rescue[link_rescue %in% names(bpgr)]]$par
 
 # Note that we don't rescue equivalent events
 begr$partner = NA
-eqv_link_df = linked_by_equivalent_variants(as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges")) %>%
+eqv_link_df = linked_by_equivalent_variants(full_vcf, as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges")) %>%
   filter(passes_final_filters(vcf[vcfId]) | vcfId %in% link_rescue) %>%
   group_by(linked_by) %>%
   filter(n() == 2) %>%
