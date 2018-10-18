@@ -269,8 +269,15 @@ sub parseJsonInfo{
         my $undet_info = \%{$info{ 'undt' }{ $undet_id }};
         $undet_info->{ 'name' } = $undet_id;
         foreach my $read ( @$undet_reads ){
+            my $rid = join( "", "read", $read->{ ReadNumber } );
             $undet_info->{ 'yield' } += $read->{ Yield };
             $undet_info->{ 'yield_q30' } += $read->{ YieldQ30 };
+            $info{ 'flow' }{ $fid }{ 'yield' } += $read->{ Yield };
+            $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
+            $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
+            $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
         }
         
         ## sample info stored together at SMPL_KEY key
@@ -315,13 +322,13 @@ sub parseJsonInfo{
             }
         }
     }
-    
+
     ## Create the info to print later
     foreach my $type ( keys %info ){
         foreach my $id ( keys %{$info{ $type }} ){
             my $obj = $info{ $type }{ $id };
             my $name = $obj->{ 'name' };
-                        
+            
             $obj->{ 'q30' } = getPerc( $obj->{ 'yield_q30' }, $obj->{ 'yield' } );
             $obj->{ 'yld_p' } = getPerc( $obj->{ 'yield' }, $info{ 'flow' }{ $fid }{ 'yield' } );
             $obj->{ 'flowcell_print' } = $fid;
@@ -371,10 +378,10 @@ sub getPerc{
        return 0;
     }
     elsif ($value < 0 or $total < 0){
-       exit "[EXIT] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
+       die "[EXIT] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
     }
     elsif ($value > $total){
-       exit "[EXIT] value ($value) should never be higher than total ($total)\n";
+       die "[EXIT] value ($value) should never be higher than total ($total)\n";
     }
     elsif ( $total == 0 and $value == 0){
        return 0;

@@ -4,7 +4,7 @@ plot_absolute_contribution <- function(contribution) {
   require(tidyr)
   require(dplyr)
 
-  m_contribution = contribution %>% gather(variable, value, -1) %>% mutate(variable = factor(variable, levels = names(signature)[-1]))
+  m_contribution = contribution %>% gather(variable, value, -1) %>% mutate(variable = factor(variable, levels = names(contribution)[-1]))
   colnames(m_contribution) = c("Signature", "Sample", "Contribution")
   plot = ggplot(m_contribution, aes(x = factor(Sample),  y = Contribution, fill = factor(Signature), order = Sample)) +
     geom_bar(stat = "identity", colour = "black") +

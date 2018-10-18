@@ -12,13 +12,14 @@ ID = commandArgs(trailingOnly = TRUE)
 dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, groups = "RAnalysis")
 
 ## Get cohort
-multipleBiopsyCohort = purple::query_multiple_biopsy_cohort(dbProd)
+multipleBiopsyCohort = purple::query_multiple_biopsy_cohort(dbProd, data.frame(sampleId = character(), genesDeleted = integer()))
 
 ##### USE FOLLOWING LINE TO FILTER A PARTICULAR PATIENT ID
 multipleBiopsyCohort = multipleBiopsyCohort %>% filter(patientId == ID)
 
 ## Get somatic and structural variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
+multipleBiopsySomaticVariants$ploidy = multipleBiopsySomaticVariants$adjustedCopyNumber * multipleBiopsySomaticVariants$adjustedVaf
 multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, multipleBiopsyCohort)
 
 ### Clean up

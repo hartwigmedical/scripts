@@ -15,20 +15,11 @@ evaluate_nmf_data<-function(runType, runId, signatures, contribution, matrixData
   evaluate_signature_fit(runType, runId, signatures, contribution, matrixData, summaryCounts, sampleCancerTypes, bucketNames, sigNamesNamed, plotByCancerType, viewResults)
 }
 
-produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfoFile,
-                                   matrixData, summaryCounts, sampleCancerTypes, bucketNames,
-                                   plotByCancerType = T, viewResults = F, printAllPlots = T)
+trim_ba_sig_names<-function(baSigNames)
 {
-  baContribs = as.matrix(read.csv(file=contribFile, stringsAsFactors=F))
-  baSigs = as.matrix(read.csv(file=sigFile, stringsAsFactors=F))
-  baSigNames = colnames(baSigs)
-  baSigCount = ncol(baSigs)
+  baSigCount = length(baSigNames)
 
-  baSigNumList = get_signame_list(baSigCount, F)
   baSigStrList = get_signame_list(baSigCount, T)
-  colnames(baSigs) <- baSigNumList
-
-  # trim sig names
   for(i in 1:baSigCount)
   {
     baSigNames[i] = paste(baSigStrList[i], baSigNames[i], sep="_")
@@ -46,18 +37,19 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
     }
   }
 
-  baSigInfo = as.data.frame(read.csv(file=sigInfoFile, stringsAsFactors=F))
+  return (baSigNames)
+}
 
-  # look for links between the sigs
-  baSigCount = nrow(baSigInfo)
-
+get_ba_sig_colours<-function(baSigCount, baSigInfo)
+{
   baseColours = get_base_colours()
+  generalColours = get_unique_colours()
 
   # look for links between the sigs
   bgSigCount = 0
-  majorSigCount = 0
-  newSigColours = sigColours
+  newSigColours = c()
 
+  # set all background sigs to grey
   for(i in 1:baSigCount)
   {
     sigInfo = baSigInfo[i,]
@@ -67,7 +59,19 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
       bgSigCount = bgSigCount + 1
       newSigColours[i] = "grey60"
     }
-    else if(sigInfo$Type == "MAJOR" && (is.na(sigInfo$ParentId) || sigInfo$ParentId==""))
+    else
+    {
+      newSigColours[i] = "unset" # unset for now
+    }
+  }
+
+  # set specific colours for majors and minors
+  majorSigCount = 0
+  for(i in 1:baSigCount)
+  {
+    sigInfo = baSigInfo[i,]
+
+    if(sigInfo$Type == "MAJOR" && (is.na(sigInfo$ParentId) || sigInfo$ParentId==""))
     {
       bgId = sigInfo$BgId
       majorSigCount = majorSigCount + 1
@@ -93,14 +97,59 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
     }
   }
 
-  # print(newSigColours)
+  # set colours for other misc sigs
+  otherSigCount = 0
+  for(i in 1:baSigCount)
+  {
+    if(newSigColours[i] == "unset")
+    {
+      otherSigCount = otherSigCount + 1
+      newSigColours[i] = generalColours[otherSigCount]
+    }
+  }
 
-  sigInfo = baSigInfo %>% select(Rank, BgId, Type, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
+  return (newSigColours)
+}
+
+produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfoFile, sigAllocFile,
+                                   matrixData, summaryCounts, sampleCancerTypes, bucketNames,
+                                   plotByCancerType = T, viewResults = F, printAllPlots = T)
+{
+  baContribs = as.matrix(read.csv(file=contribFile, stringsAsFactors=F))
+  baSigs = as.matrix(read.csv(file=sigFile, stringsAsFactors=F))
+  sigAllocs = as.data.frame(read.csv(file=sigAllocFile, stringsAsFactors=F))
+  colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
+
+  # TEMP until next java run
+  sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
+  sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
+
+  baSigNames = colnames(baSigs)
+  baSigCount = ncol(baSigs)
+
+  baSigNumList = get_signame_list(baSigCount, F)
+  colnames(baSigs) <- baSigNumList
+
+  # trim sig names
+  baSigNames = trim_ba_sig_names(baSigNames)
+
+  baSigInfo = as.data.frame(read.csv(file=sigInfoFile, stringsAsFactors=F))
+
+  # look for links between the sigs
+  baSigCount = nrow(baSigInfo)
+
+  # count up BG signatures
+  bgSigCount = nrow(baSigInfo %>%filter(Type=="BGRD"))
+
+  # set colours for BG, major, minor and other sig types
+  newSigColours = get_ba_sig_colours(baSigCount, baSigInfo)
+
+  sigInfo = baSigInfo %>% select(Rank, BgId, Type, Discovery, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
 
   sigInfo[is.na(sigInfo)] = ""
   maxTextLength = 30
   sigInfo$Effects = ifelse(stri_length(sigInfo$Effects > maxTextLength), stri_sub(sigInfo$Effects,1,maxTextLength), sigInfo$Effects)
-  sigInfo$Effects = ifelse(stri_length(sigInfo$CancerType > maxTextLength), stri_sub(sigInfo$CancerType,1,maxTextLength), sigInfo$CancerType)
+  sigInfo$CancerType = ifelse(stri_length(sigInfo$CancerType > maxTextLength), stri_sub(sigInfo$CancerType,1,maxTextLength), sigInfo$CancerType)
 
   sigInfo$Colour = ""
   colourCol = ncol(sigInfo)
@@ -112,12 +161,13 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
   sigInfo = sigInfo %>% filter(Type!="BGRD")
 
   evaluate_signature_fit(runType, runId, baSigs, baContribs, matrixData, summaryCounts, sampleCancerTypes,
-                         bucketNames, baSigNames, plotByCancerType, viewResults, bgSigCount, printAllPlots, newSigColours, sigInfo)
+                         bucketNames, baSigNames, plotByCancerType, viewResults, bgSigCount, printAllPlots, newSigColours, sigInfo, sigAllocs)
 }
 
 
 evaluate_signature_fit<-function(runType, runId, signatures, contribution, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
-                            sigNamesNamed, plotByCancerType = T, viewResults = F, bgSigCount = 0, printAllPlots = T, sigColours = c(), sigInfo = data.frame())
+                            sigNamesNamed, plotByCancerType = T, viewResults = F, bgSigCount = 0, printAllPlots = T, sigColours = c(),
+                            sigInfo = data.frame(), sigAllocs = data.frame())
 {
   sigCount = nrow(contribution)
   hasBackgroundSigs = (bgSigCount > 0)
@@ -172,27 +222,38 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   # 2 Signature Evaluation
   print("evaluating signatures")
 
-  # optionally name signatues for subsequent output
-  sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+  if(nrow(sigAllocs) > 0)
+  {
+    sigNamesCombined = rbind(sigNamesCombined, c(sigCount+1,"Unalloc"))
+    sigNamesCombined = rbind(sigNamesCombined, c(sigCount+2,"Excess"))
 
-  # key stats per signature
-  sigStats = get_sig_stats(sampleSigData)
+    # ensure an entry in every sig or every sample
+    sampleSigFullSet = merge(sampleNames, sigNamesCombined)
+    colnames(sampleSigFullSet) = c("SampleId", "Signature", "SigName")
 
-  # calculate and factor in residuals
-  sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
-  # run again, this time bucketing samples into mutational load and cancer types
+    sampleSigData = merge(sigAllocs, sampleSigFullSet, by=c("SampleId", "Signature"), all=T)
+    sampleSigData[is.na(sampleSigData)] = 0
+    sampleSigData$PercBucket = round(sampleSigData$SigPercent/0.1)*0.1
+    sampleSigData = within(sampleSigData, rm(BgId))
+  }
+  else
+  {
+    sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+
+    # calculate and factor in residuals
+    sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
+  }
 
   # get cancer type and SV Count
   sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
   sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
-
-  # sampleSigCounts = sampleSigData %>% filter(SigName!="Residual") %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
   sampleSigData = merge(sampleSigData, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+  sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
+
+  # key stats per signature
+  sigStats = get_sig_stats(sampleSigDataNoResiduals)
 
   # make the sig count total all sigs plus unalloc but not excess
-
-  sampleSigDataNoRes = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess") # was 'Residuals'
-
   if(viewResults)
   {
     View(sigStats)
@@ -257,6 +318,11 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   sigColours[sigCount+1] = "black"
   sigColours[sigCount+2] = "grey30"
 
+  if(bgSigCount > 0)
+    cancerSigColours = strip_multi_bg_colours(sigColours, bgSigCount)
+  else
+    cancerSigColours = sigColours
+
   # 5A. Plot sig information and a legend
   dropSigLegend = F
   if(nrow(sigInfo) > 0)
@@ -269,14 +335,10 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   }
 
   # 5. Relative Signature contributions by Cancer Type
-  plot_cancer_sigs(sampleSigDataNoRes, sigColours, runType)
+  plot_cancer_sigs(sampleSigDataNoResiduals, sigColours, runType)
 
   # 6. Top 50 samples by signature, but include all other signatures as well
-  plot_top_n_samples_by_sig(sampleSigDataNoRes, sigNamesNamed, 50, sigColours, runType, dropSigLegend)
-
-  # add in additional colours for Excess and Residual counts
-  # sigColours[sigCount+1] = "black"
-  # sigColours[sigCount+2] = "grey30"
+  plot_top_n_samples_by_sig(sampleSigDataNoResiduals, sigNamesNamed, 50, sigColours, runType, dropSigLegend)
 
   # 7. Sigs with Samples by cancer type
 
@@ -292,11 +354,6 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
 
   if(plotByCancerType)
   {
-    if(bgSigCount > 0)
-      cancerSigColours = strip_multi_bg_colours(sigColours, bgSigCount)
-    else
-      cancerSigColours = sigColours
-
     for(cancerType in cancerTypes$CancerType)
     {
       if(!is.na(cancerType))

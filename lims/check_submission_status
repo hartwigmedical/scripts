@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+#
+submission=$1
+
+echo ""
+echo "--- GENERAL INFO ---"
+echo "[INFO] Checking $submission"
+
+  totalLimsSamples=$( query_lims -submission "${submission}" | grep -v "^#" | wc -l )
+   totalLimsFailed=$( query_lims -submission "${submission}" | grep -v "^#" | grep Failed | wc -l )
+      totalSamples=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
+ totalSamplesReady=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | cut -f6 | grep "Ready" | wc -l )
+         totalRuns=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | wc -l )
+totalRunsValidated=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | cut -f6 | grep "Validated" | wc -l )
+
+echo "[INFO] $totalLimsSamples samples in LIMS (${totalLimsFailed} failed)"
+echo "[INFO] $totalSamplesReady samples Ready of total $totalSamples at SBP"
+echo "[INFO] $totalRunsValidated runs Validated of total $totalRuns at SBP"
+echo ""
+
+echo "--- FOR ALL SUBMISSIONS ---"
+echo "[INFO] Inspect further:"
+echo "  query_lims -submission ${submission}"
+echo "  query_sbp_api -type samples -filter submission=${submission}"
+echo "  query_sbp_api -type runs -filter name=${submission}"
+echo "[INFO] Or gather submission if all is ready and ok:"
+echo "  gather_submission ${submission}"
+echo ""
+
+## when we share fastq from datastore
+submDir="/data/submissions/${submission}"
+submTar="${submDir}/${submission}.tar"
+echo "--- IN CASE OF NEXTSEQ ---"
+echo "[INFO] In case of nextseq run you can get yield/q30 info with:"
+echo "  seqRun=\"ENTER RUN NAME\" # eg seqRun=180101_NB500901_0000_AHXXXXXXX"
+echo "  pathToSeqRun=/data/data_archive/next_seq/\${seqRun}"
+echo "  check_bcl2fastq_conversion -run \${pathToSeqRun} | grep SAMPLE | awk '{ print \$11\"\t\"\$9\"\t\"\$4\"\t\t\"\$3\"\t\"\$10 }' | sort -k2"
+echo "[INFO] And create tar with:"
+echo "  cd \${pathToSeqRun}/Data/Intensities/BaseCalls"
+echo "  tar -cvf ${submTar} $submission"
+echo "[INFO] And create tar listing later with:"
+echo "  cd ${submDir}; tar -tf ${submTar} > ${submTar}.list; ls -l"
+echo ""

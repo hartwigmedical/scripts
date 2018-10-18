@@ -27,6 +27,14 @@ get_sig_colours<-function(sigCount = 10)
   return (sigColours)
 }
 
+get_unique_colours<-function()
+{
+  colourSet = c("cornsilk3", "hotpink", "darkorange", "seagreen3", "tomato3", "thistle2", "steelblue2", "darkgreen", "indianred", "honeydew2",
+                "turquoise3", "lightpink2", "goldenrod2", "darkslateblue", "yellowgreen", "wheat2", "violetred2", "ivory3", "coral1", "springgreen2")
+
+  return (colourSet)
+}
+
 get_base_colours<-function()
 {
   baseColours = c("yellow", "blue", "green", "red", "orange", "purple", "pink", "brown", "darkgreen", "deepskyblue", "tan")
@@ -37,7 +45,7 @@ get_base_colours<-function()
 get_base_colour_extensions<-function(baseColour, extensionCount)
 {
   if(baseColour == "yellow")
-    extnColours = c("gold1", "gold2", "gold3", "gold4")
+    extnColours = c("lightgoldenrod1", "lightgoldenrod2", "lightgoldenrod3", "lightgoldenrod4")
   else if(baseColour == "blue")
     extnColours = c("royalblue1", "royalblue2", "royalblue3", "royalblue4")
   else if(baseColour == "green")
@@ -79,18 +87,20 @@ strip_multi_bg_colours<-function(sigColours, bgSigCount)
   return (newSigColours)
 }
 
-get_signame_list<-function(sigCount, asStrings)
+get_signame_list<-function(sigCount, asStrings, zeroBased=F)
 {
   sigs = c()
   for(i in 1:sigCount)
   {
+    index = ifelse(zeroBased,i-1,i)
+
     if(asStrings & i <= 9)
     {
-      sigs[i] = paste("0", i, sep='')
+      sigs[i] = paste("0", index, sep='')
     }
     else
     {
-      sigs[i] = i
+      sigs[i] = index
     }
   }
 
@@ -148,36 +158,6 @@ apply_signatures<-function(matrixData, signatures)
   return(lsq_contribution)
 }
 
-calc_sample_residuals_v2<-function(contributions, signatures, matrixData, bucketNames)
-{
-  sampleBucketFit = signatures %*% contributions
-
-  sampleBucketFit = cbind(bucketNames,sampleBucketFit)
-  sampleBucketCounts = cbind(bucketNames,matrixData)
-
-  gatherIndex = ncol(sampleBucketCounts)
-  sampleBucketCounts2 = gather(sampleBucketCounts, "SampleId", "ActualCount", 2:gatherIndex)
-  sampleBucketFit2 = gather(sampleBucketFit, "SampleId", "FitCount", 2:gatherIndex)
-
-  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleBucketFit2, by=c("SampleId","Bucket"), all=T)
-
-  sampleBucketFitVsActuals$ResidualExcess = ifelse(sampleBucketFitVsActuals$FitCount > sampleBucketFitVsActuals$ActualCount, sampleBucketFitVsActuals$FitCount - sampleBucketFitVsActuals$ActualCount, 0)
-  sampleBucketFitVsActuals$ResidualUnalloc = ifelse(sampleBucketFitVsActuals$ActualCount > sampleBucketFitVsActuals$FitCount, sampleBucketFitVsActuals$ActualCount - sampleBucketFitVsActuals$FitCount, 0)
-  sampleBucketFitVsActuals$ResidualDiff = abs(sampleBucketFitVsActuals$ActualCount-sampleBucketFitVsActuals$FitCount)
-
-  sampleResidualData = (sampleBucketFitVsActuals %>% group_by(SampleId)
-                        %>% summarise(ActualCount=sum(ActualCount),
-                                      FitCount=sum(FitCount),
-                                      ResidualTotal=round(sum(ResidualDiff),2),
-                                      ExcessCount=round(sum(ResidualExcess),2),
-                                      UnallocCount=round(sum(ResidualUnalloc),2),
-                                      ResidualPerc=round(sum(ResidualDiff)/sum(ActualCount),2)))
-
-  sampleResidualData$ResidualTotalManual = sampleResidualData$ActualCount - sampleResidualData$FitCount
-
-  return (sampleResidualData)
-}
-
 get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
 
   # get contributions by sample in percentage terms (ie each sample split across the signatures)
@@ -216,7 +196,7 @@ get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
 
 append_residuals<-function(contribution, signatures, matrixData, bucketNames, sampleSigData)
 {
-  residuals = calc_sample_residuals_v2(contribution, signatures, matrixData, bucketNames)
+  residuals = calc_contrib_sample_residuals(contribution, signatures, matrixData, bucketNames)
 
   sampleResiduals = residuals %>% select(SampleId,UnallocCount)
   colnames(sampleResiduals) <- c("SampleId","Count")
@@ -237,6 +217,67 @@ append_residuals<-function(contribution, signatures, matrixData, bucketNames, sa
 
   return (sampleSigData2)
 }
+
+calc_sig_alloc_sample_residuals<-function(sigSampleBucketCounts, matrixData, bucketNamesIndexed)
+{
+  sampleSigBucketTotals = sigSampleBucketCounts %>% group_by(SampleId, Bucket) %>% summarise(SigCount=sum(Count))
+
+  # calculate residuals by lining up the actual vs the sig counts per sample per bucket
+  sampleBucketCounts = matrixData
+  sampleBucketCounts = cbind(bucketNamesIndexed$BucketIndex, sampleBucketCounts)
+  gatherIndex = ncol(sampleBucketCounts)
+  sampleBucketCounts2 = gather(as.data.frame(sampleBucketCounts), "SampleId", "ActualCount", 2:gatherIndex)
+  colnames(sampleBucketCounts2) = c("Bucket", "SampleId", "ActualCount")
+
+  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleSigBucketTotals, by=c("SampleId","Bucket"), all=T)
+
+  sampleBucketFitVsActuals$ResidualExcess = ifelse(sampleBucketFitVsActuals$SigCount > sampleBucketFitVsActuals$ActualCount, sampleBucketFitVsActuals$SigCount - sampleBucketFitVsActuals$ActualCount, 0)
+  sampleBucketFitVsActuals$ResidualUnalloc = ifelse(sampleBucketFitVsActuals$ActualCount > sampleBucketFitVsActuals$SigCount, sampleBucketFitVsActuals$ActualCount - sampleBucketFitVsActuals$SigCount, 0)
+  sampleBucketFitVsActuals$ResidualDiff = abs(sampleBucketFitVsActuals$ActualCount-sampleBucketFitVsActuals$SigCount)
+
+  sampleResidualData = (sampleBucketFitVsActuals %>% group_by(SampleId)
+                        %>% summarise(ActualCount=sum(ActualCount),
+                                      SigCount=sum(SigCount),
+                                      ResidualTotal=round(sum(ResidualDiff),2),
+                                      ExcessCount=round(sum(ResidualExcess),2),
+                                      UnallocCount=round(sum(ResidualUnalloc),2),
+                                      ResidualPerc=round(sum(ResidualDiff)/sum(ActualCount),2)))
+
+  sampleResidualData$ResidualTotalManual = sampleResidualData$ActualCount - sampleResidualData$SigCount
+
+  return (sampleResidualData)
+}
+
+calc_contrib_sample_residuals<-function(contributions, signatures, matrixData, bucketNames)
+{
+  sampleBucketFit = signatures %*% contributions
+
+  sampleBucketFit = cbind(bucketNames,sampleBucketFit)
+  sampleBucketCounts = cbind(bucketNames,matrixData)
+
+  gatherIndex = ncol(sampleBucketCounts)
+  sampleBucketCounts2 = gather(sampleBucketCounts, "SampleId", "ActualCount", 2:gatherIndex)
+  sampleBucketFit2 = gather(sampleBucketFit, "SampleId", "FitCount", 2:gatherIndex)
+
+  sampleBucketFitVsActuals = merge(sampleBucketCounts2, sampleBucketFit2, by=c("SampleId","Bucket"), all=T)
+
+  sampleBucketFitVsActuals$ResidualExcess = ifelse(sampleBucketFitVsActuals$FitCount > sampleBucketFitVsActuals$ActualCount, sampleBucketFitVsActuals$FitCount - sampleBucketFitVsActuals$ActualCount, 0)
+  sampleBucketFitVsActuals$ResidualUnalloc = ifelse(sampleBucketFitVsActuals$ActualCount > sampleBucketFitVsActuals$FitCount, sampleBucketFitVsActuals$ActualCount - sampleBucketFitVsActuals$FitCount, 0)
+  sampleBucketFitVsActuals$ResidualDiff = abs(sampleBucketFitVsActuals$ActualCount-sampleBucketFitVsActuals$FitCount)
+
+  sampleResidualData = (sampleBucketFitVsActuals %>% group_by(SampleId)
+                        %>% summarise(ActualCount=sum(ActualCount),
+                                      FitCount=sum(FitCount),
+                                      ResidualTotal=round(sum(ResidualDiff),2),
+                                      ExcessCount=round(sum(ResidualExcess),2),
+                                      UnallocCount=round(sum(ResidualUnalloc),2),
+                                      ResidualPerc=round(sum(ResidualDiff)/sum(ActualCount),2)))
+
+  sampleResidualData$ResidualTotalManual = sampleResidualData$ActualCount - sampleResidualData$FitCount
+
+  return (sampleResidualData)
+}
+
 
 get_sig_stats<-function(sampleSigData) {
 
@@ -360,27 +401,33 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     }
 
     # only plot 50 samples at a time
-    numSamples = n_distinct(cancerSampleSigData$SampleId)
+    numSamples = nrow(cancerSampleData)
     numSigs = n_distinct(cancerSampleSigData$SigName)
     samplesPerPlot = 50
     rowsPerPlot = samplesPerPlot * numSigs
     # plotCount = ceiling(numSamples/samplesPerPlot)
 
     rowEnd = 0
+    sampleEnd = 0
     maxRows = nrow(cancerSampleSigData)
     plotCount = 0
 
-    # print(paste("cancer=", cancerType, ", numSamples=", numSamples, ", numSigs=", numSigs, ", maxRows=", maxRows, ", logTopN=", logTopNSamples, sep=''))
+    print(paste("cancer=", cancerType, ", numSamples=", numSamples, ", maxRows=", maxRows, ", logTopN=", logTopNSamples, sep=''))
 
-    while(rowEnd < maxRows)
+    # while(rowEnd < maxRows)
+    while(sampleEnd < numSamples)
     {
       if(plotCount == 0 & logTopNSamples)
       {
+        sampleStart = 1
+        sampleEnd = sampleStart + topNIndex - 1
         rowStart = 1
         rowEnd = min(rowStart + topNIndex*numSigs - 1, maxRows)
       }
       else
       {
+        sampleStart = sampleEnd + 1
+        sampleEnd = sampleStart + samplesPerPlot - 1
         rowStart = rowEnd + 1
         rowEnd = min(rowStart + rowsPerPlot - 1, maxRows)
 
@@ -390,8 +437,16 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
           # print(paste(plotCount, ": cancer=", cancerType, ", rowEnd=", rowEnd, " close to maxRows=", maxRows, sep=''))
           rowEnd = maxRows
         }
+
+        if(sampleEnd < numSamples & numSamples - sampleEnd <= samplesPerPlot * 0.4)
+        {
+          sampleEnd = numSamples
+        }
       }
 
+      plotSampleSet = cancerSampleData[sampleStart:sampleEnd,]
+
+      print(paste("plotCount= ", plotCount, ", sampleStart=", sampleStart, ", sampleEnd=", sampleEnd, sep=''))
       # print(paste("plotCount= ", plotCount, ", rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
 
       if(cancerType == "")
@@ -403,7 +458,9 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
         title = paste("Sig Counts by Sample for ", cancerType, sep="")
       }
 
-      sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
+      plotDataSet = cancerSampleSigData %>% filter(SampleId %in% plotSampleSet$SampleId)
+      sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
+      # sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
       #sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = SampleId, y = Count, fill = SigName))
                         + geom_bar(stat = "identity", colour = "black")
                         + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
@@ -462,11 +519,9 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
   for(sigName in sigNames)
   {
     topNSamplesBySig = head(sampleSigData %>% filter(SigName==sigName&Count>0) %>% arrange(-Count),topN)
-    # View(topNSamplesBySig)
 
     # now grab all sig data for these top-N samples
     topNSampleSigData = sampleSigData %>% filter(SampleId %in% topNSamplesBySig$SampleId)
-    # View(top30SampleSigData)
 
     title = paste("Top Samples for Signature ", sigName, sep="")
 
@@ -506,7 +561,88 @@ plot_top_n_samples_by_sig<-function(sampleSigData, sigNames, topN = 50, sigColou
   }
 }
 
-library("pracma")
+plot_ratio_range_distribution<-function(ratioRangeData, bgId, freq, minRatioPerc = 0.05, minRatioSeg = 0)
+{
+  colCount = ncol(ratioRangeData)
+  freqColStart = colCount - 100 + 1
+  weightColEnd = freqColStart -1
+  weightColStart = weightColEnd - 100 + 1
+
+  bgRRData = ratioRangeData %>% filter(BgId==bgId)
+  maxRatio = max(bgRRData$SigRatio)
+  bgRRData = bgRRData %>% filter(SigRatio >= maxRatio * minRatioPerc)
+
+  freqData = bgRRData[,freqColStart:colCount]
+  weightData = bgRRData[,weightColStart:weightColEnd]
+  xAxisValues = colnames(weightData)
+  # print(xAxisValues)
+  ratioSegmentNames = stri_replace_all_fixed(xAxisValues,'SW','')
+  ratioSegments = as.numeric(ratioSegmentNames)
+
+  # print(ratioSegmentNames)
+
+  if(freq)
+  {
+    rrData = freqData
+  }
+  else
+  {
+    rrData = weightData
+  }
+
+  colnames(rrData) = ratioSegments
+
+  rrDataTrans = as.data.frame(t(rrData))
+  colnames(rrDataTrans) = bgRRData$Bucket
+  rrDataTrans = cbind(ratioSegments, rrDataTrans)
+  rownames(rrDataTrans) = NULL
+
+  gatherIndex = ncol(rrDataTrans)
+  rrDataTrans2 = gather(rrDataTrans, "Bucket", "Weight", 2:gatherIndex)
+  colnames(rrDataTrans2) = c("RatioSegment", "Bucket", "Weight")
+
+  rrDataTrans2 = rrDataTrans2 %>% filter(RatioSegment >= minRatioSeg)
+
+  if(freq)
+    label = "Count"
+  else
+    label = "Weight"
+
+  maxPlotsPerPage = 20
+
+  bucketList = rrDataTrans2 %>% group_by(Bucket) %>% count() %>% arrange(Bucket)
+  bucketCount = nrow(bucketList)
+  bucketPlotsPerPage = 20
+
+  startBucketIndex = 1
+  pageCount = 1
+
+  while(startBucketIndex <= bucketCount)
+  {
+    endBucketIndex = startBucketIndex + bucketPlotsPerPage - 1
+    bucketPlotList = bucketList[startBucketIndex:endBucketIndex, ]
+
+    print(paste("pageCount=", pageCount, ", bucketCount=", bucketCount, ", start=", startBucketIndex, ", end=", endBucketIndex, sep=''))
+
+    plotData = rrDataTrans2 %>% filter(Bucket %in% bucketPlotList$Bucket)
+    maxWeight = max(plotData$Weight)
+
+    rrPlot = (ggplot(data = plotData, aes(x=RatioSegment, y=Weight))
+              + geom_line(aes(group=Bucket, colour=Bucket))
+              + facet_wrap( ~ Bucket, ncol=3)
+              + coord_cartesian(ylim = c(0, maxWeight * 1.25))
+              + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+              + labs(title=paste("Group ", bgId, ": sample Ratios by ", label, sep=''), x="Ratio Segment", y=label, fill="Bucket"))
+
+    print(rrPlot)
+
+    startBucketIndex = endBucketIndex + 1
+    pageCount = pageCount + 1
+  }
+
+  # return (rrPlot)
+}
+
 
 calc_lsqnonneg<-function(C, d)
 {

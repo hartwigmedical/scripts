@@ -1,0 +1,21 @@
+#!/bin/bash
+
+SUBMISSIONS=("$@")
+JSON=/data/lims/submissions.json
+
+if [ "$#" -eq 0 ]; then
+  SUBMISSIONS=( $( cat $JSON | jq -r 'keys[]' | sort -r | head -20 ) )
+fi
+
+for submission in "${SUBMISSIONS[@]}"; do 
+  MAINKEY=".${submission}"
+  mail=$( cat ${JSON} | jq -r "${MAINKEY}.contact_email" )
+  name=$( cat ${JSON} | jq -r "${MAINKEY}.contact_name" )
+  subm=$( cat ${JSON} | jq -r "${MAINKEY}.submission" )
+  pNam=$( cat ${JSON} | jq -r "${MAINKEY}.project_name" )
+  enti='CHECK@SBP!!!'
+  pTyp=$( cat ${JSON} | jq -r "${MAINKEY}.project_type" )
+  aTyp=$( cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
+  amnt=$( cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$ptyp" "$enti" "$aTyp" "$amnt"
+done
