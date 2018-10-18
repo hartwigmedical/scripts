@@ -5,7 +5,6 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-
 mkdir "/data/experiments/hrd_classifier_evaluation/output/${sample}"
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
@@ -35,5 +34,5 @@ fi
 cd "/data/experiments/hrd_classifier_evaluation/output/${sample}/"
 extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample}
 
-sampleFile=sample.txt
-predictHRDsample.R ${sampleFile}
+sample_mut_signatures=sample_mut_signatures.txt
+predictHRDsample.R ${sample_mut_signatures}
