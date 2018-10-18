@@ -83,7 +83,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  filtered = .addFilter(filtered, "BPI.Filter.SRSupportZero", isShort & .genosum(g$SR,c(normalOrdinal, tumourOrdinal)) == 0)
 
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
-	  #filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
+	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -512,7 +512,7 @@ transitive_breakpoints <- function(
       min_traversed < transitive_call_slop & max_traversed > -transitive_call_slop &
       find_transitive_for[queryHits] & can_traverse_through[subjectHits])
 
-  result_df = data.frame(transitive=character(), bp_path=character(), min_length=integer(), max_length=integer())
+  result_df = data.frame(transitive_start=character(), transitive_end=character(), bp_path=character(), min_length=integer(), max_length=integer())
   # start with the first traversal away from the putative transitive call
   active_df = terminal_df %>%
     mutate(

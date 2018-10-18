@@ -2,8 +2,6 @@
 #
 # Filters a raw GRIDSS VCF to high quality somatic calls
 #
-library(tidyverse)
-library(readr)
 library(stringr)
 usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF>"
 args = commandArgs(TRUE)
@@ -26,6 +24,11 @@ pon_dir = args[1]
 input_vcf = args[2]
 output_vcf = args[3]
 output_full_vcf = args[4]
+if (pon_dir == "") {
+  pon_dir = NULL
+}
+library(tidyverse)
+library(readr)
 source("libgridss.R")
 
 # Filter to somatic calls
