@@ -451,3 +451,36 @@ z = reduce(z)
 export(z, con="CPCT02010503T.spanning.bed", format="bed")
 ```
 
+
+# Somatic retrocopied genes
+
+```{r}
+require(TxDb.Hsapiens.UCSC.hg19.knownGene)
+txdb = TxDb.Hsapiens.UCSC.hg19.knownGene
+
+exongr = exons(txdb)
+seqlevelsStyle(exongr) = "NCBI"
+hitsgr = svgr[
+  countOverlaps(svgr, exongr, maxgap=5, type="start") > 0 | 
+  countOverlaps(svgr, exongr, maxgap=5, type="end") > 0]
+hitsgr = hitsgr[hitsgr$partner %in% names(hitsgr)]
+
+
+```
+
+
+# eqv links
+
+```{r}
+eqv_linked = unique(c(
+  gridss_links %>% filter(str_detect(linkedBy, "eqv")) %>% pull(beid1),
+  gridss_links %>% filter(str_detect(linkedBy, "eqv")) %>% pull(beid2)))
+
+ggplot(as.data.frame(svgr[eqv_linked])) +
+  aes(x=start) +
+  geom_histogram(bins=100) + 
+  facet_wrap(~ seqnames)
+```
+
+
+
