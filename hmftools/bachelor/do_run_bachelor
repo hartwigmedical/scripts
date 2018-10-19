@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 
 run_dir=$1 && shift
