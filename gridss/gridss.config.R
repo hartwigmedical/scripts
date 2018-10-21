@@ -31,3 +31,7 @@ gridss.templatedinsertion.maxgap=10000
 gridss.very_hard_filters = c("normalSupport", "SRNormalSupport")
 # These are included in the final VCF
 gridss.soft_filters = c("PON")
+
+# rescue limits
+# fragments supporting rescued variant / fragments supporting rescuing variant
+gridss.min_rescue_portion = 0.333

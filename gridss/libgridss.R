@@ -1088,8 +1088,8 @@ get_partner_anchor_sequence = function(gr, anchor_length, genome=BSgenome.Hsapie
   isbp = !is.na(gr$partner)
   partnergr = partner(gr[isbp])
   anchor_gr = GRanges(seqnames=seqnames(partnergr), ranges=IRanges(
-    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length + 1, start(partnergr)),
-    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length - 1)),
+    start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length[isbp] + 1, start(partnergr)),
+    end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length[isbp] - 1)),
     strand=ifelse(strand(partnergr)=="+", "-", "+"))
   seqlevelsStyle(anchor_gr) = "UCSC"
   seq[isbp] = getSeq(genome, anchor_gr, as.character=TRUE)

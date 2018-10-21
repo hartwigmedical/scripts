@@ -158,12 +158,12 @@ event_link_df = bind_rows(
   dsb_link_df) %>%
   dplyr::select(vcfId, linked_by) %>%
   mutate(QUAL=rowRanges(vcf)[vcfId]$QUAL) %>%
+  group_by(linked_by) %>%
   # filter events where supporting fragment counts differ by too much
   mutate(
     max_supporting_fragment_count = max(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
     min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF))) %>%
-  filter(
-    max_supporting_fragment_count > gridss.min_rescue_portion * max_supporting_fragment_count)
+  filter(max_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count)
 
 # Only keep the best QUAL event linkage
 event_link_df = event_link_df %>%
