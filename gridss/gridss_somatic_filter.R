@@ -1,57 +1,58 @@
 #!/usr/bin/env Rscript
-#
-# Filters a raw GRIDSS VCF to high quality somatic calls
-#
-library(stringr)
-usage = "Usage: Rscript gridss_somatic_filter.R <pon directory> <input VCF> <output QUAL filter VCF> <output full somatic VCF>"
-args = commandArgs(TRUE)
-if (str_detect(args[1], "gridss_somatic_filter")) {
-  args = args[-1]
+library(argparser)
+argp = arg_parser("Filters a raw GRIDSS VCF into somatic call subsets.")
+argp = add_argument(argp, "--pondir", default=NA, help="Directory containing Panel Of Normal bed/bedpe used to filter FP somatic events. USer create_gridss_pon.R to generate the PON.")
+argp = add_argument(argp, "--ref", default="BSgenome.Hsapiens.UCSC.hg19", help="Reference genome to use. Must be a valid installed BSgenome package")
+argp = add_argument(argp, "--input", help="GRIDSS VCF")
+argp = add_argument(argp, "--output", help="High confidence somatic subset")
+argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviously germline call.")
+argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
+argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
+argv = parse_args(argp)
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829hg38.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg38", "-p", "D:/hartwig/pon"))
+
+if (!file.exists(argv$input)) {
+  msg = paste(argv$input, "not found")
+  write(msg, stderr())
+  print(argp)
+  stop(msg)
 }
-if (length(args) != 4) {
-  write(usage, stderr())
-  q(save="no", status=1)
+if (is.na(argv$pondir)) {
+  argv$pondir = NULL
+} else if (!dir.exists(argv$pondir)) {
+  msg = paste(argv$pondir, "not found")
+  write(msg, stderr())
+  print(argp)
+  stop(msg)
 }
-if (!file.exists(args[1])) {
-  write(paste(args[1], "not found"), stderr())
-  q(save="no", status=1)
-}
-if (!file.exists(args[2])) {
-  write(paste(args[2], "not found"), stderr())
-  q(save="no", status=1)
-}
-pon_dir = args[1]
-input_vcf = args[2]
-output_vcf = args[3]
-output_full_vcf = args[4]
-if (pon_dir == "") {
-  pon_dir = NULL
-}
+refgenome=eval(parse(text=paste0("library(", argv$ref, ")\n", argv$ref)))
+
 library(tidyverse)
 library(readr)
+library(stringr)
 source("libgridss.R")
 
 # Filter to somatic calls
-write(paste0("Reading ", input_vcf), stderr())
-full_vcf = readVcf(input_vcf, "hg19")
+write(paste0("Reading ", argv$input), stderr())
+full_vcf = readVcf(argv$input, "hg19")
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
 full_vcf = align_breakpoints(full_vcf)
-write(paste0("Parsing SVs in ", input_vcf), stderr())
+write(paste0("Parsing SVs in ", argv$input), stderr())
 full_bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 full_begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
-write(paste0("Calculating VAF ", input_vcf), stderr())
-full_bpgr$af = gridss_somatic_bp_af(full_bpgr, full_vcf)
+write(paste0("Calculating VAF ", argv$input), stderr())
+full_bpgr$af = gridss_bp_af(full_bpgr, full_vcf, argv$tumourordinal)
 full_bpgr$af_str = paste(full_bpgr$af, partner(full_bpgr)$af, sep=",")
-full_begr$af = gridss_somatic_be_af(full_begr, full_vcf)
+full_begr$af = gridss_be_af(full_begr, full_vcf, argv$tumourordinal)
 full_begr$af_str = as.character(full_begr$af)
 info(full_vcf)$BPI_AF = ""
 info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
 info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
 
-write(paste0("Filtering pass 1 ", input_vcf), stderr())
-bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=pon_dir)
-befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=pon_dir)
+write(paste0("Filtering pass 1 ", argv$input), stderr())
+bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=argv$tumourordinal)
+befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=argv$tumourordinal)
 # shadow breakpoint removed due to initial mapq20 filter reducing FP rate
 # bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
 
@@ -71,7 +72,7 @@ vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
 bpgr = full_bpgr[names(full_bpgr) %in% names(vcf)]
 begr = full_begr[names(full_begr) %in% names(vcf)]
 
-write(paste0("Calculating transitive links", input_vcf), stderr())
+write(paste0("Calculating transitive links", argv$input), stderr())
 # transitive calling
 transitive_df = transitive_calls(vcf, bpgr, report="max2") %>%
   # only make transitive calls were we actually know the path
@@ -89,7 +90,7 @@ vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
 bpgr = full_bpgr[names(full_bpgr) %in% names(vcf)]
 begr = full_begr[names(full_begr) %in% names(vcf)]
 
-write(paste0("Calculating assembly links ", input_vcf), stderr())
+write(paste0("Calculating assembly links ", argv$input), stderr())
 # Assembly-based event linking
 asm_linked_df = linked_assemblies(vcf) %>%
   mutate(type="asm")
@@ -102,7 +103,7 @@ link_df = bind_rows(asm_linked_df, transitive_df) %>%
   ungroup() %>%
   filter(pass)
 
-write(paste0("Calculating bebe insertion links ", input_vcf), stderr())
+write(paste0("Calculating bebe insertion links ", argv$input), stderr())
 # Insertion linkage
 bebeins_link_df = linked_by_breakend_breakend_insertion_classification(begr) %>%
   group_by(linked_by) %>%
@@ -111,7 +112,7 @@ bebeins_link_df = linked_by_breakend_breakend_insertion_classification(begr) %>%
   ungroup() %>%
   filter(pass) %>%
   mutate(type="bebeins")
-write(paste0("Calculating bebp insertion links ", input_vcf), stderr())
+write(paste0("Calculating bebp insertion links ", argv$input), stderr())
 bebpins_link_df = linked_by_breakpoint_breakend_insertion_classification(bpgr, begr) %>%
   group_by(linked_by) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
@@ -120,7 +121,7 @@ bebpins_link_df = linked_by_breakpoint_breakend_insertion_classification(bpgr, b
   filter(pass) %>%
   mutate(type="bebpins")
 # Inversion linkage
-write(paste0("Calculating simple inversions ", input_vcf), stderr())
+write(paste0("Calculating simple inversions ", argv$input), stderr())
 inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
   group_by(linked_by) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
@@ -137,7 +138,7 @@ inv_link_df = linked_by_simple_inversion_classification(bpgr) %>%
 # Given the focal nature of chromoplexy, ChainFinder works because it just
 # finds the focal events, not because the model is correct.
 # TODO: show this by modelling additional focal DSBs
-write(paste0("Calculating dsb links ", input_vcf), stderr())
+write(paste0("Calculating dsb links ", argv$input), stderr())
 dsb_link_df = linked_by_dsb(bpgr) %>%
   group_by(linked_by) %>%
   mutate(pass=passes_final_filters(vcf[vcfId])) %>%
@@ -146,7 +147,7 @@ dsb_link_df = linked_by_dsb(bpgr) %>%
   filter(pass) %>%
   mutate(type="dsb")
 
-write(paste0("Removing duplicated/conflicting links ", input_vcf), stderr())
+write(paste0("Removing duplicated/conflicting links ", argv$input), stderr())
 # linking priorities:
 # - asm independent of other linkages
 # - transitive independent of other linkages
@@ -187,7 +188,7 @@ link_rescue = c(link_rescue, bpgr[link_rescue[link_rescue %in% names(bpgr)]]$par
 
 # Note that we don't rescue equivalent events
 begr$partner = NA
-eqv_link_df = linked_by_equivalent_variants(full_vcf, as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges")) %>%
+eqv_link_df = linked_by_equivalent_variants(full_vcf, as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges"), bsgenome=refgenome) %>%
   filter(passes_final_filters(vcf[vcfId]) | vcfId %in% link_rescue) %>%
   group_by(linked_by) %>%
   filter(n() == 2) %>%
@@ -212,16 +213,18 @@ filters[names(full_vcf)[fails_qual_without_rescue]] = paste0(filters[names(full_
 # Write outputs
 VariantAnnotation::fixed(full_vcf)$FILTER = ifelse(str_remove(filters, "^;") == "", "PASS", str_remove(filters, "^;"))
 
-write(paste0("Writing ", output_vcf), stderr())
-vcf = full_vcf[passes_soft_filters(filters)]
-vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
-writeVcf(vcf, output_vcf, index=TRUE)
-
-write(paste0("Writing ", output_full_vcf), stderr())
-vcf = full_vcf[passes_very_hard_filters(filters)]
-vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
-writeVcf(vcf, output_full_vcf, index=TRUE)
-
+if (!is.na(argv$output)) {
+  write(paste0("Writing ", argv$output), stderr())
+  vcf = full_vcf[passes_soft_filters(filters)]
+  vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
+  writeVcf(vcf, argv$output, index=TRUE)
+}
+if (!is.na(argv$fulloutput)) {
+  write(paste0("Writing ", argv$fulloutput), stderr())
+  vcf = full_vcf[passes_very_hard_filters(filters)]
+  vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
+  writeVcf(vcf, argv$fulloutput, index=TRUE)
+}
 
 
 

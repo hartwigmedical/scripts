@@ -44,7 +44,7 @@ gridss_overlaps_breakend_pon = function(gr,
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
+gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -69,7 +69,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 	  #filtered = .addFilter(filtered, "FlankingHighQualIndel", str_detect(gridss_gr$FILTER, "SINGLE_ASSEMBLY") & (i$RP + i$SR) / i%VF < 0.1 & i$RP >= 2 & i$SR >= 2 # fixed in GRIDSSv1.8.0
 	}
 	if (min_support_filters) {
-	  filtered = .addFilter(filtered, "af", gridss_somatic_bp_af(gr, vcf) < gridss.min_af)
+	  filtered = .addFilter(filtered, "af", gridss_bp_af(gr, vcf, tumourOrdinal) < gridss.min_af)
 	  # Multiple biopsy concordance indicates that assemblies with very few supporting reads are sus
 	  #filtered = .addFilter(filtered, "minRead", .genosum(g$RP,c(normalOrdinal, tumourOrdinal)) + .genosum(g$SR, c(normalOrdinal, tumourOrdinal)) < gridss.min_direct_read_support)
 	  #filtered = .addFilter(filtered, "unanchored", i$ASSR + i$SR + i$IC == 0)
@@ -97,7 +97,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal=1, tumourOrdinal=2, pon_dir=NULL) {
+gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
   vcf = vcf[names(gr)]
   i = info(vcf)
   g = geno(vcf)
@@ -106,7 +106,7 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
     filtered = .addFilter(filtered, "PON", gridss_overlaps_breakend_pon(gr, pon_dir))
   }
   if (min_support_filters) {
-    filtered = .addFilter(filtered, "af", gridss_somatic_be_af(gr, vcf) < gridss.min_af)
+    filtered = .addFilter(filtered, "af", gridss_be_af(gr, vcf, tumourOrdinal) < gridss.min_af)
     filtered = .addFilter(filtered, "imprecise", i$IMPRECISE)
     filtered = .addFilter(filtered, "NO_ASSEMBLY", str_detect(gr$FILTER, "NO_ASSEMBLY"))
     # require direct read support as well
@@ -210,21 +210,16 @@ is_short_event = function(gr) {
   seqnames(gr) == seqnames(partner(gr)) &
     abs(start(gr)-start(partner(gr))) < gridss.short_event_size_threshold
 }
-gridss_bp_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, !is_short_deldup(gr), includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE))
+gridss_bp_af = function(gr, vcf, ordinal) {
+  return(.gridss_af(gr, vcf, ordinal, !is_short_deldup(gr), includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE))
 }
-gridss_somatic_bp_af = function(gr, vcf) {
-	return(gridss_bp_af(gr, vcf, 2))
+gridss_be_af = function(gr, vcf, ordinal) {
+  return(.gridss_af(gr, vcf, ordinal, includeRefPair=rep(TRUE, length(gr)), includeBreakpointSupport=FALSE, includeBreakendSupport=TRUE))
 }
-gridss_be_af = function(gr, vcf, i=c(1)) {
-  return(.gridss_af(gr, vcf, i, TRUE, includeBreakpointSupport=FALSE, includeBreakendSupport=TRUE))
-}
-gridss_somatic_be_af = function(gr, vcf) {
-  return(gridss_be_af(gr, vcf, 2))
-}
-.gridss_af = function(gr, vcf, i, includeRefPair, no_coverage_af=0, includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE) {
+.gridss_af = function(gr, vcf, ordinal, includeRefPair, no_coverage_af=0, includeBreakpointSupport=TRUE, includeBreakendSupport=FALSE) {
+  assertthat::are_equal(length(gr), length(includeRefPair))
   genotype = geno(vcf[names(gr)])
-  g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], i) } else { genotype[[field]] } })
+  g = lapply(names(genotype), function(field) { if (is.numeric(genotype[[field]])) { .genosum(genotype[[field]], ordinal) } else { genotype[[field]] } })
   names(g) <- names(genotype)
   support = rep(0, length(gr))
   if (includeBreakpointSupport) {
@@ -863,7 +858,7 @@ transitive_calls = function(vcf, bpgr,
 #' this should be set to the tumour variant allele frequency multiplied by the
 #' copy number ratio of the tumour and normal.
 #' @param normal_ploidy Expected normal ploidy.
-gridss_breakpoint_somatic_llr = function(vcf, normalOrdinal=1, tumourOrdinal=2, contamination_rate, normal_ploidy = 2, bpgr=breakpointRanges(vcf)) {
+gridss_breakpoint_somatic_llr = function(vcf, normalOrdinal, tumourOrdinal, contamination_rate, normal_ploidy = 2, bpgr=breakpointRanges(vcf)) {
   g = geno(vcf)
   df = data.frame(
     is_bp = names(vcf) %in% names(bpgr),
@@ -1023,12 +1018,12 @@ linked_by_different_foldback_inversion_paths = function(gr, max_inversion_length
       invEditDistance=stringdist(spanningSeq, foldbackInvertedSeq, method="lv"))
   return(hitdf)
 }
-sequence_common_prefix = function(gr, anchor_bases, ...) {
+sequence_common_prefix = function(gr, anchor_bases, bsgenome, ...) {
   if (is.null(gr$sampleId)) {
     gr$sampleId = rep("placeholder", length(gr))
   }
   insSeq = .insSeq(gr)
-  anchor_sequence = get_partner_anchor_sequence(gr, anchor_bases)
+  anchor_sequence = get_partner_anchor_sequence(gr, anchor_bases, bsgenome)
   hitdf = findOverlaps(gr, gr, ...) %>%
     as.data.frame() %>%
     filter(
@@ -1082,17 +1077,22 @@ sequence_common_prefix = function(gr, anchor_bases, ...) {
 }
 #' Returns the sequence encountered at the other side of a breakpoint when traversing
 #' across it.
-get_partner_anchor_sequence = function(gr, anchor_length, genome=BSgenome.Hsapiens.UCSC.hg19) {
+get_partner_anchor_sequence = function(gr, anchor_length, bsgenome) {
   seq = rep("", length(gr))
   names(seq) = names(gr)
+  seqlevelsStyle(gr) = "UCSC"
+  in_ref = seqnames(gr) %in% seqnames(bsgenome)
+  if(any(!in_ref)) {
+    msg = paste("Ignoring contigs not in reference genome: ", paste0(unique(seqnames(gr)[!in_ref])), collapse = " ")
+    warning(msg)
+  }
   isbp = !is.na(gr$partner)
   partnergr = partner(gr[isbp])
   anchor_gr = GRanges(seqnames=seqnames(partnergr), ranges=IRanges(
     start=ifelse(strand(partnergr)=="+", start(partnergr) - anchor_length[isbp] + 1, start(partnergr)),
     end=ifelse(strand(partnergr)=="+", end(partnergr), end(partnergr) + anchor_length[isbp] - 1)),
     strand=ifelse(strand(partnergr)=="+", "-", "+"))
-  seqlevelsStyle(anchor_gr) = "UCSC"
-  seq[isbp] = getSeq(genome, anchor_gr, as.character=TRUE)
+  seq[isbp & as.logical(in_ref)] = getSeq(bsgenome, anchor_gr[seqnames(anchor_gr) %in% seqnames(bsgenome)], as.character=TRUE)
   return(seq)
 }
 get_anchor_support_width = function(vcf, gr) {
@@ -1187,10 +1187,12 @@ linked_by_adjacency = function(
     hitdf %>% mutate(sampleId=bpgr$sampleId[subjectHits], beid=bpgr$beid[subjectHits], vcfId=names(bpgr)[subjectHits]) %>% dplyr::select(sampleId, beid, vcfId, linked_by)) %>%
     distinct())
 }
-linked_by_equivalent_variants = function(vcf, gr, min_anchor_bases=20, max_per_base_edit_distance=0.1) {
+#'
+#' @param bsgenome BSGenome reference genome used in the VCF
+linked_by_equivalent_variants = function(vcf, gr, min_anchor_bases=20, max_per_base_edit_distance=0.1, bsgenome) {
   # go as far as we have support on the other side for when comparing
   anchor_bases = pmax(min_anchor_bases, get_partner_anchor_support_width(vcf, gr))
-  similar_calls_df = sequence_common_prefix(gr, anchor_bases=anchor_bases, maxgap=5) %>%
+  similar_calls_df = sequence_common_prefix(gr, anchor_bases=anchor_bases, maxgap=5, bsgenome) %>%
     filter(per_base_edit_distance <= max_per_base_edit_distance) %>%
     dplyr::select(svcfId, qvcfId) %>%
     mutate(linked_by=paste0("eqv", row_number())) %>%
