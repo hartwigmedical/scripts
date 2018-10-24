@@ -38,5 +38,5 @@ fi
 # KODU: Below creates "sample_mut_signatures.txt in the working_dir that is passed.
 extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample} ${working_dir}
 
-sample_mut_signatures=$sample + "_sample_mut_signatures.txt"
+sample_mut_signatures="_sample_mut_signatures.txt"
 predictHRDsample.R ${working_dir} ${sample_mut_signatures} ${sample}
