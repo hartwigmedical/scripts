@@ -17,4 +17,4 @@ cutoff <- 0.5
 
 pred$predicted_response <- as.integer(pred$hrd >= cutoff)
 
-write.table(pred, 'chord_prediction.txt', sep = '\t', quote = F)
+write.table(pred, file = paste(args[3], 'chord_prediction.txt', sep = ""), sep = '\t', quote = F)

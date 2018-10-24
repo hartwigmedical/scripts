@@ -36,4 +36,4 @@ fi
 extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample} ${working_dir}
 
 sample_mut_signatures=sample_mut_signatures.txt
-predictHRDsample.R ${working_dir} ${sample_mut_signatures}
+predictHRDsample.R ${working_dir} ${sample_mut_signatures} ${sample}
