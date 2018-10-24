@@ -2,7 +2,7 @@
 library(randomForest)
 args <- commandArgs(TRUE)
 
-base_dir <- '/data/experiments/hrd_classifier_evaluation/hrdetect_v2/'
+base_dir <- '/data/common/tools/chord_v0.1/'
 setwd(args[1])
 hmf_patients_mut_sigs <- read.table(args[2])
 
