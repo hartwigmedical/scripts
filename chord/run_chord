@@ -5,7 +5,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-working_dir="/data/experiments/hrd_classifier_evaluation/output/${sample}/"
+working_dir="/data/cpct/runs/${rundir}/chord/"
 mkdir -p ${working_dir}
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
