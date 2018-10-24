@@ -8,6 +8,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 working_dir="${run_dir}/chord/"
 mkdir -p ${working_dir}
 
+cd ${working_dir}
 touch "${sample}_chord_was_running.txt"
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
