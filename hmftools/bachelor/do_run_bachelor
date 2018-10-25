@@ -82,18 +82,15 @@ echo "[INFO] Post-processing germline variants"
 
 bach_data_file=${bach_output_dir}/bachelor_output.csv
 high_conf_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
-vcf_header=/data/common/dbs/bachelor/sample_bachelor_header.vcf
+purple_sub_dir=purple
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${bachelor_pp_jar} \
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -bach_input_file ${bach_data_file} \
-    -mpileup_dir ${bach_output_dir} \
+    -sample_path ${run_dir} \
+    -purple_data_dir ${purple_sub_dir} \
     -high_confidence_bed ${high_conf_bed} \
     -ref_genome ${ref_genome_file} \
     -write_to_db \
-    -write_vcf_file \
-    -vcf_header_file ${vcf_header} \
-    -data_output_path ${bach_output_dir} \
     -log_debug
