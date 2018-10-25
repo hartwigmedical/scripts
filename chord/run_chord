@@ -8,9 +8,6 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 working_dir="${run_dir}/chord/"
 mkdir -p ${working_dir}
 
-cd ${working_dir}
-touch "${sample}_chord_was_running.txt"
-
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
 if [ $? -ne 0 ]
 then
@@ -35,8 +32,8 @@ then
     fi
 fi
 
-# KODU: Below creates "sample_mut_signatures.txt in the working_dir that is passed.
-extractHRDsample.R ${somatic_vcf} ${structural_vcf} ${sample} ${working_dir}
+# KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
+extractHRDsample_test.R ${somatic_vcf} ${structural_vcf} ${sample} ${working_dir}
 
-sample_mut_signatures="_sample_mut_signatures.txt"
-predictHRDsample.R ${working_dir} ${sample_mut_signatures} ${sample}
+sample_mut_signatures="${sample}_sample_mut_signatures.txt"
+predictHRDsample_test.R ${working_dir} ${sample_mut_signatures} ${sample}

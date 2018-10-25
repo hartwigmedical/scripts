@@ -16,5 +16,5 @@ pred$hrd <- pred$BRCA1 + pred$BRCA2
 cutoff <- 0.5
 
 pred$predicted_response <- as.integer(pred$hrd >= cutoff)
-
-write.table(pred, '_chord_prediction.txt', sep = '\t', quote = F)
+fileName <- paste(args[3], "_chord_prediction.txt", sep = "")
+write.table(pred, fileName, sep = '\t', quote = F)
