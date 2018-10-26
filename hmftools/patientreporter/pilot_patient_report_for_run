@@ -19,6 +19,9 @@ fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
+# KODU: Add below command line option to enable germline reporting.
+# -do_report_germline \
+
 ${prefix}/pilot_do_run_base_patient_reporter \
     -knowledgebase_path ${knowledgebase_path} \
     -drup_genes_csv ${drup_genes_csv} \
@@ -31,6 +34,5 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
-    -do_report_germline \
     -high_confidence_bed ${high_confidence_bed} \
     -run_dir $@
