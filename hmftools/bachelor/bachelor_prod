@@ -5,6 +5,6 @@ run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/prod
 bachelor_jar=/data/common/tools/bachelor_v1.2/bachelor.jar
-bachelor_pp_jar=/data/common/tools/bachelor-pp_v1.1/bachelor-pp.jar
+bachelor_pp_jar=/data/common/tools/bachelor-pp_v1.2/bachelor-pp.jar
 
 ${prefix}/do_run_bachelor ${run_dir} ${credentials} ${bachelor_jar} ${bachelor_pp_jar} $@
