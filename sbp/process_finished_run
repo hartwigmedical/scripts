@@ -18,6 +18,9 @@ cp -r ${download_path}/${set} ${processed_path}/${set}
 echo "[INFO] Running latest purple for ${set}"
 do_run_purple_no_db ${processed_path}/${set}
 
+echo "[INFO] Running bachelor for ${set}"
+bachelor_prod ${processed_path}/${set}
+
 echo "[INFO] Loading purple into database for ${set}"
 do_load_purple_data_prod ${processed_path}/${set}
 
