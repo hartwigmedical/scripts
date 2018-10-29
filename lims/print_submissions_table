@@ -17,5 +17,5 @@ for submission in "${SUBMISSIONS[@]}"; do
   pTyp=$( cat ${JSON} | jq -r "${MAINKEY}.project_type" )
   aTyp=$( cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
   amnt=$( cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$ptyp" "$enti" "$aTyp" "$amnt"
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$pTyp" "$enti" "$aTyp" "$amnt"
 done
