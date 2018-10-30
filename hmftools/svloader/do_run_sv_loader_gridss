@@ -6,6 +6,8 @@ run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/gridss_test
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 structural_vcf=$(find -L ${run_dir}/purple/ -type f -name *.purple.sv.vcf.gz)
@@ -15,4 +17,4 @@ then
     exit 1
 fi
 
-${prefix}/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar} $@
+${prefix}/do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar} -ref_genome ${ref_genome} $@
