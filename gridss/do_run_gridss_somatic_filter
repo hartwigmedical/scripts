@@ -13,6 +13,7 @@ then
 fi
 
 output_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf
+full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf
 if [ -a ${output_vcf} ]
 then
     echo "Already processed gridss structural variants. Exiting."
@@ -22,10 +23,6 @@ fi
 unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
 gunzip -c ${original_vcf} > ${unzipped_vcf}
 
-Rscript ${prefix}/gridss_somatic_filter.R -p /data/experiments/gridss_full/pon/ -i ${unzipped_vcf} -o ${output_vcf} -f ${output_vcf}.full.vcf
+Rscript ${prefix}/gridss_somatic_filter.R -p /data/experiments/gridss_full/pon/ -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf}
 
-bgzip -c ${output_vcf} > ${output_vcf}.bgz
-bgzip -c ${output_vcf}.full.vcf > ${output_vcf}.full.vcf.bgz
-
-tabix -p vcf ${output_vcf}.bgz
-tabix -p vcf ${output_vcf}.full.vcf.bgz
+rm ${unzipped_vcf}
