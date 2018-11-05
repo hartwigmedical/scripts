@@ -40,7 +40,7 @@ then
 fi
 
 
-recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.somatic.vcf.full.vcf.bgz)
+recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.somatic.full.vcf.bgz)
 if [ -z ${recovery_vcf} ]
 then
     echo "Unable to locate gridss recovery vcf. Exiting."
