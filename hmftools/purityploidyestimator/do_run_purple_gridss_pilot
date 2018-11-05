@@ -30,6 +30,16 @@ then
     exit 1
 fi
 
+old_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.somatic.vcf.full.vcf.bgz)
+if [ -z ${old_recovery_vcf} ]
+then
+    new_recovery_vcf=$(dirname ${old_recovery_vcf})/$(basename -s .vcf.full.vcf.bgz ${old_recovery_vcf}).full.vcf.bgz
+    mv ${old_recovery_vcf} ${new_recovery_vcf}
+    rm ${old_recovery_vcf}.tbi
+    tabix -p vcf ${new_recovery_vcf}
+fi
+
+
 recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.somatic.vcf.full.vcf.bgz)
 if [ -z ${recovery_vcf} ]
 then
