@@ -14,7 +14,7 @@ fi
 
 output_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf
 full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf
-if [ -a ${output_vcf} ]
+if [ -a ${output_vcf}.bgz ]
 then
     echo "Already processed gridss structural variants. Exiting."
     exit 1
