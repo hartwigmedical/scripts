@@ -8,6 +8,9 @@ hotspot_bed=/data/experiments/181108_hotspot_caller/HotspotCaller.bed
 hotspot_tsv=/data/common/dbs/somatic_hotspot_v2/Hotspot.tsv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
+GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
+SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
+bcftools=/data/common/tools/bcftools_v1.3.1/bcftools
 
 sample=$1
 normal=${sample:0:12}R
@@ -44,11 +47,33 @@ if [ ! -f ${hotspot_vcf} ]; then
         -out ${hotspot_vcf}
 
     tabix -p vcf ${hotspot_vcf}
+
+    germline_vcf=${out_dir}/${sample}.germline.vcf.gz
+    ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${hotspot_vcf} -O z -o ${germline_vcf}
+    tabix -p vcf ${germline_vcf}
+
+    somatic_vcf=${out_dir}/${sample}.somatic.vcf.gz
+    ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${somatic_vcf}
+    tabix -p vcf ${somatic_vcf}
+
+    filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
+    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${somatic_vcf} z -O u | \
+    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O u | \
+    ${bcftools} filter -i 'FORMAT/AD[1:0] >= 2 && FORMAT/AD[0:0] = 0' -s LOW_CONFIDENCE  -m+ -O z -o ${filtered_vcf}
+
+    snpEff_vcf=${out_dir}/${sample}.snpEff.vcf
+    java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
+        -c "/data/common/tools/snpEff_v4.3s/snpEff.config" "GRCh37.75" \
+        -v ${filtered_vcf} \
+        -hgvs -lof -no-downstream -ud 1000 -no-intergenic -noShiftHgvs \
+        > ${snpEff_vcf}
+
+    rm ${hotspot_vcf}*
+    rm ${germline_vcf}*
+    rm ${somatic_vcf}*
+    rm ${filtered_vcf}*
+    mv ${snpEff_vcf} ${out_dir}/${sample}.hotspot.vcf
+    bgzip ${out_dir}/${sample}.hotspot.vcf
+    tabix -p vcf ${hotspot_vcf}
 fi
 
-
-#/data/common/tools/hotspotcaller_pilot
-#/data/common/repos/scripts/hmftools/bamslicer/bam_slicer DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015T.bam
-#/data/common/repos/scripts/hmftools/bamslicer/bam_slicer_normal DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015R.bam
-
-#/data/common/repos/scripts/hmftools/hotspot/do_run_hotspot_caller DRUP01030015T
