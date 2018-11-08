@@ -13,7 +13,6 @@ normal=${SAMPLE:0:12}R
 out_dir=/data/experiments/181108_hotspot_caller/${sample}
 mkdir -p ${out_dir}
 
-
 sample_bam=${out_dir}/${sample}.bam
 normal_bam=${out_dir}/${normal}.bam
 
@@ -23,9 +22,25 @@ normal_pileup=${out_dir}/${normal}.hotspot.pileup
 if [ ! -f ${sample_pileup} ]; then
     ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
     ${sambamba} mpileup -t 8 -L ${hotspot_bed} ${sample_bam} -o ${sample_pileup} --samtools "-q 1 -f ${ref_genome}"
+    rm ${sample_bam}
+    rm ${out_dir}/${sample}.bai
+fi
+
+if [ ! -f ${normal_pileup} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${hotspot_bed} ${normal_bam}
+    ${sambamba} mpileup -t 8 -L ${hotspot_bed} ${normal_bam} -o ${normal_pileup} --samtools "-q 1 -f ${ref_genome}"
+    rm ${normal_bam}
+    rm ${out_dir}/${normal}.bai
+fi
+
+hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
+if [ ! -f ${hotspot_vcf} ]; then
+
 fi
 
 
 #/data/common/tools/hotspotcaller_pilot
 #/data/common/repos/scripts/hmftools/bamslicer/bam_slicer DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015T.bam
 #/data/common/repos/scripts/hmftools/bamslicer/bam_slicer_normal DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015R.bam
+
+#/data/common/repos/scripts/hmftools/hotspot/do_run_hotspot_caller DRUP01030015T
