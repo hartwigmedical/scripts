@@ -379,7 +379,7 @@ sub parseLimsCPCT{
         fixDateFields( \%row_info );
         
         ## store info at uniqe id
-        next unless keyIsUnique( \%store, \%row_info, $unique );
+        next unless keyIsCorrectAndUnique( \%store, \%row_info, $unique );
         $store{ $unique } = \%row_info;
         
         ## store link between name and id in map for later use
@@ -413,7 +413,7 @@ sub parseLimsCPCT{
             }
             
             ## store info at unique id
-            next unless keyIsUnique( \%store, \%row_info, $unique );
+            next unless keyIsCorrectAndUnique( \%store, \%row_info, $unique );
             $store{ $unique } = \%row_info_copy;
         }
 
@@ -439,12 +439,16 @@ sub parseLimsCPCT{
     return \%store;
 }
 
-sub keyIsUnique{
-    my ($objectStore, $newObject, $key) = @_;
-    if ( exists $objectStore->{ $key } ){
+sub keyIsCorrectAndUnique{
+    my ($objectStore, $newObject, $key) = @_; 
+    if ( not $key =~ /^[a-zA-z0-9\-]+$/ ){
+        warn "[WARN] SKIPPING sample with key ($key): contains characters that are not allowed\n";
+        return 0;
+    }
+    elsif ( exists $objectStore->{ $key } ){
         my $obj1_name = $objectStore->{ $key }{ 'sample_name' };
         my $obj2_name = $newObject->{ 'sample_name' };
-        warn "[WARN] SKIPPING sample $obj2_name with unique key ($key) because key already exists for sample $obj1_name\n";
+        warn "[WARN] SKIPPING sample $obj2_name with unique key ($key): key already exists for sample $obj1_name\n";
         return 0;
     }
     else{
@@ -550,7 +554,7 @@ sub parseLimsRest{
         fixDateFields( \%row_info );
         
         ## store at uniqe id
-        next unless keyIsUnique( \%store, \%row_info, $unique );
+        next unless keyIsCorrectAndUnique( \%store, \%row_info, $unique );
         $store{ $unique } = \%row_info;
         
     }
