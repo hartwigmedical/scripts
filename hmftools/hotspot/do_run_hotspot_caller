@@ -40,7 +40,7 @@ if [ ! -f ${hotspot_vcf} ]; then
         -jar /data/common/tools/hotspotcaller_pilot/hotspot-caller.jar \
         -tumor ${sample} -tumor_pileup ${sample_pileup} \
         -reference ${normal} -reference_pileup ${normal_pileup} \
-        -hotspot ${hotspot_tsv}
+        -hotspot ${hotspot_tsv} \
         -out ${hotspot_vcf}
 fi
 
