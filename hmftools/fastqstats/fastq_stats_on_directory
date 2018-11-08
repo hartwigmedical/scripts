@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 fastq_dir=$1 && shift
-output_csv=$2 && shift
+output_csv=$1 && shift
 
 java -Xmx4G -jar /data/common/tools/fastq-stats_v1.1/fastq-stats.jar \
     -fastq_dir ${fastq_dir} \
