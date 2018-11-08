@@ -1,0 +1,31 @@
+#!/bin/bash
+prefix=`dirname $(readlink $0 || echo $0)`
+
+PATH=/data/common/tools/samtools_v1.2:$PATH
+export PATH
+
+hotspot_bed=/data/experiments/181108_hotspot_caller/HotspotCaller.bed
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
+
+sample=$1
+normal=${SAMPLE:0:12}R
+out_dir=/data/experiments/181108_hotspot_caller/${sample}
+mkdir -p ${out_dir}
+
+
+sample_bam=${out_dir}/${sample}.bam
+normal_bam=${out_dir}/${normal}.bam
+
+sample_pileup=${out_dir}/${sample}.hotspot.pileup
+normal_pileup=${out_dir}/${normal}.hotspot.pileup
+
+if [ ! -f ${sample_pileup} ]; then
+    ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
+    ${sambamba} mpileup -t 8 -L ${hotspot_bed} ${sample_bam} -o ${sample_pileup} --samtools "-q 1 -f ${ref_genome}"
+fi
+
+
+#/data/common/tools/hotspotcaller_pilot
+#/data/common/repos/scripts/hmftools/bamslicer/bam_slicer DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015T.bam
+#/data/common/repos/scripts/hmftools/bamslicer/bam_slicer_normal DRUP01030015T /home/jon/exons/GenePanelExonics.bed /home/jon/exons/DRUP01030015T/DRUP01030015R.bam
