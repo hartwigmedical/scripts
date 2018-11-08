@@ -1,7 +1,8 @@
 #!/bin/bash
 run=$1
-
 runRoot="/data1/illumina_data/"
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
 
 if [[ ! $run == "" ]]; then
     sheets="${run}/SampleSheet.csv"
@@ -19,15 +20,24 @@ for sheet in $sheets; do
         conversionLogFile=$runBase"/conversionLog.txt"
 	sampleSheetFile=$runBase"/SampleSheet.csv"
 	experimentName=$( cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
+	idx_id=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
+	idx_name=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
+	idx_proj=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1 )
+	idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
+	allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
 	
 	echo ""
-	#echo "# ----- HMFreg";
 	echo "# "$currHost;
 	echo "# [Rund] "$runBase;
 	echo "# [Samp] "$sampleSheetFile;
 	
 	## check cycle status
-	cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
+        if [[ ${experimentName} =~ ^NS ]]; then 
+		## Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
+		cycleCount=$( find $runBase/Data/Intensities/BaseCalls/L001/ -name "*bcl.bgzf" | wc -l )
+        else
+		cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
+	fi
 	echo "# [NOTE] CYCLE log count: $cycleCount"
 		
         ## check conversion status
@@ -52,8 +62,8 @@ for sheet in $sheets; do
 	fi
 
 	## print line that can be pasted directly into RunOverview sheet
-	echo -e "# $experimentName\t$runName\tseq\t$currHostShort";
+	echo -e "# $experimentName\t$runName\tseq\t$currHostShort\t$allProjects";
 
 	## print sample-id, sample_name, submission-id, description
-	cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f2,3,11,12 | sort | uniq
+	cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort | uniq
 done
