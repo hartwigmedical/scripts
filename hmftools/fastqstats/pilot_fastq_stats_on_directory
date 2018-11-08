@@ -6,4 +6,4 @@ output_csv=$1 && shift
 java -Xmx4G -jar /data/common/tools/fastq-stats_pilot/fastq-stats.jar \
     -fastq_dir ${fastq_dir} \
     -out ${output_csv} \
-    -threadCount 4#!/usr/bin/env bash
+    -threadCount 4
