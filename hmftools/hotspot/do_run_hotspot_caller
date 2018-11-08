@@ -10,7 +10,7 @@ ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
 GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
 SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
-bcftools=/data/common/tools/bcftools_v1.3.1/bcftools
+bcftools=/data/common/tools/bcftools_v1.9/bcftools
 
 sample=$1
 normal=${sample:0:12}R
@@ -52,12 +52,12 @@ if [ ! -f ${hotspot_vcf} ]; then
     ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${hotspot_vcf} -O z -o ${germline_vcf}
     tabix -p vcf ${germline_vcf}
 
-    somatic_vcf=${out_dir}/${sample}.somatic.vcf.gz
-    ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${somatic_vcf}
-    tabix -p vcf ${somatic_vcf}
+    pon_vcf=${out_dir}/${sample}.pon.vcf.gz
+    ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${pon_vcf}
+    tabix -p vcf ${pon_vcf}
 
     filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
-    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${somatic_vcf} z -O u | \
+    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${pon_vcf} z -O u | \
     ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O u | \
     ${bcftools} filter -i 'FORMAT/AD[1:0] >= 2 && FORMAT/AD[0:0] = 0' -s LOW_CONFIDENCE  -m+ -O z -o ${filtered_vcf}
 
@@ -70,7 +70,7 @@ if [ ! -f ${hotspot_vcf} ]; then
 
     rm ${hotspot_vcf}*
     rm ${germline_vcf}*
-    rm ${somatic_vcf}*
+    rm ${pon_vcf}*
     rm ${filtered_vcf}*
     mv ${snpEff_vcf} ${out_dir}/${sample}.hotspot.vcf
     bgzip ${out_dir}/${sample}.hotspot.vcf
