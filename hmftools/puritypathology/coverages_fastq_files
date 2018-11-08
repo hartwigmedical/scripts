@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-fastqDir=$1 && shift
-purity_pathology_jar=$1 && shift
-
-java -cp ${purity_pathology_jar} com.hartwig.hmftools.puritypatho.CoveragesFastqApplication \
-    -fastq_dir ${fastqDir}
