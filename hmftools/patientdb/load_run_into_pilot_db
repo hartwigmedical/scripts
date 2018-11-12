@@ -1,0 +1,17 @@
+#!/bin/bash
+
+run_dir=$1 && shift
+prefix=`dirname $(readlink $0 || echo $0)`
+
+echo "[INFO] Loading purple data"
+${prefix}/do_load_purple_data_pilot ${run_dir}
+
+echo "[INFO] Loading somatic variants"
+${prefix}/do_load_somatic_variants_pilot ${run_dir}
+
+echo "[INFO] Loading sv variants"
+${prefix}/../svloader/do_run_sv_loader_pilot ${run_dir}
+
+echo "[INFO] Loading metrics"
+${prefix}/do_load_metrics_data_pilot ${run_dir}
+
