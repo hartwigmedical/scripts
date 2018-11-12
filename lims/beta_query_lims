@@ -28,6 +28,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status )],
   'submissions' => [qw( submission project_name contact_name contact_email project_type analysis_type sample_count )],
   'unreported'  => [qw( sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date sbp_info )],
+  'dateTable'   => [qw( sample_name sampling_date arrival_date )],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
@@ -99,6 +100,10 @@ my $out_fields = $OUT_FIELDS_PER_TYPE{ $TYPE };
 if ( $TYPE eq 'unreported' ){
     my $samples = getUnreportedBiopsies( $lims, \%opt );
     printObjectInfo( $samples, $out_fields, 'lab_status', $opt{ json } );
+}
+elsif ( $TYPE eq 'dateTable' ){
+    my $samples = getCpctDrupDateTable( $lims, \%opt );
+    printObjectInfo( $samples, $out_fields, 'sample_name', $opt{ json } );
 }
 elsif( $TYPE eq 'samples' ){
     my $samples = filterSamples( $lims, \%opt );
@@ -225,6 +230,29 @@ sub printObjectInfo{
         }
     }
 }
+
+sub getCpctDrupDateTable{
+    my ($lims) = @_;
+    my @out_samples = ();
+    my $samples = $lims->{ 'samples' };
+    
+    foreach my $sample_id ( keys %{$samples} ){
+
+        my $sample = $samples->{ $sample_id };
+        my $sample_name = getValueByKey( $sample, 'sample_name' );
+        my $submission = getValueByKey( $sample, 'submission' );
+        
+        ## skip if not CPCT/DRUP production biopsy
+        next unless defined $sample->{'analysis_type'};
+        next unless $sample->{'analysis_type'} =~ /^(Somatic_T|Somatic_R)$/;
+        next unless defined $sample->{'submission'};
+        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        
+        push @out_samples, $sample;
+    }
+    return( \@out_samples );
+}
+
 
 sub getUnreportedBiopsies{
     my ($lims) = @_;
