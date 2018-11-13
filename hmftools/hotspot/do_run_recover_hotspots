@@ -14,9 +14,10 @@ ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 
 if [ ! -f ${output_vcf} ]; then
 
-    tmp1=${output_vcf}.tmp1.vcf.gz
-    ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O z -o ${tmp1}
-    tabix -p vcf ${tmp1}
+    tmp1=${output_vcf}.tmp1.vcf
+    ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O v -o ${tmp1}
+    sed -i 's/MAPPABILITY,Number=1,Type=String/MAPPABILITY,Number=1,Type=Float/'
+    tabix -p ${tmp1}
 
     tmp2=${output_vcf}.tmp2.vcf.gz
     java -jar "${gatk}/GenomeAnalysisTK.jar" \
