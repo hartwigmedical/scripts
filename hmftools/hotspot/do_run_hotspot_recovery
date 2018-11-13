@@ -46,6 +46,6 @@ if [ ! -f ${output_vcf} ]; then
 
     java -Dorg.jooq.no-logo=true -cp /data/common/tools/hotspotcaller_pilot/hotspot-caller.jar com.hartwig.hmftools.hotspotcaller.NearHotspotAnnotation \
         -hotspot ${hotspot_tsv} \
-        -input_vcf {tmp5} \
+        -input_vcf ${tmp5} \
         -out ${output_vcf}
 fi
