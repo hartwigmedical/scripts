@@ -4,7 +4,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 input_vcf=$1
 hotspot_vcf=$2
 output_vcf=$3
-output_dir=`dirname ${output_vcf}`
+output_dir=$(dirname ${output_vcf})
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
 recovered_header=/data/experiments/181108_hotspot_caller/recovered.hdr
 hotspot_header=/data/experiments/181108_hotspot_caller/hotspot.hdr
@@ -12,7 +12,7 @@ hotspot_header=/data/experiments/181108_hotspot_caller/hotspot.hdr
 gatk=/data/common/tools/gatk_v3.8.0
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
 
-if [ ! -f ${hotspot_vcf} ]; then
+if [ ! -f ${output_vcf} ]; then
 
     tmp1=${output_vcf}.tmp1.vcf.gz
     ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O z -o ${tmp1}
