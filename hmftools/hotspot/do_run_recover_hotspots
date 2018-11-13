@@ -17,7 +17,6 @@ if [ ! -f ${output_vcf} ]; then
     tmp1=${output_vcf}.tmp1.vcf
     ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O v -o ${tmp1}
     sed -i 's/MAPPABILITY,Number=1,Type=String/MAPPABILITY,Number=1,Type=Float/' ${tmp1}
-    tabix -p ${tmp1}
 
     tmp2=${output_vcf}.tmp2.vcf.gz
     java -jar "${gatk}/GenomeAnalysisTK.jar" \
@@ -39,7 +38,7 @@ if [ ! -f ${output_vcf} ]; then
     tabix -p vcf ${tmp4}
     rm ${tmp3}*
 
-    ${bcftools} annotate -x INFO/set ${tmp4} -O v -o ${output_vcf}
+    ${bcftools} annotate -x INFO/set ${tmp4} -O z -o ${output_vcf}
     tabix -p vcf ${output_vcf}
     rm ${tmp4}*
 fi
