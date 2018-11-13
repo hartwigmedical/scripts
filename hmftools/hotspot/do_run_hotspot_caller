@@ -11,6 +11,7 @@ sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
 GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
 SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
+MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
 
 sample=$1
 normal=${sample:0:12}R
@@ -39,26 +40,41 @@ fi
 
 hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
 if [ ! -f ${hotspot_vcf} ]; then
+
+    hotspot_caller_vcf=${out_dir}/${sample}.hotspot.all.vcf.gz
+
     java -Xmx8G -Xms4G \
         -jar /data/common/tools/hotspotcaller_pilot/hotspot-caller.jar \
         -tumor ${sample} -tumor_pileup ${sample_pileup} \
         -reference ${normal} -reference_pileup ${normal_pileup} \
         -hotspot ${hotspot_tsv} \
-        -out ${hotspot_vcf}
+        -out ${hotspot_caller_vcf}
+    tabix -p vcf ${hotspot_caller_vcf}
 
-    tabix -p vcf ${hotspot_vcf}
+    pass_vcf=${out_dir}/${sample}.pass.vcf.gz
+    ${bcftools} annotate -x INFO/HOTSPOT ${hotspot_caller_vcf} -O u |
+    ${bcftools} filter -i 'FILTER="PASS"' -O u |
+    ${bcftools} view -s ${sample} -O z -o ${pass_vcf}
+    tabix -p vcf ${pass_vcf}
 
+    echo "[INFO] Germline PON -" $(date)
     germline_vcf=${out_dir}/${sample}.germline.vcf.gz
-    ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${hotspot_vcf} -O z -o ${germline_vcf}
+    ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${pass_vcf} -O z -o ${germline_vcf}
     tabix -p vcf ${germline_vcf}
+    rm ${pass_vcf}*
 
+    echo "[INFO] Somatic PON -" $(date)
     pon_vcf=${out_dir}/${sample}.pon.vcf.gz
     ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${pon_vcf}
     tabix -p vcf ${pon_vcf}
+    rm ${germline_vcf}*
 
+    echo "[INFO] Applying PON Filter -" $(date)
     filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
-    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${pon_vcf} -O u | \
-    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${filtered_vcf}
+    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' ${pon_vcf} -O u | \
+    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -O z -o ${filtered_vcf}
+    tabix -p vcf ${filtered_vcf}
+    rm ${pon_vcf}*
 
     snpEff_vcf=${out_dir}/${sample}.snpEff.vcf
     java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
@@ -67,11 +83,12 @@ if [ ! -f ${hotspot_vcf} ]; then
         -hgvs -lof -no-downstream -ud 1000 -no-intergenic -noShiftHgvs \
         > ${snpEff_vcf}
 
-    rm ${out_dir}/snpEff*
-    rm ${hotspot_vcf}*
-    rm ${germline_vcf}*
-    rm ${pon_vcf}*
+    bgzip ${snpEff_vcf}
+    tabix -p vcf ${snpEff_vcf}.gz
     rm ${filtered_vcf}*
-    bgzip ${out_dir}/${sample}.hotspot.vcf
+
+    echo "[INFO] Annotating Mappability -" $(date)
+    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${hotspot_vcf}
     tabix -p vcf ${hotspot_vcf}
+    rm ${snpEff_vcf}*
 fi
