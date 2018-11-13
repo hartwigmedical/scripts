@@ -1,0 +1,44 @@
+#!/bin/bash
+prefix=`dirname $(readlink $0 || echo $0)`
+
+input_vcf=$1
+hotspot_vcf=$2
+output_vcf=$3
+output_dir=`dirname ${output_vcf}`
+bcftools=/data/common/tools/bcftools_v1.9/bcftools
+recovered_header=/data/experiments/181108_hotspot_caller/recovered.hdr
+hotspot_header=/data/experiments/181108_hotspot_caller/hotspot.hdr
+
+gatk=/data/common/tools/gatk_v3.8.0
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
+
+if [ ! -f ${hotspot_vcf} ]; then
+
+    tmp1=${output_vcf}.tmp1.vcf.gz
+    ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O z -o ${tmp1}
+    tabix -p vcf ${tmp1}
+
+    tmp2=${output_vcf}.tmp2.vcf.gz
+    java -jar "${gatk}/GenomeAnalysisTK.jar" \
+        -T CombineVariants \
+        -R ${ref_genome} \
+        --genotypemergeoption unsorted \
+        -V:template ${tmp1} \
+        -V:hotspot ${hotspot_vcf} \
+        -o ${tmp2}
+    rm ${tmp1}*
+
+    tmp3=${output_vcf}.tmp3.vcf.gz
+    ${bcftools} annotate -a ${hotspot_vcf} -m RECOVERED -h ${recovered_header} -i 'INFO/set="hotspot"' ${tmp2} -O z -o ${tmp3}
+    tabix -p vcf ${tmp3}
+    rm ${tmp2}*
+
+    tmp4=${output_vcf}.tmp4.vcf.gz
+    ${bcftools} annotate -a ${hotspot_vcf} -m HOTSPOT -h ${hotspot_header} ${tmp3} -O z -o ${tmp4}
+    tabix -p vcf ${tmp4}
+    rm ${tmp3}*
+
+    ${bcftools} annotate -x INFO/set ${tmp4} -O v -o ${output_vcf}
+    tabix -p vcf ${output_vcf}
+    rm ${tmp4}*
+fi
