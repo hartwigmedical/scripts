@@ -48,4 +48,6 @@ if [ ! -f ${output_vcf} ]; then
         -hotspot ${hotspot_tsv} \
         -input_vcf ${tmp5} \
         -out ${output_vcf}
+
+    rm ${tmp5}
 fi
