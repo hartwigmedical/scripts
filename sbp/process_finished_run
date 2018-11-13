@@ -35,3 +35,6 @@ do_run_sv_loader_prod ${processed_path}/${set}
 
 echo "[INFO] Loading metrics into database for ${set}"
 do_load_metrics_data_prod ${processed_path}/${set}
+
+echo "[INFO} Loading chord into database for ${set}"
+do_load_chord_data_prod ${processed_path}/${set}
