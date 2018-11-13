@@ -8,6 +8,7 @@ output_dir=$(dirname ${output_vcf})
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
 recovered_header=/data/experiments/181108_hotspot_caller/recovered.hdr
 hotspot_header=/data/experiments/181108_hotspot_caller/hotspot.hdr
+hotspot_tsv=/data/experiments/181108_hotspot_caller/HotspotWithMNV.tsv
 
 gatk=/data/common/tools/gatk_v3.8.0
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
@@ -38,7 +39,13 @@ if [ ! -f ${output_vcf} ]; then
     tabix -p vcf ${tmp4}
     rm ${tmp3}*
 
-    ${bcftools} annotate -x INFO/set ${tmp4} -O z -o ${output_vcf}
-    tabix -p vcf ${output_vcf}
+    tmp5=${output_vcf}.tmp5.vcf.gz
+    ${bcftools} annotate -x INFO/set ${tmp4} -O z -o ${tmp5}
+    tabix -p vcf ${tmp5}
     rm ${tmp4}*
+
+    java -Dorg.jooq.no-logo=true -cp /data/common/tools/hotspotcaller_pilot/hotspot-caller.jar com.hartwig.hmftools.hotspotcaller.NearHotspotAnnotation \
+        -hotspot ${hotspot_tsv} \
+        -input_vcf {tmp5} \
+        -out ${output_vcf}
 fi
