@@ -16,7 +16,7 @@ if [ ! -f ${output_vcf} ]; then
 
     tmp1=${output_vcf}.tmp1.vcf
     ${bcftools} annotate -x INFO/HOTSPOT ${input_vcf} -O v -o ${tmp1}
-    sed -i 's/MAPPABILITY,Number=1,Type=String/MAPPABILITY,Number=1,Type=Float/'
+    sed -i 's/MAPPABILITY,Number=1,Type=String/MAPPABILITY,Number=1,Type=Float/' ${tmp1}
     tabix -p ${tmp1}
 
     tmp2=${output_vcf}.tmp2.vcf.gz
