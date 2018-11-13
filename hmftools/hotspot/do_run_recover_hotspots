@@ -29,7 +29,7 @@ if [ ! -f ${output_vcf} ]; then
     rm ${tmp1}*
 
     tmp3=${output_vcf}.tmp3.vcf.gz
-    ${bcftools} annotate -a ${hotspot_vcf} -m RECOVERED -h ${recovered_header} -i 'INFO/set="hotspot"' ${tmp2} -O z -o ${tmp3}
+    ${bcftools} annotate -a ${hotspot_vcf} -m RECOVERED -h ${recovered_header} -i 'INFO/set="hotspot"' -k ${tmp2} -O z -o ${tmp3}
     tabix -p vcf ${tmp3}
     rm ${tmp2}*
 
