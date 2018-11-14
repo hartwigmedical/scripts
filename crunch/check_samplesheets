@@ -34,7 +34,7 @@ for sheet in $sheets; do
 	## check cycle status
         if [[ ${experimentName} =~ ^NS ]]; then 
 		## Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
-		cycleCount=$( find $runBase/Data/Intensities/BaseCalls/L001/ -name "*bcl.bgzf" | wc -l )
+		cycleCount=$( find $runBase/Thumbnail_Images/L001/ -mindepth 1 -maxdepth 1 -type d | wc -l )
         else
 		cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
 	fi
