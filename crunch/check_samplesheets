@@ -11,59 +11,64 @@ else
 fi
     
 for sheet in $sheets; do 
-	currHost=$( hostname )
-	currHostShort=$( echo $currHost | sed 's/crunch00/c/g' )
-	runBase=$( dirname $sheet )
-        baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
-	runName=$( basename $runBase )
-	readmeFile=$runBase"/README"
-        conversionLogFile=$runBase"/conversionLog.txt"
-	sampleSheetFile=$runBase"/SampleSheet.csv"
-	experimentName=$( cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
-	idx_id=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
-	idx_name=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
-	idx_proj=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1 )
-	idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
-	allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
-	
-	echo ""
-	echo "# "$currHost;
-	echo "# [Rund] "$runBase;
-	echo "# [Samp] "$sampleSheetFile;
-	
-	## check cycle status
-        if [[ ${experimentName} =~ ^NS ]]; then 
-		## Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
-		cycleCount=$( find $runBase/Thumbnail_Images/L001/ -mindepth 1 -maxdepth 1 -type d | wc -l )
+    currHost=$( hostname )
+    currHostShort=$( echo $currHost | sed 's/crunch00/c/g' )
+    runBase=$( dirname $sheet )
+    baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
+    runName=$( basename $runBase )
+    readmeFile=$runBase"/README"
+    conversionLogFile=$runBase"/conversionLog.txt"
+    sampleSheetFile=$runBase"/SampleSheet.csv"
+    experimentName=$( cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
+    idx_id=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
+    idx_name=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
+    idx_proj=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1 )
+    idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
+    allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
+
+    echo ""
+    echo "# "$currHost;
+    echo "# [Rund] "$runBase;
+    echo "# [Samp] "$sampleSheetFile;
+    
+    ## check cycle status
+    if [[ ${experimentName} =~ ^NS ]]; then 
+        ## Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
+        if [[ -d $runBase/Thumbnail_Images/L001/ ]]; then
+            cycleCount=$( find $runBase/Thumbnail_Images/L001/ -mindepth 1 -maxdepth 1 -type d | wc -l )
         else
-		cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
-	fi
-	echo "# [NOTE] CYCLE log count: $cycleCount"
-		
-        ## check conversion status
-        if [ ! -e $conversionLogFile ]; then
-		echo "# [NOTE] CONVERSION not started yet";
-	elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
-		echo "# [NOTE] CONVERSION appears to be FINISHED";
-	else
-                localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
-		currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
-		echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
-	fi
+            cycleCount=0
+        fi
+    else
+        cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
+    fi
+    echo "# [NOTE] CYCLE log count: $cycleCount"
 
-	## check images presence
-	if [ -d "$runBase/Thumbnail_Images/L001" ]; then
-		echo "# [NOTE] IMAGES are still present";
-	fi
+    ## check conversion status
+    if [ ! -e $conversionLogFile ]; then
+        echo "# [NOTE] CONVERSION not started yet";
+    elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
+        echo "# [NOTE] CONVERSION appears to be FINISHED";
+    else
+        localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
+        currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
+        echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
+    fi
 
-	## print readme file path if present
-	if [ -e $readmeFile ]; then
-		echo "# [README] $readmeFile";
-	fi
+    ## check images presence
+    if [ -d "$runBase/Thumbnail_Images/L001" ]; then
+        echo "# [NOTE] IMAGES are still present";
+    fi
 
-	## print line that can be pasted directly into RunOverview sheet
-	echo -e "# $experimentName\t$runName\tseq\t$currHostShort\t$allProjects";
+    ## print readme file path if present
+    if [ -e $readmeFile ]; then
+        echo "# [README] $readmeFile";
+    fi
 
-	## print sample-id, sample_name, submission-id, description
-	cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort | uniq
+    ## print line that can be pasted directly into RunOverview sheet
+    echo -e "# $experimentName\t$runName\tseq\t$currHostShort\t$allProjects";
+
+    ## print sample-id, sample_name, submission-id, description
+    cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort | uniq
 done
+
