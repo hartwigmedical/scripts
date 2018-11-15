@@ -1,6 +1,6 @@
 #!/bin/bash
 
-patient_reporter_dir=/data/common/tools/patientreporter_v5.3
+patient_reporter_dir=/data/common/tools/patientreporter_v5.2
 report_dir=/data/cpct/patient_reports
 
 lims_json=/data/lims/lims.json
