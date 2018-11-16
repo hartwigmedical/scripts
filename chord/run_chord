@@ -6,7 +6,7 @@ run_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 chord_dir=/data/common/tools/chord_v1.0
-working_dir="${run_dir}/chord/"
+working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
