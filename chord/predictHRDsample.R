@@ -2,7 +2,7 @@
 library(randomForest)
 args <- commandArgs(TRUE)
 
-base_dir <- args[1] + '/'
+base_dir <- paste(args[1], '/')
 setwd(args[2])
 hmf_patients_mut_sigs <- read.table(args[4])
 
