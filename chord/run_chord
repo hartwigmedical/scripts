@@ -34,7 +34,7 @@ then
 fi
 
 # KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
-${prefix}/extractHRDsample.R ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
-${prefix}/predictHRDsample.R ${working_dir} ${sample} ${sample_mut_signatures}
+${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
