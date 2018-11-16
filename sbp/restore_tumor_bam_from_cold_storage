@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source api_functions
+
+set=$1 && shift
+
+run_info=$(load_run_info_for_set ${set})
+if [ -z "$run_info" ]; then
+    echo "[WARN] No run info found for set ${set}. Exiting"
+    exit 1
+fi
+
+run_bucket=`echo ${run_info} | cut -d ' ' -f5`
+
+s3path="s3://${run_bucket}/${set}"
+bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX_]*dedup.realigned.bam$" )
+sbp_tape_restore.py "s3://${run_bucket}/${bampath_in_bucket}"
