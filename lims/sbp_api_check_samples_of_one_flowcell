@@ -11,8 +11,11 @@ if [[ -z $SEQRUN ]]; then
     exit 1
 fi
 
-## Flowcell done at SBP so get info per sample
-cat ${SAMPLESHEET} | grep -P "^\d{1}\," | cut -d"," -f 2 | sort | uniq | while read BARCODE; do
+## find index of Sample_ID column
+idx_id=$( cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
+
+## and check status of each unique Sample_ID in sheet
+cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
     SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
     echo -e "${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
 done
