@@ -5,6 +5,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
+chord_dir=/data/common/tools/chord_pilot
 working_dir="${run_dir}/chord_pilot"
 mkdir -p ${working_dir}
 
@@ -12,7 +13,7 @@ somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
 structural_vcf=$(ls ${run_dir}/purple/*.purple.sv.vcf.gz)
 
 # KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
-${prefix}/extractHRDsample.R ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
-${prefix}/predictHRDsample.R ${working_dir} ${sample} ${sample_mut_signatures}
+${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
