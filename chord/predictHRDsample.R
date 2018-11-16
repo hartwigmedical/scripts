@@ -2,11 +2,11 @@
 library(randomForest)
 args <- commandArgs(TRUE)
 
-base_dir <- args[1]
+base_dir <- args[1] + '/'
 setwd(args[2])
 hmf_patients_mut_sigs <- read.table(args[4])
 
-rf_model <- readRDS(paste0(base_dir, 'rf_hrd_predict.rds'))
+rf_model <- readRDS(paste0(base_dir , 'rf_hrd_predict.rds'))
 
 pred <- predict(object = rf_model, newdata = hmf_patients_mut_sigs, type = "prob")
 pred <- as.data.frame(pred)
