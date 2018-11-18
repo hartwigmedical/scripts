@@ -37,7 +37,7 @@ if [ ! -f ${hotspot_vcf} ]; then
     java -Xmx8G -Xms4G \
         -jar /data/common/tools/hotspotcaller_pilot/hotspot-caller.jar \
         -tumor ${sample} -tumor_bam ${sample_bam} \
-        -reference ${normal} -reference_ba ${normal_bam} \
+        -reference ${normal} -reference_bam ${normal_bam} \
         -hotspot ${hotspot_tsv} \
         -inframe_bed ${hotspot_bed} \
         -ref_genome ${ref_genome} \
