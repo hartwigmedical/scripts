@@ -21,21 +21,15 @@ mkdir -p ${out_dir}
 sample_bam=${out_dir}/${sample}.bam
 normal_bam=${out_dir}/${normal}.bam
 
-sample_pileup=${out_dir}/${sample}.hotspot.pileup
-normal_pileup=${out_dir}/${normal}.hotspot.pileup
+#sample_pileup=${out_dir}/${sample}.hotspot.pileup
+#normal_pileup=${out_dir}/${normal}.hotspot.pileup
 
-if [ ! -f ${sample_pileup} ]; then
+if [ ! -f ${sample_bam} ]; then
     ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
-    ${sambamba} mpileup -t 8 -L ${hotspot_bed} ${sample_bam} -o ${sample_pileup} --samtools "-q 1 -f ${ref_genome}"
-    rm ${sample_bam}
-    rm ${out_dir}/${sample}.bai
 fi
 
-if [ ! -f ${normal_pileup} ]; then
+if [ ! -f ${normal_bam} ]; then
     ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${hotspot_bed} ${normal_bam}
-    ${sambamba} mpileup -t 8 -L ${hotspot_bed} ${normal_bam} -o ${normal_pileup} --samtools "-q 1 -f ${ref_genome}"
-    rm ${normal_bam}
-    rm ${out_dir}/${normal}.bai
 fi
 
 hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
