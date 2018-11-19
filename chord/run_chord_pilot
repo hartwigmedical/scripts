@@ -9,11 +9,35 @@ chord_dir=/data/common/tools/chord_pilot
 working_dir="${run_dir}/chord_pilot"
 mkdir -p ${working_dir}
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
-structural_vcf=$(ls ${run_dir}/purple/*.purple.sv.vcf.gz)
+somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
+if [ $? -ne 0 ]; then
+    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
+    if [ $? -ne 0 ]; then
+        echo "Unable to locate post processed somatic variants. Exiting."
+        exit 1
+    fi
+fi
+
+mode="manta"
+if [ -d ${run_dir}/structuralVariants/gridss ]; then
+    mode="gridss"
+    structural_vcf=$(ls ${run_dir}/purple/*.purple.sv.vcf.gz)
+    echo "[INFO] Using GRIDSS mode for chord on ${structural_vcf}"
+else
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
+    if [ $? -ne 0 ]; then
+        # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+        structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+        if [ $? -ne 0 ]; then
+            echo "Unable to locate bpi structural variants. Exiting."
+            exit 1
+        fi
+    fi
+fi
 
 # KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
-${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf} "gridss"
+${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf} ${mode}
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
 ${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
