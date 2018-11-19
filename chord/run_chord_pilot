@@ -3,6 +3,12 @@
 source load_metadata
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
+
+if [ ! -d ${run_dir} ]; then
+    echo "[ERROR] ${run_dir} does not exist!"
+    exit 1
+fi
+
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 chord_dir=/data/common/tools/chord_pilot

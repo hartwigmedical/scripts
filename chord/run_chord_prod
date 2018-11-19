@@ -3,38 +3,48 @@
 source load_metadata
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
+
+if [ ! -d ${run_dir} ]; then
+    echo "[ERROR] ${run_dir} does not exist!"
+    exit 1
+fi
+
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-chord_dir=/data/common/tools/chord_v1.0
+chord_dir=/data/common/tools/chord_v1.1
 working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
-if [ $? -ne 0 ]
-then
+if [ $? -ne 0 ]; then
     # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
     somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
-    if [ $? -ne 0 ]
-    then
+    if [ $? -ne 0 ]; then
         echo "Unable to locate post processed somatic variants. Exiting."
         exit 1
     fi
 fi
 
-structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
-if [ $? -ne 0 ]
-then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate bpi structural variants. Exiting."
-        exit 1
+mode="manta"
+# TODO (KODU): Comment out once we switch to production.
+#if [ -d ${run_dir}/structuralVariants/gridss ]; then
+#    mode="gridss"
+#    structural_vcf=$(ls ${run_dir}/purple/*.purple.sv.vcf.gz)
+#    echo "[INFO] Using GRIDSS mode for chord on ${structural_vcf}"
+#else
+    structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf)
+    if [ $? -ne 0 ]; then
+        # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+        structural_vcf=$(ls ${run_dir}/structuralVariants/bpi/*/*_somaticSV_bpi.vcf.gz)
+        if [ $? -ne 0 ]; then
+            echo "Unable to locate bpi structural variants. Exiting."
+            exit 1
+        fi
     fi
-fi
+#fi
 
 # KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
-${prefix}/extractHRDsample_prod.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf} ${mode}
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
-${prefix}/predictHRDsample_prod.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
+${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
