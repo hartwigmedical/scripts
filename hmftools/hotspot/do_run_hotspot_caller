@@ -45,10 +45,10 @@ if [ ! -f ${hotspot_vcf} ]; then
     tabix -p vcf ${hotspot_caller_vcf}
 
     pass_vcf=${out_dir}/${sample}.pass.vcf.gz
-    ${bcftools} annotate -x INFO/HOTSPOT ${hotspot_caller_vcf} -O u |
+    ${bcftools} filter -i 'FILTER="PASS"' ${hotspot_caller_vcf} -O u |
+    ${bcftools} annotate -x INFO/HOTSPOT -O u |
     ${bcftools} annotate -x FILTER/LOW_CONFIDENCE -O u |
     ${bcftools} annotate -x FILTER/GERMLINE_INDEL -O u |
-    ${bcftools} filter -i 'FILTER="PASS"' -O u |
     ${bcftools} view -s ${sample} -O z -o ${pass_vcf}
     tabix -p vcf ${pass_vcf}
 
