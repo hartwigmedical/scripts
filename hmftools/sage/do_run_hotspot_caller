@@ -95,7 +95,7 @@ fi
 
 
 final_vcf=${out_dir}/${sample}.processed.vcf.gz
-if [ ! -f ${hotspot_vcf} ]; then
+if [ ! -f ${final_vcf} ]; then
     echo "[INFO] Merging hotspot with processed -" $(date)
 
     somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
