@@ -18,7 +18,7 @@ my $JSONS_HOME = '/data/lims/sbpfiles';
 
 my %OUT_FIELDS_PER_TYPE = (
   'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'sbp_id' ],
-  'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'sbp_id' ],
+  'flowcells' => [ 'name', 'createTime', 'flowcell_id', 'sequencer', 'q30', 'yld', 'undet_rds', 'status', 'undet_rds_p_pass', 'sbp_id' ],
   'fastq'     => [ 'sample_id', 'name_r1', 'qc_pass', 'q30', 'yld', 'bucket', 'sbp_id' ],
   'sets'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'sbp_id' ],
   'runs'      => [ 'name', 'entity', 'ref_sample', 'tumor_sample', 'bucket', 'status', 'priority', "pipeline", "ini", 'sbp_id' ],
@@ -112,8 +112,9 @@ if ( $output_as_json ){
 sub readJson{
     my ($type) = @_;
     my $json_file = "$JSONS_HOME/$type.json";
-    my $json_txt = read_file( $json_file );
-    my $json_obj = decode_json( $json_txt );
+    my $json_obj = jsonFileToObject($json_file);
+    #my $json_txt = read_file( $json_file );
+    #my $json_obj = decode_json( $json_txt );
     
     ## STLI: optimize some fields for viewing
     foreach my $obj ( @$json_obj ){
@@ -247,7 +248,15 @@ sub printOutput{
     say '## TotalCount: '.$object_count;
     say '#'.join( $delim, @$out_fields );
     foreach my $obj ( @$objects ){
-        my @out_values = map( $obj->{$_} || 'NA', @$out_fields );
+        my @out_values = ();
+        foreach my $field ( @$out_fields ){
+            if ( defined $obj->{$field} ){
+                push( @out_values, $obj->{$field} );
+            }
+            else{
+                push( @out_values, "NA" );
+            }
+        }
         say join( $delim, @out_values );
     }
 }
