@@ -92,3 +92,29 @@ if [ ! -f ${hotspot_vcf} ]; then
     tabix -p vcf ${hotspot_vcf}
     rm ${snpEff_vcf}*
 fi
+
+
+final_vcf=${out_dir}/${sample}.processed.vcf.gz
+if [ ! -f ${hotspot_vcf} ]; then
+    echo "[INFO] Merging hotspot with processed -" $(date)
+
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+        somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
+        if [ $? -ne 0 ]
+        then
+            echo "[FATAL] Unable to locate post processed somatic variants. Exiting."
+            exit 1
+        fi
+    fi
+
+    java -Xmx8G -Xms4G \
+        -cp ${sage_jar} com.hartwig.hmftools.sage.SageHotspotAnnotation \
+        -source_vcf ${somatic_vcf} \
+        -hotspot_vcf ${hotspot_vcf} \
+        -known_hotspots ${hotspot_tsv} \
+        -out ${final_vcf}
+
+fi
