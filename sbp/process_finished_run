@@ -22,7 +22,7 @@ echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${processed_path}/${set}
 
 echo "[INFO] Running CHORD for ${set}"
-run_chord ${processed_path}/${set}
+run_chord_prod ${processed_path}/${set}
 
 echo "[INFO] Loading purple into database for ${set}"
 do_load_purple_data_prod ${processed_path}/${set}
