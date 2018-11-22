@@ -1,0 +1,91 @@
+#!/bin/bash
+
+## setup main variables
+DATESTR="$( date '+%y%m%d' )"
+NAS_DIR="/volume1/machines/LIMS"
+OUT_DIR="/data/lims"
+LAB_DIR="${OUT_DIR}/labfiles"
+DAY_DIR="${LAB_DIR}/${DATESTR}"
+SYM_DIR="${OUT_DIR}/latest"
+
+## sanity checks
+if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Err: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
+for outdir in $OUT_DIR $LAB_DIR $SYM_DIR; do
+  if [[ ! -d ${outdir} ]]; then echo "[EXIT] Err: dir does not exist (${outdir})" && exit 1; fi
+  if [[ ! -w ${outdir} ]]; then echo "[EXIT] Err: no write permission (${outdir})" && exit 1; fi
+done
+mkdir -p ${DAY_DIR}
+
+## Setup cpct/received-samples/in-process variables
+cpctSource="${DAY_DIR}/HMF_LIMS_be.accdb"
+cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
+   cpctTxt="${cpctTarget}.tsv"
+cpctLatest="${SYM_DIR}/lims_cpct"
+
+sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2018 v5.1.xlsx"
+sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
+   sampTxt="${sampTarget}_samp.tsv"
+sampLatest="${SYM_DIR}/lims_samp"
+   submTxt="${sampTarget}_subm.tsv"
+submLatest="${SYM_DIR}/lims_subm"
+
+procSource="${DAY_DIR}/HMF-FOR-002 DNA samples in process 2018 V3.5.xlsx"
+procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
+   procTxt="${procTarget}.tsv"
+procLatest="${SYM_DIR}/lims_proc"
+
+## Retrieve files from NAS
+echo "[INFO] Syncing xlsx and accdb files from NAS to DATASTORE"
+echo "[INFO]   SourceDir: nas:${NAS_DIR}"
+echo "[INFO]   TargetDir: ${DAY_DIR}"
+rsync nas:${NAS_DIR}/*.xlsx nas:${NAS_DIR}/*.accdb ${DAY_DIR}
+
+## Make sure all required files are present
+if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
+for inputFile in "${cpctSource}" "${sampSource}" "${procSource}"; do
+  if [[ ! -f "${inputFile}" ]]; then 
+    echo "[EXIT] Err: input file from NAS not present (${inputFile})" && exit 1; 
+  fi
+done
+
+## Rename files to make clear which is actually used
+cp "${cpctSource}" "${cpctTarget}"
+cp "${sampSource}" "${sampTarget}"
+cp "${procSource}" "${procTarget}"
+
+## Convert to csv (tail cmd skips non-header lines)
+echo "[INFO] Converting input files to TSV"
+echo "[INFO]   Converting $( basename ${cpctTarget} )"
+mdb-export -d "\t" -Q -D "%y%m%d" "${cpctTarget}" tblSamples > ${cpctTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] CPCT export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "submissions")"
+xlsx2csv -d "\t" "${sampTarget}" -s 1 | tail -n +5 > ${submTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
+xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${procTarget} )"
+xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
+
+## Create latest symlinks
+echo "[INFO] Symlinking to latest files"
+echo "[INFO]   $cpctLatest"
+ln -sfn $cpctTxt $cpctLatest
+echo "[INFO]   $submLatest"
+ln -sfn $submTxt $submLatest
+echo "[INFO]   $sampLatest"
+ln -sfn $sampTxt $sampLatest
+echo "[INFO]   $procLatest"
+ln -sfn $procTxt $procLatest
+
+## Gather some metrics
+totalLines=$( cat $cpctLatest | grep -v "^Hospital" | wc -l )
+totalSampl=$( cat $cpctLatest | grep -v "^Hospital" | cut -d"," -f6 | sort | uniq | wc -l )
+totalBarco=$( cat $cpctLatest | grep -v "^Hospital" | cut -d"," -f4 | sort | uniq | wc -l )
+
+echo "[INFO] Stats:"
+for latestFile in $cpctLatest $submLatest $sampLatest $procLatest; do
+  totalLines=$( cat $latestFile | wc -l )
+  echo "[INFO]   LineCount of $latestFile = $totalLines"
+done
