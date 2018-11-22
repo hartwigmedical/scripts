@@ -670,6 +670,7 @@ sub getFieldNameTranslations{
       'Sample_ID_Plasma'   => 'plasma_sample_id',
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
+      'DNA_conc'           => 'dna_conc',
       'Final_lab_status'   => 'lab_status',
       'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
