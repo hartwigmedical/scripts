@@ -1,0 +1,7 @@
+#!/bin/bash
+
+LIMS_DIR="/data/lims"
+CODE_DIR="/data/common/repos/scripts/lims"
+
+${CODE_DIR}/sync_lab_lims_from_nas
+${CODE_DIR}/convert_lims_data -execute
