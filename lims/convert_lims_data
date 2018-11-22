@@ -142,7 +142,7 @@ my %CPCT_TRANSLATIONS = (
   'Pathologie_exp'          => NOTINUSESTRING,
   'Qiasymphony_exp'         => NOTINUSESTRING,
   'Bioanalyser_exp'         => NOTINUSESTRING,
-  'Remarks'                 => NOTINUSESTRING,
+  'Remarks'                 => 'lab_remarks',
   ## next block in sheet
   'Primary tumor type'      => 'primary_tum',
   'Biopsy_material '        => NOTINUSESTRING,
