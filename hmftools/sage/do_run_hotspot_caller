@@ -99,7 +99,7 @@ if [ ! -f ${hotspot_vcf} ]; then
     tabix -p vcf ${blacklist_vcf}
 
     ${bcftools} annotate -a ${blacklist_vcf} -c CHROM,POS,REF,ALT -m +BLACKLIST ${map_vcf} -O u |
-    ${bcftools} filter -e 'BLACKLIST=1' -s BLACKLIST -O v -o ${hotspot_vcf}
+    ${bcftools} filter -e 'BLACKLIST=1' -s BLACKLIST -O z -o ${hotspot_vcf}
     tabix -p vcf ${hotspot_vcf}
     rm ${map_vcf}*
     rm ${blacklist_vcf}*
