@@ -620,6 +620,7 @@ sub getFieldNameTranslations{
       "Sample_name"       => 'sample_name',
       "DNA_conc"          => 'dna_conc',
       "Yield"             => 'yield',
+      "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
       "Partner_sample"    => 'partner_sample',
       "HMF_reg"           => 'submission',
@@ -627,6 +628,7 @@ sub getFieldNameTranslations{
       "SNP_exp"           => 'snp_experiment_id',
       "Requested_product" => 'request',
       "State"             => 'lab_status', # lab status
+      "Primary_tumor_type"=> 'ptum',
       "Priority"          => 'priority', 
       "Arival_date"       => 'arrival_date',
       "Remarks"           => 'remarks',
