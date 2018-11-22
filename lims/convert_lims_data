@@ -25,6 +25,7 @@ GetOptions (
 my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
 my $LIMS_DIR = $opt{ lims_dir } || '/data/lims';
 my $JSON_OUT = $opt{ out_file } || $LIMS_DIR . '/lims.json';
+my $SUBM_OUT = $LIMS_DIR . '/submissions.json';
 my $BACK_DIR = $LIMS_DIR . '/backup';
 my $CPCT_TSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
@@ -56,6 +57,7 @@ my $HELP_TEXT = <<"HELP";
 
   Output files:
     $JSON_OUT
+    $SUBM_OUT
 HELP
 
 
@@ -105,7 +107,7 @@ $lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
-printLimsToJson( $lims_objs, $subm_objs, $JSON_OUT );
+printLimsToJson( $lims_objs, $subm_objs, $JSON_OUT, $SUBM_OUT );
 
 say "[INFO] DONE with \"$SCRIPT\"";
 
@@ -196,20 +198,25 @@ sub readJson{
 }
 
 sub printLimsToJson{
-    my ($samples, $submissions, $out_file) = @_;
-    my $samples_count = scalar keys %$samples;
-    my $submissions_count = scalar keys %$submissions;
+    my ($samples, $submissions, $lims_file, $subm_file) = @_;
+    my $samp_count = scalar keys %$samples;
+    my $subm_count = scalar keys %$submissions;
 
     ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
     my $coder = JSON::XS->new->utf8->pretty->canonical;
-    my $json_txt = $coder->encode(\%lims);
+    my $lims_txt = $coder->encode(\%lims);
     
-    say "[INFO]   Writing output to $out_file ($submissions_count submissions and $samples_count samples)";
-    open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
-        print $lims_json_fh $json_txt;
+    say "[INFO]   Writing output to $lims_file ($subm_count submissions and $samp_count samples)";
+    open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
+        print $lims_json_fh $lims_txt;
     close $lims_json_fh;
     
+    my $subm_txt = $coder->encode($submissions);
+    say "[INFO]   Writing output to $subm_file ($subm_count submissions)";
+    open my $subm_json_fh, '>', $subm_file or die "Unable to open output file ($subm_file): $!\n";
+        print $subm_json_fh $subm_txt;
+    close $subm_json_fh;
 }
 
 sub addLabSopString{
