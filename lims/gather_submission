@@ -28,7 +28,7 @@ mkdir -p ${outPath} || exit 1
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
-${HMF_QUERY_SCRIPT} -submission ${submission} > ${lmsFile}
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lmsFile}
 
 ## get q30/yield data from SBP API
 echo "[INFO] Querying SBP API to get sample status"
