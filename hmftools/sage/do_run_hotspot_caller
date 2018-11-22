@@ -6,6 +6,7 @@ run_dir=$1 && shift
 PATH=/data/common/tools/samtools_v1.2:$PATH
 export PATH
 
+blacklist_bed=/data/common/dbs/sage/Blacklist.bed.gz
 hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
 hotspot_tsv=/data/common/dbs/sage/KnownHotspots.tsv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
@@ -88,9 +89,20 @@ if [ ! -f ${hotspot_vcf} ]; then
     rm ${filtered_vcf}*
 
     echo "[INFO] Annotating Mappability -" $(date)
-    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${hotspot_vcf}
-    tabix -p vcf ${hotspot_vcf}
+    map_vcf=${out_dir}/${sample}.map.vcf
+    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${map_vcf}
+    tabix -p vcf ${map_vcf}
     rm ${snpEff_vcf}*
+
+    blacklist_vcf=${out_dir}/${sample}.blacklist.vcf
+    ${bcftools} view -R ${blacklist_bed} ${map_vcf} -O z -o ${blacklist_vcf}
+    tabix -p vcf ${blacklist_vcf}
+
+    ${bcftools} annotate -a ${blacklist_vcf} -c CHROM,POS,REF,ALT -m +BLACKLIST ${map_vcf} -O u |
+    ${bcftools} filter -e 'BLACKLIST=1' -s BLACKLIST -O v -o ${hotspot_vcf}
+    tabix -p vcf ${hotspot_vcf}
+    rm ${map_vcf}*
+    rm ${blacklist_vcf}*
 fi
 
 
