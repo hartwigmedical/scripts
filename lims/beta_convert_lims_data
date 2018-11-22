@@ -411,7 +411,14 @@ sub processSamp{
         
         ## check data analysis type and set accordingly
         if ( $analysis_type =~ /^NoAnalysis|Somatic_R|Somatic_T|Germline$/ ){
-           # Already ok so no action 
+            # Already ok so no action 
+        }
+        elsif ( $sample_name =~ /^(CORE\d{2}\d{6})(T|R){1}/ms ){
+            my ($patient, $tum_or_ref) = ($1, $2);
+            $row_info->{ 'label' }         = "CORE";
+            $row_info->{ 'patient' }       = $patient;
+            $row_info->{ 'entity' }        = $submission;
+            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $analysis_type eq 'SomaticsBFX' ){
             my $partner = $row_info->{ 'partner_sample' };
