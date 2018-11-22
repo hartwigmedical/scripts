@@ -153,7 +153,7 @@ sub filterObjects{
     
     foreach my $filter ( keys %filter_counts ){
         my $count = $filter_counts{ $filter };
-        warn "## Filter: $count filtered away by filter \"$filter\"\n";
+        say "## Filter: $count filtered away by filter \"$filter\"";
     }
     
     return \@out;
