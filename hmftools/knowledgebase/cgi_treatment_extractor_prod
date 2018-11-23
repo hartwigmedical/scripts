@@ -1,6 +1,6 @@
 #!/bin/bash
 
-treatment_extractor_jar=/data/common/tools/knowledgebase-importer_v1.1/cgi-treatment-extractor.jar
+treatment_extractor_jar=/data/common/tools/knowledgebase-importer_v1.2/cgi-treatment-extractor.jar
 cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_180822.tsv
 output_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
 
