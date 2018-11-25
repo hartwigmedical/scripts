@@ -58,6 +58,35 @@ query_sbp_api \
     done | sort -r | uniq
 echo ""
 
+echo "## Success runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Success" \
+    -json | jq -r '.[].name' | \
+    while read setName; do
+        COUNTSucess=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l)
+        bucketSetVal=$( query_sbp_api -type runs -filter "tumor_sample=${setName}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Validated" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+        ValSet=$( query_sbp_api -type runs -filter "tumor_sample=${setName}" -filter "ini=${ini}" -filter "bucket=${bucketSetVal}" -filter "pipeline=${pip}" -filter "status=Validated" -exact -json | jq -r '.[].name' | tail -n 1 )
+        countVal=$(${ValSet} | wc -l);
+
+        if [[ ${COUNTSucess} == 0 && ${countVal} == 0 ]]
+        then
+             echo "${downloadScript} ${setName}"
+        elif [[ ${COUNTSucess} > 0  && ${countVal} == 0 ]]
+        then
+             echo "# ${setName} has failed on ${pip} but seems be a succeeded runs"
+        elif [[ ${COUNTSucess} > 0  && ${countVal} > 0 ]]
+        then
+             echo "# ${setName} has a validated run"
+
+        fi
+    done | sort -r | uniq
+echo ""
+
+
 echo "## Validated runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \

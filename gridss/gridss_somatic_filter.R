@@ -7,7 +7,7 @@ argp = add_argument(argp, "--input", help="GRIDSS VCF")
 argp = add_argument(argp, "--output", help="High confidence somatic subset")
 argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviously germline call.")
 argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
-argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
+#argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
 argv = parse_args(argp)
 # argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829hg38.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg38", "-p", "D:/hartwig/pon"))
 
@@ -35,6 +35,7 @@ source("libgridss.R")
 # Filter to somatic calls
 write(paste0("Reading ", argv$input), stderr())
 full_vcf = readVcf(argv$input, "hg19")
+tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
 full_vcf = align_breakpoints(full_vcf)
@@ -42,17 +43,17 @@ write(paste0("Parsing SVs in ", argv$input), stderr())
 full_bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 full_begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 write(paste0("Calculating VAF ", argv$input), stderr())
-full_bpgr$af = gridss_bp_af(full_bpgr, full_vcf, argv$tumourordinal)
+full_bpgr$af = gridss_bp_af(full_bpgr, full_vcf, tumourordinal)
 full_bpgr$af_str = paste(full_bpgr$af, partner(full_bpgr)$af, sep=",")
-full_begr$af = gridss_be_af(full_begr, full_vcf, argv$tumourordinal)
+full_begr$af = gridss_be_af(full_begr, full_vcf, tumourordinal)
 full_begr$af_str = as.character(full_begr$af)
 info(full_vcf)$BPI_AF = ""
 info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
 info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
 
 write(paste0("Filtering pass 1 ", argv$input), stderr())
-bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=argv$tumourordinal)
-befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=argv$tumourordinal)
+bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
+befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
 # shadow breakpoint removed due to initial mapq20 filter reducing FP rate
 # bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
 

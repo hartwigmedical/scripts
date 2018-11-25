@@ -15,7 +15,7 @@ if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ] || [ -z "$OUTPUT_FILE" ];
 fi
 
 # MIVO: get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
-RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "hmf-output" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed" | sort -bnrk8.2,8 | head -1`
+RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "hmf-output" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" | sort -bnrk8.2,8 | head -1`
 
 if [ -z "$RUN_ROW" ];
   then

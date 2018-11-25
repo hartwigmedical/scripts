@@ -31,6 +31,5 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
-    -do_report_germline \
     -high_confidence_bed ${high_confidence_bed} \
     -run_dir $@

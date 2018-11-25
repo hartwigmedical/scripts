@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-prefix=`dirname $(readlink $0 || echo $0)`
-runsDir=$1 && shift
-countSet=$1 && shift
-
-purity_pathology=/data/common/tools/purity-pathology_pilot/purity-pathology.jar
-
-${prefix}/purity_pathology_set ${runsDir} ${countSet} ${purity_pathology}

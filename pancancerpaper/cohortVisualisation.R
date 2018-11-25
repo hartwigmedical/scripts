@@ -63,8 +63,8 @@ agePlotData = highestPurityCohortSummary %>%
 cancerTypeData = highestPurityCohortSummary %>% 
   group_by(cancerType) %>% 
   summarise(n = n()) %>% 
-  arrange(-n) %>% 
-  mutate(percentage = round(n / n(), 1)) %>%
+  arrange(-n) %>%
+  mutate(percentage = round(100 * n / sum(n), 1)) %>%
   mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   filter(cancerType != "Other")
 
@@ -189,6 +189,7 @@ p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 9.2)) +  
   ylab("Samples") + 
   coord_cartesian(ylim = c(0, 600)) + facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types))
+
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
   geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") + 

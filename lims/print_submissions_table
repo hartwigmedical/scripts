@@ -9,13 +9,22 @@ fi
 
 for submission in "${SUBMISSIONS[@]}"; do 
   MAINKEY=".${submission}"
+  
+  ## retrieve info
   mail=$( cat ${JSON} | jq -r "${MAINKEY}.contact_email" )
   name=$( cat ${JSON} | jq -r "${MAINKEY}.contact_name" )
   subm=$( cat ${JSON} | jq -r "${MAINKEY}.submission" )
   pNam=$( cat ${JSON} | jq -r "${MAINKEY}.project_name" )
-  enti='CHECK@SBP!!!'
   pTyp=$( cat ${JSON} | jq -r "${MAINKEY}.project_type" )
+  enti='CHECK@SBP!!!'
   aTyp=$( cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
   amnt=$( cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$ptyp" "$enti" "$aTyp" "$amnt"
+
+  ## fix project type (rename lims content to their short versions)
+  pTyp=$( echo $pTyp | sed -E -e 's/Human[[:space:]]+research/HUM-RES/' )
+  pTyp=$( echo $pTyp | sed -E -e 's/non[[:space:]]+human[[:space:]]+research/NONHUM-RES/' )
+  pTyp=$( echo $pTyp | sed -E -e 's/KG[[:space:]]+production/KG/' )
+
+  ## output
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$pTyp" "$enti" "$aTyp" "$amnt"
 done

@@ -123,6 +123,21 @@ sub addSamplesFromSamplesheet{
     my %data = ();
     my $currblock = '';
     
+    ## first read file to obtain header fields
+    my @header;
+    open my $header_fh, '<', $file or die "Unable to open file ($file): $!\n";
+    while ( <$header_fh> ){
+        chomp;
+        if ( $_ =~ /^\[Data\]/ ){
+            my $header_line = <$header_fh>;
+            die "[ERROR] Header line should contain Sample_ID\n" unless $header_line =~ /Sample_ID/;
+            @header = split( ",", $header_line );
+        }
+    }
+    close $header_fh;
+    die "[ERROR] No header line was parsed?\n" unless scalar @header;
+    
+    ## re-read file to get all information
     open my $samplesheet_fh, '<', $file or die "Unable to open file ($file): $!\n";
     while ( <$samplesheet_fh> ){
         chomp;
@@ -135,9 +150,14 @@ sub addSamplesFromSamplesheet{
             $head{ $field } = $content;
         }
         elsif ( $currblock eq 'Data' ){
-            my ($lane, $id, $name, $plate, $well, $bcname, $bcseq, $project, $desc) = split( ',', $_ );
-            next if $id eq 'Sample_ID'; # skip data header line 
-            $data{ $id }{ 'name' } = $name;
+            next if $_ =~ /Sample_ID/; # skip data header line
+            my @line_values = split( ',', $_ );
+            my %record = ();
+            foreach my $field ( @header ){
+                $record{ $field } = shift @line_values;
+            }
+            my $id = $record{ 'Sample_ID' };
+            $data{ $id } = 1;
         }
     }
     close $samplesheet_fh;

@@ -1,0 +1,132 @@
+#!/bin/bash
+source load_metadata
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+
+PATH=/data/common/tools/samtools_v1.2:$PATH
+export PATH
+
+blacklist_bed=/data/common/dbs/sage/Blacklist.bed.gz
+hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
+hotspot_tsv=/data/common/dbs/sage/KnownHotspots.tsv
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
+GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
+SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
+bcftools=/data/common/tools/bcftools_v1.9/bcftools
+MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
+sage_jar=/data/common/tools/sage_pilot/sage.jar
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+
+out_dir=${run_dir}/somaticVariants/${joint_name}/sage/
+mkdir -p ${out_dir}
+
+sample_bam=${out_dir}/${sample}.sage.bam
+normal_bam=${out_dir}/${normal}.sage.bam
+
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
+fi
+
+if [ ! -f ${normal_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${hotspot_bed} ${normal_bam}
+fi
+
+hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
+if [ ! -f ${hotspot_vcf} ]; then
+
+    hotspot_caller_vcf=${out_dir}/${sample}.hotspot.unfiltered.vcf.gz
+
+    java -Xmx8G -Xms4G \
+        -cp ${sage_jar} com.hartwig.hmftools.sage.SageHotspotApplication \
+        -tumor ${sample} -tumor_bam ${sample_bam} \
+        -reference ${normal} -reference_bam ${normal_bam} \
+        -known_hotspots ${hotspot_tsv} \
+        -coding_regions ${hotspot_bed} \
+        -ref_genome ${ref_genome} \
+        -out ${hotspot_caller_vcf}
+    tabix -p vcf ${hotspot_caller_vcf}
+
+    pass_vcf=${out_dir}/${sample}.pass.vcf.gz
+    ${bcftools} filter -i 'FILTER="PASS"' ${hotspot_caller_vcf} -O u |
+    ${bcftools} annotate -x INFO/HOTSPOT -O u |
+    ${bcftools} annotate -x FILTER/LOW_CONFIDENCE -O u |
+    ${bcftools} annotate -x FILTER/GERMLINE_INDEL -O u |
+    ${bcftools} view -s ${sample} -O z -o ${pass_vcf}
+    tabix -p vcf ${pass_vcf}
+
+    echo "[INFO] Germline PON -" $(date)
+    germline_vcf=${out_dir}/${sample}.germline.vcf.gz
+    ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${pass_vcf} -O z -o ${germline_vcf}
+    tabix -p vcf ${germline_vcf}
+    rm ${pass_vcf}*
+
+    echo "[INFO] Somatic PON -" $(date)
+    pon_vcf=${out_dir}/${sample}.pon.vcf.gz
+    ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${pon_vcf}
+    tabix -p vcf ${pon_vcf}
+    rm ${germline_vcf}*
+
+    echo "[INFO] Applying PON Filter -" $(date)
+    filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
+    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' ${pon_vcf} -O u | \
+    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -O z -o ${filtered_vcf}
+    tabix -p vcf ${filtered_vcf}
+    rm ${pon_vcf}*
+
+    snpEff_vcf=${out_dir}/${sample}.snpEff.vcf
+    java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
+        -c "/data/common/tools/snpEff_v4.3s/snpEff.config" "GRCh37.75" \
+        -v ${filtered_vcf} \
+        -hgvs -lof -no-downstream -ud 1000 -no-intergenic -noShiftHgvs \
+        > ${snpEff_vcf}
+
+    bgzip ${snpEff_vcf}
+    tabix -p vcf ${snpEff_vcf}.gz
+    rm ${filtered_vcf}*
+
+    echo "[INFO] Annotating Mappability -" $(date)
+    map_vcf=${out_dir}/${sample}.map.vcf
+    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${map_vcf}
+    tabix -p vcf ${map_vcf}
+    rm ${snpEff_vcf}*
+
+    blacklist_vcf=${out_dir}/${sample}.blacklist.vcf
+    ${bcftools} view -R ${blacklist_bed} ${map_vcf} -O z -o ${blacklist_vcf}
+    tabix -p vcf ${blacklist_vcf}
+
+    ${bcftools} annotate -a ${blacklist_vcf} -c CHROM,POS,REF,ALT -m +BLACKLIST ${map_vcf} -O u |
+    ${bcftools} filter -e 'BLACKLIST=1' -s BLACKLIST -O z -o ${hotspot_vcf}
+    tabix -p vcf ${hotspot_vcf}
+    rm ${map_vcf}*
+    rm ${blacklist_vcf}*
+fi
+
+
+final_vcf=${out_dir}/${sample}.sage.vcf.gz
+if [ ! -f ${final_vcf} ]; then
+    echo "[INFO] Merging hotspot with processed -" $(date)
+
+    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
+    if [ $? -ne 0 ]
+    then
+        # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
+        somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
+        if [ $? -ne 0 ]
+        then
+            echo "[FATAL] Unable to locate post processed somatic variants. Exiting."
+            exit 1
+        fi
+    fi
+
+    java -Xmx8G -Xms4G \
+        -cp ${sage_jar} com.hartwig.hmftools.sage.SageHotspotAnnotation \
+        -source_vcf ${somatic_vcf} \
+        -hotspot_vcf ${hotspot_vcf} \
+        -known_hotspots ${hotspot_tsv} \
+        -out ${final_vcf}
+
+fi

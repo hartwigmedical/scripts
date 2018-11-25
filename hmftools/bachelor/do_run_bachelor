@@ -3,6 +3,8 @@
 source load_metadata
 
 run_dir=$1 && shift
+bachelor_output_dir=$1 && shift
+bachelor_config=$1 && shift
 credentials=$1 && shift
 bachelor_jar=$1 && shift
 bachelor_pp_jar=$1 && shift
@@ -16,9 +18,8 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # CHSH: File Locations
-lynparza_config=/data/common/dbs/bachelor/lynparza_20180503.xml
 bach_run_dir=${run_dir}
-bach_output_dir=${run_dir}/bachelor/
+bach_output_dir=${run_dir}/${bachelor_output_dir}/
 if [ $? -ne 0 ]
 then
     echo "[ERROR] Unable to locate germline variants. Exiting."
@@ -34,9 +35,9 @@ echo "[INFO] Running Bachelor"
 
 java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
-    -configXml "$lynparza_config" \
+    -configXml ${bachelor_config} \
     -germline \
-    -runDirectory ${bach_run_dir} \
+    -runDirectory ${run_dir} \
     -output_dir ${bach_output_dir} \
     -log_debug \
     $@

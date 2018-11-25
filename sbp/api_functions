@@ -7,7 +7,7 @@
 
 load_run_info_for_set() {
     local set=$1
-    local run_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed" `
+    local run_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" `
     echo ${run_info}
 }
 

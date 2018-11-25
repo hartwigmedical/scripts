@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-runsDir=$1 && shift
-countSet=$1 && shift
-purity_pathology_jar=$1 && shift
-
-java -jar ${purity_pathology_jar} \
-    -runs_dir ${runsDir} \
-    -count_set ${countSet}

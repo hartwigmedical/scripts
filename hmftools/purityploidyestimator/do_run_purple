@@ -63,6 +63,7 @@ else
         -baf ${baf_file} \
         -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
         -run_dir ${run_dir} \
+        -ref_genome hg19 \
         -output_dir ${purple_output} \
         -gc_profile ${gc_profile} \
         -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \

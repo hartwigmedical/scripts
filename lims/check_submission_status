@@ -6,8 +6,8 @@ echo ""
 echo "--- GENERAL INFO ---"
 echo "[INFO] Checking $submission"
 
-  totalLimsSamples=$( query_lims -submission "${submission}" | grep -v "^#" | wc -l )
-   totalLimsFailed=$( query_lims -submission "${submission}" | grep -v "^#" | grep Failed | wc -l )
+  totalLimsSamples=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
+   totalLimsFailed=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep Failed | wc -l )
       totalSamples=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
  totalSamplesReady=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | cut -f6 | grep "Ready" | wc -l )
          totalRuns=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | wc -l )
@@ -20,7 +20,7 @@ echo ""
 
 echo "--- FOR ALL SUBMISSIONS ---"
 echo "[INFO] Inspect further:"
-echo "  query_lims -submission ${submission}"
+echo "  query_lims -type samples -filter submission=${submission}"
 echo "  query_sbp_api -type samples -filter submission=${submission}"
 echo "  query_sbp_api -type runs -filter name=${submission}"
 echo "[INFO] Or gather submission if all is ready and ok:"
@@ -30,7 +30,7 @@ echo ""
 ## when we share fastq from datastore
 submDir="/data/submissions/${submission}"
 submTar="${submDir}/${submission}.tar"
-echo "--- IN CASE OF NEXTSEQ ---"
+echo "--- ONLY IN CASE OF MANUAL NEXTSEQ PROCESSING ---"
 echo "[INFO] In case of nextseq run you can get yield/q30 info with:"
 echo "  seqRun=\"ENTER RUN NAME\" # eg seqRun=180101_NB500901_0000_AHXXXXXXX"
 echo "  pathToSeqRun=/data/data_archive/next_seq/\${seqRun}"

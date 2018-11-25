@@ -19,7 +19,5 @@ then
     fi
 fi
 
-hotspot=/data/common/dbs/somatic_hotspot_v2/Hotspot.tsv
-
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} -hotspot ${hotspot} $@
+${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} $@

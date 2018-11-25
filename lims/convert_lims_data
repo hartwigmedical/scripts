@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use utf8;
 
 use Data::Dumper;
 use File::Basename;
@@ -9,43 +8,38 @@ use Getopt::Long;
 use File::Slurp;
 use JSON::XS;
 use File::Copy;
-use Spreadsheet::XLSX;
-use DateTime::Format::Excel;
-use File::Basename;
 use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
-use constant NOTINUSESTRING => 'COLUMNS_NOT_IN_USE_COLLAPSED';
 
-my $CENTER_FILE = '/data/common/dbs/sbp/center2entity.tsv';
-my $CPCTIN_FILE = '/data/lims/labfiles/latest_lims_cpct';
-my $RESTIN_FILE = '/data/lims/labfiles/latest_lims_rest';
-my $PROCIN_FILE = '/data/lims/labfiles/latest_lims_proc';
-my $LIMSOUTFILE = '/data/lims/lims.json';
-my $BACKUP_DIR  = '/data/lims/previous';
-
-## PROCIN_2017: samples SOP string from 2017
-## JSONIN_2017: samples complete (non-CPCT) from 2017
-my $PROCIN_2017 = '/data/lims/labfiles/2017_lims_proc';
-my $JSONIN_2017 = '/data/lims/labfiles/lims_2017.json'; 
-
-## get and check input
 my %opt = ();
 GetOptions (
-    "out|o=s" => \$opt{ output },
-    "execute" => \$opt{ execute },
-    "debug"   => \$opt{ debug },
-    "help|h"  => \$opt{ help },
+    "out_file=s" => \$opt{ out_file },
+    "lims_dir=s" => \$opt{ lims_dir },
+    "execute"    => \$opt{ execute },
+    "debug"      => \$opt{ debug },
+    "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
-$LIMSOUTFILE = $opt{ output } if $opt{ output };
+
+my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
+my $LIMS_DIR = $opt{ lims_dir } || '/data/lims';
+my $JSON_OUT = $opt{ out_file } || $LIMS_DIR . '/lims.json';
+my $SUBM_OUT = $LIMS_DIR . '/submissions.json';
+my $BACK_DIR = $LIMS_DIR . '/backup';
+my $CPCT_TSV = $LIMS_DIR . '/latest/lims_cpct';
+my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
+my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
+my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
+my $PROC_old = $LIMS_DIR . '/latest/2017_proc'; # for SOP string
+my $LIMS_old = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
 
 ## setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
-my $HELP = <<"HELP";
+my $HELP_TEXT = <<"HELP";
 
   Description
-    Parses LIMS excel files and writes to JSON output.
+    Parses LIMS excel/csv files and writes to JSON output.
     One object in the json is one sample (by unique 
     sample id/barcode).
     
@@ -53,157 +47,69 @@ my $HELP = <<"HELP";
     $SCRIPT -execute
     
   Input files that are used
-       centers: $CENTER_FILE
-     cpct lims: $CPCTIN_FILE
-     rest lims: $RESTIN_FILE
-     proc lims: $PROCIN_FILE
-     proc 2017: $PROCIN_2017
-     lims 2017: $JSONIN_2017
+       centers: $CNTR_TSV
+     cpct lims: $CPCT_TSV
+     subm lims: $SUBM_TSV
+     samp lims: $SAMP_TSV
+     proc lims: $PROC_TSV
+     proc 2017: $PROC_old
+     lims 2017: $LIMS_old
 
   Output files:
-    $LIMSOUTFILE (main json output)
-
+    $JSON_OUT
+    $SUBM_OUT
 HELP
 
+
 ## ---------- 
-## INPUT CHECK
+## INPUT CHECKS and BACKUP
 ## ----------
-print $HELP and exit(0) if $opt{ help };
-print $HELP and exit(0) unless $opt{ execute };
+die $HELP_TEXT . "\n" if $opt{ help };
+die $HELP_TEXT . "\n" unless $opt{ execute };
 
-foreach ( $BACKUP_DIR ){
-    die "[EXIT] Dir does not exist ($_)\n" unless -d;
+foreach ( $BACK_DIR ){
+    die "[EXIT] Dir does not exist ($_)\n" unless -d $_;
 }
-foreach ( $CENTER_FILE, $CPCTIN_FILE, $RESTIN_FILE ){
-    die "[EXIT] File does not exist ($_)\n" unless -f;
+foreach ( $CNTR_TSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $CPCT_TSV, $PROC_old, $LIMS_old ){
+    die "[EXIT] File does not exist ($_)\n" unless -f $_;
 }
-
-## start with backup of current lims files
-foreach ( $LIMSOUTFILE ){
-    next unless -f $LIMSOUTFILE;
-    copy( $_, "$BACKUP_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACKUP_DIR failed: $!";
+foreach ( $JSON_OUT ){
+    next unless -f $JSON_OUT;
+    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACK_DIR failed: $!";
 }
 
-## columns shipments sheet in rest lims (FOR-001 received samples)
-my %SHIP_TRANSLATIONS = (
-  "Arrival_date"      => 'arrival_date',
-  "Project_name"      => 'project_name',
-  "HMF_reg"           => 'submission',
-  "Requested_product" => 'request',
-  "Product_category"  => 'project_type',
-  "Sample_count"      => 'sample_count',
-  "Lab_is_finished"   => 'has_lab_finished',
-  "TAT_lab"           => 'turn_around_time',
-  "Contact_name"      => 'contact_name',
-  "Contact_email"     => 'contact_email',
-  "Remarks"           => 'remarks',
-  "Storage_status"    => 'lab_storage_status',
-  "pull down options" => NOTINUSESTRING,
-);
-
-## columns samples sheet in rest lims (FOR-001 received samples)
-my %REST_TRANSLATIONS = (
-  "Sample_ID"         => 'sample_id',
-  "Sample_name"       => 'sample_name',
-  "DNA_conc"          => 'dna_conc',
-  "Yield"             => 'yield',
-  "Analysis_type"     => 'analysis_type',
-  "Partner_sample"    => 'partner_sample',
-  "HMF_reg"           => 'submission',
-  "SNP_required"      => 'is_snp_required',
-  "SNP_exp"           => 'snp_experiment_id',
-  "Requested_product" => 'request',
-  "State"             => 'lab_status', # lab status
-  "Priority"          => 'priority', 
-  "Arival_date"       => 'arrival_date',
-  "Remarks"           => 'remarks',
-);
-
-my %PROC_TRANSLATIONS = (
-  'Sample_ID'         => 'sample_id', # eg FR12345678
-  'Sample_name'       => 'sample_name', # eg CPCT1234567R
-  'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
-  'Sop_tracking_code' => 'lab_sop_versions',
-);
-
-## columns CPCT tracking sheet
-my %CPCT_TRANSLATIONS = (
-  'Hospital'                => NOTINUSESTRING,
-  'Sampling_date'           => 'sampling_date',
-  'Arrival_HMF'             => 'arrival_date',
-  'Sample_barcode'          => 'nonisolated_sample_barcode',
-  'Patient_name '           => 'patient',
-  'Sample_name'             => 'sample_name',
-  '#'                       => NOTINUSESTRING,
-  'Source '                 => 'sample_source',
-  'Yield'                   => 'yield',
-  'Sample_ID_DNA'           => 'sample_id',
-  'Sample_ID_RNA_or_plasma' => 'plasma_or_rna_sample_id',
-  'Pathologie_exp'          => NOTINUSESTRING,
-  'Qiasymphony_exp'         => NOTINUSESTRING,
-  'Bioanalyser_exp'         => NOTINUSESTRING,
-  'Remarks'                 => NOTINUSESTRING,
-  ## next block in sheet
-  'Primary tumor type'      => 'primary_tum',
-  'Biopsy_material '        => NOTINUSESTRING,
-  'tumor_%'                 => 'tumor_perc',
-  'DNA_conc'                => 'dna_conc',
-  'RNA_conc'                => NOTINUSESTRING,
-  'RIN_value'               => NOTINUSESTRING,
-  'Coupes_barcode'          => NOTINUSESTRING,
-  'Biopsy_Remarks'          => NOTINUSESTRING,
-  ## next block in sheet
-  'Pathologie'              => NOTINUSESTRING,
-  'Qiasymphony'             => NOTINUSESTRING,
-  'SNP'                     => NOTINUSESTRING,
-  'Patient_count '          => NOTINUSESTRING,
-  'Status '                 => 'lab_status',
-  'DNA_prep/reason_failed'  => NOTINUSESTRING,
-  'RNA_prep'                => NOTINUSESTRING,
-  'Biopsy_barc_2'           => NOTINUSESTRING,
-  'Biopsy_barc_3'           => NOTINUSESTRING,
-  'Biopsy_barc_4'           => NOTINUSESTRING,
-  ## next block in sheet
-  'maand'                   => NOTINUSESTRING,
-  'drup '                   => NOTINUSESTRING,
-  'not CPCT/DRUP'           => NOTINUSESTRING,
-  'Biobank (UMCU)'          => NOTINUSESTRING,
-  'Biobank (NKI)'           => NOTINUSESTRING,
-  'MAT'                     => NOTINUSESTRING,
-);
     
 ## ---------- 
 ## MAIN
 ## ----------
 
-say "[INFO] START with script \"$SCRIPT\"";
+say "[INFO] START with \"$SCRIPT\"";
 
-## init all objects that will hold various info
-my $dict_centers = {}; # will be hashref with info about cpct/drup centers
-my $lims_submiss = {}; # will be hashref with info from shipments sheet
-my $lims_inprocs = {}; # will be hashref with info from In Process sheet
-my $lims_samples = {}; # will be hashref with info from all comboined
+my $name_dict = getFieldNameTranslations();
+my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
+my $proc_objs = {}; # will contain objects from InProcess sheet
+my $subm_objs = {}; # will contain objects from Received-shipments sheet
+my $samp_objs = {}; # will contain objects from Received-samples sheet
+my $cpct_objs = {}; # will contain objects from CPCT access DB
+my $lims_objs = {}; # will contain all objects joined together
 
-## load initial 2017 lims data as basis for non-CPCT
-my $lims_2017 = readJson( $JSONIN_2017 );
-$lims_samples = $lims_2017->{ 'samples' };
-$lims_submiss = $lims_2017->{ 'submissions' };
+my $lims_2017 = readJson( $LIMS_old );
+$samp_objs = $lims_2017->{ 'samples' };
+$subm_objs = $lims_2017->{ 'submissions' };
 
-## parsing input and add to existing 2017 lims data
-$dict_centers = parseDictFile( $CENTER_FILE, 'center2centername' );
-$lims_inprocs = parseLimsProc( $PROCIN_2017, \%PROC_TRANSLATIONS, $lims_inprocs );
-$lims_inprocs = parseLimsProc( $PROCIN_FILE, \%PROC_TRANSLATIONS, $lims_inprocs );
-$lims_submiss = parseLimsSubm( $RESTIN_FILE, \%SHIP_TRANSLATIONS, $lims_submiss );
-$lims_samples = parseLimsRest( $RESTIN_FILE, \%REST_TRANSLATIONS, $lims_submiss, $lims_samples );
-$lims_samples = parseLimsCPCT( $CPCTIN_FILE, \%CPCT_TRANSLATIONS, $dict_centers, $lims_samples );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_old, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM'}, 'submission', 0, $SUBM_TSV, "\t" );
+$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP'}, 'sample_id',  1, $SAMP_TSV, "\t" );
+$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT'}, 'sample_id',  1, $CPCT_TSV, "\t" );
 
-## add extra info per sample from In Process sheet
-addLabSopString( $lims_samples, $lims_inprocs );
+$lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
+$lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
+$lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
-## output final lims file (json with 2 main keys: samples, submissions)
-printLimsToJson( $lims_samples, $lims_submiss, $LIMSOUTFILE );
+printLimsToJson( $lims_objs, $subm_objs, $JSON_OUT, $SUBM_OUT );
 
-say "[INFO] DONE with script \"$SCRIPT\"";
+say "[INFO] DONE with \"$SCRIPT\"";
 
 ## ---------- 
 ## /MAIN
@@ -214,56 +120,128 @@ say "[INFO] DONE with script \"$SCRIPT\"";
 ## ---------- 
 ## SUBs
 ## ----------
+sub parseTsv{
+    my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
+    my %store = %$objects;
+    say "[INFO]   Parsing input file $file";
+    
+    ## Check header for completeness
+    open IN, "<", $file or die "Unable to open file ($file): $!\n";
+    
+    my $header_line = <IN>; chomp($header_line);
+    my @header_fields = split( $sep, $header_line );
+    my %fields_map = map { $_ => 1 } @header_fields;
+    
+    ## checking header
+    my $header_misses_field = 0;
+    foreach my $field (keys %$fields) {
+        if ( not exists $fields_map{ $field } ){
+            warn "[WARN] Missing header field ($field) in file ($file)\n";
+            $header_misses_field = 1;
+        }
+    }
+    print Dumper \%fields_map and die "[EXIT] Error: header incomplete ($file)\n" if $header_misses_field;
+    
+    while ( <IN> ){
+        chomp;
+        my @values = split( $sep, $_ );
+        my %raw_object = ();
+        foreach my $field ( @header_fields ){
+            my $next_value = shift @values;
+            $next_value = NACHAR if not defined $next_value;
+            $raw_object{ $field } = $next_value;
+        }
+        
+        my $obj = selectAndRenameFields( \%raw_object, $fields );
+        my $key1 = $obj->{ $store_field_name } || NACHAR;
+        my $key2 = $obj->{ 'sample_id' } || NACHAR;
+        my $key3 = $obj->{ 'sample_name' } || NACHAR;
+        my $key;
+        
+        ## really try to find a key for storing object
+           if ( not isSkipValue($key1) ) { $key = $key1; }
+        elsif ( not isSkipValue($key2) ) { $key = $key2; }
+        elsif ( not isSkipValue($key3) ) { $key = $key3; }
+         else { next; }
+        
+        ## store key is chosen: do final checks
+        next if isSkipValue( $key );
+        next if $should_be_unique and not keyIsCorrectAndUnique( \%store, $obj, $key);
+        
+        ## all checks ok: fix and store
+        fixDateFields( $obj );
+        fixIntegerFields( $obj );
+        $store{ $key } = $obj;
+    }
+    close IN;
+    
+    return \%store;
+}
+
+sub selectAndRenameFields{
+    my ($obj_in, $fields) = @_;
+    my %obj_out = ();
+    foreach my $key ( keys %$obj_in ){
+        if ( defined $fields->{ $key } ){
+            $obj_out{ $fields->{$key} } = $obj_in->{ $key };
+        }
+    }
+    return \%obj_out;
+}
+
 sub readJson{
     my ($json_file) = @_;
-    say "[INFO] Parsing json file $json_file";
+    say "[INFO]   Parsing input json file $json_file";
     my $json_txt = read_file( $json_file );
     my $json_obj = decode_json( $json_txt );
     return( $json_obj );
 }
 
 sub printLimsToJson{
-    my ($samples, $submissions, $out_file) = @_;
-    my $samples_count = scalar keys %$samples;
-    my $submissions_count = scalar keys %$submissions;
+    my ($samples, $submissions, $lims_file, $subm_file) = @_;
+    my $samp_count = scalar keys %$samples;
+    my $subm_count = scalar keys %$submissions;
 
     ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
-    my $json_txt = JSON::XS->new->utf8->pretty->encode(\%lims);
-    say "[INFO] Writing output to \"$out_file\" ($submissions_count submissions and $samples_count samples)";
-    open my $lims_json_fh, '>', $out_file or die "Unable to open output file ($out_file): $!\n";
-        print $lims_json_fh $json_txt;
+    my $coder = JSON::XS->new->utf8->pretty->canonical;
+    my $lims_txt = $coder->encode(\%lims);
+    
+    say "[INFO]   Writing output to $lims_file ($subm_count submissions and $samp_count samples)";
+    open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
+        print $lims_json_fh $lims_txt;
     close $lims_json_fh;
     
-    ## submissions json
-    my ($out_name,$out_path) = fileparse($out_file);
-    my $out_file_sub = $out_path . "submissions.json";
-    my $json_txt_sub = JSON::XS->new->utf8->pretty->encode($submissions);
-    say "[INFO] Writing output to \"$out_file_sub\" ($submissions_count submissions)";
-    open my $sub_json_fh, '>', $out_file_sub or die "Unable to open output file ($out_file_sub): $!\n";
-        print $sub_json_fh $json_txt_sub;
-    close $sub_json_fh;
-    
+    my $subm_txt = $coder->encode($submissions);
+    say "[INFO]   Writing output to $subm_file ($subm_count submissions)";
+    open my $subm_json_fh, '>', $subm_file or die "Unable to open output file ($subm_file): $!\n";
+        print $subm_json_fh $subm_txt;
+    close $subm_json_fh;
 }
 
 sub addLabSopString{
-    my ($samples, $inprocessinfo) = @_;
+    my ($samples, $inprocess) = @_;
+    my %store = %$samples;
     my $sop_field_name = 'lab_sop_versions';
-    foreach my $id ( keys %$samples ){
-        if ( exists $inprocessinfo->{ $id } ){
+    foreach my $id ( keys %store ){
+        if ( exists $inprocess->{ $id } ){
             ## format: PREP(\d+)V(\d+)-QC(\d+)V(\d+)-SEQ(\d+)V(\d+)
-            $samples->{ $id }{ $sop_field_name } = $inprocessinfo->{ $id }{ $sop_field_name };
+            $store{ $id }{ $sop_field_name } = $inprocess->{ $id }{ $sop_field_name };
         }
-        elsif( not exists $samples->{ $id }{ $sop_field_name } ){
-            $samples->{ $id }{ $sop_field_name } = NACHAR;
+        elsif ( defined $samples->{ $id }{ $sop_field_name } ){
+            ## keep whatever is present
         }
-        ## else: we keep whatever is already defined at sop_field_name
+        else{
+            ## fallback to NA default
+            $store{ $id }{ $sop_field_name } = NACHAR;
+        }
     }
+    return \%store;
 }
 
 sub parseDictFile{
     my ($file, $fileType) = @_;
-    say "[INFO] Parsing trans file $file";
+    say "[INFO]   Parsing input dictionary file $file";
     my %store = ();
     
     open my $dict_fh, "<", $file or die "$!: Unable to open file ($file)\n";
@@ -289,44 +267,25 @@ sub parseDictFile{
     return \%store;
 }
 
-sub parseLimsCPCT{
+sub processCpct{
     
-    my ($file, $translations, $centers_dict, $lims) = @_;
-    my %config = (
-        excel => $file,
-        trans => $translations,
-        sheet => 'CPCT tracking',
-        h_val => 'Hospital',
-        h_row => 4,
-        h_col => 1,
-    );
-    
+    my ($lims, $objects, $centers_dict) = @_;
     my %store = %{$lims};
     my %name2id = ();
     
-    ## read the excel sheet in question
-    my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
-    
-    foreach my $row ($config{ h_row }+1 .. $max_row) {
-
-        my %row_info = ();
-        foreach my $col ( $config{ h_col } .. $max_col ){
-            my $header_name = $header->[$col-1];
-            my $cell = $sheet_obj->get_cell( $row, $col );
-            my $val = NACHAR;
-            $val = $cell->unformatted() if defined $cell;
-            $val = $translations->{ $val } if defined $translations->{ $val };
-            $row_info{ $header_name } = $val;
-        }
+    ## open file and check header before reading data lines
+    while ( my($sample_id, $row_info) = each %$objects ){
         
         ## first we work on the dna sample
-        my $sample_name = $row_info{ 'sample_name' };
-        my $sample_id = $row_info{ 'sample_id' };
-        my $patient_name = $row_info{ 'patient' };
+        my $sample_name  = $row_info->{ 'sample_name' };
+        my $sample_id    = $row_info->{ 'sample_id' };
+        my $patient_name = $row_info->{ 'patient' };
         
         ## skip NA or empty values
-        next if not $sample_name or isValueToSkip( $sample_name );
-        next if not $patient_name or isValueToSkip( $patient_name );
+        checkDefined( 'sample_name', $row_info );
+        next if not $sample_name or isSkipValue( $sample_name );
+        checkDefined( 'patient', $row_info );
+        next if not $patient_name or isSkipValue( $patient_name );
         
         ## skip particular case of weird historic sample naming
         next if $sample_name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
@@ -334,29 +293,30 @@ sub parseLimsCPCT{
         ## also sample should be either CPCT, DRUP or PMC
         if ( $sample_name =~ /^((CPCT|DRUP)\d{2}(\d{2})\d{4})(T|R){1}/ms ){
             my ($patient, $drup_or_cpct, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
-            my $centername = $centers_dict->{ $centerid } or die "[EXIT] Center id found ($centerid) but is not defined in dict\n";
-            $row_info{ 'label' } = $drup_or_cpct;
-            $row_info{ 'patient' } = $patient;
-            $row_info{ 'entity' } = $drup_or_cpct.'_'.$centername;
-            $row_info{ 'submission' } = 'HMFreg'.$drup_or_cpct;
-            $row_info{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
+            my $centername = $centers_dict->{ $centerid } or die "[EXIT] Center id ($centerid) not defined in dict\n";
+            $row_info->{ 'label' }         = $drup_or_cpct;
+            $row_info->{ 'patient' }       = $patient;
+            $row_info->{ 'entity' }        = join( "_", $drup_or_cpct, $centername );
+            $row_info->{ 'submission' }    = 'HMFreg' . $drup_or_cpct;
+            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $sample_name =~ /^(PMC\d{6})(T|R){1}/ms ){
             my ($patient, $tum_or_ref) = ($1, $2);
-            $row_info{ 'label' } = 'PMC';
-            $row_info{ 'patient' } = $patient;
-            $row_info{ 'submission' } = "HMFregPMC";
-            $row_info{ 'entity' } = "COHORT_PMC01";
-            $row_info{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
+            $row_info->{ 'label' }         = 'PMC';
+            $row_info->{ 'patient' }       = $patient;
+            $row_info->{ 'submission' }    = "HMFregPMC";
+            $row_info->{ 'entity' }        = "COHORT_PMC01";
+            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         else{
             warn "[WARN] Skipped sample $sample_name from CPCT lims because format is not as expected\n";
             next;
         }
-        $row_info{ 'project_name' } = $row_info{ 'submission' };
+        $row_info->{ 'project_name' } = $row_info->{ 'submission' };
         
-        my $unique = $row_info{ 'sample_id' };
-        my $isSkipValue = isValueToSkip( $unique );
+        my $unique = $row_info->{ 'sample_id' };
+        checkDefined( 'sample_id', $row_info );
+        my $isSkipValue = isSkipValue( $unique );
         
         ## sample misses sample_id if it was not processed
         ## but want to keep for low tumor percentage check
@@ -372,15 +332,12 @@ sub parseLimsCPCT{
         }
         
         ## some completeness checks
-        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
-        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        
-        ## fix certain fields 
-        fixDateFields( \%row_info );
+        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
+        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
         
         ## store info at uniqe id
-        next unless keyIsUnique( \%store, \%row_info, $unique );
-        $store{ $unique } = \%row_info;
+        next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
+        $store{ $unique } = $row_info;
         
         ## store link between name and id in map for later use
         if ( exists $name2id{ $sample_name } ){
@@ -389,23 +346,25 @@ sub parseLimsCPCT{
         }
         $name2id{ $sample_name } = $sample_id;
         
-        ## in case of BIOPT we also store rna sample
+        ## in case of BIOPSY we also store rna sample
         ## in case of BLOOD we also store plasma sample
-        ## both are set in same field "plasma_or_rna_sample_id"
-        my %row_info_copy = %row_info; # a copy because we will alter the object
+        my %row_info_copy = %{$row_info}; # a copy because we will alter the object
         
-        if ( defined $row_info{ 'sample_source' } ){
+        if ( defined $row_info->{ 'sample_source' } ){
             
-            my $source = $row_info{ 'sample_source' };
-            my $unique = $row_info{ 'plasma_or_rna_sample_id' };
-            next if isValueToSkip( $unique );
+            my $unique = NACHAR;
+            my $source = $row_info->{ 'sample_source' };            
             
-            $row_info_copy{ 'sample_id' } = $unique;
-            
-            if ( $source eq 'biopt' or $source eq 'Biopt' ){
+            if ( $source eq 'Biopsy' ){
+				$unique = $row_info->{ 'rna_sample_id' };
+				next if isSkipValue( $unique );
+				$row_info_copy{ 'sample_id' } = $unique;
                 $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
             }
-            elsif( $source eq 'blood' or $source eq 'Blood' ){
+            elsif( $source eq 'Blood' ){
+				$unique = $row_info->{ 'plasma_sample_id' };
+				next if isSkipValue( $unique );
+				$row_info_copy{ 'sample_id' } = $unique;
                 $row_info_copy{ 'analysis_type' } = 'PlasmaAnalysisTODO';
             }
             else{
@@ -413,7 +372,7 @@ sub parseLimsCPCT{
             }
             
             ## store info at unique id
-            next unless keyIsUnique( \%store, \%row_info, $unique );
+            next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
             $store{ $unique } = \%row_info_copy;
         }
 
@@ -429,7 +388,6 @@ sub parseLimsCPCT{
         my $ref_sample_name = $patient . 'R';
         my $ref_sample_id = '';
         
-        #say "[DEBUG] looking for $ref_sample_name at search $sample_id";
         if ( exists $name2id{ $ref_sample_name } ){
             $ref_sample_id = $name2id{ $ref_sample_name };
         }
@@ -439,79 +397,53 @@ sub parseLimsCPCT{
     return \%store;
 }
 
-sub keyIsUnique{
-    my ($objectStore, $newObject, $key) = @_;
-    if ( exists $objectStore->{ $key } ){
-        my $obj1_name = $objectStore->{ $key }{ 'sample_name' };
-        my $obj2_name = $newObject->{ 'sample_name' };
-        warn "[WARN] SKIPPING sample $obj2_name with unique key ($key) because key already exists for sample $obj1_name\n";
-        return 0;
-    }
-    else{
-        return 1;
-    }
-}
-
-sub parseLimsRest{
+sub processSamp{
     
-    my ($file, $translations, $shipments, $lims) = @_;
-    my %config = (
-        excel => $file,
-        trans => $translations,
-        sheet => 'Samples',
-        h_val => 'Sample_ID',
-        h_row => 1,
-        h_col => 1,
-    );
-    my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
-    
+    my ($lims, $objects, $shipments) = @_;
     my %store = %{$lims};
-
-    foreach my $row ( $config{ h_row }+1 .. $max_row ) {
-
-        my %row_info = ();
-        foreach my $col ( $config{ h_col } .. $max_col ){
-            my $header_name = $header->[$col-1];
-            my $cell = $sheet_obj->get_cell( $row, $col );
-            my $val = NACHAR;
-            $val = $cell->unformatted() if defined $cell;
-            $val = $translations->{ $val } if defined $translations->{ $val };
-            $row_info{ $header_name } = $val;
-        }
+    my %name2id = ();
+    
+    ## open file and check header before reading data lines
+    while ( my($sample_id, $row_info) = each %$objects ){        
         
-        my $sample_name = $row_info{ 'sample_name' } or die "No sample_name in row_info";
-        my $sample_id = $row_info{ 'sample_id' } or die "No sample_id in row_info";
-        my $submission = $row_info{ 'submission' } or die "No submission in row_info";
-        my $analysis_type = $row_info{ 'analysis_type' } or die "No analysis_type in row_info";
-        next if isValueToSkip( $sample_name );
+        my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
+        next if isSkipValue( $sample_name );
+        my $sample_id = $row_info->{ 'sample_id' } or print Dumper($row_info) and die "No sample_id in row_info ($sample_name)";
+        my $submission = $row_info->{ 'submission' } or print Dumper($row_info) and die "No submission in row_info ($sample_name)";
+        my $analysis_type = $row_info->{ 'analysis_type' } or print Dumper($row_info) and die "No analysis_type in row_info ($sample_name)";
         
-        $row_info{ 'label' } = 'RESEARCH';
-        $row_info{ 'patient' } = $row_info{ 'sample_name' };
-        $row_info{ 'entity' } = $row_info{ 'submission' };
+        $row_info->{ 'label' } = 'RESEARCH';
+        $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
+        $row_info->{ 'entity' } = $row_info->{ 'submission' };
         
         ## check data analysis type and set accordingly
-        if ( $analysis_type eq 'SomaticsBFX' ){
-            my $partner_id = $row_info{ 'partner_sample' } or die "No partner_sample field in row_info";
-            if ( $partner_id ne '' and $partner_id ne NACHAR ){
-                ## has partner so is somatic T
-                $row_info{ 'analysis_type' } = 'Somatic_T';
+        if ( $analysis_type =~ /^NoAnalysis|Somatic_R|Somatic_T|Germline$/ ){
+            # Already ok so no action 
+        }
+        elsif ( $sample_name =~ /^(CORE\d{2}\d{6})(T|R){1}/ms ){
+            my ($patient, $tum_or_ref) = ($1, $2);
+            $row_info->{ 'label' }         = "CORE";
+            $row_info->{ 'patient' }       = $patient;
+            $row_info->{ 'entity' }        = $submission;
+            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
+        }
+        elsif ( $analysis_type eq 'SomaticsBFX' ){
+            my $partner = $row_info->{ 'partner_sample' };
+            if ( $partner ne '' and $partner ne NACHAR ){
+                $row_info->{ 'analysis_type' } = 'Somatic_T';
             }
             else{
-                ## has no partner so is somatic R
-                $row_info{ 'analysis_type' } = 'Somatic_R';
+                $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
         }
-        elsif ( $analysis_type eq 'GermlineBFX' ){
-            ## Single sample germline
-            $row_info{ 'analysis_type' } = 'Germline';
+        elsif ( $analysis_type eq 'GermlineBFX' ){ ## aka SingleSample
+            $row_info->{ 'analysis_type' } = 'Germline'; 
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
-            ## SNPgenotyping: not a sample so skip
             next;
         }
         elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
-            ## None
-            $row_info{ 'analysis_type' } = 'NoAnalysis';
+            $row_info->{ 'analysis_type' } = 'NoAnalysis';
         }
         else {
             die "[EXIT] Sample ($sample_name) has unknown analysis type ($analysis_type)\n";
@@ -521,121 +453,47 @@ sub parseLimsRest{
         if ( exists $shipments->{ $submission } ){
             my $sub = $shipments->{ $submission };
             my $project_name = $sub->{ 'project_name' };
-            $row_info{ 'project_name' } = $project_name;
+            $row_info->{ 'project_name' } = $project_name;
             
             if ( $sub->{ 'project_type' } eq 'KG production' ){
                 
                 my @dvo_parts = split( /\-/, $project_name );
                 my $center = uc( $dvo_parts[0] );
-                $row_info{ 'entity' } = 'KG_'.$center;
-                $row_info{ 'label' } = 'KG';
+                $row_info->{ 'entity' } = 'KG_' . $center;
+                $row_info->{ 'label' } = 'KG';
             }
             ## assume that all samples of submission need same analysis
             ## so will just overwrite analysis_type of submission
             $sub->{ 'analysis_type' } = $analysis_type;
         }
 
-        my $unique = $row_info{ 'sample_id' };
-        next if isValueToSkip( $unique );
+        my $unique = $row_info->{ 'sample_id' };
+        next if isSkipValue( $unique );
 
         ## checks before storing
         my $regex = "^[0-9a-zA-Z\-]*\$";
         die "[EXIT] FIX IN LAB LIMS: sample_name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
         die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
-        die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info{ 'submission' };
-        die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info{ 'analysis_type' };
-        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info{ 'project_name' };        
-        
-        ## fix certain fields 
-        fixDateFields( \%row_info );
+        die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
+        die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
+        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info->{ 'project_name' };        
         
         ## store at uniqe id
-        next unless keyIsUnique( \%store, \%row_info, $unique );
-        $store{ $unique } = \%row_info;
-        
-    }
-    return \%store;
-}
-
-sub parseLimsProc{
-    
-    my ($file, $translations, $lims) = @_;
-    
-    my %config = (
-        excel => $file,
-        trans => $translations,
-        sheet => 'Sample in process, Results',
-        h_val => 'Sample_ID',
-        h_row => 4,
-        h_col => 1,
-    );
-    my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
-    
-    my %store = %{$lims};
-    
-    foreach my $row ( $config{ h_row }+1 .. $max_row ) {
-
-        my %row_info = ();
-        foreach my $col ( $config{ h_col } .. $max_col ){
-            my $header_name = $header->[$col-1];
-            my $cell = $sheet_obj->get_cell( $row, $col );
-            my $val = NACHAR;
-            $val = $cell->unformatted() if defined $cell;
-            $val = $translations->{ $val } if defined $translations->{ $val };
-            $row_info{ $header_name } = $val;
-        }
-        
-        my $unique = $row_info{ 'sample_id' };
-        next if isValueToSkip( $unique );
-        
-        ## for "In Process" sheet no need for checking actual uniqueness
-        ## the last one to be read should always be the most up2date one
-        $store{ $unique } = \%row_info;
+        next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
+        $store{ $unique } = $row_info;
         
     }
     
     return \%store;
 }
 
-sub parseLimsSubm{
-    
-    my ($file, $translations, $lims) = @_;
-    
-    my %config = (
-        excel => $file,
-        trans => $translations,
-        sheet => 'Shipments',
-        h_val => 'Arrival_date',
-        h_row => 4,
-        h_col => 1,
-    );
-    my ($header, $sheet_obj, $max_row, $max_col) = parseExcelSheet( \%config );
-    
-    my %store = %{$lims};
-    
-    foreach my $row ( $config{ h_row }+1 .. $max_row ) {
-
-        my %row_info = ();
-        foreach my $col ( $config{ h_col } .. $max_col ){
-            my $header_name = $header->[$col-1];
-            my $cell = $sheet_obj->get_cell( $row, $col );
-            my $val = NACHAR;
-            $val = $cell->unformatted() if defined $cell;
-            $val = $translations->{ $val } if defined $translations->{ $val };
-            $row_info{ $header_name } = $val;
+sub fixIntegerFields{
+    my ($obj) = @_;
+    foreach my $key ( keys %$obj ){
+        if ( $obj->{ $key } =~ /^\d+$/ ){
+            $obj->{ $key } = $obj->{ $key } + 0;
         }
-        
-        my $unique = $row_info{ 'submission' };
-        next if isValueToSkip( $unique );
-        
-        ## have to get correct format for certain fields 
-        fixDateFields( \%row_info );
-        
-        ## store shipment info at uniqe id
-        $store{ $unique } = \%row_info;
     }
-    
-    return \%store;
 }
 
 sub fixDateFields{
@@ -646,32 +504,31 @@ sub fixDateFields{
     foreach my $date_field ( @date_fields ){
         
         next unless exists $sample_hashref->{ $date_field };
-        my $new_date = "DATE_WAS_NOT_PARSED";
         my $old_date = $sample_hashref->{ $date_field };
+        my $new_date = $old_date;
         my $identifier = $sample_hashref->{ 'sample_name' };
         
         ## date is not always filled in so skip NA fields
-        next if isValueToSkip( $old_date );
+        next if isSkipValue( $old_date );
         
         ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)        
-        if ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
-            ## case yyyy-mm-dd already ok
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has incorrect month ($identifier): kept string as-is but please fix\n" if $2 > 12;
-            $new_date = $old_date;
+        if ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
+            ## format unclear so need for checks
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check\n" if ($1 < 8) or ($1 > 20);
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
+            $new_date = join( "-", "20" . $1, $2, $3 );
         }
         elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
             ## dd-mm-yyyy
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has incorrect month ($identifier): kept string as-is but please fix\n" if $2 > 12;
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
             $new_date = join( "-", $3, $2, $1 );
         }
-        elsif ( $old_date =~ /^\d+$/ ){
-            ## epoch time
-            my $datetime = DateTime::Format::Excel->parse_datetime( $old_date );
-            $new_date = $datetime->ymd(); ## eg 2017-01-31
+        elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
+            ## case yyyy-mm-dd already ok
+            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
         }
         else{
             warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
-            $new_date = $old_date;
         }
         
         ## store new format using reference to original location
@@ -715,30 +572,117 @@ sub parseExcelSheet{
     return( \@header, $sheet_obj, $max_row, $max_col );
 }
 
-sub isValueToSkip{
+sub isSkipValue{
     my ($value) = @_;
     die "[EXIT] Value to check for skipping is not defined\n" if not defined $value;
-    my @to_skip = ( NACHAR, EMPTY, 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x' );
+    my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x' );
     foreach my $skip_string ( @to_skip ){
         return 1 if $value =~ /^$skip_string$/i;
     }
     return 0;
 }
 
-sub getValueFromHashByKey{
-    my ($hashref, $key) = @_;
-    my $out = "";
-    if ( defined $hashref->{ $key } ){
-        $out = $hashref->{ $key };
+sub keyIsCorrectAndUnique{
+    my ($store, $newObject, $key) = @_;
+    if ( $key =~ /[\n\r]/ ){
+        my $woNewlines = $key =~ s/[\n\r\f]/\[ENTER\]/gr;
+	warn "[WARN] SKIPPING sample with key ($woNewlines): contains newline/enter\n";
+        return 0;
     }
-    return $out;
+    elsif ( not $key =~ /^[a-zA-z0-9\-]+$/ ){
+        warn "[WARN] SKIPPING sample with key ($key): contains characters that are not allowed\n";
+        return 0;
+    }
+    elsif ( exists $store->{ $key } ){
+        warn "[WARN] SKIPPING sample with store key ($key): key already exists in store\n";
+        print Dumper($newObject) if $opt{ 'debug' };
+        return 0;
+    }
+    else{
+        return 1;
+    }
 }
 
-sub debugHash{
-    my ($hashref, $msg) = @_;
-    my $stdout_msg = "[DEBUG] hash for debug";
-    $stdout_msg .= " ($msg)" if defined $msg;
-    say $stdout_msg;
-    print Dumper $hashref;
-    <>;
+sub checkDefined{
+	my ( $key, $hash) = @_;
+	if ( not defined $hash->{$key} ){
+		warn "[WARN] Value $key is not defined in:\n";
+	    print Dumper $hash;
+	}
+}
+
+sub getFieldNameTranslations{
+    ## columns shipments sheet in rest lims (FOR-001)
+    my %SUBM_DICT = (
+      "Arrival_date"      => 'arrival_date',
+      "Project_name"      => 'project_name',
+      "HMF_reg"           => 'submission',
+      "Requested_product" => 'request',
+      "Product_category"  => 'project_type',
+      "Sample_count"      => 'sample_count',
+      "Lab_is_finished"   => 'has_lab_finished',
+      "TAT_lab"           => 'turn_around_time',
+      "Contact_name"      => 'contact_name',
+      "Contact_email"     => 'contact_email',
+      "Remarks"           => 'remarks',
+      "Storage_status"    => 'lab_storage_status',
+    );
+
+    ## columns samples sheet in rest lims (FOR-001)
+    my %SAMP_DICT = (
+      "Sample_ID"         => 'sample_id',
+      "Sample_name"       => 'sample_name',
+      "DNA_conc"          => 'dna_conc',
+      "Yield"             => 'yield',
+      "Q30"               => 'q30',
+      "Analysis_type"     => 'analysis_type',
+      "Partner_sample"    => 'partner_sample',
+      "HMF_reg"           => 'submission',
+      "SNP_required"      => 'is_snp_required',
+      "SNP_exp"           => 'snp_experiment_id',
+      "Requested_product" => 'request',
+      "State"             => 'lab_status', # lab status
+      "Primary_tumor_type"=> 'ptum',
+      "Priority"          => 'priority', 
+      "Arival_date"       => 'arrival_date',
+      "Remarks"           => 'remarks',
+    );
+
+    ## columns In Process sheet (HMF-FOR-002)
+    my %PROC_DICT = (
+      'Sample_ID'         => 'sample_id', # eg FR12345678
+      'Sample_name'       => 'sample_name', # eg CPCT1234567R
+      'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
+      'Sop_tracking_code' => 'lab_sop_versions',
+    );
+
+    ## columns CPCT tracking Access table
+    my %CPCT_DICT = (
+      'Sampling_date'      => 'sampling_date',
+      'Arrival_HMF'        => 'arrival_date',
+      'Sample_barcode'     => 'sample_tube_barcode',
+      'Patient_name'       => 'patient',
+      'Sample_name'        => 'sample_name',
+      'Source'             => 'sample_source',
+      'Yield'              => 'yield',
+      'Sample_ID_DNA'      => 'sample_id',
+      'Sample_ID_RNA'      => 'rna_sample_id',
+      'Sample_ID_Plasma'   => 'plasma_sample_id',
+      'Primary_tumor_type' => 'ptum',
+      'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
+      'DNA_conc'           => 'dna_conc',
+      'Final_lab_status'   => 'lab_status',
+      'Reason_failed'      => 'reason_failed',
+      'Status_prep'        => 'prep_status',
+      'Remarks'            => 'lab_remarks'
+    );
+    
+    my %translations = (
+        'SUBM' => \%SUBM_DICT,
+        'SAMP' => \%SAMP_DICT,
+        'PROC' => \%PROC_DICT,
+        'CPCT' => \%CPCT_DICT,
+    );
+    
+    return \%translations;
 }
