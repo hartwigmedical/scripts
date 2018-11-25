@@ -1,5 +1,10 @@
 library(tidyverse)
 library(visNetwork)
+library(igraph)
+library(GenomicRanges)
+library(RMySQL)
+library(Biostrings)
+library(StructuralVariantAnnotation)
 
 CN_ROUNDING= 0.2
 CN_DIFF_MARGIN = 0.25
@@ -494,7 +499,49 @@ chain_events = function(links) {
     #index=1
   stop("TODO")
 }
-export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpointgraph.", sampleId, ".html")) {
+
+as_undirected_segment_connectivity_igraph = function(cngr, svgr) {
+  bpgr = svgr[!is.na(svgr$partner)]
+  df = bind_rows(
+    findOverlaps(cngr, cngr, maxgap=1) %>%
+      as.data.frame() %>%
+      mutate(
+        cnid1 = names(cngr)[queryHits],
+        cnid2 = names(cngr)[subjectHits]) %>%
+      dplyr::select(cnid1, cnid2),
+    data.frame(
+      cnid1=bpgr$cnid,
+      cnid2=partner(bpgr)$cnid,
+      stringsAsFactors=FALSE)) %>%
+    filter(cnid1 < cnid2) %>%
+    distinct()
+  # TODO: add graph weighting by #edges or total edge ploidy
+  ig = graph_from_data_frame(df, directed=FALSE, vertices=data.frame(cnid=names(cngr)))
+  return(ig)
+}
+find_cn_communities = function(cngr, svgr) {
+  ig = as_undirected_segment_connectivity_igraph(cngr, svgr)
+  comm = cluster_edge_betweenness(ig)
+  return(membership(comm))
+}
+
+get_community_sv_info_df = function(cndf, svdf, cngr, svgr, cn_membership) {
+  cndf$community_id = cn_membership
+  row.names(cndf) = cndf$id
+  svgr$community_id = cndf[svgr$cnid,]$community_id
+  svgr$arm = on_hg19_arm(svgr)
+  sv_info = as.data.frame(svgr) %>%
+    group_by(community_id) %>%
+    summarise(
+      community_breakend_count=n(),
+      community_arms=str_replace_all(str_replace_all(paste0(unique(arm), collapse=","), "P", "p"), "Q", "q"))
+  df = data.frame(community_id = unique(cn_membership), stringsAsFactors=FALSE) %>%
+    left_join(sv_info, by="community_id") %>%
+    replace_na(list(community_breakend_count=0))
+  return(df)
+}
+
+export_to_visNetwork = function(cndf, svdf, cngr, svgr, sampleId, file=paste0("breakpointgraph.", sampleId, ".html")) {
   segmentSupportShape = function(support) {
     ifelse(support %in% c("TELOMERE", "CENTROMERE"), "triangle",
            ifelse(support == "BND", "square",
@@ -505,6 +552,17 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
   cndf = cndf %>% filter(sampleId == sampleFilterId)
   svdf = svdf %>% filter(sampleId == sampleFilterId)
   svgr = svgr[svgr$sampleId == sampleFilterId,]
+  cndf$groupname = as.character(find_cn_communities(cngr, svgr))
+  cndf = cndf %>%
+    left_join(get_community_sv_info_df(cndf, svdf, cngr, svgr, cndf$groupname),
+      by=c("groupname"="community_id")) %>%
+    # split out small groups
+    mutate(group = paste0(community_breakend_count, " breakends \n", community_arms)) %>%
+    # remove groups with few breakends
+    mutate(group = ifelse(community_breakend_count <= 6, NA, group)) %>%
+    # never group arms with nothing happening
+    mutate(group = ifelse(segmentStartSupport %in% c("CENTROMERE", "TELOMERE") & segmentEndSupport %in% c("CENTROMERE", "TELOMERE"), NA, group))
+
   nodes = bind_rows(
     # start
     cndf %>%
@@ -538,7 +596,7 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
         color="lightblue",
         width=copyNumber,
         length=log10(end - start) + 1,
-        title=paste0(chromosome, ":", start, "-", end, " (", end - start + 1, "bp)"),
+        title=paste0(chromosome, ":", start, "-", end, " (", end - start + 1, "bp) ", method, " ", actualBAF),
         smooth=FALSE,
         dashes=FALSE) %>%
       dplyr::select(from, to, color, width, length, title, smooth, dashes),
@@ -598,10 +656,12 @@ export_to_visNetwork = function(cndf, svdf, svgr, sampleId, file=paste0("breakpo
   )
   rescaling = list(width=5, length=3, size=3)
   visNetwork(
-    nodes %>% mutate(size=pmin(size, 10) * rescaling$size),
-    edges %>% mutate(width=pmin(width, 10) * rescaling$width, length=length * rescaling$length),
-    height = "1000px", width = "100%") %>%
-    visLayout(improvedLayout=TRUE) %>%
+      nodes %>% mutate(size=pmin(size, 10) * rescaling$size),
+      edges %>% mutate(width=pmin(width, 10) * rescaling$width, length=length * rescaling$length),
+      height = "1000px", width = "100%") %>%
+    visIgraphLayout(layout="layout_nicely", physics=TRUE, type="full", randomSeed=0) %>%
+    visClusteringByGroup(cndf %>% filter(!is.na(group)) %>% pull(group) %>% unique(), label = "", force = FALSE, shape="big square") %>%
+    visLegend() %>%
     visSave(file)
 }
 

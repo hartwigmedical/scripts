@@ -1,8 +1,5 @@
 # Outputs reduced
-library(RMySQL)
 library(tidyverse)
-library(Biostrings)
-library(StructuralVariantAnnotation)
 library(readr)
 library(stringr)
 tmpwd=getwd()
@@ -12,7 +9,7 @@ setwd(tmpwd)
 remove(tmpwd)
 source("libSvAnalyser.R")
 
-graph_dir = "../../graphs/"
+graph_dir = "../../graphs/" #graph_dir = "D:/hartwig/graphs"
 
 samples = str_replace(list.files(path=graph_dir, pattern=".*_cn_reduced.purple.cnv"), stringr::fixed("_cn_reduced.purple.cnv"), "")
 
@@ -84,7 +81,7 @@ export_to_visjs = function(sample, graph_dir, cn_file_suffix="_cn_reduced.purple
   }
   tmpwd=getwd()
   setwd(graph_dir)
-  export_to_visNetwork(cndf, svdf, svgr, sample, file=paste0("breakpointgraph.", sample, ".simplified.html"))
+  export_to_visNetwork(cndf, svdf, cngr, svgr, sample, file=paste0("breakpointgraph.", sample, ".simplified.html"))
   setwd(tmpwd)
 }
 
