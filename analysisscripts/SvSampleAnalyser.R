@@ -10,16 +10,11 @@ library(stringi)
 library(devtools)
 
 
+# SPECIFIC SAMPLE ANALYSIS
+
+
 svData = read.csv('~/logs/CLUSTER_V21.csv')
 nrow(svData)
-nrow(svData %>% filter(PONCount>= 2)) # confirm PON has already been filtered
-
-#  extract fields to externally annotate with during SV Analyser run (to save processing time)
-extDataFields = select(svInsData, 'SampleId', 'Id', 'PONCount', 'PONRegionCount', 'LEStart', 'LEEnd', 'FSStart', 'FSEnd')
-View(extDataFields)
-write.csv(extDataFields, "~/data/sv_external_data.csv", quote=FALSE)
-
-# SPECIFIC SAMPLE ANALYSIS
 
 
 specificSample = 'CPCT02060039T'
@@ -219,101 +214,4 @@ ssTmp1 = (ssData %>% group_by(ChrStart,IsStressed)
           %>% arrange(ChrStart,IsStressed))
 
 
-
-
-# Inserts Analysis
-svInsData = read.csv('~/logs/CLUSTER_INS_V1.csv')
-svInsData$IsLINE = ifelse(svInsData$LEStart!='false'|svInsData$LEEnd!='false',1,0)
-
-insData = svInsData %>% filter(Type=='INS')
-insData$InsertLen = stri_length(insData$InsertSeq)
-nrow(insData)
-
-# length of inserts
-insData$LenLogBucket = 2**round(log(insData$InsertLen,2),0)
-insData$LenBucket = ifelse(insData$InsertLen<500,round(insData$InsertLen/10,0)*10,500)
-
-
-
-# distribution of TI lengths, by whether cross arm or not
-insByLogLength = (insData %>% group_by(LenLogBucket)
-                  %>% summarise(Count=n())
-                  %>% arrange(LenLogBucket))
-
-View(insByLogLength)
-
-insByLength = (insData %>% group_by(LenBucket)
-               %>% summarise(Count=n())
-               %>% arrange(LenBucket))
-
-View(insByLength)
-
-insLenPlot = (ggplot(data = insByLength %>% filter(LenBucket>0), aes(x = LenBucket))
-              + geom_line(aes(y=Count, colour='Count'))
-              + ylab("SV Count") + labs(title = "INS length"))
-
-print(insLenPlot)
-
-
-# links with LINE elements
-insLineData = (svInsData %>% group_by(SampleId,ClusterId)
-               %>% summarise(SvCount=n(),
-                             FragileCount=sum(FSStart!='false'|FSEnd!='false'),
-                             LINECount=sum(IsLINE==1),
-                             InsCount=sum(Type=='INS'),
-                             DelCount=sum(Type=='DEL'),
-                             DupCount=sum(Type=='DUP'),
-                             InvCount=sum(Type=='INV'),
-                             BndCount=sum(Type=='BND'))
-               %>% arrange(SampleId,ClusterId))
-
-View(insLineData)
-
-insLineData$HasLINE = ifelse(insLineData$LINECount>0,1,0)
-insLineData$ClusterSize = ifelse(insLineData$SvCount==1, 'None', ifelse(insLineData$SvCount < 4, 'Small', 'Large'))
-
-insLineStats = (insLineData %>% group_by(HasLINE,ClusterSize)
-                %>% summarise(Count=n(),
-                              InsCount=sum(InsCount),
-                              InsPerc=round(sum(InsCount)/sum(SvCount),3),
-                              DelPerc=round(sum(DelCount)/sum(SvCount),3),
-                              DupPerc=round(sum(DupCount)/sum(SvCount),3),
-                              InvPerc=round(sum(InvCount)/sum(SvCount),3),
-                              BndPerc=round(sum(BndCount)/sum(SvCount),3))
-                %>% arrange(HasLINE,ClusterSize))
-
-View(insLineStats)
-
-
-# cluster stats
-
-clusterStats1 = (svInsData %>% group_by(SampleId,ClusterId)
-               %>% summarise(SvCount=n(),
-                             FragileCount=sum(FSStart!='false'|FSEnd!='false'),
-                             LINECount=sum(IsLINE==1),
-                             InsCount=sum(Type=='INS'),
-                             DelCount=sum(Type=='DEL'),
-                             DupCount=sum(Type=='DUP'),
-                             InvCount=sum(Type=='INV'),
-                             BndCount=sum(Type=='BND'))
-               %>% arrange(SampleId,ClusterId))
-
-clusterStats1$ClusterCountBucket = ifelse(clusterStats1$SvCount<=10,clusterStats1$SvCount,
-                                  ifelse(clusterStats1$SvCount<=25,round(clusterStats1$SvCount/5)*5,
-                                  ifelse(clusterStats1$SvCount<=150,round(clusterStats1$SvCount/10)*10,round(clusterStats1$SvCount/100)*100)))
-
-clusterStats2 = (clusterStats1 %>% group_by(ClusterCountBucket)
-                %>% summarise(BucketCount=n(),
-                              SvCount=sum(SvCount),
-                              InsPerc=round(sum(InsCount)/sum(SvCount),3),
-                              DelPerc=round(sum(DelCount)/sum(SvCount),3),
-                              DupPerc=round(sum(DupCount)/sum(SvCount),3),
-                              InvPerc=round(sum(InvCount)/sum(SvCount),3),
-                              BndPerc=round(sum(BndCount)/sum(SvCount),3),
-                              LINEPerc=round(sum(LINECount)/sum(SvCount),3))
-                %>% arrange(ClusterCountBucket))
-
-clusterStats2$BucketSvPerc = round(clusterStats2$SvCount/sum(clusterStats2$SvCount),3)
-
-View(clusterStats2)
 
