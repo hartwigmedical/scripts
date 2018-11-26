@@ -26,7 +26,7 @@ unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
 gunzip -c ${original_vcf} > ${unzipped_vcf}
 
 
-Rscript $prefix/../gridss/gridss_somatic_filter.R -p /data/experiments/gridss_full/pon/ -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf} -s ${libgridss}
+Rscript $prefix/../../gridss/gridss_somatic_filter.R -p /data/experiments/gridss_full/pon/ -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf} -s ${libgridss}
 
 rm ${unzipped_vcf}
 mv ${output_vcf}.bgz ${output_vcf}.gz
