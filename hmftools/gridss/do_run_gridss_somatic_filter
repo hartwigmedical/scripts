@@ -1,10 +1,12 @@
 #!/bin/bash
 source load_metadata
 
+libgridss=/data/common/repos/scripts/gridss
+gridss_pon=/data/common/dbs/gridss/pon/
+
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-libgridss_path=$prefix/../../gridss/
 
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
 if [ -z ${original_vcf} ]
@@ -24,8 +26,7 @@ fi
 unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
 gunzip -c ${original_vcf} > ${unzipped_vcf}
 
-
-Rscript ${libgridss_path}/gridss_somatic_filter.R -p /data/experiments/gridss_full/pon/ -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf} -s ${libgridss_path}
+Rscript ${libgridss}/gridss_somatic_filter.R -p ${gridss_pon} -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf} -s ${libgridss}
 
 rm ${unzipped_vcf}
 mv ${output_vcf}.bgz ${output_vcf}.gz
