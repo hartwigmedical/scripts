@@ -8,10 +8,10 @@ credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-structural_vcf=$(find -L ${run_dir}/purple/ -type f -name *.purple.sv.vcf.gz)
+structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name *.purple.sv.vcf.gz)
 if [ -z ${structural_vcf} ]
 then
-    echo "Unable to locate gridss structural variants. Exiting."
+    echo "Unable to locate gridss pilot structural variants. Exiting."
     exit 1
 fi
 
