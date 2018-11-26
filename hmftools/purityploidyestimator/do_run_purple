@@ -40,6 +40,12 @@ fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 
+sv_recovery_arg=""
+if [[ ${structural_vcf} == *".gridss.somatic.vcf.gz" ]]; then
+  sv_recovery_vcf=$(dirname ${structural_vcf})/$(basename -s .vcf.gz ${structural_vcf}).full.vcf.gz
+  sv_recovery_arg="-sv_recovery_vcf ${sv_recovery_vcf}"
+fi
+
 if [ -z "${credentials}" ]; then
     java -Xmx8G -Xms4G \
         -jar ${purple_jar} \
@@ -50,6 +56,7 @@ if [ -z "${credentials}" ]; then
         -run_dir ${run_dir} \
         -gc_profile ${gc_profile} \
         -output_dir ${purple_output} \
+        ${sv_recovery_arg} \
         $@
 else
     db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -67,5 +74,6 @@ else
         -output_dir ${purple_output} \
         -gc_profile ${gc_profile} \
         -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+        ${sv_recovery_arg} \
         $@
 fi
