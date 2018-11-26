@@ -31,3 +31,5 @@ Rscript ${libgridss}/gridss_somatic_filter.R -p ${gridss_pon} -i ${unzipped_vcf}
 rm ${unzipped_vcf}
 mv ${output_vcf}.bgz ${output_vcf}.gz
 mv ${output_vcf}.bgz.tbi ${output_vcf}.gz.tbi
+mv ${full_vcf}.bgz ${full_vcf}.gz
+mv ${full_vcf}.bgz.tbi ${full_vcf}.gz.tbi
