@@ -32,7 +32,7 @@ function main {
 }
 
 find_subdirs_in_directory() { 
-  find "$1" -mindepth 1 -maxdepth 1 -type d
+  find "$1" -mindepth 1 -maxdepth 1 -type d | sort
 }
 
 find_file_in_pipeline_run() { 
