@@ -18,7 +18,7 @@ then
     somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
     if [ -z ${somatic_vcf} ]
     then
-        echo "Unable to locate post processed somatic variants. Exiting."
+        echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
         exit 1
     fi
 fi
@@ -33,7 +33,7 @@ then
         structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf.gz)
         if [ -z ${structural_vcf} ]
         then
-            echo "Unable to locate bpi structural variants. Exiting."
+            echo "[ERROR] Unable to locate bpi structural variants. Exiting."
             exit 1
         fi
     fi
