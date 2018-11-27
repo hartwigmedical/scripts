@@ -89,7 +89,8 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${bachelor_pp_jar} \
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -sample_path ${run_dir}/${bachelor_output_dir} \
+    -sample_path ${run_dir} \
+    -bachelor_file ${bach_data_file} \
     -purple_data_dir ${purple_sub_dir} \
     -high_confidence_bed ${high_conf_bed} \
     -ref_genome ${ref_genome_file} \
