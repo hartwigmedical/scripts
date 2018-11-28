@@ -21,6 +21,7 @@ ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${sv_jar} \
     -vcf_file ${structural_vcf} \
+    -log_debug \
     -sample ${sample} \
     -ref_genome ${ref_genome} \
     -ensembl_db ${ensembl_db} -ensembl_user ${db_user} -ensembl_pass ${db_pass} \
