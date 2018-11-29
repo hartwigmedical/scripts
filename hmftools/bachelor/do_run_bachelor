@@ -39,8 +39,7 @@ java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -germline \
     -runDirectory ${run_dir} \
     -output_dir ${bach_output_dir} \
-    -log_debug \
-    $@
+    -log_debug
 
 # CHSH: Slice BAM files using the bachelor bed file just created
 bed_file=${bach_output_dir}/bachelor_bed.csv
