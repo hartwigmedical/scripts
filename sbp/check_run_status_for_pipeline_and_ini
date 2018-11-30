@@ -40,7 +40,13 @@ query_sbp_api \
     while read failedTumorSample; do
         foundValue=$( echo ${allTumorSamplesWithValidRun} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
         if [ ${foundValue} == 0 ]; then
-            bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+            bucketSet=$( query_sbp_api \
+                -type runs \
+                -filter "tumor_sample=${failedTumorSample}" \
+                -filter "ini=${ini}" \
+                -filter "pipeline=${pip}" \
+                -filter "status=Failed" \
+                -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].name' | tail -n 1 )
 
             countSucceededSet=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
