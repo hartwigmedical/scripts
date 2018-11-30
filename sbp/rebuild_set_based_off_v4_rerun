@@ -24,4 +24,4 @@ echo "[INFO] Skipping CHORD on ${set}. Planning is to rerun chord in batch mode 
 #run_chord_prod ${download_path}/${set}
 
 echo "[INFO] Loading genomic data into pilot database"
-
+#load_run_into_pilot_db ${download_path}/${set}
