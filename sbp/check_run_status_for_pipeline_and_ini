@@ -79,7 +79,7 @@ query_sbp_api \
                 echo "# ${setNameForFailedTumorSample} has failed on ${pip} but exists in successful runs. This is not allowed!"
             fi
         else
-            echo "# ${failedTumorSample} has Failed on pip ${pip} but also has a Validated or Success run so can be ignored."
+            echo "# ${failedTumorSample} has failed analysis on pip ${pip} but also has a Validated or Success run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
