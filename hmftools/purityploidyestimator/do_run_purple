@@ -54,6 +54,7 @@ if [ -z "${credentials}" ]; then
         -baf ${baf_file} \
         -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
         -run_dir ${run_dir} \
+        -ref_genome hg19 \
         -gc_profile ${gc_profile} \
         -output_dir ${purple_output} \
         ${sv_recovery_arg} \
