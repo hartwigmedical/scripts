@@ -1,3 +1,0 @@
-#!/bin/bash
-
-check_run_status_for_pipeline_and_ini "Somatic.ini" "v4.3"
