@@ -16,7 +16,7 @@ then
     somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
     if [ $? -ne 0 ]
     then
-        echo "Unable to locate post processed somatic variants. Exiting."
+        echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
         exit 1
     fi
 fi
@@ -45,3 +45,6 @@ ${prefix}/../svloader/do_run_sv_loader ${sample} ${structural_vcf} ${credentials
 
 echo "[INFO] Loading metrics"
 ${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
+
+echo "[INFO] Loading CHORD"
+${prefix}/do_load_chord_data ${run_dir} ${credentials} ${patient_db_jar}
