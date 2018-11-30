@@ -26,16 +26,17 @@ if [[ ${ini} =~ Rerun ]]; then
     downloadScript="download_rerun_v4_set -s"
 fi
 
+fullRunInis="Somatic.ini\|CPCT.ini"
 allTumorSamplesWithValidRun=$( query_sbp_api \
     -type runs \
-    -filter "ini=${ini}" \
+    -filter "ini=${fullRunInis}" \
     -filter "bucket=hmf-output" \
     -filter "status=Validated" \
     -json | jq -r '.[].tumor_sample')
 
 allTumorSamplesWithSuccessRun=$( query_sbp_api \
     -type runs \
-    -filter "ini=${ini}" \
+    -filter "ini=${fullRunInis}" \
     -filter "bucket=hmf-output" \
     -filter "status=Success" \
     -json | jq -r '.[].tumor_sample')
