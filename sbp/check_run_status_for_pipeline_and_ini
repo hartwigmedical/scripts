@@ -35,7 +35,7 @@ allTumorSamplesWithValidRun=$( query_sbp_api \
 
 allTumorSamplesWithSuccessRun=$( query_sbp_api \
     -type runs \
-    -filter "ini=${ini}"
+    -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "status=Success" \
     -json | jq -r '.[].tumor_sample')
