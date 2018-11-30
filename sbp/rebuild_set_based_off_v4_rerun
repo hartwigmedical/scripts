@@ -20,6 +20,8 @@ do_run_purple_no_db ${download_path}/${set}
 echo "[INFO] Copying bachelor for ${set} from /data/cpct/runs"
 cp -r /data/cpct/runs/${set}/bachelor ${download_path}/${set}
 
-echo "[INFO] Running CHORD for ${set}"
-run_chord_prod ${download_path}/${set}
+echo "[INFO] Skipping CHORD on ${set}. Planning is to rerun chord in batch mode later on!"
+#run_chord_prod ${download_path}/${set}
+
+echo "[INFO] Loading genomic data into pilot database"
 
