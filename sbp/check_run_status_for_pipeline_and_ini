@@ -3,21 +3,21 @@
 ini=$1
 pip=$2
 
-if [[ -z ${ini} ]]; then echo "[EXIT] No ini given" & exit 1; fi
-if [[ -z ${pip} ]]; then echo "[EXIT] No pipeline version given" & exit 1; fi
+if [ -z ${ini} ]; then echo "[ERROR] No ini given" & exit 1; fi
+if [ -z ${pip} ]; then echo "[ERROR] No pipeline version given" & exit 1; fi
 
 ## STLI: param check
 iniCount=$( query_sbp_api -type inis -filter "name=${ini}" -exact | grep -v "^#" | wc -l )
 if [[ ${iniCount} != 1 ]]; then
-    echo "[EXIT] Error: incorrect ini ${ini})?" && exit 1
+    echo "[ERROR] Non-existing ini ${ini})?" && exit 1
 fi
 pipCount=$( query_sbp_api -type stacks -filter "revision=${pip}" -exact | grep -v "^#" | wc -l )
 if [[ ${pipCount} < 1 ]]; then
-    echo "[EXIT] Error: incorrect pipeline version (${pip})?" && exit 1
+    echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
 
 ## STLI: define setting by ini
-findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/ /data/cpct/reruns_v4/"
+findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/"
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
 downloadScriptFail="download_qc_fail_run"
@@ -26,9 +26,10 @@ if [[ ${ini} =~ Rerun ]]; then
     downloadScript="download_rerun_v4_set -s"
 fi
 
+allTumorSamplesWithValidRun=$(query_sbp_api -type runs -filter "ini=${ini}" --filter "bucket=hmf-output" -filter "status=Validated" -json | jq -r '.[].tumor_sample')
+
 ## STLI: perform job
 echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
-allValidatedRuns=$(query_sbp_api -type runs -filter "ini=${ini}" --filter "bucket=hmf-output" -filter "pipeline=${pip}" -filter "status=Validated" -json | jq -r '.[].tumor_sample')
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
@@ -37,23 +38,22 @@ query_sbp_api \
     -filter "status=Failed" \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read failedTumorSample; do
-        foundValue=$( echo ${allValidatedRuns} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
-        bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
-        if [[ ${foundValue} == 0 ]]
-        then
-             failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].name' | tail -n 1 )
-             COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
-		     CountFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${failedSet}" | wc -l)
-		     if [[ ${COUNT} == 0 && ${CountFailedSet} == 0 ]]
-		     then
-			    bucketSetFail=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | tail -n 1)
-                echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSetFail}"
-		     elif [[ ${COUNT} == 0 ]]
-             then
+        foundValue=$( echo ${allTumorSamplesWithValidRun} | tr " " "\n" | grep -w  ${failedTumorSample} | wc -l)
+        if [ ${foundValue} == 0 ]; then
+            bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+            failedSet=$( query_sbp_api -type runs -filter "tumor_sample=${failedTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Failed" -exact -json | jq -r '.[].name' | tail -n 1 )
+
+            countSucceededSet=$( find ${findDirs} -maxdepth 1 -type d -name "${failedSet}" | wc -l);
+		    countFailedSet=$( find ${findDirsFail} -maxdepth 1 -type d -name "${failedSet}" | wc -l)
+		    if [[ ${countSucceededSet} == 0 && ${countFailedSet} == 0 ]]
+		    then
+                echo "${downloadScriptFail} -s ${failedSet} -b ${bucketSet}"
+		    elif [[ ${countSucceededSet} == 0 ]]
+            then
                 echo "# ${failedSet} has failed on ${pip} and is already on datastore ${findDirsFail}"
-             else
+            else
                 echo "# ${failedSet} has failed on ${pip} but seems to exist in succeeded runs"
-             fi
+            fi
         fi
     done | sort -r | uniq
 echo ""
@@ -65,23 +65,19 @@ query_sbp_api \
     -filter "bucket=hmf-output" \
     -filter "pipeline=${pip}" \
     -filter "status=Success" \
-    -json | jq -r '.[].name' | \
-    while read setName; do
-        COUNTSucess=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l)
-        bucketSetVal=$( query_sbp_api -type runs -filter "tumor_sample=${setName}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Validated" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
-        ValSet=$( query_sbp_api -type runs -filter "tumor_sample=${setName}" -filter "ini=${ini}" -filter "bucket=${bucketSetVal}" -filter "pipeline=${pip}" -filter "status=Validated" -exact -json | jq -r '.[].name' | tail -n 1 )
-        countVal=$(${ValSet} | wc -l);
+    -json | jq -r '.[].tumor_sample' | uniq | \
+    while read successTumorSample; do
+        foundValue=$( echo ${allTumorSamplesWithValidRun} | tr " " "\n" | grep -w  ${successTumorSample} | wc -l)
+        if [ ${foundValue} == 0 ]; then
+            bucketSet=$( query_sbp_api -type runs -filter "tumor_sample=${successTumorSample}" -filter "ini=${ini}" -filter "pipeline=${pip}" -filter "status=Success" -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+            successSet=$( query_sbp_api -type runs -filter "tumor_sample=${successTumorSample}" -filter "ini=${ini}" -filter "bucket=${bucketSet}" -filter "pipeline=${pip}" -filter "status=Success" -exact -json | jq -r '.[].name' | tail -n 1 )
 
-        if [[ ${COUNTSucess} == 0 && ${countVal} == 0 ]]
-        then
-             echo "${downloadScript} ${setName}"
-        elif [[ ${COUNTSucess} > 0  && ${countVal} == 0 ]]
-        then
-             echo "# ${setName} has failed on ${pip} but seems be a succeeded runs"
-        elif [[ ${COUNTSucess} > 0  && ${countVal} > 0 ]]
-        then
-             echo "# ${setName} has a validated run"
-
+            countSucceededSet=$( find ${findDirs} -maxdepth 1 -type d -name "${successSet}" | wc -l);
+		    if [ ${countSucceededSet} == 0 ]; then
+                echo "${downloadScript} -s ${successSet}"
+		    else
+                echo "# ${successSet} has success on ${pip} and exists on datastore"
+            fi
         fi
     done | sort -r | uniq
 echo ""
