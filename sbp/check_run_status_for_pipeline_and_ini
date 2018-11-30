@@ -115,7 +115,7 @@ query_sbp_api \
 		    if [ ${existsInSuccessRunDirs} == 0 ]; then
                 echo "${downloadScript} -s ${setNameForSuccessTumorSample}"
 		    else
-                echo "# ${setNameForSuccessTumorSample} has success on ${pip} and exists on datastore"
+                echo "# No action for ${setNameForSuccessTumorSample}: already exists on datastore"
             fi
         else
             echo "# ${successTumorSample} has Success on pip ${pip} but also has a Validated run so can be ignored."
