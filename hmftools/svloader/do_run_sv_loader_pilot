@@ -14,10 +14,10 @@ if [ -z ${gridss_filtered_vcf} ]; then
     exit 1
 fi
 
-structural_vcf=$(find -L ${run_dir}/purple/ -type f -name *.purple.sv.vcf.gz)
+structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name *.purple.sv.vcf.gz)
 if [ -z ${structural_vcf} ]
 then
-    echo "[ERROR] Unable to locate gridss structural variants. Exiting."
+    echo "[ERROR] Unable to locate pilot structural variants. Exiting."
     exit 1
 fi
 
