@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+set=$1 && shift
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to rebuild_set_based_off_v4_rerun. Exiting"
+    exit 1
+fi
+
+download_path=/data/schuberg/new_runs_based_off_v4_reruns
+echo "[INFO] Downloading set ${set} to ${download_path}"
+download_set -s ${set} -p ${download_path}
+
+echo "[INFO] Running gridss somatic filtering for ${set}"
+do_run_gridss_somatic_filter ${download_path}/${set}
+
+echo "[INFO] Running latest purple for ${set}"
+do_run_purple_no_db ${download_path}/${set}
+
+echo "[INFO] Copying bachelor for ${set} from /data/cpct/runs"
+cp -r /data/cpct/runs/${set}/bachelor ${download_path}/${set}
+
+echo "[INFO] Running CHORD for ${set}"
+run_chord_prod ${download_path}/${set}
+
