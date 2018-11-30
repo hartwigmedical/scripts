@@ -12,7 +12,7 @@ if [ ${iniCount} != 1 ]; then
     echo "[ERROR] Non-existing ini ${ini})?" && exit 1
 fi
 pipCount=$( query_sbp_api -type stacks -filter "revision=${pip}" -exact | grep -v "^#" | wc -l )
-if [ ${pipCount} < 1 ]; then
+if [[ ${pipCount} < 1 ]]; then
     echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
 
@@ -21,19 +21,19 @@ findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_dr
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
 downloadScriptFail="download_qc_fail_run"
-if [ ${ini} =~ Rerun ]; then
+if [[ ${ini} =~ Rerun ]]; then
     findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
     downloadScript="download_rerun_v4_set -s"
 fi
 
-allTumorSamplesWithValidRun=$(query_sbp_api \
+allTumorSamplesWithValidRun=$( query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "status=Validated" \
     -json | jq -r '.[].tumor_sample')
 
-allTumorSamplesWithSuccessRun=$(query_sbp_api \
+allTumorSamplesWithSuccessRun=$( query_sbp_api \
     -type runs \
     -filter "ini=${ini}"
     -filter "bucket=hmf-output" \
