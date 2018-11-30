@@ -21,6 +21,9 @@ findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_dr
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
 downloadScriptFail="download_qc_fail_run"
+rerunMode=$( ${ini} =~ "Rerun" )
+echo ${rerunMode}
+
 if [[ ${ini} =~ Rerun ]]; then
     findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
     downloadScript="download_rerun_v4_set -s"
