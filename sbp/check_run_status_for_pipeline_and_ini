@@ -78,6 +78,8 @@ query_sbp_api \
             else
                 echo "# ${setNameForFailedTumorSample} has failed on ${pip} but exists in successful runs. This is not allowed!"
             fi
+        else
+            echo "# ${failedTumorSample} has Failed on pip ${pip} but also has a Validated or Success run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
@@ -115,6 +117,8 @@ query_sbp_api \
 		    else
                 echo "# ${setNameForSuccessTumorSample} has success on ${pip} and exists on datastore"
             fi
+        else
+            echo "# ${successTumorSample} has Success on pip ${pip} but also has a Validated run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
@@ -129,8 +133,8 @@ query_sbp_api \
     -filter "status=Validated" \
     -json | jq -r '.[].name' | \
     while read setName; do
-        COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
-        if [[ ${COUNT} == 0 ]]
+        existsInSuccessRunDirs=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
+        if [[ ${existsInSuccessRunDirs} == 0 ]]
         then
             echo "${downloadScript} ${setName}"
         else
@@ -148,8 +152,8 @@ query_sbp_api \
     -filter "status=SnpCheck" \
     -json | jq -r '.[].name' | \
     while read setName; do
-        COUNT=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
-        if [[ ${COUNT} == 0 ]]
+        existsInSuccessRunDirs=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
+        if [[ ${existsInSuccessRunDirs} == 0 ]]
         then
             echo "${downloadScript} ${setName}"
         else
