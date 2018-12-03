@@ -13,7 +13,7 @@ fi
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 
 s3path="s3://${run_bucket}/${set}"
-bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*R*dedup.realigned.bam$" )
+bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*R.dedup.realigned.bam$" )
 path_to_check=${run_bucket}/${bampath_in_bucket}
 
 echo "[INFO] Issuing restore for ${path_to_check}"
