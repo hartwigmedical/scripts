@@ -29,7 +29,7 @@ if [[ ${ini} =~ .*Rerun*. ]]; then
     echo ""
     rerunMode=1
     findDirs="/data/schuberg/new_runs_based_off_v4_reruns/"
-    downloadScript="rebuild_set_based_off_v4_rerun "
+    downloadScript="rebuild_set_based_off_v4_rerun"
 fi
 
 fullRunInis="Somatic.ini|CPCT.ini"
