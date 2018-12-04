@@ -129,11 +129,14 @@ getSampleIdsStr<-function(samples)
 
 # restrict to samples in high-purity and DR022 set
 load("~/data/r_data/highestPurityCohortSummary.RData")
-dr022Samples = read.csv("~/data/DR-022_metadata.tsv", sep='\t')
+dr022Samples  = read.csv("~/data/DR-022_metadata.tsv", sep='\t')
+View(dr022Samples)
 hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sampleId)
 # hpcSamples = highestPurityCohortSummary
-nrow(hpcSamples)
 View(hpcSamples)
+nrow(hpcSamples)
+
+write.csv(hpcSamples %>% select(sampleId,patientId), "~/dev/bachelor/dr22_samples.csv", quote=F,row.names = F)
 
 View(highestPurityCohortSummary)
 

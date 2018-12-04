@@ -124,6 +124,9 @@ delExtTIs$TILenBucket = ifelse(delExtTIs$SynDelDupTILen<=32,32,2**round(log(delE
 View(delExtTIs %>% filter(SynDelDupTILen <= 1000) %>% group_by(LenBucket) %>% count())
 View(delExtTIs %>% group_by(TILenBucket) %>% count())
 
+View(delExtTIs %>% filter(Type=='BND') %>% group_by(SampleId,ClusterId) %>% summarise(ChrEnd1=first(ChrEnd),ChrEnd2=last(ChrEnd)))
+
+
 # plot count of simple vs synthetic DELs by sample
 delsAndDups$DelDupType = delsAndDups$Type
 delExtTIs$DelDupType = "SYN_DEL"
@@ -157,7 +160,6 @@ print(dupTypeComparisonPlot)
 # PDF OUTPUT
 outputFile = paste("~/logs/r_output/pdfs/SVA_DEL_DUP_Lengths.pdf", sep = "")
 
-# DATA OUTPUT TO PDF
 pdf(file=outputFile, height = 14, width = 20)
 
 par(mar=c(1,1,1,1))

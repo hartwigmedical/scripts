@@ -460,8 +460,6 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
 
       plotDataSet = cancerSampleSigData %>% filter(SampleId %in% plotSampleSet$SampleId)
       sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
-      # sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
-      #sampleSigPlot <- (ggplot(cancerSampleSigData[rowStart:rowEnd,], aes(x = SampleId, y = Count, fill = SigName))
                         + geom_bar(stat = "identity", colour = "black")
                         + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
                         + scale_fill_manual(values = sigColours)
