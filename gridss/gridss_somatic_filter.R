@@ -8,8 +8,9 @@ argp = add_argument(argp, "--output", help="High confidence somatic subset")
 argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviously germline call.")
 argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
 #argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
+argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829T.gridss.somatic.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
 argv = parse_args(argp)
-# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829hg38.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg38", "-p", "D:/hartwig/pon"))
 
 if (!file.exists(argv$input)) {
   msg = paste(argv$input, "not found")
@@ -30,7 +31,19 @@ refgenome=eval(parse(text=paste0("library(", argv$ref, ")\n", argv$ref)))
 library(tidyverse)
 library(readr)
 library(stringr)
-source("libgridss.R")
+libgridssfile = paste0(argv$scriptdir, "libgridss.R")
+if (file.exists(libgridssfile)) {
+  tmpwd = getwd()
+  setwd(argv$scriptdir)
+  source("libgridss.R")
+  setwd(tmpwd)
+} else {
+  msg = paste("Could not find libgridss.R in", argv$scriptdir, " - please specify a --scriptdir path to a directory containing the required scripts")
+  write(msg, stderr())
+  print(argp)
+  stop(msg)
+}
+
 
 # Filter to somatic calls
 write(paste0("Reading ", argv$input), stderr())
@@ -39,6 +52,13 @@ tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
 full_vcf = align_breakpoints(full_vcf)
+# Add header fields
+info(header(full_vcf)) = unique(as(rbind(as.data.frame(info(header(full_vcf))), data.frame(
+  row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
+  Number=c(".", "1", "1"),
+  Type=c("Float", "String", "String"),
+  Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
+
 write(paste0("Parsing SVs in ", argv$input), stderr())
 full_bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 full_begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)

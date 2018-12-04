@@ -32,19 +32,19 @@ fi
 
 run_info=$(load_run_info_for_set ${set})
 if [ -z "$run_info" ]; then
-    echo "[WARN] No run info found for set ${set}. Exiting"
+    echo "[ERROR] No run info found for set ${set}. Exiting"
     exit 1
 fi
 
 rerun_v3_info=$(load_rerun_v3_info_for_set ${set})
 if [ -z "rerun_v3_info" ]; then
-    echo "[WARN] No v3 rerun found for set ${set}. Exiting."
+    echo "[ERROR] No v3 rerun found for set ${set}. Exiting."
     exit 1
 fi
 
 rerun_v4_info=$(load_rerun_v4_info_for_set ${set})
 if [ -z "rerun_v4_info" ]; then
-    echo "[WARN] No v4 rerun found for set ${set}. Exiting."
+    echo "[ERROR] No v4 rerun found for set ${set}. Exiting."
     exit 1
 fi
 
@@ -76,10 +76,6 @@ sbp s3 sync s3://${v4_rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--include "*somaticVariants*post_processed*" \
 	--include "*somaticVariants*strelka*" \
 	--include "*structuralVariants*gridss*gridss.vcf.gz*" \
-	--include "*structuralVariants*bpi*bpi_stats*" \
-	--include "*structuralVariants*bpi*somaticSV*" \
-	--include "*structuralVariants*bpi*sliced.bam*" \
-	--include "*structuralVariants*manta*somaticSV.vcf*" \
 	--include "*metadata*" \
 	--include "*logs*submitlog*" \
 	--include "*HealthCheck.out*" \

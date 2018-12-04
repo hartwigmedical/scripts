@@ -3,7 +3,7 @@
 set=$1
 
 if [ -z "$set" ]; then
-    echo "[WARN] No set provided to process_finished_run. Exiting"
+    echo "[ERROR] No set provided to process_finished_run. Exiting"
     exit 1
 fi
 
@@ -14,6 +14,9 @@ download_set -s ${set} -p ${download_path}
 processed_path=/data/schuberg/processed_runs
 echo "[INFO] Copying set ${set} to processed path ${processed_path}"
 cp -r ${download_path}/${set} ${processed_path}/${set}
+
+echo "[INFO] Running gridss somatic filtering for ${set}"
+do_run_gridss_somatic_filter ${processed_path}/${set}
 
 echo "[INFO] Running latest purple for ${set}"
 do_run_purple_no_db ${processed_path}/${set}

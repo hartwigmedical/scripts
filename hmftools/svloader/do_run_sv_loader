@@ -23,7 +23,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -vcf_file ${structural_vcf} \
     -sample ${sample} \
     -ref_genome ${ref_genome} \
-    -local_ensembl -ensembl_db ${ensembl_db} \
+    -ensembl_db ${ensembl_db} -ensembl_user ${db_user} -ensembl_pass ${db_pass} \
     -fusion_pairs_csv "$fusion_pairs_csv" \
     -promiscuous_five_csv "$promiscuous_five_csv" \
     -promiscuous_three_csv "$promiscuous_three_csv" \

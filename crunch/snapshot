@@ -13,32 +13,35 @@ function main {
   echo ''
 
   echo '--- PROCESSED runs ---'; 
-  find_subdirs_in_directory "/data2/processed/"
-  echo ''
-
-  echo '--- PIPELINE CHECK files ---'
-  find_file_in_pipeline_run "*logs/PipelineCheck.log"
-  echo ''
-
-  echo '--- WGS METRICS files ---'
-  find_file_in_pipeline_run "*QCStats/WGSMetrics*transposed.txt"
+  process_pipeline_runs
   echo ''
 
   echo '--- QSTAT ---'
   qstat -u "*" | head -10
   totalJobCount=`qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l`
-  echo "[HMF_INFO] Total number of jobs in qstat: "$totalJobCount
+  echo " Total number of jobs in qstat: "$totalJobCount
   echo ""
 }
 
+process_pipeline_runs() { 
+  find_subdirs_in_directory "/data2/processed" | while read run; do
+    echo $run
+    if [[ -e "${run}/metadata" ]]; then
+      find_file_in_pipeline_run "*QCStats/WGSMetrics*transposed.txt"
+      find_file_in_pipeline_run "*logs/PipelineCheck.log"
+    fi
+  done 
+}
+
 find_subdirs_in_directory() { 
-  find "$1" -mindepth 1 -maxdepth 1 -type d
+  find "$1" -mindepth 1 -maxdepth 1 -type d | sort
 }
 
 find_file_in_pipeline_run() { 
-  for run in /data2/processed/*; do 
-    find ${run} -wholename "$1" && found=1
-  done 
+  file=$( find ${run} -wholename "$1" )
+  if [[ "$file" != "" ]]; then 
+    echo "  cat $file" 
+  fi
 }
 
 function diskUsage {
@@ -46,7 +49,7 @@ function diskUsage {
     local available=$( df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4 )
     local percString=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5 )
     local percentage=$( echo ${percString} | sed 's/\%//g' )
-    echo "${percString} used with ${available} space left for mount ${mount}"
+    echo "${mount}: ${percString} used with ${available} space left"
 }
 
 main

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 treatment_extractor_jar=/data/common/tools/knowledgebase-importer_pilot/cgi-treatment-extractor.jar
-cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_180822.tsv
+cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_181127.tsv
 output_file=/data/common/dbs/knowledgebases/pilot_treatmentTypes.tsv
 
 java -jar ${treatment_extractor_jar} \

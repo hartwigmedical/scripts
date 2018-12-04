@@ -11,7 +11,7 @@ iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-input_dir=/data/common/dbs/knowledgebases/input
+input_dir=/data/common/dbs/knowledgebases/input_prod
 cgi_biomarkers_file=${input_dir}/cgi_biomarkers_per_variant_180822.tsv
 cgi_validated_file=${input_dir}/cgi_catalog_of_validated_oncogenic_mutations_180822.tsv
 onco_annotated_file=${input_dir}/onco_allAnnotatedVariants_180822.csv
