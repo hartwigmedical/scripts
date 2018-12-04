@@ -55,7 +55,7 @@ View(foldbacks %>% group_by(ChainLinksBucket,FoldbackAsmbPercent) %>% count() %>
 foldbackLenSummary = foldbacks %>% filter(FoldbackType=="INV"|FoldbackAsmbPercent>0.5) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count)
 print(ggplot(data = foldbackLenSummary, aes(x=FoldbackLenBucket, y=Count))
                      + geom_line(aes(y=INV, colour='INV'))
-                     + geom_line(aes(y=Combo, colour='Combo'))
+                     + geom_line(aes(y=Combo, colour='Combo > 50% assembled'))
                      + scale_x_log10()
                      + labs(title = "Foldback Length Distribution"))
 
@@ -65,7 +65,7 @@ print(ggplot(data = foldbackComboLenSummary, aes(x=FoldbackLenBucket, y=Count))
       + geom_line(aes(y=Combo, colour='Combo'))
       + scale_x_log10()
       + facet_wrap(~FoldbackAsmbPercent)
-      + labs(title = "Foldback Length Distribution"))                     
+      + labs(title = "Combo Foldback Length Distribution by Assembled PCT"))                     
 
 
 
