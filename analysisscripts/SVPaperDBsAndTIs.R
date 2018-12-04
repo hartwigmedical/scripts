@@ -43,9 +43,14 @@ View( dbData %>% group_by(IsLINE,ResolvedType,RepeatedSeq=ifelse(grepl('TTTTTTTT
         count() %>% spread(RepeatedSeq,n,fill=0))
 #TO DO: why so many POLY A and T in unexpected cluster types
 
-#3. 2 different base peaks for LINE elements are NOT sample specific  or
+#3. The 2 observed DB length peaks for LINE elements are NOT sample or cancer type specific
 View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_INS') %>%
-       group_by(SampleId_CancerType,OLPeak=DBLength<(-7)) %>% count() %>% spread(OLPeak,n,fill=0))
+       group_by(CancerType,OLPeak=DBLength<(-7)) %>% count() %>% spread(OLPeak,n,fill=0))
+View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_INS') %>%
+       group_by(SampleId,OLPeak=DBLength<(-7)) %>% count() %>% spread(OLPeak,n,fill=0))
+
+
+#TO DO: could the 2 peaks stratify bg identiifcation of source line element in the ref genome?
 
 ########################################################
 ########## Templated Insertion Analysis ################
