@@ -6,9 +6,6 @@ library(reshape2)
 library(ggplot2)
 library(stringi)
 library(devtools)
-
-
-# library(MutationalPatterns)
 library(grid)
 library(gridExtra)
 library(cowplot)
@@ -45,15 +42,14 @@ sv_load_and_prepare<-function(filename)
   return (svData)  
 }
 
-svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
-nrow(svData)
-View(svData)
-View(head(svData,1000))
+svData =  read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/CLUSTER_GRIDSS.csv', header = T, stringsAsFactors = F)#gridssCohortVariantsread.csv('~/data/sv/CLUSTER.csv')
 
+
+##############################################################################
 # simple annotations
 svData = sv_set_common_fields(svData)
 
-# OVERALL SAMPLE STATS
+# Summary stats per cluster
 sampleClusterSummary = (svData %>% group_by(SampleId,ClusterId)
                         %>% summarise(ClusterCount=first(ClusterCount),
                                       IsResolved=first(IsResolved),
@@ -84,24 +80,12 @@ sampleClusterSummary = (svData %>% group_by(SampleId,ClusterId)
                         )
                         %>% arrange(SampleId,ClusterId))
 
-View(sampleClusterSummary)
-
-View(sampleClusterSummary %>% filter(ClusterCount==2&BndCount==0&LineCount>0))
-View(sampleClusterSummary %>% filter(LineCount>0))
-View(sampleClusterSummary %>% filter(ResolvedType=='Line'))
-View(sampleClusterSummary %>% filter(LineCount>0&BndCount>0))
-
-nrow(sampleClusterSummary %>% filter(ResolvedType=='Line'&KnownLineCount<ClusterCount&SuspectLineCount==0&PolyAorTCount==0))
-
-View(svData %>% filter(SampleId=='CPCT02020536T'&ClusterId==526))
-
-
 sampleClusterSummary$SimpleSVCluster = (sampleClusterSummary$ClusterCount<=2&sampleClusterSummary$IsResolved=='true'&sampleClusterSummary$ResolvedType!='LowQual')
-# sampleClusterSummary$LowQual = (sampleClusterSummary$ResolvedType=='LowQual')
 sampleClusterSummary$SimpleCluster = (sampleClusterSummary$ClusterCount>2&sampleClusterSummary$FoldbackCount==0&sampleClusterSummary$RepeatedChainLinkCount==0)
 sampleClusterSummary$ComplexCluster = (sampleClusterSummary$ClusterCount>2&(sampleClusterSummary$FoldbackCount>0|sampleClusterSummary$RepeatedChainLinkCount>0))
 sampleClusterSummary$UnresolvedSmallCluster = (sampleClusterSummary$ClusterCount<=2&sampleClusterSummary$IsResolved=='false')
 
+# Stats per sample
 sampleSummary = (sampleClusterSummary %>% group_by(SampleId)
                  %>% summarise(SvCount=sum(ClusterCount),
                                Clusters=n(),
@@ -132,11 +116,6 @@ sampleSummary = (sampleClusterSummary %>% group_by(SampleId)
                  )
                  %>% arrange(SampleId))
 
-View(sampleSummary)
-
-
-# plot counts of simple DELs, DUPs, INSs, synthetic DELs and DUPs, complex, simple and line clusters
-
 sampleClusterSummary$ClusterType = ifelse(sampleClusterSummary$ResolvedType=='ComplexChain'|sampleClusterSummary$ResolvedType=='ComplexPartialChain','ComplexChain',
                                    ifelse(sampleClusterSummary$ResolvedType=='SimpleChain'|sampleClusterSummary$ResolvedType=='SimplePartialChain','SimpleChain',
                                    ifelse(sampleClusterSummary$ResolvedType=='DEL_Ext_TI'|sampleClusterSummary$ResolvedType=='DUP_Ext_TI'
@@ -146,52 +125,31 @@ sampleClusterSummary$ClusterType = ifelse(sampleClusterSummary$ResolvedType=='Co
 
 sampleCounts = sampleClusterSummary %>% group_by(SampleId) %>% summarise(SampleCount=sum(ClusterCount))
 
-View(sampleClusterSummary)
+######################################
+########### ANALYSES #################
+######################################
 
+#1. Counts by cluster type 
 View(sampleClusterSummary %>% group_by(ClusterType) %>% summarise(Clusters=n(),SvCount=sum(ClusterCount)))
 
-sampleClusterTypeData = sampleClusterSummary %>% group_by(SampleId,ClusterType) %>% summarise(SvCount=sum(ClusterCount)) %>% spread(ClusterType,SvCount)
-sampleClusterTypeData[is.na(sampleClusterTypeData)] <- 0
-View(sampleClusterTypeData)
-gatherIndex = ncol(sampleClusterTypeData)
-sampleClusterTypeData2 = gather(sampleClusterTypeData, "ClusterType", "SvCount", 2:gatherIndex)
-View(sampleClusterTypeData2)
 
+#2. Basic signature type plot
+sampleClusterTypeData = sampleClusterSummary %>% group_by(SampleId,ClusterType) %>% summarise(SvCount=sum(ClusterCount)) %>% spread(ClusterType,SvCount,fill=0)
+sampleClusterTypeData2 = gather(sampleClusterTypeData, "ClusterType", "SvCount", 2:ncol(sampleClusterTypeData))
 sampleClusterTypeData2 = merge(sampleClusterTypeData2,sampleCounts,by='SampleId',all.x=T)
 
-# sampleClusterTypeData = sampleClusterSummary %>% group_by(SampleId,ClusterType) %>% summarise(SvCount=sum(ClusterCount),SampleCount=first(SampleCount))
-
 clusterTypeColours = c("yellow", "blue", "green", "red", "orange", "purple", "pink", "brown", "darkgreen", "deepskyblue", "tan")
-
 maxSamples = 50
 maxRows = maxSamples * 5
 
-sampleClusterTypePlot = (ggplot(data = head(sampleClusterTypeData2,maxRows), aes(x = reorder(SampleId, -SampleCount), y = SvCount, fill = ClusterType))
+print(ggplot(data = head(sampleClusterTypeData2,maxRows), aes(x = reorder(SampleId, -SampleCount), y = SvCount, fill = ClusterType))
                 + geom_bar(stat = "identity", colour = "black")
                 + scale_fill_manual(values = clusterTypeColours)
                 + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
                 + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=15))
                 + ylab("SV Count") + xlab("Sample"))
 
-print(sampleClusterTypePlot)
-
-
-sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
-                  + geom_bar(stat = "identity", colour = "black")
-                  + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
-                  + scale_fill_manual(values = sigColours)
-                  + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-                  + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-                  + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
-
-
-
-# Resolved Types
-totalSVCount = nrow(svData)
-View(svData %>% group_by(ResolvedType,ClusterSize) 
-     %>% summarise(Clusters=n_distinct(paste(SampleId,ClusterId,sep='_')), TotalSVs=n(), AsPerc=round(n()/totalSVCount,2))
-     %>% arrange(-AsPerc))
-
+####################################
 
 
 
