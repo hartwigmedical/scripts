@@ -45,10 +45,19 @@ sv_load_and_prepare<-function(filename)
   return (svData)  
 }
 
+clusters_load<-function(filename)
+{
+  clusters = read.csv(filename)
+  sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
+  clusters = merge(clusters, sampleCancerTypes, by='SampleId', all.x=T)
+  return (clusters)  
+}
+
 svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
 nrow(svData)
 View(svData)
 View(head(svData,1000))
+
 
 # simple annotations
 svData = sv_set_common_fields(svData)
@@ -77,23 +86,11 @@ sampleClusterSummary = (svData %>% group_by(SampleId,ClusterId)
                                       SglCount=sum(Type=='SGL'),
                                       NoneCount=sum(Type=='NONE'),
                                       LineCount=sum(IsLINE),
-                                      KnownLineCount=sum(LEStart=='Known'|LEEnd=='Known'|LEStart=='Ident'|LEEnd=='Ident'),
-                                      SuspectLineCount=sum(LEStart=='Suspect'|LEEnd=='Suspect'),
-                                      PolyAorTCount=sum(grepl('AAAAAAAA',InsertSeq)|grepl('TTTTTTTT',InsertSeq)),
                                       FragileSiteCount=sum(IsFS)
                         )
                         %>% arrange(SampleId,ClusterId))
 
 View(sampleClusterSummary)
-
-View(sampleClusterSummary %>% filter(ClusterCount==2&BndCount==0&LineCount>0))
-View(sampleClusterSummary %>% filter(LineCount>0))
-View(sampleClusterSummary %>% filter(ResolvedType=='Line'))
-View(sampleClusterSummary %>% filter(LineCount>0&BndCount>0))
-
-nrow(sampleClusterSummary %>% filter(ResolvedType=='Line'&KnownLineCount<ClusterCount&SuspectLineCount==0&PolyAorTCount==0))
-
-View(svData %>% filter(SampleId=='CPCT02020536T'&ClusterId==526))
 
 
 sampleClusterSummary$SimpleSVCluster = (sampleClusterSummary$ClusterCount<=2&sampleClusterSummary$IsResolved=='true'&sampleClusterSummary$ResolvedType!='LowQual')
@@ -133,6 +130,45 @@ sampleSummary = (sampleClusterSummary %>% group_by(SampleId)
                  %>% arrange(SampleId))
 
 View(sampleSummary)
+
+totalSVCount = nrow(svData)
+View(svData %>% group_by(ResolvedType,ClusterSize) 
+     %>% summarise(Clusters=n_distinct(paste(SampleId,ClusterId,sep='_')), TotalSVs=n(), AsPerc=round(n()/totalSVCount,2))
+     %>% arrange(-AsPerc))
+
+
+# CLUSTER ANALYSIS
+clusters = clusters_load('~/logs/SVA_CLUSTERS.csv')
+nrow(clusters)
+
+View(clusters %>% group_by(ResolvedType) %>% count())
+
+
+# Simple chained clusters
+simpleChainedClusters = clusters %>% filter(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain')
+View(simpleChainedClusters)
+
+View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3))
+colnames(clusters)
+
+View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3) 
+     %>% select(SampleId,ClusterId,ClusterDesc,ResolvedType,FullyChained,ChainCount,Consistency,ArmCount,AssemblyLinks,ShortTIRemotes,Annotations))
+
+View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3) 
+     %>% select(Annotations))
+
+
+simpleChainedClusters = sampleClusterSummary %>% filter(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain')
+simpleChainedClusters$ClusterCountBucket = ifelse(simpleChainedClusters$ClusterCount<=5,simpleChainedClusters$ClusterCount,2**round(log(simpleChainedClusters$ClusterCount,2)))
+View(simpleChainedClusters %>% group_by(ResolvedType,ClusterCountBucket) %>% count() %>% spread(ResolvedType,n))
+View(simpleChainedClusters %>% filter(ResolvedType=='SimpleChain'&SglCount==0&NoneCount==0))
+
+
+View(svData %>% filter(SampleId=='CPCT02020536T'&ClusterId==526))
+
+
+nrow(sampleClusterSummary %>% filter(ResolvedType=='Line'&KnownLineCount<ClusterCount&SuspectLineCount==0&PolyAorTCount==0))
+
 
 
 # plot counts of simple DELs, DUPs, INSs, synthetic DELs and DUPs, complex, simple and line clusters
@@ -187,10 +223,7 @@ sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y
 
 
 # Resolved Types
-totalSVCount = nrow(svData)
-View(svData %>% group_by(ResolvedType,ClusterSize) 
-     %>% summarise(Clusters=n_distinct(paste(SampleId,ClusterId,sep='_')), TotalSVs=n(), AsPerc=round(n()/totalSVCount,2))
-     %>% arrange(-AsPerc))
+
 
 
 

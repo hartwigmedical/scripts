@@ -134,7 +134,7 @@ svData = sv_load_and_prepare(svFile)
 
 
 # TI Direct File
-tiDirectData = read.csv("~/logs/CLUSTER_LINKS.csv")
+tiDirectData = read.csv("~/logs/SVA_LINKS.csv")
 
 tiDirectData = tiDirectData %>% filter(TILength>=30)
 
@@ -151,6 +151,7 @@ nrow(tiDirectData %>% filter(IsLINE=='true'))
 tiDirectData$TiLenBucket = 2**round(log(tiDirectData$TILength,2))
 
 tiDirectData$AssemblyType = ifelse(tiDirectData$IsAssembled=='true','ASSEMBLY','INFERRED')
+tiDirectData$CNChange = ifelse(tiDirectData$CopyNumberGain=='true','GAIN','NONE')
 
 tiDirectData$ChainCountSize = ifelse(tiDirectData$ChainCount==2,'1',ifelse(tiDirectData$ChainCount<=4,'2-3','4+'))
 tiDirectData$AssembledCountSize = ifelse(tiDirectData$AssembledCount==0,0,ifelse(tiDirectData$AssembledCount==1,'1',ifelse(tiDirectData$ChainCount<=3,'2-3','4+')))
@@ -164,20 +165,22 @@ tiDirectData$ClusterType = ifelse(tiDirectData$ClusterType=='None','COMPLEX',as.
 tiDirectData$ClusterType = ifelse(tiDirectData$ClusterType=='SimpleChain'|tiDirectData$ClusterType=='SimplePartialChain','SIMPLE',as.character(tiDirectData$ClusterType))
 tiDirectData$ClusterType = ifelse(tiDirectData$ClusterType=='SimpleSV','SIMPLE',as.character(tiDirectData$ClusterType))
 
-View(tiDirectData %>% group_by(ClusterType) %>% count())
+# View(tiDirectData %>% group_by(ClusterType) %>% count())
 
-tiDirectData$Remoteness = ifelse(tiDirectData$NextSVLength==-1,'NONE',ifelse(tiDirectData$NextSVLength<=clusterDistance,'5K','REMOTE'))
+tiDirectData$NextSV = ifelse(tiDirectData$NextSVLength==-1,'NONE',ifelse(tiDirectData$NextSVLength<=clusterDistance,'5K','REM'))
 
 minDBLength = -30
 clusterDistance = 5000
 
 tiDirectData$DBLengths = ifelse(tiDirectData$DBLenStart < minDBLength & tiDirectData$DBLenEnd < minDBLength,'NONE',
                             ifelse((tiDirectData$DBLenStart >= minDBLength & tiDirectData$DBLenStart <= 50)|(tiDirectData$DBLenEnd >= minDBLength & tiDirectData$DBLenEnd <= 50),'DB',
-                            ifelse((tiDirectData$DBLenStart >= minDBLength & tiDirectData$DBLenStart <= clusterDistance)|(tiDirectData$DBLenEnd >= minDBLength & tiDirectData$DBLenEnd <= clusterDistance),'5K','REMOTE')))
+                            ifelse((tiDirectData$DBLenStart >= minDBLength & tiDirectData$DBLenStart <= clusterDistance)|(tiDirectData$DBLenEnd >= minDBLength & tiDirectData$DBLenEnd <= clusterDistance),'5K','REM')))
+
+tiDirectData$Connectivity = ifelse(tiDirectData$CNChange=='GAIN'&(tiDirectData$DBLengths=='NONE'|tiDirectData$DBLengths=='REM')&(tiDirectData$NextSV=='REM'|tiDirectData$NextSV=='NONE'),'ISOLATED','LINKED')
 
 View(tiDirectData %>% group_by(DBLengths) %>% count())
 
-tiDirectData$Category = paste(tiDirectData$ClusterType,' Size=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$Remoteness,' DB=',tiDirectData$DBLengths, sep='')
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, sep='')
 
 print(ggplot(data = tiDirectData %>% group_by(Category,TiLenBucket) %>% summarise(Count=n()), aes(x=TiLenBucket, y=Count))
       + geom_line()
@@ -205,25 +208,42 @@ plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'&ClusterDe
 
 
 # 3. Simple Chains
-tiDirectData$Category = paste(tiDirectData$ClusterType,' Size=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$Remoteness,' DB=',tiDirectData$DBLengths, sep='')
-#plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'|ResolvedType=='DUP_Ext_TI'), T)
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, sep='')
 plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'), F)
+
+View(tiDirectData %>% group_by(Connectivity) %>% count())
+View(tiDirectData %>% filter(CNChange=='GAIN'&(DBLengths=='NONE'|DBLengths=='REM')&(NextSV=='REM'|NextSV=='NONE')))
+View(tiDirectData %>% filter(FullyChained=='true') %>% group_by(ResolvedType) %>% count())
+
+# just looking at connectivity
+tiDirectData$Category = paste('Connectivty=',tiDirectData$Connectivity, sep='')
+plot_ti_by_category(tiDirectData %>% filter(FullyChained=='true'), F)
+
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' CONN=',tiDirectData$Connectivity, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&FullyChained=='true'), F)
+plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize!='4+'), F)
 
 # single-link chains
 View(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize==1))
-View(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize==1&Remoteness=='5K'&DBLengths=='DB'))
-tiDirectData$Category = paste(tiDirectData$ClusterType,' Size=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$Remoteness,' DB=',tiDirectData$DBLengths, sep='')
+View(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize==1&NextSV=='5K'&DBLengths=='DB'))
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, sep='')
 plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize==1), F)
 
 # 2-3 link chains
-tiDirectData$Category = paste(tiDirectData$ClusterType,' Size=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$Remoteness,' DB=',tiDirectData$DBLengths, sep='')
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, ' CNG=', tiDirectData$CNChange, sep='')
 plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize=='2-3'), F)
 
-View(tiDirectData %>% filter(ResolvedType=='SimpleChain'&ChainCountSize=='2-3'))
+View(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize=='2-3'))
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' DB=',tiDirectData$DBLengths, ' CNG=', tiDirectData$CNChange, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize=='2-3'), F)
+
+View(tiDirectData %>% filter(ResolvedType=='SimpleChain'&ChainCountSZ=='2-3'))
 plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='SimpleChain'&ChainCountSize=='2-3'), F)
 
 # longer link chains
-tiDirectData$Category = paste(tiDirectData$ClusterType,' Size=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$Remoteness,' DB=',tiDirectData$DBLengths, sep='')
+tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, sep='')
 plot_ti_by_category(tiDirectData %>% filter(ClusterType=='SIMPLE'&ChainCountSize=='4+'), F)
 
 View(tiDirectData %>% filter(ResolvedType=='SimpleChain'&ChainCountSize=='4+'))
@@ -231,6 +251,8 @@ plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='SimpleChain'&ChainCou
 
 # 4. Complex clusters
 plot_ti_by_category(tiDirectData %>% filter(ClusterType=='COMPLEX'&ChainCountSize=='4+'), F)
+
+plot_ti_by_category(tiDirectData %>% filter(ClusterType=='COMPLEX'&FullyChained=='true'), F)
 
 
 plot_ti_by_category<-function(tiData, showAssembly)
