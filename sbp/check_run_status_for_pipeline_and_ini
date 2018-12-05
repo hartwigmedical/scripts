@@ -28,8 +28,8 @@ if [[ ${ini} =~ .*Rerun*. ]]; then
     echo "## Running in Rerun Mode"
     echo ""
     rerunMode=1
-    findDirs="/data/cpct/reruns_v4/ /data/schuberg/reruns_v4/"
-    downloadScript="download_rerun_v4_set -s"
+    findDirs="/data/schuberg/new_runs_based_off_v4_reruns/"
+    downloadScript="rebuild_set_based_off_v4_rerun"
 fi
 
 fullRunInis="Somatic.ini|CPCT.ini"

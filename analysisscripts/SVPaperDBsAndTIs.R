@@ -9,37 +9,27 @@ library(grid)
 library(gridExtra)
 library(cowplot)
 
-svData = read.csv('~/data/sv/CLUSTER.csv')
-sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
+svData =  read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/CLUSTER_GRIDSS.csv', header = T, stringsAsFactors = F)#gridssCohortVariantsread.csv('~/data/sv/CLUSTER.csv')
+sampleCancerTypes = read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/sample_cancer_types.csv')
 svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
 svData$SampleId_CancerType = paste(svData$SampleId, svData$CancerType, sep='_')
-View(head(svData,100))
 
 svData = sv_set_common_fields(svData) 
 
 
-# Deletion Bridge length profile
+# Calculate DB Lengths per breakend
 dbStartLens = svData %>% filter(DBLenStart>-31)
 dbStartLens$DBLength = dbStartLens$DBLenStart
 dbStartLens$Assembled = ifelse(dbStartLens$AsmbMatchStart=="MATCH","Assembled","NotAssembled")
 dbEndLens = svData %>% filter(DBLenEnd>-31)
 dbEndLens$DBLength = dbEndLens$DBLenEnd
 dbEndLens$Assembled = ifelse(dbEndLens$AsmbMatchStart=="MATCH","Assembled","NotAssembled")
-
 dbData = rbind(dbStartLens, dbEndLens)
 dbData$DBLenBucket = ifelse(dbData$DBLength==0,0,ifelse(dbData$DBLength<0,-(2**round(log(-dbData$DBLength,2))),2**round(log(dbData$DBLength,2))))
 
-dbSummaryData = dbData %>% group_by(DBLenBucket,Assembled) %>% summarise(Count=n()) %>% spread(Assembled,Count)
-View(dbSummaryData)
-
-dbData1 = dbData %>% filter(DBLength<=200) %>% group_by(DBLength,Assembled) %>% summarise(Count=n()) %>% spread(Assembled,Count)
-dbData2 = dbData %>% filter(DBLength<=100&Type!='SGL'&Type!='NONE'&Type!='BND') %>% group_by(DBLength,Assembled) %>% summarise(Count=n()) %>% spread(Assembled,Count)
-dbData3 = dbData %>% filter(DBLength<=100&ResolvedType!='SglPair_INS') %>% group_by(DBLength,Assembled) %>% summarise(Count=n()) %>% spread(Assembled,Count)
-dbData4 = dbData %>% filter(DBLength<=100&ResolvedType=='SglPair_INS') %>% group_by(DBLength) %>% summarise(Count=n())
-
-dbTypeData = dbData %>% filter(DBLength<=50,ResolvedType=='ComplexPartialChain') %>% group_by(DBLength,Type,ResolvedType) %>% summarise(Count=n()) %>% spread(Type,Count)
-
-print(ggplot(data = dbTypeData, aes(x=DBLength, y=Count))
+#1. DBLength by ResolvedType
+print(ggplot(data = dbData %>% filter(DBLength<=50) %>% group_by(DBLength,Type,ResolvedType) %>% summarise(Count=n()) %>% spread(Type,Count),
+      aes(x=DBLength, y=Count))
       + geom_line(aes(y=BND, colour='BND'))
       + geom_line(aes(y=DEL, colour='DEL'))
       + geom_line(aes(y=DUP, colour='DUP'))
@@ -48,86 +38,23 @@ print(ggplot(data = dbTypeData, aes(x=DBLength, y=Count))
       + theme(panel.grid.major = element_line(colour="grey", size=0.5))
       + facet_wrap(~ResolvedType))
 
-View(dbData %>% filter(DBLength<=50,ResolvedType=='DEL_Int_TI')%>% group_by(perfect=DBLength==1) %>% 
-        count())
-View(dbData %>% filter(DBLength<=50,ResolvedType=='DEL_Int_TI')%>% group_by(DBLength) %>% 
-       count())
-View(svData %>% filter(DBLength<=50,ResolvedType=='Line'))
+#2. PolyA/T analysis across cluster type
+View( dbData %>% group_by(IsLINE,ResolvedType,RepeatedSeq=ifelse(grepl('TTTTTTTT',InsertSeq)|grepl('AAAAAAAA',InsertSeq),'PolyA/T','None')) %>% 
+        count() %>% spread(RepeatedSeq,n,fill=0))
+#TO DO: why so many POLY A and T in unexpected cluster types
 
-+ theme(panel.grid.minor = element_line(colour="white", size=0.5)) +
-  scale_y_continuous(minor_breaks = seq(0 , 100, 5), breaks = seq(0, 100, 10))
-
-
-print(ggplot(data = dbData1, aes(x=DBLength, y=Count))
-      + geom_line(aes(y=Assembled, colour='Assembled'))
-      + geom_line(aes(y=NotAssembled, colour='Not-Assembled')))
+#3. The 2 observed DB length peaks for LINE elements are NOT sample or cancer type specific
+View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_INS') %>%
+       group_by(CancerType,OLPeak=DBLength<(-7)) %>% count() %>% spread(OLPeak,n,fill=0))
+View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_INS') %>%
+       group_by(SampleId,OLPeak=DBLength<(-7)) %>% count() %>% spread(OLPeak,n,fill=0))
 
 
+#TO DO: could the 2 peaks stratify bg identiifcation of source line element in the ref genome?
 
-print(ggplot(data = dbData4, aes(x=DBLength, y=Count))
-      + geom_line())
-
-sglPairIns = dbData %>% filter(DBLength<=100&ResolvedType=='SglPair_INS')
-sglPairIns$InsertSeqLen = stri_length(sglPairIns$InsertSeq) 
-sglPairIns$InsertSeqLenPlusDB = sglPairIns$InsertSeqLen + sglPairIns$DBLength
-
-sglPairIns$RepeatedSeq = ifelse(grepl('TTTTTTTT',sglPairIns$InsertSeq),'PolyT',ifelse(grepl('AAAAAAA',sglPairIns$InsertSeq),'PolyA','None'))
-
-View(sglPairIns %>% group_by(RepeatedSeq,IsLINE) %>% count())
-
-View(sglPairIns)
-
-print(ggplot(data = sglPairIns %>% filter(DBLength<50) %>% group_by(InsertSeqLen) %>% count(), aes(x=InsertSeqLen, y=n))
-      + geom_line() + labs(title = "INS Sequence Length Distribution"))
-
-print(ggplot(data = sglPairIns %>% filter(DBLength<50) %>% group_by(InsertSeqLenPlusDB) %>% count(), aes(x=InsertSeqLenPlusDB, y=n))
-      + geom_line() + labs(title = "INS Sequence Length + DB Length Distribution"))
-
-
-View(dbData %>% filter(DBLength<50) %>% group_by(DBLength) %>% count())
-View(dbData %>% filter(DBLength<50) %>% group_by(DBLength,Assembled) %>% count() %>% spread(Assembled,n))
-
-print(ggplot(data = dbData %>% filter(DBLength<50) %>% group_by(DBLength) %>% count(), aes(x=DBLength, y=n))
-                          + geom_line()
-                          + labs(title = "Deletion Bridge Length Distribution"))
-
-
-print(ggplot(data = dbSummaryData, aes(x=DBLenBucket, y=n))
-                + geom_line()
-                + scale_x_log10()
-                # + scale_x_continuous(trans=reverselog_trans(base=10), labels=trans_format("identity", function(x) -x))
-                + labs(title = "Deletion Bridge Length Distribution"))
-
-# exploring the peak around -16 bases for non-assembled DBs
-nonAsmbDbData = dbData %>% filter(Assembled=="NotAssembled"&DBLength<50)
-
-View(nonAsmbDbData %>% group_by(Type,DBLength) %>% count() %>% spread(Type,n))
-nonAsmbTypeSummary = nonAsmbDbData %>% group_by(Type,DBLength) %>% summarise(Count=n())
-
-print(ggplot(data = nonAsmbTypeSummary, aes(x=DBLength, y=Count))
-                      + geom_line()
-                      + facet_wrap(~Type)
-                      + labs(title = "Non-assembled DB Lengths by Type"))
-
-nonAsmbDbData$ClusterCountBucket = 2**round(log(nonAsmbDbData$ClusterCount,2))
-
-nonAsmbClusterSizeSummary = nonAsmbDbData %>% group_by(ClusterCountBucket,DBLength) %>% summarise(Count=n())
-
-print(ggplot(data = nonAsmbClusterSizeSummary, aes(x=DBLength, y=Count))
-      + geom_line()
-      + facet_wrap(~ClusterCountBucket)
-      + labs(title = "Non-assembled DB Lengths by Cluster Size"))
-
-nonAsmbResolvedTypeSummary = nonAsmbDbData %>% group_by(ResolvedType,DBLength) %>% summarise(Count=n())
-
-print(ggplot(data = nonAsmbResolvedTypeSummary, aes(x=DBLength, y=Count))
-      + geom_line()
-      + facet_wrap(~ResolvedType)
-      + labs(title = "Non-assembled DB Lengths by Resolved Type"))
-
-
-
-# Templated Insertion Analysis
+########################################################
+########## Templated Insertion Analysis ################
+########################################################
 
 svFile = '~/data/sv/CLUSTER.csv'
 svData = sv_load_and_prepare(svFile)

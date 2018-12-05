@@ -164,7 +164,7 @@ signature_by_sample_and_type<-function(cluster,filter,signatureName,bucket='Leng
 ### 0. LOAD Data
 
 #LOAD and ADD Buckets
-cluster = read.csv('~/hmf/analyses/cluster/CLUSTER_V24.csv')
+cluster = read.csv('~/hmf/analyses/gridssAssessment/CLUSTER_GRIDSS.csv')
 #cluster2 = cluster %>% separate(ChrArmStats,c('ArmStartBECount','ArmEndBECount','ArmMedianBECount'),sep=":")
 cluster$ClusterCountBucket=2**(round(log(cluster$ClusterCount,2),0))
 cluster$ArmCountBucket=2**(round(log(cluster$ArmCountStart,2),0))
@@ -173,7 +173,8 @@ cluster$stressedArm=(cluster$ArmCountStart>1.3*cluster$ArmExpStart+6|cluster$Arm
 cluster$CNStartChBucket=2**(pmin(7,pmax(-3,round(log(cluster$AdjCNChgStart,2),0))))
 cluster$CNEndChBucket=2**(pmin(7,pmax(-3,round(log(cluster$AdjCNChgEnd,2),0))))
 cluster$PloidyBucket=2**(pmin(7,pmax(-3,round(log(cluster$Ploidy,2),0))))
-#cluster$NearestLengthBucket=2**(pmin(20,pmax(0,round(log(cluster$NearestLen,2),0))))
+cluster$LnkLenStartBucket=ifelse(!cluster$LnkLenStart>0,0,2**(pmin(20,pmax(0,round(log(cluster$LnkLenStart,2),0)))))
+cluster$LnkLenEndBucket=ifelse(!cluster$LnkLenEnd>0,0,2**(pmin(20,pmax(0,round(log(cluster$LnkLenEnd,2),0)))))
 #cluster$NearestTILengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestTILen,2),0))))
 #cluster$NearestDBLengthBucket=2**(pmin(25,pmax(0,round(log(cluster$NearestDBLen,2),0))))
 
@@ -191,22 +192,22 @@ cluster = (merge(cluster,clinical,by.x="SampleId",by.y="sampleId",all.x=TRUE))
 ######## MAKE THIS CONSISTENT #############
 
 # The PON mainly removes short DELS
-View(cluster %>% group_by(LengthBucket,Type,inPONRegion=PONRegionCount>1) %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
+#View(cluster %>% group_by(LengthBucket,Type,inPONRegion=PONRegionCount>1) %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
 
 # 95% of the PON variants are in single clusters
-View(cluster %>% group_by(ClusterCount=pmin(10,ClusterCount),Type,inPONRegion=PONRegionCount>1) %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
+#View(cluster %>% group_by(ClusterCount=pmin(10,ClusterCount),Type,inPONRegion=PONRegionCount>1) %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
 
 # The ploidies of the PON filtered variants are not necessarily low
-View(cluster %>% group_by(PloidyBucket,Type,inPONRegion=PONRegionCount>1)  %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
+#View(cluster %>% group_by(PloidyBucket,Type,inPONRegion=PONRegionCount>1)  %>% summarise(count=n()) %>% unite(PONType,Type,inPONRegion) %>% spread(PONType,count))
 
 # We still have a number of recurrentVariants (need to remove multiple biopsies from analysis)
-recurrentVariants = (cluster %>% filter(PONCount<2) %>% group_by(ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,Type,len=ifelse(Type=='BND',0,PosEnd-PosStart))
+#recurrentVariants = (cluster %>% filter(PONCount<2) %>% group_by(ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,Type,len=ifelse(Type=='BND',0,PosEnd-PosStart))
                      %>% summarise(count=n(),mean(ClusterCount))
                      %>% filter(count>2))
-View(recurrentVariants)
+#View(recurrentVariants)
 
 # FILTER FOR PONCount <2 for all subsequent analyses
-cluster = cluster %>% filter(PONCount<2)
+#cluster = cluster %>% filter(PONCount<2)
 
 ################################################################
 ### 2. Per Sample / Feature Counts
@@ -228,12 +229,11 @@ summary = cohortSummary(cluster,'','LengthBucket,primaryTumorLocation')
 plot_count_by_bucket_and_type(summary,'LengthBucket','primaryTumorLocation',useLogX = T)
 
 ##### DEL LENGTHS for FS by cancer Type
-summary = cohortSummary(cluster,"FSStart!='false'|FSEnd!='false'",'LengthBucket,cancerType')
-plot_count_by_bucket_and_type(summary,'LengthBucket','cancerType')
+summary = cohortSummary(cluster,"FSStart!='false'|FSEnd!='false'",'LengthBucket,primaryTumorLocation')
+plot_count_by_bucket_and_type(summary,'LengthBucket','primaryTumorLocation')
 
-summary = cohortSummary(cluster,'cancerType=="Colorectal"',"LengthBucket,IsFS=FSStart=='true'|FSEnd=='true'")
+summary = cohortSummary(cluster,'primaryTumorLocation=="Lung"',"LengthBucket,IsFS=FSStart=='true'|FSEnd=='true'")
 plot_count_by_bucket_and_type(summary,'LengthBucket','IsFS')
-head(cluster)
 
 ################################################################
 ### 4. SIGNATURES
@@ -248,53 +248,55 @@ signature_by_sample_and_type(cluster,filter,"Long Dup")
 
 
 ##### Short DELS ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket<1e4','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket<1e4','SampleId,primaryTumorLocation')
 filter = filter %>% arrange (-countDEL) %>% filter(row_number()<=30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"Short DEL")
 
 ##### BRCA RS3 ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>4e3,LengthBucket<5e4','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>4e3,LengthBucket<5e4','SampleId,primaryTumorLocation')
 filter = filter %>% arrange (-countDUP) %>% filter(row_number() <= 30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"BRCA")
 
 ##### High mid length DUP + DEL ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>4e3,LengthBucket<5e5','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>4e3,LengthBucket<5e5','SampleId,primaryTumorLocation')
 filter = filter %>% filter(countDEL/countDUP>0.5) %>% arrange (-countDUP) %>% filter(row_number() <= 30) %>% .$SampleId
-signature_by_sample_and_type(filter,"Mid Length Dup + DEL")
+signature_by_sample_and_type(cluster,filter,"Mid Length Dup + DEL")
 
 ##### Ovarian short-mid DEL ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>1e4,LengthBucket<5e4','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>1e4,LengthBucket<5e4','SampleId,primaryTumorLocation')
 filter = filter %>% filter(countDEL/countDUP>3) %>% arrange (-countDEL) %>% filter(row_number() <= 30) %>% .$SampleId
-signature_by_sample_and_type(filter,"shortish DEL")
+signature_by_sample_and_type(cluster,filter,"shortish DEL")
 
 ##### ChromosomalStress ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>1e6','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>1e6','SampleId,primaryTumorLocation')
 filter = filter %>% filter(countINV/(countDUP+countDEL)>0.9) %>% arrange (-countINV) %>% filter(row_number() <=30) %>% .$SampleId
-signature_by_sample_and_type(filter,"ChromosomalStress")
+signature_by_sample_and_type(cluster,filter,"ChromosomalStress")
 
 ##### FS like DEL ############
-filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>5e4,LengthBucket<5e5','SampleId,cancerType')
+filter = cohortSummary(cluster,'Type=="BND"|LengthBucket>5e4,LengthBucket<5e5','SampleId,primaryTumorLocation')
 filter = filter %>% filter(countDEL/countDUP>3)  %>% arrange (-countDEL) %>% filter(row_number() <= 30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"FS like DEL")
 
 ##### Esophagus ############
-filter = cohortSummary(cluster,'cancerType=="Ovary"','SampleId,cancerType')
+filter = cohortSummary(cluster,'cancerType=="Ovary"','SampleId,primaryTumorLocation')
 filter = filter %>% arrange (-count) %>% filter(row_number() <= 30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"Ovary")
 
 ##### Overall ############
-filter = cohortSummary(cluster,'','SampleId,cancerType')
+filter = cohortSummary(cluster,'','SampleId,primaryTumorLocation')
 filter = filter %>% arrange (-count) %>% filter(row_number() <= 30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"ALL")
 
 ##### Colorectal ############
 filter = cohortSummary(cluster,'cancerType=="Colorectal"','SampleId,cancerType')
-View(filter)
+#View(filter)
 filter = filter %>% arrange (-count) %>% filter(row_number() <=30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"Colorectal")
 
 ################################################################
 ### 4. BE Analysis
+
+View(cluster %>% group_by(SampleId) %>% count())
 
 # Overall Counts of LE, FS, Duplicate BE
 View(cluster %>% group_by(hasLE=LEStart=='true'|LEEnd=='true',potentialhasLE=LEStart=='ident'|LEEnd=='ident',hasFS=FSStart=='true'|FSEnd=='true',Type) %>%
@@ -309,7 +311,7 @@ breakendSummary$excessDup = breakendSummary$countDUP-breakendSummary$countINV/2
 View(breakendSummary %>% arrange(-excessDup))
 
 # HotSpots for BFB (shows Key Oncogene Amplification sites)
-breakendSummary=(breakEnd_Analysis_By_Filter_And_Group("LEStart=='false',LEEnd=='false',FSStart=='false',FSEnd=='false',ChrStart==5",
+breakendSummary=(breakEnd_Analysis_By_Filter_And_Group("LEStart=='false',LEEnd=='false',FSStart=='false',FSEnd=='false'",
                                            "ChrStart,position=round(PosStart,-6)"))
 breakendSummary$excessDel = breakendSummary$countDEL-breakendSummary$countINV/2
 breakendSummary$excessDup = breakendSummary$countDUP-breakendSummary$countINV/2
@@ -325,78 +327,33 @@ print(ggplot(data=breakendSummary,aes(countINV,countDUP))+geom_point())
 
 
 ################################################################
-### 5. Cluster Analysis
-
-### Single clusters BY TYPE AND Annotation
-temp =cluster %>%
-  group_by(ClusterCountBucket,Annotations,isDup=DupBEStart=='true'|DupBEEnd=='true') %>%
-  summarise(count=n())  %>%
-  spread(isDup,count)
-View(temp)
-
-################################################################
 ### 6. Neighbour Proximity
 
-temp = cluster %>% group_by(SampleId,ClusterId) %>% mutate(ClusterChrCount=n_distinct(ChrStart,ChrEnd)) %>% ungroup() %>% as.data.frame
 
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLen>0,ClusterCount==1",'NearestLengthBucket,ClusterCountBucket')
-plot_count_by_bucket_and_type(summary,'NearestLengthBucket','ClusterCountBucket')
+summary = cohortSummary(cluster,"",'LengthBucket,stressedArm')
+plot_count_by_bucket_and_type(summary,'LengthBucket','stressedArm',)
 
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount==3,stressedArm==FALSE",'NearestLengthBucket,Desc')
-plot_count_by_bucket_and_type(summary,'NearestLengthBucket','Desc')
+summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',ClusterCount>2,LnkLenStartBucket>0,LnkTypeEnd=='DB'",'LnkLenStartBucket,stressedArm')
+plot_count_by_bucket_and_type(summary,'LnkLenStartBucket','stressedArm',)
 
-summary = cohortSummary(temp,"FSStart=='false',FSEnd=='false',LengthBucket>=0,NearestLen>=0,
-                        ClusterCount==2,NearestTILengthBucket<NearestDBLengthBucket",'NearestTILengthBucket,ClusterChrCount')
-plot_count_by_bucket_and_type(summary,'NearestTILengthBucket','ClusterChrCount',,TRUE)
+summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',ClusterCount==2,LnkLenStartBucket>0,LnkTypeStart=='TI'",'LnkLenStartBucket,stressedArm')
+plot_count_by_bucket_and_type(summary,'LnkLenStartBucket','stressedArm',)
 
-summary = cohortSummary(temp,"FSStart=='false',FSEnd=='false',stressedArm==T,LengthBucket>=0,NearestLen>=0,
-                        ClusterCount<=2,NearestDBLengthBucket<=5e6",'NearestDBLengthBucket,ClusterChrCount')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','ClusterChrCount',,TRUE)
-
-summary = cohortSummary(temp,"FSStart=='false',FSEnd=='false',LengthBucket>=0,NearestLen>=0,
-                        ClusterCount<=200,NearestDBLengthBucket<=3e6,ArmCountStart<200,ArmCountEnd<200",'NearestDBLengthBucket,stressedArm')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','stressedArm',,TRUE)
-
-summary = cohortSummary(temp,"FSStart=='false',FSEnd=='false',LengthBucket>=0,NearestLen==0|NearestLen>30,
-                        ClusterCount<=200,NearestTILengthBucket<=3e6,ArmCountStart<20,ArmCountEnd<20",'NearestTILengthBucket,stressedArm')
-plot_count_by_bucket_and_type(summary,'NearestTILengthBucket','stressedArm',,TRUE)
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',stressedArm==F,LengthBucket>=0,NearestLen>0,ClusterCount==2,NearestDBLengthBucket>NearestTILengthBucket",'NearestTILengthBucket,ClusterDesc')
-plot_count_by_bucket_and_type(summary,'NearestTILengthBucket','ClusterDesc',,TRUE)
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',stressedArm==F,LengthBucket>=0,NearestLen>0,ClusterCount==3,NearestDBLengthBucket<NearestTILengthBucket",'NearestDBLengthBucket,ClusterDesc')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','ClusterDesc',,TRUE)
-
- summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount==2,stressedArm==FALSE",'NearestDBLengthBucket,Desc')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','Desc')
-
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount==3,stressedArm==FALSE",'NearestLengthBucket,NearestType')
-plot_count_by_bucket_and_type(summary,'NearestLengthBucket','Desc',,TRUE)
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount>=2,ClusterCount<=2",'NearestTILengthBucket,ArmCountBucket')
-plot_count_by_bucket_and_type(summary,'NearestTILengthBucket','ArmCountBucket',,TRUE)
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount>=2,ClusterCount<=10,stressedArm==FALSE",'NearestDBLengthBucket,ArmCountBucket')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','ArmCountBucket',,TRUE)
-
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount>=2,ClusterCount<=2,stressedArm==FALSE,NearestDBLengthBucket<NearestTILengthBucket",'NearestDBLengthBucket,ArmCountBucket')
-plot_count_by_bucket_and_type(summary,'NearestDBLengthBucket','ArmCountBucket',,TRUE)
 
 ##############
 
 # SINGLE ARM INVERSIONS
-breakendSummary=breakEnd_Analysis_By_Filter_And_Group("ArmCountStart==2","SampleId,ChrStart,ArmStart")
+breakendSummary=breakEnd_Analysis_By_Filter_And_Group("","SampleId")
 View(breakendSummary %>%filter(countINV==count) %>% group_by(SampleId) %>% summarise(count=n()) %>% arrange(-count))
 View(breakendSummary %>%filter(countINV==count) %>% group_by(SampleId) %>% summarise(count=n()) %>% arrange(-count))
 
-summary = cohortSummary(cluster,"ArmCountStart==4,ClusterCount>=1,Desc!='CRS'",'PloidyBucket,Type')
+summary = cohortSummary(cluster,"ArmCountStart>0,ClusterCount>=1,ClusterDesc!='CRS'",'PloidyBucket,Type')
 plot_count_by_bucket_and_type(summary,'PloidyBucket','Type',,TRUE)
 
-summary = cohortSummary(cluster,"ArmCountStart>=2,ArmCountStart<=10,ClusterCount>1,Desc!='CRS',Type=='DUP'",'CNStartChBucket,LengthBucket')
+summary = cohortSummary(cluster,"ArmCountStart>=2,ArmCountStart<=10,ClusterCount>1,ClusterDesc!='CRS',Type=='DUP'",'CNStartChBucket,LengthBucket')
 plot_count_by_bucket_and_type(summary,'CNStartChBucket','LengthBucket',,TRUE)
 
-summary = cohortSummary(cluster,"ArmCountStart>=2,ArmCountStart<=5000,ClusterCount>1,Desc!='CRS',Type=='INV'",'CNStartChBucket,LengthBucket')
+summary = cohortSummary(cluster,"ArmCountStart>=2,ArmCountStart<=5000,ClusterCount>1,ClusterDesc!='CRS',Type=='INV'",'CNStartChBucket,LengthBucket')
 plot_count_by_bucket_and_type(summary,'CNStartChBucket','LengthBucket',,TRUE)
 
 
@@ -411,13 +368,13 @@ signature_by_sample_and_type(cluster,filter,"ALL",'NearestDBLengthBucket')
 summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',NearestLength>0,ClusterCount==3",'ArmCountBucket,Desc')
 plot_count_by_bucket_and_type(summary,'ArmCountBucket','Desc',,TRUE)
 
-
+View(cluster %>% filter(LengthBucket==0,Type!='BND'))
 
 ################
 ###### 7. Short INV
 
-summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',PloidyBucket>8","LengthBucket,stressedArm")
-plot_count_by_bucket_and_type(summary,'LengthBucket','stressedArm',FALSE)
+summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',stressedArm==T,Type!='BND',PloidyBucket<2","LengthBucket,PloidyBucket")
+plot_count_by_bucket_and_type(summary,'LengthBucket','PloidyBucket',FALSE)
 
 
 summary = cohortSummary(cluster,"FSStart=='false',FSEnd=='false',LengthBucket<3e3,PloidyBucket<2","CNStartChBucket,stressedArm=ArmCountStart>1.3*ArmExpStart+6|ArmCountEnd>1.3*ArmExpEnd+6")
@@ -453,12 +410,23 @@ ggplot(aes(NearestLength),data=cluster) + stat_ecdf(geom = "step", pad = FALSE) 
 cluster2 = cluster %>% filter(ArmCountStart<1.5*ArmExpStart+10&ArmCountEnd<1.5*ArmExpEnd+10)
 
 ##### NON Chromosomal Stress with long variants ############
-filter = cohortSummary(cluster,'ArmCountStart<2*ArmExpStart+5,ArmCountEnd<2*ArmExpEnd+5,Type=="BND"|LengthBucket>1e6','SampleId,cancerType')
+filter = cohortSummary(cluster,'ArmCountStart<2*ArmExpStart+5,ArmCountEnd<2*ArmExpEnd+5,Type=="BND"|LengthBucket>1e6','SampleId,primaryTumorLocation')
 filter = filter %>% filter(countINV/(countDUP+countDEL)>0.9) %>% arrange (-countINV) %>% filter(row_number() <=30) %>% .$SampleId
 signature_by_sample_and_type(cluster,filter,"Long non chromosomal stress")
 
 
 #######################
+
+
+
+View(cluster %>% group_by(Type,isLine=LEStart=='true'|LEEnd=='true') %>% count() %>% spread(Type,n))
+View(cluster %>% group_by(Type,isFS=FSStart=='true'|FSEnd=='true') %>% count() %>% spread(Type,n))
+View(cluster %>% group_by(Type,isLine=LEStart=='true'|LEEnd=='true'isDUP=DupBEStart=='true'|DupBEEnd=='true',) %>% count() %>% spread(Type,n))
+View(cluster %>% filter(LEStart!='true'&LEEnd!='true') %>% group_by(ClusterCount,stressedArm,Type) %>% count() %>% spread(Type,n))
+View(cluster %>% filter(LEStart!='true'&LEEnd!='true',DupBEStart=='true'|DupBEEnd=='true'))
+
+
+head(cluster)
 
 breakEnd_Analysis_By_Filter_And_Group<-function(filterString = "",groupByString = "")
 {

@@ -166,8 +166,8 @@ def trinucleotideFrequencies(aRefGenome):
     for trinucleotide,count in sorted(trinucleotides.items()):
         print trinucleotide,":",count
 
-GCContent(refgenome,2000000)
-#trinucleotideFrequencies(refgenome)
+#GCContent(refgenome,2000000)
+trinucleotideFrequencies(refgenome)
 
 
 if __name__ == "__main__":
