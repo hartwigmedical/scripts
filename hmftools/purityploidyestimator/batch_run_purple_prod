@@ -1,10 +1,6 @@
 #!/bin/bash
-starts_with=$1 && shift
+run_dir=$1 && shift
 
-for file in /data/cpct/runs/*; do
-    if [[ $file == /data/cpct/runs/${starts_with}* ]]; then
-        do_run_purple_prod $file $@
-        do_load_somatic_variants_prod $file
-        do_run_sv_loader_prod $file
-    fi
-done
+do_run_purple_prod $run_dir $@
+do_load_somatic_variants_prod $run_dir
+do_run_sv_loader_prod $run_dir
