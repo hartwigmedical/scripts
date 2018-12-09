@@ -1,4 +1,20 @@
 #!/bin/bash
+
+# Runs purple, somatic variant loader and structural variant loader into pilot
+
+# Example Usages
+# 1. Single sample:
+#    batch_run_purple_pilot /data/cpct/runs/180221_HMFregDRUP_FR12345678_FR87654321_DRUP01234567
+
+# 2. All samples from November 2018 with 3 threads:
+#    nohup find /data/cpct/runs -maxdepth 1 -type d -name '1811*' | xargs -I CMD --max-procs=3 batch_run_purple_pilot CMD &
+
+# 3. All samples with directories created from 6-Dec-2018 wjth 3 threads:
+#    nohup find /data/cpct/runs -maxdepth 1 -type d -newerct '6 Dec 2018' | xargs -I CMD --max-procs=3 batch_run_purple_pilot CMD &
+
+# 4. Rerun all samples with 8 threads:
+#    nohup find /data/cpct/runs -maxdepth 1 -type d | xargs -I CMD --max-procs=8 batch_run_purple_pilot CMD &
+
 run_dir=$1 && shift
 
 do_run_purple_pilot $run_dir $@
