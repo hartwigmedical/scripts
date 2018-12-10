@@ -155,6 +155,7 @@ createFoldbacks <- function(cluster) {
          FoldbackChainLength = as.numeric(FoldbackChainLength),
          FoldbackChainLengthBucket = ifelse(FoldbackChainLength>0,2**round(log(FoldbackChainLength,2)),0),
          FoldbackAsmbPercent = ifelse(ChainLinks>0,round(AssemblyLinks/ChainLinks/0.2)*0.2,0),
+         AvgLinkLength = ifelse(FoldbackChainLength>0,FoldbackChainLength/ChainLinks,0),
          ChainSize = ifelse(ChainLinks==0,'None',ifelse(ChainLinks==1,'Single',ifelse(ChainLinks<=3,'Small','Long')))
   )
 }
@@ -202,7 +203,7 @@ svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
 svData=createBuckets(svData)
 svData=sv_set_common_fields(svData)
 svSampleSummary=createSampleSummary(svData)
-foldbcks=createFoldbacks(svData)
+foldbacks=createFoldbacks(svData)
 dbData = rbind(svData %>% filter(DBLenStart>-31) %>% mutate(DBLength = DBLenStart,Assembled = ifelse(AsmbMatchStart=="MATCH","Assembled","NotAssembled")),
                svData %>% filter(DBLenEnd>-31) %>% mutate(DBLength = DBLenEnd, Assembled = ifelse(AsmbMatchEnd=="MATCH","Assembled","NotAssembled"))) %>%
                mutate(DBLenBucket = ifelse(DBLength==0,0,ifelse(DBLength<0,-(2**round(log(-DBLength,2))),2**round(log(DBLength,2)))))
@@ -261,6 +262,15 @@ print(ggplot(data = foldbacks %>% filter(FoldbackType=="Combo") %>% group_by(Fol
 #4. Count of Foldbacks per cluster
 View(foldbacks %>% group_by(SampleId,ClusterId,ResolvedType) %>% summarise(FBcount=n()/2,
           ClusterCount=first(ClusterCount),CNMax=max(pmax(AdjCNStart,AdjCNEnd)),FBPloidyMax=max(pmax(AdjCNChgStart,AdjCNChgEnd,Ploidy))))
+
+#5. Length of TIs in the chain linking the foldback breakend in combos - showing they are also short
+foldbacks$AvgLinkLenBucket = 2**round(log(foldbacks$AvgLinkLength,2))
+
+print(ggplot(data = foldbacks %>% filter(FoldbackType!='INV'&FoldbackLength>=5e2&FoldbackLength<=8e3&ChainLength<=8e3) %>% group_by(AvgLinkLenBucket) %>% count(), aes(x=AvgLinkLenBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + labs(title = "Foldback Chained TI Length Distribution"))
+
 
 ###################################################
 ########### SAMPLE LEVEL ANALYSES #################

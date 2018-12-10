@@ -29,20 +29,26 @@ foldbacksEnd$FoldbackLength = foldbacksEnd$FoldbackLenEnd
 foldbacksEnd$FoldbackLinkInfo = foldbacksEnd$FoldbackLinkInfoEnd
 foldbacks = rbind(foldbacksStart,foldbacksEnd)
 
-foldbacks$HasLinkInfo = ifelse(foldbacks$FoldbackLinkInfo!='-1;-1;-1'&grepl(';', foldbacks$FoldbackLinkInfo),T,F)
+foldbacks$HasLinkInfo = ifelse(grepl(';', foldbacks$FoldbackLinkInfo),T,F)
 foldbacks$ChainLinks = 0
 foldbacks$AssemblyLinks = 0
 foldbacks$ChainLength = 0
 
 foldbacksNoInfo = foldbacks %>% filter(!HasLinkInfo)
+foldbacksNoInfo = within(foldbacksNoInfo, rm(FoldbackLinkInfo))
+
 foldbacksInfo = foldbacks %>% filter(HasLinkInfo)
-foldbacksInfo = get_foldback_chain_links(foldbacksInfo)
+
+foldbacksInfo = foldbacksInfo %>% separate(FoldbackLinkInfo,c('ChainLinks','AssemblyLinks','ChainLength'),sep = ';')
+View(foldbacksInfo)
+# foldbacksInfo = get_foldback_chain_links(foldbacksInfo)
 foldbacks = rbind(foldbacksNoInfo,foldbacksInfo)
 
 
 foldbacks$ChainLinks = as.numeric(foldbacks$ChainLinks)
 foldbacks$AssemblyLinks = as.numeric(foldbacks$AssemblyLinks)
 foldbacks$ChainLength = as.numeric(foldbacks$ChainLength)
+foldbacks$AvgLinkLength = ifelse(foldbacks$ChainLength>0,foldbacks$ChainLength/foldbacks$ChainLinks,0)
 
 foldbacks$FoldbackType = ifelse(!is.na(foldbacks$FoldbackLnkStart)&!is.na(foldbacks$FoldbackLnkEnd)&foldbacks$FoldbackLnkStart==foldbacks$FoldbackLnkEnd&foldbacks$Type=='INV','INV','Combo')
 foldbacks$FoldbackLenBucket = 2**round(log(foldbacks$FoldbackLength,2))
@@ -66,6 +72,7 @@ View(foldbacks %>% group_by(SampleId,ClusterId,ResolvedType) %>% summarise(FBcou
 
 #2.Simple + foldback length distribution for mostly assembled combos
 foldbackLenSummary = foldbacks %>% filter(FoldbackType=="INV"|FoldbackAsmbPercent>0.5) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count)
+View(foldbackLenSummary)
 print(ggplot(data = foldbackLenSummary, aes(x=FoldbackLenBucket, y=Count))
                      + geom_line(aes(y=INV, colour='INV'))
                      + geom_line(aes(y=Combo, colour='Combo > 50% assembled'))
@@ -87,6 +94,36 @@ print(ggplot(data = plotData, aes(x=FoldbackLenBucket, y=Count))
       + scale_x_log10()
       + facet_wrap(~Category)
       + labs(title = "Foldback Length Distribution"))
+
+
+foldbacks$AvgLinkLenBucket = 2**round(log(foldbacks$AvgLinkLength,2))
+
+View(foldbacks %>% filter(ChainLinks>0))
+
+
+plotData = foldbacks %>% filter(FoldbackType!='INV'&FoldbackLength>=5e2&FoldbackLength<=8e3&ChainLength<=8e3) %>% group_by(AvgLinkLenBucket) %>% summarise(Count=n())
+View(plotData)
+
+print(ggplot(data = plotData, aes(x=AvgLinkLenBucket, y=Count))
+      + geom_line()
+      + scale_x_log10()
+      + labs(title = "Foldback Chained TI Length Distribution"))
+
+
+
+# DEL_Ext_TI with foldbacks
+
+delExtTIFoldbacks = foldbacks %>% filter(ResolvedType=='DEL_Ext_TI')
+View(delExtTIFoldbacks)
+View(delExtTIFoldbacks %>% filter((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q')))
+
+invFoldbacks = svData %>% filter(Type=='INV'&FoldbackLenStart>=0&FoldbackLnkStart==FoldbackLnkEnd)
+
+View(invFoldbacks %>% filter(ResolvedType=='DEL_Ext_TI'&((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q'))))
+
+View(invFoldbacks)
+  ifelse(!is.na(foldbacks$FoldbackLnkStart)&!is.na(foldbacks$FoldbackLnkEnd)&foldbacks$FoldbackLnkStart==foldbacks$FoldbackLnkEnd&foldbacks$Type=='INV','INV','Combo')
+
 
 #3. Anlaysis of combo foldbacks by ASM Percent
 foldbackComboLenSummary = foldbacks %>% filter(FoldbackType=="Combo") %>% group_by(FoldbackLenBucket,FoldbackAsmbPercent,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count)

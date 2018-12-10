@@ -56,6 +56,24 @@ View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_
 ########## Templated Insertion Analysis ################
 ########################################################
 
+# generic plotting functions
+plot_length_facetted<-function(data, filterStr, groupByStr, bucketStr, facetStr, titleStr, logScale=T)
+{
+  dataSummary = data %>% s_filter(filterStr) %>% s_group_by(groupByStr) %>% summarise(Count=n()) %>% as.data.frame
+  
+  plot = (ggplot(data = dataSummary, aes_string(x=bucketStr, y='Count'))
+          + geom_line()
+          + labs(title = titleStr))
+
+  if(facetStr != "")
+    plot = plot + facet_wrap(as.formula(paste("~", facetStr)))
+
+  if(logScale)
+    plot = plot + scale_x_log10()
+  
+  print(plot)
+}
+
 svFile = '~/data/sv/CLUSTER.csv'
 svData = sv_load_and_prepare(svFile)
 
@@ -86,7 +104,6 @@ tiDirectData$TraversesSvs = (tiDirectData$TraversedSVCount>0)
 #View(tiDirectData %>% group_by(TraversesSvs) %>% count())
 
 tiDirectData$ChainCountSize = ifelse(tiDirectData$ChainCount==2,'1',ifelse(tiDirectData$ChainCount<=4,'2-3','4+'))
-tiDirectData$AssembledCountSize = ifelse(tiDirectData$AssembledCount==0,0,ifelse(tiDirectData$AssembledCount==1,'1',ifelse(tiDirectData$ChainCount<=3,'2-3','4+')))
 
 tiDirectData$ClusterType = tiDirectData$ResolvedType
 tiDirectData$ClusterType = ifelse(tiDirectData$ClusterType=='DUP_Ext_TI'|tiDirectData$ClusterType=='DEL_Ext_TI','DEL-DUP_EXT',as.character(tiDirectData$ClusterType))
@@ -108,6 +125,62 @@ clusterDistance = 5000
 tiDirectData$DBLengths = ifelse(tiDirectData$DBLenStart < minDBLength & tiDirectData$DBLenEnd < minDBLength,'NONE',
                             ifelse((tiDirectData$DBLenStart >= minDBLength & tiDirectData$DBLenStart <= 50)|(tiDirectData$DBLenEnd >= minDBLength & tiDirectData$DBLenEnd <= 50),'DB',
                             ifelse((tiDirectData$DBLenStart >= minDBLength & tiDirectData$DBLenStart <= clusterDistance)|(tiDirectData$DBLenEnd >= minDBLength & tiDirectData$DBLenEnd <= clusterDistance),'5K','NONE')))
+
+# 1. Majority of templated insertions are short (250 - 1000 bases)
+
+# split synthetic DELs and DUPs from longer clusters
+plot_length_facetted(tiDirectData, "ResolvedType=='DEL_Ext_TI'|ResolvedType=='DUP_Ext_TI'", "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "TI Lengths for Synthetic DELs and DUPS")
+
+plot_length_facetted(tiDirectData, "ResolvedType=='ComplexChain'|ResolvedType=='SimpleChain'", "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "TI Lengths for 3+ CLusters")
+
+
+# the second peak (or more) beyond the short TIs is largely from shattering and repaired sections, not genuine inserted fragments
+# show this by splitting by whether the TI has another SV in the same cluster on the same arm
+
+plot_length_facetted(tiDirectData, "NextSVDistance<=0&(ResolvedType=='DEL_Ext_TI'|ResolvedType=='DUP_Ext_TI')", "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "Isolated TI Lengths for Synthetic DELs and DUPS")
+
+plot_length_facetted(tiDirectData, "NextSVDistance<=0&(ResolvedType=='ComplexChain'|ResolvedType=='SimpleChain')", "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "Isolated TI Lengths for 3+ Clusters")
+
+plot_length_facetted(tiDirectData, "NextSVDistance>0&(ResolvedType=='ComplexChain'|ResolvedType=='SimpleChain')&ArmOfOrigin&!CNGain&DBLengths!='NONE'", 
+                     "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "Clustered TI Lengths for 3+ Clusters")
+
+plot_length_facetted(tiDirectData, "NextSVDistance>0&(ResolvedType=='ComplexChain'|ResolvedType=='SimpleChain')", 
+                     "TiLenBucket,ResolvedType", 
+                     'TiLenBucket', 'ResolvedType', "Clustered TI Lengths for 3+ Clusters")
+
+# 2. Distribution of chain link lengths based on proportion of short & assmebled TI
+shortTIData = (tiDirectData %>% group_by(SampleId,ClusterId,ChainId) 
+               %>% summarise(ClusterCount=first(ClusterCount),
+                             LinkCount=n(),
+                             ShortTICount=sum(TILength<=1e3),
+                             AssembledCount=sum(IsAssembled=='true')))
+
+shortTIData$ShortTIPerc = shortTIData$ShortTICount/(shortTIData$ClusterCount-1)
+shortTIData$ShortTIPercBucket = ifelse(shortTIData$ShortTIPerc>1,1,round(shortTIData$ShortTIPerc/0.2)*0.2)
+shortTIData$AssembledTIPerc = shortTIData$AssembledCount/(shortTIData$ClusterCount-1)
+shortTIData$AssembledTIPercBucket = ifelse(shortTIData$AssembledTIPerc>1,1,round(shortTIData$AssembledTIPerc/0.2)*0.2)
+
+#View(shortTIData)
+totalChains = nrow(shortTIData)
+View(shortTIData %>% group_by(ShortTIPercBucket) %>% summarise(Count=n(),AsPerc=round(n()/totalChains,2)))
+View(shortTIData %>% group_by(AssembledTIPercBucket) %>% summarise(Count=n(),AsPerc=round(n()/totalChains,2)))
+
+print(ggplot(data = shortTIData %>% filter(ShortTIPerc>=0.9&LinkCount>1) %>% group_by(LinkCount) %>% count(), aes(x=LinkCount, y=n))
+      + geom_line()
+      + labs(title = "Chain Link Count for short consequetive TIs"))
+
+
+
+
+############################
+# working and experimental...
+
+
 
 tiDirectData$Connectivity = ifelse(tiDirectData$CNGain&tiDirectData$TraversesSvs==F&tiDirectData$ArmOfOrigin==F
                                    &(tiDirectData$DBLengths=='NONE'|tiDirectData$DBLengths=='REM')&(tiDirectData$NextSV=='REM'|tiDirectData$NextSV=='NONE'),'ISOLATED','LINKED')
@@ -197,6 +270,12 @@ View(tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'))
 View(tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'&DBLengths=='NONE'))
 View(tiDirectData %>% filter(ResolvedType=='DEL_Int_TI') %>% group_by(ClusterDesc) %>% count())
 
+View(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'&ClusterDesc=='INV=2'))
+
+plot_length_facetted(tiDirectData, "ResolvedType=='DEL_Ext_TI'&ClusterDesc=='INV=2'", "TiLenBucket", 
+                     'TiLenBucket', '', "TI Lengths for DEL_Ext_TI from INV pairs")
+
+
 
 tiDirectData$Category = paste(tiDirectData$ClusterType,' DB=',tiDirectData$DBLengths, sep='')
 plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'&ClusterDesc=='INV=2'), F)
@@ -205,11 +284,33 @@ print(ggplot(data = tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI',!NextSVTr
            + stat_ecdf()
       + scale_x_log10()
       + facet_wrap(~ClusterDesc))
-)
-  tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'&ClusterDesc=='INV=2'
-))
 
-print(ggplot(data=ti))
+tiDirectData$NextSVDistBucket = ifelse(tiDirectData$NextSVDistance>0,10**round(log(tiDirectData$NextSVDistance,10)),-1)
+tiDirectData$NextSVDistBucket = ifelse(tiDirectData$NextSVDistance<=0,'NONE',ifelse(tiDirectData$NextSVDistance<=5e3,'LT5K',
+                                  ifelse(tiDirectData$NextSVDistance<1e5,'LT100K','REM')))
+
+tiDirectData$Category = paste(' NextSVDistance=',tiDirectData$NextSVDistBucket, sep='')
+tiDirectData$Category = paste(' NextSVDistance=',tiDirectData$ClusterType, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ResolvedType!='aDUP_Ext_TI'), F)
+tiDirectData$Category = paste(tiDirectData$ClusterType,' NextSVDistance=',tiDirectData$NextSVDistBucket, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ClusterCount<4), F)
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' DB Distance=',tiDirectData$DBLengths, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'), F)
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' CopyNumberGain=',tiDirectData$CNGain, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'), F)
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' TraversesSvs=',tiDirectData$TraversesSvs, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'), F)
+
+tiDirectData$Category = paste(tiDirectData$ClusterType,' NextSVTraversesSvs=',tiDirectData$NextSVTraversesSvs, sep='')
+plot_ti_by_category(tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'), F)
+
+View(tiDirectData %>% group_by(NextSVDistBucket) %>% count())
+View(tiDirectData %>% filter(NextSVDistBucket=='NONE'))
+
+
 
 # 3. Simple Chains
 tiDirectData$Category = paste(tiDirectData$ClusterType,' SZ=',tiDirectData$ChainCountSize,' NextSV=',tiDirectData$NextSV,' DB=',tiDirectData$DBLengths, sep='')
