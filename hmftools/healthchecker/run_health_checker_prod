@@ -5,7 +5,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 rundir=$1
 
 if [ -z "$rundir" ]; then
-    echo "[WARN] No rundir is provided to run_health_checker_prod. Exiting."
+    echo "[ERROR] No rundir is provided to run_health_checker_prod. Exiting."
     exit 1
 fi
 
@@ -15,7 +15,7 @@ if [ -z "`hostname | grep datastore`" ]; then
     base_path="/data"
 fi
 
-exec java -Xmx8G -Xms4G \
+java -Xmx8G -Xms4G \
     -jar ${base_path}/tools/healthchecker_v2.4/health-checker.jar \
     -report_file_path ${rundir}/logs/HealthCheck_v2.4.json \
     -run_dir ${rundir}

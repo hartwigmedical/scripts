@@ -47,6 +47,7 @@ sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ \
 	--include "*purple*" \
 	--include "*somaticVariants*post_processed*" \
 	--include "*somaticVariants*strelka*" \
+	--include "*structuralVariants*gridss*gridss.vcf.gz*" \
 	--include "*structuralVariants*bpi*bpi_stats*" \
 	--include "*structuralVariants*bpi*somaticSV*" \
 	--include "*structuralVariants*bpi*sliced.bam*" \
