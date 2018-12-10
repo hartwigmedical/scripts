@@ -40,4 +40,3 @@ then
 fi
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} ${credentials} $@
-do_run_sv_loader_gridss ${run_dir}

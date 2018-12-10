@@ -1,0 +1,5 @@
+#!/bin/bash
+run_dir=$1 && shift
+
+do_run_purple_gridss $run_dir $@
+do_run_sv_loader_gridss $run_dir
