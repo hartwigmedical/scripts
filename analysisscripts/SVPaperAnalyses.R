@@ -142,7 +142,7 @@ View(clusters %>% group_by(ResolvedType) %>% count())
 simpleChainedClusters = clusters %>% filter(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain')
 View(simpleChainedClusters)
 
-View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3))
+View(clusters %>% filter(SampleId=='CPCT02050052T'))
 colnames(clusters)
 
 View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3) 

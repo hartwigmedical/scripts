@@ -18,7 +18,7 @@ get_foldback_chain_links<-function(foldbacks)
 
 
 svData = read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/CLUSTER_GRIDSS.csv', header = T, stringsAsFactors = F)
-# svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
+svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
 
 # Interpetation of chaining for foldbacks
 foldbacksStart = svData %>% filter(FoldbackLenStart>=0)
@@ -61,6 +61,8 @@ View(foldbacks %>% group_by(FoldbackType, ChainSize, FoldbackAsmbPercent) %>% co
 #1.Foldback by Chain Count and Asm percent
 View(foldbacks %>% group_by(ChainLinksBucket,FoldbackLenBucket,FoldbackAsmbPercent) %>% count() %>% spread(FoldbackAsmbPercent,n))
 
+View(foldbacks %>% group_by(SampleId,ClusterId,ResolvedType) %>% summarise(FBcount=n()/2,
+                                                                           ClusterCount=first(ClusterCount),CNMax=max(pmax(AdjCNStart,AdjCNEnd)),FBPloidyMax=max(pmax(AdjCNChgStart,AdjCNChgEnd,Ploidy))))
 
 #2.Simple + foldback length distribution for mostly assembled combos
 foldbackLenSummary = foldbacks %>% filter(FoldbackType=="INV"|FoldbackAsmbPercent>0.5) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count)
@@ -77,15 +79,8 @@ print(folbackLengthPlot)
 foldbacks$Category = paste(foldbacks$FoldbackType,"_CS=",foldbacks$ChainSize,"_ASMPerc=",foldbacks$FoldbackAsmbPercent,sep='')
 
 # limited by chain length
-foldbacks$ChainLengthGroup = ifelse(foldbacks$ChainLength<=1e4,'ShortChain','LongChain')
-print(ggplot(data = foldbacks %>% filter(FoldbackType!='INV'&ChainLength<=1e4) %>% group_by(Category,FoldbackLenBucket) %>% summarise(Count=n()), aes(x=FoldbackLenBucket, y=Count))
-      + geom_line()
-      + scale_x_log10()
-      + facet_wrap(~Category)
-      + labs(title = "Foldback Length Distribution"))
-
+foldbacks$ChainLengthGroup = ifelse(foldbacks$ChainLength<=5e3,'ShortChain','LongChain')
 plotData = foldbacks %>% filter(FoldbackType!='INV') %>% group_by(Category,FoldbackLenBucket,ChainLengthGroup) %>% summarise(Count=n()) %>% spread(ChainLengthGroup,Count)
-View(plotData)
 print(ggplot(data = plotData, aes(x=FoldbackLenBucket, y=Count))
       + geom_line(aes(y=ShortChain,color='ShortChain'))
       + geom_line(aes(y=LongChain,color='LongChain'))
