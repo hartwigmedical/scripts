@@ -479,6 +479,7 @@ transitive_breakpoints <- function(
     transitive_call_slop=100,
     allow_loops=FALSE,
     max_hops=4,
+    max_intermediate_paths=1000,
     report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
@@ -519,6 +520,9 @@ transitive_breakpoints <- function(
       max_length=max_traversed + gr$insLen[subjectHits]) %>%
     dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
     filter(find_transitive_for[terminal_start])
+  path_key=integer()
+  path_value1=integer()
+  path_value2=integer()
   i = 0
   while (nrow(active_df) > 0 & i < max_hops) {
     # continue traversing
@@ -533,6 +537,33 @@ transitive_breakpoints <- function(
         max_length=max_length + max_traversed) %>%
       dplyr::select(terminal_start, terminal_end, current_to, bp_path, min_length, max_length) %>%
       filter(min_length < max_traversed_length)
+    if (FALSE && report %in% c("shortest", "max2")) {
+      # Only follow the two shortest paths to any given intermediate node
+      # technically we're going to follow all paths of the shortest two lengths
+      # but as this is just an optimisation to prevent exponential expansion of
+      # highly connected path graphs it's good enough
+      # NB: only works on up to 2**16 nodes
+      key = active_df$current_to * length(gr) + active_df$terminal_start
+      key_offset = match(key, path_key)
+      value = active_df$min_length
+      is_only_path = is.na(key_offset)
+      is_best_path = !is_only_path & value < path_value1[key_offset]
+      is_second_best_path = !is_only_path & !is_best_path & value < path_value2[key_offset]
+      # Update second value
+      path_value2[key_offset[is_second_best_path]] = value[is_second_best_path]
+      # Update first value
+      path_value2[key_offset[is_best_path]] = path_value1[key_offset[is_best_path]]
+      path_value1[key_offset[is_best_path]] = value[is_best_path]
+      # Add new best values
+      path_key = c(path_key, key[is_only_path])
+      path_value1 = c(path_value1, value[is_only_path])
+      path_value2 = c(path_value2, rep(2 * max_traversed_length, sum(is_only_path))) # placeholder
+      active_df = active_df %>% filter(is_only_path | is_best_path | is_second_best_path)
+    }
+    active_df = active_df %>%
+      group_by(terminal_start) %>%
+      top_n(max_intermediate_paths, wt=min_length) %>%
+      ungroup()
     # check for terminal completion
     active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
     result_df = active_df %>%
