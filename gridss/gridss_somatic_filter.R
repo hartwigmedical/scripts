@@ -31,7 +31,7 @@ refgenome=eval(parse(text=paste0("library(", argv$ref, ")\n", argv$ref)))
 library(tidyverse)
 library(readr)
 library(stringr)
-libgridssfile = paste0(argv$scriptdir, "libgridss.R")
+libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
 if (file.exists(libgridssfile)) {
   tmpwd = getwd()
   setwd(argv$scriptdir)
