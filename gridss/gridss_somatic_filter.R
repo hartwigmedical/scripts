@@ -67,9 +67,13 @@ full_bpgr$af = gridss_bp_af(full_bpgr, full_vcf, tumourordinal)
 full_bpgr$af_str = paste(full_bpgr$af, partner(full_bpgr)$af, sep=",")
 full_begr$af = gridss_be_af(full_begr, full_vcf, tumourordinal)
 full_begr$af_str = as.character(full_begr$af)
-info(full_vcf)$BPI_AF = ""
-info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
-info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
+info(full_vcf)$BPI_AF = rep("", length(full_vcf))
+if (length(full_bpgr) > 0) {
+  info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
+}
+if (length(full_begr) > 0) {
+  info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
+}
 
 write(paste0("Filtering pass 1 ", argv$input), stderr())
 bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
@@ -111,10 +115,13 @@ vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
 bpgr = full_bpgr[names(full_bpgr) %in% names(vcf)]
 begr = full_begr[names(full_begr) %in% names(vcf)]
 
+asm_linked_df = NULL
 write(paste0("Calculating assembly links ", argv$input), stderr())
 # Assembly-based event linking
-asm_linked_df = linked_assemblies(vcf) %>%
-  mutate(type="asm")
+if (length(vcf) > 0) {
+  asm_linked_df = linked_assemblies(vcf) %>%
+    mutate(type="asm")
+}
 
 link_df = bind_rows(asm_linked_df, transitive_df) %>%
   mutate(linking_group=str_replace(linked_by, "/.*$", "")) %>%
@@ -208,7 +215,7 @@ link_rescue = bind_rows(link_df, event_link_df) %>% pull(vcfId) %>% unique()
 link_rescue = c(link_rescue, bpgr[link_rescue[link_rescue %in% names(bpgr)]]$partner)
 
 # Note that we don't rescue equivalent events
-begr$partner = NA
+begr$partner = rep(NA, length(begr))
 eqv_link_df = linked_by_equivalent_variants(full_vcf, as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges"), bsgenome=refgenome) %>%
   filter(passes_final_filters(vcf[vcfId]) | vcfId %in% link_rescue) %>%
   group_by(linked_by) %>%
@@ -221,8 +228,8 @@ link_summary_df = bind_rows(link_df, event_link_df, eqv_link_df) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 
 # Add linking information
-info(full_vcf)$LOCAL_LINKED_BY = ""
-info(full_vcf)$REMOTE_LINKED_BY = ""
+info(full_vcf)$LOCAL_LINKED_BY = rep("", length(full_vcf))
+info(full_vcf)$REMOTE_LINKED_BY = rep("", length(full_vcf))
 info(full_vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
 info(full_vcf[!is.na(info(full_vcf)$PARID)])$REMOTE_LINKED_BY = info(full_vcf[info(full_vcf[!is.na(info(full_vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 

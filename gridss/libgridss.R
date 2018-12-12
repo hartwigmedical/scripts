@@ -123,6 +123,9 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   return(filtered)
 }
 gridss_inexact_homology_length = function(gr, vcf) {
+  if (length(gr) == 0) {
+    return(integer(0))
+  }
   ihommat = as.matrix(info(vcf[names(gr)])$IHOMPOS)
   ihomlen = pmax(0, ihommat[,2] - ihommat[,1])
   ihomlen[is.na(ihomlen)] = 0
@@ -632,6 +635,9 @@ transitive_breakpoints <- function(
 #' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
 #' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
 align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+  if (length(vcf) == 0) {
+    return(vcf)
+  }
   align = match.arg(align)
   nominal_start = start(rowRanges(vcf))
   if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
@@ -734,7 +740,7 @@ zip_aggregate_pair_of_list_of_list = function(list1, list2, ZIP_FUN, AGGREGATE_F
   zipped = ZIP_FUN(vec1, vec2)
   result = rep(NA, length(list1))
   aggregatedf = data.frame(
-      ordinal = rep(1:length(list1), times=elementNROWS(list1)),
+      ordinal = rep(seq_len(length(list1)), times=elementNROWS(list1)),
       value = zipped) %>%
     group_by(ordinal) %>%
     summarise(value = AGGREGATE_FUN(value))
@@ -1109,6 +1115,9 @@ sequence_common_prefix = function(gr, anchor_bases, bsgenome, ...) {
 #' Returns the sequence encountered at the other side of a breakpoint when traversing
 #' across it.
 get_partner_anchor_sequence = function(gr, anchor_length, bsgenome) {
+  if (length(gr) == 0) {
+    return(character(0))
+  }
   seq = rep("", length(gr))
   names(seq) = names(gr)
   seqlevelsStyle(gr) = "UCSC"
@@ -1159,7 +1168,7 @@ linked_by_adjacency = function(
     bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   if (is.null(bpgr$beid)) {
-    bpgr$beid = NA_character_
+    bpgr$beid = rep(NA_character_, length(bpgr))
   }
   hitdf = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%
