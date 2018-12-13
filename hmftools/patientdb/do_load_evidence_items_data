@@ -13,7 +13,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading evidence data for ${run_dir}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvicenceData \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -run_dir ${run_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -knowledgebase_path ${knowledgebase_path}
