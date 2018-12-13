@@ -7,7 +7,7 @@ sample=$1 && shift
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-sv_jar=/data/common/tools/variantannotator_v2.3/variant-annotator.jar
+sv_jar=/data/common/tools/variantannotator_v2.4/variant-annotator.jar
 
 # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
 somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
