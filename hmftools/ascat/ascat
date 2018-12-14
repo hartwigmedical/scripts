@@ -15,7 +15,7 @@ if [ ! -f ${amber} ]; then
 fi
 
 amberColumns=$(head -1 ${amber} | wc -w)
-if [ amberColumns -ne 8 ]; then
+if [ ${amberColumns} -ne 8 ]; then
     echo "ERROR - ASCAT requires latest AMBER output"
     exit 1
 fi
