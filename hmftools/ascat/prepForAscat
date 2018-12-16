@@ -34,7 +34,7 @@ if [ ! -f ${sample_bam} ]; then
 fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
-if [ ! -f ${sample_bam} ]; then
+if [ ! -f ${normal_bam} ]; then
     ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${bed} ${normal_bam}
 fi
 
