@@ -1,0 +1,52 @@
+#!/bin/bash
+source load_metadata
+prefix=`dirname $(readlink $0 || echo $0)`
+
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+run_dir=$1 && shift
+out_dir=${run_dir}/amber_v2/
+mkdir -p ${out_dir}
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+
+old_amber=${run_dir}/amber/${sample}.amber.baf
+if [ ! -f ${old_amber} ]; then
+    echo "ERROR - Unable to locate old AMBER file" ${old_amber}
+    exit 1
+fi
+
+new_amber=${out_dir}/${sample}.amber.baf
+if [ -f ${new_amber} ]; then
+    echo "Amber already rerun:" ${new_amber}
+    exit 0
+fi
+
+bed=${out_dir}/${sample}.amber.bed
+if [ ! -f ${bed} ]; then
+    cat ${old_amber} | grep -v Chrom | awk '{print $1 "\t" $2 - 1 "\t" $2}' > ${bed}
+fi
+
+sample_bam=${out_dir}/${sample}.amber.bam
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer ${sample} ${bed} ${sample_bam}
+fi
+
+normal_bam=${out_dir}/${normal}.amber.bam
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${bed} ${normal_bam}
+fi
+
+java -Xmx32G -cp /data/common/tools/amber_v2.0/amber.jar com.hartwig.hmftools.amber.AmberApplication \
+   -threads 4 \
+   -tumor ${sample} \
+   -tumor_bam ${sample_bam} \
+   -reference ${normal} \
+   -reference_bam ${normal_bam} \
+   -output_dir ${out_dir} \
+   -ref_genome ${ref_genome} \
+   -bed ${bed}
+
+#rm ${sample_bam}
+#rm ${normal_bam}
