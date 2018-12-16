@@ -21,5 +21,5 @@ if [ ${amberColumns} -ne 8 ]; then
 fi
 
 echo "INFO - Running ASCAT on" ${sample}
-Rscript ${prefix}/ascat.R ${run_dir} ${out_dir} ${sample} ${normal}
+Rscript ${prefix}/ascatForPaper.R ${run_dir} ${out_dir} ${sample} ${normal}
 echo "INFO - ASCAT complete"
