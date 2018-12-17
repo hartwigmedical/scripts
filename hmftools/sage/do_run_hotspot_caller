@@ -60,7 +60,7 @@ if [ ! -f ${hotspot_vcf} ]; then
 
     echo "[INFO] Applying PON Filter -" $(date)
     filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
-    ${bcftools} filter -e 'SAGE_PON_COUNT!="." && MIN(SAGE_PON_COUNT) > 0' ${pon_vcf} -O z -o ${filtered_vcf}
+    ${bcftools} filter -e 'SAGE_PON_COUNT!="." && MIN(SAGE_PON_COUNT) > 0' -s SAGE_PON ${pon_vcf} -O z -o ${filtered_vcf}
     tabix -p vcf ${filtered_vcf}
     rm ${pon_vcf}*
 
