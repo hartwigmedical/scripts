@@ -8,7 +8,7 @@ credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 
 
-somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/sage/ -type f -name *sage.vcf.gz)
+somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *sage.vcf.gz)
 if [ -z ${somatic_vcf} ]
 then
     echo "Unable to locate post processed somatic variants. Exiting."
