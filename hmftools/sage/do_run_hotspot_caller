@@ -55,13 +55,12 @@ if [ ! -f ${hotspot_vcf} ]; then
     echo "[INFO] Sage PON -" $(date)
     pon_vcf=${out_dir}/${sample}.pon.vcf.gz
     ${bcftools} annotate -a ${SAGE_PON} -c SAGE_PON_COUNT ${pass_vcf} -O z -o ${pon_vcf}
-    tabix -p vcf ${germline_vcf}
+    tabix -p vcf ${pon_vcf}
     rm ${pass_vcf}*
 
     echo "[INFO] Applying PON Filter -" $(date)
     filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
-    ${bcftools} filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' ${pon_vcf} -O u | \
-    ${bcftools} filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -O z -o ${filtered_vcf}
+    ${bcftools} filter -e 'SAGE_PON_COUNT!="." && MIN(SAGE_PON_COUNT) > 3' -O z -o ${filtered_vcf}
     tabix -p vcf ${filtered_vcf}
     rm ${pon_vcf}*
 
