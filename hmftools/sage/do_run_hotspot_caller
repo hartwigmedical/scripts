@@ -16,17 +16,17 @@ normal=$(load_ref_sample_from_metadata ${run_dir})
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 
 out_dir=${run_dir}/somaticVariants/${joint_name}/sage/
-mkdir -p ${out_dir}
-
 sample_bam=${out_dir}/${sample}.sage.bam
 normal_bam=${out_dir}/${normal}.sage.bam
 
 if [ ! -f ${sample_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
+    echo "Unable to locate sample bam" ${sample_bam}
+    exit 1
 fi
 
 if [ ! -f ${normal_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${hotspot_bed} ${normal_bam}
+    echo "Unable to locate normal bam" ${normal_bam}
+    exit 1
 fi
 
 hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
