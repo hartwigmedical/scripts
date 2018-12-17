@@ -82,7 +82,7 @@ if [ ! -f ${hotspot_vcf} ]; then
 fi
 
 
-final_vcf=${out_dir}/${sample}.sage.vcf.gz
+final_vcf=${out_dir}/../${sample}.sage.vcf.gz
 if [ ! -f ${final_vcf} ]; then
     echo "[INFO] Merging hotspot with processed -" $(date)
 
