@@ -18,6 +18,9 @@ cp -r ${download_path}/${set} ${processed_path}/${set}
 echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${processed_path}/${set}
 
+echo "[INFO] Slicing and downloading bam hotspots"
+do_download_hotspot_bams ${processed_path}/${set}
+
 echo "[INFO] Running latest purple for ${set}"
 do_run_purple_no_db ${processed_path}/${set}
 
