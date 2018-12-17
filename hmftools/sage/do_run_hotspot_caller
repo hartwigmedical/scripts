@@ -3,16 +3,10 @@ source load_metadata
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
-PATH=/data/common/tools/samtools_v1.2:$PATH
-export PATH
-
-blacklist_bed=/data/common/dbs/sage/Blacklist.bed.gz
+SAGE_PON=/data/common/dbs/sage/SAGE_PON.vcf.gz
 hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
 hotspot_tsv=/data/common/dbs/sage/KnownHotspots.tsv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-sambamba=/data/common/tools/sambamba_v0.6.5/sambamba
-GERMLINE_PON=/data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz
-SOMATIC_PON=/data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
 MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
 sage_jar=/data/common/tools/sage_pilot/sage.jar
@@ -58,17 +52,11 @@ if [ ! -f ${hotspot_vcf} ]; then
     ${bcftools} view -s ${sample} -O z -o ${pass_vcf}
     tabix -p vcf ${pass_vcf}
 
-    echo "[INFO] Germline PON -" $(date)
-    germline_vcf=${out_dir}/${sample}.germline.vcf.gz
-    ${bcftools} annotate -a ${GERMLINE_PON} -c GERMLINE_PON_COUNT ${pass_vcf} -O z -o ${germline_vcf}
+    echo "[INFO] Sage PON -" $(date)
+    pon_vcf=${out_dir}/${sample}.pon.vcf.gz
+    ${bcftools} annotate -a ${SAGE_PON} -c SAGE_PON_COUNT ${pass_vcf} -O z -o ${pon_vcf}
     tabix -p vcf ${germline_vcf}
     rm ${pass_vcf}*
-
-    echo "[INFO] Somatic PON -" $(date)
-    pon_vcf=${out_dir}/${sample}.pon.vcf.gz
-    ${bcftools} annotate -a ${SOMATIC_PON} -c SOMATIC_PON_COUNT ${germline_vcf} -O z -o ${pon_vcf}
-    tabix -p vcf ${pon_vcf}
-    rm ${germline_vcf}*
 
     echo "[INFO] Applying PON Filter -" $(date)
     filtered_vcf=${out_dir}/${sample}.filtered.vcf.gz
@@ -89,20 +77,9 @@ if [ ! -f ${hotspot_vcf} ]; then
     rm ${filtered_vcf}*
 
     echo "[INFO] Annotating Mappability -" $(date)
-    map_vcf=${out_dir}/${sample}.map.vcf
-    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${map_vcf}
-    tabix -p vcf ${map_vcf}
-    rm ${snpEff_vcf}*
-
-    blacklist_vcf=${out_dir}/${sample}.blacklist.vcf
-    ${bcftools} view -R ${blacklist_bed} ${map_vcf} -O z -o ${blacklist_vcf}
-    tabix -p vcf ${blacklist_vcf}
-
-    ${bcftools} annotate -a ${blacklist_vcf} -c CHROM,POS,REF,ALT -m +BLACKLIST ${map_vcf} -O u |
-    ${bcftools} filter -e 'BLACKLIST=1' -s BLACKLIST -O z -o ${hotspot_vcf}
+    ${bcftools} annotate -a ${MAPPABILITY_BED} -h /data/common/dbs/hg19_mappability_tracks/mappability.hdr -c CHROM,FROM,TO,-,MAPPABILITY  ${snpEff_vcf}.gz -O z -o ${hotspot_vcf}
     tabix -p vcf ${hotspot_vcf}
-    rm ${map_vcf}*
-    rm ${blacklist_vcf}*
+    rm ${snpEff_vcf}*
 fi
 
 
