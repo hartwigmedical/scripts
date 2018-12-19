@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
 bam=$1 && shift
-output_dir=$(dirname ${bam})
 
-java -cp /data/common/tools/gridss_v2.0.1/gridss.jar gridss.analysis.CollectGridssMetrics I=${bam} O=${output_dir} THRESHOLD_COVERAGE=50000
+java -cp /data/common/tools/gridss_v2.0.1/gridss.jar gridss.analysis.CollectGridssMetrics I=${bam} O=${bam} THRESHOLD_COVERAGE=50000
