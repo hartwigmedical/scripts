@@ -38,5 +38,5 @@ then
         fi
     fi
 fi
-
+# empty string is credentials of db
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} "" $@
