@@ -9,7 +9,7 @@ argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviousl
 argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
 #argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829T.gridss.somatic.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
 argv = parse_args(argp)
 
 if (!file.exists(argv$input)) {
@@ -53,11 +53,7 @@ tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
 full_vcf = align_breakpoints(full_vcf)
 # Add header fields
-info(header(full_vcf)) = unique(as(rbind(as.data.frame(info(header(full_vcf))), data.frame(
-  row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
-  Number=c(".", "1", "1"),
-  Type=c("Float", "String", "String"),
-  Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
+full_vcf = addVCFHeaders(full_vcf)
 
 write(paste0("Parsing SVs in ", argv$input), stderr())
 full_bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)

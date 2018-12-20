@@ -16,6 +16,47 @@ source("gridss.config.R")
   existing[appliesTo] = paste(existing[appliesTo], filterName, sep=";")
   return(existing)
 }
+addVCFHeaders = function(vcf) {
+  info(header(vcf)) = unique(as(rbind(as.data.frame(info(header(vcf))), data.frame(
+    row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
+    Number=c(".", "1", "1"),
+    Type=c("Float", "String", "String"),
+    Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
+  VariantAnnotation::fixed(header(vcf))$FILTER = unique(as(rbind(as.data.frame(VariantAnnotation::fixed(header(vcf)))$FILTER, data.frame(
+    row.names=c(
+      "PON",
+      "imprecise",
+      "strand_bias",
+      "homlen",
+      "ihomlen",
+      "BPI.Filter.PRSupportZero",
+      "BPI.Filter.SRSupportZero",
+      "small.del.ligation.fp",
+      "small.inv.hom.fp",
+      "normalSupport",
+      "SRNormalSupport",
+      "normalCoverage",
+      "af",
+      "NO_ASRP"),
+    Description=c(
+      "Found in panel of normals",
+      "Imprecise variant",
+      "Short event with excessive strand bias in split reads/soft clipped reads overlapping breakpoint",
+      "Breakpoint homology length too long",
+      "Inexact breakpoint homology length too long",
+      "Large event not supported by any read pairs either directly or via assembly",
+      "Short event not supported by any split reads either directly or via assembly",
+      "Short deletion that appears to be a ligation artefact",
+      "Short inverstion with significant sequence homology",
+      "Too many support reads from the normal sample",
+      "Short event with split reads support in the normal sample",
+      "Insufficient normal coverage to determine somatic status",
+      "Variant allele fraction too low",
+      "Breakend supported by 0 assembled read pairs"))), "DataFrame"))
+  return(vcf)
+}
+
+
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
     pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
