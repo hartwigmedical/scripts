@@ -191,8 +191,8 @@ sub processSample{
     if ( defined $sample->{ 'q30' } ){
         $q30 = $sample->{ 'q30' };
     }
-    if ( $q30 < 0 or $q30 > 100 ){
-        die "[EXIT] Q30 found for sample ($name) but not a percentage\n";
+    if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
+        die "[EXIT] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
     
     my @data_for_itlims = ( $label, $submission, $barcode, $name );
