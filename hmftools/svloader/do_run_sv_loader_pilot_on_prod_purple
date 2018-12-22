@@ -17,7 +17,7 @@ fi
 structural_vcf=$(find -L ${run_dir}/purple/ -type f -name *.purple.sv.vcf.gz)
 if [ -z ${structural_vcf} ]
 then
-    echo "[ERROR] Unable to locate structural variants. Exiting."
+    echo "[ERROR] Unable to locate gridss structural variants. Exiting."
     exit 1
 fi
 

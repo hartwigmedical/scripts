@@ -24,6 +24,6 @@ fi
 
 annotated_structural_vcf=${structural_vcf/.sv.vcf.gz/.sv.ann.vcf.gz}
 
-do_run_gridss_viral_annotate $run_dir $gridss_jar
+do_run_gridss_viral_annotate ${run_dir} ${gridss_jar}
 
 ${prefix}/do_run_sv_loader ${sample} ${annotated_structural_vcf} ${credentials} ${sv_jar} $@
