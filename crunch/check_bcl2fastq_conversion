@@ -22,8 +22,8 @@ my $LANE_KEY = 'ConversionResults';
 my $SMPL_KEY = 'DemuxResults';
 my $READ_KEY = 'ReadMetrics';
 my $BARC_KEY = 'IndexMetrics';
-my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission );
-my @SUM_FIELDS = qw( submission id name yld q30 );
+my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission description );
+my @SUM_FIELDS = qw( submission id name yld q30 description );
 
 my $YIELD_FACTOR = 1e6;
 my %QC_LIMITS = (
@@ -127,7 +127,7 @@ sub addSamplesheetInfo{
     $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
     $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     
-    ## add submissions: eg HMFregCPCT
+    ## add sample metadata
     my $samples = $json_info->{ 'samp' };
     foreach my $sample_id ( keys %$samples ){
         my $sample = $samples->{ $sample_id };
@@ -135,6 +135,10 @@ sub addSamplesheetInfo{
         my $submission = $NA_CHAR;
         $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
         $sample->{ 'submission_print' } = $submission;
+        
+        my $description = $NA_CHAR;
+        $description = $ssht_info->{'samples'}{$sample_id}{ 'Description' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Description' };
+        $sample->{ 'description_print' } = $description;
     }
 }
 
