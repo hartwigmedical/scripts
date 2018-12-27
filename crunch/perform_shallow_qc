@@ -11,8 +11,8 @@ if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 echo -e "#setName\ttumSample\tQC\tPurity\tStatus\
-  \trefCov\ttumCov\trefReads\ttumReads\trefMapPerc\
-  \ttumMapPerc\trefExcl\ttumExcl\trefDup\ttumDup"
+\trefCov\ttumCov\trefReads\ttumReads\trefMapPerc\
+\ttumMapPerc\trefExcl\ttumExcl\trefDup\ttumDup"
 
 for runPath in "${runPaths[@]}"; do 
   
@@ -60,9 +60,7 @@ for runPath in "${runPaths[@]}"; do
   tumExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${colIdx} )
   tumDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${colIdx} )
  
-  ## horizontal print
-  echo -e "${setName}\t${tumSample}\t${qcStat}\t${purity}\t${status}\
-    \t${refCov}\t${tumCov}\t${refRds}\t${tumRds}\t${refMap}\
-    \t${tumMap}\t${refExc}\t${tumExc}\t${refDup}\t${tumDup}"
+  ## horizontal print (any dashes after backslash escape will also be printed)
+  echo -e "${setName}\t${tumSample}\t${qcStat}\t${purity}\t${status}\t${refCov}\t${tumCov}\t${refRds}\t${tumRds}\t${refMap}\t${tumMap}\t${refExc}\t${tumExc}\t${refDup}\t${tumDup}"
 
 done
