@@ -5,5 +5,5 @@ FROM structuralVariantFusion
 INNER JOIN structuralVariantBreakend AS fiveBreakend ON fiveBreakend.id = structuralVariantFusion.fivePrimeBreakendId 
 INNER JOIN structuralVariantBreakend AS threeBreakend ON threeBreakend.id = structuralVariantFusion.threePrimeBreakendId 
 INNER JOIN structuralVariant  ON structuralVariant.id = fiveBreakend.structuralVariantId
-WHERE isReported = 1 and filter = "PASS"
+WHERE isReported = 1
 AND structuralVariant.sampleId IN  ('XXX');
