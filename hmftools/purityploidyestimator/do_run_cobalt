@@ -22,7 +22,7 @@ if [ -z ${tumor_ratio} ]
 then
     rm -f ${output_dir}/*.len
 
-    echo "Calculating cobalt ratios for sample" ${tumor_sample}
+    echo "[INFO] Calculating cobalt ratios for sample" ${tumor_sample}
     java -Xmx8G -Xms4G \
         -jar ${cobalt_jar} \
         -threads 2 \
@@ -37,4 +37,4 @@ then
     rm -f ${output_dir}/*.count
 fi
 
-echo "Cobalt complete"
+echo "[INFO] Cobalt complete"

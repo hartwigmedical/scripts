@@ -10,19 +10,19 @@ credentials=$1 && shift
 baf_file=$(ls ${run_dir}/amber/*.amber.baf)
 if [ $? -ne 0 ]
 then
-    echo "Amber BAF unavailable. Exiting."
+    echo "[ERROR] Amber BAF unavailable. Exiting."
     exit 1
 fi
 
 if [ ! -f "$somatic_vcf" ]
 then
-    echo "Unable to locate somatic variants. Exiting."
+    echo "[ERROR] Unable to locate somatic variants. Exiting."
     exit 1
 fi
 
 if [ ! -f "$structural_vcf" ]
 then
-    echo "Unable to locate structural variants. Exiting."
+    echo "[ERROR] Unable to locate structural variants. Exiting."
     exit 1
 fi
 
@@ -42,8 +42,8 @@ gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 
 sv_recovery_arg=""
 if [[ ${structural_vcf} == *".gridss.somatic.vcf.gz" ]]; then
-  sv_recovery_vcf=$(dirname ${structural_vcf})/$(basename -s .vcf.gz ${structural_vcf}).full.vcf.gz
-  sv_recovery_arg="-sv_recovery_vcf ${sv_recovery_vcf}"
+    sv_recovery_vcf=$(dirname ${structural_vcf})/$(basename -s .vcf.gz ${structural_vcf}).full.vcf.gz
+    sv_recovery_arg="-sv_recovery_vcf ${sv_recovery_vcf}"
 fi
 
 if [ -z "${credentials}" ]; then

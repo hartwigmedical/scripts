@@ -7,16 +7,10 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 
-somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed_v2.2.vcf.gz)
-if [ $? -ne 0 ]
-then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    somatic_vcf=$(ls ${run_dir}/somaticVariants/*/*post_processed.vcf.gz)
-    if [ $? -ne 0 ]
-    then
-        echo "Unable to locate post processed somatic variants. Exiting."
-        exit 1
-    fi
+somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
+if [ -z ${somatic_vcf} ]; then
+    echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
+    exit 1
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})

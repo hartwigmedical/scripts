@@ -11,32 +11,16 @@ fi
 purple_jar=${base_path}/tools/purple_v2.17/purple.jar
 purple_output=${run_dir}/purple
 
-somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed_v2.2.vcf.gz)
-if [ -z ${somatic_vcf} ]
-then
-    # TODO (KODU): Clean up after pipeline v3 does not exist anymore.
-    somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
-    if [ -z ${somatic_vcf} ]
-    then
-        echo "Unable to locate post processed somatic variants. Exiting."
-        exit 1
-    fi
+somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
+if [ -z ${somatic_vcf} ]; then
+    echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
+    exit 1
 fi
 
-# TODO (KODU): Clean up after pipeline v3 does not exist anymore.
 structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *.gridss.somatic.vcf.gz)
-if [ -z ${structural_vcf} ]
-then
-    structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf)
-    if [ -z ${structural_vcf} ]
-    then
-        structural_vcf=$(find -L ${run_dir}/structuralVariants/bpi/*/ -type f -name *_somaticSV_bpi.vcf.gz)
-        if [ -z ${structural_vcf} ]
-        then
-            echo "Unable to locate bpi structural variants. Exiting."
-            exit 1
-        fi
-    fi
+if [ -z ${structural_vcf} ]; then
+    echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting."
+    exit 1
 fi
 
 # (LISC): Empty string is credentials of db

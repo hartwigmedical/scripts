@@ -19,7 +19,7 @@ RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "hmf-output" | 
 
 if [ -z "$RUN_ROW" ];
   then
-    echo "No runs found with a Somatic/CPCT .ini file for sample ${SAMPLE}. Exiting."
+    echo "[ERROR] No runs found with a Somatic/CPCT .ini file for sample ${SAMPLE}. Exiting."
     exit 1
 fi
 
