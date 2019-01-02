@@ -20,15 +20,16 @@ fi
 
 cp -r ${bachelor_dir} ${download_path}/${set}
 
-echo "[INFO] Running gridss somatic filtering for ${set}"
-do_run_gridss_somatic_filter ${download_path}/${set}
+# KODU: Enable below to fully rebuild!
+#echo "[INFO] Running gridss somatic filtering for ${set}"
+#do_run_gridss_somatic_filter ${download_path}/${set}
 
-echo "[INFO] Running latest purple for ${set}"
-do_run_purple_no_db ${download_path}/${set}
+#echo "[INFO] Running latest purple for ${set}"
+#do_run_purple_no_db ${download_path}/${set}
 
-echo "[INFO] Running CHORD on ${set}"
+#echo "[INFO] Running CHORD on ${set}"
 #echo "[INFO] Running CHORD on ${set}. Planning is to rerun chord in batch mode later on!"
-run_chord_prod ${download_path}/${set}
+#run_chord_prod ${download_path}/${set}
 
-echo "[INFO] Loading genomic data into pilot database"
-load_run_into_pilot_db ${download_path}/${set}
+#echo "[INFO] Loading genomic data into pilot database"
+#load_run_into_pilot_db ${download_path}/${set}
