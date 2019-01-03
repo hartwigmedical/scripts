@@ -1,8 +1,8 @@
 #!/bin/bash
 
 load_ref_sample_from_metadata() {
-    run_dir=$1
-    metadata=${run_dir}/metadata
+    local run_dir=$1
+    local metadata=${run_dir}/metadata
     echo $(jq -r '.ref_sample' ${metadata})
 }
 
@@ -15,7 +15,7 @@ load_tumor_sample_from_metadata() {
 load_joint_name_from_metadata() {
     local run_dir=$1
     local metadata=${run_dir}/metadata
-    tumor=$(jq -r '.tumor_sample' ${metadata})
-    reference=$(jq -r '.ref_sample' ${metadata})
+    local tumor=$(jq -r '.tumor_sample' ${metadata})
+    local reference=$(jq -r '.ref_sample' ${metadata})
     echo ${reference}_${tumor}
 }

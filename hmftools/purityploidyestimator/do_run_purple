@@ -1,4 +1,5 @@
 #!/bin/bash
+source locate_files
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
@@ -19,11 +20,7 @@ then
     exit 1
 fi
 
-sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *.gridss.somatic.full.vcf.gz)
-if [ -z ${sv_recovery_vcf} ]; then
-    echo "[ERROR] Unable to locate recovery structural variants. Exiting."
-    exit 1
-fi
+sv_recovery_vcf=$(locate_recovery_structural_variants ${run_dir})
 
 mkdir -p ${purple_output}
 rm -rf ${purple_output}/*

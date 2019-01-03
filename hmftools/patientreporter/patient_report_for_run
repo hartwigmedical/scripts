@@ -4,7 +4,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 knowledgebase_path=/data/common/dbs/knowledgebases/output
 drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
-hotspot_tsv=/data/common/dbs/somatic_hotspot_v2/Hotspot.tsv
+hotspot=/data/common/dbs/sage/KnownHotspots.tsv
 
 # JOBA: Database details
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
