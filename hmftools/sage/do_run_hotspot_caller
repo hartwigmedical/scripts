@@ -1,11 +1,13 @@
 #!/bin/bash
+source locate_files
 source load_metadata
+
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 SAGE_PON=/data/common/dbs/sage/SAGE_PON.vcf.gz
 hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
-hotspot_tsv=/data/common/dbs/sage/KnownHotspots.tsv
+hotspot_tsv=$(locate_hotspot_tsv)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
 MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz

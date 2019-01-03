@@ -35,3 +35,7 @@ locate_recovery_structural_variants() {
     fi
     echo ${sv_recovery_vcf}
 }
+
+locate_hotspot_tsv() {
+    echo "/data/common/dbs/sage/KnownHotspots.tsv"
+}

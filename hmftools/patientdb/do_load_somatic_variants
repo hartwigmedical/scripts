@@ -1,4 +1,5 @@
 #!/bin/bash
+source locate_files
 
 sample=$1 && shift
 somatic_vcf=$1 && shift
@@ -13,7 +14,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 # JOBA: File Locations
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-hotspot=/data/common/dbs/sage/KnownHotspots.tsv
+hotspot_tsv=$(locate_hotspot_tsv)
 
 echo "[INFO] Loading somatic variant data for sample: ${sample}"
 
@@ -23,5 +24,5 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -vcf_file ${somatic_vcf} \
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -hotspot ${hotspot} \
+    -hotspot ${hotspot_tsv} \
     $@
