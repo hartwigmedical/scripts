@@ -44,7 +44,7 @@ if [ ! -z "${credentials}" ]; then
     db_args="-db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
 fi
 
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
