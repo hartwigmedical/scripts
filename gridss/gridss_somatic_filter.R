@@ -72,7 +72,7 @@ if (length(full_begr) > 0) {
 }
 
 write(paste0("Filtering pass 1 ", argv$input), stderr())
-bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
+bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, bsgenome=refgenome, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
 befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
 # shadow breakpoint removed due to initial mapq20 filter reducing FP rate
 # bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))

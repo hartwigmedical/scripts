@@ -33,6 +33,7 @@ addVCFHeaders = function(vcf) {
       "BPI.Filter.SRSupportZero",
       "small.del.ligation.fp",
       "small.inv.hom.fp",
+      "small.replacement.fp",
       "normalSupport",
       "SRNormalSupport",
       "normalCoverage",
@@ -47,7 +48,8 @@ addVCFHeaders = function(vcf) {
       "Large event not supported by any read pairs either directly or via assembly",
       "Short event not supported by any split reads either directly or via assembly",
       "Short deletion that appears to be a ligation artefact",
-      "Short inverstion with significant sequence homology",
+      "Short inversion with significant sequence homology",
+      "Deletion with insertion of the same length that is not a simple inversion.",
       "Too many support reads from the normal sample",
       "Short event with split reads support in the normal sample",
       "Insufficient normal coverage to determine somatic status",
@@ -85,7 +87,7 @@ gridss_overlaps_breakend_pon = function(gr,
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
+gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -125,6 +127,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
 	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
+	  filtered = .addFilter(filtered, "small.replacement.fp", is_indel_artefact(gr, bsgenome))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -198,6 +201,9 @@ is_short_dup = function(gr) {
   }
   return(is_dup)
 }
+is_short_del = function(gr) {
+  return(is_short_deldup(gr) & !is_short_dup(gr))
+}
 is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=100, maxsize=800, minihomlen=6) {
   result = rep(FALSE, length(gr))
   if (!is.null(gr$partner)) {
@@ -210,6 +216,21 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
       #maxaf <= 0.25
       ihomlen >= minihomlen
   }
+  return(result)
+}
+is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBase=0.5, maxEditDistancePerInversionBase=0.2) {
+  result = rep(FALSE, length(gr))
+  isOfInterest = is_short_del(gr) & abs(gr$svLen - gr$insLen) < minsizedelta
+  igr = gr[isOfInterest]
+  seqlevelsStyle(igr) = "UCSC"
+  inseq = igr$insSeq
+  refseq = getSeq(bsgenome, names=igr, as.character=TRUE)
+  revSeq = as.character(reverseComplement(DNAStringSet(refseq)))
+  fwdEditDistance = stringdist(inseq, refseq, method="lv")
+  invEditDistance = stringdist(inseq, revSeq, method="lv")
+  fwdEditDistancePerBase = fwdEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
+  invEditDistancePerBase = invEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
+  result[isOfInterest] = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
   return(result)
 }
 is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
