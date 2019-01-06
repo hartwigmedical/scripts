@@ -15,6 +15,6 @@ purple_output=${run_dir}/purple_pilot
 credentials=${base_path}/dbs/mysql_credentials/pilot
 
 somatic_vcf=$(locate_somatics ${run_dir})
-structural_vcf=$(locate_structural_variants ${run_dir})
+structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 
 ${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${purple_output} ${credentials} $@

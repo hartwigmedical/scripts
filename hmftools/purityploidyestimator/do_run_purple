@@ -20,7 +20,7 @@ then
     exit 1
 fi
 
-sv_recovery_vcf=$(locate_recovery_structural_variants ${run_dir})
+sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
 mkdir -p ${purple_output}
 rm -rf ${purple_output}/*
