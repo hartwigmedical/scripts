@@ -232,7 +232,8 @@ is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBas
   invEditDistance = stringdist(inseq, revSeq, method="lv")
   fwdEditDistancePerBase = fwdEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
   invEditDistancePerBase = invEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
-  result[gr$isOfInterest] = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
+  isActualInversion = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
+  result[gr$isOfInterest] = !isActualInversion
   return(result)
 }
 is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
