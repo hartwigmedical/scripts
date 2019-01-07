@@ -47,7 +47,7 @@ if (file.exists(libgridssfile)) {
 
 # Filter to somatic calls
 write(paste0("Reading ", argv$input), stderr())
-full_vcf = readVcf(argv$input, "hg19")
+full_vcf = readVcf(argv$input, "")
 tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]

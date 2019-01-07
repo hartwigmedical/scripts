@@ -220,17 +220,19 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
 }
 is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBase=0.5, maxEditDistancePerInversionBase=0.2) {
   result = rep(FALSE, length(gr))
-  isOfInterest = is_short_del(gr) & abs(gr$svLen - gr$insLen) < minsizedelta
-  igr = gr[isOfInterest]
+  gr$isOfInterest = is_short_del(gr) & abs(abs(start(gr) - start(gr[ifelse(is.na(gr$partner), names(gr), gr$partner)])) - gr$insLen) < minsizedelta
+  gr$isOfInterest = !is.na(gr$partner) & gr$isOfInterest & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  igr = gr[gr$isOfInterest]
   seqlevelsStyle(igr) = "UCSC"
   inseq = igr$insSeq
+  igr=GRanges(seqnames=seqnames(igr), ranges=IRanges(start=pmin(start(igr), start(partner(igr))), end=pmax(end(igr), end(partner(igr)))))
   refseq = getSeq(bsgenome, names=igr, as.character=TRUE)
   revSeq = as.character(reverseComplement(DNAStringSet(refseq)))
   fwdEditDistance = stringdist(inseq, refseq, method="lv")
   invEditDistance = stringdist(inseq, revSeq, method="lv")
   fwdEditDistancePerBase = fwdEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
   invEditDistancePerBase = invEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
-  result[isOfInterest] = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
+  result[gr$isOfInterest] = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
   return(result)
 }
 is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
@@ -729,9 +731,12 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_det
 
 readVcf = function(file, ...) {
   raw_vcf = VariantAnnotation::readVcf(file=file, ...)
-  # work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
-  alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
-  VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  #assertthat::assert_that(all(alt(raw_vcf) != ""), "VariantAnnotation 1.29.11 or later is required")
+  if (!all(unlist(alt(raw_vcf)) != "")) {
+    #work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
+    alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
+    VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  }
   # Work-around for https://github.com/PapenfussLab/gridss/issues/156
   # since we don't have all the info, we'll just pro-rata
   # is.nanan = function(x) is.na(x) | is.nan(x)
