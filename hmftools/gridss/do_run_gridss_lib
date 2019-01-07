@@ -73,6 +73,7 @@ gridss_jvm_args="
 	-Dsamjdk.use_async_io_read_samtools=true
 	-Dsamjdk.use_async_io_write_samtools=true
 	-Dsamjdk.use_async_io_write_tribble=true
+	-Dsamjdk.buffer_size=2097152
 	-cp $gridss_jar "
 gridss_common_args="
 	TMP_DIR=$gridss_dir 
