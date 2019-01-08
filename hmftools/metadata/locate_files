@@ -18,7 +18,7 @@ locate_somatics() {
 
 locate_purple_structural_variants() {
     local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name *.purple.sv.vcf.gz)
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
     if [ -z ${structural_vcf} ]; then
         echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
         exit 1
@@ -32,7 +32,7 @@ locate_gridss_structural_variants() {
 	# Use the backport VCF if it exists
 	local structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/breakpoint_position_backport/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
     if [ -z ${structural_vcf} ]; then
-        structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *.gridss.somatic.vcf.gz)
+        structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
 			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting."
 			exit 1
@@ -43,7 +43,7 @@ locate_gridss_structural_variants() {
 
 locate_gridss_recovery_candidates() {
     local run_dir=$1
-    local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *.gridss.somatic.full.vcf.gz)
+    local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
     if [ -z ${sv_recovery_vcf} ]; then
         echo "[ERROR] Unable to locate GRIDSS sv recovery candidates. Exiting."
         exit 1
