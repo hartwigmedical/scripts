@@ -16,13 +16,7 @@ chord_dir=/data/common/tools/chord_pilot
 working_dir="${run_dir}/chord_pilot"
 mkdir -p ${working_dir}
 
-#somatic_vcf=$(locate_somatics ${run_dir})
-somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
-if [ -z ${somatic_vcf} ]; then
-    echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
-    exit 1
-fi
-
+somatic_vcf=$(locate_somatics ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
 echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
