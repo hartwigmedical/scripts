@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ $# -eq 0 ]; then
+if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Search SampleSheets for string (perl style grep based matching)"
     echo " Usage: `basename $0` <string> [<string2 <stringn>]"
@@ -11,25 +11,29 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-SEARCH_STRINGS=( "$@" )
+searchTerms=( "$@" )
 
 function print_join { local IFS="$1"; shift; echo "$*"; }
 
-for SEARCH in "${SEARCH_STRINGS[@]}"; do
+for searchTerm in "${searchTerms[@]}"; do
   
-  for sheet in $( grep -l $SEARCH /data/samplesheets/*_SampleSheet.csv ); do 
-    
-    SHEETFILE=$( basename ${sheet} ) 
-    SEQRUNDIR=$( echo $SHEETFILE | sed 's#_SampleSheet.csv##g' )
-    HMFRUNDIR="/data/sequencer_archive/${SEQRUNDIR}"      
-    HMFRUN=$( grep -o -P "X\d{2}\-\d{4}" $sheet ); 
+  for sampleSheet in $( grep -l $searchTerm /data/samplesheets/*_SampleSheet.csv ); do 
+   
+    hmfRunName=$( cat $sampleSheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
+    seqRunName=$( basename $sampleSheet | sed 's#_SampleSheet.csv##g' )
 
-    cat $sheet | grep -P "$SEARCH" | cut -d"," -f 2,3,8 | sort | uniq | while read line; do
-      SAMPLEID=$( echo $line | cut -d ',' -f 1 )
-      SAMPLENAME=$( echo $line | cut -d ',' -f 2 )
-      SUBM=$( echo $line | cut -d ',' -f 3 )
-      print_join " " $SAMPLENAME $SAMPLEID $SUBM $HMFRUN $HMFRUNDIR
-    done
+    headerLine=$( cat $sampleSheet | grep Sample_ID )
+      idx_id=$( echo $headerLine | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
+    idx_name=$( echo $headerLine | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
+    idx_proj=$( echo $headerLine | tr "," "\n" | grep -n Project | cut -d":" -f1 )
+    idx_desc=$( echo $headerLine | tr "," "\n" | grep -n Description | cut -d":" -f1 ) 
+
+    cat $sampleSheet | grep -P "${searchTerm}" | while read line; do
+      sId=$( echo $line | cut -d ',' -f ${idx_id} )
+      sNm=$( echo $line | cut -d ',' -f ${idx_name} )
+      sPr=$( echo $line | cut -d ',' -f ${idx_proj} )
+      print_join " " $sNm $sId $sPr $hmfRunName $seqRunName
+    done | sort | uniq
 
   done
 
