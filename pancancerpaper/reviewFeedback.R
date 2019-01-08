@@ -112,3 +112,39 @@ p2 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
 
 plot_grid(p0, p1, p2, ncol = 2, labels = "AUTO")
 
+
+####  Actionable Pie
+library(ggforce) 
+
+load(file = "~/hmf/RData/reference/simplifiedDrivers.RData")
+actionableDriverColours = simplifiedDriverColours[c("Amp", "Fusion", "Indel", "Missense", "Nonsense", "Del")]
+names(actionableDriverColours) <- c("Amp", "Fusion", "Indel","SNV","MSI","MNV")
+
+load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
+responseChartData = responsiveVariants %>% 
+  group_by(eventType) %>% 
+  dplyr::count() %>% 
+  ungroup() %>% 
+  mutate(share = n / sum(n)) %>%
+  mutate(
+    eventType = ifelse(eventType == "Amplification", "Amp", eventType),
+    eventType = ifelse(eventType == "INDEL", "Indel", eventType)
+    )
+  
+responseChartData = responseChartData %>%
+  mutate(end = 2 * pi * cumsum(share)/sum(share),
+       start = lag(end, default = 0),
+       middle = 0.5 * (start + end),
+       hjust = ifelse(middle > pi, 1, 0),
+       vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+
+ggplot(responseChartData) + 
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, start = start, end = end, fill = eventType)) +
+  geom_text(aes(x = 1.05 * sin(middle), y = 1.05 * cos(middle), label = paste0(round(responseChartData$share*100, 1), "%"), hjust = hjust, vjust = vjust)) +
+  coord_fixed() +
+  scale_x_continuous(limits = c(-1.5, 1.4), name = "", breaks = NULL, labels = NULL) +
+  scale_y_continuous(limits = c(-1, 1), name = "", breaks = NULL, labels = NULL) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  scale_fill_manual(values = actionableDriverColours, name = "Driver") + 
+  ggtitle("Actionable Drivers") 
+
