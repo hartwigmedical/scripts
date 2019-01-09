@@ -16,6 +16,49 @@ source("gridss.config.R")
   existing[appliesTo] = paste(existing[appliesTo], filterName, sep=";")
   return(existing)
 }
+addVCFHeaders = function(vcf) {
+  info(header(vcf)) = unique(as(rbind(as.data.frame(info(header(vcf))), data.frame(
+    row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
+    Number=c(".", "1", "1"),
+    Type=c("Float", "String", "String"),
+    Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
+  VariantAnnotation::fixed(header(vcf))$FILTER = unique(as(rbind(as.data.frame(VariantAnnotation::fixed(header(vcf)))$FILTER, data.frame(
+    row.names=c(
+      "PON",
+      "imprecise",
+      "strand_bias",
+      "homlen",
+      "ihomlen",
+      "BPI.Filter.PRSupportZero",
+      "BPI.Filter.SRSupportZero",
+      "small.del.ligation.fp",
+      "small.inv.hom.fp",
+      "small.replacement.fp",
+      "normalSupport",
+      "SRNormalSupport",
+      "normalCoverage",
+      "af",
+      "NO_ASRP"),
+    Description=c(
+      "Found in panel of normals",
+      "Imprecise variant",
+      "Short event with excessive strand bias in split reads/soft clipped reads overlapping breakpoint",
+      "Breakpoint homology length too long",
+      "Inexact breakpoint homology length too long",
+      "Large event not supported by any read pairs either directly or via assembly",
+      "Short event not supported by any split reads either directly or via assembly",
+      "Short deletion that appears to be a ligation artefact",
+      "Short inversion with significant sequence homology",
+      "Deletion with insertion of the same length that is not a simple inversion.",
+      "Too many support reads from the normal sample",
+      "Short event with split reads support in the normal sample",
+      "Insufficient normal coverage to determine somatic status",
+      "Variant allele fraction too low",
+      "Breakend supported by 0 assembled read pairs"))), "DataFrame"))
+  return(vcf)
+}
+
+
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
     pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
@@ -44,7 +87,7 @@ gridss_overlaps_breakend_pon = function(gr,
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
+gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -84,6 +127,7 @@ gridss_breakpoint_filter = function(gr, vcf, min_support_filters=TRUE, somatic_f
 
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
 	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
+	  filtered = .addFilter(filtered, "small.replacement.fp", is_indel_artefact(gr, bsgenome))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -123,6 +167,9 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
   return(filtered)
 }
 gridss_inexact_homology_length = function(gr, vcf) {
+  if (length(gr) == 0) {
+    return(integer(0))
+  }
   ihommat = as.matrix(info(vcf[names(gr)])$IHOMPOS)
   ihomlen = pmax(0, ihommat[,2] - ihommat[,1])
   ihomlen[is.na(ihomlen)] = 0
@@ -154,6 +201,9 @@ is_short_dup = function(gr) {
   }
   return(is_dup)
 }
+is_short_del = function(gr) {
+  return(is_short_deldup(gr) & !is_short_dup(gr))
+}
 is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=100, maxsize=800, minihomlen=6) {
   result = rep(FALSE, length(gr))
   if (!is.null(gr$partner)) {
@@ -166,6 +216,24 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
       #maxaf <= 0.25
       ihomlen >= minihomlen
   }
+  return(result)
+}
+is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBase=0.5, maxEditDistancePerInversionBase=0.2) {
+  result = rep(FALSE, length(gr))
+  gr$isOfInterest = is_short_del(gr) & abs(abs(start(gr) - start(gr[ifelse(is.na(gr$partner), names(gr), gr$partner)])) - gr$insLen) < minsizedelta
+  gr$isOfInterest = !is.na(gr$partner) & gr$isOfInterest & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  igr = gr[gr$isOfInterest]
+  seqlevelsStyle(igr) = "UCSC"
+  inseq = igr$insSeq
+  igr=GRanges(seqnames=seqnames(igr), ranges=IRanges(start=pmin(start(igr), start(partner(igr))), end=pmax(end(igr), end(partner(igr)))))
+  refseq = getSeq(bsgenome, names=igr, as.character=TRUE)
+  revSeq = as.character(reverseComplement(DNAStringSet(refseq)))
+  fwdEditDistance = stringdist(inseq, refseq, method="lv")
+  invEditDistance = stringdist(inseq, revSeq, method="lv")
+  fwdEditDistancePerBase = fwdEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
+  invEditDistancePerBase = invEditDistance / ifelse(nchar(inseq) == 0, 1, nchar(inseq))
+  isActualInversion = fwdEditDistancePerBase > minEditDistancePerBase & invEditDistancePerBase < maxEditDistancePerInversionBase
+  result[gr$isOfInterest] = !isActualInversion
   return(result)
 }
 is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
@@ -632,6 +700,9 @@ transitive_breakpoints <- function(
 #' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
 #' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
 align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+  if (length(vcf) == 0) {
+    return(vcf)
+  }
   align = match.arg(align)
   nominal_start = start(rowRanges(vcf))
   if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
@@ -661,9 +732,12 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_det
 
 readVcf = function(file, ...) {
   raw_vcf = VariantAnnotation::readVcf(file=file, ...)
-  # work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
-  alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
-  VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  #assertthat::assert_that(all(alt(raw_vcf) != ""), "VariantAnnotation 1.29.11 or later is required")
+  if (!all(unlist(alt(raw_vcf)) != "")) {
+    #work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
+    alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
+    VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
+  }
   # Work-around for https://github.com/PapenfussLab/gridss/issues/156
   # since we don't have all the info, we'll just pro-rata
   # is.nanan = function(x) is.na(x) | is.nan(x)
@@ -734,7 +808,7 @@ zip_aggregate_pair_of_list_of_list = function(list1, list2, ZIP_FUN, AGGREGATE_F
   zipped = ZIP_FUN(vec1, vec2)
   result = rep(NA, length(list1))
   aggregatedf = data.frame(
-      ordinal = rep(1:length(list1), times=elementNROWS(list1)),
+      ordinal = rep(seq_len(length(list1)), times=elementNROWS(list1)),
       value = zipped) %>%
     group_by(ordinal) %>%
     summarise(value = AGGREGATE_FUN(value))
@@ -1109,6 +1183,9 @@ sequence_common_prefix = function(gr, anchor_bases, bsgenome, ...) {
 #' Returns the sequence encountered at the other side of a breakpoint when traversing
 #' across it.
 get_partner_anchor_sequence = function(gr, anchor_length, bsgenome) {
+  if (length(gr) == 0) {
+    return(character(0))
+  }
   seq = rep("", length(gr))
   names(seq) = names(gr)
   seqlevelsStyle(gr) = "UCSC"
@@ -1159,7 +1236,7 @@ linked_by_adjacency = function(
     bpgr$sampleId = rep("placeholder", length(bpgr))
   }
   if (is.null(bpgr$beid)) {
-    bpgr$beid = NA_character_
+    bpgr$beid = rep(NA_character_, length(bpgr))
   }
   hitdf = findOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE) %>%
     as.data.frame() %>%

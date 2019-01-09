@@ -42,7 +42,7 @@ else
     runLinksJson="${runDir}/logs/links.json"
     legacyPath="${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf"
     if [[ -f ${runLinksJson} ]]; then 
-        runSomVcfLink=$( cat $runLinksJson | jq -r '.somatic_variant_vcf')
+        runSomVcfLink=$( cat ${runLinksJson} | jq -r '.somatic_variant_vcf')
         runSomVcfPath="${runDir}/${runSomVcfLink}"
     elif [[ -f "${legacyPath}" ]]; then
         runSomVcfPath="${legacyPath}"
@@ -55,7 +55,7 @@ runSomVcfName=$( basename ${runSomVcfPath} )
 ## -----
 ## Prepare
 echo "[INFO] Using input VCF (${runSomVcfName})"
-runName="$( basename $runDir )"
+runName="$( basename ${runDir} )"
 if [[ ! -z ${outName} ]]; then
     outName="${truthVersion}__vs__${outName}"
 else    
@@ -68,12 +68,12 @@ if [[ -e ${outPath} ]]; then
     echo "[EXIT] Output dir exists remove first: ${outPath}" && exit 1
 else 
     echo "[INFO] Using output dir (${outPath})"
-    mkdir $outPath
+    mkdir ${outPath}
 fi
 
 ## -----
 ## Copy final input VCF
-cp "${runSomVcfPath}"* $outPath
+cp "${runSomVcfPath}"* ${outPath}
 runSomVcfPath="${outPath}/${runSomVcfName}"
 if [[ ${runSomVcfPath} =~ .vcf$ ]]; then
     echo "[INFO] Running bgzip"
@@ -126,13 +126,13 @@ done
 ## Parse RTGtools vcfeval produced metrics
 ## SVL: vcfeval not the most parse-able format so need some sed magic
 cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
-    thres=$( echo $line | cut -d" " -f1 )
-       tp=$( echo $line | cut -d" " -f3 )
-       fp=$( echo $line | cut -d" " -f4 )
-       fn=$( echo $line | cut -d" " -f5 )
-     prec=$( echo $line | cut -d" " -f6 )
-     sens=$( echo $line | cut -d" " -f7 )
-    score=$( echo $line | cut -d" " -f8 )
+    thres=$( echo ${line} | cut -d" " -f1 )
+       tp=$( echo ${line} | cut -d" " -f3 )
+       fp=$( echo ${line} | cut -d" " -f4 )
+       fn=$( echo ${line} | cut -d" " -f5 )
+     prec=$( echo ${line} | cut -d" " -f6 )
+     sens=$( echo ${line} | cut -d" " -f7 )
+    score=$( echo ${line} | cut -d" " -f8 )
     printf \
         "Threshold\t%s\nTruePositive\t%s\nFalsePositive\t%i\nFalseNegative\t%s\nPrecision\t%s\nSensitivity\t%s\nFmeasure\t%s\n" \
         "${thres}" "${tp}" "${fp}" "${fn}" "${prec}" "${sens}" "${score}"

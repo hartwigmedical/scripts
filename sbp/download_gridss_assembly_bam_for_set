@@ -1,0 +1,44 @@
+#!/bin/bash
+
+source api_functions
+
+script=$( basename $0 )
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <set> -p <path>" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:p:" o; do
+    case "${o}" in
+        s)
+            set=${OPTARG} || usage
+            ;;
+        p)
+            localpath=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set}" || -z "${localpath}" ]]; then
+    usage
+fi
+
+rerun_v4_info=$(load_rerun_v4_info_for_set ${set})
+if [ -z "rerun_v4_info" ]; then
+    echo "[ERROR] No v4 rerun found for set ${set}. Exiting."
+    exit 1
+fi
+
+v4_rerun_bucket=`echo ${rerun_v4_info} | cut -d ' ' -f5`
+
+sbp s3 sync s3://${v4_rerun_bucket}/${set}/ ${localpath}/${set}/ \
+	--exclude "*" \
+	--include "*structuralVariants*gridss*assembly.bam.gridss.working*" \
+	--profile download

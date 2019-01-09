@@ -76,6 +76,7 @@ sbp s3 sync s3://${v4_rerun_bucket}/${set}/ ${localpath}/${set}/ \
 	--include "*somaticVariants*post_processed*" \
 	--include "*somaticVariants*strelka*" \
 	--include "*structuralVariants*gridss*gridss.vcf.gz*" \
+	--include "*structuralVariants*gridss*assembly.bam.gridss.working*" \
 	--include "*metadata*" \
 	--include "*logs*submitlog*" \
 	--include "*HealthCheck.out*" \

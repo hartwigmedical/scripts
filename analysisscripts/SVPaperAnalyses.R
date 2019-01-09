@@ -11,53 +11,97 @@ library(gridExtra)
 library(cowplot)
 
 
-sv_set_common_fields<-function(svData)
-{
-  svData$IsLINE = ifelse(svData$LEStart!='None'|svData$LEEnd!='None',T,F)
-  svData$IsFS = ifelse(svData$FSStart!='false'|svData$FSEnd!='false',T,F)
-  svData$Length = ifelse(as.character(svData$ChrStart)!=as.character(svData$ChrEnd)|svData$Type=='INS'|svData$ArmEnd!=svData$ArmStart, -1, svData$PosEnd-svData$PosStart)
-  svData$DoubleDupBE = ifelse(svData$DupBEStart=='true'&svData$DupBEEnd=='true',T,F)
-  svData$SingleDupBE = ifelse(svData$DoubleDupBE==0&(svData$DupBEStart=='true'|svData$DupBEEnd=='true'),T,F)
-  svData$TICount = ifelse(svData$LnkTypeStart=='TI',0.5,0)+ifelse(svData$LnkTypeEnd=='TI',0.5,0)
-  svData$DBCount = ifelse(svData$DBLenStart>=0,0.5,0)+ifelse(svData$DBLenEnd>=0,0.5,0)
-  svData$IsSglTI = ifelse(svData$LnkTypeStart=='SGL',0.5,0)
-  svData$AsmbTICount = ifelse(svData$AsmbMatchStart=='MATCH',0.5,0)+ifelse(svData$AsmbMatchEnd=='MATCH',0.5,0)
-  svData$InferTICount = svData$TICount - svData$AsmbTICount
-  svData$ShortTICount=ifelse(svData$LnkTypeStart=='TI'&svData$LnkLenStart<=1000,0.5,0)+ifelse(svData$LnkTypeEnd=='TI'&svData$LnkLenEnd<=1000,0.5,0)
-  svData$ClusterSize = ifelse(svData$ClusterCount==1,'Single',ifelse(svData$ClusterCount<=4,'Small','Large'))
-  svData$IsConsistent = ifelse(svData$Consistency==0,T,F)
-  svData$IsChained = (svData$ChainCount>=1)
-  svData$FoldbackCount = ifelse(svData$FoldbackLenStart>=0,0.5,0)+ifelse(svData$FoldbackLenEnd>=0,0.5,0)
-  svData$RepeatedChainLink = (svData$ChainCount>0 & grepl(';',svData$ChainIndex))
-  return (svData)
-}
-
-sv_load_and_prepare<-function(filename)
-{
-  svData = read.csv(filename)
-  sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
-  svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
-  svData = svData %>% filter(ResolvedType!='LowQual')
-  svData = sv_set_common_fields(svData)
-  return (svData)  
-}
-
-clusters_load<-function(filename)
-{
-  clusters = read.csv(filename)
-  sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
-  clusters = merge(clusters, sampleCancerTypes, by='SampleId', all.x=T)
-  return (clusters)  
-}
+######################
+# SV Signatures
+######################
 
 svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
-nrow(svData)
+
+
+# first collect simple, unclustered DELs and DUPs
+
+simpleDels = svData %>% filter(ResolvedType=='SimpleSV'&Type=='DEL')
+nrow(simpleDels)
+simpleDels$Bucket = ifelse(simpleDels$Length<=1e2,'DEL_100',ifelse(simpleDels$Length<=2e3,'DEL_1K','DEL_LONG'))
+
+simpleDups = svData %>% filter(ResolvedType=='SimpleSV'&Type=='DUP')
+nrow(simpleDups)
+simpleDups$Bucket = ifelse(simpleDups$Length<=1e2,'DUP_100',ifelse(simpleDups$Length<=2e4,'DUP_20K',ifelse(simpleDups$Length<=2e5,'DUP_200K','DUP_LONG')))
+
+inserts = svData %>% filter(ResolvedType=='SimpleSV'&Type=='INS')
+inserts$Bucket = 'INS'
+
+# synthetic DELs and DUPs
+delExtTIs = svData %>% filter(ResolvedType=='DEL_Ext_TI'&ChainIndex=='0s')
+nrow(delExtTIs)
+delExtTIs$Bucket = ifelse(delExtTIs$SynDelDupLen<=1e2,'DEL_SE_100',ifelse(delExtTIs$SynDelDupLen<=2e3,'DEL_SE_1K','DEL_SE_LONG'))
+
+#recipInvs = svData %>% filter(ResolvedType=='DEL_Int_TI'&ChainIndex=='0s'&ClusterDesc=='INV=2'&SynDelDupTILen>=0.99*SynDelDupLen)
+#nrow(recipInvs)
+#delIntTIs = svData %>% filter(ResolvedType=='DEL_Int_TI'&ChainIndex=='0s'&!(ClusterDesc=='INV=2'&SynDelDupTILen>=0.99*SynDelDupLen))
+delIntTIs = svData %>% filter(ResolvedType=='DEL_Int_TI'&ChainIndex=='0s')
+View(delIntTIs)
+nrow(delIntTIs)
+
+delIntTIs$Bucket = ifelse(delIntTIs$SynDelDupLen<=1e2,'DEL_SI_100',ifelse(delIntTIs$SynDelDupLen<=2e3,'DEL_SI_1K','DEL_SI_LONG'))
+
+delIntTIs$DelDupType = ifelse(delIntTIs$ClusterDesc=='INV=2'&delIntTIs$SynDelDupTILen >= 0.99*delIntTIs$SynDelDupLen,'RecipInv',as.character(delIntTIs$ResolvedType))
+delIntTIs = svData %>% filter(ResolvedType=='DEL_Int_TI'&ChainCount>0)
+
+dupExtTIs = svData %>% filter(ResolvedType=='DUP_Ext_TI'&ChainIndex=='0s')
+dupExtTIs$Bucket = ifelse(dupExtTIs$SynDelDupLen<=1e2,'DUP_SE_100',ifelse(dupExtTIs$SynDelDupLen<=2e4,'DUP_SE_20K',ifelse(dupExtTIs$SynDelDupLen<=2e5,'DUP_SE_200K','DUP_SE_LONG')))
+
+# balance and unbalanced translocations
+recipTrans = svData %>% filter(ResolvedType=='RecipTrans')
+recipTrans$Bucket = 'RECIP_TRANS'
+
+unbalancedTrans = svData %>% filter(ClusterCount==1&Type=='BND'&IsConsistent)
+unbalancedTrans$Bucket = 'UNBAL_TRANS'
+View(unbalancedTrans)
+
+# line elements no further splits for now
+lineSVs = svData %>% filter(ResolvedType=='Line')
+lineSVs$Bucket = 'Line'
+
+# synthetic simple types from SGL pairs
+sglPairSimples = (svData %>% filter(ResolvedType=='SglPair_INS'|ResolvedType=='SglPair_DEL'|ResolvedType=='SglPair_DUP')
+                  %>% group_by(SampleId,ClusterId,ResolvedType) %>% summarise(Length=abs(first(PosStart) - last(PosStart))))
+
+sglPairSimples$Bucket
+
+View(sglPairSimples)
+
+
+clusters = clusters_load("~/data/sv/SVA_CLUSTERS.csv")
+View(clusters)
+
+# simple chains split by their DB count
+simpleChainSVs = svData %>% filter(ResolvedType=='SimpleChain')
+View(simpleChainSVs)
+
+
+
+
+
+
+nrow(svData %>% filter(IsFS))
+nrow(svData %>% filter(FSStart!='false'|FSEnd!='false'))
+
 View(svData)
-View(head(svData,1000))
 
 
-# simple annotations
-svData = sv_set_common_fields(svData)
+                           
+                           
+                           
+                           
+                           
+                           
+sampleBucketData = (svData %>% filter(ResolvedType=='Simple') %>% group_by(SampleId)
+                        %>% summarise(ClusterCount=first(ClusterCount),
+                                      IsResolved=first(IsResolved),
+                
+sampleBucketData = 
+
 
 # Summary stats per cluster
 sampleClusterSummary = (svData %>% group_by(SampleId,ClusterId)
@@ -142,7 +186,7 @@ View(clusters %>% group_by(ResolvedType) %>% count())
 simpleChainedClusters = clusters %>% filter(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain')
 View(simpleChainedClusters)
 
-View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3))
+View(clusters %>% filter(SampleId=='CPCT02050052T'))
 colnames(clusters)
 
 View(clusters %>% filter(SampleId=='CPCT02020670TII'&ClusterId==3) 

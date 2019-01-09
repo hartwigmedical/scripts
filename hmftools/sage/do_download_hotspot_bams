@@ -1,0 +1,25 @@
+#!/bin/bash
+source load_metadata
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+
+hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
+bcftools=/data/common/tools/bcftools_v1.9/bcftools
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+
+out_dir=${run_dir}/somaticVariants/${joint_name}/sage/
+mkdir -p ${out_dir}
+
+sample_bam=${out_dir}/${sample}.sage.bam
+normal_bam=${out_dir}/${normal}.sage.bam
+
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer ${sample} ${hotspot_bed} ${sample_bam}
+fi
+
+if [ ! -f ${normal_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${sample} ${hotspot_bed} ${normal_bam}
+fi

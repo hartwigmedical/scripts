@@ -1,0 +1,56 @@
+#!/bin/bash
+
+locate_somatics() {
+    local run_dir=$1
+    local somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *sage.vcf.gz)
+    if [ -z ${somatic_vcf} ]
+    then
+        # TODO (JOBA): Clean up after sage is rerun for every sample
+        somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
+        if [ -z ${somatic_vcf} ]
+        then
+            echo "[ERROR] Unable to locate somatic variants. Exiting."
+            exit 1
+        fi
+    fi
+    echo ${somatic_vcf}
+}
+
+locate_purple_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+
+locate_gridss_structural_variants() {
+    local run_dir=$1
+	# Use the backport VCF if it exists
+	local structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/breakpoint_position_backport/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
+		if [ -z ${structural_vcf} ]; then
+			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting."
+			exit 1
+		fi
+    fi
+    echo ${structural_vcf}
+}
+
+locate_gridss_recovery_candidates() {
+    local run_dir=$1
+    local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
+    if [ -z ${sv_recovery_vcf} ]; then
+        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates. Exiting."
+        exit 1
+    fi
+    echo ${sv_recovery_vcf}
+}
+
+locate_hotspot_tsv() {
+    echo "/data/common/dbs/sage/KnownHotspots.tsv"
+}

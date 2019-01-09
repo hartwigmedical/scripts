@@ -36,6 +36,8 @@ hpcMutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, hpcSomat
   mutate(patient = substr(sampleId, 1,12)) %>%
   left_join(phgvs, by = c("patient","chromosome","position","ref","alt")) %>% 
   select(-patient)
+save(hpcMutations, file = "~/hmf/RData/Processed/hpcDndsMutations.RData")
+
 
 #load(file = "~/hmf/RData/Reference/canonicalTranscripts.RData")
 #hpcMutations = hpcMutations %>% left_join(canonicalTranscripts %>% select(gene, transcriptId), by = "gene")

@@ -1,0 +1,66 @@
+#!/bin/bash
+
+scriptName=$( basename $0 )
+runPaths=( "$@" )
+
+if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName <shallowRunPath1> [<shallowRunPath2> <shallowRunPathN>]"
+  echo "---"
+  exit 1
+fi
+
+echo -e "#setName\ttumSample\tQC\tPurity\tStatus\
+\trefCov\ttumCov\trefReads\ttumReads\trefMapPerc\
+\ttumMapPerc\trefExcl\ttumExcl\trefDup\ttumDup"
+
+for runPath in "${runPaths[@]}"; do 
+  
+  setName=$( basename "${runPath}")
+  metaFile="${runPath}/metadata"
+  if [[ ! -f $metaFile ]]; 
+    then echo "[EXIT] File does not exist ($metaFile)" && exit 1
+  fi
+  refSample=$( cat ${metaFile} | jq -r '.ref_sample' )
+  tumSample=$( cat ${metaFile} | jq -r '.tumor_sample' )
+
+  ## main paths, files and settings
+  purpleDir="${runPath}/purple/"
+  pqcFile="${purpleDir}/${tumSample}.purple.qc"
+  ppuFile="${purpleDir}/${tumSample}.purple.purity"
+  wgsFile="${runPath}/QCStats/WGSMetrics_summary.transposed.txt"
+
+  ## some sanity checks
+  if [[ ! -f $pqcFile ]]; then echo "[EXIT] File does not exist ($pqcFile)" && exit 1; fi
+  if [[ ! -f $ppuFile ]]; then echo "[EXIT] File does not exist ($ppuFile)" && exit 1; fi
+  if [[ ! -f $wgsFile ]]; then echo "[EXIT] File does not exist ($wgsFile)" && exit 1; fi
+
+  ## gather Purple info
+  purity=$( cat $ppuFile | tail -1 | cut -f1 )
+  status=$( cat $ppuFile | tail -1 | cut -f7 )
+  qcStat=$( cat $pqcFile | grep QCStatus | cut -f2 )
+
+  ## get ref and tum WgsMetrics column index
+  refColIdx=$( cat $wgsFile | sed -n "1 s/${refSample}.*//p"| sed 's/[^\t*]//g' | wc -c )
+  tumColIdx=$( cat $wgsFile | sed -n "1 s/${tumSample}.*//p"| sed 's/[^\t*]//g' | wc -c )
+
+  ## gather WgsMetrics for REF
+  colIdx=${refColIdx}
+  refRds=$( cat $wgsFile | grep "Total number of reads" | cut -f${refColIdx} ) 
+  refMap=$( cat $wgsFile | grep "Percentage reads mapped" | cut -f${refColIdx} )
+  refCov=$( cat $wgsFile | grep "MEAN_COVERAGE" | cut -f${colIdx} )
+  refExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${colIdx} )
+  refDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${colIdx} )
+  
+  ## gather WgsMetrics for TUM
+  colIdx=${tumColIdx}
+  tumRds=$( cat $wgsFile | grep "Total number of reads" | cut -f${colIdx} ) 
+  tumMap=$( cat $wgsFile | grep "Percentage reads mapped" | cut -f${colIdx} )
+  tumCov=$( cat $wgsFile | grep "MEAN_COVERAGE" | cut -f${colIdx} )
+  tumExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${colIdx} )
+  tumDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${colIdx} )
+ 
+  ## horizontal print (any dashes after backslash escape will also be printed)
+  echo -e "${setName}\t${tumSample}\t${qcStat}\t${purity}\t${status}\t${refCov}\t${tumCov}\t${refRds}\t${tumRds}\t${refMap}\t${tumMap}\t${refExc}\t${tumExc}\t${refDup}\t${tumDup}"
+
+done

@@ -17,7 +17,7 @@ my $NA_CHAR = "NA";
 my $GER_INI = "SingleSample.ini";
 my $SOM_INI = "Somatic.ini";
 
-my $Q30_LIM = 75; # q30 limit is currently same for all samples
+my $Q30_LIM = 75; # q30 limit is currently fixed for all CPCT/DRUP samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
 
 ## could make these more fine grained (lower number is higher prio)
@@ -64,9 +64,9 @@ my $HELP =<<HELP;
       eg: $SCRIPT FR11111111 FR22222222 FR33333333
     
   Options
-    -outdir       [$JSON_BASE_DIR]
-    -limsjson     [$LIMS_IN_FILE] 
-    -useExisting  (adds the use_existing_sample flag to json)
+    -outdir <string>   [$JSON_BASE_DIR]
+    -limsjson <string> [$LIMS_IN_FILE] 
+    -useExisting       (adds the use_existing_sample flag to json)
 
 HELP
 
@@ -185,8 +185,17 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
     my $priority   = getPriority( $sample );
+
+    ## not all samples have q30 field because this was added later to lims
+    my $q30 = $Q30_LIM;
+    if ( defined $sample->{ 'q30' } ){
+        $q30 = $sample->{ 'q30' };
+    }
+    if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
+        die "[EXIT] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
+    }
     
-    my @data_for_itlims = ( $label, $submission, $barcode, $name, "BFX: Json registration" );
+    my @data_for_itlims = ( $label, $submission, $barcode, $name );
     push( @$toprint, \@data_for_itlims );
     
     ## init the json info
@@ -207,7 +216,7 @@ sub processSample{
         ## assume all NoAnalysis samples need fastq in portal
         $json_data{ 'fastq_portal' } = JSON::true;
         
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif ( $analysis eq 'RnaAnalysis' ){
         warn "[WARN] RESULT: Type $analysis not yet supported\n";
@@ -242,8 +251,8 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         
-        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $Q30_LIM, $yield_ref * $YIELD_F, $USE_EXISTING );
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif( $analysis eq 'Germline' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
@@ -251,7 +260,7 @@ sub processSample{
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $Q30_LIM, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield * $YIELD_F, $USE_EXISTING );
     }
     elsif ( $analysis eq 'Somatic_R' ){
         warn "[WARN] RESULT: SKIPPING ($sample_id) because is somatic ref sample ($name)\n";

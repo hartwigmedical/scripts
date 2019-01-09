@@ -40,8 +40,8 @@ my $HELP_TEXT =<<HELP;
     matching of filters by default.
     
   Usage
-    $SCRIPT -tyoe samples
-    $SCRIPT -tyoe submissions
+    $SCRIPT -type samples
+    $SCRIPT -type submissions
     $SCRIPT -type samples -filter "submission=HMFreg"
     $SCRIPT -type samples -filter "sample_id=FR11111111"
     $SCRIPT -type samples -filter "sample_name=CPCT01010001T" -exact
@@ -99,22 +99,22 @@ my $out_fields = $OUT_FIELDS_PER_TYPE{ $TYPE };
 
 if ( $TYPE eq 'unreported' ){
     my $samples = getUnreportedBiopsies( $lims, \%opt );
-    printObjectInfo( $samples, $out_fields, 'lab_status', $opt{ json } );
+    printObjectInfo( $samples, $out_fields, 'lab_status', \%opt );
 }
 elsif ( $TYPE eq 'dateTable' ){
     my $samples = getCpctDrupDateTable( $lims, \%opt );
-    printObjectInfo( $samples, $out_fields, 'sample_name', $opt{ json } );
+    printObjectInfo( $samples, $out_fields, 'sample_name', \%opt );
 }
 elsif( $TYPE eq 'samples' ){
-    my $samples = filterSamples( $lims, \%opt );
-    printObjectInfo( $samples, $out_fields, 'sample_name', $opt{ json } );
+    my $samples = filterSamples( $lims, \%opt  );
+    printObjectInfo( $samples, $out_fields, 'sample_name', \%opt );
 }
 elsif( $TYPE eq 'submissions' ){
     my $submissions = [];
     foreach my $subm_name ( keys %{$lims->{submissions}} ){
         push( @$submissions, $lims->{submissions}->{ $subm_name } );
     }
-    printObjectInfo( $submissions, $out_fields, 'submission', $opt{ json } );
+    printObjectInfo( $submissions, $out_fields, 'submission', \%opt );
 }
 
 ## -----
@@ -123,7 +123,6 @@ elsif( $TYPE eq 'submissions' ){
 
 sub filterSamples{
     my ($lims, $opt) = @_;
-    my $filters = $opt{ 'filters' };
     my $samples = $lims->{ 'samples' };
     
     my @selected_objects = ();    
@@ -134,14 +133,16 @@ sub filterSamples{
         push @selected_objects, $sample;
     }
     
-    my $filtered_objects = filterObjects( \@selected_objects, $filters );
+    my $filtered_objects = filterObjects( \@selected_objects, $opt );
     
     return $filtered_objects;
 }
 
 sub filterObjects{
-    my ($objects, $filters) = @_;
-    
+    my ($objects, $opt) = @_;
+    my $filters = $opt{ 'filters' };
+    my $jsonOut = $opt{ 'json' };    
+
     my @out = ();
     my %filter_counts = ();
     
@@ -153,7 +154,9 @@ sub filterObjects{
     
     foreach my $filter ( keys %filter_counts ){
         my $count = $filter_counts{ $filter };
-        say "## Filter: $count filtered away by filter \"$filter\"";
+        unless ( $jsonOut ){
+            say "## Filter: $count filtered away by filter \"$filter\"";
+        }
     }
     
     return \@out;
@@ -202,10 +205,11 @@ sub readJson{
 }
 
 sub printObjectInfo{
-    my ($objects, $fields, $sortkey, $outputAsJson) = @_;
+    my ($objects, $fields, $sortkey, $opt) = @_;
+    my $jsonOut = $opt{ 'json' };
     my $count = scalar @$objects;
     
-    unless ( $outputAsJson ){
+    unless ( $jsonOut ){
         say "## Script: $SCRIPT";
         say "## DateTime: $DATETIME";
         say "## InputJson: $LIMS_JSON";
@@ -215,7 +219,7 @@ sub printObjectInfo{
         $a->{$sortkey} cmp $b->{$sortkey}
     } @$objects;
     
-    if ( $outputAsJson ){
+    if ( $jsonOut ){
         my $json_obj = JSON::XS->new->allow_nonref;
         my $json_txt = $json_obj->pretty->encode( $objects );
         print $json_txt;

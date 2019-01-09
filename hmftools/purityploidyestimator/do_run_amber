@@ -9,7 +9,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 amber_output=$(find -L ${run_dir}/amber/ -type f -name ${tumor_sample}.amber.baf)
 if [ -z ${amber_output} ]
 then
-    echo "Amber BAF unavailable. Exiting."
+    echo "[ERROR] Amber BAF unavailable. Exiting."
     exit 1
 fi
 
@@ -23,10 +23,10 @@ then
     fi
 
     column=$(head -1 ${amber_output} | cut -f 4)
-    echo "Executing PCF Segmentation with command: Rscript ${base_path}/repos/scripts/hmftools/amber/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
+    echo "[INFO] Executing PCF Segmentation with command: Rscript ${base_path}/repos/scripts/hmftools/amber/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}"
     Rscript ${base_path}/repos/scripts/hmftools/amber/bafSegmentation.R ${amber_output} ${column} ${amber_pcf}
     rm ${amber_pcf}1
 fi
 
-echo "Amber complete"
+echo "[INFO] Amber complete"
 

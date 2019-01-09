@@ -9,14 +9,9 @@ library(grid)
 library(gridExtra)
 library(cowplot)
 
-svData = read.csv('~/data/sv/CLUSTER.csv')
-sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
-svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
+svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
 svData$SampleId_CancerType = paste(svData$SampleId, svData$CancerType, sep='_')
-View(head(svData,100))
 
-svData = sv_set_common_fields(svData) # OR just run:
-svData$Length = ifelse(svData$Type=='BND'|svData$Type=='INS'|svData$ArmEnd!=svData$ArmStart, -1, svData$PosEnd-svData$PosStart)
 
 # extract only simple, unclustered DELs and DUPs
 delsAndDups = svData %>% filter(Type=='DEL'|Type=='DUP') %>% filter(Length>0&ResolvedType=='SimpleSV')
@@ -103,49 +98,98 @@ nonderegDelDupSamplesByCancerTypePlot = (ggplot(data = nonderegDelDupData, aes(x
 print(nonderegDelDupSamplesByCancerTypePlot)
 
 
+# Synthetic DEL-DUPs
+
+tiDirectData = read.csv("~/logs/SVA_LINKS.csv")
+tiDirectData = tiDirectData %>% filter(TILength>=30)
+
+synDelDups = tiDirectData %>% filter(ResolvedType=='DEL_Int_TI'|ResolvedType=='DUP_Int_TI'|ResolvedType=='DUP_Ext_TI'|ResolvedType=='DEL_Ext_TI')
+synDelDups = synDelDups %>% filter(SynDelDupLen > 0) # keep these separate for now
+
+View(synDelDups)
+
+synDelDups$LengthBucket = 2**round(log(synDelDups$SynDelDupLen,2))
+
+synDelDupsLengthSummary = synDelDups %>% group_by(LengthBucket,ResolvedType) %>% count() %>% spread(ResolvedType,n)
+View(synDelDupsLengthSummary)
+
+print(ggplot(data = synDelDups %>% group_by(LengthBucket,ResolvedType) %>% count(), aes(x=LengthBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~ResolvedType))
 
 
-# Synthetic DEL-DUP comparisons 
+synDelIntTIs = synDelDups %>% filter(ResolvedType=='DEL_Int_TI'&TraversedSVCount==0)
+View(synDelIntTIs)
+synDelIntTIs$IsReciprocalInv = (synDelIntTIs$ClusterDesc=='INV=2' & synDelIntTIs$TILength > 0.95 * synDelIntTIs$SynDelDupLen)
+synDelIntTIs$LenBucket = ifelse(synDelIntTIs$SynDelDupLen<=32,32,2**round(log(synDelIntTIs$SynDelDupLen,2)))
 
-delExtTIs = svData %>% filter(grepl('DEL_Ext_TI',ResolvedType))
+print(ggplot(data = synDelIntTIs %>% group_by(LengthBucket,IsReciprocalInv) %>% count(), aes(x=LengthBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~IsReciprocalInv))
+
+View(synDelIntTIs %>% filter(IsReciprocalInv))
+
+
+
+# Comparison with simple DELs
+
+delExtTIs = svData %>% filter(ResolvedType=='DEL_Ext_TI')
 delExtTIs$LenBucket = ifelse(delExtTIs$SynDelDupLen<=32,32,2**round(log(delExtTIs$SynDelDupLen,2)))
 
 View(delExtTIs)
 
-dupExtTIs = svData %>% filter(grepl('DUP_Ext_TI',ResolvedType))
-dupExtTIs$LenBucket = ifelse(dupExtTIs$SynDelDupLen<=32,32,2**round(log(dupExtTIs$SynDelDupLen,2)))
-
 View(delExtTIs %>% select(SampleId,ClusterId,ResolvedType,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,
                         SynDelDupLen,SynDelDupTILen,LnkLenStart,LnkLenEnd,DBLenStart,DBLenEnd))
 
-delExtTIs$LenBucket = ifelse(delExtTIs$SynDelDupLen<=32,32,2**round(log(delExtTIs$SynDelDupLen,2)))
-delExtTIs$TILenBucket = ifelse(delExtTIs$SynDelDupTILen<=32,32,2**round(log(delExtTIs$SynDelDupTILen,2)))
+delIntTIs = svData %>% filter(ResolvedType=='DEL_Int_TI'&ChainCount>0)
+delIntTIs$LenBucket = ifelse(delIntTIs$SynDelDupLen<=32,32,2**round(log(delIntTIs$SynDelDupLen,2)))
+nrow(delIntTIs)
 
-View(delExtTIs %>% filter(SynDelDupTILen <= 1000) %>% group_by(LenBucket) %>% count())
-View(delExtTIs %>% group_by(TILenBucket) %>% count())
-
-View(delExtTIs %>% filter(Type=='BND') %>% group_by(SampleId,ClusterId) %>% summarise(ChrEnd1=first(ChrEnd),ChrEnd2=last(ChrEnd)))
+synDelIntTIs$IsReciprocalInv = (synDelIntTIs$ClusterDesc=='INV=2' & synDelIntTIs$TILength > 0.99 * synDelIntTIs$SynDelDupLen)
 
 
 # plot count of simple vs synthetic DELs by sample
 delsAndDups$DelDupType = delsAndDups$Type
-delExtTIs$DelDupType = "SYN_DEL"
+delsAndDups$LenBucket = ifelse(delsAndDups$SynDelDupLen<=32,32,2**round(log(delIntTIs$SynDelDupLen,2)))
+delExtTIs$DelDupType = delExtTIs$ResolvedType
+delIntTIs$DelDupType = ifelse(delIntTIs$ClusterDesc=='INV=2'&delIntTIs$SynDelDupTILen >= 0.99*delIntTIs$SynDelDupLen,'RecipInv',as.character(delIntTIs$ResolvedType))
+View(delIntTIs %>% group_by(DelDupType)%>% count())
+
+combinedDels = delsAndDups %>% filter(DelDupType=='DEL')
+combinedDels = rbind(combinedDels, delExtTIs %>% filter(ChainIndex=='0s'))  # take only the first of the 2 SVs involved
+combinedDels = rbind(combinedDels, delIntTIs %>% filter(ChainIndex=='0s'))  
+
+View(combinedDels %>% group_by(DelDupType) %>% count())
+
+plot_length_facetted(combinedDels, "DelDupType!='DEL'", 
+                     "LenBucket,DelDupType", 
+                     'LenBucket', 'DelDupType', "Simple and Synthetic DEL Lengths")
+
+combinedDels$LengthGroup = ifelse(combinedDels$LenBucket<1e2,'Short',ifelse(combinedDels$LenBucket>2e3,'Medium','Long'))
+
+delsPerSample = combinedDels %>% group_by(SampleId,DelDupType,LengthGroup) %>% summarise(Count=n()) %>% spread(DelDupType,Count)
+delsPerSample[is.na(delsPerSample)] <- 0
+View(delsPerSample)
+
+print(ggplot(data = delsPerSample, aes(x=DEL, y=DEL_Ext_TI))
+     + geom_point() + facet_wrap(~LengthGroup))
+
+print(ggplot(data = delsPerSample, aes(x=DEL, y=DEL_Int_TI))
+      + geom_point() + facet_wrap(~LengthGroup))
+
+print(ggplot(data = delsPerSample, aes(x=DEL, y=RecipInv))
+      + geom_point() + facet_wrap(~LengthGroup))
+
+
+
+
 dupExtTIs$DelDupType = "SYN_DUP"
 
-combinedDelsAndDups = delsAndDups
-combinedDelsAndDups = rbind(combinedDelsAndDups, delExtTIs %>% filter(ChainIndex==0))  # take only the first of the 2 SVs involved
-combinedDelsAndDups = rbind(combinedDelsAndDups, dupExtTIs %>% filter(ChainIndex==0))  
 
-delDupCountsPerSample = combinedDelsAndDups %>% group_by(SampleId,DelDupType) %>% summarise(Count=n()) %>% spread(DelDupType,Count)
-delDupCountsPerSample[is.na(delDupCountsPerSample)] <- 0
-View(delDupCountsPerSample)
-
-delTypeComparisonPlot = (ggplot(data = delDupCountsPerSample, aes(x=DEL, y=SYN_DEL))
-                 + geom_point()
-                 + labs(title = "Simple vs Synthetic DELs Counts per Sample") 
-                 + xlab("Simple DELs") + ylab("Synthetic DELs"))
-
-print(delTypeComparisonPlot)
+dupExtTIs = svData %>% filter(grepl('DUP_Ext_TI',ResolvedType))
+dupExtTIs$LenBucket = ifelse(dupExtTIs$SynDelDupLen<=32,32,2**round(log(dupExtTIs$SynDelDupLen,2)))
 
 dupTypeComparisonPlot = (ggplot(data = delDupCountsPerSample, aes(x=DUP, y=SYN_DUP))
                          + geom_point()

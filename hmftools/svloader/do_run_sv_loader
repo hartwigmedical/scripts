@@ -11,7 +11,6 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # JOBA: File Locations
-pon_csv=/data/common/dbs/PON_SV/sv_pon_1.0.csv
 fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
@@ -27,6 +26,5 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -fusion_pairs_csv "$fusion_pairs_csv" \
     -promiscuous_five_csv "$promiscuous_five_csv" \
     -promiscuous_three_csv "$promiscuous_three_csv" \
-    -sv_pon_file ${pon_csv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@

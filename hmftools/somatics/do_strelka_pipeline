@@ -21,7 +21,7 @@ mnv_bam=${working_dir}/mnv.bam
 snpEff_vcf=${working_dir}/snpEff.vcf
 snpEff_vcf_gz=${snpEff_vcf}.gz
 annotated_vcf_gz=${working_dir}/annotated.vcf.gz
-final_vcf_gz=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
+final_vcf_gz=${output_dir}/${joint_name}_post_processed_v2.vcf.gz
 
 #### JOBA: Execution
 if [[ ! -e ${final_vcf_gz} ]]

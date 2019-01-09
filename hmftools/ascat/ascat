@@ -1,0 +1,25 @@
+#!/bin/bash
+source load_metadata
+prefix=`dirname $(readlink $0 || echo $0)`
+
+run_dir=$1 && shift
+out_dir=/data/experiments/181213_ascat/
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+
+amber=${run_dir}/amber/${sample}.amber.baf
+if [ ! -f ${amber} ]; then
+    echo "ERROR - Unable to locate AMBER file" ${amber}
+    exit 1
+fi
+
+amberColumns=$(head -1 ${amber} | wc -w)
+if [ ${amberColumns} -ne 8 ]; then
+    echo "ERROR - ASCAT requires latest AMBER output"
+    exit 1
+fi
+
+echo "INFO - Running ASCAT on" ${sample}
+Rscript ${prefix}/ascat.R ${run_dir} ${out_dir} ${sample} ${normal}
+echo "INFO - ASCAT complete"

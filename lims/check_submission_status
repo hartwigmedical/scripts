@@ -9,13 +9,14 @@ echo "[INFO] Checking $submission"
   totalLimsSamples=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
    totalLimsFailed=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep Failed | wc -l )
       totalSamples=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
- totalSamplesReady=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | cut -f6 | grep "Ready" | wc -l )
+ totalSamplesReady=$( query_sbp_api -type samples -filter "submission=${submission}" -filter "status=Ready" | grep -v "^#" | wc -l )
          totalRuns=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | wc -l )
-totalRunsValidated=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | cut -f6 | grep "Validated" | wc -l )
+totalRunsValidated=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -v "^#" | wc -l )
+   totalRunsFailed=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Failed" | grep -v "^#" | wc -l )
 
 echo "[INFO] $totalLimsSamples samples in LIMS (${totalLimsFailed} failed)"
 echo "[INFO] $totalSamplesReady samples Ready of total $totalSamples at SBP"
-echo "[INFO] $totalRunsValidated runs Validated of total $totalRuns at SBP"
+echo "[INFO] $totalRunsValidated runs Validated and $totalRunsFailed Failed of total $totalRuns at SBP"
 echo ""
 
 echo "--- FOR ALL SUBMISSIONS ---"

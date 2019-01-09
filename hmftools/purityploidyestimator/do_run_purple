@@ -1,4 +1,5 @@
 #!/bin/bash
+source locate_files
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
@@ -7,27 +8,19 @@ structural_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
 
-baf_file=$(ls ${run_dir}/amber/*.amber.baf)
-if [ $? -ne 0 ]
-then
-    echo "Amber BAF unavailable. Exiting."
-    exit 1
-fi
-
 if [ ! -f "$somatic_vcf" ]
 then
-    echo "Unable to locate somatic variants. Exiting."
+    echo "[ERROR] Unable to locate somatic variants. Exiting."
     exit 1
 fi
 
 if [ ! -f "$structural_vcf" ]
 then
-    echo "Unable to locate structural variants. Exiting."
+    echo "[ERROR] Unable to locate structural variants. Exiting."
     exit 1
 fi
 
-do_run_amber ${run_dir}
-do_run_cobalt ${run_dir}
+sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
 mkdir -p ${purple_output}
 rm -rf ${purple_output}/*
@@ -40,41 +33,23 @@ fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 
-sv_recovery_arg=""
-if [[ ${structural_vcf} == *".gridss.somatic.vcf.gz" ]]; then
-  sv_recovery_vcf=$(dirname ${structural_vcf})/$(basename -s .vcf.gz ${structural_vcf}).full.vcf.gz
-  sv_recovery_arg="-sv_recovery_vcf ${sv_recovery_vcf}"
-fi
-
-if [ -z "${credentials}" ]; then
-    java -Xmx8G -Xms4G \
-        -jar ${purple_jar} \
-        -somatic_vcf ${somatic_vcf} \
-        -structural_vcf ${structural_vcf} \
-        -baf ${baf_file} \
-        -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
-        -run_dir ${run_dir} \
-        -ref_genome hg19 \
-        -gc_profile ${gc_profile} \
-        -output_dir ${purple_output} \
-        ${sv_recovery_arg} \
-        $@
-else
+db_args=""
+if [ ! -z "${credentials}" ]; then
     db_user=$(awk '/^user/ {print $2}' ${credentials})
     db_pass=$(awk '/^pass/ {print $2}' ${credentials})
     db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-    java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
-        -jar ${purple_jar} \
-        -somatic_vcf ${somatic_vcf} \
-        -structural_vcf ${structural_vcf} \
-        -baf ${baf_file} \
-        -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
-        -run_dir ${run_dir} \
-        -ref_genome hg19 \
-        -output_dir ${purple_output} \
-        -gc_profile ${gc_profile} \
-        -db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-        ${sv_recovery_arg} \
-        $@
+    db_args="-db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
 fi
+
+java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
+    -jar ${purple_jar} \
+    -somatic_vcf ${somatic_vcf} \
+    -structural_vcf ${structural_vcf} \
+    -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
+    -run_dir ${run_dir} \
+    -ref_genome hg19 \
+    -output_dir ${purple_output} \
+    -gc_profile ${gc_profile} \
+    -sv_recovery_vcf ${sv_recovery_vcf} \
+    ${db_args} \
+    $@

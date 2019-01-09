@@ -5,8 +5,8 @@ run_dir=$1 && shift
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 output_dir=${run_dir}/somaticVariants/${joint_name}
 
-input_vcf=${output_dir}/${joint_name}_post_processed_v2.2_pon.vcf.gz
-output_vcf=${output_dir}/${joint_name}_post_processed_v2.2.vcf.gz
+input_vcf=${output_dir}/${joint_name}_post_processed_pon.vcf.gz
+output_vcf=${output_dir}/${joint_name}_post_processed_v2.vcf.gz
 
 ### Dependencies
 bcftools=/data/common/tools/bcftools_v1.3.1/bcftools

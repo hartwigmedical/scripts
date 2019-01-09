@@ -31,8 +31,18 @@ my $CPCT_TSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
 my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
 my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
-my $PROC_old = $LIMS_DIR . '/latest/2017_proc'; # for SOP string
-my $LIMS_old = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
+
+## Closed files from previous years
+my $SUBM_TSV_2018 = $LIMS_DIR . '/latest/2018_subm';
+my $SAMP_TSV_2018 = $LIMS_DIR . '/latest/2018_samp';
+my $PROC_TSV_2018 = $LIMS_DIR . '/latest/2018_proc';
+my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';
+my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
+
+my @ALL_INPUT_FILES = ( 
+  $CNTR_TSV, $CPCT_TSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
+  $SAMP_TSV_2018, $PROC_TSV_2018, $PROC_TSV_2017, $LIMS_JSN_2017
+);
 
 ## setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
@@ -52,8 +62,11 @@ my $HELP_TEXT = <<"HELP";
      subm lims: $SUBM_TSV
      samp lims: $SAMP_TSV
      proc lims: $PROC_TSV
-     proc 2017: $PROC_old
-     lims 2017: $LIMS_old
+     subm 2018: $SUBM_TSV_2018
+     samp 2018: $SAMP_TSV_2018
+     proc 2018: $PROC_TSV_2018
+     proc 2017: $PROC_TSV_2017
+     lims 2017: $LIMS_JSN_2017
 
   Output files:
     $JSON_OUT
@@ -70,7 +83,7 @@ die $HELP_TEXT . "\n" unless $opt{ execute };
 foreach ( $BACK_DIR ){
     die "[EXIT] Dir does not exist ($_)\n" unless -d $_;
 }
-foreach ( $CNTR_TSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $CPCT_TSV, $PROC_old, $LIMS_old ){
+foreach ( @ALL_INPUT_FILES ){
     die "[EXIT] File does not exist ($_)\n" unless -f $_;
 }
 foreach ( $JSON_OUT ){
@@ -93,13 +106,16 @@ my $samp_objs = {}; # will contain objects from Received-samples sheet
 my $cpct_objs = {}; # will contain objects from CPCT access DB
 my $lims_objs = {}; # will contain all objects joined together
 
-my $lims_2017 = readJson( $LIMS_old );
+my $lims_2017 = readJson( $LIMS_JSN_2017 );
 $samp_objs = $lims_2017->{ 'samples' };
 $subm_objs = $lims_2017->{ 'submissions' };
 
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_old, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM'}, 'submission', 0, $SUBM_TSV, "\t" );
+$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP'}, 'sample_id',  1, $SAMP_TSV, "\t" );
 $cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT'}, 'sample_id',  1, $CPCT_TSV, "\t" );
 

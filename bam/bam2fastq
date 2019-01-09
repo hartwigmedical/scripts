@@ -21,7 +21,7 @@ OUT_BASE=`dirname ${OUT_DIR}`
 ## ---------------
 ## sanity checks
 if [[ ! -d ${PICARD_DIR} ]]; then echo "[ERROR] Picard dir not found (${PICARD_DIR})"; exit 1; fi
-if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${BAM_FILE})"; exit 1; fi
+if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${IN_BAM})"; exit 1; fi
 if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
 ## ---------------

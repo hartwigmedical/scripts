@@ -19,8 +19,8 @@ load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 
-simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice") 
-simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9")
+simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous")
+simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d")
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
 save(simplifiedDrivers, simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDrivers.RData")
 

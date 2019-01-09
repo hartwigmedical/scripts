@@ -9,7 +9,7 @@ argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviousl
 argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
 #argp = add_argument(argp, "--tumourordinal", type="integer", nargs=Inf, default=c(2), help="Ordinal(s) of tumour samples in the VCF")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829T.gridss.somatic.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
 argv = parse_args(argp)
 
 if (!file.exists(argv$input)) {
@@ -31,7 +31,7 @@ refgenome=eval(parse(text=paste0("library(", argv$ref, ")\n", argv$ref)))
 library(tidyverse)
 library(readr)
 library(stringr)
-libgridssfile = paste0(argv$scriptdir, "libgridss.R")
+libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
 if (file.exists(libgridssfile)) {
   tmpwd = getwd()
   setwd(argv$scriptdir)
@@ -47,32 +47,32 @@ if (file.exists(libgridssfile)) {
 
 # Filter to somatic calls
 write(paste0("Reading ", argv$input), stderr())
-full_vcf = readVcf(argv$input, "hg19")
+full_vcf = readVcf(argv$input, "")
 tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
 full_vcf = align_breakpoints(full_vcf)
 # Add header fields
-info(header(full_vcf)) = unique(as(rbind(as.data.frame(info(header(full_vcf))), data.frame(
-  row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
-  Number=c(".", "1", "1"),
-  Type=c("Float", "String", "String"),
-  Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
+full_vcf = addVCFHeaders(full_vcf)
 
 write(paste0("Parsing SVs in ", argv$input), stderr())
 full_bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
 full_begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 write(paste0("Calculating VAF ", argv$input), stderr())
-full_bpgr$af = gridss_bp_af(full_bpgr, full_vcf, tumourordinal)
+full_bpgr$af = round(gridss_bp_af(full_bpgr, full_vcf, tumourordinal), 5)
 full_bpgr$af_str = paste(full_bpgr$af, partner(full_bpgr)$af, sep=",")
-full_begr$af = gridss_be_af(full_begr, full_vcf, tumourordinal)
+full_begr$af = round(gridss_be_af(full_begr, full_vcf, tumourordinal), 5)
 full_begr$af_str = as.character(full_begr$af)
-info(full_vcf)$BPI_AF = ""
-info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
-info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
+info(full_vcf)$BPI_AF = rep("", length(full_vcf))
+if (length(full_bpgr) > 0) {
+  info(full_vcf[names(full_bpgr)])$BPI_AF = full_bpgr$af_str
+}
+if (length(full_begr) > 0) {
+  info(full_vcf[names(full_begr)])$BPI_AF = full_begr$af_str
+}
 
 write(paste0("Filtering pass 1 ", argv$input), stderr())
-bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
+bpfiltered = gridss_breakpoint_filter(full_bpgr, full_vcf, bsgenome=refgenome, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
 befiltered = gridss_breakend_filter(full_begr, full_vcf, pon_dir=argv$pondir, normalOrdinal=argv$normalordinal, tumourOrdinal=tumourordinal)
 # shadow breakpoint removed due to initial mapq20 filter reducing FP rate
 # bpfiltered = .addFilter(bpfiltered, "shadow", is_shadow_breakpoint(bpgr, begr, full_vcf))
@@ -111,10 +111,13 @@ vcf = vcf[is.na(info(vcf)$PARID) | info(vcf)$PARID %in% names(vcf)]
 bpgr = full_bpgr[names(full_bpgr) %in% names(vcf)]
 begr = full_begr[names(full_begr) %in% names(vcf)]
 
+asm_linked_df = NULL
 write(paste0("Calculating assembly links ", argv$input), stderr())
 # Assembly-based event linking
-asm_linked_df = linked_assemblies(vcf) %>%
-  mutate(type="asm")
+if (length(vcf) > 0) {
+  asm_linked_df = linked_assemblies(vcf) %>%
+    mutate(type="asm")
+}
 
 link_df = bind_rows(asm_linked_df, transitive_df) %>%
   mutate(linking_group=str_replace(linked_by, "/.*$", "")) %>%
@@ -208,7 +211,7 @@ link_rescue = bind_rows(link_df, event_link_df) %>% pull(vcfId) %>% unique()
 link_rescue = c(link_rescue, bpgr[link_rescue[link_rescue %in% names(bpgr)]]$partner)
 
 # Note that we don't rescue equivalent events
-begr$partner = NA
+begr$partner = rep(NA, length(begr))
 eqv_link_df = linked_by_equivalent_variants(full_vcf, as(rbind(as.data.frame(bpgr), as.data.frame(begr)), "GRanges"), bsgenome=refgenome) %>%
   filter(passes_final_filters(vcf[vcfId]) | vcfId %in% link_rescue) %>%
   group_by(linked_by) %>%
@@ -221,8 +224,8 @@ link_summary_df = bind_rows(link_df, event_link_df, eqv_link_df) %>%
   summarise(linked_by=paste0(linked_by, collapse=","))
 
 # Add linking information
-info(full_vcf)$LOCAL_LINKED_BY = ""
-info(full_vcf)$REMOTE_LINKED_BY = ""
+info(full_vcf)$LOCAL_LINKED_BY = rep("", length(full_vcf))
+info(full_vcf)$REMOTE_LINKED_BY = rep("", length(full_vcf))
 info(full_vcf[link_summary_df$vcfId])$LOCAL_LINKED_BY = link_summary_df$linked_by
 info(full_vcf[!is.na(info(full_vcf)$PARID)])$REMOTE_LINKED_BY = info(full_vcf[info(full_vcf[!is.na(info(full_vcf)$PARID)])$PARID])$LOCAL_LINKED_BY
 

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+bam=$1 && shift
+sliced_bam=$( echo ${bam} | sed 's/\(.*\).bam/\1.sliced.bam/')
+
+sambamba_dir=/data/common/tools/sambamba_v0.6.5
+qc_testing_bed=/data/common/repos/pipeline/settings/slicing/QC_Slicing.bed
+
+echo "[INFO] Creating slice for ${bam} using ${qc_testing_bed}"
+${sambamba_dir}/sambamba view ${bam} -L ${qc_testing_bed} -f bam -o ${sliced_bam}
+echo "[INFO] Done creating slice. Written output to ${sliced_bam}"
+

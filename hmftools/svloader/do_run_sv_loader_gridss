@@ -1,4 +1,5 @@
 #!/bin/bash
+source locate_files
 source load_metadata
 
 prefix=`dirname $(readlink $0 || echo $0)`
@@ -8,22 +9,10 @@ credentials=/data/common/dbs/mysql_credentials/gridss_test
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
 gridss_jar=/data/common/tools/gridss_v2.0.1/gridss.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-
-gridss_filtered_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *.gridss.somatic.vcf.gz)
-if [ -z ${gridss_filtered_vcf} ]; then
-    echo "[ERROR] No GRIDSS filtered somatic vcf found. Exiting."
-    exit 1
-fi
-
-structural_vcf=$(find -L ${run_dir}/purple_gridss/ -type f -name *.purple.sv.vcf.gz)
-if [ -z ${structural_vcf} ]
-then
-    echo "[ERROR] Unable to locate gridss structural variants. Exiting."
-    exit 1
-fi
+structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
 annotated_structural_vcf=${structural_vcf/.sv.vcf.gz/.sv.ann.vcf.gz}
 
-do_run_gridss_viral_annotate $run_dir $gridss_jar
+do_run_gridss_viral_annotate ${run_dir} ${gridss_jar}
 
 ${prefix}/do_run_sv_loader ${sample} ${annotated_structural_vcf} ${credentials} ${sv_jar} $@
