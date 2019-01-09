@@ -2,10 +2,11 @@ library(dplyr)
 library(stringr)
 library(tidyr)
 
-oncoFile <- read.csv("~/data/r/oncoKb.tsv", sep="\t", stringsAsFactors=FALSE)[,c("Gene", "Alteration", "Oncogenicity")]
-civicFile <- read.csv("~/data/r/civic_variants.tsv", sep="\t", stringsAsFactors=FALSE)[,c("gene", "variant", "variant_types")]
-cgiFile <- read.csv("~/data/r/cgi_biomarkers_per_variant.tsv", sep="\t", stringsAsFactors=FALSE)[,c("Gene", "Alteration", "Alteration.type")]
-cosmicFile <- read.csv("~/data/r/cosmic_gene_fusions.csv", stringsAsFactors=FALSE)[,c(1, 2)]
+path="~/hmf/RData/"
+oncoFile <- read.csv(paste(path,"oncoKb.tsv",sep=""), sep="\t", stringsAsFactors=FALSE)[,c("Gene", "Alteration", "Oncogenicity","Mutation.Effect")]
+civicFile <- read.csv(paste(path,"civic_variants.tsv",sep=""), sep="\t", stringsAsFactors=FALSE)[,c("gene", "variant", "variant_types")]
+cgiFile <- read.csv(paste(path,"cgi_biomarkers_per_variant.tsv",sep=""), sep="\t", stringsAsFactors=FALSE)#[,c("Gene", "Alteration", "Alteration.type")]
+cosmicFile <- read.csv(paste(path,"cosmic_gene_fusions.csv",sep=""), stringsAsFactors=FALSE)[,c(1, 2)]
 colnames(cosmicFile) <- c("H_gene", "T_gene")
 
 # --- functions ---
@@ -75,11 +76,11 @@ correctCivicVariant <- function(data, geneString, variantString, newVariantStrin
 # -----------------
 civicFile <- civicFile %>% correctCivicVariant("KMT2A", "MLL-MLLT3", "KMT2A-MLLT3")
 
-oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration)) %>% rowwise() %>%
+oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration),grepl("Gain",Mutation.Effect)) %>% rowwise() %>%
   mutate(H_gene = hGene(Gene, Alteration, separatorPattern), T_gene = tGene(Gene, Alteration, separatorPattern), Source ="oncoKb") %>%
   select(H_gene, T_gene, Source) %>% flipGenePair("ROS1", "CD74") %>% flipGenePair("EP300", "MLL") %>% flipGenePair("EP300", "MOZ") %>% flipGenePair("RET", "CCDC6") %>% distinct
 
-oncoPromiscuous <- oncoFile %>% filter(grepl("Fusions", Alteration)) %>% mutate(H_gene = Gene, T_gene = NA, Source ="oncoKb") %>%
+oncoPromiscuous <- oncoFile %>% filter(grepl("Fusions", Alteration),grepl("Gain",Mutation.Effect)) %>% mutate(H_gene = Gene, T_gene = NA, Source ="oncoKb") %>%
   select(H_gene, T_gene, Source) %>% distinct
 
 civicFusions <- civicFile %>% filter(grepl("fusion", variant_types)) %>% rowwise() %>%
@@ -135,12 +136,12 @@ allPromiscuousFusions <- rbind(knownPromiscuousH %>% mutate(T_gene = NA_characte
 
 # all fusion pairs + verified promiscuous + inferred promiscuous
 allKnownFusions <- rbind(allFusionPairs, allPromiscuousFusions) %>% arrange(H_gene, T_gene)
-write.csv(allKnownFusions, "~/data/r/allKnownFusions.csv", row.names = FALSE)
+write.csv(allKnownFusions,paste(path,"allKnownFusions.csv",sep=""), row.names = FALSE)
 
 knownPromiscuousFive <- knownPromiscuousH %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
-write.csv(knownPromiscuousFive, "~/data/r/knownPromiscuousFive.csv", row.names = FALSE)
+write.csv(knownPromiscuousFive,paste(path,"knownPromiscuousFive.csv",sep=""), row.names = FALSE)
 knownPromiscuousThree <- knownPromiscuousT %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>% select(gene, OncoKB, COSMIC, CGI, CIViC)
-write.csv(knownPromiscuousThree, "~/data/r/knownPromiscuousThree.csv", row.names = FALSE)
+write.csv(knownPromiscuousThree,paste(path,"knownPromiscuousThree.csv",sep=""), row.names = FALSE)
 knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene)) %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>%
   select(H_gene, T_gene, OncoKB, COSMIC, CGI, CIViC)
-write.csv(knownFusionPairs, "~/data/r/knownFusionPairs.csv", row.names = FALSE)
+write.csv(knownFusionPairs,paste(path,"knownFusionPairs.csv",sep=""), row.names = FALSE)
