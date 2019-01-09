@@ -22,6 +22,12 @@ structural_vcf=$(locate_purple_structural_variants ${run_dir})
 echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
+echo "[INFO] chord_dir: ${chord_dir}"
+echo "[INFO] working_dir: ${working_dir}"
+echo "[INFO] sample: ${sample}"
+echo "[INFO] somatic vcf: ${somatic_vcf}"
+echo "[INFO] structural vcf: ${structural_vcf}"
+
 # KODU: Below creates "ID_sample_mut_signatures.txt in the working_dir that is passed.
 ${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
