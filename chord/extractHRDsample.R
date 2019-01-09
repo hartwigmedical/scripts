@@ -3,11 +3,12 @@
 library('devtools')
 args <- commandArgs(TRUE)
 
-cat(args[1] , "/n")
-cat(args[2] , "/n")
-cat(args[3] , "/n")
-cat(args[4] , "/n")
-cat(args[5] , "/n")
+cat("[INFP] script extractHRDsample", "\n")
+cat("[INFO] chord_dir: ", args[1], "\n")
+cat("[INFO] working_dir: ", args[2], "\n")
+cat("[INFO] sample: ", args[3], "\n")
+cat("[INFO] somatic vcf: ", args[4], "\n")
+cat("[INFO] structural vcf: ", args[5], "\n")
 
 load_all(paste(args[1], '/mutSigExtractor', sep = ""))
 setwd(args[2])

@@ -22,6 +22,7 @@ structural_vcf=$(locate_purple_structural_variants ${run_dir})
 echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
+echo "[INFO] script run_chord_prod"
 echo "[INFO] chord_dir: ${chord_dir}"
 echo "[INFO] working_dir: ${working_dir}"
 echo "[INFO] sample: ${sample}"
