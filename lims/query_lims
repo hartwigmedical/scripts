@@ -40,8 +40,8 @@ my $HELP_TEXT =<<HELP;
     matching of filters by default.
     
   Usage
-    $SCRIPT -tyoe samples
-    $SCRIPT -tyoe submissions
+    $SCRIPT -type samples
+    $SCRIPT -type submissions
     $SCRIPT -type samples -filter "submission=HMFreg"
     $SCRIPT -type samples -filter "sample_id=FR11111111"
     $SCRIPT -type samples -filter "sample_name=CPCT01010001T" -exact
