@@ -76,11 +76,11 @@ correctCivicVariant <- function(data, geneString, variantString, newVariantStrin
 # -----------------
 civicFile <- civicFile %>% correctCivicVariant("KMT2A", "MLL-MLLT3", "KMT2A-MLLT3")
 
-oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration),grepl("Gain",Mutation.Effect)) %>% rowwise() %>%
+oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration),!grepl("Loss-of-function",Mutation.Effect)) %>% rowwise() %>%
   mutate(H_gene = hGene(Gene, Alteration, separatorPattern), T_gene = tGene(Gene, Alteration, separatorPattern), Source ="oncoKb") %>%
   select(H_gene, T_gene, Source) %>% flipGenePair("ROS1", "CD74") %>% flipGenePair("EP300", "MLL") %>% flipGenePair("EP300", "MOZ") %>% flipGenePair("RET", "CCDC6") %>% distinct
 
-oncoPromiscuous <- oncoFile %>% filter(grepl("Fusions", Alteration),grepl("Gain",Mutation.Effect)) %>% mutate(H_gene = Gene, T_gene = NA, Source ="oncoKb") %>%
+oncoPromiscuous <- oncoFile %>% filter(grepl("Fusions", Alteration),!grepl("Loss-of-function",Mutation.Effect)) %>% mutate(H_gene = Gene, T_gene = NA, Source ="oncoKb") %>%
   select(H_gene, T_gene, Source) %>% distinct
 
 civicFusions <- civicFile %>% filter(grepl("fusion", variant_types)) %>% rowwise() %>%
