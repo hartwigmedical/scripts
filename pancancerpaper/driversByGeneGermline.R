@@ -92,4 +92,4 @@ germlineDriverCatalogSupp = germlineDriverCatalog %>% ungroup() %>%
   select(-sampleId) %>%
   select(sampleId = hmfSampleId, everything()) 
 
-write.csv(germlineDriverCatalogSupp, file = "~/hmf/RData/Supplementary Table x_GermlineDriverCatalogue.csv", row.names = F) 
+write.csv(germlineDriverCatalogSupp, file = "~/hmf/RData/Supp/Supplementary Table 6_GermlinePredispositionVariants.csv", row.names = F) 

@@ -87,7 +87,7 @@ sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAs
 actionability = responsiveVariants %>% left_join(sampleIdMap, by = "sampleId") %>%
   select(-sampleId) %>%
   select(sampleId = hmfSampleId, everything())
-write.csv(actionability, file = "~/hmf/RData/Actionability.csv", row.names = F) 
+write.csv(actionability, file = "~/hmf/RData/Supp/Supplementary Table 9_Actionability.csv", row.names = F)
 
 geneResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, gene) %>% group_by(gene) %>% count()
 drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, drug) %>% group_by(drug) %>% count()

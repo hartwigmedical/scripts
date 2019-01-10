@@ -249,7 +249,7 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
 hpc = cohortSummary %>% filter(patientHighestPurityPassingSample)
 mbc = cohortSummary %>% filter(status == 'PASS') %>% group_by(patientId) %>% mutate(n = n()) %>% filter(n > 1)
 
-write.csv(cohortSummary, file = "~/hmf/RData/CohortSummary.csv", row.names = F) 
+write.csv(cohortSummary, file = "~/hmf/RData/Supp/Supplementary Table 2_CohortSummary.csv", row.names = F)
 
 #### GENERATE PATIENT/SAMPLEID
 #patientIds = unique(cohortSummary$patientId)
@@ -450,7 +450,7 @@ multipleBiopsyCohortSummary = multipleBiopsyCohort %>% left_join(allClinicalData
   mutate(patientId = substr(Sample1, 1, 9))
   
 save(multipleBiopsyCohortSummary, file = "~/hmf/RData/processed/multipleBiopsyCohortSummary.RData")
-write.csv(multipleBiopsyCohortSummary, file = "~/hmf/RData/MultipleBiopsyCohortSummary.csv", row.names = F) 
+write.csv(multipleBiopsyCohortSummary, file = "~/hmf/RData/Supp/Supplementary Table 8_MultipleBiopsyCohortSummary.csv", row.names = F)
 
 ################### SANITY CHECKS
 
