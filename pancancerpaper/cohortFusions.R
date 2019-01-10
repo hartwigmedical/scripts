@@ -13,13 +13,20 @@ rm(dbProd, allPurity)
 dbEnsemble = dbConnect(MySQL(), dbname='homo_sapiens_core_89_37', groups="RAnalysis")
 allFusionCodingRegions = purple::query_coding_regions(dbEnsemble, unique(c(allFusions$`5pTranscript`, allFusions$`3pTranscript`)))
 save(allFusionCodingRegions, file = "~/hmf/RData/reference/allFusionCodingRegions.RData")
+
+transcriptString = paste("'", unique(c(allFusions$`3pTranscript`)), "'", collapse = ",", sep = "")
+biotypeQuery = paste0("SELECT stable_id as '3pTranscript', biotype as '3pBiotype'  FROM transcript where stable_id in (",transcriptString, ")")
+allFusionBioTypes = dbGetQuery(dbEnsemble, biotypeQuery)
+save(allFusionBioTypes, file = "~/hmf/RData/reference/allFusionBioTypes.RData")
+rm(biotypeQuery, transcriptString)
+
 dbDisconnect(dbEnsemble)
 rm(dbEnsemble)
-
 
 ### PROCESSED
 load(file = "~/hmf/RData/reference/allFusions.RData")
 load(file = "~/hmf/RData/reference/allFusionCodingRegions.RData")
+load(file = "~/hmf/RData/reference/allFusionBioTypes.RData")
 
 fusionConstraints = read.csv(file = "~/hmf/Resources/3PrimeFusionDomainConstraintsV1.csv", stringsAsFactors = F) %>%
   filter(!is.na(`Min.Exon`) | !is.na(`Max.Exon`)) %>%
@@ -58,7 +65,8 @@ fusions = allFusions %>%
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 hpcFusions = fusions %>% 
   filter(sampleId %in% highestPurityCohort$sampleId) %>%
-  select(-starts_with("start"), -starts_with("end"))
+  select(-starts_with("start"), -starts_with("end")) %>%
+  left_join( allFusionBioTypes, by = '3pTranscript')
 save(hpcFusions, file = "~/hmf/RData/Processed/hpcFusions.RData")
   
 load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
