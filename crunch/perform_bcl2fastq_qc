@@ -77,7 +77,22 @@ done | sort -r
 printHeader "Sample Info"
 for seqDir in "${seqDirs[@]}"; do
     $PARSE_SCRIPT -run ${seqDir} -summary | grep -v "^#"
-done | sort -k3 
+done | sort -k1,1 -k3,3
+
+## get info for SampleOverview
+printHeader "SampleOverview Table (CPCT/DRUP R samples are removed)"
+echo -e "Submission\tSampleID\tSampleName\tYieldGBase\tDescription"
+for seqDir in "${seqDirs[@]}"; do
+    $PARSE_SCRIPT -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT|DRUP)\d{8}R" | while read line; do 
+        yldMBase=$( echo $line | cut -d" " -f3 )
+        yld=$((yldMBase/1000))
+        sub=$( echo $line | cut -d" " -f11 )
+        sid=$( echo $line | cut -d" " -f9 )
+        snm=$( echo $line | cut -d" " -f10 )
+        dsc=$( echo $line | cut -d" " -f12 )
+        echo -e "$sub\t$sid\t$snm\t$yld\t$dsc"
+   done | sort -k1,1 -k3,3
+done
 
 ## Print further actions
 printHeader "Extra actions"
