@@ -125,6 +125,11 @@ save(allSomatics_p2, file = "~/hmf/RData/reference/allSomatics_p2.RData")
 
 #load(file = "~/hmf/RData/reference/allSomatics_p1.RData")
 #load(file = "~/hmf/RData/reference/allSomatics_p2.RData")
+allSubclonalSomatics_p1 = allSomatics_p1 %>% filter(subclonalLikelihood >= 0.9)
+allSubclonalSomatics_p2 = allSomatics_p2 %>% filter(subclonalLikelihood >= 0.9)
+allSubclonalSomatics = bind_rows(allSubclonalSomatics_p1, allSubclonalSomatics_p2)
+save(allSubclonalSomatics, file = "~/hmf/RData/reference/allSubclonalSomatics.RData" )
+rm(allSubclonalSomatics_p1, allSubclonalSomatics_p2)
 
 somatics_summary_p1 = cohort_somatic_summary(allSomatics_p1)
 somatics_summary_p2 = cohort_somatic_summary(allSomatics_p2)
@@ -173,6 +178,18 @@ allIndelSummary_p2 = indel_summary(allSomatics_p2)
 allIndelSummary = bind_rows(allIndelSummary_p1, allIndelSummary_p2)
 save(allIndelSummary, file = "~/hmf/RData/Reference/allIndelSummary.RData")
 
+allSubclonalSomatics_p1 = allSomatics_p1 %>% filter(subclonalLikelihood >= 0.9)
+allSubclonalSomatics_p2 = allSomatics_p2 %>% filter(subclonalLikelihood >= 0.9)
+allSubclonalSomatics = bind_rows(allSubclonalSomatics_p1, allSubclonalSomatics_p2)
+save(allSubclonalSomatics, file = "~/hmf/RData/reference/allSubclonalSomatics.RData" )
+rm(allSubclonalSomatics_p1, allSubclonalSomatics_p2)
+
+allSubclonalIndelSummary = indel_summary(allSubclonalSomatics)
+allSubclonalSNPSummary = allSubclonalSomatics %>% filter(filter == 'PASS', type == 'SNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+allSubclonalMNPSummary = allSubclonalSomatics %>% filter(filter == 'PASS', type == 'MNP') %>% group_by(sampleId, ref, alt) %>% summarise(n = n())
+save(allSubclonalSNPSummary, file = "~/hmf/RData/Reference/allSubclonalSNPSummary.RData")
+save(allSubclonalMNPSummary, file = "~/hmf/RData/Reference/allSubclonalMNPSummary.RData")
+save(allSubclonalIndelSummary, file = "~/hmf/RData/Reference/allSubclonalIndelSummary.RData")
 
 #### COMBINE
 load(file = "~/hmf/RData/reference/allPurity.RData")
