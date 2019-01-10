@@ -292,10 +292,11 @@ pCoverage = plot_grid(pCoverage, labels = "C")
 pCoverage
 save_plot("~/hmf/RPlot/Extended Figure 1 - Coverage.png", pCoverage, base_width = 5, base_height = 5)
 
-########################################### Extended Figure 2 - MSI / TMB
+########################################### Extended Figure 3 - MSI / TMB
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
+highestPurityCohortSummary = highestPurityCohortSummary %>% mutate(TOTAL_SV = DEL + DUP + INS + INV +TRL )
 
 msiData = highestPurityCohortSummary %>% select(sampleId, cancerType, msiScore, msiStatus)
 msiRelativeData = msiData %>% group_by(cancerType, msiStatus) %>% count() %>% group_by(cancerType) %>% mutate(percentage = n / sum(n)) 
@@ -351,8 +352,28 @@ p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)
   theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
   xlab("SNVs") + ylab("Indels") + ggtitle("")
 
+p4 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL)) +
+  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 2000, y = 20000, label = "MSI Threshold", size = 3, hjust = 0) +
+  geom_point(aes(color = cancerType)) + 
+  scale_color_manual(values = cancerTypeColours) + 
+  scale_x_continuous(trans="log10", limits = c(1e1, 1e4)) + 
+  scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
+  theme(legend.position = "none", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
+  xlab("SVs") + ylab("Indels") + ggtitle("")
+
+p5 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
+  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold", size = 3, hjust = 0) +
+  geom_point(aes(color = cancerType)) + 
+  scale_color_manual(values = cancerTypeColours) + 
+  scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
+  scale_y_continuous(trans="log10", limits = c(1e1, 1e4)) + 
+  theme(legend.position = "none", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
+  xlab("SNVs") + ylab("SVs") + ggtitle("")
+
 p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("A","B"))
-pMsiTMB = plot_grid(p12, p3, ncol = 1, rel_heights = c(1, 2), labels = c("","C"))
+p45 = plot_grid(p4,p5, rel_widths = c(2,2), labels = c("D","E"))
+
+pMsiTMB = plot_grid(p12, p3, p45, ncol = 1, rel_heights = c(1, 2, 1), labels = c("","C", ""))
 
 ########### Part 2
 mutationalLoad = highestPurityCohortSummary %>%
@@ -391,7 +412,7 @@ combinedDriverAndMutationalLoad = combinedDriverAndMutationalLoad %>%
   )
 
 
-p4 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, color=cancerType)) + 
+p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, color=cancerType)) + 
   geom_point() +
   coord_cartesian(xlim= c(0,500), ylim=c(0,5))+
   ylab("CNA Drivers") + xlab("SV Mutational Load") + ggtitle("") + 
@@ -399,14 +420,14 @@ p4 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, c
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
 
-p5 = ggplot(combinedDriverAndMutationalLoad, aes(x=snvMutLoad, y=snvDriverLoad, color=cancerType)) + 
+p7 = ggplot(combinedDriverAndMutationalLoad, aes(x=snvMutLoad, y=snvDriverLoad, color=cancerType)) + 
   geom_point() +
   coord_cartesian(xlim= c(0,82000), ylim=c(0,4))+
   ylab("SNV Drivers") + xlab("SNV Mutational Load") + ggtitle("") + 
   theme(legend.position="none", legend.title = element_blank()) +
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
-p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLoad, color=cancerType)) + 
+p8 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLoad, color=cancerType)) + 
   geom_point() +
   coord_cartesian(xlim= c(0,3000), ylim=c(0,1.5))+
   ylab("Indel Drivers") + xlab("Indel Mutational Load") + ggtitle("") +
@@ -414,12 +435,12 @@ p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLo
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
 
-pLoads = plot_grid(p5,p6, p4, nrow = 1, labels = c("D","E","F"))
+pLoads = plot_grid(p7,p8, p6, nrow = 1, labels = c("F","G","H"))
 
-pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(3, 1))
+pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(4, 1))
 pComplete
 
-save_plot("~/hmf/RPlot/Extended Figure 2 - Loads.png", pComplete, base_width = 10, base_height = 14)
+save_plot("~/hmf/RPlot/Extended Figure 3 - Loads.png", pComplete, base_width = 10, base_height = 14)
 
 ########################################### Extended Figure 4 - SMG tile chart
 

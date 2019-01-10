@@ -77,41 +77,6 @@ ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
   annotate("text", x = 17, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 3) 
 
 
-###### SVs V Indels V Snvs etc 
-load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
-load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
-highestPurityCohortSummary = highestPurityCohortSummary %>% mutate(TOTAL_SV = DEL + DUP + INS + INV +TRL )
-
-p0 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
-  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB High Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
-  scale_color_manual(values = cancerTypeColours) + 
-  scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
-  scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
-  theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
-  xlab("SNVs") + ylab("Indels") + ggtitle("")
-
-p1 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e3, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
-  scale_color_manual(values = cancerTypeColours) + 
-  scale_x_continuous(trans="log10", limits = c(1e1, 1e4)) + 
-  scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
-  theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
-  xlab("SVs") + ylab("Indels") + ggtitle("")
-
-p2 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
-  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
-  scale_color_manual(values = cancerTypeColours) + 
-  scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
-  scale_y_continuous(trans="log10", limits = c(1e1, 1e4)) + 
-  theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
-  xlab("SNVs") + ylab("SVs") + ggtitle("")
-
-plot_grid(p0, p1, p2, ncol = 2, labels = "AUTO")
-
 
 ####  Actionable Pie
 library(ggforce) 
