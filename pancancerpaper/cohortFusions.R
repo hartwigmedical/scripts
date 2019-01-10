@@ -72,6 +72,17 @@ hpcFusions = fusions %>%
   filter(sampleId %in% highestPurityCohort$sampleId) %>%
   select(-starts_with("start"), -starts_with("end")) 
 save(hpcFusions, file = "~/hmf/RData/Processed/hpcFusions.RData")
+
+### CREATE SUPPLEMENTARY TABLE
+sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
+fusionsSupp = hpcFusions %>% ungroup() %>%
+  left_join(sampleIdMap, by = "sampleId") %>%
+  select(-sampleId) %>%
+  select(sampleId = hmfSampleId, everything()) 
+
+write.csv(fusionsSupp, file = "~/hmf/RData/Supp/Supplementary Table 7_Fusions.csv", row.names = F) 
+
+
   
 load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
