@@ -19,8 +19,8 @@ load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 
-simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous")
-simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d")
+simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
+simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d", "#dfc27d")
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
 save(simplifiedDrivers, simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDrivers.RData")
 
@@ -76,7 +76,15 @@ pWGD
 save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 14, base_height = 6)
 
 ########################################### Figure 4 - Driver Per Sample
-driverData = hpcDriversByGene %>%
+load("~/hmf/RData/Processed/germlineCatalog.RData")
+germlineDriverData = germlineDriverCatalog %>% 
+  group_by(sampleId, cancerType) %>% 
+  count() %>%  
+  mutate(driver = "Germline", driverLikelihood = 1) %>% select(sampleId, cancerType, driver, driverLikelihood) 
+
+driverData = hpcDriversByGene %>% 
+  select(sampleId, cancerType, driver, driverLikelihood) %>%
+  bind_rows(germlineDriverData) %>%
   mutate(driver = as.character(driver), 
          driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
          driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
@@ -128,6 +136,7 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
   coord_flip()
 
 pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "AUTO")
+pDriverPerSample
 save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
 
 ########################################### Figure 5 - Hotspots
