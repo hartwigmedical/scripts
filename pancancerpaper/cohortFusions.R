@@ -55,6 +55,11 @@ fusions = allFusions %>%
   mutate(intragenic = `5pGene` == `3pGene`) %>%
   filter(`3pPostCoding` == F, is.na(`5pPostCoding`) | `5pPostCoding` == F, !(intragenic & `5pPhase` == -1)) %>%
   
+  # Biotype Constraints
+  left_join( allFusionBioTypes, by = '3pTranscript') %>% 
+  filter(`3pBiotype` != "nonsense_mediated_decay") %>% 
+  select(-`3pBiotype`) %>%
+  
   # Clean up
   mutate(
     driver = "Fusion-Coding", 
@@ -65,8 +70,7 @@ fusions = allFusions %>%
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 hpcFusions = fusions %>% 
   filter(sampleId %in% highestPurityCohort$sampleId) %>%
-  select(-starts_with("start"), -starts_with("end")) %>%
-  left_join( allFusionBioTypes, by = '3pTranscript')
+  select(-starts_with("start"), -starts_with("end")) 
 save(hpcFusions, file = "~/hmf/RData/Processed/hpcFusions.RData")
   
 load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
