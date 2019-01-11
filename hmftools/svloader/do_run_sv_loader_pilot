@@ -5,9 +5,10 @@ source load_metadata
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
+data_output_dir=${run_dir}/svAnalysis
 credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/variantannotator_pilot/variant-annotator.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
 
-${prefix}/tmp_do_run_sv_loader ${sample} ${structural_vcf} ${credentials} ${sv_jar} -log_debug $@
+${prefix}/tmp_do_run_sv_loader ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${sv_jar} -log_debug $@

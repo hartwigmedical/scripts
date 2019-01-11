@@ -1,6 +1,7 @@
 #!/bin/bash
 
 sample=$1 && shift
+data_output_dir=$1 && shift
 structural_vcf=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
@@ -16,7 +17,9 @@ promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 ensembl_data_dir=/data/common/dbs/fusions
-data_output_dir=~/
+
+mkdir -p ${data_output_dir}
+rm ${data_output_dir}/*
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${sv_jar} \
