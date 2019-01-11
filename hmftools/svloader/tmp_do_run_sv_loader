@@ -18,8 +18,11 @@ promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 ensembl_data_dir=/data/common/dbs/fusions
 
-mkdir -p ${data_output_dir}
-rm ${data_output_dir}/*
+if [ -d ${data_output_dir} ]; then
+    rm ${data_output_dir}/*
+else
+    mkdir -p ${data_output_dir}
+fi
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -jar ${sv_jar} \
