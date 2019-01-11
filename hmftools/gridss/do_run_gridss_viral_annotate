@@ -4,17 +4,20 @@
 #
 source do_run_gridss_lib
 
+input_vcf=$1 && shift
+
 PICARD_JAR=$base_path/tools/picard-tools_v1.135/picard.jar
-
 ref_genome=$base_path/refgenomes/human_virus/human_virus.fa
-
-input_vcf=${run_dir}/purple/${tumor_sample}.purple.sv.vcf.gz
 output_vcf=${input_vcf/.vcf.gz/.ann.vcf.gz}
-
 input_decompressed=${input_vcf/.gz/}
 withBEALN=$output_vcf.withbealn.vcf
 missingBEALN=$output_vcf.missingbealn.vcf
 annotatedBEALN=$output_vcf.withannotation.vcf
+
+if [[ ! -f $input_vcf ]] ; then
+	echo "[ERROR] Missing input VCF $input_vcf"
+	exit 1
+fi
 
 if [[ $(gunzip -c $input_vcf | grep -E "^#" | grep BPI_AF | wc -l) -gt 0 ]] ; then
 	# headers not missing - just decompress as normal

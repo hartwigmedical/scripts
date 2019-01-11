@@ -1,0 +1,15 @@
+#!/bin/bash
+source locate_files
+
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+gridss_jar=/data/common/tools/gridss_v2.1.0/gridss.jar
+threads=16
+input_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
+
+if [[ "${input_vcf/.ann.vcf.gz/" == "$input_vcf" ]] ; then
+	echo "[WARN] Already annotated purple VCF $input_vcf. Exiting."
+    exit 1
+fi
+
+${prefix}/do_run_gridss_viral_annotate $run_dir $gridss_jar $threads $input_vcf

@@ -18,24 +18,29 @@ locate_somatics() {
 
 locate_purple_structural_variants() {
     local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
-        exit 1
-    fi
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.ann.vcf.gz")
+	if [ -z ${structural_vcf} ]; then
+		structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+		if [ -z ${structural_vcf} ]; then
+			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
+			exit 1
+		fi
+	fi
     echo ${structural_vcf}
 }
 
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
-        exit 1
-    fi
+	local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.ann.vcf.gz")
+	if [ -z ${structural_vcf} ]; then
+		structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
+		if [ -z ${structural_vcf} ]; then
+			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
+			exit 1
+		fi
+	fi
     echo ${structural_vcf}
 }
-
 
 locate_gridss_structural_variants() {
     local run_dir=$1

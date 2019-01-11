@@ -69,8 +69,6 @@ java -Xmx2G $gridss_jvm_args gridss.ExtractFullReads \
 	 EXTRACT_SPLITS=true \
 	 TMP_DIR=$out_dir \
 	 REGION_BED=$region_bed | exit 1
-	 
-echo$out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam)
 
 java -Xmx6G $gridss_jvm_args \
 	-Dgridss.async.buffersize=16 \

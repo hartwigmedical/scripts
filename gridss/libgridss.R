@@ -734,7 +734,7 @@ readVcf = function(file, ...) {
   raw_vcf = VariantAnnotation::readVcf(file=file, ...)
   #assertthat::assert_that(all(alt(raw_vcf) != ""), "VariantAnnotation 1.29.11 or later is required")
   if (!all(unlist(alt(raw_vcf)) != "")) {
-    #work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8
+    write("Performing work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8", stderr())
     alt = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ALT=col_character()))$ALT
     VariantAnnotation::fixed(raw_vcf)$ALT = CharacterList(lapply(as.character(alt), function(x) x))
   }
