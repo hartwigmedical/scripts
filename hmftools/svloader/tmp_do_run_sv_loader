@@ -13,6 +13,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # JOBA: File Locations
 fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
@@ -29,7 +30,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -vcf_file ${structural_vcf} \
     -sample ${sample} \
     -ref_genome ${ref_genome} \
-    -ensembl_data_dir ${ensembl_data_dir} \
+    -ensembl_db ${ensembl_db} -ensembl_user ${db_user} -ensembl_pass ${db_pass} \
     -data_output_dir ${data_output_dir} \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
