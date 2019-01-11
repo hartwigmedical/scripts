@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_jar=/data/common/tools/patient-db_v3.13/patient-db.jar
+patient_db_jar=/data/common/tools/patient-db_v3.14/patient-db.jar
 runs_dir=/data/cpct/runs
 
 credentials=/data/common/dbs/mysql_credentials/prod
@@ -17,8 +17,8 @@ exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
-    -lims_json /data/lims/lims.json \
-    -pre_lims_arrival_dates_csv /data/lims/pre_lims_arrival_dates.csv \
-    -csv_out_dir /data/common/dbs/ecrf_dumps \
+    -lims /data/lims \
+    -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
+    -portal_data_symlink portal_data \
     "$@"
