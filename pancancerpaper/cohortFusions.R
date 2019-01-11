@@ -32,6 +32,14 @@ fusionConstraints = read.csv(file = "~/hmf/Resources/3PrimeFusionDomainConstrain
   filter(!is.na(`Min.Exon`) | !is.na(`Max.Exon`)) %>%
   select(`3pTranscript` = Transcript, `3pMinExonConstraint` = `Min.Exon`, `3pMaxExonConstraint` = `Max.Exon`)
 
+
+driverLevels = factor(c("Fusion-Coding","Fusion-UTR", "Fusion-Intragenic"), ordered = T)
+
+path="~/hmf/resources/"
+knownFusionPairs = read.csv(paste(path,"knownFusionPairs.csv",sep=""), stringsAsFactors = F)  %>% mutate(known = T) %>% select(`5pGene` = H_gene, `3pGene` = T_gene, known)
+knownPromiscuousThree = read.csv(paste(path,"knownPromiscuousThree.csv",sep=""), stringsAsFactors = F) %>% mutate(`3pPromiscuous` = T) %>% select(`3pGene` = gene, `3pPromiscuous`)
+knownPromiscuousFive= read.csv(paste(path,"knownPromiscuousFive.csv",sep=""), stringsAsFactors = F) %>% mutate(`5pPromiscuous` = T) %>% select(`5pGene` = gene, `5pPromiscuous`)
+
 fusions = allFusions %>%
   # Exon constraints
   left_join(fusionConstraints, by = "3pTranscript") %>%
@@ -60,17 +68,33 @@ fusions = allFusions %>%
   filter(`3pBiotype` != "nonsense_mediated_decay") %>% 
   select(-`3pBiotype`) %>%
   
-  # Clean up
+  # Driver
   mutate(
     driver = "Fusion-Coding", 
     driver = ifelse(is.na(`5pPreCoding`) | `5pPreCoding`, "Fusion-UTR", driver), 
     driver = ifelse(intragenic, "Fusion-Intragenic", driver)) %>%
+  
+  # Select single fusion per sample
+  left_join(knownFusionPairs, by = c("3pGene", "5pGene")) %>%
+  left_join(knownPromiscuousFive, by = "5pGene") %>%
+  left_join(knownPromiscuousThree, by = "3pGene") %>%
+  mutate(
+    `known` = ifelse(is.na(`known`), F, T), 
+    `5pPromiscuous` = ifelse(is.na(`5pPromiscuous`), F, T), 
+    `3pPromiscuous` = ifelse(is.na(`3pPromiscuous`), F, T),
+    promiscuous = `5pPromiscuous` & `3pPromiscuous`,
+    driver = factor(driver, driverLevels, ordered = T)) %>%
+  select(-`5pPromiscuous`, - `3pPromiscuous`) %>%
+  group_by(`3pGene`,sampleId) %>% mutate(count3P=n()) %>% arrange(-count3P, -known, -promiscuous, driver) %>% filter(row_number() == 1) %>%
+  group_by(`5pGene`,sampleId) %>% mutate(count5P=n()) %>% arrange(-count3P, -known, -promiscuous, driver) %>% filter(row_number() == 1) %>%
+  select(-promiscuous, -known) %>%
+  
   select(-ends_with("IsStartEnd"),  -ends_with("Coding"), -filter, -intragenic)
 
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 hpcFusions = fusions %>% 
   filter(sampleId %in% highestPurityCohort$sampleId) %>%
-  select(-starts_with("start"), -starts_with("end")) 
+  select(-starts_with("start"), -starts_with("end"))
 save(hpcFusions, file = "~/hmf/RData/Processed/hpcFusions.RData")
 
 ### CREATE SUPPLEMENTARY TABLE
