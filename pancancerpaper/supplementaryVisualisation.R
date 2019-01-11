@@ -269,6 +269,8 @@ pClonality
 save_plot("~/hmf/RPlot/Figure 6 - Subclonal.png", pClonality, base_width = 10, base_height = 2.5)
 
 
+
+
 ########################################### Extended Figure 1c - Coverage
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 coverageData = highestPurityCohortSummary %>% 
@@ -442,7 +444,49 @@ pComplete
 
 save_plot("~/hmf/RPlot/Extended Figure 3 - Loads.png", pComplete, base_width = 10, base_height = 14)
 
-########################################### Extended Figure 4 - SMG tile chart
+
+########################################### Extended Figure 5 - Y DELETES
+load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
+clinical = highestPurityCohortSummary %>% select(sampleId, cancerType)
+maleCopyNumberY = hpcCopyNumbers %>% 
+  filter(chromosome == 'Y') %>% 
+  left_join(clinical, by = "sampleId") %>% 
+  mutate(status = ifelse(copyNumber < 0.5, "deleted", "normal")) %>%
+  group_by(cancerType, status) %>%
+  summarise(length = sum(end - start + 1)) %>%
+  group_by(cancerType) %>%
+  mutate(percentage = length / sum(length))
+
+maleCopyNumberYTotal = maleCopyNumberY %>% group_by(status) %>% summarise(length = sum(length)) %>% spread(status, length) %>% mutate(percentage = deleted / (normal + deleted))
+maleCopyNumberY = maleCopyNumberY %>%
+  mutate(totalPercentage = maleCopyNumberYTotal$percentage) %>%
+  filter(cancerType != "Other")
+
+maleCopyNumberYLevels = maleCopyNumberY %>% filter(status == 'deleted') %>% arrange(-percentage)
+maleCopyNumberY = maleCopyNumberY %>% ungroup() %>% 
+  mutate(
+    cancerType = factor(cancerType, maleCopyNumberYLevels$cancerType),
+    status = factor(status, c("normal", "deleted"), ordered = T))
+maleCopyNumberY[maleCopyNumberY$cancerType == "CNS", "totalPercentage"] <- NA
+maleCopyNumberY[maleCopyNumberY$cancerType == "NET", "totalPercentage"] <- NA
+
+p1 <- ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
+  geom_bar(aes(fill=status), stat = "identity") + 
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
+  ggtitle("") + xlab("") + ylab("% of males with somatic Y chromosome deletion") +
+  coord_flip() +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") + 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  scale_fill_manual(values = c("#deebf7", "#2171b5")) +
+  annotate("text", x = 18, y = maleCopyNumberYTotal$percentage, label = "Pan Cancer", size = 3) +
+  annotate("text", x = 17, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 3) 
+
+save_plot("~/hmf/RPlot/Extended Figure 5 - Somatic Y Loss.png", p1, base_width = 6, base_height = 4)
+
+
+########################################### Extended Figure 6 - SMG tile chart
 
 absSignificance = 0.01
 load(file = "~/hmf/RData/processed/genePanel.RData")
@@ -490,10 +534,11 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
   guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
 pTile  
 
-save_plot("~/hmf/RPlot/Extended Figure 4 - Tile.png", pTile, base_width = 6, base_height = 10)
+save_plot("~/hmf/RPlot/Extended Figure 6 - Tile.png", pTile, base_width = 6, base_height = 10)
 
 
-########################################### Extended Figure 5
+
+########################################### Extended Figure 8
 
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -570,7 +615,7 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
 
 pAmps = plot_grid(p0, p2, p1, labels="AUTO")
 pAmps
-save_plot("~/hmf/RPlot/Extended Figure 5 - Amps.png", pAmps, base_width = 10, base_height = 10)
+save_plot("~/hmf/RPlot/Extended Figure 8 - Amps.png", pAmps, base_width = 10, base_height = 10)
 
 ###################################################### Determining Clonality
 
