@@ -99,6 +99,7 @@ drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, dr
 
 ########################################### Visualise
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
+load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
 actionablePlotData = responsiveVariants %>% filter(cancerType != 'Other') %>%
   mutate(
@@ -127,7 +128,7 @@ actionablePlotData = actionablePlotData %>%
 
 p1 = ggplot(data = actionablePlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(stat = "identity", aes(fill = response)) + 
-  scale_fill_manual(values = levelTreatmentColors) +
+  scale_fill_manual(values = levelTreatmentColors, guide = guide_legend(reverse = TRUE)) +
   ggtitle("") + xlab("") + ylab("% Samples with treatment options") +
   scale_y_continuous(labels = percent, limits = c(0, 1), expand = c(0.02,0)) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
@@ -135,7 +136,42 @@ p1 = ggplot(data = actionablePlotData, aes(x = cancerType, y = percentage)) +
   theme(axis.ticks = element_blank()) +
   coord_flip()
 
-pActionability = plot_grid(p1, labels = "AUTO")
-pActionability
 
-save_plot("~/hmf/RPlot/Figure 8 - Actionable.png", pActionability, base_width = 6, base_height = 6)
+########################################### Figure 8 part 2 - Actionable Pie
+library(ggforce) 
+
+load(file = "~/hmf/RData/reference/simplifiedDrivers.RData")
+actionableDriverColours = simplifiedDriverColours[c("Amp", "Fusion", "Indel", "Missense", "Nonsense", "Del")]
+names(actionableDriverColours) <- c("Amp", "Fusion", "Indel","SNV","MSI","MNV")
+
+load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
+responseChartData = responsiveVariants %>% 
+  group_by(eventType) %>% 
+  dplyr::count() %>% 
+  ungroup() %>% 
+  mutate(share = n / sum(n)) %>%
+  mutate(
+    eventType = ifelse(eventType == "Amplification", "Amp", eventType),
+    eventType = ifelse(eventType == "INDEL", "Indel", eventType)
+  )
+
+responseChartData = responseChartData %>%
+  mutate(end = 2 * pi * cumsum(share)/sum(share),
+         start = lag(end, default = 0),
+         middle = 0.5 * (start + end),
+         hjust = ifelse(middle > pi, 1, 0),
+         vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
+
+pie = ggplot(responseChartData) + 
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, start = start, end = end, fill = eventType)) +
+  geom_text(aes(x = 1.05 * sin(middle), y = 1.05 * cos(middle), label = paste0(responseChartData$eventType," ", round(responseChartData$share*100, 1), "%"), hjust = hjust, vjust = vjust)) +
+  coord_fixed() +
+  scale_x_continuous(limits = c(-1.5, 1.4), name = "", breaks = NULL, labels = NULL) +
+  scale_y_continuous(limits = c(-1, 1), name = "", breaks = NULL, labels = NULL) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), legend.position = "none") +
+  scale_fill_manual(values = actionableDriverColours, name = "Variant Type")
+
+pActionability = plot_grid(p1, pie, nrow = 1, labels = "AUTO", rel_widths = c(3, 2))
+pActionability
+save_plot("~/hmf/RPlot/Figure 8 - Actionable.png", pActionability, base_width = 16, base_height = 8)
+
