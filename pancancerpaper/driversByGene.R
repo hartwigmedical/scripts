@@ -32,12 +32,16 @@ oncoDriverByGene = hpcDndsOncoDrivers %>%
   select(sampleId, coordinate, gene, category = variant, driver, impact, driverLikelihood = driverLikelihoodAdjusted, type, hotspot, subclonalLikelihood, shared, pHGVS)
 
 hotspotFactors = c("Hotspot","NearHotspot","NonHotspot")
-driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Del","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Indel","Amp")
+driverFactors = c("Fusion-Intragenic","Fusion-Coding","Fusion-UTR","Deletion","FragileDel","Multihit","Promoter","Frameshift","Nonsense","Splice","Missense","Inframe","Indel","Amplification")
 hpcDriversByGene = bind_rows(oncoDriverByGene, tsgDriverByGene) %>% 
   bind_rows(amplifications) %>% 
   bind_rows(deletions) %>% 
   bind_rows(tertPromoters) %>% 
   bind_rows(fusions) %>%
+  mutate(
+    driver = ifelse(driver == 'Amp', "Amplification", driver),
+    driver = ifelse(driver == 'Del', "Deletion", driver)
+  ) %>%
   mutate(
     hotspot = factor(hotspot, rev(hotspotFactors)),
     driver = factor(driver, rev(driverFactors))) %>%

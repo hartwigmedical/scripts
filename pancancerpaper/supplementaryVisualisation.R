@@ -19,7 +19,7 @@ load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 
-simplifiedDrivers = c("Amp","Del","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
+simplifiedDrivers = c("Amplification","Deletion","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d", "#dfc27d")
 simplifiedDriverColours = setNames(simplifiedDriverColours, simplifiedDrivers)
 save(simplifiedDrivers, simplifiedDriverColours, file = "~/hmf/RData/reference/simplifiedDrivers.RData")
@@ -78,7 +78,8 @@ save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 14, base_height =
 ########################################### Figure 4 - Driver Per Sample
 load("~/hmf/RData/Processed/germlineCatalog.RData")
 germlineDriverData = germlineDriverCatalog %>% 
-  group_by(sampleId, cancerType) %>% 
+  filter(highConfidenceGenePanel, is.na(variantLostInTumor) | !variantLostInTumor) %>%
+  group_by(sampleId, cancerType, gene) %>% 
   count() %>%  
   mutate(driver = "Germline", driverLikelihood = 1) %>% select(sampleId, cancerType, driver, driverLikelihood) 
 

@@ -19,7 +19,7 @@ bachelorGenes = read.csv(paste0(path,'genePanel152.csv')) %>% select(Gene)
 germlineDeletes = hpcGeneCopyNumberDeletes %>% 
   filter(germlineHetRegions > 0 | germlineHomRegions > 0) %>% 
   filter(gene %in% bachelorGenes$Gene) %>% left_join(fragileGenes, by = c("gene" = "gene_name")) %>%
-  mutate(category = "CNA", fragile = ifelse(is.na(fragile),F, T), driver = "Del", partial = somaticRegions > 1) %>%
+  mutate(category = "CNA", fragile = ifelse(is.na(fragile),F, T), driver = "Deletion", partial = somaticRegions > 1) %>%
   select(sampleId, gene,  driver, category)
 rm(bachelorGenes, fragileGenes, hpcGeneCopyNumberDeletes)
 

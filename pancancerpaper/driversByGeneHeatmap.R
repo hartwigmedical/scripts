@@ -11,9 +11,11 @@ load("~/hmf/RData/processed/driverGenes.RData")
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 load(file = "~/hmf/RData/reference/simplifiedDrivers.RData")
 
-tsgDrivers = c("Del","FragileDel","Indel","Missense","Multihit","Nonsense","Splice")
-oncoDrivers = c("Amp","Del","Fusion","Indel","Missense","Promoter")
-germlineDrivers = c("Del", "Indel","Missense", "Multihit","Nonsense", "Splice","Synonymous")
+tsgDrivers = c("Deletion","FragileDel","Indel","Missense","Multihit","Nonsense","Splice")
+oncoDrivers = c("Amplification","Deletion","Fusion","Indel","Missense","Promoter")
+germlineDrivers = c("Deletion", "Indel","Missense", "Multihit","Nonsense", "Splice","Synonymous")
+simplifiedDrivers <- simplifiedDrivers[!simplifiedDrivers == "Germline"]
+
 tsgDriverColours = simplifiedDriverColours[tsgDrivers]
 oncoDriverColours = simplifiedDriverColours[oncoDrivers]
 germlineDriverColours = simplifiedDriverColours[germlineDrivers]
@@ -182,7 +184,6 @@ germlineWildTypeLostAnnotation = rowAnnotation(
   `% Wild Type Lost` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineWildtypeLostData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineWildTypeLostAnnotationColours), border = F), 
   width = unit(2, "cm")
 )
-
 
 pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation + germlineWildTypeLostAnnotation
 pGermline
