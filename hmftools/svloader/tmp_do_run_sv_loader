@@ -1,0 +1,32 @@
+#!/bin/bash
+
+sample=$1 && shift
+structural_vcf=$1 && shift
+credentials=$1 && shift
+sv_jar=$1 && shift
+
+# JOBA: Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# JOBA: File Locations
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+ensembl_data_dir=/data/common/dbs/fusions
+data_output_dir=~/
+
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
+    -jar ${sv_jar} \
+    -vcf_file ${structural_vcf} \
+    -sample ${sample} \
+    -ref_genome ${ref_genome} \
+    -ensembl_data_dir ${ensembl_data_dir} \
+    -data_output_dir ${data_output_dir} \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
