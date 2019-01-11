@@ -19,14 +19,12 @@ if [[ ! -f $input_vcf ]] ; then
 	exit 1
 fi
 
-if [[ $(gunzip -c $input_vcf | grep -E "^#" | grep BPI_AF | wc -l) -gt 0 ]] ; then
-	# headers not missing - just decompress as normal
-	gunzip -c $input_vcf > $input_decompressed
-else
-	# hack to add missing headers
-	gunzip -c $input_vcf | awk 'NR==10 {print; print "##INFO=<ID=BPI_AF,Number=.,Type=Float,Description=\"Allele fraction at for each breakend\">\n##INFO=<ID=LOCAL_LINKED_BY,Number=1,Type=String,Description=\"Breakend linking information\">\n##INFO=<ID=REMOTE_LINKED_BY,Number=1,Type=String,Description=\"Partner breakend linking information\">"} NR!=10' > $input_decompressed
+if [[ "${input_vcf/.ann.vcf.gz/}" != "$input_vcf" ]] ; then
+	echo "[WARN] Already annotated purple VCF $input_vcf. Exiting."
+    exit 1
 fi
 
+gunzip -c $input_vcf > $input_decompressed
 grep -E "^#" < $input_decompressed | tee $withBEALN > $missingBEALN
 grep BEALN < $input_decompressed  | grep -vE "^#" >> $withBEALN
 grep -v BEALN < $input_decompressed  | grep -vE "^#" >> $missingBEALN
