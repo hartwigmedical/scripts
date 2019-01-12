@@ -25,7 +25,8 @@ then
 fi
 
 unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
-gunzip -c ${original_vcf} > ${unzipped_vcf}
+# workaround for https://github.com/Bioconductor/VariantAnnotation/issues/19
+gunzip -c ${original_vcf} | awk ' { if (length($0) >= 4000) { print gsub(":0.00:", ":0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000:")} ; print $0  } ' > ${unzipped_vcf}
 
 Rscript ${libgridss}/gridss_somatic_filter.R -p ${gridss_pon} -i ${unzipped_vcf} -o ${output_vcf} -f ${full_vcf} -s ${libgridss}
 
