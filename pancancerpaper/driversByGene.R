@@ -66,5 +66,5 @@ driverCatalogue = hpcDriversByGene %>%
   select(-sampleId) %>%
   select(sampleId = hmfSampleId, everything()) 
 
-write.csv(driverCatalogue, file = "~/hmf/RData/Supp/Supplementary Table 5_DriverCatalogue.csv", row.names = F) 
+write.csv(driverCatalogue, file = "~/hmf/RData/Supp/Supplementary Table 5_DriverCatalog.csv", row.names = F)
 
