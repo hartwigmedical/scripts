@@ -33,6 +33,7 @@ fusionConstraints = read.csv(file = "~/hmf/Resources/3PrimeFusionDomainConstrain
   select(`3pTranscript` = Transcript, `3pMinExonConstraint` = `Min.Exon`, `3pMaxExonConstraint` = `Max.Exon`)
 
 
+
 driverLevels = factor(c("Fusion-Coding","Fusion-UTR", "Fusion-Intragenic"), ordered = T)
 
 path="~/hmf/resources/"
@@ -87,9 +88,21 @@ fusions = allFusions %>%
   select(-`5pPromiscuous`, - `3pPromiscuous`) %>%
   group_by(`3pGene`,sampleId) %>% mutate(count3P=n()) %>% arrange(-count3P, -known, -promiscuous, driver) %>% filter(row_number() == 1) %>%
   group_by(`5pGene`,sampleId) %>% mutate(count5P=n()) %>% arrange(-count3P, -known, -promiscuous, driver) %>% filter(row_number() == 1) %>%
-  select(-promiscuous, -known) %>%
+  select(-promiscuous, -known, -count3P, -count5P) %>% 
   
-  select(-ends_with("IsStartEnd"),  -ends_with("Coding"), -filter, -intragenic)
+  select(-ends_with("IsStartEnd"),  -ends_with("Coding"), -filter, -intragenic) 
+
+
+### VALIDATION
+rnaSupportButNotCalled = read.csv('~/hmf/resources/RNA_MANUAL.csv')
+rnaValidation = read.csv('~/hmf/resources/RNA_MATCH_DATA_DRIVER_PAPER_SAMPLES.csv', stringsAsFactors = F) %>% select(sampleId = SampleId, `5pGene` = GeneUp, `3pGene` = GeneDown) %>% distinct() %>% mutate(rnaEvidence = "CALLED")
+rnaValidationSamples = rnaValidation %>% select(sampleId) %>% distinct() %>% mutate(rnaExamined = "NOT_CALLED")
+fusions = fusions %>%
+  left_join(rnaValidationSamples, by = c("sampleId")) %>%
+  left_join(rnaValidation, by = c("sampleId", "5pGene", '3pGene')) %>%
+  mutate(rnaValidationStatus = coalesce(rnaEvidence, rnaExamined)) %>%
+  select(-rnaEvidence, -rnaExamined) %>%
+  mutate(rnaValidationStatus = ifelse(sampleId %in% rnaSupportButNotCalled$sampleId, "READ_SUPPORT_BUT_NOT_CALLED", rnaValidationStatus))
 
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 hpcFusions = fusions %>% 
@@ -106,8 +119,6 @@ fusionsSupp = hpcFusions %>% ungroup() %>%
 
 write.csv(fusionsSupp, file = "~/hmf/RData/Supp/Supplementary Table 7_Fusions.csv", row.names = F) 
 
-
-  
 load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
 mbFusions = fusions %>% 
