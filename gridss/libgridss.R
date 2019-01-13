@@ -87,7 +87,7 @@ gridss_overlaps_breakend_pon = function(gr,
 #' should be filtered
 #' @param somatic_filters apply somatic filters.
 #' Assumes the normal and tumour samples are the first and second respectively
-gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL) {
+gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE, somatic_filters=TRUE, support_quality_filters=TRUE, normalOrdinal, tumourOrdinal, pon_dir=NULL, pon_maxgap=4) {
 	vcf = vcf[names(gr)]
 	i = info(vcf)
 	g = geno(vcf)
@@ -98,7 +98,7 @@ gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE,
 	filtered = rep("", length(gr))
 
 	if (!is.null(pon_dir)) {
-	  filtered = .addFilter(filtered, "PON", gridss_overlaps_breakpoint_pon(gr, pon_dir))
+	  filtered = .addFilter(filtered, "PON", gridss_overlaps_breakpoint_pon(gr, pon_dir, maxgap=pon_maxgap))
 	}
 
 	if (support_quality_filters) {
