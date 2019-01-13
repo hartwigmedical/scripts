@@ -2,53 +2,60 @@
 #
 # Incorporates the given VCF files into the Panel Of Normals
 #
+library(tidyverse, quietly=TRUE)
+library(stringr, quietly=TRUE)
+library(rtracklayer, quietly=TRUE)
+library(R.cache, quietly=TRUE)
+library(argparser, quietly=TRUE)
+argp = arg_parser("Filters a raw GRIDSS VCF into somatic call subsets.")
+argp = add_argument(argp, "--pondir", default=NA, help="Directory to write PON to.")
+argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
+argp = add_argument(argp, "--cache-only", default=FALSE, flag=TRUE, help="Only generate cache objects for input files. Useful for parallel processing of inputs.")
+argp = add_argument(argp, "--normalordinal", type="integer", default=1, help="Ordinal of normal sample in the VCF")
+argp = add_argument(argp, "--input", nargs=Inf, help="Input VCFs normal")
+# argv = parse_args(argp, argv=c("--pondir", "~/pon/", "--scriptdir", "/data/common/repos/scripts/gridss/", "--input", "a.vcf", "b.vcf"))
+argv = parse_args(argp)
 
-# Rscript create_gridss_pon.R /data/experiments/gridss_full/pon $(find /data/cpct/reruns_v4 -name '*gridss*.vcf')
-
-library(tidyverse)
-library(stringr)
-library(rtracklayer)
-library(R.cache)
-source("libgridss.R")
-
-usage = "Usage: Rscript create_gridss_pon.R <pon directory> <input VCFs>"
-args = commandArgs(TRUE)
-if (str_detect(args[1], "create_gridss_pon")) {
-  args = args[-1]
-}
-if (length(args) < 2) {
-  write(usage, stderr())
-  q(save="no", status=1)
-}
-pon_dir = args[1]
-args = args[-1]
-vcf_list = args
-if (!dir.exists(pon_dir)) {
+if (!dir.exists(argv$pondir)) {
   write("PON directory not found", stderr())
   write(usage, stderr())
   q(save="no", status=1)
 }
+vcf_list = argv$input
 if (!any(file.exists(vcf_list))) {
   write("VCF input file not found", stderr())
-  write(usage, stderr())
   q(save="no", status=1)
 }
-#pon_dir = "C:/hartwig/pon"
-#vcf_list = c(
-#"C:/hartwig/down/COLO829R_COLO829T.gridss.vcf",
-#"C:/hartwig/down/CPCT02100013R_CPCT02100013T.gridss.vcf",
-#"C:/hartwig/down/CPCT02100013R_CPCT02100013TII.gridss.vcf")
+libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
+if (file.exists(libgridssfile)) {
+  tmpwd = getwd()
+  setwd(argv$scriptdir)
+  source("libgridss.R")
+  setwd(tmpwd)
+} else {
+  msg = paste("Could not find libgridss.R in", argv$scriptdir, " - please specify a --scriptdir path to a directory containing the required scripts")
+  write(msg, stderr())
+  print(argp)
+  stop(msg)
+}
 
-setCacheRootPath(paste0(pon_dir, "/Rcache"))
+setCacheRootPath(paste0(argv$pondir, "/Rcache"))
 options("R.cache.compress"=TRUE)
-load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
+load_germline_pon_calls = function(vcf_file, sampleId) {
+  vcf_file = normalizePath(vcf_file)
+  key=list(vcf_file=vcf_file)
+  cached = loadCache(key=key)
+  if (!is.null(cached)) {
+    write(paste("Using cached data for ", vcf_file), stderr())
+    return(cached)
+  }
   write(paste("Start load", vcf_file), stderr())
   full_vcf = readVcf(vcf_file, "hg19")
   bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
   begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
 
-  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,1] > gridss.pon.min_normal_qual | geno(full_vcf[bpgr$partner])$QUAL[,1] > gridss.pon.min_normal_qual]
-  begr = begr[geno(full_vcf[begr$vcfId])$BQ[,1] > gridss.pon.min_normal_qual * gridss.single_breakend_multiplier]
+  bpgr = bpgr[geno(full_vcf[bpgr$vcfId])$QUAL[,argv$normalordinal] > gridss.pon.min_normal_qual | geno(full_vcf[bpgr$partner])$QUAL[,argv$normalordinal] > gridss.pon.min_normal_qual]
+  begr = begr[geno(full_vcf[begr$vcfId])$BQ[,argv$normalordinal] > gridss.pon.min_normal_qual * gridss.single_breakend_multiplier]
 
   minimal_bpgr = bpgr
   mcols(minimal_bpgr) = NULL
@@ -62,16 +69,22 @@ load_germline_pon_calls = addMemoization(function(vcf_file, sampleId) {
   minimal_begr$vcf = rep(sampleId, length(begr))
   minimal_begr$IMPRECISE = info(full_vcf[names(minimal_begr)])$IMPRECISE
   names(minimal_begr) = NULL
+  result = list(bp=minimal_bpgr, be=minimal_begr)
+  saveCache(result, key=key)
   write(paste("End load", vcf_file), stderr())
-  return(list(bp=minimal_bpgr, be=minimal_begr))
-})
+  return(result)
+}
 full_bp = list()
 full_be = list()
 for (vcf_file in vcf_list) {
-  sampleId = str_replace(basename(vcf_file), ".gridss.vcf", "")
+  sampleId = str_replace(str_replace(basename(vcf_file), ".gridss.vcf.gz", ""), ".gridss.vcf", "")
   calls = load_germline_pon_calls(vcf_file, sampleId)
   full_bp[[sampleId]] = calls$bp
   full_be[[sampleId]] = calls$be
+}
+if (argv$cache_only) {
+  write("Caching complete ", stderr())
+  q(save="no", status=0)
 }
 
 bpdf = bind_rows(lapply(full_bp, function(x) {
@@ -117,7 +130,7 @@ bedpe = bpdf %>% mutate(
   arrange(chrom1, start1, chrom2, start2) %>%
   mutate(name=".") %>%
   dplyr::select(chrom1, start1, end1, chrom2, start2, end2, name, score, strand1, strand2, IMPRECISE)
-withr::with_options(c(scipen = 10), write.table(bedpe, paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE))
+withr::with_options(c(scipen = 10), write.table(bedpe, paste(argv$pondir, "gridss_pon_breakpoint.bedpe", sep="/"), quote=FALSE, sep='\t', row.names=FALSE, col.names=FALSE))
 
 bedf = bind_rows(lapply(full_be, function(x) {
   data.frame(
@@ -148,4 +161,4 @@ ponbe = GRanges(
     strand=bedf$strand,
     score=bedf$score,
     IMPRECISE=bedf$IMPRECISE)
-export(ponbe, con=paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"), format="bed")
+export(ponbe, con=paste(argv$pondir, "gridss_pon_single_breakend.bed", sep="/"), format="bed")

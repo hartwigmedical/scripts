@@ -1,11 +1,11 @@
-library(VariantAnnotation)
-library(StructuralVariantAnnotation)
-library(rtracklayer)
-library(tidyverse)
-library(stringr)
-library(testthat)
-library(stringdist)
-library(BSgenome.Hsapiens.UCSC.hg19)
+library(VariantAnnotation, quietly=TRUE)
+library(StructuralVariantAnnotation, quietly=TRUE)
+library(rtracklayer, quietly=TRUE)
+library(tidyverse, quietly=TRUE)
+library(stringr, quietly=TRUE)
+library(testthat, quietly=TRUE)
+library(stringdist, quietly=TRUE)
+library(BSgenome.Hsapiens.UCSC.hg19, quietly=TRUE)
 source("gridss.config.R")
 
 #' sum of genotype fields
@@ -732,6 +732,7 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_det
 
 readVcf = function(file, ...) {
   raw_vcf = VariantAnnotation::readVcf(file=file, ...)
+  #id = read_tsv(file, comment="#", col_names=c("CHROM", "POS", "ID", "REF", "ALT", "QUAL", "FILTER", "INFO", "FORMAT", seq_len(ncol(geno(raw_vcf)[[1]]))), cols_only(ID=col_character()))$ID
   #assertthat::assert_that(all(alt(raw_vcf) != ""), "VariantAnnotation 1.29.11 or later is required")
   if (!all(unlist(alt(raw_vcf)) != "")) {
     write("Performing work-around for https://github.com/Bioconductor/VariantAnnotation/issues/8", stderr())
