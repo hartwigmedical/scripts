@@ -141,8 +141,8 @@ p1 = ggplot(data = actionablePlotData, aes(x = cancerType, y = percentage)) +
 library(ggforce) 
 
 load(file = "~/hmf/RData/reference/simplifiedDrivers.RData")
-actionableDriverColours = simplifiedDriverColours[c("Amp", "Fusion", "Indel", "Missense", "Nonsense", "Del")]
-names(actionableDriverColours) <- c("Amp", "Fusion", "Indel","SNV","MSI","MNV")
+actionableDriverColours = simplifiedDriverColours[c("Amplification", "Fusion", "Indel", "Missense", "Nonsense", "Deletion")]
+names(actionableDriverColours) <- c("Amplification", "Fusion", "Indel","SNV","MSI","MNV")
 
 load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
 responseChartData = responsiveVariants %>% 
@@ -151,7 +151,6 @@ responseChartData = responsiveVariants %>%
   ungroup() %>% 
   mutate(share = n / sum(n)) %>%
   mutate(
-    eventType = ifelse(eventType == "Amplification", "Amp", eventType),
     eventType = ifelse(eventType == "INDEL", "Indel", eventType)
   )
 
@@ -169,6 +168,7 @@ pie = ggplot(responseChartData) +
   scale_x_continuous(limits = c(-1.5, 1.4), name = "", breaks = NULL, labels = NULL) +
   scale_y_continuous(limits = c(-1, 1), name = "", breaks = NULL, labels = NULL) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), legend.position = "none") +
+  ggtitle("Actionability by variant type") + 
   scale_fill_manual(values = actionableDriverColours, name = "Variant Type")
 
 pActionability = plot_grid(p1, pie, nrow = 1, labels = "AUTO", rel_widths = c(3, 2))
