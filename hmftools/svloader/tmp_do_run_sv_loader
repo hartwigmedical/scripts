@@ -6,18 +6,18 @@ structural_vcf=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
 
-# JOBA: Database details
+# Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-# JOBA: File Locations
+# File Locations
 fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-ensembl_data_dir=/data/common/dbs/fusions
+ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 
 if [ -d ${data_output_dir} ]; then
     rm ${data_output_dir}/*
@@ -25,12 +25,11 @@ else
     mkdir -p ${data_output_dir}
 fi
 
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
-    -jar ${sv_jar} \
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -jar ${sv_jar} \
     -vcf_file ${structural_vcf} \
     -sample ${sample} \
     -ref_genome ${ref_genome} \
-    -ensembl_db ${ensembl_db} -ensembl_user ${db_user} -ensembl_pass ${db_pass} \
+    -ensembl_data_dir ${ensembl_data_dir} \
     -data_output_dir ${data_output_dir} \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
