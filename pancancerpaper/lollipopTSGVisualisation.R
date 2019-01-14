@@ -130,20 +130,19 @@ tsg_lollipop <- function(selectedGene) {
 selectedGene = "TP53"
 tsg_lollipop("TP53")
 
-
 genes = unique(tsgDrivers$gene)
 plots = list()
 for (i in c(1:length(genes))) {
   plots[[i]] = tsg_lollipop(genes[i])
 }
 
-for (i in seq(1, length(plots), 4)) {
-  j = min(length(plots), i + 3)
-  cat(i, ":", j, "\n")
-  
-  myPlotList = plots[i:j]
-  myPlot = plot_grid(plotlist = myPlotList, ncol = 1)
-  save_plot(paste0("~/hmf/RPlot/tsgLollipop/TsgLollipop", i, ".png"), myPlot, base_width = 15, base_height = 6 * (j-i + 1), limitsize = FALSE)
+pdf(file="~/hmf/RPlot/Extended Figure 7b -  TSG Lollipops.pdf",width=15, height = 6)
+for (i in 1:length(plots)) {
+  print(plots[[i]])
 }
+dev.off()
+
+
+
 
 
