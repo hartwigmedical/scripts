@@ -6,7 +6,7 @@ args <- commandArgs(TRUE)
 load_all(paste(args[1], '/mutSigExtractor', sep = ""))
 setwd(args[2])
 
-cat("[INFP] script extractHRDsample", "\n")
+cat("[INFO] Script extractHRDsample", "\n")
 cat("[INFO] chord_dir: ", args[1], "\n")
 cat("[INFO] working_dir: ", args[2], "\n")
 cat("[INFO] sample: ", args[3], "\n")
