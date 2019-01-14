@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+path=/data/schuberg/process_runs/
+process_runs=$(ls ${path})
+user=whoami
+sudo chown -R ${user}:users ${path}
+sudo mv ${path}
+
+run_clinical_patient_db_prod
+
+for run in ${process_runs}; do
+    echo "[INFO] create patient report for ${run}"
+    patient_report_for_run /data/cpct/runs/${run}
+done
+
+for run in ${process_runs}; do
+    echo "[INFO] writing evidence item into db for ${run}"
+    do_load_evidence_data_prod /data/cpct/runs/${run}
+done
+
+echo "[INFO] processing of finished runs are finished"
