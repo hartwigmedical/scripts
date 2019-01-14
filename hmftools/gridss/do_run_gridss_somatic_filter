@@ -2,7 +2,7 @@
 source load_metadata
 
 libgridss=/data/common/repos/scripts/gridss/
-gridss_pon=/data/common/dbs/gridss/pon/
+gridss_pon=/data/common/dbs/gridss/pon67/
 
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
