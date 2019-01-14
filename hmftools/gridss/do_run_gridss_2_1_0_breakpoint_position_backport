@@ -22,23 +22,23 @@ if [ ! -f $assembly_sv_bam ] ; then
 	echo "Missing $assembly_sv_bam"
 	exit 1
 fi
-
-if [ -d "$out_dir" ] ; then
-	echo "Backport processing directory  $out_dir found. Exiting."
-	exit 1
-fi
 if [ -z ${original_vcf} ]
 then
 	echo "Unable to locate raw gridss structural variants. Exiting."
 	exit 1
 fi
+if [ -d "$out_dir" ] ; then
+	echo "Backport processing directory $out_dir found. Deleting."
+	rm -r $out_dir
+fi
+
 echo Creating $out_dir
 mkdir $out_dir
 rsync -r --exclude=*.bam --exclude=*.bai --exclude=breakpoint_position_backport --exclude=*vcf* --exclude=jobs --exclude=logs $(dirname $full_vcf)/ $out_dir
 normal_bam=$out_dir/$(basename $normal_bam)
 tumor_bam=$out_dir/$(basename $tumor_bam)
 assembly_bam=$out_dir/$(basename $assembly_bam)
-# Mock input files because GRIDSS needs these as positional arguments though the reads are ignored
+# Mock input files because GRIDSS needs these as positional arguments even though the reads are ignored
 echo "Generating empty bam from $assembly_sv_bam"
 samtools view -H $assembly_sv_bam | samtools view -b - > $out_dir/empty.bam
 ln -s $(realpath $out_dir/empty.bam) $normal_bam
