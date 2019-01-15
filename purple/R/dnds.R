@@ -87,7 +87,7 @@ onco_mutations <- function(mutations) {
 
   result = mutations %>%
     #result = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
-    filter(impact %in% c("Inframe", "Missense", "Frameshift")) %>%
+    filter(impact %in% c("Inframe", "Missense")) %>%
     mutate(impact = factor(impact, levels = c("Inframe", "Missense", "Frameshift"))) %>%
     group_by(sampleId, gene) %>%
     mutate(
