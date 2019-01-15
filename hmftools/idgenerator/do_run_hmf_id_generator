@@ -1,7 +1,7 @@
 #!/bin/bash
 
 run_mode=$1
-id_generator_jar=/data/common/tools/hmf-id-generator_v1.4/hmf-id-generator.jar
+id_generator_jar=/data/common/tools/hmf-id-generator_v2.0/hmf-id-generator.jar
 
 exec java -jar ${id_generator_jar} \
     ${run_mode} \
