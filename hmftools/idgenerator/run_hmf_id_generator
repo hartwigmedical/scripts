@@ -1,7 +1,7 @@
 #!/bin/bash
 
 run_mode=$1
-basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/run_basic_id_generator
+basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/do_run_hmf_id_generator
 
 input_dir=/data/common/dbs/idgenerator/input
 output_dir=/data/common/dbs/idgenerator/output
