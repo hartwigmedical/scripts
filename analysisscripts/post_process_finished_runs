@@ -4,8 +4,12 @@ path=/data/schuberg/processed_runs/
 process_runs=$(ls ${path})
 user_name=$(echo $USER)
 
-sudo chown -R ${user_name}:users ${path}
-sudo mv ${path}
+for run in ${process_runs}; do
+    echo "[INFO] chown set for ${run}"
+    sudo chown -R ${user_name}:users /data/schuberg/processed_runs/${run}
+done
+
+sudo mv * /data/cpct/runs/
 
 run_clinical_patient_db_prod
 
