@@ -4,7 +4,12 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(ggrepel)
+library(png)
+library(grid)
 theme_set(theme_bw())
+
+img = readPNG(source = "~/hmf/RPlot/LollipopLegendLongest.png")
+pLegend <- rasterGrob(img, interpolate=TRUE)
 
 extract_position <- function(AAChange) {
   prot.spl = strsplit(x = as.character(AAChange), split = ".", fixed = TRUE)
@@ -25,18 +30,8 @@ g_legend <- function(a.gplot){
   return(legend)
 }
 
-
-#colours = c("#2c7bb6","#d7191c","#e66101", "White", "Black")
-#colours = setNames(colours, c("NonHotspot", "OnHotspot","NearHotspot", "Complex", "Simple"))
-
-#inactivationAlpha = c(0, 1, 0, 1)
-#inactivationAlpha = setNames(inactivationAlpha, c("Simple", "Complex", "Missense", "Nonsense"))
-
 variantShape = c(23, 21, 22)
 variantShape = setNames(variantShape, c("INDEL", "SNV", "MNV"))
-
-#impactAlpha = c(0, 1)
-#impactAlpha = setNames(impactAlpha, c("Missense", "Nonsense"))
 
 load(file = "~/hmf/RData/Reference/highestPurityCohort.RData")
 load("~/hmf/RData/Reference/canonicalTranscripts.RData")
@@ -122,13 +117,15 @@ tsg_lollipop <- function(selectedGene) {
     scale_x_discrete( expand = c(0,0)) +
     guides(fill=guide_legend(ncol=1))
   
-  p_graphs = plot_grid(p1, p2, ncol = 2, nrow = 1, rel_widths = c(4, 1))
+  pLeft = plot_grid(p1, pLegend, ncol = 1, nrow = 2, rel_heights = c(10, 1))
+  
+  p_graphs = plot_grid(pLeft, p2, ncol = 2, nrow = 1, rel_widths = c(4, 1))
   return (p_graphs)
   
 }
 
-selectedGene = "TP53"
-tsg_lollipop("TP53")
+#selectedGene = "TP53"
+#tsg_lollipop("TP53")
 
 genes = unique(tsgDrivers$gene)
 plots = list()
@@ -142,6 +139,43 @@ for (i in 1:length(plots)) {
 }
 dev.off()
 
+
+
+
+
+################## CREATE LEGEND
+variantShape = c(23, 21, 22)
+variantShape = setNames(variantShape, c("INDEL", "SNV", "MNV"))
+
+legendData = data.frame(
+  pos = c(1,1.5,2.0,2.9,3.8,4.7), 
+  y = c(1,1,1,1,1,1),
+  variant = (c("SNV", "MNV", "INDEL", "SNV", "MNV", "INDEL")),
+  nonsense = (c(0,0,0,1,1,1)), 
+  label = (c("SNV", "MNV", "INDEL in frame", "SNV nonsense", "MNV nonsense", "INDEL out of frame")))
+
+ggplot(data = legendData, aes(x = pos, y = y)) +
+  geom_point(aes(shape = variant), size = 4, alpha = 1, color = "#2c7bb6") + 
+  geom_point(alpha = legendData$nonsense, shape = 4, size = 4, alpha = 1, color = "#2c7bb6") + 
+  geom_text(aes(label = label), size = 2.5, hjust = 0, nudge_x = 0.1) + #, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  scale_shape_manual(name = "Type", values = variantShape) +
+  scale_x_continuous(limits = c(0,7), breaks = c(0), expand = c(0,0)) +
+  scale_y_continuous(limits = c(0,2)) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_blank()) +
+  theme(axis.title.y = element_blank(), axis.title.x = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), legend.position = "none")
+
+
+ggplot(data = legendData, aes(x = pos, y = y)) +
+  geom_point(aes(shape = variant), size = 4, alpha = 1, color = "#2c7bb6", fill = "#2c7bb6") + 
+  geom_point(alpha = legendData$nonsense, shape = 4, size = 4, alpha = 1, color = "white") + 
+  geom_text(aes(label = label), size = 2.5, hjust = 0, nudge_x = 0.1) + #, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  scale_shape_manual(name = "Type", values = variantShape) +
+  scale_x_continuous(limits = c(0,7), breaks = c(0), expand = c(0,0)) +
+  scale_y_continuous(limits = c(0,2)) +
+  theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_blank()) +
+  theme(axis.title.y = element_blank(), axis.title.x = element_blank()) +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), axis.text.y = element_blank(), legend.position = "none")
 
 
 

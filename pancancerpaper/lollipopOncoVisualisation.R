@@ -4,7 +4,12 @@ library(ggplot2)
 library(tidyr)
 library(dplyr)
 library(ggrepel)
+library(png)
+library(grid)
 theme_set(theme_bw())
+
+img = readPNG(source = "~/hmf/resources/OncoLegend.png")
+pLegend <- rasterGrob(img, interpolate=TRUE)
 
 ##### ACTUAL DATA
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
@@ -35,12 +40,6 @@ hotspotColor = setNames(hotspotColor, c("NonHotspot", "OnHotspot","NearHotspot")
 
 variantShape = c(23, 21, 22)
 variantShape = setNames(variantShape, c("INDEL", "SNV", "MNV"))
-
-crossAlpha = c(1, 0)
-crossAlpha = setNames(crossAlpha, c("Nonsense", "Missense"))
-
-#variantColour = c("#2c7bb6","#5e3c99","#d7191c","#1a9641" ,"#e66101")
-#variantColour = setNames(variantColour, c("Missense", "NonsenseOnHotspot", "MissenseOnHotspot","Nonsense", "MissenseNearHotspot"))
 
 g_legend <- function(a.gplot){
   tmp <- ggplot_gtable(ggplot_build(a.gplot))
@@ -84,8 +83,7 @@ lollipop <- function(selectedGene) {
     geom_segment(aes(x = pos, xend = pos, y = 0, yend = n, color = hotspot), linetype = "dotted", size = 0.5) +
     geom_segment(aes(x = pos, xend = pos, y = 0, yend = driverLikelihood, color = hotspot), size = 0.55) +
     geom_point(aes(x = pos, y = n, color = hotspot, fill = hotspot, shape = variant), size = 4, alpha = 1) +
-    geom_point(aes(x = pos, y = n, alpha = impact), color = "White", size = 3, shape = 4) + 
-    #geom_text_repel(data = lollipopDataGene, aes(x = pos, y = n, label = pHGVS), hjust = 0, nudge_x = nudgeDistance, direction = "both", xlim = c(0, maxY)) +
+    geom_text_repel(data = lollipopDataGene, aes(x = pos, y = n, label = pHGVS), hjust = 0, nudge_x = nudgeDistance, direction = "both", xlim = c(0, maxY)) +
     scale_shape_manual(name = "Type", values = variantShape) +
     ylab("") + xlab("Codon") + ggtitle(paste0(selectedGene, " Variants")) +
     scale_x_continuous(limits = c(0, maxY), expand = c(0,0)) +
@@ -107,17 +105,16 @@ lollipop <- function(selectedGene) {
     scale_x_discrete( expand = c(0,0)) +
     guides(fill=guide_legend(ncol=1))
 
-  #p2_legend = g_legend(p2)
-  #p2 = p2+theme(legend.position="none")
-  #p_legends = plot_grid(p1_legend, p2_legend, ncol = 1)
-
-  p_graphs = plot_grid(p1, p2, ncol = 2, nrow = 1, rel_widths = c(4, 1))
+  pLeft = plot_grid(p1, pLegend, ncol = 1, nrow = 2, rel_heights = c(10, 1))
+  
+  p_graphs = plot_grid(pLeft, p2, ncol = 2, nrow = 1, rel_widths = c(4, 1))
+  return (p_graphs)
   return (p_graphs)
 }
 
-lollipop("PREX2")
-lollipop("BRAF")
-lollipop("NRAS")
+#lollipop("PREX2")
+#lollipop("BRAF")
+#lollipop("NRAS")
 
 #for (selectedGene in unique(lollipopData$gene)) {
 #  pOncoLollipop = lollipop(selectedGene)
@@ -135,3 +132,6 @@ for (i in 1:length(plots)) {
   print(plots[[i]])
 }
 dev.off()
+
+
+
