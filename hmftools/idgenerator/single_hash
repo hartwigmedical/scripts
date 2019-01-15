@@ -4,5 +4,5 @@ basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/run_ba
 password=$1
 sample=$2
 
-$basic_id_generator_script -create_single_hash -password $password -sample_id $sample
+${basic_id_generator_script} -create_single_hash -password ${password} -sample_id ${sample}
 

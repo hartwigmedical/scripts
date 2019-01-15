@@ -6,9 +6,9 @@ sample=$2
 sample_ids_file=$3
 patient_mapping_file=$4
 
-$basic_id_generator_script \
+${basic_id_generator_script} \
     -anonymize_ids \
-    -password $password \
+    -password ${password} \
     -sample_ids_file ${sample_ids_file} \
     -patient_mapping_file ${patient_mapping_file}
 
