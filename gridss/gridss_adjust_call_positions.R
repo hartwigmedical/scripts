@@ -28,7 +28,7 @@ if (file.exists(libgridssfile)) {
   stop(msg)
 }
 write(paste0("Reading ", argv$input), stderr())
-full_vcf = readVcf(argv$input, "")
+full_vcf = readVcf(argv$input)
 full_vcf = align_breakpoints(full_vcf)
 write(paste0("Writing ", argv$output), stderr())
 writeVcf(full_vcf, argv$output, index=TRUE)

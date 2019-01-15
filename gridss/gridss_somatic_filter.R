@@ -8,7 +8,7 @@ argp = add_argument(argp, "--output", help="High confidence somatic subset")
 argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviously germline call.")
 argp = add_argument(argp, "--normalordinal", type="integer", nargs=Inf, default=c(1), help="Ordinal(s) of matching normal sample in the VCF")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-r", "BSgenome.Hsapiens.UCSC.hg19", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss"))
 argv = parse_args(argp)
 
 if (!file.exists(argv$input)) {
@@ -46,7 +46,7 @@ if (file.exists(libgridssfile)) {
 
 # Filter to somatic calls
 write(paste0("Reading ", argv$input), stderr())
-full_vcf = readVcf(argv$input, "")
+full_vcf = readVcf(argv$input)
 tumourordinal = seq(ncol(geno(full_vcf)$VF))[-argv$normalordinal]
 # hard filter unpaired breakpoints (caused by inconsistent scoring across the two breakends)
 full_vcf = full_vcf[is.na(info(full_vcf)$PARID) | info(full_vcf)$PARID %in% names(full_vcf)]
