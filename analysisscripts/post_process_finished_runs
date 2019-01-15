@@ -16,7 +16,7 @@ done
 
 for run in ${process_runs}; do
     echo "[INFO] writing evidence item into db for ${run}"
-    do_load_evidence_data_prod /data/cpct/runs/${run}
+    do_load_evidence_items_data_prod /data/cpct/runs/${run}
 done
 
 echo "[INFO] processing of finished runs are finished"
