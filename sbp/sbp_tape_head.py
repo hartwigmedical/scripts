@@ -1,5 +1,5 @@
 #!/bin/python
-# check object tiering status - thoutenbos@schubergphilis.com
+# check object tiering status - thoutenbos
 
 import re
 import json

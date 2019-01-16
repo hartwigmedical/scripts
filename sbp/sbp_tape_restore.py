@@ -1,5 +1,5 @@
 #!/bin/python
-# Request object restores - thoutenbos@schubergphilis.com
+# Request object restores - thoutenbos
 
 import re
 import sys
