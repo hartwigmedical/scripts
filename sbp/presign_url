@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+linkInclBucket=$1
+awsProfile="download"
+expiresInSec="604800" # 1 week in seconds
+
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Usage: `basename $0` <s3-url-with-bucket>"
+    echo "        `basename $0` s3://hmf_experiments/HMF_COLO829/HMF_COLO829_FASTQ.tar"
+    echo " Descr: Creates https link to share with externals"
+    echo "  Note: Run as sbp user"
+    echo "-----"
+    exit 1
+fi
+
+directLink=$( sbp s3 presign ${linkInclBucket} --expires ${expiresInSec} --profile ${awsProfile} )
+externLink=$( echo "${directLink}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+
+echo "[INFO] Original:"
+echo "${directLink}"
+echo "[INFO] External link (expires in ${expiresInSec} seconds)"
+echo "${externLink}"

@@ -43,21 +43,21 @@ while getopts 'e:i:s:r:t:h' flag; do
   esac
 done
 
-if [[ -z $ENTITY_NAME ]] || [[ -z $INI_NAME ]] || [[ -z $SET_NAME ]] || [[ -z $REF_SAMPLE ]] || [[ -z $TUMOR_SAMPLE ]]; then
+if [[ -z ${ENTITY_NAME} ]] || [[ -z ${INI_NAME} ]] || [[ -z ${SET_NAME} ]] || [[ -z ${REF_SAMPLE} ]] || [[ -z ${TUMOR_SAMPLE} ]]; then
   echo "You are missing one or more options"
   PrintHelp
 fi
 
-for FILE in $CRT_DIR/hmf.crt $CRT_DIR/hmf.key; do
-  CheckFileExists $FILE
+for FILE in ${CRT_DIR}/hmf.crt ${CRT_DIR}/hmf.key; do
+  CheckFileExists ${FILE}
 done
 
 /usr/bin/curl -s -v \
   --cert-type pem \
-  --cert $CRT_DIR/hmf.crt \
-  --key $CRT_DIR/hmf.key \
+  --cert ${CRT_DIR}/hmf.crt \
+  --key ${CRT_DIR}/hmf.key \
   https://api.hartwigmedicalfoundation.nl/hmf/v1/sets \
   -XPOST \
   -H "Content-Type: application/json" \
-  -d '{"entity": "'$ENTITY_NAME'", "ini": "'$INI_NAME'", "name": "'$SET_NAME'", "ref_sample": "'$REF_SAMPLE'", "tumor_sample": "'$TUMOR_SAMPLE'"}'
+  -d '{"entity": "'${ENTITY_NAME}'", "ini": "'${INI_NAME}'", "name": "'${SET_NAME}'", "ref_sample": "'${REF_SAMPLE}'", "tumor_sample": "'${TUMOR_SAMPLE}'"}'
 
