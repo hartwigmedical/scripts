@@ -83,6 +83,8 @@ responsiveVariants = actionableDrugs %>%
   ungroup() 
 save(responsiveVariants, file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
+#### SUPPLEMENTARY TABLE
+load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
 actionability = responsiveVariants %>% left_join(sampleIdMap, by = "sampleId") %>%
   select(-sampleId) %>%

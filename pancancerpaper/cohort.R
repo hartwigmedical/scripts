@@ -237,7 +237,7 @@ cohortSummary = cohortSummary %>% left_join(sampleIdMap, by = "sampleId") %>%
   mutate(
     patientId = substr(hmfSampleId, 1, 9),
     sample = substring(hmfSampleId, 10)) %>%
-  select(patientId, sample, sampleId = hmfSampleId, gender, status,
+  select(patientId, sampleId = hmfSampleId, gender, status,
          cancerType, primaryTumorLocation, cancerSubtype, biopsySite, biopsyType, biopsyLocation, ageAtBiopsy, refMeanCoverage,
          tumorMeanCoverage,  
          purity, ploidy, 
