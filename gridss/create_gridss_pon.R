@@ -2,15 +2,11 @@
 #
 # Incorporates the given VCF files into the Panel Of Normals
 #
-library(tidyverse, quietly=TRUE)
-library(stringr, quietly=TRUE)
-library(rtracklayer, quietly=TRUE)
-library(R.cache, quietly=TRUE)
 library(argparser, quietly=TRUE)
 argp = arg_parser("Filters a raw GRIDSS VCF into somatic call subsets.")
 argp = add_argument(argp, "--pondir", default=NA, help="Directory to write PON to.")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-argp = add_argument(argp, "--cache-only", default=FALSE, flag=TRUE, help="Only generate cache objects for input files. Useful for parallel processing of inputs.")
+argp = add_argument(argp, "--cache-only", flag=TRUE, help="Only generate cache objects for input files. Useful for parallel processing of inputs.")
 argp = add_argument(argp, "--normalordinal", type="integer", default=1, help="Ordinal of normal sample in the VCF")
 argp = add_argument(argp, "--input", nargs=Inf, help="Input VCFs normal")
 # argv = parse_args(argp, argv=c("--pondir", "~/pon/", "--scriptdir", "/data/common/repos/scripts/gridss/", "--input", "a.vcf", "b.vcf"))
@@ -30,6 +26,10 @@ libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
 if (file.exists(libgridssfile)) {
   tmpwd = getwd()
   setwd(argv$scriptdir)
+  library(tidyverse, quietly=TRUE)
+  library(stringr, quietly=TRUE)
+  library(rtracklayer, quietly=TRUE)
+  library(R.cache, quietly=TRUE)
   source("libgridss.R")
   setwd(tmpwd)
 } else {
