@@ -18,29 +18,6 @@ base_complements <- function(bases) {
   sapply(bases, point_complement)
 }
 
-multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
-  require(grid)
-  
-  plots <- c(list(...), plotlist)
-  numPlots = length(plots)
-  
-  if (is.null(layout)) {
-    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),ncol = cols, nrow = ceiling(numPlots/cols))
-  }
-  
-  if (numPlots==1) {
-    print(plots[[1]])
-  } else {
-    grid.newpage()
-    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
-    for (i in 1:numPlots) {
-      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
-      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
-                                      layout.pos.col = matchidx$col))
-    }
-  }
-}
-
 #' Modified version of dplyr's filter that uses string arguments
 #' @export
 s_filter = function(.data, ...) {
@@ -217,6 +194,7 @@ createSampleSummary <- function(cluster) {
 #############################################
 ################ LOADING ####################
 #############################################
+
 PATH='~/Dropbox/HMF Australia team folder/Structural Variant Analysis/'
 svData = read.csv(paste(PATH,'CLUSTER.csv',sep=''), header = T, stringsAsFactors = F)
 svClusters = (read.csv(paste(PATH,'SVA_CLUSTERS.csv',sep=''), header = T, stringsAsFactors = F))
@@ -224,8 +202,11 @@ svLinks = (read.csv(paste(PATH,'SVA_LINKS.csv',sep=''), header = T, stringsAsFac
 sampleCancerTypes= (read.csv(paste(PATH,'sample_cancer_types.csv',sep=''), header = T, stringsAsFactors = F))
 svChordStatus = read.csv(paste(PATH,'SVChordStatus.csv',sep=''), header = T, stringsAsFactors = F)
 svDrivers = read.csv(paste(PATH,'SVDrivers.csv',sep=''), header = T, stringsAsFactors = F)
+svGermline = read.csv(paste(PATH,'SVGermline.csv',sep=''), header = T, stringsAsFactors = F)
+svDriverAndGermline=(rbind(svDrivers %>% select(gene,sampleId,driver,driverLikelihood), svGermline %>% mutate(driverLikelihood=1,driver=ifelse(biallelic==1,'Germline Biallleic','Germline Monoallleic')) %>% select(gene,sampleId,driverLikelihood,driver)))
 svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
 sampleList = svData %>% distinct(SampleId,CancerType)
+
 #Annotations
 svData=createBuckets(svData)
 svData=sv_set_common_fields(svData)
@@ -240,7 +221,7 @@ dbData = rbind(svData %>% filter(DBLenStart>-31) %>% mutate(DBLength = DBLenStar
 ########## OVERVIEW OF COHORT ###############
 #############################################
 
-# 1. By RESOLOVED Type
+# 1. By RESOLVED Type
 View(svData %>% filter(!IsLowQual) %>% group_by(ResolvedType,Type) %>% count() %>% spread(Type,n))
 
 # 2. By CLUSTERCOUNTBUCKET
@@ -460,16 +441,41 @@ plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filte
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','CDK12 LENGTH DUP',useLogY =F)
 
 
-#CDK12 AND CCNE1 associated with 2 different Long DUP types
-filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length>100000",'SampleId,CancerType') %>% top_n(1600,count) %>% select(SampleId,CancerType,count)
-View(merge((filter),svDrivers %>% filter(gene %in% c('CDK12','CCNE1')),by.x='SampleId',by.y='sampleId',all.x=T))# %>% group_by(gene) %>% count())
+# GENE ENRICHMENT AND SIMPLE SIGNATURES TP53 enriched in all cases!
 
-filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length<100",'SampleId,CancerType') %>% top_n(20,count) %>% select(SampleId,CancerType,count)
-View(merge((filter),svDrivers %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T))# %>% group_by(gene) %>% count())
+#CDK12 AND CCNE1 associated with 2 different Long DUP types.  TP53 also enriched
+filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length>100000",'SampleId,CancerType') %>% top_n(50) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('CDK12','CCNE1')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% count())
 
-View(merge((filter),svDrivers %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T))# %>% group_by(gene) %>% count())
+# BRCA1 AND ANKRD11 associated with midrange DUPS associated with 2 different Long DUP types
+filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length<100000,Length>1000",'SampleId,CancerType') %>% top_n(30,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('BRCA1','ANKRD11')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% count())
 
-head(svData %>% filter(ClusterId==70), table(LEStart, LEEnd))
+# BRCA2,BRCA1 AND ANKRD11 strongly associated with very short dels
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length<1000",'SampleId,CancerType') %>% top_n(100,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('BRCA2','ANKRD11','BRCA1')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+
+# BRCA2 strongly associated with very mid range DUPS
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>1000,Length>20000",'SampleId,CancerType') %>% top_n(50,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('BRCA2','MYC','CDKN2A')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+View(merge((filter),svDriverAndGermline %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T) %>% group_by(gene) %>% summarise(n=n(),meanDL=mean(driverLikelihood)))
+
+# TP53 and BRCA2 STRONGLY positively associated with 1k-10k dels ()
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>1000,Length<10000",'SampleId,CancerType') %>% top_n(50,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53','BRCA2',"CDKN2A")),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+View(merge((filter),svDriverAndGermline %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T) %>% group_by(gene) %>% summarise(n=n(),meanDL=mean(driverLikelihood)) %>% arrange(-n))
+
+# TP53 STRONGLY positively associated with 10k-500k dels() (especially if IsFS but also regardless)
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>20000,Length<500000,IsFS",'SampleId,CancerType') %>% top_n(200,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>20000,Length<500000,!IsFS",'SampleId,CancerType') %>% top_n(200,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+View(merge((filter),svDriverAndGermline %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T) %>% group_by(gene) %>% summarise(n=n(),meanDL=mean(driverLikelihood)) %>% arrange(-n))
+
+# TP53 highly enriched in LINE
+filter = cohortSummary(svData,"ResolvedType=='Line'",'SampleId,CancerType') %>% top_n(100,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+
 
 ###################################################
 ########### Driver Variants #######################
@@ -692,4 +698,7 @@ print(ggplot(data = svData %>% filter(SampleId %in% filter) %>% group_by(SampleI
       + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
       + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=15))
       + ylab("SV Count") + xlab("Sample"))
+
+
+View(svData %>% filter(SampleId == 'COLO829T'))
 
