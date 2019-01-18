@@ -29,7 +29,7 @@ includeList = c('BAP1','CDKN2A','ATM','CHEK2','APC','BMPR1A','BRCA1','BRCA2','ME
 #View(includeList)
 
 # Germline CN deletions
-View(bachelorGermlineCN %>% filter((gene %in% includeList)))
+View(bachelorGermlineCN)# %>% filter((gene %in% includeList)))
 
 filteredBachelor = merge(bachelorLatest %>% mutate(refSampleVaf=GermlineAltCount/GermlineReadDepth) %>% 
   group_by(SampleId,Gene) %>% mutate(netFS=sum(stri_length(Ref)-stri_length(Alt)) %% 3) %>% ungroup() %>%  #net frameshift per sample
@@ -77,4 +77,14 @@ View(filteredBachelor %>%
        group_by(Biallelic,Gene,primaryTumorLocation) %>% count() %>% 
        arrange(-n)  %>% spread(primaryTumorLocation,n))
 
+temp = HmfRefCDSCv %>% filter(cancerType=='All')
 
+temp = temp %>% filter(wmis_cv>0,wnon_cv>0) %>% 
+  mutate(d_mis=n_mis*pmin(1,(wmis_cv-1)/wmis_cv)) %>%
+  mutate(d_ind=n_ind*pmin(1,(wind_cv-1)/wind_cv)) %>%
+  mutate(d_spl=n_spl*pmin(1,(wspl_cv-1)/wspl_cv)) %>%
+  mutate(d_non=n_non*pmin(1,(wnon_cv-1)/wnon_cv))
+temp %>% filter(!is.na(d_mis)) %>% summarise(sum(d_mis),sum(n_mis),sum(d_non),sum(n_non),sum(d_spl),sum(n_spl))
+
+
+View(temp %>% select(gene_name,d_mis,n_mis))
