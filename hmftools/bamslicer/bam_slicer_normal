@@ -45,8 +45,8 @@ run_bam_slicer() {
 
 if ! run_bam_slicer ${BAM_INDEX_KEY};
 then
-     echo "slicing with index ${BAM_INDEX_KEY} failed"
+     echo "[INFO] Slicing with index ${BAM_INDEX_KEY} failed"
      BAM_INDEX_KEY="${BAM_KEY%.*}.bai"
-     echo "retrying with index ${BAM_INDEX_KEY}"
+     echo "[INFO] Retrying with index ${BAM_INDEX_KEY}"
      run_bam_slicer ${BAM_INDEX_KEY}
 fi
