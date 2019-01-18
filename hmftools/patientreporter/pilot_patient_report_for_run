@@ -20,6 +20,9 @@ fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
 
+fusion_csv=_fusions.csv
+disruption_csv=_disruptions.csv
+
 ${prefix}/pilot_do_run_base_patient_reporter \
     -knowledgebase_path ${knowledgebase_path} \
     -drup_genes_csv ${drup_genes_csv} \
@@ -33,5 +36,7 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
     -high_confidence_bed ${high_confidence_bed} \
+    -variant_annotator_fusion ${fusion_csv} \
+    -variant_annotator_disruption ${disruption_csv} \
     -log_debug \
     -run_dir $@
