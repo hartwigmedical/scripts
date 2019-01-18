@@ -40,8 +40,8 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
     -high_confidence_bed ${high_confidence_bed} \
-    -variant_annotator_fusion ${fusion_csv} \
-    -variant_annotator_disruption ${disruption_csv} \
+    -fusion_csv ${fusion_csv} \
+    -disruption_csv ${disruption_csv} \
     -log_debug \
     -run_dir ${run_dir} \
     "$@"
