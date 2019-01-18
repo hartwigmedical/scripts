@@ -9,15 +9,15 @@ credentials=$1 && shift
 bachelor_jar=$1 && shift
 bachelor_pp_jar=$1 && shift
 
-# CHSH: Database details
+# Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-# CHSH: Load meta data
+# Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-# CHSH: File Locations
+# File Locations
 bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/${bachelor_output_dir}/
 if [ $? -ne 0 ]
@@ -41,7 +41,7 @@ java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -output_dir ${bach_output_dir} \
     -log_debug
 
-# CHSH: Slice BAM files using the bachelor bed file just created
+# Slice BAM files using the bachelor bed file just created
 bed_file=${bach_output_dir}/bachelor_bed.csv
 
 if [ -f ${bed_file} ]; then
@@ -63,7 +63,7 @@ echo "[INFO] Creating Pile-ups"
 
 ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-# CHSH: Run Mini Pileup on these bam files
+# Run Mini Pileup on these bam files
 file_index=1
 for bam_file in ${bach_output_dir}/*bam; do
     mpu_file="${bach_output_dir}${sample}_${file_index}.mpu"

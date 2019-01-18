@@ -100,7 +100,6 @@ sub doSomaticTests {
         printMsg('INFO', "  [OK] $test ($PURPLE_QC_STATUS)");
     }
 
-    # KODU:
     # Complete sample swap  =>  <0.4
     # 10%+ contamination in tumor =>  < 0.486
     # Potential Tumor contamination in Ref  => >0.5

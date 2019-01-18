@@ -116,7 +116,7 @@ sub readJson{
     #my $json_txt = read_file( $json_file );
     #my $json_obj = decode_json( $json_txt );
     
-    ## STLI: optimize some fields for viewing
+    ## optimize some fields for viewing
     foreach my $obj ( @$json_obj ){
         $obj->{ 'sbp_id' } = $obj->{ 'id' } if defined $obj->{ 'id' };
         $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
@@ -127,7 +127,7 @@ sub readJson{
         $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
     }
     
-    ## STLI: add set info for runs (set info is situated one level deeper)
+    ## Add set info for runs (set info is situated one level deeper)
     if ( $type eq 'runs' ){
         foreach my $obj ( @$json_obj ){
             my @keys_to_move = qw( name ref_sample tumor_sample entity_id );
@@ -137,7 +137,7 @@ sub readJson{
         }
     }
     
-    ## STLI: add extra information for sets/runs from other jsons
+    ## Add extra information for sets/runs from other jsons
     if ( $type eq 'sets' or $type eq 'runs' or $type eq 'shares' ){
         my $entities = jsonFileToObject( "$JSONS_HOME/entities.json" );
         my $inis = jsonFileToObject( "$JSONS_HOME/inis.json" );

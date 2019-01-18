@@ -2,17 +2,17 @@
 source load_metadata
 run_dir=$1 && shift
 
-#### JOBA: Tools
+#### Tools
 tabix=/data/common/tools/tabix_v0.2.6/tabix
 
-#### JOBA: Output Directories
+#### Output Directories
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 output_dir=${run_dir}/somaticVariants/${joint_name}
 working_dir=${output_dir}/postStrelka
 mkdir -p ${working_dir}
 
-#### JOBA: Output Files
+#### Output Files
 merged_vcf=${working_dir}/merged.vcf
 annotated_merged_vcf=${working_dir}/annotated_merged.vcf
 annotated_merged_vcf_gz=${annotated_merged_vcf}.gz
@@ -23,7 +23,7 @@ snpEff_vcf_gz=${snpEff_vcf}.gz
 annotated_vcf_gz=${working_dir}/annotated.vcf.gz
 final_vcf_gz=${output_dir}/${joint_name}_post_processed_v2.vcf.gz
 
-#### JOBA: Execution
+#### Execution
 if [[ ! -e ${final_vcf_gz} ]]
 then
 

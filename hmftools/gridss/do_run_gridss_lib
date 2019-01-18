@@ -22,7 +22,7 @@ fi
 
 base_path="/data/common"
 if [ -z "`hostname | grep datastore`" ]; then
-	# KODU: common folder does not exist on crunches...
+	# Common folder does not exist on crunches...
 	base_path="/data"
 fi
 

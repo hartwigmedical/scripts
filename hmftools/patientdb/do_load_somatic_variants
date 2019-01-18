@@ -6,12 +6,12 @@ somatic_vcf=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
-# JOBA: Database details
+# Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-# JOBA: File Locations
+# File Locations
 high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 hotspot_tsv=$(locate_hotspot_tsv)

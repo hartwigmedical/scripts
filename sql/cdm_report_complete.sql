@@ -1,33 +1,33 @@
-#  LISC: Baseline information
+#  Baseline information
 select patientId, count(sampleId), registrationDate, informedConsentDate from clinical where patientId like '%CPCT%' and not(isnull(registrationDate)) group by 1,3,4;
 
-#  LISC: Timeline starts with informed consent?
+#  Timeline starts with informed consent?
 select patientId, message, details from clinicalFindings where message ='At least 1 biopsy taken before informed consent date' and patientId like '%CPCT%'
 
 union select patientId, message, details from clinicalFindings where message ='informed consent date empty or in wrong format' and patientId like '%CPCT%';
 
-#  LISC: Hospital is known?
+#  Hospital is known?
 select patientId, message, details from clinicalFindings where message like '%Hospital could not be determined%' and patientId like '%CPCT%';
 
-#  LISC: Gender is known?
+#  Gender is known?
 select patientId, message, details from clinicalFindings where message = 'Gender empty' and patientId like '%CPCT%';
 
-#  LISC: Birthyear is known?
+#  Birthyear is known?
 select patientId, message, details from clinicalFindings where message = 'birth year could not be determined' and patientId like '%CPCT%';
 
-#  LISC: Can curate the cancer type?
+#  Can curate the cancer type?
 select patientId, message, details from clinicalFindings where message ='primary tumor location empty' and patientId like '%CPCT%';
 
-#  LISC: Systemic pre-therapy is known?
+#  Systemic pre-therapy is known?
 select patientId, message, details from clinicalFindings where message = 'pre systemic treatment given empty' and patientId like '%CPCT%';
 
-#  LISC: Radiotherapy pre-therapy is known?
+#  Radiotherapy pre-therapy is known?
 select patientId, message, details from clinicalFindings where message = 'pre radio treatment given empty' and patientId like '%CPCT%';
 
-#  LISC: Has enough ECRF biopsy forms?
+#  Has enough ECRF biopsy forms?
 select patientId, message, details from clinicalFindings where message = 'Not enough clinical biopsy forms to match for every sequenced sample' and patientId like '%CPCT%';
 
-#  LISC: Can match every sequenced sample with an ECRF biopsy?
+#  Can match every sequenced sample with an ECRF biopsy?
 select patientId, message, details from clinicalFindings where message ='biopsy date empty or in wrong format' and patientId like '%CPCT%'
 
 union select patientId, message, details from clinicalFindings where message ='could not match any clinical biopsy with sequenced sample.' and details not like '%ecrf biopsies: [].%' and patientId like '%CPCT%'
@@ -36,16 +36,16 @@ union select patientId, message, details from clinicalFindings where message ='m
 
 union select patientId, message, details from clinicalFindings where message = 'Undetermined match issue in biopsy matcher' and patientId like '%CPCT%';
 
-#  LISC: ECRF biopsy date matches with HMF sampling date?
+#  ECRF biopsy date matches with HMF sampling date?
 select patientId, message, details from clinicalFindings where message ='sampling date does not equal biopsy date in matched biopsy' and patientId like '%CPCT%';
 
-#  LISC: All biopsy sites and biopsy location are empty?
+#  All biopsy sites and biopsy location are empty?
 select patientId, message, details from clinicalFindings where message='Biopsy site and biopsy location are empty' and patientId like '%CPCT%';
 
-#  LISC: Can find treatment for every sequenced & matched biopsy?
+#  Can find treatment for every sequenced & matched biopsy?
 select patientId, message, details from clinicalFindings where message='Could not match treatment to matched biopsy' and patientId like '%CPCT%';
 
-#  LISC: Are all matched treatments correctly filled in?
+#  Are all matched treatments correctly filled in?
 select patientId, message, details from clinicalFindings where message='Treatment given is yes, but no drugs are filled in' and patientId like '%CPCT%'
 
 union select patientId, message, details from clinicalFindings where message='treatment given field empty' and patientId like '%CPCT%'
@@ -64,16 +64,16 @@ union select patientId, message, details from clinicalFindings where message='Dr
 
 union select patientId, message, details from clinicalFindings where message ='radio therapy given field empty' and patientId like '%CPCT%';
 
-#  LISC: Are all treatments sequentially in time?
+#  Are all treatments sequentially in time?
 select patientId, message, details from clinicalFindings where message ='subsequent treatment starts before the end of previous treatment' and patientId like '%CPCT%';
 
-#  LISC: Does the final treatment end before death date?
+#  Does the final treatment end before death date?
 select patientId, message, details from clinicalFindings where message ='death date before end of last treatment' and patientId like '%CPCT%';
 
-#  LISC: Does every treatment >16 weeks have at least 1 treatment response form?
+#  Does every treatment >16 weeks have at least 1 treatment response form?
 select patientId, message, details from clinicalFindings where message ='No treatment response for at least 1 matched treatment' and patientId like '%CPCT%';
 
-#  LISC: Every response is valid and can be matched to a treatment?
+#  Every response is valid and can be matched to a treatment?
 select patientId, message, details from clinicalFindings where message ='measurement done field empty' and patientId like '%CPCT%'
 
 union select patientId, message, details from clinicalFindings where message ='Response date and/or assessment date empty or in wrong format' and patientId like '%CPCT%'
