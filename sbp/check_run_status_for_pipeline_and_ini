@@ -83,8 +83,6 @@ if [ ${rerunMode} == 0 ]; then
                     echo "${downloadScriptFail} -s ${setNameForFailedTumorSample} -b ${bucketForFailedTumorSample}"
                 elif [ ${existsInSuccessRunDirs} == 0 ]; then
                     echo "# ${setNameForFailedTumorSample} has failed on ${pip} and is already on datastore ${findDirsFail}"
-                else
-                    echo "# ${setNameForFailedTumorSample} has failed on ${pip} but exists in successful runs. This is not allowed!"
                 fi
             else
                 echo "# ${failedTumorSample} has failed analysis on pip ${pip} but also has a Validated or Success run so can be ignored."
