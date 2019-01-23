@@ -102,17 +102,17 @@ sv_set_common_fields<-function(cluster){ cluster %>% mutate(
     IsFoldBack = FoldbackLenStart>=0|FoldbackLenEnd>=0,
     RepeatedChainLink = (svData$ChainCount>0 & grepl(';',svData$ChainIndex)),
     IsPolyA = grepl('TTTTTTTTTT',InsertSeq)|grepl('AAAAAAAAAA',InsertSeq),
-    IsLowQual = ResolvedType=='LowQual'
-    
+    IsLowQual = ResolvedType=='LowQual',
+    CustomType=case_when(grepl('Chain',ResolvedType) ~ "Chain",grepl('Sgl',ResolvedType) ~ 'PairedSGL', grepl('TI',ResolvedType) ~ 'SyntheticDelDup',TRUE ~ ResolvedType)
   )
 
 }
 
 createBuckets <- function(cluster) {
   cluster %>% mutate(
-    PloidyBucket=2**(pmin(5,pmax(-3,round(log(Ploidy,2),0)))),
-    CnChEndBucket=2**(pmin(5,pmax(-3,round(log(pmax(AdjCNChgEnd,0.01),2),0)))),
-    CnChStartBucket=2**(pmin(5,pmax(-3,round(log(pmax(AdjCNChgStart,0.01),2),0)))),
+    PloidyBucket=2**(pmin(7,pmax(-3,round(log(Ploidy,2),0)))),
+    CnChEndBucket=2**(pmin(7,pmax(-3,round(log(pmax(AdjCNChgEnd,0.01),2),0)))),
+    CnChStartBucket=2**(pmin(7,pmax(-3,round(log(pmax(AdjCNChgStart,0.01),2),0)))),
     ClusterCountBucket=2**(pmin(5,pmax(-3,round(log(ClusterCount,2),0)))),
     LnkLenStartBucket=ifelse(!LnkLenStart>0,0,2**(pmin(20,pmax(0,round(log(LnkLenStart,2),0))))),
     FoldBackLenStartBucket=ifelse(!FoldbackLenStart>0,0,2**(pmin(20,pmax(0,round(log(FoldbackLenStart,2),0))))),
@@ -239,36 +239,47 @@ View(svData %>% filter(!IsLowQual) %>% group_by(ResolvedType,Type) %>% tally() %
 # 2. By CLUSTERCOUNTBUCKET
 View(svData %>% filter(!IsLowQual) %>% group_by(ClusterCountBucket,Type) %>% tally() %>% spread(Type,n))
 
+#3. 
+View(svData %>% filter(!IsLowQual) %>% group_by(CustomType,ClusterId,SampleId) %>% tally() %>% group_by(CustomType) %>% summarise(variants=sum(n),clusters=n()))
 
+#4. Consistenct 
+View(svData %>% filter(!IsLowQual,CustomType=='None') %>% group_by(ClusterDesc,IsFoldBack) %>% tally() %>% spread(IsFoldBack,n))#
+
+
+#4.
+View(svData %>% filter(ClusterCount==2,ClusterDesc=='BND=1_INV=1',ResolvedType=='None') %>% arrange(SampleId,ClusterId) %>% select(ResolvedType,everything()))# %>% group_by(ResolvedType) %>% tally())# %>% select(Ploidy,AdjCNChgStart,AdjCNChgEnd,everything()))# %>% group_by(ClusterDesc) %>% tally())
+
+plot_count_by_bucket_and_type(cohortSummary(svData,"Type!='BND',Type!='SGL'",'CustomType,LengthBucket') 
+                              ,'LengthBucket','CustomType','Raw SV Length by custom type',useLogY =F )
 ##############################################################
 ########## Short Deletion Bridge Analysis ####################
 #############################################################
 
 #1.DBLength by ResolvedType => less than 50 bases (NB - DBLength of 1 means exact break - shoould correct this)
 # Note the LINE double peak and the sharp feature for Reciprocal Inversion, Reciprocal Translocations and None
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual",'DBLength,ResolvedType'),'DBLength','ResolvedType','DBLengthByResolvedType(<50bases)',useLogX = F,useLogY = F)
+plot_count_by_bucket_and_type(cohortSummary(dbData %>% mutate(CustomType=ifelse(CustomType=='Chain'&Length<1e3&Type=='INV','ShortINVinChain',CustomType)),
+                            "DBLength<=50,!IsLowQual,!(CustomType %in% c('SimpleSV','PairedSGL','None'))",'DBLength,CustomType'),
+                            'DBLength','CustomType','DBLengthByCustomType(<50bases)',useLogX = F,useLogY = F)
 
 #2. DB Length - Exact break short INV feature also exists in chains but only when INV length is <1e3   
-# only exists for Short INV
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,ResolvedType %in% c('SimpleChain','ComplexChain')",'DBLength,LengthBucket=Length<0|Length>1e3'),'DBLength','LengthBucket','DBLength for chains short or long variant',useLogX = F,useLogY = F)
 # Occurs prinicipally in the most complex clusters.  Short Inversions are much more likely than other variant types than other short variants.
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,ResolvedType %in% c('SimpleChain','ComplexChain')",'DBLength,ClusterCountBucket'),'DBLength','ClusterCountBucket','DBLength for short variants in chains by cluster count',useLogX = F,useLogY = F)
+plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,CustomType=='Chain'",'DBLength,ClusterCountBucket'),'DBLength','ClusterCountBucket','DBLength for short variants in chains by cluster count',useLogX = F,useLogY = F)
 # Is not primarily a foldback feature
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,ResolvedType %in% c('SimpleChain','ComplexChain')",'DBLength,IsFoldBack'),'DBLength','IsFoldBack','DBLength for short variants in chains by isFoldback',useLogX = F,useLogY = F)
+plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,CustomType=='Chain'",'DBLength,IsFoldBack'),'DBLength','IsFoldBack','DBLength for short variants in chains by isFoldback',useLogX = F,useLogY = F)
 # Mostly around 60-500 bases.
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,ResolvedType %in% c('SimpleChain','ComplexChain')",'DBLength,LengthBucket'),'DBLength','LengthBucket','DBLength for short variants in chains by length bucket',useLogX = F,useLogY = F)
+plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,Length<1e3,CustomType=='Chain'",'DBLength,LengthBucket'),'DBLength','LengthBucket','DBLength for short variants in chains by length bucket',useLogX = F,useLogY = F)
 
 #3. 'NONE' clusters - appear to have characteristics of short INVs and likely LINE elements for BND + SGL
-plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,ResolvedType %in% c('None')",'DBLength,LengthBucket=Length<0|Length<1e3'),'DBLength','LengthBucket','DBLength for Complex Chains ByLengthBucket>1e3(<50bases)',useLogX = F,useLogY = F)
+plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=50,!IsLowQual,ResolvedType=='None'",'DBLength,LengthBucket=Length<0|Length<1e3'),'DBLength','LengthBucket','DBLength for Complex Chains ByLengthBucket>1e3(<50bases)',useLogX = F,useLogY = F)
 
 #4. LINE Elements - no clear indication of why there are 2 peaks.
 #The 2 observed DB length peaks for LINE elements are NOT sample or cancer type specific.   Also appars to be the same regardless of source element
-print(ggplot(data = dbData %>% filter(DBLength<=50,ResolvedType %in% c('Line','SglPair_INS')) %>% group_by(CancerType,OLPeak=DBLength<(-7)) %>% tally(), 
+print(ggplot(data = dbData %>% filter(DBLength<=50,ResolvedType %in% c('Line')) %>% group_by(CancerType,OLPeak=DBLength<(-7)) %>% tally(), 
              aes(x = reorder(CancerType, -n), y = n, fill =OLPeak))
       + geom_bar(stat = "identity", colour = "black") + ylab("DB Count") + xlab("Tumor Type") + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=15)) + labs(title = "DB Counts for LINE Elements by cancerType and Overlapping Peak"))
 # Also does not seem to depend significantly on refContext.  
 View(dbData %>% filter(ResolvedType=='Line',LE=='None',IsPolyA,RefContext!='') %>% mutate(context=stri_reverse(ifelse(Orient==-1,base_complements(substring(RefContext,10,15)),(substring(RefContext,7,12))))) %>% 
-       group_by(context),longOverlap=DBLength<(-7) %>% tally() %>% arrange(-n) %>% spread(longOverlap,n))
+       group_by(context,longOverlap=DBLength<(-7)) %>% tally() %>% arrange(-n) %>% spread(longOverlap,n))
 
 #######################################################
 ########## LINE specific properties ###################
@@ -277,6 +288,8 @@ View(dbData %>% filter(ResolvedType=='Line',LE=='None',IsPolyA,RefContext!='') %
 # 1. INSERTION MOTIF: ~15% are A-TTTTT with another 30% or so a similar variant
 View(dbData %>% filter(ResolvedType=='Line',LE=='None',IsPolyA,RefContext!='') %>% mutate(context=stri_reverse(ifelse(Orient==-1,base_complements(substring(RefContext,10,15)),(substring(RefContext,7,12))))) %>% 
        group_by(context) %>% tally() %>% arrange(-n))
+
+View(dbData %>% filter(ResolvedType=='Line',LE=='None',IsPolyA,RefContext!='',Orient==-1) %>% select(InsertSeq,RefContext,DBLength,everything()))
 
 # 2. CLUSTER COUNT vs TOTAL COUNT Count of clusters per sample is very related to the total number of variants (averaging at 3-4 per cluster)
 scatterPlot(svClusters %>% filter(ResolvedType=='Line') %>% group_by(SampleId) %>% summarise(countLine=n(),sumLine=sum(ClusterCount)),'countLine','sumLine',F,F)
@@ -288,6 +301,20 @@ scatterPlot(svClusters %>% filter(ResolvedType=='Line'),'ClusterCount','ArmCount
 #TO DO:  SWITCH TO VIOLIN
 ggplot(data=merge(sampleList,svClusters %>% filter(ResolvedType=='Line',!(ClusterDesc %in% c('SGL','SGL=2','INS'))) %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)),aes(n)) + 
   stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # of LINE Clusters per Sample') + facet_wrap(~CancerType)
+
+ggplot(data=(merge(sampleList,svClusters %>% filter(ResolvedType=='Line',!(ClusterDesc %in% c('SGL','SGL=2','INS'))) %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)) %>%
+        group_by(CancerType) %>% mutate(TypeCount=n()) %>% filter(TypeCount>20) %>% ungroup())) +
+        stat_ecdf(aes(n), geom = "step", pad = FALSE) + facet_wrap(~CancerType) + labs(title = 'CDF # of LINE Clusters per Sample') +
+        theme(axis.title.x = element_blank(), axis.text.x = element_blank(),axis.ticks.x = element_blank(), panel.grid.minor.x = element_blank(),
+         legend.position="none", legend.title = element_blank()) +  coord_flip()
+
+#ggplot(merge(sampleList,svClusters %>% filter(ResolvedType=='Line',!(ClusterDesc %in% c('SGL','SGL=2','INS'))) %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)) %>%
+#         group_by(CancerType) %>% mutate(TypeCount=n()) %>% filter(TypeCount>20) %>% ungroup() , aes(CancerType, n)) + 
+#  geom_violin(scale="width",fill="#6baed6") +   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) + ggtitle("") + xlab("") + ylab("Line Elemnts Per Sample") + 
+#  theme(axis.ticks = element_blank(), legend.position="bottom") + scale_y_continuous(expand=c(0.01, 0.01)) + scale_fill_manual(values = cancerTypeColours) + theme(legend.position="none") +coord_flip() 
+
+merge(sampleList,svClusters %>% filter(ResolvedType=='Line',!(ClusterDesc %in% c('SGL','SGL=2','INS'))) %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)) %>%
+  group_by(CancerType) %>%  mutate(TypeCount=n()) %>% filter(TypeCount>20) %>% ungroup() 
 
 # 5. Known and suspected LINE element source locations => many potentially novel source locations that feature
 View(rbind(svData %>% filter(ResolvedType=='Line') %>% filter(LEStart!='None') %>% group_by(chr=ChrStart,pos=round(PosStart,-4),SampleId) %>% summarise(n=n(),countSuspected=sum(LEStart=='Suspect'),
@@ -308,7 +335,7 @@ foldbackClusters=(foldbacks %>% filter(!IsLowQual) %>% group_by(SampleId,Cluster
 #1.Foldback length distribution for simple inversions short chained foldbacks
 print(ggplot(data = foldbacks %>% filter(FoldbackType=="INV"|FoldbackChainLengthBucket<5000) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count), 
       aes(x=FoldbackLenBucket, y=Count))
-      + geom_line(aes(y=INV, colour='INV')) + geom_line(aes(y=Combo, colour='Combo ( FB Chain Lenght < 5k)' )) + theme_bw()
+      + geom_line(aes(y=INV, colour='INV')) + geom_line(aes(y=Combo, colour='Combo ( FB Chain Length < 5k)' )) + theme_bw()
       + theme(panel.grid.major = element_line(colour="grey", size=0.5),panel.grid.minor.x = element_line(colour="grey", size=0.5))
       + scale_x_log10() + labs(title = "Foldback Length Distribution"))
 
@@ -338,7 +365,7 @@ plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType=='ReciprocalInv
                               ,'LengthBucket','CancerType','Reciprical INV',useLogY =F )
 
 #2. Reciprocal INV NOT enriched in typical DEL lengths OR FS!
-plot_count_by_bucket_and_type(cohortSummary(svData,"(ResolvedType=='SimpleSV')|(ResolvedType=='ReciprocalInversion')",'IsFS,LengthBucket'),'LengthBucket','IsFS','Del,DUP, RI by IsFS',useLogY =T )
+plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType %in% c('SimpleSV','ReciprocalInversion')",'IsFS,LengthBucket'),'LengthBucket','IsFS','Reciprocal Inversions and SimpleSV by IsFS (log scale)',useLogY =T )
 
 
 ############################################################
@@ -388,10 +415,10 @@ scatterPlot(svSampleSummary,'countSimpleDUPLong','countDUP_Ext_TILong',F,F)  # L
 ##############################################################
 
 #1. Fragile Site Length Distribution
-plot_count_by_bucket_and_type(cohortSummary(svData,"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV')","LengthBucket,IsFS"),'LengthBucket','IsFS','Length Distribution by isFS',useLogY =F)
+plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType %in% c('SimpleSV','ReciprocalInversion')","LengthBucket,IsFS"),'LengthBucket','IsFS','Length Distribution of SimpleSV & Reciprocal Inversion by IsFS',useLogY =F)
 
 #2. FS like length dels outside FS are correlated, but not all 20k-500k are FS Dels
-scatterPlot(svData %>% filter(Type=='DEL'&ResolvedType=='SimpleSV') %>% group_by(SampleId) %>% summarise(countFS=sum(IsFS),countFSLike=sum(!IsFS&PosEnd-PosStart>2e4&PosEnd-PosStart<5e5)),'countFS','countFSLike',F,F) 
+scatterPlot(svData %>% filter(Type=='DEL'&ResolvedType=='SimpleSV') %>% group_by(SampleId) %>% summarise(countFS=sum(IsFS),countFSLike=sum(!IsFS&PosEnd-PosStart>2e4&PosEnd-PosStart<5e5)),'countFS','countFSLike',T,T) 
 
 #3. Extreme tail possible for FS length DELS => Unrelated process
 ggplot(data=svData %>% filter(ResolvedType=='SimpleSV',PosEnd-PosStart>20000,PosEnd-PosStart<500000,Type=='DEL') %>% group_by(SampleId,IsFS) %>% tally() %>% spread(IsFS,n,fill=0)) + 
@@ -433,8 +460,9 @@ ggplot(data=merge(sampleList,svClusters %>% filter(ClusterCount>50,ResolvedType!
 ##############################################################
 ########## SIMPLE SV SIGNATURES ##############################
 ##############################################################
-head(svData)
-#0. Counts per sample
+
+#0. Counts per sample 
+# TO DO: MOVE TO VIOLIN PLOT
 ggplot(data=svData %>% filter(ResolvedType=='SimpleSV',Type %in% c('DEL','DUP')) %>% group_by(SampleId,Type,CancerType) %>% tally() %>% spread(Type,n,fill=0)) + 
   stat_ecdf(aes(DUP,color='DUP'),geom = "step", pad = FALSE) + ylim(0,1) + stat_ecdf(aes(DEL,color='DEL'),geom = "step", pad = FALSE) +
       labs(title = 'CDF # of SimpleSV per Sample') + scale_x_log10() + facet_wrap(~CancerType)
@@ -444,9 +472,9 @@ filter = cohortSummary(svData,"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_In
 plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','AllDel&Dup',useLogY =F)
 
-#2. SHORT DELS: <100 bases length is related 1k to 10k bucket
-scatterPlot(svData %>% filter(Type=='DEL',ResolvedType=='SimpleSV') %>% group_by(SampleId) %>% summarise(DElLT100bases=sum(PosEnd-PosStart<100),DELLT1kto10kbases=sum(PosEnd-PosStart>1e3&PosEnd-PosStart<1e4)),
-            'DElLT100bases','DELLT1kto10kbases',F,F) 
+#2. SHORT DELS: <100 bases length is related 1k to 15k bucket
+scatterPlot(svData %>% filter(Type=='DEL',ResolvedType=='SimpleSV') %>% group_by(SampleId) %>% summarise(DEl_LT_100_bases=sum(PosEnd-PosStart<100),DEL_1k_to_5k_bases=sum(PosEnd-PosStart>1e3&PosEnd-PosStart<0.5e4)),
+            'DEl_LT_100_bases','DEL_1k_to_5k_bases',F,F) 
 
 #3. ULTRA SHORT DUP: Top 20:
 filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length<100",'SampleId') %>% top_n(30,count) %>% .$SampleId
@@ -458,8 +486,10 @@ filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length<100",
 plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','Ultra Short Del',useLogY =F)
 
+write.csv(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket'),"~/temp.csv" )
+
 #5. SHORT DEL: Top 30:
-filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>1000,Length<5000",'SampleId') %>% top_n(30,count) %>% .$SampleId
+filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>1000,Length<10000",'SampleId') %>% top_n(30,count) %>% .$SampleId
 plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','Ultra Short Del',useLogY =F)
 
@@ -469,6 +499,7 @@ plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filte
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','BRCA LENGTH DUP',useLogY =F)
 
 #5. CDK12 Length DUP (100k+): Top 30:
+## NB - there is a 
 filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length>100000",'SampleId') %>% top_n(30,count) %>% .$SampleId
 plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
                               %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','CDK12 LENGTH DUP',useLogY =F)
@@ -477,14 +508,12 @@ plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filte
 # GENE ENRICHMENT AND SIMPLE SIGNATURES TP53 enriched in all cases!
 
 #CDK12 AND CCNE1 associated with 2 different Long DUP types.  TP53 also enriched
-filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length>100000",'SampleId,CancerType') %>% top_n(50) %>% select(SampleId,CancerType,count)
-View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('CDK12','CCNE1')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% tally())
+filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length>100000",'SampleId,CancerType') %>% top_n(40) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('CDK12','CCNE1','ANKRD11')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% tally())
 
-# BRCA1 AND ANKRD11 associated with midrange DUPS associated with 2 different Long DUP types
+# BRCA1 AND ANKRD11 associated with midrange DUPS associated with 2 different Med DUP types
 filter = cohortSummary(svData,"Type=='DUP',ResolvedType=='SimpleSV',Length<100000,Length>1000",'SampleId,CancerType') %>% top_n(30,count) %>% select(SampleId,CancerType,count)
 View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('BRCA1','ANKRD11')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% tally())
-
-View(merge(svDriverAndGermline,sampleCancerTypes,by.x='sampleId',by.y='SampleId',all.x=T))
 
 # BRCA2,BRCA1 AND ANKRD11 strongly associated with very short dels
 filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length<1000",'SampleId,CancerType') %>% top_n(100,count) %>% select(SampleId,CancerType,count)
@@ -500,12 +529,49 @@ filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>20000
 View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
 filter = cohortSummary(svData,"Type=='DEL',ResolvedType=='SimpleSV',Length>20000,Length<500000,!IsFS",'SampleId,CancerType') %>% top_n(200,count) %>% select(SampleId,CancerType,count)
 View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
-View(merge((filter),svDriverAndGermline %>% filter(),by.x='SampleId',by.y='sampleId',all.x=T) %>% group_by(gene) %>% summarise(n=n(),meanDL=mean(driverLikelihood)) %>% arrange(-n))
 
+# AMBRA1 affects 3 samples with most 100k  length dels (but not enriched in FS)
+filter = cohortSummary(svData,"(ResolvedType=='SimpleSV'),Type=='DEL',!IsFS,PosEnd-PosStart>2e4,PosEnd-PosStart<5e5",'SampleId') %>% top_n(3,count) %>% .$SampleId
+plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV'),!IsFS,!IsLowQual",'SampleId,CancerType,LengthBucket') 
+                              %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','Top 3 long DEL samples(all with AMBRA1 DELS)',useLogY =F)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('AMBRA1')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))# %>% group_by(gene) %>% tally())
+
+# ANKRD11 drivers have with a diverse range of effects, is mutually exclusive to BRCA1 & BRCA2 (but may just be a weak site of some description?)
+filter = cohortSummary(merge(svData,svDriverAndGermline %>% filter(gene=='ANKRD11') %>% select(SampleId=sampleId),by='SampleId'),"",'SampleId') %>% top_n(20,count) %>% .$SampleId
+plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
+                              %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','ANKRD11 samples',useLogY =F)
+
+# CDK12 causes 2 peaks whereas CCNE1 only causes 1
+filter = cohortSummary(merge(svData %>% filter(ResolvedType=='SimpleSV'),svDriverAndGermline %>% filter(gene=='CDK12',driverLikelihood>0.5) %>% select(SampleId=sampleId),by='SampleId'),"",'SampleId') %>% top_n(20,count) %>% .$SampleId
+plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
+                              %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','CDK12 Top 20',useLogY =F)
+filter = cohortSummary(merge(svData %>% filter(ResolvedType=='SimpleSV'),svDriverAndGermline %>% filter(gene=='CCNE1',driverLikelihood>0.5) %>% select(SampleId=sampleId),by='SampleId'),"",'SampleId') %>% top_n(0,count) %>% .$SampleId
+plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
+                              %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','CCNE1 Top 20',useLogY =F)
+
+
+# BRCA2 causes 2 peaks whereas CCNE1 only causes 1
+filter = cohortSummary(merge(svData %>% filter(ResolvedType=='SimpleSV'),svDriverAndGermline %>% filter(gene=='BRCA2',driverLikelihood>0.5) %>% select(SampleId=sampleId),by='SampleId'),"",'SampleId') %>% top_n(30,count) %>% .$SampleId
+plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId %in% filter),"(ResolvedType=='SimpleSV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
+                              %>%  mutate(ID = paste(CancerType,SampleId)) ,'LengthBucket','ID','BRCA2 Top 30',useLogY =F)
 # TP53 highly enriched in LINE
-filter = cohortSummary(svData,"ResolvedType=='Line'",'SampleId,CancerType') %>% top_n(100,count) %>% select(SampleId,CancerType,count)
-View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
+filter = cohortSummary(svData,"IsFS,CancerType=='Breast'",'SampleId,CancerType') %>% top_n(100,count) %>% select(SampleId,CancerType,count)
+View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53',"MDM2")),by.x='SampleId',by.y='sampleId',all.x=T) %>% arrange(-count))
 
+##########################################################
+########### Enrichment by location #######################
+##########################################################
+
+#1. Enriched segments of short DEL / DUP
+#### NB - This is currently affected strongly by poor PON.   Rerun once fixed.
+#SHORT DELS
+View(svData %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4,!IsFS) %>% mutate(nrows=n()) %>% group_by(chr=ChrStart,pos=round(PosStart,-5),nrows) %>% tally() %>% mutate(p=ppois(n,nrows/2.8e9*1e5,FALSE),q=p.adjust(p,"BH",2.8e9/1e5)))
+#BRCA DUPS
+View(svData %>% filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>5e3,PosEnd-PosStart<8e4) %>% mutate(nrows=n()) %>% group_by(chr=ChrStart,pos=round(PosStart,-5),nrows) %>% tally() %>% mutate(p=ppois(n,nrows/2.8e9*1e5,FALSE),q=p.adjust(p,"BH",2.8e9/1e5)))
+#CDK12 DUPS
+View(svData %>% filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>1e5,!IsFS) %>% mutate(nrows=n()) %>% group_by(chr=ChrStart,pos=round(PosStart,-6),nrows) %>% tally() %>% mutate(p=ppois(n,nrows/2.8e9*1e6,FALSE),q=p.adjust(p,"BH",2.8e9/1e6)))
+
+View(svData %>% filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>1e5,!IsFS,ChrStart==11,round(PosStart,-6)==6.5e7))
 
 ###################################################
 ########### Driver Variants #######################
@@ -516,6 +582,20 @@ View(merge((filter),svDriverAndGermline %>% filter(gene %in% c('TP53')),by.x='Sa
 #svData = svData %>% group_by(SampleId,ClusterId) %>% mutate(isDriver=sum(ifelse(DriverStart!=''|DriverEnd!='',1,0))>1) %>% ungroup()
 #View(svData %>% group_by(ResolvedType,ClusterCountBucket,isDriver,ClusterId,SampleId) %>% tally() %>% group_by(ResolvedType,ClusterCountBucket,isDriver) %>% tally() %>% spread(isDriver,nn))
 #View(svData %>% group_by(ResolvedType,ClusterCountBucket,isDriver)  %>% tally() %>% spread(isDriver,n))
+
+###################################################
+########### HIGH LEVEL AMPLIFICTATION #############
+###################################################
+# 256/1597 (16%) of  samples have a very high copy nummber
+View(svData %>% filter(Ploidy>20,AdjCNChgStart>20) %>% group_by(SampleId,isSimpleSV=ResolvedType=='SimpleSV',ClusterId) %>% tally() %>% group_by(SampleId,isSimpleSV) %>% count() %>% arrange(-nn) %>% spread(isSimpleSV,nn))
+
+# ~70%  of those involve a cluster touching more than 1 chr
+View(svData %>% filter(Type!='SGL',Type!='NONE') %>% group_by(SampleId,ClusterId) %>% mutate(maxClusterPloidy=max(Ploidy),minChr=min(ChrStart),maxChr=max(ChrEnd)) %>% ungroup() %>% filter(maxClusterPloidy>20,AdjCNChgStart>20,minChr==maxChr) 
+     %>% group_by(SampleId,CancerType,minChr) %>% count() %>% spread(minChr,n))
+
+# By ploidy bucket       
+View(svData %>% group_by(SampleId,ClusterId) %>% mutate(maxClusterPloidy=max(Ploidy),minChr=min(ChrStart),maxChr=max(ChrEnd)) %>% ungroup() %>% filter(maxClusterPloidy>20) %>% 
+       group_by(SampleId,CancerType,ClusterId,minChr,maxChr,sameChr=minChr==maxChr,ResolvedType,ClusterDesc,PloidyBucket) %>% tally() %>% spread(PloidyBucket,n))
 
 
 ########################################
@@ -545,6 +625,13 @@ View(svData %>% filter(!IsLowQual,ResolvedType!='Line',nchar(InsertSeq)<=3) %>% 
 #4. VIRAL INSERSTIONS
 # TO DO: Count frequency per viral genome cancer type once Charles has loaded BEALN
 
+##############################################################
+############ HOMOLOGY SEQUENCE ################################
+##############################################################
+# TO DO: SHOW / BUILD ON THE FOLLOWING
+###BND and local variants >1M bases have ~60% of variants with homology,
+###Short and mid-range DELs & DUPS are all around 70% with homology
+###Foldback INV have higher rates of longer homology (>=4 bases) again.   ~35%  compared to ~30% in other short variants and ~20% in BND and long variants
 
 ##############################################################
 ############# SUPSICIOUS Findings ############################
@@ -585,23 +672,35 @@ print(ggplot(data = foldbacks %>% filter(FoldbackType=="INV") %>% group_by(Foldb
       + scale_x_log10() + scale_y_log10()
       + labs(title = "Foldback Length Distribution"))
 
-#7. LONE INV - vast majority are Foldbacks
+#7. LONE INV
+# 2/3 are Foldbacks
 View(svData %>% filter(ClusterCount==1,Type =='INV',!IsLowQual,ArmStart==ArmEnd) %>% arrange(SampleId,ChrStart,PosStart) %>%
        group_by(IsFoldBack,LengthBucket) %>% tally() %>% spread(IsFoldBack,n))
+# surplus facing centromere
+View(svData %>% filter(ClusterCount==1,Type =='INV',!IsLowQual,ArmStart==ArmEnd,IsFoldBack) %>% mutate(CentromereOriented=(OrientStart*ifelse(ArmStart=='P',-1,1))) %>%
+       group_by(CentromereOriented,LengthBucket) %>% tally() %>% spread(CentromereOriented,n))
 #select(ResolvedType,len,Ploidy,Type,ClusterCount,ClusterReason,everything()))
 
-#8. LONE BND - unclear what these are
-View(svData %>% filter(ClusterCount==1,Type =='BND',!IsLowQual)%>%  mutate(len=PosEnd-PosStart) %>% arrange(SampleId,ChrStart,PosStart) %>%
-       group_by(ResolvedType,PloidyBucket) %>% tally() %>% spread(ResolvedType,n))
+#8. LONE BND
+#Around 1500 / 5500 lone BND appear to be geuine unrecpirocated translocations.  
+# Rest likely missing a variant - should we try to join to SGL / NONE or INV
+View(svData %>% filter(!IsLowQual,Type=='BND',ClusterCount==1) %>% group_by(CustomType,Consistency) %>% tally() %>% spread(Consistency,n))
 
 #9. Should we still have imprecise?
 View(svData %>% group_by(Imprecise) %>% tally())
+
+#10. Around 1500 / 5500 lone BND appear to be geuine unrecpirocated translocations
+View(svData %>% filter(!IsLowQual,Type=='BND',ClusterCount==1) %>% group_by(CustomType,Consistency) %>% tally() %>% spread(Consistency,n))
+
+#11. Failure to cluster high ploidy INVs (not overlapping and not foldaback)
+View(svData %>%filter(SampleId=='CPCT02010662T',ChrEnd=='17'|ChrStart=='17'))
+
 
 #############################################
 ########## INDIVIDUAL SAMPLE ANALYSIS #######
 #############################################
 
-chartSample = 'CPCT02050399T'; chartChr = '6';
+chartSample = 'CPCT02010790T'; chartChr = '6';
 
 #0. Length distribution 
 plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId ==chartSample),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
@@ -633,6 +732,9 @@ View(svData %>% filter(SampleId==chartSample,ClusterId==385)%>% arrange(ChrStart
 # 4. Large cluster View
 View(svData %>% filter(!IsLowQual,SampleId==chartSample,ClusterCount>=1,ClusterCount>0,ResolvedType!='ASimpleSV')%>% 
        select(ResolvedType,Length,Ploidy,Type,ClusterCount,ClusterReason,everything()) %>% arrange(-Length))#%>% group_by(ClusterCountBucket,CnChStartBucket) %>% tally() %>% spread(CnChStartBucket,n))
+
+
+
 
 
 
@@ -749,6 +851,29 @@ View(svLinks %>% filter(SampleId=='CPCT02050399T'))
 
 View(svClusters %>% filter(SampleId=='CPCT02050399T'))
 
-
+View(svData %>% filter(ResolvedType=='RecipTrans'))
 View(svData %>% filter(DBLen))
 plot_count_by_bucket_and_type(cohortSummary(dbData,"DBLength<=10000,!IsLowQual",'DBLengthBucket=round(DBLength,-3),ResolvedType'),'DBLengthBucket','ResolvedType','DBLengthByResolvedType(<50bases)',useLogX = F,useLogY = T)
+
+
+
+View(svData %>% filter(Ploidy>20,AdjCNChgStart/AdjCNStart>0.7,AdjCNChgEnd/AdjCNEnd>0.7,AdjCNStart-AdjCNChgStart>0.5) %>%
+       mutate(LowerStart=AdjCNEnd-AdjCNChgEnd,LowerEnd=AdjCNStart-AdjCNChgStart) %>% select(Ploidy,LowerStart,LowerEnd,everything()) %>% group_by(SampleId) %>% tally())
+
+
+View(svData %>% filter(Ploidy>20,AdjCNChgStart>20) %>% group_by(SampleId,ResolvedType,ClusterDesc,ClusterId) %>% summarise(n=n(),min(ChrStart),max(ChrEnd),max(Ploidy)) %>% group_by(SampleId) %>% mutate(countClusters=n()) %>% ungroup())
+
+# 69 samples have a NONE or SGL with high ploidy
+View(svData %>% filter(Ploidy>20,AdjCNChgStart>20,Type=='SGL'|Type=='NONE') %>% group_by(SampleId) %>% tally())
+
+
+View(svData %>% filter(Ploidy>20,AdjCNChgStart/AdjCNStart>0.7,AdjCNChgEnd/AdjCNEnd>0.7,AdjCNStart-AdjCNChgStart>0.5) %>%
+       mutate(LowerStart=AdjCNEnd-AdjCNChgEnd,LowerEnd=AdjCNStart-AdjCNChgStart)  %>% group_by(SampleId) 
+     %>% mutate(sampleCount=n()) %>% ungroup() %>% select(sampleCount,ClusterCount,ArmCountStart,Ploidy,LowerStart,LowerEnd,everything()))
+
+View(svData %>%filter(SampleId=='CPCT02010790T')#,ChrEnd=='17'|ChrStart=='17'))
+  %>% mutate(temp=AdjCNEnd-AdjCNChgEnd<0.5|AdjCNStart-AdjCNChgStart<0.5) %>% select(temp,everything()))
+     
+
+# 256/1597 (16%) of  samples have a very high copy nummber
+View(svData %>% filter(AdjCNEnd-AdjCNChgEnd<0.5|AdjCNStart-AdjCNChgStart<0.5) %>% group_by(SampleId,isSimpleSV=ResolvedType=='SimpleSV',Type) %>% tally() %>% spread(Type,n))
