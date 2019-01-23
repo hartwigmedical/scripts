@@ -5,7 +5,7 @@ locate_somatics() {
     local somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *sage.vcf.gz)
     if [ -z ${somatic_vcf} ]
     then
-        # TODO (JOBA): Clean up after sage is rerun for every sample
+        # TODO: Clean up after sage is rerun for every sample
         somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
         if [ -z ${somatic_vcf} ]
         then

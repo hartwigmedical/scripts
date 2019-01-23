@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# KODU: There are 3 types of runs:
+# There are 3 types of runs:
 #  - v4 run. In this case, the run info, v3 rerun and v4 rerun are all identical.
 #  - v3 run, with a v4 rerun. In this case, the run and v3 rerun are identical, the v4 rerun is separate.
 #  - pre-v3 run, with a v3 rerun and a v4 rerun. In this case all 3 run infos will be different.
@@ -13,7 +13,7 @@ load_run_info_for_set() {
 
 load_rerun_v3_info_for_set() {
     set=$1
-    # KODU: The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
+    # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})
@@ -29,7 +29,7 @@ load_rerun_v3_info_for_set() {
 
 load_rerun_v4_info_for_set() {
     set=$1
-    # KODU: Allow for failure of v4 rerun since v4 rerun runs the health checks.
+    # Allow for failure of v4 rerun since v4 rerun runs the health checks.
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_v4.ini" | grep "v4.4" | grep "Validated\|Failed" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})

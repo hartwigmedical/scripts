@@ -7,7 +7,7 @@ knowledgebase_path=/data/common/dbs/knowledgebases/output
 drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
 hotspot_tsv=$(locate_hotspot_tsv)
 
-# JOBA: Database details
+# Database details
 ensembl_db=$(cat /data/common/dbs/mysql_credentials/ensembl_db_local | head -n 1)
 credentials=/data/common/dbs/mysql_credentials/prod
 db_user=$(awk '/^user/ {print $2}' ${credentials})

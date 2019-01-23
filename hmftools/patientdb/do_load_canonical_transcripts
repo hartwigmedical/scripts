@@ -4,7 +4,7 @@ source load_metadata
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
-# JOBA: Database details
+# Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})

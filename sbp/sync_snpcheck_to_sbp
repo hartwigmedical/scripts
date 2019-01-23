@@ -6,7 +6,7 @@ bucket='hmf_archive'
 destination='snpcheckvcfs'
 aws_profile='hmf_archive'
 
-echo "Syncing snpcheck data to SBP!"
+echo "[INFO] Syncing snpcheck data to SBP!"
 
 sbp s3 sync ${local_path} s3://${bucket}/${destination} \
     --profile ${aws_profile} \

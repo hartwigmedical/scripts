@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+profile="download"
+bucket="hmf_experiments"
+subdir="share"
+s3path="s3://${bucket}/${subdir}/"
+yymmdd=$( date "+%y%m%d" )
+
+echo "---"
+echo "[INFO] Reading ${s3path}:"
+sbp s3 ls --human-readable --summarize ${s3path} --profile ${profile}
+
+echo "[INFO] Example command to upload example file /data/tmp/YOUR_FILE:"
+echo " nohup sbp s3 sync --dryrun /data/tmp/ ${s3path} --exclude \"*\" --include \"YOUR_FILE\" --profile ${profile} > ${HOME}/logs/${yymmdd}_upload_to_share_bucket.log &"
+echo "[INFO] Example command to get external https link for YOUR_FILE:"
+echo " presign_url ${s3path}YOUR_FILE"
+echo "---"

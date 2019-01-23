@@ -6,7 +6,7 @@ pip=$2
 if [ -z ${ini} ]; then echo "[ERROR] No ini given" & exit 1; fi
 if [ -z ${pip} ]; then echo "[ERROR] No pipeline version given" & exit 1; fi
 
-## STLI: Param check
+## Param check
 iniCount=$( query_sbp_api -type inis -filter "name=${ini}" -exact | grep -v "^#" | wc -l )
 if [ ${iniCount} != 1 ]; then
     echo "[ERROR] Non-existing ini ${ini})?" && exit 1
@@ -16,7 +16,7 @@ if [[ ${pipCount} < 1 ]]; then
     echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
 
-## STLI: Define all paths used by script
+## Define all paths used by script
 findDirs="/data/cpct/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/"
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
@@ -24,7 +24,7 @@ downloadScriptFail="download_qc_fail_run"
 rerunMode=0
 
 if [[ ${ini} =~ .*Rerun*. ]]; then
-    ## KODU: When in rerun mode, we want to list Failed and Validated runs together, and skip Failed runs.
+    ## When in rerun mode, we want to list Failed and Validated runs together, and skip Failed runs.
     echo "## Running in Rerun Mode"
     echo ""
     rerunMode=1
@@ -83,8 +83,6 @@ if [ ${rerunMode} == 0 ]; then
                     echo "${downloadScriptFail} -s ${setNameForFailedTumorSample} -b ${bucketForFailedTumorSample}"
                 elif [ ${existsInSuccessRunDirs} == 0 ]; then
                     echo "# ${setNameForFailedTumorSample} has failed on ${pip} and is already on datastore ${findDirsFail}"
-                else
-                    echo "# ${setNameForFailedTumorSample} has failed on ${pip} but exists in successful runs. This is not allowed!"
                 fi
             else
                 echo "# ${failedTumorSample} has failed analysis on pip ${pip} but also has a Validated or Success run so can be ignored."
