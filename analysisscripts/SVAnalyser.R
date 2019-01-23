@@ -877,3 +877,5 @@ View(svData %>%filter(SampleId=='CPCT02010790T')#,ChrEnd=='17'|ChrStart=='17'))
 
 # 256/1597 (16%) of  samples have a very high copy nummber
 View(svData %>% filter(AdjCNEnd-AdjCNChgEnd<0.5|AdjCNStart-AdjCNChgStart<0.5) %>% group_by(SampleId,isSimpleSV=ResolvedType=='SimpleSV',Type) %>% tally() %>% spread(Type,n))
+
+View(svData %>% filter(SampleId=='COLO829T'))
