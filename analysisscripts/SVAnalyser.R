@@ -127,8 +127,8 @@ createBuckets <- function(cluster) {
   )
 }
 
-createSVLinksBuckets <- function(svLinks) {
-  svLinks %>% mutate(
+createsvSegmentsBuckets <- function(svSegments) {
+  svSegments %>% mutate(
     TILengthBucket=ifelse(TILength==0,0,2**(pmin(25,pmax(5,round(log(TILength,2),0))))),
     synDelDupLengthBucket=ifelse(SynDelDupLen==0,0,2**(pmin(25,pmax(5,round(log(SynDelDupLen,2),0))))),
     DBLenEndBucket=ifelse(DBLenEnd==0,0,2**(pmin(25,pmax(5,round(log(DBLenEnd,2),0))))),
@@ -208,7 +208,7 @@ createSampleSummary <- function(cluster) {
 PATH='~/Dropbox/HMF Australia team folder/Structural Variant Analysis/'
 svData = read.csv(paste(PATH,'CLUSTER.csv',sep=''), header = T, stringsAsFactors = F)
 svClusters = (read.csv(paste(PATH,'SVA_CLUSTERS.csv',sep=''), header = T, stringsAsFactors = F))
-svLinks = (read.csv(paste(PATH,'SVA_LINKS.csv',sep=''), header = T, stringsAsFactors = F))
+svSegments = (read.csv(paste(PATH,'SVA_SEGMENTS.csv',sep=''), header = T, stringsAsFactors = F))
 sampleCancerTypes= (read.csv(paste(PATH,'sample_cancer_types.csv',sep=''), header = T, stringsAsFactors = F))
 svChordStatus = read.csv(paste(PATH,'SVChordStatus.csv',sep=''), header = T, stringsAsFactors = F)
 svDrivers = read.csv(paste(PATH,'SVDrivers.csv',sep=''), header = T, stringsAsFactors = F)
@@ -227,7 +227,7 @@ foldbacks=createFoldbacks(svData)
 dbData = rbind(svData %>% filter(DBLenStart>-31) %>% mutate(DBLength = DBLenStart,Assembled = ifelse(AsmbMatchStart=="MATCH","Assembled","NotAssembled"),LE=LEStart,RefContext=RefContextStart,Orient=OrientStart),
                svData %>% filter(DBLenEnd>-31) %>% mutate(DBLength = DBLenEnd, Assembled = ifelse(AsmbMatchEnd=="MATCH","Assembled","NotAssembled"),LE=LEEnd,RefContext=RefContextEnd,Orient=OrientEnd)) %>%
                mutate(DBLenBucket = ifelse(DBLength==0,0,ifelse(DBLength<0,-(2**round(log(-DBLength,2))),2**round(log(DBLength,2)))))
-svLinks=createSVLinksBuckets(svLinks)
+svSegments=createsvSegmentsBuckets(svSegments)
 
 #############################################
 ########## OVERVIEW OF COHORT ###############
@@ -384,18 +384,18 @@ View(svData %>% filter(ClusterDesc=="BND=2",ArmCount==2,Consistency==0,ResolvedT
 ########### Short TIs #####################################
 ############################################################
 #0. Numbers per sample
-ggplot(data=merge(svData %>% group_by(SampleId) %>% tally(),svLinks %>% 
+ggplot(data=merge(svData %>% group_by(SampleId) %>% tally(),svSegments %>% 
     group_by(SampleId,shortTI=ifelse(TILength<1000,'ShortTICount','LongTICount')) %>% tally() %>% spread(shortTI,n),by='SampleId')) +
       geom_point(aes(n,ShortTICount))
 
 #1. TIs length distibution, showing 2 peaks for most types ('short', ie <1k and long -> presumed to be cause by random length of distance between breakages)
-ggplot(data=svLinks %>% group_by(TILengthBucket,ResolvedType) %>% summarise(count=n()),
+ggplot(data=svSegments %>% group_by(TILengthBucket,ResolvedType) %>% summarise(count=n()),
        aes(x=TILengthBucket))+geom_line(aes(y=count,colour='count'))+scale_x_log10()+scale_y_log10() + facet_wrap(~ResolvedType)
 
-svLinks %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n()) %>% spread(shortTI,n)
-ggplot(data=svLinks %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n()) %>% spread(shortTI,count))  +
+svSegments %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n()) %>% spread(shortTI,n)
+ggplot(data=svSegments %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n()) %>% spread(shortTI,count))  +
     geom_point(aes(`FALSE`,`TRUE`))
-ggplot(data=svLinks %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n())) + 
+ggplot(data=svSegments %>% group_by(SampleId,shortTI=TILength<1000) %>% summarise(count=n())) + 
   stat_ecdf(aes(`count`,color='count'),geom = "step", pad = FALSE) + facet_wrap(~shortTI)
     
 
@@ -838,16 +838,16 @@ View(svData %>% filter(SampleId == 'COLO829T'))
 
 
 ############# TESTING #############
-svLinks=createSVLinksBuckets(svLinks)
-plot_count_by_bucket_and_type(cohortSummary(svLinks,"","TILengthBucket"),'LengthBucket','','Length Distribution by isFS',useLogY =F)
-ggplot(data=svLinks %>% group_by(TILengthBucket,ResolvedType) %>% summarise(count=n()),
+svSegments=createsvSegmentsBuckets(svSegments)
+plot_count_by_bucket_and_type(cohortSummary(svSegments,"","TILengthBucket"),'LengthBucket','','Length Distribution by isFS',useLogY =F)
+ggplot(data=svSegments %>% group_by(TILengthBucket,ResolvedType) %>% summarise(count=n()),
                aes(x=TILengthBucket))+geom_line(aes(y=count,colour='count'))+scale_x_log10()+scale_y_log10() + facet_wrap(~ResolvedType)
 print(plot)
   facet_wrap(as.formula(paste("~", facetWrap)))+
-View(svLinks %>% group_by(ResolvedType,TILengthBucket) %>% summarise(count=n()))
+View(svSegments %>% group_by(ResolvedType,TILengthBucket) %>% summarise(count=n()))
      
-View(svLinks %>% group_by(SampleId,shortTI=TILength<1000) %>% tally() %>% spread(shortTI,n))
-View(svLinks %>% filter(SampleId=='CPCT02050399T'))
+View(svSegments %>% group_by(SampleId,shortTI=TILength<1000) %>% tally() %>% spread(shortTI,n))
+View(svSegments %>% filter(SampleId=='CPCT02050399T'))
 
 View(svClusters %>% filter(SampleId=='CPCT02050399T'))
 
