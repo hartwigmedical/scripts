@@ -66,7 +66,7 @@ gridss_overlaps_breakpoint_pon = function(gr,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    if (!include_pon_imprecise_calls) {
+    if (!include_pon_imprecise_calls && !is.null(pongr$IMPRECISE)) {
       pongr = pongr[!pongr$IMPRECISE]
     }
     hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
