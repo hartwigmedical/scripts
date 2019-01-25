@@ -9,7 +9,7 @@ locate_somatics() {
         somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
         if [ -z ${somatic_vcf} ]
         then
-            echo "[ERROR] Unable to locate somatic variants. Exiting."
+            echo "[ERROR] Unable to locate somatic variants. Exiting." >&2
             exit 1
         fi
     fi
@@ -22,7 +22,7 @@ locate_purple_structural_variants() {
 	if [ -z ${structural_vcf} ]; then
 		structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
+			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting." >&2
 			exit 1
 		fi
 	fi
@@ -35,7 +35,7 @@ locate_purple_pilot_structural_variants() {
 	if [ -z ${structural_vcf} ]; then
 		structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting."
+			echo "[ERROR] Unable to locate PURPLE structural variants. Exiting." >&2
 			exit 1
 		fi
 	fi
@@ -46,7 +46,7 @@ locate_variant_annotator_fusions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting" >& 2
+        echo "[ERROR] Unable to locate variant annotator dir for fusions: ${variant_annotator_dir}. Exiting" >& 2
         exit 1
     fi
 
@@ -62,7 +62,7 @@ locate_variant_annotator_disruptions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting" >&2
+        echo "[ERROR] Unable to locate variant annotator dir for disruptions: ${variant_annotator_dir}. Exiting" >&2
         exit 1
     fi
 
@@ -78,7 +78,7 @@ locate_variant_annotator_pilot_fusions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis_pilot
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator pilot dir: ${variant_annotator_dir}. Exiting" >&2
+        echo "[ERROR] Unable to locate variant annotator pilot dir for fusions: ${variant_annotator_dir}. Exiting" >&2
         exit 1
     fi
 
@@ -94,7 +94,7 @@ locate_variant_annotator_pilot_disruptions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis_pilot
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator pilot dir: ${variant_annotator_dir}. Exiting" >&2
+        echo "[ERROR] Unable to locate variant annotator pilot dir for disruptions: ${variant_annotator_dir}. Exiting" >&2
         exit 1
     fi
 
@@ -113,7 +113,7 @@ locate_gridss_structural_variants() {
     if [ -z ${structural_vcf} ]; then
         structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting."
+			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting." >&2
 			exit 1
 		fi
     fi
@@ -124,7 +124,7 @@ locate_gridss_recovery_candidates() {
     local run_dir=$1
     local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
     if [ -z ${sv_recovery_vcf} ]; then
-        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates. Exiting."
+        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates. Exiting." >&2
         exit 1
     fi
     echo ${sv_recovery_vcf}
