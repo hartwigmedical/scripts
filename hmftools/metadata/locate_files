@@ -46,13 +46,13 @@ locate_variant_annotator_fusions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting"
+        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting" >&2
         exit 1
     fi
 
 	local fusion_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_fusions.csv")
 	if [ -z ${fusion_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator fusions csv. Exiting."
+        echo "[ERROR] Unable to locate Variant Annotator fusions csv. Exiting." >&2
         exit 1
     fi
     echo ${fusion_csv}
@@ -62,13 +62,13 @@ locate_variant_annotator_disruptions() {
     local run_dir=$1
     local variant_annotator_dir=${run_dir}/svAnalysis
     if [ ! -d ${variant_annotator_dir} ]; then
-        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting"
+        echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting" >&2
         exit 1
     fi
 
 	local disruption_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_disruptions.csv")
 	if [ -z ${disruption_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator disruptions csv. Exiting."
+        echo "[ERROR] Unable to locate Variant Annotator disruptions csv. Exiting." >&2
         exit 1
     fi
     echo ${disruption_csv}
