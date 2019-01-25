@@ -47,6 +47,7 @@ locate_variant_annotator_fusions() {
     local variant_annotator_dir=${run_dir}/svAnalysis
     if [ ! -d ${variant_annotator_dir} ]; then
         echo "[ERROR] Unable to locate variant annotator dir: ${variant_annotator_dir}. Exiting" >&2
+        echo ""
         exit 1
     fi
 
