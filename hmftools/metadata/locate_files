@@ -42,6 +42,46 @@ locate_purple_pilot_structural_variants() {
     echo ${structural_vcf}
 }
 
+locate_variant_annotator_fusions() {
+    local run_dir=$1
+	local fusion_csv=$(find -L ${run_dir}/svAnalysis/ -type f -name "*_fusions.csv")
+	if [ -z ${fusion_csv} ]; then
+        echo "[ERROR] Unable to locate Variant Annotator fusions csv. Exiting."
+        exit 1
+    fi
+    echo ${fusion_csv}
+}
+
+locate_variant_annotator_disruptions() {
+    local run_dir=$1
+	local disruption_csv=$(find -L ${run_dir}/svAnalysis/ -type f -name "*_disruptions.csv")
+	if [ -z ${disruption_csv} ]; then
+        echo "[ERROR] Unable to locate Variant Annotator disruptions csv. Exiting."
+        exit 1
+    fi
+    echo ${disruption_csv}
+}
+
+locate_variant_annotator_pilot_fusions() {
+    local run_dir=$1
+	local fusion_csv=$(find -L ${run_dir}/svAnalysis_pilot/ -type f -name "*_fusions.csv")
+	if [ -z ${fusion_csv} ]; then
+        echo "[ERROR] Unable to locate Variant Annotator pilot fusions csv. Exiting."
+        exit 1
+    fi
+    echo ${fusion_csv}
+}
+
+locate_variant_annotator_pilot_disruptions() {
+    local run_dir=$1
+	local disruption_csv=$(find -L ${run_dir}/svAnalysis_pilot/ -type f -name "*_disruptions.csv")
+	if [ -z ${disruption_csv} ]; then
+        echo "[ERROR] Unable to locate Variant Annotator pilot disruptions csv. Exiting."
+        exit 1
+    fi
+    echo ${disruption_csv}
+}
+
 locate_gridss_structural_variants() {
     local run_dir=$1
 	# Use the backport VCF if it exists
