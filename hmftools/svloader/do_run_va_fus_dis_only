@@ -1,0 +1,34 @@
+#!/bin/bash
+
+sample=$1 && shift
+data_output_dir=$1 && shift
+credentials=$1 && shift
+sv_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# File Locations
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+ensembl_data_dir=/data/common/dbs/ensembl_data_cache
+
+if [ -d ${data_output_dir} ]; then
+    rm ${data_output_dir}/*
+else
+    mkdir -p ${data_output_dir}
+fi
+
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -jar ${sv_jar} \
+    -sample ${sample} \
+    -source_svs_from_db \
+    -ensembl_data_dir ${ensembl_data_dir} \
+    -data_output_dir ${data_output_dir} \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
