@@ -446,7 +446,7 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
 
       plotSampleSet = cancerSampleData[sampleStart:sampleEnd,]
 
-      print(paste("plotCount= ", plotCount, ", sampleStart=", sampleStart, ", sampleEnd=", sampleEnd, sep=''))
+      # print(paste("plotCount= ", plotCount, ", sampleStart=", sampleStart, ", sampleEnd=", sampleEnd, sep=''))
       # print(paste("plotCount= ", plotCount, ", rowStart=", rowStart, ", rowEnd=", rowEnd, sep=''))
 
       if(cancerType == "")

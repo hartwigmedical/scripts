@@ -2,22 +2,7 @@
 ####### FOLDBACK ANALYSIS #######################
 #################################################
 
-get_foldback_chain_links<-function(foldbacks)
-{
-  colCount = ncol(foldbacks)  
-  for(i in 1:nrow(foldbacks))
-  {
-    data = foldbacks[i,]
-    foldbacks[i,colCount-2] = as.numeric(stri_split_fixed(data$FoldbackLinkInfo,';')[[1]][1])
-    foldbacks[i,colCount-1] =  as.numeric(stri_split_fixed(data$FoldbackLinkInfo,';')[[1]][2])
-    foldbacks[i,colCount] = as.numeric(stri_split_fixed(data$FoldbackLinkInfo,';')[[1]][3])
-  }
-  
-  return (foldbacks)
-}
-
-
-svData = read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/CLUSTER_GRIDSS.csv', header = T, stringsAsFactors = F)
+# svData = read.csv('~/Dropbox/HMF Australia team folder/Structural Variant Analysis/CLUSTER_GRIDSS.csv', header = T, stringsAsFactors = F)
 svData = sv_load_and_prepare('~/data/sv/CLUSTER.csv')
 
 # Interpetation of chaining for foldbacks
@@ -40,7 +25,7 @@ foldbacksNoInfo = within(foldbacksNoInfo, rm(FoldbackLinkInfo))
 foldbacksInfo = foldbacks %>% filter(HasLinkInfo)
 
 foldbacksInfo = foldbacksInfo %>% separate(FoldbackLinkInfo,c('ChainLinks','AssemblyLinks','ChainLength'),sep = ';')
-View(foldbacksInfo)
+# View(foldbacksInfo)
 # foldbacksInfo = get_foldback_chain_links(foldbacksInfo)
 foldbacks = rbind(foldbacksNoInfo,foldbacksInfo)
 
@@ -72,7 +57,7 @@ View(foldbacks %>% group_by(SampleId,ClusterId,ResolvedType) %>% summarise(FBcou
 
 #2.Simple + foldback length distribution for mostly assembled combos
 foldbackLenSummary = foldbacks %>% filter(FoldbackType=="INV"|FoldbackAsmbPercent>0.5) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count)
-View(foldbackLenSummary)
+# View(foldbackLenSummary)
 print(ggplot(data = foldbackLenSummary, aes(x=FoldbackLenBucket, y=Count))
                      + geom_line(aes(y=INV, colour='INV'))
                      + geom_line(aes(y=Combo, colour='Combo > 50% assembled'))
@@ -111,13 +96,33 @@ print(ggplot(data = plotData, aes(x=AvgLinkLenBucket, y=Count))
 
 
 
-# DEL_Ext_TI with foldbacks
+print(ggplot(data = foldbacks %>% filter(FoldbackType=="INV"|ChainLength<10000,((DBLenStart>-30&DBLenStart<=0)|(DBLenEnd>-30&DBLenEnd<=0))) %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count), 
+             aes(x=FoldbackLenBucket, y=Count))
+      + geom_line(aes(y=INV, colour='INV'))
+      + geom_line(aes(y=Combo, colour='Combo ( FB Chain Lenght < 10k)' ))
+      + theme(panel.grid.major = element_line(colour="grey", size=0.5),panel.grid.minor.x = element_line(colour="grey", size=0.5))
+      + scale_x_log10()
+      + labs(title = "Foldback Length Distribution"))
 
-delExtTIFoldbacks = foldbacks %>% filter(ResolvedType=='DEL_Ext_TI')
+
+
+# DEL_Ext_TI with foldbacks
+nrow(foldbacks)
+View(foldbacks %>% filter(ClusterDesc=='INV=2'))
+View(foldbacks %>% filter(ClusterDesc=='INV=2') %>% group_by(ResolvedType) %>% count())
+
+invFoldbacks = svData %>% filter(Type=='INV'&FoldbackLenStart>=0&FoldbackLnkStart==FoldbackLnkEnd)
+delExtTIFoldbacks = invFoldbacks %>% filter(ResolvedType=='DEL_Ext_TI'&((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q')))
+
+View(delExtTIFoldbacks %>% select(SampleId,ClusterId,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,SynDelDupLen,SynDelDupTILen,Ploidy))
+
 View(delExtTIFoldbacks)
 View(delExtTIFoldbacks %>% filter((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q')))
 
-invFoldbacks = svData %>% filter(Type=='INV'&FoldbackLenStart>=0&FoldbackLnkStart==FoldbackLnkEnd)
+#  initial INV facing centromere
+View(delExtTIFoldbacks %>% filter((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q')))
+
+
 
 View(invFoldbacks %>% filter(ResolvedType=='DEL_Ext_TI'&((OrientStart==-1&ArmStart=='P')|(OrientStart==1&ArmStart=='Q'))))
 

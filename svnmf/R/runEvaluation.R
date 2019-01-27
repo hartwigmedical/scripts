@@ -121,8 +121,8 @@ produce_signature_report<-function(runType, runId, sigFile, contribFile, sigInfo
   colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
 
   # TEMP until next java run
-  sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
-  sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
+  #sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
+  #sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
 
   baSigNames = colnames(baSigs)
   baSigCount = ncol(baSigs)

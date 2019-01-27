@@ -1,21 +1,218 @@
-library(purple);
 library(devtools);
-library(RMySQL)
 library(data.table)
-library(IRanges)
 library(dplyr)
 library(tidyr)
-library(reshape2)
 library(ggplot2)
 library(stringi)
-library(NMF)
-library(MutationalPatterns)
+library(grid)
 library(gridExtra)
 library(ggpubr)
+library(cowplot)
+library("pracma")
+library(purple) # brings multiplot()
 
+
+# library(NMF)
+#library(MutationalPatterns)
 
 detach("package:svnmf", unload=TRUE);
 library(svnmf)
+
+
+# Signatures using SigAnalyser
+
+svMatrixData = read.csv("~/logs/r_output/sv_sig_matrix_data.csv")
+svSampleCounts = read.csv("~/logs/r_output/sv_sig_sample_counts.csv")
+svBucketNames = read.csv("~/logs/r_output/sv_bucket_names.csv")
+
+View(svBucketNames)
+
+sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
+View(sampleCancerTypes)
+
+produce_signature_report("SV", "siga_del_dup_plus_synths", "~/data/sv/sv_ba_sigs.csv", "~/data/sv/sv_ba_contribs.csv",
+                         "~/data/sv/sv_ba_group_data.csv", "~/data/sv/sv_ba_sample_sig_allocs.csv",
+                         svMatrixData, svSampleCounts, sampleCancerTypes, svBucketNames, F, F, T)
+
+View(svMatrixData[,1:10])
+
+
+# manual debug
+contribFile = "~/data/sv/sv_ba_contribs.csv"
+sigFile = "~/data/sv/sv_ba_sigs.csv"
+sigAllocFile = "~/data/sv/sv_ba_sample_sig_allocs.csv"
+sigInfoFile = "~/data/sv/sv_ba_group_data.csv"
+  
+baContribs = as.matrix(read.csv(file=contribFile, stringsAsFactors=F))
+baSigs = as.matrix(read.csv(file=sigFile, stringsAsFactors=F))
+sigAllocs = as.data.frame(read.csv(file=sigAllocFile, stringsAsFactors=F))
+colnames(sigAllocs) = c("Signature", "BgId", "SampleId", "Count", "SigPercent")
+
+View(baSigs)
+
+# TEMP until next java run
+#sigAllocs$Signature = ifelse(sigAllocs$BgId=='Excess',42,sigAllocs$Signature)
+#sigAllocs$Count = ifelse(sigAllocs$BgId=='Excess',-sigAllocs$Count,sigAllocs$Count) # negate the excess counts
+
+baSigNames = colnames(baSigs)
+baSigCount = ncol(baSigs)
+print(baSigCount)
+print(baSigNames)
+
+baSigNumList = get_signame_list(baSigCount, F)
+colnames(baSigs) <- baSigNumList
+print(baSigNumList)
+
+# trim sig names
+baSigNames = trim_ba_sig_names(baSigNames)
+print(baSigNames)
+
+baSigInfo = as.data.frame(read.csv(file=sigInfoFile, stringsAsFactors=F))
+View(baSigInfo)
+
+View(baContribs)
+View(baSigs)
+
+# look for links between the sigs
+baSigCount = nrow(baSigInfo)
+print(baSigCount)
+
+# count up BG signatures
+bgSigCount = nrow(baSigInfo %>%filter(Type=="BGRD"))
+
+# set colours for BG, major, minor and other sig types
+newSigColours = get_ba_sig_colours(baSigCount, baSigInfo)
+
+sigInfo = baSigInfo %>% select(Rank, BgId, Type, Discovery, CancerType, Effects, SampleCount, BucketCount, RefSigs, GrpLinks, ParentId)
+
+sigInfo[is.na(sigInfo)] = ""
+maxTextLength = 30
+sigInfo$Effects = ifelse(stri_length(sigInfo$Effects > maxTextLength), stri_sub(sigInfo$Effects,1,maxTextLength), sigInfo$Effects)
+sigInfo$CancerType = ifelse(stri_length(sigInfo$CancerType > maxTextLength), stri_sub(sigInfo$CancerType,1,maxTextLength), sigInfo$CancerType)
+
+sigInfo$Colour = ""
+colourCol = ncol(sigInfo)
+for(i in 1:baSigCount)
+{
+  sigInfo[i,colourCol] = newSigColours[i]
+}
+
+sigInfo = sigInfo %>% filter(Type!="BGRD")
+
+View(sigInfo)
+
+signatures = baSigs
+contribution = baContribs
+summaryCounts = svSampleCounts
+
+sigCount = nrow(contribution)
+hasBackgroundSigs = (bgSigCount > 0)
+print(bgSigCount)
+
+# print(paste("evaluating run: type=", runType, ", id=", runId, ", sigCount=", sigCount, sep=''))
+
+sampleNames = colnames(contribution)
+
+origSampleCounts = summaryCounts %>% group_by(SampleId) %>% summarise(SampleCount=sum(Count))
+
+print(sigCount)
+
+sigNamesUnamed = get_signame_list(sigCount, F)
+print(sigNamesUnamed)
+colnames(signatures) = sigNamesUnamed
+
+colnames(signatures)
+
+sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+colnames(sigNamesCombined) <- c("Signature", "SigName")
+
+print("evaluating buckets")
+
+bucketIndex = data.frame(as.numeric(as.character(rownames(bucketNames))))
+colnames(bucketIndex) <- c("BucketIndex")
+bucketNamesIndexed = cbind(bucketNames, bucketIndex)
+bucketNamesIndexed$BucketIndex = bucketNamesIndexed$BucketIndex-1
+
+# 1. Bucket Evaluation
+sigBucketData = get_bucket_data(signatures, contribution, bucketNames)
+sigBucketData = merge(sigBucketData,bucketNamesIndexed,by="Bucket",all.x=T)
+sigBucketData = merge(sigBucketData,sigNamesCombined,by="Signature",all.x=T)
+
+sigBucketStats = get_sig_bucket_stats(sigBucketData)
+
+# Signature Discovery, by looking at relative contribution of buckets
+sigBucketTopN = get_top_buckets(sigBucketData)
+
+# key bucket stats
+bucketSummaryData = get_bucket_stats(sigBucketData)
+
+# least contributing 10 buckets
+# leastContribBuckets = get_least_contrib_buckets(bucketSummaryData)
+# leastContribBuckets = head(leastContribBuckets, 10)
+
+if(viewResults)
+{
+  # View(sigBucketData)
+  View(sigBucketStats)
+  View(sigBucketTopN)
+}
+
+# Top Bucket Counts per Sample - for now get all buckets
+# sampleBucketTopN = get_top_buckets_by_sample(summaryCounts, origSampleCounts, sampleCancerTypes, 0)
+sampleBucketData = get_sample_bucket_data(matrixData, origSampleCounts, bucketNames)
+
+# 2 Signature Evaluation
+print("evaluating signatures")
+
+if(nrow(sigAllocs) > 0)
+{
+  sigNamesCombined = rbind(sigNamesCombined, c(sigCount+1,"Unalloc"))
+  sigNamesCombined = rbind(sigNamesCombined, c(sigCount+2,"Excess"))
+  
+  # ensure an entry in every sig or every sample
+  sampleSigFullSet = merge(sampleNames, sigNamesCombined)
+  colnames(sampleSigFullSet) = c("SampleId", "Signature", "SigName")
+  
+  sampleSigData = merge(sigAllocs, sampleSigFullSet, by=c("SampleId", "Signature"), all=T)
+  sampleSigData[is.na(sampleSigData)] = 0
+  sampleSigData$PercBucket = round(sampleSigData$SigPercent/0.1)*0.1
+  sampleSigData = within(sampleSigData, rm(BgId))
+}
+else
+{
+  sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+  
+  # calculate and factor in residuals
+  sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
+}
+
+# get cancer type and SV Count
+sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=TRUE)
+sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
+sampleSigData = merge(sampleSigData, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=TRUE)
+sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
+
+# key stats per signature
+sigStats = get_sig_stats(sampleSigDataNoResiduals)
+
+# make the sig count total all sigs plus unalloc but not excess
+if(viewResults)
+{
+  View(sigStats)
+  View(sampleSigData)
+}
+
+
+
+
+
+
+
+
+
+
+
+
 
 # DATA PREPARATION
 svData = read.csv('~/logs/CLUSTER_V23.csv')

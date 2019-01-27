@@ -15,6 +15,10 @@ svData$SampleId_CancerType = paste(svData$SampleId, svData$CancerType, sep='_')
 
 # extract only simple, unclustered DELs and DUPs
 delsAndDups = svData %>% filter(Type=='DEL'|Type=='DUP') %>% filter(Length>0&ResolvedType=='SimpleSV')
+
+delsAndDups = delsAndDups %>% filter(Type!='DEL'|stri_length(InsertSeq)!=Length-1)
+
+
 delsAndDups$LenBucket = 2 ** round(log(delsAndDups$Length,2))
 
 sampleDelDupCounts = delsAndDups %>% group_by(SampleId_CancerType,Type) %>% summarise(Count=n()) %>% arrange(-Count)
@@ -202,7 +206,7 @@ print(dupTypeComparisonPlot)
 
 
 # PDF OUTPUT
-outputFile = paste("~/logs/r_output/pdfs/SVA_DEL_DUP_Lengths.pdf", sep = "")
+outputFile = paste("~/logs/r_output/pdfs/SVA_DEL_DUP_Lengths2.pdf", sep = "")
 
 pdf(file=outputFile, height = 14, width = 20)
 
@@ -214,9 +218,80 @@ grid.arrange(deregDelDupSamplesPlot, ncol = 1, nrow = 1, newpage = TRUE)
 
 grid.arrange(nonderegDelDupSamplesByCancerTypePlot, ncol = 1, nrow = 1, newpage = TRUE)
 
-grid.arrange(delTypeComparisonPlot, dupTypeComparisonPlot, ncol = 2, nrow = 1, newpage = TRUE)
+# grid.arrange(delTypeComparisonPlot, dupTypeComparisonPlot, ncol = 2, nrow = 1, newpage = TRUE)
 
 dev.off()
+
+
+
+
+#####################
+# FRAGILE SITES
+#####################
+
+
+dels = svData %>% filter(Type=='DEL'&Length>0&ResolvedType=='SimpleSV')
+dels$LenBucket = 2**round(log(dels$Length,2))
+dels$LocationStart = paste(delsStart$ChrStart,round(dels$PosStart/1e6), sep='_')
+dels$LocationEnd = paste(dels$ChrEnd,round(dels$PosEnd/1e6), sep='_')
+
+dels$IsGenic = ifelse(dels$GeneStart!=''|dels$GeneEnd!='','Genic','NonGenic')
+dels$FreqType = ifelse(dels$IsFS,'Fragile',ifelse(dels$LocationStart %in% topLocations$Location,'FreqDel','Norm'))
+
+View(dels %>% group_by(FreqType) %>% count())
+
+# View(dels %>% group_by(LenBucket,IsFS) %>% count() %>% spread(IsFS,n))
+
+print(ggplot(data = dels %>% group_by(LenBucket,IsFS) %>% count() %>% spread(IsFS,n), aes(x=LenBucket, y=n))
+                                         + geom_line(aes(y=`TRUE`, colour='FS'))
+                                         + geom_line(aes(y=`FALSE`, colour='Non-FS'))
+                                         + scale_x_log10()
+                                         + labs(title = "DELs by length and Fragile Site"))
+
+print(ggplot(data = dels %>% group_by(LenBucket,IsFS,IsGenic) %>% count() %>% spread(IsFS,n), aes(x=LenBucket, y=n))
+      + geom_line(aes(y=`TRUE`, colour='FS'))
+      + geom_line(aes(y=`FALSE`, colour='Non-FS'))
+      + scale_x_log10()
+      + facet_wrap(~IsGenic)
+      + labs(title = "DELs by length and Fragile Site"))
+
+print(ggplot(data = dels %>% group_by(LenBucket,FreqType,IsGenic) %>% count() %>% spread(FreqType,n), aes(x=LenBucket, y=n))
+      + geom_line(aes(y=Fragile, colour='Fragile'))
+      + geom_line(aes(y=FreqDel, colour='FreqDel'))
+      + geom_line(aes(y=Norm, colour='Norm'))
+      + scale_x_log10()
+      + facet_wrap(~IsGenic)
+      + labs(title = "DELs by length and Fragile Site"))
+
+
+
+# deletes by location
+fsBucketLen = 1e6
+delsStart = dels
+delsEnd = dels %>% filter(PosEnd-PosStart>fsBucketLen)
+delsAll = rbind(delsStart,delsEnd)
+View(delsAll %>% select(ChrStart,PosStart,PosEnd,Location))
+
+View(delsAll %>% group_by(Location) %>% summarise(Count=n()) %>% arrange(-Count))
+
+locationData = delsAll %>% group_by(Location, IsGenic) %>% summarise(Count=n()) %>% arrange(-Count)
+locationData = locationData %>% spread(IsGenic,Count)
+locationData$LocationTotal = locationData$Genic + locationData$NonGenic
+locationData[is.na(locationData)] = 0
+locationData = locationData %>% arrange(-LocationTotal)
+
+View(locationData)
+nrow(locationData)
+
+topLocations = head(locationData,50)
+View(topLocations)
+
+print(ggplot(data = head(locationData,100), aes(x=reorder(Location,-LocationTotal), y=Count))
+      + geom_point(aes(y=Genic, colour='Genic'))
+      + geom_point(aes(y=NonGenic, colour='NonGenic'))
+      + labs(title = "DELs by location")
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
+
 
 
 

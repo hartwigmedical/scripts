@@ -136,7 +136,16 @@ hpcSamples = highestPurityCohortSummary %>% filter(sampleId %in% dr022Samples$sa
 View(hpcSamples)
 nrow(hpcSamples)
 
-write.csv(hpcSamples %>% select(sampleId,patientId), "~/dev/bachelor/dr22_samples.csv", quote=F,row.names = F)
+write.csv(highestPurityCohortSummary %>% select(sampleId,patientId), "~/dev/bachelor/dr22_samples.csv", quote=F,row.names = F)
+nonDr22Samples = highestPurityCohortSummary %>% filter(!(sampleId %in% dr022Samples$sampleId))
+nrow(nonDr22Samples)
+write.csv(nonDr22Samples %>% select(sampleId,patientId), "~/dev/bachelor/non_dr22_samples.csv", quote=F,row.names = F)
+
+
+load("~/data/r_data/highestPurityCohortSummary.RData")
+
+write.csv(highestPurityCohortSummary %>% select(sampleId,patientId), "~/dev/bachelor/driver_paper_samples.csv", row.names = F, quote=F)
+
 
 View(highestPurityCohortSummary)
 

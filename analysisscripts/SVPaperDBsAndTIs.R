@@ -81,6 +81,7 @@ svData = sv_load_and_prepare(svFile)
 # TI Direct File
 tiDirectData = read.csv("~/logs/SVA_LINKS.csv")
 
+nrow(tiDirectData %>% filter(TILength<30))
 tiDirectData = tiDirectData %>% filter(TILength>=30)
 
 View(tiDirectData)
@@ -94,11 +95,9 @@ nrow(tiDirectData %>% filter(IsLINE=='true'))
 # - assmebled chain length - single, short (2-4), long (5+)
 
 tiDirectData$TiLenBucket = 2**round(log(tiDirectData$TILength,2))
-
 tiDirectData$AssemblyType = ifelse(tiDirectData$IsAssembled=='true','ASSEMBLY','INFERRED')
 tiDirectData$CNGain = (tiDirectData$CopyNumberGain=='true')
 tiDirectData$ArmOfOrigin = (tiDirectData$OnArmOfOrigin=='true')
-
 tiDirectData$TraversesSvs = (tiDirectData$TraversedSVCount>0)
 #View(tiDirectData %>% group_by(TraversedSVCount) %>% count())
 #View(tiDirectData %>% group_by(TraversesSvs) %>% count())
@@ -153,7 +152,7 @@ plot_length_facetted(tiDirectData, "NextSVDistance>0&(ResolvedType=='ComplexChai
                      "TiLenBucket,ResolvedType", 
                      'TiLenBucket', 'ResolvedType', "Clustered TI Lengths for 3+ Clusters")
 
-# 2. Distribution of chain link lengths based on proportion of short & assmebled TI
+# 2. Distribution of chain link lengths based on proportion of short & assembled TI
 shortTIData = (tiDirectData %>% group_by(SampleId,ClusterId,ChainId) 
                %>% summarise(ClusterCount=first(ClusterCount),
                              LinkCount=n(),
@@ -176,9 +175,45 @@ print(ggplot(data = shortTIData %>% filter(ShortTIPerc>=0.9&LinkCount>1) %>% gro
 
 
 
-
 ############################
 # working and experimental...
+
+
+# TIs be whether they traverse another SV or not
+travsSvData = (tiDirectData %>% filter(ResolvedType=='DEL_Ext_TI'|ResolvedType=='DUP_Ext_TI') 
+               %>% group_by(ResolvedType,TraversesSvs,TiLenBucket) %>% count() %>% spread(ResolvedType,n))
+View(travsSvData)
+
+print(ggplot(data = travsSvData, aes(x=TiLenBucket, y=n))
+      + geom_line(aes(y=DEL_Ext_TI, colour='DEL_Ext_TI'))
+      + geom_line(aes(y=DUP_Ext_TI, colour='DUP_Ext_TI'))
+      + scale_x_log10()
+      + facet_wrap(~TraversesSvs)
+      + labs(title = "TI Lengths for Traversing SVs"))
+
+travsSvData2 = (tiDirectData %>% filter(ResolvedType=='DUP_Int_TI') 
+                %>% group_by(ClusterDesc,TraversesSvs,TiLenBucket) %>% count() %>% spread(TraversesSvs,n))
+travsSvData2 = (tiDirectData %>% filter(ClusterDesc=='DUP=2'&ResolvedType=='DUP_Ext_TI') 
+               %>% group_by(ClusterDesc,TraversesSvs,TiLenBucket) %>% count() %>% spread(TraversesSvs,n))
+
+print(ggplot(data = travsSvData2 , aes(x=TiLenBucket, y=n))
+      + geom_line(aes(y=`TRUE`, colour='TraversesSVs'))
+      + geom_line(aes(y=`FALSE`, colour='NoTraversal'))
+      + scale_x_log10()
+      + facet_wrap(~ClusterDesc)
+      + labs(title = "TI Lengths for Traversing SVs"))
+
+
+travsSvData3 = (tiDirectData %>% filter(ResolvedType=='SimpleChain'|ResolvedType=='ComplexChain') 
+               %>% group_by(ResolvedType,TraversesSvs,TiLenBucket) %>% count() %>% spread(ResolvedType,n))
+
+print(ggplot(data = travsSvData3, aes(x=TiLenBucket, y=n))
+      + geom_line(aes(y=ComplexChain, colour='ComplexChain'))
+      + geom_line(aes(y=SimpleChain, colour='SimpleChain'))
+      + scale_x_log10()
+      + facet_wrap(~TraversesSvs)
+      + labs(title = "TI Lengths for Traversing SVs"))
+
 
 
 
@@ -465,130 +500,6 @@ tiAssembledPlot = (ggplot(data = tiDirectData %>% filter(TiLengthBucket < 1e4) %
 
 print(tiAssembledPlot)
 
-
-
-
-
-
-# pre-direct TI file
-
-View(svData5K %>% filter(IsLINE==T,ClusterCount==1,Type!='BND')) 
-View(svData5K %>% filter(SampleId=='CPCT02020258T',ChrStart==13))
-svData = sv_load_and_prepare(svFile)
-summary10k=(svData %>% filter(grepl('Complex',ResolvedType)) %>% group_by(SampleId,Type) %>% count() %>% spread(Type,n))
-summary5k=(svData5K %>% filter(grepl('Complex',ResolvedType)) %>% group_by(SampleId,Type) %>% count() %>% spread(Type,n))
-View(merge(summary10k,summary5k,by='SampleId',all=T) %>% mutate(BNDDiff=BND.y-BND.x,DUPDiff=DUP.y-DUP.x,DELDiff=DEL.y-DEL.x,INVDiff=INV.y-INV.x) %>% 
-       select(SampleId,BND.x,BND.y,INV.x,INV.y,DEL.x,DEL.y,DUP.x,DUP.y,BNDDiff,DUPDiff,INVDiff,DELDiff))
-totalSVCount = nrow(svData)
-View(svData %>% group_by(ResolvedType,ClusterSize) 
-     %>% summarise(Clusters=n_distinct(paste(SampleId,ClusterId,sep='_')), TotalSVs=n(), AsPerc=round(n()/totalSVCount,2))
-     %>% arrange(-AsPerc))
-
-
-tiDataStart = svData %>% filter(LnkTypeStart=='TI'&Type!='SGL'&Type!='NONE') %>% filter(IsLINE==F)
-tiDataStart$TiId1 = ifelse(tiDataStart$Id<tiDataStart$LnkSvStart,tiDataStart$Id,tiDataStart$LnkSvStart)
-tiDataStart$TiId2 = ifelse(tiDataStart$Id>tiDataStart$LnkSvStart,tiDataStart$Id,tiDataStart$LnkSvStart)
-tiDataStart$TiLength = tiDataStart$LnkLenStart
-tiDataStart$Assembly = tiDataStart$AsmbMatchStart
-tiDataStart$DBOnOther = (tiDataStart$DBLenEnd>-31 & tiDataStart$DBLenEnd<100)
-tiDataEnd = svData %>% filter(LnkTypeEnd=='TI'&Type!='SGL'&Type!='NONE') %>% filter(IsLINE==F)
-tiDataEnd$TiId1 = ifelse(tiDataEnd$Id<tiDataEnd$LnkSvEnd,tiDataEnd$Id,tiDataEnd$LnkSvEnd)
-tiDataEnd$TiId2 = ifelse(tiDataEnd$Id>tiDataEnd$LnkSvEnd,tiDataEnd$Id,tiDataEnd$LnkSvEnd)
-tiDataEnd$TiLength = tiDataEnd$LnkLenEnd
-tiDataEnd$Assembly = tiDataEnd$AsmbMatchEnd
-tiDataEnd$DBOnOther = (tiDataEnd$DBLenStart>-31 & tiDataEnd$DBLenStart<100)
-
-tiData = rbind(tiDataStart,tiDataEnd)
-
-tiDataPairs = (tiData %>% group_by(SampleId,ClusterId,TiId1,TiId2) 
-               %>% summarise(Count=n(),
-                             TiLength=first(TiLength),
-                             Assembly=first(Assembly),
-                             BndCount=sum(Type=='BND'),
-                             CrossArmCount=sum(ArmStart!=ArmEnd),
-                             ChrStart1=first(ChrStart),
-                             ChrStart2=last(ChrStart),
-                             ArmStart1=first(ArmStart),
-                             ArmStart2=last(ArmStart),
-                             DBOnOtherCount=sum(DBOnOther),
-                             Assembly=last(Assembly),
-                             ResolvedType=first(ResolvedType),
-                             SynDelDupTILen=first(SynDelDupTILen),
-                             ClusterSize=first(ClusterSize))
-               %>% filter(Count==2))
-
-# View(tiDataPairs %>% filter(Count==3))
-View(tiDataPairs)
-View(tiDataPairs %>% group_by(Assembly,DBOnOtherCount) %>% count())
-View(tiDataPairs %>%filter(BndCount==0&CrossArmCount==2))
-
-View(tiDataPairs %>%filter(BndCount==0&CrossArmCount==2) %>% group_by(SampleId,ChrStart1,ChrStart2,ArmStart1,ArmStart2) 
-     %>% summarise(n_distinct(ClusterId)))
-
-
-tiDataPairs$TiLenBucket = 2**round(log(tiDataPairs$TiLength,2))
-tiDataPairs$ClusterType = tiDataPairs$ResolvedType
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='ComplexPartialChain','ComplexChain',as.character(tiDataPairs$ClusterType))
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='None','ComplexChain',as.character(tiDataPairs$ClusterType))
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='SimplePartialChain','SimpleChain',as.character(tiDataPairs$ClusterType))
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='SimpleSV','SimpleChain',as.character(tiDataPairs$ClusterType))
-tiDataPairs$AssemblyType = ifelse(tiDataPairs$Assembly=='MATCH','ASSEMBLY','INFERRED')
-tiDataPairs$DbFlanked = ifelse(tiDataPairs$DBOnOtherCount==2,'DBFlanked','Isolated')
-
-nrow(tiDataPairs %>% filter(AssemblyType=='ASSEMBLY'))
-nrow(svData)
-
-View(svData %>% filter(AsmbTICount>0&IsLINE==F) %>% group_by(FoldbackCount>0,Type) %>% count())
-View(svData %>% filter(AsmbTICount>0&IsLINE==F) %>% group_by(ResolvedType,Type) %>% count() %>% spread(Type,n))
-nrow(svData %>% filter(AsmbTICount>0&Type=='BND'))
-
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='SimpleChain','Chain',as.character(tiDataPairs$ClusterType))
-tiDataPairs$ClusterType = ifelse(tiDataPairs$ClusterType=='ComplexChain','Chain',as.character(tiDataPairs$ClusterType))
-
-tiDataPairs$TiLocation = ifelse(tiDataPairs$ResolvedType=='DEL_Ext_TI'|tiDataPairs$ResolvedType=='DUP_Ext_TI'|tiDataPairs$BndCount==2,'Remote','Unclear')
-
-tiDataPairs$TiCategory = paste(tiDataPairs$ClusterType, tiDataPairs$TiLocation, tiDataPairs$DbFlanked, sep='_')
-# tiDataPairs$TiCategory = paste(tiDataPairs$ClusterType, tiDataPairs$TiLocation, tiDataPairs$DbFlanked, sep='_')
-# tiDataPairs$TiCategory = paste(tiDataPairs$ClusterType, tiDataPairs$AssemblyType,tiDataPairs$TiLocation,sep='_')
-
-tiDataPairs = tiDataPairs %>% filter(ResolvedType!='Line')
-
-#View(tiDataPairs %>% group_by(TiLenBucket,ResolvedType) %>% count() %>% spread(ResolvedType,n))
-#View(tiDataPairs %>% group_by(TiLenBucket,ClusterType) %>% count() %>% spread(ClusterType,n))
-
-View(tiDataPairs %>% filter(ClusterType=='Chain'&TiLength>2000&TiLength<=10000&TiLocation=='Remote'))
-
-# tiClusterSummary = tiDataPairs %>% group_by(TiLenBucket,ClusterType) %>% summarise(Count=n())
-tiClusterSummary = tiDataPairs %>% group_by(TiLenBucket,TiCategory) %>% summarise(Count=n())
-tiDataPairs$TiLenSimBucket = round(tiDataPairs$TiLength,-1)
-tiClusterSummary = tiDataPairs %>% filter(TiLenSimBucket<500) %>% group_by(TiLenSimBucket,AssemblyType) %>% summarise(Count=n()) %>% spread(AssemblyType,Count)
-
-
-tiClusterTypesPlot = (ggplot(data = tiClusterSummary, aes(x=TiLenSimBucket, y=Count))
-                      + geom_line(aes(y=ASSEMBLY, colour='ASSEMBLY'))
-                      + geom_line(aes(y=INFERRED, colour='INFERRED'))
-                      + theme(panel.grid.major = element_line(colour="grey", size=0.5))
-                      + labs(title = "TI Lengths by Cluster Type"))
-
-print(tiClusterTypesPlot)
-
-tiClusterSummary2 = tiDataPairs %>% filter(TiLenSimBucket<2000) %>% group_by(TiLenSimBucket,ResolvedType) %>% summarise(Count=n())
-View(tiClusterSummary2)
-print(ggplot(data = tiClusterSummary2, aes(x=TiLenSimBucket, y=Count))
-      + geom_line()
-      + facet_wrap(~ResolvedType)
-      + theme(panel.grid.major = element_line(colour="grey", size=0.5))
-      + labs(title = "TI Lengths by Cluster Type"))
-
-
-
-print(ggplot(data = tiClusterSummary, aes(x=TiLenBucket, y=Count))
-      + geom_line()
-      + geom_line()
-      + scale_x_log10()
-      + labs(title = "TI Lengths by Cluster Type")))
-
-print(tiClusterTypesPlot)
 
 
 
