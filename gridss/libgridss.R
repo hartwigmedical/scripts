@@ -38,7 +38,8 @@ addVCFHeaders = function(vcf) {
       "SRNormalSupport",
       "normalCoverage",
       "af",
-      "NO_ASRP"),
+      "NO_ASRP",
+      "LongPolyC"),
     Description=c(
       "Found in panel of normals",
       "Imprecise variant",
@@ -54,7 +55,8 @@ addVCFHeaders = function(vcf) {
       "Short event with split reads support in the normal sample",
       "Insufficient normal coverage to determine somatic status",
       "Variant allele fraction too low",
-      "Breakend supported by 0 assembled read pairs"))), "DataFrame"))
+      "Breakend supported by 0 assembled read pairs",
+      "Single breakend containing long polyC or polyG run. Likely to be an artefact."))), "DataFrame"))
   return(vcf)
 }
 
@@ -159,6 +161,7 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
     # this is a relatively strict filter but does filter out most of the
     # noise from microsatellite sequences
     filtered = .addFilter(filtered, "NO_ASRP", i$BASRP == 0)
+    filtered = .addFilter(filtered, "LongPolyC", str_detect(gr$insSeq, "CCCCCCCCCCCCCCCC") | str_detect(gr$insSeq, "GGGGGGGGGGGGGGGG"))
   }
   if (somatic_filters) {
     filtered = .addFilter(filtered, "normalSupport", .genosum(g$BVF,normalOrdinal) > gridss.allowable_normal_contamination * .genosum(g$BVF,tumourOrdinal))
