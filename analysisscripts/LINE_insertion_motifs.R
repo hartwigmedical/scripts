@@ -179,4 +179,11 @@ ggplot(data.frame(
   geom_point()
 
 require(rpart)
-tree = rpart(deleted_bases ~ line_length + ins_length + hasHom + hasNoIns + hasOneIns + hasTwoIns + isPolyA + ihomlen + cn + homlen, clusterdf, method="anova")
+fit = rpart(isStrandInvasion ~ line_length + ins_length + hasHom + hasNoIns + hasOneIns + hasTwoIns + isPolyA + ihomlen + cn + homlen,
+            clusterdf %>% mutate(isStrandInvasion=ifelse(deleted_bases < -7, "StrandInvasion", "Clean")),
+            method="class")
+rsq.rpart(fit)
+
+ggplot(clusterdf) +
+  aes(x=deleted_bases, fill=ifelse(hasNoIns, "Both Clean", ifelse(hasOneIns, "One Clean", "Both breaks have inserted sequence"))) +
+  geom_histogram()
