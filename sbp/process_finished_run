@@ -18,6 +18,9 @@ cp -r ${download_path}/${set} ${processed_path}/${set}
 echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${processed_path}/${set}
 
+echo "[INFO] Running gridss assembly alignment backport for ${set}"
+do_run_gridss_2_1_0_breakpoint_position_backport ${processed_path}/${set} /data/common/tools/gridss_v2.1.0/gridss.jar
+
 echo "[INFO] Slicing and downloading bam hotspots for ${set}"
 do_download_hotspot_bams ${processed_path}/${set}
 
@@ -26,6 +29,9 @@ do_run_hotspot_caller ${processed_path}/${set}
 
 echo "[INFO] Running latest purple for ${set}"
 do_run_purple_no_db ${processed_path}/${set}
+
+echo "[INFO] Running viral annotation ${set}"
+do_run_gridss_viral_annotate_pilot ${processed_path}/${set}
 
 echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${processed_path}/${set}
