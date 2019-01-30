@@ -1,0 +1,30 @@
+#!/bin/bash
+
+sample=$1 && shift
+
+credentials=/data/common/dbs/mysql_credentials/pilot
+output_dir=/data/experiments/190130_sv_vis
+sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
+segments=${output_dir}/SVA_VIS_SEGMENTS.csv
+links=${output_dir}/SVA_VIS_SVS.csv
+circos=/data/common/tools/circos_v0.69.6/bin/circos
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
+    -sample ${sample} \
+    -plot_out ${output_dir} \
+    -data_out ${output_dir}/data/ \
+    -segment ${segments} \
+    -link ${links} \
+    -circos ${circos} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
+
+
+#Example usage
+# do_run_sv_visualiser CPCT12234567 -chromosome 15
+
