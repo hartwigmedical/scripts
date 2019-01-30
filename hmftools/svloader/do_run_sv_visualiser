@@ -5,8 +5,8 @@ sample=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 output_dir=/data/experiments/190130_sv_vis
 sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
-segments=${output_dir}/SVA_VIS_SEGMENTS.csv
-links=${output_dir}/SVA_VIS_SVS.csv
+segments=/data/experiments/sv/SVA_VIS_SEGMENTS.csv
+links=/data/experiments/sv/SVA_VIS_SVS.csv
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
 # Database details
@@ -26,5 +26,11 @@ java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svanalysis.S
 
 
 #Example usage
-# do_run_sv_visualiser CPCT12234567 -chromosome 15
+# do_run_sv_visualiser CPCT02020258T
+#
+# Optional arguments
+# -threads  sets number of threads
+# -chromosome   will only produce plot for supplied chromosome
+# -clusterId    will only produce plot for supplied clusterId
+# -debug    replaces sv positions with sv id
 
