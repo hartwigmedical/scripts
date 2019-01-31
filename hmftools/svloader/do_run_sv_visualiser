@@ -14,7 +14,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
+java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.SvVisualiser \
     -sample ${sample} \
     -plot_out ${output_dir} \
     -data_out ${output_dir}/data/ \
@@ -26,9 +26,11 @@ java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svanalysis.S
 
 
 #Example usage
-# do_run_sv_visualiser CPCT02020258T
+#   do_run_sv_visualiser CPCT02020258T
+#   do_run_sv_visualiser CPCT02020258T -threads 1 -chromosome 15 -debug
 #
 # Optional arguments
+#
 # -threads  sets number of threads
 # -chromosome   will only produce plot for supplied chromosome
 # -clusterId    will only produce plot for supplied clusterId
