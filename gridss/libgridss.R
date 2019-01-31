@@ -64,13 +64,9 @@ addVCFHeaders = function(vcf) {
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
     pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
-    include_pon_imprecise_calls=TRUE,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    if (!include_pon_imprecise_calls && !is.null(pongr$IMPRECISE)) {
-      pongr = pongr[!pongr$IMPRECISE]
-    }
     hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
   }
   return(hasHit)
@@ -551,6 +547,7 @@ transitive_breakpoints <- function(
     allow_loops=FALSE,
     max_hops=4,
     max_intermediate_paths=1000,
+    max_active_paths=100000,
     report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
@@ -633,7 +630,7 @@ transitive_breakpoints <- function(
     }
     active_df = active_df %>%
       group_by(terminal_start) %>%
-      top_n(max_intermediate_paths, wt=min_length) %>%
+      top_n(min(max_intermediate_paths, max_active_paths / (length(unique(active_df$terminal_start)) + 1)), wt=min_length) %>%
       ungroup()
     # check for terminal completion
     active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
@@ -771,8 +768,8 @@ readVcf = function(file, ...) {
 
 read_gridss_breakpoint_pon = function(file) {
   df = read_tsv(file,
-                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE"),
-                col_types="ciiciiccccl")
+                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2"),
+                col_types="ciiciicccc")
   gro = GRanges(
     seqnames=df$chr1,
     ranges=IRanges(
@@ -780,8 +777,7 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end1),
     strand=df$strand1,
     partner=paste0(seq_len(nrow(df)), "h"),
-    score=df$score,
-    IMPRECISE = df$IMPRECISE)
+    score=df$score)
   names(gro) = paste0(seq_len(nrow(df)), "o")
   grh = GRanges(
     seqnames=df$chr2,
@@ -790,8 +786,7 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end2),
     strand=df$strand2,
     partner=paste0(seq_len(nrow(df)), "o"),
-    score=df$score,
-    IMPRECISE = df$IMPRECISE)
+    score=df$score)
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }

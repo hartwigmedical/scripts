@@ -170,6 +170,7 @@ clusterdf = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
     homlen,
     cn)
 clustermat=scale(as.matrix(clusterdf %>% dplyr::select(-deleted_bases)))
+require(Rtsne)
 tsnedf = Rtsne(clustermat)
 ggplot(data.frame(
     x=tsnedf$Y[,1],
