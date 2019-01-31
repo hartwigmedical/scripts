@@ -66,7 +66,7 @@ for sheet in $sheets; do
     fi
 
     ## print line that can be pasted directly into RunOverview sheet
-    echo -e "# $experimentName\t$runName\tseq\t$currHostShort\t$allProjects";
+    echo -e "# $experimentName\t$runName\t$currHostShort\t$allProjects";
 
     ## print sample-id, sample_name, submission-id, description
     cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort -k2,2 -k1,1 | uniq
