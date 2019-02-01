@@ -26,8 +26,11 @@ then
 	exit 1
 fi
 if [ -d "$out_dir" ] ; then
-	echo "Backport processing directory $out_dir found. Deleting."
-	rm -r $out_dir
+    echo "Backport processing already complete. Exiting."
+    exit 1
+
+	#echo "Backport processing directory $out_dir found. Deleting."
+	#rm -r $out_dir
 fi
 
 echo Creating $out_dir
