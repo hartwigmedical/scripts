@@ -7,7 +7,7 @@ run_dir=$1 && shift
 
 data_output_dir=${run_dir}/svAnalysis
 credentials=/data/common/dbs/mysql_credentials/prod
-sv_jar=/data/common/tools/variantannotator_v2.7/variant-annotator.jar
+sv_jar=/data/common/tools/variantannotator_v2.8/variant-annotator.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
