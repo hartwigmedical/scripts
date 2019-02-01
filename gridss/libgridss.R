@@ -220,7 +220,10 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
 is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBase=0.5, maxEditDistancePerInversionBase=0.2) {
   result = rep(FALSE, length(gr))
   gr$isOfInterest = is_short_del(gr) & abs(abs(start(gr) - start(gr[ifelse(is.na(gr$partner), names(gr), gr$partner)])) - gr$insLen) < minsizedelta
-  gr$isOfInterest = !is.na(gr$partner) & gr$isOfInterest & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  gr$isOfInterest = gr$isOfInterest & !is.na(gr$partner) & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  ucscgr = gr
+  seqlevelsStyle(ucscgr) = "UCSC"
+  gr$isOfInterest = gr$isOfInterest & as.logical(seqnames(ucscgr) %in% seqnames(bsgenome))
   igr = gr[gr$isOfInterest]
   seqlevelsStyle(igr) = "UCSC"
   inseq = igr$insSeq
@@ -630,7 +633,7 @@ transitive_breakpoints <- function(
     }
     active_df = active_df %>%
       group_by(terminal_start) %>%
-      top_n(min(max_intermediate_paths, max_active_paths / (length(unique(active_df$terminal_start)) + 1)), wt=min_length) %>%
+      top_n(as.integer(min(max_intermediate_paths, 1 + max_active_paths / (length(unique(active_df$terminal_start)) + 1))), wt=min_length) %>%
       ungroup()
     # check for terminal completion
     active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
