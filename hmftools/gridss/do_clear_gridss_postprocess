@@ -11,6 +11,6 @@ fi
 
 
 gridss_dir=$(dirname ${gridss_vcf})
-echo "removing " ${gridss_dir}/*.gridss.somatic.vcf.gz*
-echo "removing " ${gridss_dir}/*.gridss.somatic.full.vcf.gz*
-echo "force removing" ${gridss_dir}/breakpoint_position_backport
+rm ${gridss_dir}/*.gridss.somatic.vcf.gz*
+rm ${gridss_dir}/*.gridss.somatic.full.vcf.gz*
+rm -rf ${gridss_dir}/breakpoint_position_backport
