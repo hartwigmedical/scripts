@@ -14,6 +14,13 @@ full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf.gz
 assembly_sv_bam=$assembly_bam.gridss.working/$(basename $assembly_bam).sv.bam
 out_dir=$(dirname $full_vcf)/breakpoint_position_backport
 region_bed=$out_dir/region.bed
+corrected_vcf=$out_dir/$(basename $output_vcf).breakpoint_position_backport.vcf
+if [ -a ${corrected_vcf}.gz ]
+then
+    echo "[WARN] Already applied backport. Exiting."
+    exit 1
+fi
+
 
 # check that the assembly actually exists
 if [ ! -f $assembly_sv_bam ] ; then
@@ -26,11 +33,8 @@ then
 	exit 1
 fi
 if [ -d "$out_dir" ] ; then
-    echo "Backport processing already complete. Exiting."
-    exit 1
-
-	#echo "Backport processing directory $out_dir found. Deleting."
-	#rm -r $out_dir
+	echo "Backport processing directory $out_dir found. Deleting."
+	rm -r $out_dir
 fi
 
 echo Creating $out_dir
@@ -97,11 +101,10 @@ java -Xmx4G $gridss_jvm_args gridss.AllocateEvidence \
 
 # Need to feed back to R to adjust nominal homology call position back to match gridss_somatic_filter
 libgridss=/data/common/repos/scripts/gridss/
-output_vcf=$out_dir/$(basename $output_vcf).breakpoint_position_backport.vcf
-Rscript ${libgridss}/gridss_adjust_call_positions.R -i ${unadjusted_vcf} -o ${output_vcf} -s ${libgridss}
+Rscript ${libgridss}/gridss_adjust_call_positions.R -i ${unadjusted_vcf} -o ${corrected_vcf} -s ${libgridss}
 rm ${unadjusted_vcf}
-mv ${output_vcf}.bgz ${output_vcf}.gz
-mv ${output_vcf}.bgz.tbi ${output_vcf}.gz.tbi
+mv ${corrected_vcf}.bgz ${corrected_vcf}.gz
+mv ${corrected_vcf}.bgz.tbi ${corrected_vcf}.gz.tbi
 
 
 

@@ -21,7 +21,7 @@ full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf
 if [ -a ${output_vcf}.gz ]
 then
     echo "[WARN] Already processed gridss structural variants. Exiting."
-    #exit 1
+    exit 1
 fi
 
 unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
