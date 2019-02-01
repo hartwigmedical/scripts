@@ -31,7 +31,7 @@ echo "[INFO] Running latest purple for ${set}"
 do_run_purple_no_db ${processed_path}/${set}
 
 echo "[INFO] Running viral annotation ${set}"
-do_run_gridss_viral_annotate_pilot ${processed_path}/${set}
+do_run_gridss_viral_annotate_prod ${processed_path}/${set}
 
 echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${processed_path}/${set}
