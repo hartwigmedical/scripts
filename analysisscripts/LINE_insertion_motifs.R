@@ -145,7 +145,7 @@ cbind_hitdf = function(hitdf, subject_gr, query_gr, suffix=c("1", "2")) {
   }
   return(bind_cols(hitdf, todf(subject_gr[hitdf$subjectHits], suffix[1]), todf(query_gr[hitdf$queryHits], suffix[2])))
 }
-clusterdf = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
+bpbp_df = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
   replace_na(list(insSeq1="", Homology1="", insSeq2="", Homology2="")) %>%
   mutate(
     ins_length = str_length(insSeq1) + str_length(insSeq2),
@@ -153,10 +153,15 @@ clusterdf = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
     hasHom=Homology1 != "" | Homology2 != "",
     hasNoIns = ins_length == 0,
     hasOneIns = pmax(str_length(insSeq1), str_length(insSeq2)) == ins_length,
-    hasTwoIns = str_length(insSeq1) < ins_length,
+    hasTwoIns = !hasNoIns & !hasOneIns,
     isPolyA = str_detect(refContext1, "AAAA") | str_detect(refContext1, "TTTT") | str_detect(refContext2, "AAAA") | str_detect(refContext2, "TTTT"),
     ihomlen=ihomlen1 + ihomlen2,
-    cn=(cn1 + cn2) / 2) %>%
+    cn=(cn1 + cn2) / 2,
+    ins1As = str_count(insSeq1, stringr::fixed("A")),
+    ins2As = str_count(insSeq2, stringr::fixed("A")),
+    ins1ATs = str_count(insSeq1, stringr::fixed("A")) + str_count(insSeq1, stringr::fixed("T")),
+    ins2ATs = str_count(insSeq2, stringr::fixed("A")) + str_count(insSeq2, stringr::fixed("T")))
+clusterdf = bpbp_df %>%
   dplyr::select(
     deleted_bases,
     line_length,
@@ -187,4 +192,21 @@ rsq.rpart(fit)
 
 ggplot(clusterdf) +
   aes(x=deleted_bases, fill=ifelse(hasNoIns, "Both Clean", ifelse(hasOneIns, "One Clean", "Both breaks have inserted sequence"))) +
-  geom_histogram()
+  geom_histogram(bins=45) +
+  scale_x_continuous(limits=c(-25, 20))
+
+
+bpbp_df %>% filter(hasTwoIns) %>% dplyr::select(insSeq1, refContext1, insSeq2, refContext2) %>% View()
+
+ggplot(bpbp_df) +
+  aes(x=str_length(insSeq1), y=str_length(insSeq2), color=(ins1As + ins2As)/ins_length > 0.8) +
+  geom_point()
+# non-polyA insert sequence?
+ggplot(bpbp_df) +
+  aes(x=deleted_bases, y=(ins1ATs + ins2ATs)/ins_length, color=hasTwoIns, size=ins_length) +
+  geom_jitter() +
+  scale_x_continuous(limits=c(-25, 20))
+
+
+
+
