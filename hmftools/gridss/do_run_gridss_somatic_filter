@@ -20,8 +20,7 @@ output_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf
 full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf
 if [ -a ${output_vcf}.gz ]
 then
-    echo "[INFO] Already processed gridss structural variants. RERUNNING!"
-    #echo "[WARN] Already processed gridss structural variants. Exiting."
+    echo "[WARN] Already processed gridss structural variants. Exiting."
     #exit 1
 fi
 
