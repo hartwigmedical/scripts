@@ -7,6 +7,7 @@ shallow_run=$1 && shift
 ${prefix}/pilot_do_run_base_patient_reporter \
     -not_analysable \
     -not_analysable_reason low_tumor_percentage \
+    -not_analysable_sample \
     -do_report_germline \
     -run_dir ${shallow_run} \
-    -not_analysable_sample "$@"
+     "$@"
