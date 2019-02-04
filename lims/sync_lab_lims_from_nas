@@ -22,7 +22,7 @@ cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
    cpctTxt="${cpctTarget}.tsv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
-sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2019 v5.1.xlsx"
+sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2019 v5.2.xlsx"
 sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
    sampTxt="${sampTarget}_samp.tsv"
 sampLatest="${SYM_DIR}/lims_samp"
