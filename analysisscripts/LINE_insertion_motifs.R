@@ -38,6 +38,13 @@ full_gr = c(with(sv_raw_df, GRanges(
   refContext=RefContextEnd
 )))
 names(full_gr) = full_gr$beid
+# replication timing
+rt_gr = import("D:/hartwig/wgEncodeUwRepliSeqHelas3WaveSignalRep1.bigWig")
+seqlevelsStyle(rt_gr) = "NCBI"
+full_gr$rt = findOverlaps(full_gr, rt_gr, select="first", ignore.strand=TRUE)
+full_gr$rt = rt_gr$score[full_gr$rt]
+
+
 line_raw_df = sv_raw_df %>% filter(LEStart != "None" | LEEnd != "None")
 line_gr = full_gr[full_gr$Id %in% line_raw_df$Id]
 bp_line_gr = line_gr[!is.na(line_gr$partner)]
@@ -106,13 +113,13 @@ ggplot(bpbp_line_df %>% filter(line_chr == as.character(seqnames(max_gr)) &
   coord_cartesian(xlim=c(start(max_gr) - 1000, end(max_gr) + 1000), ylim=c(-20, 11)) +
   labs(title="Snapshot of most inserted LINE", y="deleted bases", x="Genomic position")
 
-ggplot(bpbp_line_df) +
-  aes(x=deleted_bases, y=abs(line_pos1-line_pos2)) +
-  geom_jitter(width = 0.5, height = 0.5) +
-  coord_cartesian(xlim=c(-20, 11), ylim=c(0,2000)) +
-  geom_density2d() +
-  geom_marginal(aes(group=deleted_bases, color="red")) +
-  labs(title="vs length of LINE insertion")
+#ggplot(bpbp_line_df) +
+#  aes(x=deleted_bases, y=abs(line_pos1-line_pos2)) +
+#  geom_jitter(width = 0.5, height = 0.5) +
+#  coord_cartesian(xlim=c(-20, 11), ylim=c(0,2000)) +
+#  geom_density2d() +
+#  geom_marginal(aes(group=deleted_bases, color="red")) +
+#  labs(title="vs length of LINE insertion")
 
 ggplot(bpbp_line_df %>% filter(deleted_bases >= -20 & deleted_bases < 12)) +
   aes(x=line_length, fill=as.factor(deleted_bases)) +
@@ -149,18 +156,20 @@ bpbp_df = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
   replace_na(list(insSeq1="", Homology1="", insSeq2="", Homology2="")) %>%
   mutate(
     ins_length = str_length(insSeq1) + str_length(insSeq2),
+    ins_count = (str_length(insSeq1) > 0) + (str_length(insSeq2) > 0),
     homlen=str_length(Homology1) + str_length(Homology2),
     hasHom=Homology1 != "" | Homology2 != "",
-    hasNoIns = ins_length == 0,
-    hasOneIns = pmax(str_length(insSeq1), str_length(insSeq2)) == ins_length,
-    hasTwoIns = !hasNoIns & !hasOneIns,
+    hasNoIns = ins_count == 0,
+    hasOneIns = ins_count == 1,
+    hasTwoIns = ins_count == 2,
     isPolyA = str_detect(refContext1, "AAAA") | str_detect(refContext1, "TTTT") | str_detect(refContext2, "AAAA") | str_detect(refContext2, "TTTT"),
     ihomlen=ihomlen1 + ihomlen2,
     cn=(cn1 + cn2) / 2,
     ins1As = str_count(insSeq1, stringr::fixed("A")),
     ins2As = str_count(insSeq2, stringr::fixed("A")),
     ins1ATs = str_count(insSeq1, stringr::fixed("A")) + str_count(insSeq1, stringr::fixed("T")),
-    ins2ATs = str_count(insSeq2, stringr::fixed("A")) + str_count(insSeq2, stringr::fixed("T")))
+    ins2ATs = str_count(insSeq2, stringr::fixed("A")) + str_count(insSeq2, stringr::fixed("T")),
+    rt=rt1+rt2/2)
 clusterdf = bpbp_df %>%
   dplyr::select(
     deleted_bases,
@@ -175,25 +184,36 @@ clusterdf = bpbp_df %>%
     homlen,
     cn)
 clustermat=scale(as.matrix(clusterdf %>% dplyr::select(-deleted_bases)))
-require(Rtsne)
-tsnedf = Rtsne(clustermat)
-ggplot(data.frame(
-    x=tsnedf$Y[,1],
-    y=tsnedf$Y[,2],
-    deleted_bases=clusterdf$deleted_bases)) +
-  aes(x=x, y=y, col=cut(deleted_bases, c(-20, -16, -11, -7, 0, 5))) +
-  geom_point()
+# require(Rtsne)
+# tsnedf_in = unique(clustermat)
+# tsnedf = Rtsne(tsnedf_in)
+# ggplot(data.frame(
+#     x=tsnedf$Y[,1],
+#     y=tsnedf$Y[,2],
+#     deleted_bases=tsnedf_in$deleted_bases)) +
+#   aes(x=x, y=y, col=cut(deleted_bases, c(-20, -16, -11, -7, 0, 5))) +
+#   geom_point()
 
 require(rpart)
 fit = rpart(isStrandInvasion ~ line_length + ins_length + hasHom + hasNoIns + hasOneIns + hasTwoIns + isPolyA + ihomlen + cn + homlen,
             clusterdf %>% mutate(isStrandInvasion=ifelse(deleted_bases < -7, "StrandInvasion", "Clean")),
             method="class")
 rsq.rpart(fit)
+plot(fit)
+text(fit, use.n=TRUE)
 
-ggplot(clusterdf) +
-  aes(x=deleted_bases, fill=ifelse(hasNoIns, "Both Clean", ifelse(hasOneIns, "One Clean", "Both breaks have inserted sequence"))) +
+ggplot(bpbp_df) +
+  aes(x=deleted_bases, fill=ins_count) +
   geom_histogram(bins=45) +
-  scale_x_continuous(limits=c(-25, 20))
+  scale_x_continuous(limits=c(-25, 20)) +
+  facet_wrap(~ ins_count, scales="free")
+
+# OK: we can explain 25% as double breaks
+# What's the inserted sequence?
+
+
+
+
 
 
 bpbp_df %>% filter(hasTwoIns) %>% dplyr::select(insSeq1, refContext1, insSeq2, refContext2) %>% View()
@@ -203,9 +223,57 @@ ggplot(bpbp_df) +
   geom_point()
 # non-polyA insert sequence?
 ggplot(bpbp_df) +
-  aes(x=deleted_bases, y=(ins1ATs + ins2ATs)/ins_length, color=hasTwoIns, size=ins_length) +
+  aes(x=deleted_bases, y=(ins1ATs + ins2ATs)/ins_length, color=factor(ins_count), size=ins_length) +
   geom_jitter() +
   scale_x_continuous(limits=c(-25, 20))
+
+ggplot(bpbp_df) +
+  aes(x=str_length(Homology1)-str_length(insSeq1), fill=as.factor(pmax(-100, str_length(Homology2)-str_length(insSeq2)))) +
+  geom_histogram() +
+  scale_x_continuous(limits=c(-30, 20)) +
+  facet_wrap(~ ins_count, scales="free")
+
+
+ggplot(bpbp_df) +
+  aes(x=line_length, color=deleted_bases >= -7) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases < -7), fill = "red", alpha = 0.2) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases >= -7), fill = "blue", alpha = 0.2) +
+  scale_x_log10() +
+  facet_wrap(~ ins_count)
+
+ggplot(bpbp_df) +
+  aes(x=line_length, color=deleted_bases >= -7) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases < -7), fill = "red", alpha = 0.2) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases >= -7), fill = "blue", alpha = 0.2) +
+  scale_x_continuous(limits=c(0, 400))
+  facet_wrap(~ ins_count)
+
+# No difference in replication timing either
+ggplot(bpbp_df) +
+  aes(x=rt, color=deleted_bases >= -7) +
+  geom_density() +
+facet_wrap(~ ins_count)
+
+
+
+full_gr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
