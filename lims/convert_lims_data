@@ -110,14 +110,14 @@ my $lims_2017 = readJson( $LIMS_JSN_2017 );
 $samp_objs = $lims_2017->{ 'samples' };
 $subm_objs = $lims_2017->{ 'submissions' };
 
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC'}, 'sample_id',  0, $PROC_TSV, "\t" );
-$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
-$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM'}, 'submission', 0, $SUBM_TSV, "\t" );
-$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
-$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT'}, 'sample_id',  1, $CPCT_TSV, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
+$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
+$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
+$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
+$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
+$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_TSV, "\t" );
 
 $lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
@@ -644,7 +644,27 @@ sub getFieldNameTranslations{
       "Storage_status"    => 'lab_storage_status',
     );
 
-    ## columns samples sheet in rest lims (FOR-001)
+    ## columns samples sheet in 2018 rest lims (FOR-001)
+    my %SAMP_DICT_2018 = (
+      "Sample_ID"         => 'sample_id',
+      "Sample_name"       => 'sample_name',
+      "DNA_conc"          => 'dna_conc',
+      "Yield"             => 'yield',
+      "Q30"               => 'q30',
+      "Analysis_type"     => 'analysis_type',
+      "Partner_sample"    => 'partner_sample',
+      "HMF_reg"           => 'submission',
+      "SNP_required"      => 'is_snp_required',
+      "SNP_exp"           => 'snp_experiment_id',
+      "Requested_product" => 'request',
+      "State"             => 'lab_status', # lab status
+      "Primary_tumor_type"=> 'ptum',
+      "Priority"          => 'priority', 
+      "Arival_date"       => 'arrival_date',
+      "Remarks"           => 'remarks',
+    );
+
+    ## columns samples sheet in CURRENT rest lims (FOR-001)
     my %SAMP_DICT = (
       "Sample_ID"         => 'sample_id',
       "Sample_name"       => 'sample_name',
@@ -695,10 +715,11 @@ sub getFieldNameTranslations{
     );
     
     my %translations = (
-        'SUBM' => \%SUBM_DICT,
-        'SAMP' => \%SAMP_DICT,
-        'PROC' => \%PROC_DICT,
-        'CPCT' => \%CPCT_DICT,
+        'SUBM_CURR' => \%SUBM_DICT,
+        'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2018' => \%SAMP_DICT_2018,
+        'PROC_CURR' => \%PROC_DICT,
+        'CPCT_CURR' => \%CPCT_DICT,
     );
     
     return \%translations;
