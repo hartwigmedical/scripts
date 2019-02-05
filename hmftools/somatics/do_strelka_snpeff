@@ -9,7 +9,7 @@ SAMPLE=$1 && shift
 FINAL_VCF=$1 && shift
 ANNOTATED_VCF=$1 && shift
 
-## MIVO: some sanity checks
+## Some sanity checks
 if [[ ! -f "${FINAL_VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 

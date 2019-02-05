@@ -10,6 +10,7 @@ SNPEFF_ROOT=/data/common/tools/snpEff_${SNPEFF_VRSN}/
 SNPEFF_DB="GRCh37.75"
 
 RUN=$1
+SET=$( basename ${RUN})
 
 if [ -z "$RUN" ];
   then
@@ -24,7 +25,7 @@ fi
 VCF=$( find ${RUN} -wholename "*/somaticVariants/*_post_processed.vcf" )
 SAMPLE=$( cat ${RUN}/metadata | jq -r '.tumor_sample' )
 
-## MIVO: some sanity checks
+## Some sanity checks
 if [[ ! -d "${RUN}" ]]; then echo "[EXIT] Run ($RUN) not found" && exit 1; fi
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
@@ -46,7 +47,7 @@ fi
 
 rm "${MNV_VCF}.idx"
 
-if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ${SLICED_BAM};
+if ! ${BAM_SLICER_SCRIPT} ${SET} ${SAMPLE} ${MNV_BED} ${SLICED_BAM};
 then exit 1
 fi
 

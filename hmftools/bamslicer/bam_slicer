@@ -1,59 +1,52 @@
 #!/bin/bash
 
-BAM_SLICER=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
+source api_functions
 
-SAMPLE=$1
-BED_FILE=$2
-OUTPUT_FILE=$3
+bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
 
-if [ -z "$SAMPLE" ] || [ -z "$BED_FILE" ] || [ -z "$OUTPUT_FILE" ];
+set=$1
+sample=$2
+bed_file=$3
+output_file=$4
+
+if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ];
   then
-    echo "Usage: $ ./bam_slicer sample bed_file output_file"
+    echo "Usage: $ ./bam_slicer set sample bed_file output_file"
+    echo "   set eg 180101_HMFregCPCT..."
     echo "   sample	sample to search for. e.g CPCT11111111T"
     echo "   bed_file	bed file containing regions to be sliced"
     exit 1
 fi
 
-# MIVO: get validated somatic.ini/cpct.ini runs for this sample, sort in descending order of pipeline version then take first row
-RUN_ROW=`query_sbp_api -type runs | grep -P "${SAMPLE}\t" | grep "hmf-output" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" | sort -bnrk8.2,8 | head -1`
+run_info=$(load_run_info_for_set ${set})
 
-if [ -z "$RUN_ROW" ];
-  then
-    echo "[ERROR] No runs found with a Somatic/CPCT .ini file for sample ${SAMPLE}. Exiting."
+if [ -z "$run_info" ]; then
+    echo "[ERROR] No run info found for set ${set}. Exiting"
     exit 1
 fi
 
-RUN_NAME=`echo ${RUN_ROW} | cut -d ' ' -f1`
-RUN_BUCKET=`echo ${RUN_ROW} | cut -d ' ' -f5`
+run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 
-bamV4=$(find -L "${RUN_NAME}/${SAMPLE}/mapping/${SAMPLE}_dedup.realigned.bam")
-bamV5=$(find -L "${RUN_NAME}/${SAMPLE}/mapping/${SAMPLE}.realigned.bam")
-BAM_INDEX_KEY_V4="${bamV4}.bai"
-BAM_INDEX_KEY_V5="${bamV5}.bai"
+bampath_in_bucket=$(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set})
+bam_index="${bampath_in_bucket}.bai"
 
 run_bam_slicer() {
-   BAM_INDEX_PARAM=$1
-   BAM_KEY=$2
-   java -Xmx8G \
-     -jar ${BAM_SLICER} \
+   bam_index=$1
+   java -Xmx8G -jar ${bam_slicer_jar} \
      -s3 \
-     -bucket ${RUN_BUCKET} \
-     -input ${BAM_KEY} \
-     -index ${BAM_INDEX_PARAM} \
-     -bed ${BED_FILE} \
-     -output ${OUTPUT_FILE} \
+     -bucket ${run_bucket} \
+     -input ${bampath_in_bucket} \
+     -index ${bam_index} \
+     -bed ${bed_file} \
+     -output ${output_file} \
      -max_chunks 2000 \
      -max_concurrent_requests 30
 }
 
-if run_bam_slicer ${BAM_INDEX_KEY_V4};
+if ! run_bam_slicer ${bam_index};
 then
-     echo "running bam V4"
-     run_bam_slicer ${BAM_INDEX_KEY_V4} ${bamV4}
-elif run_bam_slicer ${BAM_INDEX_KEY_V5};
-then
-     echo "running bam V5"
-     run_bam_slicer ${BAM_INDEX_KEY_V5} ${bamV5}
-else
-    echo "slicing with index bam failed"
+     echo "[INFO] Slicing with index ${bam_index} failed"
+     bam_index="${bampath_in_bucket%.*}.bai"
+     echo "[INFO] Retrying with index ${bam_index}"
+     run_bam_slicer ${bam_index}
 fi

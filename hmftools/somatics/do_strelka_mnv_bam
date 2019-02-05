@@ -7,7 +7,7 @@ SAMPLE=$1 && shift
 VCF=$1 && shift
 BAM=$1 && shift
 
-## MIVO: some sanity checks
+## Some sanity checks
 if [[ ! -f "${VCF}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
 if [[ -z "${SAMPLE}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
@@ -25,6 +25,7 @@ fi
 
 rm "${MNV_VCF}.idx"
 
+# Wont work anymore -> need to pas set to bam slicer script
 if ! ${BAM_SLICER_SCRIPT} ${SAMPLE} ${MNV_BED} ${BAM};
 then exit 1
 fi
