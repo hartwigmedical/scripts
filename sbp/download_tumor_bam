@@ -39,5 +39,5 @@ s3path="s3://${run_bucket}/${set}"
 dspath="/data/schuberg/bam_downloads/bams_${set}"
 
 echo "[INFO] Getting TUMOR bam from ${s3path}"
-bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX]*.realigned.bam$" )
+bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX]*(_dedup)?.realigned.bam$" )
 sbp s3 cp "s3://${run_bucket}/${bampath_in_bucket}" "${dspath}/" --profile download
