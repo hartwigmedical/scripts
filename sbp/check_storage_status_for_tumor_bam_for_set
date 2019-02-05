@@ -12,8 +12,7 @@ fi
 
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 
-s3path="s3://${run_bucket}/${set}"
-bampath_in_bucket=$( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX]*(_dedup)?.realigned.bam$" )
+bampath_in_bucket=$(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set})
 path_to_check=${run_bucket}/${bampath_in_bucket}
 
 echo "[INFO] Requesting status for ${path_to_check}"

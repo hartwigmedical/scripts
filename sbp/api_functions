@@ -42,3 +42,11 @@ load_rerun_v4_info_for_set() {
     fi
     echo ${rerun_info}
 }
+
+locate_tumor_bam_for_set_in_bucket() {
+    run_bucket=$1
+    set=$2
+
+    s3path="s3://${run_bucket}/${set}"
+    echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX]*(_dedup)?.realigned.bam$" )
+}
