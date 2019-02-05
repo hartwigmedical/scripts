@@ -26,11 +26,14 @@ fi
 NORMAL=${SAMPLE:0:12}R
 RUN_NAME=`echo ${RUN_ROW} | cut -d ' ' -f1`
 RUN_BUCKET=`echo ${RUN_ROW} | cut -d ' ' -f5`
-BAM_KEY="$RUN_NAME/$NORMAL/mapping/${NORMAL}_dedup.realigned.bam"
-BAM_INDEX_KEY="${BAM_KEY}.bai"
+bamV4=$(find -L "${RUN_NAME}/${SAMPLE}/mapping/${SAMPLE}_dedup.realigned.bam")
+bamV5=$(find -L "${RUN_NAME}/${SAMPLE}/mapping/${SAMPLE}.realigned.bam")
+BAM_INDEX_KEY_V4="${bamV4}.bai"
+BAM_INDEX_KEY_V5="${bamV5}.bai"
 
 run_bam_slicer() {
    BAM_INDEX_PARAM=$1
+   BAM_KEY=$2
    java -Xmx8G \
      -jar ${BAM_SLICER} \
      -s3 \
@@ -43,10 +46,14 @@ run_bam_slicer() {
      -max_concurrent_requests 30
 }
 
-if ! run_bam_slicer ${BAM_INDEX_KEY};
+if run_bam_slicer ${BAM_INDEX_KEY_V4};
 then
-     echo "[INFO] Slicing with index ${BAM_INDEX_KEY} failed"
-     BAM_INDEX_KEY="${BAM_KEY%.*}.bai"
-     echo "[INFO] Retrying with index ${BAM_INDEX_KEY}"
-     run_bam_slicer ${BAM_INDEX_KEY}
+     echo "running bam V4"
+     run_bam_slicer ${BAM_INDEX_KEY_V4} ${bamV4}
+elif run_bam_slicer ${BAM_INDEX_KEY_V5};
+then
+     echo "running bam V5"
+     run_bam_slicer ${BAM_INDEX_KEY_V5} ${bamV5}
+else
+    echo "slicing with index bam failed"
 fi
