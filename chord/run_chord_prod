@@ -28,3 +28,9 @@ ${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
 ${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
+
+count_files_chord_prod=$(ls ${working_dir} | wc -l)
+
+if [ ${count_files_chord_prod} -lt 2 ]; then
+    echo "[ERROR] not all files for chord present!"
+fi
