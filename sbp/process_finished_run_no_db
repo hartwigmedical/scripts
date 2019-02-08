@@ -1,0 +1,38 @@
+#!/bin/bash
+
+set=$1
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to process_finished_run. Exiting"
+    exit 1
+fi
+
+download_path=/data/schuberg/tmp
+echo "[INFO] Downloading set ${set} to ${download_path}"
+download_set -s ${set} -p ${download_path}
+
+set_path=${download_path}/${set}
+
+echo "[INFO] Running gridss somatic filtering for ${set}"
+do_run_gridss_somatic_filter ${set_path}
+
+echo "[INFO] Running gridss assembly alignment backport for ${set}"
+do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.1.0/gridss.jar
+
+echo "[INFO] Slicing and downloading bam hotspots for ${set}"
+do_download_hotspot_bams ${set_path}
+
+echo "[INFO] Running sage for ${set}"
+do_run_hotspot_caller ${set_path}
+
+echo "[INFO] Running latest purple for ${set}"
+do_run_purple_no_db ${set_path}
+
+echo "[INFO] Running viral annotation ${set}"
+do_run_gridss_viral_annotate_prod ${set_path}
+
+echo "[INFO] Running bachelor for ${set}"
+bachelor_prod ${set_path}
+
+echo "[INFO] Running CHORD for ${set}"
+run_chord_prod ${set_path}
