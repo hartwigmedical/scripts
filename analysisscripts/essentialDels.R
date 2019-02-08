@@ -1,5 +1,7 @@
 library(dplyr)
 library(ggplot2)
+library(GenomicRanges)
+library(scales)
 
 approximate_distance <- function(start, end) {
   difference = end - start;
@@ -103,3 +105,58 @@ create_plot("RAD51B" , canonicalTranscripts, hpcCopyNumbers)
 
 
 
+#######  VIOLIN PLOT OF LENGTH OF DELS
+load("~/hmf/RData/Processed/hpcDriversByGene.RData")
+load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
+load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+genesToExamine = hpcDriversByGene %>% 
+  filter(driver %in% c("Deletion","FragileDel"), !grepl("telomere", gene), !grepl("centromere", gene)) %>% 
+  group_by(gene, driver) %>% 
+  count() %>% 
+  ungroup() %>%
+  top_n(200, n) %>%
+  left_join(canonicalTranscripts, by = "gene") %>% arrange(-n)
+
+hpcDels = hpcCopyNumbers %>% filter(copyNumber <= 0.5)
+hpcDelRanges = GRanges(hpcDels$chromosome, IRanges(hpcDels$start, hpcDels$end))
+geneRanges = GRanges(genesToExamine$chromosome, IRanges(genesToExamine$geneStart, genesToExamine$geneEnd))
+ol = as.matrix(findOverlaps(hpcDelRanges, geneRanges, type="any", select="all"))
+
+hpcDelsInGenes = hpcDels[ol[, 1], ]
+hpcDelsInGenes$gene <- genesToExamine[ol[,2], "gene"]$gene
+hpcDelsInGenes$driver <- genesToExamine[ol[,2], "driver"]$driver
+
+hpcDelsInGenes = hpcDelsInGenes %>% mutate(
+  length = end - start, 
+  lengthFactor = cut(length, breaks = c(0,1,10,100,1000,10000,100000,1000000,10000000000)),
+  geneFactor = factor(gene, levels = genesToExamine$gene, ordered = T)) %>%
+  filter(length > 0)
+
+## VALIDATION
+#jon = hpcDelsInGenes %>% group_by(sampleId, chromosome, start, end) %>% summarise(n = n(), genes = paste0(gene, collapse = ",") ) %>% filter(n > 1)
+#jon2 = hpcDelsInGenes %>% group_by(sampleId, gene) %>% count()  %>% filter(n > 1)
+  
+filteredGenes = hpcDelsInGenes %>% filter(gene %in% genesToExamine[1:30, ]$gene) 
+plotViolin <- function(df) {
+  ggplot(df, aes(geneFactor, length)) + 
+  geom_violin( aes(fill=driver), draw_quantiles = c(0.25, 0.5, 0.75), scale = "count") +
+  xlab("Gene") + ylab("DelLength") +
+  scale_y_continuous(trans="log10",labels = comma)
+}
+
+p1 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[1:30, ]$gene))
+p2 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[31:60, ]$gene))
+p3 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[61:90, ]$gene))
+
+cowplot::plot_grid(p1, p2, p3, ncol = 1)
+
+p4 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[91:120, ]$gene))
+p5 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[121:150, ]$gene))
+p6 = plotViolin(hpcDelsInGenes %>% filter(gene %in% genesToExamine[151:183, ]$gene))
+
+cowplot::plot_grid(p4, p5, p6, ncol = 1)
+
+
+
+
+  
