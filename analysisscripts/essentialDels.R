@@ -2,6 +2,7 @@ library(dplyr)
 library(ggplot2)
 library(GenomicRanges)
 library(scales)
+library(RMySQL)
 
 approximate_distance <- function(start, end) {
   difference = end - start;
@@ -24,7 +25,6 @@ create_histogram_data <- function (geneCopyNumbers) {
     for (i in 1:nrow(geneCopyNumbers)) {
         a = geneCopyNumbers[i,"start"] - minStart + 1
         b = geneCopyNumbers[i,"end"] - minStart + 1
-
         vec[a:b] <- vec[a:b] + 1
     }
 
@@ -33,10 +33,8 @@ create_histogram_data <- function (geneCopyNumbers) {
         mutate(x_end = lead(x)) %>%
         select(x, x_end, y) %>%
         filter(!is.na(x_end))
-
-
+    
     return (result)
-
 }
 
 
@@ -70,6 +68,7 @@ create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
 
 
 
+load("~/hmf/RData/Reference/allPurity.RData")
 load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
 load("~/hmf/RData/Reference/canonicalTranscripts.RData")
 essential = read.csv(file = "/Users/jon/hmf/analysis/essential/NIHMS732683-supplement-supp_table_3.csv", stringsAsFactors = F) %>%
@@ -103,6 +102,84 @@ create_plot("PTEN" , canonicalTranscripts, hpcCopyNumbers)
 create_plot("CDKN1B" , canonicalTranscripts, hpcCopyNumbers)
 create_plot("RAD51B" , canonicalTranscripts, hpcCopyNumbers)
 
+
+####### HISTOGRAM WITH TRANSCRIPTS
+
+query_transcripts <- function(dbConnect, genes) {
+  geneString = paste("'", genes$gene, "'", collapse = ",", sep = "")
+  query = paste0(
+    "select gx.display_label as gene, tx.display_label, t.* from gene g, xref gx, transcript t, xref tx ", 
+    "where g.display_xref_id = gx.xref_id and gx.display_label in (", geneString,") and t.gene_id = g.gene_id ",
+    "and t.biotype = 'protein_coding' and tx.xref_id = t.display_xref_id")
+  return (dbGetQuery(dbConnect, query))
+}
+
+#load("~/hmf/RData/Processed/hpcDriversByGene.RData")
+#genes = hpcDriversByGene %>% filter(driver == "FragileDel") %>% select(gene) %>% distinct()
+#dbProd = dbConnect(MySQL(), dbname='homo_sapiens_core_89_37', groups="RAnalysis")
+#transcripts = query_transcripts(dbProd, genes)
+#dbDisconnect(dbProd)
+#rm(dbProd)
+#save(transcripts, file = "/Users/jon/hmf/analysis/essential/transcripts.RData")
+
+load("~/hmf/RData/Reference/allPurity.RData")
+load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
+load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+load(file = "/Users/jon/hmf/analysis/essential/transcripts.RData")
+
+hpcCopyNumbers = hpcCopyNumbers %>% left_join(allPurity[, c("sampleId", "cancerType")], by = "sampleId")
+
+create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers, transcripts) {
+  
+  primaryGene = canonicalTranscripts %>% filter(gene == geneName)
+  geneCopyNumbers = hpcCopyNumbers %>% filter(chromosome == primaryGene$chromosome, start <= primaryGene$geneEnd, end >= primaryGene$geneStart, copyNumber <= 0.5)
+  transcripts = transcripts %>% filter(gene == geneName)
+  
+  transcriptStart = min(transcripts$seq_region_start) 
+  transcriptEnd = max(transcripts$seq_region_end) 
+  minStart = transcriptStart - 0.1 * (transcriptEnd - transcriptStart)
+  maxEnd = transcriptEnd + 0.1 * (transcriptEnd - transcriptStart)
+  
+  cancerTypes = geneCopyNumbers %>% select(cancerType) %>% distinct()
+  geneHistogramData = data.frame()
+  for (singleCancerType in cancerTypes$cancerType) {
+    cancerTypeResult = create_histogram_data(geneCopyNumbers %>% filter(cancerType == singleCancerType))
+    cancerTypeResult$cancerType = singleCancerType
+    geneHistogramData = bind_rows(cancerTypeResult, geneHistogramData)
+  }
+  
+  geneHistogramMax = max(geneHistogramData$y)
+  
+  overlappingTranscripts = transcripts %>%
+    mutate(length =  seq_region_end - seq_region_start, n = n()) %>%
+    arrange(seq_region_start, -length) %>%
+    mutate(value = (row_number() %% (n + 1)) * geneHistogramMax / n, ymin = ((row_number() - 1) %% (n + 1)) * geneHistogramMax / n)
+  
+  p = ggplot() +
+    geom_rect(data=geneHistogramData, aes(xmin = x, xmax = x_end, ymin = 0, ymax = y), alpha = 0.6) +
+    geom_rect(data=overlappingTranscripts, aes(xmin = seq_region_start, xmax = seq_region_end, ymin = ymin + 0.1, ymax = value - 0.1, fill = gene), alpha = 0.5) +
+    geom_text(data=overlappingTranscripts, aes(x = (seq_region_start + seq_region_end)/2, y = value, label = display_label), vjust = 1, hjust = 0.5, size = 2) +
+    theme(legend.position="none") +  xlab("Position") + ylab("Deletes") + ggtitle(paste0(geneName, " (range=", approximate_distance(transcriptStart, transcriptEnd), ")")) +
+    facet_wrap(~cancerType) + coord_cartesian(xlim = c(minStart, maxEnd))
+  p
+  
+  
+  return (p)
+}
+
+create_plot("FHIT", canonicalTranscripts, hpcCopyNumbers, transcripts)
+
+plots = list()
+for (geneName in unique(transcripts$gene)) {
+  cat (geneName, "\n")
+  plots[[geneName]] <- create_plot(geneName , canonicalTranscripts, hpcCopyNumbers, transcripts)
+}
+
+pdf(file="/Users/jon/hmf/analysis/essential/FragileGenesWithTranscripts.pdf",width=10, height = 10)
+for (i in 1:length(plots)) {
+  print(plots[[i]])
+}
+dev.off()
 
 
 #######  VIOLIN PLOT OF LENGTH OF DELS
