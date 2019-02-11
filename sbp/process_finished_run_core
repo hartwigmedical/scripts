@@ -7,11 +7,14 @@ if [ -z "$set" ]; then
     exit 1
 fi
 
-download_path=/data/schuberg/tmp
+download_path=/data/schuberg/core_downloads_v4
 echo "[INFO] Downloading set ${set} to ${download_path}"
 download_set -s ${set} -p ${download_path}
 
-set_path=${download_path}/${set}
+processed_path=/data/schuberg/processed_runs
+echo "[INFO] Copying set ${set} to processed path ${processed_path}"
+set_path=${processed_path}/${set}
+cp -r ${download_path}/${set} ${set_path}
 
 echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${set_path}
