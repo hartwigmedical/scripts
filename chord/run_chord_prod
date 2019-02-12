@@ -12,7 +12,7 @@ fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-chord_dir=/data/common/tools/chord_v1.1
+chord_dir=/data/common/tools/chord_v1.2
 working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
