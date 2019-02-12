@@ -15,6 +15,10 @@ approximate_distance <- function(start, end) {
 
 
 create_histogram_data <- function (geneCopyNumbers) {
+    if (nrow(geneCopyNumbers) == 0) {
+      return (data.frame())
+    }
+  
     minStart = min(geneCopyNumbers$start)
     maxEnd = max(geneCopyNumbers$end)
 
@@ -37,6 +41,96 @@ create_histogram_data <- function (geneCopyNumbers) {
     return (result)
 }
 
+########## AMPLIFICATIONS ########## 
+load("~/hmf/RData/Reference/allPurity.RData")
+load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
+load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+essential = read.csv(file = "/Users/jon/hmf/analysis/essential/NIHMS732683-supplement-supp_table_3.csv", stringsAsFactors = F) %>%
+  select(gene = Gene, pValue = KBM7.adjusted.p.value) %>% mutate(pValue = paste0(round(pValue, 2)))
+canonicalTranscripts = canonicalTranscripts %>% left_join(essential, by = "gene")
+
+load("~/hmf/RData/Processed/hpcDriversByGene.RData")
+genesToExamine = hpcDriversByGene %>% filter(driver %in% c("Amplification"), !grepl("telomere", gene), !grepl("centromere", gene)) %>%
+  group_by(gene) %>% count()  %>% arrange(gene)
+
+hpcCopyNumbers = hpcCopyNumbers %>% left_join(allPurity[, c("sampleId", "ploidy")], by = "sampleId")
+
+create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
+  primaryGene = canonicalTranscripts %>% filter(gene == geneName)
+  geneCopyNumbers = hpcCopyNumbers %>% filter(chromosome == primaryGene$chromosome, start <= primaryGene$geneEnd, end >= primaryGene$geneStart, copyNumber >= 1 * ploidy)
+
+  geneHistogramData = create_histogram_data(geneCopyNumbers %>% filter(copyNumber >= 3 * ploidy))
+  geneHistogramData5 = create_histogram_data(geneCopyNumbers %>% filter(copyNumber >= 5 * ploidy))
+  geneHistogramData10 = create_histogram_data(geneCopyNumbers %>% filter(copyNumber >= 10 * ploidy))
+  geneHistogramData20 = create_histogram_data(geneCopyNumbers %>% filter(copyNumber >= 20 * ploidy))
+
+  minStart = min((geneCopyNumbers %>% filter(copyNumber >= 5 * ploidy))$start)
+  maxEnd = max((geneCopyNumbers %>% filter(copyNumber >= 5 * ploidy))$end)
+    
+  geneHistogramMax = max(geneHistogramData$y)
+  geneHistogram5Max = max(geneHistogramData5$y)
+  
+  lowerSide = geneHistogramData5 %>% filter(y < 0.05 * geneHistogram5Max, x < primaryGene$geneStart) %>% select(x)
+  if (nrow(lowerSide) == 0) {
+    xMin = minStart
+  } else {
+    xMin = pmin(primaryGene$geneStart - 10000, max(lowerSide))
+  }
+  
+  upperSide = geneHistogramData5 %>% filter(y < 0.05 * geneHistogram5Max, x_end > primaryGene$geneEnd) %>% select(x)
+  if (nrow(upperSide) == 0) {
+    xMax = maxEnd
+  } else {
+    xMax = pmax(primaryGene$geneStart - 10000, min(upperSide))
+  }
+
+  overlappingGenes = canonicalTranscripts %>% filter(chromosome == primaryGene$chromosome, geneStart <= maxEnd + 20000, geneEnd >= minStart - 20000) %>%
+    mutate(value = (row_number() %% 15 + 1) * geneHistogramMax / 15 ) %>%
+    mutate(gene = ifelse(is.na(pValue), gene, paste0(gene, "(", pValue, ")")))
+  
+  p = ggplot() +
+    geom_rect(data=geneHistogramData, aes(xmin = x, xmax = x_end, ymin = 0, ymax = y), alpha = 0.3) +
+    geom_rect(data=geneHistogramData5, aes(xmin = x, xmax = x_end, ymin = 0, ymax = y), alpha = 0.5) 
+  
+  if (nrow(geneHistogramData10) != 0) {
+    p = p + geom_rect(data=geneHistogramData10, aes(xmin = x, xmax = x_end, ymin = 0, ymax = y), alpha = 0.7) 
+  }
+  
+  if (nrow(geneHistogramData20) != 0) {
+    p = p + geom_rect(data=geneHistogramData20, aes(xmin = x, xmax = x_end, ymin = 0, ymax = y), alpha = 1)
+  }
+  
+  p = p + 
+    geom_rect(data=overlappingGenes, aes(xmin = geneStart, xmax = geneEnd, ymin = 0, ymax = value, fill = gene), alpha = 0.5) +
+    geom_text(data=overlappingGenes, aes(x = (geneStart + geneEnd)/2, y = value, label = gene), hjust = 0.5, size = 2, nudge_y = 0.5) +
+    theme(legend.position="none") +  xlab("Position") + ylab("Amps") + ggtitle(paste0(geneName, " (range=", approximate_distance(minStart, maxEnd), ")")) + 
+    coord_cartesian(xlim = c(xMin, xMax))
+  
+  return (p)
+}
+
+geneName = "BRAF"
+create_plot("BRAF", canonicalTranscripts, hpcCopyNumbers)
+
+plots = list()
+for (geneName in genesToExamine$gene) {
+  primaryGene = canonicalTranscripts %>% filter(gene == geneName)
+  geneCopyNumbers = hpcCopyNumbers %>% filter(chromosome == primaryGene$chromosome, start <= primaryGene$geneEnd, end >= primaryGene$geneStart, copyNumber >= 5 * ploidy)
+  if (nrow(geneCopyNumbers) > 10) {
+    cat (geneName, "\n")
+    plots[[geneName]] <- create_plot(geneName , canonicalTranscripts, hpcCopyNumbers)
+  }
+}
+
+
+pdf(file="/Users/jon/hmf/analysis/essential/EssentialAmps.3.5.10.20.pdf",width=15, height = 6)
+for (i in 1:length(plots)) {
+  print(plots[[i]])
+}
+dev.off()
+
+
+########## DELETES ########## 
 
 
 create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
