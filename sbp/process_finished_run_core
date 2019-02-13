@@ -3,7 +3,7 @@
 set=$1
 
 if [ -z "$set" ]; then
-    echo "[ERROR] No set provided to process_finished_run. Exiting"
+    echo "[ERROR] No set provided to process_finished_run_core. Exiting"
     exit 1
 fi
 
