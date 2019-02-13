@@ -39,3 +39,18 @@ bachelor_prod ${set_path}
 
 echo "[INFO] Running CHORD for ${set}"
 run_chord_prod ${set_path}
+
+echo "[INFO] Loading purple into database for ${set}"
+do_load_purple_data_prod ${set_path}
+
+echo "[INFO] Loading somatics into database for ${set}"
+do_load_somatic_variants_prod ${set_path}
+
+echo "[INFO] Loading structural variants into database for ${set}"
+do_run_sv_loader_prod ${set_path}
+
+echo "[INFO] Loading metrics into database for ${set}"
+do_load_metrics_data_prod ${set_path}
+
+echo "[INFO} Loading chord into database for ${set}"
+do_load_chord_data_prod ${set_path}
