@@ -7,6 +7,7 @@ output_dir=/data/experiments/190130_sv_vis
 sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
 segments=/data/experiments/sv/SVA_VIS_SEGMENTS.csv
 links=/data/experiments/sv/SVA_VIS_SVS.csv
+exons=/data/experiments/sv/SVA_VIS_GENE_EXONS.csv
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
 # Database details
@@ -20,6 +21,7 @@ java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.
     -data_out ${output_dir}/data/ \
     -segment ${segments} \
     -link ${links} \
+    -exon ${exon} \
     -circos ${circos} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
