@@ -21,7 +21,7 @@ java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.
     -data_out ${output_dir}/data/ \
     -segment ${segments} \
     -link ${links} \
-    -exon ${exon} \
+    -exon ${exons} \
     -circos ${circos} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
