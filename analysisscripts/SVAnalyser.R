@@ -45,6 +45,28 @@ eval.string.dplyr = function(.data, .fun.name, ...) {
   df
 }
 
+insertAndHomologySummary<-function(cluster,filterString = "",groupByString = "") {
+  (cluster %>% s_filter(filterString) %>% s_group_by(groupByString)
+   %>% summarise(count=n(),
+                 noInsnoHom=sum(HomLenBucket==0&InsLenBucket==0)/n(),
+                 HomTotal=sum(HomLenBucket>0)/n(),
+                 InsTotal=sum(InsLenBucket>0)/n(),
+                 InsGTE32=sum(HomLenBucket==0&InsLenBucket>=32)/n(),
+                 Ins16=sum(HomLenBucket==0&InsLenBucket==16)/n(),
+                 Ins8=sum(HomLenBucket==0&InsLenBucket==8)/n(),
+                 Ins4=sum(HomLenBucket==0&InsLenBucket==4)/n(),
+                 Ins2=sum(HomLenBucket==0&InsLenBucket==2)/n(),
+                 Ins1=sum(HomLenBucket==0&InsLenBucket==1)/n(),
+                 Hom1=sum(HomLenBucket==1&InsLenBucket==0)/n(),
+                 Hom2=sum(HomLenBucket==2&InsLenBucket==0)/n(),
+                 Hom4=sum(HomLenBucket==4&InsLenBucket==0)/n(),
+                 Hom8=sum(HomLenBucket==8&InsLenBucket==0)/n(),
+                 Hom16=sum(HomLenBucket==16&InsLenBucket==0)/n(),
+                 HomGTE32=sum(HomLenBucket>=32&InsLenBucket==0)/n())
+  )
+}
+
+
 cohortSummary<-function(cluster,filterString = "",groupByString = "") {
   (cluster %>% s_filter(filterString) %>% s_group_by(groupByString)
              %>% summarise(count=n(),
@@ -209,7 +231,7 @@ createSampleSummary <- function(cluster) {
 ################ LOADING ####################
 #############################################
 
-#PATH='~/Dropbox/HMF Australia team folder/Structural Variant Analysis/'
+PATH='~/Dropbox/HMF Australia team folder/Structural Variant Analysis/'
 PATH='~/hmf/analyses/SVAnalysis/'
 
 svData = read.csv(paste(PATH,'SVA_SVS.csv',sep=''), header = T, stringsAsFactors = F)
@@ -601,7 +623,7 @@ write.csv(driverGeneLOHCoocurrence %>% group_by(Gene,CancerType) %>% mutate(most
 ##########################################################
 
 #1. Enriched segments of short DEL / DUP
-#### NB - This is currently affected strongly by poor PON.   Rerun once fixed.
+#### NB - Replication timing average needs to remove 0s from the mean
 #SHORT DELS
 View(svData %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4) %>% mutate(nrows=n()) %>% group_by(chr=ChrStart,pos=round(PosStart,-6),nrows) %>% summarise(n=n(),avgRep=mean(RepOriginStart)) %>% mutate(p=ppois(n,nrows/2.8e9*1e6,FALSE),q=p.adjust(p,"BH",2.8e9/1e6)))
 
@@ -662,10 +684,15 @@ View(driverVariants %>% filter(DriverCombined=='AMP') %>% group_by(SampleId,Clus
 ###################################################
 ########### HIGH LEVEL AMPLIFICTATION #############
 ###################################################
-# 256/1597 (16%) of  samples have a very high copy nummber
-View(svData %>% filter(Ploidy>20,AdjCNChgStart>20) %>% group_by(SampleId,isSimpleSV=ResolvedType=='SimpleSV',ClusterId) %>% tally() %>% group_by(SampleId,isSimpleSV) %>% count() %>% arrange(-nn) %>% spread(isSimpleSV,nn))
 
-# ~70%  of those involve a cluster touching more than 1 chr
+# 566/3582 (16%) of  samples have a very high copy nummber
+View(svData %>% filter(Ploidy>20,AdjCNChgStart>20,Type!='SGL',Type!='NONE') %>% group_by(SampleId,isSimpleSV=ResolvedType=='SimpleSV',ClusterId) %>% tally() %>% group_by(SampleId,isSimpleSV) %>% count() %>% arrange(-nn) %>% spread(isSimpleSV,nn))
+
+#TEMP
+View(svData %>% filter(Ploidy>20,AdjCNChgStart>20,Type!='SGL',Type!='NONE') %>% filter(SampleId==chartSample))
+
+
+# ~50%  of those involve a single CHR
 View(svData %>% filter(Type!='SGL',Type!='NONE') %>% group_by(SampleId,ClusterId) %>% mutate(maxClusterPloidy=max(Ploidy),minChr=min(ChrStart),maxChr=max(ChrEnd)) %>% ungroup() %>% filter(maxClusterPloidy>20,AdjCNChgStart>20,minChr==maxChr) 
      %>% group_by(SampleId,CancerType,minChr) %>% count() %>% spread(minChr,n))
 
@@ -686,13 +713,12 @@ View(merge(svClusters %>% filter(grepl('DM',Annotations),!grepl('DM_Unclear',Ann
 ########################################
 
 # TO DO: REVIVE THIS ANALYSIS AFTER CHARLES UPDATES WITH GENE ANNOTATIONS
-View(svData %>% group_by(IsFS,Type,IsGenicStart) %>% tally() %>% spread(IsGenicStart,n) %>% mutate(proportion=`TRUE`/(`TRUE`+`FALSE`)))
+View(svData %>% group_by(Type,IsGenicStart) %>% tally() %>% spread(IsGenicStart,n) %>% mutate(proportion=`TRUE`/(`TRUE`+`FALSE`)))
 plot_count_by_bucket_and_type(cohortSummary(svData ,"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsFS","LengthBucket,IsGenic=IsGenicStart"),'LengthBucket','IsGenic','Length Distribution by isGenicStart',useLogY =F)
 
 # INDIVIDUAL SIGNATURE CHECK
 filter = cohortSummary(merge(svData,svDriverAndGermline %>% filter(gene=='CCNE1') %>% select(SampleId=sampleId),by='SampleId'),"",'SampleId') %>% top_n(20,count) %>% .$SampleId
 plot_count_by_bucket_and_type(cohortSummary(svData ,"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),SampleId %in% filter","LengthBucket,IsGenic=IsGenicStart"),'LengthBucket','IsGenic','Length Distribution by isGenicEnd',useLogY =F)
-
 
 #3. Zoom in on FragileSites
 plot_count_by_bucket_and_type(cohortSummary(svData ,"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),IsFS","LengthBucket,GeneStart"),'LengthBucket','GeneStart','Length Distribution by isGenicStart',useLogY =F)
@@ -700,36 +726,63 @@ plot_count_by_bucket_and_type(cohortSummary(svData ,"(ResolvedType=='SimpleSV')|
 #4.
 View(svLinks %>% group_by(ResolvedType,isGenic=GeneStart!=''&GeneEnd!='') %>% count() %>%spread(isGenic,n) %>% mutate(proportion=`TRUE`/(`TRUE`+`FALSE`)))
 ##############################################################
-############# INSERT SEQUENCE ################################
+############# INSERT and HOM Seq #############################
 ##############################################################
 
 #1. INS SEQUENCE DISTRIBTUTION - 
 plot_count_by_bucket_and_type(cohortSummary(svData,"nchar(InsertSeq)<50,nchar(InsertSeq)>=0,nchar(Homology)==0,!IsPolyA,Type!='SGL'","InsLen=nchar(InsertSeq),CustomType"),'InsLen','CustomType','InsertSequenceLength(excl PolyA)',F,T)
 
+
+
 #2. Frequency of short distribution is relatively random - rate of As and Ts is proportional to ref genome rate.
 View(svData %>% filter(!IsLowQual,ResolvedType!='Line',nchar(InsertSeq)<=3) %>% group_by((substring(InsertSeq,1,1))) %>% tally())
 
+#3. Hom and INs length By resolved Type
+# LINE, Chains & reciprocal events have less homology then simpleSV (~58% compared to ~68%)
+# Chains and TIs have relative more INS. 
+# Chains and LINE have more long INS in particulare (32+)
+View(insertAndHomologySummary(svData,"!(Type %in% c('SGL','NONE','INS')),!IsPolyA,!IsLowQual",'ResolvedType'))
+
+#4. Hom and INs length  for SimpleSV by Type and Length Bucket
+### Short and mid-range DELs & DUPS are all around high 60%s with homology. Dels slightly lower than DUPs
+## Very Short Dels have weird lack of INS SEQ
+## Very Short DUPs have weird lack of Homology
+View(insertAndHomologySummary(svData,"!(Type %in% c('SGL','NONE','INS')),!IsPolyA,!IsLowQual,ResolvedType=='SimpleSV'",'Type,LengthBucket'))
+
+#5. POLYA in non SGL
+#TO DO: why so many POLY A and T in unexpected cluster types
+View(insertAndHomologySummary(svData,"!(Type %in% c('SGL','NONE','INS')),IsPolyA,!IsLowQual","ResolvedType") %>% arrange(-count))
+
 #3. Source of long insert sequences
-# TO DO: How much is local vs remote?   How much is human vs non-human ref genome
+# TO DO: How much is local vs remote?  
+View(svData %>% filter(Type!='SGL',Type!='NONE',!IsPolyA) %>% group_by(HasAln= InsSeqAlignments!='',nchar(InsertSeq)) %>% count() %>% spread(HasAln,n))
 
 #4. VIRAL INSERSTIONS
-# TO DO: Count frequency per viral genome cancer type once Charles has loaded BEALN
+# TO DO: Count frequency per viral genome cancer type. PORT from SQL
 
-##############################################################
-############ HOMOLOGY SEQUENCE ################################
-##############################################################
-# TO DO: SHOW / BUILD ON THE FOLLOWING
-###BND and local variants >1M bases have ~60% of variants with homology,
-###Short and mid-range DELs & DUPS are all around 70% with homology
-###Foldback INV have higher rates of longer homology (>=4 bases) again.   ~35%  compared to ~30% in other short variants and ~20% in BND and long variants
+#5. SGL BE Insertion Sequence
+# TO DO: Breakdown INS Sequence into known 
+#• POLYA (presumed LINE)    ~40$
+#• Viral    - 
+#• Telomeric Sequence (towards telomere)  - 2%
+#• Telomeric Sequence (away from telomere) - 1%
+#• Centromeric Sequence (towards centromere) - 10%???
+#• Centromeric Sequence (away from centromere) - 10%??
+#• Other satellite DNA - ?
+#• Other repeat sequences - ?
+#• Unknown - ?
+
+# eg. TELOMERE - 2.6k
+View(svData %>% filter(Type=='SGL',(InsSeqAlignments)!='',!IsPolyA,(grepl('TTAGGGTTAGGG',InsertSeq)|grepl('AACCCTAACCCT',InsertSeq))) %>% group_by(OrientStart,fwdTelomereStrand=grepl('TTAGGGTTAGGG',InsertSeq)) %>% count())
+
+# eg. CENTROMERE - at least 6k..
+View(svData %>% filter(Type=='SGL',(InsSeqAlignments)!='',!IsPolyA,
+                       (grepl('ACTTGAAACA',InsertSeq)|grepl('AACTTCCTG',InsertSeq)|grepl('CAGAGTTGAA',InsertSeq)|
+                          grepl('GAAATATCTT',InsertSeq)|grepl('AGTGGAGATT',InsertSeq))) %>% count())
 
 ##############################################################
 ############# SUPSICIOUS Findings ############################
 ##############################################################
-
-#3. POLYA in non LINE ELEMENTS
-#TO DO: why so many POLY A and T in unexpected cluster types
-View( dbData %>% group_by(IsLINE,ResolvedType,IsPolyA) %>% tally() %>% spread(IsPolyA,n,fill=0))
 
 #4. TO DO: Investigate events in general with Qual score < 450
 View(svData %>% mutate(lowQS=QualScore<450) %>% unite(lowQ,lowQS,IsLowQual) %>% group_by(SampleId,lowQ) %>% count() %>% spread(lowQ,n))
@@ -753,7 +806,7 @@ print(ggplot(data = foldbacks %>% filter(FoldbackType=="INV",!IsLowQual) %>% gro
       + labs(title = "Foldback Length Distribution"))
 
 #7. LONE INV
-# 2/3 are Foldbacks
+# 2/3 are Foldbacks and match the length disrtibution of foldbacks
 View(svData %>% filter(ClusterCount==1,Type =='INV',!IsLowQual,ArmStart==ArmEnd) %>% arrange(SampleId,ChrStart,PosStart) %>%
        group_by(IsFoldBack,LengthBucket) %>% tally() %>% spread(IsFoldBack,n))
 # surplus facing centromere
@@ -762,18 +815,16 @@ View(svData %>% filter(ClusterCount==1,Type =='INV',!IsLowQual,ArmStart==ArmEnd,
 #select(ResolvedType,len,Ploidy,Type,ClusterCount,ClusterReason,everything()))
 
 #8. LONE BND
-#Around 1500 / 5500 lone BND appear to be geuine unrecpirocated translocations.  
+#Around 3500 / 13000 lone BND appear to be geuine unrecpirocated translocations.  
 # Rest likely missing a variant - should we try to join to SGL / NONE or INV
 View(svData %>% filter(!IsLowQual,Type=='BND',ClusterCount==1) %>% group_by(CustomType,Consistency) %>% tally() %>% spread(Consistency,n))
 
 #9. Should we still have imprecise?
-View(svData %>% group_by(Imprecise) %>% tally())
-
-#10. Around 1500 / 5500 lone BND appear to be geuine unrecpirocated translocations
-View(svData %>% filter(!IsLowQual,Type=='BND',ClusterCount==1) %>% group_by(CustomType,Consistency) %>% tally() %>% spread(Consistency,n))
+# TO DO: check if recovered
+View(svData %>% group_by(Imprecise,Type) %>% tally())
 
 #11. Failure to cluster high ploidy INVs (not overlapping and not foldaback)
-View(svData %>%filter(SampleId=='CPCT02010662T',ChrEnd=='17'|ChrStart=='17'))
+### FIND EXAMPLES
 
 
 #############################################
@@ -788,9 +839,11 @@ foldbackClusters=(foldbacks %>% filter(!IsLowQual) %>% group_by(SampleId,Cluster
 ggplot(data=merge(sampleList,foldbackClusters %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)),aes(n)) + 
   stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # of Foldback Clusters per Sample')
 ggplot(data=foldbackClusters ,aes(FBcount)) + 
-  stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # of Foldback Clusters per Cluster') +scale_x_log10()
+  stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # of Foldback Count per Cluster') +scale_x_log10()
 View(merge(sampleList,foldbackClusters %>% group_by(SampleId) %>% tally(),by='SampleId',all.x=T) %>% replace_na(list(n=0)) %>% arrange(-n))
 View(foldbackClusters %>% group_by(SampleId,CC=pmin(5,ClusterCount)) %>% tally() %>% arrange(-n) %>% spread(CC,n)) 
+
+View(foldbackClusters %>% group_by(FBcount,CC=pmin(5,ClusterCount)) %>% tally() %>% arrange(-n) %>% spread(CC,n)) 
 
 View(foldbackClusters %>% group_by(ceiling(FBcount)) %>% tally())
 
@@ -798,11 +851,9 @@ View(foldbackClusters %>% group_by(ceiling(FBcount)) %>% tally())
 ########## INDIVIDUAL SAMPLE ANALYSIS #######
 #############################################
 
-chartSample = 'CPCT02070021T'; chartChr = '3';
-
-#0. Length distribution 
-#plot_count_by_bucket_and_type(cohortSummary(svData%>% filter(SampleId ==chartSample),"(ResolvedType=='SimpleSV')|(ResolvedType=='DEL_Int_TI'&Type=='INV'),!IsLowQual",'SampleId,CancerType,LengthBucket') 
-#                              ,'LengthBucket','SampleId','',useLogY =F)
+chartSample = 'CPCT02010690T'; chartChr = '11';
+View(svData %>% filter(SampleId==chartSample,ResolvedType!='LowQual') %>% 
+       select(IsFoldBack,ResolvedType,Length,ClusterId,Ploidy,Type,ClusterCount,ChrStart,ChrEnd,PosStart,PosEnd,ClusterReason,everything()) %>% arrange(-Ploidy))
 
 #1. Whole Chr View
 View(svData %>% filter(SampleId==chartSample,ChrStart==chartChr|ChrEnd==chartChr,ResolvedType!='ALowQual') %>% 
@@ -927,8 +978,8 @@ View(dbData %>% filter(RefContext!='') %>% mutate(context=stri_reverse(ifelse(Or
 
 repTiming = read.csv(paste(PATH,'heli_rep_origins.bed',sep=''), header = F, stringsAsFactors = F,sep = '\t',col.names = c('chr','posStart','posEnd','repTiming'))
 (repTiming %>% group_by(round(repTiming,-1)) %>% count())
-ggplot(data=repTiming %>% filter(chr=='chrX'),aes(as.numeric(posStart),as.numeric(repTiming)))+geom_point() 
-head(repTiming)
+ggplot(data=repTiming %>% filter(chr=='chrX'),aes(as.numeric(posStart),as.numeric(repTiming)))+geom_point() + xlim(2e7,4e7)
+head(repTiming)hea
      
 View(svData %>% filter(ChrEnd!=0,ResolvedType=='SimpleSV',RepOriginStart!=0,RepOriginEnd!=0) %>% 
        group_by(Type,Length>5000,RepStart=round(RepOriginStart,1),RepEnd=round(RepOriginEnd,1)) %>% tally() %>% spread(RepEnd,n))
