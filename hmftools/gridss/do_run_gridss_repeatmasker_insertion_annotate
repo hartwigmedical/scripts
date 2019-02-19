@@ -23,7 +23,8 @@ libgridss=/data/common/repos/scripts/gridss/
 Rscript ${libgridss}/gridss_annotate_insertions_repeatmaster.R \
 	--input $input_vcf \
 	--output $output_vcf \
-	--repeatmasker $repeatmasker
+	--repeatmasker $repeatmasker \
+	--scriptdir $libgridss
 
 mv ${output_vcf}.bgz ${output_vcf}.gz
 mv ${output_vcf}.bgz.tbi ${output_vcf}.gz.tbi

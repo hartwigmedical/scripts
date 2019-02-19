@@ -6,6 +6,7 @@ argp = arg_parser("Annotates insertion sequence with the longest alignment overl
 argp = add_argument(argp, "--input", help="Input GRIDSS VCF")
 argp = add_argument(argp, "--output", help="Output GRIDSS VCF")
 argp = add_argument(argp, "--repeatmasker", help="RepeatMasker .fa.out file")
+argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
 # argv = parse_args(argp, c("--input", "D:/hartwig/down/pre.vcf", "--output", "D:/hartwig/down/testrm.vcf","--repeatmasker", "D:/hartwig/hg19.fa.out"))
 argv = parse_args(argp)
 
@@ -21,6 +22,18 @@ if (!file.exists(argv$input)) {
 }
 if (!file.exists(argv$repeatmasker)) {
   msg = paste(argv$repeatmasker, "not found")
+  write(msg, stderr())
+  print(argp)
+  stop(msg)
+}
+libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
+if (file.exists(libgridssfile)) {
+  tmpwd = getwd()
+  setwd(argv$scriptdir)
+  source("libgridss.R")
+  setwd(tmpwd)
+} else {
+  msg = paste("Could not find libgridss.R in", argv$scriptdir, " - please specify a --scriptdir path to a directory containing the required scripts")
   write(msg, stderr())
   print(argp)
   stop(msg)
