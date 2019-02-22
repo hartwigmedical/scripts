@@ -17,7 +17,7 @@ done
 mkdir -p ${DAY_DIR}
 
 ## Setup cpct/received-samples/in-process variables
-cpctSource="${DAY_DIR}/HMF_LIMS_be.accdb"
+cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.0.accdb"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
    cpctTxt="${cpctTarget}.tsv"
 cpctLatest="${SYM_DIR}/lims_cpct"
