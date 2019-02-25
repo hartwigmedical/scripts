@@ -9,10 +9,8 @@ amber_bed=/data/common/dbs/germline_het_pon_hg19/GermlineHetPon.hg19.bed
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
-joint_name=$(load_joint_name_from_metadata ${run_dir})
 
-out_dir=${run_dir}/amber/bam/
-mkdir -p ${out_dir}
+out_dir=/data/schuberg/bam_downloads
 
 sample_bam=${out_dir}/${sample}.amber.bam
 normal_bam=${out_dir}/${normal}.amber.bam
