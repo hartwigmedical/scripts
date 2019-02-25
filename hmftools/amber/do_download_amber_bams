@@ -15,9 +15,9 @@ out_dir=/data/schuberg/bam_downloads
 sample_bam=${out_dir}/${sample}.amber.bam
 normal_bam=${out_dir}/${normal}.amber.bam
 
-if [ ! -f ${sample_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${amber_bed} ${sample_bam}
-fi
+#if [ ! -f ${sample_bam} ]; then
+#    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${amber_bed} ${sample_bam}
+#fi
 
 if [ ! -f ${normal_bam} ]; then
     ${prefix}/../bamslicer/bam_slicer_normal ${set} ${sample} ${amber_bed} ${normal_bam}
