@@ -323,7 +323,7 @@ sub getUnreportedBiopsies{
             ## DRUP will only be sequenced and reported when cohort is full
             next unless $sample->{'lab_status'} =~ /^finished|failed$/i;
         }
-        elsif{
+        else{
             next unless $sample->{'lab_status'} =~ /^finished|failed|storage$/i;
         }
         
@@ -340,7 +340,7 @@ sub getUnreportedBiopsies{
        
         ## skip CPCT biopsies without finished ref sample
         if ( $submission eq 'HMFregCPCT' ){
-            next if $sample->{'ref_status'} !~ /$final_status_regex/i;
+            next if $sample->{'ref_status'} !~ /^finished|failed|storage$/i;
         }
         
         ## ok: ready to report with SBP info added
