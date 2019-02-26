@@ -15,3 +15,7 @@ for input_vcf in $(cat input.list) ; do
         Rscript find_germline_TIs.R --input $filtered_vcf --output $output 2>&1 > $log
         rm $filtered_vcf
 done
+
+# TODO: only include one normal per patient
+# - add source file annotation (use awk to prepend CPCT to INFO )
+# - merge outputs (header, cat all samples, strip tumour FORMAT fields)

@@ -3,6 +3,7 @@ library(VariantAnnotation)
 library(rtracklayer)
 library(tidyverse)
 library(stringr)
+library(cowplot)
 
 rmfile = "D:/hartwig/hg19.fa.out"
 
@@ -86,4 +87,49 @@ if (file.exists(cache_filename)) {
 seqlevelsStyle(grrm) = "NCBI"
 
 fulldf = bind_rows(lapply(list.files(path="../analysisscripts/germlineTIs/candidates/", pattern="*.gridss.vcf.gz.ti.vcf", full.names=TRUE), candidate_to_df))
+
+fulldf = fulldf %>%
+  mutate(
+    repins1=str_extract(rcins1, "^[^/]*"),
+    repins2=str_extract(rcins2, "^[^/]*"),
+    repti1=str_extract(rcti1, "^[^/]*"),
+    repti2=str_extract(rcti2, "^[^/]*"),
+    repins=ifelse(repins1 == "", repins2, repins1),
+    repti=ifelse(repti1 == "", repti2, repti1))
+
+# TODO:
+# 0) Generated merged VCF by adding a new annotation
+# 1) add TI top level repeat class and %coverage
+# 2) dedup variants common across multiple samples
+
+
+ggplot(fulldf) +
+  aes(x=insdellen) +
+  geom_histogram(bins=70) +
+  scale_x_continuous(limits=c(-35, 35))
+  facet_wrap(. ~ repti)
+
+plot_scatter_main = ggplot(fulldf) +
+  aes(x=insdellen, y=tilen, colour=repti) +
+  geom_point() +
+  scale_y_log10()
+plot_scatter_xhist = axis_canvas(plot_scatter_main, axis="x") +
+  geom_histogram(data=fulldf, bins=70) +
+  aes(x=insdellen, fill=repti)
+plot_scatter_ybox = axis_canvas(plot_scatter_main, axis = "y", coord_flip=TRUE) +
+  geom_density(data=fulldf) +
+  aes(x=tilen, fill=repti) +
+  scale_x_log10() +
+  coord_flip()
+plot_scatter = plot_scatter_main %>%
+  insert_xaxis_grob(plot_scatter_xhist, position = "bottom") %>%
+  insert_yaxis_grob(plot_scatter_ybox, position = "right")
+ggdraw(plot_scatter)
+
+
+ggplot(fulldf) +
+  aes(x=tilen) +
+  geom_histogram(bins=70) +
+  scale_x_log10() +
+  facet_wrap(. ~ repti)
 
