@@ -24,7 +24,6 @@ my $MIN_TUM_PERC = 30;
 my $TYPE;
 my $MUST_MATCH_EXACT;
 
-my @LAB_DONE_STATUS = qw( finished failed storage );
 my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status )],
   'submissions' => [qw( submission project_name contact_name contact_email project_type analysis_type sample_count )],
@@ -281,7 +280,6 @@ sub getUnreportedBiopsies{
     my ($lims, $nonreportable, $opt) = @_;
     my @out_samples = ();
     my $samples = $lims->{ 'samples' };
-    my $final_status_regex = join( "|", @LAB_DONE_STATUS );
     
     my %pdfs = ();
     my @pdf_paths = glob( $PDF_DIR . '/*.pdf' );
@@ -321,7 +319,13 @@ sub getUnreportedBiopsies{
         
         ## skip if lab not ready yet
         next unless defined $sample->{'lab_status'};
-        next unless $sample->{'lab_status'} =~ /$final_status_regex/i;
+        if ( $submission eq 'HMFregDRUP' ){
+            ## DRUP will only be sequenced and reported when cohort is full
+            next unless $sample->{'lab_status'} =~ /^finished|failed$/i;
+        }
+        elsif{
+            next unless $sample->{'lab_status'} =~ /^finished|failed|storage$/i;
+        }
         
         ## find and add R status
         $sample->{ 'ref_status' } = $NA_CHAR;
