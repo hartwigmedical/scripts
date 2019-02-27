@@ -34,6 +34,9 @@ do_run_purple_no_db ${set_path}
 echo "[INFO] Running viral annotation ${set}"
 do_run_gridss_viral_annotate_prod ${set_path}
 
+echo "[INFO] Running repeatmasker annotation ${set}"
+do_run_gridss_repeatmasker_insertion_annotate_prod ${set_path}
+
 echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${set_path}
 
