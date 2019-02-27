@@ -19,7 +19,7 @@ source("gridss.config.R")
 addVCFHeaders = function(vcf) {
   info(header(vcf)) = unique(as(rbind(as.data.frame(info(header(vcf))), data.frame(
     row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
-    Number=c(".", "1", "1"),
+    Number=c(".", ".", "."),
     Type=c("Float", "String", "String"),
     Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
   VariantAnnotation::fixed(header(vcf))$FILTER = unique(as(rbind(as.data.frame(VariantAnnotation::fixed(header(vcf)))$FILTER, data.frame(
