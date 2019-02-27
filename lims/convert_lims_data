@@ -307,13 +307,13 @@ sub processCpct{
         next if $sample_name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         
         ## also sample should be either CPCT, DRUP or PMC
-        if ( $sample_name =~ /^((CPCT|DRUP)\d{2}(\d{2})\d{4})(T|R){1}/ms ){
-            my ($patient, $drup_or_cpct, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
+        if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}(\d{2})\d{4})(T|R){1}/ms ){
+            my ($patient, $study_type, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
             my $centername = $centers_dict->{ $centerid } or die "[EXIT] Center id ($centerid) not defined in dict\n";
-            $row_info->{ 'label' }         = $drup_or_cpct;
+            $row_info->{ 'label' }         = $study_type;
             $row_info->{ 'patient' }       = $patient;
-            $row_info->{ 'entity' }        = join( "_", $drup_or_cpct, $centername );
-            $row_info->{ 'submission' }    = 'HMFreg' . $drup_or_cpct;
+            $row_info->{ 'entity' }        = join( "_", $study_type, $centername );
+            $row_info->{ 'submission' }    = 'HMFreg' . $study_type;
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $sample_name =~ /^(PMC\d{6})(T|R){1}/ms ){
@@ -337,7 +337,7 @@ sub processCpct{
         ## sample misses sample_id if it was not processed
         ## but want to keep for low tumor percentage check
         if ( $isSkipValue ){
-            if ( $sample_name =~ /^(CPCT|DRUP|PMC)/ and $sample_name !~ /T0$/ ){
+            if ( $sample_name =~ /^(CPCT|DRUP|WIDE|CORE|PMC)/ and $sample_name !~ /T0$/ ){
                 ## probably a low tumor percentage -> store under name instead of id
                 $unique = $sample_name;
             }
@@ -398,7 +398,7 @@ sub processCpct{
     foreach my $sample_id ( keys %store ){
         my $sample = $store{ $sample_id };
         next unless $sample->{ analysis_type } eq 'Somatic_T';
-        next unless $sample->{ label } =~ /^(CPCT|DRUP)$/;
+        next unless $sample->{ label } =~ /^(CPCT|DRUP|WIDE|CORE)$/;
         
         my $patient = $sample->{ 'patient' };
         my $ref_sample_name = $patient . 'R';
