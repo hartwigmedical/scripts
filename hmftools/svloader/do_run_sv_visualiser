@@ -5,7 +5,7 @@ segments=$1 && shift
 links=$1 && shift
 exons=$1 && shift
 
-credentials=/data/common/dbs/mysql_credentials/pilot
+credentials=/data/common/dbs/mysql_credentials/prod
 output_dir=/data/experiments/190130_sv_vis
 sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
 
