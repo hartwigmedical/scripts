@@ -10,7 +10,8 @@ patientIdLookups = query_patient_id_lookup(dbPilot)
 dbDisconnect(dbPilot)
 rm(dbPilot)
 
-sv_set_common_fields<-function(cluster){ cluster %>% mutate( 
+sv_set_common_fields<-function(cluster){ 
+  cluster %>% mutate( 
   IsLINE = ifelse(LEStart!='None'|LEEnd!='None',T,F),
   IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F),
   IsGenicStart = ifelse(GeneStart!='',T,F),
@@ -151,58 +152,173 @@ save(uniquelyMappable_100k, uniquelyMappable_1M, uniquelyMappable_10M, file = "/
 
 jon2 = uniquelyMappable_1M %>% filter(chromosome == 6, binEnd >= 61000000, binStart <= 62000000)
 
-########################## Mappability
-svs = read.csv(file = "/Users/jon/hmf/analysis/svEnrichment/SVA_SVS.csv")
-shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
-shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
-rm(svs)
-
-save(shortSimpleDels, file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
 
 
-############################################################################################################################################
+#shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
+#shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
+#rm(svs)
+#load(file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
+#save(shortSimpleDels, file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
+
+
+############################################ PREP ############################################ 
+#mappability =  mappability_10M
+#averageCopyNumber = averageCopyNumber_10M
+#uniquelyMappable = uniquelyMappable_10M
+#criteria = end
+#type = "end"
+load(file = "/Users/jon/hmf/analysis/svEnrichment/hpc.RData")
+allSvs = read.csv(file = "/Users/jon/hmf/analysis/svEnrichment/SVA_SVS.csv")
+hpcSvs = svs %>% filter(SampleId %in% hpc$sampleId)
+
+rm(list=setdiff(ls(), c("allSvs", "hpcSvs")))
+
+
 load(file = "/Users/jon/hmf/analysis/svEnrichment/mappability.RData")
 load(file = "/Users/jon/hmf/analysis/svEnrichment/averageCopyNumbers.RData")
-load(file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
 load(file = "/Users/jon/hmf/analysis/svEnrichment/uniquelyMappable.RData")
 
-enrich <- function(svs, mappability, averageCopyNumber, uniquelyMappable) {
-  svs = svs %>% mutate(PosMid = (PosEnd + PosStart) / 2)
-  svsRegions = GRanges(svs$ChrStart, ranges = IRanges(start = svs$PosMid, end = svs$PosMid))  
+enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable) {
+  result = data.frame()
+  
+  middle = criteria %>% filter(as.character(ChrStart) == as.character(ChrEnd)) 
+  start = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd)) 
+  end = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd), !Type %in% c('NONE','SGL'), !ChrEnd %in% c('0','MT'))
+  
+  result = bind_rows(result, enrichInner(middle, mappability, averageCopyNumber, uniquelyMappable, "middle"))
+  result = bind_rows(result, enrichInner(start, mappability, averageCopyNumber, uniquelyMappable, "start"))
+  result = bind_rows(result, enrichInner(end, mappability, averageCopyNumber, uniquelyMappable, "end"))
+  
+  return (result)
+}
+
+
+enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, type) {
+  criteria = criteria %>% mutate(PosMid = (PosEnd + PosStart) / 2)
+  
+  if (type == "middle") {
+    svsRegions = GRanges(criteria$ChrStart, ranges = IRanges(start = criteria$PosMid, end = criteria$PosMid))  
+  } else if (type == "start") {
+    svsRegions = GRanges(criteria$ChrStart, ranges = IRanges(start = criteria$PosStart, end = criteria$PosStart))  
+  } else if (type == "end") {
+    svsRegions = GRanges(criteria$ChrEnd, ranges = IRanges(start = criteria$PosEnd, end = criteria$PosEnd))  
+  }
+  
   binRegions = GRanges(mappability$chromosome, ranges = IRanges(start = mappability$start, end = mappability$end)) 
-  uniquelyMappableRegions = GRanges(uniquelyMappable$chromosome, ranges = IRanges(start = uniquelyMappable$binStart, end = uniquelyMappable$binEnd)) 
+  uniquelyMappableRegions = GRanges(as.character(uniquelyMappable$chromosome), ranges = IRanges(start = uniquelyMappable$binStart, end = uniquelyMappable$binEnd)) 
   
   ol = as.matrix(findOverlaps(svsRegions, binRegions, type = "within"))
   ol2 = as.matrix(findOverlaps(svsRegions, uniquelyMappableRegions, type = "within"))
   
-  svs$N <- mappability[ol[, 2], ]$N
-  svs$averageCopyNumber <- averageCopyNumber[ol[, 2], ]$averageCopyNumber
-  svs$binChromosome <- mappability[ol[, 2], ]$chromosome
-  svs$binStart <- mappability[ol[, 2], ]$start
-  svs$binEnd <- mappability[ol[, 2], ]$end
-  svs$uniquelyMappablePercentage <- uniquelyMappable[ol2[, 2], ]$uniquelyMappablePercentage
-  svs$uniquelyMappablePercentage <- ifelse(is.na(svs$uniquelyMappablePercentage), 0, svs$uniquelyMappablePercentage)
+  criteria[ol[, 1], "N"] <- mappability[ol[, 2], ]$N
+  criteria[ol[, 1], "averageCopyNumber"] <- averageCopyNumber[ol[, 2], ]$averageCopyNumber
+  criteria$binChromosome <- mappability[ol[, 2], ]$chromosome
+  criteria$binStart <- mappability[ol[, 2], ]$start
+  criteria$binEnd <- mappability[ol[, 2], ]$end
   
-  return (svs)
+  criteria[ol2[, 1], "uniquelyMappablePercentage"] <- uniquelyMappable[ol2[, 2], ]$uniquelyMappablePercentage
+  criteria$uniquelyMappablePercentage <- ifelse(is.na(criteria$uniquelyMappablePercentage), 0, criteria$uniquelyMappablePercentage)
+  
+  return (criteria)
 }
 
-ssd_1M = enrich(shortSimpleDels, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M)
-mean_1M_copyNumber = mean(averageCopyNumber_1M$averageCopyNumber)
+normalise <- function(svs, buckets, meanCopyNumber) {
+  normalised_svs = svs %>% 
+    mutate(nrows=n(),meanMappable=mean(uniquelyMappablePercentage)) %>%
+    group_by(binChromosome, binStart, binEnd, N,nrows, averageCopyNumber, uniquelyMappablePercentage,meanMappable) %>% 
+    summarise(
+      unnormalisedBucketCount=n(),   
+      percentFS=sum(IsFS)/unnormalisedBucketCount,
+      avgRep=mean(RepOriginStart)) %>%
+    mutate(
+      proportionOfN = N / (binEnd - binStart), 
+      expectedBucketCount = nrows / buckets * averageCopyNumber / meanCopyNumber * uniquelyMappablePercentage / meanMappable,  
+      p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
+      q=p.adjust(p,"BH",buckets),
+      buckets = buckets)
+  
+  return (normalised_svs)
+}
 
-normalised_ssd_1M = ssd_1M %>% 
-  mutate(nrows=n()) %>%
-  group_by(binChromosome, binStart, binEnd, N,nrows, averageCopyNumber, uniquelyMappablePercentage) %>% 
-  summarise(
-    unnormalisedBucketCount=n(),
-    avgRep=mean(RepOriginStart)) %>%
-  mutate(
-    proportionOfN = N / (binEnd - binStart), 
-    expectedBucketCount = nrows / 2800 * averageCopyNumber / mean_1M_copyNumber * uniquelyMappablePercentage,  
-    p=ppois(unnormalisedBucketCount, expectedBucketCount,FALSE),
-    q=p.adjust(p,"BH",2.8e9/1e6))
+
+############################################ Executions ############################################ 
+result = data.frame()
+
+#filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart<1e3) %>% mutate(criteria = 'UltraShortDup') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>5e3,PosEnd-PosStart<8e4) %>% mutate(criteria = 'BRCADup') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>1e5,PosEnd-PosStart<1e6) %>% mutate(criteria = 'LongDup') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DUP',PosEnd-PosStart>1e6) %>% mutate(criteria = 'VeryLongDup') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<5e2) %>% mutate(criteria = 'UltraShortDel') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>5e2,PosEnd-PosStart<1e4) %>% mutate(criteria = 'ShortDel') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>2e4,PosEnd-PosStart<5e5) %>% mutate(criteria = 'FSLikeDel') %>%
+#filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>5e5) %>% mutate(criteria = 'LongDel') %>%
+#filter(ResolvedType=='Line', as.character(ChrStart) == as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
+
+#filter(ResolvedType=='Line', as.character(ChrStart) != as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
+#filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
+
+criteria = hpcSvs %>% 
+  filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
+  mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F))
+
+enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k)
+enriched_1M = enrich(criteria, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M)
+enriched_10M = enrich(criteria, mappability_10M, averageCopyNumber_10M, uniquelyMappable_10M)
+
+normalised_100k = normalise(enriched_100k, 28000, mean(averageCopyNumber_100k$averageCopyNumber)) %>% filter(q < 0.01)
+normalised_1M = normalise(enriched_1M, 2800, mean(averageCopyNumber_1M$averageCopyNumber)) %>% filter(q < 0.01)
+normalised_10M = normalise(enriched_10M, 280, mean(averageCopyNumber_10M$averageCopyNumber)) %>% filter(q < 0.01)
+
+criteriaResult = data.frame()
+criteriaResult = bind_rows(criteriaResult, normalised_100k)
+criteriaResult = bind_rows(criteriaResult, normalised_1M)
+criteriaResult = bind_rows(criteriaResult, normalised_10M)
+criteriaResult$criteria <- first(criteria$criteria)
+
+result = bind_rows(result, criteriaResult)
+unique(result$criteria)
 
 
-ggplot(data=normalised_ssd_1M) + 
-  geom_point(aes(binStart,expectedBucketCount,colour='expected'),shape="x") +
-  geom_point(aes(binStart,unnormalisedBucketCount,colour='raw'),shape='x') + 
-  facet_wrap(~binChromosome)
+multiChromosomeResult = result
+save(multiChromosomeResult, file = "/Users/jon/hmf/analysis/svEnrichment/multiChromosomeResult.RData")
+
+
+singleChromosomeResult = result
+save(singleChromosomeResult, file = "/Users/jon/hmf/analysis/svEnrichment/singleChromosomeResult.RData")
+
+
+singleChromosomeResult$method <- "midPoint"
+multiChromosomeResult$method <- "breakPoint"
+
+
+combinedResult = bind_rows(singleChromosomeResult, multiChromosomeResult)
+save(combinedResult, file = "/Users/jon/hmf/analysis/svEnrichment/combinedResult.RData")
+
+
+#save(result, file = "/Users/jon/hmf/analysis/svEnrichment/result.RData")
+
+#translocationResults = result
+#save(translocationResults, file = "/Users/jon/hmf/analysis/svEnrichment/translocationResults.RData")
+
+#resultWithoutLineOrRecipTrans = result
+#save(resultWithoutLineOrRecipTrans, file = "/Users/jon/hmf/analysis/svEnrichment/resultWithoutLineOrRecipTrans.RData")
+#load(file = "/Users/jon/hmf/analysis/svEnrichment/resultWithoutLineOrRecipTrans.RData")
+#result = bind_rows(result, resultWithoutLineOrRecipTrans)
+#resultWithoutLineOrRecipTrans
+############################################ Plot ############################################ 
+#ggplot(data=normalised_ssd_1M,aes(x=expectedBucketCount,y=unnormalisedBucketCount)) + geom_point() + xlim(0,50) + ylim(0,50)
+
+
+#ggplot(data=normalised_ssd_1M) + 
+#  geom_point(aes(binStart,expectedBucketCount,colour='expected'),shape="x") +
+#  geom_point(aes(binStart,unnormalisedBucketCount,colour='raw'),shape='x') + 
+#  facet_wrap(~binChromosome)
+
+#load(file = "/Users/jon/hmf/analysis/svEnrichment/result.RData")
+#View(result %>% mutate(bucketWidth=binEnd-binStart+1) %>% filter(unnormalisedBucketCount>5,round(bucketWidth,-3)==bucketWidth,bucketWidth==1e5) %>% group_by(binChromosome,binStart,criteria,isFS=percentFS>0) %>% summarise(q=sum(q)) %>% spread(criteria,q))
+
+#View(translocationResults %>% mutate(bucketWidth=binEnd-binStart+1) %>% filter(unnormalisedBucketCount>5,round(bucketWidth,-3)==bucketWidth,bucketWidth==1e5) %>% 
+#       group_by(binChromosome,binStart,criteria,isFS=percentFS>0) %>% summarise(n=sum(unnormalisedBucketCount)) %>% spread(criteria,n))
+
+#View(result %>% mutate(bucketWidth=binEnd-binStart+1) %>% filter(unnormalisedBucketCount>5,round(bucketWidth,-3)==bucketWidth,bucketWidth<=1e6,criteria=='UltraShortDel') %>% 
+#       group_by(binChromosome,round(binStart,-6),bucket=ifelse(bucketWidth==1e6,1e6,binStart-round(binStart,-6)),isFS=percentFS>0) %>% summarise(n=sum(unnormalisedBucketCount)) %>% spread(bucket,n))
