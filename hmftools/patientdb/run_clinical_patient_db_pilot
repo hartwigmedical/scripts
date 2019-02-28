@@ -14,7 +14,7 @@ exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
     -runs_dir_cpct_drup ${runs_dir_cpct_and_drup} \
     -runs_dir_core ${runs_dir_core} \
-    -runs_dir_colo \
+    -runs_dir_colo ${runs_dir_colo} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \
