@@ -2,7 +2,7 @@
 patient_db_jar=/data/common/tools/patient-db_pilot/patient-db.jar
 runs_dir_cpct_and_drup=/data/cpct/runs
 runs_dir_core=/data/core/runs
-runs_dir_colo=/data/data_archive/COLO829/pipelines/
+runs_dir_colo=/data/data_archive/COLO829/pipelines
 
 credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${credentials})
