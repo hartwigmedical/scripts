@@ -312,12 +312,16 @@ sub processCpct{
             my $centername = $centers_dict->{ $centerid } or die "[EXIT] Center id ($centerid) not defined in dict\n";
             $row_info->{ 'label' }         = $study_type;
             $row_info->{ 'patient' }       = $patient;
-            $row_info->{ 'submission' }    = 'HMFreg' . $study_type;
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
-            if ( $row_info->{ 'submission' } =~ /^HMFreg/ ){
+            if ( $study_type eq "CORE" ){ ## CORE is handled per case
+                unless ( exists $row_info->{ 'submission' } and $row_info->{ 'submission' } =~ /^HMFreg/ ){
+                    warn "[WARN] CORE sample found ($sample_name) but no correct HMFreg submission present\n";
+                    next;
+                }
                 $row_info->{ 'entity' } = $row_info->{ 'submission' };
             }
-            else{
+            else{ ## CPCT/DRUP/WIDE are handled study/center wide
+                $row_info->{ 'submission' } = 'HMFreg' . $study_type;
                 $row_info->{ 'entity' } = join( "_", $study_type, $centername );
             }
         }
