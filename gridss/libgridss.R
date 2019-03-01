@@ -699,23 +699,28 @@ transitive_breakpoints <- function(
     dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
     dplyr::select(-start_end_traversed, -end_start_traversed)
 }
-#' Assumes the input is sorted
-#' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
-#' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
-align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+#' Adjusts the nominal breakpoint position towards
+#' @param  align alignment position within any interval of uncertainty.
+#' In the case of an even width interval, centre alignment adjusts to the centre
+#' position closest to the initial location.
+align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(vcf) < info(vcf)$PARID) {
   if (length(vcf) == 0) {
     return(vcf)
   }
   align = match.arg(align)
-  nominal_start = start(rowRanges(vcf))
   if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
     stop("CIPOS not specified for all variants.")
   }
+  is_higher_breakend[is.na(is_higher_breakend)] = FALSE
+  #isbp = str_detect(VariantAnnotation::fixed(vcf)$ALT, "[\\]\\[]")
+  nominal_start = start(rowRanges(vcf))
   cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
   ciwdith = cipos[,2] - cipos[,1]
   if (align == "centre") {
-    adjust_by = cipos[,1] + ciwdith / 2.0
-    adjust_by = ifelse(round(adjust_by) != adjust_by, adjust_by + ifelse(is_higher_breakend, -0.5, 0.5), adjust_by)
+    citargetpos = nominal_start + cipos[,1] + ciwdith / 2.0
+    adjust_by = citargetpos - nominal_start
+    adjust_in_opposite_direction_to_partner = vcfAltToStrandPair(rowRanges(vcf)$ALT) %in% c("--", "++")
+    adjust_by = ifelse(is_higher_breakend & adjust_in_opposite_direction_to_partner, ceiling(adjust_by), floor(adjust_by))
   } else {
     stop("Only centre alignment is currently implemented.")
   }
@@ -727,10 +732,25 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_det
   if (!is.null(info(vcf)$IHOMPOS)) {
     info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
   }
+  partner_adjust =  ifelse(is.na(adjust_by), 0, adjust_by)[match(info(vcf)$PARID, names(vcf))]
+  partner_pos = nominal_start[match(info(vcf)$PARID, names(vcf))] + partner_adjust
+
+  # adjust ALT for breakpoints
+  # TODO: something faster than this regex
+  VariantAnnotation::fixed(vcf)$ALT = as(str_replace(VariantAnnotation::fixed(vcf)$ALT, ":[0-9]+(?=[\\]\\[])", paste0(":", format(partner_pos, scientific=FALSE, trim=TRUE))), "CharacterList")
+
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
-  # left align lower breakend (forces right alignment of the partner if they're in the same orientation)
-  #info(vcf[names(gr)])$CIPOS = relist(c(rbind(ifelse(left_align, 0, -bp_width), ifelse(left_align, bp_width, 0))), PartitioningByEnd(seq(2, 2*length(gr), 2)))
   return(vcf)
+}
+#'
+vcfAltToStrandPair = function(alt) {
+  chralt = unlist(alt)
+  ifelse(startsWith(chralt, "."), "-",
+    ifelse(endsWith(chralt, "."), "+",
+      ifelse(startsWith(chralt, "]"), "-+",
+        ifelse(startsWith(chralt, "["), "--",
+          ifelse(endsWith(chralt, "]"), "++",
+            ifelse(endsWith(chralt, "["), "+-", ""))))))
 }
 
 readVcf = function(file, ...) {
