@@ -103,3 +103,48 @@ svs = hpcStructuralVariants %>%
 dups = scope_summary(svs, indels)
 scope_plot(dups) + xlim(24, 41) + ggtitle("DUPS")
 
+
+
+############################################# GRIDSS COMPARISON
+svLengthLabels = c("low", "high")
+svLengthBreaks = c(32, 64, 128)
+
+svLengthsPerSample = hpcStructuralVariants %>%
+  filter(type == 'DEL', filter == '') %>%
+  mutate(length = endPosition - startPosition - 1, oddHomology = nchar(startHomologySequence) %% 2) %>%
+  mutate(length = ifelse(oddHomology == 1, length + 1, length)) %>%
+  filter(length >=32, length <= 127) %>%
+  mutate(svLength = cut(length, breaks = svLengthBreaks, labels = svLengthLabels, include.lowest = T, right = F)) %>%
+  group_by(sampleId, svLength) %>% count() %>% spread(svLength, n, fill = 0)
+
+ggplot(svLengthsPerSample) + 
+  geom_point(aes(x = low, y = high)) + ggtitle("Gridss Comparison") + xlab("Lengths 32-63") + ylab("Length 64-127")
+
+############################################# Scatter
+svLengthsPerSample = hpcStructuralVariants %>%
+  filter(type == 'DEL', filter == '') %>%
+  mutate(length = endPosition - startPosition - 1, oddHomology = nchar(startHomologySequence) %% 2) %>%
+  mutate(length = ifelse(oddHomology == 1, length + 1, length)) %>%
+  filter(length >= 33, length <= 100) %>%
+  group_by(sampleId) %>% summarise(svCount = n()) 
+
+indelLengthLabels = c("1-3", "4-7", "8-15", "16-31", "32+")
+indelLengthBreaks = c(1, 4, 8, 16, 32, 100000000)
+
+indelLengthsPerSample = hpcIndels %>% 
+  filter(nchar(ref) > nchar(alt), filter == 'PASS') %>%
+  mutate(length = abs(nchar(ref) - nchar(alt)), repeating = repeatCount >= 4) %>%
+  filter(length >= 1, length <= 31) %>%
+  mutate(indelLength = cut(length, breaks = indelLengthBreaks, labels = indelLengthLabels, include.lowest = T, right = F)) %>%
+  group_by(sampleId, repeating, indelLength) %>% summarise(indelCount = n()) 
+
+
+combined = full_join(svLengthsPerSample, indelLengthsPerSample, by = "sampleId") %>% mutate(repeating = ifelse(repeating, "RepeatCount >= 4", "RepeatCount < 4"))
+combined[is.na(combined)] <- 0
+
+ggplot(combined ) +
+#ggplot(combined %>% filter(indelLength == '1-3')) + 
+  ylim(0, 1000) +
+  #scale_y_log10() +
+  geom_point(aes(x = svCount, y = indelCount)) + facet_grid(repeating~indelLength, scales = "free_y") + xlab("Count SV DEL < 100 bases") 
+
