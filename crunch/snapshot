@@ -1,8 +1,26 @@
 #!/bin/bash
 
 function main {
-
   echo ''
+  hostName=$( hostname )
+  if [[ "$hostName" =~ crunch ]]; then
+    processAsCrunch
+  elif [[ "$hostName" =~ datastore ]]; then
+    processAsDatastore
+  else
+    echo "[EXIT] Unknown hostname ($hostName)"
+  fi
+  echo ''
+}
+
+function processAsDatastore {
+  echo '--- STORAGE OVERVIEW ---'
+  diskUsage "/home"
+  diskUsage "/data"
+}
+
+function processAsCrunch {
+
   echo '--- STORAGE OVERVIEW ---'
   diskUsage "/data1"
   diskUsage "/data2"
@@ -20,7 +38,6 @@ function main {
   qstat -u "*" | head -10
   totalJobCount=`qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l`
   echo " Total number of jobs in qstat: "$totalJobCount
-  echo ""
 }
 
 process_pipeline_runs() { 
