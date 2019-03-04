@@ -313,14 +313,19 @@ sub processCpct{
             $row_info->{ 'label' }         = $study_type;
             $row_info->{ 'patient' }       = $patient;
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
-            if ( $study_type eq "CORE" ){ ## CORE is handled per case
-                unless ( exists $row_info->{ 'submission' } and $row_info->{ 'submission' } =~ /^HMFreg/ ){
-                    warn "[WARN] CORE sample found ($sample_name) but no correct HMFreg submission present\n";
+            
+            ## CORE is handled per case
+            if ( $study_type eq "CORE" ){
+                if ( exists $row_info->{ 'submission' } and $row_info->{ 'submission' } =~ /^HMFreg/ ){
+                    $row_info->{ 'entity' } = $row_info->{ 'submission' };
+                }
+                else{
+                    warn "[WARN] SKIPPING CORE sample ($sample_name): no correct HMFreg submission present\n";
                     next;
                 }
-                $row_info->{ 'entity' } = $row_info->{ 'submission' };
             }
-            else{ ## CPCT/DRUP/WIDE are handled study/center wide
+            ## CPCT/DRUP/WIDE are handled study/center wide
+            else{
                 $row_info->{ 'submission' } = 'HMFreg' . $study_type;
                 $row_info->{ 'entity' } = join( "_", $study_type, $centername );
             }
@@ -712,7 +717,14 @@ sub getFieldNameTranslations{
       'Source'             => 'sample_source',
       'Yield'              => 'yield',
       'Sample_ID_DNA'      => 'sample_id',
+      'Sample_ID_DNA_2'    => 'sample_id_2',
+      'Sample_ID_DNA_3'    => 'sample_id_3',
       'Sample_ID_RNA'      => 'rna_sample_id',
+      'Sample_ID_RNA_2'    => 'rna_sample_id_2',
+      'Sample_ID_RNA_3'    => 'rna_sample_id_3',
+      'Mol_T_perc'         => 'mol_tum_perc',
+      'Mol_T_perc_2'       => 'mol_tum_perc_2',
+      'Mol_T_perc_3'       => 'mol_tum_perc_3',
       'Sample_ID_Plasma'   => 'plasma_sample_id',
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
@@ -720,7 +732,11 @@ sub getFieldNameTranslations{
       'Final_lab_status'   => 'lab_status',
       'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
-      'Remarks'            => 'lab_remarks'
+      'Remarks'            => 'lab_remarks',
+      'Germline_findings'  => 'germline_findings',
+      'Requester_email'    => 'requester_email',
+      'Requester_name'     => 'requester_name',
+      'Submission_number'  => 'submission'
     );
     
     my %translations = (
