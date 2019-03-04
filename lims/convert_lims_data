@@ -692,7 +692,6 @@ sub getFieldNameTranslations{
       "SNP_exp"           => 'snp_experiment_id',
       "Requested_product" => 'request',
       "State"             => 'lab_status', # lab status
-      "Patient_number"    => 'patient_number', # added for CORE
       "Primary_tumor_type"=> 'ptum',
       "Priority"          => 'priority', 
       "Arrival_date"      => 'arrival_date',
@@ -733,6 +732,7 @@ sub getFieldNameTranslations{
       'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
       'Remarks'            => 'lab_remarks',
+      'Hospital_patient_ID'=> 'hospital_patient_id',
       'Germline_findings'  => 'germline_findings',
       'Requester_email'    => 'requester_email',
       'Requester_name'     => 'requester_name',
