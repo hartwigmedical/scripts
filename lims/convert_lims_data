@@ -309,12 +309,12 @@ sub processCpct{
         ## also sample should be either CPCT, DRUP or PMC
         if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}(\d{2})\d{4})(T|R){1}/ms ){
             my ($patient, $study_type, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
-            my $centername = $centers_dict->{ $centerid } or die "[EXIT] Center id ($centerid) not defined in dict\n";
+                
             $row_info->{ 'label' }         = $study_type;
             $row_info->{ 'patient' }       = $patient;
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
             
-            ## CORE is handled per case
+            ## CORE is handled per case/submission
             if ( $study_type eq "CORE" ){
                 if ( exists $row_info->{ 'submission' } and $row_info->{ 'submission' } =~ /^HMFreg/ ){
                     $row_info->{ 'entity' } = $row_info->{ 'submission' };
@@ -326,8 +326,15 @@ sub processCpct{
             }
             ## CPCT/DRUP/WIDE are handled study/center wide
             else{
-                $row_info->{ 'submission' } = 'HMFreg' . $study_type;
-                $row_info->{ 'entity' } = join( "_", $study_type, $centername );
+                if ( exists $centers_dict->{ $centerid } ){
+                    my $centername = $centers_dict->{ $centerid };
+                    $row_info->{ 'submission' } = 'HMFreg' . $study_type;
+                    $row_info->{ 'entity' } = join( "_", $study_type, $centername );
+                }
+                else {
+                    warn "[WARN] SKIPPING sample ($sample_name): Unkown center id ($centerid)\n";
+                    next;
+                }
             }
         }
         elsif ( $sample_name =~ /^(PMC\d{6})(T|R){1}/ms ){
