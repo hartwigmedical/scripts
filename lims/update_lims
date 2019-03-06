@@ -2,6 +2,9 @@
 
 LIMS_DIR="/data/lims"
 CODE_DIR="/data/common/repos/scripts/lims"
+LOG_FILE="${LIMS_DIR}/update.log"
+DATE_STR=$( date )
 
-${CODE_DIR}/sync_lab_lims_from_nas
-${CODE_DIR}/convert_lims_data -execute
+echo "===== Running update_lims (${DATE_STR}) =====" 2>&1 | tee -a $LOG_FILE
+${CODE_DIR}/sync_lab_lims_from_nas 2>&1 | tee -a $LOG_FILE
+${CODE_DIR}/convert_lims_data -execute 2>&1 | tee -a $LOG_FILE
