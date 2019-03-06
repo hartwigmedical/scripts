@@ -743,7 +743,8 @@ sub getFieldNameTranslations{
       'Germline_findings'  => 'germline_findings',
       'Requester_email'    => 'requester_email',
       'Requester_name'     => 'requester_name',
-      'Submission_number'  => 'submission'
+      'Submission_number'  => 'submission',
+      'ShallowSeq'         => 'shallowseq'
     );
     
     my %translations = (
