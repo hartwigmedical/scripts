@@ -16,7 +16,8 @@ my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $LIMS_JSON = '/data/lims/lims.json';
 my $NONREPORTABLE_CSV = '/data/lims/nonreportable_samples.csv';
-my $PDF_DIR = '/data/cpct/final_reports';
+my @PDF_DIRS = ( '/data/cpct/final_reports', '/data/core/final_reports', '/data/cpct/old_cpct_reports' );
+my $pdfdirs_string = join( ", ", sort @PDF_DIRS );
 
 my $DELIM = "\t";
 my $NA_CHAR = "NA";
@@ -63,7 +64,7 @@ my $HELP_TEXT =<<HELP;
     
   Files/locations that are used
     LIMS input FILE: $LIMS_JSON
-    Patient reports: $PDF_DIR
+    Patient reports: $pdfdirs_string
 HELP
 
 die $HELP_TEXT . "\n" if scalar @ARGV == 0;
@@ -282,10 +283,11 @@ sub getUnreportedBiopsies{
     my $samples = $lims->{ 'samples' };
     
     my %pdfs = ();
-    my @pdf_paths = glob( $PDF_DIR . '/*.pdf' );
-    my @pdf_paths_old = glob( "/data/cpct/old_cpct_reports" . '/*.pdf' );
-    my @all_pdfs = (@pdf_paths, @pdf_paths_old);
-    foreach my $pdf_path ( @all_pdfs ){
+    my @pdf_paths = ();
+    foreach my $pdf_dir ( @PDF_DIRS ){
+        push( @pdf_paths, glob( $pdf_dir . '/*.pdf' ) );
+    }
+    foreach my $pdf_path ( @pdf_paths ){
         my ($pdf_sample) = split( /[\.\_]/, basename( $pdf_path ) );
         $pdfs{ $pdf_sample } = 1;
     }
@@ -306,9 +308,9 @@ sub getUnreportedBiopsies{
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} eq 'Somatic_T';
                 
-        ## skip if not CPCT/DRUP production biopsy
-        next unless defined $sample->{'submission'};
-        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        ## skip if not CPCT/DRUP/WIDE/CORE production biopsy
+        next unless defined $sample->{'label'};
+        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE)$/;
         
         ## skip T0 biopsies (these should always have a T as well)
         next if $sample_name =~ /T0$/;
@@ -367,7 +369,6 @@ sub addSbpInfoToSampleBySampleId{
         my $setname = getValueByKey( $run, 'name' );
         my $status = getValueByKey( $run, 'status' ); 
         next if $ini =~ /rerun/i;
-        next if $entity !~ /CPCT_|DRUP_/; 
         $sample->{sbp_info} = "$setname ($status)";
     }
     return($sample);
