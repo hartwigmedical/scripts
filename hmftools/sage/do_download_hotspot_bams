@@ -11,7 +11,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 
-out_dir=${run_dir}/somaticVariants/${joint_name}/sage/
+out_dir=${run_dir}/somaticVariants/${joint_name}/sage
 mkdir -p ${out_dir}
 
 sample_bam=${out_dir}/${sample}.sage.bam
