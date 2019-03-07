@@ -212,7 +212,7 @@ event_link_df = bind_rows(
   mutate(
     max_supporting_fragment_count = max(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
     min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF))) %>%
-  filter(max_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count)
+  filter(min_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count)
 
 write(paste(Sys.time(),"Calculating final linkage annotation", argv$input), stderr())
 # Only keep the best QUAL event linkage
