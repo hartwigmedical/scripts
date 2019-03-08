@@ -206,13 +206,17 @@ event_link_df = bind_rows(
   inv_link_df,
   dsb_link_df) %>%
   dplyr::select(vcfId, linked_by) %>%
-  mutate(QUAL=rowRanges(vcf)[vcfId]$QUAL) %>%
+  mutate(
+    QUAL=rowRanges(vcf)[vcfId]$QUAL,
+    hasPolyA=str_detect(rowRanges(vcf[vcfId])$ALT, "A{16}")) %>%
   group_by(linked_by) %>%
   # filter events where supporting fragment counts differ by too much
   mutate(
     max_supporting_fragment_count = max(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
-    min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF))) %>%
-  filter(min_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count)
+    min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
+    hasPolyA=any(hasPolyA)
+    ) %>%
+  filter(min_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count | hasPolyA)
 
 write(paste(Sys.time(),"Calculating final linkage annotation", argv$input), stderr())
 # Only keep the best QUAL event linkage
