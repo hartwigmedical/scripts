@@ -703,6 +703,7 @@ transitive_breakpoints <- function(
 #' @param  align alignment position within any interval of uncertainty.
 #' In the case of an even width interval, centre alignment adjusts to the centre
 #' position closest to the initial location.
+#' Adjusts the nominal position of a breakpoints
 align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(vcf) < info(vcf)$PARID) {
   if (length(vcf) == 0) {
     return(vcf)
@@ -716,10 +717,11 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
   nominal_start = start(rowRanges(vcf))
   cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
   ciwdith = cipos[,2] - cipos[,1]
+  orientations = .vcfAltToStrandPair(rowRanges(vcf)$ALT)
   if (align == "centre") {
     citargetpos = nominal_start + cipos[,1] + ciwdith / 2.0
     adjust_by = citargetpos - nominal_start
-    adjust_in_opposite_direction_to_partner = vcfAltToStrandPair(rowRanges(vcf)$ALT) %in% c("--", "++")
+    adjust_in_opposite_direction_to_partner = orientations %in% c("--", "++")
     adjust_by = ifelse(is_higher_breakend & adjust_in_opposite_direction_to_partner, ceiling(adjust_by), floor(adjust_by))
   } else {
     stop("Only centre alignment is currently implemented.")
@@ -732,25 +734,36 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
   if (!is.null(info(vcf)$IHOMPOS)) {
     info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
   }
-  partner_adjust =  ifelse(is.na(adjust_by), 0, adjust_by)[match(info(vcf)$PARID, names(vcf))]
-  partner_pos = nominal_start[match(info(vcf)$PARID, names(vcf))] + partner_adjust
-
-  # adjust ALT for breakpoints
-  # TODO: something faster than this regex
-  VariantAnnotation::fixed(vcf)$ALT = as(str_replace(VariantAnnotation::fixed(vcf)$ALT, ":[0-9]+(?=[\\]\\[])", paste0(":", format(partner_pos, scientific=FALSE, trim=TRUE))), "CharacterList")
-
+  alt = unlist(rowRanges(vcf)$ALT)
+  partner_alt = str_match(alt, "^([^\\]\\[]*)[\\]\\[]([^:]+):([0-9]+)([\\]\\[])([^\\]\\[]*)$")
+  # [,2] anchoring bases
+  # [,3] partner chr
+  # [,4] old partner position
+  partner_pos = ifelse(is.na(partner_alt[,4]), NA_integer_, as.integer(partner_alt[,4])) + ifelse(adjust_in_opposite_direction_to_partner, -adjust_by, adjust_by)
+  # [,5] partner orientation
+  # [,6] anchoring bases
+  # adjust ALT for breakpoints. anchoring bases get replaced with N since we don't know
+  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(adjust_by == 0, alt,
+                                                paste0(
+                                                  str_pad("", str_length(partner_alt[,2]), pad="N"),
+                                                  partner_alt[,5],
+                                                  partner_alt[,3],
+                                                  ":",
+                                                  partner_pos,
+                                                  partner_alt[,5],
+                                                  str_pad("", str_length(partner_alt[,6]), pad="N"))), "CharacterList")
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
   return(vcf)
 }
-#'
-vcfAltToStrandPair = function(alt) {
+.vcfAltToStrandPair = function(alt) {
   chralt = unlist(alt)
   ifelse(startsWith(chralt, "."), "-",
-    ifelse(endsWith(chralt, "."), "+",
-      ifelse(startsWith(chralt, "]"), "-+",
-        ifelse(startsWith(chralt, "["), "--",
-          ifelse(endsWith(chralt, "]"), "++",
-            ifelse(endsWith(chralt, "["), "+-", ""))))))
+         ifelse(endsWith(chralt, "."), "+",
+                ifelse(startsWith(chralt, "]"), "-+",
+                       ifelse(startsWith(chralt, "["), "--",
+                              ifelse(endsWith(chralt, "]"), "++",
+                                     ifelse(endsWith(chralt, "["), "+-", ""))))))
+
 }
 
 readVcf = function(file, ...) {
