@@ -63,7 +63,7 @@ addVCFHeaders = function(vcf) {
 
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
-    pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
+    pongr=cached_read_file(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), read_gridss_breakpoint_pon),
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
@@ -73,7 +73,7 @@ gridss_overlaps_breakpoint_pon = function(gr,
 }
 gridss_overlaps_breakend_pon = function(gr,
     pon_dir=NULL,
-    pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/")),
+    pongr=cached_read_file(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"), import),
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
@@ -787,6 +787,16 @@ readVcf = function(file, ...) {
   #   geno(raw_vcf)$BSCQ
   # )[is.nanan(geno(raw_vcf)$BQ)]
   return(raw_vcf)
+}
+cached_read_file = function(file, read_function) {
+  cache_filename = paste0(file, ".cached.parsed.rds")
+  if (file.exists(cache_filename)) {
+    write(paste(Sys.time(), "Loading from cache ", cache_filename), stderr())
+    result = readRDS(cache_filename)
+  } else {
+    result = read_function(file)
+    saveRDS(result, file=cache_filename)
+  }
 }
 
 read_gridss_breakpoint_pon = function(file) {
