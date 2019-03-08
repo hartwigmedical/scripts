@@ -102,7 +102,7 @@ java -Xmx4G $gridss_jvm_args gridss.AllocateEvidence \
 	I=$normal_bam \
 	I=$tumor_bam \
 	ASSEMBLY=$assembly_bam \
-	INPUT_VCF=$input_vcf \
+	INPUT_VCF=$somatic_vcf \
 	OUTPUT_VCF=$unadjusted_vcf \
 	$gridss_common_args \
 	CONFIGURATION_FILE=$gridss_config_file \

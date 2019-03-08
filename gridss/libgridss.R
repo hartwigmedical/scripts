@@ -743,7 +743,7 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
   # [,5] partner orientation
   # [,6] anchoring bases
   # adjust ALT for breakpoints. anchoring bases get replaced with N since we don't know
-  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(adjust_by == 0, alt,
+  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(is.na(adjust_by) | adjust_by == 0, alt,
                                                 paste0(
                                                   str_pad("", str_length(partner_alt[,2]), pad="N"),
                                                   partner_alt[,5],
