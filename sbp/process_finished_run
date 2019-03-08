@@ -20,7 +20,7 @@ echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${set_path}
 
 echo "[INFO] Running gridss assembly alignment backport for ${set}"
-do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.1.0/gridss.jar
+do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.2.2/gridss.jar
 
 echo "[INFO] Slicing and downloading bam hotspots for ${set}"
 do_download_hotspot_bams ${set_path}
