@@ -86,23 +86,24 @@ svs = hpcStructuralVariants %>%
   filter(length >= 10, length <= 100) 
 
 dels = scope_summary(svs, indels)
-scope_plot(dels) + xlim(21, 61) + ggtitle("DELS")
+delPlot = scope_plot(dels) + xlim(24, 76) + ggtitle("DELS")
 
 
 indels = hpcIndels %>% 
   filter(nchar(ref) < nchar(alt), filter == 'PASS') %>%
   mutate(length = abs(nchar(ref) - nchar(alt))) %>%
-  filter(length >= 10, length <= 50) 
+  filter(length >= 10, length <= 100) 
 
 svs = hpcStructuralVariants %>%
-  filter(type %in% c('DUP'), filter == '') %>%
+  filter(type %in% c('DUP', 'INS'), filter == '') %>%
   mutate(length = endPosition - startPosition + nchar(insertSequence), oddHomology = nchar(startHomologySequence) %% 2) %>%
 #  mutate(length = ifelse(oddHomology == 1, length + 1, length)) %>%
-  filter(length >= 10, length <= 50) 
+  filter(length >= 10, length <= 100) 
 
 dups = scope_summary(svs, indels)
-scope_plot(dups) + xlim(24, 41) + ggtitle("DUPS")
+dupPlot = scope_plot(dups) + xlim(24, 76) + ggtitle("DUPS")
 
+cowplot::plot_grid(delPlot, dupPlot, nrow = 1)
 
 
 ############################################# GRIDSS COMPARISON
@@ -120,7 +121,7 @@ svLengthsPerSample = hpcStructuralVariants %>%
 ggplot(svLengthsPerSample) + 
   geom_point(aes(x = low, y = high)) + ggtitle("Gridss Comparison") + xlab("Lengths 32-63") + ylab("Length 64-127")
 
-############################################# Scatter
+############################################# Scatter DELS
 svLengthsPerSample = hpcStructuralVariants %>%
   filter(type == 'DEL', filter == '') %>%
   mutate(length = endPosition - startPosition - 1, oddHomology = nchar(startHomologySequence) %% 2) %>%
@@ -147,4 +148,77 @@ ggplot(combined ) +
   ylim(0, 1000) +
   #scale_y_log10() +
   geom_point(aes(x = svCount, y = indelCount)) + facet_grid(repeating~indelLength, scales = "free_y") + xlab("Count SV DEL < 100 bases") 
+
+
+
+############################################# Scatter DUPS
+svLengthsPerSample = hpcStructuralVariants %>%
+  filter(type %in% c('DUP', 'INS'), filter == '') %>%
+  mutate(length = endPosition - startPosition + nchar(insertSequence), oddHomology = nchar(startHomologySequence) %% 2) %>%
+  filter(length >= 33, length <= 100) %>%
+  group_by(sampleId) %>% summarise(svCount = n()) 
+
+indelLengthLabels = c("1-3", "4-7", "8-15", "16-31", "32+")
+indelLengthBreaks = c(1, 4, 8, 16, 32, 100000000)
+
+indelLengthsPerSample = hpcIndels %>% 
+  filter(nchar(ref) < nchar(alt), filter == 'PASS') %>%
+  mutate(length = abs(nchar(ref) - nchar(alt)), repeating = repeatCount >= 4) %>%
+  filter(length >= 1, length <= 31) %>%
+  mutate(indelLength = cut(length, breaks = indelLengthBreaks, labels = indelLengthLabels, include.lowest = T, right = F)) %>%
+  group_by(sampleId, repeating, indelLength) %>% summarise(indelCount = n()) 
+
+
+combined = full_join(svLengthsPerSample, indelLengthsPerSample, by = "sampleId") %>% mutate(repeating = ifelse(repeating, "RepeatCount >= 4", "RepeatCount < 4"))
+combined[is.na(combined)] <- 0
+
+ggplot(combined ) +
+  #ggplot(combined %>% filter(indelLength == '1-3')) + 
+  ylim(0, 200) +
+  #scale_y_log10() +
+  geom_point(aes(x = svCount, y = indelCount)) + facet_grid(repeating~indelLength, scales = "free_y") + xlab("Count SV (DUP, INS) < 100 bases") 
+
+
+
+
+#################################### VALIDATION
+validationCohort = c("CPCT02030516T","CPCT02450014T","CPCT02130091T","CPCT02050327T","CPCT02070386T","CPCT02330102T","CPCT02370037T","CPCT02030461T","CPCT02160052T","CPCT02120143T","CPCT02150016T","DRUP01330008T","DRUP01010096T")
+indels = hpcIndels %>% filter(sampleId %in% validationCohort) %>%
+  filter(nchar(ref) > nchar(alt), filter == 'PASS') %>%
+  mutate(length = abs(nchar(ref) - nchar(alt))) %>%
+  filter(length >= 15, length <= 75)
+  
+svs = hpcStructuralVariants %>% 
+  filter(sampleId %in% validationCohort) %>%
+  filter(type == 'DEL', filter == '') %>%
+  mutate(
+    oddHomology = nchar(startHomologySequence) %% 2, 
+     endPosition = ifelse(oddHomology == 1,  endPosition + 1, endPosition),
+    length = endPosition - startPosition - 1) %>%
+  filter(length >= 15, length <= 75)
+  
+
+write.csv(indels, file = "~/hmf/paper2/indelValidationDel.csv")
+write.csv(svs, file = "~/hmf/paper2/svValidationDel.csv")
+
+
+
+indels = hpcIndels %>% filter(sampleId %in% validationCohort) %>%
+  filter(nchar(ref) < nchar(alt), filter == 'PASS') %>%
+  mutate(length = abs(nchar(ref) - nchar(alt))) %>%
+  filter(length >= 15, length <= 75)
+
+svs = hpcStructuralVariants %>% 
+  filter(sampleId %in% validationCohort) %>%
+  filter(type %in% c('INS', 'DUP'), filter == '') %>%
+  mutate(
+    oddHomology = nchar(startHomologySequence) %% 2, 
+    endPosition = ifelse(oddHomology == 1,  endPosition + 1, endPosition),
+    length = endPosition - startPosition - 1 + nchar(insertSequence)) %>%
+  filter(length >= 15, length <= 75)
+
+write.csv(indels, file = "~/hmf/paper2/indelValidationDup.csv")
+write.csv(svs, file = "~/hmf/paper2/svValidationDup.csv")
+
+
 
