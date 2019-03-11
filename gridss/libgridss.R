@@ -713,7 +713,6 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
     stop("CIPOS not specified for all variants.")
   }
   is_higher_breakend[is.na(is_higher_breakend)] = FALSE
-  #isbp = str_detect(VariantAnnotation::fixed(vcf)$ALT, "[\\]\\[]")
   nominal_start = start(rowRanges(vcf))
   cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
   ciwdith = cipos[,2] - cipos[,1]
@@ -726,7 +725,9 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
   } else {
     stop("Only centre alignment is currently implemented.")
   }
-  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(is.na(adjust_by), 0, adjust_by))
+  isbp = str_detect(VariantAnnotation::fixed(vcf)$ALT, "[\\]\\[]")
+  is_adjusted_bp =  isbp & !is.na(adjust_by) & adjust_by != 0
+  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(!is_adjusted_bp, 0, adjust_by))
   info(vcf)$CIPOS = info(vcf)$CIPOS - adjust_by
   if (!is.null(info(vcf)$CIEND)) {
     info(vcf)$CIEND = info(vcf)$CIEND - adjust_by
@@ -735,7 +736,7 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
     info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
   }
   alt = unlist(rowRanges(vcf)$ALT)
-  partner_alt = str_match(alt, "^([^\\]\\[]*)[\\]\\[]([^:]+):([0-9]+)([\\]\\[])([^\\]\\[]*)$")
+  partner_alt = stringr::str_match(alt, "^([^\\]\\[]*)[\\]\\[]([^:]+):([0-9]+)([\\]\\[])([^\\]\\[]*)$")
   # [,2] anchoring bases
   # [,3] partner chr
   # [,4] old partner position
@@ -743,15 +744,15 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
   # [,5] partner orientation
   # [,6] anchoring bases
   # adjust ALT for breakpoints. anchoring bases get replaced with N since we don't know
-  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(is.na(adjust_by) | adjust_by == 0, alt,
+  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(!is_adjusted_bp, alt,
                                                 paste0(
-                                                  str_pad("", str_length(partner_alt[,2]), pad="N"),
+                                                  str_pad("", stringr::str_length(partner_alt[,2]), pad="N"),
                                                   partner_alt[,5],
                                                   partner_alt[,3],
                                                   ":",
                                                   partner_pos,
                                                   partner_alt[,5],
-                                                  str_pad("", str_length(partner_alt[,6]), pad="N"))), "CharacterList")
+                                                  str_pad("", stringr::str_length(partner_alt[,6]), pad="N"))), "CharacterList")
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
   return(vcf)
 }
