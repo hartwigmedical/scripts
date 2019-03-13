@@ -2,7 +2,7 @@
 
 vicc_knowledgebase_importer_jar=/data/experiments/knowledgebase_vicckb/vicc-knowledgebase-importer.jar
 
-knowledgebasePath=/data/experiments/knowledgebase_vicckb/
+knowledgebasePath=/data/experiments/knowledgebase_vicckb
 allJson=all.json
 brcaJson=brca.json
 cgiJson=cgi.json
