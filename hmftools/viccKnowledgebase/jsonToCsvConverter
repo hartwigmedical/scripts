@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-vicc_knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_v1.2/knowledgebase-importer.jar
+vicc_knowledgebase_importer_jar=/data/experiments/knowledgebase_vicckb/vicc-knowledgebase-importer.jar
 
 knowledgebasePath=/data/experiments/knowledgebase_vicckb/
 allJson=all.json
