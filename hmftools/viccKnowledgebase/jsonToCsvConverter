@@ -26,4 +26,5 @@ java -jar ${vicc_knowledgebase_importer_jar} \
     -molecularMatchTrialsFile ${molecularMatchTrialsJson} \
     -oncokbFile ${oncokbJson} \
     -pmkbFile ${pmkbJson} \
-    -sageFile ${sageJson}
+    -sageFile ${sageJson} \
+    -knowledgebase ${knowledgebasePath}
