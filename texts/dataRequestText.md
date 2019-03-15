@@ -21,7 +21,7 @@ Note: both download-portal and nextcloud are behind the same dual factor login (
 Somatic data
 -----
 
-Somatic data is usually shared in a gzipped tar via our [nextcloud](https://nc.hartwigmedicalfoundation.nl/).
+Somatic data is usually shared in a gzipped tar via our [Nextcloud](https://nc.hartwigmedicalfoundation.nl/).
 
 ##### Contents of the gzipped tar file:
 - Metadata directory (with patient/biopsy/clinical information in TSV format).
@@ -57,7 +57,23 @@ Germline VCFs (GATK based) are available in our [download-portal](https://portal
 Sharing of BAM files is currently only supported for small numbers, but in case you do have access they are also visible in the download-portal.
 
 
+Data inclusion/exclusion
+-----
+In addition to data-request specific criteria, we only include data for which none of below applies.
+
+- We exclude biopsies from patients where informed consent is from before 21 April 2016.
+- We exclude biopsies where quality is poor (PURPLE QC != PASS).
+- We exclude biopsies where there is no tumor evidence (PURPLE status = “NO_TUMOR”).
+- We exclude biopsies where there is less than 20% tumor cells (PURPLE purity < 0.2).
+
+
 Code
 -----
-- The source code of the analysis pipeline can be found at [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
-- The source code of HMF tools can be found at [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
+- Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
+- Source code of all HMF tools: [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
+
+
+Detailed information
+-----
+- For explanation of most output files see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator)
+- For an example patient report see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
