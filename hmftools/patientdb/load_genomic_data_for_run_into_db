@@ -8,7 +8,7 @@ sample=$1 && shift
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-sv_jar=/data/common/tools/variantannotator_v2.11/variant-annotator.jar
+sv_jar=/data/common/tools/variantannotator_v2.12/variant-annotator.jar
 
 somatic_vcf=$(locate_somatics ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
