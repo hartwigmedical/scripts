@@ -1,19 +1,21 @@
 #!/bin/bash
 
-patient_reporter_dir=/data/common/tools/patientreporter_v5.8
+patient_reporter_dir=/data/common/tools/patientreporter_v5.9
 report_dir=/data/cpct/patient_reports
 
 lims=/data/lims
+hospital_dir=/data/common/dbs/hospital
+
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+
 signature=/data/common/dbs/signature/signature.png
-center_csv=/data/common/dbs/center/center.csv
 rva_logo=/data/common/dbs/rva_logo/L633_l_testlaboratoria_rva_en_color.jpeg
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -report_dir ${report_dir} \
-    -lims ${lims} \
+    -lims_dir ${lims} \
+    -hospital_dir ${hospital_dir} \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -rva_logo ${rva_logo} \
-    -center_csv ${center_csv} \
     "$@"
