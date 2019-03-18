@@ -392,7 +392,7 @@ sub processCpct{
             my $unique = NACHAR;
             my $source = $row_info->{ 'sample_source' };            
             
-            if ( $source eq 'Biopsy' ){
+            if ( $source eq 'TISSUE' ){
 				$unique = $row_info->{ 'rna_sample_id' };
 				next if isSkipValue( $unique );
 				$row_info_copy{ 'sample_id' } = $unique;
@@ -405,7 +405,7 @@ sub processCpct{
                 $row_info_copy{ 'analysis_type' } = 'PlasmaAnalysisTODO';
             }
             else{
-                die "[EXIT] Unexpected value for source ($source) sould be Biopt of Blood?\n";
+                die "[EXIT] Unexpected value for source ($source), expected TISSUE or Blood (fix this!)\n";
             }
             
             ## store info at unique id
