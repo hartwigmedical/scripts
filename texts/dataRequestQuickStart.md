@@ -82,4 +82,4 @@ More detailed information
 
 Final Notes
 -----
-- MySql database sheme: please ask us if you want to load the data into a database 
+- You can also setup our own MySQL database scheme and load your data request content: please contact us for instructions. 
