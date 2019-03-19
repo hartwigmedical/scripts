@@ -9,8 +9,8 @@ if [[ ${PIPESTATUS[0]} -ne 4 ]]; then
     exit 1
 fi
 
-OPTIONS=vo:t:n:s:
-LONGOPTS=verbose,output_dir:tumour_bam:,normal_bam,sample,threads:
+OPTIONS=v:o:t:n:s:
+LONGOPTS=vcf,output_dir:tumour_bam:,normal_bam,sample,threads:
 ! PARSED=$(getopt --options=$OPTIONS --longoptions=$LONGOPTS --name "$0" -- "$@")
 if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
     # e.g. return value is 1
@@ -21,16 +21,17 @@ eval set -- "$PARSED"
 run_dir=""
 tumour_bam=""
 normal_bam=""
-verbose="n"
+snvindel_vcf=""
 threads=$(nproc)
+cleanup="y"
 while true; do
     case "$1" in
-        -v|--verbose)
-            verbose=y
-            shift
+        -v|--vcf)
+            snvindel_vcf="$2"
+            shift 2
             ;;
 		-n|--normal_bam)
-            normal_bam=y
+            normal_bam="$2"
             shift 2
             ;;
         -o|--output_dir)
@@ -93,15 +94,30 @@ ref_genome=$base_path/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.
 viral_ref_genome=$base_path/refgenomes/human_virus/human_virus.fa
 encode_blacklist=$base_path/dbs/encode/ENCFF001TDO.bed
 repeatmasker=$base_path/dbs/repeatmasker/hg19.fa.out
+baf_snps=$base_path/dbs/amber/GermlineHetPon.hg19.bed
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
+gridss_pon=$base_path/dbs/gridss/pon/
+strelka_config=$base_path/settings/strelka/strelka_config_bwa_genome.ini
+# ChromaticHMF/GRIDSS2 jars
 jar_dir=$base_path/jars
 hmf_scripts=$base_path/hmfscripts/
 gridss_jar=$(ls -1 $base_path/jars/gridss-2.2.3-gridss-jar-with-dependencies.jar)
 purple_jar=$(ls -1 $base_path/jars/*purity-ploidy-estimator*.jar)
+amber_jar=$(ls -1 $base_path/jars/*amber*.jar)
+cobalt_jar=$(ls -1 $base_path/jars/*cobalt*.jar)
 # TODO Download R libraries!
 ###
 # External tools
 export PATH=${base_path}/tools/circos_v0.69.6/bin/circos:$PATH
+export PATH=${base_path}/tools/circos_v0.69.6/bin/circos:$PATH
+export PATH=${base_path}/tools/sambamba-0.6.9-linux-static:$PATH
+export PATH=${base_path}/tools/samtools-1.9:$PATH
+export PATH=${base_path}/tools/strelka-2.9.10.centos6_x86_64/bin:$PATH
+
+echo TODO: sambamba PATH 
+echo TODO: samtools PATH
+echo TODO: Rscript PATH
+echo TODO: strelka
 
 mkdir -p $run_dir/logs
 log_prefix=$run_dir/logs/$(+%Y%m%d_%H%M%S).$HOSTNAME.$$
@@ -165,19 +181,19 @@ if [[ ! -f $gridss_somatic_vcf ]] ; then
 		OUTPUT=$gridss_raw_vcf \
 		WORKER_THREADS=$threads \
 		2>&1 | tee -a $log_prefix.gridss.AnnotateUntemplatedSequence.viral.log
-		
-	rm tmp*$gridss_raw_vcf* 2>/dev/null
-	unzipped_vcf=$(dirname ${original_vcf})/$(basename -s .gz ${original_vcf})
 	# workaround for https://github.com/Bioconductor/VariantAnnotation/issues/19
-	gunzip -c ${gridss_raw_vcf} | awk ' { if (length($0) >= 4000) { gsub(":0.00:", ":0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000:")} ; print $0  } ' > tmp.$gridss_raw_vcf.vcf
+	gunzip -c ${gridss_raw_vcf} | awk ' { if (length($0) >= 4000) { gsub(":0.00:", ":0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000:")} ; print $0  } ' > tmp.decompressed.$gridss_raw_vcf.vcf
 	Rscript $hmf_scripts/gridss/gridss_somatic_filter.R \
 		-p ${gridss_pon} \
-		-i tmp.$gridss_raw_vcf.vcf \
+		-i tmp.decompressed.$gridss_raw_vcf.vcf \
 		-o ${gridss_somatic_vcf} \
 		-f ${gridss_somatic_full_vcf} \
 		-s $hmf_scripts/gridss/ \
-		--gc
-	rm tmp.$gridss_raw_vcf.vcf  2>/dev/null
+		--gc \
+		2>&1 | tee -a $log_prefix.gridss.somatic_filter.log
+	if [[ $cleanup == "y" ]] ; then
+		rm tmp.$gridss_raw_vcf.vcf* tmp.human.$gridss_raw_vcf* tmp.decompressed.$gridss_raw_vcf.vcf* 2>/dev/null
+	fi
 	mv ${gridss_somatic_vcf}.bgz ${gridss_somatic_vcf}.gz
 	mv ${gridss_somatic_vcf}.bgz.tbi ${gridss_somatic_vcf}.gz.tbi
 	mv ${gridss_somatic_full_vcf}.bgz ${gridss_somatic_full_vcf}.gz
@@ -191,11 +207,86 @@ if [[ ! -s $gridss_somatic_vcf.gz ]] ; then
 fi
 
 echo ############################################
+echo # Running Amber
+echo ############################################
+mkdir -p $run_dir/amber
+amber_pileup_N=$run_dir/amber/$ref_sample.amber.pileup
+amber_pileup_T=$run_dir/amber/$ref_sample.amber.pileup
+
+sambamba mpileup \
+	-t $threads \
+	--tmpdir=$run_dir/amber \
+	-L $baf_snps \
+	$normal_bam \
+	--samtools "-q 1 -f $ref_genome" > $amber_pileup_N
+	2>&1 | tee $log_prefix.amber.N.log
+
+sambamba mpileup \
+	-t $threads \
+	--tmpdir=$run_dir/amber \
+	-L $baf_snps \
+	$tumor_bam \
+	--samtools "-q 1 -f $ref_genome" > $amber_pileup_T
+	2>&1 | tee $log_prefix.amber.T.log
+
+java -Xmx10G \
+	-jar $amber_jar \
+	-sample $tumor_sample \
+	-reference $amber_pileup_N \
+	-tumor $amber_pileup_T \
+	-output_dir $run_dir/amber \
+	2>&1 | tee $log_prefix.amber.log
+
+if [[ $cleanup == "y" ]] ; then
+	rm $amber_pileup_N $amber_pileup_T $run_dir/amber/*.pcf1
+fi
+
+echo ############################################
+echo # Running Cobalt
+echo ############################################
+mkdir -p $run_dir/cobalt
+java -Xmx10G -jar $cobalt_jar \
+    -threads $threads \
+    -reference $ref_sample \
+    -reference_bam $normal_bam \
+    -tumor $tumor_sample \
+    -tumor_bam $tumor_bam \
+    -output_dir $run_dir/cobalt \
+    -gc_profile $gc_profile \
+	2>&1 | tee $log_prefix.cobalt.log
+
+if [[ $cleanup == "y" ]] ; then
+	rm -f "[% dirs.cobalt %]"/*.pcf1
+	rm -f "[% dirs.cobalt %]"/*.ratio
+	rm -f "[% dirs.cobalt %]"/*.ratio.gc
+	rm -f "[% dirs.cobalt %]"/*.count
+fi
+
+echo ############################################
+echo # Running Strelka
+echo ############################################
+mkdir -p $run_dir/strelka
+somatic_vcf=$run_dir/strelka/somatic.snvs.vcf.gz
+
+configureStrelkaWorkflow.pl \
+    --tumor $tumor_bam \
+    --normal $normal_bam \
+    --ref $ref_genome \
+    --config $strelka_config \
+    --output-dir $run_dir/strelka
+
+cd $run_dir/strelka
+make -j $threads
+cd -
+
+if [[ $cleanup == "y" ]] ; then
+	rm -r $run_dir/strelka/chromosomes
+fi
+
+echo ############################################
 echo # Running PURPLE
 echo ############################################
 purple_output=${run_dir}/purple
-
-somatic_vcf="????TODO?????"
 
 java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \
@@ -204,6 +295,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -circos circos \
     -run_dir ${run_dir} \
     -ref_genome hg19 \
+	-cobalt $run_dir/cobalt \
     -output_dir ${purple_output} \
     -gc_profile ${gc_profile} \
     -sv_recovery_vcf $gridss_somatic_full_vcf.gz
