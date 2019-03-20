@@ -86,11 +86,10 @@ for (sample in cohort$sampleId) {
 }
 rm(mantaSample)
 
-strelka = read.csv(file = "~/hmf/analysis/mantaVgridss/Indels.csv", stringsAsFactors = F) %>% mutate(length = abs(nchar(ref) - nchar(alt))) %>% filter(length >= 10, length <= 100)
+strelka = read.csv(file = "~/hmf/analysis/mantaVgridss/Indels.csv", stringsAsFactors = F) %>% mutate(length = abs(nchar(ref) - nchar(alt))) %>% filter(length >= 32)
 gridss = read.csv(file = "~/hmf/analysis/mantaVgridss/Svs.csv", stringsAsFactors = F) 
 
 save(manta, strelka, gridss, file = "/Users/jon/hmf/analysis/mantaVgridss/rawData.RData")
-
 
 
 
@@ -243,11 +242,18 @@ gridss$scope <- "Private"
 gridss$scope <- ifelse(gridss$matchManta, "SharedManta", gridss$scope)
 gridss$scope <- ifelse(gridss$matchStrelka, "SharedStrelka", gridss$scope)
 gridss$scope <- ifelse(gridss$matchManta & gridss$matchStrelka, "SharedBoth", gridss$scope)
+gridss = gridss %>% select(-CIPOS_start, -CIPOS_end, -matchStrelka, -matchManta)
 
 
 summary = gridss %>% group_by(sampleId, type,  scope) %>% count() %>% spread(scope, n)
 summary[is.na(summary)] <- 0
 View(summary)
+
+write.csv(gridss, file = "/Users/jon/hmf/analysis/mantaVgridss/gridssScope.csv", quote = T, row.names = F)
+write.csv(manta, file = "/Users/jon/hmf/analysis/mantaVgridss/mantaScope.csv", quote = T, row.names = F)
+write.csv(strelka, file = "/Users/jon/hmf/analysis/mantaVgridss/strelkaScope.csv", quote = T, row.names = F)
+
+
 
 
 
