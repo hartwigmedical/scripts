@@ -94,7 +94,7 @@ save(manta, strelka, gridss, file = "/Users/jon/hmf/analysis/mantaVgridss/rawDat
 
 
 
-########################### 
+########################### VALIDATION ALGORITHM
 indel_overlaps <- function(svs, indels, maxgap) {
   indelContig =  paste0(indels$chromosome, indels$sampleId)
   svContig =  paste0(svs$startChromosome, svs$sampleId)
@@ -218,12 +218,37 @@ gridsssHits = gridssIndex[mantaOverlaps$queryHits, "originalIndex"]
 manta[mantaHits, "scope"] <- "Shared"
 gridss[gridsssHits, "matchManta"] <- T
 
+########################### SINGLES
+singles_overlaps <- function(svs, indels, maxgap) {
+  indelContig =  paste0(indels$chromosome, indels$sampleId, indels$orientation)
+  svContig =  paste0(svs$startChromosome, svs$sampleId, svs$startOrientation)
+  
+  indelRanges = GRanges(indelContig, IRanges(indels$position, indels$position))
+  svRanges = GRanges(svContig, IRanges(svs$startPosition, svs$startPosition))
+  ol = as.matrix(findOverlaps(svRanges, indelRanges, type="any", select="all", maxgap))
+  return (data.frame(ol))
+}
+
+
+mantaSinglesStart = manta %>% filter(scope == "Private") %>% select(sampleId, chromosome = startChromosome, position = startPosition,  orientation = startOrientation)
+mantaSinglesEnd = manta %>% filter(scope == "Private") %>% select(sampleId, chromosome = endChromosome, position = endPosition,  orientation = endOrientation)
+mantaSingles = bind_rows(mantaSinglesStart, mantaSinglesEnd)
+
+gridssIndex = gridss %>% mutate(originalIndex = row_number()) %>% filter(type == 'SGL') %>% select(originalIndex)
+singlesOverlap = singles_overlaps(gridss[gridssIndex$originalIndex, ], mantaSingles, 20)
+gridsssHits = gridssIndex[singlesOverlap$queryHits, "originalIndex"]
+gridss[gridsssHits, "matchManta"] <- T
+
 gridss$scope <- "Private"
 gridss$scope <- ifelse(gridss$matchManta, "SharedManta", gridss$scope)
 gridss$scope <- ifelse(gridss$matchStrelka, "SharedStrelka", gridss$scope)
 gridss$scope <- ifelse(gridss$matchManta & gridss$matchStrelka, "SharedBoth", gridss$scope)
 
+
 summary = gridss %>% group_by(sampleId, type,  scope) %>% count() %>% spread(scope, n)
 summary[is.na(summary)] <- 0
 View(summary)
+
+
+
 
