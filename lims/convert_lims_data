@@ -392,16 +392,16 @@ sub processCpct{
             my $unique = NACHAR;
             my $source = $row_info->{ 'sample_source' };            
             
-            if ( $source eq 'TISSUE' ){
-				$unique = $row_info->{ 'rna_sample_id' };
-				next if isSkipValue( $unique );
-				$row_info_copy{ 'sample_id' } = $unique;
+            if ( $source =~ m/^Tissue$/i ){
+                $unique = $row_info->{ 'rna_sample_id' };
+                next if isSkipValue( $unique );
+                $row_info_copy{ 'sample_id' } = $unique;
                 $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
             }
-            elsif( $source eq 'Blood' ){
-				$unique = $row_info->{ 'plasma_sample_id' };
-				next if isSkipValue( $unique );
-				$row_info_copy{ 'sample_id' } = $unique;
+            elsif( $source =~ m/^Blood$/ ){
+                $unique = $row_info->{ 'plasma_sample_id' };
+                next if isSkipValue( $unique );
+                $row_info_copy{ 'sample_id' } = $unique;
                 $row_info_copy{ 'analysis_type' } = 'PlasmaAnalysisTODO';
             }
             else{

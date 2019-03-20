@@ -8,6 +8,8 @@ library(MutationalPatterns)
 library(ggplot2)
 library(dplyr)
 
+## To generate a CPCT-DRUP comparison run "multipleBiopsySignatures.R <CPCT patient ID>"
+
 ID = commandArgs(trailingOnly = TRUE)
 dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, groups = "RAnalysis")
 
