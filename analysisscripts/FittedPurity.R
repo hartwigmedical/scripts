@@ -72,13 +72,14 @@ df =  bind_rows(highPurityMajorPenalty, highPurityMinorPenalty,lowPurityMajorPen
 ploidyColours = setNames(c("#6baed6", "#fb6a4a"),c("Major", "Minor"))
 
 
-ggplot(df) +
+pDeviationPenalty = ggplot(df) +
   geom_line(aes(x = ploidy, y = penalty, color = Penalty, linetype = Purity)) +
   scale_color_manual(values = ploidyColours) + 
   xlab("Ploidy") + ylab("Penalty") + ggtitle("Ploidy Deviation") +
   theme( panel.border = element_blank()) + 
   theme(axis.ticks = element_blank(), legend.position="bottom") +
   ylim(0,3)
+save_plot("~/hmf/RPlot/FittedPurityDeviationPenalty.png", pDeviationPenalty, base_width = 8, base_height = 4)
 
 
 purityMatrix <- function(purity, ploidy) {
