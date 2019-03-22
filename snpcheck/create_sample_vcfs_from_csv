@@ -50,8 +50,8 @@ ${SCRIPT} --out ${vcfOutDir} --des ${DESIGN} --csv ${csvFile}
 vcfCount=$( ls ${vcfOutDir} | wc -l )
 echo "[INFO] Total of ${vcfCount} VCFs created"
 echo ""
-echo "[TODO] Run comparison script to get report info (remove -tab for just viewing)"
-echo "  perform_snpcheck -collapse ${vcfOutDir}/*vcf"
+echo "[TODO] Performs plate QC"
+echo "  perform_snpcheck_plate_qc ${vcfOutDir}"
 echo ""
 echo "[TODO] Also copy the results to SBP dir (and dont forget to sync to SBP)"
 echo "  sudo cp -r ${vcfOutDir} ${SBPDIR}"
