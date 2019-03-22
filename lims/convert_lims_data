@@ -398,7 +398,7 @@ sub processCpct{
                 $row_info_copy{ 'sample_id' } = $unique;
                 $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
             }
-            elsif( $source =~ m/^Blood$/ ){
+            elsif( $source =~ m/^Blood$/i ){
                 $unique = $row_info->{ 'plasma_sample_id' };
                 next if isSkipValue( $unique );
                 $row_info_copy{ 'sample_id' } = $unique;
