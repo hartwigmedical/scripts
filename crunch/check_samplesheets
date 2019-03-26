@@ -26,6 +26,10 @@ for sheet in $sheets; do
     idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
     allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
 
+    ## parse RunInfo file
+    runInfoFile=$runBase"/RunInfo.xml"
+    expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
+
     echo ""
     echo "# "$currHost;
     echo "# [Rund] "$runBase;
@@ -42,7 +46,7 @@ for sheet in $sheets; do
     else
         cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
     fi
-    echo "# [NOTE] CYCLE log count: $cycleCount"
+    echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
 
     ## check conversion status
     if [ ! -e $conversionLogFile ]; then
