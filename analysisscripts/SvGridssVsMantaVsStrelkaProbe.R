@@ -83,7 +83,7 @@ gridssSingles = gridss %>% filter(type %in% c('SGL')) %>%
 gridssSingles = gridssSingles %>%
   mutate(
     probe = as.character(getSeq(BSgenome.Hsapiens.UCSC.hg19, paste0("chr", chromosome), probeStart, probeEnd)),
-    probe = ifelse(orientation == 1, paste0(truncatedInsertSequence, probe), paste0(probe, truncatedInsertSequence)),
+    probe = ifelse(orientation == 1, paste0(probe, truncatedInsertSequence), paste0(truncatedInsertSequence, probe)),
     length = nchar(probe)
   )
 
@@ -93,10 +93,6 @@ probes = bind_rows(probes, gridssOverlaps %>% select(sampleId, probe)%>% mutate(
 probes = bind_rows(probes, gridssSingles %>% select(sampleId, probe)%>% mutate(source = "GRIDSS"))
 probes = bind_rows(probes, mantaStartAndEndProbes %>% select(sampleId, probe)%>% mutate(source = "MANTA"))
 probes = bind_rows(probes, mantaOverlaps %>% select(sampleId, probe)%>% mutate(source = "MANTA"))
-
-jon = probes %>% group_by(probe) %>% summarise(n = n(), source = paste0(source, collapse = ","), sampleId = paste0(sampleId, collapse = ",")) %>% filter(n > 1)
-
-
 probes = probes %>% distinct(probe)
 
 #PASS 
@@ -129,11 +125,11 @@ verification3 = gridssOverlaps %>%
 #PASS 
 verification4 = gridssOverlaps %>% 
   filter(
-    firstBreakendChromosome == secondBreakendChromosome, 
+    firstBreakendChromosome != secondBreakendChromosome, 
     sampleId == 'CPCT02030461T', 
     firstBreakendChromosome == 1, 
-    firstBreakendOrientation == secondBreakendOrientation, 
-    firstBreakendOrientation == 1)
+    firstBreakendOrientation != secondBreakendOrientation, 
+    firstBreakendOrientation == -1)
 
 #PASS 
 verification5 = gridssOverlaps %>% 
@@ -142,20 +138,62 @@ verification5 = gridssOverlaps %>%
     sampleId == 'CPCT02030461T', 
     firstBreakendChromosome == 1, 
     firstBreakendOrientation == secondBreakendOrientation, 
+    firstBreakendOrientation == 1)
+
+#PASS 
+verification6 = gridssOverlaps %>% 
+  filter(
+    firstBreakendChromosome == secondBreakendChromosome, 
+    sampleId == 'CPCT02030461T', 
+    firstBreakendChromosome == 1, 
+    firstBreakendOrientation == secondBreakendOrientation, 
     firstBreakendOrientation == -1)
 
-
-commands = verification5 %>%
+overlapCommmands = verification4 %>%
   mutate(
     sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", firstBreakendChromosome, ":" ,firstBreakendStart, "-", firstBreakendEnd, "> verification.sam"),
-    grep = paste0("grep ", probe, " verification.sam")
-    ) %>%
-  select(sam, grep)
-
-commands = verification3 %>%
-  mutate(
-    sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", firstBreakendChromosome, ":" ,firstBreakendStart, "-", secondBreakendEnd, "> verification.sam"),
     grep = paste0("grep ", probe, " verification.sam")
   ) %>%
   select(sam, grep)
 
+#PASS 
+verification7 = gridssStartAndEndProbes %>% 
+  filter(
+    sampleId == 'CPCT02030461T', 
+    chromosome == 1, 
+    orientation == -1)
+
+#PASS 
+verification8 = gridssStartAndEndProbes %>% 
+  filter(
+    sampleId == 'CPCT02030461T', 
+    chromosome == 1, 
+    orientation == 1)
+
+startEndCommmands = verification9 %>%
+  mutate(
+    sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", chromosome, ":" ,probeStart, "-", probeEnd, "> verification.sam"),
+    grep = paste0("grep ", probe, " verification.sam")
+  ) %>%
+  select(sam, grep)
+
+
+#PASS
+verification9 = gridssSingles %>% 
+  filter(
+    sampleId == 'CPCT02050327T', orientation == 1)
+
+#PASS
+verification10 = gridssSingles %>% 
+  filter(
+    sampleId == 'CPCT02050327T', orientation == -1)
+
+
+SGLCommmands = verification10 %>%
+    mutate(
+      sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02050327R_CPCT02050327T.assembly.bam.sv.bam ", chromosome, ":" ,probeStart, "-", probeEnd, "> verification.sam"),
+      grep = paste0("grep ", probe, " verification.sam")
+    ) %>%
+    select(sam, grep)
+
+  
