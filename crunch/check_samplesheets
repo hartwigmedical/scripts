@@ -28,7 +28,10 @@ for sheet in $sheets; do
 
     ## parse RunInfo file
     runInfoFile=$runBase"/RunInfo.xml"
-    expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
+    expectedCycleCount="NA"
+    if [[ -f $runInfoFile ]]; then
+      expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
+    fi
 
     echo ""
     echo "# "$currHost;
