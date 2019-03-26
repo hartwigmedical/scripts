@@ -30,10 +30,10 @@ probeOverlaps <- function(svs) {
     mutate(lengthInsertSequence = nchar(insertSequence)) %>%
     filter(lengthInsertSequence < 120) %>%
     mutate(
-      firstBreakendStart = startPosition - 59 + ceiling(lengthInsertSequence / 2), 
-      firstBreakendEnd = startPosition,
-      secondBreakendStart = endPosition,
-      secondBreakendEnd = endPosition + 59 - floor(lengthInsertSequence / 2),
+      firstBreakendStart = ifelse(startOrientation == 1, startPosition - 59 + ceiling(lengthInsertSequence / 2), startPosition), 
+      firstBreakendEnd = ifelse(startOrientation == 1, startPosition, startPosition + 59 -ceiling(lengthInsertSequence / 2)),
+      secondBreakendStart = ifelse(endOrientation == 1, endPosition - 59 + floor(lengthInsertSequence / 2), endPosition), 
+      secondBreakendEnd = ifelse(endOrientation == 1, endPosition, endPosition + 59 - floor(lengthInsertSequence / 2)),
       length = firstBreakendEnd - firstBreakendStart + secondBreakendEnd - secondBreakendStart + 2 + lengthInsertSequence
     ) %>% select(sampleId, lengthInsertSequence,
                  firstBreakendChromosome = startChromosome, firstBreakendStart, firstBreakendEnd, firstBreakendOrientation = startOrientation,
@@ -117,7 +117,7 @@ verification2 = gridssOverlaps %>%
     firstBreakendOrientation != secondBreakendOrientation, 
     firstBreakendOrientation == 1)
 
-### FAIL
+#PASS 
 verification3 = gridssOverlaps %>% 
   filter(
     firstBreakendChromosome == secondBreakendChromosome, 
@@ -126,7 +126,7 @@ verification3 = gridssOverlaps %>%
     firstBreakendOrientation != secondBreakendOrientation, 
     firstBreakendOrientation == -1)
 
-### FAIL
+#PASS 
 verification4 = gridssOverlaps %>% 
   filter(
     firstBreakendChromosome == secondBreakendChromosome, 
@@ -135,7 +135,7 @@ verification4 = gridssOverlaps %>%
     firstBreakendOrientation == secondBreakendOrientation, 
     firstBreakendOrientation == 1)
 
-### FAIL
+#PASS 
 verification5 = gridssOverlaps %>% 
   filter(
     firstBreakendChromosome == secondBreakendChromosome, 
@@ -145,7 +145,7 @@ verification5 = gridssOverlaps %>%
     firstBreakendOrientation == -1)
 
 
-commands = verification3 %>%
+commands = verification5 %>%
   mutate(
     sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", firstBreakendChromosome, ":" ,firstBreakendStart, "-", firstBreakendEnd, "> verification.sam"),
     grep = paste0("grep ", probe, " verification.sam")
