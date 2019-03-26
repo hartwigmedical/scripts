@@ -14,6 +14,7 @@ rva_logo=/data/common/dbs/rva_logo/L633_l_testlaboratoria_rva_en_color.jpeg
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -report_dir ${report_dir} \
     -lims_dir ${lims} \
+    -hospital_dir ${hospital_dir} \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -rva_logo ${rva_logo} \
