@@ -75,6 +75,7 @@ write.table(tumorBAF, file = tumorBAFPath, sep = '\t', quote = F, row.names = T,
 ascat.bc = ascat.loadData(tumorRatioPath, tumorBAFPath, germlineRatioPath, germlineBAFPath, gender = gender)
 ascat.bc = ascat.aspcf(ascat.bc,  out.dir = paste0(outDir, "/input/"))
 ascat.output = ascat.runAscat(ascat.bc, gamma = 1, img.dir = paste0(outDir, "/output/"))
-output = data.frame(tumor = tumor, purity = ascat.output$aberrantcellfraction, psi = ascat.output$psi, ploidy = ascat.output$ploidy, stringsAsFactors = F)
+output = data.frame(tumor = tumor, purity = ascat.output$aberrantcellfraction, psi = ascat.output$psi, ploidy = ascat.output$ploidy, goodnessofFit = ascat.output$goodnessOfFit, stringsAsFactors = F)
 write.table(output, file = paste0(outDir, "/output/", tumor, ".results.txt"), sep = '\t', quote = F, row.names = F, col.names = T )
-
+write.table(ascat.output$segments, file = paste0(outDir, "/output/", tumor, ".segments.txt"), sep = '\t', quote = F, row.names = F, col.names = T )
+write.table(ascat.output$segments_raw, file = paste0(outDir, "/output/", tumor, ".segments_raw.txt"), sep = '\t', quote = F, row.names = F, col.names = T )
