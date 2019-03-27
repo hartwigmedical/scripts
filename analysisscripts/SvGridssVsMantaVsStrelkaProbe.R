@@ -9,6 +9,17 @@ load(file = "/Users/jon/hmf/analysis/mantaVgridss/scopedData.RData")
 #gridss %>% filter(type != 'SGL') %>% count()
 #gridss %>% filter(type != 'SGL') %>% group_by(type) %>% count()
 
+privateStrelka = strelka %>% filter(scope == 'Private') %>% 
+  mutate(
+    startChromosome = chromosome, 
+    endChromosome = chromosome, 
+    endPosition = position + nchar(ref), 
+    startOrientation = 1,
+    endOrientation = -1,
+    insertSequence = substring(alt, 2), 
+    insertSequenceLength = nchar(insertSequence)) %>%
+  select(sampleId, startChromosome, endChromosome, startPosition = position, endPosition, startOrientation, endOrientation, ref, alt, insertSequence, insertSequenceLength, scope)
+
 privateManta = manta %>% filter(scope == 'Private') %>% select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence = SVINSSEQ_start, startOrientation, endOrientation, type = SVTYPE_start, scope)
 privateManta[is.na(privateManta)] <- ""
 rm(manta, strelka)
@@ -63,9 +74,15 @@ mantaEndProbes = probeBeforeBreakend(privateManta %>% select(sampleId, chromosom
 mantaStartAndEndProbes = bind_rows(mantaStartProbes, mantaEndProbes)
 rm(mantaStartProbes, mantaEndProbes)
 
+strelkaStartProbes = probeBeforeBreakend(privateStrelka %>% select(sampleId, chromosome = startChromosome, position = startPosition, orientation = startOrientation))
+strelkaEndProbes = probeBeforeBreakend(privateStrelka %>% select(sampleId, chromosome = endChromosome, position = endPosition, orientation = endOrientation, scope))
+strelkaStartAndEndProbes = bind_rows(strelkaStartProbes, strelkaEndProbes)
+rm(strelkaStartProbes, strelkaEndProbes)
 
 gridssOverlaps = probeOverlaps(gridss %>% filter(type != 'SGL') %>% select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence, startOrientation, endOrientation))
 mantaOverlaps = probeOverlaps(privateManta %>% select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence, startOrientation, endOrientation))
+strelkaOverlaps = probeOverlaps(privateStrelka %>% select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence, startOrientation, endOrientation))
+
 
 gridssSingles = gridss %>% filter(type %in% c('SGL')) %>%
   mutate(
@@ -93,7 +110,10 @@ probes = bind_rows(probes, gridssOverlaps %>% select(sampleId, probe)%>% mutate(
 probes = bind_rows(probes, gridssSingles %>% select(sampleId, probe)%>% mutate(source = "GRIDSS"))
 probes = bind_rows(probes, mantaStartAndEndProbes %>% select(sampleId, probe)%>% mutate(source = "MANTA"))
 probes = bind_rows(probes, mantaOverlaps %>% select(sampleId, probe)%>% mutate(source = "MANTA"))
+probes = bind_rows(probes, strelkaStartAndEndProbes %>% select(sampleId, probe)%>% mutate(source = "STRELKA"))
+probes = bind_rows(probes, strelkaOverlaps %>% select(sampleId, probe)%>% mutate(source = "STRELKA"))
 probes = probes %>% distinct(probe)
+write.csv(probes, file = "/Users/jon/hmf/analysis/mantaVgridss/probes.csv", row.names = F)
 
 #PASS 
 verification = gridssOverlaps %>% 
@@ -196,4 +216,22 @@ SGLCommmands = verification10 %>%
     ) %>%
     select(sam, grep)
 
+strelkaVerification1 = strelkaOverlaps %>% filter(sampleId == 'CPCT02030461T')
+
+overlapCommmands = strelkaVerification1 %>%
+  mutate(
+    sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", firstBreakendChromosome, ":" ,firstBreakendStart, "-", firstBreakendEnd, "> verification.sam"),
+    grep = paste0("grep ", probe, " verification.sam")
+  ) %>%
+  select(sam, grep)
+
+strelkaVerification2 = strelkaStartAndEndProbes %>% filter(sampleId == 'CPCT02030461T')
+startEndCommmands = strelkaVerification2 %>%
+  mutate(
+    sam= paste0("/data/common/tools/samtools_v1.2/samtools view CPCT02030461R_CPCT02030461T.assembly.bam.sv.bam ", chromosome, ":" ,probeStart, "-", probeEnd, "> verification.sam"),
+    grep = paste0("grep ", probe, " verification.sam")
+  ) %>%
+  select(sam, grep)
+
+gridss %>% select(sampleId) %>% distinct()
   
