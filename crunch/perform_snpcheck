@@ -84,7 +84,6 @@ print $HELP_TEXT and exit(0) if $help;
 $delim_char = "\t" if $use_tab_delim;
 
 ## input checks 
-die "[ERROR] GenotypeDB is not a directory ($snpcheck_db)\n" if $snpcheck_db and not -d $snpcheck_db;
 die "[ERROR] vcfDir is not a directory ($input_vcf_dir)\n" if $input_vcf_dir and not -d $input_vcf_dir;
 die "[ERROR] Use either vcfDir or separate VCFs as input.\n" unless scalar @ARGV or $input_vcf_dir;
 die "[ERROR] Use either vcfDir or separate VCFs as input, not both.\n" if scalar @ARGV and $input_vcf_dir;
@@ -125,6 +124,7 @@ if ( $qc_mode ){
 }
 elsif ( $vcfCount == 1 ){
     say "[INFO] Single vcf mode: will perform comparison to database ($snpcheck_db)";
+    die "[EXIT] GenotypeDB is not a directory ($snpcheck_db)\n" if not -d $snpcheck_db;
     die "[EXIT] Param outputFile required with single vcf mode.\n" unless $output_file;
     die "[EXIT] Ouput file already exists ($output_file)\n" if -f $output_file;
     
