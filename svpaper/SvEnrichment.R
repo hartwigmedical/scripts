@@ -5,74 +5,39 @@ library(dplyr)
 library(GenomicRanges)
 library(ggplot2)
 
-dbPilot = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis")
-patientIdLookups = query_patient_id_lookup(dbPilot)
-dbDisconnect(dbPilot)
-rm(dbPilot)
-
 sv_set_common_fields<-function(cluster){ 
   cluster %>% mutate( 
-  IsLINE = ifelse(LEStart!='None'|LEEnd!='None',T,F),
-  IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F),
-  IsGenicStart = ifelse(GeneStart!='',T,F),
-  IsGenicEnd = ifelse(GeneEnd!='',T,F),
-  Length = ifelse(as.character(ChrStart)!=as.character(ChrEnd)|Type=='INS'|ArmEnd!=ArmStart, -1, PosEnd-PosStart),
-  #DoubleDupBE = ifelse(DupBEStart=='true'&DupBEEnd=='true',T,F),
-  #SingleDupBE = ifelse(DoubleDupBE==0&(DupBEStart=='true'|DupBEEnd=='true'),T,F),
-  #TICount = ifelse(LnkTypeStart=='TI',0.5,0)+ifelse(LnkTypeEnd=='TI',0.5,0),
-  DBCount = ifelse(DBLenStart>=0,0.5,0)+ifelse(DBLenEnd>=0,0.5,0),
-  #IsSglTI = ifelse(LnkTypeStart=='SGL',0.5,0),
-  AsmbTICount = ifelse(AsmbMatchStart=='MATCH',0.5,0)+ifelse(AsmbMatchEnd=='MATCH',0.5,0),
-  #InferTICount = TICount - AsmbTICount,
-  #ShortTICount=ifelse(LnkTypeStart=='TI'&LnkLenStart<=1000,0.5,0)+ifelse(LnkTypeEnd=='TI'&LnkLenEnd<=1000,0.5,0),
-  ClusterSize = ifelse(ClusterCount==1,'Single',ifelse(ClusterCount<=4,'Small','Large')),
-  IsConsistent = ifelse(Consistency==0,T,F),
-  IsChained = (ChainCount>=1),
-  IsFoldBack = FoldbackLenStart>=0|FoldbackLenEnd>=0,
-  RepeatedChainLink = (cluster$ChainCount>0 & grepl(';',cluster$ChainIndex)),
-  IsPolyA = grepl('TTTTTTTTTT',InsertSeq)|grepl('AAAAAAAAAA',InsertSeq),
-  IsLowQual = ResolvedType=='LowQual',
-  CustomType=case_when(grepl('Chain',ResolvedType) ~ "Chain",grepl('Sgl',ResolvedType) ~ 'PairedSGL', grepl('TI',ResolvedType) ~ 'SyntheticDelDup',TRUE ~ ResolvedType))
+    IsLINE = ifelse(LEStart!='None'|LEEnd!='None',T,F),
+    IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F),
+    IsGenicStart = ifelse(GeneStart!='',T,F),
+    IsGenicEnd = ifelse(GeneEnd!='',T,F),
+    Length = ifelse(as.character(ChrStart)!=as.character(ChrEnd)|Type=='INS'|ArmEnd!=ArmStart, -1, PosEnd-PosStart),
+    #DoubleDupBE = ifelse(DupBEStart=='true'&DupBEEnd=='true',T,F),
+    #SingleDupBE = ifelse(DoubleDupBE==0&(DupBEStart=='true'|DupBEEnd=='true'),T,F),
+    #TICount = ifelse(LnkTypeStart=='TI',0.5,0)+ifelse(LnkTypeEnd=='TI',0.5,0),
+    DBCount = ifelse(DBLenStart>=0,0.5,0)+ifelse(DBLenEnd>=0,0.5,0),
+    #IsSglTI = ifelse(LnkTypeStart=='SGL',0.5,0),
+    AsmbTICount = ifelse(AsmbMatchStart=='MATCH',0.5,0)+ifelse(AsmbMatchEnd=='MATCH',0.5,0),
+    #InferTICount = TICount - AsmbTICount,
+    #ShortTICount=ifelse(LnkTypeStart=='TI'&LnkLenStart<=1000,0.5,0)+ifelse(LnkTypeEnd=='TI'&LnkLenEnd<=1000,0.5,0),
+    ClusterSize = ifelse(ClusterCount==1,'Single',ifelse(ClusterCount<=4,'Small','Large')),
+    IsConsistent = ifelse(Consistency==0,T,F),
+    IsChained = (ChainCount>=1),
+    IsFoldBack = FoldbackLenStart>=0|FoldbackLenEnd>=0,
+    RepeatedChainLink = (cluster$ChainCount>0 & grepl(';',cluster$ChainIndex)),
+    IsPolyA = grepl('TTTTTTTTTT',InsertSeq)|grepl('AAAAAAAAAA',InsertSeq),
+    IsLowQual = ResolvedType=='LowQual',
+    CustomType=case_when(grepl('Chain',ResolvedType) ~ "Chain",grepl('Sgl',ResolvedType) ~ 'PairedSGL', grepl('TI',ResolvedType) ~ 'SyntheticDelDup',TRUE ~ ResolvedType))
 }
-
-
-### DATABASE
-query_entire_cohort <- function(dbConnect) {
-    query = paste(
-    "SELECT p.*",
-    " FROM purity p WHERE qcStatus = 'PASS' and purity > 0.2",
-    sep = " ")
-    return (dbGetQuery(dbConnect, query))
-}
-
-
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-
-allPurity = query_entire_cohort(dbProd)
-allPurity$patientId <- sapply(allPurity$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
-save(allPurity, file = "/Users/jon/hmf/analysis/svEnrichment/allPurity.RData")
-
-hpc = allPurity %>% group_by(patientId) %>% arrange(patientId, -purity) %>% filter(row_number() == 1)
-save(hpc, file = "/Users/jon/hmf/analysis/svEnrichment/hpc.RData")
-
-hpcCopyNumbers = purple::query_copy_number(dbProd, hpc)
-save(hpcCopyNumbers, file = "/Users/jon/hmf/analysis/svEnrichment/hpcCopyNumbers.RData")
-
-dbDisconnect(dbProd)
-rm(dbProd)
-
-
 
 ########################## BINS
 library(BSgenome.Hsapiens.UCSC.hg19)
-
 bins_100k <- tileGenome(seqinfo(Hsapiens), tilewidth=100000, cut.last.tile.in.chrom=TRUE)
 bins_1M <- tileGenome(seqinfo(Hsapiens), tilewidth=1000000, cut.last.tile.in.chrom=TRUE)
 bins_10M <- tileGenome(seqinfo(Hsapiens), tilewidth=10000000, cut.last.tile.in.chrom=TRUE)
 
 
-########################## Average Copy Number
-load(file = "/Users/jon/hmf/analysis/svEnrichment/hpcCopyNumbers.RData")
+########################## Average Copy Number 
 averageCopyNumber <- function(bins, hpcCopyNumbers) {
   hpcCopyNumberRegions = GRanges(paste0("chr", hpcCopyNumbers$chromosome), ranges = IRanges(start = hpcCopyNumbers$start, end = hpcCopyNumbers$end))
   ol = as.matrix(findOverlaps(bins, hpcCopyNumberRegions, type = "any"))
@@ -86,15 +51,14 @@ averageCopyNumber <- function(bins, hpcCopyNumbers) {
   return (averageCopyNumbers)
 }
 
-########################## N Count
-genome <- BSgenome.Hsapiens.UCSC.hg19
+load(file = "/Users/jon/hmf/analysis/svPaper/hpcCopyNumbers.RData")
 averageCopyNumber_100k = averageCopyNumber(bins_100k, hpcCopyNumbers)
 averageCopyNumber_1M = averageCopyNumber(bins_1M, hpcCopyNumbers)
 averageCopyNumber_10M = averageCopyNumber(bins_10M, hpcCopyNumbers)
+save(averageCopyNumber_100k, averageCopyNumber_1M, averageCopyNumber_10M, file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
 
-save(averageCopyNumber_100k, averageCopyNumber_1M, averageCopyNumber_10M, file = "/Users/jon/hmf/analysis/svEnrichment/averageCopyNumbers.RData")
-
-mappability <- function(bins) {
+########################## Average Mappability
+mappability <- function(bins, genome) {
   df = data.frame(chromosome = seqnames(bins), start = start(bins), end = end(bins)) %>% 
     mutate(chromosome = as.character(chromosome), row = row_number()) %>% 
     filter(nchar(chromosome) <= 5, chromosome != 'chrM') %>%
@@ -106,11 +70,11 @@ mappability <- function(bins) {
   return (df)
 } 
 
-mappability_100k = mappability(bins_100k)
-mappability_1M = mappability(bins_1M)
-mappability_10M = mappability(bins_10M)
+mappability_100k = mappability(bins_100k, BSgenome.Hsapiens.UCSC.hg19)
+mappability_1M = mappability(bins_1M, BSgenome.Hsapiens.UCSC.hg19)
+mappability_10M = mappability(bins_10M, BSgenome.Hsapiens.UCSC.hg19)
 
-save(mappability_100k, mappability_1M, mappability_10M, file = "/Users/jon/hmf/analysis/svEnrichment/mappability.RData")
+save(mappability_100k, mappability_1M, mappability_10M, file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
 
 
 ########################## Uniquely Mappable
@@ -121,15 +85,10 @@ mappability_150 = mappability_150 %>%
   mutate(start = start0 + 1) %>%
   select(chromosome, start, end, mappability)
 
-#jon = mappability_150 %>% filter(chromosome == 6, end >= 61000000, start <= 62000000)
-
-bins = bins_1M
-mappability = jon
-
 uniquelyMappable <- function(bins, mappability) {
   mappableRegions = GRanges(paste0("chr",mappability$chromosome), ranges = IRanges(start = mappability$start, end = mappability$end))
   ol = as.matrix(findOverlaps(mappableRegions, bins, type = "any"))
-
+  
   df = mappability[ol[, 1], ]
   df$binStart <- start(bins)[ol[, 2]]
   df$binEnd <- end(bins)[ol[, 2]]
@@ -147,36 +106,22 @@ uniquelyMappable <- function(bins, mappability) {
 uniquelyMappable_100k = uniquelyMappable(bins_100k, mappability_150)
 uniquelyMappable_1M = uniquelyMappable(bins_1M, mappability_150)
 uniquelyMappable_10M = uniquelyMappable(bins_10M, mappability_150)
-save(uniquelyMappable_100k, uniquelyMappable_1M, uniquelyMappable_10M, file = "/Users/jon/hmf/analysis/svEnrichment/uniquelyMappable.RData")
+save(uniquelyMappable_100k, uniquelyMappable_1M, uniquelyMappable_10M, file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
 
-
-jon2 = uniquelyMappable_1M %>% filter(chromosome == 6, binEnd >= 61000000, binStart <= 62000000)
-
-
-
-#shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
-#shortSimpleDels = svs %>% filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart<2e4)
-#rm(svs)
-#load(file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
-#save(shortSimpleDels, file = "/Users/jon/hmf/analysis/svEnrichment/shortSimpleDels.RData")
 
 
 ############################################ PREP ############################################ 
-#mappability =  mappability_10M
-#averageCopyNumber = averageCopyNumber_10M
-#uniquelyMappable = uniquelyMappable_10M
-#criteria = end
-#type = "end"
-load(file = "/Users/jon/hmf/analysis/svEnrichment/hpc.RData")
-allSvs = read.csv(file = "/Users/jon/hmf/analysis/svEnrichment/SVA_SVS.csv")
-hpcSvs = svs %>% filter(SampleId %in% hpc$sampleId)
+
+allSvs = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
+load(file = "/Users/jon/hmf/analysis/svPaper/cohort.RData")
+hpcSvs = allSvs %>% filter(SampleId %in% highestPurityCohort$sampleId)
 
 rm(list=setdiff(ls(), c("allSvs", "hpcSvs")))
 
 
-load(file = "/Users/jon/hmf/analysis/svEnrichment/mappability.RData")
-load(file = "/Users/jon/hmf/analysis/svEnrichment/averageCopyNumbers.RData")
-load(file = "/Users/jon/hmf/analysis/svEnrichment/uniquelyMappable.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
 
 enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable) {
   result = data.frame()
@@ -224,15 +169,15 @@ enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappab
 
 normalise <- function(svs, buckets, meanCopyNumber) {
   normalised_svs = svs %>% 
-    mutate(nrows=n(),meanMappable=mean(uniquelyMappablePercentage)) %>%
-    group_by(binChromosome, binStart, binEnd, N,nrows, averageCopyNumber, uniquelyMappablePercentage,meanMappable) %>% 
+    mutate(nrows=n(), meanMappable=mean(uniquelyMappablePercentage)) %>%
+    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, meanMappable) %>% 
     summarise(
       unnormalisedBucketCount=n(),   
       percentFS=sum(IsFS)/unnormalisedBucketCount,
       avgRep=mean(RepOriginStart)) %>%
     mutate(
       proportionOfN = N / (binEnd - binStart), 
-      expectedBucketCount = nrows / buckets * averageCopyNumber / meanCopyNumber * uniquelyMappablePercentage / meanMappable,  
+      expectedBucketCount = nrows / buckets * averageCopyNumber / meanCopyNumber,  
       p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
       q=p.adjust(p,"BH",buckets),
       buckets = buckets)
@@ -257,8 +202,9 @@ result = data.frame()
 #filter(ResolvedType=='Line', as.character(ChrStart) != as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
 #filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
 
+
 criteria = hpcSvs %>% 
-  filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
+  filter(ResolvedType=='Line', as.character(ChrStart) != as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
   mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F))
 
 enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k)
@@ -273,26 +219,28 @@ criteriaResult = data.frame()
 criteriaResult = bind_rows(criteriaResult, normalised_100k)
 criteriaResult = bind_rows(criteriaResult, normalised_1M)
 criteriaResult = bind_rows(criteriaResult, normalised_10M)
-criteriaResult$criteria <- first(criteria$criteria)
+criteriaResult$criteria <- dplyr::first(criteria$criteria)
 
 result = bind_rows(result, criteriaResult)
 unique(result$criteria)
 
 
 multiChromosomeResult = result
-save(multiChromosomeResult, file = "/Users/jon/hmf/analysis/svEnrichment/multiChromosomeResult.RData")
+save(multiChromosomeResult, file = "/Users/jon/hmf/analysis/svPaper/multiChromosomeResult.RData")
 
 
 singleChromosomeResult = result
-save(singleChromosomeResult, file = "/Users/jon/hmf/analysis/svEnrichment/singleChromosomeResult.RData")
+save(singleChromosomeResult, file = "/Users/jon/hmf/analysis/svPaper/singleChromosomeResult.RData")
 
+
+View(combinedResult %>% group_by(binChromosome,binStart,binWidth=binEnd-binStart+1,isFS=percentFS>0,criteria) %>% summarise(n=sum(q)) %>% spread(criteria,n))
 
 singleChromosomeResult$method <- "midPoint"
 multiChromosomeResult$method <- "breakPoint"
 
 
 combinedResult = bind_rows(singleChromosomeResult, multiChromosomeResult)
-save(combinedResult, file = "/Users/jon/hmf/analysis/svEnrichment/combinedResult.RData")
+save(combinedResult, file = "/Users/jon/hmf/analysis/svPaper/combinedResult.RData")
 
 
 #save(result, file = "/Users/jon/hmf/analysis/svEnrichment/result.RData")
@@ -307,6 +255,7 @@ save(combinedResult, file = "/Users/jon/hmf/analysis/svEnrichment/combinedResult
 #resultWithoutLineOrRecipTrans
 ############################################ Plot ############################################ 
 #ggplot(data=normalised_ssd_1M,aes(x=expectedBucketCount,y=unnormalisedBucketCount)) + geom_point() + xlim(0,50) + ylim(0,50)
+
 
 
 #ggplot(data=normalised_ssd_1M) + 
