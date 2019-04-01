@@ -4,6 +4,6 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/prod
-patient_db_jar=/data/common/tools/patient-db_v3.15/patient-db.jar
+patient_db_jar=/data/common/tools/patient-db_v3.17/patient-db.jar
 
 ${prefix}/do_load_chord_data ${run_dir} ${credentials} ${patient_db_jar}
