@@ -93,43 +93,72 @@ query$ClusterCountDesc <- NA
 subject[overlaps$subjectHits, "scope"] <- "Shared"
 query[overlaps$queryHits, "scope"] <- "Shared"
 
+query[overlaps$queryHits, "ClusterCountMatch"] <- query[overlaps$queryHits, "ClusterCount"] == subject[overlaps$subjectHits, "ClusterCount"]
+query[overlaps$queryHits, "ClusterDescMatch"] <- query[overlaps$queryHits, "ClusterDesc"] == subject[overlaps$subjectHits, "ClusterDesc"]
+query[overlaps$queryHits, "ResolvedTypeMatch"] <- query[overlaps$queryHits, "ResolvedType"] == subject[overlaps$subjectHits, "ResolvedType"]
+query[overlaps$queryHits, "ResolvedTypeOther"] <- subject[overlaps$subjectHits, "ResolvedType"]
+
 query[overlaps$queryHits, "SubjectClusterCount"] <- subject[overlaps$subjectHits, "ClusterCount"]
 query[overlaps$queryHits, "SubjectClusterId"] <- subject[overlaps$subjectHits, "ClusterId"]
 subject[overlaps$subjectHits, "QueryClusterCount"] <- query[overlaps$queryHits, "ClusterCount"]
 subject[overlaps$subjectHits, "QueryClusterId"] <- query[overlaps$queryHits, "ClusterId"]
 
+subjectClusterCount = subject %>% select(patientId, SubjectClusterId = ClusterId, SubjectClusterCount = ClusterCount) %>% distinct()
+subjectClusterCount %>% group_by(patientId, SubjectClusterId) %>% count() %>% filter(n > 1)
 
 queryClusterMap = query %>% 
   filter(scope == 'Shared') %>% 
-  select(sampleId, ClusterId, ClusterCount, SubjectClusterId) %>% 
-  distinct() %>% 
-  arrange(sampleId, ClusterId, ClusterCount, SubjectClusterId) %>%
-  group_by(sampleId, ClusterId, ClusterCount) %>% summarise(OtherClusterIdCount = n(), SubjectClusterId = paste0(SubjectClusterId, collapse = ",")) %>% 
-  select(sampleId,  ClusterId,  OtherClusterIdCount)
-
+  select(sampleId, patientId, ClusterId, ClusterCount, SubjectClusterId) %>%
+  distinct() %>%
+  left_join(subjectClusterCount, by = c("patientId","SubjectClusterId")) %>%
+  group_by(sampleId, ClusterId, ClusterCount) %>% 
+  summarise(SubjectClusterIdCount = n(), SubjectClusterTotalCount = sum(SubjectClusterCount))
 
 queryClusterStatus = query %>% 
-  group_by(sampleId,ClusterId,ClusterCount,scope) %>% 
-  count() %>% 
-  spread(scope, n, fill = 0) %>% 
+  group_by(sampleId, ClusterId, ClusterCount, ResolvedType, scope) %>% 
+  summarise(n = n()) %>% ungroup() %>%
+  spread(scope, n, fill = 0) %>%
+  left_join(queryClusterMap, by = c("sampleId", "ClusterId", "ClusterCount")) %>%
+  mutate(
+    SubjectClusterIdCount = ifelse(is.na(SubjectClusterIdCount), 0, SubjectClusterIdCount),
+    SubjectClusterTotalCount = ifelse(is.na(SubjectClusterTotalCount), 0, SubjectClusterTotalCount)
+  ) %>%
+  mutate(
+    status = "Mixed",
+    status = ifelse(Shared == 0, "Private", status),
+    status = ifelse(Private == 0 & SubjectClusterIdCount == 1 & ClusterCount == SubjectClusterTotalCount, "Exact", status),
+    status = ifelse(Private > 0 & SubjectClusterIdCount == 1 & Shared == SubjectClusterTotalCount, "SimpleSuperset", status),
+    status = ifelse(Private >= 0 & SubjectClusterIdCount > 1 & Shared == SubjectClusterTotalCount, "ComplexSuperset", status),
+    status = ifelse(Private == 0 & SubjectClusterIdCount == 1 & ClusterCount < SubjectClusterTotalCount, "Subset", status)
+  ) 
+
+queryClusterStatusSummary = queryClusterStatus %>% group_by(ResolvedType,status) %>% count() %>% spread(status,n)
+View(queryClusterStatusSummary)
+
+jon = queryClusterStatus %>% filter(sampleId == 'CPCT02010255T')
+
+
+subjectClusterMap = subject %>% 
+  filter(scope == 'Shared') %>% 
+  select(sampleId, ClusterId, ClusterCount, QueryClusterId) %>% 
+  distinct() %>% 
+  arrange(sampleId, ClusterId, ClusterCount, QueryClusterId) %>%
+  group_by(sampleId, ClusterId, ClusterCount) %>% summarise(OtherClusterIdCount = n(), QueryClusterId = paste0(QueryClusterId, collapse = ",")) %>% 
+  select(sampleId,  ClusterId,  OtherClusterIdCount)
+
+queryClusterStatus = query %>% 
+  group_by(sampleId,ClusterId,ClusterCount,SubjectClusterCount, ResolvedType,scope) %>% 
+  count() %>% ungroup() %>%
+  spread(scope, n, fill = 0) %>% mutate(SubjectClusterCount = ifelse(is.na(SubjectClusterCount), 0, SubjectClusterCount)) %>%
   left_join(queryClusterMap, by = c("sampleId", "ClusterId")) %>%
   mutate(OtherClusterIdCount = ifelse(is.na(OtherClusterIdCount), 0, OtherClusterIdCount)) %>%
   mutate(
-    status = "UNKNOWN",
+    status = "Mixed",
     status = ifelse(Shared == 0, "Private", status),
-    status = ifelse(Private == 0 & OtherClusterIdCount == 1, "Exact", status),
-    status = ifelse(Private == 0 & OtherClusterIdCount > 1, "Subset", status),
-    status = ifelse(Private > 0 & Shared > 0 & OtherClusterIdCount == 1, "Superset", status),
-    status = ifelse(Private > 0 & Shared > 0 & OtherClusterIdCount > 1, "Mixed", status)
-    )
-
-queryClusterStatus %>% group_by(status) %>% count()
-
-
-#query[overlaps$queryHits, "ClusterCountMatch"] <- query[overlaps$queryHits, "ClusterCount"] == subject[overlaps$subjectHits, "ClusterCount"]
-#query[overlaps$queryHits, "ClusterDescMatch"] <- query[overlaps$queryHits, "ClusterDesc"] == subject[overlaps$subjectHits, "ClusterDesc"]
-#query[overlaps$queryHits, "ResolvedTypeMatch"] <- query[overlaps$queryHits, "ResolvedType"] == subject[overlaps$subjectHits, "ResolvedType"]
-#query[overlaps$queryHits, "ResolvedTypeOther"] <- subject[overlaps$subjectHits, "ResolvedType"]
+    status = ifelse(Private == 0 & OtherClusterIdCount == 1 & ClusterCount == SubjectClusterCount, "Exact", status),
+    status = ifelse(Private > 0 & OtherClusterIdCount == 1 & Shared == SubjectClusterCount, "Superset", status),
+    status = ifelse(Private == 0 & OtherClusterIdCount == 1 & ClusterCount < SubjectClusterCount, "Subset", status)
+  )
 
 
 
