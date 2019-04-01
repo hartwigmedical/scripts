@@ -1,3 +1,12 @@
+query_cohort <- function(dbConnect, minPurity = 0.2) {
+  cohort = purple::query_purity(dbConnect, minPurity)
+
+  patientIdLookups = query_patient_id_lookup(dbConnect)
+  cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
+  return (cohort)
+}
+
+
 query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
 
   cohort = purple::query_purity(dbConnect) %>%
@@ -10,7 +19,7 @@ query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
   cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
 
   # Cohort
-  highestPurityCohort = purple::highest_purity_patients(cohort)
+  highestPurityCohort = purple::highest_purity_cohort(cohort)
 
   return (highestPurityCohort)
 }
