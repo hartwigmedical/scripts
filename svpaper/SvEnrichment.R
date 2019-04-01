@@ -117,7 +117,7 @@ load(file = "/Users/jon/hmf/analysis/svPaper/cohort.RData")
 hpcSvs = allSvs %>% filter(SampleId %in% highestPurityCohort$sampleId)
 
 rm(list=setdiff(ls(), c("allSvs", "hpcSvs")))
-
+rm(list=setdiff(ls(), c("hpcSvs")))
 
 load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
@@ -126,9 +126,9 @@ load(file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
 enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable) {
   result = data.frame()
   
-  middle = criteria %>% filter(as.character(ChrStart) == as.character(ChrEnd)) 
-  start = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd)) 
-  end = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd), !Type %in% c('NONE','SGL'), !ChrEnd %in% c('0','MT'))
+  middle = criteria %>% filter(as.character(ChrStart) == as.character(ChrEnd), criteria != 'Line') 
+  start = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd) || criteria == 'Line') 
+  end = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd) || criteria == 'Line', !Type %in% c('NONE','SGL'), !ChrEnd %in% c('0','MT'))
   
   result = bind_rows(result, enrichInner(middle, mappability, averageCopyNumber, uniquelyMappable, "middle"))
   result = bind_rows(result, enrichInner(start, mappability, averageCopyNumber, uniquelyMappable, "start"))
@@ -137,9 +137,8 @@ enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable) {
   return (result)
 }
 
-
 enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, type) {
-  criteria = criteria %>% mutate(PosMid = (PosEnd + PosStart) / 2)
+  criteria = criteria %>% mutate(PosMid = (PosEnd + PosStart) / 2, breakend = type)
   
   if (type == "middle") {
     svsRegions = GRanges(criteria$ChrStart, ranges = IRanges(start = criteria$PosMid, end = criteria$PosMid))  
@@ -167,10 +166,10 @@ enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappab
   return (criteria)
 }
 
-normalise <- function(svs, buckets, meanCopyNumber) {
+normalise <- function(svs, buckets, meanCopyNumber, meanMappable) {
   normalised_svs = svs %>% 
-    mutate(nrows=n(), meanMappable=mean(uniquelyMappablePercentage)) %>%
-    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, meanMappable) %>% 
+    mutate(nrows=n()) %>%
+    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage) %>% 
     summarise(
       unnormalisedBucketCount=n(),   
       percentFS=sum(IsFS)/unnormalisedBucketCount,
@@ -185,6 +184,25 @@ normalise <- function(svs, buckets, meanCopyNumber) {
   return (normalised_svs)
 }
 
+enrich_and_normalise <- function(criteria) {
+  
+  enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k)
+  enriched_1M = enrich(criteria, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M)
+  enriched_10M = enrich(criteria, mappability_10M, averageCopyNumber_10M, uniquelyMappable_10M)
+  
+  normalised_100k = normalise(enriched_100k, 28000, mean(averageCopyNumber_100k$averageCopyNumber), mean(uniquelyMappable_100k$uniquelyMappablePercentage)) %>% filter(q < 0.01)
+  normalised_1M = normalise(enriched_1M, 2800, mean(averageCopyNumber_1M$averageCopyNumber), mean(uniquelyMappable_1M$uniquelyMappablePercentage)) %>% filter(q < 0.01)
+  normalised_10M = normalise(enriched_10M, 280, mean(averageCopyNumber_10M$averageCopyNumber), mean(uniquelyMappable_10M$uniquelyMappablePercentage)) %>% filter(q < 0.01)
+  
+  criteriaResult = data.frame()
+  criteriaResult = bind_rows(criteriaResult, normalised_100k)
+  criteriaResult = bind_rows(criteriaResult, normalised_1M)
+  criteriaResult = bind_rows(criteriaResult, normalised_10M)
+  criteriaResult$criteria <- dplyr::first(criteria$criteria)
+  
+  return (criteriaResult)
+}
+
 
 ############################################ Executions ############################################ 
 result = data.frame()
@@ -197,50 +215,30 @@ result = data.frame()
 #filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>5e2,PosEnd-PosStart<1e4) %>% mutate(criteria = 'ShortDel') %>%
 #filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>2e4,PosEnd-PosStart<5e5) %>% mutate(criteria = 'FSLikeDel') %>%
 #filter(ResolvedType=='SimpleSV',Type=='DEL',PosEnd-PosStart>5e5) %>% mutate(criteria = 'LongDel') %>%
-#filter(ResolvedType=='Line', as.character(ChrStart) == as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
-
-#filter(ResolvedType=='Line', as.character(ChrStart) != as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
+#filter(ResolvedType=='Line') %>% mutate(criteria = 'Line') %>%
 #filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
 
-
 criteria = hpcSvs %>% 
-  filter(ResolvedType=='Line', as.character(ChrStart) != as.character(ChrEnd)) %>% mutate(criteria = 'Line') %>%
+  filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
   mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F))
 
-enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k)
-enriched_1M = enrich(criteria, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M)
-enriched_10M = enrich(criteria, mappability_10M, averageCopyNumber_10M, uniquelyMappable_10M)
-
-normalised_100k = normalise(enriched_100k, 28000, mean(averageCopyNumber_100k$averageCopyNumber)) %>% filter(q < 0.01)
-normalised_1M = normalise(enriched_1M, 2800, mean(averageCopyNumber_1M$averageCopyNumber)) %>% filter(q < 0.01)
-normalised_10M = normalise(enriched_10M, 280, mean(averageCopyNumber_10M$averageCopyNumber)) %>% filter(q < 0.01)
-
-criteriaResult = data.frame()
-criteriaResult = bind_rows(criteriaResult, normalised_100k)
-criteriaResult = bind_rows(criteriaResult, normalised_1M)
-criteriaResult = bind_rows(criteriaResult, normalised_10M)
-criteriaResult$criteria <- dplyr::first(criteria$criteria)
-
-result = bind_rows(result, criteriaResult)
+result = bind_rows(result, enrich_and_normalise(criteria))
 unique(result$criteria)
 
 
-multiChromosomeResult = result
-save(multiChromosomeResult, file = "/Users/jon/hmf/analysis/svPaper/multiChromosomeResult.RData")
-
-
-singleChromosomeResult = result
-save(singleChromosomeResult, file = "/Users/jon/hmf/analysis/svPaper/singleChromosomeResult.RData")
-
-
+combinedResult = result
 View(combinedResult %>% group_by(binChromosome,binStart,binWidth=binEnd-binStart+1,isFS=percentFS>0,criteria) %>% summarise(n=sum(q)) %>% spread(criteria,n))
-
-singleChromosomeResult$method <- "midPoint"
-multiChromosomeResult$method <- "breakPoint"
-
-
-combinedResult = bind_rows(singleChromosomeResult, multiChromosomeResult)
 save(combinedResult, file = "/Users/jon/hmf/analysis/svPaper/combinedResult.RData")
+
+
+##### CIRCOS
+
+jon = combinedResult %>% group_by(criteria, buckets) %>% count()
+
+copyNumberTrack = combinedResult %>% filter(buckets == 28000, criteria == "LongDup") %>% mutate(chromosome = paste0("hs", binChromosome)) %>% select(chromosome, binStart, binEnd, averageCopyNumber)
+write.table(copyNumberTrack, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment/copyNumberTrack.circos", quote = F, row.names = F, col.names = F, sep = "\t")
+
+
 
 
 #save(result, file = "/Users/jon/hmf/analysis/svEnrichment/result.RData")
