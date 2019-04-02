@@ -1,0 +1,73 @@
+#!/bin/bash
+source load_metadata
+
+strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.4/strelka-post-process.jar
+bam_slicer_script=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
+
+snpeff_version="v4.3s"
+snpeff_flags=" -hgvs -lof -no-downstream -no-upstream -no-intergenic -noShiftHgvs"
+snpeff_directory=/data/common/tools/snpEff_${snpeff_version}/
+snpeff_db="GRCh37.75"
+
+run_dir=$1
+
+if [ -z "run_dir" ];
+  then
+    echo "Usage: $ ./mnv_detector_and_merger <run_dir>"
+    echo "   runpath = Path to pipeline run dir"
+    echo "Notes:"
+    echo "  - should have a ./metadata file in run_dir"
+    echo "  - somatic vcf should meet format *_post_processed.vcf.gz"
+    exit 1
+fi
+
+set_name=$( basename ${run_dir})
+somatic_input_vcf=$( find ${run_dir} -wholename "*/somaticVariants/*_post_processed.vcf.gz" )
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+## Some sanity checks
+if [[ ! -d "${run_dir}" ]]; then echo "[EXIT] Run (${run_dir}) not found" && exit 1; fi
+if [[ ! -f "${somatic_input_vcf}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
+if [[ -z "${tumor_sample}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
+
+sliced_tumor_bam="${tumor_sample}_dedup.realigned.sliced.bam"
+somatic_vcf_file_name=`basename ${somatic_input_vcf}`
+somatic_vcf_name="${somatic_vcf_file_name%.*}"
+mnv_bed="${somatic_vcf_name}.mnvs.bed"
+mnv_vcf="${somatic_vcf_name}.potential_mnvs.vcf"
+final_somatic_vcf="${somatic_vcf_name}.mnvs.vcf"
+final_somatic_annotated_vcf="${somatic_vcf_name}.mnvs.annotated.vcf"
+
+if ! java -cp ${strelka_post_process_jar} com.hartwig.hmftools.strelka.MNVDetectorApplication \
+    -v ${somatic_input_vcf} \
+    -bed_out ${mnv_bed} \
+    -vcf_out ${mnv_vcf} ;
+then exit 1
+fi
+
+rm "${mnv_vcf}.idx"
+
+if ! ${bam_slicer_script} ${set_name} ${tumor_sample} ${mnv_bed} ${sliced_tumor_bam};
+then exit 1
+fi
+
+if ! java -cp ${strelka_post_process_jar} com.hartwig.hmftools.strelka.MNVValidatorApplication \
+    -v ${somatic_input_vcf} \
+    -b ${sliced_tumor_bam} \
+    -o ${final_somatic_vcf} ;
+then exit 1
+fi
+
+rm "${final_somatic_vcf}.idx"
+
+if ! java -jar ${snpeff_directory}/snpEff.jar \
+    -c "${snpeff_directory}/snpEff.config" "${snpeff_db}" \
+    -v ${final_somatic_vcf} \
+    ${snpeff_flags} \
+    > ${final_somatic_annotated_vcf} ;
+then exit 1
+fi
+
+rm ${final_somatic_vcf}
+rm snpEff_genes.txt
+rm snpEff_summary.html
