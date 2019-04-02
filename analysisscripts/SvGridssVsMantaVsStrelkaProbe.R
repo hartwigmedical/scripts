@@ -112,7 +112,9 @@ probes = bind_rows(probes, mantaStartAndEndProbes %>% select(sampleId, probe)%>%
 probes = bind_rows(probes, mantaOverlaps %>% select(sampleId, probe)%>% mutate(source = "MANTA"))
 probes = bind_rows(probes, strelkaStartAndEndProbes %>% select(sampleId, probe)%>% mutate(source = "STRELKA"))
 probes = bind_rows(probes, strelkaOverlaps %>% select(sampleId, probe)%>% mutate(source = "STRELKA"))
-probes = probes %>% distinct(probe)
+probes = probes %>% distinct(probe) %>% filter(!grepl(',', probe), !grepl('N', probe))
+
+
 write.csv(probes, file = "/Users/jon/hmf/analysis/mantaVgridss/probes.csv", row.names = F)
 
 #PASS 
