@@ -238,6 +238,11 @@ jon = combinedResult %>% group_by(criteria, buckets) %>% count()
 copyNumberTrack = combinedResult %>% filter(buckets == 28000, criteria == "LongDup") %>% mutate(chromosome = paste0("hs", binChromosome)) %>% select(chromosome, binStart, binEnd, averageCopyNumber)
 write.table(copyNumberTrack, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment/copyNumberTrack.circos", quote = F, row.names = F, col.names = F, sep = "\t")
 
+unnormalisedBucketCountTrack = combinedResult %>% filter(buckets == 28000, criteria == "LongDup") %>% mutate(chromosome = paste0("hs", binChromosome)) %>% select(chromosome, binStart, binEnd, unnormalisedBucketCount)
+write.table(unnormalisedBucketCountTrack, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment/unnormalisedBucketCountTrack.circos", quote = F, row.names = F, col.names = F, sep = "\t")
+
+expectedBucketCountTrack = combinedResult %>% filter(buckets == 28000, criteria == "LongDup") %>% mutate(chromosome = paste0("hs", binChromosome)) %>% select(chromosome, binStart, binEnd, expectedBucketCount)
+write.table(expectedBucketCountTrack, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment/expectedBucketCountTrack.circos", quote = F, row.names = F, col.names = F, sep = "\t")
 
 
 
