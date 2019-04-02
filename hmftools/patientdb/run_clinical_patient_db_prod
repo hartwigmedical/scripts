@@ -1,5 +1,5 @@
 #!/bin/bash
-patient_db_jar=/data/common/tools/patient-db_v3.17/patient-db.jar
+patient_db_jar=/data/common/tools/patient-db_v3.18/patient-db.jar
 runs_dir_cpct_and_drup=/data/cpct/runs
 runs_dir_core=/data/core/runs
 
