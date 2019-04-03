@@ -2,7 +2,7 @@
 Data Request Quick Start
 ===== 
 
-This text provides general information about the data you received data within a data request from Hartwig Medical Foundation. Please use the unique ID given to your request (eg "DR-XXX") in any communication.
+This text provides you with information about the data you received within a data request from Hartwig Medical Foundation. Please use the unique ID given to your request (eg "DR-XXX") in any communication.
 
 <!--
 Most recent version of this text can be found at one the following repositories:  
@@ -18,8 +18,7 @@ In case your data request involves germline data, you can find GATK based VCFs i
 
 Note: both download-portal and nextcloud are behind the same dual factor login (that works with app "OKTA Verify").
 
-Somatic data
------
+### Somatic data
 
 Somatic data is usually shared in a gzipped tar via our [Nextcloud](https://nc.hartwigmedicalfoundation.nl/).
 
@@ -47,8 +46,7 @@ Somatic data is usually shared in a gzipped tar via our [Nextcloud](https://nc.h
 - The "purity" mentioned is the percentage tumor cells derived from WGS data by the tool [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
 
 
-Germline data
------
+### Germline data
 
 In case Germline level is included in your request, Germline variant VCFs (GATK based) are available via our [download-portal](https://portal.hartwigmedicalfoundation.nl/).
 
@@ -58,8 +56,8 @@ In case Germline level is included in your request, Germline variant VCFs (GATK 
 Sharing of BAM files is currently only supported for small numbers, but in case you do have access they are also visible in the download-portal.
 
 
-Data inclusion/exclusion
------
+### Data inclusion/exclusion
+
 In addition to data-request specific criteria, we only include data for which none of below applies.
 
 - We exclude biopsies from patients where informed consent is from before 21 April 2016.
@@ -68,18 +66,15 @@ In addition to data-request specific criteria, we only include data for which no
 - We exclude biopsies where there is less than 20% tumor cells (PURPLE purity < 0.2).
 
 
-Code
------
+### Code
 - Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
 - Source code of all HMF tools: [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
 
 
-More detailed information
------
+### More detailed information
 - For an explanation of most output see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator)
 - For an example patient report see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
 - For various resource files used in our analysis see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
 
-Final Notes
------
+### Final Notes
 - You can also setup our own MySQL database scheme and load your data request content: please contact us for instructions. 
