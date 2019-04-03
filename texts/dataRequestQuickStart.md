@@ -13,14 +13,14 @@ Most recent version of this text can be found at one the following repositories:
 If case your data request involves somatic data you can find these in our nextcloud portal:  
 [https://nc.hartwigmedicalfoundation.nl/](https://nc.hartwigmedicalfoundation.nl/)
 
-In case your data request involves germline data, you can find GATK based VCFs in our download-portal:   
+In case your data request involves germline data, you can find the Germline VCFs in our download-portal:   
 [https://portal.hartwigmedicalfoundation.nl/](https://portal.hartwigmedicalfoundation.nl/)
 
 Note: both download-portal and nextcloud are behind the same dual factor login (that works with app "OKTA Verify").
 
 ### Somatic data
 
-Somatic data is usually shared in a gzipped tar via our [Nextcloud](https://nc.hartwigmedicalfoundation.nl/).
+Somatic data is shared in a gzipped tar via our [Nextcloud](https://nc.hartwigmedicalfoundation.nl/).
 
 ##### Contents of the gzipped tar file:
 - Metadata directory (with patient/biopsy/clinical information in TSV format).
@@ -32,11 +32,11 @@ Somatic data is usually shared in a gzipped tar via our [Nextcloud](https://nc.h
 - purple.cnv (somatic copy number regions).
 - purple.gene.cnv (somatic copy number per gene).
 - purple.purity (implied percentage of tumor cells).
-- purple.purity.range (in depth info about purity measure).
+- purple.purity.range (in depth information about purity measure).
 - purple.qc (quality control outcome).
 - purple.version (purple version used).
 - circos.png (genome wide plot).
-- Extra if germline data is part of request: purple.germline.cnv (germline copy number regions).
+- [in case germline level is part of request] purple.germline.cnv (germline copy number regions).
 
 
 ##### About the (clinical) metadata:
@@ -58,23 +58,19 @@ Sharing of BAM files is currently only supported for small numbers, but in case 
 
 ### Data inclusion/exclusion
 
-In addition to data-request specific criteria, we only include data for which none of below applies.
+In addition to data-request specific criteria, we exclude datasets for which one of below applies.
 
 - We exclude biopsies from patients where informed consent is from before 21 April 2016.
-- We exclude biopsies where quality is poor (PURPLE QC != PASS).
-- We exclude biopsies where there is no tumor evidence (PURPLE status = “NO_TUMOR”).
-- We exclude biopsies where there is less than 20% tumor cells (PURPLE purity < 0.2).
-
-
-### Code
-- Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
-- Source code of all HMF tools: [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
-
+- We exclude biopsies with poor quality (PURPLE QC != PASS).
+- We exclude biopsies without any tumor evidence (PURPLE status = “NO_TUMOR”).
+- We exclude biopsies with less than 20% tumor cells (PURPLE purity < 0.2).
 
 ### More detailed information
+- Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
+- Source code of all HMF tools: [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
 - For an explanation of most output see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator)
 - For an example patient report see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
 - For various resource files used in our analysis see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
 
 ### Final Notes
-- You can also setup our own MySQL database scheme and load your data request content: please contact us for instructions. 
+- HMF internally uses a MySQL database setup to query our data. We can share the scheme so you can set this up yourself as well and load the data request content. Please contact one of us for instructions. 
