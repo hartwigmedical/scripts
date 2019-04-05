@@ -52,7 +52,7 @@ locate_variant_annotator_fusions() {
 
 	local fusion_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_fusions.csv")
 	if [ -z ${fusion_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator fusions csv. Exiting." >& 2
+        echo "[ERROR] Unable to locate variant annotator fusions csv. Exiting." >& 2
         exit 1
     fi
     echo ${fusion_csv}
@@ -68,7 +68,7 @@ locate_variant_annotator_disruptions() {
 
 	local disruption_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_disruptions.csv")
 	if [ -z ${disruption_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator disruptions csv. Exiting." >&2
+        echo "[ERROR] Unable to locate variant annotator disruptions csv. Exiting." >&2
         exit 1
     fi
     echo ${disruption_csv}
@@ -84,7 +84,7 @@ locate_variant_annotator_pilot_fusions() {
 
 	local fusion_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_fusions.csv")
 	if [ -z ${fusion_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator pilot fusions csv. Exiting." >&2
+        echo "[ERROR] Unable to locate variant annotator pilot fusions csv. Exiting." >&2
         exit 1
     fi
     echo ${fusion_csv}
@@ -100,7 +100,7 @@ locate_variant_annotator_pilot_disruptions() {
 
 	local disruption_csv=$(find -L ${variant_annotator_dir}/ -type f -name "*_disruptions.csv")
 	if [ -z ${disruption_csv} ]; then
-        echo "[ERROR] Unable to locate Variant Annotator pilot disruptions csv. Exiting." >&2
+        echo "[ERROR] Unable to locate variant annotator pilot disruptions csv. Exiting." >&2
         exit 1
     fi
     echo ${disruption_csv}

@@ -2,10 +2,11 @@ library(tidyverse)
 library(cowplot)
 library(GenomicRanges)
 library(StructuralVariantAnnotation)
-library(RMySQL)
 
-cluster_raw_df = read_csv('~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/CLUSTER.csv')
-full_gr = c(with(cluster_raw_df, GRanges(
+#cluster_raw_df = read_csv('~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/SVA_CLUSTERS.csv')
+sv_raw_df = read_csv('~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/SVA_SVS.csv')
+row.names(sv_raw_df) = sv_raw_df$Id
+full_gr = c(with(sv_raw_df, GRanges(
   seqnames=ChrStart,
   ranges=IRanges(start=PosStart, width=1),
   strand=ifelse(OrientStart == -1, "-", "+"),
@@ -13,10 +14,14 @@ full_gr = c(with(cluster_raw_df, GRanges(
   beid=paste0(Id, ifelse(ChrEnd != 0, "o", "b")),
   SampleId=SampleId,
   isLine=LEStart != "None",
-  InsertSeq=InsertSeq,
+  partner=ifelse(ChrEnd != 0, paste0(Id, "h"), NA),
   Homology=Homology,
-  partner=ifelse(ChrEnd != 0, paste0(Id, "h"), NA)
-)), with(line_raw_df %>% filter(ChrEnd != 0), GRanges(
+  ihomlen=InexactHOEnd-InexactHOStart,
+  insSeq=InsertSeq,
+  qual=QualScore,
+  cn=Ploidy,
+  refContext=RefContextStart
+)), with(sv_raw_df %>% filter(ChrEnd != 0), GRanges(
   seqnames=ChrEnd,
   ranges=IRanges(start=PosEnd, width=1),
   strand=ifelse(OrientEnd == -1, "-", "+"),
@@ -24,18 +29,26 @@ full_gr = c(with(cluster_raw_df, GRanges(
   beid=paste0(Id, "h"),
   SampleId=SampleId,
   isLine=LEEnd != "None",
-  InsertSeq=InsertSeq,
+  partner=paste0(Id, "o"),
   Homology=Homology,
-  partner=paste0(Id, "o")
+  ihomlen=InexactHOEnd-InexactHOStart,
+  insSeq=InsertSeq,
+  qual=QualScore,
+  cn=Ploidy,
+  refContext=RefContextEnd
 )))
 names(full_gr) = full_gr$beid
-line_raw_df = cluster_raw_df %>% filter(LEStart != "None" | LEEnd != "None")
+# replication timing
+rt_gr = import("D:/hartwig/wgEncodeUwRepliSeqHelas3WaveSignalRep1.bigWig")
+seqlevelsStyle(rt_gr) = "NCBI"
+full_gr$rt = findOverlaps(full_gr, rt_gr, select="first", ignore.strand=TRUE)
+full_gr$rt = rt_gr$score[full_gr$rt]
+
+
+line_raw_df = sv_raw_df %>% filter(LEStart != "None" | LEEnd != "None")
 line_gr = full_gr[full_gr$Id %in% line_raw_df$Id]
 bp_line_gr = line_gr[!is.na(line_gr$partner)]
 
-##
-# LINE-LINE SVs
-#
 intra_line = line_raw_df %>%
   filter(LEStart != "None" & LEEnd != "None") %>%
   filter(ChrStart==ChrEnd) %>%
@@ -49,13 +62,7 @@ ggplot(intra_line) +
   labs("Distance between breakends on intra-LINE inversions")
 # TODO: do these intra-LINE elements have corresponding insertion sites that inidicate a -- or ++ insertion site?
 
-
-
-
-##
-# LINE insertions with both breakpoints found
-#
-bpbp_line_df = findOverlaps(bp_line_gr, bp_line_gr, maxgap=100, ignore.strand=TRUE) %>%
+bpbp_line_df = findOverlaps(bp_line_gr, bp_line_gr, maxgap=50, ignore.strand=TRUE) %>%
   as.data.frame() %>%
   filter(as.logical(
     bp_line_gr$SampleId[queryHits] == bp_line_gr$SampleId[subjectHits] &
@@ -64,13 +71,11 @@ bpbp_line_df = findOverlaps(bp_line_gr, bp_line_gr, maxgap=100, ignore.strand=TR
     seqnames(partner(bp_line_gr)[queryHits]) == seqnames(partner(bp_line_gr)[subjectHits]) &
     abs(start(partner(bp_line_gr)[queryHits]) - start(partner(bp_line_gr)[subjectHits])) < 50000)) %>%
   mutate(deleted_bases=start(bp_line_gr)[subjectHits] - start(bp_line_gr)[queryHits] - 1) %>%
-  mutate(SampleId=bp_line_gr$SampleId[queryHits])
-bp_line_gr$deleted_bases = NA
-bp_line_gr$deleted_bases[bpbp_line_df$queryHits] = bpbp_line_df$deleted_bases
-bp_line_gr$deleted_bases[bpbp_line_df$subjectHits] = bpbp_line_df$deleted_bases
-bp_line_gr[bp_line_gr$partner]$deleted_bases[bpbp_line_df$queryHits] = bpbp_line_df$deleted_bases
-bp_line_gr[bp_line_gr$partner]$deleted_bases[bpbp_line_df$subjectHits] = bpbp_line_df$deleted_bases
-
+  mutate(SampleId=bp_line_gr$SampleId[queryHits]) %>%
+  mutate(line_chr=as.character(seqnames(partner(bp_line_gr)[queryHits])),
+    line_pos1 = start(partner(bp_line_gr)[queryHits]),
+    line_pos2 = start(partner(bp_line_gr)[subjectHits])) %>%
+  mutate(line_length=abs(line_pos1-line_pos2))
 
 ggplot(bpbp_line_df) +
   aes(x=deleted_bases) +
@@ -91,45 +96,185 @@ ggplot(bpbp_line_df %>%
   geom_smooth(method="lm") +
   labs(title="LINE counts by sample")
 
-ggplot(bpbp_line_df %>% filter(SampleId %in% (bpbp_line_df %>% group_by(SampleId) %>% summarise(n=n()) %>% filter(n >= 100) %>% pull(SampleId)))) +
-  aes(x=deleted_bases, fill=SampleId) +
+ggplot(bpbp_line_df %>% filter(SampleId %in% (bpbp_line_df %>% group_by(SampleId) %>% summarise(n=n()) %>% filter(n >= 200) %>% pull(SampleId)))) +
+  aes(x=deleted_bases) +
   geom_histogram(bins=60) +
-  scale_x_continuous(limits=c(-30, 30)) +
-  labs(title="LINE counts by sample (min 20 events)")
+  facet_wrap(~SampleId) +
+  scale_x_continuous(limits=c(-20, 11)) +
+  labs(title="LINE counts by sample (min 100 events)")
 
+density = countOverlaps(line_gr, line_gr, maxgap=1000)
+max_gr = line_gr[density == max(density)][1]
+ggplot(bpbp_line_df %>% filter(line_chr == as.character(seqnames(max_gr)) &
+    ((abs(line_pos1 - start(max_gr)) <= 2000) | abs(line_pos2 - start(max_gr)) <= 2000)) %>%
+      mutate(deleted_bases_jittered=deleted_bases-0.5+row_number()/n())) +
+  aes(x=pmin(line_pos1, line_pos2), xend=pmax(line_pos1, line_pos2), y=deleted_bases_jittered, yend=deleted_bases_jittered) +
+  geom_segment() +
+  coord_cartesian(xlim=c(start(max_gr) - 1000, end(max_gr) + 1000), ylim=c(-20, 11)) +
+  labs(title="Snapshot of most inserted LINE", y="deleted bases", x="Genomic position")
 
-##
-# Motif analysis
-#
-if (!exists("ucsc_line_df")) {
-  ucscDb = dbConnect(MySQL(), host="genome-mysql.cse.ucsc.edu", user="genome", password="", port=3306, dbname='hg19')
-  ucsc_line_df = dbGetQuery(ucscDb, "select chrom, chromStart, chromEnd, name, repClass, repFamily, strand from nestedRepeats where repClass='LINE'")
-  dbDisconnect(ucscDb)
-  remove(ucscDb)
+#ggplot(bpbp_line_df) +
+#  aes(x=deleted_bases, y=abs(line_pos1-line_pos2)) +
+#  geom_jitter(width = 0.5, height = 0.5) +
+#  coord_cartesian(xlim=c(-20, 11), ylim=c(0,2000)) +
+#  geom_density2d() +
+#  geom_marginal(aes(group=deleted_bases, color="red")) +
+#  labs(title="vs length of LINE insertion")
+
+ggplot(bpbp_line_df %>% filter(deleted_bases >= -20 & deleted_bases < 12)) +
+  aes(x=line_length, fill=as.factor(deleted_bases)) +
+  geom_histogram(bins=25) +
+  scale_x_continuous(limits=c(0,1000)) +
+  labs(title="Length of LINE insertions")
+ggplot(bpbp_line_df %>% filter(deleted_bases >= -20 & deleted_bases < 12)) +
+  aes(x=line_length) +
+  facet_wrap(~ deleted_bases, scales="free") +
+  geom_histogram(bins=25) +
+  scale_x_continuous(limits=c(0,1000)) +
+  labs(title="Length of LINE insertion compared to insertion site overlap")
+ggplot(bpbp_line_df %>% filter(deleted_bases >= -20 & deleted_bases < 12) %>%
+         filter(line_length <= 1000) %>%
+         mutate(bin=floor(line_length / (1000 / 20)) * (1000/20)) %>%
+         group_by(bin, deleted_bases) %>%
+         summarise(n=n()) %>%
+         group_by(bin) %>%
+         mutate(portion=n/sum(n))) +
+  aes(x=bin, y= portion, fill=as.factor(deleted_bases)) +
+  geom_bar(stat="identity") +
+  labs(title="vs LINE insertion length")
+
+cbind_hitdf = function(hitdf, subject_gr, query_gr, suffix=c("1", "2")) {
+  todf = function(gr, suffix="") {
+    names(gr) = NULL
+    x = as.data.frame(gr)
+    names(x) = paste0(names(x), suffix)
+    return(x)
+  }
+  return(bind_cols(hitdf, todf(subject_gr[hitdf$subjectHits], suffix[1]), todf(query_gr[hitdf$queryHits], suffix[2])))
 }
-ucsc_line_gr = with(ucsc_line_df, GRanges(
-  seqnames=chrom,
-  ranges=IRanges(start=chromStart, end=chromEnd),
-  strand=ifelse(strand == ".", "*", strand),
-  repName=name,
-  repClass=repClass,
-  repFamily=repFamily))
-seqlevelsStyle(ucsc_line_gr) = "NCBI"
+bpbp_df = cbind_hitdf(bpbp_line_df, bp_line_gr, bp_line_gr) %>%
+  replace_na(list(insSeq1="", Homology1="", insSeq2="", Homology2="")) %>%
+  mutate(
+    ins_length = str_length(insSeq1) + str_length(insSeq2),
+    ins_count = (str_length(insSeq1) > 0) + (str_length(insSeq2) > 0),
+    homlen=str_length(Homology1) + str_length(Homology2),
+    hasHom=Homology1 != "" | Homology2 != "",
+    hasNoIns = ins_count == 0,
+    hasOneIns = ins_count == 1,
+    hasTwoIns = ins_count == 2,
+    isPolyA = str_detect(refContext1, "AAAA") | str_detect(refContext1, "TTTT") | str_detect(refContext2, "AAAA") | str_detect(refContext2, "TTTT"),
+    ihomlen=ihomlen1 + ihomlen2,
+    cn=(cn1 + cn2) / 2,
+    ins1As = str_count(insSeq1, stringr::fixed("A")),
+    ins2As = str_count(insSeq2, stringr::fixed("A")),
+    ins1ATs = str_count(insSeq1, stringr::fixed("A")) + str_count(insSeq1, stringr::fixed("T")),
+    ins2ATs = str_count(insSeq2, stringr::fixed("A")) + str_count(insSeq2, stringr::fixed("T")),
+    rt=rt1+rt2/2)
+clusterdf = bpbp_df %>%
+  dplyr::select(
+    deleted_bases,
+    line_length,
+    ins_length,
+    hasHom,
+    hasNoIns,
+    hasOneIns,
+    hasTwoIns,
+    isPolyA,
+    ihomlen,
+    homlen,
+    cn)
+clustermat=scale(as.matrix(clusterdf %>% dplyr::select(-deleted_bases)))
+# require(Rtsne)
+# tsnedf_in = unique(clustermat)
+# tsnedf = Rtsne(tsnedf_in)
+# ggplot(data.frame(
+#     x=tsnedf$Y[,1],
+#     y=tsnedf$Y[,2],
+#     deleted_bases=tsnedf_in$deleted_bases)) +
+#   aes(x=x, y=y, col=cut(deleted_bases, c(-20, -16, -11, -7, 0, 5))) +
+#   geom_point()
 
-line5prime_gr = ucsc_line_gr[strand(ucsc_line_gr) != "*"]
-ranges(line5prime_gr) = IRanges(
-  start=ifelse(strand(ucsc_line_gr)[strand(ucsc_line_gr) != "*"]=="+", start(ucsc_line_gr[strand(ucsc_line_gr) != "*"]), end(ucsc_line_gr[strand(ucsc_line_gr) != "*"])),
-  width=1)
-bp_line_gr$fivePrimeDistance = mcols(distanceToNearest(bp_line_gr, line5prime_gr, select = "arbitrary", ignore.strand=TRUE))$distance
-bp_line_gr$fivePrimeDistance = ifelse(bp_line_gr$isLine, bp_line_gr$fivePrimeDistance, NA)
+require(rpart)
+fit = rpart(isStrandInvasion ~ line_length + ins_length + hasHom + hasNoIns + hasOneIns + hasTwoIns + isPolyA + ihomlen + cn + homlen,
+            clusterdf %>% mutate(isStrandInvasion=ifelse(deleted_bases < -7, "StrandInvasion", "Clean")),
+            method="class")
+rsq.rpart(fit)
+plot(fit)
+text(fit, use.n=TRUE)
+
+ggplot(bpbp_df) +
+  aes(x=deleted_bases, fill=ins_count) +
+  geom_histogram(bins=45) +
+  scale_x_continuous(limits=c(-25, 20)) +
+  facet_wrap(~ ins_count, scales="free")
+
+# OK: we can explain 25% as double breaks
+# What's the inserted sequence?
 
 
-ggplot(bp_line_gr %>% as.data.frame()) +
-  aes(x=deleted_bases, y=fivePrimeDistance) +
-  geom_point() +
-  geom_density_2d() +
-  scale_y_log10() +
-  coord_cartesian(xlim=c(-25,25)) +
-  labs("Distance to 5' LINE start")
+
+
+
+
+bpbp_df %>% filter(hasTwoIns) %>% dplyr::select(insSeq1, refContext1, insSeq2, refContext2) %>% View()
+
+ggplot(bpbp_df) +
+  aes(x=str_length(insSeq1), y=str_length(insSeq2), color=(ins1As + ins2As)/ins_length > 0.8) +
+  geom_point()
+# non-polyA insert sequence?
+ggplot(bpbp_df) +
+  aes(x=deleted_bases, y=(ins1ATs + ins2ATs)/ins_length, color=factor(ins_count), size=ins_length) +
+  geom_jitter() +
+  scale_x_continuous(limits=c(-25, 20))
+
+ggplot(bpbp_df) +
+  aes(x=str_length(Homology1)-str_length(insSeq1), fill=as.factor(pmax(-100, str_length(Homology2)-str_length(insSeq2)))) +
+  geom_histogram() +
+  scale_x_continuous(limits=c(-30, 20)) +
+  facet_wrap(~ ins_count, scales="free")
+
+
+ggplot(bpbp_df) +
+  aes(x=line_length, color=deleted_bases >= -7) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases < -7), fill = "red", alpha = 0.2) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases >= -7), fill = "blue", alpha = 0.2) +
+  scale_x_log10() +
+  facet_wrap(~ ins_count)
+
+ggplot(bpbp_df) +
+  aes(x=line_length, color=deleted_bases >= -7) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases < -7), fill = "red", alpha = 0.2) +
+  geom_histogram(data = bpbp_df %>% filter(deleted_bases >= -7), fill = "blue", alpha = 0.2) +
+  scale_x_continuous(limits=c(0, 400))
+  facet_wrap(~ ins_count)
+
+# No difference in replication timing either
+ggplot(bpbp_df) +
+  aes(x=rt, color=deleted_bases >= -7) +
+  geom_density() +
+facet_wrap(~ ins_count)
+
+
+
+full_gr
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

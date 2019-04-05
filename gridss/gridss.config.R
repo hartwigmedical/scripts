@@ -34,4 +34,4 @@ gridss.soft_filters = c("PON")
 
 # rescue limits
 # fragments supporting rescued variant / fragments supporting rescuing variant
-gridss.min_rescue_portion = 0.333
+gridss.min_rescue_portion = 0.25

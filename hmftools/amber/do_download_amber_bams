@@ -1,0 +1,24 @@
+#!/bin/bash
+source load_metadata
+
+prefix=`dirname $(readlink $0 || echo $0)`
+run_dir=$1 && shift
+set=$( basename ${run_dir})
+
+amber_bed=/data/common/dbs/germline_het_pon_hg19/GermlineHetPon.hg19.bed
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+
+out_dir=/data/schuberg/bam_downloads
+
+sample_bam=${out_dir}/${sample}.amber.bam
+normal_bam=${out_dir}/${normal}.amber.bam
+
+#if [ ! -f ${sample_bam} ]; then
+#    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${amber_bed} ${sample_bam}
+#fi
+
+if [ ! -f ${normal_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${sample} ${amber_bed} ${normal_bam}
+fi

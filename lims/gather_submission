@@ -18,27 +18,40 @@ samFile=${outPath}'/samples.txt'
 runFile=${outPath}'/runs.txt'
 logFile=${outPath}'/log.txt'
 bcsFile=${outPath}'/barcodes.txt'
+repFile=${outPath}'/report.txt'
+subJson=${outPath}'/submission.json'
+lmsJson=$( echo ${lmsFile} | sed 's/txt$/json/' )
+samJson=$( echo ${samFile} | sed 's/txt$/json/' )
+runJson=$( echo ${runFile} | sed 's/txt$/json/' )
 dateString=$( date )
-project=$( cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}.project_name" )
-if [[ -z ${project+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
 
 ## create dirs
 if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi
 mkdir -p ${outPath} || exit 1
 
+## gather submission info from LAB LIMS
+echo "[INFO] Querying HMF LIMS to get submission info"
+cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${subJson}
+pName=$( cat ${subJson} | jq -r '.project_name' )
+cName=$( cat ${subJson} | jq -r '.contact_name' )
+cMail=$( cat ${subJson} | jq -r '.contact_email' )
+pType=$( cat ${subJson} | jq -r '.analysis_type' )
+if [[ -z ${pName+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
+
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
 ${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lmsFile}
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${lmsJson}
 
 ## get q30/yield data from SBP API
 echo "[INFO] Querying SBP API to get sample status"
 ${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${samFile}
-${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > $( echo ${samFile} | sed 's/txt$/json/' )
+${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${samJson}
 
 ## get entity/run-status from SBP API
 echo "[INFO] Querying SBP API to get run status"
 ${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
-${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > $( echo ${runFile} | sed 's/txt$/json/' )
+${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${runJson}
 
 ## get counts to check completeness
 hmfCount=$( cat ${lmsFile} | grep -v "^#" | wc -l )
@@ -47,21 +60,45 @@ sbpCount=$( cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 ## setup barcodes file (needed later for fastq file cleanup)
 cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
 
+## setup reporting info
+rm -f ${repFile}
+echo -e "PROJECT\t${cName}" >> ${repFile}
+echo -e "PROJECT\t${cMail}" >> ${repFile}
+echo -e "PROJECT\t${pName}" >> ${repFile}
+echo -e "PROJECT\t${submission}" >> ${repFile}
+echo -e "PROJECT\t${hmfCount}" >> ${repFile}
+echo -e "PROJECT\t${pType}" >> ${repFile}
+
+cat ${samFile} | grep -v ^# | while read line; do
+  subm=$( echo $line | cut -d" " -f1 )
+  barc=$( echo $line | cut -d" " -f2 )
+   q30=$( echo $line | cut -d" " -f3 )
+  yldR=$( echo $line | cut -d" " -f4 )
+   yld=$( echo $line | cut -d" " -f5 )
+  name=$( echo $line | cut -d" " -f7 )
+  date=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .arrival_date" )
+  sops=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .lab_sop_versions" )
+  echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${repFile}
+done
+
+
 ## logging
 echo "#        Date = ${dateString}" >> ${logFile}
 echo "#  Submission = ${submission}" >> ${logFile}
-echo "#     Project = ${project}"    >> ${logFile}
+echo "#     Project = ${pName}"      >> ${logFile}
 echo "# SampleCount = ${hmfCount}"   >> ${logFile}
 echo "#   DataCount = ${sbpCount}"   >> ${logFile}
 
 ## stdout msg
-echo "[INFO] Log:"
-cat ${logFile}
+echo "[INFO] View Log:"
+echo " cat ${logFile}"
 echo "[INFO] Inspect output files:"
-echo " cd ${outPath}"
 echo " cat ${lmsFile}"
 echo " cat ${samFile}"
 echo " cat ${runFile}"
+echo "[INFO] Or get reporting info:"
+echo " cat ${repFile} | cut -f1 --complement"
+  
 
 ## warn if not complete
 if [[ ${hmfCount} -ne ${sbpCount} ]]; then 

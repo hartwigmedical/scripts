@@ -1,0 +1,32 @@
+#!/bin/bash
+
+scriptName=$( basename $0 )
+vcfDirPath=$1
+qcLogsPath="/data/common/snpcheck/qc"
+   nasPath="/volume1/web/qc/snpcheck"
+
+echo "[INFO] START with $scriptName"
+
+if [[ -z ${vcfDirPath} || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName \${pathToDirWithVCFs}"
+  echo "    Eg: $scriptName /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
+  echo "---"
+  exit 1
+fi
+
+if [[ ! -d ${vcfDirPath} ]]; then echo "[EXIT] Dir does not exist (${vcfDirPath})" && exit 1; fi
+
+vcfDirName=$( basename ${vcfDirPath} )
+ qcLogName="${vcfDirName}.qc"
+ qcLogPath="${qcLogsPath}/${qcLogName}"
+
+echo "[INFO]  Performing QC (${qcLogName})"
+perform_snpcheck -qc -vcfDir "${vcfDirPath}" > "${qcLogPath}"
+if [[ $? != 0 ]]; then echo "[EXIT] perform_snpcheck finished with non-zero exit code ($?)" && exit 1; fi
+
+echo "[INFO]  Syncing log to NAS (${qcLogPath})"
+rsync -ah "${qcLogPath}" "nas:${nasPath}/${qcLogName}"
+
+echo "[INFO] DONE with $scriptName"
+

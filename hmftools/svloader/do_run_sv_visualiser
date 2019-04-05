@@ -1,0 +1,41 @@
+#!/bin/bash
+
+sample=$1 && shift
+segments=$1 && shift
+links=$1 && shift
+exons=$1 && shift
+
+credentials=/data/common/dbs/mysql_credentials/prod
+output_dir=/data/experiments/190130_sv_vis
+sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
+
+circos=/data/common/tools/circos_v0.69.6/bin/circos
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.SvVisualiser \
+    -sample ${sample} \
+    -plot_out ${output_dir} \
+    -data_out ${output_dir}/data/ \
+    -segment ${segments} \
+    -link ${links} \
+    -exon ${exons} \
+    -circos ${circos} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
+
+
+#Example usage
+#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv
+#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv -threads 1 -chromosome 15 -debug
+#
+# Optional arguments
+#
+# -threads  sets number of threads
+# -chromosome   will only produce plot for supplied chromosome
+# -clusterId    will only produce plot for supplied clusterId
+# -debug    replaces sv positions with sv id
+

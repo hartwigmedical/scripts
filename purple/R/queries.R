@@ -1,3 +1,12 @@
+query_cohort <- function(dbConnect, minPurity = 0.2) {
+  cohort = purple::query_purity(dbConnect, minPurity)
+
+  patientIdLookups = query_patient_id_lookup(dbConnect)
+  cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
+  return (cohort)
+}
+
+
 query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
 
   cohort = purple::query_purity(dbConnect) %>%
@@ -10,7 +19,7 @@ query_highest_purity_cohort<-function(dbConnect, geneDeletes) {
   cohort$patientId <- sapply(cohort$sampleId, function(x) {purple::sample_to_patient_id(x, patientIdLookups)})
 
   # Cohort
-  highestPurityCohort = purple::highest_purity_patients(cohort)
+  highestPurityCohort = purple::highest_purity_cohort(cohort)
 
   return (highestPurityCohort)
 }
@@ -252,9 +261,9 @@ query_patient_id_lookup<-function(dbConnect) {
     "SELECT CPCTCNT.patientId AS sampleId, concat('CPCT02', CPCTCNT.itemValue, LPAD(RIGHT(CPCTPN.itemValue,4), 4, '0')) as patientId",
     "  FROM drupEcrf CTCT2YN,  drupEcrf CPCTCNT, drupEcrf CPCTPN ",
     " WHERE CPCTCNT.patientId = CPCTPN.patientId AND CTCT2YN.patientId = CPCTCNT.patientId ",
-    "   AND CPCTCNT.item = 'FLD.REG.CPCTCNT' AND CPCTCNT.itemValue != ''",
-    "   AND CPCTPN.item = 'FLD.REG.CPCTPN' AND CPCTPN.itemValue != ''",
-    "   AND CTCT2YN.item = 'FLD.REG.CTCT2YN' AND CTCT2YN.itemValue = 'Yes'",
+  "   AND CPCTCNT.item = 'FLD.CPCTCNT' AND CPCTCNT.itemValue != ''",
+  "   AND CPCTPN.item = 'FLD.CPCTPN' AND CPCTPN.itemValue != ''",
+  "   AND CTCT2YN.item = 'FLD.CTCT2YN' AND CTCT2YN.itemValue = 'Yes'",
     sep = "")
 
   result = dbGetQuery(dbConnect, query)

@@ -17,17 +17,17 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 
-out_dir=${run_dir}/somaticVariants/${joint_name}/sage/
+out_dir=${run_dir}/somaticVariants/${joint_name}/sage
 sample_bam=${out_dir}/${sample}.sage.bam
 normal_bam=${out_dir}/${normal}.sage.bam
 
 if [ ! -f ${sample_bam} ]; then
-    echo "Unable to locate sample bam" ${sample_bam}
+    echo "[ERROR] Unable to locate sample bam ${sample_bam}. Exiting"
     exit 1
 fi
 
 if [ ! -f ${normal_bam} ]; then
-    echo "Unable to locate normal bam" ${normal_bam}
+    echo "[ERROR] Unable to locate normal bam ${normal_bam}. Exiting"
     exit 1
 fi
 
@@ -82,7 +82,6 @@ if [ ! -f ${hotspot_vcf} ]; then
     tabix -p vcf ${hotspot_vcf}
     rm ${snpEff_vcf}*
 fi
-
 
 final_vcf=${out_dir}/../${sample}.sage.vcf.gz
 if [ ! -f ${final_vcf} ]; then

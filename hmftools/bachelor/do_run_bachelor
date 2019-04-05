@@ -16,6 +16,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
+set=$( basename ${run_dir})
 
 # File Locations
 clinvar_filters=/data/common/dbs/bachelor/BACHELOR_CLINVAR_FILTERS.csv
@@ -48,7 +49,7 @@ bed_file=${bach_output_dir}/bachelor_bed.csv
 if [ -f ${bed_file} ]; then
     echo "[INFO] Slicing BAM files and writing to ${bach_output_dir}"
 
-    bed_based_bam_slicer ${bed_file} ${bach_output_dir}
+    bed_based_bam_slicer ${set} ${bed_file} ${bach_output_dir}
 
     if [ ! "$(ls -A ${bach_output_dir}/*bam)" ]; then
         echo "[ERROR] BAM slicing failed"

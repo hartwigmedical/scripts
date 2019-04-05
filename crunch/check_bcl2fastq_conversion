@@ -95,11 +95,12 @@ $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_P
 ## MAIN
 ## -----
 
+my $seq_run = basename $RUN_PATH;
 my $ssht_info = readSampleSheet( $SSHT_PATH );
 my $json_info = readJson( $JSON_PATH );
 my $parsed_info = parseJsonInfo( $json_info );
 
-addSamplesheetInfo( $parsed_info, $ssht_info );
+addSamplesheetInfo( $parsed_info, $ssht_info, $seq_run );
 performQC( $parsed_info ) unless $opt{ no_qc };
 
 if ( $opt{ print_summary } ){
@@ -121,9 +122,10 @@ if ( $opt{ debug } ){
 ## -----
 
 sub addSamplesheetInfo{
-    my ($json_info, $ssht_info) = @_;
+    my ($json_info, $ssht_info, $seq_run) = @_;
     
     ## add run name: eg X17-0001
+    $json_info->{ 'stats' }{ 'seq_runname' } = $seq_run;
     $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
     $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     
@@ -423,8 +425,9 @@ sub printSummaryTable{
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
         
-    say sprintf "## RunOverviewInfoLine: %s\t%s", 
+    say sprintf "## RunOverviewInfoLine: %s\t%s\t%s", 
       $info->{'stats'}{'hmf_runname'},
+      $info->{'stats'}{'seq_runname'},
       $info->{'stats'}{'run_overview_string'};
       
     say "#".join( $OUT_SEP, @$fields );

@@ -26,6 +26,13 @@ for sheet in $sheets; do
     idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
     allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
 
+    ## parse RunInfo file
+    runInfoFile=$runBase"/RunInfo.xml"
+    expectedCycleCount="NA"
+    if [[ -f $runInfoFile ]]; then
+      expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
+    fi
+
     echo ""
     echo "# "$currHost;
     echo "# [Rund] "$runBase;
@@ -42,7 +49,7 @@ for sheet in $sheets; do
     else
         cycleCount=$( ls $runBase/Logs/ | grep -Pc "(Cycle[\W\_]{1})|(Cycle\d+)" )
     fi
-    echo "# [NOTE] CYCLE log count: $cycleCount"
+    echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
 
     ## check conversion status
     if [ ! -e $conversionLogFile ]; then
@@ -66,7 +73,7 @@ for sheet in $sheets; do
     fi
 
     ## print line that can be pasted directly into RunOverview sheet
-    echo -e "# $experimentName\t$runName\tseq\t$currHostShort\t$allProjects";
+    echo -e "# $experimentName\t$runName\t$currHostShort\t$allProjects";
 
     ## print sample-id, sample_name, submission-id, description
     cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort -k2,2 -k1,1 | uniq

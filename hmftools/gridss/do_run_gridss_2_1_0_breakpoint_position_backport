@@ -7,13 +7,22 @@ source do_run_gridss_lib
 export PATH=$base_path/tools/bedops_v2.4.30/:$PATH
 
 PICARD_JAR=$base_path/tools/picard-tools_v1.135/picard.jar
+libgridss=/data/common/repos/scripts/gridss/
+gridss_pon=/data/common/dbs/gridss/pon3792v1/
 
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
-output_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf.gz
+raw_somatic_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf.gz
 full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf.gz
 assembly_sv_bam=$assembly_bam.gridss.working/$(basename $assembly_bam).sv.bam
 out_dir=$(dirname $full_vcf)/breakpoint_position_backport
 region_bed=$out_dir/region.bed
+corrected_vcf=$out_dir/$(basename $raw_somatic_vcf).breakpoint_position_backport.vcf
+if [ -a ${corrected_vcf}.gz ]
+then
+    echo "[WARN] Already applied backport. Exiting."
+    exit 1
+fi
+
 
 # check that the assembly actually exists
 if [ ! -f $assembly_sv_bam ] ; then
@@ -31,11 +40,12 @@ if [ -d "$out_dir" ] ; then
 fi
 
 echo Creating $out_dir
-mkdir $out_dir
+mkdir -p $out_dir/tmp
 rsync -r --exclude=*.bam --exclude=*.bai --exclude=breakpoint_position_backport --exclude=*vcf* --exclude=jobs --exclude=logs $(dirname $full_vcf)/ $out_dir
 normal_bam=$out_dir/$(basename $normal_bam)
 tumor_bam=$out_dir/$(basename $tumor_bam)
 assembly_bam=$out_dir/$(basename $assembly_bam)
+somatic_vcf=$out_dir/$(basename $raw_somatic_vcf .gz)
 # Mock input files because GRIDSS needs these as positional arguments even though the reads are ignored
 echo "Generating empty bam from $assembly_sv_bam"
 samtools view -H $assembly_sv_bam | samtools view -b - > $out_dir/empty.bam
@@ -45,7 +55,7 @@ mkdir -p $normal_bam.gridss.working/ $tumor_bam.gridss.working/
 ln -s $(realpath $out_dir/empty.bam) $normal_bam.gridss.working/$(basename $normal_bam).sv.bam
 ln -s $(realpath $out_dir/empty.bam) $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
 
-gunzip -c $output_vcf | vcf2bed | cut -f 1-3 | bedops --range 2000 --everything /dev/stdin > $region_bed
+gunzip -c ${raw_somatic_vcf} | vcf2bed | cut -f 1-3 | bedops --range 2000 --everything /dev/stdin > $region_bed
 
 gridss_jvm_args="
 	-ea
@@ -56,7 +66,7 @@ gridss_jvm_args="
 	-Dsamjdk.buffer_size=2097152
 	-cp $gridss_jar "
 gridss_common_args="
-	TMP_DIR=$out_dir 
+	TMP_DIR=$out_dir/tmp
 	WORKING_DIR=$out_dir
 	REFERENCE_SEQUENCE=$ref_genome "
 
@@ -80,26 +90,25 @@ java -Xmx6G $gridss_jvm_args \
 	WRITE_OA=false \
 	WORKER_THREADS=$threads | exit 1
 
-unadjusted_vcf=$out_dir/$(basename $output_vcf).unadjusted.vcf
+unadjusted_vcf=$out_dir/$(basename $somatic_vcf).unadjusted.vcf
 java -Xmx4G $gridss_jvm_args gridss.AllocateEvidence \
 	ALLOCATE_READS=false \
 	I=$normal_bam \
 	I=$tumor_bam \
 	ASSEMBLY=$assembly_bam \
-	INPUT_VCF=$output_vcf \
+	INPUT_VCF=$raw_somatic_vcf \
 	OUTPUT_VCF=$unadjusted_vcf \
 	$gridss_common_args \
 	CONFIGURATION_FILE=$gridss_config_file \
 	WORKER_THREADS=$threads | exit 1
 
-# Need to feed back to R to adjust nominal homology call position back to match gridss_somatic_filter
-libgridss=/data/common/repos/scripts/gridss/
-output_vcf=$out_dir/$(basename $output_vcf).breakpoint_position_backport.vcf
-Rscript ${libgridss}/gridss_adjust_call_positions.R -i ${unadjusted_vcf} -o ${output_vcf} -s ${libgridss}
-rm ${unadjusted_vcf}
-mv ${output_vcf}.bgz ${output_vcf}.gz
-mv ${output_vcf}.bgz.tbi ${output_vcf}.gz.tbi
 
+# Need to feed back to R to adjust nominal homology call position back to match gridss_somatic_filter
+Rscript ${libgridss}/gridss_adjust_call_positions.R -i ${unadjusted_vcf} -o ${corrected_vcf} -s ${libgridss}
+rm ${unadjusted_vcf}
+mv ${corrected_vcf}.bgz ${corrected_vcf}.gz
+mv ${corrected_vcf}.bgz.tbi ${corrected_vcf}.gz.tbi
+chmod 775 $out_dir
 
 
 

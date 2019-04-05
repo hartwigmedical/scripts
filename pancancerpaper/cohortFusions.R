@@ -32,8 +32,6 @@ fusionConstraints = read.csv(file = "~/hmf/Resources/3PrimeFusionDomainConstrain
   filter(!is.na(`Min.Exon`) | !is.na(`Max.Exon`)) %>%
   select(`3pTranscript` = Transcript, `3pMinExonConstraint` = `Min.Exon`, `3pMaxExonConstraint` = `Max.Exon`)
 
-
-
 driverLevels = factor(c("Fusion-Coding","Fusion-UTR", "Fusion-Intragenic"), ordered = T)
 
 path="~/hmf/resources/"
@@ -107,7 +105,8 @@ fusions = fusions %>%
 load(file = "~/hmf/RData/reference/highestPurityCohort.RData")
 hpcFusions = fusions %>% 
   filter(sampleId %in% highestPurityCohort$sampleId) %>%
-  select(-starts_with("start"), -starts_with("end"))
+  select(-starts_with("start"), -starts_with("end")) %>%
+  ungroup()
 save(hpcFusions, file = "~/hmf/RData/Processed/hpcFusions.RData")
 
 ### CREATE SUPPLEMENTARY TABLE

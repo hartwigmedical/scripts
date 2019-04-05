@@ -62,7 +62,7 @@ done
 filesToRename=()
 while IFS=  read -r -d $'\0'; do
     filesToRename+=("$REPLY")
-done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "*fastq.gz" -print0)
+done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "$oldName*.fastq.gz" -print0)
 
 ## sanity checks
 if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found (with find-depth ${maxFindDepth})" && exit 1; fi

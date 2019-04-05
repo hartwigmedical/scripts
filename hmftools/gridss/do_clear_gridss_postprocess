@@ -1,0 +1,16 @@
+#!/bin/bash
+run_dir=$1
+
+
+gridss_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
+if [ -z ${gridss_vcf} ]
+then
+    echo "[ERROR] Unable to locate gridss vcf. Exiting." >&2
+    exit 1
+fi
+
+
+gridss_dir=$(dirname ${gridss_vcf})
+#rm ${gridss_dir}/*.gridss.somatic.vcf.gz*
+#rm ${gridss_dir}/*.gridss.somatic.full.vcf.gz*
+#rm -rf ${gridss_dir}/breakpoint_position_backport

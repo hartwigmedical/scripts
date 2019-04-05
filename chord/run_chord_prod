@@ -12,7 +12,7 @@ fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-chord_dir=/data/common/tools/chord_v1.1
+chord_dir=/data/common/tools/chord_v1.2
 working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
@@ -28,3 +28,9 @@ ${prefix}/extractHRDsample.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf
 
 sample_mut_signatures="${sample}_sample_mut_signatures.txt"
 ${prefix}/predictHRDsample.R ${chord_dir} ${working_dir} ${sample} ${sample_mut_signatures}
+
+count_files_chord_prod=$(ls ${working_dir} | wc -l)
+
+if [ ${count_files_chord_prod} -lt 2 ]; then
+    echo "[ERROR] not all files for chord present!"
+fi

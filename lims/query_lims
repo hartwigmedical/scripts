@@ -15,7 +15,9 @@ use 5.010.000;
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $LIMS_JSON = '/data/lims/lims.json';
-my $PDF_DIR = '/data/cpct/final_reports';
+my $NONREPORTABLE_CSV = '/data/lims/nonreportable_samples.csv';
+my @PDF_DIRS = ( '/data/cpct/final_reports', '/data/core/final_reports', '/data/cpct/old_cpct_reports' );
+my $pdfdirs_string = join( ", ", sort @PDF_DIRS );
 
 my $DELIM = "\t";
 my $NA_CHAR = "NA";
@@ -23,7 +25,6 @@ my $MIN_TUM_PERC = 30;
 my $TYPE;
 my $MUST_MATCH_EXACT;
 
-my @LAB_DONE_STATUS = qw( finished failed storage );
 my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status )],
   'submissions' => [qw( submission project_name contact_name contact_email project_type analysis_type sample_count )],
@@ -63,7 +64,7 @@ my $HELP_TEXT =<<HELP;
     
   Files/locations that are used
     LIMS input FILE: $LIMS_JSON
-    Patient reports: $PDF_DIR
+    Patient reports: $pdfdirs_string
 HELP
 
 die $HELP_TEXT . "\n" if scalar @ARGV == 0;
@@ -94,11 +95,12 @@ die $HELP_TEXT . "\n[EXIT] Type ($TYPE) is not supported\n" unless exists $OUT_F
 ## MAIN
 ## -----
 
+my $nonreportable = readNonReportableSamples( $NONREPORTABLE_CSV );
 my $lims = readJson( $opt{ lims_input } or $LIMS_JSON );
 my $out_fields = $OUT_FIELDS_PER_TYPE{ $TYPE };
 
 if ( $TYPE eq 'unreported' ){
-    my $samples = getUnreportedBiopsies( $lims, \%opt );
+    my $samples = getUnreportedBiopsies( $lims, $nonreportable, \%opt );
     printObjectInfo( $samples, $out_fields, 'lab_status', \%opt );
 }
 elsif ( $TYPE eq 'dateTable' ){
@@ -204,6 +206,22 @@ sub readJson{
     return( $json_obj );
 }
 
+sub readNonReportableSamples{
+    my ($csv_file) = @_;
+    my %non_reportable_samples = ();
+    open IN, "<", $csv_file or die "[EXIT] Unable to open file ($csv_file): $!\n";
+    while ( my $sample = <IN> ){
+        chomp $sample;
+        next if $sample =~ /^#/;
+        if ( $sample =~ /\s/ ){
+            die "[EXIT] Whitespace detected in sample \"$sample\" (file: $csv_file)\n";
+        }
+        $non_reportable_samples{ $sample } = 1;
+    }
+    close IN;
+    return( \%non_reportable_samples );
+}
+
 sub printObjectInfo{
     my ($objects, $fields, $sortkey, $opt) = @_;
     my $jsonOut = $opt{ 'json' };
@@ -216,7 +234,8 @@ sub printObjectInfo{
     }
     
     @$objects = sort { 
-        $a->{$sortkey} cmp $b->{$sortkey}
+        $a->{$sortkey} cmp $b->{$sortkey} or
+        $a->{"sample_name"} cmp $b->{"sample_name"}
     } @$objects;
     
     if ( $jsonOut ){
@@ -259,15 +278,17 @@ sub getCpctDrupDateTable{
 
 
 sub getUnreportedBiopsies{
-    my ($lims) = @_;
+    my ($lims, $nonreportable, $opt) = @_;
     my @out_samples = ();
     my $samples = $lims->{ 'samples' };
-    my $final_status_regex = join( "|", @LAB_DONE_STATUS );
     
     my %pdfs = ();
-    my @pdf_paths = glob( $PDF_DIR . '/*.pdf' );
+    my @pdf_paths = ();
+    foreach my $pdf_dir ( @PDF_DIRS ){
+        push( @pdf_paths, glob( $pdf_dir . '/*.pdf' ) );
+    }
     foreach my $pdf_path ( @pdf_paths ){
-        my ($pdf_sample) = split( "_", basename( $pdf_path ) );
+        my ($pdf_sample) = split( /[\.\_]/, basename( $pdf_path ) );
         $pdfs{ $pdf_sample } = 1;
     }
     
@@ -277,6 +298,9 @@ sub getUnreportedBiopsies{
         my $sample_name = getValueByKey( $sample, 'sample_name' );
         my $submission = getValueByKey( $sample, 'submission' );
         
+        ## skip if sample is on non reportable list
+        next if exists $nonreportable->{ $sample_name };
+
         ## skip if report already exists
         next if exists $pdfs{ $sample_name };
         
@@ -284,9 +308,9 @@ sub getUnreportedBiopsies{
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} eq 'Somatic_T';
                 
-        ## skip if not CPCT/DRUP production biopsy
-        next unless defined $sample->{'submission'};
-        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        ## skip if not CPCT/DRUP/WIDE/CORE production biopsy
+        next unless defined $sample->{'label'};
+        next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE)$/;
         
         ## skip T0 biopsies (these should always have a T as well)
         next if $sample_name =~ /T0$/;
@@ -297,7 +321,13 @@ sub getUnreportedBiopsies{
         
         ## skip if lab not ready yet
         next unless defined $sample->{'lab_status'};
-        next unless $sample->{'lab_status'} =~ /$final_status_regex/i;
+        if ( $submission eq 'HMFregDRUP' ){
+            ## DRUP will only be sequenced and reported when cohort is full
+            next unless $sample->{'lab_status'} =~ /^finished|failed$/i;
+        }
+        else{
+            next unless $sample->{'lab_status'} =~ /^finished|failed|storage$/i;
+        }
         
         ## find and add R status
         $sample->{ 'ref_status' } = $NA_CHAR;
@@ -309,19 +339,10 @@ sub getUnreportedBiopsies{
                 $sample->{ ref_status } = $ref_status;
             }
         }
-        
-        ## tumor percentage specific filtering
-        my $tum_perc = getValueByKey( $sample, 'tumor_perc' );
-        if ( $tum_perc !~ /^\d+$/ ){
-            ## skip biopsies without integer tumor percentage
-            next;
-        }
-        elsif( $tum_perc < $MIN_TUM_PERC ){
-            ## keep any low tumor biopsy (these should always be reported)
-        }
-        elsif ( $submission eq 'HMFregCPCT' ){
-            ## skip further CPCT biopsies without ready ref sample
-            next if $sample->{'ref_status'} !~ /$final_status_regex/i;
+       
+        ## skip CPCT biopsies without finished ref sample
+        if ( $submission eq 'HMFregCPCT' ){
+            next if $sample->{'ref_status'} !~ /^finished|failed|storage$/i;
         }
         
         ## ok: ready to report with SBP info added
@@ -348,7 +369,6 @@ sub addSbpInfoToSampleBySampleId{
         my $setname = getValueByKey( $run, 'name' );
         my $status = getValueByKey( $run, 'status' ); 
         next if $ini =~ /rerun/i;
-        next if $entity !~ /CPCT_|DRUP_/; 
         $sample->{sbp_info} = "$setname ($status)";
     }
     return($sample);

@@ -19,7 +19,7 @@ source("gridss.config.R")
 addVCFHeaders = function(vcf) {
   info(header(vcf)) = unique(as(rbind(as.data.frame(info(header(vcf))), data.frame(
     row.names=c("BPI_AF", "LOCAL_LINKED_BY", "REMOTE_LINKED_BY"),
-    Number=c(".", "1", "1"),
+    Number=c(".", ".", "."),
     Type=c("Float", "String", "String"),
     Description=c("Allele fraction at for each breakend", "Breakend linking information", "Partner breakend linking information"))), "DataFrame"))
   VariantAnnotation::fixed(header(vcf))$FILTER = unique(as(rbind(as.data.frame(VariantAnnotation::fixed(header(vcf)))$FILTER, data.frame(
@@ -38,7 +38,8 @@ addVCFHeaders = function(vcf) {
       "SRNormalSupport",
       "normalCoverage",
       "af",
-      "NO_ASRP"),
+      "NO_ASRP",
+      "LongPolyC"),
     Description=c(
       "Found in panel of normals",
       "Imprecise variant",
@@ -54,28 +55,25 @@ addVCFHeaders = function(vcf) {
       "Short event with split reads support in the normal sample",
       "Insufficient normal coverage to determine somatic status",
       "Variant allele fraction too low",
-      "Breakend supported by 0 assembled read pairs"))), "DataFrame"))
+      "Breakend supported by 0 assembled read pairs",
+      "Single breakend containing long polyC or polyG run. Likely to be an artefact."))), "DataFrame"))
   return(vcf)
 }
 
 
 gridss_overlaps_breakpoint_pon = function(gr,
     pon_dir=NULL,
-    pongr=read_gridss_breakpoint_pon(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/")),
-    include_pon_imprecise_calls=TRUE,
+    pongr=cached_read_file(paste(pon_dir, "gridss_pon_breakpoint.bedpe", sep="/"), read_gridss_breakpoint_pon),
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    if (!include_pon_imprecise_calls && !is.null(pongr$IMPRECISE)) {
-      pongr = pongr[!pongr$IMPRECISE]
-    }
     hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
   }
   return(hasHit)
 }
 gridss_overlaps_breakend_pon = function(gr,
     pon_dir=NULL,
-    pongr=import(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/")),
+    pongr=cached_read_file(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"), import),
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
@@ -159,6 +157,7 @@ gridss_breakend_filter = function(gr, vcf, min_support_filters=TRUE, somatic_fil
     # this is a relatively strict filter but does filter out most of the
     # noise from microsatellite sequences
     filtered = .addFilter(filtered, "NO_ASRP", i$BASRP == 0)
+    filtered = .addFilter(filtered, "LongPolyC", str_detect(gr$insSeq, "CCCCCCCCCCCCCCCC") | str_detect(gr$insSeq, "GGGGGGGGGGGGGGGG"))
   }
   if (somatic_filters) {
     filtered = .addFilter(filtered, "normalSupport", .genosum(g$BVF,normalOrdinal) > gridss.allowable_normal_contamination * .genosum(g$BVF,tumourOrdinal))
@@ -221,7 +220,10 @@ is_likely_library_prep_fragment_ligation_artefact = function(gr, vcf, minsize=10
 is_indel_artefact = function(gr, bsgenome, minsizedelta=5, minEditDistancePerBase=0.5, maxEditDistancePerInversionBase=0.2) {
   result = rep(FALSE, length(gr))
   gr$isOfInterest = is_short_del(gr) & abs(abs(start(gr) - start(gr[ifelse(is.na(gr$partner), names(gr), gr$partner)])) - gr$insLen) < minsizedelta
-  gr$isOfInterest = !is.na(gr$partner) & gr$isOfInterest & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  gr$isOfInterest = gr$isOfInterest & !is.na(gr$partner) & gr[ifelse(is.na(gr$partner), names(gr), gr$partner)]$isOfInterest
+  ucscgr = gr
+  seqlevelsStyle(ucscgr) = "UCSC"
+  gr$isOfInterest = gr$isOfInterest & as.logical(seqnames(ucscgr) %in% seqnames(bsgenome))
   igr = gr[gr$isOfInterest]
   seqlevelsStyle(igr) = "UCSC"
   inseq = igr$insSeq
@@ -548,6 +550,7 @@ transitive_breakpoints <- function(
     allow_loops=FALSE,
     max_hops=4,
     max_intermediate_paths=1000,
+    max_active_paths=100000,
     report=c("shortest", "max2", "all")) {
   ordinal_lookup = seq_len(length(gr))
   names(ordinal_lookup) = names(gr)
@@ -630,7 +633,7 @@ transitive_breakpoints <- function(
     }
     active_df = active_df %>%
       group_by(terminal_start) %>%
-      top_n(max_intermediate_paths, wt=min_length) %>%
+      top_n(as.integer(min(max_intermediate_paths, 1 + max_active_paths / (length(unique(active_df$terminal_start)) + 1))), wt=min_length) %>%
       ungroup()
     # check for terminal completion
     active_df = active_df %>% left_join(terminal_df, by=c("current_to"="queryHits", "terminal_end"="subjectHits"))
@@ -696,27 +699,35 @@ transitive_breakpoints <- function(
     dplyr::mutate(max_traversed=pmax(start_end_traversed, end_start_traversed)) %>%
     dplyr::select(-start_end_traversed, -end_start_traversed)
 }
-#' Assumes the input is sorted
-#' @param is_higher_breakend record is a breakpoint record and is considered the higher of the two breakends.
-#' Default check uses GRIDSS notation. TODO: use breakpointRanges() to make a generic default
-align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_detect(names(vcf), "h$")) {
+#' Adjusts the nominal breakpoint position towards
+#' @param  align alignment position within any interval of uncertainty.
+#' In the case of an even width interval, centre alignment adjusts to the centre
+#' position closest to the initial location.
+#' Adjusts the nominal position of a breakpoints
+align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(vcf) < info(vcf)$PARID) {
   if (length(vcf) == 0) {
     return(vcf)
   }
   align = match.arg(align)
-  nominal_start = start(rowRanges(vcf))
   if (!all(elementNROWS(info(vcf)$CIPOS) == 2)) {
     stop("CIPOS not specified for all variants.")
   }
+  is_higher_breakend[is.na(is_higher_breakend)] = FALSE
+  nominal_start = start(rowRanges(vcf))
   cipos = t(matrix(unlist(info(vcf)$CIPOS), nrow=2))
   ciwdith = cipos[,2] - cipos[,1]
+  orientations = .vcfAltToStrandPair(rowRanges(vcf)$ALT)
   if (align == "centre") {
-    adjust_by = cipos[,1] + ciwdith / 2.0
-    adjust_by = ifelse(round(adjust_by) != adjust_by, adjust_by + ifelse(is_higher_breakend, -0.5, 0.5), adjust_by)
+    citargetpos = nominal_start + cipos[,1] + ciwdith / 2.0
+    adjust_by = citargetpos - nominal_start
+    adjust_in_opposite_direction_to_partner = orientations %in% c("--", "++")
+    adjust_by = ifelse(is_higher_breakend & adjust_in_opposite_direction_to_partner, ceiling(adjust_by), floor(adjust_by))
   } else {
     stop("Only centre alignment is currently implemented.")
   }
-  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(is.na(adjust_by), 0, adjust_by))
+  isbp = str_detect(VariantAnnotation::fixed(vcf)$ALT, "[\\]\\[]")
+  is_adjusted_bp =  isbp & !is.na(adjust_by) & adjust_by != 0
+  rowRanges(vcf) = shift(rowRanges(vcf), ifelse(!is_adjusted_bp, 0, adjust_by))
   info(vcf)$CIPOS = info(vcf)$CIPOS - adjust_by
   if (!is.null(info(vcf)$CIEND)) {
     info(vcf)$CIEND = info(vcf)$CIEND - adjust_by
@@ -724,10 +735,36 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=str_det
   if (!is.null(info(vcf)$IHOMPOS)) {
     info(vcf)$IHOMPOS = info(vcf)$IHOMPOS - adjust_by
   }
+  alt = unlist(rowRanges(vcf)$ALT)
+  partner_alt = stringr::str_match(alt, "^([^\\]\\[]*)[\\]\\[]([^:]+):([0-9]+)([\\]\\[])([^\\]\\[]*)$")
+  # [,2] anchoring bases
+  # [,3] partner chr
+  # [,4] old partner position
+  partner_pos = ifelse(is.na(partner_alt[,4]), NA_integer_, as.integer(partner_alt[,4])) + ifelse(adjust_in_opposite_direction_to_partner, -adjust_by, adjust_by)
+  # [,5] partner orientation
+  # [,6] anchoring bases
+  # adjust ALT for breakpoints. anchoring bases get replaced with N since we don't know
+  VariantAnnotation::fixed(vcf)$ALT = as(ifelse(!is_adjusted_bp, alt,
+                                                paste0(
+                                                  str_pad("", stringr::str_length(partner_alt[,2]), pad="N"),
+                                                  partner_alt[,5],
+                                                  partner_alt[,3],
+                                                  ":",
+                                                  partner_pos,
+                                                  partner_alt[,5],
+                                                  str_pad("", stringr::str_length(partner_alt[,6]), pad="N"))), "CharacterList")
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
-  # left align lower breakend (forces right alignment of the partner if they're in the same orientation)
-  #info(vcf[names(gr)])$CIPOS = relist(c(rbind(ifelse(left_align, 0, -bp_width), ifelse(left_align, bp_width, 0))), PartitioningByEnd(seq(2, 2*length(gr), 2)))
   return(vcf)
+}
+.vcfAltToStrandPair = function(alt) {
+  chralt = unlist(alt)
+  ifelse(startsWith(chralt, "."), "-",
+         ifelse(endsWith(chralt, "."), "+",
+                ifelse(startsWith(chralt, "]"), "-+",
+                       ifelse(startsWith(chralt, "["), "--",
+                              ifelse(endsWith(chralt, "]"), "++",
+                                     ifelse(endsWith(chralt, "["), "+-", ""))))))
+
 }
 
 readVcf = function(file, ...) {
@@ -765,11 +802,21 @@ readVcf = function(file, ...) {
   # )[is.nanan(geno(raw_vcf)$BQ)]
   return(raw_vcf)
 }
+cached_read_file = function(file, read_function) {
+  cache_filename = paste0(file, ".cached.parsed.rds")
+  if (file.exists(cache_filename)) {
+    write(paste(Sys.time(), "Loading from cache ", cache_filename), stderr())
+    result = readRDS(cache_filename)
+  } else {
+    result = read_function(file)
+    saveRDS(result, file=cache_filename)
+  }
+}
 
 read_gridss_breakpoint_pon = function(file) {
   df = read_tsv(file,
-                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2", "IMPRECISE"),
-                col_types="ciiciiccccl")
+                col_names=c("chr1", "start1", "end1", "chr2", "start2", "end2", "name", "score", "strand1", "strand2"),
+                col_types="ciiciicccc")
   gro = GRanges(
     seqnames=df$chr1,
     ranges=IRanges(
@@ -777,8 +824,7 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end1),
     strand=df$strand1,
     partner=paste0(seq_len(nrow(df)), "h"),
-    score=df$score,
-    IMPRECISE = df$IMPRECISE)
+    score=df$score)
   names(gro) = paste0(seq_len(nrow(df)), "o")
   grh = GRanges(
     seqnames=df$chr2,
@@ -787,8 +833,7 @@ read_gridss_breakpoint_pon = function(file) {
       end=df$end2),
     strand=df$strand2,
     partner=paste0(seq_len(nrow(df)), "o"),
-    score=df$score,
-    IMPRECISE = df$IMPRECISE)
+    score=df$score)
   names(grh) = paste0(seq_len(nrow(df)), "h")
   return(c(gro, grh))
 }
