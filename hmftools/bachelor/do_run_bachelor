@@ -18,6 +18,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # File Locations
+clinvar_filters=/data/common/dbs/bachelor/BACHELOR_CLINVAR_FILTERS.csv
 bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/${bachelor_output_dir}/
 if [ $? -ne 0 ]
@@ -36,7 +37,7 @@ echo "[INFO] Running Bachelor"
 java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
     -configXml ${bachelor_config} \
-    -germline \
+    -ext_filter_file ${clinvar_filters} \
     -runDirectory ${run_dir} \
     -output_dir ${bach_output_dir} \
     -log_debug
