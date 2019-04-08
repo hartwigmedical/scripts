@@ -232,42 +232,6 @@ svSampleTotals = merge(svSampleTotals, sampleCancerTypes, by='SampleId', all.x=T
 
 
 
-######################
-# DRIVER GENE ANALYSIS
-######################
-
-svData = svData %>% separate(DriverStart, c('DriverTypeStart','DriverGeneStart','DriverInfoStart'), sep = ';')
-svData = svData %>% separate(DriverEnd, c('DriverTypeEnd','DriverGeneEnd','DriverInfoEnd'), sep = ';')
-
-driverGeneSvs = (svData %>% filter(DriverTypeStart!=''|DriverTypeEnd!='') 
-     %>% select(SampleId,ClusterId,ClusterDesc,ResolvedType,Id,Type,DriverTypeStart,DriverGeneStart,DriverInfoStart,DriverTypeEnd,DriverGeneEnd,DriverInfoEnd,
-                ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,Ploidy,AdjCNStart,AdjCNChgStart,AdjCNEnd,AdjCNChgEnd))
-
-View(driverGeneSvs)
-
-write.csv(driverGeneSvs, "~/logs/driver_gene_svs.csv", quote = F, row.names = F)
-
-driverGeneStart = driverGeneSvs %>% filter(DriverTypeStart!='')
-driverGeneStart$DriverGeneType = driverGeneStart$DriverTypeStart
-driverGeneStart$DriverGene = driverGeneStart$DriverGeneStart
-driverGeneStart$DriverGeneInfo = driverGeneStart$DriverInfoStart
-
-driverGeneEnd = driverGeneSvs %>% filter(DriverTypeStart==''&DriverTypeEnd!='')
-driverGeneEnd$DriverGeneType = driverGeneEnd$DriverTypeEnd
-driverGeneEnd$DriverGene = driverGeneEnd$DriverGeneEnd
-driverGeneEnd$DriverGeneInfo = driverGeneEnd$DriverInfoEnd
-driverGenes = rbind(driverGeneStart,driverGeneEnd)
-
-View(driverGenes)
-View(driverGenes %>% filter(DriverGeneType=='AMP'&DriverGeneInfo=='SV') %>% group_by(DriverGeneType,DriverGene,DriverGeneInfo) %>% count())
-View(driverGenes %>% filter(DriverGeneType=='AMP'&DriverGeneInfo=='SV') %>% group_by(Type) %>% count())
-
-View(driverGenes %>% group_by(DriverGeneType,DriverGene,DriverGeneInfo) %>% count())
-
-
-View(svData %>% group_by(DriverTypeStart,DriverGeneStart,DriverInfoStart) %>% count())
-
-
 
 ###############
 # Genic Regions

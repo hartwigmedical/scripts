@@ -125,6 +125,135 @@ getSampleIdsStr<-function(samples)
   return (sampleIdsStr)
 }
 
+
+# loading frozen data files and prep for sample counts
+
+# packages required
+#library(devtools) #; install_github("im3sanger/dndscv")
+#library(purple);
+library(data.table)
+library(dplyr)
+#library(tidyr)
+#library(stringi)
+
+library(MutationalPatterns)
+# library(RMySQL)
+# library(data.table)
+
+
+
+load('/data/data_archive/180921_paper_db_files/Reference/allSomatics_p1.RData')
+load('/data/data_archive/180921_paper_db_files/Reference/allSomatics_p2.RData')
+
+sampleSNVs = read.csv('~/logs/CPCT02020323T_SNVs.csv')
+nrow(sampleSNVs)
+View(sampleSNVs)
+
+
+
+
+
+# filter for SNV types
+
+# "SELECT sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy, clonality",
+# "FROM somaticVariant",
+# "WHERE filter = 'PASS' and length(alt) = length(ref) and length(alt) = 1 and trinucleotideContext not like '%N%'",
+
+# View(sampleSNVs %>% filter(type=='SNP'&!grepl('N',trinucleotideContext)&filter=='PASS'))
+
+allSomatics = (allSomatics_p2 %>% filter(type=='SNP'&!grepl('N',trinucleotideContext)&filter=='PASS') 
+                  %>% mutate(context=trinucleotideContext,
+                             ploidy=adjustedVaf*adjustedCopyNumber,
+                             snv=paste(ref,alt,sep='>'))
+                  %>% select(sampleId,context,snv,ploidy,clonality))
+
+View(allSomatics)
+
+View(allSomatics %>% group_by(context) %>% count())
+
+raw_types = allSomatics$snv
+View(head(raw_types,100))
+
+# load functions: standard_mutation and standard_context
+
+# prepare bucket data
+standard_types = standard_mutation(raw_types)
+View(head(standard_types,100))
+raw_context = allSomatics$context
+View(head(raw_context,100))
+
+
+context = standard_context(raw_types, standard_types, raw_context)
+View(context)
+
+allSomaticsDT = data.table(
+  sample = allSomatics$sampleId,
+  type = standard_types,
+  context = context,
+  ploidy = allSomatics$ploidy,
+  clonality = allSomatics$clonality)
+
+View(allSomaticsDT)
+
+# filter for high-purity samples (2405 samples)
+load('~/data/r_data/highestPurityCohortSummary.RData')
+nrow(highestPurityCohortSummary)
+highestPurityCohort = highestPurityCohortSummary 
+allSomaticsDT = allSomaticsDT %>% filter(sample %in% highestPurityCohort$sampleId)
+nrow(allSomaticsDT)
+
+# prepare sample count bucket data
+
+View(allSomaticsDT %>% group_by(sample,context,type) %>% summarise(Count=n()))
+
+sampleCounts = allSomaticsDT %>% group_by(sample,context,type) %>% summarise(Count=n())
+
+emptySigs = create_empty_signature()
+View(emptySigs)
+
+sampleResult = merge(emptySigs, sampleCounts, all=T)
+sampleResult[is.na(sampleResult)] <- 0
+View(sampleResult)
+
+sampleResult = sampleResult %>% mutate(Bucket=paste(type,context,sep='_'))
+
+
+colnames(allSomaticsDT) = c("SampleId", "Context", "SNV", "Ploidy", "Clonality")
+
+snvSampleNames = unique(allSomaticsDT$sample)
+
+View(snvSampleNames)
+
+allSampleCounts = data.frame()
+
+index = 1
+for(s in snvSampleNames)
+{
+  index = index + 1
+  
+  emptySigs = create_empty_signature()
+  
+  sampleCounts = allSomaticsDT %>% filter(sample==s) %>% group_by(sample,context,type) %>% summarise(Count=n())
+
+  sampleResult = merge(emptySigs, sampleCounts, all=T)
+  sampleResult[is.na(sampleResult)] <- 0
+  
+  allSampleCounts = rbind(allSampleCounts,sampleResult)
+}
+
+View(allSampleCounts)
+allSampleCounts = allSampleCounts %>% mutate(Bucket=paste(type,context,sep='_')) %>% select(sample,Bucket,Count)
+
+allSampleCounts = allSampleCounts %>% select(sample,Bucket,Count)
+colnames(allSampleCounts) = c('SampleId', "Bucket",'Count')
+
+
+
+
+
+
+
+
 ## NMF functions
 
 # restrict to samples in high-purity and DR022 set

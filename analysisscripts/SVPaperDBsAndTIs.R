@@ -56,30 +56,20 @@ View(dbData %>% filter(DBLength<=50,ResolvedType=='Line'|ResolvedType=='SglPair_
 ########## Templated Insertion Analysis ################
 ########################################################
 
-# generic plotting functions
-plot_length_facetted<-function(data, filterStr, groupByStr, bucketStr, facetStr, titleStr, logScale=T)
-{
-  dataSummary = data %>% s_filter(filterStr) %>% s_group_by(groupByStr) %>% summarise(Count=n()) %>% as.data.frame
-  
-  plot = (ggplot(data = dataSummary, aes_string(x=bucketStr, y='Count'))
-          + geom_line()
-          + labs(title = titleStr))
 
-  if(facetStr != "")
-    plot = plot + facet_wrap(as.formula(paste("~", facetStr)))
-
-  if(logScale)
-    plot = plot + scale_x_log10()
-  
-  print(plot)
-}
 
 svFile = '~/data/sv/CLUSTER.csv'
 svData = sv_load_and_prepare(svFile)
 
 
 # TI Direct File
+rm(tiDirectData)
+
 tiDirectData = read.csv("~/logs/SVA_LINKS.csv")
+nrow(tiDirectData)
+nrow(tiDirectData %>% filter(TILength>=30&TILength<=500))
+
+View(tiDirectData)
 
 nrow(tiDirectData %>% filter(TILength<30))
 tiDirectData = tiDirectData %>% filter(TILength>=30)
@@ -177,6 +167,35 @@ print(ggplot(data = shortTIData %>% filter(ShortTIPerc>=0.9&LinkCount>1) %>% gro
 
 ############################
 # working and experimental...
+
+# short inferred TIs
+
+shortTIData = tiDirectData %>% filter(TILength<250&ClusterCount<50&!grepl('Sgl',ResolvedType))
+View(shortTIData)
+View(shortTIData %>% group_by(ResolvedType) %>% count())
+
+shortTISummary = shortTIData %>% group_by(TiLenBucket,AssemblyType) %>% count()
+
+print(ggplot(data = shortTISummary, aes(x=TiLenBucket, y=n))
+        + geom_line()
+        + facet_wrap(~AssemblyType)
+        + labs(title = 'TI Lengths assembled or not'))
+
+shortTISum2 = shortTIData %>% filter(ResolvedType!='ComplexChain') %>% group_by(TILength,AssemblyType,NextSV=NextSVDistance>0) %>% count() %>% spread(AssemblyType,n)
+View(shortTISum2)
+
+print(ggplot(data = shortTISum2, aes(x=TILength, y=n))
+      + geom_line(aes(y=INFERRED, colour='INFERRED'))
+      + geom_line(aes(y=ASSEMBLY, colour='ASSEMBLY'))
+      + facet_wrap(~NextSV)
+      + labs(title = 'TI Lengths assembled or not'))
+
+
+shortTIData = tiDirectData %>% filter(TILength<1e3&ClusterCount<50) %>% group_by(TiLenBucket,AssemblyType,NextSV=NextSVDistance>0) %>% count()
+
+
+View(tiDirectData %>% filter(AssemblyType=='INFERRED'&TILength<=100))
+
 
 
 # TIs be whether they traverse another SV or not
