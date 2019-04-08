@@ -5,33 +5,15 @@ library(purple)
 library(GenomicRanges)
 library(BSgenome.Hsapiens.UCSC.hg19)
 
-####### GATHER DATA
 
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
-dbDisconnect(dbProd)
-rm(dbProd)
+####### PREPARE DATA
+load(file = "~/hmf/analysis/svPaper/cohort.RData")
 
-cohort = dbGetQuery(dbProd, "SELECT * from purity WHERE purity > 0.2 AND status != 'NO_TUMOR' and qcStatus = 'PASS'")
-patientIdLookups = query_patient_id_lookup(dbProd)
-cohort$patientId <- sapply(cohort$sampleId, function(x) {sample_to_patient_id(x, patientIdLookups)})
-
-multipleBiopsyCohort = cohort %>% group_by(patientId) %>% mutate(n = n()) %>% filter(n > 1)
-save(cohort, multipleBiopsyCohort, file = "/Users/jon/hmf/analysis/multipleBiopsy/cohorts.RData")
-
-multipleBiopsySamples = multipleBiopsyCohort$sampleId
-allSvs = read.csv("/Users/jon/hmf/analysis/multipleBiopsy/SVA_SVS.csv")
+allSvs = read.csv("/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
 mbcSvs = allSvs %>% filter(SampleId %in% multipleBiopsyCohort$sampleId)
-save(mbcSvs, file = "/Users/jon/hmf/analysis/multipleBiopsy/mbcSvs.RData")
+save(mbcSvs, file = "~/hmf/analysis/svPaper/mbcSvs.RData")
 
-
-####### PRIVATE / SHARED MATCHING
-load(file = "/Users/jon/hmf/analysis/multipleBiopsy/cohorts.RData")
-load( file = "/Users/jon/hmf/analysis/multipleBiopsy/mbcSvs.RData")
-
-
-
-
-doubleBiopsy = multipleBiopsyCohort %>% filter(n == 2) %>% group_by(patientId) %>% mutate(n = row_number())
+doubleBiopsy = multipleBiopsyCohort %>% group_by(patientId) %>% filter(n() == 2) %>% mutate(n = row_number())
 dbSvs = mbcSvs %>% filter(SampleId %in% doubleBiopsy$sampleId)
 
 reformattedSVS = dbSvs %>% 
@@ -41,13 +23,9 @@ reformattedSVS = dbSvs %>%
 query = reformattedSVS %>% filter(n == 1)
 subject = reformattedSVS %>% filter(n == 2)
 
-overlaps = sv_overlaps(query, subject, 10)
-save(query, subject, overlaps, file = "/Users/jon/hmf/analysis/multipleBiopsy/multipleBiopsy.RData")
+save(query, subject, file = "~/hmf/analysis/svPaper/multipleBiopsy.RData")
 
 ####### ANALYSIS
-load(file = "/Users/jon/hmf/analysis/multipleBiopsy/multipleBiopsy.RData")
-
-
 sv_overlaps <- function(query, subject, maxgap = -1) {
   require(tidyr)
   require(dplyr)
@@ -83,6 +61,7 @@ sv_overlaps <- function(query, subject, maxgap = -1) {
   return (overlapsData %>% select(queryHits, subjectHits))
 }
 
+load(file = "~/hmf/analysis/svPaper/multipleBiopsy.RData")
 overlaps = sv_overlaps(query, subject, 10)
 
 subject$scope <- "Private"
@@ -136,7 +115,6 @@ queryClusterStatusSummary = queryClusterStatus %>% group_by(ResolvedType,status)
 View(queryClusterStatusSummary)
 
 jon = queryClusterStatus %>% filter(sampleId == 'CPCT02010255T')
-
 
 subjectClusterMap = subject %>% 
   filter(scope == 'Shared') %>% 
