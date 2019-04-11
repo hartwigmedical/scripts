@@ -60,7 +60,7 @@ function main() {
     metaFile="${output}/metadata"
     if [[ $( cat $metaFile | jq '.ref_sample' ) = "null" ]]; then
         echo "EXIT REF sample is \"null\" in $metaFile"
-    elif [[ ${config} != "SingleSample" || ${config} != "SingleSampleNoRealign" && $( cat $metaFile | jq '.tumor_sample' ) = "null" ]]; then
+    elif [[ ${config} != "SingleSample" && ${config} != "SingleSampleNoRealign" && $( cat $metaFile | jq '.tumor_sample' ) = "null" ]]; then
         echo "EXIT TUM sample is \"null\" in $metaFile while config is not SingleSample"
     else
         echo "INFO Output dir with metadata is ready. Execute the pipeline with:";
