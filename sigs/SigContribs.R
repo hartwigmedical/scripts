@@ -158,9 +158,18 @@ apply_signatures<-function(matrixData, signatures)
   return(lsq_contribution)
 }
 
-get_sig_data<-function(signatures, contribution, sigNames, sampleNames) {
+get_sig_summary<-function(signatures, contribution, matrixData, sigNames, bucketNames) 
+{
+  sampleSigData = get_sig_data(signatures, contribution, sigNames)
+  sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
+  return (sampleSigData)
+}
 
-  # get contributions by sample in percentage terms (ie each sample split across the signatures)
+get_sig_data<-function(signatures, contribution, sigNames) 
+{
+  sampleNames = colnames(contribution)
+
+    # get contributions by sample in percentage terms (ie each sample split across the signatures)
   contributionPercents = apply(contribution, 2, function(x) x/sum(x))
   transposedPerc = t(contributionPercents) %>% as.data.frame()
   colnames(transposedPerc) <- sigNames
@@ -283,10 +292,10 @@ calc_contrib_sample_residuals<-function(contributions, signatures, matrixData, b
 }
 
 
-get_sig_stats<-function(sampleSigData) {
-
+get_sig_stats<-function(sampleSigData) 
+{
   # key stats per signature
-  sigStats = (sampleSigData %>% group_by(SigName)
+  sigStats = (sampleSigData %>% group_by(SigName,Signature)
               %>% summarise(SampleCount=sum(Count>0),
                             SamplePerc=round(sum(Count>0)/n_distinct(SampleId),2),
                             Count=round(sum(Count),0),
@@ -298,7 +307,7 @@ get_sig_stats<-function(sampleSigData) {
                             Perc10_25=sum(SigPercent>0.1&SigPercent<=0.25),
                             Perc5_10=sum(SigPercent>0.05&SigPercent<=0.1),
                             PercLT5=sum(SigPercent>0.001&SigPercent<=0.05))
-              %>% arrange(SigName))
+              %>% arrange(Signature))
 
   return (sigStats)
 }
@@ -352,15 +361,15 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     }
   }
 
-  cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId','SigName','Count','SampleCount')
+  cancerSampleSigData = cancerSigData %>% arrange(-SampleCount, SampleId) %>% select('SampleId','SigName','Signature','Count','SampleCount')
 
   sigCancerPlots = list()
   plotIndex = 1
 
   cancerSigStats = get_sig_stats(cancerSigData)
 
-  if(nrow(cancerSigStats) > 0) {
-
+  if(nrow(cancerSigStats) > 0) 
+  {
     if(cancerType == "")
     {
       title = "Signature Counts All Cancer Types"
@@ -369,8 +378,8 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
     {
       title = paste("Signature Counts for ", cancerType, sep="")
     }
-
-    sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = SigName, y = Count, group = 1), fill = SigName)
+    
+    sigStatsPlot = (ggplot(data = cancerSigStats, aes(x = reorder(SigName,Signature), y = Count, group = 1), fill = SigName)
                     + geom_bar(stat = "identity", colour = "black", size = 0.2)
                     + theme(axis.text.x = element_text(angle = 90, hjust = 1))
                     + ylab(paste(varType, " Count", sep='')) + xlab("Signature") + ggtitle(title)
@@ -463,7 +472,7 @@ plot_sig_samples<-function(sampleSigData, cancerType, sigColours, varType = "SV"
       }
 
       plotDataSet = cancerSampleSigData %>% filter(SampleId %in% plotSampleSet$SampleId)
-      sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y = Count, fill = SigName))
+      sampleSigPlot <- (ggplot(plotDataSet, aes(x = reorder(SampleId, -SampleCount), y = Count, fill = reorder(SigName,Signature)))
                         + geom_bar(stat = "identity", colour = "black")
                         + labs(x = "", y = paste(varType, " Count by Sample", sep=''))
                         + scale_fill_manual(values = sigColours)

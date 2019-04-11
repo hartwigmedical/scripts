@@ -128,6 +128,28 @@ evaluate_nmf_data("SNV", "pcawg_data_own_contribs", snvPcawgDataSigs, snvPcawgOw
 
 
 
+# PCAWG Residuals own data and own fit
+
+pcawgSampleSigData = get_sig_summary(snvDpPcawgSigs, snvPcawgOwnContribs, pcawgMatrixData, snvPcawgSigsNamesStr, snvBuckets)
+View(pcawgSampleSigData)
+# pcawgSampleTotals = pcawgSampleSigData %>% group_by(SampleId) %>% 
+
+pcawgSampleSigData$CancerType = "Unknown"
+
+pcawgResSummary = (pcawgSampleSigData %>% group_by(SampleId,CancerType) 
+                   %>% summarise(SampleTotal=sum(Count), 
+                                 ResidualTotal=round(sum(ifelse(SigName=='Excess',-Count,ifelse(SigName=='Unalloc',Count,0))),0))
+                   %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4)))
+
+View(pcawgResSummary)
+
+pcawgResPlot = (ggplot(pcawgResSummary %>% filter(SampleTotal>=1000), aes(CancerType, ResidualPerc))
+                + theme(axis.text.x = element_text(angle = 90, hjust=1,size=7))
+                + geom_boxplot(varwidth=T, fill="plum") +labs(title="Residuals % by Cancer Type", x="Cancer Type", y="Residuals %"))
+
+print(pcawgResPlot)
+
+
 
 
 

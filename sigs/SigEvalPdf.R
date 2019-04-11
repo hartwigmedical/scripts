@@ -178,8 +178,9 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   sigNamesUnamed = get_signame_list(sigCount, F)
   colnames(signatures) = sigNamesUnamed
 
-  sigNamesCombined = cbind(sigNamesUnamed, sigNamesNamed)
+  sigNamesCombined = as.data.frame(cbind(sigNamesUnamed, sigNamesNamed))
   colnames(sigNamesCombined) <- c("Signature", "SigName")
+  print(sigNamesCombined)
 
   print("evaluating buckets")
 
@@ -208,8 +209,8 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   if(viewResults)
   {
     # View(sigBucketData)
-    View(sigBucketStats)
-    View(sigBucketTopN)
+    #View(sigBucketStats)
+    #View(sigBucketTopN)
   }
 
   # Top Bucket Counts per Sample - for now get all buckets
@@ -219,11 +220,13 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   # 2 Signature Evaluation
   print("evaluating signatures")
 
+  # print(sigNamesCombined)
+  sigNamesCombined = sigNamesCombined %>% add_row(Signature = '19', SigName = "Unalloc")
+  sigNamesCombined = sigNamesCombined %>% add_row(Signature = '20', SigName = "Excess")
+  sigNamesCombined$Signature = as.numeric(as.character(sigNamesCombined$Signature))
+
   if(nrow(sigAllocs) > 0)
   {
-    sigNamesCombined = rbind(sigNamesCombined, c(sigCount+1,"Unalloc"))
-    sigNamesCombined = rbind(sigNamesCombined, c(sigCount+2,"Excess"))
-
     # ensure an entry in every sig or every sample
     sampleSigFullSet = merge(sampleNames, sigNamesCombined)
     colnames(sampleSigFullSet) = c("SampleId", "Signature", "SigName")
@@ -235,7 +238,7 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   }
   else
   {
-    sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed, sampleNames)
+    sampleSigData = get_sig_data(signatures, contribution, sigNamesNamed)
 
     # calculate and factor in residuals
     sampleSigData = append_residuals(contribution, signatures, matrixData, bucketNames, sampleSigData)
@@ -245,8 +248,11 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   sampleSigData = merge(sampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=T)
   sampleSigData$CancerType = ifelse(is.na(sampleSigData$CancerType), 'N/A', paste(sampleSigData$CancerType, sep=""))
   sampleSigData = merge(sampleSigData, origSampleCounts, by.x="SampleId",by.y="SampleId",all.x=T)
-  sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
 
+  sampleSigData = merge(sampleSigData,sigNamesCombined, by="SigName",all.x=T)
+
+  sampleSigDataNoResiduals = sampleSigData %>% filter(SigName!="Unalloc"&SigName!="Excess")
+  
   # key stats per signature
   sigStats = get_sig_stats(sampleSigDataNoResiduals)
 
@@ -314,6 +320,8 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   # add in additional colours for Excess and Residual counts
   sigColours[sigCount+1] = "black"
   sigColours[sigCount+2] = "grey30"
+  
+  print(sigColours)
 
   if(bgSigCount > 0)
     cancerSigColours = strip_multi_bg_colours(sigColours, bgSigCount)
