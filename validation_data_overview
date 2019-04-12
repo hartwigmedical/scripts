@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+
+SCRIPT=$( basename $0 )
+ROOT_DIR=/data/data_archive/validation_data
+LOG_DIR="${HOME}/logs"
+
+print_rsync="false"
+rsync_server="DESTSERVER"
+
+function main(){
+  for typePath in $( find ${ROOT_DIR} -mindepth 1 -maxdepth 1 -type d | sort | grep -v pipeline ); do 
+    typeName=$( basename $typePath )
+    printTitle $typeName
+    echo "$typePath"
+
+    for versionPath in $( find ${typePath} -mindepth 1 -maxdepth 1 -type d | sort ); do
+      versionName=$( basename $versionPath )
+      echo "  $versionPath"
+
+      for dataPath in $( find ${versionPath} -mindepth 1 -maxdepth 1 -type d | sort ); do
+        dataName=$( basename $dataPath )
+        if [[ ($dataName == "fastq" || $dataName == "bam") ]]; then
+          if [[ $print_rsync == "true" && ($( ls $dataPath | wc -l ) > 0) ]]; then
+            echo "    nohup rsync -ahPL --dry-run --stats ${dataPath}/ ${rsync_server}:/data2/pipelineinput/${versionName}_${dataName}/ > ${LOG_DIR}/rsync_to_${rsync_server}.log &"
+          fi
+        fi
+      done
+    done
+  done
+  echo ""
+}
+
+print_usage(){
+  echo ""
+  echo "Usage: $SCRIPT [-rsync] [-s <server>]"
+  echo "  -r        print rsync commands to screen"
+  echo "  -s <str>  servername in rsync command (eg c1 or crunch001)"
+  echo ""
+  exit 1
+}
+
+function printTitle(){
+  local titleString=$1 && shift
+  echo -e "\n# $titleString"
+}
+
+while getopts ':s:r' flag; do
+  case "${flag}" in
+    s) rsync_server=$OPTARG ;;
+    r) print_rsync="true" ;;
+    *) print_usage
+       exit 1 ;;
+  esac
+done
+
+main
