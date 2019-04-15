@@ -7,6 +7,7 @@ use File::Basename;
 use Getopt::Long;
 use File::Slurp;
 use JSON::XS;
+use Text::CSV;
 use File::Copy;
 use Date::Parse;
 use DateTime;
@@ -140,14 +141,17 @@ say "[INFO] DONE with \"$SCRIPT\"";
 ## ----------
 sub parseTsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
+    my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
+    
     my %store = %$objects;
     say "[INFO]   Parsing input file $file";
-    
+        
     ## Check header for completeness
     open IN, "<", $file or die "Unable to open file ($file): $!\n";
     
     my $header_line = <IN>; chomp($header_line);
-    my @header_fields = split( $sep, $header_line );
+    die "[EXIT] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
+    my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
     
     ## checking header
@@ -162,7 +166,9 @@ sub parseTsv{
     
     while ( <IN> ){
         chomp;
-        my @values = split( $sep, $_ );
+        die "[EXIT] Cannot parse line ($_)\n" unless $csv->parse($_);
+        my @values = $csv->fields();
+        
         my %raw_object = ();
         foreach my $field ( @header_fields ){
             my $next_value = shift @values;
@@ -417,7 +423,7 @@ sub processCpct{
 
     }
     
-    ## add R sample_id for each CPCT/DRUP biopsy
+    ## add R sample_id for each biopsy
     foreach my $sample_id ( keys %store ){
         my $sample = $store{ $sample_id };
         next unless $sample->{ analysis_type } eq 'Somatic_T';
@@ -425,12 +431,14 @@ sub processCpct{
         
         my $patient = $sample->{ 'patient' };
         my $ref_sample_name = $patient . 'R';
-        my $ref_sample_id = '';
+        my $ref_sample_id = $sample->{ 'ref_sample_id' };
         
-        if ( exists $name2id{ $ref_sample_name } ){
-            $ref_sample_id = $name2id{ $ref_sample_name };
+        if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+            if ( exists $name2id{ $ref_sample_name } ){
+                $ref_sample_id = $name2id{ $ref_sample_name };
+                $sample->{ 'ref_sample_id' } = $ref_sample_id;
+            }
         }
-        $sample->{ 'ref_sample_id' } = $ref_sample_id;
     }
     
     return \%store;
@@ -467,7 +475,7 @@ sub processSamp{
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $analysis_type eq 'SomaticsBFX' ){
-            my $partner = $row_info->{ 'partner_sample' };
+            my $partner = $row_info->{ 'ref_sample_id' };
             if ( $partner ne '' and $partner ne NACHAR ){
                 $row_info->{ 'analysis_type' } = 'Somatic_T';
             }
@@ -685,7 +693,7 @@ sub getFieldNameTranslations{
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'partner_sample',
+      "Partner_sample"    => 'ref_sample_id',
       "HMF_reg"           => 'submission',
       "SNP_required"      => 'is_snp_required',
       "SNP_exp"           => 'snp_experiment_id',
@@ -705,7 +713,7 @@ sub getFieldNameTranslations{
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'partner_sample',
+      "Partner_sample"    => 'ref_sample_id',
       "HMF_reg"           => 'submission',
       "SNP_required"      => 'is_snp_required',
       "SNP_exp"           => 'snp_experiment_id',
@@ -755,6 +763,8 @@ sub getFieldNameTranslations{
       'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
       'Remarks'            => 'lab_remarks',
+      'Other_Ref'          => 'other_ref',
+      'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
       'Germline_findings'  => 'germline_findings',
       'Requester_email'    => 'requester_email',
