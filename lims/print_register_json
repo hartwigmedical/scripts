@@ -92,10 +92,11 @@ my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
 my @msg = ();
+my $existingJsons = listExistingJsons($JSON_BASE_DIR, $JSON_DONE_DIR);
 
 foreach my $sample_id ( @ids ){
     say "[INFO] Processing $sample_id";
-    my $return = processSample( $sample_id, $samples, \%stats, \@msg );
+    my $return = processSample( $sample_id, $samples, \%stats );
     $stats{ $return }++;
 }
 
@@ -104,14 +105,6 @@ say "[STAT] -----";
 foreach my $reason ( keys %stats ){
     my $count = $stats{ $reason };
     say "[STAT]   $reason = $count";
-}
-
-if ( scalar @msg ){
-    say "[INFO] -----";
-    say "[INFO] Notes:";
-    foreach my $msg ( @msg ){
-        say "[INFO]   $msg";
-    }
 }
 
 ## -----
@@ -171,7 +164,8 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims, $stats, $toprint) = @_;
+    my ($sample_id, $lims, $stats) = @_;
+    my @warn_msg = ();
     if ( not exists $lims->{ $sample_id } ){
         warn "[WARN]   RESULT: Sample not present in LIMS ($sample_id)\n";
         return "NoJsonMade_sampleDoesNotExistsInLims";
@@ -253,10 +247,10 @@ sub processSample{
         chomp($ref_exists);
         
         if ( $tum_exists ){
-            warn "[WARN]   TUM already registered at SBP ($barcode)!!\n";
+            push( @warn_msg, "TUM already registered at SBP ($barcode)!!");
         }
         if ( $ref_exists ){
-            warn "[WARN]   REF already registered at SBP ($barcode_ref)!!\n";
+            push( @warn_msg, "REF already registered at SBP ($barcode_ref)!!" );
         }
         
         say "[INFO]   SET: $set";
@@ -301,10 +295,31 @@ sub processSample{
         }
     }
     
+    ## print any stored warnings now
+    if ( scalar @warn_msg ){
+        foreach my $msg ( @warn_msg ){
+            warn "[WARN]   $msg";
+        }
+    }
+    
     ## all checks were OK: print config file
     printSetJson( \%json_data, $json_path );
     say "[INFO]   RESULT for $sample_id: OK";
     return "OK_JSON_MADE";
+}
+
+sub doesJsonAlreadyExist{
+    my ($json_list, $search_string) = @_;
+    
+}
+
+sub listExistingJsons{
+    my @source_dirs = @_;
+    my @jsons = ();
+    foreach my $dir ( @source_dirs ){
+        push( @jsons, glob( "$dir/*json" ) );
+    }
+    return \@jsons;
 }
 
 sub printSetJson{
