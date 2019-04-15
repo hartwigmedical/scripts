@@ -8,6 +8,8 @@ use Getopt::Long;
 use File::Slurp;
 use JSON::XS;
 use File::Copy;
+use Date::Parse;
+use DateTime;
 use 5.01000;
 
 use constant EMPTY => q{ };
@@ -27,7 +29,7 @@ my $LIMS_DIR = $opt{ lims_dir } || '/data/lims';
 my $JSON_OUT = $opt{ out_file } || $LIMS_DIR . '/lims.json';
 my $SUBM_OUT = $LIMS_DIR . '/submissions.json';
 my $BACK_DIR = $LIMS_DIR . '/backup';
-my $CPCT_TSV = $LIMS_DIR . '/latest/lims_cpct';
+my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
 my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
 my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
@@ -40,7 +42,7 @@ my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';
 my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
 
 my @ALL_INPUT_FILES = ( 
-  $CNTR_TSV, $CPCT_TSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
+  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
   $SAMP_TSV_2018, $PROC_TSV_2018, $PROC_TSV_2017, $LIMS_JSN_2017
 );
 
@@ -58,7 +60,7 @@ my $HELP_TEXT = <<"HELP";
     
   Input files that are used
        centers: $CNTR_TSV
-     cpct lims: $CPCT_TSV
+     cpct lims: $CPCT_CSV
      subm lims: $SUBM_TSV
      samp lims: $SAMP_TSV
      proc lims: $PROC_TSV
@@ -117,7 +119,7 @@ $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $
 $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_TSV, "\t" );
+$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
 $lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
@@ -536,7 +538,7 @@ sub fixIntegerFields{
 sub fixDateFields{
     my ($sample_hashref) = @_;
     
-    my @date_fields = qw( arrival_date sampling_date );
+    my @date_fields = qw( arrival_date sampling_date report_date );
     
     foreach my $date_field ( @date_fields ){
         
@@ -548,8 +550,18 @@ sub fixDateFields{
         ## date is not always filled in so skip NA fields
         next if isSkipValue( $old_date );
         
-        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)        
-        if ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
+        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
+        if ( $old_date =~ /^(Mo|Tu|We|Th|Fr|Sa|Su)/ ){
+            ## case "Tue Jul 24 00:00:00 CEST 2018"
+            my $epoch = str2time($old_date);
+            my $datetime = DateTime->from_epoch(epoch => $epoch);
+            if ( $datetime ){
+                $new_date = $datetime->ymd;
+            }else{
+                warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
+            }
+        }
+        elsif ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
             ## format unclear so need for checks
             warn "[WARN] Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check\n" if ($1 < 8) or ($1 > 20);
             warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
@@ -732,9 +744,9 @@ sub getFieldNameTranslations{
       'Qiasymphony_exp'    => 'qiasymphony_exp',
       'DNA_prep'           => 'dna_prep',
       'RNA_prep'           => 'rna_prep',
-      'Mol_T_perc'         => 'mol_tum_perc',
-      'Mol_T_perc_2'       => 'mol_tum_perc_2',
-      'Mol_T_perc_3'       => 'mol_tum_perc_3',
+      'Purity_shallow_1'   => 'purity_shallow',
+      'Purity_shallow_2'   => 'purity_shallow_2',
+      'Purity_shallow_3'   => 'purity_shallow_3',
       'Sample_ID_Plasma'   => 'plasma_sample_id',
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
@@ -748,7 +760,9 @@ sub getFieldNameTranslations{
       'Requester_email'    => 'requester_email',
       'Requester_name'     => 'requester_name',
       'Submission_number'  => 'submission',
-      'ShallowSeq'         => 'shallowseq'
+      'ShallowSeq'         => 'shallowseq',
+      'Purity'             => 'purity',
+      'Report_date'        => 'report_date',
     );
     
     my %translations = (
