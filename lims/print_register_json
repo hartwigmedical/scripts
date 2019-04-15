@@ -298,7 +298,7 @@ sub processSample{
     ## print any stored warnings now
     if ( scalar @warn_msg ){
         foreach my $msg ( @warn_msg ){
-            warn "[WARN]   $msg";
+            warn "[WARN]   $msg\n";
         }
     }
     
