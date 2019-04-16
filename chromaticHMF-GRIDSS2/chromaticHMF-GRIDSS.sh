@@ -46,20 +46,29 @@ while true; do
             sample="$2"
             shift 2
             ;;
-        --)
+        --snvindel_vcf)
+		snvindel_vcf="$2"
             shift
-            break
             ;;
 		--threads)
 			threads=$(printf -v int '%d\n' "$2" 2>/dev/null)
 			shift 2
 			;;
+		--)
+            shift
+            break
+            ;;
         *)
             echo "Programming error"
             exit 3
             ;;
     esac
 done
+if [[ ! -f "$snvindel_vcf" ]] ; then
+	echo "Missing SNV VCF. A SNV VCF with the AD genotype field populated is required."
+	echo "Use the script for generating this VCF with strelka if you have not already generated a compatible VCF."
+	exit 1
+fi
 if [[ ! -f "$tumour_bam" ]] ; then
 	echo "Missing tumour BAM"
 	exit 1
@@ -76,7 +85,7 @@ fi
 if [[ -z "$sample" ]] ; then
 	sample_name=$(basename $tumour_bam .bam)
 fi
-if [[ $threads -lt 1 ]] ; then
+if [[ "$threads" -lt 1 ]] ; then
 	echo "Illegal thread count: $threads"
 	exit 1
 fi
@@ -114,10 +123,20 @@ export PATH=${base_path}/tools/sambamba-0.6.9-linux-static:$PATH
 export PATH=${base_path}/tools/samtools-1.9:$PATH
 export PATH=${base_path}/tools/strelka-2.9.10.centos6_x86_64/bin:$PATH
 
-echo TODO: sambamba PATH 
-echo TODO: samtools PATH
-echo TODO: Rscript PATH
-echo TODO: strelka
+for program in bwa sambamba samtools circos Rscript java ; do
+	if ! which $program > /dev/null ; then
+		echo "Missing required dependency $program. $program must be on PATH"
+		exit 1
+	fi
+done
+
+for rpackage in tidyverse devtools assertthat testthat NMF stringdist stringr argparser R.cache "copynumber" "VariantAnnotation" "rtracklayer" "BSgenome" "org.Hs.eg.db" "TxDb.Hsapiens.UCSC.hg19.knownGene" "BSgenome.Hsapiens.UCSC.hg19" ; do
+	if ! Rscript -e "installed.packages()" | grep $rpackage > /dev/null ; then
+		echo "Missing R package $rpackage"
+		echo "All required R packages can be installed by running Rscript install_rpackages.R with appropriate permissions."
+		#exit 1
+	fi
+done
 
 mkdir -p $run_dir/logs
 log_prefix=$run_dir/logs/$(+%Y%m%d_%H%M%S).$HOSTNAME.$$
@@ -132,18 +151,6 @@ gridss_somatic_full_vcf=$gridss_dir/${tumor_sample}.gridss.full.somatic.vcf
 gridss_somatic_vcf=$gridss_dir/${tumor_sample}.gridss.somatic.vcf
 if [[ ! -f $gridss_somatic_vcf ]] ; then
 	mkdir -p $gridss_dir
-	if ! which Rscript >/dev/null 2>&1 ; then
-		echo "Missing R installation. Please add Rscript to PATH"
-		exit 1
-	fi
-	if ! which java >/dev/null 2>&1 ; then
-		echo "Missing java. Please add java 1.8 or later to PATH"
-		exit 1
-	fi
-	if ! which bwa >/dev/null 2>&1 ; then
-		echo "Missing bwa. Please add to PATH"
-		exit 1
-	fi
 	gridss_jvm_args="
 		-ea
 		-Dreference_fasta=$ref_genome
@@ -260,27 +267,6 @@ if [[ $cleanup == "y" ]] ; then
 	rm -f "[% dirs.cobalt %]"/*.ratio
 	rm -f "[% dirs.cobalt %]"/*.ratio.gc
 	rm -f "[% dirs.cobalt %]"/*.count
-fi
-
-echo ############################################
-echo # Running Strelka
-echo ############################################
-mkdir -p $run_dir/strelka
-somatic_vcf=$run_dir/strelka/somatic.snvs.vcf.gz
-
-configureStrelkaWorkflow.pl \
-    --tumor $tumor_bam \
-    --normal $normal_bam \
-    --ref $ref_genome \
-    --config $strelka_config \
-    --output-dir $run_dir/strelka
-
-cd $run_dir/strelka
-make -j $threads
-cd -
-
-if [[ $cleanup == "y" ]] ; then
-	rm -r $run_dir/strelka/chromosomes
 fi
 
 echo ############################################

@@ -64,6 +64,13 @@ candidate_to_df = function(file, insert_site_max_gap=35, template_insert_max_len
       "rtins1"="", "rtins2"="", "rtti1"="", "rtti2"=""))
   return(df)
 }
+candidate_to_gr = function(file, insert_site_max_gap=35, template_insert_max_length=10000) {
+  vcf = readVcf(file)
+  gr = breakpointRanges(vcf, nominalPosition=TRUE)
+  gr$sampleId=str_match(file, "([^/\\\\]*).gridss.vcf.gz.ti.vcf")[,2]
+  return(gr)
+}
+
 
 # from http://github.com/PapenfussLab/sv_benchmark
 import.repeatmasker.fa.out <- function(repeatmasker.fa.out) {
@@ -87,6 +94,28 @@ if (file.exists(cache_filename)) {
 seqlevelsStyle(grrm) = "NCBI"
 
 fulldf = bind_rows(lapply(list.files(path="../analysisscripts/germlineTIs/candidates/", pattern="*.gridss.vcf.gz.ti.vcf", full.names=TRUE), candidate_to_df))
+fullgr = lapply(list.files(path="../analysisscripts/germlineTIs/candidates/", pattern="*.gridss.vcf.gz.ti.vcf", full.names=TRUE), candidate_to_gr)
+fullgr = unlist(GRangesList(fullgr))
+names(fullgr) = paste0(fullgr$sampleId, names(fullgr))
+fullgr$partner = paste0(fullgr$sampleId, fullgr$partner)
+
+# can't use findBreakpointOverlaps() because there's too many pairwise hits
+pfullgr = partner(fullgr)
+merged = as.data.frame(fullgr) %>%
+  dplyr::mutate(
+    seqnames2=as.character(seqnames(pfullgr)),
+    start2=start(pfullgr),
+    strand2=as.character(strand(pfullgr))) %>%
+  group_by(seqnames, seqnames2, start, start2, strand, strand2) %>%
+  summarise(
+    vcfIds=paste(vcfId, collapse=";"),
+    sampleIds=paste(sampleId, collapse=";"),
+    uids=paste(paste0(fullgr$sampleId, fullgr$vcfId), collapse=";"),
+    n=n(),
+    id=paste0("merged:", seq_along(.)))
+merged %>% separate_rows(uid, ";") %>%
+  inner_join(fulldf, by=c("uid"=
+
 
 fulldf = fulldf %>%
   mutate(
