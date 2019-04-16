@@ -98,6 +98,8 @@ fullgr = lapply(list.files(path="../analysisscripts/germlineTIs/candidates/", pa
 fullgr = unlist(GRangesList(fullgr))
 names(fullgr) = paste0(fullgr$sampleId, names(fullgr))
 fullgr$partner = paste0(fullgr$sampleId, fullgr$partner)
+fulldf$uid1 = paste0(fulldf$sampleId, fulldf$vcfid1)
+fulldf$uid2 = paste0(fulldf$sampleId, fulldf$vcfid2)
 
 # can't use findBreakpointOverlaps() because there's too many pairwise hits
 pfullgr = partner(fullgr)
@@ -107,15 +109,21 @@ merged = as.data.frame(fullgr) %>%
     start2=start(pfullgr),
     strand2=as.character(strand(pfullgr))) %>%
   group_by(seqnames, seqnames2, start, start2, strand, strand2) %>%
+  mutate(uid=paste0(sampleId, vcfId)) %>%
   summarise(
     vcfIds=paste(vcfId, collapse=";"),
     sampleIds=paste(sampleId, collapse=";"),
-    uids=paste(paste0(fullgr$sampleId, fullgr$vcfId), collapse=";"),
-    n=n(),
-    id=paste0("merged:", seq_along(.)))
-merged %>% separate_rows(uid, ";") %>%
-  inner_join(fulldf, by=c("uid"=
+    uids=paste(uid, collapse=";"),
+    n=n()) %>%
+  ungroup() %>%
+  mutate(id=paste0("merged", row_number()))
+mlookup = dplyr::select(merged, id, uids) %>%
+  separate_rows(uids, sep=";")
+fulldf = fulldf %>%
+  left_join(mlookup, by=c("uid1"="uids")) %>%
+  left_join(mlookup, by=c("uid2"="uids"), suffix=c("1", "2"))
 
+# TODO
 
 fulldf = fulldf %>%
   mutate(
