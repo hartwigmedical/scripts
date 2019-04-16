@@ -305,6 +305,19 @@ sub processCpct{
         my $sample_id    = $row_info->{ 'sample_id' };
         my $patient_name = $row_info->{ 'patient' };
         
+        ## rename boolean field back to 1/0 to please downstream tools
+        my $boolean_field = 'shallowseq';
+        if ( defined $row_info->{ $boolean_field } ){
+            my $val = $row_info->{ $boolean_field };
+            if ( $val =~ m/^true$/i ){
+                $row_info->{ $boolean_field } = 1;
+            }elsif ( $val =~ m/^false$/i ){
+                $row_info->{ $boolean_field } = 0;
+            }else{
+                warn "[WARN] Unexpected value ($val) in boolean field ($boolean_field) for sample ($sample_id, $sample_name)\n"
+            }
+        }
+        
         ## skip NA or empty values
         checkDefined( 'sample_name', $row_info );
         next if not $sample_name or isSkipValue( $sample_name );
