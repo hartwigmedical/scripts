@@ -42,7 +42,7 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -report_dir ${report_dir} \
     -lims ${lims_dir} \
     -center_csv ${hospital_csv} \
-    -center_csv_manual ${hospital_manual_csv} \
+    -center_manual_csv ${hospital_manual_csv} \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -rva_logo ${rva_logo} \
