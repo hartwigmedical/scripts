@@ -786,6 +786,8 @@ sub getFieldNameTranslations{
       'ShallowSeq'         => 'shallowseq',
       'Purity'             => 'purity',
       'Report_date'        => 'report_date',
+      'Date_of_birth'      => 'date_of_birth',
+      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id'
     );
     
     my %translations = (
