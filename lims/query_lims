@@ -269,7 +269,7 @@ sub getCpctDrupDateTable{
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} =~ /^(Somatic_T|Somatic_R)$/;
         next unless defined $sample->{'submission'};
-        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP|HMFregWIDE)$/;
         
         push @out_samples, $sample;
     }
