@@ -5,7 +5,6 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
-theme_set(theme_grey())
 theme_set(theme_bw())
 
 #################### SETUP #################### 
@@ -206,11 +205,11 @@ display_cancer_types <- function(cancerTypes) {
 p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   geom_bar(aes(fill = cancerType), stat = "identity") +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
-  geom_text(aes(label=paste0("(", percentage, "%)")), vjust=-0.5, size = 2) +
+  geom_text(aes(label=paste0("(", percentage, "%)")), vjust=-0.5, size = 4) +
   #geom_text(aes(label=n), vjust=-2, size = 3) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 9.2)) +  
   ylab("Samples") + 
-  coord_cartesian(ylim = c(0, 600)) + facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types))
+  coord_cartesian(ylim = c(0, 699)) + facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types))
 
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
@@ -254,14 +253,16 @@ p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=singleSubstitutionColours) +
   theme(
-    axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
-    axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+    axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+    axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     #strip.background = element_blank(), 
     strip.text.x = element_text(size = 9.2), 
     legend.position="bottom", legend.title = element_blank()) + 
   facet_grid(~cancerType, scales = "free_x", labeller = labeller(cancerType = display_cancer_types)) + 
   guides(fill = guide_legend(nrow = 1)) +
+  xlab("") +
+  ylab("") +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
 
 p6 = ggplot(data=hpcMNP, aes(x = sampleId, y = sampleRelativeN)) +
@@ -303,9 +304,15 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   guides(fill = guide_legend(nrow = 1)) +
   scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
 
-pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
-pFigure1
-save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1, base_width = 14, base_height = 20)
+#pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
+#save_plot("~/hmf/RPlot/Figure 1 - Overview TOTAL.png", pFigure1, base_width = 14, base_height = 20)
+
+pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(1, 1, 3, 3), labels = c("A", "B", "C", "D"))
+save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, base_width = 14, base_height = 10)
+
+pFigure1b = plot_grid(p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(2, 2, 2, 2), labels = c("A", "B", "C", "D"))
+save_plot("~/hmf/RPlot/Extended Data Figure 3 - Signatures.png", pFigure1b, base_width = 14, base_height = 10)
+
 
 
 ####################################
