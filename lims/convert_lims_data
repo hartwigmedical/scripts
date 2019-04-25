@@ -9,8 +9,6 @@ use File::Slurp;
 use JSON::XS;
 use Text::CSV;
 use File::Copy;
-use Date::Parse;
-use DateTime;
 use 5.01000;
 
 use constant EMPTY => q{ };
@@ -572,15 +570,13 @@ sub fixDateFields{
         next if isSkipValue( $old_date );
         
         ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
-        if ( $old_date =~ /^(Mo|Tu|We|Th|Fr|Sa|Su)/ ){
-            ## case "Tue Jul 24 00:00:00 CEST 2018"
-            my $epoch = str2time($old_date);
-            my $datetime = DateTime->from_epoch(epoch => $epoch);
-            if ( $datetime ){
-                $new_date = $datetime->ymd;
-            }else{
-                warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
-            }
+        if( $old_date =~ /^\w+ (\w{3}) (\d{2}) \d+:\d+:\d+ \w+ (\d{4})$/ ){ 
+            ## eg Tue Apr 23 00:00:00 CEST 2019
+            my $month_name = $1;
+            my $day = $2;
+            my $year = $3;
+            my $month = getMonthIndexByName( $month_name );
+            $new_date = join( "-", $year, $month, $day );
         }
         elsif ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
             ## format unclear so need for checks
@@ -603,6 +599,22 @@ sub fixDateFields{
         
         ## store new format using reference to original location
         $sample_hashref->{ $date_field } = $new_date;
+    }
+}
+
+sub getMonthIndexByName{
+    my ($month_name) = @_;
+    my %mapping = ( 
+        "Jan" => "01", "Feb" => "02", "Mar" => "03", "Apr" => "04",
+        "May" => "05", "Jun" => "06", "Jul" => "07", "Aug" => "08",
+        "Sep" => "09", "Oct" => "10", "Nov" => "11", "Dec" => "12"
+    );
+    if ( exists $mapping{ $month_name } ){
+        return $mapping{ $month_name };
+    }
+    else{
+        warn "[WARN] Unknown Month name ($month_name): kept as-is but please fix\n";
+        return $month_name;
     }
 }
 
@@ -786,6 +798,8 @@ sub getFieldNameTranslations{
       'ShallowSeq'         => 'shallowseq',
       'Purity'             => 'purity',
       'Report_date'        => 'report_date',
+      'Date_of_birth'      => 'date_of_birth',
+      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id'
     );
     
     my %translations = (
