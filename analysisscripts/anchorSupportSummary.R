@@ -86,6 +86,7 @@ anchor_df = data.frame(sampleId=unique(gr$sampleid)) %>%
     hitdf
   })
 
+adj_df = anchor_df %>% full_join(asm_links, by=c("sampleId"="sampleid", "beid1", "beid2"))
 
 
 
