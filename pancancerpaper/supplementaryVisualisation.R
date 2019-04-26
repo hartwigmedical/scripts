@@ -45,21 +45,23 @@ wgdPlotData = wgdPlotData %>%
 
 wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
 wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
-wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
-wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
+#wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
+#wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
 
 p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
   geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
+  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5) +
+  annotate("text", x = 21, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5) +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
   ggtitle("") + 
   xlab("Cancer Type") + ylab("% Samples")+ 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1.09)) +
+  scale_x_discrete(labels = c(wgdPlotLevels$cancerType, "", ""), limits = c(wgdPlotLevels$cancerType, "", "")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="none") +
+  theme(axis.text = element_text(size=16), axis.title = element_text(size=16)) +
   coord_flip()
 
 wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
@@ -69,11 +71,28 @@ p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#2171b5", 0.8))) +
   ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
-  scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
+  scale_x_continuous(limits = c(0, 7), breaks=c(1:7)) + 
+  theme(legend.position=c(.79,.8)) + 
+  theme(axis.text = element_text(size=16), axis.title = element_text(size=16))
 
-pWGD = plot_grid(p1, p2)
+
+pWGD = plot_grid(p1, p2, ncol = 1)
 pWGD
-save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 14, base_height = 6)
+save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
+
+
+#convert ~/hmf/analysis/copyNumberSummary/CNS.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/Kidney.png   -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png -append ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png
+#convert ~/hmf/analysis/copyNumberSummary/All.png ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png +append ~/hmf/analysis/copyNumberSummary/Figure\ 2ABC.png
+#convert ~/hmf/RPlot/Figure\ 2\ -\ WGD.png -resize x3000  ~/hmf/RPlot/Figure\ 2\ -\ WGD.png
+#convert ~/hmf/analysis/copyNumberSummary/Figure\ 2ABC.png ~/hmf/RPlot/Figure\ 2\ -\ WGD.png +append ~/hmf/RPlot/Figure\ 2NoText.png
+
+#convert -pointsize 80 -fill black -draw 'text 100,150 "A. Pan-Cancer"' ~/hmf/RPlot/Figure\ 2NoText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 2900,150 "B. CNS"' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 2900,1650 "C. Kidney"' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 4400,150 "D. "' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 4400,1650 "E. "' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2.png
 
 ########################################### Figure 4 - Driver Per Sample
 load("~/hmf/RData/Processed/germlineCatalog.RData")
