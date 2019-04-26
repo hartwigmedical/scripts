@@ -142,8 +142,8 @@ germlineMat = (data.matrix(germlineHeatmapData))
 germlineHeatmap = Heatmap(
   column_title = "  ",
   germlineMat, 
-  row_names_gp = gpar(fontsize = 9),
-  column_names_gp = gpar(fontsize = 9),
+  row_names_gp = gpar(fontsize = 14),
+  column_names_gp = gpar(fontsize = 14),
   row_order = sortedGermlineGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
@@ -153,7 +153,7 @@ germlineHeatmap = Heatmap(
     if (germlineMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(heat_map_text(germlineMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
+    grid.text(heat_map_text(germlineMat[i, j]), x, y, gp=gpar(fontsize=12, col = myColor))
   }
 )
 
@@ -163,7 +163,7 @@ germlineSamplesAnnotation = rowAnnotation(
   `% Samples` = row_anno_barplot(axis_gp = gpar(fontsize = 6), baseline = "min", germlineSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.03), gp = gpar(fontsize = 3, fill = "#bc80bd"), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
@@ -171,7 +171,7 @@ germlineDriversAnnotation = rowAnnotation(
   `% Drivers` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineDriversAnnotationData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineDriverColours), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
@@ -180,19 +180,19 @@ germlineWildTypeLostAnnotationColours = setNames(c("#ccebc5","white"), c("lostPe
 germlineWildTypeLostAnnotation = rowAnnotation(
   show_annotation_name = T,
   annotation_name_rot = 0,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   `% Wild Type Lost` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineWildtypeLostData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineWildTypeLostAnnotationColours), border = F), 
   width = unit(2, "cm")
 )
 
 pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation + germlineWildTypeLostAnnotation
-pGermline
+#pGermline
 
 oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
   column_title = "  ",
   oncoMat, 
-  row_names_gp = gpar(fontsize = 9),
+  row_names_gp = gpar(fontsize = 14),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedOncoGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -204,7 +204,7 @@ oncoHeatmap = Heatmap(
     if (oncoMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(heat_map_text(oncoMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
+    grid.text(heat_map_text(oncoMat[i, j]), x, y, gp=gpar(fontsize=12, col = myColor))
   }
 )
 
@@ -212,7 +212,7 @@ oncoSamplesAnnotation = rowAnnotation(
   `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis_gp = gpar(fontsize = 6), axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = "#bc80bd"), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
@@ -220,7 +220,7 @@ oncoDriversAnnotation = rowAnnotation(
   `% Drivers` = row_anno_barplot(oncoDriversAnnotationData, axis_gp = gpar(fontsize = 6), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = oncoDriverColours), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
@@ -232,13 +232,13 @@ oncoDriversAnnotationIndex = rowAnnotation(
 )
 
 pOnco = oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
-pOnco
+#pOnco
 
 tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
   column_title = "  ",
   tsgMat, 
-  row_names_gp = gpar(fontsize = 9),
+  row_names_gp = gpar(fontsize = 14),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedTsgGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -249,7 +249,7 @@ tsgHeatmap = Heatmap(
     if (tsgMat[i, j] > 0.15) {
       myColor = "white"
     }
-    grid.text(heat_map_text(tsgMat[i, j]), x, y, gp=gpar(fontsize=8, col = myColor))
+    grid.text(heat_map_text(tsgMat[i, j]), x, y, gp=gpar(fontsize=12, col = myColor))
   }
 )
 
@@ -257,14 +257,14 @@ tsgSamplesAnnotation = rowAnnotation(
   `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis_gp = gpar(fontsize = 6), axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = "#bc80bd"), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
 tsgBiallelicAnnotationColours = setNames(c("#ccebc5","white"), c("biallelicPercentage", "nonBiallelicPercentage"))
 tsgBiallelicAnnotation = rowAnnotation(
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0,
   `% Biallelic` = row_anno_barplot(tsgBiallelicAnnotationData, axis_gp = gpar(fontsize = 6), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgBiallelicAnnotationColours), border = F), 
   width = unit(2, "cm")
@@ -274,19 +274,19 @@ tsgDriversAnnotation = rowAnnotation(
   `% Drivers` = row_anno_barplot(tsgDriversAnnotationData, axis_gp = gpar(fontsize = 6), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgDriverColours), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 7),
+  annotation_name_gp  = gpar(fontsize = 8),
   annotation_name_rot = 0
 )
 
 pTSG = tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
-pTSG
+#pTSG
 
 p_tsg_grob = grid.grabExpr(draw(pTSG))
 p_onco_grob = grid.grabExpr(draw(pOnco))
 p_germline_gro= grid.grabExpr(draw(pGermline))
 
 p_final = plot_grid(p_tsg_grob, p_onco_grob, p_germline_gro, labels = "AUTO", ncol = 1, rel_heights = c(1, 1, 0.6))
-p_final
+#p_final
 save_plot("~/hmf/RPlot/Figure 3 - Driver Heatmap.png", p_final, base_width = 14, base_height = 19)
 
 
