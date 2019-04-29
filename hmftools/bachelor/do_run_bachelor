@@ -36,11 +36,11 @@ fi
 echo "[INFO] Running Bachelor"
 
 java -Xmx8G -Xms4G -jar ${bachelor_jar} \
+    -run_mode VcfParse \
     -sample ${sample} \
-    -configXml ${bachelor_config} \
+    -xml_config ${bachelor_config} \
     -ext_filter_file ${clinvar_filters} \
-    -runDirectory ${run_dir} \
-    -output_dir ${bach_output_dir} \
+    -sample_data_dir ${run_dir} \
     -log_debug
 
 # Slice BAM files using the bachelor bed file just created
@@ -87,10 +87,11 @@ high_conf_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllG
 purple_sub_dir=purple
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
-    -jar ${bachelor_pp_jar} \
+    -jar ${bachelor_jar} \
+    -run_mode PostProcess \
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -sample_path ${run_dir} \
+    -sample_data_dir ${run_dir} \
     -purple_data_dir ${purple_sub_dir} \
     -high_confidence_bed ${high_conf_bed} \
     -ref_genome ${ref_genome_file} \
