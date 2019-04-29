@@ -120,7 +120,7 @@ conserting_cn = with(conserting_qual_merge, GRanges(
 crest_bp = with(conserting_crest, {
     bp_name = paste0("bp", seq_along(chr1))
     gro = GRanges(seqnames=conserting_chr_to_xy(chr1), ranges=IRanges(start=pos1, width=1), strand=ori1, score=score1, partner=paste0(bp_name, "h"), caller="conserting")
-    grh = GRanges(seqnames=conserting_chr_to_xy(chr2), ranges=IRanges(start=pos2, width=1), strand=ori2, score=score2, partner=paste0(bp_name, "o"), caller="conserting")
+    grh = GRanges(seqnames=conserting_chr_to_xy(chr2), ranges=IRanges(start=pos2, width=1), strand=ifelse(ori2 == "+", "-", "+"), score=score2, partner=paste0(bp_name, "o"), caller="conserting")
     names(gro) = paste0(bp_name, "o")
     names(grh) = paste0(bp_name, "h")
     return(c(gro, grh))
@@ -131,6 +131,11 @@ ascat_cn = with(read_tsv(paste0(basedir, "ascat/COLO829T.segments.txt")),
   GRanges(seqnames=chr, ranges=IRanges(start=startpos, end=endpos), nMajor=nMajor, nMinor=nMinor, caller="ascat"))
 
 
+ascat_cn$cn = ascat_cn$nMajor + ascat_cn$nMinor
+weaver_cn$cn = weaver_cn$cn1 + weaver_cn$cn2
+# use the purple average ploidy so result scales match
+conserting_cn$cn = sum(width(purple_cn) * purple_cn$cn)/sum(width(purple_cn)) * (conserting_cn$DMean/conserting_cn$GMean)
+cn = c(ascat_cn, purple_cn, conserting_cn, weaver_cn)
 # Consistency with SV calls:
 # segments
 # segments supported by SV
@@ -140,16 +145,45 @@ evaluate_cn_transitions = function (cngr, svgr, margin=100000, distance=c("cn_tr
   cn_transitions = with(cngr %>% as.data.frame(), reduce(c(
     GRanges(seqnames=seqnames, ranges=IRanges(start=start, width=1)),
     GRanges(seqnames=seqnames, ranges=IRanges(start=end + 1, width=1)))))
-  cn_transitions$distance = NA
   cn_transitions$caller = unique(cngr$caller)
-  svgr$distance = NA
+  cn_transitions$cn_left = NA
+  cn_transitions$cn_right = NA
+  hits = findOverlaps(cn_transitions, with(cngr %>% as.data.frame(), GRanges(seqnames=seqnames, ranges=IRanges(start=start, width=1))))
+  cn_transitions$cn_right[queryHits(hits)] = cngr[subjectHits(hits)]$cn
+  hits = findOverlaps(cn_transitions, with(cngr %>% as.data.frame(), GRanges(seqnames=seqnames, ranges=IRanges(start=end + 1, width=1))))
+  cn_transitions$cn_left[queryHits(hits)] = cngr[subjectHits(hits)]$cn
+  cn_transitions$cn_delta = cn_transitions$cn_right - cn_transitions$cn_left
+
   hits = findOverlaps(svgr, cn_transitions, maxgap=margin, ignore.strand=TRUE) %>% as.data.frame() %>%
     mutate(distance=pmax(1, abs(start(svgr)[queryHits] - start(cn_transitions)[subjectHits])))
-  #browser()
-  best_sv_hit = hits %>% group_by(queryHits) %>% filter(distance==min(distance))
-  best_cn_hit = hits %>% group_by(subjectHits) %>% filter(distance==min(distance))
+  best_sv_hit = hits %>% group_by(queryHits) %>% filter(distance==min(distance)) %>% ungroup()
+  best_cn_hit = hits %>% group_by(subjectHits) %>% filter(distance==min(distance)) %>% ungroup()
+  cn_transitions$distance = NA
   cn_transitions[best_cn_hit$subjectHits]$distance = best_cn_hit$distance
+  svgr$distance = NA
   svgr[best_sv_hit$queryHits]$distance = best_sv_hit$distance
+  exact_bp_hit = best_sv_hit %>%
+    mutate(queryHits.p=match(svgr[queryHits]$partner, names(svgr))) %>%
+    filter(!is.na(queryHits.p)) %>%
+    inner_join(best_sv_hit, by=c("queryHits.p"="queryHits"), suffix=c("", ".p")) %>%
+    filter(distance == 1 & distance.p == 1) %>%
+    mutate(
+      ori_local = as.character(strand(svgr))[queryHits],
+      ori_remote = as.character(strand(svgr))[queryHits.p],
+      sv_cn = cn_transitions$cn_delta[subjectHits.p] * ifelse(ori_remote == "+", -1, 1),
+      cn_left = cn_transitions$cn_left[subjectHits] + ifelse(ori_local == "+", 0, sv_cn),
+      cn_right = cn_transitions$cn_right[subjectHits] + ifelse(ori_local == "+", sv_cn, 0),
+      cn_error=abs(cn_left - cn_right))
+  sv_hit_count = best_sv_hit %>% group_by(subjectHits) %>% summarise(n=n())
+  cn_transitions$sv_matches = 0
+  cn_transitions$sv_matches[sv_hit_count$subjectHits] = sv_hit_count$n
+  cn_transitions$sv_partner_matches = 0
+  cn_transitions$sv_partner_matches[exact_bp_hit$subjectHits] = cn_transitions$sv_matches[exact_bp_hit$subjectHits.p]
+  cn_transitions$can_evaluate_cn_error = cn_transitions$sv_matches == 1 & cn_transitions$sv_partner_matches == 1
+  cn_transitions$cn_error = NA
+  cn_transitions$cn_error[exact_bp_hit$subjectHits] = exact_bp_hit$cn_error
+  cn_transitions$cn_error[!cn_transitions$can_evaluate_cn_error] = NA
+
   if (distance == "cn_transition") {
     return(cn_transitions)
   } else {
@@ -170,10 +204,12 @@ cn_transistions$isFirstOrLast = is.na(lead(as.character(seqnames(cn_transistions
   seqnames(cn_transistions) != lead(as.character(seqnames(cn_transistions))) |
   seqnames(cn_transistions) != lag(as.character(seqnames(cn_transistions)))
 
-ascat_cn$cn = ascat_cn$nMajor + ascat_cn$nMinor
-weaver_cn$cn = weaver_cn$cn1 + weaver_cn$cn2
-conserting_cn$cn = 2 * (conserting_cn$DMean/conserting_cn$GMean)
-cn = c(ascat_cn, purple_cn, conserting_cn, weaver_cn)
+
+########
+# Ploidy estimates
+sum(width(ascat_cn) * ascat_cn$cn)/sum(width(ascat_cn))
+sum(width(purple_cn) * purple_cn$cn)/sum(width(purple_cn))
+sum(width(weaver_cn) * weaver_cn$cn)/sum(width(weaver_cn))
 
 ########
 # Plots
@@ -199,8 +235,29 @@ ggplot() +
   facet_grid(caller ~ ., scales="free_y") +
   labs(y="CN transitions", x="Distance to nearest SV")
 
-# TODO replace with horizontal and vertical segments
-# remove vertical segments when end + 1 != lead(start)
+cn_transistions %>%
+  as.data.frame() %>%
+  filter(!is.na(cn_error)) %>%
+  mutate(cn_error=pmin(2, cn_error)) %>%
+ggplot() +
+  aes(x=cn_error) +
+  geom_histogram(bins=20) +
+  facet_grid(caller ~ ., scales="free_y") +
+  scale_x_continuous(breaks=seq(0, 2, 0.25), labels=c(head(seq(0, 2, 0.25), -1), "2+")) +
+  labs(title="Copy number consistency of breakpoint-connected segments", x="Magnitude of copy number inconsistency", y="Count of copy number segmentation transitions")
+
+cn_transistions %>%
+  as.data.frame() %>%
+  filter(!is.na(cn_error)) %>%
+  mutate(cn_error=pmin(2, cn_error)) %>%
+ggplot() +
+  aes(x=cn_error, y=(cn_left+cn_right)/2) +
+  geom_point() +
+  #geom_jitter(width=0.02) +
+  facet_grid(caller ~ ., scales="free_y") +
+  scale_x_continuous(breaks=seq(0, 2, 0.5), labels=c(head(seq(0, 2, 0.5), -1), "2+")) +
+  labs(title="Copy number consistency of breakpoint-connected segments", x="Magnitude of copy number inconsistency", y="Average copy number")
+
 with(cn %>% as.data.frame() %>% mutate(chr=as.character(seqnames)), bind_rows(
     data.frame(caller=caller, chr=chr, pos=start, cn=cn),
     data.frame(caller=caller, chr=chr, pos=end, cn=cn))) %>%

@@ -7,6 +7,7 @@ OUT_DIR="/data/lims"
 LAB_DIR="${OUT_DIR}/labfiles"
 DAY_DIR="${LAB_DIR}/${DATESTR}"
 SYM_DIR="${OUT_DIR}/latest"
+ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
 ## sanity checks
 if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Err: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
@@ -17,9 +18,9 @@ done
 mkdir -p ${DAY_DIR}
 
 ## Setup cpct/received-samples/in-process variables
-cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.0.accdb"
+cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.1.accdb"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
-   cpctTxt="${cpctTarget}.tsv"
+   cpctTxt="${cpctTarget}.csv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
 sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2019 v5.2.xlsx"
@@ -54,10 +55,12 @@ cp "${sampSource}" "${sampTarget}"
 cp "${procSource}" "${procTarget}"
 
 ## Convert to csv (tail cmd skips non-header lines)
-echo "[INFO] Converting input files to TSV"
+echo "[INFO] Converting input files to CSV/TSV"
 echo "[INFO]   Converting $( basename ${cpctTarget} )"
-mdb-export -d "\t" -Q -D "%y%m%d" "${cpctTarget}" tblSamples > ${cpctTxt}
+${ACC2CSV} --with-header --input "${cpctTarget}" --output ${DAY_DIR} --table tblSamples --quote-all false
 if [ ! $? -eq 0 ]; then echo "[EXIT] CPCT export to csv FAILED" && exit 1; fi
+mv ${DAY_DIR}/tblSamples.csv ${cpctTxt}
+
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "submissions")"
 xlsx2csv -d "\t" "${sampTarget}" -s 1 | tail -n +5 > ${submTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi

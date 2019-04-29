@@ -1,14 +1,21 @@
 #!/bin/bash
 
-SUBMISSIONS=("$@")
+SUBMISSIONS=("$@") # optional
 JSON=/data/lims/submissions.json
+na="NA"
+unknown="Unknown Please Check!"
 
 if [ "$#" -eq 0 ]; then
-  SUBMISSIONS=( $( cat $JSON | jq -r 'keys[]' | sort -r | head -20 ) )
+  SUBMISSIONS=( $( cat $JSON | jq -r 'keys[]' | sort -r | head -100 ) )
 fi
 
 for submission in "${SUBMISSIONS[@]}"; do 
+
   MAINKEY=".${submission}"
+  
+  ## init
+  mail=$na; name=$na; subm=$na; pNam=$na; pTyp=$na
+  cntr=$na; enti=$na; buck=$na; aTyp=$na; amnt=$na
   
   ## retrieve info
   mail=$( cat ${JSON} | jq -r "${MAINKEY}.contact_email" )
@@ -16,15 +23,26 @@ for submission in "${SUBMISSIONS[@]}"; do
   subm=$( cat ${JSON} | jq -r "${MAINKEY}.submission" )
   pNam=$( cat ${JSON} | jq -r "${MAINKEY}.project_name" )
   pTyp=$( cat ${JSON} | jq -r "${MAINKEY}.project_type" )
-  enti='CHECK@SBP!!!'
   aTyp=$( cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
   amnt=$( cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
+  cntr=$( echo $pNam | cut -d"-" -f1 )
 
-  ## fix project type (rename lims content to their short versions)
-  pTyp=$( echo $pTyp | sed -E -e 's/Human[[:space:]]+research/HUM-RES/' )
-  pTyp=$( echo $pTyp | sed -E -e 's/non[[:space:]]+human[[:space:]]+research/NONHUM-RES/' )
-  pTyp=$( echo $pTyp | sed -E -e 's/KG[[:space:]]+production/KG/' )
+  ## fix project type (rename to short versions)
+  if   [[ $pTyp == "Human research" ]]; then pTyp="HUM-RES"
+  elif [[ $pTyp == "non human research" ]]; then pTyp="NONHUM-RES"
+  elif [[ $pTyp == "KG production" ]]; then pTyp="KG"
+  elif [[ $pTyp == "CORE" ]]; then pTyp="CORE"
+  else pTyp="${unknown}"
+  fi
+
+  ## check entitiy existance and fix for KG
+  bucketBySubmission=$( query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${subm}\" ) | .bucket" )
+  if   [[ $pTyp == "KG" ]]; then enti="KG_${cntr}"; buck="KG-bucket"
+  elif [[ ! -z $bucketBySubmission ]]; then enti=$subm; buck=$bucketBySubmission
+  else enti="${unknown}"; buck="${unknown}"
+  fi
 
   ## output
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$mail" "$pTyp" "$enti" "$aTyp" "$amnt"
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" "$subm" "$pNam" "$name" "$pTyp" "$enti" "$buck" "$aTyp" "$amnt"
+
 done

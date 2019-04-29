@@ -7,6 +7,7 @@ use File::Basename;
 use Getopt::Long;
 use File::Slurp;
 use JSON::XS;
+use Text::CSV;
 use File::Copy;
 use 5.01000;
 
@@ -27,7 +28,7 @@ my $LIMS_DIR = $opt{ lims_dir } || '/data/lims';
 my $JSON_OUT = $opt{ out_file } || $LIMS_DIR . '/lims.json';
 my $SUBM_OUT = $LIMS_DIR . '/submissions.json';
 my $BACK_DIR = $LIMS_DIR . '/backup';
-my $CPCT_TSV = $LIMS_DIR . '/latest/lims_cpct';
+my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
 my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
 my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
@@ -40,7 +41,7 @@ my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';
 my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
 
 my @ALL_INPUT_FILES = ( 
-  $CNTR_TSV, $CPCT_TSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
+  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
   $SAMP_TSV_2018, $PROC_TSV_2018, $PROC_TSV_2017, $LIMS_JSN_2017
 );
 
@@ -58,7 +59,7 @@ my $HELP_TEXT = <<"HELP";
     
   Input files that are used
        centers: $CNTR_TSV
-     cpct lims: $CPCT_TSV
+     cpct lims: $CPCT_CSV
      subm lims: $SUBM_TSV
      samp lims: $SAMP_TSV
      proc lims: $PROC_TSV
@@ -117,7 +118,7 @@ $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $
 $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_TSV, "\t" );
+$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
 $lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
@@ -138,14 +139,17 @@ say "[INFO] DONE with \"$SCRIPT\"";
 ## ----------
 sub parseTsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
+    my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
+    
     my %store = %$objects;
     say "[INFO]   Parsing input file $file";
-    
+        
     ## Check header for completeness
     open IN, "<", $file or die "Unable to open file ($file): $!\n";
     
     my $header_line = <IN>; chomp($header_line);
-    my @header_fields = split( $sep, $header_line );
+    die "[EXIT] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
+    my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
     
     ## checking header
@@ -160,7 +164,9 @@ sub parseTsv{
     
     while ( <IN> ){
         chomp;
-        my @values = split( $sep, $_ );
+        die "[EXIT] Cannot parse line ($_)\n" unless $csv->parse($_);
+        my @values = $csv->fields();
+        
         my %raw_object = ();
         foreach my $field ( @header_fields ){
             my $next_value = shift @values;
@@ -297,6 +303,19 @@ sub processCpct{
         my $sample_id    = $row_info->{ 'sample_id' };
         my $patient_name = $row_info->{ 'patient' };
         
+        ## rename boolean field back to 1/0 to please downstream tools
+        my $boolean_field = 'shallowseq';
+        if ( defined $row_info->{ $boolean_field } ){
+            my $val = $row_info->{ $boolean_field };
+            if ( $val =~ m/^true$/i ){
+                $row_info->{ $boolean_field } = 1;
+            }elsif ( $val =~ m/^false$/i ){
+                $row_info->{ $boolean_field } = 0;
+            }else{
+                warn "[WARN] Unexpected value ($val) in boolean field ($boolean_field) for sample ($sample_id, $sample_name)\n"
+            }
+        }
+        
         ## skip NA or empty values
         checkDefined( 'sample_name', $row_info );
         next if not $sample_name or isSkipValue( $sample_name );
@@ -415,7 +434,7 @@ sub processCpct{
 
     }
     
-    ## add R sample_id for each CPCT/DRUP biopsy
+    ## add R sample_id for each biopsy
     foreach my $sample_id ( keys %store ){
         my $sample = $store{ $sample_id };
         next unless $sample->{ analysis_type } eq 'Somatic_T';
@@ -423,12 +442,14 @@ sub processCpct{
         
         my $patient = $sample->{ 'patient' };
         my $ref_sample_name = $patient . 'R';
-        my $ref_sample_id = '';
+        my $ref_sample_id = $sample->{ 'ref_sample_id' };
         
-        if ( exists $name2id{ $ref_sample_name } ){
-            $ref_sample_id = $name2id{ $ref_sample_name };
+        if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+            if ( exists $name2id{ $ref_sample_name } ){
+                $ref_sample_id = $name2id{ $ref_sample_name };
+                $sample->{ 'ref_sample_id' } = $ref_sample_id;
+            }
         }
-        $sample->{ 'ref_sample_id' } = $ref_sample_id;
     }
     
     return \%store;
@@ -465,7 +486,7 @@ sub processSamp{
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
         elsif ( $analysis_type eq 'SomaticsBFX' ){
-            my $partner = $row_info->{ 'partner_sample' };
+            my $partner = $row_info->{ 'ref_sample_id' };
             if ( $partner ne '' and $partner ne NACHAR ){
                 $row_info->{ 'analysis_type' } = 'Somatic_T';
             }
@@ -536,7 +557,7 @@ sub fixIntegerFields{
 sub fixDateFields{
     my ($sample_hashref) = @_;
     
-    my @date_fields = qw( arrival_date sampling_date );
+    my @date_fields = qw( arrival_date sampling_date report_date );
     
     foreach my $date_field ( @date_fields ){
         
@@ -548,8 +569,16 @@ sub fixDateFields{
         ## date is not always filled in so skip NA fields
         next if isSkipValue( $old_date );
         
-        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)        
-        if ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
+        ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
+        if( $old_date =~ /^\w+ (\w{3}) (\d{2}) \d+:\d+:\d+ \w+ (\d{4})$/ ){ 
+            ## eg Tue Apr 23 00:00:00 CEST 2019
+            my $month_name = $1;
+            my $day = $2;
+            my $year = $3;
+            my $month = getMonthIndexByName( $month_name );
+            $new_date = join( "-", $year, $month, $day );
+        }
+        elsif ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
             ## format unclear so need for checks
             warn "[WARN] Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check\n" if ($1 < 8) or ($1 > 20);
             warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
@@ -570,6 +599,22 @@ sub fixDateFields{
         
         ## store new format using reference to original location
         $sample_hashref->{ $date_field } = $new_date;
+    }
+}
+
+sub getMonthIndexByName{
+    my ($month_name) = @_;
+    my %mapping = ( 
+        "Jan" => "01", "Feb" => "02", "Mar" => "03", "Apr" => "04",
+        "May" => "05", "Jun" => "06", "Jul" => "07", "Aug" => "08",
+        "Sep" => "09", "Oct" => "10", "Nov" => "11", "Dec" => "12"
+    );
+    if ( exists $mapping{ $month_name } ){
+        return $mapping{ $month_name };
+    }
+    else{
+        warn "[WARN] Unknown Month name ($month_name): kept as-is but please fix\n";
+        return $month_name;
     }
 }
 
@@ -673,7 +718,7 @@ sub getFieldNameTranslations{
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'partner_sample',
+      "Partner_sample"    => 'ref_sample_id',
       "HMF_reg"           => 'submission',
       "SNP_required"      => 'is_snp_required',
       "SNP_exp"           => 'snp_experiment_id',
@@ -693,7 +738,7 @@ sub getFieldNameTranslations{
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'partner_sample',
+      "Partner_sample"    => 'ref_sample_id',
       "HMF_reg"           => 'submission',
       "SNP_required"      => 'is_snp_required',
       "SNP_exp"           => 'snp_experiment_id',
@@ -732,9 +777,9 @@ sub getFieldNameTranslations{
       'Qiasymphony_exp'    => 'qiasymphony_exp',
       'DNA_prep'           => 'dna_prep',
       'RNA_prep'           => 'rna_prep',
-      'Mol_T_perc'         => 'mol_tum_perc',
-      'Mol_T_perc_2'       => 'mol_tum_perc_2',
-      'Mol_T_perc_3'       => 'mol_tum_perc_3',
+      'Purity_shallow_1'   => 'purity_shallow',
+      'Purity_shallow_2'   => 'purity_shallow_2',
+      'Purity_shallow_3'   => 'purity_shallow_3',
       'Sample_ID_Plasma'   => 'plasma_sample_id',
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
@@ -743,12 +788,18 @@ sub getFieldNameTranslations{
       'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
       'Remarks'            => 'lab_remarks',
+      'Other_Ref'          => 'other_ref',
+      'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
       'Germline_findings'  => 'germline_findings',
       'Requester_email'    => 'requester_email',
       'Requester_name'     => 'requester_name',
       'Submission_number'  => 'submission',
-      'ShallowSeq'         => 'shallowseq'
+      'ShallowSeq'         => 'shallowseq',
+      'Purity'             => 'purity',
+      'Report_date'        => 'report_date',
+      'Date_of_birth'      => 'date_of_birth',
+      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id'
     );
     
     my %translations = (

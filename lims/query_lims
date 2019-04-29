@@ -104,7 +104,7 @@ if ( $TYPE eq 'unreported' ){
     printObjectInfo( $samples, $out_fields, 'lab_status', \%opt );
 }
 elsif ( $TYPE eq 'dateTable' ){
-    my $samples = getCpctDrupDateTable( $lims, \%opt );
+    my $samples = getDateTable( $lims, \%opt );
     printObjectInfo( $samples, $out_fields, 'sample_name', \%opt );
 }
 elsif( $TYPE eq 'samples' ){
@@ -254,7 +254,7 @@ sub printObjectInfo{
     }
 }
 
-sub getCpctDrupDateTable{
+sub getDateTable{
     my ($lims) = @_;
     my @out_samples = ();
     my $samples = $lims->{ 'samples' };
@@ -265,11 +265,11 @@ sub getCpctDrupDateTable{
         my $sample_name = getValueByKey( $sample, 'sample_name' );
         my $submission = getValueByKey( $sample, 'submission' );
         
-        ## skip if not CPCT/DRUP production biopsy
+        ## skip if not production biopsy
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} =~ /^(Somatic_T|Somatic_R)$/;
         next unless defined $sample->{'submission'};
-        next unless $submission =~ /^(HMFregCPCT|HMFregDRUP)$/;
+        next if $submission =~ /^HMFreg\d+$/ and $sample_name !~ /^CORE/;
         
         push @out_samples, $sample;
     }
@@ -308,7 +308,7 @@ sub getUnreportedBiopsies{
         next unless defined $sample->{'analysis_type'};
         next unless $sample->{'analysis_type'} eq 'Somatic_T';
                 
-        ## skip if not CPCT/DRUP/WIDE/CORE production biopsy
+        ## skip if not production biopsy
         next unless defined $sample->{'label'};
         next unless $sample->{'label'} =~ /^(CPCT|DRUP|WIDE|CORE)$/;
         
