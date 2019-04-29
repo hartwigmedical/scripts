@@ -8,7 +8,6 @@ library(GenomicRanges)
 
 ####### DB
 #somaticQuery = paste0("select * from somaticVariant where filter = 'PASS' and gene <> '' and worstCodingEffect != 'NONE' AND sampleId in (",sampleIdString, ")")
-
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
 dbDisconnect(dbProd)
 rm(dbProd)
@@ -16,7 +15,28 @@ rm(dbProd)
 ####### Cohort
 entireCohort = purple::query_cohort(dbProd)
 highestPurityCohort = purple::highest_purity_cohort(entireCohort)
+
+load(file = "~/hmf/RData/Reference/allClinicalData.RData")
+allClinicalDataNew = purple::query_clinical_data(dbProd) %>% filter(!sampleId %in% allClinicalData$sampleId)
+
+
+highestPurityCohort = left_join(highestPurityCohort, allClinicalData %>% select(sampleId, cancerTypeOld = primaryTumorLocation))
+highestPurityCohort = left_join(highestPurityCohort, allClinicalDataNew %>% select(sampleId, cancerTypeNew = primaryTumorLocation))
+highestPurityCohort = highestPurityCohort %>% mutate(cancerType = coalesce(cancerTypeOld, cancerTypeNew)) %>% select(-cancerTypeOld, -cancerTypeNew)
+highestPurityCohort = highestPurityCohort %>%
+  mutate(
+    cancerType = ifelse(cancerType == 'Net', 'NET', cancerType),
+    cancerType = ifelse(cancerType == 'Small intestine', 'Small Intestine', cancerType),
+    cancerType = ifelse(is.na(cancerType), 'Unknown', cancerType)
+  ) %>%
+  group_by(cancerType) %>%
+  mutate(cancerTypeCount = n()) %>% ungroup() %>%
+  mutate(
+    cancerType = ifelse(cancerTypeCount < 8, "Other", cancerType)
+  ) %>%
+  select(-cancerTypeCount)
 save(highestPurityCohort, file = "~/hmf/analysis/dnds/highestPurityCohort.RData")
+
 
 sampleIdString1 = paste("'", highestPurityCohort[1:1740, ]$sampleId, "'", collapse = ",", sep = "")
 somaticQuery1 = paste0("select * from somaticVariant where filter = 'PASS' AND sampleId in (",sampleIdString1, ")")
@@ -66,6 +86,20 @@ rownames(cv) = newgenes
 kc = newgenes[oldgenes %in% known_cancergenes]
 
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+HmfRefCDSCvList = list()
+HmfRefCDSCvList[["All"]]  <- output$sel_cv
+cancerTypes = unique(highestPurityCohort$cancerType)
+cancerTypes = cancerTypes[!is.na(cancerTypes)]
+for (selectedCancerType in cancerTypes) {
+  cat("Processing", selectedCancerType)
+  cancerTypeSampleIds =  highestPurityCohort %>% filter(!is.na(cancerType), cancerType == selectedCancerType) %>% select(sampleId)
+  input = somatics %>% filter(sampleId %in% cancerTypeSampleIds$sampleId)
+  output = dndscv(input, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+  
+  HmfRefCDSCvList[[selectedCancerType]] <- output$sel_cv
+}
+
+
 HmfRefCDSCv  <- output$sel_cv
 save(HmfRefCDSCv, file = "~/hmf/analysis/dnds/HmfRefCDSCv.RData")
 
@@ -118,33 +152,22 @@ HmfRefCDSCv$cancerType <- "All"
 #  select(-patient) 
 #mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
 
-tsgMutations = tsg_mutations(mutations %>% filter(gene %in% tsGenes$gene_name))
-tsgDriverRates = dnds_driver_rates(HmfRefCDSCv, tsgMutations)
-
-
 ############################################CODE RUNS FROM HERE  ############################################
 somatics = exonicSomatics %>%
   mutate(subclonalLikelihood = 0) %>%
   select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, subclonalLikelihood, repeatCount) %>%
   mutate(shared = F)
 
-dndsExpectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, dndsUnfilteredAnnotatedMutations, somatics)
-save(dndsExpectedDriversPerGene, file = "~/hmf/analysis/dnds/dndsExpectedDriversPerGene.RData")
-
-mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations, somatics) %>%
+mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations %>% filter(gene %in% genePanel$gene_name), somatics) %>%
   mutate(patient = substr(sampleId, 1,12), pHGVS = "") %>%
-  select(-patient)
-save(mutations, file = "~/hmf/analysis/dnds/dndsMutations.RData")
+  select(-patient) %>% filter(impact != "")
 
-mutations = mutations %>% filter(gene %in% genePanel$gene_name, impact != "")
+tsgMutations = tsg_mutations(mutations %>% filter(gene %in% tsGenes$gene_name))
+tsgDriverRates = dnds_driver_rates(HmfRefCDSCv, tsgMutations)
 
-dndsTsgDriversOutput = dnds_tsg_drivers(somaticCounts, mutations %>% filter(gene %in% tsGenes$gene_name), dndsExpectedDriversPerGene)
-dndsTsgDriverRates = dndsTsgDriversOutput[["tsgDriverRates"]]
-dndsTsgUnknownDriversTotals = dndsTsgDriversOutput[["tsgUnknownDriversTotals"]]
+oncoMutations = onco_mutations(mutations %>% filter(gene %in% oncoGenes$gene_name))
+oncoDriverRates = dnds_driver_rates(HmfRefCDSCv, oncoMutations)
 
-dndsOncoDriversOutput = dnds_onco_drivers(somaticCounts, mutations %>% filter(gene %in% oncoGenes$gene_name), dndsExpectedDriversPerGene)
-dndsOncoDriverRates = dndsOncoDriversOutput[["oncoDriverRates"]]
-dndsOncoUnknownDriversTotals = dndsOncoDriversOutput[["oncoUnknownDriversTotals"]]
 
 ############################################  TSG ############################################
 
@@ -196,17 +219,43 @@ onco = oncoDriverLikelihood %>% left_join(oncoDriverLikelihoodAdjustment, by = "
          dndsDriverLikelihoodIndel = 0, pDriverIndel = 0, pVariantNonDriverFactorIndel = 0) 
 write.table(onco, "~/hmf/analysis/dnds/DndsDriverLikelihoodOnco.tsv", quote = F, row.names = F, sep = "\t")
 
+#### CHANGE IN SIGNIFICANT GENES
+
+load(file="~/hmf/RData/processed/HmfRefCDSCv.RData")
+sig = 0.01
+oldHmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig, cancerType == 'All') %>% distinct(gene_name)
+oldHmfSignificant$InOld = T
+
+load(file = "~/hmf/analysis/dnds/HmfRefCDSCv.RData")
+newHmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig) %>% distinct(gene_name)
+newHmfSignificant$InNew = T
+
+
+combinedSignificant = full_join(newHmfSignificant %>% select(gene_name, InNew), oldHmfSignificant %>% select(gene_name, InOld), by = "gene_name")
+combinedSignificant[is.na(combinedSignificant)] <- F
+
+combinedSignificant %>% filter(!InNew | !InOld)
+
+
+
 ##### IMPACT
 load(file = "~/hmf/RData/processed/driverGenes.RData")
 genePanel = bind_rows(oncoGenes, tsGenes)
 
 load(file = "~/hmf/Rdata/Processed/HmfRefCDSCv.RData")
+jon = HmfRefCDSCv %>% filter(gene_name == "AR")
+
 Old = HmfRefCDSCv %>% filter(cancerType == 'All', gene_name %in% genePanel$gene_name)
 
 load(file = "~/hmf/analysis/dnds/HmfRefCDSCv.RData")
 New = HmfRefCDSCv %>% filter(gene_name %in% genePanel$gene_name)
 New$change = round((New$wmis_cv - Old$wmis_cv) * New$n_mis, 2)
 save(New, Old, file = "~/hmf/Rdata/Processed/ImpactOfNewData.RData")
+
+merged=(merge(Old,New,by='gene_name',suffixes=c('.old','.new')))
+View(merged %>% mutate(chMisDrivers=n_mis.new*(pmax(0,(wmis_cv.new-1)/wmis_cv.new)-pmax(0,(wmis_cv.old-1)/wmis_cv.old)),
+                       chNonDrivers=n_non.new*(pmax(0,(wnon_cv.new-1)/wnon_cv.new)-pmax((wnon_cv.old-1)/wnon_cv.old,0))) %>% 
+       select(gene_name,chMisDrivers,wmis_cv.old,wmis_cv.new,chNonDrivers,everything()))
 
 #### KRAS
 
