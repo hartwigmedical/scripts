@@ -711,3 +711,4 @@ calc_lsqnonneg<-function(C, d)
   }
   return(list(x = x, resid.norm = sum(resid*resid)))
 }
+

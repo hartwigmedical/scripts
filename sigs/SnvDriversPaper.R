@@ -8,7 +8,7 @@ library(grid)
 library(gridExtra)
 library(ggplot2)
 library(cowplot)
-library(scater)
+# library(scater)
 
 # Load sample counts in matrix form
 snvMatrixData = read.csv('~/data/sigs/snv_prod_matrix_data_20190409.csv')

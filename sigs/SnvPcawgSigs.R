@@ -1,5 +1,27 @@
 
 
+# Standard SNV 96 buckets
+create_empty_signature <- function() {
+  DF <- data.frame(type = character(), context = character(), stringsAsFactors = FALSE)
+  ref_bases = c("C", "T")
+  bases = c("A", "C", "G", "T")
+  for (ref in ref_bases) {
+    for (alt in bases) {
+      if (alt != ref) {
+        type = paste(ref, alt, sep = ">")
+        for (before in bases) {
+          for (after in bases) {
+            context = paste(before, after, sep = ref)
+            DF = rbind(DF, data.frame(type, context, stringsAsFactors = FALSE))
+          }
+        }
+      }
+    }
+  }
+  return(DF)
+}
+
+
 
 ###############
 ## PCAWG Sigs
