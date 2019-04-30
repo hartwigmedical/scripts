@@ -211,7 +211,8 @@ p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
         panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) +  
   ylab("Samples") + 
   coord_cartesian(ylim = c(0, 620)) + 
-  facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + theme(panel.spacing = unit(1, "pt"))
+  facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + 
+  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 3, b = 3, l = 3, unit = "pt"))
 
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
@@ -219,7 +220,8 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
   scale_colour_manual(values=cancerTypeColours, guide=FALSE) +
   ylab("Age") + 
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank(), strip.text = element_blank(), plot.margin = margin(t = 15, unit = "pt"),
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank(), strip.text = element_blank(), 
+        plot.margin = margin(t = 10, unit = "pt"),
         panel.grid.major.x = element_blank(),  panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) + 
   facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt"))
 
@@ -236,7 +238,8 @@ p3 = ggplot(data=combinedMutationalLoad) +
         panel.grid.minor.x = element_blank(),
         strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
         legend.margin=margin(t = 0,unit = "pt"), 
-        plot.margin = margin(t = 15, unit = "pt")) +
+        plot.margin = margin(t = 15, unit = "pt"),
+        legend.background=element_blank(), legend.key=element_blank()) +
   xlab("Somatic Variants") +
   guides(colour = guide_legend(nrow = 1)) +
   coord_flip() 
@@ -253,8 +256,9 @@ p4 = ggplot(data=combinedMutationalLoad) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(),
         panel.grid.minor.x = element_blank(),
         strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
-        legend.margin=margin(t = 0,unit = "pt"),
-        plot.margin = margin(t = 15, unit = "pt")) +
+        legend.margin=margin(t = 0, b= 0, unit = "pt"),
+        plot.margin = margin(t = 15, b = 0, unit = "pt"),
+        legend.background=element_blank(), legend.key=element_blank()) +
   xlab("Somatic Variants") +
   xlab("INDELs & SVs") +
   guides(colour = guide_legend(nrow = 1)) +
