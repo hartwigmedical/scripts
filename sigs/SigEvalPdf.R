@@ -180,7 +180,6 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
 
   sigNamesCombined = as.data.frame(cbind(sigNamesUnamed, sigNamesNamed))
   colnames(sigNamesCombined) <- c("Signature", "SigName")
-  print(sigNamesCombined)
 
   print("evaluating buckets")
 
@@ -221,8 +220,10 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   print("evaluating signatures")
 
   # print(sigNamesCombined)
-  sigNamesCombined = sigNamesCombined %>% add_row(Signature = '19', SigName = "Unalloc")
-  sigNamesCombined = sigNamesCombined %>% add_row(Signature = '20', SigName = "Excess")
+  sigNamesCombined = sigNamesCombined %>% add_row(Signature = sprintf("%d",sigCount+1), SigName = "Unalloc")
+  sigNamesCombined = sigNamesCombined %>% add_row(Signature = sprintf("%d",sigCount+2), SigName = "Excess")
+  #sigNamesCombined = sigNamesCombined %>% add_row(Signature = '19', SigName = "Unalloc")
+  #sigNamesCombined = sigNamesCombined %>% add_row(Signature = '20', SigName = "Excess")
   sigNamesCombined$Signature = as.numeric(as.character(sigNamesCombined$Signature))
 
   if(nrow(sigAllocs) > 0)
@@ -321,8 +322,6 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   sigColours[sigCount+1] = "black"
   sigColours[sigCount+2] = "grey30"
   
-  print(sigColours)
-
   if(bgSigCount > 0)
     cancerSigColours = strip_multi_bg_colours(sigColours, bgSigCount)
   else
@@ -356,7 +355,7 @@ evaluate_signature_fit<-function(runType, runId, signatures, contribution, matri
   {
     cancerTypes = sampleCancerTypes %>% group_by(CancerType) %>% count()
 
-        for(cancerType in cancerTypes$CancerType)
+    for(cancerType in cancerTypes$CancerType)
     {
       if(!is.na(cancerType))
       {

@@ -200,6 +200,10 @@ View(cosmicSigs)
 
 
 # fit the samples counts to the cosmic signatures
+nmfFitResult = fit_to_signatures(snvDpMatrixData, cosmicSigs)
+nmfFitContributions = nmfFitResult$contribution
+View(nmfFitResult$contribution)
+
 snvSampleSigs = list()
 for(s in snvSampleNames)
   # for(s in sampleCountResults)

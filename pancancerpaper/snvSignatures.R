@@ -101,7 +101,8 @@ print(resPlot)
 
 # these sample IDs need to be replaced with the HMF IDs
 worstSamples = c('CPCT02010772T','CPCT02010662T') # these are the 2 SYD985 samples
-worstSamplesData = snvDpSampleCounts %>% filter(SampleId %in% worstSamples)
-worstSamplesMatixData = sample_counts_to_matrix(worstSamplesData)
+worstSamplesMatrixData = snvDpSampleCounts %>% filter(SampleId %in% worstSamples) %>% spread(SampleId,Count)
+worstSamplesMatrixData[is.na(worstSamplesMatrixData)] <- 0
+worstSamplesMatrixData = within(worstSamplesMatrixData, rm(Bucket))
 
-plot_96_profile(worstSamplesMatixData)    
+plot_96_profile(worstSamplesMatrixData)
