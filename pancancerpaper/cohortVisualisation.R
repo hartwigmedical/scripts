@@ -5,7 +5,7 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
-theme_set(theme_bw())
+theme_set(theme_bw() +  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5)))
 
 #################### SETUP #################### 
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -205,49 +205,69 @@ display_cancer_types <- function(cancerTypes) {
 p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   geom_bar(aes(fill = cancerType), stat = "identity") +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
-  geom_text(aes(label=paste0("(", percentage, "%)")), vjust=-0.5, size = 4) +
+  geom_text(aes(label=paste0("", percentage, "%")), vjust=-0.5, size = 5 * 25.4 / 72) +
   #geom_text(aes(label=n), vjust=-2, size = 3) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 9.2)) +  
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 5, face = "plain"),
+        panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) +  
   ylab("Samples") + 
-  coord_cartesian(ylim = c(0, 699)) + facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types))
+  coord_cartesian(ylim = c(0, 620)) + 
+  facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + theme(panel.spacing = unit(1, "pt"))
 
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
-  geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") + 
+  geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area", size = 0.1) + 
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) +
   scale_colour_manual(values=cancerTypeColours, guide=FALSE) +
   ylab("Age") + 
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank(), strip.text = element_blank()) + 
-  facet_grid(~cancerType)
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank(), strip.text = element_blank(), plot.margin = margin(t = 15, unit = "pt"),
+        panel.grid.major.x = element_blank(),  panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) + 
+  facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt"))
 
 p3 = ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(SNV,color='HMF SNV',linetype='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) +
-  stat_ecdf(aes(MNV,color='HMF MNV',linetype='HMF MNV') ,geom = "step", pad = FALSE) + geom_segment(aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='HMF MNV'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_SNV,color='PCAWG SNV',linetype='PCAWG SNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_MNV,color='PCAWG MNV',linetype='PCAWG MNV'), geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) +
-  scale_x_log10(labels = comma) + facet_grid(~cancerType) +
+  stat_ecdf(size = 0.3, aes(SNV,color='HMF SNV',linetype='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(MNV,color='HMF MNV',linetype='HMF MNV') ,geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='HMF MNV'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(PCAWG_SNV,color='PCAWG SNV',linetype='PCAWG SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(PCAWG_MNV,color='PCAWG MNV',linetype='PCAWG MNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) +
+  scale_x_log10(labels = c("1e1", "1e3", "1e5"), breaks = c(10, 1000, 100000)) + 
+  facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt")) + 
   scale_colour_manual(name = "Combined", values=somaticColours) +
   scale_linetype_manual(name = "Combined", values = somaticLinetypes) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(),
         panel.grid.minor.x = element_blank(),
-        strip.background = element_blank(), strip.text = element_blank(), legend.position="top", legend.title = element_blank()) +
+        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
+        legend.margin=margin(t = 0,unit = "pt"), 
+        plot.margin = margin(t = 15, unit = "pt")) +
   xlab("Somatic Variants") +
-  coord_flip()
+  guides(colour = guide_legend(nrow = 1)) +
+  coord_flip() 
 
 p4 = ggplot(data=combinedMutationalLoad) +
-  stat_ecdf(aes(INDEL, color='HMF INDEL', linetype = 'HMF INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='HMF INDEL'), show.legend = F) +
-  stat_ecdf(aes(SV,color='HMF SV',linetype='HMF SV'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='HMF SV'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_INDEL,color='PCAWG INDEL',linetype='PCAWG INDEL'),geom = "step", pad = FALSE) + geom_segment(aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
-  stat_ecdf(aes(PCAWG_SV,color='PCAWG SV', linetype='PCAWG SV'),geom = "step",  pad = FALSE) + geom_segment(aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
-  scale_x_log10(labels = comma) + facet_grid(~cancerType) +
+  stat_ecdf(size = 0.3, aes(INDEL, color='HMF INDEL', linetype = 'HMF INDEL'),geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='HMF INDEL'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(SV,color='HMF SV',linetype='HMF SV'),geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='HMF SV'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(PCAWG_INDEL,color='PCAWG INDEL',linetype='PCAWG INDEL'),geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
+  stat_ecdf(size = 0.3, aes(PCAWG_SV,color='PCAWG SV', linetype='PCAWG SV'),geom = "step",  pad = FALSE) + geom_segment(size = 0.3, aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
+  scale_x_log10(labels = c("1e1", "1e3", "1e5"), breaks = c(10, 1000, 100000)) + 
+  facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt")) + 
   scale_colour_manual(name = "Combined", values=indelSVColours) +
   scale_linetype_manual(name = "Combined", values = indelSVLinetypes) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(),
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(),
         panel.grid.minor.x = element_blank(),
-        strip.background = element_blank(), strip.text = element_blank(), legend.position="bottom", legend.title = element_blank()) +
+        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
+        legend.margin=margin(t = 0,unit = "pt"),
+        plot.margin = margin(t = 15, unit = "pt")) +
   xlab("Somatic Variants") +
   xlab("INDELs & SVs") +
+  guides(colour = guide_legend(nrow = 1)) +
   coord_flip()
+
+pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(2, 2, 3, 3), labels = c("auto"), label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+
+
+
+
+
 
 p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
@@ -307,7 +327,13 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
 #pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
 #save_plot("~/hmf/RPlot/Figure 1 - Overview TOTAL.png", pFigure1, base_width = 14, base_height = 20)
 
-pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(1, 1, 3, 3), labels = c("A", "B", "C", "D"))
+pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(1, 1, 3, 3), labels = c("auto"))
+ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+
+pdf("~/hmf/RPlot/Figure 1 - Overview.pdf", width=18.3/2.54, height=12.9/2.54)
+pFigure1a
+dev.off()
+
 save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, base_width = 14, base_height = 10)
 
 pFigure1b = plot_grid(p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(2, 2, 2, 2), labels = c("A", "B", "C", "D"))
