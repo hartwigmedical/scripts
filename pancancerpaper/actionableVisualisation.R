@@ -34,6 +34,9 @@ actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSam
     eventType = ifelse(eventType == "MNP", "MNV", eventType),
     levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors, ordered = T))
 
+actionableVariantsPerSample = actionableVariantsPerSample %>% 
+  mutate(gene = ifelse(eventType == "Fusion", paste0(gene, " - ", partnerGene), gene)) 
+
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 pembrolizumabVariants = highestPurityCohortSummary %>% 
   filter(msiStatus == 'MSI') %>% 
@@ -180,10 +183,10 @@ pie = ggplot(responseChartData) +
 
 pActionability = plot_grid(p1, pie, nrow = 1, labels = "auto", rel_widths = c(3, 3), label_size = 8)
 pActionability
-ggplot2::ggsave("~/hmf/RPlot/Figure 5b.pdf", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
+
 ggplot2::ggsave("~/hmf/RPlot/Figure 5.png", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
 #convert -density 300 ~/hmf/RPlot/Figure\ 5.png ~/hmf/RPlot/Figure\ 5.pdf
-
+#ggplot2::ggsave("~/hmf/RPlot/Figure 5b.pdf", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
 
 
 pdf(file = "~/hmf/RPlot/Figure 5.pdf", width = 89/10/2.54, height = 70/10/2.54)
