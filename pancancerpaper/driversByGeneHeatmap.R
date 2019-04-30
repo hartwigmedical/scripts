@@ -160,7 +160,7 @@ germlineHeatmap = Heatmap(
 
 
 germlineSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(axis_gp = gpar(fontsize = 5), baseline = "min", germlineSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.03), gp = gpar(fontsize = 3, fill = "#bc80bd"), border = F), 
+  `% Samples` = row_anno_barplot(axis_gp = gpar(fontsize = 5), baseline = "min", germlineSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.03), gp = gpar(fontsize = 3, fill = "#bc80bd", col = 0), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
@@ -168,7 +168,7 @@ germlineSamplesAnnotation = rowAnnotation(
 )
 
 germlineDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(axis_gp = gpar(fontsize = 5), germlineDriversAnnotationData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineDriverColours), border = F), 
+  `% Drivers` = row_anno_barplot(axis_gp = gpar(fontsize = 5), germlineDriversAnnotationData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineDriverColours, col = 0), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
@@ -181,12 +181,12 @@ germlineWildTypeLostAnnotation = rowAnnotation(
   show_annotation_name = T,
   annotation_name_rot = 0,
   annotation_name_gp  = gpar(fontsize = 6),
-  `% Wild Type Lost` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineWildtypeLostData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineWildTypeLostAnnotationColours), border = F), 
+  `% Wild Type Lost` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineWildtypeLostData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineWildTypeLostAnnotationColours, col = 0), border = F), 
   width = unit(2, "cm")
 )
 
 pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation + germlineWildTypeLostAnnotation
-#pGermline
+pGermline
 
 oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
@@ -209,7 +209,7 @@ oncoHeatmap = Heatmap(
 )
 
 oncoSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = "#bc80bd"), border = F), 
+  `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = "#bc80bd", col = 0), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
@@ -217,7 +217,7 @@ oncoSamplesAnnotation = rowAnnotation(
 )
 
 oncoDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(oncoDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = oncoDriverColours), border = F), 
+  `% Drivers` = row_anno_barplot(oncoDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = oncoDriverColours, col = 0), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
@@ -254,7 +254,7 @@ tsgHeatmap = Heatmap(
 )
 
 tsgSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = "#bc80bd"), border = F), 
+  `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = "#bc80bd", col = 0), border = F), 
   width = unit(2, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
@@ -266,12 +266,12 @@ tsgBiallelicAnnotation = rowAnnotation(
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
   annotation_name_rot = 0,
-  `% Biallelic` = row_anno_barplot(tsgBiallelicAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgBiallelicAnnotationColours), border = F), 
+  `% Biallelic` = row_anno_barplot(tsgBiallelicAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgBiallelicAnnotationColours, col = 0), border = F), 
   width = unit(2, "cm")
 )
 
 tsgDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(tsgDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgDriverColours), border = F), 
+  `% Drivers` = row_anno_barplot(tsgDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgDriverColours, col = 0), border = F), 
   width = unit(3, "cm"),
   show_annotation_name = T,
   annotation_name_gp  = gpar(fontsize = 6),
