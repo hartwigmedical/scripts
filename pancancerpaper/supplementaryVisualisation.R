@@ -1,3 +1,5 @@
+#install.packages("magick")
+
 detach("package:purple", unload=TRUE)
 library(purple)
 library(dplyr)
@@ -5,6 +7,7 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
+library(magick)
 theme_set(theme_bw())
 
 singleBlue = "#6baed6"
@@ -51,8 +54,8 @@ wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$
 p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
   geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5) +
-  annotate("text", x = 21, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5) +
+  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 21, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
   ggtitle("") + 
@@ -61,7 +64,8 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   scale_x_discrete(labels = c(wgdPlotLevels$cancerType, "", ""), limits = c(wgdPlotLevels$cancerType, "", "")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="none") +
-  theme(axis.text = element_text(size=16), axis.title = element_text(size=16)) +
+  theme(axis.text = element_text(size=5), axis.title = element_text(size=5),
+        plot.margin = margin(t = 0, unit = "pt")) +
   coord_flip()
 
 wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
@@ -72,17 +76,29 @@ p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
   scale_x_continuous(limits = c(0, 7), breaks=c(1:7)) + 
-  theme(legend.position=c(.79,.8)) + 
-  theme(axis.text = element_text(size=16), axis.title = element_text(size=16))
+  theme(legend.position=c(.80,.84)) + 
+  theme(axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm"),
+        plot.margin = margin(t = 0, unit = "pt"))
 
 
-pWGD = plot_grid(p1, p2, ncol = 1)
-pWGD
-save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
+pWGD = plot_grid(p1, p2, ncol = 1, labels =c("d","e"), label_size = 8, rel_heights = c(1, 1))
+#pWGD
+#save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
+
+pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/AllB.png")
+pb <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/CNSB.png", width = 1, scale = 1)
+pc <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/KidneyB.png", scale = 1)
+
+pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
+pabc = plot_grid(pa, pbc, pWGD, nrow = 1, labels = c("a", "", ""), rel_widths = c(0.6, 0.3, 0.3), label_size = 8)
+#pabc
+
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 183, height = 91.5, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 91.5, units = "mm", dpi = 300)
 
 
-#convert ~/hmf/analysis/copyNumberSummary/CNS.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
-#convert ~/hmf/analysis/copyNumberSummary/Kidney.png   -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/KidneyB.png   -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png
 #convert ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png -append ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png
 #convert ~/hmf/analysis/copyNumberSummary/All.png ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png +append ~/hmf/analysis/copyNumberSummary/Figure\ 2ABC.png
 #convert ~/hmf/RPlot/Figure\ 2\ -\ WGD.png -resize x3000  ~/hmf/RPlot/Figure\ 2\ -\ WGD.png
