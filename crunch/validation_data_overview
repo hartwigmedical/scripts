@@ -2,6 +2,7 @@
 
 SCRIPT=$( basename $0 )
 ROOT_DIR=/data/data_archive/validation_data
+RUNS_DIR=/data/data_archive/validation_data/pipelineruns
 LOG_DIR="${HOME}/logs"
 
 printRsync="false"
@@ -29,6 +30,10 @@ function main(){
       done
     done
   done
+  
+  print_title "PipelineRuns"
+  echo $RUNS_DIR
+  find $RUNS_DIR -mindepth 1 -maxdepth 1 -type d -exec echo "  {}" \; 
   echo ""
 }
 
