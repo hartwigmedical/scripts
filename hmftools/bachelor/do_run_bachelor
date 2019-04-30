@@ -22,14 +22,9 @@ set=$( basename ${run_dir})
 clinvar_filters=/data/common/dbs/bachelor/BACHELOR_CLINVAR_FILTERS.csv
 bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/${bachelor_output_dir}/
-if [ $? -ne 0 ]
-then
-    echo "[ERROR] Unable to locate germline variants. Exiting."
-    exit 1
-fi
 
 if [ ! -d "${bach_output_dir}" ]; then
-    echo "[INFO] Creating Bachelor output dir"
+    echo "[INFO] ${bach_output_dir} does not exist yet, creating..."
     mkdir ${bach_output_dir}
 fi
 

@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-run_dir=$1 && shift
-
-prefix=`dirname $(readlink $0 || echo $0)`
-
-${prefix}/patient_report_for_run ${run_dir} -comments "This is a followup report for a previously reported sample"
