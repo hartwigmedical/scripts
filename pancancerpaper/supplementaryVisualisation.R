@@ -151,7 +151,7 @@ driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(
 driverViolinData$driverLikelihood = driverViolinData$driverLikelihood %>% replace_na(0)
 
 p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
-  geom_violin(fill = singleBlue, scale = "area") +
+  geom_violin(fill = singleBlue, scale = "area", size = 0.1) +
   #geom_point(data = driverDataLevels, aes(cancerType, driversPerSample)) +
   stat_summary(fun.y=mean, geom="point", shape=20, size=1) +
   xlab("Cancer Type") + ylab("Drivers") +
@@ -161,7 +161,8 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
   scale_y_continuous(expand=c(0.01, 0.01)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(legend.position="none") +
-  coord_flip() 
+  coord_flip() + 
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5))
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
   geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
@@ -169,11 +170,16 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
   ggtitle("") + xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
-  coord_flip()
+  coord_flip() + 
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"))
 
-pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "AUTO")
-pDriverPerSample
-save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
+pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+
+
+#pDriverPerSample
+#save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
 
 ########################################### Figure 5 - Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
