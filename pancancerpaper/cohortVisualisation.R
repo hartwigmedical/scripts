@@ -5,7 +5,14 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
-theme_set(theme_bw() +  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5)))
+theme_set(theme_bw() +  theme(
+  axis.text=element_text(size=5),
+  axis.title=element_text(size=7), 
+  legend.text = element_text(size=5),
+  strip.text.x = element_text(size = 5, face = "plain"),
+  legend.background=element_blank(), 
+  legend.key=element_blank(),
+  panel.spacing = unit(1, "pt")))
 
 #################### SETUP #################### 
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -27,6 +34,13 @@ cancerTypeColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9
                            "#dea185","#a0729d","#8a392f")
 cancerTypeColours = setNames(cancerTypeColours[1:length(cancerTypes)], cancerTypes)
 save(cancerTypeColours, file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+
+cosmicColours = c("#ff994b","#463ec0","#88c928","#996ffb","#68b1c0","#e34bd9","#106b00","#d10073","#98d76a",
+                  "#6b3a9d","#d5c94e","#0072e2","#ff862c","#31528d","#d7003a","#323233","#ff4791","#01837a",
+                  "#ff748a","#777700","#ff86be","#4a5822","#ffabe4","#6a4e03","#c6c0fb","#ffb571","#873659",
+                  "#dea185","#a0729d","#8a392f")
+cosmicColours = setNames(cosmicColours, c(1:30))
+
 
 somaticColours = c("#a6611a","#dfc27d","#80cdc1","#018571")
 somaticColours = setNames(somaticColours, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
@@ -131,6 +145,21 @@ hpcSNP = allSNPSummary %>%
   filter(cancerType != "Other")
 hpcSNP$sampleId = factor(hpcSNP$sampleId, levels = unique(hpcSNP$sampleId))
 
+hpcCosmicSignaturesFactors = as.character(c(1:30))
+hpcCosmicSignatures = read.csv(file = "~/hmf/RData/Reference/snvDpCosmicFitContributions.csv") %>% 
+  mutate(signature = factor(as.character(row_number()), levels = hpcCosmicSignaturesFactors, ordered = T))  %>% 
+  gather(sample, absContribution, -signature) %>%
+  group_by(sample) %>%
+  mutate(relContribution = absContribution / sum(absContribution)) %>%
+  select(sampleId = sample, signature, absContribution, relContribution) %>%
+  left_join(highestPurityCohortSummary %>% select(sampleId, cancerType), by = "sampleId") %>%
+  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
+  filter(cancerType != "Other")
+hpcCosmicSignatures$sampleId = factor(hpcCosmicSignatures$sampleId, levels = unique(hpcSNP$sampleId), ordered = T) 
+hpcCosmicSignatures = hpcCosmicSignatures %>% arrange(sampleId)
+
+jon = hpcCosmicSignatures %>% group_by(sampleId) %>% summarise(total = sum(relContribution))
+
 load(file = "~/hmf/RData/Reference/allMNPSummary.RData")
 hpcMNP = allMNPSummary %>%
   filter(sampleId %in% highestPurityCohortSummary$sampleId) %>%
@@ -175,6 +204,8 @@ hpcSV = highestPurityCohortSummary %>% select(sampleId, cancerType, TRL, DEL, DU
   arrange(sampleMutationalLoad) %>%
   filter(cancerType != "Other")
 hpcSV$sampleId = factor(hpcSV$sampleId, levels = unique(hpcSV$sampleId)) 
+
+
 
 #################### Cancer Type Summary FACETED #################### 
 display_cancer_types <- function(cancerTypes) {
@@ -270,9 +301,6 @@ ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, width = 183, h
 
 
 
-
-
-
 p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=singleSubstitutionColours) +
@@ -281,15 +309,34 @@ p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
     axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     #strip.background = element_blank(), 
-    strip.text.x = element_text(size = 9.2), 
-    legend.position="bottom", legend.title = element_blank()) + 
+    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    legend.spacing.x = unit(2, 'pt'),
+    legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x", labeller = labeller(cancerType = display_cancer_types)) + 
   guides(fill = guide_legend(nrow = 1)) +
   xlab("") +
   ylab("") +
-  scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
+  scale_y_continuous(expand = c(0,0)) + 
+  coord_cartesian(ylim = c(0, 1)) 
 
-p6 = ggplot(data=hpcMNP, aes(x = sampleId, y = sampleRelativeN)) +
+p6 = ggplot(data=hpcCosmicSignatures, aes(x = sampleId, y = relContribution)) +
+  geom_bar(aes(fill = signature), stat = "identity", width=1) + ylab("") +
+  scale_fill_manual(values=cosmicColours) +
+  theme(
+    axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+    axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+    panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    strip.background = element_blank(), strip.text.x =element_blank(), 
+    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    legend.spacing.x = unit(2, 'pt'),
+    legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
+  facet_grid(~cancerType, scales = "free_x") + 
+  guides(fill = guide_legend(nrow = 1)) +
+  scale_y_continuous(expand = c(0,0)) + 
+  coord_cartesian(ylim = c(0, 1))
+
+
+p7 = ggplot(data=hpcMNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=doubleSubstitutionColours) +
   theme(
@@ -297,12 +344,15 @@ p6 = ggplot(data=hpcMNP, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    legend.position="bottom", legend.title = element_blank()) + 
+    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    legend.spacing.x = unit(2, 'pt'),
+    legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
   guides(fill = guide_legend(nrow = 1)) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
+  scale_y_continuous(expand = c(0,0)) + 
+  coord_cartesian(ylim = c(0, 1))
 
-p7 = ggplot(data=hpcINDEL, aes(x = sampleId, y = sampleRelativeN)) +
+p8 = ggplot(data=hpcINDEL, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=indelColours) +
   theme(
@@ -310,12 +360,15 @@ p7 = ggplot(data=hpcINDEL, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    legend.position="bottom", legend.title = element_blank()) + 
+    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    legend.spacing.x = unit(2, 'pt'),
+    legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
   guides(fill = guide_legend(nrow = 1)) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
+  scale_y_continuous(expand = c(0,0)) + 
+  coord_cartesian(ylim = c(0, 1))
 
-p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
+p9 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=svColours) +
   theme(
@@ -323,25 +376,22 @@ p8 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    legend.position="bottom", legend.title = element_blank()) + 
+    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    legend.spacing.x = unit(2, 'pt'),
+    legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
   guides(fill = guide_legend(nrow = 1)) +
-  scale_y_continuous(expand = c(0,0), limits = c(0,1)) 
+  scale_y_continuous(expand = c(0,0)) + 
+  coord_cartesian(ylim = c(0, 1))
 
-#pFigure1 = plot_grid(p1, p2, p3, p4, p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(1, 1, 3, 3, 2, 2, 2, 2), labels = c("A", "B", "C", "D", "E", "F", "G", "H"))
-#save_plot("~/hmf/RPlot/Figure 1 - Overview TOTAL.png", pFigure1, base_width = 14, base_height = 20)
+pFigure1b = plot_grid(p5, p6, p7, p8, p9, ncol=1, align="v", rel_heights = c(2, 2, 2, 2, 2), labels = c("auto"), label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.pdf", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.png", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+#convert -density 300 ~/hmf/RPlot/Extended\ Data\ Figure\ 3.png ~/hmf/RPlot/Extended\ Data\ Figure\ 3.pdf
 
-pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(1, 1, 3, 3), labels = c("auto"))
-ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
 
-pdf("~/hmf/RPlot/Figure 1 - Overview.pdf", width=18.3/2.54, height=12.9/2.54)
-pFigure1a
-dev.off()
-
-save_plot("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, base_width = 14, base_height = 10)
-
-pFigure1b = plot_grid(p5, p6, p7, p8, ncol=1, align="v", rel_heights = c(2, 2, 2, 2), labels = c("A", "B", "C", "D"))
-save_plot("~/hmf/RPlot/Extended Data Figure 3 - Signatures.png", pFigure1b, base_width = 14, base_height = 10)
+#pFigure1b = plot_grid(p5, p5b, p6, p7, p8, ncol=1, align="v", rel_heights = c(2, 2, 2, 2), labels = c("A", "B", "C", "D"))
+#save_plot("~/hmf/RPlot/Extended Data Figure 3 - Signatures.png", pFigure1b, base_width = 14, base_height = 10)
 
 
 
