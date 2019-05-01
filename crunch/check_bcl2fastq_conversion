@@ -26,6 +26,7 @@ my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission descri
 my @SUM_FIELDS = qw( submission id name yld q30 description );
 
 my $YIELD_FACTOR = 1e6;
+my $ROUND_DECIMALS = 0;
 my %QC_LIMITS = (
     'lane_yld' => undef,
     'lane_q30' => undef,
@@ -56,6 +57,7 @@ my $HELP =<<HELP;
     -min_lane_yield <i>    Bases
     -min_sample_yield <i>  Bases
     -yield_factor <i>      Factor to devide all yields with ($YIELD_FACTOR)
+    -round_decimals <i>    Factor to devide all yields with ($ROUND_DECIMALS)
     -samplesheet <s>       Path to SampleSheet.csv file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
@@ -79,6 +81,7 @@ GetOptions (
   "min_sample_q30=i"   => \$QC_LIMITS{ 'samp_q30' },
   "min_lane_q30=i"     => \$QC_LIMITS{ 'samp_q30' },
   "yield_factor=i"     => \$YIELD_FACTOR,
+  "round_decimals=i"   => \$ROUND_DECIMALS,
   "no_qc"              => \$opt{ no_qc },
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
@@ -342,7 +345,7 @@ sub parseJsonInfo{
             $obj->{ 'flowcell_print' } = $fid;
 
             $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
-            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, 0, $YIELD_FACTOR );
+            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, $ROUND_DECIMALS, $YIELD_FACTOR );
             $obj->{ 'id_print' } = $id;
             $obj->{ 'name_print' } = $obj->{ 'name' };
             $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' } );
@@ -366,8 +369,8 @@ sub parseJsonInfo{
     
     ## Collect some general stats/info
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'}, 0, 1e6 ), 
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, 1e6 ), 
+      round( $info{'flow'}{$fid}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'};
       
@@ -403,6 +406,7 @@ sub printTable{
     my ($info, $fields) = @_;
 
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
+    say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'hmf_runname'}, 
@@ -421,6 +425,7 @@ sub printSummaryTable{
     my ($info, $fields) = @_;
    
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
+    say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
     say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
       $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'identifier'}, 
