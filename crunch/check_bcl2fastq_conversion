@@ -55,6 +55,7 @@ my $HELP =<<HELP;
     -min_sample_q30 <i>    Percentage
     -min_lane_yield <i>    Bases
     -min_sample_yield <i>  Bases
+    -yield_factor <i>      Factor to devide all yields with ($YIELD_FACTOR)
     -samplesheet <s>       Path to SampleSheet.csv file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
@@ -77,6 +78,7 @@ GetOptions (
   "min_lane_yield=i"   => \$QC_LIMITS{ 'lane_yld' },
   "min_sample_q30=i"   => \$QC_LIMITS{ 'samp_q30' },
   "min_lane_q30=i"     => \$QC_LIMITS{ 'samp_q30' },
+  "yield_factor=i"     => \$YIELD_FACTOR,
   "no_qc"              => \$opt{ no_qc },
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
