@@ -305,17 +305,15 @@ p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
   scale_fill_manual(values=singleSubstitutionColours) +
   theme(
-    axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
-    axis.text.y = element_blank(), axis.ticks.y = element_blank(),
+    axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+    axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     #strip.background = element_blank(), 
-    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    plot.margin = margin(t = 3, b = 15, l = 7, r = 5, unit = "pt"),
     legend.spacing.x = unit(2, 'pt'),
     legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x", labeller = labeller(cancerType = display_cancer_types)) + 
   guides(fill = guide_legend(nrow = 1)) +
-  xlab("") +
-  ylab("") +
   scale_y_continuous(expand = c(0,0)) + 
   coord_cartesian(ylim = c(0, 1)) 
 
@@ -327,7 +325,7 @@ p6 = ggplot(data=hpcCosmicSignatures, aes(x = sampleId, y = relContribution)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    plot.margin = margin(t = 3, b = 15, l = 5, r = 5, unit = "pt"),
     legend.spacing.x = unit(2, 'pt'),
     legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
@@ -344,7 +342,7 @@ p7 = ggplot(data=hpcMNP, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    plot.margin = margin(t = 3, b = 15, l = 5, r = 5, unit = "pt"),
     legend.spacing.x = unit(2, 'pt'),
     legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
@@ -360,7 +358,7 @@ p8 = ggplot(data=hpcINDEL, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    plot.margin = margin(t = 3, b = 15, l = 5, r = 5, unit = "pt"),
     legend.spacing.x = unit(2, 'pt'),
     legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
@@ -376,7 +374,7 @@ p9 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
     axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank(),
     panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
     strip.background = element_blank(), strip.text.x =element_blank(), 
-    plot.margin = margin(t = 3, b = 20, l = 3, unit = "pt"),
+    plot.margin = margin(t = 3, b = 15, l = 5, r = 5, unit = "pt"),
     legend.spacing.x = unit(2, 'pt'),
     legend.position=c(0.5, -.1), legend.title = element_blank(), legend.key.size = unit(0.2, "cm")) + 
   facet_grid(~cancerType, scales = "free_x") + 
