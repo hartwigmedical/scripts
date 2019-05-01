@@ -6,15 +6,17 @@ library(tidyr)
 library(stringi)
 library(MutationalPatterns)
 library(ggplot2)
+library(cowplot)
+theme_set(theme_bw() + theme(axis.text=element_text(size=5),axis.title=element_text(size=7),legend.text = element_text(size=5)))
 
 
-snvDpSampleSigData = read.csv('~/data/sigs/dp/snvDpSampleSigData.csv')
-snvDpSampleCounts = read.csv('~/data/sigs/dp/snvDpSampleCounts.csv')
-nmfFitContributions = read.csv('~/data/sigs/dp/snvDpCosmicFitContributions.csv')
-snvDpMatrixData = read.csv('~/data/sigs/dp/snvDpMatrixData.csv')
-cosmicSigs = read.csv('~/data/sigs/dp/cosmicSigs.csv')
+snvDpSampleSigData = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleSigData.csv')
+snvDpSampleCounts = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleCounts.csv')
+nmfFitContributions = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpCosmicFitContributions.csv')
+snvDpMatrixData = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpMatrixData.csv')
+cosmicSigs = read.csv('/Users/jon/hmf/RData/SIgnatures/cosmicSigs.csv')
 
-load('~/data/r_data/highestPurityCohortSummary.RData')
+load('~/hmf/RData/processed/highestPurityCohortSummary.RData')
 sampleCancerTypes = highestPurityCohortSummary %>% select(SampleId=sampleId,CancerType=cancerType)
 
 snvDpSampleSigData = merge(snvDpSampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=T)
@@ -62,47 +64,86 @@ cancerSampleSigSummary = merge(cancerSampleSigSummary,cancerSigMedianCounts,by=c
 # calculate counts per MB for each signature
 mutLoadMin = 0.25
 mutLoadMax = 16
-cancerSampleSigSummary = cancerSampleSigSummary %>% mutate(SamplesWithSig=round(CancerSigSampleCount/CancerSampleCount,3),
-                                                           MedianLoadPerMb=ifelse(MedianSampleCount>0,round(MedianSampleCount/3e3,3),0),
-                                                           MedianLoadPerMb=ifelse(MedianLoadPerMb>mutLoadMax,mutLoadMax,
-                                                                                  ifelse(MedianLoadPerMb<mutLoadMin,mutLoadMin,MedianLoadPerMb)))
-
-plotBreaks = c(0.25, 0.5, 1, 2, 4, 8, 16)
-
-plot = (ggplot(cancerSampleSigSummary %>% filter(SamplesWithSig>0), aes(x=CancerType, y=reorder(SigName, -SigIndex))) 
-        + geom_point(aes(color=MedianLoadPerMb, size=SamplesWithSig)) 
-        + scale_color_gradient(name='MedianLoadPerMb', trans='log2', low="lightblue", high="midnightblue", guide="colourbar",limits=c(mutLoadMin,mutLoadMax), breaks=plotBreaks, labels=plotBreaks)
-        + theme_gray()
-        + theme(panel.grid.major = element_line(), panel.grid.minor = element_line())
-        + theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=0,size=10))
-        + scale_x_discrete(position = 'top')
-        + labs(subtitle="Signature Allocation by Cancer Types", y="Signature", x="CancerType"))
-
-print(plot)
-
-
-#####################
-# 2. Residuals Report
+cancerSampleSigSummary = cancerSampleSigSummary %>% 
+  mutate(
+    SamplesWithSig=round(CancerSigSampleCount/CancerSampleCount,3),
+    MedianLoadPerMb=ifelse(MedianSampleCount>0,round(MedianSampleCount/3e3,3),0),
+    MedianLoadPerMb=ifelse(MedianLoadPerMb>mutLoadMax,mutLoadMax,ifelse(MedianLoadPerMb<mutLoadMin,mutLoadMin,MedianLoadPerMb))) %>%
+  filter(CancerType != "Other")
 
 residualsSummary = (snvDpSampleSigData %>% group_by(SampleId,CancerType) 
                     %>% summarise(SampleTotal=first(SampleTotal), 
                                   ResidualTotal=round(sum(ifelse(SigName=='Excess',-Count,ifelse(SigName=='Unalloc',Count,0))),0))
-                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4)))
+                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4))) %>%
+  filter(CancerType != "Other")
 
-resPlot = (ggplot(residualsSummary, aes(CancerType, ResidualPerc))
-           + theme(axis.text.x = element_text(angle = 90, hjust=1,size=7))
-           + geom_boxplot(varwidth=T, fill="lightblue") +labs(title="Residuals % by Cancer Type", x="Cancer Type", y="Residuals %"))
+sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
+worstSamples = c('HMF001562A','HMF002896A') # these are the 2 SYD985 samples
+worstSamplesMatrixData = snvDpSampleCounts %>% left_join(sampleIdMap, by = c("SampleId" =  "sampleId")) %>% filter(hmfSampleId %in% worstSamples) %>% select(-SampleId) %>% spread(hmfSampleId,Count)
+worstSamplesMatrixData[is.na(worstSamplesMatrixData)] <- 0
+worstSamplesMatrixData = within(worstSamplesMatrixData, rm(Bucket))
 
-print(resPlot)
+colorGradients = c("#deebf7","#c6dbef","#9ecae1","#6baed6","#4292c6","#2171b5","#08519c","#08306b")
+
+plotBreaks = c(0.5, 1, 2, 4, 8, 16)
+p1 = ggplot(cancerSampleSigSummary %>% filter(SamplesWithSig>0), aes(x=CancerType, y=reorder(SigName, -SigIndex))) +
+        geom_point(aes(color=MedianLoadPerMb, size=SamplesWithSig))  +
+        scale_color_gradientn(name='Median SNV Load Per Mb', trans='log2', colors = colorGradients, guide="colourbar",limits=c(mutLoadMin,mutLoadMax), breaks=plotBreaks, labels=plotBreaks) +
+        scale_size_continuous(name = "Proportion of Samples with Signature", range = c(0, 5)) +
+        theme(
+          legend.margin=margin(t = 3, b = 0, unit = "pt"), 
+          plot.margin = margin(l = 5, r = 5, t = 10, b = 0, unit = "pt"),
+          legend.title = element_text(size = 6),  legend.key.size = unit(0.4, "cm"),
+          legend.background=element_blank(), 
+          legend.key=element_blank(),
+          axis.title.x = element_blank(),
+          axis.text.x = element_text(angle = 90, size = 7, hjust = 0.5, vjust = 0.5),
+          axis.ticks = element_blank(),
+          panel.border = element_blank(),
+          panel.grid.major.x = element_blank()
+              ) +
+        #theme(axis.text.x = element_text(angle = 90, vjust=0.5, hjust=0,size=10)) +
+        theme(legend.position = "top") +
+        #scale_x_discrete(position = 'top') + 
+        ylab("Signature") + 
+        guides(color = guide_colourbar(title.vjust = 0.5, title.position = "left", nrow = 2, barheight = unit(4, "pt"), barwidth = unit(50, "pt")))  
+    #labs(size="Proportion of Samples with Signature")
+      
+
+#####################
+# 2. Residuals Report
+p2 = ggplot(residualsSummary, aes(CancerType, ResidualPerc)) + 
+  geom_boxplot(varwidth=T, fill="lightblue", size = 0.2, outlier.size = 0.1) +
+  ylab("Residuals") +
+  theme(
+    axis.title.x = element_blank(), 
+    axis.ticks = element_blank(), axis.text.x = element_blank(),
+      panel.border = element_blank(), panel.grid.minor.x = element_blank(),  panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank(),
+      strip.background = element_blank(), strip.text = element_blank(), legend.title = element_blank(), 
+      legend.margin=margin(t = 0,unit = "pt"), 
+      plot.margin = margin(t = 0, b = 25, unit = "pt"),
+      legend.background=element_blank(), legend.key=element_blank()) +
+    scale_y_continuous(labels = percent) 
+
+
 
 
 ######################################################
 # 3. Bucket plots for samples with residuals above 50%
 
 # these sample IDs need to be replaced with the HMF IDs
-worstSamples = c('CPCT02010772T','CPCT02010662T') # these are the 2 SYD985 samples
-worstSamplesMatrixData = snvDpSampleCounts %>% filter(SampleId %in% worstSamples) %>% spread(SampleId,Count)
-worstSamplesMatrixData[is.na(worstSamplesMatrixData)] <- 0
-worstSamplesMatrixData = within(worstSamplesMatrixData, rm(Bucket))
 
-plot_96_profile(worstSamplesMatrixData)
+p3 = plot_96_profile(worstSamplesMatrixData) + xlab("") +
+  theme(
+    strip.text.y = element_text(size = 5), axis.text.y = element_text(size = 5), axis.title.y = element_text(size = 7), strip.text.x = element_text(size = 7),
+    panel.grid.minor = element_blank()
+    ) + 
+  scale_y_continuous(labels = percent, breaks = c(0, 0.1, 0.2)) + ylab("Contribution")
+
+p4 = plot_grid(p1, p2, ncol = 1, align = "v", labels = "auto", rel_heights =  c(4, 1), label_size= 8)
+p5 = plot_grid(p4, p3, labels = c("", "c"), rel_heights = c(4, 1.2), ncol = 1, label_size= 8)
+
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.pdf", p5, width = 183, height = 217, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.png", p5, width = 183, height = 217, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.eps", p5, width = 183, height = 217, units = "mm", dpi = 300)
+
