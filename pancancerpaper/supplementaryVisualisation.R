@@ -336,7 +336,7 @@ pCoverage = plot_grid(pCoverage, labels = "C")
 pCoverage
 save_plot("~/hmf/RPlot/Extended Figure 1 - Coverage.png", pCoverage, base_width = 5, base_height = 5)
 
-########################################### Extended Figure 3 - MSI / TMB
+########################################### Extended Figure 5 - MSI / TMB
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
@@ -361,9 +361,9 @@ tmbRelativeData[tmbRelativeData$cancerType == "Lung", "globalPercentage"] <- NA
 
 p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
   geom_bar(stat = "identity", fill = singleBlue) + 
-  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = msiGlobalData$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = msiGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*msiGlobalData$percentage), size = 3) +
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2, size = 0.3) +
+  annotate("text", x = 20, y = msiGlobalData$percentage, label = "Pan Cancer", size =  5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 19, y = msiGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*msiGlobalData$percentage), size =  5 * 25.4 / 72, fontface = "plain") +
   ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
@@ -375,9 +375,9 @@ p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) +
 
 p2 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) + 
   geom_bar(stat = "identity",fill = singleBlue) + 
-  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = tmbGlobalData$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = tmbGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*tmbGlobalData$percentage), size = 3) +
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2, size = 0.3) +
+  annotate("text", x = 20, y = tmbGlobalData$percentage, label = "Pan Cancer",  size =  5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 19, y = tmbGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*tmbGlobalData$percentage),  size =  5 * 25.4 / 72, fontface = "plain") +
   ylab("% Samples TMB High") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.7), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
@@ -387,8 +387,8 @@ p2 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) +
   coord_flip()
 
 p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
-  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB High Threshold", size = 3, hjust = 0) +
+  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed", size = 0.3) + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
+  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed", size = 0.3) + annotate("text", x = 32000, y = 1.1e2, label = "TMB High Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
   geom_point(aes(color = cancerType)) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
@@ -397,7 +397,7 @@ p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)
   xlab("SNVs") + ylab("Indels") + ggtitle("")
 
 p4 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 2000, y = 20000, label = "MSI Threshold", size = 3, hjust = 0) +
+  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed", size = 0.3) + annotate("text", x = 2000, y = 20000, label = "MSI Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
   geom_point(aes(color = cancerType)) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e1, 1e4)) + 
@@ -406,7 +406,7 @@ p4 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL))
   xlab("SVs") + ylab("Indels") + ggtitle("")
 
 p5 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
-  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold", size = 3, hjust = 0) +
+  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed", size = 0.3) + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
   geom_point(aes(color = cancerType)) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
@@ -414,10 +414,10 @@ p5 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
   theme(legend.position = "none", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
   xlab("SNVs") + ylab("SVs") + ggtitle("")
 
-p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("A","B"))
-p45 = plot_grid(p4,p5, rel_widths = c(2,2), labels = c("D","E"))
+p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("a","b"), label_size = 8)
+p45 = plot_grid(p4,p5, rel_widths = c(2,2), labels = c("d","e"), label_size = 8)
 
-pMsiTMB = plot_grid(p12, p3, p45, ncol = 1, rel_heights = c(1, 2, 1), labels = c("","C", ""))
+pMsiTMB = plot_grid(p12, p3, p45, ncol = 1, rel_heights = c(1, 2, 1), labels = c("","c", ""), label_size = 8)
 
 ########### Part 2
 mutationalLoad = highestPurityCohortSummary %>%
@@ -479,13 +479,12 @@ p8 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLo
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
 
-pLoads = plot_grid(p7,p8, p6, nrow = 1, labels = c("F","G","H"))
+pLoads = plot_grid(p7,p8, p6, nrow = 1, labels = c("f","g","h"), label_size = 8)
 
-pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(4, 1))
-pComplete
-
-save_plot("~/hmf/RPlot/Extended Figure 3 - Loads.png", pComplete, base_width = 10, base_height = 14)
-
+pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(4, 1), label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.pdf", pComplete, width = 183, height = 240, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.png", pComplete, width = 183, height = 240, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.eps", pComplete, width = 183, height = 240, units = "mm", dpi = 300)
 
 
 ########################################### Extended Figure 6 - SMG tile chart
