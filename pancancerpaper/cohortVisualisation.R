@@ -5,14 +5,8 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
-theme_set(theme_bw() +  theme(
-  axis.text=element_text(size=5),
-  axis.title=element_text(size=7), 
-  legend.text = element_text(size=5),
-  strip.text.x = element_text(size = 5, face = "plain"),
-  legend.background=element_blank(), 
-  legend.key=element_blank(),
-  panel.spacing = unit(1, "pt")))
+
+
 
 #################### SETUP #################### 
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -158,8 +152,6 @@ hpcCosmicSignatures = read.csv(file = "~/hmf/RData/Reference/snvDpCosmicFitContr
 hpcCosmicSignatures$sampleId = factor(hpcCosmicSignatures$sampleId, levels = unique(hpcSNP$sampleId), ordered = T) 
 hpcCosmicSignatures = hpcCosmicSignatures %>% arrange(sampleId)
 
-jon = hpcCosmicSignatures %>% group_by(sampleId) %>% summarise(total = sum(relContribution))
-
 load(file = "~/hmf/RData/Reference/allMNPSummary.RData")
 hpcMNP = allMNPSummary %>%
   filter(sampleId %in% highestPurityCohortSummary$sampleId) %>%
@@ -206,7 +198,6 @@ hpcSV = highestPurityCohortSummary %>% select(sampleId, cancerType, TRL, DEL, DU
 hpcSV$sampleId = factor(hpcSV$sampleId, levels = unique(hpcSV$sampleId)) 
 
 
-
 #################### Cancer Type Summary FACETED #################### 
 display_cancer_types <- function(cancerTypes) {
   for (i in 1:length(cancerTypes)) {
@@ -233,6 +224,7 @@ display_cancer_types <- function(cancerTypes) {
   return (label_wrap_gen(10)(cancerTypes))
 }
 
+theme_set(theme_bw() +  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5)))
 p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   geom_bar(aes(fill = cancerType), stat = "identity") +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
@@ -243,8 +235,8 @@ p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   ylab("Samples") + 
   coord_cartesian(ylim = c(0, 620)) + 
   facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + 
-  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 3, b = 3, l = 3, unit = "pt"))
-
+  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 3, b = 3, l = 3, r = 3, unit = "pt"))
+p1
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
   geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area", size = 0.1) + 
@@ -296,10 +288,12 @@ p4 = ggplot(data=combinedMutationalLoad) +
   coord_flip()
 
 pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(2, 2, 3, 3), labels = c("auto"), label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 1 - Overview.png", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 1.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 1.png", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
 
 
+theme_set(theme_bw() +  theme(axis.text=element_text(size=5), axis.title=element_text(size=7),legend.text = element_text(size=5), strip.text.x = element_text(size = 5, face = "plain"),
+  legend.background=element_blank(), legend.key=element_blank(), panel.spacing = unit(1, "pt")))
 
 p5 = ggplot(data=hpcSNP, aes(x = sampleId, y = sampleRelativeN)) +
   geom_bar(aes(fill = type), stat = "identity", width=1) + ylab("") +
@@ -385,6 +379,7 @@ p9 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
 pFigure1b = plot_grid(p5, p6, p7, p8, p9, ncol=1, align="v", rel_heights = c(2, 2, 2, 2, 2), labels = c("auto"), label_size = 8)
 ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.pdf", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.png", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.eps", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
 #convert -density 300 ~/hmf/RPlot/Extended\ Data\ Figure\ 3.png ~/hmf/RPlot/Extended\ Data\ Figure\ 3.pdf
 
 
