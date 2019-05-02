@@ -9,7 +9,6 @@ library(ggplot2)
 library(cowplot)
 theme_set(theme_bw() + theme(axis.text=element_text(size=5),axis.title=element_text(size=7),legend.text = element_text(size=5)))
 
-
 snvDpSampleSigData = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleSigData.csv')
 snvDpSampleCounts = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleCounts.csv')
 nmfFitContributions = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpCosmicFitContributions.csv')
@@ -68,14 +67,12 @@ cancerSampleSigSummary = cancerSampleSigSummary %>%
   mutate(
     SamplesWithSig=round(CancerSigSampleCount/CancerSampleCount,3),
     MedianLoadPerMb=ifelse(MedianSampleCount>0,round(MedianSampleCount/3e3,3),0),
-    MedianLoadPerMb=ifelse(MedianLoadPerMb>mutLoadMax,mutLoadMax,ifelse(MedianLoadPerMb<mutLoadMin,mutLoadMin,MedianLoadPerMb))) %>%
-  filter(CancerType != "Other")
+    MedianLoadPerMb=ifelse(MedianLoadPerMb>mutLoadMax,mutLoadMax,ifelse(MedianLoadPerMb<mutLoadMin,mutLoadMin,MedianLoadPerMb))) 
 
 residualsSummary = (snvDpSampleSigData %>% group_by(SampleId,CancerType) 
                     %>% summarise(SampleTotal=first(SampleTotal), 
                                   ResidualTotal=round(sum(ifelse(SigName=='Excess',-Count,ifelse(SigName=='Unalloc',Count,0))),0))
-                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4))) %>%
-  filter(CancerType != "Other")
+                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4))) 
 
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
 worstSamples = c('HMF001562A','HMF002896A') # these are the 2 SYD985 samples

@@ -106,7 +106,7 @@ drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, dr
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
-actionablePlotData = responsiveVariants %>% filter(cancerType != 'Other') %>%
+actionablePlotData = responsiveVariants  %>%
   mutate(
     response = ifelse(B_OnLabel != "", "B_OnLabel", "B_OffLabel"),
     response = ifelse(A_OffLabel != "", "A_OffLabel", response),
