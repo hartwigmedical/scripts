@@ -8,7 +8,8 @@ library(ggplot2)
 library(cowplot)
 library(scales)
 library(magick)
-theme_set(theme_bw() + theme(axis.text = element_text(size=5), axis.title = element_text(size=7), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
+theme_set(theme_bw() + theme(
+  axis.text = element_text(size=5), axis.title = element_text(size=7), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
 
 singleBlue = "#6baed6"
 
@@ -53,8 +54,8 @@ wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$
 p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
   geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2, size = 0.3) +
-  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
-  annotate("text", x = 21, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 23, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
   ggtitle("") + 
@@ -181,7 +182,7 @@ ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height
 #pDriverPerSample
 #save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
 
-########################################### Figure 5 - Hotspots
+########################################### Extended Figure 8 - Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
@@ -218,12 +219,13 @@ hotspotData = hotspotData %>%
 
 p_hotspot1 = ggplot(data = hotspotData %>% filter(variant == 'SNV'), aes(x = gene, y = driverLikelihood)) +
   geom_bar(aes(fill = hotspot), stat = "identity") +
-  scale_fill_manual(values = hotspotColours) +
+  scale_fill_manual(values = hotspotColours, name = "Drivers") +
   ggtitle("SNV") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
+p_hotspot1
 
 legend = g_legend(p_hotspot1)
 p_hotspot1 = p_hotspot1 + theme(legend.position="none")
@@ -234,7 +236,7 @@ p_hotspot2 = ggplot(data = hotspotData %>% filter(variant == 'MNV'), aes(x = gen
   ggtitle("MNV") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), axis.text.y = element_blank(),  legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
 
 p_hotspot3 = ggplot(data = hotspotData  %>% filter(variant == 'INDEL'), aes(x = gene, y = driverLikelihood)) +
@@ -243,14 +245,17 @@ p_hotspot3 = ggplot(data = hotspotData  %>% filter(variant == 'INDEL'), aes(x = 
   ggtitle("Indel") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), axis.text.y = element_blank(), legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
 
+pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1), ncol = 3, labels=c("a"), label_size = 8)
 
-pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1), ncol = 3, labels=c("A"))
-pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(6,1)) + draw_label("Drivers", x = 0.52, y = 0.15, size = 11)
+pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(10,1), label_size = 8)
 pHotspots2 
-save_plot("~/hmf/RPlot/Figure 5 - Hotspots.png", pHotspots2, base_width = 5, base_height = 6)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+
 
 
 ########################################### Figure 6 - Clonality
