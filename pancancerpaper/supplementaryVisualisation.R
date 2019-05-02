@@ -8,7 +8,7 @@ library(ggplot2)
 library(cowplot)
 library(scales)
 library(magick)
-theme_set(theme_bw())
+theme_set(theme_bw() + theme(axis.text = element_text(size=5), axis.title = element_text(size=7), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
 
 singleBlue = "#6baed6"
 
@@ -43,8 +43,7 @@ wgdPlotData = highestPurityCohortSummary %>%
 
 wgdPlotDataTotal = wgdPlotData %>% filter(WGD) %>% summarise(percentage = sum(n) / sum(total))
 wgdPlotData = wgdPlotData %>%
-  mutate(totalPercentage = wgdPlotDataTotal$percentage) %>%
-  filter(cancerType != "Other")
+  mutate(totalPercentage = wgdPlotDataTotal$percentage) 
 
 wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
 wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
@@ -94,8 +93,8 @@ pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
 pabc = plot_grid(pa, pbc, pWGD, nrow = 1, labels = c("a", "", ""), rel_widths = c(0.6, 0.3, 0.3), label_size = 8)
 #pabc
 
-ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 183, height = 100, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
 
 
 #convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
@@ -488,46 +487,6 @@ pComplete
 save_plot("~/hmf/RPlot/Extended Figure 3 - Loads.png", pComplete, base_width = 10, base_height = 14)
 
 
-########################################### Extended Figure 5 - Y DELETES
-load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
-load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
-clinical = highestPurityCohortSummary %>% select(sampleId, cancerType)
-maleCopyNumberY = hpcCopyNumbers %>% 
-  filter(chromosome == 'Y') %>% 
-  left_join(clinical, by = "sampleId") %>% 
-  mutate(status = ifelse(copyNumber < 0.5, "deleted", "normal")) %>%
-  group_by(cancerType, status) %>%
-  summarise(length = sum(end - start + 1)) %>%
-  group_by(cancerType) %>%
-  mutate(percentage = length / sum(length))
-
-maleCopyNumberYTotal = maleCopyNumberY %>% group_by(status) %>% summarise(length = sum(length)) %>% spread(status, length) %>% mutate(percentage = deleted / (normal + deleted))
-maleCopyNumberY = maleCopyNumberY %>%
-  mutate(totalPercentage = maleCopyNumberYTotal$percentage) %>%
-  filter(cancerType != "Other")
-
-maleCopyNumberYLevels = maleCopyNumberY %>% filter(status == 'deleted') %>% arrange(-percentage)
-maleCopyNumberY = maleCopyNumberY %>% ungroup() %>% 
-  mutate(
-    cancerType = factor(cancerType, maleCopyNumberYLevels$cancerType),
-    status = factor(status, c("normal", "deleted"), ordered = T))
-maleCopyNumberY[maleCopyNumberY$cancerType == "CNS", "totalPercentage"] <- NA
-maleCopyNumberY[maleCopyNumberY$cancerType == "NET", "totalPercentage"] <- NA
-
-p1 <- ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
-  geom_bar(aes(fill=status), stat = "identity") + 
-  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  ggtitle("") + xlab("") + ylab("% of males with somatic Y chromosome deletion") +
-  coord_flip() +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="none") + 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  scale_fill_manual(values = c("#deebf7", "#2171b5")) +
-  annotate("text", x = 18, y = maleCopyNumberYTotal$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 17, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 3) 
-
-save_plot("~/hmf/RPlot/Extended Figure 5 - Somatic Y Loss.png", p1, base_width = 6, base_height = 4)
-
 
 ########################################### Extended Figure 6 - SMG tile chart
 
@@ -580,8 +539,45 @@ pTile
 save_plot("~/hmf/RPlot/Extended Figure 6 - Tile.png", pTile, base_width = 6, base_height = 10)
 
 
+########################################### Extended Figure 6
 
-########################################### Extended Figure 8
+load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
+clinical = highestPurityCohortSummary %>% select(sampleId, cancerType)
+maleCopyNumberY = hpcCopyNumbers %>% 
+  filter(chromosome == 'Y') %>% 
+  left_join(clinical, by = "sampleId") %>% 
+  mutate(status = ifelse(copyNumber < 0.5, "deleted", "normal")) %>%
+  group_by(cancerType, status) %>%
+  summarise(length = sum(end - start + 1)) %>%
+  group_by(cancerType) %>%
+  mutate(percentage = length / sum(length))
+
+maleCopyNumberYTotal = maleCopyNumberY %>% group_by(status) %>% summarise(length = sum(length)) %>% spread(status, length) %>% mutate(percentage = deleted / (normal + deleted))
+maleCopyNumberY = maleCopyNumberY %>%
+  mutate(totalPercentage = maleCopyNumberYTotal$percentage) 
+
+maleCopyNumberYLevels = maleCopyNumberY %>% filter(status == 'deleted') %>% arrange(-percentage)
+maleCopyNumberY = maleCopyNumberY %>% ungroup() %>% 
+  mutate(
+    cancerType = factor(cancerType, maleCopyNumberYLevels$cancerType),
+    status = factor(status, c("normal", "deleted"), ordered = T))
+maleCopyNumberY[maleCopyNumberY$cancerType == "CNS", "totalPercentage"] <- NA
+maleCopyNumberY[maleCopyNumberY$cancerType == "NET", "totalPercentage"] <- NA
+
+pyDeletes <- ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
+  geom_bar(aes(fill=status), stat = "identity") + 
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2, size = 0.3) +
+  ggtitle("") + xlab("") + ylab("% of males with somatic Y chromosome deletion") +
+  coord_flip() +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") + 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  scale_fill_manual(values = c("#deebf7", "#2171b5")) +
+  annotate("text", x = 19, y = maleCopyNumberYTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 18, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") 
+
+pyDeletes
 
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -619,7 +615,7 @@ p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
   scale_y_continuous(expand=c(0.01, 0.01))
 
 ampDriversPerGene = hpcDriversByGene %>%
-  filter(driver == 'Amp') %>%
+  filter(driver == 'Amplification') %>%
   group_by(gene, cancerType) %>% count() %>%
   ungroup()
 
@@ -638,9 +634,10 @@ p2 = ggplot(data = ampDriversPerGene, aes(x = gene, y = n)) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
   coord_flip()
 
+
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 ampDriversCancerType = hpcDriversByGene %>%
-  filter(driver == 'Amp') %>%
+  filter(driver == 'Amplification') %>%
   group_by(driver, cancerType) %>% count() %>%
   ungroup() %>% arrange(-n)
 
@@ -656,9 +653,10 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
   coord_flip()
 
-pAmps = plot_grid(p0, p2, p1, labels="AUTO")
-pAmps
-save_plot("~/hmf/RPlot/Extended Figure 8 - Amps.png", pAmps, base_width = 10, base_height = 10)
+pAmps = plot_grid(pyDeletes, p0, p2, p1, labels="auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.png", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
 
 ###################################################### Determining Clonality
 
