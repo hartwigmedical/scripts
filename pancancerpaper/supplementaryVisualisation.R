@@ -529,14 +529,17 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
   geom_tile(aes(fill = qglobal_cv+ 1e-13)) + 
   scale_fill_gradient(name = "Significance", trans = "log10", low = "#2171b5", high = "#bdd7e7", guide = "colourbar",limits=c(1e-14, 1e-2), breaks=c(1e-14, 1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-2), labels=c(1e-14, 1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-2)) +
   xlab("") + ylab("") +
-  theme(axis.text.y = element_text(size = 8, colour = hmfGenesLabels$status, face = hmfGenesLabels$face), axis.text.x = element_text(angle = 90, hjust = 1), legend.title=element_text(size=9)) +
+  theme(axis.text.y = element_text(colour = hmfGenesLabels$status, face = hmfGenesLabels$face), axis.text.x = element_text(angle = 90, hjust = 1), 
+        panel.border = element_blank(),
+        axis.ticks = element_blank()) +
   #theme(panel.border = element_blank(),axis.ticks = element_blank()) +
   #theme(legend.position = "bottom") +
   guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
 pTile  
 
-save_plot("~/hmf/RPlot/Extended Figure 6 - Tile.png", pTile, base_width = 6, base_height = 10)
-
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 
 ########################################### Extended Figure 6
 
