@@ -182,7 +182,7 @@ ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height
 #pDriverPerSample
 #save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
 
-########################################### Extended Figure 8 - Hotspots
+########################################### Extended Figure 9 - Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
@@ -252,21 +252,40 @@ pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1),
 
 pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(10,1), label_size = 8)
 pHotspots2 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.png", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
 
 
 
-########################################### Figure 10
+########################################### Figure 11
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
+
+purityBreaks = c(0:10) / 10
+purityLabels = c("0-10%", "10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","90-100%")
+
+detectable_ploidy <- function(purity, ploidy) {
+  return (6/106*(2*(1-purity)+ploidy*purity)/purity)
+}
+
+ploidyFactors = c("Ploidy2", "Ploidy4")
+ploidyColors = c(singleBlue, "#d94701")
+ploidyColors = setNames(ploidyColors, ploidyFactors)
+
+detectablePloidyPurities = c(2:9)/10 + 0.05
+detectablePloidy2 <- sapply(detectablePloidyPurities, function (x) {detectable_ploidy(x, 2)})
+detectablePloidy4 <- sapply(detectablePloidyPurities, function (x) {detectable_ploidy(x, 4)})
+detectablePloidyDf = data.frame(purity = detectablePloidyPurities, Ploidy2 = detectablePloidy2, Ploidy4 = detectablePloidy4) %>% 
+  gather(value, ploidy, Ploidy2, Ploidy4) %>%
+  mutate(purityBucket = cut(purity, breaks = purityBreaks, labels = purityLabels)) 
+
 
 highestPurityCohortSummary$purityBucket = 
   cut(
     highestPurityCohortSummary$purity, 
-    breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
-    labels = c("0-10%", "10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","          90-100%"))
+    breaks=purityBreaks,
+    labels = purityLabels)
 
 clonalityLoad2 = highestPurityCohortSummary %>%
   mutate(total = TOTAL_INDEL + TOTAL_SNV + TOTAL_MNV, subclonal = SUBCLONAL_INDEL + SUBCLONAL_SNV + SUBCLONAL_MNV) %>%
@@ -289,15 +308,15 @@ p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
   ggtitle("") + xlab("Tumor Purity") + ylab("Count of samples") + 
   scale_y_continuous(expand=c(0.01, 0.01)) +
-  theme(legend.position="none") +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
   coord_flip() 
 
 p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
   geom_violin(fill = singleBlue, scale = "width", size = 0.3) +
-  geom_point(aes(y = bucketMean), shape=20, size=1) +
+  geom_point(aes(y = bucketMean), shape=20, size=0.3) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
-  theme(legend.position="none") +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
   theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip() 
@@ -306,18 +325,28 @@ p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercent
   geom_bar(fill = singleBlue, stat = "identity") + 
   xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
   scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
-  theme(legend.position="none") +
-  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
+  theme( axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip()
-p3
 
-pClonality = plot_grid(p1,p2, p3, ncol = 3, labels="auto", label_size = 8)
+p4 = ggplot(data = detectablePloidyDf, aes(x = purityBucket, y = ploidy)) +
+  geom_point(aes(color = value), size = 0.3) + 
+  scale_color_manual(values = ploidyColors, labels = c("sample ploidy = 2", "sample ploidy = 4")) +
+  xlab("") + ylab("Min detectable somatic ploidy") + ggtitle("") + scale_y_continuous(limits = c(0, 1)) + 
+  #scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
+  theme(legend.position = c(0.7,0.9), legend.title = element_blank()) +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title = element_text(size=5)) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  coord_flip()
+p4
+
+pClonality = plot_grid(p1,p2, p3, p4, ncol = 2, labels="auto", label_size = 8)
 pClonality
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.pdf", pClonality, width = 189, height = 60, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.png", pClonality, width = 189, height = 60, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.eps", pClonality, width = 189, height = 60, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.pdf", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.eps", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
 
 
 ########################################### Extended Figure 1c - Coverage
@@ -343,7 +372,7 @@ pCoverage = plot_grid(pCoverage, labels = "C")
 pCoverage
 save_plot("~/hmf/RPlot/Extended Figure 1 - Coverage.png", pCoverage, base_width = 5, base_height = 5)
 
-########################################### Extended Figure 5 - MSI / TMB
+########################################### Extended Figure 6 - MSI / TMB
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
@@ -489,12 +518,12 @@ p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("a","b"), label_size = 8)
 pRest = plot_grid(p3, p4, p5, p7, p8, p6, labels = c("c","d","e","f", "g", "h"), label_size = 8)
 pLoads = plot_grid(p12, pRest, legend, ncol = 1, rel_heights = c(4, 8, 1), labels = c("","", ""), label_size = 8)
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.pdf", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.png", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.eps", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.pdf", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.png", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.eps", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
 
 
-########################################### Extended Figure 6 - SMG tile chart
+########################################### Extended Figure 8 - SMG tile chart
 
 absSignificance = 0.01
 load(file = "~/hmf/RData/processed/genePanel.RData")
@@ -544,11 +573,11 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
   guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
 pTile  
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 
-########################################### Extended Figure 6
+########################################### Extended Figure 7
 
 load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
 load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
@@ -663,9 +692,9 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
   coord_flip()
 
 pAmps = plot_grid(pyDeletes, p0, p2, p1, labels="auto", label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.png", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.png", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
 
 ###################################################### Determining Clonality
 
