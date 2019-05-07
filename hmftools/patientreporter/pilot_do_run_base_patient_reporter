@@ -19,6 +19,6 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -rva_logo ${rva_logo} \
-    -company_log ${company_logo} \
+    -company_logo ${company_logo} \
     -comments "This is a pilot patient report, not validated" \
     "$@"
