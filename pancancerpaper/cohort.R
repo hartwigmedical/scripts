@@ -348,8 +348,6 @@ multipleBiopsySomaticVariantSummary = multipleBiopsySomaticsWithScope %>%
 
 save(multipleBiopsySomaticVariantSummary, file = "~/hmf/RData/Processed/multipleBiopsySomaticVariantSummary.RData")
 
-
-
 load(file = "~/hmf/RData/reference/allClinicalData.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
 load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
@@ -388,55 +386,3 @@ jon = allClinicalData %>% filter(patientId %in% inconsistentData$patientId)
 clinicalDatabaseSummary = purple::query_clinical_data(dbProd)
 clinicalDatabaseSummary = clinicalDatabaseSummary %>% filter(sampleId %in% inconsistentData$sampleId) %>% select(sampleId, primaryTumorLocation)
 inconsistentData = left_join(inconsistentData, clinicalDatabaseSummary, by = "sampleId", suffix = c(".curated", ".database"))
-
-################## UNUSED MULTIPLE BIOPSY 
-
-#multipleBiopsyStructuralVariants = query_structural_variants(dbProd, multipleBiopsyCohort)
-#save(multipleBiopsyStructuralVariants, file = "~/hmf/RData/reference/multipleBiopsyStructuralVariants.RData")
-
-#multipleBiopsyStructuralVariantsWithScope = left_join(multipleBiopsyStructuralVariants, multipleBiopsyScope, by = "sampleId") %>%
-#  group_by(hmfPatientId, startChromosome, endChromosome, startPosition,endPosition,startOrientation,endOrientation,type) %>%
-#  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) 
-
-#multipleBiopsyStructuralVariantSummary = multipleBiopsyStructuralVariantsWithScope %>%
-#  ungroup() %>% 
-#  mutate(type = ifelse(type == "BND", "TRL", type)) %>%
-#  distinct(hmfPatientId, scope, startChromosome, endChromosome, startPosition, endPosition, startOrientation, endOrientation, type) %>% 
-#  group_by(hmfPatientId, type, scope) %>% summarise(count = n()) %>% 
-#  unite(type, scope, type, sep = "_") %>% 
-#  spread(type, count, fill = 0)
-#save(multipleBiopsyStructuralVariantSummary, file = "~/hmf/RData/Processed/multipleBiopsyStructuralVariantSummary.RData")
-
-#mbExonicSomatics = exonic_somatics(multipleBiopsySomaticsWithScope, gr_genes)
-#save(mbExonicSomatics, file = "~/hmf/RData/reference/mbExonicSomatics.RData")
-
-#multipleBiopsyMSI = purple::cohort_msi(multipleBiopsySomaticsWithScope %>% ungroup())
-#save(multipleBiopsyMSI, file = "~/hmf/RData/reference/multipleBiopsyMSI.RData")
-
-#cat("Tert promoters")
-#mbTertPromoters = purple::query_tert_promoters(dbProd, multipleBiopsyCohort)
-#mbTertPromoters = mbTertPromoters %>%
-#  left_join(multipleBiopsyScope, by = "sampleId") %>%
-#  group_by(patientId, gene) %>%
-#  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
-#  ungroup()
-#
-#save(mbTertPromoters, file = "~/hmf/RData/reference/mbTertPromoters.RData")
-
-#cat("Querying gene copy number amplifications")
-#mbGeneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbProd, multipleBiopsyCohort)
-#mbGeneCopyNumberAmplifications = left_join(mbGeneCopyNumberAmplifications, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
-#  left_join(multipleBiopsyScope, by = "sampleId") %>%
-#  group_by(patientId, gene) %>%
-#  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
-#  ungroup()
-#save(mbGeneCopyNumberAmplifications, file = "~/hmf/RData/reference/mbGeneCopyNumberAmplifications.RData")
-
-#cat("Querying gene copy number deletes")
-#mbGeneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbProd, multipleBiopsyCohort)
-#mbGeneCopyNumberDeletes = left_join(mbGeneCopyNumberDeletes, multipleBiopsyCohort %>% select(sampleId, cancerType), by = "sampleId") %>%
-#  left_join(multipleBiopsyScope, by = "sampleId") %>%
-#  group_by(patientId, gene) %>%
-#  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
-#  ungroup()
-#save(mbGeneCopyNumberDeletes, file = "~/hmf/RData/reference/mbGeneCopyNumberDeletes.RData")
