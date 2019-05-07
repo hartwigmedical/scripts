@@ -351,6 +351,6 @@ p4 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
 pMain = plot_grid(p3, p4, p2, p1, nrow = 2, ncol = 2, rel_heights = c(1, 6))
 pCooccurence = plot_grid(pMain, legend, ncol = 1, rel_heights = c(7, 1), labels = c("a"), label_size = 8)
 pCooccurence
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.pdf", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.png", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.eps", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.pdf", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.png", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.eps", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
