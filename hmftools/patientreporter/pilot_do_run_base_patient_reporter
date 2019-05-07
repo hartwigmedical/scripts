@@ -8,8 +8,9 @@ hospital_dir=/data/common/dbs/hospital
 
 tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
 
-signature=/data/common/dbs/signature/signature.png
-rva_logo=/data/common/dbs/rva_logo/L633_l_testlaboratoria_rva_en_color.jpeg
+signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
+rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
+company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -report_dir ${report_dir} \
@@ -18,5 +19,6 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \
     -rva_logo ${rva_logo} \
+    -company_log ${company_logo} \
     -comments "This is a pilot patient report, not validated" \
     "$@"
