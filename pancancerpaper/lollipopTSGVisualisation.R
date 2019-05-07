@@ -133,7 +133,7 @@ for (i in c(1:length(genes))) {
   plots[[i]] = tsg_lollipop(genes[i])
 }
 
-pdf(file="~/hmf/RPlot/Extended Figure 7b -  TSG Lollipops.pdf",width=15, height = 6)
+pdf(file="~/hmf/RPlot/TSG Lollipops.pdf",width=15, height = 6)
 for (i in 1:length(plots)) {
   print(plots[[i]])
 }
