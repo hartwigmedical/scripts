@@ -236,7 +236,7 @@ p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   coord_cartesian(ylim = c(0, 620)) + 
   facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + 
   theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 3, b = 3, l = 3, r = 3, unit = "pt"))
-p1
+
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
   geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area", size = 0.1) + 
@@ -377,9 +377,9 @@ p9 = ggplot(data=hpcSV, aes(x = sampleId, y = sampleRelativeN)) +
   coord_cartesian(ylim = c(0, 1))
 
 pFigure1b = plot_grid(p5, p6, p7, p8, p9, ncol=1, align="v", rel_heights = c(2, 2, 2, 2, 2), labels = c("auto"), label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.pdf", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.png", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Data Figure 3.eps", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 2.pdf", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 2.png", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 2.eps", pFigure1b, width = 183, height = 161, units = "mm", dpi = 300)
 #convert -density 300 ~/hmf/RPlot/Extended\ Data\ Figure\ 3.png ~/hmf/RPlot/Extended\ Data\ Figure\ 3.pdf
 
 

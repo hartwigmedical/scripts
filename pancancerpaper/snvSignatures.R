@@ -140,7 +140,7 @@ p3 = plot_96_profile(worstSamplesMatrixData) + xlab("") +
 p4 = plot_grid(p1, p2, ncol = 1, align = "v", labels = "auto", rel_heights =  c(4, 1), label_size= 8)
 p5 = plot_grid(p4, p3, labels = c("", "c"), rel_heights = c(4, 1.2), ncol = 1, label_size= 8)
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.pdf", p5, width = 183, height = 217, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.png", p5, width = 183, height = 217, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.eps", p5, width = 183, height = 217, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.pdf", p5, width = 183, height = 217, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.png", p5, width = 183, height = 217, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.eps", p5, width = 183, height = 217, units = "mm", dpi = 300)
 
