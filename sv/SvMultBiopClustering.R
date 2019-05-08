@@ -30,13 +30,13 @@ mbSvData = mbSvDataActuals %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientS
 
 write.csv(mbSvData, '~/data/sv/multiple_biopsy_sv_data.csv', row.names = F, quote = F)
 rm(mbSvData)
-
+View(mbSvDataActuals)
 
 ## ANALYSIS
 mbSvData = read.csv('~/logs/SVA_MB_SV_DATA.csv')
 mbMergeData = read.csv('~/logs/SVA_MB_MERGE_DATA.csv')
 mbClusterData = read.csv('~/logs/SVA_MB_CLUSTER_DATA.csv')
-# mbSvDataActuals = read.csv('~/data/sv/multiple_biopsy_sv_data.csv')
+mbSvData = read.csv('~/data/sv/multiple_biopsy_sv_data.csv')
 View(mbSvData)
 View(mbMergeData)
 View(mbClusterData)

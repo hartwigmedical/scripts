@@ -28,19 +28,22 @@ View(simSigCounts %>% filter(Count>0))
 View(simSigCounts %>% group_by(SigName) %>% summarise(SampleCount=sum(Count>0),
                                                       SampleTotal=sum(Count),
                                                       MedianCount=median(Count),
+                                                      AvgCount=round(sum(Count)/n(),0),
                                                       MaxCount=max(Count)) %>% filter(SampleCount>0))
 
 View(simSigCounts %>% filter(SigName=='07'&Count>0) %>% arrange(Count))
 View(simSigCounts %>% filter(SigName=='07'&Count==0) %>% arrange(SampleTotal))
 View(simSigCounts %>% filter(SigName=='07') %>% arrange(Count))
+View(simSigCounts %>% filter(SigName=='01') %>% arrange(Count))
 
 singleSigSamples = simSigCounts %>% group_by(SampleId) %>% summarise(SigCount=sum(Count>0))
 View(singleSigSamples)
 View(singleSigSamples %>% group_by(SigCount) %>% count())
 
-simSkinActualContribs = read.csv('~/data/sigs/logs/snv_skin_sim_ba_contribs.csv')
+simSkinActualContribs = as.matrix(read.csv('~/data/sigs/logs/snv_skin_sim_ba_contribs.csv'))
+simSkinSigs = as.matrix(read.csv('~/data/sigs/logs/snv_skin_sim_ba_sigs.csv'))
 baSigNames = get_signame_list(nrow(simSkinActualContribs),T)
-baSigNames = c('1_0', '7_123', '2_197', '7ext_203', '17_202', '7ext_188')
+baSigNames = c('1_0', '7_123', '2_198', '7ext_201', '17_203', '7ext_208')
 View(simSkinActualContribs[,1:10])
 tmp = cbind(baSigNames,simSkinActualContribs)
 simActualSigCounts = gather(tmp, "SampleId", "Count", 2:ncol(tmp)) %>% select(SampleId,SigName=baSigNames,Count)
@@ -54,4 +57,9 @@ View(simActualSigCounts %>% group_by(SigName) %>% summarise(SampleCount=sum(Coun
                                                       MedianCount=round(median(Count),0),
                                                       MaxCount=round(max(Count),0)))
 
+simSkinCancerTypes = simSkinSampleCounts %>% group_by(SampleId) %>% count() %>% select(SampleId) %>% mutate(CancerType='Skin')
+View(simSkinCancerTypes)
+
+evaluate_nmf_data("SNV", "sim_skin", simSkinSigs, simSkinActualContribs, simSkinMatrixData, simSkinSampleCounts,
+                  simSkinCancerTypes, snvBuckets, baSigNames, F, F, 0, F)
 

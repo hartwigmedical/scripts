@@ -100,8 +100,12 @@ samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_10.cs
 samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_11.csv', header=F))
 samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_12.csv', header=F))
 samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_13.csv', header=F))
+samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_14.csv', header=F))
+samplesWithRna = rbind(samplesWithRna, read.csv('~/data/sv/rna/rna_samples_16.csv', header=F))
 colnames(samplesWithRna) = c('SampleId')
 View(samplesWithRna)
+
+write.csv(samplesWithRna, '~/data/sv/rna/rna_starfusion_sample_ids.csv', row.names = F, quote = F)
 
 
 sourceDir = '~/data/sv/rna/runs/'
@@ -139,12 +143,12 @@ load_rna_match_data<-function(filename)
   rnaMatchData = read.csv(filename)
   
   #Annotations
-  rnaMatchData = rnaMatchData %>% mutate(SvMatchUp=!is.na(SvIdUp),
-                                          SvMatchDown=!is.na(SvIdDown),
+  rnaMatchData = rnaMatchData %>% mutate(SvMatchUp=!is.na(SvIdUp)&TransValidLocUp=='true',
+                                          SvMatchDown=!is.na(SvIdDown)&TransValidLocDown=='true',
                                           SvViableUp=TransViableUp=='true',
                                           SvViableDown=TransViableDown=='true',
-                                          SvValidLocUp=TransValidLocUp=='true'|SvViableUp,
-                                          SvValidLocDown=TransValidLocDown=='true'|SvViableDown,
+                                          SvValidLocUp=TransValidLocUp=='true',
+                                          SvValidLocDown=TransValidLocDown=='true',
                                           SameSV=SvIdUp==SvIdDown,
                                           SameChr=ChrUp==ChrDown,
                                           FusionDistance=ifelse(SameChr,StrandUp*(RnaPosDown-RnaPosUp),0),
@@ -158,9 +162,10 @@ load_rna_match_data<-function(filename)
   rnaMatchData = rnaMatchData %>% group_by(SampleId,RnaPosUp,RnaPosDown) %>% arrange(-JunctionReadCount,-SpanningFragCount) %>% filter(row_number()==1) %>% ungroup() 
   
   # PON: Remove recurrent fusions where NONE have SV support at both ends
-  rnaMatchData = rnaMatchData %>% group_by(FusionName) %>% filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&(sum(ifelse(SvMatchType=='BothSVs',1,0))<1)))) %>% ungroup()
-  
-  # rnaMatchData$FragmentSupport = (rnaMatchData$SpanningFragCount>0)
+  # rnaMatchData = rnaMatchData %>% group_by(FusionName) %>% filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&(sum(ifelse(SvMatchType=='BothSVs',1,0))<1)))) %>% ungroup()
+  rnaMatchData = rnaMatchData %>% group_by(FusionName) %>% 
+    filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&sum(ifelse(SvMatchType=='BothSVs',1,0))<pmax(1,sum(ifelse(SvMatchType=='NoSV',1,0))-1)))) %>% ungroup()
+
   return (rnaMatchData)
 }
 
@@ -196,7 +201,6 @@ annotate_rna_both_svs<-function(rnaMatchData)
 View(allRnaData)
 # write.csv(allRnaData, '~/data/sv/rna/rna_data_all_samples.csv', row.names = F, quote = F)
 
-
 rnaMatchData = load_rna_match_data('~/data/sv/rna/SVA_RNA_DATA.csv')
 View(rnaMatchData)
 rnaMatchDataBothSVs = annotate_rna_both_svs(rnaMatchData)
@@ -206,10 +210,53 @@ View(rnaMatchData %>% group_by(ViableFusion,TransViableUp,TransViableDown) %>% c
 View(rnaMatchData)
 View(rnaMatchData %>% group_by(SvMatchUp,SvMatchDown,SvViableUp,SvViableDown,SpliceType,ViableFusion) %>% count())
 
+# 6. Summary results
+
+# Total Found in RNA (after deduplication)	
+# Called in SVA
+# Clustered breakends found but not chained
+# Breakends found for both partners, not clustered 	
+# Breakend missing for 1 partner	
+# Breakend Missing for both partners
+
+# split by Known, 5’ Promiscuous, 3’ Promiscuous, Other Proximate, Other Non Proximate
+
+summaryBothData = rnaMatchDataBothSVs %>% 
+  mutate(SvaCategory=ifelse(SameCluster&SameChain,'Matched',ifelse(SameCluster&!SameChain,'DiffChain','DiffCluster')),
+         ValidBreakends=SvViableUp&SvViableDown,
+         ViableFusion=ViableFusion=='true',
+         PhaseMatched=PhaseMatched=='true')
+
+#View(summaryBothData)
+summaryNotBothData = rnaMatchData %>% filter(SvMatchType!='BothSVs') %>% 
+  mutate(SvaCategory = ifelse(SvMatchType=='SingleSV','SingleBEMatch','NoMatch'),
+         ValidBreakends=F,
+         ViableFusion=F,
+         PhaseMatched=F)
+
+summaryRnaData = rbind(summaryBothData %>% select(KnownType,SvaCategory,Proximate,ValidBreakends,ViableFusion,PhaseMatched),
+                       summaryNotBothData %>% select(KnownType,SvaCategory,Proximate,ValidBreakends,ViableFusion,PhaseMatched))
+
+
+summaryRnaData = summaryRnaData %>% 
+  mutate(KnownCategory = ifelse(KnownType=='',ifelse(Proximate,'NoneProximate','NoneNotProximate'),as.character(KnownType)))
+
+# View(summaryRnaData)
+
+summaryRnaData = summaryRnaData %>% mutate(SvaCategory2=ifelse(SvaCategory=='Matched',ifelse(ValidBreakends,'Matched','MatchedExonsSkipped'),
+                                                               ifelse(SvaCategory=='DiffChain',ifelse(ValidBreakends,'DiffChain','DiffChainExonsSkipped'),
+                                                                      ifelse(SvaCategory=='DiffCluster',ifelse(ValidBreakends,'DiffCluster','DiffChainExonsSkipped'),SvaCategory))))
+
+rnaCategorySummary3 = summaryRnaData %>% group_by(SvaCategory2,KnownCategory) %>% count() %>% spread(SvaCategory2,n) %>% arrange(KnownCategory)
+rnaCategorySummary3[is.na(rnaCategorySummary3)] = 0
+View(rnaCategorySummary3)
+
+
+
 # 1. Genuine Misses out of 1294
-nrow(rnaMatchData %>% filter(SvMatchType!='BothSVs',Proximate==T))  #PROXIMATE   110 => 103
-nrow(rnaMatchData %>% filter(SvMatchType=='NoSV',Proximate==F) %>% group_by(SampleId) %>% count())   #NO SV FOUND  675 => 87. # TO DO - Relax rules
-nrow(rnaMatchData %>% filter(SvMatchType=='SingleSV',Proximate==F))  #One SV FOUND   154 => 161
+nrow(rnaMatchData %>% filter(SvMatchType!='BothSVs',Proximate==T))  #PROXIMATE   148
+nrow(rnaMatchData %>% filter(SvMatchType=='NoSV',Proximate==F) %>% group_by(SampleId) %>% count())   # 90
+nrow(rnaMatchData %>% filter(SvMatchType=='SingleSV',Proximate==F))  #One SV FOUND   118
 
 # 2.  BothSVs found - clustering and chaining summary
 View(rnaMatchDataBothSVs %>% group_by(ViableBothSides=SvViableUp&SvViableDown,SameSV,SameCluster,SameChain) %>% count() %>% spread(ViableBothSides,n) %>% arrange(-`TRUE`))
@@ -288,8 +335,6 @@ View(rnaMatchDataBothSVs)
 sampleRnaFusions = rnaMatchDataBothSVs %>% group_by(SampleId,GeneUp,GeneDown) 
 
 
-
-
 # 5. Analysis of RNA fusions only matching at one end
 View(rnaMatchData %>% filter(SvMatchType=='SingleSV'))
 svRnaData = read.csv('~/data/sv/rna/SVA_SVS.csv')
@@ -322,7 +367,143 @@ colnames(rnaSingleMatchUpSvData)
 View(svRnaData %>% filter(SampleId=='CPCT02020767T'&(ChrStart==2&ChrEnd==2)))
 
 
+# 6. Summary results
+
+# Total Found in RNA (after deduplication)	
+# Called in SVA
+# Clustered breakends found but not chained
+# Breakends found for both partners, not clustered 	
+# Breakend missing for 1 partner	
+# Breakend Missing for both partners
+
+# split by Known, 5’ Promiscuous, 3’ Promiscuous, Other Proximate, Other Non Proximate
+
+View(rnaMatchDataBothSVs)
+
+summaryBothData = rnaMatchDataBothSVs %>% 
+  mutate(SvaCategory=ifelse(SameCluster&SameChain,'Matched',ifelse(SameCluster&!SameChain,'DiffChain','DiffCluster')),
+         ValidBreakends=SvViableUp&SvViableDown,
+         ViableFusion=ViableFusion=='true',
+         PhaseMatched=PhaseMatched=='true')
+               
+View(summaryBothData)
+View(summaryBothData %>% group_by(SvaCategory) %>% count())
+View(summaryBothData %>% group_by(ViableFusion,ValidBreakends,PhaseMatched) %>% count())
+View(summaryBothData %>% filter(KnownType=='Known'))
+
+summaryNotBothData = rnaMatchData %>% filter(SvMatchType!='BothSVs') %>% 
+  mutate(SvaCategory = ifelse(SvMatchType=='SingleSV','SingleBEMatch','NoMatch'),
+         ValidBreakends=F,
+         ViableFusion=F,
+         PhaseMatched=F)
+
+summaryRnaData = rbind(summaryBothData %>% select(KnownType,SvaCategory,Proximate,ValidBreakends,ViableFusion,PhaseMatched),
+                       summaryNotBothData %>% select(KnownType,SvaCategory,Proximate,ValidBreakends,ViableFusion,PhaseMatched))
+
+
+summaryRnaData = summaryRnaData %>% 
+  mutate(KnownCategory = ifelse(KnownType=='',ifelse(Proximate,'NoneProximate','NoneNotProximate'),as.character(KnownType)))
+
+# View(summaryRnaData)
+
+summaryRnaData = summaryRnaData %>% mutate(SvaCategory2=ifelse(SvaCategory=='Matched',ifelse(ValidBreakends,'Matched','MatchedExonsSkipped'),
+                                                               ifelse(SvaCategory=='DiffChain',ifelse(ValidBreakends,'DiffChain','DiffChainExonsSkipped'),
+                                                                      ifelse(SvaCategory=='DiffCluster',ifelse(ValidBreakends,'DiffCluster','DiffChainExonsSkipped'),SvaCategory))))
+
+rnaCategorySummary3 = summaryRnaData %>% group_by(SvaCategory2,KnownCategory) %>% count() %>% spread(SvaCategory2,n) %>% arrange(KnownCategory)
+rnaCategorySummary3[is.na(rnaCategorySummary3)] = 0
+View(rnaCategorySummary3)
+
+rnaCategorySummary3Prev = rnaCategorySummary3
+View(rnaCategorySummary3Prev)
+
+rnaCategorySummary = summaryRnaData %>% group_by(SvaCategory,KnownCategory) %>% count() %>% spread(SvaCategory,n)
+rnaCategorySummary[is.na(rnaCategorySummary)] = 0
+View(rnaCategorySummary)
+
+rnaCategorySummary2 = summaryRnaData %>% group_by(ValidBreakends,SvaCategory,KnownCategory) %>% count() %>% spread(SvaCategory,n) %>% 
+  arrange(!ValidBreakends,KnownCategory)
+rnaCategorySummary2[is.na(rnaCategorySummary2)] = 0
+View(rnaCategorySummary2)
+
+
+
+#ViableFusion
+#SameCluster
+#SameChain
+#SvMatchType = 'BothSVs', 'SingleSV','NoSV'
+
+
+####
+# TEMP
+
+rnaMatchData = read.csv('~/data/sv/rna/SVA_RNA_DATA.csv')
+
+#Annotations
+rnaMatchData = rnaMatchData %>% mutate(SvMatchUp=!is.na(SvIdUp)&TransValidLocUp=='true',
+                                       SvMatchDown=!is.na(SvIdDown)&TransValidLocDown=='true',
+                                       SvViableUp=TransViableUp=='true',
+                                       SvViableDown=TransViableDown=='true',
+                                       SvValidLocUp=TransValidLocUp=='true',
+                                       SvValidLocDown=TransValidLocDown=='true',
+                                       SameSV=SvIdUp==SvIdDown,
+                                       SameChr=ChrUp==ChrDown,
+                                       FusionDistance=ifelse(SameChr,StrandUp*(RnaPosDown-RnaPosUp),0),
+                                       Proximate=FusionDistance>0&FusionDistance<5e5)
+
+rnaMatchData$SvMatchType = ifelse(rnaMatchData$SvMatchUp&rnaMatchData$SvMatchDown,'BothSVs',
+                                  ifelse(rnaMatchData$SvMatchUp|rnaMatchData$SvMatchDown,'SingleSV','NoSV'))
+
+# DEDUP 
+rnaMatchData = rnaMatchData %>% group_by(SampleId,FusionName) %>% arrange(-JunctionReadCount,-SpanningFragCount) %>% filter(row_number()==1) %>% ungroup() 
+rnaMatchData = rnaMatchData %>% group_by(SampleId,RnaPosUp,RnaPosDown) %>% arrange(-JunctionReadCount,-SpanningFragCount) %>% filter(row_number()==1) %>% ungroup() 
+
+nrow(rnaMatchData)
+
+nrow(rnaMatchData %>% group_by(FusionName) %>% 
+       filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&(sum(ifelse(SvMatchType=='BothSVs',1,0))<1)))))
+
+oldFilters = rnaMatchData %>% group_by(FusionName) %>% 
+  filter(((sum(ifelse(SvMatchType=='NoSV',1,0))>1&(sum(ifelse(SvMatchType=='BothSVs',1,0))<1))))
+
+nrow(rnaMatchData %>% group_by(FusionName) %>% 
+       filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&sum(ifelse(SvMatchType=='BothSVs',1,0))<pmax(1,sum(ifelse(SvMatchType=='NoSV',1,0))-1)))))
+
+newFilters = rnaMatchData %>% group_by(FusionName) %>% 
+  filter(((sum(ifelse(SvMatchType=='NoSV',1,0))>1&sum(ifelse(SvMatchType=='BothSVs',1,0))<pmax(1,sum(ifelse(SvMatchType=='NoSV',1,0))-1))))
+
+View(oldFilters %>% group_by(FusionName,SvMatchType) %>% count() %>% spread(SvMatchType,n))
+View(oldFilters)
+View(newFilters %>% group_by(FusionName,SvMatchType) %>% count() %>% spread(SvMatchType,n))
+
+# PON Filtering
+# PON: Remove recurrent fusions where NONE have SV support at both ends
+rnaMatchData = rnaMatchData %>% group_by(FusionName) %>% 
+  filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&(sum(ifelse(SvMatchType=='BothSVs',1,0))<1)))) %>% ungroup()
+
+rnaMatchData = rnaMatchData %>% group_by(FusionName) %>% 
+  filter(!((sum(ifelse(SvMatchType=='NoSV',1,0))>1&sum(ifelse(SvMatchType=='BothSVs',1,0))<pmax(1,sum(ifelse(SvMatchType=='NoSV',1,0))-1))))%>% ungroup()
+
+
+
+
+
 ## TIDY UP
 rm(sampleRnaSvaFusions)
 rm(validSvaRnaFusions)
+
+
+
+
+# subset by the 2405 cohort paper
+load('~/data/r_data/highestPurityCohortSummary.RData')
+nrow(highestPurityCohortSummary)
+View(highestPurityCohortSummary)
+
+
+View(rnaMatchData %>% group_by(SampleId) %>% count())
+
+View(rnaMatchData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId) %>% group_by(SampleId) %>% count())
+
+
 

@@ -10,6 +10,7 @@ View(clusters %>% filter(SampleId=='COLO829T'))
 ctClusters = clusters %>% filter(ClusterCount>1&ClusterCount<100) # approx 111K
 ctClusters$SampleClusterId = paste(ctClusters$SampleId,ctClusters$ClusterId,sep='_')
 nrow(ctClusters)
+View(ctClusters)
 rm(clusters)
 
 
@@ -51,6 +52,7 @@ print(plot_length_facetted(tiLinks,"LocationType!='Unclear'&ClusterCount>3",'TIL
 # factoring in whether TIs overlap other TIs or not
 print(plot_length_facetted(tiLinks,"LocationType!='Unclear'&ClusterCount>3&OverlapCount==0",'TILenBucket,LocationType','TILenBucket','LocationType','TI Length by LocationType, no overlaps'))
 print(plot_length_facetted(tiLinks,"LocationType!='Unclear'&ClusterCount>3&OverlapCount>0",'TILenBucket,LocationType','TILenBucket','LocationType','TI Length by LocationType, no overlaps'))
+print(plot_length_facetted(tiLinks,"LocationType!='Unclear'&ClusterCount>3",'TILenBucket,HasOverlaps=OverlapCount>0','TILenBucket','HasOverlaps','TI Length by whether has overlaps or not'))
 
 
 ctLinks = tiLinks %>% filter(SampleClusterId %in% internalCT$SampleClusterId)
@@ -91,11 +93,40 @@ View(dbLengths %>% group_by())
 
 
 # Shattering with Replication
+repClusters = ctClusters %>% filter(FullyChained=='true'&Foldbacks==0&ResolvedType=='SimpleChain'&MaxCopyNumber<=6&ChainCount==1&OverlapTIs>0&ChainEndsAway==1)
+nrow(repClusters)
+View(repClusters)
+View(repClusters %>% select(SampleId,ClusterId,ClusterCount,ChainCount,IntTIs,ExtTIs,IntTIsWithGain,ExtTIsWithGain,OverlapTIs,DSBs,ShortDSBs,
+                         ChainEndsFace,ChainEndsAway,ArmCount,OriginArms,FragmentArms,TotalLinks,AssemblyLinks,ShortTIRemotes,MinCopyNumber,MaxCopyNumber))
+
+# simpleCT = simpleCT %>% mutate(ShortDBPerc=round(ShortDSBs/DSBs,1),)
+
+
+# allowing foldbacks but trying to exclude BFB
+repComplexClusters = ctClusters %>% filter(FullyChained=='true'&ResolvedType=='ComplexChain'&MaxCopyNumber<=6&ChainCount==1&OverlapTIs>0&ChainEndsAway==1)
+nrow(repComplexClusters)
+View(repComplexClusters)
 
 
 
+# clusters with lots of low-count overlaps
+View(head(tiLinks,1000))
+tiOverlaps = tiLinks %>% filter(ClusterCount>3&ClusterCount<=100) %>% group_by(SampleId,ClusterId,ResolvedType,FullyChained) %>% 
+  summarise(LinkCount=n(),
+            ChainCount=n_distinct(ChainId),
+            OverlapTotal=sum(OverlapCount),
+            OverlappingLinks=sum(OverlapCount>0),
+            SampleClusterId=first(SampleClusterId))
 
+tiOverlaps$OverlapRatio = round(tiOverlaps$OverlappingLinks/tiOverlaps$LinkCount,2)
+View(tiOverlaps)
+tiOverlaps = tiOverlaps %>% ungroup()
 
+repComplexClusters2 = merge(ctClusters, tiOverlaps %>% filter(OverlapRatio>=0.5) %>% select(SampleClusterId,OverlapTotal,OverlappingLinks,OverlapRatio),
+                            by='SampleClusterId',all.y=T)
+View(repComplexClusters2)
+
+View(tiLinks %>% filter(SampleId=='COLO829T'))
 
 
 
