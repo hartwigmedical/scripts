@@ -8,6 +8,16 @@ library(stringdist, quietly=TRUE)
 library(BSgenome.Hsapiens.UCSC.hg19, quietly=TRUE)
 source("gridss.config.R")
 
+#' Replaces the NA values in a with corresponding values in b
+#' @param a,b objects to be tested or coerced.
+#' @return The altered object.
+'%na%' <- function(a, b) {
+  if (is.null(a) || length(a) == 0) return(b)
+  if (is.null(b) || length(b) == 0) return(a)
+  return(ifelse(is.na(a), b, a))
+}
+
+
 #' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
 	rowSums(genotypeField[,columns, drop=FALSE])
