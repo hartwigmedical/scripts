@@ -28,7 +28,7 @@ snvDpSampleSigData = merge(snvDpSampleSigData,sampleTotals,by.x="SampleId",by.y=
 
 # filter for samples with a sig contribution above 5% and 300 count
 sigPercentThreshold = 0.05
-sigCountThreshold = 300
+sigCountThreshold = 500
 highMLSampleSigData = snvDpSampleSigData %>% filter(SigPercent>=sigPercentThreshold&Count>=sigCountThreshold)
 
 cancerSampleCounts = sampleCancerTypes %>% group_by(CancerType) %>% summarise(CancerSampleCount=n())
