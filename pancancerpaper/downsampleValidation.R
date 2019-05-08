@@ -3,7 +3,11 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(scales)
-theme_set(theme_bw())
+theme_set(theme_bw() + theme(
+  plot.title = element_text(size=7),
+  panel.border = element_blank(),
+  axis.text = element_text(size=5), axis.title = element_text(size=6), axis.ticks = element_blank(),
+  legend.title = element_text(size=5), legend.text = element_text(size=6), legend.key.size = unit(2, "mm"), legend.spacing.y = unit(2, 'mm')))
 
 ##########  DATA COLLECTION
 dbDownsample = dbConnect(MySQL(), dbname='downsample_validation', groups="RAnalysis")
@@ -62,9 +66,9 @@ plot_changes <- function(data, multiplier, percentageOffset, title) {
   
   ggplot(tidyData, aes(x = sampleId)) + 
     geom_bar(alpha = 0.8, aes(x = sampleId, y = value, fill = variable), stat = "identity", position = "dodge") +
-    geom_point(aes(y = multiplier * (percentageOffset + change) )) +
+    geom_point(aes(y = multiplier * (percentageOffset + change) ),size = 0.1) +
     #geom_line(aes(y = multiplier * (percentageOffset + change), group = 1)) +
-    geom_line(aes(y = multiplier * (percentageOffset + average)), group = 1, linetype = "dashed") + 
+    geom_line(aes(y = multiplier * (percentageOffset + average)), group = 1, linetype = "dashed", size = 0.1) + 
     xlab("Samples") + ylab("Count") + ggtitle(title) + 
     scale_y_continuous(expand = c(0,0), sec.axis = sec_axis(~./multiplier - percentageOffset, name = " % difference", labels = percent)) +
     scale_fill_manual(name = "", values = variableFactorColours) +
@@ -82,16 +86,20 @@ pSNV = plot_changes(downsamplingComparison %>% select(sampleId, prod = TOTAL_SNV
 pMNV = plot_changes(downsamplingComparison %>% select(sampleId, prod = TOTAL_MNV.prod, downsample = TOTAL_MNV.down), 1000, 0, "MNV")
 pIndel = plot_changes(downsamplingComparison %>% select(sampleId, prod = TOTAL_INDEL.prod, downsample = TOTAL_INDEL.down), 500000, 0.15, "Indel")
 
-pPurity = ggplot(downsamplingComparison, aes(x = purity.prod, y = purity.down)) + geom_point() + 
+pPurity = ggplot(downsamplingComparison, aes(x = purity.prod, y = purity.down)) + geom_point(size = 0.1) + 
   xlab("Normal Depth") + ylab("Downsampled") + ggtitle("Purity") + 
   scale_y_continuous(labels = percent) + scale_x_continuous(labels = percent) + 
   theme(panel.border = element_blank(), axis.ticks = element_blank())
 
 
-pPloidy = ggplot(downsamplingComparison, aes(x = ploidy.prod, y = ploidy.down)) + geom_point() + 
+pPloidy = ggplot(downsamplingComparison, aes(x = ploidy.prod, y = ploidy.down)) + geom_point(size = 0.1) + 
   xlab("Normal Depth") + ylab("Downsampled") + ggtitle("Ploidy") + 
   #scale_y_continuous(labels = percent) + scale_x_continuous(labels = percent) + 
   theme(panel.border = element_blank(), axis.ticks = element_blank())
 
-p = plot_grid(pPurity, pSNV, pSV, pPloidy, pMNV, pIndel, ncol = 3, labels = "AUTO")
-save_plot("~/hmf/RPlot/Extended Figure 3 - Downsampling.png", p, base_width = 10, base_height = 6)
+pFinal = plot_grid(pPurity, pSNV, pSV, pPloidy, pMNV, pIndel, ncol = 3, labels = "auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.pdf", pFinal, width = 183, height = 91, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.png", pFinal, width = 183, height = 91, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 4.eps", pFinal, width = 183, height = 91, units = "mm", dpi = 300)
+
+

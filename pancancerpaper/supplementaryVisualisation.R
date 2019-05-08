@@ -1,3 +1,5 @@
+#install.packages("magick")
+
 detach("package:purple", unload=TRUE)
 library(purple)
 library(dplyr)
@@ -5,7 +7,9 @@ library(tidyr)
 library(ggplot2)
 library(cowplot)
 library(scales)
-theme_set(theme_bw())
+library(magick)
+theme_set(theme_bw() + theme(
+  axis.text = element_text(size=5), axis.title = element_text(size=7), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
 
 singleBlue = "#6baed6"
 
@@ -40,26 +44,28 @@ wgdPlotData = highestPurityCohortSummary %>%
 
 wgdPlotDataTotal = wgdPlotData %>% filter(WGD) %>% summarise(percentage = sum(n) / sum(total))
 wgdPlotData = wgdPlotData %>%
-  mutate(totalPercentage = wgdPlotDataTotal$percentage) %>%
-  filter(cancerType != "Other")
+  mutate(totalPercentage = wgdPlotDataTotal$percentage) 
 
 wgdPlotLevels = wgdPlotData %>% filter(WGD) %>% arrange(-percentage)
 wgdPlotData = mutate(wgdPlotData, cancerType = factor(cancerType, wgdPlotLevels$cancerType))
-wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
-wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
+#wgdPlotData[wgdPlotData$cancerType == "CNS", "totalPercentage"] <- NA
+#wgdPlotData[wgdPlotData$cancerType == "Mesothelioma", "totalPercentage"] <- NA
 
 p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(aes(fill = WGD), stat = "identity") +
-  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 3) +
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2, size = 0.3) +
+  annotate("text", x = 23, y = wgdPlotDataTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
   ggtitle("") + 
-  xlab("Cancer Type") + ylab("% Samples")+ 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  xlab("") + ylab("% Samples")+ 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1.09)) +
+  scale_x_discrete(labels = c(wgdPlotLevels$cancerType, "", ""), limits = c(wgdPlotLevels$cancerType, "", "")) +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="none") +
+  theme(axis.text = element_text(size=5), axis.title = element_text(size=5),
+        plot.margin = margin(t = 0, unit = "pt")) +
   coord_flip()
 
 wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
@@ -69,11 +75,41 @@ p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#2171b5", 0.8))) +
   ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
-  scale_x_continuous(limits = c(0, 7), breaks=c(1:7))
+  scale_x_continuous(limits = c(0, 7), breaks=c(1:7)) + 
+  theme(legend.position=c(.80,.84)) + 
+  theme(axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm"),
+        plot.margin = margin(t = 0, unit = "pt"), axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 20, unit = "pt")))  
+  
 
-pWGD = plot_grid(p1, p2)
+
+pWGD = plot_grid(p1, p2, ncol = 1, labels =c("d","e"), label_size = 8, rel_heights = c(1, 1))
 pWGD
-save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 14, base_height = 6)
+#save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
+
+pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/AllB.png")
+pb <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/CNSB.png", width = 1, scale = 1)
+pc <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/KidneyB.png", scale = 1)
+
+pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
+pabc = plot_grid(pa, pbc, pWGD, nrow = 1, labels = c("a", "", ""), rel_widths = c(0.6, 0.3, 0.3), label_size = 8)
+#pabc
+
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+
+
+#convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/KidneyB.png   -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png
+#convert ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ Kidney\ Small.png -append ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png
+#convert ~/hmf/analysis/copyNumberSummary/All.png ~/hmf/analysis/copyNumberSummary/Figure\ 2BC.png +append ~/hmf/analysis/copyNumberSummary/Figure\ 2ABC.png
+#convert ~/hmf/RPlot/Figure\ 2\ -\ WGD.png -resize x3000  ~/hmf/RPlot/Figure\ 2\ -\ WGD.png
+#convert ~/hmf/analysis/copyNumberSummary/Figure\ 2ABC.png ~/hmf/RPlot/Figure\ 2\ -\ WGD.png +append ~/hmf/RPlot/Figure\ 2NoText.png
+
+#convert -pointsize 80 -fill black -draw 'text 100,150 "A. Pan-Cancer"' ~/hmf/RPlot/Figure\ 2NoText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 2900,150 "B. CNS"' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 2900,1650 "C. Kidney"' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 4400,150 "D. "' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2WithText.png
+#convert -pointsize 80 -fill black -draw 'text 4400,1650 "E. "' ~/hmf/RPlot/Figure\ 2WithText.png ~/hmf/RPlot/Figure\ 2.png
 
 ########################################### Figure 4 - Driver Per Sample
 load("~/hmf/RData/Processed/germlineCatalog.RData")
@@ -116,7 +152,7 @@ driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(
 driverViolinData$driverLikelihood = driverViolinData$driverLikelihood %>% replace_na(0)
 
 p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
-  geom_violin(fill = singleBlue, scale = "area") +
+  geom_violin(fill = singleBlue, scale = "area", size = 0.1) +
   #geom_point(data = driverDataLevels, aes(cancerType, driversPerSample)) +
   stat_summary(fun.y=mean, geom="point", shape=20, size=1) +
   xlab("Cancer Type") + ylab("Drivers") +
@@ -126,7 +162,8 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
   scale_y_continuous(expand=c(0.01, 0.01)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(legend.position="none") +
-  coord_flip() 
+  coord_flip() + 
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5))
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
   geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
@@ -134,13 +171,18 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
   ggtitle("") + xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
-  coord_flip()
+  coord_flip() + 
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"))
 
-pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "AUTO")
-pDriverPerSample
-save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
+pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
 
-########################################### Figure 5 - Hotspots
+
+#pDriverPerSample
+#save_plot("~/hmf/RPlot/Figure 4 - DriverPerSample.png", pDriverPerSample, base_width = 6, base_height = 4)
+
+########################################### Extended Figure 9 - Hotspots
 load(file = "~/hmf/RData/Processed/hpcDndsOncoDrivers.RData")
 load(file = "~/hmf/RData/Reference/hpcTertPromoters.Rdata")
 
@@ -177,12 +219,13 @@ hotspotData = hotspotData %>%
 
 p_hotspot1 = ggplot(data = hotspotData %>% filter(variant == 'SNV'), aes(x = gene, y = driverLikelihood)) +
   geom_bar(aes(fill = hotspot), stat = "identity") +
-  scale_fill_manual(values = hotspotColours) +
+  scale_fill_manual(values = hotspotColours, name = "Drivers") +
   ggtitle("SNV") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank()) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
+p_hotspot1
 
 legend = g_legend(p_hotspot1)
 p_hotspot1 = p_hotspot1 + theme(legend.position="none")
@@ -193,7 +236,7 @@ p_hotspot2 = ggplot(data = hotspotData %>% filter(variant == 'MNV'), aes(x = gen
   ggtitle("MNV") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), axis.text.y = element_blank(),  legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
 
 p_hotspot3 = ggplot(data = hotspotData  %>% filter(variant == 'INDEL'), aes(x = gene, y = driverLikelihood)) +
@@ -202,25 +245,47 @@ p_hotspot3 = ggplot(data = hotspotData  %>% filter(variant == 'INDEL'), aes(x = 
   ggtitle("Indel") + xlab("") + ylab("")+ 
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), axis.text.y = element_blank(), legend.position="none",  strip.background = element_blank(), legend.title=element_blank()) +
-  theme(plot.title = element_text(hjust = 0.5, size = 11)) +
+  theme(plot.title = element_text(hjust = 0.5, size = 7)) +
   coord_flip()
 
+pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1), ncol = 3, labels=c("a"), label_size = 8)
 
-pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1), ncol = 3, labels=c("A"))
-pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(6,1)) + draw_label("Drivers", x = 0.52, y = 0.15, size = 11)
+pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(10,1), label_size = 8)
 pHotspots2 
-save_plot("~/hmf/RPlot/Figure 5 - Hotspots.png", pHotspots2, base_width = 5, base_height = 6)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.png", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
 
 
-########################################### Figure 6 - Clonality
+
+########################################### Figure 11
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
+
+purityBreaks = c(0:10) / 10
+purityLabels = c("0-10%", "10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","90-100%")
+
+detectable_ploidy <- function(purity, ploidy) {
+  return (6/106*(2*(1-purity)+ploidy*purity)/purity)
+}
+
+ploidyFactors = c("Ploidy2", "Ploidy4")
+ploidyColors = c(singleBlue, "#d94701")
+ploidyColors = setNames(ploidyColors, ploidyFactors)
+
+detectablePloidyPurities = c(2:9)/10 + 0.05
+detectablePloidy2 <- sapply(detectablePloidyPurities, function (x) {detectable_ploidy(x, 2)})
+detectablePloidy4 <- sapply(detectablePloidyPurities, function (x) {detectable_ploidy(x, 4)})
+detectablePloidyDf = data.frame(purity = detectablePloidyPurities, Ploidy2 = detectablePloidy2, Ploidy4 = detectablePloidy4) %>% 
+  gather(value, ploidy, Ploidy2, Ploidy4) %>%
+  mutate(purityBucket = cut(purity, breaks = purityBreaks, labels = purityLabels)) 
+
 
 highestPurityCohortSummary$purityBucket = 
   cut(
     highestPurityCohortSummary$purity, 
-    breaks=c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1),
-    labels = c("0-10%", "10-20%","20-30%","30-40%","40-50%","50-60%","60-70%","70-80%","80-90%","          90-100%"))
+    breaks=purityBreaks,
+    labels = purityLabels)
 
 clonalityLoad2 = highestPurityCohortSummary %>%
   mutate(total = TOTAL_INDEL + TOTAL_SNV + TOTAL_MNV, subclonal = SUBCLONAL_INDEL + SUBCLONAL_SNV + SUBCLONAL_MNV) %>%
@@ -243,15 +308,15 @@ p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
   ggtitle("") + xlab("Tumor Purity") + ylab("Count of samples") + 
   scale_y_continuous(expand=c(0.01, 0.01)) +
-  theme(legend.position="none") +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
   coord_flip() 
 
 p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
-  geom_violin(fill = singleBlue, scale = "width") +
-  geom_point(aes(y = bucketMean), shape=20, size=1.5) +
+  geom_violin(fill = singleBlue, scale = "width", size = 0.3) +
+  geom_point(aes(y = bucketMean), shape=20, size=0.3) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
-  theme(legend.position="none") +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
   theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip() 
@@ -259,17 +324,29 @@ p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) +
 p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
   geom_bar(fill = singleBlue, stat = "identity") + 
   xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 0.07)) +
-  theme(legend.position="none") +
-  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
+  theme(legend.position="none", axis.title = element_text(size=5)) +
+  theme( axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip()
 
-pClonality = plot_grid(p1,p2, p3, ncol = 3, labels="AUTO")
+p4 = ggplot(data = detectablePloidyDf, aes(x = purityBucket, y = ploidy)) +
+  geom_point(aes(color = value), size = 0.3) + 
+  scale_color_manual(values = ploidyColors, labels = c("sample ploidy = 2", "sample ploidy = 4")) +
+  xlab("") + ylab("Min detectable somatic ploidy") + ggtitle("") + scale_y_continuous(limits = c(0, 1)) + 
+  #scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
+  theme(legend.position = c(0.7,0.9), legend.title = element_blank()) +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank(), axis.title = element_text(size=5)) +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  coord_flip()
+p4
+
+pClonality = plot_grid(p1,p2, p3, p4, ncol = 2, labels="auto", label_size = 8)
 pClonality
-save_plot("~/hmf/RPlot/Figure 6 - Subclonal.png", pClonality, base_width = 10, base_height = 2.5)
 
-
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.pdf", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.eps", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
 
 
 ########################################### Extended Figure 1c - Coverage
@@ -295,7 +372,7 @@ pCoverage = plot_grid(pCoverage, labels = "C")
 pCoverage
 save_plot("~/hmf/RPlot/Extended Figure 1 - Coverage.png", pCoverage, base_width = 5, base_height = 5)
 
-########################################### Extended Figure 3 - MSI / TMB
+########################################### Extended Figure 6 - MSI / TMB
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
@@ -320,9 +397,9 @@ tmbRelativeData[tmbRelativeData$cancerType == "Lung", "globalPercentage"] <- NA
 
 p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) + 
   geom_bar(stat = "identity", fill = singleBlue) + 
-  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = msiGlobalData$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = msiGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*msiGlobalData$percentage), size = 3) +
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2, size = 0.3) +
+  annotate("text", x = 20, y = msiGlobalData$percentage, label = "Pan Cancer", size =  5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 19, y = msiGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*msiGlobalData$percentage), size =  5 * 25.4 / 72, fontface = "plain") +
   ylab("% Samples MSI") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.1), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
@@ -334,9 +411,9 @@ p1 = ggplot(data = msiRelativeData, aes(y = percentage, x = cancerType)) +
 
 p2 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) + 
   geom_bar(stat = "identity",fill = singleBlue) + 
-  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2) +
-  annotate("text", x = 20, y = tmbGlobalData$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 19, y = tmbGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*tmbGlobalData$percentage), size = 3) +
+  geom_line(aes(x = as.numeric(cancerType), y = globalPercentage), linetype = 2, size = 0.5) +
+  annotate("text", x = 20, y = tmbGlobalData$percentage, label = "Pan Cancer",  size =  5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 19, y = tmbGlobalData$percentage, label = sprintf(fmt='(%.1f%%)', 100*tmbGlobalData$percentage),  size =  5 * 25.4 / 72, fontface = "plain") +
   ylab("% Samples TMB High") + xlab("Cancer Type") + ggtitle("") +
   scale_y_continuous(limits = c(0, 0.7), labels = percent, expand=c(0.02, 0.001)) +
   scale_fill_manual(values = cancerTypeColours) +
@@ -346,18 +423,21 @@ p2 = ggplot(data = tmbRelativeData, aes(y = percentage, x = cancerType)) +
   coord_flip()
 
 p3 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold", size = 3, hjust = 0) +
-  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 32000, y = 1.1e2, label = "TMB High Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
+  geom_segment(aes(x = 1e2, xend=1e6, y = 12400, yend=12380), linetype = "dashed", size = 0.3) + annotate("text", x = 1e2, y = 15000, label = "MSI Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
+  geom_segment(aes(y = 1e2, yend=1e6, x = 30950, xend=30950), linetype = "dashed", size = 0.3) + annotate("text", x = 32000, y = 1.1e2, label = "TMB High Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
+  geom_point(aes(color = cancerType), size = 0.7) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
   scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
-  theme(legend.position = "right", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
+  theme(legend.position = "top", legend.title = element_blank()) + guides(colour = guide_legend(nrow = 2)) +
   xlab("SNVs") + ylab("Indels") + ggtitle("")
 
+legend = g_legend(p3)
+p3 = p3 + theme(legend.position="none")
+
 p4 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL)) +
-  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed") + annotate("text", x = 2000, y = 20000, label = "MSI Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
+  geom_segment(aes(x = 1e1, xend=1e4, y = 12400, yend=12380), linetype = "dashed", size = 0.3) + annotate("text", x = 2000, y = 20000, label = "MSI Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
+  geom_point(aes(color = cancerType), size = 0.7) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e1, 1e4)) + 
   scale_y_continuous(trans="log10", limits = c(1e2, 1e6)) + 
@@ -365,18 +445,15 @@ p4 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SV, y = TOTAL_INDEL))
   xlab("SVs") + ylab("Indels") + ggtitle("")
 
 p5 = ggplot(data=highestPurityCohortSummary, aes(x = TOTAL_SNV, y = TOTAL_SV)) +
-  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed") + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold", size = 3, hjust = 0) +
-  geom_point(aes(color = cancerType)) + 
+  geom_segment(aes(y = 1e1, yend=1e4, x = 30950, xend=30950), linetype = "dashed", size = 0.3) + annotate("text", x = 33000, y = 5000, label = "TMB High Threshold",  size =  5 * 25.4 / 72, fontface = "plain", hjust = 0) +
+  geom_point(aes(color = cancerType), size = 0.7) + 
   scale_color_manual(values = cancerTypeColours) + 
   scale_x_continuous(trans="log10", limits = c(1e2, 1e6)) + 
   scale_y_continuous(trans="log10", limits = c(1e1, 1e4)) + 
   theme(legend.position = "none", legend.title = element_blank()) + guides(colour = guide_legend(ncol = 1)) +
   xlab("SNVs") + ylab("SVs") + ggtitle("")
 
-p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("A","B"))
-p45 = plot_grid(p4,p5, rel_widths = c(2,2), labels = c("D","E"))
 
-pMsiTMB = plot_grid(p12, p3, p45, ncol = 1, rel_heights = c(1, 2, 1), labels = c("","C", ""))
 
 ########### Part 2
 mutationalLoad = highestPurityCohortSummary %>%
@@ -395,7 +472,7 @@ driverLoad =  hpcDriversByGene %>%
     driver = ifelse(grepl("Indel", impact), "indelDriverLoad", driver),
     driver = ifelse(driver %in% c("Missense", "Nonsense", "Splice"), "snvDriverLoad", driver),
     driver = ifelse(grepl("Missense", impact) | grepl("Nonsense", impact) | grepl("Splice", impact), "snvDriverLoad", driver),
-    driver = ifelse(driver %in% c("Amp", "Del","FragileDel"), "cnaDriverLoad", driver)
+    driver = ifelse(driver %in% c("Amplification", "Deletion","FragileDel"), "cnaDriverLoad", driver)
   ) %>%
   filter(driver %in% c('indelDriverLoad', "snvDriverLoad", "cnaDriverLoad")) %>%
   group_by(sampleId, cancerType, driver) %>% summarise(drivers = sum(driverLikelihood, na.rm = T)) %>%
@@ -416,7 +493,7 @@ combinedDriverAndMutationalLoad = combinedDriverAndMutationalLoad %>%
 
 
 p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, color=cancerType)) + 
-  geom_point() +
+  geom_point(size = 0.7) +
   coord_cartesian(xlim= c(0,500), ylim=c(0,5))+
   ylab("CNA Drivers") + xlab("SV Mutational Load") + ggtitle("") + 
   theme(legend.position="none", legend.title = element_blank()) +
@@ -424,70 +501,29 @@ p6 = ggplot(combinedDriverAndMutationalLoad, aes(x=svMutLoad, y=cnaDriverLoad, c
 
 
 p7 = ggplot(combinedDriverAndMutationalLoad, aes(x=snvMutLoad, y=snvDriverLoad, color=cancerType)) + 
-  geom_point() +
+  geom_point(size = 0.7) +
   coord_cartesian(xlim= c(0,82000), ylim=c(0,4))+
   ylab("SNV Drivers") + xlab("SNV Mutational Load") + ggtitle("") + 
   theme(legend.position="none", legend.title = element_blank()) +
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
 p8 = ggplot(combinedDriverAndMutationalLoad, aes(x=indelMutLoad, y=indelDriverLoad, color=cancerType)) + 
-  geom_point() +
+  geom_point(size = 0.7) +
   coord_cartesian(xlim= c(0,3000), ylim=c(0,1.5))+
   ylab("Indel Drivers") + xlab("Indel Mutational Load") + ggtitle("") +
   theme(legend.position="none", legend.title = element_blank()) +
   scale_color_manual(values=cancerTypeColours, guide=FALSE)
 
+p12 = plot_grid(p1,p2, rel_widths = c(2,2), labels = c("a","b"), label_size = 8)
+pRest = plot_grid(p3, p4, p5, p7, p8, p6, labels = c("c","d","e","f", "g", "h"), label_size = 8)
+pLoads = plot_grid(p12, pRest, legend, ncol = 1, rel_heights = c(4, 8, 1), labels = c("","", ""), label_size = 8)
 
-pLoads = plot_grid(p7,p8, p6, nrow = 1, labels = c("F","G","H"))
-
-pComplete = plot_grid(pMsiTMB, pLoads, nrow = 2, rel_heights = c(4, 1))
-pComplete
-
-save_plot("~/hmf/RPlot/Extended Figure 3 - Loads.png", pComplete, base_width = 10, base_height = 14)
-
-
-########################################### Extended Figure 5 - Y DELETES
-load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
-load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
-clinical = highestPurityCohortSummary %>% select(sampleId, cancerType)
-maleCopyNumberY = hpcCopyNumbers %>% 
-  filter(chromosome == 'Y') %>% 
-  left_join(clinical, by = "sampleId") %>% 
-  mutate(status = ifelse(copyNumber < 0.5, "deleted", "normal")) %>%
-  group_by(cancerType, status) %>%
-  summarise(length = sum(end - start + 1)) %>%
-  group_by(cancerType) %>%
-  mutate(percentage = length / sum(length))
-
-maleCopyNumberYTotal = maleCopyNumberY %>% group_by(status) %>% summarise(length = sum(length)) %>% spread(status, length) %>% mutate(percentage = deleted / (normal + deleted))
-maleCopyNumberY = maleCopyNumberY %>%
-  mutate(totalPercentage = maleCopyNumberYTotal$percentage) %>%
-  filter(cancerType != "Other")
-
-maleCopyNumberYLevels = maleCopyNumberY %>% filter(status == 'deleted') %>% arrange(-percentage)
-maleCopyNumberY = maleCopyNumberY %>% ungroup() %>% 
-  mutate(
-    cancerType = factor(cancerType, maleCopyNumberYLevels$cancerType),
-    status = factor(status, c("normal", "deleted"), ordered = T))
-maleCopyNumberY[maleCopyNumberY$cancerType == "CNS", "totalPercentage"] <- NA
-maleCopyNumberY[maleCopyNumberY$cancerType == "NET", "totalPercentage"] <- NA
-
-p1 <- ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
-  geom_bar(aes(fill=status), stat = "identity") + 
-  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2) +
-  ggtitle("") + xlab("") + ylab("% of males with somatic Y chromosome deletion") +
-  coord_flip() +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="none") + 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
-  scale_fill_manual(values = c("#deebf7", "#2171b5")) +
-  annotate("text", x = 18, y = maleCopyNumberYTotal$percentage, label = "Pan Cancer", size = 3) +
-  annotate("text", x = 17, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 3) 
-
-save_plot("~/hmf/RPlot/Extended Figure 5 - Somatic Y Loss.png", p1, base_width = 6, base_height = 4)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.pdf", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.png", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 6.eps", pLoads, width = 183, height = 210, units = "mm", dpi = 300)
 
 
-########################################### Extended Figure 6 - SMG tile chart
+########################################### Extended Figure 8 - SMG tile chart
 
 absSignificance = 0.01
 load(file = "~/hmf/RData/processed/genePanel.RData")
@@ -529,17 +565,57 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
   geom_tile(aes(fill = qglobal_cv+ 1e-13)) + 
   scale_fill_gradient(name = "Significance", trans = "log10", low = "#2171b5", high = "#bdd7e7", guide = "colourbar",limits=c(1e-14, 1e-2), breaks=c(1e-14, 1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-2), labels=c(1e-14, 1e-12, 1e-10, 1e-8, 1e-6, 1e-4, 1e-2)) +
   xlab("") + ylab("") +
-  theme(axis.text.y = element_text(size = 8, colour = hmfGenesLabels$status, face = hmfGenesLabels$face), axis.text.x = element_text(angle = 90, hjust = 1), legend.title=element_text(size=9)) +
+  theme(axis.text.y = element_text(colour = hmfGenesLabels$status, face = hmfGenesLabels$face), axis.text.x = element_text(angle = 90, hjust = 1), 
+        panel.border = element_blank(),
+        axis.ticks = element_blank()) +
   #theme(panel.border = element_blank(),axis.ticks = element_blank()) +
   #theme(legend.position = "bottom") +
   guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
 pTile  
 
-save_plot("~/hmf/RPlot/Extended Figure 6 - Tile.png", pTile, base_width = 6, base_height = 10)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 
+########################################### Extended Figure 7
 
+load(file = "hmf/RData/Processed/highestPurityCohortSummary.RData")
+load(file = "~/hmf/RData/reference/hpcCopyNumbers.RData")
+clinical = highestPurityCohortSummary %>% select(sampleId, cancerType)
+maleCopyNumberY = hpcCopyNumbers %>% 
+  filter(chromosome == 'Y') %>% 
+  left_join(clinical, by = "sampleId") %>% 
+  mutate(status = ifelse(copyNumber < 0.5, "deleted", "normal")) %>%
+  group_by(cancerType, status) %>%
+  summarise(length = sum(end - start + 1)) %>%
+  group_by(cancerType) %>%
+  mutate(percentage = length / sum(length))
 
-########################################### Extended Figure 8
+maleCopyNumberYTotal = maleCopyNumberY %>% group_by(status) %>% summarise(length = sum(length)) %>% spread(status, length) %>% mutate(percentage = deleted / (normal + deleted))
+maleCopyNumberY = maleCopyNumberY %>%
+  mutate(totalPercentage = maleCopyNumberYTotal$percentage) 
+
+maleCopyNumberYLevels = maleCopyNumberY %>% filter(status == 'deleted') %>% arrange(-percentage)
+maleCopyNumberY = maleCopyNumberY %>% ungroup() %>% 
+  mutate(
+    cancerType = factor(cancerType, maleCopyNumberYLevels$cancerType),
+    status = factor(status, c("normal", "deleted"), ordered = T))
+maleCopyNumberY[maleCopyNumberY$cancerType == "CNS", "totalPercentage"] <- NA
+maleCopyNumberY[maleCopyNumberY$cancerType == "NET", "totalPercentage"] <- NA
+
+pyDeletes <- ggplot(data = maleCopyNumberY, aes(x = cancerType, y = percentage)) +
+  geom_bar(aes(fill=status), stat = "identity") + 
+  geom_line(aes(x = as.numeric(cancerType), y = totalPercentage), linetype = 2, size = 0.3) +
+  ggtitle("") + xlab("") + ylab("% of males with somatic Y chromosome deletion") +
+  coord_flip() +
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  theme(axis.ticks = element_blank(), legend.position="none") + 
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1)) +
+  scale_fill_manual(values = c("#deebf7", "#2171b5")) +
+  annotate("text", x = 19, y = maleCopyNumberYTotal$percentage, label = "Pan Cancer", size = 5 * 25.4 / 72, fontface = "plain") +
+  annotate("text", x = 18, y = maleCopyNumberYTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*maleCopyNumberYTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") 
+
+pyDeletes
 
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
@@ -577,7 +653,7 @@ p1 = ggplot(data = wgdDriverRates, aes(x = driver, y = n)) +
   scale_y_continuous(expand=c(0.01, 0.01))
 
 ampDriversPerGene = hpcDriversByGene %>%
-  filter(driver == 'Amp') %>%
+  filter(driver == 'Amplification') %>%
   group_by(gene, cancerType) %>% count() %>%
   ungroup()
 
@@ -596,9 +672,10 @@ p2 = ggplot(data = ampDriversPerGene, aes(x = gene, y = n)) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
   coord_flip()
 
+
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 ampDriversCancerType = hpcDriversByGene %>%
-  filter(driver == 'Amp') %>%
+  filter(driver == 'Amplification') %>%
   group_by(driver, cancerType) %>% count() %>%
   ungroup() %>% arrange(-n)
 
@@ -614,9 +691,10 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
   coord_flip()
 
-pAmps = plot_grid(p0, p2, p1, labels="AUTO")
-pAmps
-save_plot("~/hmf/RPlot/Extended Figure 8 - Amps.png", pAmps, base_width = 10, base_height = 10)
+pAmps = plot_grid(pyDeletes, p0, p2, p1, labels="auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.png", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
 
 ###################################################### Determining Clonality
 

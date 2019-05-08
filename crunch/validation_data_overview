@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SCRIPT=$( basename $0 )
-ROOT_DIR=/data/data_archive/validation_data
+ROOT_DIR="/data/data_archive/validation_data"
 LOG_DIR="${HOME}/logs"
 
 printRsync="false"
@@ -10,7 +10,7 @@ dstServer="DESTSERVER"
 function main(){
   for typePath in $( find ${ROOT_DIR} -mindepth 1 -maxdepth 1 -type d | sort | grep -v pipeline ); do 
     typeName=$( basename $typePath )
-    print_title $typeName
+    print_title "$typeName FASTQ/BAM"
     echo "$typePath"
 
     for versionPath in $( find ${typePath} -mindepth 1 -maxdepth 1 -type d | sort ); do
@@ -29,6 +29,9 @@ function main(){
       done
     done
   done
+  
+  print_title "PIPELINE DIRS"
+  ls -d1 $ROOT_DIR/*pipeline*
   echo ""
 }
 
