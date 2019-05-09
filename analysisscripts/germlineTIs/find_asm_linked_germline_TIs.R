@@ -6,9 +6,9 @@ argp = arg_parser("Identifies germline templated insertions")
 argp = add_argument(argp, "--input", nargs=Inf, help="Input GRIDSS VCFs")
 argp = add_argument(argp, "--output_vcf", nargs=Inf, help="Candidate templated insertions")
 #argp = add_argument(argp, "--normal_ordinal", type="integer", default=1, help="Ordinal of normal sample in the VCF")
-#argp = add_argument(argp, "--qual", type="integer", default=350, help="Minimum QUAL score of variants")
+argp = add_argument(argp, "--qual", type="integer", default=350, help="Minimum QUAL score of variants")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-#argv = parse_args(argp, c("--scriptdir", "D:/hartwig/scripts/gridss/", "--input", "D:/hartwig/down/CPCT02180005R_CPCT02180005T.gridss.vcf", "--output_vcf", "D:/hartwig/down/test_ti.vcf"))
+#argv = parse_args(argp, c("--scriptdir", "D:/hartwig/scripts/gridss/", "--input", "D:/hartwig/down/CPCT02180037R_CPCT02180037T.gridss.vcf.gz", "--output_vcf", "D:/hartwig/down/test_ti.vcf"))
 argv = parse_args(argp)
 
 libgridssfile = paste0(argv$scriptdir, "/", "libgridss.R")
@@ -68,12 +68,12 @@ for (i in seq_along(argv$input)) {
   input_filename = argv$input[i]
   output_filename = argv$output_vcf[i]
   vcf = readVcf(input_filename)
-  vcf = vcf[info(vcf)$QUAL >= argv$qual]
+  vcf = vcf[VariantAnnotation::fixed(vcf)$QUAL >= argv$qual]
   gr = breakpointRanges(vcf)
   gr = gr[gr$partner %in% names(gr)]
   linkeddf = find_asm_linked_tis(vcf, gr, input_filename)
   if (!is.na(output_filename)) {
-    writeVcf(output_filename, vcf[names(vcf) %in% c(
+    writeVcf(filename=output_filename, vcf[names(vcf) %in% c(
       linkeddf$left_vcfId,
       linkeddf$right_vcfId,
       gr[linkeddf$left_vcfId]$partner,
