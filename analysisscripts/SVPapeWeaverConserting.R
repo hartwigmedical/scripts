@@ -4,6 +4,7 @@ library(stringr)
 library(grid)
 library(gridExtra)
 library(cowplot)
+library(scales)
 library(GenomicRanges)
 library(StructuralVariantAnnotation)
 library(BSgenome.Hsapiens.UCSC.hg19)
@@ -213,27 +214,48 @@ sum(width(weaver_cn) * weaver_cn$cn)/sum(width(weaver_cn))
 
 ########
 # Plots
-c(ascat_cn, purple_cn, conserting_cn, weaver_cn) %>%
+cn_size_distribution = c(ascat_cn, purple_cn, conserting_cn, weaver_cn) %>%
   as.data.frame() %>%
   dplyr::select(seqnames, start, end, caller) %>%
-  mutate(length=end-start) %>%
-ggplot() +
+  mutate(length=end-start)
+ggplot(cn_size_distribution) +
   aes(x=length) +
   geom_histogram() +
   scale_x_log10() +
   facet_grid(caller ~ ., scales="free_y") +
   labs(title="Copy number segment size distribution")
 
-cn_transistions %>%
+cn_transition_plot = cn_transistions %>%
   as.data.frame() %>%
   replace_na(list(distance=100000)) %>%
-  filter(!(inGap | isFirstOrLast | inCentromere)) %>%
-ggplot() +
+  filter(!(inGap | isFirstOrLast | inCentromere))
+ggplot(cn_transition_plot) +
   aes(x=distance) +
   geom_histogram(bins=10) +
   scale_x_log10(breaks=c(1,10,100,1000, 10000, 100000), labels=c("0", "10", "100", "1000", "10000", "No matching SV")) +
   facet_grid(caller ~ ., scales="free_y") +
   labs(y="CN transitions", x="Distance to nearest SV")
+
+cn_transition_plot %>%
+  mutate(distance_bin = cut(
+    distance,
+    labels=c("Less than 10 bp", "10-99 bp", "100-999 bp", "1000-9999 bp", "10000-99999 bp", "No matching SV"),
+    breaks=c(-100, 1,10,100,1000, 10000, 100000))) %>%
+  group_by(caller) %>%
+  mutate(caller_n=n()) %>%
+  group_by(caller, distance_bin) %>%
+  summarise(portion=n()/max(caller_n)) %>%
+ggplot() +
+  aes(x=caller, y=portion, fill=distance_bin) +
+  geom_col() +
+  scale_fill_brewer(palette="YlOrRd", name="Distance to SV") +
+  scale_y_continuous(labels=percent) +
+  labs(
+    x="",
+    y="Percent of copy number transitions",
+    title="Copy number transitions with matching breakpoints")
+ggsave(filename=paste0(basedir, "/sv_at_cn_transition.pdf"), width=6, height=4)
+
 
 cn_transistions %>%
   as.data.frame() %>%
@@ -244,7 +266,55 @@ ggplot() +
   geom_histogram(bins=20) +
   facet_grid(caller ~ ., scales="free_y") +
   scale_x_continuous(breaks=seq(0, 2, 0.25), labels=c(head(seq(0, 2, 0.25), -1), "2+")) +
-  labs(title="Copy number consistency of breakpoint-connected segments", x="Magnitude of copy number inconsistency", y="Count of copy number segmentation transitions")
+  labs(
+    title="Copy number consistency of breakpoint-connected segments",
+    x="Magnitude of copy number inconsistency",
+    y="Count of copy number segmentation transitions")
+
+cn_transistions %>%
+  as.data.frame() %>%
+  filter(!is.na(cn_error)) %>%
+  mutate(cn_error=pmin(2, cn_error)) %>%
+  mutate(cn_error_bin=cut(
+    cn_error,
+    labels=c("0.0 - 0.05","0.05 - 0.1", "0.1 - 0.2", "0.2 - 0.5", "1.0 - 2.0", "2.0+"),
+    breaks=c(-100, 0.05, 0.1, 0.2, 0.5, 1, 2))) %>%
+  group_by(caller) %>%
+  mutate(caller_n=n()) %>%
+  group_by(caller, cn_error_bin) %>%
+  summarise(portion=n()/max(caller_n)) %>%
+ggplot() +
+  aes(x=caller, y=portion, fill=cn_error_bin) +
+  geom_col() +
+  scale_fill_brewer(palette="YlOrRd", name="Magnitude of CN\ninconsistency") +
+  scale_y_continuous(labels=percent) +
+  labs(
+    title="CN consistency of isolated breakpoints",
+    y="Portion of breakpoints")
+ggsave(filename=paste0(basedir, "/cn_consistency.pdf"), width=5, height=4)
+
+cn_transistions %>%
+  as.data.frame() %>%
+  filter(!is.na(cn_error)) %>%
+  mutate(cn_percentage_error=cn_error/pmax(cn_left, cn_right)) %>%
+  mutate(cn_percentage_error_bin=cut(
+    cn_percentage_error,
+    labels=c("0-1","1-5", "5-10", "10-20", "20-50", "50+"),
+    breaks=c(-1, 0.01, 0.05, 0.1, 0.2, 0.5, 1000))) %>%
+  group_by(caller) %>%
+  mutate(caller_n=n()) %>%
+  group_by(caller, cn_percentage_error_bin) %>%
+  summarise(portion=n()/max(caller_n)) %>%
+ggplot() +
+  aes(x=caller, y=portion, fill=cn_percentage_error_bin) +
+  geom_col() +
+  scale_fill_brewer(palette="YlOrRd", name="Magnitude of CN\ninconsistency (%)") +
+  scale_y_continuous(labels=percent) +
+  labs(
+    title="CN consistency of isolated breakpoints",
+    y="Portion of breakpoints")
+ggsave(filename=paste0(basedir, "/cn_consistency_percentage.pdf"), width=5, height=4)
+
 
 cn_transistions %>%
   as.data.frame() %>%
