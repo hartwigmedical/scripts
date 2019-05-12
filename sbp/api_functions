@@ -5,6 +5,25 @@
 #  - v3 run, with a v4 rerun. In this case, the run and v3 rerun are identical, the v4 rerun is separate.
 #  - pre-v3 run, with a v3 rerun and a v4 rerun. In this case all 3 run infos will be different.
 
+load_sample_name_for_set_by_type_from_api() {
+    local set_name=$1
+    local sample_type=$2 # can be ref_sample or tumor_sample
+    local sample_name=$( query_sbp_api -type sets -filter "name=${set_name}" -json | jq -r ".[0].$sample_type" )
+    echo "${sample_name}"
+}
+
+load_ref_sample_name_for_set() {
+    local set_name=$1
+    local ref_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "ref_sample" )
+    echo "${ref_sample_name}"
+}
+
+load_tum_sample_name_for_set() {
+    local set_name=$1
+    local tum_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "tumor_sample" )
+    echo "${tum_sample_name}"
+}
+
 load_run_info_for_set() {
     local set=$1
     local run_info=`query_sbp_api -type runs | grep -P "hmf-output|hmf_research" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" `
@@ -47,14 +66,18 @@ locate_tumor_bam_for_set_in_bucket() {
     run_bucket=$1
     set=$2
 
+    tum_sample_name=$( load_tum_sample_name_for_set $set )
+
     s3path="s3://${run_bucket}/${set}"
-    echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*T[IVX]*(_dedup)?.realigned.bam$" )
+    echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping/${tum_sample_name}(_dedup)?.realigned.bam$" )
 }
 
 locate_ref_bam_for_set_in_bucket() {
     run_bucket=$1
     set=$2
 
+    ref_sample_name=$( load_ref_sample_name_for_set $set )
+
     s3path="s3://${run_bucket}/${set}"
-    echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping.*R(_dedup)?.realigned.bam$" )
+    echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping/${ref_sample_name}(_dedup)?.realigned.bam$" )
 }

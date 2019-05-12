@@ -1,0 +1,141 @@
+<ideogram>
+
+    <spacing>
+        default = 0.002r
+    </spacing>
+
+    # Ideogram position, fill and outline
+    radius           = 0.90r
+    thickness        = 50p
+    fill             = yes
+    stroke_color     = dgrey
+    stroke_thickness = 2p
+
+    # Minimum definition for ideogram labels.
+
+    show_label       = yes
+    # see etc/fonts.conf for list of font names
+    label_font       = default
+    label_radius     = 1r + 30p
+    label_size       = 30
+    label_parallel   = yes
+
+</ideogram>
+
+<<include etc/colors_fonts_patterns.conf>>
+
+show_ticks          = no
+show_tick_labels    = no
+
+<image>
+	<<include etc/image.conf>>
+</image>
+
+karyotype = data/karyotype/karyotype.human.txt
+
+chromosomes_units           = 1000000
+chromosomes_display_default = yes
+chromosomes                 = -EXCLUDE
+
+
+# Default is to clip the data to proximity min/max.
+<plots>
+
+	# -----------------------------------------------------------
+	# Unnormalised bucket count
+	<plot>
+		type = histogram
+		file = /Users/jon/hmf/analysis/svPaper/svEnrichment/unnormalisedBucketCountTrack.circos
+		r0   = 0.4r
+		r1   = 0.98r
+		min  = 0
+		max  = 20
+		glyph = circle
+		glyph_size = 8
+		color = blue
+		fill_color = blue
+
+		<axes>
+			<axis>
+				color     = lblue
+				thickness = 2
+				spacing   = 0.05r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlblue_a5
+			</background>
+		</backgrounds>
+
+	</plot>
+
+	# -----------------------------------------------------------
+	# Expected bucket count
+	<plot>
+		type = histogram
+		file = /Users/jon/hmf/analysis/svPaper/svEnrichment/expectedBucketCountTrack.circos
+		r0   = 0.4r
+		r1   = 0.98r
+		min  = 0
+		max  = 20
+		glyph = circle
+		glyph_size = 8
+		color = red
+		fill_color = red
+
+	</plot>
+
+	# -----------------------------------------------------------
+	# CopyNumber (Green)
+	<plot>
+		type = histogram
+		file = /Users/jon/hmf/analysis/svPaper/svEnrichment/copyNumberTrack.circos
+		r0   = 0.1r
+		r1   = 0.38r
+		min  = 0
+		max  = 6
+		glyph = circle
+		glyph_size = 8
+		color = green
+		fill_color = green
+
+		<axes>
+			<axis>
+				color     = lgreen
+				thickness = 2
+				spacing   = 0.1666r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlgreen_a5
+			</background>
+		</backgrounds>
+
+		<rules>
+			<rule>
+				condition = var(value) < 0.03
+				#show = no
+			</rule>
+		</rules>
+
+	</plot>
+
+
+</plots>
+
+#<links>
+#    <link>
+#        file          = SAMPLE.link.circos
+#        color         = black_a5
+#        radius        = 0.35r
+#        bezier_radius = 0.1r
+#        thickness     = 2
+#        ribbon        = yes
+#    </link>
+#</links>
+
+<<include etc/housekeeping.conf>>

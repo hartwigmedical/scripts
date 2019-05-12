@@ -9,19 +9,23 @@ use File::Find::Rule;
 use Array::Diff qw(:all);
 use JSON::XS;
 
-my $SCRIPT_NAME = `basename $0`; chomp($SCRIPT_NAME);
-my $SNPCHECK_DB = "/data/common/snpcheck/output/";
-my $DELIM_CHAR = ' ';
+
 my $NA_CHAR = '-';
+my $SCRIPT = `basename $0`; chomp($SCRIPT);
 my %GT_CONVERSION = ('./.'=>$NA_CHAR,'0/0'=>'A','1/0'=>'B','0/1'=>'B','1/1'=>'C','1/2'=>'D','2/1'=>'D');
 my $MIN_USABLE = 18;
 my $MIN_IDENTICAL = 18;
 my $MAX_DISTANCE = 4;
-my $OUTPUT_FILE = "";
 
-my $USE_TAB_DELIM;
-my $COLLAPSE_CALL;
-my $DESIGN_VCF;
+my $snpcheck_db = "/data/common/snpcheck/output/";
+my $delim_char = ' ';
+my $input_vcf_dir = "";
+my $output_file = "";
+my $design_vcf = "";
+
+my $use_tab_delim;
+my $collapse_call;
+my $qc_mode;
 
 my $HELP_TEXT = <<EOF;
  ---
@@ -34,26 +38,30 @@ my $HELP_TEXT = <<EOF;
       setting: mismatch penalty HOM to HOM = 2
 
     Run modus depends on input amount of input VCFs:
-      * One input VCF: compare vs all vcfs in snpcheckDB ($SNPCHECK_DB)
+      * One input VCF: compare vs all vcfs in snpcheckDB ($snpcheck_db)
       * Two input VCFs: compare the two vcfs
       * Three or more input VCFs: no comparison just print table
 
  Usage:
     Compare one VCF file vs all in snpcheckDB
-      $SCRIPT_NAME \${vcf1} -outputFile \$my_out_file
+      $SCRIPT \${vcf1} -outputFile \$my_out_file
     Compare two VCF files and perform check:
-      $SCRIPT_NAME \${vcf1} \${vcf2}
+      $SCRIPT \${vcf1} \${vcf2}
     Print table of calls for 3 or more VCFs:
-      $SCRIPT_NAME /path/to/vcfs/*vcf
+      $SCRIPT /path/to/vcfs/*vcf
     Change output format with tab delim + single char calls
-      $SCRIPT_NAME /path/to/vcfs/*vcf -tab -collapse
+      $SCRIPT /path/to/vcfs/*vcf -tab -collapse
+    Perform plate check
+      $SCRIPT -qc -vcfdir /path/to/dir/with/vcfs/
    
  Options:
-    -snpcheckDB    [s] path to dir with VCFs to serve as DB ($SNPCHECK_DB)
+    -snpcheckDB    [s] path to dir with VCFs to serve as DB ($snpcheck_db)
     -outputFile    [s] path to output file with comparisons if run in genotypeDB mode
     -tabDelim          use tab as output delimiter for output table
     -collapseCall      collapse genotypes to single characters
     -designVcf     [s] vcf design file with positions to include
+    -vcfDir        [s] directory with input vcf files
+    -qc                quality check mode (needs vcfDir as well)
  ---
 EOF
 
@@ -64,18 +72,24 @@ print $HELP_TEXT and exit(0) if scalar(@ARGV) == 0;
 GetOptions (
     "help|h" => \$help,
     "verbose" => \$verbose,
-    "tabDelim" => \$USE_TAB_DELIM,
-    "outputFile=s" => \$OUTPUT_FILE,
-    "collapseCall" => \$COLLAPSE_CALL,
-    "snpcheckDB=s" => \$SNPCHECK_DB,
-    "designVcf=s" => \$DESIGN_VCF,
+    "tabDelim" => \$use_tab_delim,
+    "outputFile=s" => \$output_file,
+    "collapseCall" => \$collapse_call,
+    "snpcheckDB=s" => \$snpcheck_db,
+    "designVcf=s" => \$design_vcf,
+    "vcfDir=s" => \$input_vcf_dir,
+    "qc" => \$qc_mode,
 ) or die "Error in command line arguments\n";
 print $HELP_TEXT and exit(0) if $help;
-$DELIM_CHAR = "\t" if $USE_TAB_DELIM;
+$delim_char = "\t" if $use_tab_delim;
 
 ## input checks 
-die "[ERROR] GenotypeDB is not a directory ($SNPCHECK_DB)\n" unless -d $SNPCHECK_DB;
-die "[ERROR] No input vcfs provided?\n" unless scalar @ARGV;
+die "[ERROR] vcfDir is not a directory ($input_vcf_dir)\n" if $input_vcf_dir and not -d $input_vcf_dir;
+die "[ERROR] Use either vcfDir or separate VCFs as input.\n" unless scalar @ARGV or $input_vcf_dir;
+die "[ERROR] Use either vcfDir or separate VCFs as input, not both.\n" if scalar @ARGV and $input_vcf_dir;
+
+## some cleanup
+$input_vcf_dir =~ s/\/$//;
 
 ## -----
 ## main
@@ -83,29 +97,45 @@ die "[ERROR] No input vcfs provided?\n" unless scalar @ARGV;
 my @vcfs = @ARGV;
 my $vcfCount = scalar @vcfs;
 my $posToKeep;
-if ( $DESIGN_VCF ){
-    $posToKeep = parseDesign( $DESIGN_VCF );
+if ( $design_vcf ){
+    $posToKeep = parseDesign( $design_vcf );
 }
 
-if ( $vcfCount == 1 ){
-    my $vcf1 = $vcfs[0];
+if ( $input_vcf_dir ){
+   my @dir_vcfs = find->file()->name('*.vcf')->in($input_vcf_dir);
+   @vcfs = ( @vcfs, @dir_vcfs );
+}
+
+my @names;
+my %store;
+foreach my $vcf ( @vcfs ){
+    my $name = fileparse( $vcf );
+    push( @names, $name );
+    parseVcf( $vcf, $name, \%store, $posToKeep );
+}
+
+
+if ( $qc_mode ){
+    say "[INFO] Quality check mode: checking call count per VCF";
+    die "[EXIT] Param vcfDir required with quality check mode.\n" unless $input_vcf_dir;
+    my $plate_name = fileparse( $input_vcf_dir );
+    say "[INFO] Working on plate: $plate_name";
+    performQualityCheck( \%store, \@names );
+}
+elsif ( $vcfCount == 1 ){
+    say "[INFO] Single vcf mode: will perform comparison to database ($snpcheck_db)";
+    die "[EXIT] GenotypeDB is not a directory ($snpcheck_db)\n" if not -d $snpcheck_db;
+    die "[EXIT] Param outputFile required with single vcf mode.\n" unless $output_file;
+    die "[EXIT] Ouput file already exists ($output_file)\n" if -f $output_file;
     
-    say "[INFO] Single vcf mode: will perform comparison to database ($SNPCHECK_DB)";
-    die "[EXIT] No -outputFile specified\n" unless $OUTPUT_FILE;
-    die "[EXIT] Ouput file already exists\n" if -f $OUTPUT_FILE;
-    die "[EXIT] Only plain text VCF supported\n" unless $vcf1 =~ /\.vcf$/;
-    
-    my $out = $OUTPUT_FILE;
+    my $out = $output_file;
     my $log = $out . ".log";
-    my $sample1 = fileparse( $vcf1 );
-    my %store1 = ();
-    parseVcf( $vcf1, $sample1, \%store1, $posToKeep );
+    my $sample1 = $names[0];
     
-    ## perform all base (input VCF) vs call (DB VCF) pairwise comparisons
     my @comparisons = ();
-    foreach my $vcf2 (find->file()->name('*.vcf')->in($SNPCHECK_DB)){
+    foreach my $vcf2 (find->file()->name('*.vcf')->in($snpcheck_db)){
         my $sample2 = fileparse( $vcf2 );
-        my %store1and2 = %store1;
+        my %store1and2 = %store;
         parseVcf( $vcf2, $sample2, \%store1and2, $posToKeep );
         my $comparison = compareTwoSamples( \%store1and2, $sample1, $sample2, \*STDOUT );
         push( @comparisons, $comparison );
@@ -119,26 +149,12 @@ if ( $vcfCount == 1 ){
 }
 elsif ( $vcfCount == 2 ){
     say "[INFO] Two VCF mode: will perform pairwise comparison";
-    my %store = ();
-    my @names = ();
-    foreach my $vcf ( @vcfs ){
-        my $name = fileparse( $vcf );
-        push( @names, $name );
-        parseVcf( $vcf, $name, \%store, $posToKeep );
-    }
     my $comparison = compareTwoSamples( \%store, $names[0], $names[1], \*STDOUT );
     exit(0) if $comparison->{result} eq 'OK';
     exit(1);
 }
 else{
     say "[INFO] More than two input vcfs: will perform no comparisons";
-    my %store = ();
-    my @names = ();
-    foreach my $vcf ( @vcfs ){
-        my $name = fileparse( $vcf );
-        push( @names, $name );
-        parseVcf( $vcf, $name, \%store, $posToKeep );
-    }
     printSampleGenotypesTable( \%store, \@names);
 }
 
@@ -174,17 +190,64 @@ sub printComparisonTable{
     }
     say "[INFO] A total of $matches matches found";
 }
+
+sub performQualityCheck{
+    my ( $storeObject, $vcfNames ) = @_;
+    
+    my @regions = sort keys %$storeObject;
+    my $callField = 'gtCallsCollapsed';
+    my @qc_pass = ();
+    my @qc_fail = ();
+    
+    foreach my $vcfName ( @$vcfNames ){
+        
+        ## skip negative control sample
+        next if $vcfName =~ /^NTC-NTC_/;
+        
+        my ($sampleName,$plateName) = (split( "_", $vcfName ))[0,1];
+        my $usable = 0;
+        my $total = 0;
+        
+        foreach my $region ( @regions ){
+            my $call = $NA_CHAR;
+            if ( exists $storeObject->{ $region }{ $vcfName }{ $callField } ){
+                $total++;
+                $call = $storeObject->{ $region }{ $vcfName }{ $callField };
+            }            
+            $usable++ unless $call =~ /$NA_CHAR/;
+        }     
+        my $is_qc_fail = $usable < $MIN_USABLE;
+        
+        if ( $is_qc_fail ){
+            push( @qc_fail, "  [FAIL] $usable usable calls of $total total (Plate:$plateName Sample:$sampleName)");
+        }
+        else{
+            push( @qc_pass, "  [PASS] $usable usable calls of $total total (Plate:$plateName Sample:$sampleName)");
+        }
+    }
+    
+    my $fail_count = scalar @qc_fail;
+    say "[INFO] Sample QC Results:";
+    say join( "\n", @qc_pass ) if scalar @qc_pass;
+    say join( "\n", @qc_fail ) if scalar @qc_fail;
+    if ( scalar @qc_fail ){
+        say "[WARN] FINAL RESULT = FAIL: there were $fail_count samples failing qc!";
+    }
+    else{
+        say "[INFO] FINAL RESULT = OK: all samples pass qc";
+    }
+}
     
 sub printSampleGenotypesTable{
     my ( $storeObject, $vcfNames ) = @_;
     
-    my @regions = sort keys %$storeObject;    
+    my @regions = sort keys %$storeObject;
     my @chroms = map( $storeObject->{ $_ }{ 'chr' }, @regions );
     say "[INFO] Genomic position order: " . join( ", ", @regions );
     
     foreach my $vcfName ( @$vcfNames ){
         my $callField = 'gtCalls';
-        $callField = 'gtCallsCollapsed' if $COLLAPSE_CALL;
+        $callField = 'gtCallsCollapsed' if $collapse_call;
         my @calls = ();
         my $usable = 0;
         
@@ -194,7 +257,7 @@ sub printSampleGenotypesTable{
             push( @calls, $call );
             $usable++ unless $call =~ /$NA_CHAR/;
         }
-        say STDOUT join( "$DELIM_CHAR", map( $_, @calls ), $usable, $vcfName );
+        say STDOUT join( "$delim_char", map( $_, @calls ), $usable, $vcfName );
     }
 }
 
@@ -229,7 +292,7 @@ sub compareTwoSamples{
         
         ## use the collapsed notation if requested
         my $callField = 'gtCalls';
-        $callField = 'gtCallsCollapsed' if $COLLAPSE_CALL;
+        $callField = 'gtCallsCollapsed' if $collapse_call;
         
         my $chrom = $info->{ 'chr' };
         my $call1 = $info->{ $sample1 }{ $callField };
@@ -292,11 +355,11 @@ sub compareTwoSamples{
     say "[INFO] Total identical = $identical ($identicalPerc% of usable)";
     say "[INFO] Total different = $different ($differentPerc% of usable)";
     say "[INFO] Total distance  = $distance (maximum: $MAX_DISTANCE)";
-    say join( $DELIM_CHAR, "[INFO] Chrom: ", map( sprintf( "%3s", $_ ), @toprint_chroms ) );
-    say join( $DELIM_CHAR, "[INFO] file1: ", map( sprintf( "%3s", $_ ), @toprint_calls1 ) );
-    say join( $DELIM_CHAR, "[INFO] file2: ", map( sprintf( "%3s", $_ ), @toprint_calls2 ) );
-    say join( $DELIM_CHAR, "[INFO]  Dist: ", map( sprintf( "%3s", $_ ), @toprint_distan ) );
-    say join( $DELIM_CHAR, "[INFO] Match: ", map( sprintf( "%3s", $_ ), @toprint_result ) );
+    say join( $delim_char, "[INFO] Chrom: ", map( sprintf( "%3s", $_ ), @toprint_chroms ) );
+    say join( $delim_char, "[INFO] file1: ", map( sprintf( "%3s", $_ ), @toprint_calls1 ) );
+    say join( $delim_char, "[INFO] file2: ", map( sprintf( "%3s", $_ ), @toprint_calls2 ) );
+    say join( $delim_char, "[INFO]  Dist: ", map( sprintf( "%3s", $_ ), @toprint_distan ) );
+    say join( $delim_char, "[INFO] Match: ", map( sprintf( "%3s", $_ ), @toprint_result ) );
     
     ## determine final RESULT
     my $result;

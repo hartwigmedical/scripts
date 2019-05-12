@@ -257,7 +257,10 @@ facet_wrap(~ ins_count)
 
 
 full_gr
-
+# DC: TODO
+# TODO follow up pseudogene insertions in sv links file
+# can I show that these are due to LINE strand invasion
+# TODO: look at rule use to identify LINE elemtns
 
 
 

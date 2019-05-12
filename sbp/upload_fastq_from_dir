@@ -2,7 +2,7 @@
 
 inputDirPath=$1
 
-sbp s3 sync ${inputDirPath}/ s3://hmf_fastq_storage/ \
+sbp s3 sync ${inputDirPath}/ s3://hmf-fastq-storage/ \
     --profile hmf_fastq \
     --grants read=id=${SBP_DOWNLOAD_CANONICAL},id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${SBP_DOWNLOAD_CANONICAL},id=${HMF_DOWNLOAD_CANONICAL}
 

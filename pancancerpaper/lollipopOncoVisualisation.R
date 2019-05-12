@@ -92,8 +92,7 @@ lollipop <- function(selectedGene) {
     theme(axis.ticks = element_blank()) +
     theme(legend.position = "none", legend.text=element_text(size=8), axis.text = element_text(size = 12)) +
     scale_color_manual(name = "Hotspot", values = hotspotColor) +
-    scale_fill_manual(name = "Hotspot", values = hotspotColor) + 
-    scale_alpha_manual(name = "Nonsense", values = crossAlpha)
+    scale_fill_manual(name = "Hotspot", values = hotspotColor)
 
   p2 = ggplot(data = lollipopCancerTypeData %>% filter(gene == selectedGene)) +
     geom_bar(aes(x = type, y = value, fill = cancerType), stat = "identity", width = 0.8) +
@@ -127,7 +126,7 @@ for (i in c(1:length(genes))) {
   plots[[i]] = lollipop(genes[i])
 }
 
-pdf(file="~/hmf/RPlot/Extended Figure 7a -  Onco Lollipops.pdf",width=15, height = 6)
+pdf(file="~/hmf/RPlot/Onco Lollipops.pdf",width=15, height = 6)
 for (i in 1:length(plots)) {
   print(plots[[i]])
 }

@@ -8,8 +8,8 @@ argp = add_argument(argp, "--output", help="High confidence somatic subset")
 argp = add_argument(argp, "--fulloutput", help="Full call set excluding obviously germline call.")
 argp = add_argument(argp, "--normalordinal", type="integer", default=1, help="Ordinal of matching normal sample in the VCF")
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
-argp = add_argument(argp, "--gc", flag=TRUE, help="Perform garbage collection after allocation of large objects. ")
-# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-p", "D:/hartwig/pon", "--scriptdir", "D:/hartwig/scripts/gridss", "--gc"))
+argp = add_argument(argp, "--gc", flag=TRUE, help="Perform garbage collection after freeing of large objects. ")
+# argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-p", "D:/hartwig/dbs/gridss/pon3792v1", "--scriptdir", "D:/hartwig/scripts/gridss", "--gc"))
 argv = parse_args(argp)
 
 if (!file.exists(argv$input)) {
@@ -206,13 +206,17 @@ event_link_df = bind_rows(
   inv_link_df,
   dsb_link_df) %>%
   dplyr::select(vcfId, linked_by) %>%
-  mutate(QUAL=rowRanges(vcf)[vcfId]$QUAL) %>%
+  mutate(
+    QUAL=rowRanges(vcf)[vcfId]$QUAL,
+    hasPolyA=str_detect(rowRanges(vcf[vcfId])$ALT, "A{16}")) %>%
   group_by(linked_by) %>%
   # filter events where supporting fragment counts differ by too much
   mutate(
     max_supporting_fragment_count = max(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
-    min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF))) %>%
-  filter(max_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count)
+    min_supporting_fragment_count = min(ifelse(is.na(info(full_vcf[vcfId])$PARID), info(full_vcf[vcfId])$BVF, info(full_vcf[vcfId])$VF)),
+    hasPolyA=any(hasPolyA)
+    ) %>%
+  filter(min_supporting_fragment_count >= gridss.min_rescue_portion * max_supporting_fragment_count | hasPolyA)
 
 write(paste(Sys.time(),"Calculating final linkage annotation", argv$input), stderr())
 # Only keep the best QUAL event linkage

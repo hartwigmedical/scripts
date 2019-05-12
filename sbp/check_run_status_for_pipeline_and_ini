@@ -17,10 +17,9 @@ if [[ ${pipCount} < 1 ]]; then
 fi
 
 ## Define all paths used by script
-findDirs="/data/cpct/runs/ /data/core/runs/ /data/schuberg/processed_runs/ /data/schuberg/cpct_drup_downloads_v4/ /data/schuberg/core_downloads_v4/ "
+findDirs="/data/cpct/runs/ /data/core/runs/ /data/schuberg/processed_runs/ /data/schuberg/downloaded_runs/ "
 findDirsFail="/data/schuberg/qc_fail_runs"
 downloadScript="process_finished_run"
-downloadScriptCore="process_finished_run_core"
 downloadScriptFail="download_qc_fail_run"
 rerunMode=0
 
@@ -148,11 +147,7 @@ query_sbp_api \
         existsInSuccessRunDirs=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
         if [[ ${existsInSuccessRunDirs} == 0 ]]
         then
-           if [[ ${setName} == *"CORE"* ]] ; then
-                echo "${downloadScriptCore} ${setName}"
-           elif [[ ${setName} == *"CPCT"* || ${setName} == *"DRUP"*  ]] ;then
                 echo "${downloadScript} ${setName}"
-           fi
         else
             echo "# No action for ${setName}: already exists on datastore"
         fi
@@ -171,11 +166,7 @@ query_sbp_api \
         existsInSuccessRunDirs=$( find ${findDirs} -maxdepth 1 -type d -name "${setName}" | wc -l);
         if [[ ${existsInSuccessRunDirs} == 0 ]]
         then
-            if [[ ${setName} == *"CORE"* ]] ; then
-                echo "${downloadScriptCore} ${setName}"
-           elif [[ ${setName} == *"CPCT"* || ${setName} == *"DRUP"*  ]] ;then
                 echo "${downloadScript} ${setName}"
-           fi
         else
             echo "# No action for ${setName}: already exists on datastore"
         fi

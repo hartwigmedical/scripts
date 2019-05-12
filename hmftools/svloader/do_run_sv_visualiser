@@ -1,13 +1,14 @@
 #!/bin/bash
 
 sample=$1 && shift
+segments=$1 && shift
+links=$1 && shift
+exons=$1 && shift
 
-credentials=/data/common/dbs/mysql_credentials/pilot
+credentials=/data/common/dbs/mysql_credentials/prod
 output_dir=/data/experiments/190130_sv_vis
 sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
-segments=/data/experiments/sv/SVA_VIS_SEGMENTS.csv
-links=/data/experiments/sv/SVA_VIS_SVS.csv
-exons=/data/experiments/sv/SVA_VIS_GENE_EXONS.csv
+
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
 # Database details
@@ -28,8 +29,8 @@ java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.
 
 
 #Example usage
-#   do_run_sv_visualiser CPCT02020258T
-#   do_run_sv_visualiser CPCT02020258T -threads 1 -chromosome 15 -debug
+#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv
+#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv -threads 1 -chromosome 15 -debug
 #
 # Optional arguments
 #

@@ -1,6 +1,7 @@
 #!/bin/bash
 patient_db_jar=/data/common/tools/patient-db_pilot/patient-db.jar
-runs_dir=/data/cpct/runs
+runs_dir_cpct_and_drup=/data/cpct/runs
+runs_dir_core=/data/core/runs
 
 credentials=/data/common/dbs/mysql_credentials/pilot
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -10,7 +11,8 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
-    -runs_dir ${runs_dir} \
+    -runs_dir_cpct_drup ${runs_dir_cpct_and_drup} \
+    -runs_dir_core ${runs_dir_core} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \

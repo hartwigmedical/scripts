@@ -7,7 +7,7 @@ if [ -z "$set" ]; then
     exit 1
 fi
 
-download_path=/data/schuberg/cpct_drup_downloads_v4
+download_path=/data/schuberg/downloaded_runs
 echo "[INFO] Downloading set ${set} to ${download_path}"
 download_set -s ${set} -p ${download_path}
 
@@ -20,7 +20,7 @@ echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${set_path}
 
 echo "[INFO] Running gridss assembly alignment backport for ${set}"
-do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.1.0/gridss.jar
+do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.2.2/gridss.jar
 
 echo "[INFO] Slicing and downloading bam hotspots for ${set}"
 do_download_hotspot_bams ${set_path}
@@ -33,6 +33,9 @@ do_run_purple_no_db ${set_path}
 
 echo "[INFO] Running viral annotation ${set}"
 do_run_gridss_viral_annotate_prod ${set_path}
+
+echo "[INFO] Running repeatmasker annotation ${set}"
+do_run_gridss_repeatmasker_insertion_annotate_prod ${set_path}
 
 echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${set_path}

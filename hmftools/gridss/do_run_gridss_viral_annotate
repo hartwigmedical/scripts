@@ -29,13 +29,19 @@ grep -E "^#" < $input_decompressed | tee $withBEALN > $missingBEALN
 grep BEALN < $input_decompressed  | grep -vE "^#" >> $withBEALN
 grep -v BEALN < $input_decompressed  | grep -vE "^#" >> $missingBEALN
 
-java -Xmx1G $gridss_jvm_args \
-	-Dgridss.output_to_temp_file=true \
-	gridss.AnnotateUntemplatedSequence \
-	REFERENCE_SEQUENCE=$ref_genome \
-	INPUT=$missingBEALN \
-	OUTPUT=$annotatedBEALN \
-	WORKER_THREADS=$threads
+# Work-around for https://github.com/PapenfussLab/gridss/issues/199
+CANDIDATES=$(grep -vE "^#" < $missingBEALN | grep -E '([].[][ACGTNagctn]{2})|([ACGTNagctn]{2}[].[])' | wc -l)
+if [[ $CANDIDATES -gt 0 ]] ; then
+	java -Xmx1G $gridss_jvm_args \
+		-Dgridss.output_to_temp_file=true \
+		gridss.AnnotateUntemplatedSequence \
+		REFERENCE_SEQUENCE=$ref_genome \
+		INPUT=$missingBEALN \
+		OUTPUT=$annotatedBEALN \
+		WORKER_THREADS=$threads
+else
+	cp $missingBEALN $annotatedBEALN
+fi
 
 java -jar $PICARD_JAR SortVcf \
 	I=$withBEALN \

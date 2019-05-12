@@ -4,7 +4,7 @@ run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
-knowledgebase_path=/data/common/dbs/knowledgebases/output
+knowledgebase_dir=/data/common/dbs/knowledgebases/output
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -16,5 +16,5 @@ echo "[INFO] Loading evidence data for ${run_dir}"
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -run_dir ${run_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -knowledgebase_path ${knowledgebase_path}
+    -knowledgebase_dir ${knowledgebase_dir}
 

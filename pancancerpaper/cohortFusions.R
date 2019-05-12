@@ -118,14 +118,3 @@ fusionsSupp = hpcFusions %>% ungroup() %>%
 
 write.csv(fusionsSupp, file = "~/hmf/RData/Supp/Supplementary Table 7_Fusions.csv", row.names = F) 
 
-load(file = "~/hmf/RData/reference/multipleBiopsyCohort.RData")
-load(file = "~/hmf/RData/reference/multipleBiopsyScope.RData")
-mbFusions = fusions %>% 
-  filter(sampleId %in% multipleBiopsyCohort$sampleId) %>%
-  left_join(multipleBiopsyScope, by = "sampleId") %>%
-  group_by(patientId, startChromosome, endChromosome, startPosition,endPosition) %>%
-  mutate(scope = ifelse(n_distinct(sampleId) > 1, "Shared", scope)) %>%
-  ungroup() %>%
-  select(-starts_with("start"), -starts_with("end"))
-save(mbFusions, file = "~/hmf/RData/Processed/mbFusions.RData")
-

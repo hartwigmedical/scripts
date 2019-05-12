@@ -36,10 +36,10 @@ function main() {
     local output=${output_root}/${output_name}
     mkdir -p "${output}"
 
-    echoerr "PIPELINE: ${pipeline}"
-    echoerr "CONFIG: ${config}"
-    echoerr "INPUT: ${input}"
-    echoerr "OUTPUT: ${output}"
+    echoerr "INFO PIPELINE: ${pipeline}"
+    echoerr "INFO CONFIG: ${config}"
+    echoerr "INFO INPUT: ${input}"
+    echoerr "INFO OUTPUT: ${output}"
 
     # SABR: only replace settings.config if providing an input folder
     if [ -n "${input}" ]; then
@@ -56,7 +56,17 @@ function main() {
 
     write_metadata "${input}" "${output}" "${output_name}"
 
-    "/data/repos/${pipeline}/bin/pipeline.pl" "${output}/settings.config" > /dev/null
+    ## final sanity checks
+    metaFile="${output}/metadata"
+    if [[ $( cat $metaFile | jq '.ref_sample' ) = "null" ]]; then
+        echo "EXIT REF sample is \"null\" in $metaFile"
+    elif [[ ${config} != "SingleSample" && ${config} != "SingleSampleNoRealign" && $( cat $metaFile | jq '.tumor_sample' ) = "null" ]]; then
+        echo "EXIT TUM sample is \"null\" in $metaFile while config is not SingleSample"
+    else
+        echo "INFO Output dir with metadata is ready. Execute the pipeline with:";
+        echo "  /data/repos/${pipeline}/bin/pipeline.pl ${output}/settings.config"
+        echo ""
+    fi
 }
 
 function choose_input_mode() {
@@ -64,7 +74,7 @@ function choose_input_mode() {
     local bam_files=$(find -L ${input} -type f -name '*.bam*')
 
     if [ -n "${fastq_files}" ] && [ -z "${bam_files}" ]; then
-        echoerr "INPUT MODE: FASTQ"
+        echoerr "INFO INPUT MODE: FASTQ"
         local mode_flag="-f"
     elif [ -z "${fastq_files}" ] && [ -n "${bam_files}" ]; then
         echoerr "INPUT MODE: BAM"
@@ -96,14 +106,15 @@ function write_metadata() {
 
     for path in $(find "${input}" -name "*.fastq.gz" -o -name "*.bam"); do
         local filename=$(basename "${path}")
-        if [[ ${filename} =~ ^((CPCT|DRUP)[0-9]{8})([RT])_ ]]; then
+        local samplename=$( echo $filename | cut -d"_" -f1 )
+        if [[ ${samplename} =~ ^((CPCT|COLO|CORE|DRUP|GIAB|WIDE)[^_]+)([RT]{1})[IVX]*$ ]]; then
             samples[${BASH_REMATCH[3]}]=${BASH_REMATCH[1]}
-        elif [[ ${filename} =~ ^([a-zA-Z0-9\-]+)_ ]]; then
+        elif [[ ${samplename} =~ ^([a-zA-Z0-9\-]+) ]]; then
             samples[R]=${BASH_REMATCH[1]}
         fi
 
         # SABR: store in extra associative array to keep complete sample name available
-        if [[ ${filename} =~ ^([a-zA-Z0-9\-]+)_ ]]; then
+        if [[ ${samplename} =~ ^([a-zA-Z0-9\-]+) ]]; then
             samples_names[${BASH_REMATCH[1]}]="dummy"
         fi
 

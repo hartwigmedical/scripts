@@ -91,26 +91,21 @@ say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
-my @toprint = ();
+my @msg = ();
+my $existingJsons = listExistingJsons($JSON_BASE_DIR, $JSON_DONE_DIR);
 
 foreach my $sample_id ( @ids ){
-    say "[INFO] -----> working on $sample_id";
-    my $return = processSample( $sample_id, $samples, \%stats, \@toprint );
+    say "[INFO] Processing $sample_id";
+    my $return = processSample( $sample_id, $samples, \%stats );
     $stats{ $return }++;
 }
 
 say "[STAT] -----";
-say "[STAT] Result Stats:";
 
 foreach my $reason ( keys %stats ){
     my $count = $stats{ $reason };
     say "[STAT]   $reason = $count";
 }
-
-say "[INFO] -----";
-say "[INFO] Info for data lims (check if samples already exist in gdoc!):";
-  print join( "\t", @$_ )."\n" foreach @toprint;
-say "[INFO] DONE with script $SCRIPT";
 
 ## -----
 ## /MAIN
@@ -169,15 +164,15 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims, $stats, $toprint) = @_;
+    my ($sample_id, $lims, $stats) = @_;
+    my @warn_msg = ();
     if ( not exists $lims->{ $sample_id } ){
-        warn "[WARN] RESULT: Sample not present in LIMS ($sample_id)\n";
+        warn "[WARN]   RESULT: Sample not present in LIMS ($sample_id)\n";
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims->{ $sample_id };
     
     my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
-    my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
     my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
     my $patient    = getValueByKey( $sample, 'patient' ); # eg CPCT02010000
     my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
@@ -185,6 +180,8 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
     my $priority   = getPriority( $sample );
+    my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
+    $yield = $yield == 0 ? 1 : $yield * $YIELD_F; ## yield=0 would result in sample being directly Ready
 
     ## not all samples have q30 field because this was added later to lims
     my $q30 = $Q30_LIM;
@@ -195,31 +192,27 @@ sub processSample{
         die "[EXIT] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
     
-    my @data_for_itlims = ( $label, $submission, $barcode, $name );
-    push( @$toprint, \@data_for_itlims );
-    
     ## init the json info
     my %json_data = ();
     $json_data{ 'priority' } = $priority;
     
-    say "[INFO] INPUT: $sample_id (NAME=$name, ENTITY=$entity, ANALYSIS:$analysis)";
+    say "[INFO]   NAME=$name, ENTITY=$entity, ANALYSIS:$analysis";
 
     my $date = localtime->strftime('%y%m%d');
 
     ## fill json based on analysis type
     if ( $analysis eq 'NoAnalysis' ){
         my $set = join("_", $date, $submission, $barcode, $name );
-        say "[INFO] SET: $set";
+        say "[INFO]   SET: $set";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         
         ## assume all NoAnalysis samples need fastq in portal
         $json_data{ 'fastq_portal' } = JSON::true;
-        
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
     }
     elsif ( $analysis eq 'RnaAnalysis' ){
-        warn "[WARN] RESULT: Type $analysis not yet supported\n";
+        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
         return "NoJsonMade_rnaTypeNotSupported";
     }
     elsif ( $analysis eq 'Somatic_T' ){
@@ -227,47 +220,61 @@ sub processSample{
         my $ref_obj;
         
         ## need to find the ref sample of somatic pair
-        if ( exists $sample->{ partner_sample } ){
-            ## for research samples a partner needs to be defined in lab LIMS
-            my $ref_string = $sample->{ partner_sample };
-            $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_id' );
+        if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
+            ## for somatic samples (biopsy) a ref sample needs to be defined
+            my $ref_sample_id = $sample->{ ref_sample_id };
+            $ref_obj = getSomaticRSampleByStringForField( $lims, $ref_sample_id, 'sample_id' );
         }
         else{
-            ## for CPCT etc the partner can be found by patient name + R
+            ## fallback for for CPCT etc the partner can be found by patient name + R
             my $ref_string = $patient.'R';
-            $ref_obj  = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_name' );
+            $ref_obj = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_name' );
         }
 
         if ( not defined $ref_obj ){
-            warn "[WARN] RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)\n";
+            warn "[WARN]   RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)\n";
             return "NoJsonMade_RnotFoundForSomaticT";
         }
+        
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
         my $yield_ref   = getValueByKey( $ref_obj, 'yield' );
+        $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
-        say "[INFO] SET: $set";
         
+        ## check if barcode already exists at SBP
+        my $tum_exists = `query_sbp_api -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
+        chomp($tum_exists);
+        my $ref_exists = `query_sbp_api -type samples -filter "barcode=$barcode_ref" -exact | grep -v Unregistered | grep -cv ^#`;
+        chomp($ref_exists);
+        
+        if ( $tum_exists ){
+            push( @warn_msg, "TUM already registered at SBP ($barcode)!!");
+        }
+        if ( $ref_exists ){
+            push( @warn_msg, "REF already registered at SBP ($barcode_ref)!!" );
+        }
+        
+        say "[INFO]   SET: $set";
         $json_data{ 'ini' } = "$SOM_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        
-        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref * $YIELD_F, $USE_EXISTING );
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $USE_EXISTING );
     }
     elsif( $analysis eq 'Germline' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
-        say "[INFO] SET: $set";
+        say "[INFO]   SET: $set";
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield * $YIELD_F, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
     }
     elsif ( $analysis eq 'Somatic_R' ){
-        warn "[WARN] RESULT: SKIPPING ($sample_id) because is somatic ref sample ($name)\n";
+        say "[INFO]   RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)";
         return "NoJsonMade_isSomaticR";
     }
     else{
-        warn "[WARN] RESULT: Somehow no (correct) analysis type was defined for input ($sample_id). Fix it.\n";
+        say "[WARN]   RESULT for $sample_id: Somehow no (correct) analysis type ($analysis) was defined for input";
         return "NoJsonMade_hasWrongAnalsisType";
     }
 
@@ -283,22 +290,43 @@ sub processSample{
     
     foreach my $existing_json ( @base_jsons, @done_jsons ){
         if ( $existing_json =~ /$setname_wo_date/ ){
-            warn "[WARN] RESULT: SKIPPING ($sample_id) because set json exists ($existing_json)\n";
+            say "[WARN]   RESULT for $sample_id: SKIPPING because set json exists ($existing_json)";
             return "NoJsonMade_setJsonalreadyExists";
+        }
+    }
+    
+    ## print any stored warnings now
+    if ( scalar @warn_msg ){
+        foreach my $msg ( @warn_msg ){
+            warn "[WARN]   $msg\n";
         }
     }
     
     ## all checks were OK: print config file
     printSetJson( \%json_data, $json_path );
-    say "[INFO] RESULT: OK";
+    say "[INFO]   RESULT for $sample_id: OK";
     return "OK_JSON_MADE";
+}
+
+sub doesJsonAlreadyExist{
+    my ($json_list, $search_string) = @_;
+    
+}
+
+sub listExistingJsons{
+    my @source_dirs = @_;
+    my @jsons = ();
+    foreach my $dir ( @source_dirs ){
+        push( @jsons, glob( "$dir/*json" ) );
+    }
+    return \@jsons;
 }
 
 sub printSetJson{
     my ($data, $out_path) = @_;
     my $json_obj = JSON->new->allow_nonref;
     my $json_txt = $json_obj->pretty->encode( $data );
-    say "[INFO] JSON: $out_path";
+    say "[INFO]   Writing json ($out_path)";
     open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
         print OUT $json_txt;
     close OUT;
@@ -352,7 +380,7 @@ sub addEntityToJsonData{
     my ($json_data, $submission, $patient, $dict1, $dict2) = @_;
     
     ## CPCT and DRUP are continues: create entity by centerid
-    if ( $patient =~ m/^(CPCT|DRUP)(\d{2})(\d{2})(\d{4})$/ ){
+    if ( $patient =~ m/^(CPCT|DRUP|WIDE)(\d{2})(\d{2})(\d{4})$/ ){
         my ( $umbrella_study, $study_id, $center_id, $patient_id ) = ( $1, $2, $3, $4 );
         if ( exists $dict1->{$center_id} ){
             my $center_name = $dict1->{$center_id};
@@ -379,8 +407,8 @@ sub addSampleToJsonData{
         'barcode'    => "$barcode",
         'submission' => "$submission",
         'type'       => "$type",
-        'q30_req'    => $q30,
-        'yld_req'    => $yield,
+        'q30_req'    => int($q30),
+        'yld_req'    => int($yield),
     );
     if ( $use_existing ){
         $tmp{ 'use_existing_sample' } = JSON::true;

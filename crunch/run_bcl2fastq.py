@@ -7,8 +7,7 @@ import fnmatch
 
 DATA_DIRS=[
     '/data1/illumina_data/',
-    '/data1/illumina_data/NextSeqData/',
-    '/data1/illumina_data/NovaSeqData/'
+    '/data1/illumina_data/TestRuns/'
 ]
 
 BCL2FASTQ_TOOL='/data/fastqconversion/bcl2fastq_v2.20.0.422/bin/bcl2fastq'

@@ -3,7 +3,7 @@ library(dplyr)
 library(tidyr)
 library(scales)
 library(cowplot)
-theme_set(theme_bw())
+theme_set(theme_bw() + theme(axis.text=element_text(size=5),axis.title=element_text(size=6), legend.text = element_text(size=5)))
 
 ########################################### Prepare Data
 alphabetical_drug <- function(drugs) {
@@ -33,6 +33,9 @@ actionableVariantsPerSample = read.csv('~/hmf/resources/actionableVariantsPerSam
     eventType = ifelse(eventType == "SNP", "SNV", eventType),
     eventType = ifelse(eventType == "MNP", "MNV", eventType),
     levelTreatment = factor(paste(hmfLevel, treatmentType, sep = "_"), levelTreatmentFactors, ordered = T))
+
+actionableVariantsPerSample = actionableVariantsPerSample %>% 
+  mutate(gene = ifelse(eventType == "Fusion", paste0(gene, " - ", partnerGene), gene)) 
 
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
 pembrolizumabVariants = highestPurityCohortSummary %>% 
@@ -103,7 +106,7 @@ drugResponseSummary = responsiveVariants %>% ungroup() %>% distinct(sampleId, dr
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 load(file = "~/hmf/RData/Processed/responsiveVariants.RData")
 
-actionablePlotData = responsiveVariants %>% filter(cancerType != 'Other') %>%
+actionablePlotData = responsiveVariants  %>%
   mutate(
     response = ifelse(B_OnLabel != "", "B_OnLabel", "B_OffLabel"),
     response = ifelse(A_OffLabel != "", "A_OffLabel", response),
@@ -131,11 +134,13 @@ actionablePlotData = actionablePlotData %>%
 p1 = ggplot(data = actionablePlotData, aes(x = cancerType, y = percentage)) +
   geom_bar(stat = "identity", aes(fill = response)) + 
   scale_fill_manual(values = levelTreatmentColors, guide = guide_legend(reverse = TRUE)) +
-  ggtitle("") + xlab("") + ylab("% Samples with treatment options") +
+  ggtitle("") + xlab("") + ylab("% with treatment options") +
   scale_y_continuous(labels = percent, limits = c(0, 1), expand = c(0.02,0)) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(legend.position = "bottom", legend.title = element_blank()) +
+  theme(legend.position = "bottom", legend.title = element_blank(),  legend.key.size = unit(0.2, "cm")) +
   theme(axis.ticks = element_blank()) +
+  guides(fill = guide_legend(nrow = 2)) + 
+  theme(legend.spacing.x = unit(4, 'pt')) +
   coord_flip()
 
 
@@ -163,17 +168,31 @@ responseChartData = responseChartData %>%
          hjust = ifelse(middle > pi, 1, 0),
          vjust = ifelse(middle < pi/2 | middle > 3 * pi/2, 0, 1))
 
+responseChartData$xOffset <- ifelse(responseChartData$eventType == "MSI", -0.1, 0)
+responseChartData$yOffset <- ifelse(responseChartData$eventType == "MSI", -0.1, 0)
+
 pie = ggplot(responseChartData) + 
-  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, start = start, end = end, fill = eventType)) +
-  geom_text(aes(x = 1.05 * sin(middle), y = 1.05 * cos(middle), label = paste0(responseChartData$eventType," ", round(responseChartData$share*100, 1), "%"), hjust = hjust, vjust = vjust)) +
+  geom_arc_bar(aes(x0 = 0, y0 = 0, r0 = 0, r = 1, start = start, end = end, fill = eventType), size = 0.000001) +
+  geom_text(aes(x = 1.05 * sin(middle) + xOffset, y = 1.05 * cos(middle) + yOffset, label = paste0(round(responseChartData$share*100, 1), "%"), hjust = hjust, vjust = vjust), size = 4.5 * 25.4 / 72) +
   coord_fixed() +
   scale_x_continuous(limits = c(-1.5, 1.4), name = "", breaks = NULL, labels = NULL) +
   scale_y_continuous(limits = c(-1, 1), name = "", breaks = NULL, labels = NULL) +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), legend.position = "none") +
-  ggtitle("Actionability by variant type") + 
+  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), legend.position = "bottom",  legend.key.size = unit(0.2, "cm"), legend.title = element_blank()) +
+  theme(legend.spacing.x = unit(4, 'pt')) +
   scale_fill_manual(values = actionableDriverColours, name = "Variant Type")
 
-pActionability = plot_grid(p1, pie, nrow = 1, labels = "AUTO", rel_widths = c(3, 2))
+pActionability = plot_grid(p1, pie, nrow = 1, labels = "auto", rel_widths = c(3, 3), label_size = 8)
+pActionability
+
+ggplot2::ggsave("~/hmf/RPlot/Figure 5.png", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
+#convert -density 300 ~/hmf/RPlot/Figure\ 5.png ~/hmf/RPlot/Figure\ 5.pdf
+#ggplot2::ggsave("~/hmf/RPlot/Figure 5b.pdf", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
+
+
+pdf(file = "~/hmf/RPlot/Figure 5.pdf", width = 89/10/2.54, height = 70/10/2.54)
+pActionability
+dev.off()
+
 pActionability
 save_plot("~/hmf/RPlot/Figure 8 - Actionable.png", pActionability, base_width = 16, base_height = 8)
 

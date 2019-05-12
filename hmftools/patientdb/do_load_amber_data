@@ -1,0 +1,20 @@
+#!/bin/bash
+
+amber_dir=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+sample=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+echo "[INFO] Loading amber data for sample: ${sample}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
+    -sample ${sample} \
+    -bed /data/common/dbs/germline_het_pon_hg19/amberAncestry.bed \
+    -amber_dir ${amber_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@

@@ -2,9 +2,11 @@
 
 run_dir=$1 && shift
 
+do_run_hotspot_caller ${run_dir}
 do_run_gridss_somatic_filter ${run_dir}
-do_run_gridss_2_1_0_breakpoint_position_backport ${run_dir} /data/common/tools/gridss_v2.1.0/gridss.jar
+do_run_gridss_2_1_0_breakpoint_position_backport ${run_dir} /data/common/tools/gridss_v2.2.2/gridss.jar
 do_run_purple_prod ${run_dir} $@
 do_load_somatic_variants_prod ${run_dir}
 do_run_gridss_viral_annotate_prod ${run_dir}
+do_run_gridss_repeatmasker_insertion_annotate_prod ${run_dir}
 do_run_sv_loader_prod ${run_dir}

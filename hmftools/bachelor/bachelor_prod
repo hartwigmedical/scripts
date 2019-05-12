@@ -4,10 +4,9 @@ prefix=`dirname $(readlink $0 || echo $0)`
 
 run_dir=$1 && shift
 bachelor_output_dir=bachelor
-bachelor_config=/data/common/dbs/bachelor/lynparza_20180503.xml
+bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
 
 credentials=/data/common/dbs/mysql_credentials/prod
-bachelor_jar=/data/common/tools/bachelor_v1.2/bachelor.jar
-bachelor_pp_jar=/data/common/tools/bachelor-pp_v1.3/bachelor-pp.jar
+bachelor_jar=/data/common/tools/bachelor_v1.5/bachelor.jar
 
-${prefix}/do_run_bachelor ${run_dir} ${bachelor_output_dir} ${bachelor_config} ${credentials} ${bachelor_jar} ${bachelor_pp_jar} $@
+${prefix}/do_run_bachelor ${run_dir} ${bachelor_output_dir} ${bachelor_config} ${credentials} ${bachelor_jar} $@

@@ -2,7 +2,7 @@
 
 maxFindDepth=1
 
-dirPath='' # directory that contains fastq files
+dirPath=$PWD # directory that contains fastq files
 oldName='' # string of current sample name
 newName='' # string of new sample name
 doRenameFiles=''
@@ -11,18 +11,17 @@ commandLine=$( basename ${0} )" $@"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Description: Renames (or symlinks to) fastq files"
+    echo " Description: Renames (or symlinks to) fastq files."
+    echo "              Searches for <oldname>_*fastq.gz"
     echo " Usage:"
-    echo "   $(basename ${0}) -o <oldname> -n <newname> -d <fastqdir>"
-    echo "   $(basename ${0}) -o CPCT12345678R -n DRUP12345678R -d \$PWD"
+    echo "   $(basename ${0}) -o <oldname> -n <newname>"
+    echo "   $(basename ${0}) -o CPCT12345678R -n DRUP12345678R"
     echo ""
     echo " Options:"
     echo "   -r      Perform actual renaming"
     echo "   -s      Symlink instead of rename"
-    echo "   -f <i>  Max depth for find to search "
-    echo ""
-    echo " Notes:"
-    echo "   - searches for *fastq.gz files only"
+    echo "   -d <s>  Directory with fastq files [$dirPath]"
+    echo "   -f <i>  Max depth for find to search [$maxFindDepth]"
     echo "---"
     exit 1
 fi
@@ -62,7 +61,7 @@ done
 filesToRename=()
 while IFS=  read -r -d $'\0'; do
     filesToRename+=("$REPLY")
-done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "*fastq.gz" -print0)
+done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "$oldName*.fastq.gz" -print0)
 
 ## sanity checks
 if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found (with find-depth ${maxFindDepth})" && exit 1; fi
