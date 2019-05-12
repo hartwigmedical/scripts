@@ -73,12 +73,59 @@ correctCivicVariant <- function(data, geneString, variantString, newVariantStrin
   return(data %>% filter(gene != geneString | variant != variantString) %>% rbind(rows))
 }
 
-# -----------------
-civicFile <- civicFile %>% correctCivicVariant("KMT2A", "MLL-MLLT3", "KMT2A-MLLT3")
+correctAlterationStringVariant <- function(data, alterationString,newAlterationString){
+  rows <- data %>% filter(Alteration == alterationString) %>%  mutate(Alteration = newAlterationString)
+  return(data %>% filter(Alteration != alterationString) %>% rbind(rows))
+}
 
+correctCOSMICVariant <- function(data, T_geneString,newT_geneString){
+  rows <- data %>% filter(T_gene == T_geneString) %>%  mutate(T_gene = newT_geneString)
+  return(data %>% filter(T_gene != T_geneString) %>% rbind(rows))
+}
+
+# -----------------
+# CIVIC gene name corrections to ensembl names
+civicFile <- civicFile %>% correctCivicVariant("KMT2A", "MLL-MLLT3", "KMT2A-MLLT3") # Not sure if this has an impact still?
+civicFile <- civicFile %>% correctCivicVariant("ALK", "NPM-ALK", "NPM1-ALK")
+civicFile <- civicFile %>% correctCivicVariant("FGFR1", "ZNF198-FGFR1", "ZMYM2-FGFR1")
+
+# CGI gene name corrections to ensembl names
+cgiFile <- cgiFile %>% correctAlterationStringVariant("BRD4__C15orf55","BRD4__NUTM1")
+
+# CGI gene name corrections to ensembl names
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("KIAA0284_ENST00000414716","CEP170B")
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("ACCN1","ASIC2")
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("ROD1","PTBP3")
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("SIP1","GEMIN2")
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("DUX4L1","DUX4")
+cosmicFile <- cosmicFile %>% correctCOSMICVariant("FAM22A_ENST00000381707","NUTM2A")
+
+# Onco gene name corrections to ensembl names
+oncoFile <- oncoFile %>% correctAlterationStringVariant("NPM-ALK Fusion","NPM1-ALK Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("ZNF198-FGFR1 Fusion","ZMYM2-FGFR1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("BRD4-NUT Fusion","BRD4-NUTM1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("CEP110-FGFR1 Fusion","CNTRL-FGFR1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("GPIAP1-PDGFRB Fusion","CAPRIN1-PDGFRB Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("KIAA1509-PDGFRB Fusion","CCDC88C-PDGFRB Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("FGFR2-KIAA1967 Fusion","FGFR2-CCAR2 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("EP300-MLL Fusion","KMT2A-EP300 Fusion")  # note also flipped
+oncoFile <- oncoFile %>% correctAlterationStringVariant("MLL-TET1 Fusion","KMT2A-TET1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("EP300-MOZ Fusion","KAT6A-EP300 Fusion")  # note also flipped
+oncoFile <- oncoFile %>% correctAlterationStringVariant("PAX8-PPAR? Fusion","PAX8-PPARA Fusion")  
+oncoFile <- oncoFile %>% correctAlterationStringVariant("TEL-JAK2 Fusion","ETV6-JAK2 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("TEL-RUNX1 Fusion","ETV6-RUNX1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("FIG-ROS1 Fusion","GOPC-ROS1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("FGFR1OP1-FGFR1 Fusion","FGFR1OP-FGFR1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("TRA-NKX2-1 Fusion","TRAC-NKX2-1 Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("IGL-MYC Fusion","IGLC6-MYC Fusion")
+oncoFile <- oncoFile %>% correctAlterationStringVariant("SEC16A1-NOTCH1 Fusion","SEC16A-NOTCH1 Fusion")
+
+# Note - outstanding issue cannot map IGH,IGK & TRB genes from OncoKb uniquely to ensembl
 oncoPairs <- oncoFile %>% filter(grepl("Fusion$", Alteration),!grepl("Loss-of-function",Mutation.Effect)) %>% rowwise() %>%
   mutate(H_gene = hGene(Gene, Alteration, separatorPattern), T_gene = tGene(Gene, Alteration, separatorPattern), Source ="oncoKb") %>%
-  select(H_gene, T_gene, Source) %>% flipGenePair("ROS1", "CD74") %>% flipGenePair("EP300", "MLL") %>% flipGenePair("EP300", "MOZ") %>% flipGenePair("RET", "CCDC6") %>% distinct
+  select(H_gene, T_gene, Source) %>% flipGenePair("ROS1", "CD74") %>% flipGenePair("RET", "CCDC6") %>% distinct %>%
+  filter(H_gene!='Delta') %>%  # Bad record in OncoKb 'Delta-NTRK1 fusions'
+  filter(T_gene!='KDD')  # KDD = Kinase Domain Duplication
 
 oncoPromiscuous <- oncoFile %>% filter(grepl("Fusions", Alteration),!grepl("Loss-of-function",Mutation.Effect)) %>% mutate(H_gene = Gene, T_gene = NA, Source ="oncoKb") %>%
   select(H_gene, T_gene, Source) %>% distinct
@@ -145,3 +192,4 @@ write.csv(knownPromiscuousThree,paste(path,"knownPromiscuousThree.csv",sep=""), 
 knownFusionPairs <- allKnownFusions %>% filter(!is.na(H_gene) & !is.na(T_gene)) %>% mutate(OncoKB = oncoKb, COSMIC= cosmic, CGI = cgi, CIViC = civic) %>%
   select(H_gene, T_gene, OncoKB, COSMIC, CGI, CIViC)
 write.csv(knownFusionPairs,paste(path,"knownFusionPairs.csv",sep=""), row.names = FALSE)
+
