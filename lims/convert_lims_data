@@ -503,6 +503,9 @@ sub processSamp{
         elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
             $row_info->{ 'analysis_type' } = 'NoAnalysis';
         }
+        elsif ( $analysis_type eq 'LabOnly' ){
+            $row_info->{ 'analysis_type' } = 'LabOnly';
+        }
         else {
             die "[EXIT] Sample ($sample_name) has unknown analysis type ($analysis_type)\n";
         }
