@@ -211,6 +211,15 @@ cn_transistions$isFirstOrLast = is.na(lead(as.character(seqnames(cn_transistions
 sum(width(ascat_cn) * ascat_cn$cn)/sum(width(ascat_cn))
 sum(width(purple_cn) * purple_cn$cn)/sum(width(purple_cn))
 sum(width(weaver_cn) * weaver_cn$cn)/sum(width(weaver_cn))
+sum(width(conserting_cn) * conserting_cn$cn)/sum(width(conserting_cn))
+
+########
+# Standardised CN export
+export(ascat_cn, paste0(basedir, "/out/ascat_cn.bed"))
+export(purple_cn, paste0(basedir, "/out/purple_cn.bed"))
+export(conserting_cn, paste0(basedir, "/out/conserting_cn.bed"))
+export(weaver_cn, paste0(basedir, "/out/weaver_cn.bed"))
+
 
 ########
 # Plots
