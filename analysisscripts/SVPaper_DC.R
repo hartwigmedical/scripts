@@ -125,7 +125,7 @@ viral_translation=c(
   "Human papillomavirus type 18"="HPV",
   "Alphapapillomavirus 7"="HPV",
   "Human papillomavirus type 45"="HPV",
-  "Merkel cell polyomavirus"="Merkcel cell",
+  "Merkel cell polyomavirus"="Merkel cell",
   "HBV genotype D"="HepB",
   "Human betaherpesvirus 5"="Herpes",
   "Human alphaherpesvirus 1"="Herpes",
@@ -162,12 +162,14 @@ viral_insertions_simple_name = svDataWithIns %>%
   summarise(virusname=unique(virusname)) %>%
   dplyr::select(-bin)
 
-
-  #group_by(SampleId, virusname) %>%
-  #summarise(insertion_sites=n())
-viral_summary = viral_insertions %>%
-  group_by(virusname) %>%
-  summarise(insertion_sites=sum(insertion_sites), samples=length(unique(SampleId)))
+viral_summary = viral_insertions_simple_name %>%
+  left_join(sampleCancerTypes) %>%
+  replace_na(list("CancerType"="Unknown")) %>%
+  mutate(CancerType=str_to_lower(CancerType)) %>%
+  group_by(CancerType, SampleId, virusname) %>%
+  summarise(sites=n()) %>%
+  group_by(CancerType, virusname) %>%
+  summarise(samples=n(), sites=sum(sites))
 
 
 
