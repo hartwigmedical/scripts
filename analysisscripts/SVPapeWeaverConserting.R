@@ -215,6 +215,10 @@ sum(width(conserting_cn) * conserting_cn$cn)/sum(width(conserting_cn))
 
 ########
 # Standardised CN export
+ascat_cn$score = ascat_cn$cn
+purple_cn$score = purple_cn$cn
+conserting_cn$score = conserting_cn$cn
+weaver_cn$score = weaver_cn$cn
 export(ascat_cn, paste0(basedir, "/out/ascat_cn.bed"))
 export(purple_cn, paste0(basedir, "/out/purple_cn.bed"))
 export(conserting_cn, paste0(basedir, "/out/conserting_cn.bed"))
