@@ -20,8 +20,8 @@ my $ref_exists = 0;
 my $tum_exists = 0;
 
 my %obj = ('set_name'=>undef, 'entity'=>undef, 'ini'=>undef,'priority'=>100);
-my %ref = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>75, 'q30_req'=>100, 'type'=>'ref');
-my %tum = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>75, 'q30_req'=>300, 'type'=>'tumor');
+my %ref = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>100, 'q30_req'=>75, 'type'=>'ref');
+my %tum = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>300, 'q30_req'=>75, 'type'=>'tumor');
 
 ## -----
 ## Gather input
