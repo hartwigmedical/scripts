@@ -19,7 +19,7 @@ my $sample;
 my $ref_exists = 0;
 my $tum_exists = 0;
 
-my %obj = ('set_name'=>undef, 'entity'=>undef, 'ini'=>undef,'priority'=>100);
+my %obj = ('set_name'=>undef, 'entity'=>'HMF_EXPERIMENT', 'ini'=>undef,'priority'=>100);
 my %ref = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>100, 'q30_req'=>75, 'type'=>'ref');
 my %tum = ('barcode'=>undef, 'submission'=>undef, 'yld_req'=>300, 'q30_req'=>75, 'type'=>'tumor');
 
@@ -54,11 +54,12 @@ my $HELP =<<HELP;
     Setname for type somatic: YYMMDD_\${submission}_\${ref_barcode}_\${tum_barcode}_\${sample}
     
   Usage
-    $SCRIPT -type single -submission HMFregVAL -entity HMF_EXPERIMENTS -ref_barcode FR111 -sample SampleName
-    $SCRIPT -type somatic -submission HMFregVAL -entity HMF_EXPERIMENTS -ref_barcode FR111 -tum_barcode FR222 -sample SampleName
-    
+    $SCRIPT -type single -submission HMFregVAL -entity HMF_EXPERIMENT -ref_barcode FR111 -sample SampleName
+    $SCRIPT -type somatic -submission HMFregVAL -entity HMF_EXPERIMENT -ref_barcode FR111 -tum_barcode FR222 -sample SampleName
+
   Options
     -set       <s>  Set name
+    -entity    <s>  Entity name
     -ref_yield <i>  Yield in GBase for ref sample
     -tum_yield <i>  Yield in GBase for tumor sample
     -ref_q30   <i>  Q30 for ref sample
@@ -72,7 +73,6 @@ say $HELP and exit(1) if $opt{ help };
 say $HELP and say "[ERROR] No type provided" and exit(1) unless $type;
 say $HELP and say "[ERROR] No submission provided" and exit(1) unless $submission;
 say $HELP and say "[ERROR] No sample provided" and exit(1) unless $sample;
-say $HELP and say "[ERROR] No entity provided" and exit(1) unless $obj{'entity'};
 
 ## -----
 
