@@ -40,7 +40,6 @@ for runPath in "${runPaths[@]}"; do
   vsnFile="${purpleDir}/purple.version"
   wgsFile="${runPath}/QCStats/WGSMetrics_summary.transposed.txt"
   chkFile="${runPath}/logs/PipelineCheck.log"
-  if [[ ! -d $purpleDir ]]; then echo "[EXIT] Dir does not exist ($purpleDir)" && exit 1; fi
   if [[ ! -f $wgsFile ]]; then echo "[EXIT] File does not exist ($wgsFile)" && exit 1; fi
 
   ## gahter general info
