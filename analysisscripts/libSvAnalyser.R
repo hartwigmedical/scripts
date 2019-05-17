@@ -330,7 +330,6 @@ hg19_arms = function() {
 on_hg19_arm = function(gr) {
   hg19_arms()$arm[findOverlaps(gr, hg19_arms(), select="first", ignore.strand=TRUE)]
 }
-line_elements = function()
 
 cluster_consistency = function(svgr) {
   svgr$arm = on_hg19_arm(svgr)
@@ -665,4 +664,47 @@ export_to_visNetwork = function(cndf, svdf, cngr, svgr, sampleId, file=paste0("b
     visSave(file)
 }
 
+SVA_SVS_to_gr = function(sv_raw_df) {
+  row.names(sv_raw_df) = sv_raw_df$Id
+  full_gr = c(with(sv_raw_df, GRanges(
+    seqnames=ChrStart,
+    ranges=IRanges(start=PosStart, width=1),
+    strand=ifelse(OrientStart == -1, "-", "+"),
+    Id=Id,
+    beid=paste0(Id, ifelse(ChrEnd != 0, "o", "b")),
+    SampleId=SampleId,
+    isLine=LEStart != "None",
+    partner=ifelse(ChrEnd != 0, paste0(Id, "h"), NA),
+    Homology=Homology,
+    ihomlen=InexactHOEnd-InexactHOStart,
+    insSeq=InsertSeq,
+    qual=QualScore,
+    cn=Ploidy,
+    refContext=RefContextStart
+  )), with(sv_raw_df %>% filter(ChrEnd != 0), GRanges(
+    seqnames=ChrEnd,
+    ranges=IRanges(start=PosEnd, width=1),
+    strand=ifelse(OrientEnd == -1, "-", "+"),
+    Id=Id,
+    beid=paste0(Id, "h"),
+    SampleId=SampleId,
+    isLine=LEEnd != "None",
+    partner=paste0(Id, "o"),
+    Homology=Homology,
+    ihomlen=InexactHOEnd-InexactHOStart,
+    insSeq=InsertSeq,
+    qual=QualScore,
+    cn=Ploidy,
+    refContext=RefContextEnd
+  )))
+  names(full_gr) = full_gr$beid
+  return(full_gr)
+}
+query_cancer_type_by_sample = function(dbConnect) {
+  query = "
+    SELECT s.sampleId, primaryTumorLocation, cancerSubtype
+    FROM baseline b
+    INNER JOIN sample s ON b.patientId = s.patientId"
+  return (DBI::dbGetQuery(dbConnect, query))
+}
 
