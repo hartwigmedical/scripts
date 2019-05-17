@@ -62,7 +62,10 @@ gridss_jvm_args="
 
 # always remake the symlink since an earlier version of this script used absolute paths
 # which broke the symlinks when moved datastore as the absolute paths are different
-unlink $normal_bam $tumor_bam $normal_bam.gridss.working/$(basename $normal_bam).sv.bam $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
+unlink $normal_bam
+unlink $tumor_bam
+unlink $normal_bam.gridss.working/$(basename $normal_bam).sv.bam
+unlink $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
 ln -s empty.bam $normal_bam
 ln -s empty.bam $tumor_bam
 mkdir -p $normal_bam.gridss.working/ $tumor_bam.gridss.working/
