@@ -13,7 +13,7 @@ fi
 purple_jar=${base_path}/tools/purple_v2.25/purple.jar
 purple_output=${run_dir}/purple
 
-somatic_vcf=$(locate_somatics ${run_dir})
+somatic_vcf=$(locate_sage_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 
 # Empty string is credentials for db
