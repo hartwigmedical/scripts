@@ -12,4 +12,6 @@ if [ -d ${destination} ]; then
 fi
 
 echo "[INFO] syncing GCP ${bucket} to ${destination}"
-gsutil cp -R gs://${bucket} ${destination}
+# -m runs gsutil in parallel for supported operations (such as cp) and may potentially speed things up.
+#-R recursively copies the entire bucket.
+gsutil -m cp -R gs://${bucket}/ ${destination}
