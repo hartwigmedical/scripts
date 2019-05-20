@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+bucket=$1
+destination=$2
+
+if [ -z ${bucket} ]; then echo "[ERROR] No bucket provided" & exit 1; fi
+if [ -z ${destination} ]; then echo "[ERROR] No destination provided" & exit 1; fi
+
+gsutil cp -R gs://${bucket} ${destination}
