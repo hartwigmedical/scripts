@@ -6,5 +6,10 @@ destination=$2
 if [ -z ${bucket} ]; then echo "[ERROR] No bucket provided" & exit 1; fi
 if [ -z ${destination} ]; then echo "[ERROR] No destination provided" & exit 1; fi
 
+if [ -d ${destination} ]; then
+    echo "[INFO] ${destination} does not exist. Creating"
+    mkdir -p ${destination}
+fi
+
 echo "[INFO] syncing GCP ${bucket} to ${destination}"
 gsutil cp -R gs://${bucket} ${destination}
