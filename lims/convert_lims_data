@@ -499,7 +499,7 @@ sub processSamp{
             ## GermlineBFX is the old term, SingleAnalysis the new
             $row_info->{ 'analysis_type' } = 'SingleAnalysis';
         }
-        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
+        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq 'NoAnalysis' or $analysis_type eq '' or $analysis_type eq 'NA' ){
             ## NoBFX is the old term, FASTQ the new
             $row_info->{ 'analysis_type' } = 'FASTQ';
         }
