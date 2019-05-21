@@ -89,7 +89,7 @@ foreach ( @ALL_INPUT_FILES ){
 }
 foreach ( $JSON_OUT ){
     next unless -f $JSON_OUT;
-    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACK_DIR failed: $!";
+    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\" to $BACK_DIR failed: $!";
 }
 
     
@@ -532,7 +532,7 @@ sub processSamp{
         next if isSkipValue( $unique );
 
         ## checks before storing
-        my $regex = "^[0-9a-zA-Z\-]*\$";
+        my $regex = '^[0-9a-zA-Z\-]*$';
         die "[EXIT] FIX IN LAB LIMS: sample_name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
         die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
         die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
