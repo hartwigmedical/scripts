@@ -10,47 +10,76 @@ library(dplyr)
 library(tidyr)
 library(RMySQL)
 
-hmfIds = read.csv(file = "~/hmf/resources/idgenerator/amber_anonymized.csv") %>%
+hmfIds = read.csv(file = "~/hmf/resources/idgenerator/amber_anonymized.csv", stringsAsFactors = F) %>%
   select(sampleId = OriginalId, hmfId = AnonymousId) %>%
   mutate(patientId = substr(hmfId, 1, 9)) %>% select(sampleId, patientId)
 
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
-purpleCohort = purple::query_cohort(dbProd)
-purpleClinical = purple::query_clinical_data(dbProd)
+purpleCohort = purple::query_cohort(dbProd) %>% 
+  select(-patientId) %>% inner_join(hmfIds, by = "sampleId")
+purpleClinical = purple::query_clinical_data(dbProd) %>% 
+  filter(sampleId %in% purpleCohort$sampleId) %>%
+  select(-patientId) %>% left_join(hmfIds, by = "sampleId")
 dbDisconnect(dbProd)
 rm(dbProd)
 
-patientCohort = purpleCohort %>% select(-patientId) %>% inner_join(hmfIds, by = "sampleId")
-highestPurityCohort = purple::highest_purity_cohort(patientCohort) %>% select(-patientId)
-
 load(file = "~/hmf/RData/Reference/allClinicalData.RData")
-paperClinical = allClinicalData %>% select(sampleId, paperCancerType = cancerType)
+paperClinical = allClinicalData %>% select(-patientId) %>%
+  filter(sampleId %in% purpleCohort$sampleId, (cancerType != 'Other' | primaryTumorLocation == "Double primary")) %>%
+  inner_join(hmfIds, by = "sampleId") %>% 
+  select(patientId, paperCancerType = cancerType)
 
-highestPurityCohortClinical = purpleClinical %>% 
-  filter(sampleId %in% highestPurityCohort$sampleId) %>% 
-  select(sampleId, primaryTumorLocation) %>%
-  left_join(paperClinical, by = "sampleId") %>%
+paperClinical %>% group_by(patientId) %>% count() %>% filter(n() > 1)
+
+sampleClinical = purpleClinical %>% ungroup() %>%
+  select(sampleId, patientId, primaryTumorLocation) %>%
+  left_join(paperClinical, by = "patientId") %>%
+  distinct() %>%
   mutate(
     primaryTumorLocation = ifelse(primaryTumorLocation == "Unknown", NA, primaryTumorLocation),
-    cancerType = coalesce(primaryTumorLocation, paperCancerType, "Unknown"),
+    cancerType = coalesce(paperCancerType, primaryTumorLocation, "Unknown"),
     cancerType = ifelse(cancerType == "Bone/soft tissue", "Bone/Soft tissue", cancerType),
     cancerType = ifelse(cancerType == "Head and Neck", "Head and neck", cancerType),
     cancerType = ifelse(cancerType == 'Net', 'NET', cancerType),
-    cancerType = ifelse(cancerType == 'Small intestine', 'Small Intestine', cancerType)
-    ) %>% 
+    cancerType = ifelse(cancerType == 'Small intestine', 'Small Intestine', cancerType),
+    cancerType = ifelse(cancerType == 'Nervous system', 'CNS', cancerType)
+  ) %>%
+  filter(cancerType != "Unknown") %>%
+  group_by(patientId) %>% mutate(nSamples = n()) %>% group_by(patientId, cancerType) %>% mutate(nSamples = max(nSamples),  nCancerType = n())
+
+sampleClinical %>% filter(nSamples != nCancerType)
+
+patientClinical = sampleClinical %>%
+  ungroup() %>%
+  mutate(cancerType = ifelse(nSamples != nCancerType, "Other", cancerType)) %>%
+  group_by(patientId, cancerType) %>% 
+  summarise() %>%
   group_by(cancerType) %>%
   mutate(n = n()) %>%
   ungroup() %>%
   mutate(cancerType = ifelse(n < 10, "Other", cancerType)) %>%
-  select(sampleId, cancerType)
+  select(patientId, cancerType)
 
-cancerTypeCounts = highestPurityCohortClinical %>% group_by(cancerType) %>% count() %>% arrange(n)
-cancerTypeCounts
+cohort = purpleCohort %>% left_join(patientClinical, by = "patientId") %>% mutate(cancerType = ifelse(is.na(cancerType), "Unknown", cancerType))
+highestPurityCohort = purple::highest_purity_cohort(cohort) %>% select(-patientId)
 
-highestPurityCohort = highestPurityCohort %>% left_join(highestPurityCohortClinical, by = "sampleId")
+multipleBiopsyMapping = cohort %>% group_by(patientId) %>% 
+  filter(n() > 1) %>% 
+  select(patientId, sampleId) %>% 
+  mutate(sample = paste0("sample", row_number())) %>%
+  spread(sample, sampleId) %>%
+  ungroup() %>%
+  mutate(patientId = row_number())
+  
+cohort = cohort %>% mutate(hpc = sampleId %in% highestPurityCohort$sampleId) %>% select(-patientId)
+
 save(highestPurityCohort, file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
-load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
+save(cohort, highestPurityCohort, multipleBiopsyMapping, file = "~/hmf/analysis/genepanel/cohort.RData")
 
+
+load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
+cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(n)
+sum(!is.na(multipleBiopsyMapping %>% select(-patientId, -Sample1)))
 
 ########### STRUCTURAL VARIANTS ########### 
 sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
