@@ -230,7 +230,7 @@ export(purple_cn, paste0(basedir, "/out/purple_cn.bed"))
 export(conserting_cn, paste0(basedir, "/out/conserting_cn.bed"))
 export(weaver_cn, paste0(basedir, "/out/weaver_cn.bed"))
 
-
+cn_transistions$caller = factor(cn_transistions$caller, levels=c("purple", "conserting", "weaver", "ascat"))
 ########
 # Plots
 cn_size_distribution = c(ascat_cn, purple_cn, conserting_cn, weaver_cn) %>%
