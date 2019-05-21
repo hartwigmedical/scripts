@@ -93,6 +93,12 @@ if [[ ! -f $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembl
 		WORKER_THREADS=$threads | exit 1
 fi
 if [[ ! -f ${corrected_vcf}.gz ]] ; then
+	if [[ ! -f $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam).full.bam ]] ;
+		mv $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam) $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam).full.bam
+	fi
+	gunzip -c ${raw_somatic_vcf} | tr ';' '\n' | grep BEID= | cut -b 6- | tr ',' '\n' | sort | uniq > $out_dir/assembly_ids.txt
+	samtools view $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam).full.bam | fgrep -f $out_dir/assembly_ids.txt | samtools view -b > $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam)
+	samtools index $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam)
 	unadjusted_vcf=$out_dir/$(basename $somatic_vcf).unadjusted.vcf
 	java -Xmx4G $gridss_jvm_args gridss.AllocateEvidence \
 		ALLOCATE_READS=false \
