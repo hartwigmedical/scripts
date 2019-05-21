@@ -36,7 +36,7 @@ for submission in "${SUBMISSIONS[@]}"; do
 
   ## check entitiy existance and fix for KG
   bucketBySubmission=$( query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${subm}\" ) | .bucket" )
-  if   [[ $pTyp == "KG" ]]; then enti="KG_${cntr}"; buck="KG-bucket"
+  if   [[ $pTyp == "KG" ]]; then enti="KG_${cntr}"; buck=$bucketBySubmission
   elif [[ ! -z $bucketBySubmission ]]; then enti=$subm; buck=$bucketBySubmission
   else enti="UnknownEntitiy"; buck="UnknownBucket"
   fi
