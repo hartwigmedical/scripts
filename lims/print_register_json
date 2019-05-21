@@ -201,19 +201,30 @@ sub processSample{
     my $date = localtime->strftime('%y%m%d');
 
     ## fill json based on analysis type
-    if ( $analysis eq 'NoAnalysis' ){
+    if ( $analysis eq 'RnaAnalysis' ){
+        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
+        return "NoJsonMade_rnaTypeNotSupported";
+    }
+    elsif ( $analysis eq 'BCL' ){
+        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
+        return "NoJsonMade_bclTypeNotSupported";
+    }
+    elsif ( $analysis eq 'FASTQ' ){
         my $set = join("_", $date, $submission, $barcode, $name );
         say "[INFO]   SET: $set";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        
-        ## assume all NoAnalysis samples need fastq in portal
+
         $json_data{ 'fastq_portal' } = JSON::true;
         addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
     }
-    elsif ( $analysis eq 'RnaAnalysis' ){
-        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
-        return "NoJsonMade_rnaTypeNotSupported";
+    elsif( $analysis eq 'SingleAnalysis' ){
+        my $set = join( "_", $date, $submission, $barcode, $name );
+        say "[INFO]   SET: $set";
+        $json_data{ 'ini' } = "$GER_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
@@ -260,14 +271,6 @@ sub processSample{
         $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $USE_EXISTING );
-    }
-    elsif( $analysis eq 'Germline' ){
-        my $set = join( "_", $date, $submission, $barcode, $name );
-        say "[INFO]   SET: $set";
-        $json_data{ 'ini' } = "$GER_INI";
-        $json_data{ 'set_name' } = "$set";
-        $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
     }
     elsif ( $analysis eq 'Somatic_R' ){
         say "[INFO]   RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)";
