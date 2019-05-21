@@ -135,7 +135,13 @@ ascat_cn = with(read_tsv(paste0(basedir, "ascat/COLO829T.segments.txt")),
 ascat_cn$cn = ascat_cn$nMajor + ascat_cn$nMinor
 weaver_cn$cn = weaver_cn$cn1 + weaver_cn$cn2
 # use the purple average ploidy so result scales match
-conserting_cn$cn = sum(width(purple_cn) * purple_cn$cn)/sum(width(purple_cn)) * (conserting_cn$DMean/conserting_cn$GMean)
+conserting_dg_normalisation =
+  (sum(width(conserting_cn) * conserting_cn$GMean)/sum(width(conserting_cn))) /
+  (sum(width(conserting_cn) * conserting_cn$DMean)/sum(width(conserting_cn)))
+purple_cn_average = sum(width(purple_cn) * purple_cn$cn)/sum(width(purple_cn))
+ascat_cn_average = sum(width(ascat_cn) * ascat_cn$cn)/sum(width(ascat_cn))
+conserting_cn$cn = ascat_cn_average * conserting_dg_normalisation *
+  (conserting_cn$DMean/conserting_cn$GMean)
 cn = c(ascat_cn, purple_cn, conserting_cn, weaver_cn)
 # Consistency with SV calls:
 # segments
