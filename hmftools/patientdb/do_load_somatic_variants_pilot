@@ -8,6 +8,6 @@ run_dir=$1 && shift
 credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
 
-somatic_vcf=$(locate_somatics ${run_dir})
+somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 ${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} $@

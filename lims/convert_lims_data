@@ -500,7 +500,7 @@ sub processSamp{
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
             next;
         }
-        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
+        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' or $analysis_type eq 'FASTQ' ){
             $row_info->{ 'analysis_type' } = 'NoAnalysis';
         }
         elsif ( $analysis_type eq 'Labonly' ){
@@ -747,7 +747,6 @@ sub getFieldNameTranslations{
       "SNP_exp"           => 'snp_experiment_id',
       "Requested_product" => 'request',
       "State"             => 'lab_status', # lab status
-      "Primary_tumor_type"=> 'ptum',
       "Priority"          => 'priority', 
       "Arrival_date"      => 'arrival_date',
       "Remarks"           => 'remarks',

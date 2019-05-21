@@ -60,16 +60,22 @@ gridss_jvm_args="
 		WORKING_DIR=$out_dir
 		REFERENCE_SEQUENCE=$ref_genome "
 
+# always remake the symlink since an earlier version of this script used absolute paths
+# which broke the symlinks when moved datastore as the absolute paths are different
+unlink $normal_bam
+unlink $tumor_bam
+unlink $normal_bam.gridss.working/$(basename $normal_bam).sv.bam
+unlink $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
+ln -s empty.bam $normal_bam
+ln -s empty.bam $tumor_bam
+mkdir -p $normal_bam.gridss.working/ $tumor_bam.gridss.working/
+ln -s ../empty.bam $normal_bam.gridss.working/$(basename $normal_bam).sv.bam
+ln -s ../empty.bam $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
 if [[ ! -f $out_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_sv_bam) ]] ; then
 	# Mock input files because GRIDSS needs these as positional arguments even though the reads are ignored
 	echo "Generating empty bam from $assembly_sv_bam"
 	samtools view -H $assembly_sv_bam | samtools view -b - > $out_dir/empty.bam
-	ln -s $(realpath $out_dir/empty.bam) $normal_bam
-	ln -s $(realpath $out_dir/empty.bam) $tumor_bam
-	mkdir -p $normal_bam.gridss.working/ $tumor_bam.gridss.working/
-	ln -s $(realpath $out_dir/empty.bam) $normal_bam.gridss.working/$(basename $normal_bam).sv.bam
-	ln -s $(realpath $out_dir/empty.bam) $tumor_bam.gridss.working/$(basename $tumor_bam).sv.bam
-
+	
 	gunzip -c ${raw_somatic_vcf} | vcf2bed | cut -f 1-3 | bedops --range 2000 --everything /dev/stdin > $region_bed
 
 	java -Xmx2G $gridss_jvm_args gridss.ExtractFullReads \

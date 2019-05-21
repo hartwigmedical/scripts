@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+bucket=$1
+destination=$2
+
+if [ -z ${bucket} ]; then echo "[ERROR] No bucket provided" & exit 1; fi
+if [ -z ${destination} ]; then echo "[ERROR] No destination provided" & exit 1; fi
+
+if [ ! -d ${destination} ]; then
+    echo "[INFO] ${destination} does not exist. Creating"
+    mkdir -p ${destination}
+fi
+
+echo "[INFO] syncing GCP ${bucket} to ${destination}"
+# -m runs gsutil in parallel for supported operations (such as cp) and may potentially speed things up.
+#-R recursively copies the entire bucket.
+gsutil -m cp -R gs://${bucket} ${destination}

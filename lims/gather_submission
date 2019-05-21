@@ -98,6 +98,8 @@ echo " cat ${samFile}"
 echo " cat ${runFile}"
 echo "[INFO] Or get reporting info:"
 echo " cat ${repFile} | cut -f1 --complement"
+echo "[INFO] If you finish the submission then please also chown:"
+echo " sudo chown -R root:root ${outPath}"
   
 
 ## warn if not complete

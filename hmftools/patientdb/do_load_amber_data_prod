@@ -5,7 +5,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 credentials=/data/common/dbs/mysql_credentials/prod
-patient_db_jar=/data/common/tools/purple_v2.28/purple.jar
+patient_db_jar=/data/common/tools/purple_v2.29/purple.jar
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 ${prefix}/do_load_amber_data ${run_dir}/amber ${credentials} ${patient_db_jar} ${sample}
