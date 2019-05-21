@@ -3,7 +3,6 @@
 SUBMISSIONS=("$@") # optional
 JSON=/data/lims/submissions.json
 na="NA"
-unknown="Unknown Please Check!"
 
 if [ "$#" -eq 0 ]; then
   SUBMISSIONS=( $( cat $JSON | jq -r 'keys[]' | sort -r | head -100 ) )
@@ -29,17 +28,17 @@ for submission in "${SUBMISSIONS[@]}"; do
 
   ## fix project type (rename to short versions)
   if   [[ $pTyp == "Human research" ]]; then pTyp="HUM-RES"
-  elif [[ $pTyp == "non human research" ]]; then pTyp="NONHUM-RES"
+  elif [[ $pTyp == "non human research" || $pTyp == "Non human research" ]]; then pTyp="NONHUM-RES"
   elif [[ $pTyp == "KG production" ]]; then pTyp="KG"
   elif [[ $pTyp == "CORE" ]]; then pTyp="CORE"
-  else pTyp="${unknown}"
+  else pTyp="UnknownType"
   fi
 
   ## check entitiy existance and fix for KG
   bucketBySubmission=$( query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${subm}\" ) | .bucket" )
   if   [[ $pTyp == "KG" ]]; then enti="KG_${cntr}"; buck="KG-bucket"
   elif [[ ! -z $bucketBySubmission ]]; then enti=$subm; buck=$bucketBySubmission
-  else enti="${unknown}"; buck="${unknown}"
+  else enti="UnknownEntitiy"; buck="UnknownBucket"
   fi
 
   ## output
