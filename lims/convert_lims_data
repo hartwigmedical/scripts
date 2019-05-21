@@ -495,7 +495,7 @@ sub processSamp{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
         }
-        elsif ( $analysis_type eq 'GermlineBFX' ){
+        elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
             $row_info->{ 'analysis_type' } = 'SingleAnalysis';
         }
