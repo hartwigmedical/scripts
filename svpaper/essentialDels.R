@@ -42,9 +42,9 @@ create_histogram_data <- function (geneCopyNumbers) {
 }
 
 ########## AMPLIFICATIONS ########## 
-load("~/hmf/RData/Reference/allPurity.RData")
-load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
-load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+load("~/hmf/analysis/cohort/cohort.RData")
+load("~/hmf/analysis/cohort/hpcCopyNumbers.RData")
+load("~/hmf/analysis/cohort/canonicalTranscripts.RData")
 essential = read.csv(file = "/Users/jon/hmf/analysis/essential/NIHMS732683-supplement-supp_table_3.csv", stringsAsFactors = F) %>%
   select(gene = Gene, pValue = KBM7.adjusted.p.value) %>% mutate(pValue = paste0(round(pValue, 2)))
 canonicalTranscripts = canonicalTranscripts %>% left_join(essential, by = "gene")
