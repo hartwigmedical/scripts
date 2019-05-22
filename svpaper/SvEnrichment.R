@@ -117,46 +117,66 @@ save(bins_100k, bins_1M, bins_10M, file = "/Users/jon/hmf/analysis/svPaper/binSi
 
 load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
 svData = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
-
-hpcSvs = svData %>%
+svData = svData %>%
   filter(SampleId %in% highestPurityCohort$sampleId) %>%
   mutate(
-  subtype = "Unknown",
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart<=500, "ShortDup", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>500 & PosEnd-PosStart<=80000, "MediumDup", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>80000 & PosEnd-PosStart<=1e6, "LongDup", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>1e6 & PosEnd-PosStart<=5e6, "VeryLongDup", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>5e6, "SuperLongDup", subtype),
+    subtype = "Unknown",
+    
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart<=500, "ShortDup", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>500 & PosEnd-PosStart<=80000, "MediumDup", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>80000 & PosEnd-PosStart<=1e6, "LongDup", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>1e6 & PosEnd-PosStart<=5e6, "VeryLongDup", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>5e6, "SuperLongDup", subtype),
+    
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart<=500, "ShortDel", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>500 & PosEnd-PosStart<=5000, "MediumDel", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>5000 & PosEnd-PosStart<=1e6, "LongDel", subtype),
+    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
+    
+    isSimpleFoldback = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV",
+    isShortTI = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000)
+save(svData, file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
 
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart<=500, "ShortDel", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>500 & PosEnd-PosStart<=5000, "MediumDel", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>5000 & PosEnd-PosStart<=1e6, "LongDel", subtype),
-  subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
 
-  subtype = ifelse(!is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV", "Foldback", subtype),
-  subtype = ifelse(ResolvedType=='LINE' & (LEStart != 'None' | LEEnd != 'None'), "Line", subtype),
-  subtype = ifelse((LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000, "ShortTI", subtype)
-  ) %>%
-  filter(subtype != 'Unknown')
+load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
+hpcSimpleSv = svData %>% 
+  filter(ResolvedType=='SIMPLE', subtype != 'Unknown') %>% 
+  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
 
-hpcSvs %>% filter(subtype == "Line", LEStart != 'None', LEEnd != 'None')
+hpcFeatureSv =  svData %>% 
+  filter(isSimpleFoldback | isShortTI) %>%
+  mutate(subtype = ifelse(isSimpleFoldback, "Foldback", "ShortTI")) %>% 
+  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
 
-jon = hpcSvs %>% filter(subtype == "Line")
+hpcLineElementStart = svData %>%
+  filter(ResolvedType=='LINE') %>%
+  mutate(Chr = ChrStart, Pos = PosStart, subtype = "Line", IsFS = FSStart!='false', RepOriginEnd = NA, subtype = ifelse(LEStart != 'None', "LineSource", "LineInsertion"))  %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
+
+hpcLineElementEnd = svData %>%
+  filter(ResolvedType=='LINE') %>%
+  mutate(Chr = ChrEnd, Pos = PosEnd, subtype = "Line", IsFS = FSEnd!='false', RepOriginStart = NA, subtype = ifelse(LEEnd != 'None', "LineSource", "LineInsertion"))  %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
+
+hpcSvs = bind_rows(hpcSimpleSv, hpcFeatureSv)
+hpcSvs = bind_rows(hpcSvs, hpcLineElementStart)
+hpcSvs = bind_rows(hpcSvs, hpcLineElementEnd)
 
 hpcSvs %>% group_by(subtype) %>% count()
 
-svsRegions = GRanges(hpcSvs$ChrStart, ranges = IRanges(start = (hpcSvs$PosStart + hpcSvs$PosEnd) / 2, end = (hpcSvs$PosStart + hpcSvs$PosEnd ) / 2))
-ol = as.matrix(findOverlaps(svsRegions, binRegions, type = "any"))
+hpcSvRegions = GRanges(hpcSvs$Chr, ranges = IRanges(start = hpcSvs$Pos, end = hpcSvs$Pos))
+ol = as.matrix(findOverlaps(hpcSvRegions, binRegions, type = "any"))
 hpcSvs = hpcSvs[ol[, 1], ]
-
+hpcSvs %>% group_by(subtype) %>% count()
 save(hpcSvs, file = "/Users/jon/hmf/analysis/svPaper/hpcSvs.RData")
-rm(list=setdiff(ls(), c("hpcDelsDups")))
 
-
+rm(list=setdiff(ls(), c("hpcSvs")))
 
 ############################################ PREP ############################################ 
 load(file = "/Users/jon/hmf/analysis/svPaper/binSizes.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/hpcDelsDups.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/hpcSvs.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
@@ -168,34 +188,11 @@ replication_bucket <- function(replication) {
 }
 
 enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, averageReplication) {
-  result = data.frame()
-
-  middle = criteria %>% filter(as.character(ChrStart) == as.character(ChrEnd), subtype != 'Line')
-  start = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd) || subtype == 'Line')
-  end = criteria %>% filter(as.character(ChrStart) != as.character(ChrEnd) || subtype == 'Line', !Type %in% c('NONE','SGL'), !ChrEnd %in% c('0','MT'))
-
-  result = bind_rows(result, enrichInner(middle, mappability, averageCopyNumber, uniquelyMappable, averageReplication, "middle"))
-  result = bind_rows(result, enrichInner(start, mappability, averageCopyNumber, uniquelyMappable, averageReplication, "start"))
-  result = bind_rows(result, enrichInner(end, mappability, averageCopyNumber, uniquelyMappable, averageReplication, "end"))
-
-  return (result)
-}
-
-enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, averageReplication, type) {
   if (nrow(criteria) == 0) {
     return (criteria)
   }
 
-  criteria = criteria %>% mutate(PosMid = (PosEnd + PosStart) / 2, breakend = type)
-
-  if (type == "middle") {
-    svsRegions = GRanges(criteria$ChrStart, ranges = IRanges(start = criteria$PosMid, end = criteria$PosMid))
-  } else if (type == "start") {
-    svsRegions = GRanges(criteria$ChrStart, ranges = IRanges(start = criteria$PosStart, end = criteria$PosStart))
-  } else if (type == "end") {
-    svsRegions = GRanges(criteria$ChrEnd, ranges = IRanges(start = criteria$PosEnd, end = criteria$PosEnd))
-  }
-
+  svsRegions = GRanges(criteria$Chr, ranges = IRanges(start = criteria$Pos, end = criteria$Pos))
   binRegions = GRanges(mappability$chromosome, ranges = IRanges(start = mappability$start, end = mappability$end))
   uniquelyMappableRegions = GRanges(as.character(uniquelyMappable$chromosome), ranges = IRanges(start = uniquelyMappable$binStart, end = uniquelyMappable$binEnd))
   replicationRegions = GRanges(as.character(averageReplication$chromosome), ranges = IRanges(start = averageReplication$start, end = averageReplication$end))
@@ -225,25 +222,19 @@ enrichInner <- function(criteria, mappability, averageCopyNumber, uniquelyMappab
 
 
 normalise <- function(svs, buckets, meanCopyNumber, meanMappable) {
-
   normalised_svs = svs %>%
     ungroup() %>%
-    mutate(nrows=n()) %>%
-    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, averageReplication, replicationFactor) %>%
-    summarise(
-    unnormalisedBucketCount=n(),
-    percentFS=sum(IsFS)/unnormalisedBucketCount) %>%
     mutate(
-    #proportionOfN = N / (binEnd - binStart),
-    expectedBucketCount = nrows / buckets * replicationFactor * averageCopyNumber / meanCopyNumber,
-    #expectedBucketCount = nrows / buckets * replicationFactor,
-    p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
-    q=p.adjust(p,"BH",buckets),
-    buckets = buckets)
-
-  sum(normalised_svs$expectedBucketCount)
-  sum(normalised_svs$unnormalisedBucketCount)
-
+      nrows=n(),
+      nrows = ifelse(subtype == "ShortTI", round(nrows / 2), nrows)) %>%
+    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, averageReplication, replicationFactor, subtype) %>%
+    summarise(unnormalisedBucketCount = n(), percentFS=sum(IsFS)/unnormalisedBucketCount) %>%
+    mutate(
+      unnormalisedBucketCount = ifelse(subtype == "ShortTI", round(unnormalisedBucketCount / 2), unnormalisedBucketCount),
+      expectedBucketCount = nrows / buckets * replicationFactor * averageCopyNumber / meanCopyNumber,
+      p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
+      q=p.adjust(p,"BH",buckets),
+      buckets = buckets)
 
   return (normalised_svs)
 }
@@ -262,33 +253,30 @@ enrich_and_normalise <- function(criteria, qFilter = 0.01) {
   criteriaResult = bind_rows(criteriaResult, normalised_100k)
   criteriaResult = bind_rows(criteriaResult, normalised_1M)
   criteriaResult = bind_rows(criteriaResult, normalised_10M)
-  criteriaResult$subtype <- dplyr::first(criteria$subtype)
 
   return (criteriaResult)
 }
-
 
 ############################################ Executions ############################################ 
 #filter(ResolvedType=='Line') %>% mutate(criteria = 'Line') %>%
 #filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
 
 
-df = hpcDelsDups
+df = hpcSvs %>% filter(!grepl("Line", subtype))
 result = data.frame()
 for (selectedSubtype in unique(df$subtype)) {
   cat ("Processing", selectedSubtype, "\n")
   criteria = df %>%
-    filter(subtype == selectedSubtype) %>%
-    mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F))
+    filter(subtype == selectedSubtype) 
   result = bind_rows(result, enrich_and_normalise(criteria, 10000000))
 }
 
 svEnrichment = result %>% filter(q < 0.01)
 save(svEnrichment, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
 
-
 unfilteredEnrichment = result
 save(unfilteredEnrichment, file = "/Users/jon/hmf/analysis/svPaper/unfilteredEnrichment.RData")
+unfilteredEnrichment %>% group_by(subtype) %>% count()
 
 ############################################ Add Genes ############################################ 
 load( file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
@@ -306,6 +294,7 @@ genes = genes %>% mutate(length = geneEnd - geneStart) %>% group_by(index) %>% a
 svEnrichment[genes$index, "gene"] <- genes$gene
 svEnrichment[genes$index, "geneLength"] <- genes$length
 save(svEnrichment, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
+svEnrichment %>% group_by(subtype) %>% count()
 
 View(svEnrichment %>% filter(binEnd-binStart+1==1000000) %>% group_by(gene,binChromosome,binStart,subtype,round(averageReplication,1),isFS=percentFS>0) %>% summarise(q=mean(q)) %>% spread(subtype,q) )
 View(svEnrichment %>% filter(binEnd-binStart+1==100000) %>% group_by(gene,binChromosome,binStart,subtype,round(averageReplication,1),isFS=percentFS>0) %>% summarise(q=mean(q)) %>% spread(subtype,q) )
@@ -418,4 +407,56 @@ df = hpcDelsDups %>%
 
 ggplot(df) +
 geom_point(aes(x = MediumDup, y = LongDel))
+
+############################################ CDF PLOT ############################################ 
+load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
+
+svData = svData %>% left_join(highestPurityCohort %>% select(SampleId = sampleId, cancerType), by = "SampleId")
+
+count_subtypes <-  function(df) {
+  df %>% 
+    group_by(SampleId, subtype, cancerType, ClusterId) %>% 
+    summarise() %>% group_by(SampleId, subtype, cancerType) %>% 
+    count() %>%
+    spread(subtype, n, fill = 0) %>% 
+    gather(subtype, n, c(-1,-2))
+}
+
+typeDF = count_subtypes(svData)
+featureDF = count_subtypes(svData %>% filter(isSimpleFoldback | isShortTI) %>% mutate(subtype = ifelse(isSimpleFoldback, "Foldback","ShortTI"))) %>% mutate(n = ifelse(subtype == "ShortTI", round(n/2), n))
+resolvedDF = count_subtypes(svData %>% filter(!ResolvedType %in% c('SIMPLE','SGL_BND_INV','SGL_PAIR_DEL')) %>% mutate(subtype = ResolvedType))
+
+plot_cdf <- function(df) {
+  
+  medDF = df %>% group_by(subtype, cancerType) %>% summarise(median = median(n))
+  
+  p = ggplot(df) + 
+    stat_ecdf(aes(x = n, color = subtype),  geom = "point", pad = FALSE, size = 0.05) +
+    geom_segment(data = medDF, size = 0.4, aes(x = median, xend = median, y = 0.1, yend = 0.9, color = subtype)) + 
+    theme(
+      legend.position = "bottom", 
+      legend.title = element_blank(), 
+      axis.title = element_blank(),
+      axis.text.x = element_blank(),
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor.y = element_blank(),
+      strip.background = element_blank(),
+      panel.spacing = unit(1, "pt"),
+      legend.margin = margin(t = 2, b = 2, unit = "pt")) +
+    facet_grid(~cancerType) +
+    scale_x_log10() + 
+    scale_y_continuous(breaks = c(0, 1)) + 
+    coord_flip() 
+  return (p)
+}
+
+delCDF = plot_cdf(typeDF %>% filter(grepl("Del", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
+dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text = element_blank())
+featureCDF = plot_cdf(featureDF) + theme(strip.text = element_blank())
+lineCDF = plot_cdf(resolvedDF) + theme(strip.text = element_blank())
+
+pFinal = plot_grid(delCDF, dupCDF, featureCDF, lineCDF, ncol = 1, align = "v", rel_heights = c(1.2, 1, 1, 1))
+ggsave("~/hmf/analysis/svPaper/plot/svCounts.png", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
+ggsave("~/hmf/analysis/svPaper/plot/svCounts.pdf", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
 

@@ -28,12 +28,10 @@ binRegions = GRanges(allowedBins$chromosome, ranges = IRanges(start = allowedBin
 replicationRegions = GRanges(averageReplication_1k$chromosome, ranges = IRanges(start = averageReplication_1k$start, end = averageReplication_1k$end)) 
 ol = as.matrix(findOverlaps(replicationRegions, binRegions, type = "any"))
 averageReplication_1k = averageReplication_1k[ol[, 1], ]
-rm(list=setdiff(ls(), c("averageReplication_1k")))
 
-load(file = "/Users/jon/hmf/analysis/svPaper/hpcDelsDups.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/hpcSvs.RData")
 
-df = hpcDelsDups %>% 
-  filter(ResolvedType=='SimpleSV', Type %in% c('DEL', 'DUP')) %>%
+df = hpcSvs %>% 
   select(subtype, RepOriginStart, RepOriginEnd) %>% gather(type, replication, c(2,3)) %>%
   filter(replication >= 0.06, replication <= 0.8)
 
@@ -71,26 +69,37 @@ normalisedHist = dfHist %>% inner_join(refHist, by = "bucket") %>%
   mutate(
     ratio = actualDensity / expectedDensity,
     sumProduct = sum(ratio * actualDensity),
-    factor = ratio / sumProduct) 
+    factor = ratio / sumProduct) %>%
+  mutate(
+    factor = ifelse(grepl("Line", subtype), 1, factor)
+  )
     
-verification = normalisedHist %>% group_by(subtype) %>% summarise(jon = sum(factor * count / sum(count)))
+verification = normalisedHist %>% group_by(subtype) %>% summarise(total = sum(factor * count / sum(count)))
 replicationFactor = normalisedHist %>% select(subtype, replicationBucket = bucket, replicationFactor = factor)
 save(replicationFactor, file = "~/hmf/analysis/svPaper/replicationFactor.RData")
 
+plot_replication <- function(df) {
+  ggplot(df) +
+    geom_bar(aes(x = bucket, y = factor), stat = "identity", width = 1, fill = singleBlue, position = "stack") +
+    scale_x_discrete(breaks = unique(normalisedHist$bucket)[seq(1,37, 9)], labels = (seq(1,37, 9) * 0.02 + 0.05)) +
+    facet_wrap( ~subtype, nrow = 3) + xlab("Replication") + ylab("Factor")
+}
 
-ggplot(normalisedHist) +
-  geom_bar(aes(x = bucket, y = factor), stat = "identity", width = 1, fill = singleBlue, position = "stack") +
-  scale_x_discrete(breaks = unique(normalisedHist$bucket)[seq(1,37, 9)], labels = (seq(1,37, 9) * 0.02 + 0.05)) +
-  facet_wrap( ~subtype, nrow = 3) + xlab("Replication") + ylab("Factor")
+simplePlot = plot_replication(normalisedHist %>% filter(grepl("Dup", subtype) | grepl("Del", subtype)))
+ggsave("~/hmf/analysis/svPaper/plot/simpleReplication.png", simplePlot, width = 183, height = 161, units = "mm", dpi = 300)
+ggsave("~/hmf/analysis/svPaper/plot/simpleReplication.pdf", simplePlot, width = 183, height = 161, units = "mm", dpi = 300)
 
-ggplot(dfHist) +
-  geom_bar(aes(x = bucket, y = density), stat = "identity", width = 1, fill = singleBlue, position = "stack") +
-  scale_x_discrete(breaks = seq(0, 1, 0.1), labels = as.character(seq(0, 1, 0.1))) +
-  facet_wrap( ~subtype, nrow = 3) + xlab("Replication") + ylab("Density")# + xlim(0.3, 0.9)
+featurePlot = plot_replication(normalisedHist %>% filter(grepl("Fold", subtype) | grepl("ShortTI", subtype)))
+ggsave("~/hmf/analysis/svPaper/plot/featureReplication.png", featurePlot, width = 183, height = 161, units = "mm", dpi = 300)
+ggsave("~/hmf/analysis/svPaper/plot/featureReplication.pdf", featurePlot, width = 183, height = 161, units = "mm", dpi = 300)
 
-ggplot(refHist) +
-  geom_bar(aes(x = bucket, y = density), stat = "identity", width = 1, fill = singleBlue, position = "stack") +
-  scale_x_discrete(breaks = seq(0, 1, 0.1), labels = as.character(seq(0, 1, 0.1))) +
-  xlab("Replication") + ylab("Density")# + xlim(0.3, 0.9)
 
+load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
+df = svData %>% filter(isShortTI, !ResolvedType %in% c("COMPLEX", "LINE")) %>% filter(xor(LocTopTypeStart=='TI_ONLY', LocTopTypeEnd=='TI_ONLY')) %>%
+  mutate(
+    TIReplication = ifelse(LocTopTypeStart=='TI_ONLY', RepOriginStart, RepOriginEnd), 
+    NonTIReplication = ifelse(LocTopTypeStart=='TI_ONLY', RepOriginEnd, RepOriginStart))
+
+ggplot(df) +
+    geom_point(aes(x = TIReplication, y = NonTIReplication, color = ResolvedType), size = 0.3) + ggtitle("ShortTI TI Vs Non TI Replication" ) 
 
