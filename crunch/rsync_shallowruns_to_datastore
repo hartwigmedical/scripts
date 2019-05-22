@@ -2,8 +2,9 @@
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo " Usage: `basename $0` /data2/processed/<path-to-seq-run> "
-    echo " Descr: Get Rsync cmd to sync shallow seq run dirs to datastore excluding bams"
+    echo " Usage: `basename $0` <path-to-pipeline-run1> [<path-to-pipeline-run2 etc>]"
+    echo "        `basename $0` /data2/processed/18*"
+    echo " Descr: Get Rsync cmd to sync pipeline runs to datastore excluding bams and diffs."
     echo "-----"
     exit 1
 fi
@@ -13,6 +14,7 @@ currDate=$( date +'%y%m%d' )
 echo "[INFO] Execute to start sync:"
 rsynccmd=" nohup rsync -ahP"
 rsynccmd=${rsynccmd}" --exclude \"*.bam\""
+rsynccmd=${rsynccmd}" --exclude \"*.diff\""
 rsynccmd=${rsynccmd}" --stats"
 rsynccmd=${rsynccmd}" $@"
 rsynccmd=${rsynccmd}" ds:/data/data_archive/shallow_seq_pipelines/"
