@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+echo "[INFO] Execute to start sync:"
+rsynccmd="rsync -ahPn"
+rsynccmd=${rsynccmd}" --exclude \"*.bam\""
+rsynccmd=${rsynccmd}" $@"
+rsynccmd=${rsynccmd}" ds:/data/data_archive/shallow_seq_pipelines/"
+
+echo ${rsynccmd}
