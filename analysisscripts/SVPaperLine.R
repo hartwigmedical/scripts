@@ -1,25 +1,5 @@
-library(GenomicRanges)
-library(tidyverse)
-library(stringr)
-library(grid)
-library(gridExtra)
-library(cowplot)
-library(RMySQL)
+source("libSVPaper.R")
 source("libSvAnalyser.R")
-
-# Paper common
-dropbox = "~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis"
-figdir=paste0(dropbox, "/figures/")
-load(paste0(dropbox, "/paper/cohort.RData"))
-db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-#sample_cancer_type_df = query_cancer_type_by_sample(db)
-sva_svs = read_csv('../../sv/SVA_SVS.csv')
-sva_links = read_csv('../../sv/SVA_LINKS.csv')
-sva_clusters = read_csv('../../sv/SVA_CLUSTERS.csv')
-
-cancerTypeOrder = sort(unique(cohort$cancerType))
-cancerTypeOrdinal = seq_along(cancerTypeOrder)
-names(cancerTypeOrdinal) = cancerTypeOrder
 
 insdf = sva_svs %>%
   filter(SampleId %in% (cohort %>% filter(hpc) %>% pull(sampleId))) %>%
@@ -115,7 +95,7 @@ linedf = sva_svs %>% filter(ResolvedType=="LINE") %>%
 # any other supporting evidence
 # export all LINE SGL events then run RepeatMasker to see
 # how widespread this issue is
-line_gr =SVA_SVS_to_gr(linedf)
+line_gr = SVA_SVS_to_gr(linedf)
 
 # site level analysis
 max_distance = 5000
