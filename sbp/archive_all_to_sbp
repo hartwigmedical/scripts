@@ -21,3 +21,6 @@ archive_data_requests_to_sbp ${delete_flag}
 
 echo "[INFO] Archiving Submissions"
 archive_submissions_to_sbp ${delete_flag}
+
+echo "[INFO] Archiving Shallow Seq Pipelines"
+archive_shallow_seq_pipelines_to_sbp ${delete_flag}
