@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
 dir=$1
-sample_name=$2
 
 somatic_vcf=${dir}/somatic_caller/results/*.cosmic.annotated.vcf.gz
+sample=$( basename ${somatic_vcf}  | cut -d"." -f1 )
 credentials=/data/common/dbs/mysql_credentials/pipeline_v5
 patient_db_jar=/data/common/tools/patient-db_v3.19/patient-db.jar
 
-do_load_somatic_variants ${sample_name} ${somatic_vcf} ${credentials} ${patient_db_jar}
+do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
