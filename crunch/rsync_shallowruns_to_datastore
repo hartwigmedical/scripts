@@ -3,7 +3,7 @@
 currDate=$( date +'%y%m%d' )
 
 echo "[INFO] Execute to start sync:"
-rsynccmd=" nohup rsync -ahPn"
+rsynccmd=" nohup rsync -ahP"
 rsynccmd=${rsynccmd}" --exclude \"*.bam\""
 rsynccmd=${rsynccmd}" --stats"
 rsynccmd=${rsynccmd}" $@"
