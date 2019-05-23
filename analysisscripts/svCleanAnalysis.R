@@ -98,8 +98,8 @@ createBuckets <- function(cluster) {
     LengthBucket=ifelse(Type=='BND'|Type=='INS'|PosEnd-PosStart==0|ArmEnd!=ArmStart,0,2**(pmin(25,pmax(5,round(log(pmax(0.01,PosEnd-PosStart),2),0))))),
     HomLenBucket=2**(round(log(nchar(Homology),2),0)),
     NearestLenBucket=2**(round(log(pmax(0.01,NearestLen),2),0)),
-    SynDelDupLenBucket=2**(round(log((SynDelDupLen),2),0)),
-    SynDelDupTILenBucket=2**(round(log((SynDelDupAvgTILen),2),0)),
+    SyntheticLenBucket=2**(round(log((SyntheticLen),2),0)),
+    SyntheticTILenBucket=2**(round(log((SyntheticTILen),2),0)),
     InsLenBucket=2**(round(log(nchar(InsertSeq),2),0)),
     QualScoreBucket=2**(round(log(nchar(QualScore),2),0))
   )
@@ -108,7 +108,6 @@ createBuckets <- function(cluster) {
 createsvLinksBuckets <- function(svLinks) {
   svLinks %>% mutate(
     TILengthBucket=ifelse(TILength==0,0,2**(pmin(25,pmax(5,round(log(TILength,2),0))))),
-    synDelDupLengthBucket=ifelse(SynDelDupLen==0,0,2**(pmin(25,pmax(5,round(log(pmax(0.01,SynDelDupLen),2),0))))),
     DBLenEndBucket=ifelse(DBLenEnd==0,0,2**(pmin(25,pmax(5,round(log(pmax(0.01,DBLenEnd),2),0))))),
     DBLenStartBucket=ifelse(DBLenStart==0,0,2**(pmin(25,pmax(5,round(log(pmax(0.01,DBLenStart),2),0))))),
     ClusterCountBucket=2**(pmin(5,pmax(-3,round(log(ClusterCount,2),0))))
@@ -142,41 +141,40 @@ createClusterArmStats <- function(cluster) {
 
 createSampleSummary <- function(cluster) {
   cluster %>% 
-    group_by(SampleId,ClusterId,ResolvedType,Type=ifelse(ClusterCount==1,as.character(Type),'')) %>% 
+    group_by(SampleId,CancerType,CancerSubtype,ClusterId,ResolvedType,Type=ifelse(ClusterCount==1,as.character(Type),'')) %>% 
     summarise(n=n(),countFS=sum(IsFS),
-              countSimpleDUPShort=sum(Type=='DUP' & PosEnd-PosStart<1e5),
+              countSimpleDUPMed=sum(Type=='DUP' & PosEnd-PosStart<8e4&PosEnd-PosStart>1e3),
               countSimpleDUPLong=sum(Type=='DUP' & PosEnd-PosStart>=1e5),
-              countDUP_EXT_TIShort=sum(ResolvedType=='DUP_EXT_TI'&SynDelDupLen<1e5),
-              countDUP_EXT_TILong=sum(ResolvedType=='DUP_EXT_TI'&SynDelDupLen>=1e5)) %>% group_by(SampleId) %>% 
+              countSimpleDELShortMed=sum(Type=='DEL' & PosEnd-PosStart<5e3),
+              countSimpleDELLong=sum(Type=='DEL' & PosEnd-PosStart>=5e3&PosEnd-PosStart<5e5),
+              countSYNTH_DUPMed=sum(ResolvedType=='SYNTH_DUP'&SyntheticLen<8e4&SyntheticLen>1e3),
+              countSYNTH_DUPLong=sum(ResolvedType=='SYNTH_DUP'&SyntheticLen>=1e5),
+              countSYNTH_DELShortMed=sum(ResolvedType=='SYNTH_DEL'&SyntheticLen<5e3),
+              countSYNTH_DELLong=sum(ResolvedType=='SYNTH_DEL'&SyntheticLen>=5e3&SyntheticLen<5e5)) %>% group_by(SampleId) %>% 
     summarise(countCluster=n(),
               count=sum(n),
               countLine=sum(ResolvedType=='LINE'),
               sumLine=sum(ifelse(ResolvedType=='LINE',n,0)),
-              countSGLPair_INS=sum(ResolvedType=='SglPair_INS'),
-              countSGLPair_DEL=sum(ResolvedType=='SglPair_DEL'),
-              countSGLPair_DUP=sum(ResolvedType=='SglPair_DUP'),
-              countSimpleChain=sum(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain'),
-              sumSimpleChain=sum(ifelse(ResolvedType=='SimpleChain'|ResolvedType=='SimplePartialChain',n,0)),
-              countComplexChain=sum(ResolvedType=='ComplexChain'|ResolvedType=='ComplexPartialChain'),
-              sumComplexChain=sum(ifelse(ResolvedType=='ComplexChain'|ResolvedType=='ComplexPartialChain',n,0)),
               countSimpleINS=sum(Type=='INS'),
               countSimpleDEL=sum(Type=='DEL'),
               countSimpleDUP=sum(Type=='DUP'),
-              countSimpleDUPShort=sum(countSimpleDUPShort),
-              countSimpleDUPLong=sum(countSimpleDUPLong) ,
               countSimpleBND=sum(Type=='BND'),
               countSimpleINV=sum(Type=='INV'),
               countSimpleSGL=sum(Type=='SGL'),
               countSimpleNONE=sum(Type=='NONE'),
-              countDEL_EXT_TI=sum(ResolvedType=='DEL_EXT_TI'),
-              countDEL_INT_TI=sum(ResolvedType=='DEL_INT_TI'),
-              countDUP_EXT_TI=sum(ResolvedType=='DUP_EXT_TI'),
-              countDUP_EXT_TIShort=sum(countDUP_EXT_TIShort),
-              countDUP_EXT_TILong=sum(countDUP_EXT_TILong),
-              countDUP_INT_TI=sum(ResolvedType=='DUP_INT_TI'),
-              countRecipInv=sum(ResolvedType=='ReciprocalInversion'),
-              countRecipTrans=sum(ResolvedType=='RecipTrans'),
-              #countShortTI=sum(ShortTICount),
+              countSimpleDUPMed=sum(countSimpleDUPMed),
+              countSimpleDUPLong=sum(countSimpleDUPLong),
+              countSimpleDELShortMed=sum(countSimpleDELShortMed),
+              countSimpleDELLong=sum(countSimpleDELLong),
+              countSYNTH_DUP=sum(ResolvedType=='SYNTH_DUP'),
+              countSYNTH_DEL=sum(ResolvedType=='SYNTH_DEL'),
+              countSYNTH_DUPMed=sum(countSYNTH_DUPMed),
+              countSYNTH_DUPLong=sum(countSYNTH_DUPLong),
+              countSYNTH_DELShortMed=sum(countSYNTH_DELShortMed),
+              countSYNTH_DELLong=sum(countSYNTH_DELLong),
+              countRECIP_INV=sum(ResolvedType=='RECIP_INV'),
+              countRECIP_DUPS=sum(ResolvedType=='RECIP_DUPS'),
+              countRECIP_TRANS=sum(ResolvedType=='RECIP_TRANS'),
               countFS=sum(countFS))
 }
 
@@ -192,7 +190,7 @@ svDrivers = read.csv(paste(PATH,'SVA_DRIVERS.csv',sep=''), header = T, stringsAs
 svLinks = read.csv(paste(PATH,'SVA_LINKS.csv',sep=''), header = T, stringsAsFactors = F)
 sampleCancerTypes= (read.csv(paste(PATH,'sample_cancer_types.csv',sep=''), header = T, stringsAsFactors = F))
 svData = merge(svData, sampleCancerTypes, by='SampleId', all.x=T)
-svData=merge(svData,svClusters %>% select(SampleId,ClusterId,Subclonal,SynDelDupLen,SynDelDupAvgTILen,Foldbacks),by=c('SampleId','ClusterId'))
+svData=merge(svData,svClusters %>% select(SampleId,ClusterId,Subclonal,SyntheticLen,SyntheticTILen,Foldbacks),by=c('SampleId','ClusterId'))
 svDrivers = merge(svDrivers, sampleCancerTypes, by='SampleId', all.x=T)
 sampleList = svData %>% distinct(SampleId,CancerType)
 
@@ -208,13 +206,10 @@ svLinks=createsvLinksBuckets(svLinks)
 foldbacks=createFoldbacks(svData)
 svSampleSummary=createSampleSummary(svData)
 
-#RI temp fix
-#svLinks = svLinks %>% mutate(ResolvedType=ifelse(ResolvedType=='DEL_INT_TI'&SynDelDupAvgTILen>SynDelDupLen*0.5,'RECIP_INV',ResolvedType))
-#svLinks = svLinks %>% mutate(ResolvedType=ifelse(ResolvedType=='DEL_INT_TI'&TILength>SynDelDupLen*0.5,'RECIP_INV',ResolvedType))
 
 # BE data
-beData = rbind(svData %>% mutate(LocTopTI=LocTopTIStart,LocTopType=LocTopTypeStart,chr=ChrStart,pos=PosStart,Orient=OrientStart,RefContext=RefContextStart,LE=LEStart,DBLength = DBLenStart,Assembled = ifelse(AsmbMatchStart=="MATCH","Assembled","NotAssembled")),
-               svData %>% mutate(LocTopTI=LocTopTIEnd,LocTopType=LocTopTypeEnd,chr=ChrEnd,pos=PosEnd,Orient=OrientEnd,RefContext=RefContextEnd,LE=LEEnd,DBLength = DBLenEnd, Assembled = ifelse(AsmbMatchEnd=="MATCH","Assembled","NotAssembled"))) 
+beData = rbind(svData %>% mutate(Arm=ArmStart,LnkLen=LnkLenStart,LocTopTI=LocTopTIStart,LocTopType=LocTopTypeStart,chr=ChrStart,pos=PosStart,Orient=OrientStart,RefContext=RefContextStart,LE=LEStart,DBLength = DBLenStart,Assembled = ifelse(AsmbMatchStart=="MATCH","Assembled","NotAssembled")),
+               svData %>% mutate(Arm=ArmEnd,LnkLen=LnkLenEnd,LocTopTI=LocTopTIEnd,LocTopType=LocTopTypeEnd,chr=ChrEnd,pos=PosEnd,Orient=OrientEnd,RefContext=RefContextEnd,LE=LEEnd,DBLength = DBLenEnd, Assembled = ifelse(AsmbMatchEnd=="MATCH","Assembled","NotAssembled"))) 
 dbData = beData %>% filter(DBLength>-1000) %>% mutate(DBLenBucket = ifelse(DBLength==0,0,ifelse(DBLength<0,-(2**round(log(-DBLength,2))),2**round(log(DBLength,2)))))
 
 #############################################
@@ -222,62 +217,103 @@ dbData = beData %>% filter(DBLength>-1000) %>% mutate(DBLenBucket = ifelse(DBLen
 #############################################
 
 # 1. By RESOLVED Type
-View(svData %>% filter(Subclonal=='false') %>% group_by(ResolvedType,Type) %>% tally() %>% spread(Type,n))
+View(svData %>% filter(Subclonal=='false',SampleId=='DRUP01060019T') %>% group_by(ResolvedType,ClusterDesc,Type) %>% tally() %>% spread(Type,n))
 
 # 2. By CLUSTERCOUNTBUCKET
-View(svData %>% filter(Subclonal=='false',ResolvedType!="Line") %>% group_by(ClusterCountBucket,Type) %>% tally() %>% spread(Type,n))
+View(svData %>% filter(Subclonal=='false') %>% group_by(ClusterCountBucket,ResolvedType) %>% tally() %>% spread(ClusterCountBucket,n))
 
 #3. Simple SV make up 70% of clusters but only 30% of SVs
 View(svClusters %>% filter(Subclonal=='false') %>% group_by(ResolvedType) %>% summarise(variants=sum(ClusterCount),clusters=n()))
+
+#############################################
+############### DUP #######################
+#############################################
+
+#0. Length distribution
+
+#1. NOVEL SHORT DUP SIG
+top30shortDUP = (svData %>% filter(ResolvedType=='SIMPLE',Type=='DUP',Length<1000) %>% 
+       group_by(SampleId,CancerType) %>% count() %>% as.data.frame() %>% top_n(50,n) %>% group_by(CancerType) %>% count % arrange(nn))
+ggplot(top30shortDUP, aes(x="", y=nn, fill=CancerType) )+ geom_bar(width = 1, stat = "identity") + coord_polar("y", start=0)+ labs(title = 'Top 30 short DUPsamples by cancer type')+
+  theme(axis.text.x=element_blank(),  
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        panel.border = element_blank(),
+        panel.grid=element_blank(),
+        axis.ticks = element_blank())
+
 
 ############################################################
 ########### Short TIs #####################################
 ############################################################
 #0. Numbers per sample
-ggplot(data=merge(svData %>% group_by(SampleId) %>% tally(),svLinks %>% 
-                    group_by(SampleId,shortTI=ifelse(TILength<1000,'ShortTICount','LongTICount')) %>% tally() %>% spread(shortTI,n),by='SampleId')) +
-  geom_point(aes(n,ShortTICount))
+
+ggplot(data=merge(svData %>% group_by(SampleId) %>% tally(),svLinks %>% group_by(SampleId,shortTI=ifelse(TILength<1000,'ShortTICount','LongTICount')) %>% tally() %>% spread(shortTI,n),by='SampleId'),aes(n,ShortTICount)) + geom_point()
 
 #1. TIs length distibution, showing 2 peaks for most types ('short', ie <1k and long -> presumed to be cause by random length of distance between breakages)
 ggplot(data=svLinks %>% filter(ResolvedType!='COMPLEX') %>% group_by(TILengthBucket,ResolvedType) %>% summarise(count=n()),
        aes(x=TILengthBucket))+geom_line(aes(y=count,colour='count'))+scale_x_log10()+ facet_wrap(~ResolvedType)
 
-#2. LONG LINE CLUSTER LENGTHS Issue
+#2. LONG LINE CLUSTER LENGTHS Issue - this is due to chaining.   Will be reomved
 ggplot(data=svLinks %>% filter(ResolvedType=='LINE') %>% group_by(TILengthBucket,ClusterCountBucket) %>% summarise(count=n()),
 aes(x=TILengthBucket))+geom_line(aes(y=count,colour='count'))+scale_x_log10()+ facet_wrap(~ClusterCountBucket)
 
 #3. SHORT TI actual shape
-ggplot(data=svLinks  %>% filter(TILength<5000) %>% mutate(TILengthBucket=round(TILength+0.001,-1)) %>% group_by(TILengthBucket) %>% summarise(count=n()),
+ggplot(data=svLinks  %>% filter(TILength<1000) %>% mutate(TILengthBucket=round(TILength+0.001,-1)) %>% group_by(TILengthBucket) %>% summarise(count=n()),
        aes(x=TILengthBucket))+geom_line(aes(y=count,colour='count'))+scale_y_log10()
 
 #4. Short TIs create 'synthetic' events that match the simpleSV event profile per sample
-scatterPlot(svSampleSummary,'countSimpleDEL','countDEL_EXT_TI',F,F) # DEL correlated with synthetic DEL
-scatterPlot(svSampleSummary,'countSimpleDUP','countDUP_EXT_TI',F,F)  # DUP correlated with synthetic DUP
-scatterPlot(svSampleSummary,'countSimpleDUP','countDUP_INT_TI',F,F)  # Int DUP correlated with synthetic DUP
-scatterPlot(svSampleSummary,'countSimpleDUPShort','countDUP_EXT_TIShort',F,F)  # Short DUP correlated with short synthetic DUP
-scatterPlot(svSampleSummary,'countSimpleDUPShort','countDUP_EXT_TILong',F,F)  # Short DUP correlated with short synthetic DUP
-scatterPlot(svSampleSummary,'countSimpleDUPLong','countDUP_EXT_TILong',F,F)  # Long DUP correlated with long synthetic DUP
-scatterPlot(svSampleSummary,'countSimpleDUPLong','countDUP_EXT_TIShort',F,F)  # Short DUP correlated with short synthetic DUP
+scatterPlot(svSampleSummary,'countSimpleDEL','countSYNTH_DEL',F,F) # DEL correlated with synthetic DEL
+scatterPlot(svSampleSummary,'countSimpleDUP','countSYNTH_DUP',F,F)  # DUP correlated with synthetic DUP
+scatterPlot(svSampleSummary,'countSimpleDEL','countRECIP_INV',F,F) # Simple DEL and DUP not highly correlated
+scatterPlot(svSampleSummary,'countSYNTH_DEL','countSYNTH_DUP',F,F)  # Synth
+scatterPlot(svSampleSummary,'countSimpleDUPMed','countSYNTH_DUPMed',F,F)  # Short DUP correlated with short synthetic DUP
+scatterPlot(svSampleSummary,'countSimpleDUPLong','countSYNTH_DUPLong',F,F)  # Short DUP correlated with short synthetic DUP
+scatterPlot(svSampleSummary,'countSimpleDELLong','countSYNTH_DELLong',F,F)  # Long synthetic DEL not really correlated with long del
+scatterPlot(svSampleSummary,'countSimpleDELShortMed','countSYNTH_DELShortMed',F,F)  # Short DUP correlated with short synthetic DUP
 
-#5. Synthetic Length Distributions
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType=='DEL_INT_TI'",'SynDelDupLenBucket,SynDelDupTILenBucket'),'SynDelDupTILenBucket','SynDelDupLenBucket','DEL_INT_TI',useLogY =F)
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType=='DEL_EXT_TI'",'SynDelDupLenBucket,SynDelDupTILenBucket'),'SynDelDupTILenBucket','SynDelDupLenBucket','DEL_EXT_TI',useLogY =F)
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType=='DUP_EXT_TI'",'SynDelDupLenBucket,SynDelDupTILenBucket'),'SynDelDupTILenBucket','SynDelDupLenBucket','DUP_EXT_TI',useLogY =F)
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType=='DUP_INT_TI'",'SynDelDupLenBucket,SynDelDupTILenBucket'),'SynDelDupTILenBucket','SynDelDupLenBucket','DUP_INT_TI',useLogY =F)
+##############################################################
+########## RECIPROCAL EVEBTS ####################
+#############################################################
+#1. Reciprocal DELS Correlated with DUPS
+scatterPlot(svSampleSummary,'countSimpleDUP','countRECIP_DUPS',F,F)  # Recip DUP correlated with short synthetic DUP
 
+#2. Reciprocal DUPSS Not correlated with other reciprocal types
+scatterPlot(svSampleSummary,'countRECIP_DUPS','countRECIP_INV',F,F)  # Recip DUP not correlated with RECIP_INV
+scatterPlot(svSampleSummary,'countSimpleDELShortMed','countRECIP_TRANS',F,F)  # Recip DUP not correlated with RECIP_INV
+scatterPlot(svSampleSummary,'countRECIP_TRANS','countRECIP_DUPS',F,F)  # Recip DUP not correlated with RECIP_INV
+
+#3. Reciprocal INV NOT enriched in typical DEL lengths OR FS!
+plot_count_by_bucket_and_type(cohortSummary(svData,"Subclonal=='false',ResolvedType=='SIMPLE'|ResolvedType=='RECIP_INV',ClusterCou",'IsFS,LengthBucket'),'LengthBucket','IsFS','Reciprocal Inversions and SimpleSV by IsFS (log scale)',useLogY =T )
+
+plot_count_by_bucket_and_type(cohortSummary(svData,"Subclonal=='false',ResolvedType=='RECIP_TRANS'",'IsFS,LengthBucket'),'LengthBucket','IsFS','Reciprocal Inversions and SimpleSV by IsFS (log scale)',useLogY =T )
+
+
+############################################################
+########### Reciprocal Translocations ######################
+############################################################
+
+# TO DO:  show the length distribution and come up with a standardised definition
+plot_count_by_bucket_and_type(cohortSummary(svData,"Subclonal=='false',ResolvedType=='RECIP_TRANS'",'CancerType,NearestLenBucket') 
+                              ,'NearestLenBucket','CancerType','Reciprical Trans',useLogY =F )
+
+# TO DO: How to find synthetic RTs?
 
 ##############################################################
 ########## Short Deletion Bridge Analysis ####################
 #############################################################
 
 ##### TEMP
+plot_count_by_bucket_and_type(cohortSummary(dbData, "LnkLen<1e5,Subclonal=='false',ResolvedType=='RECIP_DUP_DEL'",'LnkLen=round(LnkLen,-2),ClusterCountBucket'),
+                              'LnkLen','ClusterCountBucket','DBLengthByResolvedType(<=100bases)',useLogX = T,useLogY = T)
+plot_count_by_bucket_and_type(cohortSummary(dbData, "DBLength<2e4,Subclonal=='false',ResolvedType=='RECIP_DUP_DEL'",'DBLength=round(DBLength,-2),ClusterCountBucket'),
+                              'DBLength','ClusterCountBucket','DBLengthByResolvedType(<=100bases)',useLogX = T,useLogY = T)
 
 #### WHY???
 plot_count_by_bucket_and_type(cohortSummary(dbData, "DBLength<=100,DBLength>=-100,Subclonal=='false',ResolvedType=='COMPLEX',LocTopType=='DSB',LocTopTI<3",'DBLength,LocTopTI'),
                               'DBLength','LocTopTI','DBLengthByResolvedType(<=100bases)',useLogX = F,useLogY = F)
 
-View(svData %>% filter(DBLenStart==0,DBLenEnd==0,Subclonal=='false',ResolvedType=='COMPLEX',LocTopTypeStart=='DSB',LocTopTypeEnd=='DSB',ClusterDesc =='INV=4')
-     %>%select(Length,everything()))#
+
 
 
 View(svData %>% filter(DBLenStart==0,DBLenEnd==0,Subclonal=='false',ResolvedType=='COMPLEX')
@@ -305,10 +341,10 @@ plot_count_by_bucket_and_type(cohortSummary(dbData,"Type!='BND',DBLength>-50,DBL
 plot_count_by_bucket_and_type(cohortSummary(dbData,"Type!='BND',DBLength>-50,DBLength<=50,Subclonal=='false',Length<1e7,ResolvedType=='COMPLEX'",'DBLength,LocTopType'),'DBLength','LocTopType','DBLength for short variants in COMPLEX clusters by length bucket',useLogX = F,useLogY = F)
 
 
-#3 DUP EXT_TI which are likely LINE
-plot_count_by_bucket_and_type(cohortSummary(dbData %>% filter(ResolvedType=='DUP_EXT_TI'),
-                                            "SynDelDupLen<=30,Subclonal=='false'",'SynDelDupLen,IsPolyA'),
-                              'SynDelDupLen','IsPolyA','SyntheticDelDupLength',useLogX = F,useLogY = F)
+#3 SYNTH_DUP which are likely LINE
+plot_count_by_bucket_and_type(cohortSummary(dbData %>% filter(ResolvedType=='SYNTH_DUP'),
+                                            "SyntheticLen<=100,Subclonal=='false'",'SyntheticLen,IsPolyA'),
+                              'SyntheticLen','IsPolyA','SyntheticDelDupLength',useLogX = F,useLogY = F)
 
 #4. SOME SINGLES in COMPLEX 2 clusters and above LOOK LIKE LINE
 plot_count_by_bucket_and_type(cohortSummary(dbData, "DBLength<=100,DBLength>=-100,Subclonal=='false',LocTopType=='DSB',LE=='None',ClusterCount==2,ResolvedType=='COMPLEX'",'DBLength,ClusterDesc'),
@@ -334,7 +370,7 @@ View(svClusters %>% filter(Foldbacks>0) %>% group_by(Subclonal,Foldbacks) %>% ta
 #1.Foldback length distribution for simple inversions short chained foldbacks
 print(ggplot(data = foldbacks %>% filter(Subclonal=='false') %>% group_by(FoldbackLenBucket,FoldbackType) %>% summarise(Count=n()) %>% spread(FoldbackType,Count), 
              aes(x=FoldbackLenBucket, y=Count))
-      + geom_line(aes(y=INV, colour='INV')) + geom_line(aes(y=Combo, colour='Chain' )) 
+      + geom_line(aes(y=INV, colour='Simple')) + geom_line(aes(y=Combo, colour='Synthetic' )) 
       + theme_bw()
       + theme(panel.grid.major = element_line(colour="grey", size=0.5),panel.grid.minor.x = element_line(colour="grey", size=0.5))
       + scale_x_log10() + labs(title = "Foldback Length Distribution"))
@@ -343,11 +379,12 @@ print(ggplot(data = foldbacks %>% filter(Subclonal=='false') %>% group_by(Foldba
 # TO DO: WHAT DO WE WANT TO DO WITH OUR DETAILED FB analysis?
 # B. When we have 2 FB how often are they facing each other?
 # C. How often is the most telomeric FB facing to the centromere
-
+View(merge(foldbacks %>% filter(Subclonal=='false') %>% group_by(SampleId,ChrStart,ArmStart) %>% count %>% group_by(SampleId) %>% count,sampleList,by='SampleId',all = T)%>%replace.na(0))
 #2. Per sample counts (needs work)
-temp=(svData %>% filter(Subclonal=='false',IsFoldBack,ClusterCount>0) %>% group_by(SampleId,ClusterId,ClusterCount) %>% summarise(FBCount=sum(ifelse(IsFoldBack,1,0)),maxPloidy=max(Ploidy)))
-View(temp %>% group_by(SampleId) %>% count)
-scatterPlot(temp,'FBCount','maxPloidy',F,T)
+ggplot(data=merge(foldbacks %>% filter(Subclonal=='false') %>% group_by(SampleId,ChrStart,ArmStart) %>% count %>% group_by(SampleId) %>% count,sampleList,by='SampleId',all = T,fill=0)
+                  ,aes(nn)) + stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # Foldbacks  per Sample')
+ggplot(data=svClusters %>% group_by(SampleId) %>% summarise(Foldbacks=sum(Foldbacks)),aes(Foldbacks)) + stat_ecdf(geom = "step", pad = FALSE) + ylim(0,1) + labs(title = 'CDF # Foldbacks  per Sample')
+
 
 # LOCATION
 telomereOrientedFB=(svData %>% filter(CancerType!='ABreast',Subclonal=='false',IsFoldBack,Type=='INV',PosEnd-PosStart<1e4) %>% mutate(nrows=n(),FBOrient=ifelse(OrientStart*ifelse(ArmStart=='P',1,-1)==1,'TELOMERE','CENTROMERE')) %>% filter(FBOrient=="TELOMERE") %>% group_by(chr=ChrStart,pos=round(PosStart,-6),nrows) %>% summarise(n=n(),avgRep=mean(RepOriginStart)) %>% mutate(p=ppois(n,nrows/2.8e9*1e6,FALSE),q=p.adjust(p,"BH",2.8e9/1e6)))
@@ -397,7 +434,7 @@ scatterPlot(LineClusters,'countAllSuspected','countPOLYA',F,F)
 
 svPseudoGeneLinks = svLinks %>% filter(ExonMatch!='') %>% separate(ExonMatch,c('transcriptId','exonRank','exonLength','other')) #what is the last field in the ExonMatch?
 
-#1. 440 events
+#1. 479 events
 View(svPseudoGeneLinks %>% group_by(SampleId,ClusterId,GeneStart,GeneEnd,transcriptId) %>% summarise(count=n(),minExon=min(as.numeric(exonRank)),maxExon=max(as.numeric(exonRank)),range=maxExon-minExon+1))
 
 #2. found in 6% of samples - nearly all with highly activated LINE elements
@@ -407,34 +444,15 @@ View(merge(merge(svPseudoGeneLinks %>% group_by(SampleId,ClusterId,GeneStart,Gen
 
 ##TO DO: Create circos charts with gene transcripts for further analysis
 
-############################################################
-########### Reciprocal Inversions ##########################
-############################################################
-
-# #1. Reciprocal inv
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType %in% c('DEL_INT_TI','RECIP_INV'),Subclonal=='false'",'ResolvedType,LengthBucket') 
-                              ,'LengthBucket','ResolvedType','Reciprical INV',useLogY =F )
-
-#2. Reciprocal INV NOT enriched in typical DEL lengths OR FS!
-plot_count_by_bucket_and_type(cohortSummary(svData,"Subclonal=='false',ResolvedType=='SIMPLE'|ResolvedType=='RECIP_INV'",'IsFS,LengthBucket'),'LengthBucket','IsFS','Reciprocal Inversions and SimpleSV by IsFS (log scale)',useLogY =T )
 
 
-############################################################
-########### Reciprocal Translocations ######################
-############################################################
-
-# TO DO:  show the length distribution and come up with a standardised definition
-plot_count_by_bucket_and_type(cohortSummary(svData,"Subclonal=='false',ResolvedType=='RECIP_TRANS'",'CancerType,NearestLenBucket') 
-                              ,'NearestLenBucket','CancerType','Reciprical Trans',useLogY =F )
-
-# TO DO: How to find synthetic RTs?
 
 ##############################################################
 ########## FRAGILE SITE ######################################
 ##############################################################
 
 #1. Fragile Site Length Distribution
-plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType %in% c('SIMPLE','RECIP_INV')","LengthBucket,IsFS"),'LengthBucket','IsFS','Length Distribution of SimpleSV & Reciprocal Inversion by IsFS',useLogY =F)
+plot_count_by_bucket_and_type(cohortSummary(svData,"ResolvedType %in% c('SIMPLE','RECIP_INV'),Type!='BND',Type!='SGL'","LengthBucket,IsFS"),'LengthBucket','IsFS','Length Distribution of SimpleSV & Reciprocal Inversion by IsFS',useLogY =T)
 
 #2. FS like length dels outside FS are correlated, but not all 20k-500k are FS Dels eg. CPCT02300036T and CPCT02190030T
 # TODO: COLOUR this plot by cancer type
@@ -548,8 +566,8 @@ ggplot(data=svData %>% filter(ResolvedType=='SIMPLE',PosEnd-PosStart>20000,PosEn
   ylim(0,1) + labs(title = 'CDF # of FS length DELs')
 
 #CHECK
-scatterPlot(svData %>% filter(ResolvedType=='DEL_EXT_TI',Type=='BND') %>% mutate(diff=SynDelDupLen-SynDelDupAvgTILen),'SynDelDupLen','diff',F,F) 
-scatterPlot(svData %>% filter(ResolvedType=='DEL_EXT_TI',Type!='BND'),'SynDelDupLen','SynDelDupAvgTILen',F,F) 
-scatterPlot(svData %>% filter(ResolvedType=='DUP_EXT_TI',Type=='BND'),'SynDelDupLen','SynDelDupAvgTILen',F,F) 
+scatterPlot(svData %>% filter(ResolvedType=='DEL_EXT_TI',Type=='BND') %>% mutate(diff=SyntheticLen-SyntheticTILen),'SyntheticLen','diff',F,F) 
+scatterPlot(svData %>% filter(ResolvedType=='DEL_EXT_TI',Type!='BND'),'SyntheticLen','SyntheticTILen',F,F) 
+scatterPlot(svData %>% filter(ResolvedType=='DUP_EXT_TI',Type=='BND'),'SyntheticLen','SyntheticTILen',F,F) 
 
 
