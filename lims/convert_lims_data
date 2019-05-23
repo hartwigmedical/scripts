@@ -466,10 +466,11 @@ sub processSamp{
         
         my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
         next if isSkipValue( $sample_name );
-        my $sample_id = $row_info->{ 'sample_id' } or print Dumper($row_info) and die "No sample_id in row_info ($sample_name)";
-        my $submission = $row_info->{ 'submission' } or print Dumper($row_info) and die "No submission in row_info ($sample_name)";
-        my $analysis_type = $row_info->{ 'analysis_type' } or print Dumper($row_info) and die "No analysis_type in row_info ($sample_name)";
-        
+
+        my $sample_id = $row_info->{ 'sample_id' } or warn "[WARN] SKIPPING sample ($sample_name): No sample_id found" and next;
+        my $submission = $row_info->{ 'submission' } or warn "[WARN] SKIPPING sample ($sample_name): No submission found" and next;
+        my $analysis_type = $row_info->{ 'analysis_type' } or warn "[WARN] SKIPPING sample ($sample_name): No analysis_type found" and next;
+
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
         $row_info->{ 'entity' } = $row_info->{ 'submission' };
@@ -514,7 +515,8 @@ sub processSamp{
             next;
         }
         else {
-            die "[EXIT] Sample ($sample_name) has unknown analysis type ($analysis_type)\n";
+            warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
+            next;
         }
         
         ## add submission info and parse KG
@@ -540,11 +542,11 @@ sub processSamp{
 
         ## checks before storing
         my $regex = '^[0-9a-zA-Z\-]*$';
-        die "[EXIT] FIX IN LAB LIMS: sample_name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
-        die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
-        die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
-        die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
-        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info->{ 'project_name' };        
+        warn "[WARN] SKIPPING sample ($sample_name): sample_name contains unacceptable chars\n" and next if $sample_name !~ /$regex/;
+        warn "[WARN] SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars\n" and next if $sample_id !~ /$regex/;
+        warn "[WARN] SKIPPING sample ($sample_name): no submission defined for sample\n" and next unless $row_info->{ 'submission' };
+        warn "[WARN] SKIPPING sample ($sample_name): no analysis type defined for sample\n" and next unless $row_info->{ 'analysis_type' };
+        warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };        
         
         ## store at uniqe id
         next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
