@@ -9,6 +9,7 @@ if [[ -d ${submissionDir} ]]; then
   echo "[INFO] Submission directory already exists (${submissionDir})"
 fi
 
+      analysisType=$( query_lims -type submissions -json | jq -r ".[] | select(.submission == \"${submission}\") | .analysis_type" )
   totalLimsSamples=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
    totalLimsFailed=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep Failed | wc -l )
       totalSamples=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
@@ -17,6 +18,7 @@ fi
 totalRunsValidated=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -v "^#" | wc -l )
      totalRunsDone=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated|Failed|SnpCheck" | grep -v "^#" | wc -l )
 
+echo "[INFO] Analysis type for $submission in lims is \"$analysisType\""
 echo "[INFO] $totalLimsSamples samples found in LIMS (of which ${totalLimsFailed} are failed by lab)"
 echo "[INFO] $totalSamplesReady samples ready at SBP (of total $totalSamples)"
 echo "[INFO] $totalRunsDone runs finished at SBP (of total $totalRuns)"
