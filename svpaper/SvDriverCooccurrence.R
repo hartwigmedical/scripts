@@ -1,4 +1,6 @@
 library(cowplot)
+library(ggrepel)
+
 library("scales")
 
 theme_set(theme_bw() + theme(
@@ -35,7 +37,8 @@ left_plot <- function(df, breaks, limits) {
   p2 = ggplot(data = df, aes(x = QValue, y = correlation)) +
     geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
     geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-    geom_text(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, nudge_y = df$nudge) +
+    #geom_text(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, nudge_y = df$nudge) +
+    geom_text_repel(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, direction = "y", nudge_y = -0.1) +
     scale_color_manual(values = cancerTypeColours) +
     scale_x_continuous(trans=reverselog_trans(10), breaks = breaks, limits = limits, position = "top") +
     scale_y_continuous(limits = c(-2,0), breaks = c(0), expand = c(0,0)) +
@@ -52,7 +55,8 @@ right_plot <- function(df, breaks, limits) {
   p1 = ggplot(data = df, aes(x = QValue, y = correlation)) +
     geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
     geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-    geom_text(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, nudge_y = df$nudge) +
+    #geom_text(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, nudge_y = df$nudge) +
+    geom_text_repel(aes(label = label), size = 5 * 24.5/72, hjust=df$hjust, direction = "y", nudge_y = 0.1) +
     scale_color_manual(values = cancerTypeColours) +
     scale_x_continuous(trans=reverselog_trans(10), breaks = breaks, limits = limits, position = "bottom") +
     scale_y_continuous(limits = c(0,2), breaks = c(0), expand = c(0,0)) +
@@ -81,24 +85,29 @@ plot_side_by_side <- function(df, title) {
   p2 = right_plot(df, breaks = c(1e-4,1e-6, 1e-8, 1e-10,1e-12, 1e-14, 1e-16), limits = c(1e-3, 1e-17)) +
     annotate("text", y = 0.3, x = 1e-17, label = "Positive Correlation" , size =  6 * 24.5/72, hjust = 0) 
   
-  p3 = left_plot(df, breaks = c(0.05, 0.0015, 0.0025, 0.0035), limits = c(0.05, 0.0035)) +
+  p3 = left_plot(df, breaks = c(0.05, 0.0015, 0.0025, 0.003), limits = c(0.05, 0.003)) +
     theme(legend.position = "none") +
-    annotate("text", y = -0.3, x = 0.0035, label = "Negative Correlation" , size =  6 * 24.5/72, hjust = 1) 
+    annotate("text", y = -0.3, x = 0.003, label = "Negative Correlation" , size =  6 * 24.5/72, hjust = 1) 
   
-  p4 = right_plot(df, breaks = c(0.05, 0.0015, 0.0025, 0.0035), limits = c(0.05, 0.0035)) +
-    annotate("text", y = 0.3, x = 0.0035, label = "Positive Correlation" , size =  6 * 24.5/72, hjust = 0) 
+  p4 = right_plot(df, breaks = c(0.05, 0.0015, 0.0025, 0.003), limits = c(0.05, 0.003)) +
+    annotate("text", y = 0.3, x = 0.003, label = "Positive Correlation" , size =  6 * 24.5/72, hjust = 0) 
   
   p1234 = plot_grid(p1, p2, p3, p4, nrow = 1)
   pFinal = plot_grid(p1234, legend, ncol = 1, rel_heights = c(7,1), labels = c(title, ""), label_size = 8)
   
   return(pFinal)
 }
-
-pDup = plot_side_by_side(cooccurenceData %>% filter(grepl("DUP", Category)), "DUP")
 pDel =  plot_side_by_side(cooccurenceData %>% filter(grepl("DEL", Category)), "DEL")
+pDup = plot_side_by_side(cooccurenceData %>% filter(grepl("DUP", Category)), "DUP")
 pLine =  plot_side_by_side(cooccurenceData %>% filter(grepl("LINE", Category)), "LINE")
+
+
 
 ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DupCooccurrence.pdf", pDup, width = 189, height = 140, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DelCooccurrence.pdf", pDel, width = 189, height = 140, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/analysis/svPaper/plot/LineCooccurrence.pdf", pLine, width = 189, height = 140, units = "mm", dpi = 300)
+
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DupCooccurrence.png", pDup, width = 189, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DelCooccurrence.png", pDel, width = 189, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/LineCooccurrence.png", pLine, width = 189, height = 140, units = "mm", dpi = 300)
 
