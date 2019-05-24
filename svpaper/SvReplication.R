@@ -85,6 +85,14 @@ plot_replication <- function(df) {
     facet_wrap( ~subtype, nrow = 3) + xlab("Replication") + ylab("Factor")
 }
 
+
+delReplicationPlot = plot_replication(normalisedHist %>% filter(grepl("Del", subtype)))
+ggsave("~/hmf/analysis/svPaper/plot/delReplication.png", delReplicationPlot, width = 183, height = 120, units = "mm", dpi = 300)
+
+dupReplicationPlot = plot_replication(normalisedHist %>% filter(grepl("Dup", subtype)))
+ggsave("~/hmf/analysis/svPaper/plot/dupReplication.png", dupReplicationPlot, width = 183, height = 120, units = "mm", dpi = 300)
+
+
 simplePlot = plot_replication(normalisedHist %>% filter(grepl("Dup", subtype) | grepl("Del", subtype)))
 ggsave("~/hmf/analysis/svPaper/plot/simpleReplication.png", simplePlot, width = 183, height = 161, units = "mm", dpi = 300)
 ggsave("~/hmf/analysis/svPaper/plot/simpleReplication.pdf", simplePlot, width = 183, height = 161, units = "mm", dpi = 300)
