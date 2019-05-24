@@ -1,8 +1,16 @@
 #!/bin/bash
+scriptName=$( basename $0 )
 
-searchString=$1
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName CPCT02010001"
+  echo "        $scriptName FR12345678"
+  echo "---"
+  exit 1
+fi
 
 ## init
+searchString=$1
 function join_by { local IFS="$1"; shift; echo "$*"; }
 matchFields=(sample_name sample_id patient)
 matchFieldsString=$(join_by "|" "${matchFields[@]}")
