@@ -77,7 +77,7 @@ save(highestPurityCohort, file = "~/hmf/analysis/genepanel/highestPurityCohort.R
 save(cohort, highestPurityCohort, multipleBiopsyMapping, file = "~/hmf/analysis/genepanel/cohort.RData")
 
 
-load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/cohort/highestPurityCohort.RData")
 cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(n)
 sum(!is.na(multipleBiopsyMapping %>% select(-patientId, -Sample1)))
 
@@ -85,8 +85,12 @@ sum(!is.na(multipleBiopsyMapping %>% select(-patientId, -Sample1)))
 sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
 svQuery = paste0("select * from structuralVariant where filter = 'PASS' AND sampleId in (",sampleIdString, ")")
 hpcStructuralVariants = dbGetQuery(dbProd, svQuery)
-save(hpcStructuralVariants, file = "~/hmf/analysis/genepanel/hpcStructuralVariants.RData")
+save(hpcStructuralVariants, file = "~/hmf/analysis/cohort/hpcStructuralVariants.RData")
 
+
+svQuery = paste0("select * from structuralVariant where filter = 'INFERRED' AND sampleId in (",sampleIdString, ")")
+hpcInferredStructuralVariants = dbGetQuery(dbProd, svQuery)
+save(hpcInferredStructuralVariants, file = "~/hmf/analysis/cohort/hpcInferredStructuralVariants.RData")
 
 ########### Somatics Counts ########### 
 sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
