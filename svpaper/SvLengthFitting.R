@@ -1,8 +1,8 @@
 library(RMySQL)
+library(GenomicRanges)
 library(purple)
 library(tidyr)
 library(dplyr)
-library(GenomicRanges)
 library(ggplot2)
 library(cowplot)
 theme_set(theme_bw())
@@ -53,7 +53,7 @@ peaks <- function(sampleId, x, y) {
 
 
 allSvs = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
-load(file = "/Users/jon/hmf/analysis/svPaper/cohort.RData")
+load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
 hpcSvs = allSvs %>% filter(SampleId %in% highestPurityCohort$sampleId)
 
 #rm(list=setdiff(ls(), c("hpcSvs", "peaks")))
