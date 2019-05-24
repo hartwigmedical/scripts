@@ -61,6 +61,33 @@ patient_mapping <- function(sampleMapping) {
   return (patientMapping)
 }
 
+
+
+#### EXPERIMENTAL
+uhoh = read.table(file = "~/hmf/resources/idgenerator/anonymized.csv", header = F, stringsAsFactors = F, sep = ",")
+
+existingMapping = read.table(file = "~/hmf/resources/idgenerator/patient_mapping.csv", header = F, stringsAsFactors = F, sep = ",") %>%
+  select(From = V1, To = V2)
+
+previouslyMappedSamples = read.table(file = "~/hmf/resources/idgenerator/samples.csv", header = F, stringsAsFactors = F, sep = ",") %>%
+  select(sampleId = V1) %>% mutate(match = T)
+
+
+patientMapping = sampleMapping %>% 
+  left_join(previouslyMappedSamples %>% select(sample1 = sampleId, sample1Prior = match), by = "sample1") %>%
+  left_join(previouslyMappedSamples %>% select(sample2 = sampleId, sample2Prior = match), by = "sample2") %>%
+  mutate(sample1Prior = ifelse(is.na(sample1Prior), F, T), sample2Prior = ifelse(is.na(sample2Prior), F, T)) %>%
+  mutate(patient1 = substr(sample1, 1, 12), patient2 = substr(sample2, 1, 12)) %>%
+  filter(patient1 != patient2) %>% 
+  mutate(from = ifelse(patient1 > patient2, patient1, patient2), to = ifelse(patient1 > patient2, patient2, patient1))
+  group_by(from, to) %>% summarise(matchPercent = max(matchPercent)) %>%
+  group_by(to) %>% mutate(to_n = n()) %>% 
+  group_by(from) %>% mutate(from_n = n())
+#### EXPERIMENTAL
+
+
+
+
 load(file = "~/hmf/analysis/amberancestry/amberBafs.RData")
 amberSamples = unique(amberBafs$sampleId)
 date()
