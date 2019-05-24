@@ -53,7 +53,7 @@ load("~/hmf/RData/Processed/hpcDriversByGene.RData")
 genesToExamine = hpcDriversByGene %>% filter(driver %in% c("Amplification"), !grepl("telomere", gene), !grepl("centromere", gene)) %>%
   group_by(gene) %>% count()  %>% arrange(gene)
 
-hpcCopyNumbers = hpcCopyNumbers %>% left_join(allPurity[, c("sampleId", "ploidy")], by = "sampleId")
+hpcCopyNumbers = hpcCopyNumbers %>% left_join(highestPurityCohort[, c("sampleId", "ploidy")], by = "sampleId")
 
 create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
   primaryGene = canonicalTranscripts %>% filter(gene == geneName)
@@ -132,18 +132,18 @@ dev.off()
 
 ########## DELETES ########## 
 
+maxEnd = 61467686
 
-create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
+create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers, maxEnd = NA) {
     primaryGene = canonicalTranscripts %>% filter(gene == geneName)
     geneCopyNumbers = hpcCopyNumbers %>% filter(chromosome == primaryGene$chromosome, start <= primaryGene$geneEnd, end >= primaryGene$geneStart, copyNumber <= 0.5)
     strictGeneCopyNumbers = hpcCopyNumbers %>% filter(chromosome == primaryGene$chromosome, start <= primaryGene$geneEnd, end >= primaryGene$geneStart, copyNumber <= 0.2)
     
     minStart = min(geneCopyNumbers$start)
-    maxEnd = max(geneCopyNumbers$end)
+    maxEnd = ifelse(is.na(maxEnd), max(geneCopyNumbers$end), maxEnd)
 
-    geneHistogramData = create_histogram_data(geneCopyNumbers)
     strictHistogramData = create_histogram_data(strictGeneCopyNumbers)
-    
+    geneHistogramData = create_histogram_data(geneCopyNumbers)
     geneHistogramMax = max(geneHistogramData$y)
 
     overlappingGenes = canonicalTranscripts %>% filter(chromosome == primaryGene$chromosome, geneStart <= maxEnd + 20000, geneEnd >= minStart - 20000) %>%
@@ -156,18 +156,25 @@ create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers) {
         geom_rect(data=overlappingGenes, aes(xmin = geneStart, xmax = geneEnd, ymin = 0, ymax = value, fill = gene), alpha = 0.5) +
         geom_text(data=overlappingGenes, aes(x = (geneStart + geneEnd)/2, y = value, label = gene), hjust = 0.5, size = 2, nudge_y = 0.5) +
         theme(legend.position="none") +  xlab("Position") + ylab("Deletes") + ggtitle(paste0(geneName, " (range=", approximate_distance(minStart, maxEnd), ")"))
-
+    
     return (p)
 }
 
+pFIT = create_plot("FHIT", canonicalTranscripts %>% filter(gene == "FHIT"), hpcCopyNumbers, 61467686)  +  coord_cartesian(xlim = c(59425278, 61403445))
+pMacrod = create_plot("MACROD2", canonicalTranscripts%>% filter(grepl("MACROD", gene)), hpcCopyNumbers)
+pwwox = create_plot("WWOX", canonicalTranscripts %>% filter(gene == "WWOX"), hpcCopyNumbers) +  coord_cartesian(xlim = c(78134148, 79285923))
+
+pDelSpots = plot_grid(pFIT, pwwox, pMacrod, nrow = 1)
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DelSpots.pdf", pDelSpots, width = 189, height = 80, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/DelSpots.png", pDelSpots, width = 189, height = 80, units = "mm", dpi = 300)
 
 
-load("~/hmf/RData/Reference/allPurity.RData")
-load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
-load("~/hmf/RData/Reference/canonicalTranscripts.RData")
-essential = read.csv(file = "/Users/jon/hmf/analysis/essential/NIHMS732683-supplement-supp_table_3.csv", stringsAsFactors = F) %>%
-    select(gene = Gene, pValue = KBM7.adjusted.p.value) %>% mutate(pValue = paste0(round(pValue, 2)))
-canonicalTranscripts = canonicalTranscripts %>% left_join(essential, by = "gene")
+#load("~/hmf/RData/Reference/allPurity.RData")
+#load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
+#load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+#essential = read.csv(file = "/Users/jon/hmf/analysis/essential/NIHMS732683-supplement-supp_table_3.csv", stringsAsFactors = F) %>%
+#    select(gene = Gene, pValue = KBM7.adjusted.p.value) %>% mutate(pValue = paste0(round(pValue, 2)))
+#canonicalTranscripts = canonicalTranscripts %>% left_join(essential, by = "gene")
 
 load("~/hmf/RData/Processed/hpcDriversByGene.RData")
 genesToExamine = hpcDriversByGene %>% filter(driver %in% c("Deletion","FragileDel")) %>% select(gene) %>% distinct() %>% filter(!grepl("telomere", gene), !grepl("centromere", gene))  %>% arrange(gene)
@@ -190,7 +197,9 @@ for (i in 1:length(plots)) {
 dev.off()
 
 
-geneName = "TP53"
+geneName = "FHIT"
+create_plot("FHIT" , canonicalTranscripts, hpcCopyNumbers) 
+create_plot("FHIT" , canonicalTranscripts, hpcCopyNumbers, 61467686) 
 create_plot("TP53" , canonicalTranscripts, hpcCopyNumbers)
 create_plot("PTEN" , canonicalTranscripts, hpcCopyNumbers)
 create_plot("CDKN1B" , canonicalTranscripts, hpcCopyNumbers)
@@ -216,12 +225,12 @@ query_transcripts <- function(dbConnect, genes) {
 #rm(dbProd)
 #save(transcripts, file = "/Users/jon/hmf/analysis/essential/transcripts.RData")
 
-load("~/hmf/RData/Reference/allPurity.RData")
-load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
-load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+load("~/hmf/analysis/cohort/cohort.RData")
+load("~/hmf/analysis/cohort/hpcCopyNumbers.RData")
+load("~/hmf/analysis/cohort/canonicalTranscripts.RData")
 load(file = "/Users/jon/hmf/analysis/essential/transcripts.RData")
 
-hpcCopyNumbers = hpcCopyNumbers %>% left_join(allPurity[, c("sampleId", "cancerType")], by = "sampleId")
+hpcCopyNumbers = hpcCopyNumbers %>% left_join(cohort[, c("sampleId", "cancerType")], by = "sampleId")
 
 create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers, transcripts) {
   
@@ -242,6 +251,9 @@ create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers, transcri
     geneHistogramData = bind_rows(cancerTypeResult, geneHistogramData)
   }
   
+  cancersToInclude = geneHistogramData %>% group_by(cancerType) %>% summarise(n = max(y)) %>% filter(n > 4)
+  geneHistogramData = geneHistogramData %>% filter(cancerType %in% cancersToInclude$cancerType)
+  
   geneHistogramMax = max(geneHistogramData$y)
   
   overlappingTranscripts = transcripts %>%
@@ -261,7 +273,7 @@ create_plot <- function(geneName, canonicalTranscripts, hpcCopyNumbers, transcri
   return (p)
 }
 
-create_plot("FHIT", canonicalTranscripts, hpcCopyNumbers, transcripts)
+create_plot("DMD", canonicalTranscripts, hpcCopyNumbers, transcripts)
 
 plots = list()
 for (geneName in unique(transcripts$gene)) {
@@ -278,8 +290,8 @@ dev.off()
 
 #######  VIOLIN PLOT OF LENGTH OF DELS
 load("~/hmf/RData/Processed/hpcDriversByGene.RData")
-load("~/hmf/RData/Reference/hpcCopyNumbers.RData")
-load("~/hmf/RData/Reference/canonicalTranscripts.RData")
+load("~/hmf/analysis/cohort/hpcCopyNumbers.RData")
+load("~/hmf/analysis/cohort/canonicalTranscripts.RData")
 genesToExamine = hpcDriversByGene %>% 
   filter(driver %in% c("Deletion","FragileDel"), !grepl("telomere", gene), !grepl("centromere", gene)) %>% 
   group_by(gene, driver) %>% 
