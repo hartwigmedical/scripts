@@ -117,7 +117,10 @@ save(bins_100k, bins_1M, bins_10M, file = "/Users/jon/hmf/analysis/svPaper/binSi
 
 load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
 svData = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
+svClusters = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_CLUSTERS.csv") %>% select(SampleId, ClusterId, Subclonal, Synthetic)
+
 svData = svData %>%
+  left_join(svClusters, by = c("SampleId","ClusterId")) %>%
   filter(SampleId %in% highestPurityCohort$sampleId) %>%
   mutate(
     subtype = "Unknown",
@@ -134,10 +137,15 @@ svData = svData %>%
     subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
     
     isSimpleFoldback = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV",
-    isShortTI = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000)
+    isSimpleFoldbackLeft = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV" & OrientStart == 1,
+    isSimpleFoldbackRight = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV" & OrientStart == -1,
+    
+    isShortTI = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000,
+    isShortTIBND2 = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000 & ResolvedType!='LINE' & ClusterDesc=='BND=2')
+
 save(svData, file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
 
-svData %>% group_by(subtype) %>% count()
+svData %>% group_by(isSimpleFoldbackRight) %>% count()
 
 
 load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
@@ -149,6 +157,24 @@ hpcSimpleSv = svData %>%
 hpcFeatureSv =  svData %>% 
   filter(isSimpleFoldback | isShortTI) %>%
   mutate(subtype = ifelse(isSimpleFoldback, "Foldback", "ShortTI")) %>% 
+  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
+
+hpcFeatureSv2 =  svData %>% 
+  filter(isShortTIBND2) %>%
+  mutate(subtype = "ShortTIBND2") %>% 
+  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
+
+hpcFeatureSv3 =  svData %>% 
+  filter(isSimpleFoldbackLeft) %>%
+  mutate(subtype = "FoldbackLeft") %>% 
+  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
+  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
+
+hpcFeatureSv4 =  svData %>% 
+  filter(isSimpleFoldbackRight) %>%
+  mutate(subtype = "FoldbackRight") %>% 
   mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
   select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
 
@@ -165,6 +191,9 @@ hpcLineElementEnd = svData %>%
 hpcSvs = bind_rows(hpcSimpleSv, hpcFeatureSv)
 hpcSvs = bind_rows(hpcSvs, hpcLineElementStart)
 hpcSvs = bind_rows(hpcSvs, hpcLineElementEnd)
+hpcSvs = bind_rows(hpcSvs, hpcFeatureSv2)
+hpcSvs = bind_rows(hpcSvs, hpcFeatureSv3)
+hpcSvs = bind_rows(hpcSvs, hpcFeatureSv4)
 
 hpcSvs %>% group_by(subtype) %>% count()
 
@@ -228,11 +257,11 @@ normalise <- function(svs, buckets, meanCopyNumber, meanMappable) {
     ungroup() %>%
     mutate(
       nrows=n(),
-      nrows = ifelse(subtype == "ShortTI", round(nrows / 2), nrows)) %>%
+      nrows = ifelse(grepl("ShortTI", subtype), round(nrows / 2), nrows)) %>%
     group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, averageReplication, replicationFactor, subtype) %>%
     summarise(unnormalisedBucketCount = n(), percentFS=sum(IsFS)/unnormalisedBucketCount) %>%
     mutate(
-      unnormalisedBucketCount = ifelse(subtype == "ShortTI", round(unnormalisedBucketCount / 2), unnormalisedBucketCount),
+      unnormalisedBucketCount = ifelse(grepl("ShortTI", subtype), round(unnormalisedBucketCount / 2), unnormalisedBucketCount),
       expectedBucketCount = nrows / buckets * replicationFactor * averageCopyNumber / meanCopyNumber,
       p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
       q=p.adjust(p,"BH",buckets),
@@ -339,32 +368,43 @@ View(svEnrichment %>% filter(binEnd-binStart+1==1000000) %>% group_by(binChromos
 
 ############################################ Plot ############################################ 
 load(file = "/Users/jon/hmf/analysis/svPaper/unfilteredEnrichment.RData")
+unique(unfilteredEnrichment$buckets)
+#28475  2915   313
+unique(unfilteredEnrichment$subtype)
+featureSubtypes = c("ShortTI","ShortTIBND2","Foldback","FoldbackLeft", "FoldbackRight")
 
-
-
-pdf(file="~/hmf/analysis/svPaper/plot/100kBuckets.pdf",width=10, height = 6)
-#pdf(file="~/hmf/analysis/svPaper/plot/1MBuckets.pdf",width=10, height = 6)
-for (selectedSubtype in unique(unfilteredEnrichment$subtype)) {
-  df = unfilteredEnrichment %>%
-    filter(buckets == 28475) %>%
-    #filter(buckets == 2915) %>%
-    filter(subtype == selectedSubtype) %>%
-    mutate(
-    significant = q < 0.01,
-    size = ifelse(significant, 2, 0.3),
-    binChromosome = factor(binChromosome, levels = c(1:22, 'X', 'Y'), ordered = T))
-
-  myPlot = ggplot(df) +
-    geom_point(aes(x = binStart, y = unnormalisedBucketCount, color = significant, size = significant), stat = "identity", position = "stack") +
-    facet_wrap(~binChromosome) + ggtitle(unique(df$subtype)) +
-    scale_y_log10() +
-    scale_size_manual(values= c(0.2, 0.7)) +
-    xlab("location") + ylab("un-normalised bucket count")
-
-  print(myPlot)
-
+plot_enriched_locations <- function(df, selectedBucket, subtypes, file) {
+  pdf(file=file,width=10, height = 6)
+  for (selectedSubtype in featureSubtypes) {
+    df = unfilteredEnrichment %>%
+      filter(buckets == selectedBucket) %>%
+      filter(subtype == selectedSubtype) %>%
+      mutate(
+        significant = q < 0.01,
+        size = ifelse(significant, 2, 0.3),
+        binChromosome = factor(binChromosome, levels = c(1:22, 'X', 'Y'), ordered = T))
+    
+    myPlot = ggplot(df) +
+      geom_point(aes(x = binStart, y = unnormalisedBucketCount, color = significant, size = significant), stat = "identity", position = "stack") +
+      facet_wrap(~binChromosome) + ggtitle(unique(df$subtype)) +
+      scale_y_log10() +
+      scale_size_manual(values= c(0.2, 0.7)) +
+      xlab("location") + ylab("un-normalised bucket count")
+    
+    print(myPlot)
+    
+  }
+  dev.off()
 }
-dev.off()
+
+plot_enriched_locations(unfilteredEnrichment, 313, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features10M.pdf")
+plot_enriched_locations(unfilteredEnrichment, 2915, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features1M.pdf")
+plot_enriched_locations(unfilteredEnrichment, 28475, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features100k.pdf")
+
+#pdf(file="~/hmf/analysis/svPaper/plot/100kBuckets.pdf",width=10, height = 6)
+#pdf(file="~/hmf/analysis/svPaper/plot/1MBuckets.pdf",width=10, height = 6)
+#for (selectedSubtype in unique(unfilteredEnrichment$subtype)) {
+
 
 ############################################ Medium Dup Plot ############################################ 
 load(file = "/Users/jon/hmf/analysis/svPaper/hpcDelsDups.RData")
@@ -410,7 +450,7 @@ df = hpcDelsDups %>%
 ggplot(df) +
 geom_point(aes(x = MediumDup, y = LongDel))
 
-############################################ CDF PLOT ############################################ 
+############################################ CDF COUNTS PLOT ############################################ 
 load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
 
@@ -456,6 +496,12 @@ plot_cdf <- function(df) {
 
 
 delCDF = plot_cdf(typeDF %>% filter(grepl("Del", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
+ggsave("~/hmf/analysis/svPaper/plot/DelCounts.png", delCDF, width = 240, height = 80, units = "mm", dpi = 300)
+
+dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
+ggsave("~/hmf/analysis/svPaper/plot/DupCounts.png", dupCDF, width = 240, height = 80, units = "mm", dpi = 300)
+
+
 dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text = element_blank())
 featureCDF = plot_cdf(featureDF) + theme(strip.text = element_blank())
 lineCDF = plot_cdf(resolvedDF) + theme(strip.text = element_blank())
@@ -487,5 +533,32 @@ pShortDelScatter = ggplot(delData) +
 
 ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.pdf", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.png", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
+
+
+
+############################################ DEL / DUP Bucket Counts ############################################ 
+load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
+
+
+dels = svData %>% filter(ResolvedType == "DEL", Type == "DEL", Subclonal == "false", Synthetic == "false") %>%
+  mutate(
+    length = PosEnd - PosStart, 
+    bucket = cut(length, c(0, 2^(6:40) ), labels = c(2^(5:39)))
+  )
+
+dups = svData %>% filter(ResolvedType == "DUP", Type == "DUP", Subclonal == "false", Synthetic == "false") %>%
+  mutate(
+    length = PosEnd - PosStart, 
+    bucket = cut(length, c(0, 2^(6:40) ), labels = c(2^(5:39)))
+  )
+
+singleBlue = "#6baed6"
+
+ggplot(dups) + 
+  geom_bar(aes(x = bucket), fill = singleBlue) + xlab("Length") + ylab("Count")
+
+
+
 
 
