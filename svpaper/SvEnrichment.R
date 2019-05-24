@@ -122,25 +122,27 @@ svData = svData %>%
   mutate(
     subtype = "Unknown",
     
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart<=500, "ShortDup", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>500 & PosEnd-PosStart<=80000, "MediumDup", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>80000 & PosEnd-PosStart<=1e6, "LongDup", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>1e6 & PosEnd-PosStart<=5e6, "VeryLongDup", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DUP' & PosEnd-PosStart>5e6, "SuperLongDup", subtype),
+    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart<=500, "ShortDup", subtype),
+    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>500 & PosEnd-PosStart<=80000, "MediumDup", subtype),
+    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>80000 & PosEnd-PosStart<=1e6, "LongDup", subtype),
+    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>1e6 & PosEnd-PosStart<=5e6, "VeryLongDup", subtype),
+    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>5e6, "SuperLongDup", subtype),
     
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart<=500, "ShortDel", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>500 & PosEnd-PosStart<=5000, "MediumDel", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>5000 & PosEnd-PosStart<=1e6, "LongDel", subtype),
-    subtype = ifelse(ResolvedType=='SIMPLE' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
+    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart<=500, "ShortDel", subtype),
+    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>500 & PosEnd-PosStart<=5000, "MediumDel", subtype),
+    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>5000 & PosEnd-PosStart<=1e6, "LongDel", subtype),
+    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
     
     isSimpleFoldback = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV",
     isShortTI = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000)
 save(svData, file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
 
+svData %>% group_by(subtype) %>% count()
+
 
 load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
 hpcSimpleSv = svData %>% 
-  filter(ResolvedType=='SIMPLE', subtype != 'Unknown') %>% 
+  filter(subtype != 'Unknown') %>% 
   mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
   select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
 
@@ -340,12 +342,12 @@ load(file = "/Users/jon/hmf/analysis/svPaper/unfilteredEnrichment.RData")
 
 
 
-#pdf(file="~/hmf/analysis/svPaper/100kBuckets.pdf",width=10, height = 6)
-pdf(file="~/hmf/analysis/svPaper/1MBuckets.pdf",width=10, height = 6)
+pdf(file="~/hmf/analysis/svPaper/plot/100kBuckets.pdf",width=10, height = 6)
+#pdf(file="~/hmf/analysis/svPaper/plot/1MBuckets.pdf",width=10, height = 6)
 for (selectedSubtype in unique(unfilteredEnrichment$subtype)) {
   df = unfilteredEnrichment %>%
-  #filter(buckets == 28475) %>%
-    filter(buckets == 2915) %>%
+    filter(buckets == 28475) %>%
+    #filter(buckets == 2915) %>%
     filter(subtype == selectedSubtype) %>%
     mutate(
     significant = q < 0.01,
@@ -354,7 +356,7 @@ for (selectedSubtype in unique(unfilteredEnrichment$subtype)) {
 
   myPlot = ggplot(df) +
     geom_point(aes(x = binStart, y = unnormalisedBucketCount, color = significant, size = significant), stat = "identity", position = "stack") +
-    facet_wrap(~binChromosome, scales = "free_x") + ggtitle(unique(df$subtype)) +
+    facet_wrap(~binChromosome) + ggtitle(unique(df$subtype)) +
     scale_y_log10() +
     scale_size_manual(values= c(0.2, 0.7)) +
     xlab("location") + ylab("un-normalised bucket count")
@@ -429,10 +431,11 @@ resolvedDF = count_subtypes(svData %>% filter(!ResolvedType %in% c('SIMPLE','SGL
 
 plot_cdf <- function(df) {
   
+  df$n <- df$n + 1
   medDF = df %>% group_by(subtype, cancerType) %>% summarise(median = median(n))
   
   p = ggplot(df) + 
-    stat_ecdf(aes(x = n, color = subtype),  geom = "point", pad = FALSE, size = 0.05) +
+    stat_ecdf(aes(x = n, color = subtype),  geom = "point", pad = F, size = 0.05) +
     geom_segment(data = medDF, size = 0.4, aes(x = median, xend = median, y = 0.1, yend = 0.9, color = subtype)) + 
     theme(
       legend.position = "bottom", 
@@ -445,11 +448,12 @@ plot_cdf <- function(df) {
       panel.spacing = unit(1, "pt"),
       legend.margin = margin(t = 2, b = 2, unit = "pt")) +
     facet_grid(~cancerType) +
-    scale_x_log10() + 
+    scale_x_log10(breaks=c(2,11,101,1001), labels=c(1,10,100,1000)) +
     scale_y_continuous(breaks = c(0, 1)) + 
     coord_flip() 
   return (p)
 }
+
 
 delCDF = plot_cdf(typeDF %>% filter(grepl("Del", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
 dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text = element_blank())
@@ -459,4 +463,29 @@ lineCDF = plot_cdf(resolvedDF) + theme(strip.text = element_blank())
 pFinal = plot_grid(delCDF, dupCDF, featureCDF, lineCDF, ncol = 1, align = "v", rel_heights = c(1.2, 1, 1, 1))
 ggsave("~/hmf/analysis/svPaper/plot/svCounts.png", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
 ggsave("~/hmf/analysis/svPaper/plot/svCounts.pdf", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
+
+
+############################################ DEL Scatter Plot ############################################ 
+load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
+load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
+
+cancerTypeColours = setNames( c("black", "red", "green", "orange",cancerTypeColours), c("Unknown", "Lymphoid","Small Intestine","Thyroid", names(cancerTypeColours)) )
+
+svData = svData %>% left_join(highestPurityCohort %>% select(SampleId = sampleId, cancerType), by = "SampleId")
+delData = svData %>% filter(Type == 'DEL') %>% 
+  mutate(length = PosEnd - PosStart, isLT100 = length < 100, is1K25k = length < 5000 & length > 1000) %>%
+  filter(is1K25k | isLT100) %>% 
+  mutate(category = ifelse(isLT100, "isLT100", "is1K25K")) %>%
+  group_by(SampleId, category, cancerType) %>% count() %>%
+  spread(category, n, fill = 0)
+
+pShortDelScatter = ggplot(delData) + 
+  geom_point(aes(x = isLT100, y = is1K25K, color = cancerType)) + 
+  scale_color_manual(values = cancerTypeColours) + xlab("Dels < 100 bases") + ylab("Dels between 1000 and 5000 bases") + 
+  theme(legend.title = element_blank())
+
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.pdf", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.png", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
+
 
