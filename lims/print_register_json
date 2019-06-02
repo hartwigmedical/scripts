@@ -16,6 +16,7 @@ my $NA_CHAR = "NA";
 
 my $GER_INI = "SingleSample.ini";
 my $SOM_INI = "Somatic.ini";
+my $SHA_INI = "ShallowSeq.ini";
 
 my $Q30_LIM = 75; # q30 limit is currently fixed for all CPCT/DRUP samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
@@ -229,6 +230,8 @@ sub processSample{
     elsif ( $analysis eq 'Somatic_T' ){
         
         my $ref_obj;
+        my $ini = $SOM_INI;
+        my $shallow    = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
         
         ## need to find the ref sample of somatic pair
         if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
@@ -251,7 +254,16 @@ sub processSample{
         my $yield_ref   = getValueByKey( $ref_obj, 'yield' );
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
-        
+
+        ## adjust content in case of ShallowSeq
+        if ( $shallow ){
+            say "[INFO]   Will run ShallowSeq mode for $name ($barcode)";
+            $yield = 40 * $YIELD_F; $yield = 40 * $YIELD_F;
+            $entity = 'HMF_SHALLOWSEQ';
+            $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
+            $ini = $SHA_INI;
+        }
+ 
         ## check if barcode already exists at SBP
         my $tum_exists = `query_sbp_api -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($tum_exists);
@@ -266,7 +278,7 @@ sub processSample{
         }
         
         say "[INFO]   SET: $set";
-        $json_data{ 'ini' } = "$SOM_INI";
+        $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
