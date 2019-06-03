@@ -21,13 +21,16 @@ insperbaserm = rminsdf %>%
   group_by(query) %>%
   arrange(qend - qstart) %>%
   do({
-    baseRepeats = rep("No repeat", inslen[.$query[1]])
+    baseRepeatClass = rep("No repeat", inslen[.$query[1]])
+    baseRepeatType = rep("No repeat", inslen[.$query[1]])
     for (i in seq(nrow(.))) {
-      baseRepeats[seq(.$qstart[i], .$qend[i])] = .$repeatClass[i]
+      baseRepeatClass[seq(.$qstart[i], .$qend[i])] = .$repeatClass[i]
+      baseRepeatType[seq(.$qstart[i], .$qend[i])] = .$repeatType[i]
     }
     data.frame(
-      offset = seq_along(baseRepeats),
-      repeatClass = baseRepeats)
+      offset = seq_along(baseRepeatClass),
+      repeatClass = baseRepeatClass,
+      repeatType=baseRepeatType)
   })
 norepeathit = insdf %>%
   filter(!(uid %in% rminsdf$query)) %>%
@@ -35,28 +38,51 @@ norepeathit = insdf %>%
   do({
     data.frame(
       offset=seq(str_length(.$InsertSeq)),
-      repeatClass="No repeat")
+      repeatClass="No repeat",
+      repeatType="No repeat")
   })
-insperbase = bind_rows(insperbaserm %>% dplyr::select(uid=query, offset, repeatClass), norepeathit) %>%
-  mutate(length_bin = ceiling(inslen[insperbase$uid]/binsize)*binsize)
+insperbase = bind_rows(insperbaserm %>% dplyr::select(uid=query, offset, repeatType, repeatClass), norepeathit) %>%
+  ungroup() %>%
+  mutate(length_bin = ceiling(inslen[uid]/binsize)*binsize)
 
 ################
 # SGL analysis
 insperbase_summary = insperbase %>%
+  mutate(repeatAnn=as.character(getRepeatAnn(repeatClass))) %>%
+  mutate(repeatAnn=ifelse(repeatAnn == "DNA", "Other", repeatAnn)) %>%
+  mutate(repeatAnn=ifelse(repeatType == "(T)n", "poly A", repeatAnn)) %>%
+  mutate(repeatAnn=ifelse(repeatType == "(A)n", "poly A", repeatAnn)) %>%
+  mutate(repeatAnn=ifelse(repeatType %in% c("L1HS", "ALR/Alpha", "HSATII", "L1P1"), repeatType, repeatAnn)) %>%
+  mutate(repeatAnn=factor(repeatAnn, levels=c(
+    "No repeat",
+    "Simple/Low complexity", "poly A",
+    "Satellite", "ALR/Alpha", "HSATII",
+    "LINE", "L1HS", "L1P1",
+    "SINE",
+    "LTR",
+    "Other"))) %>%
   semi_join(insdf %>% filter(Type=="SGL"), by="uid") %>%
-  group_by(offset, repeatClass) %>%
+  group_by(offset, repeatAnn) %>%
   summarise(n=n())
 ggplot(insperbase_summary) +
-  aes(x=offset, y=n, fill=getRepeatAnn(repeatClass)) +
+  aes(x=offset, y=n, fill=repeatAnn) +
   geom_bar(stat="identity") +
-  scale_fill_brewer(palette="Dark2") +
+  #scale_fill_brewer(palette="Dark2") +
+  scale_fill_manual(values=c(
+  "#1b9e77",
+  "#c05402", "#f26a02",
+  "#54539d", "#7570b3", "#9591c5",
+  "#c71670", "#e7298a", "#ec57a3",
+  "#66a61e",
+  "#e6ab02",
+  "#a6761d")) +
   labs(y="Breakend count", x="Distance from breakend", fill="RepeatMasker\nAnnotation")
 ggsave(paste0(figdir, "sgl_rm_per_base_overall.pdf"), width=8, height=5)
 
 binsize=100
 insperbase_binned = insperbase %>%
   semi_join(insdf %>% filter(Type=="SGL"), by="uid") %>%
-  mutate(repeatAnn=getRepeatAnn(repeatClass)) %>%
+  mutate(repeatAnn=getRepeatAnn(repeatAnn)) %>%
   group_by(offset, repeatAnn, length_bin) %>%
   summarise(n=n())
 ggplot(insperbase_binned) +
