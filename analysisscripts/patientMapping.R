@@ -16,15 +16,21 @@ patientMappingBed = combinedHetLocations %>% filter(chr != 'X') %>%
 write.table(patientMappingBed, file = "~/hmf/resources/patientMapping.bed", sep = "\t", row.names = F, col.names = F)
 
 ######################## Query AMBER Het Locations
-dbProd = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis", host = "127.0.0.1")
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
 amberBafs = dbGetQuery(dbProd, "SELECT * FROM amber")
 dbDisconnect(dbProd)
 rm(dbProd)
 save(amberBafs, file = "~/hmf/analysis/amberancestry/amberBafs.RData")
 
+dbProd = dbConnect(MySQL(), username = "build", password = "build", dbname='hmfpatients', host = "localhost")
+existingMappings = dbGetQuery(dbProd, "SELECT * FROM patientMapping")
+dbDisconnect(dbProd)
+rm(dbProd)
+save(existingMappings, file = "~/hmf/analysis/amberancestry/existingMappings.RData")
+
 ######################## Sample / Patient Mapping
 sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
-  simpleBafs = amberBafs %>% mutate(loci = paste0(chromosome ,":", position)) %>% select(sampleId, loci) %>% mutate(het = T) 
+  simpleBafs = amberBafs %>% mutate(loci = paste0(chromosome ,":", position)) %>% select(sampleId, loci) %>% mutate(het = T)
   spreadBafs = simpleBafs %>% spread(loci, het, fill = F)
   bafMatrix = as.matrix(spreadBafs %>% select(-sampleId))
   rownames(bafMatrix) <- spreadBafs$sampleId
@@ -32,71 +38,73 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   dfResult = data.frame(matrixResult)
   dfResult$sample1 <- spreadBafs$sampleId
   dfResult = dfResult %>% gather(sample2, match,  spreadBafs$sampleId)
-  
+
   sampleCounts = dfResult %>% filter(sample1 == sample2) %>% select(sample1, count = match)
-  
-  sampleMapping = dfResult %>% 
-    filter(sample1 != sample2) %>% 
+
+  sampleMapping = dfResult %>%
+    filter(sample1 != sample2) %>%
     left_join(sampleCounts, by = "sample1") %>%
-    mutate(matchPercent = match / count) %>% 
+    mutate(matchPercent = match / count) %>%
     filter(matchPercent > percentCutoff) %>%
     mutate(tmp = sample1, sample1 = ifelse(sample1 < sample2, sample1, sample2), sample2 = ifelse(tmp < sample2, sample2, tmp)) %>%
     group_by(sample1, sample2) %>% summarise(matchPercent = max(matchPercent))
-  
+
   return (sampleMapping)
 }
 
-patient_mapping <- function(sampleMapping) {
-  patientMapping = sampleMapping %>% 
+patient_mapping <- function(sampleMapping, existingMappings) {
+  existingSamples = existingMappings %>% filter(type == 'Sample') %>% select(sampleId = sourceId) %>%
+    mutate(match = T)
+
+  existingPatientMappings = existingMappings %>% filter(type == 'Patient') %>% select(sourceId, targetId) %>% mutate(new = F)
+
+  patientMapping = sampleMapping %>%
+    left_join(existingSamples %>% select(sample1 = sampleId, sample1Prior = match), by = "sample1") %>%
+    left_join(existingSamples %>% select(sample2 = sampleId, sample2Prior = match), by = "sample2") %>%
+    mutate(sample1Prior = ifelse(is.na(sample1Prior), F, T), sample2Prior = ifelse(is.na(sample2Prior), F, T)) %>%
     mutate(patient1 = substr(sample1, 1, 12), patient2 = substr(sample2, 1, 12)) %>%
-    filter(patient1 != patient2) %>% 
-    mutate(tmp = patient1, patient1 = ifelse(patient1 > patient2, patient1, patient2), patient2 = ifelse(tmp > patient2, patient2, tmp)) %>%
-    group_by(patient1, patient2) %>% summarise(matchPercent = max(matchPercent)) %>% 
-    group_by(patient2) %>% mutate(p2n = n()) %>% 
-    group_by(patient1) %>% mutate(p1n = n()) %>%
-    arrange(-p2n) %>%
-    filter(row_number() == 1) %>% 
-    select(-p1n, -p2n)
-  
-  return (patientMapping)
+    filter(patient1 != patient2) %>%
+    mutate(
+      sourceId = ifelse(patient1 > patient2, patient1, patient2),
+      targetId = ifelse(patient1 > patient2, patient2, patient1),
+      xorSamples = xor(sample1Prior, sample2Prior),
+      sourceId = ifelse(xorSamples & sample1Prior, patient2, sourceId),
+      targetId = ifelse(xorSamples & sample1Prior, patient1, targetId)
+    ) %>%
+    group_by(sourceId, targetId) %>% summarise(matchPercent = max(matchPercent)) %>%
+    group_by(targetId) %>% mutate(target_n = n()) %>%
+    group_by(sourceId) %>% mutate(source_n = n()) %>%
+    arrange(-target_n) %>%
+    filter(row_number() == 1) %>%
+    select(sourceId, targetId, matchPercent)
+
+  patientMapping = patientMapping %>% left_join(existingPatientMappings, by = c("sourceId", "targetId"))
+  patientMapping[is.na(patientMapping)] <- T
+
+  return (patientMapping %>% arrange(-new, matchPercent))
 }
 
 
 
-#### EXPERIMENTAL
-uhoh = read.table(file = "~/hmf/resources/idgenerator/anonymized.csv", header = F, stringsAsFactors = F, sep = ",")
 
-existingMapping = read.table(file = "~/hmf/resources/idgenerator/patient_mapping.csv", header = F, stringsAsFactors = F, sep = ",") %>%
-  select(From = V1, To = V2)
-
-previouslyMappedSamples = read.table(file = "~/hmf/resources/idgenerator/samples.csv", header = F, stringsAsFactors = F, sep = ",") %>%
-  select(sampleId = V1) %>% mutate(match = T)
-
-
-patientMapping = sampleMapping %>% 
-  left_join(previouslyMappedSamples %>% select(sample1 = sampleId, sample1Prior = match), by = "sample1") %>%
-  left_join(previouslyMappedSamples %>% select(sample2 = sampleId, sample2Prior = match), by = "sample2") %>%
-  mutate(sample1Prior = ifelse(is.na(sample1Prior), F, T), sample2Prior = ifelse(is.na(sample2Prior), F, T)) %>%
-  mutate(patient1 = substr(sample1, 1, 12), patient2 = substr(sample2, 1, 12)) %>%
-  filter(patient1 != patient2) %>% 
-  mutate(from = ifelse(patient1 > patient2, patient1, patient2), to = ifelse(patient1 > patient2, patient2, patient1))
-  group_by(from, to) %>% summarise(matchPercent = max(matchPercent)) %>%
-  group_by(to) %>% mutate(to_n = n()) %>% 
-  group_by(from) %>% mutate(from_n = n())
 #### EXPERIMENTAL
 
+load(file = "~/hmf/analysis/amberancestry/sampleMapping.RData")
+load(file = "~/hmf/analysis/amberancestry/existingMappings.RData")
 
+patientMapping = patient_mapping(sampleMapping, existingMappings)
 
 
 load(file = "~/hmf/analysis/amberancestry/amberBafs.RData")
-amberSamples = unique(amberBafs$sampleId)
+
 date()
 sampleMapping = sample_mapping(amberBafs)
 patientMapping = patient_mapping(sampleMapping)
 date()
 
+amberSamples = unique(amberBafs$sampleId)
 write.table(amberSamples, file = "~/hmf/resources/idgenerator/amber_samples.csv", quote = F, row.names = F, col.names = F, sep = ",")
-write.table(patientMapping, file = "~/hmf/resources/idgenerator/amber_patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/amber_patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
 
 ######################## Verfication of single mapping
 patientMapping %>% group_by(patient1) %>% count() %>% filter(n > 1)
