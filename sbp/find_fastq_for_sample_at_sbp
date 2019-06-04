@@ -17,5 +17,6 @@ profile="hmf_fastq"
 bucket="hmf-fastq-storage"
 
 cmd="sbp s3 sync --dryrun s3://${bucket}/ ${outPath}/ --exclude \"*\" --include ${sampleName}_*.fastq.gz --profile ${profile}"
-echo "# $cmd"
-${cmd}
+
+echo "[INFO] Run the following to list all to be synced files:"
+echo "$cmd"
