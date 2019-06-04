@@ -4,7 +4,7 @@ scriptName=$( basename $0 )
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
   echo " Usage: $scriptName \${sampleName}"
-  echo "    Eg: $scriptName CPCT02010001"
+  echo "    Eg: $scriptName CPCT02010001T"
   echo "        (searches for \${sampleName}_*.fastq.gz"
   echo "---"
   exit 1
