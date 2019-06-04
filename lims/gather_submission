@@ -70,12 +70,12 @@ echo -e "PROJECT\t${hmfCount}" >> ${repFile}
 echo -e "PROJECT\t${pType}" >> ${repFile}
 
 cat ${samFile} | grep -v ^# | while read line; do
-  subm=$( echo $line | cut -d" " -f1 )
-  barc=$( echo $line | cut -d" " -f2 )
-   q30=$( echo $line | cut -d" " -f3 )
-  yldR=$( echo $line | cut -d" " -f4 )
-   yld=$( echo $line | cut -d" " -f5 )
-  name=$( echo $line | cut -d" " -f7 )
+  subm=$( echo "${line}" | cut -f1 )
+  barc=$( echo "${line}" | cut -f2 )
+   q30=$( echo "${line}" | cut -f3 )
+  yldR=$( echo "${line}" | cut -f4 )
+   yld=$( echo "${line}" | cut -f5 )
+  name=$( echo "${line}" | cut -f7 )
   date=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .arrival_date" )
   sops=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .lab_sop_versions" )
   echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${repFile}
