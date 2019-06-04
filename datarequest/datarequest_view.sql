@@ -18,12 +18,12 @@ SELECT
     `treatment`.`mechanism` AS `treatmentMechanism`,
     `treatment`.`startDate` AS `treatmentStartDate`,
     `treatment`.`endDate` AS `treatmentEndDate`,
-    `biopsyDrugs`.`biopsyPostDrugs` AS `biopsyPostTreatments`,
-    `biopsyDrugs`.`biopsyPostDrugTypes` AS `biopsyPostTreatmentTypes`,
-    `biopsyDrugs`.`biopsyPostDrugMechanisms` AS `biopsyPostTreatmentMechanisms`,
-    `patientDrugs`.`patientPostDrugs` AS `patientPostTreatments`,
-    `patientDrugs`.`patientPostDrugTypes` AS `patientPostTreatmentTypes`,
-    `patientDrugs`.`patientPostDrugMechanisms` AS `patientPostTreatmentMechanisms`,
+    `biopsyDrugs`.`biopsyPostDrugs` AS `biopsyPostDrugs`,
+    `biopsyDrugs`.`biopsyPostDrugTypes` AS `biopsyPostDrugTypes`,
+    `biopsyDrugs`.`biopsyPostDrugMechanisms` AS `biopsyPostDrugMechanisms`,
+    `patientDrugs`.`patientPostDrugs` AS `patientPostDrugs`,
+    `patientDrugs`.`patientPostDrugTypes` AS `patientPostDrugTypes`,
+    `patientDrugs`.`patientPostDrugMechanisms` AS `patientPostDrugMechanisms`,
     `firstMatchedTreatmentResponse`.`responseDate` AS `responseDate`,
     `firstMatchedTreatmentResponse`.`measurementDone` AS `responseMeasured`,
     `firstMatchedTreatmentResponse`.`response` AS `firstResponse`,
@@ -50,11 +50,11 @@ FROM
     (SELECT 
         treatment.patientId,
             GROUP_CONCAT(DISTINCT (drug.name)
-                SEPARATOR '/') AS patientPostDrugs,
+                SEPARATOR '|') AS patientPostDrugs,
             GROUP_CONCAT(DISTINCT (drug.type)
-                SEPARATOR '/') AS patientPostDrugTypes,
+                SEPARATOR '|') AS patientPostDrugTypes,
             GROUP_CONCAT(DISTINCT (drug.mechanism)
-                SEPARATOR '/') AS patientPostDrugMechanisms
+                SEPARATOR '|') AS patientPostDrugMechanisms
     FROM
         drug
     LEFT JOIN treatment ON drug.treatmentId = treatment.id
@@ -65,11 +65,11 @@ FROM
     (SELECT 
         treatment.biopsyId,
             GROUP_CONCAT(DISTINCT (drug.name)
-                SEPARATOR '/') AS biopsyPostDrugs,
+                SEPARATOR '|') AS biopsyPostDrugs,
             GROUP_CONCAT(DISTINCT (drug.type)
-                SEPARATOR '/') AS biopsyPostDrugTypes,
+                SEPARATOR '|') AS biopsyPostDrugTypes,
             GROUP_CONCAT(DISTINCT (drug.mechanism)
-                SEPARATOR '/') AS biopsyPostDrugMechanisms
+                SEPARATOR '|') AS biopsyPostDrugMechanisms
     FROM
         drug
     LEFT JOIN treatment ON drug.treatmentId = treatment.id
@@ -80,6 +80,6 @@ WHERE
     (sample.sampleId LIKE 'CPCT%'
         OR sample.sampleId LIKE 'DRUP%'
         OR sample.sampleId LIKE 'WIDE%')
-        AND informedConsentDate > '2016-04-20'
+    AND informedConsentDate > '2016-04-20'
 ORDER BY sampleId
 ;
