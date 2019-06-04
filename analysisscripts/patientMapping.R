@@ -2,33 +2,6 @@ library(dplyr)
 library(tidyr)
 library(RMySQL)
 
-######################## Generate BED file of AMBER heterozygous locations to use
-oldHetLocations = read.table(file = "/Users/jon/hmf/resources/CytoScanHD_hg19_SNPs_sorted.bed", sep = "\t", header = F, stringsAsFactors = F) %>% select(chr = V1, start = V2, end = V3) %>% mutate(old = T)
-newHetLocations = read.table(file = "/Users/jon/hmf/resources/GermlineHetPon.hg19.bed", sep = "\t", header = F, stringsAsFactors = F)  %>% select(chr = V1, start = V2) %>% mutate(new = T)
-combinedHetLocations = inner_join(oldHetLocations, newHetLocations, by = c("chr", "start"))
-patientMappingBed = combinedHetLocations %>% filter(chr != 'X') %>%
-  mutate(chr = as.numeric(chr)) %>%
-  arrange(chr, start) %>%
-  select(-old, -new) %>%
-  mutate(distance = lead(start) - start) %>%
-  filter(distance < 0 | distance > 200000) %>%
-  select(-distance)
-write.table(patientMappingBed, file = "~/hmf/resources/patientMapping.bed", sep = "\t", row.names = F, col.names = F)
-
-######################## Query AMBER Het Locations
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
-amberBafs = dbGetQuery(dbProd, "SELECT * FROM amber")
-dbDisconnect(dbProd)
-rm(dbProd)
-save(amberBafs, file = "~/hmf/analysis/amberancestry/amberBafs.RData")
-
-dbProd = dbConnect(MySQL(), username = "build", password = "build", dbname='hmfpatients', host = "localhost")
-existingMappings = dbGetQuery(dbProd, "SELECT * FROM patientMapping")
-dbDisconnect(dbProd)
-rm(dbProd)
-save(existingMappings, file = "~/hmf/analysis/amberancestry/existingMappings.RData")
-
-######################## Sample / Patient Mapping
 sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   simpleBafs = amberBafs %>% mutate(loci = paste0(chromosome ,":", position)) %>% select(sampleId, loci) %>% mutate(het = T)
   spreadBafs = simpleBafs %>% spread(loci, het, fill = F)
@@ -38,9 +11,9 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   dfResult = data.frame(matrixResult)
   dfResult$sample1 <- spreadBafs$sampleId
   dfResult = dfResult %>% gather(sample2, match,  spreadBafs$sampleId)
-
+  
   sampleCounts = dfResult %>% filter(sample1 == sample2) %>% select(sample1, count = match)
-
+  
   sampleMapping = dfResult %>%
     filter(sample1 != sample2) %>%
     left_join(sampleCounts, by = "sample1") %>%
@@ -48,16 +21,16 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
     filter(matchPercent > percentCutoff) %>%
     mutate(tmp = sample1, sample1 = ifelse(sample1 < sample2, sample1, sample2), sample2 = ifelse(tmp < sample2, sample2, tmp)) %>%
     group_by(sample1, sample2) %>% summarise(matchPercent = max(matchPercent))
-
+  
   return (sampleMapping)
 }
 
 patient_mapping <- function(sampleMapping, existingMappings) {
   existingSamples = existingMappings %>% filter(type == 'Sample') %>% select(sampleId = sourceId) %>%
     mutate(match = T)
-
+  
   existingPatientMappings = existingMappings %>% filter(type == 'Patient') %>% select(sourceId, targetId) %>% mutate(new = F)
-
+  
   patientMapping = sampleMapping %>%
     left_join(existingSamples %>% select(sample1 = sampleId, sample1Prior = match), by = "sample1") %>%
     left_join(existingSamples %>% select(sample2 = sampleId, sample2Prior = match), by = "sample2") %>%
@@ -68,8 +41,8 @@ patient_mapping <- function(sampleMapping, existingMappings) {
       sourceId = ifelse(patient1 > patient2, patient1, patient2),
       targetId = ifelse(patient1 > patient2, patient2, patient1),
       xorSamples = xor(sample1Prior, sample2Prior),
-      sourceId = ifelse(xorSamples & sample1Prior, patient2, sourceId),
-      targetId = ifelse(xorSamples & sample1Prior, patient1, targetId)
+      sourceId = ifelse(xorSamples, ifelse(sample1Prior, patient2, patient1), sourceId),
+      targetId = ifelse(xorSamples, ifelse(sample1Prior, patient1, patient2), targetId)
     ) %>%
     group_by(sourceId, targetId) %>% summarise(matchPercent = max(matchPercent)) %>%
     group_by(targetId) %>% mutate(target_n = n()) %>%
@@ -77,48 +50,59 @@ patient_mapping <- function(sampleMapping, existingMappings) {
     arrange(-target_n) %>%
     filter(row_number() == 1) %>%
     select(sourceId, targetId, matchPercent)
-
+  
   patientMapping = patientMapping %>% left_join(existingPatientMappings, by = c("sourceId", "targetId"))
   patientMapping[is.na(patientMapping)] <- T
-
+  
   return (patientMapping %>% arrange(-new, matchPercent))
 }
 
+######################## Step 1 - Regenerate patient mappings
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
+amberBafs = dbGetQuery(dbProd, "SELECT * FROM amber")
+existingMappings = dbGetQuery(dbProd, "SELECT * FROM idMapping")
+dbDisconnect(dbProd)
+rm(dbProd)
 
-
-
-#### EXPERIMENTAL
-
-load(file = "~/hmf/analysis/amberancestry/sampleMapping.RData")
-load(file = "~/hmf/analysis/amberancestry/existingMappings.RData")
-
+sampleMapping = sample_mapping(amberBafs)
 patientMapping = patient_mapping(sampleMapping, existingMappings)
 
-
-load(file = "~/hmf/analysis/amberancestry/amberBafs.RData")
-
-date()
-sampleMapping = sample_mapping(amberBafs)
-patientMapping = patient_mapping(sampleMapping)
-date()
-
 amberSamples = unique(amberBafs$sampleId)
-write.table(amberSamples, file = "~/hmf/resources/idgenerator/amber_samples.csv", quote = F, row.names = F, col.names = F, sep = ",")
-write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/amber_patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(amberSamples, file = "~/hmf/resources/idgenerator/samples_20190604.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/patient_mapping_20190604.csv", quote = F, row.names = F, col.names = F, sep = ",")
 
-######################## Verfication of single mapping
-patientMapping %>% group_by(patient1) %>% count() %>% filter(n > 1)
 
-######################## Verfication of known duplicates
-knownDuplicates = data.frame(sampleId = amberSamples) %>% filter(grepl('TII', sampleId)) %>% mutate(earlierSample = substr(sampleId, 1, 13))
-missingKnownDuplicates = knownDuplicates %>% filter(!sampleId %in% sampleMapping$sample1 & !sampleId %in% sampleMapping$sample2 & earlierSample %in% amberBafs$sampleId)
-knownDuplicates2 = data.frame(sampleId = amberSamples) %>% filter(grepl('TIII', sampleId)) %>% mutate(earlierSample = substr(sampleId, 1, 14))
-missingKnownDuplicates2 = knownDuplicates2 %>% filter(!sampleId %in% sampleMapping$sample1 & !sampleId %in% sampleMapping$sample2 & earlierSample %in% amberBafs$sampleId)
+######################## Step 2 - Update hashes
+# com.hartwig.hmftools.idgenerator.HmfIdApplicationKt
+# -update_ids
+# -password xxxxx 
+# -sample_ids_file ~/hmf/resources/idgenerator/samples_20190604.csv
+# -patient_mapping_file ~/hmf/resources/idgenerator/patient_mapping_20190604.csv
+# -out ~/hmf/resources/idgenerator/sample_hashes_20190604.csv
+# -mapping_out ~/hmf/resources/idgenerator/remapping_20190604.csv
 
-####################### Verfification of JAN14
-jan14Samples = read.table("~/hmf/resources/idgenerator/samples.csv", header = F, sep  =",")
-jan14AmberBafs = amberBafs %>% filter(sampleId %in% jan14Samples$V1)
-oldJan14PatientMapping = read.table("~/hmf/resources/idgenerator/patient_mapping.csv", header = F, sep  =",") %>% mutate(old = T)
-newJan14SampleMapping = sample_mapping(jan14AmberBafs)
-newJan14PatientMapping = patient_mapping(newJan14SampleMapping) %>% mutate(new = T)
-compare = full_join(newJan14PatientMapping, oldJan14PatientMapping, by = c("patient1" = "V1", "patient2" = "V2"))
+######################## Step 3 - Include hash in build
+# cp ~/hmf/resources/idgenerator/sample_hashes_20190604.csv ~/hmf/repos/hmftools/hmf-id-generator/src/main/resources/sample_hashes.csv
+
+######################## Step 4 - Run Anonymise Ids
+# com.hartwig.hmftools.idgenerator.HmfIdApplicationKt
+# -anonymize_ids
+# -password xxxxx
+# -sample_ids_file ~/hmf/resources/idgenerator/samples_20190604.csv
+# -patient_mapping_file ~hmf/resources/idgenerator/patient_mapping_20190604.csv
+
+######################## Step 5 - Copy output
+# Need to copy the relevant run output without header to ~/hmf/resources/idgenerator/anonymized_20190604.csv
+
+######################## Step 6 - Load into database
+# Note we do not delete type = 'Sample' so we can have a history. 
+
+#delete from idMapping where type in ('Patient', 'Remapping');
+#LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/patient_mapping_20190604.csv' IGNORE INTO TABLE idMapping  FIELDS TERMINATED BY ',' IGNORE 0 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP, type = 'Patient';
+#LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/anonymized_20190604.csv' IGNORE INTO TABLE idMapping FIELDS TERMINATED BY ',' IGNORE 0 LINES  (sourceId, targetId) SET modified = CURRENT_TIMESTAMP, type = 'Sample';
+#LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/remapping_20190604.csv' IGNORE INTO TABLE idMapping  FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 0 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP, type = 'Remapping';
+
+######################## Step 7 - Store files
+# copy all new files to datastore, eg
+# scp *20190604.csv hmf-datastore:/data/common/dbs/idgenerator/
+
