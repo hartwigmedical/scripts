@@ -11,11 +11,11 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 sampleName=$1
-outName="${sample}_fastq"
+outName="${sampleName}_fastq"
 outPath="/data/schuberg/tmp/${outName}"
 profile="hmf_fastq"
 bucket="hmf-fastq-storage"
 
-cmd="sbp s3 sync --dryrun s3://${bucket}/ ${outPath}/ --exclude \"*\" --include \"${sampleName}_*.fastq.gz\" --profile ${profile}"
+cmd="sbp s3 sync --dryrun s3://${bucket}/ ${outPath}/ --exclude \"*\" --include ${sampleName}_*.fastq.gz --profile ${profile}"
 echo "# $cmd"
 ${cmd}
