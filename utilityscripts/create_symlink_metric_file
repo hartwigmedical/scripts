@@ -4,7 +4,7 @@ source load_metadata
 
 set=$1
 
-set_path=/data/core/runs/${set}
+set_path=/data/cpct/runs/${set}
 tumor_sample=$(load_tumor_sample_from_metadata ${set_path})
 ref_sample=$(load_ref_sample_from_metadata ${set_path})
 tumor_file=${set_path}/${tumor_sample}.wgsmetrics
