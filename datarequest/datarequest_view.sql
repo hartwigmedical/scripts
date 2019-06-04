@@ -49,11 +49,11 @@ FROM
         LEFT JOIN
     (SELECT 
         treatment.patientId,
-            GROUP_CONCAT(DISTINCT (drug.name)
+            GROUP_CONCAT(drug.name
                 SEPARATOR '|') AS patientPostDrugs,
-            GROUP_CONCAT(DISTINCT (drug.type)
+            GROUP_CONCAT(drug.type
                 SEPARATOR '|') AS patientPostDrugTypes,
-            GROUP_CONCAT(DISTINCT (drug.mechanism)
+            GROUP_CONCAT(drug.mechanism
                 SEPARATOR '|') AS patientPostDrugMechanisms
     FROM
         drug
@@ -64,11 +64,11 @@ FROM
         LEFT JOIN
     (SELECT 
         treatment.biopsyId,
-            GROUP_CONCAT(DISTINCT (drug.name)
+            GROUP_CONCAT(drug.name
                 SEPARATOR '|') AS biopsyPostDrugs,
-            GROUP_CONCAT(DISTINCT (drug.type)
+            GROUP_CONCAT(drug.type
                 SEPARATOR '|') AS biopsyPostDrugTypes,
-            GROUP_CONCAT(DISTINCT (drug.mechanism)
+            GROUP_CONCAT(drug.mechanism
                 SEPARATOR '|') AS biopsyPostDrugMechanisms
     FROM
         drug
