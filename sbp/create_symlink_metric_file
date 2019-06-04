@@ -2,7 +2,7 @@
 
 source load_metadata
 set=$1
-set_path=/home/lieke/analysis/${set}
+set_path=/data/schuberg/processed_runs/${set}
 
 
 tumor_sample=$(load_tumor_sample_from_metadata ${set_path})
