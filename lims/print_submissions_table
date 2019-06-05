@@ -30,7 +30,7 @@ for submission in "${SUBMISSIONS[@]}"; do
   if   [[ $pTyp == "Human research" ]]; then pTyp="HUM-RES"
   elif [[ $pTyp == "non human research" || $pTyp == "Non human research" ]]; then pTyp="NONHUM-RES"
   elif [[ $pTyp == "KG production" ]]; then pTyp="KG"
-  elif [[ $pTyp == "CORE" ]]; then pTyp="CORE"
+  elif [[ $pTyp == "CORE" ]]; then pTyp="CORE"; aTyp="SomaticAnalysis"
   else pTyp="UnknownType"
   fi
 
