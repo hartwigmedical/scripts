@@ -45,7 +45,7 @@ View(sampleCancerTypes)
 View(sampleCancerTypes %>% group_by(CancerType) %>% count())
 
 snvDpSampleCounts = snvSampleCounts %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
-View(snvDpSampleCounts %>% group_by(SampleId) %>% count()) # 2370, not 2406 for some reason?
+View(snvDpSampleCounts %>% group_by(SampleId) %>% count()) 
 snvDpSampleTotals = snvDpSampleCounts %>% group_by(SampleId) %>% count()
 nrow(snvDpSampleTotals)
 
@@ -365,6 +365,27 @@ print(resPlot)
 
 
 
+## Mutational Load by Cancer Type
+snvDpSampleSummary = merge(snvDpSampleCounts, sampleCancerTypes,by="SampleId",all.x=T) %>% 
+  group_by(SampleId,CancerType) %>% summarise(SampleTotal=sum(Count))
+
+View(snvDpSampleSummary)
+
+View(snvDpSampleSummary %>% group_by(CancerType) %>% summarise(Samples=n(),
+                                                               CancerTotal=sum(SampleTotal),
+                                                               Min=min(SampleTotal),
+                                                               Max=max(SampleTotal),
+                                                               Avg=round(sum(SampleTotal)/n(),0),
+                                                               Med=round(median(SampleTotal),0),
+                                                               StdDev=round(std(SampleTotal),1)))
+
+
+print(ggplot(data = snvDpSampleSummary, aes(x=))
+      + stat_ecdf()
+      + facet_wrap(~CancerType))
+
+
+View(sampleCancerTypes)
 
 
 ## DEBUG

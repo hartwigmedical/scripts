@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+source load_metadata
+
+run_dir=$1 && shift
+credentials=$1 && shift
+linx_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+output_dir=${run_dir}/sv/
+credentials=/data/common/dbs/mysql_credentials/prod
+linx_jar=/data/common/tools/linx_pilot/sv-analyser.jar
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# reference files
+
+viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
+fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+ensembl_data_dir=/data/common/dbs/ensembl_data_cache
+fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
+line_elements=/data/common/dbs/sv/line_elements.csv
+replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
+
+# echo "${sample} linx data : ${output_dir}"
+
+if [ -d ${output_dir} ]; then
+    rm ${output_dir}/*linx*
+else
+    mkdir -p ${output_dir}
+fi
+
+# echo "[INFO] Running LINX"
+
+java -Xmx8G -Xms4G -jar ${linx_jar} \
+    -sample ${sample} \
+    -output_dir ${output_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -fragile_site_file ${fragile_sites} \
+    -line_element_file ${line_elements} \
+    -replication_origins_file ${replication_origins} \
+    -gene_transcripts_dir ${ensembl_data_dir} \
+    -check_fusions \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_five_csv} \
+    -write_vis_data \
+    -proximity_distance 5000 \
+    -chaining_sv_limit 0 \
+    $@
+
+    

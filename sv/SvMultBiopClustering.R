@@ -19,36 +19,95 @@ doubleBiopsy = read.csv('~/data/sv/multiple_biopsy_samples.csv')
 
 svData = read.csv('~/logs/SVA_SVS.csv')
 mbSvDataActuals = svData %>% filter(SampleId %in% doubleBiopsy$sampleId)
+write.csv(mbSvDataActuals, '~/data/sv/SVA_SVS_MB.csv', row.names = F, quote = F)
 nrow(mbSvDataActuals)
 rm(svData)
 nrow(mbSvData)
 View(mbSvData)
 View(mbSvData %>% group_by(SampleId) %>% count())
-mbSvData = mbSvDataActuals %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,
-                               ClusterId,ClusterCount,ClusterReason,ResolvedType,Ploidy,CNStart,CNEnd) %>% arrange(SampleId,ClusterId)
 
-
-write.csv(mbSvData, '~/data/sv/multiple_biopsy_sv_data.csv', row.names = F, quote = F)
-rm(mbSvData)
-View(mbSvDataActuals)
+# write out a subset of SV data for the MB samples for use in generating the MB data
+write.csv(mbSvDataActuals %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,
+                                     ClusterId,ClusterCount,ClusterReason,ResolvedType,Ploidy,CNStart,CNEnd) %>% arrange(SampleId,ClusterId),
+          '~/data/sv/multiple_biopsy_sv_data.csv', row.names = F, quote = F)
 
 ## ANALYSIS
-mbSvData = read.csv('~/logs/SVA_MB_SV_DATA.csv')
-mbMergeData = read.csv('~/logs/SVA_MB_MERGE_DATA.csv')
-mbClusterData = read.csv('~/logs/SVA_MB_CLUSTER_DATA.csv')
-mbSvData = read.csv('~/data/sv/multiple_biopsy_sv_data.csv')
+mbSvData = read.csv('~/data/sv/SVA_MB_SV_DATA.csv')
+mbMergeDataAll = read.csv('~/data/sv/SVA_MB_MERGE_DATA.csv')
+mbClusterData = read.csv('~/data/sv/SVA_MB_CLUSTER_DATA.csv')
 View(mbSvData)
+nrow(mbSvData)
+nrow(mbMergeDataAll)
 View(mbMergeData)
 View(mbClusterData)
 View(mbMergeData %>% group_by(ClusterReason) %>% count())
-View(mbClusterData %>% group_by(ClusterType) %>% count())
-View(mbClusterData %>% group_by(ClusterType,ResolvedType) %>% count() %>% spread(ClusterType,n))
+View(mbClusterData %>% group_by(OverlapType) %>% count())
+View(mbClusterData %>% group_by(OverlapType,ResolvedType) %>% count() %>% spread(OverlapType,n))
 
 mbSvData = merge(mbSvData,mbClusterData %>% select(SampleId,ClusterId,OverlapType),by=c('SampleId','ClusterId'),all.x=T)
 
+defaultPlotColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9",
+                       'saddlebrown','slateblue1','indianred3','limegreen')
+
+
+# 0. Overall results by Match Type
+# consider private and exactly shared as fine
+mbClusteringSummary = mbClusterData %>% 
+  mutate(ResolvedType=ifelse(ResolvedType=='None'|ResolvedType=='ComplexChain','Complex',as.character(ResolvedType))) %>%
+  group_by(ResolvedType) %>% 
+  summarise(ResolvedTypeCount=n(),
+            SvCount=sum(ClusterCount),
+            CorrectClusters=sum(ifelse(OverlapType=='Exact'|OverlapType=='Private',1,0)),
+            IncorrectClusters=sum(ifelse(OverlapType!='Exact'&OverlapType!='Private',1,0))) %>%
+  mutate(CorrectPerc=round(CorrectClusters/ResolvedTypeCount,3)*100,
+         IncorrectPerc=round(IncorrectClusters/ResolvedTypeCount,3)*100)
+
+View(mbClusteringSummary)         
+
+csPlot = (ggplot(mbClusteringSummary, 
+                   aes(x=ResolvedType, y=IncorrectPerc, fill=ResolvedType))
+            + geom_bar(stat = "identity", colour = "black")
+            + labs(x = "Resolved Type", y="Incorrect %")
+            + scale_fill_manual(values = defaultPlotColours)
+            + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+            + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+            + theme(axis.text.x = element_text(angle=90, hjust=1,size=10))
+            + theme(legend.position="none")
+            + coord_flip())
+
+plot(csPlot)
+
+# shared-private merges by resolved type, split by proportion of cluster with over-clustering
+View(mbClusterData)
+
+mbClusterSummary = mbClusterData %>% 
+  mutate(MixedPerc=1-abs(SharedCount-ClusterCount/2)/(ClusterCount/2),
+         MixedPercBucket=round(MixedPerc/0.1)*0.1,
+         ClusterSize=ifelse(ClusterCount<=3,'Small',ifelse(ClusterCount<=10,'Medium','Large')))
+
+View(mbClusterSummary %>% filter(ResolvedType=='SimpleChain') %>% group_by(MixedPercBucket,ClusterSize) %>% count() %>% spread(ClusterSize,n))
+View(mbClusterSummary %>% filter(ResolvedType=='ComplexChain'|ResolvedType=='None') %>% group_by(MixedPercBucket,ClusterSize) %>% count() %>% spread(ClusterSize,n))
+View(mbClusterSummary %>% filter(ResolvedType=='Line') %>% group_by(MixedPercBucket,ClusterSize) %>% count() %>% spread(ClusterSize,n))
+
+
+# 0b. Comparion for Shared variants of resultant cluster type and size
+mbSvData = merge(mbSvData,mbClusterData %>% select(SampleId,ClusterId,OverlapType),by=c('SampleId','ClusterId'),all.x=T)
+sharedSvData = mbSvData %>% filter(MatchType=='Shared')
+View(sharedSvData)
+sharedCombinedData = merge(sharedSvData,sharedSvData %>% select(OtherSvId=SvId,OtherClusterId=ClusterId,OtherSampleId=SampleId,
+                                                                OtherResolvedType=ResolvedType,OtherClusterCount=ClusterCount),by=c('OtherSvId'),all.x=T)
+View(sharedCombinedData)
+
+# distribution by clusterSize
+sharedCombinedData = sharedCombinedData %>% mutate(ClusterSize=2**round(log(ClusterCount,2)),OtherClusterSize=2**round(log(OtherClusterCount,2)))
+
+View(sharedCombinedData %>% group_by(ClusterSize,OtherClusterSize) %>% count() %>% spread(OtherClusterSize,n))
+View(sharedCombinedData %>% filter(ResolvedType!='DUP_BE'&OtherResolvedType!='DUP_BE') %>% group_by(ResolvedType,OtherResolvedType) %>% count() %>% spread(OtherResolvedType,n))
+
+
 
 # 1. Shared - Private cluster merges in super sets and mixed clusters
-mbMergeData = mbMergeData %>% filter(!((MatchType1=='Shared'&MatchType2=='Partial')|(MatchType1=='Partial'&MatchType2=='Shared')))
+mbMergeData = mbMergeDataAll %>% filter(!((MatchType1=='Shared'&MatchType2=='Partial')|(MatchType1=='Partial'&MatchType2=='Shared')))
 nrow(mbMergeData %>% filter((MatchType1=='Shared'&MatchType2=='Partial')|(MatchType1=='Partial'&MatchType2=='Shared')))
 View(mbMergeData %>% group_by(ClusterReason) %>% count())
 
@@ -57,7 +116,10 @@ View(mbMergeData)
 View(mbMergeData %>% group_by(ClusterReason,ResolvedType) %>% count() %>% spread(ClusterReason,n))
 
 # compared with counts of merge types by cluster
-allClusterReasons = mbSvDataActuals %>% group_by(ResolvedType) %>%
+allClusterReasons = mbSvDataActuals %>% filter(ResolvedType!='LowQual') %>%
+  mutate(ResolvedType=ifelse(ResolvedType=='None'|ResolvedType=='ComplexChain','Complex',as.character(ResolvedType)),
+         ClusterSize=ifelse(ClusterCount<=3,'Small',ifelse(ClusterCount<=10,'Medium','Large'))) %>%
+  group_by(ResolvedType,ClusterSize) %>% 
   summarise(#SvCount=n(),
             ArmEndPloidy=sum(grepl('ArmEndPloidy',ClusterReason)),
             BEPloidy=sum(grepl('BEPloidy',ClusterReason)),
@@ -72,28 +134,106 @@ allClusterReasons = mbSvDataActuals %>% group_by(ResolvedType) %>%
 
 View(allClusterReasons)
 
-# express as a percentage of all clustering reasons
-# exclude any cluster with a line type
-crColumns = ncol(allClusterReasons)
-allClusterReasonsData = gather(allClusterReasons, "ClusterReason", "Count", 2:ncol(allClusterReasons))
+allClusterReasonsData = allClusterReasons %>% gather('ClusterReason','Count', 3:ncol(allClusterReasons))
 View(allClusterReasonsData)
 
-svClusterReasons = allClusterReasonsData %>% filter(ResolvedType!='Line') %>% group_by(ClusterReason) %>% summarise(TotalCount=sum(Count))
+allClusterReasonsSummary = allClusterReasonsData %>% group_by(ResolvedType,ClusterReason) %>% summarise(Count=sum(Count))
+
+acrPlot = (ggplot(allClusterReasonsSummary, aes(x=ResolvedType, y=Count, fill=ClusterReason))
+                       + geom_bar(stat = "identity", colour = "black")
+                       + labs(x = "Cluster Type", y="SV Count")
+                       + scale_fill_manual(values = defaultPlotColours)
+                       + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+                       + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+                       + theme(axis.text.x = element_text(angle=90, hjust=1,size=10))
+                       + coord_flip())
+
+plot(acrPlot)
+
+acrPlot2 = (ggplot(allClusterReasonsSummary %>% filter(ResolvedType=='Complex'|ResolvedType=='SimpleChain'), aes(x=ResolvedType, y=Count, fill=ClusterReason))
+           + geom_bar(stat = "identity", colour = "black")
+           + labs(x = "Cluster Type", y="SV Count")
+           + scale_fill_manual(values = defaultPlotColours)
+           + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+           + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+           + theme(axis.text.x = element_text(angle=90, hjust=1,size=10))
+           + coord_flip())
+
+plot(acrPlot2)
+
+
+# express as a percentage of all clustering reasons
+# exclude any cluster with a line type
+
+svClusterReasons = allClusterReasonsData %>% filter(ResolvedType!='Line'&ClusterReason!='Single') %>% 
+  group_by(ClusterReason,ClusterSize) %>% summarise(TotalCount=sum(Count))
 View(svClusterReasons)
 
-privSharedClusterReasons = mbMergeData %>% group_by(ClusterReason) %>% summarise(PrivateSharedCount=n())
+
+View(mbMergeData)
+tmp = merge(mbMergeData,mbClusterData %>% select(SampleId,ClusterId,ClusterCount),by=c('SampleId','ClusterId'),all.x=T)
+View(tmp)
+privSharedClusterReasons = merge(mbMergeData,mbClusterData %>% select(SampleId,ClusterId,ClusterCount),by=c('SampleId','ClusterId'),all.x=T) %>% 
+  mutate(ClusterSize=ifelse(ClusterCount<=3,'Small',ifelse(ClusterCount<=10,'Medium','Large'))) %>%
+  group_by(ClusterReason,ClusterSize) %>% summarise(PrivateSharedCount=n())
+
+# privSharedClusterReasons = mbMergeData %>% group_by(ClusterReason) %>% summarise(PrivateSharedCount=n())
 View(privSharedClusterReasons)
 
 # 2. The background false-clustering rate is around 5% if proximity is a fair gauge for that
-clusterReasonCompare = merge(svClusterReasons,privSharedClusterReasons,by='ClusterReason',all.x=T)
+clusterReasonCompare = merge(svClusterReasons,privSharedClusterReasons,by=c('ClusterReason','ClusterSize'),all.x=T)
 clusterReasonCompare[is.na(clusterReasonCompare)] = 0
-clusterReasonCompare$InvalidPerc = round(clusterReasonCompare$PrivateSharedCount/clusterReasonCompare$TotalCount,3)
+clusterReasonCompare$OverclusteringPerc = round(clusterReasonCompare$PrivateSharedCount/clusterReasonCompare$TotalCount,3) * 100
 View(clusterReasonCompare)
 
+ocrPlot2 = (ggplot(clusterReasonCompare %>% filter(ClusterReason!='BEPloidy'&ClusterReason!='LOHChain'), 
+                   aes(x=reorder(ClusterReason,OverclusteringPerc), y=OverclusteringPerc, fill=ClusterReason))
+            + geom_bar(stat = "identity", colour = "black")
+            + labs(x = "Cluster Reason", y="Overclustering %")
+            + scale_fill_manual(values = defaultPlotColours)
+            + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+            + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+            + theme(axis.text.x = element_text(angle=90, hjust=1,size=10))
+            + theme(legend.position="none")
+            + facet_wrap(~ClusterSize)
+            + coord_flip())
 
-# 3. Many subset clusters are single LowQual SVs, about 5% (500 of 9800)
+plot(ocrPlot2)
+
+
+
+# 3. Many subset clusters are single LowQual SVs, about 5% (484 of 9800)
 View(mbSvData %>% filter(ResolvedType=='LowQual') %>% group_by(OverlapType) %>% count())
+View(mbSvData %>% filter(ResolvedType=='LowQual') %>% group_by(MatchType) %>% count())
+View(mbSvData %>% filter(ResolvedType=='LowQual'))
 
+lowQual = mbSvData %>% filter(ResolvedType=='LowQual'&MatchType!='Private')
+lowQual = merge(lowQual,mbSvData %>% select(OtherSvId=SvId,OtherClusterId=ClusterId,OtherSampleId=SampleId,OtherResolvedType=ResolvedType),by=c('OtherSvId'),all.x=T)
+View(lowQual %>% group_by(OtherResolvedType) %>% count())
+nrow(lowQual %>% filter(OtherResolvedType!='LowQual'))
+
+# make-up of other cluster where low-qual is a subset
+lowQualSubsets = mbSvData %>% filter(ResolvedType=='LowQual'&OverlapType=='Subset')
+nrow(lowQualSubsets)
+lowQualSubsets = merge(lowQualSubsets,mbSvData %>% select(OtherSvId=SvId,OtherClusterId=ClusterId,OtherSampleId=SampleId),by=c('OtherSvId'),all.x=T)
+lowQualSubsets = lowQualSubsets %>% distinct()
+lowQualSubsets = merge(lowQualSubsets,mbClusterData %>% 
+                         select(OtherSampleId=SampleId,OtherClusterId=ClusterId,OtherClusterCount=ClusterCount,OtherResolvedType=ResolvedType,
+                                OtherOverlapType=OverlapType,PrivateCount,SharedCount,MatchingClustersCount,OtherClusterIds),
+                       by=c('OtherSampleId','OtherClusterId'),all.x=T)
+View(lowQualSubsets)
+View(lowQualSubsets %>% group_by(OtherResolvedType,
+                                 ClusterSize=ifelse(OtherClusterCount<=3,'Small',ifelse(OtherClusterCount<=10,'Medium','Large'))) %>% count())
+
+View(lowQualSubsets %>% filter(PrivateCount==0))
+
+View(mbSvData %>% filter(MatchType=='Partial') %>% group_by(Type,ResolvedType=ifelse(ResolvedType=='LowQual','LowQual','NotLowQual'),Type) %>% 
+       count() %>% spread(Type,n))
+
+
+View(mbSvData %>% filter((SampleId=='CPCT02010347T'&ClusterId==43)|(SampleId=='CPCT02010347TII'&ClusterId %in% c(54,55))))
+
+View(mbMergeDataAll %>% filter(Type))
 
 # 4. Rate for shared SVs being subsets of a larger cluster by reason
 complexSuperSets = mbClusterData %>% filter(OverlapType=='ComplexSuperset'&PrivateCount==0&MatchingClustersCount==2)
@@ -110,6 +250,7 @@ View(cssSvData)
 cssSvData = merge(cssSvData,mbSvData %>% filter(MatchType!='Private') %>% select(Id=SvId,OtherSvId),by='Id',all.x=T)
 cssSvData = merge(cssSvData,mbSvDataActuals %>% select(OtherSvId=Id,OtherClusterReason=ClusterReason,OtherResolvedType=ResolvedType),by='OtherSvId',all.x=T)
 cssSvData = merge(cssSvData,mbSvDataActuals %>% select(OtherSvId=Id,OtherResolvedType=ResolvedType),by='OtherSvId',all.x=T)
+View(cssSvData)
 
 sharedDiffClustering = cssSvData %>% group_by(SampleId,ClusterId) %>% summarise(ClusterCount=first(ClusterCount),
                                                               LowQualCount=sum(OtherResolvedType=='LowQual'),
@@ -152,6 +293,7 @@ nrow(sharedDiffClustering %>% filter(LowQualCount==0&FoldbackDiff)) # 5
 nrow(sharedDiffClustering %>% filter(LowQualCount==0&LOHDiff)) # 31
 nrow(sharedDiffClustering %>% filter(LowQualCount==0&LooseOverlapDiff)) # 2
 nrow(sharedDiffClustering %>% filter(LowQualCount==0&ProxDiff)) # 3
+
 
 # 5. Exploration of over-clustering for certain reasons
 aepMerges = read.csv('~/logs/cr_arm_end_ploidy.csv')
