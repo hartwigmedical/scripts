@@ -16,9 +16,9 @@ sv_jar=/data/common/tools/linx_pilot/sv-analyser.jar
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
 java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
-    -sample ${sample} \
+    -sample ${tumor_sample} \
     -plot_out ${input_dir}/plot/ \
-    -data_out ${input_dir}/data/ \
+    -data_out ${input_dir}/circos/ \
     -segment ${segments} \
     -link ${links} \
     -exon ${exons} \
