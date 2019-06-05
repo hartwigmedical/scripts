@@ -62,7 +62,7 @@ In addition to data-request specific criteria, by default we exclude datasets fo
 
 - We exclude biopsies from patients where informed consent is from before 21 April 2016.
 - We exclude biopsies with poor quality (PURPLE qcStatus != PASS).
-- We exclude biopsies without any tumor evidence (PURPLE status = “NO_TUMOR”).
+- We exclude biopsies without any tumor evidence (PURPLE status = NO_TUMOR).
 - We exclude biopsies with less than 20% tumor cells (PURPLE purity < 0.2).
 
 ### More detailed information

@@ -6,72 +6,21 @@ library(tidyr)
 library(dndscv)
 library(GenomicRanges)
 
-####### DB
-#somaticQuery = paste0("select * from somaticVariant where filter = 'PASS' and gene <> '' and worstCodingEffect != 'NONE' AND sampleId in (",sampleIdString, ")")
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
-dbDisconnect(dbProd)
-rm(dbProd)
-
-####### Cohort
-entireCohort = purple::query_cohort(dbProd)
-highestPurityCohort = purple::highest_purity_cohort(entireCohort)
-
-load(file = "~/hmf/RData/Reference/allClinicalData.RData")
-allClinicalDataNew = purple::query_clinical_data(dbProd) %>% filter(!sampleId %in% allClinicalData$sampleId)
-
-
-highestPurityCohort = left_join(highestPurityCohort, allClinicalData %>% select(sampleId, cancerTypeOld = primaryTumorLocation))
-highestPurityCohort = left_join(highestPurityCohort, allClinicalDataNew %>% select(sampleId, cancerTypeNew = primaryTumorLocation))
-highestPurityCohort = highestPurityCohort %>% mutate(cancerType = coalesce(cancerTypeOld, cancerTypeNew)) %>% select(-cancerTypeOld, -cancerTypeNew)
-highestPurityCohort = highestPurityCohort %>%
-  mutate(
-    cancerType = ifelse(cancerType == 'Net', 'NET', cancerType),
-    cancerType = ifelse(cancerType == 'Small intestine', 'Small Intestine', cancerType),
-    cancerType = ifelse(is.na(cancerType), 'Unknown', cancerType)
-  ) %>%
-  group_by(cancerType) %>%
-  mutate(cancerTypeCount = n()) %>% ungroup() %>%
-  mutate(
-    cancerType = ifelse(cancerTypeCount < 8, "Other", cancerType)
-  ) %>%
-  select(-cancerTypeCount)
-save(highestPurityCohort, file = "~/hmf/analysis/dnds/highestPurityCohort.RData")
-
-
-sampleIdString1 = paste("'", highestPurityCohort[1:1740, ]$sampleId, "'", collapse = ",", sep = "")
-somaticQuery1 = paste0("select * from somaticVariant where filter = 'PASS' AND sampleId in (",sampleIdString1, ")")
-somatics1 = dbGetQuery(dbProd, somaticQuery1)
-save(somatics1, file = "~/hmf/analysis/dnds/somatics1.RData")
-
-sampleIdString2 = paste("'", highestPurityCohort[1741:3483, ]$sampleId, "'", collapse = ",", sep = "")
-somaticQuery2 = paste0("select * from somaticVariant where filter = 'PASS' AND sampleId in (",sampleIdString2, ")")
-somatics2 = dbGetQuery(dbProd, somaticQuery2)
-save(somatics2, file = "~/hmf/analysis/dnds/somatics2.RData")
-
-load(file = "~/hmf/RData/reference/HmfRefCDS.RData")
-exonic_somatics <- function(somatics, gr_genes) {
-  gr_muts = GRanges(somatics$chromosome, IRanges(somatics$position,somatics$position + nchar(somatics$ref) - 1))
-  ol = as.matrix(findOverlaps(gr_muts, gr_genes, type="any", select="all"))
-  return (somatics[unique(ol[, 1]), ])
+create_data_frame <- function(cvList) {
+  result = data.frame(stringsAsFactors = F)
+  for (cancerType in names(cvList)) {
+    df = cvList[[cancerType]]
+    df$cancerType <- cancerType
+    result = rbind(result, df)  
+  }
+  return (result)
 }
 
-exonicSomatics1 = exonic_somatics(somatics1, gr_genes)
-exonicSomatics2 = exonic_somatics(somatics2, gr_genes)
-exonicSomatics = rbind(exonicSomatics1, exonicSomatics2)
-save(exonicSomatics, file = "~/hmf/analysis/dnds/exonicSomatics.RData")
-rm(exonicSomatics1, exonicSomatics2, gr_genes, RefCDS)
-
-sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
-somaticCountsQuery = paste0("select sampleId, type, count(*) as total from somaticVariant where filter = 'PASS' and sampleId in (",sampleIdString, ") group by sampleId, type")
-somaticCounts = dbGetQuery(dbProd, somaticCountsQuery)
-somaticCounts = somaticCounts %>% mutate(type = paste0("TOTAL_", type)) %>% spread(type, total)
-save(somaticCounts, file = "~/hmf/analysis/dnds/somaticCounts.RData")
-
 ####### DNDS HmfRefCDSCv 
-load(file = "~/hmf/analysis/dnds/highestPurityCohort.RData")
-load(file = "~/hmf/analysis/dnds/exonicSomatics.RData")
+load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/genepanel/hpcExonicSomatics.RData")
 
-somatics = exonicSomatics %>% 
+somatics = hpcExonicSomatics %>% 
   filter(type == "INDEL" | type == "SNP", repeatCount <= 8) %>%
   select(sampleId, chr = chromosome, pos = position, ref, alt)
 
@@ -99,9 +48,19 @@ for (selectedCancerType in cancerTypes) {
   HmfRefCDSCvList[[selectedCancerType]] <- output$sel_cv
 }
 
+HmfRefCDSCv  <- create_data_frame(HmfRefCDSCvList)
+save(HmfRefCDSCv, file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")
 
-HmfRefCDSCv  <- output$sel_cv
-save(HmfRefCDSCv, file = "~/hmf/analysis/dnds/HmfRefCDSCv.RData")
+
+####### DNDS UNFILTERED ANNOTATED MUTATIONS
+unfilteredSomatics = hpcExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
+unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
+dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
+save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/analysis/genepanel/dndsUnfilteredAnnotatedMutations.RData")
+
+
+load(file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")
+
 
 
 biallelicSomatics = exonicSomatics %>% 
@@ -121,16 +80,17 @@ HmfRefCDSCvNonBiallelic  <- nonBiallelicOutput$sel_cv
 save(HmfRefCDSCvNonBiallelic, file = "~/hmf/analysis/dnds/HmfRefCDSCvNonBiallelic.RData")
 
 
-####### DNDS UNFILTERED ANNOTATED MUTATIONS
-unfilteredSomatics = exonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
-unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
-dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
-save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/analysis/dnds/exonicSomaticsDndsAnnotated.RData")
+
+
+#load('~/hmf/RData/Processed/genePanel.RData')
+#load('Downloads/HmfRefCDSCv.RData')
+#Sig = HmfRefCDSCv %>% filter(qglobal_cv<0.01,!gene_name %in% c('POM121L12','TRIM49B'))
+#View(merge(genePanel,Sig,by='gene_name',all.y = T) %>% filter(is.na(hmf),is.na(martincorena)) %>% select(cancerType,qglobal_cv,everything()))
 
 
 
 ############################################   HIGHEST PURITY COHORT ############################################
-load(file = "~/hmf/analysis/dnds/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
 load(file = "~/hmf/analysis/dnds/somaticCounts.RData")
 somaticCounts[is.na(somaticCounts)] <- 0
 somaticCounts = somaticCounts %>%

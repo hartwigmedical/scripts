@@ -1,10 +1,9 @@
 options(Ncpus=8L, repos="https://cloud.r-project.org/")
-update.packages(ask=FALSE)
+if (!requireNamespace("packrat", quietly=TRUE)) {
+	install.packages("packrat")
+}
 # default packages: might fail with permissions error
-install.packages(c(
-	"foreign",
-	"MASS",
-	"survival"))
+# install.packages(c("foreign","MASS", "survival"))
 install.packages(c(
 	"tidyverse",
 	"devtools",
@@ -19,9 +18,9 @@ if (!requireNamespace("BiocManager", quietly=TRUE)) {
 	install.packages("BiocManager")
 }
 BiocManager::install(ask=FALSE,
-	#version = "devel",
 	pkgs=c(
 	"copynumber",
+	"StructuralVariantAnnotation",
 	"VariantAnnotation",
 	"rtracklayer",
 	"BSgenome",
@@ -30,4 +29,3 @@ BiocManager::install(ask=FALSE,
 	"org.Hs.eg.db",
 	"TxDb.Hsapiens.UCSC.hg19.knownGene",
 	"BSgenome.Hsapiens.UCSC.hg19"))
-devtools::install_github("PapenfussLab/StructuralVariantAnnotation")

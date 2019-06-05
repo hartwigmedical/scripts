@@ -1,0 +1,22 @@
+#!/bin/bash
+scriptName=$( basename $0 )
+
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName \${sampleName}"
+  echo "    Eg: $scriptName CPCT02010001T"
+  echo "        (searches for \${sampleName}_*.fastq.gz"
+  echo "---"
+  exit 1
+fi
+
+sampleName=$1
+outName="${sampleName}_fastq"
+outPath="/data/schuberg/tmp/${outName}"
+profile="hmf_fastq"
+bucket="hmf-fastq-storage"
+
+cmd="sbp s3 sync --dryrun s3://${bucket}/ ${outPath}/ --exclude \"*\" --include ${sampleName}_*.fastq.gz --profile ${profile}"
+
+echo "[INFO] Run the following to list all to be synced files:"
+echo "$cmd"

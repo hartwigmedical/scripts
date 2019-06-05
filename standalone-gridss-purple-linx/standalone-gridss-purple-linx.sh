@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Stand-alone chromaticHMF/GRIDSS pipeline
+# Stand-alone GRIDSS-PURPLE-Linx pipeline
 #
 set -o errexit -o pipefail -o noclobber -o nounset
 ! getopt --test > /dev/null 
@@ -19,6 +19,7 @@ if [[ ${PIPESTATUS[0]} -ne 0 ]]; then
 fi
 eval set -- "$PARSED"
 run_dir=""
+ref_dir=""
 tumour_bam=""
 normal_bam=""
 snvindel_vcf=""
@@ -35,6 +36,10 @@ while true; do
             shift 2
             ;;
         -o|--output_dir)
+            run_dir="$2"
+            shift 2
+            ;;
+		-r|--ref_dir)
             run_dir="$2"
             shift 2
             ;;
@@ -82,6 +87,10 @@ if [[ ! -d "$run_dir" ]] ; then
 	echo "Unable to create $run_dir"
 	exit 1
 fi
+if [[ ! -d "$ref_dir" ]] ; then
+	echo "Could not find Hartwig reference directory $ref_dir"
+	exit 1
+fi
 if [[ -z "$sample" ]] ; then
 	sample_name=$(basename $tumour_bam .bam)
 fi
@@ -99,29 +108,19 @@ tumor_sample=${sample}_T
 base_path=$(dirname $(readlink $0 || echo $0))
 ###
 # Reference data
-ref_genome=$base_path/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-viral_ref_genome=$base_path/refgenomes/human_virus/human_virus.fa
-encode_blacklist=$base_path/dbs/encode/ENCFF001TDO.bed
-repeatmasker=$base_path/dbs/repeatmasker/hg19.fa.out
-baf_snps=$base_path/dbs/amber/GermlineHetPon.hg19.bed
-gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
-gridss_pon=$base_path/dbs/gridss/pon/
-strelka_config=$base_path/settings/strelka/strelka_config_bwa_genome.ini
-# ChromaticHMF/GRIDSS2 jars
-jar_dir=$base_path/jars
-hmf_scripts=$base_path/hmfscripts/
-gridss_jar=$(ls -1 $base_path/jars/gridss-2.2.3-gridss-jar-with-dependencies.jar)
-purple_jar=$(ls -1 $base_path/jars/*purity-ploidy-estimator*.jar)
-amber_jar=$(ls -1 $base_path/jars/*amber*.jar)
-cobalt_jar=$(ls -1 $base_path/jars/*cobalt*.jar)
-# TODO Download R libraries!
-###
-# External tools
-export PATH=${base_path}/tools/circos_v0.69.6/bin/circos:$PATH
-export PATH=${base_path}/tools/circos_v0.69.6/bin/circos:$PATH
-export PATH=${base_path}/tools/sambamba-0.6.9-linux-static:$PATH
-export PATH=${base_path}/tools/samtools-1.9:$PATH
-export PATH=${base_path}/tools/strelka-2.9.10.centos6_x86_64/bin:$PATH
+ref_genome=$ref_dir/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+viral_ref_genome=$ref_dir/refgenomes/human_virus/human_virus.fa
+encode_blacklist=$ref_dir/dbs/encode/ENCFF001TDO.bed
+repeatmasker=$ref_dir/dbs/repeatmasker/hg19.fa.out
+baf_snps=$ref_dir/dbs/amber/GermlineHetPon.hg19.bed
+gc_profile=$ref_dir/dbs/gc/GC_profile.1000bp.cnp
+gridss_pon=$ref_dir/dbs/gridss/pon/
+strelka_config=$ref_dir/settings/strelka/strelka_config_bwa_genome.ini
+hmf_scripts=$ref_dir/hmfscripts/
+gridss_jar=$(ls -1 $ref_dir/jars/*gridss*.jar)
+purple_jar=$(ls -1 $ref_dir/jars/*purity-ploidy-estimator*.jar)
+amber_jar=$(ls -1 $ref_dir/jars/*amber*.jar)
+cobalt_jar=$(ls -1 $ref_dir/jars/*cobalt*.jar)
 
 for program in bwa sambamba samtools circos Rscript java ; do
 	if ! which $program > /dev/null ; then
@@ -130,16 +129,22 @@ for program in bwa sambamba samtools circos Rscript java ; do
 	fi
 done
 
-for rpackage in tidyverse devtools assertthat testthat NMF stringdist stringr argparser R.cache "copynumber" "VariantAnnotation" "rtracklayer" "BSgenome" "org.Hs.eg.db" "TxDb.Hsapiens.UCSC.hg19.knownGene" "BSgenome.Hsapiens.UCSC.hg19" ; do
+for rpackage in tidyverse devtools assertthat testthat NMF stringdist stringr argparser R.cache "copynumber" StructuralVariantAnnotation "VariantAnnotation" "rtracklayer" "BSgenome" "org.Hs.eg.db" "TxDb.Hsapiens.UCSC.hg19.knownGene" "BSgenome.Hsapiens.UCSC.hg19" ; do
 	if ! Rscript -e "installed.packages()" | grep $rpackage > /dev/null ; then
 		echo "Missing R package $rpackage"
 		echo "All required R packages can be installed by running Rscript install_rpackages.R with appropriate permissions."
-		#exit 1
+		exit 1
 	fi
 done
 
 mkdir -p $run_dir/logs
 log_prefix=$run_dir/logs/$(+%Y%m%d_%H%M%S).$HOSTNAME.$$
+
+JVM_MEMORY_USAGE_ARGS="
+	-XX:+UnlockExperimentalVMOptions
+	-XX:+UseCGroupMemoryLimitForHeap
+	-XX:MaxRAMFraction=1
+	-XshowSettings:vm"
 
 echo ############################################
 echo # Running GRIDSS
@@ -153,16 +158,17 @@ if [[ ! -f $gridss_somatic_vcf ]] ; then
 	mkdir -p $gridss_dir
 	gridss_jvm_args="
 		-ea
+		$JVM_MEMORY_USAGE_ARGS
 		-Dreference_fasta=$ref_genome
 		-Dsamjdk.create_index=true
 		-Dsamjdk.use_async_io_read_samtools=true
 		-Dsamjdk.use_async_io_write_samtools=true
 		-Dsamjdk.use_async_io_write_tribble=true
-		-Dsamjdk.buffer_size=2097152
+		-Dsamjdk.buffer_size=$((4 * 1024 * 1024))
 		-Dgridss.gridss.output_to_temp_file=true
 		-cp $gridss_jar "
-
-	java -Xmx31g $gridss_jvm_args gridss.CallVariants \
+		
+	java $gridss_jvm_args gridss.CallVariants \
 		TMP_DIR=$gridss_dir \
 		WORKING_DIR=$gridss_dir \
 		REFERENCE_SEQUENCE="$ref_genome" \
@@ -173,7 +179,7 @@ if [[ ! -f $gridss_somatic_vcf ]] ; then
 		BLACKLIST="$encode_blacklist" \
 		2>&1 | tee -a $log_prefix.gridss.CallVariants.log
 		
-	java -Xmx1G $gridss_jvm_args \
+	java $gridss_jvm_args \
 		gridss.AnnotateUntemplatedSequence \
 		REFERENCE_SEQUENCE=$ref_genome \
 		INPUT=tmp.raw.$gridss_raw_vcf \
@@ -181,7 +187,7 @@ if [[ ! -f $gridss_somatic_vcf ]] ; then
 		WORKER_THREADS=$threads \
 		2>&1 | tee -a $log_prefix.gridss.AnnotateUntemplatedSequence.human.log
 		
-	java -Xmx1G $gridss_jvm_args \
+	java $gridss_jvm_args \
 		gridss.AnnotateUntemplatedSequence \
 		REFERENCE_SEQUENCE=$viral_ref_genome \
 		INPUT=tmp.human.$gridss_raw_vcf \
@@ -236,7 +242,7 @@ sambamba mpileup \
 	--samtools "-q 1 -f $ref_genome" > $amber_pileup_T
 	2>&1 | tee $log_prefix.amber.T.log
 
-java -Xmx10G \
+java $JVM_MEMORY_USAGE_ARGS \
 	-jar $amber_jar \
 	-sample $tumor_sample \
 	-reference $amber_pileup_N \
@@ -252,7 +258,7 @@ echo ############################################
 echo # Running Cobalt
 echo ############################################
 mkdir -p $run_dir/cobalt
-java -Xmx10G -jar $cobalt_jar \
+java $JVM_MEMORY_USAGE_ARGS -jar $cobalt_jar \
     -threads $threads \
     -reference $ref_sample \
     -reference_bam $normal_bam \
@@ -274,7 +280,7 @@ echo # Running PURPLE
 echo ############################################
 purple_output=${run_dir}/purple
 
-java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
+java -Dorg.jooq.no-logo=true $JVM_MEMORY_USAGE_ARGS \
     -jar ${purple_jar} \
     -somatic_vcf $somatic_vcf \
     -structural_vcf $gridss_somatic_vcf.gz \
@@ -301,11 +307,17 @@ mv ${purple_annotated_vcf}.bgz ${purple_annotated_vcf}.gz
 mv ${purple_annotated_vcf}.bgz.tbi ${purple_annotated_vcf}.gz.tbi
 
 echo ############################################
-echo # Running FUCHSIA
+echo # Running Linx
 echo ############################################
 
 
 
+echo ############################################
+echo # Driver Catalog
+echo ############################################
+
+
+# Check 
 
 
 

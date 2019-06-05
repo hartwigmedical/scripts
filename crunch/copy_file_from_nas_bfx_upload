@@ -1,0 +1,18 @@
+#!/bin/bash
+
+fileName=$1
+scriptName=$( basename $0 )
+
+if [[ -z ${fileName} || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName \${nameOfTheFileOnNas}"
+  echo "    Eg: $scriptName New_SampleSheet.csv"
+  echo "---"
+  exit 1
+fi
+
+nasDirPath="/volume1/machines/BFX/upload"
+nasFilePath="nas:${nasDirPath}/${fileName}"
+
+echo "[INFO] Running scp on ${nasFilePath}"
+scp ${nasFilePath} ./

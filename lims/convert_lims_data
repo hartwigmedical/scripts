@@ -89,7 +89,7 @@ foreach ( @ALL_INPUT_FILES ){
 }
 foreach ( $JSON_OUT ){
     next unless -f $JSON_OUT;
-    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\ to $BACK_DIR failed: $!";
+    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\" to $BACK_DIR failed: $!";
 }
 
     
@@ -466,17 +466,18 @@ sub processSamp{
         
         my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
         next if isSkipValue( $sample_name );
-        my $sample_id = $row_info->{ 'sample_id' } or print Dumper($row_info) and die "No sample_id in row_info ($sample_name)";
-        my $submission = $row_info->{ 'submission' } or print Dumper($row_info) and die "No submission in row_info ($sample_name)";
-        my $analysis_type = $row_info->{ 'analysis_type' } or print Dumper($row_info) and die "No analysis_type in row_info ($sample_name)";
-        
+
+        my $sample_id = $row_info->{ 'sample_id' } or warn "[WARN] SKIPPING sample ($sample_name): No sample_id found" and next;
+        my $submission = $row_info->{ 'submission' } or warn "[WARN] SKIPPING sample ($sample_name): No submission found" and next;
+        my $analysis_type = $row_info->{ 'analysis_type' } or warn "[WARN] SKIPPING sample ($sample_name): No analysis_type found" and next;
+
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
         $row_info->{ 'entity' } = $row_info->{ 'submission' };
         
         ## check data analysis type and set accordingly
-        if ( $analysis_type =~ /^NoAnalysis|Somatic_R|Somatic_T|Germline$/ ){
-            # Already ok so no action 
+        if ( $analysis_type =~ /^(Somatic_R|Somatic_T|SingleAnalysis|FASTQ|BCL|LabOnly)$/ ){
+            ## Already final status so no further action
         }
         elsif ( $sample_name =~ /^(CORE\d{2}\d{6})(T|R){1}/ms ){
             my ($patient, $tum_or_ref) = ($1, $2);
@@ -485,7 +486,8 @@ sub processSamp{
             $row_info->{ 'entity' }        = $submission;
             $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
         }
-        elsif ( $analysis_type eq 'SomaticsBFX' ){
+        elsif ( $analysis_type eq 'SomaticAnalysis' or $analysis_type eq 'SomaticsBFX' ){
+            ## SomaticsBFX is the old term, SomaticAnalysis the new
             my $partner = $row_info->{ 'ref_sample_id' };
             if ( $partner ne '' and $partner ne NACHAR ){
                 $row_info->{ 'analysis_type' } = 'Somatic_T';
@@ -494,17 +496,27 @@ sub processSamp{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
         }
-        elsif ( $analysis_type eq 'GermlineBFX' ){ ## aka SingleSample
-            $row_info->{ 'analysis_type' } = 'Germline'; 
+        elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
+            ## GermlineBFX is the old term, SingleAnalysis the new
+            $row_info->{ 'analysis_type' } = 'SingleAnalysis';
+        }
+        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq 'NoAnalysis' or $analysis_type eq '' or $analysis_type eq 'NA' ){
+            ## NoBFX is the old term, FASTQ the new
+            $row_info->{ 'analysis_type' } = 'FASTQ';
+        }
+        elsif ( $analysis_type eq 'BCL' ){
+            $row_info->{ 'analysis_type' } = 'BCL';
+        }
+        elsif ( $analysis_type eq 'Labonly' ){
+            $row_info->{ 'analysis_type' } = 'LabOnly';
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
+            $row_info->{ 'analysis_type' } = 'SnpGenotyping';
             next;
         }
-        elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq '' or $analysis_type eq 'NA' ){
-            $row_info->{ 'analysis_type' } = 'NoAnalysis';
-        }
         else {
-            die "[EXIT] Sample ($sample_name) has unknown analysis type ($analysis_type)\n";
+            warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
+            next;
         }
         
         ## add submission info and parse KG
@@ -529,12 +541,12 @@ sub processSamp{
         next if isSkipValue( $unique );
 
         ## checks before storing
-        my $regex = "^[0-9a-zA-Z\-]*\$";
-        die "[EXIT] FIX IN LAB LIMS: sample_name contains unacceptable chars ($sample_name)\n" if $sample_name !~ /$regex/;
-        die "[EXIT] FIX IN LAB LIMS: sample_id contains unacceptable chars ($sample_id)\n" if $sample_id !~ /$regex/;
-        die "[EXIT] FIX IN LAB LIMS: no submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
-        die "[EXIT] FIX IN LAB LIMS: no analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
-        die "[EXIT] FIX IN LAB LIMS: no project name defined for sample ($sample_name)\n" unless $row_info->{ 'project_name' };        
+        my $regex = '^[0-9a-zA-Z\-]*$';
+        warn "[WARN] SKIPPING sample ($sample_name): sample_name contains unacceptable chars\n" and next if $sample_name !~ /$regex/;
+        warn "[WARN] SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars\n" and next if $sample_id !~ /$regex/;
+        warn "[WARN] SKIPPING sample ($sample_name): no submission defined for sample\n" and next unless $row_info->{ 'submission' };
+        warn "[WARN] SKIPPING sample ($sample_name): no analysis type defined for sample\n" and next unless $row_info->{ 'analysis_type' };
+        warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };        
         
         ## store at uniqe id
         next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
@@ -744,7 +756,6 @@ sub getFieldNameTranslations{
       "SNP_exp"           => 'snp_experiment_id',
       "Requested_product" => 'request',
       "State"             => 'lab_status', # lab status
-      "Primary_tumor_type"=> 'ptum',
       "Priority"          => 'priority', 
       "Arrival_date"      => 'arrival_date',
       "Remarks"           => 'remarks',

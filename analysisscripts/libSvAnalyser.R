@@ -330,7 +330,6 @@ hg19_arms = function() {
 on_hg19_arm = function(gr) {
   hg19_arms()$arm[findOverlaps(gr, hg19_arms(), select="first", ignore.strand=TRUE)]
 }
-line_elements = function()
 
 cluster_consistency = function(svgr) {
   svgr$arm = on_hg19_arm(svgr)
@@ -665,4 +664,131 @@ export_to_visNetwork = function(cndf, svdf, cngr, svgr, sampleId, file=paste0("b
     visSave(file)
 }
 
+SVA_SVS_to_gr = function(sv_raw_df) {
+  row.names(sv_raw_df) = sv_raw_df$Id
+  full_gr = c(with(sv_raw_df, GRanges(
+    seqnames=ChrStart,
+    ranges=IRanges(start=PosStart, width=1),
+    strand=ifelse(OrientStart == -1, "-", "+"),
+    Id=Id,
+    beid=paste0(Id, ifelse(ChrEnd != 0, "o", "b")),
+    SampleId=SampleId,
+    isLine=LEStart != "None",
+    partner=ifelse(ChrEnd != 0, paste0(Id, "h"), NA),
+    Homology=Homology,
+    ihomlen=InexactHOEnd-InexactHOStart,
+    insSeq=InsertSeq,
+    qual=QualScore,
+    cn=Ploidy,
+    refContext=RefContextStart
+  )), with(sv_raw_df %>% filter(ChrEnd != 0), GRanges(
+    seqnames=ChrEnd,
+    ranges=IRanges(start=PosEnd, width=1),
+    strand=ifelse(OrientEnd == -1, "-", "+"),
+    Id=Id,
+    beid=paste0(Id, "h"),
+    SampleId=SampleId,
+    isLine=LEEnd != "None",
+    partner=paste0(Id, "o"),
+    Homology=Homology,
+    ihomlen=InexactHOEnd-InexactHOStart,
+    insSeq=InsertSeq,
+    qual=QualScore,
+    cn=Ploidy,
+    refContext=RefContextEnd
+  )))
+  names(full_gr) = full_gr$beid
+  return(full_gr)
+}
+query_cancer_type_by_sample = function(dbConnect) {
+  query = "
+    SELECT s.sampleId, primaryTumorLocation, cancerSubtype
+    FROM baseline b
+    INNER JOIN sample s ON b.patientId = s.patientId"
+  return (DBI::dbGetQuery(dbConnect, query))
+}
 
+# wget http://www.repeatmasker.org/genomes/hg19/RepeatMasker-rm330-db20120124/hg19.fa.out.gz
+# from http://github.com/PapenfussLab/sv_benchmark
+import.repeatmasker.fa.out <- function(repeatmasker.fa.out) {
+  cache_filename = paste0(repeatmasker.fa.out, ".grrm.rds")
+  if (file.exists(cache_filename)) {
+    grrm = readRDS(cache_filename)
+  } else {
+    rmdt <- read_table2(repeatmasker.fa.out, col_names=FALSE, skip=3)
+    grrm <- GRanges(
+      seqnames=rmdt$X5,
+      ranges=IRanges(start=rmdt$X6 + 1, end=rmdt$X7),
+      strand=ifelse(rmdt$X9=="C", "-", "+"),
+      repeatType=rmdt$X10,
+      repeatClass=rmdt$X11)
+    saveRDS(grrm, file=cache_filename)
+  }
+  seqlevelsStyle(grrm) = "NCBI"
+  return(grrm)
+}
+import.repeatmasker.insertseq <- function(rmoutfile) {
+  rmdt <- read_table2(
+      rmoutfile,
+      col_names=c("swscore", "percdiv", "percdel", "percins", "query", "qstart", "qend", "qleft", "orientation", "repeatType", "repeatClass", "rstart", "rend", "rleft", "id", "hasBetterOverlappingMatch"),
+      col_types="ddddcddcccccdcdc",
+      skip=3)
+}
+repeatmasker.insertseq.summarise <- function(rmdt) {
+  rmdt = rmdt %>%
+    filter(is.na(hasBetterOverlappingMatch)) %>%
+    mutate(match_length=qend-qstart)
+  byrcdf_long = rmdt %>%
+    group_by(repeatClass) %>%
+    do({
+      GRanges(seqnames=.$query, ranges=IRanges(start=.$qstart, .$qend), strand="*") %>%
+        GenomicRanges::reduce() %>%
+        as.data.frame() %>%
+        group_by(seqnames) %>%
+        summarise(nbases=sum(end - start))
+    })
+  byrcdf = byrcdf_long %>%
+    spread(repeatClass, nbases) %>%
+    replace(., is.na(.), 0)
+  byrtdf = rmdt %>%
+    filter(is.na(hasBetterOverlappingMatch)) %>%
+    mutate(match_length=qend-qstart) %>%
+    group_by(repeatType) %>%
+    do({
+      GRanges(seqnames=.$query, ranges=IRanges(start=.$qstart, .$qend), strand="*") %>%
+        GenomicRanges::reduce() %>%
+        as.data.frame() %>%
+        group_by(seqnames) %>%
+        summarise(nbases=sum(end - start))
+    }) %>%
+    spread(repeatType, nbases) %>%
+    replace(., is.na(.), 0)
+  closest_repeat = rmdt %>%
+    group_by(query) %>%
+    top_n(1, qstart + match_length / 100000) %>%
+    ungroup() %>%
+    filter(!duplicated(query)) %>%
+    dplyr::select(query, closest_repeatType=repeatType, closest_repeatClass=repeatClass, closest_start=qstart, closest_match_length=match_length)
+  longest_repeat = rmdt %>%
+    group_by(query) %>%
+    top_n(1, match_length - qstart / 100000) %>%
+    ungroup() %>%
+    filter(!duplicated(query)) %>%
+    dplyr::select(query, longest_repeatType=repeatType, longest_repeatClass=repeatClass, longest_start=qstart, longest_match_length=match_length)
+  byquery = full_join(closest_repeat, longest_repeat, by="query") %>%
+    full_join(byrcdf, by=c("query"="seqnames")) %>%
+    full_join(byrcdf, by=c("query"="seqnames"))
+  if (byquery$closest_start > byquery$longest_start) {
+    browser()
+    stop("sanity check failure")
+  }
+  return(byquery)
+}
+
+getRepeatAnn = function(repeatClass) {
+  repeatClass = str_extract(repeatClass, "^[^/]+")
+  repeatClass <- ifelse(repeatClass %in% c("No repeat", "DNA", "LINE", "LTR", "SINE", "Satellite", "Other", "Low_complexity", "Simple_repeat"), repeatClass, "Other")
+  repeatClass <- ifelse(repeatClass == "", "No repeat", repeatClass)
+  repeatClass <- ifelse(repeatClass %in% c("Low_complexity", "Simple_repeat"), "Simple/Low complexity", repeatClass)
+  repeatClass <- factor(repeatClass, levels = c("No repeat", "Simple/Low complexity", "Satellite", "LINE", "SINE", "DNA", "LTR", "Other"))
+}

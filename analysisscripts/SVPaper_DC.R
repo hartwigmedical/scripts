@@ -5,6 +5,8 @@ library(grid)
 library(gridExtra)
 library(cowplot)
 
+figdir="~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/figures/"
+sampleCancerTypes= (read.csv(paste(figdir,'../sample_cancer_types.csv',sep=''), header = T, stringsAsFactors = F))
 
 # from http://github.com/PapenfussLab/sv_benchmark
 import.repeatmasker.fa.out <- function(repeatmasker.fa.out) {
@@ -21,7 +23,8 @@ import.repeatmasker.fa.out <- function(repeatmasker.fa.out) {
 grrm = import.repeatmasker.fa.out("D:/hartwig/hg19.fa.out")
 seqlevelsStyle(grrm) = "NCBI"
 
-svData = read_csv('C:/Users/Daniel/Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/SVA_SVS.csv')
+#svData = read_csv('C:/Users/Daniel/Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/SVA_SVS.csv')
+svData = read_csv('../../sv/SVA_SVS.csv')
 
 # All (!) non-template inserted sequence 16 or longer have an alignment to either the reference genome, or our viral db
 svData %>% filter(str_length(InsertSeq) >= 16) %>% mutate(hasAln = InsSeqAlignments != "") %>% pull(hasAln) %>% table()
@@ -58,11 +61,120 @@ ggplot(insrmdf) +
   geom_histogram(bins=100) +
   scale_y_log10()
 
+svDataWithIns = svDataWithIns %>%
+  mutate(ins_class=ifelse(is.na(InsSeqAlignments),
+                          "No alignment",
+                          ifelse(!str_detect(InsSeqAlignments, "(^([0-9]?[0-9])|X|Y|(MT))[:]"), "Viral Insertion",
+                                 ifelse(!is.na(repeatOverlapPercentage) & repeatOverlapPercentage > 0,
+                                        "Repeat",
+                                        "Not repeat"))))
 ggplot(svDataWithIns %>% filter(!is.na(InsertSeq))) +
-  aes(x=str_length(InsertSeq), fill=ifelse(is.na(InsSeqAlignments), "No alignment", ifelse(!is.na(repeatOverlapPercentage) & repeatOverlapPercentage > 0, "Repeat", "Not repeat"))) +
-  geom_histogram() +
+  aes(x=str_length(InsertSeq), fill=ins_class) +
+  geom_histogram(bins=10) +
   scale_x_log10() +
-  labs(title="Alignment status by insertion length")
+  scale_fill_brewer(palette="Dark2") +
+  facet_grid(ifelse(ChrEnd == 0, "Breakend", "Breakpoint") ~ .) +
+  labs(
+    x="Assembled sequence length",
+    y="count",
+    fill="Sequence\nAnnotation"
+    )
+ggsave(filename=paste0(figdir, "insert_sequence_annotation_histogram.pdf"), width=4, height=6)
+svDataWithIns %>%
+  filter(ins_class=="Viral Insertion") %>%
+  pull(SampleId) %>%
+  unique() %>%
+  length()
+
+
+# Viral insertions
+virushostdb.tsv = read_tsv("../virus/virushostdb.tsv")
+names(virushostdb.tsv) = str_replace_all(names(virushostdb.tsv), " ", "")
+virushostlookup = virushostdb.tsv %>%
+  dplyr::select(virustaxid, virusname, refseqid) %>%
+  mutate(refseqid=str_replace_all(refseqid, " ", "")) %>%
+  separate_rows(refseqid, sep = ",") %>%
+  filter(!duplicated(refseqid))
+get_best_viral_hit = function(x) {
+  df = filter(x, !duplicated(virusname))
+  if (nrow(df) == 1) return (df)
+  df2 = df %>%
+    mutate(virusname=Biobase::lcPrefix(virusname)) %>%
+    filter(!duplicated(virusname))
+  if (nrow(df2) == 1 & all(str_length(df2$virusname) > 10)) return (df2)
+  df = df %>% filter(!(virusname %in% c("Alphapapillomavirus 7", "HBV recombinant C/G", "Hepatitis B virus subtype adr")))
+  if (nrow(df) == 1) return (df)
+  df2 = top_n(df, 1, match_length)
+  if (nrow(df2) == 1) return(df2)
+  browser()
+  return(df)
+}
+viral_insertions = svDataWithIns %>%
+  filter(ins_class=="Viral Insertion") %>%
+  dplyr::select(SampleId, ChrStart, PosStart, InsSeqAlignments) %>%
+  separate_rows(InsSeqAlignments, sep=";") %>%
+  mutate(bin=paste(ChrStart, ceiling(PosStart / 100000))) %>%
+  mutate(viral_contig=str_match(InsSeqAlignments, "^([^:]+):[0-9]+")[,2]) %>%
+  mutate(match_length=str_match(InsSeqAlignments, "([0-9]+)M")[,2]) %>%
+  inner_join(virushostlookup, by=c("viral_contig"="refseqid")) %>%
+  group_by(SampleId, bin) %>%
+  do(get_best_viral_hit(.))
+
+viral_translation=c(
+  "Human papillomavirus type 16"="HPV",
+  "Human papillomavirus type 18"="HPV",
+  "Alphapapillomavirus 7"="HPV",
+  "Human papillomavirus type 45"="HPV",
+  "Merkel cell polyomavirus"="Merkel cell",
+  "HBV genotype D"="HepB",
+  "Human betaherpesvirus 5"="Herpes",
+  "Human alphaherpesvirus 1"="Herpes",
+  "Adeno-associated virus - 2"="AAV",
+  "Adeno-associated virus 3B"="AAV",
+  "Adeno-associated virus - 6"="AAV",
+  "HBV genotype C"="HepB",
+  "HBV recombinant C/G"="HepB",
+  "Hepatitis B virus subtype adr"="HepB",
+  "HBV genotype B"="HepB",
+  "Hepatitis B virus"="HepB")
+
+viral_insertions = svDataWithIns %>%
+  filter(ins_class=="Viral Insertion") %>%
+  dplyr::select(SampleId, ChrStart, PosStart, InsSeqAlignments) %>%
+  separate_rows(InsSeqAlignments, sep=";") %>%
+  mutate(bin=paste(ChrStart, ceiling(PosStart / 100000))) %>%
+  mutate(viral_contig=str_match(InsSeqAlignments, "^([^:]+):[0-9]+")[,2]) %>%
+  mutate(match_length=str_match(InsSeqAlignments, "([0-9]+)M")[,2]) %>%
+  inner_join(virushostlookup, by=c("viral_contig"="refseqid")) %>%
+  group_by(SampleId, bin) %>%
+  do(get_best_viral_hit(.))
+
+viral_insertions_simple_name = svDataWithIns %>%
+  filter(ins_class=="Viral Insertion") %>%
+  dplyr::select(SampleId, ChrStart, PosStart, InsSeqAlignments) %>%
+  separate_rows(InsSeqAlignments, sep=";") %>%
+  mutate(bin=paste(ChrStart, ceiling(PosStart / 100000))) %>%
+  mutate(viral_contig=str_match(InsSeqAlignments, "^([^:]+):[0-9]+")[,2]) %>%
+  mutate(match_length=str_match(InsSeqAlignments, "([0-9]+)M")[,2]) %>%
+  inner_join(virushostlookup, by=c("viral_contig"="refseqid")) %>%
+  mutate(virusname=viral_translation[virusname]) %>%
+  group_by(SampleId, bin) %>%
+  summarise(virusname=unique(virusname)) %>%
+  dplyr::select(-bin)
+
+viral_summary = viral_insertions_simple_name %>%
+  left_join(sampleCancerTypes) %>%
+  replace_na(list("CancerType"="Unknown")) %>%
+  mutate(CancerType=str_to_lower(CancerType)) %>%
+  group_by(CancerType, SampleId, virusname) %>%
+  summarise(sites=n()) %>%
+  group_by(CancerType, virusname) %>%
+  summarise(samples=n(), sites=sum(sites))
+
+
+
+
+
 
 ins16df = svDataWithIns %>%
   mutate(

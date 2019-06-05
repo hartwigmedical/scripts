@@ -20,7 +20,7 @@ echo "[INFO] Running gridss somatic filtering for ${set}"
 do_run_gridss_somatic_filter ${set_path}
 
 echo "[INFO] Running gridss assembly alignment backport for ${set}"
-do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.2.2/gridss.jar
+do_run_gridss_2_1_0_breakpoint_position_backport ${set_path} /data/common/tools/gridss_v2.2.3/gridss.jar
 
 echo "[INFO] Slicing and downloading bam hotspots for ${set}"
 do_download_hotspot_bams ${set_path}
@@ -43,6 +43,9 @@ bachelor_prod ${set_path}
 echo "[INFO] Running CHORD for ${set}"
 run_chord_prod ${set_path}
 
+echo "[INFO] Loading amber into database for ${set}"
+do_load_amber_data_prod ${set_path}
+
 echo "[INFO] Loading purple into database for ${set}"
 do_load_purple_data_prod ${set_path}
 
@@ -51,6 +54,9 @@ do_load_somatic_variants_prod ${set_path}
 
 echo "[INFO] Loading structural variants into database for ${set}"
 do_run_sv_loader_prod ${set_path}
+
+echo "[INFO] Creating symlinks for metric file for ${set}"
+create_symlink_metric_file ${set_path}
 
 echo "[INFO] Loading metrics into database for ${set}"
 do_load_metrics_data_prod ${set_path}

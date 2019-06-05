@@ -1,0 +1,29 @@
+#!/bin/bash
+scriptName=$( basename $0 )
+
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName CPCT02010001"
+  echo "        $scriptName FR12345678"
+  echo "---"
+  exit 1
+fi
+
+## init
+searchString=$1
+function join_by { local IFS="$1"; shift; echo "$*"; }
+matchFields=(sample_name sample_id patient)
+matchFieldsString=$(join_by "|" "${matchFields[@]}")
+
+## retrieve all info for each barcode found
+echo "[INFO] Searching for \"${searchString}\" (exact match with: ${matchFieldsString})"
+for matchField in "${matchFields[@]}"; do
+  mapfile -t barcodes < <( query_lims -type samples -rna -exact -filter "${matchField}=${searchString}" -json | jq -r '.[].sample_id' )
+  for barcode in "${barcodes[@]}"; do
+    type=$( query_lims -type samples -rna -exact -filter "sample_id=${barcode}" -json | jq -r '.[0].analysis_type' )
+    echo "[INFO] $barcode found (type=$type)"
+    query_lims -type samples -filter "sample_id=${barcode}" -json | \
+      jq -r '.[] | to_entries|map("  \(.key) = \(.value|tostring)")|.[]' | \
+      sort | grep -vP "= $" 
+  done
+done

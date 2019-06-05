@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "-----"
+    echo " Usage: `basename $0` <path-to-pipeline-run1> [<path-to-pipeline-run2 etc>]"
+    echo "        `basename $0` /data2/processed/18*"
+    echo " Descr: Get Rsync cmd to sync pipeline runs to datastore excluding bams and diffs."
+    echo "-----"
+    exit 1
+fi
+
+echo "[INFO] Execute to start sync:"
+rsynccmd=" rsync -ahP"
+rsynccmd=${rsynccmd}" --exclude \"*.bam\""
+rsynccmd=${rsynccmd}" --exclude \"*.diff\""
+rsynccmd=${rsynccmd}" --stats"
+rsynccmd=${rsynccmd}" $@"
+rsynccmd=${rsynccmd}" ds:/data/data_archive/shallow_seq_pipelines/"
+
+echo ${rsynccmd}

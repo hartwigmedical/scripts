@@ -83,7 +83,8 @@ oncoGeneStatusPrimaryRowNumber <- function(pos, hotspot, nearHotspot, biallelic,
 
 
 onco_mutations <- function(mutations) {
-  mutations$nearHotspot <- nearHotspot(mutations)
+  #mutations$nearHotspot <- nearHotspot(mutations)
+  mutations$nearHotspot <- mutations$hotspot == "NEAR_HOTSPOT"
 
   result = mutations %>%
     #result = mutations[mutations$gene %in% c("APC", "NRAS","CDKN2A", "KRAS"), ] %>%
@@ -97,7 +98,8 @@ onco_mutations <- function(mutations) {
       redundant = row_number != oncoGeneStatusPrimaryRowNumber(row_number, hotspot, nearHotspot, biallelic, impact)) %>%
     ungroup() %>%
     mutate(
-      hotspot = hotspot > 0,
+      #hotspot = hotspot > 0,
+      hotspot = hotspot == "HOTSPOT",
       biallelic = biallelic > 0,
       impact = as.character(impact),
       driverType = as.character(driverType),
@@ -126,7 +128,8 @@ tsg_mutations <- function(mutations) {
     select(-geneStatusPrimaryPositions) %>%
     ungroup() %>%
     mutate(
-      hotspot = hotspot > 0,
+      #hotspot = hotspot > 0,
+      hotspot = hotspot == "HOTSPOT",
       biallelic = biallelic > 0,
       impact = as.character(impact),
       driverType = as.character(driverType))
@@ -159,13 +162,23 @@ dnds_driver_likelihood <- function(mutations, expectedDriversPerGene) {
 }
 
 
-dnds_expected_drivers <- function(HmfRefCDSCv, annotmuts, somatics) {
-  geneImpactCount = dnds_annotate_somatics(annotmuts, somatics, distinguishIndels = F) %>%
+dnds_expected_drivers <- function(HmfRefCDSCv, mutations) {
+
+  geneImpactCount = mutations %>%
+    mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
     group_by(gene, impact) %>%
     summarise(n = n()) %>%
     filter(!impact %in% c("", "Synonymous")) %>%
     mutate(impact = tolower(paste("n", impact, sep = "_"))) %>%
     spread(impact, n, fill = 0)
+
+  if(!"n_nonsense" %in% names(geneImpactCount)) {
+    geneImpactCount$n_nonsense <- 0
+  }
+
+  if(!"n_splice" %in% names(geneImpactCount)) {
+    geneImpactCount$n_splice <- 0
+  }
 
   result = left_join(HmfRefCDSCv %>% filter(cancerType == 'All'), geneImpactCount, by = c("gene_name" = "gene"))
 
@@ -204,6 +217,18 @@ dnds_annotate_somatics <- function(annotmuts, somatics, distinguishIndels = T) {
 
   return (result)
 }
+
+dnds_driver_rates <- function(HmfRefCDSCv, mutations) {
+  require(dplyr)
+
+  expectedDriversPerGene = dnds_expected_drivers(HmfRefCDSCv, mutations)
+  driverRates = dnds_driver_likelihood(mutations, expectedDriversPerGene) %>%
+    ungroup() %>%
+    mutate(gene_drivers = unknownDrivers * driverLikelihood, gene_non_drivers = unknownDrivers - gene_drivers)
+
+  return (driverRates)
+}
+
 
 dnds_tsg_drivers <- function(sampleSomatics, mutations, expectedDriversPerGene) {
   result = list()

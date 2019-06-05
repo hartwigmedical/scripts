@@ -3,6 +3,7 @@ library(GenomicRanges)
 library(RMySQL)
 library(Biostrings)
 library(StructuralVariantAnnotation)
+library(cowplot)
 
 
 query_somatic_structuralVariants = function(dbConnect, table="structuralVariant") {
@@ -86,8 +87,21 @@ anchor_df = data.frame(sampleId=unique(gr$sampleid)) %>%
     hitdf
   })
 
-adj_df = anchor_df %>% full_join(asm_links, by=c("sampleId"="sampleid", "beid1", "beid2"))
+adj_df = anchor_df %>%
+  left_join(asm_links, by=c("sampleId"="sampleid", "beid1"="beid1", "beid2"="beid2")) %>%
+  mutate(is_asm_linked=!is.na(linkedBy))
 
+
+ggplot(adj_df %>% filter(is_asm_linked)) +
+  aes(x=distance, fill=pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10) +
+  geom_histogram(bins=50) +
+  labs(title="Assembly linked variants", fill="supportDistance > distance")
+
+ggplot() +
+  aes(x=distance, y=pmax(anchorSupportDistance1, anchorSupportDistance2), colour=is_asm_linked) +
+  geom_point(data=adj_df %>% filter(!is_asm_linked) %>% sample_frac(size=0.1), colour="red", size=0.1) +
+  geom_point(data=adj_df %>% filter(is_asm_linked), colour="blue", size=0.1) +
+  scale_x_continuous(limits=c(0, 600))
 
 
 

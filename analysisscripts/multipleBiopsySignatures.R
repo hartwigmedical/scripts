@@ -21,7 +21,7 @@ multipleBiopsyCohort = multipleBiopsyCohort %>% filter(patientId == ID)
 
 ## Get somatic and structural variants
 multipleBiopsySomaticVariants = purple::query_somatic_variants(dbProd, multipleBiopsyCohort)
-multipleBiopsySomaticVariants$ploidy = multipleBiopsySomaticVariants$adjustedCopyNumber * multipleBiopsySomaticVariants$adjustedVaf
+multipleBiopsySomaticVariants$ploidy = multipleBiopsySomaticVariants$copyNumber * multipleBiopsySomaticVariants$adjustedVaf
 multipleBiopsyStructuralVariants = purple::query_structural_variants(dbProd, multipleBiopsyCohort)
 
 ### Clean up

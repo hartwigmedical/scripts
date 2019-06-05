@@ -276,20 +276,25 @@ singleRed = "#d94701"
 
 create_plot <- function(data, xLab, yLab) {
   ggplot(data=data,aes(PCAWG,HMF)) + 
-    geom_smooth(method = 'lm', colour = singleBlue, se = F, alpha = 0.2) +
-    geom_point(color = "black") +
-    geom_text(aes(x = xLab, y = yLab, label = lm_eqn(lm(PCAWG ~ HMF, data))), parse = TRUE, size = 3, hjust = 0) +
+    geom_smooth(method = 'lm', colour = singleBlue, se = F, alpha = 0.2, size = 0.3) +
+    geom_point(color = "black", size = 0.3) +
+#    geom_text(aes(x = xLab, y = yLab, label = lm_eqn(lm(PCAWG ~ HMF, data))), parse = TRUE, size = 3, hjust = 0) +
     xlab("PCAWG Pipeline") + ylab("HMF Pipeline") +# ggtitle("Structural Variants") +
     scale_x_continuous(expand = c(0.02,0.02)) + scale_y_continuous(expand = c(0.02,0.02)) +
     theme(panel.border = element_blank(), axis.ticks = element_blank(), panel.grid.minor = element_blank())
 }
 
 
-p1 = create_plot(combinedSummary %>% filter(type == 'SNV'), 10000, 30000) + xlab("") + ggtitle("SNV")
-p2 = create_plot(combinedSummary %>% filter(type == 'MNV'), 25, 100) + xlab("") + ylab("") + ggtitle("MNV")
-p3 = create_plot(combinedSummary %>% filter(type == 'INDEL'), 5000, 30000) + ggtitle("INDEL")
+p1 = create_plot(combinedSummary %>% filter(type == 'SNV'), 10000, 30000)  + ggtitle("SNV")
+p2 = create_plot(combinedSummary %>% filter(type == 'MNV'), 25, 100) + ylab("") + ggtitle("MNV")
+p3 = create_plot(combinedSummary %>% filter(type == 'INDEL'), 5000, 30000)  + ylab("")  + ggtitle("INDEL")
 p4 = create_plot(combinedSummary %>% filter(type == 'SV'), 100, 400) + ylab("") + ggtitle("SV") + ylim(0, 500)
 
-pTotal = plot_grid(p1,p2,p3,p4, nrow = 2, labels = "AUTO")
-pTotal
-save_plot("~/hmf/RPlot/Extended Figure 4 - Pipeline Comparison.png", pTotal, base_width = 8, base_height = 8)
+pTotal = plot_grid(p1,p2,p3,p4, nrow = 1, labels = "auto", label_size = 8)
+
+pFinal = plot_grid(pTotal, pFigure1Revisited, nrow = 2, labels = "", rel_heights = c(1, 2))
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.pdf", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.png", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.eps", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
+
+
