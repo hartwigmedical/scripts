@@ -1,30 +1,29 @@
 #!/bin/bash
+source load_metadata
 
-sample=$1 && shift
-segments=$1 && shift
-links=$1 && shift
-exons=$1 && shift
+run_dir=$1 && shift
+input_dir=${run_dir}/sv
 
-credentials=/data/common/dbs/mysql_credentials/prod
-output_dir=/data/experiments/190130_sv_vis
-sv_vis_jar=/data/common/tools/sv-visualiser_pilot/sv-visualiser.jar
+# Load metadata
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
+links=${input_dir}/${tumor_sample}.linx.vis_sv_data.csv
+exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.csv
+segments=${input_dir}/${tumor_sample}.linx.vis_segments.csv
+cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.csv
+
+sv_jar=/data/common/tools/linx_pilot/sv-analyser.jar
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
-# Database details
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-java -Dorg.jooq.no-logo=true -cp ${sv_vis_jar} com.hartwig.hmftools.svvisualise.SvVisualiser \
+java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
     -sample ${sample} \
-    -plot_out ${output_dir} \
-    -data_out ${output_dir}/data/ \
+    -plot_out ${input_dir}/plot/ \
+    -data_out ${input_dir}/data/ \
     -segment ${segments} \
     -link ${links} \
     -exon ${exons} \
+    -cna ${cna} \
     -circos ${circos} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
 
 
