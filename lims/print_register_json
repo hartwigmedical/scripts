@@ -27,6 +27,7 @@ my $YES_PIPELINE_PRIO = 99;
 
 my $LIMS_IN_FILE = '/data/lims/lims.json';
 my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
+my $SHALLOW_RUNS_DIR = '/data/data_archive/shallow_seq_pipelines';
 my $USE_EXISTING = 0;
 
 ## -----
@@ -257,11 +258,20 @@ sub processSample{
 
         ## adjust content in case of ShallowSeq
         if ( $shallow ){
-            say "[INFO]   Will run ShallowSeq mode for $name ($barcode)";
-            $yield = 40 * $YIELD_F; $yield = 40 * $YIELD_F;
-            $entity = 'HMF_SHALLOWSEQ';
-            $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
-            $ini = $SHA_INI;
+            say "[INFO]   ShallowSeq flag set in LIMS";
+            my $match_string = join( "_", $barcode_ref, $barcode, $name );
+            my $run_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
+            chomp($run_exists);
+            if ( $run_exists ){
+                say "[INFO]   ShallowSeq run found ($match_string): going for full Somatic mode";
+            }
+            else{
+                say "[INFO]   No ShallowSeq run found yet: going for ShallowSeq mode";
+                $yield = 40 * $YIELD_F; $yield = 40 * $YIELD_F;
+                $entity = 'HMF_SHALLOWSEQ';
+                $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
+                $ini = $SHA_INI;
+           }
         }
  
         ## check if barcode already exists at SBP
