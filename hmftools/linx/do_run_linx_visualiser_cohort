@@ -1,0 +1,37 @@
+#!/bin/bash
+source load_metadata
+
+sample=$1 && shift
+segments=$1 && shift
+links=$1 && shift
+exons=$1 && shift
+cna=$1 && shift
+output_dir=/data/experiments/190130_sv_vis
+
+sv_jar=/data/common/tools/linx_pilot/sv-analyser.jar
+circos=/data/common/tools/circos_v0.69.6/bin/circos
+
+java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
+    -sample ${sample} \
+    -plot_out ${output_dir}/plot/ \
+    -data_out ${output_dir}/data/ \
+    -segment ${segments} \
+    -link ${links} \
+    -exon ${exons} \
+    -cna ${cna} \
+    -circos ${circos} \
+    $@
+
+
+#Example usage
+#   do_run_linx_visualiser_cohort CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv /data/experiments/sv/SVA_VIS_CNA.csv
+#   do_run_linx_visualiser_cohort CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv /data/experiments/sv/SVA_VIS_CNA.csv -threads 1 -chromosome 15 -debug
+#
+# Optional arguments
+#
+# -threads  sets number of threads
+# -chromosome   will only produce plot for supplied chromosome
+# -clusterId    will only produce plot for supplied clusterId
+# -debug    replaces sv positions with sv id
+
+

@@ -28,8 +28,8 @@ java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
 
 
 #Example usage
-#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv
-#   do_run_sv_visualiser CPCT02020258T /data/experiments/sv/SVA_VIS_SEGMENTS.csv /data/experiments/sv/SVA_VIS_SVS.csv /data/experiments/sv/SVA_VIS_GENE_EXONS.csv -threads 1 -chromosome 15 -debug
+#   do_run_linx_visualiser /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -threads 8
+#   do_run_linx_visualiser /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -chromosome 15 -debug
 #
 # Optional arguments
 #
