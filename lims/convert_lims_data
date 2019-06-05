@@ -326,7 +326,7 @@ sub processCpct{
         next if $sample_name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         
         ## also sample should be either CPCT, DRUP or PMC
-        if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}(\d{2})\d{4})(T|R){1}/ms ){
+        if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
             my ($patient, $study_type, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
                 
             $row_info->{ 'label' }         = $study_type;
