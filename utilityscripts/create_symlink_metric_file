@@ -10,16 +10,31 @@ ref_sample=$(load_ref_sample_from_metadata ${set_path})
 tumor_file=${set_path}/${tumor_sample}.wgsmetrics
 ref_file=${set_path}/${ref_sample}.wgsmetrics
 
+metricFileP4Ref=${set_path}/QCStats/${ref_sample}_dedup/${ref_sample}_dedup_WGSMetrics.txt
+metricFileP4Tumor=${set_path}/QCStats/${tumor_sample}_dedup/${tumor_sample}_dedup_WGSMetrics.txt
+metricFileP5Ref=${set_path}/${ref_sample}.wgsmetrics
+metricFileP5Tumor=${set_path}/${tumor_sample}.wgsmetrics
+
 if [ -f ${tumor_file} ]; then
-	echo "${tumor_file} already exist"
+	echo " [INFO] File ${tumor_file} already exist"
 else
-	ln -s ${set_path}/QCStats/${tumor_sample}_dedup/${tumor_sample}_dedup_WGSMetrics.txt ${set_path}/${tumor_sample}.wgsmetrics
-	echo "symlink created for ${tumor_sample}"
+    if [ -f ${metricFileP4Tumor} ]; then
+        echo " [INFO] Metric file P4 exist"
+	    ln -s  ${metricFileP4Tumor} ${metricFileP5Tumor}
+	    echo " [INFO] Symlink created for ${tumor_sample}"
+	else
+	    " [ERROR] Metric file of P4 are not exist"
+	fi
 fi 
 
 if [ -f ${ref_file} ]; then
-        echo "${ref_file} already exist"
+        echo " [INFO] File ${ref_file} already exist"
 else
-        ln -s ${set_path}/QCStats/${ref_sample}_dedup/${ref_sample}_dedup_WGSMetrics.txt ${set_path}/${ref_sample}.wgsmetrics
-        echo "symlink created for ${ref_sample}"
+    if [ -f ${metricFileP4Ref} ]; then
+        echo " [INFO] Metric file P4 exist"
+        ln -s ${metricFileP4Ref} ${metricFileP5Ref}
+        echo " [INFO] Symlink created for ${ref_sample}"
+    else
+        echo " [ERROR] Metric file of P4 are not exist"
+    fi
 fi
