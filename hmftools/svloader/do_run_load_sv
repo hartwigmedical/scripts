@@ -1,0 +1,30 @@
+#!/bin/bash
+
+sample=$1 && shift
+output_dir=$1 && shift
+structural_vcf=$1 && shift
+credentials=$1 && shift
+sv_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# File Locations
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+if [ -d ${output_dir} ]; then
+    rm ${output_dir}/*
+else
+    mkdir -p ${output_dir}
+fi
+
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G java -cp ${sv_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
+    -structural_vcf ${structural_vcf} \
+    -tumor ${sample} \
+    -ref_genome ${ref_genome} \
+    -sv_data_dir ${output_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
+
