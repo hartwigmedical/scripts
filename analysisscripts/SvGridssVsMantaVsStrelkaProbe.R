@@ -48,11 +48,14 @@ probeOverlaps <- function(svs, contigLength = 120) {
       firstBreakendEnd = ifelse(startOrientation == 1, startPosition, startPosition + positionOffset -ceiling(lengthInsertSequence / 2)),
       secondBreakendStart = ifelse(endOrientation == 1, endPosition - positionOffset + floor(lengthInsertSequence / 2), endPosition), 
       secondBreakendEnd = ifelse(endOrientation == 1, endPosition, endPosition + positionOffset - floor(lengthInsertSequence / 2)),
-      length = firstBreakendEnd - firstBreakendStart + secondBreakendEnd - secondBreakendStart + 2 + lengthInsertSequence
+      length = firstBreakendEnd - firstBreakendStart + secondBreakendEnd - secondBreakendStart + 2 + lengthInsertSequence,
+      contigPosition = firstBreakendEnd - firstBreakendStart + 1
     ) %>% select(sampleId, id, event, lengthInsertSequence,
                  firstBreakendChromosome = startChromosome, firstBreakendStart, firstBreakendEnd, firstBreakendOrientation = startOrientation,
                  insertSequence, 
-                 secondBreakendChromosome = endChromosome, secondBreakendStart, secondBreakendEnd, secondBreakendOrientation = endOrientation)
+                 secondBreakendChromosome = endChromosome, secondBreakendStart, secondBreakendEnd, secondBreakendOrientation = endOrientation,
+                 startPosition, endPosition, contigPosition, scope, type) %>%
+    mutate(firstBreakendOrientation = as.numeric(firstBreakendOrientation), secondBreakendOrientation = as.numeric(secondBreakendOrientation))
   
   overlaps = overlaps %>%
     mutate(
@@ -78,9 +81,10 @@ probe_single <- function(svs, maxProbeLength = 120) {
       truncatedInsertSequenceLength = nchar(truncatedInsertSequence),
       probeStart = ifelse(startOrientation == 1, startPosition - maxProbeLength + 1 + truncatedInsertSequenceLength, startPosition), 
       probeEnd = ifelse(startOrientation == 1, startPosition, startPosition + maxProbeLength - 1 - truncatedInsertSequenceLength), 
-      length = probeEnd - probeStart + 1 + truncatedInsertSequenceLength
+      length = probeEnd - probeStart + 1 + truncatedInsertSequenceLength,
+      contigPosition = probeEnd - probeStart + 1
     ) %>% 
-    select(sampleId, chromosome = startChromosome, probeStart, probeEnd, truncatedInsertSequence, orientation = startOrientation, lengthInsertSequence, event, id)
+    select(sampleId, chromosome = startChromosome, probeStart, probeEnd, truncatedInsertSequence, orientation = startOrientation, lengthInsertSequence, event, id, startPosition, contigPosition, scope)
   
   result = result %>%
     mutate(
@@ -92,17 +96,49 @@ probe_single <- function(svs, maxProbeLength = 120) {
   return (result)
 }
 
+gridssSingles = probe_single(gridss %>% filter(type == 'SGL'), maxProbeLength = 2000) %>% mutate(contig = paste0(event, "_", id))
+gridssOverlaps = probeOverlaps(gridss %>% filter(type != 'SGL'), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) 
+mantaOverlaps = probeOverlaps(privateManta %>% mutate(id = row_number(), event = "MANTA"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
+strelkaOverlaps = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA", type = "INDEL"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
+allOverlaps = bind_rows(gridssOverlaps, mantaOverlaps) %>% bind_rows(strelkaOverlaps)
+save(allOverlaps, file = "~/hmf/analysis/probes/allOverlaps.RData")
 
-gridssSglContigs = probe_single(gridss %>% filter(type == 'SGL'), maxProbeLength = 2000) %>% mutate(contig = paste0(event, "_", id)) %>% select(contig, probe)
-gridssContigs = probeOverlaps(gridss %>% filter(type != 'SGL'), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) %>% select(contig, probe)
-mantaContigs = probeOverlaps(privateManta %>% mutate(id = row_number(), event = "MANTA"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) %>% select(contig, probe)
-strelkaContigs = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) %>% select(contig, probe)
+##### CREATE SAGE HOTSPOT FILE
+allOverlaps = allOverlaps %>% mutate(uniqueId = contig)
+#%>% filter(sampleId == 'CPCT02370037T')
+
+hotspotLeft = allOverlaps %>% select(sampleId, chromosome = firstBreakendChromosome, position = startPosition, uniqueId, scope)
+hotspotRight = allOverlaps %>% select(sampleId, chromosome = secondBreakendChromosome, position = endPosition, uniqueId, scope)
+hotspotOverlap = allOverlaps %>% select(sampleId, chromosome = contig, position = contigPosition, uniqueId, scope)
+
+gridssSingles = gridssSingles %>% mutate(endPosition = startPosition +  orientation, uniqueId = contig, type = 'SGL')
+save(gridssSingles, file = "~/hmf/analysis/probes/gridssSingles.RData")
+
+sglLeft = gridssSingles %>% select(sampleId, chromosome, position = startPosition, uniqueId, scope)
+sglRight = gridssSingles %>% select(sampleId, chromosome, position = endPosition, uniqueId, scope)
+sglOverlap = gridssSingles %>% select(sampleId, chromosome = contig, position = contigPosition, uniqueId, scope)
+sglHotspots = bind_rows(sglLeft, sglRight) %>% bind_rows(sglOverlap) 
+
+hotspots = bind_rows(hotspotLeft, hotspotRight) %>% 
+  bind_rows(hotspotOverlap) %>% 
+  bind_rows(sglHotspots) %>% 
+  mutate(ref = 'N', alt = 'A')
+
+save(hotspots, file = "~/hmf/analysis/probes/hotspots.RData")
+
+uniqueHotspots = hotspots %>% select(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt)
+write.table(uniqueHotspots, file = "~/hmf/analysis/probes/probeHotspots.tsv", row.names = F, col.names = F, sep = "\t", quote = F)
+
+##### CREATE CONTIGS FOR SYNTHETIC REF GENOME
+gridssSglContigs =  gridssSingles %>% select(contig, probe)
+gridssContigs =  gridssOverlaps %>% select(contig, probe)
+mantaContigs = mantaOverlaps %>% select(contig, probe)
+strelkaContigs =  strelkaOverlaps %>% select(contig, probe)
 
 contigs = bind_rows(gridssContigs, mantaContigs) %>% bind_rows(strelkaContigs) %>% bind_rows(gridssSglContigs) %>% mutate(len = nchar(probe))
 write.fasta(sequences = as.list(contigs$probe), names = (contigs$contig), file.out = "~/hmf/analysis/svPaper/probes.fasta", nbchar = 60)
 
-
-
+##### CREATE 120 BASE PROBES
 gridssStartProbes = probeBeforeBreakend(gridss %>% select(sampleId, chromosome = startChromosome, position = startPosition, orientation = startOrientation, scope))
 gridssEndProbes = probeBeforeBreakend(gridss%>% filter(!is.na(endChromosome)) %>% select(sampleId, chromosome = endChromosome, position = endPosition, orientation = endOrientation, scope))
 gridssStartAndEndProbes = bind_rows(gridssStartProbes, gridssEndProbes)
