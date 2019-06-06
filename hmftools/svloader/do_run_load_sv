@@ -15,16 +15,15 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 if [ -d ${output_dir} ]; then
-    rm ${output_dir}/*
+    rm ${output_dir}/*sv_data*
 else
     mkdir -p ${output_dir}
 fi
 
-java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G java -cp ${sv_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -cp ${sv_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
     -structural_vcf ${structural_vcf} \
     -tumor ${sample} \
     -ref_genome ${ref_genome} \
     -sv_data_dir ${output_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     $@
-

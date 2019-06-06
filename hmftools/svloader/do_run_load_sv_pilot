@@ -9,6 +9,6 @@ data_output_dir=${run_dir}/sv
 credentials=/data/common/dbs/mysql_credentials/pilot
 sv_jar=/data/common/tools/sv_loader_pilot/patient-db.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
+structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
-${prefix}/do_run_load_sv ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${sv_jar} -log_debug $@
+${prefix}/do_run_load_sv ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${sv_jar} $@

@@ -17,7 +17,6 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 output_dir=${run_dir}/sv/
 credentials=/data/common/dbs/mysql_credentials/prod
 linx_jar=/data/common/tools/linx_pilot/sv-analyser.jar
-sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
 
@@ -57,4 +56,3 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -chaining_sv_limit 0 \
     $@
 
-    
