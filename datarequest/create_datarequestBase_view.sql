@@ -5,6 +5,7 @@ CREATE OR REPLACE VIEW datarequestBase AS
         purity.purity AS purplePurity,
         purity.status AS purpleStatus,
         purity.qcStatus AS purpleQC,
+        purity.version AS purpleVersion,
         baseline.primaryTumorLocation AS primaryTumorLocation,
         baseline.cancerSubtype AS cancerSubtype,
         biopsy.biopsySite AS biopsySite,
