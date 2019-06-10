@@ -1,5 +1,6 @@
 #!/bin/bash
 source locate_files
+source load_metadata
 
 run_dir=$1 && shift
 purple_jar=$1 && shift
@@ -7,6 +8,9 @@ somatic_vcf=$1 && shift
 structural_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 if [ ! -f "$somatic_vcf" ]
 then
@@ -46,7 +50,10 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -somatic_vcf ${somatic_vcf} \
     -structural_vcf ${structural_vcf} \
     -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
-    -run_dir ${run_dir} \
+    -reference ${reference_sample} \
+    -tumor ${tumor_sample} \
+    -amber ${run_dir}/amber/ \
+    -cobalt ${run_dir}/cobalt/ \
     -ref_genome hg19 \
     -output_dir ${purple_output} \
     -gc_profile ${gc_profile} \
