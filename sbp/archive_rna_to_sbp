@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-local_path='/data/data_archive/rna_seq'
-destination='rna_seq'
-
-do_archive_directory_to_sbp -l ${local_path} -d ${destination} "$@"

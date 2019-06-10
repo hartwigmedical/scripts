@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-local_path='/data/sequencer_archive/'
-destination='sequencer_archive'
-
-do_archive_directory_to_sbp -l ${local_path} -d ${destination} "$@"

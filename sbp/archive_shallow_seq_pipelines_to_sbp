@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-local_path='/data/data_archive/shallow_seq_pipelines'
-destination='shallow_seq_pipelines'
-
-do_archive_directory_to_sbp -l ${local_path} -d ${destination} "$@"
