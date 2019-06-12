@@ -8,7 +8,7 @@ exons=$1 && shift
 cna=$1 && shift
 output_dir=/data/experiments/190130_sv_vis
 
-sv_jar=/data/common/tools/linx_pilot/sv-analyser.jar
+sv_jar=/data/common/tools/sv-linx_pilot/sv-linx.jar
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
 java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \

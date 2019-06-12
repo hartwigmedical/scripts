@@ -12,10 +12,10 @@ exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.csv
 segments=${input_dir}/${tumor_sample}.linx.vis_segments.csv
 cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.csv
 
-sv_jar=/data/common/tools/linx_pilot/sv-analyser.jar
+sv_jar=/data/common/tools/sv-linx_pilot/sv-linx.jar
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
-java -cp ${sv_jar} com.hartwig.hmftools.svanalysis.SvVisualiser \
+java -cp ${sv_jar} com.hartwig.hmftools.linx.SvVisualiser \
     -sample ${tumor_sample} \
     -plot_out ${input_dir}/plot/ \
     -data_out ${input_dir}/circos/ \
