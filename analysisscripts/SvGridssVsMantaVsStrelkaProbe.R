@@ -111,7 +111,7 @@ probe_single <- function(svs, maxProbeLength = 120) {
 gridssSingles = probe_single(gridss %>% filter(type == 'SGL'), maxProbeLength = 2000) %>% mutate(contig = paste0(event, "_", id))
 gridssOverlaps = probeOverlaps(gridss %>% filter(type != 'SGL'), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) 
 mantaOverlaps = probeOverlaps(privateManta %>% mutate(id = row_number(), event = "MANTA"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
-strelkaOverlaps = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA", type = "INDEL"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
+strelkaOverlaps = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA", type = ifelse(nchar(ref) > nchar(alt), "DEL", "INS")), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
 allOverlaps = bind_rows(gridssOverlaps, mantaOverlaps) %>% bind_rows(strelkaOverlaps)
 save(allOverlaps, file = "~/hmf/analysis/probes/allOverlaps.RData")
 
