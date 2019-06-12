@@ -17,21 +17,26 @@ annotate_fusions<-function(fusionData)
   fusionData$InChain = (fusionData$ChainId>=0)
   
   # chain & cluster validity
-  fusionData = fusionData %>% separate(OverlapUp,c('FacingBEsUp','AssembledLinksUp','FacingClusterBEsUp','TotalBEsUp','FacingDistanceUp','DisruptedExonsUp','TerminatedUp'),sep = ';')
+  fusionData = fusionData %>% separate(OverlapUp,c('FacingBEsUp','AssembledLinksUp','TotalBEsUp','FacingDistanceUp','DisruptedExonsUp','TerminatedUp'),sep = ';')
   fusionData$FacingBEsUp = as.numeric(fusionData$FacingBEsUp)
-  fusionData$FacingClusterBEsUp = as.numeric(fusionData$FacingClusterBEsUp)
   fusionData$TotalBEsUp = as.numeric(fusionData$TotalBEsUp)
   fusionData$FacingDistanceUp = as.numeric(fusionData$FacingDistanceUp)
+  fusionData$TerminatedUp = !is.na(fusionData$TerminatedUp) & fusionData$TerminatedUp=='true'
   
-  fusionData = fusionData %>% separate(OverlapDown,c('FacingBEsDown','AssembledLinksDown','FacingClusterBEsDown','TotalBEsDown','FacingDistanceDown','DisruptedExonsDown','TerminatedDown'),sep = ';')
+  fusionData = fusionData %>% separate(OverlapDown,c('FacingBEsDown','AssembledLinksDown','TotalBEsDown','FacingDistanceDown','DisruptedExonsDown','TerminatedDown'),sep = ';')
   fusionData$FacingBEsDown = as.numeric(fusionData$FacingBEsDown)
-  fusionData$FacingClusterBEsDown = as.numeric(fusionData$FacingClusterBEsDown)
   fusionData$TotalBEsDown = as.numeric(fusionData$TotalBEsDown)
   fusionData$FacingDistanceDown = as.numeric(fusionData$FacingDistanceDown)
+  fusionData$TerminatedDown = !is.na(fusionData$TerminatedDown) & fusionData$TerminatedDown=='true'
   
-  fusionData = (fusionData 
-                        %>% mutate(ValidChain=ValidTraversal=='true'&DisruptedExonsUp==0&DisruptedExonsDown==0&TerminatedUp==0&TerminatedDown==0,
-                                   NonDisruptedSingle=FacingBEsUp==0&FacingBEsDown==0&DisruptedExonsUp==0&DisruptedExonsDown==0))
+  fusionData = (fusionData %>% 
+                  mutate(ValidChain=ValidTraversal=='true'&DisruptedExonsUp==0&DisruptedExonsDown==0&TerminatedUp=='false'&TerminatedDown=='false',
+                         NonDisruptedSingle=FacingBEsUp==0&FacingBEsDown==0&DisruptedExonsUp==0&DisruptedExonsDown==0,
+                         BreakendDistUp=ifelse(StrandUp==1,TransStartUp-PosUp,PosUp-TransEndUp),
+                         BreakendDistDown=ifelse(StrandUp==1,TransStartDown-PosDown,PosDown-TransEndDown)))
+
+  fusionData[is.na(fusionData)] = 0
+  
   return (fusionData)
 }
 
@@ -54,33 +59,47 @@ svaFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
 nrow(svaFusions)
 reportedSvaFusions = svaFusions %>% filter(Reportable=='true')
 reportedSvaFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
+reportedSvaFusionsRaw = read.csv('~/logs/SVA_FUSIONS.csv')
 reportedSvaFusionsPrev2 = reportedSvaFusions
 # read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
-View(reportedSvaFusions)
-nrow(reportedSvaFusions)
-reportedSvaFusionsPrev2 = annotate_fusions(reportedSvaFusionsPrev2)
-nrow(reportedSvaFusionsPrev2 %>% filter(Clustered))
+View(reportedSvaFusionsRaw)
+nrow(reportedSvaFusionsRaw)
 rm(svaFusions)
 
 # Annotations
-reportedSvaFusions = annotate_fusions(reportedSvaFusions)
-View(reportedSvaFusions)
-write.csv(reportedSvaFusions, '~/data/sv/fusions/LINX_FUSIONS_REPORTED.csv', row.names = F, quote = F)
+reportedSvaFusions = annotate_fusions(reportedSvaFusionsRaw)
 
-# unclustered & unchained gone
-nrow(reportedSvaFusions %>% filter(!Clustered))
+View(reportedSvaFusions)
+write.csv(reportedSvaFusions, '~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv', row.names = F, quote = F)
+reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED.csv')
+nrow(reportedSvaFusions)
+View(reportedSvaFusions)
+
+reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv')
+View(reportedSvaFusions)
 
 # exons skipped
 nrow(reportedSvaFusions %>% filter(ExonsSkippedUp>0|ExonsSkippedDown>0))
 View(reportedSvaFusions %>% filter(ExonsSkippedUp>0|ExonsSkippedDown>0))
+
+# known with terminated ends
+View(reportedSvaFusions %>% filter(KnownType=='Known'&(TerminatedUp|TerminatedDown)))
+View(reportedSvaFusions %>% filter(TerminatedUp|TerminatedDown) %>% group_by(KnownType) %>% count())
+
+# distance upstream from transcript for known and promicuous fusions
+View(reportedSvaFusions %>% filter(BreakendDistUp>=5e4|BreakendDistDown>=5e4) %>% group_by(KnownType) %>% count())
+View(reportedSvaFusions %>% filter(BreakendDistUp>=5e5|BreakendDistDown>=5e5) %>% group_by(KnownType) %>% count())
+View(reportedSvaFusions %>% filter(BreakendDistUp>=1e4|BreakendDistDown>=1e4))
 
 knownNotReported = svaFusions %>% filter(KnownType=='Known'&Reportable=='false')
 knownNotReported = annotate_fusions(knownNotReported)
 View(knownNotReported)
 View(knownNotReported %>% filter(!grepl('Unclustered',ResolvedType)))
 
-
+# check for duplicates
 View(reportedSvaFusions %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
+
+
 nrow(reportedSvaFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'))
 nrow(reportedSimpleFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'))
 View(reportedSvaFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG') %>% group_by(SameSV) %>% count())
@@ -154,8 +173,164 @@ View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x) %>% 
 
 View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x,SameSV) %>% count())
 
+# comparison with previous Linx run
+reportedSvaFusionsPrev = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED.csv')
+View(reportedSvaFusionsPrev)
+
+knownNew = reportedSvaFusions %>% filter(KnownType=='Known')
+nrow(knownNew)
+knownPrev = reportedSvaFusionsPrev %>% filter(KnownType=='Known')
+nrow(knownPrev)
+
+knownByPrev = merge(knownPrev,knownNew,by=c('SvIdUp','SvIdDown'),all.x=T)
+View(knownByPrev %>% filter(is.na(GeneUp.y)))
+knownByNew = merge(knownNew,knownPrev,by=c('SvIdUp','SvIdDown'),all.x=T)
+View(knownByNew %>% filter(is.na(GeneUp.y)))
+
+promNew = reportedSvaFusions %>% filter(grepl('Prom',KnownType))
+nrow(promNew)
+promPrev = reportedSvaFusionsPrev %>% filter(grepl('Prom',KnownType))
+nrow(promPrev)
+
+promByPrev = merge(promPrev,promNew,by=c('SvIdUp','SvIdDown'),all.x=T)
+View(promByPrev %>% filter(is.na(GeneUp.y)))
+promByNew = merge(promNew,promPrev,by=c('SvIdUp','SvIdDown'),all.x=T)
+View(promByNew %>% filter(is.na(GeneUp.y)))
+
+promNew = reportedSvaFusions %>% filter(grepl('Prom',KnownType))
+nrow(promNew)
+promPrev = reportedSvaFusionsPrev %>% filter(grepl('Prom',KnownType))
+nrow(promPrev)
+
+promByPrev2 = merge(promPrev,promNew,by=c('SampleId','GeneUp','GeneDown'),all.x=T)
+View(promByPrev2 %>% filter(is.na(SvIdUp.y)))
+promByNew2 = merge(promNew,promPrev,by=c('SampleId','GeneUp','GeneDown'),all.x=T)
+View(promByNew2 %>% filter(is.na(SvIdUp.y)))
 
 
+View(svData %>% filter(Id==15629227))
+
+
+# specific sample
+specificFusions = read.csv('~/logs/CPCT02070292T.linx.fusions_detailed.csv')
+specificFusions = annotate_fusions(specificFusions)
+View(specificFusions)
+View(specificFusions %>% filter(Reportable=='true'))
+
+View(specificFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'
+                                &(ValidTraversal=='true'&PhaseMatched=='true'&BiotypeDown!='nonsense_mediated_decay')))
+
+
+
+write.csv(specificFusions%>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'),'~/logs/CPCT02070292T_fusions.csv', row.names = F, quote = F)
+
+
+# DRUP vs DNDS TSGs
+drupTsgs = read.csv('~/data/drup_genes.csv')
+dndsTsgs = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/dnds/DndsDriverLikelihoodTsg.tsv',sep='\t')
+View(dndsTsgs)
+View(drupTsgs %>% filter(!(Gene %in% dndsTsgs$gene)))
+
+
+# FUSION LIKELIHOOD
+
+# actuals from cohort
+
+allFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
+allFusions = annotate_fusions(allFusions)
+nrow(allFusions)
+View(allFusions %>% group_by(Reportable) %>% count())
+View(allFusions %>% group_by(SameSV) %>% count())
+
+allSvFusions = allFusions %>% filter(SameSV&DistancePrevDown>0)
+
+allSvFusions = allSvFusions %>% mutate(SameChromosome=(as.character(ChrUp)==as.character(ChrDown)),
+                                       Distance=ifelse(SameChromosome,abs(PosUp-PosDown),0),
+                                       Type=TypeUp)
+
+nrow(allSvFusions)
+View(allSvFusions %>% group_by(Type,SameChromosome) %>% count())
+View(allSvFusions %>% group_by(KnownType) %>% count())
+
+View(allSvFusions %>% filter(GeneDown=='VMP1',GeneUp=='VMP1'))
+
+View(allSvFusions %>% filter(GeneDown=='MPPED2',GeneUp=='FGFR2'))
+View(allSvFusions %>% filter(Type=='BND'))
+
+
+svCohort = load('~/data/hmf_cohort_may_2019.RData')
+View(svCohort)
+View(highestPurityCohort)
+
+# de-dup multiple biopsy samples
+allSvFusions = allSvFusions %>% filter(SampleId %in% highestPurityCohort$sampleId)
+nrow(allSvFusions)
+
+# frequency of specific pairs
+genePairFrequency = allSvFusions %>% group_by(GeneUp,GeneDown) %>% 
+        summarise(Count=n(),
+                  Type=first(Type),
+                  Known=sum(KnownType=='Known'),
+                  Prom3=sum(KnownType=='3P-Prom'|KnownType=='Both-Prom'),
+                  Prom5=sum(KnownType=='5P-Prom'|KnownType=='Both-Prom'),
+                  LineCluster=sum(ResolvedType=='LINE'),
+                  ChrUp=first(ChrUp),
+                  ChrDown=first(ChrDown),
+                  PosUp=round(median(PosUp)),
+                  PosDown=round(median(PosDown)),
+                  GeneUpLength=round(median(TransEndUp-TransStartUp)),
+                  GeneDownLength=round(median(TransEndDown-TransStartDown)),
+                  MedDistance=round(median(Distance))) %>%
+    filter(Count>1)
+
+write.csv(allSvFusions, '~/logs/allSvFusions.csv', row.names = F, quote = F)
+write.csv(genePairFrequency, '~/logs/genePairFrequencies', row.names = F, quote = F)
+
+View(genePairFrequency)
+View(genePairFrequency %>% filter(as.character(GeneUp)!=as.character(GeneDown)&(Type=='BND'|MedDistance>1e6)))
+View(genePairFrequency %>% filter(as.character(GeneUp)==as.character(GeneDown)))
+
+# frequency of 3P and 5P promiscuous genes
+
+
+# proximate fusion
+View(reportedSvaFusions %>% group_by(CodingTypeUp,CodingTypeDown,RegionTypeUp,RegionTypeDown) %>% count())
+
+reportedSvaFusions = reportedSvaFusions %>% mutate(SameChromosome=(as.character(ChrUp)==as.character(ChrDown)),
+                                                   Distance=abs(PosUp-PosDown))
+
+View(reportedSvaFusions %>% group_by(KnownType,SameChromosome) %>% count())
+View(reportedSvaFusions %>% filter(SameChromosome) %>% group_by(DistanceBucket=2**round(log(Distance,2))) %>% count())
+
+View(reportedSvaFusions %>% filter(SameChromosome) %>% 
+       select(TypeUp,GeneUp,StrandUp,TransStartUp,TransEndUp,GeneDown,TransStartDown,TransEndDown,Distance,everything()))
+
+View(reportedSvaFusions %>% filter(SameChromosome) %>% filter((TransStartUp<TransStartDown&TransEndUp>TransStartDown) 
+                                                              |(TransStartDown<TransStartUp&TransEndDown>TransStartUp)) %>%
+       select(TypeUp,GeneUp,StrandUp,TransStartUp,TransEndUp,GeneDown,TransStartDown,TransEndDown,Distance,everything()))
+
+
+View(reportedSvaFusions %>% filter())
+
+
+geneRangeData = read.csv('~/logs/GFL_GENE_DATA.csv')
+nrow(geneRangeData)
+geneRangeData = geneRangeData %>% mutate(TotalOverlap=Phase0+Phase1+Phase2+FivePrimeUTR)
+
+View(geneRangeData)
+
+
+View(geneRangeData %>% filter(LocalOverlap < 2e4))
+View(geneRangeData %>% filter(Chromosome==8&Phase2==TotalOverlap&TotalOverlap>=2e3&TotalOverlap<=9e3))
+
+
+
+fusionCandidates = read.csv('~/logs/GFL_FUSION_CANDIDATES.csv')
+fusionCandidates = fusionCandidates %>% mutate(BucketWidth=LengthBucketHigh-LengthBucketLow,
+                                               FusionRate=OverlapCount*1e9/BucketWidth)
+View(fusionCandidates)
+View(fusionCandidates %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(fusionCandidates %>% group_by(LengthBucketLow,LengthBucketHigh) %>% count())
 
 
 # View(reportedSvaFusions %>% filter(ChainLinks>0) %>% group_by(SameSV) %>% count())

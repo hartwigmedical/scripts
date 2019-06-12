@@ -15,8 +15,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 output_dir=${run_dir}/sv/
-credentials=/data/common/dbs/mysql_credentials/prod
-linx_jar=/data/common/tools/linx_pilot/sv-analyser.jar
 
 # reference files
 
@@ -28,6 +26,7 @@ ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
+drup_tsg_file=/data/common/dbs/drup/drup_tsg_genes.csv
 
 # echo "${sample} linx data : ${output_dir}"
 
@@ -51,6 +50,7 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_five_csv} \
+    -drup_tsg_file ${drup_tsg_file} \
     -write_vis_data \
     -proximity_distance 5000 \
     -chaining_sv_limit 0 \
