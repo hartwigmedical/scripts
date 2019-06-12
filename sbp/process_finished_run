@@ -37,6 +37,9 @@ do_run_gridss_viral_annotate_prod ${set_path}
 echo "[INFO] Running repeatmasker annotation ${set}"
 do_run_gridss_repeatmasker_insertion_annotate_prod ${set_path}
 
+echo "[INFO] Running linx for ${set}"
+do_run_linx_prod ${set_path}
+
 echo "[INFO] Running bachelor for ${set}"
 bachelor_prod ${set_path}
 
@@ -52,10 +55,14 @@ do_load_purple_data_prod ${set_path}
 echo "[INFO] Loading somatics into database for ${set}"
 do_load_somatic_variants_prod ${set_path}
 
-echo "[INFO] Loading structural variants into database for ${set}"
+# TODO Remove once patient reporter is based off LINX
+echo "[INFO] Running variant annotator for ${set}"
 do_run_sv_loader_prod ${set_path}
 
-echo "[INFO] Creating symlinks for metric file for ${set}"
+echo "[INFO] Loading linx into database for ${set}"
+do_run_load_sv_prod ${set_path}
+
+echo "[INFO] Creating symlinks for metric file to support Pv5 convention for ${set}"
 create_symlink_metric_file ${set_path}
 
 echo "[INFO] Loading metrics into database for ${set}"
