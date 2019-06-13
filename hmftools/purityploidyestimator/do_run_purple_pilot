@@ -6,7 +6,7 @@ run_dir=$1 && shift
 
 purple_output=${run_dir}/purple_pilot
 
-purple_jar=$(locate_purple_pilot)
+purple_jar=$(locate_pilot_purple)
 credentials=$(locate_pilot_database_credentials)
 somatic_vcf=$(locate_sage_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})

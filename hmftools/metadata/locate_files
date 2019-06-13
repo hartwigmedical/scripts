@@ -6,7 +6,6 @@ if [ -z "`hostname | grep datastore`" ]; then
 fi
 
 ############################# Database Credentials #############################
-
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
@@ -17,20 +16,13 @@ locate_pilot_database_credentials() {
 
 
 ##################################### JARS #####################################
-
-locate_amber_prod() {
-    echo "/data/common/tools/amber_v2.4/amber.jar"
-}
-
-locate_purple_prod() {
+locate_prod_purple() {
     echo ${base_path}/tools/purple_v2.30/purple.jar
 }
 
-locate_purple_pilot() {
+locate_pilot_purple() {
     echo ${base_path}/tools/purple_pilot/purple.jar
 }
-
-
 
 ##################################### Somatics #####################################
 locate_sage_somatics() {
