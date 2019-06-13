@@ -21,7 +21,8 @@ privateStrelka = strelka %>% filter(scope == 'Private') %>%
     insertSequenceLength = nchar(insertSequence)) %>%
   select(sampleId, startChromosome, endChromosome, startPosition = position, endPosition, startOrientation, endOrientation, ref, alt, insertSequence, insertSequenceLength, scope)
 
-privateManta = manta %>% filter(scope == 'Private') %>% select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence = SVINSSEQ_start, startOrientation, endOrientation, type = SVTYPE_start, scope)
+privateManta = manta %>% filter(scope == 'Private') %>% 
+  select(sampleId, startChromosome, endChromosome, startPosition, endPosition, insertSequence = SVINSSEQ_start, startOrientation, endOrientation, type = SVTYPE_start, scope,IMPRECISE_start, IMPRECISE_end, CIPOS_start, CIPOS_end)
 privateManta[is.na(privateManta)] <- ""
 rm(manta, strelka)
 
@@ -40,6 +41,14 @@ probeBeforeBreakend <- function(svs) {
 probeOverlaps <- function(svs, contigLength = 120) {
   positionOffset = contigLength / 2 - 1
   
+  if (!"startHomologySequence" %in% names(svs)) {
+    svs[ , c("ploidy","startHomologySequence","endHomologySequence", "qualScore", "startLinkedBy", "endLinkedBy", "recoveryFilter")] <- NA
+  }
+  
+  if (!"IMPRECISE_start" %in% names(svs)) {
+    svs[ , c("IMPRECISE_start","IMPRECISE_end","CIPOS_start", "CIPOS_end")] <- NA
+  }
+  
   overlaps = svs %>% 
     mutate(lengthInsertSequence = nchar(insertSequence)) %>%
     filter(lengthInsertSequence < 120) %>%
@@ -48,13 +57,14 @@ probeOverlaps <- function(svs, contigLength = 120) {
       firstBreakendEnd = ifelse(startOrientation == 1, startPosition, startPosition + positionOffset -ceiling(lengthInsertSequence / 2)),
       secondBreakendStart = ifelse(endOrientation == 1, endPosition - positionOffset + floor(lengthInsertSequence / 2), endPosition), 
       secondBreakendEnd = ifelse(endOrientation == 1, endPosition, endPosition + positionOffset - floor(lengthInsertSequence / 2)),
-      length = firstBreakendEnd - firstBreakendStart + secondBreakendEnd - secondBreakendStart + 2 + lengthInsertSequence,
-      contigPosition = firstBreakendEnd - firstBreakendStart + 1
+      length = firstBreakendEnd - firstBreakendStart + secondBreakendEnd - secondBreakendStart + 2 + lengthInsertSequence
     ) %>% select(sampleId, id, event, lengthInsertSequence,
                  firstBreakendChromosome = startChromosome, firstBreakendStart, firstBreakendEnd, firstBreakendOrientation = startOrientation,
                  insertSequence, 
                  secondBreakendChromosome = endChromosome, secondBreakendStart, secondBreakendEnd, secondBreakendOrientation = endOrientation,
-                 startPosition, endPosition, contigPosition, scope, type) %>%
+                 startPosition, endPosition, scope, type,
+                 ploidy, startHomologySequence, endHomologySequence, qualScore, startLinkedBy, endLinkedBy, insertSequence, recoveryFilter,
+                 IMPRECISE_start, IMPRECISE_end, CIPOS_start, CIPOS_end) %>%
     mutate(firstBreakendOrientation = as.numeric(firstBreakendOrientation), secondBreakendOrientation = as.numeric(secondBreakendOrientation))
   
   overlaps = overlaps %>%
@@ -62,6 +72,7 @@ probeOverlaps <- function(svs, contigLength = 120) {
       anchorStart = as.character(getSeq(BSgenome.Hsapiens.UCSC.hg19, paste0("chr", firstBreakendChromosome), firstBreakendStart, firstBreakendEnd)),
       anchorEnd = as.character(getSeq(BSgenome.Hsapiens.UCSC.hg19, paste0("chr", secondBreakendChromosome), secondBreakendStart, secondBreakendEnd)),
       anchorEnd = ifelse(firstBreakendOrientation == secondBreakendOrientation, reverse(chartr("ATGC", "TACG", anchorEnd)), anchorEnd),
+      contigPosition = ifelse(firstBreakendOrientation == 1, nchar(anchorStart), nchar(anchorEnd)),
       probe = ifelse(firstBreakendOrientation == 1, paste0(anchorStart, insertSequence, anchorEnd), paste0(anchorEnd, insertSequence, anchorStart)),
       length = nchar(probe)
     )
@@ -81,14 +92,15 @@ probe_single <- function(svs, maxProbeLength = 120) {
       truncatedInsertSequenceLength = nchar(truncatedInsertSequence),
       probeStart = ifelse(startOrientation == 1, startPosition - maxProbeLength + 1 + truncatedInsertSequenceLength, startPosition), 
       probeEnd = ifelse(startOrientation == 1, startPosition, startPosition + maxProbeLength - 1 - truncatedInsertSequenceLength), 
-      length = probeEnd - probeStart + 1 + truncatedInsertSequenceLength,
-      contigPosition = probeEnd - probeStart + 1
+      length = probeEnd - probeStart + 1 + truncatedInsertSequenceLength
     ) %>% 
-    select(sampleId, chromosome = startChromosome, probeStart, probeEnd, truncatedInsertSequence, orientation = startOrientation, lengthInsertSequence, event, id, startPosition, contigPosition, scope)
+    select(sampleId, chromosome = startChromosome, probeStart, probeEnd, truncatedInsertSequence, orientation = startOrientation, lengthInsertSequence, event, id, startPosition, scope, type, 
+           ploidy, startHomologySequence, endHomologySequence, qualScore, startLinkedBy, endLinkedBy, insertSequence, recoveryFilter)
   
   result = result %>%
     mutate(
       probe = as.character(getSeq(BSgenome.Hsapiens.UCSC.hg19, paste0("chr", chromosome), probeStart, probeEnd)),
+      contigPosition = ifelse(orientation == 1, nchar(probe), nchar(truncatedInsertSequence)),
       probe = ifelse(orientation == 1, paste0(probe, truncatedInsertSequence), paste0(truncatedInsertSequence, probe)),
       length = nchar(probe)
     )
@@ -99,7 +111,7 @@ probe_single <- function(svs, maxProbeLength = 120) {
 gridssSingles = probe_single(gridss %>% filter(type == 'SGL'), maxProbeLength = 2000) %>% mutate(contig = paste0(event, "_", id))
 gridssOverlaps = probeOverlaps(gridss %>% filter(type != 'SGL'), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id)) 
 mantaOverlaps = probeOverlaps(privateManta %>% mutate(id = row_number(), event = "MANTA"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
-strelkaOverlaps = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA", type = "INDEL"), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
+strelkaOverlaps = probeOverlaps(privateStrelka %>% mutate(id = row_number(), event = "STRELKA", type = ifelse(nchar(ref) > nchar(alt), "DEL", "INS")), contigLength = 2000) %>% mutate(contig = paste0(event, "_", id))
 allOverlaps = bind_rows(gridssOverlaps, mantaOverlaps) %>% bind_rows(strelkaOverlaps)
 save(allOverlaps, file = "~/hmf/analysis/probes/allOverlaps.RData")
 
@@ -111,7 +123,7 @@ hotspotLeft = allOverlaps %>% select(sampleId, chromosome = firstBreakendChromos
 hotspotRight = allOverlaps %>% select(sampleId, chromosome = secondBreakendChromosome, position = endPosition, uniqueId, scope)
 hotspotOverlap = allOverlaps %>% select(sampleId, chromosome = contig, position = contigPosition, uniqueId, scope)
 
-gridssSingles = gridssSingles %>% mutate(endPosition = startPosition +  orientation, uniqueId = contig, type = 'SGL')
+gridssSingles = gridssSingles %>% mutate(endPosition = startPosition +  orientation, uniqueId = contig)
 save(gridssSingles, file = "~/hmf/analysis/probes/gridssSingles.RData")
 
 sglLeft = gridssSingles %>% select(sampleId, chromosome, position = startPosition, uniqueId, scope)

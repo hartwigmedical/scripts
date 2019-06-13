@@ -120,8 +120,8 @@ sv_overlaps <- function(query, subject, additional = 10) {
     names(svsEndPositionCI) <- c("endPositionCIBufferLeft", "endPositionCIBufferRight")
     svs = bind_cols(svs, svsStartPositionCI)
     svs = bind_cols(svs, svsEndPositionCI)
-    svs$startPositionRangeStart = svs$startPosition - abs(as.integer(svs$startPositionCIBufferLeft)) - additional
-    svs$startPositionRangeEnd = svs$startPosition + abs(as.integer(svs$startPositionCIBufferRight)) + additional
+    svs$startPositionRangeStart = svs$startPosition - abs(as.integer(svs$startPositionCIBufferLeft))
+    svs$startPositionRangeEnd = svs$startPosition + abs(as.integer(svs$startPositionCIBufferRight))
     svs$endPositionRangeStart = svs$endPosition - abs(as.integer(svs$endPositionCIBufferLeft))
     svs$endPositionRangeEnd = svs$endPosition + abs(as.integer(svs$endPositionCIBufferRight))
     
@@ -134,11 +134,11 @@ sv_overlaps <- function(query, subject, additional = 10) {
   
   queryStartRange <- GRanges(paste0(query$sampleId, query$startChromosome), IRanges(query$startPositionRangeStart, query$startPositionRangeEnd))
   subjectStartRange <- GRanges(paste0(subject$sampleId, subject$startChromosome), IRanges(subject$startPositionRangeStart, subject$startPositionRangeEnd))
-  startOverlaps = data.frame(findOverlaps(queryStartRange, subjectStartRange, type="any", select="all", maxgap = -1))
+  startOverlaps = data.frame(findOverlaps(queryStartRange, subjectStartRange, type="any", select="all", maxgap = additional))
   
   queryEndRange <- GRanges(paste0(query$sampleId, query$endChromosome), IRanges(query$endPositionRangeStart, query$endPositionRangeEnd))
   subjectEndRange <- GRanges(paste0(subject$sampleId, subject$endChromosome), IRanges(subject$endPositionRangeStart, subject$endPositionRangeEnd))
-  endOverlaps = data.frame(findOverlaps(queryEndRange, subjectEndRange, type="any", select="all", maxgap = -1))
+  endOverlaps = data.frame(findOverlaps(queryEndRange, subjectEndRange, type="any", select="all", maxgap = additional))
   
   overlaps = inner_join(startOverlaps, endOverlaps, by = c("queryHits", "subjectHits"))
   
@@ -210,7 +210,7 @@ gridss = gridss %>% mutate(
 
 gridssIndex = gridss %>% mutate(originalIndex = row_number()) %>% filter(!is.na(endChromosome)) %>% select(originalIndex)
 
-mantaOverlaps = sv_overlaps(gridss[gridssIndex$originalIndex, ], manta, 10)
+mantaOverlaps = sv_overlaps(gridss[gridssIndex$originalIndex, ], manta, 20)
 mantaHits = mantaOverlaps$subjectHits
 gridsssHits = gridssIndex[mantaOverlaps$queryHits, "originalIndex"]
 
@@ -249,6 +249,11 @@ summary = gridss %>% group_by(sampleId, type,  scope) %>% count() %>% spread(sco
 summary[is.na(summary)] <- 0
 View(summary)
 
+#gridss %>% group_by(type, scope) %>% count()  %>% spread(scope, n)
+#manta %>% mutate(type = SVTYPE_start) %>% group_by(type, scope) %>% count()  %>% spread(scope, n)
+#manta %>% mutate(type = ifelse(nchar(ref) > nchar(alt), "DEL", "INS")) %>% group_by(type, scope) %>% count()  %>% spread(scope, n)
+
+save(gridss, manta, strelka, file = "/Users/jon/hmf/analysis/mantaVgridss/scopedData.RData")
 write.csv(gridss, file = "/Users/jon/hmf/analysis/mantaVgridss/gridssScope.csv", quote = T, row.names = F)
 write.csv(manta, file = "/Users/jon/hmf/analysis/mantaVgridss/mantaScope.csv", quote = T, row.names = F)
 write.csv(strelka, file = "/Users/jon/hmf/analysis/mantaVgridss/strelkaScope.csv", quote = T, row.names = F)
