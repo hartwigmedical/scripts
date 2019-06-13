@@ -8,6 +8,6 @@ patientMappingBed = combinedHetLocations %>% filter(chr != 'X') %>%
     select(-old, -new) %>%
     mutate(distance = lead(start) - start, source = "Amber") %>%
     filter(distance < 0 | distance > 200000) %>%
-    select(-distance)
+    select(chr, start, end)
 
-write.table(patientMappingBed, file = "~/hmf/resources/patientMapping.bed", sep = "\t", row.names = F, col.names = F)
+write.table(patientMappingBed, file = "~/hmf/resources/GermlineSnp.hg19.bed", sep = "\t", row.names = F, col.names = F)
