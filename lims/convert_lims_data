@@ -118,10 +118,10 @@ $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $
 $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
+$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'dna_sample_id_1',  1, $CPCT_CSV, "," );
 
-$lims_objs = processSamp( $lims_objs, $samp_objs, $subm_objs );
-$lims_objs = processCpct( $lims_objs, $cpct_objs, $cntr_dict );
+$lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
+$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $cntr_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $JSON_OUT, $SUBM_OUT );
@@ -174,7 +174,7 @@ sub parseTsv{
             $raw_object{ $field } = $next_value;
         }
         
-        my $obj = selectAndRenameFields( \%raw_object, $fields );
+        my $obj = selectAndRenameFields( \%raw_object, $fields );        
         my $key1 = $obj->{ $store_field_name } || NACHAR;
         my $key2 = $obj->{ 'sample_id' } || NACHAR;
         my $key3 = $obj->{ 'sample_name' } || NACHAR;
@@ -188,11 +188,12 @@ sub parseTsv{
         
         ## store key is chosen: do final checks
         next if isSkipValue( $key );
-        next if $should_be_unique and not keyIsCorrectAndUnique( \%store, $obj, $key);
+        next if $should_be_unique and not keyIsCorrectAndUnique( \%store, $key);
         
         ## all checks ok: fix and store
         fixDateFields( $obj );
         fixIntegerFields( $obj );
+        fixBooleanFields( $obj );
         $store{ $key } = $obj;
     }
     close IN;
@@ -289,43 +290,27 @@ sub parseDictFile{
     return \%store;
 }
 
-sub processCpct{
+sub processAccessSamples{
     
     my ($lims, $objects, $centers_dict) = @_;
     my %store = %{$lims};
     my %name2id = ();
     
-    ## open file and check header before reading data lines
     while ( my($sample_id, $row_info) = each %$objects ){
         
         ## first we work on the dna sample
         my $sample_name  = $row_info->{ 'sample_name' };
-        my $sample_id    = $row_info->{ 'sample_id' };
         my $patient_name = $row_info->{ 'patient' };
+        my $main_id      = $row_info->{ 'dna_sample_id_1' };
         
-        ## rename boolean field back to 1/0 to please downstream tools
-        my $boolean_field = 'shallowseq';
-        if ( defined $row_info->{ $boolean_field } ){
-            my $val = $row_info->{ $boolean_field };
-            if ( $val =~ m/^true$/i ){
-                $row_info->{ $boolean_field } = 1;
-            }elsif ( $val =~ m/^false$/i ){
-                $row_info->{ $boolean_field } = 0;
-            }else{
-                warn "[WARN] Unexpected value ($val) in boolean field ($boolean_field) for sample ($sample_id, $sample_name)\n"
-            }
-        }
-        
-        ## skip NA or empty values
+        ## skip samples when LAB gave certain sample name
         checkDefined( 'sample_name', $row_info );
         next if not $sample_name or isSkipValue( $sample_name );
-        checkDefined( 'patient', $row_info );
-        next if not $patient_name or isSkipValue( $patient_name );
         
         ## skip particular case of weird historic sample naming
         next if $sample_name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         
-        ## also sample should be either CPCT, DRUP or PMC
+        ## all other samples names should follow certain formats
         if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
             my ($patient, $study_type, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
                 
@@ -368,70 +353,104 @@ sub processCpct{
             warn "[WARN] Skipped sample $sample_name from Access lims because format is not as expected\n";
             next;
         }
+        
+        ## completeness checks
+        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
+        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
         $row_info->{ 'project_name' } = $row_info->{ 'submission' };
         
-        my $unique = $row_info->{ 'sample_id' };
-        checkDefined( 'sample_id', $row_info );
-        my $isSkipValue = isSkipValue( $unique );
-        
-        ## sample misses sample_id if it was not processed
-        ## but want to keep for low tumor percentage check
-        if ( $isSkipValue ){
+        ## in case of low tumor sample there is no DNA ID present
+        ## but want to keep sample for low tumor percentage check
+        if ( isSkipValue( $main_id ) ){
             if ( $sample_name =~ /^(CPCT|DRUP|WIDE|CORE|PMC)/ and $sample_name !~ /T0$/ ){
-                ## probably a low tumor percentage -> store under name instead of id
-                $unique = $sample_name;
+                my $unique = $sample_name;
+                next if $unique eq '';
+                next if isSkipValue( $unique );
+                next unless keyIsCorrectAndUnique( \%store, $unique );
+                $store{ $unique } = $row_info;
             }
             else{
-                ## really is a value to skip
+                ## cannot save so completely skip sample
                 next;
             }
         }
         
-        ## some completeness checks
-        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
-        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
-        
-        ## store info at uniqe id
-        next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
-        $store{ $unique } = $row_info;
-        
-        ## store link between name and id in map for later use
-        if ( exists $name2id{ $sample_name } ){
-            my $existing_id = $name2id{ $sample_name };
-            warn "[WARN] Sample $sample_name ($existing_id) will be overwritten by $sample_name ($sample_id): check with LAB to fix\n";
-        }
-        $name2id{ $sample_name } = $sample_id;
-        
-        ## in case of BIOPSY we also store rna sample
-        ## in case of BLOOD we also store plasma sample
-        my %row_info_copy = %{$row_info}; # a copy because we will alter the object
-        
-        if ( defined $row_info->{ 'sample_source' } ){
+        ## store every DNA ID present as separate sample
+        foreach my $idx ( 1, 2, 3 ){
             
-            my $unique = NACHAR;
-            my $source = $row_info->{ 'sample_source' };            
+            ## first check the new ID
+            my $field_name = 'dna_sample_id_' . $idx;
+            my $unique = $row_info->{ $field_name };
+            next unless defined $unique;
+            next if isSkipValue( $unique );
+            next unless keyIsCorrectAndUnique( \%store, $unique );
             
-            if ( $source =~ m/^Tissue$/i ){
-                $unique = $row_info->{ 'rna_sample_id' };
-                next if isSkipValue( $unique );
-                $row_info_copy{ 'sample_id' } = $unique;
-                $row_info_copy{ 'analysis_type' } = 'RnaAnalysisTODO';
-            }
-            elsif( $source =~ m/^Blood$/i ){
-                $unique = $row_info->{ 'plasma_sample_id' };
-                next if isSkipValue( $unique );
-                $row_info_copy{ 'sample_id' } = $unique;
-                $row_info_copy{ 'analysis_type' } = 'PlasmaAnalysisTODO';
-            }
-            else{
-                die "[EXIT] Unexpected value for source ($source), expected TISSUE or Blood (fix this!)\n";
-            }
+            ## make a copy because we will alter the object
+            my %row_info_copy = %{$row_info};
+            $row_info_copy{ 'sample_id' } = $unique;
             
-            ## store info at unique id
-            next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
+            ## store
             $store{ $unique } = \%row_info_copy;
         }
 
+        ## perform extra actions depending on source
+        if ( defined $row_info->{ 'sample_source' } ){
+            my $source = $row_info->{ 'sample_source' };
+            
+            ## in case of BIOPSY we also store rna sample
+            if ( $source =~ m/^Tissue$/i ){
+                
+                ## store every RNA ID present as separate sample
+                foreach my $idx ( 1, 2, 3 ){
+                    
+                    ## first check the new ID
+                    my $field_name = 'rna_sample_id_' . $idx;
+                    my $unique = $row_info->{ $field_name };
+                    next unless defined $unique;
+                    next if isSkipValue( $unique );
+                    next unless keyIsCorrectAndUnique( \%store, $unique );
+                    
+                    ## make a copy because we will alter the object
+                    my %row_info_copy = %{$row_info};
+                    
+                    ## reset and store
+                    $row_info_copy{ 'sample_id' } = $unique;
+                    $row_info_copy{ 'analysis_type' } = 'RnaAnalysis';
+                    $store{ $unique } = \%row_info_copy;
+                }
+            }
+            ## in case of BLOOD we also store plasma sample       
+            elsif( $source =~ m/^Blood$/i ){
+                
+                ## link name to id (used later to add ref sample id to each biopsy)
+                if ( exists $name2id{ $sample_name } ){
+                    my $existing_id = $name2id{ $sample_name };
+                    warn "[WARN] Sample $sample_name ($existing_id) will be overwritten by $sample_name ($sample_id): check with LAB to fix\n";
+                }
+                $name2id{ $sample_name } = $sample_id;
+                
+                ## store plasma sample if present and is OK
+                next unless defined $row_info->{ 'plasma_sample_id' };
+                my $unique = $row_info->{ 'plasma_sample_id' };
+                next if isSkipValue( $unique );
+                next unless keyIsCorrectAndUnique( \%store, $unique );
+                
+                ## make a copy because we will alter the object
+                my %row_info_copy = %{$row_info};
+                
+                ## reset and store
+                $row_info_copy{ 'sample_id' } = $unique;
+                $row_info_copy{ 'analysis_type' } = 'PLASMA';
+                $store{ $unique } = \%row_info_copy;
+                
+            }
+            else{
+                die "[EXIT] Unexpected value for source ($source), expected TISSUE or Blood (sample \"$sample_name\")\n";
+            }
+        }
+        else{
+            warn "[WARN] No source available for sample ($sample_name) so unable to check for RNA/Plasma\n";
+        }
     }
     
     ## add R sample_id for each biopsy
@@ -444,7 +463,8 @@ sub processCpct{
         my $ref_sample_name = $patient . 'R';
         my $ref_sample_id = $sample->{ 'ref_sample_id' };
         
-        if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+        #if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+        if ( $ref_sample_id eq "" ){
             if ( exists $name2id{ $ref_sample_name } ){
                 $ref_sample_id = $name2id{ $ref_sample_name };
                 $sample->{ 'ref_sample_id' } = $ref_sample_id;
@@ -455,7 +475,7 @@ sub processCpct{
     return \%store;
 }
 
-sub processSamp{
+sub processExcelSamples{
     
     my ($lims, $objects, $shipments) = @_;
     my %store = %{$lims};
@@ -549,7 +569,7 @@ sub processSamp{
         warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };        
         
         ## store at uniqe id
-        next unless keyIsCorrectAndUnique( \%store, $row_info, $unique );
+        next unless keyIsCorrectAndUnique( \%store, $unique );
         $store{ $unique } = $row_info;
         
     }
@@ -566,17 +586,33 @@ sub fixIntegerFields{
     }
 }
 
+sub fixBooleanFields{
+    my ($obj) = @_;
+    my @boolean_fields = qw( shallowseq );
+    foreach my $key ( @boolean_fields ){
+        next unless defined $obj->{ $key };
+        my $value = $obj->{ $key };
+        if ( $value eq '1' or $value eq '0' ){
+            next; # already OK
+        }elsif ( $value =~ m/^true$/i ){
+            $obj->{ $key } = 1;
+        }elsif ( $value =~ m/^false$/i ){
+            $obj->{ $key } = 0;
+        }else{
+            warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
+        }
+    }
+}
+
 sub fixDateFields{
-    my ($sample_hashref) = @_;
-    
+    my ($obj) = @_;
     my @date_fields = qw( arrival_date sampling_date report_date );
-    
     foreach my $date_field ( @date_fields ){
         
-        next unless exists $sample_hashref->{ $date_field };
-        my $old_date = $sample_hashref->{ $date_field };
+        next unless defined $obj->{ $date_field };
+        my $old_date = $obj->{ $date_field };
         my $new_date = $old_date;
-        my $identifier = $sample_hashref->{ 'sample_name' };
+        my $identifier = $obj->{ 'sample_name' };
         
         ## date is not always filled in so skip NA fields
         next if isSkipValue( $old_date );
@@ -610,7 +646,7 @@ sub fixDateFields{
         }
         
         ## store new format using reference to original location
-        $sample_hashref->{ $date_field } = $new_date;
+        $obj->{ $date_field } = $new_date;
     }
 }
 
@@ -677,7 +713,7 @@ sub isSkipValue{
 }
 
 sub keyIsCorrectAndUnique{
-    my ($store, $newObject, $key) = @_;
+    my ($store, $key) = @_;
     if ( $key =~ /[\n\r]/ ){
         my $woNewlines = $key =~ s/[\n\r\f]/\[ENTER\]/gr;
 	warn "[WARN] SKIPPING sample with key ($woNewlines): contains newline/enter\n";
@@ -688,8 +724,7 @@ sub keyIsCorrectAndUnique{
         return 0;
     }
     elsif ( exists $store->{ $key } ){
-        warn "[WARN] SKIPPING sample with store key ($key): key already exists in store\n";
-        print Dumper($newObject) if $opt{ 'debug' };
+        warn "[WARN] SKIPPING sample with key ($key): key already exists in store\n";
         return 0;
     }
     else{
@@ -778,17 +813,17 @@ sub getFieldNameTranslations{
       'Sample_name'        => 'sample_name',
       'Source'             => 'sample_source',
       'Yield'              => 'yield',
-      'Sample_ID_DNA'      => 'sample_id',
-      'Sample_ID_DNA_2'    => 'sample_id_2',
-      'Sample_ID_DNA_3'    => 'sample_id_3',
-      'Sample_ID_RNA'      => 'rna_sample_id',
+      'Sample_ID_DNA'      => 'dna_sample_id_1',
+      'Sample_ID_DNA_2'    => 'dna_sample_id_2',
+      'Sample_ID_DNA_3'    => 'dna_sample_id_3',
+      'Sample_ID_RNA'      => 'rna_sample_id_1',
       'Sample_ID_RNA_2'    => 'rna_sample_id_2',
       'Sample_ID_RNA_3'    => 'rna_sample_id_3',
       'Pathology_exp'      => 'pathology_exp',
       'Qiasymphony_exp'    => 'qiasymphony_exp',
       'DNA_prep'           => 'dna_prep',
       'RNA_prep'           => 'rna_prep',
-      'Purity_shallow_1'   => 'purity_shallow',
+      'Purity_shallow_1'   => 'purity_shallow_1',
       'Purity_shallow_2'   => 'purity_shallow_2',
       'Purity_shallow_3'   => 'purity_shallow_3',
       'Sample_ID_Plasma'   => 'plasma_sample_id',
