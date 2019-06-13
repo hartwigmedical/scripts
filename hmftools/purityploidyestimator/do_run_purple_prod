@@ -2,6 +2,8 @@
 source locate_files
 
 run_dir=$1 && shift
+prefix=`dirname $(readlink $0 || echo $0)`
+
 
 purple_output=${run_dir}/purple
 
