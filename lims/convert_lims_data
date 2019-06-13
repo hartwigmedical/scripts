@@ -367,6 +367,7 @@ sub processAccessSamples{
                 next if $unique eq '';
                 next if isSkipValue( $unique );
                 next unless keyIsCorrectAndUnique( \%store, $unique );
+                $row_info->{ 'sample_id' } = $unique;
                 $store{ $unique } = $row_info;
             }
             else{
