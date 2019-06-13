@@ -33,6 +33,5 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -jar ${sv_jar} \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -skip_db_upload \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
     $@

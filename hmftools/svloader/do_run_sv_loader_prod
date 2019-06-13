@@ -6,7 +6,7 @@ prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 data_output_dir=${run_dir}/svAnalysis
-credentials=/data/common/dbs/mysql_credentials/prod
+credentials=/data/common/dbs/mysql_credentials/tmp_variant_annotator
 sv_jar=/data/common/tools/variantannotator_v2.15/variant-annotator.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
