@@ -1,4 +1,36 @@
 #!/bin/bash
+base_path="/data/common"
+if [ -z "`hostname | grep datastore`" ]; then
+    # Common folder does not exist on crunches...
+    base_path="/data"
+fi
+
+############################# Database Credentials #############################
+
+locate_prod_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/prod
+}
+
+locate_pilot_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/pilot
+}
+
+
+##################################### JARS #####################################
+
+locate_amber_prod() {
+    echo "/data/common/tools/amber_v2.4/amber.jar"
+}
+
+locate_purple_prod() {
+    echo ${base_path}/tools/purple_v2.30/purple.jar
+}
+
+locate_purple_pilot() {
+    echo ${base_path}/tools/purple_pilot/purple.jar
+}
+
+
 
 ##################################### Somatics #####################################
 locate_sage_somatics() {

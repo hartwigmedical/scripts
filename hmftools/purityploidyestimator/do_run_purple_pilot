@@ -4,16 +4,10 @@ source locate_files
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
-base_path="/data/common"
-if [ -z "`hostname | grep datastore`" ]; then
-    # Common folder does not exist on crunches...
-	base_path="/data"
-fi
-
-purple_jar=${base_path}/tools/purple_pilot/purple.jar
 purple_output=${run_dir}/purple_pilot
-credentials=${base_path}/dbs/mysql_credentials/pilot
 
+purple_jar=$(locate_purple_pilot)
+credentials=$(locate_pilot_database_credentials)
 somatic_vcf=$(locate_sage_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 
