@@ -45,6 +45,7 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -fragile_site_file ${fragile_sites} \
     -line_element_file ${line_elements} \
     -replication_origins_file ${replication_origins} \
+    -viral_hosts_file ${viral_hosts_csv} \
     -gene_transcripts_dir ${ensembl_data_dir} \
     -check_fusions \
     -fusion_pairs_csv ${fusion_pairs_csv} \
