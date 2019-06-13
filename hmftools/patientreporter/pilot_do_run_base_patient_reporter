@@ -3,7 +3,7 @@
 patient_reporter_dir=/data/common/tools/patientreporter_pilot
 report_dir=/data/cpct/pilot_reports
 
-lims_dir=/data/tmp/
+lims_dir=/data/lims
 hospital_dir=/data/common/dbs/hospital
 
 tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
