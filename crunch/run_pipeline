@@ -104,7 +104,7 @@ function write_metadata() {
         return
     fi
 
-    for path in $(find "${input}" -name "*.fastq.gz" -o -name "*.bam"); do
+    for path in $(find -L "${input}" -name "*.fastq.gz" -o -name "*.bam"); do
         local filename=$(basename "${path}")
         local samplename=$( echo $filename | cut -d"_" -f1 )
         if [[ ${samplename} =~ ^((CPCT|COLO|CORE|DRUP|GIAB|WIDE)[^_]+)([RT]{1})[IVX]*$ ]]; then
