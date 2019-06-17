@@ -10,23 +10,23 @@ library(dplyr)
 library(tidyr)
 library(RMySQL)
 
-hmfIds = read.csv(file = "~/hmf/resources/idgenerator/amber_anonymized.csv", stringsAsFactors = F) %>%
-  select(sampleId = OriginalId, hmfId = AnonymousId) %>%
-  mutate(patientId = substr(hmfId, 1, 9)) %>% select(sampleId, patientId)
-
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
-purpleCohort = purple::query_cohort(dbProd) %>% 
+
+hmfIds = dbGetQuery(dbProd, "SELECT sampleId, hmfId from sampleMapping") %>%
+  mutate(patientId = substr(hmfId, 1, 9)) %>% select(sampleId, patientId)
+purpleCohort = purple::query_cohort(dbProd) %>%  
   select(-patientId) %>% inner_join(hmfIds, by = "sampleId")
 purpleClinical = purple::query_clinical_data(dbProd) %>% 
   filter(sampleId %in% purpleCohort$sampleId) %>%
   select(-patientId) %>% left_join(hmfIds, by = "sampleId")
+
 dbDisconnect(dbProd)
 rm(dbProd)
 
 load(file = "~/hmf/RData/Reference/allClinicalData.RData")
 paperClinical = allClinicalData %>% select(-patientId) %>%
   filter(sampleId %in% purpleCohort$sampleId, (cancerType != 'Other' | primaryTumorLocation == "Double primary")) %>%
-  inner_join(hmfIds, by = "sampleId") %>% 
+  inner_join(hmfIds, by = "sampleId") %>%
   select(patientId, paperCancerType = cancerType)
 
 paperClinical %>% group_by(patientId) %>% count() %>% filter(n() > 1)
@@ -73,9 +73,8 @@ multipleBiopsyMapping = cohort %>% group_by(patientId) %>%
   
 cohort = cohort %>% mutate(hpc = sampleId %in% highestPurityCohort$sampleId) %>% select(-patientId)
 
-save(highestPurityCohort, file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
-save(cohort, highestPurityCohort, multipleBiopsyMapping, file = "~/hmf/analysis/genepanel/cohort.RData")
-
+save(highestPurityCohort, file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
+save(cohort, highestPurityCohort, multipleBiopsyMapping, file = "~/hmf/analysis/cohort/reference/cohort.RData")
 
 load(file = "~/hmf/analysis/cohort/highestPurityCohort.RData")
 cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(n)

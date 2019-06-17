@@ -33,11 +33,11 @@ highestScoringCodingCandidate <- function(candidates, canonicalTranscripts) {
 categoriseCandidates <-function(gene, candidates, genePanel) {
  
   candidateVector = unlist(strsplit(candidates, split = ","))
-  candidatePanel = genePanel[genePanel$gene_name %in% candidateVector, ]
+  candidatePanel = genePanel[genePanel$gene %in% candidateVector, ]
   
-  result = candidatePanel %>% mutate_all(funs(ifelse(. != F, gene_name, NA))) %>% select(-gene_name) %>% summarise_all(funs(collapseCandidates))
+  result = candidatePanel %>% mutate_all(funs(ifelse(. != F, gene, NA))) %>% select(-gene) %>% summarise_all(funs(collapseCandidates))
   
-  result$remainders <- collapseCandidates(candidateVector[!candidateVector %in% genePanel$gene_name])
+  result$remainders <- collapseCandidates(candidateVector[!candidateVector %in% genePanel$gene])
   result$gene = gene
   
   return(result)
@@ -65,15 +65,22 @@ singleTarget <- function(targets, superCandidates) {
   return (superCandidateDF[1, "gene"])
 }
 
-attach_target <- function(copyNumberSummary, cosmic, known) {
-  copyNumberSummary$method <- "panel"
-  copyNumberSummary$target <- copyNumberSummary$hmf
-  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$martincorena, copyNumberSummary$target)
+#copyNumberSummary= dels
+#cosmic = "cosmicTsg"; known = "knownDeletion";  actionable = "actionableDeletion";
+  
+attach_target <- function(copyNumberSummary, cosmic, known, actionable) {
+  copyNumberSummary$method <- "dnds"
+  copyNumberSummary$target <- copyNumberSummary$hmfDnds
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$martincorenaDnds, copyNumberSummary$target)
   copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$cosmicCurated, copyNumberSummary$target)
+  copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "actionable", copyNumberSummary$method)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary[[actionable]], copyNumberSummary$target)
   copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "known", copyNumberSummary$method)
   copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary[[known]], copyNumberSummary$target)
   copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "cosmic", copyNumberSummary$method)
   copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary[[cosmic]], copyNumberSummary$target)
+  copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "drup", copyNumberSummary$method)
+  copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$actionableDrup, copyNumberSummary$target)
   copyNumberSummary$method <- ifelse(is.na(copyNumberSummary$target), "longest", copyNumberSummary$method)
   copyNumberSummary$target <- ifelse(is.na(copyNumberSummary$target), copyNumberSummary$longest, copyNumberSummary$target)
   copyNumberSummary$telomere <- ifelse(copyNumberSummary$method == "longest" & copyNumberSummary$telomereSupported > copyNumberSummary$N / 2, paste0(copyNumberSummary$chromosome, substr(copyNumberSummary$chromosomeBand,1,1), "_telomere"), NA)
@@ -84,22 +91,22 @@ attach_target <- function(copyNumberSummary, cosmic, known) {
 }
 
 #### SUPER GENES
-load(file = "~/hmf/analysis/genepanel/canonicalTranscripts.RData")
+load(file = "~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
 canonicalTranscripts$range = GRanges(canonicalTranscripts$chromosome, IRanges(canonicalTranscripts$geneStart, canonicalTranscripts$geneEnd))
 canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$range, canonicalTranscripts$range, type="within")) %>% filter(queryHits != subjectHits)
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
 #### Load Amps and Dels Gene Panel
-load("~/hmf/analysis/genepanel/genePanel.RData")
+load("~/hmf/analysis/cohort/processed/genePanel.RData")
 genePanel[is.na(genePanel)] <- F
-delGenePanel  = genePanel %>% select(-cosmicOncogene, -amplification) %>%
-  filter(martincorena| hmf | cosmicCurated | cosmicTsg | deletion)
-ampGenePanel  = genePanel %>% select(-cosmicTsg, -deletion) %>%
-  filter(martincorena| hmf | cosmicCurated | cosmicOncogene | amplification)
+delGenePanel  = genePanel %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicTsg, knownDeletion, actionableDeletion, actionableDrup) %>%
+  filter(martincorenaDnds| hmfDnds | cosmicCurated | cosmicTsg | knownDeletion | actionableDeletion | actionableDrup)
+ampGenePanel  = genePanel %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicOncogene, knownAmplification, actionableAmplification, actionableDrup) %>%
+  filter(martincorenaDnds| hmfDnds | cosmicCurated | cosmicOncogene | knownAmplification | actionableAmplification | actionableDrup)
 rm(genePanel)
 
 #### DELETIONS
-load(file = "~/hmf/analysis/genepanel/geneCopyNumberDeletionsSummary.RData")
+load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeletionsSummary.RData")
 dels = geneCopyNumberDeletionsSummary %>% 
   group_by(gene) %>%
   filter(score > 7, unsupported < N / 2) %>%
@@ -117,10 +124,10 @@ dels =  dels %>%
   group_by(gene) %>%
   mutate(longest = longestCandidate(remainders, canonicalTranscripts)) 
 
-dels = attach_target(dels, "cosmicTsg", "deletion")
+dels = attach_target(dels, "cosmicTsg", "knownDeletion", "actionableDeletion")
 
 geneCopyNumberDeleteTargets = dels
-save(geneCopyNumberDeleteTargets, file = "~/hmf/analysis/genepanel/geneCopyNumberDeleteTargets.RData")
+save(geneCopyNumberDeleteTargets, file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeleteTargets.RData")
 
 rm(dels)
 rm(delCandidates)
@@ -129,7 +136,7 @@ rm(delCandidatesRange)
 rm(geneCopyNumberDeletionsSummary)
 
 #### AMPLIFICAIONS
-load(file = "~/hmf/analysis/genepanel/geneCopyNumberAmplificationSummary.RData")
+load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationSummary.RData")
 amps = geneCopyNumberAmplificationSummary %>% 
   group_by(gene) %>%
   filter(score > 35) %>%
@@ -147,7 +154,7 @@ amps = amps %>%
   group_by(gene) %>%
   mutate(longest = longestCandidate(remainders, canonicalTranscripts))
 
-amps = attach_target(amps, "cosmicOncogene", "amplification")
+amps = attach_target(amps, "cosmicOncogene", "knownAmplification", "actionableAmplification")
 
 geneCopyNumberAmplificationTargets = amps
-save(geneCopyNumberAmplificationTargets, file = "~/hmf/analysis/genepanel/geneCopyNumberAmplificationTargets.RData")
+save(geneCopyNumberAmplificationTargets, file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")

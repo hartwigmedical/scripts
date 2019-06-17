@@ -17,8 +17,11 @@ create_data_frame <- function(cvList) {
 }
 
 ####### DNDS HmfRefCDSCv 
-load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
-load(file = "~/hmf/analysis/genepanel/hpcExonicSomatics.RData")
+load(file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/cohort/reference/hpcExonicSomatics.RData")
+
+#Verify we have all the somatics
+length(unique(hpcExonicSomatics$sampleId)) == nrow(highestPurityCohort)
 
 somatics = hpcExonicSomatics %>% 
   filter(type == "INDEL" | type == "SNP", repeatCount <= 8) %>%
@@ -49,15 +52,19 @@ for (selectedCancerType in cancerTypes) {
 }
 
 HmfRefCDSCv  <- create_data_frame(HmfRefCDSCvList)
-save(HmfRefCDSCv, file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")
+save(HmfRefCDSCv, file = "~/hmf/analysis/cohort/processed/HmfRefCDSCv.RData")
 
 
 ####### DNDS UNFILTERED ANNOTATED MUTATIONS
 unfilteredSomatics = hpcExonicSomatics %>% select(sampleId, chr = chromosome, pos = position, ref, alt)
 unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
-save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/analysis/genepanel/dndsUnfilteredAnnotatedMutations.RData")
+save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/analysis/cohort/processed/dndsUnfilteredAnnotatedMutations.RData")
 
+
+
+
+############################################   TESTING ############################################
 
 load(file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")
 

@@ -4,10 +4,14 @@ library(dplyr)
 
 
 ####### LOAD DATA FROM FILE #######
-load(file = "~/hmf/analysis/genepanel//hpcGeneCopyNumberDeletes.RData")
-load(file = "~/hmf/analysis/genepanel/hpcGeneCopyNumberAmplifications.RData")
-load(file = "~/hmf/analysis/genepanel/canonicalTranscripts.RData")
+load(file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/cohort/reference/hpcGeneCopyNumberDeletes.RData")
+load(file = "~/hmf/analysis/cohort/reference/hpcGeneCopyNumberAmplifications.RData")
+load(file = "~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
 genes = canonicalTranscripts %>% select(gene, chromosome, start = geneStart, end = geneEnd)
+
+copyNumberSamples = unique(c(unique(hpcGeneCopyNumberDeletes$sampleId)), unique(hpcGeneCopyNumberAmplifications$sampleId))
+all(copyNumberSamples %in% highestPurityCohort$sampleId)
 
 ####### EXECUTE ALGORITHM #######
 geneCopyNumberDeletes = hpcGeneCopyNumberDeletes %>% filter(
@@ -24,8 +28,8 @@ amplificationOutput = copy_number_drivers(genes, geneCopyNumberAmplifications, a
 geneCopyNumberAmplificationSummary = amplificationOutput$summary
 geneCopyNumberDeletionsSummary = deletionsOutput$summary
 
-save(geneCopyNumberAmplificationSummary, file = "~/hmf/analysis/genepanel/geneCopyNumberAmplificationSummary.RData")
-save(geneCopyNumberDeletionsSummary, file = "~/hmf/analysis/genepanel/geneCopyNumberDeletionsSummary.RData")
+save(geneCopyNumberAmplificationSummary, file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationSummary.RData")
+save(geneCopyNumberDeletionsSummary, file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeletionsSummary.RData")
 
 ####### Can also be done in parallel #######
 library(doParallel)
