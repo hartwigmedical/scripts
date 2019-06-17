@@ -14,7 +14,6 @@ locate_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pilot
 }
 
-
 ##################################### JARS #####################################
 locate_prod_purple() {
     echo ${base_path}/tools/purple_v2.30/purple.jar

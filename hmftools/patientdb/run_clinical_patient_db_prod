@@ -2,8 +2,8 @@
 source locate_files
 
 patient_db_jar=$(locate_prod_patient_db)
-runs_dir_cpct_and_drup=/data/cpct/runs
-runs_dir_core=/data/core/runs
+runs_dir_db=/data/cpct/runs
+runs_dir_non_db=/data/core/runs
 
 credentials=$(locate_prod_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -13,8 +13,8 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
-    -runs_dir_cpct_drup ${runs_dir_cpct_and_drup} \
-    -runs_dir_core ${runs_dir_core} \
+    -runs_dir_db ${runs_dir_db} \
+    -runs_dir_non_db ${runs_dir_non_db} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \
