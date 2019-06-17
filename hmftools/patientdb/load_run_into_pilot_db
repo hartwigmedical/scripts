@@ -1,9 +1,11 @@
 #!/bin/bash
+source locate_files
 source load_metadata
 
 run_dir=$1 && shift
-patient_db_jar=/data/common/tools/purple_pilot/purple.jar
-credentials=/data/common/dbs/mysql_credentials/pilot
+
+patient_db_jar=$(locate_pilot_patient_db)
+credentials=$(locate_pilot_database_credentials)
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 load_genomic_data_for_run_into_db ${run_dir} ${patient_db_jar} ${credentials} ${sample}

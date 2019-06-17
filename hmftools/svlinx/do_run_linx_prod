@@ -1,10 +1,11 @@
 #!/bin/bash
+source locate_files
 source load_metadata
 
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
-credentials=/data/common/dbs/mysql_credentials/prod
+credentials=$(locate_prod_database_credentials)
 linx_jar=/data/common/tools/sv-linx_1.0/sv-linx.jar
 
 ${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} $@

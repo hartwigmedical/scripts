@@ -1,8 +1,9 @@
 #!/bin/bash
+source locate_files
 
 file_with_sql_to_execute=$1
 
-credentials=/data/common/dbs/mysql_credentials/prod
+credentials=$(locate_prod_database_credentials)
 db_name="hmfpatients"
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})

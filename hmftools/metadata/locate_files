@@ -24,6 +24,19 @@ locate_pilot_purple() {
     echo ${base_path}/tools/purple_pilot/purple.jar
 }
 
+locate_prod_patient_db() {
+    echo ${base_path}/tools/patient-db_v3.20/patient-db.jar
+}
+
+locate_pilot_patient_db() {
+    echo ${base_path}/tools/patient-db_pilot/patient-db.jar
+}
+
+#################################### Resources #####################################
+locate_hotspot_tsv() {
+    echo "/data/common/dbs/sage/KnownHotspots.tsv"
+}
+
 ##################################### Somatics #####################################
 locate_sage_somatics() {
     local run_dir=$1
@@ -209,8 +222,4 @@ locate_gridss_recovery_candidates() {
         exit 1
     fi
     echo ${sv_recovery_vcf}
-}
-
-locate_hotspot_tsv() {
-    echo "/data/common/dbs/sage/KnownHotspots.tsv"
 }

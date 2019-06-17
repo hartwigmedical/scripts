@@ -1,8 +1,9 @@
 #!/bin/bash
+source locate_files
 source load_metadata
 
 run_dir=$1 && shift
-patient_db_jar=/data/common/tools/patient-db_v3.19/patient-db.jar
+patient_db_jar=$(locate_prod_patient_db)
 credentials=/data/common/dbs/mysql_credentials/novaseq_validation
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
