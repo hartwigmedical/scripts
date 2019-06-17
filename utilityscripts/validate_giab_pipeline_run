@@ -24,7 +24,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
     echo " Usage: $thisScript <path-to-pipeline-dir>"
-    echo "        $thisScript /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG/"
+    echo "        $thisScript /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG"
     echo "-----"
     exit 1
 fi
@@ -35,11 +35,11 @@ runPath=$1
 ## -----
 if [[ ! -d ${runPath} ]]; then echo "[EXIT] Provided run path does not exist?"; exit 1; fi
 
-germlineVcf=$( find $runPath -name "*.filtered_variants.vcf" )
+germlineVcf=$( find ${runPath} -name "*.filtered_variants.vcf" )
 if [[ ! -f ${germlineVcf} ]]; then echo "[EXIT] No germline filtered variants VCF in run ($runPath)?"; exit 1; fi
 
-vcfBaseName=$( basename $germlineVcf )
-runName=$( basename $runPath )
+vcfBaseName=$( basename ${germlineVcf} )
+runName=$( basename ${runPath} )
 outputDir=${valBase}/${runName}_Validation
 if [[ -d ${outputDir} ]]; then echo "[EXIT] OutputDir already exists ($outputDir)?"; exit 1; fi
 
@@ -48,13 +48,13 @@ echo "[INFO] Creating output dir (${outputDir})"
 mkdir -p ${outputDir}
 mkdir -p ${tmpDir}
 echo "[INFO] Copying germline vcf"
-cp ${germlineVcf} $outputDir
+cp ${germlineVcf} ${outputDir}
 
 ## -----
 ## VCF preparation
 ## -----
 startVcfPath=${outputDir}/${vcfBaseName}
-startVcfName=$( basename $startVcfPath )
+startVcfName=$( basename ${startVcfPath} )
 echo "[INFO] Running RTGTools bgzip on ${startVcfName}"
 rtg bgzip ${startVcfPath}
 startVcfPath=${startVcfPath}'.gz'
@@ -66,9 +66,9 @@ rtg index -f vcf ${startVcfPath}
 ## Use GATK SelectVariants to separate SNVs and INDELs
 ## -----
 snpVcfPath=${outputDir}"/SNP_"${startVcfName}
-snpVcfName=$( basename $snpVcfPath )
+snpVcfName=$( basename ${snpVcfPath} )
 indVcfPath=${outputDir}"/IND_"${startVcfName}
-indVcfName=$( basename $indVcfPath )
+indVcfName=$( basename ${indVcfPath} )
 
 if [[ -f ${snpVcfPath} ]]; then
     echo "[INFO] SNP vcf already exist, skipping (${snpVcfPath})"
