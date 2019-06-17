@@ -19,3 +19,8 @@ cancerTypeOrder = sort(unique(cohort$cancerType))
 cancerTypeOrder = c(cancerTypeOrder[!(cancerTypeOrder %in% c("Unknown", "Other"))], "Other", "Unknown")
 cancerTypeOrdinal = seq_along(cancerTypeOrder)
 names(cancerTypeOrdinal) = cancerTypeOrder
+
+figsave = function(figureName, ...) {
+  ggsave(paste0(figdir, figureName, ".pdf"), ...)
+  ggsave(paste0(figdir, figureName, ".png"), ...)
+}
