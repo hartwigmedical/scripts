@@ -268,7 +268,8 @@ sub processSample{
             }
             else{
                 say "[INFO]   No ShallowSeq run found yet: going for ShallowSeq mode";
-                $yield = 40 * $YIELD_F; $yield = 40 * $YIELD_F;
+                $yield = 35 * $YIELD_F;
+                $yield_ref = $yield;
                 $entity = 'HMF_SHALLOWSEQ';
                 $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
                 $ini = $SHA_INI;
