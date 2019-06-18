@@ -101,7 +101,7 @@ if [[ ! -f $sv_bam ]] ; then
 		I=$tag_tmp_bam \
 		O=${sv_bam} \
 		WORKER_THREADS=$threads &&
-	rm $tmp_bam $tag_tmp_bam
+	rm $tmp_bam $tag_tmp_bam $extract_tmp_bam
 fi
 
 # Wait for metric extraction to finish
