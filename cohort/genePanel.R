@@ -71,17 +71,16 @@ genePanel = merge(genePanel, cosmicGenes, by = "gene", all = T)
 genePanel = merge(genePanel, actionableGenes, by = "gene", all = T)
 genePanel = merge(genePanel, knownAmpsDels, by = "gene", all=T)
 
-genePanel = genePanel %>% filter(!gene %in% c("POM121L12","TRIM49B","LPCAT2"))
-save(genePanel, file="~/hmf/analysis/cohort/processed/genePanel.RData")
-str(genePanel)
+genePanelInitial = genePanel %>% filter(!gene %in% c("POM121L12","TRIM49B","LPCAT2"))
+save(genePanelInitial, file="~/hmf/analysis/cohort/processed/genePanelInitial.RData")
 
 
 ########################### PART 2 WITH TARGET AMPS AND DELS
-load(file="~/hmf/analysis/cohort/processed/genePanel.RData")
+load(file="~/hmf/analysis/cohort/processed/genePanelInitial.RData")
 load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeleteTargets.RData")
 load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
 
-completeGenePanel = merge(genePanel, geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(gene = target, hmfAmplification = T) %>% select(gene, hmfAmplification), by = "gene", all = T)
-completeGenePanel = merge(completeGenePanel, geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(gene = target, hmfDeletion = T) %>% select(gene, centromere, telomere, hmfDeletion) %>% distinct(), by = "gene", all = T)
-save(completeGenePanel, file="~/hmf/analysis/cohort/processed/completeGenePanel.RData")
+genePanelWithAmpsAndDels = merge(genePanelInitial, geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(gene = target, hmfAmplification = T) %>% select(gene, hmfAmplification), by = "gene", all = T)
+genePanelWithAmpsAndDels = merge(genePanelWithAmpsAndDels, geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(gene = target, hmfDeletion = T) %>% select(gene, centromere, telomere, hmfDeletion) %>% distinct(), by = "gene", all = T)
+save(genePanelWithAmpsAndDels, file="~/hmf/analysis/cohort/processed/genePanelWithAmpsAndDels.RData")
 

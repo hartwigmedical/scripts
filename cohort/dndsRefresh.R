@@ -38,6 +38,9 @@ rownames(cv) = newgenes
 kc = newgenes[oldgenes %in% known_cancergenes]
 
 output = dndscv(somatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
+dndsFilteredAnnotatedMutations = output$annotmuts
+save(dndsFilteredAnnotatedMutations, file = "~/hmf/analysis/cohort/processed/dndsFilteredAnnotatedMutations.RData")
+
 HmfRefCDSCvList = list()
 HmfRefCDSCvList[["All"]]  <- output$sel_cv
 cancerTypes = unique(highestPurityCohort$cancerType)
@@ -60,10 +63,6 @@ unfilteredSomatics = hpcExonicSomatics %>% select(sampleId, chr = chromosome, po
 unfilteredOutput = dndscv(unfilteredSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
 dndsUnfilteredAnnotatedMutations = unfilteredOutput$annotmuts
 save(dndsUnfilteredAnnotatedMutations, file = "~/hmf/analysis/cohort/processed/dndsUnfilteredAnnotatedMutations.RData")
-
-
-
-
 ############################################   TESTING ############################################
 
 load(file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")

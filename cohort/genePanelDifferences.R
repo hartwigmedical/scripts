@@ -30,3 +30,17 @@ save(driverCatalogDifferences, file = "~/hmf/analysis/cohort/processed/driverCat
 View(driverCatalogDifferences %>% mutate(chmis=d_mis-d_mis.old,chind=d_ind-d_ind.old,chspl=d_spl-d_spl.old,chnon=d_non-d_non.old) %>% 
        select(gene,chmis,chind,chspl,chnon,changedClassification,removed,new,everything()))
 
+load(file = "~/hmf/RData/Processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/RData/Processed/geneCopyNumberDeleteTargets.RData")
+oldAmps = geneCopyNumberAmplificationTargets %>% ungroup() %>% select(gene = target) %>% mutate(old = T)
+oldDels = geneCopyNumberDeleteTargets %>% ungroup() %>% select(gene = target) %>% mutate(old = T)
+
+load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
+load(file = "~/hmf/analysis/cohort/Processed/geneCopyNumberDeleteTargets.RData")
+newAmps = geneCopyNumberAmplificationTargets %>% ungroup() %>% select(gene = target) %>% mutate(new = T)
+newDels = geneCopyNumberDeleteTargets %>% ungroup() %>% select(gene = target) %>% mutate(new = T)
+
+ampDifferences = full_join(newAmps, oldAmps, by = "gene")
+delDifferences = full_join(newDels, oldDels, by = "gene")
+save(ampDifferences, delDifferences, file = "~/hmf/analysis/cohort/processed/ampDelDifferences.RData")
+

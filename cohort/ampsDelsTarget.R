@@ -97,13 +97,13 @@ canonicalTranscriptsOverlaps = data.frame(findOverlaps(canonicalTranscripts$rang
 superGenes = data.frame(sub = canonicalTranscripts[canonicalTranscriptsOverlaps[, 1], c("gene")], super = canonicalTranscripts[canonicalTranscriptsOverlaps[, 2], c("gene")], stringsAsFactors = F) 
 
 #### Load Amps and Dels Gene Panel
-load("~/hmf/analysis/cohort/processed/genePanel.RData")
-genePanel[is.na(genePanel)] <- F
-delGenePanel  = genePanel %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicTsg, knownDeletion, actionableDeletion, actionableDrup) %>%
+load("~/hmf/analysis/cohort/processed/genePanelInitial.RData")
+genePanelInitial[is.na(genePanelInitial)] <- F
+delGenePanel  = genePanelInitial %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicTsg, knownDeletion, actionableDeletion, actionableDrup) %>%
   filter(martincorenaDnds| hmfDnds | cosmicCurated | cosmicTsg | knownDeletion | actionableDeletion | actionableDrup)
-ampGenePanel  = genePanel %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicOncogene, knownAmplification, actionableAmplification, actionableDrup) %>%
+ampGenePanel  = genePanelInitial %>% select(gene, martincorenaDnds, hmfDnds, cosmicCurated, cosmicOncogene, knownAmplification, actionableAmplification, actionableDrup) %>%
   filter(martincorenaDnds| hmfDnds | cosmicCurated | cosmicOncogene | knownAmplification | actionableAmplification | actionableDrup)
-rm(genePanel)
+rm(genePanelInitial)
 
 #### DELETIONS
 load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeletionsSummary.RData")
