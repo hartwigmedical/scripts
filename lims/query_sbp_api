@@ -39,15 +39,15 @@ my $must_match_exact;
 my $HELP =<<HELP;
 
   Description
-    Parses SBP api (for now based on static downloaded jsons!)
-    Current json files: $JSONS_HOME (updated every 30 min by sbpext cronjob)
+    Parses SBP database info from downloaded api jsons ($JSONS_HOME)
+    (updated every 15 min by cronjob)
 
     You can manually update the jsons to latest by:
       - becoming user "sbpext"
-      - executing "sbp_api_get_db"
+      - executing "update_sbp_api_db"
     
-    Links (portal links created) are not updated in cronjob:
-      - executing "sbp_api_get_links" with required dates
+    Links (portal links created by portal users) are not updated in cronjob:
+      - run script "update_sbp_api_db_links" with required dates manually
   
   Available tables/types: 
      $available_types
