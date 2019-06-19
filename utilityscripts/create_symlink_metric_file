@@ -20,7 +20,7 @@ if [ -f ${tumor_file} ]; then
 else
     if [ -f ${metricFileP4Tumor} ]; then
         echo " [INFO] Metric file P4 exist"
-	    ln -s  ${metricFileP4Tumor} ${metricFileP5Tumor}
+	    ln -rs  ${metricFileP4Tumor} ${metricFileP5Tumor}
 	    echo " [INFO] Symlink created for ${tumor_sample}"
 	else
 	    " [ERROR] Metric file of P4 are not exist"
@@ -32,7 +32,7 @@ if [ -f ${ref_file} ]; then
 else
     if [ -f ${metricFileP4Ref} ]; then
         echo " [INFO] Metric file P4 exist"
-        ln -s ${metricFileP4Ref} ${metricFileP5Ref}
+        ln -rs ${metricFileP4Ref} ${metricFileP5Ref}
         echo " [INFO] Symlink created for ${ref_sample}"
     else
         echo " [ERROR] Metric file of P4 are not exist"
