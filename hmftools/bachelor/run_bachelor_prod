@@ -8,6 +8,6 @@ bachelor_output_dir=bachelor
 bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
 
 credentials=$(locate_prod_database_credentials)
-bachelor_jar=/data/common/tools/bachelor_v1.5/bachelor.jar
+bachelor_jar=$(locate_prod_bachelor)
 
 ${prefix}/do_run_bachelor ${run_dir} ${bachelor_output_dir} ${bachelor_config} ${credentials} ${bachelor_jar} $@

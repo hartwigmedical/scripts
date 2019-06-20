@@ -23,6 +23,14 @@ locate_pilot_purple() {
     echo ${base_path}/tools/purple_pilot/purple.jar
 }
 
+locate_prod_bachelor() {
+    echo ${base_path}/tools/bachelor_v1.6/bachelor.jar
+}
+
+locate_pilot_bachelor() {
+    echo ${base_path}/tools/bachelor_pilot/bachelor.jar
+}
+
 locate_prod_patient_db() {
     echo ${base_path}/tools/patient-db_v3.21/patient-db.jar
 }

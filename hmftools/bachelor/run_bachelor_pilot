@@ -8,7 +8,7 @@ bachelor_output_dir=bachelor_pilot
 bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
 
 credentials=$(locate_pilot_database_credentials)
-bachelor_jar=/data/common/tools/bachelor_pilot/bachelor.jar
+bachelor_jar=$(locate_pilot_bachelor)
 
 ${prefix}/do_run_bachelor ${run_dir} ${bachelor_output_dir} ${bachelor_config} ${credentials} ${bachelor_jar} $@
 
