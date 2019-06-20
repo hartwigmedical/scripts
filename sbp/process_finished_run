@@ -38,8 +38,7 @@ echo "[INFO] Running repeatmasker annotation ${set}"
 do_run_gridss_repeatmasker_insertion_annotate_prod ${set_path}
 
 echo "[INFO] Running bachelor for ${set}"
-# run_bachelor_prod ${set_path}
-echo "[ERROR] Skipped bachelor in production!"
+run_bachelor_prod ${set_path}
 
 echo "[INFO] Running CHORD for ${set}"
 run_chord_prod ${set_path}
