@@ -19,7 +19,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 set=$( basename ${run_dir})
 
 # File Locations
-clinvar_filters=/data/common/dbs/bachelor/BACHELOR_CLINVAR_FILTERS.csv
+clinvar_filters=/data/common/dbs/bachelor/pilot/bachelor_clinvar_filters.csv
 bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/${bachelor_output_dir}/
 
