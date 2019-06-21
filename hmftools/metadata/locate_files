@@ -24,7 +24,7 @@ locate_pilot_purple() {
 }
 
 locate_prod_bachelor() {
-    echo ${base_path}/tools/bachelor_v1.6/bachelor.jar
+    echo ${base_path}/tools/bachelor_v1.7/bachelor.jar
 }
 
 locate_pilot_bachelor() {
