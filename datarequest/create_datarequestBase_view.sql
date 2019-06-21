@@ -31,6 +31,7 @@ CREATE OR REPLACE VIEW datarequestBase AS
         baseline.hospital AS hospital,
         baseline.gender AS gender,
         baseline.birthYear AS birthYear,
+        baseline.deathDate AS deathDate,
         baseline.hasRadiotherapyPreTreatment AS hasRadiotherapyPreTreatment,
         baseline.hasSystemicPreTreatment AS hasSystemicPreTreatment,
         baseline.preTreatments AS preTreatments,
