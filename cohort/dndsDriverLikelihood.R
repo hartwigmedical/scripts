@@ -8,21 +8,21 @@ library(GenomicRanges)
 
 
 ############################################ LOAD NEW DATA
-load(file = "~/hmf/analysis/genepanel/HmfRefCDSCv.RData")
-load(file = "~/hmf/analysis/genepanel/dndsUnfilteredAnnotatedMutations.RData")
-load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
-load(file = "~/hmf/analysis/genepanel/somaticCounts.RData")
-load(file = "~/hmf/analysis/genepanel/highestPurityCohort.RData")
-load(file = "~/hmf/analysis/genepanel/somaticCounts.RData")
-load(file = "~/hmf/analysis/genepanel/driverGenes.RData")
-load(file = "~/hmf/analysis/genepanel/hpcExonicSomatics.RData")
+load(file = "~/hmf/analysis/cohort/processed/HmfRefCDSCv.RData")
+load(file = "~/hmf/analysis/cohort/processed/dndsUnfilteredAnnotatedMutations.RData")
+load(file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/cohort/reference/somaticCounts.RData")
+load(file = "~/hmf/analysis/cohort/reference/hpcExonicSomatics.RData")
+load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
 
 somaticCounts[is.na(somaticCounts)] <- 0
 somaticCounts = somaticCounts %>%
   mutate(sample_SNV = TOTAL_SNP, sample_INDEL = TOTAL_INDEL) %>%
   select(starts_with("sample"))
-genePanel = bind_rows(oncoGenes, tsGenes)
+genePanel = genePanel %>% filter(!is.na(reportablePointMutation))
 
+tsGenes = genePanel %>% filter(reportablePointMutation == "tsg")
+oncoGenes = genePanel %>% filter(reportablePointMutation == "onco")
 
 
 ############################################CODE RUNS FROM HERE  ############################################
@@ -31,17 +31,18 @@ somatics = hpcExonicSomatics %>%
   select(sampleId, chromosome, position, ref, alt, type, worstCodingEffect, canonicalCodingEffect, hotspot, biallelic, subclonalLikelihood, repeatCount) %>%
   mutate(shared = F)
 
-mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations %>% filter(gene %in% genePanel$gene_name), somatics) %>%
+mutations = dnds_annotate_somatics(dndsUnfilteredAnnotatedMutations %>% filter(gene %in% genePanel$gene), somatics) %>%
   mutate(patient = substr(sampleId, 1,12), pHGVS = "") %>%
   select(-patient) %>% filter(impact != "")
 
-tsgMutations = tsg_mutations(mutations %>% filter(gene %in% tsGenes$gene_name))
+tsgMutations = tsg_mutations(mutations %>% filter(gene %in% tsGenes$gene))
 tsgDriverRates = dnds_driver_rates(HmfRefCDSCv, tsgMutations)
 
-oncoMutations = onco_mutations(mutations %>% filter(gene %in% oncoGenes$gene_name))
+oncoMutations = onco_mutations(mutations %>% filter(gene %in% oncoGenes$gene))
 oncoDriverRates = dnds_driver_rates(HmfRefCDSCv, oncoMutations)
 
-save(tsgDriverRates, oncoDriverRates, file = "~/hmf/analysis/genepanel/driverRates.RData")
+save(tsgDriverRates, oncoDriverRates, file = "~/hmf/analysis/cohort/processed/driverRates.RData")
+load(file = "~/hmf/analysis/cohort/processed/driverRates.RData")
 
 ############################################  TSG ############################################
 cohortSize = nrow(highestPurityCohort)

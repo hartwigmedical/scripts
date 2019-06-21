@@ -45,14 +45,22 @@ genePanelCv$classification = ifelse(genePanelCv$d_ind > 2 * genePanelCv$d_mis & 
 
 save(genePanelCv, file = "~/hmf/analysis/cohort/processed/genePanelCv.RData")
 
+load("~/hmf/analysis/cohort/processed/genePanelCv.RData")
 load("~/hmf/analysis/cohort/processed/genePanelWithAmpsAndDels.RData")
-genePanel = left_join(genePanelWithAmpsAndDels, genePanelCv %>% select(gene, reportablePointMutation = classification), by = "gene") 
+genePanel = left_join(genePanelWithAmpsAndDels, genePanelCv %>% select(gene, classification), by = "gene") 
 
 genePanel = genePanel %>%
-  mutate(reportableAmp = reportablePointMutation == "onco" | actionableAmplification | hmfAmplification,
-         reportableDel = reportablePointMutation == "tsg" | actionableDeletion | hmfDeletion)
+  mutate(
+    actionableEnought = actionableResponse %in% c('A','B') | actionableResistance %in% c('A','B'),
+    reportablePointMutation = martincorenaDnds | hmfDnds | cosmicCurated | actionableDrup |  (actionableVariant & actionableEnought),
+    reportablePointMutation = ifelse(reportablePointMutation, classification, NA),
+    reportableAmp = reportablePointMutation == "onco" | hmfAmplification | (actionableAmplification & actionableEnought),
+    reportableDel = reportablePointMutation == "tsg" | hmfDeletion | (actionableDeletion & actionableEnought)) %>%
+  select(-actionableEnought, -classification)
 
 save(genePanel, file = "~/hmf/analysis/cohort/processed/genePanel.RData")
+
+
 
 
 

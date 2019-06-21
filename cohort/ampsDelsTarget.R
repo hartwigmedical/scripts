@@ -158,3 +158,4 @@ amps = attach_target(amps, "cosmicOncogene", "knownAmplification", "actionableAm
 
 geneCopyNumberAmplificationTargets = amps
 save(geneCopyNumberAmplificationTargets, file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
+

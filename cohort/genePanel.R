@@ -84,3 +84,108 @@ genePanelWithAmpsAndDels = merge(genePanelInitial, geneCopyNumberAmplificationTa
 genePanelWithAmpsAndDels = merge(genePanelWithAmpsAndDels, geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(gene = target, hmfDeletion = T) %>% select(gene, centromere, telomere, hmfDeletion) %>% distinct(), by = "gene", all = T)
 save(genePanelWithAmpsAndDels, file="~/hmf/analysis/cohort/processed/genePanelWithAmpsAndDels.RData")
 
+
+####### Check gene panel across canonical transcripts
+load(file = "~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
+load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
+names(genePanel)
+
+genePanel %>% filter(!gene %in% canonicalTranscripts$gene)
+
+
+####### WRITE TO REPOSITORY AND DB
+load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
+
+write.table(genePanel %>% filter(reportableAmp) %>% select(gene), file = "/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/cna/AmplificationTargets.tsv", quote = F, row.names = F, col.names = F)
+write.table(genePanel %>% filter(reportableDel) %>% select(gene), file = "/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/cna/DeletionTargets.tsv", quote = F, row.names = F, col.names = F)
+
+genePanelDB = genePanel %>%
+  mutate(
+    actionableResponse = ifelse(is.na(actionableResponse), "", actionableResponse),
+    actionableResponseSource = ifelse(is.na(actionableResponseSource), "", actionableResponseSource),
+    actionableResistance = ifelse(is.na(actionableResistance), "", actionableResistance),
+    actionableResistanceSource = ifelse(is.na(actionableResistanceSource), "", actionableResistanceSource),
+    reportablePointMutation = ifelse(is.na(reportablePointMutation), "", reportablePointMutation),
+    armEndLocus = coalesce(telomere, centromere, "")
+    ) %>%
+  select(-telomere, -centromere, -actionableDrupCategory) %>%
+  select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicTsg,actionableAmplification,actionableDeletion,actionableFusion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
+         actionableResistance,actionableResistanceSource,knownAmplification,knownDeletion,hmfAmplification,hmfDeletion,armEndLocus,reportablePointMutation,reportableAmp, reportableDel)
+
+genePanelDB[is.na(genePanelDB)] <- 0
+
+dbLocal = dbConnect(MySQL(), dbname='hmfpatients_pilot', user = "build", password = "build", host = "localhost")
+dbLocal = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysisWrite", host = "127.0.0.1")
+dbWriteTable(dbLocal, value = genePanelDB, name = "genePanel", overwrite = T, row.names = F )
+dbDisconnect(dbLocal)
+rm(dbLocal)
+
+
+########################### PART 4 Check with hotspots
+
+load("~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
+load("~/hmf/analysis/cohort/processed/genePanel.RData")
+cgi = read.csv("~/hmf/resources/cgi_variant_list", sep ="\t", stringsAsFactors = F)
+cgi = cgi %>% 
+  select(gene = GENE, chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT) %>%
+  group_by(gene, chromosome, position, ref, alt) %>% distinct(gene, chromosome, position, ref, alt)
+
+onco = read.csv("~/hmf/resources/oncoKb_variant_list", sep ="\t", stringsAsFactors = F)
+onco = onco %>% 
+  filter(INFO %in% c("Likely Oncogenic", "Oncogenic")) %>%
+  select(gene = GENE, chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT) %>%
+  group_by(gene, chromosome, position, ref, alt) %>% distinct(gene, chromosome, position, ref, alt)
+
+civic = read.csv("~/hmf/resources/civic_variant_list", sep ="\t", stringsAsFactors = F)
+civic = civic %>% 
+  filter(INFO == "true") %>%
+  select(gene = GENE, chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT) %>%
+  group_by(gene, chromosome, position, ref, alt) %>% distinct(gene, chromosome, position, ref, alt) 
+
+
+hotspots = full_join(cgi, onco, by = c("gene", "chromosome", "position", "ref", "alt")) %>% full_join(civic, by = c("gene", "chromosome", "position", "ref", "alt")) %>% 
+  left_join(genePanel %>% select(gene) %>% mutate(inGenePanel = T), by = "gene")
+
+hotspotsMissing = hotspots %>% filter(is.na(inGenePanel))
+length(unique(hotspotsMissing$gene))
+
+hotspotgenes = full_join(cgi, onco, by = "gene") %>% full_join(civic, by = "gene") %>% left_join(genePanel %>% select(gene) %>% mutate(inGenePanel = T), by = "gene")
+missingHotspotgenes = hotspotgenes %>% filter(is.na(inGenePanel))
+canonicalTranscripts %>% filter(gene %in% hotspotsMissing$gene)
+
+head(hpcExonicSomatics)
+
+load(file = "~/hmf/analysis/cohort/reference/hpcExonicSomatics.RData")
+hotspotSomatics = hpcExonicSomatics %>% inner_join(hotspotsMissing, by = c("chromosome", "position", "ref", "alt")) %>% group_by(gene.x) %>% count()
+  
+hotspotSomatics = hpcExonicSomatics %>% inner_join(hotspotsMissing, by = c("chromosome", "position", "ref", "alt")) %>% group_by(gene.x)
+  
+missingHotspotCv = hotspotSomatics %>% left_join(HmfRefCDSCv, by = c("gene.x" = "gene_name")) %>% filter(cancerType == 'All')
+missingHotspotCv$n
+
+
+
+
+
+
+########################### PART Check actionable variants
+
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+
+actionableVariant = read.csv(file = "~/hmf/analysis/actionable/actionableVariants.tsv", sep = "\t") %>% select(2,3,4,5)
+names(actionableVariant) <- c("CHROM", "POS", "REF", "ALT")
+
+actionableVariant = actionableVariant %>% mutate(ID = ".", QUAL = "100", FILTER = ".") %>%
+  select(CHROM,	POS,	ID,	REF,	ALT,	QUAL,	FILTER) %>% mutate(CHROM = factor(CHROM, levels = c(1:22, 'X', 'Y'))) %>% arrange(CHROM, POS) %>% distinct()
+
+write.table(actionableVariant, file = "~/hmf/analysis/actionable/actionableVariants.vcf", sep = "\t", row.names = F, quote = F)
+
+load("/Users/jon/hmf/analysis/cohort/processed/genePanel.RData")
+result = read.table(file = "/Users/jon/hmf/analysis/cohort/processed/actionableVariants.ann.vcf.info.summary", sep  = "|")
+names(result) <- c("impact", "gene")
+
+actionalVariantCategories = result %>%
+  group_by(gene, impact) %>% count() %>% 
+  spread(impact, n) %>% 
+  left_join(genePanel %>% select(gene, reportablePointMutation))
+save(actionalVariantCategories, file = "~/hmf/analysis/actionable/actionalVariantCategories.RData")
