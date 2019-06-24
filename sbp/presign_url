@@ -17,7 +17,8 @@ fi
 directLink=$( sbp s3 presign ${linkInclBucket} --expires ${expiresInSec} --profile ${awsProfile} )
 externLink=$( echo "${directLink}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
 
-echo "[INFO] Original:"
-echo "${directLink}"
-echo "[INFO] External link (expires in ${expiresInSec} seconds)"
+#echo "[INFO] Original:"
+#echo "${directLink}"
+dateString=$(date +%Y-%m-%d)
+echo "## NOTE: URL expires in one week (starting from date: ${dateString})"
 echo "${externLink}"
