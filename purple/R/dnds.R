@@ -114,7 +114,7 @@ onco_mutations <- function(mutations) {
 }
 
 
-tsg_mutations <- function(mutations) {
+tsg_mutations <- function(mutations, biallelicAlwaysDriver = T) {
   result = mutations %>%
     #filter(gene %in% c("MET", "NRAS","CDKN2A", "KRAS")) %>%
     filter(impact != "Synonymous") %>%
@@ -139,7 +139,7 @@ tsg_mutations <- function(mutations) {
   # Add knownDriver field: Hotspot, Biallelic, or Multihit (excluding 2xMissense & 2xIndel)
   result = result %>%
     mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
-    mutate(knownDriver = ifelse(biallelic | hotspot, T, F)) %>%
+    mutate(knownDriver = ifelse((biallelic & (impact != "Missense" | biallelicAlwaysDriver)) | hotspot, T, F)) %>%
     mutate(knownDriver = ifelse(redundant, F, knownDriver))
 
   return (result)
@@ -172,12 +172,21 @@ dnds_expected_drivers <- function(HmfRefCDSCv, mutations) {
     mutate(impact = tolower(paste("n", impact, sep = "_"))) %>%
     spread(impact, n, fill = 0)
 
+
+  if(!"n_missense" %in% names(geneImpactCount)) {
+    geneImpactCount$n_missense <- 0
+  }
+
   if(!"n_nonsense" %in% names(geneImpactCount)) {
     geneImpactCount$n_nonsense <- 0
   }
 
   if(!"n_splice" %in% names(geneImpactCount)) {
     geneImpactCount$n_splice <- 0
+  }
+
+  if(!"n_indel" %in% names(geneImpactCount)) {
+    geneImpactCount$n_indel <- 0
   }
 
   result = left_join(HmfRefCDSCv %>% filter(cancerType == 'All'), geneImpactCount, by = c("gene_name" = "gene"))
