@@ -159,3 +159,12 @@ amps = attach_target(amps, "cosmicOncogene", "knownAmplification", "actionableAm
 geneCopyNumberAmplificationTargets = amps
 save(geneCopyNumberAmplificationTargets, file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
 
+#### Add to gene panel
+load(file="~/hmf/analysis/cohort/processed/genePanelInitial.RData")
+load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeleteTargets.RData")
+load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
+
+genePanelWithAmpsAndDels = merge(genePanelInitial, geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(gene = target, hmfAmplification = T) %>% select(gene, hmfAmplification), by = "gene", all = T)
+genePanelWithAmpsAndDels = merge(genePanelWithAmpsAndDels, geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(gene = target, hmfDeletion = T) %>% select(gene, centromere, telomere, hmfDeletion) %>% distinct(), by = "gene", all = T)
+save(genePanelWithAmpsAndDels, file="~/hmf/analysis/cohort/processed/genePanelWithAmpsAndDels.RData")
+

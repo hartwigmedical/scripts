@@ -74,22 +74,10 @@ genePanelInitial = genePanel %>% filter(!gene %in% c("POM121L12","TRIM49B","LPCA
 save(genePanelInitial, file="~/hmf/analysis/cohort/processed/genePanelInitial.RData")
 
 
-########################### PART 2 WITH TARGET AMPS AND DELS
-load(file="~/hmf/analysis/cohort/processed/genePanelInitial.RData")
-load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberDeleteTargets.RData")
-load(file = "~/hmf/analysis/cohort/processed/geneCopyNumberAmplificationTargets.RData")
-
-genePanelWithAmpsAndDels = merge(genePanelInitial, geneCopyNumberAmplificationTargets %>% ungroup() %>% mutate(gene = target, hmfAmplification = T) %>% select(gene, hmfAmplification), by = "gene", all = T)
-genePanelWithAmpsAndDels = merge(genePanelWithAmpsAndDels, geneCopyNumberDeleteTargets %>% ungroup() %>% mutate(gene = target, hmfDeletion = T) %>% select(gene, centromere, telomere, hmfDeletion) %>% distinct(), by = "gene", all = T)
-save(genePanelWithAmpsAndDels, file="~/hmf/analysis/cohort/processed/genePanelWithAmpsAndDels.RData")
+########################### PART 2 - GOTO ampsDelsTarget
 
 
-####### Check gene panel across canonical transcripts
-load(file = "~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
-load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
-names(genePanel)
-
-genePanel %>% filter(!gene %in% canonicalTranscripts$gene)
+########################### PART 3 - GOTO dndsClassification
 
 
 ####### WRITE TO REPOSITORY AND DB
