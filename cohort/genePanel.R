@@ -18,7 +18,6 @@ rm(cosmicCurated, cosmicCensus)
 
 ########################### Actionable Genes
 actionableGenes = read.table("~/hmf/analysis/actionable/actionablePanel.tsv", header = T, stringsAsFactors = F) 
-names(actionableGenes)
 colnames(actionableGenes) <- c("gene", "actionableAmplification", "actionableDeletion", "actionableFusion", "actionableVariant", "actionableDrup", "actionableDrupCategory", "actionableResponse", "actionableResponseSource", "actionableResistance", "actionableResistanceSource")
 actionableGenes$actionableAmplification <- ifelse(actionableGenes$actionableAmplification  == "true", T, NA)
 actionableGenes$actionableDeletion <- ifelse(actionableGenes$actionableDeletion  == "true", T, NA)
@@ -58,7 +57,7 @@ colnames(knownAmpsDels) <- c("gene", "knownAmplification", "knownDeletion")
 
 
 ########################### Gene Panel
-load(file="~/hmf/RData/reference/PcawgRefCDSCv.RData")
+load(file="~/hmf/dnds/PcawgRefCDSCv.RData")
 load(file="~/hmf/analysis/cohort/processed/HmfRefCDSCv.RData")
 sig = 0.01
 hmfSignificant =  HmfRefCDSCv %>% filter(qglobal_cv < sig) %>% distinct(gene_name) %>% select(gene = gene_name)
@@ -109,12 +108,14 @@ genePanelDB = genePanel %>%
     armEndLocus = coalesce(telomere, centromere, "")
     ) %>%
   select(-telomere, -centromere, -actionableDrupCategory) %>%
-  select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicTsg,actionableAmplification,actionableDeletion,actionableFusion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
-         actionableResistance,actionableResistanceSource,knownAmplification,knownDeletion,hmfAmplification,hmfDeletion,armEndLocus,reportablePointMutation,reportableAmp, reportableDel)
+  select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicOncogene,cosmicTsg,actionableAmplification,actionableDeletion,actionableFusion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
+         actionableResistance,actionableResistanceSource,knownAmplification,knownDeletion,hmfAmplification,hmfDeletion,armEndLocus,reportablePointMutation,reportableAmp, reportableDel) %>%
+  filter(is.na(reportablePointMutation) | reportableDel | reportableAmp | cosmicOncogene | cosmicTsg | actionableDrup | actionableVariant | knownAmplification | knownDeletion )
 
 genePanelDB[is.na(genePanelDB)] <- 0
 
 dbLocal = dbConnect(MySQL(), dbname='hmfpatients_pilot', user = "build", password = "build", host = "localhost")
+dbLocal = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysisWrite", host = "127.0.0.1")
 dbLocal = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysisWrite", host = "127.0.0.1")
 dbWriteTable(dbLocal, value = genePanelDB, name = "genePanel", overwrite = T, row.names = F )
 dbDisconnect(dbLocal)

@@ -33,7 +33,7 @@ anova(model, test="Chisq")
 
 genePanelCv$continuousClassification <- predict(model,newdata = genePanelCv %>% select(wmis_cv, wnon_cv),type='response')
 genePanelCv[is.na(genePanelCv)] <- F
-genePanelCv$inDnds <- genePanelCv$hmfDnds | genePanelCv$martincorenaDnds
+genePanelCv$inDnds <- genePanelCv$hmfDnds 
 genePanelCv$unambigiousCosmic = xor(genePanelCv$cosmicTsg, genePanelCv$cosmicOncogene)
 
 genePanelCv$classification = ifelse(genePanelCv$continuousClassification > 0.5,"tsg","onco")
