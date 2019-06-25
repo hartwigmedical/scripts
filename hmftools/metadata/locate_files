@@ -52,7 +52,7 @@ locate_hotspot_tsv() {
     echo "/data/common/dbs/sage/KnownHotspots.tsv"
 }
 
-##################################### Somatics #####################################
+################################# Somatic Variants #################################
 locate_sage_somatics() {
     local run_dir=$1
     local somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *sage.vcf.gz)
@@ -60,8 +60,7 @@ locate_sage_somatics() {
     then
         # TODO: Clean up after sage is rerun for every sample
         somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
-        if [ -z ${somatic_vcf} ]
-        then
+        if [ -z ${somatic_vcf} ]; then
             echo "[ERROR] Unable to locate somatic variants. Exiting." >&2
             exit 1
         fi
@@ -72,8 +71,7 @@ locate_sage_somatics() {
 locate_purple_somatics() {
     local run_dir=$1
     local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
-    if [ -z ${somatic_vcf} ]
-    then
+    if [ -z ${somatic_vcf} ]; then
         echo "[ERROR] Unable to locate somatic variants. Exiting." >&2
         exit 1
     fi
@@ -83,12 +81,43 @@ locate_purple_somatics() {
 locate_purple_pilot_somatics() {
     local run_dir=$1
     local somatic_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.somatic.vcf.gz")
-    if [ -z ${somatic_vcf} ]
-    then
+    if [ -z ${somatic_vcf} ]; then
         echo "[ERROR] Unable to locate somatic variants. Exiting." >&2
         exit 1
     fi
     echo ${somatic_vcf}
+}
+
+############################################ Purple  ##########################################
+
+locate_purple_purity() {
+    local run_dir=$1
+    local purple_purity_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity")
+    if [ -z ${purple_purity_file} ]; then
+        echo "[ERROR] Unable to locate purple purity. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_file}
+}
+
+locate_purple_gene_copynumbers() {
+    local run_dir=$1
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.gene.cnv")
+    if [ -z ${purple_gene_copynumbers} ]; then
+        echo "[ERROR] Unable to locate purple gene copynumbers. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_circos_plot() {
+    local run_dir=$1
+    local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")
+    if [ -z ${circos_plot} ]; then
+        echo "[ERROR] Unable to locate purple circos plot. Exiting." >&2
+        exit 1
+    fi
+    echo ${circos_plot}
 }
 
 ##################################### Structural Variants #####################################
@@ -237,4 +266,32 @@ locate_gridss_recovery_candidates() {
         exit 1
     fi
     echo ${sv_recovery_vcf}
+}
+
+########################################### Bachelor ##########################################
+
+locate_bachelor_germline_variants() {
+    local run_dir=$1
+    local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*_germline_variants.csv")
+    if [ -z ${bachelor_csv} ]; then
+        local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "*_bachelor_output.csv")
+        local bachelor_found_nothing=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_found_no_variants")
+        if [[ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]]; then
+            echo "[ERROR] Unable to locate any bachelor output. Exiting." >&2
+            exit 1
+        fi
+    fi
+    echo ${bachelor_csv}
+}
+
+############################################# CHORD ###########################################
+
+locate_chord_prediction_file() {
+    local run_dir=$1
+    local chord_prediction_file=$(find -L ${run_dir}/chord/ -type f -name "*_chord_prediction.txt")
+    if [ -z ${chord_prediction_file} ]; then
+        echo "[ERROR] Unable to locate CHORD prediction file. Exiting." >&2
+        exit 1
+    fi
+    echo ${chord_prediction_file}
 }
