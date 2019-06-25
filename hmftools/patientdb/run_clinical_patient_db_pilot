@@ -3,7 +3,6 @@ source locate_files
 
 patient_db_jar=$(locate_pilot_patient_db)
 runs_dir_db=/data/cpct/runs
-runs_dir_non_db=/data/core/runs
 
 credentials=$(locate_pilot_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -14,7 +13,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
     -runs_dir_db ${runs_dir_db} \
-    -runs_dir_non_db ${runs_dir_non_db} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \
