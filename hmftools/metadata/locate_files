@@ -212,36 +212,36 @@ locate_variant_annotator_pilot_disruptions() {
     echo ${disruption_csv}
 }
 
-locate_linx_pilot_fusions() {
+locate_linx_fusions() {
     local run_dir=$1
     local linx_dir=${run_dir}/sv
     if [ ! -d ${linx_dir} ]; then
-        echo "[ERROR] Unable to locate linx pilot dir for fusions: ${linx_dir}. Exiting" >&2
+        echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
         exit 1
     fi
 
-	local fusion_csv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusions.csv")
-	if [ -z ${fusion_csv} ]; then
-        echo "[ERROR] Unable to locate linx pilot fusions csv. Exiting." >&2
+	local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusions.tsv")
+	if [ -z ${fusion_tsv} ]; then
+        echo "[ERROR] Unable to locate linx fusions tsv. Exiting." >&2
         exit 1
     fi
-    echo ${fusion_csv}
+    echo ${fusion_tsv}
 }
 
-locate_linx_pilot_disruptions() {
+locate_linx_disruptions() {
     local run_dir=$1
     local linx_dir=${run_dir}/sv
     if [ ! -d ${linx_dir} ]; then
-        echo "[ERROR] Unable to locate linx pilot dir for disruptions: ${linx_dir}. Exiting" >&2
+        echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
         exit 1
     fi
 
-	local disruption_csv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.csv")
-	if [ -z ${disruption_csv} ]; then
-        echo "[ERROR] Unable to locate linx pilot disruptions csv. Exiting." >&2
+	local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
+	if [ -z ${disruption_tsv} ]; then
+        echo "[ERROR] Unable to locate linx disruptions tsv. Exiting." >&2
         exit 1
     fi
-    echo ${disruption_csv}
+    echo ${disruption_tsv}
 }
 
 locate_gridss_structural_variants() {
