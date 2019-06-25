@@ -8,10 +8,10 @@ input_dir=$1 && shift
 # Load metadata
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-links=${input_dir}/${tumor_sample}.linx.vis_sv_data.csv
-exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.csv
-segments=${input_dir}/${tumor_sample}.linx.vis_segments.csv
-cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.csv
+links=${input_dir}/${tumor_sample}.linx.vis_sv_data.tsv
+exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.tsv
+segments=${input_dir}/${tumor_sample}.linx.vis_segments.tsv
+cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.tsv
 
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
