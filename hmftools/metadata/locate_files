@@ -39,6 +39,14 @@ locate_pilot_patient_db() {
     echo ${base_path}/tools/patient-db_pilot/patient-db.jar
 }
 
+locate_prod_linx() {
+    echo ${base_path}/tools/sv-linx_1.0/sv-linx.jar
+}
+
+locate_pilot_linx() {
+    echo ${base_path}/tools/sv-linx_pilot/sv-linx.jar
+}
+
 #################################### Resources #####################################
 locate_hotspot_tsv() {
     echo "/data/common/dbs/sage/KnownHotspots.tsv"
