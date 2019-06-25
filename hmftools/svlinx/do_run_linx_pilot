@@ -4,8 +4,9 @@ source load_metadata
 
 prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
+output_dir=${run_dir}/sv_pilot/
 
 credentials=$(locate_pilot_database_credentials)
-linx_jar=/data/common/tools/sv-linx_pilot/sv-linx.jar
+linx_jar=$(locate_pilot_linx)
 
-${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} $@
+${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} $@

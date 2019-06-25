@@ -5,6 +5,7 @@ source load_metadata
 run_dir=$1 && shift
 credentials=$1 && shift
 linx_jar=$1 && shift
+output_dir=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -13,8 +14,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-
-output_dir=${run_dir}/sv/
 
 # reference files
 
