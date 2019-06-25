@@ -27,6 +27,7 @@ my $YES_PIPELINE_PRIO = 99;
 
 my $LIMS_IN_FILE = '/data/lims/lims.json';
 my $JSON_BASE_DIR = '/home/sbpext/set_jsons';
+my $JSON_DONE_DIR = '/home/sbpext/set_jsons/registered';
 my $SHALLOW_RUNS_DIR = '/data/data_archive/shallow_seq_pipelines';
 my $USE_EXISTING = 0;
 
@@ -37,6 +38,7 @@ my %opt = ();
 GetOptions (
   "samplesheet=s"  => \$opt{ samplesheet },
   "outdir=s"       => \$JSON_BASE_DIR,
+  "donedir=s"      => \$JSON_DONE_DIR,
   "limsjson=s"     => \$LIMS_IN_FILE,
   "useExisting"    => \$USE_EXISTING,
   "debug"          => \$opt{ debug },
@@ -44,8 +46,6 @@ GetOptions (
   "verbose"        => \$opt{ verbose }
 ) or die "Error in command line arguments\n";
 my @ids = @ARGV;
-
-my $JSON_DONE_DIR = $JSON_BASE_DIR.'/registered';
 
 my $HELP =<<HELP;
 
@@ -260,14 +260,19 @@ sub processSample{
         ## adjust content in case of ShallowSeq
         if ( $shallow ){
             say "[INFO]   ShallowSeq flag set in LIMS";
-            my $match_string = join( "_", $barcode_ref, $barcode, $name );
-            my $run_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
-            chomp($run_exists);
-            if ( $run_exists ){
-                say "[INFO]   ShallowSeq run found ($match_string): going for full Somatic mode";
+            my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
+            my $local_run_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
+            my $shallow_json_exists = `find $JSON_DONE_DIR -maxdepth 1 -type f -name "*$match_string.json" | wc -l`;
+            chomp($local_run_exists);
+            chomp($shallow_json_exists);
+            if ( $local_run_exists ){
+                say "[INFO]   ShallowSeq run found locally for $match_string: going for full Somatic mode";
+            }
+            elsif ( $shallow_json_exists ){
+                say "[INFO]   ShallowSeq json found for $match_string: going for full Somatic mode";
             }
             else{
-                say "[INFO]   No ShallowSeq run found yet: going for ShallowSeq mode";
+                say "[INFO]   No ShallowSeq run/json found yet for $match_string: going for ShallowSeq mode";
                 $yield = 35 * $YIELD_F;
                 $yield_ref = $yield;
                 $entity = 'HMF_SHALLOWSEQ';
