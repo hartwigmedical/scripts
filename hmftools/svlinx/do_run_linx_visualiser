@@ -2,7 +2,8 @@
 source load_metadata
 
 run_dir=$1 && shift
-input_dir=${run_dir}/sv
+linx_jar=$1 && shift
+input_dir=$1 && shift
 
 # Load metadata
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -12,10 +13,9 @@ exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.csv
 segments=${input_dir}/${tumor_sample}.linx.vis_segments.csv
 cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.csv
 
-sv_jar=/data/common/tools/sv-linx_pilot/sv-linx.jar
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
-java -cp ${sv_jar} com.hartwig.hmftools.linx.SvVisualiser \
+java -cp ${linx_jar} com.hartwig.hmftools.linx.SvVisualiser \
     -sample ${tumor_sample} \
     -plot_out ${input_dir}/plot/ \
     -data_out ${input_dir}/circos/ \
@@ -28,8 +28,8 @@ java -cp ${sv_jar} com.hartwig.hmftools.linx.SvVisualiser \
 
 
 #Example usage
-#   do_run_linx_visualiser /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -threads 8
-#   do_run_linx_visualiser /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -chromosome 15 -debug
+#   do_run_linx_visualiser_prod /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -threads 8
+#   do_run_linx_visualiser_pilot /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -chromosome 15 -debug
 #
 # Optional arguments
 #
