@@ -15,7 +15,7 @@ cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.csv
 
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
-java -cp ${linx_jar} com.hartwig.hmftools.linx.SvVisualiser \
+java -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     -sample ${tumor_sample} \
     -plot_out ${input_dir}/plot/ \
     -data_out ${input_dir}/circos/ \
