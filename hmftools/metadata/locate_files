@@ -276,7 +276,7 @@ locate_bachelor_germline_variants() {
     if [ -z ${bachelor_csv} ]; then
         local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "*_bachelor_output.csv")
         local bachelor_found_nothing=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_found_no_variants")
-        if [[ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]]; then
+        if [ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]; then
             echo "[ERROR] Unable to locate any bachelor output. Exiting." >&2
             exit 1
         fi
