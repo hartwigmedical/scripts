@@ -73,10 +73,6 @@ biallelicOutput = dndscv(biallelicSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss
 HmfRefCDSCvBiallelic  <- biallelicOutput$sel_cv
 save(HmfRefCDSCvBiallelic, file = "~/hmf/analysis/cohort/processed/HmfRefCDSCvBiallelic.RData")
 
-unfilteredBiallelicOutput = dndscv(biallelicSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
-dndsUnfilteredBiallelicMutations = unfilteredBiallelicOutput$annotmuts
-save(dndsUnfilteredBiallelicMutations, file = "~/hmf/analysis/cohort/processed/dndsUnfilteredBiallelicMutations.RData")
-
 nonBiallelicSomatics = hpcExonicSomatics %>% 
   filter(type == "SNP", repeatCount <= 8, !biallelic) %>%
   select(sampleId, chr = chromosome, pos = position, ref, alt)
@@ -84,12 +80,6 @@ nonBiallelicSomatics = hpcExonicSomatics %>%
 nonBiallelicOutput = dndscv(nonBiallelicSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE)
 HmfRefCDSCvNonBiallelic  <- nonBiallelicOutput$sel_cv
 save(HmfRefCDSCvNonBiallelic, file = "~/hmf/analysis/cohort/processed/HmfRefCDSCvNonBiallelic.RData")
-
-unfilteredNonBiallelicOutput = dndscv(nonBiallelicSomatics, refdb=refdb, kc=kc, cv=cv, stop_loss_is_nonsense = TRUE, max_muts_per_gene_per_sample = 30000000, max_coding_muts_per_sample = 30000000)
-dndsUnfilteredNonBiallelicMutations = unfilteredNonBiallelicOutput$annotmuts
-save(dndsUnfilteredNonBiallelicMutations, file = "~/hmf/analysis/cohort/processed/dndsUnfilteredNonBiallelicMutations.RData")
-
-
 
 ############################################   Choose genes to use separate figures for Biallelic / NonBiallelic ############################################
 load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")

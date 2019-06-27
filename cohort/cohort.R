@@ -96,8 +96,21 @@ sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", s
 somaticCountsQuery = paste0("select sampleId, type, count(*) as total from somaticVariant where filter = 'PASS' and sampleId in (",sampleIdString, ") group by sampleId, type")
 somaticCounts = dbGetQuery(dbProd, somaticCountsQuery)
 somaticCounts = somaticCounts %>% mutate(type = paste0("TOTAL_", type)) %>% spread(type, total)
-save(somaticCounts, file = "~/hmf/analysis/genepanel/somaticCounts.RData")
 
+biallelicSomaticCountsQuery = paste0("select sampleId, type, count(*) as total from somaticVariant where filter = 'PASS' and sampleId in (",sampleIdString, ") AND biallelic group by sampleId, type")
+biallelicSomaticCounts = dbGetQuery(dbProd, biallelicSomaticCountsQuery)
+biallelicSomaticCounts = biallelicSomaticCounts %>% mutate(type = paste0("TOTAL_", type)) %>% spread(type, total)
+
+nonBiallelicSomaticCountsQuery = paste0("select sampleId, type, count(*) as total from somaticVariant where filter = 'PASS' and sampleId in (",sampleIdString, ") AND !biallelic group by sampleId, type")
+nonBiallelicSomaticCounts = dbGetQuery(dbProd, nonBiallelicSomaticCountsQuery)
+nonBiallelicSomaticCounts = nonBiallelicSomaticCounts %>% mutate(type = paste0("TOTAL_", type)) %>% spread(type, total)
+
+biallelicSomaticCounts = full_join(biallelicSomaticCounts, somaticCounts %>% select(sampleId), by = "sampleId")
+somaticCounts[is.na(somaticCounts)] <- 0
+biallelicSomaticCounts[is.na(biallelicSomaticCounts)] <- 0
+nonBiallelicSomaticCounts[is.na(nonBiallelicSomaticCounts)] <- 0
+
+save(somaticCounts, biallelicSomaticCounts, nonBiallelicSomaticCounts, file = "~/hmf/analysis/cohort/reference/somaticCounts.RData")
 
 ########### PRIOR SOMATICS ########### 
 load(file = "~/hmf/RData/reference/HmfRefCDS.RData")
