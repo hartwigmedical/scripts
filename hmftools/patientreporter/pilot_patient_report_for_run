@@ -20,7 +20,6 @@ circos_file=$(locate_purple_circos_plot ${run_dir})
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
-hotspot_tsv=$(locate_hotspot_tsv)
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 sample_summary_csv=/data/common/dbs/summary_patient_report/summary_samples.csv
 
@@ -46,7 +45,6 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -ref_sample ${ref_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -drup_genes_csv ${drup_genes_csv} \
-    -hotspot_tsv ${hotspot_tsv} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_csv ${sample_summary_csv} \
     -fasta_file_location ${ref_genome} \
