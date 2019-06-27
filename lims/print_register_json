@@ -154,6 +154,12 @@ sub addSamplesFromSamplesheet{
                 $record{ $field } = shift @line_values;
             }
             my $id = $record{ 'Sample_ID' };
+            my $name = $record{ 'Sample_Name' };
+            my $submission = $record{ 'Sample_Project' };
+            if ( $submission =~ /^HMFregVAL|HMFregGIAB$/ ){
+                warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
+                next();
+            }
             $data{ $id } = 1;
         }
     }
