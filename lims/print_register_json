@@ -311,7 +311,7 @@ sub processSample{
         $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        $json_data{ 'priority' } = "$priority";
+        $json_data{ 'priority' } = $priority;
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $USE_EXISTING );
     }
