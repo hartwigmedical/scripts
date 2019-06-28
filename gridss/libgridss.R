@@ -17,7 +17,6 @@ source("gridss.config.R")
   return(ifelse(is.na(a), b, a))
 }
 
-
 #' sum of genotype fields
 .genosum <- function(genotypeField, columns) {
 	rowSums(genotypeField[,columns, drop=FALSE])
@@ -49,7 +48,8 @@ addVCFHeaders = function(vcf) {
       "normalCoverage",
       "af",
       "NO_ASRP",
-      "LongPolyC"),
+      "LongPolyC",
+      "cohortMinSize"),
     Description=c(
       "Found in panel of normals",
       "Imprecise variant",
@@ -66,7 +66,8 @@ addVCFHeaders = function(vcf) {
       "Insufficient normal coverage to determine somatic status",
       "Variant allele fraction too low",
       "Breakend supported by 0 assembled read pairs",
-      "Single breakend containing long polyC or polyG run. Likely to be an artefact."))), "DataFrame"))
+      "Single breakend containing long polyC or polyG run. Likely to be an artefact.",
+      "Variant is smaller than the minimum event size considered for this cohort"))), "DataFrame"))
   return(vcf)
 }
 
@@ -136,6 +137,7 @@ gridss_breakpoint_filter = function(gr, vcf, bsgenome, min_support_filters=TRUE,
 	  filtered = .addFilter(filtered, "small.del.ligation.fp", is_likely_library_prep_fragment_ligation_artefact(gr, vcf))
 	  filtered = .addFilter(filtered, "small.inv.hom.fp", is_small_inversion_with_homology(gr, vcf))
 	  filtered = .addFilter(filtered, "small.replacement.fp", is_indel_artefact(gr, bsgenome))
+	  filtered = .addFilter(filtered, "cohortMinSize", is_too_small_event(gr))
 	}
 	if (somatic_filters) {
 		#normalaf <- gridss_af(gr, vcf, normalOrdinal)
@@ -259,6 +261,16 @@ is_small_inversion_with_homology = function(gr, vcf, minhomlen=6, maxsize=40) {
     result[isbp] = simpleEventType(bpgr) == "INV" &
       svlen <= maxsize &
       homlen >= minhomlen
+  }
+  return(result)
+}
+is_too_small_event = function(gr, minSize=gridss.min_event_size) {
+  result = rep(FALSE, length(gr))
+  if (!is.null(gr$partner)) {
+    isbp <- gr$partner %in% names(gr)
+    bpgr = gr[isbp]
+    svlen = abs(start(bpgr) - start(partner(bpgr))) + str_len(bpgr$insSeq) - ifelse(simpleEventType(bpgr) %in% c("DEL", "INS"), 1, 0)
+    result[isbp] = simpleEventType(bpgr) %in% c("DEL", "DUP", "INS") & svlen <= minSize
   }
   return(result)
 }

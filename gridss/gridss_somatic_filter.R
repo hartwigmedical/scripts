@@ -10,6 +10,7 @@ argp = add_argument(argp, "--normalordinal", type="integer", default=1, help="Or
 argp = add_argument(argp, "--scriptdir", default=ifelse(sys.nframe() == 0, "./", dirname(sys.frame(1)$ofile)), help="Path to libgridss.R script")
 argp = add_argument(argp, "--gc", flag=TRUE, help="Perform garbage collection after freeing of large objects. ")
 # argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/COLO829R_COLO829T.gridss.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-p", "D:/hartwig/dbs/gridss/pon3792v1", "--scriptdir", "D:/hartwig/scripts/gridss", "--gc"))
+#argv = parse_args(argp, argv=c("--input", "D:/hartwig/down/annotate_variants.vcf", "--output", "D:/hartwig/temp/out.vcf", "-f", "D:/hartwig/temp/full.vcf", "-p", "D:/hartwig/dbs/gridss/pon3792v1", "--scriptdir", "D:/hartwig/scripts/gridss", "--gc"))
 argv = parse_args(argp)
 
 if (!file.exists(argv$input)) {
