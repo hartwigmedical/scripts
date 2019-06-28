@@ -202,7 +202,6 @@ sub processSample{
     
     ## init the json info
     my %json_data = ();
-    $json_data{ 'priority' } = $priority;
     
     say "[INFO]   NAME=$name, ENTITY=$entity, ANALYSIS:$analysis";
 
@@ -284,6 +283,7 @@ sub processSample{
                 $entity = 'HMF_SHALLOWSEQ';
                 $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
                 $ini = $SHA_INI;
+                $priority = $YES_PIPELINE_PRIO;
            }
         }
  
@@ -311,6 +311,7 @@ sub processSample{
         $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
+        $json_data{ 'priority' } = "$priority";
         addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $USE_EXISTING );
     }
