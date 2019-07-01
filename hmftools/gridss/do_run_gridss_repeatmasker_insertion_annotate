@@ -6,7 +6,7 @@ input_vcf=$1 && shift
 
 output_vcf=${input_vcf/.gz/}
 
-if [[ ! -f $input_vcf ]] ; then
+if [[ ! -f ${input_vcf} ]] ; then
 	echo "[ERROR] Missing input VCF $input_vcf"
 	exit 1
 fi
@@ -17,14 +17,14 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-repeatmasker=$base_path/dbs/repeatmasker/hg19.fa.out
+repeatmasker=${base_path}/dbs/repeatmasker/hg19.fa.out
 libgridss=/data/common/repos/scripts/gridss/
 
 Rscript ${libgridss}/gridss_annotate_insertions_repeatmaster.R \
-	--input $input_vcf \
-	--output $output_vcf \
-	--repeatmasker $repeatmasker \
-	--scriptdir $libgridss
+	--input ${input_vcf} \
+	--output ${output_vcf} \
+	--repeatmasker ${repeatmasker} \
+	--scriptdir ${libgridss}
 
 mv ${output_vcf}.bgz ${output_vcf}.gz
 mv ${output_vcf}.bgz.tbi ${output_vcf}.gz.tbi

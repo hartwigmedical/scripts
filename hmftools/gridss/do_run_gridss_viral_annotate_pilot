@@ -7,4 +7,4 @@ gridss_jar=/data/common/tools/gridss_v2.1.0/gridss.jar
 threads=16
 input_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
 
-${prefix}/do_run_gridss_viral_annotate $run_dir $gridss_jar $threads $input_vcf
+${prefix}/do_run_gridss_viral_annotate ${run_dir} ${gridss_jar} ${threads} ${input_vcf}

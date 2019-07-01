@@ -6,12 +6,12 @@ run_dir=$1 && shift
 gridss_jar=$1 && shift
 threads=$1 && shift
 
-if [[ ! -f $run_dir/metadata ]] ; then
+if [[ ! -f ${run_dir}/metadata ]] ; then
 	echo "Missing metadata file in run directory. Aborting" 1>&2
 	exit 1
 fi
 
-if [[ ! -f $gridss_jar ]] ; then
+if [[ ! -f ${gridss_jar} ]] ; then
 	echo "Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
 	exit 1
 fi
@@ -26,10 +26,10 @@ if [ -z "`hostname | grep datastore`" ]; then
 	base_path="/data"
 fi
 
-config_dir=$base_path/dbs/gridss
+config_dir=${base_path}/dbs/gridss
 
-export PATH=$base_path/tools/bwa_v0.7.17/:$PATH
-export PATH=$PATH:$base_path/tools/samtools_v1.2/
+export PATH=${base_path}/tools/bwa_v0.7.17/:$PATH
+export PATH=$PATH:${base_path}/tools/samtools_v1.2/
 
 if which bwa > /dev/null ; then
 	echo -n
@@ -44,27 +44,27 @@ else
 	exit 1
 fi
 
-ref_genome=$base_path/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+ref_genome=${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 # TEMP local testing
 #ref_genome=/mnt/d/hartwig/refdata/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 source load_metadata
-ref_sample=$(load_ref_sample_from_metadata $run_dir)
-tumor_sample=$(load_tumor_sample_from_metadata $run_dir)
-joint_sample_name=$(load_joint_name_from_metadata $run_dir)
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+joint_sample_name=$(load_joint_name_from_metadata ${run_dir})
 
-gridss_dir=${run_dir}/structuralVariants/gridss/$joint_sample_name/
-gridss_raw_vcf=$gridss_dir/${joint_sample_name}.gridss.vcf
+gridss_dir=${run_dir}/structuralVariants/gridss/${joint_sample_name}/
+gridss_raw_vcf=${gridss_dir}/${joint_sample_name}.gridss.vcf
 gridss_filtered_vcf=${tumor_sample}.gridss.somatic.vcf
-normal_bam=$run_dir/$ref_sample/mapping/${ref_sample}_dedup.realigned.bam
-tumor_bam=$run_dir/$tumor_sample/mapping/${tumor_sample}_dedup.realigned.bam
-assembly_bam=$gridss_dir/$joint_sample_name.assembly.bam
-log_dir=$gridss_dir/logs/
-log_prefix=$log_dir/$HOSTNAME.$$
-blacklist=$config_dir/ENCFF001TDO.bed
+normal_bam=${run_dir}/${ref_sample}/mapping/${ref_sample}_dedup.realigned.bam
+tumor_bam=${run_dir}/${tumor_sample}/mapping/${tumor_sample}_dedup.realigned.bam
+assembly_bam=${gridss_dir}/${joint_sample_name}.assembly.bam
+log_dir=${gridss_dir}/logs/
+log_prefix=${log_dir}/$HOSTNAME.$$
+blacklist=${config_dir}/ENCFF001TDO.bed
 
 prefix=`dirname $(readlink $0 || echo $0)`
-gridss_config_file=$prefix/gridss.properties
+gridss_config_file=${prefix}/gridss.properties
 
 gridss_threshold_coverage=10000
 gridss_jvm_args="
@@ -80,26 +80,26 @@ gridss_common_args="
 	WORKING_DIR=$gridss_dir
 	REFERENCE_SEQUENCE=$ref_genome "
 
-mkdir -p $gridss_dir $log_dir
+mkdir -p ${gridss_dir} ${log_dir}
 
 function assert_preprocessing_complete() {
-	if [[ ! -f $gridss_dir/$(basename $normal_bam).gridss.working/$(basename $normal_bam).sv.bam ]] ; then
+	if [[ ! -f ${gridss_dir}/$(basename ${normal_bam}).gridss.working/$(basename ${normal_bam}).sv.bam ]] ; then
 		echo "Normal bam preprocessing not complete. Terminating." 1>&2
 		exit 1
 	fi
-	if [[ ! -f $gridss_dir/$(basename $tumor_bam).gridss.working/$(basename $tumor_bam).sv.bam ]] ; then
+	if [[ ! -f ${gridss_dir}/$(basename ${tumor_bam}).gridss.working/$(basename ${tumor_bam}).sv.bam ]] ; then
 		echo "Tumor bam preprocessing not complete. Terminating." 1>&2
 		exit 1
 	fi
 }
 function assert_assembly_complete() {
-	if [[ ! -f $gridss_dir/$(basename $assembly_bam).gridss.working/$(basename $assembly_bam).sv.bam ]] ; then
+	if [[ ! -f ${gridss_dir}/$(basename ${assembly_bam}).gridss.working/$(basename ${assembly_bam}).sv.bam ]] ; then
 		echo "Assembly not complete. Terminating." 1>&2
 		exit 1
 	fi
 }
 function assert_calling_complete() {
-	if [[ ! -f $gridss_raw_vcf.unannotated.vcf ]] ; then
+	if [[ ! -f ${gridss_raw_vcf}.unannotated.vcf ]] ; then
 		echo "Variant calling not complete. Terminating." 1>&2
 		exit 1
 	fi

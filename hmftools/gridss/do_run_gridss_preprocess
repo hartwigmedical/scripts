@@ -8,21 +8,21 @@ source do_run_gridss_lib
 tum_normal_arg=$1 && shift
 
 if [[ "$tum_normal_arg" == "normal" ]] ; then
-	bam_sample=$ref_sample
+	bam_sample=${ref_sample}
 elif [[ "$tum_normal_arg" == "tumor" ]] ; then
-	bam_sample=$tumor_sample
+	bam_sample=${tumor_sample}
 else
 	echo "Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
 	exit 1
 fi
-bam=$run_dir/$bam_sample/mapping/${bam_sample}_dedup.realigned.bam
-insert_size_metrics=$run_dir/QCStats/${bam_sample}_dedup/${bam_sample}_dedup_MultipleMetrics.txt.insert_size_metrics
+bam=${run_dir}/${bam_sample}/mapping/${bam_sample}_dedup.realigned.bam
+insert_size_metrics=${run_dir}/QCStats/${bam_sample}_dedup/${bam_sample}_dedup_MultipleMetrics.txt.insert_size_metrics
 
-if [[ ! $bam.bai ]] ; then
-	samtools index $bam
+if [[ ! ${bam}.bai ]] ; then
+	samtools index ${bam}
 fi
 
-if [[ ! -f $insert_size_metrics ]] ; then
+if [[ ! -f ${insert_size_metrics} ]] ; then
 	echo "Missing insert size metrics file $insert_size_metrics. Aborting" 1>&2
 	exit 1
 fi
@@ -32,22 +32,22 @@ if [[ ! -f "$bam" ]] ; then
 	exit 1
 fi
 
-working_dir=$gridss_dir/$(basename $bam).gridss.working
-mkdir -p $working_dir
-sv_bam=$working_dir/$(basename $bam).sv.bam
-extract_tmp_bam=$working_dir/gridss.tmp.querysorted.$(basename $bam).sv.bam
-tag_tmp_bam=$working_dir/gridss.tmp.withtags.$(basename $bam).sv.bam
-if [[ ! -f $sv_bam ]] ; then
-	if [[ ! -f $extract_tmp_bam ]] ; then
+working_dir=${gridss_dir}/$(basename ${bam}).gridss.working
+mkdir -p ${working_dir}
+sv_bam=${working_dir}/$(basename ${bam}).sv.bam
+extract_tmp_bam=${working_dir}/gridss.tmp.querysorted.$(basename ${bam}).sv.bam
+tag_tmp_bam=${working_dir}/gridss.tmp.withtags.$(basename ${bam}).sv.bam
+if [[ ! -f ${sv_bam} ]] ; then
+	if [[ ! -f ${extract_tmp_bam} ]] ; then
 		# Since we already have insert size metrics, we can compute metrics and extract SV reads in a single pass
 		echo $(date) CollectGridssMetricsAndExtractSVReads
-		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.CollectGridssMetricsAndExtractSVReads.log java -Xmx512M $gridss_jvm_args \
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.CollectGridssMetricsAndExtractSVReads.log java -Xmx512M ${gridss_jvm_args} \
 			gridss.CollectGridssMetricsAndExtractSVReads \
-			TMP_DIR=$gridss_dir \
+			TMP_DIR=${gridss_dir} \
 			ASSUME_SORTED=true \
-			I=$bam \
-			O=$working_dir/$(basename $bam) \
-			THRESHOLD_COVERAGE=$gridss_threshold_coverage \
+			I=${bam} \
+			O=${working_dir}/$(basename ${bam}) \
+			THRESHOLD_COVERAGE=${gridss_threshold_coverage} \
 			FILE_EXTENSION=null \
 			GRIDSS_PROGRAM=null \
 			GRIDSS_PROGRAM=CollectCigarMetrics \
@@ -59,22 +59,22 @@ if [[ ! -f $sv_bam ]] ; then
 			PROGRAM=CollectInsertSizeMetrics \
 			SV_OUTPUT=/dev/stdout \
 			COMPRESSION_LEVEL=0 \
-			METRICS_OUTPUT=$working_dir/$(basename $bam).sv_metrics \
-			INSERT_SIZE_METRICS=$insert_size_metrics \
+			METRICS_OUTPUT=${working_dir}/$(basename $bam).sv_metrics \
+			INSERT_SIZE_METRICS=${insert_size_metrics} \
 			UNMAPPED_READS=false \
 			MIN_CLIP_LENGTH=5 \
 			INCLUDE_DUPLICATES=true | \
 		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.sort.name.log \
-		samtools sort -O bam -T $gridss_dir/${bam_sample}.samtools.sort.tmp. -n -l 0 -@ $threads -o $extract_tmp_bam -  ||
+		samtools sort -O bam -T ${gridss_dir}/${bam_sample}.samtools.sort.tmp. -n -l 0 -@ ${threads} -o ${extract_tmp_bam} -  ||
 		exit 1
 	fi
 	if [[ ! -f $tag_tmp_bam ]] ; then
 		echo $(date) ComputeSamTags
-		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.ComputeSamTags.log java -Xmx3G $gridss_jvm_args \
+		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.ComputeSamTags.log java -Xmx3G ${gridss_jvm_args} \
 			gridss.ComputeSamTags \
-			$gridss_common_args \
+			${gridss_common_args} \
 			COMPRESSION_LEVEL=0 \
-			I=$extract_tmp_bam \
+			I=${extract_tmp_bam} \
 			O=/dev/stdout \
 			RECALCULATE_SA_SUPPLEMENTARY=true \
 			SOFTEN_HARD_CLIPS=true \
@@ -94,20 +94,20 @@ if [[ ! -f $sv_bam ]] ; then
 	fi
 	echo $(date) SoftClipsToSplitReads
 	/usr/bin/time -o ${log_prefix}.${bam_sample}.time.SoftClipsToSplitReads.log \
-	java -Xmx3G $gridss_jvm_args \
+	java -Xmx3G ${gridss_jvm_args} \
 		-Dgridss.output_to_temp_file=true \
 		gridss.SoftClipsToSplitReads \
-		$gridss_common_args \
-		I=$tag_tmp_bam \
+		${gridss_common_args} \
+		I=${tag_tmp_bam} \
 		O=${sv_bam} \
-		WORKER_THREADS=$threads &&
-	rm $tmp_bam $tag_tmp_bam $extract_tmp_bam
+		WORKER_THREADS=${threads} &&
+	rm ${tmp_bam} ${tag_tmp_bam} ${extract_tmp_bam}
 fi
 
 # Wait for metric extraction to finish
 wait
 
-if [[ ! -f  $sv_bam ]] ; then
+if [[ ! -f  ${sv_bam} ]] ; then
 	echo "$(date) Preprocessing failed. Missing $sv_bam " 1>&2
 	exit 1
 else
