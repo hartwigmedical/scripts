@@ -1,11 +1,19 @@
 #!/usr/bin/env bash
 source locate_files
 
-dir=$1
+run_dir=$1 && shift
 
-somatic_vcf=${dir}/somatic_caller/results/*.cosmic.annotated.vcf.gz
+purple_dir=${run_dir}/purple
+somatic_vcf=${purple_dir}/*.purple.somatic.vcf.gz
 sample=$( basename ${somatic_vcf}  | cut -d"." -f1 )
 credentials=/data/common/dbs/mysql_credentials/pipeline_v5
 patient_db_jar=$(locate_prod_patient_db)
 
+echo "[INFO] Loading purple"
+do_load_purple_data ${purple_dir} ${credentials} ${patient_db_jar} ${sample}
+
+echo "[INFO] Loading somatic variants"
 do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+
+echo "[INFO] Loading metrics"
+do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
