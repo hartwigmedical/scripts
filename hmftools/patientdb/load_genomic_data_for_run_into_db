@@ -8,20 +8,13 @@ sample=$1 && shift
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-sv_jar=/data/common/tools/variantannotator_v2.15/variant-annotator.jar
-
 somatic_vcf=$(locate_purple_somatics ${run_dir})
-structural_vcf=$(locate_purple_structural_variants ${run_dir})
-sv_analysis_data_dir=${run_dir}/svAnalysis
 
 echo "[INFO] Loading purple data"
 ${prefix}/do_load_purple_data ${run_dir}/purple ${credentials} ${patient_db_jar} ${sample} $@
 
 echo "[INFO] Loading somatic variants"
 ${prefix}/do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading sv variants"
-${prefix}/../svloader/do_run_sv_loader ${sample} ${sv_analysis_data_dir} ${structural_vcf} ${credentials} ${sv_jar}
 
 echo "[INFO] Loading metrics"
 ${prefix}/do_load_metrics_data ${run_dir} ${credentials} ${patient_db_jar}
