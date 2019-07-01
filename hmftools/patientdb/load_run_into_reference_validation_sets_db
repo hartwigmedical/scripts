@@ -5,7 +5,7 @@ source load_metadata
 run_dir=$1 && shift
 
 patient_db_jar=$(locate_prod_patient_db)
-credentials=/data/common/dbs/mysql_credentials/reference_validation_sets
+credentials=$(locate_reference_validation_sets_database_credentials)
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 load_genomic_data_for_run_into_db ${run_dir} ${patient_db_jar} ${credentials} ${sample}

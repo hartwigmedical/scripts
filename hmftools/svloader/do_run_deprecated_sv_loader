@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Can go once patient reporter v7 has been released for prod
+
 sample=$1 && shift
 data_output_dir=$1 && shift
 structural_vcf=$1 && shift

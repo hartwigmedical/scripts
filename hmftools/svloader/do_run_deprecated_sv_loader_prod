@@ -1,4 +1,6 @@
 #!/bin/bash
+
+# Can go once patient reporter v7 has been released for prod
 source locate_files
 source load_metadata
 
