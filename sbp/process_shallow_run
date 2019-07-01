@@ -1,7 +1,8 @@
 #!/bin/bash
 
 script=$( basename $0 )
-localpath="/data/schuberg/shallow_runs"
+archivePath="/data/data_archive/shallow_seq_pipelines"
+downloadPath="/data/schuberg/shallow_runs"
 bucket="hmf-output-shallowseq"
 
 usage() {
@@ -27,8 +28,15 @@ if [[ -z "${set}" ]]; then
     usage
 fi
 
-echo "[INFO] Syncing set ${set} to ${localpath}"
-sbp s3 sync s3://${bucket}/${set}/ ${localpath}/${set}/ \
+archiveSetPath="${archivePath}/${set}"
+downloadSetPath="${downloadPath}/${set}"
+
+if [[ -d ${archiveSetPath} ]]; then
+    echo "[WARN] SKIPPING: Set already archived locally (${archiveSetPath})"
+else 
+    echo "[INFO] Syncing set ${set} to ${downloadPath}"
+    sbp s3 sync s3://${bucket}/${set}/ ${downloadPath}/${set}/ \
         --exclude "*.bam" \
         --exclude "*.diff" \
 	--profile download
+fi
