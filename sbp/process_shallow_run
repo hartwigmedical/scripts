@@ -1,0 +1,34 @@
+#!/bin/bash
+
+script=$( basename $0 )
+localpath="/data/schuberg/shallow_runs"
+bucket="hmf-output-shallowseq"
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <SetName>" 1>&2;
+    echo "       $script -s 190101_ShallowSeq_etc" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:" o; do
+    case "${o}" in
+        s)
+            set=${OPTARG} || usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set}" ]]; then
+    usage
+fi
+
+echo "[INFO] Syncing set ${set} to ${localpath}"
+sbp s3 sync s3://${bucket}/${set}/ ${localpath}/${set}/ \
+        --exclude "*.bam" \
+        --exclude "*.diff" \
+	--profile download
