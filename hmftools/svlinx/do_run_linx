@@ -30,7 +30,10 @@ drup_tsg_file=/data/common/dbs/drup/drup_tsg_genes.csv
 # echo "${sample} linx data : ${output_dir}"
 
 if [ -d ${output_dir} ]; then
-    rm ${output_dir}/*linx*
+    linx_files=$(find ${output_dir} -type f -name "*linx*")
+    if [[ ! -z ${linx_files} ]]; then
+        rm ${output_dir}/*linx*
+    fi
 else
     mkdir -p ${output_dir}
 fi

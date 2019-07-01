@@ -15,7 +15,10 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 if [ -d ${output_dir} ]; then
-    rm ${output_dir}/*sv_data*
+    sv_data_files=$(find ${output_dir} -type f -name "*sv_data*")
+    if [[ ! -z ${sv_data_files} ]]; then
+        rm ${output_dir}/*sv_data*
+    fi
 else
     mkdir -p ${output_dir}
 fi
