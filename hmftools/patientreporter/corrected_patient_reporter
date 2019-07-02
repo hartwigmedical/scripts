@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+comments=$1 && shift
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+${prefix}/patient_report_for_run ${run_dir} -comments ${comments}
