@@ -39,13 +39,16 @@ echo "[INFO] START with ${thisScript}"
 if [[ ${runDir} =~ .vcf.gz$ || ${runDir} =~ .vcf$ ]]; then
     runSomVcfPath=${runDir}
 else
-    runLinksJson="${runDir}/logs/links.json"
-    legacyPath="${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf"
+    runLinksJson=${runDir}/logs/links.json
+    legacyPath=${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf
+    pv5Path=$( find ${runDir} -name "*.purple.somatic.vcf.gz")
     if [[ -f ${runLinksJson} ]]; then 
         runSomVcfLink=$( cat ${runLinksJson} | jq -r '.somatic_variant_vcf')
-        runSomVcfPath="${runDir}/${runSomVcfLink}"
-    elif [[ -f "${legacyPath}" ]]; then
-        runSomVcfPath="${legacyPath}"
+        runSomVcfPath=${runDir}/${runSomVcfLink}
+    elif [[ -f ${legacyPath} ]]; then
+        runSomVcfPath=${legacyPath}
+    elif [[ -f ${pv5Path} ]]; then
+        runSomVcfPath=${pv5Path}
     else
         echo "[EXIT] Unable to find somatic VCF" && exit 1; 
     fi
