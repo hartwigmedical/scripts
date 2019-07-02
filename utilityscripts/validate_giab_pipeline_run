@@ -39,7 +39,9 @@ if [[ ! -d ${runPath} ]]; then echo "[EXIT] Provided run path does not exist?"; 
 germlineVcf=$( find ${runPath} -name "*.filtered_variants.vcf" )
 if [[ ! -f ${germlineVcf} ]]; then
     # New location of germline vcf in Pv5
-    germlineVcf=$( find ${runPath} -name "*.germline.vcf.gz")
+    # TODO The real VCF is zipped, but that doesn't work downstream.
+    #germlineVcf=$( find ${runPath} -name "*.germline.vcf.gz")
+    germlineVcf=$( find ${runPath} -name "*.germline.vcf")
     if [[ ! -f ${germlineVcf} ]]; then
         echo "[EXIT] No germline filtered variants VCF in run ($runPath)?"
         exit 1
@@ -61,6 +63,7 @@ cp ${germlineVcf} ${outputDir}
 ## -----
 ## VCF preparation
 ## -----
+# TODO: Should we unzip the VCF here?
 startVcfPath=${outputDir}/${vcfBaseName}
 startVcfName=$( basename ${startVcfPath} )
 echo "[INFO] Running RTGTools bgzip on ${startVcfName}"
