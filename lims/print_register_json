@@ -307,7 +307,7 @@ sub processSample{
             push( @warn_msg, "TUM barcode ($barcode) for sample ($name) already exists at SBP!!" );
         }        
         if ( $ref_exists ){
-            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($sample) already exists at SBP!!" );
+            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($name) already exists at SBP!!" );
         }
         
         say "[INFO]   SET: $set";
