@@ -269,7 +269,7 @@ is_too_small_event = function(gr, minSize=gridss.min_event_size) {
   if (!is.null(gr$partner)) {
     isbp <- gr$partner %in% names(gr)
     bpgr = gr[isbp]
-    svlen = abs(start(bpgr) - start(partner(bpgr))) + str_len(bpgr$insSeq) - ifelse(simpleEventType(bpgr) %in% c("DEL", "INS"), 1, 0)
+    svlen = abs(start(bpgr) - start(partner(bpgr))) + str_length(bpgr$insSeq) - ifelse(simpleEventType(bpgr) %in% c("DEL", "INS"), 1, 0)
     result[isbp] = simpleEventType(bpgr) %in% c("DEL", "DUP", "INS") & svlen <= minSize
   }
   return(result)
