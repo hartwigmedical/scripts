@@ -68,7 +68,7 @@ my $HELP =<<HELP;
   Options
     -outdir <string>   [$JSON_BASE_DIR]
     -limsjson <string> [$LIMS_IN_FILE] 
-    -useExisting       (adds the use_existing_sample flag to json)
+    -useExisting       (add use_existing_sample flag to json)
 
 HELP
 
@@ -190,6 +190,7 @@ sub processSample{
     my $priority   = getPriority( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
     $yield = $yield == 0 ? 1 : $yield * $YIELD_F; ## yield=0 would result in sample being directly Ready
+    my $use_existing = $USE_EXISTING;
 
     ## not all samples have q30 field because this was added later to lims
     my $q30 = $Q30_LIM;
@@ -223,7 +224,7 @@ sub processSample{
         $json_data{ 'entity' } = "$entity";
 
         $json_data{ 'fastq_portal' } = JSON::true;
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $use_existing );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
@@ -231,7 +232,7 @@ sub processSample{
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $use_existing );
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
@@ -275,6 +276,7 @@ sub processSample{
             }
             elsif ( $shallow_json_exists ){
                 say "[INFO]   ShallowSeq json found for $match_string: going for full Somatic mode";
+                $use_existing = 1; # ShallowSeq ran at SBP so sample barcodes exist
             }
             else{
                 say "[INFO]   No ShallowSeq run/json found yet for $match_string: going for ShallowSeq mode";
@@ -284,7 +286,15 @@ sub processSample{
                 $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
                 $ini = $SHA_INI;
                 $priority = $YES_PIPELINE_PRIO;
+                $use_existing = 1; # There can be multiple ShallowSeq runs per tumor sample
            }
+        }
+
+        ## add suffix to ref barcode if ref needed from other patientId
+        if ( $other_ref eq "Yes" ){
+            my $new_barcode_ref = $barcode_ref . "_" . $name;
+            push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS so adding suffix to the REF barcode ($new_barcode_ref)" );
+            $barcode_ref = $new_barcode_ref;
         }
  
         ## check if barcode already exists at SBP
@@ -294,17 +304,10 @@ sub processSample{
         chomp($ref_exists);
         
         if ( $tum_exists ){
-            push( @warn_msg, "TUM already registered at SBP ($barcode)!!");
-        }
-        
+            push( @warn_msg, "TUM barcode ($barcode) for sample ($name) already exists at SBP!!" );
+        }        
         if ( $ref_exists ){
-            push( @warn_msg, "REF already registered at SBP ($barcode_ref)!!" );
-        }
-        else{
-            ## warn in case of other ref that is not yet registered
-            if ( $other_ref eq "Yes" ){
-                warn "[WARN]   REF not registered yet at SBP ($barcode_ref) but OtherRef flag set in LIMS ($name): please double check";
-            }
+            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($sample) already exists at SBP!!" );
         }
         
         say "[INFO]   SET: $set";
@@ -312,8 +315,8 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         $json_data{ 'priority' } = $priority;
-        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $USE_EXISTING );
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $USE_EXISTING );
+        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $use_existing );
+        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $use_existing );
     }
     elsif ( $analysis eq 'Somatic_R' ){
         say "[INFO]   RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)";
@@ -352,11 +355,6 @@ sub processSample{
     printSetJson( \%json_data, $json_path );
     say "[INFO]   RESULT for $sample_id: OK";
     return "OK_JSON_MADE";
-}
-
-sub doesJsonAlreadyExist{
-    my ($json_list, $search_string) = @_;
-    
 }
 
 sub listExistingJsons{
