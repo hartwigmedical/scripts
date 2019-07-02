@@ -35,8 +35,16 @@ runPath=$1
 ## -----
 if [[ ! -d ${runPath} ]]; then echo "[EXIT] Provided run path does not exist?"; exit 1; fi
 
+# Location of germline VCF in Pv4
 germlineVcf=$( find ${runPath} -name "*.filtered_variants.vcf" )
-if [[ ! -f ${germlineVcf} ]]; then echo "[EXIT] No germline filtered variants VCF in run ($runPath)?"; exit 1; fi
+if [[ ! -f ${germlineVcf} ]]; then
+    # New location of germline vcf in Pv5
+    germlineVcf=$( find ${runPath} -name "*.germline.vcf.gz")
+    if [[ ! -f ${germlineVcf} ]]; then
+        echo "[EXIT] No germline filtered variants VCF in run ($runPath)?"
+        exit 1
+    fi
+fi
 
 vcfBaseName=$( basename ${germlineVcf} )
 runName=$( basename ${runPath} )
