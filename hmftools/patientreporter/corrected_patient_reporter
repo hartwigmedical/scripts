@@ -11,3 +11,5 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 ${prefix}/patient_report_for_run ${run_dir} -comments "${comments}"
 
 mv ${sample}_hmf_report.pdf ${sample}_hmf_report_corrected.pdf
+
+echo "[INFO ] renamed patient report to ${sample}_hmf_report_corrected.pdf"ls
