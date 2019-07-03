@@ -1,13 +1,24 @@
 #!/bin/bash
+source load_metadata
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
-rundir=$1
+run_dir=$1 && shift
 
-if [ -z "$rundir" ]; then
+if [ -z ${run_dir} ]; then
     echo "[ERROR] No rundir is provided to run_health_checker_prod. Exiting."
     exit 1
 fi
+
+# Load metadata
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# Set paths
+metrics_dir=${run_dir}
+amber_dir=${run_dir}/amber
+purple_dir=${run_dir}/purple
+output_dir=~
 
 base_path="/data/common"
 if [ -z "`hostname | grep datastore`" ]; then
@@ -15,7 +26,10 @@ if [ -z "`hostname | grep datastore`" ]; then
     base_path="/data"
 fi
 
-java -Xmx8G -Xms4G \
-    -jar ${base_path}/tools/healthchecker_v2.4/health-checker.jar \
-    -report_file_path ${rundir}/logs/HealthCheck_v2.4.json \
-    -run_dir ${rundir}
+java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_v3.1/health-checker.jar \
+    -reference ${ref_sample} \
+    -tumor ${tumor_sample} \
+    -metrics_dir ${metrics_dir} \
+    -amber_dir ${amber_dir} \
+    -purple_dir ${purple_dir} \
+    -output_dir ${output_dir}
