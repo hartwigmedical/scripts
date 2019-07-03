@@ -21,5 +21,5 @@ echo "[INFO] Loading metrics data for ${run_dir}"
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadMetricsData \
     -metrics_dir ${run_dir} \
     -ref_sample ${ref_sample} \
-    -tumor_samople ${tumor_sample} \
+    -tumor_sample ${tumor_sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
