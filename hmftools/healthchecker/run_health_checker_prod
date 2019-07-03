@@ -18,13 +18,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 metrics_dir=${run_dir}
 amber_dir=${run_dir}/amber
 purple_dir=${run_dir}/purple
-output_dir=~
-
-base_path="/data/common"
-if [ -z "`hostname | grep datastore`" ]; then
-    # Common folder does not exist on crunches...
-    base_path="/data"
-fi
+output_dir=/data/cpct/health_check_logs/
 
 java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_v3.1/health-checker.jar \
     -reference ${ref_sample} \
