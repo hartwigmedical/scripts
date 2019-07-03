@@ -13,4 +13,4 @@ ${prefix}/patient_report_for_run ${run_dir} -comments "${comments}"
 
 mv ${path_patient_reporter}/${sample}_hmf_report.pdf ${path_patient_reporter}/${sample}_hmf_report_corrected.pdf
 
-echo "[INFO ] renamed patient report to ${sample}_hmf_report_corrected.pdf"
+echo "[INFO] Renamed patient report to ${sample}_hmf_report_corrected.pdf"
