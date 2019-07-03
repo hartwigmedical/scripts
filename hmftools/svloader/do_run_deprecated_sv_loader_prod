@@ -13,4 +13,4 @@ sv_jar=/data/common/tools/variantannotator_v2.15/variant-annotator.jar
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
-${prefix}/do_run_sv_loader ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${sv_jar} $@
+${prefix}/do_run_deprecated_sv_loader ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${sv_jar} $@
