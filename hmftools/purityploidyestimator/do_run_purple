@@ -6,25 +6,22 @@ run_dir=$1 && shift
 purple_jar=$1 && shift
 somatic_vcf=$1 && shift
 structural_vcf=$1 && shift
+sv_recovery_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-if [ ! -f "$somatic_vcf" ]
-then
+if [ ! -f "$somatic_vcf" ]; then
     echo "[ERROR] Unable to locate somatic variants. Exiting."
     exit 1
 fi
 
-if [ ! -f "$structural_vcf" ]
-then
+if [ ! -f "$structural_vcf" ]; then
     echo "[ERROR] Unable to locate structural variants. Exiting."
     exit 1
 fi
-
-sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
 mkdir -p ${purple_output}
 rm -rf ${purple_output}/*
