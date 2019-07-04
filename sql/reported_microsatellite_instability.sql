@@ -1,9 +1,9 @@
-select sampleId, count(*)/2859 as indelsPerMb, if(count(*)/2859 > 4, "MSI", "MSS" ) as status from somaticVariant
-where filter = 'PASS' and type = 'INDEL' and repeatCount >= 4 and length(alt) <= 50 and length(ref) <= 50
-and (
-	(length(repeatSequence) between 2 and 4 ) OR
-	(length(repeatSequence) = 1 and repeatCount >= 5)
+SELECT sampleId, count(*)/2859 AS indelsPerMb, if(count(*)/2859 > 4, "MSI", "MSS" ) AS status FROM somaticVariant
+WHERE filter = 'PASS' AND TYPE = 'INDEL' AND repeatCount >= 4 AND length(alt) <= 50 AND length(ref) <= 50
+AND (
+	(length(repeatSequence) BETWEEN 2 AND 4 ) OR
+	(length(repeatSequence) = 1 AND repeatCount >= 5)
 )
-and sampleId IN ('XXX')
-group by sampleId
-order by 2 desc;
+AND sampleId IN ('XXX')
+GROUP BY sampleId
+ORDER BY 2 DESC;

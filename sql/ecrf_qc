@@ -2,24 +2,24 @@
 
 ## Desc: Executes DB queries to get ECRF metrics after update with new dump
 
-scriptsRepos="/data/common/repos/scripts"
-execScript="${scriptsRepos}/sql/execute_sql_on_prod"
-lockSql="${scriptsRepos}/sql/locked_forms_analysis.sql"
-compSql="${scriptsRepos}/sql/cpct_sample_completeness_analysis.sql"
+scripts_repo="/data/common/repos/scripts"
+exec_script="${scripts_repo}/sql/execute_sql_on_prod"
+lock_sql="${scripts_repo}/sql/locked_forms_analysis.sql"
+comp_sql="${scripts_repo}/sql/cpct_sample_completeness_analysis.sql"
 yymmdd=$( date "+%y%m%d" )
 
 echo "## ---"
 echo "## Locked Forms"
 echo "## ---"
-count=$( ${execScript} ${lockSql} | grep -v "^form" | awk '$3 == "all"' | cut -f 1 )
-percs=$( ${execScript} ${lockSql} | grep -v "^form" | cut -f 2 | paste -s -d ',' )
+count=$( ${exec_script} ${lock_sql} | grep -v "^form" | awk '$3 == "all"' | cut -f 1 )
+percs=$( ${exec_script} ${lock_sql} | grep -v "^form" | cut -f 2 | paste -s -d ',' )
 echo "${yymmdd},${count},${percs}"
 echo ""
 
 echo "## ---"
 echo "## Completeness"
 echo "## ---"
-counts=$( ${execScript} ${compSql} | grep -v "^samples" | cut -f 1 | paste -s -d ',' )
+counts=$( ${exec_script} ${comp_sql} | grep -v "^samples" | cut -f 1 | paste -s -d ',' )
 echo "${yymmdd},${counts}"
 
 echo ""

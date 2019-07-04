@@ -1,16 +1,16 @@
-select patients.patientId, 
+SELECT patients.patientId,
 CTCT2YN, CPCTCNT, CPCTPN
-from 
-	(select distinct patientId from drupEcrf) patients
-left join
-   (select patientId, group_concat(itemValue separator ', ') as CTCT2YN 
-    from drupEcrf where item = 'FLD.CTCT2YN' group by patientId) yesno
-on patients.patientId = yesno.patientId
-left join
-    (select patientId, group_concat(itemValue separator ', ') as CPCTCNT
-     from drupEcrf where item ='FLD.CPCTCNT' group by patientId) center
-on patients.patientId = center.patientId
-left join
-    (select patientId, group_concat(itemValue separator ', ') as CPCTPN
-     from drupEcrf where item ='FLD.CPCTPN' group by patientId) id
-on patients.patientId = id.patientId
+FROM
+	(SELECT DISTINCT patientId FROM drupEcrf) patients
+LEFT JOIN
+   (SELECT patientId, group_concat(itemValue separator ', ') AS CTCT2YN
+    FROM drupEcrf WHERE item = 'FLD.CTCT2YN' GROUP BY patientId) yesno
+ON patients.patientId = yesno.patientId
+LEFT JOIN
+    (SELECT patientId, group_concat(itemValue separator ', ') AS CPCTCNT
+     FROM drupEcrf WHERE item ='FLD.CPCTCNT' GROUP BY patientId) center
+ON patients.patientId = center.patientId
+LEFT JOIN
+    (SELECT patientId, group_concat(itemValue separator ', ') AS CPCTPN
+     FROM drupEcrf WHERE item ='FLD.CPCTPN' GROUP BY patientId) id
+ON patients.patientId = id.patientId

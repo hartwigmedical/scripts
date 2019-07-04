@@ -10,7 +10,7 @@ UNION
 
 	SELECT count(*), level, 'any', 'any'
 	FROM clinicalFindings
-	GROUP by level
+	GROUP BY level
 
 UNION
 

@@ -1,3 +1,3 @@
-select sampleId, count(*)
-from somaticVariant where filter = "PASS" and worstCodingEffect = "MISSENSE" and sampleId in ('XXX')
-group by 1;
+SELECT sampleId, count(*) AS TML, if (count(*) > 140, "High", "Low") AS status
+FROM somaticVariant WHERE filter = "PASS" AND worstCodingEffect = "MISSENSE" AND sampleId IN ('XXX')
+GROUP BY 1;

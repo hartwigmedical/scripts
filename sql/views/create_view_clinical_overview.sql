@@ -9,10 +9,10 @@ CREATE VIEW clinical AS
 	treatment.startDate AS treatmentStartDate, treatment.endDate AS treatmentEndDate, firstMatchedTreatmentResponse.responseDate, baseline.deathDate,
 	baseline.primaryTumorLocation, baseline.cancerSubtype, biopsy.biopsyType, biopsy.biopsySite, biopsy.biopsyLocation,
 	treatment.treatmentGiven, treatment.radiotherapyGiven, treatment.name AS treatment, treatment.type AS treatmentType, treatment.mechanism AS treatmentMechanism,
-	firstMatchedTreatmentResponse.measurementDone as responseMeasured, firstMatchedTreatmentResponse.response as firstResponse
+	firstMatchedTreatmentResponse.measurementDone AS responseMeasured, firstMatchedTreatmentResponse.response AS firstResponse
 	FROM sample
 		INNER JOIN patient ON sample.patientId = patient.id
         LEFT JOIN baseline ON patient.id = baseline.patientId
 		LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
-		LEFT JOIN treatment on treatment.biopsyId = biopsy.id
+		LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
 		LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId;
