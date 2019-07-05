@@ -4,7 +4,6 @@ library(tidyr)
 library(ggplot2)
 library(stringi)
 
-
 annotate_fusions<-function(fusionData)
 {
   fusionData = fusionData %>% mutate(SameSV = (SvIdUp==SvIdDown),
@@ -128,6 +127,27 @@ nrow(reportedSvaFusions %>% filter(ChainLinks==0))
 nrow(reportedSvaFusions %>% filter(!SameSV)) # 79
 
 
+# fusion differences after using transcript
+newReported = allFusions %>% filter(Reportable=='true')
+nrow(newReported)
+
+reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv')
+nrow(reportedSvaFusions)
+
+View(reportedSvaFusions %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
+View(reportedSvaFusions %>% group_by(KnownType) %>% count())
+View(newReported %>% group_by(KnownType) %>% count())
+
+knownPrev = reportedSvaFusions %>% filter(KnownType=='Known')
+knownNew = newReported %>% filter(KnownType=='Known')
+knownPrevDiff = merge(knownPrev,knownNew,by.x=c('SampleId','GeneUp','GeneDown'),by.y=c('SampleId','GeneNameUp','GeneNameDown'),all.x=T)
+View(knownPrevDiff %>% filter(is.na(SvIdUp.y)))
+View(knownPrevDiff)
+
+
+View(newReported %>% filter(Reportable=='true'&KnownType=='Known'&GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(newReported %>% filter(Reportable=='true'&KnownType=='Known'&GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG') %>% group_by(TranscriptDown) %>% summarise(ProteinsKept=first))
+
 
 # Summary: Unique valid fusions and their type
 sampleFusions = (reportedSvaFusions %>% filter(Clustered&ValidChain) %>% group_by(SampleId,GeneUp,GeneDown) 
@@ -232,105 +252,8 @@ View(dndsTsgs)
 View(drupTsgs %>% filter(!(Gene %in% dndsTsgs$gene)))
 
 
-# FUSION LIKELIHOOD
-
-# actuals from cohort
-
-allFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
-allFusions = annotate_fusions(allFusions)
-nrow(allFusions)
-View(allFusions %>% group_by(Reportable) %>% count())
-View(allFusions %>% group_by(SameSV) %>% count())
-
-allSvFusions = allFusions %>% filter(SameSV&DistancePrevDown>0)
-
-allSvFusions = allSvFusions %>% mutate(SameChromosome=(as.character(ChrUp)==as.character(ChrDown)),
-                                       Distance=ifelse(SameChromosome,abs(PosUp-PosDown),0),
-                                       Type=TypeUp)
-
-nrow(allSvFusions)
-View(allSvFusions %>% group_by(Type,SameChromosome) %>% count())
-View(allSvFusions %>% group_by(KnownType) %>% count())
-
-View(allSvFusions %>% filter(GeneDown=='VMP1',GeneUp=='VMP1'))
-
-View(allSvFusions %>% filter(GeneDown=='MPPED2',GeneUp=='FGFR2'))
-View(allSvFusions %>% filter(Type=='BND'))
 
 
-svCohort = load('~/data/hmf_cohort_may_2019.RData')
-View(svCohort)
-View(highestPurityCohort)
-
-# de-dup multiple biopsy samples
-allSvFusions = allSvFusions %>% filter(SampleId %in% highestPurityCohort$sampleId)
-nrow(allSvFusions)
-
-# frequency of specific pairs
-genePairFrequency = allSvFusions %>% group_by(GeneUp,GeneDown) %>% 
-        summarise(Count=n(),
-                  Type=first(Type),
-                  Known=sum(KnownType=='Known'),
-                  Prom3=sum(KnownType=='3P-Prom'|KnownType=='Both-Prom'),
-                  Prom5=sum(KnownType=='5P-Prom'|KnownType=='Both-Prom'),
-                  LineCluster=sum(ResolvedType=='LINE'),
-                  ChrUp=first(ChrUp),
-                  ChrDown=first(ChrDown),
-                  PosUp=round(median(PosUp)),
-                  PosDown=round(median(PosDown)),
-                  GeneUpLength=round(median(TransEndUp-TransStartUp)),
-                  GeneDownLength=round(median(TransEndDown-TransStartDown)),
-                  MedDistance=round(median(Distance))) %>%
-    filter(Count>1)
-
-write.csv(allSvFusions, '~/logs/allSvFusions.csv', row.names = F, quote = F)
-write.csv(genePairFrequency, '~/logs/genePairFrequencies', row.names = F, quote = F)
-
-View(genePairFrequency)
-View(genePairFrequency %>% filter(as.character(GeneUp)!=as.character(GeneDown)&(Type=='BND'|MedDistance>1e6)))
-View(genePairFrequency %>% filter(as.character(GeneUp)==as.character(GeneDown)))
-
-# frequency of 3P and 5P promiscuous genes
-
-
-# proximate fusion
-View(reportedSvaFusions %>% group_by(CodingTypeUp,CodingTypeDown,RegionTypeUp,RegionTypeDown) %>% count())
-
-reportedSvaFusions = reportedSvaFusions %>% mutate(SameChromosome=(as.character(ChrUp)==as.character(ChrDown)),
-                                                   Distance=abs(PosUp-PosDown))
-
-View(reportedSvaFusions %>% group_by(KnownType,SameChromosome) %>% count())
-View(reportedSvaFusions %>% filter(SameChromosome) %>% group_by(DistanceBucket=2**round(log(Distance,2))) %>% count())
-
-View(reportedSvaFusions %>% filter(SameChromosome) %>% 
-       select(TypeUp,GeneUp,StrandUp,TransStartUp,TransEndUp,GeneDown,TransStartDown,TransEndDown,Distance,everything()))
-
-View(reportedSvaFusions %>% filter(SameChromosome) %>% filter((TransStartUp<TransStartDown&TransEndUp>TransStartDown) 
-                                                              |(TransStartDown<TransStartUp&TransEndDown>TransStartUp)) %>%
-       select(TypeUp,GeneUp,StrandUp,TransStartUp,TransEndUp,GeneDown,TransStartDown,TransEndDown,Distance,everything()))
-
-
-View(reportedSvaFusions %>% filter())
-
-
-geneRangeData = read.csv('~/logs/GFL_GENE_DATA.csv')
-nrow(geneRangeData)
-geneRangeData = geneRangeData %>% mutate(TotalOverlap=Phase0+Phase1+Phase2+FivePrimeUTR)
-
-View(geneRangeData)
-
-
-View(geneRangeData %>% filter(LocalOverlap < 2e4))
-View(geneRangeData %>% filter(Chromosome==8&Phase2==TotalOverlap&TotalOverlap>=2e3&TotalOverlap<=9e3))
-
-
-
-fusionCandidates = read.csv('~/logs/GFL_FUSION_CANDIDATES.csv')
-fusionCandidates = fusionCandidates %>% mutate(BucketWidth=LengthBucketHigh-LengthBucketLow,
-                                               FusionRate=OverlapCount*1e9/BucketWidth)
-View(fusionCandidates)
-View(fusionCandidates %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
-View(fusionCandidates %>% group_by(LengthBucketLow,LengthBucketHigh) %>% count())
 
 
 # View(reportedSvaFusions %>% filter(ChainLinks>0) %>% group_by(SameSV) %>% count())
