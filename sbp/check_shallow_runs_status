@@ -1,0 +1,17 @@
+#!/bin/bash
+
+YYMMDD=$(date +'%y%m%d')
+archivePath="/data/data_archive/shallow_seq_pipelines"
+
+## query and store
+echo "## ShallowSeq Check (${YYMMDD})"
+query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status)"' | while read line; do 
+  runName=$(echo "${line}" | cut -d" " -f1)
+  runStatus=$(echo "${line}" | cut -d" " -f2)
+    if [[ "${runName}" =~ "190314-testR" ]]; then continue 
+  elif [[ -d "${archivePath}/${runName}" ]]; then echo "## [type1] ALREADY ARCHIVED: ${runName} (status=$runStatus)"
+  elif [[ "${runStatus}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## [type2] IN PROCESS: ${runName} (status=$runStatus)"
+  elif [[ "${runStatus}" =~ ^(Failed)$ ]]; then echo "## [type3] FAILED: ${runName} (status=$runStatus)"
+  else echo " process_shallow_run -s ${runName} # (status=$runStatus)"
+    fi
+done | sort
