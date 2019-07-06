@@ -18,9 +18,9 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 # reference files
 
 viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
-fusion_pairs_csv=/data/common/dbs/fusions/knownFusionPairs.csv
-promiscuous_five_csv=/data/common/dbs/fusions/knownPromiscuousFive.csv
-promiscuous_three_csv=/data/common/dbs/fusions/knownPromiscuousThree.csv
+fusion_pairs_csv=/data/common/dbs/knowledgebases/output/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousThree.csv
 ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
@@ -52,7 +52,7 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -check_fusions \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \
-    -promiscuous_three_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
     -drup_tsg_file ${drup_tsg_file} \
     -write_vis_data \
     -proximity_distance 5000 \
