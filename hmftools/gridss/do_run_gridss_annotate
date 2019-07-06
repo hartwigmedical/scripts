@@ -30,7 +30,7 @@ if [[ ! -f ${gridss_raw_vcf} ]] ; then
 		java -Xmx1G ${gridss_jvm_args} \
 			-Dgridss.output_to_temp_file=true \
 			gridss.AnnotateUntemplatedSequence \
-			REFERENCE_SEQUENCE=$ref_genome \
+			REFERENCE_SEQUENCE=${ref_genome} \
 			INPUT=${gridss_raw_vcf}.unannotated2.vcf \
 			OUTPUT=${gridss_raw_vcf} \
 			WORKER_THREADS=${threads} && \

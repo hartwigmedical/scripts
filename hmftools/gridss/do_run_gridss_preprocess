@@ -59,7 +59,7 @@ if [[ ! -f ${sv_bam} ]] ; then
 			PROGRAM=CollectInsertSizeMetrics \
 			SV_OUTPUT=/dev/stdout \
 			COMPRESSION_LEVEL=0 \
-			METRICS_OUTPUT=${working_dir}/$(basename $bam).sv_metrics \
+			METRICS_OUTPUT=${working_dir}/$(basename ${bam}).sv_metrics \
 			INSERT_SIZE_METRICS=${insert_size_metrics} \
 			UNMAPPED_READS=false \
 			MIN_CLIP_LENGTH=5 \
@@ -68,7 +68,7 @@ if [[ ! -f ${sv_bam} ]] ; then
 		samtools sort -O bam -T ${gridss_dir}/${bam_sample}.samtools.sort.tmp. -n -l 0 -@ ${threads} -o ${extract_tmp_bam} -  ||
 		exit 1
 	fi
-	if [[ ! -f $tag_tmp_bam ]] ; then
+	if [[ ! -f ${tag_tmp_bam} ]] ; then
 		echo $(date) ComputeSamTags
 		/usr/bin/time -o ${log_prefix}.${bam_sample}.time.ComputeSamTags.log java -Xmx3G ${gridss_jvm_args} \
 			gridss.ComputeSamTags \
