@@ -6,10 +6,14 @@ source do_run_gridss_lib
 
 export PATH=${base_path}/tools/bedops_v2.4.30/:$PATH
 
-PICARD_JAR=${base_path}/tools/picard-tools_v1.135/picard.jar
 libgridss=/data/common/repos/scripts/gridss/
 
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
+if [ -z ${original_vcf} ]; then
+    # Support for pv5 location of raw GRIDSS VCF.
+    original_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name *.unfiltered.vcf.gz)
+fi
+
 raw_somatic_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf.gz
 full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf.gz
 assembly_sv_bam=${assembly_bam}.gridss.working/$(basename ${assembly_bam}).sv.bam
@@ -36,7 +40,7 @@ fi
 if [ -d "$out_dir" ] ; then
 	echo "Backport processing directory $out_dir found."
 else
-	echo Creating ${out_dir}
+	echo "Creating ${out_dir}"
 	mkdir -p ${out_dir}/tmp
 	chmod 775 ${out_dir}
 	rsync -r --exclude=*.bam --exclude=*.bai --exclude=breakpoint_position_backport --exclude=*vcf* --exclude=jobs --exclude=logs $(dirname ${full_vcf})/ ${out_dir}

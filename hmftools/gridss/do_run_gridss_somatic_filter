@@ -12,7 +12,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
 if [ -z ${original_vcf} ]; then
     # Support for pv5 location of raw GRIDSS VCF.
-    original_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name *.annotated.vcf.gz)
+    original_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name *.unfiltered.vcf.gz)
     if [ -z ${original_vcf} ]; then
         echo "[ERROR] Unable to locate raw gridss structural variants. Exiting."
         exit 1
