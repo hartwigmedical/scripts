@@ -7,8 +7,8 @@ purple_dir=${run_dir}/purple
 somatic_vcf=${purple_dir}/*.purple.somatic.vcf.gz
 structural_vcf=${purple_dir}/*.purple.sv.vcf.gz
 
-sample=$( basename ${somatic_vcf}  | cut -d"." -f1 )
-credentials=/data/common/dbs/mysql_credentials/pipeline_v5
+sample=$(basename ${somatic_vcf}  | cut -d"." -f1 )
+credentials=$(locate_pipeline_v5_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
 echo "[INFO] Loading purple"

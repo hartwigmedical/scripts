@@ -18,6 +18,10 @@ locate_reference_validation_sets_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/reference_validation_sets
 }
 
+locate_pipeline_v5_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/pipeline_v5
+}
+
 ##################################### JARS #####################################
 locate_prod_purple() {
     echo ${base_path}/tools/purple_v2.30/purple.jar
