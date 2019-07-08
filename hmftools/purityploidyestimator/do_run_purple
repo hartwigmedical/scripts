@@ -49,8 +49,8 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
     -reference ${reference_sample} \
     -tumor ${tumor_sample} \
-    -amber ${run_dir}/amber/ \
-    -cobalt ${run_dir}/cobalt/ \
+    -amber ${run_dir}/amber \
+    -cobalt ${run_dir}/cobalt \
     -ref_genome hg19 \
     -output_dir ${purple_output} \
     -gc_profile ${gc_profile} \
