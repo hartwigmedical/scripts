@@ -12,6 +12,8 @@ links=${input_dir}/${tumor_sample}.linx.vis_sv_data.tsv
 exons=${input_dir}/${tumor_sample}.linx.vis_gene_exon.tsv
 segments=${input_dir}/${tumor_sample}.linx.vis_segments.tsv
 cna=${input_dir}/${tumor_sample}.linx.vis_copy_number.tsv
+fusion=${input_dir}/${tumor_sample}.linx.fusions_detailed.csv
+protein_domain=${input_dir}/${tumor_sample}.linx.vis_protein_domain.tsv
 
 circos=/data/common/tools/circos_v0.69.6/bin/circos
 
@@ -23,6 +25,8 @@ java -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     -link ${links} \
     -exon ${exons} \
     -cna ${cna} \
+    -protein_domain ${protein_domain} \
+    -fusion ${fusion} \
     -circos ${circos} \
     $@
 
