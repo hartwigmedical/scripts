@@ -21,7 +21,7 @@ genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% dndsGen
     d_non =  ifelse(n_non>0, n_non * pmax(0,(wnon_cv-1)/wnon_cv), 0)
     ) %>%
   select(gene = gene_name, wmis_cv, wnon_cv, wspl_cv, wnon_cv, d_ind, d_mis, d_spl, d_non, n_ind, n_mis, n_spl, n_non)
-genePanelCv = left_join(genePanelCv, dndsGenePanel[, c("gene", "cosmicTsg", "cosmicOncogene", "hmfDnds", "martincorenaDnds", "actionableVariant", "actionableDrup", "actionableDrupCategory", "actionableAmplification", "actionableDeletion", "hmfAmplification", "hmfDeletion")], by = "gene")
+genePanelCv = left_join(genePanelCv, dndsGenePanel[, c("gene", "cosmicTsg", "cosmicOncogene", "hmfDnds", "martincorenaDnds", "actionableVariant", "actionableDrup", "actionableAmplification", "actionableDeletion", "hmfAmplification", "hmfDeletion")], by = "gene")
 
 trainTsg = genePanelCv %>% filter(cosmicTsg, !cosmicOncogene) %>% mutate(tsg = 1) %>% select(wmis_cv, wnon_cv,  tsg)
 trainOnco = genePanelCv %>% filter(cosmicOncogene, !cosmicTsg) %>% mutate(tsg = 0) %>% select(wmis_cv, wnon_cv,  tsg)

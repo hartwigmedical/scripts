@@ -25,6 +25,12 @@ driverCatalogDifferences = full_join(newPanel, oldPanel, by = "gene", suffix = c
     ) %>%
   select(-wind_cv, -wmis_cv, -wspl_cv, -wnon_cv)
 
+driverCatalogDifferences[is.na(driverCatalogDifferences)]=0
+temp = (driverCatalogDifferences %>% replace_na() %>% mutate(chmis=d_mis-d_mis.old,chind=d_ind-d_ind.old,chspl=d_spl-d_spl.old,chnon=d_non-d_non.old) %>% 
+          select(gene,classification.new,chmis,chind,chspl,chnon,changedClassification,removed,new,everything()))
+write.csv(temp, "~/hmf/analysis/cohort/processed/driverCatalogDifferences.csv")
+
+
 save(driverCatalogDifferences, file = "~/hmf/analysis/cohort/processed/driverCatalogDifferences.RData")
 
 View(driverCatalogDifferences %>% mutate(chmis=d_mis-d_mis.old,chind=d_ind-d_ind.old,chspl=d_spl-d_spl.old,chnon=d_non-d_non.old) %>% 

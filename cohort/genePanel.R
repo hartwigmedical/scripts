@@ -18,7 +18,7 @@ rm(cosmicCurated, cosmicCensus)
 
 ########################### Actionable Genes
 actionableGenes = read.table("~/hmf/analysis/actionable/actionablePanel.tsv", header = T, stringsAsFactors = F) 
-colnames(actionableGenes) <- c("gene", "actionableAmplification", "actionableDeletion", "actionableFusion", "actionableVariant", "actionableDrup", "actionableDrupCategory", "actionableResponse", "actionableResponseSource", "actionableResistance", "actionableResistanceSource")
+colnames(actionableGenes) <- c("gene", "actionableAmplification", "actionableDeletion", "actionableFusion", "actionableVariant", "actionableDrup", "actionableResponse", "actionableResponseSource", "actionableResistance", "actionableResistanceSource")
 actionableGenes$actionableAmplification <- ifelse(actionableGenes$actionableAmplification  == "true", T, NA)
 actionableGenes$actionableDeletion <- ifelse(actionableGenes$actionableDeletion  == "true", T, NA)
 actionableGenes$actionableFusion <- ifelse(actionableGenes$actionableFusion  == "true", T, NA)
@@ -95,7 +95,7 @@ genePanelDB = genePanel %>%
     reportablePointMutation = ifelse(is.na(reportablePointMutation), "", reportablePointMutation),
     armEndLocus = coalesce(telomere, centromere, "")
     ) %>%
-  select(-telomere, -centromere, -actionableDrupCategory) %>%
+  select(-telomere, -centromere) %>%
   select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicOncogene,cosmicTsg,actionableAmplification,actionableDeletion,actionableFusion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
          actionableResistance,actionableResistanceSource,knownAmplification,knownDeletion,hmfAmplification,hmfDeletion,armEndLocus,reportablePointMutation,reportableAmp, reportableDel) %>%
   filter(is.na(reportablePointMutation) | reportableDel | reportableAmp | cosmicOncogene | cosmicTsg | actionableDrup | actionableVariant | knownAmplification | knownDeletion )
