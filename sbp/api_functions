@@ -26,7 +26,7 @@ load_tum_sample_name_for_set() {
 
 load_run_info_for_set() {
     local set=$1
-    local run_info=`query_sbp_api -type runs | grep -P "hmf-output|hmf_research" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" `
+    local run_info=`query_sbp_api -type runs | grep -P "hmf-output|hmf_research|hmf_experiments" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" `
     echo ${run_info}
 }
 
