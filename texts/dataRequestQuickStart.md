@@ -41,7 +41,6 @@ Somatic data is shared in a gzipped tar via our [Nextcloud](https://nc.hartwigme
 
 ##### Notes about the (clinical) metadata:
 - We gather as much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies, but please be aware that records are by no means complete.
-- For biopsies from the DRUP study the "patientId" is replaced with the respective CPCT-patientId in case the patient was already known within the CPCT02 study (this way it is clear that these are from the same individual).
 - For patients from the DRUP study we can not share any treatment related information.
 - The "purity" mentioned is the percentage tumor cells derived from WGS data by the tool [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
 
