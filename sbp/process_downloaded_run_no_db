@@ -34,9 +34,10 @@ do_run_gridss_viral_annotate_prod ${set_path}
 echo "[INFO] Running repeatmasker annotation ${set}"
 do_run_gridss_repeatmasker_insertion_annotate_prod ${set_path}
 
-# Bachelor writes to database so switched off.
-#echo "[INFO] Running bachelor for ${set}"
-#run_bachelor_prod ${set_path}
+# Sneaky work-around to generate bachelor without writing to prod db.
+echo "[INFO] Running bachelor for ${set}"
+run_bachelor_pilot ${set_path}
+mv ${set_path}/bachelor_pilot ${set_path}/bachelor
 
 echo "[INFO] Running CHORD for ${set}"
 run_chord_prod ${set_path}
