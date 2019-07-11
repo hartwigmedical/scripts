@@ -18,41 +18,38 @@ rm(cosmicCurated, cosmicCensus)
 
 ########################### Actionable Genes
 actionableGenes = read.table("~/hmf/analysis/actionable/actionablePanel.tsv", header = T, stringsAsFactors = F) 
-colnames(actionableGenes) <- c("gene", "actionableAmplification", "actionableDeletion", "actionableFusion", "actionableVariant", "actionableDrup", "actionableResponse", "actionableResponseSource", "actionableResistance", "actionableResistanceSource")
+colnames(actionableGenes) <- c("gene", "actionableAmplification", "actionableDeletion", "actionableVariant", "actionableDrup", "actionableResponse", "actionableResponseSource", "actionableResistance", "actionableResistanceSource")
 actionableGenes$actionableAmplification <- ifelse(actionableGenes$actionableAmplification  == "true", T, NA)
 actionableGenes$actionableDeletion <- ifelse(actionableGenes$actionableDeletion  == "true", T, NA)
-actionableGenes$actionableFusion <- ifelse(actionableGenes$actionableFusion  == "true", T, NA)
 actionableGenes$actionableVariant <- ifelse(actionableGenes$actionableVariant  == "true", T, NA)
 actionableGenes$actionableDrup <- ifelse(actionableGenes$actionableDrup  == "true", T, NA)
 
-
 ########################### KNOWN AMPS AND DELS
-cgi = read.table(file = "~/hmf/resources/cgi_biomarkers_per_variant.tsv", stringsAsFactors = F, header = T, sep = "\t") %>%
+cgi = read.table(file = "~/hmf/resources/cgi_biomarkers_per_variant_181127.tsv", stringsAsFactors = F, header = T, sep = "\t") %>%
     select(Biomarker) %>%
     separate(Biomarker, c("gene","alteration"), sep = " ") %>%
     filter(alteration %in% c("amplification", "deletion")) %>%
     distinct(gene, alteration)
 
-onco = read.table(file = "~/hmf/resources/oncoKb.tsv", stringsAsFactors = F, header = T, sep = "\t") %>%
+onco = read.table(file = "~/hmf/resources/onco_allAnnotatedVariants_181127.csv", stringsAsFactors = F, header = T, sep = "\t", quote = "") %>%
     select(gene = Gene, alteration = Alteration) %>%
     mutate(alteration = tolower(alteration)) %>%
     filter(alteration %in% c("amplification", "deletion")) %>%
     distinct(gene, alteration)
 
-civic = read.table(file = "~/hmf/resources/civic_variants.tsv", stringsAsFactors = T, header = T, sep = "\t", quote = "") %>%
-    select(gene, alteration = variant) %>%
+civic = read.table(file = "~/hmf/resources/civic_01-Nov-2018-VariantSummaries_181127.tsv", stringsAsFactors = T, header = T, sep = "\t", quote = "", fill = T) %>%
+  select(gene, alteration = variant) %>%
     mutate(alteration = tolower(alteration)) %>%
     filter(alteration %in% c("amplification", "deletion")) %>%
     distinct(gene, alteration)
 
-manual = data.frame(gene = "ZNF703", alteration = "amplification")
+
 knownAmpsDels = bind_rows(cgi, onco) %>%
     bind_rows(civic) %>%
-    bind_rows(manual) %>%
     select(gene_name = gene, alteration) %>%
     distinct(gene_name, alteration) %>%
     mutate(value = T) %>% spread(alteration, value)
-rm(cgi, onco, civic, manual)
+rm(cgi, onco, civic)
 colnames(knownAmpsDels) <- c("gene", "knownAmplification", "knownDeletion")
 
 
@@ -96,7 +93,7 @@ genePanelDB = genePanel %>%
     armEndLocus = coalesce(telomere, centromere, "")
     ) %>%
   select(-telomere, -centromere) %>%
-  select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicOncogene,cosmicTsg,actionableAmplification,actionableDeletion,actionableFusion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
+  select(gene,martincorenaDnds,hmfDnds,cosmicCurated,cosmicOncogene,cosmicTsg,actionableAmplification,actionableDeletion,actionableVariant,actionableDrup,actionableResponse,actionableResponseSource,
          actionableResistance,actionableResistanceSource,knownAmplification,knownDeletion,hmfAmplification,hmfDeletion,armEndLocus,reportablePointMutation,reportableAmp, reportableDel) %>%
   filter(is.na(reportablePointMutation) | reportableDel | reportableAmp | cosmicOncogene | cosmicTsg | actionableDrup | actionableVariant | knownAmplification | knownDeletion )
 
