@@ -9,6 +9,7 @@ structural_vcf=$1 && shift
 sv_recovery_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
+ref_genome=$1 && shift
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -51,7 +52,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -tumor ${tumor_sample} \
     -amber ${run_dir}/amber \
     -cobalt ${run_dir}/cobalt \
-    -ref_genome hg19 \
+    -ref_genome ${ref_genome} \
     -output_dir ${purple_output} \
     -gc_profile ${gc_profile} \
     -sv_recovery_vcf ${sv_recovery_vcf} \

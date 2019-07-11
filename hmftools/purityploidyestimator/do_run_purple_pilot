@@ -11,5 +11,6 @@ credentials=$(locate_pilot_database_credentials)
 somatic_vcf=$(locate_sage_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} ${ref_genome} $@
