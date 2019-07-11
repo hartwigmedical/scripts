@@ -13,7 +13,13 @@ load("~/hmf/RData/processed/genePanel.RData")
 genePanel = genePanel %>% filter(martincorena | hmf | cosmicCurated)
 
 load("~/hmf/RData/processed/HmfRefCDSCv.RData")
-genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% genePanel$gene_name) %>% select(gene_name, wmis_cv, wnon_cv)
+genePanelCv = HmfRefCDSCv %>% filter(cancerType == "All", gene_name %in% genePanel$gene_name) %>%
+  mutate(
+    d_ind =  ifelse(n_ind>0, n_ind * pmax(0,(wind_cv-1)/wind_cv), 0),
+    d_mis =  ifelse(n_mis>0, n_mis * pmax(0,(wmis_cv-1)/wmis_cv), 0),
+    d_spl =  ifelse(n_spl>0, n_spl * pmax(0,(wspl_cv-1)/wspl_cv), 0),
+    d_non =  ifelse(n_non>0, n_non * pmax(0,(wnon_cv-1)/wnon_cv), 0)) %>%
+  select(gene_name, wmis_cv, wnon_cv, wind_cv, wspl_cv)
 genePanelCv = left_join(genePanelCv, genePanel[, c("gene_name", "cosmicTsg", "cosmicOncogene", "hmf", "martincorena")], by = "gene_name")
 
 trainTsg = genePanelCv %>% filter(cosmicTsg, !cosmicOncogene) %>% mutate(tsg = 1) %>% select(wmis_cv, wnon_cv,  tsg)
@@ -29,7 +35,10 @@ genePanelCv[is.na(genePanelCv)] <- F
 genePanelCv$classification = ifelse(genePanelCv$continuousClassification > 0.5,"tsg","onco")
 genePanelCv$classification = ifelse(!genePanelCv$hmf & !genePanelCv$martincorena & !genePanelCv$cosmicTsg & genePanelCv$cosmicOncogene, "onco", genePanelCv$classification)
 genePanelCv$classification = ifelse(!genePanelCv$hmf & !genePanelCv$martincorena & genePanelCv$cosmicTsg & !genePanelCv$cosmicOncogene, "tsg", genePanelCv$classification)
-genePanelCv[genePanel$gene_name == "TERT", "classification"] <- "onco"
+genePanelCv[genePanelCv$gene_name == "TERT", "classification"] <- "onco"
+
+genePanelCvPaper = genePanelCv
+save(genePanelCvPaper, file = "~/hmf/analysis/cohort/processed/genePanelCvPaper.RData")
 
 genePanel = left_join(genePanel, genePanelCv[, c("gene_name","classification")], by = "gene_name")
 genePanel[genePanel$gene_name == "TERT", "classification"] <- "onco"
