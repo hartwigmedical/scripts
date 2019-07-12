@@ -19,8 +19,7 @@ exec java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
-    -lims /data/lims \
-    -csv_out_dir /data/common/dbs/ecrf_dumps_pilot \
+    -lims_dir /data/lims \
+    -tumor_location_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
-    -portal_data_symlink portal_data \
     "$@"
