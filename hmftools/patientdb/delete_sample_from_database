@@ -11,8 +11,8 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Deleting data for ${sample}"
 
-echo "[INFO] TODO: remove set from datastore"
-echo "[INFO] TODO: run run_clinical_patient_db_prod"
+echo "[INFO] TODO: Remove set from datastore"
+echo "[INFO] TODO: Run run_clinical_patient_db_prod"
 echo "[INFO] Clinical data for sample: ${sample} is deleted from database"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.DeleteSampleFromDatabase \
