@@ -3,9 +3,9 @@
 ## Desc: Executes DB queries to get ECRF metrics after update with new dump
 
 scripts_repo="/data/common/repos/scripts"
-exec_script="${scripts_repo}/sql/execute/execute_sql_on_prod"
-lock_sql="${scripts_repo}/sql/locked_forms_analysis.sql"
-comp_sql="${scripts_repo}/sql/cpct_sample_completeness_analysis.sql"
+exec_script="${scripts_repo}/sql/execution/execute_sql_on_prod"
+lock_sql="${scripts_repo}/sql/clinical/locked_forms_analysis.sql"
+comp_sql="${scripts_repo}/sql/clinical/cpct_sample_completeness_analysis.sql"
 yymmdd=$( date "+%y%m%d" )
 
 echo "## ---"
