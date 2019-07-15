@@ -8,11 +8,15 @@ library(MutationalPatterns)
 library(ggplot2)
 library(dplyr)
 
-## To generate a CPCT-DRUP comparison run "multipleBiopsySignatures.R <CPCT patient ID>"
-ID = commandArgs(trailingOnly = TRUE)
-ID = "CPCT02180045T"
+##### ##### ##### ##### ##### ##### ##### ##### GATHER DATA
 
-multipleBiopsyCohort = data.frame(sampleId = ID, patientId = ID)
+##### PILOT DATA
+dbPilot = dbConnect(MySQL(), dbname='4fme', groups="RAnalysisWrite", host = "127.0.0.1")
+multipleBiopsyCohort = dbGetQuery(dbPilot, "SELECT sampleId, sampleId as patientId from purity")
+multipleBiopsySomaticVariantsPilot = purple::query_somatic_variants(dbPilot, multipleBiopsyCohort) %>% mutate(source = "4fme")
+multipleBiopsyStructuralVariantsPilot = purple::query_structural_variants(dbPilot, multipleBiopsyCohort) %>% mutate(source = "4fme")
+dbDisconnect(dbPilot)
+rm(dbPilot)
 
 ##### PROD DATA
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
@@ -21,27 +25,24 @@ multipleBiopsyStructuralVariantsProd = purple::query_structural_variants(dbProd,
 dbDisconnect(dbProd)
 rm(dbProd)
 
-##### PILOT DATA
-dbPilot = dbConnect(MySQL(), dbname='hmfpatients_pilot', groups="RAnalysis", host = "127.0.0.1")
-multipleBiopsySomaticVariantsPilot = purple::query_somatic_variants(dbPilot, multipleBiopsyCohort) %>% mutate(source = "Pilot")
-multipleBiopsyStructuralVariantsPilot = purple::query_structural_variants(dbPilot, multipleBiopsyCohort) %>% mutate(source = "Pilot")
-dbDisconnect(dbPilot)
-
 ##### COMBINE
-multipleBiopsySomaticVariants = bind_rows(multipleBiopsySomaticVariantsProd, multipleBiopsySomaticVariantsPilot) %>% mutate(sampleId = paste0(sampleId, "-", source), patientId = sampleId)
-multipleBiopsyStructuralVariants = bind_rows(multipleBiopsyStructuralVariantsProd, multipleBiopsyStructuralVariantsPilot) %>% mutate(sampleId = paste0(sampleId, "-", source), patientId = sampleId)
+multipleBiopsySomaticVariants = bind_rows(multipleBiopsySomaticVariantsProd, multipleBiopsySomaticVariantsPilot) %>% mutate(patientId = sampleId, sampleId = paste0(sampleId, "-", source))
+multipleBiopsyStructuralVariants = bind_rows(multipleBiopsyStructuralVariantsProd, multipleBiopsyStructuralVariantsPilot) %>% mutate(patientId = sampleId, sampleId = paste0(sampleId, "-", source))
+save(multipleBiopsyCohort, multipleBiopsySomaticVariants, multipleBiopsyStructuralVariants, file = "~/hmf/analysis/4fme/data.RData")
 
-### Mutational Signatures
+##### ##### ##### ##### ##### ##### ##### ##### RUN FROM HERE KORNEEL
+
+load( file = "~/hmf/analysis/4fme/data.RData")
 multipleBiopsyMutationalSignature = list()
 multipleBiopsyIndelSignature = list()
 multipleBiopsySVSignature = list()
 
-multipleBiopsyPatientsId = unique(multipleBiopsyCohort$patientId)
-for (patientId in multipleBiopsyPatientsId) {
-  cat("Processing", patientId, "\n")
+multipleBiopsyPatientsId = multipleBiopsyCohort %>% filter(sampleId != 'WIDE01010005T') %>% pull(sampleId)
+for (selectedPatientId in multipleBiopsyPatientsId) {
+  cat("Processing", selectedPatientId, "\n")
   
   # Extract patient data
-  patientSampleIds = unique(multipleBiopsySomaticVariants[multipleBiopsyCohort$patientId == patientId, c("sampleId")])
+  patientSampleIds = multipleBiopsySomaticVariants %>% filter(patientId == selectedPatientId) %>% distinct(sampleId) %>% pull()
   patientSomaticVariants = scope(multipleBiopsySomaticVariants[multipleBiopsySomaticVariants$sample %in% patientSampleIds,])
   patientStructuralVariants = scope(multipleBiopsyStructuralVariants[multipleBiopsyStructuralVariants$sample %in% patientSampleIds,])
   
@@ -51,9 +52,9 @@ for (patientId in multipleBiopsyPatientsId) {
   patientSVSignature = purple::sv_signature_by_scope(patientStructuralVariants)
   
   # Save Signatures
-  multipleBiopsyMutationalSignature[[patientId]] <- patientMutationalSignature
-  multipleBiopsyIndelSignature[[patientId]] <- patientIndelSignature
-  multipleBiopsySVSignature[[patientId]] <- patientSVSignature  
+  multipleBiopsyMutationalSignature[[selectedPatientId]] <- patientMutationalSignature
+  multipleBiopsyIndelSignature[[selectedPatientId]] <- patientIndelSignature
+  multipleBiopsySVSignature[[selectedPatientId]] <- patientSVSignature  
 
   # Plots
   somaticPloidyPlots = somatic_ploidy_plots(patientSomaticVariants)
@@ -63,7 +64,7 @@ for (patientId in multipleBiopsyPatientsId) {
   p9 = p8 # Note if samples are identical the following line won't work so we dummy p9 with p8
   p9 <- plot_cosmic_signature(patientMutationalSignature)
 
-  pdf(file = paste(patientId, "MultipleBiopsies.pdf", sep = "_"), height = 14, width = 20)
+  pdf(file = paste0("~/hmf/analysis/4fme/", selectedPatientId, "_MultipleBiopsies.pdf"), height = 14, width = 20)
   #pdf(file = "~/TestMultipleBiopsies.pdf", height = 14, width = 20)
   multiplot(somaticPloidyPlots[[1]] + ggtitle(patientSampleIds[1]), 
             somaticPloidyPlots[[2]] + ggtitle(patientSampleIds[2]),
