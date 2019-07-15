@@ -11,7 +11,7 @@ if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
   exit 1
 fi
 
-echo -e "#SetName\tTumSample\tPipeline\tPurple\tQC\tPurity\tStatus\
+echo -e "#SetName\tTumSample\tQC\tPurity\tStatus\tPipeline\tPurple\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\
 \tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
@@ -78,8 +78,8 @@ for runPath in "${runPaths[@]}"; do
   
   ## output to screen
   printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    ${setName} ${tumSample} ${pipVsn} ${purVsn} \
-    ${qcStat} ${purity} ${status} ${refCov} ${tumCov} \
+    ${setName} ${tumSample}  ${qcStat} ${purity} \
+    ${status} ${pipVsn} ${purVsn} ${refCov} ${tumCov} \
     ${refRds} ${tumRds} ${refMap} ${tumMap} \
     ${refExc} ${tumExc} ${refDup} ${tumDup}
 
