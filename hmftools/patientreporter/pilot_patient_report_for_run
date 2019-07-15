@@ -19,7 +19,7 @@ circos_file=$(locate_purple_circos_plot ${run_dir})
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
-drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
+drup_genes_csv=/data/common/dbs/drup/180905_drup_genes_patient_reporter_v7.csv
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 sample_summary_csv=/data/common/dbs/summary_patient_report/summary_samples.csv
 
