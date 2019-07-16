@@ -24,7 +24,6 @@ germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 sample_summary_csv=/data/common/dbs/summary_patient_report/summary_samples.csv
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
-high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 
 bachelor_cmd=""
 if [ ! -z ${bachelor_csv} ]; then
@@ -48,5 +47,4 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_csv ${sample_summary_csv} \
     -fasta_file_location ${ref_genome} \
-    -high_confidence_bed ${high_confidence_bed} \
     -log_debug
