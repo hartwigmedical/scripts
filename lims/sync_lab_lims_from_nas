@@ -30,7 +30,7 @@ sampLatest="${SYM_DIR}/lims_samp"
    submTxt="${sampTarget}_subm.tsv"
 submLatest="${SYM_DIR}/lims_subm"
 
-procSource="${DAY_DIR}/HMF-FOR-002 Sample in process 2019 v4.0.xlsx"
+procSource="${DAY_DIR}/HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
 procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
    procTxt="${procTarget}.tsv"
 procLatest="${SYM_DIR}/lims_proc"
