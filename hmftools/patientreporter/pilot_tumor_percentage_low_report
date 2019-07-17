@@ -2,7 +2,21 @@
 
 prefix=`dirname $(readlink $0 || echo $0)`
 
+tumor_sample=$1 && shift
+ref_sample=$1 && shift
+
+if [ -z ${tumor_sample} ]; then
+    echo "[ERROR] No tumor sample provided"
+    exit 1;
+fi
+
+if [ -z ${ref_sample} ]; then
+    echo "[ERROR] No ref sample provided"
+    exit 1;
+fi
+
 ${prefix}/pilot_do_run_base_patient_reporter \
     -qc_fail \
-    -qc_fail_reason low_tumor_percentage \
-    -tumor_sample "$@"
+    -qc_fail_reason post_analysis_fail \
+    -tumor_sample ${tumor_sample} \
+    -ref_sample ${ref_sample}
