@@ -45,6 +45,6 @@ ${prefix}/pilot_do_run_base_patient_reporter \
     -knowledgebase_dir ${knowledgebase_dir} \
     -drup_genes_csv ${drup_genes_csv} \
     -germline_genes_csv ${germline_genes_csv} \
-    -sample_summary_csv ${sample_summary_csv} \
+    -sample_summary_tsv ${sample_summary_tsv} \
     -fasta_file_location ${ref_genome} \
     -log_debug
