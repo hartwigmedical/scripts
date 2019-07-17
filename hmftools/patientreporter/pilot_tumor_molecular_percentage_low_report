@@ -17,6 +17,6 @@ fi
 
 ${prefix}/pilot_do_run_base_patient_reporter \
     -qc_fail \
-    -qc_fail_reason post_analysis_fail \
+    -qc_fail_reason shallow_seq_low_purity \
     -tumor_sample ${tumor_sample} \
     -ref_sample ${ref_sample}
