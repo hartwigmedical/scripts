@@ -80,8 +80,17 @@ save(genePanelInitial, file="~/hmf/analysis/cohort/processed/genePanelInitial.RD
 ####### WRITE TO REPOSITORY AND DB
 load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
 
+reportableDels = genePanel %>% 
+  filter(reportableDel) %>% 
+  mutate(
+    loci = coalesce(centromere, telomere), 
+    loci = gsub("_", " ", loci),
+    loci = gsub("[0-9]{1,2}", "", loci),
+    loci = gsub("[X|Y]", "", loci)) %>% 
+  select(gene, loci) %>% arrange(is.na(loci), gene)
+
 write.table(genePanel %>% filter(reportableAmp) %>% select(gene), file = "/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/cna/AmplificationTargets.tsv", quote = F, row.names = F, col.names = F)
-write.table(genePanel %>% filter(reportableDel) %>% select(gene), file = "/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/cna/DeletionTargets.tsv", quote = F, row.names = F, col.names = F)
+write.table(reportableDels, file = "/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/cna/DeletionTargets.tsv", quote = F, row.names = F, col.names = F, sep = "\t")
 
 genePanelDB = genePanel %>%
   mutate(
