@@ -11,7 +11,7 @@ if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
   exit 1
 fi
 
-echo -e "#SetName\tTumSample\tQC\tPurity\tStatus\tPipeline\tPurple\
+echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\
 \tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
@@ -21,7 +21,7 @@ for runPath in "${runPaths[@]}"; do
   pipVsn=$na; setName=$na; refSample=$na; tumsample=$na
   refCov=$na; refRds=$na; refMap=$na; refExc=$na; refDup=$na
   tumCov=$na; tumRds=$na; tumMap=$na; tumExc=$na; tumDup=$na
-  purity=$na; status=$na; qcStat=$na; purVsn=$na
+  purity=$na; status=$na; qcStat=$na; ambQC=$na; purVsn=$na
 
   ## retrieve metadata
   setName=$( basename "${runPath}")
@@ -34,6 +34,8 @@ for runPath in "${runPaths[@]}"; do
   if [[ ${tumSample} == "null" ]]; then mode="single"; tumSample=$na; else mode="somatic"; fi
 
   ## main paths, files and settings
+  amberDir="${runPath}/amber/"
+  aqcFile="${amberDir}/${tumSample}.amber.qc"
   purpleDir="${runPath}/purple/"
   pqcFile="${purpleDir}/${tumSample}.purple.qc"
   ppuFile="${purpleDir}/${tumSample}.purple.purity"
@@ -53,6 +55,10 @@ for runPath in "${runPaths[@]}"; do
     tumCov=$( cat $wgsFile | grep "MEAN_COVERAGE" | cut -f${tumIdx} )
     tumExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${tumIdx} )
     tumDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${tumIdx} )
+
+    ## gather AMBER info
+    if [[ ! -f $aqcFile ]]; then echo "[EXIT] File does not exist ($aqcFile)" && exit 1; fi
+    ambQC=$( cat $aqcFile | grep QCStatus | cut -f2 )
     
     ## gather Purple info
     if [[ ! -f $pqcFile ]]; then echo "[EXIT] File does not exist ($pqcFile)" && exit 1; fi
@@ -77,9 +83,9 @@ for runPath in "${runPaths[@]}"; do
   refDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${colIdx} )
   
   ## output to screen
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
     ${setName} ${tumSample}  ${qcStat} ${purity} \
-    ${status} ${pipVsn} ${purVsn} ${refCov} ${tumCov} \
+    ${status} ${ambQC} ${pipVsn} ${purVsn} ${refCov} ${tumCov} \
     ${refRds} ${tumRds} ${refMap} ${tumMap} \
     ${refExc} ${tumExc} ${refDup} ${tumDup}
 
