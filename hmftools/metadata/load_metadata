@@ -19,3 +19,15 @@ load_joint_name_from_metadata() {
     local reference=$(jq -r '.ref_sample' ${metadata})
     echo ${reference}_${tumor}
 }
+
+load_ref_sample_from_pv5_metadata() {
+    local run_dir=$1
+    local metadata=${run_dir}/metadata
+    echo $(jq -r '.reference.sampleName' ${metadata})
+}
+
+load_tumor_sample_from_pv5_metadata() {
+    local run_dir=$1
+    local metadata=${run_dir}/metadata
+    echo $(jq -r '.tumor.sampleName' ${metadata})
+}

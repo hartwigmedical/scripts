@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
-source load_metadata
 
-run_dir=$1 && shift
+ref_sample=$1 && shift
+tumor_sample=$1 && shift
+metrics_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
-
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading metrics data for ${run_dir}"
+echo "[INFO] Loading metrics data for ${tumor_sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadMetricsData \
-    -metrics_dir ${run_dir} \
+    -metrics_dir ${metrics_dir} \
     -ref_sample ${ref_sample} \
     -tumor_sample ${tumor_sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}

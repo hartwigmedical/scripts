@@ -1,21 +1,28 @@
 #!/usr/bin/env bash
 source locate_files
+source load_metadata
 
 run_dir=$1 && shift
+
+ref_sample=$(load_ref_sample_from_pv5_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_pv5_metadata ${run_dir})
 
 purple_dir=${run_dir}/purple
 somatic_vcf=${purple_dir}/*.purple.somatic.vcf.gz
 structural_vcf=${purple_dir}/*.purple.sv.vcf.gz
 
-sample=$(basename ${somatic_vcf}  | cut -d"." -f1 )
 credentials=$(locate_pipeline_v5_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
 echo "[INFO] Loading purple"
-do_load_purple_data ${purple_dir} ${credentials} ${patient_db_jar} ${sample}
+do_load_purple_data ${tumor_sample} ${purple_dir} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading somatic variants"
-do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading structural variants"
-do_run_load_sv ${sample} ${run_dir}/sv_linx ${structural_vcf} ${credentials} ${patient_db_jar}
+do_run_load_sv ${tumor_sample} ${run_dir}/sv_linx ${structural_vcf} ${credentials} ${patient_db_jar}
+
+echo "[INFO] Loading metrics"
+#Cannot load WGS metrics as we support only 1 metrics dir.
+#do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}

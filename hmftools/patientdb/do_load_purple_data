@@ -1,9 +1,9 @@
 #!/bin/bash
 
+sample=$1 && shift
 purple_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
-sample=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
