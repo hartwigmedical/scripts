@@ -23,6 +23,6 @@ do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient
 echo "[INFO] Loading structural variants"
 do_run_load_sv ${tumor_sample} ${run_dir}/sv_linx ${structural_vcf} ${credentials} ${patient_db_jar}
 
-echo "[INFO] Loading metrics"
+#echo "[INFO] Loading metrics"
 #Cannot load WGS metrics as we support only 1 metrics dir.
 #do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
