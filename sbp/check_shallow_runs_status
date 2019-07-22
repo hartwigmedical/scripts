@@ -11,7 +11,7 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
     if [[ "${runName}" =~ "190314-testR" ]]; then continue 
   elif [[ -d "${archivePath}/${runName}" ]]; then echo "## [type1] ALREADY ARCHIVED: ${runName} (status=$runStatus)"
   elif [[ "${runStatus}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## [type2] IN PROCESS: ${runName} (status=$runStatus)"
-  elif [[ "${runStatus}" =~ ^(Failed)$ ]]; then echo "## [type3] FAILED: ${runName} (status=$runStatus)"
+  elif [[ "${runStatus}" =~ Failed ]]; then echo "## [type3] FAILED: ${runName} (status=$runStatus)"
   else echo " process_shallow_run -s ${runName} # (status=$runStatus)"
     fi
 done | sort
