@@ -1,0 +1,50 @@
+#!/bin/bash
+source locate_files
+source load_metadata
+
+run_dir=$1 && shift
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+purple_purity_tsv=$(locate_purple_pilot_purity ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_pilot_gene_copynumbers ${run_dir})
+somatic_variant_vcf=$(locate_purple_pilot_somatics ${run_dir})
+linx_fusion_tsv=$(locate_linx_detailed_fusions ${run_dir})
+linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
+bachelor_csv=$(locate_bachelor_germline_variants ${run_dir})
+chord_prediction_file=$(locate_chord_prediction_file ${run_dir})
+circos_file=$(locate_purple_pilot_circos_plot ${run_dir})
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+knowledgebase_dir=/data/common/dbs/knowledgebases/output
+drup_genes_csv=/data/common/dbs/drup/180905_drup_genes.csv
+germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
+sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
+
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+bachelor_cmd=""
+if [ ! -z ${bachelor_csv} ]; then
+    # Only pass bachelor csv when it actually exists.
+    bachelor_cmd="-bachelor_csv ${bachelor_csv}"
+fi
+
+${prefix}/pilot_do_run_base_patient_reporter \
+    -tumor_sample ${tumor_sample} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -somatic_variant_vcf ${somatic_variant_vcf} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_disruption_tsv ${linx_disruption_tsv} \
+    ${bachelor_cmd} \
+    -chord_prediction_file ${chord_prediction_file} \
+    -circos_file ${circos_file} \
+    -ref_sample ${ref_sample} \
+    -knowledgebase_dir ${knowledgebase_dir} \
+    -drup_genes_csv ${drup_genes_csv} \
+    -germline_genes_csv ${germline_genes_csv} \
+    -sample_summary_tsv ${sample_summary_tsv} \
+    -fasta_file_location ${ref_genome} \
+    -log_debug
