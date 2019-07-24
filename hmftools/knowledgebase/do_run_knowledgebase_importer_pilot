@@ -11,15 +11,15 @@ iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-input_dir=/data/common/dbs/knowledgebases/input_pilot
-cgi_biomarkers_file=${input_dir}/190709_cgi_biomarkers_per_variant.tsv
-cgi_validated_file=${input_dir}/190709_cgi_catalog_of_validated_oncogenic_mutations.tsv
-onco_annotated_file=${input_dir}/190709_oncokb_allAnnotatedVariants.txt
-onco_actionable_file=${input_dir}/190709_oncokb_allActionableVariants.txt
-doid_file=${input_dir}/190709_doid.owl
+input_dir=/data/common/dbs/knowledgebases/input
+cgi_biomarkers_file=${input_dir}/cgi_biomarkers_per_variant_181127.tsv
+cgi_validated_file=${input_dir}/cgi_catalog_of_validated_oncogenic_mutations_181127.tsv
+onco_annotated_file=${input_dir}/onco_allAnnotatedVariants_181127.csv
+onco_actionable_file=${input_dir}/onco_allActionableVariants_181127.csv
+doid_file=${input_dir}/doid_181127.owl
 cosmic_fusions_file=${input_dir}/171127_cosmic_gene_fusions.csv
-civic_evidence_file=${input_dir}/190709_civic_ClinicalEvidenceSummaries.tsv
-civic_variants_file=${input_dir}/190709_civic_VariantSummaries.tsv
+civic_evidence_file=${input_dir}/civic_01-Nov-2018-ClinicalEvidenceSummaries_181127.tsv
+civic_variants_file=${input_dir}/civic_01-Nov-2018-VariantSummaries_181127.tsv
 
 transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/pilot_treatmentTypes.tsv
