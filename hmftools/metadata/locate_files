@@ -24,7 +24,7 @@ locate_pipeline_v5_database_credentials() {
 
 ##################################### JARS #####################################
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.30/purple.jar
+    echo ${base_path}/tools/purple_v2.31/purple.jar
 }
 
 locate_pilot_purple() {
@@ -40,7 +40,7 @@ locate_pilot_bachelor() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.23/patient-db.jar
+    echo ${base_path}/tools/patient-db_v3.24/patient-db.jar
 }
 
 locate_pilot_patient_db() {
@@ -109,7 +109,17 @@ locate_purple_pilot_somatics() {
 
 locate_purple_purity() {
     local run_dir=$1
-    local purple_purity_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity")
+    local purple_purity_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.purity.tsv")
+    if [ -z ${purple_purity_file} ]; then
+        echo "[ERROR] Unable to locate purple purity. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_file}
+}
+
+locate_purple_pilot_purity() {
+    local run_dir=$1
+    local purple_purity_file=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.purity.tsv")
     if [ -z ${purple_purity_file} ]; then
         echo "[ERROR] Unable to locate purple purity. Exiting." >&2
         exit 1
@@ -119,7 +129,17 @@ locate_purple_purity() {
 
 locate_purple_gene_copynumbers() {
     local run_dir=$1
-    local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.gene.cnv")
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
+    if [ -z ${purple_gene_copynumbers} ]; then
+        echo "[ERROR] Unable to locate purple gene copynumbers. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_pilot_gene_copynumbers() {
+    local run_dir=$1
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.cnv.gene.tsv")
     if [ -z ${purple_gene_copynumbers} ]; then
         echo "[ERROR] Unable to locate purple gene copynumbers. Exiting." >&2
         exit 1
@@ -135,27 +155,6 @@ locate_purple_circos_plot() {
         exit 1
     fi
     echo ${circos_plot}
-}
-
-############################################ Purple PILOT ##########################################
-locate_purple_pilot_purity() {
-    local run_dir=$1
-    local purple_purity_file=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.purity.tsv")
-    if [ -z ${purple_purity_file} ]; then
-        echo "[ERROR] Unable to locate purple purity. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_purity_file}
-}
-
-locate_purple_pilot_gene_copynumbers() {
-    local run_dir=$1
-    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.cnv.gene.tsv")
-    if [ -z ${purple_gene_copynumbers} ]; then
-        echo "[ERROR] Unable to locate purple gene copynumbers. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_gene_copynumbers}
 }
 
 locate_purple_pilot_circos_plot() {

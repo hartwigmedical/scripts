@@ -9,7 +9,7 @@ structural_vcf=$1 && shift
 sv_recovery_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
-ref_genome=$1 && shift
+
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -34,6 +34,7 @@ if [ -z "`hostname | grep datastore`" ]; then
 fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 db_args=""
 if [ ! -z "${credentials}" ]; then
