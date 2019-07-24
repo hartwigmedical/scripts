@@ -9,7 +9,7 @@ path_patient_reporter=/data/cpct/pilot_reports
 prefix=`dirname $(readlink $0 || echo $0)`
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-${prefix}/pilot_patient_report_for_run ${run_dir}
+${prefix}/pilot_patient_report_for_run ${run_dir} \
     -comments "${comments}" \
     -corrected_report "Corrected"
 
