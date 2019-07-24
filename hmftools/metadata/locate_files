@@ -138,7 +138,7 @@ locate_purple_circos_plot() {
 }
 
 ############################################ Purple PILOT ##########################################
-locate_purple_purity() {
+locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_purity_file=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.purity.tsv")
     if [ -z ${purple_purity_file} ]; then
@@ -148,7 +148,7 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
-locate_purple_gene_copynumbers() {
+locate_purple_pilot_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.cnv.gene.tsv")
     if [ -z ${purple_gene_copynumbers} ]; then
@@ -158,7 +158,7 @@ locate_purple_gene_copynumbers() {
     echo ${purple_gene_copynumbers}
 }
 
-locate_purple_circos_plot() {
+locate_purple_pilot_circos_plot() {
     local run_dir=$1
     local circos_plot=$(find -L ${run_dir}/purple_pilot/plot/ -type f -name "*.circos.png")
     if [ -z ${circos_plot} ]; then
