@@ -71,8 +71,9 @@ cancerTypeData = highestPurityCohortSummary %>%
   group_by(cancerType) %>% 
   summarise(n = n()) %>% 
   arrange(-n) %>%
-  mutate(percentage = round(100 * n / sum(n), 1)) %>%
-  mutate(cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
+  mutate(
+    percentage = round(100 * n / sum(n), 1),
+    cancerType = factor(cancerType, levels = cancerTypeFactors)) %>%
   filter(cancerType != "Other")
 
 hmfMutationalLoad = highestPurityCohortSummary %>% 
@@ -224,19 +225,23 @@ display_cancer_types <- function(cancerTypes) {
   return (label_wrap_gen(10)(cancerTypes))
 }
 
-theme_set(theme_bw() +  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5)))
+
+theme_set(theme_bw() +  theme(axis.text=element_text(size=5),axis.title=element_text(size=5), legend.text = element_text(size=5)))
 p1 = ggplot(data=cancerTypeData, aes(x = NA, y = n)) +
   geom_bar(aes(fill = cancerType), stat = "identity") +
   scale_fill_manual(values=cancerTypeColours, guide=FALSE) + 
-  geom_text(aes(label=paste0("", percentage, "%")), vjust=-0.5, size = 5 * 25.4 / 72) +
-  #geom_text(aes(label=n), vjust=-2, size = 3) +
-  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.text.x = element_text(size = 5, face = "plain"),
+  geom_text(aes(label=paste0("", percentage, "%"), y = pmin(n,200)), vjust= 0, size = 5 * 25.4 / 72, nudge_y = 10) +
+  theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), 
+        axis.title.y = element_text(vjust = 0),
+        panel.grid.major = element_line(size = 0.3),
+        strip.background = element_rect(size = 0.3),
+        panel.border = element_rect(size = 0.3),
+        strip.text.x = element_text(size = 5, face = "plain", margin = margin(0,0,0,0, "pt")),
         panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) +  
   ylab("Samples") + 
   coord_cartesian(ylim = c(0, 620)) + 
   facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + 
-  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 3, b = 3, l = 3, r = 3, unit = "pt"))
-
+  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 1, b = 0, l = 7, r = 3, unit = "pt"))
 
 p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) + 
   geom_violin(aes(fill=cancerType), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area", size = 0.1) + 
@@ -244,9 +249,12 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
   scale_colour_manual(values=cancerTypeColours, guide=FALSE) +
   ylab("Age") + 
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks.x = element_blank(), strip.background = element_blank(), strip.text = element_blank(), 
-        plot.margin = margin(t = 10, unit = "pt"),
+        axis.title.y = element_text(vjust = 0),
+        panel.border = element_rect(size = 0.3),
+        panel.grid.major = element_line(size = 0.3),
         panel.grid.major.x = element_blank(),  panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) + 
-  facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt"))
+  facet_grid(~cancerType) + 
+  theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 0, b = 0, l = 3, r = 3, unit = "pt"))
 
 p3 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(size = 0.3, aes(SNV,color='HMF SNV',linetype='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) +
@@ -258,12 +266,15 @@ p3 = ggplot(data=combinedMutationalLoad) +
   scale_colour_manual(name = "Combined", values=somaticColours) +
   scale_linetype_manual(name = "Combined", values = somaticLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(),
+        axis.title.y = element_text(vjust = 0),
+        panel.border = element_rect(size = 0.3),
         panel.grid.minor.x = element_blank(),
-        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
-        legend.margin=margin(t = 0,unit = "pt"), 
-        plot.margin = margin(t = 15, unit = "pt"),
+        panel.grid.major = element_line(size = 0.3),
+        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.08), legend.title = element_blank(), 
+        legend.margin= margin(t = 0, b = 0, l = 3, r = 3, unit = "pt"),
+        plot.margin = margin(t = 3, b = 0, l = 3, r = 3, unit = "pt"),
         legend.background=element_blank(), legend.key=element_blank()) +
-  xlab("Somatic Variants") +
+  xlab("SNVs & MNVs") +
   guides(colour = guide_legend(nrow = 1)) +
   coord_flip() 
 
@@ -278,18 +289,21 @@ p4 = ggplot(data=combinedMutationalLoad) +
   scale_linetype_manual(name = "Combined", values = indelSVLinetypes) +
   theme(axis.title.x = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(),
         panel.grid.minor.x = element_blank(),
-        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.1), legend.title = element_blank(), 
-        legend.margin=margin(t = 0, b= 0, unit = "pt"),
-        plot.margin = margin(t = 15, b = 0, unit = "pt"),
+        panel.border = element_rect(size = 0.3),
+        axis.title.y = element_text(vjust = 0),
+        panel.grid.major = element_line(size = 0.3),
+        strip.background = element_blank(), strip.text = element_blank(), legend.position=c(0.5, 1.08), legend.title = element_blank(), 
+        legend.margin= margin(t = 0, b = 0, l = 3, r = 3, unit = "pt"),
+        plot.margin = margin(t = 3, b = 0, l = 3, r = 3, unit = "pt"),
         legend.background=element_blank(), legend.key=element_blank()) +
   xlab("Somatic Variants") +
   xlab("INDELs & SVs") +
   guides(colour = guide_legend(nrow = 1)) +
   coord_flip()
 
-pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(2, 2, 3, 3), labels = c("auto"), label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 1.pdf", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 1.png", pFigure1a, width = 183, height = 129, units = "mm", dpi = 300)
+pFigure1a = plot_grid(p1, p2, p3, p4, ncol=1, align="v", rel_heights = c(2, 1.5, 2.5, 2.5), labels = c("auto"), label_size = 8, label_y = c(0.7, 1, 1, 1))
+ggplot2::ggsave("~/hmf/RPlot/Figure 1.pdf", pFigure1a, width = 183, height = 50, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 1.png", pFigure1a, width = 183, height = 50, units = "mm", dpi = 300)
 
 
 theme_set(theme_bw() +  theme(axis.text=element_text(size=5), axis.title=element_text(size=7),legend.text = element_text(size=5), strip.text.x = element_text(size = 5, face = "plain"),
