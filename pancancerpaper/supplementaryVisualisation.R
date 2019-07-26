@@ -9,7 +9,7 @@ library(cowplot)
 library(scales)
 library(magick)
 theme_set(theme_bw() + theme(
-  axis.text = element_text(size=5), axis.title = element_text(size=7), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
+  axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm")))
 
 singleBlue = "#6baed6"
 
@@ -58,14 +58,16 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   annotate("text", x = 22, y = wgdPlotDataTotal$percentage, label = sprintf(fmt='(%.1f%%)', 100*wgdPlotDataTotal$percentage), size = 5 * 25.4 / 72, fontface = "plain") +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
-  ggtitle("") + 
   xlab("") + ylab("% Samples")+ 
   scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1.09)) +
   scale_x_discrete(labels = c(wgdPlotLevels$cancerType, "", ""), limits = c(wgdPlotLevels$cancerType, "", "")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="none") +
   theme(axis.text = element_text(size=5), axis.title = element_text(size=5),
-        plot.margin = margin(t = 0, unit = "pt")) +
+        plot.margin = margin(t = 2, b = 0, l = 0, r = 3, unit = "pt"),
+        
+        legend.margin = margin(t = 0, b = 0, l = 0, r = 0, unit = "pt")
+        ) +
   coord_flip()
 
 wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
@@ -73,28 +75,29 @@ wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
 p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   geom_histogram(position = "identity", binwidth = 0.1) + 
   scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#2171b5", 0.8))) +
-  ggtitle("") +  xlab("Ploidy") + ylab("# Samples") +
+  xlab("Ploidy") + ylab("# Samples") +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
   scale_x_continuous(limits = c(0, 7), breaks=c(1:7)) + 
-  theme(legend.position=c(.80,.84)) + 
+  theme(legend.position=c(.80,.80)) + 
   theme(axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm"),
-        plot.margin = margin(t = 0, unit = "pt"), axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 20, unit = "pt")))  
-  
+        plot.margin = margin(t = 2, b = 0, l = 0, r = 3, unit = "pt"),
+        axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 20, unit = "pt")))  
+p1  
 
 
-pWGD = plot_grid(p1, p2, ncol = 1, labels =c("d","e"), label_size = 8, rel_heights = c(1, 1))
+pWGD = plot_grid(p1, p2, ncol = 1, labels =c("c","d"), label_size = 8, rel_heights = c(1.5, 1), align = "h")
 pWGD
 #save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
 
-pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/AllB.png")
-pb <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/CNSB.png", width = 1, scale = 1)
-pc <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/KidneyB.png", scale = 1)
+pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/All.png")
+#pb <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/CNSB.png", width = 1, scale = 1)
+#pc <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/KidneyB.png", scale = 1)
 
-pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
-pabc = plot_grid(pa, pbc, pWGD, nrow = 1, labels = c("a", "", ""), rel_widths = c(0.6, 0.3, 0.3), label_size = 8)
+#pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
+pabc = plot_grid(pa, pWGD, nrow = 1, labels = c("a", ""), rel_widths = c(80, 40), label_size = 8)
 #pabc
 
-ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 125, height = 80, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
 
 
@@ -158,24 +161,26 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
   xlab("Cancer Type") + ylab("Drivers") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  ggtitle("") + xlab("") + ylab("Drivers per sample") + 
+  xlab("") + ylab("Drivers per sample") + 
   scale_y_continuous(expand=c(0.01, 0.01)) +
   scale_fill_manual(values = cancerTypeColours) +
   theme(legend.position="none") +
   coord_flip() + 
-  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5))
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=5), legend.text = element_text(size=5),
+        plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
   geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
   scale_fill_manual(values = simplifiedDriverColours) +
-  ggtitle("") + xlab("") + ylab("Drivers by variant type") +  
+  xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
   coord_flip() + 
-  theme(axis.text=element_text(size=5),axis.title=element_text(size=7), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"))
+  theme(axis.text=element_text(size=5),axis.title=element_text(size=5), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"),
+        plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
 
 pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "auto", label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 60, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
 
 
