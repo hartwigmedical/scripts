@@ -59,7 +59,7 @@ p1 = ggplot(data = wgdPlotData, aes(x = cancerType, y = percentage)) +
   #scale_fill_manual(values = c("#f1eef6", "#3182bd")) +
   scale_fill_manual(values = c("#deebf7", "#2171b5")) +
   xlab("") + ylab("% Samples")+ 
-  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1.09)) +
+  scale_y_continuous(labels = percent, expand=c(0.01, 0.01), limits = c(0, 1.09), breaks = c(0, 0.5, 1)) +
   scale_x_discrete(labels = c(wgdPlotLevels$cancerType, "", ""), limits = c(wgdPlotLevels$cancerType, "", "")) +
   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="none") +
@@ -74,31 +74,29 @@ wgdPDFPlotData = highestPurityCohortSummary %>% select(sampleId, WGD, ploidy)
 
 p2 = ggplot(data=wgdPDFPlotData, aes(x=ploidy, fill = WGD)) +
   geom_histogram(position = "identity", binwidth = 0.1) + 
-  scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#2171b5", 0.8))) +
+  scale_fill_manual(values = c(alpha("#bdd7e7", 1), alpha("#2171b5", 0.8)), labels = c("False", "True")) +
   xlab("Ploidy") + ylab("# Samples") +
   theme(panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank()) +
   scale_x_continuous(limits = c(0, 7), breaks=c(1:7)) + 
-  theme(legend.position=c(.80,.80)) + 
-  theme(axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.2, "cm"),
+  theme(legend.position=c(.80,.75)) + 
+  theme(axis.text = element_text(size=5), axis.title = element_text(size=5), legend.title = element_text(size=5), legend.text = element_text(size=5), legend.key.size = unit(0.1, "cm"),
         plot.margin = margin(t = 2, b = 0, l = 0, r = 3, unit = "pt"),
+        legend.background = element_blank(),
         axis.title.y = element_text(margin = margin(t = 0, r = 0, b = 0, l = 20, unit = "pt")))  
-p1  
+p2
 
 
-pWGD = plot_grid(p1, p2, ncol = 1, labels =c("c","d"), label_size = 8, rel_heights = c(1.5, 1), align = "h")
-pWGD
-#save_plot("~/hmf/RPlot/Figure 2 - WGD.png", pWGD, base_width = 6, base_height = 14)
-
+pWGD = plot_grid(p1, p2, ncol = 1, labels =c("b","c"), label_size = 8, rel_heights = c(1.7, 1), align = "h")
 pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/All.png")
 #pb <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/CNSB.png", width = 1, scale = 1)
 #pc <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/KidneyB.png", scale = 1)
 
 #pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
-pabc = plot_grid(pa, pWGD, nrow = 1, labels = c("a", ""), rel_widths = c(80, 40), label_size = 8)
-#pabc
+pabc = plot_grid(pa, pWGD, nrow = 1, labels = c("a", ""), rel_widths = c(65, 35), label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 100, height = 65, units = "mm", dpi = 300)
 
-ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 125, height = 80, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+
+#ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
 
 
 #convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
