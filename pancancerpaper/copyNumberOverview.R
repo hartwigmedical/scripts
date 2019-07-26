@@ -201,9 +201,12 @@ for (location in primaryTumorLocations) {
   locationString = gsub("/", "", locationString, fixed = TRUE)
 
   cmd = paste0("sed 's/CANCER/", locationString,"/g' circos.template > ",locationString,".conf\n")
-  #cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
+  cmd = paste0("/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/",locationString, ".conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile ",locationString,".png\n")
   cat(cmd)
 }
+
+#sed 's/CANCER/All/g' circos.template.all > All.conf
+#/Users/jon/hmf/tools/circos-0.69-6/bin/circos -nosvg -conf /Users/jon/hmf/analysis/copyNumberSummary/All.conf -outputdir /Users/jon/hmf/analysis/copyNumberSummary -outputfile All.png
 
 
 for (location in sort(primaryTumorLocations)) {

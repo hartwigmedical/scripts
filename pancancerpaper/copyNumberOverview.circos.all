@@ -1,0 +1,221 @@
+<<include etc/colors_fonts_patterns.conf>>
+<<include ticks.conf>>
+
+<ideogram>
+
+	<spacing>
+		default = 0.002r
+	</spacing>
+
+	# Ideogram position, fill and outline
+	radius           = 0.90r
+	thickness        = 50p
+	fill             = yes
+	stroke_color     = dgrey
+	stroke_thickness = 2p
+
+	# Minimum definition for ideogram labels.
+
+	show_label       = yes
+	# see etc/fonts.conf for list of font names
+	label_font       = default
+	label_radius     = 1r + 30p
+	label_size       = 70p
+	label_parallel   = yes
+
+</ideogram>
+
+<image>
+	<<include etc/image.conf>>
+</image>
+
+karyotype = data/karyotype/karyotype.human.txt
+
+chromosomes_units           = 1000000
+chromosomes_display_default = yes
+chromosomes                 = -EXCLUDE
+
+<highlights>
+
+	<highlight>
+		file       = gaps.txt
+		ideogram   = yes
+		fill_color = black_a3
+		z = 5
+	</highlight>
+
+</highlights>
+
+# Default is to clip the data to range min/max.
+<plots>
+
+	# -----------------------------------------------------------
+	# Gene Labels (PART 1)
+	<plot>
+		type             = text
+		color            = black
+		file             = CANCER.genes.circos
+
+		r0   = 0.500r
+		r1   = 0.975r
+
+		show_links     = yes
+		link_dims      = 4p,4p,160p,20p,0p
+		link_thickness = 2p
+		link_color     = black
+
+		label_size   = 70p
+		label_snuggle=yes
+		max_snuggle_distance            = 4r
+
+		padding  = 0p
+		rpadding = 0p
+
+	</plot>
+
+
+
+	# -----------------------------------------------------------
+	# Amp 1_4+
+	<plot>
+
+		type = histogram
+		file = CANCER.amp1_4.circos
+		r0   = 0.525r
+		r1   = 0.975r
+		min  = 0
+		max  = 1
+		color = vlgreen
+		fill_color = vlgreen
+		glyph = circle
+
+		<axes>
+			<axis>
+				color     = vlgreen
+				thickness = 1
+				spacing   = 0.10r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlgreen_a5
+			</background>
+		</backgrounds>
+	</plot>
+
+	# -----------------------------------------------------------
+	# Gene Labels (PART 2)
+	<plot>
+		type             = text
+		color            = black
+		file             = CANCER.genes.circos
+
+		r0   = 0.500r
+		r1   = 0.975r
+
+		show_links     = no
+
+		label_size   = 70p
+		label_snuggle=yes
+		max_snuggle_distance            = 4r
+
+		padding  = 0p
+		rpadding = 188p
+
+	</plot>
+
+	# -----------------------------------------------------------
+	# Amp 2+
+	<plot>
+		type = histogram
+		file = CANCER.amp2_0.circos
+		r0   = 0.525r
+		r1   = 0.975r
+		min  = 0
+		max  = 1
+		color = dgreen
+		fill_color = green
+		glyph = circle
+	</plot>
+
+
+	# -----------------------------------------------------------
+	# Amp 3+
+	<plot>
+		type = histogram
+		file = CANCER.amp3_0.circos
+		r0   = 0.525r
+		r1   = 0.975r
+		min  = 0
+		max  = 1
+		color = orange
+		fill_color = orange
+		glyph = circle
+	</plot>
+
+	# -----------------------------------------------------------
+	# LOH
+	<plot>
+
+		type = histogram
+		file = CANCER.loh.circos
+		r0   = 0.050r
+		r1   = 0.500r
+		min  = -1
+		max  = 0
+		color = blue
+		fill_color = blue
+		glyph = circle
+
+		<axes>
+			<axis>
+				color     = vlblue
+				thickness = 1
+				spacing   = 0.1r
+			</axis>
+		</axes>
+
+		<backgrounds>
+			<background>
+				color = vlblue_a5
+			</background>
+		</backgrounds>
+	</plot>
+
+	# -----------------------------------------------------------
+	# Dels
+	<plot>
+
+		type = histogram
+		file = CANCER.reldel.circos
+		r0   = 0.050r
+		r1   = 0.500r
+		min  = -1
+		max  = 0
+		color = dblue
+		fill_color = dblue
+		glyph = circle
+	</plot>
+
+	# -----------------------------------------------------------
+	# Dels
+	<plot>
+
+		type = histogram
+		file = CANCER.absdel.circos
+		r0   = 0.050r
+		r1   = 0.500r
+		min  = -1
+		max  = 0
+		color = red
+		fill_color = red
+		glyph = circle
+	</plot>
+
+
+
+</plots>
+
+
+<<include etc/housekeeping.conf>>
