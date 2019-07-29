@@ -319,6 +319,17 @@ clonalityDrivers2 = hpcDriversByGene %>%
   group_by(purityBucket) %>%
   summarise(subclonalLikelihood = sum(driverLikelihood * subclonalLikelihood), driverLikelihood = sum(driverLikelihood), subclonalPercentage = subclonalLikelihood / driverLikelihood)
 
+display_purity_bucket <- function(purityBucket) {
+  purityBucket = as.character(purityBucket)
+  
+  for (i in 1:length(purityBucket)) {
+    n = paste0('(n=',samplesPerPurityBucket[samplesPerPurityBucket$purityBucket == purityBucket[i], ] %>% pull(n), ')')
+    purityBucket[i] = paste0(purityBucket[i], " ", n)
+  }
+  return (purityBucket)
+}
+
+
 p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) + 
   geom_bar(fill = singleBlue, stat = "identity") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
@@ -334,8 +345,9 @@ p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
   theme(legend.position="none", axis.title = element_text(size=5)) +
-  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  theme(axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  scale_x_discrete(labels = display_purity_bucket(sort(unique(clonalityLoad2$purityBucket))))+
   coord_flip() 
 
 p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
@@ -343,7 +355,7 @@ p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercent
   xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
   scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
   theme(legend.position="none", axis.title = element_text(size=5)) +
-  theme( axis.ticks=element_blank()) +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip()
 
@@ -358,13 +370,10 @@ p4 = ggplot(data = detectablePloidyDf, aes(x = purityBucket, y = ploidy)) +
   coord_flip()
 p4
 
-pClonality = plot_grid(p1,p2, p3, p4, ncol = 2, labels="auto", label_size = 8)
+pClonality = plot_grid(p2, p3, p4, nrow = 1, labels="auto", label_size = 8)
 pClonality
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.pdf", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.eps", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 140, height = 80, units = "mm", dpi = 300)
 
 ########################################### Extended Figure 1c - Coverage
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
