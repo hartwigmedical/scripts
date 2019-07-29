@@ -123,15 +123,18 @@ germlineDriverData = germlineDriverCatalog %>%
 driverData = hpcDriversByGene %>% 
   select(sampleId, cancerType, driver, driverLikelihood) %>%
   bind_rows(germlineDriverData) %>%
-  mutate(driver = as.character(driver), 
-         driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
-         driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
-         driver = factor(driver, simplifiedDrivers)
+  mutate(
+    driver = as.character(driver), 
+    driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
+    driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
+    driver = factor(driver, simplifiedDrivers)
   ) %>%
   group_by(driver, cancerType) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType") %>%
   mutate(driversPerSample = driverLikelihood / N) %>%
+  ungroup() %>%
+  mutate(cancerType = paste0(cancerType, " (n=", N,")")) %>%
   arrange(-driversPerSample)
 
 driverDataLevels = driverData %>% 
@@ -145,11 +148,13 @@ driverData = driverData %>%
   mutate(percentage = driversPerSample / sum(driversPerSample))
 
 driverViolinData = hpcDriversByGene %>%
+  left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType") %>%
+  mutate(cancerType = paste0(cancerType, " (n=", N,")")) %>%
   group_by(cancerType, sampleId) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   ungroup() %>%
   mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
-driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(sampleId,cancerType,cancerSubtype),by=c('sampleId','cancerType'),all=T) 
+#driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(sampleId,cancerType,cancerSubtype),by=c('sampleId','cancerType'),all=T) 
 driverViolinData$driverLikelihood = driverViolinData$driverLikelihood %>% replace_na(0)
 
 p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
@@ -168,18 +173,18 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
         plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
-  geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
+  geom_bar(stat = "identity", aes(fill = driver), width=0.9) +
   scale_fill_manual(values = simplifiedDriverColours) +
   xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
   coord_flip() + 
   theme(axis.text=element_text(size=5),axis.title=element_text(size=5), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"),
-        plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
+        plot.margin = margin(t = 3, b = 0, l = 0, r = 0, unit = "pt"))
 
-pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "auto", label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 60, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(3,3), labels = "auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 50, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
 
 
 #pDriverPerSample
