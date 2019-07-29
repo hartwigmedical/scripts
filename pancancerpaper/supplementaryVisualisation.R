@@ -22,6 +22,7 @@ load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
+hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n())
 
 simplifiedDrivers = c("Amplification","Deletion","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d", "#dfc27d")
@@ -33,6 +34,14 @@ g_legend <- function(a.gplot){
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
+
+display_cancer_types <- function(cancerTypes) {
+  for (i in 1:length(cancerTypes)) {
+    n = paste0('(n=',hpcCancerTypeCounts[hpcCancerTypeCounts$cancerType == cancerTypes[i], ] %>% pull(N), ')')
+    cancerTypes[i] = paste0(cancerTypes[i], " ", n)
+  }
+  return (cancerTypes)
+}
 
 
 ########################################### Figure 2 - WGD
@@ -578,12 +587,11 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
         axis.ticks = element_blank()) +
   #theme(panel.border = element_blank(),axis.ticks = element_blank()) +
   #theme(legend.position = "bottom") +
-  guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
+  guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50)) + 
+  scale_x_discrete(labels= display_cancer_types(cancerTypeFactors))
 pTile  
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 
 ########################################### Extended Figure 7
 
