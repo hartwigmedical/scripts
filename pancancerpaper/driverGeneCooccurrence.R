@@ -269,6 +269,18 @@ load(file = "~/hmf/RData/Processed/allGenePairProbs.RData")
 #new = allGenePairProbs %>% filter(QValue<qValueThreshold, GeneChr1!=GeneChr2)
 #save(new, old, file = "~/hmf/RData/Processed/driverCoorcurrenceDiff.RData")
 
+load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
+highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
+hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n())
+display_cancer_types <- function(cancerTypes) {
+  for (i in 1:length(cancerTypes)) {
+    n = paste0('(n=',hpcCancerTypeCounts[hpcCancerTypeCounts$cancerType == cancerTypes[i], ] %>% pull(N), ')')
+    cancerTypes[i] = paste0(cancerTypes[i], " ", n)
+  }
+  return (cancerTypes)
+}
+
+
 qValueThreshold = 0.05
 cooccurenceData = allGenePairProbs %>% 
   filter(QValue<qValueThreshold, GeneChr1!=GeneChr2) %>%
@@ -299,7 +311,7 @@ p2 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
   geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
   geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
-  scale_color_manual(values = cancerTypeColours) +
+  scale_color_manual(values = cancerTypeColours, labels = display_cancer_types) +
   scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-11, 1e-12), limits = c(1e-1,1e-6), position = "top") +
   scale_y_continuous(limits = c(-2,0), breaks = c(0), expand = c(0,0)) +
   theme(legend.position = "bottom", legend.title = element_blank()) + ggtitle(" ") + ylab("") +
@@ -309,6 +321,7 @@ p2 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   #theme(panel.background = element_rect(fill = "#fff5eb"))+
   coord_flip()
 
+p2
 
 g_legend <- function(a.gplot){
   tmp <- ggplot_gtable(ggplot_build(a.gplot))
@@ -351,6 +364,5 @@ p4 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
 pMain = plot_grid(p3, p4, p2, p1, nrow = 2, ncol = 2, rel_heights = c(1, 6))
 pCooccurence = plot_grid(pMain, legend, ncol = 1, rel_heights = c(7, 1), labels = c("a"), label_size = 8)
 pCooccurence
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.pdf", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.png", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 10.eps", pCooccurence, width = 89, height = 180, units = "mm", dpi = 300)
+
