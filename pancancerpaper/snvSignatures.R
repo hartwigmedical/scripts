@@ -1,13 +1,16 @@
 library(devtools)
 library(purple); # for multiplot
 library(data.table)
-library(dplyr)
-library(tidyr)
 library(stringi)
 library(MutationalPatterns)
 library(ggplot2)
 library(cowplot)
-theme_set(theme_bw() + theme(axis.text=element_text(size=5),axis.title=element_text(size=7),legend.text = element_text(size=5)))
+library(dplyr)
+library(tidyr)
+library(scales)
+theme_set(theme_bw() + theme(axis.text=element_text(size=5),axis.title=element_text(size=5),legend.text = element_text(size=5)))
+
+
 
 snvDpSampleSigData = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleSigData.csv')
 snvDpSampleCounts = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpSampleCounts.csv')
@@ -16,6 +19,17 @@ snvDpMatrixData = read.csv('/Users/jon/hmf/RData/SIgnatures/snvDpMatrixData.csv'
 cosmicSigs = read.csv('/Users/jon/hmf/RData/SIgnatures/cosmicSigs.csv')
 
 load('~/hmf/RData/processed/highestPurityCohortSummary.RData')
+hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n())
+display_cancer_types <- function(cancerTypes) {
+  for (i in 1:length(cancerTypes)) {
+    n = paste0('(n=',hpcCancerTypeCounts[hpcCancerTypeCounts$cancerType == cancerTypes[i], ] %>% pull(N), ')')
+    cancerTypes[i] = paste0(cancerTypes[i], " ", n)
+  }
+  return (cancerTypes)
+}
+
+
+
 sampleCancerTypes = highestPurityCohortSummary %>% select(SampleId=sampleId,CancerType=cancerType)
 
 snvDpSampleSigData = merge(snvDpSampleSigData, sampleCancerTypes,by.x="SampleId",by.y="SampleId",all.x=T)
@@ -72,7 +86,8 @@ cancerSampleSigSummary = cancerSampleSigSummary %>%
 residualsSummary = (snvDpSampleSigData %>% group_by(SampleId,CancerType) 
                     %>% summarise(SampleTotal=first(SampleTotal), 
                                   ResidualTotal=round(sum(ifelse(SigName=='Excess',-Count,ifelse(SigName=='Unalloc',Count,0))),0))
-                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4))) 
+                    %>% mutate(ResidualPerc=round(ResidualTotal/SampleTotal,4))) %>%
+  filter(!is.na(CancerType))
 
 sampleIdMap = read.csv(file = "/Users/jon/hmf/secure/SampleIdMap.csv", stringsAsFactors = F)
 worstSamples = c('HMF001562A','HMF002896A') # these are the 2 SYD985 samples
@@ -103,7 +118,8 @@ p1 = ggplot(cancerSampleSigSummary %>% filter(SamplesWithSig>0), aes(x=CancerTyp
         theme(legend.position = "top") +
         #scale_x_discrete(position = 'top') + 
         ylab("Signature") + 
-        guides(color = guide_colourbar(title.vjust = 0.5, title.position = "left", nrow = 2, barheight = unit(4, "pt"), barwidth = unit(50, "pt")))  
+        guides(color = guide_colourbar(title.vjust = 0.5, title.position = "left", nrow = 2, barheight = unit(4, "pt"), barwidth = unit(50, "pt"))) + 
+    scale_x_discrete(labels= display_cancer_types(sort(unique(cancerSampleSigSummary$CancerType))))
     #labs(size="Proportion of Samples with Signature")
       
 
@@ -140,7 +156,8 @@ p3 = plot_96_profile(worstSamplesMatrixData) + xlab("") +
 p4 = plot_grid(p1, p2, ncol = 1, align = "v", labels = "auto", rel_heights =  c(4, 1), label_size= 8)
 p5 = plot_grid(p4, p3, labels = c("", "c"), rel_heights = c(4, 1.2), ncol = 1, label_size= 8)
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.pdf", p5, width = 183, height = 217, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.jpg", p5, width = 183, height = 217, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.pdf", p5, width = 183, height = 217, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.png", p5, width = 183, height = 217, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.eps", p5, width = 183, height = 217, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 3.eps", p5, width = 183, height = 217, units = "mm", dpi = 300)
 
