@@ -90,13 +90,14 @@ echo "# SampleCount = ${hmfCount}"   >> ${logFile}
 echo "#   DataCount = ${sbpCount}"   >> ${logFile}
 
 ## stdout msg
+pdfName="${submission}_${pName}.pdf"
 echo "[INFO] View Log:"
 echo " cat ${logFile}"
 echo "[INFO] Inspect output files:"
 echo " cat ${lmsFile}"
 echo " cat ${samFile}"
 echo " cat ${runFile}"
-echo "[INFO] Or get reporting info:"
+echo "[INFO] Or get reporting info (for ${pdfName}):"
 echo " cat ${repFile} | cut -f1 --complement"
 echo "[INFO] If you finish the submission then please also chown:"
 echo " sudo chown -R root:root ${outPath}"
