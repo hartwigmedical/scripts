@@ -23,6 +23,8 @@ load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
 hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n())
+hpcCancerTypeCounts = bind_rows(hpcCancerTypeCounts, data.frame(cancerType = "Pan Cancer", N = sum(hpcCancerTypeCounts$N)))
+
 
 simplifiedDrivers = c("Amplification","Deletion","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d", "#dfc27d")
@@ -103,9 +105,7 @@ pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/All.png")
 #pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
 pabc = plot_grid(pa, pWGD, nrow = 1, labels = c("a", ""), rel_widths = c(65, 35), label_size = 8)
 ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 100, height = 65, units = "mm", dpi = 300)
-
-
-#ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 100, height = 65, units = "mm", dpi = 300)
 
 
 #convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
@@ -193,7 +193,8 @@ p2 = ggplot(driverData, aes(cancerType, percentage)) +
 
 pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(3,3), labels = "auto", label_size = 8)
 ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 50, units = "mm", dpi = 300)
-#ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 50, units = "mm", dpi = 300)
+
 
 
 #pDriverPerSample
