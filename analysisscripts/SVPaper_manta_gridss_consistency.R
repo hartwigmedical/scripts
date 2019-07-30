@@ -20,43 +20,55 @@ for (manta_file in list.files(path=data_dir, pattern="*.manta.vcf.gz", full.name
   write(paste("Processing", sample), stderr())
   gridss_file = str_replace(manta_file, ".manta.vcf.gz", "T.gridss.somatic.vcf.gz")
   purple_file = str_replace(manta_file, ".manta.vcf.gz", "T.purple.sv.ann.vcf.gz")
-  bpgr = c(bpgr,
+  bpgr = c(
     ann_caller_sample(manta_file, "manta", sample, breakpointRanges),
     ann_caller_sample(gridss_file, "gridss", sample, breakpointRanges),
-    ann_caller_sample(purple_file, "purple", sample, breakpointRanges))
-  begr = c(begr,
+    ann_caller_sample(purple_file, "purple", sample, breakpointRanges),
+    bpgr)
+  begr = c(
     ann_caller_sample(gridss_file, "gridss", sample, breakendRanges),
-    ann_caller_sample(purple_file, "purple", sample, breakendRanges))
+    ann_caller_sample(purple_file, "purple", sample, breakendRanges),
+    begr)
 }
-hits_by_caller = function(bpgr) {
-  bpgr$hits = 0
+hits_by_caller = function(bpgr, countFunction) {
+  bpgr$hits = rep(0, length(bpgr))
   for (caller in unique(bpgr$caller)) {
     callergr = bpgr[bpgr$caller == caller]
-    for (sample in unique(callergr$sample)) {
-      hits = bpgr$hits[bpgr$caller == caller & bpgr$sample == sample]
-      for (otherSample in unique(callergr$sample)) {
-        if (sample != otherSample) {
-          hits = hits + (countBreakpointOverlaps(
-              bpgr[bpgr$caller == caller & bpgr$sample == sample],
-              bpgr[bpgr$caller == caller & bpgr$sample == otherSample]) > 0)
+    if (length(callergr) > 0) {
+      for (sample in unique(callergr$sample)) {
+        isCurrent = bpgr$caller == caller & bpgr$sample == sample
+        if (any(isCurrent)) {
+          hits = bpgr$hits[isCurrent]
+          for (otherSample in unique(callergr$sample)) {
+            if (sample != otherSample) {
+              othergr = bpgr[bpgr$caller == caller & bpgr$sample == otherSample]
+              hits = hits + (countFunction(bpgr[isCurrent], othergr) > 0)
+            }
+          }
+          bpgr$hits[isCurrent] = hits
         }
       }
-      bpgr$hits[bpgr$caller == caller & bpgr$sample == sample] = hits
     }
   }
   return(bpgr)
 }
 passingbpgr = bpgr[bpgr$FILTER == "PASS"]
-bpna12878 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("GIABvsSELFv001", "GIABvsSELFv002", "GIABvsSELFv003")])
-bpcolo829 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("COLO829v001", "COLO829v002", "COLO829v003")])
+bpna12878 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("GIABvsSELFv001", "GIABvsSELFv002", "GIABvsSELFv003")], countBreakpointOverlaps)
+bpcolo829 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("COLO829v001", "COLO829v002", "COLO829v003")], countBreakpointOverlaps)
+passingbegr = begr[begr$FILTER == "PASS"]
+passingbegr$partner = NA_character_
+bena12878 = hits_by_caller(passingbegr[passingbegr$sample %in% c("GIABvsSELFv001", "GIABvsSELFv002", "GIABvsSELFv003")], countOverlaps)
+becolo829 = hits_by_caller(passingbegr[passingbegr$sample %in% c("COLO829v001", "COLO829v002", "COLO829v003")], countOverlaps)
+grna12878 = c(bpna12878, bena12878)
+grcolo829 = c(bpcolo829, becolo829)
 
-summary_na12878 = bpna12878 %>% data.frame() %>%
+summary_na12878 = grna12878 %>%
     group_by(caller, hits) %>%
     summarise(n=n()) %>%
     mutate(
       called_in_samples=hits + 1,
       events=n / called_in_samples)
-summary_colo829 =  bpcolo829 %>% data.frame() %>%
+summary_colo829 = grcolo829 %>%
   group_by(caller, hits) %>%
   summarise(n=n()) %>%
   mutate(
@@ -84,11 +96,28 @@ ggplot_sample_consistency = function(df) {
   )
 }
 
-ggplot_sample_consistency(bpna12878) +
+ggplot_sample_consistency(grna12878) +
   labs(title="NA12878 vs self", fill="Called in ", y="Calls")
 figsave("manta_vs_gridss_na12878", width=8, height=5)
 
-ggplot_sample_consistency(bpcolo829) +
+ggplot_sample_consistency(grcolo829) +
   labs(title="COLO829 Consistency", fill="Called in ", y="Calls")
 figsave("manta_vs_gridss_colo829", width=8, height=5)
+
+ggplot(passingbpgr %>%
+    as.data.frame(row.names=NULL) %>%
+    mutate(precise=end - start - passingbpgr$HOMLEN == 0) %>%
+    group_by(caller, sample) %>%
+    filter(
+      sample %in% c("COLO829v001", "COLO829v002", "COLO829v003") &
+      caller %in% c("manta", "purple")) %>%
+    ungroup() %>%
+    mutate(caller=ifelse(caller=="purple", "gridss", caller)) %>%
+    group_by(caller) %>%
+    summarise(prec=sum(precise)/n())) +
+  aes(x=caller, y=prec) +
+  geom_bar(stat="identity") +
+  scale_y_continuous(labels = percent_format()) +
+  labs(title="COLO829", x="", y="Base pair precise")
+figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 

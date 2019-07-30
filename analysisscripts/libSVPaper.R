@@ -1,9 +1,11 @@
 library(GenomicRanges)
 library(tidyverse)
 library(stringr)
+library(ggplot2)
 library(grid)
 library(gridExtra)
 library(cowplot)
+library(scales)
 library(RMySQL)
 
 # Paper common
