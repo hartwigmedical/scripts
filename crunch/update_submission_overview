@@ -1,0 +1,29 @@
+#!/bin/bash
+
+YYMMDD=$( date '+%y%m%d' )
+taskId="updateSubmissionOverview"
+
+srcDir="/data/submissions"
+nasLoc="/volume1/web/overviews/submissions"
+reportsSource="/volume1/machines/BFX/dataReports"
+reportsTarget="/volume1/web/overviews/submissions/pdf_reports"
+reportsTargetDs="/data/submissions/overview/pdf_reports"
+
+## Sanity checks
+if [[ ! -d ${srcDir} ]]; then echo "[EXIT] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+
+## Action
+echo "[INFO] START with ${taskId} ($YYMMDD)"
+echo "[INFO]   Listing all submissions in $srcDir" 
+dirsToSync=$( find ${srcDir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$" )
+
+echo "[INFO]   Syncing logs from datastore to NAS intranet (to ${nasLoc})"
+rsync -ah --exclude "*/data/" --include "*/" --include "*.txt" --include *README --exclude "*" ${dirsToSync} "nas:${nasLoc}"
+
+echo "[INFO]   Syncing pdfs from NAS share to NAS intranet (to ${reportsTarget})"
+ssh nas "rsync -ah --include '*.pdf' --exclude '*' ${reportsSource}/ ${reportsTarget}/"
+
+echo "[INFO]   Syncing pdfs from NAS share to Datastore (to ${reportsTargetDs})"
+rsync -trh --include '*.pdf' --exclude '*' "nas:${reportsSource}/" "${reportsTargetDs}/"
+
+echo "[INFO] DONE with ${taskId}"
