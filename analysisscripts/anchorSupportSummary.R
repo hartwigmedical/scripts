@@ -66,30 +66,28 @@ asm_links = asm_linked_breakends %>%
   group_by(sampleid, beid1, beid2) %>%
   summarise(linkedBy=paste0(linkedBy, collapse=","))
 
-maxdistance=2000
-anchor_df = data.frame(sampleId=unique(gr$sampleid)) %>%
-  group_by(sampleId) %>% do({
-    sgr = gr[gr$sampleid==.$sampleId]
-    hitdf = findOverlaps(sgr, sgr, maxgap=maxdistance, ignore.strand=TRUE) %>%
-      as.data.frame() %>%
-      filter(
-        sgr$id[queryHits] != sgr$id[subjectHits],
-        as.logical(strand(sgr)[queryHits] == "-"),
-        as.logical(strand(sgr)[subjectHits] == "+"),
-        start(sgr)[queryHits] <= start(sgr)[subjectHits]) %>%
-      mutate(
-        beid1=sgr$beid[queryHits],
-        beid2=sgr$beid[subjectHits],
-        distance=abs(start(sgr[queryHits])-start(sgr[subjectHits])),
-        anchorSupportDistance1=sgr$anchorSupportDistance[queryHits],
-        anchorSupportDistance2=sgr$anchorSupportDistance[subjectHits]) %>%
-      dplyr::select(-queryHits, -subjectHits)
-    hitdf
-  })
+maxdistance=1000
+anchor_df = findOverlaps(gr, gr, maxgap=maxdistance, ignore.strand=TRUE) %>%
+  as.data.frame() %>%
+  filter(
+    gr$id[queryHits] != gr$id[subjectHits],
+    gr$sampleid[queryHits] == gr$sampleid[subjectHits],
+    as.logical(strand(gr)[queryHits] == "-"),
+    as.logical(strand(gr)[subjectHits] == "+"),
+    start(gr)[queryHits] <= start(gr)[subjectHits]) %>%
+  mutate(
+    beid1=gr$beid[queryHits],
+    beid2=gr$beid[subjectHits],
+    distance=abs(start(gr[queryHits])-start(gr[subjectHits])),
+    anchorSupportDistance1=gr$anchorSupportDistance[queryHits],
+    anchorSupportDistance2=gr$anchorSupportDistance[subjectHits]) %>%
+  dplyr::select(-queryHits, -subjectHits)
+
 
 adj_df = anchor_df %>%
   left_join(asm_links, by=c("sampleId"="sampleid", "beid1"="beid1", "beid2"="beid2")) %>%
-  mutate(is_asm_linked=!is.na(linkedBy))
+  mutate(is_asm_linked=!is.na(linkedBy)) %>%
+  mutate(phasing=ifelse(is_asm_linked, "cis", ifelse(pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10, "trans", "unphased")))
 
 
 ggplot(adj_df %>% filter(is_asm_linked)) +
@@ -104,6 +102,17 @@ ggplot() +
   scale_x_continuous(limits=c(0, 600))
 
 
+ggplot() +
+  aes(x=distance, y=pmax(anchorSupportDistance1, anchorSupportDistance2), colour=is_asm_linked) +
+  geom_point(data=adj_df %>% filter(!is_asm_linked) %>% sample_frac(size=0.1), colour="red", size=0.1) +
+  geom_point(data=adj_df %>% filter(is_asm_linked), colour="blue", size=0.1) +
+  scale_x_continuous(limits=c(0, 600))
+
+
+ggplot(adj_df) +
+  aes(x=distance, fill=phasing) +
+  geom_histogram(bin=30) +
+  scale_x_continuous(limits = c(0, 800))
 
 
 
