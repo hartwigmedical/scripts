@@ -24,7 +24,7 @@ locate_pipeline_v5_database_credentials() {
 
 ##################################### JARS #####################################
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.31/purple.jar
+    echo ${base_path}/tools/purple_v2.32/purple.jar
 }
 
 locate_pilot_purple() {
