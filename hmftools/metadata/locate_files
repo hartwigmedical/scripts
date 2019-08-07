@@ -75,16 +75,6 @@ locate_sage_somatics() {
     echo ${somatic_vcf}
 }
 
-locate_pv5_somatic_variants() {
-    local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/somatic_caller/ -type f -name *post_processed.vcf.gz)
-    if [ -z ${somatic_vcf} ]; then
-        echo "[ERROR] Unable to locate Pv5 somatic variants. Exiting." >&2
-        exit 1
-    fi
-    echo ${somatic_vcf}
-}
-
 locate_purple_somatics() {
     local run_dir=$1
     local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
@@ -314,21 +304,11 @@ locate_gridss_structural_variants() {
     if [ -z ${structural_vcf} ]; then
         structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting." >&2
-			exit 1
-		fi
-    fi
-    echo ${structural_vcf}
-}
-
-locate_pv5_gridss_structural_variants() {
-    local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/structural_caller/breakpoint_position_backport/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        structural_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.vcf.gz")
-		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate Pv5 GRIDSS structural variants. Exiting." >&2
-			exit 1
+			structural_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.vcf.gz")
+			if [ -z ${structural_vcf} ]; then
+				echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting." >&2
+				exit 1
+			fi
 		fi
     fi
     echo ${structural_vcf}
@@ -339,16 +319,6 @@ locate_gridss_recovery_candidates() {
     local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
     if [ -z ${sv_recovery_vcf} ]; then
         echo "[ERROR] Unable to locate GRIDSS sv recovery candidates. Exiting." >&2
-        exit 1
-    fi
-    echo ${sv_recovery_vcf}
-}
-
-locate_pv5_gridss_recovery_candidates() {
-    local run_dir=$1
-    local sv_recovery_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    if [ -z ${sv_recovery_vcf} ]; then
-        echo "[ERROR] Unable to locate Pv5 GRIDSS sv recovery candidates. Exiting." >&2
         exit 1
     fi
     echo ${sv_recovery_vcf}
