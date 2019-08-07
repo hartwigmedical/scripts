@@ -49,7 +49,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 joint_sample_name=$(load_joint_name_from_metadata ${run_dir})
 
 gridss_dir=${run_dir}/structuralVariants/gridss/${joint_sample_name}
-if [ -d ${gridss_dir} ]; then
+if [ ! -d ${gridss_dir} ]; then
     # Support for pv5 location
     gridss_dir=${run_dir}/structural_caller
 fi
