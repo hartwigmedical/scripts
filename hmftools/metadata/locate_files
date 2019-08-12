@@ -24,7 +24,7 @@ locate_pipeline_v5_database_credentials() {
 
 ##################################### JARS #####################################
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.31/purple.jar
+    echo ${base_path}/tools/purple_v2.32/purple.jar
 }
 
 locate_pilot_purple() {
@@ -71,16 +71,6 @@ locate_sage_somatics() {
             echo "[ERROR] Unable to locate somatic variants. Exiting." >&2
             exit 1
         fi
-    fi
-    echo ${somatic_vcf}
-}
-
-locate_pv5_somatic_variants() {
-    local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/somatic_caller/ -type f -name *post_processed.vcf.gz)
-    if [ -z ${somatic_vcf} ]; then
-        echo "[ERROR] Unable to locate Pv5 somatic variants. Exiting." >&2
-        exit 1
     fi
     echo ${somatic_vcf}
 }
@@ -314,19 +304,12 @@ locate_gridss_structural_variants() {
     if [ -z ${structural_vcf} ]; then
         structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
 		if [ -z ${structural_vcf} ]; then
-			echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting." >&2
-			exit 1
+			structural_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.vcf.gz")
+			if [ -z ${structural_vcf} ]; then
+				echo "[ERROR] Unable to locate GRIDSS structural variants. Exiting." >&2
+				exit 1
+			fi
 		fi
-    fi
-    echo ${structural_vcf}
-}
-
-locate_pv5_gridss_structural_variants() {
-    local run_dir=$1
-	local structural_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-    	echo "[ERROR] Unable to locate Pv5 GRIDSS structural variants. Exiting." >&2
-		exit 1
     fi
     echo ${structural_vcf}
 }
@@ -341,23 +324,13 @@ locate_gridss_recovery_candidates() {
     echo ${sv_recovery_vcf}
 }
 
-locate_pv5_gridss_recovery_candidates() {
-    local run_dir=$1
-    local sv_recovery_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    if [ -z ${sv_recovery_vcf} ]; then
-        echo "[ERROR] Unable to locate Pv5 GRIDSS sv recovery candidates. Exiting." >&2
-        exit 1
-    fi
-    echo ${sv_recovery_vcf}
-}
-
 ########################################### Bachelor ##########################################
 
 locate_bachelor_germline_variants() {
     local run_dir=$1
     local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*_germline_variants.csv")
     if [ -z ${bachelor_csv} ]; then
-        local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "*_bachelor_output.csv")
+        local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_output.csv")
         local bachelor_found_nothing=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_found_no_variants")
         if [ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]; then
             echo "[ERROR] Unable to locate any bachelor output. Exiting." >&2

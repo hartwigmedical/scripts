@@ -316,8 +316,11 @@ load(file = "~/hmf/analysis/cohort/reference/geneCopyNumberDels.RData")
 load(file = "~/hmf/analysis/cohort/reference/driverCatalog.RData")
 load(file = "~/hmf/RData/Processed/fragileGenes.RData")
 load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
-load("~/hmf/analysis/cohort/hpcCopyNumbers.RData")
+#load("~/hmf/analysis/cohort/hpcCopyNumbers.RData")
 load("~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
+
+geneCopyNumberDels = geneCopyNumberDels %>% 
+  mutate(length = minRegionEnd - minRegionStart + 1)
 
 reportableDels = genePanel %>% filter(reportableDel) %>% select(gene, reportablePointMutation) %>%
     left_join(canonicalTranscripts %>% select(gene, chromosome, geneStart, geneEnd, codingBases), by = "gene") %>%
@@ -334,19 +337,19 @@ pointMutations = driverCatalog %>%
     spread(driver, driverLikelihood, fill = 0)
 
 
-hpcDels = hpcCopyNumbers %>% filter(copyNumber <= 0.5)
-hpcDelRanges = GRanges(hpcDels$chromosome, IRanges(hpcDels$start, hpcDels$end))
-geneRanges = GRanges(reportableDels$chromosome, IRanges(reportableDels$geneStart, reportableDels$geneEnd))
-ol = as.matrix(findOverlaps(hpcDelRanges, geneRanges, type="any", select="all"))
+#hpcDels = hpcCopyNumbers %>% filter(copyNumber <= 0.5)
+#hpcDelRanges = GRanges(hpcDels$chromosome, IRanges(hpcDels$start, hpcDels$end))
+#geneRanges = GRanges(reportableDels$chromosome, IRanges(reportableDels$geneStart, reportableDels$geneEnd))
+#ol = as.matrix(findOverlaps(hpcDelRanges, geneRanges, type="any", select="all"))
 
-hpcDelsInGenes = hpcDels[ol[, 1], ]
-hpcDelsInGenes$gene <- reportableDels[ol[,2], ]$gene
-hpcDelsInGenes$fragile <- reportableDels[ol[,2],]$fragile
-hpcDelsInGenes$hmfDeletion <- reportableDels[ol[,2],]$hmfDeletion
-hpcDelsInGenes$status <- reportableDels[ol[,2],]$status
-hpcDelsInGenes = hpcDelsInGenes %>% mutate(length = end - start + 1) %>% filter(length > 0)
+#hpcDelsInGenes = hpcDels[ol[, 1], ]
+#hpcDelsInGenes$gene <- reportableDels[ol[,2], ]$gene
+#hpcDelsInGenes$fragile <- reportableDels[ol[,2],]$fragile
+#hpcDelsInGenes$hmfDeletion <- reportableDels[ol[,2],]$hmfDeletion
+#hpcDelsInGenes$status <- reportableDels[ol[,2],]$status
+#hpcDelsInGenes = hpcDelsInGenes %>% mutate(length = end - start + 1) %>% filter(length > 0)
 
-geneCopyNumberDels = geneCopyNumberDels %>% mutate(length = minRegionEnd - minRegionStart + 1)
+
 
 del_lengths <- function(hpcDelsInGenes) {
     result = data.frame()
@@ -365,8 +368,8 @@ del_counts <- function(hpcDelsInGenes) {
 }
 
 
-lengths = del_lengths(hpcDelsInGenes)
-counts = del_counts(hpcDelsInGenes)
+lengths = del_lengths(geneCopyNumberDels)
+counts = del_counts(geneCopyNumberDels)
 delSummary =reportableDels %>%
     left_join(lengths, by = "gene") %>%
     left_join(counts, by = "gene") %>%
@@ -377,42 +380,37 @@ save(delSummary, file = "~/hmf/analysis/cohort/processed/delSummary.RData")
 
 View(delSummary %>% filter(reportablePointMutation!=0,delDriverLikelihood+mutationDriverLikelihood>20) %>% mutate(geneLength=geneEnd-geneStart,delProp=round(delDriverLikelihood/(delDriverLikelihood+mutationDriverLikelihood),2)))
 
+geneDelSummary = geneCopyNumberDels %>% group_by(gene) %>% 
+  summarise(delDriverLikelihood = n()) %>%
+  arrange(-delDriverLikelihood) %>%
+  full_join(pointMutations, by = "gene")
+geneDelSummary[is.na(geneDelSummary)] <- 0
+geneDelSummary = geneDelSummary %>% 
+  mutate(
+    geneFactor = factor(gene, levels = geneDelSummary$gene, ordered = T),
+    totalDriverLikelihood = delDriverLikelihood + mutationDriverLikelihood, 
+    delProportion = 7.0 * delDriverLikelihood / (totalDriverLikelihood))
 
-hpcDelsInGenesCount = hpcDelsInGenes %>% group_by(gene, status) %>% count() %>% arrange(-n)
-hpcDelsInGenes = hpcDelsInGenes %>% mutate(geneFactor = factor(gene, levels = hpcDelsInGenesCount$gene, ordered = T))
 
-str(hpcDelsInGenes)
-## VALIDATION
-#jon = hpcDelsInGenes %>% group_by(sampleId, chromosome, start, end) %>% summarise(n = n(), genes = paste0(gene, collapse = ",") ) %>% filter(n > 1)
-#jon2 = hpcDelsInGenes %>% group_by(sampleId, gene) %>% count()  %>% filter(n > 1)
+df = geneCopyNumberDels %>% filter(gene %in% geneDelSummary[1:15,]$gene) %>%
+  mutate(geneFactor = factor(gene, levels = geneDelSummary$gene, ordered = T))
 
-filteredGenes = hpcDelsInGenes %>% filter(gene %in% hpcDelsInGenesCount[1:30, ]$gene)
 plotViolin <- function(df) {
-    singleBlue = "#6baed6"
-
-    geneDelSummary = delSummary %>% filter(gene %in% df$gene) %>% mutate(geneFactor = factor(gene, levels = unique(df$gene))) %>%
-        mutate(delProportion = 7.0 * delDriverLikelihood / (delDriverLikelihood + mutationDriverLikelihood))
-    geneLengths = canonicalTranscripts %>% filter(gene %in% df$gene) %>% mutate(length = geneEnd - geneStart + 1, geneFactor = factor(gene, levels = unique(df$gene)))
-
-    ggplot() +
-        geom_bar(data = geneDelSummary, mapping = aes(geneFactor, delProportion), stat = "identity") +
-        geom_violin(data = df, mapping = aes(geneFactor, length, fill=status), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") +
-        geom_point(data = geneLengths, mapping = aes(geneFactor, length), shape = "cross", size = 5) +
-        geom_point(data = geneLengths, mapping = aes(geneFactor, codingBases), size = 5, shape = 1) +
-        xlab("Gene") + ylab("DelLength") +
-        scale_y_continuous(trans="log10",labels = comma, sec.axis = sec_axis(~.^10))
-    #scale_y_continuous(trans="log10",labels = comma, sec.axis = sec_axis(~. / 1, breaks = c(10, 1000, 100000, 10000000), labels = c("25%", "50%", "75%", "100%")))
-
-    p1 = ggplot() +
-        geom_bar(data = geneDelSummary, mapping = aes(geneFactor, delProportion), stat = "identity", fill = singleBlue) +
-        geom_violin(data = df, mapping = aes(geneFactor, log10(length), fill=status), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") +
-        geom_point(data = geneLengths, mapping = aes(geneFactor, log10(length)), shape = "cross", size = 5) +
-        geom_point(data = geneLengths, mapping = aes(geneFactor, log10(codingBases)), size = 5, shape = 1) +
-        xlab("Gene") + ylab("DelLength") +
-        scale_y_continuous(breaks = c(1,3, 5, 7), labels = c(1, "1,000", "10,000", "10,000,000"), sec.axis = sec_axis(~. / 7, breaks = c(0.25, 0.50, 0.75, 1), labels = c("25%", "50%", "75%", "100%")))
-
-    return (p1)
-
+  singleBlue = "#6baed6"
+  
+  selectedGeneSummary = geneDelSummary %>% filter(gene %in% df$gene) %>%
+    left_join(canonicalTranscripts %>% select(gene, geneStart, geneEnd, codingBases), by = "gene") %>%
+    mutate(length = geneEnd - geneStart + 1)
+  
+  ggplot() +
+    geom_bar(data = selectedGeneSummary, mapping = aes(geneFactor, delProportion), stat = "identity", fill = singleBlue) +
+    geom_violin(data = df, mapping = aes(geneFactor, log10(length)), draw_quantiles = c(0.25, 0.5, 0.75), scale = "area") +
+    geom_point(data = selectedGeneSummary, mapping = aes(geneFactor, log10(length)), shape = "cross", size = 5) +
+    geom_point(data = selectedGeneSummary, mapping = aes(geneFactor, log10(codingBases)), size = 5, shape = 1) +
+    xlab("Gene") + ylab("DelLength") +
+    scale_y_continuous(breaks = c(1,3, 5, 7), labels = c(1, "1,000", "10,000", "10,000,000"), sec.axis = sec_axis(~. / 7, breaks = c(0.25, 0.50, 0.75, 1), labels = c("25%", "50%", "75%", "100%")))
+  
+  return (p1)
 }
 
 fragileGenes = hpcDelsInGenesCount %>% filter(status == "Fragile")

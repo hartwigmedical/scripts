@@ -6,11 +6,6 @@ run_dir=$1 && shift
 gridss_jar=$1 && shift
 threads=$1 && shift
 
-if [[ ! -f ${run_dir}/metadata ]] ; then
-	echo "Missing metadata file in run directory. Aborting" 1>&2
-	exit 1
-fi
-
 if [[ ! -f ${gridss_jar} ]] ; then
 	echo "Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
 	exit 1
@@ -53,7 +48,12 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 joint_sample_name=$(load_joint_name_from_metadata ${run_dir})
 
-gridss_dir=${run_dir}/structuralVariants/gridss/${joint_sample_name}/
+gridss_dir=${run_dir}/structuralVariants/gridss/${joint_sample_name}
+if [ ! -d ${gridss_dir} ]; then
+    # Support for pv5 location
+    gridss_dir=${run_dir}/structural_caller
+fi
+
 gridss_raw_vcf=${gridss_dir}/${joint_sample_name}.gridss.vcf
 gridss_filtered_vcf=${tumor_sample}.gridss.somatic.vcf
 normal_bam=${run_dir}/${ref_sample}/mapping/${ref_sample}_dedup.realigned.bam

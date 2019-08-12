@@ -772,7 +772,7 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
                                                   partner_alt[,5],
                                                   partner_alt[,3],
                                                   ":",
-                                                  partner_pos,
+                                                  format(partner_pos, scientific=FALSE),
                                                   partner_alt[,5],
                                                   str_pad("", stringr::str_length(partner_alt[,6]), pad="N"))), "CharacterList")
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely

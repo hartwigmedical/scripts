@@ -22,6 +22,9 @@ load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
 load("~/hmf/RData/processed/hpcDriversByGene.RData")
 load(file = "~/hmf/RData/Processed/highestPurityCohortSummary.RData")
 highestPurityCohortSummary[is.na(highestPurityCohortSummary)] <- 0
+hpcCancerTypeCounts = highestPurityCohortSummary %>% group_by(cancerType) %>% summarise(N = n())
+hpcCancerTypeCounts = bind_rows(hpcCancerTypeCounts, data.frame(cancerType = "Pan Cancer", N = sum(hpcCancerTypeCounts$N)))
+
 
 simplifiedDrivers = c("Amplification","Deletion","FragileDel","Fusion","Indel","Missense","Multihit","Nonsense","Promoter","Splice", "Synonymous", "Germline")
 simplifiedDriverColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9", "#dfc27d", "#dfc27d")
@@ -33,6 +36,14 @@ g_legend <- function(a.gplot){
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box") 
   legend <- tmp$grobs[[leg]] 
   return(legend)} 
+
+display_cancer_types <- function(cancerTypes) {
+  for (i in 1:length(cancerTypes)) {
+    n = paste0('(n=',hpcCancerTypeCounts[hpcCancerTypeCounts$cancerType == cancerTypes[i], ] %>% pull(N), ')')
+    cancerTypes[i] = paste0(cancerTypes[i], " ", n)
+  }
+  return (cancerTypes)
+}
 
 
 ########################################### Figure 2 - WGD
@@ -94,9 +105,7 @@ pa <- ggdraw() + draw_image("~/hmf/analysis/copyNumberSummary/All.png")
 #pbc = plot_grid(pb, pc, ncol = 1, labels =c("b","c"), label_size = 8)
 pabc = plot_grid(pa, pWGD, nrow = 1, labels = c("a", ""), rel_widths = c(65, 35), label_size = 8)
 ggplot2::ggsave("~/hmf/RPlot/Figure 2.pdf", pabc, width = 100, height = 65, units = "mm", dpi = 300)
-
-
-#ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 183, height = 110, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 2.png", pabc, width = 100, height = 65, units = "mm", dpi = 300)
 
 
 #convert ~/hmf/analysis/copyNumberSummary/CNSB.png  -resize 50%  ~/hmf/analysis/copyNumberSummary/Extended\ Figure\ 3\ -\ CNS\ Small.png
@@ -123,15 +132,18 @@ germlineDriverData = germlineDriverCatalog %>%
 driverData = hpcDriversByGene %>% 
   select(sampleId, cancerType, driver, driverLikelihood) %>%
   bind_rows(germlineDriverData) %>%
-  mutate(driver = as.character(driver), 
-         driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
-         driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
-         driver = factor(driver, simplifiedDrivers)
+  mutate(
+    driver = as.character(driver), 
+    driver = ifelse(substr(driver, 1, 6) == "Fusion", "Fusion", driver),
+    driver = ifelse(driver %in% c("Frameshift","Inframe"), 'Indel', driver),
+    driver = factor(driver, simplifiedDrivers)
   ) %>%
   group_by(driver, cancerType) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType") %>%
   mutate(driversPerSample = driverLikelihood / N) %>%
+  ungroup() %>%
+  mutate(cancerType = paste0(cancerType, " (n=", N,")")) %>%
   arrange(-driversPerSample)
 
 driverDataLevels = driverData %>% 
@@ -145,11 +157,13 @@ driverData = driverData %>%
   mutate(percentage = driversPerSample / sum(driversPerSample))
 
 driverViolinData = hpcDriversByGene %>%
+  left_join(hpcCancerTypeCounts %>% select(cancerType, N), by = "cancerType") %>%
+  mutate(cancerType = paste0(cancerType, " (n=", N,")")) %>%
   group_by(cancerType, sampleId) %>%
   summarise(driverLikelihood = sum(driverLikelihood)) %>%
   ungroup() %>%
   mutate(cancerType = factor(cancerType, driverDataLevels$cancerType))
-driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(sampleId,cancerType,cancerSubtype),by=c('sampleId','cancerType'),all=T) 
+#driverViolinData = merge(driverViolinData,highestPurityCohortSummary %>% select(sampleId,cancerType,cancerSubtype),by=c('sampleId','cancerType'),all=T) 
 driverViolinData$driverLikelihood = driverViolinData$driverLikelihood %>% replace_na(0)
 
 p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) + 
@@ -168,18 +182,19 @@ p1 = ggplot(driverViolinData, aes(cancerType, driverLikelihood)) +
         plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
 
 p2 = ggplot(driverData, aes(cancerType, percentage)) +
-  geom_bar(stat = "identity", aes(fill = driver), width=0.7) +
+  geom_bar(stat = "identity", aes(fill = driver), width=0.9) +
   scale_fill_manual(values = simplifiedDriverColours) +
   xlab("") + ylab("Drivers by variant type") +  
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank(), axis.ticks = element_blank(), axis.text.y = element_blank(), legend.title = element_blank()) +
   scale_y_continuous(labels = percent, expand=c(0.0, 0.0), limits = c(0, 1.01)) +
   coord_flip() + 
   theme(axis.text=element_text(size=5),axis.title=element_text(size=5), legend.text = element_text(size=5), legend.title = element_text(size = 5), legend.key.size = unit(0.2, "cm"),
-        plot.margin = margin(t = 3, b = 0, l = 0, r = 3, unit = "pt"))
+        plot.margin = margin(t = 3, b = 0, l = 0, r = 0, unit = "pt"))
 
-pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(2.5,3), labels = "auto", label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 60, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 89, units = "mm", dpi = 300)
+pDriverPerSample = plot_grid(p1,p2, ncol = 2, rel_widths =  c(3,3), labels = "auto", label_size = 8)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.pdf", pDriverPerSample, width = 89, height = 50, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 4.png", pDriverPerSample, width = 89, height = 50, units = "mm", dpi = 300)
+
 
 
 #pDriverPerSample
@@ -305,6 +320,17 @@ clonalityDrivers2 = hpcDriversByGene %>%
   group_by(purityBucket) %>%
   summarise(subclonalLikelihood = sum(driverLikelihood * subclonalLikelihood), driverLikelihood = sum(driverLikelihood), subclonalPercentage = subclonalLikelihood / driverLikelihood)
 
+display_purity_bucket <- function(purityBucket) {
+  purityBucket = as.character(purityBucket)
+  
+  for (i in 1:length(purityBucket)) {
+    n = paste0('(n=',samplesPerPurityBucket[samplesPerPurityBucket$purityBucket == purityBucket[i], ] %>% pull(n), ')')
+    purityBucket[i] = paste0(purityBucket[i], " ", n)
+  }
+  return (purityBucket)
+}
+
+
 p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) + 
   geom_bar(fill = singleBlue, stat = "identity") +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
@@ -320,8 +346,9 @@ p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
   theme(legend.position="none", axis.title = element_text(size=5)) +
-  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
+  theme(axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
+  scale_x_discrete(labels = display_purity_bucket(sort(unique(clonalityLoad2$purityBucket))))+
   coord_flip() 
 
 p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
@@ -329,7 +356,7 @@ p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercent
   xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
   scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
   theme(legend.position="none", axis.title = element_text(size=5)) +
-  theme( axis.ticks=element_blank()) +
+  theme(axis.text.y=element_blank(), axis.ticks=element_blank()) +
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   coord_flip()
 
@@ -344,13 +371,10 @@ p4 = ggplot(data = detectablePloidyDf, aes(x = purityBucket, y = ploidy)) +
   coord_flip()
 p4
 
-pClonality = plot_grid(p1,p2, p3, p4, ncol = 2, labels="auto", label_size = 8)
+pClonality = plot_grid(p2, p3, p4, nrow = 1, labels="auto", label_size = 8)
 pClonality
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.pdf", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.eps", pClonality, width = 89, height = 89, units = "mm", dpi = 300)
-
+ggplot2::ggsave("~/hmf/RPlot/Extended Figure 11.png", pClonality, width = 140, height = 80, units = "mm", dpi = 300)
 
 ########################################### Extended Figure 1c - Coverage
 load(file = '~/hmf/RData/Processed/highestPurityCohortSummary.RData')
@@ -573,12 +597,11 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
         axis.ticks = element_blank()) +
   #theme(panel.border = element_blank(),axis.ticks = element_blank()) +
   #theme(legend.position = "bottom") +
-  guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50))
+  guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50)) + 
+  scale_x_discrete(labels= display_cancer_types(cancerTypeFactors))
 pTile  
 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.pdf", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.eps", pTile, width = 120, height = 183, units = "mm", dpi = 300)
 
 ########################################### Extended Figure 7
 

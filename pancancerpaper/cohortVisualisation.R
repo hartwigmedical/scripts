@@ -38,12 +38,12 @@ cosmicColours = setNames(cosmicColours, c(1:30))
 
 somaticColours = c("#a6611a","#dfc27d","#80cdc1","#018571")
 somaticColours = setNames(somaticColours, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
-somaticLinetypes = c("solid","dashed","dashed","solid")
+somaticLinetypes = c("solid","longdash","longdash","solid")
 somaticLinetypes = setNames(somaticLinetypes, c("HMF SNV","PCAWG SNV", "PCAWG MNV", "HMF MNV"))
 
 indelSVColours = c("#d01c8b","#f1b6da","#b8e186","#4dac26")
 indelSVColours = setNames(indelSVColours, c("HMF INDEL","PCAWG INDEL", "PCAWG SV", "HMF SV"))
-indelSVLinetypes = c("solid","dashed","dashed","solid")
+indelSVLinetypes = c("solid","longdash","longdash","solid")
 indelSVLinetypes = setNames(indelSVLinetypes, c("HMF INDEL","PCAWG INDEL", "PCAWG SV", "HMF SV"))
 
 singleSubstitutionColours = c("#14B0EF","#060809","#E00714","#BFBEBF","#90CA4B","#E9BBB8")
@@ -263,7 +263,6 @@ p2 = ggplot(agePlotData, aes(NA, ageAtBiopsy)) +
         panel.grid.major.x = element_blank(), panel.grid.minor.y = element_blank(), axis.ticks = element_blank()) +  
   facet_grid(~cancerType, labeller = labeller(cancerType = display_cancer_types)) + 
   theme(panel.spacing = unit(1, "pt"),  plot.margin = margin(t = 1, b = 0, l = 3, r = 3, unit = "pt"))
-p2
 
 p3 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(size = 0.3, aes(SNV,color='HMF SNV',linetype='HMF SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3, aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='HMF SNV'), show.legend = F) +
