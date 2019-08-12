@@ -121,3 +121,32 @@ ggplot(passingbpgr %>%
   labs(title="COLO829", x="", y="Base pair precise")
 figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 
+#
+# Probe validation results
+#
+
+load(paste0(data_dir, "/probeResult.RData"))
+
+
+rbind(
+    probeResult %>% filter(scope!="SharedBoth"),
+    probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
+    probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka")) %>%
+  filter(probeQuality >= 20) %>%
+  filter(!is.na(source)) %>%
+  group_by(source, callset, scope, supported) %>%
+  summarise(n=n()) %>%
+  mutate(category=factor(paste(callset, scope),
+    levels=c("Manta Private", "Gridss SharedManta", "Gridss Private", "Gridss SharedStrelka", "Strelka Private"),
+    labels=c("manta", "gridss+manta", "gridss", "gridss+strelka", "strelka (32bp+)"))) %>%
+ggplot() +
+  aes(x=source, fill=supported, y=n) +
+  geom_bar(stat="identity") +
+  facet_grid(category ~ ., scales="free") +
+  theme_bw() +
+  scale_fill_manual(values=c("#d95f02", "#1b9e77")) +
+  labs(fill="Validated", x="", y="breakpoint calls") +
+  theme(axis.text.x = element_text(angle = 90))
+figsave("probe_results_raw", width=5, height=6)
+
+
