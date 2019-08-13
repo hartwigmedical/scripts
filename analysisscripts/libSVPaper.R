@@ -26,3 +26,5 @@ figsave = function(figureName, ...) {
   ggsave(paste0(figdir, figureName, ".pdf"), ...)
   ggsave(paste0(figdir, figureName, ".png"), ...)
 }
+
+theme_set(theme_bw())
