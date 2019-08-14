@@ -16,6 +16,7 @@ if (!exists("cohort")) load(paste0(dropbox, "/paper/cohort.RData"))
 if (!exists("sva_svs")) sva_svs = read_csv('../../sv/SVA_SVS.csv')
 if (!exists("sva_links")) sva_links = read_csv('../../sv/SVA_LINKS.csv')
 if (!exists("sva_clusters")) sva_clusters = read_csv('../../sv/SVA_CLUSTERS.csv')
+if (!exists("sva_segments")) sva_segments = read_csv('../../sv/SVA_VIS_SEGMENTS.csv')
 
 cancerTypeOrder = sort(unique(cohort$cancerType))
 cancerTypeOrder = c(cancerTypeOrder[!(cancerTypeOrder %in% c("Unknown", "Other"))], "Other", "Unknown")

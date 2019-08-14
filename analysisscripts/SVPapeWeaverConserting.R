@@ -15,7 +15,7 @@ basedir="~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Varia
 # UCSC table export
 hg19_gaps = with(read_tsv(paste0(basedir,"hg19_gap")),
                  GRanges(seqnames=str_replace(chrom, "chr", ""), ranges=IRanges(start=chromStart, end=chromEnd), type=type))
-# http://hgdownload.cse.ucsc.edu/goldenPath/hg18/database/cytoBand.txt.gz
+# http://hgdownload.cse.ucsc.edu/goldenPath/hg19/database/cytoBand.txt.gz
 hg19_cytobands =  with(read_tsv(
   file=paste0(basedir, "cytoband.txt"),
   col_names=c("chr", "start", "end", "band", "type"),
@@ -59,16 +59,19 @@ weaver_bp = with(read_tsv(
 
 ######
 # GRIDSS/purple load
-gridss_bp_gr = breakpointRanges(readVcf(paste0(basedir, "purple/COLO829T.purple.sv.ann.vcf")), nominalPosition=TRUE)
-gridss_be_gr = breakendRanges(readVcf(paste0(basedir, "purple/COLO829T.purple.sv.ann.vcf")), nominalPosition=TRUE)
+gridss_vcf = readVcf(paste0(basedir, "purple/COLO829T.purple.sv.ann.vcf"))
+gridss_bp_gr = breakpointRanges(gridss_vcf, nominalPosition=TRUE)
+gridss_be_gr = breakendRanges(gridss_vcf, nominalPosition=TRUE)
 gridss_gr = c(gridss_bp_gr, gridss_be_gr)
 gridss_gr = gridss_gr[!str_detect(names(gridss_gr), "purple")] # strip out placeholder purple breakends
+gridss_gr$vaf =
 gridss_gr$caller="purple"
-purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% rename("#chromosome"="chromosome"),
+purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% rename("chromosome"="#chromosome"),
   GRanges(seqnames=chromosome, ranges=IRanges(start=start, end=end),
           cn=copyNumber,
           bafCount=bafCount,
           observedBAF=observedBAF,
+          actualBAF=actualBAF,
           segmentStartSupport=segmentStartSupport,
           segmentEndSupport=segmentEndSupport,
           method=method,
@@ -77,11 +80,12 @@ purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% ren
           minStart=minStart,
           maxStart=maxStart,
           caller="purple"))
-purple_germline_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.germline.cnv")) %>% rename("#chromosome"="chromosome"),
+purple_germline_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.germline.cnv")) %>% rename("chromosome"="#chromosome"),
   GRanges(seqnames=chromosome, ranges=IRanges(start=start, end=end),
     cn=copyNumber,
     bafCount=bafCount,
     observedBAF=observedBAF,
+    actualBAF=actualBAF,
     segmentStartSupport=segmentStartSupport,
     segmentEndSupport=segmentEndSupport,
     method=method,
@@ -133,7 +137,13 @@ ascat_cn = with(read_tsv(paste0(basedir, "ascat/COLO829T.segments.txt")),
 
 
 ascat_cn$cn = ascat_cn$nMajor + ascat_cn$nMinor
+ascat_cn$cn_major = ascat_cn$nMajor
+ascat_cn$cn_minor = ascat_cn$nMinor
 weaver_cn$cn = weaver_cn$cn1 + weaver_cn$cn2
+weaver_cn$cn_major = pmax(weaver_cn$cn1, weaver_cn$cn2)
+weaver_cn$cn_minor = pmin(weaver_cn$cn1, weaver_cn$cn2)
+purple_cn$cn_major = pmax(purple_cn$cn * purple_cn$actualBAF, purple_cn$cn * (1 - purple_cn$actualBAF))
+purple_cn$cn_minor = pmin(purple_cn$cn * purple_cn$actualBAF, purple_cn$cn * (1 - purple_cn$actualBAF))
 # use the purple average ploidy so result scales match
 conserting_dg_normalisation =
   (sum(width(conserting_cn) * conserting_cn$GMean)/sum(width(conserting_cn))) /
@@ -149,7 +159,7 @@ cn = c(ascat_cn, purple_cn, conserting_cn, weaver_cn)
 # distance to SV
 evaluate_cn_transitions = function (cngr, svgr, margin=100000, distance=c("cn_transition", "sv")) {
   distance <- match.arg(distance)
-  cn_transitions = with(cngr %>% as.data.frame(), reduce(c(
+  cn_transitions = with(cngr %>% as.data.frame(), IRanges::reduce(c(
     GRanges(seqnames=seqnames, ranges=IRanges(start=start, width=1)),
     GRanges(seqnames=seqnames, ranges=IRanges(start=end + 1, width=1)))))
   cn_transitions$caller = unique(cngr$caller)
@@ -374,5 +384,10 @@ ggplot() +
   theme(axis.ticks.x=element_blank()) +
   facet_grid(caller ~ . ) +
   labs(x="", y="Copy Number")
+
+
+
+
+
 
 

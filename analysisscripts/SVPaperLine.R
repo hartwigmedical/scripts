@@ -45,22 +45,36 @@ insperbase = bind_rows(insperbaserm %>% dplyr::select(uid=query, offset, repeatT
   ungroup() %>%
   mutate(length_bin = ceiling(inslen[uid]/binsize)*binsize)
 
-################
-# SGL analysis
-insperbase_summary = insperbase %>%
-  mutate(repeatAnn=as.character(getRepeatAnn(repeatClass))) %>%
-  mutate(repeatAnn=ifelse(repeatAnn == "DNA", "Other", repeatAnn)) %>%
-  mutate(repeatAnn=ifelse(repeatType == "(T)n", "poly A", repeatAnn)) %>%
-  mutate(repeatAnn=ifelse(repeatType == "(A)n", "poly A", repeatAnn)) %>%
-  mutate(repeatAnn=ifelse(repeatType %in% c("L1HS", "ALR/Alpha", "HSATII", "L1P1"), repeatType, repeatAnn)) %>%
-  mutate(repeatAnn=factor(repeatAnn, levels=c(
+
+two_tier_repeatAnn = function(repeatType, repeatClass) {
+  repeatAnn=as.character(getRepeatAnn(repeatClass))
+  repeatAnn=ifelse(repeatAnn == "DNA", "Other", repeatAnn)
+  repeatAnn=ifelse(repeatType == "(T)n", "poly A", repeatAnn)
+  repeatAnn=ifelse(repeatType == "(A)n", "poly A", repeatAnn)
+  repeatAnn=ifelse(repeatType %in% c("L1HS", "ALR/Alpha", "HSATII", "L1P1"), repeatType, repeatAnn)
+  repeatAnn=factor(repeatAnn, levels=c(
     "No repeat",
     "Simple/Low complexity", "poly A",
     "Satellite", "ALR/Alpha", "HSATII",
     "LINE", "L1HS", "L1P1",
     "SINE",
     "LTR",
-    "Other"))) %>%
+    "Other"))
+  return(repeatAnn)
+}
+two_tier_repeatAnn_colors = c(
+  "#1b9e77",
+  "#c05402", "#f26a02",
+  "#54539d", "#7570b3", "#9591c5",
+  "#c71670", "#e7298a", "#ec57a3",
+  "#66a61e",
+  "#e6ab02",
+  "#a6761d")
+
+################
+# SGL analysis
+insperbase_summary = insperbase %>%
+  mutate(repeatAnn=two_tier_repeatAnn(repeatType, repeatClass)) %>%
   semi_join(insdf %>% filter(Type=="SGL"), by="uid") %>%
   group_by(offset, repeatAnn) %>%
   summarise(n=n())
@@ -68,14 +82,7 @@ ggplot(insperbase_summary) +
   aes(x=offset, y=n, fill=repeatAnn) +
   geom_bar(stat="identity") +
   #scale_fill_brewer(palette="Dark2") +
-  scale_fill_manual(values=c(
-  "#1b9e77",
-  "#c05402", "#f26a02",
-  "#54539d", "#7570b3", "#9591c5",
-  "#c71670", "#e7298a", "#ec57a3",
-  "#66a61e",
-  "#e6ab02",
-  "#a6761d")) +
+  scale_fill_manual(values=two_tier_repeatAnn_colors) +
   labs(y="Breakend count", x="Distance from breakend", fill="RepeatMasker\nAnnotation")
 ggsave(paste0(figdir, "sgl_rm_per_base_overall.pdf"), width=8, height=5)
 
@@ -99,14 +106,16 @@ sgllongrepeat = left_join(
       filter(Type=="SGL") %>%
       dplyr::select(uid, inslen),
     rminssumdf %>%
-      mutate(longest_reapeatAnn=getRepeatAnn(longest_repeatClass)) %>%
+      mutate(longest_reapeatAnn=two_tier_repeatAnn(longest_repeatType, longest_repeatClass)) %>%
       dplyr::select(uid=query, longest_reapeatAnn),
     by="uid") %>%
   replace_na(list(longest_reapeatAnn="No repeat"))
 ggplot(sgllongrepeat) +
   aes(x=inslen, fill=longest_reapeatAnn) +
   geom_histogram(bins=50) +
-  scale_fill_brewer(palette="Dark2") +
+  scale_x_continuous(limits = c(0, 800)) +
+  # scale_fill_brewer(palette="Dark2") +
+  scale_fill_manual(values=two_tier_repeatAnn_colors) +
   labs(y="Single breakend count", x="Assembled breakend sequence length", fill="RepeatMasker annotation of\nlongest repeat in\nbreakend sequence")
 ggsave(paste0(figdir, "sgl_longest_repeat.pdf"), width=8, height=5)
 # viral integration?

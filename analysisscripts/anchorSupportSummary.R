@@ -85,6 +85,9 @@ anchor_df = findOverlaps(gr, gr, maxgap=maxdistance, ignore.strand=TRUE) %>%
 
 
 adj_df = anchor_df %>%
+  group_by(beid1) %>%
+  mutate(isClosest=distance==min(distance)) %>%
+  ungroup() %>%
   left_join(asm_links, by=c("sampleId"="sampleid", "beid1"="beid1", "beid2"="beid2")) %>%
   mutate(is_asm_linked=!is.na(linkedBy)) %>%
   mutate(phasing=ifelse(is_asm_linked, "cis", ifelse(pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10, "trans", "unphased")))
