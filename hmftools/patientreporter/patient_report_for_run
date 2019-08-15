@@ -26,8 +26,6 @@ sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-fusion_csv=$(locate_variant_annotator_fusions ${run_dir})
-disruption_csv=$(locate_variant_annotator_disruptions ${run_dir})
 
 bachelor_cmd=""
 if [ ! -z ${bachelor_csv} ]; then
