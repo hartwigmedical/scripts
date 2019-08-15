@@ -242,6 +242,7 @@ p_hotspot1 = ggplot(data = hotspotData %>% filter(variant == 'SNV'), aes(x = gen
   theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
   theme(axis.ticks = element_blank(), legend.position="bottom",  strip.background = element_blank()) +
   theme(plot.title = element_text(hjust = 0.5, size = 7)) +
+  theme(axis.text.y = element_text(face = "italic")) +
   coord_flip()
 p_hotspot1
 
@@ -270,9 +271,9 @@ pHotspots = plot_grid(p_hotspot1, p_hotspot2, p_hotspot3, rel_widths = c(2,1,1),
 
 pHotspots2 = plot_grid(pHotspots, legend, ncol = 1, rel_heights = c(10,1), label_size = 8)
 pHotspots2 
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.pdf", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.png", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 9.eps", pHotspots2, width = 120, height = 100, units = "mm", dpi = 300)
 
 
 
@@ -598,7 +599,9 @@ pTile = ggplot(hmfGenes, aes(x = cancerType, y = gene_name))+
   #theme(panel.border = element_blank(),axis.ticks = element_blank()) +
   #theme(legend.position = "bottom") +
   guides(fill = guide_colourbar(barheight = 20, direction = "vertical", title.position="top", title.hjust = 0, title.vjust = 0.5, nbin = 50)) + 
-  scale_x_discrete(labels= display_cancer_types(cancerTypeFactors))
+  scale_x_discrete(labels= display_cancer_types(cancerTypeFactors)) + 
+  theme(axis.text.y = element_text(face = "italic"))
+  
 pTile  
 
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 8.png", pTile, width = 120, height = 183, units = "mm", dpi = 300)
@@ -696,8 +699,8 @@ p2 = ggplot(data = ampDriversPerGene, aes(x = gene, y = n)) +
   ylab("Amplification drivers") + ggtitle("") + xlab("") +
   theme(panel.border = element_blank(), panel.grid.minor = element_blank(), panel.grid.major.y = element_blank()) +
   theme(axis.ticks = element_blank(), legend.title = element_blank()) +
+  theme(axis.text.y = element_text(face = "italic")) +
   coord_flip()
-
 
 load(file = '~/hmf/RData/Reference/hpcCancerTypeCounts.RData')
 ampDriversCancerType = hpcDriversByGene %>%
@@ -718,9 +721,10 @@ p0 =ggplot(ampDriversCancerType, aes(x = cancerType, y = mean)) +
   coord_flip()
 
 pAmps = plot_grid(pyDeletes, p0, p2, p1, labels="auto", label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+pAmps
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.pdf", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.png", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 7.eps", pAmps, width = 183, height = 140, units = "mm", dpi = 300)
 
 ###################################################### Determining Clonality
 

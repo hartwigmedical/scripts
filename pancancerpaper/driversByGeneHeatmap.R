@@ -142,7 +142,7 @@ germlineMat = (data.matrix(germlineHeatmapData))
 germlineHeatmap = Heatmap(
   column_title = "  ",
   germlineMat, 
-  row_names_gp = gpar(fontsize = 5),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
   column_names_gp = gpar(fontsize = 5),
   row_order = sortedGermlineGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -219,12 +219,14 @@ germlineWildTypeLostAnnotation = rowAnnotation(
 )
 
 pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation+ germlineWildTypeLostAnnotation
+pGermline
+
 
 oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
   column_title = "  ",
   oncoMat, 
-  row_names_gp = gpar(fontsize = 5),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedOncoGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -291,13 +293,14 @@ oncoDriversAnnotationIndex = rowAnnotation(
 )
 
 pOnco = oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
+pOnco
 
 tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
   column_title = "  ",
   tsgMat, 
   #width = unit(12, "cm"),
-  row_names_gp = gpar(fontsize = 5),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedTsgGenes$gene,
   column_order = sortedCancerTypes$cancerType,

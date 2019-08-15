@@ -290,13 +290,14 @@ cooccurenceData = allGenePairProbs %>%
     nudge = ifelse(PositivelyCorrelated, 0.1, -0.1),
     hjust = ifelse(correlation > 0, 0, 1),
     facet = ifelse(QValue < 3e-06, T, F),
-    jon = log10(1 / QValue)
+    jon = log10(1 / QValue),
+    label = paste0("italic('", label, "')")
     )
 
 p1 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
   geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge, parse = T) +
   scale_color_manual(values = cancerTypeColours) +
   scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-11, 1e-12), limits = c(1e-1,1e-6), position = "bottom") +
   scale_y_continuous(limits = c(0,2), breaks = c(0), expand = c(0,0)) +
@@ -306,11 +307,12 @@ p1 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   theme(panel.border = element_blank(), panel.grid.minor = element_blank(),  panel.grid.major.y = element_blank(), panel.grid.major.x = element_line(colour = "black", size = 1)) +
   #theme(panel.background = element_rect(fill = "#f7fcf5"))+ panel.grid.major.y = element_blank(),
   coord_flip()
+p1
 
 p2 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
   geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge, parse = T) +
   scale_color_manual(values = cancerTypeColours, labels = display_cancer_types) +
   scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-11, 1e-12), limits = c(1e-1,1e-6), position = "top") +
   scale_y_continuous(limits = c(-2,0), breaks = c(0), expand = c(0,0)) +
@@ -335,7 +337,7 @@ p2 = p2 + theme(legend.position = "none")
 p3 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
   geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  geom_text(aes(label = label), size = 5 * 24.5/72, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge, parse = T) +
   annotate("text", y = -0.3, x = 1.5e-12, label = "Negative Correlation" , size = 6 * 24.5/72, hjust = 1) +
   scale_color_manual(values = cancerTypeColours) +
   scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-10,1e-11,1e-12, 1e-13), limits = c(1e-11,1e-12), position = "top") +
@@ -350,7 +352,7 @@ p3 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
 p4 = ggplot(data = cooccurenceData, aes(x = QValue, y = correlation)) +
   geom_segment(aes(xend = QValue, y = 0, yend = correlation, color = CancerType), size = 0.5) +
   geom_point(aes(color = CancerType), size = 4, alpha = 1 ) +
-  geom_text(aes(label = label), size = 5 * 24.5/725, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge) +
+  geom_text(aes(label = label), size = 5 * 24.5/725, hjust=cooccurenceData$hjust, nudge_y = cooccurenceData$nudge, parse = T) +
   annotate("text", y = 0.3, x = 1.5e-12, label = "Postive Correlation" , size =  6 * 24.5/72, hjust = 0) +
   scale_color_manual(values = cancerTypeColours) +
   scale_x_continuous(trans=reverselog_trans(10), breaks = c(1e-1,1e-2,1e-3,1e-4,1e-5,1e-6,1e-10,1e-11,1e-12, 1e-13), limits = c(1e-11,1e-12)) +
