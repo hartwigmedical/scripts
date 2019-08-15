@@ -8,15 +8,19 @@ bucket="hmf-output-shallowseq"
 usage() {
     echo "---"
     echo "Usage: $script -s <SetName>" 1>&2;
-    echo "       $script -s 190101_ShallowSeq_etc" 1>&2;
+    echo "       $script -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
+    echo "       $script -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
     echo "---"
     exit 1
 }
 
-while getopts ":s:" o; do
+while getopts ":s:b:" o; do
     case "${o}" in
         s)
             set=${OPTARG} || usage
+            ;;
+        b)
+            bucket=${OPTARG} || usage
             ;;
         *)
             usage
@@ -34,7 +38,7 @@ downloadSetPath="${downloadPath}/${set}"
 if [[ -d ${archiveSetPath} ]]; then
     echo "[WARN] SKIPPING: Set already archived locally (${archiveSetPath})"
 else 
-    echo "[INFO] Syncing set ${set} to ${downloadPath}"
+    echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${downloadPath}"
     sbp s3 sync s3://${bucket}/${set}/ ${downloadPath}/${set}/ \
         --exclude "*.bam" \
         --exclude "*.diff" \
