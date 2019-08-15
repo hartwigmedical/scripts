@@ -330,18 +330,13 @@ display_purity_bucket <- function(purityBucket) {
   return (purityBucket)
 }
 
-
-p1 = ggplot(samplesPerPurityBucket, aes(purityBucket, n)) + 
-  geom_bar(fill = singleBlue, stat = "identity") +
-  theme(panel.grid.major.y = element_blank(), panel.grid.minor = element_blank(), panel.border = element_blank()) +
-  theme(axis.ticks = element_blank(), legend.position="bottom") + 
-  ggtitle("") + xlab("Tumor Purity") + ylab("Count of samples") + 
-  scale_y_continuous(expand=c(0.01, 0.01)) +
-  theme(legend.position="none", axis.title = element_text(size=5)) +
-  coord_flip() 
+clonalityLoadScaler = clonalityLoad2 %>% ungroup() %>% summarise(totalPercentage = sum(SUBCLONAL) / sum(total)) %>% pull(totalPercentage)
+clonalityLoadVector = data.frame(x = c(0:9), y = rep(clonalityLoadScaler, 10))
 
 p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) + 
   geom_violin(fill = singleBlue, scale = "width", size = 0.3) +
+  geom_line(data = clonalityLoadVector, mapping = aes(x = x, y = y), linetype = 2, size = 0.3) +
+  annotate("text", y = 0.08, x = 8.7, label = paste0("Pan Cancer ", sprintf(fmt='(%.1f%%)', 100*clonalityLoadScaler)), size = 5 * 25.4 / 72, fontface = "plain", hjust = 0 ) +
   geom_point(aes(y = bucketMean), shape=20, size=0.3) +
   ggtitle("") + xlab("") + ylab("% of variants subclonal") + 
   scale_y_continuous(limits = c(0, 1), labels = percent, expand=c(0.02, 0.01)) +
@@ -351,8 +346,13 @@ p2 = ggplot(clonalityLoad2, aes(purityBucket, percentage)) +
   scale_x_discrete(labels = display_purity_bucket(sort(unique(clonalityLoad2$purityBucket))))+
   coord_flip() 
 
+clonalityDriversScaler = clonalityDrivers2 %>% ungroup() %>% summarise(totalPercentage = sum(subclonalLikelihood) / sum(driverLikelihood)) %>% pull(totalPercentage)
+clonalityDriversVector = data.frame(x = c(0:9), y = rep(clonalityDriversScaler, 10))
+
 p3 = ggplot(data = clonalityDrivers2, aes(x = purityBucket, y = subclonalPercentage, width = 0.7)) +
   geom_bar(fill = singleBlue, stat = "identity") + 
+  geom_line(data = clonalityDriversVector, mapping = aes(x = x, y = y), linetype = 2, size = 0.3) +
+  annotate("text", y = 0.04, x = 8.7, label = paste0("Pan Cancer ", sprintf(fmt='(%.1f%%)', 100*clonalityDriversScaler)), size = 5 * 25.4 / 72, fontface = "plain", hjust = 0 ) +
   xlab("") + ylab("% of driver point mutations subclonal") + ggtitle("") +
   scale_y_continuous(expand=c(0.01, 0.01), limits = c(0, 0.07), breaks = c(0,0.02,0.04,0.06,0.08), labels = paste0(2 * c(0:4), "%")) +
   theme(legend.position="none", axis.title = element_text(size=5)) +
