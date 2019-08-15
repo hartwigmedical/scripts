@@ -18,6 +18,10 @@ locate_reference_validation_sets_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/reference_validation_sets
 }
 
+locate_pipeline_v5_validation_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
+}
+
 locate_pipeline_v5_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5
 }
