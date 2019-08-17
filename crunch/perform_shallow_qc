@@ -11,75 +11,106 @@ if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
   exit 1
 fi
 
-echo -e "#SetName\tTumSample\tQC\tPurity\tStatus\tPipeline\tPurple\
+echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\
 \tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
-for runPath in "${runPaths[@]}"; do 
+for runDir in "${runPaths[@]}"; do 
 
-  ## init
+  ## init variables
   pipVsn=$na; setName=$na; refSample=$na; tumsample=$na
   refCov=$na; refRds=$na; refMap=$na; refExc=$na; refDup=$na
   tumCov=$na; tumRds=$na; tumMap=$na; tumExc=$na; tumDup=$na
-  purity=$na; status=$na; qcStat=$na; purVsn=$na
+  purity=$na; status=$na; qcStat=$na; ambQC=$na; purVsn=$na
+  
+  setName=$( basename "${runDir}")
+  isPv5=$(find $runDir -maxdepth 1 -name "pipeline.version")
+  
+  ## get metadata for constructing file paths
+  metaFile=""
+  if [[ "$isPv5" ]]; then
+    pipVsn="v5"
+    metaFile="${runDir}/metadata.json"
+    refSample=$( cat ${metaFile} | jq -r '.reference.sampleName' )
+    tumSample=$( cat ${metaFile} | jq -r '.tumor.sampleName' )
+  else
+    chkFile="${runDir}/logs/PipelineCheck.log"
+    pipVsn=$( cat $chkFile | grep "Pipeline version" | cut -d":" -f2 | grep -Po "[\d\.]+" )
+    metaFile="${runDir}/metadata"
+    refSample=$( cat ${metaFile} | jq -r '.ref_sample' )
+    tumSample=$( cat ${metaFile} | jq -r '.tumor_sample' )
+  fi
+  
+  ## init rest of paths and files
+  ambDir="${runDir}/amber/"
+  purDir="${runDir}/purple/"
+  refDir="${runDir}/${refSample}"
+  tumDir="${runDir}/${tumSample}"
 
-  ## retrieve metadata
-  setName=$( basename "${runPath}")
-  metaFile="${runPath}/metadata"
-  if [[ ! -f $metaFile ]]; then echo "[EXIT] File does not exist ($metaFile)" && exit 1; fi
-  refSample=$( cat ${metaFile} | jq -r '.ref_sample' )
-  tumSample=$( cat ${metaFile} | jq -r '.tumor_sample' )
+  wgsFileR="${runDir}/QCStats/${refSample}_dedup/${refSample}_dedup_WGSMetrics.txt"
+  wgsFileT="${runDir}/QCStats/${tumSample}_dedup/${tumSample}_dedup_WGSMetrics.txt"
+  flgFileR="${refDir}/mapping/${refSample}_dedup.flagstat"
+  flgFileT="${tumDir}/mapping/${tumSample}_dedup.flagstat"
+   aqcFile="${ambDir}/${tumSample}.amber.qc"
+   vsnFile="${purDir}/purple.version"
+   pqcFile="${purDir}/${tumSample}.purple.qc"
+   ppuFile="${purDir}/${tumSample}.purple.purity"
 
-  ## SingleSample or Somatic
-  if [[ ${tumSample} == "null" ]]; then mode="single"; tumSample=$na; else mode="somatic"; fi
-
-  ## main paths, files and settings
-  purpleDir="${runPath}/purple/"
-  pqcFile="${purpleDir}/${tumSample}.purple.qc"
-  ppuFile="${purpleDir}/${tumSample}.purple.purity"
-  vsnFile="${purpleDir}/purple.version"
-  wgsFile="${runPath}/QCStats/WGSMetrics_summary.transposed.txt"
-  chkFile="${runPath}/logs/PipelineCheck.log"
-  if [[ ! -f $wgsFile ]]; then echo "[EXIT] File does not exist ($wgsFile)" && exit 1; fi
-
-  ## gahter general info
-  pipVsn=$( cat $chkFile | grep "Pipeline version" | cut -d":" -f2 | grep -Po "[\d\.]+" )
-
-  if [[ $mode == "somatic" ]]; then
-    ## gather WgsMetrics for TUM
-    tumIdx=$( cat $wgsFile | sed -n "1 s/${tumSample}.*//p"| sed 's/[^\t*]//g' | wc -c )
-    tumRds=$( cat $wgsFile | grep "Total number of reads" | cut -f${tumIdx} ) 
-    tumMap=$( cat $wgsFile | grep "Percentage reads mapped" | cut -f${tumIdx} )
-    tumCov=$( cat $wgsFile | grep "MEAN_COVERAGE" | cut -f${tumIdx} )
-    tumExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${tumIdx} )
-    tumDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${tumIdx} )
-    
-    ## gather Purple info
-    if [[ ! -f $pqcFile ]]; then echo "[EXIT] File does not exist ($pqcFile)" && exit 1; fi
-    if [[ ! -f $ppuFile ]]; then echo "[EXIT] File does not exist ($ppuFile)" && exit 1; fi
-    if [[ ! -f $vsnFile ]]; then echo "[EXIT] File does not exist ($vsnFile)" && exit 1; fi
-    purity=$( cat $ppuFile | tail -1 | cut -f1 )
-    status=$( cat $ppuFile | tail -1 | cut -f7 )
-    qcStat=$( cat $pqcFile | grep QCStatus | cut -f2 )
-    purVsn=$( cat $vsnFile | grep version | cut -d"=" -f2 )
+  ## adjust paths if Pv5
+  if [[ "$isPv5" ]]; then 
+     ppuFile="${ppuFile}.tsv"
+    wgsFileR="${refDir}/bam_metrics/${refSample}.wgsmetrics"
+    wgsFileT="${tumDir}/bam_metrics/${tumSample}.wgsmetrics"
+    flgFileR="${refDir}/flagstat/${refSample}.flagstat"
+    flgFileT="${tumDir}/flagstat/${tumSample}.flagstat"
   fi
 
-  ## get ref and tum WgsMetrics column index
-  if [[ ! -f $wgsFile ]]; then echo "[EXIT] File does not exist ($wgsFile)" && exit 1; fi
-  refColIdx=$( cat $wgsFile | sed -n "1 s/${refSample}.*//p"| sed 's/[^\t*]//g' | wc -c )
+  ## all paths/files are set so check that all is ok
+  allFilesOk="yes"
+  for requiredFile in "$aqcFile" "$pqcFile" "$ppuFile" "$vsnFile" "$wgsFileR"; do
+    if [[ -z "$requiredFile" ]]; then 
+      echo "[WARN] One of the required file variables is empty!!"
+      allFilesOk="no"
+    elif [[ ! -f $requiredFile ]]; then 
+      echo "[WARN] File does not exist ($requiredFile)"
+      allFilesOk="no"
+    fi
+  done
+  if [[ ! $allFilesOk == "yes" ]]; then echo "[EXIT] Something wrong with required files" && exit 1; fi 
 
-  ## gather WgsMetrics for REF
-  colIdx=${refColIdx}
-  refRds=$( cat $wgsFile | grep "Total number of reads" | cut -f${refColIdx} ) 
-  refMap=$( cat $wgsFile | grep "Percentage reads mapped" | cut -f${refColIdx} )
-  refCov=$( cat $wgsFile | grep "MEAN_COVERAGE" | cut -f${colIdx} )
-  refExc=$( cat $wgsFile | grep "PCT_EXC_TOTAL" | cut -f${colIdx} )
-  refDup=$( cat $wgsFile | grep "PCT_EXC_DUP" | cut -f${colIdx} )
+  ## gather WgsMetrics
+    head=$( cat $wgsFileR | grep GENOME_T )
+  refVal=$( cat $wgsFileR | grep -A1 GENOME_T | tail -1 )
+  tumVal=$( cat $wgsFileT | grep -A1 GENOME_T | tail -1 )
+  refJsn=$( perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${refVal}\"); %m = (); @m{@h} = @v; print encode_json \%m;" )
+  tumJsn=$( perl -e "use JSON::XS; @h = split(' ', \"${head}\"); @v = split(' ', \"${tumVal}\"); %m = (); @m{@h} = @v; print encode_json \%m;" )
   
-  ## output to screen
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    ${setName} ${tumSample}  ${qcStat} ${purity} \
-    ${status} ${pipVsn} ${purVsn} ${refCov} ${tumCov} \
+  refCov=$( echo "${refJsn}" | jq -r '.MEAN_COVERAGE' )
+  refExc=$( echo "${refJsn}" | jq -r '.PCT_EXC_TOTAL' )
+  refDup=$( echo "${refJsn}" | jq -r '.PCT_EXC_DUPE' )
+  tumCov=$( echo "${tumJsn}" | jq -r '.MEAN_COVERAGE' )
+  tumExc=$( echo "${tumJsn}" | jq -r '.PCT_EXC_TOTAL' )
+  tumDup=$( echo "${tumJsn}" | jq -r '.PCT_EXC_DUPE' )
+  
+  ## gather Flagstat info
+  refRds=$( cat $flgFileR | grep 'total ('  | cut -d ' ' -f1 )
+  tumRds=$( cat $flgFileT | grep 'total ('  | cut -d ' ' -f1 )
+  refMap=$( cat $flgFileR | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 )
+  tumMap=$( cat $flgFileT | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1 )
+ 
+  ## gather Amber info
+  ambQC=$( cat $aqcFile | grep QCStatus | cut -f2 )
+  
+  ## gather Purple info
+  purVsn=$( cat $vsnFile | grep version | cut -d"=" -f2 )
+  purity=$( cat $ppuFile | tail -1 | cut -f1 )
+  status=$( cat $ppuFile | tail -1 | cut -f7 )
+  qcStat=$( cat $pqcFile | grep QCStatus | cut -f2 )
+  
+  ## output
+  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    ${setName} ${tumSample} ${qcStat} ${purity} \
+    ${status} ${ambQC} ${pipVsn} ${purVsn} ${refCov} ${tumCov} \
     ${refRds} ${tumRds} ${refMap} ${tumMap} \
     ${refExc} ${tumExc} ${refDup} ${tumDup}
 

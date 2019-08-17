@@ -1,9 +1,11 @@
 library(GenomicRanges)
 library(tidyverse)
 library(stringr)
+library(ggplot2)
 library(grid)
 library(gridExtra)
 library(cowplot)
+library(scales)
 library(RMySQL)
 
 # Paper common
@@ -24,3 +26,5 @@ figsave = function(figureName, ...) {
   ggsave(paste0(figdir, figureName, ".pdf"), ...)
   ggsave(paste0(figdir, figureName, ".png"), ...)
 }
+
+theme_set(theme_bw())

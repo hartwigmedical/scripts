@@ -75,8 +75,11 @@ scatterPlot <- ggplot(logisticVisualisation, aes(wmis_cv+0.1, wnon_cv+0.1, color
     scale_x_log10(breaks = c(0.1, 1, 10, 100))  +
     scale_y_log10()  +
     scale_color_manual(name = "Gene Type", values = c(singleOnco,singleBlue), labels = c("Oncogene", "Tumor Suppressor Gene")) +
-    theme(panel.border = element_blank(), panel.grid.minor = element_blank(), axis.ticks = element_blank()) +
+    theme(panel.border = element_blank(), panel.grid.minor = element_blank(), axis.ticks = element_blank(), legend.position = "bottom") +
     xlab("w_missense") + ylab("w_nonsense") + ggtitle("")
+
+scatterPlot
+save_plot("~/hmf/RPlot/Methods Figure 4 - LogisticRegression.png", scatterPlot, base_width = 4, base_height = 4)
 
 xdensity <- ggplot(logisticVisualisation, aes(wmis_cv+0.1, fill=factor(classification))) + 
     geom_density(alpha=.5, adjust = 6.5) + 

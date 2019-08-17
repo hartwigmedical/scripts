@@ -6,6 +6,8 @@ run_dir=$1 && shift
 
 patient_db_jar=$(locate_prod_patient_db)
 credentials=/data/common/dbs/mysql_credentials/4fme
-sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-load_genomic_data_for_run_into_db ${run_dir} ${patient_db_jar} ${credentials} ${sample}
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+load_genomic_data_for_run_into_db ${ref_sample} ${tumor_sample} ${run_dir} ${patient_db_jar} ${credentials}

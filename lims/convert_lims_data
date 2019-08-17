@@ -846,7 +846,8 @@ sub getFieldNameTranslations{
       'Purity'             => 'purity',
       'Report_date'        => 'report_date',
       'Date_of_birth'      => 'date_of_birth',
-      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id'
+      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id',
+      'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id'
     );
     
     my %translations = (

@@ -293,8 +293,8 @@ p4 = create_plot(combinedSummary %>% filter(type == 'SV'), 100, 400) + ylab("") 
 pTotal = plot_grid(p1,p2,p3,p4, nrow = 1, labels = "auto", label_size = 8)
 
 pFinal = plot_grid(pTotal, pFigure1Revisited, nrow = 2, labels = "", rel_heights = c(1, 2))
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.pdf", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.pdf", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.png", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.eps", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
+#ggplot2::ggsave("~/hmf/RPlot/Extended Figure 5.eps", pFinal, width = 183, height = 150, units = "mm", dpi = 300)
 
 

@@ -32,8 +32,8 @@ hpcDriversByGene = hpcDriversByGene  %>%
   ) %>%
   ungroup()
 
-sortedTsgGenes = hpcDriversByGene %>% filter(type == 'TSG') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(25, n) %>% arrange(-n)
-sortedOncoGenes = hpcDriversByGene %>% filter(type == 'ONCO') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(25, n) %>% arrange(-n)
+sortedTsgGenes = hpcDriversByGene %>% filter(type == 'TSG') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(20, n) %>% arrange(-n)
+sortedOncoGenes = hpcDriversByGene %>% filter(type == 'ONCO') %>% group_by(gene) %>% summarise(n = sum(driverLikelihood)) %>% ungroup() %>% top_n(20, n) %>% arrange(-n)
 sortedCancerTypes = hpcDriversByGene %>% group_by(cancerType) %>% summarise(n = sum(driverLikelihood)) %>% arrange(-n)
 sortedGermlineGenes = germlineDriversByGene %>% group_by(gene) %>% count() %>% ungroup() %>% top_n(10, n) %>% arrange(-n)
 
@@ -142,8 +142,8 @@ germlineMat = (data.matrix(germlineHeatmapData))
 germlineHeatmap = Heatmap(
   column_title = "  ",
   germlineMat, 
-  row_names_gp = gpar(fontsize = 6),
-  column_names_gp = gpar(fontsize = 6),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
+  column_names_gp = gpar(fontsize = 5),
   row_order = sortedGermlineGenes$gene,
   column_order = sortedCancerTypes$cancerType,
   cluster_rows = FALSE, cluster_columns = FALSE, show_heatmap_legend = FALSE,
@@ -157,21 +157,43 @@ germlineHeatmap = Heatmap(
   }
 )
 
-
-
 germlineSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(axis_gp = gpar(fontsize = 5), baseline = "min", germlineSamplesAnnotationData, axis = T, axis_side = "top", ylim = c(0,0.03), gp = gpar(fontsize = 3, fill = "#bc80bd", col = 0), border = F), 
+  `% Samples` = row_anno_barplot(
+    baseline = "min", 
+    germlineSamplesAnnotationData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.01, 0.02, 0.03), labels = c("0%", "1%", "2%", "3%"),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,0.03), 
+    gp = gpar(fontsize = 3, fill = "#bc80bd", col = 0), 
+    border = F,
+    bar_width = 0.9), 
   width = unit(2, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
+
 germlineDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(axis_gp = gpar(fontsize = 5), germlineDriversAnnotationData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineDriverColours, col = 0), border = F), 
-  width = unit(3, "cm"),
+  `% Drivers` = row_anno_barplot(
+    germlineDriversAnnotationData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.25, 0.5, 0.75, 1), labels = c("", "25%", "50%", "75%", "100%"),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,1), 
+    gp = gpar(fill = germlineDriverColours, col = 0), 
+    border = F,
+    bar_width = 0.9), 
+  width = unit(2, "cm"),
   show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
@@ -180,19 +202,31 @@ germlineWildTypeLostAnnotationColours = setNames(c("#ccebc5","white"), c("lostPe
 germlineWildTypeLostAnnotation = rowAnnotation(
   show_annotation_name = T,
   annotation_name_rot = 0,
-  annotation_name_gp  = gpar(fontsize = 6),
-  `% Wild Type Lost` = row_anno_barplot(axis_gp = gpar(fontsize = 6), germlineWildtypeLostData, axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = germlineWildTypeLostAnnotationColours, col = 0), border = F), 
+  annotation_name_gp  = gpar(fontsize = 5),
+  `% Biallelic in Tumor` = row_anno_barplot(
+    germlineWildtypeLostData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.25, 0.5, 0.75, 1), labels = c("", "25%", "50%", "75%", "100%"),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,1), 
+    gp = gpar(fill = germlineWildTypeLostAnnotationColours, col = 0), 
+    border = F,
+    bar_width = 0.9), 
   width = unit(2, "cm")
 )
 
-pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation + germlineWildTypeLostAnnotation
+pGermline = germlineHeatmap + germlineSamplesAnnotation + germlineDriversAnnotation+ germlineWildTypeLostAnnotation
 pGermline
+
 
 oncoMat = (data.matrix(oncoHeatmapData))
 oncoHeatmap = Heatmap(
   column_title = "  ",
   oncoMat, 
-  row_names_gp = gpar(fontsize = 6),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedOncoGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -209,36 +243,64 @@ oncoHeatmap = Heatmap(
 )
 
 oncoSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(oncoSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.2), gp = gpar(fill = "#bc80bd", col = 0), border = F), 
+  `% Samples` = 
+    row_anno_barplot(
+      oncoSamplesAnnotationData, 
+      axis_param = list(
+        at = c(0, 0.1, 0.2), labels = c("0%", "10%", "20%"),
+        gp = gpar(fontsize = 5),
+        labels_rot = "0",
+        side = "top"),
+      axis = T, 
+      ylim = c(0,0.2), 
+      gp = gpar(fill = "#bc80bd", col = 0), 
+      border = F,
+      bar_width = 0.9), 
   width = unit(2, "cm"),
-  show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  show_annotation_name = F,
+
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
 oncoDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(oncoDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = oncoDriverColours, col = 0), border = F), 
-  width = unit(3, "cm"),
-  show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  `% Drivers` = 
+    row_anno_barplot(
+      oncoDriversAnnotationData, 
+      axis_param = list(
+        at = c(0, 0.25, 0.5, 0.75, 1), labels = c("", "25%", "50%", "75%", "100%"),
+        gp = gpar(fontsize = 5),
+        labels_rot = "0",
+        side = "top"),
+      axis = T, 
+      ylim = c(0,1), 
+      gp = gpar(fill = oncoDriverColours, col = 0), 
+      border = F,
+      bar_width = 0.9), 
+  width = unit(2, "cm"),
+  show_annotation_name = F,
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
 oncoDriversAnnotationIndex = rowAnnotation(
-  df = data.frame(Driver = simplifiedDrivers),
+  show_annotation_name = F,
+  df = data.frame("Driver" = simplifiedDrivers),
   col = list(Driver = simplifiedDriverColours),
-  width = unit(0, "cm"),
-  annotation_legend_param = list(title = "", labels_gp = gpar(fontsize = 6.3))
+  simple_anno_size = unit(0, "cm"),
+  width = unit(2, "cm"),
+  annotation_legend_param = list(title = "", labels_gp = gpar(fontsize = 5), grid_height = unit(2, "mm"), grid_width = unit(2, "mm"))
 )
 
 pOnco = oncoHeatmap + oncoSamplesAnnotation + oncoDriversAnnotation + oncoDriversAnnotationIndex
-#pOnco
+pOnco
 
 tsgMat = (data.matrix(tsgHeatmapData))
 tsgHeatmap = Heatmap(
   column_title = "  ",
   tsgMat, 
-  row_names_gp = gpar(fontsize = 6),
+  #width = unit(12, "cm"),
+  row_names_gp = gpar(fontsize = 5, fontface = "italic"),
   column_names_gp = gpar(fontsize = 0),
   row_order = sortedTsgGenes$gene,
   column_order = sortedCancerTypes$cancerType,
@@ -254,39 +316,81 @@ tsgHeatmap = Heatmap(
 )
 
 tsgSamplesAnnotation = rowAnnotation(
-  `% Samples` = row_anno_barplot(tsgSamplesAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,0.6), gp = gpar(fill = "#bc80bd", col = 0), border = F), 
+  `% Samples` = row_anno_barplot(
+    tsgSamplesAnnotationData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.15, 0.3, 0.45, 0.6), labels = c("0%", "15%", "30%", "45%", "60%"),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,0.6), 
+    gp = gpar(fill = "#bc80bd", col = 0), 
+    border = F,
+    bar_width = 0.9), 
   width = unit(2, "cm"),
-  show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  show_annotation_name = F,
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
 tsgBiallelicAnnotationColours = setNames(c("#ccebc5","white"), c("biallelicPercentage", "nonBiallelicPercentage"))
 tsgBiallelicAnnotation = rowAnnotation(
-  show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  show_annotation_name = F,
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0,
-  `% Biallelic` = row_anno_barplot(tsgBiallelicAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgBiallelicAnnotationColours, col = 0), border = F), 
+  `% Biallelic` = row_anno_barplot(
+    tsgBiallelicAnnotationData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.25, 0.5, 0.75, 1), labels = c("", "25%", "50%", "75%", "100%  "),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,1), 
+    gp = gpar(fill = tsgBiallelicAnnotationColours, col = 0), 
+    border = F,
+    bar_width = 0.9), 
   width = unit(2, "cm")
 )
 
 tsgDriversAnnotation = rowAnnotation(
-  `% Drivers` = row_anno_barplot(tsgDriversAnnotationData, axis_gp = gpar(fontsize = 5), axis = T, axis_side = "top", ylim = c(0,1), gp = gpar(fill = tsgDriverColours, col = 0), border = F), 
-  width = unit(3, "cm"),
-  show_annotation_name = T,
-  annotation_name_gp  = gpar(fontsize = 6),
+  `% Drivers` = row_anno_barplot(
+    tsgDriversAnnotationData, 
+    axis = T, 
+    axis_param = list(
+      at = c(0, 0.25, 0.5, 0.75, 1), labels = c("", "25%", "50%", "75%", "100%  "),
+      gp = gpar(fontsize = 5),
+      labels_rot = "0",
+      side = "top"),
+    ylim = c(0,1), 
+    gp = gpar(fill = tsgDriverColours, col = 0), 
+    border = F,
+    bar_width = 0.9), 
+  width = unit(2, "cm"),
+  show_annotation_name = F,
+  annotation_name_gp  = gpar(fontsize = 5),
   annotation_name_rot = 0
 )
 
 pTSG = tsgHeatmap + tsgSamplesAnnotation + tsgDriversAnnotation + tsgBiallelicAnnotation
-#pTSG
+pTSG
 
-p_tsg_grob = grid.grabExpr(draw(pTSG))
-p_onco_grob = grid.grabExpr(draw(pOnco))
-p_germline_gro= grid.grabExpr(draw(pGermline))
+pdf("~/hmf/RPlot/Figure 3a.pdf", width = 18.3/2.54, height = 5/2.54)
+draw(pTSG, padding = unit(c(0, 5, 0, 5), "mm"), auto_adjust = F)
+dev.off()
 
-p_final = plot_grid(p_tsg_grob, p_onco_grob, p_germline_gro, labels = "auto", ncol = 1, rel_heights = c(1, 1, 0.7), label_size = 8)
-ggplot2::ggsave("~/hmf/RPlot/Figure 3.pdf", p_final, width = 183, height = 210, units = "mm", dpi = 300)
+pdf("~/hmf/RPlot/Figure 3b.pdf", width = 18.3/2.54, height = 5/2.54)
+draw(pOnco, padding = unit(c(0, 5, 0, 5), "mm"), auto_adjust = F)
+dev.off()
+
+p_tsg_grob = grid.grabExpr(draw(pTSG, padding = unit(c(0, 5, 0, 5), "mm"), ht_gap = unit(c(2, 2, 2), "mm"), auto_adjust = F))
+p_onco_grob = grid.grabExpr(draw(pOnco, padding = unit(c(0, 5, 0, 5), "mm"), ht_gap = unit(c(2, 2, 6), "mm"), auto_adjust = F))
+p_germline_gro= grid.grabExpr(draw(pGermline, padding = unit(c(0, 5, 0, 5), "mm"), ht_gap = unit(c(2, 2, 2), "mm"), auto_adjust = F))
+
+p_final = plot_grid(p_onco_grob, p_tsg_grob, p_germline_gro, ncol = 1, rel_heights = c(1, 1, 0.95), label_size = 8, labels = "auto", label_y = c(0.82,0.82, 0.82))
+#p_final
+ggplot2::ggsave("~/hmf/RPlot/Figure 3.pdf", p_final, width = 183, height = 120, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Figure 3.png", p_final, width = 183, height = 210, units = "mm", dpi = 300)
 
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-patient_reporter_dir=/data/common/tools/patientreporter_v6.0
-report_dir=/data/cpct/patient_reports
+patient_reporter_dir=/data/common/tools/patientreporter_v7.2
+output_dir=/data/cpct/patient_reports
 
 lims=/data/lims
 hospital_dir=/data/common/dbs/hospital
@@ -13,7 +13,7 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
-    -report_dir ${report_dir} \
+    -output_dir ${output_dir} \
     -lims_dir ${lims} \
     -hospital_dir ${hospital_dir} \
     -tumor_location_csv ${tumor_location_csv} \

@@ -78,7 +78,7 @@ gridss_overlaps_breakpoint_pon = function(gr,
     ...) {
   hasHit = rep(FALSE, length(gr))
   if (!is.null(pongr)) {
-    hasHit[findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...)$queryHits] = TRUE
+    hasHit[as.data.frame(findBreakpointOverlaps(gr, pongr[pongr$score >= gridss.pon.min_samples], sizemargin=NULL, restrictMarginToSizeMultiple=NULL, ...))$queryHits] = TRUE
   }
   return(hasHit)
 }
@@ -269,8 +269,8 @@ is_too_small_event = function(gr, minSize=gridss.min_event_size) {
   if (!is.null(gr$partner)) {
     isbp <- gr$partner %in% names(gr)
     bpgr = gr[isbp]
-    svlen = abs(start(bpgr) - start(partner(bpgr))) + str_length(bpgr$insSeq) - ifelse(simpleEventType(bpgr) %in% c("DEL", "INS"), 1, 0)
-    result[isbp] = simpleEventType(bpgr) %in% c("DEL", "DUP", "INS") & svlen <= minSize
+    svlen = abs(start(bpgr) - start(partner(bpgr))) + str_length(bpgr$insSeq) + ifelse(simpleEventType(bpgr) %in% c("DEL", "INS"), -1, 1)
+    result[isbp] = simpleEventType(bpgr) %in% c("DEL", "DUP", "INS") & svlen < minSize
   }
   return(result)
 }
@@ -325,7 +325,7 @@ gridss_be_af = function(gr, vcf, ordinal) {
   return(vf_af)
 }
 annotate_overlaps = function(query, subject, ..., group_by_col_name="sampleId") {
-	hits = findBreakpointOverlaps(query, subject, ...)
+	hits = as.data.frame(findBreakpointOverlaps(query, subject, ...))
 	if (group_by_col_name %in% names(mcols(query)) & group_by_col_name %in% names(mcols(subject))) {
 		hits = hits %>% filter(mcols(query)[[group_by_col_name]][queryHits] == mcols(subject)[[group_by_col_name]][subjectHits])
 	}
@@ -772,7 +772,7 @@ align_breakpoints <- function(vcf, align=c("centre"), is_higher_breakend=names(v
                                                   partner_alt[,5],
                                                   partner_alt[,3],
                                                   ":",
-                                                  partner_pos,
+                                                  format(partner_pos, scientific=FALSE),
                                                   partner_alt[,5],
                                                   str_pad("", stringr::str_length(partner_alt[,6]), pad="N"))), "CharacterList")
   info(vcf)$CIRPOS = NULL # TODO: remove CIRPOS from GRIDSS entirely
@@ -1118,7 +1118,7 @@ linked_by_simple_inversion_classification = function(bpgr, maxgap=gridss.inversi
   if (is.null(bpgr$sampleId)) {
     bpgr$sampleId = rep("placeholder", length(bpgr))
   }
-  hits = findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL) %>%
+  hits = as.data.frame(findBreakpointOverlaps(bpgr, bpgr, maxgap=maxgap, ignore.strand=TRUE, sizemargin=NULL, restrictMarginToSizeMultiple=NULL)) %>%
     filter(bpgr$sampleId[queryHits] == bpgr$sampleId[subjectHits]) %>% # intra-sample
     filter(as.logical(strand(bpgr)[queryHits] != strand(bpgr)[subjectHits])) %>% # opposite strand
     # matching pairs with the best qual
@@ -1391,3 +1391,80 @@ passes_soft_filters = function(filters) {
   return(filters == "" | filters == ";" | filters == "PASS")
 }
 
+
+# SVA functions no longer exported by SVA
+.elementExtract.List <- function(x, offset=1) {
+  lengths <- S4Vectors::elementNROWS(x)
+  flat <- BiocGenerics::unlist(x)
+  hasValue <- lengths >= offset
+  flatOffset <- head(c(1, 1 + cumsum(lengths)), -1) + offset - 1
+  flatOffset[!hasValue] <- length(flat) + 1 # out of bounds
+  # need to strip XStringSet since that throws an error
+  # on out of bounds instead of returning a correctly typed NA
+  return(.unXStringSet(flat)[flatOffset])
+}
+.elementExtract.ANY <- function(x, offset=1) {
+  if (is.null(x)) return(x)
+  if (is.vector(x)) {
+    if (offset==1) return(x)
+    return(x[rep(length(x) + 1, length(x))])
+  }
+  result <- sapply(x, function(r) r[offset], USE.NAMES=FALSE)
+  return(result)
+}
+.elementExtract.XStringSet <- function(x, offset=1) {
+  return(.elementExtract.ANY(as.character(x), offset))
+}
+#' Extracts the element of each element at the given position
+#'
+#' @param x list-like object
+#' @param offset offset of list
+#' @export
+setGeneric("elementExtract", function(x, offset=1) standardGeneric("elementExtract"))
+setMethod("elementExtract", "XStringSet", .elementExtract.XStringSet)
+setMethod("elementExtract", "List", .elementExtract.List)
+setMethod("elementExtract", "ANY", .elementExtract.ANY)
+
+#' converts an XStringSet to a character
+setGeneric(".unXStringSet", function(x) x)
+setMethod(".unXStringSet", "XStringSet", function(x) as.character(x))
+
+
+#' Replaces the NA values in a with corresponding values in b
+#' @export
+'%na%' <- function(a, b) {
+  if (is.null(a) || length(a) == 0) return(b)
+  if (is.null(b) || length(b) == 0) return(a)
+  return(ifelse(is.na(a), b, a))
+}
+
+#' Uses b if a is NULL
+#' @export
+'%null%' <- function(a, b) {
+  if (is.null(a)) return(b)
+  return (a)
+}
+
+#' vectorised pairwise longest common prefix
+#' Returns the length of the longest common prefix for
+#' each string pair
+#' @export
+pairwiseLCPrefix <- function(s1, s2, ignore.case=FALSE) {
+  s1 <- as.character(s1)
+  s2 <- as.character(s2)
+  if (ignore.case) {
+    s1 <- toupper(s1)
+    s2 <- toupper(s2)
+  }
+  prefixLength <- rep(0, max(length(s1), length(s2)))
+  matchi <- TRUE
+  i <- 1
+  while (any(matchi)) {
+    s1i <- substring(s1, i, i)
+    s2i <- substring(s2, i, i)
+    matchi <- s1i != "" & s1i == s2i
+    prefixLength <- prefixLength + as.integer(matchi)
+    i <- i + 1
+  }
+  return(prefixLength)
+}

@@ -1,0 +1,64 @@
+#!/bin/bash
+
+source api_functions
+
+script=$( basename $0 )
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <set> -p <path>" 1>&2;
+    echo "       $script -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
+    echo "---"
+    exit 1
+}
+
+getRunsBySetFromApi() {
+    local set_name=$1
+    local json_string=$( query_sbp_api -type runs -json \
+        -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
+        -filter "ini=PipelineV5.ini|Somatic.ini" \
+        -filter "status=Validated|SnpCheck|Failed|Success" \
+        -filter "name=${set_name}"
+    )
+    echo "$json_string"
+    #return ${json_string}
+}
+
+while getopts ":s:p:" o; do
+    case "${o}" in
+        s)
+            set_name=${OPTARG} || usage
+            ;;
+        p)
+            local_path=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set_name}" || -z "${local_path}" ]]; then
+    usage
+fi
+
+json_data=$(getRunsBySetFromApi ${set_name})
+object_count=$( echo "$json_data" | jq '. | length' )
+
+if [[ $object_count == 0 ]]; then
+    echo "[EXIT] No run found for set ${set_name}!"
+    exit 1
+elif [[ $object_count > 1 ]]; then
+    echo "[WARN] More than 1 run found for ${set_name} (${object_count}), selecting last one."
+fi
+
+run=$( echo "$json_data" | jq '.[-1]' )
+run_status=$( echo "$run" | jq -r '.status' )
+run_bucket=$( echo "$run" | jq -r '.bucket' )
+set_path="${local_path}/${set_name}"
+
+echo "[DEBUG] Complete json structure of run:"
+echo "$run" | jq '.'
+
+echo "[INFO] Syncing run from bucket ${run_bucket}/${set_name} to ${set_path} (status=${run_status})"
+sbp s3 sync "s3://${run_bucket}/${set_name}/" "${set_path}/" --exclude "*.bam" --profile download

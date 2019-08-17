@@ -43,7 +43,10 @@ save(filteredHmfMutationalLoad, file = "~/hmf/RData/processed/filteredHmfMutatio
 
 ########### PLOT FUNCTIONS
 display_cancer_types <- function(cancerTypes) {
+  
   for (i in 1:length(cancerTypes)) {
+    n = paste0('(n=',hpcCancerTypeCounts[hpcCancerTypeCounts$cancerType == cancerTypes[i], ] %>% pull(N), ')')
+    
     if (cancerTypes[i] == "Mesothelioma") {
       cancerTypes[i]= "Meso- thelioma"
     }
@@ -62,6 +65,8 @@ display_cancer_types <- function(cancerTypes) {
     if (cancerTypes[i] == "Urinary tract") {
       cancerTypes[i]= "Urinary Tract"
     }
+    
+    cancerTypes[i] = paste0(cancerTypes[i], " ", n)
   }
   
   return (label_wrap_gen(10)(cancerTypes))
@@ -69,12 +74,12 @@ display_cancer_types <- function(cancerTypes) {
 
 somaticColours = c("#a6611a","#dfc27d","#80cdc1","#018571")
 somaticColours = setNames(somaticColours, c("Adjusted HMF SNV","PCAWG SNV", "PCAWG MNV", "Adjusted HMF MNV"))
-somaticLinetypes = c("solid","dashed","dashed","solid")
+somaticLinetypes = c("solid","longdash","longdash","solid")
 somaticLinetypes = setNames(somaticLinetypes, c("Adjusted HMF SNV","PCAWG SNV", "PCAWG MNV", "Adjusted HMF MNV"))
 
 indelSVColours = c("#d01c8b","#f1b6da","#b8e186","#4dac26")
 indelSVColours = setNames(indelSVColours, c("Adjusted HMF INDEL","PCAWG INDEL", "PCAWG SV", "Adjusted HMF SV"))
-indelSVLinetypes = c("solid","dashed","dashed","solid")
+indelSVLinetypes = c("solid","longdash","longdash","solid")
 indelSVLinetypes = setNames(indelSVLinetypes, c("Adjusted HMF INDEL","PCAWG INDEL", "PCAWG SV", "Adjusted HMF SV"))
 
 ########### PLOT
@@ -148,8 +153,8 @@ theme_set(theme_bw() +  theme(axis.text=element_text(size=5), axis.title=element
 p3 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(size = 0.3, aes(SNV,color='Adjusted HMF SNV',linetype='Adjusted HMF SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianSNV, xend = medianSNV, y = 0.25, yend = 0.75, color='Adjusted HMF SNV'), show.legend = F) + 
   stat_ecdf(size = 0.3,aes(MNV,color='Adjusted HMF MNV',linetype='Adjusted HMF MNV') ,geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianMNV, xend = medianMNV, y = 0.25, yend = 0.75, color='Adjusted HMF MNV'), show.legend = F) + 
-  stat_ecdf(size = 0.3,aes(PCAWG_SNV,color='PCAWG SNV',linetype='PCAWG SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) + 
-  stat_ecdf(size = 0.3,aes(PCAWG_MNV,color='PCAWG MNV',linetype='PCAWG MNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) + 
+  stat_ecdf(size = 0.4,aes(PCAWG_SNV,color='PCAWG SNV',linetype='PCAWG SNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_SNV, xend = medianPCAWG_SNV, y = 0.25, yend = 0.75, color='PCAWG SNV'), show.legend = F) + 
+  stat_ecdf(size = 0.4,aes(PCAWG_MNV,color='PCAWG MNV',linetype='PCAWG MNV'), geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_MNV, xend = medianPCAWG_MNV, y = 0.25, yend = 0.75, color='PCAWG MNV'), show.legend = F) + 
   scale_x_log10() + 
   facet_grid(~cancerType, scales = "free_x", labeller = labeller(cancerType = display_cancer_types)) + theme(panel.spacing = unit(1, "pt")) +  
   scale_colour_manual(name = "Combined", values=somaticColours) + 
@@ -167,8 +172,8 @@ p3
 p4 = ggplot(data=combinedMutationalLoad) +
   stat_ecdf(size = 0.3,aes(INDEL, color='Adjusted HMF INDEL', linetype = 'Adjusted HMF INDEL'),geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianINDEL, xend = medianINDEL, y = 0.25, yend = 0.75, color='Adjusted HMF INDEL'), show.legend = F) + 
   stat_ecdf(size = 0.3,aes(SV,color='Adjusted HMF SV',linetype='Adjusted HMF SV'),geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianSV, xend = medianSV, y = 0.25, yend = 0.75, color='Adjusted HMF SV'), show.legend = F) +
-  stat_ecdf(size = 0.3,aes(PCAWG_INDEL,color='PCAWG INDEL',linetype='PCAWG INDEL'),geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
-  stat_ecdf(size = 0.3,aes(PCAWG_SV,color='PCAWG SV', linetype='PCAWG SV'),geom = "step",  pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
+  stat_ecdf(size = 0.4,aes(PCAWG_INDEL,color='PCAWG INDEL',linetype='PCAWG INDEL'),geom = "step", pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_INDEL, xend = medianPCAWG_INDEL, y = 0.25, yend = 0.75, color='PCAWG INDEL'), show.legend = F) +
+  stat_ecdf(size = 0.4,aes(PCAWG_SV,color='PCAWG SV', linetype='PCAWG SV'),geom = "step",  pad = FALSE) + geom_segment(size = 0.3,aes(x = medianPCAWG_SV, xend = medianPCAWG_SV, y = 0.25, yend = 0.75, color='PCAWG SV'), show.legend = F) +
   scale_x_log10() +  facet_grid(~cancerType) + theme(panel.spacing = unit(1, "pt")) +
   scale_colour_manual(name = "Combined", values=indelSVColours) + 
   scale_linetype_manual(name = "Combined", values = indelSVLinetypes) +
@@ -186,7 +191,7 @@ p4 = ggplot(data=combinedMutationalLoad) +
   coord_flip()
 
 p4
-pFigure1Revisited = plot_grid(p3, p4, ncol=1, align="v", rel_heights = c(1, 1), labels = c("e", "f"), label_size = 8)
+pFigure1Revisited = plot_grid(p3, p4, ncol=1, align="v", rel_heights = c(1.2, 1), labels = c("e", "f"), label_size = 8)
 pFigure1Revisited
 dev.off()
 save_plot("~/hmf/RPlot/Extended Figure 5 - Adjusted TMB Comparison.png", pFigure1Revisited, base_width = 14, base_height = 5)

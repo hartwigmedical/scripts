@@ -12,4 +12,4 @@ structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
 # Empty string is credentials for db
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} "" hg19 $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} "" $@

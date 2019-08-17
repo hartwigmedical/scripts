@@ -12,4 +12,4 @@ somatic_vcf=$(locate_sage_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} hg19 $@
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} $@

@@ -9,4 +9,4 @@ credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_purple)
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-${prefix}/do_load_purple_data ${run_dir}/purple ${credentials} ${patient_db_jar} ${sample}
+${prefix}/do_load_purple_data ${sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
