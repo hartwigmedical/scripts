@@ -8,7 +8,7 @@ subdir="share"
 s3path="s3://${bucket}/${subdir}/"
 yymmdd=$( date "+%y%m%d" )
 
-if [[ -z $uploadFileName ]]; then
+if [[ -z ${uploadFileName} ]]; then
   uploadFileName="YOUR_FILE_IN_DATA_TMP"
 fi
 
