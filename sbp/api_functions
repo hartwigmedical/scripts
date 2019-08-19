@@ -67,7 +67,7 @@ locate_tumor_bam_for_set_in_bucket() {
     run_bucket=$1
     set=$2
 
-    tum_sample_name=$( load_tum_sample_name_for_set $set )
+    tum_sample_name=$( load_tum_sample_name_for_set ${set} )
 
     s3path="s3://${run_bucket}/${set}"
     echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping/${tum_sample_name}(_dedup)?.realigned.bam$" )
@@ -77,7 +77,7 @@ locate_ref_bam_for_set_in_bucket() {
     run_bucket=$1
     set=$2
 
-    ref_sample_name=$( load_ref_sample_name_for_set $set )
+    ref_sample_name=$( load_ref_sample_name_for_set ${set} )
 
     s3path="s3://${run_bucket}/${set}"
     echo $( sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*mapping/${ref_sample_name}(_dedup)?.realigned.bam$" )
