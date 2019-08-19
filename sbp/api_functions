@@ -26,9 +26,26 @@ load_tum_sample_name_for_set() {
 }
 
 load_run_info_for_set() {
-    local set=$1
-    local run_info=`query_sbp_api -type runs | grep -P "hmf-output|hmf_research|hmf_experiments" | grep "${set}" | grep "Somatic.ini\|CPCT.ini" | grep "Validated\|SnpCheck\|Failed\|Success" `
+    local set_name=$1
+    local run_info=$( query_sbp_api -type runs \
+        -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
+        -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
+        -filter "status=Validated|SnpCheck|Failed|Success" \
+        -filter "name=${set_name}"
+    )
     echo ${run_info}
+}
+
+getRunsBySetFromApi() {
+    local set_name=$1
+    local json_string=$( query_sbp_api -type runs -json \
+        -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
+        -filter "ini=PipelineV5.ini|Somatic.ini" \
+        -filter "status=Validated|SnpCheck|Failed|Success" \
+        -filter "name=${set_name}"
+    )
+    echo "$json_string"
+    #return ${json_string}
 }
 
 load_rerun_v3_info_for_set() {
