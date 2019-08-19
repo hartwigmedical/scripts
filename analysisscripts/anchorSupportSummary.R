@@ -50,7 +50,7 @@ sv_gr <- function(dbdf, include.homology=TRUE) {
 db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
 dbdf = query_somatic_structuralVariants(db)
 #save(dbdf, file = "d:/hartwig/anchorsupport.RData")
-#dbdf = load(file = "d:/hartwig/anchorsupport.RData")
+#load(file = "d:/hartwig/anchorsupport.RData")
 gr = sv_gr(dbdf)
 #pgr = sgr[ifelse(is.na(sgr$partner), names(sgr), sgr$partner)]
 
@@ -88,7 +88,7 @@ adj_df = anchor_df %>%
   group_by(beid1) %>%
   mutate(isClosest=distance==min(distance)) %>%
   ungroup() %>%
-  left_join(asm_links, by=c("sampleId"="sampleid", "beid1"="beid1", "beid2"="beid2")) %>%
+  left_join(asm_links, by=c("beid1"="beid1", "beid2"="beid2")) %>%
   mutate(is_asm_linked=!is.na(linkedBy)) %>%
   mutate(phasing=ifelse(is_asm_linked, "cis", ifelse(pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10, "trans", "unphased")))
 
@@ -112,21 +112,36 @@ ggplot() +
   scale_x_continuous(limits=c(0, 600))
 
 
-ggplot(adj_df) +
+ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(distance > 35)) +
   aes(x=distance, fill=phasing) +
   geom_histogram(bin=30) +
-  scale_x_continuous(limits = c(0, 800))
+  scale_x_continuous(limits = c(50, 800))
+# TODO: fix x axis labels
 
+adj_df %>% group_by(beid1) %>%
+  summarise(state=max(ifelse(phasing=="cis", 2, ifelse(phasing=="trans", 1, 0)))) %>%
+  group_by(state) %>%
+  summarise(n=n()) %>%
+  mutate(percentage=n/length(gr))
+# TODO: fix percentage as we're:
+# - only counting the left side
+# - not filtering to > 50bp
 
+nearby_summary_df = gr %>% as.data.frame() %>% dplyr::select(beid, sampleid) %>%
+  left_join(rbind(
+        adj_df %>% filter(distance >= 50 & distance <= 1000 & str_sub(adj_df$beid1, end=8) != str_sub(adj_df$beid2, end=8)) %>% mutate(beid=beid1) %>% dplyr::select(beid, distance),
+        adj_df %>% filter(distance >= 50 & distance <= 1000 & str_sub(adj_df$beid1, end=8) != str_sub(adj_df$beid2, end=8)) %>% mutate(beid=beid2) %>% dplyr::select(beid, distance)) %>%
+      group_by(beid) %>% summarise(distance=min(distance)),
+  by="beid") %>%
+group_by(sampleid) %>%
+  summarise(n=n(), hasNearby=sum(!is.na(distance)))
 
-
-
-
-
-
-
-
-
-
-
+nearby_summary_df = nearby_summary_df %>%
+  filter(hasNearby > 1) %>%
+  group_by(sampleid, n, hasNearby) %>%
+  do({data.frame(
+      pvalue=prod(.$n - seq(1, .$hasNearby - 1)) * ((1000/3000000000) ** (.$hasNearby - 1)),
+      log10pvalue=sum(log10(.$n - seq(1, .$hasNearby - 1))) + (.$hasNearby - 1) * log10(1000/3000000000)
+  )})
+sum(nearby_summary_df$log10pvalue)
 

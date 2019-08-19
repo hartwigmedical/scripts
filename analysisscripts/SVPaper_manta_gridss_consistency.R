@@ -7,12 +7,18 @@ bpgr = NULL
 begr = NULL
 
 ann_caller_sample = function(filename, caller, sample, befct) {
-  gr = befct(readVcf(filename))
+  vcf = readVcf(filename)
+  gr = befct(vcf)
   if (length(gr) > 0) {
     gr$caller = caller
     gr$sample = sample
   }
   if (length(gr) > 0) {
+    if (is.null(info(vcf)$IMPRECISE)) {
+      gr$IMPRECISE=FALSE
+    } else {
+      gr$IMPRECISE = info(vcf[gr$sourceId])$IMPRECISE
+    }
     names(gr) = paste0(sample, caller, names(gr))
     gr$partner = paste0(sample, caller, gr$partner)
   }
@@ -183,14 +189,20 @@ figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 #
 
 load(paste0(data_dir, "/probeResult.RData"))
-
+probeResult = probeResult %>%
+  filter(source!="CPCT02450014T") %>%
+  filter(probeQuality >= 20) %>%
+  filter(!is.na(source)) %>%
+  ungroup()
+sample_rename = paste("Sample", str_pad(1:length(unique(probeResult$source)), 2, pad="0"))
+names(sample_rename) = unique(probeResult$source)
+probeResult = probeResult %>%
+  mutate(source=sample_rename[source])
 
 rbind(
     probeResult %>% filter(scope!="SharedBoth"),
     probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
     probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka")) %>%
-  filter(probeQuality >= 20) %>%
-  filter(!is.na(source)) %>%
   group_by(source, callset, scope, supported) %>%
   summarise(n=n()) %>%
   mutate(category=factor(paste(callset, scope),
@@ -214,7 +226,6 @@ rbind(
   probeResult %>% filter(scope=="SharedStrelka") %>% mutate(callset="Gridss", scope="Private")) %>%
   filter(probeQuality >= 20) %>%
   filter(!is.na(source)) %>%
-  filter(source!="CPCT02450014T") %>%
   mutate(category=factor(paste(callset, scope),
                          levels=c("Gridss Private", "Gridss SharedManta", "Manta Private"),
                          labels=c("gridss", "gridss+manta", "manta"))) %>%
@@ -234,9 +245,6 @@ rbind(
   probeResult %>% filter(scope!="SharedBoth"),
   probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka"),
   probeResult %>% filter(scope=="SharedManta") %>% mutate(callset="Gridss", scope="Private")) %>%
-  filter(probeQuality >= 20) %>%
-  filter(!is.na(source)) %>%
-  filter(source!="CPCT02450014T") %>%
   mutate(category=factor(paste(callset, scope),
                          levels=c("Gridss Private", "Gridss SharedStrelka", "Strelka Private"),
                          labels=c("gridss", "gridss+strelka", "strelka"))) %>%
@@ -254,8 +262,6 @@ ggplot() +
 figsave("probe_results_vs_stelka_under_50bp", width=5, height=4)
 
 sumdf = probeResult %>%
-  filter(probeQuality >= 20) %>%
-  filter(source!="CPCT02450014T") %>%
   group_by(callset, scope) %>%
   summarise(calls=n(), validated=sum(supported)) %>%
   ungroup()
@@ -277,8 +283,6 @@ rbind(
     fdr=1-validated/calls)
 
 shortsumdf = probeResult %>%
-  filter(probeQuality >= 20) %>%
-  filter(source!="CPCT02450014T") %>%
   mutate(under50bp=!is.na(length) & abs(length) <= 50) %>%
   filter(under50bp) %>%
   group_by(callset, scope) %>%
@@ -300,3 +304,16 @@ rbind(
   mutate(
     prec=validated/calls,
     fdr=1-validated/calls)
+
+# manta imprecise calls
+as.data.frame(grcolo829) %>%
+  mutate(gridss_be_match=overlapsAny(grcolo829, grcolo829[grcolo829$caller=="purple"])) %>%
+  group_by(caller, gridss_be_match, IMPRECISE) %>%
+  summarise(tp=sum(betp | bptp), n=n()) %>%
+  mutate(fdr=(n-tp)/n)
+probeResult %>% filter(str_detect(callset, "Manta")) %>%
+  mutate(isImprecise=IMPRECISE_start | IMPRECISE_end == "TRUE") %>%
+  group_by(isImprecise) %>%
+  summarise(n=n(), supported=sum(supported)) %>%
+  mutate(fdr=(n-supported)/n)
+
