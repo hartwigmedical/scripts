@@ -10,11 +10,11 @@ for run in ${process_runs}; do
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run})
     if [ -f "${run}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
-            echo "[INFO] check healthcheck has runned for set ${run}"
+            echo "[INFO] check healthcheck has run for set ${run}"
     elif [ -f "${run}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
-            echo "[ERROR] check healthcheck has failed for set ${run}"
+            echo "[ERROR] check healthcheck has fail for set ${run}"
     else
-            echo "[ERROR] check healthcheck has not runned for set ${run}"
+            echo "[ERROR] check healthcheck has not run for set ${run}"
     fi
 
 done
