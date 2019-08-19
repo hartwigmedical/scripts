@@ -10,7 +10,7 @@ for run in ${process_runs}; do
     #run_health_checker_prod /data/schuberg/processed_runs/${run}
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run})
-    if [ -f "${tumor_sample}.HealthCheckSucceeded" ] ; then
+    if [ -f "health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
             echo "[INFO] check healthcheck has runned for set ${run}"
     else
             echo "[ERROR] check healthcheck has not runned for set ${run}"
