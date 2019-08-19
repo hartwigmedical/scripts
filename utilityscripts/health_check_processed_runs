@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 
+source load_metadata
+
 path=/data/schuberg/processed_runs/
 process_runs=$(ls ${path})
 
 for run in ${process_runs}; do
     echo "[INFO] healthcheck for set ${run}"
-    do_healthcheck_qctests --healthcheck-log-file /data/schuberg/processed_runs/${run}/logs/HealthCheck.out
+    run_health_checker_prod /data/schuberg/processed_runs/${run}
+
+    tumor_sample=$(load_tumor_sample_from_metadata ${run})
+    if [ -f "${tumor_sample}.HealthCheckSucceeded" ] ; then
+            echo "[INFO] check healthcheck has runned for set ${run}"
+    else
+            echo "[ERROR] check healthcheck has not runned for set ${run}"
+    fi
+
 done
 
 echo "TODO: check if every healthcheck is correct"
