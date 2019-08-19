@@ -25,7 +25,3 @@ do_archive_directory_to_sbp -l "/data/submissions" -d "submissions" ${delete_fla
 
 echo "[INFO] Archiving Shallow Seq Pipelines"
 do_archive_directory_to_sbp -l "/data/data_archive/shallow_seq_pipelines" -d "shallow_seq_pipelines" ${delete_flag}
-
-
-
-
