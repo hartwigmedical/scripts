@@ -83,7 +83,7 @@ done | sort -k1,1 -k3,3
 printHeader "SampleOverview Table (CPCT02/DRUP01/WIDE01 R samples are removed)"
 echo -e "Submission\tSampleID\tSampleName\tYieldGBase\tDescription"
 for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01)\d{6}R" | while read line; do
+    ${PARSE_SCRIPT} -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01|CORE.{2})\d{6}R" | while read line; do
         yldMBase=$( echo ${line} | cut -d" " -f3 )
         yld=$((yldMBase/1000))
         sub=$( echo ${line} | cut -d" " -f11 )
