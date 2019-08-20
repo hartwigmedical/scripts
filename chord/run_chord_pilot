@@ -17,8 +17,7 @@ working_dir="${run_dir}/chord_pilot"
 mkdir -p ${working_dir}
 
 somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
-# TODO: Can't take the purple SV here because of screwed up contig headers which crash CHORD. See mail Jon 10-1-2019
-structural_vcf=$(locate_gridss_structural_variants ${run_dir})
+structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
 
 echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
