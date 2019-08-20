@@ -16,8 +16,8 @@ chord_dir=/data/common/tools/chord_pilot
 working_dir="${run_dir}/chord_pilot"
 mkdir -p ${working_dir}
 
-somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
-structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
+somatic_vcf=$(locate_purple_somatics ${run_dir})
+structural_vcf=$(locate_purple_structural_variants ${run_dir})
 
 echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
