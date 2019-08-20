@@ -25,12 +25,12 @@ while getopts ":s:p:" o; do
     esac
 done
 
-if [[ -z "${set}" ]]; then
+if [ -z "${set}" ]; then
     usage
 fi
 
 rerun_v3_info=$(load_rerun_v3_info_for_set ${set})
-if [ -z "rerun_v3_info" ]; then
+if [ -z "${rerun_v3_info}" ]; then
     echo "[ERROR] No v3 rerun found for set ${set}. Exiting."
     exit 1
 fi

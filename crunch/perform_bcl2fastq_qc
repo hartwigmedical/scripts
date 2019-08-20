@@ -48,11 +48,11 @@ for seqDir in "${seqDirs[@]}"; do
     nasrun_name="${hmfrun_name}__${seqdir_name}"
     
     ## anything wrong with any seqrun: exit the whole thing
-    if [[ ! -d $seqDir ]]; then 
+    if [[ ! -d ${seqDir} ]]; then
         echo "[ERROR] dir does not exist ($seqDir)" && exit 1; 
     elif [[ ! $( cat ${errlog_path} | tail -1 | grep "with 0 errors and" ) ]]; then 
         echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
-    elif [[ -z $hmfrun_name ]]; then 
+    elif [[ -z ${hmfrun_name} ]]; then
         echo "[ERROR] Have not been able to parse hmfrun_name from sheet ($ssheet_path)" && exit 1; 
     fi
     
@@ -64,32 +64,32 @@ done
 ## get QC
 printHeader "RUN QC"
 for seqDir in "${seqDirs[@]}"; do
-    $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
+    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
 done
 
 ## get info for RunOverview
 printHeader "RUN Info"
 for seqDir in "${seqDirs[@]}"; do
-    $PARSE_SCRIPT -run ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
 done | sort -r
 
 ## get info for SampleOverview
 printHeader "Sample Info"
 for seqDir in "${seqDirs[@]}"; do
-    $PARSE_SCRIPT -run ${seqDir} -summary | grep -v "^#"
+    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -v "^#"
 done | sort -k1,1 -k3,3
 
 ## get info for SampleOverview
 printHeader "SampleOverview Table (CPCT02/DRUP01/WIDE01 R samples are removed)"
 echo -e "Submission\tSampleID\tSampleName\tYieldGBase\tDescription"
 for seqDir in "${seqDirs[@]}"; do
-    $PARSE_SCRIPT -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01)\d{6}R" | while read line; do 
-        yldMBase=$( echo $line | cut -d" " -f3 )
+    ${PARSE_SCRIPT} -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01)\d{6}R" | while read line; do
+        yldMBase=$( echo ${line} | cut -d" " -f3 )
         yld=$((yldMBase/1000))
-        sub=$( echo $line | cut -d" " -f11 )
-        sid=$( echo $line | cut -d" " -f9 )
-        snm=$( echo $line | cut -d" " -f10 )
-        dsc=$( echo $line | cut -d" " -f12 )
+        sub=$( echo ${line} | cut -d" " -f11 )
+        sid=$( echo ${line} | cut -d" " -f9 )
+        snm=$( echo ${line} | cut -d" " -f10 )
+        dsc=$( echo ${line} | cut -d" " -f12 )
         echo -e "$sub\t$sid\t$snm\t$yld\t$dsc"
    done | sort -k1,1 -k3,3
 done
@@ -101,7 +101,7 @@ for cmd in "${cmdsToExecute[@]}"; do
 done
 
 ## add flowcell rsync cmd
-if [[ ${currHost} != "datastore" ]]; then
+if [[ ${CURR_HOST} != "datastore" ]]; then
     printHeader "Get Rsync code for partial sync to datastore"
     rsync_cmd="rsync_seqruns_to_datastore $@"
     echo ${rsync_cmd}
