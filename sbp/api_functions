@@ -10,19 +10,19 @@ load_sample_name_for_set_by_type_from_api() {
     local set_name=$1
     local sample_type=$2 # can be ref_sample or tumor_sample
     local sample_name=$( query_sbp_api -type sets -filter "name=${set_name}" -json | jq -r ".[0].$sample_type" )
-    echo "${sample_name}"
+    echo ${sample_name}
 }
 
 load_ref_sample_name_for_set() {
     local set_name=$1
     local ref_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "ref_sample" )
-    echo "${ref_sample_name}"
+    echo ${ref_sample_name}
 }
 
 load_tum_sample_name_for_set() {
     local set_name=$1
     local tum_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "tumor_sample" )
-    echo "${tum_sample_name}"
+    echo ${tum_sample_name}
 }
 
 load_run_info_for_set() {
@@ -38,26 +38,15 @@ load_run_info_for_set() {
     echo ${run_info}
 }
 
-getRunsBySetFromApi() {
-    local set_name=$1
-    local json_string=$( query_sbp_api -type runs -json \
-        -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
-        -filter "ini=PipelineV5.ini|Somatic.ini" \
-        -filter "status=Validated|SnpCheck|Failed|Success" \
-        -filter "name=${set_name}"
-    )
-    echo "$json_string"
-    #return ${json_string}
-}
-
 load_rerun_v3_info_for_set() {
     set=$1
     # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
-    if [ -z "${rerun_info}" ]; then
+    if [ -z ${rerun_info} ]; then
         run_info=$(load_run_info_for_set ${set})
         run_is_v3_or_v4_or_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v3\|v5"`
-        if [ -z "run_is_v3_or_v4_or_v5" ]; then
+        if [ -z ${run_is_v3_or_v4_or_v5} ]; then
+            # Should not happen - any pre-v3 run must have a v3-rerun
             rerun_info=""
         else
             rerun_info=${run_info}
@@ -70,10 +59,11 @@ load_rerun_v4_info_for_set() {
     set=$1
     # Allow for failure of v4 rerun since v4 rerun runs the health checks.
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_v4.ini" | grep "v4.4" | grep "Validated\|Failed" `
-    if [ -z "${rerun_info}" ]; then
+    if [ -z ${rerun_info} ]; then
         run_info=$(load_run_info_for_set ${set})
         run_is_v4_or_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v5"`
-        if [ -z "run_is_v4_or_v5" ]; then
+        if [ -z ${run_is_v4_or_v5} ]; then
+            # Should not happen - any pre-v4 run must have a v4-rerun
             rerun_info=""
         else
             rerun_info=${run_info}
