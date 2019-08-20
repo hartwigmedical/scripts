@@ -32,8 +32,8 @@ load_run_info_for_set() {
         -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
         -filter "status=Validated|SnpCheck|Failed|Success" \
-        -filter "name=${set_name}"
-    ) | grep -v "^#"
+        -filter "name=${set_name}" | grep -v "^#"
+    )
 
     echo ${run_info}
 }
