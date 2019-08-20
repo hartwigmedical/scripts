@@ -31,19 +31,19 @@ if [[ -z "${set}" || -z "${localpath}" ]]; then
 fi
 
 run_info=$(load_run_info_for_set ${set})
-if [ -z ${run_info} ]; then
+if [ -z "${run_info}" ]; then
     echo "[ERROR] No run info found for set ${set}. Exiting"
     exit 1
 fi
 
 rerun_v3_info=$(load_rerun_v3_info_for_set ${set})
-if [ -z ${rerun_v3_info} ]; then
+if [ -z "${rerun_v3_info}" ]; then
     echo "[ERROR] No v3 rerun found for set ${set}. Exiting."
     exit 1
 fi
 
 rerun_v4_info=$(load_rerun_v4_info_for_set ${set})
-if [ -z ${rerun_v4_info} ]; then
+if [ -z "${rerun_v4_info}" ]; then
     echo "[ERROR] No v4 rerun found for set ${set}. Exiting."
     exit 1
 fi
@@ -51,7 +51,7 @@ fi
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 run_is_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v5"`
 
-if [ ! -z ${run_is_v5} ]; then
+if [ ! -z "${run_is_v5}" ]; then
     echo "[INFO] Downloading v5 run ${set}"
     sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
         --exclude "*.bam" \
