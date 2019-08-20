@@ -9,7 +9,7 @@ fi
 
 download_path=/data/schuberg/downloaded_runs
 echo "[INFO] Downloading set ${set} to ${download_path}"
-download_set_v5 -s ${set} -p ${download_path}
+download_set -s ${set} -p ${download_path}
 
 processed_path=/data/schuberg/processed_runs
 echo "[INFO] Copying set ${set} to processed path ${processed_path}"

@@ -27,7 +27,7 @@ load_tum_sample_name_for_set() {
 
 load_run_info_for_set() {
     local set_name=$1
-    # Remove header
+    # Remove header from the query command
     local run_info=$( query_sbp_api -type runs \
         -filter "bucket=hmf-output|hmf_research" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
@@ -56,8 +56,8 @@ load_rerun_v3_info_for_set() {
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})
-        run_is_v3_or_v4=`echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v3"`
-        if [ -z "run_is_v3_or_v4" ]; then
+        run_is_v3_or_v4_or_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v3\|v5"`
+        if [ -z "run_is_v3_or_v4_or_v5" ]; then
             rerun_info=""
         else
             rerun_info=${run_info}
@@ -72,8 +72,8 @@ load_rerun_v4_info_for_set() {
     rerun_info=`query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_v4.ini" | grep "v4.4" | grep "Validated\|Failed" `
     if [ -z "${rerun_info}" ]; then
         run_info=$(load_run_info_for_set ${set})
-        run_is_v4=`echo ${run_info} | cut -d ' ' -f8 | grep "v4"`
-        if [ -z "run_is_v4" ]; then
+        run_is_v4_or_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v5"`
+        if [ -z "run_is_v4_or_v5" ]; then
             rerun_info=""
         else
             rerun_info=${run_info}
