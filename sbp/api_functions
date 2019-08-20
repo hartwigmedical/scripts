@@ -34,7 +34,7 @@ load_run_info_for_set() {
         -filter "name=${set_name}"
     )
     # Remove header
-    echo ${run_info} | grep -v "#"
+    echo ${run_info} | grep -v "^#"
 }
 
 getRunsBySetFromApi() {
