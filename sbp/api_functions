@@ -27,14 +27,15 @@ load_tum_sample_name_for_set() {
 
 load_run_info_for_set() {
     local set_name=$1
+    # Remove header
     local run_info=$( query_sbp_api -type runs \
         -filter "bucket=hmf-output|hmf_research|hmf_experiments" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
         -filter "status=Validated|SnpCheck|Failed|Success" \
         -filter "name=${set_name}"
-    )
-    # Remove header
-    echo ${run_info} | grep -v "^#"
+    ) | grep -v "^#"
+
+    echo ${run_info}
 }
 
 getRunsBySetFromApi() {
