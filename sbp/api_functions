@@ -33,7 +33,8 @@ load_run_info_for_set() {
         -filter "status=Validated|SnpCheck|Failed|Success" \
         -filter "name=${set_name}"
     )
-    echo ${run_info}
+    # Remove header
+    echo ${run_info} | grep -v "#"
 }
 
 getRunsBySetFromApi() {
