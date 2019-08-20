@@ -317,3 +317,23 @@ probeResult %>% filter(str_detect(callset, "Manta")) %>%
   summarise(n=n(), supported=sum(supported)) %>%
   mutate(fdr=(n-supported)/n)
 
+# 32-100bp DUP
+rbind(
+  probeResult %>% filter(scope!="SharedBoth"),
+  probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
+  probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka")) %>%
+  filter(type == "DUP" & abs(endPosition - startPosition) <= 100 & abs(endPosition - startPosition) >= 32) %>%
+  group_by(callset, scope, supported) %>%
+  summarise(n=n()) %>%
+  mutate(category=factor(paste(callset, scope),
+    levels=c("Manta Private", "Gridss SharedManta", "Gridss Private", "Gridss SharedStrelka", "Strelka Private"),
+    labels=c("manta", "gridss+manta", "gridss", "gridss+strelka", "strelka (32bp+)"))) %>%
+  ggplot() +
+  aes(x=category, fill=supported, y=n) +
+  geom_bar(stat="identity") +
+  theme_bw() +
+  scale_fill_manual(values=c("#d95f02", "#1b9e77")) +
+  labs(fill="Validated", x="", y="32-100bp DUP") +
+  theme(axis.text.x = element_text(angle = 90))
+figsave("probe_results_32-100bp_DUP", width=5, height=4)
+
