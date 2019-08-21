@@ -20,17 +20,17 @@ if [[ ! -w ${outDir} ]]; then echo "[EXIT] OUTPUT DIR not writable (${outDir})" 
 if [[ ! -d ${seqDir} ]]; then echo "[EXIT] INPUT DIR does not exist (${seqDir})" && exit 1; fi
 
 ## startup
-echo "[INFO] START ${taskId} ($YYMMDD)" | tee $outSum
-echo "[INFO] Writing err log to ${errLog}" | tee -a $outSum
+echo "[INFO] START ${taskId} ($YYMMDD)" | tee ${outSum}
+echo "[INFO] Writing err log to ${errLog}" | tee -a ${outSum}
 
 # gather info
 echo -e "#sample\tbarcode\tsize\tpath\tflowcells" > "${outTsv}"
 for fastqDirPath in ${seqDir}/*; do 
-    fastqDirName=$( basename $fastqDirPath )
-    barcode=$( echo $fastqDirName | cut -d"_" -f1 )
-    sample=$( echo $fastqDirName | cut -d"_" -f2 )
-    size=$( du -sh $fastqDirPath | cut -f1 )
-    flowcells=$( find $fastqDirPath -name "*fastq.gz" -exec basename {} \; | cut -d"_" -f2 | sort | uniq | tr "\n" "," | sed 's/,$//' )
+    fastqDirName=$( basename ${fastqDirPath} )
+    barcode=$( echo ${fastqDirName} | cut -d"_" -f1 )
+    sample=$( echo ${fastqDirName} | cut -d"_" -f2 )
+    size=$( du -sh ${fastqDirPath} | cut -f1 )
+    flowcells=$( find ${fastqDirPath} -name "*fastq.gz" -exec basename {} \; | cut -d"_" -f2 | sort | uniq | tr "\n" "," | sed 's/,$//' )
     printf "%s\t%s\t%s\t%s\t%s\n" "${sample}" "${barcode}" "${size}" "${fastqDirPath}" "${flowcells}"
 done | sort -k1 >>"${outTsv}" 2>"${errLog}"
 
@@ -38,18 +38,18 @@ done | sort -k1 >>"${outTsv}" 2>"${errLog}"
 cat ${outTsv} | grep -v "^#" | cut -f1 | sort | uniq > ${outSmp}
 sampleCount=$( grep -cv "^#" ${outSmp} )
 
- uniqSampleCount=$( cat $outTsv | grep -v ^# | cut -f1 | sort | uniq | wc -l )
-uniqBarcodeCount=$( cat $outTsv | grep -v ^# | cut -f2 | sort | uniq | wc -l )
+ uniqSampleCount=$( cat ${outTsv} | grep -v ^# | cut -f1 | sort | uniq | wc -l )
+uniqBarcodeCount=$( cat ${outTsv} | grep -v ^# | cut -f2 | sort | uniq | wc -l )
 
-echo "[INFO] Number of samples: ${sampleCount}" | tee -a $outSum
-echo "[INFO] Number of unique sample names: ${uniqSampleCount}" | tee -a $outSum
-echo "[INFO] Number of unique sample barcodes: ${uniqBarcodeCount}" | tee -a $outSum
-echo "[INFO] Complete table in: ${outTsv}" | tee -a $outSum
-echo "[INFO]   Sample table in: ${outSmp}" | tee -a $outSum
+echo "[INFO] Number of samples: ${sampleCount}" | tee -a ${outSum}
+echo "[INFO] Number of unique sample names: ${uniqSampleCount}" | tee -a ${outSum}
+echo "[INFO] Number of unique sample barcodes: ${uniqBarcodeCount}" | tee -a ${outSum}
+echo "[INFO] Complete table in: ${outTsv}" | tee -a ${outSum}
+echo "[INFO]   Sample table in: ${outSmp}" | tee -a ${outSum}
 
 echo "[INFO] Starting NAS sync (to ${nasLoc})"
-rsync $outTsv ${nasLoc}/overview.txt
-rsync $outSmp ${nasLoc}/samples.txt
-rsync $outSum ${nasLoc}/summary.txt
+rsync ${outTsv} ${nasLoc}/overview.txt
+rsync ${outSmp} ${nasLoc}/samples.txt
+rsync ${outSum} ${nasLoc}/summary.txt
 
 echo "[INFO] DONE ${taskId}" | tee -a $outSum

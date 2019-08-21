@@ -9,18 +9,18 @@ dstServer="DESTSERVER"
 
 function main(){
   for typePath in $( find ${ROOT_DIR} -mindepth 1 -maxdepth 1 -type d | sort | grep -v pipeline ); do 
-    typeName=$( basename $typePath )
-    print_title "$typeName FASTQ/BAM"
+    typeName=$( basename ${typePath} )
+    print_title "$typeName FASTQ"
     echo "$typePath"
 
     for versionPath in $( find ${typePath} -mindepth 1 -maxdepth 1 -type d | sort ); do
-      versionName=$( basename $versionPath )
+      versionName=$( basename ${versionPath} )
       echo "  $versionPath"
 
       for dataPath in $( find ${versionPath} -mindepth 1 -maxdepth 1 -type d | sort ); do
-        dataName=$( basename $dataPath )
-        if [[ ($dataName == "fastq" || $dataName == "bam") ]]; then
-          if [[ $printRsync == "true" && ($( ls $dataPath | wc -l ) > 0) ]]; then
+        dataName=$( basename ${dataPath} )
+        if [[ ${dataName} == "fastq" ]]; then
+          if [[ ${printRsync} == "true" && ($( ls ${dataPath} | wc -l ) > 0) ]]; then
             dstPath="/data2/pipelineinput/${versionName}_${dataName}"
             logPath="${LOG_DIR}/rsync_to_${dstServer}.log"
             echo "    nohup rsync -ahPL --dry-run --stats ${dataPath}/ ${dstServer}:${dstPath}/ > ${logPath} &"
@@ -31,7 +31,7 @@ function main(){
   done
   
   print_title "PIPELINE DIRS"
-  ls -d1 $ROOT_DIR/*pipeline*
+  ls -d1 ${ROOT_DIR}/*pipeline*
   echo ""
 }
 
