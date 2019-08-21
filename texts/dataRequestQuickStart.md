@@ -10,10 +10,10 @@ Most recent version of this text can be found at one the following repositories:
 [https://github.com/hartwigmedical/texts/](https://github.com/hartwigmedical/texts/)
 -->
 
-In case your data request involves somatic data you can find these in our nextcloud portal:  
+In case your data request involves tertiary analysis data you can find these in our nextcloud portal:  
 [https://nc.hartwigmedicalfoundation.nl/](https://nc.hartwigmedicalfoundation.nl/)
 
-In case your data request involves germline data, you can find the Germline VCFs in our download-portal:   
+In case your data request involves BAM files, you can find the links to the BAMs in our download-portal:   
 [https://portal.hartwigmedicalfoundation.nl/](https://portal.hartwigmedicalfoundation.nl/)
 
 Note: both download-portal and nextcloud are behind the same dual factor login (that works with app "OKTA Verify").
@@ -24,7 +24,7 @@ Somatic data is shared in a gzipped tar via our [Nextcloud](https://nc.hartwigme
 
 ##### Contents of the gzipped tar file:
 - ./metadata directory (content depends on the specifics of the request).
-- ./data directory with various somatic data files per biopsy/set.
+- ./data directory with various somatic data files per biopsy.
 
 ##### Per biopsy the following files are present:
 - post_processed.vcf.gz (somatic SNVs and small INDELs).
@@ -40,20 +40,16 @@ Somatic data is shared in a gzipped tar via our [Nextcloud](https://nc.hartwigme
 
 
 ##### Notes about the (clinical) metadata:
-- We gather as much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies, but please be aware that records are by no means complete.
+- We gather as much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies, but please be aware that records are not guaranteed to be complete.
 - For patients from the DRUP study we can not share any treatment related information.
 - The "purity" mentioned is the percentage tumor cells derived from WGS data by the tool [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
 
 
 ### Germline data
 
-In case Germline level is included in your request, Germline variant VCFs (GATK based) are available via our [download-portal](https://portal.hartwigmedicalfoundation.nl/).
-
-- On top of the download-portal interface you can find some download tips behind the question mark icon. Best is to use the aria2 config option as it allows you to select multiple sets, download a plain text config file and then use the aria2 download tool to perform download and md5sum file integrity check in one go.
-- In case you want to use other command line tools like curl/wget to download files, make sure to put quotes around the URLs as certain characters might otherwise break the URL.
+In case Germline level is included in your request, Germline variant VCFs (GATK based) are available via nextcloud.
 
 Sharing of BAM files is currently only supported for small numbers, but in case you do have access they are also visible in the download-portal.
-
 
 ### Data inclusion/exclusion
 
@@ -62,10 +58,10 @@ In addition to data-request specific criteria, by default we exclude datasets fo
 - We exclude biopsies from patients where informed consent is from before 21 April 2016.
 - We exclude biopsies with poor quality (PURPLE qcStatus != PASS).
 - We exclude biopsies without any tumor evidence (PURPLE status = NO_TUMOR).
-- We exclude biopsies with less than 20% tumor cells (PURPLE purity < 0.2).
+- We exclude biopsies with less than 19.5% tumor cells (PURPLE purity < 0.195).
 
 ### More detailed information
-- Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline](https://github.com/hartwigmedical/pipeline)
+- Source code of our analysis pipeline: [https://github.com/hartwigmedical/pipeline5](https://github.com/hartwigmedical/pipeline5)
 - Source code of all HMF tools: [https://github.com/hartwigmedical/hmftools](https://github.com/hartwigmedical/hmftools)
 - For an explanation of most output see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator)
 - For an example patient report see our [resources page](http://resources.hartwigmedicalfoundation.nl/)
