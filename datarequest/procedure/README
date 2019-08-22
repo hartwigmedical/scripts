@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+
+# Not supposed to be run!
+exit 0
+
+### =================================================================================
+### Complete a data request
+### =================================================================================
+
+# main variables
+scriptsDir="/data/data_archive/datarequests/procedure/scripts"
+templatesDir="/data/data_archive/datarequests/procedure/templates"
+latestMetadata="/data/data_archive/datarequests/procedure/latest/metadata"
+execSqlScript="/data/common/repos/scripts/sql/execution/execute_sql_on_prod"
+metadataScript="/data/data_archive/datarequests/procedure/scripts/create_metadata_for_request"
+
+#entityName="CompleteDB"
+entityName="DR-084" # entityName is not the same as requestId for updates
+entitySbpId=$( query_sbp_api -type entities | grep $entityName | cut -f3 )
+drHome="/data/data_archive/datarequests"
+rootDir="${drHome}/${entityName}"
+if [[ -d $rootDir ]]; then cd $rootDir && ls -1; else echo "[WARN] No $rootDir yet"; fi
+
+# determine subname
+requestId="${entityName}"
+#requestId="${entityName}-190410"
+#requestId="${entityName}-190813"
+#requestId="${entityName}-update2"
+
+# request variables
+requestDir="${rootDir}/${requestId}"
+somaDir="${requestDir}/somatics"
+germDir="${requestDir}/germline"
+ rnaDir="${requestDir}/rnaseq"
+metaDir="${requestDir}/metadata"
+logsDir="${requestDir}/logs"
+jsonDir="${requestDir}/logs/json"
+logFile="${logsDir}/log.txt"
+metadataFile="${metaDir}/metadata.tsv"
+selectPatientsSql="${logsDir}/selectPatients.sql"
+selectPatientsOut="${logsDir}/selectPatients.tsv"
+
+# checks
+echo -e "[INFO] Request: ${requestId} (base=${requestDir})\nEntity: ${entityName} (id=${entitySbpId})"
+if [[ -d ${requestDir} ]]; then echo "[NOTE] Output dir already exists (${requestDir})"; fi
+
+# setup dir structure
+mkdir -p ${requestDir}; mkdir -p ${somaDir}; mkdir -p ${metaDir}; mkdir -p ${logsDir}; mkdir -p ${jsonDir}
+cd ${requestDir} && ls
+cd ${logsDir}
+cp ${templatesDir}/template_selectPatients.sql ${selectPatientsSql}
+
+# get patients
+${execSqlScript} $selectPatientsSql > $selectPatientsOut
+
+# inspect metadata script
+vim ${metadataScript}
+
+# get metadata
+${metadataScript} selectPatients.tsv $latestMetadata
+patientCount=$( grep -cv "^#" $selectPatientsOut )
+echo "[INFO] PatientCount: ${patientCount}"
+cat metadata_final.tsv | cut -f 1-6 | head -20
+inspect_header metadata_final.tsv
+
+# if all ok copy the final
+cp metadata_final.tsv ${metadataFile}
+cat ${metadataFile} | grep -v "^#" | cut -f4 | sort | uniq > "${logsDir}/patients_final.tsv"
+
+finalBiopsyCount=$( grep -cv "^#" ${metadataFile} )
+finalPatientCount=$( grep -cv "^#" "${logsDir}/patients_final.tsv" )
+echo "[INFO] FinalBiopsyCount: ${finalBiopsyCount} (of ${finalPatientCount} unique patients)" >> $logFile
+cat $logFile
+
+# if only specific data: create specific jsons (one for each file-type)
+#matchStrings=(GERMLINE_VARIANT_VCF)
+matchStrings=(TUMOR_SAMPLE_BA)
+cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do
+  setId=$( cat metadata_unfiltered.tsv | grep ${setName} | cut -f2);
+  for matchString in "${matchStrings[@]}"; do
+    filterString="%${matchString}%";
+    jsonOut="${requestDir}/logs/json/${setName}_${matchString}.json"; echo "Creating ${jsonOut}";
+    ${scriptsDir}/print_share_json_with_filter.sh ${setId} ${entitySbpId} "${filterString}" > "${jsonOut}";
+  done
+done
+
+# or create jsons WITHOUT any filters
+cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do
+  jsonOut="${requestDir}/logs/json/${setName}.json"; echo "[INFO] Creating ${jsonOut}";
+  setId=$( query_sbp_api -type sets | grep ${setName} | cut -f5);
+  ${scriptsDir}/print_share_json.sh ${setId} ${entitySbpId} > "${jsonOut}";
+done
+
+# get the somatic files from datastore per set
+cd $requestDir
+#cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do setPath=/data/cpct/runs/${setName}; $scriptsDir/get_set_data.sh $setPath; done
+cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do setPath=/data/data_archive/datarequests/CompleteDB/CompleteDB-190813/data/${setName}; $scriptsDir/get_set_data_from_snapshot.sh $setPath; done
+
+# get the germline files from datastore per set
+cd $requestDir
+cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do setPath=/data/cpct/runs/${setName}; $scriptsDir/get_set_data_germline_vcf.sh $setPath; done
+
+# get RNAseq
+cd $requestDir
+mkdir -p $rnaDir
+rnaOverview="/data/data_archive/rna_seq/overview/overview.tsv"
+cat $metadataFile | grep -v ^# | cut -f3 | while read sampleId; do echo "[INFO] Checking $sampleId"; fastqPath=$( cat $rnaOverview | awk -v sampleId="${sampleId}" '$1 == sampleId' | cut -f4); if [[ "$fastqPath" ]]; then echo "[INFO]   found $fastqPath"; ln -s $fastqPath ${rnaDir}/; fi; done
+
+# delete germline if not requested!
+find $somaDir -name "*germline*"
+#find data/ -name "*germline*" -delete
+
+## =================================================================================
+## Adding drug info
+## ===============================================================================
+
+## test template existance
+for type in postBiopsyDrugsByBiopsy postBiopsyDrugsByPatient preBiopsyDrugsByPatient responsesByBiopsy responsesByPatient; do
+  tpl="${templatesDir}/template_${type}.sql"
+  outcome="NO_OUTCOME_SET"
+  if [[ ! -f "${tpl}" ]]; then outcome="FAIL (does not exist: $tpl)"; else outcome="OK"; fi
+  echo "[INFO] Checking type $type: $outcome"
+done
+
+#for type in postBiopsyDrugsByPatient responsesByPatient preBiopsyDrugsByPatient; do
+#for type in postBiopsyDrugsByBiopsy responsesByBiopsy; do
+#for type in preBiopsyDrugsByPatient; do
+for type in postBiopsyDrugsByBiopsy responsesByBiopsy preBiopsyDrugsByPatient; do
+  echo "[INFO] Working on $type"
+  tpl="${templatesDir}/template_${type}.sql"
+  sql="${logsDir}/${type}.sql"
+  raw="${logsDir}/${type}_raw.tsv"
+  flt="${logsDir}/${type}_flt.tsv"
+  out="${metaDir}/${type}.tsv"
+  cp ${tpl} ${sql}
+  ${execSqlScript} $sql > $raw
+  head -1 $raw > $flt
+  cat $raw | while read line; do patient=$( echo "$line" | cut -f 1); if [[ $( grep -c "$patient" $metadataFile ) > 0 ]]; then echo "$line"; fi; done >> $flt
+  cp $flt $out
+done
+
+## ===============================================================================
+### Sanity checks
+### ===============================================================================
+
+# compare with previous
+oldMeta=/data/data_archive/datarequests/DR-010/DR-010-update/DR-010-update_metadata.tsv
+newMeta=${logsDir}/metadata_final.tsv
+cat $oldMeta | grep -v ^# | cut -f1 | while read set; do cnt=$( cat $newMeta | grep -c $set ); if [[ $cnt < 1 ]]; then echo "[WARN] Set lost: $set"; fi; done
+
+# germline present and allowed?
+find ${somaDir} -name "*germline*" | wc -l
+find -L ${germDir} -name "*gz" | wc -l
+
+# check amount to be equal with count in metadata file
+countMeta=$( cat $metadataFile | grep -v "^#" | cut -f3 | sort | uniq | wc -l )
+countDirs=$( find $somaDir -mindepth 1 -maxdepth 1 -type d | wc -l )
+countGerm=$( find $germDir -mindepth 1 -maxdepth 1 -type d | wc -l )
+countJson=$( find $logsDir/json/ -mindepth 1 -maxdepth 1 -type f -name "*.json" | wc -l )
+echo "[INFO] meta: $countMeta" && echo "[INFO] dirs: $countDirs" && echo "[INFO] germ: $countGerm" && echo "[INFO] json: $countJson"
+
+# check if all expected files are present
+firstSet=$( ls -d $somaDir/* | head -1 )
+fileCount=$( ls $firstSet | wc -l )
+for i in ${somaDir}/*; do COUNT=$( ls $i | wc -l ); if [[ $COUNT != ${fileCount} ]]; then echo $i; fi; done
+
+# find broken symlinks
+find ${somaDir} -xtype l
+
+# make sure we have only one purple version
+for i in ${somaDir}/*/purple.version; do cat $i | grep version; done | sort | uniq -c
+
+# metadata checks
+cd $metaDir
+for bFile in responsesByBiopsy.tsv postBiopsyDrugsByBiopsy.tsv; do
+  if [[ -f $bFile ]]; then echo "[INFO] Checking $bFile"; cat $bFile | grep -v ^# | cut -f1 | sort | uniq | while read id; do
+    COUNT=$( cat metadata.tsv | cut -f3 | grep -Pc "^$id$" ); if [[ $COUNT == 0 ]]; then echo $id; fi; done;
+  fi
+done
+
+for pFile in preBiopsyDrugsByPatient.tsv drugsByPatient.tsv responsesByPatient.tsv; do
+  if [[ -f $pFile ]]; then echo "[INFO] Checking $pFile"; cat $pFile | grep -v ^# | cut -f1 | sort | uniq | while read id; do
+    COUNT=$( cat metadata.tsv | cut -f4 | grep -Pc "^$id$" ); if [[ $COUNT == 0 ]]; then echo $id; fi; done;
+  fi
+done
+
+## =================================================================================
+## Adding mutational signatures
+## ===============================================================================
+allBiopsiesString=$( cat $metadataFile | grep -v "^#" | cut -f3 | tr "\n" " " )
+cd $logsDir
+nohup /data/common/repos/scripts/analysisscripts/mutSignaturePerSample.R ${allBiopsiesString} > mutSignaturePerSample.log &
+
+## =================================================================================
+## Md5sum / TAR
+## ===============================================================================
+#nohup find -L ./data/ -type f -exec md5sum {} + > md5sums.txt &
+
+# create archive to share with requester
+for outType in "metadata" "somatics" "germline"; do
+  datPath="./${outType}"
+  logPath="${HOME}/logs/tar_${entityName}_${outType}.log"
+  tarPath="${rootDir}/${requestId}.${outType}.tar";
+  tarName=$( basename "${tarPath}" );
+  if [[ ! -d ${datPath} ]]; then
+    echo "## [EXIT] Data dir to package does not exist: $datPath"
+  elif [[ -e ${tarPath} ]]; then
+    echo "## [EXIT] Output file already exists: $tarPath"
+  else
+    echo -e "## [TODO] Execute following to package type $outType:"
+    echo " cd ${requestDir}; nohup tar -hcvf ${tarPath} ${datPath} > ${logPath} &"
+  fi
+done
+
+# Upload to nextcloud for sharing
+uploadLog="${HOME}/logs/upload_to_nextcloud.log"
+echo "[INFO] About to upload" $( basename ${tarName} ) "to NEXTCLOUD"
+nohup upload_file_to_nextcloud_UPLOAD "${tarPath}" > $uploadLog &
+
+# inspect result
+cat $uploadLog
+
+## TAR checks
+# check that all sets in germline tar are present in metadata file
+tar -tf DR-068.germline.tar | grep -P "\/$" | grep -vP 'germline/$' | while read setPath; do setName=$(basename $setPath); COUNT=$(grep -c $setName $metadataFile); if [[ $COUNT < 1 ]]; then echo "[FAIL] String not present in metadata: $setName"; else echo "[OK] String present in metadata: $setName"; fi; done
+# check that all sets in rnaseq tar are present in metadata file
+tar -tf DR-059.rnaseq.tar | grep -P "\/$" | grep -vP   'rnaseq/$' | while read setPath; do setName=$(basename $setPath | cut -d"_" -f2); COUNT=$(grep -c $setName $metadataFile); if [[ $COUNT < 1 ]]; then echo "[FAIL] String not present in metadata: $setName"; else echo "[OK] String present in metadata: $setName"; fi; done
+
+
+## =================================================================================
+## Sharing of RNAseq/Germline data
+## =================================================================================
+
+cd $requestDir
+nohup tar -hcvf /data/data_archive/datarequests/DR-XXX/DR-XXX.rnaseq.tar ./rnaseq > /home/stef/logs/tar_DR-XXX.rnaseq.log &
+nohup tar -hcvf /data/data_archive/datarequests/DR-XXX/DR-XXX.germline.tar ./germline > /home/stef/logs/tar_DR-XXX.germline.log &
+
+## check progress
+cat tar.log | grep -P "\/$" | wc -l
+
+## sync to bucket (user: sbp)
+tarName="DR-059.rnaseq.tar"
+nohup sbp s3 sync --dryrun /data/tmp/ s3://hmf_experiments/share/ --profile download --exclude "*" --include "${tarName}" > ~/logs/upload_to_share_bucket &
+## get url to share
+presign_url "s3://hmf_experiments/share/S{tarName}"
