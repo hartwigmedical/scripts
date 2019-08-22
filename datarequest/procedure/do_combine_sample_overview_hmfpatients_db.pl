@@ -64,7 +64,7 @@ my %REQUIRED_FIELDS_CLINICAL = (
 
 my %REQUIRED_FIELDS_DRUPCPCT = (
     "patientId" => "patientId",
-    "CPCT2YN" => "paticipatedInCpct",
+    "CPCT2YN" => "participatedInCpct",
     "CPCTCNT" => "cpctCenterNumber",
     "CPCTPN" => "cpctPatientNumber",
 );
@@ -192,7 +192,7 @@ sub findCpctIdForDrupPatient{
     my ($drupID, $drupDB) = @_;
     if ( exists $drupDB->{ $drupID } ){
 
-        #my $participated = $drupDB->{ $drupID }{ paticipatedInCpct } eq 'Yes';
+        #my $participated = $drupDB->{ $drupID }{ participatedInCpct } eq 'Yes';
         my $cpctCenID = $drupDB->{ $drupID }{ 'cpctCenterNumber' };
         my $cpctPatID = $drupDB->{ $drupID }{ 'cpctPatientNumber' };
 
@@ -384,7 +384,7 @@ sub findAndCheckHeader{
     while ( <$fh> ){
         chomp;
         next if $_ =~ /^##/;
-        $_ =~ s/\r//g; # remove any windowns ^M carriage return
+        $_ =~ s/\r//g; # remove any windows ^M carriage return
         my $header_line = $_;
         my @header_fields = split( "\t", $header_line );
         my $header_print = substr( join( ',', @header_fields ), 0, 2000);
