@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Not supposed to be run!
+# Not supposed to be used
 exit 0
 
 ### =================================================================================
