@@ -4,6 +4,7 @@ library(RMySQL)
 library(Biostrings)
 library(StructuralVariantAnnotation)
 library(cowplot)
+source("libSVPaper.R")
 
 
 query_somatic_structuralVariants = function(dbConnect, table="structuralVariant") {
@@ -52,6 +53,7 @@ dbdf = query_somatic_structuralVariants(db)
 #save(dbdf, file = "d:/hartwig/anchorsupport.RData")
 #load(file = "d:/hartwig/anchorsupport.RData")
 gr = sv_gr(dbdf)
+gr = gr[gr$sampleid %in% sva_sampleids]
 #pgr = sgr[ifelse(is.na(sgr$partner), names(sgr), sgr$partner)]
 
 asm_linked_breakends = as.data.frame(gr) %>%
@@ -114,9 +116,29 @@ ggplot() +
 
 ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(distance > 35)) +
   aes(x=distance, fill=phasing) +
-  geom_histogram(bin=30) +
-  scale_x_continuous(limits = c(50, 800))
-# TODO: fix x axis labels
+  geom_histogram(binwidth=5, boundary=0) +
+  scale_x_continuous(expand = c(0,0), limits = c(35, 750), breaks=c(50, 200, 400, 600, 750)) +
+  coord_cartesian(xlim=c(35, 750)) +
+  scale_y_continuous(expand = c(0,0)) +
+  labs(y="structural variants", x="distance to adjacent SV")
+figsave("assembly_phasing.pdf", width=5, height=4)
+# Counts:
+adj_df_35_1000 = adj_df %>% filter(distance >= 35)
+length(unique(c(adj_df_35_1000$beid1,adj_df_35_1000$beid2)))
+gr$hasNearby = gr$beid %in% unique(c(adj_df_35_1000$beid1, adj_df_35_1000$beid2)) | gr$partner %in% unique(c(adj_df_35_1000$beid1, adj_df_35_1000$beid2))
+adj_df %>% filter(isClosest) %>% filter(distance > 35) %>% pull(phasing) %>% table()
+table(gr$hasNearby)
+
+nearbyBySample = gr %>% as.data.frame() %>%
+  group_by(sampleid) %>%
+  summarise(n=n(), hasNearby=sum(hasNearby)) %>%
+  mutate(portionWithNearby=100 * hasNearby / n)
+median(nearbyBySample$portionWithNearby)
+ggplot(nearbyBySample) +
+  aes(x=portionWithNearby) +
+  geom_histogram(bins=50) +
+  labs(y="Samples", x="Percentage of SVs with nearby SV", title="Portion of SVs with an adjacent SV within 35-1000bp")
+figsave("portion_of_nearby_svs", width=5, height=4)
 
 adj_df %>% group_by(beid1) %>%
   summarise(state=max(ifelse(phasing=="cis", 2, ifelse(phasing=="trans", 1, 0)))) %>%

@@ -29,4 +29,4 @@ figsave = function(figureName, ...) {
 }
 
 theme_set(theme_bw())
-sva_sampleids = unique(sva_svs$SampleId)
+sva_sampleids = cohort %>% filter(hpc) %>% pull(sampleId)

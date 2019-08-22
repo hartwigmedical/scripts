@@ -1,8 +1,9 @@
 source("libSVPaper.R")
 source("libSvAnalyser.R")
+library(Biostrings)
 
 insdf = sva_svs %>%
-  filter(SampleId %in% (cohort %>% filter(hpc) %>% pull(sampleId))) %>%
+  filter(SampleId %in% sva_sampleids) %>%
   filter(!is.na(InsertSeq)) %>%
   mutate(
     beSeq = ifelse(OrientStart == 1, InsertSeq, as.character(reverseComplement(DNAStringSet(InsertSeq)))),
@@ -11,7 +12,10 @@ insdf %>%
   mutate(fq=paste0(">", uid, "\n", beSeq)) %>%
   pull(fq) %>%
   writeLines(con="ins.fa")
+# split -d -a1 -l70000 ins.fa --additional-suffix=.fa ins
 # RepeatMasker: RMBlast, default speed, report query aln, rep lower case, skip bacterial, no contamination check, matrix: RM choice
+
+#insss = readDNAStringSet("../../sv/sgl/ins.fa")
 rminsdf = bind_rows(lapply(list.files(path = "../../sv/sgl/", pattern=".*ins.*[.]out$", full.names=TRUE), function(x)
   import.repeatmasker.insertseq(x)))
 rminssumdf = repeatmasker.insertseq.summarise(rminsdf)
@@ -41,6 +45,7 @@ norepeathit = insdf %>%
       repeatClass="No repeat",
       repeatType="No repeat")
   })
+bin_size = 100
 insperbase = bind_rows(insperbaserm %>% dplyr::select(uid=query, offset, repeatType, repeatClass), norepeathit) %>%
   ungroup() %>%
   mutate(length_bin = ceiling(inslen[uid]/binsize)*binsize)
@@ -86,7 +91,6 @@ ggplot(insperbase_summary) +
   labs(y="Breakend count", x="Distance from breakend", fill="RepeatMasker\nAnnotation")
 ggsave(paste0(figdir, "sgl_rm_per_base_overall.pdf"), width=8, height=5)
 
-binsize=100
 insperbase_binned = insperbase %>%
   semi_join(insdf %>% filter(Type=="SGL"), by="uid") %>%
   mutate(repeatAnn=getRepeatAnn(repeatAnn)) %>%
@@ -119,6 +123,13 @@ ggplot(sgllongrepeat) +
   labs(y="Single breakend count", x="Assembled breakend sequence length", fill="RepeatMasker annotation of\nlongest repeat in\nbreakend sequence")
 ggsave(paste0(figdir, "sgl_longest_repeat.pdf"), width=8, height=5)
 # viral integration?
+
+
+rminssumdf %>%
+  mutate(ttra=two_tier_repeatAnn(longest_repeatType, longest_repeatClass)) %>%
+  group_by(ttra) %>%
+  summarise(n=n()) %>%
+  mutate(perc = 100 * n / sum(n))
 
 
 ################
