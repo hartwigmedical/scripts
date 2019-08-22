@@ -17,7 +17,7 @@ function main {
 
 function crunches {
     for crunch in crunch00{1,2,3}; do 
-        header $crunch
+        header ${crunch}
         diskUsage "/home"  "ssh $crunch"
         diskUsage "/data1" "ssh $crunch"
         diskUsage "/data2" "ssh $crunch"
@@ -65,7 +65,6 @@ function log {
 function warn {
     log "WARN" "$1"
 }
-
 
 function gridUsage {
     local prefix=$1
