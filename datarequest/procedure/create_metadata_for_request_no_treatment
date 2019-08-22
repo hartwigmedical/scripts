@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+patientIdsTsv=$1
+datareqInputTsv=$2
+
+unfiltered="metadata_unfiltered.tsv"
+filtered="metadata_filtered.tsv"
+final="metadata_final.tsv"
+
+if [[ ! -f ${patientIdsTsv} ]]; then
+  echo "[EXIT] Cannot find ${patientIdsTsv}" && exit 1;
+fi
+if [[ ! -f ${datareqInputTsv} ]]; then
+  echo "[EXIT] Cannot find ${datareqInputTsv}" && exit 1;
+fi
+
+## select metadata info of all biopsies for each patient
+head -1 ${datareqInputTsv} | sed 's/sbpSetName/setName/' > ${unfiltered}
+cat ${patientIdsTsv} | grep -v "^#" | while read patientId; do
+  grep ${patientId} ${datareqInputTsv}
+done | sort | uniq >> ${unfiltered}
+
+## =======================
+## FILTER
+## =======================
+
+## HEADER
+cat ${unfiltered} | grep "^#" > ${filtered}
+## SETS
+cat ${unfiltered} | grep -v "^#" | awk '$8 ~ /^PASS$/' | awk '$9 !~ /NO_TUMOR/' | awk '$10 > 0.195' >> ${filtered}
+
+## =======================
+## SELECT COLUMNS
+## =======================
+
+## Select columns of tumor + patient (no treatment)
+cat ${filtered} | cut -f 1,10-20 > ${final}
+
+## report
+countBefore=$( cat ${unfiltered} | grep -v "^#" | wc -l )
+countAfter=$( cat ${filtered} | grep -v "^#" | wc -l )
+echo "[INFO] Output in ${final} (from $countBefore to $countAfter)"
