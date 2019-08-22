@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+dateString=$( date +'%y%m%d' )
+sampleOverviewTsv="/data/data_archive/datarequests/procedure/files/sampleOverview.tsv"
+if [[ ! -z "$1" ]]; then
+    sampleOverviewTsv=$1
+fi
+
+SCRIPT_TASK="DataRequestMetadataSetup"
+ROOT_DIR="/data/data_archive/datarequests/procedure"
+CODE_DIR=`dirname $(readlink $0 || echo $0)`
+FILE_DIR="${ROOT_DIR}/files"
+CLIN_SQL_FILE="${CODE_DIR}/sql_clinical.sql"
+DRUP_SQL_FILE="${CODE_DIR}/sql_drup2cpct.sql"
+SAMP_TSV_FILE="${FILE_DIR}/${dateString}_sampleOverview.tsv"
+CLIN_OUT_FILE="${FILE_DIR}/${dateString}_clinical.tsv"
+DRUP_OUT_FILE="${FILE_DIR}/${dateString}_drup2cpct.tsv"
+META_OUT_FILE="${FILE_DIR}/${dateString}_datarequestInput.tsv"
+META_LOG_FILE="${FILE_DIR}/${dateString}_datarequestInputCreate.log"
+EXEC_SQL_FILE="/data/common/repos/scripts/sql/execution/execute_sql_on_prod"
+
+## Sanity checks
+if [[ ! -f ${sampleOverviewTsv} ]]; then
+    echo "[EXIT] File does not exist (${sampleOverviewTsv})" && exit 1;
+fi
+if [[   -f ${META_OUT_FILE} ]]; then
+    echo "[EXIT] Output file already exists (${META_OUT_FILE})" && exit 1;
+fi
+
+## All good: continue with procedure
+echo "[INFO] ${SCRIPT_TASK} started"
+
+echo "[INFO] Copying ${sampleOverviewTsv} to ${SAMP_TSV_FILE}"
+cp ${sampleOverviewTsv} ${SAMP_TSV_FILE}
+
+echo "[INFO] Creating clinical file (${CLIN_OUT_FILE})"
+${EXEC_SQL_FILE} ${CLIN_SQL_FILE} > ${CLIN_OUT_FILE}
+
+echo "[INFO] Creating drupcpct file (${DRUP_OUT_FILE})"
+${EXEC_SQL_FILE} ${DRUP_SQL_FILE} > ${DRUP_OUT_FILE}
+
+echo "[INFO] Creating metadata file (${META_OUT_FILE})"
+${CODE_DIR}/do_combine_sample_overview_hmfpatients_db.pl \
+  -s ${sampleOverviewTsv} \
+  -d ${DRUP_OUT_FILE} \
+  -c ${CLIN_OUT_FILE} \
+  -o ${META_OUT_FILE} > ${META_LOG_FILE}
+
+## in case of err: do not continue
+if [ $? -ne 0 ]; then echo "[EXIT] Something wrong with previous step" && exit 1; fi
+
+echo "[INFO] Symlinking latest"
+metadataSymlink=${ROOT_DIR}/latest/metadata
+ln -sf ${META_OUT_FILE} ${metadataSymlink}
+
+echo "[INFO] ${SCRIPT_TASK} finished (please inspect ${META_LOG_FILE})"
+echo "[INFO] Output in ${metadataSymlink}"
