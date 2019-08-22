@@ -51,7 +51,7 @@ chmod 755 ${registerNewSharesJob}
 ## perform registering
 nohup ${registerNewSharesJob} > ${registerNewSharesLog} &
 
-## check succesfull log
+## check successful log
 grep "entity_id" ${registerNewSharesLog} | wc -l
 grep "CREATED" ${registerNewSharesLog} | wc -l
 grep -Pi "Fail|Err|warn" ${registerNewSharesLog}
