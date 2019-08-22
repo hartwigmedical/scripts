@@ -73,7 +73,6 @@ echo "[INFO] FinalBiopsyCount: ${finalBiopsyCount} (of ${finalPatientCount} uniq
 cat $logFile
 
 # if only specific data: create specific jsons (one for each file-type)
-#matchStrings=(GERMLINE_VARIANT_VCF)
 matchStrings=(TUMOR_SAMPLE_BA)
 cat $metadataFile | grep -v "^#" | cut -f1 | while read setName; do
   setId=$( cat metadata_unfiltered.tsv | grep ${setName} | cut -f2);
