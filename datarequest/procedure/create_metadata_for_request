@@ -5,7 +5,6 @@ datareqInputTsv=$2
 
 unfiltered="metadata_unfiltered.tsv"
 filtered="metadata_filtered.tsv"
-final="metadata_final.tsv"
 
 if [[ ! -f ${patientIdsTsv} ]]; then
   echo "[EXIT] Cannot find ${patientIdsTsv}" && exit 1;
@@ -29,14 +28,8 @@ cat ${unfiltered} | grep "^#" > ${filtered}
 ## SETS
 cat ${unfiltered} | grep -v "^#" | awk '$8 ~ /^PASS$/' | awk '$9 !~ /NO_TUMOR/' | awk '$10 > 0.195' >> ${filtered}
 
-## =======================
-## SELECT COLUMNS
-## =======================
-
-## Select columns of tumor + patient (no treatment)
-cat ${filtered} | cut -f 1,10-20 > ${final}
-
 ## report
 countBefore=$( cat ${unfiltered} | grep -v "^#" | wc -l )
 countAfter=$( cat ${filtered} | grep -v "^#" | wc -l )
-echo "[INFO] Output in ${final} (from $countBefore to $countAfter)"
+echo "[INFO] Output from ${countBefore} to ${countAfter}"
+
