@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+metadataFile=$1
+entityName=$2
+
+entitySbpId=$( query_sbp_api -type entities | grep ${entityName} | cut -f3 )
+cat ${metadataFile} | grep -v "^#" | cut -f1 | while read setName; do
+  setId=$( query_sbp_api -type sets | grep ${setName} | cut -f5)
+
+  bamJson="./logs/json/${setName}_bam.json"
+  echo "[INFO] Creating ${bamJson}"
+
+  create_share_json_for_tumor_bam ${setId} ${entitySbpId} ".bam" > "${bamJson}"
+
+  bamIndexJson="./logs/json/${setName}_bai.json"
+  echo "[INFO] Creating ${bamIndexJson}"
+
+  create_share_json_for_tumor_bam_index ${setId} ${entitySbpId} ".bai" > "${bamIndexJson}"
+done
