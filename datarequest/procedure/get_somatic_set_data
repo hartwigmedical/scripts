@@ -13,6 +13,7 @@ mkdir -p ${destDir}
 ## start symlinking
 echo "[INFO] Symlinking files for ${setName}"
 ln -s ${setPath}/purple/purple.version ${destDir}
+# TODO Remove germline if only somatic access granted.
 ln -s ${setPath}/purple/*.purple.cnv.germline.tsv ${destDir}
 ln -s ${setPath}/purple/*.purple.cnv.somatic.tsv ${destDir}
 ln -s ${setPath}/purple/*.purple.cnv.gene.tsv ${destDir}
