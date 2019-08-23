@@ -3,7 +3,6 @@
 filtered="metadata_filtered.tsv"
 final="metadata_final.tsv"
 
-## Select columns of tumor + patient (no treatment)
 cat ${filtered} | cut -f 1,10-17 > ${final}
 
 # 1    #setName always
