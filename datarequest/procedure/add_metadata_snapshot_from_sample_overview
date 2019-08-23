@@ -17,7 +17,6 @@ CLIN_OUT_FILE="${FILE_DIR}/${dateString}_clinical.tsv"
 DRUP_OUT_FILE="${FILE_DIR}/${dateString}_drup2cpct.tsv"
 META_OUT_FILE="${FILE_DIR}/${dateString}_datarequestInput.tsv"
 META_LOG_FILE="${FILE_DIR}/${dateString}_datarequestInputCreate.log"
-EXEC_SQL_FILE="/data/common/repos/scripts/sql/execution/execute_sql_on_prod"
 
 ## Sanity checks
 if [[ ! -f ${sampleOverviewTsv} ]]; then
@@ -34,10 +33,10 @@ echo "[INFO] Copying ${sampleOverviewTsv} to ${SAMP_TSV_FILE}"
 cp ${sampleOverviewTsv} ${SAMP_TSV_FILE}
 
 echo "[INFO] Creating clinical file (${CLIN_OUT_FILE})"
-${EXEC_SQL_FILE} ${CLIN_SQL_FILE} > ${CLIN_OUT_FILE}
+execute_sql_on_prod ${CLIN_SQL_FILE} > ${CLIN_OUT_FILE}
 
 echo "[INFO] Creating drupcpct file (${DRUP_OUT_FILE})"
-${EXEC_SQL_FILE} ${DRUP_SQL_FILE} > ${DRUP_OUT_FILE}
+execute_sql_on_prod ${DRUP_SQL_FILE} > ${DRUP_OUT_FILE}
 
 echo "[INFO] Creating metadata file (${META_OUT_FILE})"
 ${CODE_DIR}/do_combine_sample_overview_hmfpatients_db.pl \
