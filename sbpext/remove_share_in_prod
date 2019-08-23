@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+SHARE_ID=$1 # eg 118
+
+if [ -z ${SHARE_ID+x} ]; then
+    echo "[EXIT] No share id given?"
+    exit 1
+fi
+
+sbp_curl https://api.hartwigmedicalfoundation.nl/hmf/v1/shares/${SHARE_ID} -XDELETE

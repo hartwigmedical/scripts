@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+CRT_FILE='/home/sbpext/bcl-upload-prod/api.crt'
+KEY_FILE='/home/sbpext/bcl-upload-prod/api.key'
+
+curl -v --cert-type pem --cert ${CRT_FILE} --key ${KEY_FILE} "$@"

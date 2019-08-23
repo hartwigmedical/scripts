@@ -52,7 +52,7 @@ do
     # One upload at a time please
     touch /tmp/bcl_uploading
 
-    # Chopping the first 7 characters off the name for the upload, as I don't know the date for the auto schaeduler
+    # Chopping the first 7 characters off the name for the upload, as I don't know the date for the auto scheduler
     aws s3 sync ${DIRECTORY}${bclName} s3://${outputBucket}/${bclName:7} --profile ${profile} --endpoint-url https://s3.object02.schubergphilis.com --grants read=id=${HMF_DWN_ID} readacl=id=${HMF_DWN_ID} --no-follow-symlinks --endpoint-url=https://s3.object02.schubergphilis.com --exclude *fastq* --exclude *Thumbnail_Images* --exclude *Logs* --exclude *Config* --exclude *PeriodicSaveRates*
     if [[ $? -ne 0 ]]; then
       echo "something went wrong uploading the data"
