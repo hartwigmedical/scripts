@@ -2,7 +2,7 @@
 
 metadataFile=$1
 rnaOverview="/data/data_archive/rna_seq/overview/overview.tsv"
-rnaDir=./rna
+rnaDir=./rnaseq
 
 cat ${metadataFile} | grep -v "^#" | cut -f3 | while read sampleId; do
     echo "[INFO] Checking $sampleId"
