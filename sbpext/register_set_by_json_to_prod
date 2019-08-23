@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+JSON_FILE=$1
+CRT_FILE='/home/sbpext/bcl-upload-prod/api.crt'
+KEY_FILE='/home/sbpext/bcl-upload-prod/api.key'
+API_URL='https://api.hartwigmedicalfoundation.nl/hmf/v1/action/register'
+
+if [ -z ${JSON_FILE+x} ]; then echo "[EXIT] No json given" && exit 1; fi
+
+/usr/bin/curl -s -v --cert-type pem --cert ${CRT_FILE} --key ${KEY_FILE} ${API_URL} -XPOST -H "Content-Type: application/json" -d @${JSON_FILE}

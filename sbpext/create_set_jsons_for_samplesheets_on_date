@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+SHEETS_LOC=/data/samplesheets
+THIS_SCRIPT=$( basename $0 )
+
+ssheetDate=$1
+currDate=$( date +'%y%m%d' )
+createLog="${HOME}/logs/${currDate}_create_jsons_for_${ssheetDate}"
+registerLog="${HOME}/logs/${currDate}_register_sets_from_${ssheetDate}_flowcells"
+
+## Sanity checks
+if [[ ! $( whoami ) =~ ^sbpext$ ]]; then echo "[EXIT] Script can currently only be ran as user sbpext" && exit 1; fi
+if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[EXIT] Wrong input date: run with \"$THIS_SCRIPT YYMMDD\"" && exit 1; fi
+if [[ -f ${createLog} ]]; then echo "[EXIT] Log already exists: ${createLog}" && exit 1; fi
+if [[ -f ${registerLog} ]]; then echo "[EXIT] Log already exists: ${registerLog}" && exit 1; fi
+echo "[INFO] JsonCreation started with input date: ${ssheetDate}"
+
+## Actual work
+for ssheet in ${SHEETS_LOC}/${ssheetDate}_*_SampleSheet*; do 
+    echo ${ssheet}; 
+    print_register_json -samplesheet ${ssheet}; 
+done > ${createLog}
+
+## Reporting further actions to screen
+echo "[INFO] JsonCreation done and log written to: ${createLog}"
+if [[ $( cat ${createLog} | grep -P "\d{8}T[IVX]+" | wc -l ) > 0 ]]; then 
+    ## multiple biopsies usually need R from bam2fastq
+    echo "[WARN]  ATTENTION: Found T[IVX]+ samples so might need to adjust R barcode"
+    cat ${createLog} | grep -P "\d{8}T[IVX]+" | grep Somatic_T
+fi
+
+## Samples/barcodes that already exist at SBP already have the use_existing flag
+## but in case a barcode is re-used at the same register batch then manual adjustment is needed
+for dupBc in $( cat ${HOME}/set_jsons/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do 
+   echo "[WARN] Found duplicate barcode ($dupBc): make sure the use_existing flag is set correctly on second one:"; 
+   for readyJson in $(find ${HOME}/set_jsons/ -maxdepth 1 -name "*json"); do 
+       if [[ $(grep -c "${dupBc}" $readyJson) > 0 ]]; then 
+           echo "[WARN]   $readyJson"
+       fi
+   done
+done
+
+echo "[INFO] TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists at SBP"
+echo "[INFO] TODO: If all OK you can register them at SBP with:"
+echo " nohup register_all_ready_jsons > ${registerLog} &"
+echo ""
+echo "[INFO] TODO: Afterwards you can check the registration success rate with:"
+echo " echo \"Amount IN: \"\$( ls ${HOME}/set_jsons/*json | wc -l); echo \"Amount OK: \"\$( cat ${registerLog} | grep created | wc -l) "
+echo ""
