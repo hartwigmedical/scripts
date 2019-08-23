@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+prefix=`dirname $(readlink $0 || echo $0)`
+
+metadataFile=$1
+
+do_generate_extra_clinical_data ${metadataFile} "pre_biopsy_drugs_by_patient" ${prefix}/sql_preBiopsyDrugsByPatient.sql

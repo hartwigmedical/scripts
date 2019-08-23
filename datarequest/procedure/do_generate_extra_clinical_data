@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+metadataFile=$1
+name=$2
+sql=$3
+
+echo "[INFO] Generating clinical data ${name}"
+raw="./logs/${name}_raw.tsv"
+flt="./logs/${name}_flt.tsv"
+out="./metadata/${name}.tsv"
+execute_sql_on_prod ${sql} > ${raw}
+head -1 ${raw} > ${flt}
+cat ${raw} | while read line; do
+    patient=$( echo "${line}" | cut -f 1)
+    if [[ $( grep -c "${patient}" ${metadataFile} ) > 0 ]]; then
+        echo "${line}"
+    fi
+done >> ${flt}
+
+cp ${flt} ${out}
