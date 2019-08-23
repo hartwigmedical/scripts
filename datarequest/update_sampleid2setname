@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+ls /data/cpct/runs/ | while read setName; do
+  setPath=/data/cpct/runs/${setName}/
+  metadataPath=${setPath}/metadata
+  if [[ ! -f "$metadataPath" ]]; then
+    echo "No metadata for ${setPath}";
+  else
+    tumSample=$( cat ${metadataPath} | jq -r '.tumor_sample')
+    echo -e "${tumSample}\t${setName}"
+  fi
+done > /data/data_archive/datarequests/procedure/sampleid2setname.tsv
