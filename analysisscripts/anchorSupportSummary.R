@@ -113,15 +113,36 @@ ggplot() +
   geom_point(data=adj_df %>% filter(is_asm_linked), colour="blue", size=0.1) +
   scale_x_continuous(limits=c(0, 600))
 
+ggplot(
+    adj_df %>% filter(isClosest & phasing == "unphased") %>%
+    mutate(probably_cis=pmax(anchorSupportDistance1, anchorSupportDistance2) > distance - 5)) +
+  aes(x=distance, y=pmax(anchorSupportDistance1, anchorSupportDistance2)) +
+  geom_point(size=0.1) +
+  scale_x_continuous(limits=c(0, 1000)) +
+  scale_y_continuous(limits=c(0, 1000)) +
+  labs(title="Unphased variants", x="Distance to nearest SV", y="(max) anchor support distance")
+figsave("unphased_anchoring_distance", width=8, height=8)
+adj_df %>% filter(isClosest & phasing == "unphased") %>%
+  mutate(probably_cis=pmax(anchorSupportDistance1, anchorSupportDistance2) > distance - 5) %>%
+  pull(probably_cis) %>%
+  table()
 
-ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(distance > 35)) +
+ggplot(adj_df %>% filter(isClosest | is_asm_linked)) +
   aes(x=distance, fill=phasing) +
-  geom_histogram(binwidth=5, boundary=0) +
-  scale_x_continuous(expand = c(0,0), limits = c(35, 750), breaks=c(50, 200, 400, 600, 750)) +
-  coord_cartesian(xlim=c(35, 750)) +
-  scale_y_continuous(expand = c(0,0)) +
+  geom_histogram(binwidth=10, boundary=0) +
+  scale_x_continuous(
+    expand = c(0,0),
+    limits = c(0, 800),
+    breaks=seq(0, 800, 100),
+    labels=c("0", "", "200", "", "400", "", "600", "", "800")) +
+  coord_cartesian(xlim=c(0, 800)) +
+  scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
+  scale_fill_manual(values=c("#b2df8a", "#984ea3", "#ff7f00")) +
+  theme(
+    axis.line = element_line(colour = "black"),
+    panel.border = element_blank()) +
   labs(y="structural variants", x="distance to adjacent SV")
-figsave("assembly_phasing.pdf", width=5, height=4)
+figsave("assembly_phasing", width=5, height=4)
 # Counts:
 adj_df_35_1000 = adj_df %>% filter(distance >= 35)
 length(unique(c(adj_df_35_1000$beid1,adj_df_35_1000$beid2)))

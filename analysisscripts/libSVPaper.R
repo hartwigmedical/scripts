@@ -28,5 +28,11 @@ figsave = function(figureName, ...) {
   ggsave(paste0(figdir, figureName, ".png"), ...)
 }
 
-theme_set(theme_bw())
+theme_set(theme_bw() + theme(
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank()))
 sva_sampleids = cohort %>% filter(hpc) %>% pull(sampleId)
+
+
+gridss_fig_tp_colours = c("#6baed6", "#3182bd", "#08519c")
+gridss_fig_fp_colours = c("#fb6a4a", "#de2d26", "#a50f15")
