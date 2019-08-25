@@ -256,20 +256,6 @@ query_structural_variant_summary<-function(dbConnect, cohort) {
   return (result)
 }
 
-query_patient_id_lookup<-function(dbConnect) {
-  query = paste(
-    "SELECT CPCTCNT.patientId AS sampleId, concat('CPCT02', CPCTCNT.itemValue, LPAD(RIGHT(CPCTPN.itemValue,4), 4, '0')) as patientId",
-    "  FROM drupEcrf CTCT2YN,  drupEcrf CPCTCNT, drupEcrf CPCTPN ",
-    " WHERE CPCTCNT.patientId = CPCTPN.patientId AND CTCT2YN.patientId = CPCTCNT.patientId ",
-  "   AND CPCTCNT.item = 'FLD.CPCTCNT' AND CPCTCNT.itemValue != ''",
-  "   AND CPCTPN.item = 'FLD.CPCTPN' AND CPCTPN.itemValue != ''",
-  "   AND CTCT2YN.item = 'FLD.CTCT2YN' AND CTCT2YN.itemValue = 'Yes'",
-    sep = "")
-
-  result = dbGetQuery(dbConnect, query)
-  return (result)
-}
-
 query_whole_genome_duplication<-function(dbConnect, cohort) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(

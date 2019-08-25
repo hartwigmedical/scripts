@@ -822,40 +822,6 @@ queryClusterStatus = query %>%
 
 
 ####### DB retrieval
-
-query_patient_id_lookup<-function(dbConnect) {
-  query = paste(
-    "SELECT CPCTCNT.patientId AS sampleId, concat('CPCT02', CPCTCNT.itemValue, LPAD(RIGHT(CPCTPN.itemValue,4), 4, '0')) as patientId",
-    "  FROM drupEcrf CTCT2YN,  drupEcrf CPCTCNT, drupEcrf CPCTPN ",
-    " WHERE CPCTCNT.patientId = CPCTPN.patientId AND CTCT2YN.patientId = CPCTCNT.patientId ",
-    "   AND CPCTCNT.item = 'FLD.CPCTCNT' AND CPCTCNT.itemValue != ''",
-    "   AND CPCTPN.item = 'FLD.CPCTPN' AND CPCTPN.itemValue != ''",
-    "   AND CTCT2YN.item = 'FLD.CTCT2YN' AND CTCT2YN.itemValue = 'Yes'",
-    sep = "")
-  
-  result = dbGetQuery(dbConnect, query)
-  return (result)
-}
-
-
-sample_to_patient_id<-function(sampleId, lookup) {
-  colnames(lookup) <- c("truncatedSampleIds", "patientIds")
-  
-  lookup = rbind(manual_patient_id(), lookup)
-  
-  index = match(substr(sampleId, 1, 12) , substr(lookup[[1]], 1, 12))
-  if (is.na(index)) {
-    substr(sampleId, 1, 12)
-  } else {
-    lookup[index, c(2)]
-  }
-}
-
-manual_patient_id<-function() {
-  truncatedSampleIds  = c("CPCT02020192", "CPCT02030224", "DRUP01010007", "DRUP01070024", "DRUP01050008",
-                          "DRUP01010065", "DRUP01330002", "DRUP01340004", "DRUP01340003", "DRUP01340002", "DRUP01070008")
-  patientIds = c("CPCT02020438", "CPCT02030292", "DRUP01010044", "CPCT02070110", "CPCT02050116",
-                 "CPCT02010639", "CPCT02330049", "CPCT02340029", "CPCT02340014", "CPCT02340026", "CPCT02070023")
-  return (data.frame(truncatedSampleIds, patientIds, stringsAsFactors = FALSE))
-}
-
+# I have removed the queries to get the patientId for the samples. There is a new much easier way to do it just be querying
+# the sampleMapping table to get the HMFID and then stripping the last character. There are some privacy concerns you need to be aware of
+# so please have a chat with me next time you need to do it and I will run you through the process.
