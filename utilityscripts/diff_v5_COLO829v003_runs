@@ -9,31 +9,47 @@ tumor_sample=${patient}T
 
 echo "[INFO] Diffing run1 ${run1} and run2 ${run2}"
 
+# Metadata and pipeline versions.
+echo "[INFO] Printing pipeline version for ${run1}"
+cat ${run1}/pipeline.version
+echo "[INFO] Printing pipeline version for ${run2}"
+cat ${run2}/pipeline.version
+echo "[INFO] Diffing metadata"
+diff ${run1}/metadata.json ${run2}/metadata.json
+
 # Ref sample diffing
 echo "[INFO] Diffing ref sample ${ref_sample}"
 ref1=${run1}/${ref_sample}
 ref2=${run2}/${ref_sample}
 
+echo "[INFO]  Diffing metadata"
 diff ${ref1}/metadata.json ${ref2}/metadata.json
-diff ${ref1}/flagstat/${ref_sample}.flagstat ${ref2}/flagstat/${ref_sample}.flagstat
+echo "[INFO]  Printing flagstats for ${ref1}"
+cat ${ref1}/flagstat/${ref_sample}.flagstat
+echo "[INFO]  Printing flagstats for ${ref2}"
+cat ${ref2}/flagstat/${ref_sample}.flagstat
 
 germline_caller_lines_1=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
 germline_caller_lines_2=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
-echo "[INFO] ${run1} germline vcf lines: ${germline_caller_lines_1}"
-echo "[INFO] ${run2} germline vcf lines: ${germline_caller_lines_2}"
+echo "[INFO]  ${run1} germline vcf lines: ${germline_caller_lines_1}"
+echo "[INFO]  ${run2} germline vcf lines: ${germline_caller_lines_2}"
 
 ref_snp_genotype_lines_1=$( cat ${ref1}/snp_genotype/snp_genotype_output.vcf | wc -l)
 ref_snp_genotype_lines_2=$( cat ${ref2}/snp_genotype/snp_genotype_output.vcf | wc -l)
-echo "[INFO] ${run1} ref snp genotype vcf lines: ${ref_snp_genotype_lines_1}"
-echo "[INFO] ${run2} ref snp genotype vcf lines: ${ref_snp_genotype_lines_2}"
+echo "[INFO]  ${run1} ref snp genotype vcf lines: ${ref_snp_genotype_lines_1}"
+echo "[INFO]  ${run2} ref snp genotype vcf lines: ${ref_snp_genotype_lines_2}"
 
 # Tumor sample diffing
 echo "[INFO] Diffing tumor sample ${tumor_sample}"
 tum1=${run1}/${tumor_sample}
 tum2=${run2}/${tumor_sample}
 
+echo "[INFO]  Diffing metadata"
 diff ${tum1}/metadata.json ${tum2}/metadata.json
-diff ${tum1}/flagstat/${tumor_sample}.flagstat ${tum2}/flagstat/${tumor_sample}.flagstat
+echo "[INFO]  Printing flagstats for ${tum1}"
+cat ${tum1}/flagstat/${ref_sample}.flagstat
+echo "[INFO]  Printing flagstats for ${tum2}"
+cat ${tum2}/flagstat/${ref_sample}.flagstat
 
 tum_snp_genotype_lines_1=$( cat ${tum1}/snp_genotype/snp_genotype_output.vcf | wc -l)
 tum_snp_genotype_lines_2=$( cat ${tum2}/snp_genotype/snp_genotype_output.vcf | wc -l)
@@ -43,9 +59,35 @@ echo "[INFO] ${run2} tumor snp genotype vcf lines: ${tum_snp_genotype_lines_2}"
 # Tertiary analyses
 
 amber_files_1=$( ls ${run1}/amber | wc -l)
-amber_files_2=$( ls ${run1}/amber | wc -l)
+amber_files_2=$( ls ${run2}/amber | wc -l)
+echo "[INFO] ${run1}/amber ls count: ${amber_files_1}"
+echo "[INFO] ${run2}/amber ls count: ${amber_files_2}"
 
-echo "[INFO] ${run1} amber file count: ${amber_files_1}"
-echo "[INFO] ${run2} amber file count: ${amber_files_2}"
+cobalt_files_1=$( ls ${run1}/cobalt | wc -l)
+cobalt_files_2=$( ls ${run2}/cobalt | wc -l)
+echo "[INFO] ${run1}/cobalt ls count: ${cobalt_files_1}"
+echo "[INFO] ${run2}/cobalt ls count: ${cobalt_files_2}"
+
+health_checker_files1=$( ls ${run1}/health_checker | wc -l)
+health_checker_files2=$( ls ${run2}/health_checker | wc -l)
+echo "[INFO] ${run1}/health_checker ls count: ${health_checker_files1}"
+echo "[INFO] ${run2}/health_checker ls count: ${health_checker_files2}"
+
+purple_files1=$( ls ${run1}/purple | wc -l)
+purple_files2=$( ls ${run2}/purple | wc -l)
+echo "[INFO] ${run1}/purple ls count: ${purple_files1}"
+echo "[INFO] ${run2}/purple ls count: ${purple_files2}"
+
+somatic_caller_files1=$( ls ${run1}/somatic_caller | wc -l)
+somatic_caller_files2=$( ls ${run2}/somatic_caller | wc -l)
+echo "[INFO] ${run1}/somatic_caller ls count: ${somatic_caller_files1}"
+echo "[INFO] ${run2}/somatic_caller ls count: ${somatic_caller_files2}"
+
+structural_caller_files1=$( ls ${run1}/structural_caller | wc -l)
+structural_caller_files2=$( ls ${run2}/structural_caller | wc -l)
+echo "[INFO] ${run1}/structural_caller ls count: ${structural_caller_files1}"
+echo "[INFO] ${run2}/structural_caller ls count: ${structural_caller_files2}"
+
+
 
 
