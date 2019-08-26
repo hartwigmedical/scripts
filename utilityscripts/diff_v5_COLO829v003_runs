@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 run1=$1 && shift
-run2=$2 && shift
+run2=$1 && shift
 
 patient=COLO829v003
 ref_sample=${patient}R
