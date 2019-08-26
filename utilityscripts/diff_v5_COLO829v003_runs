@@ -3,6 +3,14 @@
 run1=$1 && shift
 run2=$1 && shift
 
+# Checks performed:
+#  - Visually compare metadata (run will be different, rest should be identical).
+#  - Pipeline version doesn't matter but file should exist.
+#  - Visually inspect the flagstats to see if they roughly match.
+#  - Number of lines in germline vcf should be max 10 difference.
+#  - No difference in snp genotype number of lines.
+#  - No difference in number of files in any of the tertiary analyses.
+
 patient=COLO829v003
 ref_sample=${patient}R
 tumor_sample=${patient}T
@@ -10,12 +18,12 @@ tumor_sample=${patient}T
 echo "[INFO] Diffing run1 ${run1} and run2 ${run2}"
 
 # Metadata and pipeline versions.
-echo "[INFO] Printing pipeline version for ${run1}"
+echo "[INFO] Printing pipeline version and metadata for ${run1}"
 cat ${run1}/pipeline.version
-echo "[INFO] Printing pipeline version for ${run2}"
+cat ${run1}/metadata.json
+echo "[INFO] Printing pipeline version and metadata for ${run2}"
 cat ${run2}/pipeline.version
-echo "[INFO] Diffing metadata"
-diff ${run1}/metadata.json ${run2}/metadata.json
+cat ${run2}/metadata.json
 
 # Ref sample diffing
 echo "[INFO] Diffing ref sample ${ref_sample}"
@@ -47,9 +55,9 @@ tum2=${run2}/${tumor_sample}
 echo "[INFO]  Diffing metadata"
 diff ${tum1}/metadata.json ${tum2}/metadata.json
 echo "[INFO]  Printing flagstats for ${tum1}"
-cat ${tum1}/flagstat/${ref_sample}.flagstat
+cat ${tum1}/flagstat/${tumor_sample}.flagstat
 echo "[INFO]  Printing flagstats for ${tum2}"
-cat ${tum2}/flagstat/${ref_sample}.flagstat
+cat ${tum2}/flagstat/${tumor_sample}.flagstat
 
 tum_snp_genotype_lines_1=$( cat ${tum1}/snp_genotype/snp_genotype_output.vcf | wc -l)
 tum_snp_genotype_lines_2=$( cat ${tum2}/snp_genotype/snp_genotype_output.vcf | wc -l)
