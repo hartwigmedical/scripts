@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+run1=$1 && shift
+run2=$2 && shift
+
+patient=COLO829v003
+ref_sample=${patient}R
+tumor_sample=${patient}T
+
+echo "[INFO] Diffing run1 ${run1} and run2 ${run2}"
+
+# Ref sample diffing
+echo "[INFO] Diffing ref sample ${ref_sample}"
+ref1=${run1}/${ref_sample}
+ref2=${run2}/${ref_sample}
+
+diff ${ref1}/metadata.json ${ref2}.metadata.json
+diff ${ref1}/bam_metrics/${ref_sample}.wgsmetrics ${ref2}/bam_metrics/${ref_sample}.wgsmetrics
+diff ${ref1}/flagstat/${ref_sample}.flagstat ${ref2}/bam_metrics/${ref_sample}.flagstat
+
+germline_caller_lines_1=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
+germline_caller_lines_2=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
+echo "[INFO] ${run1} germline vcf lines: ${germline_caller_lines_1}"
+echo "[INFO] ${run2} germline vcf lines: ${germline_caller_lines_2}"
+
+ref_snp_genotype_lines_1=$( cat ${ref1}/snp_genotype/snp_genotype_output.vcf | wc -l)
+ref_snp_genotype_lines_2=$( cat ${ref2}/snp_genotype/snp_genotype_output.vcf | wc -l)
+echo "[INFO] ${run1} ref snp genotype vcf lines: ${ref_snp_genotype_lines_1}"
+echo "[INFO] ${run2} ref snp genotype vcf lines: ${ref_snp_genotype_lines_2}"
+
+# Tumor sample diffing
+echo "[INFO] Diffing tumor sample ${tumor_sample}"
+tum1=${run1}/${tumor_sample}
+tum2=${run2}/${tumor_sample}
+
+diff ${tum1}/metadata.json ${tum2}.metadata.json
+diff ${tum1}/bam_metrics/${tumor_sample}.wgsmetrics ${tum2}/bam_metrics/${tumor_sample}.wgsmetrics
+diff ${tum1}/flagstat/${tumor_sample}.flagstat ${tum2}/bam_metrics/${tumor_sample}.flagstat
+
+tum_snp_genotype_lines_1=$( cat ${tum1}/snp_genotype/snp_genotype_output.vcf | wc -l)
+tum_snp_genotype_lines_2=$( cat ${tum2}/snp_genotype/snp_genotype_output.vcf | wc -l)
+echo "[INFO] ${run1} tumor snp genotype vcf lines: ${tum_snp_genotype_lines_1}"
+echo "[INFO] ${run2} tumor snp genotype vcf lines: ${tum_snp_genotype_lines_2}"
+
+# Tertiary analyses
+
+amber_files_1=$( ls ${run1}/amber | wc -l)
+amber_files_2=$( ls ${run1}/amber | wc -l)
+
+echo "[INFO] ${run1} amber file count: ${amber_files_1}"
+echo "[INFO] ${run2} amber file count: ${amber_files_2}"
+
+
