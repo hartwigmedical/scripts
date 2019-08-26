@@ -80,7 +80,7 @@ echo "[INFO] Setting NewName: \"${newName}\""
 for oldFile in "${filesToRename[@]}"; do
     fileDir=$( dirname ${oldFile} )
     oldBase=$( basename ${oldFile} )
-    newBase=$( echo $oldBase | sed "s/${oldName}/${newName}/" )
+    newBase=$( echo ${oldBase} | sed "s/${oldName}/${newName}/" )
     newFile="${fileDir}/${newBase}" 
 
     if [[ ${doSymlinkFiles} ]]; then
@@ -98,6 +98,6 @@ if [[ ! ${doRenameFiles} ]]; then
     logFilePath="${dirPath}/fastqrename.log"
     echo "[INFO] Option -r not set so only printed the potential rename actions"
     echo "[INFO] Cmd to rename: ${commandLine} -r > ${logFilePath}"
-    if [[ -f ${lofFilePath} ]]; then echo "[WARN] Logfile (${logFilePath}) already exists!"; fi
+    if [[ -f ${logFilePath} ]]; then echo "[WARN] Logfile (${logFilePath}) already exists!"; fi
 fi
 
