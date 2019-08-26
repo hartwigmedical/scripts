@@ -14,9 +14,8 @@ echo "[INFO] Diffing ref sample ${ref_sample}"
 ref1=${run1}/${ref_sample}
 ref2=${run2}/${ref_sample}
 
-diff ${ref1}/metadata.json ${ref2}.metadata.json
-diff ${ref1}/bam_metrics/${ref_sample}.wgsmetrics ${ref2}/bam_metrics/${ref_sample}.wgsmetrics
-diff ${ref1}/flagstat/${ref_sample}.flagstat ${ref2}/bam_metrics/${ref_sample}.flagstat
+diff ${ref1}/metadata.json ${ref2}/metadata.json
+diff ${ref1}/flagstat/${ref_sample}.flagstat ${ref2}/flagstat/${ref_sample}.flagstat
 
 germline_caller_lines_1=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
 germline_caller_lines_2=$( zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
@@ -33,9 +32,8 @@ echo "[INFO] Diffing tumor sample ${tumor_sample}"
 tum1=${run1}/${tumor_sample}
 tum2=${run2}/${tumor_sample}
 
-diff ${tum1}/metadata.json ${tum2}.metadata.json
-diff ${tum1}/bam_metrics/${tumor_sample}.wgsmetrics ${tum2}/bam_metrics/${tumor_sample}.wgsmetrics
-diff ${tum1}/flagstat/${tumor_sample}.flagstat ${tum2}/bam_metrics/${tumor_sample}.flagstat
+diff ${tum1}/metadata.json ${tum2}/metadata.json
+diff ${tum1}/flagstat/${tumor_sample}.flagstat ${tum2}/flagstat/${tumor_sample}.flagstat
 
 tum_snp_genotype_lines_1=$( cat ${tum1}/snp_genotype/snp_genotype_output.vcf | wc -l)
 tum_snp_genotype_lines_2=$( cat ${tum2}/snp_genotype/snp_genotype_output.vcf | wc -l)
