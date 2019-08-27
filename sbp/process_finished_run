@@ -16,6 +16,10 @@ echo "[INFO] Copying set ${set} to processed path ${processed_path}"
 set_path=${processed_path}/${set}
 cp -r ${download_path}/${set} ${set_path}
 
+# TODO Can be removed once pre v5.2 pipelines have been processed and reported.
+echo "[INFO] Running purple on ${set}"
+do_run_purple_no_db ${set_path}
+
 echo "[INFO] Running viral annotation ${set}"
 do_run_gridss_viral_annotate_prod ${set_path}
 
