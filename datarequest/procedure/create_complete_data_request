@@ -11,7 +11,8 @@ fi
 
 dr_path=/data/data_archive/datarequests/${dr_name}/${request_name}
 
-if [ create_base_directory_structure_for_data_request ${dr_path} ]; then
+create_base_directory_structure_for_data_request ${dr_path}
+if [ $? != 0 ]; then
     echo "success"
 else
     echo "fail"
