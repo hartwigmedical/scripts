@@ -21,3 +21,5 @@ fi
 mkdir -p ${final_dr_path}
 mkdir ${final_dr_path}/logs
 mkdir ${final_dr_path}/metadata
+
+echo "[INFO] Finished creating structure at ${final_dr_path}"
