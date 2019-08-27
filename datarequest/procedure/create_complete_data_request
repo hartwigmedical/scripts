@@ -14,7 +14,18 @@ dr_path=/data/data_archive/datarequests/${dr_name}/${request_name}
 create_base_directory_structure_for_data_request ${dr_path}
 if [ $? = 0 ]; then
     echo "success"
+
+    # TODO Create metadata
+    # TODO Filter metadata based on specific request
+    # TODO Move metadata into final location
+    # TODO If relevant: Collect RNA Data
+    # TODO If relevant: Collect somatic data
+    # TODO If relevant: Collect germline data
+    # TODO If relevant: Create JSONs for sharing tumor BAM/BAI
+    # TODO If relevant: Create JSONs for sharing germline BAM/BAI
+    # TODO If relevant: Generate additional clinical data
 else
     echo "fail"
 fi
+
 
