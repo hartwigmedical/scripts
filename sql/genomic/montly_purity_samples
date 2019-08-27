@@ -1,1 +1,0 @@
-select sampleId, status, qcStatus, purity from purity where sampleId in ('XXX') order by sampleId
