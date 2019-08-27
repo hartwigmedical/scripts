@@ -1,9 +1,6 @@
 options(Ncpus=8L, repos="https://cloud.r-project.org/")
-if (!requireNamespace("packrat", quietly=TRUE)) {
-	install.packages("packrat")
-}
 # default packages: might fail with permissions error
-# install.packages(c("foreign","MASS", "survival"))
+install.packages(c("foreign","MASS", "survival"))
 install.packages(c(
 	"tidyverse",
 	"devtools",
@@ -28,4 +25,6 @@ BiocManager::install(ask=FALSE,
 	"biomaRt",
 	"org.Hs.eg.db",
 	"TxDb.Hsapiens.UCSC.hg19.knownGene",
-	"BSgenome.Hsapiens.UCSC.hg19"))
+	"TxDb.Hsapiens.UCSC.hg38.knownGene",
+	"BSgenome.Hsapiens.UCSC.hg19",
+	"BSgenome.Hsapiens.UCSC.hg38"))
