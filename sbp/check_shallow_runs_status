@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 YYMMDD=$(date +'%y%m%d')
-archivePath="/data/data_archive/shallow_seq_pipelines"
+archive_path="/data/data_archive/shallow_seq_pipelines"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
 query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status)"' | while read line; do 
-  runName=$(echo "${line}" | cut -d" " -f1)
-  runStatus=$(echo "${line}" | cut -d" " -f2)
-    if [[ "${runName}" =~ "190314-testR" ]]; then continue 
-  elif [[ -d "${archivePath}/${runName}" ]]; then echo "## [type1] ALREADY ARCHIVED: ${runName} (status=$runStatus)"
-  elif [[ "${runStatus}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## [type2] IN PROCESS: ${runName} (status=$runStatus)"
-  elif [[ "${runStatus}" =~ Failed ]]; then echo "## [type3] FAILED: ${runName} (status=$runStatus)"
-  else echo " process_shallow_run -s ${runName} # (status=$runStatus)"
+  run_name=$(echo "${line}" | cut -d" " -f1)
+  run_status=$(echo "${line}" | cut -d" " -f2)
+    if [[ "${run_name}" =~ "190314-testR" ]]; then continue
+  elif [[ -d "${archive_path}/${run_name}" ]]; then echo "## [type1] ALREADY ARCHIVED: ${run_name} (status=${run_status})"
+  elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## [type2] IN PROCESS: ${run_name} (status=${run_status})"
+  elif [[ "${run_status}" =~ Failed ]]; then echo "## [type3] FAILED: ${run_name} (status=${run_status})"
+  else echo " process_shallow_run -s ${run_name} # (status=${run_status})"
     fi
 done | sort

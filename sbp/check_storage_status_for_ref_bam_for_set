@@ -26,7 +26,7 @@ if [[ -z "${set}" ]]; then
 fi
 
 run_info=$(load_run_info_for_set ${set})
-if [ -z "$run_info" ]; then
+if [ -z "${run_info}" ]; then
     echo "[ERROR] No run info found for set ${set}. Exiting"
     exit 1
 fi

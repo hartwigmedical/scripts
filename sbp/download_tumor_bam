@@ -33,8 +33,8 @@ fi
 
 run_bucket=`echo ${run_info} | cut -d ' ' -f5`
 
-s3path="s3://${run_bucket}/${set}"
-dspath="/data/schuberg/bam_downloads/bams_${set}"
+s3path=s3://${run_bucket}/${set}
+dspath=/data/schuberg/bam_downloads/bams_${set}
 
 echo "[INFO] Getting TUMOR bam from ${s3path}"
 bampath_in_bucket=$(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set})
