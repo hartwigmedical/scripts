@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 
-uploadFileName=$1
+upload_file_name=$1
 
 profile="download"
 bucket="hmf_experiments"
 subdir="share"
-s3path="s3://${bucket}/${subdir}/"
+s3path="s3://${bucket}/${subdir}"
 yymmdd=$( date "+%y%m%d" )
 
-if [[ -z ${uploadFileName} ]]; then
-  uploadFileName="YOUR_FILE_IN_DATA_TMP"
+if [[ -z ${upload_file_name} ]]; then
+  upload_file_name="YOUR_FILE_IN_DATA_TMP"
 fi
 
 echo "---"
 echo "[INFO] Reading ${s3path}:"
-sbp s3 ls --human-readable --summarize ${s3path} --profile ${profile}
+sbp s3 ls --human-readable --summarize ${s3path}/ --profile ${profile}
 
 echo ""
 echo "[INFO] Command to upload file:"
-echo " nohup sbp s3 sync --follow-symlinks --dryrun /data/tmp/ ${s3path} --exclude \"*\" --include \"${uploadFileName}\" --profile ${profile} > ${HOME}/logs/${yymmdd}_upload_to_share_bucket.log &"
+echo " nohup sbp s3 sync --follow-symlinks --dryrun /data/tmp/ ${s3path} --exclude \"*\" --include \"${upload_file_name}\" --profile ${profile} > ${HOME}/logs/${yymmdd}_upload_to_share_bucket.log &"
 echo ""
 echo "[INFO] Command to get external https link:"
-echo " presign_url ${s3path}${uploadFileName}"
+echo " presign_url ${s3path}/${upload_file_name}"
 echo "---"

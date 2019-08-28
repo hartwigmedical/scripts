@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 YYMMDD=$(date +'%y%m%d')
 archivePath="/data/data_archive/shallow_seq_pipelines"

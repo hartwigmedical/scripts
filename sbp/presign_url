@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
-linkInclBucket=$1
-awsProfile="download"
-expiresInSec="604800" # 1 week in seconds
+link_incl_bucket=$1
+
+aws_profile="download"
+expires_in_sec="604800" # 1 week in seconds
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
@@ -14,11 +15,9 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-directLink=$( sbp s3 presign ${linkInclBucket} --expires ${expiresInSec} --profile ${awsProfile} )
-externLink=$( echo "${directLink}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+direct_link=$( sbp s3 presign ${link_incl_bucket} --expires ${expires_in_sec} --profile ${aws_profile} )
+extern_link=$( echo "${direct_link}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
 
-#echo "[INFO] Original:"
-#echo "${directLink}"
-dateString=$(date +%Y-%m-%d)
-echo "## NOTE: URL expires in one week (starting from date: ${dateString})"
-echo "${externLink}"
+date_string=$(date +%Y-%m-%d)
+echo "## NOTE: URL expires in one week (starting from date: ${date_string})"
+echo "${extern_link}"

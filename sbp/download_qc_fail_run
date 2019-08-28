@@ -1,11 +1,9 @@
-#!/bin/bash
-
-script=$( basename $0 )
+#!/usr/bin/env bash
 
 usage() {
     echo "---"
-    echo "Usage: $script -s <setname> -b <bucket>" 1>&2;
-    echo "       $script -s 170101_HMFregCPCT_etc -b hmf-output-2017-52" 1>&2;
+    echo "Usage: `basename $0` -s <setname> -b <bucket>" 1>&2;
+    echo "       `basename $0` -s 170101_HMFregCPCT_etc -b hmf-output-2017-52" 1>&2;
     echo "---"
     exit 1
 }

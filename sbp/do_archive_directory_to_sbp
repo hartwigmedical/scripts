@@ -4,8 +4,8 @@ do_cleanup_destination=false;
 
 usage() {
     echo "---"
-    echo "Usage: do_archive_directory_to_sbp -l <local_path> -d <destination> [-c]" 1>&2;
-    echo "       do_archive_directory_to_sbp -l /data/sequencer_archive -d sequencer_archive" 1>&2;
+    echo "Usage: `basename $0` -l <local_path> -d <destination> [-c]" 1>&2;
+    echo "       `basename $0` -l /data/sequencer_archive -d sequencer_archive" 1>&2;
     echo "---"
     exit 1
 }

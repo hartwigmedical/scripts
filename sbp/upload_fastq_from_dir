@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-inputDirPath=$1
+input_dir_path=$1
 
-sbp s3 sync ${inputDirPath}/ s3://hmf-fastq-storage/ \
+sbp s3 sync ${input_dir_path}/ s3://hmf-fastq-storage/ \
     --profile hmf_fastq \
     --grants read=id=${SBP_DOWNLOAD_CANONICAL},id=${HMF_DOWNLOAD_CANONICAL} readacl=id=${SBP_DOWNLOAD_CANONICAL},id=${HMF_DOWNLOAD_CANONICAL}
 

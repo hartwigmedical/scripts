@@ -1,15 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-script=$( basename $0 )
-archivePath="/data/data_archive/shallow_seq_pipelines"
-downloadPath="/data/schuberg/shallow_runs"
+archive_path="/data/data_archive/shallow_seq_pipelines"
+download_path="/data/schuberg/shallow_runs"
 bucket="hmf-output-shallowseq"
 
 usage() {
     echo "---"
-    echo "Usage: $script -s <SetName>" 1>&2;
-    echo "       $script -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
-    echo "       $script -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
+    echo "Usage: `basename $0` -s <SetName>" 1>&2;
+    echo "       `basename $0` -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
+    echo "       `basename $0` -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
     echo "---"
     exit 1
 }
@@ -32,14 +31,14 @@ if [[ -z "${set}" ]]; then
     usage
 fi
 
-archiveSetPath="${archivePath}/${set}"
-downloadSetPath="${downloadPath}/${set}"
+archive_set_path=${archive_path}/${set}
 
-if [[ -d ${archiveSetPath} ]]; then
-    echo "[WARN] SKIPPING: Set already archived locally (${archiveSetPath})"
+if [[ -d ${archive_set_path} ]]; then
+    echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
 else 
-    echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${downloadPath}"
-    sbp s3 sync s3://${bucket}/${set}/ ${downloadPath}/${set}/ \
+    echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${download_path}"
+    download_set_path=${download_path}/${set}
+    sbp s3 sync s3://${bucket}/${set}/ ${download_set_path}/ \
         --exclude "*.bam" \
         --exclude "*.diff" \
 	--profile download

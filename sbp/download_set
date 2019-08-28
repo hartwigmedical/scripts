@@ -1,13 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source api_functions
 
-script=$( basename $0 )
-
 usage() {
     echo "---"
-    echo "Usage: $script -s <set> -p <path>" 1>&2;
-    echo "       $script -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
+    echo "Usage: `basename $0` -s <set> -p <path>" 1>&2;
+    echo "       `basename $0` -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
     echo "---"
     exit 1
 }
