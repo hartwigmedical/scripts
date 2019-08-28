@@ -12,7 +12,12 @@ mkdir -p ${dest_set_path}
 ## gather germline info
 echo "[DEBUG] Symlinking Germline VCF (and tbi index) for ${set_name}"
 for germline_vcf_path in $( find ${source_set_path} -mindepth 1 -maxdepth 1 -name "*.annotated.vcf.gz" ); do
-  ln -s ${germline_vcf_path} ${dest_set_path}
-  ln -s ${germline_vcf_path}.tbi ${dest_set_path}
+    ln -s ${germline_vcf_path} ${dest_set_path}
+    ln -s ${germline_vcf_path}.tbi ${dest_set_path}
 done
+
+germline_file_count=$( ls ${dest_set_path} | wc -l)
+if [ ${germline_file_count} -ne 2 ]; then
+    echo "[WARN] Found ${germline_file_count} which is different than expected for ${set_name} Please manually inspect!"
+fi
 

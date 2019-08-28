@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+tar_file_to_create=$1 && shift
+base_directory=$1 && shift
+directory_to_tar=$1 && shift
+log_file=$1 && shift
+
+cd ${base_directory}
+tar -hcvf ${tar_file_to_create} ${directory_to_tar} > ${log_file}
+tar_content_size=$(tar -tf ${tar_file_to_create} | wc -l)
+echo "[DEBUG] Created ${tar_file_to_create} with ${tar_content_size} entries"

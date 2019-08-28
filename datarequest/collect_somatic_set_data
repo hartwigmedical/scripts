@@ -24,6 +24,14 @@ ln -s ${source_set_path}/purple/plot/*.circos.png ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz.tbi ${dest_set_path}
 
+expected_file_count=11
 if [ ${include_germline} == "1" ]; then
     ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
+    expected_file_count=12
+fi
+
+somatic_file_count=$( ls ${dest_set_path} | wc -l)
+
+if [ ${somatic_file_count} != ${expected_file_count} ]; then
+    echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
 fi

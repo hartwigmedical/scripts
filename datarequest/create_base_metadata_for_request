@@ -8,7 +8,7 @@ base_metadata_filtered_tsv=$1 && shift
 ## select metadata info of all biopsies for each patient
 head -1 ${datareq_input_tsv} | sed 's/sbpSetName/setName/' > ${base_metadata_unfiltered_tsv}
 cat ${patient_selection_tsv} | grep -v "^#" | while read patient_id; do
-  grep ${patient_id} ${datareq_input_tsv}
+    grep ${patient_id} ${datareq_input_tsv}
 done | sort | uniq >> ${base_metadata_unfiltered_tsv}
 
 ## =======================
