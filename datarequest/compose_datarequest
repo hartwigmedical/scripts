@@ -80,7 +80,7 @@ if [ $? = 0 ]; then
         collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
         somatics_sample_count=$( ls ${somatics_dir} | wc -l)
         somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
-        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatics_tar_file}"
+        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
         create_tar_file ${somatic_tar_file} ${somatics_dir} ${log_dir}/tar_${request_name}_somatics.log
     else
         echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
