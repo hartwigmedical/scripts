@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-metadataFile=$1
-cat ${metadataFile} | grep -v "^#" | cut -f1 | while read setName; do
-    setPath=/data/cpct/runs/${setName}
-    get_germline_set_data ${setPath}
+metadata_tsv=$1 && shift
+germline_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
+    set_path=/data/cpct/runs/${set_name}
+    collect_germline_set_data ${set_path} ${germline_dir}
 done

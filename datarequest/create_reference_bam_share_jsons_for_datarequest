@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+metadata_tsv=$1 && shift
+# Entity name should generally match dr name (eg "DR-028")
+entity_name=$1 && shift
+base_json_dir=$1 && shift
+
+entity_sbp_id=$( query_sbp_api -type entities | grep ${entity_name} | cut -f3 )
+cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
+  set_id=$( query_sbp_api -type sets | grep ${set_name} | cut -f5)
+
+  reference_bam_json=${base_json_dir}/${set_name}_ref_bam.json
+  echo "[DEBUG] Creating ${reference_bam_json}"
+
+  create_share_json_for_reference_bam ${set_id} ${entity_sbp_id} > ${reference_bam_json}
+done

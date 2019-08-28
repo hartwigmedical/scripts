@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source_set_path=$1 && shift
+dest_set_base_path=$1 && shift
+
+set_name=$( basename ${source_set_path} )
+dest_set_path=${dest_set_base_path}/${set_name}
+
+## init
+mkdir -p ${dest_set_path}
+
+## start symlinking
+echo "[INFO] Symlinking files for ${set_name}"
+ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
+# TODO Remove germline if only somatic access granted.
+ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.purity.tsv ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.purity.range.tsv ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.qc ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.sv.ann.vcf.gz ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.sv.ann.vcf.gz.tbi ${dest_set_path}
+ln -s ${source_set_path}/purple/plot/*.circos.png ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz ${dest_set_path}
+ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz.tbi ${dest_set_path}

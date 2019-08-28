@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+dr_path=$1 && shift
+
+if [ -z "${dr_path}" ]; then
+    echo "Usage: create_base_directory_for_datarequest dr_path"
+    echo "   eg create_base_directory_for_datarequest /data/data_archive/datarequests/DR-028/DR-028-update2"
+    exit 1
+fi
+
+echo "[INFO] Creating base directory structure at ${dr_path}"
+if [ -d ${dr_path} ]; then
+    echo "[WARN] Directory already exists: ${dr_path}. Exiting"
+    exit 1
+fi
+
+mkdir -p ${dr_path}
+
+echo "[INFO] Finished creating DR at ${dr_path}"
