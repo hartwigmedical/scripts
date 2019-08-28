@@ -48,10 +48,10 @@ sv_gr <- function(dbdf, include.homology=TRUE) {
   names(grh)=grh$beid
   return(c(grs, grh))
 }
-db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
-dbdf = query_somatic_structuralVariants(db)
+#db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+#dbdf = query_somatic_structuralVariants(db)
 #save(dbdf, file = "d:/hartwig/anchorsupport.RData")
-#load(file = "d:/hartwig/anchorsupport.RData")
+load(file = "d:/hartwig/anchorsupport.RData")
 gr = sv_gr(dbdf)
 gr = gr[gr$sampleid %in% sva_sampleids]
 #pgr = sgr[ifelse(is.na(sgr$partner), names(sgr), sgr$partner)]
@@ -147,7 +147,7 @@ ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% mutate(type=ifelse(isbp1
   labs(y="structural variants", x="distance to adjacent SV", title="Phasing by breakpoint/breakend status")
 figsave("assembly_phasing_by_type", width=5, height=4)
 
-ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(isbp1 & isbp2)) +
+plot_assembly_phasing = ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(isbp1 & isbp2)) +
   aes(x=distance, fill=phasing) +
   geom_histogram(binwidth=10, boundary=0) +
   scale_x_continuous(
@@ -161,7 +161,9 @@ ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(isbp1 & isbp2)) +
   theme(
     axis.line = element_line(colour = "black"),
     panel.border = element_blank()) +
-  labs(y="structural variants", x="distance to adjacent SV")
+  labs(y="structural variants", x="distance to adjacent SV") +
+  theme(legend.position=c(.9,.9))
+plot_assembly_phasing
 figsave("assembly_phasing_breakpoint", width=5, height=4)
 
 ggplot(adj_df %>% filter(isClosest | is_asm_linked)) +
