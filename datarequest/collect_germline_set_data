@@ -17,7 +17,7 @@ for germline_vcf_path in $( find ${source_set_path} -mindepth 1 -maxdepth 1 -nam
 done
 
 germline_file_count=$( ls ${dest_set_path} | wc -l)
-if [ ${germline_file_count} > 2 ]; then
-    echo "[WARN] Found ${germline_file_count} which is more than expected for ${set_name} Please manually inspect!"
+if [ ${germline_file_count} -ne 2 ]; then
+    echo "[WARN] Found ${germline_file_count} which is different than expected for ${set_name} Please manually inspect!"
 fi
 
