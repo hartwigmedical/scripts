@@ -8,7 +8,7 @@ if [ -z "${dr_path}" ]; then
     exit 1
 fi
 
-echo "[INFO] Creating base directory structure at ${dr_path}"
+echo "[DEBUG] Creating base directory structure at ${dr_path}"
 if [ -d ${dr_path} ]; then
     echo "[WARN] Directory already exists: ${dr_path}. Exiting"
     exit 1
@@ -16,4 +16,4 @@ fi
 
 mkdir -p ${dr_path}
 
-echo "[INFO] Finished creating DR at ${dr_path}"
+echo "[DEBUG] Finished creating DR at ${dr_path}"

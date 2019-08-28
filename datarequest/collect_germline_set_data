@@ -10,7 +10,7 @@ dest_set_path=${dest_set_base_path}/${set_name}
 mkdir -p ${dest_set_path}
 
 ## gather germline info
-echo "[INFO] Symlinking Germline VCF (and tbi index) for ${set_name}"
+echo "[DEBUG] Symlinking Germline VCF (and tbi index) for ${set_name}"
 for germline_vcf_path in $( find ${source_set_path} -mindepth 1 -maxdepth 1 -name "*.annotated.vcf.gz" ); do
   ln -s ${germline_vcf_path} ${dest_set_path}
   ln -s ${germline_vcf_path}.tbi ${dest_set_path}

@@ -10,7 +10,7 @@ dest_set_path=${dest_set_base_path}/${set_name}
 mkdir -p ${dest_set_path}
 
 ## start symlinking
-echo "[INFO] Symlinking files for ${set_name}"
+echo "[DEBUG] Symlinking files for ${set_name}"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
 # TODO Remove germline if only somatic access granted.
 ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}

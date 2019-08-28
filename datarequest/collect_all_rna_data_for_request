@@ -3,13 +3,13 @@
 metadata_tsv=$1 && shift
 rna_output_dir=$1 && shift
 
-rnaOverview="/data/data_archive/rna_seq/overview/overview.tsv"
+rna_overview="/data/data_archive/rna_seq/overview/overview.tsv"
 
-cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read sampleId; do
-    echo "[INFO] Checking $sampleId"
-    fastqPath=$( cat ${rnaOverview} | awk -v sampleId="${sampleId}" '$1 == sampleId' | cut -f4)
-    if [[ "${fastqPath}" ]]; then
-        echo "[INFO]   found $fastqPath"
-        ln -s ${fastqPath} ${rna_output_dir}/
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read sample_id; do
+    echo "[DEBUG] Checking ${sample_id}"
+    fastq_path=$( cat ${rna_overview} | awk -v sample_id="${sample_id}" '$1 == sample_id' | cut -f4)
+    if [[ "${fastq_path}" ]]; then
+        echo "[DEBUG]   found ${fastq_path}"
+        ln -s ${fastq_path} ${rna_output_dir}/
     fi
 done
