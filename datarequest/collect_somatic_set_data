@@ -11,10 +11,10 @@ dest_set_path=${dest_set_base_path}/${set_name}
 mkdir -p ${dest_set_path}
 
 ## Find purple version
-purple_version=$( cat ${source_set_path}/purple/purple.version)
+purple_version=$( cat ${source_set_path}/purple/purple.version | grep version)
 
 ## start symlinking
-echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple version ${purple_version}"
+echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple '${purple_version}'"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
