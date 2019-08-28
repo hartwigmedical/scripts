@@ -10,8 +10,11 @@ dest_set_path=${dest_set_base_path}/${set_name}
 ## init
 mkdir -p ${dest_set_path}
 
+## Find purple version
+purple_version=$( cat ${source_set_path}/purple/purple.version)
+
 ## start symlinking
-echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline}"
+echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple version ${purple_version}"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
@@ -32,6 +35,6 @@ fi
 
 somatic_file_count=$( ls ${dest_set_path} | wc -l)
 
-if [ ${somatic_file_count} != ${expected_file_count} ]; then
+if [ ${somatic_file_count} -ne ${expected_file_count} ]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
 fi
