@@ -210,22 +210,6 @@ locate_linx_fusions() {
     echo ${fusion_tsv}
 }
 
-locate_linx_detailed_fusions() {
-    local run_dir=$1
-    local linx_dir=${run_dir}/sv
-    if [ ! -d ${linx_dir} ]; then
-        echo "[ERROR] Unable to locate linx dir for detailed fusions: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-
-	local fusion_detailed_csv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusions_detailed.csv")
-	if [ -z ${fusion_detailed_csv} ]; then
-        echo "[ERROR] Unable to locate linx detailed fusions csv. Exiting." >&2
-        exit 1
-    fi
-    echo ${fusion_detailed_csv}
-}
-
 locate_linx_disruptions() {
     local run_dir=$1
     local linx_dir=${run_dir}/sv
