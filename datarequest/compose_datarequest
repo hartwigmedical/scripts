@@ -66,7 +66,8 @@ if [ $? = 0 ]; then
         exit 1
     fi
 
-    metadata_dir=${dr_path}/metadata
+    metadata_dir_name=metadata
+    metadata_dir=${dr_path}/${metadata_dir_name}
     mkdir -p ${metadata_dir}
     metadata_tsv=${metadata_dir}/metadata.tsv
     cp ${base_metadata_final_tsv} ${metadata_tsv}
@@ -75,26 +76,28 @@ if [ $? = 0 ]; then
 
     if [ ${include_somatics} == "1" ]; then
         echo "[INFO] Collecting somatic data for ${request_name}..."
-        somatics_dir=${dr_path}/somatics
+        somatic_dir_name=somatics
+        somatics_dir=${dr_path}/${somatic_dir_name}
         mkdir -p ${somatics_dir}
         collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
         somatics_sample_count=$( ls ${somatics_dir} | wc -l)
         somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
         echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
-        create_tar_file ${somatic_tar_file} ${somatics_dir} ${log_dir}/tar_${request_name}_somatics.log
+        create_tar_file ${somatic_tar_file} ${dr_path} ./${somatic_dir_name} ${log_dir}/tar_${request_name}_somatics.log
     else
         echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
     fi
 
     if [ ${include_germline} == "1" ]; then
         echo "[INFO] Collecting germline data for ${request_name}..."
-        germline_dir=${dr_path}/germline
+        germline_dir_name=germline
+        germline_dir=${dr_path}/${germline_dir_name}
         mkdir -p ${germline_dir}
         collect_all_germline_set_data_for_request ${metadata_tsv} ${germline_dir}
         germline_sample_count=$( ls ${germline_dir} | wc -l)
         germline_tar_file=${dr_base_path}/${request_name}.germline.tar
         echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
-        create_tar_file ${germline_tar_file} ${germline_dir} ${log_dir}/tar_${request_name}_germline.log
+        create_tar_file ${germline_tar_file} ${dr_path} ./${germline_dir_name} ${log_dir}/tar_${request_name}_germline.log
     else
         echo "[INFO] Skipped germline collection as not deemed relevant for ${request_name}"
     fi
@@ -121,13 +124,14 @@ if [ $? = 0 ]; then
 
     if [ ${include_rna} == "1" ]; then
         echo "[INFO] Collecting RNA seq for ${request_name}..."
-        rnaseq_dir=${dr_path}/rnaseq
+        rnaseq_dir_name=rnaseq
+        rnaseq_dir=${dr_path}/${rnaseq_dir_name}
         mkdir -p ${rnaseq_dir}
         collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
         rna_sample_count=$( ls ${rnaseq_dir} | wc -l)
         rna_tar_file=${dr_base_path}/${request_name}.rnaseq.tar
         echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples. Creating TAR file at ${rna_tar_file}"
-        create_tar_file ${rna_tar_file} ${rnaseq_dir} ${log_dir}/tar_${request_name}_rnaseq.log
+        create_tar_file ${rna_tar_file} ${dr_path} ./${rnaseq_dir_name} ${log_dir}/tar_${request_name}_rnaseq.log
     else
         echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
     fi
@@ -144,7 +148,7 @@ if [ $? = 0 ]; then
 
     metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
     echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
-    create_tar_file ${metadata_tar_file} ${metadata_dir} ${log_dir}/tar_${request_name}_metadata.log
+    create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
 else
     echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
