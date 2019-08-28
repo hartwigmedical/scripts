@@ -21,5 +21,5 @@ done >> ${flt}
 
 cp ${flt} ${out}
 
-item_count=$( grep -cv "^#" ${patient_selection_tsv})
+item_count=$( grep -cv "^#" ${out})
 echo "[DEBUG] Found ${item_count} items for ${name}"
