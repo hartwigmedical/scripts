@@ -125,6 +125,9 @@ if [ $? = 0 ]; then
     else
         echo "[INFO] Skipped generation of extra clinical data as not deemed relevant for ${request_name}"
     fi
+
+    # TODO: Add QC
+    # TODO: Add creation of final TAR files for upload.
 else
     echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
