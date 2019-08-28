@@ -1,0 +1,46 @@
+#!/bin/bash
+
+script=$( basename $0 )
+archivePath="/data/data_archive/shallow_seq_pipelines"
+downloadPath="/data/schuberg/shallow_runs"
+bucket="hmf_experiments"
+
+usage() {
+    echo "---"
+    echo "Usage: $script -s <SetName>" 1>&2;
+    echo "       $script -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
+    echo "       $script -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:b:" o; do
+    case "${o}" in
+        s)
+            set=${OPTARG} || usage
+            ;;
+        b)
+            bucket=${OPTARG} || usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set}" ]]; then
+    usage
+fi
+
+archiveSetPath="${archivePath}/${set}"
+downloadSetPath="${downloadPath}/${set}"
+
+if [[ -d ${archiveSetPath} ]]; then
+    echo "[WARN] SKIPPING: Set already archived locally (${archiveSetPath})"
+else
+    echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${downloadPath}"
+    sbp s3 sync s3://${bucket}/${set}/ ${downloadPath}/${set}/ \
+        --exclude "*.bam" \
+        --exclude "*.diff" \
+	--profile download
+fi
