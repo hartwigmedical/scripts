@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+dr_name=XXX
+request_name=XXX-update1
+patient_selection_sql=/data/data_archive/datarequests/procedure/patient_selection_sql/XXX.sql
+metadata_selection="tumor" # can be 'tumor', 'tumor-patient' or 'tumor-patient-treatment'
+include_somatics=1
+include_germline=0
+include_tumor_bam_jsons=0
+include_ref_bam_jsons=0
+include_rna=0
+include_extra_clinical_data=0
+
+# Uncomment below lines to actually create the DR
+#compose_datarequest ${dr_name} ${request_name} ${patient_selection_sql} ${metadata_selection} \
+#    ${include_somatics} ${include_germline} ${include_tumor_bam_jsons} ${include_ref_bam_jsons} ${include_rna} ${include_extra_clinical_data}
