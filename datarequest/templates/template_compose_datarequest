@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-dr_name=XXX
-request_name=XXX-update1
-patient_selection_sql=/data/data_archive/datarequests/procedure/patient_selection_sql/XXX.sql
+dr_name="XXX"
+request_name="XXX-update1"
+patient_selection_sql="/data/data_archive/datarequests/procedure/patient_selection_sql/XXX.sql"
 metadata_selection="tumor" # can be 'tumor', 'tumor-patient' or 'tumor-patient-treatment'
 include_somatics=1
 include_germline=0
