@@ -41,7 +41,7 @@ all_tumor_samples_with_valid_run=$( query_sbp_api \
 
 all_tumor_samples_with_success_run=$( query_sbp_api \
     -type runs \
-    -filter "ini=${fullRunInis}" \
+    -filter "ini=${full_run_inis}" \
     -filter "bucket=hmf-output" \
     -filter "status=Success" \
     -json | jq -r '.[].tumor_sample')
@@ -77,7 +77,7 @@ if [ ${rerun_mode} == 0 ]; then
                     -filter "status=Failed" \
                     -exact -json | jq -r '.[].name' | tail -n 1 )
 
-                exists_in_success_run_dirs=$( find ${findDirs} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l);
+                exists_in_success_run_dirs=$( find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l);
                 exists_in_qcfail_run_dirs=$( find ${find_dirs_fail} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l)
                 if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                     echo "${download_script_fail} -s ${set_name_for_failed_tumor_sample} -b ${bucket_for_failed_tumor_sample}"
@@ -118,7 +118,7 @@ query_sbp_api \
                 -filter "pipeline=${pip}" \
                 -filter "status=Success" -exact -json | jq -r '.[].name' | tail -n 1 )
 
-            exists_in_success_run_dirs=$( find ${findDirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
+            exists_in_success_run_dirs=$( find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
 		    if [ ${exists_in_success_run_dirs} == 0 ]; then
                 echo "${download_script} -s ${set_name_for_success_tumor_sample}"
 		    else
@@ -144,7 +144,7 @@ query_sbp_api \
     -filter "status=${status_filter}" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        exists_in_success_run_dirs=$( find ${findDirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
+        exists_in_success_run_dirs=$( find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
         if [[ ${exists_in_success_run_dirs} == 0 ]]
         then
                 echo "${download_script} ${set_name}"
@@ -163,7 +163,7 @@ query_sbp_api \
     -filter "status=SnpCheck" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        exists_in_success_run_dirs=$( find ${findDirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
+        exists_in_success_run_dirs=$( find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
         if [[ ${exists_in_success_run_dirs} == 0 ]]
         then
                 echo "${download_script} ${set_name}"
