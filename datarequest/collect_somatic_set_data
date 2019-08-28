@@ -13,9 +13,6 @@ mkdir -p ${dest_set_path}
 ## start symlinking
 echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline}"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
-if [ ${include_germline} == "1" ]; then
-    ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
-fi
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.purity.tsv ${dest_set_path}
@@ -26,3 +23,7 @@ ln -s ${source_set_path}/purple/*.purple.sv.ann.vcf.gz.tbi ${dest_set_path}
 ln -s ${source_set_path}/purple/plot/*.circos.png ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz.tbi ${dest_set_path}
+
+if [ ${include_germline} == "1" ]; then
+    ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
+fi
