@@ -42,8 +42,6 @@ ${prefix}/do_run_base_patient_reporter \
     -circos_file ${circos_file} \
     -ref_sample ${ref_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -drup_genes_csv ${drup_genes_csv} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -fasta_file_location ${ref_genome} \
     "$@"
