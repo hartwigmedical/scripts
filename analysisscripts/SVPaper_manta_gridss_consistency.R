@@ -115,10 +115,9 @@ ggplot_fp_df = function(gr) {
 ggplot_fp_consistency = function(df) {
   return(
     ggplot(df) +
-      aes(fill=factor(hits, levels=c(0,1,2), labels=c("1 sample", "2 samples", "3 samples")), y=n, x=sample) +
-      geom_bar(stat="identity") +
+      aes(y=n, x=sample) +
+      geom_bar(stat="identity", fill=gridss_fig_fp_colours[2]) +
       facet_grid(~ caller) +
-      scale_fill_manual(values = gridss_fig_fp_colours) +
       scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
       theme(
         strip.text.x=element_text(margin=margin(3,0,3,0, "mm")),
@@ -127,14 +126,16 @@ ggplot_fp_consistency = function(df) {
   )
 }
 plot_data = ggplot_fp_df(grna12878)
-ggplot_fp_consistency(plot_data)
+plot_manta_vs_gridss_fp_na12878 = ggplot_fp_consistency(plot_data)
+plot_manta_vs_gridss_fp_na12878
 figsave("manta_vs_gridss_fp_na12878", width=8, height=4)
 
 plot_data = ggplot_fp_df(grcolo829)
-ggplot_fp_consistency(plot_data)
+plot_manta_vs_gridss_fp_colo829 = ggplot_fp_consistency(plot_data)
+plot_manta_vs_gridss_fp_colo829
 figsave("manta_vs_gridss_fp_colo829", width=8, height=4)
 
-grcolo829 %>% as.data.frame() %>%
+plot_manta_vs_gridss_tp_colo829 = grcolo829 %>% as.data.frame() %>%
   group_by(sample, caller, bpid) %>%
   summarise(hits=max(hits)) %>%
   group_by(sample, caller, hits) %>%
@@ -148,10 +149,9 @@ grcolo829 %>% as.data.frame() %>%
   # hack in a zero row so the legend has three categories
   rbind(data.frame(sample="Run 1", caller="gridss", hits=0, n=0)) %>%
 ggplot() +
-  aes(fill=factor(hits, levels=c(0,1,2), labels=c("1 sample", "2 samples", "3 samples")), y=n, x=sample) +
-  geom_bar(stat="identity") +
+  aes(y=n, x=sample) +
+  geom_bar(stat="identity", fill=gridss_fig_tp_colours[2]) +
   facet_grid(~ caller) +
-  scale_fill_manual(values=gridss_fig_tp_colours) +
   scale_y_continuous(
     limits=c(0, length(bpcolo829t) / 2),
     expand=expand_scale(mult=c(0, 0.02)),
@@ -163,9 +163,10 @@ ggplot() +
     strip.text.x=element_text(margin=margin(3,0,3,0, "mm")),
     strip.background=element_rect(fill="white")) +
   labs(x="Sequencing run", y="True Positives", fill="Called in")
+plot_manta_vs_gridss_tp_colo829
 figsave("manta_vs_gridss_tp_colo829", width=8, height=4)
 
-ggplot(passingbpgr %>%
+plot_manta_vs_gridss_call_percent_precise = ggplot(passingbpgr %>%
     as.data.frame(row.names=NULL) %>%
     mutate(precise=end - start - passingbpgr$HOMLEN == 0) %>%
     group_by(caller, sample) %>%
@@ -180,6 +181,7 @@ ggplot(passingbpgr %>%
   geom_bar(stat="identity") +
   scale_y_continuous(labels = percent_format()) +
   labs(title="COLO829", x="", y="Base pair precise")
+plot_manta_vs_gridss_call_percent_precise
 figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 
 #
@@ -210,7 +212,7 @@ ggplot() +
   aes(x=source, fill=supported, y=n) +
   geom_bar(stat="identity") +
   facet_grid(category ~ ., scales="free") +
-  scale_fill_manual(values=c(gridss_fig_fp_colours[1], gridss_fig_tp_colours[1])) +
+  scale_fill_manual(values=c(gridss_fig_fp_colours[2], gridss_fig_tp_colours[1])) +
   scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
   labs(fill="Validated", x="", y="breakpoint calls") +
   theme(axis.text.x = element_text(angle = 90))
@@ -218,7 +220,7 @@ figsave("probe_results_by_sample", width=5, height=6)
 
 
 # GRIDSS vs manta
-rbind(
+probe_results_vs_manta_over_50bp = rbind(
   probeResult %>% filter(scope!="SharedBoth"),
   probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
   probeResult %>% filter(scope=="SharedStrelka") %>% mutate(callset="Gridss", scope="Private")) %>%
@@ -235,12 +237,13 @@ ggplot() +
   aes(x=category, fill=supported, y=n) +
   geom_bar(stat="identity") +
   scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
-  scale_fill_manual(values=c(gridss_fig_fp_colours[1], gridss_fig_tp_colours[1])) +
+  scale_fill_manual(values=c(gridss_fig_fp_colours[2], gridss_fig_tp_colours[1])) +
   labs(fill="Probe\nValidated", x="", y="Variant calls (50bp+)") +
   theme(axis.text.x = element_text(angle = 90))
+probe_results_vs_manta_over_50bp
 figsave("probe_results_vs_manta_over_50bp", width=5, height=4)
 
-rbind(
+plot_probe_results_vs_stelka_under_50bp = rbind(
   probeResult %>% filter(scope!="SharedBoth"),
   probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka"),
   probeResult %>% filter(scope=="SharedManta") %>% mutate(callset="Gridss", scope="Private")) %>%
@@ -255,9 +258,10 @@ ggplot() +
   aes(x=category, fill=supported, y=n) +
   geom_bar(stat="identity") +
   scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
-  scale_fill_manual(values=c(gridss_fig_fp_colours[1], gridss_fig_tp_colours[1])) +
+  scale_fill_manual(values=c(gridss_fig_fp_colours[2], gridss_fig_tp_colours[1])) +
   labs(fill="Probe\nValidated", x="", y="Variant calls (32-50bp)") +
   theme(axis.text.x = element_text(angle = 90))
+plot_probe_results_vs_stelka_under_50bp
 figsave("probe_results_vs_stelka_under_50bp", width=5, height=4)
 
 sumdf = probeResult %>%

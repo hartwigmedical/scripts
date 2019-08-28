@@ -91,9 +91,11 @@ adj_df = anchor_df %>%
   mutate(isClosest=distance==min(distance)) %>%
   ungroup() %>%
   left_join(asm_links, by=c("beid1"="beid1", "beid2"="beid2")) %>%
-  mutate(is_asm_linked=!is.na(linkedBy)) %>%
+  mutate(
+    is_asm_linked=!is.na(linkedBy),
+    isbp1 = !is.na(gr[beid1]$partner),
+    isbp2 = !is.na(gr[beid2]$partner)) %>%
   mutate(phasing=ifelse(is_asm_linked, "cis", ifelse(pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10, "trans", "unphased")))
-
 
 ggplot(adj_df %>% filter(is_asm_linked)) +
   aes(x=distance, fill=pmax(anchorSupportDistance1, anchorSupportDistance2) > distance + 10) +
@@ -127,6 +129,41 @@ adj_df %>% filter(isClosest & phasing == "unphased") %>%
   pull(probably_cis) %>%
   table()
 
+ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% mutate(type=ifelse(isbp1 & isbp1, "Both breakpoints", ifelse(isbp1 | isbp2, "Breakpoint/breakend", "Both breakends")))) +
+  aes(x=distance, fill=phasing) +
+  geom_histogram(binwidth=10, boundary=0) +
+  scale_x_continuous(
+    expand = c(0,0),
+    limits = c(30, 800),
+    breaks=c(30, seq(100, 800, 100)),
+    labels=c("30", "", "200", "", "400", "", "600", "", "800")) +
+  coord_cartesian(xlim=c(30, 800)) +
+  facet_wrap( ~ type) +
+  scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
+  scale_fill_manual(values=c("#b2df8a", "#984ea3", "#ff7f00")) +
+  theme(
+    axis.line = element_line(colour = "black"),
+    panel.border = element_blank()) +
+  labs(y="structural variants", x="distance to adjacent SV", title="Phasing by breakpoint/breakend status")
+figsave("assembly_phasing_by_type", width=5, height=4)
+
+ggplot(adj_df %>% filter(isClosest | is_asm_linked) %>% filter(isbp1 & isbp2)) +
+  aes(x=distance, fill=phasing) +
+  geom_histogram(binwidth=10, boundary=0) +
+  scale_x_continuous(
+    expand = c(0,0),
+    limits = c(30, 800),
+    breaks=c(30, seq(100, 800, 100)),
+    labels=c("30", "", "200", "", "400", "", "600", "", "800")) +
+  coord_cartesian(xlim=c(30, 800)) +
+  scale_y_continuous(expand=expand_scale(mult=c(0, 0.02))) +
+  scale_fill_manual(values=c("#b2df8a", "#984ea3", "#ff7f00")) +
+  theme(
+    axis.line = element_line(colour = "black"),
+    panel.border = element_blank()) +
+  labs(y="structural variants", x="distance to adjacent SV")
+figsave("assembly_phasing_breakpoint", width=5, height=4)
+
 ggplot(adj_df %>% filter(isClosest | is_asm_linked)) +
   aes(x=distance, fill=phasing) +
   geom_histogram(binwidth=10, boundary=0) +
@@ -144,10 +181,10 @@ ggplot(adj_df %>% filter(isClosest | is_asm_linked)) +
   labs(y="structural variants", x="distance to adjacent SV")
 figsave("assembly_phasing", width=5, height=4)
 # Counts:
-adj_df_35_1000 = adj_df %>% filter(distance >= 35)
-length(unique(c(adj_df_35_1000$beid1,adj_df_35_1000$beid2)))
-gr$hasNearby = gr$beid %in% unique(c(adj_df_35_1000$beid1, adj_df_35_1000$beid2)) | gr$partner %in% unique(c(adj_df_35_1000$beid1, adj_df_35_1000$beid2))
-adj_df %>% filter(isClosest) %>% filter(distance > 35) %>% pull(phasing) %>% table()
+adj_df_30_1000 = adj_df %>% filter(distance >= 30)
+length(unique(c(adj_df_30_1000$beid1,adj_df_30_1000$beid2)))
+gr$hasNearby = gr$beid %in% unique(c(adj_df_30_1000$beid1, adj_df_30_1000$beid2)) | gr$partner %in% unique(c(adj_df_30_1000$beid1, adj_df_30_1000$beid2))
+adj_df %>% filter(isClosest) %>% filter(distance > 30) %>% pull(phasing) %>% table()
 table(gr$hasNearby)
 
 nearbyBySample = gr %>% as.data.frame() %>%
@@ -188,3 +225,25 @@ nearby_summary_df = nearby_summary_df %>%
   )})
 sum(nearby_summary_df$log10pvalue)
 
+
+long_anchor_df = findOverlaps(gr, gr, maxgap=20000, ignore.strand=TRUE) %>%
+  as.data.frame() %>%
+  filter(
+    gr$id[queryHits] != gr$id[subjectHits],
+    gr$sampleid[queryHits] == gr$sampleid[subjectHits],
+    as.logical(strand(gr)[queryHits] == "-"),
+    as.logical(strand(gr)[subjectHits] == "+"),
+    start(gr)[queryHits] <= start(gr)[subjectHits]) %>%
+  mutate(
+    beid1=gr$beid[queryHits],
+    beid2=gr$beid[subjectHits],
+    distance=abs(start(gr[queryHits])-start(gr[subjectHits])),
+    anchorSupportDistance1=gr$anchorSupportDistance[queryHits],
+    anchorSupportDistance2=gr$anchorSupportDistance[subjectHits]) %>%
+  dplyr::select(-queryHits, -subjectHits)
+
+long_anchor_df %>%
+  group_by(beid1) %>%
+  summarise(
+    within500=sum(distance <= 500),
+    within20000=n())
