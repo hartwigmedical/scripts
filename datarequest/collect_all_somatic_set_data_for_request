@@ -2,8 +2,9 @@
 
 metadata_tsv=$1 && shift
 somatics_dir=$1 && shift
+include_germline=$1 && shift
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
     set_path=/data/cpct/runs/${set_name}
-    collect_somatic_set_data ${set_path} ${somatics_dir}
+    collect_somatic_set_data ${set_path} ${somatics_dir} ${include_germline}
 done

@@ -2,6 +2,7 @@
 
 source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
+include_germline=$1 && shift
 
 set_name=$( basename ${source_set_path} )
 dest_set_path=${dest_set_base_path}/${set_name}
@@ -10,10 +11,11 @@ dest_set_path=${dest_set_base_path}/${set_name}
 mkdir -p ${dest_set_path}
 
 ## start symlinking
-echo "[DEBUG] Symlinking files for ${set_name}"
+echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline}"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
-# TODO Remove germline if only somatic access granted.
-ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
+if [ ${include_germline} == "1" ]; then
+    ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
+fi
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.purity.tsv ${dest_set_path}

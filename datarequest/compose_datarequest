@@ -5,8 +5,8 @@ request_name=$1 && shift
 patient_selection_sql=$1 && shift
 
 if [ -z "${dr_name}" ] || [ -z "${request_name}" ] || [ -z "${patient_selection_sql}" ]; then
-    echo "Usage: compose_data_request dr_name request_name path_to_patient_selection_sql"
-    echo "   eg compose_data_request DR-028 DR-028-update2 /data/data_archive/datarequests/procedure/patient_selection_sql/DR-028.sql"
+    echo "Usage: compose_datarequest dr_name request_name path_to_patient_selection_sql"
+    echo "   eg compose_datarequest DR-028 DR-028-update2 /data/data_archive/datarequests/procedure/patient_selection_sql/DR-028.sql"
     echo "   You can use template_selectPatients.sql as basis for the patient selection sql"
     exit 1
 fi
@@ -78,7 +78,7 @@ if [ $? = 0 ]; then
         echo "[INFO] Collecting somatic data for ${request_name}..."
         somatics_dir=${dr_path}/somatics
         mkdir -p ${somatics_dir}
-        collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir}
+        collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
         somatics_sample_count=$( ls ${somatics_dir} | wc -l)
         echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples"
     else
