@@ -13,11 +13,11 @@ fi
 
 # TODO Make this configurable from external
 metadata_selection="tumor" # can be tumor, tumor-patient and tumor-patient-treatment
-include_rna=1
 include_somatics=1
 include_germline=1
 include_tumor_bam_jsons=1
 include_ref_bam_jsons=1
+include_rna=1
 include_extra_clinical_data=1
 
 base_path=/data/data_archive/datarequests
@@ -63,17 +63,6 @@ if [ $? = 0 ]; then
     sample_count=$( grep -cv "^#" ${metadata_tsv} )
     echo "[INFO] Created ${metadata_tsv} with ${sample_count} samples"
 
-    if [ ${include_rna} == "1" ]; then
-        echo "[INFO] Collecting RNA seq for ${request_name}..."
-        rnaseq_dir=${dr_path}/rnaseq
-        mkdir -p ${rnaseq_dir}
-        collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
-        rna_sample_count=$( ls ${rnaseq_dir} | wc -l)
-        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples"
-    else
-        echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
-    fi
-
     if [ ${include_somatics} == "1" ]; then
         echo "[INFO] Collecting somatic data for ${request_name}..."
         somatics_dir=${dr_path}/somatics
@@ -114,6 +103,17 @@ if [ $? = 0 ]; then
         echo "[INFO] Done creating reference bam share jsons for DR"
     else
         echo "[INFO] Skipped reference bam share json creation as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_rna} == "1" ]; then
+        echo "[INFO] Collecting RNA seq for ${request_name}..."
+        rnaseq_dir=${dr_path}/rnaseq
+        mkdir -p ${rnaseq_dir}
+        collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
+        rna_sample_count=$( ls ${rnaseq_dir} | wc -l)
+        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples"
+    else
+        echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
     fi
 
     if [ ${include_extra_clinical_data} == "1" ]; then
