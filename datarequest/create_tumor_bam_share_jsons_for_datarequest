@@ -7,10 +7,14 @@ base_json_dir=$1 && shift
 
 entity_sbp_id=$( query_sbp_api -type entities | grep ${entity_name} | cut -f3 )
 cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
-  set_id=$( query_sbp_api -type sets | grep ${set_name} | cut -f5)
+    set_id=$( query_sbp_api -type sets | grep ${set_name} | cut -f5)
 
-  tumor_bam_json=${base_json_dir}/${set_name}_tumor_bam.json
-  echo "[DEBUG] Creating ${tumor_bam_json}"
+    if [ ! -z "${set_id}" ]; then
+        echo "[DEBUG] Creating ${tumor_bam_json}"
+        tumor_bam_json=${base_json_dir}/${set_name}_tumor_bam.json
 
-  create_share_json_for_tumor_bam ${set_id} ${entity_sbp_id} > ${tumor_bam_json}
+        create_share_json_for_tumor_bam ${set_id} ${entity_sbp_id} > ${tumor_bam_json}
+    else
+        echo "[WARN] Could not find set_id for ${set_name}. Skipping tumor bam share creation!"
+    fi
 done

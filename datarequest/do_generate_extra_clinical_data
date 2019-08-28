@@ -20,3 +20,6 @@ cat ${raw} | while read line; do
 done >> ${flt}
 
 cp ${flt} ${out}
+
+item_count=$( grep -cv "^#" ${patient_selection_tsv})
+echo "[DEBUG] Found ${item_count} items for ${name}"
