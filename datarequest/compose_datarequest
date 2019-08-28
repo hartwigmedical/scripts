@@ -30,7 +30,8 @@ include_extra_clinical_data=$1 && shift
 base_path=/data/data_archive/datarequests
 datareq_input_tsv=${base_path}/procedure/latest/metadata
 
-dr_path=${base_path}/${dr_name}/${request_name}
+dr_base_path=${base_path}/${dr_name}
+dr_path=${dr_base_path}/${request_name}
 
 echo "[INFO] Composing data request ${request_name} in ${dr_path}"
 create_base_directory_for_datarequest ${dr_path}
@@ -78,7 +79,9 @@ if [ $? = 0 ]; then
         mkdir -p ${somatics_dir}
         collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
         somatics_sample_count=$( ls ${somatics_dir} | wc -l)
-        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples"
+        somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
+        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatics_tar_file}"
+        create_tar_file ${somatic_tar_file} ${somatics_dir} ${log_dir}/tar_${request_name}_somatics.log
     else
         echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
     fi
@@ -89,7 +92,9 @@ if [ $? = 0 ]; then
         mkdir -p ${germline_dir}
         collect_all_germline_set_data_for_request ${metadata_tsv} ${germline_dir}
         germline_sample_count=$( ls ${germline_dir} | wc -l)
-        echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples"
+        germline_tar_file=${dr_base_path}/${request_name}.germline.tar
+        echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
+        create_tar_file ${germline_tar_file} ${germline_dir} ${log_dir}/tar_${request_name}_germline.log
     else
         echo "[INFO] Skipped germline collection as not deemed relevant for ${request_name}"
     fi
@@ -120,7 +125,9 @@ if [ $? = 0 ]; then
         mkdir -p ${rnaseq_dir}
         collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
         rna_sample_count=$( ls ${rnaseq_dir} | wc -l)
-        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples"
+        rna_tar_file=${dr_base_path}/${request_name}.rnaseq.tar
+        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples. Creating TAR file at ${rna_tar_file}"
+        create_tar_file ${rna_tar_file} ${rnaseq_dir} ${log_dir}/tar_${request_name}_rnaseq.log
     else
         echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
     fi
@@ -135,8 +142,9 @@ if [ $? = 0 ]; then
         echo "[INFO] Skipped generation of extra clinical data as not deemed relevant for ${request_name}"
     fi
 
-    # TODO: Add QC
-    # TODO: Add creation of final TAR files for upload.
+    metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
+    echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
+    create_tar_file ${metadata_tar_file} ${metadata_dir} ${log_dir}/tar_${request_name}_metadata.log
 else
     echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
