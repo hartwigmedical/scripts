@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+dr_name=$1 && shift
+request_name=$1 && shift
+
+if [ -z "${dr_name}" ] || [ -z "${request_name}" ]; then
+    echo "Usage: `basename $0` dr_name request_name"
+    exit 1
+fi
+
+request_dir=/data/data_archive/datarequests/${dr_name}/${request_name}
+
+if [ -d ${request_dir} ]; then
+    echo "[INFO] Refreshing all shares for ${request_name}"
+
+    current_share_count=$( query_sbp_api -type shares -filter "entity=${dr_name}" | grep -v "^#" | wc -l )
+
+    echo "[INFO] Current number of shares for entity ${dr_name}: ${current_share_count}"
+
+    query_sbp_api -type shares -filter "entity=${dr_name}" | grep -v "^#" | cut -f8 | while read share_id; do
+        echo "[INFO] Removing share ${share_id} from ${dr_name}"
+        remove_share_in_prod ${share_id}
+    done
+
+    json_dir=${request_dir}/logs/json
+
+    if [ -d ${json_dir} ]; then
+        json_count=$( find ${json_dir} -type f -name "*json" | wc -l )
+        echo "[INFO] ${json_count} shares pending for ${request_name}"
+
+        for json in ${json_dir}/*json; do
+            echo "[INFO] Creating share ${json}"
+            echo create_share_in_prod ${json}
+        done
+    else
+        echo "[WARN] No jsons found in ${json_dir} to register for ${request_name}"
+    fi
+else
+    echo "[ERROR] Can't find request directory ${request_dir}"
+fi
