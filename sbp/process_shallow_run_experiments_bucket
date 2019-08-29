@@ -2,7 +2,7 @@
 
 archive_path="/data/data_archive/shallow_seq_pipelines"
 download_path="/data/schuberg/shallow_runs"
-bucket="hmf-output-shallowseq"
+bucket="hmf_experiments"
 
 usage() {
     echo "---"
@@ -35,9 +35,9 @@ archive_set_path=${archive_path}/${set}
 
 if [[ -d ${archive_set_path} ]]; then
     echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
-else 
+else
     echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${download_path}"
-    download_set_path=${download_path}/${set}
+    download_set_path="${download_path}/${set}"
     sbp s3 sync s3://${bucket}/${set}/ ${download_set_path}/ \
         --exclude "*.bam" \
         --exclude "*.diff" \

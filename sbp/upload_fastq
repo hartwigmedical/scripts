@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-prefix=`dirname $(readlink $0 || echo $0)`
-inputDirPath=/data/schuberg/manual_fastq_upload/
+input_dir_path=/data/schuberg/manual_fastq_upload/
 
-${prefix}/upload_fastq_from_dir ${inputDirPath}
+upload_fastq_from_dir ${input_dir_path}

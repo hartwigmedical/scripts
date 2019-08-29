@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_v1.5/knowledgebase-importer.jar
+knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_v1.7/knowledgebase-importer.jar
 
 iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})

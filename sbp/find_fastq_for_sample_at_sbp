@@ -1,22 +1,22 @@
-#!/bin/bash
-scriptName=$( basename $0 )
+#!/usr/bin/env bash
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $scriptName \${sampleName}"
-  echo "    Eg: $scriptName CPCT02010001T"
-  echo "        (searches for \${sampleName}_*.fastq.gz"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Usage: `basename $0` \${sampleName}"
+    echo "    Eg: `basename $0` CPCT02010001T"
+    echo "        (searches for \${sampleName}_*.fastq.gz"
+    echo "---"
+    exit 1
 fi
 
-sampleName=$1
-outName="${sampleName}_fastq"
-outPath="/data/schuberg/tmp/${outName}"
+sample_name=$1
+
+out_name="${sample_name}_fastq"
+out_path="/data/schuberg/tmp/${out_name}"
 profile="hmf_fastq"
 bucket="hmf-fastq-storage"
 
-cmd="sbp s3 sync --dryrun s3://${bucket}/ ${outPath}/ --exclude \"*\" --include ${sampleName}_*.fastq.gz --profile ${profile}"
+cmd="sbp s3 sync --dryrun s3://${bucket}/ ${out_path}/ --exclude \"*\" --include ${sample_name}_*.fastq.gz --profile ${profile}"
 
 echo "[INFO] Run the following to list all to be synced files:"
-echo "$cmd"
+echo "${cmd}"

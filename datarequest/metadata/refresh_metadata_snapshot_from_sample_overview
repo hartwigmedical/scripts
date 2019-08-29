@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# 1. Create an export of the first sheet of sample overview in tsv format and copy to datastore
+# 2. Run this script to refresh the datarequest metadata file.
+
 dateString=$( date +'%y%m%d' )
 sampleOverviewTsv="/data/data_archive/datarequests/procedure/files/sampleOverview.tsv"
 if [[ ! -z "$1" ]]; then
@@ -52,5 +55,5 @@ echo "[INFO] Symlinking latest"
 metadataSymlink=${ROOT_DIR}/latest/metadata
 ln -sf ${META_OUT_FILE} ${metadataSymlink}
 
-echo "[INFO] ${SCRIPT_TASK} finished (please inspect ${META_LOG_FILE})"
+echo "[INFO] ${SCRIPT_TASK} finished (please inspect ${META_LOG_FILE}"
 echo "[INFO] Output in ${metadataSymlink}"

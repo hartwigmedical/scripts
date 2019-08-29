@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-set_id=$1
-entity_id=$2
+set_id=$1 && shift
+entity_id=$1 && shift
 
 echo "{"
 echo "    \"set_id\": ${set_id},"
 echo "    \"entity_id\": ${entity_id},"
-echo "    \"filter\": \"%REF_SAMPLE_B%\""
+echo "    \"filter\": \"%TUMOR_SAMPLE_B%\""
 echo "}"

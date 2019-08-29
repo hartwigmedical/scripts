@@ -114,14 +114,15 @@ sgllongrepeat = left_join(
       dplyr::select(uid=query, longest_reapeatAnn),
     by="uid") %>%
   replace_na(list(longest_reapeatAnn="No repeat"))
-ggplot(sgllongrepeat) +
+plot_sgllongrepeat = ggplot(sgllongrepeat) +
   aes(x=inslen, fill=longest_reapeatAnn) +
   geom_histogram(bins=50) +
   scale_x_continuous(limits = c(0, 800)) +
   # scale_fill_brewer(palette="Dark2") +
   scale_fill_manual(values=two_tier_repeatAnn_colors) +
   labs(y="Single breakend count", x="Assembled breakend sequence length", fill="RepeatMasker annotation of\nlongest repeat in\nbreakend sequence")
-ggsave(paste0(figdir, "sgl_longest_repeat.pdf"), width=8, height=5)
+plot_sgllongrepeat
+figsave("sgl_longest_repeat", width=8, height=5)
 # viral integration?
 
 

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-filtered="metadata_filtered.tsv"
-final="metadata_final.tsv"
+filtered=$1 && shift
+final=$1 && shift
 
-cat ${filtered} | cut -f 1,10-20 > ${final}
+cat ${filtered} | cut -f 1,10-22,23-30 > ${final}
 
 # 1    #setName always
 # 2    sbpSetId never

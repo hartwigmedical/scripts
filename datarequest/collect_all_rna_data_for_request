@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+metadata_tsv=$1 && shift
+rna_output_dir=$1 && shift
+
+rna_overview="/data/data_archive/rna_seq/overview/overview.tsv"
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read sample_id; do
+    echo "[DEBUG] Checking ${sample_id} for existance of RNA data"
+    fastq_path=$( cat ${rna_overview} | awk -v sample_id="${sample_id}" '$1 == sample_id' | cut -f4)
+    if [[ "${fastq_path}" ]]; then
+        fastq_content_size=$(ls ${fastq_path} | wc -l)
+        echo "[DEBUG]  Found ${fastq_path} with ${fastq_content_size} files"
+        ln -s ${fastq_path} ${rna_output_dir}/
+    fi
+done

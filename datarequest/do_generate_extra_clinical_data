@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+metadata_tsv=$1 && shift
+log_dir=$1 && shift
+metadata_dir=$1 && shift
+name=$1 && shift
+sql=$1 && shift
+
+echo "[DEBUG] Generating clinical data ${name}"
+raw=${log_dir}/${name}_raw.tsv
+flt=${log_dir}/${name}_flt.tsv
+out=${metadata_dir}/${name}.tsv
+execute_sql_on_prod ${sql} > ${raw}
+head -1 ${raw} > ${flt}
+cat ${raw} | while read line; do
+    patient=$( echo "${line}" | cut -f 1)
+    if [[ $( grep -c "${patient}" ${metadata_tsv} ) > 0 ]]; then
+        echo "${line}"
+    fi
+done >> ${flt}
+
+cp ${flt} ${out}
+
+item_count=$( grep -cv "^#" ${out})
+echo "[DEBUG] Found ${item_count} items for ${name}"

@@ -2,7 +2,7 @@
 
 do_cleanup_destination=$1
 
-if [ "${do_cleanup_destination}" == "--cleanup_destination" ]; then
+if [ ${do_cleanup_destination} == "--cleanup_destination" ]; then
     echo "[INFO] Destination will be cleaned up as part of the archive job!"
     delete_flag="-c"
 fi

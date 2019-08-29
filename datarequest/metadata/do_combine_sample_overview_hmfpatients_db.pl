@@ -9,10 +9,6 @@ use JSON;
 use File::Slurp;
 
 my $SBP_API_SCRIPT = "query_sbp_api";
-my $SBP_JSON_ROOT = "/data/lims/sbpfiles";
-my $SBP_SETS_JSON = "$SBP_JSON_ROOT/sets.json";
-my $SBP_RUNS_JSON = "$SBP_JSON_ROOT/runs.json";
-my $SBP_SAMP_JSON = "$SBP_JSON_ROOT/samples.json";
 
 my $NA_CHAR = "";
 my $INPUT_DELIM_OVERVIEW = "\t";
@@ -207,7 +203,6 @@ sub findCpctIdForDrupPatient{
 
 sub performQualCheck{
     my ($objects) = @_;
-    my $idx = 0;
 
     foreach my $obj ( @$objects ){
         my $biopsy = $obj->{ hmfExternalId };

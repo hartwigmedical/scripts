@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-metadataFile=$1
-cat ${metadataFile} | grep -v "^#" | cut -f1 | while read setName; do
-    setPath=/data/cpct/runs/${setName}
-    get_germline_set_data ${setPath}
-done

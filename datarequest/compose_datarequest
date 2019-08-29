@@ -1,0 +1,156 @@
+#!/usr/bin/env bash
+
+if [ "$#" -ne 10 ]; then
+    echo "Usage: `basename $0`"
+    echo "      - dr_name (eg DR-028)"
+    echo "      - request_name (eg DR-028-update1)"
+    echo "      - patient_selection_sql (eg /data/data_archive/datarequest/procedure/patient_selection_sql/DR-028-update1.sql"
+    echo "          Note: You can use template_selectPatients.sql as basis for the patient selection sql"
+    echo "      - metadata_selection ('tumor', 'tumor-patient' or 'tumor-patient-treatment')"
+    echo "      - include_somatics (1 or 0)"
+    echo "      - include_germline (1 or 0)"
+    echo "      - include_tumor_bam_jsons (1 or 0)"
+    echo "      - include_ref_bam_jsons (1 or 0)"
+    echo "      - include_rna (1 or 0)"
+    echo "      - include_extra_clinical_data (1 or 0)"
+    exit 1
+fi
+
+dr_name=$1 && shift
+request_name=$1 && shift
+patient_selection_sql=$1 && shift
+metadata_selection=$1 && shift # can be tumor, tumor-patient and tumor-patient-treatment
+include_somatics=$1 && shift
+include_germline=$1 && shift
+include_tumor_bam_jsons=$1 && shift
+include_ref_bam_jsons=$1 && shift
+include_rna=$1 && shift
+include_extra_clinical_data=$1 && shift
+
+base_path=/data/data_archive/datarequests
+datareq_input_tsv=${base_path}/procedure/latest/metadata
+
+dr_base_path=${base_path}/${dr_name}
+dr_path=${dr_base_path}/${request_name}
+
+echo "[INFO] Composing data request ${request_name} in ${dr_path}"
+create_base_directory_for_datarequest ${dr_path}
+if [ $? = 0 ]; then
+    log_dir=${dr_path}/logs
+    mkdir -p ${log_dir}
+
+    echo "[INFO] Selecting patients to include for ${request_name}..."
+    cp ${patient_selection_sql} ${log_dir}/selectPatients.sql
+    patient_selection_tsv=${log_dir}/selectPatients.tsv
+    execute_sql_on_prod ${log_dir}/selectPatients.sql > ${patient_selection_tsv}
+    patient_count=$( grep -cv "^#" ${patient_selection_tsv})
+    echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients"
+
+    echo "[INFO] Creating metadata for ${request_name}..."
+    base_metadata_unfiltered_tsv=${log_dir}/metadata_unfiltered.tsv
+    base_metadata_filtered_tsv=${log_dir}/metadata_filtered.tsv
+    create_base_metadata_for_request ${patient_selection_tsv} ${datareq_input_tsv} ${base_metadata_unfiltered_tsv} ${base_metadata_filtered_tsv}
+    base_metadata_final_tsv=${log_dir}/metadata_final.tsv
+
+    if [ ${metadata_selection} == "tumor" ]; then
+        echo "[INFO] Filtering metadata for ${request_name} on tumor fields"
+        filter_metadata_tumor ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+    elif [ ${metadata_selection} == "tumor-patient" ]; then
+        echo "[INFO] Filtering metadata for ${request_name} on tumor and patient fields"
+        filter_metadata_tumor_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+    elif [ ${metadata_selection} == "tumor-patient-treatment" ]; then
+        echo "[INFO] Filtering metadata for ${request_name} on tumor, patient and treatment fields"
+        filter_metadata_tumor_patient_treatment ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+    else
+        echo "[ERROR] Invalid metadata selection chosen: ${metadata_selection}"
+        exit 1
+    fi
+
+    metadata_dir_name=metadata
+    metadata_dir=${dr_path}/${metadata_dir_name}
+    mkdir -p ${metadata_dir}
+    metadata_tsv=${metadata_dir}/metadata.tsv
+    cp ${base_metadata_final_tsv} ${metadata_tsv}
+    sample_count=$( grep -cv "^#" ${metadata_tsv} )
+    echo "[INFO] Created ${metadata_tsv} with ${sample_count} samples"
+
+    if [ ${include_somatics} == "1" ]; then
+        echo "[INFO] Collecting somatic data for ${request_name}..."
+        somatic_dir_name=somatics
+        somatics_dir=${dr_path}/${somatic_dir_name}
+        mkdir -p ${somatics_dir}
+        collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
+        somatics_sample_count=$( ls ${somatics_dir} | wc -l)
+        somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
+        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
+        create_tar_file ${somatic_tar_file} ${dr_path} ./${somatic_dir_name} ${log_dir}/tar_${request_name}_somatics.log
+    else
+        echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_germline} == "1" ]; then
+        echo "[INFO] Collecting germline data for ${request_name}..."
+        germline_dir_name=germline
+        germline_dir=${dr_path}/${germline_dir_name}
+        mkdir -p ${germline_dir}
+        collect_all_germline_set_data_for_request ${metadata_tsv} ${germline_dir}
+        germline_sample_count=$( ls ${germline_dir} | wc -l)
+        germline_tar_file=${dr_base_path}/${request_name}.germline.tar
+        echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
+        create_tar_file ${germline_tar_file} ${dr_path} ./${germline_dir_name} ${log_dir}/tar_${request_name}_germline.log
+    else
+        echo "[INFO] Skipped germline collection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_tumor_bam_jsons} == "1" ]; then
+        echo "[INFO] Creating tumor bam share jsons for ${request_name}..."
+        base_json_dir=${dr_path}/logs/json
+        mkdir -p ${base_json_dir}
+        create_tumor_bam_share_jsons_for_datarequest ${metadata_tsv} ${dr_name} ${base_json_dir}
+        echo "[INFO] Done creating tumor bam share jsons for DR"
+    else
+        echo "[INFO] Skipped tumor bam share json creation as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_ref_bam_jsons} == "1" ]; then
+        echo "[INFO] Creating reference bam share jsons for ${request_name}..."
+        base_json_dir=${dr_path}/logs/json
+        mkdir -p ${base_json_dir}
+        create_reference_bam_share_jsons_for_datarequest ${metadata_tsv} ${dr_name} ${base_json_dir}
+        echo "[INFO] Done creating reference bam share jsons for DR"
+    else
+        echo "[INFO] Skipped reference bam share json creation as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_rna} == "1" ]; then
+        echo "[INFO] Collecting RNA seq for ${request_name}..."
+        rnaseq_dir_name=rnaseq
+        rnaseq_dir=${dr_path}/${rnaseq_dir_name}
+        mkdir -p ${rnaseq_dir}
+        collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
+        rna_sample_count=$( ls ${rnaseq_dir} | wc -l)
+        rna_tar_file=${dr_base_path}/${request_name}.rnaseq.tar
+        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples. Creating TAR file at ${rna_tar_file}"
+        create_tar_file ${rna_tar_file} ${dr_path} ./${rnaseq_dir_name} ${log_dir}/tar_${request_name}_rnaseq.log
+    else
+        echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_extra_clinical_data} == "1" ]; then
+        echo "[INFO] Creating extra clinical data for ${request_name}..."
+        generate_post_biopsy_drugs_by_biopsy ${metadata_tsv} ${log_dir} ${metadata_dir}
+        generate_pre_biopsy_drugs_by_patient ${metadata_tsv} ${log_dir} ${metadata_dir}
+        generate_responses_by_biopsy ${metadata_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating extra clinical data for DR"
+    else
+        echo "[INFO] Skipped generation of extra clinical data as not deemed relevant for ${request_name}"
+    fi
+
+    metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
+    echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
+    create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
+else
+    echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
+fi
+
+
