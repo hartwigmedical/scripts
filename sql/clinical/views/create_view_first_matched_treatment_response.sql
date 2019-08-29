@@ -1,6 +1,4 @@
-DROP VIEW IF EXISTS firstMatchedTreatmentResponse;
-
-CREATE VIEW firstMatchedTreatmentResponse AS 
+CREATE OR REPLACE VIEW firstMatchedTreatmentResponse AS
 	SELECT *
 	FROM treatmentResponse AS tr
 	WHERE NOT EXISTS (

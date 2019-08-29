@@ -1,6 +1,4 @@
-DROP VIEW IF EXISTS clinical;
-
-CREATE VIEW clinical AS
+CREATE OR REPLACE VIEW clinical AS
 
 	SELECT sample.sampleId, sample.arrivalDate as sampleArrivalDate, patient.patientIdentifier AS patientId,
 	baseline.registrationDate, baseline.informedConsentDate, baseline.hospital, baseline.gender,

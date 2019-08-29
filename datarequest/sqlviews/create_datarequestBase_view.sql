@@ -42,7 +42,7 @@ CREATE OR REPLACE VIEW datarequestBase AS
         patient.patientIdentifier AS patientId
     FROM
         ((((((sample
-        JOIN patient ON ((sample.patientId = patient.id)))
+        INNER JOIN patient ON ((sample.patientId = patient.id)))
         LEFT JOIN baseline ON ((patient.id = baseline.patientId)))
         LEFT JOIN biopsy ON ((biopsy.sampleId = sample.sampleId)))
         LEFT JOIN purity ON ((purity.sampleId = sample.sampleId)))
