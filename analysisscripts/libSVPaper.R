@@ -27,6 +27,11 @@ figsave = function(figureName, ...) {
   ggsave(paste0(figdir, figureName, ".pdf"), ...)
   ggsave(paste0(figdir, figureName, ".png"), ...)
 }
+get_legend = function(p) {
+  grobs <- ggplotGrob(p)$grobs
+  legend <- grobs[[which(sapply(grobs, function(x) x$name) == "guide-box")]]
+  return(legend)
+}
 
 theme_set(theme_bw() + theme(
   panel.grid.major = element_blank(),

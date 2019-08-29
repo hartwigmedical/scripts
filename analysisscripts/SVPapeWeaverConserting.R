@@ -265,7 +265,7 @@ ggplot(cn_transition_plot) +
   facet_grid(caller ~ ., scales="free_y") +
   labs(y="CN transitions", x="Distance to nearest SV")
 
-cn_transition_plot %>%
+fig3_sv_at_cn_transition = cn_transition_plot %>%
   mutate(distance_bin = cut(
     distance,
     labels=c("Less than 10 bp", "10-99 bp", "100-999 bp", "1000-9999 bp", "10000-99999 bp", "No matching SV"),
@@ -277,12 +277,13 @@ cn_transition_plot %>%
 ggplot() +
   aes(x=caller, y=portion, fill=distance_bin) +
   geom_col() +
-  scale_fill_brewer(palette="YlOrRd", name="Distance to SV") +
+  scale_fill_manual(values=c("#ABD9E9", "#B6A9B6", "#C17983","#CC494F", "#D7191C"), name="Distance to SV") +
   scale_y_continuous(labels=percent) +
   labs(
     x="",
-    y="Percent of copy number transitions",
-    title="Copy number transitions with matching breakpoints")
+    y="Percent of copy number transitions") +
+  theme(axis.text.x = element_text(angle = 90))
+fig3_sv_at_cn_transition
 ggsave(filename=paste0(basedir, "/sv_at_cn_transition.pdf"), width=6, height=4)
 
 
@@ -300,7 +301,7 @@ ggplot() +
     x="Magnitude of copy number inconsistency",
     y="Count of copy number segmentation transitions")
 
-cn_transistions %>%
+fig3_cn_consistency = cn_transistions %>%
   as.data.frame() %>%
   filter(!is.na(cn_error)) %>%
   mutate(cn_error=pmin(2, cn_error)) %>%
@@ -315,12 +316,22 @@ cn_transistions %>%
 ggplot() +
   aes(x=caller, y=portion, fill=cn_error_bin) +
   geom_col() +
-  scale_fill_brewer(palette="YlOrRd", name="Magnitude of CN\ninconsistency") +
+  scale_fill_manual(values=c("#ABD9E9", "#B4B3C0", "#BD8C97","#C5666E", "#CE3F45", "#D7191C"), name="Magnitude of CN\ninconsistency") +
   scale_y_continuous(labels=percent) +
   labs(
-    title="CN consistency of isolated breakpoints",
-    y="Portion of breakpoints")
+    x="",
+    y="Portion of breakpoints") +
+  theme(axis.text.x = element_text(angle = 90))
+fig3_cn_consistency
 ggsave(filename=paste0(basedir, "/cn_consistency.pdf"), width=5, height=4)
+
+fig3_comparison = plot_grid(
+  fig3_sv_at_cn_transition + theme(legend.position="none"),
+  get_legend(fig3_sv_at_cn_transition),
+  fig3_cn_consistency + theme(legend.position="none"),
+  get_legend(fig3_cn_consistency),
+  ncol=2, nrow=2, rel_widths=c(3.2,2))
+figsave("purple_conserting_weaver_comparisons", fig3_comparison, width=4, height=8)
 
 cn_transistions %>%
   as.data.frame() %>%
