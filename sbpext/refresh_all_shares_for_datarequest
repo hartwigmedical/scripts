@@ -26,11 +26,11 @@ if [ -d ${request_dir} ]; then
 
     if [ -d ${json_dir} ]; then
         json_count=$( find ${json_dir} -type f -name "*json" | wc -l )
-        echo "[INFO] ${json_count} shares pending for ${request_name}"
+        echo "[INFO] ${json_count} shares found which will be registered for ${request_name}"
 
         for json in ${json_dir}/*json; do
             echo "[INFO] Creating share ${json}"
-            echo create_share_in_prod ${json}
+            create_share_in_prod ${json}
         done
     else
         echo "[WARN] No jsons found in ${json_dir} to register for ${request_name}"

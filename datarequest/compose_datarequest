@@ -107,7 +107,7 @@ if [ $? = 0 ]; then
         base_json_dir=${dr_path}/logs/json
         mkdir -p ${base_json_dir}
         create_tumor_bam_share_jsons_for_datarequest ${metadata_tsv} ${dr_name} ${base_json_dir}
-        echo "[INFO] Done creating tumor bam share jsons for DR"
+        echo "[INFO] Done creating tumor bam share jsons for DR."
     else
         echo "[INFO] Skipped tumor bam share json creation as not deemed relevant for ${request_name}"
     fi
@@ -149,6 +149,12 @@ if [ $? = 0 ]; then
     metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
     echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
     create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
+
+    if [ ${include_ref_bam_jsons} == "1" ] || [ ${include_tumor_bam_jsons} == "1" ]; then
+        echo "[INFO] Make sure to run 'refresh_all_shares_for_datarequest ${dr_name} ${request_name}' as sbpext to register the JSONs!"
+    fi
+
+    echo "[INFO] Composing datarequest for ${request_name} completed!"
 else
     echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
