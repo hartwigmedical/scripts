@@ -6,8 +6,7 @@ library(stringi)
 
 annotate_fusions<-function(fusionData)
 {
-  fusionData = fusionData %>% mutate(SameSV = (SvIdUp==SvIdDown),
-                                     Clustered = ifelse(grepl('Unclustered',ResolvedType),F,T))
+  fusionData = fusionData %>% mutate(SameSV = (SvIdUp==SvIdDown))
   
   # chaining info
   fusionData = fusionData %>% separate(ChainInfo,c('ChainId','ChainLinks','ChainLength','ValidTraversal','TraversalAssembled'),sep = ';')
@@ -39,17 +38,6 @@ annotate_fusions<-function(fusionData)
   return (fusionData)
 }
 
-####
-## Single-SV fusions from VariantAnntotator
-
-simpleFusions = read.csv('~/data/sv/fusions/FUSIONS.csv')
-simpleFusions = read.csv('~/data/sv/fusions/VAR_ANN_FUSIONS_PROD.csv')
-write.csv(reportedSimpleFusions, '~/data/sv/fusions/VAR_ANN_FUSIONS_PROD.csv', row.names = F, quote = F)
-nrow(simpleFusions)
-reportedSimpleFusions = simpleFusions %>% filter(Reportable=='true')
-View(reportedSimpleFusions)
-nrow(reportedSimpleFusions)
-rm(simpleFusions)
 
 
 ####
@@ -57,46 +45,70 @@ rm(simpleFusions)
 svaFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
 nrow(svaFusions)
 reportedSvaFusions = svaFusions %>% filter(Reportable=='true')
-reportedSvaFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
-reportedSvaFusionsRaw = read.csv('~/logs/SVA_FUSIONS.csv')
-reportedSvaFusionsPrev2 = reportedSvaFusions
 # read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
 View(reportedSvaFusionsRaw)
-nrow(reportedSvaFusionsRaw)
+nrow(reportedSvaFusions)
 rm(svaFusions)
 
 # Annotations
-reportedSvaFusions = annotate_fusions(reportedSvaFusionsRaw)
-
-View(reportedSvaFusions)
-write.csv(reportedSvaFusions, '~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv', row.names = F, quote = F)
-reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED.csv')
-nrow(reportedSvaFusions)
-View(reportedSvaFusions)
-
-reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv')
-View(reportedSvaFusions)
-
-# exons skipped
-nrow(reportedSvaFusions %>% filter(ExonsSkippedUp>0|ExonsSkippedDown>0))
-View(reportedSvaFusions %>% filter(ExonsSkippedUp>0|ExonsSkippedDown>0))
-
-# known with terminated ends
-View(reportedSvaFusions %>% filter(KnownType=='Known'&(TerminatedUp|TerminatedDown)))
-View(reportedSvaFusions %>% filter(TerminatedUp|TerminatedDown) %>% group_by(KnownType) %>% count())
-
-# distance upstream from transcript for known and promicuous fusions
-View(reportedSvaFusions %>% filter(BreakendDistUp>=5e4|BreakendDistDown>=5e4) %>% group_by(KnownType) %>% count())
-View(reportedSvaFusions %>% filter(BreakendDistUp>=5e5|BreakendDistDown>=5e5) %>% group_by(KnownType) %>% count())
-View(reportedSvaFusions %>% filter(BreakendDistUp>=1e4|BreakendDistDown>=1e4))
-
-knownNotReported = svaFusions %>% filter(KnownType=='Known'&Reportable=='false')
-knownNotReported = annotate_fusions(knownNotReported)
-View(knownNotReported)
-View(knownNotReported %>% filter(!grepl('Unclustered',ResolvedType)))
+reportedSvaFusions = annotate_fusions(reportedSvaFusions)
 
 # check for duplicates
-View(reportedSvaFusions %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
+View(reportedSvaFusions %>% group_by(SampleId,GeneNameUp,GeneNameDown) %>% count() %>% filter(n>1))
+
+# multiple fusions per sample
+View(reportedSvaFusions %>% filter(Clustered) %>% group_by(SampleId,GeneIdUp,GeneIdDown) %>% count() %>% filter(n>1))
+
+
+#######
+# Comparison with previous run
+reportedFusionsPrev = read.csv('~/data/sv/fusions/SVA_FUSIONS_CM_OLD.csv')
+nrow(reportedFusionsPrev)
+
+fusionComparison = merge(reportedSvaFusions,reportedFusionsPrev, by=c('SampleId','GeneIdUp','GeneIdDown'),all=T)
+
+# new fusions
+nrow(fusionComparison %>% filter(is.na(Reportable.y))) 
+View(fusionComparison %>% filter(is.na(Reportable.y)))
+View(fusionComparison %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneNameUp.x,GeneNameDown.x,KnownType.x,ClusterId.x,SvIdUp.x,SvIdDown.x))
+View(fusionComparison %>% filter(is.na(Reportable.y)) %>% group_by(GeneNameUp.x,GeneNameDown.x,KnownType.x) %>% count())
+View(fusionComparison %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x) %>% count())
+
+# missing old fusions
+nrow(fusionComparison %>% filter(is.na(Reportable.x))) 
+View(fusionComparison %>% filter(is.na(Reportable.x)))
+View(fusionComparison %>% filter(is.na(Reportable.x)) %>% select(SampleId,GeneNameUp.y,GeneNameDown.y,KnownType.y,ClusterId.y,SvIdUp.y,SvIdDown.y))
+View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(GeneNameUp.y,GeneNameDown.y,KnownType.y) %>% count())
+View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(KnownType.y) %>% count())
+
+
+View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,GeneDown,KnownType.x))
+
+
+#######
+# DISRUPTIONS 
+
+# comparison with prod
+linxDisruptions = read.csv('~/data/sv/fusions/SVA_DISRUPTIONS.csv')
+linxDisruptions = read.csv('~/data/sv/SVA_PROD_DISRUPTIONS.csv')
+linxDisruptions = linxDisruptions %>% filter(SampleId %in% highestPurityCohort$sampleId)
+nrow(linxDisruptions)
+linxDisruptionSummary = linxDisruptions %>% group_by(SampleId,GeneName) %>% count()
+View(linxDisruptionSummary)
+
+
+
+prodDisruptions = read.csv('~/logs/prod_disruptions.csv')
+nrow(prodDisruptions)
+prodDisruptions = prodDisruptions %>% filter(sampleId %in% highestPurityCohort$sampleId)
+nrow(prodDisruptions)
+prodDisruptionSummary = prodDisruptions %>% group_by(SampleId=sampleId,GeneName=gene) %>% count()
+View(prodDisruptionSummary)
+
+
+load('~/data/hmf_cohort_may_2019.RData')
+View(highestPurityCohort) # 3524 has multiple biopsy samples removed
+
 
 
 nrow(reportedSvaFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'))
@@ -104,13 +116,11 @@ nrow(reportedSimpleFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'))
 View(reportedSvaFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG') %>% group_by(SameSV) %>% count())
 View(reportedSvaFusionsPrev %>% filter(SameSV&GeneUp=='TMPRSS2'&GeneDown=='ERG'))
 
-# multiple fusions per sample
-View(reportedSvaFusions %>% filter(Clustered) %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
-View(reportedSvaFusionsPrev %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
+View(reportedSvaFusions %>% group_by(RegionTypeUp,RegionTypeDown) %>% count())
+View(reportedSvaFusions %>% filter(RegionTypeUp=='Intronic'&RegionTypeDown=='Exonic'))
 
-View(reportedSvaFusions %>% filter(Clustered) %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
 
-# comparison with previous run
+
 nrow(reportedSvaFusionsPrev %>% filter(Clustered&ValidChain))
 nrow(reportedSvaFusions %>% filter(Clustered&ValidChain))
 nrow(reportedSvaFusionsPrev %>% filter(Clustered&ValidChain&SameSV))
@@ -120,33 +130,11 @@ nrow(reportedSvaFusions %>% filter(Clustered&SameSV)) # 538
 nrow(reportedSvaFusionsPrev %>% filter(Clustered&ValidChain&!SameSV)) # 74
 nrow(reportedSvaFusions %>% filter(Clustered&ValidChain&!SameSV)) # 90
 
-# basic numbers
-nrow(reportedSvaFusions %>% filter(SameSV)) # 456 vs 585 single-SV fusions
-nrow(reportedSvaFusions %>% filter(SameSV&!InChain)) # 274
+# basic numbers - taken from HPC de-duped on 5/8/2019
+nrow(reportedSvaFusions %>% filter(SameSV)) # 508
+nrow(reportedSvaFusions %>% filter(SameSV&!InChain)) # 282
 nrow(reportedSvaFusions %>% filter(ChainLinks==0))
-nrow(reportedSvaFusions %>% filter(!SameSV)) # 79
-
-
-# fusion differences after using transcript
-newReported = allFusions %>% filter(Reportable=='true')
-nrow(newReported)
-
-reportedSvaFusions = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED_2_rules.csv')
-nrow(reportedSvaFusions)
-
-View(reportedSvaFusions %>% group_by(SampleId,GeneUp,GeneDown) %>% count())
-View(reportedSvaFusions %>% group_by(KnownType) %>% count())
-View(newReported %>% group_by(KnownType) %>% count())
-
-knownPrev = reportedSvaFusions %>% filter(KnownType=='Known')
-knownNew = newReported %>% filter(KnownType=='Known')
-knownPrevDiff = merge(knownPrev,knownNew,by.x=c('SampleId','GeneUp','GeneDown'),by.y=c('SampleId','GeneNameUp','GeneNameDown'),all.x=T)
-View(knownPrevDiff %>% filter(is.na(SvIdUp.y)))
-View(knownPrevDiff)
-
-
-View(newReported %>% filter(Reportable=='true'&KnownType=='Known'&GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
-View(newReported %>% filter(Reportable=='true'&KnownType=='Known'&GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG') %>% group_by(TranscriptDown) %>% summarise(ProteinsKept=first))
+nrow(reportedSvaFusions %>% filter(!SameSV)) # 82
 
 
 # Summary: Unique valid fusions and their type
@@ -167,31 +155,7 @@ View(sampleFusions)
 View(sampleFusions %>% group_by(FusionType,KnownType) %>% count() %>% spread(KnownType,n))
 
 
-# Comparison with VariantAnnotator
-reportedSvaSingleSvFusions = reportedSvaFusions %>% filter(SameSV)
-View(reportedSvaSingleSvFusions)
-nrow(reportedSvaSingleSvFusions)
-
-nrow(reportedSvaFusions %>% filter(KnownType=='Known'))
-nrow(reportedSimpleFusions %>% filter(KnownType=='Known'))
-
-vaSvaOverlap = merge(reportedSimpleFusions,reportedSvaFusions, by=c('SampleId','GeneUp','GeneDown'),all.x=T)
-View(vaSvaOverlap)
-nrow(vaSvaOverlap %>% filter(is.na(Reportable.y))) 
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)))
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,GeneDown,KnownType.x))
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(GeneUp,GeneDown,KnownType.x) %>% count())
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x) %>% count())
-
-svaVaOverlap = merge(reportedSvaFusions,reportedSimpleFusions,by=c('SampleId','GeneUp','GeneDown'),all.x=T)
-View(svaVaOverlap)
-nrow(svaVaOverlap %>% filter(is.na(Reportable.y)))
-View(svaVaOverlap %>% filter(is.na(Reportable.y)))
-View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,GeneDown,KnownType.x))
-View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(GeneUp,GeneDown,KnownType.x) %>% count())
-View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x) %>% count())
-
-View(svaVaOverlap %>% filter(is.na(Reportable.y)) %>% group_by(KnownType.x,SameSV) %>% count())
+# Comparison with previous fusions
 
 # comparison with previous Linx run
 reportedSvaFusionsPrev = read.csv('~/data/sv/fusions/LINX_FUSIONS_REPORTED.csv')
@@ -228,9 +192,6 @@ promByNew2 = merge(promNew,promPrev,by=c('SampleId','GeneUp','GeneDown'),all.x=T
 View(promByNew2 %>% filter(is.na(SvIdUp.y)))
 
 
-View(svData %>% filter(Id==15629227))
-
-
 # specific sample
 specificFusions = read.csv('~/logs/CPCT02070292T.linx.fusions_detailed.csv')
 specificFusions = annotate_fusions(specificFusions)
@@ -252,28 +213,6 @@ View(dndsTsgs)
 View(drupTsgs %>% filter(!(Gene %in% dndsTsgs$gene)))
 
 
-
-
-
-
-# View(reportedSvaFusions %>% filter(ChainLinks>0) %>% group_by(SameSV) %>% count())
-# View(reportedSvaFusions %>% group_by(SameSV,InChain) %>% count())
-# View(reportedSvaFusions %>% group_by(SameSV,InChain,ValidTraversal) %>% count())
-
-
-# possibly invalid single-SV fusions
-nrow(reportedSvaSingleSvFusions %>% filter(!ValidChain|!NonDisruptedSingle))
-View(reportedSvaSingleSvFusions %>% filter(!ValidChain|!NonDisruptedSingle))
-View(reportedSvaSingleSvFusions %>% filter(!ValidChain|!NonDisruptedSingle) %>% group_by(Clustered=ClusterCount>1) %>% count())
-View(reportedSvaSingleSvFusions %>% group_by(Clustered=ClusterCount>1,InChain,IsValid=ValidChain|NonDisruptedSingle) %>% count())
-
-reportedSvaSingleSvFusions$TotalFacingBreakends = reportedSvaSingleSvFusions$FacingBEsUp + reportedSvaSingleSvFusions$FacingBEsDown
-reportedSvaSingleSvFusions$FacingBECountBucket = 2**round(log(reportedSvaSingleSvFusions$TotalFacingBreakends,2))
-View(reportedSvaSingleSvFusions %>% group_by(Clustered=ClusterCount>1,InChain,FacingBECountBucket) %>% count())
-nrow(reportedSvaSingleSvFusions %>% filter(!InChain&!NonDisruptedSingle))
-
-
-# number of single-SV fusions with possible disruptions from other breakends
 
 
 # number of valid chained (non-single SV) fusions without a matching single SV fusion for same genes
@@ -343,74 +282,6 @@ View(knownFusionData %>% group_by(SampleId,GeneUp,GeneDown) %>% summarise(Count=
                                                                           Unphased=sum(grepl('Unphased',InvalidReasons))))
 
 View(knownFusionData %>% filter(SampleId=='CPCT02020449T'))
-
-
-
-########
-# RNA vs SVA comparison and precision estimation
-
-# rm(svaFusions)
-rnaMatchData = load_rna_match_data('~/data/sv/rna/SVA_RNA_DATA.csv')
-rnaMatchDataBothSVs = annotate_rna_both_svs(rnaMatchData)
-View(rnaMatchData)
-
-rm(rnaSvaFusions)  
-rnaSvaFusions = svaFusions %>% filter(SampleId %in% rnaMatchData$SampleId)
-nrow(rnaSvaFusions)
-View(rnaSvaFusions)
-
-rnaSvaFusions = annotate_fusions(rnaSvaFusions)
-
-View(rnaSvaFusions %>% filter(ValidTraversal=='true'&TerminatedUp==0) %>% group_by(GeneUp,GeneDown,SampleId) %>% summarise(min(ChainLength)))
-
-View(rnaSvaFusions %>% group_by(ValidTraversal,TerminatedUp,TerminatedDown) %>% count())
-
-write.csv(rnaSvaFusions, '~/data/sv/fusions/SVA_RNA_FUSIONS_ANNOT.csv', row.names = F, quote = F)
-rnaSvaFusions = read.csv('~/data/sv/fusions/SVA_RNA_FUSIONS_ANNOT.csv')
-View(head(rnaSvaFusions,100))
-
-View(rnaMatchData %>% group_by(SampleId,GeneUp,GeneDown) %>% count()) # 3048 RNA fusions by sample and gene-pair
-rnaSampleData = rnaMatchData %>% group_by(SampleId,GeneUp,GeneDown) %>% count()
-
-rnaSvaSampleData = rnaSvaFusions %>% group_by(SampleId,GeneUp,GeneDown) %>% 
-  summarise(Total=n(),
-            ValidCount=sum(ValidTraversal=='true'&TerminatedUp==0&TerminatedDown==0),
-            SingleSVs=sum(SameSV),
-            DiffSVs=sum(!SameSV&InChain),
-            Reported=sum(Reportable=='true'),
-            Known=sum(KnownType=='Known'))
-
-View(rnaSvaSampleData) # 158K
-nrow(rnaSvaSampleData %>% filter(ValidCount==0)) # 126K
-nrow(rnaSvaSampleData %>% filter(Clustered==0)) # only 150
-nrow(rnaSvaSampleData %>% filter(ValidCount>0)) # 32K
-
-rnaSvaValidSampleData = rnaSvaSampleData %>% filter(ValidCount>0)
-nrow(rnaSvaValidSampleData)
-
-rnaSvaSampleDataMatched = merge(rnaSvaValidSampleData,rnaMatchData,by=c('SampleId','GeneUp','GeneDown'),all.x=T)
-View(rnaSvaSampleDataMatched)
-View(rnaSvaSampleDataMatched %>% group_by(is.na(FusionName)) %>% count())
-View(rnaSvaSampleDataMatched %>% group_by(GeneUp,GeneDown,Matched=!is.na(FusionName)) %>% count())
-
-
-View(rnaSvaSampleDataMatched %>% group_by(Matched=!is.na(FusionName)) %>% summarise(ValidCount=sum(ValidCount>0),
-                                                                                    SingleSVs=sum(SingleSVs>0),
-                                                                                    DiffSVs=sum(DiffSVs>0),
-                                                                                    Reported=sum(Reported>0),
-                                                                                    Known=sum(Known>0)))
-
-
-
-# Annotations
-
-# we already looked from point of view of the RNA fusions, now need to do the equivalent from POV of the SVA fusions
-# ie how many find an RNA fusions of those which ought to (being viable ones)
-
-
-validSvaRnaFusions = rnaSvaFusions %>% filter(ValidTraversal=='true')
-View(validSvaRnaFusions)
-
 
 
 
