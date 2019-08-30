@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+dir=$1 && shift
+file=$1 && shift
+
+if [ -z "${file}" ]; then
+    echo "[ERROR] Please provide a directory and file pattern. Exiting"
+    exit 1
+fi
+
+destination="s3://hmf_experiments/share/"
+
+echo "[INFO] Uploading ${dir}/${file} to ${destination}"
+sbp s3 sync ${dir} ${destination} --exclude \"*\" --include \"${file}\" --profile download
