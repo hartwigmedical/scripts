@@ -6,4 +6,4 @@ metadata_tsv=$1 && shift
 log_dir=$1 && shift
 metadata_dir=$1 && shift
 
-do_generate_extra_clinical_data ${metadata_tsv} ${log_dir} ${metadata_dir} "pre_biopsy_drugs_by_patient" ${prefix}/sql_preBiopsyDrugsByPatient.sql
+do_generate_extra_clinical_data ${metadata_tsv} ${log_dir} ${metadata_dir} "pre_biopsy_drugs_by_patient" ${prefix}/sql_pre_biopsy_drugs_by_patient.sql

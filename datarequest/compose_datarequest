@@ -6,26 +6,30 @@ if [ "$#" -ne 10 ]; then
     echo "      - request_name (eg DR-028-update1)"
     echo "      - patient_selection_sql (eg /data/data_archive/datarequest/procedure/patient_selection_sql/DR-028-update1.sql"
     echo "          Note: You can use template_selectPatients.sql as basis for the patient selection sql"
-    echo "      - metadata_selection ('tumor', 'tumor-patient' or 'tumor-patient-treatment')"
     echo "      - include_somatics (1 or 0)"
     echo "      - include_germline (1 or 0)"
     echo "      - include_tumor_bam_jsons (1 or 0)"
     echo "      - include_ref_bam_jsons (1 or 0)"
     echo "      - include_rna (1 or 0)"
-    echo "      - include_extra_clinical_data (1 or 0)"
+    echo "      - include_patient_clinical_data (1 or 0)"
+    echo "      - include_treatment_response_clinical_data (1 or 0)"
+    echo "      - include_pre_treatment_clinical_data (1 or 0)"
+    echo "      - include_rano_measurement_by_patient (1 or 0)"
     exit 1
 fi
 
 dr_name=$1 && shift
 request_name=$1 && shift
 patient_selection_sql=$1 && shift
-metadata_selection=$1 && shift # can be tumor, tumor-patient and tumor-patient-treatment
 include_somatics=$1 && shift
 include_germline=$1 && shift
 include_tumor_bam_jsons=$1 && shift
 include_ref_bam_jsons=$1 && shift
 include_rna=$1 && shift
-include_extra_clinical_data=$1 && shift
+include_patient_clinical_data=$1 && shift
+include_treatment_response_clinical_data=$1 && shift
+include_pre_treatment_clinical_data=$1 && shift
+include_rano_measurement_by_patient=$1 && shift
 
 base_path=/data/data_archive/datarequests
 datareq_input_tsv=${base_path}/procedure/latest/metadata
@@ -52,18 +56,20 @@ if [ $? = 0 ]; then
     create_base_metadata_for_request ${patient_selection_tsv} ${datareq_input_tsv} ${base_metadata_unfiltered_tsv} ${base_metadata_filtered_tsv}
     base_metadata_final_tsv=${log_dir}/metadata_final.tsv
 
-    if [ ${metadata_selection} == "tumor" ]; then
+    if [ ${include_patient_clinical_data} == "1" ]; then
+        if [ ${include_treatment_response_clinical_data} == "1" ]; then
+            echo "[INFO] Filtering metadata for ${request_name} on tumor, patient and treatment fields"
+            filter_metadata_tumor_patient_treatment ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+        else
+            echo "[INFO] Filtering metadata for ${request_name} on tumor and patient fields"
+            filter_metadata_tumor_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+        fi
+    elif [ ${include_treatment_response_clinical_data} == "1" ]; then
+        echo "[ERROR]: Cannot include treatment data without including patient data! Exiting."
+        exit 1
+    else
         echo "[INFO] Filtering metadata for ${request_name} on tumor fields"
         filter_metadata_tumor ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
-    elif [ ${metadata_selection} == "tumor-patient" ]; then
-        echo "[INFO] Filtering metadata for ${request_name} on tumor and patient fields"
-        filter_metadata_tumor_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
-    elif [ ${metadata_selection} == "tumor-patient-treatment" ]; then
-        echo "[INFO] Filtering metadata for ${request_name} on tumor, patient and treatment fields"
-        filter_metadata_tumor_patient_treatment ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
-    else
-        echo "[ERROR] Invalid metadata selection chosen: ${metadata_selection}"
-        exit 1
     fi
 
     metadata_dir_name=metadata
@@ -136,14 +142,27 @@ if [ $? = 0 ]; then
         echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
     fi
 
-    if [ ${include_extra_clinical_data} == "1" ]; then
-        echo "[INFO] Creating extra clinical data for ${request_name}..."
-        generate_post_biopsy_drugs_by_biopsy ${metadata_tsv} ${log_dir} ${metadata_dir}
-        generate_pre_biopsy_drugs_by_patient ${metadata_tsv} ${log_dir} ${metadata_dir}
-        generate_responses_by_biopsy ${metadata_tsv} ${log_dir} ${metadata_dir}
-        echo "[INFO] Done creating extra clinical data for DR"
+    if [ ${include_treatment_response_clinical_data} == "1" ]; then
+        echo "[INFO] Creating treatment and response clinical data for ${request_name}..."
+        generate_post_biopsy_drugs_by_sample ${metadata_tsv} ${log_dir} ${metadata_dir}
+        generate_responses_by_sample ${metadata_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating response clinical data for DR"
     else
-        echo "[INFO] Skipped generation of extra clinical data as not deemed relevant for ${request_name}"
+        echo "[INFO] Skipped generation of response clinical data as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_pre_treatment_clinical_data} == "1" ]; then
+        echo "[INFO] Creating pre-biopsy treatment data for ${request_name}..."
+        generate_pre_biopsy_drugs_by_patient ${metadata_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating pre-biopsy treatment data for DR"
+    else
+        echo "[INFO] Skipped generation of pre-biopsy treatment data as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_rano_measurement_by_patient} == "1" ]; then
+        echo "[INFO Creating RANO measurements for ${request_name}... (WIP)"
+    else
+        echo "[INFO] Skipped generation of RANO measurement data as not deemed relevant for ${request_name}"
     fi
 
     metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
