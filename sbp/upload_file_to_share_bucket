@@ -11,4 +11,5 @@ fi
 destination="s3://hmf_experiments/share/"
 
 echo "[INFO] Uploading ${dir}/${file} to ${destination}"
-sbp s3 sync ${dir} ${destination} --exclude \"*\" --include \"${file}\" --profile download
+# TODO Test further, doesn't work yet.
+#sbp s3 sync ${dir} ${destination} --exclude \"*\" --include \"${file}\" --profile download
