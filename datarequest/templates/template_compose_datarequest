@@ -3,6 +3,7 @@
 dr_name="DR-test"
 request_name="DR-test1"
 patient_selection_sql="/data/data_archive/datarequests/procedure/patient_selection_sql/test.sql"
+
 include_somatics=0
 include_germline=0
 include_tumor_bam_jsons=0
