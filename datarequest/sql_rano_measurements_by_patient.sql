@@ -1,5 +1,5 @@
 SELECT
-	patient.patientIdentifier AS '#patient_id',
+	patient.patientIdentifier AS '#patientId',
     ranoMeasurement.responseDate,
     ranoMeasurement.therapyGiven,
     ranoMeasurement.targetLesionResponse,
