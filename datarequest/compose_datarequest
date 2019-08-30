@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 10 ]; then
+if [ "$#" -ne 12 ]; then
     echo "Usage: `basename $0`"
     echo "      - dr_name (eg DR-028)"
     echo "      - request_name (eg DR-028-update1)"
