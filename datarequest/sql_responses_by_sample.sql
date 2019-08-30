@@ -1,5 +1,5 @@
 SELECT
-    patient.patientIdentifier,
+    patient.patientIdentifier AS '#patient_id',
     biopsy.sampleId,
     treatmentResponse.responseDate,
     treatmentResponse.response,
