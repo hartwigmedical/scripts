@@ -160,7 +160,7 @@ if [ $? = 0 ]; then
     fi
 
     if [ ${include_rano_measurement_by_patient} == "1" ]; then
-        echo "[INFO] Creating RANO measurements for ${request_name}... (WIP)"
+        echo "[INFO] Creating RANO measurements for ${request_name}..."
         generate_rano_measurements_by_patient ${metadata_tsv} ${log_dir} ${metadata_dir}
         echo "[INFO] Done creating RANO measurements for DR"
     else
