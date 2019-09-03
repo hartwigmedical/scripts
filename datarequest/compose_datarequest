@@ -72,21 +72,21 @@ if [ $? = 0 ]; then
     create_base_metadata_for_request ${patient_selection_tsv} ${datareq_input_tsv} ${base_metadata_unfiltered_tsv} ${base_metadata_filtered_tsv}
     base_metadata_final_tsv=${log_dir}/metadata_final.tsv
 
-    if [ ${include_patient_clinical_data} = 1 ]; then
-        if [ ${include_tumor_clinical_data} = 0 ]; then
+    if [ ${include_patient_clinical_data} == "1" ]; then
+        if [ ${include_tumor_clinical_data} == "0" ]; then
             echo "[INFO] Filtering metadata for ${request_name} on patient fields"
             filter_metadata_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
-        elif [ ${include_treatment_response_clinical_data} = 1 ]; then
+        elif [ ${include_treatment_response_clinical_data} == "1" ]; then
             echo "[INFO] Filtering metadata for ${request_name} on tumor, patient and treatment fields"
             filter_metadata_tumor_patient_treatment ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
         else
             echo "[INFO] Filtering metadata for ${request_name} on tumor and patient fields"
             filter_metadata_tumor_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
         fi
-    elif [ ${include_treatment_response_clinical_data} = 1 ]; then
+    elif [ ${include_treatment_response_clinical_data} == "1" ]; then
         echo "[ERROR] Cannot include treatment data without including patient data! Exiting."
         exit 1
-    elif [ ${include_tumor_clinical_data} = 0 ]; then
+    elif [ ${include_tumor_clinical_data} == "0" ]; then
         echo "[ERROR] Have to include either patient or tumor clinical data. Exiting"
         exit 1
     else
