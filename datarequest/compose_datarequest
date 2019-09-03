@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 12 ]; then
+if [ "$#" -ne 13 ]; then
     echo "Usage: `basename $0`"
     echo "      - dr_name (eg DR-028)"
     echo "      - request_name (eg DR-028-update1)"
@@ -11,6 +11,7 @@ if [ "$#" -ne 12 ]; then
     echo "      - include_tumor_bam_jsons (1 or 0)"
     echo "      - include_ref_bam_jsons (1 or 0)"
     echo "      - include_rna (1 or 0)"
+    echo "      - include_tumor_clinical_data (1 or 0)"
     echo "      - include_patient_clinical_data (1 or 0)"
     echo "      - include_treatment_response_clinical_data (1 or 0)"
     echo "      - include_pre_treatment_clinical_data (1 or 0)"
@@ -26,6 +27,7 @@ include_germline=$1 && shift
 include_tumor_bam_jsons=$1 && shift
 include_ref_bam_jsons=$1 && shift
 include_rna=$1 && shift
+include_tumor_clinical_data=$1 && shift # This will become non-optional in future update.
 include_patient_clinical_data=$1 && shift
 include_treatment_response_clinical_data=$1 && shift
 include_pre_treatment_clinical_data=$1 && shift
@@ -57,7 +59,10 @@ if [ $? = 0 ]; then
     base_metadata_final_tsv=${log_dir}/metadata_final.tsv
 
     if [ ${include_patient_clinical_data} == "1" ]; then
-        if [ ${include_treatment_response_clinical_data} == "1" ]; then
+        if [ ${include_tumor_clinical_data} == "0" ]; then
+            echo "[INFO] Filtering metadata for ${request_name} on patient fields"
+            filter_metadata_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+        elif [ ${include_treatment_response_clinical_data} == "1" ]; then
             echo "[INFO] Filtering metadata for ${request_name} on tumor, patient and treatment fields"
             filter_metadata_tumor_patient_treatment ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
         else
@@ -65,7 +70,10 @@ if [ $? = 0 ]; then
             filter_metadata_tumor_patient ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
         fi
     elif [ ${include_treatment_response_clinical_data} == "1" ]; then
-        echo "[ERROR]: Cannot include treatment data without including patient data! Exiting."
+        echo "[ERROR] Cannot include treatment data without including patient data! Exiting."
+        exit 1
+    elif [ ${include_tumor_clinical_data} == "0" ]; then
+        echo "[ERROR] Have to include either patient or tumor clinical data. Exiting"
         exit 1
     else
         echo "[INFO] Filtering metadata for ${request_name} on tumor fields"
