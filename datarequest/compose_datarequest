@@ -86,7 +86,7 @@ if [ $? = 0 ]; then
     elif [ ${include_treatment_response_clinical_data} == "1" ]; then
         echo "[ERROR] Cannot include treatment data without including patient data! Exiting."
         exit 1
-    elif [ ${include_tumor_clinical_data} == "0" ]; then
+    elif [ ${include_tumor_clinical_data} != "1" ]; then
         echo "[ERROR] Have to include either patient or tumor clinical data. Exiting"
         exit 1
     else
