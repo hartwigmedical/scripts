@@ -86,12 +86,12 @@ if [ $? = 0 ]; then
     elif [ ${include_treatment_response_clinical_data} == "1" ]; then
         echo "[ERROR] Cannot include treatment data without including patient data! Exiting."
         exit 1
-    elif [ ${include_tumor_clinical_data} == "0" ]; then
-        echo "[ERROR] Have to include either patient or tumor clinical data. Exiting"
-        exit 1
-    else
+    elif [ ${include_tumor_clinical_data} == "1" ]; then
         echo "[INFO] Filtering metadata for ${request_name} on tumor fields"
         filter_metadata_tumor ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
+    else
+        echo "[INFO] Filtering metadata for ${request_name} on none"
+        filter_metadata_none ${base_metadata_filtered_tsv} ${base_metadata_final_tsv}
     fi
 
     metadata_dir_name=metadata
