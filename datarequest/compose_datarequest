@@ -40,6 +40,20 @@ dr_base_path=${base_path}/${dr_name}
 dr_path=${dr_base_path}/${request_name}
 
 echo "[INFO] Composing data request ${request_name} in ${dr_path}"
+echo "[INFO]    dr_name=${dr_name}"
+echo "[INFO]    request_name=${request_name}"
+echo "[INFO]    patient_selection_sql=${patient_selection_sql}"
+echo "[INFO]    include_somatics=${include_somatics}"
+echo "[INFO]    include_germline=${include_germline}"
+echo "[INFO]    include_tumor_bam_jsons=${include_tumor_bam_jsons}"
+echo "[INFO]    include_ref_bam_jsons=${include_ref_bam_jsons}"
+echo "[INFO]    include_rna=${include_rna}"
+echo "[INFO]    include_tumor_clinical_data=${include_tumor_clinical_data}"
+echo "[INFO]    include_patient_clinical_data=${include_patient_clinical_data}"
+echo "[INFO]    include_treatment_response_clinical_data=${include_treatment_response_clinical_data}"
+echo "[INFO]    include_pre_treatment_clinical_data=${include_pre_treatment_clinical_data}"
+echo "[INFO]    include_rano_measurement_by_patient=${include_rano_measurement_by_patient}"
+
 create_base_directory_for_datarequest ${dr_path}
 if [ $? = 0 ]; then
     log_dir=${dr_path}/logs
