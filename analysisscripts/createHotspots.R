@@ -1,3 +1,5 @@
+#!/usr/bin/Rscript
+
 #### This file used to create the hotspot list for our HMF pipeline.
 
 library(tidyr)
