@@ -40,6 +40,5 @@ else
     download_set_path=${download_path}/${set}
     sbp s3 sync s3://${bucket}/${set}/ ${download_set_path}/ \
         --exclude "*.bam" \
-        --exclude "*.diff" \
 	--profile download
 fi
