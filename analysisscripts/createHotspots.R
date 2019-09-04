@@ -30,9 +30,10 @@ civic = read.csv("/data/experiments/compare_hotspots/prod_hotspots/civic_variant
 civic = civic %>% 
   filter(INFO == "true") %>%
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, civicGene = GENE) %>%
-  group_by(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt) 
+    group_by(chromosome, position, ref, alt) %>%
+    distinct(chromosome, position, ref, alt)
 
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
+dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, groups = "RAnalysis")
 query = "SELECT distinct chromosome, position, ref, alt FROM somaticVariant where gene = 'TERT' and position in (1295242,1295228,1295250) AND canonicalEffect = 'upstream gene variant'"
 tert = dbGetQuery(dbProd, query)
 dbDisconnect(dbProd)
