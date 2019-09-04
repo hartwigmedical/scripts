@@ -13,18 +13,18 @@ pasteNA <- function(...) {
 
 chromosomeLevels = c(1:22, "X","Y")
 
-cgi = read.csv("~/hmf/resources/cgi_variant_list", sep ="\t", stringsAsFactors = F)
+cgi = read.csv("/data/experiments/compare_hotspots/prod_hotspots/cgi_variant_list", sep = "\t", stringsAsFactors = F)
 cgi = cgi %>% 
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, cgiGene = GENE) %>%
   group_by(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt)
 
-onco = read.csv("~/hmf/resources/oncoKb_variant_list", sep ="\t", stringsAsFactors = F)
+onco = read.csv("/data/experiments/compare_hotspots/prod_hotspots/oncoKb_variant_list", sep = "\t", stringsAsFactors = F)
 onco = onco %>% 
   filter(INFO %in% c("Likely Oncogenic", "Oncogenic")) %>%
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, oncoGene = GENE) %>%
   group_by(chromosome, position, ref, alt) %>% distinct(chromosome, position, ref, alt)
 
-civic = read.csv("~/hmf/resources/civic_variant_list", sep ="\t", stringsAsFactors = F)
+civic = read.csv("/data/experiments/compare_hotspots/prod_hotspots/civic_variant_list", sep = "\t", stringsAsFactors = F)
 civic = civic %>% 
   filter(INFO == "true") %>%
   select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, civicGene = GENE) %>%
@@ -44,7 +44,7 @@ hotspots = hotspots %>% distinct(chromosome, position, ref, alt) %>%
   mutate(chromosome = factor(chromosome, chromosomeLevels)) %>%
   arrange(chromosome, position)
 
-write.table(hotspots, file = "~/hmf/resources/Hotspot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
+write.table(hotspots, file = "/data/experiments/compare_hotspots/prod_hotspots/Hotspot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
 
 #bgzip Hotspot.tsv
 #tabix -f -s 1 -b 2 -e 2 -S 0 Hotspot.tsv.gz
