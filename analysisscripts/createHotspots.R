@@ -37,7 +37,6 @@ dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_
 query = "SELECT distinct chromosome, position, ref, alt FROM somaticVariant where gene = 'TERT' and position in (1295242,1295228,1295250) AND canonicalEffect = 'upstream gene variant'"
 tert = dbGetQuery(dbProd, query)
 dbDisconnect(dbProd)
-rm(dbProd)
 
 hotspots = merge(cgi, onco, by = c("chromosome", "position", "ref", "alt"), all = T)
 hotspots = merge(hotspots, civic, by = c("chromosome", "position", "ref", "alt"), all = T)
