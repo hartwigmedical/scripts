@@ -87,6 +87,14 @@ becolo829$bpid = bpcolo829t$bpid[findOverlaps(becolo829, bpcolo829t, select="fir
 bpcolo829$bpid = bpcolo829t$bpid[findOverlaps(bpcolo829, bpcolo829t, select="first")]
 grcolo829 = c(bpcolo829, becolo829)
 
+bpcolo829t$caller = "TruthSet"
+bpcolo829t$sample = "COLO829"
+bpcolo829t$bptp = NA
+bpcolo829t$betp = NA
+bpcolo829t$hits = NA
+bpcolo829t$IMPRECISE = FALSE
+write_csv(c(grna12878, grcolo829, bpcolo829t) %>% as.data.frame(), paste0(data_dir, "/../figures/supptable_sv_colo829_na12878.csv"))
+
 summary_na12878 = grna12878 %>%
   as.data.frame() %>%
   group_by(caller, hits) %>%
@@ -200,6 +208,7 @@ sample_rename = paste("Sample", str_pad(1:length(unique(probeResult$source)), 2,
 names(sample_rename) = unique(probeResult$source)
 probeResult = probeResult %>%
   mutate(source=sample_rename[source])
+write_csv(probeResult, paste0(data_dir, "/../figures/supptable_probe_validation.csv"))
 
 rbind(
     probeResult %>% filter(scope!="SharedBoth"),

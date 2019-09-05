@@ -66,7 +66,7 @@ gridss_gr = c(gridss_bp_gr, gridss_be_gr)
 gridss_gr = gridss_gr[!str_detect(names(gridss_gr), "purple")] # strip out placeholder purple breakends
 gridss_gr$vaf =
 gridss_gr$caller="purple"
-purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% rename("chromosome"="#chromosome"),
+purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% rename("#chromosome"="chromosome"),
   GRanges(seqnames=chromosome, ranges=IRanges(start=start, end=end),
           cn=copyNumber,
           bafCount=bafCount,
@@ -80,7 +80,7 @@ purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% ren
           minStart=minStart,
           maxStart=maxStart,
           caller="purple"))
-purple_germline_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.germline.cnv")) %>% rename("chromosome"="#chromosome"),
+purple_germline_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.germline.cnv")) %>% rename("#chromosome"="chromosome"),
   GRanges(seqnames=chromosome, ranges=IRanges(start=start, end=end),
     cn=copyNumber,
     bafCount=bafCount,
@@ -239,6 +239,18 @@ export(ascat_cn, paste0(basedir, "/out/ascat_cn.bed"))
 export(purple_cn, paste0(basedir, "/out/purple_cn.bed"))
 export(conserting_cn, paste0(basedir, "/out/conserting_cn.bed"))
 export(weaver_cn, paste0(basedir, "/out/weaver_cn.bed"))
+library('openxlsx')
+suppfigurewb <- createWorkbook()
+addWorksheet(suppfigurewb, "cn")
+writeData(suppfigurewb, "cn", c(ascat_cn, purple_cn, weaver_cn, conserting_cn) %>% as.data.frame() %>% dplyr::select(1:11))
+addWorksheet(suppfigurewb, "sv")
+crest_bp$beid = names(crest_bp)
+weaver_bp$beid = names(weaver_bp)
+gridss_gr$beid = names(gridss_gr)
+writeData(suppfigurewb, "sv", c(gridss_gr, crest_bp, weaver_bp) %>% as.data.frame(row.names=NULL) %>% dplyr::select(-c("vaf","score","allele","cn","type")))
+addWorksheet(suppfigurewb, "cntransitions")
+writeData(suppfigurewb, "cntransitions", cn_transistions %>% as.data.frame())
+saveWorkbook(suppfigurewb, file = paste0(basedir, "../figures/supptable_cn_comparison.xlsx"), overwrite = TRUE)
 
 cn_transistions$caller = factor(cn_transistions$caller, levels=c("purple", "conserting", "weaver", "ascat"))
 ########
