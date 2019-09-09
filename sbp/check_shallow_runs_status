@@ -9,7 +9,8 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
   run_name=$(echo "${line}" | cut -d" " -f1)
   run_status=$(echo "${line}" | cut -d" " -f2)
     if [[ "${run_name}" =~ "190314-testR" ]]; then continue
-  elif [[ -d "${archive_path}/${run_name}" ]]; then echo "## [type1] ALREADY ARCHIVED: ${run_name} (status=${run_status})"
+  elif [[ "${run_name}" =~ "_HMFregVAL_" ]]; then continue
+  elif [[ -d "${archive_path}/${run_name}" ]]; then continue
   elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## [type2] IN PROCESS: ${run_name} (status=${run_status})"
   elif [[ "${run_status}" =~ Failed ]]; then echo "## [type3] FAILED: ${run_name} (status=${run_status})"
   else echo " process_shallow_run -s ${run_name} # (status=${run_status})"
