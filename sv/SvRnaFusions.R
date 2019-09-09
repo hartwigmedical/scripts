@@ -106,6 +106,9 @@ View(rnaSampleIds %>% filter(!(SampleId %in% hpcDedupedSamples$sampleId)))
 View(rnaSampleIds %>% filter(SampleId %in% hpcDedupedSamples$sampleId))
 
 rnaMatchData = load_rna_match_data('~/data/sv/rna/SVA_RNA_DATA.csv')
+
+View(rnaMatchData)
+
 write.csv(rnaMatchData,'~/data/sv/rna/SVA_RNA_DATA_hpc_dedup.csv',row.names = F, quote = F)
 
 # restrict to HPC deduped cohort
@@ -411,6 +414,19 @@ View(rnaMatchData %>% group_by(SpliceType,ExonsFoundUp=!is.na(RnaExonRankUp),Exo
 View(rnaMatchData %>% filter(is.na(RnaExonRankUp)|is.na(RnaExonRankDown)))
 View(rnaMatchData %>% filter(RnaPhaseMatched=='false'))
 View(svaRnaFusions)
+
+
+# DEBUG only
+rnaRawMatchData = read.csv('~/data/sv/rna/SVA_RNA_DATA.csv')
+
+
+View(svaRnaFusions %>% filter(SampleId=='CPCT02020502T'))
+View(rnaMatchData %>% filter(SampleId=='CPCT02020502T'))
+View(rnaRawMatchData %>% filter(SampleId=='CPCT02020502T'))
+
+
+
+
 
 
 ## previous sensitivty plots
