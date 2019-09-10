@@ -64,7 +64,7 @@ locate_pilot_linx() {
 }
 
 locate_pilot_vicc() {
-    echo ${base_path}/tools/vicc_pilot/vicc.jar
+    echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
 }
 
 #################################### Resources #####################################
