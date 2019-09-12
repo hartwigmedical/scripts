@@ -250,7 +250,7 @@ gridss_gr$beid = names(gridss_gr)
 writeData(suppfigurewb, "sv", c(gridss_gr, crest_bp, weaver_bp) %>% as.data.frame(row.names=NULL) %>% dplyr::select(-c("vaf","score","allele","cn","type")))
 addWorksheet(suppfigurewb, "cntransitions")
 writeData(suppfigurewb, "cntransitions", cn_transistions %>% as.data.frame())
-saveWorkbook(suppfigurewb, file = paste0(basedir, "../figures/supptable_cn_comparison.xlsx"), overwrite = TRUE)
+saveWorkbook(suppfigurewb, file = paste0(basedir, "../figures/supptable_purple_conserting_weaver_cn_comparison.xlsx"), overwrite = TRUE)
 
 cn_transistions$caller = factor(cn_transistions$caller, levels=c("purple", "conserting", "weaver", "ascat"))
 ########

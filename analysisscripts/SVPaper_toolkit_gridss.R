@@ -12,7 +12,7 @@ plot_gridss_top = grid.arrange(
   probe_results_vs_manta_over_50bp,
   plot_probe_results_vs_stelka_under_50bp,
   widths = c(5, 1, 1),
-  heights = c(1.2,1,1,0.2,0.5,1.5),
+  heights = c(1.2,1,1,0.2,0.5,1.5), # TODOO adjust heights so legend can go at bottom
   layout_matrix = rbind(
     c(1, 2, 2),
     c(1, 3, 3),

@@ -199,12 +199,15 @@ figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 #
 load(paste0(data_dir, "/probeMSI.RData"))
 load(paste0(data_dir, "/probeResult.RData"))
-probeResult = probeResult %>%
+rawprobeResult = probeResult
+probeResult = rawprobeResult %>%
   ungroup() %>%
   filter(probeQuality >= 20) %>%
   anti_join(probeMsi, by=c("sampleId"="sampleId", "startChromosome", "endChromosome", "startPosition", "endPosition")) %>%
-  mutate(sampleId=sample_rename[sampleId])
-write_csv(probeResult, paste0(data_dir, "/../figures/supptable_probe_validation.csv"))
+  mutate(sampleId=sample_rename_lookup[sampleId])
+write_csv(rawprobeResult %>%
+            mutate(exclusion=ifelse(probeQuality < 20, "probeQuality", ifelse(paste0(sampleId, uniqueId) %in% paste0(probeResult$sampleId, probeResult$uniqueId), "", "ambiguous microsatellite"))),
+  paste0(data_dir, "/../figures/supptable_probe_validation_results.csv"))
 
 rbind(
     probeResult %>% filter(scope!="SharedBoth"),
