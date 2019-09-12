@@ -27,17 +27,16 @@ Somatic data is shared in a gzipped tar via our [Nextcloud](https://nc.hartwigme
 - ./data directory with various somatic data files per biopsy.
 
 ##### Per biopsy the following files are present:
-- post_processed.vcf.gz (somatic SNVs and small INDELs).
+- purple.somatic.vcf.gz (somatic SNVs and small INDELs).
 - purple.sv.ann.vcf.gz (somatic structural variants).
-- purple.cnv (somatic copy number regions).
-- purple.gene.cnv (somatic copy number per gene).
-- purple.purity (implied percentage of tumor cells).
-- purple.purity.range (in depth information about purity measure).
+- purple.cnv.somatic.tsv (somatic copy number regions).
+- purple.cnv.gene.tsv (somatic copy number per gene).
+- purple.purity.tsv (implied percentage of tumor cells).
+- purple.purity.range.tsv (in depth information about purity measure).
 - purple.qc (quality control outcome).
 - purple.version (purple version used).
 - circos.png (genome wide plot).
 - [in case germline level is part of request] purple.germline.cnv (germline copy number regions).
-
 
 ##### Notes about the (clinical) metadata:
 - We gather as much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies, but please be aware that records are not guaranteed to be complete.
