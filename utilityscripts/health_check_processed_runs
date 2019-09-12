@@ -5,7 +5,7 @@ source load_metadata
 path=/data/schuberg/processed_runs/
 process_runs=$(ls ${path})
 
-for run in ${process_runs}; do
+for run in ${path}/${process_runs}; do
     #run_health_checker_prod /data/schuberg/processed_runs/${run}
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run})
