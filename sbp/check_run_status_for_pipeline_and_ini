@@ -43,6 +43,13 @@ all_tumor_samples_with_processing_run=$(query_sbp_api \
     -filter "status=Processing" \
     -json | jq -r '.[].tumor_sample')
 
+all_tumor_samples_with_waiting_run=$(query_sbp_api \
+    -type runs \
+    -filter "ini=${full_run_inis}" \
+    -filter "bucket=hmf-output" \
+    -filter "status=Waiting" \
+    -json | jq -r '.[].tumor_sample')
+
 echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
 query_sbp_api \
     -type runs \
@@ -54,7 +61,9 @@ query_sbp_api \
     while read failed_tumor_sample; do
         tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
         tumor_has_success_run=$(echo ${all_tumor_samples_with_success_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_success_run} == 0 ]]; then
+        tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
+        tumor_has_waiting_run=$(echo ${all_tumor_samples_with_waiting_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
+        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_success_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
             bucket_for_failed_tumor_sample=$(query_sbp_api \
                 -type runs \
                 -filter "tumor_sample=${failed_tumor_sample}" \
@@ -80,7 +89,7 @@ query_sbp_api \
                 echo "# ${set_name_for_failed_tumor_sample} has failed on ${pip} and is already on datastore ${find_dirs_fail}"
             fi
         else
-            echo "# ${failed_tumor_sample} has failed analysis on pip ${pip} but also has a Validated or Success run so can be ignored."
+            echo "# ${failed_tumor_sample} has Failed on pip ${pip} but also has a Validated/Success/Processing/Waiting run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
@@ -96,7 +105,8 @@ query_sbp_api \
     while read success_tumor_sample; do
         tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
         tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
-        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_processing_run} == 0 ]]; then
+        tumor_has_waiting_run=$(echo ${all_tumor_samples_with_waiting_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
+        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
             bucket_for_success_tumor_sample=$(query_sbp_api \
                 -type runs \
                 -filter "tumor_sample=${success_tumor_sample}" \
@@ -118,7 +128,7 @@ query_sbp_api \
                 echo "${download_script} -s ${set_name_for_success_tumor_sample}"
             fi
         else
-            echo "# ${success_tumor_sample} has Success on pip ${pip} but also has a Validated run or is Processing so can be ignored."
+            echo "# ${success_tumor_sample} has Success on pip ${pip} but also has a Validated/Processing/Waiting run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
@@ -159,14 +169,26 @@ query_sbp_api \
     done | sort -r | uniq
 echo ""
 
-echo "## Processing (or downloading/uploading) runs with ini ${ini} and pipeline ${pip}"
+echo "## Processing/Uploading runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "pipeline=${pip}" \
-    -filter "status=Processing|Downloading|Uploading" \
+    -filter "status=Processing|Uploading" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        echo "# ${set_name} is processing (or downloading/uploading) on ${pip}"
+        echo "# ${set_name} is Processing/Uploading) on ${pip}"
+    done | sort -r | uniq
+echo ""
+
+echo "## Waiting runs with ini ${ini} and pipeline ${pip}"
+query_sbp_api \
+    -type runs \
+    -filter "ini=${ini}" \
+    -filter "pipeline=${pip}" \
+    -filter "status=Waiting" \
+    -json | jq -r '.[].name' | \
+    while read set_name; do
+        echo "# ${set_name} is Waiting) on ${pip}"
     done | sort -r | uniq
 echo ""
