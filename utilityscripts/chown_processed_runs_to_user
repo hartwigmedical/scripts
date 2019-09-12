@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+path=/data/schuberg/processed_runs
+process_runs=$(ls ${path})
+
+for run in ${process_runs}; do
+    run_dir=${path}/${run}
+    echo "[INFO] chown set for ${run} to ${USER}"
+    sudo chown -R ${USER}:users ${run_dir}
+done
