@@ -36,6 +36,13 @@ all_tumor_samples_with_success_run=$(query_sbp_api \
     -filter "status=Success" \
     -json | jq -r '.[].tumor_sample')
 
+all_tumor_samples_with_processing_run=$(query_sbp_api \
+    -type runs \
+    -filter "ini=${full_run_inis}" \
+    -filter "bucket=hmf-output" \
+    -filter "status=Processing" \
+    -json | jq -r '.[].tumor_sample')
+
 echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
 query_sbp_api \
     -type runs \
@@ -88,7 +95,8 @@ query_sbp_api \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read success_tumor_sample; do
         tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
-        if [ ${tumor_has_valid_run} == 0 ]; then
+        tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
+        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_processing_run} == 0 ]]; then
             bucket_for_success_tumor_sample=$(query_sbp_api \
                 -type runs \
                 -filter "tumor_sample=${success_tumor_sample}" \
@@ -106,13 +114,11 @@ query_sbp_api \
                 -filter "status=Success" -exact -json | jq -r '.[].name' | tail -n 1 )
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
-		    if [ ${exists_in_success_run_dirs} == 0 ]; then
+		        if [ ${exists_in_success_run_dirs} == 0 ]; then
                 echo "${download_script} -s ${set_name_for_success_tumor_sample}"
-		    else
-                echo "# No action for ${set_name_for_success_tumor_sample}: already exists on datastore"
             fi
         else
-            echo "# ${success_tumor_sample} has Success on pip ${pip} but also has a Validated run so can be ignored."
+            echo "# ${success_tumor_sample} has Success on pip ${pip} but also has a Validated run or is Processing so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
