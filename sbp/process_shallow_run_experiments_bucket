@@ -6,9 +6,9 @@ bucket="hmf_experiments"
 
 usage() {
     echo "---"
-    echo "Usage: `basename $0` -s <SetName>" 1>&2;
-    echo "       `basename $0` -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
-    echo "       `basename $0` -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
+    echo "Usage: $(basename $0) -s <SetName>" 1>&2;
+    echo "       $(basename $0) -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
+    echo "       $(basename $0) -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
     echo "---"
     exit 1
 }
@@ -37,9 +37,8 @@ if [[ -d ${archive_set_path} ]]; then
     echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
 else
     echo "[INFO] Syncing set ${set} from bucket (${bucket}) to ${download_path}"
-    download_set_path="${download_path}/${set}"
+    download_set_path=${download_path}/${set}
     sbp s3 sync s3://${bucket}/${set}/ ${download_set_path}/ \
         --exclude "*.bam" \
-        --exclude "*.diff" \
-	--profile download
+	      --profile download
 fi

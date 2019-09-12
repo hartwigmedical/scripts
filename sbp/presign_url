@@ -7,16 +7,16 @@ expires_in_sec="604800" # 1 week in seconds
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo " Usage: `basename $0` <s3-url-with-bucket>"
-    echo "        `basename $0` s3://hmf_experiments/HMF_COLO829/HMF_COLO829_FASTQ.tar"
+    echo " Usage: $(basename $0) <s3-url-with-bucket>"
+    echo "        $(basename $0) s3://hmf_experiments/HMF_COLO829/HMF_COLO829_FASTQ.tar"
     echo " Descr: Creates https link to share with externals"
     echo "  Note: Run as sbp user"
     echo "-----"
     exit 1
 fi
 
-direct_link=$( sbp s3 presign ${link_incl_bucket} --expires ${expires_in_sec} --profile ${aws_profile} )
-extern_link=$( echo "${direct_link}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+direct_link=$(sbp s3 presign ${link_incl_bucket} --expires ${expires_in_sec} --profile ${aws_profile} )
+extern_link=$(echo "${direct_link}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
 
 date_string=$(date +%Y-%m-%d)
 echo "## NOTE: URL expires in one week (starting from date: ${date_string})"
