@@ -40,7 +40,7 @@ all_tumor_samples_with_processing_run=$(query_sbp_api \
     -type runs \
     -filter "ini=${full_run_inis}" \
     -filter "bucket=hmf-output" \
-    -filter "status=Processing" \
+    -filter "status=Processing|Uploading" \
     -json | jq -r '.[].tumor_sample')
 
 all_tumor_samples_with_waiting_run=$(query_sbp_api \
@@ -49,6 +49,8 @@ all_tumor_samples_with_waiting_run=$(query_sbp_api \
     -filter "bucket=hmf-output" \
     -filter "status=Waiting" \
     -json | jq -r '.[].tumor_sample')
+
+all_tumor_samples_with_waiting_run
 
 echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
 query_sbp_api \
@@ -177,7 +179,7 @@ query_sbp_api \
     -filter "status=Processing|Uploading" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        echo "# ${set_name} is Processing/Uploading) on ${pip}"
+        echo "# ${set_name} is Processing/Uploading on ${pip}"
     done | sort -r | uniq
 echo ""
 
@@ -189,6 +191,6 @@ query_sbp_api \
     -filter "status=Waiting" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        echo "# ${set_name} is Waiting) on ${pip}"
+        echo "# ${set_name} is Waiting on ${pip}"
     done | sort -r | uniq
 echo ""
