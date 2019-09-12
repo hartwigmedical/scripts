@@ -23,14 +23,14 @@ cgi = cgi %>%
 
 onco = read.csv("/data/experiments/compare_hotspots/pilot_hotspots/oncoKbKnownVariants.tsv", sep = "\t", stringsAsFactors = F)
 onco = onco %>%
-    filter(INFO %in% c("Likely Oncogenic", "Oncogenic")) %>%
+    filter(annotation %in% c("Likely Oncogenic", "Oncogenic")) %>%
     select(chromosome = chromosome, position = position, ref = ref, alt = alt, oncoGene = gene) %>%
     group_by(chromosome, position, ref, alt) %>%
     distinct(chromosome, position, ref, alt)
 
 civic = read.csv("/data/experiments/compare_hotspots/pilot_hotspots/civicKnownVariants.tsv", sep = "\t", stringsAsFactors = F)
 civic = civic %>%
-    filter(INFO == "true") %>%
+    filter(annotation == "true") %>%
     select(chromosome = chromosome, position = position, ref = ref, alt = alt, civicGene = gene) %>%
     group_by(chromosome, position, ref, alt) %>%
     distinct(chromosome, position, ref, alt)
