@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+source load_metadata
+source locate_files
+
+run_dir=$1 && shift
+linx_jar=$1 && shift
+
+structural_vcf=$(locate_purple_structural_variants ${run_dir})
+purple_dir=${run_dir}/purple
+output_dir=${run_dir}/sv
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# reference files
+viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
+fusion_pairs_csv=/data/common/dbs/knowledgebases/output/knownFusionPairs.csv
+promiscuous_five_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousFive.csv
+promiscuous_three_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousThree.csv
+ensembl_data_dir=/data/common/dbs/ensembl_data_cache
+fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
+line_elements=/data/common/dbs/sv/line_elements.csv
+replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+# echo "${sample} linx data : ${output_dir}"
+
+if [ -d ${output_dir} ]; then
+    linx_files=$(find ${output_dir} -type f -name "*linx*")
+    if [[ ! -z ${linx_files} ]]; then
+        rm ${output_dir}/*linx*
+    fi
+else
+    mkdir -p ${output_dir}
+fi
+
+# echo "[INFO] Running LINX"
+
+java -Xmx8G -Xms4G -jar ${linx_jar} \
+    -sample ${sample} \
+    -sv_vcf ${structural_vcf} \
+    -purple_dir ${purple_dir} \
+    -ref_genome ${ref_genome} \
+    -output_dir ${output_dir} \
+    -fragile_site_file ${fragile_sites} \
+    -line_element_file ${line_elements} \
+    -replication_origins_file ${replication_origins} \
+    -viral_hosts_file ${viral_hosts_csv} \
+    -gene_transcripts_dir ${ensembl_data_dir} \
+    -check_fusions \
+    -fusion_pairs_csv ${fusion_pairs_csv} \
+    -promiscuous_five_csv ${promiscuous_five_csv} \
+    -promiscuous_three_csv ${promiscuous_three_csv} \
+    -chaining_sv_limit 0 \
+    -check_drivers \
+    -write_vis_data \
+    $@
+

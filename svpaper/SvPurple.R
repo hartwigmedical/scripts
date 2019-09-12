@@ -1,6 +1,8 @@
 library(tidyr)
 library(dplyr)
 library(ggplot2)
+detach("package:purple", unload=TRUE)
+library(purple)
 
 singleBlue = "#6baed6"
 
@@ -21,12 +23,16 @@ theme_set(hmfTheme)
 
 load(file = "~/hmf/analysis/cohort/cohort.RData")
 load(file = "~/hmf/analysis/cohort/hpcStructuralVariants.RData")
-load(file = "~/hmf/analysis/genepanel/hpcInferredStructuralVariants.RData")
+#load(file = "~/hmf/analysis/cohort/hpcInferredStructuralVariants.RData")
 
-hpcStructuralVariants = hpcStructuralVariants %>% filter(sampleId %in% highestPurityCohort$sampleId)
+hpcStructuralVariants = hpcStructuralVariants %>% filter(sampleId %in% highestPurityCohort$sampleId, !grepl("PON", filter))
+hpcStructuralVariantsSummary = hpcStructuralVariants %>% mutate(single = is.na(endChromosome) | endChromosome == 0) %>% group_by(filter, single, recovered) %>% count() %>%
+  mutate(weight = ifelse(single, 1, 2), n = n * weight) %>%
+  group_by(filter, recovered) %>% summarise(n = sum(n)) %>%
+  ungroup() %>%
+  mutate(relPercentage = n / sum(n))
 
-
-svInferredDF = hpcInferredStructuralVariants %>% filter(filter =='INFERRED') %>% group_by(sampleId) %>% summarise(inferred = n())
+svInferredDF = hpcStructuralVariants %>% filter(filter =='INFERRED') %>% group_by(sampleId) %>% summarise(inferred = n())
 svPassingDF = hpcStructuralVariants %>% 
   filter(filter  == 'PASS') %>% mutate(type = ifelse(recovered, "recovered", "supported")) %>%
   group_by(sampleId, type) %>% 
@@ -88,3 +94,22 @@ ggplot(centromeres) +
   
 
 
+  
+  #Base level accuracy in copy number predictions
+  #has direct clinical relevance in accurately calling disrupted tumor suppressor genes as we found in the same cohort that over
+  #Z%
+  #of homozygous deletions of TSG drivers [CITE] are caused by deletion of 10k bases or less 
+  #[FIGURE 3B].
+  
+  load(file = "~/hmf/analysis/cohort/reference/hpcGeneCopyNumberDeletes.RData")
+  load(file = "~/hmf/analysis/cohort/reference/hpcDriverCatalog.RData")
+
+
+hpcDriverDels = hpcDriverCatalog %>% filter(driver == 'DEL', category == 'TSG') %>% select(gene, sampleId) %>% left_join(hpcGeneCopyNumberDeletes, by = c("gene", "sampleId")) %>%
+  mutate(delLength = minRegionEnd - minRegionStart + 1, bucket = cut(delLength, breaks = c(0, 1000, 10000, 100000, 1e100), labels = c("1-1k", "1k-10k", "10k-100k", "100k+"))) %>%
+  group_by(bucket) %>% count() %>% ungroup() %>% mutate(percentage = n / sum(n))
+
+ggplot(hpcDriverDels, aes(bucket, y = percentage)) +
+  geom_bar(stat = "identity") + xlab("Del Length") + ylab("Del Drivers") +
+  scale_y_continuous(breaks = 0.1*c(0:7), labels = paste0(10*c(0:7), "%"))
+  

@@ -60,6 +60,8 @@ View(reportedSvaFusions %>% group_by(SampleId,GeneNameUp,GeneNameDown) %>% count
 View(reportedSvaFusions %>% filter(Clustered) %>% group_by(SampleId,GeneIdUp,GeneIdDown) %>% count() %>% filter(n>1))
 
 
+
+
 #######
 # Comparison with previous run
 reportedFusionsPrev = read.csv('~/data/sv/fusions/SVA_FUSIONS_CM_OLD.csv')
@@ -88,22 +90,115 @@ View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,Gen
 #######
 # DISRUPTIONS 
 
+View(highestPurityCohort)
+
 # comparison with prod
-linxDisruptions = read.csv('~/data/sv/fusions/SVA_DISRUPTIONS.csv')
-linxDisruptions = read.csv('~/data/sv/SVA_PROD_DISRUPTIONS.csv')
-linxDisruptions = linxDisruptions %>% filter(SampleId %in% highestPurityCohort$sampleId)
-nrow(linxDisruptions)
-linxDisruptionSummary = linxDisruptions %>% group_by(SampleId,GeneName) %>% count()
+linxDisruptions = read.csv('~/data/sv/fusions/LNX_DISRUPTIONS.csv')
+nrow(linxDisruptions) # 18265
+linxDisruptionSummary = linxDisruptions %>% group_by(SampleId,GeneName) %>% summarise(Count=n(),
+                                                                                      Standard=sum(Reportable=='true'),
+                                                                                      Excluded=sum(Reportable=='false'))
+
+View(linxDisruptions %>% group_by(ExcludedReason) %>% count())
 View(linxDisruptionSummary)
+View(linxDisruptions %>% filter(Reportable=='false') %>% group_by(GeneName) %>% count())
+View(linxDisruptions %>% filter(Reportable=='false'&GeneName=='PTEN'))
+
+View(linxDisruptions %>% group_by(SampleId,GeneName) %>% summarise(Count=n(),
+                                                              Standard=sum(Reportable=='true'),
+                                                              SameIntronNoSPA=sum(ExcludedReason=='SameIntronNoSPA'),
+                                                              RemoteIntron=sum(ExcludedReason=='IntronicSection')) %>%
+       filter(Count==RemoteIntron))
+
+
+write.csv(linxDisruptions %>% filter(ExcludedReason=='SameIntronNoSPA') %>% group_by(SampleId) %>% count(),
+          '~/logs/no_spa_disruption_samples.csv', row.names = F, quote = F)
+
+
+sameIntronNoSpa = read.csv('~/logs/LNX_DISRUPTIONS.csv')
+View(sameIntronNoSpa)
+sameIntronNoSpa = sameIntronNoSpa %>% filter(ExcludedReason=='SameIntronNoSPA')
+sameIntronNoSpa = sameIntronNoSpa %>% separate(ExtraInfo,c('ChainLinks','ChainLength'),sep='-')
+sameIntronNoSpa = sameIntronNoSpa %>% mutate(ChainLinks=as.numeric(as.character(ChainLinks)),
+                                             ChainLength=as.numeric(as.character(ChainLength)))
+View(sameIntronNoSpa)
+View(sameIntronNoSpa %>% group_by(ChainLengthBucket=2**round(log(ChainLength,2))) %>% summarise(Count=n(),
+                                                                                                MedLinks=median(ChainLinks),
+                                                                                                MaxLinks=max(ChainLinks)))
+
+write.csv(sameIntronNoSpa,'~/logs/chained_non_disruptions.csv', quote = F, row.names = F)
+
+linxDisruptions = linxDisruptions %>% mutate(UndisruptedCNBucket=ifelse(UndisruptedCN>0.1,2**round(log(UndisruptedCN,2)),0))
+View(linxDisruptions %>% group_by(UndisruptedCN) %>% count())
+
+oldDisruptions = read.csv('~/data/sv/fusions/LNX_DISRUPTIONS_OLD.csv')
+nrow(oldDisruptions) # 18625
+View(oldDisruptions) # 17819
+
+oldDisruptionsummary = oldDisruptions %>% group_by(SampleId,GeneName) %>% count()
+View(oldDisruptionsummary)
+
+# samples and genes with no disruptions
+mergedDisruptions = merge(oldDisruptionsummary,linxDisruptionSummary %>% filter(Standard>0),by=c('SampleId','GeneName'),all=T)
+
+mergedDisruptions = merge(linxDisruptions %>% group_by(SampleId,GeneName) %>% count(),
+                          linxDisruptionSummary %>% filter(Standard>0),by=c('SampleId','GeneName'),all=T)
+
+View(mergedDisruptions %>% filter(is.na(Count)))
+
+
+# unaffected samples & genes
+View(mergedDisruptions)
+
+
+# oldDisruptions = read.csv('~/logs/prod_disruptions.csv')
+oldDisruptions = oldDisruptions %>% filter(SampleId %in% highestPurityCohort$sampleId)
+nrow(oldDisruptions)
+#oldDisruptionsummary = oldDisruptions %>% group_by(SampleId=sampleId,GeneName=gene) %>% count()
+
+# genes entirely dropped from samples
+
+
+droppedDisruptions = read.csv('~/logs/SVA_DISRUPTIONS.csv')
+View(droppedDisruptions %>% filter(Reportable=='false'))
+View(droppedDisruptions %>% filter(Reportable=='false') %>% group_by(ExcludedReason) %>% count())
+View(droppedDisruptions %>% filter(Reportable=='false') %>% group_by(SampleId) %>% count())
+View(droppedDisruptions %>% filter(Reportable=='true') %>% group_by(SampleId) %>% count())
+
+View(droppedDisruptions %>% filter(Reportable=='false'&ExcludedReason!='SimpleSV') %>% group_by(SampleId,GeneName) %>% count())
+
+View(droppedDisruptions %>% filter(Reportable=='true') %>% group_by(SampleId,GeneName) %>% count())
+
+View(droppedDisruptions %>% filter(ExcludedReason!='SimpleSV'&GeneName=='PTEN'))
+
+View(oldDisruptions %>% filter(GeneName=='PTEN'&SampleId %in% droppedDisruptions$SampleId))
+
+View(droppedDisruptions %>% filter(SampleId=='CPCT02210037T') %>% group_by(SvId,IsStart) %>% count())
+
+
+View(droppedDisruptions %>% filter(ExcludedReason!='SimpleSV') %>% 
+       group_by(GeneName,Reportable) %>% count() %>% spread(Reportable,n))
+
+
+mergedDisruptions = merge(linxDisruptions %>% select(SampleId,GeneName,SvId),oldDisruptions %>% select(SampleId,GeneName,SvId),by=c('SampleId','GeneName'),all=T)
+
+View(mergedDisruptions)
+nrow(mergedDisruptions)
+nrow(mergedDisruptions %>% filter(is.na(SvId.x)))
+nrow(mergedDisruptions %>% filter(is.na(SvId.y)))
+View(mergedDisruptions %>% filter(is.na(SvId.x)))
+
+View(mergedDisruptions %>% filter(is.na(SvId.x)) %>% group_by(SampleId) %>% count())
+
+write.csv(mergedDisruptions %>% filter(is.na(SvId.x)) %>% group_by(SampleId) %>% count() %>% select(SampleId),
+          '~/logs/dropped_disruption_sample_ids.csv', row.names = F, quote = F)
 
 
 
-prodDisruptions = read.csv('~/logs/prod_disruptions.csv')
-nrow(prodDisruptions)
-prodDisruptions = prodDisruptions %>% filter(sampleId %in% highestPurityCohort$sampleId)
-nrow(prodDisruptions)
-prodDisruptionSummary = prodDisruptions %>% group_by(SampleId=sampleId,GeneName=gene) %>% count()
-View(prodDisruptionSummary)
+
+
+
+
 
 
 load('~/data/hmf_cohort_may_2019.RData')
