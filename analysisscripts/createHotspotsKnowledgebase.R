@@ -17,21 +17,21 @@ chromosomeLevels = c(1 : 22, "X", "Y")
 
 cgi = read.csv("/data/experiments/compare_hotspots/pilot_hotspots/cgiKnownVariants.tsv", sep = "\t", stringsAsFactors = F)
 cgi = cgi %>%
-    select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, cgiGene = GENE) %>%
+    select(chromosome = chromosome, position = position, ref = ref, alt = alt, cgiGene = gene) %>%
     group_by(chromosome, position, ref, alt) %>%
     distinct(chromosome, position, ref, alt)
 
 onco = read.csv("/data/experiments/compare_hotspots/pilot_hotspots/oncoKbKnownVariants.tsv", sep = "\t", stringsAsFactors = F)
 onco = onco %>%
     filter(INFO %in% c("Likely Oncogenic", "Oncogenic")) %>%
-    select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, oncoGene = GENE) %>%
+    select(chromosome = chromosome, position = position, ref = ref, alt = alt, oncoGene = gene) %>%
     group_by(chromosome, position, ref, alt) %>%
     distinct(chromosome, position, ref, alt)
 
 civic = read.csv("/data/experiments/compare_hotspots/pilot_hotspots/civicKnownVariants.tsv", sep = "\t", stringsAsFactors = F)
 civic = civic %>%
     filter(INFO == "true") %>%
-    select(chromosome = CHROMOSOME, position = POSITION, ref = REF, alt = ALT, civicGene = GENE) %>%
+    select(chromosome = chromosome, position = position, ref = ref, alt = alt, civicGene = gene) %>%
     group_by(chromosome, position, ref, alt) %>%
     distinct(chromosome, position, ref, alt)
 
