@@ -5,10 +5,10 @@ source load_metadata
 
 run_dir=$1 && shift
 linx_jar=$1 && shift
-output_dir=$1 && shift
 
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_dir=${run_dir}/purple
+output_dir=${run_dir}/sv
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
