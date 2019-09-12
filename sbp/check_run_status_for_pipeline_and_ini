@@ -46,7 +46,7 @@ all_tumor_samples_with_processing_run=$(query_sbp_api \
 all_tumor_samples_with_waiting_run=$(query_sbp_api \
     -type runs \
     -filter "ini=${full_run_inis}" \
-    -filter "bucket=hmf-output" \
+    -filter "pipeline=${pip}" \
     -filter "status=Waiting" \
     -json | jq -r '.[].tumor_sample')
 
