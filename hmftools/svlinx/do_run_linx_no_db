@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 source load_metadata
-source load_metadata
+source locate_files
 
 run_dir=$1 && shift
 linx_jar=$1 && shift
