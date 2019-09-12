@@ -50,8 +50,6 @@ all_tumor_samples_with_waiting_run=$(query_sbp_api \
     -filter "status=Waiting" \
     -json | jq -r '.[].tumor_sample')
 
-echo ${all_tumor_samples_with_waiting_run}
-
 echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
 query_sbp_api \
     -type runs \
