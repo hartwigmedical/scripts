@@ -2,11 +2,10 @@
 
 path=/data/schuberg/processed_runs/
 process_runs=$(ls ${path})
-user_name=$(echo ${USER})
 
 for run in ${process_runs}; do
     echo "[INFO] chown set for ${run}"
-    sudo chown -R ${user_name}:users /data/schuberg/processed_runs/${run}
+    sudo chown -R ${USER}:users /data/schuberg/processed_runs/${run}
     sudo mv /data/schuberg/processed_runs/${run} /data/cpct/runs/
 done
 
