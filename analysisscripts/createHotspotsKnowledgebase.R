@@ -49,7 +49,7 @@ hotspots = hotspots %>%
     mutate(chromosome = factor(chromosome, chromosomeLevels)) %>%
     arrange(chromosome, position)
 
-write.table(hotspots, file = "/data/experiments/compare_hotspots/prod_hotspots/Hotspot_pilot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
+write.table(hotspots, file = "/data/experiments/compare_hotspots/pilot_hotspots/Hotspot_pilot.tsv", sep = "\t", col.names = F, quote = F, row.names = F)
 
 #bgzip Hotspot.tsv
 #tabix -f -s 1 -b 2 -e 2 -S 0 Hotspot.tsv.gz
