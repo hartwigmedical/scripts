@@ -8,6 +8,4 @@ output_dir=${run_dir}/sv/
 credentials=$(locate_prod_database_credentials)
 linx_jar=$(locate_prod_linx)
 
-drup_tsg_file=/data/common/dbs/drup/drup_tsg_genes.csv
-
-${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} -drup_tsg_file ${drup_tsg_file} $@
+${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} $@

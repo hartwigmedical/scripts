@@ -424,9 +424,23 @@ View(svaRnaFusions %>% filter(SampleId=='CPCT02020502T'))
 View(rnaMatchData %>% filter(SampleId=='CPCT02020502T'))
 View(rnaRawMatchData %>% filter(SampleId=='CPCT02020502T'))
 
+View(rnaCombinedData %>% filter(!HasDnaData&(SameCluster&SameChain)) %>% group_by(KnownType.y) %>% count())
+View(rnaCombinedData %>% filter(!HasDnaData&(SameCluster&SameChain)&KnownType.y!='Unknown'&KnownType.y!=''))
+
+View(dnaRnaCombinedData %>% filter(is.na(ChainLinks) &KnownType.y=='Known'&MatchType=='DNA & RNA'))
+
+View(dnaRnaCombinedOutputData)
+View(dnaRnaCombinedOutputData %>% filter(is.na(ChainLinks)&MatchType=='RNA Only'))
 
 
+View(dnaRnaCombinedData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(dnaRnaCombinedOutputData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(svaRnaFusions %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(rnaMatchData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+View(rnaCombinedData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
 
+
+svaRnaFusions
 
 
 ## previous sensitivty plots

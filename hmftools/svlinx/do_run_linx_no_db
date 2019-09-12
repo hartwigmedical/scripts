@@ -1,22 +1,19 @@
 #!/usr/bin/env bash
 
 source load_metadata
+source load_metadata
 
 run_dir=$1 && shift
-credentials=$1 && shift
 linx_jar=$1 && shift
 output_dir=$1 && shift
 
-# Database details
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
+structural_vcf=$(locate_purple_structural_variants ${run_dir})
+purple_dir=${run_dir}/purple
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
-
 viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
 fusion_pairs_csv=/data/common/dbs/knowledgebases/output/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousFive.csv
@@ -25,6 +22,7 @@ ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
+ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 # echo "${sample} linx data : ${output_dir}"
 
@@ -41,8 +39,10 @@ fi
 
 java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \
+    -sv_vcf ${structural_vcf} \
+    -purple_dir ${purple_dir} \
+    -ref_genome ${ref_genome} \
     -output_dir ${output_dir} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -fragile_site_file ${fragile_sites} \
     -line_element_file ${line_elements} \
     -replication_origins_file ${replication_origins} \
