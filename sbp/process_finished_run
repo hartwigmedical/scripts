@@ -11,7 +11,7 @@ download_path=/data/schuberg/downloaded_runs
 echo "[INFO] Downloading set ${set} to ${download_path}"
 download_set -s ${set} -p ${download_path}
 
-if [ ! -f ${download_path}/${set}/metadata ]; then
+if [ ! -f ${download_path}/${set}/metadata.json ]; then
     echo "[ERROR] No metadata file found. Probably something wrong with the downloading of the run. Exiting"
     exit 1;
 fi

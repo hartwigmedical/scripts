@@ -4,9 +4,11 @@ load_ref_sample_from_metadata() {
     local run_dir=$1
     local ref_sample=""
     if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
         metadata=${run_dir}/metadata.json
         ref_sample=$(jq -r '.reference.sampleName' ${metadata})
     else
+        # Pre-V5 format
         metadata=${run_dir}/metadata
         ref_sample=$(jq -r '.ref_sample' ${metadata})
     fi
@@ -17,9 +19,11 @@ load_tumor_sample_from_metadata() {
     local run_dir=$1
     local tum_sample=""
     if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
         metadata=${run_dir}/metadata.json
         tum_sample=$(jq -r '.tumor.sampleName' ${metadata})
     else
+        # Pre-V5 format
         metadata=${run_dir}/metadata
         tum_sample=$(jq -r '.tumor_sample' ${metadata})
     fi
