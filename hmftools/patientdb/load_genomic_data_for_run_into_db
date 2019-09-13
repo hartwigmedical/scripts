@@ -33,5 +33,5 @@ echo "[INFO] Loading metrics for ${run_dir}"
 do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading CHORD for ${run_dir}"
-do_load_chord_data ${run_dir} ${credentials} ${patient_db_jar}
+do_load_chord_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
 

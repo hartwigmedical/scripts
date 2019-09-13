@@ -10,4 +10,4 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-${prefix}/do_load_chord_data ${run_dir} ${tumor_sample} ${credentials} ${patient_db_jar}
+${prefix}/do_load_chord_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
