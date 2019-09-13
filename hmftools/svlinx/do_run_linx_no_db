@@ -4,8 +4,8 @@ source load_metadata
 source locate_files
 
 run_dir=$1 && shift
-linx_jar=$1 && shift
 
+linx_jar=$(locate_prod_linx)
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_dir=${run_dir}/purple
 output_dir=${run_dir}/sv
