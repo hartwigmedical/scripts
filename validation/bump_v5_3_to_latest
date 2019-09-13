@@ -2,6 +2,9 @@
 
 run_dir=$1
 
+echo "[INFO] Running Purple on ${run_dir}"
+do_run_purple_no_db ${run_dir}
+
 echo "[INFO] Running GRIDSS annotations on ${run_dir}"
 do_run_gridss_viral_annotate_prod ${run_dir}
 do_run_gridss_repeatmasker_insertion_annotate_prod ${run_dir}
@@ -12,15 +15,12 @@ run_chord_prod ${run_dir}
 echo "[INFO] Create symlinks for metrics files"
 create_symlink_metric_file ${run_dir}
 
-echo "[INFO] Loading SVs for ${run_dir}"
-do_run_load_sv_reference_validation_sets ${run_dir}
+echo "[INFO] Running linx for ${run_dir}"
+do_run_linx_no_db ${run_dir}
 
-echo "[INFO] Running LINX on ${run_dir}"
-do_run_linx_reference_validation_sets ${run_dir}
-
-echo "[INFO] Faking bachelor to be present"
 # A little tricky - assume no pathogenic germline variants.
 if [ ! -d ${run_dir}/bachelor ]; then
-	mkdir ${run_dir}/bachelor
-	touch ${run_dir}/bachelor/bachelor_found_no_variants
+    echo "[INFO] Faking bachelor to be present"
+	  mkdir ${run_dir}/bachelor
+	  touch ${run_dir}/bachelor/bachelor_found_no_variants
 fi

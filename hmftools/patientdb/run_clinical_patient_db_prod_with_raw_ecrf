@@ -1,5 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 
 ${prefix}/run_clinical_patient_db_prod -do_load_raw_ecrf

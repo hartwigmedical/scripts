@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 sample=$1 && shift
 purple_dir=$1 && shift
@@ -16,4 +16,4 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -sample ${sample} \
     -purple_dir ${purple_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    "$@"

@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
 sample=$1 && shift
@@ -23,4 +24,4 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -hotspot ${hotspot_tsv} \
-    $@
+    "$@"

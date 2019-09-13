@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
-run_dir=$1 && shift
+prefix=$(dirname $(readlink $0 || echo $0))
 
 credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
