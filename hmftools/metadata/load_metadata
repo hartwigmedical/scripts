@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 load_ref_sample_from_metadata() {
     local run_dir=$1
