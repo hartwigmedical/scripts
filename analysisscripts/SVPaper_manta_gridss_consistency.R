@@ -197,30 +197,29 @@ figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 #
 # Probe validation results
 #
-
+load(paste0(data_dir, "/probeMSI.RData"))
 load(paste0(data_dir, "/probeResult.RData"))
-probeResult = probeResult %>%
-  filter(source!="CPCT02450014T") %>%
+rawprobeResult = probeResult
+probeResult = rawprobeResult %>%
+  ungroup() %>%
   filter(probeQuality >= 20) %>%
-  filter(!is.na(source)) %>%
-  ungroup()
-sample_rename = paste("Sample", str_pad(1:length(unique(probeResult$source)), 2, pad="0"))
-names(sample_rename) = unique(probeResult$source)
-probeResult = probeResult %>%
-  mutate(source=sample_rename[source])
-write_csv(probeResult, paste0(data_dir, "/../figures/supptable_probe_validation.csv"))
+  anti_join(probeMsi, by=c("sampleId"="sampleId", "startChromosome", "endChromosome", "startPosition", "endPosition")) %>%
+  mutate(sampleId=sample_rename_lookup[sampleId])
+write_csv(rawprobeResult %>%
+            mutate(exclusion=ifelse(probeQuality < 20, "probeQuality", ifelse(paste0(sampleId, uniqueId) %in% paste0(probeResult$sampleId, probeResult$uniqueId), "", "ambiguous microsatellite"))),
+  paste0(data_dir, "/../figures/supptable_probe_validation_results.csv"))
 
 rbind(
     probeResult %>% filter(scope!="SharedBoth"),
     probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
     probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedStrelka")) %>%
-  group_by(source, callset, scope, supported) %>%
+  group_by(sampleId, callset, scope, supported) %>%
   summarise(n=n()) %>%
   mutate(category=factor(paste(callset, scope),
     levels=c("Manta Private", "Gridss SharedManta", "Gridss Private", "Gridss SharedStrelka", "Strelka Private"),
     labels=c("manta", "gridss+manta", "gridss", "gridss+strelka", "strelka (32bp+)"))) %>%
 ggplot() +
-  aes(x=source, fill=supported, y=n) +
+  aes(x=sampleId, fill=supported, y=n) +
   geom_bar(stat="identity") +
   facet_grid(category ~ ., scales="free") +
   scale_fill_manual(values=c(gridss_fig_fp_colours[2], gridss_fig_tp_colours[1])) +
@@ -235,8 +234,6 @@ probe_results_vs_manta_over_50bp = rbind(
   probeResult %>% filter(scope!="SharedBoth"),
   probeResult %>% filter(scope=="SharedBoth") %>% mutate(scope="SharedManta"),
   probeResult %>% filter(scope=="SharedStrelka") %>% mutate(callset="Gridss", scope="Private")) %>%
-  filter(probeQuality >= 20) %>%
-  filter(!is.na(source)) %>%
   mutate(category=factor(paste(callset, scope),
                          levels=c("Gridss Private", "Gridss SharedManta", "Manta Private"),
                          labels=c("gridss", "shared", "manta"))) %>%
@@ -357,4 +354,16 @@ rbind(
   labs(fill="Validated", x="", y="32-100bp DUP") +
   theme(axis.text.x = element_text(angle = 90))
 figsave("probe_results_32-100bp_DUP", width=5, height=4)
+
+sva_svs %>%
+  mutate(isShortDup = Type=="DUP" & PosEnd - PosStart <= 100) %>%
+  group_by(isShortDup) %>%
+  summarise(n=n())
+
+sva_svs %>%
+  mutate(isShortDup = Type=="DUP" & PosEnd - PosStart <= 100) %>%
+  group_by(SampleId, ClusterId) %>%
+  summarise(cluster_type=ifelse(n()==1, "Simple", "Multiple"), shortDupCount=sum(isShortDup)) %>%
+  group_by(shortDupCount, cluster_type) %>%
+  summarise(n=n())
 

@@ -4,8 +4,8 @@ source api_functions
 
 usage() {
     echo "---"
-    echo "Usage: `basename $0` -s <set> " 1>&2;
-    echo "       `basename $0` -s 170101_HMFregCPCT_etc" 1>&2;
+    echo "Usage: $(basename $0) -s <set> " 1>&2;
+    echo "       $(basename $0) -s 170101_HMFregCPCT_etc" 1>&2;
     echo "---"
     exit 1
 }
@@ -31,7 +31,7 @@ if [ -z "${run_info}" ]; then
     exit 1
 fi
 
-run_bucket=`echo ${run_info} | cut -d ' ' -f5`
+run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
 s3path=s3://${run_bucket}/${set}
 dspath=/data/schuberg/bam_downloads/bams_${set}

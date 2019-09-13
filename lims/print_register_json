@@ -191,8 +191,14 @@ sub processSample{
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
     my $priority   = getPriority( $sample );
-    my $yield      = getValueByKey( $sample, 'yield' ); # eg 300
-    $yield = $yield == 0 ? 1 : $yield * $YIELD_F; ## yield=0 would result in sample being directly Ready
+    my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
+    
+    ## reset 0 yield to 1 base in order to avoid samples being ready directly
+    ## except for so-called "VirtualSample" samples (these index seqs should be absent)
+    if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
+        $yield = 1;
+    }
+    
     my $use_existing_ref = $USE_EXISTING_REF;
     my $use_existing_tum = $USE_EXISTING_TUM;
 

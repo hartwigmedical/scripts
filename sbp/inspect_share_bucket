@@ -9,7 +9,7 @@ s3path="s3://${bucket}/${subdir}"
 yymmdd=$( date "+%y%m%d" )
 
 if [[ -z ${upload_file_name} ]]; then
-  upload_file_name="YOUR_FILE_IN_DATA_TMP"
+    upload_file_name="YOUR_FILE_IN_DATA_TMP"
 fi
 
 echo "---"

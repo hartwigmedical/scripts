@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source load_metadata
+
+run_dir=$1 && shift
+credentials=$1 && shift
+linx_jar=$1 && shift
+sv_data_dir=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# echo "[INFO] Loading LINX data"
+
+java -Xmx8G -Xms4G -cp ${linx_jar} com.hartwig.hmftools.linx.SvDataLoader \
+    -sample ${sample} \
+    -load_linx_data \
+    -sv_data_dir ${sv_data_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    $@
+

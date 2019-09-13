@@ -4,7 +4,7 @@ dr_name=$1 && shift
 request_name=$1 && shift
 
 if [ -z "${dr_name}" ] || [ -z "${request_name}" ]; then
-    echo "Usage: `basename $0` dr_name request_name"
+    echo "Usage: $(basename $0) dr_name request_name"
     exit 1
 fi
 
@@ -13,7 +13,7 @@ request_dir=/data/data_archive/datarequests/${dr_name}/${request_name}
 if [ -d ${request_dir} ]; then
     echo "[INFO] Refreshing all shares for ${request_name}"
 
-    current_share_count=$( query_sbp_api -type shares -filter "entity=${dr_name}" | grep -v "^#" | wc -l )
+    current_share_count=$(query_sbp_api -type shares -filter "entity=${dr_name}" | grep -cv "^#")
 
     echo "[INFO] Current number of shares for entity ${dr_name}: ${current_share_count}"
 

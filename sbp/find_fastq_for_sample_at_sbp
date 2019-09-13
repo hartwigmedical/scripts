@@ -2,8 +2,8 @@
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: `basename $0` \${sampleName}"
-    echo "    Eg: `basename $0` CPCT02010001T"
+    echo " Usage: $(basename $0) \${sampleName}"
+    echo "    Eg: $(basename $0) CPCT02010001T"
     echo "        (searches for \${sampleName}_*.fastq.gz"
     echo "---"
     exit 1

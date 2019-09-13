@@ -4,8 +4,8 @@ source api_functions
 
 usage() {
     echo "---"
-    echo "Usage: `basename $0` -s <set> -p <path>" 1>&2;
-    echo "       `basename $0` -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
+    echo "Usage: $(basename $0) -s <set> -p <path>" 1>&2;
+    echo "       $(basename $0) -s 170101_HMFregCPCT_etc -p /data/schuberg/cpct_drup_downloads" 1>&2;
     echo "---"
     exit 1
 }
@@ -46,8 +46,8 @@ if [ -z "${rerun_v4_info}" ]; then
     exit 1
 fi
 
-run_bucket=`echo ${run_info} | cut -d ' ' -f5`
-run_is_v5=`echo ${run_info} | cut -d ' ' -f8 | grep "v5"`
+run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
+run_is_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v5")
 
 if [ ! -z "${run_is_v5}" ]; then
     echo "[INFO] Downloading v5 run ${set} from ${run_bucket} to ${localpath}"
@@ -56,8 +56,8 @@ if [ ! -z "${run_is_v5}" ]; then
         --profile download
 else
     echo "[INFO] Downloading pre-v5 run ${set} from ${run_bucket} to ${localpath}"
-    v3_rerun_bucket=`echo ${rerun_v3_info} | cut -d ' ' -f5`
-    v4_rerun_bucket=`echo ${rerun_v4_info} | cut -d ' ' -f5`
+    v3_rerun_bucket=$(echo ${rerun_v3_info} | cut -d ' ' -f5)
+    v4_rerun_bucket=$(echo ${rerun_v4_info} | cut -d ' ' -f5)
 
     sbp s3 sync s3://${run_bucket}/${set}/ ${localpath}/${set}/ \
         --exclude "*" \

@@ -6,9 +6,9 @@ bucket="hmf-output-shallowseq"
 
 usage() {
     echo "---"
-    echo "Usage: `basename $0` -s <SetName>" 1>&2;
-    echo "       `basename $0` -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
-    echo "       `basename $0` -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
+    echo "Usage: $(basename $0) -s <SetName>" 1>&2;
+    echo "       $(basename $0) -s 190101_ShallowSeq_etc (uses bucket $bucket)" 1>&2;
+    echo "       $(basename $0) -s 190101_ShallowSeq_etc -b <bucket>" 1>&2;
     echo "---"
     exit 1
 }
@@ -40,5 +40,5 @@ else
     download_set_path=${download_path}/${set}
     sbp s3 sync s3://${bucket}/${set}/ ${download_set_path}/ \
         --exclude "*.bam" \
-	--profile download
+	      --profile download
 fi

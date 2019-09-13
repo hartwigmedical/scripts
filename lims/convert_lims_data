@@ -114,7 +114,7 @@ $subm_objs = $lims_2017->{ 'submissions' };
 $proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
-$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
+$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
@@ -742,6 +742,22 @@ sub checkDefined{
 }
 
 sub getFieldNameTranslations{
+    ## columns shipments sheet in 2018 rest lims (FOR-001)
+    my %SUBM_DICT_2018 = (
+      "Arrival_date"      => 'arrival_date',
+      "Project_name"      => 'project_name',
+      "HMF_reg"           => 'submission',
+      "Requested_product" => 'request',
+      "Product_category"  => 'project_type',
+      "Sample_count"      => 'sample_count',
+      "Lab_is_finished"   => 'has_lab_finished',
+      "TAT_lab"           => 'turn_around_time',
+      "Contact_name"      => 'contact_name',
+      "Contact_email"     => 'contact_email',
+      "Remarks"           => 'remarks',
+      "Storage_status"    => 'lab_storage_status',
+    );
+
     ## columns shipments sheet in rest lims (FOR-001)
     my %SUBM_DICT = (
       "Arrival_date"      => 'arrival_date',
@@ -754,6 +770,8 @@ sub getFieldNameTranslations{
       "TAT_lab"           => 'turn_around_time',
       "Contact_name"      => 'contact_name',
       "Contact_email"     => 'contact_email',
+      "Portal_contact_name" => 'portal_contact_name',
+      "Portal_contact_email" => 'portal_contact_email',
       "Remarks"           => 'remarks',
       "Storage_status"    => 'lab_storage_status',
     );
@@ -852,6 +870,7 @@ sub getFieldNameTranslations{
     
     my %translations = (
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,

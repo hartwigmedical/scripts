@@ -2,21 +2,20 @@
 
 source load_metadata
 
-path=/data/schuberg/processed_runs/
+path=/data/schuberg/processed_runs
 process_runs=$(ls ${path})
 
 for run in ${process_runs}; do
-    #run_health_checker_prod /data/schuberg/processed_runs/${run}
+    run_dir=${path}/${run}
+    #run_health_checker_prod ${run_dir}
 
-    tumor_sample=$(load_tumor_sample_from_metadata ${run})
-    if [ -f "${run}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
-            echo "[INFO] check healthcheck has run for set ${run}"
-    elif [ -f "${run}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
-            echo "[ERROR] check healthcheck has failed for set ${run}"
+    tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+    if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
+            echo "[INFO] HealthChecker has succeeded for ${run}"
+    elif [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
+            echo "[ERROR] HealthChecker has failed for ${run}!!"
     else
-            echo "[ERROR] check healthcheck has not run for set ${run}"
+            echo "[ERROR] HealthChecker has not been run for ${run}"
     fi
 
 done
-
-echo "TODO: check if every healthcheck is correct"

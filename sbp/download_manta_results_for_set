@@ -4,8 +4,8 @@ source api_functions
 
 usage() {
     echo "---"
-    echo "Usage: `basename $0` -s <set>" 1>&2;
-    echo "       `basename $0` -s 170101_HMFregCPCT_etc" 1>&2;
+    echo "Usage: $(basename $0) -s <set>" 1>&2;
+    echo "       $(basename $0) -s 170101_HMFregCPCT_etc" 1>&2;
     echo "---"
     exit 1
 }
@@ -31,12 +31,12 @@ if [ -z "${rerun_v3_info}" ]; then
     exit 1
 fi
 
-v3_rerun_bucket=`echo ${rerun_v3_info} | cut -d ' ' -f5`
+v3_rerun_bucket=$(echo ${rerun_v3_info} | cut -d ' ' -f5)
 
 sbp s3 sync s3://${v3_rerun_bucket}/${set}/ /data/schuberg/manta_results/${set}/ \
-	--exclude "*" \
+	  --exclude "*" \
     --include "*structuralVariants*bpi*bpi_stats*" \
-	--include "*structuralVariants*bpi*somaticSV*" \
-	--include "*structuralVariants*bpi*sliced.bam*" \
-	--include "*structuralVariants*manta*somaticSV.vcf*" \
-	--profile download
+	  --include "*structuralVariants*bpi*somaticSV*" \
+	  --include "*structuralVariants*bpi*sliced.bam*" \
+	  --include "*structuralVariants*manta*somaticSV.vcf*" \
+	  --profile download
