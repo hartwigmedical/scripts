@@ -28,8 +28,7 @@ java -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     -protein_domain ${protein_domain} \
     -fusion ${fusion} \
     -circos ${circos} \
-    $@
-
+    "$@"
 
 #Example usage
 #   do_run_linx_visualiser_prod /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -threads 8

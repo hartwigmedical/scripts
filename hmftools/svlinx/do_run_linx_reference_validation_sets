@@ -1,11 +1,11 @@
 #!/bin/bash
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 output_dir=${run_dir}/sv/
 
 credentials=$(locate_reference_validation_sets_database_credentials)
 linx_jar=$(locate_prod_linx)
 
-${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} $@
+${prefix}/do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} "$@"
