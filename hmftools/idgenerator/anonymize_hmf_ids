@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/do_run_hmf_id_generator
 password=$1

@@ -14,7 +14,7 @@ somatic_vcf=$(locate_purple_somatics ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 linx_jar=$(locate_prod_linx)
 
-echo "[INFO] Loading amber data for ${run_dir}}"
+echo "[INFO] Loading amber data for ${run_dir}"
 ${prefix}/do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading purple data for ${run_dir}"

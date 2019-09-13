@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 bam_slicer_script=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer
 

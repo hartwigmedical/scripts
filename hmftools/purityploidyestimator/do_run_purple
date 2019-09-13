@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 source load_metadata
 
@@ -58,4 +59,4 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -gc_profile ${gc_profile} \
     -sv_recovery_vcf ${sv_recovery_vcf} \
     ${db_args} \
-    $@
+    "$@"

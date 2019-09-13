@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 
 strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.4/strelka-post-process.jar
@@ -11,7 +12,7 @@ snpeff_db="GRCh37.75"
 
 run_dir=$1
 
-if [ -z "run_dir" ];
+if [ -z "${run_dir}" ];
   then
     echo "Usage: $ ./mnv_detector_and_merger <run_dir>"
     echo "   runpath = Path to pipeline run dir"
@@ -21,8 +22,8 @@ if [ -z "run_dir" ];
     exit 1
 fi
 
-set_name=$( basename ${run_dir})
-somatic_input_vcf=$( find ${run_dir} -wholename "*/somaticVariants/*_post_processed.vcf.gz" )
+set_name=$(basename ${run_dir})
+somatic_input_vcf=$(find ${run_dir} -wholename "*/somaticVariants/*_post_processed.vcf.gz" )
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 ## Some sanity checks
@@ -31,7 +32,7 @@ if [[ ! -f "${somatic_input_vcf}" ]]; then echo "[EXIT] Vcf not found" && exit 1
 if [[ -z "${tumor_sample}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
 
 sliced_tumor_bam="${tumor_sample}_dedup.realigned.sliced.bam"
-somatic_vcf_file_name=`basename ${somatic_input_vcf}`
+somatic_vcf_file_name=$(basename ${somatic_input_vcf})
 somatic_vcf_name="${somatic_vcf_file_name%.*}"
 mnv_bed="${somatic_vcf_name}.mnvs.bed"
 mnv_vcf="${somatic_vcf_name}.potential_mnvs.vcf"

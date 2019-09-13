@@ -7,7 +7,6 @@ bachelor_output_dir=$1 && shift
 bachelor_config=$1 && shift
 credentials=$1 && shift
 bachelor_jar=$1 && shift
-bachelor_pp_jar=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -20,7 +19,6 @@ set=$( basename ${run_dir})
 
 # File Locations
 clinvar_filters=/data/common/dbs/bachelor/bachelor_clinvar_filters.csv
-bach_run_dir=${run_dir}
 bach_output_dir=${run_dir}/${bachelor_output_dir}/
 
 if [ ! -d "${bach_output_dir}" ]; then
@@ -94,4 +92,4 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G \
     -ref_genome ${ref_genome_file} \
     -write_to_db \
     -log_debug \
-    $@
+    "$@"
