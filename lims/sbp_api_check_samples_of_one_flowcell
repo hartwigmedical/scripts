@@ -4,6 +4,7 @@ SAMPLESHEET=$1
 SAMPLESHEETFILE=$( basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )
 FLOWCELLID=${SAMPLESHEETFILE: -9}
 SEQRUN=$( query_sbp_api -type flowcells | grep ${FLOWCELLID} | cut -f 1 )
+RUNDATE=${SAMPLESHEETFILE:0:6}
 
 ## only proceed if flowcell actually done at SBP
 if [[ -z $SEQRUN ]]; then 
@@ -17,5 +18,5 @@ idx_id=$( cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID 
 ## and check status of each unique Sample_ID in sheet
 cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
     SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
-    echo -e "${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
+    echo -e "${RUNDATE}\t${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
 done
