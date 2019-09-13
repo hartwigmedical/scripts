@@ -286,10 +286,11 @@ fig3_sv_at_cn_transition = cn_transition_plot %>%
   mutate(caller_n=n()) %>%
   group_by(caller, distance_bin) %>%
   summarise(portion=n()/max(caller_n)) %>%
+  bind_rows(data.frame(caller="ascat", distance_bin="10-99 bp", portion=0)) %>%
 ggplot() +
   aes(x=caller, y=portion, fill=distance_bin) +
   geom_col() +
-  scale_fill_manual(values=c("#ABD9E9", "#B6A9B6", "#C17983","#CC494F", "#D7191C"), name="Distance to SV") +
+  scale_fill_manual(values=c("#ABD9E9", "#B4B3C0", "#BD8C97","#C5666E", "#CE3F45", "#D7191C"), name="Distance to SV") +
   scale_y_continuous(labels=percent) +
   labs(
     x="",
