@@ -8,20 +8,18 @@ run_dir=$1 && shift
 patient_db_jar=$1 && shift
 credentials=$1 && shift
 
-prefix=$(dirname $(readlink $0 || echo $0))
-
 somatic_vcf=$(locate_purple_somatics ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 linx_jar=$(locate_prod_linx)
 
 echo "[INFO] Loading amber data for ${run_dir}"
-${prefix}/do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_jar}
+do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading purple data for ${run_dir}"
-${prefix}/do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
+do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading somatic variants for ${run_dir}"
-${prefix}/do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading structural variants for ${run_dir}"
 do_run_load_sv ${tumor_sample} ${run_dir}/sv ${structural_vcf} ${credentials} ${patient_db_jar}
