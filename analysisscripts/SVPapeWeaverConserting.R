@@ -9,6 +9,7 @@ library(GenomicRanges)
 library(StructuralVariantAnnotation)
 library(BSgenome.Hsapiens.UCSC.hg19)
 options(stringsAsFactors=FALSE)
+source("libSVPaper.R")
 
 basedir="~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis/colo829/"
 
@@ -252,7 +253,8 @@ addWorksheet(suppfigurewb, "cntransitions")
 writeData(suppfigurewb, "cntransitions", cn_transistions %>% as.data.frame())
 saveWorkbook(suppfigurewb, file = paste0(basedir, "../figures/supptable_purple_conserting_weaver_cn_comparison.xlsx"), overwrite = TRUE)
 
-cn_transistions$caller = factor(cn_transistions$caller, levels=c("purple", "conserting", "weaver", "ascat"))
+purple_first = function(x) {factor(x, levels=c("purple", "conserting", "weaver", "ascat")) }
+cn_transistions$caller = purple_first(cn_transistions$caller)
 ########
 # Plots
 cn_size_distribution = c(ascat_cn, purple_cn, conserting_cn, weaver_cn) %>%
@@ -286,11 +288,11 @@ fig3_sv_at_cn_transition = cn_transition_plot %>%
   mutate(caller_n=n()) %>%
   group_by(caller, distance_bin) %>%
   summarise(portion=n()/max(caller_n)) %>%
-  bind_rows(data.frame(caller="ascat", distance_bin="10-99 bp", portion=0)) %>%
+  ungroup() %>%
 ggplot() +
   aes(x=caller, y=portion, fill=distance_bin) +
   geom_col() +
-  scale_fill_manual(values=c("#ABD9E9", "#B4B3C0", "#BD8C97","#C5666E", "#CE3F45", "#D7191C"), name="Distance to SV") +
+  scale_fill_manual(values=c("#ABD9E9", "#B4B3C0", "#BD8C97","#C5666E", "#CE3F45", "#D7191C"), name="Distance to SV", drop=FALSE) +
   scale_y_continuous(labels=percent) +
   labs(
     x="",
@@ -338,15 +340,7 @@ ggplot() +
 fig3_cn_consistency
 ggsave(filename=paste0(basedir, "/cn_consistency.pdf"), width=5, height=4)
 
-fig3_comparison = plot_grid(
-  fig3_sv_at_cn_transition + theme(legend.position="none"),
-  get_legend(fig3_sv_at_cn_transition),
-  fig3_cn_consistency + theme(legend.position="none"),
-  get_legend(fig3_cn_consistency),
-  ncol=2, nrow=2, rel_widths=c(3.2,2))
-figsave("purple_conserting_weaver_comparisons", fig3_comparison, width=4, height=8)
-
-cn_transistions %>%
+fig3_sv_at_cn_transition_percentage = cn_transistions %>%
   as.data.frame() %>%
   filter(!is.na(cn_error)) %>%
   mutate(cn_percentage_error=cn_error/pmax(cn_left, cn_right)) %>%
@@ -361,12 +355,23 @@ cn_transistions %>%
 ggplot() +
   aes(x=caller, y=portion, fill=cn_percentage_error_bin) +
   geom_col() +
-  scale_fill_brewer(palette="YlOrRd", name="Magnitude of CN\ninconsistency (%)") +
+  scale_fill_manual(values=c("#ABD9E9", "#B4B3C0", "#BD8C97","#C5666E", "#CE3F45", "#D7191C"), name="Magnitude of CN\ninconsistency (%)") +
   scale_y_continuous(labels=percent) +
+  scale_x_discrete(drop=FALSE) +
   labs(
-    title="CN consistency of isolated breakpoints",
-    y="Portion of breakpoints")
+    title="",
+    y="Portion of breakpoints") +
+  theme(axis.text.x = element_text(angle = 90))
+fig3_sv_at_cn_transition_percentage
 ggsave(filename=paste0(basedir, "/cn_consistency_percentage.pdf"), width=5, height=4)
+
+fig3_comparison = plot_grid(
+  fig3_sv_at_cn_transition + theme(legend.position="none"),
+  get_legend(fig3_sv_at_cn_transition),
+  fig3_sv_at_cn_transition_percentage + theme(legend.position="none"),
+  get_legend(fig3_sv_at_cn_transition_percentage),
+  ncol=2, nrow=2, rel_widths=c(3.2,2))
+figsave("../colo829/purple_conserting_weaver_comparisons", fig3_comparison, width=4, height=8)
 
 
 cn_transistions %>%
