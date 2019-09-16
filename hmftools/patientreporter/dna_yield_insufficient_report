@@ -20,4 +20,4 @@ ${prefix}/do_run_base_patient_reporter \
     -qc_fail_reason low_dna_yield \
     -tumor_sample ${tumor_sample} \
     -ref_sample ${ref_sample} \
-     "$@"
+    "$@"
