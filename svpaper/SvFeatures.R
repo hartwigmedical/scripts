@@ -38,6 +38,16 @@ foldbackBreakends = beData %>% filter(IsFoldback) %>%
 featuredBreakends = bind_rows(dupBreakends, delBreakends) %>% bind_rows(sglBreakends) %>% bind_rows(lineBreakends) %>% bind_rows(tiBreakends) %>% bind_rows(foldbackBreakends)
 featuredBreakends = featuredBreakends %>% mutate(feature = factor(feature, levels = featureLevels, ordered = T))
 
+averageGC_1k = read.table("~/hmf/resources/GC_profile.1000bp.cnp", sep = '\t', header = F, stringsAsFactors = F) %>%
+  mutate(chromosome = V1, start = V2 + 1, end = start + 1000, gc = V3) %>%
+  select(chromosome, start, end, gc) %>%
+  filter(gc > -1)
+
+gcRegions = GRanges(averageGC_1k$chromosome, ranges = IRanges(start = averageGC_1k$start, end = averageGC_1k$end)) 
+featuredBreakendRegions = GRanges(featuredBreakends$Chr, ranges = IRanges(start = featuredBreakends$Pos, end = featuredBreakends$Pos)) 
+ol = as.matrix(findOverlaps(gcRegions, featuredBreakendRegions, type = "any"))
+featuredBreakends[ol[, 2], "gc"] = averageGC_1k[ol[, 1], "gc"]
+
 save(featuredBreakends, file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")
 
 
