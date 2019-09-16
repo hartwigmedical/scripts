@@ -29,4 +29,4 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -cp ${sv_jar} com.hartwig.hmftools.pa
     -ref_genome ${ref_genome} \
     -sv_data_dir ${output_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    "$@"

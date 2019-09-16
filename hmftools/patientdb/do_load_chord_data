@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-run_dir=$1 && shift
 tumor_sample=$1 && shift
+run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 

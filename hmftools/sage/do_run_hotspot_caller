@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 source load_metadata
 
-prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 
 SAGE_PON=/data/common/dbs/sage/SAGE_PON.vcf.gz
@@ -33,7 +33,6 @@ fi
 
 hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
 if [ ! -f ${hotspot_vcf} ]; then
-
     hotspot_caller_vcf=${out_dir}/${sample}.hotspot.unfiltered.vcf.gz
 
     java -Xmx8G -Xms4G \
@@ -99,5 +98,4 @@ if [ ! -f ${final_vcf} ]; then
         -hotspot_vcf ${hotspot_vcf} \
         -known_hotspots ${hotspot_tsv} \
         -out ${final_vcf}
-
 fi

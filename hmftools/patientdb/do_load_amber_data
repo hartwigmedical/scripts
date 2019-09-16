@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
+sample=$1 && shift
 amber_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
-sample=$1 && shift
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -17,4 +17,4 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -bed /data/common/dbs/germline_het_pon_hg19/GermlineSnp.hg19.bed \
     -amber_dir ${amber_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    "$@"

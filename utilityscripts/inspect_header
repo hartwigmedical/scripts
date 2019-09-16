@@ -1,14 +1,15 @@
 #!/bin/bash
+
 inputFile=$1
 delimChar=${2:-"\t"}
 
 ## retrieve header line
-fieldString=$( cat $inputFile | grep -v "^##" | grep -v "^\*" | head -1 | tr "${delimChar}" " ");
+fieldString=$(cat ${inputFile} | grep -v "^##" | grep -v "^\*" | head -1 | tr "${delimChar}" " ");
 
 ## convert into array
 headerFields=($fieldString)
 
 ## print to screen
 for i in "${!headerFields[@]}"; do 
-  printf "%s\t%s\n" "$(expr $i + 1)" "${headerFields[$i]}"
+    printf "%s\t%s\n" "$(expr $i + 1)" "${headerFields[$i]}"
 done

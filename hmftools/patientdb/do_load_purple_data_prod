@@ -1,8 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
 credentials=$(locate_prod_database_credentials)

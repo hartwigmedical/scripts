@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-fileName=$1
+file_name=$1
 
-if [ -z "fileName" ]; then
+if [ -z "${file_name}" ]; then
     echo "[ERROR] No log file name. Exiting"
     exit 1
 fi
 
-cat ${fileName} | grep -Pi "error|excep|fail" | grep -Pv "^#.*(E|e)rrors :.*\(" | grep -Pv "errorCorrection|OnFirstError|download:"
+cat ${file_name} | grep -Pi "error|excep|fail" | grep -Pv "^#.*(E|e)rrors :.*\(" | grep -Pv "errorCorrection|OnFirstError|download:"

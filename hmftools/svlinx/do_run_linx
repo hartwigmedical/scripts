@@ -16,7 +16,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
-
 viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
 fusion_pairs_csv=/data/common/dbs/knowledgebases/output/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousFive.csv
@@ -26,8 +25,6 @@ fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
 
-# echo "${sample} linx data : ${output_dir}"
-
 if [ -d ${output_dir} ]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
     if [[ ! -z ${linx_files} ]]; then
@@ -36,8 +33,6 @@ if [ -d ${output_dir} ]; then
 else
     mkdir -p ${output_dir}
 fi
-
-# echo "[INFO] Running LINX"
 
 java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \
@@ -55,5 +50,4 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -chaining_sv_limit 0 \
     -check_drivers \
     -write_vis_data \
-    $@
-
+    "$@"

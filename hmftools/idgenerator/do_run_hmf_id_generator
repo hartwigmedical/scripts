@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 run_mode=$1
 id_generator_jar=/data/common/tools/hmf-id-generator_v2.0/hmf-id-generator.jar
