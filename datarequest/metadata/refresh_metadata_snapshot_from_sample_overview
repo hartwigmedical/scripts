@@ -3,7 +3,7 @@
 # 1. Create an export of the first sheet of sample overview in tsv format and copy to datastore
 # 2. Run this script to refresh the datarequest metadata file.
 
-dateString=$( date +'%y%m%d' )
+dateString=$(date +'%y%m%d')
 sampleOverviewTsv="/data/data_archive/datarequests/procedure/files/sampleOverview.tsv"
 if [[ ! -z "$1" ]]; then
     sampleOverviewTsv=$1
@@ -11,7 +11,7 @@ fi
 
 SCRIPT_TASK="DataRequestMetadataSetup"
 ROOT_DIR="/data/data_archive/datarequests/procedure"
-CODE_DIR=`dirname $(readlink $0 || echo $0)`
+CODE_DIR=$(dirname $(readlink $0 || echo $0))
 FILE_DIR="${ROOT_DIR}/files"
 CLIN_SQL_FILE="${CODE_DIR}/sql_clinical.sql"
 DRUP_SQL_FILE="${CODE_DIR}/sql_drup2cpct.sql"
