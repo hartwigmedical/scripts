@@ -15,7 +15,7 @@ if [ -z ${ref_sample} ]; then
     exit 1;
 fi
 
-${prefix}/pilot_do_run_base_patient_reporter \
+${prefix}/do_run_base_patient_reporter \
     -qc_fail \
     -qc_fail_reason insufficient_tissue_delivered \
     -tumor_sample ${tumor_sample} \

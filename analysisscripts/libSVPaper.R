@@ -9,7 +9,7 @@ library(scales)
 library(RMySQL)
 
 # Paper common
-dropbox = "~/../Dropbox (HMF Australia)/HMF Australia team folder"
+dropbox = "~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Variant Analysis"
 if (!file.exists(dropbox)) {
   dropbox = "~/Dropbox/HMF Australia team folder/Structural Variant Analysis"
 }
