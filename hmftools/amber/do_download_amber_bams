@@ -4,7 +4,7 @@ source load_metadata
 
 prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
-set=$( basename ${run_dir})
+set=$(basename ${run_dir})
 
 amber_bed=/data/common/dbs/germline_het_pon_hg19/GermlineHetPon.hg19.bed
 

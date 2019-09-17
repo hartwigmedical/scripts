@@ -9,8 +9,7 @@ sample=$2
 bed_file=$3
 output_file=$4
 
-if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ];
-  then
+if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ]; then
     echo "Usage: $ ./bam_slicer_normal set sample bed_file output_file"
     echo "   set eg 180101_HMFregCPCT..."
     echo "   sample	sample to search for. e.g CPCT11111111R"

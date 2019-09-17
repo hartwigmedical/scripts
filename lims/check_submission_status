@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-#
+
 submission=$1
 submissionDir="/data/submissions/${submission}"
 
 echo ""
-echo "[INFO] Checking $submission"
+echo "[INFO] Checking ${submission}"
 if [[ -d ${submissionDir} ]]; then 
-  echo "[INFO] Submission directory already exists (${submissionDir})"
+    echo "[INFO] Submission directory already exists (${submissionDir})"
 fi
 
-      analysisType=$( query_lims -type submissions -json | jq -r ".[] | select(.submission == \"${submission}\") | .analysis_type" )
-  totalLimsSamples=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
-   totalLimsFailed=$( query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep Failed | wc -l )
-      totalSamples=$( query_sbp_api -type samples -filter "submission=${submission}" | grep -v "^#" | wc -l )
- totalSamplesReady=$( query_sbp_api -type samples -filter "submission=${submission}" -filter "status=Ready" | grep -v "^#" | wc -l )
-         totalRuns=$( query_sbp_api -type runs -filter "name=${submission}" | grep -v "^#" | wc -l )
-totalRunsValidated=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -v "^#" | wc -l )
-     totalRunsDone=$( query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated|Failed|SnpCheck" | grep -v "^#" | wc -l )
+analysisType=$(query_lims -type submissions -json | jq -r ".[] | select(.submission == \"${submission}\") | .analysis_type" )
+totalLimsSamples=$(query_lims -type samples -filter "submission=${submission}" | grep -cv "^#")
+totalLimsFailed=$(query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep -c Failed)
+totalSamples=$(query_sbp_api -type samples -filter "submission=${submission}" | grep -cv "^#")
+totalSamplesReady=$(query_sbp_api -type samples -filter "submission=${submission}" -filter "status=Ready" | grep -cv "^#")
+totalRuns=$(query_sbp_api -type runs -filter "name=${submission}" | grep -cv "^#")
+totalRunsValidated=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -cv "^#")
+totalRunsDone=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated|Failed|SnpCheck" | grep -cv "^#")
 
 echo "[INFO] Analysis type for $submission in lims is \"$analysisType\""
 echo "[INFO] $totalLimsSamples samples found in LIMS (of which ${totalLimsFailed} are failed by lab)"
@@ -36,17 +36,17 @@ echo ""
 ## We should provide nextseq data also via portal from now on
 ## but will keep next block for some time in case we still need
 ## to share fastq from datastore
-if [ "" ]; then
-  submTar="${submissionDir}/${submission}.tar"
-  echo "--- EXTRA PROCEDURE IN CASE OF MANUAL NEXTSEQ PROCESSING ---"
-  echo "[INFO] In case of nextseq run you can get yield/q30 info with:"
-  echo "  seqRun=\"ENTER RUN NAME\" # eg seqRun=180101_NB500901_0000_AHXXXXXXX"
-  echo "  pathToSeqRun=/data/data_archive/next_seq/\${seqRun}"
-  echo "  check_bcl2fastq_conversion -run \${pathToSeqRun} | grep SAMPLE | awk '{ print \$11\"\t\"\$9\"\t\"\$4\"\t\t\"\$3\"\t\"\$10 }' | sort -k2"
-  echo "[INFO] And create tar with:"
-  echo "  cd \${pathToSeqRun}/Data/Intensities/BaseCalls"
-  echo "  tar -cvf ${submTar} $submission"
-  echo "[INFO] And create tar listing later with:"
-  echo "  cd ${submDir}; tar -tf ${submTar} > ${submTar}.list; ls -l"
-  echo ""
-fi
+
+submTar="${submissionDir}/${submission}.tar"
+echo "--- EXTRA PROCEDURE IN CASE OF MANUAL NEXTSEQ PROCESSING ---"
+echo "[INFO] In case of nextseq run you can get yield/q30 info with:"
+echo "  seqRun=\"ENTER RUN NAME\" # eg seqRun=180101_NB500901_0000_AHXXXXXXX"
+echo "  pathToSeqRun=/data/data_archive/next_seq/\${seqRun}"
+echo "  check_bcl2fastq_conversion -run \${pathToSeqRun} | grep SAMPLE | awk '{ print \$11\"\t\"\$9\"\t\"\$4\"\t\t\"\$3\"\t\"\$10 }' | sort -k2"
+echo "[INFO] And create tar with:"
+echo "  cd \${pathToSeqRun}/Data/Intensities/BaseCalls"
+echo "  tar -cvf ${submTar} $submission"
+echo "[INFO] And create tar listing later with:"
+echo "  cd ${submissionDir}; tar -tf ${submTar} > ${submTar}.list; ls -l"
+echo ""
+

@@ -4,14 +4,14 @@ source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
 include_germline=$1 && shift
 
-set_name=$( basename ${source_set_path} )
+set_name=$(basename ${source_set_path})
 dest_set_path=${dest_set_base_path}/${set_name}
 
 ## init
 mkdir -p ${dest_set_path}
 
 ## Find purple version
-purple_version=$( cat ${source_set_path}/purple/purple.version | grep version)
+purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 
 ## start symlinking
 echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple '${purple_version}'"
@@ -33,7 +33,7 @@ if [ ${include_germline} == "1" ]; then
     expected_file_count=12
 fi
 
-somatic_file_count=$( ls ${dest_set_path} | wc -l)
+somatic_file_count=$(ls ${dest_set_path} | wc -l)
 
 if [ ${somatic_file_count} -ne ${expected_file_count} ]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"

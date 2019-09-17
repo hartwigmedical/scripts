@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SAMPLESHEET=$1
 SAMPLESHEETFILE=$( basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )

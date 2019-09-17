@@ -5,9 +5,9 @@ metadata_tsv=$1 && shift
 entity_name=$1 && shift
 base_json_dir=$1 && shift
 
-entity_sbp_id=$( query_sbp_api -type entities | grep ${entity_name} | cut -f3 )
+entity_sbp_id=$(query_sbp_api -type entities | grep ${entity_name} | cut -f3 )
 cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
-    set_id=$( query_sbp_api -type sets | grep ${set_name} | cut -f5)
+    set_id=$(query_sbp_api -type sets | grep ${set_name} | cut -f5)
 
     if [ ! -z "${set_id}" ]; then
         echo "[DEBUG] Creating ${tumor_bam_json}"

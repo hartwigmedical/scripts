@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## setup main variables
 DATESTR="$( date '+%y%m%d' )"
@@ -20,19 +20,19 @@ mkdir -p ${DAY_DIR}
 ## Setup cpct/received-samples/in-process variables
 cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.2.accdb"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
-   cpctTxt="${cpctTarget}.csv"
+cpctTxt="${cpctTarget}.csv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
 sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2019 v5.4.xlsx"
 sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
-   sampTxt="${sampTarget}_samp.tsv"
+sampTxt="${sampTarget}_samp.tsv"
 sampLatest="${SYM_DIR}/lims_samp"
-   submTxt="${sampTarget}_subm.tsv"
+submTxt="${sampTarget}_subm.tsv"
 submLatest="${SYM_DIR}/lims_subm"
 
 procSource="${DAY_DIR}/HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
 procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
-   procTxt="${procTarget}.tsv"
+procTxt="${procTarget}.tsv"
 procLatest="${SYM_DIR}/lims_proc"
 
 ## Retrieve files from NAS
@@ -83,12 +83,12 @@ echo "[INFO]   $procLatest"
 ln -sfn $procTxt $procLatest
 
 ## Gather some metrics
-totalLines=$( cat $cpctLatest | grep -v "^Hospital" | wc -l )
-totalSampl=$( cat $cpctLatest | grep -v "^Hospital" | cut -d"," -f6 | sort | uniq | wc -l )
-totalBarco=$( cat $cpctLatest | grep -v "^Hospital" | cut -d"," -f4 | sort | uniq | wc -l )
+totalLines=$(cat ${cpctLatest} | grep -cv "^Hospital")
+totalSampl=$(cat ${cpctLatest} | grep -v "^Hospital" | cut -d"," -f6 | sort | uniq | wc -l )
+totalBarco=$(cat ${cpctLatest} | grep -v "^Hospital" | cut -d"," -f4 | sort | uniq | wc -l )
 
 echo "[INFO] Stats:"
 for latestFile in $cpctLatest $submLatest $sampLatest $procLatest; do
-  totalLines=$( cat $latestFile | wc -l )
-  echo "[INFO]   LineCount of $latestFile = $totalLines"
+    totalLines=$( cat $latestFile | wc -l )
+    echo "[INFO]   LineCount of $latestFile = $totalLines"
 done
