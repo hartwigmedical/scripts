@@ -23,7 +23,7 @@ echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-${prefix}/extractAndPredictHRD.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+${prefix}/extractSigPredictHRD.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
 count_files_chord_pilot=$(ls ${working_dir} | wc -l)
 
