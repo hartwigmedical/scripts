@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 
 credentials=$1 && shift
@@ -11,4 +12,4 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadCanonicalTranscripts \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    "$@"

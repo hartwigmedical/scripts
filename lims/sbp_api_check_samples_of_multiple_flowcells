@@ -1,14 +1,14 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SAMPLESHEETS=( "$@" )
 
 ## only proceed if input
-if [[ -z $SAMPLESHEETS ]]; then 
+if [[ -z ${SAMPLESHEETS} ]]; then
     echo "[WARN] No samplesheet paths given?"
     exit 1
 fi
 
 ## Flowcell done at SBP so get info per sample
 for SAMPLESHEET in "${SAMPLESHEETS[@]}"; do
-   sbp_api_check_samples_of_one_flowcell ${SAMPLESHEET}
+    sbp_api_check_samples_of_one_flowcell ${SAMPLESHEET}
 done | sort

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 source api_functions
 
@@ -9,8 +9,7 @@ sample=$2
 bed_file=$3
 output_file=$4
 
-if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ];
-  then
+if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ]; then
     echo "Usage: $ ./bam_slicer_normal set sample bed_file output_file"
     echo "   set eg 180101_HMFregCPCT..."
     echo "   sample	sample to search for. e.g CPCT11111111R"
@@ -25,7 +24,7 @@ if [ -z "$run_info" ]; then
     exit 1
 fi
 
-run_bucket=`echo ${run_info} | cut -d ' ' -f5`
+run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
 bampath_in_bucket=$(locate_ref_bam_for_set_in_bucket ${run_bucket} ${set})
 bam_index="${bampath_in_bucket}.bai"

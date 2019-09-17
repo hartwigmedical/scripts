@@ -227,25 +227,47 @@ nearby_summary_df = nearby_summary_df %>%
   )})
 sum(nearby_summary_df$log10pvalue)
 
-
-long_anchor_df = findOverlaps(gr, gr, maxgap=20000, ignore.strand=TRUE) %>%
-  as.data.frame() %>%
-  filter(
-    gr$id[queryHits] != gr$id[subjectHits],
-    gr$sampleid[queryHits] == gr$sampleid[subjectHits],
-    as.logical(strand(gr)[queryHits] == "-"),
-    as.logical(strand(gr)[subjectHits] == "+"),
-    start(gr)[queryHits] <= start(gr)[subjectHits]) %>%
-  mutate(
-    beid1=gr$beid[queryHits],
-    beid2=gr$beid[subjectHits],
-    distance=abs(start(gr[queryHits])-start(gr[subjectHits])),
-    anchorSupportDistance1=gr$anchorSupportDistance[queryHits],
-    anchorSupportDistance2=gr$anchorSupportDistance[subjectHits]) %>%
-  dplyr::select(-queryHits, -subjectHits)
+# process each sample separately to avoid hotspot pairing combinatoric explosion
+long_anchor_df =
+  data.frame(sampleid=unique(gr$sampleid)) %>%
+  group_by(sampleid) %>%
+  do({
+    samplegr = gr[gr$sampleid==.$sampleid]
+    findOverlaps(samplegr, samplegr, maxgap=20000, ignore.strand=TRUE) %>%
+    as.data.frame() %>%
+    filter(
+      samplegr$id[queryHits] != samplegr$id[subjectHits],
+      samplegr$sampleid[queryHits] == samplegr$sampleid[subjectHits],
+      as.logical(strand(samplegr)[queryHits] == "-"),
+      as.logical(strand(samplegr)[subjectHits] == "+"),
+      start(samplegr)[queryHits] <= start(samplegr)[subjectHits]) %>%
+    mutate(
+      beid1=samplegr$beid[queryHits],
+      beid2=samplegr$beid[subjectHits],
+      distance=abs(start(samplegr[queryHits])-start(samplegr[subjectHits])),
+      anchorSupportDistance1=samplegr$anchorSupportDistance[queryHits],
+      anchorSupportDistance2=samplegr$anchorSupportDistance[subjectHits]) %>%
+    dplyr::select(-queryHits, -subjectHits)
+  })
 
 long_anchor_df %>%
   group_by(beid1) %>%
   summarise(
     within500=sum(distance <= 500),
-    within20000=n())
+    within20000=n()) %>%
+  ungroup() %>%
+  summarise(
+    has500 = sum(within500 > 0),
+    has20000 = sum(within20000 > 0),
+    has500percent=has500/length(gr),
+    has20000percent=has20000/length(gr),
+    longreadimprovementpercent=has20000percent - has500percent)
+
+
+
+
+
+
+
+
+

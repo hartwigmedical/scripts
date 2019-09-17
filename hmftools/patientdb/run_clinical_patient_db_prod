@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
 patient_db_jar=$(locate_prod_patient_db)
@@ -10,7 +11,7 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
-java -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
+java -Dorg.jooq.no-logo=true -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
     -runs_dir ${runs_dir} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \

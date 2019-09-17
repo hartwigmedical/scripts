@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 
 run_dir=$1 && shift
 
 base_path="/data/common"
-if [ -z "`hostname | grep datastore`" ]; then
+if [ -z "$(hostname | grep datastore)" ]; then
     # Common folder does not exist on crunches...
     base_path="/data"
 fi
@@ -12,14 +13,12 @@ fi
 cobalt_jar=${base_path}/tools/cobalt_v1.4/cobalt.jar
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 output_dir=${run_dir}/cobalt
-metadata=${run_dir}/metadata
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 tumor_ratio=$(find -L ${run_dir}/cobalt/ -type f -name ${tumor_sample}.cobalt)
-if [ -z ${tumor_ratio} ]
-then
+if [ -z ${tumor_ratio} ]; then
     rm -f ${output_dir}/*.len
 
     echo "[INFO] Calculating cobalt ratios for sample" ${tumor_sample}

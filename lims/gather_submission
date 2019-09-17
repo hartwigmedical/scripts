@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 SUBMISSIONS_DIR="/data/submissions"
 HMF_QUERY_SCRIPT="query_lims"
@@ -32,10 +32,10 @@ mkdir -p ${outPath} || exit 1
 ## gather submission info from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get submission info"
 cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${subJson}
-pName=$( cat ${subJson} | jq -r '.project_name' )
-cName=$( cat ${subJson} | jq -r '.contact_name' )
-cMail=$( cat ${subJson} | jq -r '.contact_email' )
-pType=$( cat ${subJson} | jq -r '.analysis_type' )
+pName=$(cat ${subJson} | jq -r '.project_name')
+cName=$(cat ${subJson} | jq -r '.contact_name')
+cMail=$(cat ${subJson} | jq -r '.contact_email')
+pType=$(cat ${subJson} | jq -r '.analysis_type')
 if [[ -z ${pName+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
 
 ## get all samples involved from LAB LIMS
@@ -54,8 +54,8 @@ ${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
 ${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${runJson}
 
 ## get counts to check completeness
-hmfCount=$( cat ${lmsFile} | grep -v "^#" | wc -l )
-sbpCount=$( cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+hmfCount=$(cat ${lmsFile} | grep -cv "^#")
+sbpCount=$(cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
 cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
@@ -70,15 +70,15 @@ echo -e "PROJECT\t${hmfCount}" >> ${repFile}
 echo -e "PROJECT\t${pType}" >> ${repFile}
 
 cat ${samFile} | grep -v ^# | while read line; do
-  subm=$( echo "${line}" | cut -f1 )
-  barc=$( echo "${line}" | cut -f2 )
-   q30=$( echo "${line}" | cut -f3 )
-  yldR=$( echo "${line}" | cut -f4 )
-   yld=$( echo "${line}" | cut -f5 )
-  name=$( echo "${line}" | cut -f7 )
-  date=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .arrival_date" )
-  sops=$( cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .lab_sop_versions" )
-  echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${repFile}
+    subm=$(echo "${line}" | cut -f1)
+    barc=$(echo "${line}" | cut -f2)
+    q30=$(echo "${line}" | cut -f3)
+    yldR=$(echo "${line}" | cut -f4)
+    yld=$(echo "${line}" | cut -f5)
+    name=$(echo "${line}" | cut -f7)
+    date=$(cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .arrival_date" )
+    sops=$(cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .lab_sop_versions" )
+    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${repFile}
 done
 
 

@@ -105,7 +105,7 @@ die "[EXIT] Input file not found ($drup_in_file): $!\n" unless -f $drup_in_file;
 
 ## gather inputs
 say "[INFO] Parsing SBP json to get runs info";
-my $runs_db = parseSBPjson( $SBP_API_SCRIPT, 'runs' );
+my $runs_db = parseSBPJson( $SBP_API_SCRIPT, 'runs' );
 say "[INFO] Parsing $clin_in_file";
 my $clin_db = parseSqlQueryFile( $clin_in_file, $INPUT_DELIM_CLINICAL, \%REQUIRED_FIELDS_CLINICAL, 'puritySampleId' );
 #print Dumper $clin_db;
@@ -115,7 +115,7 @@ say "[INFO] Parsing $samp_in_file";
 my $data_db = parseSampleOverview( $samp_in_file, $INPUT_DELIM_OVERVIEW, \%REQUIRED_FIELDS_OVERVIEW );
 
 ## make selection and merge
-$data_db = selectAllDoneCPCTandDRUP( $data_db );
+$data_db = selectAllDoneCPCTAndDRUPAndWIDE( $data_db );
 
 #say "[DEBUG] After selection before merge";
 #print Dumper $data_db;
@@ -138,7 +138,7 @@ performQualCheck( $data_db ) unless $skip_qc;
 
 ## -----
 
-sub parseSBPjson{
+sub parseSBPJson {
     my ($script, $type) = @_;
     my $cmd = "$script -type $type -json";
     my $txt = `$cmd`;
@@ -146,7 +146,7 @@ sub parseSBPjson{
     return $objects;
 }
 
-sub mergeData{
+sub mergeData {
     my ($data, $clin, $runs, $drup) = @_;
 
     #print Dumper($data);
@@ -201,7 +201,7 @@ sub findCpctIdForDrupPatient{
     return $drupID;
 }
 
-sub performQualCheck{
+sub performQualCheck {
     my ($objects) = @_;
 
     foreach my $obj ( @$objects ){
@@ -219,7 +219,7 @@ sub performQualCheck{
     }
 }
 
-sub selectSBPrun{
+sub selectSBPrun {
     my ($hmfobj, $sbp_runs) = @_;
     my $biopsy = $hmfobj->{ hmfExternalId };
 
@@ -242,7 +242,7 @@ sub selectSBPrun{
         next unless defined $obj->{ bucket };
         next if $obj->{ bucket } eq 'hmf_experiments';
         my $pipeline = $obj->{ pipeline };
-        #my $setname = $obj->{ hmfSetName };
+        #my $setName = $obj->{ hmfSetName };
         #next unless $obj->{ bucket } eq 'hmf_experiments';
 
         if ( $pipeline =~ /v(\d+)\.(\d+)/ ){
@@ -266,7 +266,7 @@ sub selectSBPrun{
     }
 }
 
-sub printSelection{
+sub printSelection {
     my ($objects, $fh) = @_;
 
     ## make order more readable
@@ -288,21 +288,21 @@ sub printSelection{
     }
 }
 
-sub selectAllDoneCPCTandDRUP{
+sub selectAllDoneCPCTAndDRUPAndWIDE {
     my ($objects) = @_;
     my @out = ();
 
     foreach my $obj ( @$objects ){
         next unless $obj->{ hmfStatus } eq 'Done';
-        next unless $obj->{ hmfLabel } =~ m/^(CPCT|DRUP)$/;
-        next unless $obj->{ hmfExternalId } =~ /^(CPCT|DRUP)\d{8}T/;
+        next unless $obj->{ hmfLabel } =~ m/^(CPCT|DRUP|WIDE)$/;
+        next unless $obj->{ hmfExternalId } =~ /^(CPCT|DRUP|WIDE)\d{8}T/;
         push( @out, $obj );
     }
 
     return \@out;
 }
 
-sub parseSqlQueryFile{
+sub parseSqlQueryFile {
     my ($file, $input_delim, $required_fields, $store_field_name) = @_;
     my %out = ();
 
@@ -343,7 +343,7 @@ sub parseSqlQueryFile{
     return \%out;
 }
 
-sub parseSampleOverview{
+sub parseSampleOverview {
     my ($file, $input_delim, $required_fields) = @_;
     my @out = ();
 
@@ -354,7 +354,7 @@ sub parseSampleOverview{
     while ( <$fh> ){
         chomp;
         next if $_ =~ /^#/;
-        $_ =~ s/\r//g; # remove any windowns ^M carriage return
+        $_ =~ s/\r//g; # remove any windows ^M carriage return
         my %tmp = ();
         my @values = split( $input_delim, $_ );
         foreach my $field_name ( @$header ){
@@ -371,7 +371,7 @@ sub parseSampleOverview{
     return \@out;
 }
 
-sub findAndCheckHeader{
+sub findAndCheckHeader {
     my ($fh, $delim, $required_fields_dict) = @_;
     my @requir_fields = keys %$required_fields_dict;
     my $requir_string = join( ", ", @requir_fields );

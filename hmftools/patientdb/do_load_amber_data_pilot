@@ -1,12 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_purple)
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-${prefix}/do_load_amber_data ${run_dir}/amber ${credentials} ${patient_db_jar} ${sample}
+${prefix}/do_load_amber_data ${sample} ${run_dir}/amber ${credentials} ${patient_db_jar}

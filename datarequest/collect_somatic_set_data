@@ -4,18 +4,19 @@ source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
 include_germline=$1 && shift
 
-set_name=$( basename ${source_set_path} )
+set_name=$(basename ${source_set_path})
 dest_set_path=${dest_set_base_path}/${set_name}
 
 ## init
 mkdir -p ${dest_set_path}
 
 ## Find purple version
-purple_version=$( cat ${source_set_path}/purple/purple.version | grep version)
+purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 
 ## start symlinking
 echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple '${purple_version}'"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
+ln -s ${source_set_path}/purple/*.driver.catalog.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.purity.tsv ${dest_set_path}
@@ -27,13 +28,13 @@ ln -s ${source_set_path}/purple/plot/*.circos.png ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz.tbi ${dest_set_path}
 
-expected_file_count=11
+expected_file_count=12
 if [ ${include_germline} == "1" ]; then
     ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
-    expected_file_count=12
+    expected_file_count=13
 fi
 
-somatic_file_count=$( ls ${dest_set_path} | wc -l)
+somatic_file_count=$(ls ${dest_set_path} | wc -l)
 
 if [ ${somatic_file_count} -ne ${expected_file_count} ]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"

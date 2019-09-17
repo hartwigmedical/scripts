@@ -1,6 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-patient_reporter_dir=/data/common/tools/patientreporter_v7.3
+source locate_files
+
+patient_reporter_jar=$(locate_prod_patient_reporter)
 output_dir=/data/cpct/patient_reports
 
 lims=/data/lims
@@ -12,7 +14,7 @@ signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.p
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 
-java -Dorg.jooq.no-logo=true -jar ${patient_reporter_dir}/patient-reporter.jar \
+java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
     -output_dir ${output_dir} \
     -lims_dir ${lims} \
     -hospital_dir ${hospital_dir} \

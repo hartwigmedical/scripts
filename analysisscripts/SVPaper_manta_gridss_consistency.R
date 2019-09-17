@@ -199,7 +199,10 @@ figsave("manta_vs_gridss_call_percent_precise", width=3, height=3)
 #
 load(paste0(data_dir, "/probeMSI.RData"))
 load(paste0(data_dir, "/probeResult.RData"))
-rawprobeResult = probeResult
+rawprobeResult = probeResult %>%
+  ungroup() %>%
+  dplyr::select(-source) %>%
+  mutate(sampleId=sample_rename_lookup[sampleId])
 probeResult = rawprobeResult %>%
   ungroup() %>%
   filter(probeQuality >= 20) %>%

@@ -1,10 +1,11 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 input_dir=${run_dir}/sv_pilot/
 
 linx_jar=$(locate_pilot_linx)
 
-${prefix}/do_run_linx_visualiser ${run_dir} ${linx_jar} ${input_dir} $@
+${prefix}/do_run_linx_visualiser ${run_dir} ${linx_jar} ${input_dir} "$@"

@@ -4,8 +4,8 @@ source load_metadata
 source locate_files
 
 run_dir=$1 && shift
-linx_jar=$1 && shift
 
+linx_jar=$(locate_prod_linx)
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_dir=${run_dir}/purple
 output_dir=${run_dir}/sv
@@ -24,8 +24,6 @@ line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-# echo "${sample} linx data : ${output_dir}"
-
 if [ -d ${output_dir} ]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
     if [[ ! -z ${linx_files} ]]; then
@@ -34,8 +32,6 @@ if [ -d ${output_dir} ]; then
 else
     mkdir -p ${output_dir}
 fi
-
-# echo "[INFO] Running LINX"
 
 java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \
@@ -55,5 +51,5 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -chaining_sv_limit 0 \
     -check_drivers \
     -write_vis_data \
-    $@
+    "$@"
 

@@ -14,12 +14,12 @@ execute_sql_on_prod ${sql} > ${raw}
 head -1 ${raw} > ${flt}
 cat ${raw} | while read line; do
     patient=$( echo "${line}" | cut -f 1)
-    if [[ $( grep -c "${patient}" ${metadata_tsv} ) > 0 ]]; then
+    if [[ $( grep -c "${patient}" ${metadata_tsv} ) -gt 0 ]]; then
         echo "${line}"
     fi
 done >> ${flt}
 
 cp ${flt} ${out}
 
-item_count=$( grep -cv "^#" ${out})
+item_count=$(grep -cv "^#" ${out})
 echo "[DEBUG] Found ${item_count} items for ${name}"

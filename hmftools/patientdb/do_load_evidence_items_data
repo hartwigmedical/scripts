@@ -19,4 +19,3 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -tumor_sample ${tumor_sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -knowledgebase_dir ${knowledgebase_dir}
-

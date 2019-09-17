@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source load_metadata
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
-set=$( basename ${run_dir})
+set=$(basename ${run_dir})
 
 hotspot_bed=/data/common/dbs/sage/CodingRegions.bed
 

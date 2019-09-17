@@ -21,7 +21,7 @@ cat ${base_metadata_unfiltered_tsv} | grep "^#" > ${base_metadata_filtered_tsv}
 cat ${base_metadata_unfiltered_tsv} | grep -v "^#" | awk '$8 ~ /^PASS$/' | awk '$9 !~ /NO_TUMOR/' | awk '$10 > 0.195' >> ${base_metadata_filtered_tsv}
 
 ## report on debug filtering results.
-count_before=$( cat ${base_metadata_unfiltered_tsv} | grep -v "^#" | wc -l )
-count_after=$( cat ${base_metadata_filtered_tsv} | grep -v "^#" | wc -l )
+count_before=$(cat ${base_metadata_unfiltered_tsv} | grep -cv "^#")
+count_after=$(cat ${base_metadata_filtered_tsv} | grep -cv "^#")
 echo "[DEBUG] Metadata output filtered from ${count_before} to ${count_after}"
 
