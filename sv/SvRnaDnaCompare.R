@@ -146,17 +146,13 @@ nrow(rnaSampleIds %>% filter(SampleId %in% hpcDedupedSamples$sampleId))
 write.csv(rnaSampleIds %>% filter(SampleId %in% hpcDedupedSamples$sampleId) %>% select(SampleId),
           '~/data/sv/rna/rna_sample_ids_hpc_dedup.csv', row.names = F, quote = F)
 
-
-#nrow(rnaSampleIds %>% filter(SampleId %in% cohort$sampleId))
-#View(rnaMatchData %>% group_by(SampleId) %>% count())
-
-# restrict to HPC deduped cohort
-rnaMatchData = rnaMatchData %>% filter(RnaPhaseMatched=='true')
+# filter out unphased RNA fusions for all subsequent analysis
+# rnaMatchData = rnaMatchData %>% filter(RnaPhaseMatched=='true')
 
 # filter out sample which was swapped with another during RNA sampling
 rnaMatchData = rnaMatchData %>% filter(SampleId!='CPCT02330014T')
 
-# filter out unphased RNA fusions for all subsequent analysis
+# restrict to HPC deduped cohort
 rnaMatchData = rnaMatchData %>% filter(SampleId %in% hpcDedupedSamples$sampleId)
 
 rnaMatchDataBothSVs = annotate_rna_both_svs(rnaMatchData)
@@ -226,16 +222,13 @@ nrow(svaRnaFusions) # 12149
 View(svaRnaFusions %>% group_by(RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown) %>% 
        summarise(Count=n(),ExonsSkippedUp=sum(ExonsSkippedUp>0),ExonsSkippedDown=sum(ExonsSkippedDown>0)))
 
-View(svaRnaFusions %>% filter(CodingTypeUp=='3P_UTR') %>% group_by(KnownType) %>% count())
-View(svaRnaFusions %>% filter(CodingTypeUp=='3P_UTR'&KnownType!=''))
-
 rnaReadData = load_rna_match_data('~/data/sv/rna/read_data/SVA_RNA_READ_DATA.csv')
 rnaReadData = rnaReadData %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
 View(rnaReadData)
 
 # create a combined file from the RNA and LINX fusions files
 rnaCombinedData = merge(svaRnaFusions, 
-                        rnaMatchData %>% filter(RnaPhaseMatched=='true'),
+                        rnaMatchData, #  %>% filter(RnaPhaseMatched=='true')
                         by=c('SampleId','GeneNameUp','GeneNameDown'),all=T)
 
 rnaCombinedData = rnaCombinedData %>% mutate(HasDnaData=!is.na(KnownType.x)|DnaMatchType=='GENES'|DnaMatchType=='SV',
@@ -255,52 +248,24 @@ dnaRnaCombinedData = rnaCombinedData %>%
                   ifelse(HasDnaData,'DNA & RNA','RNA with DNA Support')))),
          KnownCategory=ifelse(KnownType=='Both-Prom','Both promiscuous',ifelse(KnownType=='5P-Prom',"5' promiscuous",ifelse(KnownType=='3P-Prom',"3' promiscuous",ifelse(KnownType=='Known','Known','Unknown')))),
          MatchType=ifelse(MatchCategory=='DNA & RNA','DNA & RNA',ifelse(MatchCategory=='DNA Only'|MatchCategory=='DNA with RNA Read Support','DNA Only',
-                   ifelse(MatchCategory=='RNA with DNA Support','RNA with DNA Support','RNA Only'))))
+                   ifelse(MatchCategory=='RNA with DNA Support','RNA with DNA Support','RNA Only'))),
+         SameGeneFusion=(as.character(GeneNameUp)==as.character(GeneNameDown)))
 
-# validation
-View(dnaRnaCombinedData %>% group_by(KnownType,KnownCategory) %>% count())
-View(dnaRnaCombinedData %>% group_by(KnownCategory,MatchCategory,MatchType) %>% count())
+# now filter for RNA unphased with no DNA support
+dnaRnaCombinedData = dnaRnaCombinedData %>% filter(!(HasRnaData&RnaPhaseMatched=='false'&(MatchCategory=='RNA with DNA Support'|MatchCategory=='RNA Only')))
 
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster))
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&TransViableUp=='true'&TransViableDown=='true'))
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&TransViableUp=='true'&TransViableDown=='true'))
+# convert RNA with DNA Support to be classified as RNA only
+dnaRnaCombinedData = dnaRnaCombinedData %>% mutate(MatchType=ifelse(MatchType=='RNA with DNA Support','RNA Only',MatchType))
 
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown) %>%
-       group_by(PhaseMatched.y,ViableFusion,KnownCategory,SameSV.y) %>% count %>% spread(SameSV.y,n))
+# filter out same-gene fusions
+dnaRnaCombinedData = dnaRnaCombinedData %>% filter(!SameGeneFusion)
 
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown) %>%
-       group_by(PhaseMatched.y,ViableFusion,KnownCategory,SameSV.y,CodingTypeUp.y,CodingTypeDown.y) %>% count %>% spread(SameSV.y,n))
-
-View(dnaRnaCombinedData %>% filter(HasDnaData&is.na(KnownType.x)) %>% group_by(KnownCategory) %>% count())
-
-View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown&CodingTypeUp.y=='5P_UTR'&CodingTypeDown.y=='Coding'))
-
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA Only'&KnownCategory!='Unknown'))
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support'&KnownCategory!='Unknown'))
-View(dnaRnaCombinedData %>% filter(MatchCategory=='DNA & RNA'&KnownCategory=='Known'))
-
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
-       group_by(PhaseMatched.y,ViableFusion,SameSV.y,RegionTypeUp.y,RegionTypeDown.y,CodingTypeUp.y,CodingTypeDown.y) %>% count())
-
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% group_by(SampleId) %>% count())
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support'&SameCluster&SameChain&DnaMatchType=='NONE'))
-
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
-       group_by(DnaMatchType,Unchained=(DnaMatchType=='NONE'&!SameChain),
-                Unclustered=(DnaMatchType=='NONE'&!SameCluster)) %>% count())
-
-View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
-       group_by(PhaseMatched.y,ViableFusion,SameSV.y,SameCluster,SameChain) %>% count())
-
-
-colnames(dnaRnaCombinedData)
-
-View(dnaRnaCombinedData %>% group_by(KnownCategory,MatchCategory) %>% count() %>% spread(MatchCategory,n))
-
-dnaRnaSummary = dnaRnaCombinedOutputData %>% filter(KnownCategory!='Unknown') %>% group_by(MatchType,KnownCategory) %>% count()
+dnaRnaSummary = dnaRnaCombinedData %>% filter(KnownCategory!='Unknown') %>% group_by(MatchType,KnownCategory) %>% count()
 View(dnaRnaSummary)
 View(dnaRnaSummary %>% spread(MatchType,n))
+View(dnaRnaCombinedData %>% group_by(MatchType,KnownCategory) %>% count() %>% spread(MatchType,n))
 
+View(dnaRnaCombinedData)
 
 # swap SampleIds for HMF IDs
 sampleIdMapping = read.csv('~/data/sv/sample_id_mapping.csv')
@@ -329,14 +294,14 @@ dnaRnaCombinedOutputData = dnaRnaCombinedData %>%
          CodingTypeUp,CodingTypeDown,RegionTypeUp,RegionTypeDown,TranscriptIdUp,TranscriptIdDown,
          ChainLinks,ChainLength,BreakendExonUp,BreakendExonDown,ExonsSkippedUp,ExonsSkippedDown)
 
-
-View(dnaRnaCombinedOutputData)
-View(dnaRnaCombinedOutputData %>% filter(is.na(HmfId)))
-
 dnaRnaCombinedOutputData = dnaRnaCombinedOutputData %>% mutate(DnaPosUp=ifelse(DnaPosUp>0,DnaPosUp,''),
                                                                DnaPosDown=ifelse(DnaPosDown>0,DnaPosDown,''),
                                                                DnaOrientUp=ifelse(DnaOrientUp!=0,DnaOrientUp,''),
-                                                               DnaOrientDown=ifelse(DnaOrientDown!=0,DnaOrientDown,''))
+                                                               DnaOrientDown=ifelse(DnaOrientDown!=0,DnaOrientDown,''),
+                                                               ChainLinks=ifelse(is.na(ChainLinks),0,ChainLinks),
+                                                               ChainLength=ifelse(is.na(ChainLength),0,ChainLength))
+
+View(dnaRnaCombinedOutputData)
 
 write.csv(dnaRnaCombinedOutputData,'~/data/sv/rna/LINX_dna_rna_combined_data_tmp.csv', quote = F, row.names = F)
 write.csv(dnaRnaCombinedOutputData %>% select(-SampleId,-ClusterId),'~/data/sv/rna/LINX_dna_rna_combined_data.csv', quote = F, row.names = F)
@@ -346,15 +311,10 @@ write.csv(dnaRnaCombinedOutputData %>% select(-SampleId,-ClusterId),'~/data/sv/r
 # Plot Results
 
 dnaRnaCombinedOutputData = read.csv('~/data/sv/rna/LINX_dna_rna_combined_data.csv')
-
 View(dnaRnaCombinedOutputData)
 
-
-# previously used dnaRnaCombinedData
 # create a summary view to plot the precision results 
-dnaRnaSummary = dnaRnaCombinedOutputData %>% filter(KnownCategory!='Unknown'&MatchType!='RNA with DNA Support') %>% group_by(MatchType,KnownCategory) %>% count()
-
-
+dnaRnaSummary = dnaRnaCombinedOutputData %>% filter(KnownCategory!='Unknown') %>% group_by(MatchType,KnownCategory) %>% count()
 
 View(dnaRnaSummary)
 View(dnaRnaSummary %>% spread(MatchType,n))
@@ -371,4 +331,46 @@ dnaRnaSummaryPlot = (ggplot(dnaRnaSummary , aes(x=KnownCategory, y=n, fill=Match
                      + coord_flip())
 
 print(dnaRnaSummaryPlot)
+
+
+## Validation
+View(dnaRnaCombinedData %>% group_by(KnownType,KnownCategory) %>% count())
+View(dnaRnaCombinedData %>% group_by(KnownCategory,MatchCategory,MatchType) %>% count())
+
+
+View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown) %>%
+       group_by(PhaseMatched.y,ViableFusion,KnownCategory,SameSV.y) %>% count %>% spread(SameSV.y,n))
+
+View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown) %>%
+       group_by(PhaseMatched.y,ViableFusion,KnownCategory,SameSV.y,CodingTypeUp.y,CodingTypeDown.y) %>% count %>% spread(SameSV.y,n))
+
+View(dnaRnaCombinedData %>% filter(HasDnaData&is.na(KnownType.x)) %>% group_by(KnownCategory) %>% count())
+
+View(dnaRnaCombinedData %>% filter(!HasDnaData&SameChain&SameCluster&SvMatchUp&SvMatchDown&CodingTypeUp.y=='5P_UTR'&CodingTypeDown.y=='Coding'))
+
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA Only'&KnownCategory!='Unknown'))
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support'&KnownCategory!='Unknown'))
+View(dnaRnaCombinedData %>% filter(MatchCategory=='DNA & RNA'&KnownCategory=='Known'))
+
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
+       group_by(PhaseMatched.y,ViableFusion,SameSV.y,RegionTypeUp.y,RegionTypeDown.y,CodingTypeUp.y,CodingTypeDown.y) %>% count())
+
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% group_by(SampleId) %>% count())
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support'&SameCluster&SameChain&DnaMatchType=='NONE'))
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support'&DistancePrevDown.y<0))
+View(dnaRnaCombinedData %>% filter(DistancePrevDown.y<0) %>% group_by(MatchCategory) %>% count())
+
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
+       group_by(DnaMatchType,Unchained=(DnaMatchType=='NONE'&!SameChain),
+                Unclustered=(DnaMatchType=='NONE'&!SameCluster),
+                InvalidDistanceDown=DistancePrevDown.y<0) %>% count())
+
+View(dnaRnaCombinedData %>% filter(MatchCategory=='RNA with DNA Support') %>% 
+       group_by(PhaseMatched.y,ViableFusion,SameSV.y,SameCluster,SameChain) %>% count())
+
+
+colnames(dnaRnaCombinedData)
+
+
+
 

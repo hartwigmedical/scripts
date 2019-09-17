@@ -440,7 +440,12 @@ View(rnaMatchData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
 View(rnaCombinedData %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
 
 
-svaRnaFusions
+View(dnaRnaCombinedData %>% filter(KnownCategory=='Known'&MatchType=='DNA & RNA'))
+
+View(dnaRnaCombinedOutputData %>% filter(KnownCategory=='Known'&MatchType=='DNA & RNA'))
+
+View(dnaRnaCombinedData %>% filter(!(PosUp.x %in% dnaRnaCombinedOutputData$DnaPosUp)))
+
 
 
 ## previous sensitivty plots
