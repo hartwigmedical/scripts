@@ -33,17 +33,17 @@ imply_ref_sample_from_tumor_sample() {
 
 load_tumor_sample_from_metadata() {
     local run_dir=$1
-    local tum_sample=""
+    local tumor_sample=""
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
-        tum_sample=$(jq -r '.tumor.sampleName' ${metadata})
+        tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
     else
         # Pre-V5 format
         metadata=${run_dir}/metadata
-        tum_sample=$(jq -r '.tumor_sample' ${metadata})
+        tumor_sample=$(jq -r '.tumor_sample' ${metadata})
     fi
-    echo "${tum_sample}"
+    echo "${tumor_sample}"
 }
 
 load_tumor_sample_barcode_from_metadata() {
@@ -59,18 +59,8 @@ load_tumor_sample_barcode_from_metadata() {
 
 load_joint_name_from_metadata() {
     local run_dir=$1
-    local joint_name=""
-    if [[ -f ${run_dir}/pipeline.version ]]; then
-        metadata=${run_dir}/metadata.json
-        ref_sample=$(jq -r '.reference.sampleName' ${metadata})
-        tum_sample=$(jq -r '.tumor.sampleName' ${metadata})
-        joint_name="${ref_sample}_${tum_sample}"
-    else
-        metadata=${run_dir}/metadata
-        ref_sample=$(jq -r '.ref_sample' ${metadata})
-        tum_sample=$(jq -r '.tumor_sample' ${metadata})
-        joint_name="${ref_sample}_${tum_sample}"
-    fi
-    echo "${joint_name}"
+    local ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+    local tumor_sample=$(load_ref_sample_from_metadata ${run_dir})
+    echo "${ref_sample}_${tumor_sample}"
 }
 
