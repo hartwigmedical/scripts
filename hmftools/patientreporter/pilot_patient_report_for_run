@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files
-source load_metadata
+source metadata_functions
 
 run_dir=$1 && shift
 

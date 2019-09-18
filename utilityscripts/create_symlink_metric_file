@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source load_metadata
+source metadata_functions
 
 set_path=$1
 set_name=$( basename $set_path )

@@ -28,7 +28,7 @@ load_ref_sample_barcode_from_metadata() {
 
 imply_ref_sample_from_tumor_sample() {
     local tumor_sample=$1
-    echo $(${tumor_sample} | cut -c1-12)R
+    echo $(echo ${tumor_sample} | cut -c1-12)R
 }
 
 load_tumor_sample_from_metadata() {

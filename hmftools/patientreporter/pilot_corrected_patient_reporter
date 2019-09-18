@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source load_metadata
+source metadata_functions
 
 run_dir=$1 && shift
 comments=$1 && shift
