@@ -60,7 +60,7 @@ load_tumor_sample_barcode_from_metadata() {
 load_joint_name_from_metadata() {
     local run_dir=$1
     local ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-    local tumor_sample=$(load_ref_sample_from_metadata ${run_dir})
+    local tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     echo "${ref_sample}_${tumor_sample}"
 }
 
