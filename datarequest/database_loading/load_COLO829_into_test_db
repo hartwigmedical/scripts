@@ -21,8 +21,8 @@ tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 
 # load purple data
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
-    -sample ${tumor_sample} \
     -purple_dir ${data_dir} \
+    -sample ${tumor_sample} \
     -data_request \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
@@ -30,10 +30,10 @@ java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
 
 # load somatic variants
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
-    -high_confidence_bed ${high_confidence_bed} \
     -vcf_file ${somatic_vcf} \
     -sample ${tumor_sample} \
     -hotspot ${hotspot_tsv} \
+    -high_confidence_bed ${high_confidence_bed} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url}
