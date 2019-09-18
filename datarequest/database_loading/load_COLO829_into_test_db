@@ -16,7 +16,7 @@ db_pass="test"
 
 # Resolving of actual file locations based on data dir
 structural_vcf=$(find ${data_dir} -name "*.purple.sv.ann.vcf.gz")
-somatic_vcf=$(find ${data_dir} -name "*_post_processed.vcf.gz")
+somatic_vcf=$(find ${data_dir} -name "*.purple.somatic.vcf.gz")
 tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 
 # load purple data
