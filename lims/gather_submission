@@ -20,10 +20,10 @@ logFile=${outPath}'/log.txt'
 bcsFile=${outPath}'/barcodes.txt'
 repFile=${outPath}'/report.txt'
 subJson=${outPath}'/submission.json'
-lmsJson=$( echo ${lmsFile} | sed 's/txt$/json/' )
-samJson=$( echo ${samFile} | sed 's/txt$/json/' )
-runJson=$( echo ${runFile} | sed 's/txt$/json/' )
-dateString=$( date )
+lmsJson=$(echo ${lmsFile} | sed 's/txt$/json/')
+samJson=$(echo ${samFile} | sed 's/txt$/json/')
+runJson=$(echo ${runFile} | sed 's/txt$/json/')
+dateString=$(date)
 
 ## create dirs
 if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi

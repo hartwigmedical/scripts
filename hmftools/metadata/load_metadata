@@ -15,6 +15,22 @@ load_ref_sample_from_metadata() {
     echo "${ref_sample}"
 }
 
+load_ref_sample_barcode_from_metadata() {
+    local run_dir=$1
+    local ref_sample_barcode=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata})
+    fi
+    echo "${ref_sample_barcode}"
+}
+
+imply_ref_sample_from_tumor_sample() {
+    local tumor_sample=$1
+    echo $(${tumor_sample} | cut -c1-12)R
+}
+
 load_tumor_sample_from_metadata() {
     local run_dir=$1
     local tum_sample=""
@@ -28,6 +44,17 @@ load_tumor_sample_from_metadata() {
         tum_sample=$(jq -r '.tumor_sample' ${metadata})
     fi
     echo "${tum_sample}"
+}
+
+load_tumor_sample_barcode_from_metadata() {
+    local run_dir=$1
+    local tumor_sample_barcode=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
+    fi
+    echo "${tumor_sample_barcode}"
 }
 
 load_joint_name_from_metadata() {

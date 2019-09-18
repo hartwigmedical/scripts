@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
 
-prefix=$(dirname $(readlink $0 || echo $0))
+source load_metadata
 
 tumor_sample=$1 && shift
-ref_sample=$1 && shift
 
 if [ -z ${tumor_sample} ]; then
     echo "[ERROR] No tumor sample provided"
     exit 1;
 fi
 
-if [ -z ${ref_sample} ]; then
-    echo "[ERROR] No ref sample provided"
-    exit 1;
-fi
+ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
 
-${prefix}/pilot_do_run_base_patient_reporter \
+pilot_do_run_base_patient_reporter \
     -qc_fail \
     -qc_fail_reason low_dna_yield \
-    -tumor_sample ${tumor_sample} \
-    -ref_sample ${ref_sample}
+    -ref_sample_id ${ref_sample} \
+    -ref_sample_barcode "" \
+    -tumor_sample_id ${tumor_sample} \
+    -tumor_sample_barcode ""
