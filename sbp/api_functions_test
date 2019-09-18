@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source api_functions
+
 set_name=$1
 
 if [ -z "${set_name}" ]; then
