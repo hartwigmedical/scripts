@@ -5,7 +5,7 @@ source api_functions
 set_name=$1
 
 if [ -z "${set_name}" ]; then
-    echo "[ERROR] Provide a set name"
+    echo "[ERROR] Provide a set name. Exiting"
     exit 1
 fi
 
