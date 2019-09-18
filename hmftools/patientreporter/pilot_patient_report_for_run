@@ -40,7 +40,6 @@ pilot_do_run_base_patient_reporter \
     ${bachelor_cmd} \
     -chord_prediction_file ${chord_prediction_file} \
     -circos_file ${circos_file} \
-    -ref_sample ${ref_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
