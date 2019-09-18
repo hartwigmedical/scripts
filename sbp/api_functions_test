@@ -15,5 +15,9 @@ echo "[INFO] Rerun V3 Info = $(load_rerun_v3_info_for_set ${set_name})"
 echo "[INFO] Rerun V4 Info = $(load_rerun_v4_info_for_set ${set_name})"
 echo "[INFO] Tumor Sample Name = $(load_tumor_sample_name_for_set ${set_name})"
 echo "[INFO] Ref Sample Name = $(load_ref_sample_name_for_set ${set_name})"
-echo "[INFO] Tumor BAM = $(locate_tumor_bam_for_set_in_bucket ${set_name})"
-echo "[INFO] Ref BAM = $(locate_ref_bam_for_set_in_bucket ${set_name})"
+
+echo "[INFO] Locating Tumor BAM..."
+locate_tumor_bam_for_set_in_bucket ${set_name}
+
+echo "[INFO] Locating Ref BAM..."
+locate_ref_bam_for_set_in_bucket ${set_name}
