@@ -213,7 +213,7 @@ plot_ploidy_comparison <- function(x) {
 ####################################### EXECUTION
 
 ## Collect data from MySQL
-dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
+dbProd = dbConnect(MySQL(), user = db_user, password = db_password, dbname = db_name, groups = "RAnalysis")
 sampleIdString = paste("'", samples, "'", collapse = ",", sep = "")
 somaticVariants = dbGetQuery(dbProd, paste0("SELECT * FROM somaticVariant WHERE filter = 'PASS' AND sampleId in (",sampleIdString,")"))
 structuralVariants = dbGetQuery(dbProd, paste0("SELECT * FROM structuralVariant WHERE filter = 'PASS' AND sampleId in (",sampleIdString,")"))
