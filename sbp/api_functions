@@ -9,19 +9,19 @@
 load_sample_name_for_set_by_type_from_api() {
     local set_name=$1
     local sample_type=$2 # can be ref_sample or tumor_sample
-    local sample_name=$( query_sbp_api -type sets -filter "name=${set_name}" -json | jq -r ".[0].$sample_type" )
+    local sample_name=$(query_sbp_api -type sets -filter "name=${set_name}" -json | jq -r ".[0].$sample_type" )
     echo ${sample_name}
 }
 
 load_ref_sample_name_for_set() {
     local set_name=$1
-    local ref_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "ref_sample" )
+    local ref_sample_name=$(load_sample_name_for_set_by_type_from_api ${set_name} "ref_sample" )
     echo ${ref_sample_name}
 }
 
 load_tum_sample_name_for_set() {
     local set_name=$1
-    local tum_sample_name=$( load_sample_name_for_set_by_type_from_api "${set_name}" "tumor_sample" )
+    local tum_sample_name=$(load_sample_name_for_set_by_type_from_api ${set_name} "tumor_sample" )
     echo ${tum_sample_name}
 }
 
@@ -31,19 +31,28 @@ load_run_info_for_set() {
     local run_info=$(query_sbp_api -type runs \
         -filter "bucket=hmf-output|hmf_research" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
-        -filter "status=Validated|SnpCheck|Failed|Success" \
+        -filter "status=Validated|SnpCheck|Success" \
         -filter "name=${set_name}" | grep -v "^#"
     )
 
+    # If there are no succesfull runs, try a failed run for same set
+    if [ -z "${run_info}" ]; then
+        run_info=$(query_sbp_api -type runs \
+            -filter "bucket=hmf-output|hmf_research" \
+            -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
+            -filter "status=Failed" \
+            -filter "name=${set_name}" | grep -v "^#"
+    )
+    fi
     echo ${run_info}
 }
 
 load_rerun_v3_info_for_set() {
-    set=$1
+    set_name=$1
     # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
-    rerun_info=$(query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_bam.ini" | grep "Validated" )
+    rerun_info=$(query_sbp_api -type runs | grep "hmf-output" | grep ${set_name} | grep "Somatic_Rerun_bam.ini" | grep "Validated" )
     if [ -z "${rerun_info}" ]; then
-        run_info=$(load_run_info_for_set ${set})
+        run_info=$(load_run_info_for_set ${set_name})
         run_is_v3_or_v4_or_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v3\|v5")
         if [ -z "${run_is_v3_or_v4_or_v5}" ]; then
             # Should not happen - any pre-v3 run must have a v3-rerun
@@ -56,11 +65,11 @@ load_rerun_v3_info_for_set() {
 }
 
 load_rerun_v4_info_for_set() {
-    set=$1
+    set_name=$1
     # Allow for failure of v4 rerun since v4 rerun runs the health checks.
-    rerun_info=$(query_sbp_api -type runs | grep "hmf-output" | grep "${set}" | grep "Somatic_Rerun_v4.ini" | grep "v4.4" | grep "Validated\|Failed" )
+    rerun_info=$(query_sbp_api -type runs | grep "hmf-output" | grep ${set_name} | grep "Somatic_Rerun_v4.ini" | grep "v4.4" | grep "Validated\|Failed" )
     if [ -z "${rerun_info}" ]; then
-        run_info=$(load_run_info_for_set ${set})
+        run_info=$(load_run_info_for_set ${set_name})
         run_is_v4_or_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v5")
         if [ -z "${run_is_v4_or_v5}" ]; then
             # Should not happen - any pre-v4 run must have a v4-rerun
@@ -74,20 +83,20 @@ load_rerun_v4_info_for_set() {
 
 locate_tumor_bam_for_set_in_bucket() {
     run_bucket=$1
-    set=$2
+    set_name=$2
 
-    tum_sample_name=$( load_tum_sample_name_for_set ${set} )
+    tum_sample_name=$(load_tum_sample_name_for_set ${set_name})
 
-    s3path="s3://${run_bucket}/${set}"
+    s3path="s3://${run_bucket}/${set_name}"
     sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*(mapping|aligner)/${tum_sample_name}(_dedup)?(.realigned)?.bam$"
 }
 
 locate_ref_bam_for_set_in_bucket() {
     run_bucket=$1
-    set=$2
+    set_name=$2
 
-    ref_sample_name=$( load_ref_sample_name_for_set ${set} )
+    ref_sample_name=$(load_ref_sample_name_for_set ${set_name})
 
-    s3path="s3://${run_bucket}/${set}"
+    s3path="s3://${run_bucket}/${set_name}"
     sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*(mapping|aligner)/${ref_sample_name}(_dedup)?(.realigned)?.bam$"
 }
