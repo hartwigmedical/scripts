@@ -32,21 +32,3 @@ echo ""
 echo "[INFO] Or gather submission if all is ready and ok:"
 echo "  gather_submission ${submission}"
 echo ""
-
-## We should provide nextseq data also via portal from now on
-## but will keep next block for some time in case we still need
-## to share fastq from datastore
-
-submTar="${submissionDir}/${submission}.tar"
-echo "--- EXTRA PROCEDURE IN CASE OF MANUAL NEXTSEQ PROCESSING ---"
-echo "[INFO] In case of nextseq run you can get yield/q30 info with:"
-echo "  seqRun=\"ENTER RUN NAME\" # eg seqRun=180101_NB500901_0000_AHXXXXXXX"
-echo "  pathToSeqRun=/data/data_archive/next_seq/\${seqRun}"
-echo "  check_bcl2fastq_conversion -run \${pathToSeqRun} | grep SAMPLE | awk '{ print \$11\"\t\"\$9\"\t\"\$4\"\t\t\"\$3\"\t\"\$10 }' | sort -k2"
-echo "[INFO] And create tar with:"
-echo "  cd \${pathToSeqRun}/Data/Intensities/BaseCalls"
-echo "  tar -cvf ${submTar} $submission"
-echo "[INFO] And create tar listing later with:"
-echo "  cd ${submissionDir}; tar -tf ${submTar} > ${submTar}.list; ls -l"
-echo ""
-
