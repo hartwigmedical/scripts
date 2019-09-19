@@ -43,7 +43,7 @@ to_rep_bucket <- function(x) {
 }
 
 from_rep_bucket <- function(x) {
-  (as.numeric(x) - 1) * 0.02 + 0.61
+  (as.numeric(x) - 1) * 0.02 + 0.061
 }
 
 
@@ -86,8 +86,6 @@ normalise_value <- function(df, averageReplication, to_bucket) {
 plot_replication <- function(df) {
   ggplot(df) +
     geom_col(aes(x = bucketCentre, y = factor), width = 0.02, fill = singleBlue, position = "identity") +
-    #scale_x_discrete(breaks = unique(df$bucket)[seq(1,37, 9)], labels = (seq(1,37, 9) * 0.02 + 0.05)) +
-    #scale_x_discrete(breaks = unique(df$bucket)[seq(1,37, 9)], labels = (seq(1,37, 9) * 0.02 + 0.05)) +
     facet_wrap( ~feature, nrow = 4) + 
     xlab("Replication") + ylab("Factor")
 }
@@ -104,10 +102,6 @@ averageReplication_1k = read.table(file = "~/hmf/analysis/svPaper/heli_rep_origi
   mutate(chromosome = substring(V1, 4), start = V2 + 1, end = V3, replication = V4) %>%
   select(chromosome, start, end, replication)
 averageReplication_1k = filter_unmappable(averageReplication_1k, mappability_100k)
-
-
-
-
 
 replicationBreakends = featuredBreakends %>% filter(replication >= 0.06, replication <= 0.8) %>% mutate(value = replication)
 averageReplication_1k = averageReplication_1k %>% mutate(value = replication / 100.0) %>% filter(value >= 0.06, value <= 0.8)
@@ -127,67 +121,22 @@ gcBreakendNormalised = normalise_value(gcBreakends, averageGC_1k, to_gc_bucket)
 gcBreakendNormalised$bucketCentre = from_gc_bucket(gcBreakendNormalised$bucket)
 plot_replication(gcBreakendNormalised) + xlab("GC")
 
+gcFactor = gcBreakendNormalised %>% select(feature, gcBucket = bucket, gcFactor = factor)
+save(gcFactor, file = "~/hmf/analysis/svPaper/gcFactor.RData")
 
 
-scatterRep = averageReplication_1k %>% 
-  mutate(
-    type = "rep",
-    bucket = cut(replication/100.0, breaks = c(-0.1, seq(0.02, 0.98, 0.02), 1.1)),
-    bucketCenter = (as.numeric(bucket) - 1) * 0.02 + 0.01) %>%
-  select(bucketCenter, type, value = replication)
-
-scatterGC = averageGC_1k %>% 
-  mutate(
-    type = "gc",
-    bucket = cut(gc, breaks = c(-0.1, seq(0.02, 0.98, 0.02), 1.1)),
-    bucketCenter = (as.numeric(bucket) - 1) * 0.02 + 0.01) %>%
-  select(bucketCenter, type, value = gc) 
+########## GC NORMALISED
+gcNormalisedBreakends = featuredBreakends %>%
+  mutate(gcBucket = to_gc_bucket(gc)) %>%
+  left_join(gcFactor, by = c("feature","gcBucket"))
 
 
-scatterDF = inner_join(scatterRep, scatterGC, by = 'bucketCentre')
-
-
-
-scatterDF = bind_rows(scatterRep, scatterGC)
-countDF = scatterDF %>% group_by(type, bucketCenter) %>% count()
-
-ggplot(countDF) +
-  geom_col(aes(x = bucketCenter, y = n, fill = type),position = "identity", alpha = 0.7)
+replicationBreakends = gcNormalisedBreakends %>% filter(replication >= 0.06, replication <= 0.8) %>% mutate(value = replication)
+averageReplication_1k = averageReplication_1k %>% mutate(value = replication / 100.0) %>% filter(value >= 0.06, value <= 0.8)
+replicationBreakendNormalised = normalise_value(replicationBreakends, averageReplication_1k, to_rep_bucket)
+replicationBreakendNormalised$bucketCentre = from_rep_bucket(replicationBreakendNormalised$bucket)
+plot_replication(replicationBreakendNormalised) + xlab("GC")
 
 
 
 
-
-
-
-
-
-breaks = c(-0.1, seq(0.02, 0.98, 0.02), 1.1)
-
-gcCountsPerBucket = averageGC_1k %>%
-  mutate(bucket = ) %>%
-  group_by(bucket) %>% count()
-
-gcCountsPerBucket$bucketCentre = 
-
-replicationCountsPerBucket = averageReplication_1k
-
-ggplot(countsPerBucket) +
-  geom_col(aes(x = bucketCentre, y = n))
-
-ol = as.matrix(findOverlaps(gcRegions, binRegions, type = "any"))
-averageGC_1k = averageGC_1k[ol[, 1], ]
-rm(gcRegions, featuredBreakendRegions, ol)
-
-
-
-
-plot_replication(gcBreakendNormalised)
-unique(gcBreakendNormalised$bucket)[seq(0,40,5)]
-unique(gcBreakendNormalised$bucket)
-
-seq(0,40,5)
-seq(0,1,0.1)
-
-df = gcBreakendNormalised
-averageReplication = averageGC_1k
