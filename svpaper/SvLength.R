@@ -1,5 +1,8 @@
-load("~/hmf/analysis/cohort/highestPurityCohort.RData")
+library(tidyr)
+library(dplyr)
+library(ggplot2)
 
+load("~/hmf/analysis/cohort/highestPurityCohort.RData")
 
 svDrivers = read.csv(file = "/Users/jon/hmf/analysis/fusions/SV")
 svCluster = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_CLUSTERS.csv")
@@ -7,6 +10,8 @@ svData = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_SVS.csv")
 svCombined = left_join(svData,svCluster %>% select(SampleId, ClusterId, SuperType), by = c("SampleId", "ClusterId")) %>%
   filter(SuperType != 'ARTIFACT')
   
+rm(list=setdiff(ls(), c("svData", "svCluster", "svDrivers", "svCombined")))
+
 ### SIMPLE TOP 50
 create_top_50_violin_plot <- function(x, filter = 100) {
   xSummary = x %>% group_by(SampleId) %>% 
@@ -34,13 +39,41 @@ create_top_50_violin_plot <- function(x, filter = 100) {
   return (p1)
 }
 
+
+simpleTop50DupsDF = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
+p1 = create_top_50_violin_plot(simpleTop50DupsDF) + ggtitle("Simple Top 50 Dups")
+
+simpleTop50DelsDF = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
+p2 = create_top_50_violin_plot(simpleTop50DelsDF) + ggtitle("Simple Top 50 Dels")
+
+cdk12Drivers = svDrivers %>% filter(Gene == 'CDK12') %>% select(SampleId)
+simpleTop50DupsCDK12 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
+p3 = create_top_50_violin_plot(simpleTop50DupsCDK12) + ggtitle("Simple Top CDK12 Dups")
+
+simpleTop50DelsCDK12 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
+p4 = create_top_50_violin_plot(simpleTop50DelsCDK12) + ggtitle("Simple Top CDK12 Dels")
+
+ccne1Drivers = svDrivers %>% filter(Gene == 'CCNE1') %>% select(SampleId)
+simpleTop50DupsCCNE1 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
+p5 = create_top_50_violin_plot(simpleTop50DupsCCNE1) + ggtitle("Simple Top CCNE1 Dups")
+
+simpleTop50DelsCCNE1 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
+p6 = create_top_50_violin_plot(simpleTop50DelsCCNE1) + ggtitle("Simple Top CCNE1 Dels")
+
+plot_grid(p1,p2, ncol = 1)
+plot_grid(p3,p4, ncol = 1)
+plot_grid(p5,p6, ncol = 1)
+
+
+### Cancer type TOP 50
+
 create_top_50_violin_plot_cancer_type <- function(x) {
   xSummary = x %>% 
     left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId") %>%
     group_by(CancerType) %>% 
     count() %>% 
     arrange(-n)
-
+  
   cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% ungroup() %>% mutate(CancerType = cancerType, weight = 1.0/n) %>% select(CancerType, weight)
   
   xSummary[is.na(xSummary)] <- "Unknown"
@@ -70,69 +103,42 @@ pCancerTypeDels = create_top_50_violin_plot_cancer_type(cancerTypeDels) + ggtitl
 plot_grid(pCancerTypeDups, pCancerTypeDels, ncol = 1)
 
 
-simpleTop50DupsDF = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-p1 = create_top_50_violin_plot(simpleTop50DupsDF) + ggtitle("Simple Top 50 Dups")
-
-simpleTop50DelsDF = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-p2 = create_top_50_violin_plot(simpleTop50DelsDF) + ggtitle("Simple Top 50 Dels")
-
-cdk12Drivers = svDrivers %>% filter(Gene == 'CDK12') %>% select(SampleId)
-simpleTop50DupsCDK12 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
-p3 = create_top_50_violin_plot(simpleTop50DupsCDK12) + ggtitle("Simple Top CDK12 Dups")
-
-simpleTop50DelsCDK12 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
-p4 = create_top_50_violin_plot(simpleTop50DelsCDK12) + ggtitle("Simple Top CDK12 Dels")
-
-ccne1Drivers = svDrivers %>% filter(Gene == 'CCNE1') %>% select(SampleId)
-simpleTop50DupsCCNE1 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
-p5 = create_top_50_violin_plot(simpleTop50DupsCCNE1) + ggtitle("Simple Top CCNE1 Dups")
-
-simpleTop50DelsCCNE1 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
-p6 = create_top_50_violin_plot(simpleTop50DelsCCNE1) + ggtitle("Simple Top CCNE1 Dels")
-
-plot_grid(p1,p2, ncol = 1)
-plot_grid(p3,p4, ncol = 1)
-plot_grid(p5,p6, ncol = 1)
-
 ### DRIVER SIMPLE DELS / DUPS
+plot_nine_violins <- function(svEnriched) {
 
-x = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
+  svSimple = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ClusterCount == 1) %>% mutate(Feature = paste0("Simple ",Type)) %>% select(Feature, Length)
+  svComplex = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ResolvedType == 'COMPLEX') %>% mutate(Feature = paste0("Complex ",Type)) %>% select(Feature, Length)
+  svRecipInv = svEnriched %>% filter(!IsFoldback, ResolvedType == "RECIP_INV") %>% mutate(Feature = "Recip Inv", Length = pmax(PosEnd, PosStart) - pmin(PosEnd, PosStart) + 1) %>% select(Feature, Length)
+  
+  fbStart = svEnriched %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
+  fbEnd = svEnriched %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
+  svFoldbacks = rbind(fbStart,fbEnd)
+  svFoldbacks = svFoldbacks %>% mutate(
+      IsChained=(OtherId!=Id),                               
+      SingleBreakend=(OtherId==Id&FoldbackLength==0),
+      FoldbackId=ifelse(Id<OtherId,Id,OtherId),
+      Feature = ifelse(IsChained, "Chained Foldback", "Simple Foldback")) %>%
+    group_by(SampleId,ClusterId,FoldbackId,IsChained, Feature) %>% 
+    summarise(Chr=first(Chr),Arm=first(Arm),FoldbackLength=first(FoldbackLength)) %>%
+    ungroup() %>%
+    select(Feature, Length = FoldbackLength)
+  
+  svComplete = bind_rows(svSimple, svRecipInv) %>% bind_rows(svComplex) %>% bind_rows(svFoldbacks)
+  svFeatureLevels = unique(svComplete$Feature)
+  svComplete = svComplete %>% mutate(Feature = factor(Feature, svFeatureLevels))
+  
+  ggplot(svComplete, aes(Feature, Length)) + 
+    geom_violin(scale = "area") + 
+    scale_y_log10() 
+}
 
-
-
-
-
-
-
-
-### COMPLEX V SIMPLE
-complexVSimpleDF = svCombined %>% filter(Type %in% c("DUP","DEL", "INV")) %>%
-  mutate(IsFoldback = Type == 'INV' & FoldbackLnkStart > 0) %>%
-  filter(ClusterCount == 1 | ResolvedType == 'COMPLEX', !IsFoldback) %>%
+svEnriched = svCombined %>%
   mutate(
-    length = PosEnd - PosStart + 1, 
-    ResolvedType = ifelse(ResolvedType == 'COMPLEX', 'COMPLEX', 'SIMPLE'))
+    IsFragile = FSStart == 'true'|FSEnd == 'true',
+    IsLineElement = LEStart != 'false'| LEEnd !='false',
+    IsFoldback = Type == 'INV' & FoldbackLnkStart > 0, 
+    Length = PosEnd - PosStart + 1) 
 
-ggplot(complexVSimpleDF, aes(Type, length)) + 
-  geom_violin(scale = "area") + 
-  scale_y_log10() + 
-  facet_wrap(~ResolvedType)
-
-
-#### FOLDBACK
-fbStart = svCombined %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
-fbEnd = svCombined %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
-foldbacks = rbind(fbStart,fbEnd)
-foldbacks = foldbacks %>% mutate(
-  IsChained=(OtherId!=Id),                               
-  SingleBreakend=(OtherId==Id&FoldbackLength==0),
-  FoldbackId=ifelse(Id<OtherId,Id,OtherId))
-
-# unique foldback data
-foldbackSummary = foldbacks %>% group_by(SampleId,ClusterId,FoldbackId,IsChained) %>% summarise(Chr=first(Chr),Arm=first(Arm),FoldbackLength=first(FoldbackLength))
-ggplot(foldbackSummary, aes(NA, FoldbackLength)) + 
-  geom_violin(scale = "area") + 
-  scale_y_log10() + 
-  facet_wrap(~IsChained)
-
-
+plot_nine_violins(svEnriched) + ggtitle("No Filter")
+plot_nine_violins(svEnriched %>% filter(IsFragile)) + ggtitle("So Very Fragile")
+plot_nine_violins(svEnriched %>% filter(IsLineElement)) + ggtitle("Line Element")
