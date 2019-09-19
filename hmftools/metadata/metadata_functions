@@ -26,11 +26,6 @@ load_ref_sample_barcode_from_metadata() {
     echo "${ref_sample_barcode}"
 }
 
-imply_ref_sample_from_tumor_sample() {
-    local tumor_sample=$1
-    echo $(echo ${tumor_sample} | cut -c1-12)R
-}
-
 load_tumor_sample_from_metadata() {
     local run_dir=$1
     local tumor_sample=""

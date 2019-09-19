@@ -10,11 +10,8 @@ if [ -z "${run_dir}" ]; then
 fi
 
 echo "[INFO] Testing metadata functions on ${run_dir}"
-
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-echo "[INFO]  Tumor Sample = ${tumor_sample}"
+echo "[INFO]  Tumor Sample = $(load_tumor_sample_from_metadata ${run_dir})"
 echo "[INFO]  Tumor Sample Barcode = $(load_tumor_sample_barcode_from_metadata ${run_dir})"
-echo "[INFO]  Ref Sample From Metadata = $(load_ref_sample_from_metadata ${run_dir})"
-echo "[INFO]  Ref Sample Implied = $(imply_ref_sample_from_tumor_sample ${tumor_sample})"
+echo "[INFO]  Ref Sample = $(load_ref_sample_from_metadata ${run_dir})"
 echo "[INFO]  Ref Sample Barcode = $(load_ref_sample_barcode_from_metadata ${run_dir})"
 echo "[INFO]  Joint Name = $(load_joint_name_from_metadata ${run_dir})"

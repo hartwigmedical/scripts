@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source metadata_functions
+source lims_functions
 
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
@@ -16,11 +17,13 @@ if [ -z ${qc_fail_reason} ]; then
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
+ref_sample_barcode=$(find_barcode_for_sample_name ${ref_sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
 pilot_do_run_base_patient_reporter \
     -qc_fail \
     -qc_fail_reason ${qc_fail_reason} \
     -ref_sample_id ${ref_sample} \
-    -ref_sample_barcode "" \
+    -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
-    -tumor_sample_barcode ""
+    -tumor_sample_barcode ${tumor_sample_barcode}

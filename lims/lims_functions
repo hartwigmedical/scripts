@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+imply_ref_sample_from_tumor_sample() {
+    local tumor_sample=$1
+    echo $(echo ${tumor_sample} | cut -c1-12)R
+}
+
+find_barcode_for_sample_name() {
+    # TODO based on query_lims
+    echo "TODO"
+}
