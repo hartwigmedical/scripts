@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 ## setup main variables
-DATESTR="$( date '+%y%m%d' )"
+DATESTR="$(date '+%y%m%d')"
 NAS_DIR="/volume1/machines/LIMS"
 OUT_DIR="/data/lims"
 LAB_DIR="${OUT_DIR}/labfiles"
@@ -12,8 +12,8 @@ ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2cs
 ## sanity checks
 if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Err: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
 for outdir in $OUT_DIR $LAB_DIR $SYM_DIR; do
-  if [[ ! -d ${outdir} ]]; then echo "[EXIT] Err: dir does not exist (${outdir})" && exit 1; fi
-  if [[ ! -w ${outdir} ]]; then echo "[EXIT] Err: no write permission (${outdir})" && exit 1; fi
+    if [[ ! -d ${outdir} ]]; then echo "[EXIT] Err: dir does not exist (${outdir})" && exit 1; fi
+    if [[ ! -w ${outdir} ]]; then echo "[EXIT] Err: no write permission (${outdir})" && exit 1; fi
 done
 mkdir -p ${DAY_DIR}
 
@@ -44,9 +44,9 @@ rsync nas:${NAS_DIR}/*.xlsx nas:${NAS_DIR}/*.accdb ${DAY_DIR}
 ## Make sure all required files are present
 if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
 for inputFile in "${cpctSource}" "${sampSource}" "${procSource}"; do
-  if [[ ! -f "${inputFile}" ]]; then 
-    echo "[EXIT] Err: input file from NAS not present (${inputFile})" && exit 1; 
-  fi
+    if [[ ! -f "${inputFile}" ]]; then
+        echo "[EXIT] Err: input file from NAS not present (${inputFile})" && exit 1;
+    fi
 done
 
 ## Rename files to make clear which is actually used
@@ -83,12 +83,8 @@ echo "[INFO]   $procLatest"
 ln -sfn $procTxt $procLatest
 
 ## Gather some metrics
-totalLines=$(cat ${cpctLatest} | grep -cv "^Hospital")
-totalSampl=$(cat ${cpctLatest} | grep -v "^Hospital" | cut -d"," -f6 | sort | uniq | wc -l )
-totalBarco=$(cat ${cpctLatest} | grep -v "^Hospital" | cut -d"," -f4 | sort | uniq | wc -l )
-
 echo "[INFO] Stats:"
 for latestFile in $cpctLatest $submLatest $sampLatest $procLatest; do
-    totalLines=$( cat $latestFile | wc -l )
-    echo "[INFO]   LineCount of $latestFile = $totalLines"
+    totalLines=$(cat $latestFile | wc -l)
+    echo "[INFO]   LineCount of ${latestFile} = ${totalLines}"
 done

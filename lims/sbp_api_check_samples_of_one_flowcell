@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 SAMPLESHEET=$1
-SAMPLESHEETFILE=$( basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )
+SAMPLESHEETFILE=$(basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )
 FLOWCELLID=${SAMPLESHEETFILE: -9}
-SEQRUN=$( query_sbp_api -type flowcells | grep ${FLOWCELLID} | cut -f 1 )
+SEQRUN=$(query_sbp_api -type flowcells | grep ${FLOWCELLID} | cut -f 1 )
 RUNDATE=${SAMPLESHEETFILE:0:6}
 
 ## only proceed if flowcell actually done at SBP
@@ -13,7 +13,7 @@ if [[ -z $SEQRUN ]]; then
 fi
 
 ## find index of Sample_ID column
-idx_id=$( cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
+idx_id=$(cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
 
 ## and check status of each unique Sample_ID in sheet
 cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
