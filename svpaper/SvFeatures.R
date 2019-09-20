@@ -1,10 +1,22 @@
 library(tidyr)
 library(dplyr)
 
-svDrivers = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_DRIVERS.csv")
+localPath = '~/hmf/analyses/SVAnalysis/'
+sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
+
+#### STATIC DATA ###### 
+lengthLabels = c("Short", "Medium", "Long", "VeryLong") 
+lengthBreaksDup = c(0, 500, 80000, 1000000, 1e100)
+lengthBreaksDel = c(0, 500, 10000, 500000, 1e100)
+dupLabels = paste0(lengthLabels, "Dup")
+delLabels = paste0(lengthLabels, "Del")
+featureLevels = c(dupLabels, delLabels, "TiSource", "CentromericSGL", "PeriCentromericSGL", "TelomericSGL", "Foldback", "LineInsertion", "LineSource")
+
+
+svDrivers = read.csv(file = paste0(localPath,"SVA_DRIVERS.csv"))
 svDriverSummary = svDrivers %>% group_by(SampleId, ClusterId, ResolvedType) %>% count() %>% filter(ResolvedType != "") %>% select(-n) %>% mutate(IsDriver = T)
 
-svData = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_SVS.csv")
+svData = read.csv(file = paste0(localPath,"SVA_SVS.csv"))
 svData = left_join(svData, svDriverSummary, by = c("SampleId", "ClusterId", "ResolvedType")) 
 svData = svData %>% 
   mutate(
@@ -19,17 +31,13 @@ beData = rbind(
   svData %>% mutate(LnkLen = LnkLenStart, IsFoldback = Type == 'INV' & FoldbackLnkStart == FoldbackLnkEnd & FoldbackLnkStart > 0, RepeatClass, RepeatType, FoldbackLnk=FoldbackLnkStart,LocTopType=LocTopTypeStart,Chr=ChrStart,Pos=PosStart,Orient=OrientStart,IsStart=T,LE=LEStart, replication = RepOriginStart, Len=PosEnd - PosStart + 1, PosMid = round(PosStart  + (PosEnd - PosStart)/2), CN = CNStart),
   svData %>% filter(ChrEnd != 0) %>% mutate(LnkLen = LnkLenEnd, IsFoldback = Type == 'INV' & FoldbackLnkStart == FoldbackLnkEnd & FoldbackLnkStart > 0, RepeatClass, RepeatType, FoldbackLnk=FoldbackLnkEnd,LocTopType=LocTopTypeEnd,Chr=ChrEnd,Pos=PosEnd,Orient=OrientEnd,IsStart=F, LE=LEEnd, replication = RepOriginEnd, Len=PosEnd - PosStart + 1, PosMid = round(PosStart  + (PosEnd - PosStart)/2), CN = CNEnd)) %>%
   select(SampleId,Id,IsStart,ClusterId,Type,ResolvedType,RepeatType,RepeatClass,FoldbackLnk,LocTopType,Chr,Pos,Orient,LE,ClusterCount,Len,replication, IsFoldback, LnkLen, CN, ClusterContainsDriver, ClusterContainsBND, ClusterVariantCount) 
-  
-lengthLabels = c("Short", "Medium", "Long", "VeryLong") 
-lengthBreaks = c(0, 500, 10000, 500000, 1e100)
-dupLabels = paste0(lengthLabels, "Dup")
-delLabels = paste0(lengthLabels, "Del")
-featureLevels = c(dupLabels, delLabels, "TiSource", "CentromericSGL", "PeriCentromericSGL", "TelomericSGL", "LeftFoldback", "RightFoldback", "LineInsertion", "LineSource")
 
+
+# Create features (non-exclusive)
 dupBreakends = beData %>% filter(ResolvedType == 'DUP', ClusterCount == 1) %>% 
-  mutate(feature = cut(Len, lengthBreaks, labels = paste0(lengthLabels, "Dup"), ordered_result = F))
+  mutate(feature = cut(Len, lengthBreaksDup, labels = paste0(lengthLabels, "Dup"), ordered_result = F))
 delBreakends = beData %>% filter(ResolvedType == 'DEL', ClusterCount == 1) %>% 
-  mutate(feature = cut(Len, lengthBreaks, labels = paste0(lengthLabels, "Del"), ordered_result = F))
+  mutate(feature = cut(Len, lengthBreaksDel, labels = paste0(lengthLabels, "Del"), ordered_result = F))
 sglBreakends = beData %>% 
   mutate(
     feature = ifelse(RepeatClass == 'Satellite/centr', "CentromericSGL", NA), 
@@ -44,12 +52,12 @@ lineBreakends = beData %>% filter(ResolvedType == 'LINE') %>%
 tiBreakends = beData %>% filter(LocTopType=='TI_ONLY', LnkLen < 1000) %>% 
   mutate(feature = "TiSource") 
 foldbackBreakends = beData %>% filter(IsFoldback) %>%
-  mutate(feature = ifelse(Orient == 1, "LeftFoldback", "RightFoldback"))
+  mutate(feature = "Foldback")
 
 featuredBreakends = bind_rows(dupBreakends, delBreakends) %>% bind_rows(sglBreakends) %>% bind_rows(lineBreakends) %>% bind_rows(tiBreakends) %>% bind_rows(foldbackBreakends)
 featuredBreakends = featuredBreakends %>% mutate(feature = factor(feature, levels = featureLevels, ordered = T))
 
-averageGC_1k = read.table("~/hmf/resources/GC_profile.1000bp.cnp", sep = '\t', header = F, stringsAsFactors = F) %>%
+averageGC_1k = read.table(paste0(sharedPath,"GC_profile.1000bp.cnp"), sep = '\t', header = F, stringsAsFactors = F) %>%
   mutate(chromosome = V1, start = V2 + 1, end = start + 1000, gc = V3) %>%
   select(chromosome, start, end, gc) %>%
   filter(gc > -1)
@@ -59,8 +67,8 @@ featuredBreakendRegions = GRanges(featuredBreakends$Chr, ranges = IRanges(start 
 ol = as.matrix(findOverlaps(gcRegions, featuredBreakendRegions, type = "any"))
 featuredBreakends[ol[, 2], "gc"] = averageGC_1k[ol[, 1], "gc"]
 
-save(featuredBreakends, file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")
+save(featuredBreakends, file = paste0(localPath,"featuredBreakends.RData"))
 
 resolveTypeBreakends = beData
-save(resolveTypeBreakends, file = "/Users/jon/hmf/analysis/svPaper/resolveTypeBreakends.RData")
+save(resolveTypeBreakends, file = paste0(localPath,"resolveTypeBreakends.RData"))
 
