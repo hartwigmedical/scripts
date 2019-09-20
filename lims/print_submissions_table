@@ -16,6 +16,7 @@ for submission in "${SUBMISSIONS[@]}"; do
 
     ## retrieve info
     downloadName=$(cat ${JSON} | jq -r "${MAINKEY}.portal_contact_name" )
+    downloadMail=$(cat ${JSON} | jq -r "${MAINKEY}.portal_contact_email" )
     contactName=$(cat ${JSON} | jq -r "${MAINKEY}.contact_name" )
     projectName=$(cat ${JSON} | jq -r "${MAINKEY}.project_name" )
     projectType=$(cat ${JSON} | jq -r "${MAINKEY}.project_type" )
@@ -52,11 +53,12 @@ for submission in "${SUBMISSIONS[@]}"; do
     fi
 
     ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
         "$submission" \
         "$projectName" \
         "$contactName" \
         "$downloadName" \
+        "$downloadMail" \
         "$projectType" \
         "$entity" \
         "$bucket" \
