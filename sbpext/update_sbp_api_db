@@ -5,39 +5,35 @@ CRT_FILE="/home/sbpext/bcl-upload-prod/api.crt"
 KEY_FILE="/home/sbpext/bcl-upload-prod/api.key"
 BASE_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 LOG_FILE="/home/sbpext/logs/update_sbp_api_db.log"
-DATETIME=$( date )
-  SCRIPT=$( basename $0 )
+DATETIME=$(date)
+SCRIPT=$(basename $0)
 
 DB_TYPES=( fastq entities runs samples sets flowcells inis shares stacks )
 
 if [[ ! -f $CRT_FILE ]]; then echo "[EXIT] CRT file not found ($CRT_FILE)" && exit 1; fi
 if [[ ! -f $KEY_FILE ]]; then echo "[EXIT] KEY file not found ($KEY_FILE)" && exit 1; fi
 
-for TYPE in "${DB_TYPES[@]}"
-do
-  
-  API_URL="${BASE_URL}/${TYPE}"
-  OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
-  OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
-  
-  /usr/bin/curl \
-    --cert-type pem \
-    --cert "${CRT_FILE}" \
-    --key "${KEY_FILE}" \
-    -X GET \
-    -H "Accept: application/json" \
-    -H "Content-Type: application/json" \
-    "${API_URL}" \
-    > ${OUTPUT_FILE_TMP}
+for TYPE in "${DB_TYPES[@]}"; do
+    API_URL="${BASE_URL}/${TYPE}"
+    OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
+    OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
 
-  if [ 0 -eq $? ]; then
-    cp ${OUTPUT_FILE_TMP} ${OUTPUT_FILE}
-    echo "[INFO] Written to ${OUTPUT_FILE}"
-  else
-    echo "${DATETIME} WARNING retrieval of $TYPE failed so stopping" && exit 1
-  fi
+    /usr/bin/curl \
+        --cert-type pem \
+        --cert "${CRT_FILE}" \
+        --key "${KEY_FILE}" \
+        -X GET \
+        -H "Accept: application/json" \
+        -H "Content-Type: application/json" \
+        "${API_URL}" \
+        > ${OUTPUT_FILE_TMP}
 
-  
+    if [ 0 -eq $? ]; then
+        cp ${OUTPUT_FILE_TMP} ${OUTPUT_FILE}
+        echo "[INFO] Written to ${OUTPUT_FILE}"
+    else
+        echo "${DATETIME} WARNING retrieval of $TYPE failed so stopping" && exit 1
+    fi
 done
 
 rm ${JSON_DIR}/tmp_*.tmp
