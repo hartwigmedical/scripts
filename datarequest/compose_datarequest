@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [ "$#" -ne 13 ]; then
-    echo "Usage: `basename $0`"
+    echo "Usage: $(basename $0)"
     echo "      - dr_name (eg DR-028)"
     echo "      - request_name (eg DR-028-update1)"
     echo "      - patient_selection_sql (eg /data/data_archive/datarequest/procedure/patient_selection_sql/DR-028-update1.sql"
