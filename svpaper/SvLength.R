@@ -2,15 +2,17 @@ library(tidyr)
 library(dplyr)
 library(ggplot2)
 
-load("~/hmf/analysis/cohort/highestPurityCohort.RData")
+localPath = '~/hmf/analyses/SVAnalysis/'
+sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
 
-svDrivers = read.csv(file = "/Users/jon/hmf/analysis/fusions/SV")
-svCluster = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_CLUSTERS.csv")
-svData = read.csv(file = "/Users/jon/hmf/analysis/fusions/SVA_SVS.csv")
+load(paste0(sharedPath,"highestPurityCohort.RData"))
+
+##### LOAD ##########
+svDrivers = read.csv(file = paste0(localPath,"SVA_DRIVERS.csv"))
+svData = read.csv(file = paste0(localPath,"SVA_SVS.csv"))
+svCluster = read.csv(file = paste0(localPath,"SVA_CLUSTERS.csv"))
 svCombined = left_join(svData,svCluster %>% select(SampleId, ClusterId, SuperType), by = c("SampleId", "ClusterId")) %>%
   filter(SuperType != 'ARTIFACT')
-  
-rm(list=setdiff(ls(), c("svData", "svCluster", "svDrivers", "svCombined")))
 
 ### SIMPLE TOP 50
 create_top_50_violin_plot <- function(x, filter = 100) {
