@@ -60,3 +60,7 @@ ol = as.matrix(findOverlaps(gcRegions, featuredBreakendRegions, type = "any"))
 featuredBreakends[ol[, 2], "gc"] = averageGC_1k[ol[, 1], "gc"]
 
 save(featuredBreakends, file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")
+
+resolveTypeBreakends = beData
+save(resolveTypeBreakends, file = "/Users/jon/hmf/analysis/svPaper/resolveTypeBreakends.RData")
+
