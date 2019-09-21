@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source load_metadata
+source metadata_functions
 
 run_dir=$1 && shift
 credentials=$1 && shift

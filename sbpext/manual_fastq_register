@@ -1,51 +1,50 @@
 #!/bin/bash
 
-scriptName=$( basename $0 )
+scriptName=$(basename $0)
 apiUrl="https://api.hartwigmedicalfoundation.nl"
 apiKey="/home/sbpext/bcl-upload-prod/api.key"
 apiCrt="/home/sbpext/bcl-upload-prod/api.crt"
 
 hmfapi () {
-  http --ignore-stdin --cert="${apiCrt}" --cert-key="${apiKey}" $@
+    http --ignore-stdin --cert="${apiCrt}" --cert-key="${apiKey}" "$@"
 }
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $scriptName \${barcode} \${fastqDir}"
-  echo "        $scriptName FR12345678 /path/to/fastq/files/"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Usage: $scriptName \${barcode} \${fastqDir}"
+    echo "        $scriptName FR12345678 /path/to/fastq/files/"
+    echo "---"
+    exit 1
 fi
 
-BARCODE=${1}
-FASTQ_DIR=${2}
+BARCODE=$1
+FASTQ_DIR=$2
 
-ORIGINAL_DIR=$(pwd)
 SAMPLE_NAME=""
 SAMPLE_ID=$(curl -s --cert-type pem --cert "${apiCrt}" --key "${apiKey}" "${apiUrl}/hmf/v1/samples?barcode=${BARCODE}" | jq '.[].id')
 
 if [[ -z "$SAMPLE_ID" ]]; then
-  echo "[EXIT] Barcode not found at SBP ($BARCODE)" && exit 1
+    echo "[EXIT] Barcode not found at SBP ($BARCODE)" && exit 1
 fi
 
 ## make sure the FASTQ files contain only ONE sample
-SAMPLE_COUNT=$( find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq | wc -l)
+SAMPLE_COUNT=$(find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq | wc -l)
 if [[ $SAMPLE_COUNT -ne 1 ]]; then 
-  echo "[EXIT] FASTQ files in dir should be from one sample (found $SAMPLE_COUNT samples in dir \"$FASTQ_DIR\")" && exit 1;
+    echo "[EXIT] FASTQ files in dir should be from one sample (found $SAMPLE_COUNT samples in dir \"$FASTQ_DIR\")" && exit 1;
 else
-  SAMPLE_NAME=$( find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq)
+    SAMPLE_NAME=$(find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq)
 fi
 
 ## find all R1 fastq files -> check R2 presence -> register pair
 echo "[INFO] Starting with sample $SAMPLE_NAME barcode:$BARCODE sbpId:$SAMPLE_ID"
 find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | while read R1; do
-  R2=$( echo "$R1" | sed 's/_R1_/_R2_/' )
-  if [[ -z "$R1" || -z "$R2" ]]; then
-    echo "[WARNi] Somehow R1 found but R2 file does not exist ($R2) so SKIPPING this pair."
-  else 
-    echo "[INFO] Registering fastq R1/R2 pair (name_r1=$R1)"
-    ID=$(hmfapi --print=b POST "${apiUrl}/hmf/v1/fastq" name_r1="${R1}" name_r2="${R2}" bucket="hmf-fastq-storage" sample_id="${SAMPLE_ID}" | jq '.id');
-  fi
+    R2=$( echo "$R1" | sed 's/_R1_/_R2_/' )
+    if [[ -z "$R1" || -z "$R2" ]]; then
+        echo "[WARN] Somehow R1 found but R2 file does not exist ($R2) so SKIPPING this pair."
+    else
+        echo "[INFO] Registering fastq R1/R2 pair (name_r1=$R1)"
+        hmfapi --print=b POST "${apiUrl}/hmf/v1/fastq" name_r1="${R1}" name_r2="${R2}" bucket="hmf-fastq-storage" sample_id="${SAMPLE_ID}"
+    fi
 done
 
 echo "[INFO] Registering sample"

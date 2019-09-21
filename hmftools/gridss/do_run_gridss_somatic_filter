@@ -1,5 +1,5 @@
 #!/bin/bash
-source load_metadata
+source metadata_functions
 
 libgridss=/data/common/repos/scripts/gridss/
 gridss_pon=/data/common/dbs/gridss/pon3792v1/

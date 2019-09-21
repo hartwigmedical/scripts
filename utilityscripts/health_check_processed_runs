@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source load_metadata
+source metadata_functions
 
 path=/data/schuberg/processed_runs
 process_runs=$(ls ${path})

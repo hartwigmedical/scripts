@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+
+load_ref_sample_from_metadata() {
+    local run_dir=$1
+    local ref_sample=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        ref_sample=$(jq -r '.reference.sampleName' ${metadata})
+    else
+        # Pre-V5 format
+        metadata=${run_dir}/metadata
+        ref_sample=$(jq -r '.ref_sample' ${metadata})
+    fi
+    echo "${ref_sample}"
+}
+
+load_ref_sample_barcode_from_metadata() {
+    local run_dir=$1
+    local ref_sample_barcode=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata})
+    fi
+    echo "${ref_sample_barcode}"
+}
+
+load_tumor_sample_from_metadata() {
+    local run_dir=$1
+    local tumor_sample=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
+    else
+        # Pre-V5 format
+        metadata=${run_dir}/metadata
+        tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+    fi
+    echo "${tumor_sample}"
+}
+
+load_tumor_sample_barcode_from_metadata() {
+    local run_dir=$1
+    local tumor_sample_barcode=""
+    if [[ -f ${run_dir}/pipeline.version ]]; then
+        # V5 format
+        metadata=${run_dir}/metadata.json
+        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
+    fi
+    echo "${tumor_sample_barcode}"
+}
+
+load_joint_name_from_metadata() {
+    local run_dir=$1
+    local ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+    local tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+    echo "${ref_sample}_${tumor_sample}"
+}
+

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source load_metadata
+source metadata_functions
 
 strelka_post_process_jar=/data/common/tools/strelka-post-process_v1.4/strelka-post-process.jar
 bam_slicer_script=/data/common/repos/scripts/hmftools/bamslicer/bam_slicer

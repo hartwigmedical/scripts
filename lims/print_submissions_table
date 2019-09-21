@@ -2,69 +2,66 @@
 
 SUBMISSIONS=("$@") # optional
 JSON=/data/lims/submissions.json
-na="NA"
 
 if [ "$#" -eq 0 ]; then
-  SUBMISSIONS=( $( cat $JSON | jq -r 'keys[]' | sort -r | head -100 ) )
+    SUBMISSIONS=( $(cat $JSON | jq -r 'keys[]' | sort -r | head -100) )
 fi
 
-for submission in "${SUBMISSIONS[@]}"; do 
+for submission in "${SUBMISSIONS[@]}"; do
+    MAINKEY=".${submission}"
 
-  MAINKEY=".${submission}"
-  
-  ## init
-  #portE=$na; portN=$na; contE=$na; contN=$na; subm=$na; pNam=$na;
-  #pTyp=$na; cntr=$na; enti=$na; buck=$na; aTyp=$na; amnt=$na
-  
-  ## retrieve info
-  downloadName=$( cat ${JSON} | jq -r "${MAINKEY}.portal_contact_name" )
-  downloadMail=$( cat ${JSON} | jq -r "${MAINKEY}.portal_contact_email" )
-   contactName=$( cat ${JSON} | jq -r "${MAINKEY}.contact_name" )
-   contactMail=$( cat ${JSON} | jq -r "${MAINKEY}.contact_email" )
-   projectName=$( cat ${JSON} | jq -r "${MAINKEY}.project_name" )
-   projectType=$( cat ${JSON} | jq -r "${MAINKEY}.project_type" )
-   sampleCount=$( cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
-    submission=$( cat ${JSON} | jq -r "${MAINKEY}.submission" )
-       product=$( cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
-        center=$( echo $projectName | cut -d"-" -f1 )
+    ## init
+    #portE=$na; portN=$na; contE=$na; contN=$na; subm=$na; pNam=$na;
+    #pTyp=$na; cntr=$na; enti=$na; buck=$na; aTyp=$na; amnt=$na
 
-  ## rename project type to short notation
-  if [[ $projectType == "Human research" ]]; then
-    projectType="HUM-RES"
-  elif [[ $projectType == "non human research" || $projectType == "Non human research" ]]; then 
-    projectType="NONHUM-RES"
-  elif [[ $projectType == "KG production" ]]; then 
-    projectType="KG"
-  elif [[ $projectType == "CORE" ]]; then 
-    projectType="CORE"
-    product="SomaticAnalysis"
-  else 
-    projectType="UnknownType"
-  fi
+    ## retrieve info
+    downloadName=$(cat ${JSON} | jq -r "${MAINKEY}.portal_contact_name" )
+    downloadMail=$(cat ${JSON} | jq -r "${MAINKEY}.portal_contact_email" )
+    contactName=$(cat ${JSON} | jq -r "${MAINKEY}.contact_name" )
+    projectName=$(cat ${JSON} | jq -r "${MAINKEY}.project_name" )
+    projectType=$(cat ${JSON} | jq -r "${MAINKEY}.project_type" )
+    sampleCount=$(cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
+    submission=$(cat ${JSON} | jq -r "${MAINKEY}.submission" )
+    product=$(cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
+    center=$(echo $projectName | cut -d"-" -f1 )
 
-  ## check entitiy existance and fix for KG
-  bucketBySubmission=$( query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${submission}\" ) | .bucket" )
-  if [[ $projectType == "KG" ]]; then 
-    entity="KG_${center}"
-    bucket=$bucketBySubmission
-  elif [[ ! -z $bucketBySubmission ]]; then 
-    entity=$submission
-    bucket=$bucketBySubmission
-  else 
-    entity="UnknownEntitiy"
-    bucket="UnknownBucket"
-  fi
+    ## rename project type to short notation
+    if [[ $projectType == "Human research" ]]; then
+        projectType="HUM-RES"
+    elif [[ $projectType == "non human research" || $projectType == "Non human research" ]]; then
+        projectType="NONHUM-RES"
+    elif [[ $projectType == "KG production" ]]; then
+        projectType="KG"
+    elif [[ $projectType == "CORE" ]]; then
+        projectType="CORE"
+        product="SomaticAnalysis"
+    else
+        projectType="UnknownType"
+    fi
 
-  ## output
-  printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-    "$submission" \
-    "$projectName" \
-    "$contactName" \
-    "$downloadName" \
-    "$projectType" \
-    "$entity" \
-    "$bucket" \
-    "$product" \
-    "$sampleCount"
+    ## check entitiy existance and fix for KG
+    bucketBySubmission=$(query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${submission}\" ) | .bucket")
+    if [[ $projectType == "KG" ]]; then
+        entity="KG_${center}"
+        bucket=$bucketBySubmission
+    elif [[ ! -z $bucketBySubmission ]]; then
+        entity=$submission
+        bucket=$bucketBySubmission
+    else
+        entity="UnknownEntity"
+        bucket="UnknownBucket"
+    fi
 
+    ## output
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+        "$submission" \
+        "$projectName" \
+        "$contactName" \
+        "$downloadName" \
+        "$downloadMail" \
+        "$projectType" \
+        "$entity" \
+        "$bucket" \
+        "$product" \
+        "$sampleCount"
 done

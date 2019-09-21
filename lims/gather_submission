@@ -20,10 +20,10 @@ logFile=${outPath}'/log.txt'
 bcsFile=${outPath}'/barcodes.txt'
 repFile=${outPath}'/report.txt'
 subJson=${outPath}'/submission.json'
-lmsJson=$( echo ${lmsFile} | sed 's/txt$/json/' )
-samJson=$( echo ${samFile} | sed 's/txt$/json/' )
-runJson=$( echo ${runFile} | sed 's/txt$/json/' )
-dateString=$( date )
+lmsJson=$(echo ${lmsFile} | sed 's/txt$/json/')
+samJson=$(echo ${samFile} | sed 's/txt$/json/')
+runJson=$(echo ${runFile} | sed 's/txt$/json/')
+dateString=$(date)
 
 ## create dirs
 if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi
@@ -101,12 +101,11 @@ echo "[INFO] Or get reporting info (for ${pdfName}):"
 echo " cat ${repFile} | cut -f1 --complement"
 echo "[INFO] If you finish the submission then please also chown:"
 echo " sudo chown -R root:root ${outPath}"
-  
 
 ## warn if not complete
 if [[ ${hmfCount} -ne ${sbpCount} ]]; then 
-  echo "[WARNING] There might be missing samples!" 
-  exit 1
+    echo "[WARNING] There might be missing samples!"
+    exit 1
 fi
 
 exit 0

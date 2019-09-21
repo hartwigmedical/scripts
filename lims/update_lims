@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-LIMS_DIR="/data/lims"
-CODE_DIR="/data/common/repos/scripts/lims"
-LOG_FILE="${LIMS_DIR}/update.log"
-DATE_STR=$(date)
+lims_dir="/data/lims"
+code_dir="/data/common/repos/scripts/lims"
+log_file="${lims_dir}/update.log"
+date_str=$(date)
 
-echo "===== Running update_lims (${DATE_STR}) =====" 2>&1 | tee -a $LOG_FILE
-${CODE_DIR}/sync_lab_lims_from_nas 2>&1 | tee -a $LOG_FILE
-${CODE_DIR}/convert_lims_data -execute 2>&1 | tee -a $LOG_FILE
+echo "===== Running update_lims (${date_str}) =====" 2>&1 | tee -a ${log_file}
+${code_dir}/sync_lab_lims_from_nas 2>&1 | tee -a ${log_file}
+${code_dir}/convert_lims_data -execute 2>&1 | tee -a ${log_file}

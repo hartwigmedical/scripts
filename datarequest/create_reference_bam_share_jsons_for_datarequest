@@ -10,8 +10,8 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f1 | while read set_name; do
     set_id=$(query_sbp_api -type sets | grep ${set_name} | cut -f5)
 
     if [ ! -z "${set_id}" ]; then
-        echo "[DEBUG] Creating ${reference_bam_json}"
         reference_bam_json=${base_json_dir}/${set_name}_ref_bam.json
+        echo "[DEBUG] Creating ${reference_bam_json}"
 
         create_share_json_for_reference_bam ${set_id} ${entity_sbp_id} > ${reference_bam_json}
     else

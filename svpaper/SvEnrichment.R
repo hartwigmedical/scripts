@@ -11,6 +11,8 @@ bins_100k <- tileGenome(seqinfo(Hsapiens), tilewidth=100000, cut.last.tile.in.ch
 bins_1M <- tileGenome(seqinfo(Hsapiens), tilewidth=1000000, cut.last.tile.in.chrom=TRUE)
 bins_10M <- tileGenome(seqinfo(Hsapiens), tilewidth=10000000, cut.last.tile.in.chrom=TRUE)
 
+#getCentromeres(Hsapiens) TODO
+
 ########################## Average Mappability
 mappability <- function(bins, genome) {
   df = data.frame(chromosome = seqnames(bins), start = start(bins), end = end(bins)) %>%
@@ -70,6 +72,25 @@ averageReplication_1M = averageReplication(bins_1M, replication)
 averageReplication_10M = averageReplication(bins_10M, replication)
 save(averageReplication_100k, averageReplication_1M, averageReplication_10M, file = "/Users/jon/hmf/analysis/svPaper/averageReplication.RData")
 
+########################## Average GC
+gc = read.table("~/hmf/resources/GC_profile.1000bp.cnp", sep = '\t', header = F, stringsAsFactors = F) %>%
+  mutate(chromosome = V1, start = V2 + 1, end = start + 1000, gc = V3) %>%
+  select(chromosome, start, end, gc) %>%
+  filter(gc > -1)
+
+averageGC <- function(bins, gc) {
+  result = averageCopyNumber(bins, gc %>% select(chromosome, start, end, copyNumber = gc))
+  result = result %>%
+    mutate(averageGC = averageCopyNumber) %>%
+    select(chromosome, start, end, averageGC)
+  return (result)
+}
+
+averageGC_100k = averageGC(bins_100k, gc)
+averageGC_1M = averageGC(bins_1M, gc)
+averageGC_10M = averageGC(bins_10M, gc)
+save(averageGC_100k, averageGC_1M, averageGC_10M, file = "/Users/jon/hmf/analysis/svPaper/averageGC.RData")
+
 
 ########################## Uniquely Mappable
 mappability_150 = read.table(file = "/Users/jon/hmf/resources/unique.mappability.bed", sep = "\t")
@@ -103,7 +124,106 @@ uniquelyMappable_10M = uniquelyMappable(bins_10M, mappability_150)
 save(uniquelyMappable_100k, uniquelyMappable_1M, uniquelyMappable_10M, file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
 
 
-############################################ HPC ############################################ 
+############################################ Functions ############################################ 
+replication_bucket <- function(replication) {
+  cut(replication, breaks = c(-0.1, seq(0.062, 0.78, 0.02), 1.1))
+}
+
+gc_bucket <- function(x) {
+  cut(x, breaks = c(-0.1, seq(0.26, 0.64, 0.02), 1.1))
+}
+
+
+enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, averageReplication, averageGC) {
+  if (nrow(criteria) == 0) {
+    return (criteria)
+  }
+  
+  svsRegions = GRanges(criteria$Chr, ranges = IRanges(start = criteria$Pos, end = criteria$Pos))
+  binRegions = GRanges(mappability$chromosome, ranges = IRanges(start = mappability$start, end = mappability$end))
+  uniquelyMappableRegions = GRanges(as.character(uniquelyMappable$chromosome), ranges = IRanges(start = uniquelyMappable$binStart, end = uniquelyMappable$binEnd))
+  replicationRegions = GRanges(as.character(averageReplication$chromosome), ranges = IRanges(start = averageReplication$start, end = averageReplication$end))
+  gcRegions = GRanges(as.character(averageGC$chromosome), ranges = IRanges(start = averageGC$start, end = averageGC$end))
+  
+  
+  ol = as.matrix(findOverlaps(svsRegions, binRegions, type = "within"))
+  ol2 = as.matrix(findOverlaps(svsRegions, uniquelyMappableRegions, type = "within"))
+  ol3 = as.matrix(findOverlaps(svsRegions, replicationRegions, type = "within"))
+  ol4 = as.matrix(findOverlaps(svsRegions, gcRegions, type = "within"))
+    
+  criteria[ol[, 1], "N"] <- mappability[ol[, 2], ]$N
+  criteria[ol[, 1], "averageCopyNumber"] <- averageCopyNumber[ol[, 2], ]$averageCopyNumber
+  criteria[ol[, 1], "binChromosome"] <- mappability[ol[, 2], ]$chromosome
+  criteria[ol[, 1], "binStart"] <- mappability[ol[, 2], ]$start
+  criteria[ol[, 1], "binEnd"] <- mappability[ol[, 2], ]$end
+  
+  criteria[ol2[, 1], "uniquelyMappablePercentage"] <- uniquelyMappable[ol2[, 2], ]$uniquelyMappablePercentage
+  criteria$uniquelyMappablePercentage <- ifelse(is.na(criteria$uniquelyMappablePercentage), 0, criteria$uniquelyMappablePercentage)
+  
+  criteria[ol3[, 1], "averageReplication"] <- averageReplication[ol3[, 2], ]$averageReplication
+  criteria$averageReplication <- ifelse(is.na(criteria$averageReplication), 0.00001, criteria$averageReplication)
+  criteria$averageReplication <- ifelse(criteria$averageReplication < 0.00001, 0.00001, criteria$averageReplication)
+  criteria$replicationBucket = replication_bucket(criteria$averageReplication)
+  
+  criteria[ol4[, 1], "averageGC"] <- averageGC[ol4[, 2], ]$averageGC
+  criteria$averageGC <- ifelse(is.na(criteria$averageGC), 0.00001, criteria$averageGC)
+  criteria$averageGC <- ifelse(criteria$averageGC < 0.00001, 0.00001, criteria$averageGC)
+  criteria$gcBucket = gc_bucket(criteria$averageGC)
+  
+  criteria = criteria %>% 
+    left_join(replicationFactor, by = c("feature", "replicationBucket")) %>%
+    mutate(replicationFactor = ifelse(is.na(replicationFactor), 1, replicationFactor)) %>% 
+    left_join(gcFactor, by = c("feature", "gcBucket")) %>%
+    mutate(gcFactor = ifelse(is.na(gcFactor), 1, gcFactor))
+  
+  return (criteria)
+}
+
+
+normalise <- function(svs, buckets) {
+  normalised_svs = svs %>%
+    group_by(feature) %>%
+    mutate(featureRows=n()) %>%
+    group_by(binChromosome, binStart, binEnd, N, featureRows, averageCopyNumber, uniquelyMappablePercentage, averageReplication, feature, gcFactor, replicationFactor) %>%
+    summarise(
+      unnormalisedBucketCount = n()) %>%
+    group_by(feature) %>%
+    mutate(
+      unnormalisedBucketCount = unnormalisedBucketCount,
+      #expectedBucketCount = nrows / buckets * replicationFactor * averageCopyNumber / meanCopyNumber,
+      expectedBucketCount = featureRows * replicationFactor * averageCopyNumber * gcFactor /sum(replicationFactor * averageCopyNumber * gcFactor),
+      p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
+      q=p.adjust(p,"BH", buckets),
+      buckets = buckets)
+  
+    normalised_svs %>% group_by(feature) %>% count()
+    
+  return (normalised_svs)
+}
+
+enrich_and_normalise <- function(criteria, qFilter = 0.01) {
+  
+  criteria = featuredBreakends
+  
+  enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k, averageReplication_100k, averageGC_100k)
+  enriched_1M = enrich(criteria, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M, averageReplication_1M, averageGC_1M)
+  enriched_10M = enrich(criteria, mappability_10M, averageCopyNumber_10M, uniquelyMappable_10M, averageReplication_10M, averageGC_10M)
+  
+  normalised_100k = normalise(enriched_100k, bins_100k) #%>% filter(q < qFilter)
+  normalised_1M = normalise(enriched_1M, bins_1M) # %>% filter(q < qFilter)
+  normalised_10M = normalise(enriched_10M, bins_10M) #%>% filter(q < qFilter)
+  
+  criteriaResult = data.frame()
+  criteriaResult = bind_rows(criteriaResult, normalised_100k)
+  criteriaResult = bind_rows(criteriaResult, normalised_1M)
+  criteriaResult = bind_rows(criteriaResult, normalised_10M)
+  
+  return (criteriaResult)
+}
+
+
+
+############################################ BINS ############################################ 
 load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
 allowedBins = mappability_100k %>% mutate(mappable = (100000 - N) / 100000) %>% filter(mappable >= 0.8)
 binRegions = GRanges(allowedBins$chromosome, ranges = IRanges(start = allowedBins$start, end = allowedBins$end))
@@ -115,270 +235,30 @@ bins_1M = length(unique(as.matrix(findOverlaps(regions_1M, binRegions, type = "a
 bins_10M = length(unique(as.matrix(findOverlaps(regions_10M, binRegions, type = "any"))[, 1]))
 save(bins_100k, bins_1M, bins_10M, file = "/Users/jon/hmf/analysis/svPaper/binSizes.RData")
 
-load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
-svData = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_SVS.csv")
-svClusters = read.csv(file = "/Users/jon/hmf/analysis/svPaper/SVA_CLUSTERS.csv") %>% select(SampleId, ClusterId, Subclonal, Synthetic)
-
-svData = svData %>%
-  left_join(svClusters, by = c("SampleId","ClusterId")) %>%
-  filter(SampleId %in% highestPurityCohort$sampleId) %>%
-  mutate(
-    subtype = "Unknown",
-    
-    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart<=500, "ShortDup", subtype),
-    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>500 & PosEnd-PosStart<=80000, "MediumDup", subtype),
-    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>80000 & PosEnd-PosStart<=1e6, "LongDup", subtype),
-    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>1e6 & PosEnd-PosStart<=5e6, "VeryLongDup", subtype),
-    subtype = ifelse(ResolvedType=='DUP' & Type=='DUP' & PosEnd-PosStart>5e6, "SuperLongDup", subtype),
-    
-    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart<=500, "ShortDel", subtype),
-    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>500 & PosEnd-PosStart<=5000, "MediumDel", subtype),
-    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>5000 & PosEnd-PosStart<=1e6, "LongDel", subtype),
-    subtype = ifelse(ResolvedType=='DEL' & Type=='DEL' & PosEnd-PosStart>1e6, "VeryLongDel", subtype),
-    
-    isSimpleFoldback = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV",
-    isSimpleFoldbackLeft = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV" & OrientStart == 1,
-    isSimpleFoldbackRight = !is.na(FoldbackLnkStart) & !is.na(FoldbackLnkEnd) & Type=="INV" & OrientStart == -1,
-    
-    isShortTI = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000,
-    isShortTIBND2 = (LocTopTypeStart=='TI_ONLY' | LocTopTypeEnd=='TI_ONLY') & PosEnd-PosStart<=1000 & ResolvedType!='LINE' & ClusterDesc=='BND=2')
-
-save(svData, file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
-
-svData %>% group_by(isSimpleFoldbackRight) %>% count()
-
-
-load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
-hpcSimpleSv = svData %>% 
-  filter(subtype != 'Unknown') %>% 
-  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcFeatureSv =  svData %>% 
-  filter(isSimpleFoldback | isShortTI) %>%
-  mutate(subtype = ifelse(isSimpleFoldback, "Foldback", "ShortTI")) %>% 
-  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcFeatureSv2 =  svData %>% 
-  filter(isShortTIBND2) %>%
-  mutate(subtype = "ShortTIBND2") %>% 
-  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcFeatureSv3 =  svData %>% 
-  filter(isSimpleFoldbackLeft) %>%
-  mutate(subtype = "FoldbackLeft") %>% 
-  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcFeatureSv4 =  svData %>% 
-  filter(isSimpleFoldbackRight) %>%
-  mutate(subtype = "FoldbackRight") %>% 
-  mutate(Chr = ChrStart, Pos = (PosStart + PosEnd) / 2, IsFS = FSStart!='false' | FSEnd!='false') %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcLineElementStart = svData %>%
-  filter(ResolvedType=='LINE') %>%
-  mutate(Chr = ChrStart, Pos = PosStart, subtype = "Line", IsFS = FSStart!='false', RepOriginEnd = NA, subtype = ifelse(LEStart != 'None', "LineSource", "LineInsertion"))  %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcLineElementEnd = svData %>%
-  filter(ResolvedType=='LINE') %>%
-  mutate(Chr = ChrEnd, Pos = PosEnd, subtype = "Line", IsFS = FSEnd!='false', RepOriginStart = NA, subtype = ifelse(LEEnd != 'None', "LineSource", "LineInsertion"))  %>%
-  select(SampleId, Chr, Pos, IsFS, ResolvedType, subtype, RepOriginStart, RepOriginEnd)
-
-hpcSvs = bind_rows(hpcSimpleSv, hpcFeatureSv)
-hpcSvs = bind_rows(hpcSvs, hpcLineElementStart)
-hpcSvs = bind_rows(hpcSvs, hpcLineElementEnd)
-hpcSvs = bind_rows(hpcSvs, hpcFeatureSv2)
-hpcSvs = bind_rows(hpcSvs, hpcFeatureSv3)
-hpcSvs = bind_rows(hpcSvs, hpcFeatureSv4)
-
-hpcSvs %>% group_by(subtype) %>% count()
-
-hpcSvRegions = GRanges(hpcSvs$Chr, ranges = IRanges(start = hpcSvs$Pos, end = hpcSvs$Pos))
-ol = as.matrix(findOverlaps(hpcSvRegions, binRegions, type = "any"))
-hpcSvs = hpcSvs[ol[, 1], ]
-hpcSvs %>% group_by(subtype) %>% count()
-save(hpcSvs, file = "/Users/jon/hmf/analysis/svPaper/hpcSvs.RData")
-
-rm(list=setdiff(ls(), c("hpcSvs")))
-
-############################################ PREP ############################################ 
+############################################ RUN FROM HERE ############################################ 
 load(file = "/Users/jon/hmf/analysis/svPaper/binSizes.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/hpcSvs.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/uniquelyMappable.RData")
-load(file = "~/hmf/analysis/svPaper/replicationFactor.RData")
 load(file = "/Users/jon/hmf/analysis/svPaper/averageReplication.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/averageCopyNumbers.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/averageGC.RData")
+load(file = "~/hmf/analysis/svPaper/replicationFactor.RData")
+load(file = "~/hmf/analysis/svPaper/gcFactor.RData")
+load(file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")
+featuredBreakends = featuredBreakends %>% mutate(IsFS = F)
 
-replication_bucket <- function(replication) {
-  cut(replication, breaks = c(0, seq(0.062, 0.78, 0.02), 1))
-}
-
-enrich <- function(criteria, mappability, averageCopyNumber, uniquelyMappable, averageReplication) {
-  if (nrow(criteria) == 0) {
-    return (criteria)
-  }
-
-  svsRegions = GRanges(criteria$Chr, ranges = IRanges(start = criteria$Pos, end = criteria$Pos))
-  binRegions = GRanges(mappability$chromosome, ranges = IRanges(start = mappability$start, end = mappability$end))
-  uniquelyMappableRegions = GRanges(as.character(uniquelyMappable$chromosome), ranges = IRanges(start = uniquelyMappable$binStart, end = uniquelyMappable$binEnd))
-  replicationRegions = GRanges(as.character(averageReplication$chromosome), ranges = IRanges(start = averageReplication$start, end = averageReplication$end))
-
-  ol = as.matrix(findOverlaps(svsRegions, binRegions, type = "within"))
-  ol2 = as.matrix(findOverlaps(svsRegions, uniquelyMappableRegions, type = "within"))
-  ol3 = as.matrix(findOverlaps(svsRegions, replicationRegions, type = "within"))
-
-  criteria[ol[, 1], "N"] <- mappability[ol[, 2], ]$N
-  criteria[ol[, 1], "averageCopyNumber"] <- averageCopyNumber[ol[, 2], ]$averageCopyNumber
-  criteria$binChromosome <- mappability[ol[, 2], ]$chromosome
-  criteria$binStart <- mappability[ol[, 2], ]$start
-  criteria$binEnd <- mappability[ol[, 2], ]$end
-
-  criteria[ol2[, 1], "uniquelyMappablePercentage"] <- uniquelyMappable[ol2[, 2], ]$uniquelyMappablePercentage
-  criteria$uniquelyMappablePercentage <- ifelse(is.na(criteria$uniquelyMappablePercentage), 0, criteria$uniquelyMappablePercentage)
-
-  criteria[ol3[, 1], "averageReplication"] <- averageReplication[ol3[, 2], ]$averageReplication
-  criteria$averageReplication <- ifelse(is.na(criteria$averageReplication), 0.00001, criteria$averageReplication)
-  criteria$averageReplication <- ifelse(criteria$averageReplication < 0.00001, 0.00001, criteria$averageReplication)
-  criteria$replicationBucket = replication_bucket(criteria$averageReplication)
-
-  criteria = criteria %>% left_join(replicationFactor, by = c("subtype", "replicationBucket"))
-
-  return (criteria)
-}
-
-
-normalise <- function(svs, buckets, meanCopyNumber, meanMappable) {
-  normalised_svs = svs %>%
-    ungroup() %>%
-    mutate(
-      nrows=n(),
-      nrows = ifelse(grepl("ShortTI", subtype), round(nrows / 2), nrows)) %>%
-    group_by(binChromosome, binStart, binEnd, N, nrows, averageCopyNumber, uniquelyMappablePercentage, averageReplication, replicationFactor, subtype) %>%
-    summarise(unnormalisedBucketCount = n(), percentFS=sum(IsFS)/unnormalisedBucketCount) %>%
-    mutate(
-      unnormalisedBucketCount = ifelse(grepl("ShortTI", subtype), round(unnormalisedBucketCount / 2), unnormalisedBucketCount),
-      expectedBucketCount = nrows / buckets * replicationFactor * averageCopyNumber / meanCopyNumber,
-      p=ppois(unnormalisedBucketCount, expectedBucketCount, FALSE),
-      q=p.adjust(p,"BH",buckets),
-      buckets = buckets)
-
-  return (normalised_svs)
-}
-
-enrich_and_normalise <- function(criteria, qFilter = 0.01) {
-
-  enriched_100k = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k, averageReplication_100k)
-  enriched_1M = enrich(criteria, mappability_1M, averageCopyNumber_1M, uniquelyMappable_1M, averageReplication_1M)
-  enriched_10M = enrich(criteria, mappability_10M, averageCopyNumber_10M, uniquelyMappable_10M, averageReplication_10M)
-
-  normalised_100k = normalise(enriched_100k, bins_100k, mean(averageCopyNumber_100k$averageCopyNumber), mean(uniquelyMappable_100k$uniquelyMappablePercentage)) %>% filter(q < qFilter)
-  normalised_1M = normalise(enriched_1M, bins_1M, mean(averageCopyNumber_1M$averageCopyNumber), mean(uniquelyMappable_1M$uniquelyMappablePercentage)) %>% filter(q < qFilter)
-  normalised_10M = normalise(enriched_10M, bins_10M, mean(averageCopyNumber_10M$averageCopyNumber), mean(uniquelyMappable_10M$uniquelyMappablePercentage)) %>% filter(q < qFilter)
-
-  criteriaResult = data.frame()
-  criteriaResult = bind_rows(criteriaResult, normalised_100k)
-  criteriaResult = bind_rows(criteriaResult, normalised_1M)
-  criteriaResult = bind_rows(criteriaResult, normalised_10M)
-
-  return (criteriaResult)
-}
-
-############################################ Executions ############################################ 
-#filter(ResolvedType=='Line') %>% mutate(criteria = 'Line') %>%
-#filter(ResolvedType=='RecipTrans', as.character(ChrStart) != as.character(ChrEnd))%>% mutate(criteria = 'Recip Translocation') %>%
-
-
-df = hpcSvs %>% filter(!grepl("Line", subtype))
-result = data.frame()
-for (selectedSubtype in unique(df$subtype)) {
-  cat ("Processing", selectedSubtype, "\n")
-  criteria = df %>%
-    filter(subtype == selectedSubtype) 
-  result = bind_rows(result, enrich_and_normalise(criteria, 10000000))
-}
-
-svEnrichment = result %>% filter(q < 0.01)
-save(svEnrichment, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
-
-unfilteredEnrichment = result
-save(unfilteredEnrichment, file = "/Users/jon/hmf/analysis/svPaper/unfilteredEnrichment.RData")
-unfilteredEnrichment %>% group_by(subtype) %>% count()
-
-############################################ Add Genes ############################################ 
-load( file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
-svEnrichment$gene <- NA
-
-load(file = "~/hmf/analysis/svPaper/canonicalTranscripts.RData")
-
-transcriptRegions = GRanges(canonicalTranscripts$chromosome, ranges = IRanges(start = canonicalTranscripts$geneStart, end = canonicalTranscripts$geneEnd))
-enrichmentRegions = GRanges(svEnrichment$binChromosome, ranges = IRanges(start = svEnrichment$binStart, end = svEnrichment$binEnd))
-ol = as.matrix(findOverlaps(enrichmentRegions, transcriptRegions, type = "any"))
-genes = canonicalTranscripts[ol[, 2], ]
-genes$index <- ol[, 1]
-genes = genes %>% mutate(length = geneEnd - geneStart) %>% group_by(index) %>% arrange(-length) %>% filter(row_number() == 1)
-
-svEnrichment[genes$index, "gene"] <- genes$gene
-svEnrichment[genes$index, "geneLength"] <- genes$length
-save(svEnrichment, file = "/Users/jon/hmf/analysis/svPaper/svEnrichment.RData")
-svEnrichment %>% group_by(subtype) %>% count()
-
-View(svEnrichment %>% filter(binEnd-binStart+1==1000000) %>% group_by(gene,binChromosome,binStart,subtype,round(averageReplication,1),isFS=percentFS>0) %>% summarise(q=mean(q)) %>% spread(subtype,q) )
-View(svEnrichment %>% filter(binEnd-binStart+1==100000) %>% group_by(gene,binChromosome,binStart,subtype,round(averageReplication,1),isFS=percentFS>0) %>% summarise(q=mean(q)) %>% spread(subtype,q) )
-
-############################################ 1M Genes ############################################ 
-load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
-transcriptRegions = GRanges(canonicalTranscripts$chromosome, ranges = IRanges(start = canonicalTranscripts$geneStart, end = canonicalTranscripts$geneEnd))
-enrichmentRegions = GRanges(mappability_1M$chromosome, ranges = IRanges(start = mappability_1M$start, end = mappability_1M$end))
-ol = as.matrix(findOverlaps(enrichmentRegions, transcriptRegions, type = "any"))
-genes = canonicalTranscripts[ol[, 2], ]
-genes$index <- ol[, 1]
-genes = genes %>% mutate(length = geneEnd - geneStart) %>% group_by(index) %>% arrange(-length) %>% filter(row_number() == 1)
-mappability_1M[genes$index, "gene"] <- genes$gene
-mappability_1M[genes$index, "geneLength"] <- genes$length
-
-mappability_1M_with_genes = mappability_1M
-save(mappability_1M_with_genes, file = "~/hmf/analysis/svPaper/mappability_1M_with_genes.RData")
-
-#selectedSubtype = "MediumDup"
-#jon = enrich(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k, averageReplication_100k)
-#jon = enrichInner(criteria, mappability_100k, averageCopyNumber_100k, uniquelyMappable_100k, averageReplication_100k, "end")
-#jon$replicationBucket = replication_bucket(jon $>$ )
-#mappability = mappability_100k;
-#averageCopyNumber = averageCopyNumber_100k
-#uniquelyMappable = uniquelyMappable_100k 
-#averageReplication = averageReplication_100k;
-#type ="middle"
-#unique(result$criteria)
-
-
-View(svEnrichment %>% group_by(binChromosome,binStart,binWidth=binEnd-binStart+1,isFS=percentFS>0,subtype) %>% summarise(n=sum(q)) %>% spread(subtype,n))
-
-load(file = "/Users/jon/hmf/analysis/svPaper/combinedResult.RData")
-View(combinedResult %>% group_by(binChromosome,binStart,buckets,isFS=percentFS>0,criteria) %>% summarise(n=sum(q)) %>% spread(criteria,n))
-
-View(svEnrichment %>% group_by(subtype) %>% summarise(sum(unnormalisedBucketCount),sum(expectedBucketCount)))
-View(svEnrichment %>% filter(binEnd-binStart+1==1000000) %>% group_by(binChromosome,binStart,subtype,round(averageReplication,1),isFS=percentFS>0) %>% summarise(q=mean(q)) %>% spread(subtype,q) )
+buckets = enrich_and_normalise(featuredBreakends, 100000) 
+save(featuredBreakends, buckets, replicationFactor, file = "/Users/jon/hmf/analysis/svPaper/buckets.RData")
 
 
 
 ############################################ Plot ############################################ 
-load(file = "/Users/jon/hmf/analysis/svPaper/unfilteredEnrichment.RData")
-unique(unfilteredEnrichment$buckets)
-#28475  2915   313
-unique(unfilteredEnrichment$subtype)
-featureSubtypes = c("ShortTI","ShortTIBND2","Foldback","FoldbackLeft", "FoldbackRight")
-
-plot_enriched_locations <- function(df, selectedBucket, subtypes, file) {
+plot_enriched_locations <- function(dataf, selectedBucket, subtypes, file) {
   pdf(file=file,width=10, height = 6)
-  for (selectedSubtype in featureSubtypes) {
-    df = unfilteredEnrichment %>%
+  for (selectedSubtype in subtypes) {
+    df = dataf %>%
       filter(buckets == selectedBucket) %>%
-      filter(subtype == selectedSubtype) %>%
+      filter(feature == selectedSubtype) %>%
       mutate(
         significant = q < 0.01,
         size = ifelse(significant, 2, 0.3),
@@ -386,7 +266,7 @@ plot_enriched_locations <- function(df, selectedBucket, subtypes, file) {
     
     myPlot = ggplot(df) +
       geom_point(aes(x = binStart, y = unnormalisedBucketCount, color = significant, size = significant), stat = "identity", position = "stack") +
-      facet_wrap(~binChromosome) + ggtitle(unique(df$subtype)) +
+      facet_wrap(~binChromosome) + ggtitle(unique(df$feature)) +
       scale_y_log10() +
       scale_size_manual(values= c(0.2, 0.7)) +
       xlab("location") + ylab("un-normalised bucket count")
@@ -397,168 +277,9 @@ plot_enriched_locations <- function(df, selectedBucket, subtypes, file) {
   dev.off()
 }
 
-plot_enriched_locations(unfilteredEnrichment, 313, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features10M.pdf")
-plot_enriched_locations(unfilteredEnrichment, 2915, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features1M.pdf")
-plot_enriched_locations(unfilteredEnrichment, 28475, featureSubtypes, "~/hmf/analysis/svPaper/plot/Features100k.pdf")
+buckets[is.na(buckets)] <- 1
 
-#pdf(file="~/hmf/analysis/svPaper/plot/100kBuckets.pdf",width=10, height = 6)
-#pdf(file="~/hmf/analysis/svPaper/plot/1MBuckets.pdf",width=10, height = 6)
-#for (selectedSubtype in unique(unfilteredEnrichment$subtype)) {
-
-
-############################################ Medium Dup Plot ############################################ 
-load(file = "/Users/jon/hmf/analysis/svPaper/hpcDelsDups.RData")
-
-df = hpcDelsDups %>% filter(subtype == "MediumDup") %>%
-  mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F)) %>%
-  group_by(SampleId, IsFS) %>% count() %>%
-  group_by(SampleId) %>%
-  mutate(sampleTotal = sum(n), proportion = n / sampleTotal) %>%
-  arrange(-n)
-
-df$SampleId = factor(df$SampleId, levels = unique(df$SampleId), ordered = T)
-
-
-ggplot(df) +
-  geom_bar(width = 1, aes(x = SampleId, y = n, fill = IsFS), stat = "Identity") +
-  theme(axis.text.x = element_blank())
-
-df2 = df %>%
-  mutate(bucket = cut(sampleTotal, breaks = c(0, 8, 16, 32, 64, 127, 256, 512, 1024))) %>%
-  group_by(bucket, IsFS) %>% summarise(n = sum(n)) %>%
-  group_by(bucket) %>%
-  mutate(sampleTotal = sum(n), proportion = n / sampleTotal) %>%
-  arrange(-n)
-
-sum(df$n)
-sum(df2$n)
-
-
-
-ggplot(df2) +
-geom_bar(width = 1, aes(x = bucket, y = n, fill = IsFS), stat = "Identity")
-
-ggplot(df2) +
-geom_bar(width = 1, aes(x = bucket, y = proportion, fill = IsFS), stat = "Identity")
-
-
-df = hpcDelsDups %>%
-  mutate(IsFS = ifelse(FSStart!='false'|FSEnd!='false',T,F)) %>%
-  filter(subtype %in% c("MediumDup", "LongDel"), IsFS == T | subtype == "LongDel") %>%
-  group_by(SampleId, subtype) %>% count() %>% spread(subtype, n, fill = 0)
-
-ggplot(df) +
-geom_point(aes(x = MediumDup, y = LongDel))
-
-############################################ CDF COUNTS PLOT ############################################ 
-load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
-
-svData = svData %>% left_join(highestPurityCohort %>% select(SampleId = sampleId, cancerType), by = "SampleId")
-
-count_subtypes <-  function(df) {
-  df %>% 
-    group_by(SampleId, subtype, cancerType, ClusterId) %>% 
-    summarise() %>% group_by(SampleId, subtype, cancerType) %>% 
-    count() %>%
-    spread(subtype, n, fill = 0) %>% 
-    gather(subtype, n, c(-1,-2))
-}
-
-typeDF = count_subtypes(svData)
-featureDF = count_subtypes(svData %>% filter(isSimpleFoldback | isShortTI) %>% mutate(subtype = ifelse(isSimpleFoldback, "Foldback","ShortTI"))) %>% mutate(n = ifelse(subtype == "ShortTI", round(n/2), n))
-resolvedDF = count_subtypes(svData %>% filter(!ResolvedType %in% c('SIMPLE','SGL_BND_INV','SGL_PAIR_DEL')) %>% mutate(subtype = ResolvedType))
-
-plot_cdf <- function(df) {
-  
-  df$n <- df$n + 1
-  medDF = df %>% group_by(subtype, cancerType) %>% summarise(median = median(n))
-  
-  p = ggplot(df) + 
-    stat_ecdf(aes(x = n, color = subtype),  geom = "point", pad = F, size = 0.05) +
-    geom_segment(data = medDF, size = 0.4, aes(x = median, xend = median, y = 0.1, yend = 0.9, color = subtype)) + 
-    theme(
-      legend.position = "bottom", 
-      legend.title = element_blank(), 
-      axis.title = element_blank(),
-      axis.text.x = element_blank(),
-      panel.grid.major.y = element_blank(),
-      panel.grid.minor.y = element_blank(),
-      strip.background = element_blank(),
-      panel.spacing = unit(1, "pt"),
-      legend.margin = margin(t = 2, b = 2, unit = "pt")) +
-    facet_grid(~cancerType) +
-    scale_x_log10(breaks=c(2,11,101,1001), labels=c(1,10,100,1000)) +
-    scale_y_continuous(breaks = c(0, 1)) + 
-    coord_flip() 
-  return (p)
-}
-
-
-delCDF = plot_cdf(typeDF %>% filter(grepl("Del", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
-ggsave("~/hmf/analysis/svPaper/plot/DelCounts.png", delCDF, width = 240, height = 80, units = "mm", dpi = 300)
-
-dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text.x = element_text(angle = 90, hjust=0, vjust=0.5))
-ggsave("~/hmf/analysis/svPaper/plot/DupCounts.png", dupCDF, width = 240, height = 80, units = "mm", dpi = 300)
-
-
-dupCDF = plot_cdf(typeDF %>% filter(grepl("Dup", subtype))) + theme(strip.text = element_blank())
-featureCDF = plot_cdf(featureDF) + theme(strip.text = element_blank())
-lineCDF = plot_cdf(resolvedDF) + theme(strip.text = element_blank())
-
-pFinal = plot_grid(delCDF, dupCDF, featureCDF, lineCDF, ncol = 1, align = "v", rel_heights = c(1.2, 1, 1, 1))
-ggsave("~/hmf/analysis/svPaper/plot/svCounts.png", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
-ggsave("~/hmf/analysis/svPaper/plot/svCounts.pdf", pFinal, width = 200, height = 240, units = "mm", dpi = 300)
-
-
-############################################ DEL Scatter Plot ############################################ 
-load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
-load(file = "~/hmf/RData/Reference/cancerTypeColours.RData")
-
-cancerTypeColours = setNames( c("black", "red", "green", "orange",cancerTypeColours), c("Unknown", "Lymphoid","Small Intestine","Thyroid", names(cancerTypeColours)) )
-
-svData = svData %>% left_join(highestPurityCohort %>% select(SampleId = sampleId, cancerType), by = "SampleId")
-delData = svData %>% filter(Type == 'DEL') %>% 
-  mutate(length = PosEnd - PosStart, isLT100 = length < 100, is1K25k = length < 5000 & length > 1000) %>%
-  filter(is1K25k | isLT100) %>% 
-  mutate(category = ifelse(isLT100, "isLT100", "is1K25K")) %>%
-  group_by(SampleId, category, cancerType) %>% count() %>%
-  spread(category, n, fill = 0)
-
-pShortDelScatter = ggplot(delData) + 
-  geom_point(aes(x = isLT100, y = is1K25K, color = cancerType)) + 
-  scale_color_manual(values = cancerTypeColours) + xlab("Dels < 100 bases") + ylab("Dels between 1000 and 5000 bases") + 
-  theme(legend.title = element_blank())
-
-ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.pdf", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
-ggplot2::ggsave("~/hmf/analysis/svPaper/plot/ShortDelScatter.png", pShortDelScatter, width = 189, height = 140, units = "mm", dpi = 300)
-
-
-
-############################################ DEL / DUP Bucket Counts ############################################ 
-load(file = "/Users/jon/hmf/analysis/cohort/cohort.RData")
-load(file = "/Users/jon/hmf/analysis/svPaper/svData.RData")
-
-
-dels = svData %>% filter(ResolvedType == "DEL", Type == "DEL", Subclonal == "false", Synthetic == "false") %>%
-  mutate(
-    length = PosEnd - PosStart, 
-    bucket = cut(length, c(0, 2^(6:40) ), labels = c(2^(5:39)))
-  )
-
-dups = svData %>% filter(ResolvedType == "DUP", Type == "DUP", Subclonal == "false", Synthetic == "false") %>%
-  mutate(
-    length = PosEnd - PosStart, 
-    bucket = cut(length, c(0, 2^(6:40) ), labels = c(2^(5:39)))
-  )
-
-singleBlue = "#6baed6"
-
-ggplot(dups) + 
-  geom_bar(aes(x = bucket), fill = singleBlue) + xlab("Length") + ylab("Count")
-
-
-
-
-
+uniqueResolvedTypes = as.character(unique(featuredBreakends$feature))
+plot_enriched_locations(buckets, 313, uniqueResolvedTypes, "~/hmf/analysis/svPaper/plot/ResolvedType10M.pdf")
+plot_enriched_locations(buckets, 2915, uniqueResolvedTypes, "~/hmf/analysis/svPaper/plot/ResolvedType1M.pdf")
+plot_enriched_locations(buckets, 28475, uniqueResolvedTypes, "~/hmf/analysis/svPaper/plot/ResolvedType100k.pdf")

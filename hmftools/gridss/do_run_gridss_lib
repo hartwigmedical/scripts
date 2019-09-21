@@ -43,7 +43,7 @@ ref_genome=${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapien
 # TEMP local testing
 #ref_genome=/mnt/d/hartwig/refdata/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-source load_metadata
+source metadata_functions
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 joint_sample_name=$(load_joint_name_from_metadata ${run_dir})
