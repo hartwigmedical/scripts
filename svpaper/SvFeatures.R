@@ -12,7 +12,7 @@ dupLabels = paste0(lengthLabels, "Dup")
 delLabels = paste0(lengthLabels, "Del")
 featureLevels = c(dupLabels, delLabels, "TiSource", "CentromericSGL", "PeriCentromericSGL", "TelomericSGL", "Foldback", "LineInsertion", "LineSource")
 
-
+##### LOAD ##########
 svDrivers = read.csv(file = paste0(localPath,"SVA_DRIVERS.csv"))
 svDriverSummary = svDrivers %>% group_by(SampleId, ClusterId, ResolvedType) %>% count() %>% filter(ResolvedType != "") %>% select(-n) %>% mutate(IsDriver = T)
 
@@ -33,7 +33,7 @@ beData = rbind(
   select(SampleId,Id,IsStart,ClusterId,Type,ResolvedType,RepeatType,RepeatClass,FoldbackLnk,LocTopType,Chr,Pos,Orient,LE,ClusterCount,Len,replication, IsFoldback, LnkLen, CN, ClusterContainsDriver, ClusterContainsBND, ClusterVariantCount) 
 
 
-# Create features (non-exclusive)
+#### Create features (non-exclusive) ###
 dupBreakends = beData %>% filter(ResolvedType == 'DUP', ClusterCount == 1) %>% 
   mutate(feature = cut(Len, lengthBreaksDup, labels = paste0(lengthLabels, "Dup"), ordered_result = F))
 delBreakends = beData %>% filter(ResolvedType == 'DEL', ClusterCount == 1) %>% 
