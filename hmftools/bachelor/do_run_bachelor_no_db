@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 source metadata_functions
+source locate_files
 
 run_dir=$1 && shift
-bachelor_jar=$1 && shift
+bachelor_jar=$(locate_pilot_bachelor)
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
