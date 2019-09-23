@@ -8,7 +8,6 @@ bachelor_jar=$1 && shift
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 sample_ref=$(load_ref_sample_from_metadata ${run_dir})
-set=$( basename ${run_dir})
 
 # file Locations
 clinvar_filters=/data/common/dbs/bachelor/bachelor_clinvar_filters.csv
@@ -18,7 +17,7 @@ ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_s
 # /COLO829v003R/germline_caller/COLO829v003R.germline.vcf.gz
 germline_vcf=${run_dir}/${sample_ref}/germline_caller/${sample_ref}.germline.vcf.gz
 
-# /WIDE01010112T/mapping/WIDE01010112T_dedup.realigned.bam
+# /COLO829v003T/aligner/COLO829v003T.bam
 tumor_bam_file=${run_dir}/${sample}/aligner/${sample}.bam
 bachelor_output_dir=${run_dir}/bachelor/
 purple_dir=${run_dir}/purple/
@@ -32,11 +31,11 @@ echo "[INFO] Running Bachelor"
 
 java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
-    -xml_config ${bachelor_xml_config} \
-    -ext_filter_file ${clinvar_filters} \
     -germline_vcf ${germline_vcf} \
     -tumor_bam_file ${tumor_bam_file} \
     -purple_data_dir ${purple_dir} \
+    -xml_config ${bachelor_xml_config} \
+    -ext_filter_file ${clinvar_filters} \
     -ref_genome ${ref_genome_file} \
     -output_dir ${bachelor_output_dir} \
     -log_debug

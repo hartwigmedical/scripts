@@ -1,4 +1,4 @@
-o#!/usr/bin/env bash
+#!/usr/bin/env bash
 
 source locate_files
 
@@ -9,4 +9,3 @@ credentials=$(locate_pilot_database_credentials)
 bachelor_jar=$(locate_pilot_bachelor)
 
 ${prefix}/do_load_bachelor_to_db ${run_dir} ${credentials} ${bachelor_jar} "$@"
-

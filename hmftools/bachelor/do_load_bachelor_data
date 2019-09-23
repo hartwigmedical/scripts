@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 source metadata_functions
 
 run_dir=$1 && shift
