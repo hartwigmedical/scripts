@@ -8,5 +8,4 @@ run_dir=$1 && shift
 credentials=$(locate_pilot_database_credentials)
 bachelor_jar=$(locate_pilot_bachelor)
 
-${prefix}/do_load_bachelor_to_db ${run_dir} ${credentials} ${bachelor_jar} "$@"
-
+${prefix}/do_load_bachelor_data ${run_dir} ${credentials} ${bachelor_jar} "$@"
