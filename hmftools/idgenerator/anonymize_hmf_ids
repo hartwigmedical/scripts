@@ -2,6 +2,11 @@
 
 password=$1 && shift
 
+if [ -z "${password}" ]; then
+    echo "[ERROR] Please provide an anonimisation password! Exiting"
+    exit 1
+fi
+
 input_samples=/data/common/dbs/idgenerator/input/samples.csv
 patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
 
