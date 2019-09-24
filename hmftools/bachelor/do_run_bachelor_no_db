@@ -4,7 +4,8 @@ source metadata_functions
 source locate_files
 
 run_dir=$1 && shift
-bachelor_jar=$(locate_pilot_bachelor)
+
+bachelor_jar=/data/common/tools/bachelor_v1.9/bachelor.jar
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -23,10 +24,10 @@ tumor_bam_file=${run_dir}/${sample}/aligner/${sample}.bam
 bachelor_output_dir=${run_dir}/bachelor/
 purple_dir=${run_dir}/purple/
 
-if [ ! -d "${bachelor_output_dir}" ]; then
-    echo "[INFO] ${bachelor_output_dir} does not exist yet, creating..."
-    mkdir ${bachelor_output_dir}
-fi
+#if [ ! -d "${bachelor_output_dir}" ]; then
+#    echo "[INFO] ${bachelor_output_dir} does not exist yet, creating..."
+#    mkdir ${bachelor_output_dir}
+#fi
 
 echo "[INFO] Running Bachelor"
 

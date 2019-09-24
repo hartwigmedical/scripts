@@ -6,6 +6,7 @@ prefix=$(dirname $(readlink $0 || echo $0))
 
 run_dir=$1 && shift
 credentials=$(locate_pilot_database_credentials)
-bachelor_jar=$(locate_pilot_bachelor)
+
+bachelor_jar=/data/common/tools/bachelor_v1.9/bachelor.jar
 
 ${prefix}/do_load_bachelor_data ${run_dir} ${credentials} ${bachelor_jar} "$@"
