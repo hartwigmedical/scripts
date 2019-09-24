@@ -16,6 +16,7 @@ for sheet in $sheets; do
     runBase=$( dirname $sheet )
     baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
     runName=$( basename $runBase )
+    runStatus="Sequencing"
     readmeFile=$runBase"/README"
     conversionLogFile=$runBase"/conversionLog.txt"
     sampleSheetFile=$runBase"/SampleSheet.csv"
@@ -51,16 +52,21 @@ for sheet in $sheets; do
         cycleCount=$( ls $runBase/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l )
     fi
     echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
+    if [[ "$cycleCount" -ge "$expectedCycleCount" ]]; then
+        runStatus="SequencingDone"
+    fi
 
     ## check conversion status
     if [ ! -e $conversionLogFile ]; then
         echo "# [NOTE] CONVERSION not started yet";
     elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
         echo "# [NOTE] CONVERSION appears to be FINISHED";
+        runStatus="ConversionDone"
     else
         localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
         currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
         echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
+        runStatus="Converting"
     fi
 
     ## check images presence
@@ -72,6 +78,9 @@ for sheet in $sheets; do
     if [ -e $readmeFile ]; then
         echo "# [README] $readmeFile";
     fi
+
+    ## print status
+    echo "# [Stat] $runStatus";
 
     ## print line that can be pasted directly into RunOverview sheet
     echo -e "# $experimentName\t$runName\t$currHostShort\t$allProjects";
