@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
-run_mode=$1
-basic_id_generator_script=/data/common/repos/scripts/hmftools/idgenerator/do_run_hmf_id_generator
+run_mode=$1 && shift
 
 input_dir=/data/common/dbs/idgenerator/input
 output_dir=/data/common/dbs/idgenerator/output
@@ -10,7 +9,7 @@ patient_mapping=${input_dir}/patient_mapping.csv
 anonymized_samples=${output_dir}/hmf_samples.csv
 anonymized_sample_mapping=${output_dir}/hmf_sample_mapping.csv
 
-${basic_id_generator_script} \
+do_run_hmf_id_generator \
     ${run_mode} \
     -sample_ids_file ${input_samples} \
     -patient_mapping_file ${patient_mapping} \

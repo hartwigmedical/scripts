@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-run_mode=$1
+run_mode=$1 && shift
 id_generator_jar=/data/common/tools/hmf-id-generator_v2.0/hmf-id-generator.jar
 
-exec java -jar ${id_generator_jar} \
+java -jar ${id_generator_jar} \
     ${run_mode} \
     "$@"
