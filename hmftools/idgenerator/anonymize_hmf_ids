@@ -1,12 +1,6 @@
 #!/usr/bin/env bash
 
-password=$1 && shift
 sample_ids_file=$1 && shift
-
-if [ -z "${password}" ]; then
-    echo "[ERROR] Please provide an anonimisation password! Exiting"
-    exit 1
-fi
 
 if [ -z "${sample_ids_file}" ]; then
     echo "[INFO] No sample IDs file provided. Using default"
@@ -15,6 +9,7 @@ fi
 
 # patient mapping is an input to anonymizer but should never have an impact since all samples should have a unique hash!
 patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping_empty.csv
+password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator \
     -anonymize_ids \
