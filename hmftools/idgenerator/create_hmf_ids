@@ -2,5 +2,9 @@
 
 password=$1 && shift
 
-run_hmf_id_generator -create_ids -password ${password}
+if [ -z "${password}" ]; then
+    echo "[ERROR] Please provide an anonimisation password! Exiting"
+    exit 1
+fi
 
+run_hmf_id_generator -create_ids -password ${password}

@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
 
 run_mode=$1 && shift
+
+if [ -z "${run_mode}" ]; then
+    echo "[ERROR] Please provide a run mode! Exiting"
+    exit 1
+fi
+
 id_generator_jar=/data/common/tools/hmf-id-generator_v2.0/hmf-id-generator.jar
 
 java -jar ${id_generator_jar} \
