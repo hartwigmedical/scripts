@@ -15,8 +15,10 @@ fi
 
 patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
 
+# One can provide "-anonymize_out ${file_path}" to write the output to a file.
 do_run_hmf_id_generator \
     -anonymize_ids \
     -password ${password} \
     -sample_ids_file ${sample_ids_file} \
-    -patient_mapping_file ${patient_mapping}
+    -patient_mapping_file ${patient_mapping} \
+    "$@"
