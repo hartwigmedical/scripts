@@ -2,8 +2,8 @@
 
 run_dir=$1
 
-echo "[INFO] Running Purple on ${run_dir}"
-do_run_purple_no_db ${run_dir}
+#echo "[INFO] Running Purple on ${run_dir}"
+#do_run_purple_no_db ${run_dir}
 
 echo "[INFO] Running GRIDSS annotations on ${run_dir}"
 do_run_gridss_viral_annotate_prod ${run_dir}
