@@ -18,11 +18,11 @@ totalRuns=$(query_sbp_api -type runs -filter "name=${submission}" | grep -cv "^#
 totalRunsValidated=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -cv "^#")
 totalRunsDone=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated|Failed|SnpCheck" | grep -cv "^#")
 
-echo "[INFO] Analysis type for $submission in lims is \"$analysisType\""
-echo "[INFO] $totalLimsSamples samples found in LIMS (of which ${totalLimsFailed} are failed by lab)"
-echo "[INFO] $totalSamplesReady samples ready at SBP (of total $totalSamples)"
-echo "[INFO] $totalRunsDone runs finished at SBP (of total $totalRuns)"
-echo "[INFO] $totalRunsValidated runs validated at SBP (of total $totalRuns)"
+echo "[INFO] Analysis type for ${submission} in lims is \"${analysisType}\""
+echo "[INFO] ${totalLimsSamples} samples found in LIMS (of which ${totalLimsFailed} are failed by lab)"
+echo "[INFO] ${totalSamplesReady} samples ready at SBP (of total ${totalSamples})"
+echo "[INFO] ${totalRunsDone} runs finished at SBP (of total ${totalRuns})"
+echo "[INFO] ${totalRunsValidated} runs validated at SBP (of total ${totalRuns})"
 echo ""
 echo "[INFO] Inspect further:"
 echo "  query_lims -type samples -filter submission=${submission}"
