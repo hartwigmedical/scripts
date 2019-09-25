@@ -1,15 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions
-
 run_dir=$1 && shift
-comments=$1 && shift
 
-path_patient_reporter=/data/cpct/pilot_reports
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-
-pilot_patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "Corrected"
-
-mv ${path_patient_reporter}/${sample}_hmf_report.pdf ${path_patient_reporter}/${sample}_hmf_report_corrected.pdf
-
-echo "[INFO] Renamed patient report to ${sample}_hmf_report_corrected.pdf"
+pilot_patient_report_for_run ${run_dir} -corrected_report "$@"
