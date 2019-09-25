@@ -6,7 +6,9 @@ source metadata_functions
 run_dir=$1 && shift
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
@@ -29,9 +31,9 @@ fi
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
-    -ref_sample_barcode "" \
+    -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
-    -tumor_sample_barcode "" \
+    -tumor_sample_barcode ${tumor_sample_barcode} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \

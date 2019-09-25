@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-prefix=$(dirname $(readlink $0 || echo $0))
-
 tumor_sample=$1 && shift
 ref_sample=$1 && shift
 
@@ -15,7 +13,7 @@ if [ -z ${ref_sample} ]; then
     exit 1;
 fi
 
-${prefix}/do_run_base_patient_reporter \
+do_run_base_patient_reporter \
     -qc_fail \
     -qc_fail_reason insufficient_tissue_delivered \
     -tumor_sample ${tumor_sample} \
