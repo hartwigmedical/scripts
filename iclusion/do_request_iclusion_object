@@ -3,8 +3,7 @@
 object=$1 && shift
 api_credentials=$1 && shift
 
-script_dir=$(dirname $(readlink $0 || echo $0))
-token=$(${script_dir}/do_request_iclusion_token ${api_credentials} | jq -r '.access_token')
+token=$(do_request_iclusion_token ${api_credentials} | jq -r '.access_token')
 
 endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
 
