@@ -7,4 +7,4 @@ sample=$1 && shift
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}
+do_delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}
