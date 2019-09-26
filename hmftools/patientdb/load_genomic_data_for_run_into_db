@@ -22,7 +22,7 @@ echo "[INFO] Loading somatic variants for ${run_dir}"
 do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading structural variants for ${run_dir}"
-do_run_load_sv ${tumor_sample} ${run_dir}/sv ${structural_vcf} ${credentials} ${patient_db_jar}
+do_run_load_sv ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading linx into database for ${run_dir}"
 do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/sv

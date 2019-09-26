@@ -5,10 +5,9 @@ source metadata_functions
 
 run_dir=$1 && shift
 
-data_output_dir=${run_dir}/sv
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
 
-do_run_load_sv ${sample} ${data_output_dir} ${structural_vcf} ${credentials} ${patient_db_jar} "$@"
+do_run_load_sv ${sample} ${structural_vcf} ${credentials} ${patient_db_jar} "$@"

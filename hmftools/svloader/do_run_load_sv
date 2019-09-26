@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 sample=$1 && shift
-output_dir=$1 && shift
 structural_vcf=$1 && shift
 credentials=$1 && shift
 sv_jar=$1 && shift
@@ -10,15 +9,6 @@ sv_jar=$1 && shift
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
-
-if [ -d ${output_dir} ]; then
-    sv_data_files=$(find ${output_dir} -type f -name "*sv_data*")
-    if [[ ! -z ${sv_data_files} ]]; then
-        rm ${output_dir}/*sv_data*
-    fi
-else
-    mkdir -p ${output_dir}
-fi
 
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms4G -cp ${sv_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
     -tumor ${sample} \
