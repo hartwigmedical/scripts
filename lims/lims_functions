@@ -10,3 +10,15 @@ find_barcode_for_sample_name() {
     # TODO figure out how to deal with samples with multiple entries! Now take first entry...
     query_lims -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].sample_id'
 }
+
+find_ref_barcode_for_sample_name() {
+    local sample=$1
+    # TODO figure out how to deal with samples with multiple entries! Now take first entry...
+    query_lims -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].ref_sample_id'
+}
+
+find_name_for_barcode() {
+    local barcode=$1
+    # Any barcode should be unique in LIMS so safe to select first entry
+    query_lims -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[0].sample_name'
+}
