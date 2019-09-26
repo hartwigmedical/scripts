@@ -2,189 +2,227 @@ library(tidyr)
 library(dplyr)
 library(cowplot)
 library(ggplot2)
+library(stringr)
 
 localPath = '~/hmf/analyses/SVAnalysis/'
 sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
 
+##### LOAD DATA ##### 
 load(paste0(sharedPath,"highestPurityCohort.RData"))
+svDrivers = read.csv(file = paste0(localPath,"LNX_DRIVERS.csv"))
+svGermline = read.csv(paste(localPath,'SVGermline.csv',sep=''), header = T, stringsAsFactors = F)
+svDrivers=rbind(svDrivers %>% select(Gene,SampleId,DriverType,DriverLikelihood=Likelihood) %>% filter(DriverLikelihood>0.8), svGermline %>% mutate(DriverLikelihood=1,DriverType=ifelse(biallelic==1,'Germline Biallleic','Germline Monoallelic')) %>% select(Gene=gene,SampleId=sampleId,DriverType,DriverLikelihood))
 
-##### LOAD ##########
-svDrivers = read.csv(file = paste0(localPath,"SVA_DRIVERS.csv"))
 svData = read.csv(file = paste0(localPath,"SVA_SVS.csv"))
 svCluster = read.csv(file = paste0(localPath,"SVA_CLUSTERS.csv"))
-svCombined = left_join(svData,svCluster %>% select(SampleId, ClusterId, SuperType), by = c("SampleId", "ClusterId")) %>%
-  filter(SuperType != 'ARTIFACT')
+svEnriched = left_join(svData,svCluster %>% 
+  select(SampleId, ClusterId, SuperType), by = c("SampleId", "ClusterId")) %>%
+  filter(SuperType != 'ARTIFACT') %>% 
+  mutate(IsFragile = FSStart == 'true'|FSEnd == 'true',
+  IsLineElement = LEStart != 'false'| LEEnd !='false',
+  IsFoldback = Type == 'INV' & FoldbackLnkStart > 0, 
+  Length = PosEnd - PosStart + 1,
+  HomLength = pmin(10,nchar(as.character(Homology)))) %>%
+  left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId")
 
-### By Sample SIMPLE DELS & DUPS ####
-create_top_50_violin_plot <- function(x, filter = 100) {
-  xSummary = x %>% group_by(SampleId) %>% 
-    count() %>% 
-    arrange(-n) %>% 
-    ungroup() %>% 
-    top_n(50, n) %>%
-    left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId") %>%
-    arrange(CancerType, -n)
-  
-  if (filter > 0) {
-    xSummary = xSummary %>% filter(n > filter)
-  }
-  
-  xSummary[is.na(xSummary)] <- "Unknown"
-  xSummary = xSummary %>% mutate(Label = paste(SampleId, CancerType, n, sep = "-")) %>% select(SampleId, Label)
-  
-  plotDF = x %>% filter(SampleId %in% xSummary$SampleId) %>% left_join(xSummary, by = "SampleId") %>% mutate(Label = factor(Label, xSummary$Label, ordered = T))
-  
-  p1 = ggplot(plotDF, aes(Label, length)) + 
-    geom_violin(scale = "area") + 
-    scale_y_log10() +
-    theme(axis.text.x = element_text(angle = 90))
-  
-  return (p1)
+# Samples with key drivers
+sample_filter_by_driver<-function(driverGene){
+  return((svDrivers %>% filter(DriverLikelihood>0.8,Gene == driverGene) %>% .$SampleId))
 }
+CDK12samples=sample_filter_by_driver('CDK12')
+CCNE1samples=sample_filter_by_driver('CCNE1')
+BRCA2samples=sample_filter_by_driver('BRCA2')
+BRCA1samples=sample_filter_by_driver('BRCA1')
+######################### 
 
-simpleTop50DupsDF = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-p1 = create_top_50_violin_plot(simpleTop50DupsDF) + ggtitle("Simple Top 50 Dups")
-
-simpleTop50DelsDF = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-p2 = create_top_50_violin_plot(simpleTop50DelsDF) + ggtitle("Simple Top 50 Dels")
-
-cdk12Drivers = svDrivers %>% filter(Gene == 'CDK12') %>% select(SampleId)
-simpleTop50DupsCDK12 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
-p3 = create_top_50_violin_plot(simpleTop50DupsCDK12) + ggtitle("Simple Top CDK12 Dups")
-
-simpleTop50DelsCDK12 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% cdk12Drivers$SampleId)
-p4 = create_top_50_violin_plot(simpleTop50DelsCDK12) + ggtitle("Simple Top CDK12 Dels")
-
-ccne1Drivers = svDrivers %>% filter(Gene == 'CCNE1') %>% select(SampleId)
-simpleTop50DupsCCNE1 = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
-p5 = create_top_50_violin_plot(simpleTop50DupsCCNE1) + ggtitle("Simple Top CCNE1 Dups")
-
-simpleTop50DelsCCNE1 = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1) %>% filter(SampleId %in% ccne1Drivers$SampleId)
-p6 = create_top_50_violin_plot(simpleTop50DelsCCNE1) + ggtitle("Simple Top CCNE1 Dels")
-
-plot_grid(p1,p2, ncol = 1)
-plot_grid(p3,p4, ncol = 1)
-plot_grid(p5,p6, ncol = 1)
-
-
-### By Cancer Type ###
-
-create_violin_plot_cancer_type <- function(x) {
+##### FUNCTIONS ######
+plot_eight_violins <- function(svEnriched,complexType = 'COMPLEX',violinScale = 'area') {
+  
+  svSimple = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ClusterCount == 1|ResolvedType=='SIMPLE_GRP') %>% mutate(Feature = paste0("Simple ",Type)) %>% select(Feature, Length)
+  svComplex = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ResolvedType == complexType) %>% mutate(Feature = paste0(complexType," ",Type)) %>% select(Feature, Length)
+  svRecipInv = svEnriched %>% filter(!IsFoldback, ResolvedType == "RECIP_INV") %>% mutate(Feature = "Recip INV", Length = pmax(PosEnd, PosStart) - pmin(PosEnd, PosStart) + 1) %>% select(Feature, Length)
+  
+  fbStart = svEnriched %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
+  fbEnd = svEnriched %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
+  svFoldbacks = rbind(fbStart,fbEnd) %>% mutate(Feature='Foldback',Length = FoldbackLength+1) %>% select(Feature,Length)  #+1 allows dsiplay of 0 length
+  
+  svComplete = bind_rows(svSimple,svComplex) %>% bind_rows(svRecipInv) %>% bind_rows(svFoldbacks) 
+  svFeatureLevels = unique(svComplete$Feature)
+  svComplete = svComplete %>% mutate(Feature = factor(Feature, svFeatureLevels))
+  
+  ggplot(svComplete, aes(Feature, Length)) + 
+    geom_violin(scale = violinScale,fill='light blue',color=NA) + 
+    scale_y_log10() +
+    theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
+          axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
+          panel.grid.major.y=element_line(linetype = 8,size=0.1))
+}
+create_violin_plot_cancer_type <- function(x,feature='Length',scaleLogY=T) {
   
   cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(-n) %>%  ungroup()  %>% 
     mutate(CancerType = cancerType, weight = 1.0/n,Label = paste0(CancerType," (n=", n,")")) %>% select(CancerType, weight,Label)
-  
   plotDF = x %>%
     left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId") %>%
     filter(!is.na(CancerType)) %>%
     left_join(cancerTypeCounts, by = "CancerType") %>%
     mutate(Label = factor(Label, cancerTypeCounts$Label, ordered = T)) #%>%left_join(cancerTypeCounts)
   
-  p1 = ggplot(plotDF, aes(Label, length)) + 
-    geom_violin(scale = "area", aes(weight = weight)) + 
+  p1 = ggplot(plotDF, aes_string('Label', feature)) + 
+    geom_violin(scale = "area", aes(weight = weight),fill='light blue',color=NA)  +theme(axis.text.x = element_text(angle = 90)) +
+    theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
+          axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
+          panel.grid.major.y=element_line(linetype = 8,size=0.1))
+  
+  if (scaleLogY==T) {
+    p1 = p1+ scale_y_log10()
+  }
+  return (p1)
+}
+create_top_n_violin_plot <- function(x, topN=40,minVariants = 0) {
+  xSummary = x %>% group_by(SampleId) %>% 
+    count() %>% 
+    filter(n > minVariants) %>%
+    arrange(-n) %>% 
+    ungroup() %>% 
+    top_n(topN, n) %>%
+    left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId") %>%
+    arrange(CancerType, -n) %>% 
+    mutate(Label = str_wrap(paste0(SampleId,' ', ifelse(is.na(CancerType),"Unknown",CancerType),"(n=", n,")"),16)) %>% select(SampleId, Label)
+  
+  plotDF = x %>% filter(SampleId %in% xSummary$SampleId) %>% left_join(xSummary, by = "SampleId") %>% mutate(Label = factor(Label, xSummary$Label, ordered = T))
+  
+  p1 = ggplot(plotDF, aes(Label, Length)) + 
+    geom_violin(scale = 'area',fill='light blue',color=NA) + 
     scale_y_log10() +
-    theme(axis.text.x = element_text(angle = 90))
+    theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
+          axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
+          panel.grid.major.y=element_line(linetype = 8,size=0.1))
   
   return (p1)
 }
-
-cancerTypeDups = svCombined %>% filter(Type %in% c("DUP"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-pCancerTypeDups = create_violin_plot_cancer_type(cancerTypeDups) + ggtitle("DUP by CancerType (abs counts)")
-
-cancerTypeDels = svCombined %>% filter(Type %in% c("DEL"), ClusterCount == 1) %>% mutate(length = PosEnd - PosStart + 1)
-pCancerTypeDels = create_violin_plot_cancer_type(cancerTypeDels) + ggtitle("DELS by CancerType (abs counts)")
-
-plot_grid(pCancerTypeDups, pCancerTypeDels, ncol = 1)
-
-
-### Overall view of INV,DEL and DUP  ###
-plot_eight_violins <- function(svEnriched,complexType = 'COMPLEX',violinScale = 'area') {
-
-  svSimple = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ClusterCount == 1) %>% mutate(Feature = paste0("Simple ",Type)) %>% select(Feature, Length)
-  svComplex = svEnriched %>% filter(!IsFoldback, Type %in% c("DUP","DEL", "INV"), ResolvedType == complexType) %>% mutate(Feature = paste0(complexType,"_",Type)) %>% select(Feature, Length)
-  svRecipInv = svEnriched %>% filter(!IsFoldback, ResolvedType == "RECIP_INV") %>% mutate(Feature = "Recip Inv", Length = pmax(PosEnd, PosStart) - pmin(PosEnd, PosStart) + 1) %>% select(Feature, Length)
-  
-  fbStart = svEnriched %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
-  fbEnd = svEnriched %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
-  svFoldbacks = rbind(fbStart,fbEnd) %>% mutate(Feature='Foldback',Length = FoldbackLength+1) %>% select(Feature,Length)  #+1 allows dsiplay of 0 length
-
-  svComplete = bind_rows(svSimple, svRecipInv)  %>% bind_rows(svFoldbacks) %>% bind_rows(svComplex)
-  svFeatureLevels = unique(svComplete$Feature)
-  svComplete = svComplete %>% mutate(Feature = factor(Feature, svFeatureLevels))
-  
-  ggplot(svComplete, aes(Feature, Length)) + 
-    geom_violin(scale = violinScale) + 
-    scale_y_log10() 
-}
-
-svEnriched = svCombined %>% mutate(
-    IsFragile = FSStart == 'true'|FSEnd == 'true',
-    IsLineElement = LEStart != 'false'| LEEnd !='false',
-    IsFoldback = Type == 'INV' & FoldbackLnkStart > 0, 
-    Length = PosEnd - PosStart + 1) 
-
-p1 = plot_eight_violins(svEnriched,'COMPLEX','count') + ggtitle("All")
-p2 = plot_eight_violins(svEnriched %>% filter(IsFragile),'COMPLEX','count') + ggtitle("Fragile Site")
-plot_grid(p1, p2, ncol = 1)
-#plot_eight_violins(svEnriched %>% filter(IsLineElement),'LINE','count') + ggtitle("Line Element")   # Does not show much except that LINE can cause some INV of 100-200 bases
-
-### Synthtetics  ###
-
 plot_synthetics <- function(svEnriched,violinScale = 'area') {
-  svSimple = svEnriched %>% filter(Type %in% c("DUP","DEL"), ClusterCount == 1) %>% mutate(Feature = paste0("Simple ",Type)) %>% select(Feature, Length)
+  svSimple = svEnriched %>% filter(Type %in% c("DUP","DEL"), ClusterCount == 1) %>% mutate(Feature = paste0("Simple ",Type)) %>% select(Feature, Length) %>% arrange(Feature)
   synStart = svEnriched %>% filter(ClusterCount>1,ResolvedType %in% c('DEL','DUP'),is.na(LnkSvStart)) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,Pos=PosStart,ResolvedType)
   synEnd = svEnriched %>% filter(ClusterCount>1,ResolvedType %in% c('DEL','DUP'),is.na(LnkSvEnd)) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,Pos=PosEnd,ResolvedType)
   svSyn = bind_rows(synStart,synEnd) %>% 
-      group_by(SampleId,ClusterId,ResolvedType) %>%
-      summarise(Length=max(Pos)-min(Pos)) %>% ungroup() %>% mutate(Feature = paste0("SYN_",ResolvedType)) %>% select(Feature, Length)
+    group_by(SampleId,ClusterId,ResolvedType) %>%
+    summarise(Length=max(Pos)-min(Pos)) %>% ungroup() %>% mutate(Feature = paste0("Synthetic ",ResolvedType)) %>% select(Feature, Length) %>% arrange(Feature)
+  svSyn= bind_rows(svSyn,svSyn)
+  svSyn= bind_rows(svSyn,svSyn)
+  svSyn= bind_rows(svSyn,svSyn)
+  svSyn= bind_rows(svSyn,svSyn)
+  svSyn= bind_rows(svSyn,svSyn)
   
   fbStart = svEnriched %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
   fbEnd = svEnriched %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
   svFoldbacks = rbind(fbStart,fbEnd) %>% mutate(
-      IsChained=(OtherId!=Id),                               
-      SingleBreakend=(OtherId==Id&FoldbackLength==0),
-      FoldbackId=ifelse(Id<OtherId,Id,OtherId),
-      Feature = ifelse(IsChained, "Chained Foldback", "Simple Foldback"),
-      FoldbackLength=FoldbackLength+1) %>%
+    IsChained=(OtherId!=Id),                               
+    SingleBreakend=(OtherId==Id&FoldbackLength==0),
+    FoldbackId=ifelse(Id<OtherId,Id,OtherId),
+    Feature = ifelse(IsChained, "Synthetic Foldback", "Simple Foldback"),
+    FoldbackLength=FoldbackLength+1) %>%
     group_by(SampleId,ClusterId,FoldbackId,IsChained, Feature) %>% 
     summarise(Chr=first(Chr),Arm=first(Arm),FoldbackLength=first(FoldbackLength)) %>%
     ungroup() %>%
-    select(Feature, Length = FoldbackLength)
+    select(Feature, Length = FoldbackLength) %>% arrange(Feature)
   
-  svComplete = bind_rows(svFoldbacks, svSyn)  %>% bind_rows(svSimple)#  %>% bind_rows(svFoldbacks) %>% bind_rows(svComplex)
+  svComplete = bind_rows(svSimple,svSyn)  %>% bind_rows(svFoldbacks)#  %>% bind_rows(svFoldbacks) %>% bind_rows(svComplex)
   #svComplete=svFoldbacks
   svFeatureLevels = unique(svComplete$Feature)
   svComplete = svComplete %>% mutate(Feature = factor(Feature, svFeatureLevels))
   
   ggplot(svComplete, aes(Feature, Length)) + 
-    geom_violin(scale = violinScale) + 
-    scale_y_log10() 
+    geom_violin(scale = violinScale,fill='light blue',color=NA) + 
+    scale_y_log10()  +
+    theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
+          axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
+          panel.grid.major.y=element_line(linetype = 8,size=0.1),panel.grid.minor.y=element_line(linetype = 8,size=0.1))
 }
+create_violin_plot_resolved_type <- function(x,feature='Length',scaleLogY=T) {
+  
+  plotDF = x %>% mutate(Label = factor(ResolvedType, ordered = T)) #%>%left_join(cancerTypeCounts)
+  
+  p1 = ggplot(plotDF, aes_string('Label', feature)) + 
+    geom_violin(bw=0.1,scale = "area",fill='light blue',color=NA)  +theme(axis.text.x = element_text(angle = 90)) 
+  
+  if (scaleLogY==T) {
+    p1 = p1+ scale_y_log10()
+  }
+  return (p1)
+}
+######################
 
-#All
-plot_synthetics(svEnriched) + ggtitle("Synthetics")
+##### LENGTH ANALYSES #######
+### 1. High level INV,DEL and DUP Lengths ###
+p1 = plot_eight_violins(svEnriched,'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV")
+p2 = plot_eight_violins(svEnriched %>% filter(IsFragile),'COMPLEX','count') + ggtitle("Fragile site only")
+plot_grid(p1, p2, ncol = 1)
 
-#CDK12
-cdk12Drivers = svDrivers %>% filter(Gene == 'CDK12') %>% select(SampleId)  # note need dir
-simpleTop50DupsCDK12 = svEnriched %>%  filter(SampleId %in% cdk12Drivers$SampleId)
-plot_synthetics(simpleTop50DupsCDK12) + ggtitle("Simple Top CDK12 Dups")
+### 2. Simple DELS and DUPS  by Cancer Type ###
+pCancerTypeDups = create_violin_plot_cancer_type(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1)) + ggtitle("Length Distribution: Simple DUP by CancerType (count per sample)")
+pCancerTypeDels = create_violin_plot_cancer_type(svEnriched %>% filter(Type %in% c("DEL"), ClusterCount == 1)) + ggtitle("Simple DEL by CancerType (count per sample)")
+plot_grid(pCancerTypeDups, pCancerTypeDels, ncol = 1)
 
-#CCNE1
-CCNE1Drivers = svDrivers %>% filter(Gene == 'CCNE1') %>% select(SampleId)
-simpleTop50DupsCCNE1 = svEnriched %>%  filter(SampleId %in% CCNE1Drivers$SampleId)
-plot_synthetics(simpleTop50DupsCCNE1) + ggtitle("Simple Top CCNE1 Dups")
+### 3. Simple DELS and DUPS top 50 samples ####
+#TO DO: can we colour violin by enriched driver genes?
+p1 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1),50) + ggtitle("Simple Top 50 Dups")
+p2 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DEL"), ClusterCount == 1) ,50) + ggtitle("Simple Top 50 Dels")
+plot_grid(p1,p2, ncol = 1)
 
-#BRCA1
-BRCA1Drivers = svDrivers %>% filter(Gene == 'BRCA1') %>% select(SampleId)
-simpleTop50DupsBRCA1 = svEnriched %>%  filter(SampleId %in% BRCA1Drivers$SampleId)
-plot_synthetics(simpleTop50DupsBRCA1) + ggtitle("Simple Top BRCA1 Dups")
+### 4.Simple DUP top N by enriched driver Gene ###
+p3 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1,(SampleId %in% CDK12samples))) + ggtitle("Simple Top CDK12 Dups")
+p4 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1,(SampleId %in% CCNE1samples))) + ggtitle("Simple Top CCNE1 Dups")
+p5 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1,(SampleId %in% BRCA1samples))) + ggtitle("Simple Top BRCA1 Dups")
+plot_grid(p3,p4,p5, ncol = 1)
+print(p3)
 
-#BRCA2
-BRCA2Drivers = svDrivers %>% filter(Gene == 'BRCA2') %>% select(SampleId)
-simpleTop50DupsBRCA2 = svEnriched %>%  filter(SampleId %in% BRCA2Drivers$SampleId)
-plot_synthetics(simpleTop50DupsBRCA2) + ggtitle("Simple Top BRCA2 Dups")
+### 5.Simple DEL top N by enriched driver Gene ###
+p6 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1,(SampleId %in% BRCA1samples))) + ggtitle("Simple Top BRCA1 DEL")
+p7 = create_top_n_violin_plot(svEnriched %>% filter(Type %in% c("DUP"), ClusterCount == 1,(SampleId %in% BRCA2samples))) + ggtitle("Simple Top BRCA2 DEL")
+plot_grid(p6,p7, ncol = 1)
 
+### 4.Simple DUP top N for enriched cancer types ###
+p10 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType=='Ovary',20)) + ggtitle("Simple top Ovary DUP")
+p11 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType %in% c('Esophagus','Stomach')),20) + ggtitle("Simple Top Esophagus & Stomach DUP")
+p12 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType=='Prostate'),20) + ggtitle("Simple Top Prostate DUP")
+p13 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType=='Colon/Rectum'),20) + ggtitle("Simple Top CRC DUP")
+p14 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType=='Breast'),20) + ggtitle("Simple Top Breast DUP")
+plot_grid(p10,p11,p12,p13,p14, ncol = 1)
 
-#### SCRATCH#######
-# 4 main genes are mutually exclusive
+### 5. Simple vs synthetic lengths overall ###
+plot_synthetics(svEnriched,'count') + ggtitle("Synthetics")
+
+### 6. Simple vs synthetic lengths by driver gene ###
+p0= plot_synthetics(svEnriched,'count') + ggtitle("All Samples")
+simpleTop50DupsCDK12 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'CDK12') %>% .$SampleId))
+p1=plot_synthetics(simpleTop50DupsCDK12,'count') + ggtitle("Samples with  CDK12 drivers")
+simpleTop50DupsCCNE1 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'CCNE1') %>% .$SampleId))
+p2=plot_synthetics(simpleTop50DupsCCNE1,'count') + ggtitle("Samples with CCNE1 drivers")
+simpleTop50DupsBRCA1 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'BRCA1') %>% .$SampleId))
+p3=plot_synthetics(simpleTop50DupsBRCA1,'count') + ggtitle("Samples with  BRCA1 drivers")
+simpleTop50DupsBRCA2 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'BRCA2') %>% .$SampleId))
+p4= plot_synthetics(simpleTop50DupsBRCA2,'count') + ggtitle("Samples with BRCA2 drivers")
+plot_grid(p0,p1,p2,p3,p4,ncol=1)
+################################
+
+##### DB LENGTH ANALYSES #######
+### 1. Short DB lengths by Resolved Type ###
+#TODO: switch to breakend based
+print(create_violin_plot_resolved_type(svEnriched %>% filter(ClusterCount>1,DBLenStart<100,DBLenStart>-100,SuperType!='INCOMPLETE',
+                                                             !ResolvedType %in% c('DOUBLE_MINUTE')),'DBLenStart',F) + ggtitle(" DB by ResolvedType (abs counts)"))
+################################
+
+##### HOM LENGTH ANALYSES ######
+### 1. HOM engths by Resolved Type ###
+# TODO: convert to bar chart.  
+# LINE has least homology, followed by COMPLEX and RECIP events.  PAIR_OTHER has a very long upper tail.  DELS and DUPS have nuances by length
+View(svEnriched %>% filter(SuperType!='INCOMPLETE',Type!='SGL',Type!='INF') %>% group_by(ResolvedType,HL=pmin(20,nchar(as.character(Homology)))) %>% count %>% spread(HL,n))
+
+################################
+
+########## SCRATCH##############
+# 4 main genes are almost mutually exclusive
 View(svDrivers %>% filter(Gene %in% c('CDK12','BRCA1','BRCA2','CCNE1')) %>% group_by(Gene,SampleId) %>% count %>% spread(Gene,n))
+plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02060120T'),'COMPLEX','count') + ggtitle("CPCT02060120T")
+
+################################
