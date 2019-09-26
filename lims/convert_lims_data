@@ -13,10 +13,18 @@ use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
+use constant TISSUE_ANCESTOR_FIELDS => qw( 
+    submission lab_status hospital_pa_sample_id hospital_patient_id
+    germline_findings requester_name requester_email purity_shallow 
+    tumor_perc
+);
+use constant BLOOD_ANCESTOR_FIELDS => qw( 
+    submission lab_status
+);
 
 my %opt = ();
 GetOptions (
-    "out_file=s" => \$opt{ out_file },
+    "out_dir=s"  => \$opt{ out_dir },
     "lims_dir=s" => \$opt{ lims_dir },
     "execute"    => \$opt{ execute },
     "debug"      => \$opt{ debug },
@@ -24,10 +32,12 @@ GetOptions (
 ) or die("Error in command line arguments\n");
 
 my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
-my $LIMS_DIR = $opt{ lims_dir } || '/data/lims';
-my $JSON_OUT = $opt{ out_file } || $LIMS_DIR . '/lims.json';
-my $SUBM_OUT = $LIMS_DIR . '/submissions.json';
-my $BACK_DIR = $LIMS_DIR . '/backup';
+my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
+my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
+my $JSON_OUT = $OUT_DIR . '/lims.json';
+my $SUBM_OUT = $OUT_DIR . '/submissions.json';
+my $BACK_DIR = $OUT_DIR . '/backup';
+
 my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
 my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
@@ -37,7 +47,7 @@ my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
 my $SUBM_TSV_2018 = $LIMS_DIR . '/latest/2018_subm';
 my $SAMP_TSV_2018 = $LIMS_DIR . '/latest/2018_samp';
 my $PROC_TSV_2018 = $LIMS_DIR . '/latest/2018_proc';
-my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';
+my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';    
 my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
 
 my @ALL_INPUT_FILES = ( 
@@ -72,23 +82,27 @@ my $HELP_TEXT = <<"HELP";
   Output files:
     $JSON_OUT
     $SUBM_OUT
+    
+  Options (only for testing):
+    -lims_dir <str>  Path to input lims dir ($LIMS_DIR)
+    -out_file <str>  Path to output json ($JSON_OUT)
+    
 HELP
-
 
 ## ---------- 
 ## INPUT CHECKS and BACKUP
 ## ----------
-die $HELP_TEXT . "\n" if $opt{ help };
-die $HELP_TEXT . "\n" unless $opt{ execute };
+die $HELP_TEXT if $opt{ help };
+die $HELP_TEXT unless $opt{ execute };
 
-foreach ( $BACK_DIR ){
+foreach ( $BACK_DIR, $OUT_DIR ){
     die "[EXIT] Dir does not exist ($_)\n" unless -d $_;
 }
 foreach ( @ALL_INPUT_FILES ){
     die "[EXIT] File does not exist ($_)\n" unless -f $_;
 }
-foreach ( $JSON_OUT ){
-    next unless -f $JSON_OUT;
+foreach ( $JSON_OUT, $SUBM_OUT ){
+    next unless -f $_;
     copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\" to $BACK_DIR failed: $!";
 }
 
@@ -105,20 +119,20 @@ my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-shipments sheet
 my $samp_objs = {}; # will contain objects from Received-samples sheet
 my $cpct_objs = {}; # will contain objects from CPCT access DB
-my $lims_objs = {}; # will contain all objects joined together
+my $lims_objs = {}; # will contain all sample objects
 
 my $lims_2017 = readJson( $LIMS_JSN_2017 );
 $samp_objs = $lims_2017->{ 'samples' };
 $subm_objs = $lims_2017->{ 'submissions' };
 
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
-$proc_objs = parseTsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
-$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
-$subm_objs = parseTsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
-$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
-$samp_objs = parseTsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'dna_sample_id_1',  1, $CPCT_CSV, "," );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
+$cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
 $lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $cntr_dict );
@@ -137,22 +151,19 @@ say "[INFO] DONE with \"$SCRIPT\"";
 ## ---------- 
 ## SUBs
 ## ----------
-sub parseTsv{
+sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
-    
     my %store = %$objects;
-    say "[INFO]   Parsing input file $file";
-        
-    ## Check header for completeness
-    open IN, "<", $file or die "Unable to open file ($file): $!\n";
     
+    say "[INFO]   Parsing input file $file";
+    open IN, "<", $file or die "Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[EXIT] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
     my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
     
-    ## checking header
+    ## Checking header content
     my $header_misses_field = 0;
     foreach my $field (keys %$fields) {
         if ( not exists $fields_map{ $field } ){
@@ -160,8 +171,11 @@ sub parseTsv{
             $header_misses_field = 1;
         }
     }
-    print Dumper \%fields_map and die "[EXIT] Error: header incomplete ($file)\n" if $header_misses_field;
+    if ( $header_misses_field ){
+        print Dumper \%fields_map and die "[EXIT] Error: header incomplete ($file)\n";
+    }
     
+    ## Header OK: continue reading in all data lines
     while ( <IN> ){
         chomp;
         die "[EXIT] Cannot parse line ($_)\n" unless $csv->parse($_);
@@ -174,23 +188,22 @@ sub parseTsv{
             $raw_object{ $field } = $next_value;
         }
         
-        my $obj = selectAndRenameFields( \%raw_object, $fields );        
-        my $key1 = $obj->{ $store_field_name } || NACHAR;
-        my $key2 = $obj->{ 'sample_id' } || NACHAR;
-        my $key3 = $obj->{ 'sample_name' } || NACHAR;
-        my $key;
+        my $obj = selectAndRenameFields( \%raw_object, $fields );
+        my $key = $obj->{ $store_field_name } || NACHAR;
+        my $source = $obj->{ 'sample_source' } || NACHAR;
+        my $name = $obj->{ 'sample_name' } || "SampleNameUnknown";
         
-        ## really try to find a key for storing object
-           if ( not isSkipValue($key1) ) { $key = $key1; }
-        elsif ( not isSkipValue($key2) ) { $key = $key2; }
-        elsif ( not isSkipValue($key3) ) { $key = $key3; }
-         else { next; }
+        if ( $source eq 'BLOOD' ){
+            $key = $name;
+        }
         
-        ## store key is chosen: do final checks
         next if isSkipValue( $key );
-        next if $should_be_unique and not keyIsCorrectAndUnique( \%store, $key);
+        my $reason_not_to_store = checkKeyToStore( \%store, $key );
+        if ( $should_be_unique and $reason_not_to_store ){
+            warn "[WARN] SKIPPING sample (name: $name) for reason: $reason_not_to_store\n" and next;
+        }
         
-        ## all checks ok: fix and store
+        ## Checks OK: fix some fields and store object
         fixDateFields( $obj );
         fixIntegerFields( $obj );
         fixBooleanFields( $obj );
@@ -294,183 +307,155 @@ sub processAccessSamples{
     
     my ($lims, $objects, $centers_dict) = @_;
     my %store = %{$lims};
-    my %name2id = ();
+    my %blood_samples_by_name = ();
+    my %tissue_samples_by_coupe = ();
     
-    while ( my($sample_id, $row_info) = each %$objects ){
+    ## First gather info of all source samples
+    ## to enrich info of derivate samples of these later on
+    say "[INFO]   Storing temporary mappings of BLOOD and TISSUE samples for later enrichment of DNA/RNA samples";
+    while ( my($main_id, $row_info) = each %$objects ){
         
-        ## first we work on the dna sample
-        my $sample_name  = $row_info->{ 'sample_name' };
-        my $patient_name = $row_info->{ 'patient' };
-        my $main_id      = $row_info->{ 'dna_sample_id_1' };
+        my $source = $row_info->{ 'sample_source' };        
+        my $id     = $row_info->{ 'sample_id' };
+        my $name   = $row_info->{ 'sample_name' };
+        my $coupe  = $row_info->{ 'coupes_barcode' } || NACHAR;
         
-        ## skip samples when LAB gave certain sample name
-        checkDefined( 'sample_name', $row_info );
-        next if not $sample_name or isSkipValue( $sample_name );
+        ## Only need to store the ancestor samples
+        next unless ($source eq 'BLOOD' or $source eq 'TISSUE');
         
-        ## skip particular case of weird historic sample naming
-        next if $sample_name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
-        
-        ## all other samples names should follow certain formats
-        if ( $sample_name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
-            my ($patient, $study_type, $centerid, $tum_or_ref) = ($1, $2, $3, $4);
-                
-            $row_info->{ 'label' }         = $study_type;
-            $row_info->{ 'patient' }       = $patient;
-            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
-            
-            ## CORE is handled per case/submission
-            if ( $study_type eq "CORE" ){
-                if ( exists $row_info->{ 'submission' } and $row_info->{ 'submission' } =~ /^HMFreg/ ){
-                    $row_info->{ 'entity' } = $row_info->{ 'submission' };
-                }
-                else{
-                    warn "[WARN] SKIPPING CORE sample ($sample_name): no correct HMFreg submission present\n";
-                    next;
-                }
-            }
-            ## CPCT/DRUP/WIDE are handled study/center wide
-            else{
-                if ( exists $centers_dict->{ $centerid } ){
-                    my $centername = $centers_dict->{ $centerid };
-                    $row_info->{ 'submission' } = 'HMFreg' . $study_type;
-                    $row_info->{ 'entity' } = join( "_", $study_type, $centername );
-                }
-                else {
-                    warn "[WARN] SKIPPING sample ($sample_name): Unkown center id ($centerid)\n";
-                    next;
-                }
+        ## Add to temporary ref sample mappings by sample name
+        if ( $source eq 'BLOOD' and not isSkipValue($name) ){
+            if ( exists $blood_samples_by_name{ $name } ){
+                warn "[WARN]     Sample with name \"$name\" already exists in mapping for sample ($id)";
+            }else{
+                 $blood_samples_by_name{ $name } = $row_info;
             }
         }
-        elsif ( $sample_name =~ /^(PMC\d{6})(T|R){1}/ms ){
-            my ($patient, $tum_or_ref) = ($1, $2);
-            $row_info->{ 'label' }         = 'PMC';
-            $row_info->{ 'patient' }       = $patient;
-            $row_info->{ 'submission' }    = "HMFregPMC";
-            $row_info->{ 'entity' }        = "COHORT_PMC01";
-            $row_info->{ 'analysis_type' } = $tum_or_ref eq 'T' ? 'Somatic_T' : 'Somatic_R';
-        }
-        else{
-            warn "[WARN] Skipped sample $sample_name from Access lims because format is not as expected\n";
-            next;
-        }
-        
-        ## completeness checks
-        die "[EXIT] No submission defined for sample ($sample_name)\n" unless $row_info->{ 'submission' };
-        die "[EXIT] No analysis type defined for sample ($sample_name)\n" unless $row_info->{ 'analysis_type' };
-        $row_info->{ 'project_name' } = $row_info->{ 'submission' };
-        
-        ## in case of low tumor sample there is no DNA ID present
-        ## but want to keep sample for low tumor percentage check
-        if ( isSkipValue( $main_id ) ){
-            if ( $sample_name =~ /^(CPCT|DRUP|WIDE|CORE|PMC)/ and $sample_name !~ /T0$/ ){
-                my $unique = $sample_name;
-                next if $unique eq '';
-                next if isSkipValue( $unique );
-                next unless keyIsCorrectAndUnique( \%store, $unique );
-                $row_info->{ 'sample_id' } = $unique;
-                $store{ $unique } = $row_info;
+        ## Add to temporary tumor sample mappings by coupe barcode
+        if ( not isSkipValue($coupe) ){
+            if ( exists $tissue_samples_by_coupe{ $coupe } ){
+                warn "[WARN]     Sample with coupe barcode \"$coupe\" already exists in mapping for sample ($name)";
+            }else{
+                 $tissue_samples_by_coupe{ $coupe } = $row_info;
             }
-            else{
-                ## cannot save so completely skip sample
-                next;
-            }
-        }
-        
-        ## store every DNA ID present as separate sample
-        foreach my $idx ( 1, 2, 3 ){
-            
-            ## first check the new ID
-            my $field_name = 'dna_sample_id_' . $idx;
-            my $unique = $row_info->{ $field_name };
-            next unless defined $unique;
-            next if isSkipValue( $unique );
-            next unless keyIsCorrectAndUnique( \%store, $unique );
-            
-            ## make a copy because we will alter the object
-            my %row_info_copy = %{$row_info};
-            $row_info_copy{ 'sample_id' } = $unique;
-            
-            ## store
-            $store{ $unique } = \%row_info_copy;
-        }
-
-        ## perform extra actions depending on source
-        if ( defined $row_info->{ 'sample_source' } ){
-            my $source = $row_info->{ 'sample_source' };
-            
-            ## in case of BIOPSY we also store rna sample
-            if ( $source =~ m/^Tissue$/i ){
-                
-                ## store every RNA ID present as separate sample
-                foreach my $idx ( 1, 2, 3 ){
-                    
-                    ## first check the new ID
-                    my $field_name = 'rna_sample_id_' . $idx;
-                    my $unique = $row_info->{ $field_name };
-                    next unless defined $unique;
-                    next if isSkipValue( $unique );
-                    next unless keyIsCorrectAndUnique( \%store, $unique );
-                    
-                    ## make a copy because we will alter the object
-                    my %row_info_copy = %{$row_info};
-                    
-                    ## reset and store
-                    $row_info_copy{ 'sample_id' } = $unique;
-                    $row_info_copy{ 'analysis_type' } = 'RnaAnalysis';
-                    $store{ $unique } = \%row_info_copy;
-                }
-            }
-            ## in case of BLOOD we also store plasma sample       
-            elsif( $source =~ m/^Blood$/i ){
-                
-                ## link name to id (used later to add ref sample id to each biopsy)
-                if ( exists $name2id{ $sample_name } ){
-                    my $existing_id = $name2id{ $sample_name };
-                    warn "[WARN] Sample $sample_name ($existing_id) will be overwritten by $sample_name ($sample_id): check with LAB to fix\n";
-                }
-                $name2id{ $sample_name } = $sample_id;
-                
-                ## store plasma sample if present and is OK
-                next unless defined $row_info->{ 'plasma_sample_id' };
-                my $unique = $row_info->{ 'plasma_sample_id' };
-                next if isSkipValue( $unique );
-                next unless keyIsCorrectAndUnique( \%store, $unique );
-                
-                ## make a copy because we will alter the object
-                my %row_info_copy = %{$row_info};
-                
-                ## reset and store
-                $row_info_copy{ 'sample_id' } = $unique;
-                $row_info_copy{ 'analysis_type' } = 'PLASMA';
-                $store{ $unique } = \%row_info_copy;
-                
-            }
-            else{
-                die "[EXIT] Unexpected value for source ($source), expected TISSUE or Blood (sample \"$sample_name\")\n";
-            }
-        }
-        else{
-            warn "[WARN] No source available for sample ($sample_name) so unable to check for RNA/Plasma\n";
         }
     }
     
-    ## add R sample_id for each biopsy
-    foreach my $sample_id ( keys %store ){
-        my $sample = $store{ $sample_id };
-        next unless $sample->{ analysis_type } eq 'Somatic_T';
-        next unless $sample->{ label } =~ /^(CPCT|DRUP|WIDE|CORE)$/;
+    ## Now read through all samples again to store all samples 
+    ## and enrich DNA and RNA samples with info from their ancestor samples
+    while ( my($id, $object) = each %$objects ){
         
-        my $patient = $sample->{ 'patient' };
-        my $ref_sample_name = $patient . 'R';
-        my $ref_sample_id = $sample->{ 'ref_sample_id' };
+        my $name    = $object->{ 'sample_name' };
+        my $patient = $object->{ 'patient' };
+        my $source  = $object->{ 'sample_source' };
+        my $coupe   = $object->{ 'coupes_barcode' } || NACHAR;
         
-        #if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
-        if ( $ref_sample_id eq "" ){
-            if ( exists $name2id{ $ref_sample_name } ){
-                $ref_sample_id = $name2id{ $ref_sample_name };
-                $sample->{ 'ref_sample_id' } = $ref_sample_id;
+        (my $ancestor_coupe = $coupe) =~ s/(_DNA|_RNA)$//;
+        my $is_dna = $source =~ /^DNA/ ? 1 : 0;
+        my $is_rna = $source =~ /^RNA/ ? 1 : 0;
+        my $is_blood = $source =~ /BLOOD$/ ? 1 : 0;
+        my $is_tissue = $source =~ /TISSUE$/ ? 1 : 0;
+        
+        ## Only store DNA/RNA samples (all samples should have DNA derivate in LIMS)
+        next unless ($is_dna or $is_rna);
+        
+        ## Source of a sample must be TISSUE or BLOOD or PLASMA (with possible DNA or RNA prefix for derivates)
+        unless ( $source =~ /^((DNA|RNA)\-)?(PLASMA|TISSUE|BLOOD)$/ ){
+            warn "[WARN] SKIPPING sample: unable to parse source (\"$source\") for sample (\"$name\"). Need to fix this!\n" and next;
+        }
+        
+        ## Skip particular cases of weird historic sample naming or absent name
+        next if not $name or isSkipValue( $name );
+        next if $name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
+        next if $name =~ /^(PMC\d{6})(T|R){1}/ms;
+        next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
+        
+        ## Enrich (DNA|RNA)-TISSUE samples with info from their TISSUE ancestor
+        ## Enrich (DNA|RNA)-BLOOD samples with info from their BLOOD ancestor
+        if ( $is_tissue ){
+            if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
+                my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
+                foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
+                    #if ( isSkipValue($object->{ $field }) ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    #}
+                }
+                
+            }
+        
+            ## find blood counterpart and copy info
+            my $patient_string = $object->{ 'patient' };
+            my $ref_sample_name = $patient_string . 'R';
+            my $ref_sample_id = $object->{ 'ref_sample_id' };
+            if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+                if ( exists $blood_samples_by_name{ $ref_sample_name } ){
+                    my $ref_sample = $blood_samples_by_name{ $ref_sample_name };
+                    $ref_sample_id = $ref_sample->{ 'sample_id' };
+                    $object->{ 'ref_sample_id' } = $ref_sample_id;
+                }
             }
         }
+        elsif ( $is_blood ){
+            my $ancestor = $blood_samples_by_name{ $name };
+            foreach my $field ( BLOOD_ANCESTOR_FIELDS ){
+                $object->{ $field } = $ancestor->{ $field };
+            }
+        }
+        else{
+            warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
+        }
+        
+        ## All other sample names should follow certain formats
+        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
+            my ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
+                
+            $object->{ 'label' }   = $study;
+            $object->{ 'patient' } = $patient_id;
+            
+            if ( $is_rna ){
+                $object->{ 'analysis_type' } = "RNAanalysis";
+            }elsif( $tum_or_ref eq 'T' ){
+                $object->{ 'analysis_type' } = "Somatic_T";
+            }elsif( $tum_or_ref eq 'R' ){
+                $object->{ 'analysis_type' } = "Somatic_R";
+            }else{
+                $object->{ 'analysis_type' } = 'Unknown';
+            }
+            
+            ## CORE is handled per case/submission            
+            ## CPCT/DRUP/WIDE are handled study/center wide
+            if ( $study eq 'CORE' ){
+                $object->{ 'entity' } = $object->{ 'submission' };
+                $object->{ 'project_name' } = $object->{ 'submission' };
+            }
+            elsif ( exists $centers_dict->{ $center } ){
+                my $centername = $centers_dict->{ $center };
+                $object->{ 'submission' } = 'HMFreg' . $study;
+                $object->{ 'entity' } = join( "_", $study, $centername );
+                $object->{ 'project_name' } = $object->{ 'submission' };
+            }
+            else {
+                warn "[WARN] SKIPPING sample ($name): Unkown center id ($center)\n" and next;
+            }
+        }
+        else{
+            warn "[WARN] Skipped sample $name from Access lims because format is not as expected\n" and next;
+        }
+        
+        ## Final sanity checks before storing
+        my @fields_to_check = qw( submission analysis_type );
+        foreach my $field ( @fields_to_check ){
+            if ( not $object->{ $field } ){
+                warn "[WARN] Storing sample but no $field defined (id:$id name:$name)\n";
+            }
+        }
+        
+        ## Store sample unless key not OK
+        my $reason_not_to_store = checkKeyToStore( \%store, $id );
+        if ( $reason_not_to_store ){
+            warn "[WARN] SKIPPING for reason: $reason_not_to_store" and next;
+        }
+        $store{ $id } = $object;
     }
     
     return \%store;
@@ -570,7 +555,10 @@ sub processExcelSamples{
         warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };        
         
         ## store at uniqe id
-        next unless keyIsCorrectAndUnique( \%store, $unique );
+        my $reason_not_to_store = checkKeyToStore( \%store, $unique );
+        if ( $reason_not_to_store ){
+            warn "[WARN] SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store" and next;
+        }
         $store{ $unique } = $row_info;
         
     }
@@ -713,24 +701,28 @@ sub isSkipValue{
     return 0;
 }
 
-sub keyIsCorrectAndUnique{
-    my ($store, $key) = @_;
-    if ( $key =~ /[\n\r]/ ){
+sub checkKeyToStore{
+    my ($store, $key) = @_;    
+    my $failReason = 0;
+    
+    if ( not defined $key ){
+        $failReason = "key variable is not defined";
+    }
+    elsif ( isSkipValue($key) ){
+        $failReason = "key is string to skip (key: $key)";
+    }
+    elsif ( $key =~ /[\n\r]/ ){
         my $woNewlines = $key =~ s/[\n\r\f]/\[ENTER\]/gr;
-	warn "[WARN] SKIPPING sample with key ($woNewlines): contains newline/enter\n";
-        return 0;
+        $failReason = "key contains newline/enter (key: $woNewlines)";
     }
     elsif ( not $key =~ /^[a-zA-z0-9\-]+$/ ){
-        warn "[WARN] SKIPPING sample with key ($key): contains characters that are not allowed\n";
-        return 0;
+        $failReason = "key contains characters that are not allowed (key: $key)";
     }
     elsif ( exists $store->{ $key } ){
-        warn "[WARN] SKIPPING sample with key ($key): key already exists in store\n";
-        return 0;
+        $failReason = "duplicate key that should be unique (key: $key)";
     }
-    else{
-        return 1;
-    }
+    
+    return $failReason;
 }
 
 sub checkDefined{
@@ -780,7 +772,7 @@ sub getFieldNameTranslations{
     my %SAMP_DICT_2018 = (
       "Sample_ID"         => 'sample_id',
       "Sample_name"       => 'sample_name',
-      "DNA_conc"          => 'dna_conc',
+      "DNA_conc"          => 'conc',
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
@@ -800,7 +792,7 @@ sub getFieldNameTranslations{
     my %SAMP_DICT = (
       "Sample_ID"         => 'sample_id',
       "Sample_name"       => 'sample_name',
-      "DNA_conc"          => 'dna_conc',
+      "DNA_conc"          => 'conc',
       "Yield"             => 'yield',
       "Q30"               => 'q30',
       "Analysis_type"     => 'analysis_type',
@@ -825,46 +817,36 @@ sub getFieldNameTranslations{
 
     ## columns CPCT tracking Access table
     my %CPCT_DICT = (
+      'Coupes_barc'        => 'coupes_barcode',
       'Sampling_date'      => 'sampling_date',
       'Arrival_HMF'        => 'arrival_date',
-      'Sample_barcode'     => 'sample_tube_barcode',
       'Patient_name'       => 'patient',
       'Sample_name'        => 'sample_name',
       'Source'             => 'sample_source',
       'Yield'              => 'yield',
-      'Sample_ID_DNA'      => 'dna_sample_id_1',
-      'Sample_ID_DNA_2'    => 'dna_sample_id_2',
-      'Sample_ID_DNA_3'    => 'dna_sample_id_3',
-      'Sample_ID_RNA'      => 'rna_sample_id_1',
-      'Sample_ID_RNA_2'    => 'rna_sample_id_2',
-      'Sample_ID_RNA_3'    => 'rna_sample_id_3',
+      'Sample_barcode'     => 'sample_id', # was Sample_ID_(DNA|RNA|Plasma)
       'Pathology_exp'      => 'pathology_exp',
       'Qiasymphony_exp'    => 'qiasymphony_exp',
-      'DNA_prep'           => 'dna_prep',
-      'RNA_prep'           => 'rna_prep',
-      'Purity_shallow_1'   => 'purity_shallow_1',
-      'Purity_shallow_2'   => 'purity_shallow_2',
-      'Purity_shallow_3'   => 'purity_shallow_3',
-      'Sample_ID_Plasma'   => 'plasma_sample_id',
+      'Prep'               => 'prep', # was (DNA|RNA)_prep
+      'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
-      'DNA_conc'           => 'dna_conc',
+      'Conc'               => 'conc', # was (DNA|RNA)_conc
       'Final_lab_status'   => 'lab_status',
-      'Reason_failed'      => 'reason_failed',
       'Status_prep'        => 'prep_status',
       'Remarks'            => 'lab_remarks',
       'Other_Ref'          => 'other_ref',
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
       'Germline_findings'  => 'germline_findings',
-      'Requester_email'    => 'requester_email',
       'Requester_name'     => 'requester_name',
+      'Requester_email'    => 'requester_email',
       'Submission_number'  => 'submission',
-      'ShallowSeq'         => 'shallowseq',
-      'Purity'             => 'purity',
-      'Report_date'        => 'report_date',
       'Date_of_birth'      => 'date_of_birth',
-      'Hospital_PA_Sample_ID' => 'hospital_pa_sample_id',
+      'Purity'             => 'purity',
+      'ShallowSeq'         => 'shallowseq',
+      'Report_date'        => 'report_date',
+      'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
       'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id'
     );
     
