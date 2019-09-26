@@ -1,0 +1,16 @@
+#!/bin/bash
+
+file=$1
+scriptName=$( basename $0 )
+
+if [[ -z ${file} || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo " Usage: $scriptName \${file}"
+  echo "---"
+  exit 1
+fi
+
+nasPath="nas:/volume1/machines/BFX/upload"
+
+echo "[INFO] Copying ${file} to ${nasPath}"
+scp ${file} ${nasPath}/
