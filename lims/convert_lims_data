@@ -85,7 +85,7 @@ my $HELP_TEXT = <<"HELP";
     
   Options (only for testing):
     -lims_dir <str>  Path to input lims dir ($LIMS_DIR)
-    -out_file <str>  Path to output json ($JSON_OUT)
+    -out_dir <str>   Path to output dir ($OUT_DIR)
     
 HELP
 
