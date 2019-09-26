@@ -3,7 +3,6 @@
 source locate_files
 source metadata_functions
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -12,4 +11,4 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-${prefix}/do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
+do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
