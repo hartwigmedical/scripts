@@ -3,8 +3,12 @@ library(dplyr)
 library(ggplot2)
 library(GenomicRanges)
 
+localPath = '~/hmf/analyses/SVAnalysis/'
+sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
+
 singleBlue = "#6baed6"
-load(file = "/Users/jon/hmf/analysis/svPaper/mappability.RData")
+load(file = paste0(sharedPath,"mappability.RData"))
+load(file = paste0(localPath,"featuredBreakends.RData"))
 
 filter_unmappable <- function(x, mappability) {
   allowedBins = mappability %>% mutate(mappable = (100000 - N) / 100000) %>% filter(mappable >= 0.8)
@@ -90,15 +94,15 @@ plot_replication <- function(df) {
     xlab("Replication") + ylab("Factor")
 }
 
-load(file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")  
+  
 
-averageGC_1k = read.table("~/hmf/resources/GC_profile.1000bp.cnp", sep = '\t', header = F, stringsAsFactors = F) %>%
+averageGC_1k = read.table(paste0(sharedPath,"GC_profile.1000bp.cnp"), sep = '\t', header = F, stringsAsFactors = F) %>%
   mutate(chromosome = V1, start = V2 + 1, end = start + 1000, gc = V3) %>%
   select(chromosome, start, end, gc) %>%
   filter(gc > -1)
 averageGC_1k = filter_unmappable(averageGC_1k, mappability_100k)
 
-averageReplication_1k = read.table(file = "~/hmf/analysis/svPaper/heli_rep_origins.bed", sep = '\t', header = F, stringsAsFactors = F) %>% 
+averageReplication_1k = read.table(file = paste0(sharedPath,"heli_rep_origins.bed"), sep = '\t', header = F, stringsAsFactors = F) %>% 
   mutate(chromosome = substring(V1, 4), start = V2 + 1, end = V3, replication = V4) %>%
   select(chromosome, start, end, replication)
 averageReplication_1k = filter_unmappable(averageReplication_1k, mappability_100k)
@@ -110,7 +114,7 @@ replicationBreakendNormalised$bucketCentre = from_rep_bucket(replicationBreakend
 plot_replication(replicationBreakendNormalised)
 
 replicationFactor = replicationBreakendNormalised %>% select(feature, replicationBucket = bucket, replicationFactor = factor)
-save(replicationFactor, file = "~/hmf/analysis/svPaper/replicationFactor.RData")
+save(replicationFactor, file = paste0(localPath,"replicationFactor.RData"))
 
 
 ########## GC
@@ -122,7 +126,7 @@ gcBreakendNormalised$bucketCentre = from_gc_bucket(gcBreakendNormalised$bucket)
 plot_replication(gcBreakendNormalised) + xlab("GC")
 
 gcFactor = gcBreakendNormalised %>% select(feature, gcBucket = bucket, gcFactor = factor)
-save(gcFactor, file = "~/hmf/analysis/svPaper/gcFactor.RData")
+save(gcFactor, file = paste0(localPath,"gcFactor.RData"))
 
 
 ########## GC NORMALISED
