@@ -308,6 +308,7 @@ sub processAccessSamples{
     my ($lims, $objects, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
+    my %dna_blood_samples_by_name = ();
     my %tissue_samples_by_coupe = ();
     
     ## First gather info of all source samples
@@ -316,25 +317,28 @@ sub processAccessSamples{
     while ( my($main_id, $row_info) = each %$objects ){
         
         my $source = $row_info->{ 'sample_source' };        
-        my $id     = $row_info->{ 'sample_id' };
+        my $id     = $row_info->{ 'sample_id' }; # is field "Sample_barcode" in Access LIMS
         my $name   = $row_info->{ 'sample_name' };
-        my $coupe  = $row_info->{ 'coupes_barcode' } || NACHAR;
+        my $coupe  = $row_info->{ 'coupes_barcode' };
         
-        ## Only need to store the ancestor samples
-        next unless ($source eq 'BLOOD' or $source eq 'TISSUE');
-        
-        ## Add to temporary ref sample mappings by sample name
+        ## Add to temporary mappings (used later on to enrich DNA/RNA samples)
         if ( $source eq 'BLOOD' and not isSkipValue($name) ){
             if ( exists $blood_samples_by_name{ $name } ){
-                warn "[WARN]     Sample with name \"$name\" already exists in mapping for sample ($id)";
+                warn "[WARN]     BLOOD Sample with name \"$name\" found more than once in mapping ($id)";
             }else{
                  $blood_samples_by_name{ $name } = $row_info;
             }
         }
-        ## Add to temporary tumor sample mappings by coupe barcode
-        if ( not isSkipValue($coupe) ){
+        elsif ( $source eq 'DNA-BLOOD' and not isSkipValue($name) ){
+            if ( exists $dna_blood_samples_by_name{ $name } ){
+                warn "[WARN]     DNA-BLOOD sample with name \"$name\" found more than once in mapping ($id)";
+            }else{
+                 $dna_blood_samples_by_name{ $name } = $row_info;
+            }
+        }
+        elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ){
             if ( exists $tissue_samples_by_coupe{ $coupe } ){
-                warn "[WARN]     Sample with coupe barcode \"$coupe\" already exists in mapping for sample ($name)";
+                warn "[WARN]     TISSUE sample with coupe barcode \"$coupe\" found more than once in mapping ($name)";
             }else{
                  $tissue_samples_by_coupe{ $coupe } = $row_info;
             }
@@ -376,20 +380,19 @@ sub processAccessSamples{
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    #if ( isSkipValue($object->{ $field }) ){
-                        $object->{ $field } = $ancestor->{ $field };
-                    #}
+                    $object->{ $field } = $ancestor->{ $field };
                 }
-                
             }
         
-            ## find blood counterpart and copy info
-            my $patient_string = $object->{ 'patient' };
-            my $ref_sample_name = $patient_string . 'R';
+            ## If ref_sample_id absent: find blood counterpart by name
             my $ref_sample_id = $object->{ 'ref_sample_id' };
-            if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
-                if ( exists $blood_samples_by_name{ $ref_sample_name } ){
-                    my $ref_sample = $blood_samples_by_name{ $ref_sample_name };
+            if ( $ref_sample_id eq "" ){
+                my $patient_string = $object->{ 'patient' };
+                $patient_string =~ s/\-//g; # string this point still with dashes
+                my $ref_sample_name = $patient_string . 'R';
+                
+                if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
+                    my $ref_sample = $dna_blood_samples_by_name{ $ref_sample_name };
                     $ref_sample_id = $ref_sample->{ 'sample_id' };
                     $object->{ 'ref_sample_id' } = $ref_sample_id;
                 }
