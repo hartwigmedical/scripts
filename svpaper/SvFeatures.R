@@ -1,5 +1,6 @@
 library(tidyr)
 library(dplyr)
+library(GenomicRanges)
 
 localPath = '~/hmf/analyses/SVAnalysis/'
 sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
@@ -11,12 +12,13 @@ lengthBreaksDel = c(0, 500, 10000, 500000, 1e100)
 dupLabels = paste0(lengthLabels, "Dup")
 delLabels = paste0(lengthLabels, "Del")
 featureLevels = c(dupLabels, delLabels, "TiSource", "CentromericSGL", "PeriCentromericSGL", "TelomericSGL", "Foldback", "LineInsertion", "LineSource")
+######################### 
 
 ##### LOAD ##########
-svDrivers = read.csv(file = paste0(localPath,"SVA_DRIVERS.csv"))
+svDrivers = read.csv(file = paste0(localPath,"LNX_DRIVERS.csv"))
 svDriverSummary = svDrivers %>% group_by(SampleId, ClusterId, ResolvedType) %>% count() %>% filter(ResolvedType != "") %>% select(-n) %>% mutate(IsDriver = T)
 
-svData = read.csv(file = paste0(localPath,"SVA_SVS.csv"))
+svData = read.csv(file = paste0(localPath,"LNX_SVS.csv"))
 svData = left_join(svData, svDriverSummary, by = c("SampleId", "ClusterId", "ResolvedType")) 
 svData = svData %>% 
   mutate(
@@ -66,9 +68,7 @@ gcRegions = GRanges(averageGC_1k$chromosome, ranges = IRanges(start = averageGC_
 featuredBreakendRegions = GRanges(featuredBreakends$Chr, ranges = IRanges(start = featuredBreakends$Pos, end = featuredBreakends$Pos)) 
 ol = as.matrix(findOverlaps(gcRegions, featuredBreakendRegions, type = "any"))
 featuredBreakends[ol[, 2], "gc"] = averageGC_1k[ol[, 1], "gc"]
-
-save(featuredBreakends, file = paste0(localPath,"featuredBreakends.RData"))
-
 resolveTypeBreakends = beData
+save(featuredBreakends, file = paste0(localPath,"featuredBreakends.RData"))
 save(resolveTypeBreakends, file = paste0(localPath,"resolveTypeBreakends.RData"))
 
