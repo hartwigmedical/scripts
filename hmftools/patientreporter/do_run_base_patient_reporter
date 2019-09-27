@@ -5,18 +5,17 @@ source locate_files
 patient_reporter_jar=$(locate_prod_patient_reporter)
 output_dir=/data/cpct/patient_reports
 
-lims=/data/lims
+lims_dir=/data/lims
 hospital_dir=/data/common/dbs/hospital
-
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 
-signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
+signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
     -output_dir ${output_dir} \
-    -lims_dir ${lims} \
+    -lims_dir ${lims_dir} \
     -hospital_dir ${hospital_dir} \
     -tumor_location_csv ${tumor_location_csv} \
     -signature ${signature} \

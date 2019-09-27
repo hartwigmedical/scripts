@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+source lims_functions
+
+tumor_sample=$1 && shift
+qc_fail_reason=$1 && shift
+
+if [ -z ${tumor_sample} ]; then
+    echo "[ERROR] No tumor sample provided. Exiting"
+    exit 1;
+fi
+
+if [ -z ${qc_fail_reason} ]; then
+    echo "[ERROR] No QC fail reason provided. Exiting"
+    exit 1;
+fi
+
+ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+
+if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
+    echo "[ERROR] Incomplete information for reporter. Exiting"
+    echo "  ref_sample name: ${ref_sample}"
+    echo "  ref sample barcode: ${ref_sample_barcode}"
+    echo "  tur sample barcode: ${tumor_sample_barcode}"
+    exit 1;
+fi
+
+do_run_base_patient_reporter \
+    -qc_fail \
+    -qc_fail_reason ${qc_fail_reason} \
+    -ref_sample_id ${ref_sample} \
+    -ref_sample_barcode ${ref_sample_barcode} \
+    -tumor_sample_id ${tumor_sample} \
+    -tumor_sample_barcode ${tumor_sample_barcode}

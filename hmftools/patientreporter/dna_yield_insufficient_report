@@ -1,21 +1,10 @@
 #!/usr/bin/env bash
 
 tumor_sample=$1 && shift
-ref_sample=$1 && shift
 
 if [ -z ${tumor_sample} ]; then
-    echo "[ERROR] No tumor sample provided"
+    echo "[ERROR] No tumor sample provided. Exiting"
     exit 1;
 fi
 
-if [ -z ${ref_sample} ]; then
-    echo "[ERROR] No ref sample provided"
-    exit 1;
-fi
-
-do_run_base_patient_reporter \
-    -qc_fail \
-    -qc_fail_reason low_dna_yield \
-    -tumor_sample ${tumor_sample} \
-    -ref_sample ${ref_sample} \
-    "$@"
+do_run_qc_fail_patient_reporter ${tumor_sample} "low_dna_yield"
