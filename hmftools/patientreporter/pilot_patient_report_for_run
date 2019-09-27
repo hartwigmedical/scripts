@@ -2,13 +2,15 @@
 
 source locate_files
 source metadata_functions
+source lims_functions
 
 run_dir=$1 && shift
 
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
+
+ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})

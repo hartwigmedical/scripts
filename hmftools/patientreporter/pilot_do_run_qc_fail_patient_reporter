@@ -17,7 +17,7 @@ if [ -z ${qc_fail_reason} ]; then
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${ref_sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
 if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
