@@ -211,14 +211,10 @@ locate_linx_reported_fusions() {
         exit 1
     fi
 
-    # TODO Remove when linx v1.4 has been run on every sample
-	  local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusions.tsv")
-	  if [ -z ${fusion_tsv} ]; then
-	      fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
-	      if [ -z ${fusion_tsv} ]; then
-            echo "[ERROR] Unable to locate linx fusions tsv. Exiting." >&2
-            exit 1
-        fi
+    fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
+    if [ -z ${fusion_tsv} ]; then
+        echo "[ERROR] Unable to locate linx fusions tsv. Exiting." >&2
+        exit 1
     fi
     echo ${fusion_tsv}
 }
