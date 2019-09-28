@@ -129,13 +129,13 @@ done
 ## Parse RTGtools vcfeval produced metrics
 ## SVL: vcfeval not the most parse-able format so need some sed magic
 cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
-    thres=$( echo ${line} | cut -d" " -f1 )
-       tp=$( echo ${line} | cut -d" " -f3 )
-       fp=$( echo ${line} | cut -d" " -f4 )
-       fn=$( echo ${line} | cut -d" " -f5 )
-     prec=$( echo ${line} | cut -d" " -f6 )
-     sens=$( echo ${line} | cut -d" " -f7 )
-    score=$( echo ${line} | cut -d" " -f8 )
+    thres=$(echo ${line} | cut -d" " -f1)
+    tp=$(echo ${line} | cut -d" " -f3)
+    fp=$(echo ${line} | cut -d" " -f4)
+    fn=$(echo ${line} | cut -d" " -f5)
+    prec=$(echo ${line} | cut -d" " -f6)
+    sens=$(echo ${line} | cut -d" " -f7)
+    score=$(echo ${line} | cut -d" " -f8)
     printf \
         "Threshold\t%s\nTruePositive\t%s\nFalsePositive\t%i\nFalseNegative\t%s\nPrecision\t%s\nSensitivity\t%s\nFmeasure\t%s\n" \
         "${thres}" "${tp}" "${fp}" "${fn}" "${prec}" "${sens}" "${score}"

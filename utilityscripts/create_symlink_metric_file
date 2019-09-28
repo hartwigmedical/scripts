@@ -3,9 +3,12 @@
 source metadata_functions
 
 set_path=$1
-set_name=$( basename $set_path )
+set_name=$(basename $set_path)
 
-if [[ ! -d ${set_path} ]]; then echo "[ERROR] Dir does not exist (${set_path})" && exit 1; fi
+if [[ ! -d ${set_path} ]]; then
+    echo "[ERROR] Dir does not exist (${set_path})"
+    exit 1;
+fi
 
 ref_sample=$(load_ref_sample_from_metadata ${set_path})
 tum_sample=$(load_tumor_sample_from_metadata ${set_path})

@@ -7,7 +7,6 @@ process_runs=$(ls ${path})
 
 for run in ${process_runs}; do
     run_dir=${path}/${run}
-    #run_health_checker_prod ${run_dir}
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
@@ -17,5 +16,4 @@ for run in ${process_runs}; do
     else
             echo "[ERROR] HealthChecker has not been run for ${run}"
     fi
-
 done
