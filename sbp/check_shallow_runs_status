@@ -2,6 +2,7 @@
 
 YYMMDD=$(date +'%y%m%d')
 archive_path="/data/data_archive/shallow_seq_pipelines"
+qcfail_path="/data/schuberg/qc_fail_runs"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
@@ -14,6 +15,7 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
     elif [[ -d "${archive_path}/${run_name}" ]]; then continue
     elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing)$ ]]; then echo "## PROCESSING: ${run_name} (status=${run_status})"
     elif [[ "${run_status}" =~ Failed ]]; then echo "## FAILED: ${run_name} (status=${run_status})"
+    elif [[ -d "${qcfail_path}/${run_name}" ]]; then echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${qcfail_path})"
     else echo " process_shallow_run -s ${run_name} # (status=${run_status})"
     fi
 done | sort
