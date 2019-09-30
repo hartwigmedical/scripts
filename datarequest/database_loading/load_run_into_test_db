@@ -21,12 +21,12 @@ db_pass="test"
 
 # Resolving of actual file locations based on data dir
 structural_vcf=$(find ${run_dir} -name "*.purple.sv.ann.vcf.gz")
-somatic_vcf=$(find ${data_dir} -name "*.purple.somatic.vcf.gz")
+somatic_vcf=$(find ${run_dir} -name "*.purple.somatic.vcf.gz")
 tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 
 # load purple data
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
-    -purple_dir ${data_dir} \
+    -purple_dir ${run_dir} \
     -sample ${tumor_sample} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
