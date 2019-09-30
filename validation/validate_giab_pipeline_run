@@ -1,95 +1,92 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-thisScript=$( basename $0 )
-valBase='/data/giab/validation/sets'
-gatkPath='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
-refFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
-rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
-truthVersion='NIST_v3.2.2';
-truthDirPath="/data/giab/truth/${truthVersion}/"
-truthBedName='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed'
-truthBedPath="${truthDirPath}/${truthBedName}"
-truthVcfName='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.vcf.gz'
-truthVcfPath="${truthDirPath}/${truthVcfName}"
-truthVcfPathSnv=$(echo ${truthVcfPath} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/')
-truthVcfPathInd=$(echo ${truthVcfPath} | sed 's/\.vcf\.gz/_IND\.vcf.\gz/')
+this_script=$(basename $0)
+val_base='/data/giab/validation/sets'
+gatk_path='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
+ref_genome_fasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+rtg_sdf_path='/data/common/dbs/RTGSDF_GRCh37/'
+
+truth_version='NIST_v3.2.2';
+truth_dir_path="/data/giab/truth/${truth_version}/"
+truth_bed_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed'
+truth_bed_path="${truth_dir_path}/${truth_bed_name}"
+truth_vcf_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.vcf.gz'
+truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
+truth_vcf_path_snv=$(echo ${truth_vcf_path} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/')
 
 ## init checks
-if [[ ! -w ${valBase} ]]; then echo "[EXIT] validation base not writable (${valBase})"; exit 1; fi
-if [[ ! -f ${gatkPath} ]]; then echo "[EXIT] GATK JAR not available (${gatkPath})"; exit 1; fi
-if [[ ! -f ${refFasta} ]]; then echo "[EXIT] Ref fasta not available (${refFasta})"; exit 1; fi
-if [[ ! -f ${truthVcfPath} ]]; then echo "[EXIT] truth VCF not available (${truthVcfPath})"; exit 1; fi
-if [[ ! -f ${truthBedPath} ]]; then echo "[EXIT] truth BED not available (${truthBedPath})"; exit 1; fi
+if [[ ! -w ${val_base} ]]; then echo "[EXIT] validation base not writable (${val_base})"; exit 1; fi
+if [[ ! -f ${gatk_path} ]]; then echo "[EXIT] GATK JAR not available (${gatk_path})"; exit 1; fi
+if [[ ! -f ${ref_genome_fasta} ]]; then echo "[EXIT] Ref fasta not available (${ref_genome_fasta})"; exit 1; fi
+if [[ ! -f ${truth_vcf_path} ]]; then echo "[EXIT] truth VCF not available (${truth_vcf_path})"; exit 1; fi
+if [[ ! -f ${truth_bed_path} ]]; then echo "[EXIT] truth BED not available (${truth_bed_path})"; exit 1; fi
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
-    echo " Usage: $thisScript <path-to-pipeline-dir>"
-    echo "        $thisScript /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG"
+    echo " Usage: ${this_script} <path-to-pipeline-dir>"
+    echo "        ${this_script} /data/giab/pipelineruns/170615_VAL-S00057_v1.12_KG"
     echo "-----"
     exit 1
 fi
-runPath=$1
+
+run_path=$1 && shift
 
 ## -----
 ## Checks and Setup
 ## -----
-if [[ ! -d $runPath ]]; then echo "[EXIT] Provided run path does not exist?"; exit 1; fi
+if [[ ! -d $run_path ]]; then echo "[EXIT] Provided run path does not exist?"; exit 1; fi
 
 ## Name of germline VCF differs betwee Pv4 and Pv5
-inputVcfPath=$(find ${runPath} -wholename "*/germline_caller/*.germline.vcf.gz")
-if [[ ! -f $inputVcfPath ]]; then inputVcfPath=$(find ${runPath} -maxdepth 1 -name "*.annotated.vcf.gz"); fi
-if [[ ! -f $inputVcfPath ]]; then echo "[EXIT] No germline VCF found ($runPath)" && exit 1; fi
+input_vcf_path=$(find ${run_path} -wholename "*/germline_caller/*.germline.vcf.gz")
+if [[ ! -f ${input_vcf_path} ]]; then input_vcf_path=$(find ${run_path} -maxdepth 1 -name "*.annotated.vcf.gz"); fi
+if [[ ! -f ${input_vcf_path} ]]; then echo "[EXIT] No germline VCF found ($run_path)" && exit 1; fi
 
-vcfBaseName=$(basename ${inputVcfPath})
-runName=$(basename ${runPath})
-outputDir="${valBase}/${runName}_Validation"
-tmpDir="${outputDir}/tmp"
+run_name=$(basename ${run_path})
+output_dir="${val_base}/${run_name}_Validation"
+tmp_dir="${output_dir}/tmp"
 
-if [[ -d $outputDir ]]; then echo "[EXIT] OutputDir already exists ($outputDir)"; exit 1; fi
+if [[ -d ${output_dir} ]]; then echo "[EXIT] output_dir already exists (${output_dir})"; exit 1; fi
 
-echo "[INFO] Creating output dir (${outputDir})"
-mkdir -p $outputDir
-mkdir -p $tmpDir
-echo "[INFO] Copying germline vcf (${inputVcfPath})"
-cp ${inputVcfPath}* ${outputDir}
+echo "[INFO] Creating output dir (${output_dir})"
+mkdir -p ${output_dir}
+mkdir -p ${tmp_dir}
+echo "[INFO] Copying germline vcf (${input_vcf_path})"
+cp ${input_vcf_path}* ${output_dir}
 
 ## -----
 ## VCF preparation
 ## -----
-inputVcfName=$(basename ${inputVcfPath})
-startVcfPath="${outputDir}/input.vcf"
-startVcfName="$(basename ${startVcfPath})"
+start_vcf_path="${output_dir}/input.vcf"
+start_vcf_name="$(basename ${start_vcf_path})"
 
-if [[ $inputVcfPath =~ .vcf$ ]]; then
-    echo "[INFO] Copying Germline VCF to $startVcfPath"
-    cp $inputVcfPath $startVcfPath
-elif [[ $inputVcfPath =~ .gz$ ]]; then
-    echo "[INFO] Germline VCF is compressed: gunzippig to $startVcfPath"
-    gunzip -c $inputVcfPath > $startVcfPath
+if [[ ${input_vcf_path} =~ .vcf$ ]]; then
+    echo "[INFO] Copying Germline VCF to ${start_vcf_path}"
+    cp ${input_vcf_path} ${start_vcf_path}
+elif [[ ${input_vcf_path} =~ .gz$ ]]; then
+    echo "[INFO] Germline VCF is compressed: gunzippig to ${start_vcf_path}"
+    gunzip -c ${input_vcf_path} > ${start_vcf_path}
 else
     echo "[EXIT] Germline VCF of unsupported extension" && exit 1
 fi
 
-echo "[INFO] Running RTGTools bgzip on ${startVcfName}"
-rtg bgzip ${startVcfPath}
-startVcfPath="${startVcfPath}.gz"
-startVcfName="${startVcfName}.gz"
-echo "[INFO] Running RTGTools index on ${startVcfName}"
-rtg index -f vcf ${startVcfPath}
+echo "[INFO] Running RTGTools bgzip on ${start_vcf_name}"
+rtg bgzip ${start_vcf_path}
+start_vcf_path="${start_vcf_path}.gz"
+start_vcf_name="${start_vcf_name}.gz"
+echo "[INFO] Running RTGTools index on ${start_vcf_name}"
+rtg index -f vcf ${start_vcf_path}
 
 ## -----
 ## Use GATK SelectVariants to separate SNVs and INDELs
 ## -----
-snpVcfPath="${outputDir}/SNP_${startVcfName}"
-snpVcfName=$(basename ${snpVcfPath})
-indVcfPath="${outputDir}/IND_${startVcfName}"
-indVcfName=$(basename ${indVcfPath})
+snp_vcf_path="${output_dir}/SNP_${start_vcf_name}"
+snp_vcf_name=$(basename ${snp_vcf_path})
 
-if [[ -f $snpVcfPath ]]; then
-    echo "[INFO] SNP vcf already exist, skipping (${snpVcfPath})"
+if [[ -f $snp_vcf_path ]]; then
+    echo "[INFO] SNP vcf already exist, skipping (${snp_vcf_path})"
 else
-    echo "[INFO] Running GATK to create SNP vcf (${snpVcfName})"
-    java -Djava.io.tmpdir=${tmpDir} -jar ${gatkPath} -T SelectVariants -R ${refFasta} -L ${truthBedPath} --excludeNonVariants --removeUnusedAlternates -V ${startVcfPath} -selectType SNP -o ${snpVcfPath}
+    echo "[INFO] Running GATK to create SNP vcf (${snp_vcf_name})"
+    java -Djava.io.tmp_dir=${tmp_dir} -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType SNP -o ${snp_vcf_path}
     if [ $? -ne 0 ]; then { echo "[EXIT] GATK SelectVariants Failed"; exit 1; } fi
 fi
 
@@ -98,28 +95,28 @@ fi
 #    echo "[INFO] INDEL vcf already exist, skipping (${indVcfPath})"
 #else
 #    echo "[INFO] Running GATK to create INDEL vcf (${indVcfName})"
-#    java -jar ${gatkPath} -T SelectVariants -R ${refFasta} -L ${truthBedPath} --excludeNonVariants --removeUnusedAlternates -V ${startVcfPath} -selectType INDEL -o ${indVcfPath}
+#    java -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType INDEL -o ${indVcfPath}
 #fi
 
 
 ## -----
 ## run RTGtools vcfeval
 ## -----
-callName="${snpVcfName}"
-callName=$(echo "${callName}" | sed 's/\.filtered_variants\.vcf\.gz//')
-callName=$(echo "${callName}" | sed 's/\.annotated\.vcf\.gz//')
-callName=$(echo "${callName}" | sed 's/\.germline\.vcf\.gz//')
+call_name="${snp_vcf_name}"
+call_name=$(echo "${call_name}" | sed 's/\.filtered_variants\.vcf\.gz//')
+call_name=$(echo "${call_name}" | sed 's/\.annotated\.vcf\.gz//')
+call_name=$(echo "${call_name}" | sed 's/\.germline\.vcf\.gz//')
 
-rtgOutName="${truthVersion}_vs_${callName}_truthBed";
-rtgOutPath="${outputDir}/${rtgOutName}"
-sumOutPath="${rtgOutPath}/summary.txt"
-csvOutPath="${rtgOutPath}/summary_transposed.csv"
-tsvOutPath="${rtgOutPath}/summary_transposed.tsv"
+rtg_out_name="${truth_version}_vs_${call_name}_truthBed";
+rtg_out_path="${output_dir}/${rtg_out_name}"
+sum_out_path="${rtg_out_path}/summary.txt"
+csv_out_path="${rtg_out_path}/summary_transposed.csv"
+tsv_out_path="${rtg_out_path}/summary_transposed.tsv"
 
-echo "[INFO] Running RTGtools vcfeval (${rtgOutName})"
-rtg vcfeval -t ${rtgSdfPath} -T 8 --baseline=${truthVcfPathSnv} --calls=${snpVcfPath} --bed-regions=${truthBedPath} -o ${rtgOutPath}
+echo "[INFO] Running RTGtools vcfeval (${rtg_out_name})"
+rtg vcfeval -t ${rtg_sdf_path} -T 8 --baseline=${truth_vcf_path_snv} --calls=${snp_vcf_path} --bed-regions=${truth_bed_path} -o ${rtg_out_path}
 echo "[INFO] Reformatting RTGtools vcfeval results into csv/tsv"
-cat ${sumOutPath} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold,"$2; print "True-pos,"$3; print "False-pos,"$4; print "False-neg,"$5; print "Precision,"$6; print "Sensitivity,"$7; print "F-measure,"$8 }' > ${csvOutPath}
-cat ${sumOutPath} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold\t"$2; print "True-pos\t"$3; print "False-pos\t"$4; print "False-neg\t"$5; print "Precision\t"$6; print "Sensitivity\t"$7; print "F-measure\t"$8 }' > ${tsvOutPath}
-echo "[INFO] Final output in: ${tsvOutPath}"
+cat ${sum_out_path} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold,"$2; print "True-pos,"$3; print "False-pos,"$4; print "False-neg,"$5; print "Precision,"$6; print "Sensitivity,"$7; print "F-measure,"$8 }' > ${csv_out_path}
+cat ${sum_out_path} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold\t"$2; print "True-pos\t"$3; print "False-pos\t"$4; print "False-neg\t"$5; print "Precision\t"$6; print "Sensitivity\t"$7; print "F-measure\t"$8 }' > ${tsv_out_path}
+echo "[INFO] Final output in: ${tsv_out_path}"
 

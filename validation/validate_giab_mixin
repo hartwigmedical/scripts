@@ -1,134 +1,135 @@
-#!/bin/bash
-runDir=$1
-outName=$2 # optional
+#!/usr/bin/env bash
 
-thisScript=$( basename $0 )
-valBase='/data/giab/validation/mixin'
-gatkJar='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
-rtgExec='/data/common/tools/rtg-tools_v3.9.1/rtg'
-rtgSdfPath='/data/common/dbs/RTGSDF_GRCh37/'
-rtgThreads=8
-genomeFasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+run_dir=$1 && shift
+out_name=$1 && shift # optional
 
-truthVersion='giab_mixin_truth_set_160628'
-truthVcfName='na12878-na24385-somatic-truth.vcf.gz'
-truthBedName='na12878-na24385-somatic-truth-regions.bed'
-truthDirPath="/data/giab/truth/${truthVersion}"
-truthVcfPath="${truthDirPath}/${truthVcfName}"
-truthBedPath="${truthDirPath}/${truthBedName}"
+this_script=$(basename $0)
+val_base='/data/giab/validation/mixin'
+gatk_jar='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
+rtg_exec='/data/common/tools/rtg-tools_v3.9.1/rtg'
+rtg_sdf_path='/data/common/dbs/RTGSDF_GRCh37/'
+rtg_threads=8
+ref_genome_fasta="/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+
+truth_version='giab_mixin_truth_set_160628'
+truth_vcf_name='na12878-na24385-somatic-truth.vcf.gz'
+truth_bed_name='na12878-na24385-somatic-truth-regions.bed'
+truth_dir_path="/data/giab/truth/${truth_version}"
+truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
+truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 
 ## init checks
-if [[ ! -w ${valBase} ]]; then echo "[EXIT] validation base not writable (${valBase})"; exit 1; fi
-if [[ ! -f ${truthVcfPath} ]]; then echo "[EXIT] truth VCF not available (${truthVcfPath})"; exit 1; fi
-if [[ ! -f ${truthBedPath} ]]; then echo "[EXIT] truth BED not available (${truthBedPath})"; exit 1; fi
+if [[ ! -w ${val_base} ]]; then echo "[EXIT] validation base not writable (${val_base})"; exit 1; fi
+if [[ ! -f ${truth_vcf_path} ]]; then echo "[EXIT] truth VCF not available (${truth_vcf_path})"; exit 1; fi
+if [[ ! -f ${truth_bed_path} ]]; then echo "[EXIT] truth BED not available (${truth_bed_path})"; exit 1; fi
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
-    echo " Usage: $thisScript <path-to-pipeline-dir-or-vcf>"
-    echo "        $thisScript <path-to-pipeline-dir-or-vcf> [<output-name>]"
-    echo "        $thisScript /data/experiments/giab-mixin/mixin-run/"
-    echo "        $thisScript /data/experiments/giab-mixin/mixin-run/ \"hmf-mixin-v4-final\""
+    echo " Usage: ${this_script} <path-to-pipeline-dir-or-vcf>"
+    echo "        ${this_script} <path-to-pipeline-dir-or-vcf> [<output-name>]"
+    echo "        ${this_script} /data/experiments/giab-mixin/mixin-run/"
+    echo "        ${this_script} /data/experiments/giab-mixin/mixin-run/ \"hmf-mixin-v4-final\""
     echo "-----"
     exit 1
 fi
 
-echo "[INFO] START with ${thisScript}"
+echo "[INFO] START with ${this_script}"
 
 ## -----
 ## Find somatic VCF
-if [[ ${runDir} =~ .vcf.gz$ || ${runDir} =~ .vcf$ ]]; then
-    runSomVcfPath=${runDir}
+if [[ ${run_dir} =~ .vcf.gz$ || ${run_dir} =~ .vcf$ ]]; then
+    run_som_vcf_path=${run_dir}
 else
-    runLinksJson=${runDir}/logs/links.json
-    legacyPath=${runDir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf
-    pv5Path=$( find ${runDir} -name "*.purple.somatic.vcf.gz")
-    if [[ -f ${runLinksJson} ]]; then 
-        runSomVcfLink=$( cat ${runLinksJson} | jq -r '.somatic_variant_vcf')
-        runSomVcfPath=${runDir}/${runSomVcfLink}
-    elif [[ -f ${legacyPath} ]]; then
-        runSomVcfPath=${legacyPath}
-    elif [[ -f ${pv5Path} ]]; then
-        runSomVcfPath=${pv5Path}
+    run_links_json=${run_dir}/logs/links.json
+    legacy_path=${run_dir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf
+    pv5_path=$( find ${run_dir} -name "*.purple.somatic.vcf.gz")
+    if [[ -f ${run_links_json} ]]; then 
+        run_som_vcf_link=$( cat ${run_links_json} | jq -r '.somatic_variant_vcf')
+        run_som_vcf_path=${run_dir}/${run_som_vcf_link}
+    elif [[ -f ${legacy_path} ]]; then
+        run_som_vcf_path=${legacy_path}
+    elif [[ -f ${pv5_path} ]]; then
+        run_som_vcf_path=${pv5_path}
     else
         echo "[EXIT] Unable to find somatic VCF" && exit 1; 
     fi
 fi
-runSomVcfName=$( basename ${runSomVcfPath} )
+run_som_vcf_name=$(basename ${run_som_vcf_path})
 
 ## -----
 ## Prepare
-echo "[INFO] Using input VCF (${runSomVcfName})"
-runName="$( basename ${runDir} )"
-if [[ ! -z ${outName} ]]; then
-    outName="${truthVersion}__vs__${outName}"
+echo "[INFO] Using input VCF (${run_som_vcf_name})"
+run_name="$(basename ${run_dir} )"
+if [[ ! -z ${out_name} ]]; then
+    out_name="${truth_version}__vs__${out_name}"
 else    
-    outName="${truthVersion}__vs__${runName}"
+    out_name="${truth_version}__vs__${run_name}"
 fi
 
-outPath="${valBase}/${outName}"
-tmpPath="${outPath}/vcfeval"
-if [[ -e ${outPath} ]]; then
-    echo "[EXIT] Output dir exists remove first: ${outPath}" && exit 1
+out_path="${val_base}/${out_name}"
+tmp_path="${out_path}/vcfeval"
+if [[ -e ${out_path} ]]; then
+    echo "[EXIT] Output dir exists remove first: ${out_path}" && exit 1
 else 
-    echo "[INFO] Using output dir (${outPath})"
-    mkdir ${outPath}
+    echo "[INFO] Using output dir (${out_path})"
+    mkdir ${out_path}
 fi
 
 ## -----
 ## Copy final input VCF
-cp "${runSomVcfPath}"* ${outPath}
-runSomVcfPath="${outPath}/${runSomVcfName}"
-if [[ ${runSomVcfPath} =~ .vcf$ ]]; then
+cp "${run_som_vcf_path}"* ${out_path}
+run_som_vcf_path="${out_path}/${run_som_vcf_name}"
+if [[ ${run_som_vcf_path} =~ .vcf$ ]]; then
     echo "[INFO] Running bgzip"
-    bgzip ${runSomVcfPath}
+    bgzip ${run_som_vcf_path}
     echo "[INFO] Running tabix"
-    tabix "${runSomVcfPath}.gz"
-    runSomVcfPath="${runSomVcfPath}.gz"
+    tabix "${run_som_vcf_path}.gz"
+    run_som_vcf_path="${run_som_vcf_path}.gz"
 fi 
 
 ## -----
 ## Run variant evaluation
 echo "[INFO] Running RTGtools vcfeval"
-${rtgExec} vcfeval \
-  --template=${rtgSdfPath} \
-  --threads=${rtgThreads} \
-  --baseline=${truthVcfPath} \
-  --calls=${runSomVcfPath} \
-  --evaluation-regions=${truthBedPath} \
-  --output=${tmpPath} \
-  --ref-overlap \
-  --all-records
+${rtg_exec} vcfeval \
+    --template=${rtg_sdf_path} \
+    --threads=${rtg_threads} \
+    --baseline=${truth_vcf_path} \
+    --calls=${run_som_vcf_path} \
+    --evaluation-regions=${truth_bed_path} \
+    --output=${tmp_path} \
+    --ref-overlap \
+    --all-records
 
 ## -----
 ## Create the sub VCFs
-callClasses=( tp fp fn )
-variantTypes=( SNP INDEL MNP MIXED SYMBOLIC NO_VARIATION )
-metricsOutFile="${outPath}/final_counts.tsv"
-touch ${metricsOutFile}
-printf "##INPUT=variant_count_of_input_vcf\n" >> ${metricsOutFile}
-printf "##SUM=variant_count_sum_of_all_variant_types\n" >> ${metricsOutFile}
-printf "#%s\t%s\t%s\n" "class" "type" "count" >> ${metricsOutFile}
+call_classes=(tp fp fn)
+variant_types=(SNP INDEL MNP MIXED SYMBOLIC NO_VARIATION)
+metrics_out_file="${out_path}/final_counts.tsv"
+touch ${metrics_out_file}
+printf "##INPUT=variant_count_of_input_vcf\n" >> ${metrics_out_file}
+printf "##SUM=variant_count_sum_of_all_variant_types\n" >> ${metrics_out_file}
+printf "#%s\t%s\t%s\n" "class" "type" "count" >> ${metrics_out_file}
 
-for callType in "${callClasses[@]}"; do 
-    rtgVcf="${tmpPath}/${callType}.vcf.gz"
-    allCount=$( zcat ${rtgVcf} | grep -cv "^#" ) 
-    printf "%s\t%s\t%i\n" "${callType}" "INPUT" "${allCount}" >> ${metricsOutFile}
-    callTypeSum=0
-    for variantType in "${variantTypes[@]}"; do
-        outVcf="${tmpPath}/${variantType}_${callType}.vcf.gz"
-        echo "[INFO] Creating $callType $variantType sub VCF"
-        java -jar ${gatkJar} -T SelectVariants --variant ${rtgVcf} -o ${outVcf} -R ${genomeFasta} -selectType ${variantType}
-        variantCount=$( zcat ${outVcf} | grep -cv "^#" )
-        callTypeSum=$((callTypeSum + variantCount))
-        printf "%s\t%s\t%i\n" "${callType}" "${variantType}" "${variantCount}" >> ${metricsOutFile}
+for call_type in "${call_classes[@]}"; do 
+    rtg_vcf="${tmp_path}/${call_type}.vcf.gz"
+    all_count=$(zcat ${rtg_vcf} | grep -cv "^#")
+    printf "%s\t%s\t%i\n" "${call_type}" "INPUT" "${all_count}" >> ${metrics_out_file}
+    call_type_sum=0
+    for variant_type in "${variant_types[@]}"; do
+        out_vcf="${tmp_path}/${variant_type}_${call_type}.vcf.gz"
+        echo "[INFO] Creating $call_type $variant_type sub VCF"
+        java -jar ${gatk_jar} -T SelectVariants --variant ${rtg_vcf} -o ${out_vcf} -R ${ref_genome_fasta} -selectType ${variant_type}
+        variant_count=$(zcat ${out_vcf} | grep -cv "^#")
+        call_type_sum=$((call_type_sum + variant_count))
+        printf "%s\t%s\t%i\n" "${call_type}" "${variant_type}" "${variant_count}" >> ${metrics_out_file}
     done
-    printf "%s\t%s\t%i\n" "${callType}" "SUM" "${callTypeSum}" >> ${metricsOutFile}
+    printf "%s\t%s\t%i\n" "${call_type}" "SUM" "${call_type_sum}" >> ${metrics_out_file}
 done
 
 ## -----
 ## Parse RTGtools vcfeval produced metrics
 ## SVL: vcfeval not the most parse-able format so need some sed magic
-cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
+cat ${tmp_path}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while read line; do
     thres=$(echo ${line} | cut -d" " -f1)
     tp=$(echo ${line} | cut -d" " -f3)
     fp=$(echo ${line} | cut -d" " -f4)
@@ -139,9 +140,9 @@ cat ${tmpPath}/summary.txt | sed 's/  */ /g' | sed 's/^ *//' | grep None | while
     printf \
         "Threshold\t%s\nTruePositive\t%s\nFalsePositive\t%i\nFalseNegative\t%s\nPrecision\t%s\nSensitivity\t%s\nFmeasure\t%s\n" \
         "${thres}" "${tp}" "${fp}" "${fn}" "${prec}" "${sens}" "${score}"
-done > ${outPath}/rtg_summary.tsv
+done > ${out_path}/rtg_summary.tsv
 
-echo "[INFO] Output in ${outPath}"
-echo "[INFO] Counts in ${metricsOutFile}"
-echo "[INFO] DONE with ${thisScript}"
+echo "[INFO] Output in ${out_path}"
+echo "[INFO] Counts in ${metrics_out_file}"
+echo "[INFO] DONE with ${this_script}"
 
