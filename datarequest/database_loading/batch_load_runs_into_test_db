@@ -11,5 +11,5 @@ prefix=$(dirname $(readlink $0 || echo $0))
 
 for run in ${runs_directory}/*; do
     echo "[INFO] Loading ${run} into testdb"
-    #${prefix}/load_run_into_test_db ${run}
+    ${prefix}/load_run_into_test_db ${run}
 done
