@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+runs_directory=$1
+
+if [ -z "${runs_directory}" ]; then
+    echo "[ERROR] No runs directory provided. Exiting"
+    exit 1
+fi
+
+prefix=$(dirname $(readlink $0 || echo $0))
+
+for run in ${runs_directory}/*; do
+    echo "[INFO] Loading ${run} into testdb"
+    #${prefix}/load_run_into_test_db ${run}
+done

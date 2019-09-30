@@ -1,11 +1,16 @@
 #!/usr/bin/env bash
 
+run_dir=$1
+
+if [ -z "${run_dir}" ]; then
+    echo "[ERROR] No run dir provided. Exiting"
+    exit 1
+fi
+
 # Configuration of paths
 db_loader_jar=${HOME}/hmf/demo_database/hmf-db-loader.jar
-data_dir=${HOME}/hmf/DR-COLO829-Example/somatics/190830_COLO829v003_v5.3
 
-# Configuration of external inputs required to load up the data
-ref_genome=${HOME}/hmf/refgenome/Homo_sapiens.GRCh37.GATK.illumina.fasta
+# Configuration of external inputs required to load up somatic variants
 high_confidence_bed=${HOME}/hmf/resources/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 hotspot_tsv=${HOME}/hmf/resources/KnownHotspots.tsv
 
@@ -15,7 +20,7 @@ db_user="test"
 db_pass="test"
 
 # Resolving of actual file locations based on data dir
-structural_vcf=$(find ${data_dir} -name "*.purple.sv.ann.vcf.gz")
+structural_vcf=$(find ${run_dir} -name "*.purple.sv.ann.vcf.gz")
 somatic_vcf=$(find ${data_dir} -name "*.purple.somatic.vcf.gz")
 tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 
@@ -23,7 +28,6 @@ tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
     -purple_dir ${data_dir} \
     -sample ${tumor_sample} \
-    -data_request \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url}
@@ -42,7 +46,6 @@ java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
     -structural_vcf ${structural_vcf} \
     -tumor ${tumor_sample}  \
-    -ref_genome ${ref_genome} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url}
