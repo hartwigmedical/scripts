@@ -19,19 +19,22 @@ mkdir -p ${DAY_DIR}
 
 ## Setup cpct/received-samples/in-process variables
 #cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.2.accdb"
-cpctSource="${DAY_DIR}/LIMS_v4.0_be.accdb"
+cpctFile="LIMS_v4.0_be.accdb"
+cpctSource="${DAY_DIR}/${cpctFile}"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
 cpctTxt="${cpctTarget}.csv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
-sampSource="${DAY_DIR}/HMF-FOR-001 Received Samples 2019 v5.4.xlsx"
+sampFile="HMF-FOR-001 Received Samples 2019 v5.4.xlsx"
+sampSource="${DAY_DIR}/${sampFile}"
 sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
 sampTxt="${sampTarget}_samp.tsv"
 sampLatest="${SYM_DIR}/lims_samp"
 submTxt="${sampTarget}_subm.tsv"
 submLatest="${SYM_DIR}/lims_subm"
 
-procSource="${DAY_DIR}/HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
+procFile="HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
+procSource="${DAY_DIR}/${procFile}"
 procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
 procTxt="${procTarget}.tsv"
 procLatest="${SYM_DIR}/lims_proc"
@@ -40,7 +43,9 @@ procLatest="${SYM_DIR}/lims_proc"
 echo "[INFO] Syncing xlsx and accdb files from NAS to DATASTORE"
 echo "[INFO]   SourceDir: nas:${NAS_DIR}"
 echo "[INFO]   TargetDir: ${DAY_DIR}"
-rsync nas:${NAS_DIR}/*.xlsx nas:${NAS_DIR}/*.accdb ${DAY_DIR}
+rsync -s "nas:${NAS_DIR}/${cpctFile}" ${DAY_DIR}
+rsync -s "nas:${NAS_DIR}/${sampFile}" ${DAY_DIR}
+rsync -s "nas:${NAS_DIR}/${procFile}" ${DAY_DIR}
 
 ## Make sure all required files are present
 if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
