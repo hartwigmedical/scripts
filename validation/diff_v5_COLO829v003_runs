@@ -38,7 +38,7 @@ echo "[INFO]  Printing flagstats for ${ref2}"
 cat ${ref2}/flagstat/${ref_sample}.flagstat
 
 germline_caller_lines_1=$(zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
-germline_caller_lines_2=$(zcat ${ref1}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
+germline_caller_lines_2=$(zcat ${ref2}/germline_caller/${ref_sample}.germline.vcf.gz | wc -l)
 echo "[INFO]  ${run1} germline vcf lines: ${germline_caller_lines_1}"
 echo "[INFO]  ${run2} germline vcf lines: ${germline_caller_lines_2}"
 
