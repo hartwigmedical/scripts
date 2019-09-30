@@ -193,11 +193,31 @@ locate_purple_structural_variants() {
     echo ${structural_vcf}
 }
 
+locate_purple_pre_viral_annotate_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
 	  local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.ann.vcf.gz")
     if [ -z ${structural_vcf} ]; then
         echo "[ERROR] Unable to locate purple pilot structural variants. Exiting." >&2
+        exit 1
+    fi
+    echo ${structural_vcf}
+}
+
+locate_purple_pilot_pre_viral_annotate_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate purple pilot pre-viral-annotate structural variants. Exiting." >&2
         exit 1
     fi
     echo ${structural_vcf}

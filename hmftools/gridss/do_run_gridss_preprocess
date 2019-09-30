@@ -1,25 +1,23 @@
-#!/bin/bash
-#
-# Performs GRIDSS preprocessing
-#
+#!/usr/bin/env bash
+
 source do_run_gridss_lib
 
 # BAM to process. "normal" and "tumor"
 tum_normal_arg=$1 && shift
 
 if [[ "$tum_normal_arg" == "normal" ]] ; then
-	bam_sample=${ref_sample}
+	  bam_sample=${ref_sample}
 elif [[ "$tum_normal_arg" == "tumor" ]] ; then
-	bam_sample=${tumor_sample}
+	  bam_sample=${tumor_sample}
 else
-	echo "Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
-	exit 1
+	  echo "Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
+	  exit 1
 fi
 bam=${run_dir}/${bam_sample}/mapping/${bam_sample}_dedup.realigned.bam
 insert_size_metrics=${run_dir}/QCStats/${bam_sample}_dedup/${bam_sample}_dedup_MultipleMetrics.txt.insert_size_metrics
 
 if [[ ! ${bam}.bai ]] ; then
-	samtools index ${bam}
+	  samtools index ${bam}
 fi
 
 if [[ ! -f ${insert_size_metrics} ]] ; then
@@ -28,8 +26,8 @@ if [[ ! -f ${insert_size_metrics} ]] ; then
 fi
 
 if [[ ! -f "$bam" ]] ; then
-	echo "Missing input bam $bam. Aborting" 1>&2
-	exit 1
+	  echo "Missing input bam $bam. Aborting" 1>&2
+	  exit 1
 fi
 
 working_dir=${gridss_dir}/$(basename ${bam}).gridss.working
@@ -108,8 +106,8 @@ fi
 wait
 
 if [[ ! -f  ${sv_bam} ]] ; then
-	echo "$(date) Preprocessing failed. Missing $sv_bam " 1>&2
-	exit 1
+	  echo "$(date) Preprocessing failed. Missing $sv_bam " 1>&2
+	  exit 1
 else
-	echo "$(date) Preprocessing complete"
+	  echo "$(date) Preprocessing complete"
 fi

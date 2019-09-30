@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
-prefix=`dirname $(readlink $0 || echo $0)`
 run_dir=$1 && shift
 input_vcf=$(locate_purple_structural_variants ${run_dir})
 
-${prefix}/do_run_gridss_repeatmasker_insertion_annotate ${input_vcf}
+do_run_gridss_repeatmasker_insertion_annotate ${input_vcf}

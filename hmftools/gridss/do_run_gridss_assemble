@@ -1,66 +1,64 @@
-#!/bin/bash
-#
-# Performs GRIDSS assembly
-#
+#!/usr/bin/env bash
+
 source do_run_gridss_lib
 
 assert_preprocessing_complete
 
 if [[ ! -f ${assembly_bam} ]] ; then
-	echo $(date) AssembleBreakends
-	/usr/bin/time -o ${log_prefix}.AssembleBreakends.log \
-	java -Xmx31G ${gridss_jvm_args} \
-		-Dgridss.output_to_temp_file=true \
-		gridss.AssembleBreakends \
-		${gridss_common_args} \
-		INPUT=${normal_bam} \
-		INPUT=${tumor_bam} \
-		OUTPUT=${assembly_bam} \
-		WORKER_THREADS=${threads} \
-		BLACKLIST=${blacklist} \
-		CONFIGURATION_FILE=${gridss_config_file} ||
-		exit 1
+	  echo $(date) AssembleBreakends
+	  /usr/bin/time -o ${log_prefix}.AssembleBreakends.log \
+	  java -Xmx31G ${gridss_jvm_args} \
+        -Dgridss.output_to_temp_file=true \
+        gridss.AssembleBreakends \
+        ${gridss_common_args} \
+        INPUT=${normal_bam} \
+        INPUT=${tumor_bam} \
+        OUTPUT=${assembly_bam} \
+        WORKER_THREADS=${threads} \
+        BLACKLIST=${blacklist} \
+        CONFIGURATION_FILE=${gridss_config_file} ||
+        exit 1
 fi
 
 if [[ ! -f ${assembly_bam}.gridss.working/$(basename ${assembly_bam}).idsv_metrics ]] ; then
-	# async metrics
-	echo $(date) CollectGridssMetrics
-	/usr/bin/time -o ${log_prefix}.assembly.CollectGridssMetrics.log \
-	java -Xmx256M ${gridss_jvm_args} \
-		gridss.analysis.CollectGridssMetrics \
-		ASSUME_SORTED=true \
-		I=${assembly_bam} \
-		O=${assembly_bam}.gridss.working/$(basename ${assembly_bam}) \
-		THRESHOLD_COVERAGE=${gridss_threshold_coverage} \
-		FILE_EXTENSION=null \
-		GRIDSS_PROGRAM=null \
-		GRIDSS_PROGRAM=CollectCigarMetrics \
-		GRIDSS_PROGRAM=CollectMapqMetrics \
-		GRIDSS_PROGRAM=CollectTagMetrics \
-		GRIDSS_PROGRAM=CollectIdsvMetrics \
-		GRIDSS_PROGRAM=ReportThresholdCoverage \
-		PROGRAM=null \
-		PROGRAM=CollectInsertSizeMetrics \
-		2> ${log_prefix}.assembly.CollectGridssMetrics.log &
+	  # async metrics
+	  echo $(date) CollectGridssMetrics
+	  /usr/bin/time -o ${log_prefix}.assembly.CollectGridssMetrics.log \
+	  java -Xmx256M ${gridss_jvm_args} \
+        gridss.analysis.CollectGridssMetrics \
+        ASSUME_SORTED=true \
+        I=${assembly_bam} \
+        O=${assembly_bam}.gridss.working/$(basename ${assembly_bam}) \
+        THRESHOLD_COVERAGE=${gridss_threshold_coverage} \
+        FILE_EXTENSION=null \
+        GRIDSS_PROGRAM=null \
+        GRIDSS_PROGRAM=CollectCigarMetrics \
+        GRIDSS_PROGRAM=CollectMapqMetrics \
+        GRIDSS_PROGRAM=CollectTagMetrics \
+        GRIDSS_PROGRAM=CollectIdsvMetrics \
+        GRIDSS_PROGRAM=ReportThresholdCoverage \
+        PROGRAM=null \
+        PROGRAM=CollectInsertSizeMetrics \
+        2> ${log_prefix}.assembly.CollectGridssMetrics.log &
 fi
 
 sv_bam=${assembly_bam}.gridss.working/$(basename ${assembly_bam}).sv.bam
 if [[ ! -f ${sv_bam} ]] ; then
-	# The extra memory is to hold the reference genome as we buffer
-	# We could probably get away with 4G as we we're already using
-	# a lot of memory for the act assembly, this shouldn't be problematic
-	echo $(date) SoftClipsToSplitReads
-	/usr/bin/time -o ${log_prefix}.assembly.SoftClipsToSplitReads.log \
-	java -Xmx6G ${gridss_jvm_args} \
-		-Dgridss.async.buffersize=16 \
-		-Dgridss.output_to_temp_file=true \
-		gridss.SoftClipsToSplitReads \
-		${gridss_common_args} \
-		I=${assembly_bam} \
-		O=${sv_bam} \
-		REALIGN_ENTIRE_READ=true \
-		WORKER_THREADS=${threads}
+	  # The extra memory is to hold the reference genome as we buffer
+	  # We could probably get away with 4G as we we're already using
+	  # a lot of memory for the act assembly, this shouldn't be problematic
+	  echo $(date) SoftClipsToSplitReads
+	  /usr/bin/time -o ${log_prefix}.assembly.SoftClipsToSplitReads.log \
+	  java -Xmx6G ${gridss_jvm_args} \
+        -Dgridss.async.buffersize=16 \
+        -Dgridss.output_to_temp_file=true \
+        gridss.SoftClipsToSplitReads \
+        ${gridss_common_args} \
+        I=${assembly_bam} \
+        O=${sv_bam} \
+        REALIGN_ENTIRE_READ=true \
+        WORKER_THREADS=${threads}
 fi
+
 # wait for metrics and indexing to finish
 wait
-

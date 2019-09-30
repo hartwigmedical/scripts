@@ -1,7 +1,5 @@
-#!/bin/bash
-#
-# Performs GRIDSS preprocessing
-#
+#!/usr/bin/env bash
+
 source do_run_gridss_lib
 
 input_vcf=$1 && shift
@@ -20,7 +18,7 @@ if [[ ! -f ${input_vcf} ]] ; then
 fi
 
 if [[ "${input_vcf/.ann.vcf.gz/}" != "$input_vcf" ]] ; then
-	echo "[WARN] Already annotated purple VCF $input_vcf. Exiting."
+	echo "[WARN] Already annotated purple VCF ${input_vcf}. Exiting."
     exit 1
 fi
 
@@ -32,20 +30,20 @@ grep -v BEALN < ${input_decompressed}  | grep -vE "^#" >> ${missingBEALN}
 # Work-around for https://github.com/PapenfussLab/gridss/issues/199
 CANDIDATES=$(grep -vE "^#" < ${missingBEALN} | grep -E '([].[][ACGTNagctn]{2})|([ACGTNagctn]{2}[].[])' | wc -l)
 if [[ ${CANDIDATES} -gt 0 ]] ; then
-	java -Xmx1G ${gridss_jvm_args} \
-		-Dgridss.output_to_temp_file=true \
-		gridss.AnnotateUntemplatedSequence \
-		REFERENCE_SEQUENCE=${ref_genome} \
-		INPUT=${missingBEALN} \
-		OUTPUT=${annotatedBEALN} \
-		WORKER_THREADS=${threads}
+	  java -Xmx1G ${gridss_jvm_args} \
+		    -Dgridss.output_to_temp_file=true \
+		    gridss.AnnotateUntemplatedSequence \
+		    REFERENCE_SEQUENCE=${ref_genome} \
+		    INPUT=${missingBEALN} \
+		    OUTPUT=${annotatedBEALN} \
+		    WORKER_THREADS=${threads}
 else
-	cp ${missingBEALN} ${annotatedBEALN}
+	  cp ${missingBEALN} ${annotatedBEALN}
 fi
 
 java -jar ${PICARD_JAR} SortVcf \
-	I=${withBEALN} \
-	I=${annotatedBEALN} \
-	O=${output_vcf}
+	  I=${withBEALN} \
+	  I=${annotatedBEALN} \
+	  O=${output_vcf}
 
 rm ${input_decompressed} ${withBEALN} ${missingBEALN} ${annotatedBEALN} ${annotatedBEALN}.idx

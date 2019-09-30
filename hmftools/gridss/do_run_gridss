@@ -1,7 +1,5 @@
-#!/bin/bash
-#
-# Runs GRIDSS
-#
+#!/usr/bin/env bash
+
 source do_run_gridss_lib
 
 echo $(date) Preprocessing normal

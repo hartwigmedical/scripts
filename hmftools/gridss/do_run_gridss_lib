@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ulimit -n $(ulimit -Hn)
 
@@ -7,18 +7,18 @@ gridss_jar=$1 && shift
 threads=$1 && shift
 
 if [[ ! -f ${gridss_jar} ]] ; then
-	echo "Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
-	exit 1
+	  echo "Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
+	  exit 1
 fi
 
 if [[ "$threads" == "" ]] ; then
-	threads=$(nproc)
+	  threads=$(nproc)
 fi
 
 base_path="/data/common"
-if [ -z "`hostname | grep datastore`" ]; then
-	# Common folder does not exist on crunches...
-	base_path="/data"
+if [ -z "$(hostname | grep datastore)" ]; then
+	  # Common folder does not exist on crunches...
+	  base_path="/data"
 fi
 
 config_dir=${base_path}/dbs/gridss
@@ -27,16 +27,16 @@ export PATH=${base_path}/tools/bwa_v0.7.17/:$PATH
 export PATH=$PATH:${base_path}/tools/samtools_v1.2/
 
 if which bwa > /dev/null ; then
-	echo -n
+	  echo -n
 else
-	echo "Missing bwa. Aborting"
-	exit 1
+	  echo "Missing bwa. Aborting"
+	  exit 1
 fi
 if which samtools > /dev/null ; then
-	echo -n
+	  echo -n
 else
-	echo "Missing samtools. Aborting"
-	exit 1
+	  echo "Missing samtools. Aborting"
+	  exit 1
 fi
 
 ref_genome=${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
@@ -63,46 +63,48 @@ log_dir=${gridss_dir}/logs/
 log_prefix=${log_dir}/$HOSTNAME.$$
 blacklist=${config_dir}/ENCFF001TDO.bed
 
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 gridss_config_file=${prefix}/gridss.properties
 
 gridss_threshold_coverage=10000
 gridss_jvm_args="
-	-ea
-	-Dsamjdk.create_index=true
-	-Dsamjdk.use_async_io_read_samtools=true
-	-Dsamjdk.use_async_io_write_samtools=true
-	-Dsamjdk.use_async_io_write_tribble=true
-	-Dsamjdk.buffer_size=2097152
-	-cp $gridss_jar "
+	  -ea
+	  -Dsamjdk.create_index=true
+	  -Dsamjdk.use_async_io_read_samtools=true
+	  -Dsamjdk.use_async_io_write_samtools=true
+	  -Dsamjdk.use_async_io_write_tribble=true
+	  -Dsamjdk.buffer_size=2097152
+	  -cp $gridss_jar "
 gridss_common_args="
-	TMP_DIR=$gridss_dir 
-	WORKING_DIR=$gridss_dir
-	REFERENCE_SEQUENCE=$ref_genome "
+	  TMP_DIR=$gridss_dir
+	  WORKING_DIR=$gridss_dir
+	  REFERENCE_SEQUENCE=$ref_genome "
 
 mkdir -p ${gridss_dir} ${log_dir}
 
 function assert_preprocessing_complete() {
-	if [[ ! -f ${gridss_dir}/$(basename ${normal_bam}).gridss.working/$(basename ${normal_bam}).sv.bam ]] ; then
-		echo "Normal bam preprocessing not complete. Terminating." 1>&2
-		exit 1
-	fi
-	if [[ ! -f ${gridss_dir}/$(basename ${tumor_bam}).gridss.working/$(basename ${tumor_bam}).sv.bam ]] ; then
-		echo "Tumor bam preprocessing not complete. Terminating." 1>&2
-		exit 1
-	fi
+	  if [[ ! -f ${gridss_dir}/$(basename ${normal_bam}).gridss.working/$(basename ${normal_bam}).sv.bam ]] ; then
+		    echo "Normal bam preprocessing not complete. Terminating." 1>&2
+		    exit 1
+	  fi
+	  if [[ ! -f ${gridss_dir}/$(basename ${tumor_bam}).gridss.working/$(basename ${tumor_bam}).sv.bam ]] ; then
+		    echo "Tumor bam preprocessing not complete. Terminating." 1>&2
+		    exit 1
+	  fi
 }
+
 function assert_assembly_complete() {
-	if [[ ! -f ${gridss_dir}/$(basename ${assembly_bam}).gridss.working/$(basename ${assembly_bam}).sv.bam ]] ; then
-		echo "Assembly not complete. Terminating." 1>&2
-		exit 1
-	fi
+	  if [[ ! -f ${gridss_dir}/$(basename ${assembly_bam}).gridss.working/$(basename ${assembly_bam}).sv.bam ]] ; then
+		    echo "Assembly not complete. Terminating." 1>&2
+		    exit 1
+	  fi
 }
+
 function assert_calling_complete() {
-	if [[ ! -f ${gridss_raw_vcf}.unannotated.vcf ]] ; then
-		echo "Variant calling not complete. Terminating." 1>&2
-		exit 1
-	fi
+	  if [[ ! -f ${gridss_raw_vcf}.unannotated.vcf ]] ; then
+		    echo "Variant calling not complete. Terminating." 1>&2
+		    exit 1
+	  fi
 }
 
 
