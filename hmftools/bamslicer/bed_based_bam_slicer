@@ -6,18 +6,16 @@ set=$1
 input_bed_file=$2
 working_dir=$3
 
-if [ -z "$input_bed_file" ];
-  then
+if [ -z "$input_bed_file" ]; then
     echo "Usage: $ ./bed_based_bam_slicer set input_file working_dir"
     echo "   input_file	file containing sample, chromosome, start and end of region to be sliced, one per line (tab separated)"
     exit 1
 fi
 
 while read sample chromosome start end; do
-   tmp_file="${working_dir}"/"${sample}_${chromosome}_${start}_${end}.bed"
-   output_file="${working_dir}"/"${sample}_${chromosome}_${start}_${end}.bam"
-   echo "${chromosome}	${start}	${end}" > ${tmp_file}
-   ${bam_slicer_script} ${set} ${sample} ${tmp_file} ${output_file}
-   rm ${tmp_file}
+    tmp_file="${working_dir}"/"${sample}_${chromosome}_${start}_${end}.bed"
+    output_file="${working_dir}"/"${sample}_${chromosome}_${start}_${end}.bam"
+    echo "${chromosome}	${start}	${end}" > ${tmp_file}
+    ${bam_slicer_script} ${set} ${sample} ${tmp_file} ${output_file}
+    rm ${tmp_file}
 done < ${input_bed_file}
-

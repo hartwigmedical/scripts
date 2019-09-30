@@ -11,7 +11,6 @@ sv_recovery_vcf=$1 && shift
 purple_output=$1 && shift
 credentials=$1 && shift
 
-
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
@@ -29,7 +28,7 @@ mkdir -p ${purple_output}
 rm -rf ${purple_output}/*
 
 base_path="/data/common"
-if [ -z "`hostname | grep datastore`" ]; then
+if [ -z "$(hostname | grep datastore)" ]; then
     # Common folder does not exist on crunches...
 	base_path="/data"
 fi

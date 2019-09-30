@@ -12,8 +12,7 @@ snpeff_db="GRCh37.75"
 
 run_dir=$1
 
-if [ -z "${run_dir}" ];
-  then
+if [ -z "${run_dir}" ]; then
     echo "Usage: $ ./mnv_detector_and_merger <run_dir>"
     echo "   runpath = Path to pipeline run dir"
     echo "Notes:"
@@ -48,8 +47,8 @@ fi
 
 rm "${mnv_vcf}.idx"
 
-if ! ${bam_slicer_script} ${set_name} ${tumor_sample} ${mnv_bed} ${sliced_tumor_bam};
-then exit 1
+if ! ${bam_slicer_script} ${set_name} ${tumor_sample} ${mnv_bed} ${sliced_tumor_bam}; then
+    exit 1
 fi
 
 if ! java -cp ${strelka_post_process_jar} com.hartwig.hmftools.strelka.MNVValidatorApplication \

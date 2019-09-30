@@ -1,11 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source metadata_functions
 source locate_files
-
-prefix=`dirname $(readlink $0 || echo $0)`
 
 credentials=$(locate_vicc_database_credentials)
 vicc_jar=$(locate_pilot_vicc)
 vicc_file=/data/experiments/knowledgebase_vicckb/all.json
 
-${prefix}/do_load_vicc_knowledge_base ${vicc_file} ${credentials} ${vicc_jar}
+do_load_vicc_knowledge_base ${vicc_file} ${credentials} ${vicc_jar}

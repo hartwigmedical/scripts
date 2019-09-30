@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 vicc_file=$1 && shift
 credentials=$1 && shift
@@ -16,4 +16,4 @@ mysql vicc_db --user=${db_user} --password=${db_pass} < /data/experiments/knowle
 java -Dorg.jooq.no-logo=true -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonToSQLImporter \
     -vicc_file ${vicc_file} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    $@
+    "$@"

@@ -32,18 +32,17 @@ bam_index="${bampath_in_bucket}.bai"
 run_bam_slicer() {
    bam_index=$1
    java -Xmx8G -jar ${bam_slicer_jar} \
-     -s3 \
-     -bucket ${run_bucket} \
-     -input ${bampath_in_bucket} \
-     -index ${bam_index} \
-     -bed ${bed_file} \
-     -output ${output_file} \
-     -max_chunks 2000 \
-     -max_concurrent_requests 30
+        -s3 \
+        -bucket ${run_bucket} \
+        -input ${bampath_in_bucket} \
+        -index ${bam_index} \
+        -bed ${bed_file} \
+        -output ${output_file} \
+        -max_chunks 2000 \
+        -max_concurrent_requests 30
 }
 
-if ! run_bam_slicer ${bam_index};
-then
+if ! run_bam_slicer ${bam_index}; then
      echo "[INFO] Slicing with index ${bam_index} failed"
      bam_index="${bampath_in_bucket%.*}.bai"
      echo "[INFO] Retrying with index ${bam_index}"

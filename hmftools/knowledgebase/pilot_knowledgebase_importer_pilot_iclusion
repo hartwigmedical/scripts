@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-prefix=$(dirname $(readlink $0 || echo $0))
 iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
 
-${prefix}/do_run_knowledgebase_importer_pilot ${iclusion_api_credentials}
+do_run_knowledgebase_importer_pilot ${iclusion_api_credentials}
