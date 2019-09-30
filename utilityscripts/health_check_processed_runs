@@ -10,10 +10,14 @@ for run in ${process_runs}; do
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
     if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
-            echo "[INFO] HealthChecker has succeeded for ${run}"
+        echo "[INFO] HealthChecker has succeeded for ${run}"
     elif [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
-            echo "[ERROR] HealthChecker has failed for ${run}!!"
+        echo "[ERROR] HealthChecker has failed for ${run}!!"
     else
-            echo "[ERROR] HealthChecker has not been run for ${run}"
+        echo "[ERROR] HealthChecker has not been run for ${run}"
     fi
+
+    # Printing purple version just for double-checking!
+    purple_version=$(cat ${run_dir}/purple/purple.version | grep version)
+    echo "[INFO] Purple version = ${purple_version}"
 done
