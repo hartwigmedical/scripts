@@ -320,6 +320,10 @@ sub processAccessSamples{
         my $id     = $row_info->{ 'sample_id' }; # is field "Sample_barcode" in Access LIMS
         my $name   = $row_info->{ 'sample_name' };
         my $coupe  = $row_info->{ 'coupes_barcode' };
+        my $status = $row_info->{ 'lab_status' };
+
+        ## Skip failed samples (in these cases there should be a good sample too)
+        next if $status =~ m/failed/i;
         
         ## Add to temporary mappings (used later on to enrich DNA/RNA samples)
         if ( $source eq 'BLOOD' and not isSkipValue($name) ){
@@ -372,7 +376,7 @@ sub processAccessSamples{
         next if not $name or isSkipValue( $name );
         next if $name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         next if $name =~ /^(PMC\d{6})(T|R){1}/ms;
-        next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
+        next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
         
         ## Enrich (DNA|RNA)-TISSUE samples with info from their TISSUE ancestor
         ## Enrich (DNA|RNA)-BLOOD samples with info from their BLOOD ancestor
@@ -409,7 +413,7 @@ sub processAccessSamples{
         }
         
         ## All other sample names should follow certain formats
-        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
+        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
             my ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
                 
             $object->{ 'label' }   = $study;
