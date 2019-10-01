@@ -13,16 +13,16 @@ svDrivers = read.csv(file = paste0(localPath,"LNX_DRIVERS.csv"))
 svGermline = read.csv(paste(localPath,'SVGermline.csv',sep=''), header = T, stringsAsFactors = F)
 svDrivers=rbind(svDrivers %>% select(Gene,SampleId,DriverType,DriverLikelihood=Likelihood) %>% filter(DriverLikelihood>0.8), svGermline %>% mutate(DriverLikelihood=1,DriverType=ifelse(biallelic==1,'Germline Biallleic','Germline Monoallelic')) %>% select(Gene=gene,SampleId=sampleId,DriverType,DriverLikelihood))
 
-svData = read.csv(file = paste0(localPath,"SVA_SVS.csv"))
-svCluster = read.csv(file = paste0(localPath,"SVA_CLUSTERS.csv"))
-svEnriched = left_join(svData,svCluster %>% 
-  select(SampleId, ClusterId, SuperType), by = c("SampleId", "ClusterId")) %>%
+svData = read.csv(file = paste0(localPath,"LNX_SVS.csv"))
+svCluster = read.csv(file = paste0(localPath,"LNX_CLUSTERS.csv"))
+svEnriched = left_join(svData,svCluster %>% separate('Annotations',c('SynLength1','SynLength2','SynGapLength'),sep=';') %>% 
+  select(SampleId, ClusterId, SuperType,SynLength1,SynLength2,SynGapLength), by = c("SampleId", "ClusterId")) %>%
   filter(SuperType != 'ARTIFACT') %>% 
   mutate(IsFragile = FSStart == 'true'|FSEnd == 'true',
   IsLineElement = LEStart != 'false'| LEEnd !='false',
   IsFoldback = Type == 'INV' & FoldbackLnkStart > 0, 
   Length = PosEnd - PosStart + 1,
-  HomLength = pmin(10,nchar(as.character(Homology)))) %>%
+  HomLength = pmin(10,nchar(as.character(HomologyStart)))) %>%
   left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId")
 
 # Samples with key drivers
@@ -33,6 +33,7 @@ CDK12samples=sample_filter_by_driver('CDK12')
 CCNE1samples=sample_filter_by_driver('CCNE1')
 BRCA2samples=sample_filter_by_driver('BRCA2')
 BRCA1samples=sample_filter_by_driver('BRCA1')
+TP53samples=sample_filter_by_driver('T')
 ######################### 
 
 ##### FUNCTIONS ######
@@ -57,24 +58,23 @@ plot_eight_violins <- function(svEnriched,complexType = 'COMPLEX',violinScale = 
           axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
           panel.grid.major.y=element_line(linetype = 8,size=0.1))
 }
-create_violin_plot_cancer_type <- function(x,feature='Length',scaleLogY=T) {
+create_violin_plot_cancer_type <- function(x,feature='Length',scaleLogY=T,violinScale = 'area') {
   
   cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(-n) %>%  ungroup()  %>% 
     mutate(CancerType = cancerType, weight = 1.0/n,Label = paste0(CancerType," (n=", n,")")) %>% select(CancerType, weight,Label)
   plotDF = x %>%
-    left_join(highestPurityCohort %>% select(SampleId = sampleId, CancerType = cancerType), by = "SampleId") %>%
     filter(!is.na(CancerType)) %>%
     left_join(cancerTypeCounts, by = "CancerType") %>%
-    mutate(Label = factor(Label, cancerTypeCounts$Label, ordered = T)) #%>%left_join(cancerTypeCounts)
+    mutate(Label = factor(Label, cancerTypeCounts$Label, ordered = T))
   
   p1 = ggplot(plotDF, aes_string('Label', feature)) + 
-    geom_violin(scale = "area", aes(weight = weight),fill='light blue',color=NA)  +theme(axis.text.x = element_text(angle = 90)) +
+    geom_violin(scale = violinScale, aes(weight = weight),fill='light blue',color=NA)+
     theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
           axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
-          panel.grid.major.y=element_line(linetype = 8,size=0.1))
+          panel.grid.major.y=element_line(linetype = 8,size=0.5))
   
   if (scaleLogY==T) {
-    p1 = p1+ scale_y_log10()
+    p1 = p1+ scale_y_log10(breaks = scales::trans_breaks("log10", function(x) 10^x))
   }
   return (p1)
 }
@@ -96,7 +96,7 @@ create_top_n_violin_plot <- function(x, topN=40,minVariants = 0) {
     scale_y_log10() +
     theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
           axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
-          panel.grid.major.y=element_line(linetype = 8,size=0.1))
+          panel.grid.major.y=element_line(linetype = 8,size=0.25))
   
   return (p1)
 }
@@ -112,21 +112,15 @@ plot_synthetics <- function(svEnriched,violinScale = 'area') {
   svSyn= bind_rows(svSyn,svSyn)
   svSyn= bind_rows(svSyn,svSyn)
   svSyn= bind_rows(svSyn,svSyn)
+  svRecipDups = bind_rows(svEnriched %>% filter(ResolvedType=='RECIP_INV_DUPS'|ResolvedType=='RECIP_TRANS_DUPS', ClusterCount == 2) %>% mutate(Length=as.numeric(SynLength1),Feature = "RECIP_DUPS") %>% select(Feature, Length) %>% arrange(Feature),
+                         svEnriched %>% filter(ResolvedType=='RECIP_INV_DUPS'|ResolvedType=='RECIP_TRANS_DUPS', ClusterCount == 2) %>% mutate(Length=as.numeric(SynLength2),Feature = "RECIP_DUPS") %>% select(Feature, Length) %>% arrange(Feature))
+  svRecipDups= bind_rows(svRecipDups,svRecipDups)
+  svRecipDups= bind_rows(svRecipDups,svRecipDups)
   
   fbStart = svEnriched %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
   fbEnd = svEnriched %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
-  svFoldbacks = rbind(fbStart,fbEnd) %>% mutate(
-    IsChained=(OtherId!=Id),                               
-    SingleBreakend=(OtherId==Id&FoldbackLength==0),
-    FoldbackId=ifelse(Id<OtherId,Id,OtherId),
-    Feature = ifelse(IsChained, "Synthetic Foldback", "Simple Foldback"),
-    FoldbackLength=FoldbackLength+1) %>%
-    group_by(SampleId,ClusterId,FoldbackId,IsChained, Feature) %>% 
-    summarise(Chr=first(Chr),Arm=first(Arm),FoldbackLength=first(FoldbackLength)) %>%
-    ungroup() %>%
-    select(Feature, Length = FoldbackLength) %>% arrange(Feature)
   
-  svComplete = bind_rows(svSimple,svSyn)  %>% bind_rows(svFoldbacks)#  %>% bind_rows(svFoldbacks) %>% bind_rows(svComplex)
+  svComplete = bind_rows(svSimple,svSyn) %>% bind_rows(svRecipDups) 
   #svComplete=svFoldbacks
   svFeatureLevels = unique(svComplete$Feature)
   svComplete = svComplete %>% mutate(Feature = factor(Feature, svFeatureLevels))
@@ -151,7 +145,6 @@ create_violin_plot_resolved_type <- function(x,feature='Length',scaleLogY=T) {
   return (p1)
 }
 ######################
-
 ##### LENGTH ANALYSES #######
 ### 1. High level INV,DEL and DUP Lengths ###
 p1 = plot_eight_violins(svEnriched,'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV")
@@ -194,15 +187,34 @@ plot_synthetics(svEnriched,'count') + ggtitle("Synthetics")
 
 ### 6. Simple vs synthetic lengths by driver gene ###
 p0= plot_synthetics(svEnriched,'count') + ggtitle("All Samples")
-simpleTop50DupsCDK12 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'CDK12') %>% .$SampleId))
-p1=plot_synthetics(simpleTop50DupsCDK12,'count') + ggtitle("Samples with  CDK12 drivers")
-simpleTop50DupsCCNE1 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'CCNE1') %>% .$SampleId))
-p2=plot_synthetics(simpleTop50DupsCCNE1,'count') + ggtitle("Samples with CCNE1 drivers")
-simpleTop50DupsBRCA1 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'BRCA1') %>% .$SampleId))
-p3=plot_synthetics(simpleTop50DupsBRCA1,'count') + ggtitle("Samples with  BRCA1 drivers")
-simpleTop50DupsBRCA2 = svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene == 'BRCA2') %>% .$SampleId))
-p4= plot_synthetics(simpleTop50DupsBRCA2,'count') + ggtitle("Samples with BRCA2 drivers")
+p1=plot_synthetics(svEnriched %>% filter(SampleId %in% CDK12samples),'count') + ggtitle("Samples with  CDK12 drivers")
+p2=plot_synthetics(svEnriched %>% filter(SampleId %in% CCNE1samples),'count') + ggtitle("Samples with CCNE1 drivers")
+p3=plot_synthetics(svEnriched %>% filter(SampleId %in% BRCA1samples),'count') + ggtitle("Samples with BRCA1 drivers")
+p4=plot_synthetics(svEnriched %>% filter(SampleId %in% BRCA2samples),'count') + ggtitle("Samples with BRCA2 drivers")
 plot_grid(p0,p1,p2,p3,p4,ncol=1)
+
+### 7. Reciprocal DUPS ###
+pairClusters = svCluster %>% filter(ClusterCount==2,ResolvedType=='RECIP_TRANS_DUPS'|ResolvedType=='RECIP_INV_DUPS') %>% separate('Annotations',c('SynLength1','SynLength2','SynGapLength'),sep=';') %>% 
+  mutate(SynGapLength=as.numeric(as.character(SynGapLength)),SynLength1=as.numeric(as.character(SynLength1)),SynLength2=as.numeric(as.character(SynLength2)))
+p0=ggplot(data=pairClusters,aes(SynLength1,SynLength2)) + geom_hex(bins=30) + facet_wrap(~ResolvedType) + scale_x_log10() + scale_y_log10()+
+  scale_fill_gradient(low = 'light blue', high = 'dark blue') + ggtitle("All")
+p1=ggplot(data=pairClusters %>% filter(SampleId %in% BRCA1samples),aes(SynLength1,SynLength2)) + geom_hex(bins=30) + facet_wrap(~ResolvedType) + scale_x_log10() + scale_y_log10()+
+  scale_fill_gradient(low = 'light blue', high = 'dark blue') + ggtitle("BRCA1")
+p2=ggplot(data=pairClusters %>% filter(SampleId %in% CCNE1samples),aes(SynLength1,SynLength2)) + geom_hex(bins=30) + facet_wrap(~ResolvedType) + scale_x_log10() + scale_y_log10()+
+  scale_fill_gradient(low = 'light blue', high = 'dark blue') + ggtitle("CCNE1")
+p3=ggplot(data=pairClusters %>% filter(SampleId %in% CDK12samples),aes(SynLength1,SynLength2)) + geom_hex(bins=30) + facet_wrap(~ResolvedType) + scale_x_log10() + scale_y_log10()+
+  scale_fill_gradient(low = 'light blue', high = 'dark blue') + ggtitle("CDK12")
+plot_grid(p0,p1,p2,p3,ncol=1)
+
+################################
+
+##### Variant Counts  #######
+#1. By cancer Type and Resolved Type
+topResolvedTypes = svEnriched  %>% filter(SuperType!='INCOMPLETE') %>% group_by(ResolvedType) %>% count %>% filter(n>2500) %>% .$ResolvedType
+allCounts = svEnriched  %>% group_by(SampleId,CancerType,ResolvedType) %>% summarise(count=n()) %>% tidyr::complete(SampleId,CancerType,ResolvedType,fill=list(count=0.5))
+create_violin_plot_cancer_type(allCounts %>% filter(ResolvedType %in% topResolvedTypes) ,'count',T,'width') +  ggtitle("Counts of Variants by Resolved Type") + facet_wrap(~ResolvedType)
+create_violin_plot_cancer_type(allCounts %>% filter(ResolvedType=='RECIP_TRANS') ,'count',T,'area') +  ggtitle("Counts of Variants by Resolved Type") + facet_wrap(~ResolvedType)
+View(svEnriched %>% group_by(SuperType,ResolvedType) %>% count)
 ################################
 
 ##### DB LENGTH ANALYSES #######
@@ -226,3 +238,48 @@ View(svDrivers %>% filter(Gene %in% c('CDK12','BRCA1','BRCA2','CCNE1')) %>% grou
 plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02060120T'),'COMPLEX','count') + ggtitle("CPCT02060120T")
 
 ################################
+
+p1 = ggplot(plotDF, aes_string('Label','SampleId')) + 
+  geom_violin(scale = "area", aes(weight = weight),fill='light blue',color=NA)  +theme(axis.text.x = element_text(angle = 90)) +
+  theme(axis.text.x = element_text(angle = 90,size=8),axis.title.x=element_blank(),
+        axis.text.y = element_text(angle = 90,size=8),axis.title.y = element_text(size=8),
+        panel.grid.major.y=element_line(linetype = 8,size=0.1))
+print(p1)
+View(svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene != 'BRCA1') %>% .$SampleId)) %>% filter(Type %in% c("INV"), ClusterCount == 2,ResolvedType=='RECIP_INV') %>% filter(CancerType!='OOvary') %>% group_by(SampleId,CancerType) %>% count)
+
+View(svDrivers %>% filter(SampleId %in% c('CPCT02080092T','CPCT02020659T','CPCT02070410T','CPCT02100117T','DRUP01070063T','DRUP01180001T','CPCT02070145T','CPCT02020630T','CPCT02060056T')) %>% group_by(Gene) %>% count)
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02020683T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))# control
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02100161T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))# control
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02250003T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))# control
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02060056T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02020422T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02020867T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02020630T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02070145T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02080092T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02020659T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02070410T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02100117T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='DRUP01070063T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='DRUP01180001T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02230050T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+print(plot_eight_violins(svEnriched %>% filter(SampleId=='CPCT02450007T'),'COMPLEX','count') + ggtitle("ALL simple & complex variants + foldback & reciprocal INV"))
+View(svEnriched %>% filter(SampleId=='CPCT02030381T') %>% select(Length,ResolvedType,Type,IsFoldback))
+View(svEnriched %>% filter(SampleId=='CPCT02450007T') %>% group_by(ResolvedType,Type,IsFoldback) %>% count)
+create_violin_plot_cancer_type(svEnriched %>%  filter(SampleId %in% (svDrivers %>% filter(Gene != 'CCNE1') %>% .$SampleId)) %>% filter(Type %in% c("INV"), ClusterCount == 2,ResolvedType=='RECIP_INV')) + ggtitle("Length Distribution: Simple DUP by CancerType (count per sample)")
+create_top_n_violin_plot(svEnriched  %>% filter(Type %in% c("INV"), ClusterCount == 2,ResolvedType=='RECIP_INV') %>% filter(CancerType!='OOvary'),40) + ggtitle("Simple top Ovary DUP")
+
+View(svEnriched  %>% filter(Type %in% c("INV"), ClusterCount == 2,ResolvedType=='RECIP_INV') %>% group_by(SampleId,CancerType,long=Length<2e5) %>% count %>% spread(long,n))
+View(svEnriched %>% filter(SampleId=='CPCT02070410T') %>% group_by(ResolvedType,Type,IsFoldback) %>% count)
+
+p10 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DEL", ClusterCount == 1,CancerType=='Ovary',20)) + ggtitle("Simple top Ovary DUP")
+p11 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DEL", ClusterCount == 1,CancerType %in% c('Esophagus','Stomach')),20) + ggtitle("Simple Top Esophagus & Stomach DUP")
+p12 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DEL", ClusterCount == 1,CancerType=='Prostate'),20) + ggtitle("Simple Top Prostate DUP")
+p13 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DEL", ClusterCount == 1,CancerType=='Colon/Rectum'),20) + ggtitle("Simple Top CRC DUP")
+p14 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DEL", ClusterCount == 1,CancerType=='Breast'),20) + ggtitle("Simple Top Breast DUP")
+plot_grid(p10,p11,p12,p13,p14, ncol = 1)
+
+create_violin_plot_cancer_type(svEnriched %>% filter(SampleId %in% CDK12samples,ClusterCount == 2,ResolvedType=='RECIP_TRANS_DUPS') %>%mutate(SynLength1=as.numeric(SynLength1)),'SynLength1',violinScale = 'count') + ggtitle("RECIP_INV")
+
+View(svEnriched %>% filter(SampleId %in% CDK12samples,ClusterCount == 2,ResolvedType=='RECIP_TRANS_DUPS') %>% mutate(SynLength1=as.numeric(SynLength1)))
+p10 = create_top_n_violin_plot(svEnriched %>% filter(Type=="DUP", ClusterCount == 1,CancerType=='Ovary',20)) + ggtitle("Simple top Ovary DUP")

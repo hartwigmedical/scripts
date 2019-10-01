@@ -1,8 +1,17 @@
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(GenomicRanges)
+
+localPath = '~/hmf/analyses/SVAnalysis/'
+sharedPath = '~/Dropbox/HMF Australia team folder/RData/'
+hmftoolsPath = '~/hmf/repos/hmftools/'
+
 ##### ARM locations
-centromeres = read.csv("/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/refgenome/hg19_centromere.tsv", sep = "\t", header= F)
+centromeres = read.csv(paste0(hmftoolsPath,"hmf-common/src/main/resources/refgenome/hg19_centromere.tsv"), sep = "\t", header= F)
 names(centromeres) <- c("chromosome", "centromere")
 
-lengths = read.csv("/Users/jon/hmf/repos/hmftools/hmf-common/src/main/resources/refgenome/hg19_len.tsv", sep = "\t", header= F)
+lengths = read.csv(paste0(hmftoolsPath,"hmf-common/src/main/resources/refgenome/hg19_len.tsv"), sep = "\t", header= F)
 names(lengths) <- c("chromosome", "length")
 
 chromosomes = left_join(centromeres, lengths, by = "chromosome") %>%
@@ -15,9 +24,8 @@ arms = bind_rows(
 
 rm(centromeres, lengths, chromosomes)
 
-
 ##### AVERAGE COPY NUMBER
-load(file = "~/hmf/analysis/cohort/hpcCopyNumbers.RData")
+load(file = paste0(sharedPath,"hpcCopyNumbers.RData"))
 armRegions = GRanges(arms$chromosome, ranges = IRanges(start = arms$start, end = arms$end)) 
 copyNumberRegions = GRanges(hpcCopyNumbers$chromosome, ranges = IRanges(start = hpcCopyNumbers$start, end = hpcCopyNumbers$end)) 
 ol = as.matrix(findOverlaps(armRegions, copyNumberRegions, type = "any"))
@@ -30,9 +38,33 @@ armAveragedCopyNumber = hpcCopyNumbers %>%
   group_by(arm) %>%
   summarise(averageCopyNumber = sum(averageCopyNumber) / n())
 
+##### FUNCTIONS
+
+count_summmary <- function(x,byCluster=T) {
+  if(byCluster) {
+      x=x %>% group_by(SampleId, feature, ClusterId, Chr, arm, armLength) %>% count() %>% ungroup() 
+  }
+  x %>%
+    filter(!Chr %in% c('X','Y'), !arm %in% c("p13","p14","p15","p20","p21")) %>%
+    left_join(armAveragedCopyNumber, by = "arm") %>%
+    group_by(feature, arm, armLength) %>%
+    summarise(n = n(), nAdj = sum(1 / averageCopyNumber))
+}
+
+
+plot_arm_by_feature <- function(x) {
+  ggplot(x, aes(x = armLength, y = nAdj)) + 
+    geom_point() + 
+    geom_smooth(method=lm,se=TRUE, fullrange=F) +
+    geom_text(aes(label = arm), size = 2, nudge_x = 7000000, color = "red") +
+    theme(panel.grid.major.y=element_line(linetype = 8,size=0.1),panel.grid.major.x=element_line(linetype = 8,size=0.1)) +
+    facet_wrap(~feature, scales = "free_y") + 
+    expand_limits(x = 0, y = 0)
+}
+
 
 ##### Annotate FEATURES
-load(file = "/Users/jon/hmf/analysis/svPaper/featuredBreakends.RData")  
+load(file = paste0(localPath,"featuredBreakends.RData"))  
 
 armData = featuredBreakends %>% 
   mutate(
@@ -40,36 +72,17 @@ armData = featuredBreakends %>%
     feature = ifelse(grepl("Dup", feature), "Dup", as.character(feature)),
     feature = ifelse(grepl("Del", feature), "Del", as.character(feature))) %>%
   filter(IsStart | !feature %in% c("Dup","Del")) 
-
-
 armRegions = GRanges(arms$chromosome, ranges = IRanges(start = arms$start, end = arms$end)) 
 armDataRegions = GRanges(armData$Chr, ranges = IRanges(start = armData$Pos, end = armData$Pos)) 
 ol = as.matrix(findOverlaps(armRegions, armDataRegions, type = "any"))
 armData[ol[, 2], "armLength"] = arms[ol[, 1], "armLength"]
 armData[ol[, 2], "arm"] = arms[ol[, 1], "arm"]
 
-armDataSummary = armData %>% 
-  filter(!Chr %in% c('X','Y'), !arm %in% c("p13","p14","p15","p20","p21")) %>%
-  left_join(armAveragedCopyNumber, by = "arm") %>%
-  #filter(feature == 'TiSource') %>%
-  #mutate(n = 1,  nAdj = (1 / CN))
-  group_by(feature, arm, armLength) %>%
-  summarise(n = n(), nAdj = sum(1 / averageCopyNumber))
-
-ggplot(armDataSummary, aes(x = armLength, y = nAdj)) + 
-  geom_point() + 
-  geom_smooth(method=lm,se=FALSE, fullrange=F) +
-  geom_text(aes(label = arm), size = 2, nudge_x = 7000000, color = "red") +
-  facet_wrap(~feature, scales = "free_y") + 
-  expand_limits(x = 0, y = 0)
-
-
-armData %>% group_by(feature) %>% count()
-featuredBreakends %>% group_by(feature) %>% count()
-
+armDataSummary = count_summmary(armData,byCluster=F)
+plot_arm_by_feature(armDataSummary)
 
 #### FEATURES PER CLUSTERID / ARM
-load("/Users/jon/hmf/analysis/svPaper/resolveTypeBreakends.RData")
+load(paste0(localPath,"resolveTypeBreakends.RData"))
 
 armData = resolveTypeBreakends %>% mutate(feature = ResolvedType) %>% filter(IsStart | !feature %in% c("DUP","DEL","INV"))
 armRegions = GRanges(arms$chromosome, ranges = IRanges(start = arms$start, end = arms$end)) 
@@ -78,32 +91,11 @@ ol = as.matrix(findOverlaps(armRegions, armDataRegions, type = "any"))
 armData[ol[, 2], "armLength"] = arms[ol[, 1], "armLength"]
 armData[ol[, 2], "arm"] = arms[ol[, 1], "arm"]
 
-armDataSummary = arm_summmary(armData)
-
-
-clusterId_count_summmary <- function(x) {
-  x %>% 
-    group_by(SampleId, feature, ClusterId, Chr, arm, armLength) %>% 
-    count() %>% 
-    ungroup() %>%
-    filter(!Chr %in% c('X','Y'), !arm %in% c("p13","p14","p15","p20","p21")) %>%
-    left_join(armAveragedCopyNumber, by = "arm") %>%
-    group_by(feature, arm, armLength) %>%
-    summarise(n = n(), nAdj = sum(1 / averageCopyNumber))
-}
-
-plot_arm_by_feature <- function(x) {
-  ggplot(x, aes(x = armLength, y = nAdj)) + 
-    geom_point() + 
-    geom_smooth(method=lm,se=FALSE, fullrange=F) +
-    geom_text(aes(label = arm), size = 2, nudge_x = 7000000, color = "red") +
-    facet_wrap(~feature, scales = "free_y") + 
-    expand_limits(x = 0, y = 0)
-}
-
+armDataSummary = count_summmary(armData,byCluster = T)
+plot_arm_by_feature(armDataSummary)
 
 #### Complex
-load(file = "~/hmf/analysis/cohort/highestPurityCohort.RData")
+load(file = paste0(sharedPath,"highestPurityCohort.RData"))
 
 armData = resolveTypeBreakends  %>% filter(ResolvedType == 'COMPLEX', !ClusterContainsDriver) %>% 
   left_join(highestPurityCohort %>% select(sampleId, cancerType), by = c("SampleId" = "sampleId")) %>% mutate(feature = cancerType) 
@@ -116,6 +108,6 @@ ol = as.matrix(findOverlaps(armRegions, armDataRegions, type = "any"))
 armData[ol[, 2], "armLength"] = arms[ol[, 1], "armLength"]
 armData[ol[, 2], "arm"] = arms[ol[, 1], "arm"]
 
-armDataSummary = clusterId_count_summmary(armData)
+armDataSummary = count_summmary(armData,byCluster = T)
 plot_arm_by_feature(armDataSummary)
 

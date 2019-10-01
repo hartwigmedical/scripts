@@ -16,3 +16,5 @@ dnaRnaSummaryPlot = (ggplot(dnaRnaSummary , aes(x=KnownCategory, y=n, fill=Match
                      + coord_flip())
 
 print(dnaRnaSummaryPlot)
+
+p.adjust()
