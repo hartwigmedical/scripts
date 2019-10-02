@@ -19,5 +19,5 @@ for run in ${process_runs}; do
 
     # Printing purple version just for double-checking!
     purple_version=$(cat ${run_dir}/purple/purple.version | grep version)
-    echo "[INFO] Purple version = ${purple_version}"
+    echo "[INFO] This analysis has been done with purple ${purple_version}"
 done
