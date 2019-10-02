@@ -12,7 +12,7 @@ for run in ${process_runs}; do
     if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
         echo "[INFO] HealthChecker has succeeded for ${run}"
     elif [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
-        echo "[ERROR] HealthChecker has failed for ${run}!!"
+        echo "[WARN] HealthChecker has failed for ${run}!!"
     else
         echo "[ERROR] HealthChecker has not been run for ${run}"
     fi
