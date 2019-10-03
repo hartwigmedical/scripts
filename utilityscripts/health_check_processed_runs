@@ -12,12 +12,12 @@ for run in ${process_runs}; do
     if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
         echo "[INFO] HealthChecker has succeeded for ${run}"
     elif [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
-        echo "[ERROR] HealthChecker has failed for ${run}!!"
+        echo "[WARN] HealthChecker has failed for ${run}!!"
     else
         echo "[ERROR] HealthChecker has not been run for ${run}"
     fi
 
     # Printing purple version just for double-checking!
     purple_version=$(cat ${run_dir}/purple/purple.version | grep version)
-    echo "[INFO] Purple version = ${purple_version}"
+    echo "[INFO] This analysis has been done with purple ${purple_version}"
 done
