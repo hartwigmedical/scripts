@@ -14,7 +14,7 @@ setwd(workingDir)
 
 suppressPackageStartupMessages(library('devtools'))
 suppressPackageStartupMessages(library('randomForest'))
-suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/mutSigExtractor-1.02')))
+suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/mutSigExtractor-1.03')))
 suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD-60.02')))
 
 cat("[INFO] Settings:\n")
