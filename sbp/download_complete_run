@@ -32,7 +32,7 @@ if [[ -z "${setname}" || -z "${bucket}" ]]; then
     usage
 fi
 
-if [[ -z "${downloadpath}" ]]; then
+if [[ -z "${localpath}" ]]; then
     localpath="/data/schuberg/tmp"
 fi
 
