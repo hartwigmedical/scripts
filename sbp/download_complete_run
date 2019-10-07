@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+usage() {
+    echo "---"
+    echo "Usage: $(basename $0) -s <setname> -b <bucket>" 1>&2;
+    echo "       $(basename $0) -s <setname> -b <bucket> -p <localpath>" 1>&2;
+    echo "       $(basename $0) -s 170101_HMFregCPCT_etc -b hmf-output-2017-52" 1>&2;
+    echo "Options:"
+    echo "  -p <string>  Path to local directory where run will be saved to"
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:b:p:" o; do
+    case "${o}" in
+        s)
+            setname=${OPTARG} || usage
+            ;;
+        b)
+            bucket=${OPTARG}
+            ;;
+        p)
+            localpath=${OPTARG}
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${setname}" || -z "${bucket}" ]]; then
+    usage
+fi
+
+if [[ -z "${downloadpath}" ]]; then
+    localpath="/data/schuberg/tmp"
+fi
+
+echo "[INFO] Starting sync of ${setname} (${bucket}) to ${localpath}"
+sbp s3 sync s3://${bucket}/${setname}/ ${localpath}/${setname}/ --profile download
