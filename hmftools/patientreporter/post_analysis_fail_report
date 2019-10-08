@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
 tumor_sample=$1 && shift
+comments=$1 && shift
+
 
 if [ -z ${tumor_sample} ]; then
     echo "[ERROR] No tumor sample provided. Exiting"
     exit 1;
 fi
 
-do_run_qc_fail_patient_reporter ${tumor_sample} "post_analysis_fail"
+do_run_qc_fail_patient_reporter ${tumor_sample} -comments "${comments}" "post_analysis_fail"
