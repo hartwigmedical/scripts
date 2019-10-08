@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+CRT_FILE="/home/sbpext/bcl-upload-prod/api.crt"
+KEY_FILE="/home/sbpext/bcl-upload-prod/api.key"
+BASE_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+
+set_name=$1
+
+if [ -z "${set_name}" ]; then
+    echo "[ERROR] No set provided. Exiting" && exit 1
+fi
+
+## get runs by set name and check that only one exists
+runs_json=$(query_sbp_api -type runs -filter "name=${set_name}" -json | jq '.')
+runs_count=$(echo "${runs_json}" | jq '. | length')
+if [ "${runs_count}" -gt 1 ]; then
+    echo "[ERROR] More than one run found (${runs_count}). Not supported. Exiting" && exit 1
+fi
+
+## setup final api url
+run_id=$(echo "${runs_json}" | jq -r '.[-1].sbp_id')
+api_url="${BASE_URL}/files?run_id=${run_id}"
+
+## get the file objects for one run
+api_json_response=$( /usr/bin/curl --silent --cert-type pem \
+  --cert ${CRT_FILE} --key ${KEY_FILE} -X GET \
+  -H "Accept: application/json" -H "Content-Type: application/json" \
+  "${api_url}"
+)
+
+## translating json to md5 format (and exlude some files)
+echo "${api_json_response}" | \
+#  jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | \
+  jq -r '.[] | .hash + "  " + .filename' | \
+  grep -P "(.bam|.bam.bai|.germline.vcf.gz|.germline.vcf.gz.tbi)$"
+#  grep -v 'run.log' | \
+#  grep -v 'run.sh' | \
+#  grep -v 'metadata.json'
