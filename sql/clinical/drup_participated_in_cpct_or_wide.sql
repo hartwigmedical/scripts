@@ -1,5 +1,5 @@
 SELECT patients.patientId,
-CTCT2YN, CPCTCNT, CPCTPN
+CTCT2YN, CPCTCNT, CPCTPN, WIDEPNR
 FROM
 	(SELECT DISTINCT patientId FROM drupEcrf) patients
 LEFT JOIN
@@ -14,3 +14,7 @@ LEFT JOIN
     (SELECT patientId, group_concat(itemValue separator ', ') AS CPCTPN
      FROM drupEcrf WHERE item ='FLD.CPCTPN' GROUP BY patientId) id
 ON patients.patientId = id.patientId
+LEFT JOIN
+    (SELECT patientId, group_concat(itemValue separator ', ') AS WIDEPNR
+     FROM drupEcrf WHERE item ='FLD.WIDEPNR' GROUP BY patientId) wideid
+ON patients.patientId = wideid.patientId
