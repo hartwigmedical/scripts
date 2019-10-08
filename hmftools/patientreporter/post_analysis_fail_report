@@ -2,6 +2,7 @@
 
 tumor_sample=$1 && shift
 
+
 if [ -z ${tumor_sample} ]; then
     echo "[ERROR] No tumor sample provided. Exiting"
     exit 1;
