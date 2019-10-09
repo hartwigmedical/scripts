@@ -16,4 +16,4 @@ CREATE OR REPLACE VIEW clinical AS
 		LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
 		LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
 		LEFT JOIN drug on drug.treatmentId = treatment.id
-		LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId;;
+		LEFT JOIN firstMatchedTreatmentResponse ON treatment.id = firstMatchedTreatmentResponse.treatmentId;
