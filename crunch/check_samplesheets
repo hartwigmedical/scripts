@@ -54,6 +54,8 @@ for sheet in $sheets; do
     echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
     if [[ "$expectedCycleCount" =~ '^[0-9]+$' && "$cycleCount" -ge "$expectedCycleCount" ]]; then
         runStatus="SequencingDone"
+    else
+        runStatus="Sequencing ($cycleCount of $expectedCycleCount)"
     fi
 
     ## check conversion status
