@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source lims_functions
+
 load_ref_sample_from_metadata() {
     local run_dir=$1
     local ref_sample=""
@@ -60,7 +62,7 @@ load_tumor_sample_barcode_from_metadata_pilot() {
         metadata=${run_dir}/metadata.json
         tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
     elif [[ ! -f ${run_dir}/pipeline.version ]]; then
-       tumor_sample_barcode=""
+       tumor_sample_barcode=$(find_barcode_for_sample_name)
     fi
     echo "${tumor_sample_barcode}"
 }
