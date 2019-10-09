@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source locate_files
+linx_jar=$(locate_prod_linx)
+
+output_dir=$1 && shift
+
+credentials=$(locate_prod_database_credentials)
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+ensembl_db="mysql://localhost/homo_sapiens_core_89_37?serverTimezone=UTC&useSSL=false"
+
+java -Xmx8G -Xms4G -cp ${linx_jar} com.hartwig.hmftools.linx.gene.GenerateEnsemblDataCache \
+    -output_dir ${output_dir} \
+    -ensembl_user ${db_user} -ensembl_pass ${db_pass} \
+    -ensembl_db ${ensembl_db} \
+    "$@"
+
