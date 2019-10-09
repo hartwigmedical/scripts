@@ -28,6 +28,8 @@ linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
 bachelor_csv=$(locate_bachelor_germline_variants ${run_dir})
 chord_prediction_file_pilot=$(locate_chord_prediction_file_pilot ${run_dir})
+linx_viral_integration_file=$(locate_viral_integration_file_pilot ${run_dir})
+
 circos_file=$(locate_purple_circos_plot ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
@@ -52,6 +54,7 @@ pilot_do_run_base_patient_reporter \
     -linx_disruption_tsv ${linx_disruption_tsv} \
     ${bachelor_cmd} \
     -chord_prediction_file ${chord_prediction_file_pilot} \
+    -viral_insertion_file ${linx_viral_integration_file} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
