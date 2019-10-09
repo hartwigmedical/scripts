@@ -54,21 +54,6 @@ load_tumor_sample_barcode_from_metadata() {
     echo "${tumor_sample_barcode}"
 }
 
-load_tumor_sample_barcode_from_metadata_pilot() {
-    local run_dir=$1
-    local tumor_sample_barcode=""
-    local tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-    if [[ -f ${run_dir}/pipeline.version ]]; then
-        # V5 format
-        metadata=${run_dir}/metadata.json
-        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
-    elif [[ ! -f ${run_dir}/pipeline.version ]]; then
-       tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
-    fi
-    echo "${tumor_sample_barcode}"
-}
-
-
 load_joint_name_from_metadata() {
     local run_dir=$1
     local ref_sample=$(load_ref_sample_from_metadata ${run_dir})

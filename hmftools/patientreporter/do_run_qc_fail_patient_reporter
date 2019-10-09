@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions
 source lims_functions
 
 tumor_sample=$1 && shift

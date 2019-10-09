@@ -259,6 +259,16 @@ locate_linx_disruptions() {
     echo ${disruption_tsv}
 }
 
+locate_linx_viral_integrations() {
+    local run_dir=$1
+    local viral_integration_tsv=$(find -L ${run_dir}/sv/ -type f -name "*.linx.viral_inserts.tsv")
+    if [ -z ${viral_integration_tsv} ]; then
+        echo "[ERROR] Unable to locate viral integration tsv. Exiting." >&2
+        exit 1
+    fi
+    echo ${viral_integration_tsv}
+}
+
 locate_gridss_structural_variants() {
     local run_dir=$1
 	  # Use the backport VCF if it exists
@@ -311,7 +321,7 @@ locate_bachelor_germline_variants() {
 
 ############################################# CHORD ###########################################
 
-locate_chord_prediction_file() {
+locate_chord_prediction() {
     local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord/ -type f -name "*_chord_prediction.txt")
     if [ -z ${chord_prediction_file} ]; then
@@ -321,7 +331,7 @@ locate_chord_prediction_file() {
     echo ${chord_prediction_file}
 }
 
-locate_chord_prediction_file_pilot() {
+locate_chord_pilot_prediction() {
     local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord_pilot/ -type f -name "*_chord_prediction.txt")
     if [ -z ${chord_prediction_file} ]; then
@@ -329,16 +339,4 @@ locate_chord_prediction_file_pilot() {
         exit 1
     fi
     echo ${chord_prediction_file}
-}
-
-############################################# Viral integration ###########################################
-
-locate_viral_integration_file_pilot() {
-    local run_dir=$1
-    local viral_integration_file=$(find -L ${run_dir}/sv/ -type f -name "*.linx.viral_inserts.tsv")
-    if [ -z ${viral_integration_file} ]; then
-        echo "[ERROR] Unable to locate viral integration prediction file. Exiting." >&2
-        exit 1
-    fi
-    echo ${viral_integration_file}
 }
