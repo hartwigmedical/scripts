@@ -6,5 +6,5 @@ SELECT
     ranoMeasurement.noTargetLesionResponse,
     ranoMeasurement.overallResponse
 FROM ranoMeasurement
-	INNER JOIN patient on ranoMeasurement.patientId = patient.id
+	INNER JOIN patient ON ranoMeasurement.patientId = patient.id
 ORDER BY 1,2;
