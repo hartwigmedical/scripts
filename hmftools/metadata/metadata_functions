@@ -62,7 +62,7 @@ load_tumor_sample_barcode_from_metadata_pilot() {
         # V5 format
         metadata=${run_dir}/metadata.json
         tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
-    elif [[ tumor_sample_barcode == "" ]]; then
+    elif [[ ! -f ${run_dir}/pipeline.version ]]; then
        tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
     fi
     echo "${tumor_sample_barcode}"
