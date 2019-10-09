@@ -66,7 +66,7 @@ for sheet in $sheets; do
         localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
         currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
         echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
-        runStatus="Converting"
+        runStatus="Converting (${currLane})"
     fi
 
     ## check images presence
