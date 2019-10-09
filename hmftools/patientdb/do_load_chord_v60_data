@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+tumor_sample=$1 && shift
+run_dir=$1 && shift
+credentials=$1 && shift
+patient_db_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+prediction_file="${run_dir}/chord_pilot/${tumor_sample}_chord_prediction.txt"
+
+echo "[INFO] Loading chord data from ${prediction_file}"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadChordData \
+    -prediction_file ${prediction_file} \
+    -tumor_sample ${tumor_sample} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
