@@ -313,6 +313,16 @@ locate_bachelor_germline_variants() {
 
 locate_chord_prediction_file() {
     local run_dir=$1
+    local chord_prediction_file=$(find -L ${run_dir}/chord/ -type f -name "*_chord_prediction.txt")
+    if [ -z ${chord_prediction_file} ]; then
+        echo "[ERROR] Unable to locate CHORD prediction file. Exiting." >&2
+        exit 1
+    fi
+    echo ${chord_prediction_file}
+}
+
+locate_chord_prediction_file_pilot() {
+    local run_dir=$1
     local chord_prediction_file=$(find -L ${run_dir}/chord_pilot/ -type f -name "*_chord_prediction.txt")
     if [ -z ${chord_prediction_file} ]; then
         echo "[ERROR] Unable to locate CHORD prediction file. Exiting." >&2
