@@ -17,14 +17,15 @@ if [ -z ${qc_fail_reason} ]; then
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+ref_sample_barcode=$(load_tumor_sample_barcode_from_metadata_pilot ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
 if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
     echo "[ERROR] Incomplete information for reporter. Exiting"
     echo "  ref_sample name: ${ref_sample}"
     echo "  ref sample barcode: ${ref_sample_barcode}"
-    echo "  tur sample barcode: ${tumor_sample_barcode}"
+    echo "  tumor_sample name: ${tumor_sample}"
+    echo "  tum sample barcode: ${tumor_sample_barcode}"
     exit 1;
 fi
 
