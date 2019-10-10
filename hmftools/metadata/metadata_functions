@@ -34,11 +34,11 @@ load_tumor_sample_from_metadata() {
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
-        tumor_sample=$(jq -r '.tumor.sampleName' ${metadata})
+        tumor_sample=$(jq -r '.tumor.sampleName' ${metadata} | tr "_" " " | awk '{print $1}')
     else
         # Pre-V5 format
         metadata=${run_dir}/metadata
-        tumor_sample=$(jq -r '.tumor_sample' ${metadata})
+        tumor_sample=$(jq -r '.tumor_sample' ${metadata} | tr "_" " " | awk '{print $1}')
     fi
     echo "${tumor_sample}"
 }
