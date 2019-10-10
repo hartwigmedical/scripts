@@ -31,7 +31,7 @@ purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
-bachelor_csv=$(locate_bachelor_germline_variants ${run_dir})
+bachelor_pilot_csv=$(locate_bachelor_pilot_germline_variants ${run_dir})
 chord_prediction_file_pilot=$(locate_chord_pilot_prediction ${run_dir})
 linx_viral_integration_file=$(locate_linx_viral_integrations ${run_dir})
 
@@ -42,9 +42,9 @@ germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 
 bachelor_cmd=""
-if [ ! -z ${bachelor_csv} ]; then
+if [ ! -z ${bachelor_pilot_csv} ]; then
     # Only pass bachelor csv when it actually exists.
-    bachelor_cmd="-bachelor_csv ${bachelor_csv}"
+    bachelor_cmd="-bachelor_csv ${bachelor_pilot_csv}"
 fi
 
 pilot_do_run_base_patient_reporter \

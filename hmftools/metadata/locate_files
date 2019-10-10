@@ -319,6 +319,17 @@ locate_bachelor_germline_variants() {
     echo ${bachelor_csv}
 }
 
+locate_bachelor_pilot_germline_variants() {
+    local run_dir=$1
+    local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
+    if [ -z ${bachelor_csv} ]; then
+        echo "[ERROR] Unable to locate any bachelor output. Exiting." >&2
+        exit 1
+    fi
+    echo ${bachelor_csv}
+}
+
+
 ############################################# CHORD ###########################################
 
 locate_chord_prediction() {
