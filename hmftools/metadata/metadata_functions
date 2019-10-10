@@ -23,7 +23,7 @@ load_ref_sample_barcode_from_metadata() {
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
-        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata})
+        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
     fi
     echo "${ref_sample_barcode}"
 }
@@ -49,7 +49,7 @@ load_tumor_sample_barcode_from_metadata() {
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
-        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata})
+        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
     fi
     echo "${tumor_sample_barcode}"
 }
