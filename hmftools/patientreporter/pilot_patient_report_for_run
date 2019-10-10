@@ -41,12 +41,6 @@ knowledgebase_dir=/data/common/dbs/knowledgebases/output
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 
-bachelor_cmd=""
-if [ ! -z ${bachelor_pilot_csv} ]; then
-    # Only pass bachelor csv when it actually exists.
-    bachelor_cmd="-bachelor_csv ${bachelor_pilot_csv}"
-fi
-
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
@@ -57,7 +51,7 @@ pilot_do_run_base_patient_reporter \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_disruption_tsv ${linx_disruption_tsv} \
-    ${bachelor_cmd} \
+    -bachelor_csv ${bachelor_pilot_csv} \
     -chord_prediction_file ${chord_prediction_file_pilot} \
     -viral_insertion_file ${linx_viral_integration_file} \
     -circos_file ${circos_file} \
