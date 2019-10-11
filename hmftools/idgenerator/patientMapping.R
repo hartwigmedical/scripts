@@ -6,7 +6,7 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   simpleBafs = amberBafs %>% mutate(loci = paste0(chromosome ,":", position)) %>% select(sampleId, loci) %>% mutate(het = T)
   spreadBafs = simpleBafs %>% spread(loci, het, fill = F)
   bafMatrix = as.matrix(spreadBafs %>% select(-sampleId))
-  rownames(bafMatrix) <- spreadBafs$sampleId
+  #rownames(bafMatrix) <- spreadBafs$sampleId
   matrixResult = bafMatrix %*% t(bafMatrix)
   dfResult = data.frame(matrixResult)
   dfResult$sample1 <- spreadBafs$sampleId
@@ -72,7 +72,6 @@ amberBafs = dbGetQuery(dbProd, "SELECT * FROM amber")
 existingSamples = dbGetQuery(dbProd, "SELECT * FROM sampleMapping")
 existingMappings = dbGetQuery(dbProd, "SELECT * FROM patientMapping")
 
-#existingMappings = existingMappings %>% filter(sourceId != 'CPCT02010981T')
 dbDisconnect(dbProd)
 rm(dbProd)
 
@@ -80,31 +79,27 @@ sampleMapping = sample_mapping(amberBafs)
 patientMapping = patient_mapping(sampleMapping, existingSamples, existingMappings)
 
 amberSamples = unique(amberBafs$sampleId)
-write.table(amberSamples, file = "~/hmf/resources/idgenerator/samples_20190604.csv", quote = F, row.names = F, col.names = F, sep = ",")
-write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/patient_mapping_20190604.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(amberSamples, file = "~/hmf/resources/idgenerator/patient_mapping/samples.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/patient_mapping/patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
 
 
 ######################## Step 2 - Update hashes
 # com.hartwig.hmftools.idgenerator.HmfIdApplicationKt
 # -update_ids
 # -password xxxxx 
-# -sample_ids_file ~/hmf/resources/idgenerator/samples_20190604.csv
-# -patient_mapping_file ~/hmf/resources/idgenerator/patient_mapping_20190604.csv
-# -out ~/hmf/resources/idgenerator/sample_hashes_20190604.csv
-# -mapping_out ~/hmf/resources/idgenerator/remapping_20190604.csv
-# -anonymize_out ~/hmf/resources/idgenerator/anonymized_20190604.csv
+# -sample_ids_file ~/hmf/resources/idgenerator/patient_mapping/samples.csv
+# -patient_mapping_file ~/hmf/resources/idgenerator/patient_mapping/patient_mapping.csv
+# -out ~/hmf/resources/idgenerator/output/sample_hashes.csv
+# -mapping_out ~/hmf/resources/idgenerator/output/remapping.csv
+# -anonymize_out ~/hmf/resources/idgenerator/output/anonymized.csv
 
 ######################## Step 3 - Include hash in build
-# cp ~/hmf/resources/idgenerator/sample_hashes_20190604.csv ~/hmf/repos/hmftools/hmf-id-generator/src/main/resources/sample_hashes.csv
+# cp ~/hmf/resources/idgenerator/output/sample_hashes.csv ~/hmf/repos/hmftools/hmf-id-generator/src/main/resources/sample_hashes.csv
 
 ######################## Step 4 - Load into database
 # TRUNCATE patientMapping;
 # TRUNCATE sampleMapping;
-# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/patient_mapping_20190604.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' IGNORE 0 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
-# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/remapping_20190604.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
-# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/anonymized_20190604.csv' INTO TABLE sampleMapping FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES  (sampleId, hmfId) SET modified = CURRENT_TIMESTAMP;
-
-######################## Step 5 - Store files
-# copy all new files to datastore, eg
-# scp *20190604.csv hmf-datastore:/data/common/dbs/idgenerator/
+# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/patient_mapping/patient_mapping.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' IGNORE 0 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
+# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/output/remapping.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
+# LOAD DATA LOCAL INFILE '~/hmf/resources/idgenerator/output/anonymized.csv' INTO TABLE sampleMapping FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES  (sampleId, hmfId) SET modified = CURRENT_TIMESTAMP;
 
