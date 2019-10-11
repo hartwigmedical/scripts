@@ -1,3 +1,5 @@
+#!/usr/bin/Rscript
+
 library(dplyr)
 library(tidyr)
 library(RMySQL)
