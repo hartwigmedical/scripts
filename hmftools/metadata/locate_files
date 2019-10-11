@@ -191,12 +191,8 @@ locate_purple_structural_variants() {
     local run_dir=$1
     local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.ann.vcf.gz")
     if [ -z ${structural_vcf} ]; then
-        # TODO: Cleanup after PURPLE has been rerun for every sample
-        structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-        if [ -z ${structural_vcf} ]; then
-            echo "[ERROR] Unable to locate purple structural variants. Exiting." >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate purple structural variants. Exiting." >&2
+        exit 1
     fi
     echo ${structural_vcf}
 }
@@ -233,7 +229,7 @@ locate_purple_pilot_pre_viral_annotate_structural_variants() {
 
 locate_linx_reported_fusions() {
     local run_dir=$1
-    local linx_dir=${run_dir}/linx
+    local linx_dir=${run_dir}/sv
     if [ ! -d ${linx_dir} ]; then
         echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
         exit 1
@@ -249,7 +245,7 @@ locate_linx_reported_fusions() {
 
 locate_linx_disruptions() {
     local run_dir=$1
-    local linx_dir=${run_dir}/linx
+    local linx_dir=${run_dir}/sv
     if [ ! -d ${linx_dir} ]; then
         echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
         exit 1
@@ -265,12 +261,7 @@ locate_linx_disruptions() {
 
 locate_linx_viral_integrations() {
     local run_dir=$1
-    local linx_dir=${run_dir}/linx
-    if [ ! -d ${linx_dir} ]; then
-        echo "[ERROR] Unable to locate linx dir for viral integrations: ${linx_dir}. Exiting" >&2
-        exit 1
-    fi
-    local viral_integration_tsv=$(find -L ${linx_dir} -type f -name "*.linx.viral_inserts.tsv")
+    local viral_integration_tsv=$(find -L ${run_dir}/sv/ -type f -name "*.linx.viral_inserts.tsv")
     if [ -z ${viral_integration_tsv} ]; then
         echo "[ERROR] Unable to locate viral integration tsv. Exiting." >&2
         exit 1
