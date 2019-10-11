@@ -6,7 +6,6 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   simpleBafs = amberBafs %>% mutate(loci = paste0(chromosome ,":", position)) %>% select(sampleId, loci) %>% mutate(het = T)
   spreadBafs = simpleBafs %>% spread(loci, het, fill = F)
   bafMatrix = as.matrix(spreadBafs %>% select(-sampleId))
-  #rownames(bafMatrix) <- spreadBafs$sampleId
   matrixResult = bafMatrix %*% t(bafMatrix)
   dfResult = data.frame(matrixResult)
   dfResult$sample1 <- spreadBafs$sampleId
