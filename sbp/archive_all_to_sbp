@@ -18,8 +18,8 @@ do_archive_directory_to_sbp -l "/data/cpct/final_reports" -d "patient_reports/fi
 do_archive_directory_to_sbp -l "/data/cpct/old_cpct_reports" -d "patient_reports/old" ${delete_flag}
 do_archive_directory_to_sbp -l "/data/core/final_reports" -d "patient_reports/core" ${delete_flag}
 
-echo "[INFO] Archiving Data Requests"
-do_archive_directory_to_sbp -l "/data/data_archive/datarequests" -d "data_requests" ${delete_flag}
+#echo "[INFO] Archiving Data Requests"
+#do_archive_directory_to_sbp -l "/data/data_archive/datarequests" -d "data_requests" ${delete_flag}
 
 echo "[INFO] Archiving Submissions"
 do_archive_directory_to_sbp -l "/data/submissions" -d "submissions" ${delete_flag}
