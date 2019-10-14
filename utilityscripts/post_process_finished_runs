@@ -4,7 +4,7 @@ path=/data/schuberg/processed_runs
 process_runs=$(ls ${path})
 
 for run in ${process_runs}; do
-    patientId=$( echo ${run} | tr "_" " " | awk '{print $5}' )
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORE"* ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
 	    mv /data/schuberg/processed_runs/${run} /data/core/runs/
@@ -18,7 +18,7 @@ run_clinical_patient_db_prod
 
 for run in ${process_runs}; do
     echo "[INFO] Create patient report for ${run}"
-    patientId=$( echo ${run} | tr "_" " " | awk '{print $5}' )
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORE"* ]]; then
         patient_report_for_run /data/core/runs/${run}
     else
@@ -27,10 +27,10 @@ for run in ${process_runs}; do
 done
 
 for run in ${process_runs}; do
-    patientId=$( echo ${run} | tr "_" " " | awk '{print $5}' )
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     echo "[INFO] Writing evidence item into db for ${run}"
-    if [[ ${patientId} == "CORE"* ]]; then
-        do_load_evidence_items_data_prod /data/core/runs/${run}
+    if [[ ${patientId} != "CORE"* ]]; then
+        do_load_evidence_items_data_prod /data/cpct/runs/${run}
     else
         do_load_evidence_items_data_prod /data/cpct/runs/${run}
     fi
@@ -40,7 +40,7 @@ echo "[INFO] Processing of finished runs is finished"
 
 for run in ${process_runs}; do
     "[INFO] Removing genomic data of patient db for ${run}"
-    patientId=$( echo ${run} | tr "_" " " | awk '{print $5}' )
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORE"* ]]; then
         delete_sample_from_database_prod /data/core/runs/${run}
     fi
