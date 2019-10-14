@@ -37,9 +37,9 @@ done
 echo "[INFO] Processing of finished runs is finished"
 
 for run in ${process_runs}; do
-    "[INFO] Removing genomic data of patient db for ${run}"
     patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORE"* ]]; then
+        echo "[INFO] Removing genomic data of patient db for ${run}"
         delete_sample_from_database_prod /data/core/runs/${run}
     fi
 done
