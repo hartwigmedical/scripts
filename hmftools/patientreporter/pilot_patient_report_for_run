@@ -54,7 +54,7 @@ pilot_do_run_base_patient_reporter \
     -bachelor_csv ${bachelor_pilot_csv} \
     -chord_prediction_file ${chord_prediction_file_pilot} \
     -viral_insertion_file ${linx_viral_integration_file} \
-    -linx_drivers_tsv ${} \
+    -linx_drivers_tsv ${linx_drivers_tsv} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
