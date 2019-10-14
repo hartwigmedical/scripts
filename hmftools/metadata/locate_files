@@ -283,6 +283,26 @@ locate_linx_viral_integrations() {
     echo ${viral_integration_tsv}
 }
 
+locate_linx_drivers_tsv() {
+    local run_dir=$1
+    local linx_dir=${run_dir}/sv
+    if [ ! -d ${linx_dir} ]; then
+        linx_dir=${run_dir}/linx
+        if [ ! -d ${linx_dir} ]; then
+            echo "[ERROR] Unable to locate linx dir for drivers: ${linx_dir}. Exiting" >&2
+            exit 1
+        fi
+    fi
+
+    local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.drivers.tsv")
+    if [ -z ${drivers_tsv} ]; then
+        echo "[ERROR] Unable to locate drivers tsv. Exiting." >&2
+        exit 1
+    fi
+    echo ${drivers_tsv}
+
+}
+
 locate_gridss_structural_variants() {
     local run_dir=$1
 	  # Use the backport VCF if it exists
