@@ -31,8 +31,6 @@ for run in ${process_runs}; do
     echo "[INFO] Writing evidence item into db for ${run}"
     if [[ ${patientId} != "CORE"* ]]; then
         do_load_evidence_items_data_prod /data/cpct/runs/${run}
-    else
-        do_load_evidence_items_data_prod /data/cpct/runs/${run}
     fi
 done
 
