@@ -3,6 +3,7 @@
 MEM_USE=50
 PIGZ_THREADS=8
 PICARD_DIR=/data/tools/picard-tools_v1.141
+SAMBAMBA_DIR=/data/tools/sambamba_v0.6.5
 OUT_DIR=./fastq
 IN_BAM=$1
 
@@ -25,6 +26,15 @@ if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${IN_BAM})"; exi
 if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
 ## ---------------
+
+## Check format of RG/ID tags in header
+correct_lane_count=$( ${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG | grep -vcP "_L00[1-8]_" )
+if [[ ${correct_lane_count} > 1 ]]; then
+    echo "[EXIT] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
+    ${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG
+    exit 1
+fi
+
 if [[ -d ${OUT_DIR} ]]; then
     echo "[ERROR] output dir exists, will not overwrite"
     exit 1
