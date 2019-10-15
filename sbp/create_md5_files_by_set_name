@@ -14,32 +14,33 @@ fi
 
 function main() {
   
-  ## check that only one run exists for set name
+  ## check that only one run exists for the set
   runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -exact -json | jq '.')
   runs_count=$(echo "$runs_json" | jq '. | length')
   if [ "$runs_count" -ne 1 ]; then
-    echo "[ERROR] Wrong amount of runs found ($runs_count). Only 1 supported. Exiting" && exit 1
+    echo "[ERROR] Only sets supported with exactly one run (found $runs_count). Exiting" && exit 1
   fi
   run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
-  ## setup variables
-  run_id=$(echo "$run_json" | jq -r '.sbp_id')
-  run_ini=$(echo "$run_json" | jq -r '.ini')
-  run_bucket=$(echo "$run_json" | jq -r '.bucket')
-  files_url="${SBP_API_URL}/files?run_id=${run_id}"
+  ## setup all variables
+  bucket=$(echo "$run_json" | jq -r '.bucket')
+    name=$(echo "$run_json" | jq -r '.name')
+     ini=$(echo "$run_json" | jq -r '.ini')
+     ref=$(echo "$run_json" | jq -r '.ref_sample')
+     tum=$(echo "$run_json" | jq -r '.tumor_sample')
+      id=$(echo "$run_json" | jq -r '.sbp_id')
 
-  out_jsn_all="${set_name}_files.json"
-  out_md5_all="${set_name}_files.md5"
-  out_aria="${set_name}.aria.txt"
-  out_md5="${set_name}.md5"
+  files_url="${SBP_API_URL}/files?run_id=${id}"
+  out_jsn_all="${name}_tmp_all_files.json"
+  out_md5_all="${name}_tmp_all_files.md5"
+  out_aria="${name}.aria.txt"
+  out_md5="${name}.md5"
 
-  ## get samples from api
-  ref_sample=$( echo "$run_json" | jq -r '.ref_sample')
-  tum_sample=$( echo "$run_json" | jq -r '.tumor_sample')
-
-  echo "[INFO] Setting: $run_ini"
-  echo "[INFO] Ref Sample: $ref_sample"
-  echo "[INFO] Tum Sample: $tum_sample"
+  echo "[INFO] RunName: $name"
+  echo "[INFO] Bucket: $bucket"
+  echo "[INFO] IniFile: $ini"
+  echo "[INFO] TumorSample: $tum"
+  echo "[INFO] RefSample: $ref"
 
   ## cleanup existing files
   for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
@@ -54,99 +55,96 @@ function main() {
     -H "Accept: application/json" -H "Content-Type: application/json" \
     "$files_url"
   )
-  echo "[INFO] Creating $out_jsn_all"
+  
   create_json_file "$files_json" "$out_jsn_all"
-  echo "[INFO] Creating $out_md5_all"
   create_md5sums_file "$files_json" "$out_md5_all"
-
-  if [[ "$run_ini" =~ "Somatic" ]]; then 
-    create_somatic_md5_file "$files_json" "$out_md5" "$out_aria" "$ref_sample" "$tum_sample" "$set_name" "$run_bucket"
-  elif [[ "$run_ini" =~ "SingleSample" ]]; then 
-    create_singlesample_md5_file "$files_json" "$out_md5" "$out_aria" "$ref_sample" "$set_name" "$run_bucket"
-  else 
-    echo "[EXIT] Unknown ini type ($run_ini) for run:" && exit 1
-  fi
+  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$name" "$bucket" "$ini" "$ref" "$tum"
   
   ## sanity checks
-  line_count=$( cat "$out_md5" | wc -l)
-  echo "[INFO] Final md5 file contains $line_count lines"
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+    line_count=$( cat "$output_file" | wc -l)
+    echo "[INFO] Output file $output_file contains $line_count lines"
+  done
 }
 
-create_somatic_md5_file () {
+create_ini_specific_files () {
   local json=$1 && shift
   local out_md5=$1 && shift
   local out_aria=$1 && shift
-  local ref_sample=$1 && shift
-  local tum_sample=$1 && shift
-  local set_name=$1 && shift
+  local name=$1 && shift
   local bucket=$1 && shift
+  local ini=$1 && shift
+  local ref=$1 && shift
+  local tum=$1 && shift
 
-  local files=( 
+  local single_files=(
+    "${ref}/aligner/${ref}.bam"
+    "${ref}/aligner/${ref}.bam.bai"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+  )
+
+  local somatic_files=( 
     "purple/purple.version"
-    "purple/${tum_sample}.driver.catalog.tsv"
-    "purple/${tum_sample}.purple.cnv.somatic.tsv"
-    "purple/${tum_sample}.purple.cnv.gene.tsv"
-    "purple/${tum_sample}.purple.purity.tsv"
-    "purple/${tum_sample}.purple.purity.range.tsv"
-    "purple/${tum_sample}.purple.qc"
-    "purple/${tum_sample}.purple.sv.vcf.gz"
-    "purple/${tum_sample}.purple.sv.vcf.gz.tbi"
-    "purple/${tum_sample}.purple.somatic.vcf.gz"
-    "purple/${tum_sample}.purple.somatic.vcf.gz.tbi"
-    "purple/${tum_sample}.purple.cnv.germline.tsv"
-    "purple/plot/${tum_sample}.circos.png"
-    "${ref_sample}/aligner/${ref_sample}.bam"
-    "${ref_sample}/aligner/${ref_sample}.bam.bai"
-    "${tum_sample}/aligner/${tum_sample}.bam"
-    "${tum_sample}/aligner/${tum_sample}.bam.bai"
-    "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz"
-    "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz.tbi"
+    "purple/${tum}.driver.catalog.tsv"
+    "purple/${tum}.purple.cnv.somatic.tsv"
+    "purple/${tum}.purple.cnv.gene.tsv"
+    "purple/${tum}.purple.purity.tsv"
+    "purple/${tum}.purple.purity.range.tsv"
+    "purple/${tum}.purple.qc"
+    "purple/${tum}.purple.sv.vcf.gz"
+    "purple/${tum}.purple.sv.vcf.gz.tbi"
+    "purple/${tum}.purple.somatic.vcf.gz"
+    "purple/${tum}.purple.somatic.vcf.gz.tbi"
+    "purple/${tum}.purple.cnv.germline.tsv"
+    "purple/plot/${tum}.circos.png"
+    "${ref}/aligner/${ref}.bam"
+    "${ref}/aligner/${ref}.bam.bai"
+    "${tum}/aligner/${tum}.bam"
+    "${tum}/aligner/${tum}.bam.bai"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
   )
-  
+ 
+  ## select file collection based on pipeline ini 
+  if [[ $ini == "Somatic.ini" ]]; then
+    file_selection="${somatic_files[@]}"
+  elif [[ $ini == "SingleSample.ini" ]]; then
+    file_selection="${single_files[@]}"
+  else
+    echo "[EXIT] Unknown ini ($ini)" && exit 1
+  fi
+
+  ## output
   echo "[INFO] Creating $out_md5"
-  #echo "[INFO] Creating $out_aria"
-  for i in ${!files[@]}; do
-    local file_to_include=${files[$i]}
-    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_md5
+  for file in ${file_selection[@]}; do
+    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file}$" >> $out_md5
   done
-  
-    #echo "  dir=${set_name}"
-    #echo "  checksum=md5=${md5sum}"
-    #echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_aria
-    #expires_in_sec="604800" # 1 week in seconds
-    #direct_link=$(sbp s3 presign ${link_incl_bucket} --expires ${expires_in_sec} --profile ${aws_profile} )
-    #extern_link=$(echo "${direct_link}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
-}
 
-create_singlesample_md5_file () {
-  local files_json=$1 && shift
-  local out_file=$1 && shift
-  local ref_sample=$1 && shift
-  
-  echo "[INFO] Creating $out_file"
-
-  local files=(
-    "${ref_sample}/aligner/${ref_sample}.bam"
-    "${ref_sample}/aligner/${ref_sample}.bam.bai"
-    "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz"
-    "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz.tbi"
-  )
-  for i in ${!files[@]}; do
-    local file_to_include=${files[$i]}
-    echo "$files_json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_file
-    #cat "$md5_file" | grep -P "${file_to_include}$" >> $out_file
+  echo "[INFO] Creating $out_aria"
+  for file in ${file_selection[@]}; do
+    local file_url="s3://${bucket}/${name}/${file}"
+    local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file}$" | cut -f1) 
+    local direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
+    local extern=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+    echo "${extern}" >> $out_aria
+    echo "  dir=${name}" >> $out_aria
+    echo "  checksum=md5=${md5sum}" >> $out_aria
+    echo "" >> $out_aria
   done
 }
 
 create_json_file () {
   local json_text=$1 && shift
   local out_file=$1 && shift
+  echo "[INFO] Creating $out_file"
   echo "$json_text" | jq '.' > $out_file
 }
 
 create_md5sums_file () {
   local json_text=$1 && shift
   local out_file=$1 && shift
+  echo "[INFO] Creating $out_file"
   echo "$json_text" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $out_file
   echo "$json_text" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $out_file
 }
