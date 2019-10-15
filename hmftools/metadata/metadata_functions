@@ -23,6 +23,7 @@ load_ref_sample_barcode_from_metadata() {
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
+        # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP
         ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
     fi
     echo "${ref_sample_barcode}"
@@ -49,6 +50,7 @@ load_tumor_sample_barcode_from_metadata() {
     if [[ -f ${run_dir}/pipeline.version ]]; then
         # V5 format
         metadata=${run_dir}/metadata.json
+        # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP
         tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
     fi
     echo "${tumor_sample_barcode}"
