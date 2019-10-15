@@ -1,77 +1,85 @@
 #!/usr/bin/env bash
 
+set_name=$1
+
 CRED_DIR="/data/common/dbs/sbp_api_credentials"
 CRT_FILE="${CRED_DIR}/api.crt"
 KEY_FILE="${CRED_DIR}/api.key"
-BASE_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+SBP_API_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 AWS_PROFILE="download"
-
-set_name=$1
 
 if [ -z "$set_name" ]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
 fi
 
 function main() {
-  ## get all runs by set name and check that only one exists
-  runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -json | jq '.')
+  
+  ## check that only one run exists for set name
+  runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -exact -json | jq '.')
   runs_count=$(echo "$runs_json" | jq '. | length')
-  if [ "$runs_count" -gt 1 ]; then
-    echo "[ERROR] More than one run found ($runs_count). Not supported. Exiting" && exit 1
+  if [ "$runs_count" -ne 1 ]; then
+    echo "[ERROR] Wrong amount of runs found ($runs_count). Only 1 supported. Exiting" && exit 1
   fi
+  run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
   ## setup variables
-  run_id=$(echo "$runs_json" | jq -r '.[-1].sbp_id')
-  ini=$(echo "$runs_json" | jq -r '.[-1].ini')
-  url="${BASE_URL}/files?run_id=${run_id}"
-  out_jsn="${set_name}_files.json"
-  md5_all="${set_name}_files.md5"
-  md5_sub="${set_name}_files_subset.md5"
+  run_id=$(echo "$run_json" | jq -r '.sbp_id')
+  run_ini=$(echo "$run_json" | jq -r '.ini')
+  run_bucket=$(echo "$run_json" | jq -r '.bucket')
+  files_url="${SBP_API_URL}/files?run_id=${run_id}"
 
-  ## get samples
-  run_json_text=$(query_sbp_api -type runs -exact -filter "sbp_id=${run_id}" -json | jq '.[-1]')
-  ref_sample=$( echo "$run_json_text" | jq -r '.ref_sample')
-  tum_sample=$( echo "$run_json_text" | jq -r '.tumor_sample')
+  out_jsn_all="${set_name}_files.json"
+  out_md5_all="${set_name}_files.md5"
+  out_aria="${set_name}.aria.txt"
+  out_md5="${set_name}.md5"
+
+  ## get samples from api
+  ref_sample=$( echo "$run_json" | jq -r '.ref_sample')
+  tum_sample=$( echo "$run_json" | jq -r '.tumor_sample')
+
+  echo "[INFO] Setting: $run_ini"
+  echo "[INFO] Ref Sample: $ref_sample"
+  echo "[INFO] Tum Sample: $tum_sample"
 
   ## cleanup existing files
-  for output_file in "$out_jsn" "$md5_all" "$md5_sub"; do
-    if [[ -f $output_file ]]; then echo "[INFO] Deleting existing file ($output_file)" && rm $output_file; fi
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+    if [[ -f $output_file ]]; then 
+      echo "[INFO] Deleting existing file ($output_file)" && rm $output_file; 
+    fi
   done
 
   ## get the file objects for one run by id
-  json=$( /usr/bin/curl --silent --cert-type pem \
+  files_json=$( /usr/bin/curl --silent --cert-type pem \
     --cert ${CRT_FILE} --key ${KEY_FILE} -X GET \
     -H "Accept: application/json" -H "Content-Type: application/json" \
-    "$url"
+    "$files_url"
   )
-  echo "[INFO] Creating $out_jsn"
-  echo "$json" > $out_jsn
-  echo "[INFO] Creating $md5_all"
-  echo "$json" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $md5_all
-  echo "$json" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $md5_all
+  echo "[INFO] Creating $out_jsn_all"
+  create_json_file "$files_json" "$out_jsn_all"
+  echo "[INFO] Creating $out_md5_all"
+  create_md5sums_file "$files_json" "$out_md5_all"
 
-  ## translating json to md5 format (file selection depends on type of run)
-  if [[ "$ini" =~ "Somatic" ]]; then
-    echo "[INFO] Creating $md5_sub (based on $ini)"
-    create_somatic_md5_file "$md5_all" "$md5_sub" "$ref_sample" "$tum_sample"
-  elif [[ "$ini" =~ "SingleSample" ]]; then
-    echo "[INFO] Creating $md5_sub (based on $ini)"
-    create_singlesample_md5_file "$md5_all" "$md5_sub" "$ref_sample"
-  else
-    echo "[EXIT] Unknown ini type ($ini) for run:"
-    exit 1
+  if [[ "$run_ini" =~ "Somatic" ]]; then 
+    create_somatic_md5_file "$files_json" "$out_md5" "$out_aria" "$ref_sample" "$tum_sample" "$set_name" "$run_bucket"
+  elif [[ "$run_ini" =~ "SingleSample" ]]; then 
+    create_singlesample_md5_file "$files_json" "$out_md5" "$out_aria" "$ref_sample" "$set_name" "$run_bucket"
+  else 
+    echo "[EXIT] Unknown ini type ($run_ini) for run:" && exit 1
   fi
   
   ## sanity checks
-  line_count=$( cat "$md5_sub" | wc -l)
+  line_count=$( cat "$out_md5" | wc -l)
   echo "[INFO] Final md5 file contains $line_count lines"
 }
 
 create_somatic_md5_file () {
-  local md5_file=$1 && shift
-  local out_file=$1 && shift
+  local json=$1 && shift
+  local out_md5=$1 && shift
+  local out_aria=$1 && shift
   local ref_sample=$1 && shift
   local tum_sample=$1 && shift
+  local set_name=$1 && shift
+  local bucket=$1 && shift
 
   local files=( 
     "purple/purple.version"
@@ -83,10 +91,10 @@ create_somatic_md5_file () {
     "purple/${tum_sample}.purple.qc"
     "purple/${tum_sample}.purple.sv.vcf.gz"
     "purple/${tum_sample}.purple.sv.vcf.gz.tbi"
-    "purple/plot/${tum_sample}.circos.png"
     "purple/${tum_sample}.purple.somatic.vcf.gz"
     "purple/${tum_sample}.purple.somatic.vcf.gz.tbi"
     "purple/${tum_sample}.purple.cnv.germline.tsv"
+    "purple/plot/${tum_sample}.circos.png"
     "${ref_sample}/aligner/${ref_sample}.bam"
     "${ref_sample}/aligner/${ref_sample}.bam.bai"
     "${tum_sample}/aligner/${tum_sample}.bam"
@@ -94,20 +102,28 @@ create_somatic_md5_file () {
     "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz"
     "${ref_sample}/germline_caller/${ref_sample}.germline.vcf.gz.tbi"
   )
+  
+  echo "[INFO] Creating $out_md5"
+  #echo "[INFO] Creating $out_aria"
   for i in ${!files[@]}; do
     local file_to_include=${files[$i]}
-    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_file
-    #cat "$md5_file" | grep -P "${file_to_include}$" >> $out_file
+    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_md5
+  done
+  
+    #echo "  dir=${set_name}"
+    #echo "  checksum=md5=${md5sum}"
+    #echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_aria
     #expires_in_sec="604800" # 1 week in seconds
     #direct_link=$(sbp s3 presign ${link_incl_bucket} --expires ${expires_in_sec} --profile ${aws_profile} )
     #extern_link=$(echo "${direct_link}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
-  done
 }
 
 create_singlesample_md5_file () {
-  local md5_file=$1 && shift
+  local files_json=$1 && shift
   local out_file=$1 && shift
   local ref_sample=$1 && shift
+  
+  echo "[INFO] Creating $out_file"
 
   local files=(
     "${ref_sample}/aligner/${ref_sample}.bam"
@@ -117,8 +133,22 @@ create_singlesample_md5_file () {
   )
   for i in ${!files[@]}; do
     local file_to_include=${files[$i]}
-    cat "$md5_file" | grep -P "${file_to_include}$" >> $out_file
+    echo "$files_json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_to_include}$" >> $out_file
+    #cat "$md5_file" | grep -P "${file_to_include}$" >> $out_file
   done
+}
+
+create_json_file () {
+  local json_text=$1 && shift
+  local out_file=$1 && shift
+  echo "$json_text" | jq '.' > $out_file
+}
+
+create_md5sums_file () {
+  local json_text=$1 && shift
+  local out_file=$1 && shift
+  echo "$json_text" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $out_file
+  echo "$json_text" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $out_file
 }
 
 main
