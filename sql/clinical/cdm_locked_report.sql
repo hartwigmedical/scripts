@@ -21,5 +21,6 @@ select patientId, message, details from clinicalFindings where message ='primary
 #  Systemic pre-therapy is known?
 select patientId, message, details from clinicalFindings where message = 'pre systemic treatment given empty' and patientId like '%CPCT%'  and formLocked = 'true';
 
+
 #  Radiotherapy pre-therapy is known?
 select patientId, message, details from clinicalFindings where message = 'pre radio treatment given empty' and patientId like '%CPCT%'  and formLocked = 'true';
