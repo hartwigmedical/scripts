@@ -294,9 +294,9 @@ locate_linx_drivers_tsv() {
         fi
     fi
 
-    local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.drivers.tsv")
+    local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [ -z ${drivers_tsv} ]; then
-        echo "[ERROR] Unable to locate drivers tsv. Exiting." >&2
+        echo "[ERROR] Unable to locate drivers catalog tsv. Exiting." >&2
         exit 1
     fi
     echo ${drivers_tsv}
