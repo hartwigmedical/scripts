@@ -53,7 +53,7 @@ pilot_do_run_base_patient_reporter \
     -linx_disruption_tsv ${linx_disruption_tsv} \
     -viral_insertion_file ${linx_viral_insertion_tsv} \
     -linx_drivers_catalog_tsv ${linx_drivers_catalog_tsv} \
-    -bachelor_csv ${bachelor_germline_tsv} \
+    -bachelor_tsv ${bachelor_germline_tsv} \
     -chord_prediction_file ${chord_prediction_file_pilot} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
