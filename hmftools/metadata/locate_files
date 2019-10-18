@@ -386,22 +386,22 @@ locate_linx_disruptions() {
     echo ${disruption_tsv}
 }
 
-locate_linx_viral_integrations() {
+locate_linx_viral_insertions() {
     local run_dir=$1
     local linx_dir=${run_dir}/sv
     if [ ! -d ${linx_dir} ]; then
         linx_dir=${run_dir}/linx
         if [ ! -d ${linx_dir} ]; then
-            echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
+            echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
             exit 1
         fi
     fi
-    local viral_integration_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
-    if [ -z ${viral_integration_tsv} ]; then
-        echo "[ERROR] Unable to locate viral integration tsv in ${run_dir}. Exiting." >&2
+    local viral_insertion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
+    if [ -z ${viral_insertion_tsv} ]; then
+        echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
         exit 1
     fi
-    echo ${viral_integration_tsv}
+    echo ${viral_insertion_tsv}
 }
 
 locate_linx_drivers() {
@@ -426,7 +426,7 @@ locate_linx_drivers() {
 
 ########################################### Bachelor ##########################################
 
-locate_bachelor_germline_variants() {
+locate_bachelor_germline_variants_v1_8() {
     local run_dir=$1
     local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*_germline_variants.csv")
     if [ -z ${bachelor_csv} ]; then
@@ -440,7 +440,7 @@ locate_bachelor_germline_variants() {
     echo ${bachelor_csv}
 }
 
-locate_bachelor_pilot_germline_variants() {
+locate_bachelor_germline_variants_v1_9() {
     local run_dir=$1
     local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
     if [ -z ${bachelor_csv} ]; then

@@ -25,7 +25,7 @@ purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
-bachelor_csv=$(locate_bachelor_germline_variants ${run_dir})
+bachelor_csv=$(locate_bachelor_germline_variants_v1_8 ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
 

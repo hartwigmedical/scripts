@@ -51,14 +51,17 @@ if [ $? = 0 ]; then echo "[INFO]  LINX Fusions: ${linx_reported_fusions}"; fi
 linx_reported_disruptions=$(locate_linx_disruptions ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  LINX Disruptions: ${linx_reported_disruptions}"; fi
 
-linx_viral_integrations=$(locate_linx_viral_integrations ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  LINX Viral Integrations: ${linx_viral_integrations}"; fi
+linx_viral_insertions=$(locate_linx_viral_insertions ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions}"; fi
 
 linx_drivers=$(locate_linx_drivers ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  LINX Drivers: ${linx_drivers}"; fi
 
-bachelor_germline_variants=$(locate_bachelor_germline_variants ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Bachelor Germline Variants: ${bachelor_germline_variants}"; fi
+bachelor_germline_variants_v1_8=$(locate_bachelor_germline_variants_v1_8 ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Bachelor v1.8 Germline Variants: ${bachelor_germline_variants_v1_8}"; fi
+
+bachelor_germline_variants_v1_9=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Bachelor v1.9 Germline Variants: ${bachelor_germline_variants_v1_9}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; fi
