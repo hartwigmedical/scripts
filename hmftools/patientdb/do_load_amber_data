@@ -10,11 +10,11 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading amber data for sample: ${sample}"
+echo "[INFO] Loading amber data ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
     -sample ${sample} \
-    -bed /data/common/dbs/germline_het_pon_hg19/GermlineSnp.hg19.bed \
     -amber_dir ${amber_dir} \
+    -bed /data/common/dbs/germline_het_pon_hg19/GermlineSnp.hg19.bed \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"

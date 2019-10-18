@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+credentials=$(locate_pilot_database_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+do_load_somatic_variants_new ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} "$@"

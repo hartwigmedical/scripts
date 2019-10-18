@@ -46,16 +46,16 @@ echo "[INFO] Running CHORD for ${set}"
 run_chord_prod ${set_path}
 
 echo "[INFO] Loading amber into database for ${set}"
-do_load_amber_data_prod ${set_path}
+load_amber_data_prod ${set_path}
 
 echo "[INFO] Loading purple into database for ${set}"
-do_load_purple_data_prod ${set_path}
+load_purple_data_prod ${set_path}
 
 echo "[INFO] Loading somatics into database for ${set}"
-do_load_somatic_variants_prod ${set_path}
+load_somatic_variants_prod ${set_path}
 
 echo "[INFO] Loading structural variants into database for ${set}"
-do_run_load_sv_prod ${set_path}
+load_structural_variants_prod ${set_path}
 
 echo "[INFO] Loading linx into database for ${set}"
 do_run_load_linx_prod ${set_path}
@@ -64,7 +64,7 @@ echo "[INFO] Creating symlinks for metric files for ${set}"
 create_symlink_metric_file ${set_path}
 
 echo "[INFO] Loading metrics into database for ${set}"
-do_load_metrics_data_prod ${set_path}
+load_metrics_data_prod ${set_path}
 
 echo "[INFO} Loading chord into database for ${set}"
-do_load_chord_data_prod ${set_path}
+load_chord_data_prod ${set_path}

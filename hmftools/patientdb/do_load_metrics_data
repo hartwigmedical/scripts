@@ -14,7 +14,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 echo "[INFO] Loading metrics data for ${tumor_sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadMetricsData \
-    -metrics_dir ${metrics_dir} \
     -ref_sample ${ref_sample} \
     -tumor_sample ${tumor_sample} \
+    -metrics_dir ${metrics_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 
 source locate_files
+source metadata_functions
 
-ref_sample=$1 && shift
-tumor_sample=$1 && shift
 run_dir=$1 && shift
 patient_db_jar=$1 && shift
 credentials=$1 && shift
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 somatic_vcf=$(locate_purple_somatics ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
@@ -22,7 +24,7 @@ echo "[INFO] Loading somatic variants for ${run_dir}"
 do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading structural variants for ${run_dir}"
-do_run_load_sv ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
+do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
 
 echo "[INFO] Loading linx into database for ${run_dir}"
 

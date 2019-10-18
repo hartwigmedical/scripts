@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-tumor_sample=$1 && shift
+sample=$1 && shift
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -10,9 +10,9 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading chord data for ${run_dir}"
+echo "[INFO] Loading chord data for ${tumor_sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadChordData \
     -run_dir ${run_dir} \
-    -tumor_sample ${tumor_sample} \
+    -tumor_sample ${sample} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}

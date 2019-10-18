@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
+sample=$1 && shift
 run_dir=$1 && shift
-tumor_sample=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
@@ -12,10 +12,11 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading evidence data for ${run_dir}"
+echo "[INFO] Loading evidence data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
+    -tumor_sample ${sample} \
     -run_dir ${run_dir} \
-    -tumor_sample ${tumor_sample} \
+    -knowledgebase_dir ${knowledgebase_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -knowledgebase_dir ${knowledgebase_dir}
+    "$@"
