@@ -10,7 +10,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading chord data for ${tumor_sample}"
+echo "[INFO] Loading chord data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadChordData \
     -run_dir ${run_dir} \
