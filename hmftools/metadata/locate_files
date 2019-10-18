@@ -250,8 +250,12 @@ locate_purple_structural_variants() {
     local run_dir=$1
     local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.ann.vcf.gz")
     if [ -z ${structural_vcf} ]; then
-        echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
-        exit 1
+        # In pipeline v5.5 we no longer have to annotate purple SVs.
+        structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+        if [ -z ${structural_vcf} ]; then
+            echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
+            exit 1
+        fi
     fi
     echo ${structural_vcf}
 }
