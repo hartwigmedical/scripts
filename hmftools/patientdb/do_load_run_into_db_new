@@ -18,19 +18,10 @@ tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 
 linx_jar=$(locate_prod_linx)
 
-echo "[INFO] Loading amber data for ${run_dir}"
 do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading purple data for ${run_dir}"
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading somatic variants for ${run_dir}"
 do_load_somatic_variants_new ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading structural variants for ${run_dir}"
 do_load_structural_variants_new ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading linx into database for ${run_dir}"
 
 # TODO: Since v5.5 dir is "linx" instead of "sv": remove once exists for old runs?
 if [ -d "${run_dir}/sv" ]; then
@@ -38,13 +29,8 @@ if [ -d "${run_dir}/sv" ]; then
 elif [ -d "${run_dir}/linx" ]; then
     do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/linx
 else
-    echo "[INFO] Could not find linx directory for ${run_dir}"
+    echo "[ERROR] Could not find linx directory for ${run_dir}"
 fi
 
-echo "[INFO] Loading metrics for ${run_dir}"
 do_load_metrics_data_new ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
-
-echo "[INFO] Loading CHORD for ${run_dir}"
 do_load_chord_data_new ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
-
-
