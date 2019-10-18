@@ -302,7 +302,7 @@ locate_purple_pilot_pre_viral_annotate_structural_variants() {
 
 locate_gridss_structural_variants() {
     local run_dir=$1
-    local gridss_dir_pre_v5=${run_dir}/structural_variants/gridss
+    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local structural_vcf=""
@@ -328,7 +328,7 @@ locate_gridss_structural_variants() {
 
 locate_gridss_recovery_candidates() {
     local run_dir=$1
-    local gridss_dir_pre_v5=${run_dir}/structural_variants/gridss
+    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local sv_recovery_vcf=""
