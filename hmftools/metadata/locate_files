@@ -110,18 +110,26 @@ locate_wgs_metrics() {
 ################################# Somatic Variants #################################
 locate_sage_somatics() {
     local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *sage.vcf.gz)
-    if [ -z ${somatic_vcf} ]; then
-        # TODO: Clean up after sage is rerun for every sample
-        somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
+    local somatics_dir_pre_v5=${run_dir}/somaticVariants
+    local somatics_dir_v5=${run_dir}/somatic_caller
+
+    local somatic_vcf=""
+
+    if [ -d ${somatics_dir_pre_v5} ]; then
+        somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name *sage.vcf.gz)
         if [ -z ${somatic_vcf} ]; then
-            somatic_vcf=$(find -L ${run_dir}/somatic_caller/ -type f -name *post_processed.vcf.gz)
-            if [ -z ${somatic_vcf} ]; then
-                echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
-                exit 1
-            fi
+            # TODO: Clean up after sage is rerun for every sample
+            somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name *post_processed.vcf.gz)
         fi
+    elif [ -d ${somatics_dir_v5} ]; then
+        somatic_vcf=$(find -L ${somatics_dir_v5}/ -type f -name *post_processed.vcf.gz)
     fi
+
+    if [ -z ${somatic_vcf} ]; then
+        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
     echo ${somatic_vcf}
 }
 
@@ -132,16 +140,24 @@ locate_purple_somatics() {
         echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${somatic_vcf}
 }
 
 locate_purple_pilot_somatics() {
     local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.somatic.vcf.gz")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local somatic_vcf=""
+
+    if [ -d ${purple_pilot_dir} ]; then
+        somatic_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
     if [ -z ${somatic_vcf} ]; then
         echo "[ERROR] Unable to locate purple pilot somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${somatic_vcf}
 }
 
@@ -159,11 +175,18 @@ locate_purple_purity() {
 
 locate_purple_pilot_purity() {
     local run_dir=$1
-    local purple_purity_file=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.purity.tsv")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local purple_purity_file=""
+
+    if [ -d ${purple_pilot_dir} ]; then
+        purple_purity_file=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.purity.tsv")
+    fi
+
     if [ -z ${purple_purity_file} ]; then
         echo "[ERROR] Unable to locate purple pilot purity in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${purple_purity_file}
 }
 
@@ -179,11 +202,18 @@ locate_purple_gene_copynumbers() {
 
 locate_purple_pilot_gene_copynumbers() {
     local run_dir=$1
-    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.cnv.gene.tsv")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local purple_gene_copynumbers=""
+
+    if [ -d ${purple_pilot_dir} ]; then
+        purple_gene_copynumbers=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.cnv.gene.tsv")
+    fi
+
     if [ -z ${purple_gene_copynumbers} ]; then
         echo "[ERROR] Unable to locate purple pilot gene copynumbers in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${purple_gene_copynumbers}
 }
 
@@ -199,11 +229,18 @@ locate_purple_circos_plot() {
 
 locate_purple_pilot_circos_plot() {
     local run_dir=$1
-    local circos_plot=$(find -L ${run_dir}/purple_pilot/plot/ -type f -name "*.circos.png")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local circos_plot=""
+
+    if [ -d ${purple_pilot_dir} ]; then
+        circos_plot=$(find -L ${purple_pilot_dir}/plot/ -type f -name "*.circos.png")
+    fi
+
     if [ -z ${circos_plot} ]; then
         echo "[ERROR] Unable to locate purple pilot circos plot in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${circos_plot}
 }
 
@@ -231,55 +268,81 @@ locate_purple_pre_viral_annotate_structural_variants() {
 
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
-	  local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.ann.vcf.gz")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+	  local structural_vcf=""
+
+	  if [ -d ${purple_pilot_dir} ]; then
+	      structural_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.sv.ann.vcf.gz")
+	  fi
+
     if [ -z ${structural_vcf} ]; then
         echo "[ERROR] Unable to locate purple pilot structural variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${structural_vcf}
 }
 
 locate_purple_pilot_pre_viral_annotate_structural_variants() {
     local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
+    local purple_pilot_dir=${run_dir}/purple_pilot
+    local structural_vcf=""
+
+    if [ -d ${purple_pilot_dir} ]; then
+        structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
+    fi
+
     if [ -z ${structural_vcf} ]; then
         echo "[ERROR] Unable to locate purple pilot pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
+
     echo ${structural_vcf}
 }
 
 locate_gridss_structural_variants() {
     local run_dir=$1
-	  # Use the backport VCF if it exists
-	  local structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/breakpoint_position_backport/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        # Otherwise use v4 naming convention
-        structural_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.vcf.gz")
-		    if [ -z ${structural_vcf} ]; then
-		        # Otherwise use v5 naming convention
-			      structural_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.vcf.gz")
-			      if [ -z ${structural_vcf} ]; then
-				        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
-				        exit 1
-			      fi
-		    fi
+    local gridss_dir_pre_v5=${run_dir}/structural_variants/gridss
+    local gridss_dir_v5=${run_dir}/structural_caller
+
+    local structural_vcf=""
+    if [ -d ${gridss_dir_pre_v5} ]; then
+	      local gridss_backport_dir=${gridss_dir_pre_v5}/*/breakpoint_position_backport
+	      if [ -d ${gridss_backport_dir} ]; then
+	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
+        else
+            # Fall back to v4 format which did not require the backport.
+            structural_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.vcf.gz")
+        fi
+    elif [ -d ${gridss_dir_v5} ]; then
+		    structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
     fi
+
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+		fi
+
     echo ${structural_vcf}
 }
 
 locate_gridss_recovery_candidates() {
     local run_dir=$1
-    # Use v4 naming convention
-    local sv_recovery_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    if [ -z ${sv_recovery_vcf} ]; then
-        # Otherwise use v5 naming convention
-        sv_recovery_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name "*.gridss.somatic.full.vcf.gz")
-        if [ -z ${sv_recovery_vcf} ]; then
-            echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
+    local gridss_dir_pre_v5=${run_dir}/structural_variants/gridss
+    local gridss_dir_v5=${run_dir}/structural_caller
+
+    local sv_recovery_vcf=""
+    if [ -d ${gridss_dir_pre_v5} ]; then
+        sv_recovery_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
+    elif [ -d ${gridss_dir_v5} ]; then
+        sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.full.vcf.gz")
     fi
+
+    if [ -z ${sv_recovery_vcf} ]; then
+        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
     echo ${sv_recovery_vcf}
 }
 
@@ -315,8 +378,8 @@ locate_linx_disruptions() {
         fi
     fi
 
-	local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
-	if [ -z ${disruption_tsv} ]; then
+	  local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
+	  if [ -z ${disruption_tsv} ]; then
         echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}}. Exiting." >&2
         exit 1
     fi
