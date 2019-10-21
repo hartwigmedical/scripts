@@ -2,9 +2,12 @@
 HMF Data Request Guide
 ===== 
 
-This page provides information about the data you received within a data request from Hartwig Medical Foundation. Please use the **unique ID** given to your request (eg "DR-XXX") in any communication.
+This page provides information about the data you received within the context of a data request (DR) from Hartwig Medical Foundation.
 
-In case your data request involves tertiary analysis data (VCF/TXT) you can find these in our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl). In case your data request involves BAM files, you can find the links to the BAMs in our [Download Portal](https://portal.hartwigmedicalfoundation.nl). Both the download portal and nextcloud require an OKTA account using dual-factor authentication.
+## General Notes:
+ - Sharing of data is done via OKTA accounts which require dual-factor authentication. The OKTA account is required to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+ - Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
+ - When publishing results based on HMF data, please be aware that you can only refer to our samples using their HMF-IDs. These IDs are currently not shared when you receive data but can be requested whenever they become relevant.
 
 ## Clinical Data
 
@@ -17,7 +20,7 @@ Some notes about the clinical data:
 
 ### Somatic Data
 
-Somatic data is shared in a **tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+Somatic data is shared via a url to **somatics.tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
 
 ##### Per sample the following files are present:
 - purple.somatic.vcf.gz (somatic SNVs and small INDELs).
@@ -34,11 +37,13 @@ Somatic data is shared in a **tar** via [Nextcloud Portal](https://nc.hartwigmed
 
 ### Germline Data
 
-In case Germline level is included in your request, GATK based variant calls of the healthy reference sample (blood) are available via our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+Germline data is shared via a url to **germline.tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+
+We share the SNVs and small INDELs called from the reference sample using GATK haplotype caller.
 
 ### Alignments
 
-Sharing of BAM files is currently only supported for small numbers, but in case you do have access they are also visible in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+Sharing of BAM files is currently only supported for samples which have been published so far, but in case you do have access they are also visible in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
 
 ### Sample selection
 
