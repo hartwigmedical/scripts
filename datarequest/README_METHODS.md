@@ -1,4 +1,4 @@
-HMF Methods
+HMF Description of Methods
 ===== 
 
 This page describes the methods used to generate the data serviced to researchers through data requests (DRs).
@@ -19,10 +19,14 @@ Typically, DNA yield for the tissue biopsy ranged between 50 and 5,000 ng. A tot
 
 ## Bioinformatics workflow
 
- -  BCL output from the HiSeqX and Novaseq6000 platform was converted using bcl2fastq tool (Illumina, versions 2.17 to 2.20 have been used) using default parameters. 
- - Reads were mapped to the reference genome GRCh37 using BWA-mem v0.7.x. Duplicates were marked for filtering. 
- - For all HiSeq X data, INDELs were realigned and base qualities were recalibrated prior to somatic SNV/INDEL calling using GATK v3.x. Note that for some Novaseq data the same steps were run but they do in practice have neglectful impact on Novaseq data. 
- - GATK HaplotypeCaller v3.x was run to call germline variants in the reference sample. 
- - Strelka v1 was run to call somatic SNVs and small INDELs using non-default (reduced) filters to increase sensitivity. In addition various additional filters are run post-strelka to increase precision.
- - GRIDSS v2.x was run to call structural variants. 
- - PURPLE v2.x was run to fit purity and ploidy.    
+ BCL output from the HiSeqX and Novaseq6000 platform was converted using bcl2fastq tool (Illumina, versions 2.17 to 2.20 have been used) using default parameters. 
+
+Reads were mapped to the reference genome GRCh37 using BWA-mem v0.7.x. Duplicates were marked for filtering. In addition, for all HiSeq X data, INDELs were realigned and base qualities were recalibrated prior to somatic SNV/INDEL calling using GATK v3.x. These steps have also been applied to some Novaseq data.  
+
+GATK HaplotypeCaller v3.x was run to call germline variants in the reference sample, after a which a set of soft filters are applied which can be found in the germline VCFs of the samples. 
+
+Strelka v1 was run to call somatic SNVs and small INDELs using non-default (reduced) filters to increase sensitivity. In addition various additional filters are run post-strelka to increase precision.
+
+GRIDSS v2.x was run to call structural variants with various additional annotations applied. 
+
+PURPLE v2.x was run to fit purity and ploidy.    
