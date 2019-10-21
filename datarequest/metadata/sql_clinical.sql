@@ -10,8 +10,8 @@ SELECT
    allPostTreatmentTypes
 FROM
    purity
-   INNER JOIN
-      c
+   LEFT JOIN
+      clinical as c
       ON purity.sampleId = c.sampleId
    LEFT JOIN
       patient p
