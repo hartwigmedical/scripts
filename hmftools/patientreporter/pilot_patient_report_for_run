@@ -51,7 +51,7 @@ pilot_do_run_base_patient_reporter \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_disruption_tsv ${linx_disruption_tsv} \
-    -viral_insertion_file ${linx_viral_insertion_tsv} \
+    -viral_insertion_tsv ${linx_viral_insertion_tsv} \
     -linx_drivers_catalog_tsv ${linx_drivers_catalog_tsv} \
     -bachelor_tsv ${bachelor_germline_tsv} \
     -chord_prediction_file ${chord_prediction_file_pilot} \
