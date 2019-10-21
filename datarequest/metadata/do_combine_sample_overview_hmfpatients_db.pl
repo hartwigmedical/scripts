@@ -51,7 +51,7 @@ my %REQUIRED_FIELDS_CLINICAL = (
     "treatmentGiven" => "treatmentGiven",
     "radiotherapyGiven" => "radiotherapyGiven",
     "treatment" => "treatment",
-    "treatmentType" => "treatmentType",
+    "treatmentType" => "consolidatedTreatmentType",
     "responseMeasured" => "responseMeasured",
     "firstResponse" => "firstResponse",
     "allPostTreatments" => "allPostTreatments",
@@ -108,7 +108,6 @@ say "[INFO] Parsing SBP json to get runs info";
 my $runs_db = parseSBPJson( $SBP_API_SCRIPT, 'runs' );
 say "[INFO] Parsing $clin_in_file";
 my $clin_db = parseSqlQueryFile( $clin_in_file, $INPUT_DELIM_CLINICAL, \%REQUIRED_FIELDS_CLINICAL, 'puritySampleId' );
-#print Dumper $clin_db;
 say "[INFO] Parsing $drup_in_file";
 my $drup_db = parseSqlQueryFile( $drup_in_file, $INPUT_DELIM_CLINICAL, \%REQUIRED_FIELDS_DRUPCPCT, 'patientId' );
 say "[INFO] Parsing $samp_in_file";

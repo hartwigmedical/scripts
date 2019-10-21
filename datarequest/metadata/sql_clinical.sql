@@ -1,17 +1,18 @@
 USE hmfpatients;
+
 SELECT
    purity.sampleId AS 'puritySampleId',
    purity.qcStatus AS 'purityQC',
    purity.status AS 'purityStatus',
    ROUND(purity.purity, 2) AS 'tumorPurity',
-   c.*,
+   clinical.*,
    allPostTreatments,
    allPostTreatmentTypes
 FROM
    purity
-   LEFT JOIN
-      clinical c
-      ON purity.sampleId = c.sampleId
+   INNER JOIN
+      clinical
+      ON purity.sampleId = clinical.sampleId
    LEFT JOIN
       patient p
       ON c.patientId = p.patientIdentifier

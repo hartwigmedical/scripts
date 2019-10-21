@@ -31,7 +31,7 @@ cat ${filtered} | cut -f 1,10-20 > ${final}
 # 24    treatmentStartDate  treatment
 # 25    treatmentEndDate    treatment
 # 26    treatment   treatment
-# 27    treatmentType   treatment
+# 27    consolidatedTreatmentType   treatment
 # 28    responseDate    treatment
 # 29    responseMeasured    treatment
 # 30    firstResponse   treatment
