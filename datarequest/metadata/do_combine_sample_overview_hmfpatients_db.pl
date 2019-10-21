@@ -70,13 +70,13 @@ my @PRINT_FIELDS_OVERVIEW = qw( sbpSetName sbpSetId sbpBucket sbpStatus hmfStatu
 #my @PRINT_FIELDS_CLINICAL = qw(
 #  puritySampleId purityQC purityStatus tumorPurity sampleId patientId primaryTumorLocation cancerSubtype gender birthYear deathDate biopsyDate
 #  biopsySite biopsyLocation hasSystemicPreTreatment hasRadiotherapyPreTreatment treatmentGiven treatmentStartDate treatmentEndDate
-#  treatment treatmentType responseDate responseMeasured firstResponse preTreatments allPostTreatments allPostTreatmentTypes
-#);
+#  treatment consolidatedTreatmentType responseDate responseMeasured firstResponse preTreatments allPostTreatments allPostTreatmentTypes
+#)
 
 my @PRINT_FIELDS_CLINICAL = qw(
     puritySampleId purityQC purityStatus tumorPurity sampleId patientId primaryTumorLocation cancerSubtype biopsyDate biopsySite biopsyLocation
     gender birthYear deathDate hasSystemicPreTreatment hasRadiotherapyPreTreatment treatmentGiven treatmentStartDate treatmentEndDate
-    treatment treatmentType responseDate responseMeasured firstResponse preTreatments allPostTreatments allPostTreatmentTypes
+    treatment consolidatedTreatmentType responseDate responseMeasured firstResponse preTreatments allPostTreatments allPostTreatmentTypes
 );
 
 my $SORT_COLUMN = 'hmfExternalId'; # no clinical field possible (is 1 level deeper)
