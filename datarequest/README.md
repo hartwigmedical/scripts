@@ -6,7 +6,7 @@ This page provides information about the data you received within a data request
 
 <!--
 Most recent version of this text can be found at one the following repositories:  
-[https://github.com/hartwigmedical/scripts/tree/master/texts](https://github.com/hartwigmedical/scripts/tree/master/texts)  
+[https://github.com/hartwigmedical/scripts/tree/master/datarequest](https://github.com/hartwigmedical/scripts/tree/master/datarequest)  
 [https://github.com/hartwigmedical/texts/](https://github.com/hartwigmedical/texts/)
 -->
 
