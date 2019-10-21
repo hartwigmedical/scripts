@@ -5,14 +5,14 @@ SELECT
    purity.qcStatus AS 'purityQC',
    purity.status AS 'purityStatus',
    ROUND(purity.purity, 2) AS 'tumorPurity',
-   clinical.*,
+   c.*,
    allPostTreatments,
    allPostTreatmentTypes
 FROM
    purity
    INNER JOIN
-      clinical
-      ON purity.sampleId = clinical.sampleId
+      c
+      ON purity.sampleId = c.sampleId
    LEFT JOIN
       patient p
       ON c.patientId = p.patientIdentifier
