@@ -4,10 +4,11 @@ HMF Data Request Guide
 
 This page provides information about the data you received within the context of a data request (DR) from Hartwig Medical Foundation.
 
-## General Notes:
- - Sharing of data is done via OKTA accounts which require dual-factor authentication. The OKTA account is required to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+## General Notes
+ - Sharing of data is done via an OKTA account which require dual-factor authentication. The OKTA account is required to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
  - Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
  - When publishing results based on HMF data, please be aware that you can only refer to our samples using their HMF-IDs. These IDs are currently not shared when you receive data but can be requested whenever they become relevant.
+ - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
 
 ## Clinical Data
 
@@ -43,11 +44,11 @@ We share the SNVs and small INDELs called from the reference sample using GATK h
 
 ### Alignments
 
-Sharing of BAM files is currently only supported for samples which have been published so far, but in case you do have access they are also visible in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+Sharing of BAM files is currently only supported for samples which have been previously published, but in case you do have access they can be accessed in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
 
 ### Sample selection
 
-By default, in addition to data-request specific criteria, samples for which one of the below applies are **exluded**:
+By default, in addition to data-request specific criteria, samples for which one of the below applies are **excluded**:
 
 - Samples from patients where informed consent is from before 21 April 2016.
 - Samples with poor quality (PURPLE qcStatus != PASS).
@@ -60,6 +61,3 @@ By default, in addition to data-request specific criteria, samples for which one
 - For an explanation of most output see our [PURPLE tool](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
 - For an example patient report see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
 - For various resource files used in the analysis see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
-
-### Final Notes
-- Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
