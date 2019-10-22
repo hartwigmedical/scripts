@@ -36,6 +36,7 @@ linx_drivers_catalog_tsv=$(locate_linx_drivers ${run_dir})
 bachelor_germline_tsv=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
 chord_prediction_txt_pilot=$(locate_chord_pilot_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
+report_dates_tsv=$(locate_file_report_dates_pilot)
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
@@ -59,5 +60,6 @@ pilot_do_run_base_patient_reporter \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
+    -report_dates_tsv ${report_dates_tsv} \
     -log_debug \
     "$@"

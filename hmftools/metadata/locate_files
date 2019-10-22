@@ -476,3 +476,14 @@ locate_chord_pilot_prediction() {
     fi
     echo ${chord_prediction_file}
 }
+
+############################################# LIMS ###########################################
+
+locate_file_report_dates_pilot() {
+    local report_dates_tsv=$(find "report_dates_lims_pilot.tsv")
+    if [ -z ${report_dates_tsv} ]; then
+        echo "[ERROR] Unable to locate report dates CSV. Exiting." >&2
+        exit 1
+    fi
+    echo ${report_dates_tsv}
+}
