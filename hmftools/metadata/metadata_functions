@@ -53,8 +53,9 @@ load_tumor_sample_barcode_from_metadata() {
         # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
         tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
     else
-         metadata=${run_dir}/metadata
-         tumor_sample_barcode=$(jq -r '.set_name' ${metadata} | tr "_" " " | awk '{print $4}')
+         # Pre-V5 format
+        metadata=${run_dir}/metadata
+        tumor_sample_barcode=$(jq -r '.set_name' ${metadata} | tr "_" " " | awk '{print $4}')
     fi
     echo "${tumor_sample_barcode}"
 }
