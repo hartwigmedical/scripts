@@ -27,7 +27,7 @@ if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode}
 fi
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc_tsv=$(locate_purple_qc ${run_dir})
+purple_qc=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
@@ -49,7 +49,7 @@ pilot_do_run_base_patient_reporter \
     -tumor_sample_id ${tumor_sample} \
     -tumor_sample_barcode ${tumor_sample_barcode} \
     -purple_purity_tsv ${purple_purity_tsv} \
-    -purple_qc_tsv ${purple_qc_tsv} \
+    -purple_qc ${purple_qc} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
