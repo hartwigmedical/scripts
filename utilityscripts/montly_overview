@@ -5,7 +5,7 @@ month=$1
 report_dates_tsv=/data/lims/report_dates_lims_pilot.tsv
 
 if [ -z "${report_dates_tsv}" ]; then
-    echo "[ERROR] No log file name. Exiting"
+    echo "[ERROR] No report dates tsv. Exiting"
     exit 1
 fi
 
