@@ -9,5 +9,5 @@ if [ -z "${report_dates_tsv}" ]; then
     exit 1
 fi
 
-echo "sampleId\ttumorBarcode\treportDate\tsourceReport\tpurity\tstatus\tqcStatus\n"
+echo -e "sampleId\ttumorBarcode\treportDate\tsourceReport\tpurity\tstatus\tqcStatus\n"
 cat ${report_dates_tsv} | grep /${month}/2019
