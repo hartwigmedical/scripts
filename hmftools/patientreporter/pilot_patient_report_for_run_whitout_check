@@ -17,15 +17,6 @@ fi
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 
-if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
-    echo "[ERROR] Incomplete information for reporter. Exiting"
-    echo "  ref_sample name: ${ref_sample}"
-    echo "  ref sample barcode: ${ref_sample_barcode}"
-    echo "  tumor_sample name: ${tumor_sample}"
-    echo "  tum sample barcode: ${tumor_sample_barcode}"
-    exit 1;
-fi
-
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
