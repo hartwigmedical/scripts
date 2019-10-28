@@ -32,5 +32,5 @@ GRIDSS v2.x was run to call structural variants with various additional annotati
 PURPLE v2.x was run to fit purity and ploidy.    
 
 For more detailed information on tools and parameters used:
- - For germline SNV/INDEL calling and somatic SNV/INDEL calling please see [HMF Pan Cancer Paper Methods](https://www.nature.com/articles/s41586-019-1689-y)
+ - For germline SNV/INDEL calling and somatic SNV/INDEL calling please see the 'Methods' section of [HMF Pan Cancer Paper](https://www.nature.com/articles/s41586-019-1689-y)
  - For GRIDSS/Purple/LINX see [HMF Toolkit Paper](https://www.biorxiv.org/content/10.1101/781013v1)
