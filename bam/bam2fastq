@@ -1,23 +1,24 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+IN_BAM=$1
 
 MEM_USE=50
 PIGZ_THREADS=8
 PICARD_DIR=/data/tools/picard-tools_v1.141
 SAMBAMBA_DIR=/data/tools/sambamba_v0.6.5
 OUT_DIR=./fastq
-IN_BAM=$1
 
 if [[ ${IN_BAM} == "" || ${IN_BAM} == "-h" || ${IN_BAM} == "--help" ]]; then
     echo "-----"
-    echo " Usage: `basename $0` <BAM_FILE>"
+    echo " Usage: $(basename $0) <BAM_FILE>"
     echo " Output will be in ${OUT_DIR}"
     echo " Using Picard dir ${PICARD_DIR}"
     echo "-----"
     exit 1
 fi
 
-IN_BAM_NAME=`basename ${IN_BAM}`
-OUT_BASE=`dirname ${OUT_DIR}`
+IN_BAM_NAME=$(basename ${IN_BAM})
+OUT_BASE=$(dirname ${OUT_DIR})
 
 ## ---------------
 ## sanity checks
@@ -28,8 +29,8 @@ if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1;
 ## ---------------
 
 ## Check format of RG/ID tags in header
-correct_lane_count=$( ${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG | grep -vcP "_L00[1-8]_" )
-if [[ ${correct_lane_count} > 1 ]]; then
+correct_lane_count=$(${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG | grep -vcP "_L00[1-8]_" )
+if [[ ${correct_lane_count} -gt 1 ]]; then
     echo "[EXIT] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
     ${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG
     exit 1
@@ -43,14 +44,14 @@ else
     mkdir ${OUT_DIR}; 
 fi
 
-echo "[INFO] Running SamToFastq for bam file: $IN_BAM_NAME"
+echo "[INFO] Running SamToFastq for bam file: ${IN_BAM_NAME}"
 java -Xmx${MEM_USE}g -jar ${PICARD_DIR}/picard.jar SamToFastq ODIR=${OUT_DIR} OPRG=true RGT=ID NON_PF=true RC=true I=${IN_BAM}
 
 echo "[INFO] About to rename fastq files"
 for fastq_path in ${OUT_DIR}/*fastq; do 
 
-    fastq_old=`basename ${fastq_path}`
-    fastq_new=`echo ${fastq_old} | sed 's#\.fastq##g' - | awk 'BEGIN { FS = "_" } ; { print $1"_"$2"_"$3"_"$4"_R"$6"_"$5".fastq" }'`
+    fastq_old=$(basename ${fastq_path})
+    fastq_new=$(echo ${fastq_old} | sed 's#\.fastq##g' - | awk 'BEGIN { FS = "_" } ; { print $1"_"$2"_"$3"_"$4"_R"$6"_"$5".fastq" }')
    
     mv ${fastq_path} ${OUT_DIR}/${fastq_new}
     echo "[INFO] ${fastq_old} renamed to ${fastq_new}"
