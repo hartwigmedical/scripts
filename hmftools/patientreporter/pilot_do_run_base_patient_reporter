@@ -5,7 +5,7 @@ source locate_files
 patient_reporter_jar=$(locate_pilot_patient_reporter)
 output_dir=/data/cpct/pilot_reports
 
-report_dates_tsv=$(locate_report_dates_tsv_pilot)
+reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
 lims_dir=/data/lims
 hospital_dir=/data/common/dbs/hospital
@@ -16,7 +16,7 @@ signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.p
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
     -output_dir ${output_dir} \
-    -report_dates_tsv ${report_dates_tsv} \
+    -reporting_db_tsv ${reporting_db_tsv} \
     -tumor_location_csv ${tumor_location_csv} \
     -lims_dir ${lims_dir} \
     -hospital_dir ${hospital_dir} \
