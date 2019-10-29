@@ -20,8 +20,6 @@ ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
-report_dates_tsv=$(locate_file_report_dates_pilot)
-
 if [ -z ${tumor_sample_barcode} ]; then
     echo "[INFO] Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
@@ -43,4 +41,4 @@ pilot_do_run_base_patient_reporter \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
     -tumor_sample_barcode ${tumor_sample_barcode} \
-    -report_dates_tsv ${report_dates_tsv}
+    "$@"
