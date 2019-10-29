@@ -15,7 +15,7 @@ if [ -z ${tumor_sample_barcode} ]; then
 fi
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${run_dir})
+ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
 if [ -z ${ref_sample_barcode} ]; then
     echo "[INFO] Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
