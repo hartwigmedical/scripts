@@ -10,12 +10,17 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 if [ -z ${tumor_sample_barcode} ]; then
-    echo "[INFO] Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
+    echo "[INFO] Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
 
-ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
+
+if [ -z ${ref_sample_barcode} ]; then
+    echo "[INFO] Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
+    ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
+fi
 
 if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
     echo "[ERROR] Incomplete information for reporter. Exiting"
@@ -27,17 +32,16 @@ if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode}
 fi
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc=$(locate_purple_qc ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+bachelor_germline_tsv=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
 linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
-linx_drivers_catalog_tsv=$(locate_linx_drivers ${run_dir})
-bachelor_germline_tsv=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
+linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 chord_prediction_txt_pilot=$(locate_chord_pilot_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
-report_dates_tsv=$(locate_file_report_dates_pilot)
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
@@ -49,19 +53,18 @@ pilot_do_run_base_patient_reporter \
     -tumor_sample_id ${tumor_sample} \
     -tumor_sample_barcode ${tumor_sample_barcode} \
     -purple_purity_tsv ${purple_purity_tsv} \
-    -purple_qc ${purple_qc} \
+    -purple_qc_file ${purple_qc_file} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
+    -bachelor_tsv ${bachelor_germline_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_disruption_tsv ${linx_disruption_tsv} \
-    -viral_insertion_tsv ${linx_viral_insertion_tsv} \
-    -linx_drivers_catalog_tsv ${linx_drivers_catalog_tsv} \
-    -bachelor_tsv ${bachelor_germline_tsv} \
+    -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
+    -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_prediction_txt ${chord_prediction_txt_pilot} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -report_dates_tsv ${report_dates_tsv} \
     -log_debug \
     "$@"
