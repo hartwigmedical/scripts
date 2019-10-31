@@ -364,15 +364,12 @@ locate_gridss_recovery_candidates() {
 
 locate_linx_reported_fusions() {
     local run_dir=$1
-    local linx_dir=${run_dir}/sv
+    local linx_dir=${run_dir}/linx
     if [ ! -d ${linx_dir} ]; then
-        linx_dir=${run_dir}/linx
-        if [ ! -d ${linx_dir} ]; then
-            echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
+        exit 1
     fi
-
+    
     fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
     if [ -z ${fusion_tsv} ]; then
         echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
@@ -383,17 +380,14 @@ locate_linx_reported_fusions() {
 
 locate_linx_disruptions() {
     local run_dir=$1
-    local linx_dir=${run_dir}/sv
+    local linx_dir=${run_dir}/linx
     if [ ! -d ${linx_dir} ]; then
-        linx_dir=${run_dir}/linx
-        if [ ! -d ${linx_dir} ]; then
-            echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
+        exit 1
     fi
-
-	  local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
-	  if [ -z ${disruption_tsv} ]; then
+    
+    local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
+    if [ -z ${disruption_tsv} ]; then
         echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}}. Exiting." >&2
         exit 1
     fi
@@ -402,13 +396,10 @@ locate_linx_disruptions() {
 
 locate_linx_viral_insertions() {
     local run_dir=$1
-    local linx_dir=${run_dir}/sv
+    local linx_dir=${run_dir}/linx
     if [ ! -d ${linx_dir} ]; then
-        linx_dir=${run_dir}/linx
-        if [ ! -d ${linx_dir} ]; then
-            echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
+        exit 1
     fi
     local viral_insertion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
     if [ -z ${viral_insertion_tsv} ]; then
@@ -420,13 +411,10 @@ locate_linx_viral_insertions() {
 
 locate_linx_drivers() {
     local run_dir=$1
-    local linx_dir=${run_dir}/sv
+    local linx_dir=${run_dir}/linx
     if [ ! -d ${linx_dir} ]; then
-        linx_dir=${run_dir}/linx
-        if [ ! -d ${linx_dir} ]; then
-            echo "[ERROR] Unable to locate linx dir for drivers: ${linx_dir}. Exiting" >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate linx dir for drivers: ${linx_dir}. Exiting" >&2
+        exit 1
     fi
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
