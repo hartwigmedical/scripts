@@ -4,8 +4,8 @@ IN_BAM=$1
 
 MEM_USE=50
 PIGZ_THREADS=8
-PICARD_DIR=/data/tools/picard-tools_v1.141
-SAMBAMBA_DIR=/data/tools/sambamba_v0.6.5
+PICARD_DIR=/data/common/tools/picard-tools_v1.141
+SAMBAMBA_DIR=/data/common/tools/sambamba_v0.6.5
 OUT_DIR=./fastq
 
 if [[ ${IN_BAM} == "" || ${IN_BAM} == "-h" || ${IN_BAM} == "--help" ]]; then

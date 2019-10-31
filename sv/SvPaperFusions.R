@@ -84,7 +84,25 @@ View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(GeneNameUp.y,
 View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(KnownType.y) %>% count())
 
 
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,GeneDown,KnownType.x))
+## Fusion comparison after disruption for known fusions change
+prevFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv.prev')
+prevFusions = prevFusions %>% filter(Reportable=='true')
+nrow(prevFusions)
+
+newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv')
+newFusions = newFusions %>% filter(Reportable=='true')
+nrow(newFusions)
+
+prevFusions = prevFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+newFusions = newFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+
+View(newFusions %>% filter(!(SampleGenePair %in% prevFusions$SampleGenePair)))
+View(prevFusions %>% filter(!(SampleGenePair %in% newFusions$SampleGenePair)) %>% select(SampleId,SvIdUp,SvIdDown,ClusterId,ClusterCount,everything()))
+
+rm(newFusions)
+rm(prevFusions)
+
+
 
 
 #######
