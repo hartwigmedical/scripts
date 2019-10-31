@@ -4,7 +4,7 @@ source locate_files
 
 prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
-sv_data_dir=${run_dir}/sv/
+sv_data_dir=${run_dir}/linx/
 
 credentials=$(locate_prod_database_credentials)
 linx_jar=$(locate_prod_linx)
