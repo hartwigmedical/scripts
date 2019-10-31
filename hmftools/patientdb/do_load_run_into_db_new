@@ -22,12 +22,6 @@ do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants_new ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 do_load_structural_variants_new ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
-
-if [ -d "${run_dir}/linx" ]; then
-    do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/linx
-else
-    echo "[ERROR] Could not find linx directory for ${run_dir}"
-fi
-
+do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data_new ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
 do_load_chord_data_new ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}

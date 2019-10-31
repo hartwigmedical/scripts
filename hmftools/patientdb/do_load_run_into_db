@@ -18,6 +18,6 @@ do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
-do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/linx
+do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
