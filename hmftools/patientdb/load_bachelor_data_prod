@@ -11,3 +11,4 @@ bachelor_jar=$(locate_prod_bachelor)
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 do_load_bachelor_data ${sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar} "$@"
+
