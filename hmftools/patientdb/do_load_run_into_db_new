@@ -23,10 +23,7 @@ do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_d
 do_load_somatic_variants_new ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
 do_load_structural_variants_new ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
 
-# TODO: Since v5.5 dir is "linx" instead of "sv": remove once exists for old runs?
-if [ -d "${run_dir}/sv" ]; then
-    do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/sv
-elif [ -d "${run_dir}/linx" ]; then
+if [ -d "${run_dir}/linx" ]; then
     do_run_load_linx ${run_dir} ${credentials} ${linx_jar} ${run_dir}/linx
 else
     echo "[ERROR] Could not find linx directory for ${run_dir}"
