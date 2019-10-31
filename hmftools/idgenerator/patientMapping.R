@@ -81,8 +81,8 @@ sampleMapping = sample_mapping(amberBafs)
 patientMapping = patient_mapping(sampleMapping, existingSamples, existingMappings)
 
 amberSamples = unique(amberBafs$sampleId)
-write.table(amberSamples, file = "~/hmf/resources/idgenerator/input/samples.csv", quote = F, row.names = F, col.names = F, sep = ",")
-write.table(patientMapping %>% select(sourceId, targetId), file = "~/hmf/resources/idgenerator/input/patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(amberSamples, file = "~/tmp/samples.csv", quote = F, row.names = F, col.names = F, sep = ",")
+write.table(patientMapping %>% select(sourceId, targetId), file = "~/tmp/patient_mapping.csv", quote = F, row.names = F, col.names = F, sep = ",")
 
 
 ######################## Step 2 - Update hashes
