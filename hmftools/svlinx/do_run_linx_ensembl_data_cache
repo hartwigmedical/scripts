@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 source locate_files
-linx_jar=$(locate_prod_linx)
 
 output_dir=$1 && shift
 
 credentials=$(locate_prod_database_credentials)
+linx_jar=$(locate_prod_linx)
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
