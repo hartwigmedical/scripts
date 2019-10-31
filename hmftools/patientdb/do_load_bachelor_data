@@ -10,10 +10,15 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading germline variants"
+bachelor_tsv=$(find -L ${bachelor_dir} -type f -name "*.bachelor.germline_variant.tsv")
+if [ -z ${bachelor_tsv } ]; then
+    echo "[WARN] Cannot find bachelor germline variants v1.9+"
+else
+    echo "[INFO] Loading bachelor germline variants for ${sample}"
 
-java -Xmx8G -Xms4G -cp ${bachelor_jar} com.hartwig.hmftools.bachelor.LoadGermlineVariants \
-    -sample ${sample} \
-    -sample_data_dir ${bachelor_dir} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} 
-
+    java -Dorg.jooq.no-logo=true -cp ${bachelor_jar} com.hartwig.hmftools.bachelor.LoadGermlineVariants \
+        -sample ${sample} \
+        -sample_data_dir ${bachelor_dir} \
+        -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}  \
+        "$@"
+fi

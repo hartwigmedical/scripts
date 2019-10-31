@@ -6,8 +6,8 @@ source locate_files
 run_dir=$1 && shift
 
 credentials=$(locate_pilot_database_credentials)
-bachelor_jar=/data/common/tools/bachelor_v1.9/bachelor.jar
+bachelor_jar=$(locate_pilot_bachelor)
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-do_load_bachelor_data ${sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar} "$@"
+do_load_bachelor_data ${sample} ${run_dir}/bachelor_pilot ${credentials} ${bachelor_jar} "$@"

@@ -21,3 +21,4 @@ do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${p
 do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data ${ref_sample} ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}
+do_load_bachelor_data ${tumor_sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar}
