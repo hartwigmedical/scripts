@@ -10,8 +10,9 @@ sample_mapping <- function(amberBafs, percentCutoff = 0.6) {
   bafMatrix = as.matrix(spreadBafs %>% select(-sampleId))
   matrixResult = bafMatrix %*% t(bafMatrix)
   dfResult = data.frame(matrixResult)
+  colnames(dfResult) = spreadBafs$sampleId
   dfResult$sample1 <- spreadBafs$sampleId
-  dfResult = dfResult %>% gather(sample2, match,  spreadBafs$sampleId)
+  dfResult = dfResult %>% gather(sample2, match, spreadBafs$sampleId)
   
   sampleCounts = dfResult %>% filter(sample1 == sample2) %>% select(sample1, count = match)
   
