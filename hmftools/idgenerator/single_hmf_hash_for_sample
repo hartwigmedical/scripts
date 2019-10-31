@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 
-password=$1 && shift
 sample=$1 && shift
-
-if [ -z "${password}" ]; then
-    echo "[ERROR] Please provide a password! Exiting"
-    exit 1
-fi
 
 if [ -z "${sample}" ]; then
     echo "[ERROR] Please provide a sample! Exiting"
     exit 1
 fi
+
+password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator -create_single_hash -password ${password} -sample_id ${sample}
 

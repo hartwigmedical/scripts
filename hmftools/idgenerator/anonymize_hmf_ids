@@ -7,8 +7,7 @@ if [ -z "${sample_ids_file}" ]; then
     sample_ids_file=/data/common/dbs/idgenerator/input/samples.csv
 fi
 
-# patient mapping is an input to anonymizer but should never have an impact since all samples should have a unique hash!
-patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping_empty.csv
+patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
 password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator \
