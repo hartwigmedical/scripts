@@ -3,8 +3,8 @@
 sample_ids_file=$1 && shift
 
 if [ -z "${sample_ids_file}" ]; then
-    echo "[INFO] No sample IDs file provided. Using default"
     sample_ids_file=/data/common/dbs/idgenerator/input/samples.csv
+    echo "[INFO] No sample IDs file provided. Using default at ${sample_ids_file}"
 fi
 
 patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
