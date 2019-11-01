@@ -90,13 +90,6 @@ write.table(patientMapping %>% select(sourceId, targetId), file = "~/tmp/patient
 # cp ~/tmp/patient_mapping.csv /data/common/dbs/idgenerator/input/
 # -> Compare to previous samples and patient mapping
 # -> Run 'update_hmf_ids'
-# -> Check output -> compare to previous output
-# -> Update hashes in repo -> build -> test anonymization that it is the same as previous for existing samples.
-
-######################## Step 4 - Load into database
-# TRUNCATE patientMapping;
-# TRUNCATE sampleMapping;
-# LOAD DATA LOCAL INFILE '/data/common/dbs/idgenerator/input/patient_mapping.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' IGNORE 0 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
-# LOAD DATA LOCAL INFILE '/data/common/dbs/idgenerator/output/remapping.csv' INTO TABLE patientMapping  FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES (sourceId, targetId) SET modified = CURRENT_TIMESTAMP;
-# LOAD DATA LOCAL INFILE '/data/common/dbs/idgenerator/output/anonymized.csv' INTO TABLE sampleMapping FIELDS TERMINATED BY ',' LINES TERMINATED BY '\r\n' IGNORE 1 LINES  (sampleId, hmfId) SET modified = CURRENT_TIMESTAMP;
-
+# -> Update hashes in repo -> build -> assess anonymization is the same as previous for existing samples.
+# -> Make new release and deploy -> retest
+# -> Recreate patientMapping table (based on patient mapping and remapping) and sampleMapping table (based on anonymized IDs)
