@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source metadata_functions
+
 set=$1
 
 if [ -z "$set" ]; then
@@ -21,5 +23,11 @@ echo "[INFO] Copying set ${set} to processed path ${processed_path}"
 set_path=${download_path}/${set}
 cp -r ${download_path}/${set} ${set_path}
 
-echo "[INFO} Loading data into database for ${set}"
-load_run_into_prod_db_new ${set_path}
+tumor_sample=$(load_tumor_sample_from_metadata ${set})
+
+if [[ ${tumor_sample} =~ ^CORE ]]; then
+    echo "[INFO] Data not loaded into database for ${set}. It is a CORE sample!"
+else
+    echo "[INFO] Loading data into database for ${set}"
+    load_run_into_prod_db_new ${set_path}
+fi
