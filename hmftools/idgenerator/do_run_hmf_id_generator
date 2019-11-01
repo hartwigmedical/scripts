@@ -7,6 +7,6 @@ if [ -z "${run_mode}" ]; then
     exit 1
 fi
 
-id_generator_jar=/data/common/tools/hmf-id-generator_pilot/hmf-id-generator.jar
+id_generator_jar=/data/common/tools/hmf-id-generator_v2.1/hmf-id-generator.jar
 
 java -jar ${id_generator_jar} ${run_mode} "$@"
