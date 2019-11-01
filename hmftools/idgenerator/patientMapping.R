@@ -86,9 +86,8 @@ write.table(patientMapping %>% select(sourceId, targetId), file = "~/tmp/patient
 
 
 ######################## Step 2 - Update hashes
-# cp ~/tmp/samples.csv /data/common/dbs/idgenerator/input/
-# cp ~/tmp/patient_mapping.csv /data/common/dbs/idgenerator/input/
 # -> Compare to previous samples and patient mapping
+# -> Copy both files to /data/common/dbs/idgenerator/input/
 # -> Run 'update_hmf_ids'
 # -> Update hashes in repo -> build -> assess anonymization is the same as previous for existing samples.
 # -> Make new release and deploy -> retest
