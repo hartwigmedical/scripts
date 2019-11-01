@@ -88,10 +88,10 @@ write.table(patientMapping %>% select(sourceId, targetId), file = "~/tmp/patient
 ######################## Step 2 - Update hashes
 # cp ~/tmp/samples.csv /data/common/dbs/idgenerator/input/
 # cp ~/tmp/patient_mapping.csv /data/common/dbs/idgenerator/input/
-# update_hmf_ids ${password}
-
-######################## Step 3 - Include hash in build and make new release of id-generator
-# cp ~/hmf/resources/idgenerator/output/sample_hashes.csv ~/hmf/repos/hmftools/hmf-id-generator/src/main/resources/sample_hashes.csv
+# -> Compare to previous samples and patient mapping
+# -> Run 'update_hmf_ids'
+# -> Check output -> compare to previous output
+# -> Update hashes in repo -> build -> test anonymization that it is the same as previous for existing samples.
 
 ######################## Step 4 - Load into database
 # TRUNCATE patientMapping;
