@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 sample=$1 && shift
 run_dir=$1 && shift
 credentials=$1 && shift
@@ -7,6 +9,10 @@ patient_db_jar=$1 && shift
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+
+linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -20,5 +26,8 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -run_dir ${run_dir} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -tumorlocation_file ${tumor_location_csv} \
+    -somatic_variant_vcf ${somatic_variant_vcf} \
+    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
