@@ -14,7 +14,7 @@ lims_dir=/data/lims
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
-bachelor_csv=$(locate_bachelor_germline_variants_v1_8 ${run_dir})
+bachelor_csv=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
 chord_prediction_txt_pilot=$(locate_chord_pilot_prediction ${run_dir})
 
 # Database details
