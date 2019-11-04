@@ -2,7 +2,7 @@
 
 submission=$1
 submissionDir="/data/submissions/${submission}"
-sopStringRegex='QC[0-9]+V[0-9]+-SEQV[0-9]+'
+sopStringRegex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
 echo ""
 echo "[INFO] Checking ${submission}"
@@ -25,8 +25,8 @@ echo "[INFO] ${totalLimsSamples} samples found in LIMS (of which ${totalLimsFail
 echo "[INFO] ${totalSamplesReady} samples ready at SBP (of total ${totalSamples})"
 echo "[INFO] ${totalRunsDone} runs finished at SBP (of total ${totalRuns})"
 echo "[INFO] ${totalRunsValidated} runs validated at SBP (of total ${totalRuns})"
-if [[ ! "${firstSopString}" =~ "${sopStringRegex}" ]]; then
-  echo "[WARNING] At least one sample without complete SOP string (regex: ${sopStringRegex})"
+if [[ ! "${firstSopString}" =~ ${sopStringRegex} ]]; then
+  echo "[WARNING] At least one sample without complete SOP string (regex: ${firstSopString})"
 fi
 echo ""
 echo "[INFO] Inspect further:"
