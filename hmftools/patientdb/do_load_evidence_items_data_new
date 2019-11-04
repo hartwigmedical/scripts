@@ -34,6 +34,6 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -bachelor_tsv ${bachelor_csv} \
-    -chord_prediction_txt ${chord_prediction_txt_pilot}
+    -chord_prediction_txt ${chord_prediction_txt_pilot} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
