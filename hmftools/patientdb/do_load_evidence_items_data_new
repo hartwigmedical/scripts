@@ -9,10 +9,12 @@ patient_db_jar=$1 && shift
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+lims_dir=/data/lims
 
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+bachelor_csv=$(locate_bachelor_germline_variants_v1_8 ${run_dir})
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -24,10 +26,12 @@ echo "[INFO] Loading evidence data for ${sample}"
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
     -run_dir ${run_dir} \
+    -lims_dir ${lims_dir} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -tumorlocation_file ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
+    -bachelor_tsv ${bachelor_csv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
