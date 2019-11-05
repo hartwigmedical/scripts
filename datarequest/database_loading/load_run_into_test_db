@@ -7,6 +7,16 @@ if [ -z "${run_dir}" ]; then
     exit 1
 fi
 
+if [ ! -d "${run_dir}" ]; then
+    echo "[ERROR] Not a dir as run dir provided (maybe file?). Exiting"
+    exit 1
+fi
+
+if [ ! -f "${run_dir}"*.purple.purity.tsv ]; then
+    echo "[ERROR] Not the correct run dir provided (important file missing in run dir). Exiting"
+    exit 1
+fi
+
 # Configuration of paths
 db_loader_jar=${HOME}/hmf/demo_database/hmf-db-loader.jar
 
