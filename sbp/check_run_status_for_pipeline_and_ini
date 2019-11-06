@@ -11,7 +11,7 @@ ini_count=$(query_sbp_api -type inis -filter "name=${ini}" -exact | grep -cv "^#
 if [ ${ini_count} != 1 ]; then
     echo "[ERROR] Non-existing ini ${ini})?" && exit 1
 fi
-pip_count=$(query_sbp_api -type stacks -filter "revision=^${pip}" -exact | grep -cv "^#")
+pip_count=$(query_sbp_api -type stacks -filter "revision=^${pip}" | grep -cv "^#")
 if [ ${pip_count} -lt 1 ]; then
     echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
@@ -70,7 +70,7 @@ query_sbp_api \
                 -filter "ini=${ini}" \
                 -filter "pipeline=^${pip}" \
                 -filter "status=Failed" \
-                -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+                -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
 
             set_name_for_failed_tumor_sample=$(query_sbp_api \
                 -type runs \
@@ -79,7 +79,7 @@ query_sbp_api \
                 -filter "bucket=${bucket_for_failed_tumor_sample}" \
                 -filter "pipeline=^${pip}" \
                 -filter "status=Failed" \
-                -exact -json | jq -r '.[].name' | tail -n 1 )
+                -json | jq -r '.[].name' | tail -n 1 )
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l);
             exists_in_qcfail_run_dirs=$(find ${find_dirs_fail} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l)
@@ -113,7 +113,7 @@ query_sbp_api \
                 -filter "ini=${ini}" \
                 -filter "pipeline=^${pip}" \
                 -filter "status=Success" \
-                -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+                -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
 
             set_name_for_success_tumor_sample=$(query_sbp_api \
                 -type runs \
@@ -121,7 +121,7 @@ query_sbp_api \
                 -filter "ini=${ini}" \
                 -filter "bucket=${bucket_for_success_tumor_sample}" \
                 -filter "pipeline=^${pip}" \
-                -filter "status=Success" -exact -json | jq -r '.[].name' | tail -n 1 )
+                -filter "status=Success" -json | jq -r '.[].name' | tail -n 1 )
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
 		        if [ ${exists_in_success_run_dirs} == 0 ]; then
