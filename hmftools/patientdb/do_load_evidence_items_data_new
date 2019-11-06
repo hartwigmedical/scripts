@@ -3,6 +3,7 @@
 source locate_files
 
 sample=$1 && shift
+tumor_sample_barcode=$1 && shift
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -11,6 +12,8 @@ knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 lims_dir=/data/lims
 
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
@@ -26,6 +29,7 @@ echo "[INFO] Loading evidence data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
+    -tumor_sample_barcode ${tumor_sample_barcode} \
     -run_dir ${run_dir} \
     -lims_dir ${lims_dir} \
     -knowledgebase_dir ${knowledgebase_dir} \
@@ -33,6 +37,8 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -germline_genes_csv ${germline_genes_csv} \
     -bachelor_tsv ${bachelor_csv} \
     -chord_prediction_txt ${chord_prediction_txt_pilot} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
