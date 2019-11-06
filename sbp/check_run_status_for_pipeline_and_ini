@@ -46,7 +46,7 @@ all_tumor_samples_with_processing_run=$(query_sbp_api \
 all_tumor_samples_with_waiting_run=$(query_sbp_api \
     -type runs \
     -filter "ini=${full_run_inis}" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Waiting" \
     -json | jq -r '.[].tumor_sample')
 
@@ -55,7 +55,7 @@ query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Failed" \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read failed_tumor_sample; do
@@ -68,7 +68,7 @@ query_sbp_api \
                 -type runs \
                 -filter "tumor_sample=${failed_tumor_sample}" \
                 -filter "ini=${ini}" \
-                -filter "pipeline=${pip}" \
+                -filter "pipeline=^${pip}" \
                 -filter "status=Failed" \
                 -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
 
@@ -77,7 +77,7 @@ query_sbp_api \
                 -filter "tumor_sample=${failed_tumor_sample}" \
                 -filter "ini=${ini}" \
                 -filter "bucket=${bucket_for_failed_tumor_sample}" \
-                -filter "pipeline=${pip}" \
+                -filter "pipeline=^${pip}" \
                 -filter "status=Failed" \
                 -exact -json | jq -r '.[].name' | tail -n 1 )
 
@@ -99,7 +99,7 @@ query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Success" \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read success_tumor_sample; do
@@ -111,7 +111,7 @@ query_sbp_api \
                 -type runs \
                 -filter "tumor_sample=${success_tumor_sample}" \
                 -filter "ini=${ini}" \
-                -filter "pipeline=${pip}" \
+                -filter "pipeline=^${pip}" \
                 -filter "status=Success" \
                 -exact -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
 
@@ -120,7 +120,7 @@ query_sbp_api \
                 -filter "tumor_sample=${success_tumor_sample}" \
                 -filter "ini=${ini}" \
                 -filter "bucket=${bucket_for_success_tumor_sample}" \
-                -filter "pipeline=${pip}" \
+                -filter "pipeline=^${pip}" \
                 -filter "status=Success" -exact -json | jq -r '.[].name' | tail -n 1 )
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
@@ -138,7 +138,7 @@ query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Validated" \
     -json | jq -r '.[].name' | \
     while read set_name; do
@@ -155,7 +155,7 @@ query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=SnpCheck" \
     -json | jq -r '.[].name' | \
     while read set_name; do
@@ -173,7 +173,7 @@ echo "## Processing/Uploading runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Processing|Uploading" \
     -json | jq -r '.[].name' | \
     while read set_name; do
@@ -185,7 +185,7 @@ echo "## Waiting runs with ini ${ini} and pipeline ${pip}"
 query_sbp_api \
     -type runs \
     -filter "ini=${ini}" \
-    -filter "pipeline=${pip}" \
+    -filter "pipeline=^${pip}" \
     -filter "status=Waiting" \
     -json | jq -r '.[].name' | \
     while read set_name; do
