@@ -524,7 +524,6 @@ sub processExcelSamples{
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
             $row_info->{ 'analysis_type' } = 'SnpGenotyping';
-            next;
         }
         else {
             warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
