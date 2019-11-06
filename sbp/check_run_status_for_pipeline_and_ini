@@ -11,7 +11,7 @@ ini_count=$(query_sbp_api -type inis -filter "name=${ini}" -exact | grep -cv "^#
 if [ ${ini_count} != 1 ]; then
     echo "[ERROR] Non-existing ini ${ini})?" && exit 1
 fi
-pip_count=$(query_sbp_api -type stacks -filter "revision=${pip}" -exact | grep -cv "^#")
+pip_count=$(query_sbp_api -type stacks -filter "revision=^${pip}" -exact | grep -cv "^#")
 if [ ${pip_count} -lt 1 ]; then
     echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
