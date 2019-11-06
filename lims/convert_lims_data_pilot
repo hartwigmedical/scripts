@@ -16,7 +16,7 @@ use constant NACHAR => 'NA';
 use constant TISSUE_ANCESTOR_FIELDS => qw( 
     submission lab_status hospital_pa_sample_id hospital_patient_id
     germline_findings requester_name requester_email purity_shallow 
-    tumor_perc ptum
+    tumor_perc
 );
 use constant BLOOD_ANCESTOR_FIELDS => qw( 
     submission lab_status
@@ -85,7 +85,7 @@ my $HELP_TEXT = <<"HELP";
     
   Options (only for testing):
     -lims_dir <str>  Path to input lims dir ($LIMS_DIR)
-    -out_dir <str>   Path to output dir ($OUT_DIR)
+    -out_file <str>  Path to output json ($JSON_OUT)
     
 HELP
 
@@ -308,40 +308,35 @@ sub processAccessSamples{
     my ($lims, $objects, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
-    my %dna_blood_samples_by_name = ();
     my %tissue_samples_by_coupe = ();
     
-    ## First gather info of certain samples to enrich DNA/RNA samples with later on
-    say "[INFO]   Storing temporary mappings for blood (by name) and tissue (by coupe) for later enrichment of DNA/RNA samples";
+    ## First gather info of all source samples
+    ## to enrich info of derivate samples of these later on
+    say "[INFO]   Storing temporary mappings of BLOOD and TISSUE samples for later enrichment of DNA/RNA samples";
     while ( my($main_id, $row_info) = each %$objects ){
         
         my $source = $row_info->{ 'sample_source' };        
-        my $id     = $row_info->{ 'sample_id' }; # is field "Sample_barcode" in Access LIMS
+        my $id     = $row_info->{ 'sample_id' };
         my $name   = $row_info->{ 'sample_name' };
-        my $coupe  = $row_info->{ 'coupes_barcode' };
-        my $status = $row_info->{ 'lab_status' };
-        my $failed = $status =~ m/failed/i;
-
-        ## Add to temporary mappings (used later on to enrich DNA/RNA samples)
+        my $coupe  = $row_info->{ 'coupes_barcode' } || NACHAR;
+        
+        ## Only need to store the ancestor samples
+        next unless ($source eq 'BLOOD' or $source eq 'TISSUE');
+        
+        ## Add to temporary ref sample mappings by sample name
         if ( $source eq 'BLOOD' and not isSkipValue($name) ){
-            if ( exists $blood_samples_by_name{ $name } and $failed ){
-                warn "[INFO]     Exclude mapping for BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
+            if ( exists $blood_samples_by_name{ $name } ){
+                warn "[WARN]     Sample with name \"$name\" already exists in mapping for sample ($id)";
             }else{
-                $blood_samples_by_name{ $name } = $row_info;
+                 $blood_samples_by_name{ $name } = $row_info;
             }
         }
-        elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ){
-            if ( exists $tissue_samples_by_coupe{ $coupe } and $failed ){
-                warn "[INFO]     Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed";
+        ## Add to temporary tumor sample mappings by coupe barcode
+        if ( not isSkipValue($coupe) ){
+            if ( exists $tissue_samples_by_coupe{ $coupe } ){
+                warn "[WARN]     Sample with coupe barcode \"$coupe\" already exists in mapping for sample ($name)";
             }else{
-                $tissue_samples_by_coupe{ $coupe } = $row_info;
-            }
-        }
-        elsif ( $source eq 'DNA-BLOOD' and not isSkipValue($name) ){
-            if ( exists $dna_blood_samples_by_name{ $name } and $failed ){
-                warn "[WARN]     Exclude mapping for DNA-BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
-            }else{
-                $dna_blood_samples_by_name{ $name } = $row_info;
+                 $tissue_samples_by_coupe{ $coupe } = $row_info;
             }
         }
     }
@@ -373,46 +368,45 @@ sub processAccessSamples{
         next if not $name or isSkipValue( $name );
         next if $name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         next if $name =~ /^(PMC\d{6})(T|R){1}/ms;
-        next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
-
+        next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
+        
         ## Enrich (DNA|RNA)-TISSUE samples with info from their TISSUE ancestor
         ## Enrich (DNA|RNA)-BLOOD samples with info from their BLOOD ancestor
         if ( $is_tissue ){
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    $object->{ $field } = $ancestor->{ $field };
+                    #if ( isSkipValue($object->{ $field }) ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    #}
                 }
+                
             }
         
-            ## If ref_sample_id absent: find blood counterpart by name
+            ## find blood counterpart and copy info
+            my $patient_string = $object->{ 'patient' };
+            my $ref_sample_name = $patient_string . 'R';
             my $ref_sample_id = $object->{ 'ref_sample_id' };
-            if ( $ref_sample_id eq "" ){
-                my $patient_string = $object->{ 'patient' };
-                $patient_string =~ s/\-//g; # string this point still with dashes
-                my $ref_sample_name = $patient_string . 'R';
-                
-                if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
-                    my $ref_sample = $dna_blood_samples_by_name{ $ref_sample_name };
+            if ( $ref_sample_id eq "" and $ref_sample_id ne NACHAR ){
+                if ( exists $blood_samples_by_name{ $ref_sample_name } ){
+                    my $ref_sample = $blood_samples_by_name{ $ref_sample_name };
                     $ref_sample_id = $ref_sample->{ 'sample_id' };
                     $object->{ 'ref_sample_id' } = $ref_sample_id;
                 }
             }
         }
         elsif ( $is_blood ){
-            if ( exists $blood_samples_by_name{ $name } ){
-                my $ancestor = $blood_samples_by_name{ $name };
-                $object->{ $_ } = $ancestor->{ $_ } foreach BLOOD_ANCESTOR_FIELDS;
-            }else{
-                warn "[WARN] Tried to enrich blood sample from BLOOD ancestor but seems absent (id:$id name:$name)\n"
+            my $ancestor = $blood_samples_by_name{ $name };
+            foreach my $field ( BLOOD_ANCESTOR_FIELDS ){
+                $object->{ $field } = $ancestor->{ $field };
             }
         }
         else{
             warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
         }
-
+        
         ## All other sample names should follow certain formats
-        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
+        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)\d{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
             my ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
                 
             $object->{ 'label' }   = $study;
@@ -441,18 +435,18 @@ sub processAccessSamples{
                 $object->{ 'project_name' } = $object->{ 'submission' };
             }
             else {
-                warn "[WARN] SKIPPING sample because of unkown center id \"$center\" (id:$id name:$name)\n" and next;
+                warn "[WARN] SKIPPING sample ($name): Unkown center id ($center)\n" and next;
             }
         }
         else{
-            warn "[WARN] SKIPPING sample from Access lims because of unknown name format (id:$id name:$name)\n" and next;
+            warn "[WARN] Skipped sample $name from Access lims because format is not as expected\n" and next;
         }
- 
+        
         ## Final sanity checks before storing
         my @fields_to_check = qw( submission analysis_type );
         foreach my $field ( @fields_to_check ){
-            if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
-                warn "[WARN] Sample stored but $field not present or defined (id:$id name:$name)\n";
+            if ( not $object->{ $field } ){
+                warn "[WARN] Storing sample but no $field defined (id:$id name:$name)\n";
             }
         }
         
@@ -510,21 +504,21 @@ sub processExcelSamples{
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
-            $analysis_type = 'SingleAnalysis';
-            $row_info->{ 'analysis_type' } = $analysis_type;
+            $row_info->{ 'analysis_type' } = 'SingleAnalysis';
         }
         elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq 'NoAnalysis' or $analysis_type eq '' or $analysis_type eq 'NA' ){
             ## NoBFX is the old term, FASTQ the new
-            $analysis_type = 'FASTQ';
-            $row_info->{ 'analysis_type' } = $analysis_type;
+            $row_info->{ 'analysis_type' } = 'FASTQ';
+        }
+        elsif ( $analysis_type eq 'BCL' ){
+            $row_info->{ 'analysis_type' } = 'BCL';
         }
         elsif ( $analysis_type eq 'Labonly' ){
-            $analysis_type = 'LabOnly';
-            $row_info->{ 'analysis_type' } = $analysis_type;
+            $row_info->{ 'analysis_type' } = 'LabOnly';
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
-            $analysis_type = 'SnpGenotyping';
-            $row_info->{ 'analysis_type' } = $analysis_type;
+            $row_info->{ 'analysis_type' } = 'SnpGenotyping';
+            next;
         }
         else {
             warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
