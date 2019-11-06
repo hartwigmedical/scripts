@@ -4,15 +4,21 @@ IN_BAM=$1
 
 MEM_USE=50
 PIGZ_THREADS=8
-PICARD_DIR=/data/common/tools/picard-tools_v1.141
-SAMBAMBA_DIR=/data/common/tools/sambamba_v0.6.5
+PICARD_DIR=/data/tools/picard-tools_v1.141
+SAMBAMBA_DIR=/data/tools/sambamba_v0.6.5
 OUT_DIR=./fastq
+
+if [[ "$( hostname )" == "datastore" ]]; then
+    PICARD_DIR=/data/common/tools/picard-tools_v1.141
+    SAMBAMBA_DIR=/data/common/tools/sambamba_v0.6.5
+fi
 
 if [[ ${IN_BAM} == "" || ${IN_BAM} == "-h" || ${IN_BAM} == "--help" ]]; then
     echo "-----"
     echo " Usage: $(basename $0) <BAM_FILE>"
     echo " Output will be in ${OUT_DIR}"
     echo " Using Picard dir ${PICARD_DIR}"
+    echo " Using Sambamba dir ${SAMBAMBA_DIR}"
     echo "-----"
     exit 1
 fi
@@ -23,6 +29,7 @@ OUT_BASE=$(dirname ${OUT_DIR})
 ## ---------------
 ## sanity checks
 if [[ ! -d ${PICARD_DIR} ]]; then echo "[ERROR] Picard dir not found (${PICARD_DIR})"; exit 1; fi
+if [[ ! -d ${SAMBAMBA_DIR} ]]; then echo "[ERROR] Sambamba dir not found (${SAMBAMBA_DIR})"; exit 1; fi
 if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${IN_BAM})"; exit 1; fi
 if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
