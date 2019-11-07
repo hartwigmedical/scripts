@@ -11,4 +11,4 @@ structural_vcf=$(locate_purple_structural_variants ${run_dir})
 credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
-do_load_structural_variants ${sample} ${structural_vcf} ${credentials} ${patient_db_jar} "$@"
+do_load_structural_variants_new ${sample} ${structural_vcf} ${credentials} ${patient_db_jar} "$@"
