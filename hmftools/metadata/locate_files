@@ -423,11 +423,16 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [ -z ${drivers_tsv} ]; then
-        echo "[ERROR] Unable to locate linx drivers catalog tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        local fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
+        if [ -z ${fusion_tsv} ]; then
+            echo "[ERROR] Unable to locate linx drivers catalog tsv in ${run_dir}. Exiting." >&2
+            exit 1
+        else
+            echo "[WARN] No linx driver catalog found for ${run_dir}, but fusions were found. Assume no drivers present!" >&2
+            drivers_tsv=/data/common/dbs/sv/empty.driver.catalog.tsv
+        fi
     fi
     echo ${drivers_tsv}
-
 }
 
 ########################################### Bachelor ##########################################
