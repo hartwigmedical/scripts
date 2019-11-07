@@ -10,7 +10,7 @@ if [ -z "${report_dates_tsv}" ]; then
 fi
 
 header=$( head -n 1 ${report_dates_tsv} )
-outputFile=$( cat ${report_dates_tsv} | grep -${month}-2019)
+outputFile=$( cat ${report_dates_tsv} | grep "-${month}-2019" )
 
 purity=$(echo ${outputFile} | awk '{print $5 /100}' )
 
