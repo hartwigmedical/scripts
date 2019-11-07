@@ -1,4 +1,4 @@
-SELECT count(distinct sampleId) FROM datarequestFiltered
+SELECT count(distinct sampleId) FROM datarequest
 WHERE sampleId IN
 (
 		SELECT sampleId FROM somaticVariant
