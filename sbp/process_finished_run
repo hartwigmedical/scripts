@@ -23,7 +23,7 @@ echo "[INFO] Copying set ${set} to processed path ${processed_path}"
 set_path=${processed_path}/${set}
 cp -r ${download_path}/${set} ${set_path}
 
-tumor_sample=$(load_tumor_sample_from_metadata ${set})
+tumor_sample=$(load_tumor_sample_from_metadata ${set_path})
 
 if [[ ${tumor_sample} =~ ^CORE ]]; then
     echo "[INFO] Data not loaded into database for ${set}. It is a CORE sample!"
