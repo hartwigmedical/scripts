@@ -11,4 +11,4 @@ prediction_file=$(locate_chord_pilot_prediction ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_chord_data_new ${sample} ${prediction_file} ${credentials} ${patient_db_jar}
+do_load_chord_data ${sample} ${prediction_file} ${credentials} ${patient_db_jar}

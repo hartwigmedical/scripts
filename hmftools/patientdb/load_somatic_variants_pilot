@@ -11,4 +11,4 @@ somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_somatic_variants_new ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} "$@"
+do_load_somatic_variants ${sample} ${somatic_vcf} ${credentials} ${patient_db_jar} "$@"

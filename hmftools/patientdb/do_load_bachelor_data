@@ -12,7 +12,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 bachelor_tsv=$(find -L ${bachelor_dir} -type f -name "*.bachelor.germline_variant.tsv")
 if [ -z ${bachelor_tsv} ]; then
-    echo "[WARN] Cannot find bachelor germline variants v1.9+"
+    echo "[WARN] Cannot find bachelor germline variants v1.9+. Skipping database loading for ${sample}}"
 else
     echo "[INFO] Loading bachelor germline variants for ${sample}"
 

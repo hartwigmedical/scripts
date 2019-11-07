@@ -21,9 +21,9 @@ bachelor_jar=$(locate_prod_bachelor)
 
 do_load_amber_data ${tumor_sample} ${run_dir}/amber ${credentials} ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
-do_load_somatic_variants_new ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
-do_load_structural_variants_new ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
+do_load_somatic_variants ${tumor_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
 do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
-do_load_metrics_data_new ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
-do_load_chord_data_new ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
+do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
+do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
 do_load_bachelor_data ${tumor_sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar}
