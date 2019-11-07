@@ -9,8 +9,9 @@ if [ -z "$set" ]; then
     exit 1
 fi
 
+echo "[INFO] Processing finished SBP run ${set}"
+
 download_path=/data/schuberg/downloaded_runs
-echo "[INFO] Downloading set ${set} to ${download_path}"
 download_set -s ${set} -p ${download_path}
 
 if [ ! -f ${download_path}/${set}/metadata.json ]; then
