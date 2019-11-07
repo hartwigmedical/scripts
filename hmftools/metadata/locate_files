@@ -131,7 +131,14 @@ locate_sage_somatics() {
 
 locate_purple_somatics() {
     local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
+    local purple_dir=${run_dir}/purple
+
+    local somatic_vcf=""
+
+    if [ -d ${purple_dir} ]; then
+        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
     if [ -z ${somatic_vcf} ]; then
         echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
         exit 1
@@ -366,7 +373,7 @@ locate_linx_reported_fusions() {
         exit 1
     fi
     
-    fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
+    local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
     if [ -z ${fusion_tsv} ]; then
         echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
         exit 1
@@ -397,6 +404,7 @@ locate_linx_viral_insertions() {
         echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
         exit 1
     fi
+
     local viral_insertion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
     if [ -z ${viral_insertion_tsv} ]; then
         echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
@@ -424,30 +432,15 @@ locate_linx_drivers() {
 
 ########################################### Bachelor ##########################################
 
-locate_bachelor_germline_variants_v1_8() {
+locate_bachelor_germline_variants() {
     local run_dir=$1
-    local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*_germline_variants.csv")
-    if [ -z ${bachelor_csv} ]; then
-        local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_output.csv")
-        local bachelor_found_nothing=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_found_no_variants")
-        if [ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]; then
-            echo "[ERROR] Unable to locate bachelor v1.8 output in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
-    fi
-    echo ${bachelor_csv}
-}
-
-locate_bachelor_germline_variants_v1_9() {
-    local run_dir=$1
-    local bachelor_tsv=$(find -L ${run_dir}/bachelor_pilot/ -type f -name "*.bachelor.germline_variant.tsv")
+    local bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
     if [ -z ${bachelor_tsv} ]; then
-        echo "[ERROR] Unable to locate bachelor v1.9 tsv output in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate bachelor tsv output in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${bachelor_tsv}
 }
-
 
 ############################################# CHORD ###########################################
 
