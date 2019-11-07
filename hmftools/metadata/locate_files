@@ -423,7 +423,7 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [ -z ${drivers_tsv} ]; then
-        echo "[ERROR] Unable to locate drivers catalog tsv in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate linx drivers catalog tsv in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${drivers_tsv}
@@ -436,8 +436,8 @@ locate_bachelor_germline_variants() {
     local run_dir=$1
     local bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
     if [ -z ${bachelor_tsv} ]; then
-        echo "[ERROR] Unable to locate bachelor tsv output in ${run_dir}. Exiting." >&2
-        exit 1
+        echo "[WARN] Cannot find bachelor v1.9+ output. Assuming bachelor has not found any variants for ${run_dir}!"
+        bachelor_tsv=/data/common/dbs/bachelor/empty.bachelor.germline_variant.tsv
     fi
     echo ${bachelor_tsv}
 }
