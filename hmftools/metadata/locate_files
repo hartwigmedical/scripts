@@ -176,16 +176,6 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
-locate_purple_qc() {
-    local run_dir=$1
-    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
-    if [ -z ${purple_qc_file} ]; then
-        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_qc_file}
-}
-
 locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -201,6 +191,26 @@ locate_purple_pilot_purity() {
     fi
 
     echo ${purple_purity_file}
+}
+
+locate_purple_qc() {
+    local run_dir=$1
+    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
+    if [ -z ${purple_qc_file} ]; then
+        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_qc_file}
+}
+
+locate_purple_drivers() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
+    if [ -z ${purple_driver_tsv} ]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_driver_tsv}
 }
 
 locate_purple_gene_copynumbers() {
@@ -423,13 +433,10 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [ -z ${drivers_tsv} ]; then
-        local fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
-        if [ -z ${fusion_tsv} ]; then
-            echo "[ERROR] Unable to locate linx drivers catalog tsv in ${run_dir}. Exiting." >&2
+        drivers_tsv=$(locate_purple_drivers ${run_dir})
+        if [ -z ${drivers_tsv} ]; then
+            echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
             exit 1
-        else
-            echo "[WARN] No linx driver catalog found for ${run_dir}, but fusions were found. Assume no drivers present!" >&2
-            drivers_tsv=/data/common/dbs/sv/empty.driver.catalog.tsv
         fi
     fi
     echo ${drivers_tsv}
