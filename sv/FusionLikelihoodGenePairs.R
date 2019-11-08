@@ -66,8 +66,8 @@ annotate_proximate_svs<-function(genePairData,cohortSVs,log=F)
   genePairData$ExpGenePairCount=0
   genePairData$ExpLocalFusions=0
   
-  localSvThreshold=1e6
-  
+  localSvThreshold=5e5
+
   typeLengths = genePairData %>% group_by(Type,LengthMin,LengthMax) %>% count
   genePairResults = data.frame(matrix(ncol=ncol(genePairData), nrow=0))
   index = 1
@@ -111,12 +111,20 @@ annotate_proximate_svs<-function(genePairData,cohortSVs,log=F)
       
       genePairCount = nrow(cohortSubset %>% 
                              filter((grepl(geneIdUp,GeneStart)&grepl(geneIdDown,GeneEnd))|(grepl(geneIdDown,GeneStart)&grepl(geneIdUp,GeneEnd))))
+
+      geneMidpointUp = (geneStartUp+geneEndUp)/2
+      geneMidpointDown = (geneStartDown+geneEndDown)/2
+
+      rangeStartUp = pmin(geneStartUp,geneMidpointUp-localSvThreshold)
+      rangeEndUp = pmax(geneEndUp,geneMidpointUp+localSvThreshold)
+      rangeStartDown = pmin(geneStartDown,geneMidpointDown-localSvThreshold)
+      rangeEndDown = pmax(geneEndDown,geneMidpointDown+localSvThreshold)
       
       # count number of SVs in vacinity
-      cohortSubset = cohortSubset %>% mutate(StartInGeneUp=ChrStart==chrUp&PosStart>geneStartUp-localSvThreshold&PosStart<geneEndUp+localSvThreshold,
-                                           StartInGeneDown=ChrStart==chrDown&PosStart>geneStartDown-localSvThreshold&PosStart<geneEndDown+localSvThreshold,
-                                           EndInGeneUp=ChrEnd==chrUp&PosEnd>geneStartUp-localSvThreshold&PosEnd<geneEndUp+localSvThreshold,
-                                           EndInGeneDown=ChrEnd==chrDown&PosEnd>geneStartDown-localSvThreshold&PosEnd<geneEndDown+localSvThreshold)
+      cohortSubset = cohortSubset %>% mutate(StartInGeneUp=ChrStart==chrUp&PosStart>rangeStartUp&PosStart<rangeEndUp,
+                                           StartInGeneDown=ChrStart==chrDown&PosStart>rangeStartDown&PosStart<rangeEndDown,
+                                           EndInGeneUp=ChrEnd==chrUp&PosEnd>rangeStartUp&PosEnd<rangeEndUp,
+                                           EndInGeneDown=ChrEnd==chrDown&PosEnd>rangeStartDown&PosEnd<rangeEndDown)
       
       localCount = nrow(cohortSubset %>% filter((StartInGeneUp|StartInGeneDown)&(EndInGeneUp|EndInGeneDown)))
   
@@ -125,16 +133,18 @@ annotate_proximate_svs<-function(genePairData,cohortSVs,log=F)
       
       sameChromosome = (as.character(chrUp)==as.character(chrDown))
       
-      distanceBetweenGenes = ifelse(sameChromosome,pmax(geneStartUp,geneStartDown)-pmin(geneEndUp,geneEndDown),0)
+      distanceBetweenRanges = ifelse(sameChromosome,pmax(rangeStartUp,rangeStartDown)-pmin(rangeEndUp,rangeEndDown),0)
       
-      localSvDistance = ifelse(!sameChromosome|distanceBetweenGenes>localSvThreshold*2,
-                               (geneEndUp-geneStartUp)+(geneEndDown-geneStartDown)+localSvThreshold*4,
-                               pmax(geneEndUp,geneEndDown)-pmin(geneStartUp,geneStartDown)+localSvThreshold*2)
+      localSvDistance = ifelse(!sameChromosome|distanceBetweenRanges>0,
+                               (rangeEndUp-rangeStartUp)+(rangeEndDown-rangeStartDown),
+                               pmax(rangeEndUp,rangeEndDown)-pmin(rangeStartUp,rangeStartDown))
       
       if(log)
       {
-        print(sprintf("geneUp(%s %d-> %d) geneDown(%s %d-> %d) distance(%d) localSvDistance(%d)", 
-                      geneNameUp, geneStartUp, geneEndUp, geneNameDown, geneStartDown, geneEndDown, distanceBetweenGenes, localSvDistance))
+        print(sprintf("geneUp(%s %d-> %d len=%d) geneDown(%s %d-> %d len=%d) distance(%d) localSvDistance(%d)", 
+                      geneNameUp, geneStartUp, geneEndUp, geneEndUp-geneStartUp, 
+                      geneNameDown, geneStartDown, geneEndDown, geneEndDown-geneStartDown, 
+                      distanceBetweenRanges, localSvDistance))
       }
       
       gpSubset = gpSubset %>% mutate(ExpGenePairCount=GenePairRate*fullGenome/localSvDistance*LocalSvCount,
@@ -147,11 +157,11 @@ annotate_proximate_svs<-function(genePairData,cohortSVs,log=F)
   return (genePairResults)
 }
 
-# tmp = annotate_proximate_svs(head(lowProbPairs,10),cohortSVs,F)
+# tmp = annotate_proximate_svs(lowProbPairs %>% filter(GenePair %in% c('TMPRSS2_ERG','AUTS2_AUTS2')),cohortSVs,T)
 # View(tmp)
 
 
-annotate_fusion_data<-function(genePairData,unfilteredFusions)
+annotate_fusion_data<-function(genePairData,unfilteredFusions,byTyeAndLength=T)
 {
   genePairData$CancerTypes = ""
   genePairData$FusedExons = ""
@@ -166,117 +176,55 @@ annotate_fusion_data<-function(genePairData,unfilteredFusions)
   {
     gpData = genePairData[i,]
     genePair = gpData$GenePair
-    type = as.character(gpData$Type)
-    lengthMin = gpData$LengthMin
-    lengthMax = gpData$LengthMax
     
     print(paste(i,': ',genePair,' - adding fusion annotations',sep=''))
+
+    if(byTyeAndLength)
+    {
+      type = as.character(gpData$Type)
+      lengthMin = gpData$LengthMin
+      lengthMax = gpData$LengthMax
+      gpFusions = unfilteredFusions %>% filter(GenePair==genePair&Type==type&LengthMin==lengthMin&LengthMax==lengthMax)
+    }
+    else
+    {
+      gpFusions = unfilteredFusions %>% filter(GenePair==genePair)
+    }
     
-    gpFusions = unfilteredFusions %>% filter(GenePair==genePair&Type==type&LengthMin==lengthMin&LengthMax==lengthMax)
     fusionCount = nrow(gpFusions)
     
-    # cancer types
-    fusionsByType = gpFusions %>% group_by(CancerType) %>% count() %>% arrange(-n)
-    
-    ctInfo = ""
-    
-    for(j in 1:nrow(fusionsByType))
+    if(fusionCount>0)
     {
-      cancerType = fusionsByType[j,1]
-      count = fusionsByType[j,2]
-      if(count > 0.25*fusionCount)
-      {
-        ctStr = paste(cancerType,'=',round(count/fusionCount*100),'%',sep='')
-        ctInfo = ifelse(j==1,ctStr,paste(ctInfo,ctStr,sep=';'))
-      }
-      else
-      {
-        break
-      }
-    }
-    
-    genePairData[i,which(colnames(genePairData)=='CancerTypes')] = ctInfo
-    
-    # exonic fusions 
-    genePairData[i,which(colnames(genePairData)=='ExonicCount')] = nrow(gpFusions %>% filter(RegionTypeUp=='Exonic'|RegionTypeDown=='Exonic'))
-
-    # fused exons
-    fusionsByType = gpFusions %>% group_by(FusedExonUp,FusedExonDown) %>% count() %>% arrange(-n)
-    
-    exonInfo = ""
-    
-    for(j in 1:nrow(fusionsByType))
-    {
-      fbt = fusionsByType[j,]
-      count = fbt$n
+      # cancer types
+      fusionsByType = gpFusions %>% group_by(CancerType) %>% count() %>% arrange(-n)
       
-      if(count > 0.25*fusionCount)
-      {
-        exonStr = paste(fbt$FusedExonUp,'->',fbt$FusedExonDown,'=',round(count/fusionCount*100),'%',sep='')
-        exonInfo = ifelse(j==1,exonStr,paste(exonInfo,exonStr,sep=';'))
-      }
-      else
-      {
-        break
-      }
-    }
-    
-    genePairData[i,which(colnames(genePairData)=='FusedExons')] = exonInfo
-    
-    # coding context
-    fusionsByType = gpFusions %>% group_by(CodingTypeUp,CodingTypeDown) %>% count() %>% arrange(-n)
-    
-    ctInfo = ""
-    
-    for(j in 1:nrow(fusionsByType))
-    {
-      fbt = fusionsByType[j,]
-      count = fbt$n
+      ctInfo = ""
       
-      if(count > 0.25*fusionCount)
+      for(j in 1:nrow(fusionsByType))
       {
-        str = paste(fbt$CodingTypeUp,'->',fbt$CodingTypeDown,'=',round(count/fusionCount*100),'%',sep='')
-        ctInfo = ifelse(j==1,str,paste(ctInfo,str,sep=';'))
+        cancerType = fusionsByType[j,1]
+        count = fusionsByType[j,2]
+        if(count > 0.25*fusionCount)
+        {
+          ctStr = paste(cancerType,'=',round(count/fusionCount*100),'%',sep='')
+          ctInfo = ifelse(j==1,ctStr,paste(ctInfo,ctStr,sep=';'))
+        }
+        else
+        {
+          break
+        }
       }
-      else
-      {
-        break
-      }
-    }
-    
-    genePairData[i,which(colnames(genePairData)=='FusionContexts')] = ctInfo
-    
-    # resolved type
-    fusionsByType = gpFusions %>% group_by(ResolvedType) %>% count() %>% arrange(-n)
-    
-    rtInfo = ""
-    
-    for(j in 1:nrow(fusionsByType))
-    {
-      fbt = fusionsByType[j,]
-      resolvedType = fbt$ResolvedType
-      count = fbt$n
       
-      if(count > 0.25*fusionCount)
-      {
-        str = paste(resolvedType,'=',round(count/fusionCount*100),'%',sep='')
-        rtInfo = ifelse(j==1,str,paste(rtInfo,str,sep=';'))
-      }
-      else
-      {
-        break
-      }
-    }
-    
-    genePairData[i,which(colnames(genePairData)=='FusionClusters')] = rtInfo
-    
-    colIndex = which(colnames(genePairData)=='RepeatedPositions')
-    
-    # check for repeated positions
-    fusionsByType = gpFusions %>% group_by(PosUp=round(PosUp,-1),PosDown=round(PosDown,-1)) %>% count() %>% filter(n>1) %>% arrange(-n)
-    
-    if(nrow(fusionsByType) > 0)
-    {
+      genePairData[i,which(colnames(genePairData)=='CancerTypes')] = ctInfo
+      
+      # exonic fusions 
+      genePairData[i,which(colnames(genePairData)=='ExonicCount')] = nrow(gpFusions %>% filter(RegionTypeUp=='Exonic'|RegionTypeDown=='Exonic'))
+  
+      # fused exons
+      fusionsByType = gpFusions %>% group_by(FusedExonUp,FusedExonDown) %>% count() %>% arrange(-n)
+      
+      exonInfo = ""
+      
       for(j in 1:nrow(fusionsByType))
       {
         fbt = fusionsByType[j,]
@@ -284,8 +232,81 @@ annotate_fusion_data<-function(genePairData,unfilteredFusions)
         
         if(count > 0.25*fusionCount)
         {
-          genePairData[i,colIndex] = TRUE
+          exonStr = paste(fbt$FusedExonUp,'->',fbt$FusedExonDown,'=',round(count/fusionCount*100),'%',sep='')
+          exonInfo = ifelse(j==1,exonStr,paste(exonInfo,exonStr,sep=';'))
+        }
+        else
+        {
           break
+        }
+      }
+      
+      genePairData[i,which(colnames(genePairData)=='FusedExons')] = exonInfo
+      
+      # coding context
+      fusionsByType = gpFusions %>% group_by(CodingTypeUp,CodingTypeDown) %>% count() %>% arrange(-n)
+      
+      ctInfo = ""
+      
+      for(j in 1:nrow(fusionsByType))
+      {
+        fbt = fusionsByType[j,]
+        count = fbt$n
+        
+        if(count > 0.25*fusionCount)
+        {
+          str = paste(fbt$CodingTypeUp,'->',fbt$CodingTypeDown,'=',round(count/fusionCount*100),'%',sep='')
+          ctInfo = ifelse(j==1,str,paste(ctInfo,str,sep=';'))
+        }
+        else
+        {
+          break
+        }
+      }
+      
+      genePairData[i,which(colnames(genePairData)=='FusionContexts')] = ctInfo
+      
+      # resolved type
+      fusionsByType = gpFusions %>% group_by(ResolvedType) %>% count() %>% arrange(-n)
+      
+      rtInfo = ""
+      
+      for(j in 1:nrow(fusionsByType))
+      {
+        fbt = fusionsByType[j,]
+        resolvedType = fbt$ResolvedType
+        count = fbt$n
+        
+        if(count > 0.25*fusionCount)
+        {
+          str = paste(resolvedType,'=',round(count/fusionCount*100),'%',sep='')
+          rtInfo = ifelse(j==1,str,paste(rtInfo,str,sep=';'))
+        }
+        else
+        {
+          break
+        }
+      }
+      
+      genePairData[i,which(colnames(genePairData)=='FusionClusters')] = rtInfo
+      
+      colIndex = which(colnames(genePairData)=='RepeatedPositions')
+      
+      # check for repeated positions
+      fusionsByType = gpFusions %>% group_by(PosUp=round(PosUp,-1),PosDown=round(PosDown,-1)) %>% count() %>% filter(n>1) %>% arrange(-n)
+      
+      if(nrow(fusionsByType) > 0)
+      {
+        for(j in 1:nrow(fusionsByType))
+        {
+          fbt = fusionsByType[j,]
+          count = fbt$n
+          
+          if(count > 0.25*fusionCount)
+          {
+            genePairData[i,colIndex] = TRUE
+            break
+          }
         }
       }
     }
@@ -293,88 +314,6 @@ annotate_fusion_data<-function(genePairData,unfilteredFusions)
   
   return (genePairData)
 }
-
-generate_intron_data<-function(tp53ExonData)
-{
-  intronData = data.frame(matrix(ncol=4, nrow=0))
-  colnames(intronData) = c('IntronStart','IntronEnd','IntronPhase','IntronRank')
-  intronCount = nrow(tp53ExonData)-1 
-  
-  for(i in 1:intronCount)
-  {
-    exonPrev=tp53ExonData[i,]
-    exonNext=tp53ExonData[i+1,]
-    
-    intronData[i,1] = exonPrev$ExonEnd
-    intronData[i,2] = exonNext$ExonStart
-    intronData[i,3] = ifelse(exonPrev$Strand==1,exonPrev$ExonEndPhase,exonNext$ExonEndPhase)
-    intronData[i,4] = exonPrev$ExonRank-1
-  }
-  
-  return (intronData)
-}
-
-generate_fusion_intron_plot<-function(transId,svType,unfilteredFusions,ensemblTransExonData,cohortSVs)
-{
-  fusions = unfilteredFusions %>% filter(TranscriptUp==transId&TranscriptDown==transId&Type==svType) %>% 
-    mutate(SvLength=PosUp-PosDown) %>% arrange(SvLength)
-  
-  if(nrow(fusions) == 0)
-  {
-    print("no fusions found")
-    return(fusions)
-  }
-  
-  print(paste("fusions found: ",nrow(fusions),sep=''))
-  
-  rowIndex = data.frame(as.numeric(as.character(rownames(fusions))))
-  colnames(rowIndex) <- c("FusionIndex")
-  fusions = cbind(fusions,rowIndex)
-  
-  geneId = fusions[1,which(colnames(fusions)=='GeneIdUp')]
-  geneName = fusions[1,which(colnames(fusions)=='GeneNameUp')]
-  # print(geneId)
-  
-  exonData = ensemblTransExonData %>% filter(Trans==transId)
-  intronData = generate_intron_data(exonData)
-  
-  intronData = intronData %>% mutate(PhaseColour=ifelse(IntronPhase==-1,'grey',
-                                                        ifelse(IntronPhase==0,'yellow3',
-                                                               ifelse(IntronPhase==1,'skyblue2','tomato2'))))
-  
-  transStart = min(exonData$ExonStart)
-  transEnd = max(exonData$ExonEnd)
-  
-  geneSVs = cohortSVs %>% filter(Type==svType&grepl(geneId,GeneStart)&grepl(geneId,GeneEnd)&!(SampleId %in% fusions$SampleId))
-  geneSVs = geneSVs %>% filter(PosStart>=transStart&PosEnd<=transEnd) %>% arrange(Length)
-  
-  print(paste('SVs in gene-pair=', nrow(geneSVs),sep=''))
-  
-  rowIndex = data.frame(as.numeric(as.character(rownames(geneSVs))))
-  colnames(rowIndex) <- c("SvIndex")
-  geneSVs = cbind(geneSVs,rowIndex)
-  
-  phaseColours = c('Red','Yellow','Green','Grey')
-  
-  plot = (ggplot() 
-          + geom_point(data=fusions, aes(x=PosDown,y=FusionIndex*15,colour='PosDown'))
-          + geom_point(data=fusions, aes(x=PosUp,y=FusionIndex*15,colour='PosUp'))
-          + geom_text(data=fusions, aes(x=pmax(PosDown,PosUp)+500,y=FusionIndex*15,label=paste(SampleId,CancerType,sep=' '),hjust=0, vjust=0))
-          + geom_rect(data=intronData, aes(xmin=IntronStart, xmax=IntronEnd, ymin=0, ymax=10), fill=intronData$PhaseColour)
-          + geom_text(data=intronData, aes(x=(IntronStart+IntronEnd)/2,y=5,label=IntronRank))
-          + labs(y='SampleId')
-          + ggtitle(sprintf("Same Gene Fusion: %s-%s %s", geneId, geneName, svType)))
-  
-  if(nrow(geneSVs) > 0)
-  {
-    plot = (plot 
-            + geom_point(data=geneSVs, aes(x=PosStart,y=-SvIndex/nrow(geneSVs)*20,colour='PosStart'))
-            + geom_point(data=geneSVs, aes(x=PosEnd,y=-SvIndex/nrow(geneSVs)*20,colour='PosEnd')))
-  }
-  
-  return (plot)
-}
-
 
 
 # 1. Get counts of all fusion, including those usually filtered out for FLC analysis
@@ -404,13 +343,19 @@ unfilteredFusions = unfilteredFusions %>% mutate(ExceedsDownPreGeneLimit=((Stran
                                                                           |(StrandDown==-1&PosDown-TransEndDown>maxPreGeneDistance)),
                                                  Filtered=PhaseMatched=='false'|ExonsSkippedUp>0|ExonsSkippedDown>0|ExceedsDownPreGeneLimit)
 
+sampleCancerTypes = highestPurityCohort %>% select(SampleId=sampleId,CancerType=cancerType)
+
 unfilteredFusions = merge(unfilteredFusions,sampleCancerTypes,by='SampleId',all.x=T)
 View(unfilteredFusions %>% group_by(CancerType) %>% count)
+View(unfilteredFusions %>% group_by(Type,LengthMin,LengthMax) %>% count)
 View(unfilteredFusions %>% filter(PhaseMatched=='true') %>% group_by(KnownType,ExonsSkipped=(ExonsSkippedUp>0|ExonsSkippedDown>0)|ExceedsDownPreGeneLimit) %>% count)
 View(unfilteredFusions %>% filter(Filtered) %>% group_by(KnownType,Filtered) %>% count)
 View(unfilteredFusions %>% filter(!Filtered) %>% group_by(SameSV) %>% count)
 View(unfilteredFusions)
 # View(unfilteredFusions %>% filter(KnownType==''&(ExonsSkippedUp>0|ExonsSkippedDown>0)))
+
+View(unfilteredFusions %>% group_by(GenePair,SampleId) %>% count %>% filter(n>1))
+
 
 # 1b
 # Produce a set of gene-pairs to calculate likelihood for
@@ -419,6 +364,8 @@ View(unfilteredFusions)
 
 cohortGenePairSet = unfilteredFusions %>% group_by(SampleId,GenePair,GeneIdUp,GeneIdDown,KnownType) %>% count() %>% 
   group_by(GenePair,GeneIdUp,GeneIdDown,KnownType) %>% summarise(SampleCount=n()) %>% filter(KnownType=='Known'|SampleCount>=2)
+cohortGenePairSet = cohortGenePairSet %>% ungroup()
+
 View(cohortGenePairSet)
 nrow(cohortGenePairSet)
 
@@ -427,26 +374,21 @@ blacklistedCosmic = read.csv('~/data/sv/fusion_like/blacklisted_cosmic_fusions.c
 blacklistedCosmic = merge(blacklistedCosmic,ensemblGeneData %>% select(GeneIdUp=GeneId,GeneName),by.x='GeneNameUp',by.y='GeneName',all.x=T)
 blacklistedCosmic = merge(blacklistedCosmic,ensemblGeneData %>% select(GeneIdDown=GeneId,GeneName),by.x='GeneNameDown',by.y='GeneName',all.x=T)
 blacklistedCosmic = blacklistedCosmic %>% mutate(GenePair=paste(GeneNameUp,GeneNameDown,sep='_'),
-                                                 KnownType='',
+                                                 KnownType='Blacklist',
                                                  SampleCount=0)
 
-blacklistedCosmic = blacklistedCosmic %>% filter(!(GenePair %in% cohortGenePairSet$GenePair))
+cohortGenePairSet = cohortGenePairSet %>% filter(!(GenePair %in% blacklistedCosmic$GenePair))
+
+# blacklistedCosmic = blacklistedCosmic %>% filter(!(GenePair %in% cohortGenePairSet$GenePair))
 View(blacklistedCosmic)
 
 
-
-genePairSet = rbind(cohortGenePairSet %>% ungroup(),blacklistedCosmic %>% select(GenePair,GeneIdUp,GeneIdDown,KnownType,SampleCount))
+genePairSet = rbind(cohortGenePairSet,blacklistedCosmic %>% select(GenePair,GeneIdUp,GeneIdDown,KnownType,SampleCount))
 View(genePairSet)
-write.csv(genePairSet %>% group_by(GeneIdUp,GeneIdDown) %>% count() %>% select(GeneIdUp,GeneIdDown), # check for duplicates
-          '~/data/sv/fusion_like/cohort_gene_pairs.csv',row.names = F, quote = F)
-
-View(genePairSet %>% group_by(GeneIdUp,GeneIdDown) %>% count())
 
 
 # known pairs - for now only including known pairs which feature at least once in our cohort
 knownPairs = read.csv('~/data/knownFusionPairs.csv')
-
-View(knownPairs)
 knownFusionPairs = merge(knownPairs,ensemblGeneData %>% select(GeneIdUp=GeneId,GeneName),by.x='FiveGene',by.y='GeneName',all.x=T)
 knownFusionPairs = merge(knownFusionPairs,ensemblGeneData %>% select(GeneIdDown=GeneId,GeneName),by.x='ThreeGene',by.y='GeneName',all.x=T)
 knownFusionPairs = knownFusionPairs %>% filter(!(is.na(GeneIdUp)|is.na(GeneIdDown)))
@@ -454,15 +396,20 @@ knownFusionPairs = knownFusionPairs %>% mutate(GenePair=paste(FiveGene,ThreeGene
 View(knownFusionPairs)
 write.csv(knownFusionPairs %>% select(GeneIdUp,GeneIdDown),'~/data/sv/fusion_like/knownFusionPairs.csv',row.names = F, quote = F)
 
-knownFusionPairs = knownFusionPairs %>% select(GenePair,GeneIdUp,GeneIdDown) %>% mutate(SampleCount=1)
+knownFusionPairs = knownFusionPairs %>% select(GenePair,GeneIdUp,GeneIdDown) %>% mutate(KnownType='Known',SampleCount=1)
 nrow(knownFusionPairs)
 View(knownFusionPairs %>% filter(!(GenePair %in% cohortGenePairSet$GenePair)))
 
-genePairSet = rbind(cohortGenePairSet %>% ungroup(),knownFusionPairs %>% filter(!(GenePair %in% cohortGenePairSet$GenePair)))
+genePairSet = rbind(genePairSet,knownFusionPairs %>% filter(!(GenePair %in% cohortGenePairSet$GenePair)))
 nrow(genePairSet)
 View(genePairSet)
 
-write.csv(genePairSet %>% select(GeneIdUp,GeneIdDown),'~/data/sv/fusion_like/cohort_known_gene_pairs.csv',row.names = F, quote = F)
+write.csv(genePairSet %>% group_by(GeneIdUp,GeneIdDown) %>% count() %>% select(GeneIdUp,GeneIdDown), # check for duplicates
+          '~/data/sv/fusion_like/cohort_gene_pairs.csv',row.names = F, quote = F)
+
+View(genePairSet %>% group_by(KnownType) %>% count())
+
+View(genePairSet %>% group_by(GeneIdUp,GeneIdDown) %>% count())
 
 
 # 2. Load FLC calc data - expected fusion and gene-pair SV rates
@@ -474,33 +421,44 @@ nrow(flcSpecificPairs)
 flcSpecificPairs = flcSpecificPairs %>% mutate(GenePair=paste(GeneNameUp,GeneNameDown,sep='_'),
                                                FusionVsGenePairRateRatio=ifelse(GenePairRate>0,round(FusionRate/GenePairRate,4),0))
 
-# for now limit to those genes-pairs actually observed in our cohort
-# flcSpecificPairs = flcSpecificPairs %>% filter(GenePair %in% gpActFusions$GenePair)
-
-gpActFusions = unfilteredFusions %>% filter(GenePair %in% flcSpecificPairs$GenePair) %>% 
+# work out actual fusion counts per pair
+# if a sample has more than 1 fusion for a given pair, take the shortest
+gpActFusions = unfilteredFusions %>% filter(GenePair %in% genePairSet$GenePair) %>% 
   filter(!Filtered) %>% 
-  group_by(SampleId,GenePair,Type,LengthMin,LengthMax) %>% count() %>% group_by(GenePair,Type,LengthMin,LengthMax) %>% summarise(ActFusions=n())
+  group_by(SampleId,GenePair,Type,LengthMin,LengthMax) %>% count() %>% 
+  arrange(SampleId,GenePair,LengthMin) %>% group_by(GenePair,SampleId) %>% 
+  summarise(Type=first(Type),LengthMin=first(LengthMin),LengthMax=first(LengthMax)) %>%
+  group_by(GenePair,Type,LengthMin,LengthMax) %>% summarise(ActFusions=n())
 
-gpActFusionsUnfiltered = unfilteredFusions %>% filter(GenePair %in% flcSpecificPairs$GenePair) %>% 
-  group_by(SampleId,GenePair,Type,LengthMin,LengthMax) %>% count() %>% group_by(GenePair,Type,LengthMin,LengthMax) %>% summarise(ActFusionsNF=n())
+View(gpActFusions)
 
-gpActFusions = merge(gpActFusions,gpActFusionsUnfiltered,by=c('GenePair','Type','LengthMin','LengthMax'),all.x=T)
+gpActFusionsUnfiltered = unfilteredFusions %>% filter(GenePair %in% genePairSet$GenePair) %>% 
+  group_by(SampleId,GenePair,Type,LengthMin,LengthMax) %>% count() %>% 
+  arrange(SampleId,GenePair,LengthMin) %>% group_by(GenePair,SampleId) %>% 
+  summarise(Type=first(Type),LengthMin=first(LengthMin),LengthMax=first(LengthMax)) %>%
+  group_by(GenePair,Type,LengthMin,LengthMax) %>% summarise(ActFusionsNF=n())
+
+#gpActFusionsUnfiltered = unfilteredFusions %>% filter(GenePair %in% genePairSet$GenePair) %>% 
+#  group_by(SampleId,GenePair,Type,LengthMin,LengthMax) %>% count() %>% group_by(GenePair,Type,LengthMin,LengthMax) %>% summarise(ActFusionsNF=n())
+
+gpActFusions = merge(gpActFusionsUnfiltered,gpActFusions,,by=c('GenePair','Type','LengthMin','LengthMax'),all.x=T)
+gpActFusions[is.na(gpActFusions)] = 0
 
 View(gpActFusions)
 View(gpActFusions %>% filter(ActFusions>1))
 
+lowProbPairs = within(lowProbPairs,rm(ActFusions))
+lowProbPairs = within(lowProbPairs,rm(ActFusionsNF))
+lowProbPairs = merge(lowProbPairs,gpActFusions,by=c('GenePair','Type','LengthMin','LengthMax'),all.x=T)
+View(lowProbPairs)
 
 flcSpecificPairs = merge(flcSpecificPairs,gpActFusions,by=c('GenePair','Type','LengthMin','LengthMax'),all.x=T)
 
 # merge in actual observed counts by type
-flcSpecificPairs = merge(flcSpecificPairs,cohortSvSummary %>% select(-CountAll),by=c('Type','LengthMin','LengthMax'),all.x=T)
+flcSpecificPairs = merge(flcSpecificPairs,cohortSvSummary,by=c('Type','LengthMin','LengthMax'),all.x=T)
 flcSpecificPairs[is.na(flcSpecificPairs)] = 0
 
-# View(flcSpecificPairs)
-
-# limit to those observed 1+ times
-flcSpecificPairs = flcSpecificPairs %>% filter(ActFusionsNF>=1)
-nrow(flcSpecificPairs) # 10121
+# View(flcSpecificPairs %>% group_by(Type,LengthMin,LengthMax) %>% count())
 
 flcSpecificPairs = flcSpecificPairs %>% 
   mutate(ExpFusions=FusionRate*CohortCount,
@@ -518,28 +476,35 @@ flcSpecificPairs = merge(flcSpecificPairs,ensemblGeneData %>% select(GeneIdDown=
 
 flcSpecificPairs = flcSpecificPairs %>% mutate(ReverseGenePair=paste(GeneNameDown,GeneNameUp,sep='_'))
 
+oncoGenes = read.csv('~/data/sv/fusion_like/reportable_oncogenes.csv')
+View(oncoGenes)
+
 #  annotate fusion with known gene and fusion data
 flcSpecificPairs = flcSpecificPairs %>% mutate(
   KnownPair=GenePair %in% knownFusionPairs$GenePair, 
+  BlacklistCosmic=GenePair %in% blacklistedCosmic$GenePair, 
   RevKnownPair=ReverseGenePair %in% knownFusionPairs$GenePair, 
   ThreePrimeProm=GeneNameDown %in% threePrimeProm$GeneName,
   FivePrimeProm=GeneNameUp %in% fivePrimeProm$GeneName,
   FragileSite=(GeneNameUp %in% fragileSiteGenes$GeneName)|(GeneNameDown %in% fragileSiteGenes$GeneName),
+  ThreePrimeOncogene=(GeneNameDown %in% oncoGenes$GeneName),
   KnownTSG=(GeneNameUp %in% topTsgGenes$GeneName)|(GeneNameDown %in% topTsgGenes$GeneName))
 
 View(flcSpecificPairs)
 
-# lowProbPairs = flcSpecificPairs %>% filter(ActFusionsNF>=2&Prob<0.001)
+# limit to those observed 1+ times
+flcSpecificPairs = flcSpecificPairs %>% filter(ActFusionsNF>=1|KnownPair|BlacklistCosmic)
+nrow(flcSpecificPairs) # 10509
 
 # for now remove the probability filter
-lowProbPairs = flcSpecificPairs %>% filter(ActFusionsNF>=2|KnownPair)
-nrow(lowProbPairs) # 4243
+lowProbPairs = flcSpecificPairs %>% filter(ActFusionsNF>=2|KnownPair|BlacklistCosmic)
+nrow(lowProbPairs) # 4633
 View(lowProbPairs)
 
 # to lower the set being evaluated, ignore any unknown gene-pairs with high probability
 # View(lowProbPairs %>% filter(!KnownPair&!ThreePrimeProm&!FivePrimeProm) %>% filter(Prob>0.01) %>% arrange(Prob))
-lowProbPairs = lowProbPairs %>% filter(KnownPair|ThreePrimeProm|FivePrimeProm|FragileSite|Prob<0.01|(GenePair %in% blacklistedCosmic$GenePair))
-nrow(lowProbPairs)
+lowProbPairs = lowProbPairs %>% filter(KnownPair|ThreePrimeProm|FivePrimeProm|FragileSite|BlacklistCosmic|Prob<0.01)
+nrow(lowProbPairs) # 1446
 View(lowProbPairs)
 
 # check driver catalog
@@ -548,12 +513,14 @@ ampDrivers = drivers %>% filter((DriverType=='AMP'|DriverType=='DEL')&ClusterId>
 ampDrivers = merge(ampDrivers,ensemblGeneData %>% select(Gene=GeneName,GeneStart,GeneEnd),by='Gene',all.x=T)
 ampDriverPositions = ampDrivers %>% group_by(Gene,Chromosome,GeneStart,GeneEnd) %>% summarise(DriverCount=n())
 View(ampDriverPositions)
+rm(drivers)
 
 lowProbPairs = annotate_drivers(lowProbPairs,ampDriverPositions)
 
 # add in SV counts around and inside the genes
 lowProbPairs = annotate_proximate_svs(lowProbPairs,cohortSVs)
 nrow(lowProbPairs)
+View(lowProbPairs)
 
 # add in any repeated exon-fusings or dominant cancer types
 
@@ -562,14 +529,19 @@ nrow(lowProbPairs)
 # - any repeated cluster types
 lowProbPairs = annotate_fusion_data(lowProbPairs,unfilteredFusions)
 
-lowProbPairs = lowProbPairs %>% mutate(LocalProb=1-ppois(ActFusions-1,ExpLocalFusions,T),
+lowProbPairs = lowProbPairs %>% mutate(ActFusions=ifelse(is.na(ActFusions),0,ActFusions),
+                                       ActFusionsNF=ifelse(is.na(ActFusionsNF),0,ActFusionsNF),
+                                       ExpFusions=FusionRate*CohortCount,
+                                       Prob=ifelse(ActFusions>0,1-ppois(ActFusions-1,ExpFusions,T),1),
+                                       LocalProb=ifelse(ActFusions>0,1-ppois(ActFusions-1,ExpLocalFusions,T),1),
                                        GenePairProb=1-ppois(GenePairSvCount-1,ExpGenePairCount,T))
 
 
 
 View(lowProbPairs)
+View(lowProbPairs %>% filter(is.na(ActFusions)))
 # colnames(lowProbPairs)
-write.csv(lowProbPairs,'~/data/sv/fusion_like/gene_pair_summary.csv', quote = F, row.names = F)
+write.csv(lowProbPairs,'~/data/sv/fusion_like/fusion_like_gene_pairs_by_length.csv', quote = F, row.names = F)
 
 View(lowProbPairs %>% select(GenePair,Type,LengthMin,LengthMax,Prob,LocalProb,ActFusions,ExpFusions,ExpLocalFusions,CancerTypes,FusedExons,FusionClusters,everything())
      %>% arrange(LocalProb))
@@ -578,17 +550,19 @@ View(lowProbPairs %>% filter(!KnownPair&!RevKnownPair&!FragileSite&!NearDriver) 
        mutate(Length=paste(LengthMin/1000,'-',LengthMax/1000,'K',sep='')) %>%
        select(GenePair,Type,Length,Prob,LocalProb,ActFusions,CancerTypes,FusedExons,FusionClusters,everything()))
 
-View(lowProbPairs %>% filter(!KnownPair&!RevKnownPair&!FragileSite&!NearDriver) %>% arrange(LocalProb) %>%
+googleSheetData = lowProbPairs %>% filter(!KnownPair&!RevKnownPair&!FragileSite) %>% filter(LocalProb<1e-4) %>% arrange(LocalProb) %>%
        mutate(Length=paste(LengthMin/1000,'-',LengthMax/1000,'K',sep='')) %>%
-       select(GenePair,Type,Length,Prob,LocalProb,ActFusions,CancerTypes,FusedExons,FusionClusters,everything()))
+       select(GenePair,Type,Length,Prob,LocalProb,ActFusions,CancerTypes,FusedExons,FusionClusters,DriverGenes,everything())
 
-write.csv(lowProbPairs %>% filter(!KnownPair&!RevKnownPair&!FragileSite&!NearDriver&!RepeatedPositions) %>% arrange(LocalProb) %>%
-       mutate(Length=paste(LengthMin/1000,'-',LengthMax/1000,'K',sep='')) %>%
-       select(GenePair,Type,Length,Prob,LocalProb,ActFusions,CancerTypes,FusedExons,FusionClusters,FusionContexts),
-       '~/data/sv/fusion_like/gene_pair_google_sheets.csv', quote = F, row.names = F)
+View(googleSheetData)
+write.csv(googleSheetData %>% select(GenePair,Type,Length,Prob,LocalProb,ActFusions,CancerTypes,FusedExons,FusionClusters,DriverGenes),
+          '~/data/sv/fusion_like/gene_pair_google_sheets.csv', quote = F, row.names = F)
 
 
 # Summary across all buckets
+
+colnames(lowProbPairs)
+nrow(genePairSummary)
 
 genePairSummary = lowProbPairs %>% group_by(GenePair) %>% 
   summarise(ActFusions=sum(ActFusions),
@@ -597,17 +571,34 @@ genePairSummary = lowProbPairs %>% group_by(GenePair) %>%
             ExpLocalFusions=sum(FusionRate*LocalSvCount),
             GenePairSvCount=sum(GenePairSvCount),
             KnownPair=first(KnownPair|RevKnownPair),
+            Blacklisted=first(BlacklistCosmic),
             ThreePrimeProm=first(ThreePrimeProm),
             FivePrimeProm=first(FivePrimeProm),
             FragileSite=first(FragileSite),
             NearDriver=first(NearDriver),
             DriverGenes=first(DriverGenes),
-            KnownTSG=first(KnownTSG)) %>%
+            ThreePrimeOncogene=first(ThreePrimeOncogene),
+            KnownTSG=first(KnownTSG),
+            GeneStartUp=first(GeneStartUp),
+            GeneEndUp=first(GeneEndUp),
+            GeneLengthUp=first(GeneLengthUp),
+            GeneLengthDown=first(GeneLengthDown),
+            GeneStartDown=first(GeneStartDown),
+            GeneEndDown=first(GeneEndDown)) %>%
   mutate(Prob=1-ppois(ActFusions-1,ExpFusions,T),
          LocalProb=1-ppois(ActFusions-1,ExpLocalFusions,T))
 
+genePairSummary = annotate_fusion_data(genePairSummary,unfilteredFusions,F)
+
+
 View(genePairSummary %>% filter(ActFusionsNF>=2|(KnownPair&ActFusionsNF>=1)|((KnownPair|ThreePrimeProm|FivePrimeProm)&ActFusionsNF>=1)) %>%
        arrange(LocalProb))
+
+View(genePairSummary)
+
+write.csv(genePairSummary %>% filter(ActFusionsNF>=2|(KnownPair&ActFusionsNF>=1)|((KnownPair|ThreePrimeProm|FivePrimeProm)&ActFusionsNF>=1)) %>%
+       arrange(LocalProb),
+       '~/data/sv/fusion_like/fusion_like_gene_pairs.csv', row.names = F, quote = )
 
 View(knownFusionPairs)
 
@@ -643,15 +634,14 @@ nrow(tmpSVs %>% filter(grepl('ENSG00000155657',GeneStart)))
 nrow(tmpSVs %>% filter(grepl('ENSG00000155657',GeneEnd)))
 nrow(tmpSVs %>% filter(grepl('ENSG00000155657',GeneEnd)&grepl('ENSG00000155657',GeneStart)))
 
-View(unfilteredFusions %>% filter(GenePair=='TTN_TTN'&Type=='DEL'&LengthMin==100&LengthMax==1000) %>%
+View(unfilteredFusions %>% filter(GenePair=='OLFM2_OLFM2'&Type=='DEL'&LengthMin==100&LengthMax==1000) %>%
        select(BreakendExonUp,BreakendExonDown,RegionTypeUp,RegionTypeDown,Length,PosUp,PosDown,ProteinsKept,ProteinsLost,everything()))
 
 
-nrow(tmpSVs %>% filter(PosStart>179390716-1e6&PosEnd<179695529+1e6))
-geneLength=179695529-179390716
-print(geneLength/(geneLength+2e6))
+View(unfilteredFusions %>% filter(GenePair=='OLFM2_OLFM2'))
 
-
+View(unfilteredFusions %>% filter(Type=='DUP'&FusedExonUp==1&FusedExonDown==2&as.character(GeneIdUp)==as.character(GeneIdDown)
+                                  &ExonsSkippedUp==0&ExonsSkippedDown==0&PhaseMatched=='true'&RegionTypeUp=='Intronic'))
 
 
 View(unfilteredFusions %>% filter(GenePair=='AHR_AHR'&Type=='DEL'&LengthMin==2000&LengthMax==4000))
@@ -668,30 +658,184 @@ rm(ensemblTransExonData)
 View(lowProbPairs %>% filter(as.character(GeneIdUp)==as.character(GeneIdDown)) %>% group_by(GeneId=GeneIdUp,Type) %>% count())
 View(unfilteredFusions %>% filter(SameGene))
 
+
+
+generate_intron_data<-function(exonData)
+{
+  intronExonData = data.frame(matrix(ncol=5, nrow=0))
+  colnames(intronExonData) = c('Type','PosStart','PosEnd','Phase','ExonRank')
+  exonCount = nrow(exonData)-1 
+  
+  transLength = max(exonData$ExonEnd) - min(exonData$ExonStart)
+  exonCount = nrow(exonData)
+  minExonWidth = round(transLength*0.01)
+  
+  for(i in 1:exonCount)
+  {
+    exonRow = i*2 - 1
+    exonPrev=exonData[i,]
+    exonNext=exonData[i+1,]
+
+    intronRow = exonRow+1
+    exonMidpoint = (exonPrev$ExonStart+exonPrev$ExonEnd)/2
+    intronExonData[exonRow,1] = 'Exon'
+    intronExonData[exonRow,2] = exonPrev$ExonStart # pmin(exonMidpoint-minExonWidth,exonPrev$ExonStart)
+    intronExonData[exonRow,3] = exonPrev$ExonEnd # pmax(exonMidpoint+minExonWidth,exonPrev$ExonEnd)
+    intronExonData[exonRow,4] = ''
+    intronExonData[exonRow,5] = exonPrev$ExonRank
+    
+    if(i < nrow(exonData))
+    {
+      intronExonData[intronRow,1] = 'Intron'
+      intronExonData[intronRow,2] = exonPrev$ExonEnd
+      intronExonData[intronRow,3] = exonNext$ExonStart
+      intronExonData[intronRow,4] = ifelse(exonPrev$Strand==1,exonPrev$ExonEndPhase,exonNext$ExonEndPhase)
+      intronExonData[intronRow,5] = ''
+    }
+  }
+  
+  return (intronExonData)
+}
+
+exonData = ensemblTransExonData %>% filter(Trans=='ENST00000300305')
+View(exonData)
+intronExonData = generate_intron_data(exonData)
+View(intronExonData %>% mutate(Length=PosEnd-PosStart))
+
+
+exonData = ensemblTransExonData %>% filter(Trans=='ENST00000275493')
+print(generate_fusion_intron_plot('ENST00000275493','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # EGFR
+print(generate_fusion_intron_plot('ENST00000300305','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # RUNX1
+
+
+generate_fusion_intron_plot<-function(transId,svType,unfilteredFusions,ensemblTransExonData,cohortSVs)
+{
+  fusions = unfilteredFusions %>% filter(TranscriptUp==transId&TranscriptDown==transId&Type==svType&!Filtered) %>% 
+    arrange(SampleId,Length) %>% group_by(SampleId,CancerType,GeneIdUp,GeneNameUp,ChrUp) %>%
+    summarise(PosUp=first(PosUp),PosDown=first(PosDown),Length=first(Length)) %>%
+    arrange(-Length) %>% ungroup()
+    
+  if(nrow(fusions) == 0)
+  {
+    print("no fusions found")
+    return(fusions)
+  }
+  
+  print(sprintf("%s type=%s: %d fusions found: ",transId, svType, nrow(fusions)))
+  
+  rowIndex = data.frame(as.numeric(as.character(rownames(fusions))))
+  colnames(rowIndex) <- c("FusionIndex")
+  fusions = cbind(fusions,rowIndex)
+  
+  geneId = fusions[1,which(colnames(fusions)=='GeneIdUp')]
+  geneName = fusions[1,which(colnames(fusions)=='GeneNameUp')]
+  geneChr = fusions[1,which(colnames(fusions)=='ChrUp')]
+
+  print(sprintf("gene(%s:%s) chr=%s",geneId, geneName, geneChr))
+  
+  exonData = ensemblTransExonData %>% filter(Trans==transId)
+  intronExonData = generate_intron_data(exonData)
+  
+  intronExonData = intronExonData %>% mutate(BlockColour=ifelse(Type=='Exon','black',ifelse(Phase==-1,'grey',
+                                                        ifelse(Phase==0,'yellow3',
+                                                               ifelse(Phase==1,'darkolivegreen3','skyblue2'))))) # tomato2
+  
+  transStart = min(exonData$ExonStart)
+  transEnd = max(exonData$ExonEnd)
+  transLength = transEnd-transStart
+  
+  geneSVs = cohortSVs %>% filter(Type==svType&grepl(geneId,GeneStart)&grepl(geneId,GeneEnd)&!(SampleId %in% fusions$SampleId))
+  geneSVs = geneSVs %>% filter(PosStart>=transStart&PosEnd<=transEnd) %>% arrange(Length)
+  
+  print(paste('SVs in gene-pair=', nrow(geneSVs),sep=''))
+  
+  rowIndex = data.frame(as.numeric(as.character(rownames(geneSVs))))
+  colnames(rowIndex) <- c("SvIndex")
+  geneSVs = cbind(geneSVs,rowIndex)
+  
+  phaseColours = c('Red','Yellow','Green','Grey')
+  exonHeight = 5
+  sampleBuffer=transLength*0.02
+
+  plot = (ggplot() 
+          + geom_point(data=fusions, aes(x=PosDown,y=exonHeight*(1.1+FusionIndex),colour='Fusion Downstream'))
+          + geom_point(data=fusions, aes(x=PosUp,y=exonHeight*(1.1+FusionIndex),colour='Fusion Upstream'))
+          + geom_text(data=fusions, aes(x=pmax(PosDown,PosUp)+sampleBuffer,y=exonHeight*(1.1+FusionIndex),label=paste(SampleId,CancerType,sep=' '),hjust=0, vjust=0))
+          + geom_rect(data=intronExonData, aes(xmin=PosStart, xmax=PosEnd, ymin=0, ymax=exonHeight), fill=intronExonData$BlockColour)
+          + geom_text(data=intronExonData, aes(x=(PosStart+PosEnd)/2,y=-exonHeight/2,label=ExonRank))
+          + labs(y='SampleId')
+          + theme(axis.title.y = element_blank()) + theme(axis.ticks.y = element_blank()) + theme(axis.text.y = element_blank())
+          + scale_color_hue("SV Positions") 
+          # + scale_fill_manual("CI horizontal line", values=rep(1,4),guide=guide_legend(override.aes = list(colour=c("orange", "darkred"))),
+          #                    labels=c("CI of 95%", "CI of 99%"))
+          # + scale_fill_identity(name='Breakends',guide='legend') 
+          # + scale_colour_manual(name='Phasing', values=phaseLegend)
+          + ggtitle(sprintf("Same Gene Fusion: %s-%s type=%s length=%d", geneId, geneName, svType, transLength)))
+  
+  if(nrow(geneSVs) > 0)
+  {
+    plot = (plot 
+            + geom_point(data=geneSVs, aes(x=PosStart,y=-exonHeight-SvIndex/nrow(geneSVs)*exonHeight,colour='Non-fusion SV Start'))
+            + geom_point(data=geneSVs, aes(x=PosEnd,y=-exonHeight-SvIndex/nrow(geneSVs)*exonHeight,colour='Non-fusion SV End')))
+  }
+  
+  return (plot)
+}
+
+print(generate_fusion_intron_plot('ENST00000242057','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # AHR
+print(generate_fusion_intron_plot('ENST00000275493','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # EGFR
+print(generate_fusion_intron_plot('ENST00000349496','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # CTNNB1
+print(generate_fusion_intron_plot('ENST00000275493','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # BRAF
+
+#print(generate_fusion_intron_plot('ENST00000300305','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # RUNX1
+print(generate_fusion_intron_plot('ENST00000288135','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # KIT
+
+View(unfilteredFusions %>% filter(GenePair=='EGFR_EGFR') %>% group_by(SampleId,Type,LengthMin,LengthMax) %>% count())
+View(unfilteredFusions %>% filter(GenePair=='KIT_KIT'))
+
+View(unfilteredFusions %>% filter(TranscriptUp=='ENST00000242057'&TranscriptDown=='ENST00000242057'&Type=='DEL'&!Filtered) %>% 
+  arrange(SampleId,Length) %>% group_by(SampleId,GeneIdUp,GeneNameUp,ChrUp) %>%
+  summarise(PosUp=first(PosUp),PosDown=first(PosDown),Length=first(Length)) %>%
+  arrange(Length))
+
+View(unfilteredFusions %>% filter(GenePair=='EGFR_EGFR') %>% arrange(SampleId,Length))
+
+
+View(unfilteredFusions %>% filter(GenePair=='EGFR_EGFR') %>% arrange(SampleId,Length) %>%
+       group_by(SampleId,GeneIdUp,GeneNameUp,ChrUp) %>%
+       summarise(Count=n(),PosUp=first(PosUp),PosDown=first(PosDown),Length=first(Length)))
+
+View(ensemblTransExonData %>% filter(ExonRank==1&Strand==1&ExonPhase==0))
+View(ensemblTransExonData %>% filter(Trans=='ENST00000428131'))
+View(ensemblTransExonData %>% filter(ExonRank==1&Strand==1&CodingEnd==ExonEnd))
+View(ensemblTransExonData %>% filter(Strand==1&CodingEnd==ExonEnd))
+
+
 print(generate_fusion_intron('ENST00000269305','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # TP53
-print(generate_fusion_intron('ENST00000242057','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # AHR
 print(generate_fusion_intron('ENST00000349496','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # CTNNB1
 print(generate_fusion_intron('ENST00000426105','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # PUM1
 print(generate_fusion_intron('ENST00000269701','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # AKAP8
 
-print(generate_fusion_intron('ENST00000288602','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # BRAF
-print(generate_fusion_intron('ENST00000288602','DUP',unfilteredFusions,ensemblTransExonData,cohortSVs)) # BRAF
+print(generate_fusion_intron_plot('ENST00000288602','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # BRAF
+print(generate_fusion_intron_plot('ENST00000288602','DUP',unfilteredFusions,ensemblTransExonData,cohortSVs)) # BRAF
 
-print(generate_fusion_intron('ENST00000342788','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # ERBB4_ERBB4
 print(generate_fusion_intron('ENST00000342788','DUP',unfilteredFusions,ensemblTransExonData,cohortSVs)) # ERBB4_ERBB4
 
-print(generate_fusion_intron('ENST00000262189','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # KMT2C
 print(generate_fusion_intron('ENST00000378933','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # EP300
-print(generate_fusion_intron('ENST00000275493','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # EGFR
-View(unfilteredFusions)
 
-sameGeneFusions = lowProbPairs %>% filter(as.character(GeneIdUp)==as.character(GeneIdDown)) %>% 
-  group_by(GeneId=GeneIdUp,Type,GeneNameUp) %>% summarise(LowestLocalProb=min(LocalProb)) %>% arrange(LowestLocalProb)
+print(generate_fusion_intron_plot('ENST00000433211','DEL',unfilteredFusions,ensemblTransExonData,cohortSVs)) # RBFOX1
+
+View(unfilteredFusions %>% filter(GenePair=='KIT_KIT'))
+
+sameGeneFusions = lowProbPairs %>% filter(as.character(GeneIdUp)==as.character(GeneIdDown)&!FragileSite&!RepeatedPositions) %>% 
+  group_by(GeneId=GeneIdUp,Type,GeneNameUp) %>% summarise(ActFusions=sum(ActFusions),
+                                                          LowestLocalProb=min(LocalProb),
+                                                          GeneLength=first(GeneLengthUp)) %>% arrange(LowestLocalProb)
 
 nrow(sameGeneFusions)
 View(sameGeneFusions)
 
-topN = 100
+topN = 300
 outputFile = '~/data/sv/fusion_like/same_gene_plots_top100.pdf'
 pdf(file=outputFile, height = 14, width = 20)
 par(mar=c(1,1,1,1))
@@ -702,17 +846,21 @@ for(i in 1:pmin(nrow(sameGeneFusions),topN))
   geneId = gpData$GeneId
   type= as.character(gpData$Type)
   
-  gpFusions = head(unfilteredFusions %>% filter(as.character(GeneIdUp)==geneId&as.character(GeneIdDown)==geneId&CanonicalUp=='true'),1)
+  gpFusions = head(unfilteredFusions %>% filter(as.character(GeneIdUp)==geneId&as.character(GeneIdDown)==geneId
+                                                &CanonicalUp=='true'&!Filtered),1)
   transId = as.character(gpFusions[1,which(colnames(gpFusions)=='TranscriptUp')])
 
   print(sprintf("plotting %d: gene(%s) trans(%s)", i, geneId, transId))
   
-  print(generate_fusion_intron(transId,type,unfilteredFusions,ensemblTransExonData,cohortSVs))
+  print(generate_fusion_intron_plot(transId,type,unfilteredFusions,ensemblTransExonData,cohortSVs))
 }
 
 dev.off()
 
 
+rnaReadCounts = read.csv('~/data/sv/fusion_like/same_gene_rna_reads.csv')
+View(rnaReadCounts)
+View(rnaReadCounts %>% group_by(Gene,ExonJunction) %>% summarise(ReadCount=sum(ReadCount)))
 
 tp53SVs = cohortSVs %>% filter(Type=='DEL'&grepl('TP53',GeneStart)&grepl('TP53',GeneEnd))
 tp53SVs = cohortSVs %>% filter(Type=='DEL'&grepl('TP53',GeneStart)&grepl('TP53',GeneEnd)&!(SampleId %in% tp53Fusions$SampleId))
@@ -726,22 +874,45 @@ tp53SVs = cbind(tp53SVs,rowIndex)
 tp53ExonData = ensemblTransExonData %>% filter(Trans=='ENST00000269305')
 View(tp53ExonData)
 
-tp53Fusions = unfilteredFusions %>% filter(GenePair=='TP53_TP53'&Type=='DEL') %>% 
+View(ensemblTransExonData %>% filter(Trans=='ENST00000316626'))
+
+tmp = unfilteredFusions %>% filter(GenePair=='TP53_TP53'&Type=='DEL') %>% 
   select(SampleId,ChrUp,PosUp,PosDown,Length,RegionTypeUp,RegionTypeDown,BreakendExonUp,BreakendExonDown,TranscriptUp,CancerType) %>%
   mutate(SvLength=PosUp-PosDown) %>% arrange(SvLength)
 
-rowIndex = data.frame(as.numeric(as.character(rownames(tp53Fusions))))
-colnames(rowIndex) <- c("FusionIndex")
-tp53Fusions = cbind(tp53Fusions,rowIndex)
+View(lowProbPairs %>% filter(GenePair=='NTRK2_NTRK2') %>% select(GenePair,Type,LengthMin,ActFusions,FusedExons,CancerTypes,everything()))
 
-View(tp53Fusions)
+View(unfilteredFusions %>% filter(GenePair %in% c('KIT_KIT','GSK3B_GSK3B','ESR1_ESR1','BRAF_BRAF','RUNX1_RUNX1','PUM1_PUM1','EP300_EP300','PREX2_PREX2','NTRK2_NTRK2'))
+     %>% select(SampleId,GenePair,BreakendExonUp,BreakendExonDown,RegionTypeUp,RegionTypeDown,LengthMin,ChrUp,TranscriptUp,TranscriptDown,everything()))
 
-View(unfilteredFusions %>% filter(as.character(GeneIdUp)==as.character(GeneIdDown)&Type=='DUP'))
-View(unfilteredFusions %>% filter(as.character(GeneIdUp)==as.character(GeneIdDown)&Type=='DUP') %>% group_by(GenePair) %>% count()
-     %>% filter(n>1) %>% arrange(-n))
+View(ensemblTransExonData %>% filter(Trans %in% c('ENST00000316626','ENST00000288602','ENST00000263253','ENST00000440973','ENST00000376214','ENST00000300305',
+                                                  'ENST00000426105','ENST00000288368','ENST00000288135')) %>%
+       select(TransId,Trans,Strand,ExonRank,ExonStart,ExonEnd,everything()))
+
+View(ensemblGeneData)
 
 
+View(unfilteredFusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Intronic'))
 
+View(unfilteredFusions %>% filter(SameSV&PhaseMatched=='true') %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Intronic') %>%
+       select(SampleId,GenePair,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,BreakendExonUp,BreakendExonDown,FusedExonUp,FusedExonDown,
+              ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(unfilteredFusions %>% filter(SameSV&PhaseMatched=='true') %>% filter(RegionTypeUp=='Intronic'&RegionTypeDown=='Exonic') %>%
+       select(SampleId,GenePair,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,BreakendExonUp,BreakendExonDown,FusedExonUp,FusedExonDown,
+              ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(unfilteredFusions %>% filter(SameSV&PhaseMatched=='true') %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Intronic') %>%
+       # filter(FusedExonUp==1&ExonsSkippedUp==0) %>%
+       mutate(AdjExonSkippedUp=ifelse(RegionTypeUp=='Exonic'&RegionTypeDown=='Intronic'&ExonsSkippedUp==0,1,ExonsSkippedUp),
+              AdjFusedExonUp=pmax(BreakendExonUp-AdjExonSkippedUp,1)) %>%
+       select(SampleId,GenePair,RegionTypeUp,RegionTypeDown,CodingTypeUp,BreakendExonUp,FusedExonUp,
+              ExonsSkippedUp,AdjExonSkippedUp,AdjFusedExonUp,CodingTypeDown,BreakendExonDown,FusedExonDown,ExonsSkippedDown,everything()))
+
+View(unfilteredFusions %>% filter(SameSV&PhaseMatched=='true') %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Intronic') %>%
+       filter(FusedExonUp==0&ExonsSkippedUp==0) %>%
+       select(SampleId,GenePair,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,BreakendExonUp,BreakendExonDown,FusedExonUp,FusedExonDown,
+              ExonsSkippedUp,ExonsSkippedDown,everything()))
 
 ## DEBUG
 
@@ -816,18 +987,6 @@ nrow(proximatePairs)
 
 
 
-# manual checks
-matchingSVs = cohortSVs %>% filter(Type=='DEL'&LengthMin==2000&LengthMax==4000)
-
-localCount = matchingSVs %>% filter(ChrStart==7) %>%
-  filter(PosStart>pmin(17338246)-localSvThreshold&PosEnd<pmax(17385776)+localSvThreshold)
-nrow(localCount)     
-
-genePairCount = matchingSVs %>% filter((grepl('ENSG00000106546',GeneStart)&grepl('ENSG00000106546',GeneEnd))
-                                       |(grepl('ENSG00000106546',GeneStart)&grepl('ENSG00000106546',GeneEnd)))
-nrow(genePairCount)
-View(genePairCount)
-
 
 
 # RNA Read Counts for K-mers
@@ -842,11 +1001,15 @@ View(ahrExonReadCounts)
 ctnnb1ExonReadCounts = read.csv('~/data/sv/fusion_like/ctnnb1_exon_junction_counts.csv')
 View(ctnnb1ExonReadCounts)
 
-print(ggplot(ahrExonReadCounts, aes(ExonJunction, ReadCount)) #  %>% mutate(ReadCount=pmin(ReadCount,50))
-      + facet_wrap(~HasFusion)
+ahrExonReadCounts = ahrExonReadCounts %>% mutate(ExonDesc=paste(ifelse(Aberrant=='true','Aberrant','Standard'),ExonJunction,sep=' '),
+                                                 SampleType=ifelse(HasFusion=='true','Fusion','No Fusion')) %>%  arrange(Gene,ExonDesc)
+
+print(ggplot(ahrExonReadCounts %>% filter(Gene=='CTNNB1'), aes(ExonDesc, ReadCount)) #  %>% mutate(ReadCount=pmin(ReadCount,50))
+      + facet_wrap(~SampleType)
       + scale_y_log10()
       + theme(axis.text.x = element_text(angle = 90, hjust=1,size=10))
-      + geom_boxplot(varwidth=T, fill="plum"))
+      + geom_boxplot(varwidth=T, fill="plum")
+      + ggtitle(sprintf("SameGene Fusion Exon-Junction Read Counts: CTNNB1")))
 
 print(ggplot(ctnnb1ExonReadCounts, aes(ExonJunction, ReadCount))
       + facet_wrap(~HasFusion)
@@ -861,74 +1024,7 @@ print(ggplot(ahrExonReadCounts %>% group_by(ExonJunction,HasFusion) %>% count, a
 
 View(cohortSVs %>% filter(Type=='DEL'&LengthMin==2048000&LengthMax==4096000&grepl('ENSG00000157554',GeneStart)&grepl('ENSG00000184012',GeneEnd)))
 
-genePairData = merge(flcSpecificPairs,svFusionBreakends,by=c('GeneIdUp','GeneIdDown','Type','LengthMin','LengthMax'),all.x=T)
-
-genePairData = genePairData %>% 
-  mutate(ExpFusions=FusionRate*CountAll,
-         #ExpOffFusions=ifelse(ExpBreakendFusions>ExpFusion,ExpBreakendFusions-ExpFusion,ExpFusion),
-         #AdjExpFusions=ifelse(ExpOffFusions>0,round((ActBeCount-ActFusions)*ExpFusion/ExpOffFusions,4),ExpFusion),
-         Prob=ifelse(ActFusions>ExpFusions&ExpFusions>0,1-ppois(ActFusions-1,ExpFusions,T),1))
-
-View(genePairData)
-
-
-## DEBUG
-
-genePairData = lowProbPairs
-View(genePairData)
-
-genePairData = within(genePairData,rm(LocalSvCount))
-genePairData = within(genePairData,rm(LocalSvCount))
-genePairData = within(genePairData,rm(GenePairSvCount))
-
-genePairData$LocalSvCount = 0
-genePairData$GenePairSvCount = 0
-localSvThreshold=1e6
-colIndex = ncol(genePairData)
-
-gpData = head(genePairData %>% filter(GeneNameUp=='AHR'&GeneNameDown=='AHR'),1)
-nrow(gpData)
-genePair = gpData$GenePair
-chrUp = gpData$ChrUp
-chrDown = gpData$ChrDown
-geneIdUp = gpData$GeneIdUp
-geneIdDown = gpData$GeneIdDown
-geneStartUp = gpData$GeneStartUp
-geneEndUp = gpData$GeneEndUp
-geneStartDown = gpData$GeneStartDown
-geneEndDown = gpData$GeneEndDown
-type = as.character(gpData$Type)
-lengthMin = gpData$LengthMin
-lengthMax = gpData$LengthMax
-
-
-# count number of SVs hitting both these genes
-matchingSVs = cohortSVs %>% filter(Type==type&LengthMin==lengthMin&LengthMax==lengthMax)
-
-genePairCount = matchingSVs %>% filter((grepl(geneIdUp,GeneStart)&grepl(geneIdDown,GeneEnd))|(grepl(geneIdDown,GeneStart)&grepl(geneIdUp,GeneEnd)))
-
-# count number of SVs in vacinity
-localCount = matchingSVs %>% filter(as.character(ChrStart)==as.character(chrUp)) %>%
-  filter((PosStart>geneStartUp-localSvThreshold&PosEnd<geneEndUp+localSvThreshold)
-         |(PosStart>geneStartDown-localSvThreshold&PosEnd<geneEndDown+localSvThreshold))
-
-View(localCount)
-
-gpData$LocalSvCount = nrow(localCount)
-gpData$GenePairSvCount = nrow(genePairCount)
-
-distanceBetweenGenes = pmax(geneStartUp,geneStartDown)-pmin(geneEndUp,geneEndDown)
-
-localSvDistance = ifelse(distanceBetweenGenes>localSvThreshold*2,
-                         (geneEndUp-geneStartUp)+(geneEndDown-geneStartDown)+localSvThreshold*4,
-                         pmax(geneEndUp,geneEndDown)-pmin(geneStartUp,geneStartDown)+localSvThreshold*2)
-
-gpData = gpData %>% mutate(ExpGenePairCount=round(GenePairRate*fullGenome/localSvDistance*LocalSvCount,2),
-                                       ExpLocalFusions=round(FusionRate*fullGenome/localSvDistance*LocalSvCount,2))
-  
-View(gpData)
 
 
 
-
-
+View(unfilteredFusions %>% filter(GeneNameDown=='MYC'))
