@@ -35,7 +35,7 @@ purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
-bachelor_germline_tsv=$(locate_bachelor_germline_variants ${run_dir})
+bachelor_tsv=$(locate_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
 linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
@@ -56,7 +56,7 @@ pilot_do_run_base_patient_reporter \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
-    -bachelor_tsv ${bachelor_germline_tsv} \
+    -bachelor_tsv ${bachelor_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_disruption_tsv ${linx_disruption_tsv} \
     -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \

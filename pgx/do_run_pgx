@@ -6,51 +6,19 @@ source metadata_functions
 run_dir=$1 && shift
 output_dir=$1 && shift
 
-# Below code should be moved to locate_files
-locate_germline_vcf() {
-    local run_dir=$1
-    
-    local germline_vcf=""
-    
-    if [[ -f ${run_dir}/pipeline.version ]]; then
-        # >v5 format
-        ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name *.germline.vcf.gz)
-    else
-        # <v5 format
-        germline_vcf=$(find -L ${run_dir}/ -type f -name *.annotated.vcf.gz)
-    fi
-    
-    if [ -z ${germline_vcf} ]; then
-        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    
-    echo ${germline_vcf}
-}
-
-locate_pgx() {
-    echo ${base_path}/repos/scripts/pgx/main.py
-}
-
-locate_source_pgx() {
-    echo ${base_path}/dbs/pgx/
-}
-
-locate_vcftools() {
-    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
-germline_vcf=$(locate_germline_vcf ${run_dir})
-
 # START VIRTUAL ENV
 source /data/common/dbs/pgx/venv/pgx/bin/activate
 
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+germline_vcf=$(locate_germline_variants ${run_dir} ${ref_sample})
+
 # REFERENCES
-pgx_tool=$(locate_pgx)
-source_dir=$(locate_source_pgx)
+pgx_tool=$(locate_pgx_main)
+pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
-python ${pgx_tool} ${germline_vcf} ${output_dir} --panel ${source_dir}/panelfiles/DPYD.json --sourcedir ${source_dir} --vcftools ${vcftools_tool}
-
+python ${pgx_tool} ${germline_vcf} ${output_dir} \
+    --panel ${pgx_resource_dir}/panelfiles/DPYD.json \
+    --sourcedir ${pgx_resource_dir} \
+    --vcftools ${vcftools_tool}

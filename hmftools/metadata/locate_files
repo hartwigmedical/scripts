@@ -76,12 +76,25 @@ locate_pilot_vicc() {
     echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
 }
 
-#################################### Resources #####################################
-locate_hotspot_tsv() {
-    echo "/data/common/dbs/sage/KnownHotspots.tsv"
+################################# NON JAVA TOOLS ###################################
+locate_pgx_main() {
+    echo ${base_path}/repos/scripts/pgx/main.py
 }
 
-########################################### WGS METRICS #########################################
+locate_vcftools() {
+    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
+}
+
+#################################### Resources #####################################
+locate_hotspot_tsv() {
+    echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_pgx_resource_dir() {
+    echo ${base_path}/dbs/pgx/
+}
+
+################################### WGS METRICS ####################################
 
 locate_wgs_metrics() {
     local run_dir=$1 && shift
@@ -442,9 +455,32 @@ locate_linx_drivers() {
     echo ${drivers_tsv}
 }
 
+########################################### Germline ##########################################
+locate_germline_variants() {
+    local run_dir=$1 && shift
+    local ref_sample=$1 && shift
+
+    local germline_vcf=""
+
+    if [ -f ${run_dir}/pipeline.version ]; then
+        # >v5 format
+        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name *.germline.vcf.gz)
+    else
+        # <v5 format
+        germline_vcf=$(find -L ${run_dir}/ -type f -name *.annotated.vcf.gz)
+    fi
+
+    if [ -z ${germline_vcf} ]; then
+        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
+}
+
 ########################################### Bachelor ##########################################
 
-locate_bachelor_germline_variants() {
+locate_bachelor_variants() {
     local run_dir=$1
     local bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
     if [ -z ${bachelor_tsv} ]; then
