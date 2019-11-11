@@ -1,5 +1,5 @@
 SELECT
     DISTINCT patientId AS '#patientId'
 FROM
-    datarequest
+    datarequestFiltered
 ORDER BY 1;
