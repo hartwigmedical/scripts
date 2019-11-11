@@ -10,7 +10,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading purple data for sample: ${sample}"
+echo "[INFO] Loading purple data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
     -sample ${sample} \

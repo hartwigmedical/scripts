@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+prediction_file=$(locate_chord_pilot_prediction ${run_dir})
+
+credentials=$(locate_pilot_database_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+do_load_chord_data ${sample} ${prediction_file} ${credentials} ${patient_db_jar}

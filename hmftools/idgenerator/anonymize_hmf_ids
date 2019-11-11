@@ -3,12 +3,11 @@
 sample_ids_file=$1 && shift
 
 if [ -z "${sample_ids_file}" ]; then
-    echo "[INFO] No sample IDs file provided. Using default"
     sample_ids_file=/data/common/dbs/idgenerator/input/samples.csv
+    echo "[INFO] No sample IDs file provided. Using default at ${sample_ids_file}"
 fi
 
-# patient mapping is an input to anonymizer but should never have an impact since all samples should have a unique hash!
-patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping_empty.csv
+patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
 password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator \

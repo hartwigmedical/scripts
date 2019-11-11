@@ -32,8 +32,8 @@ java -cp ${linx_jar} com.hartwig.hmftools.linx.visualiser.SvVisualiser \
     "$@"
 
 #Example usage
-#   do_run_linx_visualiser_prod /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -threads 8
-#   do_run_linx_visualiser_pilot /data/cpct/runs/180419_HMFregCPCT_FR15412337_FR16985125_CPCT02030466 -chromosome 15 -debug
+#   do_run_linx_visualiser_prod /data/cpct/runs/<run> -threads 8
+#   do_run_linx_visualiser_pilot /data/cpct/runs/<run> -chromosome 15 -debug
 #
 # Optional arguments
 #

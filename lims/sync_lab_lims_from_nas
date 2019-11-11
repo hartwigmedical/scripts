@@ -18,20 +18,21 @@ done
 mkdir -p ${DAY_DIR}
 
 ## Setup cpct/received-samples/in-process variables
-#cpctSource="${DAY_DIR}/HMF_LIMS_be_v1.2.accdb"
-cpctFile="LIMS_v4.0_be.accdb"
+cpctFile="LIMS_v4.1_be.accdb"
 cpctSource="${DAY_DIR}/${cpctFile}"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
 cpctTxt="${cpctTarget}.csv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
-sampFile="HMF-FOR-001 Received Samples 2019 v5.4.xlsx"
+sampFile="HMF-FOR-001 Received Samples 2019 v5.5.xlsx"
 sampSource="${DAY_DIR}/${sampFile}"
 sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
 sampTxt="${sampTarget}_samp.tsv"
 sampLatest="${SYM_DIR}/lims_samp"
 submTxt="${sampTarget}_subm.tsv"
 submLatest="${SYM_DIR}/lims_subm"
+contTxt="${sampTarget}_cont.tsv"
+contLatest="${SYM_DIR}/lims_cont"
 
 procFile="HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
 procSource="${DAY_DIR}/${procFile}"
@@ -73,6 +74,9 @@ if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
 xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Group_ID")"
+xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +2 > ${contTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] CONT export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${procTarget} )"
 xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
@@ -85,12 +89,14 @@ echo "[INFO]   $submLatest"
 ln -sfn $submTxt $submLatest
 echo "[INFO]   $sampLatest"
 ln -sfn $sampTxt $sampLatest
+echo "[INFO]   $contLatest"
+ln -sfn $contTxt $contLatest
 echo "[INFO]   $procLatest"
 ln -sfn $procTxt $procLatest
 
 ## Gather some metrics
 echo "[INFO] Stats:"
-for latestFile in $cpctLatest $submLatest $sampLatest $procLatest; do
+for latestFile in $cpctLatest $submLatest $sampLatest $contLatest $procLatest; do
     totalLines=$(cat $latestFile | wc -l)
     echo "[INFO]   LineCount of ${latestFile} = ${totalLines}"
 done

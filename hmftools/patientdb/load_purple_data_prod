@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+source locate_files
+
+run_dir=$1 && shift
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+credentials=$(locate_prod_database_credentials)
+patient_db_jar=$(locate_prod_purple)
+
+do_load_purple_data ${sample} ${run_dir}/purple ${credentials} ${patient_db_jar}

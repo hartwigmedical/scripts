@@ -418,7 +418,8 @@ View(svaRnaFusions)
 
 # DEBUG only
 rnaRawMatchData = read.csv('~/data/sv/rna/SVA_RNA_DATA.csv')
-
+View(rnaRawMatchData)
+rm(rnaRawMatchData)
 
 View(svaRnaFusions %>% filter(SampleId=='CPCT02020502T'))
 View(rnaMatchData %>% filter(SampleId=='CPCT02020502T'))

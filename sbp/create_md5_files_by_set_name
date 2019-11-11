@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+
+set_name=$1
+
+CRED_DIR="/data/common/dbs/sbp_api_credentials"
+CRT_FILE="${CRED_DIR}/api.crt"
+KEY_FILE="${CRED_DIR}/api.key"
+SBP_API_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+AWS_PROFILE="download"
+
+if [ -z "$set_name" ]; then
+    echo "[ERROR] No set provided. Exiting" && exit 1
+fi
+
+function main() {
+  
+  ## check that only one run exists for the set
+  runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -exact -json | jq '.')
+  runs_count=$(echo "$runs_json" | jq '. | length')
+  if [ "$runs_count" -ne 1 ]; then
+    echo "[ERROR] Only sets supported with exactly one run (found $runs_count). Exiting" && exit 1
+  fi
+  run_json=$(echo "$runs_json" | jq -r '.[-1]')
+
+  ## setup all variables
+  bucket=$(echo "$run_json" | jq -r '.bucket')
+    name=$(echo "$run_json" | jq -r '.name')
+     ini=$(echo "$run_json" | jq -r '.ini')
+     ref=$(echo "$run_json" | jq -r '.ref_sample')
+     tum=$(echo "$run_json" | jq -r '.tumor_sample')
+      id=$(echo "$run_json" | jq -r '.sbp_id')
+
+  files_url="${SBP_API_URL}/files?run_id=${id}"
+  out_jsn_all="${name}_tmp_all_files.json"
+  out_md5_all="${name}_tmp_all_files.md5"
+  out_aria="${name}.aria.txt"
+  out_md5="${name}.md5"
+
+  echo "[INFO] RunName: $name"
+  echo "[INFO] Bucket: $bucket"
+  echo "[INFO] IniFile: $ini"
+  echo "[INFO] TumorSample: $tum"
+  echo "[INFO] RefSample: $ref"
+
+  ## cleanup existing files
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+    if [[ -f $output_file ]]; then 
+      echo "[INFO] Deleting existing file ($output_file)" && rm $output_file; 
+    fi
+  done
+
+  ## get the file objects for one run by id
+  files_json=$( /usr/bin/curl --silent --cert-type pem \
+    --cert ${CRT_FILE} --key ${KEY_FILE} -X GET \
+    -H "Accept: application/json" -H "Content-Type: application/json" \
+    "$files_url"
+  )
+  
+  create_json_file "$files_json" "$out_jsn_all"
+  create_md5sums_file "$files_json" "$out_md5_all"
+  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$name" "$bucket" "$ini" "$ref" "$tum"
+  
+  ## sanity checks
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+    line_count=$( cat "$output_file" | wc -l)
+    echo "[INFO] Output file $output_file contains $line_count lines"
+  done
+}
+
+create_ini_specific_files () {
+  local json=$1 && shift
+  local out_md5=$1 && shift
+  local out_aria=$1 && shift
+  local name=$1 && shift
+  local bucket=$1 && shift
+  local ini=$1 && shift
+  local ref=$1 && shift
+  local tum=$1 && shift
+
+  local single_files=(
+    "${ref}/aligner/${ref}.bam"
+    "${ref}/aligner/${ref}.bam.bai"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+  )
+
+  local somatic_files=( 
+    "purple/purple.version"
+    "purple/${tum}.driver.catalog.tsv"
+    "purple/${tum}.purple.cnv.somatic.tsv"
+    "purple/${tum}.purple.cnv.gene.tsv"
+    "purple/${tum}.purple.purity.tsv"
+    "purple/${tum}.purple.purity.range.tsv"
+    "purple/${tum}.purple.qc"
+    "purple/${tum}.purple.sv.vcf.gz"
+    "purple/${tum}.purple.sv.vcf.gz.tbi"
+    "purple/${tum}.purple.somatic.vcf.gz"
+    "purple/${tum}.purple.somatic.vcf.gz.tbi"
+    "purple/${tum}.purple.cnv.germline.tsv"
+    "purple/plot/${tum}.circos.png"
+    "${ref}/aligner/${ref}.bam"
+    "${ref}/aligner/${ref}.bam.bai"
+    "${tum}/aligner/${tum}.bam"
+    "${tum}/aligner/${tum}.bam.bai"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz"
+    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+  )
+ 
+  ## select file collection based on pipeline ini 
+  if [[ $ini == "Somatic.ini" ]]; then
+    file_selection="${somatic_files[@]}"
+  elif [[ $ini == "SingleSample.ini" ]]; then
+    file_selection="${single_files[@]}"
+  else
+    echo "[EXIT] Unknown ini ($ini)" && exit 1
+  fi
+
+  ## output
+  echo "[INFO] Creating $out_md5"
+  for file in ${file_selection[@]}; do
+    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file}$" >> $out_md5
+  done
+
+  echo "[INFO] Creating $out_aria"
+  for file in ${file_selection[@]}; do
+    local file_url="s3://${bucket}/${name}/${file}"
+    local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file}$" | cut -f1) 
+    local direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
+    local extern=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+    echo "${extern}" >> $out_aria
+    echo "  dir=${name}" >> $out_aria
+    echo "  checksum=md5=${md5sum}" >> $out_aria
+    echo "" >> $out_aria
+  done
+}
+
+create_json_file () {
+  local json_text=$1 && shift
+  local out_file=$1 && shift
+  echo "[INFO] Creating $out_file"
+  echo "$json_text" | jq '.' > $out_file
+}
+
+create_md5sums_file () {
+  local json_text=$1 && shift
+  local out_file=$1 && shift
+  echo "[INFO] Creating $out_file"
+  echo "$json_text" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $out_file
+  echo "$json_text" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $out_file
+}
+
+main

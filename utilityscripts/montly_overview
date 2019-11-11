@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+month=$1
+
+report_dates_tsv=/data/lims/reporting_db.tsv
+
+if [ -z "${report_dates_tsv}" ]; then
+    echo "[ERROR] No report dates tsv. Exiting"
+    exit 1
+fi
+
+header=$( head -n 1 ${report_dates_tsv} )
+outputFile=$( cat ${report_dates_tsv} | grep "-${month}-2019" )
+
+purity=$(echo ${outputFile} | awk '{print $5 /100}' )
+
+sampleData=$(echo $outputFile | awk '{ print $1, $2, $3, $4}' )
+samplePurple=$(echo $outputFile | awk '{ print $6 $7} ')
+
+echo ${header} tr " " \\t > "/data/lims/montly_overview_reporting_db/19${month}_overview.tsv"
+echo ${sampleData} ${purity} ${samplePurple} | tr " " \\t >> "/data/lims/montly_overview_reporting_db/19${month}_overview.tsv"

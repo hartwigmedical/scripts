@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-password=$1 && shift
+password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
 
-if [ -z "${password}" ]; then
-    echo "[ERROR] Please provide a password! Exiting"
-    exit 1
-fi
-
-run_hmf_id_generator --update_ids -password ${password}
+run_hmf_id_generator -update_ids -password ${password}

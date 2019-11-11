@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
 run_dir=$1 && shift
+comments=$1 && shift
 
-patient_report_for_run ${run_dir} -corrected_report "$@"
+patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "$@"

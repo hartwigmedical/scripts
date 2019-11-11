@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+prefix=$(dirname $(readlink $0 || echo $0))
+
+metadata_tsv=$1 && shift
+log_dir=$1 && shift
+metadata_dir=$1 && shift
+
+do_generate_extra_clinical_data ${metadata_tsv} ${log_dir} ${metadata_dir} "tumor_markers_by_patient" ${prefix}/sql_tumor_markers_by_patient.sql

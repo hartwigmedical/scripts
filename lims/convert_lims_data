@@ -452,7 +452,10 @@ sub processAccessSamples{
         my @fields_to_check = qw( submission analysis_type );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
-                warn "[WARN] Sample stored but $field not present or defined (id:$id name:$name)\n";
+                warn "[WARN] Sample will be stored but field $field is not present (id:$id name:$name)\n";
+            }
+            elsif ( $object->{ $field } eq NACHAR or $object->{ $field } eq "" ){
+                warn "[WARN] Sample will be stored but field $field is not defined (id:$id name:$name)\n";
             }
         }
         
@@ -510,21 +513,21 @@ sub processExcelSamples{
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
-            $row_info->{ 'analysis_type' } = 'SingleAnalysis';
+            $analysis_type = 'SingleAnalysis';
+            $row_info->{ 'analysis_type' } = $analysis_type;
         }
         elsif ( $analysis_type eq 'NoBFX' or $analysis_type eq 'NoAnalysis' or $analysis_type eq '' or $analysis_type eq 'NA' ){
             ## NoBFX is the old term, FASTQ the new
-            $row_info->{ 'analysis_type' } = 'FASTQ';
-        }
-        elsif ( $analysis_type eq 'BCL' ){
-            $row_info->{ 'analysis_type' } = 'BCL';
+            $analysis_type = 'FASTQ';
+            $row_info->{ 'analysis_type' } = $analysis_type;
         }
         elsif ( $analysis_type eq 'Labonly' ){
-            $row_info->{ 'analysis_type' } = 'LabOnly';
+            $analysis_type = 'LabOnly';
+            $row_info->{ 'analysis_type' } = $analysis_type;
         }
         elsif ( $analysis_type eq 'SNPgenotyping' or $analysis_type eq 'SNP' ){
-            $row_info->{ 'analysis_type' } = 'SnpGenotyping';
-            next;
+            $analysis_type = 'SnpGenotyping';
+            $row_info->{ 'analysis_type' } = $analysis_type;
         }
         else {
             warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";

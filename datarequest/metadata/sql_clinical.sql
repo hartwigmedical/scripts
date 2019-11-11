@@ -1,4 +1,5 @@
 USE hmfpatients;
+
 SELECT
    purity.sampleId AS 'puritySampleId',
    purity.qcStatus AS 'purityQC',
@@ -10,7 +11,7 @@ SELECT
 FROM
    purity
    LEFT JOIN
-      clinical c
+      clinical as c
       ON purity.sampleId = c.sampleId
    LEFT JOIN
       patient p

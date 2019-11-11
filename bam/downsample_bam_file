@@ -1,9 +1,10 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-PICARD_DIR=/data/tools/picard-tools_v1.141
 OUT_BAM=$2
 IN_BAM=$1
 KEEPING_DATA=$3
+
+PICARD_DIR=/data/tools/picard-tools_v1.141
 MEM_USE=50
 
 echo "Input bam file: " ${IN_BAM}

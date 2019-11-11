@@ -1,23 +1,19 @@
 #!/usr/bin/env bash
 
-path=/data/schuberg/processed_runs
-process_runs=$(ls ${path})
+health_check_processed_runs
 
+process_runs=$(ls /data/schuberg/processed_runs)
 for run in ${process_runs}; do
-    echo "[INFO] Moving set ${run} to /data/cpct/runs"
-    mv /data/schuberg/processed_runs/${run} /data/cpct/runs/
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
+    if [[ ${patientId} == "CORE"* ]]; then
+        echo "[INFO] Moving set ${run} to /data/core/runs"
+	      mv /data/schuberg/processed_runs/${run} /data/core/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/core/runs/${run}
+    else
+        echo "[INFO] Moving set ${run} to /data/cpct/runs"
+	      mv /data/schuberg/processed_runs/${run} /data/cpct/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/cpct/runs/${run}
+    fi
 done
-
-run_clinical_patient_db_prod
-
-for run in ${process_runs}; do
-    echo "[INFO] Create patient report for ${run}"
-    patient_report_for_run /data/cpct/runs/${run}
-done
-
-for run in ${process_runs}; do
-    echo "[INFO] Writing evidence item into db for ${run}"
-    do_load_evidence_items_data_prod /data/cpct/runs/${run}
-done
-
-echo "[INFO] Processing of finished runs is finished"

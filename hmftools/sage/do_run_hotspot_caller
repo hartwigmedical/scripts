@@ -11,7 +11,7 @@ hotspot_tsv=$(locate_hotspot_tsv)
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 bcftools=/data/common/tools/bcftools_v1.9/bcftools
 MAPPABILITY_BED=/data/common/dbs/hg19_mappability_tracks/out_150_hg19.mappability.bed.gz
-sage_jar=/data/common/tools/sage_pilot/sage.jar
+sage_jar=$(locate_prod_sage)
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})

@@ -84,7 +84,44 @@ View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(GeneNameUp.y,
 View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(KnownType.y) %>% count())
 
 
-View(vaSvaOverlap %>% filter(is.na(Reportable.y)) %>% select(SampleId,GeneUp,GeneDown,KnownType.x))
+## Fusion comparison after disruption for known fusions change
+prevFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv.prev')
+prevFusions = prevFusions %>% filter(Reportable=='true')
+nrow(prevFusions)
+
+newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv')
+newFusions = newFusionsAll %>% filter(Reportable=='true')
+nrow(newFusions)
+
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% group_by(KnownType) %>% count)
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% select(ExactBaseUp,ExactBaseDown))
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&CodingTypeUp=='5P_UTR'&CodingTypeDown=='5P_UTR'))
+
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&PhaseMatched=='true'&CodingTypeUp=='Coding'&CodingTypeDown=='Coding') %>% 
+       filter(!((ExactBaseUp==0&ExactBaseDown==1)|(ExactBaseUp==1&ExactBaseDown==2)|(ExactBaseUp==2&ExactBaseDown==0))) %>%
+       select(ExactBaseUp,ExactBaseDown,everything()))
+
+
+
+
+prevFusions = prevFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+newFusions = newFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+
+flcFusions = unfilteredFusions %>% filter(Reportable=='true') %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+
+View(newFusions %>% filter(!(SampleGenePair %in% prevFusions$SampleGenePair)) %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,everything()))
+
+View(prevFusions %>% filter(!(SampleGenePair %in% newFusions$SampleGenePair)) %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,everything()))
+
+rm(newFusions)
+rm(prevFusions)
+
+
 
 
 #######
@@ -172,8 +209,6 @@ View(droppedDisruptions %>% filter(Reportable=='true') %>% group_by(SampleId,Gen
 View(droppedDisruptions %>% filter(ExcludedReason!='SimpleSV'&GeneName=='PTEN'))
 
 View(oldDisruptions %>% filter(GeneName=='PTEN'&SampleId %in% droppedDisruptions$SampleId))
-
-View(droppedDisruptions %>% filter(SampleId=='CPCT02210037T') %>% group_by(SvId,IsStart) %>% count())
 
 
 View(droppedDisruptions %>% filter(ExcludedReason!='SimpleSV') %>% 
@@ -288,7 +323,6 @@ View(promByNew2 %>% filter(is.na(SvIdUp.y)))
 
 
 # specific sample
-specificFusions = read.csv('~/logs/CPCT02070292T.linx.fusions_detailed.csv')
 specificFusions = annotate_fusions(specificFusions)
 View(specificFusions)
 View(specificFusions %>% filter(Reportable=='true'))
@@ -297,8 +331,6 @@ View(specificFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'
                                 &(ValidTraversal=='true'&PhaseMatched=='true'&BiotypeDown!='nonsense_mediated_decay')))
 
 
-
-write.csv(specificFusions%>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'),'~/logs/CPCT02070292T_fusions.csv', row.names = F, quote = F)
 
 
 # DRUP vs DNDS TSGs
@@ -376,15 +408,9 @@ View(knownFusionData %>% group_by(SampleId,GeneUp,GeneDown) %>% summarise(Count=
                                                                           Coding=sum(grepl('Coding',InvalidReasons)),
                                                                           Unphased=sum(grepl('Unphased',InvalidReasons))))
 
-View(knownFusionData %>% filter(SampleId=='CPCT02020449T'))
-
-
-
-
 
 
 # DEBUG ONLY
-nrow(svaFusions %>% filter(SampleId=='CPCT02020924T'))
 
 specSampleFusions = read.csv('~/data/sv/fusions/tmp.csv')
 specSampleFusions = read.csv('~/logs/SVA_FUSIONS.csv')
@@ -393,32 +419,13 @@ View(specSampleFusions)
 View(specSampleFusions %>% filter(GeneUp=='CCDC6'&GeneDown=='RET'))
 
 View(specSampleFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG')) # &!grepl('Unclustered',ResolvedType)
-specSvData = read.csv('~/logs/CPCT02070338T_SVA.csv')
-View(specSvData)
 
 View(specSampleFusions %>% filter(PhaseMatched=='false'))
 View(specSampleFusions %>% filter(GeneUp=='TMPRSS2'&GeneDown=='ERG'&PhaseMatched=='false') %>% group_by(SampleId) %>% count())
 
-View(svaFusions %>% filter(SampleId=='CPCT02020348T'&Reportable=='true'))
-View(reportedSvaFusions %>% filter(SampleId=='CPCT02030426T'))
-View(reportedSimpleFusions %>% filter(SampleId=='CPCT02030426T'))
-
-
-tmp = svaFusions %>% filter(SampleId=='CPCT02140052T'&SvIdUp==14975994)
-tmp = annotate_fusions(tmp)
-View(tmp %>% filter(TranscriptUp=='ENST00000332149'&TranscriptDown=='ENST00000417133'))
-View(reportedSvaFusions %>% filter(SampleId=='CPCT02140025T'&SvIdUp==15785387&TranscriptUp=='ENST00000398585'&TranscriptDown=='ENST00000417133'))
-View(reportedSvaFusionsPrev %>% filter(SampleId=='CPCT02140052T'&SvIdUp==14975994&TranscriptUp=='ENST00000398585'&TranscriptDown=='ENST00000417133'))
-
-
 newFusionsTmp = reportedSvaFusions %>% filter(Clustered&GeneUp=='TMPRSS2'&GeneDown=='ERG') %>% group_by(SameSV,InChain,ValidChain) %>% count()
 prevFusionsTmp = reportedSvaFusionsPrev %>% filter(Clustered&GeneUp=='TMPRSS2'&GeneDown=='ERG') %>% group_by(SameSV,InChain,ValidChain) %>% count()
-View(reportedSvaFusionsPrev %>% filter(SampleId=='CPCT02011025'&Clustered&GeneUp=='TMPRSS2'&GeneDown=='ERG'))
-View(reportedSvaFusionsPrev %>% filter(SampleId=='CPCT02030417T'&Clustered&GeneUp=='CCDC6'&GeneDown=='RET'))
-View(reportedSvaFusionsPrev %>% filter(SampleId=='CPCT02150031T'&Clustered&GeneUp=='TMPRSS2'&GeneDown=='ETV4'))
 
-
-View(reportedSvaFusions %>% filter(SampleId=='CPCT02070036T'&Clustered&GeneUp=='FGFR1'&GeneDown=='ANXA4'))
 
 View(newFusionsTmp)
 View(prevFusionsTmp)

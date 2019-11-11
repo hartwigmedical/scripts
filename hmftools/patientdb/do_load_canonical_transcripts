@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions
-
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 

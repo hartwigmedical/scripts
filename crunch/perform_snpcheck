@@ -106,10 +106,15 @@ if ( $input_vcf_dir ){
    @vcfs = ( @vcfs, @dir_vcfs );
 }
 
+my %names_seen = ();
 my @names;
 my %store;
 foreach my $vcf ( @vcfs ){
     my $name = fileparse( $vcf );
+    if ( exists $names_seen{ $name } ){
+        die "[EXIT] Input name clash: VCF name appears more than once in input ($name)\n";
+    }
+    $names_seen{ $name } = "seen";
     push( @names, $name );
     parseVcf( $vcf, $name, \%store, $posToKeep );
 }

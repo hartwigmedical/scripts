@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+
+sample=$1 && shift
+linx_dir=$1 && shift
+credentials=$1 && shift
+linx_jar=$1 && shift
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+java -Dorg.jooq.no-logo=true -cp ${linx_jar} com.hartwig.hmftools.linx.SvDataLoader \
+    -sample ${sample} \
+    -load_linx_data \
+    -sv_data_dir ${linx_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"

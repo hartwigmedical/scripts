@@ -190,7 +190,7 @@ pie
 pActionability = plot_grid(p1, pie, nrow = 1, labels = "auto", rel_widths = c(4, 4), label_size = 8)
 pActionability
 
-#ggplot2::ggsave("~/hmf/RPlot/Figure 5.pdf", pActionability, width = 94, height = 50, units = "mm", dpi = 300)
+ggplot2::ggsave("~/hmf/RPlot/Figure 5.pdf", pActionability, width = 94, height = 50, units = "mm", dpi = 300)
 ggplot2::ggsave("~/hmf/RPlot/Figure 5.png", pActionability, width = 94, height = 50, units = "mm", dpi = 300)
 #convert -density 300 ~/hmf/RPlot/Figure\ 5.png ~/hmf/RPlot/Figure\ 5.pdf
 #ggplot2::ggsave("~/hmf/RPlot/Figure 5b.pdf", pActionability, width = 89, height = 70, units = "mm", dpi = 300)
