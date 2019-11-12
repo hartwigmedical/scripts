@@ -4,6 +4,12 @@ HMF Data Request Guide
 
 This page provides information about the data you received within the context of a data request (DR) from Hartwig Medical Foundation.
 
+### Contents
+
+* [General notes](#general-notes)
+* [Sample selection](#sample-selection)
+* [Tips on downloading files ](#tips-on-downloading-files)
+
 ### General Notes
  - Sharing of data is done via an OKTA account which requires dual-factor authentication. The OKTA account is used to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
  - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. These can be requested for the samples you have been provided. 
@@ -50,7 +56,7 @@ We share the SNVs and small INDELs called from the reference sample using GATK h
 
 Sharing of BAM files is currently only supported for samples which have been previously published, but in case you do have access they can be accessed in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
 
-**Some notes to keep in mind**
+**Some notes to keep in mind:**
 - The session time is 2 hours, after this period you will have to login again
 - Files can be very large (up to 300GB) so please check before starting a download!
 - When you create links to files, be aware that these links are valid for 24 hours. After this period you will have to create new links.
@@ -70,8 +76,9 @@ By default, in addition to data-request specific criteria, samples for which one
 - Samples without any tumor evidence (PURPLE status = NO_TUMOR).
 - Samples with less than 19.5% tumor cells (PURPLE purity < 0.195).
 
-### Downloading files via URLs from [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) or [Download Portal](https://portal.hartwigmedicalfoundation.nl) 
+### Tips on downloading files 
 
+Links to URLs can be retrieved or created via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and [Download Portal](https://portal.hartwigmedicalfoundation.nl)
 For smaller files, wget generally works fine and is provided as standard on linux-based operating systems.
 
 **Example download using WGET:**
