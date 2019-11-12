@@ -40,7 +40,7 @@ linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
 linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
-chord_prediction_txt=$(locate_chord_pilot_prediction ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
