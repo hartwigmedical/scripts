@@ -492,6 +492,18 @@ locate_bachelor_variants() {
     echo ${bachelor_tsv}
 }
 
+locate_bachelor_variants_pilot() {
+    local run_dir=$1
+    local bachelor_tsv=$(find -L ${run_dir}/bachelor_pilot/ -type f -name "*.bachelor.germline_variant.tsv")
+    if [ -z ${bachelor_tsv} ]; then
+        # The germline_variant_tsv will only be found for bachelor v1.9 and higher. Since we cannot rerun bachelor on datastore,
+        # we just blank out bachelor results for every pre-v1.9 bachelor run.
+        echo "[WARN] Cannot find bachelor v1.9+ output. Assuming bachelor has not found any variants for ${run_dir}!" >&2
+        bachelor_tsv=/data/common/dbs/bachelor/empty.bachelor.germline_variant.tsv
+    fi
+    echo ${bachelor_tsv}
+}
+
 ############################################# CHORD ###########################################
 
 locate_chord_prediction() {
