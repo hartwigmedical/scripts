@@ -3,18 +3,23 @@
 YYMMDD=$(date +'%y%m%d')
 archive_path="/data/data_archive/shallow_seq_pipelines"
 qcfail_path="/data/schuberg/qc_fail_runs"
+process_path="/data/schuberg/shallow_runs"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
 query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status)"' | while read line; do 
     run_name=$(echo "${line}" | cut -d" " -f1)
     run_status=$(echo "${line}" | cut -d" " -f2)
+    run_name_wo_date=$(echo "${run_name}" | cut -c 8-)
+    archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${run_name_wo_date}" | wc -l)
 
     if [[ "${run_name}" =~ "190314-testR" ]]; then continue
     elif [[ "${run_name}" =~ "_HMFregVAL_" ]]; then continue
     elif [[ -d "${archive_path}/${run_name}" ]]; then continue
     elif [[ -d "${qcfail_path}/${run_name}" ]]; then echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${qcfail_path})"
-    elif [[ "${run_status}" =~ Failed ]]; then echo "## FAILED: ${run_name} (status=${run_status})"
+    elif [[ -d "${process_path}/${run_name}" ]]; then echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${process_path})"
+    elif [[ "${run_status}" =~ Failed ]]; then 
+        if [[ "$archive_count" -gt 0 ]]; then continue; else echo "## FAILED: ${run_name} (status=${run_status})"; fi
     elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing|Uploading|Downloading)$ ]]; then echo "## PROCESSING: ${run_name} (status=${run_status})"
     elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then echo " process_shallow_run -s ${run_name} # (status=${run_status})"
     else echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"
