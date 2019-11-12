@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-source locate_files
 source lims_functions
 
 tumor_sample=$1 && shift

@@ -10,7 +10,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-java -Xmx8G -Xms4G -cp ${linx_jar} com.hartwig.hmftools.linx.SvDataLoader \
+java -Dorg.jooq.no-logo=true -cp ${linx_jar} com.hartwig.hmftools.linx.SvDataLoader \
     -sample ${sample} \
     -load_linx_data \
     -sv_data_dir ${linx_dir} \

@@ -49,7 +49,7 @@ locate_pilot_bachelor() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.29/patient-db.jar
+    echo ${base_path}/tools/patient-db_v3.30/patient-db.jar
 }
 
 locate_pilot_patient_db() {
@@ -57,7 +57,7 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/sv-linx_v1.5/sv-linx.jar
+    echo ${base_path}/tools/sv-linx_v1.6/sv-linx.jar
 }
 
 locate_pilot_linx() {
@@ -65,7 +65,7 @@ locate_pilot_linx() {
 }
 
 locate_prod_patient_reporter() {
-    echo ${base_path}/tools/patientreporter_v7.5/patient-reporter.jar
+    echo ${base_path}/tools/patientreporter_v7.6/patient-reporter.jar
 }
 
 locate_pilot_patient_reporter() {
@@ -76,12 +76,25 @@ locate_pilot_vicc() {
     echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
 }
 
-#################################### Resources #####################################
-locate_hotspot_tsv() {
-    echo "/data/common/dbs/sage/KnownHotspots.tsv"
+################################# NON JAVA TOOLS ###################################
+locate_pgx_main() {
+    echo ${base_path}/repos/scripts/pgx/main.py
 }
 
-########################################### WGS METRICS #########################################
+locate_vcftools() {
+    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
+}
+
+#################################### Resources #####################################
+locate_hotspot_tsv() {
+    echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_pgx_resource_dir() {
+    echo ${base_path}/dbs/pgx/
+}
+
+################################### WGS METRICS ####################################
 
 locate_wgs_metrics() {
     local run_dir=$1 && shift
@@ -131,7 +144,14 @@ locate_sage_somatics() {
 
 locate_purple_somatics() {
     local run_dir=$1
-    local somatic_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.somatic.vcf.gz")
+    local purple_dir=${run_dir}/purple
+
+    local somatic_vcf=""
+
+    if [ -d ${purple_dir} ]; then
+        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
     if [ -z ${somatic_vcf} ]; then
         echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
         exit 1
@@ -169,16 +189,6 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
-locate_purple_qc() {
-    local run_dir=$1
-    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
-    if [ -z ${purple_qc_file} ]; then
-        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_qc_file}
-}
-
 locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -194,6 +204,26 @@ locate_purple_pilot_purity() {
     fi
 
     echo ${purple_purity_file}
+}
+
+locate_purple_qc() {
+    local run_dir=$1
+    local purple_qc_file=$(find -L ${run_dir}/purple/ -type f -name "*.purple.qc")
+    if [ -z ${purple_qc_file} ]; then
+        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_qc_file}
+}
+
+locate_purple_drivers() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
+    if [ -z ${purple_driver_tsv} ]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_driver_tsv}
 }
 
 locate_purple_gene_copynumbers() {
@@ -366,7 +396,7 @@ locate_linx_reported_fusions() {
         exit 1
     fi
     
-    fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
+    local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
     if [ -z ${fusion_tsv} ]; then
         echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
         exit 1
@@ -397,6 +427,7 @@ locate_linx_viral_insertions() {
         echo "[ERROR] Unable to locate linx dir for viral insertions: ${linx_dir}. Exiting" >&2
         exit 1
     fi
+
     local viral_insertion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.viral_inserts.tsv")
     if [ -z ${viral_insertion_tsv} ]; then
         echo "[ERROR] Unable to locate viral insertion tsv in ${run_dir}. Exiting." >&2
@@ -415,39 +446,51 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [ -z ${drivers_tsv} ]; then
-        echo "[ERROR] Unable to locate drivers catalog tsv in ${run_dir}. Exiting." >&2
-        exit 1
+        drivers_tsv=$(locate_purple_drivers ${run_dir})
+        if [ -z ${drivers_tsv} ]; then
+            echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
+            exit 1
+        fi
     fi
     echo ${drivers_tsv}
+}
 
+########################################### Germline ##########################################
+locate_germline_variants() {
+    local run_dir=$1 && shift
+    local ref_sample=$1 && shift
+
+    local germline_vcf=""
+
+    if [ -f ${run_dir}/pipeline.version ]; then
+        # >v5 format
+        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name *.germline.vcf.gz)
+    else
+        # <v5 format
+        germline_vcf=$(find -L ${run_dir}/ -type f -name *.annotated.vcf.gz)
+    fi
+
+    if [ -z ${germline_vcf} ]; then
+        echo "[ERROR] Unable to locate germline VCF in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
 }
 
 ########################################### Bachelor ##########################################
 
-locate_bachelor_germline_variants_v1_8() {
+locate_bachelor_variants() {
     local run_dir=$1
-    local bachelor_csv=$(find -L ${run_dir}/bachelor/ -type f -name "*_germline_variants.csv")
-    if [ -z ${bachelor_csv} ]; then
-        local bachelor_output=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_output.csv")
-        local bachelor_found_nothing=$(find -L ${run_dir}/bachelor/ -type f -name "bachelor_found_no_variants")
-        if [ -z ${bachelor_output} ] && [ -z ${bachelor_found_nothing} ]; then
-            echo "[ERROR] Unable to locate bachelor v1.8 output in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
-    fi
-    echo ${bachelor_csv}
-}
-
-locate_bachelor_germline_variants_v1_9() {
-    local run_dir=$1
-    local bachelor_tsv=$(find -L ${run_dir}/bachelor_pilot/ -type f -name "*.bachelor.germline_variant.tsv")
+    local bachelor_tsv=$(find -L ${run_dir}/bachelor/ -type f -name "*.bachelor.germline_variant.tsv")
     if [ -z ${bachelor_tsv} ]; then
-        echo "[ERROR] Unable to locate bachelor v1.9 tsv output in ${run_dir}. Exiting." >&2
-        exit 1
+        # The germline_variant_tsv will only be found for bachelor v1.9 and higher. Since we cannot rerun bachelor on datastore,
+        # we just blank out bachelor results for every pre-v1.9 bachelor run.
+        echo "[WARN] Cannot find bachelor v1.9+ output. Assuming bachelor has not found any variants for ${run_dir}!" >&2
+        bachelor_tsv=/data/common/dbs/bachelor/empty.bachelor.germline_variant.tsv
     fi
     echo ${bachelor_tsv}
 }
-
 
 ############################################# CHORD ###########################################
 
@@ -473,11 +516,21 @@ locate_chord_pilot_prediction() {
 
 ############################################# LIMS ###########################################
 
-locate_reporting_db_tsv_pilot() {
-    local reporting_db_tsv=$(find "/data/lims/report_dates_lims_pilot.tsv")
-    if [ -z ${reporting_db_tsv} ]; then
+locate_reporting_db_tsv() {
+    local reporting_db_tsv=/data/lims/reporting_db.tsv
+    if [ ! -f ${reporting_db_tsv} ]; then
         echo "[ERROR] Unable to locate reporting db TSV. Exiting." >&2
         exit 1
     fi
     echo ${reporting_db_tsv}
 }
+
+locate_reporting_db_tsv_pilot() {
+    local reporting_db_tsv=/data/lims/report_dates_lims_pilot.tsv
+    if [ ! -f ${reporting_db_tsv} ]; then
+        echo "[ERROR] Unable to locate reporting db TSV. Exiting." >&2
+        exit 1
+    fi
+    echo ${reporting_db_tsv}
+}
+

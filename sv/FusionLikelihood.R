@@ -14,7 +14,7 @@ library(stringi)
 # - fusion likelihood for long non-proximate DELs, DUPs and INVs, translocation and short INVs
 
 lengthBucketMax = 4096e3
-lengthBucketMin = 100
+lengthBucketMin = 10
 lengthLong = 5e6
 longDelDupInv = 'LONG_DDI'
 shortInv = 1e5
@@ -32,7 +32,7 @@ get_length_min<-function(Type,Length)
 {
   lengthMin=ifelse(Type=='BND',0,
             ifelse(Length>lengthBucketMax,lengthLong,
-            ifelse(Type=='INV',ifelse(Length<shortInv,1000,100000),
+            ifelse(Type=='INV',ifelse(Length<shortInv,lengthBucketMin,100000),
             ifelse(Length<1000,lengthBucketMin,1000*(2**floor(log(Length/1000,2))))
             )))
   
@@ -111,7 +111,7 @@ allFusions = allFusions %>% mutate(SameSV=(SvIdUp==SvIdDown),
 allFusions = allFusions %>% filter(SampleId %in% highestPurityCohort$sampleId) # de-dup multiple biopsy samples
 allFusions = allFusions %>% filter(TypeUp!='INS'&TypeDown!='INS') # include inserts
 allFusions = allFusions %>% filter(ResolvedType!='LINE'&ResolvedType!='DUP_BE') # exclude LINE and duplicate SVs
-allFusions = allFusions %>% filter(SameSV&PhaseMatched=='true'&ExonsSkippedUp==0&ExonsSkippedDown==0)
+allFusions = allFusions %>% filter(PhaseMatched=='true'&ExonsSkippedUp==0&ExonsSkippedDown==0)
 nrow(allFusions)
 
 maxPreGeneDistance=10e3
@@ -126,19 +126,25 @@ allFusions = allFusions %>% mutate(Length=get_length(Type,PosUp,PosDown),
                                    LengthMax=get_length_max(Type,Length,LengthMin),
                                    Type=ifelse(LengthMin==lengthLong,longDelDupInv,as.character(Type)))
 
-nrow(allFusions) # 32K
+nrow(allFusions) # 36.6K
 
 
 # DEBUG: filter for single chromosome
 # allFusions = allFusions %>% filter(SameChromosome&ChrUp==filterChromosome)
 
-allFusions = allFusions %>% mutate(SampleSvId=paste(SampleId,SvIdUp,sep='_'))
+# optionally ignore same-gene fusions
+allFusions = allFusions %>% filter(!SameGene)
 
-# de-dedup so that for each sample and type/length there is at most 1 fusion per gene-pair
+# de-dedup so that for each sample and type/length there is at most 1 fusion per gene-pair per sample (shortest if more than 1)
+# allFusionsDedup = allFusions %>% group_by(SampleId,GenePair,GeneIdUp,GeneNameUp,GeneIdDown,GeneNameDown,Type,LengthMin,LengthMax) %>% count() %>%
+#  ungroup() %>% select(GenePair,GeneIdUp,GeneNameUp,GeneIdDown,GeneNameDown,Type,LengthMin,LengthMax)
+
 allFusionsDedup = allFusions %>% group_by(SampleId,GenePair,GeneIdUp,GeneNameUp,GeneIdDown,GeneNameDown,Type,LengthMin,LengthMax) %>% count() %>%
+  arrange(SampleId,GenePair,LengthMin) %>% group_by(SampleId,GenePair,GeneIdUp,GeneNameUp,GeneIdDown,GeneNameDown) %>% 
+  summarise(Type=first(Type),LengthMin=first(LengthMin),LengthMax=first(LengthMax)) %>% 
   ungroup() %>% select(GenePair,GeneIdUp,GeneNameUp,GeneIdDown,GeneNameDown,Type,LengthMin,LengthMax)
-  
-nrow(allFusionsDedup) # 31814
+
+nrow(allFusionsDedup) # 35593, 22639 without same-gene fusions
 
 View(allFusions %>% select(GeneNameUp,GeneNameDown,Type,Length,LengthMin,LengthMax,PosUp,PosDown,TypeUp,TypeDown))
 View(allFusions %>% group_by(Type,LengthMin,LengthMax) %>% count())
@@ -156,8 +162,9 @@ threePrimeActuals = allFusionsDedup %>% group_by(GeneId=GeneIdDown,GeneName=Gene
 
 actualFusions = rbind(fivePrimeActuals,threePrimeActuals)
 View(actualFusions)
-nrow(actualFusions) # 43870
+nrow(actualFusions) # 53516
 
+rm(allFusionsDedup)
 rm(threePrimeActuals)
 rm(fivePrimeActuals)
 
@@ -184,9 +191,6 @@ cohortSVs = cohortSVs %>% filter(ResolvedType!='LINE'&ResolvedType!='DUP_BE')
 # cohortSVs = cohortSVs %>% filter(!(Type=='BND'&((LnkLenStart>1&LnkLenStart<1000)|(LnkLenEnd>1&LnkLenEnd<1000))))
 # nrow(cohortSVs %>% filter(Type=='BND'&((LnkLenStart>1&LnkLenStart<1000)|(LnkLenEnd>1&LnkLenEnd<1000)))) # 49.7K
 
-cohortSVs = cohortSVs %>% mutate(SampleSvId=paste(SampleId,Id,sep='_'))
-
-cohortSVs = cohortSVs %>% mutate(InFusion=SampleSvId %in% allFusions$SampleSvId)
 
 #View(cohortSVs %>% group_by(Type) %>% count())
 cohortSVs = cohortSVs %>% mutate(Length=get_length(Type,PosStart,PosEnd),
@@ -195,27 +199,20 @@ cohortSVs = cohortSVs %>% mutate(Length=get_length(Type,PosStart,PosEnd),
                                  Type=ifelse(LengthMin==lengthLong,longDelDupInv,as.character(Type)))
 
 View(cohortSVs %>% group_by(Type,LengthMin,LengthMax,InFusion) %>% count() %>% spread(InFusion,n))
+View(cohortSVs %>% group_by(Type,LengthMin,LengthMax) %>% count())
 
 View(cohortSVs)
 nrow(cohortSVs)
 #View(cohortSVs %>% filter(LengthMin==LengthMax&LengthMin>0&LengthMin<1e5))
 
+write.csv(cohortSVs, '~/data/sv/fusion_like/cohort_svs.csv', row.names = F, quote = F)
+cohortSVs = read.csv('~/data/sv/fusion_like/cohort_svs.csv')
 
 # produce numbers of each category
 cohortSvSummary = cohortSVs %>% group_by(Type,LengthMin,LengthMax) %>% 
-  summarise(CountAll=n(),
-            CountNoFusions=sum(!InFusion))
-
-# decide which count to use to adjusted expected counts below
-# cohortSvSummary = cohortSvSummary %>% mutate(CohortCount=CountNoPosSelection)
-cohortSvSummary = cohortSvSummary %>% mutate(CohortCount=CountAll)
+  summarise(CohortCount=n()) %>% ungroup()
 
 View(cohortSvSummary)
-
-#write.csv(cohortSvSummary, '~/data/sv/fusion_like/cohort_bucket_counts.csv', row.names = F, quote = F)
-#write.csv(cohortSVs, '~/data/sv/fusion_like/cohort_svs.csv', row.names = F, quote = F)
-# cohortSvSummary = read.csv('~/data/sv/fusion_like/cohort_bucket_counts.csv')
-
 
 
 
@@ -235,10 +232,10 @@ View(geneRangeData)
 
 # set these from the cohort summary
 print(shortInv)
-delDupInvCount = sum(cohortSvSummary %>% ungroup() %>% filter(Type==longDelDupInv&LengthMin==lengthLong&LengthMax==lengthLong) %>% select(CohortCount))
-bndCount = sum(cohortSvSummary %>% ungroup() %>% filter(Type=='BND') %>% select(CohortCount))
-shortInvCount = sum(cohortSvSummary %>% ungroup() %>% filter(Type=='INV'&LengthMin==1e3&LengthMax==shortInv) %>% select(CohortCount))
-medInvCount = sum(cohortSvSummary %>% ungroup() %>% filter(Type=='INV'&LengthMin==shortInv&LengthMax==lengthLong) %>% select(CohortCount))
+delDupInvCount = sum(cohortSvSummary %>% filter(Type==longDelDupInv&LengthMin==lengthLong&LengthMax==lengthLong) %>% select(CohortCount))
+bndCount = sum(cohortSvSummary %>% filter(Type=='BND') %>% select(CohortCount))
+shortInvCount = sum(cohortSvSummary %>% filter(Type=='INV'&LengthMin==lengthBucketMin&LengthMax==shortInv) %>% select(CohortCount))
+medInvCount = sum(cohortSvSummary %>% filter(Type=='INV'&LengthMin==shortInv&LengthMax==lengthLong) %>% select(CohortCount))
 print(delDupInvCount)
 print(bndCount)
 print(medInvCount)
@@ -268,7 +265,7 @@ shortInvCounts = rbind(geneRangeData %>% select(GeneId,GeneName,ShortInvRateUp) 
                        %>% mutate(ExpFusion=ShortInvRateUp*shortInvCount) %>% select(GeneId,GeneName,Stream,ExpFusion),
                        geneRangeData %>% select(GeneId,GeneName,ShortInvRateDown) %>% mutate(Stream='Downstream')
                        %>% mutate(ExpFusion=ShortInvRateDown*shortInvCount) %>% select(GeneId,GeneName,Stream,ExpFusion)) %>%
-  mutate(Type='INV',LengthMin=1000,LengthMax=shortInv)
+  mutate(Type='INV',LengthMin=lengthBucketMin,LengthMax=shortInv)
 
 # View(shortInvCounts)
 sum(shortInvCounts$ExpFusion)
@@ -292,6 +289,10 @@ proximateDelDups = read.csv('~/data/sv/fusion_like/GFL_DEL_DUP_PROXIMATES.csv')
 # DEBUG for single chromosome
 proximateDelDups = read.csv('~/logs/GFL_DEL_DUP_PROXIMATES.csv')
 proximateDelDups = proximateDelDups %>% filter(Chromosome==filterChromosome)
+
+# optionally filter out same-gene fusions
+proximateDelDups = proximateDelDups %>% filter(as.character(GeneIdUp)!=as.character(GeneIdDown))
+nrow(proximateDelDups)
 
 proximateDelDups = merge(proximateDelDups,cohortSvSummary,by=c('Type','LengthMin','LengthMax'),all.x=T)
 proximateDelDups = proximateDelDups %>% mutate(ExpFusion=CohortCount*ProximateRate)
@@ -349,18 +350,14 @@ View(breakendsInGenes %>% filter(GeneName=='CSMD1'&Type=='DEL'))
 # and populated with actual gene-breakend counts
 ensemblGeneData = read.csv('~/data/sv/ensembl_gene_data.csv')
 nrow(ensemblGeneData)
+View(head(ensemblGeneData,100))
+
+ensemblGeneData = ensemblGeneData %>% mutate(GeneLength=GeneEnd-GeneStart,
+                                             ExpBreakendRate=round(GeneLength/fullGenome,12))
 
 # DEBUG single chromosome only
 ensemblGeneData = ensemblGeneData %>% filter(Chromosome==filterChromosome)
 rm(ensemblGeneDataAll)
-
-#transSpliceData = read.csv('~/data/sv/ensembl_trans_splice_data.csv')
-#nrow(transSpliceData)
-# View(transSpliceData %>% filter(PreSpliceAcceptorPosition<(-1)))
-
-#preGeneDistances = transSpliceData %>% filter(PreSpliceAcceptorPosition>=0) %>% group_by(GeneId) %>% 
-#  summarise(PreDistanceMax=max(Distance)) %>% mutate(PreDistanceMax=ifelse(PreDistanceMax<maxPreGeneDistance,PreDistanceMax,maxPreGeneDistance))
-# View(preGeneDistances)
 
 fullGenome=3e9
 genomeLength=fullGenome
@@ -370,8 +367,6 @@ genomeLength=146364022 # chr 8
 genomeLength=81195210 # chr 17
 genomeLength=48129895 # chr 21
 
-ensemblGeneData = ensemblGeneData %>% mutate(GeneLength=GeneEnd-GeneStart,
-                                             ExpBreakendRate=round(GeneLength/fullGenome,12))
 
 geneFrequencies = merge(ensemblGeneData %>% select(GeneId,GeneName,ExpBreakendRate,Strand),cohortSvSummary,all=T)
 geneFrequencies = geneFrequencies %>% select(GeneId,GeneName,ExpBreakendRate,Strand,Type,LengthMin,LengthMax,CohortCount)
@@ -396,7 +391,6 @@ rm(geneFrequencies2)
 
 geneExpAndActCounts = geneExpAndActCounts %>% mutate(ExpBeCount=ExpBreakendRate*CohortCount*2) # since each SV has 2 breakends
 View(geneExpAndActCounts)
-View(head(geneExpAndActCounts,100))
 nrow(geneExpAndActCounts)
 
 View(geneExpAndActCounts %>% group_by(Type,LengthMin,LengthMax) %>% 
@@ -420,12 +414,11 @@ combinedGeneData[is.na(combinedGeneData)] = 0
 
 combinedGeneData = combinedGeneData %>% 
   mutate(ExpSvCount=ifelse(ExpBeCount>ExpFusion,ExpBeCount-ExpFusion,ExpFusion),
-         AdjExpFusions=ifelse(ExpBeCount>0,round((ActBeCount-ActFusions)*ExpFusion/ExpBeCount,4),ExpFusion))
-
-combinedGeneData = combinedGeneData %>% 
-  mutate(Prob=ifelse(ActFusions>AdjExpFusions&AdjExpFusions>0,1-ppois(ActFusions-1,AdjExpFusions,T),1))
+         AdjExpFusions=ifelse(ExpBeCount>0,(ActBeCount-ActFusions)*ExpFusion/ExpBeCount,ExpFusion),
+         Prob=ifelse(AdjExpFusions>0,1-ppois(ActFusions-1,AdjExpFusions,T),1))
 
 View(combinedGeneData %>% filter(Prob<0.001) %>% arrange(Prob))
+View(combinedGeneData %>% filter(is.na(Prob)))
 
 rm(allExpFusion)
 rm(allFusionData)
@@ -433,7 +426,7 @@ rm(actualFusions)
 
 
 ## SAVE key data sets
-write.csv(combinedGeneData, '~/data/sv/fusion_like/fusion_likelihood_summary.csv',row.names=F,quote=F)
+write.csv(combinedGeneData, '~/data/sv/fusion_like/fusion_like_per_gene.csv',row.names=F,quote=F)
 combinedGeneData = read.csv('~/data/sv/fusion_like/fusion_likelihood_summary.csv')
 
 write.csv(cohortSVs,'~/data/sv/fusion_like/cohort_sv_data.csv',row.names=F,quote=F)
@@ -467,17 +460,26 @@ View(fragileSiteGenes)
 topTsgGenes = read.csv('~/data/sv/drivers/KnownTSGs.csv')
 View(topTsgGenes)
 
-combinedGeneData = combinedGeneData %>% mutate(FragileSite=GeneName %in% fragileSiteGenes$GeneName)
-combinedGeneData = combinedGeneData %>% mutate(KnownTSG=GeneName %in% topTsgGenes$GeneName)
-combinedGeneData = combinedGeneData %>% mutate(ThreePrimeProm=Stream=='Downstream'&GeneName %in% threePrimeProm$GeneName)
-combinedGeneData = combinedGeneData %>% mutate(FivePrimeProm=Stream=='Upstream'&GeneName %in% fivePrimeProm$GeneName)
+View(combinedGeneData)
+
+combinedGeneData = combinedGeneData %>% mutate(FragileSite=GeneName %in% fragileSiteGenes$GeneName,
+                                               KnownTSG=GeneName %in% topTsgGenes$GeneName,
+                                               ThreePrimeProm=Stream=='Downstream'&GeneName %in% threePrimeProm$GeneName,
+                                               FivePrimeProm=Stream=='Upstream'&GeneName %in% fivePrimeProm$GeneName)
 
 
 # calculate a probability across all buckets for each gene
 geneSummary = combinedGeneData %>% group_by(GeneName,Stream,GeneLength,FragileSite,KnownTSG,ThreePrimeProm,FivePrimeProm) %>% 
   summarise(ActFusions=sum(ActFusions),
-            AdjExpFusions=round(sum(AdjExpFusions),4)) %>%
-  mutate(Prob=ifelse(ActFusions>AdjExpFusions&AdjExpFusions>0,1-ppois(ActFusions-1,AdjExpFusions,T),1))
+            AdjExpFusions=sum(AdjExpFusions)) %>%
+  mutate(Prob=ifelse(AdjExpFusions>0,1-ppois(ActFusions-1,AdjExpFusions,T),1))
+
+
+View(geneSummary %>% filter(Prob<0.01|ThreePrimeProm|FivePrimeProm) %>% arrange(Prob))
+
+write.csv(geneSummary %>% filter(Prob<0.01|ThreePrimeProm|FivePrimeProm) %>% arrange(Prob),
+          '~/data/sv/fusion_like/fusion_like_gene_partners.csv',row.names=F,quote=F)
+
 
 View(geneSummary %>% filter(Prob<0.001))
 View(geneSummary %>% filter(!FragileSite&Prob<0.001) %>% arrange(Prob))

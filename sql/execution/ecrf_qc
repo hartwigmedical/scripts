@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Desc: Executes DB queries to get ECRF metrics after update with new dump
 
@@ -6,20 +6,20 @@ scripts_repo="/data/common/repos/scripts"
 exec_script="${scripts_repo}/sql/execution/execute_sql_on_prod"
 lock_sql="${scripts_repo}/sql/clinical/locked_forms_analysis.sql"
 comp_sql="${scripts_repo}/sql/clinical/cpct_sample_completeness_analysis.sql"
-yymmdd=$( date "+%y%m%d" )
+yymmdd=$(date "+%y%m%d")
 
 echo "## ---"
 echo "## Locked Forms"
 echo "## ---"
-count=$( ${exec_script} ${lock_sql} | grep -v "^form" | awk '$3 == "all"' | cut -f 1 )
-percs=$( ${exec_script} ${lock_sql} | grep -v "^form" | cut -f 2 | paste -s -d ',' )
+count=$(${exec_script} ${lock_sql} | grep -v "^form" | awk '$3 == "all"' | cut -f 1)
+percs=$(${exec_script} ${lock_sql} | grep -v "^form" | cut -f 2 | paste -s -d ',')
 echo "${yymmdd},${count},${percs}"
 echo ""
 
 echo "## ---"
 echo "## Completeness"
 echo "## ---"
-counts=$( ${exec_script} ${comp_sql} | grep -v "^samples" | cut -f 1 | paste -s -d ',' )
+counts=$(${exec_script} ${comp_sql} | grep -v "^samples" | cut -f 1 | paste -s -d ',')
 echo "${yymmdd},${counts}"
 
 echo ""

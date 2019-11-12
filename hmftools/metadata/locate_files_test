@@ -30,6 +30,12 @@ if [ $? = 0 ]; then echo "[INFO]  Purple Somatic VCF: ${purple_somatics}"; fi
 purple_purity=$(locate_purple_purity ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  Purple Purity: ${purple_purity}"; fi
 
+purple_qc=$(locate_purple_qc ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Purple QC: ${purple_qc}"; fi
+
+purple_drivers=$(locate_purple_drivers ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Purple Drivers: ${purple_drivers}"; fi
+
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  Purple Gene Copy Numbers: ${purple_gene_copynumbers}"; fi
 
@@ -57,11 +63,11 @@ if [ $? = 0 ]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions
 linx_drivers=$(locate_linx_drivers ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  LINX Drivers: ${linx_drivers}"; fi
 
-bachelor_germline_variants_v1_8=$(locate_bachelor_germline_variants_v1_8 ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Bachelor v1.8 Germline Variants: ${bachelor_germline_variants_v1_8}"; fi
+germline_variants=$(locate_germline_variants ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Germline Variants: ${germline_variants}"; fi
 
-bachelor_germline_variants_v1_9=$(locate_bachelor_germline_variants_v1_9 ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Bachelor v1.9 Germline Variants: ${bachelor_germline_variants_v1_9}"; fi
+bachelor_variants=$(locate_bachelor_variants ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Bachelor Variants: ${bachelor_variants}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; fi

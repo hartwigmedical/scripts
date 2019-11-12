@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source locate_files
 
 file_with_sql_to_execute=$1

@@ -5,6 +5,8 @@ import re
 import sys
 import json
 import requests
+import hashlib
+import base64
 from requests_aws4auth import AWS4Auth
 from dateutil import parser
 from datetime import timedelta, datetime
@@ -60,6 +62,8 @@ if 'x-amz-restore' in r.headers:
         print 'Object already restored till ' + str(parsed['expiry-date']) + ' so not requesting new restore'
         sys.exit(0)
 
+data='<RestoreRequest><Days>7</Days></RestoreRequest>'
+
 r = requests.post(
   'https://s3.object02.schubergphilis.com/' + sys.argv[1] + '?restore',
         auth=AWS4Auth(
@@ -68,8 +72,11 @@ r = requests.post(
             'eu-nl-prod01',
             's3'
        	),
+        headers={
+            'Content-MD5': base64.b64encode(hashlib.md5(data).digest())
+        },
        	timeout=30,
-        data='<RestoreRequest><Days>7</Days></RestoreRequest>'
+        data=data
     )
 
 print r.status_code

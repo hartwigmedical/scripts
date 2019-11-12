@@ -1,45 +1,19 @@
 #!/usr/bin/env bash
 
-path=/data/schuberg/processed_runs
-process_runs=$(ls ${path})
+health_check_processed_runs
 
+process_runs=$(ls /data/schuberg/processed_runs)
 for run in ${process_runs}; do
     patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORE"* ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
-	    mv /data/schuberg/processed_runs/${run} /data/core/runs/
+	      mv /data/schuberg/processed_runs/${run} /data/core/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/core/runs/${run}
     else
         echo "[INFO] Moving set ${run} to /data/cpct/runs"
-	    mv /data/schuberg/processed_runs/${run} /data/cpct/runs/
-    fi
-done
-
-run_clinical_patient_db_prod
-
-for run in ${process_runs}; do
-    echo "[INFO] Create patient report for ${run}"
-    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
-    if [[ ${patientId} == "CORE"* ]]; then
-        patient_report_for_run /data/core/runs/${run}
-    else
-       patient_report_for_run /data/cpct/runs/${run}
-    fi
-done
-
-for run in ${process_runs}; do
-    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
-    echo "[INFO] Writing evidence item into db for ${run}"
-    if [[ ${patientId} != "CORE"* ]]; then
-        load_evidence_items_data_prod /data/cpct/runs/${run}
-    fi
-done
-
-echo "[INFO] Processing of finished runs is finished"
-
-for run in ${process_runs}; do
-    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
-    if [[ ${patientId} == "CORE"* ]]; then
-        echo "[INFO] Removing genomic data of patient db for ${run}"
-        delete_sample_from_database_prod /data/core/runs/${run}
+	      mv /data/schuberg/processed_runs/${run} /data/cpct/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/cpct/runs/${run}
     fi
 done

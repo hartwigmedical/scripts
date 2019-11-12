@@ -7,4 +7,4 @@ run_dir=$1 && shift
 patient_db_jar=$(locate_prod_patient_db)
 credentials=$(locate_prod_database_credentials)
 
-do_load_run_into_db  ${run_dir} ${patient_db_jar} ${credentials}
+do_load_run_into_db ${run_dir} ${patient_db_jar} ${credentials}

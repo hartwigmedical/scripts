@@ -13,15 +13,15 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 # File Locations
-high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 hotspot_tsv=$(locate_hotspot_tsv)
+high_confidence_bed=/data/common/dbs/GIAB_NIST_v3.2.2/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed.gz
 
 echo "[INFO] Loading somatic variant data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
     -sample ${sample} \
-    -vcf_file ${somatic_vcf} \
-    -hotspot ${hotspot_tsv} \
+    -somatic_vcf ${somatic_vcf} \
+    -hotspot_tsv ${hotspot_tsv} \
     -high_confidence_bed ${high_confidence_bed} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
