@@ -2,11 +2,10 @@
 
 local_path='/data/schuberg/snpcheckvcfupload'
 
-user_project='hmf-database'
 bucket='hmf-snpcheck'
 destination='snpcheckvcfs'
 
 echo "[INFO] Syncing snpcheck data to GCP!"
 
 gcloud auth activate-service-account --key-file /home/sbpext/hmf-snpcheck
-gsutil -u ${user_project} rsync -dr ${local_path} gs://${bucket}/${destination}
+gsutil rsync -dr ${local_path} gs://${bucket}/${destination}
