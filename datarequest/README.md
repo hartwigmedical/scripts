@@ -78,8 +78,7 @@ By default, in addition to data-request specific criteria, samples for which one
 
 ### Tips on downloading files 
 
-Links to URLs can be retrieved or created via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and [Download Portal](https://portal.hartwigmedicalfoundation.nl)
-For smaller files, wget generally works fine and is provided as standard on linux-based operating systems.
+Links to URLs can be retrieved or created via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and [Download Portal](https://portal.hartwigmedicalfoundation.nl). For smaller files, wget generally works fine and is provided on standard linux-based operating systems.
 
 **Example download using WGET:**
 
