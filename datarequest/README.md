@@ -46,9 +46,20 @@ Germline data is shared via a url to **germline.tar** via [Nextcloud Portal](htt
 
 We share the SNVs and small INDELs called from the reference sample using GATK haplotype caller.
 
-### Alignments
+### Alignments (BAM files)
 
 Sharing of BAM files is currently only supported for samples which have been previously published, but in case you do have access they can be accessed in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+
+**Some notes to keep in mind**
+- The session time is 2 hours, after this period you will have to login again
+- Files can be very large (up to 300GB) so please check before starting a download!
+- When you create links to files, be aware that these links are valid for 24 hours. After this period you will have to create new links.
+
+**Example loading BAM file in IGV:**
+- Create the links for the BAM and accompanying BAI file (by clicking the most right icon next to a run)
+- Open the IGV program and choose option "Load from URL"
+- Paste the BAM file link at field "File URL"
+- Paste the BAI file link at field "Index URL"
 
 ### Sample selection
 
@@ -58,6 +69,26 @@ By default, in addition to data-request specific criteria, samples for which one
 - Samples with poor quality (PURPLE qcStatus != PASS).
 - Samples without any tumor evidence (PURPLE status = NO_TUMOR).
 - Samples with less than 19.5% tumor cells (PURPLE purity < 0.195).
+
+### Downloading files via URLs from [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) or [Download Portal](https://portal.hartwigmedicalfoundation.nl) 
+
+For smaller files, wget generally works fine and is provided as standard on linux-based operating systems.
+
+**Example download using WGET:**
+
+- Copy the links into a new text file (eg links.txt)
+- Use the following command to download: 
+
+```sh
+wget --content-disposition -i links.txt
+```
+
+For bigger files or if wget doesn't work in the first place, we recommend to use the [aria2 download tool](https://aria2.github.io/). This will allow you to download with multiple streams speeding up the download significantly.
+
+**Example download using aria2 (with 5 connections):**
+```sh
+aria2c -x 5 -c -i links.txt
+```
 
 ### More information
 - For source code of our analysis pipeline see our [pipeline5 repo](https://github.com/hartwigmedical/pipeline5).
