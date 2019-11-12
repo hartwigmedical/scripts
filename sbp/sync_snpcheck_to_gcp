@@ -8,5 +8,5 @@ destination='snpcheckvcfs'
 
 echo "[INFO] Syncing snpcheck data to GCP!"
 
-gcloud auth activate-service-account --key-file /home/sbpext/hmf-output-test
+gcloud auth activate-service-account --key-file /home/sbpext/hmf-snpcheck
 gsutil -u ${user_project} rsync -dr ${local_path} gs://${bucket}/${destination}
