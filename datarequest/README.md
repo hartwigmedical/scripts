@@ -6,7 +6,7 @@ This page provides information about the data you received within the context of
 
 ### General Notes
  - Sharing of data is done via an OKTA account which requires dual-factor authentication. The OKTA account is used to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
- - When publishing results based on HMF data, please be aware that you can only refer to our samples using their HMF-IDs. These IDs are currently not shared when you receive data but can be requested whenever they become relevant.
+ - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. These can be requested for the samples you have been provided. 
  - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
  - Methods used to collect and analyse our samples can be found on our [methods](./README_METHODS.md) page.
  
