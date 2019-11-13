@@ -24,9 +24,8 @@ echo "[INFO] Loading evidence data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
-    -run_dir ${run_dir} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -tumorlocation_file ${tumor_location_csv} \
+    -tumor_location_csv ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
