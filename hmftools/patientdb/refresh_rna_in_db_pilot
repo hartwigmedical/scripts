@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+rna_samples_tsv=$1 && shift
+
+credentials=$(locate_pilot_database_credentials)
+patient_db_jar=$(locate_pilot_patient_db)
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+echo "[INFO] Refreshing RNA data"
+
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadRNAMetaData \
+    -rna_samples_tsv ${rna_samples_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
