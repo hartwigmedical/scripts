@@ -7,7 +7,7 @@ month=$1
 reporting_db_tsv=$(locate_reporting_db_tsv)
 
 header=$(head -n 1 ${reporting_db_tsv})
-output_file=$(cat ${reporting_db_tsv} | grep "-${month}-2019" )
+output_file=$(cat ${reporting_db_tsv} | grep "${month}-2019" )
 
 purity=$(echo ${output_file} | awk '{print $5 /100}' )
 
