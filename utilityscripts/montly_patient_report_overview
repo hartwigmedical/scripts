@@ -7,13 +7,11 @@ month=$1
 reporting_db_tsv=$(locate_reporting_db_tsv)
 
 header=$(head -n 1 ${reporting_db_tsv})
-output_file=$(cat ${reporting_db_tsv} | grep "${month}-2019" )
+cat ${reporting_db_tsv} | grep ${month}-2019 > "/data/lims/montly_overview_reporting_db/19_${month}_overview_tmp.tsv"
 
-purity=$(echo ${output_file} | awk '{print $5 /100}' )
+reporting_db_tsv="/data/lims/montly_overview_reporting_db/19_${month}_overview_tmp.tsv"
 
-sample_data=$(echo ${output_file} | awk '{ print $1, $2, $3, $4}' )
-sample_purple=$(echo ${output_file} | awk '{ print $6 $7} ')
+echo ${header} | tr " " \\t > "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
+cat ${reporting_db_tsv} | awk '{print $1, $2, $3, $4, $5 /100, $6, $7}' | tr " " \\t >> "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
 
-echo ${header} > "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
-echo ${sample_data} ${purity} ${sample_purple} >> "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
-cat "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv" | tr " " \\t > "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
+rm "/data/lims/montly_overview_reporting_db/19_${month}_overview_tmp.tsv"
