@@ -15,5 +15,5 @@ sample_data=$(echo ${output_file} | awk '{ print $1, $2, $3, $4}' )
 sample_purple=$(echo ${output_file} | awk '{ print $6 $7} ')
 
 echo ${header} > "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
-echo ${sample_data} ${purity} ${sample_purple} | tr >> "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
+echo ${sample_data} ${purity} ${sample_purple} >> "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
 cat "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv" | tr " " \\t > "/data/lims/montly_overview_reporting_db/19_${month}_overview.tsv"
