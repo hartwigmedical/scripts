@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-dr_name="DR-test"
-request_name="DR-test1"
-patient_selection_sql="/data/data_archive/datarequests/procedure/patient_selection_sql/test.sql"
+# Replace "test" with the actualDR number in format "xxx" (eg, "102" for DR-102)
+# Do note that this only works for initial DR handouts. Otherwise you need to manually update the request_name.
+dr_id="xxx"
+
+dr_name="DR-${dr_id}"
+request_name="DR-${dr_id}"
+patient_selection_sql="/data/common/repos/scripts/datarequest/selection/DR${dr_id}.sql"
 
 include_somatics=0
 include_germline=0

@@ -6,9 +6,8 @@ source metadata_functions
 run_dir=$1 && shift
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_evidence_items_data_new ${tumor_sample} ${tumor_sample_barcode} ${run_dir} ${credentials} ${patient_db_jar}
+do_load_clinical_evidence_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar} "$@"

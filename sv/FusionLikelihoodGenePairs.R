@@ -917,6 +917,55 @@ View(unfilteredFusions %>% filter(SameSV&PhaseMatched=='true') %>% filter(Region
 ## DEBUG
 
 
+ensemblGeneData = read.csv('~/data/sv/ensembl_gene_data.csv')
+View(ensemblData)
+
+# 3' must have coding bases after the first exon
+# 5' if coding must have coding bases after the first exon
+ensemblTransData = read.csv('~/data/sv/ensembl_trans_exon_data.csv')
+View(ensemblTransData)
+View(head(ensemblTransData,100))
+ensemblTransData = ensemblTransData %>% filter(TransId==CanonicalTranscriptId)
+nrow(ensemblTransData)
+
+transData = ensemblTransData %>% group_by(GeneId,TransId,Trans,Strand,CodingStart,CodingEnd,TransStart,TransEnd) %>%
+  summarise(ExonCount=n(),
+            LowExonStart=min(ExonStart),
+            HighExonStart=max(ExonStart),
+            LowExonEnd=min(ExonEnd),
+            HighExonEnd=max(ExonEnd)) %>% ungroup()
+
+transData = transData %>% mutate(CodingStart=ifelse(CodingStart=='NULL',-1,as.numeric(as.character(CodingStart))),
+                                 CodingEnd=ifelse(CodingEnd=='NULL',-1,as.numeric(as.character(CodingEnd))),
+                                 IsCoding=CodingStart>0&CodingEnd>0,
+                                 CodingPastFirstExon=ifelse(Strand==1,IsCoding&ExonCount>1&CodingEnd>LowExonEnd,
+                                                            IsCoding&ExonCount>1&CodingStart<HighExonStart))
+
+View(transData)
+View(transData %>% filter(is.na(CodingEnd)))
+View(ensemblTransData %>% filter(Trans=='ENST00000442233'))
+View(transData %>% group_by(GeneId) %>% count)
+
+nrow(transData %>% filter(CodingPastFirstExon)) # 3' possibles
+nrow(transData %>% filter(CodingPastFirstExon|(!IsCoding&ExonCount>1))) # 5' possibles
+nrow(transData %>% filter(!CodingPastFirstExon&IsCoding))
+nrow(transData %>% filter(ExonCount==1))
+
+possibleTrans = transData %>% mutate(Possible3P=CodingPastFirstExon,
+                                     Possible5P=CodingPastFirstExon|(!IsCoding&ExonCount>1))
+
+possibleTrans = merge(possibleTrans,ensemblGeneData %>% select(GeneId,Chromosome),by='GeneId',all.x=T)
+View(possibleTrans %>% filter(is.na(Chromosome)))
+possibleTrans = possibleTrans %>% filter(!is.na(Chromosome))
+
+View(possibleTrans %>% group_by(Chromosome) %>% summarise(Possible5P=sum(Possible5P),Possible3P=sum(Possible3P)))
+
+rm(possibleTrans)
+rm(transData)
+rm(ensemblTransData)
+
+
+
 tp53Introns = generate_intron_data(tp53ExonData)
 View(tp53Introns)
 

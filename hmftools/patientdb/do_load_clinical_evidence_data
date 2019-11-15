@@ -3,7 +3,6 @@
 source locate_files
 
 sample=$1 && shift
-tumor_sample_barcode=$1 && shift
 run_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
@@ -25,10 +24,8 @@ echo "[INFO] Loading evidence data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
-    -tumor_sample_barcode ${tumor_sample_barcode} \
-    -run_dir ${run_dir} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -tumorlocation_file ${tumor_location_csv} \
+    -tumor_location_csv ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \

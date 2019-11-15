@@ -27,3 +27,4 @@ do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
 do_load_bachelor_data ${tumor_sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar}
+do_load_clinical_evidence_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar}

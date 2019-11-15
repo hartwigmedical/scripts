@@ -2,8 +2,15 @@
 
 prefix=$(dirname $(readlink $0 || echo $0))
 
-metadata_tsv=$1 && shift
+patient_selection_tsv=$1 && shift
 log_dir=$1 && shift
 metadata_dir=$1 && shift
 
-do_generate_extra_clinical_data ${metadata_tsv} ${log_dir} ${metadata_dir} "rano_measurements_by_patient" ${prefix}/sql_rano_measurements_by_patient.sql
+name="rano_measurements_by_patient"
+
+do_generate_extra_clinical_data \
+    ${patient_selection_tsv} \
+    ${log_dir} \
+    ${name} \
+    ${metadata_dir}/${name}.tsv \
+    ${prefix}/../sql/sql_rano_measurements_by_patient.sql
