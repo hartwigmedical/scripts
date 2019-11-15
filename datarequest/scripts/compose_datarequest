@@ -67,7 +67,7 @@ if [ $? = 0 ]; then
     echo "[INFO] Selecting patients to include for ${request_name}..."
     cp ${patient_selection_sql} ${log_dir}/selectPatients.sql
     patient_selection_tsv=${log_dir}/selectPatients.tsv
-    execute_sql_on_prod ${log_dir}/selectPatients.sql > ${patient_selection_tsv}
+    execute_sql_on_pilot ${log_dir}/selectPatients.sql > ${patient_selection_tsv}
     patient_count=$(grep -cv "^#" ${patient_selection_tsv})
     echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients"
 

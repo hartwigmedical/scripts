@@ -9,7 +9,7 @@ sql=$1 && shift
 echo "[DEBUG] Generating clinical data ${name}"
 raw=${log_dir}/${name}_raw.tsv
 flt=${log_dir}/${name}_flt.tsv
-execute_sql_on_prod ${sql} > ${raw}
+execute_sql_on_pilot ${sql} > ${raw}
 head -1 ${raw} > ${flt}
 cat ${raw} | while read line; do
     patient=$(echo "${line}" | cut -f 1)
