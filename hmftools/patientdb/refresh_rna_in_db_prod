@@ -14,9 +14,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Refreshing RNA data"
 
-#java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadRNAMetaData \
-#    -rna_samples_tsv ${rna_samples_tsv} \
-#    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-#    "$@"
-
-echo " NOT ENABLED YET!!"
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadRNAMetaData \
+    -rna_samples_tsv ${rna_samples_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    "$@"
