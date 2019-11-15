@@ -1,17 +1,19 @@
 HMF Description of Methods
 ===== 
 
-This page describes the methods used to generate the data serviced to researchers through data requests (DRs). The data in the Hartwig database are collected through 3 different clinical studies.
+This page describes the methods used to generate the data serviced to researchers through data requests (DRs). The samples in the Hartwig database are collected through three clinical studies: CPCT-02, DRUP-01 and WIDE.
+Patients in these studies have given explicit consent for whole genome sequencing and data sharing for cancer research purposes.
+Every study delivers clinical data to Hartwig to accompany the whole genome analysis. The clinical data from the various studies is curated and standardized by Hartwig as part of the data ingestion process found in our [Patient DB](https://github.com/hartwigmedical/hmftools/tree/master/patient-db)   
 
 ## CPCT-02 ([NCT01855477](https://clinicaltrials.gov/ct2/show/NCT01855477))
 
 Patients with advanced cancer not curable by local treatment options and being candidates for any type of systemic treatment and any line of treatment were included as part of the Center for Personalized Cancer Treatment (CPCT-02) clinical study, which was approved by the medical ethical committee (METC) of the University Medical Center Utrecht. 
 
-A total of 44 academic, teaching and general hospitals across the Netherlands participated in this study and collected material and clinical data by standardized protocols. Patients have given explicit consent for whole genome sequencing and data sharing for cancer research purposes.
+A total of 44 academic, teaching and general hospitals across the Netherlands participated in this study and collected material and clinical data by standardized protocols. 
 
-Core needle biopsies were sampled from the metastatic lesion, or when considered not feasible or not safe, from the primary tumor site when still in situ. One to four biopsies were collected (average of 2.1 per patient) and frozen in liquid nitrogen directly after sampling. In parallel, a tube of blood was collected in CellSave or Streck tubes, which was shipped by room temperature to the central sequencing facility at the Hartwig Medical Foundation. Left-over material (biopsy, DNA) after sample processing was stored in biobanks associated with the studies at the University Medical Center Utrecht and the Netherlands Cancer Institute.
+Core needle biopsies were sampled from the metastatic lesion, or when considered not feasible or not safe, from the primary tumor site when still in situ. One to four biopsies were collected (average of 2.1 per patient) and frozen in liquid nitrogen directly after sampling. In parallel, a tube of blood was collected in CellSave or Streck tubes, which was shipped by room temperature to the central sequencing facility at the Hartwig Medical Foundation. Left-over material (biopsy, DNA) after sample processing was stored in a biobank at the University Medical Center Utrecht.
 
-### Clinical data collection
+#### CPCT-02 clinical data collection
 
 Clinical data to accompany the whole genome sequencing analysis has been collected in an electronic Case Record Form by local datamanagers at the 44 different hospitals, and supervised by central datamanagement. The current data extract has not been cleaned. CPCT is in the process of checking for any inconsistencies in the data and working with the sites to resolve these issues. Therefore, there may be inaccuracies in the data that are not resolved yet. Please carefully consider this when interpreting the data.
 
