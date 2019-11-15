@@ -1,6 +1,6 @@
-select distinct patientId as '#patientId'
-from datarequestFiltered
-where sampleId in
-(
-# See DR archive
-) order by 1
+SELECT
+    DISTINCT patientId AS '#patientId'
+FROM
+    datarequestFiltered
+WHERE sampleId IN ( # See DR archive)
+ORDER BY 1
