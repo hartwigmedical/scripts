@@ -29,9 +29,13 @@ There are specific issues with different types of information:
 
  - Survival: the data on survival are not present for every patient. Connecting our data to survival data is something CPCT aims to be performing in 2020.
 
-## CPCT-02 ([NCT02925234](https://clinicaltrials.gov/ct2/show/NCT02925234))
+## DRUP-01 ([NCT02925234](https://clinicaltrials.gov/ct2/show/NCT02925234))
 
 Core needle biopsies were sampled from the metastatic lesion, or when considered not feasible or not safe, from the primary tumor site when still in situ. One to four biopsies were collected (average of 2.1 per patient) and frozen in liquid nitrogen directly after sampling. In parallel, a tube of blood was collected in CellSave or Streck tubes, which was shipped by room temperature to the central sequencing facility at the Hartwig Medical Foundation. Left-over material (biopsy, DNA) after sample processing was stored in biobanks associated with the studies at the University Medical Center Utrecht and the Netherlands Cancer Institute.
+
+## WIDE ()
+
+ToDO
 
 ## Sequencing workflow
 
