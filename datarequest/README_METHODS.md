@@ -1,13 +1,35 @@
 HMF Description of Methods
 ===== 
 
-This page describes the methods used to generate the data serviced to researchers through data requests (DRs).
+This page describes the methods used to generate the data serviced to researchers through data requests (DRs). The data in the Hartwig database are collected through 3 different clinical studies.
 
-## Sample collection
+## CPCT-02 ([NCT01855477](https://clinicaltrials.gov/ct2/show/NCT01855477))
 
-Patients with advanced cancer not curable by local treatment options and being candidates for any type of systemic treatment and any line of treatment were included as part of the CPCT-02 (NCT01855477) and DRUP (NCT02925234) clinical studies, which were approved by the medical ethical committees (METC) of the University Medical Center Utrecht and the Netherlands Cancer Institute, respectively. 
+Patients with advanced cancer not curable by local treatment options and being candidates for any type of systemic treatment and any line of treatment were included as part of the Center for Personalized Cancer Treatment (CPCT-02) clinical study, which was approved by the medical ethical committee (METC) of the University Medical Center Utrecht. 
 
-A total of 41 academic, teaching and general hospitals across the Netherlands participated in these studies and collected material and clinical data by standardized protocols. Patients have given explicit consent for whole genome sequencing and data sharing for cancer research purposes. Clinical data, including primary tumor type, biopsy location, gender and birth year were collected in electronic case record forms and stored in a central database.
+A total of 44 academic, teaching and general hospitals across the Netherlands participated in this study and collected material and clinical data by standardized protocols. Patients have given explicit consent for whole genome sequencing and data sharing for cancer research purposes.
+
+Core needle biopsies were sampled from the metastatic lesion, or when considered not feasible or not safe, from the primary tumor site when still in situ. One to four biopsies were collected (average of 2.1 per patient) and frozen in liquid nitrogen directly after sampling. In parallel, a tube of blood was collected in CellSave or Streck tubes, which was shipped by room temperature to the central sequencing facility at the Hartwig Medical Foundation. Left-over material (biopsy, DNA) after sample processing was stored in biobanks associated with the studies at the University Medical Center Utrecht and the Netherlands Cancer Institute.
+
+### Clinical data collection
+
+Clinical data to accompany the whole genome sequencing analysis has been collected in an electronic Case Record Form by local datamanagers at the 44 different hospitals, and supervised by central datamanagement. The current data extract has not been cleaned. CPCT is in the process of checking for any inconsistencies in the data and working with the sites to resolve these issues. Therefore, there may be inaccuracies in the data that are not resolved yet. Please carefully consider this when interpreting the data.
+
+CPCT's standard quality control system consists of source data verification. This means about 10% of all data will be verified against source data at the different sites. This work is being done by CPCT monitors. There is an average of 10-20% of items that are not consistent with source documentation. This means the data will not be 100% complete. In case of insufficient documentation by the treating physician there is no way to correct for this. Central datamanagement is in the process of performing a logic check, meaning that after data entry the consistency of the data is checked (eg are the dates possible and logical, are the data entered conform protocol) and if possible errors are resolved. The last check will be a medical check to ensure the data from each patient makes sense from the medical point of view. CPCT expects to have completed these checks for the entire dataset in the beginning of 2020.
+
+There are specific issues with different types of information:
+
+ - Tumor type: The data on tumor type is reliable and will not contain more than 1-2% errors. CPCT has categorized tumors by tissue type of origin and provides one layer of subtype classification. Further histological subclassification is typically not present as the biopsies were collected from metastases and not part of routine diagnostics.
+ 
+ - Prior treatment: The type of prior treatment will in general be reliable and whether the prior treatment fits with the diagnosis will be part of the medical check of the data. Best response to treatment is a retrospective feature and lacks full consistency. CPCT does not have the means to fully check these data. The dates that are given in many cases are estimated dates. Please be careful in interpreting the data on response and exposure times. If you want to make correlations between genomic data and duration of exposure / response these data are not completely verifiable.
+
+ - Post biopsy treatment: From here the data are collected prospectively and thus more reliable and uniformly present.
+
+ - Response to treatment after biopsy: These data are collected prospectively and should be accurate. There is however the need to understand that CPCT did not mandate the exact time at which the evaluation was performed. Therefore differences in parameters such as time to progression are not a reliable measure of efficacy (as the physician choice to perform an evaluation biases the data). Also CPCT did not mandate confirmation of responses so there will be an underestimation of the number of confirmed responses. The time on treatment is a reliable measure, however incorporates the stopping of medication due to toxicity. CPCT does not make a distinction between these 2 stop reasons. Also note that CPCT did not collect the data on dose intensity.
+
+ - Survival: the data on survival are not present for every patient. Connecting our data to survival data is something CPCT aims to be performing in 2020.
+
+## CPCT-02 ([NCT02925234](https://clinicaltrials.gov/ct2/show/NCT02925234))
 
 Core needle biopsies were sampled from the metastatic lesion, or when considered not feasible or not safe, from the primary tumor site when still in situ. One to four biopsies were collected (average of 2.1 per patient) and frozen in liquid nitrogen directly after sampling. In parallel, a tube of blood was collected in CellSave or Streck tubes, which was shipped by room temperature to the central sequencing facility at the Hartwig Medical Foundation. Left-over material (biopsy, DNA) after sample processing was stored in biobanks associated with the studies at the University Medical Center Utrecht and the Netherlands Cancer Institute.
 
