@@ -2,7 +2,7 @@
 HMF Data Request Guide
 ===== 
 
-This page provides information about the data you received within the context of a data request (DR) from Hartwig Medical Foundation.
+This page provides information about the data you received within the context of a data request (DR) from Hartwig Medical Foundation. More details on the methods used to generate the data you received can be found on a separate [Methods](./README_METHODS.md) page.
 
 ### Contents
 
@@ -14,7 +14,6 @@ This page provides information about the data you received within the context of
  - Sharing of data is done via an OKTA account which requires dual-factor authentication. The OKTA account is used to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
  - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. These can be requested for the samples you have been provided. 
  - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
- - Methods used to collect and analyse our samples can be found on our [methods](./README_METHODS.md) page.
  
 Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
 
