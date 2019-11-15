@@ -4,5 +4,5 @@ SELECT
     setName,
     tumorPurity,
     hmfPatientId,
-    hmfSampleId,
+    hmfSampleId
 FROM datarequest;
