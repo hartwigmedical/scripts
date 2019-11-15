@@ -1,8 +1,8 @@
 SELECT
+    patientId AS '#patientId',
+    sampleId,
     setName,
     tumorPurity,
-    sampleId,
-    patientId,
+    hmfPatientId,
     hmfSampleId,
-    hmfPatientId
 FROM datarequest;

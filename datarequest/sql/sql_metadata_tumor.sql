@@ -1,10 +1,10 @@
 SELECT
+    patientId AS '#patientId',
+    sampleId,
     setName,
     tumorPurity,
-    sampleId,
-    patientId,
-    hmfSampleId,
     hmfPatientId,
+    hmfSampleId,
     primaryTumorLocation,
     cancerSubtype,
     biopsyDate,
