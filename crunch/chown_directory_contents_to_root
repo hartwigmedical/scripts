@@ -9,7 +9,7 @@ function main {
         echo "[EXIT] Is not a directory (${chownDir})!"
         print_usage
     fi
-    echo "[INFO] Searching content that is not owned by root yet ()"
+    echo "[INFO] Searching content that is not owned by root yet (${chownDir})"
     nonRootCount=$(find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | wc -l)
     echo "[INFO] Found $nonRootCount to chown in $chownDir"
     if [[ "${nonRootCount}" > 0 ]]; then
