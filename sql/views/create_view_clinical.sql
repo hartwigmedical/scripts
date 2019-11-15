@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW clinical AS
 
 SELECT sampleMapping.hmfId as hmfSampleId, left(sampleMapping.hmfId, 9) as hmfPatientId,
-    sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA,
+    sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA, setName,
     sample.arrivalDate as sampleArrivalDate, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.cancerSubtype, baseline.hospital, baseline.gender, baseline.birthYear,
     baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment,

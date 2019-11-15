@@ -1,0 +1,26 @@
+SELECT
+    setName,
+    tumorPurity,
+    sampleId,
+    patientId,
+    hmfSampleId,
+    hmfPatientId,
+    primaryTumorLocation,
+    cancerSubtype,
+    biopsyDate,
+    biopsySite,
+    biopsyLocation,
+    gender,
+    birthYear,
+    deathDate,
+    hasSystemicPreTreatment,
+    hasRadiotherapyPreTreatment
+    treatmentGiven,
+    treatmentStartDate,
+    treatmentEndDate,
+    treatment,
+    consolidatedTreatmentType as treatmentType,
+    responseDate,
+    responseMeasured,
+    firstResponse
+FROM datarequest;
