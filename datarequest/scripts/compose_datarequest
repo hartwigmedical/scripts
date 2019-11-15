@@ -4,7 +4,7 @@ if [ "$#" -ne 15 ]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg DR-028)"
     echo "      - request_name (eg DR-028-update1)"
-    echo "      - patient_selection_sql (eg /data/common/repos/scripts/datarequest/patientselectionsql/DR028.sql"
+    echo "      - patient_selection_sql (eg /data/common/repos/scripts/datarequest/selection/DR028.sql"
     echo "          Note: You can use template_select_patients.sql as basis for the patient selection sql"
     echo "      - include_somatics (1 or 0)"
     echo "      - include_germline (1 or 0)"

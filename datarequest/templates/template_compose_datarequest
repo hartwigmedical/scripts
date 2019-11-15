@@ -6,7 +6,7 @@ dr_id="xxx"
 
 dr_name="DR-${dr_id}"
 request_name="DR-${dr_id}"
-patient_selection_sql="/data/common/repos/scripts/datarequest/patientselectionsql/DR${dr_id}.sql"
+patient_selection_sql="/data/common/repos/scripts/datarequest/selection/DR${dr_id}.sql"
 
 include_somatics=0
 include_germline=0
