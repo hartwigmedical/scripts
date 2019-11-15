@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+sampleId=$1
+outputDir=$2
+
+credentials=$(locate_prod_database_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+sigAnalyser=/data/common/tools/sig_analyser_pilot/sig_analyser.jar
+cosmicSignatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
+snvSigScript=/data/common/repos/scripts/hmdtools/sigs/SampleSnvSigs.R
+
+# create 3 separate files each with different subclonal and ploidy criteria
+# SubclonalLikelihood >0.5
+# SubclonalLikelihood < 0.5  & Ploidy < 1.5
+# Ploidy > 1.5
+
+loadSnvsCmd="java -jar ${sigAnalyser} -load_snvs -sample_ids ${sampleId} -log_debug \
+	-db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${outputDir}"
+
+echo ${loadSnvCmd}
+
+counts_01=${sampleId}_01
+counts_02=${sampleId}_02
+counts_03=${sampleId}_03
+${loadSnvsCmd} -subclonal_min 0.5 -output_file_id ${counts_01}
+${loadSnvsCmd} -subclonal_max 0.5 -ploidy_max 1.5 -output_file_id ${counts_02}
+${loadSnvsCmd} -ploidy_min 1.5 -output_file_id ${counts_03}
+
+# Rscript SampleSnvSigs.R snv_db_sample_counts.csv snv_cosmic_sigs.csv ./
+Rscript ${snvSigScript} ${outputDir}/${counts_01}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_01}_snv_sig_allocation.csv
+Rscript ${snvSigScript} ${outputDir}/${counts_02}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_02}_snv_sig_allocation.csv
+Rscript ${snvSigScript} ${outputDir}/${counts_03}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_03}_snv_sig_allocation.csv
