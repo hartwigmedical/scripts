@@ -1,6 +1,6 @@
 SELECT
     DISTINCT patientId AS '#patientId'
 FROM
-    datarequestFiltered
+    datarequest
 WHERE sampleId IN ( # See DR archive)
 ORDER BY 1

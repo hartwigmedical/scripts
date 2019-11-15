@@ -1,6 +1,6 @@
 SELECT
     DISTINCT patientId AS '#patientId'
 FROM
-    datarequestFiltered
+    datarequest
 WHERE primaryTumorLocation = 'Prostate'
 ORDER BY 1;
