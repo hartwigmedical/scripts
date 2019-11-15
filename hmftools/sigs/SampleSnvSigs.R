@@ -31,7 +31,8 @@ sampleTotal = sum(sampleMatrixData[,1])
 sigNames = rownames(sigFitContributions)
 sigFitContributions = cbind(sigNames,sigFitContributions)
 colnames(sigFitContributions) = c('Signature','SigContribution')
-sigFitContributions = sigFitContributions %>% mutate(SigPercent=round(SigContribution/sampleTotal,4))
+sigFitContributions = sigFitContributions %>% mutate(SigPercent=round(SigContribution/sampleTotal,4),
+                                                     SigContribution = round(SigContribution,4))
 
 print(sprintf("Signatures fit complete, writing to %s", outputFile))
 
