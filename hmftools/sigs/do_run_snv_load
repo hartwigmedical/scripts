@@ -12,7 +12,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 sigAnalyser=/data/common/tools/sig_analyser_pilot/sig_analyser.jar
 cosmicSignatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
-snvSigScript=/data/common/repos/scripts/hmdtools/sigs/SampleSnvSigs.R
+snvSigScript=/data/common/repos/scripts/hmftools/sigs/SampleSnvSigs.R
 
 # create 3 separate files each with different subclonal and ploidy criteria
 # SubclonalLikelihood >0.5
