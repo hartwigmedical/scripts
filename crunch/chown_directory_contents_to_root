@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 chownDir=$1
 
@@ -12,7 +12,7 @@ function main {
     echo "[INFO] Searching content that is not owned by root yet (${chownDir})"
     nonRootCount=$(find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | wc -l)
     echo "[INFO] Found $nonRootCount to chown in $chownDir"
-    if [[ "${nonRootCount}" > 0 ]]; then
+    if [[ "${nonRootCount}" -gt 0 ]]; then
         find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root -exec sudo chown -R root:root {} +
     fi
 }
