@@ -4,7 +4,7 @@ HMF Description of Methods
 This page describes the methods used to generate the data serviced to researchers through data requests (DRs). The samples in the Hartwig database are collected via three clinical studies: CPCT-02, DRUP-01 and WIDE.
 Patients in these studies have given explicit consent for whole genome sequencing and data sharing for cancer research purposes.
 
-These studies deliver clinical data to Hartwig to accompany the whole genome analysis. The clinical data is curated and standardized by Hartwig as part of the data ingestion process found in our [Patient DB](https://github.com/hartwigmedical/hmftools/tree/master/patient-db)   
+These studies deliver clinical data to Hartwig to accompany the whole genome analysis. The clinical data is curated and standardized by Hartwig as part of the data ingestion algorithms found in our [Patient DB](https://github.com/hartwigmedical/hmftools/tree/master/patient-db)   
 
 ## CPCT-02 ([NCT01855477](https://clinicaltrials.gov/ct2/show/NCT01855477))
 
