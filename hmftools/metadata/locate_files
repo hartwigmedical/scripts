@@ -399,7 +399,7 @@ locate_linx_reported_fusions() {
     local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
     if [ -z ${fusion_tsv} ]; then
         # Assume there were no reported fusions found. This can be removed with linx v1.7. See also DEV-1049
-        # TODO Remove once linx v1.7+ has been run on all runs
+        # TODO Revert once linx v1.7+ has been run on all runs
         #echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
         #exit 1
         fusion_tsv=/data/common/dbs/sv/empty.linx.reported_fusion.tsv
@@ -418,7 +418,7 @@ locate_linx_disruptions() {
     local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
     if [ -z ${disruption_tsv} ]; then
         # Assume there were no disruptions found. This can be removed with linx v1.7. See also DEV-1049
-        # TODO Remove once linx v1.7+ has been run on all runs
+        # TODO Revert once linx v1.7+ has been run on all runs
         #echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}}. Exiting." >&2
         #exit 1
         disruption_tsv=/data/common/dbs/sv/empty.linx.disruptions.tsv
