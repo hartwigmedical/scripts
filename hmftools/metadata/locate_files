@@ -419,7 +419,7 @@ locate_linx_disruptions() {
     if [ -z ${disruption_tsv} ]; then
         # Assume there were no disruptions found. This can be removed with linx v1.7. See also DEV-1049
         # TODO Revert once linx v1.7+ has been run on all runs
-        #echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}}. Exiting." >&2
+        #echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
         #exit 1
         disruption_tsv=/data/common/dbs/sv/empty.linx.disruptions.tsv
     fi
