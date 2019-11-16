@@ -19,24 +19,25 @@ db_url="mysql://localhost:3306/testdb?serverTimezone=CET"
 db_user="test"
 db_pass="test"
 
-# Resolving of actual file locations based on data dir
-structural_vcf=$(find ${run_dir} -name "*.purple.sv.ann.vcf.gz")
+# Resolving of actual file locations based on data dir.
+# Do note that the sv file can potentially have ".ann" on the middle asterix, this script should support both conventions.
+structural_vcf=$(find ${run_dir} -name "*.purple.sv*.vcf.gz")
 somatic_vcf=$(find ${run_dir} -name "*.purple.somatic.vcf.gz")
 tumor_sample=$(basename ${structural_vcf} | cut -d"." -f1)
 
 # load purple data
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadPurpleData \
-    -purple_dir ${run_dir} \
     -sample ${tumor_sample} \
+    -purple_dir ${run_dir} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url}
 
 # load somatic variants
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
-    -vcf_file ${somatic_vcf} \
     -sample ${tumor_sample} \
-    -hotspot ${hotspot_tsv} \
+    -somatic_vcf ${somatic_vcf} \
+    -hotspot_tsv ${hotspot_tsv} \
     -high_confidence_bed ${high_confidence_bed} \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
@@ -44,8 +45,8 @@ java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadSomaticVariants \
 
 # load structural variants
 java -cp ${db_loader_jar} com.hartwig.hmftools.patientdb.LoadStructuralVariants \
+    -sample ${tumor_sample}  \
     -structural_vcf ${structural_vcf} \
-    -tumor ${tumor_sample}  \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url}
