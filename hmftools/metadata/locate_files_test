@@ -63,7 +63,7 @@ if [ $? = 0 ]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions
 linx_drivers=$(locate_linx_drivers ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  LINX Drivers: ${linx_drivers}"; fi
 
-germline_variants=$(locate_germline_variants ${run_dir})
+germline_variants=$(locate_germline_variants ${run_dir} ${ref_sample})
 if [ $? = 0 ]; then echo "[INFO]  Germline Variants: ${germline_variants}"; fi
 
 bachelor_variants=$(locate_bachelor_variants ${run_dir})

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files
+source metadata_functions
 
 source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
@@ -11,10 +12,12 @@ dest_set_path=${dest_set_base_path}/${set_name}
 ## init
 mkdir -p ${dest_set_path}
 
+ref_sample=$(load_ref_sample_from_metadata ${source_set_path})
+
 ## gather germline info
 echo "[DEBUG] Symlinking Germline VCF (and tbi index) for ${set_name}"
-ln -s $(locate_germline_variants ${source_set_path}) ${dest_set_path}
-ln -s $(locate_germline_variants ${source_set_path}).tbi ${dest_set_path}
+ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}) ${dest_set_path}
+ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}).tbi ${dest_set_path}
 
 germline_file_count=$(ls ${dest_set_path} | wc -l)
 if [ ${germline_file_count} -ne 2 ]; then
