@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+
+metadata_tsv=$1 && shift
+linx_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+    set_path=/data/cpct/runs/${set_name}
+    dest_set_path=${linx_dir}/${set_name}
+
+    linx_version_file=${source_set_path}/linx/linx.version
+    if [ -f ${linx_version_file} ]; then
+        mkdir -p ${dest_set_path}
+        linx_version=$(cat ${linx_version_file} | grep version)
+
+        ## start symlinking
+        echo "[DEBUG] Symlinking linx files for ${set_name} having linx '${linx_version}'"
+        ln -s ${source_set_path}/linx/linx.version ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.driver_catalog.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.breakend.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.clusters.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.disruptions.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.drivers.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.fusion.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.links.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.reported_fusion.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.svs.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.viral_inserts.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_copy_number.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_fusion.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_gene_exon.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_protein_domain.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_segments.tsv ${dest_set_path}
+        ln -s ${source_set_path}/linx/*.linx.vis_sv_data.tsv ${dest_set_path}
+    else
+        echo "[WARN] Could not determine linx version for ${set_path}. Skipping."
+    fi
+done
