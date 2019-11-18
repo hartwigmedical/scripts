@@ -15,6 +15,8 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
 
     if [[ "${run_name}" =~ "190314-testR" ]]; then 
         continue
+    elif [[ "${run_name}" =~ "cancerPanel" ]]; then 
+        continue
     elif [[ "${run_name}" =~ "_HMFregVAL_" ]]; then 
         continue
     elif [[ -d "${archive_path}/${run_name}" ]]; then 
