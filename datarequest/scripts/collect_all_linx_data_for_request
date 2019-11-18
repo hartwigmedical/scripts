@@ -6,7 +6,7 @@ metadata_tsv=$1 && shift
 linx_dir=$1 && shift
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
-    set_path=/data/cpct/runs/${set_name}
+    source_set_path=/data/cpct/runs/${set_name}
     dest_set_path=${linx_dir}/${set_name}
 
     linx_version_file=${source_set_path}/linx/linx.version
