@@ -2,7 +2,6 @@
 
 source locate_files
 source metadata_functions
-source lims_functions
 
 run_dir=$1 && shift
 
