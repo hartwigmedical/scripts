@@ -13,6 +13,7 @@ dropbox = "~/../Dropbox (HMF Australia)/HMF Australia team folder/Structural Var
 if (!file.exists(dropbox)) {
   dropbox = "~/Dropbox/HMF Australia team folder/Structural Variant Analysis"
 }
+dropbox = "D:/hartwig/svtoolkit"
 figdir=paste0(dropbox, "/figures/")
 if (!exists("cohort")) load(paste0(dropbox, "/paper/cohort.RData"))
 if (!exists("db")) db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis")
