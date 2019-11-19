@@ -39,7 +39,6 @@ armAveragedCopyNumber = hpcCopyNumbers %>%
   summarise(averageCopyNumber = sum(averageCopyNumber) / n())
 
 ##### FUNCTIONS
-
 count_summmary <- function(x,byCluster=T) {
   if(byCluster) {
       x=x %>% group_by(SampleId, feature, ClusterId, Chr, arm, armLength) %>% count() %>% ungroup() 
@@ -50,8 +49,6 @@ count_summmary <- function(x,byCluster=T) {
     group_by(feature, arm, armLength) %>%
     summarise(n = n(), nAdj = sum(1 / averageCopyNumber))
 }
-
-
 plot_arm_by_feature <- function(x) {
   ggplot(x, aes(x = armLength, y = nAdj)) + 
     geom_point() + 
@@ -78,8 +75,16 @@ ol = as.matrix(findOverlaps(armRegions, armDataRegions, type = "any"))
 armData[ol[, 2], "armLength"] = arms[ol[, 1], "armLength"]
 armData[ol[, 2], "arm"] = arms[ol[, 1], "arm"]
 
-armDataSummary = count_summmary(armData,byCluster=F)
+armDataSummary = count_summmary(armData,byCluster=T)
 plot_arm_by_feature(armDataSummary)
+
+# FOLDBACKS and centromeric SGLs tend to occur on the same arms...
+ggplot(armDataSummary %>% select(feature,n,arm) %>% filter(feature=='CentromericSGL'|feature=='Foldback') %>% spread(feature,n), aes(x = Foldback, y = CentromericSGL)) + 
+  geom_point() + 
+  geom_smooth(method=lm,se=TRUE, fullrange=F) +
+  geom_text(aes(label = arm), size = 2, nudge_x = 5, color = "red") +
+  theme(panel.grid.major.y=element_line(linetype = 8,size=0.1),panel.grid.major.x=element_line(linetype = 8,size=0.1)) +
+  expand_limits(x = 0, y = 0)
 
 #### FEATURES PER CLUSTERID / ARM
 load(paste0(localPath,"resolveTypeBreakends.RData"))
@@ -111,3 +116,12 @@ armData[ol[, 2], "arm"] = arms[ol[, 1], "arm"]
 armDataSummary = count_summmary(armData,byCluster = T)
 plot_arm_by_feature(armDataSummary)
 
+View(merge(featuredBreakends %>% filter(feature=='TelomericSGL') %>% group_by(SampleId) %>% count() %>% arrange(-n),highestPurityCohort %>% select(SampleId=sampleId,cancerType),by='SampleId' ))
+View(svDriver)
+
+View(merge(featuredBreakends %>% filter(feature=='TelomericSGL') %>% group_by(SampleId) %>% count() %>% filter(n>20) %>%
+        arrange(-n),svDrivers %>% filter(DriverLikelihood>0.5) %>% select(SampleId,Gene),by='SampleId') %>% group_by(Gene) %>% summarise(sum(n),n()))
+
+
+View(merge(svDrivers,highestPurityCohort %>% select(SampleId=sampleId,cancerType),by='SampleId') %>% filter(cancerType=='Bone/Soft tissue'))# %>% group_by(Gene) %>% count)
+View(svDrivers)

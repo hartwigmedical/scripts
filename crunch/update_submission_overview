@@ -8,6 +8,7 @@ nasLoc="/volume1/web/overviews/submissions"
 reportsSource="/volume1/machines/BFX/dataReports"
 reportsTarget="/volume1/web/overviews/submissions/pdf_reports"
 reportsTargetDs="/data/submissions/overview/pdf_reports"
+reportsTargetDs="/data/data_archive/overviews/submissions/pdf_reports"
 
 ## Sanity checks
 if [[ ! -d ${srcDir} ]]; then echo "[EXIT] INPUT DIR does not exist (${srcDir})" && exit 1; fi

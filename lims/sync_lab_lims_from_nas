@@ -9,23 +9,32 @@ DAY_DIR="${LAB_DIR}/${DATESTR}"
 SYM_DIR="${OUT_DIR}/latest"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
-## sanity checks
-if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Err: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
+CPCT_FILE='LIMS_v4.1_be.accdb'
+SAMP_FILE='HMF-FOR-001 Received Samples 2019 v5.5.xlsx'
+PROC_FILE='HMF-FOR-002 Sample in process 2019 v4.1.xlsx'
+
+CPCT_NAS_PATH="${NAS_DIR}/${CPCT_FILE}"
+SAMP_NAS_PATH="${NAS_DIR}/${SAMP_FILE}"
+PROC_NAS_PATH="${NAS_DIR}/${PROC_FILE}"
+
+## File and dir sanity checks
+if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Error: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
+for nasFilePath in "$CPCT_NAS_PATH" "$SAMP_NAS_PATH" "$PROC_NAS_PATH"; do
+    if ssh nas "[[ ! -f '${nasFilePath}' ]]"; then echo "[EXIT] Error: file does not exist (nas:${nasFilePath})" && exit 1; fi
+done
 for outdir in $OUT_DIR $LAB_DIR $SYM_DIR; do
-    if [[ ! -d ${outdir} ]]; then echo "[EXIT] Err: dir does not exist (${outdir})" && exit 1; fi
-    if [[ ! -w ${outdir} ]]; then echo "[EXIT] Err: no write permission (${outdir})" && exit 1; fi
+    if [[ ! -d ${outdir} ]]; then echo "[EXIT] Error: dir does not exist (${outdir})" && exit 1; fi
+    if [[ ! -w ${outdir} ]]; then echo "[EXIT] Error: no write permission (${outdir})" && exit 1; fi
 done
 mkdir -p ${DAY_DIR}
 
-## Setup cpct/received-samples/in-process variables
-cpctFile="LIMS_v4.1_be.accdb"
-cpctSource="${DAY_DIR}/${cpctFile}"
+## Setup file variables
+cpctSource="${DAY_DIR}/${CPCT_FILE}"
 cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
 cpctTxt="${cpctTarget}.csv"
 cpctLatest="${SYM_DIR}/lims_cpct"
 
-sampFile="HMF-FOR-001 Received Samples 2019 v5.5.xlsx"
-sampSource="${DAY_DIR}/${sampFile}"
+sampSource="${DAY_DIR}/${SAMP_FILE}"
 sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
 sampTxt="${sampTarget}_samp.tsv"
 sampLatest="${SYM_DIR}/lims_samp"
@@ -34,40 +43,38 @@ submLatest="${SYM_DIR}/lims_subm"
 contTxt="${sampTarget}_cont.tsv"
 contLatest="${SYM_DIR}/lims_cont"
 
-procFile="HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
-procSource="${DAY_DIR}/${procFile}"
+procSource="${DAY_DIR}/${PROC_FILE}"
 procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
 procTxt="${procTarget}.tsv"
 procLatest="${SYM_DIR}/lims_proc"
 
 ## Retrieve files from NAS
-echo "[INFO] Syncing xlsx and accdb files from NAS to DATASTORE"
+echo "[INFO] Syncing LIMS files from NAS to DATASTORE"
 echo "[INFO]   SourceDir: nas:${NAS_DIR}"
 echo "[INFO]   TargetDir: ${DAY_DIR}"
-rsync -s "nas:${NAS_DIR}/${cpctFile}" ${DAY_DIR}
-rsync -s "nas:${NAS_DIR}/${sampFile}" ${DAY_DIR}
-rsync -s "nas:${NAS_DIR}/${procFile}" ${DAY_DIR}
+rsync -s "nas:${CPCT_NAS_PATH}" ${DAY_DIR}
+rsync -s "nas:${SAMP_NAS_PATH}" ${DAY_DIR}
+rsync -s "nas:${PROC_NAS_PATH}" ${DAY_DIR}
 
 ## Make sure all required files are present
 if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
 for inputFile in "${cpctSource}" "${sampSource}" "${procSource}"; do
     if [[ ! -f "${inputFile}" ]]; then
-        echo "[EXIT] Err: input file from NAS not present (${inputFile})" && exit 1;
+        echo "[EXIT] Error: input file from NAS not present (${inputFile})" && exit 1;
     fi
 done
 
-## Rename files to make clear which is actually used
-cp "${cpctSource}" "${cpctTarget}"
-cp "${sampSource}" "${sampTarget}"
-cp "${procSource}" "${procTarget}"
+## Symlink LIMS files to create stable naming for downstream work
+ln -sfn "${cpctSource}" "${cpctTarget}"
+ln -sfn "${sampSource}" "${sampTarget}"
+ln -sfn "${procSource}" "${procTarget}"
 
-## Convert to csv (tail cmd skips non-header lines)
+## Convert to text format
 echo "[INFO] Converting input files to CSV/TSV"
 echo "[INFO]   Converting $( basename ${cpctTarget} )"
 ${ACC2CSV} --with-header --input "${cpctTarget}" --output ${DAY_DIR} --table tblSamples --quote-all false
 if [ ! $? -eq 0 ]; then echo "[EXIT] CPCT export to csv FAILED" && exit 1; fi
 mv ${DAY_DIR}/tblSamples.csv ${cpctTxt}
-
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "submissions")"
 xlsx2csv -d "\t" "${sampTarget}" -s 1 | tail -n +5 > ${submTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
