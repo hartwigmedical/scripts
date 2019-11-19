@@ -13,6 +13,8 @@ purple_qc_file=$(locate_purple_qc ${run_dir})
 
 shallow_seq_csv=/data/lims/shallow_seq_purity_pilot.csv
 
+echo "[INFO] Extract shallow purity of ${tumor_sample}"
+
 java com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -sample ${tumor_sample} \
     -purple_purity_tsv ${purple_purity_tsv} \
