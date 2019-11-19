@@ -111,7 +111,7 @@ query_coding_regions <- function(dbConnect, transcriptIds) {
 query_gene_copy_number_deletes<-function(dbConnect, cohort, cutoff = 0.5) {
   sampleIdString = paste("'", cohort$sampleId, "'", collapse = ",", sep = "")
   query = paste(
-    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetRegions, g.germlineHomRegions",
+    "SELECT g.sampleId, g.chromosome, g.start, g.end, g.gene, g.chromosomeBand, g.minCopyNumber, 1 as score, g.minRegionStartSupport, g.minRegionEndSupport, g.somaticRegions, g.germlineHetToHomDeletionRegions, g.germlineHomDeletionRegions",
     "  FROM geneCopyNumber g, purity p",
     " WHERE g.sampleId = p.sampleId",
     "   AND g.minCopyNumber < ", cutoff,
