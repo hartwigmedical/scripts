@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+
+echo "sampleId	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasReliableQuality"  > /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+
+echo "[INFO] Reading cpct old final reports"
+for patientReportOldCPCT in /data/cpct/old_cpct_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportOldCPCT} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
+    reportName=$( echo ${patientReportOldCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' | tr "." " " | awk '{print $1}' )
+    outputString=$( echo ${reportName} "N/A" "prio-"${dateReport} )
+    echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO] Reading cpct final reports"
+for patientReportCPCT in /data/cpct/final_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportCPCT} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
+	reportName=$( echo ${patientReportCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' )
+	corrected=$( echo ${patientReportCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " "  | awk '{print $4}' | tr "." " " | awk '{print $1}' )
+	if [[ ${corrected} == "corrected" ]]; then
+		totalName=$( echo ${reportName}"-"${corrected} )
+	elif [[ ${corrected} == "DRAFT" ]]; then
+		totalName=$( echo ${reportName}"-"${corrected} )
+	else
+		totalName=$( echo ${reportName} )
+	fi
+	outputString=$( echo ${totalName} "N/A" ${dateReport} )
+	echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO] Reading CORE final reports"
+for patientReportCORE in /data/core/final_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportCORE} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
+    reportName=$( echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' )
+    corrected=$( echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " "  | awk '{print $4}' | tr "." " " | awk '{print $1}' )
+    if [[ ${corrected} == "corrected" ]]; then
+        totalName=$( echo ${reportName}"-"${corrected} )
+    elif [[ ${corrected} == "DRAFT" ]]; then
+        totalName=$( echo ${reportName}"-"${corrected} )
+    else
+        totalName=$( echo ${reportName} )
+    fi
+    outputString=$( echo ${totalName} "N/A" ${dateReport} )
+    echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
+fileReportingSamples="/home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv"
+count=0
+while IFS= read line;do
+	 sampleId=$( echo $line | tr "_" " " | tr "-" " " | awk '{print $1}' )
+	 dateReport=$( echo $line | awk '{print $3}' )
+	 position=$( cat "/home/lieke/tmp/createReportingDB/puritiesDB.csv" | grep -wn ${sampleId} )
+	 seq=$( cat "/home/lieke/tmp/createReportingDB/puritiesDB.csv" | grep -w ${sampleId} | wc -l )
+	 if [[ -z ${position} && ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]];then
+        if [[ ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]];then
+	        outputTofile=$( echo ${line} "N/A" "N/A" "N/A" "N/A" )
+			echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+		else
+			outputToFile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "N/A"  )
+			echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+		fi
+	else
+		countSamplesInFile=$(cat ${fileReportingSamples} | grep -w ${sampleId} | wc -l)
+
+		if [[ ${countSamplesInFile} == 1 && ${seq} = 1 ]]; then
+			count=$( expr $count + 1 )
+			positionrow=$( echo ${position} | tr ":" " " | awk '{print $1}' )
+			addingPutiryRow=$( echo ${position} |tr "," " " | awk '{print $4, $6}' )
+			purity=$( echo ${position} |tr "," " " | awk '{print $2}' )
+			purityProcent=$( echo ${purity} | awk '{ print $1 * 100}')
+
+			sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
+            barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
+
+			outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+			echo ${outputLine} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+		else
+			count=$( expr $count + 1)
+			if [[ ${count} == ${countSamplesInFile} && ${seq} = 1 ]];then
+			    positionrow=$( echo ${position} | tr ":" " " | awk '{print $1}' )
+                addingPutiryRow=$( echo ${position} |tr "," " " | awk '{print $4, $6}' )
+                purity=$( echo ${position} |tr "," " " | awk '{print $2}' )
+                purityProcent=$( echo ${purity} | awk '{ print $1 * 100}')
+
+                sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
+                barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
+
+                outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+                echo ${outputLine} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+			else
+				outputTofile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "NA" )
+                echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+			fi
+		fi
+	fi
+
+	if [[ ${count} == ${countSamplesInFile} ]];then
+        count=0
+    fi
+
+done < ${fileReportingSamples}
+
+echo "[INFO] Create output file with with tab"
+cat "/home/lieke/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /home/lieke/tmp/createReportingDB/reporting_db.tsv
+
+echo "[INFO] Finished!"
