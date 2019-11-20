@@ -5,7 +5,7 @@ source locate_files
 runs_dir=/home/lieke/tmp/shallowSeqs
 patient_db_jar=$(locate_pilot_patient_db)
 
-shallow_seq_csv=/home/lieke/tmp/shallowSeqs/shallow_seq_purity_pilot.csv
+shallow_seq_csv=/home/lieke/tmp/shallow_seq_purity_pilot.csv
 
 java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -runs_dir ${runs_dir} \
