@@ -52,7 +52,7 @@ for sheet in $sheets; do
         cycleCount=$( ls $runBase/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l )
     fi
     echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
-    if [[ "$expectedCycleCount" =~ '^[0-9]+$' && "$cycleCount" -ge "$expectedCycleCount" ]]; then
+    if [[ "$expectedCycleCount" =~ ^[0-9]+$ && "$cycleCount" -ge "$expectedCycleCount" ]]; then
         runStatus="SequencingDone"
     else
         runStatus="Sequencing ($cycleCount of $expectedCycleCount)"
