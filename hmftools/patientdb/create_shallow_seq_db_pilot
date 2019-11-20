@@ -1,11 +1,8 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
-
 runs_dir=/home/lieke/tmp/shallowSeqs
 
-if [ -f ${run_dir}/pipeline.version ]; then
+if [ -f ${runs_dir}/pipeline.version ]; then
     # >v5 format
     purple_purity_tsv=.purple.purity.tsv
     purple_qc_file=.purple.qc
