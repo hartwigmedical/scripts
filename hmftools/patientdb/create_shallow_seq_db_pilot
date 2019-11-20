@@ -3,19 +3,23 @@
 source locate_files
 source metadata_functions
 
-run_dir=$1 && shift
+runs_dir=/home/lieke/tmp/shallowSeqs
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+if [ -f ${run_dir}/pipeline.version ]; then
+    # >v5 format
+    purple_purity_tsv=.purple.purity.tsv
+    purple_qc_file=.purple.qc
 
-purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc_file=$(locate_purple_qc ${run_dir})
+else
+    # <v5 format
+    purple_purity_tsv=.purple.purity
+    purple_qc_file=.purple.qc
+fi
 
-shallow_seq_csv=/data/lims/shallow_seq_purity_pilot.csv
-
-echo "[INFO] Extract shallow purity of ${tumor_sample}"
+shallow_seq_csv=/home/lieke/tmp/shallowSeqs/shallow_seq_purity_pilot.csv
 
 java com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
-    -sample ${tumor_sample} \
+    -runs_dir ${runs_dir} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -shallow_seq_csv ${shallow_seq_csv} \
