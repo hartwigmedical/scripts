@@ -18,7 +18,7 @@ fi
 
 shallow_seq_csv=/home/lieke/tmp/shallowSeqs/shallow_seq_purity_pilot.csv
 
-java -jar ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
+java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -runs_dir ${runs_dir} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
