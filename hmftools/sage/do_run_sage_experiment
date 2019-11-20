@@ -42,7 +42,7 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -reference ${normal} -reference_bam ${normal_bam}  \
     -panel /data/common/dbs/sage/ActionableExonPanel.hg19.bed.gz  -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
     -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
-    -out /data/experiments/191119_sage_panel_slices/WIDE01010317T/WIDE01010317T.sage.vcf.gz
+    -out ${sage_vcf}
 
 echo "Germline pon..."
 /data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon1_vcf}
@@ -58,4 +58,3 @@ echo "Somatic pon..."
 
 rm ${pon1_vcf}*
 rm ${pon2_vcf}*
-
