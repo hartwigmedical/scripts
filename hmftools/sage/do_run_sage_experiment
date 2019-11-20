@@ -45,7 +45,7 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -out /data/experiments/191119_sage_panel_slices/WIDE01010317T/WIDE01010317T.sage.vcf.gz
 
 echo "Germline pon..."
-/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon_vcf}
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon1_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${pon1_vcf}
 
 echo "Somatic pon..."
@@ -58,3 +58,4 @@ echo "Somatic pon..."
 
 rm ${pon1_vcf}*
 rm ${pon2_vcf}*
+
