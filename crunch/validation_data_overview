@@ -20,7 +20,7 @@ function main(){
       for dataPath in $( find ${versionPath} -mindepth 1 -maxdepth 1 -type d | sort ); do
         dataName=$( basename ${dataPath} )
         if [[ ${dataName} == "fastq" ]]; then
-          if [[ ${printRsync} == "true" && ($( ls ${dataPath} | wc -l ) > 0) ]]; then
+          if [[ ${printRsync} == "true" && ($( ls ${dataPath} | wc -l ) -gt 0) ]]; then
             dstPath="/data2/pipelineinput/${versionName}_${dataName}"
             logPath="${LOG_DIR}/rsync_to_${dstServer}.log"
             echo "    nohup rsync -ahPL --dry-run --stats ${dataPath}/ ${dstServer}:${dstPath}/ > ${logPath} &"

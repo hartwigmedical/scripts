@@ -23,7 +23,7 @@ while IFS=  read -r -d $'\0'; do
 done < <(ssh nas find ${SOURCE} -name "${plateID}*${SUFFIX}" -print0)
 if [[ ${#resultFiles[@]} -eq 0 ]]; then 
   echo "[EXIT] No ${plateID} ${SUFFIX} files found!" && exit 1
-elif [[ ${#resultFiles[@]} > 1 ]]; then
+elif [[ ${#resultFiles[@]} -gt 1 ]]; then
   echo "[EXIT] More than 1 ${plateID} ${SUFFIX} files found!" && exit 1
 fi
 

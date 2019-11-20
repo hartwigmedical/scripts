@@ -23,7 +23,7 @@ done > ${createLog}
 
 ## Reporting further actions to screen
 echo "[INFO] JsonCreation done and log written to: ${createLog}"
-if [[ $( cat ${createLog} | grep -P "\d{8}T[IVX]+" | wc -l ) > 0 ]]; then 
+if [[ $( cat ${createLog} | grep -P "\d{8}T[IVX]+" | wc -l ) -gt 0 ]]; then
     ## multiple biopsies usually need R from bam2fastq
     echo "[WARN]  ATTENTION: Found T[IVX]+ samples so might need to adjust R barcode"
     cat ${createLog} | grep -P "\d{8}T[IVX]+" | grep Somatic_T
@@ -34,7 +34,7 @@ fi
 for dupBc in $( cat ${HOME}/set_jsons/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do 
    echo "[WARN] Found duplicate barcode ($dupBc): make sure the use_existing flag is set correctly on second one:"; 
    for readyJson in $(find ${HOME}/set_jsons/ -maxdepth 1 -name "*json"); do 
-       if [[ $(grep -c "${dupBc}" $readyJson) > 0 ]]; then 
+       if [[ $(grep -c "${dupBc}" $readyJson) -gt 0 ]]; then
            echo "[WARN]   $readyJson"
        fi
    done
