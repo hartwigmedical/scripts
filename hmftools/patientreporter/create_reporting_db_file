@@ -100,6 +100,6 @@ while IFS= read line;do
 done < ${fileReportingSamples}
 
 echo "[INFO] Create output file with with tab"
-cat "/home/lieke/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /data/tmp/createReportingDB/reporting_db.tsv
+cat "/data/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /data/tmp/createReportingDB/reporting_db.tsv
 
 echo "[INFO] Finished!"
