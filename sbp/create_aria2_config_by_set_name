@@ -117,12 +117,12 @@ create_ini_specific_files () {
 
   ## output
   echo "[INFO] Creating $out_md5"
-  for file in ${file_selection[@]}; do
+  for file in "${file_selection[@]}"; do
     echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file}$" >> $out_md5
   done
 
   echo "[INFO] Creating $out_aria"
-  for file in ${file_selection[@]}; do
+  for file in "${file_selection[@]}"; do
     local file_url="s3://${bucket}/${name}/${file}"
     local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file}$" | cut -f1) 
     local direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
