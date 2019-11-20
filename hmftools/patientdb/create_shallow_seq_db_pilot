@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 runs_dir=/home/lieke/tmp/shallowSeqs
+patient_db_jar=$(locate_pilot_patient_db)
 
 if [ -f ${runs_dir}/pipeline.version ]; then
     # >v5 format
@@ -16,6 +19,7 @@ fi
 shallow_seq_csv=/home/lieke/tmp/shallowSeqs/shallow_seq_purity_pilot.csv
 
 java com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
+    -jar ${patient_db_jar} \
     -runs_dir ${runs_dir} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
