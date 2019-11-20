@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+
+prefix=$(dirname $(readlink $0 || echo $0))
+run_dir=$1 && shift
+set=$(basename ${run_dir})
+
+hotspot_bed=/data/common/dbs/sage/ActionableExonPanel.hg19.bed
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+
+out_dir=/data/experiments/191119_sage_panel_slices/${sample}/
+mkdir -p ${out_dir}
+
+sample_bam=/data/experiments/191119_sage_panel_slices/bams/${sample}.panel.bam
+normal_bam=/data/experiments/191119_sage_panel_slices/bams/${normal}.panel.bam
+
+sage_vcf=${out_dir}/${sample}.sage.vcf.gz
+pon1_vcf=${out_dir}/${sample}.pon1.vcf.gz
+pon2_vcf=${out_dir}/${sample}.pon2.vcf.gz
+final_vcf=${out_dir}/${sample}.final.vcf.gz
+
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${hotspot_bed} ${sample_bam}
+else
+    echo "[INFO] Skipping tumor BAM slicing. HotSpot BAM already exists: ${sample_bam}"
+fi
+
+if [ ! -f ${normal_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${sample} ${hotspot_bed} ${normal_bam}
+else
+    echo "[INFO] Skipping reference BAM slicing. HotSpot BAM already exists: ${normal_bam}"
+fi
+
+echo "Running SAGE"
+java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
+    -threads 4 -panel_only \
+    -tumor ${sample} -tumor_bam ${sample_bam} \
+    -reference ${normal} -reference_bam ${normal_bam}  \
+    -panel /data/common/dbs/sage/ActionableExonPanel.hg19.bed.gz  -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
+    -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
+    -out ${sage_vcf}
+
+echo "Germline pon..."
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon1_vcf}
+/data/common/tools/bcftools_v1.9/bcftools index ${pon1_vcf}
+
+echo "Somatic pon..."
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz -c SOMATIC_PON_COUNT ${pon1_vcf} -O z -o ${pon2_vcf}
+/data/common/tools/bcftools_v1.9/bcftools index ${pon2_vcf}
+
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${pon2_vcf} -O u | \
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${final_vcf}
+/data/common/tools/bcftools_v1.9/bcftools index ${final_vcf}
+
+rm ${pon1_vcf}*
+rm ${pon2_vcf}*

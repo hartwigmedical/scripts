@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+
+shallow_seq_csv=/data/lims/shallow_seq_purity_pilot.csv
+
+echo "[INFO] Extract shallow purity of ${tumor_sample}"
+
+java com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
+    -sample ${tumor_sample} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -shallow_seq_csv ${shallow_seq_csv} \
+    "$@"

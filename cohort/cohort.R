@@ -9,6 +9,8 @@
 library(dplyr)
 library(tidyr)
 library(RMySQL)
+detach("package:purple", unload=TRUE)
+library(purple)
 
 dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
 
@@ -76,20 +78,22 @@ cohort = cohort %>% mutate(hpc = sampleId %in% highestPurityCohort$sampleId) %>%
 save(highestPurityCohort, file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
 save(cohort, highestPurityCohort, multipleBiopsyMapping, file = "~/hmf/analysis/cohort/reference/cohort.RData")
 
-load(file = "~/hmf/analysis/cohort/highestPurityCohort.RData")
+load(file = "~/hmf/analysis/cohort/reference/highestPurityCohort.RData")
 cancerTypeCounts = highestPurityCohort %>% group_by(cancerType) %>% count() %>% arrange(n)
 sum(!is.na(multipleBiopsyMapping %>% select(-patientId, -Sample1)))
 
 ########### STRUCTURAL VARIANTS ########### 
 sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
-svQuery = paste0("select * from structuralVariant where filter = 'PASS' AND sampleId in (",sampleIdString, ")")
+driverQuery = paste0("select * from driverCatalog where sampleId in (",sampleIdString, ")")
+hpcDriverCatalog = dbGetQuery(dbProd, driverQuery)
+save(hpcDriverCatalog, file = "~/hmf/analysis/cohort/reference/hpcDriverCatalog.RData")
+
+
+########### STRUCTURAL VARIANTS ########### 
+sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
+svQuery = paste0("select * from structuralVariant where filter != 'PON' AND sampleId in (",sampleIdString, ")")
 hpcStructuralVariants = dbGetQuery(dbProd, svQuery)
-save(hpcStructuralVariants, file = "~/hmf/analysis/cohort/hpcStructuralVariants.RData")
-
-
-svQuery = paste0("select * from structuralVariant where filter = 'INFERRED' AND sampleId in (",sampleIdString, ")")
-hpcInferredStructuralVariants = dbGetQuery(dbProd, svQuery)
-save(hpcInferredStructuralVariants, file = "~/hmf/analysis/cohort/hpcInferredStructuralVariants.RData")
+save(hpcStructuralVariants, file = "~/hmf/analysis/cohort/reference/hpcStructuralVariants.RData")
 
 ########### Somatics Counts ########### 
 sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
@@ -159,9 +163,11 @@ hpcExonicSomatics = bind_rows(bind_rows(exonicSomatics1, exonicSomatics2), exoni
 save(hpcExonicSomatics, file = "~/hmf/analysis/genepanel/hpcExonicSomatics.RData")
 
 ########### COPY NUMBER ########### 
-hpcGeneCopyNumberDeletes = purple::query_gene_copy_number_deletes(dbProd, highestPurityCohort)
+sampleIdString = paste("'", highestPurityCohort$sampleId, "'", collapse = ",", sep = "")
+hpcGeneCopyNumberDeletesQuery = paste0("select * from geneCopyNumber where minCopyNumber < 0.5 and chromosome != 'Y' AND sampleId in (",sampleIdString, ")")
+hpcGeneCopyNumberDeletes = dbGetQuery(dbProd, hpcGeneCopyNumberDeletesQuery)
 hpcGeneCopyNumberDeletes = left_join(hpcGeneCopyNumberDeletes, highestPurityCohort %>% select(sampleId, cancerType), by = "sampleId")
-save(hpcGeneCopyNumberDeletes, file = "~/hmf/analysis/genepanel/hpcGeneCopyNumberDeletes.RData")
+save(hpcGeneCopyNumberDeletes, file = "~/hmf/analysis/cohort/reference/hpcGeneCopyNumberDeletes.RData")
 
 hpcGeneCopyNumberAmplifications = purple::query_gene_copy_number_amplifications(dbProd, highestPurityCohort)
 hpcGeneCopyNumberAmplifications = left_join(hpcGeneCopyNumberAmplifications, highestPurityCohort %>% select(sampleId, cancerType), by = "sampleId")
