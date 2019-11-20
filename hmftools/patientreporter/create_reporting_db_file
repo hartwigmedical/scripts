@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-echo "sampleId	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasReliableQuality"  > /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+echo "sampleId	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasReliableQuality"  > /data/tmp/createReportingDB/reportingDB_Total.tsv
 
 echo "[INFO] Reading cpct old final reports"
 for patientReportOldCPCT in /data/cpct/old_cpct_reports/*.pdf; do
     dateReport=$(date -r ${patientReportOldCPCT} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
     reportName=$( echo ${patientReportOldCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' | tr "." " " | awk '{print $1}' )
     outputString=$( echo ${reportName} "N/A" "prio-"${dateReport} )
-    echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+    echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
 done
 
 echo "[INFO] Reading cpct final reports"
@@ -23,7 +23,7 @@ for patientReportCPCT in /data/cpct/final_reports/*.pdf; do
 		totalName=$( echo ${reportName} )
 	fi
 	outputString=$( echo ${totalName} "N/A" ${dateReport} )
-	echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+	echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
 done
 
 echo "[INFO] Reading CORE final reports"
@@ -39,7 +39,7 @@ for patientReportCORE in /data/core/final_reports/*.pdf; do
         totalName=$( echo ${reportName} )
     fi
     outputString=$( echo ${totalName} "N/A" ${dateReport} )
-    echo ${outputString} >> /home/lieke/tmp/createReportingDB/reportingSamplesTotal.tsv
+    echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
 done
 
 echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
@@ -53,10 +53,10 @@ while IFS= read line;do
 	 if [[ -z ${position} && ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]];then
         if [[ ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]];then
 	        outputTofile=$( echo ${line} "N/A" "N/A" "N/A" "N/A" )
-			echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+			echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 		else
 			outputToFile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "N/A"  )
-			echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+			echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 		fi
 	else
 		countSamplesInFile=$(cat ${fileReportingSamples} | grep -w ${sampleId} | wc -l)
@@ -72,7 +72,7 @@ while IFS= read line;do
             barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
 			outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
-			echo ${outputLine} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+			echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 		else
 			count=$( expr $count + 1)
 			if [[ ${count} == ${countSamplesInFile} && ${seq} = 1 ]];then
@@ -85,10 +85,10 @@ while IFS= read line;do
                 barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
                 outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
-                echo ${outputLine} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+                echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 			else
 				outputTofile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "NA" )
-                echo ${outputTofile} >> /home/lieke/tmp/createReportingDB/reportingDB_Total.tsv
+                echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 			fi
 		fi
 	fi
@@ -100,6 +100,6 @@ while IFS= read line;do
 done < ${fileReportingSamples}
 
 echo "[INFO] Create output file with with tab"
-cat "/home/lieke/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /home/lieke/tmp/createReportingDB/reporting_db.tsv
+cat "/home/lieke/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /data/tmp/createReportingDB/reporting_db.tsv
 
 echo "[INFO] Finished!"
