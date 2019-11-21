@@ -35,6 +35,11 @@ else
     echo "[INFO] Skipping reference BAM slicing. HotSpot BAM already exists: ${normal_bam}"
 fi
 
+if [ ! -f ${sample_bam} ]; then
+    echo "[ERROR] BAM download failed"
+    exit 1
+fi
+
 echo "Running SAGE"
 java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
     -threads 4 -panel_only \
