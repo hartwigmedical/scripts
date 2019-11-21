@@ -9,7 +9,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Loading vicc into SQL"
+echo "[INFO] Loading vicc into SQL into ${db_url}"
 
 # mysql vicc_db --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
 

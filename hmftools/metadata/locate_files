@@ -23,7 +23,6 @@ locate_vicc_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/vicc_db_pilot
 }
 
-
 locate_reference_validation_sets_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/reference_validation_sets
 }
