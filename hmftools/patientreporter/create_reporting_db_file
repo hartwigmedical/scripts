@@ -19,6 +19,10 @@ for patientReportCPCT in /data/cpct/final_reports/*.pdf; do
 		totalName=$( echo ${reportName}"-"${corrected} )
 	elif [[ ${corrected} == "DRAFT" ]]; then
 		totalName=$( echo ${reportName}"-"${corrected} )
+	elif [[ ${corrected} =~ ^v[0-9] || ${corrected} =~ ^[0-9] ]];then
+        totalName=$( echo ${reportName}"-unknown" )
+    elif [[ ${corrected} != "final" ]];then
+        totalName=$( echo ${reportName}"-unknown" )
 	else
 		totalName=$( echo ${reportName} )
 	fi
@@ -42,11 +46,15 @@ for patientReportCORE in /data/core/final_reports/*.pdf; do
     echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
 done
 
+cat "/data/tmp/createReportingDB/reportingSamplesTotal.tsv" | sort > /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv
+
+
 echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
-fileReportingSamples="/data/tmp/createReportingDB/reportingSamplesTotal.tsv"
+fileReportingSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv"
 count=0
 while IFS= read line;do
 	 sampleId=$( echo $line | tr "_" " " | tr "-" " " | awk '{print $1}' )
+	 wholeSampleId=$( echo $line | tr "_" " "  | awk '{print $1}' )
 	 dateReport=$( echo $line | awk '{print $3}' )
 	 position=$( cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -wn ${sampleId} )
 	 seq=$( cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -w ${sampleId} | wc -l )
@@ -71,7 +79,7 @@ while IFS= read line;do
 			sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
             barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
-			outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+			outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
 			echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 		else
 			count=$( expr $count + 1)
@@ -84,7 +92,7 @@ while IFS= read line;do
                 sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
                 barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
-                outputLine=$( echo ${sampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+                outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
                 echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 			else
 				outputTofile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "NA" )
