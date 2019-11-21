@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-vicc_file=$1 && shift
+vicc_json=$1 && shift
 credentials=$1 && shift
 vicc_jar=$1 && shift
 
@@ -11,9 +11,9 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading vicc into SQL"
 
-mysql vicc_db --user=${db_user} --password=${db_pass} < /data/experiments/knowledgebase_vicckb/create_vicc_database.sql
+# mysql vicc_db --user=${db_user} --password=${db_pass} < ~/create_vicc_database.sql
 
-java -Dorg.jooq.no-logo=true -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonToSQLImporter \
-    -vicc_file ${vicc_file} \
+java -Dorg.jooq.no-logo=true -cp ${vicc_jar} com.hartwig.hmftools.vicc.ViccJsonSQLImporter \
+    -vicc_json ${vicc_json} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
