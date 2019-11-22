@@ -66,6 +66,9 @@ names(filters) = names(full_vcf)
 
 write(paste(Sys.time(), "Parsing single breakends", argv$input), stderr())
 begr = breakpointRanges(full_vcf, unpartneredBreakends=TRUE)
+if (!is.null(begr$sourceId) & is.null(begr$vcfId)) {
+  stop("StructuralVariantAnnotation version mismatch.")
+}
 write(paste(Sys.time(), "Calculating single breakend VAF", argv$input), stderr())
 begr$af = round(gridss_be_af(begr, full_vcf, tumourordinal), 5)
 begr$af_str = as.character(begr$af)
@@ -84,6 +87,9 @@ if (argv$gc) { gc() }
 
 write(paste(Sys.time(), "Parsing breakpoints", argv$input), stderr())
 bpgr = breakpointRanges(full_vcf, unpartneredBreakends=FALSE)
+if (!is.null(bpgr$sourceId) & is.null(bpgr$vcfId)) {
+  stop("StructuralVariantAnnotation version mismatch.")
+}
 write(paste(Sys.time(), "Calculating breakpoint VAF", argv$input), stderr())
 bpgr$af = round(gridss_bp_af(bpgr, full_vcf, tumourordinal), 5)
 bpgr$af_str = paste(bpgr$af, partner(bpgr)$af, sep=",")
