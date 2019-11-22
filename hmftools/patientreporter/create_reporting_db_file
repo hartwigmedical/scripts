@@ -61,6 +61,7 @@ count=0
 while IFS= read line;do
 	 sampleId=$( echo $line | tr "_" " " | tr "-" " " | awk '{print $1}' )
 	 wholeSampleId=$( echo $line | tr "_" " "  | awk '{print $1}' )
+	 unknownSample=$( echo wholeSampleId | tr "-" " "  | awk '{print $2}' )
 	 dateReport=$( echo $line | awk '{print $3}' )
 	 position=$( cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -wn ${sampleId} )
 	 seq=$( cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -w ${sampleId} | wc -l )
@@ -69,8 +70,13 @@ while IFS= read line;do
 	        outputTofile=$( echo ${line} "N/A" "N/A" "N/A" "N/A" )
 			echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
 		else
-			outputToFile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "N/A"  )
-			echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		   if [[ ${unknownSample} == "unknown" ]]; then
+		        outputToFile=$( echo ${line} "unknown_report" "N/A" "N/A" "N/A"  )
+			    echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		    else
+		        outputToFile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "N/A"  )
+			    echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		   fi
 		fi
 	else
 		countSamplesInFile=$(cat ${fileReportingSamples} | grep -w ${sampleId} | wc -l)
@@ -85,8 +91,13 @@ while IFS= read line;do
 			sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
             barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
-			outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
-			echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+            if [[ ${unknownSample} == "unknown" ]]; then
+		        outputToFile=$( echo ${line} "unknown_report" "N/A" "N/A" "N/A"  )
+			    echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			else
+			    outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+			    echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		   fi
 		else
 			count=$( expr $count + 1)
 			if [[ ${count} == ${countSamplesInFile} && ${seq} = 1 ]];then
@@ -98,11 +109,21 @@ while IFS= read line;do
                 sampleQuerySBP=$( query_lims -type samples | grep -w $sampleId )
                 barcodeSample=$( echo ${sampleQuerySBP} | awk '{print $2}')
 
-                outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
-                echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+                if [[ ${unknownSample} == "unknown" ]]; then
+		            outputToFile=$( echo ${line} "unknown_report" "N/A" "N/A" "N/A"  )
+			        echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			    else
+			        outputLine=$( echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow} )
+                    echo ${outputLine} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		        fi
 			else
-				outputTofile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "NA" )
-                echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			    if [[ ${unknownSample} == "unknown" ]]; then
+		            outputToFile=$( echo ${line} "unknown_report" "N/A" "N/A" "N/A"  )
+			        echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			     else
+			        outputTofile=$( echo ${line} "QC_fail_report" "N/A" "N/A" "NA" )
+                    echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		        fi
 			fi
 		fi
 	fi
