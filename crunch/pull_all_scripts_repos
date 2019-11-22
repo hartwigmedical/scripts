@@ -1,6 +1,6 @@
 #!/bin/bash
 
-pull_script="pull_scripts_repos"
+pull_script="pull_scripts_repo"
 
 for server in crunch00{1,2,3}; do
   echo "---"
