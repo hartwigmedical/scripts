@@ -4,6 +4,10 @@ repo_name="scripts"
 repo_root="/data/repos"
 work_path=$(pwd)
 
+if [[ "$USER" == "root" ]]; then
+  echo "[EXIT] This script should not be executed as user root" && exit 1
+fi
+
 if [[ "$(hostname)" == "datastore" ]]; then
     repo_root=/data/common/repos
 fi
