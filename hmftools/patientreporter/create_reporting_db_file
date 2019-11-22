@@ -21,8 +21,6 @@ for patientReportCPCT in /data/cpct/final_reports/*.pdf; do
 		totalName=$( echo ${reportName}"-"${corrected} )
 	elif [[ ${corrected} == "DRAFT" ]]; then
 		totalName=$( echo ${reportName}"-"${corrected} )
-	elif [[ ${corrected} =~ ^v[0-9] || ${corrected} =~ ^[0-9] ]];then
-        totalName=$( echo ${reportName}"-unknown" )
     elif [[ ${corrected} != "final" && ${corrected} != "" ]];then
         totalName=$( echo ${reportName}"-unknown" )
     elif [[ ${countWords} == 3 && ${checkExt} != "report.pdf" ]];then
