@@ -15,6 +15,10 @@ if [[ ! -f $KEY_FILE ]]; then echo "[EXIT] KEY file not found ($KEY_FILE)" && ex
 
 for TYPE in "${DB_TYPES[@]}"; do
     API_URL="${BASE_URL}/${TYPE}"
+    if [[ "${TYPE}" == "fastq" ]]; then
+        ## adding bucket filter reduces output significantly
+        API_URL+="?bucket=hmf-fastq-storage"
+    fi
     OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
     OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
 
