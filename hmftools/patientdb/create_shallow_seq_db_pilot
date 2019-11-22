@@ -9,6 +9,7 @@ shallow_seq_csv=/home/lieke/tmp/shallow_seq_purity_pilot.csv
 purple_purity_p4_tsv=".purple.purity"
 purple_purity_p5_tsv=".purple.purity.tsv"
 purple_qc_file=".purple.qc"
+pipeline_version="pipeline.version"
 
 java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -runs_dir ${runs_dir} \
@@ -16,4 +17,5 @@ java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -purple_purity_p4_tsv ${purple_purity_p4_tsv} \
     -purple_purity_p5_tsv ${purple_purity_p5_tsv} \
     -purple_qc_file ${purple_qc_file} \
+    -pipeline_version_file ${pipeline_version} \
     "$@"
