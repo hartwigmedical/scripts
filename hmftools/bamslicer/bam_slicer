@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source api_functions
+source sbp_api_functions
 
 bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
 

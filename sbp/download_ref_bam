@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source api_functions
+source sbp_api_functions
 
 usage() {
     echo "---"
