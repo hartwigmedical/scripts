@@ -50,7 +50,7 @@ mkdir -p ${out_dir}
 
 echo "Running SAGE"
 java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
-    -threads 4 -panel_only \
+    -threads 1 -panel_only \
     -tumor ${sample} -tumor_bam ${sample_bam} \
     -reference ${normal} -reference_bam ${normal_bam}  \
     -panel /data/common/dbs/sage/ActionableCodingPanel.hg19.bed.gz  -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
@@ -82,11 +82,11 @@ rm ${pon1_vcf}*
 rm ${pon2_vcf}*
 rm ${snpeff_vcf}*
 
+# RUN
+# cat something | xargs -I CMD --max-procs=5 do_run_sage_experiment /data/cpct/runs/CMD &
 
 # Create panel PON files
 #/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz
 #/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz
-
-
-/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.sorted.vcf.gz
-/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.sorted.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.sorted.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.sorted.vcf.gz
