@@ -12,7 +12,7 @@ fi
 echo "[INFO] Processing finished GCP run ${set}"
 
 download_path=/data/gcp/downloaded_runs
-download_set ${set} ${download_path}
+download_set_gcp ${set} ${download_path}
 
 if [ ! -f ${download_path}/${set}/metadata.json ]; then
     echo "[ERROR] No metadata file found. Probably something wrong with the downloading of the run. Exiting"
