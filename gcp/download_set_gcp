@@ -20,8 +20,10 @@ run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
 echo "[INFO] Downloading v5 run ${set} from ${run_bucket} to ${download_path}"
 
-gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
-gsutil rsync -x *.bam \
-    gs://${bucket}/${set} \
-    ${download_path}/${set}/ \
+dest_path=${download_path}/${set}/
+mkdir -p ${dest_path}
 
+gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
+gsutil -u hmf-database -m rsync -r -x .*.bam \
+    gs:/${bucket}/${set} \
+    ${dest_path}
