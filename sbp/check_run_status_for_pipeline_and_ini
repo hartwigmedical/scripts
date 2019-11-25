@@ -17,9 +17,9 @@ if [ ${pip_count} -lt 1 ]; then
 fi
 
 ## Define all paths used by script
-find_dirs="/data/cpct/runs/ /data/core/runs/ /data/schuberg/processed_runs/ /data/schuberg/downloaded_runs/ "
+find_dirs="/data/cpct/runs/ /data/core/runs/ /data/gcp/processed_runs/ /data/gcp/downloaded_runs/ "
 find_dirs_fail="/data/schuberg/qc_fail_runs"
-download_script="process_finished_run"
+download_script="process_finished_run_gcp"
 download_script_fail="download_qc_fail_run"
 
 full_run_inis="Somatic.ini|CPCT.ini"
