@@ -2,7 +2,7 @@
 
 source metadata_functions
 
-path=/data/schuberg/processed_runs
+path=/data/gcp/processed_runs
 process_runs=$(ls ${path})
 
 for run in ${process_runs}; do
