@@ -23,6 +23,7 @@ function crunches {
         diskUsage "/data2" "ssh $crunch"
         gitRepVsn "/data/repos/pipeline" "ssh $crunch"
         gitRepVsn "/data/repos/pipeline-test" "ssh $crunch"
+        gitRepVsn "/data/repos/scripts" "ssh $crunch"
         gridUsage "ssh $crunch"
     done
 }
