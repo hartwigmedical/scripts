@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+
+set=$1
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to process_finished_run. Exiting"
+    exit 1
+fi
+
+echo "[INFO] Processing finished GCP run ${set}"
+
+download_path=/data/gcp/downloaded_runs
+download_set ${set} ${download_path}
+
+if [ ! -f ${download_path}/${set}/metadata.json ]; then
+    echo "[ERROR] No metadata file found. Probably something wrong with the downloading of the run. Exiting"
+    exit 1;
+fi
+
+processed_path=/data/gcp/processed_runs
+echo "[INFO] Copying set ${set} to processed path ${processed_path}"
+set_path=${processed_path}/${set}
+cp -r ${download_path}/${set} ${set_path}
+
+tumor_sample=$(load_tumor_sample_from_metadata ${set_path})
+
+if [[ ${tumor_sample} =~ ^CORE ]]; then
+    echo "[INFO] Skipped loading into database for ${set} because ${tumor_sample} is a CORE sample!"
+else
+    echo "[INFO] Loading data into production database for ${tumor_sample}"
+    load_run_into_prod_db ${set_path}
+fi
