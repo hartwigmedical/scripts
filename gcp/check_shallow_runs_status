@@ -7,7 +7,6 @@ process_path="/data/gcp/shallow_runs"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
-echo ""
 query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status)"' | while read line; do 
     run_name=$(echo "${line}" | cut -d" " -f1)
     run_status=$(echo "${line}" | cut -d" " -f2)
