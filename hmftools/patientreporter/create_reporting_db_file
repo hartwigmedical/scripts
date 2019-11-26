@@ -56,44 +56,49 @@ echo "[INFO} sorting file"
 cat "/data/tmp/createReportingDB/reportingSamplesTotal.tsv" | sort > /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv
 
 echo "[INFO] extract correct date format"
-sampleFromFile=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $1}' )
-BarcodeFromFile=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $2}' )
 
-year=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $3}' | tr "-" " " | awk '{print $1}' )
-month=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $3}' | tr "-" " " | awk '{print $2}' )
-day=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $3}' | tr "-" " " | awk '{print $3}' )
+sortedReportedSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv"
+while IFS= read samplesLine;do
+    sampleFromFile=$( echo $samplesLine | awk '{ print $1}' )
+    BarcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
 
-changedMonth="";
-if [[ $month == 01 ]];then
-    changedMonth="Jan"
-elif [[ $month == 02 ]];then
-    changedMonth="Feb"
-elif [[ $month == 03 ]];then
-    changedMonth="Mrt"
-elif [[ $month == 04 ]];then
-    changedMonth="Apr"
-elif [[ $month == 05 ]];then
-    changedMonth="Mei"
-elif [[ $month == 06 ]];then
-    changedMonth="Jun"
-elif [[ $month == 07 ]];then
-    changedMonth="Jul"
-elif [[ $month == 08 ]];then
-    changedMonth="Aug"
-elif [[ $month == 09 ]];then
-    changedMonth="Sep"
-elif [[ $month == 10 ]];then
-    changedMonth="Okt"
-elif [[ $month == 11 ]];then
-    changedMonth="Nov"
-elif [[ $month == 12 ]];then
-    changedMonth="Dec"
-else
-    echo "No correct month of file"
-fi
-date=$( echo "$day-changedMonth-$year" )
+    year=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $1}' )
+    month=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $2}' )
+    day=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $3}' )
+    changedMonth=""
+    if [[ $month == 01 ]];then
+        changedMonth="Jan"
+    elif [[ $month == 02 ]];then
+        changedMonth="Feb"
+    elif [[ $month == 03 ]];then
+        changedMonth="Mrt"
+    elif [[ $month == 04 ]];then
+        changedMonth="Apr"
+    elif [[ $month == 05 ]];then
+        changedMonth="Mei"
+    elif [[ $month == 06 ]];then
+        changedMonth="Jun"
+    elif [[ $month == 07 ]];then
+        changedMonth="Jul"
+    elif [[ $month == 08 ]];then
+        changedMonth="Aug"
+    elif [[ $month == 09 ]];then
+        changedMonth="Sep"
+    elif [[ $month == 10 ]];then
+        changedMonth="Okt"
+    elif [[ $month == 11 ]];then
+        changedMonth="Nov"
+    elif [[ $month == 12 ]];then
+        changedMonth="Dec"
+    else
+        changedMonth=""
+        echo "No correct month of file"
+    fi
+    date=$( echo "$day-changedMonth-$year" )
+    echo $sampleFromFile $BarcodeFromFile $changedMonth >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
 
-echo $sampleFromFile $BarcodeFromFile $changedMonth > /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
+done < ${sortedReportedSamples}
+
 
 echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
 fileReportingSamples="/data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv"
