@@ -97,7 +97,7 @@ while IFS= read samplesLine;do
             changedMonth=""
             echo "No correct month of file"
         fi
-    elif [[ $date != "prio-23-Feb-2017" ]] ; then
+    elif [[ $date == "prio-23-Feb-2017" ]] ; then
         date="prio-23-Feb-2017"
     fi
     date=$( echo "$day-$changedMonth-$year" )
