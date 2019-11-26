@@ -61,42 +61,47 @@ sortedReportedSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.
 while IFS= read samplesLine;do
     sampleFromFile=$( echo $samplesLine | awk '{ print $1}' )
     BarcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
+    date=$( echo $samplesLine | awk '{ print $3}' )
 
-    year=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $1}' )
-    month=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $2}' )
-    day=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $3}' )
-    changedMonth=""
-    if [[ $month == 01 ]];then
-        changedMonth="Jan"
-    elif [[ $month == 02 ]];then
-        changedMonth="Feb"
-    elif [[ $month == 03 ]];then
-        changedMonth="Mrt"
-    elif [[ $month == 04 ]];then
-        changedMonth="Apr"
-    elif [[ $month == 05 ]];then
-        changedMonth="Mei"
-    elif [[ $month == 06 ]];then
-        changedMonth="Jun"
-    elif [[ $month == 07 ]];then
-        changedMonth="Jul"
-    elif [[ $month == 08 ]];then
-        changedMonth="Aug"
-    elif [[ $month == 09 ]];then
-        changedMonth="Sep"
-    elif [[ $month == 10 ]];then
-        changedMonth="Okt"
-    elif [[ $month == 11 ]];then
-        changedMonth="Nov"
-    elif [[ $month == 12 ]];then
-        changedMonth="Dec"
-    else
+    if [[ $date != "prio-23-Feb-2017" ]]; then
+        year=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $1}' )
+        month=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $2}' )
+        day=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $3}' )
+
         changedMonth=""
-        echo "No correct month of file"
+        if [[ $month == 01 ]];then
+            changedMonth="Jan"
+        elif [[ $month == 02 ]];then
+            changedMonth="Feb"
+        elif [[ $month == 03 ]];then
+            changedMonth="Mrt"
+        elif [[ $month == 04 ]];then
+            changedMonth="Apr"
+        elif [[ $month == 05 ]];then
+            changedMonth="Mei"
+        elif [[ $month == 06 ]];then
+            changedMonth="Jun"
+        elif [[ $month == 07 ]];then
+            changedMonth="Jul"
+        elif [[ $month == 08 ]];then
+            changedMonth="Aug"
+        elif [[ $month == 09 ]];then
+            changedMonth="Sep"
+        elif [[ $month == 10 ]];then
+            changedMonth="Okt"
+        elif [[ $month == 11 ]];then
+            changedMonth="Nov"
+        elif [[ $month == 12 ]];then
+            changedMonth="Dec"
+        else
+            changedMonth=""
+            echo "No correct month of file"
+        fi
+    elif [[ $date != "prio-23-Feb-2017" ]] ; then
+        date="prio-23-Feb-2017"
     fi
     date=$( echo "$day-$changedMonth-$year" )
     echo $sampleFromFile $BarcodeFromFile $date >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
-
 done < ${sortedReportedSamples}
 
 
