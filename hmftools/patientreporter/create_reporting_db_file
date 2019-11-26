@@ -59,7 +59,6 @@ echo "[INFO] extract correct date format"
 
 sortedReportedSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv"
 while IFS= read samplesLine;do
-    echo $samplesLine
     sampleFromFile=$( echo $samplesLine | awk '{ print $1}' )
     BarcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
     date=$( echo $samplesLine | awk '{ print $3}' )
