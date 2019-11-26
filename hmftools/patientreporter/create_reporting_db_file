@@ -95,7 +95,7 @@ while IFS= read samplesLine;do
         echo "No correct month of file"
     fi
     date=$( echo "$day-changedMonth-$year" )
-    echo $sampleFromFile $BarcodeFromFile $changedMonth >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
+    echo $sampleFromFile $BarcodeFromFile date >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
 
 done < ${sortedReportedSamples}
 
