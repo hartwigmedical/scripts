@@ -4,7 +4,7 @@ echo "sampleId	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasRe
 
 echo "[INFO] Reading cpct old final reports"
 for patientReportOldCPCT in /data/cpct/old_cpct_reports/*.pdf; do
-    dateReport=$(date -r ${patientReportOldCPCT} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
+    dateReport=$(date -r ${patientReportOldCPCT} "+%Y-%m-%d")
     reportName=$( echo ${patientReportOldCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' | tr "." " " | awk '{print $1}' )
     outputString=$( echo ${reportName} "N/A" "prio-"${dateReport} )
     echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
@@ -38,7 +38,7 @@ done
 
 echo "[INFO] Reading CORE final reports"
 for patientReportCORE in /data/core/final_reports/*.pdf; do
-    dateReport=$(date -r ${patientReportCORE} | awk '{print $3,"-",$2,"-",$6}' | tr -d [:space:])
+    dateReport=$(date -r ${patientReportCORE} "+%Y-%m-%d")
     reportName=$( echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' )
     corrected=$( echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " "  | awk '{print $4}' | tr "." " " | awk '{print $1}' )
     if [[ ${corrected} == "corrected" ]]; then
@@ -63,7 +63,7 @@ while IFS= read samplesLine;do
     BarcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
     date=$( echo $samplesLine | awk '{ print $3}' )
 
-    if [[ $date != "prio-23-Feb-2017" ]]; then
+    if [[ $date != "prio-2017-02-23" ]]; then
         year=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $1}' )
         month=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $2}' )
         day=$( echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $3}' )
@@ -97,7 +97,7 @@ while IFS= read samplesLine;do
             changedMonth=""
             echo "No correct month of file"
         fi
-    elif [[ $date == "prio-23-Feb-2017" ]] ; then
+    elif [[ $date == "prio-2017-02-23" ]] ; then
         date="prio-23-Feb-2017"
     fi
     date=$( echo "$day-$changedMonth-$year" )
