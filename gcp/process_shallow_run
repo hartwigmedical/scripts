@@ -21,11 +21,7 @@ else
     mkdir -p ${dest_path}
     gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
     gsutil -u hmf-database -m rsync -r \
-        -x .*.bam$ \
-        -x .*.bam.bai$ \
-        -x .*.cobalt.ratio.tsv$ \
-        -x .*.gridss.unfiltered.vcf.gz$ \
-        -x .*.amber.baf.tsv$ \
+        -x ".*\.bam$|.*.bam.bai$|.*.cobalt.ratio.tsv$|.*.gridss.unfiltered.vcf.gz$|.*.amber.baf.tsv$" \
         gs://${run_bucket}/${set} \
         ${dest_path}
 fi
