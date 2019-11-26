@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+set=$1 && shift
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+download_path="/data/gcp/qc_fail_runs"
+
+download_run_without_bams ${set} ${download_path}

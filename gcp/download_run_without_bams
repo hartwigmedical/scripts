@@ -6,7 +6,7 @@ set=$1 && shift
 download_path=$1 && shift
 
 if [ -z "$set" ]; then
-    echo "[ERROR] No set provided to process_finished_run. Exiting"
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
 

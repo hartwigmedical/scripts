@@ -2,17 +2,17 @@
 
 source metadata_functions
 
-set=$1
+set=$1 && shift
 
 if [ -z "$set" ]; then
-    echo "[ERROR] No set provided to process_finished_run. Exiting"
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
 
-echo "[INFO] Processing finished GCP run ${set}"
+echo "[INFO] Processing successful GCP run ${set}"
 
 download_path=/data/gcp/downloaded_runs
-download_set_gcp ${set} ${download_path}
+download_run_without_bams ${set} ${download_path}
 downloaded_set_path=${download_path}/${set}
 
 if [ ! -f ${downloaded_set_path}/metadata.json ]; then
