@@ -12,7 +12,7 @@ fi
 echo "[INFO] Processing finished SBP run ${set}"
 
 download_path=/data/schuberg/downloaded_runs
-download_set -s ${set} -p ${download_path}
+download_set_sbp -s ${set} -p ${download_path}
 
 if [ ! -f ${download_path}/${set}/metadata.json ]; then
     echo "[ERROR] No metadata file found. Probably something wrong with the downloading of the run. Exiting"
