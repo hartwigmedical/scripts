@@ -2,7 +2,7 @@
 
 source locate_files
 
-runs_dir=/data/data_archive/shallow_seq_pipelines
+runs_dir=/data/gcp/shallow_runs
 patient_db_jar=$(locate_prod_patient_db)
 
 shallow_seq_csv=/data/lims/shallow_seq_purity_new.csv
