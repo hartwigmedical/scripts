@@ -24,6 +24,7 @@ dest_path=${download_path}/${set}/
 mkdir -p ${dest_path}
 
 gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
-gsutil -u hmf-database -m rsync -r -x .*.bam \
+gsutil -u hmf-database -m rsync -r \
+    -x .*.bam$ \
     gs://${run_bucket}/${set} \
     ${dest_path}
