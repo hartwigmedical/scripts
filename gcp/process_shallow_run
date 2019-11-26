@@ -9,7 +9,7 @@ fi
 
 archive_path="/data/data_archive/shallow_seq_pipelines"
 download_path="/data/gcp/shallow_runs"
-bucket="hmf-output-shallowseq"
+run_bucket="hmf-output-shallowseq"
 archive_set_path=${archive_path}/${set}
 
 if [[ -d ${archive_set_path} ]]; then
