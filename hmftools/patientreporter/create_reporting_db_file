@@ -59,6 +59,7 @@ echo "[INFO] extract correct date format"
 
 sortedReportedSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv"
 while IFS= read samplesLine;do
+    echo $samplesLine
     sampleFromFile=$( echo $samplesLine | awk '{ print $1}' )
     BarcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
     date=$( echo $samplesLine | awk '{ print $3}' )
@@ -97,10 +98,10 @@ while IFS= read samplesLine;do
             changedMonth=""
             echo "No correct month of file"
         fi
+        date=$( echo "$day-$changedMonth-$year" )
     elif [[ $date == "prio-2017-02-23" ]] ; then
         date="prio-23-Feb-2017"
     fi
-    date=$( echo "$day-$changedMonth-$year" )
     echo $sampleFromFile $BarcodeFromFile $date >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
 done < ${sortedReportedSamples}
 
