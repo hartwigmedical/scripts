@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+
+exit 1
+
+set=$1 && shift
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+archive_path="/data/data_archive/shallow_seq_pipelines"
+download_path="/data/gcp/shallow_runs"
+bucket="hmf-output-shallowseq"
+
+
+download_run_without_bams ${set} ${download_path}
+
+archive_set_path=${archive_path}/${set}
+
+if [[ -d ${archive_set_path} ]]; then
+    echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
+else
+    echo "[INFO] Processing successful GCP run ${set}"
+    download_set_path=${download_path}/${set}
+
+
+fi
