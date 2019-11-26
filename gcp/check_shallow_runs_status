@@ -2,8 +2,8 @@
 
 YYMMDD=$(date +'%y%m%d')
 archive_path="/data/data_archive/shallow_seq_pipelines"
-qcfail_path="/data/schuberg/qc_fail_runs"
-process_path="/data/schuberg/shallow_runs"
+qcfail_path="/data/gcp/qc_fail_runs"
+process_path="/data/gcp/shallow_runs"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
