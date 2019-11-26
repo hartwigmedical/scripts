@@ -52,8 +52,10 @@ for patientReportCORE in /data/core/final_reports/*.pdf; do
     echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
 done
 
+echo "[INFO} sorting file"
 cat "/data/tmp/createReportingDB/reportingSamplesTotal.tsv" | sort > /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv
 
+echo "[INFO] extract correct date format"
 sampleFromFile=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $1}' )
 BarcodeFromFile=$( cat /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv | awk '{ print $2}' )
 
