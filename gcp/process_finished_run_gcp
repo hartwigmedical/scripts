@@ -37,5 +37,5 @@ if [[ ${tumor_sample} =~ ^CORE ]]; then
     echo "[INFO] Skipped loading into database for ${set} because ${tumor_sample} is a CORE sample!"
 else
     echo "[INFO] Loading data into production database for ${tumor_sample}"
-    load_run_into_prod_db ${set_path}
+    load_run_into_prod_db ${processed_set_path}
 fi
