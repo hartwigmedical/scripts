@@ -7,4 +7,4 @@ if [ -z "${file_name}" ]; then
     exit 1
 fi
 
-cat ${file_name} | grep -i "error|excep|fail" | grep -Pv "^#.*(E|e)rrors :.*\(" | grep -v "errorCorrection|OnFirstError|download:"
+cat ${file_name} | grep -Pi "error|excep|fail" | grep -Pv "^#.*(E|e)rrors :.*\(" | grep -Pv "errorCorrection|OnFirstError|download:|\.error"
