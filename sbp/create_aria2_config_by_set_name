@@ -8,6 +8,9 @@ KEY_FILE="${CRED_DIR}/api.key"
 SBP_API_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 AWS_PROFILE="download"
 
+GCP_URL_SCRIPT="generate_signed_gcp_url.py"
+GCP_KEY_FILE="/data/common/dbs/gcp_credentials/hmf-download"
+
 if [ -z "$set_name" ]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
 fi
@@ -23,12 +26,13 @@ function main() {
   run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
   ## setup all variables
-  bucket=$(echo "$run_json" | jq -r '.bucket')
-    name=$(echo "$run_json" | jq -r '.name')
-     ini=$(echo "$run_json" | jq -r '.ini')
-     ref=$(echo "$run_json" | jq -r '.ref_sample')
-     tum=$(echo "$run_json" | jq -r '.tumor_sample')
-      id=$(echo "$run_json" | jq -r '.sbp_id')
+  cluster=$(echo "$run_json" | jq -r '.cluster')
+   bucket=$(echo "$run_json" | jq -r '.bucket')
+     name=$(echo "$run_json" | jq -r '.name')
+      ini=$(echo "$run_json" | jq -r '.ini')
+      ref=$(echo "$run_json" | jq -r '.ref_sample')
+      tum=$(echo "$run_json" | jq -r '.tumor_sample')
+       id=$(echo "$run_json" | jq -r '.sbp_id')
 
   files_url="${SBP_API_URL}/files?run_id=${id}"
   out_jsn_all="${name}_tmp_all_files.json"
@@ -37,6 +41,7 @@ function main() {
   out_md5="${name}.md5"
 
   echo "[INFO] RunName: $name"
+  echo "[INFO] Cluster: $cluster"
   echo "[INFO] Bucket: $bucket"
   echo "[INFO] IniFile: $ini"
   echo "[INFO] TumorSample: $tum"
@@ -58,7 +63,7 @@ function main() {
   
   create_json_file "$files_json" "$out_jsn_all"
   create_md5sums_file "$files_json" "$out_md5_all"
-  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$name" "$bucket" "$ini" "$ref" "$tum"
+  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum"
   
   ## sanity checks
   for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
@@ -72,6 +77,7 @@ create_ini_specific_files () {
   local out_md5=$1 && shift
   local out_aria=$1 && shift
   local name=$1 && shift
+  local cluster=$1 && shift
   local bucket=$1 && shift
   local ini=$1 && shift
   local ref=$1 && shift
@@ -123,10 +129,19 @@ create_ini_specific_files () {
 
   echo "[INFO] Creating $out_aria"
   for file in ${file_selection[@]}; do
-    local file_url="s3://${bucket}/${name}/${file}"
+    local file_url=""
+    local direct=""
+    local extern=""
+    if [[ $cluster == "gcp" ]]; then
+        file_in_bucket="${bucket}/${name}/${file}"
+        extern=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${file_in_bucket}" 604800)
+    else
+        file_url="s3://${bucket}/${name}/${file}"
+        direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
+        extern=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+    fi
+    
     local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file}$" | cut -f1) 
-    local direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
-    local extern=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
     echo "${extern}" >> $out_aria
     echo "  dir=${name}" >> $out_aria
     echo "  checksum=md5=${md5sum}" >> $out_aria
