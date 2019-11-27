@@ -34,7 +34,7 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
     elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing|Uploading|Downloading)$ ]]; then 
         echo "## PROCESSING: ${run_name} (status=${run_status})"
     elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then 
-        echo " process_shallow_run -s ${run_name} # (status=${run_status})"
+        echo " process_shallow_run ${run_name} # (status=${run_status})"
     else 
         echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"
     fi
