@@ -74,11 +74,11 @@ while IFS= read samplesLine;do
         elif [[ $month == 02 ]];then
             changedMonth="Feb"
         elif [[ $month == 03 ]];then
-            changedMonth="Mrt"
+            changedMonth="Mar"
         elif [[ $month == 04 ]];then
             changedMonth="Apr"
         elif [[ $month == 05 ]];then
-            changedMonth="Mei"
+            changedMonth="May"
         elif [[ $month == 06 ]];then
             changedMonth="Jun"
         elif [[ $month == 07 ]];then
@@ -88,7 +88,7 @@ while IFS= read samplesLine;do
         elif [[ $month == 09 ]];then
             changedMonth="Sep"
         elif [[ $month == 10 ]];then
-            changedMonth="Okt"
+            changedMonth="Oct"
         elif [[ $month == 11 ]];then
             changedMonth="Nov"
         elif [[ $month == 12 ]];then
