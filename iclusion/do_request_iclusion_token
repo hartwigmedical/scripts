@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-api_credentials=$1
+api_credentials=$1 && shift
 
 endpoint=$(awk '/^endpoint/ {print $2}' ${api_credentials})
 client_id=$(awk '/^client_id/ {print $2}' ${api_credentials})
