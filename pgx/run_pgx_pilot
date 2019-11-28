@@ -4,7 +4,7 @@ source locate_files
 source metadata_functions
 
 run_dir=$1 && shift
-output_dir=${run_dir}/pgx
+output_dir=${run_dir}/pgx_pilot
 
 # START VIRTUAL ENV
 source /data/common/dbs/pgx/venv/pgx/bin/activate
