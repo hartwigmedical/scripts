@@ -4,10 +4,11 @@ source locate_files
 source metadata_functions
 
 run_dir=$1 && shift
-output_dir=${run_dir}/pgx_pilot
 
 # START VIRTUAL ENV
 source /data/common/dbs/pgx/venv/pgx/bin/activate
+
+output_dir=${run_dir}/pgx_pilot
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
