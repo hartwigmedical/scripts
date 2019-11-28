@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
+iclusion_api_credentials=$1 && shift
+
 knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 
-iclusion_api_credentials=$1
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_credentials})
@@ -43,4 +44,5 @@ java -jar ${knowledgebase_importer_jar} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_user ${iclusion_user} \
     -iclusion_password ${iclusion_password} \
-    -output_dir ${output_dir}
+    -output_dir ${output_dir} \
+    "$@"
