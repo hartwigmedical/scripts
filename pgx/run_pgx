@@ -10,6 +10,8 @@ output_dir=$1 && shift
 source /data/common/dbs/pgx/venv/pgx/bin/activate
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
 germline_vcf=$(locate_germline_variants ${run_dir} ${ref_sample})
 
 # REFERENCES
@@ -18,7 +20,7 @@ pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
-python ${pgx_tool} ${germline_vcf} ${output_dir} \
+python ${pgx_tool} ${germline_vcf} ${output_dir} ${tumor_sample} \
     --panel ${pgx_resource_dir}/panelfiles/DPYD.json \
     --sourcedir ${pgx_resource_dir} \
     --vcftools ${vcftools_tool}

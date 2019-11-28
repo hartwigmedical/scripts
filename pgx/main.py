@@ -430,7 +430,7 @@ def get_bed_file(gene_panel, panel_path, sourcedir):
     return bed_path
 
 
-def main(vcf, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
+def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
@@ -502,8 +502,7 @@ def main(vcf, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
         ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
             convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel)
         if outputdir:
-            set_name = vcf.split("/")[4]
-            out = outputdir + "/" + set_name
+            out = outputdir + "/" + sampleID
             all_ids_in_panel.to_csv(out + "_calls.txt", sep='\t', index=False)
             f = open(out + "_genotype.txt", 'w')
             f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
@@ -549,6 +548,7 @@ if __name__ == '__main__':
                                                  'annotations are done on GRCh38, so in the output both reference '
                                                  'genome output is given where possible.')
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
+    parser.add_argument('sampleID', type=str, help='The sample ID of the run')
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
     parser.add_argument('--panel', type=str, help='TSV file with the panel variants')
     parser.add_argument('--requery', default=False, action='store_true', help='Requery genes in pharmGKB')
@@ -560,4 +560,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.vcf, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
+    main(args.vcf, args.sampleID, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
