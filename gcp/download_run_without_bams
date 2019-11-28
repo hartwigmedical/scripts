@@ -18,7 +18,7 @@ fi
 
 run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
-echo "[INFO] Downloading v5 run ${set} from ${run_bucket} to ${download_path}"
+echo "[INFO] Downloading run ${set} from ${run_bucket} to ${download_path}"
 
 dest_path=${download_path}/${set}/
 mkdir -p ${dest_path}
