@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+
+set=$1 && shift
+download_path=$1 && shift
+
+if [ -z "$set" ]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+run_info=$(load_run_info_for_set ${set})
+if [ -z "${run_info}" ]; then
+    echo "[ERROR] No run info found for set ${set}. Exiting"
+    exit 1
+fi
+
+run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
+
+echo "[INFO] Downloading v5 run ${set} from ${run_bucket} to ${download_path}"
+
+dest_path=${download_path}/${set}/
+mkdir -p ${dest_path}
+
+gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
+gsutil -u hmf-database -m rsync -r \
+    gs://${run_bucket}/${set} \
+    ${dest_path}
