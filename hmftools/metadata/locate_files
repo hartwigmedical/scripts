@@ -548,9 +548,9 @@ locate_reporting_db_tsv() {
 }
 
 locate_reporting_db_tsv_pilot() {
-    local reporting_db_tsv=/data/lims/report_dates_lims_pilot.tsv
+    local reporting_db_tsv=/data/lims/reporting_db_pilot.tsv
     if [ ! -f ${reporting_db_tsv} ]; then
-        echo "[ERROR] Unable to locate reporting db TSV. Exiting." >&2
+        echo "[ERROR] Unable to locate pilot reporting db TSV. Exiting." >&2
         exit 1
     fi
     echo ${reporting_db_tsv}
