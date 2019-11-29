@@ -16,7 +16,7 @@ use constant NACHAR => 'NA';
 use constant TISSUE_ANCESTOR_FIELDS => qw( 
     submission lab_status hospital_pa_sample_id hospital_patient_id
     germline_findings requester_name requester_email purity_shallow 
-    tumor_perc ptum
+    tumor_perc ptum ref_sample_id
 );
 use constant BLOOD_ANCESTOR_FIELDS => qw( 
     submission lab_status
