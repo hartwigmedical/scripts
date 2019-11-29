@@ -12,11 +12,11 @@ function main {
     echo "[INFO] Searching content that is not owned by root yet (${chownDir})"
     nonRootCount=$(find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | wc -l)
     echo "[INFO] Found $nonRootCount to chown in $chownDir"
-    echo "[INFO] First 5 records:"
-    find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | head -5
-    read -p "[INFO] Press enter to start chown action"
 
     if [[ "${nonRootCount}" -gt 0 ]]; then
+        echo "[INFO] First 5 records:"
+        find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | head -5
+        read -p "[INFO] Press enter to start chown action"
         find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root -exec sudo chown -R root:root {} +
     fi
 }
