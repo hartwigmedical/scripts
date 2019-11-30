@@ -2,22 +2,22 @@
 
 source sbp_api_functions
 
-set_name=$1
+set=$1
 
-if [ -z "${set_name}" ]; then
-    echo "[ERROR] Provide a set name. Exiting"
+if [ -z "${set}" ]; then
+    echo "[ERROR] Provide a set. Exiting"
     exit 1
 fi
 
-run_info=$(load_run_info_for_set ${set_name})
-run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
+run_info=$(load_run_info_for_set ${set})
+run_bucket=$(extract_bucket_from_run_info ${run_info})
 
-echo "[INFO] Testing SBP API functions on ${set_name}"
+echo "[INFO] Testing SBP API functions on ${set}"
 echo "[INFO] Run Info = ${run_info}"
 echo "[INFO] Run Bucket = ${run_bucket}"
-echo "[INFO] Rerun V3 Info = $(load_rerun_v3_info_for_set ${set_name})"
-echo "[INFO] Rerun V4 Info = $(load_rerun_v4_info_for_set ${set_name})"
-echo "[INFO] Tumor Sample Name = $(load_tumor_sample_name_for_set ${set_name})"
-echo "[INFO] Ref Sample Name = $(load_ref_sample_name_for_set ${set_name})"
-echo "[INFO] Tumor BAM Location in ${run_bucket} = $(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set_name})"
-echo "[INFO] Ref BAM Location in ${run_bucket} = $(locate_ref_bam_for_set_in_bucket ${run_bucket} ${set_name})"
+echo "[INFO] Rerun V3 Info = $(load_rerun_v3_info_for_set ${set})"
+echo "[INFO] Rerun V4 Info = $(load_rerun_v4_info_for_set ${set})"
+echo "[INFO] Tumor Sample ID = $(load_tumor_sample_id_for_set ${set})"
+echo "[INFO] Ref Sample ID = $(load_ref_sample_id_for_set ${set})"
+echo "[INFO] Tumor BAM Location in ${run_bucket} = $(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set})"
+echo "[INFO] Ref BAM Location in ${run_bucket} = $(locate_ref_bam_for_set_in_bucket ${run_bucket} ${set})"
