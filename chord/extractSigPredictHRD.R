@@ -1,4 +1,5 @@
 #!/usr/bin/Rscript
+
 args <- commandArgs(TRUE)
 
 chordToolDir <- args[1]
