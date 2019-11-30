@@ -10,7 +10,7 @@ if [ -z "${set}" ]; then
 fi
 
 run_info=$(load_run_info_for_set ${set})
-run_bucket=$(extract_bucket_from_run_info ${run_info})
+run_bucket=$(extract_bucket_from_run_info "${run_info}")
 
 echo "[INFO] Testing SBP API functions on ${set}"
 echo "[INFO] Run Info = ${run_info}"

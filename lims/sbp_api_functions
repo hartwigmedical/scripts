@@ -25,6 +25,15 @@ load_sample_id_for_set_by_type_from_api() {
     echo ${sample_name}
 }
 
+load_intial_run_bucket_for_set() {
+    local set=$1 && shift
+
+    local run_info=$(load_run_info_for_set ${set})
+
+    # Need to pass as a string because ${run_info} is a string containing spaces.
+    extract_bucket_from_run_info "${run_info}"
+}
+
 load_run_info_for_set() {
     local set=$1 && shift
 
@@ -97,6 +106,7 @@ load_rerun_v4_info_for_set() {
 
 extract_bucket_from_run_info() {
     local run_info=$1 && shift
+
     run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
     echo ${run_bucket}
