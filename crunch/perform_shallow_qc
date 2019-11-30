@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-scriptName=$( basename $0 )
+scriptName=$(basename $0)
 runPaths=( "$@" )
 na="na"
 

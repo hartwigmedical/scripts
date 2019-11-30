@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-SCRIPT=$( basename $0 )
+SCRIPT=$(basename $0)
 ROOT_DIR="/data/data_archive/validation_data"
 LOG_DIR="${HOME}/logs"
 

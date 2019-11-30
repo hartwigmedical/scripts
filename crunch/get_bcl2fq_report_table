@@ -16,12 +16,10 @@ fi
 
 seqRunName=$1
 
-
 ## allow absolute path as param
 if [[ $seqRunName =~ ^\/ ]]; then
     runDir=$seqRunName
-elif [[ $currhost == "datastore" ]]
-then
+elif [[ $currhost == "datastore" ]]; then
     runDir=/data/sequencer_archive/$seqRunName 
 else
     runDir=/data1/illumina_data/$seqRunName

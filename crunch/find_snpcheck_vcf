@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 searchString=$1 # eg FR12345678
 

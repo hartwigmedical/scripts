@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-YYMMDD=$( date '+%y%m%d' )
+YYMMDD=$(date '+%y%m%d')
 taskId="updateSubmissionOverview"
 
 srcDir="/data/submissions"

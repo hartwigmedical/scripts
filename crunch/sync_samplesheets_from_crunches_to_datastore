@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 datastoreSheetsDir=/data/samplesheets
 crunchSeqRunsDir=/data1/illumina_data

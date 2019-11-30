@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
-    echo " Usage: `basename $0` <path-to-seq-run1> [<path-to-seq-run2 etc>]"
-    echo "        `basename $0` /data1/illumina_data/18*"
+    echo " Usage: $(basename $0) <path-to-seq-run1> [<path-to-seq-run2 etc>]"
+    echo "        $(basename $0) /data1/illumina_data/18*"
     echo " Descr: Get Rsync cmd to sync sequence run dirs to datastore excluding BCL, images, etc."
     echo "-----"
     exit 1

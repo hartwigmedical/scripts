@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-WORKING_DIR=`pwd`
+WORKING_DIR=$(pwd)
 PATIENT_DIR="/data/repos/testdata/cancerPanel/"
 REFERENCE_GENOME_DIR="/data/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/"
 KNOWN_INDELS_DIR="/data/dbs/GATK_bundle_v2.8/"

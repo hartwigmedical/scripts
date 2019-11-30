@@ -3,10 +3,10 @@
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Search SampleSheets for string (perl style grep based matching)"
-    echo " Usage: `basename $0` <string> [<string2 <stringn>]"
-    echo "        `basename $0` CPCT02020000T"
-    echo "        `basename $0` FR12345678"
-    echo "        `basename $0` CPCT02021234R CPCT02021234T"
+    echo " Usage: $(basename $0) <string> [<string2 <stringn>]"
+    echo "        $(basename $0) CPCT02020000T"
+    echo "        $(basename $0) FR12345678"
+    echo "        $(basename $0) CPCT02021234R CPCT02021234T"
     echo "---"
     exit 1
 fi

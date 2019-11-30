@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 repo_name="scripts"
 repo_root="/data/repos"

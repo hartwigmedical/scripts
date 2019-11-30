@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## This script has to be executed from the
 ## sequence run output directory
@@ -7,11 +7,11 @@
 SEPSTR='##'
 LOGDIR='/data/sbpuploadlogs/'
 RUNDIR=$PWD
-RUNNAM=`basename $RUNDIR`
+RUNNAM=$(basename $RUNDIR)
 SSHEET=${RUNDIR}'/SampleSheet.csv'
 CONV_L=${RUNDIR}'/conversionLog.txt'
 CONV_E=${RUNDIR}'/conversionError.txt'
-RUNHMF=`cat ${SSHEET} | grep -P '^Experiment' | cut -d',' --output-delimiter ': ' -f 2`
+RUNHMF=$(cat ${SSHEET} | grep -P '^Experiment' | cut -d',' --output-delimiter ': ' -f 2)
 RUNNAS=${RUNHMF}'__'$RUNNAM
 
 echo "";

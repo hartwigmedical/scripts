@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 fileName=$1
-scriptName=$( basename $0 )
+scriptName=$(basename $0)
 
 if [[ -z ${fileName} || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
