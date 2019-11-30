@@ -69,7 +69,7 @@ load_rerun_v3_info_for_set() {
 
     if [ -z "${rerun_info}" ]; then
         local run_info=$(load_run_info_for_set ${set})
-        local run_is_v3_or_v4_or_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v3\|v5")
+        local run_is_v3_or_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v3\|v5")
         if [ -z "${run_is_v3_or_v4_or_v5}" ]; then
             # Should not happen - any pre-v3 run must have a v3-rerun
             rerun_info=""
@@ -92,7 +92,7 @@ load_rerun_v4_info_for_set() {
 
     if [ -z "${rerun_info}" ]; then
         local run_info=$(load_run_info_for_set ${set})
-        local run_is_v4_or_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v4\|v5")
+        local run_is_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v5")
         if [ -z "${run_is_v4_or_v5}" ]; then
             # Should not happen - any pre-v4 run must have a v4-rerun
             rerun_info=""
@@ -112,22 +112,10 @@ extract_bucket_from_run_info() {
     echo ${run_bucket}
 }
 
-locate_tumor_bam_for_set_in_bucket() {
-    local run_bucket=$1 && shift
-    local set=$1 && shift
+extract_pipeline_version_from_run_info() {
+    local run_info=$1 && shift
 
-    local tumor_sample_id=$(load_tumor_sample_id_for_set ${set})
+    run_bucket=$(echo ${run_info} | cut -d ' ' -f8)
 
-    local s3path="s3://${run_bucket}/${set}"
-    sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*(mapping|aligner)/${tumor_sample_id}(_dedup)?(.realigned)?.bam$"
-}
-
-locate_ref_bam_for_set_in_bucket() {
-    local run_bucket=$1 && shift
-    local set=$1 && shift
-
-    local ref_sample_id=$(load_ref_sample_id_for_set ${set})
-
-    local s3path="s3://${run_bucket}/${set}"
-    sbp s3 ls ${s3path}/ --profile download --recursive | grep -Po "[^\s]*(mapping|aligner)/${ref_sample_id}(_dedup)?(.realigned)?.bam$"
+    echo ${run_bucket}
 }
