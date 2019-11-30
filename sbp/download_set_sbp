@@ -46,7 +46,7 @@ if [ -z "${rerun_v4_info}" ]; then
     exit 1
 fi
 
-run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
+run_bucket=$(extract_bucket_from_run_info "${run_info}")
 run_is_v5=$(echo ${run_info} | cut -d ' ' -f8 | grep "v5")
 
 if [ ! -z "${run_is_v5}" ]; then
