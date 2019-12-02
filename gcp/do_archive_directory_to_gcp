@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
 
+source gcp_functions
+
 local_path=$1 && shift
 remote_archive_dir=$1 && shift
 
-gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-archive
+if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
+    echo "[ERROR] Not all input parameters provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+switch_to_hmf_archive_service_account
 
 # -d = delete files on GS that no longer exist on datastore
 # -e = exclude symlinks to go to GS
 # -r = Recursive
-# TODO: consider granting hmf-download read-only access?
 gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-archive/${remote_archive_dir}

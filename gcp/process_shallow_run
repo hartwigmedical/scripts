@@ -2,7 +2,7 @@
 
 set=$1 && shift
 
-if [ -z "${set}" ]; then
+if [[ -z "${set}" ]]; then
     echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
@@ -20,7 +20,7 @@ else
     echo "[INFO]   Creating directory ${dest_path}"
     mkdir -p ${dest_path}
 
-    gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
+    switch_to_hmf_download_service_account
     gsutil -u hmf-database -m rsync -r \
         -x ".*\.bam$|.*.bam.bai$|.*.cobalt.ratio.tsv$|.*.gridss.unfiltered.vcf.gz$|.*.amber.baf.tsv$" \
         gs://${run_bucket}/${set} \

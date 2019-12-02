@@ -1,14 +1,21 @@
 #!/usr/bin/env bash
 
+source gcp_functions
+
 set=$1 && shift
 bucket=$1 && shift
 sample_id=$1 && shift
+
+if [[ -z "${set}" ]] || [[ -z "${bucket}" ]] || [[ -z "${sample_id}" ]]; then
+    echo "[ERROR] Not all input parameters provided to $(basename $0). Exiting"
+    exit 1
+fi
 
 gs_path=gs://${bucket}/${set}
 ds_path=/data/gcp/bam_downloads/bams_${set}
 
 echo "[INFO] Downloading bam for ${sample_id} from ${gs_path}"
-gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
+switch_to_hmf_download_service_account
 
 bam_path=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|aligner)/${sample_id}(_dedup)?(.realigned)?.bam$")
 

@@ -11,7 +11,7 @@ amber_bed=/data/common/dbs/germline_het_pon_hg19/GermlineHetPon.hg19.bed
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 
-out_dir=/data/schuberg/bam_downloads
+out_dir=/data/gcp/bam_downloads
 
 #sample_bam=${out_dir}/${sample}.amber.bam
 #if [ ! -f ${sample_bam} ]; then

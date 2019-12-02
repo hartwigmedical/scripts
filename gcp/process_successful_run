@@ -4,7 +4,7 @@ source metadata_functions
 
 set=$1 && shift
 
-if [ -z "${set}" ]; then
+if [[ -z "${set}" ]]; then
     echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
@@ -15,7 +15,7 @@ download_path=/data/gcp/downloaded_runs
 download_run_without_bams ${set} ${download_path}
 downloaded_set_path=${download_path}/${set}
 
-if [ ! -f ${downloaded_set_path}/metadata.json ]; then
+if [[ ! -f ${downloaded_set_path}/metadata.json ]]; then
     echo "[ERROR] No metadata file found. Probably something wrong with the downloading of the run. Exiting"
     exit 1;
 fi
@@ -24,7 +24,7 @@ processed_path=/data/gcp/processed_runs
 echo "[INFO] Copying set ${set} to processed path ${processed_path}"
 processed_set_path=${processed_path}/${set}
 
-if [ -d ${processed_set_path} ]; then
+if [[ -d ${processed_set_path} ]]; then
     echo "[INFO] Removing processed set prior to recopy"
     rm -r ${processed_set_path}
 fi
