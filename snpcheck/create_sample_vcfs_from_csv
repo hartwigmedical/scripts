@@ -3,7 +3,7 @@
 CODEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 OUTBASE="/data/common/snpcheck"
 SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
-SBPDIR="/data/gcp/snpcheckvcfupload"
+GCPDIR="/data/gcp/snpcheckvcfupload"
 SNPCOUNT="26"
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
@@ -13,7 +13,7 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "        $(basename $0) /data/common/snpcheck/input/<design>/file.csv"
     echo " Confg:"
     echo "   CODEDIR = ${CODEDIR}"
-    echo "   SBPDIR  = ${SBPDIR}"
+    echo "   GCPDIR  = ${GCPDIR}"
     echo "-----"
     exit 1
 fi
@@ -22,6 +22,7 @@ csvFile=$1
 if [[   -z ${csvFile} ]]; then echo "[EXIT] No csv results file provided.."; exit 1; fi
 if [[ ! -f ${csvFile} ]]; then echo "[EXIT] Input csv file does not exist?"; exit 1; fi
 if [[ ! -f ${SCRIPT}  ]]; then echo "[EXIT] Script file does not exist?"; exit 1; fi
+if [[ ! -w ${GCPDIR}  ]]; then echo "[EXIT] Output sync dir not writable ($GCPDIR)"; exit 1; fi
 
 ## setup design to use
 oneSample=$( cat ${csvFile} | grep ^FR | cut -d"," -f1 | sort | uniq | head -1 )
@@ -53,8 +54,7 @@ echo ""
 echo "[TODO] Performs plate QC"
 echo "  perform_snpcheck_plate_qc ${vcfOutDir}"
 echo ""
-echo "[TODO] Also copy the results to SBP dir (and dont forget to sync to SBP)"
-echo "  sudo cp -r ${vcfOutDir} ${SBPDIR}"
-echo "  sudo chown -R sbp:sbp ${SBPDIR}/${combiName}"
+echo "[TODO] Also copy the results to sync dir"
+echo "  cp -r ${vcfOutDir} ${GCPDIR}"
 echo ""
 
