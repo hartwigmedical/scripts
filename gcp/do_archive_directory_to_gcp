@@ -9,4 +9,4 @@ gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials
 # -e = exclude symlinks to go to GS
 # -r = Recursive
 # TODO: consider granting hmf-download read-only access?
-gsutil -u hmf-database -m rsync -d -r -e ${local_path} s3://hmf-archive/${remote_archive_dir}
+gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-archive/${remote_archive_dir}
