@@ -5,7 +5,7 @@ source locate_files
 runs_dir=/data/gcp/shallow_runs
 patient_db_jar=$(locate_prod_patient_db)
 
-shallow_seq_csv=/data/lims/shallow_seq_purity_new.csv
+shallow_seq_csv=/data/lims/shallow_seq_purity.csv
 purple_purity_p4_tsv=".purple.purity"
 purple_purity_p5_tsv=".purple.purity.tsv"
 purple_qc_file=".purple.qc"
