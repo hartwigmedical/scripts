@@ -17,13 +17,4 @@ fi
 
 sample_id=$(load_ref_sample_id_for_set ${set})
 
-gs_path=gs://${bucket}/${set}
-ds_path=/data/gcp/bam_downloads/bams_${set}
-
-echo "[INFO] Downloading REF bam from ${gs_path}"
-gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
-
-bam_path=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|aligner)/${sample_id}(_dedup)?(.realigned)?.bam$")
-
-mkdir -p ${ds_path}
-gsutil -u hmf-database cp ${bam_path} ${ds_path}/
+do_download_bam_for_sample ${set} ${bucket} ${sample_id}
