@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-SCRIPT=$( basename $0 )
+SCRIPT=$(basename $0)
 SOURCE='/volume1/machines/Experimenten/SNP\ check'
 TARGET='/data/common/snpcheck/input'
 SUFFIX='Results.csv'
@@ -29,7 +29,7 @@ fi
 
 ## sync and process
 resultFilePath="${resultFiles[0]}"
-resultFileName=$( basename "${resultFilePath}" )
+resultFileName=$(basename "${resultFilePath}")
 targetFilePath="${TARGET}/${resultFileName}"
 
 echo "[INFO] Found SNPcheck file at NAS ($resultFileName)"

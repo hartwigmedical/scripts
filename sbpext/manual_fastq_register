@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 scriptName=$(basename $0)
 apiUrl="https://api.hartwigmedicalfoundation.nl"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 JSON_DIR="/data/lims/sbpfiles"
 CRT_FILE="/home/sbpext/bcl-upload-prod/api.crt"

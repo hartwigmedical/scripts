@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 GATK_JAR='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
 REF_FASTA='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
@@ -20,8 +20,7 @@ echo "[INFO] SNPcheck Genotying Starting"
 fileName=$( basename $bamPath )
 sampleName=$( echo $fileName | sed 's/\.bam//' )
 
-for designFile in "${designs[@]}"; 
-do 
+for designFile in "${designs[@]}"; do
     designName=$( echo $designFile | sed 's/_design\.vcf//' )
     designPath=${DESIGN_DIR}'/'${designFile}
     outFile="${sampleName}_${designName}_snpcheck.vcf"
