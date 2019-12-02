@@ -15,15 +15,15 @@ if [ -z "${bucket}" ]; then
     exit 1
 fi
 
-gspath=gs://${bucket}/${set}
-dspath=/data/gcp/bam_downloads/bams_${set}
-
 sample_id=$(load_ref_sample_id_for_set ${set})
 
-echo "[INFO] Downloading REF bam from ${gspath}"
+gs_path=gs://${bucket}/${set}
+ds_path=/data/gcp/bam_downloads/bams_${set}
+
+echo "[INFO] Downloading REF bam from ${gs_path}"
 gcloud auth activate-service-account --key-file=/data/common/dbs/gcp_credentials/hmf-download
 
-bampath=$(gsutil -u hmf-database ls -r ${gspath} | grep -Po "[^\s]*(mapping|aligner)/${sample_id}(_dedup)?(.realigned)?.bam$")
+bam_path=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|aligner)/${sample_id}(_dedup)?(.realigned)?.bam$")
 
-echo ${bampath}
-# gsutil -u hmf-database cp gs://${bucket}/${bampath} ${dspath}/
+mkdir -p ${ds_path}
+gsutil -u hmf-database cp ${bam_path} ${ds_path}/
