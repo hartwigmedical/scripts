@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+echo "[INFO] Archiving RNA Data"
+do_archive_directory_to_gcp /data/data_archive/rna_seq rna_seq
+
+echo "[INFO] Archiving Sequencer Archive"
+do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive
+
+echo "[INFO] Archiving Patient Reports"
+do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final
+do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old
+do_archive_directory_to_gcp /data/core/final_reports patient_reports/core
+
+echo "[INFO] Archiving Data Requests"
+do_archive_directory_to_gcp /data/data_archive/datarequests data_requests
+
+echo "[INFO] Archiving Submissions"
+do_archive_directory_to_gcp /data/submissions submissions
+
+echo "[INFO] Archiving Shallow Seq Pipelines"
+do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines
