@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-local_path='/data/schuberg/snpcheckvcfupload'
+local_path='/data/gcp/snpcheckvcfupload'
 
 bucket='hmf-snpcheck'
 destination='snpcheckvcfs'
