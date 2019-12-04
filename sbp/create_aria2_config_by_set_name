@@ -35,10 +35,11 @@ function main() {
        id=$(echo "$run_json" | jq -r '.sbp_id')
 
   files_url="${SBP_API_URL}/files?run_id=${id}"
-  out_jsn_all="${name}_tmp_all_files.json"
-  out_md5_all="${name}_tmp_all_files.md5"
+  out_jsn_all="${name}_runfiles.json"
+  out_md5_all="${name}_runfiles.md5"
   out_aria="${name}.aria.txt"
   out_md5="${name}.md5"
+  out_url="${name}.url"
 
   echo "[INFO] RunName: $name"
   echo "[INFO] Cluster: $cluster"
@@ -48,7 +49,7 @@ function main() {
   echo "[INFO] RefSample: $ref"
 
   ## cleanup existing files
-  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
     if [[ -f $output_file ]]; then 
       echo "[INFO] Deleting existing file ($output_file)" && rm $output_file; 
     fi
@@ -63,10 +64,10 @@ function main() {
   
   create_json_file "$files_json" "$out_jsn_all"
   create_md5sums_file "$files_json" "$out_md5_all"
-  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum"
+  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum"
   
   ## sanity checks
-  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5"; do
+  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
     line_count=$( cat "$output_file" | wc -l)
     echo "[INFO] Output file $output_file contains $line_count lines"
   done
@@ -76,6 +77,7 @@ create_ini_specific_files () {
   local json=$1 && shift
   local out_md5=$1 && shift
   local out_aria=$1 && shift
+  local out_url=$1 && shift
   local name=$1 && shift
   local cluster=$1 && shift
   local bucket=$1 && shift
@@ -123,31 +125,36 @@ create_ini_specific_files () {
 
   ## output
   echo "[INFO] Creating $out_md5"
-  for file in ${file_selection[@]}; do
-    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file}$" >> $out_md5
+  for file_path in ${file_selection[@]}; do
+    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_path}$" >> $out_md5
   done
 
+  echo "[INFO] Creating $out_url"
   echo "[INFO] Creating $out_aria"
-  for file in ${file_selection[@]}; do
+  for file_path in ${file_selection[@]}; do
+    local file_name=$(basename "${file_path}")
     local file_url=""
     local direct=""
     local extern=""
     if [[ $cluster == "gcp" ]]; then
         ## replace underscores as they cannot exist in GCP
-        gcp_bucket=$( echo "${bucket}" | sed 's/_/-/g' )
-        file_in_bucket="${gcp_bucket}/${name}/${file}"
-        extern=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${file_in_bucket}" 604800)
+        bucket=$( echo "${bucket}" | sed 's/_/-/g' )
+        file_in_bucket="${bucket}/${name}/${file_path}"
+        internal_url="gs://${file_in_bucket}"
+        external_url=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${file_in_bucket}" 604800)
     else
-        file_url="s3://${bucket}/${name}/${file}"
-        direct=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
-        extern=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        file_in_bucket="${bucket}/${name}/${file_path}"
+        internal_url="s3://${file_in_bucket}"
+        direct_url=$(sbp s3 presign ${file_url} --expires 604800 --profile ${AWS_PROFILE})
+        external_url=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
     fi
     
-    local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file}$" | cut -f1) 
-    echo "${extern}" >> $out_aria
+    local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1) 
+    echo "${external_url}" >> $out_aria
     echo "  dir=${name}" >> $out_aria
     echo "  checksum=md5=${md5sum}" >> $out_aria
     echo "" >> $out_aria
+    echo -e "${file_name}\t${external_url}" >> $out_url
   done
 }
 
