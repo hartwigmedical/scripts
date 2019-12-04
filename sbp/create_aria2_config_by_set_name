@@ -133,7 +133,9 @@ create_ini_specific_files () {
     local direct=""
     local extern=""
     if [[ $cluster == "gcp" ]]; then
-        file_in_bucket="${bucket}/${name}/${file}"
+        ## replace underscores as they cannot exist in GCP
+        gcp_bucket=$( echo "${bucket}" | sed 's/_/-/g' )
+        file_in_bucket="${gcp_bucket}/${name}/${file}"
         extern=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${file_in_bucket}" 604800)
     else
         file_url="s3://${bucket}/${name}/${file}"
