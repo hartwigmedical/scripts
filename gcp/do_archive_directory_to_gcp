@@ -6,8 +6,9 @@ local_path=$1 && shift
 remote_archive_dir=$1 && shift
 
 minimal_local_entries=0
-if [[ "$#" -gt 2 ]]; then
+if [[ "$#" -gt 0 ]]; then
     minimal_local_entries=$1 && shift
+    echo "[DEBUG] Setting minimal local entries to ${minimal_local_entries}"
 fi
 
 if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
