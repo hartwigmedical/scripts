@@ -31,6 +31,11 @@ locate_pipeline_v5_validation_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
 }
 
+############################# Nextcloud Credentials #############################
+locate_nextcloud_upload_reports_credentials() {
+    echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
+}
+
 ##################################### JARS #####################################
 locate_prod_sage() {
     echo ${base_path}/tools/sage_v1.1/sage.jar
