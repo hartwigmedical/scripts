@@ -15,7 +15,7 @@ dest_path=${download_path}/${set_name}/
 echo "[INFO] Creating directory ${dest_path}"
 mkdir -p ${dest_path}
 
-echo "[INFO] Creating directory ${dest_path}"
+echo "[INFO] Switching to service account"
 switch_to_hmf_download_service_account
 
 echo "[INFO] Downloading ${gcp_url} to ${download_path}"
