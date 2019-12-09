@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source gcp_functions
+
+gcp_url=$1 && shift
+download_path=$1 && shift
+
+if [[ -z "${gcp_url}" ]]; then echo "[ERROR] No URL provided ($(basename $0)). Exiting" && exit 1; fi
+if [[ -z "${download_path}" ]]; then echo "[ERROR] No download path provided ($(basename $0)). Exiting" && exit 1; fi
+if [[ ! "${gcp_url}" =~ ^gs\: ]]; then echo "[ERROR] Url should start with gs ($(basename $0)). Exiting" && exit 1; fi
+
+set_name=$(basename "${gcp_url}")
+dest_path=${download_path}/${set_name}/
+
+echo "[INFO] Creating directory ${dest_path}"
+mkdir -p ${dest_path}
+
+echo "[INFO] Creating directory ${dest_path}"
+switch_to_hmf_download_service_account
+
+echo "[INFO] Downloading ${gcp_url} to ${download_path}"
+gsutil -u hmf-database -m rsync -r ${gcp_url} ${dest_path}
