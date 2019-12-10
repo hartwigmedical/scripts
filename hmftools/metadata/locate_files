@@ -58,7 +58,7 @@ locate_pilot_bachelor() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.35/patient-db.jar
+    echo ${base_path}/tools/patient-db_v3.36/patient-db.jar
 }
 
 locate_pilot_patient_db() {
