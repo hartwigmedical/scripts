@@ -5,7 +5,7 @@ source locate_files
 runs_dir=/data/gcp/shallow_runs
 patient_db_jar=$(locate_prod_patient_db)
 
-shallow_seq_csv=/data/lims/shallow_seq_purity.csv
+shallow_seq_tsv=/data/lims/shallow_seq_purity.tsv
 purple_purity_p4_tsv=".purple.purity"
 purple_purity_p5_tsv=".purple.purity.tsv"
 purple_qc_file=".purple.qc"
@@ -13,7 +13,7 @@ pipeline_version_file="pipeline.version"
 
 java -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.CreateShallowSeqDB \
     -runs_dir ${runs_dir} \
-    -shallow_seq_csv ${shallow_seq_csv} \
+    -shallow_seq_tsv ${shallow_seq_tsv} \
     -purple_purity_p4_tsv ${purple_purity_p4_tsv} \
     -purple_purity_p5_tsv ${purple_purity_p5_tsv} \
     -purple_qc_file ${purple_qc_file} \
