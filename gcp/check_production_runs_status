@@ -20,7 +20,7 @@ fi
 ## Define all paths used by script
 find_dirs="/data/cpct/runs/ /data/core/runs/ /data/gcp/processed_runs/ /data/gcp/downloaded_runs/ "
 find_dirs_fail="/data/gcp/qc_fail_runs"
-download_runs_dir="data/gcp/downloaded_runs"
+download_runs_dir="/data/gcp/downloaded_runs"
 download_script="process_successful_run"
 download_script_fail="process_qc_fail_run"
 download_run_without_bams_script="download_run_without_bams"
