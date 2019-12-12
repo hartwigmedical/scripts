@@ -25,6 +25,7 @@ knowledgebase_dir=/data/common/dbs/knowledgebases/output
 
 # These configs have no impact as samples can't be found in lims and the signature and rva logo appear on disclaimer page.
 lims_dir=/data/lims
+hospital_dir=/data/common/dbs/hospital
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
@@ -38,9 +39,9 @@ germline_genes_csv=/data/experiments/aus_patient_reporting/config/empty_germline
 patient_reporter_jar=/data/experiments/aus_patient_reporting/tools/patient-reporter.jar
 tumor_location_csv=/data/experiments/aus_patient_reporting/config/tumor_locations.csv
 output_dir=/data/experiments/aus_patient_reporting/reports
-hospital_dir=/data/experiments/aus_patient_reporting/config
 sample_summary_tsv=/data/experiments/aus_patient_reporting/config/sample_summaries.tsv
 
+# Potentially change?
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 
 java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
