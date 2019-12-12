@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 knowledgebase_importer_jar=$(locate_prod_knowledgebase)
 
 iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod

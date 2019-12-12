@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 iclusion_api_credentials=$1 && shift
 
 knowledgebase_importer_jar=$(locate_pilot_knowledgebase)

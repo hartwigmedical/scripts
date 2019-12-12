@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 treatment_extractor_jar=$(locate_pilot_cgi_treatment_extractor_knowledgebase)
 cgi_biomarkers_file=/data/common/dbs/knowledgebases/input/cgi_biomarkers_per_variant_181127.tsv
 output_file=/data/common/dbs/knowledgebases/pilot_treatmentTypes.tsv
