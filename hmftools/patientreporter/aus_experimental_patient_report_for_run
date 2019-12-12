@@ -1,23 +1,13 @@
 #!/usr/bin/env bash
 
 source locate_files
-source metadata_functions
 
 run_dir=$1 && shift
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
-
-if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
-    echo "[ERROR] Incomplete information for reporter. Exiting"
-    echo "  ref_sample name: ${ref_sample}"
-    echo "  ref sample barcode: ${ref_sample_barcode}"
-    echo "  tumor_sample name: ${tumor_sample}"
-    echo "  tum sample barcode: ${tumor_sample_barcode}"
-    exit 1;
-fi
+tumor_sample=$(basename ${run_dir})
+tumor_sample_barcode="N/A"
+ref_sample="N/A"
+ref_sample_barcode="N/A"
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
