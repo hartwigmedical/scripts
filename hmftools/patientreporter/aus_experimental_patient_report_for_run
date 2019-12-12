@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
+
+if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode} ]]; then
+    echo "[ERROR] Incomplete information for reporter. Exiting"
+    echo "  ref_sample name: ${ref_sample}"
+    echo "  ref sample barcode: ${ref_sample_barcode}"
+    echo "  tumor_sample name: ${tumor_sample}"
+    echo "  tum sample barcode: ${tumor_sample_barcode}"
+    exit 1;
+fi
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+bachelor_tsv=$(locate_bachelor_variants ${run_dir})
+linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
+linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
+linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
+linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
+circos_file=$(locate_purple_circos_plot ${run_dir})
+
+knowledgebase_dir=/data/common/dbs/knowledgebases/output
+
+# These configs have no impact as samples can't be found in lims and the signature and rva logo appear on disclaimer page.
+lims_dir=/data/lims
+rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
+signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
+
+# No reports will be written to reporting db unless sample IN (CPCT, DRUP, WIDE, CORE)
+reporting_db_tsv=/data/experiments/aus_patient_reporting/config/reporting_db.tsv
+
+# Germline variants won't be reported since we can't find informed consent in LIMS anyways, so blanking out.
+germline_genes_csv=/data/experiments/aus_patient_reporting/config/empty_germline_genes.csv
+
+# Specific configuration for aus
+patient_reporter_jar=/data/experiments/aus_patient_reporting/tools/patient-reporter.jar
+tumor_location_csv=/data/experiments/aus_patient_reporting/config/tumor_locations.csv
+output_dir=/data/experiments/aus_patient_reporting/reports
+hospital_dir=/data/experiments/aus_patient_reporting/config
+sample_summary_tsv=/data/experiments/aus_patient_reporting/config/sample_summaries.tsv
+
+company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
+
+java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
+    -ref_sample_id ${ref_sample} \
+    -ref_sample_barcode ${ref_sample_barcode} \
+    -tumor_sample_id ${tumor_sample} \
+    -tumor_sample_barcode ${tumor_sample_barcode} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -somatic_variant_vcf ${somatic_variant_vcf} \
+    -bachelor_tsv ${bachelor_tsv} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_disruption_tsv ${linx_disruption_tsv} \
+    -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
+    -linx_drivers_tsv ${linx_drivers_tsv} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -circos_file ${circos_file} \
+    -knowledgebase_dir ${knowledgebase_dir} \
+    -germline_genes_csv ${germline_genes_csv} \
+    -sample_summary_tsv ${sample_summary_tsv} \
+    -output_dir ${output_dir} \
+    -reporting_db_tsv ${reporting_db_tsv} \
+    -tumor_location_csv ${tumor_location_csv} \
+    -lims_dir ${lims_dir} \
+    -hospital_dir ${hospital_dir} \
+    -rva_logo ${rva_logo} \
+    -company_logo ${company_logo} \
+    -signature ${signature} \
+    -unofficial_report \
+    "$@"
