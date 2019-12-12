@@ -2,7 +2,7 @@
 
 iclusion_api_credentials=$1 && shift
 
-knowledgebase_importer_jar=/data/common/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+knowledgebase_importer_jar=$(locate_pilot_knowledgebase)
 
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})

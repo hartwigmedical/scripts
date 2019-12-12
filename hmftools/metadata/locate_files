@@ -85,6 +85,21 @@ locate_pilot_vicc() {
     echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
 }
 
+locate_prod_cgi_treatment_extractor_knowledgebase() {
+    echo ${base_path}/tools/knowledgebase-importer_v1.8/cgi-treatment-extractor.jar
+}
+
+locate_pilot_cgi_treatment_extractor_knowledgebase() {
+    echo ${base_path}/tools/knowledgebase-importer_pilot/cgi-treatment-extractor.jar
+}
+
+locate_prod_knowledgebase() {
+    echo ${base_path}/tools/knowledgebase-importer_v1.8/knowledgebase-importer.jar
+}
+
+locate_pilot_knowledgebase() {
+    echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+}
 ################################# NON JAVA TOOLS ###################################
 locate_pgx_main() {
     echo ${base_path}/repos/scripts/pgx/main.py
