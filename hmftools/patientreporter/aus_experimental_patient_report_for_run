@@ -44,7 +44,7 @@ sample_summary_tsv=/data/experiments/aus_patient_reporting/config/sample_summari
 # Potentially change?
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 
-java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
+java -jar ${patient_reporter_jar} \
     -ref_sample_id ${ref_sample} \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
