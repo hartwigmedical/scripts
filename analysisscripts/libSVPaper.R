@@ -20,6 +20,7 @@ if (!exists("db")) db = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalys
 if (!exists("sva_svs")) sva_svs = read_csv('../../sv/SVA_SVS.csv')
 if (!exists("sva_links")) sva_links = read_csv('../../sv/SVA_LINKS.csv')
 if (!exists("sva_clusters")) sva_clusters = read_csv('../../sv/SVA_CLUSTERS.csv')
+if (!exists("sva_fusions")) sva_fusions = read_csv('../../sv/SVA_FUSIONS.csv')
 #if (!exists("sva_segments")) sva_segments = read_tsv('../../sv/SVA_VIS_SEGMENTS.tsv')
 if (!exists("sample_rename_lookup")) {
   sample_lookup_df = DBI::dbGetQuery(db, "SELECT * FROM sampleMapping")
