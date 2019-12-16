@@ -72,23 +72,48 @@ fi
 cd $input_dir
 r1=$(find $input_dir/*_R1_001.fastq.gz | tr '\n' ',')
 r2=${r1//_R1_001.fastq.gz/_R2_001.fastq.gz}
-# arriba (and star)
-( $arriba_root/run_arriba.sh \
-  $ref_root/hs37d5_GENCODE19/STAR_index_hs37d5_GENCODE19/ \
-  $ref_root/hs37d5_GENCODE19/GENCODE19.gtf \
-  $ref_root/hs37d5_GENCODE19/hs37d5.fa \
-  $arriba_root/database/blacklist_hg19_hs37d5_GRCh37_2018-11-04.tsv.gz \
-  $r1 \
-  $r2 \
-  $(nproc) )
+# # arriba recommended pipeline
+# ( $arriba_root/run_arriba.sh \
+  # $ref_root/hs37d5_GENCODE19/STAR_index_hs37d5_GENCODE19/ \
+  # $ref_root/hs37d5_GENCODE19/GENCODE19.gtf \
+  # $ref_root/hs37d5_GENCODE19/hs37d5.fa \
+  # $arriba_root/database/blacklist_hg19_hs37d5_GRCh37_2018-11-04.tsv.gz \
+  # $r1 \
+  # $r2 \
+  # $(nproc) )
+# minimal arriba where the star alignment is piped directly to arriba
+THREADS=16
+STAR_INDEX_DIR="$ref_root/hs37d5_GENCODE19/STAR_index_hs37d5_GENCODE19/"
+ANNOTATION_GTF="$ref_root/hs37d5_GENCODE19/GENCODE19.gtf"
+ASSEMBLY_FA="$ref_root/hs37d5_GENCODE19/hs37d5.fa"
+BLACKLIST_TSV="$arriba_root/database/blacklist_hg19_hs37d5_GRCh37_2018-11-04.tsv.gz"
+READ1="$rr1"
+READ2="$r2"
+/usr/bin/time -vo arriba.minimal.star.timing STAR \
+  --runThreadN "$THREADS" \
+  --genomeDir "$STAR_INDEX_DIR" --genomeLoad NoSharedMemory \
+  --readFilesIn "$READ1" "$READ2" --readFilesCommand zcat \
+  --outStd BAM_Unsorted --outSAMtype BAM Unsorted --outSAMunmapped Within --outBAMcompression 0 \
+  --outFilterMultimapNmax 1 --outFilterMismatchNmax 3 \
+  --chimSegmentMin 10 --chimOutType WithinBAM SoftClip --chimJunctionOverhangMin 10 --chimScoreMin 1 --chimScoreDropMax 30 --chimScoreJunctionNonGTAG 0 --chimScoreSeparation 1 --alignSJstitchMismatchNmax 5 -1 5 5 --chimSegmentReadGapMax 3 |
+/usr/bin/time -vo arriba.minimal.arrbia.timing  $arriba_root/arriba \
+        -x /dev/stdin \
+        -o fusions.tsv -O fusions.discarded.tsv \
+        -a "$ASSEMBLY_FA" -g "$ANNOTATION_GTF" -b "$BLACKLIST_TSV" \
+        -T -P \
+#       -d structural_variants_from_WGS.tsv \
+#       -k known_fusions_from_CancerGeneCensus.tsv # see section "Complete Fusion Export" at http://cancer.sanger.ac.uk/cosmic/download
+
+#TODO: should we use the -d parameter?
+
 
 # STAR-Fusion
 # TODO: do we wantt to run FusionInspector as well?
-( STAR-Fusion \
-  --genome_lib_dir $ref_root/GRCh37_gencode_v19_CTAT_lib_Oct012019 \
-  --left_fq $r1 \
-  --right_fq $r2 \
-  --output_dir $input_dir/star_fusion_outdir )
+# ( STAR-Fusion \
+  # --genome_lib_dir $ref_root/GRCh37_gencode_v19_CTAT_lib_Oct012019 \
+  # --left_fq $r1 \
+  # --right_fq $r2 \
+  # --output_dir $input_dir/star_fusion_outdir )
 
   
 
