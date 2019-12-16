@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+
+set=$1 && shift
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided. Exiting."
+    exit 1
+fi
+
+bucket=$(load_intial_run_bucket_for_set ${set})
+if [[ -z "${bucket}" ]]; then
+    echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
+    exit 1
+fi
+
+sample_id=$(load_tumor_sample_id_for_set ${set})
+
+do_download_bam_for_sample ${set} ${bucket} ${sample_id}

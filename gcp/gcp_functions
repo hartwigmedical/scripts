@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+switch_to_hmf_download_service_account() {
+    gcloud config set account hmf-download@hmf-database.iam.gserviceaccount.com
+}
+
+switch_to_hmf_archive_service_account() {
+    gcloud config set account hmf-archive@hmf-database.iam.gserviceaccount.com
+}

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 source_set_path=$1 && shift
 dest_set_base_path=$1 && shift
 include_germline=$1 && shift
@@ -16,17 +18,17 @@ purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 ## start symlinking
 echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple '${purple_version}'"
 ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
-ln -s ${source_set_path}/purple/*.driver.catalog.tsv ${dest_set_path}
+ln -s $(locate_purple_drivers ${source_set_path}) ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.cnv.gene.tsv ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.purity.tsv ${dest_set_path}
+ln -s $(locate_purple_gene_copynumbers ${source_set_path}) ${dest_set_path}
+ln -s $(locate_purple_purity ${source_set_path}) ${dest_set_path}
 ln -s ${source_set_path}/purple/*.purple.purity.range.tsv ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.qc ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.sv.ann.vcf.gz ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.sv.ann.vcf.gz.tbi ${dest_set_path}
-ln -s ${source_set_path}/purple/plot/*.circos.png ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.somatic.vcf.gz.tbi ${dest_set_path}
+ln -s $(locate_purple_qc ${source_set_path}) ${dest_set_path}
+ln -s $(locate_purple_structural_variants ${source_set_path}) ${dest_set_path}
+ln -s $(locate_purple_structural_variants ${source_set_path}).tbi ${dest_set_path}
+ln -s $(locate_purple_circos_plot ${source_set_path}) ${dest_set_path}
+ln -s $(locate_purple_somatics ${source_set_path}) ${dest_set_path}
+ln -s $(locate_purple_somatics ${source_set_path}).tbi ${dest_set_path}
 
 expected_file_count=12
 if [ ${include_germline} == "1" ]; then

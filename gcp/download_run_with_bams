@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+source gcp_functions
+
+set=$1 && shift
+download_path=$1 && shift
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+run_bucket=$(load_intial_run_bucket_for_set ${set})
+if [[ -z "${run_bucket}" ]]; then
+    echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
+    exit 1
+fi
+
+dest_path=${download_path}/${set}/
+mkdir -p ${dest_path}
+
+echo "[INFO] Downloading set ${set} from ${run_bucket} to ${download_path}"
+
+switch_to_hmf_download_service_account
+gsutil -u hmf-database -m rsync -r gs://${run_bucket}/${set} ${dest_path}

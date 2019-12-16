@@ -1,8 +1,8 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 searchString=$1 # eg FR12345678
 
 LOC1='/data/common/snpcheck/'
-LOC2='/data/schuberg/snpcheckvcfupload/'
+LOC2='/data/gcp/snpcheckvcfupload/'
 
 find ${LOC1} ${LOC2} -name "*${searchString}*OpenArrayCalls.vcf"

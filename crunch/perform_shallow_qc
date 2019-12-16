@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-scriptName=$( basename $0 )
+scriptName=$(basename $0)
 runPaths=( "$@" )
 na="na"
 
@@ -29,10 +29,11 @@ for runDir in "${runPaths[@]}"; do
   ## get metadata for constructing file paths
   metaFile=""
   if [[ "$isPv5" ]]; then
-    pipVsn="v5"
     metaFile="${runDir}/metadata.json"
+    pipFile="${runDir}/pipeline.version"
     refSample=$( cat ${metaFile} | jq -r '.reference.sampleName' )
     tumSample=$( cat ${metaFile} | jq -r '.tumor.sampleName' )
+    pipVsn=$( cat ${pipFile} )
   else
     chkFile="${runDir}/logs/PipelineCheck.log"
     pipVsn=$( cat $chkFile | grep "Pipeline version" | cut -d":" -f2 | grep -Po "[\d\.]+" )

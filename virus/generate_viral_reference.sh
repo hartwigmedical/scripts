@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 HOMOSAPIENS_TAX_ID=9606
 
 if [[ ! -f virushostdb.genomic.fna ]] ; then

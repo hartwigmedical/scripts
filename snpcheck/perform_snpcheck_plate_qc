@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-scriptName=$( basename $0 )
+scriptName=$(basename $0)
 vcfDirPath=$1
 qcLogsPath="/data/common/snpcheck/qc"
-   nasPath="/volume1/web/qc/snpcheck"
+nasPath="/volume1/web/qc/snpcheck"
 
 echo "[INFO] START with $scriptName"
 
@@ -17,7 +17,7 @@ fi
 
 if [[ ! -d ${vcfDirPath} ]]; then echo "[EXIT] Dir does not exist (${vcfDirPath})" && exit 1; fi
 
-vcfDirName=$( basename ${vcfDirPath} )
+vcfDirName=$(basename ${vcfDirPath})
  qcLogName="${vcfDirName}.qc"
  qcLogPath="${qcLogsPath}/${qcLogName}"
 

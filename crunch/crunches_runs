@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 for i in 1 2 3; do
     ssh crunch00${i} check_samplesheets | grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+"

@@ -14,7 +14,7 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
-java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
+java -jar ${patient_reporter_jar} \
     -output_dir ${output_dir} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -tumor_location_csv ${tumor_location_csv} \

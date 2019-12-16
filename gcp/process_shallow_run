@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set=$1 && shift
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+archive_path="/data/data_archive/shallow_seq_pipelines"
+download_path="/data/gcp/shallow_runs"
+run_bucket="hmf-output-shallowseq"
+archive_set_path=${archive_path}/${set}
+
+if [[ -d ${archive_set_path} ]]; then
+    echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
+else
+    echo "[INFO] Syncing ShallowSeq GCP run ${set}"
+    dest_path=${download_path}/${set}
+    echo "[INFO]   Creating directory ${dest_path}"
+    mkdir -p ${dest_path}
+
+    switch_to_hmf_download_service_account
+    gsutil -u hmf-database -m rsync -r \
+        -x ".*\.bam$|.*.bam.bai$|.*.cobalt.ratio.tsv$|.*.gridss.unfiltered.vcf.gz$|.*.amber.baf.tsv$" \
+        gs://${run_bucket}/${set} \
+        ${dest_path}
+fi

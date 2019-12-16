@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source gcp_functions
+
+local_path=$1 && shift
+remote_archive_dir=$1 && shift
+
+minimal_local_entries=0
+if [[ "$#" -gt 0 ]]; then
+    minimal_local_entries=$1 && shift
+    echo "[DEBUG] Setting minimal local entries to ${minimal_local_entries} for ${local_path}"
+fi
+
+if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
+    echo "[ERROR] Not all input parameters provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+local_entry_count=$(ls ${local_path} | wc -l)
+if [[ ${local_entry_count} -lt ${minimal_local_entries} ]]; then
+    echo "[WARN] Number of entries in ${local_path} is ${local_entry_count} which is less than required ${minimal_local_entries}. Exiting"
+    exit 1
+fi
+
+switch_to_hmf_archive_service_account
+
+# -d = delete files on GS that no longer exist on datastore
+# -e = exclude symlinks to go to GS
+# -r = Recursive
+gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-archive/${remote_archive_dir}

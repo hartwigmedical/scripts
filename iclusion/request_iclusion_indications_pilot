@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
-
-do_request_iclusion_object "indications" ${api_credentials}

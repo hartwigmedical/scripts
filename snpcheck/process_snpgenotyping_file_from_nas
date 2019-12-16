@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-SCRIPT=$( basename $0 )
+SCRIPT=$(basename $0)
 SOURCE='/volume1/machines/Experimenten/SNP\ check'
 TARGET='/data/common/snpcheck/input'
 SUFFIX='Results.csv'
@@ -23,13 +23,13 @@ while IFS=  read -r -d $'\0'; do
 done < <(ssh nas find ${SOURCE} -name "${plateID}*${SUFFIX}" -print0)
 if [[ ${#resultFiles[@]} -eq 0 ]]; then 
   echo "[EXIT] No ${plateID} ${SUFFIX} files found!" && exit 1
-elif [[ ${#resultFiles[@]} > 1 ]]; then
+elif [[ ${#resultFiles[@]} -gt 1 ]]; then
   echo "[EXIT] More than 1 ${plateID} ${SUFFIX} files found!" && exit 1
 fi
 
 ## sync and process
 resultFilePath="${resultFiles[0]}"
-resultFileName=$( basename "${resultFilePath}" )
+resultFileName=$(basename "${resultFilePath}")
 targetFilePath="${TARGET}/${resultFileName}"
 
 echo "[INFO] Found SNPcheck file at NAS ($resultFileName)"

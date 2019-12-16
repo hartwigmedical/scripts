@@ -1,30 +1,28 @@
 #!/usr/bin/env bash
 
-source api_functions
+source sbp_api_functions
+source sbp_s3_functions
 
 bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
 
-set=$1
-sample=$2
-bed_file=$3
-output_file=$4
+set=$1 && shift
+sample=$1 && shift
+bed_file=$1 && shift
+output_file=$1 && shift
 
-if [ -z "$set" ] || [ -z "$sample" ] || [ -z "$bed_file" ] || [ -z "$output_file" ]; then
-    echo "Usage: $ ./bam_slicer_normal set sample bed_file output_file"
+if [ -z "${set}" ] || [ -z "${sample}" ] || [ -z "${bed_file}" ] || [ -z "${output_file}" ]; then
+    echo "Usage: $ ./$(basename $0) set sample bed_file output_file"
     echo "   set eg 180101_HMFregCPCT..."
     echo "   sample	sample to search for. e.g CPCT11111111R"
     echo "   bed_file	bed file containing regions to be sliced"
     exit 1
 fi
 
-run_info=$(load_run_info_for_set ${set})
-
-if [ -z "$run_info" ]; then
-    echo "[ERROR] No run info found for set ${set}. Exiting"
+run_bucket=$(load_intial_run_bucket_for_set ${set})
+if [ -z "${run_bucket}" ]; then
+    echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
     exit 1
 fi
-
-run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
 
 bampath_in_bucket=$(locate_ref_bam_for_set_in_bucket ${run_bucket} ${set})
 bam_index="${bampath_in_bucket}.bai"

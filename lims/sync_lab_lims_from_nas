@@ -9,7 +9,7 @@ DAY_DIR="${LAB_DIR}/${DATESTR}"
 SYM_DIR="${OUT_DIR}/latest"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
-CPCT_FILE='LIMS_v4.1_be.accdb'
+CPCT_FILE='LIMS_v4.2_be.accdb'
 SAMP_FILE='HMF-FOR-001 Received Samples 2019 v5.5.xlsx'
 PROC_FILE='HMF-FOR-002 Sample in process 2019 v4.1.xlsx'
 

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+source sbp_s3_functions
+
+usage() {
+    echo "---"
+    echo "Usage: $(basename $0) -s <set> " 1>&2;
+    echo "       $(basename $0) -s 170101_HMFregCPCT_etc" 1>&2;
+    echo "---"
+    exit 1
+}
+
+while getopts ":s:" o; do
+    case "${o}" in
+        s)
+            set=${OPTARG} || usage
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+if [[ -z "${set}" ]]; then
+    usage
+fi
+
+bucket=$(load_intial_run_bucket_for_set ${set})
+if [ -z "${bucket}" ]; then
+    echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
+    exit 1
+fi
+
+s3path=s3://${bucket}/${set}
+dspath=/data/schuberg/bam_downloads/bams_${set}
+
+echo "[INFO] Getting REF bam from ${s3path}"
+bampath_in_bucket=$(locate_ref_bam_for_set_in_bucket ${bucket} ${set})
+sbp s3 cp "s3://${bucket}/${bampath_in_bucket}" "${dspath}/" --profile download

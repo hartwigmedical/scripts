@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+file_with_sql_to_execute=$1
+
+credentials=$(locate_pilot_database_credentials)
+db_name="hmfpatients_pilot"
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
+mysql ${db_name} --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}

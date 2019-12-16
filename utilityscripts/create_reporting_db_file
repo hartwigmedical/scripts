@@ -1,0 +1,187 @@
+#!/usr/bin/env bash
+
+echo "sampleId	tumorBarcode	reportDate	reportType	purity	hasReliablePurity	hasReliableQuality"  > /data/tmp/createReportingDB/reportingDB_Total.tsv
+
+echo "[INFO] Reading cpct old final reports"
+for patientReportOldCPCT in /data/cpct/old_cpct_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportOldCPCT} "+%Y-%m-%d")
+    reportName=$(echo ${patientReportOldCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}' | tr "." " " | awk '{print $1}')
+    outputString=$(echo ${reportName} "N/A" "prio-"${dateReport})
+    echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO] Reading cpct final reports"
+for patientReportCPCT in /data/cpct/final_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportCPCT} "+%Y-%m-%d")
+	  reportName=$(echo ${patientReportCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}')
+	  corrected=$(echo ${patientReportCPCT} |  tr "/" " " | awk '{print $4}' | tr "_" " "  | awk '{print $4}' | tr "." " " | awk '{print $1}')
+	  countWords=$(echo ${patientReportCPCT} | tr "/" " " | awk '{print $4}' | tr "_" " " | wc -w)
+	  checkExt=$(echo ${patientReportCPCT} | tr "/" " " | awk '{print $4}' | tr "_" " " |  awk '{print $3}')
+	  if [[ ${corrected} == "corrected" ]]; then
+		    totalName=$(echo ${reportName}"-"${corrected})
+	  elif [[ ${corrected} == "DRAFT" ]]; then
+		    totalName=$(echo ${reportName}"-"${corrected})
+	  elif [[ ${corrected} =~ ^[0-9] ]];then
+        totalName=$(echo ${reportName})
+    elif [[ ${corrected} =~ ^v[0-9] ]];then
+        totalName=$(echo ${reportName})
+    elif [[ ${corrected} != "final" && ${corrected} != "" ]];then
+        totalName=$(echo ${reportName}"-unknown")
+    elif [[ ${countWords} == 3 && ${checkExt} != "report.pdf" ]];then
+        totalName=$(echo ${reportName}"-unknown")
+	  else
+		    totalName=$(echo ${reportName} )
+	  fi
+	  outputString=$(echo ${totalName} "N/A" ${dateReport} )
+	  echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO] Reading CORE final reports"
+for patientReportCORE in /data/core/final_reports/*.pdf; do
+    dateReport=$(date -r ${patientReportCORE} "+%Y-%m-%d")
+    reportName=$(echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " " | awk '{print $1}')
+    corrected=$(echo ${patientReportCORE} |  tr "/" " " | awk '{print $4}' | tr "_" " "  | awk '{print $4}' | tr "." " " | awk '{print $1}')
+    if [[ ${corrected} == "corrected" ]]; then
+        totalName=$(echo ${reportName}"-"${corrected})
+    elif [[ ${corrected} == "DRAFT" ]]; then
+        totalName=$(echo ${reportName}"-"${corrected})
+    else
+        totalName=$(echo ${reportName})
+    fi
+    outputString=$(echo ${totalName} "N/A" ${dateReport})
+    echo ${outputString} >> /data/tmp/createReportingDB/reportingSamplesTotal.tsv
+done
+
+echo "[INFO} sorting file"
+cat "/data/tmp/createReportingDB/reportingSamplesTotal.tsv" | sort > /data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv
+
+echo "[INFO] extract correct date format"
+
+sortedReportedSamples="/data/tmp/createReportingDB/reportingSamplesTotal_sorted.tsv"
+while IFS= read samplesLine;do
+    sampleFromFile=$( echo $samplesLine | awk '{ print $1}' )
+    barcodeFromFile=$( echo $samplesLine | awk '{ print $2}' )
+    date=$(echo $samplesLine | awk '{ print $3}')
+
+    if [[ $date != "prio-2017-02-23" ]]; then
+        year=$(echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $1}')
+        month=$(echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $2}')
+        day=$(echo $samplesLine | awk '{ print $3}' | tr "-" " " | awk '{print $3}')
+
+        changedMonth=""
+        if [[ $month == 01 ]];then
+            changedMonth="Jan"
+        elif [[ $month == 02 ]];then
+            changedMonth="Feb"
+        elif [[ $month == 03 ]];then
+            changedMonth="Mar"
+        elif [[ $month == 04 ]];then
+            changedMonth="Apr"
+        elif [[ $month == 05 ]];then
+            changedMonth="May"
+        elif [[ $month == 06 ]];then
+            changedMonth="Jun"
+        elif [[ $month == 07 ]];then
+            changedMonth="Jul"
+        elif [[ $month == 08 ]];then
+            changedMonth="Aug"
+        elif [[ $month == 09 ]];then
+            changedMonth="Sep"
+        elif [[ $month == 10 ]];then
+            changedMonth="Oct"
+        elif [[ $month == 11 ]];then
+            changedMonth="Nov"
+        elif [[ $month == 12 ]];then
+            changedMonth="Dec"
+        else
+            changedMonth=""
+            echo "[ERROR] No correct month of file"
+        fi
+        date=$( echo "$day-$changedMonth-$year" )
+    elif [[ $date == "prio-2017-02-23" ]] ; then
+        date="prio-23-Feb-2017"
+    fi
+    echo ${sampleFromFile} ${barcodeFromFile} ${date} >> /data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv
+done < ${sortedReportedSamples}
+
+echo "[INFO] Adding purple info to the samples and adding tumor barcode for sequenced samples"
+fileReportingSamples="/data/tmp/createReportingDB/reportingSamplesTotalWitCorrectDateFormat.tsv"
+count=0
+while IFS= read line;do
+	  sampleId=$(echo $line | tr "_" " " | tr "-" " " | awk '{print $1}')
+	  wholeSampleId=$(echo $line | tr "_" " "  | awk '{print $1}')
+	  unknownSample=$(echo $wholeSampleId | tr "-" " "  | awk '{print $2}')
+	  dateReport=$(echo $line | awk '{print $3}')
+	  position=$(cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -wn ${sampleId})
+	  seq=$(cat "/data/tmp/createReportingDB/puritiesDB.csv" | grep -wc ${sampleId})
+	  if [[ -z ${position} && ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]]; then
+        if [[ ${sampleId} =~ ^CORE || ${sampleId} =~ ^LUMC ]];then
+	          outputTofile=$(echo ${line} "N/A" "N/A" "N/A" "N/A")
+			      echo ${outputTofile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+        else
+		        if [[ ${unknownSample} == "unknown" ]]; then
+		            outputToFile=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
+			          echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		        else
+		            outputToFile=$(echo ${line} "QC_fail_report" "N/A" "N/A" "N/A")
+			          echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		        fi
+		    fi
+	  else
+		    countSamplesInFile=$(cat ${fileReportingSamples} | grep -wc ${sampleId})
+
+		    if [[ ${countSamplesInFile} == 1 && ${seq} = 1 ]]; then
+			      count=$(expr ${count} + 1)
+			      addingPutiryRow=$( echo ${position} |tr "," " " | awk '{print $4, $6}')
+			      purity=$(echo ${position} |tr "," " " | awk '{print $2}')
+			      purityProcent=$(echo ${purity} | awk '{ print $1 * 100}')
+
+			      sampleQuerySBP=$(query_lims -type samples | grep -w ${sampleId})
+            barcodeSample=$(echo ${sampleQuerySBP} | awk '{print $2}')
+
+            if [[ ${unknownSample} == "unknown" ]]; then
+		            outputToFile=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
+			          echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			      else
+			          outputToFile=$(echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow})
+			          echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		        fi
+		    else
+			      count=$(expr ${count} + 1)
+			      if [[ ${count} == "${countSamplesInFile}" && ${seq} = 1 ]]; then
+                addingPutiryRow=$(echo ${position} |tr "," " " | awk '{print $4, $6}')
+                purity=$(echo ${position} |tr "," " " | awk '{print $2}')
+                purityProcent=$(echo ${purity} | awk '{ print $1 * 100}')
+
+                sampleQuerySBP=$(query_lims -type samples | grep -w $sampleId)
+                barcodeSample=$(echo ${sampleQuerySBP} | awk '{print $2}')
+
+                if [[ ${unknownSample} == "unknown" ]]; then
+		                outputToFile=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
+			              echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			          else
+			              outputToFile=$(echo ${wholeSampleId} ${barcodeSample} ${dateReport} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${addingPutiryRow})
+                    echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		            fi
+			      else
+			          if [[ ${unknownSample} == "unknown" ]]; then
+		                outputToFile=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
+			              echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+			          else
+			              outputToFile=$(echo ${line} "QC_fail_report" "N/A" "N/A" "NA")
+                    echo ${outputToFile} >> /data/tmp/createReportingDB/reportingDB_Total.tsv
+		            fi
+			      fi
+		    fi
+	  fi
+
+	  if [[ ${count} == "${countSamplesInFile}" ]];then
+        count=0
+    fi
+
+done < ${fileReportingSamples}
+
+echo "[INFO] Create output file with with tab"
+cat "/data/tmp/createReportingDB/reportingDB_Total.tsv" | tr " " \\t > /data/tmp/createReportingDB/reporting_db.tsv
+
+echo "[INFO] Finished!"

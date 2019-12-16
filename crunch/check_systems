@@ -1,9 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 MAX_DF_PERC=95
 
 function main {
-    if [[ ! "$( hostname )" =~ datastore ]]; then
+    if [[ ! "$(hostname)" =~ datastore ]]; then
         echo "[EXIT] Only run this script at datastore!" && exit 1
     fi
 
@@ -23,6 +23,7 @@ function crunches {
         diskUsage "/data2" "ssh $crunch"
         gitRepVsn "/data/repos/pipeline" "ssh $crunch"
         gitRepVsn "/data/repos/pipeline-test" "ssh $crunch"
+        gitRepVsn "/data/repos/scripts" "ssh $crunch"
         gridUsage "ssh $crunch"
     done
 }

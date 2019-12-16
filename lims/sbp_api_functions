@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+
+# There are 4 types of runs:
+#  - v5 run. In this case the v5 run holds all the output.
+#  - v4 run. In this case, the run info, v3 rerun and v4 rerun are all identical.
+#  - v3 run, with a v4 rerun. In this case, the run and v3 rerun are identical, the v4 rerun is separate.
+#  - pre-v3 run, with a v3 rerun and a v4 rerun. In this case all 3 run infos will be different.
+
+load_ref_sample_id_for_set() {
+    local set=$1
+    local ref_sample_name=$(load_sample_id_for_set_by_type_from_api ${set} "ref_sample" )
+    echo ${ref_sample_name}
+}
+
+load_tumor_sample_id_for_set() {
+    local set=$1 && shift
+    local tumor_sample_name=$(load_sample_id_for_set_by_type_from_api ${set} "tumor_sample" )
+    echo ${tumor_sample_name}
+}
+
+load_sample_id_for_set_by_type_from_api() {
+    local set=$1 && shift
+    local sample_type=$1 && shift # can be 'ref_sample' or 'tumor_sample'
+    local sample_name=$(query_sbp_api -type sets -filter "name=${set}" -json | jq -r ".[0].$sample_type" )
+    echo ${sample_name}
+}
+
+load_intial_run_bucket_for_set() {
+    local set=$1 && shift
+
+    local run_info=$(load_run_info_for_set ${set})
+
+    # Need to pass as a string because ${run_info} is a string containing spaces.
+    extract_bucket_from_run_info "${run_info}"
+}
+
+load_run_info_for_set() {
+    local set=$1 && shift
+
+    # Remove header from the query command
+    local run_info=$(query_sbp_api -type runs \
+        -filter "bucket=hmf-output|hmf_research" \
+        -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
+        -filter "status=Validated|SnpCheck|Success" \
+        -filter "name=${set}" | grep -v "^#"
+    )
+
+    # If there are no succesfull runs, try a failed run for same set
+    if [ -z "${run_info}" ]; then
+        run_info=$(query_sbp_api -type runs \
+            -filter "bucket=hmf-output|hmf_research" \
+            -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
+            -filter "status=Failed" \
+            -filter "name=${set}" | grep -v "^#")
+    fi
+
+    echo ${run_info}
+}
+
+load_rerun_v3_info_for_set() {
+    local set=$1 && shift
+
+    # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
+    local rerun_info=$(query_sbp_api -type runs \
+        -filter "bucket=hmf-output" \
+        -filter "ini=Somatic_Rerun_bam.ini" \
+        -filter "status=Validated" \
+        -filter "name=${set}" | grep -v "^#")
+
+    if [ -z "${rerun_info}" ]; then
+        local run_info=$(load_run_info_for_set ${set})
+        local run_is_v3_or_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v3\|v5")
+        if [ -z "${run_is_v3_or_v4_or_v5}" ]; then
+            # Should not happen - any pre-v3 run must have a v3-rerun
+            rerun_info=""
+        else
+            rerun_info=${run_info}
+        fi
+    fi
+    echo ${rerun_info}
+}
+
+load_rerun_v4_info_for_set() {
+    local set=$1 && shift
+
+    # Allow for failure of v4 rerun since v4 rerun runs the health checks.
+    local rerun_info=$(query_sbp_api -type runs \
+        -filter "bucket=hmf-output" \
+        -filter "ini=Somatic_Rerun_v4.ini" \
+        -filter "status=Validated|Failed" \
+        -filter "name=${set}"  | grep "v4.4" | grep  -v "^#")
+
+    if [ -z "${rerun_info}" ]; then
+        local run_info=$(load_run_info_for_set ${set})
+        local run_is_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v5")
+        if [ -z "${run_is_v4_or_v5}" ]; then
+            # Should not happen - any pre-v4 run must have a v4-rerun
+            rerun_info=""
+        else
+            rerun_info=${run_info}
+        fi
+    fi
+
+    echo ${rerun_info}
+}
+
+extract_bucket_from_run_info() {
+    local run_info=$1 && shift
+
+    run_bucket=$(echo ${run_info} | cut -d ' ' -f5)
+
+    echo ${run_bucket}
+}
+
+extract_pipeline_version_from_run_info() {
+    local run_info=$1 && shift
+
+    run_bucket=$(echo ${run_info} | cut -d ' ' -f8)
+
+    echo ${run_bucket}
+}

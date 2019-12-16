@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+path=/data/common/dbs/knowledgebases
+pilot_out=${path}/pilot_output
+prod_out=${path}/output
+
+echo "[INFO] Diffing actionable variants"
+diff ${prod_out}/actionableVariants.tsv ${pilot_out}/actionableVariants.tsv
+
+echo "[INFO] Diffing actionable ranges"
+diff ${prod_out}/actionableRanges.tsv ${pilot_out}/actionableRanges.tsv
+
+echo "[INFO] Diffing actionable CNVs"
+diff ${prod_out}/actionableCNVs.tsv ${pilot_out}/actionableCNVs.tsv
+
+echo "[INFO] Diffing actionable fusion pairs"
+diff ${prod_out}/actionableFusionPairs.tsv ${pilot_out}/actionableFusionPairs.tsv
+
+echo "[INFO] Diffing actionable promiscuous five genes"
+diff ${prod_out}/actionablePromiscuousFive.tsv ${pilot_out}/actionablePromiscuousFive.tsv
+
+echo "[INFO] Diffing actionable promiscuous three genes"
+diff ${prod_out}/actionablePromiscuousThree.tsv ${pilot_out}/actionablePromiscuousThree.tsv
+
+echo "[INFO] Diffing known fusion pairs"
+diff ${prod_out}/knownFusionPairs.csv ${pilot_out}/knownFusionPairs.csv
+
+echo "[INFO] Diffing known promiscuous five"
+diff ${prod_out}/knownPromiscuousFive.csv ${pilot_out}/knownPromiscuousFive.csv
+
+echo "[INFO] Diffing known promiscuous three"
+diff ${prod_out}/knownPromiscuousThree.csv ${pilot_out}/knownPromiscuousThree.csv

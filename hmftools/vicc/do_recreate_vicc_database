@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+credentials=$1 && shift
+vicc_db=$1 && shift
+
+# Resources
+vicc_database_sql=/data/common/dbs/vicc/create_vicc_database.sql
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+echo "[INFO] Rebuilding VICC db ${db_url} using ${vicc_database_sql}"
+
+mysql ${vicc_db} --user=${db_user} --password=${db_pass} < ${vicc_database_sql}

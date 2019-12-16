@@ -22,6 +22,7 @@ Remember to source the virtualenv before running `main.py`.
 
 ####Arguments
 * `vcf`: (Required) Path to germline VCF file of sample.
+* `sampleID`: (Required) The sample ID of the run.
 * `--panel`: A file that contains the variants to test on. Different options are available for a panel file:
     * Curated JSON file (for example: `data/panelfiles/DPYD.json`). If this file is used, a hardcoded exceptions file is used to refactor hg19/hg38 differences.
     * TSV file where each row is a variant and containing the following columns: `chrom, hg19_start, gene, rsid`.

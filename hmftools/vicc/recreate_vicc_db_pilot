@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+credentials=$(locate_vicc_pilot_database_credentials)
+
+do_recreate_vicc_database ${credentials} vicc_db_pilot

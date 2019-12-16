@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# Note: The 3rd param is the minimal local entries required for the sync to start.
+
+echo "[INFO] Archiving RNA Data"
+do_archive_directory_to_gcp /data/data_archive/rna_seq rna_seq 4
+
+echo "[INFO] Archiving Sequencer Archive"
+do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 2500
+
+echo "[INFO] Archiving Patient Reports"
+do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 5000
+do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 500
+do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 25
+
+echo "[INFO] Archiving Data Requests"
+do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 80
+
+echo "[INFO] Archiving Submissions"
+do_archive_directory_to_gcp /data/submissions submissions 500
+
+echo "[INFO] Archiving Shallow Seq Pipelines"
+do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 500

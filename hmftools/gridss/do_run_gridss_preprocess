@@ -16,7 +16,7 @@ fi
 bam=${run_dir}/${bam_sample}/mapping/${bam_sample}_dedup.realigned.bam
 insert_size_metrics=${run_dir}/QCStats/${bam_sample}_dedup/${bam_sample}_dedup_MultipleMetrics.txt.insert_size_metrics
 
-if [[ ! ${bam}.bai ]] ; then
+if [[ ! -f ${bam}.bai ]] ; then
 	  samtools index ${bam}
 fi
 

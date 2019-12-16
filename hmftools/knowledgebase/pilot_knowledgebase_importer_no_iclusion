@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+# Technically we don't need the iclusion credentials, but kept them in for better reuse of existing scripts.
+iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
+
+do_run_knowledgebase_importer_pilot ${iclusion_api_credentials} -skip_iclusion

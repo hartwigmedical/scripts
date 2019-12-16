@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+repo_name="scripts"
+repo_root="/data/repos"
+work_path=$(pwd)
+
+if [[ "$USER" == "root" ]]; then
+  echo "[EXIT] This script should not be executed as user root" && exit 1
+fi
+
+if [[ "$(hostname)" == "datastore" ]]; then
+    repo_root=/data/common/repos
+fi
+
+repo_path="${repo_root}/${repo_name}"
+
+if [[ ! -d ${repo_path} ]]; then
+  echo "[EXIT] Dir does not exist (${repo_path})" && exit 1
+fi
+
+echo "[INFO] Change dir (to ${repo_path})"
+cd ${repo_path}
+echo "[INFO] Performing pull (in ${repo_path})"
+git pull
+echo "[INFO] Change dir (to ${work_path})"
+cd ${work_path}
+

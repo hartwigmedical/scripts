@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 run=$1
 runRoot="/data1/illumina_data/"
 
@@ -7,15 +8,15 @@ function join_by { local IFS="$1"; shift; echo "$*"; }
 if [[ ! $run == "" ]]; then
     sheets="${run}/SampleSheet.csv"
 else
-    sheets=$( find ${runRoot} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " " )
+    sheets=$(find ${runRoot} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
 fi
     
 for sheet in $sheets; do 
-    currHost=$( hostname )
-    currHostShort=$( echo $currHost | sed 's/crunch00/c/g' )
-    runBase=$( dirname $sheet )
+    currHost=$(hostname)
+    currHostShort=$(echo $currHost | sed 's/crunch00/c/g')
+    runBase=$(dirname $sheet)
     baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
-    runName=$( basename $runBase )
+    runName=$(basename $runBase)
     runStatus="Sequencing"
     readmeFile=$runBase"/README"
     conversionLogFile=$runBase"/conversionLog.txt"
@@ -49,10 +50,10 @@ for sheet in $sheets; do
         fi
     else
         ## every platform does things slightly different so need some nasty grepping
-        cycleCount=$( ls $runBase/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l )
+        cycleCount=$(ls $runBase/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l)
     fi
     echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
-    if [[ "$expectedCycleCount" =~ '^[0-9]+$' && "$cycleCount" -ge "$expectedCycleCount" ]]; then
+    if [[ "$expectedCycleCount" =~ ^[0-9]+$ && "$cycleCount" -ge "$expectedCycleCount" ]]; then
         runStatus="SequencingDone"
     else
         runStatus="Sequencing ($cycleCount of $expectedCycleCount)"
@@ -61,12 +62,12 @@ for sheet in $sheets; do
     ## check conversion status
     if [ ! -e $conversionLogFile ]; then
         echo "# [NOTE] CONVERSION not started yet";
-    elif [ $((`cat $conversionLogFile | wc -l`%2)) -eq 0 ]; then
+    elif [ $(($(cat $conversionLogFile | wc -l)%2)) -eq 0 ]; then
         echo "# [NOTE] CONVERSION appears to be FINISHED";
         runStatus="ConversionDone"
     else
-        localsearchdirs=$( find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " " )
-        currLane=$( find $localsearchdirs -name "*fastq.gz" | grep -Po "L\d{3}" | sort | uniq | tail -1 )
+        localsearchdirs=$(find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " ")
+        currLane=$(find $localsearchdirs -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
         echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
         runStatus="Converting (${currLane})"
     fi

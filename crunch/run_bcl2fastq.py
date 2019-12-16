@@ -1,6 +1,8 @@
 #!/usr/bin/env python
-import os
+
 import fnmatch
+import os
+
 #from email.mime.text import MIMEText
 #from xml.dom.minidom import parse
 #import smtplib

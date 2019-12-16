@@ -6,7 +6,7 @@ patient_reporter_jar=$(locate_pilot_patient_reporter)
 output_dir=/data/cpct/pilot_reports
 
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
-tumor_location_csv=/data/common/dbs/ecrf_dumps_pilot/curated_tumor_locations
+tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 lims_dir=/data/lims
 hospital_dir=/data/common/dbs/hospital
 
@@ -14,7 +14,7 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
-java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
+java -jar ${patient_reporter_jar} \
     -output_dir ${output_dir} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -tumor_location_csv ${tumor_location_csv} \
@@ -23,5 +23,5 @@ java -Dorg.jooq.no-logo=true -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -comments "This is a pilot patient report, not validated" \
+    -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"

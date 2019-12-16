@@ -15,7 +15,7 @@ use 5.010.000;
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $LIMS_JSON = '/data/lims/lims.json';
-my $NONREPORTABLE_CSV = '/data/lims/nonreportable_samples.csv';
+my $NONREPORTABLE_TSV = '/data/lims/samples_without_pdf_report.tsv';
 my @PDF_DIRS = ( '/data/cpct/final_reports', '/data/core/final_reports', '/data/cpct/old_cpct_reports' );
 my $pdfdirs_string = join( ", ", sort @PDF_DIRS );
 
@@ -95,7 +95,7 @@ die $HELP_TEXT . "\n[EXIT] Type ($TYPE) is not supported\n" unless exists $OUT_F
 ## MAIN
 ## -----
 
-my $nonreportable = readNonReportableSamples( $NONREPORTABLE_CSV );
+my $nonreportable = readNonReportableSamples( $NONREPORTABLE_TSV );
 my $lims = readJson( $opt{ lims_input } or $LIMS_JSON );
 my $out_fields = $OUT_FIELDS_PER_TYPE{ $TYPE };
 
@@ -207,14 +207,14 @@ sub readJson{
 }
 
 sub readNonReportableSamples{
-    my ($csv_file) = @_;
+    my ($tsv_file) = @_;
     my %non_reportable_samples = ();
-    open IN, "<", $csv_file or die "[EXIT] Unable to open file ($csv_file): $!\n";
+    open IN, "<", $tsv_file or die "[EXIT] Unable to open file ($tsv_file): $!\n";
     while ( my $sample = <IN> ){
         chomp $sample;
         next if $sample =~ /^#/;
         if ( $sample =~ /\s/ ){
-            die "[EXIT] Whitespace detected in sample \"$sample\" (file: $csv_file)\n";
+            die "[EXIT] Whitespace detected in sample \"$sample\" (file: $tsv_file)\n";
         }
         $non_reportable_samples{ $sample } = 1;
     }

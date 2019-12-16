@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 HOMOSAPIENS_TAX_ID=9606
 HUMAN_REF=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fa
 REF=hg19_virus.fa

@@ -67,6 +67,10 @@ passingbpgr = bpgr[bpgr$FILTER == "PASS"]
 passingbegr = begr[begr$FILTER == "PASS"]
 passingbegr$partner = NA_character_
 
+# GRIDSS 1
+passingbpgr = c(passingbpgr, ann_caller_sample("D:/hartwig/gridss12/COLO829v001_gridss12.somatic.vcf", "gridss1", "COLO829v001", breakpointRanges))
+passingbpgr = c(passingbpgr, ann_caller_sample("D:/hartwig/gridss12/COLO829v002_gridss12.somatic.vcf", "gridss1", "COLO829v002", breakpointRanges))
+
 bpna12878 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("GIABvsSELFv001", "GIABvsSELFv002", "GIABvsSELFv003")], countBreakpointOverlaps)
 bena12878 = hits_by_caller(passingbegr[passingbegr$sample %in% c("GIABvsSELFv001", "GIABvsSELFv002", "GIABvsSELFv003")], countOverlaps)
 grna12878 = c(bpna12878, bena12878)
@@ -75,6 +79,7 @@ grna12878$bptp = FALSE
 
 becolo829 = hits_by_caller(passingbegr[passingbegr$sample %in% c("COLO829v001", "COLO829v002", "COLO829v003")], countOverlaps)
 bpcolo829 = hits_by_caller(passingbpgr[passingbpgr$sample %in% c("COLO829v001", "COLO829v002", "COLO829v003")], countBreakpointOverlaps)
+
 colo829truth = readVcf(paste0(data_dir, "/../colo829/COLO829.somatic.overlapped.vcf"))
 bpcolo829t = breakpointRanges(colo829truth, inferMissingBreakends=TRUE)
 becolo829t = breakendRanges(colo829truth)
@@ -111,11 +116,11 @@ summary_colo829 = grcolo829 %>%
     events=n / called_in_samples)
 ggplot_fp_df = function(gr) {
   gr %>% data.frame() %>%
-    filter(caller %in% c("manta", "purple")) %>%
+    filter(caller %in% c("manta", "purple", "gridss1")) %>%
     filter(!betp & !bptp) %>%
     filter(!is.na(partner)) %>%
     mutate(
-      caller=factor(ifelse(caller=="purple", "gridss", caller), labels=c("gridss", "manta")),
+      caller=factor(ifelse(caller=="purple", "gridss", caller), levels=c("gridss", "manta", "gridss1")),
       sample=paste0("Run ", str_extract(sample, ".$"))) %>%
     group_by(caller, sample, hits) %>%
     summarise(n=n() / 2)
@@ -151,9 +156,9 @@ plot_manta_vs_gridss_tp_colo829 = grcolo829 %>% as.data.frame() %>%
   # score a breakend that matches a breakpoint as a match
   summarise(n=length(unique(bpid))) %>%
   ungroup() %>%
-  filter(caller %in% c("manta", "purple")) %>%
+  filter(caller %in% c("manta", "purple", "gridss1")) %>%
   mutate(
-    caller=factor(ifelse(caller=="purple", "gridss", caller), labels=c("gridss", "manta")),
+    caller=factor(ifelse(caller=="purple", "gridss", caller), levels=c("gridss", "manta", "gridss1")),
     sample=paste0("Run ", str_extract(sample, ".$"))) %>%
   # hack in a zero row so the legend has three categories
   rbind(data.frame(sample="Run 1", caller="gridss", hits=0, n=0)) %>%
@@ -182,7 +187,7 @@ plot_manta_vs_gridss_call_percent_precise = ggplot(passingbpgr %>%
     group_by(caller, sample) %>%
     filter(
       sample %in% c("COLO829v001", "COLO829v002", "COLO829v003") &
-      caller %in% c("manta", "purple")) %>%
+      caller %in% c("manta", "purple", "gridss1")) %>%
     ungroup() %>%
     mutate(caller=ifelse(caller=="purple", "gridss", caller)) %>%
     group_by(caller) %>%

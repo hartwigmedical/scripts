@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+
+set=$1
+
+if [ -z "${set}" ]; then
+    echo "[ERROR] Provide a set. Exiting"
+    exit 1
+fi
+
+run_info=$(load_run_info_for_set ${set})
+initial_run_bucket=$(load_intial_run_bucket_for_set ${set})
+pipeline_version=$(extract_pipeline_version_from_run_info "${run_info}")
+
+echo "[INFO] Testing SBP API functions on ${set}"
+echo "[INFO] Run Info = ${run_info}"
+echo "[INFO] Initial Run Bucket = ${initial_run_bucket}"
+echo "[INFO] Pipeline Version = ${pipeline_version}"
+echo "[INFO] Rerun V3 Info = $(load_rerun_v3_info_for_set ${set})"
+echo "[INFO] Rerun V4 Info = $(load_rerun_v4_info_for_set ${set})"
+echo "[INFO] Tumor Sample ID = $(load_tumor_sample_id_for_set ${set})"
+echo "[INFO] Ref Sample ID = $(load_ref_sample_id_for_set ${set})"

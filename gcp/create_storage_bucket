@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-bucket=$1 && shift
-
-gsutil mb -l europe-west4 -c regional gs://${bucket}
