@@ -108,7 +108,7 @@ def parse_vcf(vcf, rs_ids, bed_file, sampleId, vcftools):
     # Slice VCF on bed file
     runname = vcf.split("/")[-2]
     temp_vcf_prefix = outputdir + '/' + sampleId + '_PGx'
-    temp_vcf = outputdir + '/' + runname + '_PGx.recode.vcf'
+    temp_vcf = outputdir + '/' + sampleId + '_PGx.recode.vcf'
 
     # Check if output vcf does not already exist
     if os.path.exists(temp_vcf):
@@ -120,7 +120,7 @@ def parse_vcf(vcf, rs_ids, bed_file, sampleId, vcftools):
     # Read in VCF file
     try:
         variants = allel.read_vcf(temp_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                    'variants/FILTER_PASS', 'variants/ID', 'variants/POS',
+                                                    'variants/FILTER', 'variants/ID', 'variants/POS',
                                                     'variants/QUAL', 'variants/REF', 'variants/ANN'],
                                   transformers=allel.ANNTransformer())
     except IOError:
