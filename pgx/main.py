@@ -101,13 +101,13 @@ def load_json(panel):
     return genes, ids
 
 
-def parse_vcf(vcf, rs_ids, bed_file, outputdir, vcftools):
+def parse_vcf(vcf, rs_ids, bed_file, sampleId, vcftools):
     match_on_rsid = 0
     match_on_location = 0
 
     # Slice VCF on bed file
     runname = vcf.split("/")[-2]
-    temp_vcf_prefix = outputdir + '/' + runname + '_PGx'
+    temp_vcf_prefix = outputdir + '/' + sampleId + '_PGx'
     temp_vcf = outputdir + '/' + runname + '_PGx.recode.vcf'
 
     # Check if output vcf does not already exist
@@ -494,7 +494,7 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
                 bed_file = sourcedir + "/pharmgkb_cache/cache_bed.bed"
             if not os.path.exists(bed_file):
                 sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
-        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, vcftools)
+        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, sampleID, vcftools)
     else:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
