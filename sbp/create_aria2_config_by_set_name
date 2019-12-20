@@ -146,7 +146,7 @@ create_ini_specific_files () {
         file_in_bucket="${bucket}/${name}/${file_path}"
         internal_url="s3://${file_in_bucket}"
           direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${AWS_PROFILE})
-        external_url=$(echo "${direct}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
     fi
     
     local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1) 
