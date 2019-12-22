@@ -486,6 +486,7 @@ locate_linx_drivers() {
 }
 
 ########################################### Germline ##########################################
+
 locate_germline_variants() {
     local run_dir=$1 && shift
     local ref_sample=$1 && shift
