@@ -11,7 +11,7 @@ source /data/common/dbs/pgx/venv/pgx/bin/activate
 output_dir=${run_dir}/pgx_pilot
 
 version_pgx_tool=/data/common/tools/knowledgebase-importer_v1.0
-version=$( echo $version_pgx_tool | tr "_" " " | tr "v" " "| awk '{print $0}' )
+version=$( echo $version_pgx_tool | tr "_" " " | tr "v" " "| awk '{print $1}' )
 echo ${version}
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
