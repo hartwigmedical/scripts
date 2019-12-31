@@ -15,6 +15,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 if [ -d ${output_dir} ]; then
     echo "pgx dir exist"
+    rm -r ${output_dir}
 fi
 
 #germline_vcf=$(locate_germline_variants ${run_dir} ${ref_sample})
