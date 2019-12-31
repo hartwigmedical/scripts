@@ -100,6 +100,45 @@ locate_prod_knowledgebase() {
 locate_pilot_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 }
+
+################################### PGX ####################################
+
+locate_pilot_pgx_calls() {
+    local run_dir=$1
+    local pgx_dir=${run_dir}/pgx_pilot
+
+    local pgx_calls_txt=""
+
+    if [ -d ${pgx_dir} ]; then
+        pgx_calls_txt=$(find -L ${pgx_dir} -type f -name "*_calls.txt")
+    fi
+
+    if [ -z ${pgx_calls_txt} ]; then
+        echo "[ERROR] Unable to locate pilot pgx calls in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${pgx_calls_txt}
+}
+
+locate_pilot_pgx_genotype() {
+    local run_dir=$1
+    local pgx_dir=${run_dir}/pgx_pilot
+
+    local pgx_genotype_txt=""
+
+    if [ -d ${pgx_dir} ]; then
+        pgx_genotype_txt=$(find -L ${pgx_dir} -type f -name "*_genotype.txt")
+    fi
+
+    if [ -z ${pgx_genotype_txt} ]; then
+        echo "[ERROR] Unable to locate pgx genotype pilot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${pgx_genotype_txt}
+}
+
 ################################# NON JAVA TOOLS ###################################
 locate_pgx_main() {
     echo ${base_path}/repos/scripts/pgx/main.py
