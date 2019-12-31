@@ -514,6 +514,7 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
             print("git version")
             print(git_describe)
             git_describe = git_describe.stdout.decode("utf-8").strip()
+            print(git_describe)
             for gene in results:
                 for haplotype in results[gene]:
                     f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" + drug_info[gene][1] + "\t" + panel + "\t" +
