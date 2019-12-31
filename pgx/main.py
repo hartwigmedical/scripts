@@ -120,7 +120,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleId, vcftools):
     # Read in VCF file
     try:
         variants = allel.read_vcf(temp_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                    'variants/FILTER', 'variants/ID', 'variants/POS',
+                                                    'variants/FILTER_PASS', 'variants/ID', 'variants/POS',
                                                     'variants/QUAL', 'variants/REF', 'variants/ANN'],
                                   transformers=allel.ANNTransformer())
     except IOError:
@@ -509,12 +509,11 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
             # Below solution for > Python 3.7
             # git_describe = subprocess.run(["git", "--git-dir=" +
             # os.path.dirname(os.path.realpath(__file__)) + "/.git", "describe", "--always"], capture_output=True)
+
+            ####git version is not working
             git_describe = subprocess.run(["git", "--git-dir=" + os.path.dirname(os.path.realpath(__file__)) + "/.git",
                                            "describe", "--always"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            print("git version")
-            print(git_describe)
             git_describe = git_describe.stdout.decode("utf-8").strip()
-            print(git_describe)
             for gene in results:
                 for haplotype in results[gene]:
                     f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" + drug_info[gene][1] + "\t" + panel + "\t" +
