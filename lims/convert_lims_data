@@ -44,6 +44,9 @@ my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
 my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
 
 ## Closed files from previous years
+my $SUBM_TSV_2019 = $LIMS_DIR . '/latest/2019_subm';
+my $SAMP_TSV_2019 = $LIMS_DIR . '/latest/2019_samp';
+my $PROC_TSV_2019 = $LIMS_DIR . '/latest/2019_proc';
 my $SUBM_TSV_2018 = $LIMS_DIR . '/latest/2018_subm';
 my $SAMP_TSV_2018 = $LIMS_DIR . '/latest/2018_samp';
 my $PROC_TSV_2018 = $LIMS_DIR . '/latest/2018_proc';
@@ -51,8 +54,10 @@ my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';
 my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
 
 my @ALL_INPUT_FILES = ( 
-  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, $SUBM_TSV_2018, 
-  $SAMP_TSV_2018, $PROC_TSV_2018, $PROC_TSV_2017, $LIMS_JSN_2017
+  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, 
+  $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
+  $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018, 
+  $PROC_TSV_2017, $LIMS_JSN_2017
 );
 
 ## setup help msg
@@ -73,6 +78,9 @@ my $HELP_TEXT = <<"HELP";
      subm lims: $SUBM_TSV
      samp lims: $SAMP_TSV
      proc lims: $PROC_TSV
+     subm 2019: $SUBM_TSV_2019
+     samp 2019: $SAMP_TSV_2019
+     proc 2019: $PROC_TSV_2019
      subm 2018: $SUBM_TSV_2018
      samp 2018: $SAMP_TSV_2018
      proc 2018: $PROC_TSV_2018
@@ -127,10 +135,13 @@ $subm_objs = $lims_2017->{ 'submissions' };
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
@@ -759,8 +770,8 @@ sub getFieldNameTranslations{
       "Storage_status"    => 'lab_storage_status',
     );
 
-    ## columns shipments sheet in rest lims (FOR-001)
-    my %SUBM_DICT = (
+    ## columns shipments sheet in 2019 rest lims (FOR-001)
+    my %SUBM_DICT_2019 = (
       "Arrival_date"      => 'arrival_date',
       "Project_name"      => 'project_name',
       "HMF_reg"           => 'submission',
@@ -775,6 +786,19 @@ sub getFieldNameTranslations{
       "Portal_contact_email" => 'portal_contact_email',
       "Remarks"           => 'remarks',
       "Storage_status"    => 'lab_storage_status',
+    );
+    
+    ## columns shipments sheet in rest lims (FOR-001)
+    my %SUBM_DICT = (
+      "Arrival_date"      => 'arrival_date',
+      "Project_name"      => 'project_name',
+      "HMF_reg"           => 'submission',
+      "Requested_product" => 'request',
+      "Product_category"  => 'project_type',
+      "Sample_count"      => 'sample_count',
+      "Lab_is_finished"   => 'has_lab_finished',
+      "Group_ID"          => 'group_id',
+      "Remarks"           => 'remarks',
     );
 
     ## columns samples sheet in 2018 rest lims (FOR-001)
@@ -862,6 +886,7 @@ sub getFieldNameTranslations{
     my %translations = (
         'SUBM_CURR' => \%SUBM_DICT,
         'SUBM_2018' => \%SUBM_DICT_2018,
+        'SUBM_2019' => \%SUBM_DICT_2019,
         'SAMP_CURR' => \%SAMP_DICT,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
