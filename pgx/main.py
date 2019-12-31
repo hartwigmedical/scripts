@@ -148,7 +148,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleId, vcftools):
             else:
                 match_on_location += 1
             new_id = {}
-            if variants['variants/FILTER'][i] == True:
+            if variants['variants/FILTER_PASS'][i] == True:
                 filter = "PASS"
             else:
                 filter = "FILTERED"
