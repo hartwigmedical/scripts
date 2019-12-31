@@ -511,6 +511,8 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
             # os.path.dirname(os.path.realpath(__file__)) + "/.git", "describe", "--always"], capture_output=True)
             git_describe = subprocess.run(["git", "--git-dir=" + os.path.dirname(os.path.realpath(__file__)) + "/.git",
                                            "describe", "--always"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            print("git version")
+            print(git_describe)
             git_describe = git_describe.stdout.decode("utf-8").strip()
             for gene in results:
                 for haplotype in results[gene]:
