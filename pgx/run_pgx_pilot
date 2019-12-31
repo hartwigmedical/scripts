@@ -10,9 +10,8 @@ source /data/common/dbs/pgx/venv/pgx/bin/activate
 
 output_dir=${run_dir}/pgx_pilot
 
-version_pgx_tool=/data/common/tools/knowledgebase-importer_v1.0
-version=$( echo $version_pgx_tool | tr "_" " " | tr "v" " "| awk '{print $1}' )
-echo ${version}
+pgx_tool_path=/data/common/tools/ # TODO add the real path when in prod used
+version_pgx_tool=$( echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}' )
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -30,7 +29,7 @@ pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
-python ${pgx_tool} ${germline_vcf} ${tumor_sample} ${output_dir}  \
+python ${pgx_tool} ${germline_vcf} ${tumor_sample} ${version_pgx_tool} ${output_dir}  \
     --panel ${pgx_resource_dir}/panelfiles/DPYD.json \
     --sourcedir ${pgx_resource_dir} \
     --vcftools ${vcftools_tool}
