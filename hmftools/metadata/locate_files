@@ -101,6 +101,10 @@ locate_pilot_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 }
 
+locate_pilot_iclusion_importer() {
+    echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
+}
+
 ################################### PGX ####################################
 
 locate_pilot_pgx_calls() {
