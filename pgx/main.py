@@ -120,7 +120,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleId, vcftools):
     # Read in VCF file
     try:
         variants = allel.read_vcf(temp_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                    'variants/FILTER_PASS', 'variants/ID', 'variants/POS',
+                                                    'variants/FILTER', 'variants/ID', 'variants/POS',
                                                     'variants/QUAL', 'variants/REF', 'variants/ANN'],
                                   transformers=allel.ANNTransformer())
     except IOError:
