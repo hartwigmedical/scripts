@@ -4,7 +4,7 @@ source locate_files
 
 iclusion_importer_jar=$(locate_pilot_iclusion_importer)
 
-iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_pilot
+iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
 
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
