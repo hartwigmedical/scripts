@@ -287,7 +287,8 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene)]
         perfect_match = False
         severity[gene_info['referenceAllele']] = "Normal Function"
-        drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]), ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
+        drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]),
+                           ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
 
         # If all variants are assumed_ref, return reference allele
         if len(all_ids_in_panel.loc[all_ids_in_panel['filter'] == "NO_CALL"]) == len(all_ids_in_panel):
@@ -401,7 +402,7 @@ def get_bed_file(gene_panel, panel_path, sourcedir):
     print("[INFO] Recreating bed-file...")
     header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
              ' with HMF_PGx main.py"\n'
-    bed_regions = []    # chrom, start, end, gene
+    bed_regions = []  # chrom, start, end, gene
     covered = []
     transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
     for line in transcripts:
@@ -436,7 +437,7 @@ def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftoo
 
     haplotypes_info = None
     genes = None
-    
+
     # Check if output dir exists, create if it does not
     if not os.path.exists(outputdir):
         try:
@@ -516,7 +517,8 @@ def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftoo
             # git_describe = git_describe.stdout.decode("utf-8").strip()
             for gene in results:
                 for haplotype in results[gene]:
-                    f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" + drug_info[gene][1] + "\t" + panel + "\t" +
+                    f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" +
+                            drug_info[gene][1] + "\t" + panel + "\t" +
                             version + "\n")
             f.close()
             # Also copy the bed-filtered VCF file for research purposes
