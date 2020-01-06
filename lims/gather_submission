@@ -33,8 +33,10 @@ mkdir -p ${outPath} || exit 1
 echo "[INFO] Querying HMF LIMS to get submission info"
 cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${subJson}
 pName=$(cat ${subJson} | jq -r '.project_name')
-cName=$(cat ${subJson} | jq -r '.contact_name')
-cMail=$(cat ${subJson} | jq -r '.contact_email')
+rName=$(cat ${subJson} | jq -r '.report_contact_name')
+rMail=$(cat ${subJson} | jq -r '.report_contact_email')
+dName=$(cat ${subJson} | jq -r '.data_contact_name')
+dMail=$(cat ${subJson} | jq -r '.data_contact_email')
 pType=$(cat ${subJson} | jq -r '.analysis_type')
 if [[ -z ${pName+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
 
@@ -62,8 +64,8 @@ cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
 
 ## setup reporting info
 rm -f ${repFile}
-echo -e "PROJECT\t${cName}" >> ${repFile}
-echo -e "PROJECT\t${cMail}" >> ${repFile}
+echo -e "PROJECT\t${rName}" >> ${repFile}
+echo -e "PROJECT\t${rMail}" >> ${repFile}
 echo -e "PROJECT\t${pName}" >> ${repFile}
 echo -e "PROJECT\t${submission}" >> ${repFile}
 echo -e "PROJECT\t${hmfCount}" >> ${repFile}
@@ -83,11 +85,13 @@ done
 
 
 ## logging
-echo "#        Date = ${dateString}" >> ${logFile}
-echo "#  Submission = ${submission}" >> ${logFile}
-echo "#     Project = ${pName}"      >> ${logFile}
-echo "# SampleCount = ${hmfCount}"   >> ${logFile}
-echo "#   DataCount = ${sbpCount}"   >> ${logFile}
+echo "#           Date = ${dateString}" >> ${logFile}
+echo "#     Submission = ${submission}" >> ${logFile}
+echo "#        Project = ${pName}"      >> ${logFile}
+echo "#    SampleCount = ${hmfCount}"   >> ${logFile}
+echo "#      DataCount = ${sbpCount}"   >> ${logFile}
+echo "# Report Contact = ${rName} (${rMail})" >> ${logFile}
+echo "#   Data Contact = ${dName} (${dMail})" >> ${logFile}
 
 ## stdout msg
 pdfName="${submission}_${pName}.pdf"
