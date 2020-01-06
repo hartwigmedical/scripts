@@ -254,6 +254,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
                                                      'filter'])
+    print(ids_found_in_patient)
     for rs in ids_found_in_patient.rsid.tolist():
         print("rs_ids")
         print(rs_ids)
