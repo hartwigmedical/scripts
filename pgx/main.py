@@ -255,6 +255,8 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
                                                      'filter'])
     for rs in ids_found_in_patient.rsid.tolist():
+        print("rs_ids")
+        print(rs_ids)
         rs_ids.pop(rs)
     rs_ids = {key: val for key, val in rs_ids.items() if val not in ids_found_in_patient.position_GRCh37.tolist()}
     for item in rs_ids:
