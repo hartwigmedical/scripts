@@ -257,6 +257,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     for rs in ids_found_in_patient.rsid.tolist():
         print("rs_ids")
         print(rs_ids)
+        print(rs)
         rs_ids.pop(rs)
     rs_ids = {key: val for key, val in rs_ids.items() if val not in ids_found_in_patient.position_GRCh37.tolist()}
     for item in rs_ids:
