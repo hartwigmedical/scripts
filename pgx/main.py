@@ -299,7 +299,6 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             for allele in gene_info['alleles']:
                 severity[allele['alleleName']] = allele['function']
                 variants_sample = list(zip(all_ids_in_panel.rsid.tolist(), all_ids_in_panel.alt_GRCh38.tolist()))
-                print(variants_sample)
                 if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]):
                     perfect_match = True
                     print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
@@ -327,8 +326,6 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                         print("[INFO] A subset of rsids matches " + str(allele['alleleName']) + " in part")
                         haplotypes_matching.append(allele)
 
-            print(perfect_match)
-            print(haplotypes_matching)
             if not perfect_match:
                 if not haplotypes_matching:
                     sys.exit("[ERROR] No allele match found for " + str(gene))
