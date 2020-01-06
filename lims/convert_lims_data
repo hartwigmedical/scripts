@@ -154,7 +154,7 @@ checkContactInfo($cont_objs);
 
 $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
-$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $cntr_dict );
+$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT, $SUBM_OUT );
@@ -392,7 +392,7 @@ sub checkContactInfo{
 
 sub processAccessSamples{
     
-    my ($lims, $objects, $centers_dict) = @_;
+    my ($lims, $objects, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
     my %dna_blood_samples_by_name = ();
@@ -515,12 +515,16 @@ sub processAccessSamples{
                 $object->{ 'analysis_type' } = 'Unknown';
             }
             
-            ## CORE is handled per case/submission            
-            ## CPCT/DRUP/WIDE are handled study/center wide
+            ## CORE is handled per case/submission
             if ( $study eq 'CORE' ){
-                $object->{ 'entity' } = $object->{ 'submission' };
-                $object->{ 'project_name' } = $object->{ 'submission' };
+                my $submission_id = $object->{ 'submission' };
+                $object->{ 'entity' } = $submission_id;
+                $object->{ 'project_name' } = $submission_id;
+                ## TODO: remove or rename once patient-reporter supports name/email from submission
+                $object->{ 'requester_name' } = $submissions->{$submission_id}{'report_contact_name'};
+                $object->{ 'requester_email' } = $submissions->{$submission_id}{'report_contact_email'};
             }
+            ## CPCT/DRUP/WIDE are handled study/center wide
             elsif ( exists $centers_dict->{ $center } ){
                 my $centername = $centers_dict->{ $center };
                 $object->{ 'submission' } = 'HMFreg' . $study;
@@ -964,8 +968,6 @@ sub getFieldNameTranslations{
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
       'Germline_findings'  => 'germline_findings',
-      'Requester_name'     => 'requester_name',
-      'Requester_email'    => 'requester_email',
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
