@@ -9,6 +9,7 @@ use File::Slurp;
 use JSON::XS;
 use Text::CSV;
 use File::Copy;
+use Email::Valid;
 use 5.01000;
 
 use constant EMPTY => q{ };
@@ -40,6 +41,7 @@ my $BACK_DIR = $OUT_DIR . '/backup';
 
 my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
+my $CONT_TSV = $LIMS_DIR . '/latest/lims_cont';
 my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
 my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
 
@@ -124,14 +126,16 @@ say "[INFO] START with \"$SCRIPT\"";
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
 my $proc_objs = {}; # will contain objects from InProcess sheet
-my $subm_objs = {}; # will contain objects from Received-shipments sheet
-my $samp_objs = {}; # will contain objects from Received-samples sheet
+my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
+my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
+my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $cpct_objs = {}; # will contain objects from CPCT access DB
 my $lims_objs = {}; # will contain all sample objects
 
-my $lims_2017 = readJson( $LIMS_JSN_2017 );
-$samp_objs = $lims_2017->{ 'samples' };
-$subm_objs = $lims_2017->{ 'submissions' };
+## No longer reading info from before 2018
+#my $lims_2017 = readJson( $LIMS_JSN_2017 );
+#$samp_objs = $lims_2017->{ 'samples' };
+#$subm_objs = $lims_2017->{ 'submissions' };
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
@@ -140,16 +144,20 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
+$cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $CONT_TSV, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
+checkContactInfo($cont_objs);
+
+$subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $cntr_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
-printLimsToJson( $lims_objs, $subm_objs, $JSON_OUT, $SUBM_OUT );
+printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT, $SUBM_OUT );
 
 say "[INFO] DONE with \"$SCRIPT\"";
 
@@ -245,16 +253,17 @@ sub readJson{
 }
 
 sub printLimsToJson{
-    my ($samples, $submissions, $lims_file, $subm_file) = @_;
+    my ($samples, $submissions, $contact_groups, $lims_file, $subm_file) = @_;
     my $samp_count = scalar keys %$samples;
     my $subm_count = scalar keys %$submissions;
+    my $cont_count = scalar keys %$contact_groups;
 
     ## samples and submission json
-    my %lims = ( 'samples' => $samples, 'submissions' => $submissions );
+    my %lims = ( 'samples' => $samples, 'submissions' => $submissions, 'contact_groups' => $contact_groups );
     my $coder = JSON::XS->new->utf8->pretty->canonical;
     my $lims_txt = $coder->encode(\%lims);
     
-    say "[INFO]   Writing output to $lims_file ($subm_count submissions and $samp_count samples)";
+    say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
         print $lims_json_fh $lims_txt;
     close $lims_json_fh;
@@ -314,6 +323,73 @@ sub parseDictFile{
     return \%store;
 }
 
+sub addContactInfoToSubmissions{
+    my ($submissions, $contact_groups) = @_;
+    my @fields = qw( report_contact_name report_contact_email data_contact_name data_contact_email );
+    say "[INFO]   Adding contact group information to submissions";
+    my %store = %{$submissions};
+    foreach my $submission_id (sort keys %store){
+        my $submission = $store{$submission_id};
+        
+        if( exists $submission->{ 'report_contact_email' } ){
+            ## skip records from the time when contact info was entered in shipments tab
+            next;
+        }
+        elsif( exists $submission->{ 'group_id' } ){
+            my $group_id = $submission->{ 'group_id' };
+            if ( exists $contact_groups->{ $group_id } ){
+                my $group = $contact_groups->{ $group_id };
+                foreach my $field ( @fields ){
+                    $submission->{$field} = $group->{ $field };
+                }
+            }
+            else{
+                warn "[WARN] Submission \"$submission_id\" has group ID \"$group_id\" but not found in contact groups (check Contact tab of FOR-001)\n";
+                next;
+            }
+        }
+        else{
+            warn "[WARN] No Group ID in place for submission $submission_id (check Shipments tab of FOR-001)\n";
+            next;
+        }
+    }
+    return \%store;
+}
+
+sub checkContactInfo{
+    my ($contact_groups) = @_;
+    my $found_issues = 0;
+    my @name_fields = qw(client_contact_name report_contact_name);
+    my @mail_fields = qw(report_contact_email data_contact_email);
+    say "[INFO]   Checking contact group information for completeness";
+    foreach my $id (sort keys %$contact_groups){
+        my $info = $contact_groups->{$id};
+        my $name = $info->{client_contact_name};
+        my $mail = $info->{client_contact_email};
+        
+        ## These fields should at the very least have content
+        foreach my $field (@name_fields){
+            if ( $info->{$field} eq "" ){
+                say "[WARN] No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)";
+                $found_issues = 1;
+            }
+        }
+        ## These fields should contain only (valid) email addresses
+        foreach my $field (@mail_fields){
+            my @addressess = split( ";", $info->{$field});
+            foreach my $address (@addressess){
+                if( not Email::Valid->address($address) ){
+                    say "[WARN] No valid email address ($address) for contact group ID $id (see FOR-001 Contacts tab)";
+                    $found_issues = 1;
+                }
+            }
+        }
+    }
+    if ( $found_issues ){
+        say "[WARN] Found issues for contact group information";
+    }
+}
+
 sub processAccessSamples{
     
     my ($lims, $objects, $centers_dict) = @_;
@@ -323,7 +399,7 @@ sub processAccessSamples{
     my %tissue_samples_by_coupe = ();
     
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
-    say "[INFO]   Storing temporary mappings for blood (by name) and tissue (by coupe) for later enrichment of DNA/RNA samples";
+    say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
     while ( my($main_id, $row_info) = each %$objects ){
         
         my $source = $row_info->{ 'sample_source' };        
@@ -754,6 +830,21 @@ sub checkDefined{
 }
 
 sub getFieldNameTranslations{
+    ## columns contact sheet in current FOR-001
+    my %CONT_DICT = (
+      "Group_ID"               => 'group_id',
+      "Client_contact_name"    => 'client_contact_name',
+      "Client_contact_email"   => 'client_contact_email',
+      "On_behalf_of_client_name"  => 'on_behalf_of_client_contact_name',
+      "On_behalf_of_client_email" => 'on_behalf_of_client_contact_email',
+      "Report_contact_name"    => 'report_contact_name',
+      "Report_contact_email"   => 'report_contact_email',
+      "Data_contact_name"      => 'data_contact_name',
+      "Data_contact_email"     => 'data_contact_email',
+      "Lab_contact_name"       => 'lab_contact_name',
+      "Lab_contact_email"      => 'lab_contact_email',
+    );
+    
     ## columns shipments sheet in 2018 rest lims (FOR-001)
     my %SUBM_DICT_2018 = (
       "Arrival_date"      => 'arrival_date',
@@ -764,8 +855,8 @@ sub getFieldNameTranslations{
       "Sample_count"      => 'sample_count',
       "Lab_is_finished"   => 'has_lab_finished',
       "TAT_lab"           => 'turn_around_time',
-      "Contact_name"      => 'contact_name',
-      "Contact_email"     => 'contact_email',
+      "Contact_name"      => 'report_contact_name',
+      "Contact_email"     => 'report_contact_email',
       "Remarks"           => 'remarks',
       "Storage_status"    => 'lab_storage_status',
     );
@@ -779,11 +870,12 @@ sub getFieldNameTranslations{
       "Product_category"  => 'project_type',
       "Sample_count"      => 'sample_count',
       "Lab_is_finished"   => 'has_lab_finished',
+      "Group_ID"          => 'group_id',
       "TAT_lab"           => 'turn_around_time',
-      "Contact_name"      => 'contact_name',
-      "Contact_email"     => 'contact_email',
-      "Portal_contact_name" => 'portal_contact_name',
-      "Portal_contact_email" => 'portal_contact_email',
+      "Contact_name"      => 'report_contact_name',
+      "Contact_email"     => 'report_contact_email',
+      "Portal_contact_name" => 'data_contact_name',
+      "Portal_contact_email" => 'data_contact_email',
       "Remarks"           => 'remarks',
       "Storage_status"    => 'lab_storage_status',
     );
@@ -884,6 +976,7 @@ sub getFieldNameTranslations{
     );
     
     my %translations = (
+        'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SUBM_2019' => \%SUBM_DICT_2019,
