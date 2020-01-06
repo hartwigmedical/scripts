@@ -533,13 +533,13 @@ def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftoo
         print(ids_found_in_patient)
 
     # Clean up temp_vcf
-    # if os.path.exists(temp_vcf):
-    #     if os.path.exists(temp_vcf):
-    #         os.remove(temp_vcf)
-    #         print("[INFO] " + temp_vcf + " removed.")
-    #     if os.path.exists(temp_vcf.replace(".recode.vcf", ".log")):
-    #         os.remove(temp_vcf.replace(".recode.vcf", ".log"))
-    #         print("[INFO] " + temp_vcf.replace(".recode.vcf", ".log") + " removed.")
+    if os.path.exists(temp_vcf):
+        if os.path.exists(temp_vcf):
+            os.remove(temp_vcf)
+            print("[INFO] " + temp_vcf + " removed.")
+        if os.path.exists(temp_vcf.replace(".recode.vcf", ".log")):
+            os.remove(temp_vcf.replace(".recode.vcf", ".log"))
+            print("[INFO] " + temp_vcf.replace(".recode.vcf", ".log") + " removed.")
 
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
