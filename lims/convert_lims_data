@@ -529,6 +529,10 @@ sub processAccessSamples{
                 $object->{ 'submission' } = 'HMFreg' . $study;
                 $object->{ 'entity' } = join( "_", $study, $centername );
                 $object->{ 'project_name' } = $object->{ 'submission' };
+                ## TODO: Dummy fields needed for hmf-common code (cannot be null)
+                ## TODO: Remove once hmf-common code supports name/email from submission
+                $object->{ 'requester_name' } = "";
+                $object->{ 'requester_email' } = "";
             }
             else {
                 warn "[WARN] SKIPPING sample because of unkown center id \"$center\" (id:$id name:$name)\n" and next;
