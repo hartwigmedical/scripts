@@ -6,6 +6,7 @@ use File::Basename;
 use Getopt::Long;
 use File::Slurp;
 use JSON;
+use XML::Simple;
 use 5.010.000;
 
 ## -----
@@ -17,6 +18,7 @@ my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
 
 my $SSHT_LOC = 'SampleSheet.csv';
+my $RXML_LOC = 'RunInfo.xml';
 my $JSON_LOC = 'Data/Intensities/BaseCalls/Stats/Stats.json';
 my $LANE_KEY = 'ConversionResults';
 my $SMPL_KEY = 'DemuxResults';
@@ -37,6 +39,7 @@ my %QC_LIMITS = (
 
 my $RUN_PATH;
 my $JSON_PATH;
+my $RXML_PATH;
 my $SSHT_PATH;
 
 my $HELP =<<HELP;
@@ -59,6 +62,7 @@ my $HELP =<<HELP;
     -yield_factor <i>      Factor to devide all yields with ($YIELD_FACTOR)
     -round_decimals <i>    Factor to devide all yields with ($ROUND_DECIMALS)
     -samplesheet <s>       Path to SampleSheet.csv file
+    -run_info_xml <s>      Path to RunInfo.xml file
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
     -debug                 Prints complete datastructure
@@ -74,6 +78,7 @@ GetOptions (
   "run_dir=s"          => \$RUN_PATH,
   "json_path=s"        => \$JSON_PATH,
   "samplesheet=s"      => \$SSHT_PATH,
+  "run_info_xml=s"     => \$RXML_PATH,
   "sep=s"              => \$OUT_SEP,
   "max_undet_perc=i"   => \$QC_LIMITS{ 'max_undt' },
   "min_sample_yield=i" => \$QC_LIMITS{ 'samp_yld' },
@@ -92,8 +97,10 @@ die "[EXIT] Provide either run-dir or json-path not both\n" if (defined $RUN_PAT
 die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_PATH or defined $JSON_PATH);
 die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
 die "[EXIT] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
+die "[EXIT] Provided xml does not exist ($RXML_PATH)\n" if defined $RXML_PATH and not -f $RXML_PATH;
 
 $JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
+$RXML_PATH = "$RUN_PATH/$RXML_LOC" if defined $RUN_PATH;
 $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_PATH);
 
 ## -----
@@ -103,7 +110,8 @@ $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_P
 my $seq_run = basename $RUN_PATH;
 my $ssht_info = readSampleSheet( $SSHT_PATH );
 my $json_info = readJson( $JSON_PATH );
-my $parsed_info = parseJsonInfo( $json_info );
+my $rxml_info = readXml( $RXML_PATH );
+my $parsed_info = parseJsonInfo( $json_info, $rxml_info );
 
 addSamplesheetInfo( $parsed_info, $ssht_info, $seq_run );
 performQC( $parsed_info ) unless $opt{ no_qc };
@@ -147,6 +155,12 @@ sub addSamplesheetInfo{
         $description = $ssht_info->{'samples'}{$sample_id}{ 'Description' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Description' };
         $sample->{ 'description_print' } = $description;
     }
+}
+
+sub readXml{
+    my ($file) = @_;
+    my $obj = XMLin( $file );
+    return($obj);
 }
 
 sub readJson{
@@ -255,10 +269,12 @@ sub checkObjectField{
 }
 
 sub parseJsonInfo{
-    my ($raw_json_info) = @_;    
+    my ($raw_json_info, $run_xml_info) = @_;
     my %info = ();
-    
+
     ## Reading phase
+    my @cycle_counts = map( $_->{NumCycles}, @{$run_xml_info->{Run}{Reads}{Read}});
+    my $cycle_string = join( "|", @cycle_counts);
     my $fid = $raw_json_info->{ 'Flowcell' };
     $info{ 'flow' }{ $fid }{ 'id' } = $fid;
     $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
@@ -368,16 +384,18 @@ sub parseJsonInfo{
     }
     
     ## Collect some general stats/info
-    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s", 
+    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s", 
       round( $info{'flow'}{$fid}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       round( $info{'undt'}{'UNDETERMINED'}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       $info{'flow'}{$fid}{'q30_print'},
-      $info{'flow'}{$fid}{'pf_print'};
+      $info{'flow'}{$fid}{'pf_print'},
+      $cycle_string;
       
     $info{'stats'}{'undet_perc'} = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
+    $info{'stats'}{'cycle_string'} = $cycle_string;
 
     return \%info;
 }
@@ -407,11 +425,12 @@ sub printTable{
 
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
-    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %s cycles)', 
       $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'lane_count'}, 
-      $info->{'stats'}{'samp_count'};
+      $info->{'stats'}{'samp_count'},
+      $info->{'stats'}{'cycle_string'};
     
     say "#".join( $OUT_SEP, "level", @$fields );
     printTableForLevel( $info->{'flow'}, $fields, "RUN" );

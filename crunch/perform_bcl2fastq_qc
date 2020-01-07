@@ -64,26 +64,26 @@ done
 ## get QC
 printHeader "RUN QC"
 for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
+    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
 done
 
 ## get info for RunOverview
 printHeader "RUN Info"
 for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
 done | sort -r
 
 ## get info for SampleOverview
 printHeader "Sample Info"
 for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run ${seqDir} -summary | grep -v "^#"
+    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -v "^#"
 done | sort -k1,1 -k3,3
 
 ## get info for SampleOverview
 printHeader "SampleOverview Table (CPCT02/DRUP01/WIDE01 R samples are removed)"
 echo -e "Submission\tSampleID\tSampleName\tYieldGBase\tDescription"
 for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01|CORE.{2})\d{6}R" | while read line; do
+    ${PARSE_SCRIPT} -run_dir ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01|CORE.{2})\d{6}R" | while read line; do
         yldMBase=$( echo ${line} | cut -d" " -f3 )
         yld=$((yldMBase/1000))
         sub=$( echo ${line} | cut -d" " -f11 )

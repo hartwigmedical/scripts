@@ -36,7 +36,33 @@ There are specific considerations to keep in mind with different types of data:
 
 ## DRUP-01 ([NCT02925234](https://clinicaltrials.gov/ct2/show/NCT02925234))
 
-Coming soon...
+Patients who were eligible for the study had an advanced or metastatic solid tumour, multiple myeloma or B cell non-Hodgkin lymphoma, and had exhausted standard-treatment options. A tumour genetic or protein-expression test (CPCT or regular diagnostics) had to have revealed a potentially actionable variant, for which FDA- and/or EMA-approved targeted (or immuno-) therapy was available—but not for the tumour type in question. This clinical study was approved by the Medical Ethical Committee of the Netherlands Cancer Institute in Amsterdam
+
+Upon case submission, the study team attempted to match each patient to the appropriate study treatment, according to pre-defined matching rules. If a slot for a matching study treatment was available (to which the patient consented) the patient could be enrolled, if all drug-specific selection criteria were met. Once a variant-drug match was identified, all patients underwent a fresh baseline tumor biopsy for WGS. 
+
+Core needle biopsies were sampled similar according to the CPCT protocol as outlined above and also shipped to the Hartwig Medical Foundation for sequencing. Left-over material (biopsy, DNA) after sample processing was stored in a biobank at the Netherlands Cancer Institute in Amsterdam. 
+
+A total of 37 academic, teaching and general hospitals across the Netherlands participated in this study and collected material and clinical data by standardized protocols.
+DRUP clinical data collection
+
+#### DRUP clinical data collection
+
+DRUP clinical data is collected in an electronic Case Record Form by local datamanagers at the 37 different hospitals, and supervised by central datamanagement. The current data extract has not been fully cleaned by DRUP. They are in the process of checking for any inconsistencies in the data and working with the hospitals to resolve these issues. Therefore, there may be inaccuracies in the data that are not resolved yet. Please carefully consider this when interpreting the data.
+
+DRUP’s standard quality control system consists of source data verification. This means that every first patient for a certain drug in a hospital is verified again source data and then about 10% randomly after. In case of insufficient documentation by the treating physician there is no way to correct for this.
+
+Central datamanagement is in the process of performing a logic check, meaning that after data entry the consistency of the data is checked (e.g. are the dates possible and logical, is the data entered conform protocol) and if possible errors are resolved. The last check will be a medical check to ensure the data from each patient makes sense from the medical point of view. 
+
+There are specific considerations to keep in mind with different types of data:
+
+- Tumor type: The data on tumor type is reliable and will not contain more than 1-2% errors. DRUP has categorized tumors by tissue type of origin and provides one layer of subtype classification. Further histological sub classification is typically not present as the biopsies were generally collected from metastases and not part of routine diagnostics.
+
+- Prior treatment: The type of prior treatment will in general be reliable and whether the prior treatment fits with the diagnosis will be part of the medical check of the data. Best response to treatment is a retrospective feature and lacks full consistency. DRUP does not have the means to fully check this data. The dates that are given in many cases are estimated dates. Please be careful in interpreting the data on response and exposure times. If you want to make correlations between genomic data and duration of exposure / response these data are not completely verifiable.
+
+- Treatment data: the DRUP trial is an ongoing study. Therefore, clinical, treatment outcome and safety data cannot (yet) be issued.  
+
+- Survival: the data on survival are not present for every patient. 
+
 
 ## WIDE ()
 

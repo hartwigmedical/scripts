@@ -10,16 +10,20 @@ SYM_DIR="${OUT_DIR}/latest"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
 CPCT_FILE='LIMS_v4.2_be.accdb'
-SAMP_FILE='HMF-FOR-001 Received Samples 2019 v5.5.xlsx'
-PROC_FILE='HMF-FOR-002 Sample in process 2019 v4.1.xlsx'
+SAMP_FILE='HMF-FOR-001 Received Samples 2020 v5.6.xlsx'
+PROC_FILE='HMF-FOR-002 Sample in process 2020 v4.2.xlsx'
+SAMP_FILE_2019='HMF-FOR-001 Received Samples 2019 v5.5.xlsx'
+PROC_FILE_2019='HMF-FOR-002 Sample in process 2019 v4.1.xlsx'
 
 CPCT_NAS_PATH="${NAS_DIR}/${CPCT_FILE}"
 SAMP_NAS_PATH="${NAS_DIR}/${SAMP_FILE}"
 PROC_NAS_PATH="${NAS_DIR}/${PROC_FILE}"
+SAMP_NAS_PATH_2019="${NAS_DIR}/${SAMP_FILE_2019}"
+PROC_NAS_PATH_2019="${NAS_DIR}/${PROC_FILE_2019}"
 
 ## File and dir sanity checks
 if ssh nas "[[ ! -d ${NAS_DIR} ]]"; then echo "[EXIT] Error: dir does not exist (nas:${NAS_DIR})" && exit 1; fi
-for nasFilePath in "$CPCT_NAS_PATH" "$SAMP_NAS_PATH" "$PROC_NAS_PATH"; do
+for nasFilePath in "$CPCT_NAS_PATH" "$SAMP_NAS_PATH" "$PROC_NAS_PATH" "$SAMP_NAS_PATH_2019" "$PROC_NAS_PATH_2019"; do
     if ssh nas "[[ ! -f '${nasFilePath}' ]]"; then echo "[EXIT] Error: file does not exist (nas:${nasFilePath})" && exit 1; fi
 done
 for outdir in $OUT_DIR $LAB_DIR $SYM_DIR; do
@@ -42,11 +46,21 @@ submTxt="${sampTarget}_subm.tsv"
 submLatest="${SYM_DIR}/lims_subm"
 contTxt="${sampTarget}_cont.tsv"
 contLatest="${SYM_DIR}/lims_cont"
-
 procSource="${DAY_DIR}/${PROC_FILE}"
 procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
 procTxt="${procTarget}.tsv"
 procLatest="${SYM_DIR}/lims_proc"
+
+sampSource2019="${DAY_DIR}/${SAMP_FILE_2019}"
+sampTarget2019="${DAY_DIR}/${DATESTR}_LimsReceived_2019.xlsx"
+sampTxt2019="${sampTarget2019}_samp_2019.tsv"
+sampLatest2019="${SYM_DIR}/2019_samp"
+submTxt2019="${sampTarget2019}_subm_2019.tsv"
+submLatest2019="${SYM_DIR}/2019_subm"
+procSource2019="${DAY_DIR}/${PROC_FILE_2019}"
+procTarget2019="${DAY_DIR}/${DATESTR}_LimsInProcess_2019.xlsx"
+procTxt2019="${procTarget2019}.tsv"
+procLatest2019="${SYM_DIR}/2019_proc"
 
 ## Retrieve files from NAS
 echo "[INFO] Syncing LIMS files from NAS to DATASTORE"
@@ -55,6 +69,8 @@ echo "[INFO]   TargetDir: ${DAY_DIR}"
 rsync -s "nas:${CPCT_NAS_PATH}" ${DAY_DIR}
 rsync -s "nas:${SAMP_NAS_PATH}" ${DAY_DIR}
 rsync -s "nas:${PROC_NAS_PATH}" ${DAY_DIR}
+rsync -s "nas:${SAMP_NAS_PATH_2019}" ${DAY_DIR}
+rsync -s "nas:${PROC_NAS_PATH_2019}" ${DAY_DIR}
 
 ## Make sure all required files are present
 if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
@@ -69,6 +85,10 @@ ln -sfn "${cpctSource}" "${cpctTarget}"
 ln -sfn "${sampSource}" "${sampTarget}"
 ln -sfn "${procSource}" "${procTarget}"
 
+## Symlink LIMS files to create stable naming for downstream work 2019
+ln -sfn "${sampSource2019}" "${sampTarget2019}"
+ln -sfn "${procSource2019}" "${procTarget2019}"
+
 ## Convert to text format
 echo "[INFO] Converting input files to CSV/TSV"
 echo "[INFO]   Converting $( basename ${cpctTarget} )"
@@ -81,11 +101,22 @@ if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
 xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Group_ID")"
+echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Contact")"
 xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +2 > ${contTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] CONT export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${procTarget} )"
 xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}
+if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
+
+## Convert to text format for 2019 files
+echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "submissions")"
+xlsx2csv -d "\t" "${sampTarget2019}" -s 1 | tail -n +5 > ${submTxt2019}
+if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "samples")"
+xlsx2csv -d "\t" "${sampTarget2019}" -s 2 | tail -n +2 > ${sampTxt2019}
+if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
+echo "[INFO]   Converting $( basename ${procTarget2019} )"
+xlsx2csv -d "\t" "${procTarget2019}" -s 1 | tail -n +5 > ${procTxt2019}
 if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
 
 ## Create latest symlinks
@@ -100,6 +131,14 @@ echo "[INFO]   $contLatest"
 ln -sfn $contTxt $contLatest
 echo "[INFO]   $procLatest"
 ln -sfn $procTxt $procLatest
+
+## Create latest symlinks for 2019 files
+echo "[INFO]   $submLatest2019"
+ln -sfn $submTxt2019 $submLatest2019
+echo "[INFO]   $sampLatest2019"
+ln -sfn $sampTxt2019 $sampLatest2019
+echo "[INFO]   $procLatest2019"
+ln -sfn $procTxt2019 $procLatest2019
 
 ## Gather some metrics
 echo "[INFO] Stats:"

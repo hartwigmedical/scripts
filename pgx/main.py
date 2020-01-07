@@ -101,14 +101,13 @@ def load_json(panel):
     return genes, ids
 
 
-def parse_vcf(vcf, rs_ids, bed_file, outputdir, vcftools):
+def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleId, vcftools):
     match_on_rsid = 0
     match_on_location = 0
 
     # Slice VCF on bed file
-    runname = vcf.split("/")[-2]
-    temp_vcf_prefix = outputdir + '/' + runname + '_PGx'
-    temp_vcf = outputdir + '/' + runname + '_PGx.recode.vcf'
+    temp_vcf_prefix = outputdir + '/' + sampleId + '_PGx'
+    temp_vcf = outputdir + '/' + sampleId + '_PGx.recode.vcf'
 
     # Check if output vcf does not already exist
     if os.path.exists(temp_vcf):
@@ -120,7 +119,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, vcftools):
     # Read in VCF file
     try:
         variants = allel.read_vcf(temp_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                    'variants/FILTER_PASS', 'variants/ID', 'variants/POS',
+                                                    'variants/FILTER', 'variants/ID', 'variants/POS',
                                                     'variants/QUAL', 'variants/REF', 'variants/ANN'],
                                   transformers=allel.ANNTransformer())
     except IOError:
@@ -287,7 +286,8 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene)]
         perfect_match = False
         severity[gene_info['referenceAllele']] = "Normal Function"
-        drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]), ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
+        drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]),
+                           ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
 
         # If all variants are assumed_ref, return reference allele
         if len(all_ids_in_panel.loc[all_ids_in_panel['filter'] == "NO_CALL"]) == len(all_ids_in_panel):
@@ -401,7 +401,7 @@ def get_bed_file(gene_panel, panel_path, sourcedir):
     print("[INFO] Recreating bed-file...")
     header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
              ' with HMF_PGx main.py"\n'
-    bed_regions = []    # chrom, start, end, gene
+    bed_regions = []  # chrom, start, end, gene
     covered = []
     transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
     for line in transcripts:
@@ -430,13 +430,13 @@ def get_bed_file(gene_panel, panel_path, sourcedir):
     return bed_path
 
 
-def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
+def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
     haplotypes_info = None
     genes = None
-    
+
     # Check if output dir exists, create if it does not
     if not os.path.exists(outputdir):
         try:
@@ -494,7 +494,7 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
                 bed_file = sourcedir + "/pharmgkb_cache/cache_bed.bed"
             if not os.path.exists(bed_file):
                 sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
-        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, vcftools)
+        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleID, vcftools)
     else:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
@@ -509,13 +509,16 @@ def main(vcf, sampleID, panel, requery, outputdir, recreate_bed, vcftools, sourc
             # Below solution for > Python 3.7
             # git_describe = subprocess.run(["git", "--git-dir=" +
             # os.path.dirname(os.path.realpath(__file__)) + "/.git", "describe", "--always"], capture_output=True)
-            git_describe = subprocess.run(["git", "--git-dir=" + os.path.dirname(os.path.realpath(__file__)) + "/.git",
-                                           "describe", "--always"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            git_describe = git_describe.stdout.decode("utf-8").strip()
+
+            ####git version is not working
+            # git_describe = subprocess.run(["git", "--git-dir=" + os.path.dirname(os.path.realpath(__file__)) + "/.git",
+            #                                "describe", "--always"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # git_describe = git_describe.stdout.decode("utf-8").strip()
             for gene in results:
                 for haplotype in results[gene]:
-                    f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" + drug_info[gene][1] + "\t" + panel + "\t" +
-                            git_describe + "\n")
+                    f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" +
+                            drug_info[gene][1] + "\t" + panel + "\t" +
+                            version + "\n")
             f.close()
             # Also copy the bed-filtered VCF file for research purposes
             copyfile(temp_vcf, out + "_PGx.vcf")
@@ -549,6 +552,7 @@ if __name__ == '__main__':
                                                  'genome output is given where possible.')
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
     parser.add_argument('sampleID', type=str, help='The sample ID of the run')
+    parser.add_argument('version', type=str, help='The version of the tool')
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
     parser.add_argument('--panel', type=str, help='TSV file with the panel variants')
     parser.add_argument('--requery', default=False, action='store_true', help='Requery genes in pharmGKB')
@@ -560,4 +564,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.vcf, args.sampleID, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
+    main(args.vcf, args.sampleID, args.version, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
