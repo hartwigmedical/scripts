@@ -100,7 +100,7 @@ query_sbp_api \
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && $ignoreSample == "" ]]; then
                 echo "${download_script_fail} ${set_name_for_failed_tumor_sample}"
             elif [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 && $ignoreSample != "" ]]; then
-                echo "# ${set_name_for_failed_tumor_sample} is QC failed and must be not loaded into db"
+                echo "# ${set_name_for_failed_tumor_sample} is QC failed and must be not loaded into db so can be ignored"
             elif [ ${exists_in_success_run_dirs} == 0 ]; then
                 echo "# ${set_name_for_failed_tumor_sample} has failed on ${pip} and is already on datastore ${find_dirs_fail}"
             fi
