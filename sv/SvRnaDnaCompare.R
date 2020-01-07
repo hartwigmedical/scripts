@@ -283,13 +283,13 @@ dnaRnaCombinedOutputData = dnaRnaCombinedOutputData %>% mutate(DnaPosUp=ifelse(D
 View(dnaRnaCombinedOutputData)
 
 # write.csv(dnaRnaCombinedOutputData,'~/data/sv/rna/LINX_dna_rna_combined_data_tmp.csv', quote = F, row.names = F)
-write.csv(dnaRnaCombinedOutputData %>% select(-SampleId,-ClusterId),'~/data/sv/rna/LINX_dna_rna_combined_data_20191210.csv',quote=F,row.names=F)
+write.csv(dnaRnaCombinedOutputData %>% select(-SampleId,-ClusterId),'~/data/sv/rna/LINX_dna_rna_combined_data_20191211.csv',quote=F,row.names=F)
 write.csv(dnaRnaCombinedOutputData %>% select(-SampleId,-ClusterId),'~/data/sv/rna/LINX_dna_rna_combined_data.csv',quote=F,row.names=F)
 
 
 # PLOT 1: Precision report
 
-dnaRnaCombinedOutputData = read.csv('~/data/sv/rna/LINX_dna_rna_combined_data_20191208.csv')
+dnaRnaCombinedOutputData = read.csv('~/data/sv/rna/LINX_dna_rna_combined_data.csv')
 View(dnaRnaCombinedOutputData)
 
 # create a summary view to plot the precision results 

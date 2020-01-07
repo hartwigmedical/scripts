@@ -6,7 +6,8 @@ library(stringi)
 
 annotate_fusions<-function(fusionData)
 {
-  fusionData = fusionData %>% mutate(SameSV = (SvIdUp==SvIdDown))
+  fusionData = fusionData %>% mutate(SameSV=(SvIdUp==SvIdDown),
+                                     KnownType=ifelse(!is.na(KnownType)&KnownType!='',as.character(KnownType),'Unknown'))
   
   # chaining info
   fusionData = fusionData %>% separate(ChainInfo,c('ChainId','ChainLinks','ChainLength','ValidTraversal','TraversalAssembled'),sep = ';')
@@ -42,7 +43,7 @@ annotate_fusions<-function(fusionData)
 
 ####
 ## SVA Fusions from single SVs and clustered & chained SVs
-svaFusions = read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
+svaFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv')
 nrow(svaFusions)
 reportedSvaFusions = svaFusions %>% filter(Reportable=='true')
 # read.csv('~/data/sv/fusions/SVA_FUSIONS.csv')
@@ -59,7 +60,290 @@ View(reportedSvaFusions %>% group_by(SampleId,GeneNameUp,GeneNameDown) %>% count
 # multiple fusions per sample
 View(reportedSvaFusions %>% filter(Clustered) %>% group_by(SampleId,GeneIdUp,GeneIdDown) %>% count() %>% filter(n>1))
 
+newFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS_20191206_new.csv') %>% filter(KnownType!='')
+newFusions = newFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+newFusions = annotate_fusions(newFusions)
+nrow(newFusions)
 
+preChgFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS_20191206_pre_change.csv') %>% filter(KnownType!='')
+preChgFusions = preChgFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
+preChgFusions = annotate_fusions(preChgFusions)
+nrow(preChgFusions)
+
+write.csv(preChgFusions,'~/data/sv/fusions/pre_chg_fusions.csv',quote = F,row.names = F)
+write.csv(newFusions,'~/data/sv/fusions/new_fusions.csv',quote = F,row.names = F)
+
+# comparisons
+View(newFusions %>% filter(!(SampleGenePair %in% preChgFusions$SampleGenePair)) %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+requiredBiotypes = c('protein_coding','retained_intron','processed_transcript','nonsense_mediated_decay','lincRNA')
+
+View(preChgFusions %>% filter(!(SampleGenePair %in% newFusions$SampleGenePair)) %>%
+       filter(BiotypeUp %in% requiredBiotypes) %>%
+       filter(Reportable=='true') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+
+
+
+## Fusion Comparison
+prevFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS_20191206_pre_change.csv')
+
+prevFusionsAll = prevFusionsAll %>% filter(SampleId %in% changedSamples$SampleId)
+prevFusionsAll = annotate_fusions(prevFusionsAll)
+
+prevFusionsAll = prevFusionsAll %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'),
+                                           SampleIdPair=paste(SvIdUp,SvIdDown,sep='_'))
+# prevFusions = prevFusions %>% filter(Reportable=='true')
+prevFusions = prevFusionsAll %>% filter(KnownType!='')
+nrow(prevFusions)
+
+newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv')
+newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS_20191206_new.csv')
+newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS_20191206_biotypes.csv')
+newFusionsAll = annotate_fusions(newFusionsAll)
+newFusionsAll = newFusionsAll %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'),
+                                         SampleIdPair=paste(SvIdUp,SvIdDown,sep='_'))
+# newFusions = newFusions %>% filter(Reportable=='true')
+newFusions = newFusionsAll %>% filter(KnownType!='')
+# newFusions = annotate_fusions(newFusions)
+nrow(newFusions)
+
+nrow(newFusionsAll %>% group_by(SampleId) %>% count)
+nrow(prevFusionsAll %>% group_by(SampleId) %>% count)
+
+View(newFusionsAll %>% group_by(SampleId,SvIdUp,SvIdDown) %>% count %>% filter(n>1))
+View(prevFusionsAll %>% group_by(SampleId,SvIdUp,SvIdDown) %>% count %>% filter(n>1))
+
+# all sample differences
+samplesWithNew = newFusionsAll %>% filter(!(SampleGenePair %in% prevFusionsAll$SampleGenePair)) %>% select(SampleId,GeneNameUp,GeneNameDown)
+samplesWithPrev = prevFusionsAll %>% filter(!(SampleGenePair %in% newFusionsAll$SampleGenePair)) %>% select(SampleId,GeneNameUp,GeneNameDown)
+
+View(samplesWithNew %>% group_by(SampleId) %>% count)
+View(samplesWithPrev %>% group_by(SampleId) %>% count)
+View(samplesWithPrev)
+
+changedSamples = rbind(samplesWithNew %>% group_by(SampleId) %>% count %>% ungroup(),
+                       samplesWithPrev %>% group_by(SampleId) %>% count %>% ungroup()) %>% group_by(SampleId) %>% count
+
+View(changedSamples)
+write.csv(changedSamples,'~/data/sv/fusions/changed_sample_ids.csv',row.names = F, quote = F)
+
+View(newFusions %>% filter(!(SampleGenePair %in% prevFusions$SampleGenePair)) %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+requiredBiotypes = c('protein_coding','retained_intron','processed_transcript','nonsense_mediated_decay','lincRNA')
+
+View(prevFusions %>% filter(!(SampleGenePair %in% newFusions$SampleGenePair)&!(SampleIdPair %in% newFusions$SampleIdPair)) %>%
+       filter(BiotypeUp %in% requiredBiotypes) %>%
+       # filter(Reportable=='true') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(prevFusionsAll %>% filter(!(SampleIdPair %in% newFusionsAll$SampleIdPair)&!(SampleGenePair %in% newFusionsAll$SampleGenePair)) %>%
+       filter(BiotypeUp %in% requiredBiotypes) %>%
+       # filter(Reportable=='true') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(newFusionsAll %>% filter(!(SampleIdPair %in% prevFusionsAll$SampleIdPair)&!(SampleGenePair %in% prevFusionsAll$SampleGenePair)) %>%
+       filter(BiotypeUp %in% requiredBiotypes) %>%
+       # filter(Reportable=='true') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(newFusionsAll %>% filter(SampleId=='CPCT02010240T') %>% filter(GeneNameUp=='TMEM178B'))
+View(newFusionsAll %>% filter(SampleId=='CPCT02010240T') %>% filter(SvIdUp==863))
+nrow(newFusionsAll %>% filter(SampleId=='CPCT02011102T'))
+nrow(prevFusionsAll %>% filter(SampleId=='CPCT02010240T'))
+View(newFusionsAll %>% filter(SampleId=='CPCT02011102T'))
+
+View(newFusions %>% filter(SampleId=='CPCT02011102T') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(prevFusionsAll %>% filter(SampleId=='DRUP01010110T') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(newFusionsAll %>% filter(SampleId=='CPCT02011102T') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PhaseMatched,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+
+# sample comparisons
+
+
+sampleFusions = read.csv('~/logs/LNX_FUSIONS.csv')
+View(sampleFusions)
+
+sampleFusions = annotate_fusions(sampleFusions)
+
+View(sampleFusions %>% filter(GeneNameUp=='YAP1'))
+View(sampleFusions %>% group_by(SampleId) %>% count)
+
+View(sampleFusions %>% filter(GeneNameUp=='YAP1') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PriorityScore,PhaseMatched,TranscriptUp,TranscriptDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,CanonicalUp,CanonicalDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(sampleFusions %>% filter(GeneNameUp=='KCNB2') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PriorityScore,PhaseMatched,TranscriptUp,TranscriptDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+              TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,CanonicalUp,CanonicalDown,
+              ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(sampleFusions %>% filter(GeneNameDown=='BRAF') %>%
+       select(SampleId,KnownType,GeneNameUp,GeneNameDown,Reportable,PriorityScore,PhaseMatched,TranscriptUp,TranscriptDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,
+                     TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,BiotypeUp,BiotypeDown,
+                     ChainLinks,ChainLength,TerminatedUp,TerminatedDown,ExonsSkippedUp,ExonsSkippedDown,everything()))
+
+View(dnaRnaCombinedOutputData %>% filter(HmfId=='HMF001945A'))
+View(dnaRnaCombinedOutputData %>% filter(HmfId=='HMF002774A'))
+
+View(svaRnaFusions %>% filter(SampleId=='CPCT02010440T'))
+
+
+dnaRnaCombinedDataNewPrio = dnaRnaCombinedData
+dnaRnaCombinedDataOldPrio = dnaRnaCombinedData
+dnaRnaCombinedDataOldPrioPMC = dnaRnaCombinedData
+dnaRnaCombinedDataPreHomOffset = dnaRnaCombinedData
+
+View(dnaRnaCombinedData %>% filter(MatchType=='DNA Only') %>% group_by(KnownCategory,
+                                                                       ExonsSkipped=(ExonsSkippedUp.x>0|ExonsSkippedDown.x>0)) %>% 
+       count %>% spread(KnownCategory,n))
+
+View(dnaRnaCombinedDataNewPrio %>% filter(!is.na(Reportable)&KnownCategory!='Both promiscuous') %>% 
+       group_by(MatchType,KnownCategory,ExonsSkipped=(ExonsSkippedUp.x>0|ExonsSkippedDown.x>0)) %>% 
+       count %>% spread(KnownCategory,n))
+
+View(dnaRnaCombinedDataOldPrio %>% filter(!is.na(Reportable)&KnownCategory!='Both promiscuous') %>% 
+       group_by(MatchType,KnownCategory,ExonsSkipped=(ExonsSkippedUp.x>0|ExonsSkippedDown.x>0)) %>% 
+       count %>% spread(knit_with_parametersparameters(file = samplesWithNew)ownCategory,n))
+
+View(dnaRnaCombinedDataOldPrioPMC %>% filter(!is.na(Reportable)&KnownCategory!='Both promiscuous') %>% 
+       group_by(MatchType,KnownCategory,ExonsSkipped=(ExonsSkippedUp.x>0|ExonsSkippedDown.x>0)) %>% 
+       count %>% spread(KnownCategory,n))
+
+
+View(dnaRnaCombinedData %>% filter(MatchType=='RNA Only'&KnownType=='Known'))
+View(dnaRnaCombinedDataNewPrio %>% filter(MatchType=='RNA Only'&KnownType=='Known'))
+View(dnaRnaCombinedDataNewPrio %>% filter(GeneNameUp=='NAB2'&GeneNameDown=='STAT6'))
+
+View(paperDnaRna %>% filter(GeneNameUp=='NAB2'&GeneNameDown=='STAT6')) # MatchType=='RNA Only'&
+colnames(paperDnaRna)
+
+paperDnaRna = read.csv('~/data/sv/rna/rna_tmp/supptable3_LINX_dna_rna_fusion_comparison.csv')
+paperDnaRna = paperDnaRna%>% mutate(HmdIdGenePair=paste(HmfId,GeneNameUp,GeneNameDown,sep='_'))
+
+View(paperDnaRna %>% group_by(KnownCategory,MatchType) %>% count %>% spread(MatchType,n))
+View(dnaRnaCombinedData %>% group_by(KnownType,MatchCategory) %>% count %>% spread(KnownType,n))
+
+dnaRnaCombinedDataNewPrio = merge(dnaRnaCombinedDataNewPrio,sampleIdMapping,by='SampleId',all.x=T)
+dnaRnaCombinedDataNewPrio = dnaRnaCombinedDataNewPrio %>% mutate(HmdIdGenePair=paste(HmfId,GeneNameUp,GeneNameDown,sep='_'))
+
+View(dnaRnaCombinedDataNewPrio %>% filter(!(HmdIdGenePair %in% paperDnaRna$HmdIdGenePair)) %>%
+       group_by(KnownType,MatchCategory,ExonsSkipped=(ExonsSkippedUp.x>0|ExonsSkippedDown.x>0)) %>% count %>% spread(ExonsSkipped,n))
+
+View(dnaRnaCombinedDataNewPrio %>% filter(!(HmdIdGenePair %in% paperDnaRna$HmdIdGenePair)) %>%
+       group_by(SampleId,HmfId) %>% count)
+
+View(dnaRnaCombinedDataNewPrio %>% filter(!(HmdIdGenePair %in% paperDnaRna$HmdIdGenePair)&SampleId=='CPCT02010386T') %>%
+       group_by(GeneNameUp,GeneNameDown) %>% count)
+
+View(paperDnaRna %>% filter(!(HmdIdGenePair %in% dnaRnaCombinedDataNewPrio$HmdIdGenePair)) %>%
+       group_by(KnownCategory,MatchType,ExonsSkipped=((!is.na(ExonsSkippedUp)&ExonsSkippedUp>0)|(!is.na(ExonsSkippedDown)&ExonsSkippedDown>0))) %>% count %>% spread(ExonsSkipped,n))
+
+View(paperDnaRna %>% filter(is.na(ExonsSkippedUp)|is.na(ExonsSkippedDown)))
+
+View(paperDnaRna %>% filter(!(HmdIdGenePair %in% dnaRnaCombinedDataNewPrio$HmdIdGenePair)) %>%
+       group_by(HmfId) %>% count)
+
+View(rnaMatchData %>% filter(SampleId=='CPCT02010386T') %>% group_by(GeneNameUp,GeneNameDown) %>% count)
+
+View(dnaRnaCombinedData %>% filter(MatchType=='RNA Only'&KnownType=='Known'&GeneNameUp=='NAB2') %>%
+       select(SampleId,GeneNameUp,GeneNameDown,PosUp.x,PosUp.y,RnaPosUp,OrientUp.x,OrientUp.y,StrandUp.x,TransViableUp,TransValidLocUp,
+              SvIdUp.x,SvIdDown.x,SvIdUp.y,SvIdDown.y,TranscriptUp,RnaTransIdUp,SpliceType,everything()))
+
+View(dnaRnaCombinedData %>% filter(MatchType=='RNA Only'&KnownType=='Known'&GeneNameUp=='NAB2') %>%
+       select(SampleId,GeneNameUp,GeneNameDown,PosUp.x,RnaPosUp,OrientUp.x,StrandUp.x,TransValidLocUp,
+              SvIdUp.x,SvIdDown.x,SpliceType,everything()))
+
+tmpNew = read.csv('~/logs/LNX_FUSIONS.csv')
+# tmpNew = tmpNew %>% filter()
+View(tmpNew)
+
+tmpOld = read.csv('~/logs/LNX_FUSIONS.csv')
+View(tmpOld)
+
+nrow(tmpOld %>% filter(PhaseMatched=='true'))
+nrow(tmpNew %>% filter(PhaseMatched=='true'))
+
+View(dnaRnaCombinedData %>% filter(is.na(ExonsSkippedUp.x)))
+       
+View(dnaRnaCombinedDataNewPrio %>% filter(!is.na(Reportable)&KnownCategory!='Both promiscuous') %>% 
+       group_by(RegionTypeUp.x,RegionTypeDown.x) %>% count)
+       
+
+# Match type debug
+View(rnaCombinedData %>% filter(HasDnaData&HasRnaData&!DnaRnaMatch))
+
+View(rnaCombinedData %>% filter(HasDnaData&HasRnaData&!DnaRnaMatch) %>% group_by(DnaMatchType,SvMatchType,SvMatchUp,SvMatchDown) %>% count)
+
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% 
+       group_by(KnownCategory,MatchType,MatchCategory,OldMatchType,OldMatchCategory) %>% count %>% spread(KnownCategory,n))
+
+
+View(dnaRnaCombinedData %>% filter(OldMatchCategory=='DNA & RNA'&MatchCategory=='RNA Only'&KnownType.x=='Known'))
+
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% group_by(KnownCategory,MatchType) %>% count %>% spread(KnownCategory,n))
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% group_by(KnownCategory,MatchType,DnaMatchType,SvMatchType) %>% count %>% spread(KnownCategory,n))
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% group_by(KnownCategory,MatchType,HasDnaData,DnaMatchType,SvMatchType) %>% count %>% spread(KnownCategory,n))
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% group_by(KnownCategory,MatchType,DnaMatchType,SvMatchType) %>% count %>% spread(KnownCategory,n))
+View(dnaRnaCombinedData %>% filter(!SameGeneFusion) %>% group_by(KnownCategory,MatchType,MatchCategory,HasDnaData,DnaMatchType,SvMatchType) %>% count %>% spread(KnownCategory,n))
+
+colnames(svaRnaFusions)
+View(svaRnaFusions %>% group_by(PhaseMatched,ValidChain) %>% count)
+
+View(dnaRnaCombinedData %>% filter(DnaMatchType=='INVALID_Terminated',SvMatchType=='BothSVs'))
+View(dnaRnaCombinedData %>% filter(is.na(MatchType)))
+
+
+
+
+
+
+# -restricted_fusion_genes
+# EGFR;FGD2;BRPF3
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% group_by(KnownType) %>% count)
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% select(ExactBaseUp,ExactBaseDown))
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&CodingTypeUp=='5P_UTR'&CodingTypeDown=='5P_UTR'))
+
+
+View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&PhaseMatched=='true'&CodingTypeUp=='Coding'&CodingTypeDown=='Coding') %>% 
+       filter(!((ExactBaseUp==0&ExactBaseDown==1)|(ExactBaseUp==1&ExactBaseDown==2)|(ExactBaseUp==2&ExactBaseDown==0))) %>%
+       select(ExactBaseUp,ExactBaseDown,everything()))
+
+
+
+
+
+rm(newFusions)
+rm(prevFusions)
 
 
 #######
@@ -84,42 +368,6 @@ View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(GeneNameUp.y,
 View(fusionComparison %>% filter(is.na(Reportable.x)) %>% group_by(KnownType.y) %>% count())
 
 
-## Fusion comparison after disruption for known fusions change
-prevFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv.prev')
-prevFusions = prevFusions %>% filter(Reportable=='true')
-nrow(prevFusions)
-
-newFusionsAll = read.csv('~/data/sv/fusions/LNX_FUSIONS.csv')
-newFusions = newFusionsAll %>% filter(Reportable=='true')
-nrow(newFusions)
-
-
-View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% group_by(KnownType) %>% count)
-View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>% select(ExactBaseUp,ExactBaseDown))
-
-View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&CodingTypeUp=='5P_UTR'&CodingTypeDown=='5P_UTR'))
-
-
-View(fusions %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic'&PhaseMatched=='true'&CodingTypeUp=='Coding'&CodingTypeDown=='Coding') %>% 
-       filter(!((ExactBaseUp==0&ExactBaseDown==1)|(ExactBaseUp==1&ExactBaseDown==2)|(ExactBaseUp==2&ExactBaseDown==0))) %>%
-       select(ExactBaseUp,ExactBaseDown,everything()))
-
-
-
-
-prevFusions = prevFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
-newFusions = newFusions %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
-
-flcFusions = unfilteredFusions %>% filter(Reportable=='true') %>% mutate(SampleGenePair=paste(SampleId,GeneNameUp,GeneNameDown,sep='_'))
-
-View(newFusions %>% filter(!(SampleGenePair %in% prevFusions$SampleGenePair)) %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>%
-       select(SampleId,KnownType,GeneNameUp,GeneNameDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,everything()))
-
-View(prevFusions %>% filter(!(SampleGenePair %in% newFusions$SampleGenePair)) %>% filter(RegionTypeUp=='Exonic'&RegionTypeDown=='Exonic') %>%
-       select(SampleId,KnownType,GeneNameUp,GeneNameDown,RegionTypeUp,RegionTypeDown,CodingTypeUp,CodingTypeDown,TypeUp,SvIdUp,TypeDown,SvIdDown,ProteinsKept,ProteinsLost,everything()))
-
-rm(newFusions)
-rm(prevFusions)
 
 
 

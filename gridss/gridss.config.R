@@ -38,3 +38,4 @@ gridss.min_rescue_portion = 0.25
 
 # consistency
 gridss.min_event_size = 32
+

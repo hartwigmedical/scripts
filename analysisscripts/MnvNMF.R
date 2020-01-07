@@ -76,6 +76,8 @@ write.csv(mnvData, "~/logs/r_output/mnv_prod_all.csv", row.names=F, quote=F)
 mnvData = read.csv("~/logs/r_output/mnv_prod_all.csv")
 mnvData = within(mnvData, rm(X))
 
+mnvData = read.csv('~/logs/r_output/mnv_prod_all_20180418.csv')
+
 # limit to samples in the high-confidence set
 mnvData = mnvData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
 nrow(mnvData)
@@ -145,15 +147,11 @@ setMutationAdjusted<-function(ref, alt)
 
 print(setMutationAdjusted("AT", "GA", 2))
 
-mnvData$MutationAdj2 = apply(mnvData[,c('Ref','Alt')], 1, function(x) setMutationAdjusted(x[1],x[2]))
-
-mnvData = within(mnvData, rm(MutationAdj2))
-# mnvData$MutationAdjTest = ifelse(mnvData$Length==2,mnvData$MutationAdj, ifelse(mnvData$Length==3,"3Bases","4+Bases"))
+mnvData$MutationAdj = apply(mnvData[,c('Ref','Alt')], 1, function(x) setMutationAdjusted(x[1],x[2]))
 
 print(n_distinct((mnvData %>% filter(Length==2))$Mutation))
-print(n_distinct(mnvData$MutationAdj2))
 print(n_distinct(mnvData$MutationAdj))
-View(mnvData %>% group_by(MutationAdj2) %>% count())
+View(mnvData %>% group_by(MutationAdj) %>% count())
 
 View(mnvData %>% group_by(Length) %>% count())
 View(mnvData %>% group_by(Mutation) %>% count())
@@ -201,6 +199,9 @@ write.csv(indelData, "~/logs/r_output/indel_prod_all.csv", row.names=F, quote=F)
 indelData = read.csv("~/logs/r_output/indel_prod_all.csv")
 indelData = within(indelData, rm(X))
 
+indelData = read.csv('~/logs/indels_sample.csv')
+View(indelData)
+
 indelData = indelData %>% filter(SampleId %in% highestPurityCohortSummary$sampleId)
 nrow(indelData)
 
@@ -210,8 +211,6 @@ View(head(indelData,10))
 # if an alt has different insert or del strings, split these and take the first (arbitrarily)
 indelData$HasSplit = grepl(",",indelData$Alt)
 nrow(indelData %>% filter(HasSplit))
-indelData$AltAdjusted = indelData$Alt
-indelData = within(indelData, rm(AltAdjusted))
 
 View(head(indelData,1000))
 

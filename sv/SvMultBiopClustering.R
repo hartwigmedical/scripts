@@ -14,40 +14,216 @@ dbSvs = mbcSvs %>% filter(SampleId %in% doubleBiopsy$sampleId)
 nrow(dbSvs)
 
 View(doubleBiopsy %>% group_by(patientId) %>% count()) #  %>% group_by(n) %>% count()
-write.csv(doubleBiopsy %>% select(patientId,sampleId), '~/data/sv/multiple_biopsy_samples.csv', row.names = F, quote = F)
-doubleBiopsy = read.csv('~/data/sv/multiple_biopsy_samples.csv')
+write.csv(doubleBiopsy %>% select(PatientId,SampleId), '~/data/sv/multi_biop/mb_samples.csv', row.names = F, quote = F)
+write.csv(doubleBiopsy %>% select(SampleId), '~/data/sv/multi_biop/mb_sample_ids.csv', row.names = F, quote = F)
+doubleBiopsy = read.csv('~/data/sv/mb_samples.csv')
+View(doubleBiopsy)
 
-svData = read.csv('~/logs/SVA_SVS.csv')
-mbSvDataActuals = svData %>% filter(SampleId %in% doubleBiopsy$sampleId)
-write.csv(mbSvDataActuals, '~/data/sv/SVA_SVS_MB.csv', row.names = F, quote = F)
+svData = read.csv('~/data/sv/drivers/LNX_SVS.csv')
+mbSvDataActuals = svData %>% filter(SampleId %in% doubleBiopsy$SampleId)
+write.csv(mbSvDataActuals, '~/data/sv/multi_biop/LNX_SVS_MB.csv', row.names = F, quote = F)
 nrow(mbSvDataActuals)
 rm(svData)
-nrow(mbSvData)
-View(mbSvData)
-View(mbSvData %>% group_by(SampleId) %>% count())
 
 # write out a subset of SV data for the MB samples for use in generating the MB data
-write.csv(mbSvDataActuals %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,
+write.csv(mbSvDataActuals %>% mutate(Ploidy=(PloidyMin+PloidyMax)*0.5) %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,ChrEnd,PosEnd,OrientEnd,
                                      ClusterId,ClusterCount,ClusterReason,ResolvedType,Ploidy,CNStart,CNEnd) %>% arrange(SampleId,ClusterId),
-          '~/data/sv/multiple_biopsy_sv_data.csv', row.names = F, quote = F)
+          '~/data/sv/mb_sv_data.csv', row.names = F, quote = F)
 
 ## ANALYSIS
-mbSvData = read.csv('~/data/sv/SVA_MB_SV_DATA.csv')
-mbMergeDataAll = read.csv('~/data/sv/SVA_MB_MERGE_DATA.csv')
-mbClusterData = read.csv('~/data/sv/SVA_MB_CLUSTER_DATA.csv')
+mbSvData = read.csv('~/data/sv/multi_biop/LNX_MB_SV_DATA.csv')
+mbMergeDataAll = read.csv('~/data/sv/multi_biop/LNX_MB_MERGE_DATA.csv')
+mbClusterData = read.csv('~/data/sv/multi_biop/LNX_MB_CLUSTER_DATA.csv')
+mbSVs = read.csv('~/data/sv/multi_biop/LNX_SVS.csv')
+mbDrivers = read.csv('~/data/sv/multi_biop/LNX_DRIVERS.csv')
+
 View(mbSvData)
 nrow(mbSvData)
 nrow(mbMergeDataAll)
+View(mbMergeDataAll)
 View(mbMergeData)
 View(mbClusterData)
+View(mbMergeDataAll)
 View(mbMergeData %>% group_by(ClusterReason) %>% count())
 View(mbClusterData %>% group_by(OverlapType) %>% count())
 View(mbClusterData %>% group_by(OverlapType,ResolvedType) %>% count() %>% spread(OverlapType,n))
+
+# CLEAN UP
+rm(matchedSVs)
+rm(mbClusterData)
+rm(mbAmpSVs)
+rm(mbSvCombined)
+rm(mbSvData)
+rm(mbSVs)
+rm(mbSvDataActuals)
+
+mbClusterData = mbClusterData %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
+
+View(mbSVs %>% group_by(SampleId) %>% count)
+View(mbClusterData %>% group_by(SampleId) %>% count)
+
+mbSvCombined = merge(mbSVs,mbSvData %>% select(PatientId,SampleId,Id=SvId,MatchType,OtherSvId),by=c('SampleId','Id'),all.x=T)
+
+mbSvCombined = mbSvCombined %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'),
+                                       Ploidy=(PloidyMin+PloidyMax)*0.5)
+
+
+## Differences in positions
+# precision of matches by difference in position
+matchedSVs = mbSvCombined %>% filter(MatchType=='Shared') %>% select(PatientId,SampleId,Id,OtherSvId,Type,PosStart,PosEnd)
+matchedSVs = merge(matchedSVs %>% filter(SampleId %in% dbSampleData$Sample1),
+                   matchedSVs %>% filter(SampleId %in% dbSampleData$Sample2) %>% 
+                     select(PatientId,OtherSampleId=SampleId,OtherSvId=Id,OtherPosStart=PosStart,OtherPosEnd=PosEnd),
+                   by=c('PatientId','OtherSvId'),all.x=T)
+
+matchedSVs = matchedSVs %>% mutate(DiffStart=abs(PosStart-OtherPosStart),DiffEnd=abs(PosEnd-OtherPosEnd),TotalDiff=DiffStart+DiffEnd)
+
+View(matchedSVs)
+View(matchedSVs %>% group_by(Type,TotalDiff) %>% count)
+View(matchedSVs %>% filter(!is.na(TotalDiff)) %>% group_by(TotalDiff) %>% count)
+
+
+
+#####
+## Amplifications
+View(ampDrivers)
+mbAmpDrivers = mbDrivers %>% filter(ClusterId!=-1&DriverType=='AMP')
+mbAmpDrivers = mbAmpDrivers %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
+nrow(mbAmpDrivers) # 680
+
+mbAmpClusters = merge(mbAmpDrivers,
+                      mbClusterData %>% select(SampleClusterId,PrivateCount,SharedCount,MatchingClustersCount,OverlapType,OtherClusterIds),
+                      by='SampleClusterId',all.x=T)
+nrow(mbAmpClusters)
+View(mbAmpClusters)
+View(mbAmpClusters %>% group_by(OverlapType) %>% count)
+View(mbAmpClusters %>% group_by(SampleId) %>% count) # 177 distinct samples
+
+mbAmpClusters = merge(mbAmpClusters,doubleBiopsy,by='SampleId',all.x=T)
+View(mbAmpClusters %>% group_by(PatientId) %>% count) # 97 distinct patients
+
+mbAmpClusters = mbAmpClusters %>% mutate(IsDM=SampleClusterId %in% mbDMs$SampleClusterId)
+View(mbAmpClusters %>% filter(IsDM))
+
+# using clusterIds to gather up all possibly related SVs but then abandon use of clustering due to its uncertainty
+View(mbSvCombined)
+
+mbAmpSVs = mbSvCombined %>% filter(SampleClusterId %in% mbAmpClusters$SampleClusterId)
+nrow(mbAmpSVs) # 15713
+View(mbAmpSVs)
+
+# report on the number of shared vs private SVs per patient/sample and gene
+# questions:
+# - is there subsequent evolution of gene amplifications
+# - how often are they entirely private to a sample
+# - are the higher ploidy SVs more likely to be shared
+# - differences in gene CN between the 2 samples
+# - correlation with whether a DM or not
+
+View(mbAmpSVs %>% group_by(PatientId) %>% summarise(PrivateCount=sum(MatchType=='Private'),
+                                                    SharedCount=sum(MatchType=='Shared')))
+
+# count up all shared and private SVs per patient and gene
+ampPatientGenes = mbAmpClusters %>% group_by(PatientId,SampleId,Gene,GeneMinCN) %>% summarise(ClusterCount=n(),
+                                                                                    PrivateCount=sum(PrivateCount),
+                                                                                    SharedCount=sum(SharedCount),
+                                                                                    DMCount=sum(IsDM)) %>% 
+  group_by(PatientId,Gene) %>% summarise(SampleCount=n(),
+                                         ClusterCount=sum(ClusterCount),
+                                         Sample1=first(SampleId),Sample2=last(SampleId),
+                                         CN1=first(GeneMinCN),CN2=last(GeneMinCN),
+                                         PrivateCount=sum(PrivateCount),
+                                         SharedCount=sum(SharedCount),
+                                         DMCount=sum(pmin(DMCount,1)))
+
+ampPatientGenes = ampPatientGenes %>% mutate(CNDiff=abs(CN1-CN2),CNDiffPerc=CNDiff/pmax(CN1,CN2))
+View(ampPatientGenes)
+write.csv(ampPatientGenes,'~/logs/mb_amp_driver_summary.csv',row.names = F,quote = F)
+
+View(ampPatientGenes %>% filter(SampleCount==2) %>% group_by(DMCount,HasCNDiff=CNDiffPerc>=0.3&CNDiff>=2) %>% count %>% spread(HasCNDiff,n,fill=0))
+
+mbAmpDrivers = mbAmpDrivers %>% mutate(SampleGeneId=paste(SampleId,Gene,sep='_'))
+
+# non-DM where CN stays the same
+nonDMNoDiff = ampPatientGenes %>% filter(SampleCount==2&DMCount==0&(CNDiffPerc<0.3|CNDiff<2))
+View(nonDMNoDiff)
+nonDMNoDiff = nonDMNoDiff %>% mutate(SampleIdGene1=paste(Sample1,Gene,sep='_'),SampleIdGene2=paste(Sample2,Gene,sep='_'))
+nonDMNoDiffClusters = mbAmpDrivers %>% filter(SampleGeneId %in% nonDMNoDiff$SampleIdGene1|SampleGeneId %in% nonDMNoDiff$SampleIdGene2)
+nonDMNoDiffSVs = mbSvCombined %>% filter(SampleClusterId %in% nonDMNoDiffClusters$SampleClusterId)
+nrow(nonDMNoDiffSVs)
+View(nonDMNoDiffSVs %>% group_by(MatchType) %>% count)
+View(nonDMNoDiffSVs %>% filter(MatchType=='Private') %>% group_by(Type,NearestType) %>% count)
+
+View(nonDMNoDiffSVs %>% filter(ClusterCount<=100) %>% group_by(SampleId,ClusterId,ClusterCount) %>% 
+       summarise(Private=round(sum(MatchType=='Private')/first(ClusterCount),2),
+                 Shared=round(sum(MatchType!='Private')/first(ClusterCount),2)))
+
+View(nonDMNoDiffSVs %>% group_by(ClusterCount=2**round(log(ClusterCount,2))) %>% 
+       summarise(Private=sum(MatchType=='Private'),Shared=sum(MatchType=='Shared')))
+
+
+View(nonDMNoDiffSVs %>% filter(MatchType=='Private') %>% arrange(SampleId,ClusterId,ChrStart,PosStart) %>% 
+       select(SampleId,ClusterId,ClusterCount,Type,Ploidy,ChrStart,ChrEnd,PosStart,PosEnd,LnkLenStart,LnkLenEnd,
+              LocTopIdStart,LocTopIdEnd,LocTopTypeStart,LocTopTypeEnd,everything()))
+
+View(nonDMNoDiffSVs %>% filter(MatchType=='Private') %>% group_by(LocTopTypeStart,LocTopTypeEnd) %>% count)
+
+
+       
+
+# non-DM AMPs where CN changes
+nonDMWithDiff = ampPatientGenes %>% filter(SampleCount==2&DMCount==0&CNDiffPerc>=0.3&CNDiff>=2)
+nonDMWithDiff = nonDMWithDiff %>% mutate(SampleIdGene1=paste(Sample1,Gene,sep='_'),SampleIdGene2=paste(Sample2,Gene,sep='_'))
+nonDMWithDiffClusters = mbAmpDrivers %>% filter(SampleGeneId %in% nonDMWithDiff$SampleIdGene1|SampleGeneId %in% nonDMWithDiff$SampleIdGene2)
+nonDMWithDiffClusters = merge(nonDMWithDiffClusters,mbClusterData %>% select(-ClusterCount,-ResolvedType,-SampleClusterId),by=c('SampleId','ClusterId'),all.x=T)
+nonDMWithDiffClusters = merge(nonDMWithDiffClusters,doubleBiopsy,by='SampleId',all.x=T)
+View(nonDMWithDiffClusters)
+
+View(nonDMWithDiffClusters %>% group_by(PatientId,SampleId,Gene,GeneMinCN) %>% summarise(Clusters=n(),
+                                                                               PrivateCount=sum(PrivateCount),
+                                                                               SharedCount=sum(SharedCount)) %>%
+       group_by(PatientId,Gene) %>% summarise(Samples=n(),Clusters=sum(Clusters),
+                                              Sample1=first(SampleId),Sample2=last(SampleId),
+                                              CN1=first(GeneMinCN),CN2=last(GeneMinCN),
+                                              PrivateCount=sum(PrivateCount),SharedCount=sum(SharedCount)))
+
+View(mbSvCombined %>% filter(SampleId=='CPCT02040071TII'&ChrStart==8))
+View(mbSvCombined %>% filter(SampleClusterId=='CPCT02050351T_34'))
+
+View(mbSvCombined %>% filter(PatientId=='CPCT02010776'&ClusterId %in% c(153,215)))
+
+
+
+write.csv(mbAmpDrivers %>% filter(SampleGeneId %in% nonDMWithDiff$SampleIdGene1|SampleGeneId %in% nonDMWithDiff$SampleIdGene2) %>% 
+       group_by(SampleId,ClusterId) %>% count %>% select(-n),'~/logs/amp_diff_cn_clusters.csv',row.names = F,quote = F)
+
+View(mbAmpDrivers %>% filter(SampleGeneId %in% nonDMWithDiff$SampleIdGene1|SampleGeneId %in% nonDMWithDiff$SampleIdGene2) %>%
+       group_by(SampleId,Gene,Chromosome) %>% count)
+
+
+# need to remove the multiple clusters per sample first
+mbPatientGenes = mbAmpClusters %>% group_by(PatientId,SampleId,Gene) %>% summarise(ClusterCount=n()) %>% 
+  group_by(PatientId,Gene) %>% summarise(SampleCount=n())
+
+mbAmpClusters = merge(mbAmpClusters,mbPatientGenes,by=c('PatientId','Gene'),all.x=T)
+
+# patients with AMPs in both samples but no shared SVs
+View(mbAmpClusters %>% filter(SampleCount==2&OverlapType=='Private') %>% group_by(PatientId,SampleId,Gene) %>% summarise(ClusterCount=n()) %>%
+       group_by(PatientId,Gene) %>% summarise(SampleCount=n()))
+
+View(mbAmpClusters %>% filter(SampleCount==2) %>% group_by(OverlapType) %>% count)
+View(mbPatientGenes)
+
+View(mbAmpClusters %>% group_by(OverlapType,GeneCN=2**round(log(GeneMinCN,2))) %>% count %>% spread(GeneCN,n,fill=0))
+View(mbAmpClusters %>% group_by(PatientId,SampleId,Gene) %>% count %>% group_by(PatientId,Gene) %>% count %>% group_by(n,Gene) %>% count %>% spread(n,nn))
+
+
 
 mbSvData = merge(mbSvData,mbClusterData %>% select(SampleId,ClusterId,OverlapType),by=c('SampleId','ClusterId'),all.x=T)
 
 defaultPlotColours = c("#fb8072","#bc80bd","#bebada", "#fdb462","#80b1d3","#8dd3c7","#b3de69","#fccde5","#ffffb3","#d9d9d9",
                        'saddlebrown','slateblue1','indianred3','limegreen')
+
 
 
 # 0. Overall results by Match Type
