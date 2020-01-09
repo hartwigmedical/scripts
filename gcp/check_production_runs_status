@@ -2,7 +2,7 @@
 
 YYMMDD=$(date +'%y%m%d')
 ini="Somatic.ini"
-pip="v5.6"
+pip="v5.7"
 
 echo "## Production Run Status Check (${YYMMDD})"
 echo ""
