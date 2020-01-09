@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+pa_id=$1 && shift
+
+query_lims -json -type samples -filter "hospital_pa_sample_id=${pa_id}"
