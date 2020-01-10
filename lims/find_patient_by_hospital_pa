@@ -2,4 +2,9 @@
 
 pa_id=$1 && shift
 
+if [ -z ${pa_id} ]; then
+    echo "[INFO] No PA ID is known"
+    exit 1;
+fi
+
 query_lims -json -type samples -filter "hospital_pa_sample_id=${pa_id}"
