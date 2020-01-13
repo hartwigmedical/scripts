@@ -24,3 +24,6 @@ do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq
 
 echo "[INFO] Archiving SnpCheck Data"
 do_archive_directory_to_gcp /data/common/snpcheck snpcheck 5
+
+echo "[INFO] Archiving Samplesheets"
+do_archive_directory_to_gcp /data/samplesheets samplesheets 2500
