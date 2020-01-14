@@ -64,8 +64,7 @@ query_sample_variants <- function(dbConnect,sampleId) {
     sample = raw_data$sampleId,
     type = standard_types,
     context = context,
-    ploidy = raw_data$ploidy,
-    clonality = raw_data$clonality)
+  ploidy = raw_data$ploidy)
 
   return(DT)
 }
