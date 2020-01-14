@@ -32,6 +32,7 @@ GetOptions (
 ) or die("Error in command line arguments\n");
 
 my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
+my $MAIL_TSV = '/data/common/dbs/sbp/study2mail.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $OUT_DIR . '/lims.json';
@@ -124,6 +125,7 @@ say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
+my $mail_dict = parseDictFile( $MAIL_TSV, 'study2mail' );
 my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
@@ -153,7 +155,7 @@ checkContactInfo($cont_objs);
 
 $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
-$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
+$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict, $mail_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT, $SUBM_OUT );
@@ -308,6 +310,12 @@ sub parseDictFile{
             die "[EXIT] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
             $store{ $id } = $name if ( $id ne EMPTY and $name ne EMPTY );
         }
+        elsif ( $fileType eq 'study2mail' ){
+            my ( $study, $name, $mail ) = split /\t/;
+            die "[EXIT] study name occurs multiple times ($study) in file ($file)\n" if exists $store{ $study };
+            $store{ $study }{ 'name' } = $name;
+            $store{ $study }{ 'mail' } = $mail;
+        }
         elsif ( $fileType eq 'submission2entity' ){
             my ( $submission, $entity ) = split /\t/;
             die "[EXIT] submission occurs multiple times ($submission) in file ($file)\n" if exists $store{ $submission };
@@ -391,11 +399,15 @@ sub checkContactInfo{
 
 sub processAccessSamples{
     
-    my ($lims, $objects, $submissions, $centers_dict) = @_;
+    my ($lims, $objects, $submissions, $centers_dict, $mail_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
     my %dna_blood_samples_by_name = ();
     my %tissue_samples_by_coupe = ();
+
+    ## Collect requester name/email for WIDE study
+    my $WIDE_name = $mail_dict->{ 'WIDE' }{ 'name' };
+    my $WIDE_mail = $mail_dict->{ 'WIDE' }{ 'mail' };
     
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
     say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
@@ -523,12 +535,21 @@ sub processAccessSamples{
                 $object->{ 'requester_name' } = $submissions->{$submission_id}{'report_contact_name'};
                 $object->{ 'requester_email' } = $submissions->{$submission_id}{'report_contact_email'};
             }
-            ## CPCT/DRUP/WIDE are handled study/center wide
+            ## CPCT/DRUP are handled study/center wide
             elsif ( exists $centers_dict->{ $center } ){
                 my $centername = $centers_dict->{ $center };
                 $object->{ 'submission' } = 'HMFreg' . $study;
                 $object->{ 'entity' } = join( "_", $study, $centername );
                 $object->{ 'project_name' } = $object->{ 'submission' };
+                ## TODO: Dummy fields needed for hmf-common code (cannot be null)
+                ## TODO: Remove once hmf-common code supports name/email from submission
+                $object->{ 'requester_name' } = "";
+                $object->{ 'requester_email' } = "";
+                ## WIDE is an exception with static requester
+                if ( $study eq 'WIDE'){
+                    $object->{ 'requester_name' } = $WIDE_name;
+                    $object->{ 'requester_email' } = $WIDE_mail;
+                }
             }
             else {
                 warn "[WARN] SKIPPING sample because of unkown center id \"$center\" (id:$id name:$name)\n" and next;

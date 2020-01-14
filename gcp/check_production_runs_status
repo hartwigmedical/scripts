@@ -2,7 +2,7 @@
 
 YYMMDD=$(date +'%y%m%d')
 ini="Somatic.ini"
-pip="v5.6"
+pip="v5.7"
 
 echo "## Production Run Status Check (${YYMMDD})"
 echo ""
@@ -86,6 +86,7 @@ query_sbp_api \
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l);
             exists_in_qcfail_run_dirs=$(find ${find_dirs_fail} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l)
+
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
                 echo "${download_script_fail} ${set_name_for_failed_tumor_sample}"
             elif [ ${exists_in_success_run_dirs} == 0 ]; then
