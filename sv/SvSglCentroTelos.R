@@ -792,20 +792,6 @@ View(sglCentroSvData %>% group_by(CentroChr,OrientEnd) %>% count)
 View(sglCentroData %>% group_by(CentroChr) %>% count)
 View(sglCentroData %>% group_by(CentroChr,HighConf) %>% count %>% spread(HighConf,n))
 
-View(filteredBlatResults %>% group_by(TName) %>% count)
-View(filteredBlatResults %>% group_by(TName,ScoreBucket=round(Score,-2)) %>% count %>% spread(ScoreBucket,n,fill=0))
-
-
-
-print(ggplot(filteredBlatResults %>% group_by(TName,ScoreBucket=round(Score,-2)) %>% count, 
-               aes(x=TName,y=ScoreBucket)) 
-        + geom_tile(aes(fill = n),colour="white",stat = "identity",position="identity") 
-        # + geom_text(aes(label=ifelse(Percent==0,'',round(Percent*100, 0))))
-        + scale_fill_gradient(low="white",high="steelblue"))
-
-
-
-
 
 # DEBUG and working
 

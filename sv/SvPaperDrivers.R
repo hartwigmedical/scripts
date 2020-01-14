@@ -367,11 +367,12 @@ driverDELReport(delResolvedTypes,'driver_del')
 
 
 ## AMPLIFICATIONS
+View(ampDrivers)
 
 ampDrivers = drivers %>% filter(DriverCategory=='AMP') %>%
   mutate(AmpType=ifelse(DriverCategory!='AMP','NONE',
                  ifelse(EventType=='GAIN_ARM','GAIN_ARM',ifelse(EventType=='GAIN_CHR','GAIN_CHR',
-                 ifelse(Annotations=='BFB','BFB',ifelse(Annotations=='DM','DM',ifelse(ResolvedType=='COMPLEX','COMPLEX',
+                 ifelse(grepl('BFB',Annotations),'BFB',ifelse(grepl('DM',Annotations),'DM',ifelse(ResolvedType=='COMPLEX','COMPLEX',
                  ifelse(ResolvedType=='DUP','DUP','COMPLEX'))))))),
          CnGainBucket=ifelse(GeneMinCN>128,128,2**round(log(GeneMinCN/SamplePloidy,2))),
          GeneLoc=paste(Gene,':',Chromosome,Arm,sep=''))

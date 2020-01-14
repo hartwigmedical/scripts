@@ -12,6 +12,15 @@ View(svData %>% filter(Type=='INF'|Type=='SGL'))
 View(fusions %>% filter(GeneNameDown=='TERT'))
 
 
+# BND coming into TERT promotor region for CNS
+
+tertBnds = svData %>% filter(Type=='BND'&ChrStart==5&ChrEnd==10&PosStart>1e6&PosStart<1.25e6)
+View(tertBnds)
+
+# TERT: chr5 strand-1, pos: 1,253,262 to 1,295,184
+
+
+
 oncoGenes = read.csv('~/data/oncogenes.csv')
 sampleCancerTypes = read.csv('~/data/sample_cancer_types.csv')
 oncogeneBreakends = read.csv('~/data/sv/oncogene_breakends.csv')

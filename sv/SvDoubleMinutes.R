@@ -125,9 +125,9 @@ View(doubleMinutes %>% group_by(CancerType,Chromosomes,HasDriver) %>% count %>% 
 
 # Link to oncogene drivers
 drivers = read.csv('~/data/sv/drivers/LNX_DRIVERS.csv')
-View(drivers)
+#View(drivers)
 ampDrivers = drivers %>% filter(Category=='ONCO')
-View(ampDrivers)
+#View(ampDrivers)
 
 doubleMinutes = within(doubleMinutes,rm(HasDriver))
 doubleMinutes = within(doubleMinutes,rm(DriverAMPs))
@@ -589,41 +589,6 @@ colnames(newDoubleMinutes)
 
 
 
-prevDoubleMinutes = prevDoubleMinutes %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
-newDoubleMinutes = newDoubleMinutes %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
-
-tmpDMs = read.csv('~/logs/LNX_DOUBLE_MINUTES.csv')
-View(tmpDMs)
-
-View(dmSvs %>% filter(SampleId=='CPCT02070264T'&ChrStart=='X'&ArmStart=='P'))
-
-View(prevDoubleMinutes %>% filter(!(SampleClusterId %in% newDoubleMinutes$SampleClusterId)))
-View(newDoubleMinutes %>% filter(!(SampleClusterId %in% prevDoubleMinutes$SampleClusterId)))
-
-write.csv(prevDoubleMinutes,'~/logs/LNX_DOUBLE_MINUTES_PREV.csv',row.names = F, quote = F)
-write.csv(prevDoubleMinutes,'~/logs/LNX_DOUBLE_MINUTES_NEW.csv',row.names = F, quote = F)
-
-write.csv(prevDoubleMinutes %>% filter(!(SampleClusterId %in% newDoubleMinutes$SampleClusterId)), 
-          '~/logs/dm_clusters_dropped.csv',row.names = F,quote = F)
-
-
-egfrSamples = doubleMinutes %>% filter(grepl('EGFR',AmpGenes)&CancerType=='CNS')
-nrow(egfrSamples)
-ampDrivers = merge(ampDrivers,sampleCancerTypes,by='SampleId',all.x=T)
-
-egfrSampleDrivers = ampDrivers %>% filter(Gene=='EGFR'&CancerType=='CNS')
-nrow(egfrSampleDrivers)
-
-View(drivers %>% filter(Gene=='EGFR'))
-
-View(dmSvs %>% filter(SampleId=='CPCT02030483T'&ClusterId==73) %>% 
-       select(SampleId,Id,ClusterId,Ploidy,DMSV,CNStart,CNEnd,LnkLenStart,LnkLenEnd,ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,everything()))
-
-View(dmSvs %>% filter(SampleId=='CPCT02070380T'&ClusterId==81) %>% 
-       select(SampleId,Id,ClusterId,Ploidy,DMSV,CNStart,CNEnd,LnkLenStart,LnkLenEnd,ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,everything()))
-
-View(dmSvs %>% filter(SampleId=='CPCT02010527T'&ClusterId==246) %>% 
-       select(SampleId,Id,ClusterId,Ploidy,DMSV,CNStart,CNEnd,LnkLenStart,LnkLenEnd,ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,everything()))
 
 
 View(doubleMinutes %>% group_by(DMSvs=pmin(DMSvCount,10)) %>% count)
