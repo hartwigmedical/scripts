@@ -57,11 +57,9 @@ query_sample_variants <- function(dbConnect,sampleId) {
   raw_data = dbGetQuery(dbConnect, query)
   raw_types = raw_data$snv
   standard_types = standard_mutation(raw_types)
-    print(standard_types)
   raw_context = raw_data$context
-    print(raw_context)
   context = standard_context(raw_types, standard_types, raw_context)
-    print(context)
+    print(colnames(raw_data))
   DT = data.table(
     sample = raw_data$sampleId,
     type = standard_types,
