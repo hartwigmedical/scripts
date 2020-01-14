@@ -19,7 +19,6 @@ fi
 seqRuns=( "$@" )
 seqDirs=()
 
-
 function printHeader() {
     local fieldTitle=$1 && shift
     echo -e "\n## ----------\n## ${fieldTitle}:\n## ----------"
@@ -27,7 +26,10 @@ function printHeader() {
 
 ## make sure all are absolute paths
 for seqRun in "${seqRuns[@]}"; do
-    
+
+    ## remove trailing slash if present
+    seqRun=$(echo ${seqRun%/})
+
     if [[ $seqRun =~ ^\/ ]]; then
         seqDirs+=(${seqRun})
     else
@@ -103,7 +105,7 @@ done
 ## add flowcell rsync cmd
 if [[ ${CURR_HOST} != "datastore" ]]; then
     printHeader "Get Rsync code for partial sync to datastore"
-    rsync_cmd="rsync_seqruns_to_datastore $@"
+    rsync_cmd="rsync_seqruns_to_datastore ${seqDirs[@]}"
     echo ${rsync_cmd}
 fi
 
