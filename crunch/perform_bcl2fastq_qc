@@ -5,7 +5,7 @@ SELF_SCRIPT=$(basename $0)
 PARSE_SCRIPT="check_bcl2fastq_conversion"
 ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
-REPORT_ROOT="Data/Intensities/BaseCalls/Reports/html"
+REPORT_ROOT="Data/Intensities/BaseCalls"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
@@ -42,7 +42,7 @@ for seqDir in "${seqDirs[@]}"; do
     
     ssheet_path="${seqDir}/${SSHEET_FILE}"
     errlog_path="${seqDir}/${ERRLOG_FILE}"
-    report_path="${seqDir}/${REPORT_ROOT}"
+    report_path="${seqDir}/${REPORT_ROOT}/{Reports,Stats}"
     seqdir_name="$( basename $seqDir | tr -d '\r' )"
     hmfrun_name="$( cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r' )"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
@@ -57,7 +57,7 @@ for seqDir in "${seqDirs[@]}"; do
     fi
     
     ## store further cmds so we can print all together at the end
-    rsync_cmd="rsync -ah ${report_path}/ nas:/volume1/web/qc/conversion/${nasrun_name}"
+    rsync_cmd="rsync -ah ${report_path} nas:/volume1/web/qc/conversion/${nasrun_name}/"
     cmdsToExecute+=("${rsync_cmd}")
 done
 
