@@ -342,8 +342,9 @@ sub addContactInfoToSubmissions{
             ## skip records from the time when contact info was entered in shipments tab
             next;
         }
-        elsif( exists $submission->{ 'group_id' } ){
+        elsif( defined $submission->{ 'group_id' } ){
             my $group_id = $submission->{ 'group_id' };
+            next if $group_id eq 'na';
             if ( exists $contact_groups->{ $group_id } ){
                 my $group = $contact_groups->{ $group_id };
                 foreach my $field ( @fields ){
@@ -356,7 +357,7 @@ sub addContactInfoToSubmissions{
             }
         }
         else{
-            warn "[WARN] No Group ID in place for submission $submission_id (check Shipments tab of FOR-001)\n";
+            warn "[WARN] No Group ID field in place for submission $submission_id\n";
             next;
         }
     }
