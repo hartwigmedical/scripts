@@ -45,7 +45,7 @@ standard_context <- function(raw_type, standard_type, context) {
 # warning: this takes ages!
 query_sample_variants <- function(dbConnect,sampleId) {
   query = paste(
-  "SELECT s.sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, ploidy,clonality ",
+  "SELECT s.sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * copyNumber as ploidy,clonality ",
     " FROM somaticVariant s inner join purity p on p.sampleId = s.sampleId ",
     " WHERE filter = 'PASS' and length(alt) = length(ref) and length(alt) = 1 and trinucleotideContext not like '%N%' ",
     #" and qcStatus = 'PASS' and status <> 'NO_TUMOR' and p.sampleId ='",
