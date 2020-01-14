@@ -55,7 +55,9 @@ query_sample_variants <- function(dbConnect,sampleId) {
     sep = "")
   print(query)
   raw_data = dbGetQuery(dbConnect, query)
+    print(raw_data)
   raw_types = raw_data$snv
+    print(raw_types)
   standard_types = standard_mutation(raw_types)
   raw_context = raw_data$context
   context = standard_context(raw_types, standard_types, raw_context)
