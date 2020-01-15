@@ -561,15 +561,19 @@ sub processAccessSamples{
         }
  
         ## Final sanity checks before storing
+        my $all_fields_ok = 1;
         my @fields_to_check = qw( submission analysis_type );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
-                warn "[WARN] Sample will be stored but field $field is not present (id:$id name:$name)\n";
+                warn "[WARN] SKIPPING sample because field $field is not present (id:$id name:$name)\n";
+                $all_fields_ok = 0;
             }
             elsif ( $object->{ $field } eq NACHAR or $object->{ $field } eq "" ){
-                warn "[WARN] Sample will be stored but field $field is not defined (id:$id name:$name)\n";
+                warn "[WARN] SKIPPING sample because $field is not defined (id:$id name:$name)\n";
+                $all_fields_ok = 0;
             }
         }
+        next if not $all_fields_ok;
         
         ## Store sample unless key not OK
         my $reason_not_to_store = checkKeyToStore( \%store, $id );
