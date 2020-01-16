@@ -105,6 +105,10 @@ locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
 }
 
+locate_pilot_protect() {
+    echo ${base_path}/tools/protect_pilot/protect.jar
+}
+
 ################################### PGX ####################################
 
 locate_pilot_pgx_calls() {
