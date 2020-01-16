@@ -5,6 +5,8 @@ source locate_files
 sample=$1 && shift
 run_dir=$1 && shift
 
+protect_jar=$(locate_pilot_protect)
+
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 
@@ -13,8 +15,7 @@ linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 
-protect_jar=$(locate_pilot_protect)
-mkdir protect
+mkdir ${run_dir}/protect
 output_database_tsv=${run_dir}/protect/actionability_database.tsv
 
 java -jar ${protect_jar} \
