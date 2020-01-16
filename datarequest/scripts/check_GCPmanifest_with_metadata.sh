@@ -30,9 +30,9 @@ wc -l temp_GCP_check/patientId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv) | wc -l
-echo 'extra samples patientId_metadata.tsv:'
+echo 'extra patients patientId_metadata.tsv:'
 comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
-echo 'extra samples patientId_DNA_GCP.tsv:'
+echo 'extra patients patientId_DNA_GCP.tsv:'
 comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
 
 #######
@@ -80,10 +80,10 @@ wc -l temp_GCP_check/patientId_RNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-echo 'extra samples patientId_metadata.tsv:'
+echo 'extra patients patientId_metadata.tsv:'
 #comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
 comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-echo 'extra samples patientId_DNA_GCP.tsv:'
+echo 'extra patients patientId_DNA_GCP.tsv:'
 comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
 
 
