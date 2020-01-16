@@ -2,10 +2,11 @@
 
 source locate_files
 
-sample=$1 && shift
 run_dir=$1 && shift
 
 protect_jar=$(locate_pilot_protect)
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
@@ -19,7 +20,7 @@ mkdir ${run_dir}/protect_pilot
 output_database_tsv=${run_dir}/protect_pilot/actionability_database.tsv
 
 java -jar ${protect_jar} \
-    -tumor_sample_id ${sample} \
+    -tumor_sample_id ${tumor_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -tumor_location_csv ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
