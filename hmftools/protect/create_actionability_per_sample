@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+sample=$1 && shift
+run_dir=$1 && shift
+
+knowledgebase_dir=/data/common/dbs/knowledgebases/output
+tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+
+protect_jar=$(locate_pilot_protect)
+mkdir protect
+output_database_tsv=${run_dir}/protect/actionability_database.tsv
+
+java -jar ${protect_jar} \
+    -tumor_sample_id ${sample} \
+    -knowledgebase_dir ${knowledgebase_dir} \
+    -tumor_location_csv ${tumor_location_csv} \
+    -somatic_variant_vcf ${somatic_variant_vcf} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -output_database_tsv ${output_database_tsv}
+    "$@"
