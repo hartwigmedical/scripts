@@ -17,8 +17,14 @@ linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 
-mkdir ${run_dir}/protect_pilot
-output_database_tsv=${run_dir}/protect_pilot/actionability_database.tsv
+pilot_output_dir=${run_dir}/protect_pilot
+if [ -d ${pilot_output_dir} ]; then
+    rm -r ${pilot_output_dir}
+    echo "[INFO] protect pilot dir exist. protect dir is just removed and will be replaced"
+fi
+
+mkdir ${pilot_output_dir}
+output_database_tsv=${pilot_output_dir}/actionability_database.tsv
 
 java -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
