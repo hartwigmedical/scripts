@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+
+prefix=$(dirname $(readlink $0 || echo $0))
+run_dir=$1 && shift
+set=$(basename ${run_dir})
+
+hotspot_bed=/data/common/dbs/sage/ActionableCodingPanel.hg19.bed
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+
+
+bam_dir=/data/experiments/191119_sage_panel_slices/${sample}/
+out_dir=/data/experiments/200116_sage_pon/
+
+sample_bam=/data/experiments/191119_sage_panel_slices/bams/${sample}.panel.bam
+normal_bam=/data/experiments/191119_sage_panel_slices/bams/${normal}.panel.bam
+
+final_vcf=${out_dir}/${sample}.pon.vcf
+
+if [ ! -f ${normal_bam} ]; then
+    echo "[ERROR] BAM download failed"
+    exit 1
+fi
+
+if [ ! -f ${sample_bam} ]; then
+    echo "[ERROR] BAM download failed"
+    exit 1
+fi
+
+if [ -f ${final_vcf} ]; then
+    echo "[ERROR] Output already created"
+    exit 1
+fi
+
+mkdir -p ${out_dir}
+
+echo "Running SAGE"
+java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
+    -threads 1 -panel_only \
+    -tumor ${sample} -tumor_bam ${sample_bam} \
+    -reference ${normal} -reference_bam ${normal_bam}  \
+    -panel /data/common/dbs/sage/ActionableCodingPanel.hg19.bed.gz  -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
+    -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
+    -germline -hard_filter -hard_min_tumor_qual 0 \
+    -out ${final_vcf}
