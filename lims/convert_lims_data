@@ -532,7 +532,10 @@ sub processAccessSamples{
                 my $submission_id = $object->{ 'submission' };
                 $object->{ 'entity' } = $submission_id;
                 $object->{ 'project_name' } = $submission_id;
-                ## TODO: remove or rename once patient-reporter supports name/email from submission
+                ## TODO: remove or rename once patient-reporter supports name/email from submission object
+                if ( $submission_id eq "" ){
+                    warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n" and next;
+                }
                 $object->{ 'requester_name' } = $submissions->{$submission_id}{'report_contact_name'};
                 $object->{ 'requester_email' } = $submissions->{$submission_id}{'report_contact_email'};
             }
