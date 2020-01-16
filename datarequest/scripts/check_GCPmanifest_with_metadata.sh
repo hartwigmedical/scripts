@@ -25,6 +25,8 @@ wc -l temp_GCP_check/patientId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
 awk 'NR==FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/patientId_metadata.tsv temp_GCP_check/patientId_DNA_GCP.tsv | wc -l
+echo 'difference two files:'
+awk 'NR=!FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/patientId_metadata.tsv temp_GCP_check/patientId_DNA_GCP.tsv
 
 #######
 echo ''
