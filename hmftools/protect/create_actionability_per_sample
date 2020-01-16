@@ -15,8 +15,8 @@ linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 
-mkdir ${run_dir}/protect
-output_database_tsv=${run_dir}/protect/actionability_database.tsv
+mkdir ${run_dir}/protect_pilot
+output_database_tsv=${run_dir}/protect_pilot/actionability_database.tsv
 
 java -jar ${protect_jar} \
     -tumor_sample_id ${sample} \
