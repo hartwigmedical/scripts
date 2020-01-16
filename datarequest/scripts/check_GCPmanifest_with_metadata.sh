@@ -2,13 +2,18 @@
 
 #put metadata file path at $1.
 #put manifest file path at $2.
+# note: comm function
+#comm [-1] [-2] [-3 ] file1 file2
+# -1 Suppress the output column of lines unique to file1.
+# -2 Suppress the output column of lines unique to file2.
+# -3 Suppress the output column of lines duplicated in file1 and file2.
 
 # make dir for temporary files
 mkdir temp_GCP_check
 
 ### Read in patients and samples selected for DR
-awk -F"\t" '{print $1}' $1 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
-awk -F"\t" '{print $2}' $1 | sort | uniq > temp_GCP_check/samplesId_metadata.tsv
+awk -F"\t" 'FNR > 1 {print $1}' $1 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
+awk -F"\t" 'FNR > 1 {print $2}' $1 | sort | uniq > temp_GCP_check/samplesId_metadata.tsv
 
 
 echo ''
@@ -24,9 +29,11 @@ cat temp_GCP_check/patientId_DNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv te
 wc -l temp_GCP_check/patientId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
-awk 'NR==FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/patientId_metadata.tsv temp_GCP_check/patientId_DNA_GCP.tsv | wc -l
-echo 'difference two files:'
-awk 'NR=!FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/patientId_metadata.tsv temp_GCP_check/patientId_DNA_GCP.tsv
+comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_metadata.tsv:'
+comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
+echo 'extra samples patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
 
 #######
 echo ''
@@ -40,7 +47,11 @@ cat temp_GCP_check/sampleId_DNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv tes
 wc -l temp_GCP_check/sampleId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
-awk 'NR==FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/samplesId_metadata.tsv temp_GCP_check/sampleId_DNA_GCP.tsv | wc -l
+comm -1 -2 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_metadata.tsv:'
+comm -2 -3 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
+echo 'extra samples patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
 
 #######
 echo ''
@@ -68,7 +79,13 @@ cat temp_GCP_check/patientId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv te
 wc -l temp_GCP_check/patientId_RNA_GCP.tsv
 
 echo 'Overlap between two files:'
-awk 'NR==FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/patientId_metadata.tsv temp_GCP_check/patientId_RNA_GCP.tsv | wc -l
+comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_metadata.tsv:'
+#comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+
 
 #######
 echo ''
@@ -82,7 +99,12 @@ cat temp_GCP_check/sampleId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv tes
 wc -l temp_GCP_check/sampleId_RNA_GCP.tsv
 
 echo 'Overlap between two files:'
-awk 'NR==FNR {end[$1]; next} ($1 not in end)' temp_GCP_check/samplesId_metadata.tsv temp_GCP_check/sampleId_RNA_GCP.tsv | wc -l
+comm -1 -2 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_metadata.tsv:'
+#comm -2 -3 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+comm -2 -3 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
+echo 'extra samples patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/samplesId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
 
 #######
 echo ''
