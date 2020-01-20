@@ -24,8 +24,8 @@ if [ -d ${pilot_output_dir} ]; then
 fi
 
 mkdir ${pilot_output_dir}
-output_database_tsv=${pilot_output_dir}/actionability_database.tsv
-output_report_tsv=${pilot_output_dir}/actionability_report.tsv
+output_database_tsv=${pilot_output_dir}/${tumor_sample}_actionability_database.tsv
+output_report_tsv=${pilot_output_dir}/${tumor_sample}_actionability_report.tsv
 
 java -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \

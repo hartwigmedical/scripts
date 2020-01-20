@@ -607,7 +607,7 @@ locate_chord_pilot_prediction() {
 
 locate_protect_actionability_pilot() {
     local run_dir=$1
-    local actionability_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "actionability_database.tsv")
+    local actionability_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*_actionability_database.tsv")
     if [ -z ${actionability_tsv} ]; then
         echo "[ERROR] Unable to locate actionability tsv file in ${run_dir}. Exiting." >&2
         exit 1
