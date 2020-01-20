@@ -8,6 +8,6 @@ run_dir=$1 && shift
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 credentials=$(locate_pilot_database_credentials)
-patient_db_jar=$(locate_pilot_patient_db)
+protect_jar=$(locate_pilot_protect)
 
-do_load_clinical_evidence_protect_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar} "$@"
+do_load_protect_data ${tumor_sample} ${run_dir} ${credentials} ${protect_jar} "$@"
