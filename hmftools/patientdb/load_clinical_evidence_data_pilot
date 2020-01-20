@@ -10,4 +10,4 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_clinical_evidence_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar} "$@"
+do_load_clinical_evidence_protect_data ${tumor_sample} ${run_dir} ${credentials} ${patient_db_jar} "$@"
