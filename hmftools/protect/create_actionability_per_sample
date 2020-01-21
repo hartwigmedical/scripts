@@ -16,18 +16,20 @@ purple_purity_tsv=$(locate_purple_purity ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+chord_txt=$(locate_chord_prediction ${run_dir})
 
-pilot_output_dir=${run_dir}/protect_pilot
-if [ -d ${pilot_output_dir} ]; then
-    rm -r ${pilot_output_dir}
+pilot_project_dir=${run_dir}/protect_pilot
+if [ -d ${pilot_project_dir} ]; then
+    rm -r ${pilot_project_dir}
     echo "[INFO] protect pilot dir exist. protect dir is just removed and will be replaced"
 fi
 
-mkdir ${pilot_output_dir}
-output_database_tsv=${pilot_output_dir}/${tumor_sample}_actionability_database.tsv
-output_report_tsv=${pilot_output_dir}/${tumor_sample}_actionability_report.tsv
+mkdir ${pilot_project_dir}
+output_database_tsv=${pilot_project_dir}/${tumor_sample}_actionability_database.tsv
+output_report_tsv=${pilot_project_dir}/${tumor_sample}_actionability_report.tsv
+conclusion_tsv=${pilot_project_dir}/${tumor_sample}_conclusion.tsv
 
-java -jar ${protect_jar} \
+java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability\
     -tumor_sample_id ${tumor_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -tumor_location_csv ${tumor_location_csv} \
@@ -35,6 +37,8 @@ java -jar ${protect_jar} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
+    -chord_txt ${chord_txt} \
     -output_database_tsv ${output_database_tsv} \
     -output_report_tsv ${output_report_tsv} \
+    -conclusion_tsv ${conclusion_tsv} \
     "$@"
