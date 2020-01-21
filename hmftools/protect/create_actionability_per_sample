@@ -11,6 +11,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+template_conclusion=/data/common/dbs/protect/conclusion_template.tsv
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
@@ -32,6 +33,7 @@ conclusion_tsv=${pilot_project_dir}/${tumor_sample}_conclusion.tsv
 java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability\
     -tumor_sample_id ${tumor_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
+    -template_conclusion ${template_conclusion}
     -tumor_location_csv ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_purity_tsv ${purple_purity_tsv} \
