@@ -30,10 +30,10 @@ output_database_tsv=${pilot_project_dir}/${tumor_sample}_actionability_database.
 output_report_tsv=${pilot_project_dir}/${tumor_sample}_actionability_report.tsv
 conclusion_tsv=${pilot_project_dir}/${tumor_sample}_conclusion.tsv
 
-java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability\
+java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability \
     -tumor_sample_id ${tumor_sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -template_conclusion ${template_conclusion}
+    -template_conclusion ${template_conclusion} \
     -tumor_location_csv ${tumor_location_csv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_purity_tsv ${purple_purity_tsv} \
