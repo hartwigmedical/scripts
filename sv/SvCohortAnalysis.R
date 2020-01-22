@@ -11,6 +11,66 @@ clusters = read.csv('~/data/sv/drivers/LNX_CLUSTERS.csv')
 clusters = read.csv('~/logs/LNX_CLUSTERS.csv')
 nrow(svData)
 
+# clean-up
+rm(svData)
+rm(clusters)
+rm(fbSvData)
+rm(fbClusters)
+rm(fbClustersCmb)
+
+
+#####
+## Indels and Shattering
+
+
+indelClusters = read.csv('~/logs/LNX_CLUSTERS_PROD_INDELS.csv')
+nrow(indelClusters)
+nrow(indelClusters %>% filter(IndelCount>0))
+
+rm(indelClusters)
+
+# clusters meeting criteria for indel search
+nrow(indelClusters %>% filter(MinPloidy==MaxPloidy&(ResolvedType=='RECIP_INV'|ResolvedType=='SIMPLE_GRP'|ResolvedType=='COMPLEX')))
+
+View(indelClusters %>% filter(IndelCount>0) %>% 
+       select(SampleId,ClusterId,ClusterCount,ResolvedType,IndelCount,IndelProb,ChainCount,TotalRange,TotalDeleted,OriginArms,TotalTIs,ShortTIs,DBs,ShortDBs,ClusterDesc))
+
+indelClusterSummary = indelClusters %>% filter(IndelCount>0) %>% 
+  mutate(ClusterSize=as.character(2**round(log(pmin(ClusterCount,128),2))),
+         ClusterRangeMB=ifelse(TotalRange>0&TotalRange>TotalDeleted,(TotalRange-TotalDeleted)/1e6,0),
+         ClusterRange=ifelse(ClusterRangeMB>0,as.character(2**round(log(ClusterRangeMB,2))),0),
+         IndelsPerMB=ifelse(ClusterRangeMB>0,IndelCount/ClusterRangeMB,0))
+
+View(indelClusterSummary)
+
+View(indelClusterSummary %>% filter(IndelCount>0) %>% 
+       select(SampleId,ClusterId,ClusterCount,ResolvedType,IndelCount,IndelProb,TotalRange,TotalDeleted,ClusterRangeMB,IndelsPerMB,
+              ChainCount,OriginArms,TotalTIs,ShortTIs,DBs,ShortDBs,ClusterDesc))
+
+print(ggplot(indelClusterSummary, aes(x=reorder(ClusterSize,ClusterCount), y=IndelCount))
+      + geom_boxplot(varwidth=T, fill="plum") 
+      + labs(title='Indel Count by Cluster Size',x='Cluster Size',y='Indel Count'))
+
+print(ggplot(indelClusterSummary %>% filter(ClusterRangeMB>0.05&ClusterRangeMB<50), aes(x=reorder(ClusterRange,ClusterRangeMB), y=IndelsPerMB))
+      + geom_boxplot(varwidth=T, fill="plum") 
+      + scale_y_log10()
+      + labs(title='Indel Count per MB of Cluster Range',x='Cluster Range (MB)',y='Indel Count'))
+
+cleanIndelClusters = indelClusters %>% 
+  filter(ClusterCount>=3&ClusterCount<=100&ResolvedType=='COMPLEX'&MinPloidy==1&MinPloidy==MaxPloidy&Foldbacks==0) %>%
+  filter(SglCount==0&InfCount==0&FullyChained=='true') %>%
+  filter(ChainCount==1&TotalDeleted>0&TotalRange>0&ClusterCount<=50&OriginArms==1&ChainEndsAway==1) %>%
+  filter(TotalRange>ChainedLength*1.1&ClusterCount<=50&OriginArms==1&ExtTIs-ExtShortTIs==0)
+
+# clean and low-probability clusters
+View(indelClusters %>% filter(IndelCount>0&TotalRange>TotalDeleted) %>% mutate(ClusterRange=TotalRange-TotalDeleted) %>%
+       filter(ChainCount==1&IndelProb<0.01) %>%
+       select(SampleId,ClusterId,ClusterCount,ResolvedType,IndelCount,IndelProb,ClusterRange,TotalRange,TotalDeleted,
+              ChainCount,OriginArms,TotalTIs,ShortTIs,DBs,ShortDBs,ClusterDesc) %>% arrange(IndelProb))
+
+nrow(cleanIndelClusters)
+View(cleanIndelClusters %>% filter(IndelCount>0))
+
 
 #####
 ## Shattering characteristics
@@ -430,6 +490,122 @@ View(clusters %>% filter(ResolvedType=='COMPLEX'&MinPloidy==1&MinPloidy==MaxPloi
 
 View(svData %>% filter(SampleId=='DRUP01080008T'&ClusterId==79))
 View(svData %>% filter(SampleId=='CPCT02010419TII'&ClusterId==496))
+
+
+
+#####
+## Breakage-Fusion-Bridge (BFB)
+fbClusters = clusters %>% filter(Foldbacks>0)
+nrow(fbClusters) #15K
+
+fbClusters = fbClusters %>% filter(ResolvedType=='COMPLEX') # require them to not be resolved to something else
+nrow(fbClusters) #10278K
+
+fbClusters = fbClusters %>% mutate(IsBFB=grepl('BFB',Annotations),
+                                   SampleClusterId=paste(SampleId,ClusterId,sep='_'))
+
+svData = svData %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
+fbSvData = svData %>% filter(SampleClusterId %in% fbClusters$SampleClusterId)
+nrow(fbSvData)
+
+fbSvData = fbSvData %>% mutate(Ploidy=(PloidyMax+PloidyMin)*0.5,
+                               IsFoldback=FoldbackLnkStart!='-1'|FoldbackLnkEnd!='-1')
+
+fbSvClusterData = fbSvData %>% group_by(SampleClusterId) %>% summarise(MaxFbPloidy=max(ifelse(IsFoldback,Ploidy,0)),
+                                                                       MaxNonFbPloidy=max(ifelse(!IsFoldback,Ploidy,0)),
+                                                                       MaxCopyNumber=max(pmax(CNStart,CNEnd)))
+
+fbSvData = merge(fbSvData,fbSvClusterData,by='SampleClusterId',all.x=T)
+fbSvData = fbSvData %>% mutate(IsHighPloidySv=(PloidyMax>=MaxNonFbPloidy))
+View(fbSvData %>% filter(SampleId=='COLO829T') %>% select(IsHighPloidySv,MaxNonFbPloidy,MaxFbPloidy,MaxCopyNumber,IsFoldback,everything()))
+
+View(fbSvData %>% group_by(SampleClusterId,IsHighPloidySv=(PloidyMax>=MaxNonFbPloidy)) %>% count %>% spread(IsHighPloidySv,n))
+
+fbSvClusterData = fbSvData %>% group_by(SampleClusterId) %>% summarise(MaxFbPloidy=max(ifelse(IsFoldback,round(Ploidy),0)),
+                                                                       MinFbPloidy=min(ifelse(IsFoldback,round(pmin(Ploidy,1)),1)),
+                                                                       MaxNonFbPloidy=max(ifelse(!IsFoldback,Ploidy,0)),
+                                                                       MaxCopyNumber=max(pmax(CNStart,CNEnd)),
+                                                                       HighPloidyNonFBs=sum(!IsFoldback&PloidyMax>=MaxNonFbPloidy))
+
+
+# basic data about foldbacks and BFB clusters
+fbClustersCmb = merge(fbClusters,fbSvClusterData,by='SampleClusterId',all.x=T)
+
+# count of foldbacks
+View(fbClustersCmb %>% group_by(FoldbackCount=ifelse(Foldbacks<=10,Foldbacks,2**round(log(Foldbacks,2)))) %>% count)
+
+print(ggplot(fbClustersCmb %>% group_by(FoldbackCount=pmin(Foldbacks,20)) %>% count, aes(x=FoldbackCount,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + labs(title='Frequency of Foldbacks per Cluster'))
+
+# by cluster size
+print(ggplot(fbClustersCmb %>% group_by(FoldbackCount=pmin(Foldbacks,20),
+                                     ClusterSize=2**round(log(pmin(ClusterCount,100),2))) %>% count, aes(x=FoldbackCount,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + facet_wrap(~ClusterSize)
+      + labs(title='Frequency of Foldbacks per Cluster by Cluster Size'))
+
+# impact on max cluster copy number
+View(fbClustersCmb %>% group_by(MaxCopyNumber=2**round(log(MaxCopyNumber,2))) %>% count)
+
+print(ggplot(fbClustersCmb %>% filter(MaxCopyNumber<=100) %>% group_by(MaxCopyNumber=round(MaxCopyNumber)) %>% count, aes(x=MaxCopyNumber,y=n))
+      + geom_bar(stat='identity',colour='black')
+      # + scale_x_log10()
+      + labs(title='Max Copy Number in Foldback Clusters'))
+
+# and by foldback counts
+print(ggplot(fbClustersCmb %>% filter(MaxCopyNumber<=100&Foldbacks<=10) %>% group_by(FoldbackCount=2**round(log(Foldbacks,2)),
+                                                                                  MaxCopyNumber=round(MaxCopyNumber)) %>% count, aes(x=MaxCopyNumber,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + facet_wrap(~FoldbackCount)
+      + labs(title='Max Copy Number in Foldback Clusters by # Foldbacks'))
+
+# chaining information
+print(ggplot(fbClustersCmb %>% filter(SglCount==0&InfCount==0&ChainCount<=10) %>% group_by(FoldbackCount=2**round(log(Foldbacks,2)),ChainCount) %>% count, aes(x=ChainCount,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + facet_wrap(~FoldbackCount)
+      + labs(title='Chains Formed by # Foldbacks'))
+
+# rounds of BFB
+fbClustersCmb = fbClustersCmb %>% mutate(MinFbPloidy=pmax(MinFbPloidy,1),
+                                         FbPloidyDiff=MaxFbPloidy-MinFbPloidy,
+                                         InferredBFBRounds=round(log(MaxFbPloidy,2))-round(log(MinFbPloidy,2)))
+
+print(ggplot(fbClustersCmb %>% filter(InferredBFBRounds>0) %>% group_by(InferredBFBRounds) %>% count, aes(x=InferredBFBRounds,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + labs(x='ClusterCount',y='Rounds',title='Rounds of BFB Implied by Foldback Plodies'))
+
+View(fbClustersCmb %>% filter(FbPloidyDiff>0) %>% 
+       select(SampleId,ClusterId,ClusterCount,ClusterDesc,Foldbacks,MinPloidy,MaxPloidy,MinFbPloidy,MaxFbPloidy,InferredBFBRounds,everything()))
+
+print(ggplot(fbClustersCmb %>% filter(SglCount==0&InfCount==0&ChainCount<=10) %>% group_by(FoldbackCount=2**round(log(Foldbacks,2)),ChainCount) %>% count, aes(x=ChainCount,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + facet_wrap(~FoldbackCount)
+      + labs(title='Chains Formed by # Foldbacks'))
+
+
+# proportion of non-foldback SVs with high ploidy
+fbClustersCmb = fbClustersCmb %>% mutate(HighPloidyNonFBPerc=ifelse(ClusterCount-Foldbacks>0,HighPloidyNonFBs/(ClusterCount-Foldbacks),0))
+View(fbClustersCmb %>% select(SampleId,ClusterId,ClusterCount,Foldbacks,HighPloidyNonFBs,HighPloidyNonFBPerc,everything()))
+
+print(ggplot(fbClustersCmb %>% group_by(HighPloidyNonFBPerc=round(HighPloidyNonFBPerc,1),
+                                     ClusterSize=2**round(log(pmin(ClusterCount,100),2))) %>% count, aes(x=HighPloidyNonFBPerc,y=n))
+      + geom_bar(stat='identity',colour='black')
+      + facet_wrap(~ClusterSize)
+      + labs(title='Proportion of non-foldback SVs with High Ploidy per Cluster by Cluster Size'))
+
+View(fbClustersCmb %>% filter(ChainCount==1&FullyChained=='true'&MinPloidy<MaxPloidy&HighPloidyNonFBPerc>0.5) %>%
+       filter(Foldbacks>=3) %>%
+       select(SampleId,ClusterId,ClusterCount,ClusterDesc,Foldbacks,MinPloidy,MaxPloidy,HighPloidyNonFBPerc,everything()))
+
+
+# clusters with only foldbacks
+View(fbClustersCmb %>% filter(Foldbacks==ClusterCount&ChainCount==1&FullyChained=='true'&MinPloidy==1&MinPloidy<MaxPloidy) %>%
+                           select(SampleId,ClusterId,ClusterCount,ClusterDesc,Foldbacks,MinPloidy,MaxPloidy,everything()))
+                               
+# clusters with more folbacks
+View(fbClustersCmb %>% filter(ChainCount==1&FullyChained=='true'&MinPloidy==1&MinPloidy<MaxPloidy&Foldbacks>=4) %>%
+       select(SampleId,ClusterId,ClusterCount,ClusterDesc,Foldbacks,MinPloidy,MaxPloidy,everything()))
 
 
 
