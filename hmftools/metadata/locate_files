@@ -58,7 +58,7 @@ locate_pilot_bachelor() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.37/patient-db.jar
+    echo ${base_path}/tools/patient-db_v3.39/patient-db.jar
 }
 
 locate_pilot_patient_db() {
@@ -103,6 +103,10 @@ locate_pilot_knowledgebase() {
 
 locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
+}
+
+locate_pilot_protect() {
+    echo ${base_path}/tools/protect_pilot/protect.jar
 }
 
 ################################### PGX ####################################
@@ -598,6 +602,17 @@ locate_chord_pilot_prediction() {
         exit 1
     fi
     echo ${chord_prediction_file}
+}
+############################################# ACTIONABILITY ###########################################
+
+locate_protect_actionability_pilot() {
+    local run_dir=$1
+    local actionability_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*_actionability_database.tsv")
+    if [ -z ${actionability_tsv} ]; then
+        echo "[ERROR] Unable to locate actionability tsv file in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${actionability_tsv}
 }
 
 ############################################# LIMS ###########################################

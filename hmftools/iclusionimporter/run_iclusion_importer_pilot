@@ -15,9 +15,8 @@ iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 iclusionStudiesRaw=/data/common/dbs/iclusion/pilot/iClusionStudiesRaw.tsv
 iclusionStudiesProcessed=/data/common/dbs/iclusion/pilot/iClusionStudiesProcessed.tsv
 
-
 java -jar ${iclusion_importer_jar} \
-    -iclusion_link ${iclusion_endpoint} \
+    -iclusion_endpoint ${iclusion_endpoint} \
     -iclusion_client_id ${iclusion_client_id} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_username ${iclusion_user} \

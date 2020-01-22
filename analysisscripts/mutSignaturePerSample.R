@@ -45,7 +45,7 @@ standard_context <- function(raw_type, standard_type, context) {
 # warning: this takes ages!
 query_sample_variants <- function(dbConnect,sampleId) {
   query = paste(
-    "SELECT s.sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * adjustedCopyNumber as ploidy,clonality ",
+"SELECT s.sampleId, trinucleotideContext as context, concat(ref,'>', alt) as snv, adjustedVaf * copyNumber as ploidy, clonality ",
     " FROM somaticVariant s inner join purity p on p.sampleId = s.sampleId ",
     " WHERE filter = 'PASS' and length(alt) = length(ref) and length(alt) = 1 and trinucleotideContext not like '%N%' ",
     #" and qcStatus = 'PASS' and status <> 'NO_TUMOR' and p.sampleId ='",
@@ -59,13 +59,12 @@ query_sample_variants <- function(dbConnect,sampleId) {
   standard_types = standard_mutation(raw_types)
   raw_context = raw_data$context
   context = standard_context(raw_types, standard_types, raw_context)
-
   DT = data.table(
     sample = raw_data$sampleId,
     type = standard_types,
     context = context,
-    ploidy = raw_data$ploidy,
-    clonality = raw_data$clonality)
+ploidy = raw_data$ploidy,
+clonality = raw_data$clonality))
 
   return(DT)
 }
@@ -133,26 +132,26 @@ dbConnect = dbConnect(MySQL(), user=db_user, password=db_password, dbname = db_n
 
 ## run analysis per sampleId
 for ( sampleId in sampleIds ){
-    
+
     cat( paste( "[INFO] Creating mutational signature for: ", sampleId, sep=""), "\n" )
     variants = query_sample_variants(dbConnect,sampleId) # returns a DT
     mutation_vectors = process_variants(variants)
     # we need to slice out only the mutation count columns (delete col 1 and 2)
-    signatures = fit_to_signatures(mutation_vectors[[sampleId]][, -c(1, 2)], cancer_signatures)$contribution    
+    signatures = fit_to_signatures(mutation_vectors[[sampleId]][, -c(1, 2)], cancer_signatures)$contribution
 
     ## table output
     txtFileName = paste( sampleId, "_mutSig.tsv", sep="" )
     write.table(data.frame("Signature" = rownames(signatures), signatures), txtFileName, row.names=FALSE, quote=FALSE, sep="\t")
 
-    ## plotting    
+    ## plotting
     pdfFileName = paste( sampleId, "_mutSig.pdf", sep="" )
     pdf( pdfFileName )
-    print( 
+    print(
       plot_contribution(signatures,cancerSignatures)+
       theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10),legend.text=element_text(size=5),axis.title.y = element_text(size=10))+
       scale_fill_manual( values= myCOLORS)+
       labs(fill="")+
-      ggtitle(paste("Mutational signatures by clonality for",sampleId)) 
+      ggtitle(paste("Mutational signatures by clonality for", sampleId))
     )
     dev.off()
 

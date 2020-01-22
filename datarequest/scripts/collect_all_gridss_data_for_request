@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+# run as: collect_all_gridss_data_for_request ${dr_name} ${request_name}
+
+dr_name=$1 && shift
+request_name=$1 && shift
+
+base_path=/data/data_archive/datarequests
+dr_base_path=${base_path}/${dr_name}
+dr_path=${dr_base_path}/${request_name}
+log_dir=${dr_path}/logs
+
+echo "[INFO] Collecting gridss data for ${request_name}..."
+gridss_dir_name=gridss
+gridss_dir=${dr_path}/${gridss_dir_name}
+mkdir -p ${gridss_dir}
+
+metadata_dir_name=metadata
+metadata_dir=${dr_path}/${metadata_dir_name}
+metadata_tsv=${metadata_dir}/metadata.tsv
+
+#################
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+    source_set_path=/data/cpct/runs/${set_name}
+    dest_set_path=${gridss_dir}/${set_name}
+
+     mkdir -p ${dest_set_path}
+
+     ## start symlinking
+     echo "[DEBUG] Symlinking gridds files for ${set_name}'"
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.full.vcf.gz ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.full.vcf.tbi ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.vcf.gz ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.vcf.gz.tbi ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.vcf.gz ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.vcf.tbi ${dest_set_path}
+done
+
+###############
+
+gridss_sample_count=$(ls ${gridss_dir} | wc -l)
+gridss_tar_file=${dr_base_path}/${request_name}.gridss.tar
+echo "[INFO] Done collecting gridss data for DR. Found ${gridss_sample_count} samples. Creating TAR at ${gridss_tar_file}"
+create_tar_file ${gridss_tar_file} ${dr_path} ./${gridss_dir_name} ${log_dir}/tar_${request_name}_gridss.log
