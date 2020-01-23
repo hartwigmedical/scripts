@@ -366,8 +366,7 @@ sub addContactInfoToSubmissions{
 
 sub checkContactInfo{
     my ($contact_groups) = @_;
-    my $found_issues = 0;
-    my @name_fields = qw(client_contact_name report_contact_name);
+    my @name_fields = qw(client_contact_name report_contact_name data_contact_name);
     my @mail_fields = qw(report_contact_email data_contact_email);
     say "[INFO]   Checking contact group information for completeness";
     foreach my $id (sort keys %$contact_groups){
@@ -376,25 +375,23 @@ sub checkContactInfo{
         my $mail = $info->{client_contact_email};
         
         ## These fields should at the very least have content
-        foreach my $field (@name_fields){
+        foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
                 say "[WARN] No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)";
-                $found_issues = 1;
             }
         }
         ## These fields should contain only (valid) email addresses
         foreach my $field (@mail_fields){
             my @addressess = split( ";", $info->{$field});
             foreach my $address (@addressess){
-                if( not Email::Valid->address($address) ){
-                    say "[WARN] No valid email address ($address) for contact group ID $id (see FOR-001 Contacts tab)";
-                    $found_issues = 1;
+                if( $address eq NACHAR ){
+                    next;
+                }
+                elsif( not Email::Valid->address($address) ){
+                    say "[WARN] No valid email address ($address) in field \"$field\"for contact group ID \"$id\" (see FOR-001 Contacts tab)";
                 }
             }
         }
-    }
-    if ( $found_issues ){
-        say "[WARN] Found issues for contact group information";
     }
 }
 
