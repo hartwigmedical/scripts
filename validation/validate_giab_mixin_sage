@@ -98,6 +98,7 @@ ${rtg_exec} vcfeval \
     --evaluation-regions=${truth_bed_path} \
     --output=${tmp_path} \
     --ref-overlap \
+    --squash-ploidy \
     --all-records
 
 ## -----
