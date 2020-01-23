@@ -7,11 +7,13 @@ process_path="/data/gcp/shallow_runs"
 
 ## query and store
 echo "## ShallowSeq Check (${YYMMDD})"
-query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status)"' | while read line; do 
+query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status) \(.tumor_sample)"' | while read line; do 
     run_name=$(echo "${line}" | cut -d" " -f1)
     run_status=$(echo "${line}" | cut -d" " -f2)
+    tumor_sample=$(echo "${line}" | cut -d" " -f3)
     run_name_wo_date=$(echo "${run_name}" | cut -c 8-)
     archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${run_name_wo_date}" | wc -l)
+    sample_archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
 
     if [[ "${run_name}" =~ "190314-testR" ]]; then 
         continue
@@ -25,17 +27,19 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
         echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${qcfail_path})"
     elif [[ -d "${process_path}/${run_name}" ]]; then 
         echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${process_path})"
-    elif [[ "${run_status}" =~ Failed ]]; then 
-        if [[ "$archive_count" -gt 0 ]]; then 
-            continue
+    else
+        if [[ "${run_status}" =~ Failed ]]; then 
+            if [[ "$sample_archive_count" -gt 0 ]]; then 
+                continue
+            else 
+                echo "## FAILED: ${run_name} (status=${run_status})"
+            fi
+        elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing|Uploading|Downloading)$ ]]; then 
+            echo "## PROCESSING: ${run_name} (status=${run_status})"
+        elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then 
+            echo " process_shallow_run ${run_name} # (status=${run_status})"
         else 
-            echo "## FAILED: ${run_name} (status=${run_status})"
+            echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"
         fi
-    elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing|Uploading|Downloading)$ ]]; then 
-        echo "## PROCESSING: ${run_name} (status=${run_status})"
-    elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then 
-        echo " process_shallow_run ${run_name} # (status=${run_status})"
-    else 
-        echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"
     fi
 done | sort
