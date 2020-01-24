@@ -18,18 +18,6 @@ idx_id=$(cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID |
 ## and check status of each unique Sample_ID in sheet
 cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
     SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
-    SAMPLID=$(query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" | awk '{print $7}')
-    REFSAMPLEID=$(echo -n $SAMPLID | tail -c 1)
 
-    YIELD=$(query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" | awk '{ print $4}')
-
-    if [[ ${YIELD} == "35,000" && ${REFSAMPLEID} == "R" ]]; then
-        INI="ShallowSeq"
-    elif [[ ${YIELD} == "100,000" && ${REFSAMPLEID} == "R" ]]; then
-        INI="Somatic"
-    else
-        INI=$(query_sbp_api -type runs -filter "name=${BARCODE}" -json | jq '.[0].ini')
-    fi
-
-    echo -e "${RUNDATE}\t${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}\t${INI}"
+    echo -e "${RUNDATE}\t${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
 done
