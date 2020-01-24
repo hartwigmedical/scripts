@@ -626,6 +626,11 @@ sub processExcelSamples{
             else{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
+            ## TODO remove once shallowseq column is built into lims
+            ## Harcode Somatic_T samples to not run in shallow mode
+            ## Harcode Somatic_T samples to not use existing ref data
+            $row_info->{ 'shallowseq' } = 0;
+            $row_info->{ 'other_ref' } = 0;
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
