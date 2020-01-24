@@ -49,7 +49,7 @@ java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability \
     -germline_variant_vcf ${germline_variant_vcf} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
-    -purple_qc_tsv ${purple_qc_tsv}
+    -purple_qc_tsv ${purple_qc_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -chord_txt ${chord_txt} \
     -output_database_tsv ${output_database_tsv} \
