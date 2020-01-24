@@ -8,17 +8,22 @@ run_dir=$1 && shift
 protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_barcode_id=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 template_conclusion=/data/common/dbs/protect/conclusion_template.tsv
 tumor_location_conclusion=/data/common/dbs/protect/conclusion_tumor_location.tsv
+germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
+lims_dir=/data/lims
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 chord_txt=$(locate_chord_prediction ${run_dir})
+germline_variant_vcf=$(locate_bachelor_variants ${run_dir})
+purple_qc_tsv=$(locate_purple_qc ${run_dir})
 
 pilot_project_dir=${run_dir}/protect_pilot
 if [ -d ${pilot_project_dir} ]; then
@@ -33,13 +38,18 @@ conclusion_tsv=${pilot_project_dir}/${tumor_sample}_conclusion.tsv
 
 java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability \
     -tumor_sample_id ${tumor_sample} \
+    -tumor_barcode_id ${tumor_barcode_id} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -template_conclusion ${template_conclusion} \
     -tumor_location_curation_conclusion_tsv ${tumor_location_conclusion} \
     -tumor_location_csv ${tumor_location_csv} \
+    -germline_genes_csv ${germline_genes_csv} \
+    -lims_dir ${lims_dir} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
+    -germline_variant_vcf ${germline_variant_vcf} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -purple_qc_tsv ${purple_qc_tsv}
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -chord_txt ${chord_txt} \
     -output_database_tsv ${output_database_tsv} \
