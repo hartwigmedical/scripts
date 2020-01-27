@@ -24,6 +24,7 @@ somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 chord_txt=$(locate_chord_prediction ${run_dir})
 germline_variant_vcf=$(locate_bachelor_variants ${run_dir})
 purple_qc_tsv=$(locate_purple_qc ${run_dir})
+linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 
 pilot_project_dir=${run_dir}/protect_pilot
 if [ -d ${pilot_project_dir} ]; then
@@ -51,6 +52,7 @@ java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -purple_qc_tsv ${purple_qc_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_txt ${chord_txt} \
     -output_database_tsv ${output_database_tsv} \
     -output_report_tsv ${output_report_tsv} \
