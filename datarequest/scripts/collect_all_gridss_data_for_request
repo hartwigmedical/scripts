@@ -31,11 +31,11 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      ## start symlinking
      echo "[DEBUG] Symlinking gridds files for ${set_name}'"
      ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.full.vcf.gz ${dest_set_path}
-     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.full.vcf.tbi ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.full.vcf.gz.tbi ${dest_set_path}
      ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.vcf.gz ${dest_set_path}
      ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.vcf.gz.tbi ${dest_set_path}
      ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.vcf.gz ${dest_set_path}
-     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.vcf.tbi ${dest_set_path}
+     ln -s ${source_set_path}/structuralVariants/gridss/*/*.gridss.somatic.vcf.gz.tbi ${dest_set_path}
 done
 
 ###############
