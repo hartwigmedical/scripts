@@ -11,7 +11,7 @@ SELECT
     biopsySite,
     biopsyLocation,
     hasSystemicPreTreatment,
-    hasRadiotherapyPreTreatment
+    hasRadiotherapyPreTreatment,
     treatmentGiven,
     treatmentStartDate,
     treatmentEndDate,
