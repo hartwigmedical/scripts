@@ -14,7 +14,7 @@ SELECT
     birthYear,
     deathDate,
     hasSystemicPreTreatment,
-    hasRadiotherapyPreTreatment
+    hasRadiotherapyPreTreatment,
     treatmentGiven,
     treatmentStartDate,
     treatmentEndDate,
