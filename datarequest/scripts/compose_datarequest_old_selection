@@ -64,18 +64,18 @@ if [ $? = 0 ]; then
     log_dir=${dr_path}/logs
     mkdir -p ${log_dir}
 
-    echo "[INFO] Selecting patients from ${request_name_selection} to include for ${request_name}..."
-    # get the patient selection of the old DR handout.
-    patient_selection_tsv_original=${dr_path_selection}/logs/selectPatients.tsv
-    patient_count=$(grep -cv "^#" ${patient_selection_tsv_original})
-    echo "[INFO] Number of patients within old selection: ${patient_count} patients"
-    # get all patients that are now available for data requests
-    cp /data/common/repos/scripts/datarequest/selection/all_patients_eligible_datarequests.sql ${log_dir}/allPatients.sql
-    all_patients_tsv=${log_dir}/allPatients.tsv
-    execute_sql_on_prod ${log_dir}/allPatients.sql > ${all_patients_tsv}
+    echo "[INFO] Selecting samples from ${request_name_selection} to include for ${request_name}..."
+    # get the sample selection of the old DR handout.
+    sample_selection_tsv_original=${dr_path_selection}/metadata/metadata.tsv
+    # get all samples that are now available for data requests
+    cp /data/common/repos/scripts/datarequest/selection/all_samples_eligible_datarequests.sql ${log_dir}/allSamples.sql
+    all_samples_tsv=${log_dir}/allSamples.tsv
+    execute_sql_on_prod ${log_dir}/allSamples.sql > ${all_samples_tsv}
     # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
     patient_selection_tsv=${log_dir}/selectPatients.tsv
-    comm -1 -2 <(sort ${patient_selection_tsv_original}) <(sort ${all_patients_tsv}) > ${patient_selection_tsv}
+    awk -F'|' 'NR==FNR{c[$1]++;next};c[$1] > 0' <(cut -f 2-2 ${sample_selection_tsv_original} | sort) <(sort ${all_samples_tsv}) > ${patient_selection_tsv}
+    cut -f 2-2 ${patient_selection_tsv} | sort | uniq > ${patient_selection_tsv}
+    #comm -1 -2 <(cut -f 2-2 ${sample_selection_tsv_original} | sort) <(sort ${all_samples_tsv}) | unique > ${patient_selection_tsv}
     patient_count=$(grep -cv "^#" ${patient_selection_tsv})
     echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients (overlap old selection and those now available for data requests)"
 
