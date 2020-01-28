@@ -73,10 +73,11 @@ if [ $? = 0 ]; then
     all_samples_tsv=${log_dir}/allSamples.tsv
     execute_sql_on_prod ${log_dir}/allSamples.sql > ${all_samples_tsv}
     # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
+    temp_tsv=${log_dir}/temp_tsv.tsv
     patient_selection_tsv=${log_dir}/selectPatients.tsv
-    awk -F'|' 'NR==FNR{c[$1]++;next};c[$1] > 0' <(sort ${sample_selection_tsv_original}) <(sort ${all_samples_tsv}) > ${patient_selection_tsv}
-    cut -f 2-2 ${patient_selection_tsv} | sort | uniq > ${patient_selection_tsv}
-    #comm -1 -2 <(cut -f 2-2 ${sample_selection_tsv_original} | sort) <(sort ${all_samples_tsv}) | unique > ${patient_selection_tsv}
+    grep -w -Ff ${sample_selection_tsv_original} ${all_samples_tsv} > ${temp_tsv}
+    cut -f 2-2 ${temp_tsv} | sort | uniq > ${patient_selection_tsv}
+    rm ${log_dir}/temp_tsv.tsv
     patient_count=$(grep -cv "^#" ${patient_selection_tsv})
     echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients (overlap old selection and those now available for data requests)"
 
