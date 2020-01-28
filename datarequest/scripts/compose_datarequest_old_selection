@@ -4,8 +4,7 @@ if [ "$#" -ne 15 ]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg DR-028)"
     echo "      - request_name (eg DR-028-update1)"
-    echo "      - patient_selection_sql (eg /data/common/repos/scripts/datarequest/selection/DR028.sql"
-    echo "          Note: You can use template_patient_selection.sql as basis for the patient selection sql"
+    echo "      - request_name_selection (eg DR-028 - request name from where the selection should be used)"
     echo "      - include_somatics (1 or 0)"
     echo "      - include_germline (1 or 0)"
     echo "      - include_tumor_bam_jsons (1 or 0)"
@@ -23,7 +22,7 @@ fi
 
 dr_name=$1 && shift
 request_name=$1 && shift
-patient_selection_sql=$1 && shift
+request_name_selection=$1 && shift
 include_somatics=$1 && shift
 include_germline=$1 && shift
 include_tumor_bam_jsons=$1 && shift
@@ -41,11 +40,12 @@ base_path=/data/data_archive/datarequests
 
 dr_base_path=${base_path}/${dr_name}
 dr_path=${dr_base_path}/${request_name}
+dr_path_selection=${dr_base_path}/${request_name_selection}
 
 echo "[INFO] Composing data request ${request_name} in ${dr_path}"
 echo "[INFO]    dr_name=${dr_name}"
 echo "[INFO]    request_name=${request_name}"
-echo "[INFO]    patient_selection_sql=${patient_selection_sql}"
+echo "[INFO]    request_name_selection=${request_name_selection}"
 echo "[INFO]    include_somatics=${include_somatics}"
 echo "[INFO]    include_germline=${include_germline}"
 echo "[INFO]    include_tumor_bam_jsons=${include_tumor_bam_jsons}"
@@ -64,12 +64,19 @@ if [ $? = 0 ]; then
     log_dir=${dr_path}/logs
     mkdir -p ${log_dir}
 
-    echo "[INFO] Selecting patients to include for ${request_name}..."
-    cp ${patient_selection_sql} ${log_dir}/selectPatients.sql
-    patient_selection_tsv=${log_dir}/selectPatients.tsv
-    execute_sql_on_prod ${log_dir}/selectPatients.sql > ${patient_selection_tsv}
+    echo "[INFO] Selecting patients from ${request_name_selection} to include for ${request_name}..."
+    # get the patient selection of the old DR handout.
+    patient_selection_tsv=${dr_path_selection}/logs/selectPatients.tsv
     patient_count=$(grep -cv "^#" ${patient_selection_tsv})
-    echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients"
+    echo "[INFO] Number of patients within old selection: ${patient_count} patients"
+    # get all patients that are now available for data requests
+    cp all_patients_eligible_datarequests.sql ${log_dir}/allPatients.sql
+    all_patients_tsv=${log_dir}/allPatients.tsv
+    execute_sql_on_prod ${log_dir}/allPatients.sql > ${all_patients_tsv}
+    # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
+    comm -1 -2 <(sort ${patient_selection_tsv}) <(sort ${all_patients_tsv}) > ${patient_selection_tsv}
+    patient_count=$(grep -cv "^#" ${patient_selection_tsv})
+    echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients (overlap old selection and those now available for data requests)"
 
     echo "[INFO] Creating metadata for ${request_name}..."
     metadata_dir_name=metadata
@@ -205,5 +212,3 @@ if [ $? = 0 ]; then
 else
     echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
-
-
