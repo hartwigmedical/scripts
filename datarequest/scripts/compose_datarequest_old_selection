@@ -70,7 +70,7 @@ if [ $? = 0 ]; then
     patient_count=$(grep -cv "^#" ${patient_selection_tsv})
     echo "[INFO] Number of patients within old selection: ${patient_count} patients"
     # get all patients that are now available for data requests
-    cp all_patients_eligible_datarequests.sql ${log_dir}/allPatients.sql
+    cp /data/common/repos/scripts/datarequest/selection/all_patients_eligible_datarequests.sql ${log_dir}/allPatients.sql
     all_patients_tsv=${log_dir}/allPatients.tsv
     execute_sql_on_prod ${log_dir}/allPatients.sql > ${all_patients_tsv}
     # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
