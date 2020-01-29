@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+iclusion_importer_jar=$(locate_prod_iclusion_importer)
+iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
+
+do_run_iclusion_importer ${iclusion_importer_jar} ${iclusion_trial_tsv}

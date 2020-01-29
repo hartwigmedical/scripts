@@ -101,6 +101,10 @@ locate_pilot_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 }
 
+locate_prod_iclusion_importer() {
+    echo ${base_path}/tools/iclusion-importer_v1.0/iclusion-importer.jar
+}
+
 locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
 }
@@ -603,6 +607,17 @@ locate_chord_pilot_prediction() {
     fi
     echo ${chord_prediction_file}
 }
+
+########################################### ICLUSION IMPORTER #########################################
+
+locate_pilot_iclusion_trial_tsv() {
+    echo "/data/common/dbs/iclusion/iclusion_trials_pilot.tsv"
+}
+
+locate_prod_iclusion_trial_tsv() {
+    echo "/data/common/dbs/iclusion/iclusion_trials_prod.tsv"
+}
+
 ############################################# ACTIONABILITY ###########################################
 
 locate_protect_actionability_pilot() {
