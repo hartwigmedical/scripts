@@ -4,7 +4,7 @@ source locate_files
 
 iclusion_importer_jar=$(locate_pilot_iclusion_importer)
 
-iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
+iclusion_api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
 
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
@@ -12,8 +12,7 @@ iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_creden
 iclusion_user=$(awk '/^username/ {print $2}' ${iclusion_api_credentials})
 iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 
-iclusionStudiesRaw=/data/common/dbs/iclusion/pilot/iClusionStudiesRaw.tsv
-iclusionStudiesProcessed=/data/common/dbs/iclusion/pilot/iClusionStudiesProcessed.tsv
+iclusion_trial_tsv=/data/common/dbs/iclusion/iclusion_trials_pilot.tsv
 
 java -jar ${iclusion_importer_jar} \
     -iclusion_endpoint ${iclusion_endpoint} \
@@ -21,6 +20,5 @@ java -jar ${iclusion_importer_jar} \
     -iclusion_client_secret ${iclusion_client_secret} \
     -iclusion_username ${iclusion_user} \
     -iclusion_password ${iclusion_password} \
-    -iclusion_output_studies_raw ${iclusionStudiesRaw} \
-    -iclusion_output_studies_processed ${iclusionStudiesProcessed} \
+    -iclusion_trial_tsv ${iclusion_trial_tsv} \
     "$@"

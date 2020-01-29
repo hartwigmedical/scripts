@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-iclusion_api_credentials=/data/common/dbs/api_credentials/iclusion_prod
+iclusion_api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
 
 do_run_knowledgebase_importer_pilot ${iclusion_api_credentials}
