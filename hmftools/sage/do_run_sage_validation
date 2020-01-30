@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+
+prefix=$(dirname $(readlink $0 || echo $0))
+run_dir=$1 && shift
+set=$(basename ${run_dir})
+
+hotspot_bed=/data/experiments/200131_sage_validation/Sage.validation.bed
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+joint_name=$(load_joint_name_from_metadata ${run_dir})
+
+out_dir=/data/experiments/191119_sage_panel_slices/${sample}/
+
+sample_bam=/data/experiments/200131_sage_validation/bams/${sample}.panel.bam
+normal_bam=/data/experiments/200131_sage_validation/bams/${normal}.panel.bam
+
+sage_vcf=${out_dir}/${sample}.sage.vcf.gz
+pon_vcf=${out_dir}/${sample}.pon.vcf.gz
+snpeff_vcf=${out_dir}/${sample}.snpeff.vcf
+post_vcf=${out_dir}/${sample}.post.vcf.gz
+final_vcf=${out_dir}/${sample}.final.vcf.gz
+
+if [ ! -f ${sample_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_tumor ${set} ${hotspot_bed} ${sample_bam}
+else
+    echo "[INFO] Skipping tumor BAM slicing. BAM already exists: ${sample_bam}"
+fi
+
+if [ ! -f ${normal_bam} ]; then
+    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${hotspot_bed} ${normal_bam}
+else
+    echo "[INFO] Skipping reference BAM slicing. BAM already exists: ${normal_bam}"
+fi
+
+if [ ! -f ${sample_bam} ]; then
+    echo "[ERROR] BAM download failed"
+    exit 1
+fi
+
+if [ -f ${final_vcf} ]; then
+    echo "[ERROR] Output already created"
+    exit 1
+fi
+
+mkdir -p ${out_dir}
+
+echo "Running SAGE"
+java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
+    -threads 1 -panel_only \
+    -tumor ${sample} -tumor_bam ${sample_bam} \
+    -reference ${normal} -reference_bam ${normal_bam}  \
+    -panel_bed /data/common/dbs/sage/ActionableCodingPanel.hg19.bed.gz  \
+    -high_confidence_bed /data/common/dbs/bed/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed \
+    -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
+    -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
+    -out ${sage_vcf}
+
+echo "SAGE pon..."
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/200131_sage_validation/SAGE.pon.vcf.gz -c PON_COUNT ${sage_vcf} -O z -o ${pon_vcf}
+/data/common/tools/bcftools_v1.9/bcftools index ${pon_vcf}
+
+java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
+    -c "/data/common/tools/snpEff_v4.3s/snpEff.config" "GRCh37.75" \
+    -v ${pon_vcf} \
+    -hgvs -lof -no-downstream -ud 1000 -no-intergenic -noShiftHgvs \
+    > ${snpeff_vcf}
+
+bgzip ${snpeff_vcf}
+tabix -p vcf ${snpeff_vcf}.gz
+
+java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SagePostProcessApplication \
+    -in ${snpeff_vcf}.gz \
+    -out ${post_vcf}
+
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 2' -s SAGE_PON -m+ -O z -o ${final_vcf}
+/data/common/tools/bcftools_v1.9/bcftools index ${final_vcf}
+
+rm ${pon_vcf}*
+rm ${post_vcf}*
+rm ${snpeff_vcf}*
+
+# RUN
+# cat something | xargs -I CMD --max-procs=5 do_run_sage_experiment /data/cpct/runs/CMD &
+
+# Create panel PON files
+#/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.sorted.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.sorted.vcf.gz
