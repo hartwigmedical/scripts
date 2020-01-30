@@ -4,12 +4,11 @@ set=$1 && shift
 bed_file=$1 && shift
 output_file=$1 && shift
 
-if [ -z "${set}" ] || [ -z "${bed_file}" ] || [ -z "${output_file}" ]; then
+if [[ -z "${set}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]]; then
     echo "Usage: $ ./$(basename $0) set bed_file output_file"
     echo "   set eg 180101_HMFregCPCT..."
     echo "   bed_file	bed file containing regions to be sliced"
     exit 1
 fi
 
-prefix=$(dirname $(readlink $0 || echo $0))
-$prefix/bam_slicer ${set} ${bed_file} ${output_file} TUM
+bam_slicer ${set} ${bed_file} ${output_file} TUM
