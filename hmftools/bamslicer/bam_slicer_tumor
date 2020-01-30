@@ -12,4 +12,4 @@ if [ -z "${set}" ] || [ -z "${bed_file}" ] || [ -z "${output_file}" ]; then
 fi
 
 prefix=$(dirname $(readlink $0 || echo $0))
-$prefix/bam_slicer ${set} ${bed_file} ${output_file} REF
+$prefix/bam_slicer ${set} ${bed_file} ${output_file} TUM

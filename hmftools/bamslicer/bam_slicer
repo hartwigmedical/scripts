@@ -1,48 +1,62 @@
 #!/usr/bin/env bash
 
 source sbp_api_functions
-source sbp_s3_functions
 
-bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
-
-set=$1 && shift
-sample=$1 && shift
+set_name=$1 && shift
 bed_file=$1 && shift
 output_file=$1 && shift
+type=$1 && shift
 
-if [ -z "${set}" ] || [ -z "${sample}" ] || [ -z "${bed_file}" ] || [ -z "${output_file}" ]; then
-    echo "Usage: $ ./$(basename $0) set sample bed_file output_file"
-    echo "   set eg 180101_HMFregCPCT..."
-    echo "   sample	sample to search for. e.g CPCT11111111R"
-    echo "   bed_file	bed file containing regions to be sliced"
-    exit 1
+bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
+GCP_URL_SCRIPT="generate_signed_gcp_url.py"
+GCP_KEY_FILE="/data/common/dbs/gcp_credentials/hmf-download"
+
+if [ -z "$set_name" ]; then
+    echo "[ERROR] No set provided. Exiting" && exit 1
 fi
 
-run_bucket=$(load_intial_run_bucket_for_set ${set})
-if [ -z "${run_bucket}" ]; then
-    echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
-    exit 1
+## query run info
+run_info=$(load_run_info_for_set ${set_name})
+
+## setup all variables
+pipeline=$(echo "$run_info" | cut -d ' ' -f8)
+  bucket=$(echo "$run_info" | cut -d ' ' -f5)
+   name=$(echo "$run_info" | cut -d ' ' -f1)
+    ref=$(echo "$run_info" | cut -d ' ' -f3)
+    tum=$(echo "$run_info" | cut -d ' ' -f4)
+
+if [ $type = "REF" ]
+then
+    sample=$ref
+else
+    sample=$tum
 fi
 
-bampath_in_bucket=$(locate_tumor_bam_for_set_in_bucket ${run_bucket} ${set})
-bam_index="${bampath_in_bucket}.bai"
+bamPrefix="${bucket}/${name}/${sample}"
 
-run_bam_slicer() {
-   bam_index=$1
-   java -Xmx8G -jar ${bam_slicer_jar} \
-        -s3 \
-        -bucket ${run_bucket} \
-        -input ${bampath_in_bucket} \
-        -index ${bam_index} \
-        -bed ${bed_file} \
-        -output ${output_file} \
-        -max_chunks 2000 \
-        -max_concurrent_requests 30
-}
-
-if ! run_bam_slicer ${bam_index}; then
-     echo "[INFO] Slicing with index ${bam_index} failed"
-     bam_index="${bampath_in_bucket%.*}.bai"
-     echo "[INFO] Retrying with index ${bam_index}"
-     run_bam_slicer ${bam_index}
+if [[ $pipeline = v5* ]]
+then
+    bam="${bamPrefix}/aligner/${sample}.bam"
+else
+    bam="${bamPrefix}/mapping/${sample}_dedup.realigned.bam"
 fi
+
+internal_bam_url="gs://${bam}"
+external_bam_url=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${bam}" 604800)
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAM URL: ${internal_bam_url}"
+#echo "$(date +"%H:%M:%S") - [INFO ] - GCP External BAM URL: ${external_bam_url}"
+
+bai=${bam}.bai
+internal_bai_url="gs://${bai}"
+external_bai_url=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${bai}" 604800)
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAI URL: ${internal_bai_url}"
+#echo "$(date +"%H:%M:%S") - [INFO ] - GCP External BAI URL: ${external_bai_url}"
+
+java -Xmx8G -jar ${bam_slicer_jar} \
+    -url \
+    -input ${external_bam_url} \
+    -index ${external_bai_url} \
+    -bed ${bed_file} \
+    -output ${output_file} \
+    -max_chunks 2000 \
+    -max_concurrent_requests 30
