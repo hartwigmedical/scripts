@@ -8,7 +8,7 @@ output_file=$1 && shift
 type=$1 && shift
 
 if [[ -z "${set_name}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]] || [[ -z "${type}" ]]; then
-    echo "[ERROR] No set provided. Exiting" && exit 1
+    echo "[ERROR] Not all input parameters provided to $(basename $0)." && exit 1
 fi
 
 bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
