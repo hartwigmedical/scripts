@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source gcp_functions
+
 set=$1 && shift
 
 if [[ -z "${set}" ]]; then
