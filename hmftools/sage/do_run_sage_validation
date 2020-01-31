@@ -6,16 +6,16 @@ prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 set=$(basename ${run_dir})
 
-hotspot_bed=/data/experiments/200131_sage_validation/Sage.validation.bed
+hotspot_bed=/data/experiments/200131_sage_validation/SAGE.validation.bed
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 joint_name=$(load_joint_name_from_metadata ${run_dir})
 
-out_dir=/data/experiments/191119_sage_panel_slices/${sample}/
+out_dir=/data/experiments/200131_sage_validation/${sample}/
 
-sample_bam=/data/experiments/200131_sage_validation/bams/${sample}.panel.bam
-normal_bam=/data/experiments/200131_sage_validation/bams/${normal}.panel.bam
+sample_bam=/data/experiments/200131_sage_validation/bams/${sample}.validation.bam
+normal_bam=/data/experiments/200131_sage_validation/bams/${normal}.validation.bam
 
 sage_vcf=${out_dir}/${sample}.sage.vcf.gz
 pon_vcf=${out_dir}/${sample}.pon.vcf.gz
@@ -59,7 +59,7 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -out ${sage_vcf}
 
 echo "SAGE pon..."
-/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/200131_sage_validation/SAGE.pon.vcf.gz -c PON_COUNT ${sage_vcf} -O z -o ${pon_vcf}
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/200131_sage_validation/SAGE.validation.pon.vcf.gz -c PON_COUNT ${sage_vcf} -O z -o ${pon_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${pon_vcf}
 
 java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
@@ -75,18 +75,10 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -in ${snpeff_vcf}.gz \
     -out ${post_vcf}
 
-/data/common/tools/bcftools_v1.9/bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 2' -s SAGE_PON -m+ -O z -o ${final_vcf}
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 2' -s SAGE_PON -m+ ${snpeff_vcf}.gz -O z -o ${final_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${final_vcf}
 
-rm ${pon_vcf}*
-rm ${post_vcf}*
-rm ${snpeff_vcf}*
+#rm ${pon_vcf}*
+#rm ${post_vcf}*
+#rm ${snpeff_vcf}*
 
-# RUN
-# cat something | xargs -I CMD --max-procs=5 do_run_sage_experiment /data/cpct/runs/CMD &
-
-# Create panel PON files
-#/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/GERMLINE_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz
-#/data/common/tools/bcftools_v1.9/bcftools filter -R /data/common/dbs/sage/ActionableCodingPanel.hg19.bed /data/common/dbs/PON_v2.0/SOMATIC_PON.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz
-#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.sorted.vcf.gz
-#/data/common/tools/bcftools_v1.9/bcftools sort /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz -O z -o /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.sorted.vcf.gz
