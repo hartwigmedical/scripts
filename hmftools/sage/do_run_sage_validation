@@ -75,10 +75,9 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -in ${snpeff_vcf}.gz \
     -out ${post_vcf}
 
-/data/common/tools/bcftools_v1.9/bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 2' -s SAGE_PON -m+ ${snpeff_vcf}.gz -O z -o ${final_vcf}
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'PON_COUNT!="." && MIN(PON_COUNT) > 2' -s SAGE_PON -m+ ${post_vcf} -O z -o ${final_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${final_vcf}
 
-#rm ${pon_vcf}*
-#rm ${post_vcf}*
-#rm ${snpeff_vcf}*
 
+#/data/common/tools/bcftools_v1.9/bcftools view -R SAGE.validation.bed SAGE.pon.vcf.gz -O z -o SAGE.validation.pon.vcf.gz
+#/data/common/tools/bcftools_v1.9/bcftools index SAGE.validation.pon.vcf.gz
