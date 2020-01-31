@@ -26,8 +26,8 @@ metadata_tsv=${metadata_dir}/metadata.tsv
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
 
-    source_set_path=$(locate_gridss_structural_variants /data/cpct/runs/${set_name})
-    dest_set_path=${gridss_dir}/${set_name}
+     source_set_path=$(locate_gridss_structural_variants /data/cpct/runs/${set_name})
+     dest_set_path=${gridss_dir}/${set_name}
 
      mkdir -p ${dest_set_path}
 
