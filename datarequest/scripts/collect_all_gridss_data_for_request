@@ -3,6 +3,8 @@
 # NOTE: This script is not used typically in production. Has been added as one-off.
 # run as: collect_all_gridss_data_for_request ${dr_name} ${request_name}
 
+source locate_files
+
 dr_name=$1 && shift
 request_name=$1 && shift
 
@@ -23,7 +25,8 @@ metadata_tsv=${metadata_dir}/metadata.tsv
 #################
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
-    source_set_path=/data/cpct/runs/${set_name}
+
+    source_set_path=$(locate_gridss_structural_variants /data/cpct/runs/${set_name})
     dest_set_path=${gridss_dir}/${set_name}
 
      mkdir -p ${dest_set_path}
