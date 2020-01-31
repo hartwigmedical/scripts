@@ -461,6 +461,27 @@ locate_gridss_recovery_candidates() {
     echo ${sv_recovery_vcf}
 }
 
+locate_gridss_unfiltered_candidates() {
+    local run_dir=$1
+    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
+    local gridss_dir_v5=${run_dir}/structural_caller
+
+    local sv_unfiltered_vcf=""
+    if [ -d ${gridss_dir_pre_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.vcf.gz")
+    elif [ -d ${gridss_dir_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+    fi
+
+    if [ -z ${sv_unfiltered_vcf} ]; then
+        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${sv_unfiltered_vcf}
+}
+
+
 ######################################## LINX ########################################
 
 locate_linx_reported_fusions() {
