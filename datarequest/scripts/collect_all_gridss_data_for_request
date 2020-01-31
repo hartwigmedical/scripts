@@ -44,3 +44,5 @@ gridss_sample_count=$(ls ${gridss_dir} | wc -l)
 gridss_tar_file=${dr_base_path}/${request_name}.gridss.tar
 echo "[INFO] Done collecting gridss data for DR. Found ${gridss_sample_count} samples. Creating TAR at ${gridss_tar_file}"
 create_tar_file ${gridss_tar_file} ${dr_path} ./${gridss_dir_name} ${log_dir}/tar_${request_name}_gridss.log
+
+echo "[INFO] Composing gridss data for ${request_name} completed!"
