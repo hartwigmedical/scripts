@@ -36,12 +36,12 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
 
      ## start symlinking
      echo "[DEBUG] Symlinking gridds files for ${set_name}'"
-     ln -s ${structural_variants_path} ${dest_set_path}
-     ln -s ${structural_variants_path} ${dest_set_path}
-     ln -s ${recovery_candidates_path} ${dest_set_path}
-     ln -s ${recovery_candidates_path} ${dest_set_path}
-     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz ${dest_set_path}
-     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz.tbi ${dest_set_path}
+     ln -s ${structural_variants_path}  ${dest_set_path}
+     ln -s ${structural_variants_path}.tbi  ${dest_set_path}
+     ln -s ${recovery_candidates_path}  ${dest_set_path}
+     ln -s ${recovery_candidates_path}.tbi  ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz  ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz.tbi  ${dest_set_path}
 done
 
 ###############
