@@ -16,3 +16,5 @@ do_run_linx_no_db ${run_dir}
 
 echo " [INFO] Loading LINX version ${linx_jar} to database"
 do_load_linx_data ${sample} ${linx_dir} ${credentials} ${linx_jar} "$@"
+
+echo " [INFO] Finished re-running LINX version ${linx_jar}"
