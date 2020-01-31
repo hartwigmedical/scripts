@@ -28,7 +28,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      source_set_path=/data/cpct/runs/${set_name}
      structural_variants_path=$(locate_gridss_structural_variants ${source_set_path})
      recovery_candidates_path=$(locate_gridss_recovery_candidates ${source_set_path})
-     unfiltered_candidates_source_path=$(locate_gridss_recovery_candidates ${source_set_path} | grep -o '^[^\.]*')
+     unfiltered_candidates_source_path=$(locate_gridss_recovery_candidates ${source_set_path} | sed 's|\(.*\)/.*|\1|')
 
      dest_set_path=${gridss_dir}/${set_name}
 
@@ -40,8 +40,8 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      ln -s ${structural_variants_path} ${dest_set_path}
      ln -s ${recovery_candidates_path} ${dest_set_path}
      ln -s ${recovery_candidates_path} ${dest_set_path}
-     ln -s ${unfiltered_candidates_source_path}.gridss.vcf.gz ${dest_set_path}
-     ln -s ${unfiltered_candidates_source_path}.gridss.vcf.gz.tbi ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}/*.gridss.vcf.gz.tbi ${dest_set_path}
 done
 
 ###############
