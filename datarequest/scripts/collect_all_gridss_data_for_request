@@ -25,20 +25,23 @@ metadata_tsv=${metadata_dir}/metadata.tsv
 #################
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+     source_set_path=/data/cpct/runs/${set_name}
+     structural_variants_path=$(locate_gridss_structural_variants ${source_set_path})
+     recovery_candidates_path=$(locate_gridss_recovery_candidates ${source_set_path})
+     unfiltered_candidates_source_path=$(locate_gridss_recovery_candidates ${source_set_path} | grep -o '^[^\.]*')
 
-     source_set_path=$(locate_gridss_structural_variants /data/cpct/runs/${set_name} | grep -o '^[^\.]*')
      dest_set_path=${gridss_dir}/${set_name}
 
      mkdir -p ${dest_set_path}
 
      ## start symlinking
      echo "[DEBUG] Symlinking gridds files for ${set_name}'"
-     ln -s ${source_set_path}.gridss.somatic.full.vcf.gz ${dest_set_path}
-     ln -s ${source_set_path}.gridss.somatic.full.vcf.gz.tbi ${dest_set_path}
-     ln -s ${source_set_path}.gridss.vcf.gz ${dest_set_path}
-     ln -s ${source_set_path}.gridss.vcf.gz.tbi ${dest_set_path}
-     ln -s ${source_set_path}.gridss.somatic.vcf.gz ${dest_set_path}
-     ln -s ${source_set_path}.gridss.somatic.vcf.gz.tbi ${dest_set_path}
+     ln -s ${structural_variants_path} ${dest_set_path}
+     ln -s ${structural_variants_path} ${dest_set_path}
+     ln -s ${recovery_candidates_path} ${dest_set_path}
+     ln -s ${recovery_candidates_path} ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}.gridss.vcf.gz ${dest_set_path}
+     ln -s ${unfiltered_candidates_source_path}.gridss.vcf.gz.tbi ${dest_set_path}
 done
 
 ###############
