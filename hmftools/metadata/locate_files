@@ -465,8 +465,8 @@ locate_gridss_unfiltered_candidates() {
     local run_dir=$1
     local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
     local gridss_dir_v5=${run_dir}/structural_caller/
-    local gridss_ufile1_v5 = $(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
-    local gridss_ufile2_v5 = $(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
+    local gridss_ufile1_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+    local gridss_ufile2_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
 
 
     local sv_unfiltered_vcf=""
