@@ -474,10 +474,11 @@ locate_gridss_unfiltered_candidates() {
     fi
 
     if [ -z ${sv_unfiltered_vcf} ]; then
-        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
+    else
+        echo "[ERROR] Unable to locate GRIDSS sv unfiltered candidates in ${run_dir}. Exiting." >&2
         exit 1
     fi
-
     echo ${sv_unfiltered_vcf}
 }
 
