@@ -39,7 +39,7 @@ load_run_info_for_set() {
 
     # Remove header from the query command
     local run_info=$(query_sbp_api -type runs \
-        -filter "bucket=hmf-output|hmf_research" \
+        -filter "bucket=hmf-output|hmf-research" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
         -filter "status=Validated|SnpCheck|Success" \
         -filter "name=${set}" | grep -v "^#"
@@ -48,7 +48,7 @@ load_run_info_for_set() {
     # If there are no succesfull runs, try a failed run for same set
     if [ -z "${run_info}" ]; then
         run_info=$(query_sbp_api -type runs \
-            -filter "bucket=hmf-output|hmf_research" \
+            -filter "bucket=hmf-output|hmf-research" \
             -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
             -filter "status=Failed" \
             -filter "name=${set}" | grep -v "^#")
