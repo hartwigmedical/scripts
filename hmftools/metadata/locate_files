@@ -102,7 +102,7 @@ locate_pilot_knowledgebase() {
 }
 
 locate_prod_iclusion_importer() {
-    echo ${base_path}/tools/iclusion-importer_v1.0/iclusion-importer.jar
+    echo ${base_path}/tools/iclusion-importer_v1.1/iclusion-importer.jar
 }
 
 locate_pilot_iclusion_importer() {
