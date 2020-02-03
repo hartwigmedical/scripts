@@ -464,18 +464,21 @@ locate_gridss_recovery_candidates() {
 locate_gridss_unfiltered_candidates() {
     local run_dir=$1
     local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
-    local gridss_dir_v5=${run_dir}/structural_caller
+    local gridss_dir_v5=${run_dir}/structural_caller/
+    local gridss_ufile1_v5 = $(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+    local gridss_ufile2_v5 = $(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
+
 
     local sv_unfiltered_vcf=""
     if [ -d ${gridss_dir_pre_v5} ]; then
         sv_unfiltered_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.vcf.gz")
-    elif [ -d ${gridss_dir_v5} ]; then
+    elif [ -a ${gridss_ufile1_v5} ]; then
         sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+    elif [ -a ${gridss_ufile2_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
     fi
 
     if [ -z ${sv_unfiltered_vcf} ]; then
-        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
-    else
         echo "[ERROR] Unable to locate GRIDSS sv unfiltered candidates in ${run_dir}. Exiting." >&2
         exit 1
     fi
