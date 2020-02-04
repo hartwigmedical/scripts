@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+knowledgebase_generator_jar=/data/common/tools/knowledgebase-generator_pilot/knowledgebase-generator.jar
+
+java -jar ${knowledgebase_generator_jar}
