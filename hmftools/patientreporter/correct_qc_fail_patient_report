@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+sampleId=$1 && shift
+comments=$1 && shift
+qc_fail=$1 && shift
+
+${qc_fail} ${sampleId} -comments "${comments}" -corrected_report "$@"
