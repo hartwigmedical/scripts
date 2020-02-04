@@ -81,10 +81,6 @@ locate_pilot_patient_reporter() {
     echo ${base_path}/tools/patientreporter_pilot/patient-reporter.jar
 }
 
-locate_pilot_vicc() {
-    echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
-}
-
 locate_prod_cgi_treatment_extractor_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_v1.8/cgi-treatment-extractor.jar
 }
@@ -93,12 +89,20 @@ locate_pilot_cgi_treatment_extractor_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/cgi-treatment-extractor.jar
 }
 
-locate_prod_knowledgebase() {
+locate_prod_knowledgebase_importer() {
     echo ${base_path}/tools/knowledgebase-importer_v1.8/knowledgebase-importer.jar
 }
 
-locate_pilot_knowledgebase() {
+locate_pilot_knowledgebase_importer() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+}
+
+locate_prod_vicc_knowledgebase_importer() {
+    echo ${base_path}/tools/vicc-knowledgebase-importer_v1.0/vicc-knowledgebase-importer.jar
+}
+
+locate_pilot_vicc_knowledgebase_importer() {
+    echo ${base_path}/tools/vicc-knowledgebase-importer_pilot/vicc-knowledgebase-importer.jar
 }
 
 locate_prod_iclusion_importer() {
@@ -109,9 +113,47 @@ locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
 }
 
+locate_pilot_knowledgebase_generator() {
+    echo ${base_path}/tools/knowledgebase-generator_pilot/knowledgebase-generator.jar
+}
+
 locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
+
+################################# NON JAVA TOOLS ###################################
+
+locate_pgx_main() {
+    echo ${base_path}/repos/scripts/pgx/main.py
+}
+
+locate_vcftools() {
+    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
+}
+
+#################################### Resources #####################################
+
+locate_hotspot_tsv() {
+    echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_pgx_resource_dir() {
+    echo ${base_path}/dbs/pgx/
+}
+
+locate_vicc_json() {
+    echo ${base_path}/dbs/vicc/all.json
+}
+
+locate_pilot_iclusion_trial_tsv() {
+    echo ${base_path}/dbs/iclusion/iclusion_trials_pilot.tsv
+}
+
+locate_prod_iclusion_trial_tsv() {
+    echo ${base_path}/dbs/iclusion/iclusion_trials_prod.tsv
+}
+
+
 
 ################################### PGX ####################################
 
@@ -151,24 +193,6 @@ locate_pilot_pgx_genotype() {
     echo ${pgx_genotype_txt}
 }
 
-################################# NON JAVA TOOLS ###################################
-locate_pgx_main() {
-    echo ${base_path}/repos/scripts/pgx/main.py
-}
-
-locate_vcftools() {
-    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
-#################################### Resources #####################################
-locate_hotspot_tsv() {
-    echo ${base_path}/dbs/sage/KnownHotspots.tsv
-}
-
-locate_pgx_resource_dir() {
-    echo ${base_path}/dbs/pgx/
-}
-
 ################################### WGS METRICS ####################################
 
 locate_wgs_metrics() {
@@ -192,6 +216,7 @@ locate_wgs_metrics() {
 }
 
 ################################# Somatic Variants #################################
+
 locate_sage_somatics() {
     local run_dir=$1
     local somatics_dir_pre_v5=${run_dir}/somaticVariants
@@ -371,16 +396,6 @@ locate_purple_structural_variants() {
     echo ${structural_vcf}
 }
 
-locate_purple_pre_viral_annotate_structural_variants() {
-    local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${structural_vcf}
-}
-
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -395,6 +410,16 @@ locate_purple_pilot_structural_variants() {
         exit 1
     fi
 
+    echo ${structural_vcf}
+}
+
+locate_purple_pre_viral_annotate_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
     echo ${structural_vcf}
 }
 
@@ -485,7 +510,6 @@ locate_gridss_unfiltered_candidates() {
     fi
     echo ${sv_unfiltered_vcf}
 }
-
 
 ######################################## LINX ########################################
 
@@ -632,16 +656,6 @@ locate_chord_pilot_prediction() {
         exit 1
     fi
     echo ${chord_prediction_file}
-}
-
-########################################### ICLUSION IMPORTER #########################################
-
-locate_pilot_iclusion_trial_tsv() {
-    echo "/data/common/dbs/iclusion/iclusion_trials_pilot.tsv"
-}
-
-locate_prod_iclusion_trial_tsv() {
-    echo "/data/common/dbs/iclusion/iclusion_trials_prod.tsv"
 }
 
 ############################################# ACTIONABILITY ###########################################

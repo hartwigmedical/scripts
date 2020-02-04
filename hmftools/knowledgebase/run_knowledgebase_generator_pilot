@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-knowledgebase_generator_jar=/data/common/tools/knowledgebase-generator_pilot/knowledgebase-generator.jar
+knowledgebase_generator_jar=$(locate_pilot_knowledgebase_generator)
+iclusion_trial_tsv=$(locate_pilot_iclusion_trial_tsv)
+vicc_json=$(locate_vicc_json)
 
-java -jar ${knowledgebase_generator_jar}
+java -jar ${knowledgebase_generator_jar} \
+    -vicc_json ${vicc_json} \
+    -iclusion_trial_tsv ${iclusion_trial_tsv}

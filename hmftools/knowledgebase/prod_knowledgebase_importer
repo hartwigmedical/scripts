@@ -2,7 +2,7 @@
 
 source locate_files
 
-knowledgebase_importer_jar=$(locate_prod_knowledgebase)
+knowledgebase_importer_jar=$(locate_prod_knowledgebase_importer)
 
 iclusion_api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
