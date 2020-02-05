@@ -24,6 +24,7 @@ function main() {
     fi
     run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
+    echo $run_json
     ## setup all variables
     cluster=$(echo "$run_json" | jq -r '.cluster')
     bucket=$(echo "$run_json" | jq -r '.bucket')
