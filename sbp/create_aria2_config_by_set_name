@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source sbp_api_functions
+
 set_name=$1
 
 if [[ -z "$set_name" ]]; then
@@ -24,6 +26,12 @@ function main() {
     fi
     run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
+    ## query run info
+    run_info=$(load_run_info_for_set ${set_name})
+
+    ## setup all variables
+    pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
+
     ## setup all variables
     cluster=$(echo "$run_json" | jq -r '.cluster')
     bucket=$(echo "$run_json" | jq -r '.bucket')
@@ -32,7 +40,6 @@ function main() {
     ref=$(echo "$run_json" | jq -r '.ref_sample')
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
     id=$(echo "$run_json" | jq -r '.sbp_id')
-    pipelineVersion=$(echo "$run_json" | jq -r '.pipeline')
 
     files_url="${sbp_api_url}/files?run_id=${id}"
     out_jsn_all="${name}_runfiles.json"
@@ -63,7 +70,7 @@ function main() {
 
     create_json_file "$files_json" "$out_jsn_all"
     create_md5sums_file "$files_json" "$out_md5_all"
-    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum" "$pipelineVersion"
+    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum" "$pipeline"
 
     ## sanity checks
     for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
@@ -83,17 +90,23 @@ create_ini_specific_files () {
     local ini=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
-    local pipelineVersion=$1 && shift
+    local pipeline=$1 && shift
 
-    if [[${pipelineVersion} == "v5"* ]]; then
-        bamDir="aligner"
+    if [[ ${pipeline} = v5* ]]; then
+        ref_bam="${ref}/aligner/${ref}.bam"
+        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
+        tumor_bam="${ref}/aligner/${tum}.bam"
+        tumor_bam_bai="${ref}/aligner/${tum}.bam.bai"
     else
-        bamDir="mapping"
+        ref_bam="${ref}/mapping/${ref}_dedup.realigned.bam"
+        ref_bam_bai="${ref}/mapping/${ref}_dedup.realigned.bam.bai"
+        tumor_bam="${ref}/mapping/${tum}_dedup.realigned.bam"
+        tumor_bam_bai="${ref}/mapping/${tum}_dedup.realigned.bam.bai"
     fi
 
     local single_files=(
-        "${ref}/${bamDir}/${ref}.bam"
-        "${ref}/${bamDir}/${ref}.bam.bai"
+        "${ref_bam}"
+        "${ref_bam_bai}"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
@@ -112,10 +125,10 @@ create_ini_specific_files () {
         "purple/${tum}.purple.somatic.vcf.gz.tbi"
         "purple/${tum}.purple.cnv.germline.tsv"
         "purple/plot/${tum}.circos.png"
-        "${ref}/${bamDir}/${ref}.bam"
-        "${ref}/${bamDir}/${ref}.bam.bai"
-        "${tum}/${bamDir}/${tum}.bam"
-        "${tum}/${bamDir}/${tum}.bam.bai"
+        "${ref_bam}"
+        "${ref_bam_bai}"
+        "${tumor_bam}"
+        "${tumor_bam_bai}"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
