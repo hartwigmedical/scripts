@@ -17,11 +17,21 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
         ## start symlinking
         echo "[DEBUG] Symlinking linx files for ${set_name} having linx '${linx_version}'"
         ln -s ${source_set_path}/linx/linx.version ${dest_set_path}
-        ln -s ${source_set_path}/linx/*.driver_catalog.tsv ${dest_set_path}
+
+        linx_driver_catalog_file=$(find -L ${source_set_path}/linx -type f -name "*.driver.catalog.tsv")
+        if [[ -f ${linx_driver_catalog_file} ]]; then
+            ln -s ${linx_driver_catalog_file} ${dest_set_path}
+        fi
+
         ln -s ${source_set_path}/linx/*.linx.breakend.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.clusters.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.disruptions.tsv ${dest_set_path}
-        ln -s ${source_set_path}/linx/*.linx.drivers.tsv ${dest_set_path}
+
+        linx_drivers_file=$(find -L ${source_set_path}/linx -type f -name "*.linx.drivers.tsv")
+        if [[ -f ${linx_drivers_file} ]]; then
+            ln -s ${linx_drivers_file} ${dest_set_path}
+        fi
+
         ln -s ${source_set_path}/linx/*.linx.fusion.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.links.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.reported_fusion.tsv ${dest_set_path}

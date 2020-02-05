@@ -1,28 +1,9 @@
 #!/usr/bin/env bash
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
-# run as: collect_all_gridss_data_for_request ${dr_name} ${request_name}
 
-source locate_files
-
-dr_name=$1 && shift
-request_name=$1 && shift
-
-base_path=/data/data_archive/datarequests
-dr_base_path=${base_path}/${dr_name}
-dr_path=${dr_base_path}/${request_name}
-log_dir=${dr_path}/logs
-
-echo "[INFO] Collecting gridss data for ${request_name}..."
-gridss_dir_name=gridss
-gridss_dir=${dr_path}/${gridss_dir_name}
-mkdir -p ${gridss_dir}
-
-metadata_dir_name=metadata
-metadata_dir=${dr_path}/${metadata_dir_name}
-metadata_tsv=${metadata_dir}/metadata.tsv
-
-#################
+metadata_tsv=$1 && shift
+gridss_dir=$1 && shift
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      source_set_path=/data/cpct/runs/${set_name}
@@ -43,12 +24,3 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      ln -s ${unfiltered_candidates_path} ${dest_set_path}
      ln -s ${unfiltered_candidates_path}.tbi  ${dest_set_path}
 done
-
-###############
-
-gridss_sample_count=$(ls ${gridss_dir} | wc -l)
-gridss_tar_file=${dr_base_path}/${request_name}.gridss.tar
-echo "[INFO] Done collecting gridss data for DR. Found ${gridss_sample_count} samples. Creating TAR at ${gridss_tar_file}"
-create_tar_file ${gridss_tar_file} ${dr_path} ./${gridss_dir_name} ${log_dir}/tar_${request_name}_gridss.log
-
-echo "[INFO] Composing gridss data for ${request_name} completed!"

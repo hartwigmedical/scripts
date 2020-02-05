@@ -10,9 +10,12 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
     dest_set_path=${amber_dir}/${set_name}
     mkdir -p ${dest_set_path}
 
-    amber_baf_file=${source_set_path}/amber/*.amber.baf.tsv
+    amber_baf_file=$(find -L ${source_set_path}/amber -type f -name "*.amber.baf.tsv")
     if [[ ! -f ${amber_baf_file} ]]; then
-        amber_baf_file=${source_set_path}/amber/*.amber.baf
+        amber_baf_file=$(find -L ${source_set_path}/amber -type f -name "*.amber.baf")
+        if [[ ! -f ${amber_baf_file} ]]; then
+            echo "[WARN] Could not resolve amber BAF file for ${set_name}"
+        fi
     fi
 
     ## start symlinking

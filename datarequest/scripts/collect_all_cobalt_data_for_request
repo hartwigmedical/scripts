@@ -10,9 +10,12 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
     dest_set_path=${cobalt_dir}/${set_name}
     mkdir -p ${dest_set_path}
 
-    cobalt_ratio_file=${source_set_path}/cobalt/*.cobalt.ratio.tsv
+    cobalt_ratio_file=$(find -L ${source_set_path}/cobalt -type f -name "*.cobalt.ratio.tsv")
     if [[ ! -f ${cobalt_ratio_file} ]]; then
-        cobalt_ratio_file=${source_set_path}/cobalt/*.cobalt
+        cobalt_ratio_file=$(find -L ${source_set_path}/cobalt -type f -name "*.cobalt")
+        if [[ ! -f ${cobalt_ratio_file} ]]; then
+            echo "[WARN] Could not resolve cobalt ratio file for ${set_name}"
+        fi
     fi
 
     ## start symlinking
