@@ -34,6 +34,6 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
         ln -s ${source_set_path}/linx/*.linx.vis_segments.tsv ${dest_set_path}
         ln -s ${source_set_path}/linx/*.linx.vis_sv_data.tsv ${dest_set_path}
     else
-        echo "[WARN] Could not determine linx version for ${set_path}. Skipping."
+        echo "[WARN] Could not determine linx version for ${set_name}. Skipping."
     fi
 done
