@@ -24,7 +24,6 @@ function main() {
     fi
     run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
-    echo "$run_json" | jq -r '.pipeline'
     ## setup all variables
     cluster=$(echo "$run_json" | jq -r '.cluster')
     bucket=$(echo "$run_json" | jq -r '.bucket')
@@ -33,6 +32,7 @@ function main() {
     ref=$(echo "$run_json" | jq -r '.ref_sample')
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
     id=$(echo "$run_json" | jq -r '.sbp_id')
+    pipelineVersion=$(echo "$run_json" | jq -r '.pipeline')
 
     files_url="${sbp_api_url}/files?run_id=${id}"
     out_jsn_all="${name}_runfiles.json"
@@ -63,7 +63,7 @@ function main() {
 
     create_json_file "$files_json" "$out_jsn_all"
     create_md5sums_file "$files_json" "$out_md5_all"
-    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum"
+    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum" "$pipelineVersion"
 
     ## sanity checks
     for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
@@ -83,10 +83,17 @@ create_ini_specific_files () {
     local ini=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
+    local pipelineVersion=$1 && shift
+
+    if [[${pipelineVersion} == "v5"* ]]; then
+        bamDir="aligner"
+    else
+        bamDir="mapping"
+    fi
 
     local single_files=(
-        "${ref}/aligner/${ref}.bam"
-        "${ref}/aligner/${ref}.bam.bai"
+        "${ref}/${bamDir}/${ref}.bam"
+        "${ref}/${bamDir}/${ref}.bam.bai"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
@@ -105,10 +112,10 @@ create_ini_specific_files () {
         "purple/${tum}.purple.somatic.vcf.gz.tbi"
         "purple/${tum}.purple.cnv.germline.tsv"
         "purple/plot/${tum}.circos.png"
-        "${ref}/aligner/${ref}.bam"
-        "${ref}/aligner/${ref}.bam.bai"
-        "${tum}/aligner/${tum}.bam"
-        "${tum}/aligner/${tum}.bam.bai"
+        "${ref}/${bamDir}/${ref}.bam"
+        "${ref}/${bamDir}/${ref}.bam.bai"
+        "${tum}/${bamDir}/${tum}.bam"
+        "${tum}/${bamDir}/${tum}.bam.bai"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
