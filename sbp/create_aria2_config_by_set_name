@@ -95,13 +95,13 @@ create_ini_specific_files () {
     if [[ ${pipeline} = v5* ]]; then
         ref_bam="${ref}/aligner/${ref}.bam"
         ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
-        tumor_bam="${ref}/aligner/${tum}.bam"
-        tumor_bam_bai="${ref}/aligner/${tum}.bam.bai"
+        tumor_bam="${tum}/aligner/${tum}.bam"
+        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
     else
         ref_bam="${ref}/mapping/${ref}_dedup.realigned.bam"
         ref_bam_bai="${ref}/mapping/${ref}_dedup.realigned.bam.bai"
-        tumor_bam="${ref}/mapping/${tum}_dedup.realigned.bam"
-        tumor_bam_bai="${ref}/mapping/${tum}_dedup.realigned.bam.bai"
+        tumor_bam="${tum}/mapping/${tum}_dedup.realigned.bam"
+        tumor_bam_bai="${tum}/mapping/${tum}_dedup.realigned.bam.bai"
     fi
 
     local single_files=(
