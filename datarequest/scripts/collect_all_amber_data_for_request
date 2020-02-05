@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+
+metadata_tsv=$1 && shift
+amber_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+    source_set_path=/data/cpct/runs/${set_name}
+    dest_set_path=${amber_dir}/${set_name}
+    mkdir -p ${dest_set_path}
+
+    amber_baf_file=${source_set_path}/amber/*.amber.baf.tsv
+    if [[ ! -f ${amber_baf_file} ]]; then
+        amber_baf_file=${source_set_path}/amber/*.amber.baf
+    fi
+
+    ## start symlinking
+    echo "[DEBUG] Symlinking amber files for ${set_name}"
+    ln -s ${amber_baf_file} ${dest_set_path}
+    ln -s ${source_set_path}/amber/*.amber.baf.pcf ${dest_set_path}
+
+    amber_file_count=$(ls ${dest_set_path} | wc -l)
+
+    if [ ${amber_file_count} -ne 2 ]; then
+        echo "[WARN]: Mismatch in expected file count. Expected 2 files but got ${amber_file_count} files for ${set_name}. Please inspect manually!"
+    fi
+done
