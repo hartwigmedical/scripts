@@ -11,6 +11,8 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_barcode_id=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
+knowledgebase_dir_v2=/data/common/dbs/knowledgebase_generator/pilot
+
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
 template_conclusion=/data/common/dbs/protect/conclusion_template.tsv
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
@@ -40,6 +42,7 @@ java -cp ${protect_jar} com.hartwig.hmftools.protect.ProtectActionability \
     -tumor_sample_id ${tumor_sample} \
     -tumor_barcode_id ${tumor_barcode_id} \
     -knowledgebase_dir ${knowledgebase_dir} \
+    -knowledgebase_dir_v2 ${knowledgebase_dir_v2} \
     -template_conclusion ${template_conclusion} \
     -tumor_location_csv ${tumor_location_csv} \
     -germline_genes_csv ${germline_genes_csv} \
