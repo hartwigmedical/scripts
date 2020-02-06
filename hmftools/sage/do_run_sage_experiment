@@ -60,12 +60,9 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -out ${sage_vcf}
 
 echo "Germline pon..."
-/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/191119_sage_panel_slices/GERMLINE_PON.panel.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon1_vcf}
-/data/common/tools/bcftools_v1.9/bcftools index ${pon1_vcf}
-
-echo "Somatic pon..."
-/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/191119_sage_panel_slices/SOMATIC_PON.panel.vcf.gz -c SOMATIC_PON_COUNT ${pon1_vcf} -O z -o ${pon2_vcf}
-/data/common/tools/bcftools_v1.9/bcftools index ${pon2_vcf}
+echo "SAGE pon..."
+/data/common/tools/bcftools_v1.9/bcftools annotate -a /data/common/dbs/sage/SageGermlinePon.panel.hg19.vcf.gz -c GERMLINE_PON_COUNT ${sage_vcf} -O z -o ${pon_vcf2}
+/data/common/tools/bcftools_v1.9/bcftools index ${pon_vcf2}
 
 java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
     -c "/data/common/tools/snpEff_v4.3s/snpEff.config" "GRCh37.75" \
@@ -76,8 +73,7 @@ java -jar /data/common/tools/snpEff_v4.3s/snpEff.jar \
 bgzip ${snpeff_vcf}
 tabix -p vcf ${snpeff_vcf}.gz
 
-/data/common/tools/bcftools_v1.9/bcftools filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 5' -s GERMLINE_PON -m+ ${snpeff_vcf}.gz -O u | \
-/data/common/tools/bcftools_v1.9/bcftools filter -e 'SOMATIC_PON_COUNT!="." && MIN(SOMATIC_PON_COUNT) > 3' -s SOMATIC_PON -m+ -O z -o ${final_vcf}
+/data/common/tools/bcftools_v1.9/bcftools filter -e 'GERMLINE_PON_COUNT!="." && MIN(GERMLINE_PON_COUNT) > 2' -s GERMLINE_PON -m+ -O z -o ${final_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${final_vcf}
 
 rm ${pon1_vcf}*
