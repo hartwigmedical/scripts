@@ -67,7 +67,7 @@ if [ $? = 0 ]; then
     echo "[INFO] Selecting samples from ${request_name_selection} to include for ${request_name}..."
     # get the sample selection of the old DR handout.
     sample_selection_tsv_original=${log_dir}/originalSamples.tsv
-    cut -f 2-2 ${dr_path_selection}/metadata/metadata.tsv > ${log_dir}/originalSamples.tsv
+    csvcut -t -c 'sampleId' ${dr_path_selection}/metadata/metadata.tsv | csvformat -T > ${log_dir}/originalSamples.tsv
     # get all samples that are now available for data requests
     cp /data/common/repos/scripts/datarequest/selection/all_samples_eligible_datarequests.sql ${log_dir}/allSamples.sql
     all_samples_tsv=${log_dir}/allSamples.tsv
