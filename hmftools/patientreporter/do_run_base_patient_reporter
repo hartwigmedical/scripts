@@ -7,7 +7,7 @@ output_dir=/data/cpct/patient_reports
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
-lims_dir=/data/lims
+lims_dir=/data/experiments/verification_patient_reporter_v5_10/lims_fake
 hospital_dir=/data/common/dbs/hospital
 
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
