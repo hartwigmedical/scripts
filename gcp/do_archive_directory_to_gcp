@@ -25,6 +25,8 @@ local_entry_count=$(ls ${local_path} | wc -l)
 if [[ ${local_entry_count} -lt ${minimal_local_entries} ]]; then
     echo "[WARN] Number of entries in ${local_path} is ${local_entry_count} which is less than required ${minimal_local_entries}. Exiting"
     exit 1
+else
+    echo "[DEBUG] Number of entries ${local_entry_count} is equal or larger than minimum required of ${minimal_local_entries}"
 fi
 
 switch_to_hmf_archive_service_account
