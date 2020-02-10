@@ -26,16 +26,11 @@ function main() {
     fi
     run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
-    ## query run info
-    run_info=$(load_run_info_for_set ${set_name})
-
-    ## setup all variables
-    pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
-
     ## setup all variables
     cluster=$(echo "$run_json" | jq -r '.cluster')
     bucket=$(echo "$run_json" | jq -r '.bucket')
     name=$(echo "$run_json" | jq -r '.name')
+    pipeline=$(echo "$run_json" | jq -r '.pipeline')
     ini=$(echo "$run_json" | jq -r '.ini')
     ref=$(echo "$run_json" | jq -r '.ref_sample')
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
@@ -51,6 +46,7 @@ function main() {
     echo "[INFO] RunName: $name"
     echo "[INFO] Cluster: $cluster"
     echo "[INFO] Bucket: $bucket"
+    echo "[INFO] Pipeline: $pipeline"
     echo "[INFO] IniFile: $ini"
     echo "[INFO] TumorSample: $tum"
     echo "[INFO] RefSample: $ref"
@@ -92,7 +88,7 @@ create_ini_specific_files () {
     local tum=$1 && shift
     local pipeline=$1 && shift
 
-    if [[ ${pipeline} = v5* ]]; then
+    if [[ "${pipeline}" == v5* ]]; then
         ref_bam="${ref}/aligner/${ref}.bam"
         ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
         tumor_bam="${tum}/aligner/${tum}.bam"
