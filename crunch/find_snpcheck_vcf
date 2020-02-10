@@ -1,8 +1,24 @@
 #!/usr/bin/env bash
 
-searchString=$1 # eg FR12345678
+search=$1 # eg FR12345678
 
-LOC1='/data/common/snpcheck/'
-LOC2='/data/gcp/snpcheckvcfupload/'
+server=$(hostname)
+dir1='/data/common/snpcheck/'
+dir2='/data/gcp/snpcheckvcfupload/'
+gcp_bucket='hmf-snpcheck'
+gcp_subdir='snpcheckvcfs'
+gcp_key="/data/common/dbs/gcp_credentials/hmf-snpcheck"
 
-find ${LOC1} ${LOC2} -name "*${searchString}*OpenArrayCalls.vcf"
+echo ""
+echo "[INFO] Searching for SNPcheck VCFs at ${dir1} (with filter \"${search}\")"
+find ${dir1} -name "*${search}*.vcf"
+echo ""
+
+echo "[INFO] Searching for SNPcheck VCFs at ${dir2} (with filter \"${search}\")"
+find ${dir2} -name "*${search}*.vcf"
+echo ""
+
+echo "[INFO] Searching SNPcheck VCFs at GCP bucket ${bucket} (with filter \"${search}\")"
+gcloud auth activate-service-account --no-user-output-enabled --key-file "${gcp_key}"
+gsutil ls -r gs://${gcp_bucket}/${gcp_subdir}/** | grep "${search}"
+echo ""
