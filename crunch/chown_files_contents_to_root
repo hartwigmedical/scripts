@@ -14,8 +14,8 @@ function main {
     echo "[INFO] Found $nonRootCount to chown in $chownDir"
 
     if [[ "${nonRootCount}" -gt 0 ]]; then
-        echo "[INFO] First 5 records:"
-        find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | head -10
+        echo "[INFO] First 20 records:"
+        find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | head -20
         read -p "[INFO] Press enter to start chown action"
         find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root -exec sudo chown root:root {} +
     fi
