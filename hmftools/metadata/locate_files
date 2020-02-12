@@ -153,6 +153,10 @@ locate_prod_iclusion_trial_tsv() {
     echo ${base_path}/dbs/iclusion/iclusion_trials_prod.tsv
 }
 
+locate_pilot_compassionate_use_programs_tsv() {
+    echo ${base_path}/dbs/knowledgebase_generator/compassionate_use_programs.tsv
+}
+
 
 
 ################################### PGX ####################################

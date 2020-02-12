@@ -5,7 +5,9 @@ source locate_files
 knowledgebase_generator_jar=$(locate_pilot_knowledgebase_generator)
 iclusion_trial_tsv=$(locate_pilot_iclusion_trial_tsv)
 vicc_json=$(locate_vicc_json)
+compassionate_use_program_tsv=$(locate_pilot_compassionate_use_programs_tsv)
 
 java -jar ${knowledgebase_generator_jar} \
     -vicc_json ${vicc_json} \
-    -iclusion_trial_tsv ${iclusion_trial_tsv}
+    -iclusion_trial_tsv ${iclusion_trial_tsv} \
+    -compassionate_use_programs_tsv ${compassionate_use_program_tsv}
