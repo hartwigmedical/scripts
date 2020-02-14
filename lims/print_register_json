@@ -269,7 +269,8 @@ sub processSample{
         }
         
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
-        my $yield_ref   = getValueByKey( $ref_obj, 'yield' );
+        my $yield_ref = getValueByKey( $ref_obj, 'yield' );
+        my $submission_ref = getValueByKey( $ref_obj, 'submission' );
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
@@ -325,7 +326,7 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         $json_data{ 'priority' } = $priority;
-        addSampleToJsonData( \%json_data, $submission, $barcode_ref, 'ref', $q30, $yield_ref, $use_existing_ref );
+        addSampleToJsonData( \%json_data, $submission_ref, $barcode_ref, 'ref', $q30, $yield_ref, $use_existing_ref );
         addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $use_existing_tum );
     }
     elsif ( $analysis eq 'Somatic_R' ){
