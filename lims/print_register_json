@@ -248,8 +248,8 @@ sub processSample{
         
         my $ref_obj;
         my $ini = $SOM_INI;
-        my $shallow    = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
-        my $other_ref  = getValueByKey( $sample, 'other_ref' ); # Yes | No
+        my $needs_shallow = getValueByKey( $sample, 'shallowseq' ); # 0 | 1
+        my $other_ref = getValueByKey( $sample, 'other_ref' ); # Yes | No
         
         ## need to find the ref sample of somatic pair
         if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
@@ -275,17 +275,26 @@ sub processSample{
         my $set = join( "_", $date, $submission, $barcode_ref, $barcode, $patient );
 
         ## adjust content in case of ShallowSeq
-        if ( $shallow ){
+        if ( $needs_shallow ){
             say "[INFO]   ShallowSeq flag set in LIMS";
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
-            my $local_run_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
-            my $shallow_json_exists = `find $JSON_DONE_DIR -maxdepth 1 -type f -name "*$match_string.json" | wc -l`;
-            chomp($local_run_exists);
-            chomp($shallow_json_exists);
-            if ( $local_run_exists ){
-                say "[INFO]   ShallowSeq run found locally for $match_string: going for full Somatic mode";
+            my $status_query = "query_sbp_api -type runs -filter \"ini=ShallowSeq.ini\" -filter \"name=$match_string\" -json | jq -r '.[-1].status'";
+            my $run_status = `$status_query`;
+            my $dir_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
+            my $jsn_exists = `find $JSON_DONE_DIR -maxdepth 1 -type f -name "*$match_string.json" | wc -l`;
+
+            chomp($run_status);
+            chomp($dir_exists);
+            chomp($jsn_exists);
+            
+            if ( $run_status eq "Waiting" ){
+                warn "[WARN]   RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)\n";
+                return "NoJsonMade_ShallowExtraSeq";
             }
-            elsif ( $shallow_json_exists ){
+            elsif ( $dir_exists ){
+                say "[INFO]   ShallowSeq run dir found locally for $match_string: going for full Somatic mode";
+            }
+            elsif ( $jsn_exists ){
                 say "[INFO]   ShallowSeq json found for $match_string: going for full Somatic mode";
             }
             else{
