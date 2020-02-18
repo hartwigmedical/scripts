@@ -9,7 +9,12 @@
 flowcells_dir="/data1/illumina_data"
 
 bucket="bcl-input-prod"
-gcp_cred="/home/sbpext/bcl-upload-prod.json"
+gcp_cred="/home/sbpext/bcl-upload-prod/bcl-input-prod.json"
+
+if [ "$#" -ne 1 ]; then
+  echo "Useage: upload_gcp api_url api_dir"
+  exit 1
+fi
 
 api_url=$1
 api_dir=$2
@@ -65,6 +70,13 @@ do
   sequencer=$(echo ${flowcell_name} | cut -d '_' -f2)
   index=$(echo ${flowcell_name} | cut -d '_' -f3)
   experiment_name=$(grep ExperimentName ${samplesheet_path} | cut -d "," -f2)
+
+  ## -----
+  ## TESTING TODO: remove test stuff
+  ## -----
+  test_string="_Test200130"
+  flowcell_id+="$test_string"
+  experiment_name+="$test_string"
 
   echo "[INFO] Working on path \"${flowcell_path}\""
   echo "[INFO]   Hostname: ${hostname}"
