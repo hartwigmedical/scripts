@@ -1,5 +1,11 @@
 #!/bin/bash
 
+
+if [ "$#" -ne 3 ]; then
+  echo "Useage: pass_qc api_url api_dir flowcell_id"
+  exit 1
+fi
+
 api_url=$1
 api_dir=$2
 flowcell_id=$3

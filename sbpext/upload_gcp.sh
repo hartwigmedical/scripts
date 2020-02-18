@@ -11,7 +11,7 @@ flowcells_dir="/data1/illumina_data"
 bucket="bcl-input-prod"
 gcp_cred="/home/sbpext/bcl-upload-prod/bcl-input-prod.json"
 
-if [ "$#" -ne 1 ]; then
+if [ "$#" -ne 2 ]; then
   echo "Useage: upload_gcp api_url api_dir"
   exit 1
 fi
