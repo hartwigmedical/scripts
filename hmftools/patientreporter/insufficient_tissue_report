@@ -7,4 +7,4 @@ if [ -z ${tumor_sample} ]; then
     exit 1;
 fi
 
-do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tissue_delivered"
+do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tissue_delivered" "$@"
