@@ -71,13 +71,6 @@ do
   index=$(echo ${flowcell_name} | cut -d '_' -f3)
   experiment_name=$(grep ExperimentName ${samplesheet_path} | cut -d "," -f2)
 
-  ## -----
-  ## TESTING TODO: remove test stuff
-  ## -----
-  test_string="_Test200130"
-  flowcell_id+="$test_string"
-  experiment_name+="$test_string"
-
   echo "[INFO] Working on path \"${flowcell_path}\""
   echo "[INFO]   Hostname: ${hostname}"
   echo "[INFO]   Samplesheet: ${samplesheet_path}"
