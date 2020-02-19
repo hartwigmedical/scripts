@@ -64,7 +64,7 @@ do
 
   if [ ! -f "${samplesheet_path}" ]; then
     echo "[WARN] Flowcell ${flowcell_name} on $hostname is missing SampleSheet (${samplesheet_path}): skipping"
-      continue
+    continue
   fi
 
   flowcell_id=$(xmllint --xpath "/RunInfo/Run/Flowcell/text()" ${runinfoxml_path})
@@ -90,7 +90,7 @@ do
     flowcell="$(hmfapi GET ${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id})"
     if [ $(echo "${flowcell}" | jq length) -eq 0 ]; then
       hmfapi POST ${api_url}/hmf/v1/flowcells name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" status=Sequencing > /dev/null;
-       fi
+    fi
     continue
   fi
 
@@ -98,7 +98,7 @@ do
   find ${flowcell_path} -name '*.bcl.gz' -or -name '*.cbcl' -or -name '*.bcl.bgzf' | grep bcl > /dev/null
   if [[ $? -ne 0 ]]; then
     #slack "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
-     echo "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
+    echo "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
     continue
   fi
 
@@ -128,7 +128,7 @@ do
       hmfapi PATCH ${api_url}/hmf/v1/flowcells/${api_id} status=Pending index="${index}" sequencer="${sequencer}" bucket="${bucket}" > /dev/null;
     else
       #slack "[WARN] Would try invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})";
-       echo "[WARN] SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})";
+      echo "[WARN] SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})";
       continue
     fi
   else
