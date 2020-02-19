@@ -101,10 +101,11 @@ do
     echo "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
     continue
   fi
-
-  gcloud auth activate-service-account --key-file ${gcp_cred}
-  cmd="gsutil -m rsync -r ${flowcell_path} gs://${bucket}/${flowcell_name}"
+  
+  ## setup rsync cmd excluding un-used and post-sequencing-generated files
+  cmd="gsutil -m rsync -r -x ".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" ${flowcell_path} gs://${bucket}/${flowcell_name}"
   echo "[INFO] Executing rsync ($cmd)"
+  gcloud auth activate-service-account --key-file ${gcp_cred}
   $cmd
 
   if [[ $? -ne 0 ]]; then
