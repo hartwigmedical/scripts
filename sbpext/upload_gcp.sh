@@ -103,7 +103,7 @@ do
   fi
   
   ## setup rsync cmd excluding un-used and post-sequencing-generated files
-  cmd="gsutil -m rsync -r -x ".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" ${flowcell_path} gs://${bucket}/${flowcell_name}"
+  cmd="gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" ${flowcell_path} gs://${bucket}/${flowcell_name}"
   echo "[INFO] Executing rsync ($cmd)"
   gcloud auth activate-service-account --key-file ${gcp_cred}
   $cmd
