@@ -21,7 +21,8 @@ api_dir=$2
 
 api_crt="${api_dir}/api.crt"
 api_key="${api_dir}/api.key"
-logs_dir="/data/sbpuploadlogsgcp"
+log_dir="/data/sbpuploadlogs"
+log_suffix="GCP_Uploaded.done"
 hostname=$(hostname)
 
 ## tmp file to avoid multiple uploads
@@ -54,7 +55,7 @@ do
   samplesheet_path="${flowcell_path}/SampleSheet.csv"
   rtacomplete_path="${flowcell_path}/RTAComplete.txt"
   runinfoxml_path="${flowcell_path}/RunInfo.xml"
-  log_file="${logs_dir}/${flowcell_name}_SBP_Uploaded.done"
+  log_file="${log_dir}/${flowcell_name}_${log_suffix}"
 
   if [ -f "$log_file" ]; then
     echo "[INFO] Flowcell ${flowcell_name} already uploaded: skipping"
@@ -136,7 +137,7 @@ do
   fi
 
   echo "[INFO] BCL of flowcell $flowcell_name is uploaded from $hostname and is ready for bcl2fastq conversion"
-  echo `date` > /data/sbpuploadlogs/${flowcell_name}_GCP_Uploaded.done
+  echo `date` > ${log_file}
 
 done
 
