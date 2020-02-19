@@ -136,7 +136,7 @@ do
   fi
 
   echo "[INFO] BCL of flowcell $flowcell_name is uploaded from $hostname and is ready for bcl2fastq conversion"
-  echo `date` > /data/sbpuploadlogs/${flowcell_name}_SBP_Uploaded.done
+  echo `date` > /data/sbpuploadlogs/${flowcell_name}_GCP_Uploaded.done
 
 done
 
