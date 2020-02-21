@@ -74,7 +74,7 @@ locate_pilot_linx() {
 }
 
 locate_prod_patient_reporter() {
-    echo ${base_path}/tools/patientreporter_v7.9/patient-reporter.jar
+    echo ${base_path}/tools/patientreporter_v7.10/patient-reporter.jar
 }
 
 locate_pilot_patient_reporter() {
