@@ -409,8 +409,8 @@ sub processAccessSamples{
     
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
     say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
-    while ( my($main_id, $row_info) = each %$objects ){
-        
+    foreach my $main_id ( sort keys %$objects ){
+        my $row_info = $objects->{$main_id};    
         my $source = $row_info->{ 'sample_source' };        
         my $id     = $row_info->{ 'sample_id' }; # is field "Sample_barcode" in Access LIMS
         my $name   = $row_info->{ 'sample_name' };
@@ -421,14 +421,14 @@ sub processAccessSamples{
         ## Add to temporary mappings (used later on to enrich DNA/RNA samples)
         if ( $source eq 'BLOOD' and not isSkipValue($name) ){
             if ( exists $blood_samples_by_name{ $name } and $failed ){
-                warn "[INFO]     Exclude mapping for BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
+                warn "[WARN]     Exclude mapping for BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
             }else{
                 $blood_samples_by_name{ $name } = $row_info;
             }
         }
         elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ){
             if ( exists $tissue_samples_by_coupe{ $coupe } and $failed ){
-                warn "[INFO]     Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed";
+                warn "[WARN]     Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed";
             }else{
                 $tissue_samples_by_coupe{ $coupe } = $row_info;
             }
