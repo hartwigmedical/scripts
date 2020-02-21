@@ -43,3 +43,18 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
         fi
     fi
 done | sort
+
+job_file="${HOME}/jobs/${YYMMDD}_process_shallow_runs"
+log_file=$(echo "${job_file}" | sed 's/jobs/logs/')
+
+write_job_cmd="$0 > ${job_file} && chmod +x ${job_file}"
+execute_job_cmd="nohup ${job_file} > ${log_file} &"
+
+echo "## ---"
+echo "## Potential followup steps to process ready runs:"
+echo "## Create job: $write_job_cmd"
+echo "##    Run job: $execute_job_cmd"
+if [[ -f "${job_file}" ]]; then 
+  echo "## WARNING: job file already exists ($job_file)"
+fi
+
