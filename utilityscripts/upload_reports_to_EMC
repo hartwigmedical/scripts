@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+credentials=$(locate_nextcloud_upload_reports_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
+for report in /data/cpct/patient_reports/*.pdf; do
+    echo "[INFO] Uploading ${report} to Nextcloud for KMBP EMC
+    curl -u "${db_user}:${db_pass}" -T "${report}" https://nc.hartwigmedicalfoundation.nl/remote.php/webdav/Reports-KMBP-EMC/
+done
