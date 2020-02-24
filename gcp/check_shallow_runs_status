@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 YYMMDD=$(date +'%y%m%d')
+SCRIPT=$(basename $0)
 archive_path="/data/data_archive/shallow_seq_pipelines"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
@@ -47,7 +48,7 @@ done | sort
 job_file="${HOME}/jobs/${YYMMDD}_process_shallow_runs"
 log_file=$(echo "${job_file}" | sed 's/jobs/logs/')
 
-write_job_cmd="$0 > ${job_file} && chmod +x ${job_file}"
+write_job_cmd="$SCRIPT > ${job_file} && chmod +x ${job_file}"
 execute_job_cmd="nohup ${job_file} > ${log_file} &"
 
 echo "## ---"
