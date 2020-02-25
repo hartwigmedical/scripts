@@ -3,7 +3,7 @@
 # Add user to all BAM Read ACLs. This script is used to ensure that all BAMs can be read by the hmf-crunch user. It finds all the BAM files
 # on which the user is not on the ACL, then adds them via the SBP API.
 #
-# NOTE: the environment you run this in must have the correct auth and project set throughout the run
+# NOTE: the environment you run this in must have the hmf-download credentials activated.
 
 function log() {
   echo "$(date) $@"
