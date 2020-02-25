@@ -157,7 +157,9 @@ locate_pilot_compassionate_use_programs_tsv() {
     echo ${base_path}/dbs/knowledgebase_generator/compassionate_use_programs.tsv
 }
 
-
+locate_ref_genome_fasta_file() {
+    echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+}
 
 ################################### PGX ####################################
 

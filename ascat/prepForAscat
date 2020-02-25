@@ -1,11 +1,12 @@
 #!/bin/bash
+
 source metadata_functions
-prefix=`dirname $(readlink $0 || echo $0)`
+prefix=$(dirname $(readlink $0 || echo $0))
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 run_dir=$1 && shift
-set=$( basename ${run_dir})
+set=$(basename ${run_dir})
 out_dir=${run_dir}/amber_v2/
 mkdir -p ${out_dir}
 
