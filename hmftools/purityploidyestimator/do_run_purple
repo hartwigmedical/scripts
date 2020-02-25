@@ -34,7 +34,7 @@ if [ -z "$(hostname | grep datastore)" ]; then
 fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
-ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+ref_genome=$(locate_ref_genome_fasta_file)
 
 db_args=""
 if [ ! -z "${credentials}" ]; then
