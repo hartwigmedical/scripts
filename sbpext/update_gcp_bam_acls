@@ -44,8 +44,11 @@ if [[ "$(wc -l $SHARED_FILE_IDS | awk '{print $1}')" -ne "$(wc -l $SHARED_FILE_P
 fi
 
 log "Fetching list of stored files"
-for y in $(seq 2017 $(date '+%Y')); do
-  for m in $(seq 1 12); do
+yearNow="$(date '+%Y')"
+endWeek=52
+for y in $(seq 2017 $yearNow); do
+  [[ "$y" = "$yearNow" ]] && endWeek="$(date '+%W')"
+  for m in $(seq 1 $endWeek); do
     datestr="$(printf "%d-%02d" $y $m)"
     gsutil -u ${4} ls -r gs://hmf-output-${datestr}/** | filefilter >> $STORED_FILES
   done
