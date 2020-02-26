@@ -46,7 +46,7 @@ fi
 log "Fetching list of stored files"
 yearNow="$(date '+%Y')"
 endWeek=52
-for y in $(seq 2017 $yearNow); do
+for y in $(seq 2016 $yearNow); do
   [[ "$y" = "$yearNow" ]] && endWeek="$(date '+%W')"
   for m in $(seq 1 $endWeek); do
     datestr="$(printf "%d-%02d" $y $m)"
