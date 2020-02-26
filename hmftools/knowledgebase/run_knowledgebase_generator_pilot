@@ -11,9 +11,22 @@ compassionate_use_program_tsv=$(locate_pilot_compassionate_use_programs_tsv)
 ref_genome_version=hg19
 ref_genome_fasta_file=$(locate_ref_genome_fasta_file)
 
+output_dir=/data/common/dbs/knowledgebase_generator/output
+
+if [ -d ${output_dir} ]; then
+    echo "[INFO] dir exist and removed!"
+    rm -r ${output_dir}
+fi
+
+if [ ! -d ${output_dir} ]; then
+    mkdir -p ${output_dir}
+    echo " [INFO] dir created!"
+fi
+
 java -jar ${knowledgebase_generator_jar} \
     -vicc_json ${vicc_json} \
     -iclusion_trial_tsv ${iclusion_trial_tsv} \
     -compassionate_use_program_tsv ${compassionate_use_program_tsv} \
     -ref_genome_version ${ref_genome_version} \
-    -ref_genome_fasta_file ${ref_genome_fasta_file}
+    -ref_genome_fasta_file ${ref_genome_fasta_file} \
+    -output_dir ${output_dir}
