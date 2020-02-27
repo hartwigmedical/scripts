@@ -11,4 +11,4 @@ if [[ -z "${set}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]]; the
     exit 1
 fi
 
-bam_slicer ${set} ${bed_file} ${output_file} REF
+do_slice_bam_on_gcp ${set} ${bed_file} ${output_file} TUM

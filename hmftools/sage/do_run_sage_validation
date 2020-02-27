@@ -10,7 +10,6 @@ hotspot_bed=/data/experiments/200131_sage_validation/SAGE.validation.bed
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
-joint_name=$(load_joint_name_from_metadata ${run_dir})
 
 out_dir=/data/experiments/200131_sage_validation/${sample}/
 
@@ -24,13 +23,13 @@ post_vcf=${out_dir}/${sample}.post.vcf.gz
 final_vcf=${out_dir}/${sample}.final.vcf.gz
 
 if [ ! -f ${sample_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer_tumor ${set} ${hotspot_bed} ${sample_bam}
+    ${prefix}/../bamslicer/slice_tumor_sample_bam_bam_on_gcp ${set} ${hotspot_bed} ${sample_bam}
 else
     echo "[INFO] Skipping tumor BAM slicing. BAM already exists: ${sample_bam}"
 fi
 
 if [ ! -f ${normal_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${hotspot_bed} ${normal_bam}
+    ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${hotspot_bed} ${normal_bam}
 else
     echo "[INFO] Skipping reference BAM slicing. BAM already exists: ${normal_bam}"
 fi

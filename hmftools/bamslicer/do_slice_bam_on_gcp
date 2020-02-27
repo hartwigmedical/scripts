@@ -28,12 +28,12 @@ else
     sample=$(load_tumor_sample_id_for_set ${set_name})
 fi
 
-bamPrefix="${bucket}/${set_name}/${sample}"
+bam_prefix="${bucket}/${set_name}/${sample}"
 
 if [[ ${pipeline} = v5* ]]; then
-    bam="${bamPrefix}/aligner/${sample}.bam"
+    bam="${bam_prefix}/aligner/${sample}.bam"
 else
-    bam="${bamPrefix}/mapping/${sample}_dedup.realigned.bam"
+    bam="${bam_prefix}/mapping/${sample}_dedup.realigned.bam"
 fi
 
 internal_bam_url="gs://${bam}"

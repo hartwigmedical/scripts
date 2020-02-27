@@ -33,12 +33,12 @@ fi
 
 sample_bam=${out_dir}/${sample}.amber.bam
 if [ ! -f ${sample_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${bed} ${sample_bam}
+    ${prefix}/../bamslicer/do_slice_bam_on_gcp ${set} ${sample} ${bed} ${sample_bam}
 fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
 if [ ! -f ${normal_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${sample} ${bed} ${normal_bam}
+    ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${sample} ${bed} ${normal_bam}
 fi
 
 java -Xmx32G -cp /data/common/tools/amber_v2.0/amber.jar com.hartwig.hmftools.amber.AmberApplication \
