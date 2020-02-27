@@ -4,7 +4,7 @@ bam_input=$1 && shift
 vcf_slice=$1 && shift
 bam_output=$1 && shift
 
-bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
+bam_slicer_jar=/data/common/tools/bam-slicer_pilot/bam-slicer.jar
 java -jar ${bam_slicer_jar} \
     -file \
     -input ${bam_input} \
