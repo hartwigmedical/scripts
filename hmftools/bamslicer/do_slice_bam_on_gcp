@@ -11,7 +11,7 @@ if [[ -z "${set_name}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]]
     echo "[ERROR] Not all input parameters provided to $(basename $0)." && exit 1
 fi
 
-bam_slicer_jar=/data/common/tools/bam-slicer_v1.3/bam-slicer.jar
+bam_slicer_jar=/data/common/tools/bam-slicer_v1.4/bam-slicer.jar
 gcp_sign_url_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
 
