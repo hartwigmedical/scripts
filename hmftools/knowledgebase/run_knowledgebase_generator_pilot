@@ -20,7 +20,7 @@ fi
 
 if [ ! -d ${output_dir} ]; then
     mkdir -p ${output_dir}
-    echo " [INFO] dir created!"
+    echo "[INFO] dir created!"
 fi
 
 java -jar ${knowledgebase_generator_jar} \
