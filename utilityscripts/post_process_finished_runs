@@ -11,9 +11,9 @@ for run in ${process_runs}; do
 	      echo "[INFO] Create patient report for ${run}"
 	      patient_report_for_run /data/core/runs/${run}
     else
-        echo "[INFO] Moving set ${run} to /data/cpct/runs"
-	      mv /data/gcp/processed_runs/${run} /data/cpct/runs/
+        echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
+	      mv /data/gcp/processed_runs/${run} /data/cpct/reportable_runs/
 	      echo "[INFO] Create patient report for ${run}"
-	      patient_report_for_run /data/cpct/runs/${run}
+	      patient_report_for_run /data/cpct/reportable_runs/${run}
     fi
 done

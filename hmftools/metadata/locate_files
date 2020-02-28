@@ -223,6 +223,24 @@ locate_wgs_metrics() {
 
 ################################# Somatic Variants #################################
 
+locate_tool_sage_somatics() {
+    local run_dir=$1
+    local sage_dir=${run_dir}/sage
+
+    local somatic_vcf=""
+
+    if [ -d ${sage_dir} ]; then
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name *.sage.somatic.post_processed.vcf.gz)
+    fi
+
+    if [ -z ${somatic_vcf} ]; then
+        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${somatic_vcf}
+}
+
 locate_sage_somatics() {
     local run_dir=$1
     local somatics_dir_pre_v5=${run_dir}/somaticVariants
@@ -251,6 +269,24 @@ locate_sage_somatics() {
 locate_purple_somatics() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
+
+    local somatic_vcf=""
+
+    if [ -d ${purple_dir} ]; then
+        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
+    if [ -z ${somatic_vcf} ]; then
+        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${somatic_vcf}
+}
+
+locate_purple_on_sage_somatics() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple_sage
 
     local somatic_vcf=""
 
@@ -295,6 +331,16 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
+locate_purple_purity_sage() {
+    local run_dir=$1
+    local purple_purity_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.purity.tsv")
+    if [ -z ${purple_purity_file} ]; then
+        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_file}
+}
+
 locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -322,6 +368,16 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
+locate_purple_sage_qc() {
+    local run_dir=$1
+    local purple_qc_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.qc")
+    if [ -z ${purple_qc_file} ]; then
+        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_qc_file}
+}
+
 locate_purple_drivers() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
@@ -335,6 +391,16 @@ locate_purple_drivers() {
 locate_purple_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
+    if [ -z ${purple_gene_copynumbers} ]; then
+        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_sage_gene_copynumbers() {
+    local run_dir=$1
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.cnv.gene.tsv")
     if [ -z ${purple_gene_copynumbers} ]; then
         echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
         exit 1

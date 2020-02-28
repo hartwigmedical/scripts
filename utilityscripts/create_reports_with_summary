@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+process_runs=$(ls /data/cpct/reportable_runs)
+for run in ${process_runs}; do
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
+
+	echo "[INFO] Create patient report for ${run}"
+	patient_report_for_run /data/cpct/reportable_runs/${run}
+	echo "[INFO] Moving run to /data/cpct/runs/"
+	mv ${run} /data/cpct/runs/
+
+done
