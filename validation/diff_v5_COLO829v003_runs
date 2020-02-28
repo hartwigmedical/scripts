@@ -71,15 +71,30 @@ amber_files_2=$(ls ${run2}/amber | wc -l)
 echo "[INFO] ${run1}/amber ls count: ${amber_files_1}"
 echo "[INFO] ${run2}/amber ls count: ${amber_files_2}"
 
+bachelor_files_1=$(ls ${run1}/bachelor | wc -l)
+bachelor_files_2=$(ls ${run2}/bachelor | wc -l)
+echo "[INFO] ${run1}/bachelor ls count: ${bachelor_files_1}"
+echo "[INFO] ${run2}/bachelor ls count: ${bachelor_files_2}"
+
+chord_files_1=$(ls ${run1}/chord | wc -l)
+chord_files_2=$(ls ${run2}/chord | wc -l)
+echo "[INFO] ${run1}/chord ls count: ${chord_files_1}"
+echo "[INFO] ${run2}/chord ls count: ${chord_files_2}"
+
 cobalt_files_1=$(ls ${run1}/cobalt | wc -l)
 cobalt_files_2=$(ls ${run2}/cobalt | wc -l)
 echo "[INFO] ${run1}/cobalt ls count: ${cobalt_files_1}"
 echo "[INFO] ${run2}/cobalt ls count: ${cobalt_files_2}"
 
-health_checker_files1=$(ls ${run1}/health_checker | wc -l)
-health_checker_files2=$(ls ${run2}/health_checker | wc -l)
-echo "[INFO] ${run1}/health_checker ls count: ${health_checker_files1}"
-echo "[INFO] ${run2}/health_checker ls count: ${health_checker_files2}"
+health_checker_files_1=$(ls ${run1}/health_checker | wc -l)
+health_checker_files_2=$(ls ${run2}/health_checker | wc -l)
+echo "[INFO] ${run1}/health_checker ls count: ${health_checker_files_1}"
+echo "[INFO] ${run2}/health_checker ls count: ${health_checker_files_2}"
+
+linx_files_1=$(ls ${run1}/linx | wc -l)
+linx_files_2=$(ls ${run2}/linx | wc -l)
+echo "[INFO] ${run1}/linx ls count: ${linx_files_1}"
+echo "[INFO] ${run2}/linx ls count: ${linx_files_2}"
 
 purple_files1=$(ls ${run1}/purple | wc -l)
 purple_files2=$(ls ${run2}/purple | wc -l)
@@ -95,3 +110,4 @@ structural_caller_files1=$(ls ${run1}/structural_caller | wc -l)
 structural_caller_files2=$(ls ${run2}/structural_caller | wc -l)
 echo "[INFO] ${run1}/structural_caller ls count: ${structural_caller_files1}"
 echo "[INFO] ${run2}/structural_caller ls count: ${structural_caller_files2}"
+
