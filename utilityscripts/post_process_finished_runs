@@ -15,6 +15,8 @@ for run in ${process_runs}; do
 	    mv /data/gcp/processed_runs/${run} /data/cpct/runs/
 	    echo "[INFO] Create patient report for ${run}"
 	    patient_report_for_run /data/cpct/runs/${run}
+	    echo "[INFO] patch linx to version 1.7"
+	    patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
     else
         echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
 	    mv /data/gcp/processed_runs/${run} /data/cpct/reportable_runs/
