@@ -5,15 +5,20 @@ health_check_processed_runs
 process_runs=$(ls /data/gcp/processed_runs)
 for run in ${process_runs}; do
     patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
-    if [[ ${patientId} == "CORE"* ]]; then
+    if [[ ${patientId} == "CORELR02"* || ${patientId} == "CORERI02"* ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
-	      mv /data/gcp/processed_runs/${run} /data/core/runs/
-	      echo "[INFO] Create patient report for ${run}"
-	      patient_report_for_run /data/core/runs/${run}
+	    mv /data/gcp/processed_runs/${run} /data/core/runs/
+	    echo "[INFO] Create patient report for ${run}"
+	    patient_report_for_run /data/core/runs/${run}
+	elif [[ ${patientId} == "CPCT"* || ${patientId} == "DRUP"* ]]; then
+	    echo "[INFO] Moving set ${run} to /data/cpct/runs"
+	    mv /data/gcp/processed_runs/${run} /data/cpct/runs/
+	    echo "[INFO] Create patient report for ${run}"
+	    patient_report_for_run /data/cpct/runs/${run}
     else
         echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
-	      mv /data/gcp/processed_runs/${run} /data/cpct/reportable_runs/
-	      echo "[INFO] Create patient report for ${run}"
-	      patient_report_for_run /data/cpct/reportable_runs/${run}
+	    mv /data/gcp/processed_runs/${run} /data/cpct/reportable_runs/
+	    echo "[INFO] Create patient report for ${run}"
+	    patient_report_for_run /data/cpct/reportable_runs/${run}
     fi
 done
