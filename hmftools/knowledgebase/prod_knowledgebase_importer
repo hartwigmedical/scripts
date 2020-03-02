@@ -27,7 +27,7 @@ transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
 output_dir=/data/common/dbs/knowledgebases/output
 
-rm -rf ${output_dir}
+rm -r ${output_dir}
 java -jar ${knowledgebase_importer_jar} \
     -reference ${ref_genome} \
     -transvar_location ${transvar_command} \

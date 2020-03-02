@@ -11,4 +11,4 @@ fi
 #gridss_dir=$(dirname ${gridss_vcf})
 #rm ${gridss_dir}/*.gridss.somatic.vcf.gz*
 #rm ${gridss_dir}/*.gridss.somatic.full.vcf.gz*
-#rm -rf ${gridss_dir}/breakpoint_position_backport
+#rm -r ${gridss_dir}/breakpoint_position_backport
