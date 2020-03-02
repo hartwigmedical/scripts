@@ -24,10 +24,10 @@ if [[ ! -f ${structural_vcf} ]]; then
     exit 1
 fi
 
-#if [[ ! -f ${sv_recovery_vcf} ]]; then
-#    echo "[ERROR] Unable to locate sv recovery variants. Exiting."
-#    exit 1
-#fi
+if [[ ! -f ${sv_recovery_vcf} ]]; then
+    echo "[ERROR] Unable to locate sv recovery variants. Exiting."
+    exit 1
+fi
 
 mkdir -p ${purple_output}
 if [[ $? = 1 ]]; then
