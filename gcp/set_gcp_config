@@ -12,6 +12,5 @@ gcloud config set account ${gcp_account}@${gcp_project}.iam.gserviceaccount.com
 
 echo "## INFO: Searching for non-weekly buckets (exclude regex ${exclude_rgx}):"
 gsutil -u "${gcp_project}" ls gs:// | \
- grep -vP "${exclude_rgx}" | \
- xargs printf " gsutil -u ${gcp_project} ls %s\n"
-
+    grep -vP "${exclude_rgx}" | \
+    xargs printf " gsutil -u ${gcp_project} ls %s\n"
