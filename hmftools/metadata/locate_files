@@ -7,6 +7,7 @@ if [ -z "$(hostname | grep datastore)" ]; then
 fi
 
 ############################# Database Credentials #############################
+
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
@@ -32,11 +33,13 @@ locate_pipeline_v5_validation_database_credentials() {
 }
 
 ############################# Nextcloud Credentials #############################
+
 locate_nextcloud_upload_reports_credentials() {
     echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
 }
 
 ##################################### JARS #####################################
+
 locate_prod_sage() {
     echo ${base_path}/tools/sage_v1.1/sage.jar
 }
@@ -163,7 +166,7 @@ locate_ref_genome_fasta_file() {
 
 ################################### PGX ####################################
 
-locate_pilot_pgx_calls() {
+locate_pgx_pilot_calls() {
     local run_dir=$1
     local pgx_dir=${run_dir}/pgx_pilot
 
@@ -181,7 +184,7 @@ locate_pilot_pgx_calls() {
     echo ${pgx_calls_txt}
 }
 
-locate_pilot_pgx_genotype() {
+locate_pgx_pilot_genotype() {
     local run_dir=$1
     local pgx_dir=${run_dir}/pgx_pilot
 
@@ -223,17 +226,17 @@ locate_wgs_metrics() {
 
 ################################# Somatic Variants #################################
 
-locate_tool_sage_somatics() {
+locate_sage_somatics() {
     local run_dir=$1
     local sage_dir=${run_dir}/sage
 
     local somatic_vcf=""
 
-    if [ -d ${sage_dir} ]; then
+    if [[ -d ${sage_dir} ]]; then
         somatic_vcf=$(find -L ${sage_dir}/ -type f -name *.sage.somatic.post_processed.vcf.gz)
     fi
 
-    if [ -z ${somatic_vcf} ]; then
+    if [[ -z ${somatic_vcf} ]]; then
         echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
@@ -241,7 +244,7 @@ locate_tool_sage_somatics() {
     echo ${somatic_vcf}
 }
 
-locate_sage_somatics() {
+locate_strelka_somatics() {
     local run_dir=$1
     local somatics_dir_pre_v5=${run_dir}/somaticVariants
     local somatics_dir_v5=${run_dir}/somatic_caller

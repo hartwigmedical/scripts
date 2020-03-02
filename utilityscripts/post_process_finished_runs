@@ -2,26 +2,34 @@
 
 health_check_processed_runs
 
-process_runs=$(ls /data/gcp/processed_runs)
+source_path=/data/gcp/processed_runs
+
+process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
+
+    # TODO: switch on when runs used pipeline 5.8
+    #echo "Running purple on sage input"
+    #do_run_purple_no_db_on_sage ${source_path}/${run}
+
     patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
     if [[ ${patientId} == "CORELR02"* || ${patientId} == "CORERI02"* ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
-	    mv /data/gcp/processed_runs/${run} /data/core/runs/
-	    echo "[INFO] Create patient report for ${run}"
-	    patient_report_for_run /data/core/runs/${run}
-	elif [[ ${patientId} == "CPCT"* || ${patientId} == "DRUP"* ]]; then
-	    echo "[INFO] Moving set ${run} to /data/cpct/runs"
-	    mv /data/gcp/processed_runs/${run} /data/cpct/runs/
-	    echo "[INFO] Create patient report for ${run}"
-	    patient_report_for_run /data/cpct/runs/${run}
-	    # TODO: remove when pipeline is 5.8
-	    echo "[INFO] patch linx to version 1.7"
-	    patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
+	      mv ${source_path}/${run} /data/core/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/core/runs/${run}
+	  elif [[ ${patientId} == "CPCT"* || ${patientId} == "DRUP"* ]]; then
+	      echo "[INFO] Moving set ${run} to /data/cpct/runs"
+	      mv ${source_path}/${run} /data/cpct/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/cpct/runs/${run}
+	      # TODO: remove when pipeline is 5.8
+	      echo "[INFO] patch linx to version 1.7"
+	      patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
     else
+        # This is for patients that require a summary (WIDE, some CORE)
         echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
-	    mv /data/gcp/processed_runs/${run} /data/cpct/reportable_runs/
-	    echo "[INFO] Create patient report for ${run}"
-	    patient_report_for_run /data/cpct/reportable_runs/${run}
+	      mv ${source_path}/${run} /data/cpct/reportable_runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/cpct/reportable_runs/${run}
     fi
 done

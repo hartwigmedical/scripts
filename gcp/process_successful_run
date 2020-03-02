@@ -33,10 +33,6 @@ cp -r ${downloaded_set_path} ${processed_set_path}
 
 tumor_sample=$(load_tumor_sample_from_metadata ${processed_set_path})
 
-# TODO: switch on when runs used pipeline 5.8
-#echo "Running purple on sage input"
-#do_run_purple_no_db_on_sage ${processed_path}
-
 if [[ ${tumor_sample} =~ ^CORE ]]; then
     echo "[INFO] Skipped loading into database for ${set} because ${tumor_sample} is a CORE sample!"
 else
