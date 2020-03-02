@@ -14,17 +14,26 @@ credentials=$1 && shift
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-if [ ! -f "$somatic_vcf" ]; then
+if [[ ! -f ${somatic_vcf} ]]; then
     echo "[ERROR] Unable to locate somatic variants. Exiting."
     exit 1
 fi
 
-if [ ! -f "$structural_vcf" ]; then
+if [[ ! -f ${structural_vcf} ]]; then
     echo "[ERROR] Unable to locate structural variants. Exiting."
     exit 1
 fi
 
+#if [[ ! -f ${sv_recovery_vcf} ]]; then
+#    echo "[ERROR] Unable to locate sv recovery variants. Exiting."
+#    exit 1
+#fi
+
 mkdir -p ${purple_output}
+if [[ $? = 1 ]]; then
+    echo "[ERROR] Could not create directory ${purple_output}. Exiting."
+    exit 1
+fi
 rm -rf ${purple_output}/*
 
 base_path="/data/common"
