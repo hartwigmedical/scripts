@@ -13,6 +13,7 @@ for run in ${process_runs}; do
 	    mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
 	    echo "[INFO] Create patient report for ${run}"
 	    patient_report_for_run /data/cpct/runs/${run}
+	    # TODO: remove when pipeline is 5.8
 	    echo "[INFO] patch linx to version 1.7"
 	    patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
 	fi
