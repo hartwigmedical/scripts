@@ -521,19 +521,23 @@ locate_gridss_structural_variants() {
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local structural_vcf=""
-    if [ -d ${gridss_dir_pre_v5} ]; then
+    if [[ -d ${gridss_dir_pre_v5} ]]; then
 	      local gridss_backport_dir=${gridss_dir_pre_v5}/*/breakpoint_position_backport
-	      if [ -d ${gridss_backport_dir} ]; then
+	      if [[ -d ${gridss_backport_dir} ]]; then
 	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
         else
             # Fall back to v4 format which did not require the backport.
             structural_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.vcf.gz")
         fi
-    elif [ -d ${gridss_dir_v5} ]; then
-		    structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+    elif [[ -d ${gridss_dir_v5} ]]; then
+        # Pipeline v5.8+ calls this file "filtered".
+        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
+        if [[ -z ${structural_vcf} ]]; then
+		        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+		    fi
     fi
 
-    if [ -z ${structural_vcf} ]; then
+    if [[ -z ${structural_vcf} ]]; then
         echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
         exit 1
 		fi
@@ -547,13 +551,17 @@ locate_gridss_recovery_candidates() {
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local sv_recovery_vcf=""
-    if [ -d ${gridss_dir_pre_v5} ]; then
+    if [[ -d ${gridss_dir_pre_v5} ]]; then
         sv_recovery_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    elif [ -d ${gridss_dir_v5} ]; then
+    elif [[ -d ${gridss_dir_v5} ]]; then
         sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.full.vcf.gz")
+        # File is renamed to below in v5.8+
+        if [[ -z ${sv_recovery_vcf} ]]; then
+            sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+        fi
     fi
 
-    if [ -z ${sv_recovery_vcf} ]; then
+    if [[ -z ${sv_recovery_vcf} ]]; then
         echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
         exit 1
     fi
