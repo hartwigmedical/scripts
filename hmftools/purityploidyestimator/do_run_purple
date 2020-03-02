@@ -34,7 +34,7 @@ if [[ $? = 1 ]]; then
     echo "[ERROR] Could not create directory ${purple_output}. Exiting."
     exit 1
 fi
-rm -rf ${purple_output}/*
+rm -r ${purple_output}/*
 
 base_path="/data/common"
 if [ -z "$(hostname | grep datastore)" ]; then
