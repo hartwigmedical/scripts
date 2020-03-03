@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+bam=$1 && shift
+
+if [[ ! -f ${bam} ]]; then
+    echo "[ERROR] Bam is not a file: ${bam}. Exiting"
+    exit 1
+fi
+
+samtools=/data/common/tools/samtools_v1.9/samtools
+fasta=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+
+echo "-----"
+echo "## Printing header part"
+$samtools view -H ${bam}
+
+echo "-----"
+echo "## Printing data part (head 3) with -T ref genome"
+$samtools view -T ${fasta} ${bam} | head -3
+
+echo "-----"
+echo "## Printing data part (head 3) without -T ref genome"
+$samtools view ${bam} | head -3
