@@ -38,7 +38,7 @@ if [ $? = 0 ]; then
     set_selection_tsv=${log_dir}/selectSets.tsv
     execute_sql_on_prod ${log_dir}/selectSets.sql > ${set_selection_tsv}
     set_count=$(grep -cv "^#" ${set_selection_tsv})
-    echo "[INFO] Created ${set_selection_tsv} with ${set_count} patients"
+    echo "[INFO] Created ${set_selection_tsv} with ${set_count} sets"
 
     if [ ${include_somatics} == "1" ]; then
         echo "[INFO] Collecting somatic data for hospital Request ${request_name}."
