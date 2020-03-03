@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 
-OUT_BAM=$2
-IN_BAM=$1
-KEEPING_DATA=$3
+in_bam=$1 && shift
+out_bam=$1 && shift
+ratio_to_keep=$1 && shift
 
-PICARD_DIR=/data/tools/picard-tools_v1.141
-MEM_USE=50
+picard_dir=/data/tools/picard-tools_v1.141
+mem_use=50
 
-echo "Input bam file: " ${IN_BAM}
-echo "output bam file: " ${OUT_BAM}
-echo "Keeping data between 0 and 1: " ${KEEPING_DATA}
+echo "[INFO] Input bam file: " ${in_bam}
+echo "[INFO] Output bam file: " ${out_bam}
+echo "[INFO] Ratio to keep between 0 and 1: " ${ratio_to_keep}
 
-java -Xmx${MEM_USE}g -jar ${PICARD_DIR}/picard.jar DownsampleSam \
-I=${IN_BAM} \
-O=${OUT_BAM} \
-P=${KEEPING_DATA}
+java -Xmx${mem_use}G -jar ${picard_dir}/picard.jar DownsampleSam \
+    I=${in_bam} \
+    O=${out_bam} \
+    P=${ratio_to_keep}
 
-echo "Finished!"
+echo "[INFO] Finished!"
