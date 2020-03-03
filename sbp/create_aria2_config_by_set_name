@@ -153,6 +153,12 @@ create_ini_specific_files () {
             bucket=$(echo "${bucket}" | sed 's/_/-/g' )
             file_in_bucket="${bucket}/${name}/${file_path}"
             internal_url="gs://${file_in_bucket}"
+            ## sanity check on existance of file in bucket
+            gsutil -u hmf-database -q stat "${internal_url}"
+            if [[ $? -eq 1 ]]; then
+                echo "[EXIT] File does not exist (${internal_url})" && exit 1
+            fi
+            ## get actual pre-signed URL
             external_url=$( ${gcp_url_sign_script} "${gcp_key_file}" "${file_in_bucket}" 604800)
         else
             file_in_bucket="${bucket}/${name}/${file_path}"
