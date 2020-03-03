@@ -13,12 +13,12 @@ ref_genome_fasta_file=$(locate_ref_genome_fasta_file)
 
 output_dir=/data/common/dbs/knowledgebase_generator/output
 
-if [ -d ${output_dir} ]; then
+if [[ -d ${output_dir} ]]; then
     echo "[INFO] dir exist and removed!"
     rm -r ${output_dir}
 fi
 
-if [ ! -d ${output_dir} ]; then
+if [[ ! -d ${output_dir} ]]; then
     mkdir -p ${output_dir}
     echo "[INFO] dir created!"
 fi
