@@ -27,7 +27,7 @@ my $MUST_MATCH_EXACT;
 
 my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status )],
-  'submissions' => [qw( submission project_name contact_name contact_email project_type analysis_type sample_count )],
+  'submissions' => [qw( submission project_name project_type analysis_type sample_count has_lab_finished )],
   'unreported'  => [qw( sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date sbp_info )],
   'dateTable'   => [qw( sample_name sampling_date arrival_date )],
 );
@@ -112,16 +112,25 @@ elsif( $TYPE eq 'samples' ){
     printObjectInfo( $samples, $out_fields, 'sample_name', \%opt );
 }
 elsif( $TYPE eq 'submissions' ){
-    my $submissions = [];
-    foreach my $subm_name ( keys %{$lims->{submissions}} ){
-        push( @$submissions, $lims->{submissions}->{ $subm_name } );
-    }
+    my $submissions = filterSubmissions( $lims, \%opt );
     printObjectInfo( $submissions, $out_fields, 'submission', \%opt );
 }
 
 ## -----
 ## /MAIN
 ## -----
+sub filterSubmissions{
+    my ($lims, $opt) = @_;
+    my $objects = $lims->{ 'submissions' };
+    my @selected_objects = ();    
+    foreach my $id ( keys %{$objects} ){
+        push @selected_objects, $objects->{ $id };
+    }
+    my $filtered_objects = filterObjects( \@selected_objects, $opt );
+    
+    return $filtered_objects;
+}
+    
 
 sub filterSamples{
     my ($lims, $opt) = @_;
@@ -134,7 +143,6 @@ sub filterSamples{
         next if ( not $opt{ include_plasma } ) and ($sample->{analysis_type} =~ /plasma/i);
         push @selected_objects, $sample;
     }
-    
     my $filtered_objects = filterObjects( \@selected_objects, $opt );
     
     return $filtered_objects;

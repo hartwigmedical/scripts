@@ -25,7 +25,7 @@ wc -l temp_GCP_check/patientId_metadata.tsv
 
 jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/patientId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
-cat temp_GCP_check/patientId_DNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
+cat temp_GCP_check/patientId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
 wc -l temp_GCP_check/patientId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
@@ -43,7 +43,7 @@ wc -l temp_GCP_check/samplesId_metadata.tsv
 
 jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/sampleId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
-cat temp_GCP_check/sampleId_DNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
+cat temp_GCP_check/sampleId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
 wc -l temp_GCP_check/sampleId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
@@ -61,9 +61,7 @@ echo ''
 jq '.patients | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate DNA BAM files shared within GCP:'
-grep 'DNA' temp_GCP_check/files_GCP.tsv | wc -l
-
-
+grep -c 'DNA' temp_GCP_check/files_GCP.tsv
 
 echo ''
 echo ''
@@ -114,7 +112,7 @@ echo ''
 jq '.patients | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate RNA FASTQ files shared within GCP:'
-grep 'RNA' temp_GCP_check/files_GCP.tsv | wc -l
+grep -c 'RNA' temp_GCP_check/files_GCP.tsv
 
 
 # remove all temporary files

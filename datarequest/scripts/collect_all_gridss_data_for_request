@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+
+metadata_tsv=$1 && shift
+gridss_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+     source_set_path=/data/cpct/runs/${set_name}
+     structural_variants_path=$(locate_gridss_structural_variants ${source_set_path})
+     recovery_candidates_path=$(locate_gridss_recovery_candidates ${source_set_path})
+     unfiltered_candidates_path=$(locate_gridss_unfiltered_candidates ${source_set_path})
+
+     dest_set_path=${gridss_dir}/${set_name}
+
+     mkdir -p ${dest_set_path}
+
+     ## start symlinking
+     echo "[DEBUG] Symlinking gridds files for ${set_name}'"
+     ln -s ${structural_variants_path}  ${dest_set_path}
+     ln -s ${structural_variants_path}.tbi  ${dest_set_path}
+     ln -s ${recovery_candidates_path}  ${dest_set_path}
+     ln -s ${recovery_candidates_path}.tbi  ${dest_set_path}
+     ln -s ${unfiltered_candidates_path} ${dest_set_path}
+     ln -s ${unfiltered_candidates_path}.tbi  ${dest_set_path}
+done

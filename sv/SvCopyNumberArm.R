@@ -6,14 +6,19 @@
 # - CN at telomere and centromere
 # - whether has an arm-level LOH
 
-cnChrData = read.csv('~/data/sv/CN_CHR_ARM_DATA.csv')
+cnChrData = read.csv('~/data/sv/LNX_CN_CHR_ARM_DATA.csv')
 nrow(cnChrData)
+
+# Clean-Up
+rm(cnChrData)
 
 View(cnChrData %>% group_by(SampleId) %>% count())
 
 # restrict to HPC deduped cohort
 nrow(highestPurityCohort)
-cnChrData = cnChrData %>% filter(SampleId %in% highestPurityCohort$sampleId)
+hpcSamples = read.csv('~/data/sv/hpc_sample_ids.csv')
+# cnChrData = cnChrData %>% filter(SampleId %in% highestPurityCohort$sampleId)
+cnChrData = cnChrData %>% filter(SampleId %in% hpcSamples$SampleId)
 
 
 #sampleCancerTypes = read.csv('~/data/hpc_sample_cancer_types.csv')
@@ -190,6 +195,64 @@ print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>%
 
 print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(SumField=HasCentroCNChg,FacetField=TP53Driver),
                         'Centromere Copy Number Change by Samples with TP53 Driver','TP53Driver',T))
+
+
+#####
+## By biopsy site - location of metastass (biopsySite field in our clinical table)
+# group by biopsySite instead of cancer type
+
+biopsySites = read.csv('~/data/sample_biopsy_site.csv')
+biopsySites = biopsySites %>% filter(!is.na(BiopsySite)&BiopsySite!='')
+biopsySites = biopsySites %>% mutate(BiopsySiteGrp=as.character(stri_trans_toupper(BiopsySite)))
+
+biopsySites = biopsySites %>% mutate(BiopsySiteGrp=ifelse(grepl('SKIN',BiopsySiteGrp)|grepl('SUBCUTANEOUS',BiopsySiteGrp),'SKIN',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('ABDOM',BiopsySiteGrp),'ABDOMEN',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('MAMMA',BiopsySiteGrp)|grepl('BREAST',BiopsySiteGrp),'MAMMA',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('BRAIN',BiopsySiteGrp),'BRAIN',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('LIVER',BiopsySiteGrp),'LIVER',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('LYMPH',BiopsySiteGrp),'LYMPH',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('SOFT TISSUE',BiopsySiteGrp),'SOFT TISSUE',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('KIDNEY',BiopsySiteGrp),'KIDNEY',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('NECK',BiopsySiteGrp),'NECK',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('BLADDER',BiopsySiteGrp),'BLADDER',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('PROSTATE',BiopsySiteGrp),'PROSTATE',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('COLON',BiopsySiteGrp),'COLON',BiopsySiteGrp),
+                                     BiopsySiteGrp=ifelse(grepl('RECTUM',BiopsySiteGrp),'RECTUM',BiopsySiteGrp))
+                                     
+
+View(biopsySites %>% group_by(BiopsySite) %>% count)
+View(biopsySites %>% group_by(BiopsySiteGrp) %>% count)
+
+biopsySiteGrps = biopsySites %>% group_by(BiopsySiteGrp) %>% count %>% filter(n>=10)
+biopsySites = biopsySites %>% mutate(MainGroup=BiopsySiteGrp %in% biopsySiteGrps$BiopsySiteGrp)
+View(biopsySites)
+
+cnChrData = within(cnChrData,rm(BiopsySiteGrp))
+cnChrData = within(cnChrData,rm(BiopsySite))
+cnChrData = merge(cnChrData,biopsySites %>% filter(MainGroup) %>% select(SampleId,BiopsySiteGrp),by='SampleId',all.x=T)
+cnChrData = cnChrData %>% mutate(BiopsySite=ifelse(!is.na(BiopsySiteGrp),BiopsySiteGrp,'OTHER'))
+View(cnChrData %>% group_by(BiopsySiteGrp) %>% count)
+View(cnChrData %>% group_by(BiopsySite) %>% count)
+
+# TEMP for plots
+print(chrCancerTypePlot(cnChrData %>% mutate(SumField=WholeChrGain,CancerType=BiopsySite),'Whole Chromosome Gain by Chromosome'))
+
+print(chrCancerTypePlot(cnChrData %>% mutate(SumField=WholeChrLoss,CancerType=BiopsySite),'Whole Chromosome Loss By Chromosome'))
+
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=PvsQGain,FacetField=PCentroGain),'P Arm Gain by Gain in Centromere','PCentroGain'))
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(SumField=PvsQGain,FacetField=PCentroGain),'P Arm Gain by Gain in Centromere','PCentroGain'))
+
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=QvsPGain,FacetField=QCentroGain),'Q Arm Gain by Gain in Centromere','QCentroGain'))
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(SumField=QvsPGain,FacetField=QCentroGain),'Q Arm Gain by Gain in Centromere','QCentroGain'))
+
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=PvsQLoss,FacetField=QCentroGain),'P Arm Loss by Loss in Centromere','QCentroGain'))
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=QvsPLoss,FacetField=PCentroGain),'Q Arm Loss by Loss in Centromere','PCentroGain'))
+
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=QvsPLoss|PvsQGain),'P Arm Gain / Q Arm Loss'))
+print(chrCancerTypePlot(cnChrData %>% filter(!ShortArm) %>% mutate(CancerType=BiopsySite,SumField=PvsQLoss|QvsPGain),'Q Arm Gain / P Arm Loss'))
+
+
+
 
 
 #####

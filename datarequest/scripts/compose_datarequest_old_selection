@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+
+if [ "$#" -ne 15 ]; then
+    echo "Usage: $(basename $0)"
+    echo "      - dr_name (eg DR-028)"
+    echo "      - request_name (eg DR-028-update1)"
+    echo "      - request_name_selection (eg DR-028 - request name from where the selection should be used)"
+    echo "      - include_somatics (1 or 0)"
+    echo "      - include_germline (1 or 0)"
+    echo "      - include_tumor_bam_jsons (1 or 0)"
+    echo "      - include_ref_bam_jsons (1 or 0)"
+    echo "      - include_rna (1 or 0)"
+    echo "      - build_rna_tar (1 or 0)"
+    echo "      - include_tumor_clinical_data (1 or 0)"
+    echo "      - include_patient_clinical_data (1 or 0)"
+    echo "      - include_treatment_response_clinical_data (1 or 0)"
+    echo "      - include_pre_treatment_clinical_data (1 or 0)"
+    echo "      - include_rano_measurement_by_patient (1 or 0)"
+    echo "      - include_tumor_markers_by_patient (1 or 0)"
+    exit 1
+fi
+
+dr_name=$1 && shift
+request_name=$1 && shift
+request_name_selection=$1 && shift
+include_somatics=$1 && shift
+include_germline=$1 && shift
+include_tumor_bam_jsons=$1 && shift
+include_ref_bam_jsons=$1 && shift
+include_rna=$1 && shift
+build_rna_tar=$1 && shift
+include_tumor_clinical_data=$1 && shift # This will become non-optional at some point.
+include_patient_clinical_data=$1 && shift
+include_treatment_response_clinical_data=$1 && shift
+include_pre_treatment_clinical_data=$1 && shift
+include_rano_measurement_by_patient=$1 && shift
+include_tumor_markers_by_patient=$1 && shift
+
+base_path=/data/data_archive/datarequests
+
+dr_base_path=${base_path}/${dr_name}
+dr_path=${dr_base_path}/${request_name}
+dr_path_selection=${dr_base_path}/${request_name_selection}
+
+echo "[INFO] Composing data request ${request_name} in ${dr_path}"
+echo "[INFO]    dr_name=${dr_name}"
+echo "[INFO]    request_name=${request_name}"
+echo "[INFO]    request_name_selection=${request_name_selection}"
+echo "[INFO]    include_somatics=${include_somatics}"
+echo "[INFO]    include_germline=${include_germline}"
+echo "[INFO]    include_tumor_bam_jsons=${include_tumor_bam_jsons}"
+echo "[INFO]    include_ref_bam_jsons=${include_ref_bam_jsons}"
+echo "[INFO]    include_rna=${include_rna}"
+echo "[INFO]    build_rna_tar=${build_rna_tar}"
+echo "[INFO]    include_tumor_clinical_data=${include_tumor_clinical_data}"
+echo "[INFO]    include_patient_clinical_data=${include_patient_clinical_data}"
+echo "[INFO]    include_treatment_response_clinical_data=${include_treatment_response_clinical_data}"
+echo "[INFO]    include_pre_treatment_clinical_data=${include_pre_treatment_clinical_data}"
+echo "[INFO]    include_rano_measurement_by_patient=${include_rano_measurement_by_patient}"
+echo "[INFO]    include_tumor_markers_by_patient=${include_tumor_markers_by_patient}"
+
+create_base_directory_for_datarequest ${dr_path}
+if [ $? = 0 ]; then
+    log_dir=${dr_path}/logs
+    mkdir -p ${log_dir}
+
+    echo "[INFO] Selecting samples from ${request_name_selection} to include for ${request_name}..."
+    # get the sample selection of the old DR handout.
+    sample_selection_tsv_original=${log_dir}/originalSamples.tsv
+    csvcut -t -e iso-8859-1 -c 'sampleId' ${dr_path_selection}/metadata/metadata.tsv | csvformat -T > ${log_dir}/originalSamples.tsv
+    # get all samples that are now available for data requests
+    cp /data/common/repos/scripts/datarequest/selection/all_samples_eligible_datarequests.sql ${log_dir}/allSamples.sql
+    all_samples_tsv=${log_dir}/allSamples.tsv
+    execute_sql_on_prod ${log_dir}/allSamples.sql > ${all_samples_tsv}
+    # get the overlap between the old DR handout selection and those that are still available for data requests: this is the final selection.
+    temp_tsv=${log_dir}/temp_tsv.tsv
+    patient_selection_tsv=${log_dir}/selectPatients.tsv
+    grep -w -Ff ${sample_selection_tsv_original} ${all_samples_tsv} > ${temp_tsv}
+    cut -f 2-2 ${temp_tsv} | sort | uniq > ${patient_selection_tsv}
+    rm ${log_dir}/temp_tsv.tsv
+    patient_count=$(grep -cv "^#" ${patient_selection_tsv})
+    echo "[INFO] Created ${patient_selection_tsv} with ${patient_count} patients (overlap old selection and those now available for data requests)"
+
+    echo "[INFO] Creating metadata for ${request_name}..."
+    metadata_dir_name=metadata
+    metadata_dir=${dr_path}/${metadata_dir_name}
+    mkdir -p ${metadata_dir}
+    metadata_tsv=${metadata_dir}/metadata.tsv
+    generate_metadata \
+        ${patient_selection_tsv} \
+        ${log_dir} \
+        ${metadata_tsv} \
+        ${include_patient_clinical_data} \
+        ${include_tumor_clinical_data} \
+        ${include_treatment_response_clinical_data}
+
+    if [ $? = 1 ]; then
+        # Propogate error upstream to caller of this function.
+        exit 1;
+    fi
+
+    sample_count=$(grep -cv "^#" ${metadata_tsv})
+    echo "[INFO] Created ${metadata_tsv} with ${sample_count} samples"
+
+    if [ ${include_somatics} == "1" ]; then
+        echo "[INFO] Collecting somatic data for ${request_name}..."
+        somatic_dir_name=somatics
+        somatics_dir=${dr_path}/${somatic_dir_name}
+        mkdir -p ${somatics_dir}
+        collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
+        somatics_sample_count=$(ls ${somatics_dir} | wc -l)
+        somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
+        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
+        create_tar_file ${somatic_tar_file} ${dr_path} ./${somatic_dir_name} ${log_dir}/tar_${request_name}_somatics.log
+    else
+        echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_germline} == "1" ]; then
+        echo "[INFO] Collecting germline data for ${request_name}..."
+        germline_dir_name=germline
+        germline_dir=${dr_path}/${germline_dir_name}
+        mkdir -p ${germline_dir}
+        collect_all_germline_set_data_for_request ${metadata_tsv} ${germline_dir}
+        germline_sample_count=$(ls ${germline_dir} | wc -l)
+        germline_tar_file=${dr_base_path}/${request_name}.germline.tar
+        echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
+        create_tar_file ${germline_tar_file} ${dr_path} ./${germline_dir_name} ${log_dir}/tar_${request_name}_germline.log
+    else
+        echo "[INFO] Skipped germline collection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_tumor_bam_jsons} == "1" ]; then
+        echo "[INFO] Creating tumor bam share jsons for ${request_name}..."
+        base_json_dir=${dr_path}/logs/json
+        mkdir -p ${base_json_dir}
+        create_tumor_bam_share_jsons_for_datarequest ${metadata_tsv} ${dr_name} ${base_json_dir}
+        echo "[INFO] Done creating tumor bam share jsons for DR."
+    else
+        echo "[INFO] Skipped tumor bam share json creation as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_ref_bam_jsons} == "1" ]; then
+        echo "[INFO] Creating reference bam share jsons for ${request_name}..."
+        base_json_dir=${dr_path}/logs/json
+        mkdir -p ${base_json_dir}
+        create_reference_bam_share_jsons_for_datarequest ${metadata_tsv} ${dr_name} ${base_json_dir}
+        echo "[INFO] Done creating reference bam share jsons for DR"
+    else
+        echo "[INFO] Skipped reference bam share json creation as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_rna} == "1" ]; then
+        echo "[INFO] Collecting RNA seq for ${request_name}..."
+        rnaseq_dir_name=rnaseq
+        rnaseq_dir=${dr_path}/${rnaseq_dir_name}
+        mkdir -p ${rnaseq_dir}
+        collect_all_rna_data_for_request ${metadata_tsv} ${rnaseq_dir}
+        rna_sample_count=$(ls ${rnaseq_dir} | wc -l)
+        echo "[INFO] Done collecting RNA seq for DR. Found ${rna_sample_count} samples"
+
+        if [ ${build_rna_tar} == "1" ]; then
+            rna_tar_file=${dr_base_path}/${request_name}.rnaseq.tar
+            echo "[INFO] Creating RNA TAR file at ${rna_tar_file}"
+            create_tar_file ${rna_tar_file} ${dr_path} ./${rnaseq_dir_name} ${log_dir}/tar_${request_name}_rnaseq.log
+        else
+            echo "[INFO] Skipping RNA TAR file creation!"
+        fi
+    else
+        echo "[INFO] Skipped RNA selection as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_treatment_response_clinical_data} == "1" ]; then
+        echo "[INFO] Creating treatment and response clinical data for ${request_name}..."
+        generate_post_biopsy_drugs_by_sample ${patient_selection_tsv} ${log_dir} ${metadata_dir}
+        generate_responses_by_sample ${patient_selection_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating response clinical data for DR"
+    else
+        echo "[INFO] Skipped generation of response clinical data as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_pre_treatment_clinical_data} == "1" ]; then
+        echo "[INFO] Creating pre-biopsy treatment data for ${request_name}..."
+        generate_pre_biopsy_drugs_by_patient ${patient_selection_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating pre-biopsy treatment data for DR"
+    else
+        echo "[INFO] Skipped generation of pre-biopsy treatment data as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_rano_measurement_by_patient} == "1" ]; then
+        echo "[INFO] Creating RANO measurements for ${request_name}..."
+        generate_rano_measurements_by_patient ${patient_selection_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating RANO measurements for DR"
+    else
+        echo "[INFO] Skipped generation of RANO measurement data as not deemed relevant for ${request_name}"
+    fi
+
+    if [ ${include_tumor_markers_by_patient} == "1" ]; then
+        echo "[INFO] Creating tumor markers for ${request_name}..."
+        generate_tumor_markers_by_patient ${patient_selection_tsv} ${log_dir} ${metadata_dir}
+        echo "[INFO] Done creating tumor markers for DR"
+    else
+        echo "[INFO] Skipped generation of tumor markers as not deemed relevant for ${request_name}"
+    fi
+
+    metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
+    echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
+    create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
+
+    if [ ${include_ref_bam_jsons} == "1" ] || [ ${include_tumor_bam_jsons} == "1" ]; then
+        echo "[INFO] Make sure to run 'refresh_all_shares_for_datarequest ${dr_name} ${request_name}' as sbpext to register the JSONs!"
+    fi
+
+    echo "[INFO] Composing datarequest for ${request_name} completed!"
+else
+    echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
+fi

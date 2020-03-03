@@ -188,28 +188,28 @@ sub performQC{
             'lane_q30' => 75,
             'samp_yld' => 1e9,
             'samp_q30' => 75,
-            'max_undt' => 6
+            'max_undt' => 8
         },
         'NextSeq' => {
             'lane_yld' => 8e9,
             'lane_q30' => 75,
             'samp_yld' => 1e9,
             'samp_q30' => 75,
-            'max_undt' => 6
+            'max_undt' => 8
         },
         'NovaSeq' => {
             'lane_yld' => 100e9,
             'lane_q30' => 75,
             'samp_yld' => 1e9,
             'samp_q30' => 75,
-            'max_undt' => 6
+            'max_undt' => 8
         },
         'ISeq' => {
             'lane_yld' => 0,
             'lane_q30' => 75,
             'samp_yld' => 0,
             'samp_q30' => 75,
-            'max_undt' => 6
+            'max_undt' => 8
         }
     );
        

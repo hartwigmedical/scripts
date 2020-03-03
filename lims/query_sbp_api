@@ -15,6 +15,7 @@ use 5.010.000;
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $JSONS_HOME = '/data/lims/sbpfiles';
+my $JSONS_HOME_ACC = '/data/lims/sbpfiles/acc';
 
 my %OUT_FIELDS_PER_TYPE = (
   'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'sbp_id' ],
@@ -35,6 +36,7 @@ my $type;
 my $output_as_json;
 my @filters = ();
 my $must_match_exact;
+my $use_acceptance;
 
 my $HELP =<<HELP;
 
@@ -67,6 +69,7 @@ my $HELP =<<HELP;
     -filter   <s>  (search string arg)
     -exact         (only allow exact matches for filters)
     -json          (output as json instead of table)
+    -acc           (query acceptance api data)
   
   Filter examples
      -filter "submission=HMFreg0001"
@@ -85,6 +88,7 @@ GetOptions (
     "type=s"    => \$type,
     "filter=s@" => \@filters,
     "delim=s"   => \$delim,
+    "acc"       => \$use_acceptance,
     "json"      => \$output_as_json,
     "exact"     => \$must_match_exact,
 ) or die "Error in command line arguments\n";
@@ -94,6 +98,9 @@ warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_P
 ## -----
 ## MAIN
 ## -----
+if ( $use_acceptance ){
+   $JSONS_HOME = $JSONS_HOME_ACC;
+}
 my $objects = readJson( $type );
 my $filtered_objects = filterObjects( $objects, \@filters );
 my $out_fields = $OUT_FIELDS_PER_TYPE{ $type };

@@ -10,5 +10,6 @@ FROM drug
     INNER JOIN treatment ON drug.treatmentId = treatment.id
     INNER JOIN biopsy ON treatment.biopsyId = biopsy.id
     INNER JOIN patient ON biopsy.patientId = patient.id
-WHERE treatmentGiven = "Yes" AND NOT isnull(drug.startDate)
+    INNER JOIN datarequest ON biopsy.sampleId = datarequest.sampleId
+WHERE treatment.treatmentGiven = "Yes" AND NOT isnull(drug.startDate)
 ORDER BY 1,2,3;

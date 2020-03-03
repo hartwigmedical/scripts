@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+log_file=$1 && shift
+
+echo "[INFO] Printing all log messages minus symlinks"
+cat ${log_file} | grep -v "symbolic" | grep -v "symlink"
+
+echo "[INFO] Printing removals only"
+cat ${log_file} | grep Removing

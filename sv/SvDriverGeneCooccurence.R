@@ -881,3 +881,291 @@ View(allResults)
 
 
 
+View(tsgDataSummary)
+sum(tsgDataSummary$WithGeneNoCat)
+
+tsgNoGeneSamples = tsgDataSummary %>% filter(WithGene==0)
+View(tsgNoGeneSamples)
+nrow(tsgNoGeneSamples)
+tsgNoCatSamples = tsgDataSummary %>% filter(WithCat==0)
+nrow(tsgNoCatSamples)
+scNoCatNoGene = nrow(tsgDataSummary %>% filter(WithCat==0&WithGene==0))
+print(scNoCatNoGene)
+scWithCatWithGene = nrow(tsgDataSummary %>% filter(WithCat>0&WithGene>0))
+print(scWithCatWithGene)
+nrow(tsgDataSummary %>% filter(WithGeneWithCat>0))
+
+scWithCatNoGene = nrow(tsgDataSummary %>% filter(WithCat>0&WithGene==0))
+print(scWithCatNoGene)
+View(tsgDataSummary %>% filter(WithCat>0&WithGene==0))
+
+scNoCatWithGene = nrow(tsgDataSummary %>% filter(WithCat==0&WithGene>0))
+print(scNoCatWithGene)
+
+scWithGene = nrow(tsgDataSummary %>% filter(WithGene>0))
+print(scWithGene)
+scWithCat = nrow(tsgDataSummary %>% filter(WithCat>0))
+print(scWithCat)
+
+
+View(cancerTypesPlusAllList)
+
+lohTypeGeneCocResults = calc_loh_gene_coc(cancerTypesPlusAllList, tsgSampleData, F)
+View(lohTypeGeneCocResults)
+
+calc_loh_gene_coc<-function(cancerTypesList, tsgSampleData, logCalcs = T)
+{
+  allResults = data.frame()
+
+  cancerTypesList = cancerTypesPlusAllList
+
+  for(cancerTypeStr in cancerTypesList)
+  {
+    if(cancerTypeStr!='All')
+      tsgData = tsgSampleData %>% filter(CancerType==cancerTypeStr)
+    
+    scCancerType = nrow(tsgData %>% group_by(SampleId) %>% count())
+    
+    geneList = unique(tsgData$Gene)
+    geneCount = length(geneList)
+    
+    categoryList = unique(tsgData$LohType)
+    categoryCount = length(categoryList)
+    
+    print(paste("cancerType=", cancerTypeStr, ", sampleCount=", scCancerType, ' lohTypes=', categoryCount, ' geneCount=', geneCount, sep=''))
+    
+    geneCatProbs = data.frame(matrix(ncol = 9, nrow = 0))
+    colnames(geneCatProbs) = c("CatType", "Gene", "SampleCount", "CatSC", "GeneSC", "WithCatWithGeneSC", "NoCatNoGeneSC", "ExpectedSC", "FisherET")
+    
+    for(catName in categoryList)
+    {
+      for(geneName in geneList)
+      {
+        tsgDataSummary = tsgData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName),
+                                                                      WithGene=sum(Gene==geneName))
+        
+        scNoCatNoGene = nrow(tsgDataSummary %>% filter(WithCat==0&WithGene==0))
+        scWithCatWithGene = nrow(tsgDataSummary %>% filter(WithCat>0&WithGene>0))
+        scWithCatNoGene = nrow(tsgDataSummary %>% filter(WithCat>0&WithGene==0))
+        scNoCatWithGene = nrow(tsgDataSummary %>% filter(WithCat==0&WithGene>0))
+
+        scWithGene = nrow(tsgDataSummary %>% filter(WithGene>0))
+        scWithCat = nrow(tsgDataSummary %>% filter(WithCat>0))
+        
+        expectedCount = round(scWithGene/scCancerType*scWithCat,4) 
+
+        if(scWithCatWithGene < 0 | scNoCatWithGene < 0 | scWithCatNoGene < 0 | scNoCatNoGene < 0)
+        {
+          print(paste("INVALID catName=", catName, " gene=", geneName, " geneSC=", scWithGene, " catSC=", scWithCat, sep=''))
+          
+          print(paste("withGene=", scWithGene, " noCatWithGene=", scNoCatWithGene, " withCatWithGene=", scWithCatWithGene, sep=''))
+          print(paste("noGene=", scNoGene, " noCatNoGene=", scNoCatNoGene, " withCatNoGene=", scWithCatNoGene, sep=''))
+          return (allResults)
+        }
+        
+        fishMatrix = rbind(c(scWithCatWithGene,scNoCatWithGene), c(scWithCatNoGene,scNoCatNoGene))
+        
+        if(scWithCatWithGene < expectedCount)
+          fetProb = fisher.test(fishMatrix, alternative="less")$p.value
+        else
+          fetProb = fisher.test(fishMatrix, alternative="greater")$p.value
+        
+        if(fetProb < 1e-6 | logCalcs)
+        {
+          print(paste("catName=", catName, ", gene=", geneName, " geneSC=", scWithGene, " catSC=", scWithCat, " expectedBothSC=", expectedCount,
+                      " fetProb=", round(fetProb,10), sep=''))
+          
+          print(paste("withGene=", scWithGene, " noCatWithGene=", scNoCatWithGene, " withCatWithGene=", scWithCatWithGene, sep=''))
+          print(paste("noGene=", scNoGene, " noCatNoGene=", scNoCatNoGene, " withCatNoGene=", scWithCatNoGene, sep=''))
+        }
+        
+        rowIndex = nrow(geneCatProbs)+1
+        geneCatProbs[rowIndex,1] = catName
+        geneCatProbs[rowIndex,2] = as.character(geneName)
+        geneCatProbs[rowIndex,3] = scCancerType
+        geneCatProbs[rowIndex,4] = scWithCat
+        geneCatProbs[rowIndex,5] = scWithGene
+        geneCatProbs[rowIndex,6] = scWithCatWithGene
+        geneCatProbs[rowIndex,7] = scNoCatNoGene
+        geneCatProbs[rowIndex,8] = expectedCount
+        geneCatProbs[rowIndex,9] = fetProb
+      }
+    }
+    
+    if(nrow(geneCatProbs) > 0)
+    {
+      geneCatProbs$Count_GT_Exp = geneCatProbs$WithCatWithGeneSC > geneCatProbs$ExpectedSC
+      geneCatProbs = geneCatProbs %>% arrange(FisherET)
+      
+      # set ranking values
+      rowIndex = data.frame(as.numeric(as.character(rownames(geneCatProbs))))
+      colnames(rowIndex) <- c("Rank")
+      geneCatProbs = cbind(geneCatProbs, rowIndex)
+      
+      geneCatProbs$TestCount = categoryCount * geneCount
+      geneCatProbs$FDR = geneCatProbs$FisherET*geneCatProbs$TestCount/geneCatProbs$Rank
+      
+      geneCatProbs$CancerType = cancerTypeStr
+      
+      allResults = rbind(allResults, geneCatProbs)
+    }
+  }
+  
+  return (allResults)
+}
+
+lohTypeGeneCocResults = calc_loh_gene_coc(cancerTypesPlusAllList, tsgSampleData, F)
+View(lohTypeGeneCocResults)
+
+write.csv(lohTypeGeneCocResults, '~/data/sv/coc_sv_loh_gene.csv', row.names = F, quote = F)
+
+
+# LOH vs cancer type
+calc_loh_cancer_coc<-function(cancerTypesList, tsgSampleData, logCalcs = T)
+{
+  allResults = data.frame()
+  
+  totalSamples = n_distinct(tsgSampleData$SampleId)
+
+  categoryList = unique(tsgData$LohType)
+  categoryCount = length(categoryList)
+  
+  # cancerTypesList = c('Prostate')
+  
+  for(cancerTypeStr in cancerTypesList)
+  {
+    withCancerTsgData = tsgSampleData %>% filter(CancerType==cancerTypeStr)
+    noCancerTsgData = tsgSampleData %>% filter(CancerType!=cancerTypeStr)
+    
+    scWithCancer = nrow(withCancerTsgData %>% group_by(SampleId) %>% count())
+    scNoCancer = nrow(noCancerTsgData %>% group_by(SampleId) %>% count())
+
+    print(paste("cancerType=", cancerTypeStr, ", withCancer=", scWithCancer, ", noCancer=", scNoCancer, ' lohTypes=', categoryCount, sep=''))
+    
+    cancerCatProbs = data.frame(matrix(ncol = 8, nrow = 0))
+    colnames(cancerCatProbs) = c("CatType", "CancerType", "CatSC", "CancerSC", "WithCatWithCancerSC", "NoCatNoCancerSC", "ExpectedSC", "FisherET")
+    
+    for(catName in categoryList)
+    {
+      catSummaryData = tsgSampleData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+      scWithCat = nrow(catSummaryData %>% filter(WithCat>0))
+      scNoCat = nrow(catSummaryData %>% filter(WithCat==0))
+      
+      withCancerData = withCancerTsgData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+      noCancerData = noCancerTsgData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+
+      scWithCatWithCancer = nrow(withCancerData %>% filter(WithCat>0))
+      scWithCatNoCancer = nrow(noCancerData %>% filter(WithCat>0))
+      scNoCatWithCancer = nrow(withCancerData %>% filter(WithCat==0))
+      scNoCatNoCancer = nrow(noCancerData %>% filter(WithCat==0))
+      
+      expectedCount = round(scWithCancer/totalSamples*scWithCat,4) 
+      
+      if(scWithCatWithCancer < 0 | scNoCatWithCancer < 0 | scWithCatNoCancer < 0 | scNoCatNoCancer < 0)
+      {
+        print(paste("INVALID catName=", catName, " cancerSC=", scWithCancer, " catSC=", scWithCat, sep=''))
+        
+        print(paste("withCancer=", scWithCancer, " noCatWithCancer=", scNoCatWithCancer, " withCatWithCancer=", scWithCatWithCancer, sep=''))
+        print(paste("noCancer=", scNoCancer, " noCatNoCancer=", scNoCatNoCancer, " withCatNoCancer=", scWithCatNoCancer, sep=''))
+        return (allResults)
+      }
+      
+      fishMatrix = rbind(c(scWithCatWithCancer,scNoCatWithCancer), c(scWithCatNoCancer,scNoCatNoCancer))
+      
+      if(scWithCatWithCancer < expectedCount)
+        fetProb = fisher.test(fishMatrix, alternative="less")$p.value
+      else
+        fetProb = fisher.test(fishMatrix, alternative="greater")$p.value
+      
+      if(fetProb < 1e-6 | logCalcs)
+      {
+        print(paste("catName=", catName, ", cancerSC=", scWithCancer, " catSC=", scWithCat, " expectedSC=", expectedCount,
+                    " fetProb=", round(fetProb,10), sep=''))
+        
+        print(paste("withCancer=", scWithCancer, " noCatWithCancer=", scNoCatWithCancer, " withCatWithCancer=", scWithCatWithCancer, sep=''))
+        print(paste("noCancer=", scNoCancer, " noCatNoCancer=", scNoCatNoCancer, " withCatNoCancer=", scWithCatNoCancer, sep=''))
+      }
+      
+      # colnames(cancerCatProbs) = c("CatType", "CancerType", "CatSC", "CancerSC", "WithCatWithCancerSC", "NoCatNoCancerSC", "ExpectedSC", "FisherET")
+
+      rowIndex = nrow(cancerCatProbs)+1
+      cancerCatProbs[rowIndex,1] = catName
+      cancerCatProbs[rowIndex,2] = as.character(cancerTypeStr)
+      cancerCatProbs[rowIndex,3] = scWithCat
+      cancerCatProbs[rowIndex,4] = scWithCancer
+      cancerCatProbs[rowIndex,5] = scWithCatWithCancer
+      cancerCatProbs[rowIndex,6] = scNoCatNoCancer
+      cancerCatProbs[rowIndex,7] = expectedCount
+      cancerCatProbs[rowIndex,8] = fetProb
+    }
+    
+    if(nrow(cancerCatProbs) > 0)
+    {
+      cancerCatProbs$Count_GT_Exp = cancerCatProbs$WithCatWithCancerSC > cancerCatProbs$ExpectedSC
+      cancerCatProbs = cancerCatProbs %>% arrange(FisherET)
+      
+      # set ranking values
+      rowIndex = data.frame(as.numeric(as.character(rownames(cancerCatProbs))))
+      colnames(rowIndex) <- c("Rank")
+      cancerCatProbs = cbind(cancerCatProbs, rowIndex)
+      
+      cancerCatProbs$TestCount = categoryCount * geneCount
+      cancerCatProbs$FDR = cancerCatProbs$FisherET*cancerCatProbs$TestCount/cancerCatProbs$Rank
+      
+      cancerCatProbs$CancerType = cancerTypeStr
+      
+      allResults = rbind(allResults, cancerCatProbs)
+    }
+  }
+  
+  return (allResults)
+}
+
+lohTypeCancerCocResults = calc_loh_cancer_coc(cancerTypesList, tsgSampleData, F)
+View(lohTypeCancerCocResults)
+
+write.csv(lohTypeCancerCocResults, '~/data/sv/coc_sv_loh_cancer.csv', row.names = F, quote = F)
+
+# manual validation
+totalSamples = n_distinct(tsgSampleData$SampleId)
+print(totalSamples)
+
+categoryList = unique(tsgData$LohType)
+categoryCount = length(categoryList)
+print(categoryCount)
+
+cancerTypeStr = 'Prostate'
+withCancerTsgData = tsgSampleData %>% filter(CancerType==cancerTypeStr)
+noCancerTsgData = tsgSampleData %>% filter(CancerType!=cancerTypeStr)
+View(withCancerTsgData)
+
+scWithCancer = nrow(withCancerTsgData %>% group_by(SampleId) %>% count())
+scNoCancer = nrow(noCancerTsgData %>% group_by(SampleId) %>% count())
+
+print(paste("cancerType=", cancerTypeStr, ", withCancer=", scWithCancer, ", noCancer=", scNoCancer, ' lohTypes=', categoryCount, sep=''))
+
+catName = 'TELO_TELO'
+
+withCatData = tsgSampleData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+scWithCat = nrow(withCatData %>% filter(WithCat>0))
+print(scWithCat)
+scNoCat = nrow(withCatData %>% filter(WithCat==0))
+print(scNoCat)
+
+
+withCancerData = withCancerTsgData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+#View(withCancerData)
+noCancerData = noCancerTsgData %>% group_by(SampleId) %>% summarise(WithCat=sum(LohType==catName))
+#View(noCancerData)
+
+scWithCatWithCancer = nrow(withCancerData %>% filter(WithCat>0))
+scWithCatNoCancer = nrow(noCancerData %>% filter(WithCat>0))
+scNoCatWithCancer = nrow(withCancerData %>% filter(WithCat==0))
+scNoCatNoCancer = nrow(noCancerData %>% filter(WithCat==0))
+
+expectedCount = round(scWithCancer/totalSamples*scWithCat,4) 
+    
+print(paste("catName=", catName, " cancerSC=", scWithCancer, " catSC=", scWithCat, " expected=", expectedCount, sep=''))
+print(paste("withCancer=", scWithCancer, " noCatWithCancer=", scNoCatWithCancer, " withCatWithCancer=", scWithCatWithCancer, sep=''))
+print(paste("noCancer=", scNoCancer, " noCatNoCancer=", scNoCatNoCancer, " withCatNoCancer=", scWithCatNoCancer, sep=''))
+

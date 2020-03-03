@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+json=$1
+
+api_dir="/data/common/dbs/sbp_api_credentials/acc"
+api_crt="${api_dir}/api.crt"
+api_key="${api_dir}/api.key"
+api_url='https://api.acc.hartwigmedicalfoundation.nl/hmf/v1/action/register'
+
+if [ -z ${json+x} ]; then echo "[EXIT] No json given" && exit 1; fi
+if [ ! -f ${api_crt} ]; then echo "[EXIT] File does not exist (${api_crt})" && exit 1; fi
+if [ ! -f ${api_key} ]; then echo "[EXIT] File does not exist (${api_key})" && exit 1; fi
+if [ ! -f ${json} ]; then echo "[EXIT] File does not exist (${json})" && exit 1; fi
+
+/usr/bin/curl -s -v --cert-type pem --cert ${api_crt} --key ${api_key} ${api_url} -XPOST -H "Content-Type: application/json" -d @${json}

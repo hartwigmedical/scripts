@@ -4,7 +4,7 @@ source locate_files
 
 iclusion_api_credentials=$1 && shift
 
-knowledgebase_importer_jar=$(locate_pilot_knowledgebase)
+knowledgebase_importer_jar=$(locate_pilot_knowledgebase_importer)
 
 iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
@@ -28,7 +28,7 @@ transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/pilot_treatmentTypes.tsv
 output_dir=/data/common/dbs/knowledgebases/pilot_output
 
-rm -rf ${output_dir}
+rm -r ${output_dir}
 java -jar ${knowledgebase_importer_jar} \
     -reference ${ref_genome} \
     -transvar_location ${transvar_command} \

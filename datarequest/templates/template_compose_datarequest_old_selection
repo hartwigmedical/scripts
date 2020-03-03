@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+# The dr_name should be the number of the specific Data Request (eg DR-028).
+# The request_name should be the name of the specific handout of the Data Request you are preparing now (eg DR-028-update1 (this is never the first original hand-out!)).
+# The request_name_selection should be the name of the specific handout of the Data Request you want to use the selection from (eg DR-028 (this can be the original hand-out or an update)).
+
+dr_name="DR-XXX"
+request_name="DR-XXX"
+request_name_selection="DR-XXX"
+
+include_somatics=0
+include_germline=0
+include_tumor_bam_jsons=0
+include_ref_bam_jsons=0
+include_rna=0
+build_rna_tar=0
+include_tumor_clinical_data=0
+include_patient_clinical_data=0
+include_treatment_response_clinical_data=0
+include_pre_treatment_clinical_data=0
+include_rano_measurement_by_patient=0
+include_tumor_markers_by_patient=0
+
+compose_datarequest_old_selection ${dr_name} ${request_name} ${request_name_selection} \
+    ${include_somatics} ${include_germline} ${include_tumor_bam_jsons} ${include_ref_bam_jsons} ${include_rna} ${build_rna_tar} \
+    ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
+    ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}

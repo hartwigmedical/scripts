@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+gcp_project="hmf-database"
+gcp_account="hmf-download"
+exclude_rgx='hmf-output-\d+'
+
+echo "## INFO: Setting GCP project to ${gcp_project} (ignore access WARNING)"
+gcloud config set project "${gcp_project}"
+
+echo "## INFO: Switching to service account ${gcp_account}"
+gcloud config set account ${gcp_account}@${gcp_project}.iam.gserviceaccount.com
+
+echo "## INFO: Searching for non-weekly buckets (exclude regex ${exclude_rgx}):"
+gsutil -u "${gcp_project}" ls gs:// | \
+    grep -vP "${exclude_rgx}" | \
+    xargs printf " gsutil -u ${gcp_project} ls %s\n"

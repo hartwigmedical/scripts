@@ -1,176 +1,194 @@
 #!/usr/bin/env bash
 
+source sbp_api_functions
+
 set_name=$1
 
-CRED_DIR="/data/common/dbs/sbp_api_credentials"
-CRT_FILE="${CRED_DIR}/api.crt"
-KEY_FILE="${CRED_DIR}/api.key"
-SBP_API_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-AWS_PROFILE="download"
-
-GCP_URL_SCRIPT="generate_signed_gcp_url.py"
-GCP_KEY_FILE="/data/common/dbs/gcp_credentials/hmf-download"
-
-if [ -z "$set_name" ]; then
+if [[ -z "$set_name" ]]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
 fi
 
+cred_dir="/data/common/dbs/sbp_api_credentials"
+sbp_api_crt_file="${cred_dir}/api.crt"
+sbp_api_key_file="${cred_dir}/api.key"
+sbp_api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+aws_profile="download"
+
+gcp_url_sign_script="generate_signed_gcp_url.py"
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+
 function main() {
-  
-  ## check that only one run exists for the set
-  runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -exact -json | jq '.')
-  runs_count=$(echo "$runs_json" | jq '. | length')
-  if [ "$runs_count" -ne 1 ]; then
-    echo "[ERROR] Only sets supported with exactly one run (found $runs_count). Exiting" && exit 1
-  fi
-  run_json=$(echo "$runs_json" | jq -r '.[-1]')
-
-  ## setup all variables
-  cluster=$(echo "$run_json" | jq -r '.cluster')
-   bucket=$(echo "$run_json" | jq -r '.bucket')
-     name=$(echo "$run_json" | jq -r '.name')
-      ini=$(echo "$run_json" | jq -r '.ini')
-      ref=$(echo "$run_json" | jq -r '.ref_sample')
-      tum=$(echo "$run_json" | jq -r '.tumor_sample')
-       id=$(echo "$run_json" | jq -r '.sbp_id')
-
-  files_url="${SBP_API_URL}/files?run_id=${id}"
-  out_jsn_all="${name}_runfiles.json"
-  out_md5_all="${name}_runfiles.md5"
-  out_aria="${name}.aria.txt"
-  out_md5="${name}.md5"
-  out_url="${name}.url"
-
-  echo "[INFO] RunName: $name"
-  echo "[INFO] Cluster: $cluster"
-  echo "[INFO] Bucket: $bucket"
-  echo "[INFO] IniFile: $ini"
-  echo "[INFO] TumorSample: $tum"
-  echo "[INFO] RefSample: $ref"
-
-  ## cleanup existing files
-  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
-    if [[ -f $output_file ]]; then 
-      echo "[INFO] Deleting existing file ($output_file)" && rm $output_file; 
+    ## check that only one run exists for the set
+    runs_json=$(query_sbp_api -type runs -filter "name=$set_name" -exact -json | jq '.')
+    runs_count=$(echo "$runs_json" | jq '. | length')
+    if [[ "$runs_count" -ne 1 ]]; then
+        echo "[ERROR] Only sets supported with exactly one run (found $runs_count). Exiting" && exit 1
     fi
-  done
+    run_json=$(echo "$runs_json" | jq -r '.[-1]')
 
-  ## get the file objects for one run by id
-  files_json=$( /usr/bin/curl --silent --cert-type pem \
-    --cert ${CRT_FILE} --key ${KEY_FILE} -X GET \
-    -H "Accept: application/json" -H "Content-Type: application/json" \
-    "$files_url"
-  )
-  
-  create_json_file "$files_json" "$out_jsn_all"
-  create_md5sums_file "$files_json" "$out_md5_all"
-  create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum"
-  
-  ## sanity checks
-  for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
-    line_count=$( cat "$output_file" | wc -l)
-    echo "[INFO] Output file $output_file contains $line_count lines"
-  done
+    ## setup all variables
+    cluster=$(echo "$run_json" | jq -r '.cluster')
+    bucket=$(echo "$run_json" | jq -r '.bucket')
+    name=$(echo "$run_json" | jq -r '.name')
+    pipeline=$(echo "$run_json" | jq -r '.pipeline')
+    ini=$(echo "$run_json" | jq -r '.ini')
+    ref=$(echo "$run_json" | jq -r '.ref_sample')
+    tum=$(echo "$run_json" | jq -r '.tumor_sample')
+    id=$(echo "$run_json" | jq -r '.sbp_id')
+
+    files_url="${sbp_api_url}/files?run_id=${id}"
+    out_jsn_all="${name}_runfiles.json"
+    out_md5_all="${name}_runfiles.md5"
+    out_aria="${name}.aria.txt"
+    out_md5="${name}.md5"
+    out_url="${name}.url"
+
+    echo "[INFO] RunName: $name"
+    echo "[INFO] Cluster: $cluster"
+    echo "[INFO] Bucket: $bucket"
+    echo "[INFO] Pipeline: $pipeline"
+    echo "[INFO] IniFile: $ini"
+    echo "[INFO] TumorSample: $tum"
+    echo "[INFO] RefSample: $ref"
+
+    ## cleanup existing files
+    for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
+        if [[ -f $output_file ]]; then
+            echo "[INFO] Deleting existing file ($output_file)" && rm $output_file;
+        fi
+    done
+
+    ## get the file objects for one run by id
+    files_json=$(/usr/bin/curl --silent --cert-type pem \
+        --cert ${sbp_api_crt_file} --key ${sbp_api_key_file} -X GET \
+        -H "Accept: application/json" -H "Content-Type: application/json" \
+        "$files_url")
+
+    create_json_file "$files_json" "$out_jsn_all"
+    create_md5sums_file "$files_json" "$out_md5_all"
+    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum" "$pipeline"
+
+    ## sanity checks
+    for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
+        line_count=$(cat "$output_file" | wc -l)
+        echo "[INFO] Output file $output_file contains $line_count lines"
+    done
 }
 
 create_ini_specific_files () {
-  local json=$1 && shift
-  local out_md5=$1 && shift
-  local out_aria=$1 && shift
-  local out_url=$1 && shift
-  local name=$1 && shift
-  local cluster=$1 && shift
-  local bucket=$1 && shift
-  local ini=$1 && shift
-  local ref=$1 && shift
-  local tum=$1 && shift
+    local json=$1 && shift
+    local out_md5=$1 && shift
+    local out_aria=$1 && shift
+    local out_url=$1 && shift
+    local name=$1 && shift
+    local cluster=$1 && shift
+    local bucket=$1 && shift
+    local ini=$1 && shift
+    local ref=$1 && shift
+    local tum=$1 && shift
+    local pipeline=$1 && shift
 
-  local single_files=(
-    "${ref}/aligner/${ref}.bam"
-    "${ref}/aligner/${ref}.bam.bai"
-    "${ref}/germline_caller/${ref}.germline.vcf.gz"
-    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
-  )
-
-  local somatic_files=( 
-    "purple/purple.version"
-    "purple/${tum}.driver.catalog.tsv"
-    "purple/${tum}.purple.cnv.somatic.tsv"
-    "purple/${tum}.purple.cnv.gene.tsv"
-    "purple/${tum}.purple.purity.tsv"
-    "purple/${tum}.purple.purity.range.tsv"
-    "purple/${tum}.purple.qc"
-    "purple/${tum}.purple.sv.vcf.gz"
-    "purple/${tum}.purple.sv.vcf.gz.tbi"
-    "purple/${tum}.purple.somatic.vcf.gz"
-    "purple/${tum}.purple.somatic.vcf.gz.tbi"
-    "purple/${tum}.purple.cnv.germline.tsv"
-    "purple/plot/${tum}.circos.png"
-    "${ref}/aligner/${ref}.bam"
-    "${ref}/aligner/${ref}.bam.bai"
-    "${tum}/aligner/${tum}.bam"
-    "${tum}/aligner/${tum}.bam.bai"
-    "${ref}/germline_caller/${ref}.germline.vcf.gz"
-    "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
-  )
- 
-  ## select file collection based on pipeline ini 
-  if [[ $ini == "Somatic.ini" ]]; then
-    file_selection="${somatic_files[@]}"
-  elif [[ $ini == "SingleSample.ini" ]]; then
-    file_selection="${single_files[@]}"
-  else
-    echo "[EXIT] Unknown ini ($ini)" && exit 1
-  fi
-
-  ## output
-  echo "[INFO] Creating $out_md5"
-  for file_path in ${file_selection[@]}; do
-    echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_path}$" >> $out_md5
-  done
-
-  echo "[INFO] Creating $out_url"
-  echo "[INFO] Creating $out_aria"
-  for file_path in ${file_selection[@]}; do
-    local file_name=$(basename "${file_path}")
-    local file_url=""
-    local direct=""
-    local extern=""
-    if [[ $cluster == "gcp" ]]; then
-        ## replace underscores as they cannot exist in GCP
-        bucket=$( echo "${bucket}" | sed 's/_/-/g' )
-        file_in_bucket="${bucket}/${name}/${file_path}"
-        internal_url="gs://${file_in_bucket}"
-        external_url=$( ${GCP_URL_SCRIPT} "${GCP_KEY_FILE}" "${file_in_bucket}" 604800)
+    if [[ "${pipeline}" == v5* ]]; then
+        ref_bam="${ref}/aligner/${ref}.bam"
+        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
+        tumor_bam="${tum}/aligner/${tum}.bam"
+        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
     else
-        file_in_bucket="${bucket}/${name}/${file_path}"
-        internal_url="s3://${file_in_bucket}"
-          direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${AWS_PROFILE})
-        external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        ref_bam="${ref}/mapping/${ref}_dedup.realigned.bam"
+        ref_bam_bai="${ref}/mapping/${ref}_dedup.realigned.bam.bai"
+        tumor_bam="${tum}/mapping/${tum}_dedup.realigned.bam"
+        tumor_bam_bai="${tum}/mapping/${tum}_dedup.realigned.bam.bai"
     fi
-    
-    local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1) 
-    echo "${external_url}" >> $out_aria
-    echo "  dir=${name}" >> $out_aria
-    echo "  checksum=md5=${md5sum}" >> $out_aria
-    echo "" >> $out_aria
-    echo -e "${file_name}\t${external_url}" >> $out_url
-  done
+
+    local single_files=(
+        "${ref_bam}"
+        "${ref_bam_bai}"
+        "${ref}/germline_caller/${ref}.germline.vcf.gz"
+        "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+    )
+
+    local somatic_files=(
+        "purple/purple.version"
+        "purple/${tum}.driver.catalog.tsv"
+        "purple/${tum}.purple.cnv.somatic.tsv"
+        "purple/${tum}.purple.cnv.gene.tsv"
+        "purple/${tum}.purple.purity.tsv"
+        "purple/${tum}.purple.purity.range.tsv"
+        "purple/${tum}.purple.qc"
+        "purple/${tum}.purple.sv.vcf.gz"
+        "purple/${tum}.purple.sv.vcf.gz.tbi"
+        "purple/${tum}.purple.somatic.vcf.gz"
+        "purple/${tum}.purple.somatic.vcf.gz.tbi"
+        "purple/${tum}.purple.cnv.germline.tsv"
+        "purple/plot/${tum}.circos.png"
+        "${ref_bam}"
+        "${ref_bam_bai}"
+        "${tumor_bam}"
+        "${tumor_bam_bai}"
+        "${ref}/germline_caller/${ref}.germline.vcf.gz"
+        "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+    )
+
+    ## select file collection based on pipeline ini
+    if [[ $ini == "Somatic.ini" ]]; then
+        file_selection="${somatic_files[@]}"
+    elif [[ $ini == "SingleSample.ini" ]]; then
+        file_selection="${single_files[@]}"
+    else
+        echo "[EXIT] Unknown ini ($ini)" && exit 1
+    fi
+
+    ## output
+    echo "[INFO] Creating $out_md5"
+    for file_path in ${file_selection[@]}; do
+        echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_path}$" >> $out_md5
+    done
+
+    echo "[INFO] Creating $out_url"
+    echo "[INFO] Creating $out_aria"
+    for file_path in ${file_selection[@]}; do
+        local file_name=$(basename "${file_path}")
+        if [[ $cluster == "gcp" ]]; then
+            ## replace underscores as they cannot exist in GCP
+            bucket=$(echo "${bucket}" | sed 's/_/-/g' )
+            file_in_bucket="${bucket}/${name}/${file_path}"
+            internal_url="gs://${file_in_bucket}"
+            ## sanity check on existance of file in bucket
+            gsutil -u hmf-database -q stat "${internal_url}"
+            if [[ $? -eq 1 ]]; then
+                echo "[EXIT] File does not exist (${internal_url})" && exit 1
+            fi
+            ## get actual pre-signed URL
+            external_url=$( ${gcp_url_sign_script} "${gcp_key_file}" "${file_in_bucket}" 604800)
+        else
+            file_in_bucket="${bucket}/${name}/${file_path}"
+            internal_url="s3://${file_in_bucket}"
+            direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${aws_profile})
+            external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        fi
+
+        local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1)
+        echo "${external_url}" >> $out_aria
+        echo "  dir=${name}" >> $out_aria
+        echo "  checksum=md5=${md5sum}" >> $out_aria
+        echo "" >> $out_aria
+        echo -e "${file_name}\t${external_url}" >> $out_url
+    done
 }
 
 create_json_file () {
-  local json_text=$1 && shift
-  local out_file=$1 && shift
-  echo "[INFO] Creating $out_file"
-  echo "$json_text" | jq '.' > $out_file
+    local json_text=$1 && shift
+    local out_file=$1 && shift
+    echo "[INFO] Creating $out_file"
+    echo "$json_text" | jq '.' > $out_file
 }
 
 create_md5sums_file () {
-  local json_text=$1 && shift
-  local out_file=$1 && shift
-  echo "[INFO] Creating $out_file"
-  echo "$json_text" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $out_file
-  echo "$json_text" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $out_file
+    local json_text=$1 && shift
+    local out_file=$1 && shift
+    echo "[INFO] Creating $out_file"
+    echo "$json_text" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > $out_file
+    echo "$json_text" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> $out_file
 }
 
 main

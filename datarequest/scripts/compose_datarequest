@@ -162,7 +162,7 @@ if [ $? = 0 ]; then
 
     if [ ${include_treatment_response_clinical_data} == "1" ]; then
         echo "[INFO] Creating treatment and response clinical data for ${request_name}..."
-        generate_post_biopsy_drugs_by_sample ${metadata_tsv} ${log_dir} ${metadata_dir}
+        generate_post_biopsy_drugs_by_sample ${patient_selection_tsv} ${log_dir} ${metadata_dir}
         generate_responses_by_sample ${patient_selection_tsv} ${log_dir} ${metadata_dir}
         echo "[INFO] Done creating response clinical data for DR"
     else

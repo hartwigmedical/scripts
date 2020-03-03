@@ -165,6 +165,7 @@ dnds_driver_likelihood <- function(mutations, expectedDriversPerGene) {
 dnds_expected_drivers <- function(HmfRefCDSCv, mutations) {
 
   geneImpactCount = mutations %>%
+    filter(redundant == F) %>%
     mutate(impact = ifelse(impact %in% c("Inframe", "Frameshift"), "Indel", impact)) %>%
     group_by(gene, impact) %>%
     summarise(n = n()) %>%

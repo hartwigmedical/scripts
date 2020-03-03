@@ -2,8 +2,8 @@
 
 source locate_files
 
-vicc_json=/data/common/dbs/vicc/all.json
+vicc_json=$(locate_vicc_json)
 credentials=$(locate_vicc_pilot_database_credentials)
-vicc_jar=$(locate_pilot_vicc)
+vicc_jar=$(locate_pilot_vicc_knowledgebase_importer)
 
 do_load_vicc_knowledgebase ${vicc_json} ${credentials} ${vicc_jar} -skip_database_writing

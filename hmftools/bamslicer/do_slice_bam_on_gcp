@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+source sbp_api_functions
+
+set_name=$1 && shift
+bed_file=$1 && shift
+output_file=$1 && shift
+type=$1 && shift
+
+if [[ -z "${set_name}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]] || [[ -z "${type}" ]]; then
+    echo "[ERROR] Not all input parameters provided to $(basename $0)." && exit 1
+fi
+
+bam_slicer_jar=/data/common/tools/bam-slicer_v1.5/bam-slicer.jar
+gcp_sign_url_script="generate_signed_gcp_url.py"
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+
+## query run info
+run_info=$(load_run_info_for_set ${set_name})
+
+## setup all variables
+pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
+bucket=$(extract_bucket_from_run_info "${run_info}")
+
+if [[ ${type} = "REF" ]]; then
+    sample=$(load_ref_sample_id_for_set ${set_name})
+else
+    sample=$(load_tumor_sample_id_for_set ${set_name})
+fi
+
+bam_prefix="${bucket}/${set_name}/${sample}"
+
+if [[ ${pipeline} = v5* ]]; then
+    bam="${bam_prefix}/aligner/${sample}.bam"
+else
+    bam="${bam_prefix}/mapping/${sample}_dedup.realigned.bam"
+fi
+
+internal_bam_url="gs://${bam}"
+external_bam_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${bam}" 604800)
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAM URL: ${internal_bam_url}"
+
+bai=${bam}.bai
+internal_bai_url="gs://${bai}"
+external_bai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${bai}" 604800)
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAI URL: ${internal_bai_url}"
+
+java -Xmx8G -jar ${bam_slicer_jar} \
+    -url \
+    -input ${external_bam_url} \
+    -index ${external_bai_url} \
+    -bed ${bed_file} \
+    -output ${output_file} \
+    -max_chunks 2000 \
+    -max_concurrent_requests 30

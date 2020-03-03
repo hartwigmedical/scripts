@@ -24,6 +24,9 @@ if [ $? = 0 ]; then echo "[INFO]  WGSMetrics Tumor Sample: ${tumor_sample_metric
 sage_somatics=$(locate_sage_somatics ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  SAGE Somatic VCF: ${sage_somatics}"; fi
 
+strelka_somatics=$(locate_strelka_somatics ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Strelka Somatic VCF: ${strelka_somatics}"; fi
+
 purple_somatics=$(locate_purple_somatics ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  Purple Somatic VCF: ${purple_somatics}"; fi
 
@@ -51,6 +54,9 @@ if [ $? = 0 ]; then echo "[INFO]  GRIDSS Filtered Structural VCF: ${gridss_struc
 gridss_recovery_candidates=$(locate_gridss_recovery_candidates ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  GRIDSS Recovery Candidates VCF: ${gridss_recovery_candidates}"; fi
 
+gridss_unfiltered_candicated=$(locate_gridss_unfiltered_candidates ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  GRIDSS Unfiltered Candidates VCF: ${gridss_unfiltered_candicated}"; fi
+
 linx_reported_fusions=$(locate_linx_reported_fusions ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  LINX Fusions: ${linx_reported_fusions}"; fi
 
@@ -74,6 +80,15 @@ if [ $? = 0 ]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; f
 
 echo ""
 echo "[INFO] Files that are generated in pilot setting"
+
+pgx_pilot_calls=$(locate_pgx_pilot_calls ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  PGx Pilot Calls: ${pgx_pilot_calls}"; fi
+
+pgx_pilot_genotype=$(locate_pgx_pilot_genotype ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  PGx Pilot Genotype: ${pgx_pilot_genotype}"; fi
+
+purple_on_sage_somatics=$(locate_purple_on_sage_somatics ${run_dir})
+if [ $? = 0 ]; then echo "[INFO]  Purple-On-Sage Somatic VCF: ${purple_on_sage_somatics}"; fi
 
 purple_pilot_somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
 if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Somatic VCF: ${purple_pilot_somatic_vcf}"; fi

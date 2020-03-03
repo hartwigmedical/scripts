@@ -18,5 +18,6 @@ idx_id=$(cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID |
 ## and check status of each unique Sample_ID in sheet
 cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
     SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
+
     echo -e "${RUNDATE}\t${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
 done

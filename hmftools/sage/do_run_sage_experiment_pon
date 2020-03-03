@@ -43,7 +43,9 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -threads 1 -panel_only \
     -tumor ${sample} -tumor_bam ${sample_bam} \
     -reference ${normal} -reference_bam ${normal_bam}  \
-    -panel /data/common/dbs/sage/ActionableCodingPanel.hg19.bed.gz  -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
+    -panel_bed /data/common/dbs/sage/ActionableCodingPanel.hg19.bed.gz \
+    -high_confidence_bed /data/common/dbs/bed/NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2.2_highconf.bed \
+    -hotspots /data/common/dbs/sage/KnownHotspots.hg19.vcf.gz \
     -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
-    -germline -hard_filter -hard_min_tumor_qual 0 \
+    -germline -hard_filter -hard_min_tumor_qual 0 -hard_min_tumor_raw_alt_support 3 -hard_min_tumor_raw_base_quality 30 \
     -out ${final_vcf}

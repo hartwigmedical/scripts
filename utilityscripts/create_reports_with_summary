@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+process_runs=$(ls /data/cpct/reportable_runs)
+
+for run in ${process_runs}; do
+    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
+    if [[ ${patientId} == "CORE"* ]]; then
+        echo "[INFO] Moving set ${run} to /data/core/runs"
+	      mv /data/cpct/reportable_runs/${run} /data/core/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/core/runs/${run}
+	  elif [[ ${patientId} == "WIDE"* ]]; then
+	      echo "[INFO] Moving set ${run} to /data/cpct/runs"
+	      mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
+	      echo "[INFO] Create patient report for ${run}"
+	      patient_report_for_run /data/cpct/runs/${run}
+	      # TODO: remove when pipeline is 5.8
+	      echo "[INFO] patch linx to version 1.7"
+	      patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
+	  fi
+done

@@ -1,72 +1,67 @@
 #!/usr/bin/env bash
 
-IN_BAM=$1
+in_bam=$1
 
-MEM_USE=50
-PIGZ_THREADS=8
-PICARD_DIR=/data/tools/picard-tools_v1.141
-SAMBAMBA_DIR=/data/tools/sambamba_v0.6.5
-OUT_DIR=./fastq
+mem_use=50
+pigz_threads=8
+picard_dir=/data/tools/picard-tools_v1.141
+sambamba_dir=/data/tools/sambamba_v0.6.5
+out_dir=./fastq
 
-if [[ "$( hostname )" == "datastore" ]]; then
-    PICARD_DIR=/data/common/tools/picard-tools_v1.141
-    SAMBAMBA_DIR=/data/common/tools/sambamba_v0.6.5
+if [[ "$(hostname)" == "datastore" ]]; then
+    picard_dir=/data/common/tools/picard-tools_v1.141
+    sambamba_dir=/data/common/tools/sambamba_v0.6.5
 fi
 
-if [[ ${IN_BAM} == "" || ${IN_BAM} == "-h" || ${IN_BAM} == "--help" ]]; then
+if [[ ${in_bam} == "" || ${in_bam} == "-h" || ${in_bam} == "--help" ]]; then
     echo "-----"
     echo " Usage: $(basename $0) <BAM_FILE>"
-    echo " Output will be in ${OUT_DIR}"
-    echo " Using Picard dir ${PICARD_DIR}"
-    echo " Using Sambamba dir ${SAMBAMBA_DIR}"
+    echo " Output will be in ${out_dir}"
+    echo " Using Picard dir ${picard_dir}"
+    echo " Using Sambamba dir ${sambamba_dir}"
     echo "-----"
     exit 1
 fi
 
-IN_BAM_NAME=$(basename ${IN_BAM})
-OUT_BASE=$(dirname ${OUT_DIR})
-
 ## ---------------
 ## sanity checks
-if [[ ! -d ${PICARD_DIR} ]]; then echo "[ERROR] Picard dir not found (${PICARD_DIR})"; exit 1; fi
-if [[ ! -d ${SAMBAMBA_DIR} ]]; then echo "[ERROR] Sambamba dir not found (${SAMBAMBA_DIR})"; exit 1; fi
-if [[ ! -f ${IN_BAM} ]]; then echo "[ERROR] Bam file not found (${IN_BAM})"; exit 1; fi
-if [[ ! -w ${OUT_BASE} ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
+if [[ ! -d ${picard_dir} ]]; then echo "[ERROR] Picard dir not found (${picard_dir})"; exit 1; fi
+if [[ ! -d ${sambamba_dir} ]]; then echo "[ERROR] Sambamba dir not found (${sambamba_dir})"; exit 1; fi
+if [[ ! -f ${in_bam} ]]; then echo "[ERROR] Bam file not found (${in_bam})"; exit 1; fi
+if [[ ! -w $(dirname ${out_dir}) ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
 ## ---------------
 
 ## Check format of RG/ID tags in header
-correct_lane_count=$(${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG | grep -vcP "_L00[1-8]_" )
+correct_lane_count=$(${sambamba_dir}/sambamba view -H ${in_bam} | grep ^@RG | grep -vcP "_L00[1-8]_" )
 if [[ ${correct_lane_count} -gt 1 ]]; then
     echo "[EXIT] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
-    ${SAMBAMBA_DIR}/sambamba view -H ${IN_BAM} | grep ^@RG
+    ${sambamba_dir}/sambamba view -H ${in_bam} | grep ^@RG
     exit 1
 fi
 
-if [[ -d ${OUT_DIR} ]]; then
+if [[ -d ${out_dir} ]]; then
     echo "[ERROR] output dir exists, will not overwrite"
     exit 1
 else
-    echo "[INFO] Creating output dir (${OUT_DIR})"; 
-    mkdir ${OUT_DIR}; 
+    echo "[INFO] Creating output dir (${out_dir})";
+    mkdir ${out_dir};
 fi
 
-echo "[INFO] Running SamToFastq for bam file: ${IN_BAM_NAME}"
-java -Xmx${MEM_USE}g -jar ${PICARD_DIR}/picard.jar SamToFastq ODIR=${OUT_DIR} OPRG=true RGT=ID NON_PF=true RC=true I=${IN_BAM}
+echo "[INFO] Running SamToFastq for bam file: $(basename ${in_bam})"
+java -Xmx${mem_use}G -jar ${picard_dir}/picard.jar SamToFastq ODIR=${out_dir} OPRG=true RGT=ID NON_PF=true RC=true I=${in_bam}
 
 echo "[INFO] About to rename fastq files"
-for fastq_path in ${OUT_DIR}/*fastq; do 
-
+for fastq_path in ${out_dir}/*fastq; do
     fastq_old=$(basename ${fastq_path})
     fastq_new=$(echo ${fastq_old} | sed 's#\.fastq##g' - | awk 'BEGIN { FS = "_" } ; { print $1"_"$2"_"$3"_"$4"_R"$6"_"$5".fastq" }')
    
-    mv ${fastq_path} ${OUT_DIR}/${fastq_new}
+    mv ${fastq_path} ${out_dir}/${fastq_new}
     echo "[INFO] ${fastq_old} renamed to ${fastq_new}"
-
 done
 
 echo "[INFO] gzipping fastq files...(using pigz)"
-pigz -p ${PIGZ_THREADS} ${OUT_DIR}/*.fastq
+pigz -p ${pigz_threads} ${out_dir}/*.fastq
 
-echo "[INFO] Output fastq can be found in ${OUT_DIR}"
-ls ${OUT_DIR}
+echo "[INFO] Output fastq can be found in ${out_dir}"
+ls ${out_dir}

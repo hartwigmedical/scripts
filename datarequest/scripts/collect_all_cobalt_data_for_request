@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+
+metadata_tsv=$1 && shift
+cobalt_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
+    source_set_path=/data/cpct/runs/${set_name}
+    dest_set_path=${cobalt_dir}/${set_name}
+    mkdir -p ${dest_set_path}
+
+    cobalt_ratio_file=$(find -L ${source_set_path}/cobalt -type f -name "*.cobalt.ratio.tsv")
+    if [[ ! -f ${cobalt_ratio_file} ]]; then
+        cobalt_ratio_file=$(find -L ${source_set_path}/cobalt -type f -name "*.cobalt")
+        if [[ ! -f ${cobalt_ratio_file} ]]; then
+            echo "[WARN] Could not resolve cobalt ratio file for ${set_name}"
+        fi
+    fi
+
+    ## start symlinking
+    echo "[DEBUG] Symlinking cobalt files for ${set_name}"
+    ln -s ${cobalt_ratio_file} ${dest_set_path}
+    ln -s ${source_set_path}/cobalt/*.cobalt.ratio.pcf ${dest_set_path}
+
+    cobalt_file_count=$(ls ${dest_set_path} | wc -l)
+
+    if [ ${cobalt_file_count} -ne 3 ]; then
+        echo "[WARN]: Mismatch in expected file count. Expected 3 files but got ${cobalt_file_count} files for ${set_name}. Please inspect manually!"
+    fi
+done

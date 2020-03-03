@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+set=$1 && shift
+bed_file=$1 && shift
+output_file=$1 && shift
+
+if [[ -z "${set}" ]] || [[ -z "${bed_file}" ]] || [[ -z "${output_file}" ]]; then
+    echo "Usage: $ ./$(basename $0) set bed_file output_file"
+    echo "   set eg 180101_HMFregCPCT..."
+    echo "   bed_file	bed file containing regions to be sliced"
+    exit 1
+fi
+
+do_slice_bam_on_gcp ${set} ${bed_file} ${output_file} REF

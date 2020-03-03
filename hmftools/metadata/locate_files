@@ -7,6 +7,7 @@ if [ -z "$(hostname | grep datastore)" ]; then
 fi
 
 ############################# Database Credentials #############################
+
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
@@ -32,11 +33,13 @@ locate_pipeline_v5_validation_database_credentials() {
 }
 
 ############################# Nextcloud Credentials #############################
+
 locate_nextcloud_upload_reports_credentials() {
     echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
 }
 
 ##################################### JARS #####################################
+
 locate_prod_sage() {
     echo ${base_path}/tools/sage_v1.1/sage.jar
 }
@@ -58,7 +61,7 @@ locate_pilot_bachelor() {
 }
 
 locate_prod_patient_db() {
-    echo ${base_path}/tools/patient-db_v3.39/patient-db.jar
+    echo ${base_path}/tools/patient-db_v3.40/patient-db.jar
 }
 
 locate_pilot_patient_db() {
@@ -74,15 +77,11 @@ locate_pilot_linx() {
 }
 
 locate_prod_patient_reporter() {
-    echo ${base_path}/tools/patientreporter_v7.9/patient-reporter.jar
+    echo ${base_path}/tools/patientreporter_v7.10/patient-reporter.jar
 }
 
 locate_pilot_patient_reporter() {
     echo ${base_path}/tools/patientreporter_pilot/patient-reporter.jar
-}
-
-locate_pilot_vicc() {
-    echo ${base_path}/tools/vicc_knowledgebase_pilot/vicc-knowledgebase-importer.jar
 }
 
 locate_prod_cgi_treatment_extractor_knowledgebase() {
@@ -93,25 +92,81 @@ locate_pilot_cgi_treatment_extractor_knowledgebase() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/cgi-treatment-extractor.jar
 }
 
-locate_prod_knowledgebase() {
+locate_prod_knowledgebase_importer() {
     echo ${base_path}/tools/knowledgebase-importer_v1.8/knowledgebase-importer.jar
 }
 
-locate_pilot_knowledgebase() {
+locate_pilot_knowledgebase_importer() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
+}
+
+locate_prod_vicc_knowledgebase_importer() {
+    echo ${base_path}/tools/vicc-knowledgebase-importer_v1.0/vicc-knowledgebase-importer.jar
+}
+
+locate_pilot_vicc_knowledgebase_importer() {
+    echo ${base_path}/tools/vicc-knowledgebase-importer_pilot/vicc-knowledgebase-importer.jar
+}
+
+locate_prod_iclusion_importer() {
+    echo ${base_path}/tools/iclusion-importer_v1.1/iclusion-importer.jar
 }
 
 locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
 }
 
+locate_pilot_knowledgebase_generator() {
+    echo ${base_path}/tools/knowledgebase-generator_pilot/knowledgebase-generator.jar
+}
+
 locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
 
+################################# NON JAVA TOOLS ###################################
+
+locate_pgx_main() {
+    echo ${base_path}/repos/scripts/pgx/main.py
+}
+
+locate_vcftools() {
+    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
+}
+
+#################################### Resources #####################################
+
+locate_hotspot_tsv() {
+    echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_pgx_resource_dir() {
+    echo ${base_path}/dbs/pgx/
+}
+
+locate_vicc_json() {
+    echo ${base_path}/dbs/vicc/all.json
+}
+
+locate_pilot_iclusion_trial_tsv() {
+    echo ${base_path}/dbs/iclusion/iclusion_trials_pilot.tsv
+}
+
+locate_prod_iclusion_trial_tsv() {
+    echo ${base_path}/dbs/iclusion/iclusion_trials_prod.tsv
+}
+
+locate_pilot_compassionate_use_programs_tsv() {
+    echo ${base_path}/dbs/knowledgebase_generator/compassionate_use_programs.tsv
+}
+
+locate_ref_genome_fasta_file() {
+    echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+}
+
 ################################### PGX ####################################
 
-locate_pilot_pgx_calls() {
+locate_pgx_pilot_calls() {
     local run_dir=$1
     local pgx_dir=${run_dir}/pgx_pilot
 
@@ -129,7 +184,7 @@ locate_pilot_pgx_calls() {
     echo ${pgx_calls_txt}
 }
 
-locate_pilot_pgx_genotype() {
+locate_pgx_pilot_genotype() {
     local run_dir=$1
     local pgx_dir=${run_dir}/pgx_pilot
 
@@ -145,24 +200,6 @@ locate_pilot_pgx_genotype() {
     fi
 
     echo ${pgx_genotype_txt}
-}
-
-################################# NON JAVA TOOLS ###################################
-locate_pgx_main() {
-    echo ${base_path}/repos/scripts/pgx/main.py
-}
-
-locate_vcftools() {
-    echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
-}
-
-#################################### Resources #####################################
-locate_hotspot_tsv() {
-    echo ${base_path}/dbs/sage/KnownHotspots.tsv
-}
-
-locate_pgx_resource_dir() {
-    echo ${base_path}/dbs/pgx/
 }
 
 ################################### WGS METRICS ####################################
@@ -188,7 +225,26 @@ locate_wgs_metrics() {
 }
 
 ################################# Somatic Variants #################################
+
 locate_sage_somatics() {
+    local run_dir=$1
+    local sage_dir=${run_dir}/sage
+
+    local somatic_vcf=""
+
+    if [[ -d ${sage_dir} ]]; then
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name *.sage.somatic.post_processed.vcf.gz)
+    fi
+
+    if [[ -z ${somatic_vcf} ]]; then
+        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${somatic_vcf}
+}
+
+locate_strelka_somatics() {
     local run_dir=$1
     local somatics_dir_pre_v5=${run_dir}/somaticVariants
     local somatics_dir_v5=${run_dir}/somatic_caller
@@ -216,6 +272,24 @@ locate_sage_somatics() {
 locate_purple_somatics() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
+
+    local somatic_vcf=""
+
+    if [ -d ${purple_dir} ]; then
+        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
+    fi
+
+    if [ -z ${somatic_vcf} ]; then
+        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${somatic_vcf}
+}
+
+locate_purple_on_sage_somatics() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple_sage
 
     local somatic_vcf=""
 
@@ -260,6 +334,16 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
+locate_purple_purity_sage() {
+    local run_dir=$1
+    local purple_purity_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.purity.tsv")
+    if [ -z ${purple_purity_file} ]; then
+        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_purity_file}
+}
+
 locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -287,6 +371,16 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
+locate_purple_sage_qc() {
+    local run_dir=$1
+    local purple_qc_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.qc")
+    if [ -z ${purple_qc_file} ]; then
+        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_qc_file}
+}
+
 locate_purple_drivers() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
@@ -300,6 +394,16 @@ locate_purple_drivers() {
 locate_purple_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
+    if [ -z ${purple_gene_copynumbers} ]; then
+        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${purple_gene_copynumbers}
+}
+
+locate_purple_sage_gene_copynumbers() {
+    local run_dir=$1
+    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.cnv.gene.tsv")
     if [ -z ${purple_gene_copynumbers} ]; then
         echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
         exit 1
@@ -367,16 +471,6 @@ locate_purple_structural_variants() {
     echo ${structural_vcf}
 }
 
-locate_purple_pre_viral_annotate_structural_variants() {
-    local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-    if [ -z ${structural_vcf} ]; then
-        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${structural_vcf}
-}
-
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -391,6 +485,16 @@ locate_purple_pilot_structural_variants() {
         exit 1
     fi
 
+    echo ${structural_vcf}
+}
+
+locate_purple_pre_viral_annotate_structural_variants() {
+    local run_dir=$1
+    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
+    if [ -z ${structural_vcf} ]; then
+        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
     echo ${structural_vcf}
 }
 
@@ -417,19 +521,23 @@ locate_gridss_structural_variants() {
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local structural_vcf=""
-    if [ -d ${gridss_dir_pre_v5} ]; then
+    if [[ -d ${gridss_dir_pre_v5} ]]; then
 	      local gridss_backport_dir=${gridss_dir_pre_v5}/*/breakpoint_position_backport
-	      if [ -d ${gridss_backport_dir} ]; then
+	      if [[ -d ${gridss_backport_dir} ]]; then
 	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
         else
             # Fall back to v4 format which did not require the backport.
             structural_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.vcf.gz")
         fi
-    elif [ -d ${gridss_dir_v5} ]; then
-		    structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+    elif [[ -d ${gridss_dir_v5} ]]; then
+        # Pipeline v5.8+ calls this file "filtered".
+        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
+        if [[ -z ${structural_vcf} ]]; then
+		        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+		    fi
     fi
 
-    if [ -z ${structural_vcf} ]; then
+    if [[ -z ${structural_vcf} ]]; then
         echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
         exit 1
 		fi
@@ -443,18 +551,47 @@ locate_gridss_recovery_candidates() {
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local sv_recovery_vcf=""
-    if [ -d ${gridss_dir_pre_v5} ]; then
+    if [[ -d ${gridss_dir_pre_v5} ]]; then
         sv_recovery_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    elif [ -d ${gridss_dir_v5} ]; then
+    elif [[ -d ${gridss_dir_v5} ]]; then
         sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.full.vcf.gz")
+        # File is renamed to below in v5.8+
+        if [[ -z ${sv_recovery_vcf} ]]; then
+            sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+        fi
     fi
 
-    if [ -z ${sv_recovery_vcf} ]; then
+    if [[ -z ${sv_recovery_vcf} ]]; then
         echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
     echo ${sv_recovery_vcf}
+}
+
+locate_gridss_unfiltered_candidates() {
+    local run_dir=$1
+    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
+    local gridss_dir_v5=${run_dir}/structural_caller
+    if [ -d ${gridss_dir_v5} ]; then
+        gridss_ufile1_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+        gridss_ufile2_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
+    fi
+
+    local sv_unfiltered_vcf=""
+    if [ -d ${gridss_dir_pre_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.vcf.gz")
+    elif [ -z ${gridss_ufile2_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
+    elif [ -z ${gridss_ufile1_v5} ]; then
+        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
+    fi
+
+    if [ -z ${sv_unfiltered_vcf} ]; then
+        echo "[ERROR] Unable to locate GRIDSS sv unfiltered candidates in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${sv_unfiltered_vcf}
 }
 
 ######################################## LINX ########################################
@@ -602,6 +739,18 @@ locate_chord_pilot_prediction() {
         exit 1
     fi
     echo ${chord_prediction_file}
+}
+
+############################################# ACTIONABILITY ###########################################
+
+locate_protect_actionability_pilot() {
+    local run_dir=$1
+    local actionability_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*_actionability_database.tsv")
+    if [ -z ${actionability_tsv} ]; then
+        echo "[ERROR] Unable to locate actionability tsv file in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${actionability_tsv}
 }
 
 ############################################# LIMS ###########################################

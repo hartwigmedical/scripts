@@ -1,11 +1,13 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 source metadata_functions
-prefix=`dirname $(readlink $0 || echo $0)`
+
+prefix=$(dirname $(readlink $0 || echo $0))
 
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 run_dir=$1 && shift
-set=$( basename ${run_dir})
+set=$(basename ${run_dir})
 out_dir=${run_dir}/amber_v2/
 mkdir -p ${out_dir}
 
@@ -31,12 +33,12 @@ fi
 
 sample_bam=${out_dir}/${sample}.amber.bam
 if [ ! -f ${sample_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer ${set} ${sample} ${bed} ${sample_bam}
+    ${prefix}/../bamslicer/do_slice_bam_on_gcp ${set} ${sample} ${bed} ${sample_bam}
 fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
 if [ ! -f ${normal_bam} ]; then
-    ${prefix}/../bamslicer/bam_slicer_normal ${set} ${sample} ${bed} ${normal_bam}
+    ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${sample} ${bed} ${normal_bam}
 fi
 
 java -Xmx32G -cp /data/common/tools/amber_v2.0/amber.jar com.hartwig.hmftools.amber.AmberApplication \
