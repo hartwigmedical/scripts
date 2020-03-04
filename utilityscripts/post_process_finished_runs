@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions
-
 health_check_processed_runs
 
 source_path=/data/gcp/processed_runs
@@ -13,32 +11,25 @@ for run in ${process_runs}; do
     #echo "Running purple on sage input"
     #do_run_purple_no_db_on_sage ${source_path}/${run}
 
-    # Load meta data
-    sampleId=$(load_tumor_sample_from_metadata ${run})
-    summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep ${sampleId} | wc -w)
-    if [[ ${summary_present} -ge 2 ]] ;then
-
-        if [[ ${sampleId} == "CORELR02"* || ${sampleId} == "CORERI02"* ]]; then
-            echo "[INFO] Moving set ${run} to /data/core/runs"
-              mv ${source_path}/${run} /data/core/runs/
-              echo "[INFO] Create patient report for ${run}"
-              patient_report_for_run /data/core/runs/${run}
-          elif [[ ${sampleId} == "CPCT"* || ${sampleId} == "DRUP"* ]]; then
-              echo "[INFO] Moving set ${run} to /data/cpct/runs"
-              mv ${source_path}/${run} /data/cpct/runs/
-              echo "[INFO] Create patient report for ${run}"
-              patient_report_for_run /data/cpct/runs/${run}
-              # TODO: remove when pipeline is 5.8
-              echo "[INFO] patch linx to version 1.7"
-              patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
-        else
-            # This is for patients that require a summary (WIDE, some CORE)
-            echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
-              mv ${source_path}/${run} /data/cpct/reportable_runs/
-              echo "[INFO] Create patient report for ${run}"
-              patient_report_for_run /data/cpct/reportable_runs/${run}
-        fi
-    elif [[  ${summary_present} -eq 1 ]] ;then
-        echo "No summary present for run ${run}"
-    fi
+   patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
+   if [[ ${patientId} == "CORELR02"* || ${patientId} == "CORERI02"* ]]; then
+        echo "[INFO] Moving set ${run} to /data/core/runs"
+        mv ${source_path}/${run} /data/core/runs/
+        echo "[INFO] Create patient report for ${run}"
+        patient_report_for_run /data/core/runs/${run}
+   elif [[ ${patientId} == "CPCT"* || ${patientId} == "DRUP"* ]]; then
+        echo "[INFO] Moving set ${run} to /data/cpct/runs"
+        mv ${source_path}/${run} /data/cpct/runs/
+        echo "[INFO] Create patient report for ${run}"
+        patient_report_for_run /data/cpct/runs/${run}
+        # TODO: remove when pipeline is 5.8
+        echo "[INFO] patch linx to version 1.7"
+        patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
+   else
+        # This is for patients that require a summary (WIDE, some CORE)
+        echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
+        mv ${source_path}/${run} /data/cpct/reportable_runs/
+        echo "[INFO] Create patient report for ${run}"
+        patient_report_for_run /data/cpct/reportable_runs/${run}
+   fi
 done
