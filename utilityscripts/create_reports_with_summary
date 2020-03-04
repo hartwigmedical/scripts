@@ -7,7 +7,7 @@ process_runs=$(ls /data/cpct/reportable_runs)
 for run in ${process_runs}; do
 
      # Load meta data
-    sampleId=$(load_tumor_sample_from_metadata ${run})
+    sampleId=$(load_tumor_sample_from_metadata /data/cpct/reportable_runs/${run})
     summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep ${sampleId} | wc -w)
 
      if [[ ${summary_present} -ge 1 ]] ;then
@@ -26,6 +26,6 @@ for run in ${process_runs}; do
               patch_linx_version_1_5_to_version_1_8 /data/cpct/runs/${run}
           fi
      elif [[  ${summary_present} -eq 0 ]] ;then
-        echo "No summary present for run ${run}"
+        echo "No summary present for run /data/cpct/reportable_runs/${run}"
      fi
 done
