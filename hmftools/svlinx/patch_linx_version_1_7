@@ -5,7 +5,7 @@ source locate_files
 
 run_dir=$1 && shift
 
-linx_jar=/data/common/tools/sv-linx_v1.5/sv-linx.jar
+linx_jar=/data/common/tools/sv-linx_v1.7/sv-linx.jar
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_dir=${run_dir}/purple
 output_dir=${run_dir}/linx
