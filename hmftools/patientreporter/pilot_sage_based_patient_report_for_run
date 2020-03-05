@@ -31,17 +31,17 @@ if [[ -z ${ref_sample} || -z ${ref_sample_barcode} || -z ${tumor_sample_barcode}
     exit 1;
 fi
 
-purple_purity_tsv=$(locate_purple_purity ${run_dir})
-purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
-somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
-bachelor_tsv=$(locate_bachelor_variants_pilot ${run_dir})
+purple_purity_tsv=$(locate_purple_on_sage_purity ${run_dir})
+purple_qc_file=$(locate_purple_on_sage_qc ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_on_sage_gene_copynumbers ${run_dir})
+somatic_variant_vcf=$(locate_purple_on_sage_somatics ${run_dir})
+bachelor_tsv=$(locate_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
 linx_disruption_tsv=$(locate_linx_disruptions ${run_dir})
 linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
-chord_prediction_txt=$(locate_chord_pilot_prediction ${run_dir})
-circos_file=$(locate_purple_circos_plot ${run_dir})
+chord_prediction_txt=$(locate_chord_prediction ${run_dir})
+circos_file=$(locate_purple_on_sage_circos_plot ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
@@ -66,5 +66,4 @@ pilot_do_run_base_patient_reporter \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
-    -log_debug \
     "$@"
