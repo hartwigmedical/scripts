@@ -7,9 +7,8 @@ source_path=/data/gcp/processed_runs
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
 
-    # TODO: switch on when runs used pipeline 5.8
-    #echo "Running purple on sage input"
-    #do_run_purple_no_db_on_sage ${source_path}/${run}
+    echo "Running purple on sage input"
+    do_run_purple_no_db_on_sage ${source_path}/${run}
 
    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
    if [[ ${patientId} == "CORELR02"* || ${patientId} == "CORERI02"* ]]; then
