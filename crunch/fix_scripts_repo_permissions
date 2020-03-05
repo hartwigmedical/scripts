@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+repo="/data/repos/scripts"
+group="users"
+
+echo ""
+echo "# Execute following to fix group perms for $repo"
+echo "cd $repo"
+echo "sudo chgrp -R $group ."
+echo "sudo chmod -R g+rwX ."
+
+echo ""
+echo "# Check if repository is in shared config (should print \"group\")"
+echo "git config core.sharedRepository"
+
+echo ""
+echo "# If not set to group, true or 1 then execute:"
+echo "git config core.sharedRepository group"
+
+echo ""
+
