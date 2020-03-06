@@ -18,7 +18,7 @@ function filefilter() {
 API="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 CURL="curl --retry 3 -s --cert $2 --key $3"
 INI_FILTER_ID=6
-WORKING_DIR="$(mktemp -d)"
+WORKING_DIR="$(mktemp -td gcp_acls_$(date +%Y%m%d)_XXXXX)"
 SHARED_FILE_IDS="${WORKING_DIR}/shared_file_ids"
 SHARED_FILE_PATHS="${WORKING_DIR}/shared_file_paths"
 STORED_FILES="${WORKING_DIR}/stored_files"
