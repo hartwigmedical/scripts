@@ -18,9 +18,6 @@ use constant TISSUE_ANCESTOR_FIELDS => qw(
     submission lab_status hospital_pa_sample_id hospital_patient_id
     germline_findings purity_shallow tumor_perc ptum ref_sample_id
 );
-use constant BLOOD_ANCESTOR_FIELDS => qw( 
-    submission lab_status
-);
 
 my %opt = ();
 GetOptions (
@@ -472,7 +469,6 @@ sub processAccessSamples{
         next unless $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms;
 
         ## Enrich (DNA|RNA)-TISSUE samples with info from their TISSUE ancestor
-        ## Enrich (DNA|RNA)-BLOOD samples with info from their BLOOD ancestor
         if ( $is_tissue ){
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
@@ -496,12 +492,7 @@ sub processAccessSamples{
             }
         }
         elsif ( $is_blood ){
-            if ( exists $blood_samples_by_name{ $name } ){
-                my $ancestor = $blood_samples_by_name{ $name };
-                $object->{ $_ } = $ancestor->{ $_ } foreach BLOOD_ANCESTOR_FIELDS;
-            }else{
-                warn "[WARN] Tried to enrich blood sample from BLOOD ancestor but seems absent (id:$id name:$name)\n"
-            }
+            # DNA-BLOOD samples are not enriched from BLOOD ancestor sample
         }
         else{
             warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
