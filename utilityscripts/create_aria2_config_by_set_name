@@ -163,7 +163,7 @@ create_ini_specific_files () {
         else
             file_in_bucket="${bucket}/${name}/${file_path}"
             internal_url="s3://${file_in_bucket}"
-            direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${aws_profile})
+            direct_url=$(../sbp/sbp s3 presign ${internal_url} --expires 604800 --profile ${aws_profile})
             external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
         fi
 
