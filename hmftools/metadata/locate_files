@@ -140,6 +140,10 @@ locate_hotspot_tsv() {
     echo ${base_path}/dbs/sage/KnownHotspots.tsv
 }
 
+locate_hotspot_vcf() {
+    echo ${base_path}/dbs/sage/KnownHotspots.hg19.vcf.gz
+}
+
 locate_pgx_resource_dir() {
     echo ${base_path}/dbs/pgx/
 }
