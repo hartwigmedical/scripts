@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+knowledgebase_generator_jar=$(locate_pilot_knowledgebase_generator)
+
+java -Xmx8G -cp ${knowledgebase_generator_jar} com.hartwig.hmftools.knowledgebasegenerator.ViccHotspotExtractorTestApplication
