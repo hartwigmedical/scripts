@@ -11,7 +11,6 @@ purple_jar=$(locate_pilot_purple)
 somatic_vcf=$(locate_strelka_somatics ${run_dir})
 structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
-hotspot_vcf=$(locate_hotspot_vcf)
 credentials=""
 
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} -driver_catalog -hotspots ${hotspot_vcf} "$@"
+${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} "$@"

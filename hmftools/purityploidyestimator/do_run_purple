@@ -44,6 +44,7 @@ fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
 ref_genome=$(locate_ref_genome_fasta_file)
+hotspot_vcf=$(locate_hotspot_vcf)
 
 db_args=""
 if [ ! -z "${credentials}" ]; then
@@ -66,5 +67,6 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -output_dir ${purple_output} \
     -gc_profile ${gc_profile} \
     -sv_recovery_vcf ${sv_recovery_vcf} \
+    -driver_catalog -hotspots ${hotspot_vcf} \
     ${db_args} \
     "$@"
