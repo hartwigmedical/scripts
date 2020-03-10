@@ -45,7 +45,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.34/purple.jar
+    echo ${base_path}/tools/purple_v2.40/purple.jar
 }
 
 locate_pilot_purple() {
@@ -138,6 +138,10 @@ locate_vcftools() {
 
 locate_hotspot_tsv() {
     echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_hotspot_vcf() {
+    echo ${base_path}/dbs/sage/KnownHotspots.hg19.vcf.gz
 }
 
 locate_pgx_resource_dir() {

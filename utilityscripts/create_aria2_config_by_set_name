@@ -16,6 +16,7 @@ aws_profile="download"
 
 gcp_url_sign_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+gcp_project="hmf-database"
 
 function main() {
     ## check that only one run exists for the set
@@ -88,17 +89,15 @@ create_ini_specific_files () {
     local tum=$1 && shift
     local pipeline=$1 && shift
 
-    if [[ "${pipeline}" == v5* ]]; then
-        ref_bam="${ref}/aligner/${ref}.bam"
-        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
-        tumor_bam="${tum}/aligner/${tum}.bam"
-        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
-    else
-        ref_bam="${ref}/mapping/${ref}_dedup.realigned.bam"
-        ref_bam_bai="${ref}/mapping/${ref}_dedup.realigned.bam.bai"
-        tumor_bam="${tum}/mapping/${tum}_dedup.realigned.bam"
-        tumor_bam_bai="${tum}/mapping/${tum}_dedup.realigned.bam.bai"
+    ## sanity check on data location in API
+    if [[ $cluster != "gcp" ]]; then
+       echo "[EXIT] Error: unexpected cluster ($cluster)." && exit 1
     fi
+
+    ref_bam="${ref}/aligner/${ref}.bam"
+    ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
+    tumor_bam="${tum}/aligner/${tum}.bam"
+    tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
 
     local single_files=(
         "${ref_bam}"
@@ -138,34 +137,24 @@ create_ini_specific_files () {
         echo "[EXIT] Unknown ini ($ini)" && exit 1
     fi
 
-    ## output
-    echo "[INFO] Creating $out_md5"
-    for file_path in ${file_selection[@]}; do
-        echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_path}$" >> $out_md5
-    done
-
-    echo "[INFO] Creating $out_url"
-    echo "[INFO] Creating $out_aria"
+    ## output aria2 config file
+    echo "[INFO] Creating selection files and $out_aria"
     for file_path in ${file_selection[@]}; do
         local file_name=$(basename "${file_path}")
-        if [[ $cluster == "gcp" ]]; then
-            ## replace underscores as they cannot exist in GCP
-            bucket=$(echo "${bucket}" | sed 's/_/-/g' )
-            file_in_bucket="${bucket}/${name}/${file_path}"
-            internal_url="gs://${file_in_bucket}"
-            ## sanity check on existance of file in bucket
-            gsutil -u hmf-database -q stat "${internal_url}"
-            if [[ $? -eq 1 ]]; then
-                echo "[EXIT] File does not exist (${internal_url})" && exit 1
-            fi
-            ## get actual pre-signed URL
-            external_url=$( ${gcp_url_sign_script} "${gcp_key_file}" "${file_in_bucket}" 604800)
-        else
-            file_in_bucket="${bucket}/${name}/${file_path}"
-            internal_url="s3://${file_in_bucket}"
-            direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${aws_profile})
-            external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        local file_in_bucket="${bucket}/${name}/${file_path}"
+        local internal_url="gs://${file_in_bucket}"
+        local md5_string=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$")
+        local md5sum=$(echo "$md5_string" | cut -f1)
+        echo "${md5_string}" >> $out_md5
+
+        ## sanity check on existance of file in bucket
+        gsutil -u "${gcp_project}" -q stat "${internal_url}"
+        if [[ $? -eq 1 ]]; then
+            echo "[EXIT] File does not exist (${internal_url})" && exit 1
         fi
+
+        ## get actual pre-signed URL
+        external_url=$( "${gcp_url_sign_script}" "${gcp_key_file}" "${file_in_bucket}" 604800)
 
         local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1)
         echo "${external_url}" >> $out_aria
