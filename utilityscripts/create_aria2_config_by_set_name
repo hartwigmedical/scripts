@@ -12,7 +12,6 @@ cred_dir="/data/common/dbs/sbp_api_credentials"
 sbp_api_crt_file="${cred_dir}/api.crt"
 sbp_api_key_file="${cred_dir}/api.key"
 sbp_api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-aws_profile="download"
 
 gcp_url_sign_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
