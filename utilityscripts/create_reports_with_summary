@@ -22,9 +22,10 @@ for run in ${process_runs}; do
               mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
               echo "[INFO] Create patient report for ${run}"
               patient_report_for_run /data/cpct/runs/${run}
+              echo "[INFO] patch purple to version 2.40"
+              do_run_purple_prod /data/cpct/runs/${run}
               echo "[INFO] patch linx to version 1.8"
               patch_linx_version_1_5_to_version_1_8 /data/cpct/runs/${run}
-              do_run_purple_prod /data/cpct/runs/${run}
           fi
      elif [[  ${summary_present} -eq 0 ]] ;then
         echo "No summary present for run /data/cpct/reportable_runs/${run}"
