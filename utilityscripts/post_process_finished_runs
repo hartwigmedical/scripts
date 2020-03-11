@@ -24,7 +24,7 @@ for run in ${process_runs}; do
         echo "[INFO] patch purple to version 2.40"
         do_run_purple_prod /data/cpct/runs/${run}
         echo "[INFO] patch linx to version 1.8"
-        patch_linx_version_1_5_to_version_1_8 /data/cpct/runs/${run}
+        patch_linx_version_1_7_to_version_1_8 /data/cpct/runs/${run}
    else
         # This is for patients that require a summary (WIDE, some CORE)
         echo "[INFO] Moving set ${run} to /data/cpct/reportable_runs"
