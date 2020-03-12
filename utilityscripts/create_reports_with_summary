@@ -23,7 +23,7 @@ for run in ${process_runs}; do
               echo "[INFO] Create patient report for ${run}"
               patient_report_for_run /data/cpct/runs/${run}
               echo "[INFO] rerun set"
-              batch_run_purple_prod /data/cpct/runs/${run}
+              rerun_processing_set /data/cpct/runs/${run}
           fi
      elif [[  ${summary_present} -eq 0 ]] ;then
         echo "No summary present for run /data/cpct/reportable_runs/${run}"
