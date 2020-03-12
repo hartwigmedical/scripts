@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+do_run_purple_prod ${run_dir} "$@"
+load_somatic_variants_prod ${run_dir}
+load_structural_variants_prod ${run_dir}
+do_run_linx_prod ${run_dir}
