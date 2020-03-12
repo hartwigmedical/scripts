@@ -17,7 +17,6 @@ smpApiTot=$(echo "$apiSmpJsn" | jq 'length')
 rnsApiTot=$(echo "$apiRnsJsn" | jq 'length')
 
 smpLmsErr=$(echo "$lmsSmpJsn" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
-smpSopStr=$(echo "$lmsSmpJsn" | jq -c '.[-1].lab_sop_versions')
 smpApiRdy=$(echo "$apiSmpJsn" | jq -c '[.[] | select(.status=="Ready")] | length')
 rnsApiRdy=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="SnpCheck")] | length')
 rnsApiVal=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated")] | length')
