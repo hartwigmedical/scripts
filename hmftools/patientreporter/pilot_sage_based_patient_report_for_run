@@ -9,7 +9,7 @@ run_dir=$1 && shift
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
-if [ -z ${tumor_sample_barcode} ]; then
+if [[ -z ${tumor_sample_barcode} ]]; then
     echo "[INFO] Could not load tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
@@ -17,7 +17,7 @@ fi
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 ref_sample_barcode=$(load_ref_sample_barcode_from_metadata ${run_dir})
 
-if [ -z ${ref_sample_barcode} ]; then
+if [[ -z ${ref_sample_barcode} ]]; then
     echo "[INFO] Could not load ref sample barcode from metadata. Attempting to resolve from LIMS."
     ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 fi

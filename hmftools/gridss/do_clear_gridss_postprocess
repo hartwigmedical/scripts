@@ -3,7 +3,7 @@
 run_dir=$1
 
 gridss_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
-if [ -z ${gridss_vcf} ]; then
+if [[ -z ${gridss_vcf} ]]; then
     echo "[ERROR] Unable to locate gridss vcf. Exiting." >&2
     exit 1
 fi
