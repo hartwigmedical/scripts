@@ -131,7 +131,7 @@ missed_summary =
   filter(!is.na(cn_left) & !is.na(cn_right)) %>%
   mutate(missed_sv = sv_matches == 0) %>%
   group_by(cohort, nearGapOrCentromere) %>%
-  summarise(portion_missed=sum(missed_sv) / n(), transitions=n())
+  summarise(portion_missed=sum(missed_sv) / n(), missed=sum(missed_sv), transitions=n())
 
 missed_clonal_summary =
   cn_transitions %>%
