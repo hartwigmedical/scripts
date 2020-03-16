@@ -343,7 +343,7 @@ sub processSample{
         return "NoJsonMade_isSomaticR";
     }
     else{
-        warn "[WARN]   RESULT for $sample_id: Somehow no (correct) analysis type ($analysis) was defined for input";
+        warn "[WARN]   RESULT for $sample_id: Somehow no (correct) analysis type ($analysis) was defined for input\n";
         return "NoJsonMade_hasWrongAnalsisType";
     }
 
@@ -359,7 +359,7 @@ sub processSample{
     
     foreach my $existing_json ( @base_jsons, @done_jsons ){
         if ( $existing_json =~ /$setname_wo_date/ ){
-            warn "[WARN]   RESULT for $sample_id: SKIPPING because set json exists ($existing_json)";
+            warn "[WARN]   RESULT for $sample_id: SKIPPING because set json exists ($existing_json)\n";
             return "NoJsonMade_setJsonalreadyExists";
         }
     }
