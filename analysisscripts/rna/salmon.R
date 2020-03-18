@@ -1,135 +1,201 @@
 library(ggplot2)
+library(RMySQL)
+library(random)
 
+#### AHR Data
+ahrData = read.table(file = "~/hmf/analysis/salmon/ahr/ahr.tsv", sep = "\t", header = T, stringsAsFactors = F) %>%
+  mutate(
+    AHR = ifelse(Amplification == "High Amp", "AMP", "NONE"), 
+    AHR = ifelse(!is.na(Hotspot) & Hotspot, "HOTSPOT", AHR),
+    AHR = ifelse(!is.na(HasExonDeletion) & HasExonDeletion, "DEL", AHR)) %>%
+  filter(AHR != "NONE") %>%
+  select(sampleId, AHR)
+names(ahrData) <- c("Sample", "AHR")
+
+#### GENE Panel
+load(file = "~/hmf/analysis/cohort/reference/canonicalTranscripts.RData")
 load(file = "~/hmf/analysis/cohort/processed/genePanel.RData")
-genePanel = genePanel %>% filter(!is.na(reportablePointMutation) | !is.na(reportableAmp) | !is.na(reportableDel)) %>% pull(gene)
+genePanel = genePanel %>% filter(!is.na(reportablePointMutation) | !is.na(reportableAmp) | !is.na(reportableDel)) %>% 
+  select(gene) %>%
+  bind_rows(data.frame(gene = c("AHR"), stringsAsFactors = F)) %>%
+  left_join(canonicalTranscripts %>% select(gene, geneId), by = "gene") 
+names(genePanel) <- c("GeneName", "GeneId")
 
-purity = data.frame(
-SampleId = c("A-CPCT02010944T", "U-CPCT02010963T", "P-CPCT02020378T", "A-CPCT02020629T","A-CPCT02020787T", "U-CPCT02020834T", "P-CPCT02080180T", "P-CPCT02100137T", "U-CPCT02360014T", "P-DRUP01010040T"),
-Purity = c(0.58,0.93,	0.63,	0.2,	0.95,	1,	0.88,	0.94,	0.9,	0.88), stringsAsFactors = F)
-
-ensemblTransExonData = read.csv('~/hmf/analysis/RNA/ensembl_trans_exon_data.csv')
-ensemblGeneData = read.csv('~/hmf/analysis/RNA/ensembl_gene_data.csv')
-allTranscripts = ensemblTransExonData %>% distinct(GeneId,Trans)
-
-salmonTest = rbind(
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02010944T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='A-CPCT02010944T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02020629T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='A-CPCT02020629T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02020787T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='A-CPCT02020787T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02360014T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='U-CPCT02360014T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02010963T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='U-CPCT02010963T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02020834T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='U-CPCT02020834T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02020378T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='P-CPCT02020378T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02080180T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='P-CPCT02080180T'),
-read.csv('/Users/jon/hmf/analysis/salmon/CPCT02100137T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='P-CPCT02100137T'),
-read.csv('/Users/jon/hmf/analysis/salmon/DRUP01010040T.salmon_quant/quant.sf',sep='\t') %>% mutate(SampleId='P-DRUP01010040T'))
-
-save(ensemblTransExonData, ensemblGeneData, allTranscripts, salmonTest, genePanel, purity, file = "/Users/jon/hmf/analysis/salmon/salmonTest.RData")
-rm(list=setdiff(ls(), c("ensemblTransExonData","allTranscripts","ensemblGeneData","salmonTest", "genePanel")))
-
-unique(filteredSalmonTest$SampleId)
-
-
-
-load(file = "/Users/jon/hmf/analysis/salmon/salmonTest.RData")
-
-filteredSalmonTest = salmonTest %>%
-    group_by(SampleId) %>%
-    left_join(purity, by = "SampleId") %>%
-    mutate(CancerType = substr(SampleId, 1, 1)) %>%
-    mutate(normalisationFactor = sum(ifelse(TPM > 5000,0, NumReads) / EffectiveLength)) %>%
-    ungroup() %>%
+### Raw ISOFOX Data
+fileNames <- Sys.glob("/Users/jon/hmf/analysis/salmon/isofox/*.isf.transcript_data.csv")
+rawIsofoxData = data.frame(stringsAsFactors = F)
+for (fileName in fileNames) {
+  sample <- gsub("/Users/jon/hmf/analysis/salmon/isofox/", "", fileName)
+  sample <- gsub(".isf.transcript_data.csv", "", sample)
+  cat ("Processing", sample, "\n")
+  data = read.table(fileName, sep = ",", header = T, stringsAsFactors = F) %>% 
+    mutate(NumReads = FitAllocation) %>%
+    select(GeneId, GeneName, TransId = TransName, EffectiveLength, NumReads) %>%
+    mutate(normalisationFactor =  sum(ifelse(EffectiveLength > 0, NumReads / EffectiveLength, 0))) %>%
     mutate(TPM = NumReads / EffectiveLength / normalisationFactor * 1000000) %>%
-    select(-normalisationFactor) %>%
-    left_join(allTranscripts %>% select(Name = Trans, GeneId), by = c("Name")) %>%
-    left_join(ensemblGeneData %>% select(GeneId, GeneName), by = "GeneId") %>%
-    mutate( GenePanel = GeneName %in% genePanel) %>%
-    filter(GenePanel)
-
-geneData = filteredSalmonTest %>% group_by(SampleId, GeneName, Purity, CancerType) %>% summarise(TPM = sum(TPM)) %>% ungroup()
-ggplot(geneData %>% filter(GeneName == "B2M"), aes(Purity, TPM)) + geom_point(aes(color = CancerType))
-
-urinaryData = geneData %>% filter(grepl("^A", SampleId) | grepl("^U", SampleId), !is.na(GeneName))
-prostateData = geneData %>% filter(grepl("^P", SampleId), !is.na(GeneName))
-
-
-summariseAndCombine <- function(trainingData, testData) {
-    trainingDataSummary = trainingData %>%
-        filter(!is.na(GeneName)) %>%
-        group_by(GeneName) %>%
-        summarise(meanTrainingTPM = mean(TPM), sdTrainingTPM = sd(TPM))
-
-    testDataSummary = testData %>%
-        filter(!is.na(GeneName)) %>%
-        group_by(GeneName) %>%
-        summarise(meanTestTPM = mean(TPM), sdTestTPM = sd(TPM))
-
-    result = full_join(trainingDataSummary, testDataSummary, by = "GeneName") %>%
-        mutate(diff = abs(meanTestTPM - meanTrainingTPM), foldChange = meanTestTPM / meanTrainingTPM, z = diff / sdTrainingTPM) %>%
-        filter(meanTrainingTPM > 0) %>%
-        arrange(-z)
-    return (result)
+    filter(GeneName %in% genePanel$GeneName)
+  data$Sample <- sample
+  rawIsofoxData = bind_rows(rawIsofoxData, data)
 }
 
-sampleOutliers <- function(sample, data) {
-    trainingData = data %>% filter(SampleId != sample)
-    testData = data  %>% filter(SampleId == sample)
+#### Raw Salmon Data
+ensemblTransExonData = read.csv('~/hmf/analysis/RNA/ensembl_trans_exon_data.csv', stringsAsFactors = F)
+ensemblTransExonData = ensemblTransExonData %>% select(GeneId, TransId = Trans) %>% distinct()
 
-    result = summariseAndCombine(trainingData, testData) %>%
-    filter(meanTrainingTPM > 0, z > 2, diff > 10)
-    return (result)
+fileNames <- Sys.glob("/Users/jon/hmf/analysis/salmon/data/*.sf")
+rawSalmonData = data.frame(stringsAsFactors = F)
+for (fileName in fileNames) {
+  sample <- gsub("/Users/jon/hmf/analysis/salmon/data/", "", fileName)
+  sample <- gsub("-quant.sf", "", sample)
+  cat ("Processing", sample, "\n")
+  data = read.table(fileName, sep = "\t", header = T, stringsAsFactors = F) %>%
+    mutate(TransId = substr(Name, 1, 15)) %>% select(-Name) %>%
+    left_join(ensemblTransExonData, by = "TransId") %>%
+    filter(GeneId %in% genePanel$GeneId) %>%
+    left_join(genePanel, by = "GeneId")
+  data$Sample <- sample
+  rawSalmonData = bind_rows(rawSalmonData, data)
 }
 
-urinarySamples = unique(urinaryData$SampleId)
-urinaryOutliers1 = sampleOutliers(urinarySamples[1], urinaryData)
-urinaryOutliers2 = sampleOutliers(urinarySamples[2], urinaryData)
-urinaryOutliers3 = sampleOutliers(urinarySamples[3], urinaryData)
-urinaryOutliers4 = sampleOutliers(urinarySamples[4], urinaryData)
-urinaryOutliers5 = sampleOutliers(urinarySamples[5], urinaryData)
-urinaryOutliers6 = sampleOutliers(urinarySamples[6], urinaryData)
-
-prostateSamples = unique(prostateData$SampleId)
-prostateOutliers1 = sampleOutliers(prostateSamples[1], prostateData)
-prostateOutliers2 = sampleOutliers(prostateSamples[2], prostateData)
-prostateOutliers3 = sampleOutliers(prostateSamples[3], prostateData)
-prostateOutliers4 = sampleOutliers(prostateSamples[4], prostateData)
-
-cohortOutliers = summariseAndCombine(urinaryData, prostateData) %>%
-filter(z > 3, diff > 10)
+#fileName = "/Users/jon/hmf/analysis/salmon/data/CPCT02010944T-quant.sf"
+#ENST00000284881
 
 
-ggplot(cohortOutliers, aes(meanTrainingTPM, meanTestTPM)) +
-    geom_point() +
-    geom_text(aes(label = GeneName), size = 3, nudge_x = .01, color = "red") +
-#xlim(0, 50) + ylim(0, 50) +
-    xlab("Prostate TPM") + ylab("Urinary TPM")  + scale_x_log10() + scale_y_log10()
+#### ADD PATIENT DATA
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
+purityTable = dbGetQuery(dbProd, "SELECT * from purity")
+clinicalTable = dbGetQuery(dbProd, "SELECT * from clinical")
+dbDisconnect(dbProd)
+rm(dbProd)
+
+patientData = purityTable %>% filter(sampleId %in% rawIsofoxData$Sample | sampleId %in% rawSalmonData$Sample) %>%
+  left_join(clinicalTable, by = "sampleId") %>%
+  select(sampleId, purity, primaryTumorLocation, status, qcStatus)
+names(patientData) <- c("Sample", "Purity", "CancerType", "Status", "QCStatus")
+patientData = patientData %>% left_join(ahrData, by = "Sample")
+patientData[is.na(patientData)] <- "NONE"
+
+
+#### GET DRIVER DATA
+dbProd = dbConnect(MySQL(), dbname='hmfpatients', groups="RAnalysis", host = "127.0.0.1")
+sampleIdString = paste("'", patientData$Sample, "'", collapse = ",", sep = "")
+driverQuery = paste0("select * from driverCatalog where sampleId in (",sampleIdString, ")")
+driverData = dbGetQuery(dbProd, driverQuery)
+dbDisconnect(dbProd)
+rm(dbProd)
+driverData = driverData %>% group_by(sampleId, gene) %>% arrange(gene, driver) %>% mutate(n = row_number()) %>% filter(n == 1) %>% ungroup() %>%
+  select(sampleId, gene, driver, driverLikelihood)
+names(driverData) <- c("Sample", "GeneName", "Driver", "DriverLikelihood")
+
+
+#### SAVE DATA
+save(genePanel, driverData, rawIsofoxData, rawSalmonData, patientData, file = "/Users/jon/hmf/analysis/salmon/expression.RData")
+
+
+salmonData = result %>% group_by(Name) %>% mutate(TotalNumReads = sum(NumReads)) %>% filter(TotalNumReads > 0) %>% ungroup() %>%
+  filter(Name %in% genePanel$transcriptId) %>%
+  select(-TotalNumReads)
+
+################ PROCESS
+load(file = "/Users/jon/hmf/analysis/salmon/expression.RData")
+
+sampleIntersection = rawSalmonData %>% filter(Sample %in% rawIsofoxData$Sample, Sample != "CPCT02020618T") %>% distinct(Sample) %>% pull(Sample)
+sampleIntersection
+
+genePanel = genePanel %>% arrange(GeneName) %>% mutate( Group = pmin(17,row_number() %/% 25))
+
+driverData = driverData %>%
+  mutate(
+    Impact = ifelse(DriverLikelihood > 0.2, "MED", "LOW"), 
+    Impact = ifelse(DriverLikelihood > 0.8, "HIGH", Impact),
+    Driver = ifelse(Driver == "MUTATION", paste(Driver, Impact, sep = "_"), Driver)) %>%
+  select(-Impact, -DriverLikelihood)
+
+combinedData = bind_rows(
+  rawIsofoxData %>% select(Sample, GeneId, GeneName, TransId, EffectiveLength, NumReads, TPM) %>% mutate(Source = "ISOFOX"),
+  rawSalmonData %>% select(Sample, GeneId, GeneName, TransId, EffectiveLength, NumReads, TPM) %>% mutate(Source = "SALMON")) %>%
+  left_join(patientData %>% select(-ends_with("Status")), by = "Sample") %>%
+  left_join(driverData, by = c("GeneName", "Sample")) %>%
+  left_join(genePanel %>% select(GeneName, Group), by = "GeneName") %>%
+  group_by(Sample, Source) %>%
+  mutate(normalisationFactor = sum(ifelse(TPM > 5000,0, NumReads) / EffectiveLength)) %>%
+  ungroup() %>%
+  mutate(TPM = NumReads / EffectiveLength / normalisationFactor * 1000000) %>%
+  select(-normalisationFactor) %>%
+  mutate(
+    DriverCatalog = ifelse(is.na(Driver), "NONE", Driver),
+    DriverCategory = ifelse(is.na(Driver), "NONE", "DRIVER")
+  ) %>%
+  select(-Driver)
+
+head(combinedData)
+compareData = combinedData %>% 
+#  filter(grepl("CPCT02010944T", Sample)) %>%
+  select(-NumReads) %>% select(-EffectiveLength) %>% spread(Source, TPM) 
 
 
 
-ggplot(urinaryOutliers1 %>% filter(diff > 30), aes(meanTrainingTPM, meanTestTPM)) +
-    geom_point() +
-    geom_text(aes(label = GeneName), size = 3, nudge_x = 0.01, color = "red") +
-    xlab("Cohort TPM") + ylab("Sample TPM") + scale_x_log10() + scale_y_log10()
+  
+geneData = combinedData %>% 
+  group_by(Source, Sample, GeneName, Purity, CancerType, Group, DriverCatalog, DriverCategory) %>% 
+  summarise(TPM = sum(TPM)) %>% ungroup()
+
+geneData$random <- runif(nrow(geneData), 0.02, 0.1)
+
+cohortData = geneData %>%
+  #filter( grepl("CPCT02010944", Sample)) %>%
+  filter(CancerType == "Urinary tract", Sample != "CPCT02010944T", Sample %in% sampleIntersection, grepl("CPCT02010944", Sample)) %>%
+  group_by(GeneName, Source) %>%
+  mutate(
+    logTPM =log(pmax(TPM,random),2),
+    logMedian = median(logTPM),
+    logMax = logMedian + 2, 
+    logMin = logMedian - 2) 
+
+cohortDataSummary = cohortData %>% group_by(GeneName, Group, Source) %>%
+  summarise(
+    logMedian = median(logTPM),
+    logMax = logMedian + 2, 
+    logMin = logMedian - 2) 
+
+sampleData = geneData %>% filter(Sample == "CPCT02010944T") %>%
+  mutate(logTPM =log(pmax(TPM,0.1),2))
+
+
+ggplot(geneData %>% filter(GeneName == "ACVR1B"), aes(Purity, TPM)) + geom_point(aes(color = DriverCatalog)) + ggtitle("ACVR1B") + facet_grid(~Source)
+ggplot(compareData %>% filter(GeneName == "FHIT"), aes(ISOFOX, SALMON)) + geom_point()  + scale_y_log10() + scale_x_log10()
+
+
+driverCatalogColours = c("red","blue","orange")
+driverCatalogColours = setNames(driverCatalogColours, c("DRIVER", "NONE", "SPLICE"))
+sourceColours = c("red", "blue")
+sourceColours = setNames(sourceColours, c("ISOFOX", "SALMON"))
+
+targetGroup = 16
+pdf(file="/Users/jon/hmf/analysis/salmon/expression.pdf",width=20, height = 6)
+for (targetGroup in unique(genePanel$Group)) {
+  cat("Processing", targetGroup, "\n")
+  
+  plot = ggplot() +
+    geom_tile(aes(x=GeneName, width = 0.8, y = (logMin + logMax) /2, height = logMax - logMin), data = cohortDataSummary %>% filter(Group == targetGroup),  stat="identity", fill = "green") + 
+    geom_violin(aes(x=GeneName,y=logTPM, fill = Source), data = cohortData %>% filter(Group == targetGroup), scale='count',draw_quantiles = c(0.05,0.5,0.95),bw=0.7, size = 0.1) + 
+    geom_point(aes(x = GeneName, y = logTPM, shape = Source), data = sampleData %>% filter(Group == targetGroup)) +
+    scale_fill_manual(values=sourceColours) 
+  
+  print(plot)
+}
+dev.off()
 
 
 
 
+pdf(file="/Users/jon/hmf/analysis/salmon/singleSample.pdf",width=20, height = 6)
+for (targetGroup in unique(genePanel$Group)) {
+  cat("Processing", targetGroup, "\n")
+  plot = ggplot(cohortData %>% filter(Group == targetGroup)) + geom_point(aes(x = GeneName, y = logTPM, shape = Source, color = Sample))
+  print(plot)
+}
+dev.off()
 
 
 
-
-
-salmonTPM = filteredSalmonTest %>%  mutate(TPM=round(TPM,1)) %>% spread(SampleId,TPM)
-salmonTPMGene = filteredSalmonTest %>% filter(!is.na(GeneName)) %>% mutate(TPM=round(TPM,1)) %>% group_by(GeneName,SampleId) %>% summarise(TPM=sum(TPM)) %>% spread(SampleId,TPM)
-
-View(salmonTPMGene %>% filter(GeneName=='AHR'))
-
-ggplot(data=salmonTPMGene %>% filter(`A-CPCT02010944T`>100|`A-CPCT02020629T`>100),aes(`A-CPCT02010944T`,`A-CPCT02020629T`))+geom_point() + geom_text(aes(label = GeneName), size = 3, nudge_x = 100, color = "red") #+scale_x_log10() +scale_y_log10()
-ggplot(data=salmonTPMGene %>% filter(`A-CPCT02010944T`>100|`P-CPCT02020378T`>100),aes(`A-CPCT02010944T`,`P-CPCT02020378T`))+geom_point()+ geom_text(aes(label = GeneName), size = 3, nudge_x = 100, color = "red") #+scale_x_log10() +scale_y_log10()
-ggplot(data=salmonTPMGene %>% filter(`A-CPCT02010944T`>100|`U-CPCT02020834T`>100),aes(`A-CPCT02010944T`,`U-CPCT02020834T`))+geom_point() + geom_text(aes(label = GeneName), size = 3, nudge_x = 100, color = "red") #+scale_x_log10() +scale_y_log10()
-
-
-# High Purity urinary tract vs NO_TUMOR
-ggplot(data=salmonTPMGene %>% filter(`U-CPCT02010963T`+`U-CPCT02020834T`>100),aes(`U-CPCT02010963T`,`U-CPCT02020834T`))+geom_point() + geom_text(aes(label = GeneName), size = 3, nudge_x = 100, color = "red") #+scale_x_log10() +scale_y_log10()
-
-# High Purity prostate vs NO_TUMOR
-ggplot(data=salmonTPMGene %>% filter(`P-CPCT02100137T`+`U-CPCT02020834T`>100),aes(`P-CPCT02100137T`,`U-CPCT02020834T`))+geom_point() + geom_text(aes(label = GeneName), size = 3, nudge_x = 0.1, color = "red") +scale_x_log10() +scale_y_log10()
