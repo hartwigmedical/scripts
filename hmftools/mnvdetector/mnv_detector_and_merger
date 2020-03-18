@@ -12,7 +12,7 @@ snpeff_db="GRCh37.75"
 
 run_dir=$1
 
-if [ -z "${run_dir}" ]; then
+if [[ -z ${run_dir} ]]; then
     echo "Usage: $ ./mnv_detector_and_merger <run_dir>"
     echo "   runpath = Path to pipeline run dir"
     echo "Notes:"
