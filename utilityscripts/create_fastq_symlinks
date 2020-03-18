@@ -2,6 +2,11 @@
 
 fastq_dir=$1
 
+if [[ -z ${fastq_dir} ]]; then
+    echo "[ERROR] No fastq dir provided. Exiting"
+    exit 1
+fi
+
 for file in ${fastq_dir}/*.fastq.gz ; do
     ln -s ${file} .
 done
