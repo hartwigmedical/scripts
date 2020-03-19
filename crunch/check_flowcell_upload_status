@@ -7,7 +7,7 @@ echo "# Checking upload status of flowcells"
 echo "# Runs in ${flowcells_dir}"
 echo "# Logs in ${uploadlog_dir}"
 
-for run_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun"); do
+for run_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" -exec ls -d {} +); do
   run_name=$( basename $run_path )
   log_SBP="${uploadlog_dir}/${run_name}_SBP_Uploaded.done"
   log_GCP="${uploadlog_dir}/${run_name}_GCP_Uploaded.done"
