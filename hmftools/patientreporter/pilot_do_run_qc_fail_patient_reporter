@@ -5,12 +5,12 @@ source lims_functions
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
 
-if [ -z ${tumor_sample} ]; then
+if [[ -z ${tumor_sample} ]]; then
     echo "[ERROR] No tumor sample provided. Exiting"
     exit 1;
 fi
 
-if [ -z ${qc_fail_reason} ]; then
+if [[ -z ${qc_fail_reason} ]]; then
     echo "[ERROR] No QC fail reason provided. Exiting"
     exit 1;
 fi
@@ -19,7 +19,7 @@ ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
 ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
 tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 
-if [ -z ${tumor_sample_barcode} ]; then
+if [[ -z ${tumor_sample_barcode} ]]; then
     echo "[INFO] Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi

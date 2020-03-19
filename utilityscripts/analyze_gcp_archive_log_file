@@ -2,6 +2,11 @@
 
 log_file=$1 && shift
 
+if [[ -z ${log_file} ]]; then
+    echo "[ERROR] No log file provided. Exiting"
+    exit 1
+fi
+
 echo "[INFO] Printing all log messages minus symlinks"
 cat ${log_file} | grep -v "symbolic" | grep -v "symlink"
 

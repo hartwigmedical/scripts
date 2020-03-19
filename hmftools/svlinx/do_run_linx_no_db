@@ -24,7 +24,7 @@ line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
 ref_genome=$(locate_ref_genome_fasta_file)
 
-if [ -d ${output_dir} ]; then
+if [[ -d ${output_dir} ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
     if [[ ! -z ${linx_files} ]]; then
         rm ${output_dir}/*linx*

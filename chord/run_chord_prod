@@ -3,10 +3,9 @@
 source locate_files
 source metadata_functions
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
-if [ ! -d ${run_dir} ]; then
+if [[ ! -d ${run_dir} ]]; then
     echo "[ERROR] ${run_dir} does not exist!"
     exit 1
 fi
@@ -24,10 +23,10 @@ echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-${prefix}/extractSigPredictHRD.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+extractSigPredictHRD.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
 file_count=$(ls ${working_dir} | wc -l)
 
-if [ ${file_count} -lt 2 ]; then
+if [[ ${file_count} -lt 2 ]]; then
     echo "[ERROR] not all files for chord present!"
 fi

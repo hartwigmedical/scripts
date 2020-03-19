@@ -20,12 +20,12 @@ viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
 fusion_pairs_csv=/data/common/dbs/knowledgebases/output/knownFusionPairs.csv
 promiscuous_five_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousFive.csv
 promiscuous_three_csv=/data/common/dbs/knowledgebases/output/knownPromiscuousThree.csv
-ensembl_data_dir=/data/common/dbs/ensembl_data_cache
+gene_transcripts_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
 
-if [ -d ${output_dir} ]; then
+if [[ -d ${output_dir} ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
     if [[ ! -z ${linx_files} ]]; then
         rm ${output_dir}/*linx*
@@ -42,7 +42,7 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -line_element_file ${line_elements} \
     -replication_origins_file ${replication_origins} \
     -viral_hosts_file ${viral_hosts_csv} \
-    -gene_transcripts_dir ${ensembl_data_dir} \
+    -gene_transcripts_dir ${gene_transcripts_dir} \
     -check_fusions \
     -fusion_pairs_csv ${fusion_pairs_csv} \
     -promiscuous_five_csv ${promiscuous_five_csv} \

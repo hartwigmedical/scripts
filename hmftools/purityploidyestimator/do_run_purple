@@ -39,7 +39,7 @@ rm -r ${purple_output}/*
 base_path="/data/common"
 if [ -z "$(hostname | grep datastore)" ]; then
     # Common folder does not exist on crunches...
-	base_path="/data"
+    base_path="/data"
 fi
 
 gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
@@ -47,7 +47,7 @@ ref_genome=$(locate_ref_genome_fasta_file)
 hotspot_vcf=$(locate_hotspot_vcf)
 
 db_args=""
-if [ ! -z "${credentials}" ]; then
+if [[ ! -z "${credentials}" ]]; then
     db_user=$(awk '/^user/ {print $2}' ${credentials})
     db_pass=$(awk '/^pass/ {print $2}' ${credentials})
     db_url=$(awk '/^url/ {print $2}' ${credentials})

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+if [[ -z ${run_dir} ]]; then
+    echo "[ERROR] No run dir provided. Exiting"
+    exit 1
+fi
+
+do_run_purple_no_db ${run_dir}
+do_run_linx_no_db ${run_dir}
+load_run_into_prod_db ${run_dir}
