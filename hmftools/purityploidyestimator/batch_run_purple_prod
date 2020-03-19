@@ -11,3 +11,4 @@ do_run_gridss_viral_annotate_prod ${run_dir}
 do_run_gridss_repeatmasker_insertion_annotate_prod ${run_dir}
 load_structural_variants_prod ${run_dir}
 do_run_linx_prod ${run_dir}
+load_linx_data_prod ${run_dir}
