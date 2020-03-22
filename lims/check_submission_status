@@ -2,32 +2,32 @@
 
 submission=$1
 submissionDir="/data/submissions/${submission}"
-sopStringRegex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
+sopRegex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
-echo ""
-echo "[INFO] Checking ${submission}"
-if [[ -d ${submissionDir} ]]; then 
-    echo "[INFO] Submission directory already exists (${submissionDir})"
-fi
+if [[ -z ${submission} ]]; then echo "[EXIT] Provide submission (eg HMFreg0001)" && exit 1; fi
 
-analysisType=$(query_lims -type submissions -json | jq -r ".[] | select(.submission == \"${submission}\") | .analysis_type" )
-totalLimsSamples=$(query_lims -type samples -filter "submission=${submission}" | grep -cv "^#")
-totalLimsFailed=$(query_lims -type samples -filter "submission=${submission}" | grep -v "^#" | grep -c Failed)
-totalSamples=$(query_sbp_api -type samples -filter "submission=${submission}" | grep -cv "^#")
-totalSamplesReady=$(query_sbp_api -type samples -filter "submission=${submission}" -filter "status=Ready" | grep -cv "^#")
-totalRuns=$(query_sbp_api -type runs -filter "name=${submission}" | grep -cv "^#")
-totalRunsValidated=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated" | grep -cv "^#")
-totalRunsDone=$(query_sbp_api -type runs -filter "name=${submission}" -filter "status=Validated|Failed|SnpCheck" | grep -cv "^#")
-firstSopString=$(query_lims -type samples -filter "submission=${submission}" -json | jq -r '.[-1].lab_sop_versions' )
+lmsSubJsn=$(query_lims -type submissions -filter "submission=${submission}" -json)
+lmsSmpJsn=$(query_lims -type samples -filter "submission=${submission}" -json)
+apiSmpJsn=$(query_sbp_api -type samples -filter "submission=${submission}" -json)
+apiRnsJsn=$(query_sbp_api -type runs -filter "name=${submission}" -json)
 
-echo "[INFO] Analysis type for ${submission} in lims is \"${analysisType}\""
-echo "[INFO] ${totalLimsSamples} samples found in LIMS (of which ${totalLimsFailed} are failed by lab)"
-echo "[INFO] ${totalSamplesReady} samples ready at SBP (of total ${totalSamples})"
-echo "[INFO] ${totalRunsDone} runs finished at SBP (of total ${totalRuns})"
-echo "[INFO] ${totalRunsValidated} runs validated at SBP (of total ${totalRuns})"
-if [[ ! "${firstSopString}" =~ ${sopStringRegex} ]]; then
-  echo "[WARNING] At least one sample without complete SOP string (regex: ${firstSopString})"
-fi
+analyType=$(echo "$lmsSubJsn" | jq -r ".[].analysis_type" )
+smpLmsTot=$(echo "$lmsSmpJsn" | jq 'length')
+smpApiTot=$(echo "$apiSmpJsn" | jq 'length')
+rnsApiTot=$(echo "$apiRnsJsn" | jq 'length')
+
+smpLmsErr=$(echo "$lmsSmpJsn" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
+smpApiRdy=$(echo "$apiSmpJsn" | jq -c '[.[] | select(.status=="Ready")] | length')
+rnsApiRdy=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="SnpCheck")] | length')
+rnsApiVal=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated")] | length')
+
+echo "[INFO] Output type for ${submission} in lims is \"${analyType}\""
+echo "[INFO] ${smpLmsTot} LMS samples total (of which ${smpLmsErr} failed)"
+echo "[INFO] ${smpApiTot} BFX samples total"
+echo "[INFO] ${smpApiRdy} BFX samples ready"
+echo "[INFO] ${rnsApiTot} BFX runs total"
+echo "[INFO] ${rnsApiRdy} BFX runs finished"
+echo "[INFO] ${rnsApiVal} BFX runs validated"
 echo ""
 echo "[INFO] Inspect further:"
 echo "  query_lims -type samples -filter submission=${submission}"
@@ -37,3 +37,11 @@ echo ""
 echo "[INFO] Or gather submission if all is ready and ok:"
 echo "  gather_submission ${submission}"
 echo ""
+
+## print warnings last
+if [[ -d ${submissionDir} ]]; then echo "[WARNING] Submission directory already exists (${submissionDir})"; fi
+if [[ ! "${rnsApiVal}" -eq "${rnsApiTot}" ]]; then echo "[WARNING] Not all runs in API are status Validated!"; fi
+echo "$lmsSmpJsn" | jq -r '.[].lab_sop_versions' | while read smpSopStr; do
+  ## Note to self: no quoted regex since bash 3.2
+  if [[ ! "${smpSopStr}" =~ ${sopRegex} ]]; then echo "[WARNING] Found sample with incomplete SOP string (${smpSopStr} does not match ${sopRegex})!"; fi
+done

@@ -5,7 +5,7 @@ source locate_files
 
 run_dir=$1 && shift
 
-linx_jar=/data/common/tools/sv-linx_v1.5/sv-linx.jar
+linx_jar=/data/common/tools/sv-linx_v1.7/sv-linx.jar
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_dir=${run_dir}/purple
 output_dir=${run_dir}/linx
@@ -24,7 +24,7 @@ line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
 ref_genome=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-if [ -d ${output_dir} ]; then
+if [[ -d ${output_dir} ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
     if [[ ! -z ${linx_files} ]]; then
         rm ${output_dir}/*linx*

@@ -2,18 +2,19 @@
 
 YYMMDD=$(date +'%y%m%d')
 ini="Somatic.ini"
-pip="v5.7"
+pip="v5.8"
 
 echo "## Production Run Status Check (${YYMMDD})"
 echo ""
 
 ## Param check
 ini_count=$(query_sbp_api -type inis -filter "name=${ini}" -exact | grep -cv "^#")
-if [ ${ini_count} != 1 ]; then
+if [[ ${ini_count} != 1 ]]; then
     echo "[ERROR] Non-existing ini ${ini})?" && exit 1
 fi
+
 pip_count=$(query_sbp_api -type stacks -filter "revision=^${pip}" | grep -cv "^#")
-if [ ${pip_count} -lt 1 ]; then
+if [[ ${pip_count} -lt 1 ]]; then
     echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
 fi
 

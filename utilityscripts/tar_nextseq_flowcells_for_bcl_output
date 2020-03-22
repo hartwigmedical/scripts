@@ -1,51 +1,51 @@
 #!/usr/bin/env bash
 
-outputTarPath=$1 && shift
-flowcellPaths=("$@")
+output_tar_path=$1 && shift
+flowcell_paths=("$@")
 
 YYMMDD="$(date '+%y%m%d')"
-scriptName=$(basename $0)
+script_name=$(basename $0)
 
-if [[ ${#flowcellPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+if [[ ${#flowcell_paths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
   echo " Descr: Prints tar command to screen (for any number of provided flowcell paths)"
-  echo " Usage: $scriptName /path/to/output.tar <FlowcellPath1> [<FlowcellPath2> <FlowcellPathN>]"
-  echo " Examp: $scriptName /data/tmp/HMFregXXXX.tar 190101_NB000000_0001_ABCDEFGHIJ"
+  echo " Usage: ${script_name} /path/to/output.tar <FlowcellPath1> [<FlowcellPath2> <FlowcellPathN>]"
+  echo " Examp: ${script_name} /data/tmp/HMFregXXXX.tar 190101_NB000000_0001_ABCDEFGHIJ"
   echo "  NOTE: Please realize to first cd (directory structures are retained in tar)"
   echo "---"
   exit 1
 fi
 
-outputTarName=$(basename ${outputTarPath})
-tarLog="${HOME}/logs/${YYMMDD}_tar_create_${outputTarName}.log"
+output_tar_name=$(basename ${output_tar_path})
+tar_log="${HOME}/logs/${YYMMDD}_tar_create_${output_tar_name}.log"
 
 ## some sanity checks
-if [[ -e "${outputTarPath}" ]]; then
-  echo "[EXIT] Provided output tar file already exists (${outputTarPath})" && exit 1
+if [[ -e "${output_tar_path}" ]]; then
+    echo "[EXIT] Provided output tar file already exists (${output_tar_path})" && exit 1
 fi
 
-for inputPath in "${flowcellPaths[@]}"; do
-  if [[ ! -d "${inputPath}" ]]; then
-    echo "[EXIT] Provided input directory does not exist (${inputPath})" && exit 1
-  fi
+for inputPath in "${flowcell_paths[@]}"; do
+    if [[ ! -d "${inputPath}" ]]; then
+        echo "[EXIT] Provided input directory does not exist (${inputPath})" && exit 1
+    fi
 done
 
 ## build and print command
-tarCmd="tar"
-tarCmd+=" --exclude '*Images*'"
-tarCmd+=" --exclude '*Logs*'"
-tarCmd+=" --exclude '*.fastq.gz'"
-tarCmd+=" -vcf ${outputTarPath}"
-tarCmd+=" ${flowcellPaths[@]}"
+tar_cmd="tar"
+tar_cmd+=" --exclude '*Images*'"
+tar_cmd+=" --exclude '*Logs*'"
+tar_cmd+=" --exclude '*.fastq.gz'"
+tar_cmd+=" -vcf ${output_tar_path}"
+tar_cmd+=" ${flowcell_paths[@]}"
 
 echo ""
 echo "## Create tar with:"
-echo "nohup ${tarCmd} > ${tarLog} &"
+echo "nohup ${tar_cmd} > ${tar_log} &"
 echo ""
 echo "## Follow progress with:"
-echo "tail -f ${tarLog}"
+echo "tail -f ${tar_log}"
 echo ""
 echo "## Once ready create content and md5 file with:"
-echo "tar -tf ${outputTarPath} > ${outputTarPath}.content"
-echo "md5sum ${outputTarPath} > ${outputTarPath}.md5"
+echo "tar -tf ${output_tar_path} > ${output_tar_path}.content"
+echo "md5sum ${output_tar_path} > ${output_tar_path}.md5"
 echo ""

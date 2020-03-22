@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
+    echo "-----"
+    echo " Usage: $SELF_SCRIPT <FileToUpload> [<FileToUpload2> <FileToUploadN>]"
+    echo "-----"
+    exit 1
+fi
+
+files_to_upload=( "$@" )
+nc_dir="UPLOAD"
+nc_url="https://nextcloud.hartwigmedicalfoundation.nl"
+credentials_file=$(locate_nextcloud_upload_reports_credentials)
+user=$(awk '/^user/ {print $2}' ${credentials_file})
+pass=$(awk '/^pass/ {print $2}' ${credentials_file})
+
+for file in "${files_to_upload[@]}"; do
+    if [[ ! -f "${file}" ]]; then
+        echo "[WARN] File not found so will not upload (${file})"
+    else
+        echo "[INFO] Uploading ${file} to Nextcloud dir ${nc_dir} with user ${user}"
+        curl -u "${user}:${pass}" -T "${file}" "${nc_url}/remote.php/webdav/${nc_dir}/"
+        if [[ $? -ne 0 ]]; then
+            echo "[WARN] Upload of file failed (${file})";
+        fi
+    fi
+done
+
+
+

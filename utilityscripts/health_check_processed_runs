@@ -9,9 +9,9 @@ for run in ${process_runs}; do
     run_dir=${path}/${run}
 
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-    if [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ] ; then
+    if [[ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckSucceeded" ]]; then
         echo "[INFO] HealthChecker has succeeded for ${run}"
-    elif [ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]; then
+    elif [[ -f "${run_dir}/health_checker/${tumor_sample}.HealthCheckFailed" ]]; then
         echo "[WARN] HealthChecker has failed for ${run}!!"
     else
         echo "[ERROR] HealthChecker has not been run for ${run}"

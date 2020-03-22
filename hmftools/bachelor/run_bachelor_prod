@@ -24,7 +24,7 @@ tumor_bam_file=${run_dir}/${sample}/aligner/${sample}.bam
 bachelor_output_dir=${run_dir}/bachelor
 purple_dir=${run_dir}/purple
 
-if [ ! -d "${bachelor_output_dir}" ]; then
+if [[ ! -d ${bachelor_output_dir} ]]; then
     echo "[INFO] ${bachelor_output_dir} does not exist yet, creating..."
     mkdir ${bachelor_output_dir}
 fi

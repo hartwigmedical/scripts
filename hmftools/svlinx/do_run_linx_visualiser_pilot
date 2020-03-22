@@ -3,6 +3,7 @@
 source locate_files
 
 run_dir=$1 && shift
+
 input_dir=${run_dir}/linx_pilot/
 
 linx_jar=$(locate_pilot_linx)

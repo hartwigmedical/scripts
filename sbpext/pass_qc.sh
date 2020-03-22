@@ -23,6 +23,6 @@ flowcell="$(hmfapi GET ${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id})"
 
 if [ $(echo "${flowcell}" | jq length) -eq 1 ]; then
     api_id=$(echo "${flowcell}" | jq -r .[0].id);
-    hmfapi PATCH ${api_url}/hmf/v1/flowcells/${api_id} undet_rds_p_pass=True > /dev/null;
+    hmfapi PATCH ${api_url}/hmf/v1/flowcells/${api_id} undet_rds_p_pass:=true;
     hmfapi POST ${api_url}/hmf/v1/flowcells/${api_id}/recalculate
 fi

@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 
-source sbp_api_functions
-
 set_name=$1
+cmd_date=$(date)
 
 if [[ -z "$set_name" ]]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
@@ -12,10 +11,15 @@ cred_dir="/data/common/dbs/sbp_api_credentials"
 sbp_api_crt_file="${cred_dir}/api.crt"
 sbp_api_key_file="${cred_dir}/api.key"
 sbp_api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-aws_profile="download"
 
 gcp_url_sign_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+gcp_project="hmf-database"
+gcp_account="hmf-download"
+
+echo "[INFO] Start of $0 ($cmd_date)"
+msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
+echo "[INFO] $msg"
 
 function main() {
     ## check that only one run exists for the set
@@ -29,14 +33,16 @@ function main() {
     ## setup all variables
     cluster=$(echo "$run_json" | jq -r '.cluster')
     bucket=$(echo "$run_json" | jq -r '.bucket')
+    entity=$(echo "$run_json" | jq -r '.entity')
+    status=$(echo "$run_json" | jq -r '.status')
     name=$(echo "$run_json" | jq -r '.name')
-    pipeline=$(echo "$run_json" | jq -r '.pipeline')
+    pip=$(echo "$run_json" | jq -r '.pipeline')
     ini=$(echo "$run_json" | jq -r '.ini')
     ref=$(echo "$run_json" | jq -r '.ref_sample')
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
-    id=$(echo "$run_json" | jq -r '.sbp_id')
+    oid=$(echo "$run_json" | jq -r '.sbp_id') # object id
 
-    files_url="${sbp_api_url}/files?run_id=${id}"
+    files_api_url="${sbp_api_url}/files?run_id=${oid}"
     out_jsn_all="${name}_runfiles.json"
     out_md5_all="${name}_runfiles.md5"
     out_aria="${name}.aria.txt"
@@ -44,12 +50,20 @@ function main() {
     out_url="${name}.url"
 
     echo "[INFO] RunName: $name"
+    echo "[INFO] RunStat: $status"
+    echo "[INFO] IniName: $ini"
+    echo "[INFO] TumName: $tum"
+    echo "[INFO] RefName: $ref"
+    echo "[INFO] PipeVsn: $pip"
     echo "[INFO] Cluster: $cluster"
-    echo "[INFO] Bucket: $bucket"
-    echo "[INFO] Pipeline: $pipeline"
-    echo "[INFO] IniFile: $ini"
-    echo "[INFO] TumorSample: $tum"
-    echo "[INFO] RefSample: $ref"
+    echo "[INFO] Bucket:  $bucket"
+    echo "[INFO] Entity:  $entity"
+    
+    ## sanity check on data location in API
+    ## TODO once all at gcp then remove the ini check
+    if [[ $cluster != "gcp" && $ini != "FastQ.ini" ]]; then
+       echo "[EXIT] Error: unexpected cluster ($cluster)." && exit 1
+    fi
 
     ## cleanup existing files
     for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
@@ -62,43 +76,47 @@ function main() {
     files_json=$(/usr/bin/curl --silent --cert-type pem \
         --cert ${sbp_api_crt_file} --key ${sbp_api_key_file} -X GET \
         -H "Accept: application/json" -H "Content-Type: application/json" \
-        "$files_url")
+        "$files_api_url")
 
+    ## create run type agnostic info files
     create_json_file "$files_json" "$out_jsn_all"
     create_md5sums_file "$files_json" "$out_md5_all"
-    create_ini_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$cluster" "$bucket" "$ini" "$ref" "$tum" "$pipeline"
 
-    ## sanity checks
+    ## create the run type specific subset files
+    if [[ $ini == "FastQ.ini" ]]; then
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "Fastq"
+    elif [[ $ini == "Somatic.ini" ]]; then 
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "Somatic"
+    elif [[ $ini == "SingleSample.ini" ]]; then
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "SingleSample"
+    else
+        echo "[EXIT] Unknown ini ($ini)" && exit 1
+    fi
+
+    ## sanity checks on final files
     for output_file in "$out_jsn_all" "$out_md5_all" "$out_aria" "$out_md5" "$out_url"; do
         line_count=$(cat "$output_file" | wc -l)
         echo "[INFO] Output file $output_file contains $line_count lines"
     done
 }
 
-create_ini_specific_files () {
+create_run_specific_files () {
     local json=$1 && shift
     local out_md5=$1 && shift
     local out_aria=$1 && shift
     local out_url=$1 && shift
     local name=$1 && shift
-    local cluster=$1 && shift
     local bucket=$1 && shift
-    local ini=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
-    local pipeline=$1 && shift
+    local run_type=$1 && shift
 
-    if [[ "${pipeline}" == v5* ]]; then
-        ref_bam="${ref}/aligner/${ref}.bam"
-        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
-        tumor_bam="${tum}/aligner/${tum}.bam"
-        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
-    else
-        ref_bam="${ref}/mapping/${ref}_dedup.realigned.bam"
-        ref_bam_bai="${ref}/mapping/${ref}_dedup.realigned.bam.bai"
-        tumor_bam="${tum}/mapping/${tum}_dedup.realigned.bam"
-        tumor_bam_bai="${tum}/mapping/${tum}_dedup.realigned.bam.bai"
-    fi
+    ref_bam="${ref}/aligner/${ref}.bam"
+    ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
+    tumor_bam="${tum}/aligner/${tum}.bam"
+    tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
+
+    mapfile -t all_files < <( echo $json | jq -r '.[].filename' )
 
     local single_files=(
         "${ref_bam}"
@@ -129,45 +147,43 @@ create_ini_specific_files () {
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
 
-    ## select file collection based on pipeline ini
-    if [[ $ini == "Somatic.ini" ]]; then
+    ## select file collection
+    if [[ $run_type == "Somatic" ]]; then
         file_selection="${somatic_files[@]}"
-    elif [[ $ini == "SingleSample.ini" ]]; then
+    elif [[ $run_type == "SingleSample" ]]; then
         file_selection="${single_files[@]}"
+    elif [[ $run_type == "Fastq" ]]; then
+        file_selection="${all_files[@]}"
     else
-        echo "[EXIT] Unknown ini ($ini)" && exit 1
+        echo "[EXIT] Unknown run type ($run_type)" && exit 1
     fi
 
-    ## output
-    echo "[INFO] Creating $out_md5"
+    ## output aria2 config file
+    echo "[INFO] Creating $out_aria (and selection tmp files)"
     for file_path in ${file_selection[@]}; do
-        echo "$json" | jq -r '.[] | .hash + "  " + .directory + "/" + .filename' | grep -P "${file_path}$" >> $out_md5
-    done
+        file_name=$(basename "${file_path}")
+        file_in_bucket="${bucket}/${name}/${file_path}"
+        ## Fastq files are at main level in the bucket
+        if [[ $run_type == "Fastq" ]]; then
+            file_in_bucket="${bucket}/${file_path}"
+        fi
+        internal_url="gs://${file_in_bucket}"
+        md5_string=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$")
+        md5sum=$(echo "$md5_string" | cut -f1)
+        echo "${md5_string}" >> $out_md5
 
-    echo "[INFO] Creating $out_url"
-    echo "[INFO] Creating $out_aria"
-    for file_path in ${file_selection[@]}; do
-        local file_name=$(basename "${file_path}")
-        if [[ $cluster == "gcp" ]]; then
-            ## replace underscores as they cannot exist in GCP
-            bucket=$(echo "${bucket}" | sed 's/_/-/g' )
-            file_in_bucket="${bucket}/${name}/${file_path}"
-            internal_url="gs://${file_in_bucket}"
-            ## sanity check on existance of file in bucket
-            gsutil -u hmf-database -q stat "${internal_url}"
-            if [[ $? -eq 1 ]]; then
-                echo "[EXIT] File does not exist (${internal_url})" && exit 1
-            fi
-            ## get actual pre-signed URL
-            external_url=$( ${gcp_url_sign_script} "${gcp_key_file}" "${file_in_bucket}" 604800)
-        else
-            file_in_bucket="${bucket}/${name}/${file_path}"
-            internal_url="s3://${file_in_bucket}"
-            direct_url=$(sbp s3 presign ${internal_url} --expires 604800 --profile ${aws_profile})
-            external_url=$(echo "${direct_url}" | sed 's,s3.object02.schubergphilis.com,dl.hartwigmedicalfoundation.nl/s3hmf_object02,g' )
+        ## sanity check on existance of file in bucket
+        gsutil -u "${gcp_project}" -q stat "${internal_url}"
+        if [[ $? -eq 1 ]]; then
+            msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
+            echo "[EXIT] Cannot access file (${internal_url})"
+            echo "[EXIT] ErrCode=${?} ErrMsg=\"${msg}\""
+            exit 1
         fi
 
-        local md5sum=$(echo "$json" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$" | cut -f1)
+        ## get actual pre-signed URL
+        external_url=$( "${gcp_url_sign_script}" "${gcp_key_file}" "${file_in_bucket}" 604800)
+
         echo "${external_url}" >> $out_aria
         echo "  dir=${name}" >> $out_aria
         echo "  checksum=md5=${md5sum}" >> $out_aria

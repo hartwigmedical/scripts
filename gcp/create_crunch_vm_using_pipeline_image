@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+vm_name=$1 && shift
+image=$1 && shift
+
+# VM Name can be any valid GCP VM name, such as "kodu-vm"
+# Image should be an image on hmf-crunch, eg pipeline5-5-9-202003131433
+# Use 'gcloud compute --project=hmf-crunch images list' to list all available images.
+
+if [[ -z ${vm_name} ]]; then
+    echo "[ERROR] No VM name passed. Exiting"
+    exit 1
+fi
+
+if [[ -z ${image} ]]; then
+    image=pipeline5-5-9-202003131433
+    echo "[DEBUG] No image parameter passed. Using '${image}' as default."
+fi
+
+echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
+
+# TODO Consider using CMEK?
+#  --csek-key-file projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001?
+
+gcloud compute --project=hmf-crunch instances create ${vm_name} \
+    --zone=europe-west4-a --machine-type=n1-standard-1 \
+    --image=${image} --image-project=hmf-crunch \
+    --boot-disk-size=200GB --boot-disk-type=pd-standard --boot-disk-device-name=${vm_name} \
+    --no-address
+
+# Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'
+# Once the experiment is done, destroy the VM using 'gcloud compute instances delete ${vm_name}

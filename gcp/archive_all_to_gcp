@@ -6,24 +6,24 @@ echo "[INFO] Archiving RNA Data"
 do_archive_directory_to_gcp /data/data_archive/rna_seq rna_seq 4
 
 echo "[INFO] Archiving Sequencer Archive"
-do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 2850
+do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 2868
 
 echo "[INFO] Archiving Patient Reports"
-do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 5720
-do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 543
-do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 38
+do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 5744
+do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 544
+do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 40
 
 echo "[INFO] Archiving Data Requests"
 do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 93
 
 echo "[INFO] Archiving Submissions"
-do_archive_directory_to_gcp /data/submissions submissions 634
+do_archive_directory_to_gcp /data/submissions submissions 641
 
 echo "[INFO] Archiving Shallow Seq Pipelines"
-do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 767
+do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 785
 
 echo "[INFO] Archiving SnpCheck Data"
 do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
 echo "[INFO] Archiving Samplesheets"
-do_archive_directory_to_gcp /data/samplesheets samplesheets 2698
+do_archive_directory_to_gcp /data/samplesheets samplesheets 2710

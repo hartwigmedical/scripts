@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+#
+# Make `file` entries for all RNA FASTQ files so they can be shared. Assumptions:
+#  - The invoking user will have appropriate credentials for reading file listings from GCP;
+#  - Structure is [bucket]/[single directory]/[fastq files];
+#  - What is in the bucket will always be either the same as or a strict superset of what is in the run
+#
+RUN_ID=63886
+BUCKET="$1"
+API="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+CURL="curl --retry 3 -s --cert $3 --key $4"
+GSUTIL="gsutil -u $2"
+WORKDIR="$(mktemp -d -t mkfiles_rna_$(date +%Y%m%d)_XXXXX)"
+IN_BUCKET="${WORKDIR}/in_bucket.list"
+IN_RUN="${WORKDIR}/in_run.list"
+
+[[ $# -ne 4 ]] && echo "USAGE: $(basename $0) [rna bucket] [gcp payer] [certificate] [key]" && exit 1
+
+echo "Writing temp data in ${WORKDIR}"
+$GSUTIL ls gs://${BUCKET}/**/*.fastq.gz | sort > "${IN_BUCKET}"
+$CURL "${API}/files?run_id=${RUN_ID}" | jq -cr '.[].filepath' | sort > "${IN_RUN}"
+diff $IN_BUCKET $IN_RUN | grep '<' | awk '{print $NF}' | while read missing; do
+  echo "Adding $missing"
+  attrs="$(mktemp -p ${WORKDIR})"
+  payload="$(mktemp -p ${WORKDIR})"
+  $GSUTIL ls -L $missing > $attrs
+  md5=$(grep 'Hash (md5):' $attrs | awk '{print $NF}' | base64 -d | od -A n -t x1 | tr -d ' ')
+  size=$(grep 'Content-Length:' $attrs | awk '{printf $NF}')
+  dir=$(echo $missing | awk -F '/' '{print $4}')
+  filename=$(basename $missing)
+  printf "{\"filepath\":\"%s\", \"tiering\":null, \"hash\":\"%s\"," $missing $md5 > $payload
+  printf "\"filesize\":%s,\"run_id\":%s,\"directory\":\"%s\"," $size $RUN_ID $dir >> $payload
+  printf "\"portal_name\":null,\"filename\":\"%s\"}" $filename >> $payload
+  $CURL -X POST -H "Content-Type: application/json" -d @${payload} "${API}/files"
+done
+
