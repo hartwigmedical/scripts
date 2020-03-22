@@ -49,5 +49,5 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -promiscuous_three_csv ${promiscuous_three_csv} \
     -chaining_sv_limit 0 \
     -check_drivers \
-    -write_vis_data \
+    -write_vis_data -write_links -write_single_sv_clusters \
     "$@"
