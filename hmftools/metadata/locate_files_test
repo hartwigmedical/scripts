@@ -5,7 +5,7 @@ source metadata_functions
 
 run_dir=$1 && shift
 
-if [ -z "${run_dir}" ]; then
+if [[ -z ${run_dir} ]]; then
     echo "[ERROR] No run dir configured. Exiting"
     exit 1
 fi

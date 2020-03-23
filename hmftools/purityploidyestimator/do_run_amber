@@ -8,17 +8,15 @@ run_dir=$1 && shift
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 amber_output=$(find -L ${run_dir}/amber/ -type f -name ${tumor_sample}.amber.baf)
-if [ -z ${amber_output} ]
-then
+if [[ -z ${amber_output} ]]; then
     echo "[ERROR] Amber BAF unavailable. Exiting."
     exit 1
 fi
 
 amber_pcf=${amber_output}.pcf
-if [[ ! -e ${amber_pcf} ]]
-then
+if [[ ! -e ${amber_pcf} ]]; then
     base_path="/data/common"
-    if [ -z "$(hostname | grep datastore)" ]; then
+    if [[ -z "$(hostname | grep datastore)" ]]; then
         # Common folder does not exist on crunches...
         base_path="/data"
     fi

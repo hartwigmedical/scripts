@@ -1169,6 +1169,3 @@ print(paste("catName=", catName, " cancerSC=", scWithCancer, " catSC=", scWithCa
 print(paste("withCancer=", scWithCancer, " noCatWithCancer=", scNoCatWithCancer, " withCatWithCancer=", scWithCatWithCancer, sep=''))
 print(paste("noCancer=", scNoCancer, " noCatNoCancer=", scNoCatNoCancer, " withCatNoCancer=", scWithCatNoCancer, sep=''))
 
-
-
-

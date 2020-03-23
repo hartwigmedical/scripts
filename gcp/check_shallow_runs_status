@@ -12,8 +12,6 @@ query_sbp_api -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.n
     run_name=$(echo "${line}" | cut -d" " -f1)
     run_status=$(echo "${line}" | cut -d" " -f2)
     tumor_sample=$(echo "${line}" | cut -d" " -f3)
-    run_name_wo_date=$(echo "${run_name}" | cut -c 8-)
-    archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${run_name_wo_date}" | wc -l)
     sample_archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
 
     if [[ "${run_name}" =~ "190314-testR" ]]; then 
@@ -55,7 +53,8 @@ echo "## ---"
 echo "## Potential followup steps to process ready runs:"
 echo "## Create job: $write_job_cmd"
 echo "##    Run job: $execute_job_cmd"
-if [[ -f "${job_file}" ]]; then 
-  echo "## WARNING: job file already exists ($job_file)"
+
+if [[ -f "${job_file}" ]]; then
+    echo "## WARNING: job file already exists ($job_file)"
 fi
 

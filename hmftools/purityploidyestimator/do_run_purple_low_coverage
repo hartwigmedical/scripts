@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
-${prefix}/do_run_purple_no_db ${run_dir} -highly_diploid_percentage 0.88 -somatic_min_total 100 -somatic_min_purity_spread 0.1
+do_run_purple_no_db ${run_dir} -highly_diploid_percentage 0.88 -somatic_min_total 100 -somatic_min_purity_spread 0.1

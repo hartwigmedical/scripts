@@ -67,7 +67,7 @@ gridss_gr = c(gridss_bp_gr, gridss_be_gr)
 gridss_gr = gridss_gr[!str_detect(names(gridss_gr), "purple")] # strip out placeholder purple breakends
 gridss_gr$vaf =
 gridss_gr$caller="purple"
-purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% rename("#chromosome"="chromosome"),
+purple_cn = with(read_tsv(paste0(basedir, "purple/COLO829T.purple.cnv")) %>% dplyr::rename("chromosome"="#chromosome"),
   GRanges(seqnames=chromosome, ranges=IRanges(start=start, end=end),
           cn=copyNumber,
           bafCount=bafCount,
@@ -417,6 +417,22 @@ ggplot() +
 
 
 
+library(tidyverse)
+library(GenomicRanges)
+library(rtracklayer)
+library(StructuralVariantAnnotation)
+
+sv_bedpe = read_delim(
+  "D:/dev/gpl_benchmarking/PCAWG_consensus_sv_final_consensus_sv_bedpe_passonly.icgc.public/icgc/open/0009b464-b376-4fbc-8a56-da538269a02f.pcawg_consensus_1.6.161116.somatic.sv.bedpe",
+  delim="\t",
+  col_names=TRUE,
+  col_types="ciiciicicccc")
+cndf =  read_delim(
+  "D:/dev/gpl_benchmarking/PCAWG_consensus_cnv_consensus.20170119.somatic.cna.icgc.public/0009b464-b376-4fbc-8a56-da538269a02f.consensus.20170119.somatic.cna.txt",
+  delim="\t",
+  col_names=TRUE,
+  col_types="ciinnnn",
+  na="NA")
 
 
 

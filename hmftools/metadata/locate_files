@@ -45,7 +45,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.34/purple.jar
+    echo ${base_path}/tools/purple_v2.40/purple.jar
 }
 
 locate_pilot_purple() {
@@ -69,7 +69,7 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/sv-linx_v1.7/sv-linx.jar
+    echo ${base_path}/tools/sv-linx_v1.8/sv-linx.jar
 }
 
 locate_pilot_linx() {
@@ -138,6 +138,10 @@ locate_vcftools() {
 
 locate_hotspot_tsv() {
     echo ${base_path}/dbs/sage/KnownHotspots.tsv
+}
+
+locate_hotspot_vcf() {
+    echo ${base_path}/dbs/sage/KnownHotspots.hg19.vcf.gz
 }
 
 locate_pgx_resource_dir() {
@@ -298,7 +302,7 @@ locate_purple_on_sage_somatics() {
     fi
 
     if [ -z ${somatic_vcf} ]; then
-        echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate purple on sage somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
@@ -334,11 +338,11 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
-locate_purple_purity_sage() {
+locate_purple_on_sage_purity() {
     local run_dir=$1
     local purple_purity_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.purity.tsv")
     if [ -z ${purple_purity_file} ]; then
-        echo "[ERROR] Unable to locate purple purity in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate purple on sage purity in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${purple_purity_file}
@@ -371,11 +375,11 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
-locate_purple_sage_qc() {
+locate_purple_on_sage_qc() {
     local run_dir=$1
     local purple_qc_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.qc")
     if [ -z ${purple_qc_file} ]; then
-        echo "[ERROR] Unable to locate purple qc in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate purple on sage qc in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${purple_qc_file}
@@ -401,11 +405,11 @@ locate_purple_gene_copynumbers() {
     echo ${purple_gene_copynumbers}
 }
 
-locate_purple_sage_gene_copynumbers() {
+locate_purple_on_sage_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.cnv.gene.tsv")
     if [ -z ${purple_gene_copynumbers} ]; then
-        echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate purple on sage gene copynumbers in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${purple_gene_copynumbers}
@@ -437,6 +441,17 @@ locate_purple_circos_plot() {
     fi
     echo ${circos_plot}
 }
+
+locate_purple_on_sage_circos_plot() {
+    local run_dir=$1
+    local circos_plot=$(find -L ${run_dir}/purple_sage/plot/ -type f -name "*.circos.png")
+    if [ -z ${circos_plot} ]; then
+        echo "[ERROR] Unable to locate purple on sage circos plot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${circos_plot}
+}
+
 
 locate_purple_pilot_circos_plot() {
     local run_dir=$1

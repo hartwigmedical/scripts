@@ -1,21 +1,29 @@
 #!/usr/bin/env bash
 
+source metadata_functions
+
 process_runs=$(ls /data/cpct/reportable_runs)
 
 for run in ${process_runs}; do
-    patientId=$(echo ${run} | tr "_" " " | awk '{print $5}')
-    if [[ ${patientId} == "CORE"* ]]; then
-        echo "[INFO] Moving set ${run} to /data/core/runs"
-	      mv /data/cpct/reportable_runs/${run} /data/core/runs/
-	      echo "[INFO] Create patient report for ${run}"
-	      patient_report_for_run /data/core/runs/${run}
-	  elif [[ ${patientId} == "WIDE"* ]]; then
-	      echo "[INFO] Moving set ${run} to /data/cpct/runs"
-	      mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
-	      echo "[INFO] Create patient report for ${run}"
-	      patient_report_for_run /data/cpct/runs/${run}
-	      # TODO: remove when pipeline is 5.8
-	      echo "[INFO] patch linx to version 1.7"
-	      patch_linx_version_1_5_to_version_1_7 /data/cpct/runs/${run}
-	  fi
+     # Load meta data
+    sampleId=$(load_tumor_sample_from_metadata /data/cpct/reportable_runs/${run})
+    summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep -w ${sampleId} | wc -w)
+
+    if [[ ${summary_present} -ge 1 ]] ;then
+        if [[ ${sampleId} == "CORE"* ]]; then
+            echo "[INFO] Moving set ${run} to /data/core/runs"
+            mv /data/cpct/reportable_runs/${run} /data/core/runs/
+            echo "[INFO] Create patient report for ${run}"
+            patient_report_for_run /data/core/runs/${run}
+        elif [[ ${sampleId} == "WIDE"* ]]; then
+            echo "[INFO] Moving set ${run} to /data/cpct/runs"
+            mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
+            echo "[INFO] Create patient report for ${run}"
+            patient_report_for_run /data/cpct/runs/${run}
+            echo "[INFO] rerun set"
+            rerun_processed_set /data/cpct/runs/${run}
+        fi
+    elif [[  ${summary_present} -eq 0 ]] ;then
+        echo "No summary present for run /data/cpct/reportable_runs/${run}"
+    fi
 done

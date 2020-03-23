@@ -1,3 +1,20 @@
+library(dplyr)
+library(tidyr)
+library(stringi)
+library(pracma) # for ceil function
+
+# plotting
+library(grid)
+library(gridExtra)
+library(ggplot2)
+library(cowplot)
+
+install.packages("BiocManager") # if NMF functions or fit_to_signatures are used
+BiocManager::install("MutationalPatterns")
+library(MutationalPatterns)
+library(NMF)
+
+
 evaluate_nmf_run<-function(runType, runId, nmfResult, matrixData, summaryCounts, sampleCancerTypes, bucketNames,
                            sigNamesNamed, plotByCancerType = T, viewResults = F)
 {

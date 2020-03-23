@@ -2,7 +2,7 @@
 
 source locate_files
 
-knowledgebase_generator_jar=$(locate_pilot_knowledgebase_generator)
+knowledgebase_generator_jar=/data/common/tools/knowledgebase-generator_pilot/main_jar/knowledgebase-generator.jar
 
 iclusion_trial_tsv=$(locate_pilot_iclusion_trial_tsv)
 vicc_json=$(locate_vicc_json)

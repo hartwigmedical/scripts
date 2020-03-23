@@ -3,4 +3,14 @@
 run_dir=$1 && shift
 comments=$1 && shift
 
+if [[ -z ${run_dir} ]]; then
+    echo "[ERROR] No run dir provided. Exiting"
+    exit 1;
+fi
+
+if [[ -z ${comments} ]]; then
+    echo "[ERROR] No comments provided. Exiting"
+    exit 1;
+fi
+
 patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "$@"

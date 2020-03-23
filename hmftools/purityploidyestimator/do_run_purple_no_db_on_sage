@@ -2,7 +2,6 @@
 
 source locate_files
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
 
 purple_output=${run_dir}/purple_sage
@@ -13,4 +12,4 @@ structural_vcf=$(locate_gridss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gridss_recovery_candidates ${run_dir})
 
 # Empty string is credentials for db
-${prefix}/do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} "" "$@"
+do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} "" "$@"

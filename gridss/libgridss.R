@@ -82,7 +82,7 @@ gridss_overlaps_breakpoint_pon = function(gr,
   }
   return(hasHit)
 }
- = function(gr,
+gridss_overlaps_breakend_pon = function(gr,
     pon_dir=NULL,
     pongr=cached_read_file(paste(pon_dir, "gridss_pon_single_breakend.bed", sep="/"), import),
     ...) {

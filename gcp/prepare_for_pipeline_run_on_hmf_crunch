@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# This script should be run under own user, and we assume this user is authenticated prior to running this script
+
+small_cap_sample_r=cpct02990999r
+small_cap_sample_t=cpct02990999t
+
+gsutil mb -c standard -p hmf-crunch -l europe-west4 -b off gs://run-${small_cap_sample_r}
+gsutil mb -c standard -p hmf-crunch -l europe-west4 -b off gs://run-${small_cap_sample_t}
+
+# Note: This created buckets with google encryption.
+# To switch to CMEK you should run something like: gsutil kms encryption -k ${path_to_key gs://my-bucket
+# However, personal account doesn't have access to our standard CMEK key.
+

@@ -4,7 +4,7 @@ source gcp_functions
 
 set=$1 && shift
 
-if [[ -z "${set}" ]]; then
+if [[ -z ${set} ]]; then
     echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
