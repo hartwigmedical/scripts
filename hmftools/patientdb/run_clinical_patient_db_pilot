@@ -27,4 +27,5 @@ java -Dorg.jooq.no-logo=true -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/lims \
     -tumor_location_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
+    -process_wide_clinical_data \
     "$@"
