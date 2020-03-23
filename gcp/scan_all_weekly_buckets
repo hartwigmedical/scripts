@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+source gcp_functions
+
+switch_to_hmf_download_service_account
+
+for year in {2016..2019}; do
+    for week in {1..52}; do
+        if [[ week -lt 10 ]]; then
+            week_string="0${week}"
+        else
+            week_string=${week}
+        fi
+        bucket="hmf-output-${year}-${week_string}"
+        gsutil -u hmf-database ls gs://${bucket}
+    done
+done
