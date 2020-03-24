@@ -1,7 +1,7 @@
 #!/bin/bash
 
 script_name=$(basename $0)
-api_url="https://api.hartwigmedicalfoundation.nl"
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 api_dir="/data/common/dbs/sbp_api_credentials"
 api_key="${api_dir}/api.key"
 api_crt="${api_dir}/api.crt"
@@ -20,8 +20,8 @@ t_bc=$2 # target sample barcode
 
 main () {
   echo "[INFO] Searching for samples (${s_bc} and ${t_bc})"
-  s_result="$(hmfapi GET ${api_url}/hmf/v1/samples?barcode=${s_bc})"
-  t_result="$(hmfapi GET ${api_url}/hmf/v1/samples?barcode=${t_bc})"
+  s_result="$(hmfapi GET ${api_url}/samples?barcode=${s_bc})"
+  t_result="$(hmfapi GET ${api_url}/samples?barcode=${t_bc})"
   s_count=$(echo "${s_result}" | jq length)
   t_count=$(echo "${t_result}" | jq length)
 
@@ -41,8 +41,15 @@ main () {
     s_q30=$(echo "${s_sample}" | jq -r .q30)
 
     echo "[INFO] Found source sample (barcode=${s_bc} id=${s_id} yield=${s_yld} q30=${s_q30})"
-    echo "[INFO] Patching yld/q30/status for target sample (barcode=${t_barcode} id=${t_id})"
-    hmfapi PATCH ${api_url}/hmf/v1/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
+    echo "[INFO] Found target sample (barcode=${t_bc} id=${t_id})"
+
+    echo "[INFO] Patching all fastq pairs of target sample (to qc_pass=true)"
+    t_fastq=$(hmfapi GET ${api_url}/fastq?sample_id=${t_id})
+    echo "${t_fastq}" | jq -r .[].id | while read fastq_oid; do
+      hmfapi PATCH ${api_url}/fastq/${fastq_oid} qc_pass:=true
+    done
+    echo "[INFO] Patching yld/q30 for target sample (to values from source sample)"
+    hmfapi PATCH ${api_url}/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
 
   fi
 }
