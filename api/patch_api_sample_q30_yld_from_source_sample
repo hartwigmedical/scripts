@@ -42,7 +42,7 @@ main () {
 
     echo "[INFO] Found source sample (barcode=${s_bc} id=${s_id} yield=${s_yld} q30=${s_q30})"
     echo "[INFO] Patching yld/q30/status for target sample (barcode=${t_barcode} id=${t_id})"
-    hmfapi PATCH ${api_url}/hmf/v1/samples_doesnotexist/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
+    hmfapi PATCH ${api_url}/hmf/v1/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
 
   fi
 }
