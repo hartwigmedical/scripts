@@ -32,12 +32,11 @@ for dep in curl jq; do
 done
 
 [[ $# -ne 4 ]] && echo "USAGE: $(basename $0) [group_id] [api.crt] [api.key] [requester-pays project name]" && exit 1
+log "Working directory is \"${WORKING_DIR}\""
 log "Fetching list of currently-shared file ids for group \"${1}\""
 curl -s --cert "$2" --key "$3" "${API}/groups/${1}/files" | jq -c '.[].file_id' > $SHARED_FILE_IDS
 log "Resolving file ids to paths"
-for fileid in $(cat $SHARED_FILE_IDS); do
-  curl -s --cert "$2" --key "$3" "${API}/files/${fileid}" | jq -r '.filepath' >> $SHARED_FILE_PATHS
-done
+parallel -j 800% -a $SHARED_FILE_IDS curl -s --cert "$2" --key "$3" "${API}/files/{}" | jq -r '.filepath' >> $SHARED_FILE_PATHS
 
 if [[ "$(wc -l $SHARED_FILE_IDS | awk '{print $1}')" -ne "$(wc -l $SHARED_FILE_PATHS | awk '{print $1}')" ]]; then
   log "Counts do not match. Continuing but results may be incomplete."
