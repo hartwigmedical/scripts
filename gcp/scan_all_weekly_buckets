@@ -4,7 +4,7 @@ source gcp_functions
 
 switch_to_hmf_download_service_account
 
-for year in {2016..2019}; do
+for year in {2020..2020}; do
     for week in {1..52}; do
         if [[ week -lt 10 ]]; then
             week_string="0${week}"
