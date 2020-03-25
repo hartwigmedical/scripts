@@ -17,7 +17,6 @@ function filefilter() {
 
 API="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 CURL="curl --retry 3 -s --cert $2 --key $3"
-INI_FILTER_ID=6
 WORKING_DIR="$(mktemp -td gcp_acls_$(date +%Y%m%d)_XXXXX)"
 SHARED_FILE_IDS="${WORKING_DIR}/shared_file_ids"
 SHARED_FILE_PATHS="${WORKING_DIR}/shared_file_paths"
@@ -55,9 +54,11 @@ done
 
 diff $SHARED_FILE_PATHS $STORED_FILES | awk '$0 ~ "^> .+" {print $2}' > $NEW_FILES
 
-for status in Success Validated; do
-  log "Fetching ${status} runs"
-  ${CURL} "${API}/runs?status=${status}&ini_id=$INI_FILTER_ID" | jq -cr '.[].id' >> $ALL_RUNS
+for status in Success Validated Failed; do
+  for ini in 2 6; do
+    log "Fetching ${status} runs for ini ${ini}"
+    ${CURL} "${API}/runs?status=${status}&ini_id=${ini}" | jq -cr '.[].id' >> $ALL_RUNS
+  done
 done
 
 log "Fetching files for runs"
