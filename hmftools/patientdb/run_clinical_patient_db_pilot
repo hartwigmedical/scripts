@@ -17,15 +17,15 @@ java -Dorg.jooq.no-logo=true -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \
-    -wide_treatment_data /data/ecrf/treatment.csv \
-    -wide_pre_treatment_data /data/ecrf/pre_treatment.csv \
-    -wide_biopt_data /data/ecrf/biopsy.csv \
-    -wide_response_data /data/ecrf/response.csv \
+    -do_process_wide_clinical_data \
+    -wide_pre_treatment_csv /data/ecrf/wide_pre_treatments.csv \
+    -wide_biopsy_csv /data/ecrf/wide_biopsies.csv \
+    -wide_treatment_csv /data/ecrf/wide_treatments.csv \
+    -wide_response_csv /data/ecrf/wide_responses.csv \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
     -lims_dir /data/lims \
     -tumor_location_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
-    -process_wide_clinical_data \
     "$@"
