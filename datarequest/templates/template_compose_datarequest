@@ -10,16 +10,20 @@ patient_selection_sql="/data/common/repos/scripts/datarequest/selection/DR${dr_i
 
 include_somatics=0
 include_germline=0
-include_tumor_bam_jsons=0
-include_ref_bam_jsons=0
-include_rna=0
-build_rna_tar=0
+
 include_tumor_clinical_data=0
 include_patient_clinical_data=0
 include_treatment_response_clinical_data=0
 include_pre_treatment_clinical_data=0
+
 include_rano_measurement_by_patient=0
 include_tumor_markers_by_patient=0
+
+# raw data prepartion per DR not applicable anymore from 4/2020 (leave all to zero):
+include_tumor_bam_jsons=0
+include_ref_bam_jsons=0
+include_rna=0
+build_rna_tar=0
 
 compose_datarequest ${dr_name} ${request_name} ${patient_selection_sql} \
     ${include_somatics} ${include_germline} ${include_tumor_bam_jsons} ${include_ref_bam_jsons} ${include_rna} ${build_rna_tar} \
