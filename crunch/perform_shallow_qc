@@ -5,20 +5,19 @@ runPaths=( "$@" )
 na="na"
 
 if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $scriptName <RunPath1> [<RunPath2> <RunPathN>]"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Usage: $scriptName <RunPath1> [<RunPath2> <RunPathN>]"
+    echo "---"
+    exit 1
 fi
 
 echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\
 \tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
-for runDir in "${runPaths[@]}"; do 
-
+for runDir in "${runPaths[@]}"; do
   ## init variables
-  pipVsn=$na; setName=$na; refSample=$na; tumsample=$na
+  pipVsn=$na; setName=$na; refSample=$na
   refCov=$na; refRds=$na; refMap=$na; refExc=$na; refDup=$na
   tumCov=$na; tumRds=$na; tumMap=$na; tumExc=$na; tumDup=$na
   purity=$na; status=$na; qcStat=$na; ambQC=$na; purVsn=$na
@@ -28,18 +27,18 @@ for runDir in "${runPaths[@]}"; do
   
   ## get metadata for constructing file paths
   metaFile=""
-  if [[ "$isPv5" ]]; then
+  if [[ "${isPv5}" ]]; then
     metaFile="${runDir}/metadata.json"
     pipFile="${runDir}/pipeline.version"
-    refSample=$( cat ${metaFile} | jq -r '.reference.sampleName' )
-    tumSample=$( cat ${metaFile} | jq -r '.tumor.sampleName' )
-    pipVsn=$( cat ${pipFile} )
+    refSample=$(cat ${metaFile} | jq -r '.reference.sampleName')
+    tumSample=$(cat ${metaFile} | jq -r '.tumor.sampleName')
+    pipVsn=$(cat ${pipFile})
   else
     chkFile="${runDir}/logs/PipelineCheck.log"
-    pipVsn=$( cat $chkFile | grep "Pipeline version" | cut -d":" -f2 | grep -Po "[\d\.]+" )
+    pipVsn=$(cat $chkFile | grep "Pipeline version" | cut -d":" -f2 | grep -Po "[\d\.]+")
     metaFile="${runDir}/metadata"
-    refSample=$( cat ${metaFile} | jq -r '.ref_sample' )
-    tumSample=$( cat ${metaFile} | jq -r '.tumor_sample' )
+    refSample=$(cat ${metaFile} | jq -r '.ref_sample')
+    tumSample=$(cat ${metaFile} | jq -r '.tumor_sample')
   fi
   
   ## init rest of paths and files

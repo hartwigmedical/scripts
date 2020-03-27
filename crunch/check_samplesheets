@@ -1,94 +1,99 @@
 #!/usr/bin/env bash
 
 run=$1
-runRoot="/data1/illumina_data/"
+run_root="/data1/illumina_data/"
 
 function join_by { local IFS="$1"; shift; echo "$*"; }
 
-if [[ ! $run == "" ]]; then
+if [[ ! ${run} == "" ]]; then
     sheets="${run}/SampleSheet.csv"
 else
-    sheets=$(find ${runRoot} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
+    sheets=$(find ${run_root} -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" | sort | tr "\n" " ")
 fi
     
-for sheet in $sheets; do 
+for sheet in ${sheets}; do
     currHost=$(hostname)
-    currHostShort=$(echo $currHost | sed 's/crunch00/c/g')
-    runBase=$(dirname $sheet)
-    baseCallsDir=$runBase"/Data/Intensities/BaseCalls/"
-    runName=$(basename $runBase)
+    currHostShort=$(echo ${currHost} | sed 's/crunch00/c/g')
+    runBase=$(dirname ${sheet})
+    baseCallsDir=${runBase}"/Data/Intensities/BaseCalls/"
+    runName=$(basename ${runBase})
     runStatus="Sequencing"
-    readmeFile=$runBase"/README"
-    conversionLogFile=$runBase"/conversionLog.txt"
-    sampleSheetFile=$runBase"/SampleSheet.csv"
-    experimentName=$( cat $sheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
-    idx_id=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
-    idx_name=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
-    idx_proj=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1 )
-    idx_desc=$( cat $sheet | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1 )
-    allProjects=$( join_by "," $( cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " " ) )
+    readmeFile=${runBase}"/README"
+    conversionLogFile=${runBase}"/conversionLog.txt"
+    sampleSheetFile=${runBase}"/SampleSheet.csv"
+    experimentName=$(cat ${sheet} | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2)
+    idx_id=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
+    idx_name=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1)
+    idx_proj=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1)
+    idx_desc=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1)
+    allProjects=$(join_by "," $(cat ${sheet} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f $idx_proj | sort | uniq | tr "\n" " "))
 
     ## parse RunInfo file
-    runInfoFile=$runBase"/RunInfo.xml"
+    runInfoFile=${runBase}"/RunInfo.xml"
     expectedCycleCount="NA"
-    if [[ -f $runInfoFile ]]; then
-      expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
+    if [[ -f ${runInfoFile} ]]; then
+        expectedCycleCount=$( cat $runInfoFile | xml2json | jq -r '.RunInfo.Run.Reads.Read[].NumCycles' | jq -s add )
     fi
 
     echo ""
-    echo "# "$currHost;
-    echo "# [Rund] "$runBase;
-    echo "# [Samp] "$sampleSheetFile;
+    echo "# "${currHost};
+    echo "# [Rund] "${runBase};
+    echo "# [Samp] "${sampleSheetFile};
     
     ## check cycle status
     if [[ ${experimentName} =~ ^NS ]]; then 
         ## Nextseq runs do not have the same cycle logs as Hiseq and Novaseq
-        if [[ -d $runBase/Data/Intensities/BaseCalls/L001/ ]]; then
-            cycleCount=$( ls ${runBase}/Data/Intensities/BaseCalls/L001/*.bgzf | wc -l )
+        if [[ -d ${runBase}/Data/Intensities/BaseCalls/L001/ ]]; then
+            cycleCount=$(ls ${runBase}/Data/Intensities/BaseCalls/L001/*.bgzf | wc -l)
         else
             cycleCount=0
         fi
     else
         ## every platform does things slightly different so need some nasty grepping
-        cycleCount=$(ls $runBase/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l)
+        cycleCount=$(ls ${runBase}/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l)
     fi
-    echo "# [NOTE] CYCLE log count: $cycleCount (expected:$expectedCycleCount)"
-    if [[ "$expectedCycleCount" =~ ^[0-9]+$ && "$cycleCount" -ge "$expectedCycleCount" ]]; then
+    echo "# [NOTE] CYCLE log count: ${cycleCount} (expected:${expectedCycleCount})"
+    if [[ "${expectedCycleCount}" =~ ^[0-9]+$ && "$cycleCount" -ge "$expectedCycleCount" ]]; then
         runStatus="SequencingDone"
     else
         runStatus="Sequencing ($cycleCount of $expectedCycleCount)"
     fi
 
     ## check conversion status
-    if [ ! -e $conversionLogFile ]; then
+    if [[ ! -e ${conversionLogFile} ]]; then
         echo "# [NOTE] CONVERSION not started yet";
-    elif [ $(($(cat $conversionLogFile | wc -l)%2)) -eq 0 ]; then
+    elif [[ $(($(cat ${conversionLogFile} | wc -l)%2)) -eq 0 ]]; then
         echo "# [NOTE] CONVERSION appears to be FINISHED";
         runStatus="ConversionDone"
     else
-        localsearchdirs=$(find $baseCallsDir -maxdepth 1 -type d | grep -v "L00" | tr "\n" " ")
-        currLane=$(find $localsearchdirs -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
-        echo "# [NOTE] CONVERSION appears to be RUNNING ($currLane)";
+        localsearchdirs=$(find ${baseCallsDir} -maxdepth 1 -type d | grep -v "L00" | tr "\n" " ")
+        currLane=$(find ${localsearchdirs} -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
+        echo "# [NOTE] CONVERSION appears to be RUNNING (${currLane})";
         runStatus="Converting (${currLane})"
     fi
 
     ## check images presence
-    if [ -d "$runBase/Thumbnail_Images/L001" ]; then
+    if [[ -d "${runBase}/Thumbnail_Images/L001" ]]; then
         echo "# [NOTE] IMAGES are still present";
     fi
 
     ## print readme file path if present
-    if [ -e $readmeFile ]; then
-        echo "# [README] $readmeFile";
+    if [[ -e ${readmeFile} ]]; then
+        echo "# [README] ${readmeFile}";
     fi
 
     ## print status
-    echo "# [Stat] $runStatus";
+    echo "# [Stat] ${runStatus}";
 
     ## print line that can be pasted directly into RunOverview sheet
-    echo -e "# $experimentName\t$runName\t$runStatus\t$currHostShort\t$allProjects";
+    echo -e "# ${experimentName}\t${runName}\t${runStatus}\t${currHostShort}\t${allProjects}";
 
     ## print sample-id, sample_name, submission-id, description
-    cat $sheet | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | sort -k2,2 -k1,1 | uniq
+    cat ${sheet} | \
+        sed -e '1,/Sample_ID/d' | \
+        grep -vP "^[\,\s]+$" | \
+        cut -d',' --output-delimiter " " -f"${idx_id},${idx_name},${idx_proj},${idx_desc}" | \
+        sort -k2,2 -k1,1 | \
+        uniq
 done
 

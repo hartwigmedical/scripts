@@ -2,7 +2,6 @@
 
 search=$1 # eg FR12345678
 
-server=$(hostname)
 dir1='/data/common/snpcheck/'
 dir2='/data/gcp/snpcheckvcfupload/'
 gcp_bucket='hmf-snpcheck'

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-searchString=$1 # eg CPCT02010001
-namePattern="${searchString}*.pdf"
+search_string=$1 # eg CPCT02010001
+name_pattern="${search_string}*.pdf"
 
-LOC1='/data/cpct/old_cpct_reports'
-LOC2='/data/cpct/final_reports'
+directory1='/data/cpct/old_cpct_reports'
+directory2='/data/cpct/final_reports'
 
-COUNT=$(find ${LOC1} ${LOC2} -name "${namePattern}" | wc -l)
+count=$(find ${directory1} ${directory2} -name "${name_pattern}" | wc -l)
 
-if [[ ${COUNT} -eq 0 ]]; then
-    echo "Nothing found for: ${namePattern}"
+if [[ ${count} -eq 0 ]]; then
+    echo "Nothing found for: ${name_pattern}"
 else
-    find ${LOC1} ${LOC2} -name "${namePattern}"
+    find ${directory1} ${directory2} -name "${name_pattern}"
 fi
