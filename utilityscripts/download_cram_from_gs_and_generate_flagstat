@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+gs_cram_url=$1 && shift
+
+if [[ -z "${gs_cram_url}" ]]; then
+    echo >&2 "[ERROR] No CRAM URL passed to $(basename $0). Exiting."
+    exit 1
+fi
+
+samtools=/opt/tools/samtools/1.10/samtools
+
+cram_name=$(basename "${gs_cram_url}")
+
+working_dir=${HOME}/${cram_name}
+mkdir "${working_dir}"
+
+gsutil cp ${gs_cram_url} "${working_dir}"/
+
+${samtools} flagstat ${working_dir}/${cram_name} > ${working_dir}/${cram_name}.flagstat
