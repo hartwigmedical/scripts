@@ -2,9 +2,11 @@
 
 source locate_files
 
+script_name=$(basename $0)
+
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
-    echo " Usage: $SELF_SCRIPT <FileToUpload> [<FileToUpload2> <FileToUploadN>]"
+    echo " Usage: $script_name <File1> [<File2> <FileN>]"
     echo "-----"
     exit 1
 fi
