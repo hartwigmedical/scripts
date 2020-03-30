@@ -8,7 +8,7 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 
 for report in /data/cpct/patient_reports/*.pdf; do
     echo "[INFO] Uploading ${report} to Nextcloud for summary creation"
-    curl -u "${db_user}:${db_pass}" -T "${report}" https://nextcloud.hartwigmedicalfoundation.nl/remote.php/webdav/Reports-For-Summary/
+    curl -u "${db_user}:${db_pass}" -T "${report}" https://nextcloud.hartwigmedicalfoundation.nl/remote.php/webdav/STAGING/Reports-For-Summary/
 done
 
 
