@@ -7,9 +7,9 @@ ratio_to_keep=$1 && shift
 picard_dir=/data/tools/picard-tools_v1.141
 mem_use=50
 
-echo "[INFO] Input bam file: " ${in_bam}
-echo "[INFO] Output bam file: " ${out_bam}
-echo "[INFO] Ratio to keep between 0 and 1: " ${ratio_to_keep}
+echo "[INFO] Input bam file: ${in_bam}"
+echo "[INFO] Output bam file: ${out_bam}"
+echo "[INFO] Ratio to keep between 0 and 1: ${ratio_to_keep}"
 
 java -Xmx${mem_use}G -jar ${picard_dir}/picard.jar DownsampleSam \
     I=${in_bam} \
