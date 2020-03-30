@@ -7,13 +7,16 @@ if [[ -z "${gs_cram_url}" ]]; then
     exit 1
 fi
 
-samtools=/opt/tools/samtools/1.10/samtools
-
 cram_name=$(basename "${gs_cram_url}")
+working_dir="${HOME}/${cram_name}"
 
-working_dir=${HOME}/${cram_name}
 mkdir "${working_dir}"
+echo "[INFO] Downloading CRAM '${gs_cram_url}'"
+gsutil cp ${gs_cram_url} "${working_dir}/"
 
-gsutil cp ${gs_cram_url} "${working_dir}"/
+local_cram_path="${working_dir}/${cram_name}"
+echo "[INFO] Generating flagstat for ${cram_name}"
+/opt/tools/samtools/1.10/samtools flagstat "${local_cram_path}" > "${local_cram_path}.flagstat"
 
-${samtools} flagstat ${working_dir}/${cram_name} > ${working_dir}/${cram_name}.flagstat
+echo "[INFO] Done generating flagstat. Cleaning up CRAM"
+rm "${local_cram_path}"
