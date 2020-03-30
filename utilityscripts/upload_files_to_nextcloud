@@ -12,21 +12,28 @@ if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 files_to_upload=( "$@" )
+
 nc_dir="UPLOAD"
 nc_url="https://nextcloud.hartwigmedicalfoundation.nl"
-credentials_file=$(locate_nextcloud_upload_reports_credentials)
-user=$(awk '/^user/ {print $2}' ${credentials_file})
-pass=$(awk '/^pass/ {print $2}' ${credentials_file})
 
+cred=$(locate_nextcloud_upload_reports_credentials)
+user=$(awk '/^user/ {print $2}' ${cred})
+pass=$(awk '/^pass/ {print $2}' ${cred})
+
+echo "[INFO] Checking input files for existance"
 for file in "${files_to_upload[@]}"; do
     if [[ ! -f "${file}" ]]; then
-        echo "[WARN] File not found so will not upload (${file})"
-    else
-        echo "[INFO] Uploading ${file} to Nextcloud dir ${nc_dir} with user ${user}"
-        curl -u "${user}:${pass}" -T "${file}" "${nc_url}/remote.php/webdav/${nc_dir}/"
-        if [[ $? -ne 0 ]]; then
-            echo "[WARN] Upload of file failed (${file})";
-        fi
+        echo >&2 "[EXIT] Error: File not found so will not upload (${file})"
+        exit 1
+    fi
+done
+
+echo "[INFO] Starting upload of input files to Nextcloud dir ${nc_dir} with user ${user}"
+for file in "${files_to_upload[@]}"; do
+    echo "[INFO] Uploading ${file}"
+    curl -u "${user}:${pass}" -T "${file}" "${nc_url}/remote.php/webdav/${nc_dir}/"
+    if [[ $? -ne 0 ]]; then
+        echo >&2 "[WARN] Upload of file failed (${file})";
     fi
 done
 
