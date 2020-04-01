@@ -1,45 +1,54 @@
 #!/usr/bin/env bash
 
-SUBMISSIONS=("$@") # optional
-JSON=/data/lims/submissions.json
+LIMS_SUBM_JSON_FILE="/data/lims/submissions.json"
+SUBMISSIONS_JSON="$(cat "$LIMS_SUBM_JSON_FILE" | jq -c .)"
+CORE_BUCKET="hmf-output-core"
+
+submissions_to_visit=("$@") # optional
 
 if [ "$#" -eq 0 ]; then
-    SUBMISSIONS=( $(cat $JSON | jq -r 'keys[]' | sort -r | head -100) )
+    submissions_to_visit=( $(echo "$SUBMISSIONS_JSON" | jq -r 'keys[]' | sort -r | head -100) )
 fi
 
-for submission in "${SUBMISSIONS[@]}"; do
-    MAINKEY=".${submission}"
-
-    ## retrieve info
-    project_name=$(cat ${JSON} | jq -r "${MAINKEY}.project_name" )
-    project_type=$(cat ${JSON} | jq -r "${MAINKEY}.project_type" )
-    sample_count=$(cat ${JSON} | jq -r "${MAINKEY}.sample_count" )
-    submission=$(cat ${JSON} | jq -r "${MAINKEY}.submission" )
-    product=$(cat ${JSON} | jq -r "${MAINKEY}.analysis_type" )
-    center=$(echo $projectName | cut -d"-" -f1 )
+for submission in "${submissions_to_visit[@]}"; do
+    obj_json=$(echo "${SUBMISSIONS_JSON}" | jq ".${submission}")
+    project_name=$(echo "${obj_json}" | jq -r ".project_name")
+    project_type=$(echo "${obj_json}" | jq -r ".project_type")
+    sample_count=$(echo "${obj_json}" | jq -r ".sample_count")
+    analysis_type=$(echo "${obj_json}" | jq -r ".analysis_type")
+    entity=""
+    bucket=""
 
     ## reset some fields according to project type
-    if [[ $project_type == "Human research" ]]; then
+    if [[ "$project_type" == "Human research" ]]; then
         project_type="HUM-RES"
-    elif [[ $project_type == "non human research" || $project_type == "Non human research" ]]; then
+    elif [[ "$project_type" == "non human research" || "$project_type" == "Non human research" ]]; then
         project_type="NONHUM-RES"
-    elif [[ $project_type == "KG production" ]]; then
+    elif [[ "$project_type" == "KG production" ]]; then
         project_type="KG"
-    elif [[ $project_type == "CORE" ]]; then
-        product="SomaticAnalysis"
+    elif [[ "$project_type" == "CORE" ]]; then
+        analysis_type="SomaticAnalysis"
     else
-        projectType="UnknownProjectType"
+        project_Type="CheckProjectType(${project_type})"
+    fi
+    
+    ## retrieve missing info
+    samples_json=$(query_lims -type samples -filter "submission=${submission}" -json)
+    if [[ "$project_type" == "Cohort" ]]; then
+        entity="NA"
+        bucket="NA"
+        analysis_type="NA"
+    elif [[ $(echo "$samples_json" | jq 'length') -gt 0 ]]; then
+        entity=$(echo "$samples_json" | jq -r '.[-1].entity')
+        bucket=$(query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
     fi
 
-    ## check entitity existance and bucket
-    entity=$(query_lims -type samples -filter submission=${submission} -json | jq -r '.[-1].entity')
-    bucket=$(query_sbp_api -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
-    if [[ $project_type == "KG" ]]; then
-        bucket=$bucket_by_submission
-    elif [[ $project_type == "CORE" ]]; then
-        if [[ "${bucket}" != "hmf-output-core" ]]; then
-            echo "[WARNING] Potentialy wrong bucket for $submission ($bucket)!!"
-        fi
+    ## perform some sanity checks
+    #echo "[DEBUG] $submission $entity $bucket"
+    if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARNING] No entity found for $submission!"; fi
+    if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARNING] No bucket found for $submission!"; fi
+    if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then 
+        echo "[WARNING] Found CORE submission with wrong bucket (submission=$submission entity=$entity bucket=$bucket)!!"
     fi
 
     ## output
@@ -47,6 +56,6 @@ for submission in "${SUBMISSIONS[@]}"; do
         "$submission" \
         "$project_name" \
         "$project_type" \
-        "$product" \
+        "$analysis_type" \
         "$sample_count"
 done
