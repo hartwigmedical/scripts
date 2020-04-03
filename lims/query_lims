@@ -175,29 +175,48 @@ sub filterObjects{
 sub applyFiltersOnObject{
     my ($object, $filters, $counts) = @_;
         
-    foreach my $filter_string ( @$filters ){
-        
-        my ($name, $include) = split( "=", $filter_string );
+    foreach my $filter ( @$filters ){
+        my $negate_search;
+        my $field;
+        my $match_str;
+
+        if ($filter =~ /\!\=/){
+            $negate_search = 1;
+            ($field, $match_str) = split( "!=", $filter, 2 );
+        }
+        elsif ($filter =~ /=/){
+            $negate_search = 0;
+            ($field, $match_str) = split( "=", $filter, 2 );
+        }
+        else{
+            die "[EXIT] Incorrect filter format ($filter). Requires a = or != in string.\n"
+        }
                     
-        if ( not exists $object->{ $name } ){
-            $counts->{ $name.'=KeyNotExists' }++;
+        if ( not exists $object->{ $field } ){
+            $counts->{ $field.'=KeyNotExists' }++;
             return(1);
         }
-        elsif ( not defined $object->{ $name } ){
-            $counts->{ $name.'=KeyNotDefined' }++;
+        elsif ( not defined $object->{ $field } ){
+            $counts->{ $field.'=KeyNotDefined' }++;
             return(1);
         }
         else{
-            my $to_match = $object->{ $name };
-            my $exact_match = $object->{ $name } eq $include;
-            my $regex_match = $object->{ $name } =~ m/$include/i;
+            my $exact_match = $object->{ $field } eq $match_str;
+            my $regex_match = $object->{ $field } =~ m/$match_str/i;
+
+            if ( $negate_search ){
+                $exact_match = !$exact_match;
+                $regex_match = !$regex_match;
+            }
             
-            if ( not $exact_match and $MUST_MATCH_EXACT ){
-                $counts->{ $filter_string }++;
-                return(1);
+            if ( $MUST_MATCH_EXACT ){
+                if ( not $exact_match ){
+                    $counts->{ $filter }++;
+                    return(1);
+                }
             }
             elsif( not $regex_match ){
-                $counts->{ $filter_string }++;
+                $counts->{ $filter }++;
                 return(1);
             }
         }
