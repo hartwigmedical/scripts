@@ -2,5 +2,5 @@ SELECT
     DISTINCT patientId AS '#patientId'
 FROM
     datarequest
-WHERE patientId = 'CPCT02010408'
+WHERE primaryTumorLocation = 'Breast'
 ORDER BY 1;
