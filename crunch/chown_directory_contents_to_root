@@ -1,32 +1,33 @@
 #!/usr/bin/env bash
 
-chownDir=$1
+chown_dir=$1
 
 function main {
-    if [[ -z "$chownDir" ]]; then
+    if [[ -z ${chown_dir} ]]; then
         print_usage
-    elif [[ ! -d "$chownDir" ]]; then
-        echo "[EXIT] Is not a directory (${chownDir})!"
+    elif [[ ! -d ${chown_dir} ]]; then
+        echo "[EXIT] Is not a directory (${chown_dir})!"
         print_usage
     fi
-    echo "[INFO] Searching content that is not owned by root yet (${chownDir})"
-    nonRootCount=$(find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | wc -l)
-    echo "[INFO] Found $nonRootCount to chown in $chownDir"
 
-    if [[ "${nonRootCount}" -gt 0 ]]; then
+    echo "[INFO] Searching content that is not owned by root yet (${chown_dir})"
+    non_root_count=$(find ${chown_dir} -mindepth 1 -maxdepth 1 \! -user root | wc -l)
+    echo "[INFO] Found ${non_root_count} to chown in ${chown_dir}"
+
+    if [[ "${non_root_count}" -gt 0 ]]; then
         echo "[INFO] First 5 records:"
-        find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root | head -5
+        find ${chown_dir} -mindepth 1 -maxdepth 1 \! -user root | head -5
         read -p "[INFO] Press enter to start chown action"
-        find ${chownDir} -mindepth 1 -maxdepth 1 \! -user root -exec sudo chown -R root:root {} +
+        find ${chown_dir} -mindepth 1 -maxdepth 1 \! -user root -exec sudo chown -R root:root {} +
     fi
 }
 
 print_usage(){
-  echo "---"
-  echo " Descr: Recursively chown non-root content in \${directory} to root:root"
-  echo " Usage: $(basename ${0}) \${directory}"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Descr: Recursively chown non-root content in \${directory} to root:root"
+    echo " Usage: $(basename ${0}) \${directory}"
+    echo "---"
+    exit 1
 }
 
 main

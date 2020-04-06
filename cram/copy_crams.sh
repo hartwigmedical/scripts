@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+#
+# Generates shell scripts for moving CRAMs out of the bucket they were written to by the batch conversion job, and into the
+# per-set buckets where they will live in production.
+#
+# Intended to be used in conjunction with the `BamSetMatcher` class in the `datarequest` repo.
+#
+# TODO: 
+#   * Requester pays?
+#   * Access control is currently fine-grained, should it be uniform?
+
+BUCKET_LOC="europe-west4"
+
+[[ $# -ne 2 ]] && echo "USAGE: $(basename $0) [BamSetMatcher output directory] [dest_cmek_url]" && exit 1
+BUCKETS="$1/buckets.list"
+FILES="$1/urls.list"
+[[ -f $FILES && -f $BUCKETS ]] \
+  || (echo "$BUCKETS or $FILES does not exist" && echo "$1 does not look like a BamSetMatcher output directory" && exit 1)
+
+echo "Created buckets will be owned by the currently-authorised user and the current project."
+echo "Current user must be able to read from the source URLs."
+echo "  Currently authorised user: $(gcloud config get-value account)"
+echo "  Current project          : $(gcloud config get-value project)"
+read -p "Continue with these settings (or Ctrl-C now)? " ignore
+
+# Abort on _any_ failures.
+set -e
+
+grep -v '^$' "$BUCKETS" | while read bucket set_name; do
+  gsutil mb -l $BUCKET_LOC "gs://${bucket}"
+  gsutil kms encryption -k "$2" "gs://${bucket}"
+  gsutil cp <(echo ${set_name}) "gs://${bucket}/MANIFEST"
+  echo "  $bucket"
+done
+
+# This is tremendously slow. For the trial run, changed it to instead generate a file with all the
+# commands and ran that with `parallel`.
+echo "Copying files from batch bucket:"
+grep -v '^$' "$FILES" | while read src dest; do
+  gsutil cp "$src" "$dest" 
+done

@@ -1,0 +1,47 @@
+#!/bin/bash
+
+script_name=$(basename $0)
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+api_dir="/data/common/dbs/sbp_api_credentials"
+api_key="${api_dir}/api.key"
+api_crt="${api_dir}/api.crt"
+
+if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
+  echo "-----"
+  echo "Descr: Patches target sample status to \"Ready\""
+  echo "Usage: ${script_name} \$barcode_of_sample"
+  echo "   Eg: ${script_name} FR111111"
+  echo "-----"
+  exit 1
+fi
+
+bc=$1 # sample barcode
+
+main () {
+  echo "[INFO] Searching for sample (${bc})"
+  result="$(hmfapi GET ${api_url}/samples?barcode=${bc})"
+  result_count=$(echo "${result}" | jq length)
+
+  if [[ $result_count -ne 1 ]]; then
+    echo "[EXIT] Error: expected one sample for ${bc} but ${result_count} found instead"
+    exit 1
+  else
+    sample=$(echo "${result}" | jq -r .[0])
+    oid=$(echo "${sample}" | jq -r .id) 
+    yld=$(echo "${sample}" | jq -r .yld)
+    q30=$(echo "${sample}" | jq -r .q30)
+    sts=$(echo "${sample}" | jq -r .status)
+
+    echo "[INFO] Found sample (barcode=${bc} id=${oid} yield=${yld} q30=${q30} status=${sts})"
+    echo "[INFO] Patching status to Ready"
+    hmfapi PATCH ${api_url}/samples/${oid} status=Ready
+  fi
+}
+
+## Generic api function
+hmfapi () {
+  echo "$@" 1>&2
+  http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
+}
+
+main

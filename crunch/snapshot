@@ -3,75 +3,74 @@
 PREFIX=" "
 
 function main {
-  echo ''
-  hostName=$( hostname )
-  if [[ "$hostName" =~ crunch ]]; then
-    processAsCrunch
-  elif [[ "$hostName" =~ datastore ]]; then
-    processAsDatastore
-  else
-    echo "[EXIT] Unknown hostname ($hostName)"
-  fi
-  echo ''
+    echo ''
+    hostName=$(hostname)
+    if [[ "${hostName}" =~ crunch ]]; then
+        processAsCrunch
+    elif [[ "${hostName}" =~ datastore ]]; then
+        processAsDatastore
+    else
+        echo "[EXIT] Unknown hostname (${hostName})"
+    fi
+    echo ''
 }
 
 function processAsDatastore {
-  echo '--- STORAGE ---'
-  diskUsage "/home"
-  diskUsage "/data"
+    echo '--- STORAGE ---'
+    diskUsage "/home"
+    diskUsage "/data"
 }
 
 function processAsCrunch {
+    echo '--- STORAGE ---'
+    diskUsage "/data1"
+    diskUsage "/data2"
 
-  echo '--- STORAGE ---'
-  diskUsage "/data1"
-  diskUsage "/data2"
+    echo -e "\n--- ILLUMINA_DATA ---"
+    find_subdirs_in_directory "/data1/illumina_data/"
 
-  echo -e "\n--- ILLUMINA_DATA ---"
-  find_subdirs_in_directory "/data1/illumina_data/"
+    echo -e "\n--- PIPELINEINPUT ---"
+    find_subdirs_in_directory "/data2/pipelineinput"
 
-  echo -e "\n--- PIPELINEINPUT ---"
-  find_subdirs_in_directory "/data2/pipelineinput"
+    echo -e "\n--- PROCESSED ---";
+    process_pipeline_runs
 
-  echo -e "\n--- PROCESSED ---"; 
-  process_pipeline_runs
-
-  echo -e "\n--- QSTAT ---"
-  process_qstat
+    echo -e "\n--- QSTAT ---"
+    process_qstat
 }
 
 process_qstat() {
-  qstat -u "*" | head -10
-  totalJobCount=`qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l`
-  echo "${PERFIX}Total number of jobs in qstat: "$totalJobCount
+    qstat -u "*" | head -10
+    totalJobCount=$(qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l)
+    echo "${PERFIX}Total number of jobs in qstat: "$totalJobCount
 }
 
 process_pipeline_runs() { 
-  find_subdirs_in_directory "/data2/processed" | while read run; do
-    echo "${PREFIX}${run}"
-    if [[ -e "${run}/metadata" ]]; then
-      find_file_in_pipeline_run "*QCStats/WGSMetrics*transposed.txt"
-      find_file_in_pipeline_run "*logs/PipelineCheck.log"
-    fi
-  done 
+    find_subdirs_in_directory "/data2/processed" | while read run; do
+        echo "${PREFIX}${run}"
+        if [[ -e "${run}/metadata" ]]; then
+            find_file_in_pipeline_run "*QCStats/WGSMetrics*transposed.txt"
+            find_file_in_pipeline_run "*logs/PipelineCheck.log"
+        fi
+    done
 }
 
 find_subdirs_in_directory() { 
-  find "$1" -mindepth 1 -maxdepth 1 -type d -printf "${PREFIX}%p\n" | sort
+    find "$1" -mindepth 1 -maxdepth 1 -type d -printf "${PREFIX}%p\n" | sort
 }
 
 find_file_in_pipeline_run() { 
-  file=$( find ${run} -wholename "$1" )
-  if [[ "$file" != "" ]]; then 
-    echo "${PREFIX}  cat $file"
-  fi
+    file=$(find ${run} -wholename "$1" )
+    if [[ "$file" != "" ]]; then
+        echo "${PREFIX}  cat $file"
+    fi
 }
 
 function diskUsage {
     local mount=$1
-    local available=$( df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4 )
-    local percString=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5 )
-    local percentage=$( echo ${percString} | sed 's/\%//g' )
+    local available=$(df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4)
+    local percString=$(${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5)
+    #local percentage=$(echo ${percString} | sed 's/\%//g')
     echo "${PREFIX}${mount}: ${percString} used with ${available} space left"
 }
 

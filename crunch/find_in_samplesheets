@@ -11,31 +11,26 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-searchTerms=( "$@" )
+searchTerms=("$@")
 
 function print_join { local IFS="$1"; shift; echo "$*"; }
 
 for searchTerm in "${searchTerms[@]}"; do
-  
-  for sampleSheet in $( grep -l $searchTerm /data/samplesheets/*_SampleSheet.csv ); do 
-   
-    hmfRunName=$( cat $sampleSheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2 )
-    seqRunName=$( basename $sampleSheet | sed 's#_SampleSheet.csv##g' )
+    for sampleSheet in $(grep -l ${searchTerm} /data/samplesheets/*_SampleSheet.csv); do
+        hmfRunName=$(cat $sampleSheet | grep "ExperimentName" | cut -d',' --output-delimiter ": " -f 2)
+        seqRunName=$(basename $sampleSheet | sed 's#_SampleSheet.csv##g')
 
-    headerLine=$( cat $sampleSheet | grep Sample_ID )
-      idx_id=$( echo $headerLine | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1 )
-    idx_name=$( echo $headerLine | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1 )
-    idx_proj=$( echo $headerLine | tr "," "\n" | grep -n Project | cut -d":" -f1 )
-    idx_desc=$( echo $headerLine | tr "," "\n" | grep -n Description | cut -d":" -f1 ) 
+        headerLine=$(cat $sampleSheet | grep Sample_ID)
+        idx_id=$(echo $headerLine | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
+        idx_name=$(echo $headerLine | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1)
+        idx_proj=$(echo $headerLine | tr "," "\n" | grep -n Project | cut -d":" -f1)
 
-    cat $sampleSheet | grep -P "${searchTerm}" | while read line; do
-      sId=$( echo $line | cut -d ',' -f ${idx_id} )
-      sNm=$( echo $line | cut -d ',' -f ${idx_name} )
-      sPr=$( echo $line | cut -d ',' -f ${idx_proj} )
-      print_join " " $sNm $sId $sPr $hmfRunName $seqRunName
-    done | sort | uniq
-
-  done
-
+        cat $sampleSheet | grep -P "${searchTerm}" | while read line; do
+            sId=$(echo $line | cut -d ',' -f ${idx_id})
+            sNm=$(echo $line | cut -d ',' -f ${idx_name})
+            sPr=$(echo $line | cut -d ',' -f ${idx_proj})
+            print_join " " $sNm $sId $sPr $hmfRunName $seqRunName
+        done | sort | uniq
+    done
 done | sort
 

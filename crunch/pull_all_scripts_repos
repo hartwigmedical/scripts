@@ -3,9 +3,9 @@
 pull_script="pull_scripts_repo"
 
 for server in crunch00{1,2,3}; do
-  echo "---"
-  echo "[INFO] Executing \"${pull_script}\" at server ${server}"
-  ssh ${server} "${pull_script}"
+    echo "---"
+    echo "[INFO] Executing \"${pull_script}\" at server ${server}"
+    ssh ${server} "${pull_script}"
 done
 
 echo "---"

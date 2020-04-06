@@ -122,7 +122,7 @@ ggplot_fp_df = function(gr) {
     mutate(
       caller=factor(ifelse(caller=="purple", "gridss", caller), levels=c("gridss", "manta", "gridss1")),
       sample=paste0("Run ", str_extract(sample, ".$"))) %>%
-    group_by(caller, sample, hits) %>%
+    group_by(caller, sample) %>%
     summarise(n=n() / 2)
 }
 ggplot_fp_consistency = function(df) {
@@ -149,10 +149,10 @@ plot_manta_vs_gridss_fp_colo829 = ggplot_fp_consistency(plot_data)
 plot_manta_vs_gridss_fp_colo829
 figsave("manta_vs_gridss_fp_colo829", width=3, height=2)
 
-plot_manta_vs_gridss_tp_colo829 = grcolo829 %>% as.data.frame() %>%
-  group_by(sample, caller, bpid) %>%
-  summarise(hits=max(hits)) %>%
-  group_by(sample, caller, hits) %>%
+plot_gridss1_fp_colo829 = ggplot_fp_consistency(plot_data %>% filter(sample != "Run 3"))
+
+plot_manta_vs_gridss_tp_colo829_data = grcolo829 %>% as.data.frame() %>%
+  group_by(sample, caller) %>%
   # score a breakend that matches a breakpoint as a match
   summarise(n=length(unique(bpid))) %>%
   ungroup() %>%
@@ -161,8 +161,8 @@ plot_manta_vs_gridss_tp_colo829 = grcolo829 %>% as.data.frame() %>%
     caller=factor(ifelse(caller=="purple", "gridss", caller), levels=c("gridss", "manta", "gridss1")),
     sample=paste0("Run ", str_extract(sample, ".$"))) %>%
   # hack in a zero row so the legend has three categories
-  rbind(data.frame(sample="Run 1", caller="gridss", hits=0, n=0)) %>%
-ggplot() +
+  rbind(data.frame(sample="Run 1", caller="gridss", n=0))
+ggplot(plot_manta_vs_gridss_tp_colo829_data) +
   aes(y=n, x=sample) +
   geom_bar(stat="identity", fill=gridss_fig_tp_colours[2]) +
   facet_grid(caller ~ .) +
@@ -180,6 +180,25 @@ ggplot() +
   labs(x="Sequencing run", y="True Positives", fill="Called in")
 plot_manta_vs_gridss_tp_colo829
 figsave("manta_vs_gridss_tp_colo829", width=4, height=2)
+
+plot_gridss1_tp_colo829 = ggplot(plot_manta_vs_gridss_tp_colo829_data %>% filter(sample != "Run 3")) +
+  aes(y=n, x=sample) +
+  geom_bar(stat="identity", fill=gridss_fig_tp_colours[2]) +
+  facet_grid(caller ~ .) +
+  scale_y_continuous(
+    limits=c(0, length(bpcolo829t) / 2),
+    expand=expand_scale(mult=c(0, 0.02)),
+    sec.axis=sec_axis(
+      trans=function(x) x / length(bpcolo829t) * 2 * 100,
+      breaks=1:5*20,
+      label=paste0(1:5*20, "%"))) +
+  coord_flip() +
+  theme(
+    strip.text.x=element_text(margin=margin(3,0,3,0, "mm")),
+    strip.background=element_rect(fill="white")) +
+  labs(x="Sequencing run", y="True Positives", fill="Called in")
+
+
 
 plot_manta_vs_gridss_call_percent_precise = ggplot(passingbpgr %>%
     as.data.frame(row.names=NULL) %>%

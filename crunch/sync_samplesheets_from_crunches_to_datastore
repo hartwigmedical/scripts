@@ -1,23 +1,21 @@
 #!/usr/bin/env bash
 
-datastoreSheetsDir=/data/samplesheets
-crunchSeqRunsDir=/data1/illumina_data
+datastore_sheets_dir=/data/samplesheets
+crunch_seq_runs_dir=/data1/illumina_data
 
 for i in {1,2,3}; do
+    crunch_name="crunch00${i}"
+    echo -e "\n--- Checking ${crunch_name} for samplesheets -----\n"
 
-    crunchName="crunch00${i}"
-    echo -e "\n--- Checking ${crunchName} for samplesheets -----\n"
+    ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
+    while read sheet_path; do
+        run_path=$(dirname ${sheet_path})
+        run_name=$(basename ${run_path})
 
-    ssh ${crunchName} find ${crunchSeqRunsDir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
-    while read sheetPath; do
-      runPath=$( dirname ${sheetPath} )
-      runName=$( basename ${runPath} )
-
-      runSheetName="${runName}_SampleSheet.csv"
-      destPath="${datastoreSheetsDir}/${runSheetName}"
-      echo " Creating ${destPath}"
-      copyCmd="scp ${crunchName}:${sheetPath} ${destPath}"
-      ${copyCmd}
+        run_sheet_name="${run_name}_SampleSheet.csv"
+        dest_path="${datastore_sheets_dir}/${run_sheet_name}"
+        echo " Creating ${dest_path}"
+        copy_cmd="scp ${crunch_name}:${sheet_path} ${dest_path}"
+        ${copy_cmd}
     done
-
 done

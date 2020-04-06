@@ -622,6 +622,12 @@ sub processExcelSamples{
             ## Harcode Somatic_T samples to not use existing ref data
             $row_info->{ 'shallowseq' } = 0;
             $row_info->{ 'other_ref' } = 0;
+            
+            ## TODO remove once project is done
+            ## Hardcode one project back to shallowseq
+            if ( $submission eq "HMFreg0760" ){
+                $row_info->{ 'shallowseq' } = 1;
+            }
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new

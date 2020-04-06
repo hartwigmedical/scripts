@@ -4,13 +4,13 @@ source sbp_api_functions
 
 set=$1 && shift
 
-if [[ -z "${set}" ]]; then
+if [[ -z ${set} ]]; then
     echo "[ERROR] No set provided. Exiting."
     exit 1
 fi
 
 bucket=$(load_intial_run_bucket_for_set ${set})
-if [[ -z "${bucket}" ]]; then
+if [[ -z ${bucket} ]]; then
     echo "[ERROR] No initial run bucket found for set ${set}. Exiting"
     exit 1
 fi

@@ -1,19 +1,23 @@
 #!/usr/bin/env bash
 
-MAX_CHAR=150
+MAX_CHAR=64
 
-echo ""
+function main () {
+    echo ""
+    grep_ps "[a]ws"
+    grep_ps "[g]sutil"
+    grep_ps "[r]sync"
+    grep_ps "[m]d5sum"
+    grep_ps "[b]am2fastq"
+    grep_ps "[b]cl2fastq"
+    echo ""
+}
 
-echo "===> AWS"
-ps aux | grep "[a]ws" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
+function grep_ps () {
+    local string=$1 && shift
+    ps_cmd="ps -ef | grep '${string}' | tr -s ' ' | cut -d' ' -f1,5,8- | cut -c 1-$MAX_CHAR | sort | uniq"
+    echo "# Executing ps ($ps_cmd)"
+    eval $ps_cmd
+}
 
-echo "===> RSYNC"
-ps aux | grep "[r]sync" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
-
-echo "===> MD5SUM"
-ps aux | grep "[m]d5sum" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
-
-echo "===> bam2fastq"
-ps aux | grep "[b]am2fastq" | awk '{$2=$3=$4=$5=$6=$7=$8=$10=$11=""; print $0}' | cut -c 1-${MAX_CHAR}
-
-echo ""
+main

@@ -102,7 +102,7 @@ echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
 xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Contact")"
-xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +2 > ${contTxt}
+xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +1 > ${contTxt}
 if [ ! $? -eq 0 ]; then echo "[EXIT] CONT export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${procTarget} )"
 xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}

@@ -28,60 +28,27 @@ formFilename<-function(dir,sampleId,type)
 #####
 ## Gene RNA Expression
 transData = read.csv(formFilename('~/logs/',sampleId,'transcript_data.csv'))
+transData = read.csv(formFilename('~/logs/',sampleId,'gp_overs.transcript_data.csv'))
 View(transData)
 View(transData %>% filter(is.na(EmFitAllocation)))
 View(transData %>% filter(GeneName=='HIST1H1C'))
 
-transCatCounts = read.csv(formFilename('~/logs/',sampleId,'category_counts.csv'))
-transCombo = read.csv('~/logs/RNA_EXP_TRANS_COMBO_DATA.csv')
-View(transCatCounts)
-View(transCatCounts %>% filter(is.na(EmFitCount)))
-View(transCombo)
-View(transCombo %>% filter(is.na(EmFitCount)))
-
-geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+geneData = read.csv(formFilename('~/logs/',sampleId,'gp_overs.gene_data.csv'))
 geneData = read.csv(formFilename('~/logs/',sampleId,'all_gene_data.csv'))
 View(geneData)
 
-exonData = read.csv('~/logs/RNA_EXP_EXON_DATA.csv')
+exonData = read.csv(formFilename('~/logs/',sampleId,'exon_data.csv'))
 View(exonData)
 
-
-tmpTransData = read.csv('~/logs/RNA_EXP_TRANS_DATA.csv')
-View(tmpTransData)
-# View(tmpTransData %>% mutate(diff=ExonicBases-EffectiveLength) %>% select(diff,everything()))
-
-tmpGeneData = read.csv('~/logs/RNA_EXP_GENE_DATA.csv')
-View(tmpGeneData)
-
-expRates = read.csv('~/logs/RNA_EXP_TRAN_RATES.csv')
-View(expRates)
-View(expRates %>% filter(GeneName=='CD74',grepl(518797,Transcript)|grepl(9530,Transcript)) %>% spread(Transcript,Rate))
-View(expRates %>% filter(GeneName=='HRAS') %>% spread(Transcript,Rate))
-
-View(merge(transCombo,expRates %>% filter(GeneName=='CD74',grepl(518797,Transcript)|grepl(9530,Transcript)) %>% spread(Transcript,Rate,fill=0),by=c('Category','GeneName','GeneId'),all=T)
-     %>% mutate(Residuals=Count-FittedCount))
-
-View(ensemblTransExonData %>% filter(GeneId=='ENSG00000213281'))
-View(ensemblTransExonData %>% filter(GeneId=='ENSG00000019582') %>% group_by(Exon=paste(ExonStart,ExonEnd,sep='_')) %>% 
-        summarise(TransCount=n(),FirstTrans=first(Trans),FirstRank=first(ExonRank)))
-
-View(ensemblTransExonData %>% filter(Trans=='ENST00000462734'|Trans=='ENST00000493230'))
-
-rnaExp = rnaExp %>% mutate(ExonsMatchedPerc=round(ExonsMatched/ExonCount,1),
-                           LinksMatchedPerc=round(LinksMatched/ExonCount,1),
-                           ReadsPer1kbCoding=round(TotalReads/CodingLength,1))
-
-View(rnaExp %>% group_by(ExonsMatchedPerc) %>% count)
-View(rnaExp %>% group_by(LinksMatchedPerc) %>% count)
-View(rnaExp %>% group_by(ReadDepth=2**round(log(AvgDepth,2))) %>% count)
-
-View(rnaExp %>% filter(GeneName %in% c('AR','TP53','ERG','MYC','ERBB2','TMPRSS2')) %>% select(-LinksMatchedPerc,-ExonsMatchedPerc))
+View(rnaSampleData)
+View(rnaSampleData %>% filter(SampleId %in% c('CPCT02020723T','CPCT02040216T','CPCT02080180T','CPCT02140007T','CPCT02110046T',
+                       'CPCT02120030T','CPCT02210029T','DRUP01010047T','CPCT02070066T','CPCT02120162T','CPCT02040100T','CPCT02220059T','DRUP01090008T')))
 
 
 ## Alternative Splice Sites
 altSJs = read.csv(formFilename('~/logs/',sampleId,'alt_splice_junc.csv'))
 altSJs = read.csv(formFilename('~/logs/',sampleId,'gp.alt_splice_junc.csv'))
+altSJs = read.csv(formFilename('~/logs/',sampleId,'gp_overs.alt_splice_junc.csv'))
 View(altSJs)
 nrow(altSJs)
 
@@ -186,6 +153,22 @@ print(ggplot(geneExpData %>% filter(TotalFragments>0&GeneLength>1e4&ReadsPer1KB<
       + geom_line()
       # + scale_y_log10()
       )
+
+
+## transcript fit validation
+transData = read.csv(formFilename('~/logs/',sampleId,'gp_overs.transcript_data.csv'))
+transData = read.csv(formFilename('~/logs/',sampleId,'transcript_data.csv'))
+View(transData)
+View(transData %>% filter(is.na(EmFitAllocation)))
+View(transData %>% filter(GeneName=='HIST1H1C'))
+
+transCatCounts = read.csv(formFilename('~/logs/',sampleId,'category_counts.csv'))
+View(transCatCounts)
+
+geneData = read.csv(formFilename('~/logs/',sampleId,'gp_overs.gene_data.csv'))
+geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+View(geneData)
+
 
 
 # Gene exon overlaps
@@ -427,7 +410,386 @@ View(rsemResults)
 
 #####
 ## Fragment Lengths
-fragLengths = read.csv('~/logs/RNA_EXP_FRAG_LENGTHS.csv')
+
+rnaSampleData = read.csv('~/data/sv/rna_exp/rna_exp_samples.csv')
+
+load_frag_length_data<-function(sampleId)
+{
+   filename = formFilename('~/logs/',sampleId,'frag_length.csv')
+   #sprintf('loading data for sample(%s) from file(%s)', sampleId,filename)
+   print(paste('loading data for sample(',sampleId,') from file:',filename,sep = ''))
+   
+   fragLengths = read.csv(filename)
+   fragLengths$SampleId = sampleId
+   return (fragLengths %>% select(SampleId,FragmentLength,Count))
+}
+
+sampleFraglengths = load_frag_length_data('CPCT02010944T')
+View(sampleFraglengths)
+View(sampleFraglengths %>% filter(Count==0))
+
+sampleFraglengths = data.frame()
+for(sampleId in unique(rnaSampleData$SampleId))
+{
+   sampleFraglengths = rbind(sampleFraglengths,load_frag_length_data(sampleId))
+}
+
+View(sampleFraglengths)
+
+write.csv(sampleFraglengths,'~/data/sv/rna_exp/sample_frag_lengths.csv',row.names = F,quote = F)
+
+print(ggplot(sampleFraglengths, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,1000)
+      + facet_wrap(~SampleId))
+
+print(ggplot(sampleFraglengths %>% group_by(FragmentLength) %>% summarise(FragCount=sum(Count)) %>% filter(FragmentLength>=50&FragmentLength<100), aes(x=FragmentLength, y=FragCount))
+      + geom_line()
+      + xlim(0,1000))
+
+View(sampleFraglengths %>% group_by(FragmentLength) %>% summarise(FragCount=sum(Count)) %>% filter(FragmentLength>=50&FragmentLength<100))
+
+# 151bp samples
+samples151=c('CPCT02110046T','CPCT02120030T','CPCT02210029T','CPCT02070066T','CPCT02120162T','CPCT02220059T','DRUP01090008T')
+sample151Fraglengths = data.frame()
+for(sampleId in samples151)
+{
+   sample151Fraglengths = rbind(sample151Fraglengths,load_frag_length_data(sampleId))
+}
+
+View(sample151Fraglengths)
+write.csv(sample151Fraglengths,'~/data/rna/exp/sample_151_frag_lengths.csv',row.names = F,quote = F)
+
+print(ggplot(sample151Fraglengths, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,500)
+      + facet_wrap(~SampleId))
+
+
+fragLengths151Adj = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.033.csv'))
+fragLengths151Adj$SampleId = 'CPCT02210029T_param_0.33'
+fragLengths151Adj = fragLengths151Adj %>% select(SampleId,FragmentLength,Count)
+
+fragLengths151_033 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.033.csv'))
+fragLengths151_033$SampleId = 'CPCT02210029T_param_0.33'
+fragLengths151_033 = fragLengths151_033 %>% select(SampleId,FragmentLength,Count)
+
+fragLengths151_033_n = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.033_n.csv'))
+fragLengths151_033_n$SampleId = 'CPCT02210029T_param_0.33_n'
+fragLengths151_033_n = fragLengths151_033_n %>% select(SampleId,FragmentLength,Count)
+
+fragLengths151_000 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.000.csv'))
+fragLengths151_000$SampleId = 'CPCT02210029T_param_0.00'
+fragLengths151_000 = fragLengths151_000 %>% select(SampleId,FragmentLength,Count)
+
+View(fragLengthsCompare %>% group_by(SampleId) %>% summarise(Reads=sum(Count)))
+
+fragLengthsCompare = rbind(fragLengths151_000,fragLengths151_033,fragLengths151_033_n,sample151Fraglengths %>% filter(SampleId=='CPCT02210029T'))
+print(ggplot(fragLengthsCompare, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,300)
+      + ylim(0,10000)
+      + facet_wrap(~SampleId))
+
+print(ggplot(fragLengthsCompare, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,100)
+      + ylim(0,10000)
+      + facet_wrap(~SampleId))
+
+
+fragLengths151_p002 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length_p002.csv'))
+fragLengths151_p002$SampleId = 'CPCT02210029T_param_002'
+fragLengths151_p002 = fragLengths151_p002 %>% select(SampleId,FragmentLength,Count)
+
+fragLengths151_p003 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.p003.csv'))
+fragLengths151_p003$SampleId = 'CPCT02210029T_param_003'
+fragLengths151_p003 = fragLengths151_p003 %>% select(SampleId,FragmentLength,Count)
+View(fragLengths151_p003)
+
+fragLengths151_004 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.p004.csv'))
+fragLengths151_004$SampleId = 'CPCT02210029T_param_004'
+fragLengths151_004 = fragLengths151_004 %>% select(SampleId,FragmentLength,Count)
+View(fragLengths151_004)
+
+
+fragLengths151_005 = read.csv(formFilename('~/logs/','CPCT02210029T','frag_length.p005.csv'))
+fragLengths151_005$SampleId = 'CPCT02210029T_param_005'
+fragLengths151_005 = fragLengths151_005 %>% select(SampleId,FragmentLength,Count)
+View(fragLengths151_005)
+
+
+View(fragLengthsCompare %>% group_by(SampleId) %>% summarise(Reads=sum(Count)))
+
+print(ggplot(fragLengths151_005 %>% filter(FragmentLength<=300), aes(x=FragmentLength, y=Count))
+      + geom_line())
+
+print(ggplot(fragLengths151_p003, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,300)
+      + ylim(0,10000))
+
+
+## Retained Introns
+retIntrons = read.csv(formFilename('~/logs/','CPCT02020378T','retained_intron.csv'))
+retIntrons = read.csv(formFilename('~/logs/','CPCT02020378T','gp.retained_intron.csv'))
+retIntrons = read.csv(formFilename('~/logs/','CPCT02020378T','gp_overs.retained_intron.csv'))
+View(retIntrons)
+View(retIntrons %>% filter(FragCount>TotalDepth))
+View(retIntrons %>% filter(GeneId=='ENSG00000244203'))
+
+retIntronsTmp = read.csv(formFilename('~/logs/','CPCT02020378T','retained_intron.csv'))
+View(retIntronsTmp)
+
+View(ensemblTransExonData %>% filter(TransName=='ENST00000374690'))
+
+View(geneOverlaps %>% group_by(GeneCount) %>% count)
+sum(geneOverlaps$GeneCount)
+
+matchingExonStarts = ensemblTransExonData %>% group_by(ExonStart,Strand) %>% summarise(GeneCount=n()) %>% group_by(ExonStart) %>%
+   summarise(GeneCount=sum(GeneCount),StrandCount=n()) 
+View(matchingExonStarts %>% filter(GeneCount>1))
+View(matchingExonStarts %>% filter(GeneCount>1&StrandCount==2))
+
+View(ensemblTransExonData %>% filter(ExonStart==230452))
+nrow(ensemblTransExonData %>% filter(ExonStart==230452))
+
+altSJs = read.csv(formFilename('~/logs/','CPCT02020378T','gp_overs.alt_splice_junc.csv'))
+altSJs = altSJs %>% mutate(StartSeq=stri_sub(StartBases,3,4),EndSeq=stri_sub(EndBases,9,10))
+View(altSJs %>% filter(Strand==1))
+View(altSJs %>% filter(Strand==1) %>% group_by(Seq=paste(StartSeq,EndSeq,sep='_'),Type) %>% count %>% spread(Type,n,fill=0))
+View(altSJs %>% filter(FragCount>StartDepth|FragCount>EndDepth))
+
+View(altSJs %>% filter(StartSeq=='CT'&EndSeq=='AC'))
+
+
+expRates = read.csv(formFilename('~/logs/','CPCT02020378T','gp.exp_rates.csv'))
+View(expRates)
+View(expRates %>% group_by(GeneSetId) %>% count)
+
+
+## Summary of 151b reads samples
+
+# 1x extreme 151b samples
+sampleId = 'CPCT02210029T'
+geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+geneData$SampleId = sampleId
+
+topGenes = head(geneData %>% arrange(-TotalFragments),10)
+
+geneDataSum = geneData %>% filter(!(GeneName %in% topGenes$GeneName)) %>% group_by(SampleId) %>% summarise(GeneName='OTHER',TotalFragments=sum(TotalFragments))
+geneDataSum = rbind(geneDataSum,geneData %>% filter(GeneName %in% topGenes$GeneName) %>% select(SampleId,GeneName,TotalFragments))
+View(geneDataSum)
+allGeneData = geneDataSum
+
+# 1x normal 151b samples
+sampleId = 'CPCT02110046T'
+geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+geneData$SampleId = sampleId
+geneDataSum = geneData %>% filter(!(GeneName %in% topGenes$GeneName)) %>% group_by(SampleId) %>% summarise(GeneName='OTHER',TotalFragments=sum(TotalFragments))
+geneDataSum = rbind(geneDataSum,geneData %>% filter(GeneName %in% topGenes$GeneName) %>% select(SampleId,GeneName,TotalFragments))
+View(geneDataSum)
+allGeneData = rbind(allGeneData,geneDataSum)
+
+# 2x 76b samples
+sampleId = 'CPCT02020378T'
+geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+geneData$SampleId = sampleId
+geneDataSum = geneData %>% filter(!(GeneName %in% topGenes$GeneName)) %>% group_by(SampleId) %>% summarise(GeneName='OTHER',TotalFragments=sum(TotalFragments))
+geneDataSum = rbind(geneDataSum,geneData %>% filter(GeneName %in% topGenes$GeneName) %>% select(SampleId,GeneName,TotalFragments))
+View(geneDataSum)
+allGeneData = rbind(allGeneData,geneDataSum)
+
+sampleId = 'CPCT02010944T'
+geneData = read.csv(formFilename('~/logs/',sampleId,'gene_data.csv'))
+geneData$SampleId = sampleId
+geneDataSum = geneData %>% filter(!(GeneName %in% topGenes$GeneName)) %>% group_by(SampleId) %>% summarise(GeneName='OTHER',TotalFragments=sum(TotalFragments))
+geneDataSum = rbind(geneDataSum,geneData %>% filter(GeneName %in% topGenes$GeneName) %>% select(SampleId,GeneName,TotalFragments))
+View(geneDataSum)
+allGeneData = rbind(allGeneData,geneDataSum)
+
+sampleTotals = allGeneData %>% group_by(SampleId) %>% summarise(SampleFragCount=sum(TotalFragments))
+allGeneData = merge(allGeneData,sampleTotals,by='SampleId',all.x=T)
+allGeneData = allGeneData %>% mutate(GenePerc=round(TotalFragments/SampleFragCount,4))
+View(allGeneData)
+
+colors = c("wheat2", "hotpink", "darkorange", "seagreen3", "gray", "thistle2", "steelblue2", "darkgreen", "indianred", "honeydew2",
+                          "turquoise3", "lightpink2", "goldenrod2", "cornsilk3", "yellowgreen", "wheat2", "violetred2", "ivory3", "coral1", "springgreen2")
+
+print(ggplot(allGeneData, aes(x=SampleId, y=GenePerc, fill=GeneName))
+      + geom_bar(stat = "identity", colour = "black")
+      + labs(x='', y='% of Sample SFragments', title='% of Total Fragment Counts for Top Genes vs All Other Genes')
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=9))
+      + scale_fill_manual(values = colors))
+
+# fragment length for 2x 151b samples
+sampleId = 'CPCT02210029T'
+fragLengths = read.csv(formFilename('~/logs/',sampleId,'frag_length.p004.csv'))
+fragLengths$SampleId = sampleId
+fragLengths151_004 = fragLengths151_004 %>% select(SampleId,FragmentLength,Count)
+View(fragLengths)
+
+print(ggplot(fragLengths151_004, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,300)
+      + ylim(0,10000))
+
+
+## GC-Bias
+# 2x 151b samples
+sampleId = 'CPCT02110046T'
+gcData = read.csv(formFilename('~/logs/',sampleId,'read_gc_ratios.csv'))
+gcData$SampleId = sampleId
+allGcData = gcData %>% filter(GeneName=='ALL') %>% select(SampleId,GeneName,GcRatio,Count)
+View(allGcData)
+
+sampleId = 'CPCT02210029T'
+gcData = read.csv(formFilename('~/logs/',sampleId,'read_gc_ratios.csv'))
+gcData$SampleId = sampleId
+allGcData = rbind(allGcData,gcData %>% filter(GeneName=='ALL') %>% select(SampleId,GeneName,GcRatio,Count))
+
+# 2x 76b samples
+sampleId = 'CPCT02020378T'
+gcData = read.csv(formFilename('~/logs/',sampleId,'read_gc_ratios.csv'))
+gcData$SampleId = sampleId
+allGcData = rbind(allGcData,gcData %>% filter(GeneName=='ALL') %>% select(SampleId,GeneName,GcRatio,Count))
+
+sampleId = 'CPCT02010944T'
+gcData = read.csv(formFilename('~/logs/',sampleId,'read_gc_ratios.csv'))
+gcData$SampleId = sampleId
+allGcData = rbind(allGcData,gcData %>% filter(GeneName=='ALL') %>% select(SampleId,GeneName,GcRatio,Count))
+
+print(ggplot(allGcData, aes(x=GcRatio, y=Count))
+      + geom_line()
+      + facet_wrap(~SampleId))
+
+
+
+View(fragLengthsCompare %>% group_by(SampleId) %>% summarise(Reads=sum(Count)))
+
+print(ggplot(fragLengths151_004, aes(x=FragmentLength, y=Count))
+      + geom_line()
+      + xlim(0,300)
+      + ylim(0,10000))
+
+
+
+
+## Fragment Length Read Data
+fragLengthReads76 = read.csv('~/logs/CPCT02020378T.frag_length_reads.csv')
+fragLengthReads = read.csv('~/logs/CPCT02210029T.frag_length_reads.csv')
+fragLengthReadsPrev = fragLengthReads
+fragLengthReads = read.csv('~/logs/CPCT02210029T.frag_length_reads.p003.csv')
+View(fragLengthReads)
+View(fragLengthReads %>% mutate(InsertSize=abs(InsertSize)) %>% filter(InsertSize>0&InsertSize<76))
+View(fragLengthReads %>% filter(abs(InsertSize)<=76,ReadLength==76) %>% group_by(Cigar) %>% count)
+View(fragLengthReads %>% mutate(InsertSize=abs(InsertSize)) %>% filter(InsertSize==100))
+
+tmpFLReads = fragLengthReads %>% mutate(InsertSize=abs(InsertSize)) %>% filter(InsertSize<180)
+View(tmpFLReads %>% filter(InsertSize>0) %>% group_by(InsertSize) %>% count)
+
+print(ggplot(tmpFLReads %>% filter(InsertSize>0) %>% group_by(InsertSize) %>% count, aes(x=InsertSize, y=n))
+      + geom_line())
+
+
+rnaSampleReads = read.csv('~/logs/rna_sample_reads.csv')
+View(rnaSampleReads)
+rnaSampleReads = rnaSampleReads %>% mutate(ReadLength=pmax(stri_length(ReadBases),76))
+View(rnaSampleReads %>% group_by(ReadLength) %>% count)
+
+sampleCancerTypes = read.csv('~/data/hpc_sample_cancer_types.csv')
+rnaCTs = read.csv('~/data/rna/rna_sample_cancer_types.csv')
+rnaCTs = rbind(rnaCTs,sampleCancerTypes %>% select(SampleId,CancerType))
+
+rnaSampleReads = merge(rnaSampleReads,rnaCTs,by='SampleId',all.x=T)
+View(rnaSampleReads)
+View(rnaSampleReads %>% filter(is.na(CancerType)))
+View(rnaSampleReads %>% filter(is.na(CancerType)) %>% select(SampleId))
+View(rnaSampleReads %>% group_by(CancerType,ReadLength) %>% count %>% spread(ReadLength,n,fill=0))
+View(rnaSampleReads %>% group_by(CancerType) %>% count)
+
+rnaSampleData = rnaSampleReads %>% mutate(FastqDir=paste(Dir,SampleId,sep='_')) %>% select(-ReadBases,-Dir)
+View(rnaSampleData)
+write.csv(rnaSampleData,'~/logs/rna_sample_data.csv',row.names = F,quote = F)
+write.csv(rnaSampleData %>% filter(CancerType=='Urinary tract') %>% select(FastqDir),'~/logs/rna_urinary_tract_fastq_dir.txt',row.names = F,quote = F)
+
+
+tmpFLReads76 = fragLengthReads76 %>% mutate(InsertSize=abs(InsertSize)) %>% filter(InsertSize<160)
+
+print(ggplot(tmpFLReads76 %>% filter(InsertSize>0&InsertSize<100) %>% group_by(InsertSize) %>% count, aes(x=InsertSize, y=n))
+      + geom_line())
+
+View(tmpFLReads76 %>% filter(InsertSize>=70&InsertSize<=77) %>% group_by(InsertSize,Cigar) %>% count %>% spread(InsertSize,n,fill=0))
+
+
+
+## GC Bias
+
+gcRatios = read.csv('~/data/rna/exp/gcbias_ratios.csv')
+View(gcRatios)
+colnames(gcRatios) = c('Chromosome','Region','GcRatio')
+gcRatioFreq = gcRatios %>% filter(GcRatio>0) %>% group_by(GcRatio) %>% count
+View(gcRatioFreq)
+
+print(ggplot(gcRatioFreq, aes(x=GcRatio, y=n))
+      + geom_line())
+
+geneData = read.csv(formFilename('~/logs/','CPCT02210029T','gene_data.csv'))
+View(geneData)
+
+fastqDirs = read.csv('~/logs/fastq_dir.txt')
+View(fastqDirs)
+write.csv(fastqDirs %>% select(SampleId,FastqDir),'~/logs/rna_fastq_dir.csv',row.names = F,quote = F)
+fastqDirs = fastqDirs %>% mutate(FastqDir=paste(Dir,SampleId,sep='_')) %>% select(SampleId,FastqDir)
+
+fastqDirs = merge(fastqDirs,sampleCancerTypes %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+View(fastqDirs %>% filter(CancerType=='Urinary Tract'))
+View(fastqDirs %>% group_by(CancerType) %>% count)
+
+View(fastqDirs %>% select(SampleId))
+
+View(rnaSampleData)
+
+
+readGcRatios = read.csv(formFilename('~/logs/','CPCT02210029T','read_gc_ratios.csv'))
+readGcRatios = read.csv(formFilename('~/logs/','CPCT02210029T','dups.read_gc_ratios.csv'))
+View(readGcRatios)
+View(readGcRatios %>% filter(GcRatio>=0.9))
+View(readGcRatios %>% filter(GeneName=='RPS29'))
+View(readGcRatios %>% group_by(GeneName) %>% summarise(Total=sum(Count)))
+
+
+filteredReads = readGcRatios %>% filter(GeneName!='ALL'&GeneName!='RN7SL2'&GeneName!='RN7SL1'&GeneName!='RPS29'&GcRatio>0.57&GcRatio<0.63) %>% 
+   group_by(GeneName) %>% summarise(Total=sum(Count))
+
+highReadGenes = head(geneData %>% arrange(-Duplicates),100)
+View(highReadGenes)
+View(readGcRatios %>% filter(!(GeneName %in% highReadGenes$GeneName)))
+filteredReads = readGcRatios %>% filter(!(GeneName %in% highReadGenes$GeneName)&GeneName!='ALL') %>% group_by(GcRatio) %>% summarise(Total=sum(Count))
+View(filteredReads)
+print(ggplot(filteredReads, aes(x=GcRatio, y=Total))
+      + geom_line())
+
+
+View(highReadGenes)
+
+print(ggplot(readGcRatios %>% filter(GeneName=='ALL'), aes(x=GcRatio, y=Count))
+      + geom_line())
+
+print(ggplot(readGcRatios %>% filter(GeneName=='RPS29'), aes(x=GcRatio, y=Count))
+      + geom_line())
+
+print(ggplot(readGcRatios %>% filter(GeneId %in% highReadGenes$GeneId), aes(x=GcRatio, y=Count))
+      + geom_line()
+      + facet_wrap(~GeneName))
+
+tmpGcRatios = read.csv(formFilename('~/logs/',sampleId,'gp.read_gc_ratios.csv'))
+View(tmpGcRatios)
+
+print(ggplot(tmpGcRatios %>% filter(GeneName=='ALL'), aes(x=GcRatio, y=Count))
+      + geom_line())
+
+
 
 View(fragLengths)
 nrow(fragLengths)

@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+UPLOAD_SCRIPT="upload_files_to_nextcloud_directory"
+NEXTCLOUD_DIR="UPLOAD"
+
+if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "Usage: $(basename $0) <file1> [<fileN>]" && exit 1
+fi
+
+${UPLOAD_SCRIPT} "$NEXTCLOUD_DIR" "$@"
