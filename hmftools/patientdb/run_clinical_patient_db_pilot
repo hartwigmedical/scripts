@@ -22,6 +22,7 @@ java -Dorg.jooq.no-logo=true -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -wide_biopsy_csv /data/ecrf/wide_biopsies.csv \
     -wide_treatment_csv /data/ecrf/wide_treatments.csv \
     -wide_response_csv /data/ecrf/wide_responses.csv \
+    -wide_five_days_csv /data/ecrf/wide_five_days.csv \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
