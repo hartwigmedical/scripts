@@ -2,26 +2,30 @@
 HMF Data Request Guide
 ===== 
 
-This page provides practical information on how to work with the data you received within the context of a data request (DR) from Hartwig Medical Foundation. 
+This page provides practical information on how to access / work with the data that will be made available to you within the context of a Data Access Request (DR) from Hartwig Medical Foundation. 
 
-More details on the methods used to generate both the genomic and clinical data can be found on a separate [Methods](./README_METHODS.md) page.
+Hartwig Medical foundation will make the licenced data available through the Google Cloud Platform (GCP). 
+
+Note: more details on the methods used to generate both the genomic and clinical data can be found on a separate [Methods](./README_METHODS.md) page.
 
 ### Contents
 
 * [General notes](#general-notes)
 * [Sample selection](#sample-selection)
-* [Tips on downloading files ](#tips-on-downloading-files)
+* [Format of the data made available](#sample-selection)
+* [Tips on accesing the data trough GCP](#tips-on-downloading-files)
 
 ### General Notes
- - Sharing of data is done via an OKTA account which requires dual-factor authentication. The OKTA account is used to access our [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and our [Download Portal](https://portal.hartwigmedicalfoundation.nl).
- - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. These can be requested for the samples you have been provided. 
+ - 
+ - It will be made accesible for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
+ - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. For newer DRs these have been made available; for older requests these can be requested for the samples you have been provided. 
  - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
  
 Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
 
 ### Clinical Data
 
-Clinical data is shared in a **metadata.tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+Clinical data is shared in a **metadata.tar** via GCP.
 
 Some notes about the clinical data:
 - As much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies is gathered. Please be aware that records are not guaranteed to be complete.
