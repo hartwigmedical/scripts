@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+gcp_url=$1
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-share"
+
+if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "Usage: $(basename $0) gs://bucket/path/to_file" && exit 1
+fi
+
+## first check object existance
+gsutil -q stat "${gcp_url}"
+if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Unable to locate file (${gcp_url})" >&2
+    exit 1
+fi
+
+## retrieve presigned URL
+signurl_response=$( gsutil signurl -d 7d "${gcp_key_file}" "${gcp_url}")
+if [[ $? -ne 0 ]]; then
+    echo "[ERROR] Unable to generate URL for file" >&2
+    exit 1
+fi
+
+## response has data header line and multiple fields
+signurl_data=$(echo "${signurl_response}" | grep -A1 ^URL | tail -1)
+int_url=$(echo "${signurl_data}" | cut -f1)
+expires=$(echo "${signurl_data}" | cut -f3)
+ext_url=$(echo "${signurl_data}" | cut -f4)
+
+## output to screen
+echo "## File is ${int_url}"
+echo "## Expires at ${expires}"
+echo "${ext_url}"
+
