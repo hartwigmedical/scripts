@@ -17,6 +17,7 @@ Note: more details on the methods used to generate both the genomic and clinical
 * [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)
 * [Other tips on working with GCP](#other-tips-on-working-with-GCP)
 
+
 ### General Notes
 
  - The data will be made available for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
@@ -104,25 +105,24 @@ RNAseq data will be made available per sample via GCP.
 ### Tips on accessing the data trough GCP
 
 
-### Accessing HMF Data
+#### Accessing the data
 
-The process around accessing data is still evolving, but we now have a process to make all our BAMs available which was previously 
-impossible. Given the size of the data, our key challenge is avoid any copying or duplication of the data. We do this by adding users 
-directly to the ACL of each file they have access, and providing a manifest containing the URLs and parseable metadata they can use to 
-download to a VM and organize appropriately.
+Given the size of the data (especially the Aligned readout and RNAseq data), our key challenge is avoid any copying or duplication of the data. We do this by adding users 
+directly to the Access Control List of each file they are allowed to access, and providing a manifest containing the URLs they can use to 
+download the data to a VM or bucket in their own project (without extra costs) and organize appropriately.
 
 The manifest is also still evolving, but in its current form it looks like:
 
 ```json
 {
   "id": "example",
-  "tertiary": [
+  "bundeld": [
     {
-      "gsutilUrl": "gs://hmf-dr-example/clinical.tar.gz",
-      "tags": {
-        "moleculetype": "DNA",
-        "datatype": "CLINICAL"
-      }
+      "gsutilUrl": "gs://hmf-dr-example/metadata.tar",
+      "tags": [
+        "metadata",
+        "tar"
+      ]
     }
   ],
   "accounts": [
@@ -139,31 +139,31 @@ The manifest is also still evolving, but in its current form it looks like:
           "data": [
             {
               "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam",
-              "tags": {
-                "moleculetype": "DNA",
-                "filetype": "BAM"
-              }
+              "tags": [
+                "DNA",
+                "BAM"
+              ]
             },
             {
               "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam.bai",
-              "tags": {
-                "moleculetype": "DNA",
-                "filetype": "BAI"
-              }
+              "tags": [
+                "DNA",
+                "BAI"
+              ]
             },
             {
               "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.bam",
-              "tags": {
-                "moleculetype": "DNA",
-                "filetype": "BAM"
-              }
+              "tags": [
+                "DNA",
+                "BAM"
+              ]
             },
             {
               "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.bam.bai",
-              "tags": {
-                "moleculetype": "DNA",
-                "filetype": "BAI"
-              }
+              "tags": [
+                "DNA",
+                "BAI"
+              ]
             }
           ]
         }
@@ -196,12 +196,10 @@ For this purpose, we're creating a tool you can use to take advantage of all our
 called [Batch 5](https://github.com/hartwigmedical/pipeline5/blob/master/batch/README.md). Batch5 takes care of handling pre-emptible vms,
 setting up local ssds, managing failures, exposing logs, etc.
 
-We're also going to evaluate the Broad Institutes solution to this called [Terra](https://app.terra.bio/). Terra allows you to run pipelines
-via common worflow languages (WDL, CWL), but also create notebooks. It runs on GCP and is a joint project between Broad and Google.
 
 
 
-### Other tips working with GCP
+### Other tips on working with GCP
 
 
 #### Using the console
@@ -330,7 +328,7 @@ Try SSH'ing into your new VM and running the same `gsutil` commands we ran in th
 Images are a handy way to save and share state of a VM. You can take an image on the command line by:
 
 ```bash
- gcloud images create my-instance-image-1 --family=my-instance-image --source-disk=my-instance-image --source-disk-zone=europe-west4"
+ gcloud images create my-instance-image-1 --family=my-instance-image --source-disk=my-instance-image --source-disk-zone=europe-west4
 ```
 
 ### GCE Cost Savings
@@ -344,8 +342,6 @@ always be shut-down at 24 hours. This is how Google sells excess capacity, and c
 analysis workloads running between 1-24 hours, and the savings are big (80%). 
 
 You can mark a VM pre-emptible on VM creation *Create VM -> Management -> Availability Policy* and through the `glcoud` CLI.
-
-![Make a pre-emptible VM](https://github.com/hartwigmedical/gcpworkshop/blob/master/images/compute-demo-3.png)
 
 While creating them is easy, its worth having some automation around them to manage pre-emptions. In our pipline, we handle the pre-empted
 signal by polling the GCE API, then re-starting the workload in a new zone.
