@@ -8,22 +8,38 @@ Hartwig Medical foundation will make the licenced data available through the Goo
 
 Note: more details on the methods used to generate both the genomic and clinical data can be found on a separate [Methods](./README_METHODS.md) page.
 
+
 ### Contents
 
 * [General notes](#general-notes)
 * [Sample selection](#sample-selection)
-* [Format of the data made available](#sample-selection)
-* [Tips on accesing the data trough GCP](#tips-on-downloading-files)
+* [Format of the data made available](#format-of-the-data-made-available)
+* [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)
+
 
 ### General Notes
- - 
- - It will be made accesible for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
+
+ - The data will be made available for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
  - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. For newer DRs these have been made available; for older requests these can be requested for the samples you have been provided. 
  - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
  
 Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
 
-### Clinical Data
+
+### Sample selection
+
+By default, in addition to data-request specific criteria, samples for which one of the below applies are **excluded**:
+
+- Samples from patients where informed consent is from before 21 April 2016.
+- Samples with poor quality (PURPLE qcStatus != PASS).
+- Samples without any tumor evidence (PURPLE status = NO_TUMOR).
+- Samples with less than 19.5% tumor cells (PURPLE purity < 0.195).
+
+
+
+### Format of the data made available
+
+#### Clinical Data
 
 Clinical data is shared in a **metadata.tar** via GCP.
 
@@ -72,16 +88,10 @@ Sharing of BAM files is currently only supported for samples which have been pre
 - Paste the BAM file link at field "File URL"
 - Paste the BAI file link at field "Index URL"
 
-### Sample selection
 
-By default, in addition to data-request specific criteria, samples for which one of the below applies are **excluded**:
 
-- Samples from patients where informed consent is from before 21 April 2016.
-- Samples with poor quality (PURPLE qcStatus != PASS).
-- Samples without any tumor evidence (PURPLE status = NO_TUMOR).
-- Samples with less than 19.5% tumor cells (PURPLE purity < 0.195).
 
-### Tips on downloading files 
+### Tips on accessing the data trough GCP
 
 Links to URLs can be retrieved or created via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and [Download Portal](https://portal.hartwigmedicalfoundation.nl). For smaller files, wget generally works fine and is provided on standard linux-based operating systems.
 
