@@ -3,8 +3,7 @@ HMF Data Request Guide
 ===== 
 
 This page provides practical information on how to access / work with the data that will be made available to you within the context of a Data Access Request (DR) from Hartwig Medical Foundation. 
-
-Hartwig Medical foundation will make the licenced data available through the Google Cloud Platform (GCP). 
+ 
 
 Note: more details on the methods used to generate both the genomic and clinical data can be found on a separate [Methods](./README_METHODS.md) page.
 
@@ -18,22 +17,17 @@ Note: more details on the methods used to generate both the genomic and clinical
 * [Other tips on working with GCP](#other-tips-on-working-with-GCP)
 
 
-### General Notes
-
+## General Notes
+- Hartwig Medical foundation will make the licenced data available through the Google Cloud Platform (GCP). 
  - The data will be made available for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
  - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. For newer DRs these have been made available; for older requests these can be requested for the samples you have been provided. 
  - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](https://resources.hartwigmedicalfoundation.nl/).
  
 Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
 
-#### More information
-- For source code of our analysis pipeline see our [pipeline5 repo](https://github.com/hartwigmedical/pipeline5).
-- For source code of all HMF tools see our [hmftools repo](https://github.com/hartwigmedical/hmftools).
-- For an example patient report see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
-- For various resource files used in the analysis see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
 
 
-### Sample selection
+## Sample selection
 
 By default, in addition to data-request specific criteria, samples for which one of the below applies are **excluded**:
 
@@ -44,7 +38,7 @@ By default, in addition to data-request specific criteria, samples for which one
 
 
 
-### Format of the data made available
+## Format of the data made available
 
 #### Clinical Data (TSV format)
 
@@ -82,14 +76,14 @@ Germline data will be made available in a **germline.tar** via GCP.
 
 We share the SNVs and small INDELs called from the reference sample using GATK haplotype caller.
 
-### Aligned readout data (CRAM format)
+#### Aligned readout data (CRAM format)
 
 Aligned readout data will be made available per sample via GCP.
 
 **Some notes to keep in mind:**
-- Files can be very large (up to 300GB) so consider this when you want to egress the files (comes with costs).
+- Files can be very large (up to 300GB) so consider this when you want to egress the files (comes with costs, see [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)).
 
-**Example loading BAM file in IGV:**
+**Example loading CRAM file in IGV:**
 - Create the links for the CRAM and accompanying CRAI file (by clicking the most right icon next to a run)
 - Open the IGV program and choose option "Load from URL"
 - Paste the BAM file link at field "File URL"
@@ -101,17 +95,33 @@ Please find more details on the methods used to generate both the genomic and cl
 
 RNAseq data will be made available per sample via GCP.
 
+**Some notes to keep in mind:**
+- Files can be very large  so consider this when you want to egress the files (comes with costs, see [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)).
 
-### Tips on accessing the data trough GCP
+#### More information
+- For source code of our analysis pipeline see our [pipeline5 repo](https://github.com/hartwigmedical/pipeline5).
+- For source code of all HMF tools see our [hmftools repo](https://github.com/hartwigmedical/hmftools).
+- For an example patient report see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
+- For various resource files used in the analysis see our [resources page](https://resources.hartwigmedicalfoundation.nl/).
+
+
+## Tips on accessing the data trough GCP
 
 
 #### Accessing the data
 
 Given the size of the data (especially the Aligned readout and RNAseq data), our key challenge is avoid any copying or duplication of the data. We do this by adding users 
 directly to the Access Control List of each file they are allowed to access, and providing a manifest containing the URLs they can use to 
-download the data to a VM or bucket in their own project (without extra costs) and organize appropriately.
+download the data to a VM or bucket of their own project inside of the `europe-west4` region and organize appropriately.
 
-The manifest is also still evolving, but in its current form it looks like:
+Important: downloading data outside of the `europe-west4` region or outside GCP carries data egress cost of €0.11 per GB. We strongly recommend creating VMs or buckets inside of the `europe-west4` region to avoid this cost and time of download. That said, it is possible to egress the data, but you must specify your own project in the
+`gsutil` command to pay for the costs that will be involved (note: specifying your own project is also necessary to download to a vm or another bucket inside of the `europe-west4` region, but you won't be charged anything). 
+Egress command example:
+
+```bash
+gsutil -u my-project gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam ./
+```
+Example of the format of the manifest containing the URLs of the files made available:
 
 ```json
 {
@@ -173,14 +183,7 @@ The manifest is also still evolving, but in its current form it looks like:
 }
 ```
 
-Downloading data outside of the `europe-west4` region carries a data egress cost of €0.11 per GB. We strongly recommend creating VMs close
-to the data to avoid this cost and time of download. That said, it is possible to download, but you must specify your own project in the
-`gsutil` command to do so. This is also necessary to download to a vm or another bucket, but you won't be charged anything if its in the
-same region. For example:
 
-```bash
-gsutil -u my-project gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam ./
-```
 
 ### Scaling Analysis
 
@@ -199,7 +202,7 @@ setting up local ssds, managing failures, exposing logs, etc.
 
 
 
-### Other tips on working with GCP
+## Other tips on working with GCP
 
 
 #### Using the console
