@@ -21,7 +21,7 @@ Note: more details on the methods used to generate both the genomic and clinical
 
  - The data will be made available for GCP accounts of data download contacts. For these accounts multi-factor authentication needs to be enabled.
  - Please be aware that the sample IDs provided to you are not publicly shareable. In case you want to publish something with respect to a specific sample from the HMF database you need to use the HMF Sample ID for this. For newer DRs these have been made available; for older requests these can be requested for the samples you have been provided. 
- - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](http://resources.hartwigmedicalfoundation.nl).
+ - Internally at HMF we load up all data into a MySQL database. The scheme and code to set this up yourself can be found on our [resources page](https://resources.hartwigmedicalfoundation.nl/).
  
 Please use the **unique ID** given to your request (eg "DR-XXX") in any communication with us about your data request.
 
@@ -39,18 +39,20 @@ By default, in addition to data-request specific criteria, samples for which one
 
 ### Format of the data made available
 
-#### Clinical Data
+#### Clinical Data (TSV format)
 
-Clinical data is shared in a **metadata.tar** via GCP.
+Clinical data will be made available in a **metadata.tar** via GCP.
 
 Some notes about the clinical data:
 - As much information as possible from the Electronic Case Report Form (eCRF) of the respective clinical studies is gathered. Please be aware that records are not guaranteed to be complete.
 - For patients who participated in the DRUP study we can not share any treatment related information.
 - The "purity" field in the metadata is the percentage tumor cells derived from WGS data by [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
 
-### Somatic Data
+Please find more details on the methods used to generate both the genomic and clinical data on a separate [Methods](./README_METHODS.md) page.
 
-Somatic data is shared via a url to **somatics.tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+#### Somatic Data (VCF/TXT formats)
+
+Somatic data will be made available in a **somatics.tar** via GCP.
 
 ##### Per sample the following files are present:
 - purple.somatic.vcf.gz (somatic SNVs and small INDELs).
@@ -65,50 +67,40 @@ Somatic data is shared via a url to **somatics.tar** via [Nextcloud Portal](http
 - driver.catalog.tsv (affected driver genes).
 - purple.cnv.germline.tsv (germline copy number regions). *[in case germline level is part of request]*
 
-For an explanation of the contents of these files, see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).
+For an explanation of the contents of these files, see [PURPLE](https://github.com/hartwigmedical/hmftools/tree/master/purity-ploidy-estimator).  
 
-### Germline Data
+#### Germline Data (VCF/TXT formats)
 
-Germline data is shared via a url to **germline.tar** via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl).
+Germline data will be made available in a **germline.tar** via GCP.
 
 We share the SNVs and small INDELs called from the reference sample using GATK haplotype caller.
 
-### Alignments (BAM files)
+### Aligned readout data (CRAM format)
 
-Sharing of BAM files is currently only supported for samples which have been previously published, but in case you do have access they can be accessed in the [Download Portal](https://portal.hartwigmedicalfoundation.nl).
+Aligned readout data will be made available per sample via GCP.
 
 **Some notes to keep in mind:**
-- The session time is 2 hours, after this period you will have to login again
-- Files can be very large (up to 300GB) so please check before starting a download!
-- When you create links to files, be aware that these links are valid for 24 hours. After this period you will have to create new links.
+- Files can be very large (up to 300GB) so consider this when you want to egress the files (comes with costs).
 
 **Example loading BAM file in IGV:**
-- Create the links for the BAM and accompanying BAI file (by clicking the most right icon next to a run)
+- Create the links for the CRAM and accompanying CRAI file (by clicking the most right icon next to a run)
 - Open the IGV program and choose option "Load from URL"
 - Paste the BAM file link at field "File URL"
 - Paste the BAI file link at field "Index URL"
 
+Please find more details on the methods used to generate both the genomic and clinical data on a separate [Methods](./README_METHODS.md) page.
 
+#### RNAseq data (FASTQ format)
+
+RNAseq data will be made available per sample via GCP.
 
 
 ### Tips on accessing the data trough GCP
 
-Links to URLs can be retrieved or created via [Nextcloud Portal](https://nc.hartwigmedicalfoundation.nl) and [Download Portal](https://portal.hartwigmedicalfoundation.nl). For smaller files, wget generally works fine and is provided on standard linux-based operating systems.
 
-**Example download using WGET:**
-
-- Copy the links into a new text file (eg links.txt)
-- Use the following command to download: 
-
+**Example egress data from GCP:**
 ```sh
-wget --content-disposition -i links.txt
-```
 
-For bigger files or if wget doesn't work in the first place, we recommend to use the [aria2 download tool](https://aria2.github.io/). This will allow you to download with multiple streams speeding up the download significantly.
-
-**Example download using aria2 (with 5 connections):**
-```sh
-aria2c -x 5 -c -i links.txt
 ```
 
 ### More information
