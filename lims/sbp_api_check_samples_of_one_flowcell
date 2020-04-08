@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
 
-SAMPLESHEET=$1
-SAMPLESHEETFILE=$(basename $SAMPLESHEET | sed 's#_SampleSheet.csv##' )
-FLOWCELLID=${SAMPLESHEETFILE: -9}
-SEQRUN=$(query_sbp_api -type flowcells | grep ${FLOWCELLID} | cut -f 1 )
-RUNDATE=${SAMPLESHEETFILE:0:6}
+samplesheet_path=$1
+samplesheet_name=$(basename "${samplesheet_path}" | sed 's#_SampleSheet.csv##')
+api_script="query_sbp_api"
 
-## only proceed if flowcell actually done at SBP
-if [[ -z $SEQRUN ]]; then 
-    echo "[WARN] Flowcell ${FLOWCELLID} not present yet at schuberg"
-    exit 1
-fi
+fc_fcid=${samplesheet_name: -9}
+fc_date=${samplesheet_name:0:6}
+fc_name=$(${api_script} -type flowcells -filter "flowcell_id=${flowcell_fcid}" -json | jq -r '.[-1].name')
 
 ## find index of Sample_ID column
-idx_id=$(cat ${SAMPLESHEET} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
+idx_id=$(cat ${samplesheet_path} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
 
 ## and check status of each unique Sample_ID in sheet
-cat ${SAMPLESHEET} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read BARCODE; do
-    SCRIPTOUTPUT=$( query_sbp_api -type samples -filter "barcode=${BARCODE}" -exact | grep -v "^#" )
+cat ${samplesheet_path} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq | while read barcode; do
+    smp_info=$(${api_script} -type samples -filter "barcode=${barcode}" -exact | grep -v "^#" )
+    run_info=$(${api_script} -type runs -filter "name=${barcode}" -json | jq -r '.[-1] | "ini="+.ini+"_status="+.status+"_id="+(.id|tostring)')
 
-    echo -e "${RUNDATE}\t${SEQRUN}\t${FLOWCELLID}\t${SCRIPTOUTPUT}"
+    echo -e "${fc_date}\t${fc_name}\t${fc_fcid}\t${smp_info}\t${run_info}"
 done
