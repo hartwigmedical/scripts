@@ -7,13 +7,15 @@ if [[ -z "$set_name" ]]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
 fi
 
-cred_dir="/data/common/dbs/sbp_api_credentials"
-sbp_api_crt_file="${cred_dir}/api.crt"
-sbp_api_key_file="${cred_dir}/api.key"
-sbp_api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+api_cred_dir="/data/common/dbs/api_credentials"
+gcp_cred_dir="/data/common/dbs/gcp_credentials"
+
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+api_crt_file="${api_cred_dir}/api.crt"
+api_key_file="${api_cred_dir}/api.key"
 
 gcp_url_sign_script="generate_signed_gcp_url.py"
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+gcp_key_file="${gcp_cred_dir}/hmf-download"
 gcp_project="hmf-database"
 gcp_account="hmf-download"
 
@@ -42,7 +44,7 @@ function main() {
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
     oid=$(echo "$run_json" | jq -r '.sbp_id') # object id
 
-    files_api_url="${sbp_api_url}/files?run_id=${oid}"
+    files_api_url="${api_url}/files?run_id=${oid}"
     out_jsn_all="${name}_runfiles.json"
     out_md5_all="${name}_runfiles.md5"
     out_aria="${name}.aria.txt"
@@ -74,7 +76,7 @@ function main() {
 
     ## get the file objects for one run by id
     files_json=$(/usr/bin/curl --silent --cert-type pem \
-        --cert ${sbp_api_crt_file} --key ${sbp_api_key_file} -X GET \
+        --cert ${api_crt_file} --key ${api_key_file} -X GET \
         -H "Accept: application/json" -H "Content-Type: application/json" \
         "$files_api_url")
 

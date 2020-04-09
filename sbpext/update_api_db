@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 
 JSON_DIR="/data/lims/sbpfiles"
-CRT_FILE="/home/sbpext/bcl-upload-prod/api.crt"
-KEY_FILE="/home/sbpext/bcl-upload-prod/api.key"
+CRED_DIR="/data/common/dbs/api_credentials"
+CRT_FILE="${CRED_DIR}/api.crt"
+KEY_FILE="${CRED_DIR}/api.key"
 BASE_URL="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 LOG_FILE="/home/sbpext/logs/update_sbp_api_db.log"
 DATETIME=$(date)

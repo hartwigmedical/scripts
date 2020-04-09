@@ -2,9 +2,9 @@
 
 script_name=$(basename $0)
 api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_dir="/data/common/dbs/sbp_api_credentials"
-api_key="${api_dir}/api.key"
-api_crt="${api_dir}/api.crt"
+api_cred_dir="/data/common/dbs/api_credentials"
+api_key_file="${api_cred_dir}/api.key"
+api_crt_file="${api_cred_dir}/api.crt"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
   echo "-----"
@@ -41,7 +41,7 @@ main () {
 ## Generic api function
 hmfapi () {
   echo "$@" 1>&2
-  http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
+  http --ignore-stdin --cert="${api_crt_file}" --cert-key="${api_key_file}" "$@"
 }
 
 main

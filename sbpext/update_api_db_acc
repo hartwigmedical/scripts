@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 JSON_DIR="/data/lims/sbpfiles/acc"
-CRED_DIR="/data/common/dbs/sbp_api_credentials/acc"
+CRED_DIR="/data/common/dbs/api_credentials/acc"
 CRT_FILE="${CRED_DIR}/api.crt"
 KEY_FILE="${CRED_DIR}/api.key"
 BASE_URL="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
