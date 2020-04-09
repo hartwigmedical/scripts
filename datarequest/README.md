@@ -119,7 +119,7 @@ Important: downloading data outside of the `europe-west4` region or outside GCP 
 Egress command example:
 
 ```bash
-gsutil -u my-project gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam ./
+gsutil -u my-project gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.cram ./
 ```
 Example of the format of the manifest containing the URLs of the files made available:
 
@@ -148,31 +148,31 @@ Example of the format of the manifest containing the URLs of the files made avai
           "sampleId": "COLO829v003T",
           "data": [
             {
-              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam",
+              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.cram",
               "tags": [
                 "DNA",
-                "BAM"
+                "CRAM"
               ]
             },
             {
-              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.bam.bai",
+              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003R/aligner/COLO829v003R.cram.crai",
               "tags": [
                 "DNA",
-                "BAI"
+                "CRAI"
               ]
             },
             {
-              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.bam",
+              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.cram",
               "tags": [
                 "DNA",
-                "BAM"
+                "CRAM"
               ]
             },
             {
-              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.bam.bai",
+              "gsutilUrl": "gs://hmf-output-test/COLO_VALIDATION_5_7_1314/COLO829v003T/aligner/COLO829v003T.cram.crai",
               "tags": [
                 "DNA",
-                "BAI"
+                "CRAI"
               ]
             }
           ]
