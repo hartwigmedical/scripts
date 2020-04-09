@@ -19,7 +19,7 @@ echo ''
 
 wc -l temp_GCP_check/patientId_metadata.tsv
 
-jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
+jq '.data | .[] | select(.samples | .[] | .data | .[] | .tags | .[]=="DNA") | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/patientId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
 cat temp_GCP_check/patientId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
 wc -l temp_GCP_check/patientId_DNA_GCP.tsv
@@ -45,7 +45,7 @@ echo ''
 
 wc -l temp_GCP_check/sampleId_metadata.tsv
 
-jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
+jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="DNA") | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/sampleId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
 cat temp_GCP_check/sampleId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
 wc -l temp_GCP_check/sampleId_DNA_GCP.tsv
@@ -69,11 +69,14 @@ fi
 echo ''
 #######
 
-
-jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate DNA BAM files shared within GCP:'
-grep -c 'DNA' temp_GCP_check/files_GCP.tsv
+grep -c 'BAM' temp_GCP_check/files_GCP.tsv
+
+echo 'number of seperate DNA BAI files shared within GCP:'
+grep -c 'BAI' temp_GCP_check/files_GCP.tsv
+
 
 echo ''
 echo ''
@@ -83,7 +86,7 @@ echo ''
 
 wc -l temp_GCP_check/patientId_metadata.tsv
 
-jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_RNA_GCP.tsv
+jq '.data | .[] | select(.samples | .[] | .data | .[] | .tags | .[]=="RNA") | .patientId'  $2 > temp_GCP_check/patientId_RNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/patientId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
 cat temp_GCP_check/patientId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
 wc -l temp_GCP_check/patientId_RNA_GCP.tsv
@@ -109,7 +112,7 @@ echo ''
 
 wc -l temp_GCP_check/sampleId_metadata.tsv
 
-jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_RNA_GCP.tsv
+jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="RNA") | .sampleId' $2 > temp_GCP_check/sampleId_RNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/sampleId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
 cat temp_GCP_check/sampleId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
 wc -l temp_GCP_check/sampleId_RNA_GCP.tsv
@@ -134,10 +137,10 @@ echo ''
 #######
 
 
-jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="RNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate RNA FASTQ files shared within GCP:'
-grep -c 'RNA' temp_GCP_check/files_GCP.tsv
+grep -c 'FASTQ' temp_GCP_check/files_GCP.tsv
 
 
 # remove all temporary files
