@@ -2,7 +2,7 @@
 
 samplesheet_path=$1
 samplesheet_name=$(basename "${samplesheet_path}" | sed 's#_SampleSheet.csv##')
-api_script="query_sbp_api"
+api_script="query_api"
 
 fc_fcid=${samplesheet_name: -9}
 fc_date=${samplesheet_name:0:6}

@@ -10,5 +10,5 @@ fi
 
 ## Flowcell done at SBP so get info per sample
 for SAMPLESHEET in "${SAMPLESHEETS[@]}"; do
-    sbp_api_check_samples_of_one_flowcell ${SAMPLESHEET}
+    api_check_samples_of_one_flowcell ${SAMPLESHEET}
 done | sort
