@@ -5,8 +5,7 @@ MAX_CHAR=64
 function main () {
     echo ""
     grep_ps "[a]ws"
-    grep_ps "[g]sutil"
-    grep_ps "[r]sync"
+    grep_ps "[g]sutil|[r]sync"
     grep_ps "[m]d5sum"
     grep_ps "[b]am2fastq"
     grep_ps "[b]cl2fastq"
@@ -15,9 +14,14 @@ function main () {
 
 function grep_ps () {
     local string=$1 && shift
-    ps_cmd="ps -ef | grep '${string}' | tr -s ' ' | cut -d' ' -f1,5,8- | cut -c 1-$MAX_CHAR | sort | uniq"
-    echo "# Executing ps ($ps_cmd)"
-    eval $ps_cmd
+    local tag=$(echo "${string}" | sed 's/[]\[]//g')
+
+    ps_cmd="ps -ef | grep -P '${string}' | tr -s ' '"
+    ps_cmd_exec="${ps_cmd} | cut -d' ' -f1,5,8- | cut -c 1-$MAX_CHAR | sort | uniq"
+
+    echo "-----> Searching for ${tag} ($ps_cmd)"
+    eval $ps_cmd_exec
+    echo ""
 }
 
 main
