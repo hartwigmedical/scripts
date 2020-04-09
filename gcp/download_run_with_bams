@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source sbp_api_functions
+source api_functions
 source gcp_functions
 
 set=$1 && shift
