@@ -2,14 +2,12 @@
 
 #put metadata file path at $1.
 #put manifest file path at $2.
-
+#put 0 when you do not want to see unique mismatching identifiers, and 1 if you want to see them, at $3.
 
 # make dir for temporary files
 mkdir temp_GCP_check
 
 ### Read in patients and samples selected for DR
-#awk -F"\t" 'FNR > 1 {print $1}' $1 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
-#awk -F"\t" 'FNR > 1 {print $2}' $1 | sort | uniq > temp_GCP_check/sampleId_metadata.tsv
 csvcut -t -e iso-8859-1 -c '#patientId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata.tsv
 
@@ -21,17 +19,25 @@ echo ''
 
 wc -l temp_GCP_check/patientId_metadata.tsv
 
-jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
+jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/patientId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
 cat temp_GCP_check/patientId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
 wc -l temp_GCP_check/patientId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv) | wc -l
-echo 'extra patients patientId_metadata.tsv:'
-comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
-echo 'extra patients patientId_DNA_GCP.tsv:'
-comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
+echo 'Number of extra patients patientId_metadata.tsv:'
+comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
+fi
+echo 'Number of extra patients patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_DNA_GCP.tsv)
+fi
 
 #######
 echo ''
@@ -39,24 +45,32 @@ echo ''
 
 wc -l temp_GCP_check/sampleId_metadata.tsv
 
-jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
+jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="DNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/sampleId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
 cat temp_GCP_check/sampleId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
 wc -l temp_GCP_check/sampleId_DNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv) | wc -l
-echo 'extra samples sampleId_metadata.tsv:'
-comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
-echo 'extra samples sampleId_DNA_GCP.tsv:'
-comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
+echo 'Number of extra samples sampleId_metadata.tsv:'
+comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
+fi
+echo 'Number of extra samples sampleId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv)
+fi
 
 #######
 echo ''
 #######
 
 
-jq '.patients | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate DNA BAM files shared within GCP:'
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
@@ -69,19 +83,25 @@ echo ''
 
 wc -l temp_GCP_check/patientId_metadata.tsv
 
-jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_RNA_GCP.tsv
+jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .patientId'  $2 > temp_GCP_check/patientId_RNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/patientId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
 cat temp_GCP_check/patientId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
 wc -l temp_GCP_check/patientId_RNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-echo 'extra patients patientId_metadata.tsv:'
-#comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+echo 'Number of extra patients patientId_metadata.tsv:'
 comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-echo 'extra patients patientId_DNA_GCP.tsv:'
-comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
-
+if $3 > 0
+then
+  comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+fi
+echo 'Number of extra patients patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+fi
 
 #######
 echo ''
@@ -89,25 +109,32 @@ echo ''
 
 wc -l temp_GCP_check/sampleId_metadata.tsv
 
-jq '.patients | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_RNA_GCP.tsv
+jq '.data | select(.[] | .samples | .[] | .data | .[] | .tags | .moleculetype=="RNA") | .[] | .samples | .[] | .sampleId' $2 > temp_GCP_check/sampleId_RNA_GCP.tsv
 sed 's/\"//g' temp_GCP_check/sampleId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
 cat temp_GCP_check/sampleId_RNA_GCP.tsv |  sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
 wc -l temp_GCP_check/sampleId_RNA_GCP.tsv
 
 echo 'Overlap between two files:'
 comm -1 -2 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
-echo 'extra samples patientId_metadata.tsv:'
-#comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+echo 'Number of extra samples patientId_metadata.tsv:'
 comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
-echo 'extra samples patientId_DNA_GCP.tsv:'
-comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+if $3 > 0
+then
+  comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+fi
+echo 'Number of extra samples patientId_DNA_GCP.tsv:'
+comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
+if $3 > 0
+then
+  comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+fi
 
 #######
 echo ''
 #######
 
 
-jq '.patients | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' $2 > temp_GCP_check/files_GCP.tsv
 
 echo 'number of seperate RNA FASTQ files shared within GCP:'
 grep -c 'RNA' temp_GCP_check/files_GCP.tsv

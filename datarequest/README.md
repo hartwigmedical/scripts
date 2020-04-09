@@ -86,8 +86,8 @@ Aligned readout data will be made available per sample via GCP.
 **Example loading CRAM file in IGV:**
 - Create the links for the CRAM and accompanying CRAI file (by clicking the most right icon next to a run)
 - Open the IGV program and choose option "Load from URL"
-- Paste the BAM file link at field "File URL"
-- Paste the BAI file link at field "Index URL"
+- Paste the CRAM file link at field "File URL"
+- Paste the CRAI file link at field "Index URL"
 
 Please find more details on the methods used to generate both the genomic and clinical data on a separate [Methods](./README_METHODS.md) page.
 
@@ -140,7 +140,7 @@ Example of the format of the manifest containing the URLs of the files made avai
       "email": "user@google.com"
     }
   ],
-  "patients": [
+  "data": [
     {
       "patientId": "COLO829v003",
       "samples": [
