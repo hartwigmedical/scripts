@@ -21,7 +21,7 @@ load_tumor_sample_id_for_set() {
 load_sample_id_for_set_by_type_from_api() {
     local set=$1 && shift
     local sample_type=$1 && shift # can be 'ref_sample' or 'tumor_sample'
-    local sample_name=$(query_sbp_api -type sets -filter "name=${set}" -json | jq -r ".[0].$sample_type" )
+    local sample_name=$(query_api -type sets -filter "name=${set}" -json | jq -r ".[0].$sample_type" )
     echo ${sample_name}
 }
 
@@ -38,7 +38,7 @@ load_run_info_for_set() {
     local set=$1 && shift
 
     # Remove header from the query command
-    local run_info=$(query_sbp_api -type runs \
+    local run_info=$(query_api -type runs \
         -filter "bucket=hmf-output|hmf_research" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
         -filter "status=Validated|SnpCheck|Success" \
@@ -47,7 +47,7 @@ load_run_info_for_set() {
 
     # If there are no succesfull runs, try a failed run for same set
     if [ -z "${run_info}" ]; then
-        run_info=$(query_sbp_api -type runs \
+        run_info=$(query_api -type runs \
             -filter "bucket=hmf-output|hmf_research" \
             -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
             -filter "status=Failed" \
@@ -61,7 +61,7 @@ load_rerun_v3_info_for_set() {
     local set=$1 && shift
 
     # The v3 rerun ini was called 'Somatic_Rerun.bam" so below will always get v3 reruns
-    local rerun_info=$(query_sbp_api -type runs \
+    local rerun_info=$(query_api -type runs \
         -filter "bucket=hmf-output" \
         -filter "ini=Somatic_Rerun_bam.ini" \
         -filter "status=Validated" \
@@ -84,7 +84,7 @@ load_rerun_v4_info_for_set() {
     local set=$1 && shift
 
     # Allow for failure of v4 rerun since v4 rerun runs the health checks.
-    local rerun_info=$(query_sbp_api -type runs \
+    local rerun_info=$(query_api -type runs \
         -filter "bucket=hmf-output" \
         -filter "ini=Somatic_Rerun_v4.ini" \
         -filter "status=Validated|Failed" \

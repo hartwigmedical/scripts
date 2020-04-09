@@ -13,11 +13,11 @@ request_dir=/data/data_archive/datarequests/${dr_name}/${request_name}
 if [ -d ${request_dir} ]; then
     echo "[INFO] Refreshing all shares for ${request_name}"
 
-    current_share_count=$(query_sbp_api -type shares -filter "entity=${dr_name}" | grep -cv "^#")
+    current_share_count=$(query_api -type shares -filter "entity=${dr_name}" | grep -cv "^#")
 
     echo "[INFO] Current number of shares for entity ${dr_name}: ${current_share_count}"
 
-    query_sbp_api -type shares -filter "entity=${dr_name}" | grep -v "^#" | cut -f8 | while read share_id; do
+    query_api -type shares -filter "entity=${dr_name}" | grep -v "^#" | cut -f8 | while read share_id; do
         echo "[INFO] Removing share ${share_id} from ${dr_name}"
         remove_share_in_prod ${share_id}
     done

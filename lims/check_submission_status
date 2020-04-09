@@ -8,8 +8,8 @@ if [[ -z ${submission} ]]; then echo "[EXIT] Provide submission (eg HMFreg0001)"
 
 lmsSubJsn=$(query_lims -type submissions -filter "submission=${submission}" -json)
 lmsSmpJsn=$(query_lims -type samples -filter "submission=${submission}" -json)
-apiSmpJsn=$(query_sbp_api -type samples -filter "submission=${submission}" -json)
-apiRnsJsn=$(query_sbp_api -type runs -filter "name=${submission}" -json)
+apiSmpJsn=$(query_api -type samples -filter "submission=${submission}" -json)
+apiRnsJsn=$(query_api -type runs -filter "name=${submission}" -json)
 
 analyType=$(echo "$lmsSubJsn" | jq -r ".[].analysis_type" )
 smpLmsTot=$(echo "$lmsSmpJsn" | jq 'length')
