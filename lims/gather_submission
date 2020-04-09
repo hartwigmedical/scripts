@@ -2,7 +2,7 @@
 
 SUBMISSIONS_DIR="/data/submissions"
 HMF_QUERY_SCRIPT="query_lims"
-SBP_QUERY_SCRIPT="query_sbp_api"
+SBP_QUERY_SCRIPT="query_api"
 HMF_LIMS_JSON='/data/lims/lims.json'
 submission=$1
 

@@ -373,17 +373,17 @@ sub getUnreportedBiopsies{
         }
         
         ## ok: ready to report with SBP info added
-        addSbpInfoToSampleBySampleId( $sample, $sample_id );
+        addApiInfoToSampleBySampleId( $sample, $sample_id );
         push @out_samples, $sample;
     }
     
     return( \@out_samples );
 }
 
-sub addSbpInfoToSampleBySampleId{
+sub addApiInfoToSampleBySampleId{
     my ($sample, $sample_id) = @_;
     
-    my $sbp_cmd = "query_sbp_api -type runs -filter \"name=${sample_id}\" -json";
+    my $sbp_cmd = "query_api -type runs -filter \"name=${sample_id}\" -json";
     my $sbp_txt = `$sbp_cmd`;
     my $runs = decode_json( $sbp_txt );
     

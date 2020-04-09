@@ -278,7 +278,7 @@ sub processSample{
         if ( $needs_shallow ){
             say "[INFO]   ShallowSeq flag set in LIMS";
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
-            my $status_query = "query_sbp_api -type runs -filter \"ini=ShallowSeq.ini\" -filter \"name=$match_string\" -json | jq -r '.[-1].status'";
+            my $status_query = "query_api -type runs -filter \"ini=ShallowSeq.ini\" -filter \"name=$match_string\" -json | jq -r '.[-1].status'";
             my $run_status = `$status_query`;
             my $dir_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
             my $jsn_exists = `find $JSON_DONE_DIR -maxdepth 1 -type f -name "*$match_string.json" | wc -l`;
@@ -316,9 +316,9 @@ sub processSample{
         }
  
         ## check if barcode already exists at SBP
-        my $tum_exists = `query_sbp_api -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
+        my $tum_exists = `query_api -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($tum_exists);
-        my $ref_exists = `query_sbp_api -type samples -filter "barcode=$barcode_ref" -exact | grep -v Unregistered | grep -cv ^#`;
+        my $ref_exists = `query_api -type samples -filter "barcode=$barcode_ref" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($ref_exists);
         
         if ( $tum_exists ){
