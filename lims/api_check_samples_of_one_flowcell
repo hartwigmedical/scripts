@@ -6,7 +6,7 @@ api_script="query_api"
 
 fc_fcid=${samplesheet_name: -9}
 fc_date=${samplesheet_name:0:6}
-fc_name=$(${api_script} -type flowcells -filter "flowcell_id=${flowcell_fcid}" -json | jq -r '.[-1].name')
+fc_name=$(${api_script} -type flowcells -filter "flowcell_id=${fc_fcid}" -json | jq -r '.[-1].name')
 
 ## find index of Sample_ID column
 idx_id=$(cat ${samplesheet_path} | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
