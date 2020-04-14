@@ -24,6 +24,7 @@ function crunches {
         gitRepVsn "/data/repos/pipeline" "ssh $crunch"
         gitRepVsn "/data/repos/pipeline-test" "ssh $crunch"
         gitRepVsn "/data/repos/scripts" "ssh $crunch"
+          toolVsn "gsutil" "ssh $crunch"
         gridUsage "ssh $crunch"
     done
 }
@@ -38,11 +39,20 @@ function header {
     echo -e "\n[${msg}]"
 }
 
+function toolVsn {
+    local toolName=$1
+    local cmdPrefix=$2
+    local version=$( ${cmdPrefix} "${toolName} --version" )
+    local location=$( ${cmdPrefix} "which ${toolName}" )
+    echo "TOOL: $toolName is at version $version ($location)"
+}
+
 function gitRepVsn {
     local reposDir=$1
     local cmdPrefix=$2
-    local version=$( ${cmdPrefix} "cd ${reposDir}; git describe --tags" )
-    echo "GIT: $reposDir is version $version"
+    local commit=$( ${cmdPrefix} "cd ${reposDir}; git log --pretty=oneline | head -1" )
+    local gittag=$( ${cmdPrefix} "cd ${reposDir}; git describe --tags" )
+    echo "GIT: $reposDir: tag $gittag and commit $commit"
 }
 
 function diskUsage {
