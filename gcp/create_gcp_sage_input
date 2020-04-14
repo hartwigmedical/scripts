@@ -1,4 +1,4 @@
-source sbp_api_functions
+source api_functions
 source metadata_functions
 source gcp_functions
 
