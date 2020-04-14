@@ -7,4 +7,4 @@ for i in 1 2 3; do
         fc_date=$(echo "$line" | cut -f2 | cut -d"_" -f1)
         echo -e "$fc_date\t$line"
     done     
-done | sort -r -k2
+done | sort -r -k1 -k2 | cut -f2-
