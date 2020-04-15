@@ -42,7 +42,7 @@ function main() {
     ini=$(echo "$run_json" | jq -r '.ini')
     ref=$(echo "$run_json" | jq -r '.ref_sample')
     tum=$(echo "$run_json" | jq -r '.tumor_sample')
-    oid=$(echo "$run_json" | jq -r '.sbp_id') # object id
+    oid=$(echo "$run_json" | jq -r '.id') # object id
 
     files_api_url="${api_url}/files?run_id=${oid}"
     out_jsn_all="${name}_runfiles.json"
