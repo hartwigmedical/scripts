@@ -80,10 +80,10 @@ We share the SNVs and small INDELs called from the reference sample using GATK h
 
 Aligned readout data will be made available per sample via GCP.
 
-**Some notes to keep in mind:**
+Some notes to keep in mind:
 - Files can be very large (up to 300GB) so consider this when you want to egress the files (comes with costs, see [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)).
 
-**Example loading CRAM file in IGV:**
+Example loading CRAM file in IGV:
 - Create the links for the CRAM and accompanying CRAI file (by clicking the most right icon next to a run)
 - Open the IGV program and choose option "Load from URL"
 - Paste the CRAM file link at field "File URL"
@@ -95,7 +95,7 @@ Please find more details on the methods used to generate both the genomic and cl
 
 RNAseq data will be made available per sample via GCP.
 
-**Some notes to keep in mind:**
+Some notes to keep in mind:
 - Files can be very large  so consider this when you want to egress the files (comes with costs, see [Tips on accessing the data trough GCP](#tips-on-accessing-the-data-trough-GCP)).
 
 #### More information
@@ -185,7 +185,7 @@ Example of the format of the manifest containing the URLs of the files made avai
 
 
 
-### Scaling Analysis
+#### Scaling Analysis
 
 Running commands interactively can work for small workloads, but to get a real analysis done and really take advantage of GCP you'll want
 to automate provisioning many VMs to scale up. The general pattern for this is:
@@ -212,7 +212,7 @@ create a quick shell for more advances operations.
 
 Hit the following link to start up the console: https://console.cloud.google.com/
 
-### Projects, Users and Roles
+#### Projects, Users and Roles
 
 When you begin in the console you'll notice that you are working within a *Project*. Project group together services and users along with 
 billing. Most of the time you'll work in a single project along with close colleagues, and you're interactions with GCP will be confined
@@ -225,7 +225,7 @@ IAM is used to organize users permissions. It uses the concepts of roles, which 
 Unfortunately there are a lot of roles, and its not always clear how they map to a give permission. 
 [This page](https://cloud.google.com/iam/docs/understanding-roles) gives the overview of how roles map to permissions.
 
-### Using the command line
+#### Using the command line
 
 The fastest way to get to a shell is to use the "cloud shell" functionality. The cloud shell already has all tools installed and will 
 default to the project you have open. It works by provisioning a small VM.
@@ -248,7 +248,7 @@ gcloud auth login
 gsutil ls
 ```
 
-### Google Cloud Storage (GCS)
+#### Google Cloud Storage (GCS)
 
 Storage in the cloud is one of its most power tools and concepts. GCS is an object storage system which works with buckets, paths and files.
 
@@ -291,7 +291,7 @@ You can share your data with other users using the Access Control List of the bu
 be done with `gsutil`. 
 
 
-### Google Compute Engine (GCE)
+#### Google Compute Engine (GCE)
 
 GCE gives you the ability to create VMs, make images, and deploy containers. Next we'll create our own VM and learn how to access it via 
 SSH.
@@ -326,7 +326,7 @@ gcloud compute --project "your-project" ssh --zone "europe-west4-a" "your-vm"
 
 Try SSH'ing into your new VM and running the same `gsutil` commands we ran in the previous sections.
 
-### Images
+#### Images
 
 Images are a handy way to save and share state of a VM. You can take an image on the command line by:
 
@@ -334,11 +334,11 @@ Images are a handy way to save and share state of a VM. You can take an image on
  gcloud images create my-instance-image-1 --family=my-instance-image --source-disk=my-instance-image --source-disk-zone=europe-west4
 ```
 
-### GCE Cost Savings
+#### GCE Cost Savings
 
 During our migration to GCP, we found two major ways to cut back on our compute costs.
 
-#### Pre-emptible VMS
+##### Pre-emptible VMS
 
 The single biggest win we had was moving to all pre-emptible VMs. A pre-emptible VM, is one that GCP can claim back at any time, and will
 always be shut-down at 24 hours. This is how Google sells excess capacity, and claims it back when they need it. It is a great fit for 

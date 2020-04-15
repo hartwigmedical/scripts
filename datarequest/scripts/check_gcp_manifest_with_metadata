@@ -76,10 +76,10 @@ jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[
 
 echo 'number of seperate DNA files shared within GCP:'
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
-echo 'of which are BAM:'
-grep -c 'BAM' temp_GCP_check/files_GCP.tsv
-echo 'of which are BAI:'
-grep -c 'BAI' temp_GCP_check/files_GCP.tsv
+echo 'of which are CRAM:'
+grep -c 'CRAM' temp_GCP_check/files_GCP.tsv
+echo 'of which are CRAI:'
+grep -c 'CRAI' temp_GCP_check/files_GCP.tsv
 
 
 echo ''
