@@ -16,12 +16,12 @@ outputTreatment="${outputPath}/${yymmdd}_wide_treatment.csv"
 outputResponses="${outputPath}/${yymmdd}_wide_repsonses.csv"
 
 echo "## create baseline/biopsy file"
-${exec_script} ${wide_baseline_biopsy} > ${outputBaselineBiopsy}
+echo "${exec_script} ${wide_baseline_biopsy}" > ${outputBaselineBiopsy}
 
 echo "## create treatment file"
-${exec_script} ${wide_treatment} > ${outputTreatment}
+echo "${exec_script} ${wide_treatment}" > ${outputTreatment}
 
 echo "## create responses file"
-${exec_script} ${wide_responses} > ${outputResponses}
+echo "${exec_script} ${wide_responses}" > ${outputResponses}
 
 echo "## Finished!"
