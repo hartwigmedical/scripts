@@ -5,8 +5,8 @@ scripts_repo="/data/common/repos/scripts"
 exec_script="${scripts_repo}/sql/execution/execute_sql_on_pilot"
 
 wide_baseline_biopsy="${scripts_repo}/sql/clinical/wide_baseline_biopsy.sql"
-wide_treatment="${scripts_repo}/sql/clinical/wide_responses.sql"
-wide_responses="${scripts_repo}/sql/clinical/wide_treatment.sql"
+wide_treatment="${scripts_repo}/sql/clinical/wide_treatments.sql"
+wide_responses="${scripts_repo}/sql/clinical/wide_responses.sql"
 
 yymmdd=$(date "+%y%m%d")
 
