@@ -10,7 +10,7 @@ wide_responses="${scripts_repo}/sql/clinical/wide_responses.sql"
 
 yymmdd=$(date "+%y%m%d")
 
-outputPath="/data/common/dbs/wide_timelines/"
+outputPath="/data/experiments/wide_timelines/"
 outputBaselineBiopsy="${outputPath}/${yymmdd}_wide_baseline_biopsy.csv"
 outputTreatment="${outputPath}/${yymmdd}_wide_treatment.csv"
 outputResponses="${outputPath}/${yymmdd}_wide_repsonses.csv"
