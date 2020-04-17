@@ -76,9 +76,9 @@ jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[
 
 echo 'number of seperate DNA files shared within GCP:'
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
-echo 'of which are CRAM:'
+echo 'of which are CRAM (should be 2 times the number of samples: per sample one for tumor and one for normal):'
 grep -c 'CRAM' temp_GCP_check/files_GCP.tsv
-echo 'of which are CRAI:'
+echo 'of which are CRAI (should be the same number as CRAM files):'
 grep -c 'CRAI' temp_GCP_check/files_GCP.tsv
 
 
