@@ -4,6 +4,11 @@ source locate_files
 
 file_with_sql_to_execute=$1
 
+if [[ ! -f ${file_with_sql_to_execute} ]]; then
+    echo "[ERROR] Unable to SQL file to execute. Exiting."
+    exit 1
+fi
+
 credentials=$(locate_reference_validation_sets_database_credentials)
 db_name="reference_validation_sets"
 db_user=$(awk '/^user/ {print $2}' ${credentials})

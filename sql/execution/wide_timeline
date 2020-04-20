@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 scripts_repo="/data/common/repos/scripts"
 exec_script="${scripts_repo}/sql/execution/execute_sql_on_pilot"
 
@@ -10,18 +9,18 @@ wide_responses="${scripts_repo}/sql/clinical/wide_responses.sql"
 
 yymmdd=$(date "+%y%m%d")
 
-outputPath="/data/experiments/wide_timelines/"
-outputBaselineBiopsy="${outputPath}/${yymmdd}_wide_baseline_biopsy.csv"
-outputTreatment="${outputPath}/${yymmdd}_wide_treatment.csv"
-outputResponses="${outputPath}/${yymmdd}_wide_repsonses.csv"
+output_path="/data/experiments/wide_timelines/"
+output_baseline_biopsy="${output_path}/${yymmdd}_wide_baseline_biopsy.csv"
+output_treatment="${output_path}/${yymmdd}_wide_treatment.csv"
+output_responses="${output_path}/${yymmdd}_wide_repsonses.csv"
 
 echo "## create baseline/biopsy file"
-${exec_script} ${wide_baseline_biopsy} > ${outputBaselineBiopsy}
+${exec_script} ${wide_baseline_biopsy} > ${output_baseline_biopsy}
 
 echo "## create treatment file"
-${exec_script} ${wide_treatment} > ${outputTreatment}
+${exec_script} ${wide_treatment} > ${output_treatment}
 
 echo "## create responses file"
-${exec_script} ${wide_responses} > ${outputResponses}
+${exec_script} ${wide_responses} > ${output_responses}
 
 echo "## Finished!"
