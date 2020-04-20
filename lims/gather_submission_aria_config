@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+
+CREATE_ARIA_SCRIPT="create_aria2_config_by_set_name"
+
+if [[ $# -eq 0 ]] ; then echo "Usage: $0 HMFreg0000"; exit 1; fi
+
+submission=$1
+submission_dir="/data/submissions/${submission}"
+output_dir="${submission_dir}/aria2"
+runs_json="${submission_dir}/runs.json"
+create_job="${output_dir}/create_aria_configs.sh"
+create_log="${output_dir}/create_aria_configs.log"
+out_config="${output_dir}/${submission}.aria.txt"
+
+## sanity checks
+if [[ ! -d ${submission_dir} ]] ; then echo "[EXIT] Submission dir does not exist (${submission_dir})"; exit 1; fi
+if [[ ! -w ${submission_dir} ]] ; then echo "[EXIT] Submission dir is not writable (${submission_dir})"; exit 1; fi
+if [[ ! -f ${runs_json} ]] ; then echo "[EXIT] Runs json does not exist (${runs_json})"; exit 1; fi
+if [[   -d ${output_dir} ]] ; then echo "[EXIT] Output dir already exists (${output_dir})"; exit 1; fi
+
+## setup actual job
+mkdir "${output_dir}"
+for run_name in $(cat "${runs_json}" | jq '.[].name'); do 
+    echo "${CREATE_ARIA_SCRIPT} ${run_name}" 
+done > "${create_job}"
+chmod +x "${create_job}"
+
+echo "# -----"
+echo "# Run create script (nohup because can take a long time for many samples!)"
+echo " cd ${output_dir}; nohup ${create_job} > ${create_log} &"
+echo ""
+echo "# Double check result and cat together if OK"
+echo " cat ${create_log} | grep -v '\\[INFO\\]'"
+echo " cat ${output_dir}/*.aria.txt > ${out_config}"
+echo ""
+echo "# Upload final config to Nextcloud"
+echo " upload_files_to_nextcloud_research ${out_config}"
+echo ""
+echo "# Check one URL in the output by visiting in browser"
+echo " head -4 ${out_config}"
+echo ""
