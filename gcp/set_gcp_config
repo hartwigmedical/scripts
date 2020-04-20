@@ -2,7 +2,7 @@
 
 gcp_project="hmf-database"
 gcp_account="hmf-download"
-exclude_rgx='hmf-output-\d+'
+exclude_rgx='hmf-output-\d+|hmf-cram-'
 
 echo "## INFO: Setting GCP project to ${gcp_project} (ignore access WARNING)"
 gcloud config set project "${gcp_project}"
