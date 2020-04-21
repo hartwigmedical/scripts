@@ -2,7 +2,7 @@
 
 file=$1 && shift
 
-if [[ -z ${file} || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "${file}" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename $0) \${nameOfTheFileOnNas}"
     echo "    Eg: $(basename $0) New_SampleSheet.csv"
@@ -14,4 +14,4 @@ nas_dir_path="/volume1/machines/BFX/upload"
 nas_file_path="nas:${nas_dir_path}/${file}"
 
 echo "[INFO] Running scp on ${nas_file_path}"
-scp ${nas_file_path} ./
+scp "${nas_file_path}" ./
