@@ -19,12 +19,14 @@ if [[ -z ${comments} ]]; then
     exit 1;
 fi
 
+interpretComments="This is a pilot patient report and is not meant for production purpose. ${comments}"
+
 if [[ ${report} == "dna" ]]; then
-    pilot_dna_yield_insufficient_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+    pilot_dna_yield_insufficient_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 elif [[ ${report} == "tissue" ]]; then
-    pilot_insufficient_tissue_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+    pilot_insufficient_tissue_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 elif [[ ${report} == "post" ]]; then
-    pilot_post_analysis_fail_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+    pilot_post_analysis_fail_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 elif [[ ${report} == "low_tumor" ]]; then
-    pilot_tumor_molecular_percentage_low_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+    pilot_tumor_molecular_percentage_low_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 fi
