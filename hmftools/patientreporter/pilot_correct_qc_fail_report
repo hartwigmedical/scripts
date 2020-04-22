@@ -19,12 +19,12 @@ if [[ -z ${comments} ]]; then
     exit 1;
 fi
 
-if [[ ${report} == "" ]]; then
+if [[ ${report} == "dna" ]]; then
     pilot_dna_yield_insufficient_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "" ]]; then
+elif [[ ${report} == "tissue" ]]; then
     pilot_insufficient_tissue_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "" ]]; then
+elif [[ ${report} == "post" ]]; then
     pilot_post_analysis_fail_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "" ]]; then
+elif [[ ${report} == "low_tumor" ]]; then
     pilot_tumor_molecular_percentage_low_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
 fi
