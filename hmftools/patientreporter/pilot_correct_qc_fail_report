@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+tumorSampleId=$1 && shift
+report=$1 && shift
+comments=$1 && shift
+
+if [[ -z ${tumorSampleId} ]]; then
+    echo "[ERROR] No sample provided. Exiting"
+    exit 1;
+fi
+
+if [[ -z ${report} ]]; then
+    echo "[ERROR] No which qc fail report is provided. Exiting"
+    exit 1;
+fi
+
+if [[ -z ${comments} ]]; then
+    echo "[ERROR] No comments provided. Exiting"
+    exit 1;
+fi
+
+if [[ ${report} == "" ]]; then
+    pilot_dna_yield_insufficient_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "" ]]; then
+    pilot_insufficient_tissue_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "" ]]; then
+    pilot_post_analysis_fail_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "" ]]; then
+    pilot_tumor_molecular_percentage_low_report ${tumorSampleId} -comments "${comments}" -corrected_report "$@"
+fi
