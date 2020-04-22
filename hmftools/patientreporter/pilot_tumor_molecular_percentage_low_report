@@ -7,4 +7,4 @@ if [[ -z ${tumor_sample} ]]; then
     exit 1;
 fi
 
-pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "shallow_seq_low_purity"
+pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "shallow_seq_low_purity" "$@"
