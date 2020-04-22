@@ -45,7 +45,7 @@ circos_file=$(locate_purple_circos_plot ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
-sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
+sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples_pilot.tsv
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
