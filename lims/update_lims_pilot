@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 lims_dir="/data/lims"
-out_json="${lims_dir}/lims_pilot.json"
-log_file="${lims_dir}/update_pilot.log"
 code_dir="/data/common/repos/scripts/lims"
-date_str=$(date)
 
-echo "===== Running $(basename $0) at ${date_str} =====" 2>&1 | tee -a ${log_file}
+out_jsn="${lims_dir}/lims_pilot.json"
+out_log="${lims_dir}/update_pilot.log"
+
+echo "===== Running $(basename $0) at $(date) =====" 2>&1 | tee -a ${log_file}
 ${code_dir}/convert_lims_data_pilot \
   -out_json "${out_json}" \
   -execute 2>&1 | tee -a ${log_file}
