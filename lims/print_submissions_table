@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-LIMS_SUBM_JSON_FILE="/data/lims/submissions.json"
-SUBMISSIONS_JSON="$(cat "$LIMS_SUBM_JSON_FILE" | jq -c .)"
+LIMS_JSON_FILE="/data/lims/lims.json"
+SUBMISSIONS_JSON="$(cat "$LIMS_JSON_FILE" | jq -c '.submissions')"
 CORE_BUCKET="hmf-output-core"
 
 submissions_to_visit=("$@") # optional
@@ -47,8 +47,8 @@ for submission in "${submissions_to_visit[@]}"; do
     #echo "[DEBUG] $submission $entity $bucket"
     if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARNING] No entity found for $submission!"; fi
     if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARNING] No bucket found for $submission!"; fi
-    if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then 
-        echo "[WARNING] Found CORE submission with wrong bucket (submission=$submission entity=$entity bucket=$bucket)!!"
+    if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then
+        echo -e "\n[WARNING] Found CORE submission with wrong bucket (submission=$submission entity=$entity bucket=$bucket)!!\n"
     fi
 
     ## output
