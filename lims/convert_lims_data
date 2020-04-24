@@ -28,6 +28,7 @@ my %opt = ();
 GetOptions (
     "out_dir=s"  => \$opt{ out_dir },
     "lims_dir=s" => \$opt{ lims_dir },
+    "out_json=s" => \$opt{ out_json },
     "execute"    => \$opt{ execute },
     "debug"      => \$opt{ debug },
     "help|h"     => \$opt{ help },
@@ -37,8 +38,7 @@ my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
 my $MAIL_TSV = '/data/common/dbs/sbp/study2mail.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
-my $JSON_OUT = $OUT_DIR . '/lims.json';
-my $SUBM_OUT = $OUT_DIR . '/submissions.json';
+my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
 my $BACK_DIR = $OUT_DIR . '/backup';
 
 my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
@@ -93,11 +93,11 @@ my $HELP_TEXT = <<"HELP";
 
   Output files:
     $JSON_OUT
-    $SUBM_OUT
     
   Options (only for testing):
     -lims_dir <str>  Path to input lims dir ($LIMS_DIR)
     -out_dir <str>   Path to output dir ($OUT_DIR)
+    -out_json <str>  Path to output json ($JSON_OUT)
     
 HELP
 
@@ -113,7 +113,7 @@ foreach ( $BACK_DIR, $OUT_DIR ){
 foreach ( @ALL_INPUT_FILES ){
     die "[EXIT] File does not exist ($_)\n" unless -f $_;
 }
-foreach ( $JSON_OUT, $SUBM_OUT ){
+foreach ( $JSON_OUT ){
     next unless -f $_;
     copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\" to $BACK_DIR failed: $!";
 }
@@ -160,7 +160,7 @@ $lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict, $mail_dict );
 $lims_objs = addLabSopString( $lims_objs, $proc_objs );
 
-printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT, $SUBM_OUT );
+printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
 
 say "[INFO] DONE with \"$SCRIPT\"";
 
@@ -256,7 +256,7 @@ sub readJson{
 }
 
 sub printLimsToJson{
-    my ($samples, $submissions, $contact_groups, $lims_file, $subm_file) = @_;
+    my ($samples, $submissions, $contact_groups, $lims_file) = @_;
     my $samp_count = scalar keys %$samples;
     my $subm_count = scalar keys %$submissions;
     my $cont_count = scalar keys %$contact_groups;
@@ -270,12 +270,6 @@ sub printLimsToJson{
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
         print $lims_json_fh $lims_txt;
     close $lims_json_fh;
-    
-    my $subm_txt = $coder->encode($submissions);
-    say "[INFO]   Writing output to $subm_file ($subm_count submissions)";
-    open my $subm_json_fh, '>', $subm_file or die "Unable to open output file ($subm_file): $!\n";
-        print $subm_json_fh $subm_txt;
-    close $subm_json_fh;
 }
 
 sub addLabSopString{
@@ -1004,13 +998,13 @@ sub getFieldNameTranslations{
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
-      'ShallowSeq'         => 'shallowseq', # will sample be sequenced to shallow depth first
-      'Database'           => 'add_to_database', # should biopsy be added to SQL DB
-      'Data_request'       => 'add_to_datarequest', # should biopsy be part of DRs
+      'ShallowSeq'         => 'shallowseq', # Should we expect a ShallowSeq run
+      'Database'           => 'add_to_database', # Should biopsy be added to SQL DB
+      'Data_request'       => 'add_to_datarequest', # Should biopsy be part of DRs
       'Report_date'        => 'report_date',
-      'Cohort'             => 'cohort', # what cohort is sample part of
-      'Report_viral'       => 'report_viral', # should report contain viral info
-      'Report_pgx'         => 'report_pgx', # should report contain pharmacogenomics info
+      'Cohort'             => 'cohort', # What cohort is sample part of
+      'Report_viral'       => 'report_viral', # Should we add viral info to report
+      'Report_pgx'         => 'report_pgx', # Should we add pharmacogenomics info to report
       'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
       'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id'
     );
