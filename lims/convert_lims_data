@@ -18,6 +18,11 @@ use constant TISSUE_ANCESTOR_FIELDS => qw(
     submission lab_status hospital_pa_sample_id hospital_patient_id
     germline_findings purity_shallow tumor_perc ptum ref_sample_id
 );
+## Some fields need to be actively set to boolean for json output
+use constant BOOLEAN_FIELDS => qw(
+    shallowseq report_viral report_pgx
+    add_to_database add_to_datarequest
+);
 
 my %opt = ();
 GetOptions (
@@ -704,16 +709,17 @@ sub fixIntegerFields{
 
 sub fixBooleanFields{
     my ($obj) = @_;
-    my @boolean_fields = qw( shallowseq );
-    foreach my $key ( @boolean_fields ){
+    foreach my $key ( BOOLEAN_FIELDS ){
         next unless defined $obj->{ $key };
         my $value = $obj->{ $key };
-        if ( $value eq '1' or $value eq '0' ){
-            next; # already OK
-        }elsif ( $value =~ m/^true$/i ){
-            $obj->{ $key } = 1;
+        if ( $value =~ m/^true$/i ){
+            $obj->{ $key } = JSON::XS::true;
+            ## TODO remove once patient reporter supports boolean
+            $obj->{ $key } = 1 if $key eq 'shallowseq';
         }elsif ( $value =~ m/^false$/i ){
-            $obj->{ $key } = 0;
+            $obj->{ $key } = JSON::XS::false;
+            ## TODO remove once patient reporter supports boolean
+            $obj->{ $key } = 0 if $key eq 'shallowseq';
         }else{
             warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
         }
@@ -998,8 +1004,13 @@ sub getFieldNameTranslations{
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
-      'ShallowSeq'         => 'shallowseq',
+      'ShallowSeq'         => 'shallowseq', # will sample be sequenced to shallow depth first
+      'Database'           => 'add_to_database', # should biopsy be added to SQL DB
+      'Data_request'       => 'add_to_datarequest', # should biopsy be part of DRs
       'Report_date'        => 'report_date',
+      'Cohort'             => 'cohort', # what cohort is sample part of
+      'Report_viral'       => 'report_viral', # should report contain viral info
+      'Report_pgx'         => 'report_pgx', # should report contain pharmacogenomics info
       'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
       'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id'
     );
