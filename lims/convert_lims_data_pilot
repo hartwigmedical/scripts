@@ -708,12 +708,8 @@ sub fixBooleanFields{
         my $value = $obj->{ $key };
         if ( $value =~ m/^true$/i ){
             $obj->{ $key } = JSON::XS::true;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 1 if $key eq 'shallowseq';
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 0 if $key eq 'shallowseq';
         }else{
             warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
         }
