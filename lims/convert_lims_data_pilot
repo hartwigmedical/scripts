@@ -261,9 +261,8 @@ sub printLimsToJson{
     my $subm_count = scalar keys %$submissions;
     my $cont_count = scalar keys %$contact_groups;
 
-    ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions, 'contact_groups' => $contact_groups );
-    my $coder = JSON::XS->new->utf8->pretty->canonical;
+    my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
     
     say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
