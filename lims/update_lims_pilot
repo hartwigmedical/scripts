@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+lims_dir="/data/lims"
+out_dir="/data/lims_pilot"
+code_dir="/data/common/repos/scripts/lims"
+log_file="${out_dir}/update.log"
+date_str=$(date)
+
+echo "===== Running update_lims (${date_str}) =====" 2>&1 | tee -a ${log_file}
+${code_dir}/sync_lab_lims_from_nas 2>&1 | tee -a ${log_file}
+${code_dir}/convert_lims_data_pilot -outdir "${out_dir}" -execute 2>&1 | tee -a ${log_file}
