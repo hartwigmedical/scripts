@@ -8,5 +8,5 @@ out_log="${lims_dir}/update_pilot.log"
 
 echo "===== Running $(basename $0) at $(date) =====" 2>&1 | tee -a ${log_file}
 ${code_dir}/convert_lims_data_pilot \
-  -out_json "${out_json}" \
+  -out_json "${out_jsn}" \
   -execute 2>&1 | tee -a ${log_file}
