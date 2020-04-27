@@ -16,91 +16,91 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 echo "[INFO] Files that must exist in every circumstance"
 
 ref_sample_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
-if [ $? = 0 ]; then echo "[INFO]  WGSMetrics Ref Sample: ${ref_sample_metrics_file}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Ref Sample: ${ref_sample_metrics_file}"; fi
 
 tumor_sample_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
-if [ $? = 0 ]; then echo "[INFO]  WGSMetrics Tumor Sample: ${tumor_sample_metrics_file}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Tumor Sample: ${tumor_sample_metrics_file}"; fi
 
 sage_somatics=$(locate_sage_somatics ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  SAGE Somatic VCF: ${sage_somatics}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  SAGE Somatic VCF: ${sage_somatics}"; fi
 
 strelka_somatics=$(locate_strelka_somatics ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Strelka Somatic VCF: ${strelka_somatics}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Strelka Somatic VCF: ${strelka_somatics}"; fi
 
 purple_somatics=$(locate_purple_somatics ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Somatic VCF: ${purple_somatics}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Somatic VCF: ${purple_somatics}"; fi
 
 purple_purity=$(locate_purple_purity ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Purity: ${purple_purity}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Purity: ${purple_purity}"; fi
 
 purple_qc=$(locate_purple_qc ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple QC: ${purple_qc}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple QC: ${purple_qc}"; fi
 
 purple_drivers=$(locate_purple_drivers ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Drivers: ${purple_drivers}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Drivers: ${purple_drivers}"; fi
 
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Gene Copy Numbers: ${purple_gene_copynumbers}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Gene Copy Numbers: ${purple_gene_copynumbers}"; fi
 
 purple_circos_plot=$(locate_purple_circos_plot ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Circos Plot: ${purple_circos_plot}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Circos Plot: ${purple_circos_plot}"; fi
 
 purple_structural_variants=$(locate_purple_structural_variants ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Structural VCF: ${purple_structural_variants}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Structural VCF: ${purple_structural_variants}"; fi
 
 gridss_structural_variants=$(locate_gridss_structural_variants ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  GRIDSS Filtered Structural VCF: ${gridss_structural_variants}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  GRIDSS Filtered Structural VCF: ${gridss_structural_variants}"; fi
 
 gridss_recovery_candidates=$(locate_gridss_recovery_candidates ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  GRIDSS Recovery Candidates VCF: ${gridss_recovery_candidates}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  GRIDSS Recovery Candidates VCF: ${gridss_recovery_candidates}"; fi
 
 gridss_unfiltered_candicated=$(locate_gridss_unfiltered_candidates ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  GRIDSS Unfiltered Candidates VCF: ${gridss_unfiltered_candicated}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  GRIDSS Unfiltered Candidates VCF: ${gridss_unfiltered_candicated}"; fi
 
 linx_reported_fusions=$(locate_linx_reported_fusions ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  LINX Fusions: ${linx_reported_fusions}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  LINX Fusions: ${linx_reported_fusions}"; fi
 
 linx_reported_disruptions=$(locate_linx_disruptions ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  LINX Disruptions: ${linx_reported_disruptions}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  LINX Disruptions: ${linx_reported_disruptions}"; fi
 
 linx_viral_insertions=$(locate_linx_viral_insertions ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  LINX Viral Insertions: ${linx_viral_insertions}"; fi
 
 linx_drivers=$(locate_linx_drivers ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  LINX Drivers: ${linx_drivers}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  LINX Drivers: ${linx_drivers}"; fi
 
 germline_variants=$(locate_germline_variants ${run_dir} ${ref_sample})
-if [ $? = 0 ]; then echo "[INFO]  Germline Variants: ${germline_variants}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Germline Variants: ${germline_variants}"; fi
 
 bachelor_variants=$(locate_bachelor_variants ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Bachelor Variants: ${bachelor_variants}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Bachelor Variants: ${bachelor_variants}"; fi
 
 chord_prediction=$(locate_chord_prediction ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}"; fi
 
 echo ""
 echo "[INFO] Files that are generated in pilot setting"
 
 pgx_pilot_calls=$(locate_pgx_pilot_calls ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  PGx Pilot Calls: ${pgx_pilot_calls}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  PGx Pilot Calls: ${pgx_pilot_calls}"; fi
 
 pgx_pilot_genotype=$(locate_pgx_pilot_genotype ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  PGx Pilot Genotype: ${pgx_pilot_genotype}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  PGx Pilot Genotype: ${pgx_pilot_genotype}"; fi
 
 purple_on_sage_somatics=$(locate_purple_on_sage_somatics ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple-On-Sage Somatic VCF: ${purple_on_sage_somatics}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple-On-Sage Somatic VCF: ${purple_on_sage_somatics}"; fi
 
 purple_pilot_somatic_vcf=$(locate_purple_pilot_somatics ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Somatic VCF: ${purple_pilot_somatic_vcf}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Somatic VCF: ${purple_pilot_somatic_vcf}"; fi
 
 purple_pilot_purity=$(locate_purple_pilot_purity ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Purity: ${purple_pilot_purity}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Purity: ${purple_pilot_purity}"; fi
 
 purple_pilot_gene_copynumbers=$(locate_purple_pilot_gene_copynumbers ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Gene Copy Numbers: ${purple_pilot_gene_copynumbers}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Gene Copy Numbers: ${purple_pilot_gene_copynumbers}"; fi
 
 purple_pilot_circos_plot=$(locate_purple_pilot_circos_plot ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Circos Plot: ${purple_pilot_circos_plot}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Circos Plot: ${purple_pilot_circos_plot}"; fi
 
 purple_pilot_structural_variants=$(locate_purple_pilot_structural_variants ${run_dir})
-if [ $? = 0 ]; then echo "[INFO]  Purple Pilot Structural VCF: ${purple_pilot_structural_variants}"; fi
+if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Structural VCF: ${purple_pilot_structural_variants}"; fi

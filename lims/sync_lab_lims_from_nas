@@ -73,7 +73,8 @@ rsync -s "nas:${SAMP_NAS_PATH_2019}" ${DAY_DIR}
 rsync -s "nas:${PROC_NAS_PATH_2019}" ${DAY_DIR}
 
 ## Make sure all required files are present
-if [ ! $? -eq 0 ]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] Error with RSYNC from NAS, please check " && exit 1; fi
+
 for inputFile in "${cpctSource}" "${sampSource}" "${procSource}"; do
     if [[ ! -f "${inputFile}" ]]; then
         echo "[EXIT] Error: input file from NAS not present (${inputFile})" && exit 1;
@@ -93,31 +94,31 @@ ln -sfn "${procSource2019}" "${procTarget2019}"
 echo "[INFO] Converting input files to CSV/TSV"
 echo "[INFO]   Converting $( basename ${cpctTarget} )"
 ${ACC2CSV} --with-header --input "${cpctTarget}" --output ${DAY_DIR} --table tblSamples --quote-all false
-if [ ! $? -eq 0 ]; then echo "[EXIT] CPCT export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] CPCT export to csv FAILED" && exit 1; fi
 mv ${DAY_DIR}/tblSamples.csv ${cpctTxt}
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "submissions")"
 xlsx2csv -d "\t" "${sampTarget}" -s 1 | tail -n +5 > ${submTxt}
-if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
 xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
-if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Contact")"
 xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +1 > ${contTxt}
-if [ ! $? -eq 0 ]; then echo "[EXIT] CONT export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] CONT export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${procTarget} )"
 xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}
-if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
 
 ## Convert to text format for 2019 files
 echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "submissions")"
 xlsx2csv -d "\t" "${sampTarget2019}" -s 1 | tail -n +5 > ${submTxt2019}
-if [ ! $? -eq 0 ]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] SUBM export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "samples")"
 xlsx2csv -d "\t" "${sampTarget2019}" -s 2 | tail -n +2 > ${sampTxt2019}
-if [ ! $? -eq 0 ]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] SAMP export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $( basename ${procTarget2019} )"
 xlsx2csv -d "\t" "${procTarget2019}" -s 1 | tail -n +5 > ${procTxt2019}
-if [ ! $? -eq 0 ]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
+if [[ ! $? -eq 0 ]]; then echo "[EXIT] PROC export to csv FAILED" && exit 1; fi
 
 ## Create latest symlinks
 echo "[INFO] Symlinking to latest files"

@@ -87,7 +87,7 @@ if [[ -f $snp_vcf_path ]]; then
 else
     echo "[INFO] Running GATK to create SNP vcf (${snp_vcf_name})"
     java -Djava.io.tmp_dir=${tmp_dir} -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType SNP -o ${snp_vcf_path}
-    if [ $? -ne 0 ]; then { echo "[EXIT] GATK SelectVariants Failed"; exit 1; } fi
+    if [[ $? -ne 0 ]]; then { echo "[EXIT] GATK SelectVariants Failed"; exit 1; } fi
 fi
 
 ## no INDELs for now

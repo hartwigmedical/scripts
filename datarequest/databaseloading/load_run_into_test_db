@@ -2,17 +2,17 @@
 
 run_dir=$1
 
-if [ -z "${run_dir}" ]; then
+if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting"
     exit 1
 fi
 
-if [ ! -d "${run_dir}" ]; then
+if [[ ! -d "${run_dir}" ]]; then
     echo "[ERROR] Not a dir as run dir provided (maybe file?). Exiting"
     exit 1
 fi
 
-if [ ! -f "${run_dir}"*.purple.purity.tsv ]; then
+if [[ ! -f "${run_dir}"*.purple.purity.tsv ]]; then
     echo "[ERROR] Not the correct run dir provided (important file missing in run dir). Exiting"
     exit 1
 fi

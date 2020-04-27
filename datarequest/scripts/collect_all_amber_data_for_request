@@ -25,7 +25,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
 
     amber_file_count=$(ls ${dest_set_path} | wc -l)
 
-    if [ ${amber_file_count} -ne 2 ]; then
+    if [[ ${amber_file_count} -ne 2 ]]; then
         echo "[WARN]: Mismatch in expected file count. Expected 2 files but got ${amber_file_count} files for ${set_name}. Please inspect manually!"
     fi
 done

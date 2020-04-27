@@ -29,7 +29,7 @@ for TYPE in "${DB_TYPES[@]}"; do
         "${API_URL}" \
         > ${OUTPUT_FILE_TMP}
 
-    if [ 0 -eq $? ]; then
+    if [[ 0 -eq $? ]]; then
         cp ${OUTPUT_FILE_TMP} ${OUTPUT_FILE}
         echo "[INFO] Written to ${OUTPUT_FILE}"
     else

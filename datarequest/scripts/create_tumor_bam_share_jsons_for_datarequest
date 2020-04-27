@@ -9,7 +9,7 @@ entity_id=$(query_api.pl -type entities | grep ${entity_name} | cut -f3 )
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
     set_id=$(query_api.pl -type sets | grep ${set_name} | cut -f5)
 
-    if [ ! -z "${set_id}" ]; then
+    if [[ ! -z "${set_id}" ]]; then
         tumor_bam_json=${base_json_dir}/${set_name}_tumor_bam.json
         echo "[DEBUG] Creating ${tumor_bam_json}"
 

@@ -7,7 +7,7 @@ export PATH=${base_path}/tools/bedops_v2.4.30/:$PATH
 libgridss=/data/common/repos/scripts/gridss/
 
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
-if [ -z ${original_vcf} ]; then
+if [[ -z ${original_vcf} ]]; then
     # Support for pv5 location of raw GRIDSS VCF.
     original_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name *.unfiltered.vcf.gz)
 fi
@@ -19,23 +19,23 @@ out_dir=$(dirname ${full_vcf})/breakpoint_position_backport
 region_bed=${out_dir}/region.bed
 corrected_vcf=${out_dir}/$(basename ${raw_somatic_vcf}).breakpoint_position_backport.vcf
 
-if [ -a ${corrected_vcf}.gz ]; then
+if [[ -a ${corrected_vcf}.gz ]]; then
     echo "[WARN] Already applied backport. Exiting."
     exit 1
 fi
 
 # check that the assembly actually exists
-if [ ! -f ${assembly_sv_bam} ] ; then
+if [[ ! -f ${assembly_sv_bam} ]]; then
 	  echo "Missing $assembly_sv_bam"
 	  exit 1
 fi
 
-if [ -z ${original_vcf} ]; then
+if [[ -z ${original_vcf} ]]; then
 	  echo "Unable to locate raw gridss structural variants. Exiting."
 	  exit 1
 fi
 
-if [ -d "$out_dir" ] ; then
+if [[ -d "$out_dir" ]]; then
 	  echo "Backport processing directory $out_dir found."
 else
 	  echo "Creating ${out_dir}"

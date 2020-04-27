@@ -46,7 +46,7 @@ load_run_info_for_set() {
     )
 
     # If there are no succesfull runs, try a failed run for same set
-    if [ -z "${run_info}" ]; then
+    if [[ -z "${run_info}" ]]; then
         run_info=$(query_api.pl -type runs \
             -filter "bucket=hmf-output|hmf_research" \
             -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
@@ -67,10 +67,10 @@ load_rerun_v3_info_for_set() {
         -filter "status=Validated" \
         -filter "name=${set}" | grep -v "^#")
 
-    if [ -z "${rerun_info}" ]; then
+    if [[ -z "${rerun_info}" ]]; then
         local run_info=$(load_run_info_for_set ${set})
         local run_is_v3_or_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v3\|v5")
-        if [ -z "${run_is_v3_or_v4_or_v5}" ]; then
+        if [[ -z "${run_is_v3_or_v4_or_v5}" ]]; then
             # Should not happen - any pre-v3 run must have a v3-rerun
             rerun_info=""
         else
@@ -90,10 +90,10 @@ load_rerun_v4_info_for_set() {
         -filter "status=Validated|Failed" \
         -filter "name=${set}"  | grep "v4.4" | grep  -v "^#")
 
-    if [ -z "${rerun_info}" ]; then
+    if [[ -z "${rerun_info}" ]]; then
         local run_info=$(load_run_info_for_set ${set})
         local run_is_v4_or_v5=$(extract_pipeline_version_from_run_info "${run_info}" | grep "v4\|v5")
-        if [ -z "${run_is_v4_or_v5}" ]; then
+        if [[ -z "${run_is_v4_or_v5}" ]]; then
             # Should not happen - any pre-v4 run must have a v4-rerun
             rerun_info=""
         else

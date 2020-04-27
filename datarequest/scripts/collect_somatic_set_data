@@ -31,13 +31,13 @@ ln -s $(locate_purple_somatics ${source_set_path}) ${dest_set_path}
 ln -s $(locate_purple_somatics ${source_set_path}).tbi ${dest_set_path}
 
 expected_file_count=12
-if [ ${include_germline} == "1" ]; then
+if [[ ${include_germline} == "1" ]]; then
     ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
     expected_file_count=13
 fi
 
 somatic_file_count=$(ls ${dest_set_path} | wc -l)
 
-if [ ${somatic_file_count} -ne ${expected_file_count} ]; then
+if [[ ${somatic_file_count} -ne ${expected_file_count} ]]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
 fi

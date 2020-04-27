@@ -5,7 +5,7 @@ api_cred_dir="/data/common/dbs/api_credentials"
 api_key_file="${api_cred_dir}/api.key"
 api_crt_file="${api_cred_dir}/api.crt"
 
-if [ "$#" -ne 2 ]; then
+if [[ "$#" -ne 2 ]]; then
     echo "-----"
     echo "Descr: Patches target sample yield/q30 from source sample (and sets status to Ready)"
     echo "Usage: $(basename $0) \$barcode_of_source_sample \$barcode_of_target_sample"

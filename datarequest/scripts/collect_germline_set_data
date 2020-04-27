@@ -20,7 +20,7 @@ ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}) ${dest_set_pa
 ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}).tbi ${dest_set_path}
 
 germline_file_count=$(ls ${dest_set_path} | wc -l)
-if [ ${germline_file_count} -ne 2 ]; then
+if [[ ${germline_file_count} -ne 2 ]]; then
     echo "[WARN] Found ${germline_file_count} which is different than expected for ${set_name} Please manually inspect!"
 fi
 

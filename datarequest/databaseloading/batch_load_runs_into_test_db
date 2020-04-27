@@ -2,7 +2,7 @@
 
 runs_directory=$1
 
-if [ -z "${runs_directory}" ]; then
+if [[ -z "${runs_directory}" ]]; then
     echo "[ERROR] No runs directory provided. Exiting"
     exit 1
 fi

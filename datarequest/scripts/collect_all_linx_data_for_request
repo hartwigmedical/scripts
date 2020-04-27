@@ -10,7 +10,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
     dest_set_path=${linx_dir}/${set_name}
 
     linx_version_file=${source_set_path}/linx/linx.version
-    if [ -f ${linx_version_file} ]; then
+    if [[ -f ${linx_version_file} ]]; then
         mkdir -p ${dest_set_path}
         linx_version=$(cat ${linx_version_file} | grep version)
 

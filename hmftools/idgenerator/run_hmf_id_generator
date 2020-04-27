@@ -2,7 +2,7 @@
 
 run_mode=$1 && shift
 
-if [ -z "${run_mode}" ]; then
+if [[ -z "${run_mode}" ]]; then
     echo "[ERROR] Please provide a run mode! Exiting"
     exit 1
 fi

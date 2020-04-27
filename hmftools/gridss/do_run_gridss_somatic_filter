@@ -10,10 +10,10 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # GRIDSS somatic filtering should use the raw GRIDSS VCF.
 original_vcf=$(find -L ${run_dir}/structuralVariants/gridss/*/ -type f -name *gridss.vcf.gz)
-if [ -z ${original_vcf} ]; then
+if [[ -z "${original_vcf}" ]]; then
     # Support for pv5 location of raw GRIDSS VCF.
     original_vcf=$(find -L ${run_dir}/structural_caller/ -type f -name *.unfiltered.vcf.gz)
-    if [ -z ${original_vcf} ]; then
+    if [[ -z "${original_vcf}" ]]; then
         echo "[ERROR] Unable to locate raw gridss structural variants. Exiting."
         exit 1
     fi
@@ -21,8 +21,8 @@ fi
 
 output_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.vcf
 full_vcf=$(dirname ${original_vcf})/${tumor_sample}.gridss.somatic.full.vcf
-if [ -a ${output_vcf}.gz ]; then
-    echo "[WARN] Already processed gridss structural variants. Exiting."
+if [[ -a ${output_vcf}.gz ]]; then
+    echo "[ERROR] Already processed gridss structural variants. Exiting."
     exit 1
 fi
 

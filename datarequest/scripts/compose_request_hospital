@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [ "$#" -ne 5 ]; then
+if [[ "$#" -ne 5 ]]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg LUMC)"
     echo "      - request_name (eg request_20200303)"
@@ -29,7 +29,7 @@ echo "[INFO]    include_somatics=${include_somatics}"
 echo "[INFO]    include_germline=${include_germline}"
 
 create_base_directory_for_datarequest ${dr_path}
-if [ $? = 0 ]; then
+if [[ $? = 0 ]]; then
     log_dir=${dr_path}/logs
     mkdir -p ${log_dir}
 
@@ -40,7 +40,7 @@ if [ $? = 0 ]; then
     set_count=$(grep -cv "^#" ${set_selection_tsv})
     echo "[INFO] Created ${set_selection_tsv} with ${set_count} sets"
 
-    if [ ${include_somatics} == "1" ]; then
+    if [[ ${include_somatics} == "1" ]]; then
         echo "[INFO] Collecting somatic data for hospital Request ${request_name}."
         somatic_dir_name=somatics
         somatics_dir=${dr_path}/${somatic_dir_name}
@@ -54,7 +54,7 @@ if [ $? = 0 ]; then
         echo "[INFO] Skipped somatics collection as not deemed relevant for hospital Request ${request_name}"
     fi
 
-    if [ ${include_germline} == "1" ]; then
+    if [[ ${include_germline} == "1" ]]; then
         echo "[INFO] Collecting germline data for hospital Request ${request_name}..."
         germline_dir_name=germline
         germline_dir=${dr_path}/${germline_dir_name}

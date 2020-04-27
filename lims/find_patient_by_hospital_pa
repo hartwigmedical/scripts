@@ -2,8 +2,8 @@
 
 pa_id=$1 && shift
 
-if [ -z ${pa_id} ]; then
-    echo "[INFO] No PA ID is known"
+if [[ -z "${pa_id}" ]]; then
+    echo "[ERROR] No pathology id passed to function"
     exit 1;
 fi
 

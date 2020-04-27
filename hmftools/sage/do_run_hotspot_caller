@@ -21,18 +21,18 @@ out_dir=${run_dir}/somaticVariants/${joint_name}/sage
 sample_bam=${out_dir}/${sample}.sage.bam
 normal_bam=${out_dir}/${normal}.sage.bam
 
-if [ ! -f ${sample_bam} ]; then
+if [[ ! -f ${sample_bam} ]]; then
     echo "[ERROR] Unable to locate sample bam ${sample_bam}. Exiting"
     exit 1
 fi
 
-if [ ! -f ${normal_bam} ]; then
+if [[ ! -f ${normal_bam} ]]; then
     echo "[ERROR] Unable to locate normal bam ${normal_bam}. Exiting"
     exit 1
 fi
 
 hotspot_vcf=${out_dir}/${sample}.hotspot.vcf.gz
-if [ ! -f ${hotspot_vcf} ]; then
+if [[ ! -f ${hotspot_vcf} ]]; then
     hotspot_caller_vcf=${out_dir}/${sample}.hotspot.unfiltered.vcf.gz
 
     java -Xmx8G -Xms4G \
@@ -83,11 +83,11 @@ if [ ! -f ${hotspot_vcf} ]; then
 fi
 
 final_vcf=${out_dir}/../${sample}.sage.vcf.gz
-if [ ! -f ${final_vcf} ]; then
+if [[ ! -f ${final_vcf} ]]; then
     echo "[INFO] Merging hotspot with processed -" $(date)
 
     somatic_vcf=$(find -L ${run_dir}/somaticVariants/*/ -type f -name *post_processed.vcf.gz)
-    if [ -z ${somatic_vcf} ]; then
+    if [[ -z ${somatic_vcf} ]]; then
         echo "[ERROR] Unable to locate post processed somatic variants. Exiting."
         exit 1
     fi

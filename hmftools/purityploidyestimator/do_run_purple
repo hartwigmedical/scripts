@@ -37,7 +37,7 @@ fi
 rm -r ${purple_output}/*
 
 base_path="/data/common"
-if [ -z "$(hostname | grep datastore)" ]; then
+if [[ -z "$(hostname | grep datastore)" ]]; then
     # Common folder does not exist on crunches...
     base_path="/data"
 fi

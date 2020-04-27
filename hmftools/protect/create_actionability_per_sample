@@ -28,7 +28,7 @@ purple_qc_tsv=$(locate_purple_qc ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 
 pilot_project_dir=${run_dir}/protect_pilot
-if [ -d ${pilot_project_dir} ]; then
+if [[ -d ${pilot_project_dir} ]]; then
     rm -r ${pilot_project_dir}
     echo "[INFO] protect pilot dir exist. protect dir is just removed and will be replaced"
 fi

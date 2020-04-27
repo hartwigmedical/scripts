@@ -12,13 +12,13 @@
 ######
 
 CheckFileExists() {
-    if [ ! -f $1 ]; then
+    if [[ ! -f $1 ]]; then
         echo "$1 is missing. Please put in the same directory as this script"
         exit 2
     fi
 }
 
-PrintHelp(){
+PrintHelp() {
     echo "Please use with -e EntityName -i IniName -s SetName -r ReferenceSampleName -t TumourSampleName"
     exit 3
 }

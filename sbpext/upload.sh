@@ -12,23 +12,23 @@ profile="default"
 
 #int-hartwig-bots
 source ~/.slack
-if [ -f /tmp/bcl_uploading ]; then
-    echo "Uploading in progress, exiting"
+if [[ -f /tmp/bcl_uploading ]]; then
+    echo "[INFO] Uploading in progress, exiting"
     exit 0
 fi
 
 DIRECTORY="/data1/illumina_data/"
 
 for bclName in $(ls ${DIRECTORY}); do
-    if [ -f /data/sbpuploadlogs/${bclName}_SBP_Uploaded.done ]; then
-        echo "${bclName} already uploaded, skipping";
+    if [[ -f /data/sbpuploadlogs/${bclName}_SBP_Uploaded.done ]]; then
+        echo "[INFO] ${bclName} already uploaded, skipping";
         continue;
     fi
 
-    if [ -f ${DIRECTORY}${bclName}/RTAComplete.txt ]; then
+    if [[ -f ${DIRECTORY}${bclName}/RTAComplete.txt ]]; then
         find ${DIRECTORY}${bclName} -name '*.bcl.gz' | grep bcl > /dev/null
         if [[ $? -ne 0 ]]; then
-            echo "${bclName} has no BCL files, skipping";
+            echo "[INFO] ${bclName} has no BCL files, skipping";
             continue;
         fi
 
@@ -38,12 +38,12 @@ for bclName in $(ls ${DIRECTORY}); do
         flowcell_id=${flowcell_id_tmp:1}
         experiment_name=$(grep ExperimentName ${DIRECTORY}${bclName}/SampleSheet.csv  | awk -F , '{print $2}')
         if [[ $? -eq 1 ]]; then
-            echo "Warning! BCL is missing SampleSheet.csv"
+            echo "[WARN] BCL is missing SampleSheet.csv"
             # shellcheck disable=SC2154
             curl -X POST --data-urlencode 'payload={"text":"Warning! BCL is missing SampleSheet.csv, failing upload"}' ${slackChannel}
             exit 2
         fi
-        echo "${bclName} is complete"
+        echo "[INFO] ${bclName} is complete"
 
         # One upload at a time please
         touch /tmp/bcl_uploading

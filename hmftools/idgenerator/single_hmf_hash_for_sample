@@ -2,7 +2,7 @@
 
 sample=$1 && shift
 
-if [ -z "${sample}" ]; then
+if [[ -z "${sample}" ]]; then
     echo "[ERROR] Please provide a sample! Exiting"
     exit 1
 fi

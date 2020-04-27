@@ -62,7 +62,7 @@ function diskUsage {
     local percentageString=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5 )
     local percentage=$( echo ${percentageString} | sed 's/\%//g' )
     echo "${percentageString} used with ${available} space left for mount ${mount}"
-    if [ "${percentage}" -gt "${MAX_DF_PERC}" ]; then
+    if [[ "${percentage}" -gt "${MAX_DF_PERC}" ]]; then
         warn "Disk usage (${percentageString}) for mount $mount higher than ${MAX_DF_PERC}!"
     fi
 }

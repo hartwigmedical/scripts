@@ -6,7 +6,7 @@ CORE_BUCKET="hmf-output-core"
 
 submissions_to_visit=("$@") # optional
 
-if [ "$#" -eq 0 ]; then
+if [[ "$#" -eq 0 ]]; then
     submissions_to_visit=( $(echo "$SUBMISSIONS_JSON" | jq -r 'keys[]' | sort -r | head -100) )
 fi
 

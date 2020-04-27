@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-JSON_PATH=$1
+json_path=$1
 
-if [ -z ${JSON_PATH+x} ]; then
+if [[ -z ${json_path+x} ]]; then
     echo "[EXIT] No json given"
     exit 1
 fi
 
-sbp_curl https://api.hartwigmedicalfoundation.nl/hmf/v1/shares -XPOST -H "Content-Type: application/json" -d @${JSON_PATH}
+sbp_curl https://api.hartwigmedicalfoundation.nl/hmf/v1/shares -XPOST -H "Content-Type: application/json" -d @${json_path}
