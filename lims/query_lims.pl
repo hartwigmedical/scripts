@@ -26,12 +26,12 @@ my $TYPE;
 my $MUST_MATCH_EXACT;
 
 my %OUT_FIELDS_PER_TYPE = (
-  'samples'     => [qw( submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status )],
-  'submissions' => [qw( submission project_name project_type analysis_type sample_count has_lab_finished )],
-  'unreported'  => [qw( sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date sbp_info )],
-  'dateTable'   => [qw( sample_name sampling_date arrival_date )],
+  'samples'     => [qw(submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status)],
+  'submissions' => [qw(submission project_name project_type analysis_type sample_count has_lab_finished)],
+  'unreported'  => [qw(sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date api_info)],
+  'dateTable'   => [qw(sample_name sampling_date arrival_date)],
 );
-my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
+my $available_types = join(", ", sort keys %OUT_FIELDS_PER_TYPE);
 
 my $HELP_TEXT =<<HELP;
 
@@ -372,8 +372,8 @@ sub getUnreportedBiopsies{
             next if $sample->{'ref_status'} !~ /^finished|failed|storage$/i;
         }
         
-        ## ok: ready to report with SBP info added
-        addApiInfoToSampleBySampleId( $sample, $sample_id );
+        ## ok: ready to report with API info added
+        addApiInfoToSampleBySampleId($sample, $sample_id);
         push @out_samples, $sample;
     }
     
@@ -383,20 +383,20 @@ sub getUnreportedBiopsies{
 sub addApiInfoToSampleBySampleId{
     my ($sample, $sample_id) = @_;
     
-    my $sbp_cmd = "query_api -type runs -filter \"name=${sample_id}\" -json";
-    my $sbp_txt = `$sbp_cmd`;
-    my $runs = decode_json( $sbp_txt );
+    my $api_cmd = "query_api.pl -type runs -filter \"name=${sample_id}\" -json";
+    my $api_txt = `$api_cmd`;
+    my $runs = decode_json( $api_txt );
     
     ## init new fields in case no runs found
-    $sample->{sbp_info} = $NA_CHAR;
+    $sample->{api_info} = $NA_CHAR;
     
     foreach my $run ( @$runs ){
         my $ini = getValueByKey( $run, 'ini' );
         my $entity = getValueByKey( $run, 'entity' );
-        my $setname = getValueByKey( $run, 'name' );
+        my $set_name = getValueByKey( $run, 'name' );
         my $status = getValueByKey( $run, 'status' ); 
         next if $ini =~ /rerun/i;
-        $sample->{sbp_info} = "$setname ($status)";
+        $sample->{api_info} = "$set_name ($status)";
     }
     return($sample);
 }

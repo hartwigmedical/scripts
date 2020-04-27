@@ -36,7 +36,7 @@ else
 fi
 
 ## find all R1 fastq files -> check R2 presence -> register pair
-echo "[INFO] Starting with sample $SAMPLE_NAME barcode:$BARCODE sbpId:$SAMPLE_ID"
+echo "[INFO] Starting with sample $SAMPLE_NAME barcode:$BARCODE id:$SAMPLE_ID"
 find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | while read R1; do
     R2=$( echo "$R1" | sed 's/_R1_/_R2_/' )
     if [[ -z "$R1" || -z "$R2" ]]; then

@@ -42,16 +42,15 @@ echo "$SEPSTR print bcl2fastq conversion report"
 echo "get_bcl2fq_report_table $RUNDIR"
 
 ## check conversion status
-if [ ! -e "${LOGDIR}/${RUNNAM}_SBP_Uploaded.done" ]; then
-    echo -e "\n# [WARNING] UPLOAD to SBP is NOT DONE YET!\n";
+if [[ ! -e "${LOGDIR}/${RUNNAM}_SBP_Uploaded.done" ]]; then
+    echo -e "\n# [WARNING] UPLOAD to GCP is NOT DONE YET!\n";
 else
-    echo "# [NOTE] UPLOAD to SBP has finished";
+    echo "# [NOTE] UPLOAD to GCP has finished";
 fi
 
 ## print readme file path if present
 README_FILE=${RUNDIR}"/README"
-if [[ -e ${README_FILE} ]];
-then
+if [[ -e ${README_FILE} ]]; then
     echo "# [README] $README_FILE";
 fi
 

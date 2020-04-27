@@ -53,7 +53,7 @@ my $HELP =<<HELP;
 
   Description
     Parses LIMS JSON file and writes JSON(s) to perform 
-    registering at SBP. It does check whether the to be 
+    registering in HMF API. It does check whether the to be
     written JSON already exists in either the output location
     or the "register done" location.
     
@@ -315,18 +315,18 @@ sub processSample{
             $barcode_ref = $new_barcode_ref;
         }
  
-        ## check if barcode already exists at SBP
+        ## check if barcode already exists in HMF API
         my $tum_exists = `query_api -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($tum_exists);
         my $ref_exists = `query_api -type samples -filter "barcode=$barcode_ref" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($ref_exists);
         
         if ( $tum_exists ){
-            push( @warn_msg, "TUM barcode ($barcode) for sample ($name) already exists at SBP (so use_existing flag was added!)" );
+            push( @warn_msg, "TUM barcode ($barcode) for sample ($name) already exists in HMF API (so use_existing flag was added!)" );
             $use_existing_tum = 1;
         }        
         if ( $ref_exists ){
-            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($name) already exists at SBP (so use_existing flag was added!)" );
+            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($name) already exists in HMF API (so use_existing flag was added!)" );
             $use_existing_ref = 1;
         }
         

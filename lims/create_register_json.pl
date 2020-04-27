@@ -49,7 +49,7 @@ GetOptions (
 my $HELP =<<HELP;
 
   Description
-    Creates one SBP register json from input. 
+    Creates one HMF API register json from input.
     Setname for type single: YYMMDD_\${submission}_\${ref_barcode}_\${sample}
     Setname for type somatic: YYMMDD_\${submission}_\${ref_barcode}_\${tum_barcode}_\${sample}
     

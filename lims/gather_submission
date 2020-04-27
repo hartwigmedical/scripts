@@ -2,7 +2,7 @@
 
 SUBMISSIONS_DIR="/data/submissions"
 HMF_QUERY_SCRIPT="query_lims"
-SBP_QUERY_SCRIPT="query_api"
+API_QUERY_SCRIPT="query_api.pl"
 HMF_LIMS_JSON='/data/lims/lims.json'
 submission=$1
 
@@ -47,27 +47,27 @@ echo "[INFO] Querying HMF LIMS to get sample list"
 ${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lmsFile}
 ${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${lmsJson}
 
-## get q30/yield data from SBP API
-echo "[INFO] Querying SBP API to get sample status"
-${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${samFile}
-${SBP_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${samJson}
+## get q30/yield data from HMF API
+echo "[INFO] Querying HMF API to get sample status"
+${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${samFile}
+${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${samJson}
 
-## get entity/run-status from SBP API
-echo "[INFO] Querying SBP API to get run status"
-${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
-${SBP_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${runJson}
+## get entity/run-status from HMF API
+echo "[INFO] Querying HMF API to get run status"
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${runJson}
 
 ## get flowcell info from datastore
-echo "[INFO] Querying SBP API to get flowcell status"
+echo "[INFO] Querying HMF API to get flowcell status"
 fcidsWithAB=$(find_in_samplesheets "${submission}" | cut -d" " -f5 | cut -d"_" -f4 | sort | uniq)
 fcids=$(for fcid in ${fcidsWithAB[@]}; do fcid="${fcid:1}"; echo "${fcid}"; done)
 fcidsGrepString=$(echo $fcids | tr " " "|")
-${SBP_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" > ${flwFile}
-${SBP_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" -json > ${flwJson}
+${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" > ${flwFile}
+${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" -json > ${flwJson}
 
 ## get counts to check completeness
 hmfCount=$(cat ${lmsFile} | grep -cv "^#")
-sbpCount=$(cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+apiCount=$(cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
 cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
@@ -98,7 +98,7 @@ echo "#           Date = ${dateString}" >> ${logFile}
 echo "#     Submission = ${submission}" >> ${logFile}
 echo "#        Project = ${pName}"      >> ${logFile}
 echo "#    SampleCount = ${hmfCount}"   >> ${logFile}
-echo "#      DataCount = ${sbpCount}"   >> ${logFile}
+echo "#      DataCount = ${apiCount}"   >> ${logFile}
 echo "# Report Contact = ${rName} (${rMail})" >> ${logFile}
 echo "#   Data Contact = ${dName} (${dMail})" >> ${logFile}
 
@@ -117,7 +117,7 @@ echo " cat ${repFile} | cut -f1 --complement"
 echo ""
 
 ## warn if not complete
-if [[ ${hmfCount} -ne ${sbpCount} ]]; then 
+if [[ ${hmfCount} -ne ${apiCount} ]]; then
     echo "[WARNING] There might be missing samples!"
     exit 1
 fi

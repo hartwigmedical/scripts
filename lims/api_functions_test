@@ -13,7 +13,7 @@ run_info=$(load_run_info_for_set ${set})
 initial_run_bucket=$(load_intial_run_bucket_for_set ${set})
 pipeline_version=$(extract_pipeline_version_from_run_info "${run_info}")
 
-echo "[INFO] Testing SBP API functions on ${set}"
+echo "[INFO] Testing HMF API functions on ${set}"
 echo "[INFO] Run Info = ${run_info}"
 echo "[INFO] Initial Run Bucket = ${initial_run_bucket}"
 echo "[INFO] Pipeline Version = ${pipeline_version}"

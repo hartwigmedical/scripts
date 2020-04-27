@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ## Desc: Uploads flowcell BCL level data to the storage bucket
 
