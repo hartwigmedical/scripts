@@ -64,7 +64,7 @@ function main() {
     ## sanity check on data location in API
     ## TODO once all at gcp then remove the ini check
     if [[ $cluster != "gcp" && $ini != "FastQ.ini" ]]; then
-       echo "[EXIT] Error: unexpected cluster ($cluster)." && exit 1
+       echo "[ERROR] Error: unexpected cluster ($cluster)." && exit 1
     fi
 
     ## cleanup existing files
@@ -92,7 +92,7 @@ function main() {
     elif [[ $ini == "SingleSample.ini" ]]; then
         create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "SingleSample"
     else
-        echo "[EXIT] Unknown ini ($ini)" && exit 1
+        echo "[ERROR] Unknown ini ($ini)" && exit 1
     fi
 
     ## sanity checks on final files
@@ -157,7 +157,7 @@ create_run_specific_files () {
     elif [[ $run_type == "Fastq" ]]; then
         file_selection="${all_files[@]}"
     else
-        echo "[EXIT] Unknown run type ($run_type)" && exit 1
+        echo "[ERROR] Unknown run type ($run_type)" && exit 1
     fi
 
     ## output aria2 config file
@@ -178,8 +178,8 @@ create_run_specific_files () {
         gsutil -u "${gcp_project}" -q stat "${internal_url}"
         if [[ $? -eq 1 ]]; then
             msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
-            echo "[EXIT] Cannot access file (${internal_url})"
-            echo "[EXIT] ErrCode=${?} ErrMsg=\"${msg}\""
+            echo "[ERROR] Cannot access file (${internal_url})"
+            echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
             exit 1
         fi
 

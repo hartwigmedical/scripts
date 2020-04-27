@@ -91,13 +91,13 @@ GetOptions (
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
   "help|h"             => \$opt{ help },
-) or die "Error in command line arguments\n";
+) or die "[ERROR] Issue in command line arguments\n";
 print $HELP and exit(0) if $opt{ help };
-die "[EXIT] Provide either run-dir or json-path not both\n" if (defined $RUN_PATH and defined $JSON_PATH);
-die "[EXIT] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_PATH or defined $JSON_PATH);
-die "[EXIT] Provided rundir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
-die "[EXIT] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
-die "[EXIT] Provided xml does not exist ($RXML_PATH)\n" if defined $RXML_PATH and not -f $RXML_PATH;
+die "[ERROR] Provide either run-dir or json-path not both\n" if (defined $RUN_PATH and defined $JSON_PATH);
+die "[ERROR] Provide either run-dir or json-path, see -h\n" unless (defined $RUN_PATH or defined $JSON_PATH);
+die "[ERROR] Provided run dir does not exist ($RUN_PATH)\n" if defined $RUN_PATH and not -d $RUN_PATH;
+die "[ERROR] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
+die "[ERROR] Provided xml does not exist ($RXML_PATH)\n" if defined $RXML_PATH and not -f $RXML_PATH;
 
 $JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
 $RXML_PATH = "$RUN_PATH/$RXML_LOC" if defined $RUN_PATH;
@@ -404,27 +404,27 @@ sub parseJsonInfo{
     return \%info;
 }
 
-sub getPerc{
+sub getPerc {
     my ($value, $total) = @_;
     
-    if ( not defined($value) or not defined($total) ){
-       return 0;
+    if ( not defined($value) or not defined($total) ) {
+        return 0;
     }
-    elsif ($value < 0 or $total < 0){
-       die "[EXIT] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
+    elsif ($value < 0 or $total < 0) {
+        die "[ERROR] Cannot calculate percentage if either value ($value) or total ($total) is < 0\n";
     }
     elsif ($value > $total){
-       die "[EXIT] value ($value) should never be higher than total ($total)\n";
+        die "[ERROR] value ($value) should never be higher than total ($total)\n";
     }
-    elsif ( $total == 0 and $value == 0){
+    elsif ( $total == 0 and $value == 0) {
        return 0;
     }
-    else{
-       return $value*100/$total;
+    else {
+        return $value*100/$total;
     }
 }
 
-sub printTable{
+sub printTable {
     my ($info, $fields) = @_;
 
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);

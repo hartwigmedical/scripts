@@ -7,9 +7,9 @@ api_crt_file="${api_cred_dir}/api.crt"
 api_key_file="${api_cred_dir}/api.key"
 api_url='https://api.acc.hartwigmedicalfoundation.nl/hmf/v1/action/register'
 
-if [[ -z ${json+x} ]]; then echo "[EXIT] No json given" && exit 1; fi
-if [[ ! -f ${api_crt_file} ]]; then echo "[EXIT] File does not exist (${api_crt_file})" && exit 1; fi
-if [[ ! -f ${api_key_file} ]]; then echo "[EXIT] File does not exist (${api_key_file})" && exit 1; fi
-if [[ ! -f ${json} ]]; then echo "[EXIT] File does not exist (${json})" && exit 1; fi
+if [[ -z ${json+x} ]]; then echo "[ERROR] No json given" && exit 1; fi
+if [[ ! -f ${api_crt_file} ]]; then echo "[ERROR] File does not exist (${api_crt_file})" && exit 1; fi
+if [[ ! -f ${api_key_file} ]]; then echo "[ERROR] File does not exist (${api_key_file})" && exit 1; fi
+if [[ ! -f ${json} ]]; then echo "[ERROR] File does not exist (${json})" && exit 1; fi
 
 /usr/bin/curl -s -v --cert-type pem --cert ${api_crt_file} --key ${api_key_file} ${api_url} -XPOST -H "Content-Type: application/json" -d @${json}

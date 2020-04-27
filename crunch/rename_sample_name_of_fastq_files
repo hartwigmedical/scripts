@@ -64,11 +64,11 @@ while IFS=  read -r -d $'\0'; do
 done < <(find "${dirPath}" -maxdepth ${maxFindDepth} -name "$oldName*.fastq.gz" -print0)
 
 ## sanity checks
-if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[EXIT] No fastq files found (with find-depth ${maxFindDepth})" && exit 1; fi
-if [[ -z ${oldName} ]]; then echo "[EXIT] Param oldName (-o) not set" && exit 1; fi
-if [[ -z ${newName} ]]; then echo "[EXIT] Param newName (-n) not set" && exit 1; fi
-if [[ -z ${dirPath} ]]; then echo "[EXIT] Param dirPath (-d) not set" && exit 1; fi
-if [[ ! -d ${dirPath} ]]; then echo "[EXIT] dirPath (${dirPath}) does not exist?" && exit 1; fi
+if [[ ${#filesToRename[@]} -lt 1 ]]; then echo "[ERROR] No fastq files found (with find-depth ${maxFindDepth})" && exit 1; fi
+if [[ -z ${oldName} ]]; then echo "[ERROR] Param oldName (-o) not set" && exit 1; fi
+if [[ -z ${newName} ]]; then echo "[ERROR] Param newName (-n) not set" && exit 1; fi
+if [[ -z ${dirPath} ]]; then echo "[ERROR] Param dirPath (-d) not set" && exit 1; fi
+if [[ ! -d ${dirPath} ]]; then echo "[ERROR] dirPath (${dirPath}) does not exist?" && exit 1; fi
 
 
 ## print info

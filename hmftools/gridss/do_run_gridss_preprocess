@@ -10,7 +10,7 @@ if [[ "$tum_normal_arg" == "normal" ]] ; then
 elif [[ "$tum_normal_arg" == "tumor" ]] ; then
 	  bam_sample=${tumor_sample}
 else
-	  echo "Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
+	  echo "[ERROR] Please specify \"normal\" or \"tumor\" to indicate which BAM to preprocessing. Aborting" 1>&2
 	  exit 1
 fi
 bam=${run_dir}/${bam_sample}/mapping/${bam_sample}_dedup.realigned.bam
@@ -21,12 +21,12 @@ if [[ ! -f ${bam}.bai ]] ; then
 fi
 
 if [[ ! -f ${insert_size_metrics} ]] ; then
-	echo "Missing insert size metrics file $insert_size_metrics. Aborting" 1>&2
+	echo "[ERROR] Missing insert size metrics file $insert_size_metrics. Aborting" 1>&2
 	exit 1
 fi
 
 if [[ ! -f "$bam" ]] ; then
-	  echo "Missing input bam $bam. Aborting" 1>&2
+	  echo "[ERROR] Missing input bam $bam. Aborting" 1>&2
 	  exit 1
 fi
 
@@ -106,8 +106,8 @@ fi
 wait
 
 if [[ ! -f  ${sv_bam} ]] ; then
-	  echo "$(date) Preprocessing failed. Missing $sv_bam " 1>&2
+	  echo "[ERROR] $(date) Preprocessing failed. Missing $sv_bam " 1>&2
 	  exit 1
 else
-	  echo "$(date) Preprocessing complete"
+	  echo "[INFO] $(date) Preprocessing complete"
 fi

@@ -26,9 +26,9 @@ somatic_input_vcf=$(find ${run_dir} -wholename "*/somaticVariants/*_post_process
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 ## Some sanity checks
-if [[ ! -d "${run_dir}" ]]; then echo "[EXIT] Run (${run_dir}) not found" && exit 1; fi
-if [[ ! -f "${somatic_input_vcf}" ]]; then echo "[EXIT] Vcf not found" && exit 1; fi
-if [[ -z "${tumor_sample}" ]]; then echo "[EXIT] Sample not found" && exit 1; fi
+if [[ ! -d "${run_dir}" ]]; then echo "[ERROR] Run (${run_dir}) not found" && exit 1; fi
+if [[ ! -f "${somatic_input_vcf}" ]]; then echo "[ERROR] Vcf not found" && exit 1; fi
+if [[ -z "${tumor_sample}" ]]; then echo "[ERROR] Sample not found" && exit 1; fi
 
 sliced_tumor_bam="${tumor_sample}_dedup.realigned.sliced.bam"
 somatic_vcf_file_name=$(basename ${somatic_input_vcf})

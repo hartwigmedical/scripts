@@ -24,13 +24,13 @@ SAMPLE_NAME=""
 SAMPLE_ID=$(curl -s --cert-type pem --cert "${apiCrt}" --key "${apiKey}" "${apiUrl}/hmf/v1/samples?barcode=${BARCODE}" | jq '.[].id')
 
 if [[ -z "$SAMPLE_ID" ]]; then
-    echo "[EXIT] Barcode not found at SBP ($BARCODE)" && exit 1
+    echo "[ERROR] Barcode not found at SBP ($BARCODE)" && exit 1
 fi
 
 ## make sure the FASTQ files contain only ONE sample
 SAMPLE_COUNT=$(find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq | wc -l)
 if [[ $SAMPLE_COUNT -ne 1 ]]; then 
-    echo "[EXIT] FASTQ files in dir should be from one sample (found $SAMPLE_COUNT samples in dir \"$FASTQ_DIR\")" && exit 1;
+    echo "[ERROR] FASTQ files in dir should be from one sample (found $SAMPLE_COUNT samples in dir \"$FASTQ_DIR\")" && exit 1;
 else
     SAMPLE_NAME=$(find ${FASTQ_DIR} -name "*_R1_*.fastq.gz" -exec basename {} \; | cut -d"_" -f1 | sort | uniq)
 fi

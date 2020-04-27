@@ -19,9 +19,9 @@ truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
 truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 
 ## init checks
-if [[ ! -w ${val_base} ]]; then echo "[EXIT] validation base not writable (${val_base})"; exit 1; fi
-if [[ ! -f ${truth_vcf_path} ]]; then echo "[EXIT] truth VCF not available (${truth_vcf_path})"; exit 1; fi
-if [[ ! -f ${truth_bed_path} ]]; then echo "[EXIT] truth BED not available (${truth_bed_path})"; exit 1; fi
+if [[ ! -w ${val_base} ]]; then echo "[ERROR] validation base not writable (${val_base})"; exit 1; fi
+if [[ ! -f ${truth_vcf_path} ]]; then echo "[ERROR] truth VCF not available (${truth_vcf_path})"; exit 1; fi
+if [[ ! -f ${truth_bed_path} ]]; then echo "[ERROR] truth BED not available (${truth_bed_path})"; exit 1; fi
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
@@ -51,7 +51,7 @@ else
     elif [[ -f ${pv5_path} ]]; then
         run_som_vcf_path=${pv5_path}
     else
-        echo "[EXIT] Unable to find somatic VCF" && exit 1; 
+        echo "[ERROR] Unable to find somatic VCF" && exit 1;
     fi
 fi
 run_som_vcf_name=$(basename ${run_som_vcf_path})
@@ -69,7 +69,7 @@ fi
 out_path="${val_base}/${out_name}"
 tmp_path="${out_path}/vcfeval"
 if [[ -e ${out_path} ]]; then
-    echo "[EXIT] Output dir exists remove first: ${out_path}" && exit 1
+    echo "[ERROR] Output dir exists remove first: ${out_path}" && exit 1
 else 
     echo "[INFO] Using output dir (${out_path})"
     mkdir ${out_path}

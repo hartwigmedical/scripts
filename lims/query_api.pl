@@ -89,8 +89,8 @@ GetOptions (
     "json"      => \$output_as_json,
     "exact"     => \$must_match_exact,
 ) or die "Error in command line arguments\n";
-warn "[EXIT] No type given?" and exit(0) unless $type;
-warn "[EXIT] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
+warn "[ERROR] No type given?" and exit(0) unless $type;
+warn "[ERROR] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
 
 ## -----
 ## MAIN
@@ -218,7 +218,7 @@ sub applyFiltersOnObject{
             ($field, $match_str) = split( "=", $filter, 2 );
         }
         else{
-            die "[EXIT] Incorrect filter format ($filter). Requires a = or != in string.\n"
+            die "[ERROR] Incorrect filter format ($filter). Requires a = or != in string.\n"
         }
 
         if ( not exists $object->{ $field } ){

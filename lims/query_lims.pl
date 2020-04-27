@@ -88,8 +88,8 @@ GetOptions (
     "help|h"    => \$opt{ help },
 ) or die "Error in command line arguments\n";
 die $HELP_TEXT . "\n" if $opt{'help'};
-die $HELP_TEXT . "\n[EXIT] Please provide type with -type\n" unless $TYPE;
-die $HELP_TEXT . "\n[EXIT] Type ($TYPE) is not supported\n" unless exists $OUT_FIELDS_PER_TYPE{ $TYPE };
+die $HELP_TEXT . "\n[ERROR] Please provide type with -type\n" unless $TYPE;
+die $HELP_TEXT . "\n[ERROR] Type ($TYPE) is not supported\n" unless exists $OUT_FIELDS_PER_TYPE{ $TYPE };
 
 ## -----
 ## MAIN
@@ -189,7 +189,7 @@ sub applyFiltersOnObject{
             ($field, $match_str) = split( "=", $filter, 2 );
         }
         else{
-            die "[EXIT] Incorrect filter format ($filter). Requires a = or != in string.\n"
+            die "[ERROR] Incorrect filter format ($filter). Requires a = or != in string.\n"
         }
                     
         if ( not exists $object->{ $field } ){
@@ -236,12 +236,12 @@ sub readJson{
 sub readNonReportableSamples{
     my ($tsv_file) = @_;
     my %non_reportable_samples = ();
-    open IN, "<", $tsv_file or die "[EXIT] Unable to open file ($tsv_file): $!\n";
+    open IN, "<", $tsv_file or die "[ERROR] Unable to open file ($tsv_file): $!\n";
     while ( my $sample = <IN> ){
         chomp $sample;
         next if $sample =~ /^#/;
         if ( $sample =~ /\s/ ){
-            die "[EXIT] Whitespace detected in sample \"$sample\" (file: $tsv_file)\n";
+            die "[ERROR] Whitespace detected in sample \"$sample\" (file: $tsv_file)\n";
         }
         $non_reportable_samples{ $sample } = 1;
     }

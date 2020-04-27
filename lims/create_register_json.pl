@@ -100,7 +100,7 @@ elsif ( $type eq 'somatic' ){
     push( @{$obj{'samples'}}, \%tum );
 }
 else{
-    say "[EXIT] Type not supported ($type)";
+    say "[ERROR] Type not supported ($type)";
 }
 
 my $json_file_name = $obj{'set_name'} . '.json';

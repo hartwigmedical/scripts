@@ -108,14 +108,14 @@ die $HELP_TEXT if $opt{ help };
 die $HELP_TEXT unless $opt{ execute };
 
 foreach ( $BACK_DIR, $OUT_DIR ){
-    die "[EXIT] Dir does not exist ($_)\n" unless -d $_;
+    die "[ERROR] Dir does not exist ($_)\n" unless -d $_;
 }
 foreach ( @ALL_INPUT_FILES ){
-    die "[EXIT] File does not exist ($_)\n" unless -f $_;
+    die "[ERROR] File does not exist ($_)\n" unless -f $_;
 }
 foreach ( $JSON_OUT ){
     next unless -f $_;
-    copy( $_, "$BACK_DIR" ) or die "[EXIT] Backup of \"$_\" to $BACK_DIR failed: $!";
+    copy( $_, "$BACK_DIR" ) or die "[ERROR] Backup of \"$_\" to $BACK_DIR failed: $!";
 }
 
     
@@ -181,7 +181,7 @@ sub parseTsvCsv{
     say "[INFO]   Parsing input file $file";
     open IN, "<", $file or die "Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
-    die "[EXIT] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
+    die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
     my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
     
@@ -194,13 +194,13 @@ sub parseTsvCsv{
         }
     }
     if ( $header_misses_field ){
-        print Dumper \%fields_map and die "[EXIT] Error: header incomplete ($file)\n";
+        print Dumper \%fields_map and die "[ERROR] Error: header incomplete ($file)\n";
     }
     
     ## Header OK: continue reading in all data lines
     while ( <IN> ){
         chomp;
-        die "[EXIT] Cannot parse line ($_)\n" unless $csv->parse($_);
+        die "[ERROR] Cannot parse line ($_)\n" unless $csv->parse($_);
         my @values = $csv->fields();
         
         my %raw_object = ();
@@ -303,22 +303,22 @@ sub parseDictFile{
         chomp;
         if ( $fileType eq 'center2centername' ){
             my ( $id, $descr, $name ) = split /\t/;
-            die "[EXIT] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
+            die "[ERROR] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
             $store{ $id } = $name if ( $id ne EMPTY and $name ne EMPTY );
         }
         elsif ( $fileType eq 'study2mail' ){
             my ( $study, $name, $mail ) = split /\t/;
-            die "[EXIT] study name occurs multiple times ($study) in file ($file)\n" if exists $store{ $study };
+            die "[ERROR] study name occurs multiple times ($study) in file ($file)\n" if exists $store{ $study };
             $store{ $study }{ 'name' } = $name;
             $store{ $study }{ 'mail' } = $mail;
         }
         elsif ( $fileType eq 'submission2entity' ){
             my ( $submission, $entity ) = split /\t/;
-            die "[EXIT] submission occurs multiple times ($submission) in file ($file)\n" if exists $store{ $submission };
+            die "[ERROR] submission occurs multiple times ($submission) in file ($file)\n" if exists $store{ $submission };
             $store{ $submission } = $entity if ( $submission ne EMPTY and $entity ne EMPTY );
         }
         else{
-            die "[EXIT] Filetype not set or not recognized ($fileType)\n";
+            die "[ERROR] File type not set or not recognized ($fileType)\n";
         }
     }
     close $dict_fh;
@@ -793,8 +793,8 @@ sub parseExcelSheet{
     my $sheet = $config->{ 'sheet' };
     
     say "[INFO] Loading excel file $excel sheet \"$sheet\"";
-    my $workbook = Spreadsheet::XLSX->new( $excel ) or die "[EXIT] Unable to load excel file $excel: $!\n";
-    my $sheet_obj = $workbook->worksheet( $sheet ) or die "[EXIT] Unable to read sheet \"$sheet\" from file $excel: $!\n";
+    my $workbook = Spreadsheet::XLSX->new( $excel ) or die "[ERROR] Unable to load excel file $excel: $!\n";
+    my $sheet_obj = $workbook->worksheet( $sheet ) or die "[ERROR] Unable to read sheet \"$sheet\" from file $excel: $!\n";
     
     my @header = ();
     my $max_row = $sheet_obj->{'MaxRow'};
@@ -804,7 +804,7 @@ sub parseExcelSheet{
     my $first_val = EMPTY;
     my $first_cel = $sheet_obj->get_cell( $h_row, $h_col );
     $first_val = $first_cel->unformatted() if defined $first_cel;
-    die "[EXIT] Header value ($h_val) cannot be found at set location ($excel)\n" unless $first_val eq $h_val;
+    die "[ERROR] Header value ($h_val) cannot be found at set location ($excel)\n" unless $first_val eq $h_val;
     
     ## now read header values for later storage
     foreach my $col ( $h_col .. $max_col ){
@@ -820,7 +820,7 @@ sub parseExcelSheet{
 
 sub isSkipValue{
     my ($value) = @_;
-    die "[EXIT] Value to check for skipping is not defined\n" if not defined $value;
+    die "[ERROR] Value to check for skipping is not defined\n" if not defined $value;
     my @to_skip = ( NACHAR, EMPTY, '', 'na', 'naR', 'naT', 'invalid', 'failed', 'nvt', 'no', 'x' );
     foreach my $skip_string ( @to_skip ){
         return 1 if $value =~ /^$skip_string$/i;

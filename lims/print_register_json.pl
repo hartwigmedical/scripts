@@ -77,7 +77,7 @@ HELP
 
 print $HELP and exit(0) if $opt{ help };
 print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
-die "[EXIT] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
+die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
 ## -----
 ## MAIN
@@ -208,7 +208,7 @@ sub processSample{
         $q30 = $sample->{ 'q30' };
     }
     if ( $q30 !~ /^\d+$/ or $q30 < 0 or $q30 > 100 ){
-        die "[EXIT] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
+        die "[ERROR] Q30 found for sample ($name) but not an integer percentage ($q30)\n";
     }
     
     ## init the json info
@@ -419,9 +419,9 @@ sub getSomaticRSampleByStringForField{
 sub getValueByKey{
     my ($info, $key) = @_;
     if ( not defined $info->{ $key } ){
-        say "[EXIT] Cannot find field \"$key\" in datastructure:";
+        say "[ERROR] Cannot find field \"$key\" in data structure:";
         print Dumper( $info );
-        die "[EXIT] Unable to get field $key\n"
+        die "[ERROR] Unable to get field $key\n"
     }
     else{
         return( $info->{ $key } );
@@ -451,7 +451,7 @@ sub addEntityToJsonData{
             $json_data->{ 'entity' } = $umbrella_study."_".$center_name;
         }
         else{
-            die "[EXIT] center id not found in hash ($center_id)\n"; 
+            die "[ERROR] center id not found in hash ($center_id)\n";
         }
     }
     ## otherwise entity must have been set by LAB team in $SUBMISSION_TO_ENTITY_FILE
@@ -461,7 +461,7 @@ sub addEntityToJsonData{
     }
     ## no entity found: should not happen
     else{
-        die "[EXIT] entity not found for submission ($submission) of patient ($patient)\n"; 
+        die "[ERROR] entity not found for submission ($submission) of patient ($patient)\n";
     }
 }
 

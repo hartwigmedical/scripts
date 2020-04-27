@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-SCRIPT=$(basename $0)
 SOURCE='/volume1/machines/Experimenten/SNP\ check'
 TARGET='/data/common/snpcheck/input'
 SUFFIX='Results.csv'
@@ -9,8 +8,8 @@ plateID=$1
 
 if [[ -z ${plateID} || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
-  echo " Usage: $SCRIPT \${plateID}"
-  echo "    Eg: $SCRIPT S19-0001"
+  echo " Usage: $(basename $0) \${plateID}"
+  echo "    Eg: $(basename $0) S19-0001"
   echo "---"
   exit 1
 fi
@@ -22,9 +21,9 @@ while IFS=  read -r -d $'\0'; do
     resultFiles+=("$REPLY")
 done < <(ssh nas find ${SOURCE} -name "${plateID}*${SUFFIX}" -print0)
 if [[ ${#resultFiles[@]} -eq 0 ]]; then 
-  echo "[EXIT] No ${plateID} ${SUFFIX} files found!" && exit 1
+    echo "[ERROR] No ${plateID} ${SUFFIX} files found!" && exit 1
 elif [[ ${#resultFiles[@]} -gt 1 ]]; then
-  echo "[EXIT] More than 1 ${plateID} ${SUFFIX} files found!" && exit 1
+    echo "[ERROR] More than 1 ${plateID} ${SUFFIX} files found!" && exit 1
 fi
 
 ## sync and process
@@ -35,9 +34,9 @@ targetFilePath="${TARGET}/${resultFileName}"
 echo "[INFO] Found SNPcheck file at NAS ($resultFileName)"
 echo "[INFO]   syncing to datastore"
 rsync --protect-args -ah "nas:${resultFilePath}" "${targetFilePath}"
-if [[ $? != 0 ]]; then echo "[EXIT] Rsync finished with non-zero exit code ($?)" && exit 1; fi
+if [[ $? != 0 ]]; then echo "[ERROR] Rsync finished with non-zero exit code ($?)" && exit 1; fi
 
 echo "[INFO]   converting file VCFs"
 create_sample_vcfs_from_csv "${targetFilePath}"
-if [[ $? != 0 ]]; then echo "[EXIT] Conversion to VCF finished with non-zero exit code ($?)" && exit 1; fi
+if [[ $? != 0 ]]; then echo "[ERROR] Conversion to VCF finished with non-zero exit code ($?)" && exit 1; fi
 

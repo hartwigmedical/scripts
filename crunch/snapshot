@@ -10,7 +10,7 @@ function main {
     elif [[ "${hostName}" =~ datastore ]]; then
         processAsDatastore
     else
-        echo "[EXIT] Unknown hostname (${hostName})"
+        echo "[ERROR] Unknown hostname (${hostName})"
     fi
     echo ''
 }

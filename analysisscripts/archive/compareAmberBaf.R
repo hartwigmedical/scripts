@@ -20,7 +20,7 @@ main <- function(){
         stop( "Provide two or more *.amber.baf files: eg <file-1.baf> <file-2.baf> [<file-n.baf>]\n", call.=FALSE)
     }
     if ( file.exists(OUTPUT_FILE) ){ 
-        stop( paste( "[EXIT] Output file already exists:", OUTPUT_FILE, sep=" ") ) 
+        stop( paste( "[ERROR] Output file already exists:", OUTPUT_FILE, sep=" ") )
     }
     
     ## preparation

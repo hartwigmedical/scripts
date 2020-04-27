@@ -10,7 +10,7 @@ reportsTarget="/volume1/web/overviews/submissions/pdf_reports"
 reportsTargetDs="/data/data_archive/overviews/submissions/pdf_reports"
 
 ## Sanity checks
-if [[ ! -d ${srcDir} ]]; then echo "[EXIT] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+if [[ ! -d ${srcDir} ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
 
 ## Action
 echo "[INFO] START with ${taskId} ($YYMMDD)"

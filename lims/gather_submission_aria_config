@@ -13,10 +13,10 @@ create_log="${output_dir}/create_aria_configs.log"
 out_config="${output_dir}/${submission}.aria.txt"
 
 ## sanity checks
-if [[ ! -d ${submission_dir} ]] ; then echo "[EXIT] Submission dir does not exist (${submission_dir})"; exit 1; fi
-if [[ ! -w ${submission_dir} ]] ; then echo "[EXIT] Submission dir is not writable (${submission_dir})"; exit 1; fi
-if [[ ! -f ${runs_json} ]] ; then echo "[EXIT] Runs json does not exist (${runs_json})"; exit 1; fi
-if [[   -d ${output_dir} ]] ; then echo "[EXIT] Output dir already exists (${output_dir})"; exit 1; fi
+if [[ ! -d ${submission_dir} ]] ; then echo "[ERROR] Submission dir does not exist (${submission_dir})"; exit 1; fi
+if [[ ! -w ${submission_dir} ]] ; then echo "[ERROR] Submission dir is not writable (${submission_dir})"; exit 1; fi
+if [[ ! -f ${runs_json} ]] ; then echo "[ERROR] Runs json does not exist (${runs_json})"; exit 1; fi
+if [[   -d ${output_dir} ]] ; then echo "[ERROR] Output dir already exists (${output_dir})"; exit 1; fi
 
 ## setup actual job
 mkdir "${output_dir}"

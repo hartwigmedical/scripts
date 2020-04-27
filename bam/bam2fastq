@@ -35,7 +35,7 @@ if [[ ! -w $(dirname "${out_dir}") ]]; then echo "[ERROR] Output dir not writabl
 ## Check format of RG/ID tags in header
 correct_lane_count=$(${sambamba_dir}/sambamba view -H "${in_bam}" | grep ^@RG | grep -vcP "_L00[1-8]_" )
 if [[ ${correct_lane_count} -gt 1 ]]; then
-    echo "[EXIT] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
+    echo "[ERROR] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
     ${sambamba_dir}/sambamba view -H ${in_bam} | grep ^@RG
     exit 1
 fi

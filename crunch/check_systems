@@ -4,7 +4,7 @@ MAX_DF_PERC=95
 
 function main {
     if [[ ! "$(hostname)" =~ datastore ]]; then
-        echo "[EXIT] Only run this script at datastore!" && exit 1
+        echo "[ERROR] Only run this script at datastore!" && exit 1
     fi
 
     title "SYSTEMS CHECK"

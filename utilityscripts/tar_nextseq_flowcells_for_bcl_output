@@ -20,12 +20,12 @@ tar_log="${HOME}/logs/${YYMMDD}_tar_create_${output_tar_name}.log"
 
 ## some sanity checks
 if [[ -e "${output_tar_path}" ]]; then
-    echo "[EXIT] Provided output tar file already exists (${output_tar_path})" && exit 1
+    echo "[ERROR] Provided output tar file already exists (${output_tar_path})" && exit 1
 fi
 
 for inputPath in "${flowcell_paths[@]}"; do
     if [[ ! -d "${inputPath}" ]]; then
-        echo "[EXIT] Provided input directory does not exist (${inputPath})" && exit 1
+        echo "[ERROR] Provided input directory does not exist (${inputPath})" && exit 1
     fi
 done
 

@@ -8,10 +8,10 @@ createLog="${HOME}/logs/${currDate}_create_jsons_for_${ssheetDate}"
 registerLog="${HOME}/logs/${currDate}_register_sets_from_${ssheetDate}_flowcells"
 
 ## Sanity checks
-if [[ ! $( whoami ) =~ ^sbpext$ ]]; then echo "[EXIT] Script can currently only be ran as user sbpext" && exit 1; fi
-if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[EXIT] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
-if [[ -f ${createLog} ]]; then echo "[EXIT] Log already exists: ${createLog}" && exit 1; fi
-if [[ -f ${registerLog} ]]; then echo "[EXIT] Log already exists: ${registerLog}" && exit 1; fi
+if [[ ! $( whoami ) =~ ^sbpext$ ]]; then echo "[ERROR] Script can currently only be ran as user sbpext" && exit 1; fi
+if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[ERROR] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
+if [[ -f ${createLog} ]]; then echo "[ERROR] Log already exists: ${createLog}" && exit 1; fi
+if [[ -f ${registerLog} ]]; then echo "[ERROR] Log already exists: ${registerLog}" && exit 1; fi
 echo "[INFO] JsonCreation started with input date: ${ssheetDate}"
 
 ## Actual work

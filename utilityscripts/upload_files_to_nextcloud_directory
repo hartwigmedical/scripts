@@ -27,7 +27,7 @@ pass=$(awk '/^pass/ {print $2}' ${cred})
 echo "[INFO] Checking input files"
 for file in "${files_to_upload[@]}"; do
     if [[ ! -f "${file}" ]]; then
-        echo >&2 "[EXIT] Error: File not found (${file})"
+        echo >&2 "[ERROR] Error: File not found (${file})"
         exit 1
     fi
 done

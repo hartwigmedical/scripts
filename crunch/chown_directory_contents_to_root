@@ -6,7 +6,7 @@ function main {
     if [[ -z "${chown_dir}" ]]; then
         print_usage
     elif [[ ! -d "${chown_dir}" ]]; then
-        echo "[EXIT] Is not a directory (${chown_dir})!"
+        echo "[ERROR] Is not a directory (${chown_dir})!"
         print_usage
     fi
 

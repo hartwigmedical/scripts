@@ -76,7 +76,7 @@ for runDir in "${runPaths[@]}"; do
       allFilesOk="no"
     fi
   done
-  if [[ ! $allFilesOk == "yes" ]]; then echo "[EXIT] Something wrong with required files" && exit 1; fi 
+  if [[ ! $allFilesOk == "yes" ]]; then echo "[ERROR] Something wrong with required files" && exit 1; fi
 
   ## gather WgsMetrics
     head=$( cat $wgsFileR | grep GENOME_T )

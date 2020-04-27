@@ -28,7 +28,7 @@ flwJson=$(echo ${flwFile} | sed 's/txt$/json/')
 dateString=$(date)
 
 ## create dirs
-if [[ -e ${outPath} ]] ; then echo "[EXIT] Dir exists already (${outPath})"; exit 1; fi
+if [[ -e ${outPath} ]] ; then echo "[ERROR] Dir exists already (${outPath})"; exit 1; fi
 mkdir -p ${outPath} || exit 1
 
 ## gather submission info from LAB LIMS
@@ -40,7 +40,7 @@ rMail=$(cat ${subJson} | jq -r '.report_contact_email')
 dName=$(cat ${subJson} | jq -r '.data_contact_name')
 dMail=$(cat ${subJson} | jq -r '.data_contact_email')
 pType=$(cat ${subJson} | jq -r '.analysis_type')
-if [[ -z ${pName+x} ]]; then echo "[EXIT] Unable to find project for submission"; exit 1; fi
+if [[ -z ${pName+x} ]]; then echo "[ERROR] Unable to find project for submission"; exit 1; fi
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"

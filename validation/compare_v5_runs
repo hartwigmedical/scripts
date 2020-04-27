@@ -20,10 +20,10 @@ if [[ "$#" -ne 2 ]]; then
     echo "-----"
     exit 1
 fi
-if [[ ! -d "$base_run_path" ]]; then echo "[EXIT] Directory not found ($base_run_path)" && exit 1; fi
-if [[ ! -d "$test_run_path" ]]; then echo "[EXIT] Directory not found ($test_run_path)" && exit 1; fi
-if [[ ! -f "$base_pip_vsn_file" ]]; then echo "[EXIT] File not found ($base_pip_vsn_file)" && exit 1; fi
-if [[ ! -f "$test_pip_vsn_file" ]]; then echo "[EXIT] File not found ($test_pip_vsn_file)" && exit 1; fi
+if [[ ! -d "$base_run_path" ]]; then echo "[ERROR] Directory not found ($base_run_path)" && exit 1; fi
+if [[ ! -d "$test_run_path" ]]; then echo "[ERROR] Directory not found ($test_run_path)" && exit 1; fi
+if [[ ! -f "$base_pip_vsn_file" ]]; then echo "[ERROR] File not found ($base_pip_vsn_file)" && exit 1; fi
+if [[ ! -f "$test_pip_vsn_file" ]]; then echo "[ERROR] File not found ($test_pip_vsn_file)" && exit 1; fi
 
 base_pip_vsn=$(cat "$base_pip_vsn_file")
 test_pip_vsn=$(cat "$test_pip_vsn_file")

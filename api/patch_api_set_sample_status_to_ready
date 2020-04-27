@@ -22,7 +22,7 @@ main () {
     result_count=$(echo "${result}" | jq length)
 
     if [[ $result_count -ne 1 ]]; then
-        echo "[EXIT] Error: expected one sample for ${bc} but ${result_count} found instead"
+        echo "[ERROR] Expected one sample for ${bc} but ${result_count} found instead"
         exit 1
     else
         sample=$(echo "${result}" | jq -r .[0])

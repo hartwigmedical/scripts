@@ -33,7 +33,7 @@ if ( is.null(opt$outputPath) ){
 if ( is.null(opt$configCsv) ){
   for (reqParam in c( 'dbName1', 'sample1' )){
       if ( is.null(opt[[ reqParam ]]) ) {
-          cat( "[EXIT] Missing required parameter:", reqParam, " (-h for help)\n" )
+          cat( "[ERROR] Missing required parameter:", reqParam, " (-h for help)\n" )
           q(status=1)
       }
   }

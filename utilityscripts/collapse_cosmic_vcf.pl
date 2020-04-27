@@ -31,13 +31,13 @@ my $output_file = shift; # optional
 
 ## Input checks
 my $script_arguments = "<cosmic-mut-vcf.gz> <cosmic-transcript-tsv.gz> [<optional-output-file-path>]";
-die "[EXIT] Run with $0 $script_arguments\n" unless $csm_mut_vcf and $csm_tra_tsv;
-die "[EXIT] Input vcf must be gzipped VCF\n" unless $csm_mut_vcf =~ /\.vcf\.gz$/;
-die "[EXIT] Input tsv must be gzipped TSV\n" unless $csm_tra_tsv =~ /\.tsv\.gz$/;
-die "[EXIT] File not found ($csm_mut_vcf)\n" unless -f $csm_mut_vcf;
-die "[EXIT] File not found ($csm_tra_tsv)\n" unless -f $csm_tra_tsv;
+die "[ERROR] Run with $0 $script_arguments\n" unless $csm_mut_vcf and $csm_tra_tsv;
+die "[ERROR] Input vcf must be gzipped VCF\n" unless $csm_mut_vcf =~ /\.vcf\.gz$/;
+die "[ERROR] Input tsv must be gzipped TSV\n" unless $csm_tra_tsv =~ /\.tsv\.gz$/;
+die "[ERROR] File not found ($csm_mut_vcf)\n" unless -f $csm_mut_vcf;
+die "[ERROR] File not found ($csm_tra_tsv)\n" unless -f $csm_tra_tsv;
 ($output_file = $csm_mut_vcf ) =~ s/\.vcf\.gz$/_collapsed\.vcf/ unless $output_file;
-die "[EXIT] Output VCF $output_file(.gz) already exists\n" if -f $output_file or -f "$output_file.gz";
+die "[ERROR] Output VCF $output_file(.gz) already exists\n" if -f $output_file or -f "$output_file.gz";
 
 ## -----
 ## MAIN
@@ -45,7 +45,7 @@ say "[INFO] Parsing transcript input TSV";
 my $gene2transcript = parseTranscripts($csm_tra_tsv);
 
 say "[INFO] Opening tmp output file";
-open OUT, ">", $output_file or die "[EXIT] Unable to open output filehandle: $!\n";
+open OUT, ">", $output_file or die "[ERROR] Unable to open output filehandle: $!\n";
   printAdjustedVcfHeader($csm_mut_vcf, *OUT, $OUT_INFO_DSC);
   printCollapsedVariants($csm_mut_vcf, *OUT, \@COSMIC_VCF_FIELDS, $gene2transcript);
 close OUT;
@@ -120,7 +120,7 @@ sub addTranscript{
     }
     elsif ( exists $gene2tran->{ $gene_name } ){
         my $tran_count = scalar @{$gene2tran->{ $gene_name }};
-        die "[EXIT] Transcripts found for \"$gene_name\" but count != 1 ($tran_count)" if ( $tran_count != 1 );
+        die "[ERROR] Transcripts found for \"$gene_name\" but count != 1 ($tran_count)" if ( $tran_count != 1 );
         return $gene_name . '_' . $gene2tran->{ $gene_name }[0];
     }
     else{
@@ -163,7 +163,7 @@ sub parseTranscripts{
         next if $_ =~ /Gene ID/;
         my ($gene_id,$gene_name,$transcript_id) = split( "\t", $_ );
         if ( exists %gene2transcript{ $gene_name } ){
-            die "[EXIT] Should not occur: gene \"$gene_name\" key already present\n";
+            die "[ERROR] Should not occur: gene \"$gene_name\" key already present\n";
         }
         push( @{%gene2transcript{ $gene_name }}, $transcript_id );
     }

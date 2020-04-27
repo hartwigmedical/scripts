@@ -113,7 +113,7 @@ my %store;
 foreach my $vcf ( @vcfs ){
     my $name = fileparse( $vcf );
     if ( exists $names_seen{ $name } ){
-        die "[EXIT] Input name clash: VCF name appears more than once in input ($name)\n";
+        die "[ERROR] Input name clash: VCF name appears more than once in input ($name)\n";
     }
     $names_seen{ $name } = "seen";
     push( @names, $name );
@@ -123,16 +123,16 @@ foreach my $vcf ( @vcfs ){
 
 if ( $qc_mode ){
     say "[INFO] Quality check mode: checking call count per VCF";
-    die "[EXIT] Param vcfDir required with quality check mode.\n" unless $input_vcf_dir;
+    die "[ERROR] Param vcfDir required with quality check mode.\n" unless $input_vcf_dir;
     my $plate_name = fileparse( $input_vcf_dir );
     say "[INFO] Working on plate: $plate_name";
     performQualityCheck( \%store, \@names );
 }
 elsif ( $vcfCount == 1 ){
     say "[INFO] Single vcf mode: will perform comparison to database ($snpcheck_db)";
-    die "[EXIT] GenotypeDB is not a directory ($snpcheck_db)\n" if not -d $snpcheck_db;
-    die "[EXIT] Param outputFile required with single vcf mode.\n" unless $output_file;
-    die "[EXIT] Ouput file already exists ($output_file)\n" if -f $output_file;
+    die "[ERROR] GenotypeDB is not a directory ($snpcheck_db)\n" if not -d $snpcheck_db;
+    die "[ERROR] Param outputFile required with single vcf mode.\n" unless $output_file;
+    die "[ERROR] Output file already exists ($output_file)\n" if -f $output_file;
     
     my $out = $output_file;
     my $log = $out . ".log";
@@ -170,7 +170,7 @@ else{
 sub parseDesign{
     my ( $file ) = @_;
     my %positionsToKeep = ();
-    open IN, "<", $file or die "[EXIT] Unable to open $file: $!\n";
+    open IN, "<", $file or die "[ERROR] Unable to open $file: $!\n";
     while ( <IN> ){
         next if $_ =~ /^#/;
         my ( $chr, $pos ) = split( "\t", $_ );
