@@ -43,7 +43,7 @@ slack () {
 
 ## Run once at a time
 if [[ -f ${tmp_upload_file} ]]; then
-    echo "Uploading in progress, exiting" && exit 0
+    echo "[INFO] Uploading in progress, exiting" && exit 0
 else
     touch "${tmp_upload_file}"
 fi

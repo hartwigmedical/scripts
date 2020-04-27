@@ -9,7 +9,7 @@ directory2='/data/cpct/final_reports'
 count=$(find ${directory1} ${directory2} -name "${name_pattern}" | wc -l)
 
 if [[ ${count} -eq 0 ]]; then
-    echo "Nothing found for: ${name_pattern}"
+    echo "[WARN] Nothing found for: ${name_pattern}"
 else
     find ${directory1} ${directory2} -name "${name_pattern}"
 fi

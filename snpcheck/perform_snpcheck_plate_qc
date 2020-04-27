@@ -1,25 +1,25 @@
 #!/usr/bin/env bash
 
-scriptName=$(basename $0)
 vcfDirPath=$1
-qcLogsPath="/data/common/snpcheck/qc"
-nasPath="/volume1/web/qc/snpcheck"
 
-echo "[INFO] START with $scriptName"
+echo "[INFO] START with $(basename $0)"
 
 if [[ -z ${vcfDirPath} || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
-  echo " Usage: $scriptName \${pathToDirWithVCFs}"
-  echo "    Eg: $scriptName /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
+  echo " Usage: $(basename $0) \${pathToDirWithVCFs}"
+  echo "    Eg: $(basename $0) /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
   echo "---"
   exit 1
 fi
 
 if [[ ! -d ${vcfDirPath} ]]; then echo "[ERROR] Dir does not exist (${vcfDirPath})" && exit 1; fi
 
+qcLogsPath="/data/common/snpcheck/qc"
+nasPath="/volume1/web/qc/snpcheck"
+
 vcfDirName=$(basename ${vcfDirPath})
- qcLogName="${vcfDirName}.qc"
- qcLogPath="${qcLogsPath}/${qcLogName}"
+qcLogName="${vcfDirName}.qc"
+qcLogPath="${qcLogsPath}/${qcLogName}"
 
 echo "[INFO]  Performing QC (${qcLogName})"
 perform_snpcheck.pl -qc -vcfDir "${vcfDirPath}" > "${qcLogPath}"
@@ -28,5 +28,5 @@ if [[ $? != 0 ]]; then echo "[ERROR] perform_snpcheck finished with non-zero exi
 echo "[INFO]  Syncing log to NAS (${qcLogPath})"
 rsync -ah "${qcLogPath}" "nas:${nasPath}/${qcLogName}"
 
-echo "[INFO] DONE with $scriptName"
+echo "[INFO] DONE with $(basename $0)"
 
