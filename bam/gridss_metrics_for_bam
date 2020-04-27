@@ -2,4 +2,9 @@
 
 bam=$1 && shift
 
+if [[ ! -f "${bam}" ]]; then
+    echo "[ERROR] Bam is not a file: ${bam}. Exiting"
+    exit 1
+fi
+
 java -cp /data/common/tools/gridss_v2.0.1/gridss.jar gridss.analysis.CollectGridssMetrics I=${bam} O=${bam} THRESHOLD_COVERAGE=50000

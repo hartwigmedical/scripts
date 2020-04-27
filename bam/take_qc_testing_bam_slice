@@ -2,6 +2,11 @@
 
 bam=$1 && shift
 
+if [[ ! -f "${bam}" ]]; then
+    echo "[ERROR] Bam is not a file: ${bam}. Exiting"
+    exit 1
+fi
+
 sliced_bam=$(echo "${bam}" | sed 's/\(.*\).bam/\1.sliced.bam/')
 
 sambamba=/data/common/tools/sambamba_v0.6.5/sambamba

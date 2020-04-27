@@ -4,6 +4,11 @@ in_bam=$1 && shift
 out_bam=$1 && shift
 ratio_to_keep=$1 && shift
 
+if [[ ! -f "${in_bam}" || -z "${out_bam}" || -z "${ratio_to_keep}" ]]; then
+    echo "[ERROR] Missing input files for downslicing"
+    exit 1
+fi
+
 picard_dir=/data/tools/picard-tools_v1.141
 mem_use=50
 
