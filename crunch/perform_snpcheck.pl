@@ -2,6 +2,7 @@
 
 use strict;
 use warnings;
+
 use 5.16.0;
 use Data::Dumper;
 use Getopt::Long;
@@ -9,7 +10,6 @@ use File::Basename;
 use File::Find::Rule;
 use Array::Diff qw(:all);
 use JSON::XS;
-
 
 my $NA_CHAR = '-';
 my $SCRIPT = `basename $0`; chomp($SCRIPT);
