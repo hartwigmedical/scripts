@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 for run_dir in /data/cpct/runs/*; do
     if [[ ${run_dir} == /data/cpct/runs/${starts_with}* ]]; then

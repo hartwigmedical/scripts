@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-#
+#!/usr/bin/env bash
 
 rna_root=/data2/rna
 tools_root=$rna_root/tools

@@ -1,22 +1,21 @@
 #!/usr/bin/env bash
 
 CURR_HOST=$(hostname)
-SELF_SCRIPT=$(basename $0)
-PARSE_SCRIPT="check_bcl2fastq_conversion"
+PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
 ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Data/Intensities/BaseCalls"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
-    echo " Usage: $SELF_SCRIPT <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
-    echo "        $SELF_SCRIPT /path/to/171117_ST-E00287_0115_AHCFL5CCXY"
-    echo "        $SELF_SCRIPT 171117_ST-E00287_0115_AHCFL5CCXY 171117_ST-E00287_0116_BHCCVKCCXY"
+    echo " Usage: $(basename $0) <SeqRunDir> [<SeqRunDir2> <SeqRunDirN>]"
+    echo "        $(basename $0) /path/to/171117_ST-E00287_0115_AHCFL5CCXY"
+    echo "        $(basename $0) 171117_ST-E00287_0115_AHCFL5CCXY 171117_ST-E00287_0116_BHCCVKCCXY"
     echo "-----"
     exit 1
 fi
 
-seqRuns=( "$@" )
+seqRuns=("$@")
 seqDirs=()
 
 function printHeader() {
@@ -26,7 +25,6 @@ function printHeader() {
 
 ## make sure all are absolute paths
 for seqRun in "${seqRuns[@]}"; do
-
     ## remove trailing slash if present
     seqRun=$(echo ${seqRun%/})
 
@@ -41,7 +39,6 @@ done
 ## some checking before we start
 cmdsToExecute=()
 for seqDir in "${seqDirs[@]}"; do
-    
     ssheet_path="${seqDir}/${SSHEET_FILE}"
     errlog_path="${seqDir}/${ERRLOG_FILE}"
     report_path="${seqDir}/${REPORT_ROOT}/{Reports,Stats}"

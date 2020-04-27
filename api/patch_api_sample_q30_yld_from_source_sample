@@ -1,63 +1,61 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-script_name=$(basename $0)
 api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 api_cred_dir="/data/common/dbs/api_credentials"
 api_key_file="${api_cred_dir}/api.key"
 api_crt_file="${api_cred_dir}/api.crt"
 
 if [ "$#" -ne 2 ]; then
-  echo "-----"
-  echo "Descr: Patches target sample yield/q30 from source sample (and sets status to Ready)"
-  echo "Usage: ${script_name} \$barcode_of_source_sample \$barcode_of_target_sample"
-  echo "   Eg: ${script_name} FR111111 F222222"
-  echo "-----"
-  exit 1
+    echo "-----"
+    echo "Descr: Patches target sample yield/q30 from source sample (and sets status to Ready)"
+    echo "Usage: $(basename $0) \$barcode_of_source_sample \$barcode_of_target_sample"
+    echo "   Eg: $(basename $0) FR111111 F222222"
+    echo "-----"
+    exit 1
 fi
 
 s_bc=$1 # source sample barcode
 t_bc=$2 # target sample barcode
 
 main () {
-  echo "[INFO] Searching for samples (${s_bc} and ${t_bc})"
-  s_result="$(hmfapi GET ${api_url}/samples?barcode=${s_bc})"
-  t_result="$(hmfapi GET ${api_url}/samples?barcode=${t_bc})"
-  s_count=$(echo "${s_result}" | jq length)
-  t_count=$(echo "${t_result}" | jq length)
+    echo "[INFO] Searching for samples (${s_bc} and ${t_bc})"
+    s_result="$(hmfapi GET ${api_url}/samples?barcode=${s_bc})"
+    t_result="$(hmfapi GET ${api_url}/samples?barcode=${t_bc})"
+    s_count=$(echo "${s_result}" | jq length)
+    t_count=$(echo "${t_result}" | jq length)
 
-  if [[ $s_count -ne 1 ]]; then
-    echo "[EXIT] Error: number of samples found for source ${s_bc} not 1 (${s_count})"
-    exit 1
-  elif [[ $t_count -ne 1 ]]; then
-    echo "[EXIT] Error: number of samples found for target ${t_bc} not 1 (${t_count})"
-    exit 1
-  else
-    s_sample=$(echo "${s_result}" | jq -r .[0])
-    t_sample=$(echo "${t_result}" | jq -r .[0])
-    s_id=$(echo "${s_sample}" | jq -r .id)
-    t_id=$(echo "${t_sample}" | jq -r .id)
+    if [[ $s_count -ne 1 ]]; then
+        echo "[EXIT] Error: number of samples found for source ${s_bc} not 1 (${s_count})"
+        exit 1
+    elif [[ $t_count -ne 1 ]]; then
+        echo "[EXIT] Error: number of samples found for target ${t_bc} not 1 (${t_count})"
+        exit 1
+    else
+        s_sample=$(echo "${s_result}" | jq -r .[0])
+        t_sample=$(echo "${t_result}" | jq -r .[0])
+        s_id=$(echo "${s_sample}" | jq -r .id)
+        t_id=$(echo "${t_sample}" | jq -r .id)
  
-    s_yld=$(echo "${s_sample}" | jq -r .yld)
-    s_q30=$(echo "${s_sample}" | jq -r .q30)
+        s_yld=$(echo "${s_sample}" | jq -r .yld)
+        s_q30=$(echo "${s_sample}" | jq -r .q30)
 
-    echo "[INFO] Found source sample (barcode=${s_bc} id=${s_id} yield=${s_yld} q30=${s_q30})"
-    echo "[INFO] Found target sample (barcode=${t_bc} id=${t_id})"
+        echo "[INFO] Found source sample (barcode=${s_bc} id=${s_id} yield=${s_yld} q30=${s_q30})"
+        echo "[INFO] Found target sample (barcode=${t_bc} id=${t_id})"
 
-    echo "[INFO] Patching all fastq pairs of target sample (to qc_pass=true)"
-    t_fastq=$(hmfapi GET ${api_url}/fastq?sample_id=${t_id})
-    echo "${t_fastq}" | jq -r .[].id | while read fastq_oid; do
-      hmfapi PATCH ${api_url}/fastq/${fastq_oid} qc_pass:=true
-    done
-    echo "[INFO] Patching yld/q30 for target sample (to values from source sample)"
-    hmfapi PATCH ${api_url}/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
-
-  fi
+        echo "[INFO] Patching all fastq pairs of target sample (to qc_pass=true)"
+        t_fastq=$(hmfapi GET ${api_url}/fastq?sample_id=${t_id})
+        echo "${t_fastq}" | jq -r .[].id | while read fastq_oid; do
+            hmfapi PATCH ${api_url}/fastq/${fastq_oid} qc_pass:=true
+        done
+        echo "[INFO] Patching yld/q30 for target sample (to values from source sample)"
+        hmfapi PATCH ${api_url}/samples/${t_id} yld:=${s_yld} q30:=${s_q30} status=Ready
+    fi
 }
 
 ## Generic api function
 hmfapi () {
-  echo "$@" 1>&2
-  http --ignore-stdin --cert="${api_crt_file}" --cert-key="${api_key_file}" "$@"
+    echo "$@" 1>&2
+    http --ignore-stdin --cert="${api_crt_file}" --cert-key="${api_key_file}" "$@"
 }
 
 main

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
-scriptName=$(basename $0)
-runPaths=( "$@" )
-na="na"
+runPaths=("$@")
 
 if [[ ${#runPaths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $scriptName <RunPath1> [<RunPath2> <RunPathN>]"
+    echo " Usage: $(basename $0) <RunPath1> [<RunPath2> <RunPathN>]"
     echo "---"
     exit 1
 fi
+
+na="na"
 
 echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
 \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\

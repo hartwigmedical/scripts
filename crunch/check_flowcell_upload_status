@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 flowcells_dir=/data1/illumina_data
 uploadlog_dir=/data/sbpuploadlogs
