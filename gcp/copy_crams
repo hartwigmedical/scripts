@@ -27,15 +27,15 @@ read -p "Continue with these settings (or Ctrl-C now)? " ignore
 set -e
 
 grep -v '^$' "$BUCKETS" | while read bucket set_name; do
-  gsutil mb -l $BUCKET_LOC "gs://${bucket}"
-  gsutil kms encryption -k "$2" "gs://${bucket}"
-  gsutil cp <(echo ${set_name}) "gs://${bucket}/MANIFEST"
-  echo "  $bucket"
+    gsutil mb -l $BUCKET_LOC "gs://${bucket}"
+    gsutil kms encryption -k "$2" "gs://${bucket}"
+    gsutil cp <(echo ${set_name}) "gs://${bucket}/MANIFEST"
+    echo "  $bucket"
 done
 
 # This is tremendously slow. For the trial run, changed it to instead generate a file with all the
 # commands and ran that with `parallel`.
 echo "Copying files from batch bucket:"
 grep -v '^$' "$FILES" | while read src dest; do
-  gsutil cp "$src" "$dest" 
+    gsutil cp "$src" "$dest"
 done

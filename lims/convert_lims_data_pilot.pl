@@ -453,10 +453,10 @@ sub processAccessSamples{
         my $is_blood = $source =~ /BLOOD$/ ? 1 : 0;
         my $is_tissue = $source =~ /TISSUE$/ ? 1 : 0;
         
-        ## Only store DNA/RNA samples (all samples should have DNA derivate in LIMS)
+        ## Only store DNA/RNA samples (all samples should have DNA derivative in LIMS)
         next unless ($is_dna or $is_rna);
         
-        ## Source of a sample must be TISSUE or BLOOD or PLASMA (with possible DNA or RNA prefix for derivates)
+        ## Source of a sample must be TISSUE or BLOOD or PLASMA (with possible DNA or RNA prefix for derivatives)
         unless ( $source =~ /^((DNA|RNA)\-)?(PLASMA|TISSUE|BLOOD)$/ ){
             warn "[WARN] SKIPPING sample: unable to parse source (\"$source\") for sample (\"$name\"). Need to fix this!\n" and next;
         }

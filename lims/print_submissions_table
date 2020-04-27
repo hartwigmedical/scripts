@@ -29,7 +29,7 @@ for submission in "${submissions_to_visit[@]}"; do
     elif [[ "$project_type" == "CORE" ]]; then
         analysis_type="SomaticAnalysis"
     else
-        project_Type="CheckProjectType(${project_type})"
+        project_type="CheckProjectType(${project_type})"
     fi
     
     ## retrieve missing info

@@ -25,10 +25,10 @@ if [[ ! -d "$test_run_path" ]]; then echo "[ERROR] Directory not found ($test_ru
 if [[ ! -f "$base_pip_vsn_file" ]]; then echo "[ERROR] File not found ($base_pip_vsn_file)" && exit 1; fi
 if [[ ! -f "$test_pip_vsn_file" ]]; then echo "[ERROR] File not found ($test_pip_vsn_file)" && exit 1; fi
 
-base_pip_vsn=$(cat "$base_pip_vsn_file")
-test_pip_vsn=$(cat "$test_pip_vsn_file")
-base_ref_sample_name=$(cat "$base_meta_file" | jq -r '.reference.sampleName')
-test_ref_sample_name=$(cat "$base_meta_file" | jq -r '.reference.sampleName')
+base_pip_vsn=$(cat "${base_pip_vsn_file}")
+test_pip_vsn=$(cat "${test_pip_vsn_file}")
+base_ref_sample_name=$(cat "${base_meta_file}" | jq -r '.reference.sampleName')
+test_ref_sample_name=$(cat "${test_meta_file}" | jq -r '.reference.sampleName')
 
 echo ""
 echo "===== Overview"
@@ -40,12 +40,12 @@ echo "[INFO] TEST version: $test_pip_vsn"
 echo ""
 echo "===== Directory CHECKS"
 for tool_name in ${tools[*]}; do 
-  for run_path in "$base_run_path" "$test_run_path"; do
-    run_name=$(basename $run_path)
-    tool_path="$run_path/$tool_name"
-    count=$(ls $tool_path | wc -l )
-    echo "[INFO] Subdir $tool_name has $count file(s) in $run_name"
-  done
+    for run_path in "$base_run_path" "$test_run_path"; do
+        run_name=$(basename $run_path)
+        tool_path="$run_path/$tool_name"
+        count=$(ls $tool_path | wc -l )
+        echo "[INFO] Subdir $tool_name has $count file(s) in $run_name"
+    done
 done
 
 echo ""

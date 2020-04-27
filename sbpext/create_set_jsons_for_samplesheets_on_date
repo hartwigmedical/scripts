@@ -22,7 +22,7 @@ done > ${createLog}
 
 ## Reporting further actions to screen
 echo "[INFO] JsonCreation done and log written to: ${createLog}"
-if [[ $( cat ${createLog} | grep -P "\d{8}T[IVX]+" | wc -l ) -gt 0 ]]; then
+if [[ $( cat ${createLog} | grep -Pc "\d{8}T[IVX]+" ) -gt 0 ]]; then
     ## multiple biopsies usually need R from bam2fastq
     echo "[WARN]  ATTENTION: Found T[IVX]+ samples so might need to adjust R barcode"
     cat ${createLog} | grep -P "\d{8}T[IVX]+" | grep Somatic_T

@@ -192,10 +192,10 @@ to automate provisioning many VMs to scale up. The general pattern for this is:
 * Create a VM with a predefined startup script.
 * Within the startup script, download the data you need
 * Within the startup script, run your analysis
-* Within the startup scrupt, upload the results to your own bucket
+* Within the startup script, upload the results to your own bucket
 * Terminate the VM
 
-For this purpose, we're creating a tool you can use to take advantage of all our GCP automation, cost savings and perfomance improvements
+For this purpose, we're creating a tool you can use to take advantage of all our GCP automation, cost savings and performance improvements
 called [Batch 5](https://github.com/hartwigmedical/pipeline5/blob/master/batch/README.md). Batch5 takes care of handling pre-emptible vms,
 setting up local ssds, managing failures, exposing logs, etc.
 
@@ -240,7 +240,7 @@ gsutil ls
 ```
 
 That said, the shell still runs in the browser so can be a little slow and not suited to long running interactions. You can also do 
-everything from a terminal on your own maching with the `gcloud` and `gsutil` tools.
+everything from a terminal on your own machine with the `gcloud` and `gsutil` tools.
 
 Open a terminal and try the following:
 ```
@@ -258,7 +258,7 @@ The first time, its best to create a bucket via the console:
 
 Important concepts:
 * The region is where your bucket will be created. Best to pick a local region.
-* The storage class impacts how your data is stored. Standard will be used for frequently accessed data. Nearline and Coldine for less 
+* The storage class impacts how your data is stored. Standard will be used for frequently accessed data. Nearline and Coldline for less 
 accessed.
 * The access control can be per bucket or per file, normally per bucket is fine.
 * By default data in encrypted with Google's internal keys. Customer Managed Encryption is also available, but does carry a large 
@@ -346,7 +346,7 @@ analysis workloads running between 1-24 hours, and the savings are big (80%).
 
 You can mark a VM pre-emptible on VM creation *Create VM -> Management -> Availability Policy* and through the `glcoud` CLI.
 
-While creating them is easy, its worth having some automation around them to manage pre-emptions. In our pipline, we handle the pre-empted
+While creating them is easy, its worth having some automation around them to manage pre-emptions. In our pipeline, we handle the pre-empted
 signal by polling the GCE API, then re-starting the workload in a new zone.
 
 #### Local SSDs

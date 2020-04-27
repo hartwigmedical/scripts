@@ -2,18 +2,11 @@
 
 source metadata_functions
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
-set=$(basename ${run_dir})
-
-hotspot_bed=/data/common/dbs/sage/ActionableCodingPanel.hg19.bed
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
-joint_name=$(load_joint_name_from_metadata ${run_dir})
 
-
-bam_dir=/data/experiments/191119_sage_panel_slices/${sample}/
 out_dir=/data/experiments/200116_sage_pon/
 
 sample_bam=/data/experiments/191119_sage_panel_slices/bams/${sample}.panel.bam

@@ -207,7 +207,7 @@ if [[ $? = 0 ]]; then
     echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
     create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
 
-    if [[ ${include_ref_bam_jsons} == "1" ] || [ ${include_tumor_bam_jsons} == "1" ]]; then
+    if [[ ${include_ref_bam_jsons} == "1" || ${include_tumor_bam_jsons} == "1" ]]; then
         echo "[INFO] Make sure to run 'refresh_all_shares_for_datarequest ${dr_name} ${request_name}' as sbpext to register the JSONs!"
     fi
 

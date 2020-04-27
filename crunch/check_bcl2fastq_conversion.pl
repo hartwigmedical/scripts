@@ -61,8 +61,8 @@ my $HELP =<<HELP;
     -min_sample_q30 <i>    Percentage
     -min_lane_yield <i>    Bases
     -min_sample_yield <i>  Bases
-    -yield_factor <i>      Factor to devide all yields with ($YIELD_FACTOR)
-    -round_decimals <i>    Factor to devide all yields with ($ROUND_DECIMALS)
+    -yield_factor <i>      Factor to divide all yields with ($YIELD_FACTOR)
+    -round_decimals <i>    Factor to divide all yields with ($ROUND_DECIMALS)
     -samplesheet <s>       Path to SampleSheet.csv file
     -run_info_xml <s>      Path to RunInfo.xml file
     -no_qc                 Skip QC checks

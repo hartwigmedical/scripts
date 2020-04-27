@@ -8,7 +8,7 @@ output:
 # Overview
 
 Hartwig Medical Foundation has been extensively investigating calling 
-switching from Manta+BPI to GRISS for the detection of structural variants.
+switching from Manta+BPI to GRIDSS for the detection of structural variants.
 
 The GRIDSS paper can be found at https://genome.cshlp.org/content/early/2017/11/02/gr.222109.117.abstract
 
@@ -18,7 +18,7 @@ Migrating HMF SV calling to GRIDSS will have the following advantages:
 
 ## Additional split reads
 
-As part of the GRIDSS preprocessing steps, GRIDSS attempts realignment of all soft-clipped bases for which the aligner has not reported a split read alignment.
+As part of the GRIDSS pre-processing steps, GRIDSS attempts realignment of all soft-clipped bases for which the aligner has not reported a split read alignment.
 Although bwa does report split read alignments, feeding the soft clipped reads back to bwa produces additional alignments which the GRIDSs preprocessor converts to split read alignments.
 This results in a slight
 
@@ -46,7 +46,7 @@ With a k-mer size of 25, a poly-A sequence of length 27 and 50 both result in th
 Due to this, de Bruijn graph assemblers typically break contigs at these loops.
 This causes truncated assembly contigs which are difficult to place.
 Since GRIDSS incorporated the expected position into the assembly graph itself the graph is a DAG thus such loops are not present.
-Whilst GRIDSS still produces truncated assemblies when the transition from fixed position SR reads to DPs that can be placed in multiple position occurs in k-mer repeat sequence, this is a less common occurance than any k-mer repeat sequence.
+Whilst GRIDSS still produces truncated assemblies when the transition from fixed position SR reads to DPs that can be placed in multiple position occurs in k-mer repeat sequence, this is a less common occurrence than any k-mer repeat sequence.
 
 Manta assembled across poly-A sequence in around 15% of CPCT02030318 INS calls. On these same breakpoints, GRIDSS assembled across the poly-A in 60% of cases. For example, at 7:153146820 manta assembled AAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA whereas GRIDSS assembled AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATATAAACAATTTCCTGAATAATAAGTCTTATATAATTATTGAATGATACGTTACTATTTTCCTGTTGGCTTAAATTTTTATTTGTCCGGCGAACCGGAGGGTTTCACGATCCTAATGTCTGTTCAAAAGATTGACTCTTAATCAAAAGAAGAGAGGTTTCGATTCGGTGACAAAC.
 
@@ -71,7 +71,7 @@ Looking at the raw assembly contig alignments for CPCT02030318, of the alignment
 
 In addition to your typical SV breakpoints, GRIDSS reports single breakends.
 Single breakends are locations in which there is evidence a structural variant occurs but the partner breakend cannot be unambiguously identified.
-Typically these are events that have one side in repetative sequence, but can also be the result in incorporation of non-reference sequence such as retroviral insertions events.
+Typically these are events that have one side in repetitive sequence, but can also be the result in incorporation of non-reference sequence such as retroviral insertions events.
 Such events are able to pinpoint changes in copy number that would not otherwise be able to the placed to base-pair accuracy.
 Knowning the existence of such events enables a more accurate reconstruction of the somatic genome.
 As these events required a different data model, they have not yet been incorporated into the Hartwig pipeline.
@@ -83,10 +83,10 @@ As these events required a different data model, they have not yet been incorpor
 ### File handles
 
 GRIDSS will temporarily leak file handles until the next full GC.
-In certain situations, these unused file handles can acculate until the file handle ulimit is reached and GRIDSS is killed byt he OS.
+In certain situations, these unused file handles can accumulate until the file handle ulimit is reached and GRIDSS is killed byt he OS.
 GRIDSS using htsjdk to handle SAM/BAM IO which memory maps BAM index files.
 Due to security concerns, Java does not provide an API to explicitly close memory mapping.
-As a result, unsed file handles are not closed until a GC disposes of the underlying channel.
+As a result, used file handles are not closed until a GC disposes of the underlying channel.
 
 The workaround for this behaviour is to increase the file handle ulimit on the OS (ulimit -n).
 

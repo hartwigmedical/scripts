@@ -28,7 +28,7 @@ grep BEALN < ${input_decompressed}  | grep -vE "^#" >> ${withBEALN}
 grep -v BEALN < ${input_decompressed}  | grep -vE "^#" >> ${missingBEALN}
 
 # Work-around for https://github.com/PapenfussLab/gridss/issues/199
-CANDIDATES=$(grep -vE "^#" < ${missingBEALN} | grep -E '([].[][ACGTNagctn]{2})|([ACGTNagctn]{2}[].[])' | wc -l)
+CANDIDATES=$(grep -vE "^#" < ${missingBEALN} | grep -Ec '([].[][ACGTNagctn]{2})|([ACGTNagctn]{2}[].[])')
 if [[ ${CANDIDATES} -gt 0 ]] ; then
 	  java -Xmx1G ${gridss_jvm_args} \
 		    -Dgridss.output_to_temp_file=true \

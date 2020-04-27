@@ -404,7 +404,7 @@ biplot(sdelpca, scale = 0)
 
 ```
 
-# Small inverion FP analysis
+# Small inversion FP analysis
 ```{r}
 sinvgr = svgr[!is.na(svgr$partner)]
 sinvgr = sinvgr[simpleEventType(sinvgr) == "INV"]
