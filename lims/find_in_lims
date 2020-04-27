@@ -18,11 +18,11 @@ match_fields_string=$(join_by "|" "${match_fields[@]}")
 ## retrieve all info for each barcode found
 echo "[INFO] Searching for \"${search_string}\" (exact match with: ${match_fields_string})"
 for match_field in "${match_fields[@]}"; do
-    mapfile -t barcodes < <(query_lims -type samples -rna -exact -filter "${match_field}=${search_string}" -json | jq -r '.[].sample_id' )
+    mapfile -t barcodes < <(query_lims.pl -type samples -rna -exact -filter "${match_field}=${search_string}" -json | jq -r '.[].sample_id' )
     for barcode in "${barcodes[@]}"; do
-        type=$(query_lims -type samples -rna -exact -filter "sample_id=${barcode}" -json | jq -r '.[0].analysis_type' )
+        type=$(query_lims.pl -type samples -rna -exact -filter "sample_id=${barcode}" -json | jq -r '.[0].analysis_type' )
         echo "[INFO] ${barcode} found (type=${type})"
-        query_lims -type samples -filter "sample_id=${barcode}" -json | \
+        query_lims.pl -type samples -filter "sample_id=${barcode}" -json | \
             jq -r '.[] | to_entries|map("  \(.key) = \(.value|tostring)")|.[]' | \
             sort | grep -vP "= $"
     done

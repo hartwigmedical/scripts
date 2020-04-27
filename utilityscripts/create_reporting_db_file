@@ -136,7 +136,7 @@ while IFS= read line;do
 			      purity=$(echo ${position} |tr "," " " | awk '{print $2}')
 			      purityProcent=$(echo ${purity} | awk '{ print $1 * 100}')
 
-			      sampleQuerySBP=$(query_lims -type samples | grep -w ${sampleId})
+			      sampleQuerySBP=$(query_lims.pl -type samples | grep -w ${sampleId})
             barcodeSample=$(echo ${sampleQuerySBP} | awk '{print $2}')
 
             if [[ ${unknownSample} == "unknown" ]]; then
@@ -153,7 +153,7 @@ while IFS= read line;do
                 purity=$(echo ${position} |tr "," " " | awk '{print $2}')
                 purityProcent=$(echo ${purity} | awk '{ print $1 * 100}')
 
-                sampleQuerySBP=$(query_lims -type samples | grep -w $sampleId)
+                sampleQuerySBP=$(query_lims.pl -type samples | grep -w $sampleId)
                 barcodeSample=$(echo ${sampleQuerySBP} | awk '{print $2}')
 
                 if [[ ${unknownSample} == "unknown" ]]; then

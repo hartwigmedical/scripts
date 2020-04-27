@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-UPLOAD_SCRIPT="upload_files_to_nextcloud_directory"
-NEXTCLOUD_DIR="UPLOAD_RESEARCH"
+nextcloud_dir="UPLOAD_RESEARCH"
 
-${UPLOAD_SCRIPT} "$NEXTCLOUD_DIR" "$@"
+upload_files_to_nextcloud_directory "${nextcloud_dir}" "$@"

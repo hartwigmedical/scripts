@@ -4,12 +4,12 @@ submission=$1
 submissionDir="/data/submissions/${submission}"
 sopRegex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
-if [[ -z ${submission} ]]; then echo "[EXIT] Provide submission (eg HMFreg0001)" && exit 1; fi
+if [[ -z "${submission}" ]]; then echo "[EXIT] Provide submission (eg HMFreg0001)" && exit 1; fi
 
-lmsSubJsn=$(query_lims -type submissions -filter "submission=${submission}" -json)
-lmsSmpJsn=$(query_lims -type samples -filter "submission=${submission}" -json)
-apiSmpJsn=$(query_api -type samples -filter "submission=${submission}" -json)
-apiRnsJsn=$(query_api -type runs -filter "name=${submission}" -json)
+lmsSubJsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -json)
+lmsSmpJsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
+apiSmpJsn=$(query_api.pl -type samples -filter "submission=${submission}" -json)
+apiRnsJsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
 
 analyType=$(echo "$lmsSubJsn" | jq -r ".[].analysis_type" )
 smpLmsTot=$(echo "$lmsSmpJsn" | jq 'length')

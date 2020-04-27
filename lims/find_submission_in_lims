@@ -17,10 +17,10 @@ match_fields_string=$(join_by "|" "${match_fields[@]}")
 
 echo "[INFO] Searching for \"${search_string}\" (exact match with: ${match_fields_string})"
 for match_field in "${match_fields[@]}"; do
-   mapfile -t ids < <(query_lims -type submissions -exact -filter "${match_field}=${search_string}" -json | jq -r '.[].submission' )
+   mapfile -t ids < <(query_lims.pl -type submissions -exact -filter "${match_field}=${search_string}" -json | jq -r '.[].submission' )
    for id in "${ids[@]}"; do
        echo "[INFO] ${id} found"
-       query_lims -type submissions -filter "submission=${id}" -json | \
+       query_lims.pl -type submissions -filter "submission=${id}" -json | \
            jq -r '.[] | to_entries|map("  \(.key) = \(.value|tostring)")|.[]' | \
            sort | grep -vP "= $"
    done

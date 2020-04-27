@@ -2,6 +2,11 @@
 
 input_file=$1
 
+if [[ -z "${input_file}" ]]; then
+    echo "[ERROR] No input file provided. Exiting"
+    exit 1
+fi
+
 delim_char=${2:-"\t"}
 
 ## retrieve header line

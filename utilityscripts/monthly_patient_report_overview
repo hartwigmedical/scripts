@@ -4,6 +4,11 @@ source locate_files
 
 month=$1
 
+if [[ -z "${month}" ]]; then
+    echo "[ERROR] No month provided. Exiting"
+    exit 1
+fi
+
 reporting_db_tsv=$(locate_reporting_db_tsv)
 
 echo " [INFO] Creating 20_${month}_overview_tmp.tsv file"

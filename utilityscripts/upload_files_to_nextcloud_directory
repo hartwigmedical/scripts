@@ -8,13 +8,14 @@ function print_help () {
     echo "-----"
     exit 1
 }
+
 if [[ ! $1 || ! $2 || $1 == "-h" || $1 == "--help" ]]; then print_help; fi 
 
 source locate_files
 
 nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
 nextcloud_dir=$1 && shift
-files_to_upload=( "$@" )
+files_to_upload=("$@")
 
 echo "[INFO] Running script $(basename $0)"
 echo "[INFO] Directory to upload into is ${nextcloud_dir}"

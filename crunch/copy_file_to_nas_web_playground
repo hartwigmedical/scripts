@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-file=$1
+file=$1 && shift
 
-if [[ -z ${file} || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "${file}" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename $0) \${file}"
     echo "---"

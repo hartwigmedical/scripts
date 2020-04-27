@@ -7,4 +7,4 @@ if [ -z ${pa_id} ]; then
     exit 1;
 fi
 
-query_lims -json -type samples -filter "hospital_pa_sample_id=${pa_id}"
+query_lims.pl -json -type samples -filter "hospital_pa_sample_id=${pa_id}"

@@ -4,16 +4,15 @@ output_tar_path=$1 && shift
 flowcell_paths=("$@")
 
 YYMMDD="$(date '+%y%m%d')"
-script_name=$(basename $0)
 
 if [[ ${#flowcell_paths[@]} -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Descr: Prints tar command to screen (for any number of provided flowcell paths)"
-  echo " Usage: ${script_name} /path/to/output.tar <FlowcellPath1> [<FlowcellPath2> <FlowcellPathN>]"
-  echo " Examp: ${script_name} /data/tmp/HMFregXXXX.tar 190101_NB000000_0001_ABCDEFGHIJ"
-  echo "  NOTE: Please realize to first cd (directory structures are retained in tar)"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Descr: Prints tar command to screen (for any number of provided flowcell paths)"
+    echo " Usage: $(basename $0) /path/to/output.tar <FlowcellPath1> [<FlowcellPath2> <FlowcellPathN>]"
+    echo " Examp: $(basename $0) /data/tmp/HMFregXXXX.tar 190101_NB000000_0001_ABCDEFGHIJ"
+    echo "  NOTE: Please realize to first cd (directory structures are retained in tar)"
+    echo "---"
+    exit 1
 fi
 
 output_tar_name=$(basename ${output_tar_path})

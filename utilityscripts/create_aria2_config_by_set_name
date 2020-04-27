@@ -25,7 +25,7 @@ echo "[INFO] $msg"
 
 function main() {
     ## check that only one run exists for the set
-    runs_json=$(query_api -type runs -filter "name=$set_name" -exact -json | jq '.')
+    runs_json=$(query_api.pl -type runs -filter "name=$set_name" -exact -json | jq '.')
     runs_count=$(echo "$runs_json" | jq '. | length')
     if [[ "$runs_count" -ne 1 ]]; then
         echo "[ERROR] Only sets supported with exactly one run (found $runs_count). Exiting" && exit 1

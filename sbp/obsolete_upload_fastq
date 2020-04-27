@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-input_dir_path=/data/schuberg/manual_fastq_upload/
-
-upload_fastq_from_dir ${input_dir_path}

@@ -18,7 +18,7 @@ echo "[INFO] JsonCreation started with input date: ${ssheetDate}"
 ## Actual work
 for ssheet in ${SHEETS_LOC}/${ssheetDate}_*_SampleSheet*; do 
     echo ${ssheet}; 
-    print_register_json -samplesheet ${ssheet}; 
+    print_register_json.pl -samplesheet ${ssheet};
 done > ${createLog}
 
 ## Reporting further actions to screen

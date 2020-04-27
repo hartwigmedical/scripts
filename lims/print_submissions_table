@@ -33,14 +33,14 @@ for submission in "${submissions_to_visit[@]}"; do
     fi
     
     ## retrieve missing info
-    samples_json=$(query_lims -type samples -filter "submission=${submission}" -json)
+    samples_json=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
     if [[ "$project_type" == "Cohort" ]]; then
         entity="NA"
         bucket="NA"
         analysis_type="NA"
     elif [[ $(echo "$samples_json" | jq 'length') -gt 0 ]]; then
         entity=$(echo "$samples_json" | jq -r '.[-1].entity')
-        bucket=$(query_api -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
+        bucket=$(query_api.pl -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
     fi
 
     ## perform some sanity checks
