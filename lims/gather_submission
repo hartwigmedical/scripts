@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 SUBMISSIONS_DIR="/data/submissions"
-HMF_QUERY_SCRIPT="query_lims"
+HMF_QUERY_SCRIPT="query_lims.pl"
 API_QUERY_SCRIPT="query_api.pl"
 HMF_LIMS_JSON='/data/lims/lims.json'
 submission=$1
