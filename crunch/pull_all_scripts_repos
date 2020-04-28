@@ -5,7 +5,9 @@ pull_script="pull_scripts_repo"
 for server in crunch00{1,2,3}; do
     echo "---"
     echo "[INFO] Executing \"${pull_script}\" at server ${server}"
-    ssh ${server} "${pull_script}"
+    # Need to configure umask to 0002 which sets permissions of all new files on particular crunch to 664.
+    # If we don't do this, a subsequent different user which pulls can't pull anymore due to wrong file permissions.
+    ssh ${server} "umask 0002 && ${pull_script}"
 done
 
 echo "---"
