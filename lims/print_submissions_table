@@ -14,7 +14,7 @@ for submission in "${submissions_to_visit[@]}"; do
     obj_json=$(echo "${SUBMISSIONS_JSON}" | jq ".${submission}")
     project_name=$(echo "${obj_json}" | jq -r ".project_name")
     project_type=$(echo "${obj_json}" | jq -r ".project_type")
-    sample_count=$(echo "${obj_json}" | jq -r ".sample_count")
+    expected_sample_count=$(echo "${obj_json}" | jq -r ".sample_count")
     analysis_type=$(echo "${obj_json}" | jq -r ".analysis_type")
     entity=""
     bucket=""
@@ -34,13 +34,16 @@ for submission in "${submissions_to_visit[@]}"; do
     
     ## retrieve missing info
     samples_json=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
+    lims_sample_count=$(echo "$samples_json" | jq 'length')
     if [[ "$project_type" == "Cohort" ]]; then
         entity="NA"
         bucket="NA"
         analysis_type="NA"
-    elif [[ $(echo "$samples_json" | jq 'length') -gt 0 ]]; then
+    elif [[ "$lims_sample_count" -gt 0 ]]; then
         entity=$(echo "$samples_json" | jq -r '.[-1].entity')
         bucket=$(query_api.pl -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
+    else
+        echo "[WARNING] No sample found for $submission so unable to retrieve entity and bucket!"
     fi
 
     ## perform some sanity checks
@@ -48,7 +51,7 @@ for submission in "${submissions_to_visit[@]}"; do
     if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARNING] No entity found for $submission!"; fi
     if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARNING] No bucket found for $submission!"; fi
     if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then
-        echo -e "\n[WARNING] Found CORE submission with wrong bucket (submission=$submission entity=$entity bucket=$bucket)!!\n"
+        echo -e "\n[WARNING] Found CORE submission where bucket is not $CORE_BUCKET (submission=$submission entity=$entity bucket=$bucket)!!\n"
     fi
 
     ## output
@@ -57,5 +60,5 @@ for submission in "${submissions_to_visit[@]}"; do
         "$project_name" \
         "$project_type" \
         "$analysis_type" \
-        "$sample_count"
+        "$expected_sample_count"
 done
