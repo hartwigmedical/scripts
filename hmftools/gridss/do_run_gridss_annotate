@@ -22,6 +22,7 @@ if [[ ! -f ${gridss_raw_vcf} ]] ; then
             BLACKLIST=${blacklist} \
             CONFIGURATION_FILE=${gridss_config_file}
     fi
+
 	  if [[ ! -f ${gridss_raw_vcf} ]] ; then
 		    echo $(date) AnnotateUntemplatedSequence
 		    /usr/bin/time -o ${log_prefix}.AnnotateUntemplatedSequence.log \

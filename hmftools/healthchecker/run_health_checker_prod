@@ -4,8 +4,8 @@ source metadata_functions
 
 run_dir=$1 && shift
 
-if [[ -z ${run_dir} ]]; then
-    echo "[ERROR] No rundir is provided to run_health_checker_prod. Exiting."
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No rundir is provided to $(basename $0). Exiting."
     exit 1
 fi
 

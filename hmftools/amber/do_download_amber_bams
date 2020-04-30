@@ -2,8 +2,12 @@
 
 source metadata_functions
 
-prefix=$(dirname $(readlink $0 || echo $0))
 run_dir=$1 && shift
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] Run dir not provided. Exiting."
+    exit 1
+fi
+
 set=$(basename ${run_dir})
 
 amber_bed=/data/common/dbs/germline_het_pon_hg19/GermlineHetPon.hg19.bed
@@ -15,10 +19,10 @@ out_dir=/data/gcp/bam_downloads
 
 #sample_bam=${out_dir}/${sample}.amber.bam
 #if [[ ! -f ${sample_bam} ]]; then
-#    ${prefix}/../bamslicer/do_slice_bam_on_gcp ${set} ${sample} ${amber_bed} ${sample_bam}
+#    do_slice_bam_on_gcp ${set} ${sample} ${amber_bed} ${sample_bam}
 #fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
 if [[ ! -f ${normal_bam} ]]; then
-    ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${sample} ${amber_bed} ${normal_bam}
+    slice_ref_sample_bam_on_gcp ${set} ${sample} ${amber_bed} ${normal_bam}
 fi

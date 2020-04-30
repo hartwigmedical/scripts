@@ -18,7 +18,7 @@ if [[ ! -f ${input_vcf} ]] ; then
 fi
 
 if [[ "${input_vcf/.ann.vcf.gz/}" != "$input_vcf" ]] ; then
-	echo "[WARN] Already annotated purple VCF ${input_vcf}. Exiting."
+	  echo "[ERROR] Already annotated purple VCF ${input_vcf}. Exiting."
     exit 1
 fi
 

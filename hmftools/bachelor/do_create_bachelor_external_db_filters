@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-bachelor_jar=$1
-output_dir=$2
+bachelor_jar=$1 && shift
+output_dir=$1 && shift
 
 bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
 clinvar_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
