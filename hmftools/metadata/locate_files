@@ -452,7 +452,6 @@ locate_purple_on_sage_circos_plot() {
     echo ${circos_plot}
 }
 
-
 locate_purple_pilot_circos_plot() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
