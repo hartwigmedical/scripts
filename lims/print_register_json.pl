@@ -28,7 +28,6 @@ my $NO_PIPELINE_PRIO = 100;
 my $YES_PIPELINE_PRIO = 99;
 
 my $LIMS_IN_FILE = '/data/lims/lims.json';
-my $OUTPUT_DIR = '/data/ops/api/prod/'
 my $JSON_BASE_DIR = '/data/ops/api/prod/set_jsons';
 my $JSON_DONE_DIR = '/data/ops/api/prod/set_jsons/registered';
 my $SHALLOW_RUNS_DIR = '/data/data_archive/shallow_seq_pipelines';
