@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 SHEETS_LOC=/data/samplesheets
+JSONS_LOC=/data/ops/api/prod/jsons
 
 ssheetDate=$1
 currDate=$( date +'%y%m%d' )
-createLog="${HOME}/logs/${currDate}_create_jsons_for_${ssheetDate}"
-registerLog="${HOME}/logs/${currDate}_register_sets_from_${ssheetDate}_flowcells"
+createLog="/data/ops/api/prod/logs/${currDate}_create_jsons_for_${ssheetDate}"
+registerLog="/data/ops/api/prod/logs/${currDate}_register_sets_from_${ssheetDate}_flowcells"
 
 ## Sanity checks
-if [[ ! $( whoami ) =~ ^sbpext$ ]]; then echo "[ERROR] Script can currently only be ran as user sbpext" && exit 1; fi
 if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[ERROR] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
 if [[ -f ${createLog} ]]; then echo "[ERROR] Log already exists: ${createLog}" && exit 1; fi
 if [[ -f ${registerLog} ]]; then echo "[ERROR] Log already exists: ${registerLog}" && exit 1; fi
@@ -30,9 +30,9 @@ fi
 
 ## Samples/barcodes that already exist in HMF API already have the use_existing flag
 ## but in case a barcode is re-used at the same register batch then manual adjustment is needed
-for dupBc in $( cat ${HOME}/set_jsons/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do 
+for dupBc in $( cat ${JSONS_LOC}/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
    echo "[WARN] Found duplicate barcode ($dupBc): make sure the use_existing flag is set correctly on second one:"; 
-   for readyJson in $(find ${HOME}/set_jsons/ -maxdepth 1 -name "*json"); do 
+   find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read readyJson; do
        if [[ $(grep -c "${dupBc}" $readyJson) -gt 0 ]]; then
            echo "[WARN]   $readyJson"
        fi
@@ -44,5 +44,5 @@ echo "[INFO] TODO: If all OK you can register them in API with:"
 echo " nohup register_all_ready_jsons > ${registerLog} &"
 echo ""
 echo "[INFO] TODO: Afterwards you can check the registration success rate with:"
-echo " echo \"Amount IN: \"\$( ls ${HOME}/set_jsons/*json | wc -l); echo \"Amount OK: \"\$( cat ${registerLog} | grep created | wc -l) "
+echo " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${registerLog} | grep created | wc -l) "
 echo ""

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-for i in /home/sbpext/set_jsons/*json; do 
+for json in /data/ops/api/prod/jsons/*.json; do
     echo ""
-    echo "[INFO] About to register: $i"
-    register_set_by_json_to_prod $i
+    echo "[INFO] About to register: $json"
+    register_set_by_json_to_prod $json
 done

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-CRT_FILE='/home/sbpext/bcl-upload-prod/api.crt'
-KEY_FILE='/home/sbpext/bcl-upload-prod/api.key'
+api_cred_dir="/data/common/dbs/api_credentials"
+api_crt_file="${api_cred_dir}/api.crt"
+api_key_file="${api_cred_dir}/api.key"
 
-curl -v --cert-type pem --cert ${CRT_FILE} --key ${KEY_FILE} "$@"
+curl -v --cert-type pem --cert ${api_crt_file} --key ${api_key_file} "$@"
