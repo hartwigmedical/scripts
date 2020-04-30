@@ -12,9 +12,8 @@ snpeff_db="GRCh37.75"
 
 run_dir=$1
 
-if [[ -z ${run_dir} ]]; then
-    echo "Usage: $ ./mnv_detector_and_merger <run_dir>"
-    echo "   runpath = Path to pipeline run dir"
+if [[ ! -d "${run_dir}" ]]; then
+    echo "Usage: $ $(basename $0) run_dir"
     echo "Notes:"
     echo "  - should have a ./metadata file in run_dir"
     echo "  - somatic vcf should meet format *_post_processed.vcf.gz"
@@ -26,7 +25,6 @@ somatic_input_vcf=$(find ${run_dir} -wholename "*/somaticVariants/*_post_process
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 ## Some sanity checks
-if [[ ! -d "${run_dir}" ]]; then echo "[ERROR] Run (${run_dir}) not found" && exit 1; fi
 if [[ ! -f "${somatic_input_vcf}" ]]; then echo "[ERROR] Vcf not found" && exit 1; fi
 if [[ -z "${tumor_sample}" ]]; then echo "[ERROR] Sample not found" && exit 1; fi
 
