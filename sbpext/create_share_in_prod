@@ -7,4 +7,4 @@ if [[ -z ${json_path+x} ]]; then
     exit 1
 fi
 
-sbp_curl https://api.hartwigmedicalfoundation.nl/hmf/v1/shares -XPOST -H "Content-Type: application/json" -d @${json_path}
+api_curl https://api.hartwigmedicalfoundation.nl/hmf/v1/shares -XPOST -H "Content-Type: application/json" -d @${json_path}
