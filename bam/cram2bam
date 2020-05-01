@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+
+cram=$1
+
+if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "-----"
+    echo " Usage: $(basename $0) <CRAM file>"
+    echo "-----"
+    exit 1
+fi
+
+## use 80 percent of available threads
+threads=$( expr $(grep -c processor /proc/cpuinfo) / 10 \* 8)
+samtools="/data/tools/samtools_v1.10/samtools"
+
+## reset paths for use at datastore server
+if [[ "$(hostname)" == "datastore" ]]; then
+    samtools="/data/common/tools/samtools_v1.10/samtools"
+fi
+
+main() {
+    info "Starting with $(basename $0)"
+    
+    ## sanity checks
+    command -v "${samtools}" >/dev/null 2>&1 || die "$samtools not found"
+    [[ -f "${cram}" ]] || die "File not found ($cram)"
+    [[ "${cram}" =~ cram$ ]] || die "Not a CRAM file ($cram)"
+
+    ## variables setup
+    bam=$(echo "${cram}" | sed 's/cram$/bam/')
+
+    ## jobs
+    info "Config: using samtools ($samtools)"
+    info "Converting $cram to $bam (with samtools view)"
+    $samtools view -O bam -o "${bam}" --threads "${threads}" "${cram}"
+
+    info "Creating flagstat for $cram"
+    cram_flagstat="${cram}.flagstat"
+    $samtools flagstat --threads "${threads}" "${cram}" > "${cram_flagstat}"
+
+    info "Creating flagstat for $bam"
+    bam_flagstat="${bam}.flagstat"
+    $samtools flagstat --threads "${threads}" "${bam}" > "${bam_flagstat}"
+
+    total_cram=$(cat $cram_flagstat | head -1 | cut -d" " -f1)
+    total_bam=$(cat $bam_flagstat | head -1 | cut -d" " -f1)
+
+    info "File ${cram_flagstat} shows ${total_cram} total reads"
+    info "File ${bam_flagstat} shows ${total_bam} total reads"
+
+    info "Running diff on flagstats"
+    diff ${cram_flagstat} ${bam_flagstat}
+    if [[ $? -ne 0 ]]; then 
+        warn "Flagstat diff failed: check result before using downstream!!"
+    fi
+
+    info "Finished with $(basename $0)"
+}
+
+die() { 
+    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
+    exit 1 
+}
+warn() { 
+    echo "[WARNING] $(date +"%y%m%d %T") $@" >&2 
+}
+info() { 
+    echo "[INFO] $(date +"%y%m%d %T") $@"
+}
+
+main
