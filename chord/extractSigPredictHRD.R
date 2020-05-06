@@ -3,10 +3,11 @@
 args <- commandArgs(TRUE)
 
 chordToolDir <- args[1]
-  workingDir <- args[2]
-  sampleName <- args[3]
-   snvIndVcf <- args[4]
-       svVcf <- args[5]
+chordVersion <- args[2]
+  workingDir <- args[3]
+  sampleName <- args[4]
+   snvIndVcf <- args[5]
+       svVcf <- args[6]
    sigOutTxt <- paste0( workingDir, '/', sampleName, '_chord_signatures.txt')
    prdOutTxt <- paste0( workingDir, '/', sampleName, '_chord_prediction.txt')
 
@@ -16,7 +17,7 @@ setwd(workingDir)
 suppressPackageStartupMessages(library('devtools'))
 suppressPackageStartupMessages(library('randomForest'))
 suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/mutSigExtractor-1.03')))
-suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD-60.02')))
+suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD-', chordVersion)))
 
 cat("[INFO] Settings:\n")
 cat("[INFO]   Chord dir:", chordToolDir, "\n")

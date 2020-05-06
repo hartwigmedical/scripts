@@ -13,6 +13,7 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 chord_dir=/data/common/tools/chord_v60.02
+chord_version=60.02
 working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
@@ -23,7 +24,7 @@ echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-extractSigPredictHRD.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+extractSigPredictHRD.R ${chord_dir} ${chord_version} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
 
 file_count=$(ls ${working_dir} | wc -l)
 
