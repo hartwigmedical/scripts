@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $(basename $0) HMFreg0001"
-  echo "        $(basename $0) DVO-001-001"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Usage: $(basename $0) HMFreg0001"
+    echo "        $(basename $0) DVO-001-001"
+    echo "---"
+    exit 1
 fi
 
 ## init
-search_string=$1
+search_string=$1 && shift
 
 function join_by { local IFS="$1"; shift; echo "$*"; }
 match_fields=(submission project_name)

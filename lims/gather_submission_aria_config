@@ -2,7 +2,7 @@
 
 CREATE_ARIA_SCRIPT="create_aria2_config_by_set_name"
 
-if [[ $# -eq 0 ]] ; then echo "Usage: basename($0) HMFreg0000"; exit 1; fi
+if [[ $# -eq 0 ]]; then echo "Usage: basename($0) HMFreg0000"; exit 1; fi
 
 submission=$1
 submission_dir="/data/submissions/${submission}"

@@ -1,33 +1,37 @@
 #!/usr/bin/env bash
 
 submission=$1
-submissionDir="/data/submissions/${submission}"
-sopRegex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
-if [[ -z "${submission}" ]]; then echo "[ERROR] Provide submission (eg HMFreg0001)" && exit 1; fi
+if [[ -z "${submission}" ]]; then
+    echo "[ERROR] Provide a submission (eg HMFreg0001). Exiting"
+    exit 1
+fi
 
-lmsSubJsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -json)
-lmsSmpJsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
-apiSmpJsn=$(query_api.pl -type samples -filter "submission=${submission}" -json)
-apiRnsJsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
+submission_dir="/data/submissions/${submission}"
+sop_regex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
-analyType=$(echo "$lmsSubJsn" | jq -r ".[].analysis_type" )
-smpLmsTot=$(echo "$lmsSmpJsn" | jq 'length')
-smpApiTot=$(echo "$apiSmpJsn" | jq 'length')
-rnsApiTot=$(echo "$apiRnsJsn" | jq 'length')
+lms_sub_jsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -json)
+lms_smp_jsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
+api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -json)
+api_rns_jsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
 
-smpLmsErr=$(echo "$lmsSmpJsn" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
-smpApiRdy=$(echo "$apiSmpJsn" | jq -c '[.[] | select(.status=="Ready")] | length')
-rnsApiRdy=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="SnpCheck")] | length')
-rnsApiVal=$(echo "$apiRnsJsn" | jq -c '[.[] | select(.status=="Validated")] | length')
+analy_type=$(echo "${lms_sub_jsn}" | jq -r ".[].analysis_type" )
+smp_lms_tot=$(echo "${lms_smp_jsn}" | jq 'length')
+smp_api_tot=$(echo "${api_smp_jsn}" | jq 'length')
+rns_api_tot=$(echo "${api_rns_jsn}" | jq 'length')
 
-echo "[INFO] Output type for ${submission} in lims is \"${analyType}\""
-echo "[INFO] ${smpLmsTot} LMS samples total (of which ${smpLmsErr} failed)"
-echo "[INFO] ${smpApiTot} BFX samples total"
-echo "[INFO] ${smpApiRdy} BFX samples ready"
-echo "[INFO] ${rnsApiTot} BFX runs total"
-echo "[INFO] ${rnsApiRdy} BFX runs finished"
-echo "[INFO] ${rnsApiVal} BFX runs validated"
+smp_lms_err=$(echo "${lms_smp_jsn}" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
+smp_api_rdy=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Ready")] | length')
+rns_api_rdy=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="SnpCheck")] | length')
+rns_api_val=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated")] | length')
+
+echo "[INFO] Output type for ${submission} in lims is \"${analy_type}\""
+echo "[INFO] ${smp_lms_tot} LMS samples total (of which ${smp_lms_err} failed)"
+echo "[INFO] ${smp_api_tot} BFX samples total"
+echo "[INFO] ${smp_api_rdy} BFX samples ready"
+echo "[INFO] ${rns_api_tot} BFX runs total"
+echo "[INFO] ${rns_api_rdy} BFX runs finished"
+echo "[INFO] ${rns_api_val} BFX runs validated"
 echo ""
 echo "[INFO] Inspect further:"
 echo "  query_lims.pl -type samples -filter submission=${submission}"
@@ -39,9 +43,11 @@ echo "  gather_submission ${submission}"
 echo ""
 
 ## print warnings last
-if [[ -d ${submissionDir} ]]; then echo "[WARNING] Submission directory already exists (${submissionDir})"; fi
-if [[ ! "${rnsApiVal}" -eq "${rnsApiTot}" ]]; then echo "[WARNING] Not all runs in API are status Validated!"; fi
-echo "$lmsSmpJsn" | jq -r '.[].lab_sop_versions' | while read smpSopStr; do
-  ## Note to self: no quoted regex since bash 3.2
-  if [[ ! "${smpSopStr}" =~ ${sopRegex} ]]; then echo "[WARNING] Found sample with incomplete SOP string (${smpSopStr} does not match ${sopRegex})!"; fi
+if [[ -d ${submission_dir} ]]; then echo "[WARNING] Submission directory already exists (${submission_dir})"; fi
+if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then echo "[WARNING] Not all runs in API are status Validated!"; fi
+echo "${lms_smp_jsn}" | jq -r '.[].lab_sop_versions' | while read smp_sop_str; do
+    ## Note to self: no quoted regex since bash 3.2
+    if [[ ! "${smp_sop_str}" =~ ${sop_regex} ]]; then
+        echo "[WARNING] Found sample with incomplete SOP string (${smp_sop_str} does not match ${sop_regex})!"
+    fi
 done

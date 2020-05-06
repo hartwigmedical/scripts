@@ -3,7 +3,7 @@
 pa_id=$1 && shift
 
 if [[ -z "${pa_id}" ]]; then
-    echo "[ERROR] No pathology id passed to function"
+    echo "[ERROR] No pathology id passed to function. Exiting"
     exit 1;
 fi
 
