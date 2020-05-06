@@ -1,20 +1,13 @@
-source api_functions
 source metadata_functions
-source gcp_functions
 
 set=$1
 run_dir="/data/cpct/runs/"${set}
-
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 
+bucket=$(echo ${set} | tr A-Z a-z | tr _ -)
 
-run_info=$(load_run_info_for_set ${set})
-pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
-bucket=$(extract_bucket_from_run_info "${run_info}")
-
-gs_path=gs://${bucket}/${set}
-sample_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|aligner)/${sample}(_dedup)?(.realigned)?.bam$")
-normal_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*(mapping|aligner)/${normal}(_dedup)?(.realigned)?.bam$")
+normal_bam=gs://hmf-cram-${bucket}/${normal}_dedup.realigned.cram
+sample_bam=gs://hmf-cram-${bucket}/${sample}_dedup.realigned.cram
 
 echo {\"tumor\":\"${sample_bam}\", \"reference\":\"${normal_bam}\", \"tumorSample\":\"${sample}\", \"referenceSample\":\"${normal}\"},
