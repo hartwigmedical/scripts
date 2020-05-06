@@ -40,11 +40,28 @@ echo "[INFO] TEST version: $test_pip_vsn"
 echo ""
 echo "===== Directory CHECKS"
 for tool_name in ${tools[*]}; do 
-    for run_path in "$base_run_path" "$test_run_path"; do
-        run_name=$(basename $run_path)
-        tool_path="$run_path/$tool_name"
-        count=$(ls $tool_path | wc -l )
-        echo "[INFO] Subdir $tool_name has $count file(s) in $run_name"
+    base_tool_path="${base_run_path}/${tool_name}"
+    test_tool_path="${test_run_path}/${tool_name}"
+    base_file_count=$(find "${base_tool_path}" -maxdepth 1 | wc -l)
+    test_file_count=$(find "${test_tool_path}" -maxdepth 1 | wc -l)
+    if [[ $base_file_count -eq $test_file_count ]]; then
+        echo "[INFO] Tool directory ${tool_name} has identical file count (${base_file_count}) for base and test"
+    else
+        echo "[WARN] Tool directory ${tool_name} has different file count in base (${base_file_count}) vs test (${test_file_count})"
+    fi
+
+    find ${base_run_path}/${tool_name} -mindepth 1 -maxdepth 1 -type f | \
+    grep -vP "(vcf|tbi|gz|log|sh|cram|crai|bam|bai)$" | \
+    while read base_file_path; do 
+        file_name=$(basename "${base_file_path}"); 
+        test_file_path="${test_run_path}/${tool_name}/${file_name}"
+        base_count=$(cat "${base_file_path}" | wc -l)
+        test_count=$(cat "${test_file_path}" | wc -l)
+        if [[ $base_count -eq $test_count ]]; then
+            echo "[INFO]   File ${file_name} has identical line count (${base_count}) for base and test"
+        else
+            echo "[WARN]   File ${file_name} has different line count in base (${base_count}) vs test (${test_count})"
+        fi
     done
 done
 
