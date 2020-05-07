@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+######################
+#Edit me
+fingerprinting_dir="/data/experiments/fingerprinting_for_aumc_DR089"
+gatk_jar="/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar"
+ref_genome=$(locate_ref_genome_fasta_file)
+
+######################
+
+#input data
+germline_vcf=$1
+sample_id=$(dirname "${germline_vcf}" | cut -d "/" -f10)
+
+cd ${fingerprinting_dir}
+
+java -Xmx8g -jar ${gatk_jar} \
+    -T SelectVariants \
+    --removeUnusedAlternates \
+    -R "${ref_genome}" \
+    -L "${fingerprinting_dir}/inputs/snp_filtered.vcf" \
+    -V "${germline_vcf}" \
+    -selectType SNP \
+    -o "${fingerprinting_dir}/output/${sample_id}.vcf"

@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+######################
+#Edit me
+fingerprinting_dir="/data/experiments/fingerprinting_for_aumc_DR089"
+gatk_jar="/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar"
+ref_genome=$(locate_ref_genome_fasta_file)
+dbsnp_database="/data/common/dbs/dbsnp_v149/common_all_20161121.vcf.gz"
+list_of_snps_bed="${fingerprinting_dir}/inputs/snp_list.bed"
+######################
+
+cd ${fingerprinting_dir}
+
+java -Xmx8g -jar ${gatk_jar} \
+    -T SelectVariants \
+    --removeUnusedAlternates \
+    -R "${ref_genome}" \
+    -L "${list_of_snps_bed}" \
+    -V "${dbsnp_database}" \
+    -selectType SNP \
+    -o "${fingerprinting_dir}/inputs/snp_filtered.vcf"
+
+
+#remark: add manually variants not included in dbsnp database ((v137) to snp_filtered.vcf file
+#rs121909548
+#rs8176719
+#rs2232698

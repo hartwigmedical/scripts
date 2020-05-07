@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+for run in /data/cpct/runs*; do
+    sample_ref=$(load_ref_sample_from_metadata ${run_dir})
+    germline_vcf=$(locate_germline_variants ${run} ${ref_sample})
+
+    select_variants_gatk ${germline_vcf}
+done
