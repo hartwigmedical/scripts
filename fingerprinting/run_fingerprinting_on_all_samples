@@ -7,5 +7,5 @@ for run in /data/cpct/runs/*; do
     sample_ref=$(load_ref_sample_from_metadata ${run})
     germline_vcf=$(locate_germline_variants ${run} ${ref_sample})
 
-    select_variants_gatk ${germline_vcf}
+    select_variants_gatk ${germline_vcf} ${sample_ref}
 done

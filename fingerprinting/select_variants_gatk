@@ -11,16 +11,23 @@ ref_genome=$(locate_ref_genome_fasta_file)
 ######################
 
 #input data
-germline_vcf=$1
-sample_id=$(dirname "${germline_vcf}" | cut -d "/" -f10)
+germline_vcf=$1 && shift
+sample_id=$1 && shift
 
-cd ${fingerprinting_dir}
+output_vcf="${fingerprinting_dir}/output/${sample_id}.vcf"
 
-java -Xmx8g -jar ${gatk_jar} \
-    -T SelectVariants \
-    --removeUnusedAlternates \
-    -R "${ref_genome}" \
-    -L "${fingerprinting_dir}/inputs/snp_filtered.vcf" \
-    -V "${germline_vcf}" \
-    -selectType SNP \
-    -o "${fingerprinting_dir}/output/${sample_id}.vcf"
+if [[ ! -f ${output_vcf} ]]; then
+    echo "[INFO] Running fingerprinting on sample ${sample_id} using germline vcf ${germline_vcf}"
+    cd ${fingerprinting_dir}
+
+    java -Xmx8g -jar ${gatk_jar} \
+        -T SelectVariants \
+        --removeUnusedAlternates \
+        -R "${ref_genome}" \
+        -L "${fingerprinting_dir}/inputs/snp_filtered.vcf" \
+        -V "${germline_vcf}" \
+        -selectType SNP \
+        -o "${fingerprinting_dir}/output/${sample_id}.vcf"
+else
+    echo "[INFO] Skipping fingerprinting on ${sample_id}. Output already exists."
+fi
