@@ -7,7 +7,8 @@ normal=$(load_ref_sample_from_metadata ${run_dir})
 
 bucket=$(echo ${set} | tr A-Z a-z | tr _ -)
 
-normal_bam=gs://hmf-cram-${bucket}/${normal}_dedup.realigned.cram
-sample_bam=gs://hmf-cram-${bucket}/${sample}_dedup.realigned.cram
+gs_path=gs://hmf-cram-${bucket}/
+normal_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -P "${normal}.*cram$")
+sample_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -P "${sample}.*cram$")
 
 echo {\"tumor\":\"${sample_bam}\", \"reference\":\"${normal_bam}\", \"tumorSample\":\"${sample}\", \"referenceSample\":\"${normal}\"},
