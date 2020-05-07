@@ -4,7 +4,7 @@ source locate_files
 
 ######################
 #Edit me
-fingerprinting_dir="/data/experiments/fingerprinting_for_aumc_DR089"
+fingerprinting_dir="data/experiments/200507_fingerprinting_for_aumc_DR089"
 gatk_jar="/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar"
 ref_genome=$(locate_ref_genome_fasta_file)
 dbsnp_database="/data/common/dbs/dbsnp_v149/common_all_20161121.vcf.gz"
