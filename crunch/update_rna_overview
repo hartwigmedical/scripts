@@ -24,6 +24,7 @@ echo "[INFO] START ${taskId} ($YYMMDD)" | tee ${outSum}
 echo "[INFO] Writing err log to ${errLog}" | tee -a ${outSum}
 
 # gather info
+fastq_disk_usage=$(du -sh ${seqDir} | cut -f1)
 echo -e "#sample\tbarcode\tsize\tpath\tflowcells" > "${outTsv}"
 for fastqDirPath in ${seqDir}/*; do 
     fastqDirName=$( basename ${fastqDirPath} )
@@ -41,6 +42,7 @@ sampleCount=$( grep -cv "^#" ${outSmp} )
  uniqSampleCount=$( cat ${outTsv} | grep -v ^# | cut -f1 | sort | uniq | wc -l )
 uniqBarcodeCount=$( cat ${outTsv} | grep -v ^# | cut -f2 | sort | uniq | wc -l )
 
+echo "[INFO] FASTQ data footprint: ${fastq_disk_usage}" | tee -a ${outSum}
 echo "[INFO] Number of samples: ${sampleCount}" | tee -a ${outSum}
 echo "[INFO] Number of unique sample names: ${uniqSampleCount}" | tee -a ${outSum}
 echo "[INFO] Number of unique sample barcodes: ${uniqBarcodeCount}" | tee -a ${outSum}
