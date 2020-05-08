@@ -2,36 +2,41 @@
 
 source locate_files
 
-sampleId=$1
-outputDir=$2
+sample_id=$1
+output_dir=$2
+
+if [[ -z "${sample_id}" || -z "${output_dir}" ]]; then
+    echo "[ERROR] Sample ID and/or Output dir not provided. Exiting."
+    exit 1
+fi
 
 credentials=$(locate_prod_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-sigAnalyser=/data/common/tools/sig_analyser_pilot/sig_analyser.jar
-cosmicSignatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
-snvSigScript=/data/common/repos/scripts/hmftools/sigs/SampleSnvSigs.R
+sig_analyser=/data/common/tools/sig_analyser_pilot/sig_analyser.jar
+cosmic_signatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
+snv_sig_script=/data/common/repos/scripts/hmftools/sigs/SampleSnvSigs.R
 
 # create 3 separate files each with different subclonal and ploidy criteria
 # SubclonalLikelihood >0.5
 # SubclonalLikelihood < 0.5  & Ploidy < 1.5
 # Ploidy > 1.5
 
-loadSnvsCmd="java -jar ${sigAnalyser} -load_snvs -sample_ids ${sampleId} -log_debug \
-	-db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${outputDir}"
+load_snvs_cmd="java -jar ${sig_analyser} -load_snvs -sample_ids ${sample_id} -log_debug \
+	-db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${output_dir}"
 
-echo ${loadSnvCmd}
+echo ${load_snvs_cmd}
 
-counts_01=${sampleId}_01
-counts_02=${sampleId}_02
-counts_03=${sampleId}_03
-${loadSnvsCmd} -subclonal_min 0.5 -output_file_id ${counts_01}
-${loadSnvsCmd} -subclonal_max 0.5 -ploidy_max 1.5 -output_file_id ${counts_02}
-${loadSnvsCmd} -ploidy_min 1.5 -output_file_id ${counts_03}
+counts_01=${sample_id}_01
+counts_02=${sample_id}_02
+counts_03=${sample_id}_03
+${load_snvs_cmd} -subclonal_min 0.5 -output_file_id ${counts_01}
+${load_snvs_cmd} -subclonal_max 0.5 -ploidy_max 1.5 -output_file_id ${counts_02}
+${load_snvs_cmd} -ploidy_min 1.5 -output_file_id ${counts_03}
 
 # Rscript SampleSnvSigs.R snv_db_sample_counts.csv snv_cosmic_sigs.csv ./
-Rscript ${snvSigScript} ${outputDir}/${counts_01}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_01}_snv_sig_allocation.csv
-Rscript ${snvSigScript} ${outputDir}/${counts_02}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_02}_snv_sig_allocation.csv
-Rscript ${snvSigScript} ${outputDir}/${counts_03}_sample_counts.csv ${cosmicSignatures} ${outputDir}/${counts_03}_snv_sig_allocation.csv
+Rscript ${snv_sig_script} ${output_dir}/${counts_01}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_01}_snv_sig_allocation.csv
+Rscript ${snv_sig_script} ${output_dir}/${counts_02}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_02}_snv_sig_allocation.csv
+Rscript ${snv_sig_script} ${output_dir}/${counts_03}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_03}_snv_sig_allocation.csv
