@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
-CURR_HOST=$(hostname)
+HOSTNAME=$(hostname)
 PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
 ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Data/Intensities/BaseCalls"
+API_SAMPLES_JSON="/data/lims/api_files/samples.json"
+REGISTERED_DIR="/data/ops/api/prod/jsons/registered"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
@@ -15,41 +17,39 @@ if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-seqRuns=("$@")
-seqDirs=()
+seq_runs=("$@")
+seq_dirs=()
 
 function printHeader() {
-    local fieldTitle=$1 && shift
-    echo -e "\n## ----------\n## ${fieldTitle}:\n## ----------"
+    local field_title=$1 && shift
+    echo -e "\n## ----------\n## ${field_title}:\n## ----------"
 }
 
 ## make sure all are absolute paths
-for seqRun in "${seqRuns[@]}"; do
+for seq_run in "${seq_runs[@]}"; do
     ## remove trailing slash if present
-    seqRun=$(echo ${seqRun%/})
-
-    if [[ $seqRun =~ ^\/ ]]; then
-        seqDirs+=(${seqRun})
+    seq_run=$(echo ${seq_run%/})
+    if [[ $seq_run =~ ^\/ ]]; then
+        seq_dirs+=(${seq_run})
     else
-        seqDirs+=("$PWD/${seqRun}" )
+        seq_dirs+=("$PWD/${seq_run}" )
     fi
-    
 done
 
 ## some checking before we start
-cmdsToExecute=()
-for seqDir in "${seqDirs[@]}"; do
-    ssheet_path="${seqDir}/${SSHEET_FILE}"
-    errlog_path="${seqDir}/${ERRLOG_FILE}"
-    report_path="${seqDir}/${REPORT_ROOT}/{Reports,Stats}"
-    seqdir_name="$( basename $seqDir | tr -d '\r' )"
-    hmfrun_name="$( cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r' )"
+cmds_to_execute=()
+for seq_dir in "${seq_dirs[@]}"; do
+    ssheet_path="${seq_dir}/${SSHEET_FILE}"
+    errlog_path="${seq_dir}/${ERRLOG_FILE}"
+    report_path="${seq_dir}/${REPORT_ROOT}/{Reports,Stats}"
+    seqdir_name="$(basename $seq_dir | tr -d '\r')"
+    hmfrun_name="$(cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r')"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
     
     ## anything wrong with any seqrun: exit the whole thing
-    if [[ ! -d ${seqDir} ]]; then
-        echo "[ERROR] dir does not exist ($seqDir)" && exit 1; 
-    elif [[ ! $( cat ${errlog_path} | tail -1 | grep "with 0 errors and" ) ]]; then 
+    if [[ ! -d ${seq_dir} ]]; then
+        echo "[ERROR] dir does not exist ($seq_dir)" && exit 1; 
+    elif [[ ! $(cat ${errlog_path} | tail -1 | grep "with 0 errors and") ]]; then 
         echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
     elif [[ -z ${hmfrun_name} ]]; then
         echo "[ERROR] Have not been able to parse hmfrun_name from sheet ($ssheet_path)" && exit 1; 
@@ -57,52 +57,40 @@ for seqDir in "${seqDirs[@]}"; do
     
     ## store further cmds so we can print all together at the end
     rsync_cmd="rsync -ah ${report_path} nas:/volume1/web/qc/conversion/${nasrun_name}/"
-    cmdsToExecute+=("${rsync_cmd}")
+    cmds_to_execute+=("${rsync_cmd}")
 done
 
-## get QC
-printHeader "RUN QC"
-for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -P "^## (Flowcell|FINAL QC)"
-done
-
-## get info for RunOverview
-printHeader "RUN Info"
-for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+printHeader "RUN info"
+for seq_dir in "${seq_dirs[@]}"; do
+    ${PARSE_SCRIPT} -run_dir "${seq_dir}" -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
 done | sort -r
 
-## get info for SampleOverview
-printHeader "Sample Info"
-for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run_dir ${seqDir} -summary | grep -v "^#"
-done | sort -k1,1 -k3,3
-
-## get info for SampleOverview
-printHeader "SampleOverview Table (CPCT02/DRUP01/WIDE01 R samples are removed)"
-echo -e "Submission\tSampleID\tSampleName\tYieldGBase\tDescription"
-for seqDir in "${seqDirs[@]}"; do
-    ${PARSE_SCRIPT} -run_dir ${seqDir} | grep ^SAMPLE | grep -Pv "(CPCT02|DRUP01|WIDE01|CORE.{2})\d{6}R" | while read line; do
-        yldMBase=$( echo ${line} | cut -d" " -f3 )
-        yld=$((yldMBase/1000))
-        sub=$( echo ${line} | cut -d" " -f11 )
-        sid=$( echo ${line} | cut -d" " -f9 )
-        snm=$( echo ${line} | cut -d" " -f10 )
-        dsc=$( echo ${line} | cut -d" " -f12 )
-        echo -e "$sub\t$sid\t$snm\t$yld\t$dsc"
+printHeader "SAMPLE info"
+for seq_dir in "${seq_dirs[@]}"; do
+    ${PARSE_SCRIPT} -run_dir "${seq_dir}" | grep ^SAMPLE | while read line; do
+        yld_seq=$(echo ${line} | cut -d" " -f3)
+        q30_seq=$(echo ${line} | cut -d" " -f4)
+        yld_seq_gbase=$((yld_seq/1000))
+        submission=$(echo ${line} | cut -d" " -f11)
+        sample_id=$(echo ${line} | cut -d" " -f9)
+        sample_name=$(echo ${line} | cut -d" " -f10)
+        description=$(echo ${line} | cut -d" " -f12)
+        api_yld=$(cat ${API_SAMPLES_JSON} | jq -r ".[] | select( .barcode == \"$sample_id\") | .yld")
+        api_sts=$(cat ${API_SAMPLES_JSON} | jq -r ".[] | select( .barcode == \"$sample_id\") | .status")
+        api_yld=$((api_yld/1000000000))
+        set_name=$(find ${REGISTERED_DIR} -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
+        status_info="y=$yld_seq_gbase q=$q30_seq (API: sample is $api_sts with $api_yld yld)"
+        echo -e "$submission\t$sample_id\t$sample_name\t$status_info\t$set_name\t$description"
    done | sort -k1,1 -k3,3
 done
 
-## Print further actions
 printHeader "Extra actions"
-for cmd in "${cmdsToExecute[@]}"; do
+for cmd in "${cmds_to_execute[@]}"; do
     echo ${cmd}
 done
 
-## add flowcell rsync cmd
-if [[ ${CURR_HOST} != "datastore" ]]; then
-    printHeader "Get Rsync code for partial sync to datastore"
-    rsync_cmd="rsync_seqruns_to_datastore ${seqDirs[@]}"
+if [[ ${HOSTNAME} != "datastore" ]]; then
+    rsync_cmd=$(rsync_seqruns_to_datastore ${seq_dirs[@]} | grep -v 'INFO')
     echo ${rsync_cmd}
 fi
 
