@@ -39,3 +39,6 @@ else
     echo "[INFO] Loading data into production database for ${tumor_sample}"
     load_run_into_prod_db ${processed_set_path}
 fi
+
+echo "[INFO] Running purple on sage input"
+do_run_purple_no_db_on_sage ${processed_set_path}
