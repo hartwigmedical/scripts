@@ -8,8 +8,8 @@ switch_to_hmf_archive_service_account() {
     gcloud config set account hmf-archive@hmf-database.iam.gserviceaccount.com
 }
 
-switch_to_hmf_rna_fastq_service_account() {
-    gcloud config set account hmf-rna-fastq@hmf-database.iam.gserviceaccount.com
+switch_to_hmf_fastq_rna_service_account() {
+    gcloud config set account hmf-fastq-rna@hmf-database.iam.gserviceaccount.com
 }
 
 gcp_set_account() {
