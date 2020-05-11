@@ -16,7 +16,7 @@ if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
     exit 1
 fi
 
-if [[ ! -d ${local_path} ]]; then
+if [[ ! -d "${local_path}" ]]; then
     echo "[ERROR] ${local_path} is not a directory. Exiting"
     exit 1
 fi

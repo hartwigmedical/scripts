@@ -4,7 +4,7 @@ source gcp_functions
 
 set=$1 && shift
 
-if [[ -z ${set} ]]; then
+if [[ -z "${set}" ]]; then
     echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
@@ -14,7 +14,7 @@ download_path="/data/gcp/shallow_runs"
 run_bucket="hmf-output-shallowseq"
 archive_set_path=${archive_path}/${set}
 
-if [[ -d ${archive_set_path} ]]; then
+if [[ -d "${archive_set_path}" ]]; then
     echo "[WARN] SKIPPING: Set already archived locally (${archive_set_path})"
 else
     echo "[INFO] Syncing ShallowSeq GCP run ${set}"

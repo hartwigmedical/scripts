@@ -7,12 +7,12 @@ image=$1 && shift
 # Image should be an image on hmf-crunch, eg pipeline5-5-9-202003131433
 # Use 'gcloud compute --project=hmf-crunch images list' to list all available images.
 
-if [[ -z ${vm_name} ]]; then
+if [[ -z "${vm_name}" ]]; then
     echo "[ERROR] No VM name passed. Exiting"
     exit 1
 fi
 
-if [[ -z ${image} ]]; then
+if [[ -z "${image}" ]]; then
     image=pipeline5-5-9-202003131433
     echo "[DEBUG] No image parameter passed. Using '${image}' as default."
 fi
