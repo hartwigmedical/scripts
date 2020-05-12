@@ -40,6 +40,10 @@ locate_nextcloud_upload_reports_credentials() {
 
 ##################################### JARS #####################################
 
+locate_latest_datarequest() {
+    echo ${base_path}/tools/datarequest_latest/datarequest.jar
+}
+
 locate_prod_sage() {
     echo ${base_path}/tools/sage_v1.1/sage.jar
 }
