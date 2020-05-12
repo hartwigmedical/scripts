@@ -8,6 +8,11 @@ fi
 
 ############################# Database Credentials #############################
 
+# This is needed for java library to unpack jks creds file
+retrieve_api_jks_password() {
+    echo $(cat ${base_path}/dbs/api_credentials/api.jks.pw)
+}
+
 locate_prod_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/prod
 }
