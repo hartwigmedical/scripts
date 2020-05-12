@@ -28,6 +28,8 @@ for submission in "${submissions_to_visit[@]}"; do
         project_type="KG"
     elif [[ "$project_type" == "CORE" ]]; then
         analysis_type="SomaticAnalysis"
+    elif [[ "$project_type" == "Cohort" ]]; then
+        analysis_type="NA"
     else
         project_type="CheckProjectType(${project_type})"
     fi
