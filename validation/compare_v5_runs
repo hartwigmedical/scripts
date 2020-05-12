@@ -45,9 +45,9 @@ for tool_name in ${tools[*]}; do
     base_file_count=$(find "${base_tool_path}" -maxdepth 1 | wc -l)
     test_file_count=$(find "${test_tool_path}" -maxdepth 1 | wc -l)
     if [[ $base_file_count -eq $test_file_count ]]; then
-        echo "[INFO] Tool directory ${tool_name} has identical file count (${base_file_count}) for base and test"
+        echo "[INFO] Identical file count (${base_file_count}) for tool ${tool_name}"
     else
-        echo "[WARN] Tool directory ${tool_name} has different file count in base (${base_file_count}) vs test (${test_file_count})"
+        echo "[WARN] DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool ${tool_name}"
     fi
 
     find ${base_run_path}/${tool_name} -mindepth 1 -maxdepth 1 -type f | \
@@ -58,9 +58,9 @@ for tool_name in ${tools[*]}; do
         base_count=$(cat "${base_file_path}" | wc -l)
         test_count=$(cat "${test_file_path}" | wc -l)
         if [[ $base_count -eq $test_count ]]; then
-            echo "[INFO]   File ${file_name} has identical line count (${base_count}) for base and test"
+            echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
         else
-            echo "[WARN]   File ${file_name} has different line count in base (${base_count}) vs test (${test_count})"
+            echo "[WARN]   DIFFERENT line count (${base_count} vs ${test_count}) for file ${file_name}"
         fi
     done
 done
@@ -101,24 +101,24 @@ for file in "$test_grm_vcf" "$base_grm_vcf" "$test_chord" "$base_chord" "$test_v
 done
 
 echo "[INFO] Counting somatic small variants"
-test_som_varCount=$(zcat "$test_som_var" | grep -cv ^#)
-base_som_varCount=$(zcat "$base_som_var" | grep -cv ^#)
-test_som_pass_var_count=$(zcat "$test_som_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_som_pass_var_count=$(zcat "$base_som_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+test_som_varCount=$(unpigz -c "$test_som_var" | grep -cv ^#)
+base_som_varCount=$(unpigz -c "$base_som_var" | grep -cv ^#)
+test_som_pass_var_count=$(unpigz -c "$test_som_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+base_som_pass_var_count=$(unpigz -c "$base_som_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 
 echo "[INFO] Counting somatic structural variants"
-test_sv_varCount=$(zcat "$test_sv_var" | grep -cv ^#)
-base_sv_varCount=$(zcat "$base_sv_var" | grep -cv ^#)
-test_sv_pass_var_count=$(zcat "$test_sv_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_sv_pass_var_count=$(zcat "$base_sv_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-test_sv_non_pon_var_count=$(zcat "$test_sv_var" | grep -v ^# | awk '$7 != "PON"' | wc -l)
-base_sv_non_pon_var_count=$(zcat "$base_sv_var" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+test_sv_varCount=$(unpigz -c "$test_sv_var" | grep -cv ^#)
+base_sv_varCount=$(unpigz -c "$base_sv_var" | grep -cv ^#)
+test_sv_pass_var_count=$(unpigz -c "$test_sv_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+base_sv_pass_var_count=$(unpigz -c "$base_sv_var" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+test_sv_non_pon_var_count=$(unpigz -c "$test_sv_var" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+base_sv_non_pon_var_count=$(unpigz -c "$base_sv_var" | grep -v ^# | awk '$7 != "PON"' | wc -l)
 
 echo "[INFO] Counting germline variants"
-test_grm_var_count=$(zcat "$test_grm_vcf" | grep -cv ^#)
-base_grm_var_count=$(zcat "$base_grm_vcf" | grep -cv ^#)
-test_grm_pass_var_count=$(zcat "$test_grm_vcf" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_grm_pass_var_count=$(zcat "$base_grm_vcf" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+test_grm_var_count=$(unpigz -c "$test_grm_vcf" | grep -cv ^#)
+base_grm_var_count=$(unpigz -c "$base_grm_vcf" | grep -cv ^#)
+test_grm_pass_var_count=$(unpigz -c "$test_grm_vcf" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+base_grm_pass_var_count=$(unpigz -c "$base_grm_vcf" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 test_tool_vsn=$( cat ${test_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
 base_tool_vsn=$( cat ${base_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
 
