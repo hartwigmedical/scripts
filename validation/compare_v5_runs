@@ -29,6 +29,11 @@ base_pip_vsn=$(cat "${base_pip_vsn_file}")
 test_pip_vsn=$(cat "${test_pip_vsn_file}")
 base_ref_sample_name=$(cat "${base_meta_file}" | jq -r '.reference.sampleName')
 test_ref_sample_name=$(cat "${test_meta_file}" | jq -r '.reference.sampleName')
+base_tum_sample_name=$(cat "${base_meta_file}" | jq -r '.tumor.sampleName')
+test_tum_sample_name=$(cat "${test_meta_file}" | jq -r '.tumor.sampleName')
+
+test_ref_reads_file="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
+test_tum_reads_file="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
 
 echo ""
 echo "===== Overview"
@@ -36,6 +41,19 @@ echo "[INFO] BASE run path: $base_run_path"
 echo "[INFO] TEST run path: $test_run_path"
 echo "[INFO] BASE version: $base_pip_vsn"
 echo "[INFO] TEST version: $test_pip_vsn"
+
+
+echo ""
+echo "===== CRAM CHECK"
+echo "[INFO] TEST ref sample CRAM: $test_ref_reads_file"
+echo "[INFO] TEST tum sample CRAM: $test_tum_reads_file"
+if [[ ! -f "$test_ref_reads_file" ]]; then
+    echo "[ERROR] File does not exist ($test_ref_reads_file)"
+    exit 1
+elif [[ ! -f "$test_tum_reads_file" ]]; then
+    echo "[ERROR] File does not exist ($test_tum_reads_file)"
+    exit 1
+fi
 
 echo ""
 echo "===== Directory CHECKS"
