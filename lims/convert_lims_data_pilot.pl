@@ -508,6 +508,11 @@ sub processAccessSamples{
             $object->{ 'label' }   = $study;
             $object->{ 'patient' } = $patient_id;
             
+            ## TODO: Remove once field is present in LIMS
+            if ( ! exists $object->{ 'report_germline' } ){
+                $object->{ 'report_germline' } = "ComingInNextLimsRelease";
+            }
+            
             if ( $is_rna ){
                 $object->{ 'analysis_type' } = "RNAanalysis";
             }elsif( $tum_or_ref eq 'T' ){
