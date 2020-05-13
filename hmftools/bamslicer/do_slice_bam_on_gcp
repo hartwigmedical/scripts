@@ -20,7 +20,6 @@ run_info=$(load_run_info_for_set ${set_name})
 
 ## setup all variables
 pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
-bucket=$(extract_bucket_from_run_info "${run_info}")
 
 if [[ ${type} = "REF" ]]; then
     sample=$(load_ref_sample_id_for_set ${set_name})
@@ -28,12 +27,13 @@ else
     sample=$(load_tumor_sample_id_for_set ${set_name})
 fi
 
-bam_prefix="${bucket}/${set_name}/${sample}"
+bucket=$(echo ${set_name} | tr A-Z a-z | tr _ -)
+bam_prefix="gs://hmf-cram-${bucket}"
 
 if [[ ${pipeline} = v5* ]]; then
-    bam="${bam_prefix}/aligner/${sample}.bam"
+    bam="${bam_prefix}/${sample}.cram"
 else
-    bam="${bam_prefix}/mapping/${sample}_dedup.realigned.bam"
+    bam="${bam_prefix}/${sample}_dedup.realigned.cram"
 fi
 
 internal_bam_url="gs://${bam}"
