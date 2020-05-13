@@ -28,7 +28,7 @@ else
 fi
 
 bucket=$(echo ${set_name} | tr A-Z a-z | tr _ -)
-bam_prefix="gs://hmf-cram-${bucket}"
+bam_prefix="hmf-cram-${bucket}"
 
 if [[ ${pipeline} = v5* ]]; then
     bam="${bam_prefix}/${sample}.cram"
