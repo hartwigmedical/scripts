@@ -17,11 +17,11 @@ use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
 use constant TISSUE_ANCESTOR_FIELDS => qw( 
     submission lab_status hospital_pa_sample_id hospital_patient_id
-    germline_findings purity_shallow tumor_perc ptum ref_sample_id
+    report_germline_level purity_shallow tumor_perc ptum ref_sample_id
 );
 ## Some fields need to be actively set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(
-    shallowseq report_viral report_pgx
+    shallowseq report_germline report_viral report_pgx
     add_to_database add_to_datarequest
 );
 
@@ -472,7 +472,11 @@ sub processAccessSamples{
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    $object->{ $field } = $ancestor->{ $field };
+                    if ( exists $object->{ $field } ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    }else{
+                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
+                    }
                 }
             }
         
@@ -704,6 +708,7 @@ sub fixIntegerFields{
 sub fixBooleanFields{
     my ($obj) = @_;
     foreach my $key ( BOOLEAN_FIELDS ){
+        next unless exists $obj->{ $key };
         next unless defined $obj->{ $key };
         my $value = $obj->{ $key };
         if ( $value =~ m/^true$/i ){
@@ -990,7 +995,8 @@ sub getFieldNameTranslations{
       'Other_Ref'          => 'other_ref',
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
-      'Germline_findings'  => 'germline_findings',
+      'Germline_findings'  => 'report_germline_level', # TODO: next LIMS release will change name
+      #'Report_germline'   => 'report_germline', # TODO: next LIMS release will contain this new field
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
