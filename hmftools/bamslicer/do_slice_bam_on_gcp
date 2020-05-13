@@ -40,15 +40,15 @@ internal_bam_url="gs://${bam}"
 external_bam_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${bam}" 604800)
 echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAM URL: ${internal_bam_url}"
 
-bai=${bam}.bai
-internal_bai_url="gs://${bai}"
-external_bai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${bai}" 604800)
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAI URL: ${internal_bai_url}"
+crai=${bam}.crai
+internal_crai_url="gs://${crai}"
+external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" 604800)
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP Internal BAI URL: ${internal_crai_url}"
 
 java -Xmx8G -jar ${bam_slicer_jar} \
     -url \
     -input ${external_bam_url} \
-    -index ${external_bai_url} \
+    -index ${external_crai_url} \
     -bed ${bed_file} \
     -output ${output_file} \
     -max_chunks 2000 \
