@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source api_functions
+source locate_files
 
 set_name=$1 && shift
 bed_file=$1 && shift
@@ -14,6 +15,7 @@ fi
 bam_slicer_jar=/data/common/tools/bam-slicer_v1.5/bam-slicer.jar
 gcp_sign_url_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+ref_genome=$(locate_ref_genome_fasta_file)
 
 ## query run info
 run_info=$(load_run_info_for_set ${set_name})
@@ -52,4 +54,5 @@ java -Xmx8G -jar ${bam_slicer_jar} \
     -bed ${bed_file} \
     -output ${output_file} \
     -max_chunks 2000 \
+    -ref_genome_fasta_file ${ref_genome} \
     -max_concurrent_requests 30
