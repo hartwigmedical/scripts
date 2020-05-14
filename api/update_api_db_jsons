@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-JSON_DIR="/data/lims/api_files"
+JSON_DIR="/data/ops/api/prod/database"
+JSON_DIR_OLD="/data/lims/api_files"
 CRED_DIR="/data/common/dbs/api_credentials"
 CRT_FILE="${CRED_DIR}/api.crt"
 KEY_FILE="${CRED_DIR}/api.key"
@@ -42,5 +43,9 @@ for TYPE in "${DB_TYPES[@]}"; do
 done
 
 rm ${JSON_DIR}/tmp_*.tmp
+
+# TODO remove once /data/lims/api_files no longer needed
+# TODO and then do not forget JSON_DIR_OLD variable on top
+find ${JSON_DIR} -mindepth 1 -maxdepth 1 -type f -exec cp {} ${JSON_DIR_OLD} \;
 
 echo "${DATETIME} Script $SCRIPT has finished" | tee -a ${LOG_FILE}
