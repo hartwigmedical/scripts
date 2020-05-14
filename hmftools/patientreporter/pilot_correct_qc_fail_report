@@ -29,4 +29,8 @@ elif [[ ${report} == "post" ]]; then
     pilot_post_analysis_fail_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 elif [[ ${report} == "low_tumor" ]]; then
     pilot_tumor_molecular_percentage_low_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
+elif [[ ${report} == "below_detection" ]]; then
+    pilot_below_detection_threshold_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
+elif [[ ${report} == "lab_failure" ]]; then
+    pilot_lab_failure_report ${tumorSampleId} -comments "${interpretComments}" -corrected_report "$@"
 fi
