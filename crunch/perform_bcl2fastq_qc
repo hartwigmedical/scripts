@@ -5,8 +5,9 @@ PARSE_SCRIPT="check_bcl2fastq_conversion.pl"
 ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Data/Intensities/BaseCalls"
-API_SAMPLES_JSON="/data/lims/api_files/samples.json"
-REGISTERED_DIR="/data/ops/api/prod/jsons/registered"
+API_DIR="/data/ops/api/prod/"
+API_SAMPLES_JSON="${API_DIR}/samples.json"
+REGISTERED_DIR="${API_DIR}/jsons/registered"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
     echo "-----"
