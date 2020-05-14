@@ -510,7 +510,7 @@ sub processAccessSamples{
             
             ## TODO: Remove once field is present in LIMS
             if ( ! exists $object->{ 'report_germline' } ){
-                $object->{ 'report_germline' } = "ComingInNextLimsRelease";
+                $object->{ 'report_germline' } = true;
             }
             
             if ( $is_rna ){
