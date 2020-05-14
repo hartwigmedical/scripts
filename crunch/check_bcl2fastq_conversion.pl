@@ -390,14 +390,16 @@ sub parseJsonInfo{
     }
     
     ## Collect some general stats/info
-    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s", 
+    my $undet_perc = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
       round( $info{'flow'}{$fid}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       round( $info{'undt'}{'UNDETERMINED'}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'},
-      $cycle_string;
+      $cycle_string,
+      $undet_perc . '%';
       
-    $info{'stats'}{'undet_perc'} = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    $info{'stats'}{'undet_perc'} = $undet_perc;
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
@@ -461,7 +463,6 @@ sub printSummaryTable{
       $info->{'stats'}{'hmf_runname'},
       $info->{'stats'}{'seq_runname'},
       $info->{'stats'}{'run_overview_string'},
-      "UndPerc", # placeholder for formula in destination sheet
       $info->{'stats'}{'flowcell_qc'};
       
     say "#".join( $OUT_SEP, @$fields );
