@@ -28,4 +28,4 @@ mkdir -p ${dest_path}
 echo "[INFO] Downloading set ${set} from ${run_bucket} to ${download_path}"
 
 switch_to_hmf_download_service_account
-gsutil -u hmf-database -m rsync -r -x .*.bam$ gs://${run_bucket}/${set} ${dest_path}
+gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" gs://${run_bucket}/${set} ${dest_path}
