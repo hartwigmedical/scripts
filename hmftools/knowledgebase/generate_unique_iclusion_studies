@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 path=/data/common/dbs/knowledgebases
+path_studies=/data/common/dbs/knowledgebases/analyse_iClusion_studies
 
 prod_current=${path}/output_old
-file_current_prod=${path}/current_prod_iclusion_studies.tsv
-file_current_prod_uniq=${path}/uniq_current_prod_iclusion_studies.tsv
+file_current_prod=${path_studies}/current_prod_iclusion_studies.tsv
+file_current_prod_uniq=${path_studies}/uniq_current_prod_iclusion_studies.tsv
 
 echo "[INFO] Analyzing current prod knowledgebase"
 echo "[INFO] Studies actionable variants"
@@ -36,8 +37,8 @@ cat ${file_current_prod} | sort | uniq | wc -l
 cat ${file_current_prod} | sort | uniq > ${file_current_prod_uniq}
 
 prod_new=${path}/output
-file_new_prod=${path}/new_prod_iclusion_studies.tsv
-file_new_prod_uniq=${path}/uniq_new_prod_iclusion_studies.tsv
+file_new_prod=${path_studies}/new_prod_iclusion_studies.tsv
+file_new_prod_uniq=${path_studies}/uniq_new_prod_iclusion_studies.tsv
 
 echo "[INFO] Analyzing new prod knowledgebase"
 echo "[INFO] Studies actionable variants"
