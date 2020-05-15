@@ -45,15 +45,15 @@ for submission in "${submissions_to_visit[@]}"; do
         entity=$(echo "$samples_json" | jq -r '.[-1].entity')
         bucket=$(query_api.pl -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
     else
-        echo "[WARNING] No sample found for $submission so unable to retrieve entity and bucket!"
+        echo "[WARN] No sample found for $submission so unable to retrieve entity and bucket!"
     fi
 
     ## perform some sanity checks
     #echo "[DEBUG] $submission $entity $bucket"
-    if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARNING] No entity found for $submission!"; fi
-    if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARNING] No bucket found for $submission!"; fi
+    if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARN] No entity found for $submission!"; fi
+    if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARN] No bucket found for $submission!"; fi
     if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then
-        echo -e "\n[WARNING] Found CORE submission where bucket is not $CORE_BUCKET (submission=$submission entity=$entity bucket=$bucket)!!\n"
+        echo -e "\n[WARN] Found CORE submission where bucket is not $CORE_BUCKET (submission=$submission entity=$entity bucket=$bucket)!!\n"
     fi
 
     ## output

@@ -1,9 +1,9 @@
 #!/usr/bin/python
-import os
-import csv
 import copy
-
+import csv
+import os
 from optparse import OptionParser
+
 # --------------------------------------------------------
 # Joep de Ligt UMCUtrecht
 # Build for Python 2.7
@@ -159,7 +159,7 @@ def DetermineGenotype(vcf, entry):
 			geno = "0/1"
 			alto = ref
 		else:
-			print("[WARNING] incompatible calls with TEMPLATE VCF")
+			print("[WARN] incompatible calls with TEMPLATE VCF")
 			print(ref, alt, vcf)
 
 	# DEFAULT GENOTYPE QUALITY IS 60

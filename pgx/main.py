@@ -1,14 +1,14 @@
-import argparse
 import allel
-import pandas as pd
-import sys
-import requests
-import json
-import time
+import argparse
 import collections
 import itertools
-import subprocess
+import json
 import os
+import pandas as pd
+import requests
+import subprocess
+import sys
+import time
 from shutil import copyfile
 
 
@@ -195,7 +195,7 @@ def process_exceptions(ids_found, panel):
                         ids_found = ids_found.drop(found_var.index[0])
                     elif found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
-                        print("[WARNING] What should we do? ref = corRef, alt = corAlt")
+                        print("[WARN] What should we do? ref = corRef, alt = corAlt")
                     elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
                         # Change variant_annotation and ref and alt base
@@ -206,7 +206,7 @@ def process_exceptions(ids_found, panel):
                                                                               str(variant['positionGRCh38'])
                     elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
-                        print("[WARNING] What should we do? ref = corAlt, alt = corAlt")
+                        print("[WARN] What should we do? ref = corAlt, alt = corAlt")
                     else:
                         print("[ERROR] Complete mismatch:")
                         print(found_var)

@@ -118,7 +118,7 @@ echo ""
 
 ## warn if not complete
 if [[ ${hmfCount} -ne ${apiCount} ]]; then
-    echo "[WARNING] There might be missing samples!"
+    echo "[ERROR] There might be missing samples!"
     exit 1
 fi
 
