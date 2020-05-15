@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+path=/data/common/dbs/knowledgebases
+
+prod_current=${path}/output_old
+file_current_prod=${path}/current_prod_iclusion_studies.tsv
+file_current_prod_uniq=${path}/uniq_current_prod_iclusion_studies.tsv
+
+echo "[INFO] Analyzing current prod knowledgebase"
+echo "[INFO] Studies actionable variants"
+cat ${prod_current}/actionableVariants.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionableVariants.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $8}' >> ${file_current_prod}
+
+echo "[INFO] Studies actionable ranges"
+cat ${prod_current}/actionableRanges.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionableRanges.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $9}' >> ${file_current_prod}
+
+echo "[INFO] Studies actionable CNVs"
+cat ${prod_current}/actionableCNVs.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionableCNVs.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $5}'>> ${file_current_prod}
+
+echo "[INFO] Studies actionable fusion pairs"
+cat ${prod_current}/actionableFusionPairs.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionableFusionPairs.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $5}' >> ${file_current_prod}
+
+echo "[INFO] Studies actionable promiscuous five genes"
+cat ${prod_current}/actionablePromiscuousFive.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionablePromiscuousFive.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $4}' >> ${file_current_prod}
+
+echo "[INFO] Studies actionable promiscuous three genes"
+cat ${prod_current}/actionablePromiscuousThree.tsv | grep iclusion | wc -l
+cat ${prod_current}/actionablePromiscuousThree.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $4}' >> ${file_current_prod}
+
+echo "[INFO] Create uniq studies"
+cat ${file_current_prod} | sort | uniq | wc-l
+cat ${file_current_prod} | sort | uniq > ${file_current_prod_uniq}
+
+prod_new=${path}/output
+file_new_prod=${path}/new_prod_iclusion_studies.tsv
+file_new_prod_uniq=${path}/uniq_new_prod_iclusion_studies.tsv
+
+echo "[INFO] Analyzing new prod knowledgebase"
+echo "[INFO] Studies actionable variants"
+cat ${prod_new}/actionableVariants.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionableVariants.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $8}' >> ${file_new_prod}
+
+echo "[INFO] Studies actionable ranges"
+cat ${prod_new}/actionableRanges.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionableRanges.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $9}' >> ${file_new_prod}
+
+echo "[INFO] Studies actionable CNVs"
+cat ${prod_new}/actionableCNVs.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionableCNVs.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $5}' >> ${file_new_prod}
+
+echo "[INFO] Studies actionable fusion pairs"
+cat ${prod_new}/actionableFusionPairs.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionableFusionPairs.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $5}' >> ${file_new_prod}
+
+echo "[INFO] Studies actionable promiscuous five genes"
+cat ${prod_new}/actionablePromiscuousFive.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionablePromiscuousFive.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $4}' >> ${file_new_prod}
+
+echo "[INFO] Studies actionable promiscuous three genes"
+cat ${prod_new}/actionablePromiscuousThree.tsv | grep iclusion | wc -l
+cat ${prod_new}/actionablePromiscuousThree.tsv | grep iclusion | awk 'BEGIN {FS="\t"}; {print $4}' >> ${file_new_prod}
+
+echo "[INFO] Create uniq studies"
+cat ${file_new_prod} | sort | uniq | wc-l
+cat ${file_new_prod} | sort | uniq > ${file_new_prod_uniq}
