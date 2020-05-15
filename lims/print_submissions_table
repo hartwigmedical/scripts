@@ -57,7 +57,7 @@ for submission in "${submissions_to_visit[@]}"; do
     fi
 
     ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\n" \
         "$submission" \
         "$project_name" \
         "$project_type" \
