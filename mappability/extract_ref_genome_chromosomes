@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-# ./extractRefGenomeChromosomes \
+# ./extract_ref_genome_chromosomes \
 #   /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
 #   /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
 
 ref_genome=$1 && shift
 output_dir=$1 && shift
-samtools=/data/common/tools/samtools_v1.9/samtools
+samtools=/data/common/tools/samtools_v1.10/samtools
 
 ${samtools} faidx ${ref_genome} chr1 > ${output_dir}/chr1.fasta 
 ${samtools} faidx ${ref_genome} chr2 > ${output_dir}/chr2.fasta
