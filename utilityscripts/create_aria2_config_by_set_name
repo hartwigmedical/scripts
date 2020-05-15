@@ -86,11 +86,11 @@ function main() {
 
     ## create the run type specific subset files
     if [[ $ini == "FastQ.ini" ]]; then
-        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "Fastq"
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "$pip" "Fastq"
     elif [[ $ini == "Somatic.ini" ]]; then 
-        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "Somatic"
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "$pip" "Somatic"
     elif [[ $ini == "SingleSample.ini" ]]; then
-        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "SingleSample"
+        create_run_specific_files "$files_json" "$out_md5" "$out_aria" "$out_url" "$name" "$bucket" "$ref" "$tum" "$pip" "SingleSample"
     else
         echo "[ERROR] Unknown ini ($ini)" && exit 1
     fi
@@ -111,12 +111,32 @@ create_run_specific_files () {
     local bucket=$1 && shift
     local ref=$1 && shift
     local tum=$1 && shift
+    local pip=$1 && shift
     local run_type=$1 && shift
 
-    ref_bam="${ref}/aligner/${ref}.bam"
-    ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
-    tumor_bam="${tum}/aligner/${tum}.bam"
-    tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
+    if [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
+        local major=$(echo "${pip}" | cut -d"." -f1)
+        local minor=$(echo "${pip}" | cut -d"." -f2)
+        local build=$(echo "${pip}" | cut -d"." -f3)
+    else
+        echo "[ERROR] Pipeline version string has unknow format (${pip})"
+        exit 1
+    fi
+
+    echo "[INFO] Run version check (major=$major minor=$minor build=$build)"
+    
+    ## from pipeline v5.10 onwards CRAM replaced BAM
+    if [[ "${minor}" -lt 10 ]]; then
+        ref_bam="${ref}/aligner/${ref}.bam"
+        ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
+        tumor_bam="${tum}/aligner/${tum}.bam"
+        tumor_bam_bai="${tum}/aligner/${tum}.bam.bai"
+    else
+        ref_bam="${ref}/cram/${ref}.cram"
+        ref_bam_bai="${ref}/cram/${ref}.cram.crai"
+        tumor_bam="${tum}/cram/${tum}.cram"
+        tumor_bam_bai="${tum}/cram/${tum}.cram.crai"
+    fi
 
     mapfile -t all_files < <( echo $json | jq -r '.[].filename' )
 
