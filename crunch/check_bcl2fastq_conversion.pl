@@ -459,7 +459,7 @@ sub printSummaryTable{
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'};
         
-    say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s\t%s", 
+    say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s", 
       $info->{'stats'}{'hmf_runname'},
       $info->{'stats'}{'seq_runname'},
       $info->{'stats'}{'run_overview_string'},
