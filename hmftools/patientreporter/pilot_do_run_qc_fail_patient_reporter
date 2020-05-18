@@ -21,7 +21,7 @@ then
     echo ${tumor_sample}
 else
     echo "3"
-    tumor_sample=$(${sample})
+    tumor_sample=${sample}
     echo ${sample}
     echo ${tumor_sample}
 fi
