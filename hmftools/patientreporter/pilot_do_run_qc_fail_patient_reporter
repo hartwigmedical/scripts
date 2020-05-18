@@ -1,18 +1,16 @@
 #!/usr/bin/env bash
 
 source lims_functions
+source metadata_functions
 
 sample=$1 && shift
 qc_fail_reason=$1 && shift
 
-echo ${sample}
 if [[ ${qc_fail_reason} -eq "post_analysis_fail" || ${qc_fail_reason} -eq "below_detection_threshold" ]];
 then
     tumor_sample=$(load_tumor_sample_from_metadata ${sample})
-    echo ${tumor_sample}
 else
     tumor_sample=${sample}
-        echo ${tumor_sample}
 fi
 
 if [[ -z ${tumor_sample} ]]; then

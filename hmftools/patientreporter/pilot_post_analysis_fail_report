@@ -9,5 +9,4 @@ fi
 
 comments="This is a pilot patient report and is not meant for production purpose."
 
-echo ${run_dir}
 pilot_do_run_qc_fail_patient_reporter ${run_dir} "post_analysis_fail" -comments "${comments}" "$@"
