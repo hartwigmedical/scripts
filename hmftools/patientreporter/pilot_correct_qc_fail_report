@@ -5,7 +5,7 @@ report=$1 && shift
 comments=$1 && shift
 
 if [[ -z ${tumorSampleId} ]]; then
-    echo "[ERROR] No sample provided. Exiting"
+    echo "[ERROR] No sample or run provided. Exiting"
     exit 1;
 fi
 

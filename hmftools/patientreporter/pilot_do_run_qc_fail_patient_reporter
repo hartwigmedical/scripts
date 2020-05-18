@@ -2,8 +2,15 @@
 
 source lims_functions
 
-tumor_sample=$1 && shift
+sample=$1 && shift
 qc_fail_reason=$1 && shift
+
+if [[ ${qc_fail_reason} == "post_analysis_fail" || ${qc_fail_reason} == "below_detection_threshold" ]]
+then
+    tumor_sample=$(load_tumor_sample_from_metadata ${sample})
+else
+    tumor_sample=${sample}
+fi
 
 if [[ -z ${tumor_sample} ]]; then
     echo "[ERROR] No tumor sample provided. Exiting"

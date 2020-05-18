@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
-tumor_sample=$1 && shift
+run_dir=$1 && shift
 
-if [[ -z ${tumor_sample} ]]; then
-    echo "[ERROR] No tumor sample provided. Exiting"
+if [[ -z ${run_dir} ]]; then
+    echo "[ERROR] No run dir provided. Exiting"
     exit 1;
 fi
 
 comments="This is a pilot patient report and is not meant for production purpose."
 
-pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "below_detection_threshold" -comments "${comments}" "$@"
+pilot_do_run_qc_fail_patient_reporter ${run_dir} "below_detection_threshold" -comments "${comments}" "$@"
