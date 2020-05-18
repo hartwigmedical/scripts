@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 run_dir=$1 && shift
 
 if [[ -z ${run_dir} ]]; then
@@ -9,4 +11,6 @@ fi
 
 comments="This is a pilot patient report and is not meant for production purpose."
 
-pilot_do_run_qc_fail_patient_reporter ${run_dir} "below_detection_threshold" -comments "${comments}" "$@"
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+
+pilot_do_run_qc_fail_patient_reporter ${run_dir} "below_detection_threshold" -comments "${comments}" -purple_purity_tsv ${purple_purity_tsv} "$@"
