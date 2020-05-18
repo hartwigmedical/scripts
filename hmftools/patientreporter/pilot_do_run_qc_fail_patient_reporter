@@ -10,7 +10,7 @@ if [[ ${qc_fail_reason} -eq "post_analysis_fail" || ${qc_fail_reason} -eq "below
 then
     tumor_sample=$(load_tumor_sample_from_metadata ${sample})
 else
-    tumor_sample=${sample}
+    tumor_sample=$(${sample})
 fi
 echo ${tumor_sample}
 
