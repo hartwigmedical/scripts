@@ -24,7 +24,7 @@ else
 
     switch_to_hmf_download_service_account
     gsutil -u hmf-database -m rsync -r \
-        -x ".*\.bam$|.*.bam.bai$|.*.cobalt.ratio.tsv$|.*.gridss.unfiltered.vcf.gz$|.*.amber.baf.tsv$" \
+        -x ".*\.bam$|.*\.cram$|.*.cobalt.ratio.tsv$|.*.gridss.unfiltered.vcf.gz$|.*.amber.baf.tsv$" \
         gs://${run_bucket}/${set} \
         ${dest_path}
 fi
