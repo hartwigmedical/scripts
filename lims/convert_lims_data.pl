@@ -35,8 +35,8 @@ GetOptions (
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
-my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
-my $MAIL_TSV = '/data/common/dbs/sbp/study2mail.tsv';
+my $CNTR_TSV = '/data/common/dbs/hospital/center2entity.tsv';
+my $MAIL_TSV = '/data/common/dbs/hospital/study2mail.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
