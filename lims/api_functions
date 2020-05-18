@@ -34,6 +34,24 @@ load_intial_run_bucket_for_set() {
     extract_bucket_from_run_info "${run_info}"
 }
 
+load_cram_run_bucket_for_set() {
+    local set=$1 && shift
+
+    local run_info=$(query_api.pl -type runs \
+        -filter "ini=CRAM.ini" \
+        -filter "name=${set}" \
+        -json
+    )
+    local obj_count=$(echo "${run_info}" | jq 'length')
+
+    # There should be max one CRAM.ini run so return empty if anything else.
+    if [[ "$obj_count" -eq 1 ]]; then
+        bucket=$(echo "${run_info}"  jq -r '.[0].bucket')
+    else
+        echo ""
+    fi
+}
+
 load_run_info_for_set() {
     local set=$1 && shift
 
