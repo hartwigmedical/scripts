@@ -7,13 +7,13 @@ sample=$1 && shift
 qc_fail_reason=$1 && shift
 echo ${sample}
 echo ${qc_fail_reason}
-if [[ ${qc_fail_reason} -eq "post_analysis_fail" ]];
+if [[ ${qc_fail_reason} == "post_analysis_fail" ]];
 then
     echo "1"
     tumor_sample=$(load_tumor_sample_from_metadata ${sample})
     echo ${sample}
     echo ${tumor_sample}
-elif [[ ${qc_fail_reason} -eq "below_detection_threshold" ]];
+elif [[ ${qc_fail_reason} == "below_detection_threshold" ]];
 then
     echo "2"
     tumor_sample=$(load_tumor_sample_from_metadata ${sample})
