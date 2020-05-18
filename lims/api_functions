@@ -47,6 +47,7 @@ load_cram_run_bucket_for_set() {
     # There should be max one CRAM.ini run so return empty if anything else.
     if [[ "$obj_count" -eq 1 ]]; then
         bucket=$(echo "${run_info}"  jq -r '.[0].bucket')
+        echo "${bucket}"
     else
         echo ""
     fi
