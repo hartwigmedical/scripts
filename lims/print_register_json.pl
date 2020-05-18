@@ -33,6 +33,7 @@ my $JSON_DONE_DIR = '/data/ops/api/prod/jsons/registered';
 my $SHALLOW_RUNS_DIR = '/data/data_archive/shallow_seq_pipelines';
 my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
+my $FORCE_OUTPUT = 0;
 
 ## -----
 ## Gather input
@@ -45,6 +46,7 @@ GetOptions (
   "limsjson=s"     => \$LIMS_IN_FILE,
   "useExistingRef" => \$USE_EXISTING_REF,
   "useExistingTum" => \$USE_EXISTING_TUM,
+  "forceOutput"    => \$FORCE_OUTPUT,
   "debug"          => \$opt{ debug },
   "help|h"         => \$opt{ help },
   "verbose"        => \$opt{ verbose }
@@ -74,6 +76,7 @@ my $HELP =<<HELP;
     -limsjson <string> [$LIMS_IN_FILE] 
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
+    -forceOutput       (write json even if sample already has run in $JSON_DONE_DIR)
 
 HELP
 
@@ -361,8 +364,13 @@ sub processSample{
     
     foreach my $existing_json ( @base_jsons, @done_jsons ){
         if ( $existing_json =~ /$setname_wo_date/ ){
-            warn "[WARN]   RESULT for $sample_id: SKIPPING because set json exists ($existing_json)\n";
-            return "NoJsonMade_setJsonalreadyExists";
+            if ( $FORCE_OUTPUT ){
+                push( @warn_msg, "Existing run for $sample_id ($existing_json) but output json enforced" );
+            }
+            else{
+                warn "[WARN]   RESULT for $sample_id ($name): SKIPPING because set json exists ($existing_json)\n";
+                return "NoJsonMade_setJsonAlreadyExists";
+            }
         }
     }
     
