@@ -312,11 +312,6 @@ sub parseDictFile{
             $store{ $study }{ 'name' } = $name;
             $store{ $study }{ 'mail' } = $mail;
         }
-        elsif ( $fileType eq 'submission2entity' ){
-            my ( $submission, $entity ) = split /\t/;
-            die "[ERROR] submission occurs multiple times ($submission) in file ($file)\n" if exists $store{ $submission };
-            $store{ $submission } = $entity if ( $submission ne EMPTY and $entity ne EMPTY );
-        }
         else{
             die "[ERROR] File type not set or not recognized ($fileType)\n";
         }
