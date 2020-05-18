@@ -5,7 +5,7 @@ source lims_functions
 sample=$1 && shift
 qc_fail_reason=$1 && shift
 
-if [[ ${qc_fail_reason} -eq "post_analysis_fail" || ${qc_fail_reason} -eq "below_detection_threshold" ]]
+if [[ ${qc_fail_reason} -eq "post_analysis_fail" || ${qc_fail_reason} -eq "below_detection_threshold" ]];
 then
     tumor_sample=$(load_tumor_sample_from_metadata ${sample})
 else
