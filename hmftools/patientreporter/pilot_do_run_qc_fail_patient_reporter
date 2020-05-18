@@ -6,6 +6,7 @@ source metadata_functions
 sample=$1 && shift
 qc_fail_reason=$1 && shift
 echo ${sample}
+echo ${qc_fail_reason}
 if [[ ${qc_fail_reason} -eq "post_analysis_fail" || ${qc_fail_reason} -eq "below_detection_threshold" ]];
 then
     echo "1"
