@@ -699,13 +699,16 @@ sub fixIntegerFields{
 sub fixBooleanFields{
     my ($obj) = @_;
     foreach my $key ( BOOLEAN_FIELDS ){
-        next unless exists $obj->{ $key };
         next unless defined $obj->{ $key };
         my $value = $obj->{ $key };
         if ( $value =~ m/^true$/i ){
             $obj->{ $key } = JSON::XS::true;
+            ## TODO remove once patient reporter supports boolean
+            $obj->{ $key } = 1 if $key eq 'shallowseq';
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
+            ## TODO remove once patient reporter supports boolean
+            $obj->{ $key } = 0 if $key eq 'shallowseq';
         }else{
             warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
         }
@@ -987,7 +990,8 @@ sub getFieldNameTranslations{
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
       'Report_germline'    => 'report_germline',
-      'Report_germline_level' => 'report_germline_level',
+      #'Report_germline_level' => 'report_germline_level',
+      'Report_germline_level' => 'germline_findings', # TODO: use above line once patient reporter ready
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
