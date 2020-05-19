@@ -15,9 +15,10 @@ use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
+# TODO: rename germline_findings to report_germline_level once next patient reporter is released
 use constant TISSUE_ANCESTOR_FIELDS => qw(
     submission lab_status hospital_pa_sample_id hospital_patient_id
-    report_germline report_germline_level report_viral report_pgx
+    report_germline germline_findings report_viral report_pgx
     purity_shallow tumor_perc ptum ref_sample_id
 );
 ## Some fields need to be actively set to boolean for json output
