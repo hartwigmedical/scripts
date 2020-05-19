@@ -28,6 +28,7 @@ my $MUST_MATCH_EXACT;
 my %OUT_FIELDS_PER_TYPE = (
   'samples'     => [qw(submission sample_id sample_name arrival_date label analysis_type project_name lab_sop_versions lab_status)],
   'submissions' => [qw(submission project_name project_type analysis_type sample_count has_lab_finished)],
+  'contact_groups' => [qw(group_id report_contact_email data_contact_email)],
   'unreported'  => [qw(sample_name tumor_perc lab_status ref_status sample_id ref_sample_id arrival_date api_info)],
   'dateTable'   => [qw(sample_name sampling_date arrival_date)],
 );
@@ -43,13 +44,14 @@ my $HELP_TEXT =<<HELP;
   Usage
     $SCRIPT -type samples
     $SCRIPT -type submissions
+    $SCRIPT -type contact_groups
     $SCRIPT -type samples -filter "submission=HMFreg"
     $SCRIPT -type samples -filter "sample_id=FR11111111"
     $SCRIPT -type samples -filter "sample_name=CPCT01010001T" -exact
     $SCRIPT -type unreported 
       (prints a list of biopsies without pdf report)
 
-  Available types: 
+  Available query types:
      $available_types
     
   Selection options
@@ -112,17 +114,21 @@ elsif( $TYPE eq 'samples' ){
     printObjectInfo( $samples, $out_fields, 'sample_name', \%opt );
 }
 elsif( $TYPE eq 'submissions' ){
-    my $submissions = filterSubmissions( $lims, \%opt );
+    my $submissions = filterByCategory( $lims, \%opt, $TYPE );
     printObjectInfo( $submissions, $out_fields, 'submission', \%opt );
+}
+elsif( $TYPE eq 'contact_groups' ){
+    my $contact_groups = filterByCategory( $lims, \%opt, $TYPE );
+    printObjectInfo( $contact_groups, $out_fields, 'group_id', \%opt );
 }
 
 ## -----
 ## /MAIN
 ## -----
-sub filterSubmissions{
-    my ($lims, $opt) = @_;
-    my $objects = $lims->{ 'submissions' };
-    my @selected_objects = ();    
+sub filterByCategory{
+    my ($lims, $opt, $category) = @_;
+    my $objects = $lims->{ $category };
+    my @selected_objects = ();
     foreach my $id ( keys %{$objects} ){
         push @selected_objects, $objects->{ $id };
     }
@@ -130,7 +136,6 @@ sub filterSubmissions{
     
     return $filtered_objects;
 }
-    
 
 sub filterSamples{
     my ($lims, $opt) = @_;
