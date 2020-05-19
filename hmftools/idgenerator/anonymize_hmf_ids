@@ -8,7 +8,7 @@ if [[ -z "${sample_ids_file}" ]]; then
 fi
 
 patient_mapping=/data/common/dbs/idgenerator/input/patient_mapping.csv
-password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
+password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator \
     -anonymize_ids \
