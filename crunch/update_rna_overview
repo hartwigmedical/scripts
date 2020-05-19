@@ -15,9 +15,9 @@ outSum="${outDir}/summary.log"
 errLog="${outDir}/error.log"
 
 ## sanity checks
-if [[ ! -d ${outDir} ]]; then echo "[ERROR] OUTPUT DIR does not exist (${outDir})" && exit 1; fi
-if [[ ! -w ${outDir} ]]; then echo "[ERROR] OUTPUT DIR not writable (${outDir})" && exit 1; fi
-if [[ ! -d ${seqDir} ]]; then echo "[ERROR] INPUT DIR does not exist (${seqDir})" && exit 1; fi
+if [[ ! -d "${outDir}" ]]; then echo "[ERROR] OUTPUT DIR does not exist (${outDir})" && exit 1; fi
+if [[ ! -w "${outDir}" ]]; then echo "[ERROR] OUTPUT DIR not writable (${outDir})" && exit 1; fi
+if [[ ! -d "${seqDir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${seqDir})" && exit 1; fi
 
 ## startup
 echo "[INFO] START ${taskId} ($YYMMDD)" | tee ${outSum}

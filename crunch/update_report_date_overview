@@ -7,7 +7,7 @@ srcDir="/data/lims"
 nasLoc="/volume1/web/overviews/reporting"
 
 ## Sanity checks
-if [[ ! -d ${srcDir} ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+if [[ ! -d "${srcDir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
 
 ## Action
 echo "[INFO] START with ${taskId} ($YYMMDD)"

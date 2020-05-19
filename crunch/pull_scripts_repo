@@ -14,7 +14,7 @@ fi
 
 repo_path="${repo_root}/${repo_name}"
 
-if [[ ! -d ${repo_path} ]]; then
+if [[ ! -d "${repo_path}" ]]; then
     echo "[ERROR] Dir does not exist (${repo_path})" && exit 1
 fi
 
