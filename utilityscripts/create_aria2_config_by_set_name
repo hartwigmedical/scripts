@@ -114,7 +114,9 @@ create_run_specific_files () {
     local pip=$1 && shift
     local run_type=$1 && shift
 
-    if [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
+    if [[ "${run_type}" == "Fastq" ]]; then
+        pip="Fastq"
+    elif [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
         local major=$(echo "${pip}" | cut -d"." -f1)
         local minor=$(echo "${pip}" | cut -d"." -f2)
         local build=$(echo "${pip}" | cut -d"." -f3)
@@ -122,11 +124,15 @@ create_run_specific_files () {
         echo "[ERROR] Pipeline version string has unknow format (${pip})"
         exit 1
     fi
-
-    echo "[INFO] Run version check (major=$major minor=$minor build=$build)"
-    
+ 
     ## from pipeline v5.10 onwards CRAM replaced BAM
-    if [[ "${minor}" -lt 10 ]]; then
+    if [[ "${pip}" == "Fastq" ]]; then
+        ## for fastq type runs no pipeline output is available
+        ref_bam="undef"
+        ref_bam_bai="undef"
+        tumor_bam="undef"
+        tumor_bam_bai="undef"
+    elif [[ "${minor}" -lt 10 ]]; then
         ref_bam="${ref}/aligner/${ref}.bam"
         ref_bam_bai="${ref}/aligner/${ref}.bam.bai"
         tumor_bam="${tum}/aligner/${tum}.bam"
