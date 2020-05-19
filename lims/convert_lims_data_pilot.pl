@@ -15,9 +15,10 @@ use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
-use constant TISSUE_ANCESTOR_FIELDS => qw( 
+use constant TISSUE_ANCESTOR_FIELDS => qw(
     submission lab_status hospital_pa_sample_id hospital_patient_id
-    report_germline_level purity_shallow tumor_perc ptum ref_sample_id
+    report_germline report_germline_level report_viral report_pgx
+    purity_shallow tumor_perc ptum ref_sample_id
 );
 ## Some fields need to be actively set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(
@@ -37,7 +38,7 @@ GetOptions (
 
 my $CNTR_TSV = '/data/common/dbs/hospital/center2entity.tsv';
 my $MAIL_TSV = '/data/common/dbs/hospital/study2mail.tsv';
-my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
+my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
 my $BACK_DIR = $OUT_DIR . '/backup';
@@ -503,11 +504,6 @@ sub processAccessSamples{
             $object->{ 'label' }   = $study;
             $object->{ 'patient' } = $patient_id;
             
-            ## TODO: Remove once field is present in LIMS
-            if ( ! exists $object->{ 'report_germline' } ){
-                $object->{ 'report_germline' } = JSON::XS::true;
-            }
-            
             if ( $is_rna ){
                 $object->{ 'analysis_type' } = "RNAanalysis";
             }elsif( $tum_or_ref eq 'T' ){
@@ -620,17 +616,12 @@ sub processExcelSamples{
             else{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
-            ## TODO remove once shallowseq column is built into lims
+            ## TODO remove once shallowseq column is built into lims FOR-001
             ## Harcode Somatic_T samples to not run in shallow mode
             ## Harcode Somatic_T samples to not use existing ref data
             $row_info->{ 'shallowseq' } = 0;
             $row_info->{ 'other_ref' } = 0;
             
-            ## TODO remove once project is done
-            ## Hardcode one project back to shallowseq
-            if ( $submission eq "HMFreg0760" ){
-                $row_info->{ 'shallowseq' } = 1;
-            }
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
@@ -995,8 +986,8 @@ sub getFieldNameTranslations{
       'Other_Ref'          => 'other_ref',
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
-      'Germline_findings'  => 'report_germline_level', # TODO: next LIMS release will change name
-      #'Report_germline'   => 'report_germline', # TODO: next LIMS release will contain this new field
+      'Report_germline'    => 'report_germline',
+      'Report_germline_level' => 'report_germline_level',
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',

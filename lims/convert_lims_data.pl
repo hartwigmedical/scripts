@@ -15,13 +15,14 @@ use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
-use constant TISSUE_ANCESTOR_FIELDS => qw( 
+use constant TISSUE_ANCESTOR_FIELDS => qw(
     submission lab_status hospital_pa_sample_id hospital_patient_id
-    germline_findings purity_shallow tumor_perc ptum ref_sample_id
+    report_germline report_germline_level report_viral report_pgx
+    purity_shallow tumor_perc ptum ref_sample_id
 );
 ## Some fields need to be actively set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(
-    shallowseq report_viral report_pgx
+    shallowseq report_germline report_viral report_pgx
     add_to_database add_to_datarequest
 );
 
@@ -37,7 +38,7 @@ GetOptions (
 
 my $CNTR_TSV = '/data/common/dbs/hospital/center2entity.tsv';
 my $MAIL_TSV = '/data/common/dbs/hospital/study2mail.tsv';
-my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
+my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
 my $BACK_DIR = $OUT_DIR . '/backup';
@@ -195,7 +196,7 @@ sub parseTsvCsv{
         }
     }
     if ( $header_misses_field ){
-        print Dumper \%fields_map and die "[ERROR] Error: header incomplete ($file)\n";
+        print Dumper \%fields_map and die "[ERROR] Header incomplete ($file)\n";
     }
     
     ## Header OK: continue reading in all data lines
@@ -262,9 +263,8 @@ sub printLimsToJson{
     my $subm_count = scalar keys %$submissions;
     my $cont_count = scalar keys %$contact_groups;
 
-    ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions, 'contact_groups' => $contact_groups );
-    my $coder = JSON::XS->new->utf8->pretty->canonical;
+    my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
     
     say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
@@ -468,7 +468,11 @@ sub processAccessSamples{
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    $object->{ $field } = $ancestor->{ $field };
+                    if ( exists $object->{ $field } ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    }else{
+                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
+                    }
                 }
             }
         
@@ -612,17 +616,12 @@ sub processExcelSamples{
             else{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
-            ## TODO remove once shallowseq column is built into lims
+            ## TODO remove once shallowseq column is built into lims FOR-001
             ## Harcode Somatic_T samples to not run in shallow mode
             ## Harcode Somatic_T samples to not use existing ref data
             $row_info->{ 'shallowseq' } = 0;
             $row_info->{ 'other_ref' } = 0;
             
-            ## TODO remove once project is done
-            ## Hardcode one project back to shallowseq
-            if ( $submission eq "HMFreg0760" ){
-                $row_info->{ 'shallowseq' } = 1;
-            }
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
@@ -700,16 +699,13 @@ sub fixIntegerFields{
 sub fixBooleanFields{
     my ($obj) = @_;
     foreach my $key ( BOOLEAN_FIELDS ){
+        next unless exists $obj->{ $key };
         next unless defined $obj->{ $key };
         my $value = $obj->{ $key };
         if ( $value =~ m/^true$/i ){
             $obj->{ $key } = JSON::XS::true;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 1 if $key eq 'shallowseq';
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 0 if $key eq 'shallowseq';
         }else{
             warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
         }
@@ -990,7 +986,8 @@ sub getFieldNameTranslations{
       'Other_Ref'          => 'other_ref',
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
-      'Germline_findings'  => 'germline_findings',
+      'Report_germline'    => 'report_germline',
+      'Report_germline_level' => 'report_germline_level',
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
