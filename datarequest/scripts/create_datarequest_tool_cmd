@@ -1,15 +1,8 @@
 #!/usr/bin/env bash
 
-source locate_files
-
-#dr_id="" # eg DR-001
-#dr_suffix="" # eg update1
-#run_mode="" # eg dna
-#gcp_mail="" # gcp account
-
 print_usage(){
     echo "-----"
-    echo " Descr: Constructs cmd to run datarequest tool (prints to existing dir)"
+    echo " Descr: Constructs bash command for datarequest tool"
     echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -m <mode> -e <email>"
     echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com'"
     echo "-----"
@@ -27,14 +20,15 @@ while getopts ':i:s:m:e:' flag; do
     esac
 done
 
-if [[ -z "${dr_id}" ]]; then
+if [[ -z "${dr_id}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
 api_url="https://api.hartwigmedicalfoundation.nl"
-tool_jar="/data/common/tools/datarequest/datarequest_prod.jar" # is symlink to most recent
+tool_jar_symlink="/data/common/tools/datarequest/datarequest_prod.jar"
+tool_jar=$(readlink -f "$tool_jar_symlink")
 api_keystore="/data/common/dbs/api_credentials/api.jks"
-api_keystore_pw="/data/common/dbs/api_credentials/api.jks.pw" # contains pw of api.jks encryption
+api_keystore_pw="/data/common/dbs/api_credentials/api.jks.pw" # pw of api.jks file encryption
 
 main() {
     info "Starting with $(basename $0)"
@@ -131,10 +125,6 @@ warn() {
 }
 info() { 
     echo "[INFO] $(date +"%y%m%d %T") $@"
-}
-
-join_by() { 
-    local IFS="$1"; shift; echo "$*"; 
 }
 
 main
