@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 print_usage(){
     echo "-----"
     echo " Descr: Constructs bash command for datarequest tool"
@@ -25,8 +27,8 @@ if [[ -z "${dr_id}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
 fi
 
 api_url="https://api.hartwigmedicalfoundation.nl"
-tool_jar_symlink="/data/common/tools/datarequest/datarequest_prod.jar"
-tool_jar=$(readlink -f "$tool_jar_symlink")
+tool_jar_symlink="$(locate_prod_datarequest)"
+tool_jar="$(readlink -f "$tool_jar_symlink")"
 api_keystore="/data/common/dbs/api_credentials/api.jks"
 api_keystore_pw="/data/common/dbs/api_credentials/api.jks.pw" # pw of api.jks file encryption
 
