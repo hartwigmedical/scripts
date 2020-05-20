@@ -78,11 +78,11 @@ main() {
     [[ -w "${dr_release_dir}" ]] || die "DR release dir not writeable (${dr_release_dir})"
     [[ ! -f "${output_cmd_file}" ]] || die "Output file already exists (${output_cmd_file})"
 
-    info "Metadata TSV: $metadata_tsv"
-    info "Metadata TAR: $metadata_tar"
-    info "Datarequest JAR: $tool_jar"
-    info "Run Mode: $run_mode"
-    info "GCP Mail: $gcp_mail"
+    info "Metadata TSV: ${metadata_tsv}"
+    info "Metadata TAR: ${metadata_tar}"
+    info "Datarequest JAR: ${tool_jar}"
+    info "Run Mode: ${run_mode}"
+    info "GCP Mail: ${gcp_mail}"
     
     ## create the magic
     cmd_array=("java11")
@@ -123,7 +123,7 @@ die() {
     exit 1 
 }
 warn() { 
-    echo "[WARNING] $(date +"%y%m%d %T") $@" >&2 
+    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
 }
 info() { 
     echo "[INFO] $(date +"%y%m%d %T") $@"
