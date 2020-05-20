@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+#dr_id="" # eg DR-001
+#dr_suffix="" # eg update1
+#run_mode="" # eg dna
+#gcp_mail="" # gcp account
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Constructs cmd to run datarequest tool (prints to existing dir)"
+    echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -m <mode> -e <email>"
+    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com'"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':i:s:m:e:' flag; do
+    case "${flag}" in
+        i) dr_id=$OPTARG ;;
+        s) dr_suffix=$OPTARG ;;
+        m) run_mode=$OPTARG ;;
+        e) gcp_mail=$OPTARG ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${dr_id}" ]]; then
+    print_usage
+fi
+
+api_url="https://api.hartwigmedicalfoundation.nl"
+tool_jar="/data/common/tools/datarequest/datarequest_prod.jar" # is symlink to most recent
+api_keystore="/data/common/dbs/api_credentials/api.jks"
+api_keystore_pw="/data/common/dbs/api_credentials/api.jks.pw" # contains pw of api.jks encryption
+
+main() {
+    info "Starting with $(basename $0)"
+    
+    ## quick input checks
+    [[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
+    [[ ! -z "${run_mode}" && "${run_mode}" =~ (dna|rna) ]] || die "run-mode incorrect (${run_mode})?"
+    [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
+
+    ## we need the index of DR to 
+    local dr_index=$( echo "${dr_id}" | sed 's/^DR\-//')
+    local release_id="${dr_id}"
+    local request_id="${dr_index}"
+
+    ## reset release/request ids to include suffix if given
+    if [[ "${dr_suffix}" != "" ]]; then
+        release_id="${dr_id}-${dr_suffix}"
+        request_id="${dr_index}-${dr_suffix}"
+    fi
+    
+    ## setup path/file variables
+    local dr_root_dir="/data/data_archive/datarequests/${dr_id}"
+    local dr_release_dir="${dr_root_dir}/DR-${request_id}"
+    local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
+    local metadata_tar="${dr_root_dir}/${release_id}.metadata.tar"
+    local uploads="${metadata_tar}:metadata:tar"
+    local output_cmd_file="${dr_release_dir}/run_datarequest_tool.sh"
+    
+    input_files=(
+        "${metadata_tsv}"
+        "${metadata_tar}"
+        "${api_keystore}"
+        "${api_keystore_pw}"
+        "${tool_jar}"
+    )
+
+    ## check input file existance
+    for f in "${input_files[@]}"; do
+        if [[ ! -f "${f}" ]]; then
+            die "File does not exist (${f})"
+        fi
+    done
+
+    ## some last sanity checks
+    [[ -w "${dr_release_dir}" ]] || die "DR release dir not writeable (${dr_release_dir})"
+    [[ ! -f "${output_cmd_file}" ]] || die "Output file already exists (${output_cmd_file})"
+
+    info "Metadata TSV: $metadata_tsv"
+    info "Metadata TAR: $metadata_tar"
+    info "Datarequest JAR: $tool_jar"
+    info "Run Mode: $run_mode"
+    info "GCP Mail: $gcp_mail"
+    
+    ## create the magic
+    cmd_array=("java11")
+    cmd_array+=("-Djavax.net.ssl.keyStore='${api_keystore}'")
+    cmd_array+=("-Djavax.net.ssl.keyStorePassword=\"\$(cat ${api_keystore_pw})\"")
+    cmd_array+=("-jar '${tool_jar}'")
+    cmd_array+=("-sbp_api_url '${api_url}'")
+    cmd_array+=("-request_id '${request_id}'")
+    cmd_array+=("-accounts '${gcp_mail}'")
+    cmd_array+=("-metadata_tsv '${metadata_tsv}'")
+    cmd_array+=("-uploads '${uploads}'")
+    cmd_array+=("-mode '${run_mode}'")
+    cmd_array+=("-skip_login")
+
+    cmd_single_line=$(echo "${cmd_array[@]}")
+
+    info "Constructed cmd: ${cmd_single_line}"
+    info "Writing cmd to cmd file ${output_cmd_file}"
+
+    echo "# $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+    for cmd_line in "${cmd_array[@]}"; do 
+        echo "${cmd_line} \\" >> "${output_cmd_file}"
+    done
+    echo "" >> "${output_cmd_file}"
+
+    info "Making cmd file executable"
+    chmod +x "${output_cmd_file}"
+
+    info "TODO:"
+    info " 1) Inspect cmd file: cat ${output_cmd_file}"
+    info " 2) Make sure you are logged in at GCP with correct credentials!"
+    info " 3) And then run cmd with: nohup ${output_cmd_file} > ${output_cmd_file}.log &"
+    info "Finished with $(basename $0)"
+}
+
+die() { 
+    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
+    exit 1 
+}
+warn() { 
+    echo "[WARNING] $(date +"%y%m%d %T") $@" >&2 
+}
+info() { 
+    echo "[INFO] $(date +"%y%m%d %T") $@"
+}
+
+join_by() { 
+    local IFS="$1"; shift; echo "$*"; 
+}
+
+main
