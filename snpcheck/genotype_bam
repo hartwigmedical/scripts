@@ -10,22 +10,28 @@ designs=(
     '81SNPmip_design.vcf'
 )
 
-bamPath=$1
+bam_path=$1
 
-if [[ ! -f ${bamPath} ]]; then echo "Provide path to bam"; exit 1; fi
-if [[ ! "${bamPath}" =~ \.bam$ ]]; then echo "Only BAM files as input"; exit 1; fi
+if [[ ! -f "${bam_path}" ]]; then echo "[ERROR] Provide path to bam"; exit 1; fi
+if [[ ! "${bam_path}" =~ \.bam$ ]]; then echo "[ERROR] Only BAM files as input"; exit 1; fi
 
 echo "[INFO] SNPcheck Genotying Starting"
 
-fileName=$( basename $bamPath )
-sampleName=$( echo $fileName | sed 's/\.bam//' )
+file_name=$(basename ${bam_path})
+sample_name=$(echo ${file_name} | sed 's/\.bam//')
 
-for designFile in "${designs[@]}"; do
-    designName=$( echo $designFile | sed 's/_design\.vcf//' )
-    designPath=${DESIGN_DIR}'/'${designFile}
-    outFile="${sampleName}_${designName}_snpcheck.vcf"
-    echo "[INFO] Genotying by ${designName} for ${sampleName} to ${outFile}"
-    java -Xms2g -Xmx9g -jar ${GATK_JAR} -T UnifiedGenotyper -R ${REF_FASTA} -L ${designPath} --output_mode EMIT_ALL_SITES -I ${bamPath} -o ${outFile}
+for design_file in "${designs[@]}"; do
+    design_name=$( echo ${design_file} | sed 's/_design\.vcf//' )
+    design_path=${DESIGN_DIR}'/'${design_file}
+    out_file="${sample_name}_${design_name}_snpcheck.vcf"
+    echo "[INFO] Genotying by ${design_name} for ${sample_name} to ${out_file}"
+    java -Xms2g -Xmx9g -jar ${GATK_JAR} \
+        -T UnifiedGenotyper \
+        -R ${REF_FASTA} \
+        -L ${design_path} \
+        --output_mode EMIT_ALL_SITES \
+        -I ${bam_path} \
+        -o ${out_file}
 done
 
 echo "[INFO] SNPcheck Genotying Done"

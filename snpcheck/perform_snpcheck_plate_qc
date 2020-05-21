@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-vcfDirPath=$1
+vcf_dir_path=$1
 
 echo "[INFO] START with $(basename $0)"
 
-if [[ -z ${vcfDirPath} || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "${vcf_dir_path}" || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
   echo " Usage: $(basename $0) \${pathToDirWithVCFs}"
   echo "    Eg: $(basename $0) /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
@@ -12,21 +12,21 @@ if [[ -z ${vcfDirPath} || $1 == "-h" || $1 == "--help" ]]; then
   exit 1
 fi
 
-if [[ ! -d ${vcfDirPath} ]]; then echo "[ERROR] Dir does not exist (${vcfDirPath})" && exit 1; fi
+if [[ ! -d "${vcf_dir_path}" ]]; then echo "[ERROR] Dir does not exist (${vcf_dir_path})" && exit 1; fi
 
-qcLogsPath="/data/common/snpcheck/qc"
-nasPath="/volume1/web/qc/snpcheck"
+qc_logs_path="/data/common/snpcheck/qc"
+nas_path="/volume1/web/qc/snpcheck"
 
-vcfDirName=$(basename ${vcfDirPath})
-qcLogName="${vcfDirName}.qc"
-qcLogPath="${qcLogsPath}/${qcLogName}"
+vcf_dir_name=$(basename ${vcf_dir_path})
+qc_log_name="${vcf_dir_name}.qc"
+qc_log_path="${qc_logs_path}/${qc_log_name}"
 
-echo "[INFO]  Performing QC (${qcLogName})"
-perform_snpcheck.pl -qc -vcfDir "${vcfDirPath}" > "${qcLogPath}"
+echo "[INFO]  Performing QC (${qc_log_name})"
+perform_snpcheck.pl -qc -vcfDir "${vcf_dir_path}" > "${qc_log_path}"
 if [[ $? != 0 ]]; then echo "[ERROR] perform_snpcheck finished with non-zero exit code ($?)" && exit 1; fi
 
-echo "[INFO]  Syncing log to NAS (${qcLogPath})"
-rsync -ah "${qcLogPath}" "nas:${nasPath}/${qcLogName}"
+echo "[INFO]  Syncing log to NAS (${qc_log_path})"
+rsync -ah "${qc_log_path}" "nas:${nas_path}/${qc_log_name}"
 
 echo "[INFO] DONE with $(basename $0)"
 

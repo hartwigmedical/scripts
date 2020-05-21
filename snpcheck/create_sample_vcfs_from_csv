@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-CODEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+CODEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OUTBASE="/data/common/snpcheck"
 SCRIPT="${CODEDIR}/Convert_OpenArray_CSV_to_VCF.py"
 GCPDIR="/data/gcp/snpcheckvcfupload"
@@ -18,43 +18,43 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-csvFile=$1
-if [[   -z ${csvFile} ]]; then echo "[ERROR] No csv results file provided.."; exit 1; fi
-if [[ ! -f ${csvFile} ]]; then echo "[ERROR] Input csv file does not exist?"; exit 1; fi
-if [[ ! -f ${SCRIPT}  ]]; then echo "[ERROR] Script file does not exist?"; exit 1; fi
-if [[ ! -w ${GCPDIR}  ]]; then echo "[ERROR] Output sync dir not writable ($GCPDIR)"; exit 1; fi
+csv_file=$1
+if [[   -z "${csv_file}" ]]; then echo "[ERROR] No csv results file provided.."; exit 1; fi
+if [[ ! -f "${csv_file}" ]]; then echo "[ERROR] Input csv file does not exist?"; exit 1; fi
+if [[ ! -f "${SCRIPT}"  ]]; then echo "[ERROR] Script file does not exist?"; exit 1; fi
+if [[ ! -w "${GCPDIR}"  ]]; then echo "[ERROR] Output sync dir not writable ($GCPDIR)"; exit 1; fi
 
 ## setup design to use
-oneSample=$( cat ${csvFile} | grep ^FR | cut -d"," -f1 | sort | uniq | head -1 )
-designSize=$( grep -c ^${oneSample} ${csvFile} )
-if [[ ${designSize} -eq 60 ]]; then
-  echo "[INFO] Detected temporary 60SNP panel"
-  SNPCOUNT="60"
+one_sample=$( cat ${csv_file} | grep ^FR | cut -d"," -f1 | sort | uniq | head -1 )
+design_size=$( grep -c ^${one_sample} ${csv_file} )
+if [[ ${design_size} -eq 60 ]]; then
+    echo "[INFO] Detected temporary 60SNP panel"
+    SNPCOUNT="60"
 fi
 DESIGN="${CODEDIR}/${SNPCOUNT}SNPtaq_design.vcf"
 OUTDIR="${OUTBASE}/output/${SNPCOUNT}SNPtaq"
-if [[ ! -f ${DESIGN}  ]]; then echo "[ERROR] Design file does not exist (${DESIGN})?"; exit 1; fi
-if [[ ! -d ${OUTDIR}  ]]; then echo "[ERROR] Output dir does not exist (${OUTDIR})?"; exit 1; fi
+if [[ ! -f "${DESIGN}" ]]; then echo "[ERROR] Design file does not exist (${DESIGN})?"; exit 1; fi
+if [[ ! -d "${OUTDIR}" ]]; then echo "[ERROR] Output dir does not exist (${OUTDIR})?"; exit 1; fi
 
 ## continue with parsing and converting
-experimentName=$( echo $( basename ${csvFile} ) | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//' )
-plateName=$( cat ${csvFile} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2 )
-combiName="${experimentName}_${plateName}"
-vcfOutDir="${OUTDIR}/${combiName}"
+experiment_name=$(echo $(basename ${csv_file}) | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//')
+plate_name=$(cat ${csv_file} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2)
+combi_name="${experiment_name}_${plate_name}"
+vcf_out_dir="${OUTDIR}/${combi_name}"
 
-if [[ -d ${vcfOutDir} ]]; then echo "[ERROR] Output dir already exists (${vcfOutDir})"; exit 1; fi
+if [[ -d "${vcf_out_dir}" ]]; then echo "[ERROR] Output dir already exists (${vcf_out_dir})"; exit 1; fi
 
 echo "[INFO] Starting conversion from CSVs to VCFs"
-echo "[INFO] Output dir will be: ${vcfOutDir}"
-mkdir ${vcfOutDir}
-${SCRIPT} --out ${vcfOutDir} --des ${DESIGN} --csv ${csvFile}
-vcfCount=$(ls ${vcfOutDir} | wc -l)
-echo "[INFO] Total of ${vcfCount} VCFs created"
+echo "[INFO] Output dir will be: ${vcf_out_dir}"
+mkdir ${vcf_out_dir}
+${SCRIPT} --out ${vcf_out_dir} --des ${DESIGN} --csv ${csv_file}
+vcf_count=$(ls ${vcf_out_dir} | wc -l)
+echo "[INFO] Total of ${vcf_count} VCFs created"
 echo ""
 echo "[TODO] Performs plate QC"
-echo "  perform_snpcheck_plate_qc ${vcfOutDir}"
+echo "  perform_snpcheck_plate_qc ${vcf_out_dir}"
 echo ""
 echo "[TODO] Also copy the results to sync dir"
-echo "  cp -r ${vcfOutDir} ${GCPDIR}"
+echo "  cp -r ${vcf_out_dir} ${GCPDIR}"
 echo ""
 
