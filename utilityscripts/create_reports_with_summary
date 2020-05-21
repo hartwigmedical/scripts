@@ -2,28 +2,28 @@
 
 source metadata_functions
 
-process_runs=$(ls /data/cpct/reportable_runs)
+source_path=/data/cpct/reportable_runs
+process_runs=$(ls ${source_path})
 
 for run in ${process_runs}; do
-     # Load meta data
-    sample_id=$(load_tumor_sample_from_metadata /data/cpct/reportable_runs/${run})
+    sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
     summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep -w ${sample_id} | wc -w)
 
     if [[ ${summary_present} -ge 1 ]]; then
         if [[ ${sample_id} == "CORE"* ]]; then
             echo "[INFO] Moving set ${run} to /data/core/runs"
-            mv /data/cpct/reportable_runs/${run} /data/core/runs/
+            mv ${source_path}/${run} /data/core/runs/
             echo "[INFO] Create patient report for ${run}"
             patient_report_for_run /data/core/runs/${run}
         elif [[ ${sample_id} == "WIDE"* ]]; then
             echo "[INFO] Moving set ${run} to /data/cpct/runs"
-            mv /data/cpct/reportable_runs/${run} /data/cpct/runs/
+            mv ${source_path}/${run} /data/cpct/runs/
             echo "[INFO] Create patient report for ${run}"
             patient_report_for_run /data/cpct/runs/${run}
             echo "[INFO] rerun set"
             rerun_processed_set /data/cpct/runs/${run}
         fi
     elif [[ ${summary_present} -eq 0 ]]; then
-        echo "No summary present for run /data/cpct/reportable_runs/${run}"
+        echo "No summary present for run ${source_path}/${run}"
     fi
 done
