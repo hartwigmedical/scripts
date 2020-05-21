@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 
-search_string=$1 # eg CPCT02010001
-name_pattern="${search_string}*.pdf"
+search=$1 # eg CPCT02010001
+
+if [[ -z "${search}" ]]; then
+    echo "[ERROR] No search string specified. Exiting." && exit 1
+fi
+
+name_pattern="${search}*.pdf"
 
 directory1='/data/cpct/old_cpct_reports'
 directory2='/data/cpct/final_reports'

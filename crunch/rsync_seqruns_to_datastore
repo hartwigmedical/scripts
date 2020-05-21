@@ -10,18 +10,18 @@ if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 echo "[INFO] Execute to start sync:"
-rsynccmd="rsync -trhP"
-rsynccmd=${rsynccmd}" --exclude \"*.bcl.gz\""
-rsynccmd=${rsynccmd}" --exclude \"*.cbcl\""
-rsynccmd=${rsynccmd}" --exclude \"*Data/Intensities/BaseCalls/L0*\""
-rsynccmd=${rsynccmd}" --exclude \"*.fastq.gz\""
-rsynccmd=${rsynccmd}" --exclude \"*Images*\""
-rsynccmd=${rsynccmd}" --exclude \"*Read*Cycle*.log\""
-rsynccmd=${rsynccmd}" --exclude \"*RTALogs/*FileCopyLog*.tsv\""
-rsynccmd=${rsynccmd}" --exclude \"*RTALogs/*GlobalLog*.tsv\""
-rsynccmd=${rsynccmd}" --stats"
-rsynccmd=${rsynccmd}" $@"
-rsynccmd=${rsynccmd}" ds:/data/sequencer_archive/"
+rsync_cmd="rsync -trhP"
+rsync_cmd=${rsync_cmd}" --exclude \"*.bcl.gz\""
+rsync_cmd=${rsync_cmd}" --exclude \"*.cbcl\""
+rsync_cmd=${rsync_cmd}" --exclude \"*Data/Intensities/BaseCalls/L0*\""
+rsync_cmd=${rsync_cmd}" --exclude \"*.fastq.gz\""
+rsync_cmd=${rsync_cmd}" --exclude \"*Images*\""
+rsync_cmd=${rsync_cmd}" --exclude \"*Read*Cycle*.log\""
+rsync_cmd=${rsync_cmd}" --exclude \"*RTALogs/*FileCopyLog*.tsv\""
+rsync_cmd=${rsync_cmd}" --exclude \"*RTALogs/*GlobalLog*.tsv\""
+rsync_cmd=${rsync_cmd}" --stats"
+rsync_cmd=${rsync_cmd}" $@"
+rsync_cmd=${rsync_cmd}" ds:/data/sequencer_archive/"
 
-echo ${rsynccmd}
+echo ${rsync_cmd}
 

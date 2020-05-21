@@ -18,14 +18,14 @@ function main {
 function crunches {
     for crunch in crunch00{1,2,3}; do 
         header ${crunch}
-        diskUsage "/home"  "ssh $crunch"
-        diskUsage "/data1" "ssh $crunch"
-        diskUsage "/data2" "ssh $crunch"
-        gitRepVsn "/data/repos/pipeline" "ssh $crunch"
-        gitRepVsn "/data/repos/pipeline-test" "ssh $crunch"
-        gitRepVsn "/data/repos/scripts" "ssh $crunch"
-          toolVsn "gsutil" "ssh $crunch"
-        gridUsage "ssh $crunch"
+        diskUsage "/home"  "ssh ${crunch}"
+        diskUsage "/data1" "ssh ${crunch}"
+        diskUsage "/data2" "ssh ${crunch}"
+        gitRepVsn "/data/repos/pipeline" "ssh ${crunch}"
+        gitRepVsn "/data/repos/pipeline-test" "ssh ${crunch}"
+        gitRepVsn "/data/repos/scripts" "ssh ${crunch}"
+          toolVsn "gsutil" "ssh ${crunch}"
+        gridUsage "ssh ${crunch}"
     done
 }
 
@@ -40,30 +40,30 @@ function header {
 }
 
 function toolVsn {
-    local toolName=$1
-    local cmdPrefix=$2
-    local version=$( ${cmdPrefix} "${toolName} --version" )
-    local location=$( ${cmdPrefix} "which ${toolName}" )
-    echo "TOOL: $toolName is at version $version ($location)"
+    local tool_name=$1
+    local cmd_prefix=$2
+    local version=$(${cmd_prefix} "${tool_name} --version")
+    local location=$(${cmd_prefix} "which ${tool_name}")
+    echo "TOOL: ${tool_name} is at version ${version} (${location})"
 }
 
 function gitRepVsn {
-    local reposDir=$1
-    local cmdPrefix=$2
-    local commit=$( ${cmdPrefix} "cd ${reposDir}; git log --pretty=oneline | head -1" )
-    local gittag=$( ${cmdPrefix} "cd ${reposDir}; git describe --tags" )
-    echo "GIT: $reposDir: tag $gittag and commit $commit"
+    local repos_dir=$1
+    local cmd_prefix=$2
+    local commit=$(${cmd_prefix} "cd ${repos_dir}; git log --pretty=oneline | head -1")
+    local gittag=$(${cmd_prefix} "cd ${repos_dir}; git describe --tags")
+    echo "GIT: ${repos_dir}: tag ${gittag} and commit ${commit}"
 }
 
 function diskUsage {
     local mount=$1
-    local cmdPrefix=$2
-    local available=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4 )
-    local percentageString=$( ${cmdPrefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5 )
-    local percentage=$( echo ${percentageString} | sed 's/\%//g' )
-    echo "${percentageString} used with ${available} space left for mount ${mount}"
+    local cmd_prefix=$2
+    local available=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4)
+    local percentage_string=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5)
+    local percentage=$(echo ${percentage_string} | sed 's/\%//g')
+    echo "${percentage_string} used with ${available} space left for mount ${mount}"
     if [[ "${percentage}" -gt "${MAX_DF_PERC}" ]]; then
-        warn "Disk usage (${percentageString}) for mount $mount higher than ${MAX_DF_PERC}!"
+        warn "Disk usage (${percentage_string}) for mount ${mount} higher than ${MAX_DF_PERC}!"
     fi
 }
 
@@ -74,16 +74,16 @@ function log {
 }
 
 function warn {
-    log "WARN" "$1"
+    log "[WARN] " "$1"
 }
 
 function gridUsage {
     local prefix=$1
-    local jobCount=$( ${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | wc -l" )
-    local errCount=$( ${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | \
+    local job_count=$(${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | wc -l")
+    local err_count=$(${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | \
       tr -s ' ' | tr \" \" \"\\t\" | awk '\$5 ~ \"E\"' | wc -l" 
     )
-    echo "SGE job count: ${jobCount} (${errCount} in error state)"
+    echo "SGE job count: ${job_count} (${err_count} in error state)"
 }
 
 main

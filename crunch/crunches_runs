@@ -4,7 +4,7 @@ for i in {1,2,3}; do
     ssh crunch00${i} check_samplesheets | \
     grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+" | \
     while read line; do
-        fc_date=$(echo "$line" | cut -f2 | cut -d"_" -f1)
-        echo -e "$fc_date\t$line"
+        fc_date=$(echo "${line}" | cut -f2 | cut -d"_" -f1)
+        echo -e "${fc_date}\t${line}"
     done     
 done | sort -r -k1 -k2 | cut -f2-

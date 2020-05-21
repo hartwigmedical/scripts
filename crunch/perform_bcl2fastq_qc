@@ -30,10 +30,10 @@ function printHeader() {
 for seq_run in "${seq_runs[@]}"; do
     ## remove trailing slash if present
     seq_run=$(echo ${seq_run%/})
-    if [[ $seq_run =~ ^\/ ]]; then
+    if [[ ${seq_run} =~ ^\/ ]]; then
         seq_dirs+=(${seq_run})
     else
-        seq_dirs+=("$PWD/${seq_run}" )
+        seq_dirs+=("${PWD}/${seq_run}" )
     fi
 done
 
@@ -43,17 +43,17 @@ for seq_dir in "${seq_dirs[@]}"; do
     ssheet_path="${seq_dir}/${SSHEET_FILE}"
     errlog_path="${seq_dir}/${ERRLOG_FILE}"
     report_path="${seq_dir}/${REPORT_ROOT}/{Reports,Stats}"
-    seqdir_name="$(basename $seq_dir | tr -d '\r')"
+    seqdir_name="$(basename ${seq_dir} | tr -d '\r')"
     hmfrun_name="$(cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r')"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
     
     ## anything wrong with any seqrun: exit the whole thing
     if [[ ! -d ${seq_dir} ]]; then
-        echo "[ERROR] dir does not exist ($seq_dir)" && exit 1; 
+        echo "[ERROR] dir does not exist (${seq_dir})" && exit 1; 
     elif [[ ! $(cat ${errlog_path} | tail -1 | grep "with 0 errors and") ]]; then 
         echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
     elif [[ -z ${hmfrun_name} ]]; then
-        echo "[ERROR] Have not been able to parse hmfrun_name from sheet ($ssheet_path)" && exit 1; 
+        echo "[ERROR] Have not been able to parse hmfrun_name from sheet (${ssheet_path})" && exit 1; 
     fi
     
     ## store further cmds so we can print all together at the end
@@ -76,9 +76,9 @@ for seq_dir in "${seq_dirs[@]}"; do
         sample_id=$(echo ${line} | cut -d" " -f9)
         sample_nm=$(echo ${line} | cut -d" " -f10)
         set_name="NA"
-        fc_status_info="$yld_seq q=$q30_seq"
+        fc_status_info="${yld_seq} q=${q30_seq}"
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
-            api_jsn=$(cat "${API_SAMPLES_JSON}" | jq -r --arg barcode "$sample_id" '.[] | select(.barcode == $barcode)')
+            api_jsn=$(cat "${API_SAMPLES_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
             api_sts=$(echo "${api_jsn}" | jq -r ".status")
             api_yld=$(echo "${api_jsn}" | jq -r ".yld")
             api_req=$(echo "${api_jsn}" | jq -r ".yld_req")
@@ -90,7 +90,7 @@ for seq_dir in "${seq_dirs[@]}"; do
             api_status_info="(run at datastore for added API info)"
         fi
         final_status_info="${fc_status_info} ${api_status_info}"
-        echo -e "$submission\t$sample_id\t$sample_nm\t$final_status_info\t$set_name"
+        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${final_status_info}\t${set_name}"
    done | sort -k1,1 -k3,3
 done
 

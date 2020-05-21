@@ -3,26 +3,26 @@
 ROOT_DIR="/data/data_archive/validation_data"
 LOG_DIR="${HOME}/logs"
 
-printRsync="false"
-dstServer="DESTSERVER"
+print_rsync="false"
+dst_server="DESTSERVER"
 
 function main(){
-    for typeName in "COLO829" "GIAB12878" "GIABMIX" "GIABvsSELF"; do
-        typePath="${ROOT_DIR}/${typeName}"
-        print_title "$typeName FASTQ"
-        echo "$typePath"
+    for type_name in "COLO829" "GIAB12878" "GIABMIX" "GIABvsSELF"; do
+        type_path="${ROOT_DIR}/${type_name}"
+        print_title "${type_name} FASTQ"
+        echo "${type_path}"
 
-        for versionPath in $(find ${typePath} -mindepth 1 -maxdepth 1 -type d | sort); do
-            versionName=$(basename ${versionPath})
-            echo "  $versionPath"
+        for version_path in $(find ${type_path} -mindepth 1 -maxdepth 1 -type d | sort); do
+            version_name=$(basename ${version_path})
+            echo "  ${version_path}"
 
-            for dataPath in $(find ${versionPath} -mindepth 1 -maxdepth 1 -type d | sort); do
-                dataName=$(basename ${dataPath})
-                if [[ ${dataName} == "fastq" ]]; then
-                    if [[ ${printRsync} == "true" && ($(ls ${dataPath} | wc -l) -gt 0) ]]; then
-                        dstPath="/data2/pipelineinput/${versionName}_${dataName}"
-                        logPath="${LOG_DIR}/rsync_to_${dstServer}.log"
-                        echo "    nohup rsync -ahPL --dry-run --stats ${dataPath}/ ${dstServer}:${dstPath}/ > ${logPath} &"
+            for data_path in $(find ${version_path} -mindepth 1 -maxdepth 1 -type d | sort); do
+                data_name=$(basename ${data_path})
+                if [[ ${data_name} == "fastq" ]]; then
+                    if [[ ${print_rsync} == "true" && ($(ls ${data_path} | wc -l) -gt 0) ]]; then
+                        dst_path="/data2/pipelineinput/${version_name}_${data_name}"
+                        log_path="${LOG_DIR}/rsync_to_${dst_server}.log"
+                        echo "    nohup rsync -ahPL --dry-run --stats ${data_path}/ ${dst_server}:${dst_path}/ > ${log_path} &"
                     fi
                 fi
             done
@@ -44,14 +44,14 @@ print_usage(){
 }
 
 function print_title() {
-    local titleString=$1 && shift
-    echo -e "\n# $titleString"
+    local title_string=$1 && shift
+    echo -e "\n# ${title_string}"
 }
 
 while getopts ':s:r' flag; do
     case "${flag}" in
-        s) dstServer=$OPTARG ;;
-        r) printRsync="true" ;;
+        s) dst_server=${OPTARG} ;;
+        r) print_rsync="true" ;;
         *) print_usage
         exit 1 ;;
     esac

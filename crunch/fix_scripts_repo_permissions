@@ -6,7 +6,7 @@ group="users"
 echo ""
 echo "# Execute following to fix group perms for ${repo}"
 echo "cd ${repo}"
-echo "sudo chgrp -R $group ."
+echo "sudo chgrp -R ${group} ."
 echo "sudo chmod -R g+rwX ."
 
 echo ""

@@ -4,7 +4,7 @@ repo_name="scripts"
 repo_root="/data/repos"
 work_path=$(pwd)
 
-if [[ "$USER" == "root" ]]; then
+if [[ "${USER}" == "root" ]]; then
     echo "[ERROR] This script should not be executed as user root" && exit 1
 fi
 

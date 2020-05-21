@@ -140,6 +140,6 @@ for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); d
     echo $(date) > ${log_file}
 done
 
-echo "[INFO] Removing $tmp_upload_file"
-rm -f ${tmp_upload_file}
+echo "[INFO] Removing ${tmp_upload_file}"
+rm -f "${tmp_upload_file}"
 echo "[INFO] Finished with $0"

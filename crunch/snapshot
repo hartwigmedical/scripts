@@ -4,13 +4,13 @@ PREFIX=" "
 
 function main {
     echo ''
-    hostName=$(hostname)
-    if [[ "${hostName}" =~ crunch ]]; then
+    host_name=$(hostname)
+    if [[ "${host_name}" =~ crunch ]]; then
         processAsCrunch
-    elif [[ "${hostName}" =~ datastore ]]; then
+    elif [[ "${host_name}" =~ datastore ]]; then
         processAsDatastore
     else
-        echo "[ERROR] Unknown hostname (${hostName})"
+        echo "[ERROR] Unknown hostname (${host_name})"
     fi
     echo ''
 }
@@ -42,8 +42,8 @@ function processAsCrunch {
 
 process_qstat() {
     qstat -u "*" | head -10
-    totalJobCount=$(qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l)
-    echo "${PREFIX}Total number of jobs in qstat: "$totalJobCount
+    total_job_count=$(qstat -u "*" | awk '$1 !~ /^job|---/' | wc -l)
+    echo "${PREFIX}Total number of jobs in qstat: "${total_job_count}
 }
 
 process_pipeline_runs() { 
@@ -62,8 +62,8 @@ find_subdirs_in_directory() {
 
 find_file_in_pipeline_run() { 
     file=$(find ${run} -wholename "$1" )
-    if [[ "$file" != "" ]]; then
-        echo "${PREFIX}  cat $file"
+    if [[ "${file}" != "" ]]; then
+        echo "${PREFIX}  cat ${file}"
     fi
 }
 
@@ -72,8 +72,8 @@ function diskUsage {
     local df_info=$(df -h "${mount}" | tail -1 | tr -s ' ')
     local size=$(echo "${df_info}" | cut -d" " -f3)
     local available=$(echo "${df_info}" | cut -d" " -f4)
-    local percString=$(echo "${df_info}" | cut -d" " -f5)
-    echo "${PREFIX}${mount}: ${percString} used with ${available} space left (size=$size)"
+    local perc_string=$(echo "${df_info}" | cut -d" " -f5)
+    echo "${PREFIX}${mount}: ${perc_string} used with ${available} space left (size=${size})"
 }
 
 main

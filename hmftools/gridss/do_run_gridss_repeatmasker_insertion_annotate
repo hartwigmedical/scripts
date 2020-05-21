@@ -4,7 +4,7 @@ input_vcf=$1 && shift
 
 output_vcf=${input_vcf/.gz/}
 
-if [[ ! -f ${input_vcf} ]] ; then
+if [[ ! -f "${input_vcf}" ]] ; then
 	echo "[ERROR] Missing input VCF ${input_vcf}"
 	exit 1
 fi

@@ -22,10 +22,10 @@ function grep_ps () {
     if [[ "${exclude}" != "" ]]; then 
         ps_cmd="ps -ef | grep '${string}' | grep -v \"${exclude}\" | tr -s ' '"
     fi
-    ps_cmd_exec="${ps_cmd} | cut -d' ' -f1,5,8- | cut -c 1-$MAX_CHAR | sort | uniq"
+    ps_cmd_exec="${ps_cmd} | cut -d' ' -f1,5,8- | cut -c 1-${MAX_CHAR} | sort | uniq"
 
-    echo "-----> Searching for ${tag} ($ps_cmd)"
-    eval $ps_cmd_exec
+    echo "-----> Searching for ${tag} (${ps_cmd})"
+    eval ${ps_cmd_exec}
     echo ""
 }
 

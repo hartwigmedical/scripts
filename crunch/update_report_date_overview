@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 
 YYMMDD=$(date '+%y%m%d')
-taskId="updateReportingOverview"
+task_id="updateReportingOverview"
 
-srcDir="/data/lims"
-nasLoc="/volume1/web/overviews/reporting"
+src_dir="/data/lims"
+nas_loc="/volume1/web/overviews/reporting"
 
 ## Sanity checks
-if [[ ! -d "${srcDir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+if [[ ! -d "${src_dir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${src_dir})" && exit 1; fi
 
 ## Action
-echo "[INFO] START with ${taskId} ($YYMMDD)"
-echo "[INFO]   Syncing from datastore to NAS intranet (to ${nasLoc})"
-scp "/data/lims/reporting_db.tsv" "nas:${nasLoc}"
-scp "/data/lims/reporting_db.tsv" "nas:${nasLoc}/reporting_db.txt"
-echo "[INFO] DONE with ${taskId}"
+echo "[INFO] START with ${task_id} ($YYMMDD)"
+echo "[INFO]   Syncing from datastore to NAS intranet (to ${nas_loc})"
+scp "/data/lims/reporting_db.tsv" "nas:${nas_loc}"
+scp "/data/lims/reporting_db.tsv" "nas:${nas_loc}/reporting_db.txt"
+echo "[INFO] DONE with ${task_id}"
