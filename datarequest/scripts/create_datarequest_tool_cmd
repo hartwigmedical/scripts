@@ -13,10 +13,10 @@ print_usage(){
 
 while getopts ':i:s:m:e:' flag; do
     case "${flag}" in
-        i) dr_id=$OPTARG ;;
-        s) dr_suffix=$OPTARG ;;
-        m) run_mode=$OPTARG ;;
-        e) gcp_mail=$OPTARG ;;
+        i) dr_id=${OPTARG} ;;
+        s) dr_suffix=${OPTARG} ;;
+        m) run_mode=${OPTARG} ;;
+        e) gcp_mail=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -28,7 +28,7 @@ fi
 
 api_url="https://api.hartwigmedicalfoundation.nl"
 tool_jar_symlink="$(locate_prod_datarequest)"
-tool_jar="$(readlink -f "$tool_jar_symlink")"
+tool_jar="$(readlink -f "${tool_jar_symlink}")"
 api_keystore="/data/common/dbs/api_credentials/api.jks"
 api_keystore_pw="/data/common/dbs/api_credentials/api.jks.pw" # pw of api.jks file encryption
 

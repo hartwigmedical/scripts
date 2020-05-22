@@ -34,12 +34,12 @@ run_path=$1 && shift
 ## -----
 ## Checks and Setup
 ## -----
-if [[ ! -d $run_path ]]; then echo "[ERROR] Provided run path does not exist?"; exit 1; fi
+if [[ ! -d "${run_path}" ]]; then echo "[ERROR] Provided run path does not exist?"; exit 1; fi
 
 ## Name of germline VCF differs betwee Pv4 and Pv5
 input_vcf_path=$(find ${run_path} -wholename "*/germline_caller/*.germline.vcf.gz")
 if [[ ! -f "${input_vcf_path}" ]]; then input_vcf_path=$(find ${run_path} -maxdepth 1 -name "*.annotated.vcf.gz"); fi
-if [[ ! -f "${input_vcf_path}" ]]; then echo "[ERROR] No germline VCF found ($run_path)" && exit 1; fi
+if [[ ! -f "${input_vcf_path}" ]]; then echo "[ERROR] No germline VCF found (${run_path})" && exit 1; fi
 
 run_name=$(basename ${run_path})
 output_dir="${val_base}/${run_name}_Validation"
@@ -82,16 +82,24 @@ rtg index -f vcf ${start_vcf_path}
 snp_vcf_path="${output_dir}/SNP_${start_vcf_name}"
 snp_vcf_name=$(basename ${snp_vcf_path})
 
-if [[ -f $snp_vcf_path ]]; then
+if [[ -f "${snp_vcf_path}" ]]; then
     echo "[INFO] SNP vcf already exist, skipping (${snp_vcf_path})"
 else
     echo "[INFO] Running GATK to create SNP vcf (${snp_vcf_name})"
-    java -Djava.io.tmp_dir=${tmp_dir} -jar ${gatk_path} -T SelectVariants -R ${ref_genome_fasta} -L ${truth_bed_path} --excludeNonVariants --removeUnusedAlternates -V ${start_vcf_path} -selectType SNP -o ${snp_vcf_path}
+    java -Djava.io.tmp_dir=${tmp_dir} -jar ${gatk_path} \
+        -T SelectVariants \
+        -R ${ref_genome_fasta} \
+        -L ${truth_bed_path} \
+        --excludeNonVariants \
+        --removeUnusedAlternates \
+        -V ${start_vcf_path} \
+        -selectType SNP \
+        -o ${snp_vcf_path}
     if [[ $? -ne 0 ]]; then { echo "[ERROR] GATK SelectVariants Failed"; exit 1; } fi
 fi
 
 ## no INDELs for now
-#if [[ -f ${indVcfPath} ]]; then
+#if [[ -f "${indVcfPath}" ]]; then
 #    echo "[INFO] INDEL vcf already exist, skipping (${indVcfPath})"
 #else
 #    echo "[INFO] Running GATK to create INDEL vcf (${indVcfName})"

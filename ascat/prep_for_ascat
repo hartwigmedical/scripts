@@ -15,29 +15,29 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 
 old_amber=${run_dir}/amber/${sample}.amber.baf
-if [[ ! -f ${old_amber} ]]; then
+if [[ ! -f "${old_amber}" ]]; then
     echo "[ERROR] Unable to locate old AMBER file ${old_amber}. Exiting"
     exit 1
 fi
 
 new_amber=${out_dir}/${sample}.amber.baf
-if [[ -f ${new_amber} ]]; then
+if [[ -f "${new_amber}" ]]; then
     echo "[INFO] Amber already rerun: ${new_amber}"
     exit 0
 fi
 
 bed=${out_dir}/${sample}.amber.bed
-if [[ ! -f ${bed} ]]; then
+if [[ ! -f "${bed}" ]]; then
     cat ${old_amber} | grep -v Chrom | awk '{print $1 "\t" $2 - 1 "\t" $2}' > ${bed}
 fi
 
 sample_bam=${out_dir}/${sample}.amber.bam
-if [[ ! -f ${sample_bam} ]]; then
+if [[ ! -f "${sample_bam}" ]]; then
     ${prefix}/../bamslicer/do_slice_bam_on_gcp ${set} ${sample} ${bed} ${sample_bam}
 fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
-if [[ ! -f ${normal_bam} ]]; then
+if [[ ! -f "${normal_bam}" ]]; then
     ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${sample} ${bed} ${normal_bam}
 fi
 

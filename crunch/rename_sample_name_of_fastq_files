@@ -97,6 +97,6 @@ if [[ ! ${do_rename_files} ]]; then
     log_file_path="${dir_path}/fastqrename.log"
     echo "[INFO] Option -r not set so only printed the potential rename actions"
     echo "[INFO] Cmd to rename: ${command_line} -r > ${log_file_path}"
-    if [[ -f ${log_file_path} ]]; then echo "[WARN] Logfile (${log_file_path}) already exists!"; fi
+    if [[ -f "${log_file_path}" ]]; then echo "[WARN] Logfile (${log_file_path}) already exists!"; fi
 fi
 

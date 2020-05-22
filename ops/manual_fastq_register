@@ -11,7 +11,7 @@ hmfapi () {
     http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
 }
 
-if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $script_name \${barcode} \${fastqDir}"
     echo "        $script_name FR12345678 /path/to/fastq/files/"
@@ -19,8 +19,8 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-barcode=$1
-fastq_dir=$2
+barcode=$1 && shift
+fastq_dir=$1 && shift
 
 sample_name=""
 sample_id=$(curl -s --cert-type pem --cert "${api_crt}" --key "${api_key}" "${api_url}/samples?barcode=${barcode}" | jq '.[].id')

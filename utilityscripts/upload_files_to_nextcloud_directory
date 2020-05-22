@@ -3,7 +3,7 @@
 function print_help () {
     echo "-----"
     echo " Descr: Uploads provided files to provided nextcloud directory"
-    echo " Usage: $(basename $0) \$NC_DIR <File1> [<File2> <FileN>]"
+    echo " Usage: $(basename $0) \${NC_DIR} <File1> [<File2> <FileN>]"
     echo " Examp: $(basename $0) UPLOAD file1.txt file2.txt"
     echo "-----"
     exit 1

@@ -10,8 +10,8 @@ registerLog="/data/ops/api/prod/logs/${currDate}_register_sets_from_${ssheetDate
 
 ## Sanity checks
 if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[ERROR] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
-if [[ -f ${createLog} ]]; then echo "[ERROR] Log already exists: ${createLog}" && exit 1; fi
-if [[ -f ${registerLog} ]]; then echo "[ERROR] Log already exists: ${registerLog}" && exit 1; fi
+if [[ -f "${createLog}" ]]; then echo "[ERROR] Log already exists: ${createLog}" && exit 1; fi
+if [[ -f "${registerLog}" ]]; then echo "[ERROR] Log already exists: ${registerLog}" && exit 1; fi
 echo "[INFO] JsonCreation started with input date: ${ssheetDate}"
 
 ## Actual work
@@ -33,8 +33,8 @@ fi
 for dupBc in $( cat ${JSONS_LOC}/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
    echo "[WARN] Found duplicate barcode ($dupBc): make sure the use_existing flag is set correctly on second one:"; 
    find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read readyJson; do
-       if [[ $(grep -c "${dupBc}" $readyJson) -gt 0 ]]; then
-           echo "[WARN]   $readyJson"
+       if [[ $(grep -c "${dupBc}" ${readyJson}) -gt 0 ]]; then
+           echo "[WARN]   ${readyJson}"
        fi
    done
 done

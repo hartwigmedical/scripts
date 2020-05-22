@@ -25,49 +25,49 @@ PROC_NAS_PATH_2019="${NAS_DIR}/${PROC_FILE_2019}"
 
 ## File and dir sanity checks
 if ssh nas "[[ ! -d "${NAS_DIR}" ]]"; then echo "[ERROR] Dir does not exist (nas:${NAS_DIR})" && exit 1; fi
-for nasFilePath in "$TEST_NAS_PATH" "$CPCT_NAS_PATH" "$SAMP_NAS_PATH" "$PROC_NAS_PATH" "$SAMP_NAS_PATH_2019" "$PROC_NAS_PATH_2019"; do
-    if ssh nas "[[ ! -f '${nasFilePath}' ]]"; then echo "[ERROR] File does not exist (nas:${nasFilePath})" && exit 1; fi
+for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH}_2019" "${PROC_NAS_PATH}_2019"; do
+    if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1; fi
 done
-for outdir in $OUT_DIR $LAB_DIR $SYM_DIR; do
-    if [[ ! -d ${outdir} ]]; then echo "[ERROR] Dir does not exist (${outdir})" && exit 1; fi
-    if [[ ! -w ${outdir} ]]; then echo "[ERROR] No write permission (${outdir})" && exit 1; fi
+for outdir in ${OUT_DIR} ${LAB_DIR} ${SYM_DIR}; do
+    if [[ ! -d "${outdir}" ]]; then echo "[ERROR] Dir does not exist (${outdir})" && exit 1; fi
+    if [[ ! -w "${outdir}" ]]; then echo "[ERROR] No write permission (${outdir})" && exit 1; fi
 done
 mkdir -p ${DAY_DIR}
 
 ## Setup file variables
-testSource="${DAY_DIR}/${TEST_FILE}"
-testTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrackPilot.accdb"
-testTxt="${testTarget}.csv"
-testLatest="${SYM_DIR}/lims_test"
+test_source="${DAY_DIR}/${TEST_FILE}"
+test_target="${DAY_DIR}/${DATESTR}_LimsCPCTtrackPilot.accdb"
+test_txt="${test_target}.csv"
+test_latest="${SYM_DIR}/lims_test"
 
-cpctSource="${DAY_DIR}/${CPCT_FILE}"
-cpctTarget="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
-cpctTxt="${cpctTarget}.csv"
-cpctLatest="${SYM_DIR}/lims_cpct"
+cpct_source="${DAY_DIR}/${CPCT_FILE}"
+cpct_target="${DAY_DIR}/${DATESTR}_LimsCPCTtrack.accdb"
+cpct_txt="${cpct_target}.csv"
+cpct_latest="${SYM_DIR}/lims_cpct"
 
-sampSource="${DAY_DIR}/${SAMP_FILE}"
-sampTarget="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
-sampTxt="${sampTarget}_samp.tsv"
-sampLatest="${SYM_DIR}/lims_samp"
-submTxt="${sampTarget}_subm.tsv"
-submLatest="${SYM_DIR}/lims_subm"
-contTxt="${sampTarget}_cont.tsv"
-contLatest="${SYM_DIR}/lims_cont"
-procSource="${DAY_DIR}/${PROC_FILE}"
-procTarget="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
-procTxt="${procTarget}.tsv"
-procLatest="${SYM_DIR}/lims_proc"
+samp_source="${DAY_DIR}/${SAMP_FILE}"
+samp_target="${DAY_DIR}/${DATESTR}_LimsReceived.xlsx"
+samp_txt="${samp_target}_samp.tsv"
+samp_latest="${SYM_DIR}/lims_samp"
+subm_txt="${samp_target}_subm.tsv"
+subm_latest="${SYM_DIR}/lims_subm"
+cont_txt="${samp_target}_cont.tsv"
+cont_latest="${SYM_DIR}/lims_cont"
+proc_source="${DAY_DIR}/${PROC_FILE}"
+proc_target="${DAY_DIR}/${DATESTR}_LimsInProcess.xlsx"
+proc_txt="${proc_target}.tsv"
+proc_latest="${SYM_DIR}/lims_proc"
 
-sampSource2019="${DAY_DIR}/${SAMP_FILE_2019}"
-sampTarget2019="${DAY_DIR}/${DATESTR}_LimsReceived_2019.xlsx"
-sampTxt2019="${sampTarget2019}_samp_2019.tsv"
-sampLatest2019="${SYM_DIR}/2019_samp"
-submTxt2019="${sampTarget2019}_subm_2019.tsv"
-submLatest2019="${SYM_DIR}/2019_subm"
-procSource2019="${DAY_DIR}/${PROC_FILE_2019}"
-procTarget2019="${DAY_DIR}/${DATESTR}_LimsInProcess_2019.xlsx"
-procTxt2019="${procTarget2019}.tsv"
-procLatest2019="${SYM_DIR}/2019_proc"
+samp_source_2019="${DAY_DIR}/${SAMP_FILE_2019}"
+samp_target_2019="${DAY_DIR}/${DATESTR}_LimsReceived_2019.xlsx"
+samp_txt_2019="${samp_target_2019}_samp_2019.tsv"
+samp_latest_2019="${SYM_DIR}/2019_samp"
+subm_txt_2019="${samp_target_2019}_subm_2019.tsv"
+subm_latest_2019="${SYM_DIR}/2019_subm"
+proc_source_2019="${DAY_DIR}/${PROC_FILE_2019}"
+proc_target_2019="${DAY_DIR}/${DATESTR}_LimsInProcess_2019.xlsx"
+proc_txt_2019="${proc_target_2019}.tsv"
+proc_latest_2019="${SYM_DIR}/2019_proc"
 
 ## Retrieve files from NAS
 echo "[INFO] Syncing LIMS files from NAS to DATASTORE"
@@ -83,83 +83,83 @@ rsync -s "nas:${PROC_NAS_PATH_2019}" ${DAY_DIR}
 ## Make sure all required files are present
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] Error with RSYNC from NAS, please check " && exit 1; fi
 
-for inputFile in "${testSource}" "${cpctSource}" "${sampSource}" "${procSource}"; do
-    if [[ ! -f "${inputFile}" ]]; then
-        echo "[ERROR] Input file from NAS not present (${inputFile})" && exit 1;
+for input_file in "${test_source}" "${cpct_source}" "${samp_source}" "${proc_source}"; do
+    if [[ ! -f "${input_file}" ]]; then
+        echo "[ERROR] Input file from NAS not present (${input_file})" && exit 1;
     fi
 done
 
 ## Symlink LIMS files to create stable naming for downstream work
-ln -sfn "${testSource}" "${testTarget}"
-ln -sfn "${cpctSource}" "${cpctTarget}"
-ln -sfn "${sampSource}" "${sampTarget}"
-ln -sfn "${procSource}" "${procTarget}"
+ln -sfn "${test_source}" "${test_target}"
+ln -sfn "${cpct_source}" "${cpct_target}"
+ln -sfn "${samp_source}" "${samp_target}"
+ln -sfn "${proc_source}" "${proc_target}"
 
 ## Symlink LIMS files to create stable naming for downstream work 2019
-ln -sfn "${sampSource2019}" "${sampTarget2019}"
-ln -sfn "${procSource2019}" "${procTarget2019}"
+ln -sfn "${samp_source_2019}" "${samp_target_2019}"
+ln -sfn "${proc_source_2019}" "${proc_target_2019}"
 
 ## Convert to text format
 echo "[INFO] Converting input files to CSV/TSV"
 
-echo "[INFO]   Converting $( basename ${testTarget} )"
-${ACC2CSV} --with-header --input "${testTarget}" --output ${DAY_DIR} --table tblSamples --quote-all false
+echo "[INFO]   Converting $(basename ${test_target})"
+${ACC2CSV} --with-header --input "${test_target}" --output ${DAY_DIR} --table tblSamples --quote-all false
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] TEST export to csv FAILED" && exit 1; fi
-mv ${DAY_DIR}/tblSamples.csv ${testTxt}
-echo "[INFO]   Converting $( basename ${cpctTarget} )"
-${ACC2CSV} --with-header --input "${cpctTarget}" --output ${DAY_DIR} --table tblSamples --quote-all false
+mv ${DAY_DIR}/tblSamples.csv ${test_txt}
+echo "[INFO]   Converting $(basename ${cpct_target})"
+${ACC2CSV} --with-header --input "${cpct_target}" --output ${DAY_DIR} --table tblSamples --quote-all false
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] CPCT export to csv FAILED" && exit 1; fi
-mv ${DAY_DIR}/tblSamples.csv ${cpctTxt}
-echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "submissions")"
-xlsx2csv -d "\t" "${sampTarget}" -s 1 | tail -n +5 > ${submTxt}
+mv ${DAY_DIR}/tblSamples.csv ${cpct_txt}
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet "submissions")"
+xlsx2csv -d "\t" "${samp_target}" -s 1 | tail -n +5 > ${subm_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SUBM export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "samples")"
-xlsx2csv -d "\t" "${sampTarget}" -s 2 | tail -n +2 > ${sampTxt}
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet "samples")"
+xlsx2csv -d "\t" "${samp_target}" -s 2 | tail -n +2 > ${samp_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SAMP export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${sampTarget} ) (sheet "Contact")"
-xlsx2csv -d "\t" "${sampTarget}" -s 3 | tail -n +1 > ${contTxt}
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet "Contact")"
+xlsx2csv -d "\t" "${samp_target}" -s 3 | tail -n +1 > ${cont_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] CONT export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${procTarget} )"
-xlsx2csv -d "\t" "${procTarget}" -s 1 | tail -n +5 > ${procTxt}
+echo "[INFO]   Converting $(basename ${proc_target})"
+xlsx2csv -d "\t" "${proc_target}" -s 1 | tail -n +5 > ${proc_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] PROC export to csv FAILED" && exit 1; fi
 
 ## Convert to text format for 2019 files
-echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "submissions")"
-xlsx2csv -d "\t" "${sampTarget2019}" -s 1 | tail -n +5 > ${submTxt2019}
+echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet "submissions")"
+xlsx2csv -d "\t" "${samp_target_2019}" -s 1 | tail -n +5 > ${subm_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SUBM export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${sampTarget2019} ) (sheet "samples")"
-xlsx2csv -d "\t" "${sampTarget2019}" -s 2 | tail -n +2 > ${sampTxt2019}
+echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet "samples")"
+xlsx2csv -d "\t" "${samp_target_2019}" -s 2 | tail -n +2 > ${samp_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SAMP export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $( basename ${procTarget2019} )"
-xlsx2csv -d "\t" "${procTarget2019}" -s 1 | tail -n +5 > ${procTxt2019}
+echo "[INFO]   Converting $(basename ${proc_target_2019})"
+xlsx2csv -d "\t" "${proc_target_2019}" -s 1 | tail -n +5 > ${proc_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] PROC export to csv FAILED" && exit 1; fi
 
 ## Create latest symlinks
 echo "[INFO] Symlinking to latest files (to ${SYM_DIR})"
-echo "[INFO]   $testLatest"
-ln -sfn $testTxt $testLatest
-echo "[INFO]   $cpctLatest"
-ln -sfn $cpctTxt $cpctLatest
-echo "[INFO]   $submLatest"
-ln -sfn $submTxt $submLatest
-echo "[INFO]   $sampLatest"
-ln -sfn $sampTxt $sampLatest
-echo "[INFO]   $contLatest"
-ln -sfn $contTxt $contLatest
-echo "[INFO]   $procLatest"
-ln -sfn $procTxt $procLatest
+echo "[INFO]   ${test_latest}"
+ln -sfn ${test_txt} ${test_latest}
+echo "[INFO]   ${cpct_latest}"
+ln -sfn ${cpct_txt} ${cpct_latest}
+echo "[INFO]   ${subm_latest}"
+ln -sfn ${subm_txt} ${subm_latest}
+echo "[INFO]   ${samp_latest}"
+ln -sfn ${samp_txt} ${samp_latest}
+echo "[INFO]   ${cont_latest}"
+ln -sfn ${cont_txt} ${cont_latest}
+echo "[INFO]   ${proc_latest}"
+ln -sfn ${proc_txt} ${proc_latest}
 
 ## Create latest symlinks for 2019 files
-echo "[INFO]   $submLatest2019"
-ln -sfn $submTxt2019 $submLatest2019
-echo "[INFO]   $sampLatest2019"
-ln -sfn $sampTxt2019 $sampLatest2019
-echo "[INFO]   $procLatest2019"
-ln -sfn $procTxt2019 $procLatest2019
+echo "[INFO]   ${subm_latest}2019"
+ln -sfn ${subm_txt}2019 ${subm_latest}2019
+echo "[INFO]   ${samp_latest}2019"
+ln -sfn ${samp_txt}2019 ${samp_latest}2019
+echo "[INFO]   ${proc_latest}2019"
+ln -sfn ${proc_txt}2019 ${proc_latest}2019
 
 ## Gather some metrics
 echo "[INFO] Stats:"
-for latestFile in $testLatest $cpctLatest $submLatest $sampLatest $contLatest $procLatest; do
-    totalLines=$(cat $latestFile | wc -l)
-    echo "[INFO]   LineCount of ${latestFile} = ${totalLines}"
+for latest_file in ${test_latest} ${cpct_latest} ${subm_latest} ${samp_latest} ${cont_latest} ${proc_latest}; do
+    total_lines=$(cat ${latest_file} | wc -l)
+    echo "[INFO]   LineCount of ${latest_file} = ${total_lines}"
 done

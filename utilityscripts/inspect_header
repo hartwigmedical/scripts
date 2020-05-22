@@ -3,8 +3,7 @@
 input_file=$1
 
 if [[ -z "${input_file}" ]]; then
-    echo "[ERROR] No input file provided. Exiting"
-    exit 1
+    echo "[ERROR] No input file provided. Exiting" && exit 1
 fi
 
 delim_char=${2:-"\t"}
@@ -17,5 +16,5 @@ header_fields=(${field_string})
 
 ## print to screen
 for i in "${!header_fields[@]}"; do
-    printf "%s\t%s\n" "$(expr $i + 1)" "${header_fields[$i]}"
+    printf "%s\t%s\n" "$(expr ${i} + 1)" "${header_fields[${i}]}"
 done

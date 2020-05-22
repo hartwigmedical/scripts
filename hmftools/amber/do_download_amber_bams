@@ -18,11 +18,11 @@ normal=$(load_ref_sample_from_metadata ${run_dir})
 out_dir=/data/gcp/bam_downloads
 
 #sample_bam=${out_dir}/${sample}.amber.bam
-#if [[ ! -f ${sample_bam} ]]; then
+#if [[ ! -f "${sample_bam}" ]]; then
 #    do_slice_bam_on_gcp ${set} ${sample} ${amber_bed} ${sample_bam}
 #fi
 
 normal_bam=${out_dir}/${normal}.amber.bam
-if [[ ! -f ${normal_bam} ]]; then
+if [[ ! -f "${normal_bam}" ]]; then
     slice_ref_sample_bam_on_gcp ${set} ${sample} ${amber_bed} ${normal_bam}
 fi

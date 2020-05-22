@@ -16,7 +16,7 @@ sample_id=$1 && shift
 
 output_vcf="${fingerprinting_dir}/output/${sample_id}.vcf"
 
-if [[ ! -f ${output_vcf} ]]; then
+if [[ ! -f "${output_vcf}" ]]; then
     echo "[INFO] Running fingerprinting on sample ${sample_id} using germline vcf ${germline_vcf}"
     cd ${fingerprinting_dir}
 

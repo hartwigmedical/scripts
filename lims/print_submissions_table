@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
 LIMS_JSON_FILE="/data/lims/lims.json"
-SUBMISSIONS_JSON="$(cat "$LIMS_JSON_FILE" | jq -c '.submissions')"
+SUBMISSIONS_JSON="$(cat "${LIMS_JSON_FILE}" | jq -c '.submissions')"
 CORE_BUCKET="hmf-output-core"
 
 submissions_to_visit=("$@") # optional
 
 if [[ "$#" -eq 0 ]]; then
-    submissions_to_visit=( $(echo "$SUBMISSIONS_JSON" | jq -r 'keys[]' | sort -r | head -100) )
+    submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -100) )
 fi
 
 for submission in "${submissions_to_visit[@]}"; do
@@ -20,15 +20,15 @@ for submission in "${submissions_to_visit[@]}"; do
     bucket=""
 
     ## reset some fields according to project type
-    if [[ "$project_type" == "Human research" ]]; then
+    if [[ "${project_type}" == "Human research" ]]; then
         project_type="HUM-RES"
-    elif [[ "$project_type" == "non human research" || "$project_type" == "Non human research" ]]; then
+    elif [[ "${project_type}" == "non human research" || "${project_type}" == "Non human research" ]]; then
         project_type="NONHUM-RES"
-    elif [[ "$project_type" == "KG production" ]]; then
+    elif [[ "${project_type}" == "KG production" ]]; then
         project_type="KG"
-    elif [[ "$project_type" == "CORE" ]]; then
+    elif [[ "${project_type}" == "CORE" ]]; then
         analysis_type="SomaticAnalysis"
-    elif [[ "$project_type" == "Cohort" ]]; then
+    elif [[ "${project_type}" == "Cohort" ]]; then
         analysis_type="NA"
     else
         project_type="CheckProjectType(${project_type})"
@@ -36,31 +36,31 @@ for submission in "${submissions_to_visit[@]}"; do
     
     ## retrieve missing info
     samples_json=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
-    lims_sample_count=$(echo "$samples_json" | jq 'length')
-    if [[ "$project_type" == "Cohort" ]]; then
+    lims_sample_count=$(echo "${samples_json}" | jq 'length')
+    if [[ "${project_type}" == "Cohort" ]]; then
         entity="NA"
         bucket="NA"
         analysis_type="NA"
-    elif [[ "$lims_sample_count" -gt 0 ]]; then
-        entity=$(echo "$samples_json" | jq -r '.[-1].entity')
+    elif [[ "${lims_sample_count}" -gt 0 ]]; then
+        entity=$(echo "${samples_json}" | jq -r '.[-1].entity')
         bucket=$(query_api.pl -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
     else
-        echo "[WARN] No sample found for $submission so unable to retrieve entity and bucket!"
+        echo "[WARN] No sample found for ${submission} so unable to retrieve entity and bucket!"
     fi
 
     ## perform some sanity checks
-    #echo "[DEBUG] $submission $entity $bucket"
-    if [[ -z "$entity" || "$entity" == "null" ]]; then echo "[WARN] No entity found for $submission!"; fi
-    if [[ -z "$bucket" || "$bucket" == "null" ]]; then echo "[WARN] No bucket found for $submission!"; fi
-    if [[ "$project_type" == "CORE" && "$bucket" != "$CORE_BUCKET" ]]; then
-        echo -e "\n[WARN] Found CORE submission where bucket is not $CORE_BUCKET (submission=$submission entity=$entity bucket=$bucket)!!\n"
+    #echo "[DEBUG] ${submission} ${entity} ${bucket}"
+    if [[ -z "${entity}" || "${entity}" == "null" ]]; then echo "[WARN] No entity found for ${submission}!"; fi
+    if [[ -z "${bucket}" || "${bucket}" == "null" ]]; then echo "[WARN] No bucket found for ${submission}!"; fi
+    if [[ "${project_type}" == "CORE" && "${bucket}" != "${CORE_BUCKET}" ]]; then
+        echo -e "\n[WARN] Found CORE submission where bucket is not ${CORE_BUCKET} (submission=${submission} entity=${entity} bucket=${bucket})!!\n"
     fi
 
     ## output
     printf "%s\t%s\t%s\t%s\t%s\n" \
-        "$submission" \
-        "$project_name" \
-        "$project_type" \
-        "$analysis_type" \
-        "$expected_sample_count"
+        "${submission}" \
+        "${project_name}" \
+        "${project_type}" \
+        "${analysis_type}" \
+        "${expected_sample_count}"
 done

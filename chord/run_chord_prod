@@ -5,9 +5,8 @@ source metadata_functions
 
 run_dir=$1 && shift
 
-if [[ ! -d ${run_dir} ]]; then
-    echo "[ERROR] ${run_dir} does not exist!"
-    exit 1
+if [[ ! -d "${run_dir}" ]]; then
+    echo "[ERROR] ${run_dir} does not exist!" && exit 1
 fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})

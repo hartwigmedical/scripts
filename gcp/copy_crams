@@ -14,7 +14,7 @@ BUCKET_LOC="europe-west4"
 [[ $# -ne 2 ]] && echo "USAGE: $(basename $0) [BamSetMatcher output directory] [dest_cmek_url]" && exit 1
 BUCKETS="$1/buckets.list"
 FILES="$1/urls.list"
-[[ -f ${FILES} && -f ${BUCKETS} ]] \
+[[ -f "${FILES}" && -f "${BUCKETS}" ]] \
   || (echo "${BUCKETS} or ${FILES} does not exist" && echo "$1 does not look like a BamSetMatcher output directory" && exit 1)
 
 echo "Created buckets will be owned by the currently-authorised user and the current project."

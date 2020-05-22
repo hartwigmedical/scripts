@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Usage: $(basename $0) CPCT02010001"
     echo "        $(basename $0) FR12345678"

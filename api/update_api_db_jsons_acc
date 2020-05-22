@@ -12,8 +12,8 @@ SCRIPT=$(basename $0)
 
 DB_TYPES=( fastq entities runs samples sets flowcells inis shares stacks )
 
-if [[ ! -f $CRT_FILE ]]; then echo "[ERROR] CRT file not found ($CRT_FILE)" && exit 1; fi
-if [[ ! -f $KEY_FILE ]]; then echo "[ERROR] KEY file not found ($KEY_FILE)" && exit 1; fi
+if [[ ! -f "${CRT_FILE}" ]]; then echo "[ERROR] CRT file not found (${CRT_FILE})" && exit 1; fi
+if [[ ! -f "${KEY_FILE}" ]]; then echo "[ERROR] KEY file not found (${KEY_FILE})" && exit 1; fi
 
 for TYPE in "${DB_TYPES[@]}"; do
     API_URL="${BASE_URL}/${TYPE}"

@@ -9,9 +9,8 @@ if [[ -z "${dr_path}" ]]; then
 fi
 
 echo "[DEBUG] Creating base directory structure at ${dr_path}"
-if [[ -d ${dr_path} ]]; then
-    echo "[WARN] Directory already exists: ${dr_path}. Exiting"
-    exit 1
+if [[ -d "${dr_path}" ]]; then
+    echo "[WARN] Directory already exists: ${dr_path}. Exiting" && exit 1
 fi
 
 mkdir -p "${dr_path}"

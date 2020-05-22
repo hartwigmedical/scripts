@@ -9,8 +9,8 @@ print_usage(){
 
 while getopts ':n:p:' flag; do
     case "${flag}" in
-        n) bucket_name=$OPTARG ;;
-        p) project_name=$OPTARG ;;
+        n) bucket_name=${OPTARG} ;;
+        p) project_name=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac

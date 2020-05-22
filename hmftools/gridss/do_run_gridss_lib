@@ -61,7 +61,7 @@ normal_bam=${run_dir}/${ref_sample}/mapping/${ref_sample}_dedup.realigned.bam
 tumor_bam=${run_dir}/${tumor_sample}/mapping/${tumor_sample}_dedup.realigned.bam
 assembly_bam=${gridss_dir}/${joint_sample_name}.assembly.bam
 log_dir=${gridss_dir}/logs/
-log_prefix=${log_dir}/$HOSTNAME.$$
+log_prefix=${log_dir}/${HOSTNAME}.$$
 blacklist=${config_dir}/ENCFF001TDO.bed
 
 prefix=$(dirname $(readlink $0 || echo $0))

@@ -42,12 +42,12 @@ else
     run_links_json=${run_dir}/logs/links.json
     legacy_path=${run_dir}/somaticVariants/CPCT11111111R_CPCT11111111T/CPCT11111111R_CPCT11111111T_post_processed.vcf
     pv5_path=$( find ${run_dir} -name "*.purple.somatic.vcf.gz")
-    if [[ -f ${run_links_json} ]]; then 
-        run_som_vcf_link=$( cat ${run_links_json} | jq -r '.somatic_variant_vcf')
+    if [[ -f "${run_links_json}" ]]; then
+        run_som_vcf_link=$(cat ${run_links_json} | jq -r '.somatic_variant_vcf')
         run_som_vcf_path=${run_dir}/${run_som_vcf_link}
-    elif [[ -f ${legacy_path} ]]; then
+    elif [[ -f "${legacy_path}" ]]; then
         run_som_vcf_path=${legacy_path}
-    elif [[ -f ${pv5_path} ]]; then
+    elif [[ -f "${pv5_path}" ]]; then
         run_som_vcf_path=${pv5_path}
     else
         echo "[ERROR] Unable to find somatic VCF" && exit 1;
@@ -59,7 +59,7 @@ run_som_vcf_name=$(basename ${run_som_vcf_path})
 ## Prepare
 echo "[INFO] Using input VCF (${run_som_vcf_name})"
 run_name="$(basename ${run_dir} )"
-if [[ ! -z ${out_name} ]]; then
+if [[ ! -z "${out_name}" ]]; then
     out_name="${truth_version}__vs__${out_name}"
 else    
     out_name="${truth_version}__vs__${run_name}"
@@ -67,7 +67,7 @@ fi
 
 out_path="${val_base}/${out_name}"
 tmp_path="${out_path}/vcfeval"
-if [[ -e ${out_path} ]]; then
+if [[ -e "${out_path}" ]]; then
     echo "[ERROR] Output dir exists remove first: ${out_path}" && exit 1
 else 
     echo "[INFO] Using output dir (${out_path})"

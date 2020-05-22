@@ -121,7 +121,7 @@ while IFS= read line; do
 	  date_report=$(echo ${line} | awk '{print $3}')
 	  position=$(cat "${output_dir}/puritiesDB.csv" | grep -wn ${sample_id})
 	  seq=$(cat "${output_dir}/puritiesDB.csv" | grep -wc ${sample_id})
-	  if [[ -z ${position} && ${sample_id} =~ ^CORE || ${sample_id} =~ ^LUMC ]]; then
+	  if [[ -z "${position}" && ${sample_id} =~ ^CORE || ${sample_id} =~ ^LUMC ]]; then
         if [[ ${sample_id} =~ ^CORE || ${sample_id} =~ ^LUMC ]];then
 	          output_to_file=$(echo ${line} "N/A" "N/A" "N/A" "N/A")
 			      echo ${output_to_file} >> ${output_dir}/reportingDB_Total.tsv
@@ -150,7 +150,8 @@ while IFS= read line; do
 		            output_to_file=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
 			          echo ${output_to_file} >> ${output_dir}/reportingDB_Total.tsv
 			      else
-			          output_to_file=$(echo ${whole_sample_id} ${barcodeSample} ${date_report} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${adding_purity_row})
+			          output_to_file=$(echo ${whole_sample_id} ${barcodeSample} ${date_report} \
+			              "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${adding_purity_row})
 			          echo ${output_to_file} >> ${output_dir}/reportingDB_Total.tsv
 		        fi
 		    else
@@ -160,14 +161,15 @@ while IFS= read line; do
                 purity=$(echo ${position} |tr "," " " | awk '{print $2}')
                 purityProcent=$(echo ${purity} | awk '{ print $1 * 100}')
 
-                sample_query_lims=$(query_lims.pl -type samples | grep -w $sample_id)
+                sample_query_lims=$(query_lims.pl -type samples | grep -w ${sample_id})
                 barcodeSample=$(echo ${sample_query_lims} | awk '{print $2}')
 
                 if [[ ${unknown_sample} == "unknown" ]]; then
 		                output_to_file=$(echo ${line} "unknown_report" "N/A" "N/A" "N/A")
 			              echo ${output_to_file} >> ${output_dir}/reportingDB_Total.tsv
 			          else
-			              output_to_file=$(echo ${whole_sample_id} ${barcodeSample} ${date_report} "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${adding_purity_row})
+			              output_to_file=$(echo ${whole_sample_id} ${barcodeSample} ${date_report} \
+			                  "sequence_or_post-analysis-fail_report" ${purityProcent}"%" ${adding_purity_row})
                     echo ${output_to_file} >> ${output_dir}/reportingDB_Total.tsv
 		            fi
 			      else

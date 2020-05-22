@@ -14,19 +14,16 @@ normal_bam=/data/experiments/191119_sage_panel_slices/bams/${normal}.panel.bam
 
 final_vcf=${out_dir}/${sample}.pon.vcf
 
-if [[ ! -f ${normal_bam} ]]; then
-    echo "[ERROR] BAM download failed"
-    exit 1
+if [[ ! -f "${normal_bam}" ]]; then
+    echo "[ERROR] BAM download failed" && exit 1
 fi
 
-if [[ ! -f ${sample_bam} ]]; then
-    echo "[ERROR] BAM download failed"
-    exit 1
+if [[ ! -f "${sample_bam}" ]]; then
+    echo "[ERROR] BAM download failed" && exit 1
 fi
 
-if [[ -f ${final_vcf} ]]; then
-    echo "[ERROR] Output already created"
-    exit 1
+if [[ -f "${final_vcf}" ]]; then
+    echo "[ERROR] Output already created" && exit 1
 fi
 
 mkdir -p ${out_dir}

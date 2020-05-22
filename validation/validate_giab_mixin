@@ -19,9 +19,9 @@ truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
 truth_bed_path="${truth_dir_path}/${truth_bed_name}"
 
 ## init checks
-if [[ ! -w ${val_base} ]]; then echo "[ERROR] validation base not writable (${val_base})"; exit 1; fi
-if [[ ! -f ${truth_vcf_path} ]]; then echo "[ERROR] truth VCF not available (${truth_vcf_path})"; exit 1; fi
-if [[ ! -f ${truth_bed_path} ]]; then echo "[ERROR] truth BED not available (${truth_bed_path})"; exit 1; fi
+if [[ ! -w "${val_base}" ]]; then echo "[ERROR] validation base not writable (${val_base})"; exit 1; fi
+if [[ ! -f "${truth_vcf_path}" ]]; then echo "[ERROR] truth VCF not available (${truth_vcf_path})"; exit 1; fi
+if [[ ! -f "${truth_bed_path}" ]]; then echo "[ERROR] truth BED not available (${truth_bed_path})"; exit 1; fi
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"

@@ -11,15 +11,13 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
 
 amber=${run_dir}/amber_v2/${sample}.amber.baf
-if [[ ! -f ${amber} ]]; then
-    echo "[ERROR] Unable to locate AMBER file: ${amber}"
-    exit 1
+if [[ ! -f "${amber}" ]]; then
+    echo "[ERROR] Unable to locate AMBER file: ${amber}" && exit 1
 fi
 
 amber_column_count=$(head -1 ${amber} | wc -w)
 if [[ ${amber_column_count} -ne 8 ]]; then
-    echo "[ERROR] ASCAT requires latest AMBER output"
-    exit 1
+    echo "[ERROR] ASCAT requires latest AMBER output" && exit 1
 fi
 
 echo "[INFO] Running ASCAT on ${sample}"

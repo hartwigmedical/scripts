@@ -21,7 +21,7 @@ load_tumor_sample_id_for_set() {
 load_sample_id_for_set_by_type_from_api() {
     local set=$1 && shift
     local sample_type=$1 && shift # can be 'ref_sample' or 'tumor_sample'
-    local sample_name=$(query_api.pl -type sets -filter "name=${set}" -json | jq -r ".[0].$sample_type" )
+    local sample_name=$(query_api.pl -type sets -filter "name=${set}" -json | jq -r ".[0].${sample_type}" )
     echo ${sample_name}
 }
 

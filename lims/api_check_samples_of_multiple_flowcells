@@ -4,8 +4,7 @@ sample_sheets=("$@")
 
 ## only proceed if input
 if [[ -z "${sample_sheets}" ]]; then
-    echo "[WARN] No samplesheet paths given?"
-    exit 1
+    echo "[WARN] No samplesheet paths given?" && exit 1
 fi
 
 ## Flowcell done at GCP so get info per sample

@@ -34,7 +34,7 @@ while getopts ':p:r:k:v:c:o:h:l' flag; do
     esac
 done
 
-if [[ -z ${PATIENT_DIR} || -z ${REFERENCE_GENOME_DIR} || -z ${VERSION} ]]; then
+if [[ -z "${PATIENT_DIR}" || -z "${REFERENCE_GENOME_DIR}" || -z "${VERSION}" ]]; then
     print_usage
 fi
 

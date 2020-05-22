@@ -42,7 +42,7 @@ slack () {
 }
 
 ## Run once at a time
-if [[ -f ${tmp_upload_file} ]]; then
+if [[ -f "${tmp_upload_file}" ]]; then
     echo "[INFO] Uploading in progress, exiting" && exit 0
 else
     touch "${tmp_upload_file}"
@@ -56,13 +56,13 @@ for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); d
     runinfoxml_path="${flowcell_path}/RunInfo.xml"
     log_file="${log_dir}/${flowcell_name}_${log_suffix}"
 
-    if [[ -f "$log_file" ]]; then
+    if [[ -f "${log_file}" ]]; then
         echo "[INFO] Flowcell ${flowcell_name} already uploaded: skipping"
         continue
     fi
 
     if [[ ! -f "${samplesheet_path}" ]]; then
-        echo "[WARN] Flowcell ${flowcell_name} on $hostname is missing SampleSheet (${samplesheet_path}): skipping"
+        echo "[WARN] Flowcell ${flowcell_name} on ${hostname} is missing SampleSheet (${samplesheet_path}): skipping"
         continue
     fi
 
@@ -78,12 +78,12 @@ for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); d
     echo "[INFO]   Flowcell Name: ${flowcell_name}"
     echo "[INFO]   Experiment Name: ${experiment_name}"
 
-    if [[ -z $flowcell_id ]]; then
-        echo "[WARN] Flowcell ${flowcell_name} on $hostname is missing flowcell_id: skipping"
+    if [[ -z "${flowcell_id}" ]]; then
+        echo "[WARN] Flowcell ${flowcell_name} on ${hostname} is missing flowcell_id: skipping"
         continue
     fi
 
-    if [[ ! -f ${rtacomplete_path} ]]; then
+    if [[ ! -f "${rtacomplete_path}" ]]; then
         # Sequencing not finished yet but do pre-register
         echo "[INFO] Flowcell ${flowcell_name} has no run complete file yet (${rtacomplete_path}): skipping"
         flowcell="$(hmfapi GET ${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id})"
@@ -103,9 +103,9 @@ for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); d
   
     ## setup rsync cmd excluding un-used and post-sequencing-generated files
     cmd="gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x \".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*\" ${flowcell_path} gs://${bucket}/${flowcell_name}"
-    echo "[INFO] Executing rsync ($cmd)"
+    echo "[INFO] Executing rsync (${cmd})"
     gcloud auth activate-service-account --key-file ${gcp_cred}
-    $cmd
+    ${cmd}
 
     if [[ $? -ne 0 ]]; then
         #slack "[WARN] Something wrong with BCL upload \"${flowcell_path}\" on \"${hostname}\""
@@ -136,7 +136,7 @@ for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); d
         hmfapi POST ${api_url}/hmf/v1/flowcells name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" bucket="${bucket}" status=Pending
     fi
 
-    echo "[INFO] BCL of flowcell $flowcell_name is uploaded from $hostname and is ready for bcl2fastq conversion"
+    echo "[INFO] BCL of flowcell ${flowcell_name} is uploaded from ${hostname} and is ready for bcl2fastq conversion"
     echo $(date) > ${log_file}
 done
 

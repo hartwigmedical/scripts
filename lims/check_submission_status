@@ -3,8 +3,7 @@
 submission=$1
 
 if [[ -z "${submission}" ]]; then
-    echo "[ERROR] Provide a submission (eg HMFreg0001). Exiting"
-    exit 1
+    echo "[ERROR] Provide a submission (eg HMFreg0001). Exiting" && exit 1
 fi
 
 submission_dir="/data/submissions/${submission}"
@@ -43,7 +42,7 @@ echo "  gather_submission ${submission}"
 echo ""
 
 ## print warnings last
-if [[ -d ${submission_dir} ]]; then echo "[WARN] Submission directory already exists (${submission_dir})"; fi
+if [[ -d "${submission_dir}" ]]; then echo "[WARN] Submission directory already exists (${submission_dir})"; fi
 if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then echo "[WARN] Not all runs in API are status Validated!"; fi
 echo "${lms_smp_jsn}" | jq -r '.[].lab_sop_versions' | while read smp_sop_str; do
     ## Note to self: no quoted regex since bash 3.2
