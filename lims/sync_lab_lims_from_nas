@@ -25,7 +25,7 @@ PROC_NAS_PATH_2019="${NAS_DIR}/${PROC_FILE_2019}"
 
 ## File and dir sanity checks
 if ssh nas "[[ ! -d "${NAS_DIR}" ]]"; then echo "[ERROR] Dir does not exist (nas:${NAS_DIR})" && exit 1; fi
-for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH}_2019" "${PROC_NAS_PATH}_2019"; do
+for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH_2019}" "${PROC_NAS_PATH_2019}"; do
     if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1; fi
 done
 for outdir in ${OUT_DIR} ${LAB_DIR} ${SYM_DIR}; do
