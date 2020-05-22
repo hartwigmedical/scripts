@@ -55,7 +55,7 @@ my $HELP_TEXT =<<HELP;
      $available_types
     
   Selection options
-    -exact      (match filters with \"eq\" instead of regex)
+    -exact      (match filters with "eq" instead of regex)
     -rna        (include rna samples in output)
     -plasma     (include plasma samples in output)
     
