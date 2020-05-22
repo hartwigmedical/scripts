@@ -468,8 +468,10 @@ sub processAccessSamples{
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    if ( exists $object->{ $field } ){
-                        $object->{ $field } = $ancestor->{ $field };
+                    if ( exists $ancestor->{ $field } ){
+                        if ( $object->{ $field } eq '' ){
+                            $object->{ $field } = $ancestor->{ $field };
+                        }
                     }else{
                         die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
                     }
