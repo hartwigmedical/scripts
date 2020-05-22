@@ -3,8 +3,8 @@
 script_name=$(basename $0)
 
 api_cred_dir="/data/common/dbs/api_credentials"
-api_crt_file="${api_cred_dir}/api.crt"
-api_key_file="${api_cred_dir}/api.key"
+api_crt="${api_cred_dir}/api.crt"
+api_key="${api_cred_dir}/api.key"
 api_url='https://api.hartwigmedicalfoundation.nl/hmf/v1'
 
 hmfapi () {
