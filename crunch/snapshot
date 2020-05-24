@@ -3,7 +3,7 @@
 PREFIX=" "
 
 function main {
-    echo ''
+    echo ""
     host_name=$(hostname)
     if [[ "${host_name}" =~ crunch ]]; then
         processAsCrunch
@@ -12,17 +12,17 @@ function main {
     else
         echo "[ERROR] Unknown hostname (${host_name})"
     fi
-    echo ''
+    echo ""
 }
 
 function processAsDatastore {
-    echo '--- STORAGE ---'
+    echo "--- STORAGE ---"
     diskUsage "/home"
     diskUsage "/data"
 }
 
 function processAsCrunch {
-    echo '--- STORAGE ---'
+    echo "--- STORAGE ---"
     diskUsage "/home"
     diskUsage "/data1"
     diskUsage "/data2"
