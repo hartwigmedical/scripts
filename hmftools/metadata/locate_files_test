@@ -21,6 +21,12 @@ if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Ref Sample: ${ref_sample_metrics_
 tumor_sample_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 if [[ $? = 0 ]]; then echo "[INFO]  WGSMetrics Tumor Sample: ${tumor_sample_metrics_file}"; fi
 
+ref_sample_flagstats=$(locate_flagstats ${run_dir} ${ref_sample})
+if [[ $? = 0 ]]; then echo "[INFO]  Flagstats Ref Sample: ${ref_sample_flagstats}"; fi
+
+tumor_sample_flagstats=$(locate_flagstats ${run_dir} ${tumor_sample})
+if [[ $? = 0 ]]; then echo "[INFO]  Flagstats Tumor Sample: ${tumor_sample_flagstats}"; fi
+
 sage_somatics=$(locate_sage_somatics ${run_dir})
 if [[ $? = 0 ]]; then echo "[INFO]  SAGE Somatic VCF: ${sage_somatics}"; fi
 
