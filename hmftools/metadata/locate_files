@@ -236,7 +236,7 @@ locate_wgs_metrics() {
     echo ${metrics_file}
 }
 
-ocate_flagstats() {
+locate_flagstats() {
     local run_dir=$1 && shift
     local sample=$1 && shift
 
