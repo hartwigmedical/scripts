@@ -67,7 +67,7 @@ fi
 input_dir=$1
 # Per sample inputs
 if [[ ! -d "${input_dir}" ]] ; then
-  echo "Input directory not found. Please specify the directory with the RNA-Seq sequencing data on the command line" 1>&2
+  echo "[INFO] Input directory not found. Please specify the directory with the RNA-Seq sequencing data on the command line" 1>&2
   #exit 1
 fi
 

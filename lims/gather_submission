@@ -7,9 +7,9 @@ HMF_LIMS_JSON='/data/lims/lims.json'
 submission=$1
 
 ## sanity checks
-if [[ $# -eq 0 ]] ; then echo "run with eg: $0 HMFreg0000"; exit 1; fi
-if [[ -z "${submission+x}" ]]; then echo "Missing submission id as input"; exit 1; fi
-if [[ ! ${submission} =~ ^HMFreg ]]; then echo "Submission should start with \"HMFreg\""; exit 1; fi
+if [[ $# -eq 0 ]] ; then echo "[ERROR] Run with eg: $0 HMFreg0000"; exit 1; fi
+if [[ -z "${submission+x}" ]]; then echo "[ERROR] Missing submission id as input"; exit 1; fi
+if [[ ! ${submission} =~ ^HMFreg ]]; then echo "[ERROR] Submission should start with \"HMFreg\""; exit 1; fi
 
 ## setting up variables
 out_path=${SUBMISSIONS_DIR}'/'${submission}

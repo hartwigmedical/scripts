@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ "$#" -ne 3 ]]; then
-    echo "Usage: pass_qc api_url api_dir flowcell_id"
+    echo "Usage: $(basename $0) api_url api_dir flowcell_id"
     exit 1
 fi
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-print_usage(){
+print_usage() {
     echo "Usage: $(basename $0) -n bucket_name -p project_name"
     echo "  -n bucket_name      Name of the bucket to be created"
     echo "  -p project_name     Name of the project in which to create bucket"
@@ -20,6 +20,6 @@ if [[ -z "${bucket_name}" || -z "${project_name}" ]]; then
     print_usage
 fi
 
-echo "Creating bucket in GCP. Disregard warnings about KMS permissions, our storage accounts are authorized."
+echo "[INFO] Creating bucket in GCP. Disregard warnings about KMS permissions, our storage accounts are authorized."
 gsutil mb -c standard -b on -l europe-west4 -p ${project_name} gs://${bucket_name}
 gsutil kms encryption -w -k projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001 gs://${bucket_name}

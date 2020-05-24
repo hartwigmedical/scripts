@@ -47,11 +47,11 @@ while getopts ":o:n:d:rsf:" opt; do
       max_find_depth=${OPTARG}
       ;;
     \?)
-      echo "Invalid option: -${OPTARG}" >&2
+      echo "[ERROR] Invalid option: -${OPTARG}" >&2
       exit 1
       ;;
     :)
-      echo "Option -${OPTARG} requires an argument." >&2
+      echo "[ERROR] Option -${OPTARG} requires an argument." >&2
       exit 1
       ;;
   esac

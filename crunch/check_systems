@@ -83,7 +83,7 @@ function gridUsage {
     local err_count=$(${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | \
       tr -s ' ' | tr \" \" \"\\t\" | awk '\$5 ~ \"E\"' | wc -l" 
     )
-    echo "SGE job count: ${job_count} (${err_count} in error state)"
+    echo "[INFO] SGE job count: ${job_count} (${err_count} in error state)"
 }
 
 main
