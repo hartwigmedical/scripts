@@ -2,7 +2,7 @@
 
 # NOTE: This script is not used typically in production. Has been added as one-off.
 
-source metadata_funtions;
+source metadata_functions;
 
 metadata_tsv=$1 && shift
 flagstat_dir=$1 && shift
