@@ -228,7 +228,9 @@ locate_wgs_metrics() {
         metrics_file=$(find -L ${metrics_dir_pre_v5}/ -type f -name "${sample}*_WGSMetrics.txt")
     elif [[ -d "${metrics_dir_v5}" ]]; then
         metrics_file=$(find -L ${metrics_dir_v5}/ -type f -name "${sample}.wgsmetrics")
-    else
+    fi
+
+    if [[ -z "${metrics_file}" ]]; then
         echo "[ERROR] Unable to locate metrics file for ${sample} in run ${run_dir}. Exiting." >& 2
         exit 1
     fi
@@ -248,7 +250,9 @@ locate_flagstats() {
         flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*_dedup.realigned.flagstat")
     elif [[ -d "${flagstats_dir_v5}" ]]; then
         flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}.flagstat")
-    else
+    fi
+
+    if [[ -z "${flagstats_file}" ]]; then
         echo "[ERROR] Unable to locate flagstats file for ${sample} in run ${run_dir}. Exiting." >& 2
         exit 1
     fi
