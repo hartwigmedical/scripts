@@ -247,7 +247,7 @@ locate_flagstats() {
     local flagstats_dir_v5=${run_dir}/${sample}/flagstat
 
     if [[ -d "${flagstats_dir_pre_v5}" ]]; then
-        flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*_dedup.realigned.flagstat")
+        flagstats_file=$(find -L ${flagstats_dir_pre_v5}/ -type f -name "${sample}*.realigned.flagstat")
     elif [[ -d "${flagstats_dir_v5}" ]]; then
         flagstats_file=$(find -L ${flagstats_dir_v5}/ -type f -name "${sample}.flagstat")
     fi
