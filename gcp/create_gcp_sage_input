@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source metadata_functions
 
 set=$1

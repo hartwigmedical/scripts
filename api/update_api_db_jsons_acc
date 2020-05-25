@@ -8,7 +8,6 @@ KEY_FILE="${CRED_DIR}/api.key"
 BASE_URL="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
 LOG_FILE="${JSON_DIR}/update_api_db_acc.log"
 DATETIME=$(date)
-SCRIPT=$(basename $0)
 
 DB_TYPES=( fastq entities runs samples sets flowcells inis shares stacks )
 
@@ -44,4 +43,4 @@ rm ${JSON_DIR}/tmp_*.tmp
 # TODO and then do not forget JSON_DIR_OLD variable on top
 find ${JSON_DIR} -mindepth 1 -maxdepth 1 -type f -exec cp {} ${JSON_DIR_OLD} \;
 
-echo "${DATETIME} Script $SCRIPT has finished" | tee -a ${LOG_FILE}
+echo "${DATETIME} Script $(basename $0) has finished" | tee -a ${LOG_FILE}

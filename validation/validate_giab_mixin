@@ -3,7 +3,6 @@
 run_dir=$1 && shift
 out_name=$1 && shift # optional
 
-this_script=$(basename $0)
 val_base='/data/giab/validation/mixin'
 gatk_jar='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
 rtg_exec='/data/common/tools/rtg-tools_v3.9.1/rtg'
@@ -25,15 +24,15 @@ if [[ ! -f "${truth_bed_path}" ]]; then echo "[ERROR] truth BED not available ($
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
     echo " Descr: Validate GIAB run"
-    echo " Usage: ${this_script} <path-to-pipeline-dir-or-vcf>"
-    echo "        ${this_script} <path-to-pipeline-dir-or-vcf> [<output-name>]"
-    echo "        ${this_script} /data/experiments/giab-mixin/mixin-run/"
-    echo "        ${this_script} /data/experiments/giab-mixin/mixin-run/ \"hmf-mixin-v4-final\""
+    echo " Usage: $(basename $0)<path-to-pipeline-dir-or-vcf>"
+    echo "        $(basename $0) <path-to-pipeline-dir-or-vcf> [<output-name>]"
+    echo "        $(basename $0) /data/experiments/giab-mixin/mixin-run/"
+    echo "        $(basename $0) /data/experiments/giab-mixin/mixin-run/ \"hmf-mixin-v4-final\""
     echo "-----"
     exit 1
 fi
 
-echo "[INFO] START with ${this_script}"
+echo "[INFO] START with $(basename $0)"
 
 ## -----
 ## Find somatic VCF
@@ -144,4 +143,4 @@ done > ${out_path}/rtg_summary.tsv
 
 echo "[INFO] Output in ${out_path}"
 echo "[INFO] Counts in ${metrics_out_file}"
-echo "[INFO] DONE with ${this_script}"
+echo "[INFO] DONE with $(basename $0)"

@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-script_name=$(basename $0)
-
 api_cred_dir="/data/common/dbs/api_credentials"
 api_crt="${api_cred_dir}/api.crt"
 api_key="${api_cred_dir}/api.key"
@@ -13,8 +11,8 @@ hmfapi () {
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
-    echo " Usage: $script_name \${barcode} \${fastqDir}"
-    echo "        $script_name FR12345678 /path/to/fastq/files/"
+    echo " Usage: $(basename $0) \${barcode} \${fastqDir}"
+    echo "        $(basename $0) FR12345678 /path/to/fastq/files/"
     echo "---"
     exit 1
 fi
@@ -50,4 +48,7 @@ find ${fastq_dir} -name "*_R1_*.fastq.gz" -exec basename {} \; | while read R1; 
 done
 
 echo "[INFO] Registering sample"
-curl -s --header "Content-type: application/json" --cert-type pem -X PATCH --cert "${api_crt}" --key "${api_key}" -d '{"name": "'${sample_name}'", "status": "Pending_QC"}' "${api_url}/samples/${sample_id}"
+curl -s --header "Content-type: application/json" \
+    --cert-type pem -X PATCH \
+    --cert "${api_crt}" --key "${api_key}" \
+    -d '{"name": "'${sample_name}'", "status": "Pending_QC"}' "${api_url}/samples/${sample_id}"

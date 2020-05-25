@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source api_functions
 source metadata_functions
 source gcp_functions
@@ -7,7 +9,6 @@ run_dir="/data/cpct/runs/"${set}
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 normal=$(load_ref_sample_from_metadata ${run_dir})
-
 
 run_info=$(load_run_info_for_set ${set})
 pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
