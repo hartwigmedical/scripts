@@ -13,7 +13,7 @@ if [[ -z "${vm_name}" ]]; then
 fi
 
 if [[ -z "${image}" ]]; then
-    image=pipeline5-5-9-202003131433
+    image=pipeline5-5-10-202004301423
     echo "[DEBUG] No image parameter passed. Using '${image}' as default."
 fi
 
