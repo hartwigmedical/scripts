@@ -25,7 +25,7 @@ echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '
 gcloud compute --project=hmf-crunch instances create ${vm_name} \
     --zone=europe-west4-a --machine-type=n1-standard-2 \
     --image=${image} --image-project=hmf-crunch \
-    --boot-disk-size=500GB --boot-disk-type=pd-standard --boot-disk-device-name=${vm_name} \
+    --boot-disk-size=1000GB --boot-disk-type=pd-standard --boot-disk-device-name=${vm_name} \
     --no-address
 
 # Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'
