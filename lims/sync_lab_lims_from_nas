@@ -3,7 +3,7 @@
 ## setup main variables
 DATESTR="$(date '+%y%m%d')"
 NAS_DIR="/volume1/sync_from_infracom"
-OUT_DIR="/data/ops/lims/"
+OUT_DIR="/data/ops/lims"
 LAB_DIR="${OUT_DIR}/lab_files"
 DAY_DIR="${LAB_DIR}/${DATESTR}"
 SYM_DIR="${LAB_DIR}/latest"
@@ -28,9 +28,9 @@ if ssh nas "[[ ! -d "${NAS_DIR}" ]]"; then echo "[ERROR] Dir does not exist (nas
 for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH_2019}" "${PROC_NAS_PATH_2019}"; do
     if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1; fi
 done
-for outdir in ${OUT_DIR} ${LAB_DIR} ${SYM_DIR}; do
-    if [[ ! -d "${outdir}" ]]; then echo "[ERROR] Dir does not exist (${outdir})" && exit 1; fi
-    if [[ ! -w "${outdir}" ]]; then echo "[ERROR] No write permission (${outdir})" && exit 1; fi
+for dir_to_check in ${OUT_DIR} ${LAB_DIR} ${SYM_DIR}; do
+    if [[ ! -d "${dir_to_check}" ]]; then echo "[ERROR] Dir does not exist (${dir_to_check})" && exit 1; fi
+    if [[ ! -w "${dir_to_check}" ]]; then echo "[ERROR] No write permission (${dir_to_check})" && exit 1; fi
 done
 mkdir -p ${DAY_DIR}
 
