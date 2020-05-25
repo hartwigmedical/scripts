@@ -3,8 +3,7 @@
 bam=$1 && shift
 
 if [[ ! -f "${bam}" ]]; then
-    echo "[ERROR] Bam is not a file: ${bam}. Exiting"
-    exit 1
+    echo "[ERROR] Bam is not a file: ${bam}. Exiting" && exit 1
 fi
 
 samtools=/data/common/tools/samtools_v1.9/samtools
