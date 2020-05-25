@@ -63,7 +63,7 @@ for bcl_name in $(ls ${DIRECTORY}); do
         fi
         rm -f /tmp/bcl_uploading
 
-        /usr/bin/curl -s -v \
+        curl -s -v \
             --cert-type pem \
             --cert /home/sbpext/bcl-upload/api.crt \
             --key /home/sbpext/bcl-upload/api.key \
@@ -72,7 +72,8 @@ for bcl_name in $(ls ${DIRECTORY}); do
             -H "Content-Type: application/json" \
             -d '{"name": "'${experiment_name}'", "sequencer": "'${sequencer}'", "index": "'${index}'", "flowcell_id": "'${flowcell_id}'", "status": "Pending"}'
 
-        curl -X POST --data-urlencode 'payload={"text":"BCL '${bcl_name}' is uploaded from '$(hostname)' to https://s3.object02.schubergphilis.com/'${outputBucket}'/'${bcl_name:7}' and is ready for bcl conversion"}' ${slackChannel}
+        curl -X POST \
+            --data-urlencode 'payload={"text":"BCL '${bcl_name}' is uploaded from '$(hostname)' to https://s3.object02.schubergphilis.com/'${outputBucket}'/'${bcl_name:7}' and is ready for bcl conversion"}' ${slackChannel}
 
         date > /data/sbpuploadlogs/${bcl_name}_SBP_Uploaded.done
     fi

@@ -23,7 +23,7 @@ for TYPE in "${DB_TYPES[@]}"; do
     OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
     OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
 
-    /usr/bin/curl \
+    curl \
         --cert-type pem \
         --cert "${CRT_FILE}" \
         --key "${KEY_FILE}" \

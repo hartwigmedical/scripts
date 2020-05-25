@@ -12,4 +12,4 @@ if [[ ! -f "${api_crt_file}" ]]; then echo "[ERROR] File does not exist (${api_c
 if [[ ! -f "${api_key_file}" ]]; then echo "[ERROR] File does not exist (${api_key_file})" && exit 1; fi
 if [[ ! -f "${json}" ]]; then echo "[ERROR] File does not exist (${json})" && exit 1; fi
 
-/usr/bin/curl -s -v --cert-type pem --cert ${api_crt_file} --key ${api_key_file} ${api_url} -XPOST -H "Content-Type: application/json" -d @${json}
+curl -s -v --cert-type pem --cert ${api_crt_file} --key ${api_key_file} ${api_url} -XPOST -H "Content-Type: application/json" -d @${json}

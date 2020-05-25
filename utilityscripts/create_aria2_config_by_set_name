@@ -75,7 +75,7 @@ function main() {
     done
 
     ## get the file objects for one run by id
-    files_json=$(/usr/bin/curl --silent --cert-type pem \
+    files_json=$(curl --silent --cert-type pem \
         --cert ${api_crt_file} --key ${api_key_file} -X GET \
         -H "Accept: application/json" -H "Content-Type: application/json" \
         "${files_api_url}")
