@@ -2,6 +2,6 @@
 
 for json in /data/ops/api/acc/jsons/*.json; do
     echo ""
-    echo "[INFO] About to register: $json"
-    register_set_by_json_to_acc $json
+    echo "[INFO] About to register: ${json}"
+    register_set_by_json_to_acc ${json}
 done
