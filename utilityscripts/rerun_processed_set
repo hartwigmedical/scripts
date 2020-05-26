@@ -3,8 +3,7 @@
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir provided. Exiting"
-    exit 1
+    echo "[ERROR] No run dir provided. Exiting" && exit 1
 fi
 
 do_run_purple_no_db ${run_dir}

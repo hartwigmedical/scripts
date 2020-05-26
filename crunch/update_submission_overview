@@ -15,10 +15,10 @@ if [[ ! -d "${src_dir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${src_d
 ## Action
 echo "[INFO] START with ${task_id} ($YYMMDD)"
 echo "[INFO]   Listing all submissions in ${src_dir}" 
-dirsToSync=$(find ${src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
+dirs_to_sync=$(find ${src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
 echo "[INFO]   Syncing logs from datastore to NAS intranet (to ${nas_loc})"
-rsync -ah --exclude "*/data/" --include "*/" --include "*.txt" --include *README --exclude "*" ${dirsToSync} "nas:${nas_loc}"
+rsync -ah --exclude "*/data/" --include "*/" --include "*.txt" --include *README --exclude "*" ${dirs_to_sync} "nas:${nas_loc}"
 
 echo "[INFO]   Syncing pdfs from NAS share to NAS intranet (to ${reports_target})"
 ssh nas "rsync -ah --include '*.pdf' --exclude '*' ${reports_source}/ ${reports_target}/"
