@@ -7,5 +7,5 @@ if [[ -z "${run_dir}" ]]; then
 fi
 
 do_run_purple_no_db ${run_dir}
-do_run_linx_no_db ${run_dir}
+run_linx_no_db ${run_dir}
 load_run_into_prod_db ${run_dir}

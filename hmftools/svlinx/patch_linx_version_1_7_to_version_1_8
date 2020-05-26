@@ -12,7 +12,7 @@ credentials=$(locate_prod_database_credentials)
 linx_jar=$(locate_prod_linx)
 
 echo "[INFO] Running LINX version ${linx_jar}"
-do_run_linx_no_db ${run_dir}
+run_linx_no_db ${run_dir}
 
 echo "[INFO] Loading LINX version ${linx_jar} to database"
 do_load_linx_data ${sample} ${linx_dir} ${credentials} ${linx_jar} "$@"
