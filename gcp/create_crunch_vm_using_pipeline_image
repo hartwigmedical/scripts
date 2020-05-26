@@ -35,7 +35,7 @@ if [[ -z "${image}" ]]; then
 fi
 
 if [[ -z "${disk_size_gb}" ]]; then
-    echo "[DEBUG] No image parameter passed. Using '${default_disk_size_gb}' as default."
+    echo "[DEBUG] No disk size gb parameter passed. Using '${default_disk_size_gb}GB' as default."
     disk_size_gb=${default_disk_size_gb}
 fi
 
