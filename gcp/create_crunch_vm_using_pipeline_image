@@ -46,9 +46,6 @@ fi
 
 echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
 
-# TODO Consider using CMEK?
-#  --csek-key-file projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001?
-
 gcloud compute --project=hmf-crunch instances create ${vm_name} \
     --zone=europe-west4-a \
     --machine-type=${machine_type} \
