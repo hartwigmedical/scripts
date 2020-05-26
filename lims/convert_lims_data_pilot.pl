@@ -40,7 +40,9 @@ GetOptions (
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
+## TODO: change location of center2entitiy once pilot becomes prod
 my $CNTR_TSV = '/data/common/dbs/hospital/center2entity.tsv';
+## TODO: study2mail no longer needed once pilot becomes prod
 my $MAIL_TSV = '/data/common/dbs/hospital/study2mail.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
