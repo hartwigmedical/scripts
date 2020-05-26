@@ -12,7 +12,7 @@ profile="default"
 
 #int-hartwig-bots
 source ~/.slack
-if [[ -f /tmp/bcl_uploading ]]; then
+if [[ -f "/tmp/bcl_uploading" ]]; then
     echo "[INFO] Uploading in progress, exiting"
     exit 0
 fi
