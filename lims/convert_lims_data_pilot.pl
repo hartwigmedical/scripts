@@ -18,10 +18,8 @@ use constant NACHAR => 'NA';
 
 ## These fields are copied from ancestor sample
 ## in case they are not set at DNA/RNA sample
-use constant TISSUE_ANCESTOR_FIELDS => qw(
-    submission hospital_pa_sample_id hospital_patient_id
-    report_germline report_germline_level report_viral report_pgx
-    ptum ref_sample_id cohort
+use constant FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR => qw(
+    report_germline report_germline_level report_viral report_pgx ptum
 );
 
 ## These fields will be set to json boolean for json output
@@ -502,7 +500,7 @@ sub addAccessSamplesToSamples{
         if ( $is_tissue ){
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
-                foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
+                foreach my $field ( FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR ){
                     if ( exists $ancestor->{ $field } ){
                         $object->{ $field } = $ancestor->{ $field };
                     }else{
