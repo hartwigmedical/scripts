@@ -504,9 +504,7 @@ sub addAccessSamplesToSamples{
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
                     if ( exists $ancestor->{ $field } ){
-                        if ( $object->{ $field } eq '' ){
-                            $object->{ $field } = $ancestor->{ $field };
-                        }
+                        $object->{ $field } = $ancestor->{ $field };
                     }else{
                         die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
                     }
