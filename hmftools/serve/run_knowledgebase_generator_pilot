@@ -2,8 +2,7 @@
 
 source locate_files
 
-knowledgebase_generator_jar=/data/common/tools/knowledgebase-generator_pilot/main_jar/knowledgebase-generator.jar
-
+serve_jar=$(locate_pilot_serve)
 iclusion_trial_tsv=$(locate_pilot_iclusion_trial_tsv)
 vicc_json=$(locate_vicc_json)
 compassionate_use_program_tsv=$(locate_pilot_compassionate_use_programs_tsv)
@@ -14,14 +13,14 @@ ref_genome_fasta_file=$(locate_ref_genome_fasta_file)
 output_dir=/data/common/dbs/knowledgebase_generator/output
 
 if [[ -d "${output_dir}" ]]; then
-    echo "[INFO] dir exist and removed!"
+    echo "[INFO] output dir exist and will be removed!"
     rm -r ${output_dir}
 else
     mkdir -p ${output_dir}
-    echo "[INFO] dir created!"
+    echo "[INFO] dir created: ${output_dir}!"
 fi
 
-java -jar ${knowledgebase_generator_jar} \
+java -jar ${serve_jar} \
     -vicc_json ${vicc_json} \
     -iclusion_trial_tsv ${iclusion_trial_tsv} \
     -compassionate_use_program_tsv ${compassionate_use_program_tsv} \

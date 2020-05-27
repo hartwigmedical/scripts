@@ -116,8 +116,8 @@ locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
 }
 
-locate_pilot_knowledgebase_generator() {
-    echo ${base_path}/tools/knowledgebase-generator_pilot/knowledgebase-generator.jar
+locate_pilot_serve() {
+    echo ${base_path}/tools/serve_pilot/serve.jar
 }
 
 locate_pilot_protect() {
