@@ -37,8 +37,8 @@ fi
 
 internal_cram_url="gs://${cram}"
 external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" 172800)
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP BAM URL: ${internal_cram_url}"
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP BAM URL: ${external_cram_url}"
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP CRAM URL: ${internal_cram_url}"
+echo "$(date +"%H:%M:%S") - [INFO ] - GCP CRAM URL: ${external_cram_url}"
 
 crai=${cram}.crai
 internal_crai_url="gs://${crai}"
