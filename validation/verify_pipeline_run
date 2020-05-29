@@ -109,6 +109,7 @@ download_run_from_gcp() {
 copy_file() {
     local file_path=$1 && shift
     local target_dir=$1 && shift
+
     if [[ ! "${job_file}" =~ sql$ ]]; then
          file_path=$(which ${job_file})
     fi
@@ -120,7 +121,7 @@ copy_file() {
         cp "${file_path}" "${jobs_dir}"
     fi
     
-    [[ $? -eq 0 ]] || die "Unable to copy file (${file_poth}) to dir (${target_dir})"
+    [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
 }
 
 die() { 
