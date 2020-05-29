@@ -273,7 +273,8 @@ locate_sage_somatics() {
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
+        # SAGE hasn't been rerun yet on all runs so this should be a WARN rather than an ERROR.
+        echo "[WARN] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
