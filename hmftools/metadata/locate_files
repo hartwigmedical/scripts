@@ -568,7 +568,7 @@ locate_gridss_structural_variants() {
 
     local structural_vcf=""
     if [[ -d "${gridss_dir_pre_v5}" ]]; then
-	      local gridss_backport_dir=${gridss_dir_pre_v5}/*/breakpoint_position_backport
+	      local gridss_backport_dir=$(echo ${gridss_dir_pre_v5}/*/breakpoint_position_backport)
 	      if [[ -d "${gridss_backport_dir}" ]]; then
 	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
         else
