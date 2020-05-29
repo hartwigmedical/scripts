@@ -103,7 +103,7 @@ download_run_from_gcp() {
     [[ $? -eq 0 ]] || die "Something went wrong with re-download"
 
     line_count=$(cat "${check_log}" | grep -v 'Building sync' | grep -v 'Starting sync' | wc -l)
-    [[ "${line_count}" -eq 0 ]] || die 'Download check log was not empty (pls check ${check_log}) '
+    [[ "${line_count}" -eq 0 ]] || die "Download check log seems to contain downloaded files (pls check ${check_log})"
 }
 
 copy_file() {
