@@ -569,26 +569,28 @@ locate_gridss_structural_variants() {
 
     local structural_vcf=""
     if [[ -d "${gridss_dir_pre_v5}" ]]; then
-        # This echo seems required to turn the variable into a standard string that can be evaluated with -d
-	      local gridss_backport_dir=$(echo ${gridss_dir_pre_v5}/*/breakpoint_position_backport)
-	      if [[ -d "${gridss_backport_dir}" ]]; then
-	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
+        local gridss_backport_dir=$(find ${gridss_dir_pre_v5} -mindepth 2 -maxdepth 2 -type d -name "breakpoint_position_backport")
+        if [[ -d "${gridss_backport_dir}" ]]; then
+            structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
         else
             # Fall back to v4 format which did not require the backport.
-            structural_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.vcf.gz")
+            structural_vcf=$(find -L ${gridss_dir_pre_v5}/ -mindepth 2 -maxdepth 2 -type f -name "*.gridss.somatic.vcf.gz")
         fi
     elif [[ -d "${gridss_dir_v5}" ]]; then
         # Pipeline v5.8+ calls this file "filtered".
         structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
         if [[ -z "${structural_vcf}" ]]; then
-		        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
-		    fi
+            structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
+        fi
+    else
+        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Both pre v5 dir and v5 dir not found. Exiting." >&2
+        exit 1
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
         echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
         exit 1
-		fi
+    fi
 
     echo ${structural_vcf}
 }
