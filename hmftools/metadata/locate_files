@@ -269,7 +269,7 @@ locate_sage_somatics() {
     local somatic_vcf=""
 
     if [[ -d "${sage_dir}" ]]; then
-        somatic_vcf=$(find -L ${sage_dir}/ -type f -name *.sage.somatic.post_processed.vcf.gz)
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.post_processed.vcf.gz")
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
@@ -289,13 +289,13 @@ locate_strelka_somatics() {
     local somatic_vcf=""
 
     if [[ -d "${somatics_dir_pre_v5}" ]]; then
-        somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name *sage.vcf.gz)
+        somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name "*sage.vcf.gz")
         if [[ -z "${somatic_vcf}" ]]; then
             # TODO: Clean up after sage is rerun for every sample
-            somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name *post_processed.vcf.gz)
+            somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name "*post_processed.vcf.gz")
         fi
     elif [[ -d "${somatics_dir_v5}" ]]; then
-        somatic_vcf=$(find -L ${somatics_dir_v5}/ -type f -name *post_processed.vcf.gz)
+        somatic_vcf=$(find -L ${somatics_dir_v5}/ -type f -name "*post_processed.vcf.gz")
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
@@ -723,10 +723,10 @@ locate_germline_variants() {
 
     if [[ -f "${run_dir}/pipeline.version" ]]; then
         # >v5 format
-        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name *.germline.vcf.gz)
+        germline_vcf=$(find -L ${run_dir}/${ref_sample}/germline_caller/ -type f -name "*.germline.vcf.gz")
     else
         # <v5 format
-        germline_vcf=$(find -L ${run_dir}/ -type f -name *.annotated.vcf.gz)
+        germline_vcf=$(find -L ${run_dir}/ -type f -name "*.annotated.vcf.gz")
     fi
 
     if [[ -z "${germline_vcf}" ]]; then
