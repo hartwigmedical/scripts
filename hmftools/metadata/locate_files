@@ -569,6 +569,7 @@ locate_gridss_structural_variants() {
 
     local structural_vcf=""
     if [[ -d "${gridss_dir_pre_v5}" ]]; then
+        # This echo seems required to turn the variable into a standard string that can be evaluated with -d
 	      local gridss_backport_dir=$(echo ${gridss_dir_pre_v5}/*/breakpoint_position_backport)
 	      if [[ -d "${gridss_backport_dir}" ]]; then
 	          structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
