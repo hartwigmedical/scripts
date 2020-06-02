@@ -8,6 +8,4 @@ FROM
 	INNER JOIN metric ON metric.sampleId = clinical.sampleId
 WHERE
 	blacklisted = 0 AND qcStatus = 'PASS' AND sufficientCoverage = 1 AND status <> 'NO_TUMOR' AND purity > 0.195 AND
-	((clinical.sampleId LIKE '%CPCT%' AND informedConsentDate > '2016-04-20')
-	    OR clinical.sampleId LIKE '%WIDE%'
-	    OR clinical.sampleId LIKE '%DRUP%');
+	(clinical.sampleId LIKE '%CPCT%' OR clinical.sampleId LIKE '%WIDE%' OR clinical.sampleId LIKE '%DRUP%');
