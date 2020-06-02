@@ -12,6 +12,7 @@ DB_TYPES=( fastq entities runs samples sets flowcells inis shares stacks )
 
 if [[ ! -f "${CRT_FILE}" ]]; then echo "[ERROR] CRT file not found (${CRT_FILE})" && exit 1; fi
 if [[ ! -f "${KEY_FILE}" ]]; then echo "[ERROR] KEY file not found (${KEY_FILE})" && exit 1; fi
+if [[ $(find "${JSON_DIR}" -maxdepth 1 -name "*.tmp" | wc -l) -gt 0  ]]; then echo "[INFO] Tmp files found. Skipping." && exit 0; fi
 
 for TYPE in "${DB_TYPES[@]}"; do
     API_URL="${BASE_URL}/${TYPE}"
@@ -42,4 +43,4 @@ done
 
 rm ${JSON_DIR}/tmp_*.tmp
 
-echo "${DATETIME} Script $(basename $0) has finished" | tee -a ${LOG_FILE}
+echo "${DATETIME} Script $(basename $0) started at ${DATETIME} and finished at $(date)" | tee -a ${LOG_FILE}
