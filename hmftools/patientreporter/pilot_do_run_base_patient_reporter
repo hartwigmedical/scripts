@@ -21,4 +21,5 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
+    -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"
