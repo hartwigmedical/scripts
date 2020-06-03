@@ -17,8 +17,6 @@ if [[ -z "${comments}" ]]; then
 fi
 
 interpret_comments="This is a pilot patient report and is not meant for production purpose. ${comments}"
-echo "${comments}"
-echo "${interpret_comments}"
 
 if [[ ${report} == "dna" ]]; then
     pilot_dna_yield_insufficient_report ${tumor_sample} -comments "${interpret_comments}" -corrected_report "$@"
