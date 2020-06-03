@@ -8,9 +8,7 @@ if [[ ! -f "${file_with_sql_to_execute}" ]]; then
     echo "[ERROR] Unable to locate SQL file to execute. Exiting." && exit 1
 fi
 
+database_name="pipeline_v5_validation"
 credentials=$(locate_pipeline_v5_validation_database_credentials)
-db_name="pipeline_v5_validation"
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 
-mysql ${db_name} --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
+do_execute_sql_on_database ${file_with_sql_to_execute} ${database_name} ${credentials}

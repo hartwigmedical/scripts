@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+file_with_sql_to_execute=$1 && shift
+database_name=$1 && shift
+credentials=$1 && shift
+
+if [[ ! -f "${file_with_sql_to_execute}" ]]; then
+    echo "[ERROR] Unable to locate SQL file to execute. Exiting." && exit 1
+fi
+
+if [[ -z "${database_name}" ]]; then
+    echo "[ERROR] No database name provided. Exiting." && exit 1
+fi
+
+if [[ ! -f "${credentials}" ]]; then
+    echo "[ERROR] Unable to locate MySQL credentials. Exiting." && exit 1
+fi
+
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+
+mysql ${database_name} --user="${db_user}" --password="${db_pass}" < ${file_with_sql_to_execute}
