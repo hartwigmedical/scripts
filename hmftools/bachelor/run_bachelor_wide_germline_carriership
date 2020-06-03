@@ -7,6 +7,12 @@ run_dir=$1 && shift
 
 bachelor_jar=/data/common/tools/bachelor_v1.9/bachelor.jar
 
+# Database details
+credentials=$(locate_wide_germline_carriership_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 sample_ref=$(load_ref_sample_from_metadata ${run_dir})
@@ -16,28 +22,24 @@ clinvar_filters=/data/common/dbs/bachelor/wide_germline_carriership_clinvar_filt
 bachelor_xml_config=/data/common/dbs/bachelor/wide_germline_carriership_program.xml
 ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
-# /COLO829v003R/germline_caller/COLO829v003R.germline.vcf.gz
-germline_vcf=${run_dir}/${sample_ref}/germline_caller/${sample_ref}.germline.vcf.gz
+germline_vcf=$(locate_germline_variants ${run_dir} ${sample_ref})
 
-# /COLO829v003T/aligner/COLO829v003T.bam
-tumor_bam_file=${run_dir}/${sample}/aligner/${sample}.bam
 bachelor_output_dir=${run_dir}/bachelor_wide
-purple_dir=${run_dir}/purple
 
 if [[ ! -d "${bachelor_output_dir}" ]]; then
     echo "[INFO] ${bachelor_output_dir} does not exist yet, creating..."
     mkdir ${bachelor_output_dir}
 fi
 
-echo "[INFO] Running Bachelor For WIDE Germline Carriership"
+echo "[INFO] Running Bachelor for WIDE Germline Carriership"
 
-#java -Xmx8G -Xms4G -jar ${bachelor_jar} \
-#    -sample ${sample} \
-#    -germline_vcf ${germline_vcf} \
-#    -tumor_bam_file ${tumor_bam_file} \
-#    -purple_data_dir ${purple_dir} \
-#    -xml_config ${bachelor_xml_config} \
-#    -ext_filter_file ${clinvar_filters} \
-#    -ref_genome ${ref_genome_file} \
-#    -output_dir ${bachelor_output_dir} \
-#    -log_debug
+java -Xmx8G -Xms4G -jar ${bachelor_jar} \
+    -sample ${sample} \
+    -skip_enrichment \
+    -germline_vcf ${germline_vcf} \
+    -xml_config ${bachelor_xml_config} \
+    -ext_filter_file ${clinvar_filters} \
+    -ref_genome ${ref_genome_file} \
+    -output_dir ${bachelor_output_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -log_debug
