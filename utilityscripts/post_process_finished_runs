@@ -27,9 +27,5 @@ for run in ${process_runs}; do
         echo "[INFO] Create patient report for ${run}"
         patient_report_for_run /data/cpct/reportable_runs/${run}
 
-        if [[ ${patient_id} == "WIDE"* ]]; then
-            echo "[INFO] Running WIDE germline carriership analysis for ${run}"
-            run_bachelor_wide_germline_carriership /data/cpct/reportable_runs/${run}
-        fi
     fi
 done
