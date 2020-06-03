@@ -10,3 +10,6 @@ execute_sql_on_wide_germline_carriership ${sql_file} > ${output_tsv}
 
 entries=$(( $(cat ${output_tsv} | wc -l) - 1 ))
 echo "[INFO] Done writing WIDE germline carriership analysis. Found ${entries} entries"
+
+echo "[INFO] Uploading ${output_tsv} to Nextcloud"
+upload_files_to_nextcloud_directory "WIDE-Germline-Carriership" ${output_tsv}
