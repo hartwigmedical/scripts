@@ -8,3 +8,5 @@ sql_file=/data/common/repos/scripts/sql/genomic/wide_germline_carriership.sql
 echo "[INFO] Writing WIDE germline carriership analysis to ${output_tsv}"
 execute_sql_on_wide_germline_carriership ${sql_file} > ${output_tsv}
 
+entries=$($(cat ${output_tsv} | wc -l) - 1)
+echo "[INFO] Done writing WIDE germline carriership analysis. Found ${entries} entries"
