@@ -20,7 +20,6 @@ sample_ref=$(load_ref_sample_from_metadata ${run_dir})
 # file Locations
 clinvar_filters=/data/common/dbs/bachelor/wide_germline_carriership_clinvar_filters.csv
 bachelor_xml_config=/data/common/dbs/bachelor/wide_germline_carriership_program.xml
-ref_genome_file=/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 
 germline_vcf=$(locate_germline_variants ${run_dir} ${sample_ref})
 
@@ -39,7 +38,6 @@ java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -germline_vcf ${germline_vcf} \
     -xml_config ${bachelor_xml_config} \
     -ext_filter_file ${clinvar_filters} \
-    -ref_genome ${ref_genome_file} \
-    -output_dir ${bachelor_output_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -output_dir ${bachelor_output_dir} \
     -log_debug
