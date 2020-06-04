@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 yymmdd=$(date "+%y%m%d")
-output_tsv=/data/ops/wide_germline_carriership/${yymmdd}_wide_germline_carriership.tsv
+output_tsv=/data/experiments/wide_germline_carriership_analyses/${yymmdd}_wide_germline_carriership.tsv
 
 sql_file=/data/common/repos/scripts/sql/genomic/wide_germline_carriership.sql
 
