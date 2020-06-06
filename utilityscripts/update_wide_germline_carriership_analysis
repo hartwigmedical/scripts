@@ -3,13 +3,16 @@
 yymmdd=$(date "+%y%m%d")
 output_tsv=/data/experiments/wide_germline_carriership_analyses/${yymmdd}_wide_germline_carriership.tsv
 
-sql_file=/data/common/repos/scripts/sql/genomic/wide_germline_carriership.sql
+# Normally we rely on paths to infer location of scripts but this script is meant to be run from a cronjob in which paths are not available.
+scripts_repo=/data/common/repos/scripts/
+
+sql_file=${scripts_repo}/sql/genomic/wide_germline_carriership.sql
 
 echo "[INFO] Writing WIDE germline carriership analysis to ${output_tsv}"
-execute_sql_on_wide_germline_carriership ${sql_file} > ${output_tsv}
+${scripts_repo}/sql/execution/execute_sql_on_wide_germline_carriership ${sql_file} > ${output_tsv}
 
 entries=$(( $(cat ${output_tsv} | wc -l) - 1 ))
 echo "[INFO] Done writing WIDE germline carriership analysis. Found ${entries} entries"
 
 echo "[INFO] Uploading ${output_tsv} to Nextcloud"
-upload_files_to_nextcloud_directory "WIDE-Germline-Carriership" ${output_tsv}
+${scripts_repo}/utilityscripts/upload_files_to_nextcloud_directory "WIDE-Germline-Carriership" ${output_tsv}
