@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
 
-source locate_files
-
-credentials=$(locate_nextcloud_upload_reports_credentials)
 nextcloud_dir="UPLOAD"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "Usage: $(basename $0) <file1> [<fileN>]" && exit 1
 fi
 
-do_upload_files_to_nextcloud_directory "${credentials}" "${nextcloud_dir}" "$@"
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$@"

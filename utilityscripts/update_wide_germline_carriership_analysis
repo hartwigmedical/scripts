@@ -5,7 +5,6 @@ output_tsv=/data/experiments/wide_germline_carriership_analyses/${yymmdd}_wide_g
 
 # We assume this script is started from a cronjob rather than a personal terminal, so we need to manually source bashrc.
 source ${HOME}/.bashrc
-source locate_files
 
 sql_file=/data/common/repos/scripts/sql/genomic/wide_germline_carriership.sql
 
@@ -16,5 +15,4 @@ entries=$(( $(cat ${output_tsv} | wc -l) - 1 ))
 echo "[INFO] Done writing WIDE germline carriership analysis. Found ${entries} entries"
 
 echo "[INFO] Uploading ${output_tsv} to Nextcloud"
-credentials=$(locate_nextcloud_upload_reports_credentials)
-do_upload_files_to_nextcloud_directory "${credentials}" "WIDE-Germline-Carriership" ${output_tsv}
+do_upload_files_to_nextcloud_directory "WIDE-Germline-Carriership" ${output_tsv}

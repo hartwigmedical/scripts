@@ -1,18 +1,19 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 function print_help () {
     echo "-----"
     echo " Descr: Uploads provided files to provided nextcloud directory"
-    echo " Usage: $(basename $0) \${CRED} \${NC_DIR} <File1> [<File2> <FileN>]"
-    echo " Examp: $(basename $0) /data/common/dbs/nextcloud_credentials/nextcloud_credentials UPLOAD file1.txt file2.txt"
+    echo " Usage: $(basename $0) \${NC_DIR} <File1> [<File2> <FileN>]"
+    echo " Examp: $(basename $0) UPLOAD file1.txt file2.txt"
     echo "-----"
     exit 1
 }
 
-if [[ ! $1 || ! $2 || ! ${3} || $1 == "-h" || $1 == "--help" ]]; then print_help; fi
+if [[ ! $1 || ! $2 || $1 == "-h" || $1 == "--help" ]]; then print_help; fi
 
 nextcloud_url="https://nextcloud.hartwigmedicalfoundation.nl"
-credentials=$1 && shift
 nextcloud_dir=$1 && shift
 files_to_upload=("$@")
 
@@ -20,6 +21,7 @@ echo "[INFO] Running script $(basename $0)"
 echo "[INFO] Directory to upload into is ${nextcloud_dir}"
 echo "[INFO] Collecting credentials"
 
+credentials=$(locate_nextcloud_upload_reports_credentials)
 user=$(awk '/^user/ {print $2}' ${credentials})
 pass=$(awk '/^pass/ {print $2}' ${credentials})
 
