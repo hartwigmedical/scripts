@@ -1,28 +1,29 @@
 #!/usr/bin/env bash
 
 # Note: The 3rd param is the minimal local entries required for the sync to start.
-# Note: We want to be able to run this script from a cronjob without a dependency on relative paths, which is why scripts repo is defined.
-archive_script=/data/common/repos/scripts/gcp/do_archive_directory_to_gcp
+
+# We assume this script as a cronjob rather than from a terminal, so we need to source .bashrc to get all paths
+source ${HOME}/.bashrc
 
 echo "[INFO] Archiving Sequencer Archive"
-${archive_script} /data/sequencer_archive sequencer_archive 2937
+do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 2937
 
 echo "[INFO] Archiving Patient Reports"
-${archive_script} /data/cpct/final_reports patient_reports/final 5910
-${archive_script} /data/cpct/old_cpct_reports patient_reports/old 544
-${archive_script} /data/core/final_reports patient_reports/core 52
+do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 5910
+do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 544
+do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 52
 
 echo "[INFO] Archiving Data Requests"
-${archive_script} /data/data_archive/datarequests data_requests 97
+do_archive_directory_to_gcp/data/data_archive/datarequests data_requests 97
 
 echo "[INFO] Archiving Submissions"
-${archive_script} /data/submissions submissions 690
+do_archive_directory_to_gcp /data/submissions submissions 690
 
 echo "[INFO] Archiving Shallow Seq Pipelines"
-${archive_script} /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 975
+do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 975
 
 echo "[INFO] Archiving SnpCheck Data"
-${archive_script} /data/common/snpcheck snpcheck 6
+do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
 echo "[INFO] Archiving Samplesheets"
-${archive_script} /data/samplesheets samplesheets 2781
+do_archive_directory_to_gcp /data/samplesheets samplesheets 2781
