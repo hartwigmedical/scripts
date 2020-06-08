@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 
-YYMMDD=$(date '+%y%m%d')
 task_id="updateReportingOverview"
-
-src_dir="/data/lims"
+rep_src_file="/data/lims/reporting_db.tsv"
 nas_loc="/volume1/web/overviews/reporting"
+pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
 
-## Sanity checks
-if [[ ! -d "${src_dir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${src_dir})" && exit 1; fi
+## Sanity check
+if [[ ! -f "${rep_src_file}" ]]; then 
+    echo "[ERROR] Source file does not exist (${rep_src_file})"
+    exit 1
+fi
 
-## Action
-echo "[INFO] START with ${task_id} ($YYMMDD)"
-echo "[INFO]   Syncing from datastore to NAS intranet (to ${nas_loc})"
-scp "/data/lims/reporting_db.tsv" "nas:${nas_loc}"
-scp "/data/lims/reporting_db.tsv" "nas:${nas_loc}/reporting_db.txt"
+## Syncing source file twice (second time as txt which can be read directly in browser)
+echo "[INFO] START with ${task_id} $(date '+%y%m%d')"
+echo "[INFO]   Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
+sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/"
+sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/reporting_db.txt"
+echo "[INFO}   File updated (see http://intranet.hartwigmedicalfoundation.nl/overviews/reporting/)"
 echo "[INFO] DONE with ${task_id}"
