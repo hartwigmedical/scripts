@@ -39,7 +39,7 @@ locate_wide_germline_carriership_credentials() {
 
 ############################# Nextcloud Credentials #############################
 
-locate_nextcloud_upload_reports_credentials() {
+locate_nextcloud_upload_credentials() {
     echo ${base_path}/dbs/nextcloud_credentials/nextcloud_credentials
 }
 
