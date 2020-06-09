@@ -42,7 +42,7 @@ fi
 
 if [[ ${tumor_sample} == "WIDE"* ]]; then
     echo "[INFO] Running WIDE germline carriership analysis for ${set}"
-    run_bachelor_wide_germline_carriership /data/cpct/reportable_runs/${set}
+    run_bachelor_wide_germline_carriership ${processed_set_path}
 fi
 
 echo "[INFO] Running purple on sage input"
