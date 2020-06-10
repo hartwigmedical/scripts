@@ -7,6 +7,7 @@ SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Data/Intensities/BaseCalls"
 API_DIR="/data/ops/api/prod"
 API_SAMPLES_JSON="${API_DIR}/database/samples.json"
+API_RUNS_JSON="${API_DIR}/database/runs.json"
 REGISTERED_DIR="${API_DIR}/jsons/registered"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
@@ -85,9 +86,11 @@ for seq_dir in "${seq_dirs[@]}"; do
             api_yld=$((api_yld/1000000000))
             api_req=$((api_req/1000000000))
             set_name=$(find ${REGISTERED_DIR} -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
-            api_status_info="(API: yld=${api_yld} req=${api_req} sts=${api_sts})"
+            api_run_jsn=$(cat "${API_RUNS_JSON}" | jq -r --arg set_name "${set_name}" '.[] | select(.set.name == $set_name)')
+            run_sts=$(echo "${api_run_jsn}" | jq -r ".status")
+            api_status_info="(API: yld=${api_yld} req=${api_req} smp=${api_sts} run=${run_sts})"
         else
-            api_status_info="(run at datastore for added API info)"
+            api_status_info="(run at datastore to add API info)"
         fi
         final_status_info="${fc_status_info} ${api_status_info}"
         echo -e "${submission}\t${sample_id}\t${sample_nm}\t${final_status_info}\t${set_name}"
