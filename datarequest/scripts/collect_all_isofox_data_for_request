@@ -18,7 +18,7 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f2 | while read sample_name; do
 
             ## start symlinking
             echo "[DEBUG] Symlinking isofox files for ${sample_name}"
-            ln -s ${gene_data_csv}  ${dest_set_path}
+            ln -s ${gene_data_csv} ${dest_set_path}
             ln -s ${transcript_data_csv} ${dest_set_path}
         else
             echo "[WARN] Either gene or transcript data missing for ${sample_name}"
