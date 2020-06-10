@@ -550,7 +550,8 @@ sub addAccessSamplesToSamples{
             ## CORE is handled per case/submission
             if ( $study eq 'CORE' ){
                 my $submission_id = $object->{ 'submission' };
-                if ( $submission_id eq "" ){
+                ## specifically check for non-ref samples if submission is defined
+                if ( $submission_id eq '' and $object->{ 'analysis_type' } ne 'Somatic_R' ){
                     warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
                     next;
                 }
@@ -578,7 +579,7 @@ sub addAccessSamplesToSamples{
  
         ## Final sanity checks before storing
         my $all_fields_ok = 1;
-        my @fields_to_check = qw( submission analysis_type );
+        my @fields_to_check = qw( analysis_type );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
                 warn "[WARN] SKIPPING sample because field $field is not present (id:$id name:$name)\n";
