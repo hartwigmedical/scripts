@@ -91,6 +91,8 @@ function main() {
         create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Somatic"
     elif [[ ${ini} == "SingleSample.ini" ]]; then
         create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "SingleSample"
+    elif [[ ${ini} == "ShallowSeq.ini" ]]; then
+        create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
     else
         echo "[ERROR] Unknown ini (${ini})" && exit 1
     fi
@@ -153,6 +155,13 @@ create_run_specific_files () {
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
     )
 
+    local shallow_files=(
+        "${ref_bam}"
+        "${ref_bam_bai}"
+        "${tumor_bam}"
+        "${tumor_bam_bai}"
+    )
+
     local somatic_files=(
         "purple/purple.version"
         "purple/${tum}.driver.catalog.tsv"
@@ -178,6 +187,8 @@ create_run_specific_files () {
     ## select file collection
     if [[ ${run_type} == "Somatic" ]]; then
         file_selection="${somatic_files[@]}"
+    elif [[ ${run_type} == "ShallowSeq" ]]; then
+        file_selection="${shallow_files[@]}"
     elif [[ ${run_type} == "SingleSample" ]]; then
         file_selection="${single_files[@]}"
     elif [[ ${run_type} == "Fastq" ]]; then
