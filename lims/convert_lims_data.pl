@@ -522,9 +522,11 @@ sub processAccessSamples{
                 my $submission_id = $object->{ 'submission' };
                 $object->{ 'entity' } = $submission_id;
                 $object->{ 'project_name' } = $submission_id;
-                ## specifically check for non-ref samples if submission is defined
-                if ( $submission_id eq '' and $object->{ 'analysis_type' } ne 'Somatic_R' ){
-                    warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+                ## SKIP samples without submission defined and warn if T sample
+                if ( $submission_id eq '' ){
+                    if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
+                        warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+                    }
                     next;
                 }
                 ## TODO: remove or rename once patient-reporter supports name/email from submission object
@@ -557,7 +559,8 @@ sub processAccessSamples{
  
         ## Final sanity checks before storing
         my $all_fields_ok = 1;
-        my @fields_to_check = qw( analysis_type );
+        ## Some fields need to be set for downstream tools not to crash!
+        my @fields_to_check = qw( analysis_type submission );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
                 warn "[WARN] SKIPPING sample because field $field is not present (id:$id name:$name)\n";
