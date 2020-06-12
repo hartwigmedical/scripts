@@ -8,8 +8,7 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-comments="This is a pilot patient report and is not meant for production purpose."
-
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 
-do_run_qc_fail_patient_reporter ${run_dir} "post_analysis_fail" -purple_purity_tsv ${purple_purity_tsv} "$@"
+do_run_qc_fail_patient_reporter \
+    ${run_dir} "below_detection_threshold" -purple_purity_tsv ${purple_purity_tsv} "$@"
