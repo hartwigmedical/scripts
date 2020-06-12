@@ -38,10 +38,7 @@ GetOptions (
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
-## TODO: change location of center2entitiy once pilot becomes prod
-my $CNTR_TSV = '/data/common/dbs/hospital/center2entity.tsv';
-## TODO: study2mail no longer needed once pilot becomes prod
-my $MAIL_TSV = '/data/common/dbs/hospital/study2mail.tsv';
+my $CNTR_TSV = '/data/lims/center2entity.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
@@ -133,7 +130,6 @@ say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
-my $mail_dict = parseDictFile( $MAIL_TSV, 'study2mail' );
 my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
@@ -158,7 +154,7 @@ checkContactInfo( $cont_objs );
 
 $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
-$lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict, $mail_dict );
+$lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
 
 checkDrupStage3Info( $subm_objs, $lims_objs );
@@ -308,12 +304,6 @@ sub parseDictFile{
             die "[ERROR] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
             $store{ $id } = $name if ( $id ne EMPTY and $name ne EMPTY );
         }
-        elsif ( $fileType eq 'study2mail' ){
-            my ( $study, $name, $mail ) = split /\t/;
-            die "[ERROR] study name occurs multiple times ($study) in file ($file)\n" if exists $store{ $study };
-            $store{ $study }{ 'name' } = $name;
-            $store{ $study }{ 'mail' } = $mail;
-        }
         else{
             die "[ERROR] File type not set or not recognized ($fileType)\n";
         }
@@ -422,16 +412,12 @@ sub checkContactInfo{
 
 sub addAccessSamplesToSamples{
     
-    my ($lims, $objects, $submissions, $centers_dict, $mail_dict) = @_;
+    my ($lims, $objects, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
     my %dna_blood_samples_by_name = ();
     my %tissue_samples_by_coupe = ();
 
-    ## Collect requester name/email for WIDE study
-    my $WIDE_name = $mail_dict->{ 'WIDE' }{ 'name' };
-    my $WIDE_mail = $mail_dict->{ 'WIDE' }{ 'mail' };
-    
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
     say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
     foreach my $main_id ( sort keys %$objects ){
@@ -560,7 +546,7 @@ sub addAccessSamplesToSamples{
                 $object->{ 'entity' } = $submission_id;
                 $object->{ 'project_name' } = $submission_id;
             }
-            ## CPCT/DRUP are handled study/center wide
+            ## All other samples are clinical study based (CPCT/DRUP/WIDE)
             elsif ( exists $centers_dict->{ $center } ){
                 my $centername = $centers_dict->{ $center };
                 my $original_submission = $object->{ 'submission' };
