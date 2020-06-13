@@ -3,7 +3,7 @@
 SUBMISSIONS_DIR="/data/submissions"
 HMF_QUERY_SCRIPT="query_lims.pl"
 API_QUERY_SCRIPT="query_api.pl"
-HMF_LIMS_JSON='/data/lims/lims.json'
+HMF_LIMS_JSON='/data/ops/lims/prod/lims.json'
 submission=$1
 
 ## sanity checks

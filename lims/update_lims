@@ -11,8 +11,3 @@ ${code_dir}/sync_lab_lims_from_nas 2>&1 | tee -a ${log_file}
 ${code_dir}/convert_lims_data.pl \
     -out_json "${out_json}" \
     -execute 2>&1 | tee -a ${log_file}
-
-## TODO: remove following lines once everything uses the new /data/ops location
-old_file_path="/data/lims/lims.json"
-echo "[INFO] Copying output file to old location for backwards compatibility (${old_file_path})"
-cp "${out_json}" "${old_file_path}"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-LIMS_JSON_FILE="/data/lims/lims.json"
+LIMS_JSON_FILE="/data/ops/lims/prod/lims.json"
 SUBMISSIONS_JSON="$(cat "${LIMS_JSON_FILE}" | jq -c '.submissions')"
 CORE_BUCKET="hmf-output-core"
 

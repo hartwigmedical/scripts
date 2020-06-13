@@ -14,8 +14,8 @@ use 5.010.000;
 ## -----
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
-my $LIMS_JSON = '/data/lims/lims.json';
-my $NONREPORTABLE_TSV = '/data/lims/samples_without_pdf_report.tsv';
+my $LIMS_JSON = '/data/ops/lims/prod/lims.json';
+my $NONREPORTABLE_TSV = '/data/ops/lims/prod/samples_without_pdf_report.tsv';
 my @PDF_DIRS = ( '/data/cpct/final_reports', '/data/core/final_reports', '/data/cpct/old_cpct_reports' );
 my $pdfdirs_string = join( ", ", sort @PDF_DIRS );
 

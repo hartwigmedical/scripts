@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 task_id="updateReportingOverview"
-rep_src_file="/data/lims/reporting_db.tsv"
+rep_src_file=$(locate_reporting_db_tsv)
 nas_loc="/volume1/web/overviews/reporting"
 pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
 

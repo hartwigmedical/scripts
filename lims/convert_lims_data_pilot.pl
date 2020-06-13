@@ -38,7 +38,7 @@ GetOptions (
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
-my $CNTR_TSV = '/data/lims/center2entity.tsv';
+my $CNTR_TSV = '/data/ops/lims/prod/center2entity.tsv';
 my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';

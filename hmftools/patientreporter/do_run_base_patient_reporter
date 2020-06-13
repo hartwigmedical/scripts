@@ -7,7 +7,7 @@ output_dir=/data/cpct/patient_reports
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
-lims_dir=/data/lims
+lims_dir=/data/ops/lims/prod
 
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
