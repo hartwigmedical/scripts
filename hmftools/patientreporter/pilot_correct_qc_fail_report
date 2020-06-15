@@ -29,5 +29,5 @@ elif [[ ${report} == "low_tumor" ]]; then
 elif [[ ${report} == "below_detection" ]]; then
     pilot_below_detection_threshold_report ${tumor_sample} -comments "${interpret_comments}" -corrected_report "$@"
 elif [[ ${report} == "lab_failure" ]]; then
-    pilot_lab_failure_report ${tumor_sample} -comments "${interpret_comments}" -corrected_report "$@"
+    pilot_technical_failure_report ${tumor_sample} -comments "${interpret_comments}" -corrected_report "$@"
 fi
