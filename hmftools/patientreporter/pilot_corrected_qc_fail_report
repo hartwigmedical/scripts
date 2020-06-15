@@ -16,7 +16,7 @@ if [[ -z "${comments}" ]]; then
     echo "[ERROR] No comments provided. Exiting" && exit 1;
 fi
 
-# TODO These comments are not picked up
+# TODO These comments are not picked up as they are overwitten downstream
 interpret_comments="This is a pilot patient report and is not meant for production purpose. ${comments}"
 
 if [[ ${qc_fail_reason} == "insufficient_dna" ]]; then
