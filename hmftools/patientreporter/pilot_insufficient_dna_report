@@ -8,4 +8,4 @@ fi
 
 comments="This is a pilot patient report and is not meant for production purpose."
 
-pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "low_dna_yield" -comments "${comments}" "$@"
+pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_dna" -comments "${comments}" "$@"
