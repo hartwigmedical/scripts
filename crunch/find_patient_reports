@@ -2,19 +2,16 @@
 
 search=$1 # eg CPCT02010001
 
-if [[ -z "${search}" ]]; then
-    echo "[ERROR] No search string specified. Exiting." && exit 1
-fi
-
 name_pattern="${search}*.pdf"
 
-directory1='/data/cpct/old_cpct_reports'
-directory2='/data/cpct/final_reports'
+dir1='/data/cpct/old_cpct_reports'
+dir2='/data/cpct/final_reports'
+dir3='/data/core/final_reports/'
 
-count=$(find ${directory1} ${directory2} -name "${name_pattern}" | wc -l)
+count=$(find ${dir1} ${dir2} ${dir3} -name "${name_pattern}" | wc -l)
 
 if [[ ${count} -eq 0 ]]; then
-    echo "[WARN] Nothing found for: ${name_pattern}"
+    echo "[WARN] Nothing found for pattern ${name_pattern}"
 else
-    find ${directory1} ${directory2} -name "${name_pattern}"
+    find ${dir1} ${dir2} ${dir3} -name "${name_pattern}"
 fi
