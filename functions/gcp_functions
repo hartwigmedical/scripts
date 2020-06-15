@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+switch_to_hmf_download_service_account() {
+    gcp_set_account "hmf-download@hmf-database.iam.gserviceaccount.com"
+}
+
+gcp_set_account() {
+    local account_name=$1 && shift
+    gcloud config set account "${account_name}"
+}
+
+gcp_get_active_account() {
+    echo $(gcloud auth list --filter=status:ACTIVE --format="value(account)")
+}
+
