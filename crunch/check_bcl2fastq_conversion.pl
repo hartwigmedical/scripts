@@ -453,7 +453,7 @@ sub printTable {
 sub printSummaryTable{
     my ($info, $fields) = @_;
     
-    my @submissions = keys %{$info->{'stats'}{'submissions'}};
+    my @submissions = sort keys %{$info->{'stats'}{'submissions'}};
     map( $_ =~ s/HMFreg//, @submissions );
     my $submissions_string = join( ',', @submissions );
    
