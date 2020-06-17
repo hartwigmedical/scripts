@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+run_purple_gripss $run_dir
+run_linx_gripss $run_dir
+load_purple_data_pilot $run_dir
+load_linx_data_pilot $run_dir
+
+
