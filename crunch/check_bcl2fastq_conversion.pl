@@ -452,6 +452,10 @@ sub printTable {
 
 sub printSummaryTable{
     my ($info, $fields) = @_;
+    
+    my @submissions = keys %{$info->{'stats'}{'submissions'}};
+    map( $_ =~ s/HMFreg//, @submissions );
+    my $submissions_string = join( ',', @submissions );
    
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
@@ -464,7 +468,7 @@ sub printSummaryTable{
     say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s\t%s", 
       $info->{'stats'}{'hmf_runname'},
       $info->{'stats'}{'seq_runname'},
-      join(',', keys %{$info->{'stats'}{'submissions'}}),
+      $submissions_string,
       $info->{'stats'}{'run_overview_string'},
       $info->{'stats'}{'flowcell_qc'};
       
