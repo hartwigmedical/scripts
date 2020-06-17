@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source metadata_functions
 source locate_files
 
 run_dir=$1 && shift
@@ -10,3 +11,5 @@ do_load_structural_variants ${tumor_sample} ${run_dir}/purple_pilot/${tumor_samp
 
 run_linx_gripss $run_dir
 load_linx_data_pilot $run_dir
+
+
