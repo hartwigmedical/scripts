@@ -14,4 +14,4 @@ structural_vcf=/data/cpct/gcp/gridss/${tumor_sample}.gridss.somatic.filtered.vcf
 sv_recovery_vcf=/data/cpct/gcp/gridss/${tumor_sample}.gridss.somatic.vcf.gz
 credentials=$(locate_pilot_database_credentials)
 
-do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} "" "$@"
+do_run_purple ${run_dir} ${purple_jar} ${somatic_vcf} ${structural_vcf} ${sv_recovery_vcf} ${purple_output} ${credentials} "$@"

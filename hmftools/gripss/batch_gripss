@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 run_dir=$1 && shift
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 run_purple_gripss $run_dir
+do_load_structural_variants ${tumor_sample} ${run_dir}/purple_pilot/${tumor_sample}.purple.sv.vcf.gz  /data/common/dbs/mysql_credentials/pilot /data/common/tools/patient-db_pilot/patient-db.jar
+
 run_linx_gripss $run_dir
-load_purple_data_pilot $run_dir
 load_linx_data_pilot $run_dir
-
-
