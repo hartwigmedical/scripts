@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Verifies a new COLO829T Somatic pipeline run"
+    echo " Usage: $(basename $0) -u <gcp_url> -o <out_dir> -t <truth_dir>"
+    echo " Options:"
+    echo "   -u  gcp_url    URL to run at GCP"
+    echo "   -o  out_dir    Path to directory for verification"
+    echo "   -t  truth_run  Path to directory of truth run"
+    echo " Example:"
+    echo "   $(basename $0) -u gs://path/to/run/ -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
+    echo " Notes:"
+    echo "   - Run with nohup since this includes downlaoding from GCP"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':u:o:t:' flag; do
+    case "${flag}" in
+        u) gcp_url=${OPTARG} ;;
+        o) out_dir=${OPTARG} ;;
+        t) truth_run=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${gcp_url}" || -z "${out_dir}" || -z "${truth_run}" ]]; then
+    print_usage
+fi
+
+main() {
+    info "Starting with script $(basename $0)"
+    
+    ## some input sanity checks
+    [[ ! -z "${out_dir}" && "${out_dir}" =~ ^\/ ]] || die "Incorrect out_dir (${out_dir})?"
+    [[ ! -z "${gcp_url}" && "${gcp_url}" =~ ^gs\:// ]] || die "Incorrect gcp_url (${gcp_url})"
+    [[ ! -d "${out_dir}" ]] || die "Dir exists (${out_dir})"
+
+    info "Constructing variables"
+    run_name=$(basename "${gcp_url}")
+    runs_dir="$out_dir/runs"
+    jobs_dir="$out_dir/jobs"
+    logs_dir="$out_dir/logs"
+    run_dir="${runs_dir}/${run_name}"
+    download_log="$logs_dir/download.log"
+    
+    info "Creating directory structure"
+    info "Run name: $run_name" 
+    info "Out path: $out_dir"
+    info "Runs directory: $runs_dir"
+    info "Jobs directory: $jobs_dir"
+    info "Logs directory: $logs_dir"
+    
+    mkdir $out_dir $runs_dir $run_dir $jobs_dir $logs_dir || die "Unable to create dirs"
+    cd $out_dir || die "Unable to move to output directory"
+
+    info "Gathering script and sql job files"
+    script_jobs=("compare_v5_runs" "diff_v5_COLO829v003_runs" "locate_files_test" "load_run_into_reference_validation_sets_db" "patient_report_for_run")
+    sql_jobs=("check_update_time.sql" "compare_metrics.sql" "compare_purity.sql" "counts_variants.sql" "diff_somatic_variants.sql" "diff_sv.sql" "diff_sv_test.sql")
+    for job_file in ${script_jobs[@]} ${sql_jobs[@]}; do 
+        file_path="/data/common/repos/scripts/validation/${job_file}"
+        copy_file "${file_path}" "${jobs_dir}"
+    done
+
+    download_run_from_gcp "${gcp_url}" "${run_dir}" "${download_log}"
+
+    new_run="${run_dir}"
+
+    info "Looking for anomalies in run.log files"
+    find "${new_run}" -name "run.log" -exec grep -Pi "err|warn|exit|excep" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
+
+    info "Executing locate_files test"
+    ${jobs_dir}/locate_files_test "$new_run" > "${logs_dir}/locate_files_test.log" 2>&1
+
+    info "Executing compare_v5_runs"
+    ${jobs_dir}/compare_v5_runs "$truth_run" "$new_run" > "${logs_dir}/compare_v5_runs.log" 2>&1
+
+    info "Executing diff_v5_COLO829v003_runs"
+    ${jobs_dir}/diff_v5_COLO829v003_runs "$truth_run" "$new_run" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
+
+    info "TODO NEXT:"
+    info " 1) Inspect log files in ${logs_dir}"
+    info "Finished with $(basename $0)"
+}
+
+download_run_from_gcp() {
+    local gcp_url=$1 && shift
+    local target_dir=$1 && shift
+    local log_file=$1 && shift
+    local check_log="${log_file}.check"
+    
+    touch $log_file
+    touch $check_log
+    
+    info "Starting download from GCP (you can track progress in log ${log_file})"
+    gsutil -m rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}" 2>&1
+    [[ $? -eq 0 ]] || die "Something went wrong with download"
+
+    info "Starting re-download from GCP (to check sync completeness)"
+    gsutil -m rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}.check" 2>&1
+    [[ $? -eq 0 ]] || die "Something went wrong with re-download"
+
+    line_count=$(cat "${check_log}" | grep -v 'Building sync' | grep -v 'Starting sync' | wc -l)
+    [[ "${line_count}" -eq 0 ]] || die "Download check log seems to contain downloaded files (pls check ${check_log})"
+}
+
+copy_file() {
+    local file_path=$1 && shift
+    local target_dir=$1 && shift
+
+    if [[ ! "${job_file}" =~ sql$ ]]; then
+         file_path=$(which ${job_file})
+    fi
+
+    if [[ ! -f "${file_path}" ]]; then
+        die "File not found (${file_path})"
+    else
+        info "Copying file ($file_path)"
+        cp "${file_path}" "${jobs_dir}"
+    fi
+    
+    [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
+}
+
+die() { 
+    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
+    exit 1 
+}
+warn() { 
+    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
+}
+info() { 
+    echo "[INFO] $(date +"%y%m%d %T") $@"
+}
+
+main

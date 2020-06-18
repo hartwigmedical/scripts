@@ -18,7 +18,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 
 tumor_ratio=$(find -L ${run_dir}/cobalt/ -type f -name ${tumor_sample}.cobalt)
-if [[ -z ${tumor_ratio} ]]; then
+if [[ -z "${tumor_ratio}" ]]; then
     rm -f ${output_dir}/*.len
 
     echo "[INFO] Calculating cobalt ratios for sample" ${tumor_sample}

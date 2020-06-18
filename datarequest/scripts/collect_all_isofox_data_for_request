@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+# NOTE: This script is not used typically in production. Has been added as one-off.
+
+metadata_tsv=$1 && shift
+isofox_dir=$1 && shift
+
+cat ${metadata_tsv} | grep -v "^#" | cut -f2 | while read sample_name; do
+    source_set_path=/data/data_archive/rna_seq/200602_isofox/${sample_name}/isofox
+    if [[ -d "${source_set_path}" ]]; then
+        dest_set_path=${isofox_dir}/${sample_name}
+
+        gene_data_csv=${source_set_path}/${sample_name}.isf.gene_data.csv
+        transcript_data_csv=${source_set_path}/${sample_name}.isf.transcript_data.csv
+
+        if [[ -f "${gene_data_csv}" && -f "${transcript_data_csv}" ]]; then
+            mkdir -p ${dest_set_path}
+
+            ## start symlinking
+            echo "[DEBUG] Symlinking isofox files for ${sample_name}"
+            ln -s ${gene_data_csv} ${dest_set_path}
+            ln -s ${transcript_data_csv} ${dest_set_path}
+        else
+            echo "[WARN] Either gene or transcript data missing for ${sample_name}"
+        fi
+    else
+        echo "[DEBUG] No isofox files found for ${sample_name}. Skipping."
+    fi
+done

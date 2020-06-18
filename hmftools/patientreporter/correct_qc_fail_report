@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+tumor_sample_or_run=$1 && shift
+report=$1 && shift
+comments=$1 && shift
+
+if [[ -z "${tumor_sample_or_run}" ]]; then
+    echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${report}" ]]; then
+    echo "[ERROR] No which qc fail report is provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${comments}" ]]; then
+    echo "[ERROR] No comments provided. Exiting" && exit 1;
+fi
+
+
+if [[ ${report} == "dna" ]]; then
+    dna_yield_insufficient_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "tissue" ]]; then
+    insufficient_tissue_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "post" ]]; then
+    post_analysis_fail_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "low_tumor" ]]; then
+    tumor_molecular_percentage_low_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "below_detection" ]]; then
+    below_detection_threshold_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+elif [[ ${report} == "lab_failure" ]]; then
+    lab_failure_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+fi

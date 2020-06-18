@@ -3,122 +3,125 @@
 SUBMISSIONS_DIR="/data/submissions"
 HMF_QUERY_SCRIPT="query_lims.pl"
 API_QUERY_SCRIPT="query_api.pl"
-HMF_LIMS_JSON='/data/lims/lims.json'
+HMF_LIMS_JSON='/data/ops/lims/prod/lims.json'
 submission=$1
 
 ## sanity checks
-if [[ $# -eq 0 ]] ; then echo "run with eg: $0 HMFreg0000"; exit 1; fi
-if [[ -z ${submission+x} ]]; then echo "Missing submission id as input"; exit 1; fi
-if [[ ! ${submission} =~ ^HMFreg ]]; then echo "Submission should start with \"HMFreg\""; exit 1; fi
+if [[ $# -eq 0 ]] ; then echo "[ERROR] Run with eg: $0 HMFreg0000"; exit 1; fi
+if [[ -z "${submission+x}" ]]; then echo "[ERROR] Missing submission id as input"; exit 1; fi
+if [[ ! ${submission} =~ ^HMFreg ]]; then echo "[ERROR] Submission should start with \"HMFreg\""; exit 1; fi
 
 ## setting up variables
-outPath=${SUBMISSIONS_DIR}'/'${submission}
-lmsFile=${outPath}'/lims.txt'
-samFile=${outPath}'/samples.txt'
-runFile=${outPath}'/runs.txt'
-logFile=${outPath}'/log.txt'
-bcsFile=${outPath}'/barcodes.txt'
-repFile=${outPath}'/report.txt'
-subJson=${outPath}'/submission.json'
-flwFile=${outPath}'/flowcells.txt'
-lmsJson=$(echo ${lmsFile} | sed 's/txt$/json/')
-samJson=$(echo ${samFile} | sed 's/txt$/json/')
-runJson=$(echo ${runFile} | sed 's/txt$/json/')
-flwJson=$(echo ${flwFile} | sed 's/txt$/json/')
-dateString=$(date)
+out_path=${SUBMISSIONS_DIR}'/'${submission}
+lms_file=${out_path}'/lims.txt'
+sam_file=${out_path}'/samples.txt'
+run_file=${out_path}'/runs.txt'
+log_file=${out_path}'/log.txt'
+bcs_file=${out_path}'/barcodes.txt'
+rep_file=${out_path}'/report.txt'
+sub_json=${out_path}'/submission.json'
+flw_file=${out_path}'/flowcells.txt'
+lms_json=$(echo ${lms_file} | sed 's/txt$/json/')
+sam_json=$(echo ${sam_file} | sed 's/txt$/json/')
+run_json=$(echo ${run_file} | sed 's/txt$/json/')
+flw_json=$(echo ${flw_file} | sed 's/txt$/json/')
+date_string=$(date)
 
 ## create dirs
-if [[ -e ${outPath} ]] ; then echo "[ERROR] Dir exists already (${outPath})"; exit 1; fi
-mkdir -p ${outPath} || exit 1
+if [[ -e "${out_path}" ]] ; then echo "[ERROR] Dir exists already (${out_path})"; exit 1; fi
+mkdir -p ${out_path} || exit 1
 
 ## gather submission info from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get submission info"
-cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${subJson}
-pName=$(cat ${subJson} | jq -r '.project_name')
-rName=$(cat ${subJson} | jq -r '.report_contact_name')
-rMail=$(cat ${subJson} | jq -r '.report_contact_email')
-dName=$(cat ${subJson} | jq -r '.data_contact_name')
-dMail=$(cat ${subJson} | jq -r '.data_contact_email')
-pType=$(cat ${subJson} | jq -r '.analysis_type')
-if [[ -z ${pName+x} ]]; then echo "[ERROR] Unable to find project for submission"; exit 1; fi
+cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${sub_json}
+p_name=$(cat ${sub_json} | jq -r '.project_name')
+r_name=$(cat ${sub_json} | jq -r '.report_contact_name')
+r_mail=$(cat ${sub_json} | jq -r '.report_contact_email')
+d_name=$(cat ${sub_json} | jq -r '.data_contact_name')
+d_mail=$(cat ${sub_json} | jq -r '.data_contact_email')
+p_type=$(cat ${sub_json} | jq -r '.analysis_type')
+if [[ -z "${p_name+x}" ]]; then echo "[ERROR] Unable to find project for submission"; exit 1; fi
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lmsFile}
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${lmsJson}
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lms_file}
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${lms_json}
 
 ## get q30/yield data from HMF API
 echo "[INFO] Querying HMF API to get sample status"
-${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${samFile}
-${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${samJson}
+${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${sam_file}
+${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${sam_json}
 
 ## get entity/run-status from HMF API
 echo "[INFO] Querying HMF API to get run status"
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${runFile}
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${runJson}
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${run_file}
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${run_json}
 
 ## get flowcell info from datastore
 echo "[INFO] Querying HMF API to get flowcell status"
-fcidsWithAB=$(find_in_samplesheets "${submission}" | cut -d" " -f5 | cut -d"_" -f4 | sort | uniq)
-fcids=$(for fcid in ${fcidsWithAB[@]}; do fcid="${fcid:1}"; echo "${fcid}"; done)
-fcidsGrepString=$(echo $fcids | tr " " "|")
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" > ${flwFile}
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcidsGrepString}" -json > ${flwJson}
+fcids_with_ab=$(find_in_samplesheets "${submission}" | cut -d" " -f5 | cut -d"_" -f4 | sort | uniq)
+fcids=$(for fcid in ${fcids_with_ab[@]}; do fcid="${fcid:1}"; echo "${fcid}"; done)
+fcids_grep_string=$(echo ${fcids} | tr " " "|")
+${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" > ${flw_file}
+${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" -json > ${flw_json}
 
 ## get counts to check completeness
-hmfCount=$(cat ${lmsFile} | grep -cv "^#")
-apiCount=$(cat ${samFile} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+hmf_count=$(cat ${lms_file} | grep -cv "^#")
+api_count=$(cat ${sam_file} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
-cat ${samFile} | grep -v "^#" | cut -f2 > ${bcsFile}
+cat ${sam_file} | grep -v "^#" | cut -f2 > ${bcs_file}
 
 ## setup reporting info
-rm -f ${repFile}
-echo -e "PROJECT\t${rName}" >> ${repFile}
-echo -e "PROJECT\t${rMail}" >> ${repFile}
-echo -e "PROJECT\t${pName}" >> ${repFile}
-echo -e "PROJECT\t${submission}" >> ${repFile}
-echo -e "PROJECT\t${hmfCount}" >> ${repFile}
-echo -e "PROJECT\t${pType}" >> ${repFile}
+rm -f ${rep_file}
+echo -e "PROJECT\t${r_name}" >> ${rep_file}
+echo -e "PROJECT\t${r_mail}" >> ${rep_file}
+echo -e "PROJECT\t${p_name}" >> ${rep_file}
+echo -e "PROJECT\t${submission}" >> ${rep_file}
+echo -e "PROJECT\t${hmf_count}" >> ${rep_file}
+echo -e "PROJECT\t${p_type}" >> ${rep_file}
 
-cat ${samFile} | grep -v ^# | while read line; do
+cat ${sam_file} | grep -v ^# | while read line; do
     subm=$(echo "${line}" | cut -f1)
     barc=$(echo "${line}" | cut -f2)
     q30=$(echo "${line}" | cut -f3)
     yldR=$(echo "${line}" | cut -f4)
     yld=$(echo "${line}" | cut -f5)
     name=$(echo "${line}" | cut -f7)
-    date=$(cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .arrival_date" )
-    sops=$(cat ${lmsJson} | jq -r ".[] | select( .sample_id == \"$barc\" ) | .lab_sop_versions" )
-    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${repFile}
+    date=$(cat ${lms_json} | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" )
+    sops=$(cat ${lms_json} | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" )
+    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${rep_file}
 done
 
 ## logging
-echo "#           Date = ${dateString}" >> ${logFile}
-echo "#     Submission = ${submission}" >> ${logFile}
-echo "#        Project = ${pName}"      >> ${logFile}
-echo "#    SampleCount = ${hmfCount}"   >> ${logFile}
-echo "#      DataCount = ${apiCount}"   >> ${logFile}
-echo "# Report Contact = ${rName} (${rMail})" >> ${logFile}
-echo "#   Data Contact = ${dName} (${dMail})" >> ${logFile}
+echo "#           Date = ${date_string}" >> ${log_file}
+echo "#     Submission = ${submission}" >> ${log_file}
+echo "#        Project = ${p_name}"      >> ${log_file}
+echo "#    SampleCount = ${hmf_count}"   >> ${log_file}
+echo "#      DataCount = ${api_count}"   >> ${log_file}
+echo "# Report Contact = ${r_name} (${r_mail})" >> ${log_file}
+echo "#   Data Contact = ${d_name} (${d_mail})" >> ${log_file}
 
 ## stdout msg
-pdfName="${submission}_${pName}.pdf"
+pdf_name="${submission}_${p_name}.pdf"
 echo "[INFO] Inspect output files:"
-echo " cd ${outPath}"
-echo " cat ${logFile}"
-echo " cat ${lmsFile}"
-echo " cat ${samFile}"
-echo " cat ${runFile}"
-echo " cat ${flwFile}"
+echo " cd ${out_path}"
+echo " cat ${log_file}"
+echo " cat ${lms_file}"
+echo " cat ${sam_file}"
+echo " cat ${run_file}"
+echo " cat ${flw_file}"
 echo ""
-echo "[INFO] Or directly get reporting info (for ${pdfName}):"
-echo " cat ${repFile} | cut -f1 --complement"
+echo "[INFO] Or directly get reporting info (for ${pdf_name}):"
+echo " cat ${rep_file} | cut -f1 --complement"
+echo ""
+echo "[INFO] And get the aria2 downlaod config with:"
+echo " nohup gather_submission_aria_config ${submission} > ${out_path}/gather_submission_aria_config.log &"
 echo ""
 
 ## warn if not complete
-if [[ ${hmfCount} -ne ${apiCount} ]]; then
-    echo "[WARNING] There might be missing samples!"
+if [[ ${hmf_count} -ne ${api_count} ]]; then
+    echo "[ERROR] There might be missing samples!"
     exit 1
 fi
 

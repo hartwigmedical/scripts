@@ -7,7 +7,7 @@ if [[ -z "${sample}" ]]; then
     exit 1
 fi
 
-password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
+password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
 
 do_run_hmf_id_generator -create_single_hash -password ${password} -sample_id ${sample}
 

@@ -1,25 +1,28 @@
 #!/usr/bin/env bash
 
-JSON_DIR="/data/lims/api_files/acc"
+JSON_DIR="/data/ops/api/acc/database"
 CRED_DIR="/data/common/dbs/api_credentials/acc"
 CRT_FILE="${CRED_DIR}/api.crt"
 KEY_FILE="${CRED_DIR}/api.key"
 BASE_URL="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
 LOG_FILE="${JSON_DIR}/update_api_db_acc.log"
 DATETIME=$(date)
-SCRIPT=$(basename $0)
 
 DB_TYPES=( fastq entities runs samples sets flowcells inis shares stacks )
 
-if [[ ! -f $CRT_FILE ]]; then echo "[ERROR] CRT file not found ($CRT_FILE)" && exit 1; fi
-if [[ ! -f $KEY_FILE ]]; then echo "[ERROR] KEY file not found ($KEY_FILE)" && exit 1; fi
+if [[ ! -f "${CRT_FILE}" ]]; then echo "[ERROR] CRT file not found (${CRT_FILE})" && exit 1; fi
+if [[ ! -f "${KEY_FILE}" ]]; then echo "[ERROR] KEY file not found (${KEY_FILE})" && exit 1; fi
+if [[ $(find "${JSON_DIR}" -maxdepth 1 -name "*.tmp" | wc -l) -gt 0  ]]; then
+    echo "[INFO] Tmp files found. Skipping." | tee -a ${LOG_FILE}
+    exit 0
+fi
 
 for TYPE in "${DB_TYPES[@]}"; do
     API_URL="${BASE_URL}/${TYPE}"
     OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
     OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
 
-    /usr/bin/curl \
+    curl \
         --cert-type pem \
         --cert "${CRT_FILE}" \
         --key "${KEY_FILE}" \
@@ -33,10 +36,10 @@ for TYPE in "${DB_TYPES[@]}"; do
         cp ${OUTPUT_FILE_TMP} ${OUTPUT_FILE}
         echo "[INFO] Written to ${OUTPUT_FILE}"
     else
-        echo "${DATETIME} WARNING retrieval of $TYPE failed so stopping" && exit 1
+        echo "${DATETIME} WARN retrieval of $TYPE failed so stopping" && exit 1
     fi
 done
 
 rm ${JSON_DIR}/tmp_*.tmp
 
-echo "${DATETIME} Script $SCRIPT has finished" | tee -a ${LOG_FILE}
+echo "${DATETIME} Script $(basename $0) started at ${DATETIME} and finished at $(date)" | tee -a ${LOG_FILE}

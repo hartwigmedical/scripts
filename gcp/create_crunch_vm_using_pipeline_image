@@ -1,31 +1,59 @@
 #!/usr/bin/env bash
 
-vm_name=$1 && shift
-image=$1 && shift
+default_image=pipeline5-5-10-202004301423
+default_disk_size_gb=200
+default_machine_type=n1-standard-2
 
-# VM Name can be any valid GCP VM name, such as "kodu-vm"
-# Image should be an image on hmf-crunch, eg pipeline5-5-9-202003131433
-# Use 'gcloud compute --project=hmf-crunch images list' to list all available images.
-
-if [[ -z ${vm_name} ]]; then
-    echo "[ERROR] No VM name passed. Exiting"
+print_usage() {
+    echo "Usage: $(basename $0) -n vm_name -i image_name -d disk_size_gb -t machine_type"
+    echo "  -n vm_name      Name of the VM to be created, eg 'kodu-vm'"
+    echo "  -i image_name     Name of the image to use. Default=${default_image}. Should exist on hmf-crunch"
+    echo "  -d disk_size_gb     How many GBs to reserve on disk. Default=${default_disk_size_gb}"
+    echo "  -t machine_type     The machine type to create. Default=${default_machine_type}"
     exit 1
+}
+
+while getopts ':n:i:d:t:' flag; do
+    case "${flag}" in
+        n) vm_name=${OPTARG} ;;
+        i) image=${OPTARG} ;;
+        d) disk_size_gb=${OPTARG} ;;
+        t) machine_type=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+
+if [[ -z "${vm_name}" ]]; then
+    print_usage
 fi
 
-if [[ -z ${image} ]]; then
-    image=pipeline5-5-9-202003131433
-    echo "[DEBUG] No image parameter passed. Using '${image}' as default."
+if [[ -z "${image}" ]]; then
+    echo "[DEBUG] No image parameter passed. Using '${default_image}' as default."
+    image=${default_image}
+fi
+
+if [[ -z "${disk_size_gb}" ]]; then
+    echo "[DEBUG] No disk size gb parameter passed. Using '${default_disk_size_gb}GB' as default."
+    disk_size_gb=${default_disk_size_gb}
+fi
+
+if [[ -z "${machine_type}" ]]; then
+    echo "[DEBUG] No machine type parameter passed. Using '${default_machine_type}' as default."
+    machine_type=${default_machine_type}
 fi
 
 echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
 
-# TODO Consider using CMEK?
-#  --csek-key-file projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKeys/hmf-database-20191001?
-
 gcloud compute --project=hmf-crunch instances create ${vm_name} \
-    --zone=europe-west4-a --machine-type=n1-standard-2 \
-    --image=${image} --image-project=hmf-crunch \
-    --boot-disk-size=200GB --boot-disk-type=pd-standard --boot-disk-device-name=${vm_name} \
+    --zone=europe-west4-a \
+    --machine-type=${machine_type} \
+    --image=${image} \
+    --image-project=hmf-crunch \
+    --boot-disk-size=${disk_size_gb}GB \
+    --boot-disk-type=pd-standard \
+    --boot-disk-device-name=${vm_name} \
     --no-address
 
 # Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'

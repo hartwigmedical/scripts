@@ -21,7 +21,7 @@ main () {
     result="$(hmfapi GET ${api_url}/samples?barcode=${bc})"
     result_count=$(echo "${result}" | jq length)
 
-    if [[ $result_count -ne 1 ]]; then
+    if [[ ${result_count} -ne 1 ]]; then
         echo "[ERROR] Expected one sample for ${bc} but ${result_count} found instead"
         exit 1
     else

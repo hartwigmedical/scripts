@@ -6,18 +6,18 @@ source gcp_functions
 set=$1 && shift
 download_path=$1 && shift
 
-if [[ -z ${set} ]]; then
+if [[ -z "${set}" ]]; then
     echo "[ERROR] No set provided to $(basename $0). Exiting"
     exit 1
 fi
 
-if [[ -z ${download_path} ]]; then
+if [[ -z "${download_path}" ]]; then
     echo "[ERROR] No download path provided to $(basename $0). Exiting"
     exit 1
 fi
 
 run_bucket=$(load_intial_run_bucket_for_set ${set})
-if [[ -z ${run_bucket} ]]; then
+if [[ -z "${run_bucket}" ]]; then
     echo "[ERROR] No initial run bucket found for set '${set}'. Exiting"
     exit 1
 fi
@@ -28,4 +28,4 @@ mkdir -p ${dest_path}
 echo "[INFO] Downloading set ${set} from ${run_bucket} to ${download_path}"
 
 switch_to_hmf_download_service_account
-gsutil -u hmf-database -m rsync -r -x .*.bam$ gs://${run_bucket}/${set} ${dest_path}
+gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" gs://${run_bucket}/${set} ${dest_path}

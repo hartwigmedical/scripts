@@ -1,29 +1,29 @@
 #!/usr/bin/env bash
 
 YYMMDD=$(date '+%y%m%d')
-taskId="updateSubmissionOverview"
+task_id="updateSubmissionOverview"
 
-srcDir="/data/submissions"
-nasLoc="/volume1/web/overviews/submissions"
-reportsSource="/volume1/machines/BFX/dataReports"
-reportsTarget="/volume1/web/overviews/submissions/pdf_reports"
-reportsTargetDs="/data/data_archive/overviews/submissions/pdf_reports"
+src_dir="/data/submissions"
+nas_loc="/volume1/web/overviews/submissions"
+reports_source="/volume1/machines/BFX/dataReports"
+reports_target="/volume1/web/overviews/submissions/pdf_reports"
+reports_target_ds="/data/data_archive/overviews/submissions/pdf_reports"
 
 ## Sanity checks
-if [[ ! -d ${srcDir} ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+if [[ ! -d "${src_dir}" ]]; then echo "[ERROR] INPUT DIR does not exist (${src_dir})" && exit 1; fi
 
 ## Action
-echo "[INFO] START with ${taskId} ($YYMMDD)"
-echo "[INFO]   Listing all submissions in $srcDir" 
-dirsToSync=$( find ${srcDir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$" )
+echo "[INFO] START with ${task_id} ($YYMMDD)"
+echo "[INFO]   Listing all submissions in ${src_dir}" 
+dirs_to_sync=$(find ${src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
-echo "[INFO]   Syncing logs from datastore to NAS intranet (to ${nasLoc})"
-rsync -ah --exclude "*/data/" --include "*/" --include "*.txt" --include *README --exclude "*" ${dirsToSync} "nas:${nasLoc}"
+echo "[INFO]   Syncing logs from datastore to NAS intranet (to ${nas_loc})"
+rsync -ah --exclude "*/data/" --include "*/" --include "*.txt" --include *README --exclude "*" ${dirs_to_sync} "nas:${nas_loc}"
 
-echo "[INFO]   Syncing pdfs from NAS share to NAS intranet (to ${reportsTarget})"
-ssh nas "rsync -ah --include '*.pdf' --exclude '*' ${reportsSource}/ ${reportsTarget}/"
+echo "[INFO]   Syncing pdfs from NAS share to NAS intranet (to ${reports_target})"
+ssh nas "rsync -ah --include '*.pdf' --exclude '*' ${reports_source}/ ${reports_target}/"
 
-echo "[INFO]   Syncing pdfs from NAS share to Datastore (to ${reportsTargetDs})"
-rsync -trh --include '*.pdf' --exclude '*' "nas:${reportsSource}/" "${reportsTargetDs}/"
+echo "[INFO]   Syncing pdfs from NAS share to Datastore (to ${reports_target_ds})"
+rsync -trh --include '*.pdf' --exclude '*' "nas:${reports_source}/" "${reports_target_ds}/"
 
-echo "[INFO] DONE with ${taskId}"
+echo "[INFO] DONE with ${task_id}"

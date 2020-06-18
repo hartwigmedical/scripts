@@ -1,0 +1,4 @@
+SELECT TABLE_SCHEMA, UPDATE_TIME, TABLE_NAME, TABLE_ROWS
+FROM   information_schema.tables
+WHERE  TABLE_SCHEMA = 'pipeline_v5_validation'
+ORDER by UPDATE_TIME DESC;

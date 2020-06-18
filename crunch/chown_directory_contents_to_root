@@ -22,7 +22,7 @@ function main {
     fi
 }
 
-print_usage(){
+print_usage() {
     echo "---"
     echo " Descr: Recursively chown non-root content in \${directory} to root:root"
     echo " Usage: $(basename ${0}) \${directory}"

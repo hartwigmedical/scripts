@@ -1,38 +1,37 @@
 #!/usr/bin/env bash
 
-currhost=$(hostname)
-scriptname=$(basename $0)
-parsescript="$(dirname $0)/do_parse_bcl2fqreporthtml.pl"
+curr_host=$(hostname)
+parse_script="$(dirname $0)/do_parse_bcl2fqreporthtml.pl"
 
 if [[ ! $1 || $1 == "-h" ]]; then 
     echo "-----"
-    echo " @$currhost"
-    echo " Usage: $scriptname <SeqRunDirName>"
-    echo "        $scriptname 160812_ST-E00290_0091_AHTW73CCXX"
-    echo "        $scriptname /path/to/160812_ST-E00290_0091_AHTW73CCXX"
+    echo " @${curr_host}"
+    echo " Usage: $(basename $0) <SeqRunDirName>"
+    echo "        $(basename $0) 160812_ST-E00290_0091_AHTW73CCXX"
+    echo "        $(basename $0) /path/to/160812_ST-E00290_0091_AHTW73CCXX"
     echo "-----"
     exit 1
 fi
 
-seqRunName=$1
+seq_run_name=$1
 
 ## allow absolute path as param
-if [[ $seqRunName =~ ^\/ ]]; then
-    runDir=$seqRunName
-elif [[ $currhost == "datastore" ]]; then
-    runDir=/data/sequencer_archive/$seqRunName 
+if [[ ${seq_run_name} =~ ^\/ ]]; then
+    run_dir=${seq_run_name}
+elif [[ ${curr_host} == "datastore" ]]; then
+    run_dir=/data/sequencer_archive/${seq_run_name} 
 else
-    runDir=/data1/illumina_data/$seqRunName
+    run_dir=/data1/illumina_data/${seq_run_name}
 fi
 
-reportDir=$runDir/Data/Intensities/BaseCalls/Reports/
-if [[ ! -e $reportDir ]]; then echo "[ERROR] reportDir does not exist ($reportDir)"; exit 1; fi
+report_dir=${run_dir}/Data/Intensities/BaseCalls/Reports/
+if [[ ! -e "${report_dir}" ]]; then echo "[ERROR] report_dir does not exist (${report_dir})"; exit 1; fi
 
 echo ""
-echo "## ==> Conversion results for $seqRunName"
-$parsescript -d $reportDir
+echo "## ==> Conversion results for ${seq_run_name}"
+${parse_script} -d ${report_dir}
 
 ## print a summary (only those with fastq files present!!)
 echo "## PerSampleInfo summary (for direct pasting in SampleOverview)"
-$parsescript -d $reportDir | grep -P "HMFreg|project" | awk '{print $1"\t"$13"\t"$11"\t"$10"\t"$15 }'
+${parse_script} -d ${report_dir} | grep -P "HMFreg|project" | awk '{print $1"\t"$13"\t"$11"\t"$10"\t"$15 }'
 echo ""

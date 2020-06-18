@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+source metadata_functions
+source locate_files
+
+run_dir=$1 && shift
+
+bachelor_jar=/data/common/tools/bachelor_pilot/bachelor.jar
+
+# Database details
+credentials=$(locate_wide_germline_carriership_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+# Load meta data
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+sample_ref=$(load_ref_sample_from_metadata ${run_dir})
+
+# file Locations
+clinvar_filters=/data/common/dbs/bachelor/wide_germline_carriership_clinvar_filters.csv
+bachelor_xml_config=/data/common/dbs/bachelor/wide_germline_carriership_program.xml
+
+germline_vcf=$(locate_germline_variants ${run_dir} ${sample_ref})
+
+bachelor_output_dir=${run_dir}/bachelor_wide
+
+if [[ ! -d "${bachelor_output_dir}" ]]; then
+    echo "[INFO] ${bachelor_output_dir} does not exist yet, creating..."
+    mkdir ${bachelor_output_dir}
+fi
+
+echo "[INFO] Running Bachelor for WIDE Germline Carriership"
+
+java -Xmx8G -Xms4G -jar ${bachelor_jar} \
+    -sample ${sample} \
+    -skip_enrichment \
+    -germline_vcf ${germline_vcf} \
+    -xml_config ${bachelor_xml_config} \
+    -ext_filter_file ${clinvar_filters} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -output_dir ${bachelor_output_dir} \
+    -log_debug

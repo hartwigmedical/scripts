@@ -4,39 +4,39 @@ SOURCE='/volume1/machines/Experimenten/SNP\ check'
 TARGET='/data/common/snpcheck/input'
 SUFFIX='Results.csv'
 
-plateID=$1
+plate_id=$1
 
-if [[ -z ${plateID} || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $(basename $0) \${plateID}"
-  echo "    Eg: $(basename $0) S19-0001"
-  echo "---"
-  exit 1
+if [[ -z "${plate_id}" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Usage: $(basename $0) \${plate_id}"
+    echo "    Eg: $(basename $0) S19-0001"
+    echo "---"
+    exit 1
 fi
 
 ## find at NAS
-echo "[INFO] Searching for \"${plateID}*${SUFFIX}\" results file in \"nas:${SOURCE}\""
-resultFiles=()
+echo "[INFO] Searching for \"${plate_id}*${SUFFIX}\" results file in \"nas:${SOURCE}\""
+result_files=()
 while IFS=  read -r -d $'\0'; do
-    resultFiles+=("$REPLY")
-done < <(ssh nas find ${SOURCE} -name "${plateID}*${SUFFIX}" -print0)
-if [[ ${#resultFiles[@]} -eq 0 ]]; then 
-    echo "[ERROR] No ${plateID} ${SUFFIX} files found!" && exit 1
-elif [[ ${#resultFiles[@]} -gt 1 ]]; then
-    echo "[ERROR] More than 1 ${plateID} ${SUFFIX} files found!" && exit 1
+    result_files+=("$REPLY")
+done < <(ssh nas find ${SOURCE} -name "${plate_id}*${SUFFIX}" -print0)
+if [[ ${#result_files[@]} -eq 0 ]]; then 
+    echo "[ERROR] No ${plate_id} ${SUFFIX} files found!" && exit 1
+elif [[ ${#result_files[@]} -gt 1 ]]; then
+    echo "[ERROR] More than 1 ${plate_id} ${SUFFIX} files found!" && exit 1
 fi
 
 ## sync and process
-resultFilePath="${resultFiles[0]}"
-resultFileName=$(basename "${resultFilePath}")
-targetFilePath="${TARGET}/${resultFileName}"
+result_file_path="${result_files[0]}"
+result_file_name=$(basename "${result_file_path}")
+target_file_path="${TARGET}/${result_file_name}"
 
-echo "[INFO] Found SNPcheck file at NAS ($resultFileName)"
+echo "[INFO] Found SNPcheck file at NAS ($result_file_name)"
 echo "[INFO]   syncing to datastore"
-rsync --protect-args -ah "nas:${resultFilePath}" "${targetFilePath}"
+rsync --protect-args -ah "nas:${result_file_path}" "${target_file_path}"
 if [[ $? != 0 ]]; then echo "[ERROR] Rsync finished with non-zero exit code ($?)" && exit 1; fi
 
 echo "[INFO]   converting file VCFs"
-create_sample_vcfs_from_csv "${targetFilePath}"
+create_sample_vcfs_from_csv "${target_file_path}"
 if [[ $? != 0 ]]; then echo "[ERROR] Conversion to VCF finished with non-zero exit code ($?)" && exit 1; fi
 

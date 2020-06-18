@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source gcp_functions
+# Note: This script assumes an account is active in gcloud which has the privileges to make backups in GS.
+#  A service account with this privileges is hmf-archive@hmf-database.iam.gserviceaccount.com
 
 local_path=$1 && shift
 remote_archive_dir=$1 && shift
@@ -16,7 +17,7 @@ if [[ -z "${local_path}" ]] || [[ -z "${remote_archive_dir}" ]]; then
     exit 1
 fi
 
-if [[ ! -d ${local_path} ]]; then
+if [[ ! -d "${local_path}" ]]; then
     echo "[ERROR] ${local_path} is not a directory. Exiting"
     exit 1
 fi
@@ -28,8 +29,6 @@ if [[ ${local_entry_count} -lt ${minimal_local_entries} ]]; then
 else
     echo "[DEBUG] Number of entries ${local_entry_count} is equal or larger than minimum required of ${minimal_local_entries}"
 fi
-
-switch_to_hmf_archive_service_account
 
 # -d = delete files on GS that no longer exist on datastore
 # -e = exclude symlinks to go to GS

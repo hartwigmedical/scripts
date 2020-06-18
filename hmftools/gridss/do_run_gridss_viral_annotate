@@ -12,12 +12,12 @@ withBEALN=${output_vcf}.withbealn.vcf
 missingBEALN=${output_vcf}.missingbealn.vcf
 annotatedBEALN=${output_vcf}.withannotation.vcf
 
-if [[ ! -f ${input_vcf} ]] ; then
-	echo "[ERROR] Missing input VCF $input_vcf"
+if [[ ! -f "${input_vcf}" ]] ; then
+	echo "[ERROR] Missing input VCF ${input_vcf}"
 	exit 1
 fi
 
-if [[ "${input_vcf/.ann.vcf.gz/}" != "$input_vcf" ]] ; then
+if [[ "${input_vcf/.ann.vcf.gz/}" != "${input_vcf}" ]] ; then
 	  echo "[ERROR] Already annotated purple VCF ${input_vcf}. Exiting."
     exit 1
 fi

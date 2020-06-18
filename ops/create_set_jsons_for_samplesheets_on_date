@@ -3,46 +3,46 @@
 SHEETS_LOC=/data/samplesheets
 JSONS_LOC=/data/ops/api/prod/jsons
 
-ssheetDate=$1
-currDate=$( date +'%y%m%d' )
-createLog="/data/ops/api/prod/logs/${currDate}_create_jsons_for_${ssheetDate}"
-registerLog="/data/ops/api/prod/logs/${currDate}_register_sets_from_${ssheetDate}_flowcells"
+ssheet_date=$1
+curr_date=$(date +'%y%m%d')
+create_log="/data/ops/api/prod/logs/${curr_date}_create_jsons_for_${ssheet_date}"
+register_log="/data/ops/api/prod/logs/${curr_date}_register_sets_from_${ssheet_date}_flowcells"
 
 ## Sanity checks
-if [[ ! ${ssheetDate} =~ ^[0-9]{6}$ ]]; then echo "[ERROR] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
-if [[ -f ${createLog} ]]; then echo "[ERROR] Log already exists: ${createLog}" && exit 1; fi
-if [[ -f ${registerLog} ]]; then echo "[ERROR] Log already exists: ${registerLog}" && exit 1; fi
-echo "[INFO] JsonCreation started with input date: ${ssheetDate}"
+if [[ ! ${ssheet_date} =~ ^[0-9]{6}$ ]]; then echo "[ERROR] Wrong input date: run with \"$(basename $0) YYMMDD\"" && exit 1; fi
+if [[ -f "${create_log}" ]]; then echo "[ERROR] Log already exists: ${create_log}" && exit 1; fi
+if [[ -f "${register_log}" ]]; then echo "[ERROR] Log already exists: ${register_log}" && exit 1; fi
+echo "[INFO] JsonCreation started with input date: ${ssheet_date}"
 
 ## Actual work
-for ssheet in ${SHEETS_LOC}/${ssheetDate}_*_SampleSheet*; do 
+for ssheet in ${SHEETS_LOC}/${ssheet_date}_*_SampleSheet*; do 
     echo ${ssheet}; 
     print_register_json.pl -samplesheet ${ssheet};
-done > ${createLog}
+done > ${create_log}
 
 ## Reporting further actions to screen
-echo "[INFO] JsonCreation done and log written to: ${createLog}"
-if [[ $( cat ${createLog} | grep -Pc "\d{8}T[IVX]+" ) -gt 0 ]]; then
+echo "[INFO] JsonCreation done and log written to: ${create_log}"
+if [[ $( cat ${create_log} | grep -Pc "\d{8}T[IVX]+" ) -gt 0 ]]; then
     ## multiple biopsies usually need R from bam2fastq
     echo "[WARN]  ATTENTION: Found T[IVX]+ samples so might need to adjust R barcode"
-    cat ${createLog} | grep -P "\d{8}T[IVX]+" | grep Somatic_T
+    cat ${create_log} | grep -P "\d{8}T[IVX]+" | grep Somatic_T
 fi
 
 ## Samples/barcodes that already exist in HMF API already have the use_existing flag
 ## but in case a barcode is re-used at the same register batch then manual adjustment is needed
-for dupBc in $( cat ${JSONS_LOC}/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
-   echo "[WARN] Found duplicate barcode ($dupBc): make sure the use_existing flag is set correctly on second one:"; 
-   find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read readyJson; do
-       if [[ $(grep -c "${dupBc}" $readyJson) -gt 0 ]]; then
-           echo "[WARN]   $readyJson"
+for dup_bc in $( cat ${JSONS_LOC}/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
+   echo "[WARN] Found duplicate barcode (${dup_bc}): make sure the use_existing flag is set correctly on second one:"; 
+   find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read ready_json; do
+       if [[ $(grep -c "${dup_bc}" ${ready_json}) -gt 0 ]]; then
+           echo "[WARN]   ${ready_json}"
        fi
    done
 done
 
 echo "[INFO] TODO: Check one json per entity to see if settings are conform agreement with requester and entity exists in API"
 echo "[INFO] TODO: If all OK you can register them in API with:"
-echo " nohup register_all_ready_jsons > ${registerLog} &"
+echo " nohup register_all_ready_jsons > ${register_log} &"
 echo ""
 echo "[INFO] TODO: Afterwards you can check the registration success rate with:"
-echo " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${registerLog} | grep created | wc -l) "
+echo " echo \"Amount IN: \"\$( ls ${JSONS_LOC}/*json | wc -l); echo \"Amount OK: \"\$( cat ${register_log} | grep created | wc -l) "
 echo ""

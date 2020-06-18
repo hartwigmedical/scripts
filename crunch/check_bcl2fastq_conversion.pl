@@ -143,6 +143,7 @@ sub addSamplesheetInfo{
     $json_info->{ 'stats' }{ 'seq_runname' } = $seq_run;
     $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
     $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
+    $json_info->{ 'stats' }{ 'submissions' } = {};
     
     ## add sample metadata
     my $samples = $json_info->{ 'samp' };
@@ -152,6 +153,7 @@ sub addSamplesheetInfo{
         my $submission = $NA_CHAR;
         $submission = $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Sample_Project' };
         $sample->{ 'submission_print' } = $submission;
+        $json_info->{ 'stats' }{ 'submissions' }{ $submission } = 1;
         
         my $description = $NA_CHAR;
         $description = $ssht_info->{'samples'}{$sample_id}{ 'Description' } if defined $ssht_info->{'samples'}{$sample_id}{ 'Description' };
@@ -390,14 +392,16 @@ sub parseJsonInfo{
     }
     
     ## Collect some general stats/info
-    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s", 
+    my $undet_perc = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
       round( $info{'flow'}{$fid}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       round( $info{'undt'}{'UNDETERMINED'}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'},
-      $cycle_string;
+      $cycle_string,
+      $undet_perc . '%';
       
-    $info{'stats'}{'undet_perc'} = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    $info{'stats'}{'undet_perc'} = $undet_perc;
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
@@ -448,6 +452,10 @@ sub printTable {
 
 sub printSummaryTable{
     my ($info, $fields) = @_;
+    
+    my @submissions = sort keys %{$info->{'stats'}{'submissions'}};
+    map( $_ =~ s/HMFreg//, @submissions );
+    my $submissions_string = join( ',', @submissions );
    
     say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
     say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
@@ -460,8 +468,8 @@ sub printSummaryTable{
     say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s\t%s", 
       $info->{'stats'}{'hmf_runname'},
       $info->{'stats'}{'seq_runname'},
+      $submissions_string,
       $info->{'stats'}{'run_overview_string'},
-      "UndPerc", # placeholder for formula in destination sheet
       $info->{'stats'}{'flowcell_qc'};
       
     say "#".join( $OUT_SEP, @$fields );

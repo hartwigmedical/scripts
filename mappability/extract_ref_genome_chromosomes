@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+# ./extract_ref_genome_chromosomes \
+#   /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
+#   /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
+
+ref_genome=$1 && shift
+output_dir=$1 && shift
+samtools=/data/common/tools/samtools_v1.10/samtools
+
+${samtools} faidx ${ref_genome} chr1 > ${output_dir}/chr1.fasta 
+${samtools} faidx ${ref_genome} chr2 > ${output_dir}/chr2.fasta
+${samtools} faidx ${ref_genome} chr3 > ${output_dir}/chr3.fasta
+${samtools} faidx ${ref_genome} chr4 > ${output_dir}/chr4.fasta
+${samtools} faidx ${ref_genome} chr5 > ${output_dir}/chr5.fasta
+${samtools} faidx ${ref_genome} chr6 > ${output_dir}/chr6.fasta
+${samtools} faidx ${ref_genome} chr7 > ${output_dir}/chr7.fasta
+${samtools} faidx ${ref_genome} chr8 > ${output_dir}/chr8.fasta
+${samtools} faidx ${ref_genome} chr9 > ${output_dir}/chr9.fasta
+${samtools} faidx ${ref_genome} chr10 > ${output_dir}/chr10.fasta
+${samtools} faidx ${ref_genome} chr11 > ${output_dir}/chr11.fasta
+${samtools} faidx ${ref_genome} chr12 > ${output_dir}/chr12.fasta
+${samtools} faidx ${ref_genome} chr13 > ${output_dir}/chr13.fasta
+${samtools} faidx ${ref_genome} chr14 > ${output_dir}/chr14.fasta
+${samtools} faidx ${ref_genome} chr15 > ${output_dir}/chr15.fasta
+${samtools} faidx ${ref_genome} chr16 > ${output_dir}/chr16.fasta
+${samtools} faidx ${ref_genome} chr17 > ${output_dir}/chr17.fasta
+${samtools} faidx ${ref_genome} chr18 > ${output_dir}/chr18.fasta
+${samtools} faidx ${ref_genome} chr19 > ${output_dir}/chr19.fasta
+${samtools} faidx ${ref_genome} chr20 > ${output_dir}/chr20.fasta
+${samtools} faidx ${ref_genome} chr21 > ${output_dir}/chr21.fasta
+${samtools} faidx ${ref_genome} chr22 > ${output_dir}/chr22.fasta
+${samtools} faidx ${ref_genome} chrY > ${output_dir}/chrY.fasta
+${samtools} faidx ${ref_genome} chrX > ${output_dir}/chrX.fasta 

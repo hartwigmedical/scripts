@@ -24,10 +24,10 @@ main () {
     s_count=$(echo "${s_result}" | jq length)
     t_count=$(echo "${t_result}" | jq length)
 
-    if [[ $s_count -ne 1 ]]; then
+    if [[ ${s_count} -ne 1 ]]; then
         echo "[ERROR] Number of samples found for source ${s_bc} not 1 (${s_count})"
         exit 1
-    elif [[ $t_count -ne 1 ]]; then
+    elif [[ ${t_count} -ne 1 ]]; then
         echo "[ERROR] Number of samples found for target ${t_bc} not 1 (${t_count})"
         exit 1
     else

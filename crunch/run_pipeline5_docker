@@ -21,36 +21,36 @@ print_usage(){
 
 while getopts ':p:r:k:v:c:o:h:l' flag; do
     case "${flag}" in
-        p) PATIENT_DIR=$OPTARG ;;
-        r) REFERENCE_GENOME_DIR=$OPTARG ;;
-        k) KNOWN_INDELS_DIR=$OPTARG ;;
-        c) CONF_DIR=$OPTARG;;
-        o) OUTPUT_DIR=$OPTARG;;
-        v) VERSION=$OPTARG ;;
-        h) MAX_HEAP=$OPTARG ;;
+        p) PATIENT_DIR=${OPTARG} ;;
+        r) REFERENCE_GENOME_DIR=${OPTARG} ;;
+        k) KNOWN_INDELS_DIR=${OPTARG} ;;
+        c) CONF_DIR=${OPTARG};;
+        o) OUTPUT_DIR=${OPTARG};;
+        v) VERSION=${OPTARG} ;;
+        h) MAX_HEAP=${OPTARG} ;;
         l) LOCAL_MODE="true" ;;
         *) print_usage
         exit 1 ;;
     esac
 done
 
-if [[ -z $PATIENT_DIR || -z $REFERENCE_GENOME_DIR || -z $VERSION ]]; then
+if [[ -z "${PATIENT_DIR}" || -z "${REFERENCE_GENOME_DIR}" || -z "${VERSION}" ]]; then
     print_usage
 fi
 
 volumes="-v ${PATIENT_DIR}:/patients -v ${REFERENCE_GENOME_DIR}:/reference_genome/ -v ${KNOWN_INDELS_DIR}:/known_indels/ -v ${OUTPUT_DIR}:/results -v ${OUTPUT_DIR}/tmp:/tmp -v ${OUTPUT_DIR}/logs:/logs"
 
-if [[ ! -z $CONF_DIR ]]; then
+if [[ ! -z "${CONF_DIR}" ]]; then
     volumes="-v ${CONF_DIR}:/conf/ ${volumes}"
 fi
 
-if [[ -z $LOCAL_MODE ]]; then
+if [[ -z "${LOCAL_MODE}" ]]; then
     network="--network=host"
 fi
 
-if [[ ! -z $MAX_HEAP ]]; then
+if [[ ! -z "${MAX_HEAP}" ]]; then
     environment_variables="-e JAVA_OPTS=-Xmx${MAX_HEAP}"
 fi
 
 echo "[INFO] Running pipeline5 as a background docker process. Tail ${OUTPUT_DIR}/logs/pipeline.log to see the progress."
-sudo docker run -d $network $volumes $environment_variables hartwigmedicalfoundation/pipeline5:${VERSION}
+sudo docker run -d ${network} ${volumes} ${environment_variables} hartwigmedicalfoundation/pipeline5:${VERSION}

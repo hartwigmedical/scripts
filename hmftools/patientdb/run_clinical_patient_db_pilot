@@ -26,7 +26,7 @@ java -Dorg.jooq.no-logo=true -Xmx4G -Xms2G -Dfile.encoding=UTF-8 \
     -db_user ${db_user} \
     -db_pass ${db_pass} \
     -db_url ${db_url} \
-    -lims_dir /data/lims \
+    -lims_dir /data/ops/lims/prod \
     -tumor_location_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
     "$@"

@@ -5,17 +5,14 @@ crunch_seq_runs_dir=/data1/illumina_data
 
 for i in {1,2,3}; do
     crunch_name="crunch00${i}"
-    echo -e "\n--- Checking ${crunch_name} for samplesheets -----\n"
+    echo -e "[INFO] Checking ${crunch_name} for samplesheets"
 
     ssh ${crunch_name} find ${crunch_seq_runs_dir} -type f -mindepth 2 -maxdepth 2 -name "SampleSheet.csv" |
     while read sheet_path; do
         run_path=$(dirname ${sheet_path})
         run_name=$(basename ${run_path})
-
-        run_sheet_name="${run_name}_SampleSheet.csv"
-        dest_path="${datastore_sheets_dir}/${run_sheet_name}"
-        echo " Creating ${dest_path}"
-        copy_cmd="scp ${crunch_name}:${sheet_path} ${dest_path}"
-        ${copy_cmd}
+        dest_path="${datastore_sheets_dir}/${run_name}_SampleSheet.csv"
+        echo "[INFO]   Executing rsync for ${run_name}"
+        rsync ${crunch_name}:${sheet_path} ${dest_path}
     done
 done

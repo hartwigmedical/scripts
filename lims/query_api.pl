@@ -14,8 +14,8 @@ use 5.010.000;
 ## -----
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
-my $JSONS_HOME = '/data/lims/api_files';
-my $JSONS_HOME_ACC = '/data/lims/api_files/acc';
+my $JSONS_HOME = '/data/ops/api/prod/database';
+my $JSONS_HOME_ACC = '/data/ops/api/acc/database';
 
 my %OUT_FIELDS_PER_TYPE = (
   'samples'   => [ 'submission', 'barcode', 'q30', 'yld_req', 'yld', 'status', 'name', 'id' ],

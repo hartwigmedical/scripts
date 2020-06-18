@@ -22,31 +22,31 @@ snpeff_vcf=${out_dir}/${sample}.snpeff.vcf
 post_vcf=${out_dir}/${sample}.post.vcf.gz
 final_vcf=${out_dir}/${sample}.final.vcf.gz
 
-if [[ ! -f ${sample_bam} ]]; then
+if [[ ! -f "${sample_bam}" ]]; then
     ${prefix}/../bamslicer/slice_tumor_sample_bam_bam_on_gcp ${set} ${hotspot_bed} ${sample_bam}
 else
     echo "[INFO] Skipping tumor BAM slicing. BAM already exists: ${sample_bam}"
 fi
 
-if [[ ! -f ${normal_bam} ]]; then
+if [[ ! -f "${normal_bam}" ]]; then
     ${prefix}/../bamslicer/slice_ref_sample_bam_on_gcp ${set} ${hotspot_bed} ${normal_bam}
 else
     echo "[INFO] Skipping reference BAM slicing. BAM already exists: ${normal_bam}"
 fi
 
-if [[ ! -f ${sample_bam} ]]; then
+if [[ ! -f "${sample_bam}" ]]; then
     echo "[ERROR] BAM download failed"
     exit 1
 fi
 
-if [[ -f ${final_vcf} ]]; then
+if [[ -f "${final_vcf}" ]]; then
     echo "[ERROR] Output already created"
     exit 1
 fi
 
 mkdir -p "${out_dir}"
 
-echo "Running SAGE"
+echo "[INFO] Running SAGE"
 java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmftools.sage.SageApplication \
     -threads 1 -panel_only \
     -tumor ${sample} -tumor_bam ${sample_bam} \
@@ -57,7 +57,7 @@ java -Xmx32G -Xms32G -cp /data/common/tools/sage_pilot/sage.jar com.hartwig.hmft
     -ref_genome /data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta \
     -out ${sage_vcf}
 
-echo "SAGE pon..."
+echo "[INFO] SAGE pon..."
 /data/common/tools/bcftools_v1.9/bcftools annotate -a /data/experiments/200131_sage_validation/SAGE.validation.pon.vcf.gz -c PON_COUNT ${sage_vcf} -O z -o ${pon_vcf}
 /data/common/tools/bcftools_v1.9/bcftools index ${pon_vcf}
 

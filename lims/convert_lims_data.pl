@@ -15,13 +15,16 @@ use 5.01000;
 
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
-use constant TISSUE_ANCESTOR_FIELDS => qw( 
-    submission lab_status hospital_pa_sample_id hospital_patient_id
-    germline_findings purity_shallow tumor_perc ptum ref_sample_id
+
+## These fields are copied from ancestor sample
+## in case they are not set at DNA/RNA sample
+use constant FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR => qw(
+    report_germline report_germline_level report_viral report_pgx ptum
 );
-## Some fields need to be actively set to boolean for json output
+
+## These fields will be set to json boolean for json output
 use constant BOOLEAN_FIELDS => qw(
-    shallowseq report_viral report_pgx
+    shallowseq report_germline report_viral report_pgx
     add_to_database add_to_datarequest
 );
 
@@ -35,9 +38,8 @@ GetOptions (
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
-my $CNTR_TSV = '/data/common/dbs/sbp/center2entity.tsv';
-my $MAIL_TSV = '/data/common/dbs/sbp/study2mail.tsv';
-my $LIMS_DIR = $opt{lims_dir} || '/data/lims';
+my $CNTR_TSV = '/data/ops/lims/prod/center2entity.tsv';
+my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
 my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
 my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
 my $BACK_DIR = $OUT_DIR . '/backup';
@@ -128,18 +130,12 @@ say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
-my $mail_dict = parseDictFile( $MAIL_TSV, 'study2mail' );
 my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
-my $cpct_objs = {}; # will contain objects from CPCT access DB
+my $cpct_objs = {}; # will contain objects from MS Access LIMS
 my $lims_objs = {}; # will contain all sample objects
-
-## No longer reading info from before 2018
-#my $lims_2017 = readJson( $LIMS_JSN_2017 );
-#$samp_objs = $lims_2017->{ 'samples' };
-#$subm_objs = $lims_2017->{ 'submissions' };
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
@@ -154,12 +150,14 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
 
-checkContactInfo($cont_objs);
+checkContactInfo( $cont_objs );
 
 $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
-$lims_objs = processExcelSamples( $lims_objs, $samp_objs, $subm_objs );
-$lims_objs = processAccessSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict, $mail_dict );
-$lims_objs = addLabSopString( $lims_objs, $proc_objs );
+$lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
+$lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
+$lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
+
+checkDrupStage3Info( $subm_objs, $lims_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
 
@@ -195,7 +193,7 @@ sub parseTsvCsv{
         }
     }
     if ( $header_misses_field ){
-        print Dumper \%fields_map and die "[ERROR] Error: header incomplete ($file)\n";
+        print Dumper \%fields_map and die "[ERROR] Header incomplete ($file)\n";
     }
     
     ## Header OK: continue reading in all data lines
@@ -262,9 +260,8 @@ sub printLimsToJson{
     my $subm_count = scalar keys %$submissions;
     my $cont_count = scalar keys %$contact_groups;
 
-    ## samples and submission json
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions, 'contact_groups' => $contact_groups );
-    my $coder = JSON::XS->new->utf8->pretty->canonical;
+    my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
     
     say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
@@ -273,7 +270,7 @@ sub printLimsToJson{
     close $lims_json_fh;
 }
 
-sub addLabSopString{
+sub addLabSopStringToSamples{
     my ($samples, $inprocess) = @_;
     my %store = %$samples;
     my $sop_field_name = 'lab_sop_versions';
@@ -306,17 +303,6 @@ sub parseDictFile{
             my ( $id, $descr, $name ) = split /\t/;
             die "[ERROR] id occurs multiple times ($id) in file ($file)\n" if exists $store{ $id };
             $store{ $id } = $name if ( $id ne EMPTY and $name ne EMPTY );
-        }
-        elsif ( $fileType eq 'study2mail' ){
-            my ( $study, $name, $mail ) = split /\t/;
-            die "[ERROR] study name occurs multiple times ($study) in file ($file)\n" if exists $store{ $study };
-            $store{ $study }{ 'name' } = $name;
-            $store{ $study }{ 'mail' } = $mail;
-        }
-        elsif ( $fileType eq 'submission2entity' ){
-            my ( $submission, $entity ) = split /\t/;
-            die "[ERROR] submission occurs multiple times ($submission) in file ($file)\n" if exists $store{ $submission };
-            $store{ $submission } = $entity if ( $submission ne EMPTY and $entity ne EMPTY );
         }
         else{
             die "[ERROR] File type not set or not recognized ($fileType)\n";
@@ -361,6 +347,38 @@ sub addContactInfoToSubmissions{
     return \%store;
 }
 
+sub checkDrupStage3Info{
+    my ($submissions, $samples) = @_;
+    my $drup_stage3_count = 0;
+    my $expected_cohort = 'DRUPstage3';
+
+    say "[INFO]   Checking $expected_cohort submissions";
+    while (my ($id,$obj) = each %$submissions){
+        my $project_type = $obj->{'project_type'};
+        my $project_name = $obj->{'project_name'};
+
+        next unless ($project_type eq 'Cohort' and $project_name =~ /DRUP/);
+
+        $drup_stage3_count++;
+        my $patient_id = $project_name;
+        $patient_id =~ tr/-//d;
+        my $sample_name = $patient_id . "T";
+        my $sample_count = 0;
+        while (my($barcode,$sample) = each %$samples){
+            next unless $sample->{'sample_name'} eq $sample_name;
+            next unless $sample->{'original_submission'} eq $id;
+            next unless $sample->{'analysis_type'} eq 'Somatic_T';
+            my $cohort = $sample->{'cohort'};
+            if ( $cohort ne $expected_cohort ){
+                say "[WARN]     Found sample for submission $id with incorrect cohort (name:$sample_name id:$barcode cohort:$cohort)";
+            }
+            $sample_count++;
+        }
+        say "[WARN]     Found no samples for $expected_cohort submission $id!" if $sample_count < 1;
+    }
+    say "[INFO]     Summary: $drup_stage3_count submissions encountered and checked for $expected_cohort";
+}
+
 sub checkContactInfo{
     my ($contact_groups) = @_;
     my @name_fields = qw(client_contact_name report_contact_name data_contact_name);
@@ -392,18 +410,14 @@ sub checkContactInfo{
     }
 }
 
-sub processAccessSamples{
+sub addAccessSamplesToSamples{
     
-    my ($lims, $objects, $submissions, $centers_dict, $mail_dict) = @_;
+    my ($lims, $objects, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
     my %dna_blood_samples_by_name = ();
     my %tissue_samples_by_coupe = ();
 
-    ## Collect requester name/email for WIDE study
-    my $WIDE_name = $mail_dict->{ 'WIDE' }{ 'name' };
-    my $WIDE_mail = $mail_dict->{ 'WIDE' }{ 'mail' };
-    
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
     say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
     foreach my $main_id ( sort keys %$objects ){
@@ -472,8 +486,12 @@ sub processAccessSamples{
         if ( $is_tissue ){
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
-                foreach my $field ( TISSUE_ANCESTOR_FIELDS ){
-                    $object->{ $field } = $ancestor->{ $field };
+                foreach my $field ( FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR ){
+                    if ( exists $ancestor->{ $field } ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    }else{
+                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
+                    }
                 }
             }
         
@@ -518,42 +536,39 @@ sub processAccessSamples{
             ## CORE is handled per case/submission
             if ( $study eq 'CORE' ){
                 my $submission_id = $object->{ 'submission' };
+                ## specifically check for non-ref samples if submission is defined
+                if ( $submission_id eq '' ){
+                    if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
+                        warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+                    }
+                    next;
+                }
                 $object->{ 'entity' } = $submission_id;
                 $object->{ 'project_name' } = $submission_id;
-                ## TODO: remove or rename once patient-reporter supports name/email from submission object
-                if ( $submission_id eq "" ){
-                    warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n" and next;
-                }
-                $object->{ 'requester_name' } = $submissions->{$submission_id}{'report_contact_name'};
-                $object->{ 'requester_email' } = $submissions->{$submission_id}{'report_contact_email'};
             }
-            ## CPCT/DRUP are handled study/center wide
+            ## All other samples are clinical study based (CPCT/DRUP/WIDE)
             elsif ( exists $centers_dict->{ $center } ){
                 my $centername = $centers_dict->{ $center };
-                $object->{ 'submission' } = 'HMFreg' . $study;
+                my $original_submission = $object->{ 'submission' };
+                my $register_submission = 'HMFreg' . $study;
+                $object->{ 'original_submission' } = $original_submission;
+                $object->{ 'submission' } = $register_submission;
+                $object->{ 'project_name' } = $register_submission;
                 $object->{ 'entity' } = join( "_", $study, $centername );
-                $object->{ 'project_name' } = $object->{ 'submission' };
-                ## TODO: Dummy fields needed for hmf-common code (cannot be null)
-                ## TODO: Remove once hmf-common code supports name/email from submission
-                $object->{ 'requester_name' } = "";
-                $object->{ 'requester_email' } = "";
-                ## WIDE is an exception with static requester
-                if ( $study eq 'WIDE'){
-                    $object->{ 'requester_name' } = $WIDE_name;
-                    $object->{ 'requester_email' } = $WIDE_mail;
-                }
             }
             else {
-                warn "[WARN] SKIPPING sample because of unkown center id \"$center\" (id:$id name:$name)\n" and next;
+                warn "[WARN] SKIPPING sample because not is core and center id unknown \"$center\" (id:$id name:$name)\n";
+                next;
             }
         }
         else{
-            warn "[WARN] SKIPPING sample from Access lims because of unknown name format (id:$id name:$name)\n" and next;
+            warn "[WARN] SKIPPING sample from Access lims because of unknown sample name format (id:$id name:$name)\n" and next;
         }
  
         ## Final sanity checks before storing
         my $all_fields_ok = 1;
-        my @fields_to_check = qw( submission analysis_type );
+        ## Some fields need to be set for downstream tools not to crash!
+        my @fields_to_check = qw( analysis_type submission );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
                 warn "[WARN] SKIPPING sample because field $field is not present (id:$id name:$name)\n";
@@ -577,7 +592,7 @@ sub processAccessSamples{
     return \%store;
 }
 
-sub processExcelSamples{
+sub addExcelSamplesToSamples{
     
     my ($lims, $objects, $shipments) = @_;
     my %store = %{$lims};
@@ -617,17 +632,12 @@ sub processExcelSamples{
             else{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
-            ## TODO remove once shallowseq column is built into lims
+            ## TODO remove once shallowseq column is built into lims FOR-001
             ## Harcode Somatic_T samples to not run in shallow mode
             ## Harcode Somatic_T samples to not use existing ref data
             $row_info->{ 'shallowseq' } = 0;
             $row_info->{ 'other_ref' } = 0;
             
-            ## TODO remove once project is done
-            ## Hardcode one project back to shallowseq
-            if ( $submission eq "HMFreg0760" ){
-                $row_info->{ 'shallowseq' } = 1;
-            }
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
@@ -705,16 +715,13 @@ sub fixIntegerFields{
 sub fixBooleanFields{
     my ($obj) = @_;
     foreach my $key ( BOOLEAN_FIELDS ){
+        next unless exists $obj->{ $key };
         next unless defined $obj->{ $key };
         my $value = $obj->{ $key };
         if ( $value =~ m/^true$/i ){
             $obj->{ $key } = JSON::XS::true;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 1 if $key eq 'shallowseq';
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
-            ## TODO remove once patient reporter supports boolean
-            $obj->{ $key } = 0 if $key eq 'shallowseq';
         }else{
             warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
         }
@@ -995,7 +1002,8 @@ sub getFieldNameTranslations{
       'Other_Ref'          => 'other_ref',
       'Sample_ID_DNA_ref'  => 'ref_sample_id',
       'Hospital_patient_ID'=> 'hospital_patient_id',
-      'Germline_findings'  => 'germline_findings',
+      'Report_germline'    => 'report_germline',
+      'Report_germline_level' => 'report_germline_level',
       'Submission_number'  => 'submission',
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',

@@ -6,12 +6,12 @@ run_dir=$1 && shift
 gridss_jar=$1 && shift
 threads=$1 && shift
 
-if [[ ! -f ${gridss_jar} ]] ; then
-	  echo "[ERROR] Missing GRIDSS jar $gridss_jar. Aborting" 1>&2
+if [[ ! -f "${gridss_jar}" ]] ; then
+	  echo "[ERROR] Missing GRIDSS jar ${gridss_jar}. Aborting" 1>&2
 	  exit 1
 fi
 
-if [[ "$threads" == "" ]] ; then
+if [[ "${threads}" == "" ]] ; then
 	  threads=$(nproc)
 fi
 
@@ -50,7 +50,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 joint_sample_name=$(load_joint_name_from_metadata ${run_dir})
 
 gridss_dir=${run_dir}/structuralVariants/gridss/${joint_sample_name}
-if [[ ! -d ${gridss_dir} ]]; then
+if [[ ! -d "${gridss_dir}" ]]; then
     # Support for pv5 location
     gridss_dir=${run_dir}/structural_caller
 fi
@@ -61,7 +61,7 @@ normal_bam=${run_dir}/${ref_sample}/mapping/${ref_sample}_dedup.realigned.bam
 tumor_bam=${run_dir}/${tumor_sample}/mapping/${tumor_sample}_dedup.realigned.bam
 assembly_bam=${gridss_dir}/${joint_sample_name}.assembly.bam
 log_dir=${gridss_dir}/logs/
-log_prefix=${log_dir}/$HOSTNAME.$$
+log_prefix=${log_dir}/${HOSTNAME}.$$
 blacklist=${config_dir}/ENCFF001TDO.bed
 
 prefix=$(dirname $(readlink $0 || echo $0))
@@ -75,35 +75,35 @@ gridss_jvm_args="
 	  -Dsamjdk.use_async_io_write_samtools=true
 	  -Dsamjdk.use_async_io_write_tribble=true
 	  -Dsamjdk.buffer_size=2097152
-	  -cp $gridss_jar "
+	  -cp ${gridss_jar} "
 gridss_common_args="
-	  TMP_DIR=$gridss_dir
-	  WORKING_DIR=$gridss_dir
-	  REFERENCE_SEQUENCE=$ref_genome "
+	  TMP_DIR=${gridss_dir}
+	  WORKING_DIR=${gridss_dir}
+	  REFERENCE_SEQUENCE=${ref_genome} "
 
 mkdir -p ${gridss_dir} ${log_dir}
 
 function assert_preprocessing_complete() {
-	  if [[ ! -f ${gridss_dir}/$(basename ${normal_bam}).gridss.working/$(basename ${normal_bam}).sv.bam ]] ; then
+	  if [[ ! -f "${gridss_dir}/$(basename ${normal_bam}).gridss.working/$(basename ${normal_bam}).sv.bam" ]] ; then
 		    echo "[ERROR] Normal bam preprocessing not complete. Terminating." 1>&2
 		    exit 1
 	  fi
 	  
-	  if [[ ! -f ${gridss_dir}/$(basename ${tumor_bam}).gridss.working/$(basename ${tumor_bam}).sv.bam ]] ; then
+	  if [[ ! -f "${gridss_dir}/$(basename ${tumor_bam}).gridss.working/$(basename ${tumor_bam}).sv.bam" ]] ; then
 		    echo "[ERROR] Tumor bam preprocessing not complete. Terminating." 1>&2
 		    exit 1
 	  fi
 }
 
 function assert_assembly_complete() {
-	  if [[ ! -f ${gridss_dir}/$(basename ${assembly_bam}).gridss.working/$(basename ${assembly_bam}).sv.bam ]] ; then
+	  if [[ ! -f "${gridss_dir}/$(basename ${assembly_bam}).gridss.working/$(basename ${assembly_bam}).sv.bam" ]] ; then
 		    echo "[ERROR] Assembly not complete. Terminating." 1>&2
 		    exit 1
 	  fi
 }
 
 function assert_calling_complete() {
-	  if [[ ! -f ${gridss_raw_vcf}.unannotated.vcf ]] ; then
+	  if [[ ! -f "${gridss_raw_vcf}.unannotated.vcf" ]] ; then
 		    echo "[ERROR] Variant calling not complete. Terminating." 1>&2
 		    exit 1
 	  fi

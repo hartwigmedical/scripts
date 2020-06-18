@@ -1,10 +1,13 @@
 #!/usr/bin/env bash
 
-tumor_sample=$1 && shift
+source locate_files
 
-if [[ -z ${tumor_sample} ]]; then
-    echo "[ERROR] No tumor sample provided. Exiting"
-    exit 1;
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-do_run_qc_fail_patient_reporter ${tumor_sample} "post_analysis_fail" "$@"
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+
+do_run_qc_fail_patient_reporter ${run_dir} "post_analysis_fail" -purple_purity_tsv ${purple_purity_tsv} "$@"

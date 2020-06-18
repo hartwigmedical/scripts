@@ -12,7 +12,7 @@ for run_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d -not -na
     log_gcp="${uploadlog_dir}/${run_name}_GCP_Uploaded.done"
 
     echo "${run_name}"
-    if [[ -f ${log_gcp} ]]; then
+    if [[ -f "${log_gcp}" ]]; then
         echo "  has been uploaded to GCP (${log_gcp})"
     else
         echo "  has NOT uploaded to GCP yet!!"

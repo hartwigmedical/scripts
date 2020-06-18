@@ -28,7 +28,7 @@ fi
 if [[ ! -d "${picard_dir}" ]]; then echo "[ERROR] Picard dir not found (${picard_dir})"; exit 1; fi
 if [[ ! -d "${sambamba_dir}" ]]; then echo "[ERROR] Sambamba dir not found (${sambamba_dir})"; exit 1; fi
 if [[ ! -f "${in_bam}" ]]; then echo "[ERROR] Bam file not found (${in_bam})"; exit 1; fi
-if [[ ! -w $(dirname "${out_dir}") ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
+if [[ ! -w "$(dirname "${out_dir}")" ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
 ## ---------------
 

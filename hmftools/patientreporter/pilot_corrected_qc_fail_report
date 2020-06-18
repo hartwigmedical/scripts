@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+tumor_sample_or_run_dir=$1 && shift
+qc_fail_reason=$1 && shift
+comments=$1 && shift
+
+if [[ -z "${tumor_sample_or_run_dir}" ]]; then
+    echo "[ERROR] No tumor sample or run dir provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${qc_fail_reason}" ]]; then
+    echo "[ERROR] No QC fail reason provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${comments}" ]]; then
+    echo "[ERROR] No comments provided. Exiting" && exit 1;
+fi
+
+# TODO These comments are not picked up as they are overwitten downstream
+interpret_comments="This is a pilot patient report and is not meant for production purpose. ${comments}"
+
+if [[ ${qc_fail_reason} == "insufficient_dna" ]]; then
+    pilot_insufficient_dna_report ${tumor_sample_or_run_dir} -comments "${interpret_comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "sufficient_tcp_qc_failure" ]]; then
+    pilot_sufficient_tcp_qc_failure_report ${tumor_sample_or_run_dir} -comments "${interpret_comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "insufficient_tcp_shallow_wgs" ]]; then
+    pilot_insufficient_tcp_shallow_wgs_report ${tumor_sample_or_run_dir} -comments "${interpret_comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "insufficient_tcp_deep_wgs" ]]; then
+    pilot_insufficient_tcp_deep_wgs_report ${tumor_sample_or_run_dir} -comments "${interpret_comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "technical_failure" ]]; then
+    pilot_technical_failure_report ${tumor_sample_or_run_dir} -comments "${interpret_comments}" -corrected_report "$@"
+else
+    echo "[WARN] Did not recognize QC Fail reason: ${qc_fail_reason}. Skipping"
+fi

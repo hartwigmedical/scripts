@@ -1,17 +1,25 @@
 #!/usr/bin/env bash
 
-YYMMDD=$(date '+%y%m%d')
-taskId="updateReportingOverview"
+# This script is expected to be run as a cronjob so loading bashrc
+source ${HOME}/.bashrc
 
-srcDir="/data/lims"
-nasLoc="/volume1/web/overviews/reporting"
+source locate_files
 
-## Sanity checks
-if [[ ! -d ${srcDir} ]]; then echo "[ERROR] INPUT DIR does not exist (${srcDir})" && exit 1; fi
+task_id="updateReportingOverview"
+rep_src_file=$(locate_reporting_db_tsv)
+nas_loc="/volume1/web/overviews/reporting"
+pwd_loc="/data/common/dbs/nas_credentials/rsyncuser"
 
-## Action
-echo "[INFO] START with ${taskId} ($YYMMDD)"
-echo "[INFO]   Syncing from datastore to NAS intranet (to ${nasLoc})"
-scp "/data/lims/reporting_db.tsv" "nas:${nasLoc}"
-scp "/data/lims/reporting_db.tsv" "nas:${nasLoc}/reporting_db.txt"
-echo "[INFO] DONE with ${taskId}"
+## Sanity check
+if [[ ! -f "${rep_src_file}" ]]; then 
+    echo "[ERROR] Source file does not exist (${rep_src_file})"
+    exit 1
+fi
+
+## Syncing source file twice (second time as txt which can be read directly in browser)
+echo "[INFO] START with ${task_id} $(date '+%y%m%d')"
+echo "[INFO]   Syncing ${rep_src_file} from datastore to NAS (to ${nas_loc})"
+sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/"
+sshpass -p "$(cat ${pwd_loc})" rsync -ah "${rep_src_file}" "rsyncuser@nas:${nas_loc}/reporting_db.txt"
+echo "[INFO}   File updated (see http://intranet.hartwigmedicalfoundation.nl/overviews/reporting/)"
+echo "[INFO] DONE with ${task_id}"

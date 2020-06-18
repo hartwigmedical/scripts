@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
-password=$(cat /data/common/dbs/credentials/anonimisation_pwd)
+password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
 
 run_hmf_id_generator -update_ids -password ${password}

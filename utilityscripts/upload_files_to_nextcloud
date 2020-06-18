@@ -6,4 +6,4 @@ if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "Usage: $(basename $0) <file1> [<fileN>]" && exit 1
 fi
 
-upload_files_to_nextcloud_directory "${nextcloud_dir}" "$@"
+do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "$@"

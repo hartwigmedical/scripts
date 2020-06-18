@@ -2,7 +2,7 @@
 
 CREATE_ARIA_SCRIPT="create_aria2_config_by_set_name"
 
-if [[ $# -eq 0 ]]; then echo "Usage: basename($0) HMFreg0000"; exit 1; fi
+if [[ $# -eq 0 ]]; then echo "Usage: $(basename $0) HMFreg0000"; exit 1; fi
 
 submission=$1
 submission_dir="/data/submissions/${submission}"
@@ -13,29 +13,35 @@ create_log="${output_dir}/create_aria_configs.log"
 out_config="${output_dir}/${submission}.aria.txt"
 
 ## sanity checks
-if [[ ! -d ${submission_dir} ]] ; then echo "[ERROR] Submission dir does not exist (${submission_dir})"; exit 1; fi
-if [[ ! -w ${submission_dir} ]] ; then echo "[ERROR] Submission dir is not writable (${submission_dir})"; exit 1; fi
-if [[ ! -f ${runs_json} ]] ; then echo "[ERROR] Runs json does not exist (${runs_json})"; exit 1; fi
-if [[   -d ${output_dir} ]] ; then echo "[ERROR] Output dir already exists (${output_dir})"; exit 1; fi
+if [[ ! -d "${submission_dir}" ]] ; then echo "[ERROR] Submission dir does not exist (${submission_dir})"; exit 1; fi
+if [[ ! -w "${submission_dir}" ]] ; then echo "[ERROR] Submission dir is not writable (${submission_dir})"; exit 1; fi
+if [[ ! -f "${runs_json}" ]] ; then echo "[ERROR] Runs json does not exist (${runs_json})"; exit 1; fi
+if [[   -d "${output_dir}" ]] ; then echo "[ERROR] Output dir already exists (${output_dir})"; exit 1; fi
 
-## setup actual job
+echo "[INFO] Creating aria output dir (${output_dir})"
 mkdir "${output_dir}"
-for run_name in $(cat "${runs_json}" | jq '.[].name'); do 
-    echo "${CREATE_ARIA_SCRIPT} ${run_name}" 
+
+echo "[INFO] Changing dir to output dir '${output_dir}'"
+cd ${output_dir}
+if [[ ! $? -eq 0 ]]; then echo "[ERROR] Unable to change dir to ${output_dir}" && exit 1; fi
+
+echo "[INFO] Creating job file (${create_job})"
+for run_name in $(cat "${runs_json}" | jq '.[].name'); do
+    echo "${CREATE_ARIA_SCRIPT} ${run_name}"
 done > "${create_job}"
 chmod +x "${create_job}"
 
-echo "# -----"
-echo "# Run create script (nohup because can take a long time for many samples!)"
-echo " cd ${output_dir}; nohup ${create_job} > ${create_log} &"
-echo ""
-echo "# Double check result and cat together if OK"
-echo " cat ${create_log} | grep -v '\\[INFO\\]'"
-echo " cat ${output_dir}/*.aria.txt > ${out_config}"
-echo ""
-echo "# Upload final config to Nextcloud"
+echo "[INFO] Executing job script (this can take a long time, check progress in log '${create_log})'"
+${create_job} > ${create_log} 2>&1
+
+echo "[INFO] Checking for any non INFO lines from log"
+cat ${create_log} | grep -v '\[INFO\]'
+
+echo "[INFO] Concat all run aria.txt files to ${out_config}"
+find ${output_dir} -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
+
+echo "[INFO] Job done. Gathering one URL config to check manually in browser:"
+head -4 "${out_config}"
+
+echo "[INFO] If all OK, ou can upload final config to Nextcloud with:"
 echo " upload_files_to_nextcloud_research ${out_config}"
-echo ""
-echo "# Check one URL in the output by visiting in browser"
-echo " head -4 ${out_config}"
-echo ""
