@@ -4,6 +4,7 @@ library(tidyr)
 library(ggplot2)
 library(stringi)
 
+## DEPRECATED
 annotate_fusions<-function(fusionData)
 {
   fusionData = fusionData %>% mutate(SameSV=(SvIdUp==SvIdDown),
@@ -38,6 +39,208 @@ annotate_fusions<-function(fusionData)
   
   return (fusionData)
 }
+
+
+########################
+## Fusion Reference Data
+
+newKnownPairs = read.csv('~/data/sv/known_pairs_new.csv',sep='\t')
+View(newKnownPairs)
+nrow(newKnownPairs)
+
+newProms = read.csv('~/data/sv/promiscuous_genes.csv',sep='\t')
+View(newProms)
+igGenes = read.csv('~/data/sv/ig_fusion_genes.csv')
+View(igGenes)
+exonDelDups = read.csv('~/data/sv/exon_del_dup_genes.csv',sep='\t')
+View(exonDelDups)
+colnames(exonDelDups)
+
+write.csv(rbind(newKnownPairs %>% select(GeneName=FiveGene),
+                newKnownPairs %>% select(GeneName=ThreeGene)),'~/logs/known_pair_genes.csv',row.names = F,quote = F)
+
+combinedKnownFusions = newKnownPairs %>% mutate(Type='KNOWN_PAIR',PubMedId=as.character(PubMedId),OtherData='') %>% 
+  select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData)
+
+View(combinedKnownFusions)
+
+combinedKnownFusions = rbind(combinedKnownFusions,
+                             newProms %>% filter(Stream=='Up') %>% mutate(Type='PROMISCUOUS_5',FiveGene=GeneName,ThreeGene='',PubMedId='',OtherData='') %>%
+                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
+
+combinedKnownFusions = rbind(combinedKnownFusions,
+                             newProms %>% filter(Stream=='Down') %>% mutate(Type='PROMISCUOUS_3',FiveGene='',ThreeGene=GeneName,PubMedId='',OtherData='') %>%
+                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
+
+combinedKnownFusions = rbind(combinedKnownFusions,igGenes)
+
+combinedKnownFusions = rbind(combinedKnownFusions,
+                             exonDelDups %>% mutate(Type='EXON_DEL_DUP',PubMedId='',
+                                                    FiveGene=Gene,ThreeGene=Gene,
+                                                    OtherData=sprintf('%s;%d;%d;%d;%d',Transcript,MinFusedExonStart,MaxFusedExonStart,MinFusedExonEnd,MaxFusedExonEnd)) %>%
+                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
+
+View(combinedKnownFusions)
+write.csv(combinedKnownFusions,'~/data/sv/known_fusion_data.csv',row.names = F, quote=F)
+
+
+# write in old-style format
+write.csv(newKnownPairs %>% select(FiveGene,ThreeGene),'~/data/sv/knownFusionPairs_20200603.csv',row.names = F, quote=F)
+
+# known and promiscuous genes for impact of expression on fusions
+expGenes = combinedKnownFusions %>% select(GeneName=FiveGene)
+expGenes = rbind(expGenes,combinedKnownFusions %>% select(GeneName=ThreeGene))
+expGenes = merge(ensemblGeneData %>% select(GeneId,GeneName),expGenes,by='GeneName',all.y=T)
+
+write.csv(expGenes %>% group_by(GeneId,GeneName) %>% count %>% select(GeneId,GeneName),
+          '~/data/sv/fusions/known_gene_ids.csv',row.names = F, quote=F)
+
+
+
+
+
+######
+## Fusion Comparisons
+
+sampleIds = read.csv('~/data/sv/fusions/sample_ids_3909.csv')
+nrow(sampleIds)
+oldFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS_old_5200.csv')
+#oldFusions = oldFusions %>% filter(SampleId %in% sampleIds$SampleId)
+nrow(oldFusions)
+nrow(oldFusions %>% group_by(SampleId) %>% count)
+
+# make known types comparable
+View(oldFusions %>% group_by(KnownType) %>% count)
+oldFusions = oldFusions %>% mutate(KnownType=ifelse(KnownType=='3P-Prom','PROMISCUOUS_3',
+                                                    ifelse(KnownType=='5P-Prom','PROMISCUOUS_5',
+                                                           ifelse(KnownType=='Both-Prom','PROMISCUOUS_BOTH',
+                                                                  ifelse(KnownType=='Known','KNOWN_PAIR','NONE')))))
+View(oldFusions %>% group_by(KnownType) %>% count)
+
+
+newFusions = read.csv('~/data/sv/fusions/LNX_FUSIONS_new_5200.csv')
+# newFusions = newFusionsAll %>% filter(SampleId %in% sampleIds$SampleId)
+nrow(newFusions %>% group_by(SampleId) %>% count)
+View(newFusions %>% group_by(KnownType) %>% count)
+nrow(newFusions)
+View(newFusions)
+View(newFusions %>% filter(GeneNameUp=='PAX8'))
+
+# clean-up
+rm(oldFusions)
+rm(newFusions)
+rm(newFusionsAll)
+rm(cmpFusionsNew)
+rm(cmpFusionsOld)
+
+dnaFusionGeneExp = read.csv('~/data/rna/fusions/isofox_linx_up_genes.sample_gene_perc_data.csv')
+View(dnaFusionGeneExp)
+
+# difference in reportable fusions from POV of new fusions
+cmpFusionsNew = merge(newFusions,oldFusions %>% select(SampleId,ReportableOld=Reportable,KnownTypeOld=KnownType,GeneIdUp,GeneIdDown),
+                      by=c('SampleId','GeneIdUp','GeneIdDown'),all.x=T)
+
+cmpFusionsNew = merge(cmpFusionsNew,dnaFusionGeneExp %>% select(SampleId,GeneIdUp=GeneId,TPM),by=c('SampleId','GeneIdUp'),all.x=T)
+cmpFusionsNew = cmpFusionsNew %>% mutate(TPM=ifelse(is.na(TPM),0,round(TPM,1)))
+cmpFusionsNew = cmpFusionsNew %>% mutate(TPM=round(TPM,1))
+
+cmpFusionsNewRep = cmpFusionsNew %>% filter(Reportable=='true') %>% 
+  filter(!(!is.na(ReportableOld)&ReportableOld==Reportable&!is.na(KnownTypeOld)&as.character(KnownType)==as.character(KnownTypeOld))) %>%
+  select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownType,KnownTypeOld,TPM,
+         SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything())
+
+nrow(cmpFusionsNewRep) # 137
+View(cmpFusionsNewRep)
+View(cmpFusionsNewRep %>% group_by(ReportableOld,KnownType,KnownTypeOld) %>% count)
+View(cmpFusionsNewRep %>% group_by(GeneNameUp,GeneNameDown) %>% 
+       summarise(Fusions=n(),ReportableOld=first(ReportableOld),KnownType=first(KnownType),KnownTypeOld=first(KnownTypeOld)))
+
+View(cmpFusionsNewRep %>% filter(KnownType!='IG_KNOWN_PAIR'&KnownType!='IG_PROMISCUOUS') %>% group_by(TpmBucket=ifelse(TPM==0,0,10**round(log(TPM,10)))) %>% count)
+
+
+write.csv(cmpFusionsNewRep,'~/data/sv/fusions/linx_reportable_changes_new.csv',row.names = F,quote = F)
+
+# difference in reportable fusions from POV of old fusions
+cmpFusionsOld = merge(oldFusions,newFusions %>% select(SampleId,ReportableNew=Reportable,KnownTypeNew=KnownType,GeneIdUp,GeneIdDown),
+                      by=c('SampleId','GeneIdUp','GeneIdDown'),all.x=T)
+
+cmpFusionsOld = merge(cmpFusionsOld,dnaFusionGeneExp %>% select(SampleId,GeneIdUp=GeneId,TPM),by=c('SampleId','GeneIdUp'),all.x=T)
+
+cmpFusionsOld = cmpFusionsOld %>% mutate(TPM=ifelse(is.na(TPM),0,round(TPM,1)))
+
+cmpFusionsOldRep = cmpFusionsOld %>% filter(Reportable=='true') %>% 
+  filter(!(!is.na(ReportableNew)&ReportableNew==Reportable)) %>%
+  select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableNew,KnownType,KnownTypeNew,TPM,
+         SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything())
+
+View(cmpFusionsOldRep) # 126
+View(cmpFusionsOldRep %>% group_by(ReportableNew,KnownType,KnownTypeNew) %>% count)
+View(cmpFusionsOldRep %>% group_by(GeneNameUp,GeneNameDown) %>% 
+       summarise(Fusions=n(),ReportableNew=first(ReportableNew),KnownType=first(KnownType),KnownTypeNew=first(KnownTypeNew)))
+
+View(cmpFusionsOldRep %>% group_by(TpmBucket=ifelse(TPM==0,0,10**round(log(TPM,10)))) %>% count)
+
+write.csv(cmpFusionsOldRep,'~/data/sv/fusions/linx_reportable_changes_old.csv',row.names = F,quote = F)
+
+
+knownFusionData = read.csv('~/data/sv/known_fusion_data.csv')
+View(knownFusionData)
+
+oldKnownPairs = read.csv('~/data/knownFusionPairs.csv')
+View(oldKnownPairs)
+oldProm5 = read.csv('~/data/knownPromiscuousFive.csv')
+oldProm3 = read.csv('~/data/knownPromiscuousThree.csv')
+oldKnownFusionData = oldKnownPairs %>% mutate(Type='KNOWN_PAIR') %>% select(Type,FiveGene=fiveGene,ThreeGene=threeGene)
+oldKnownFusionData = rbind(oldKnownFusionData,oldProm5 %>% mutate(Type='PROMISCUOUS_5',ThreeGene='') %>% select(Type,FiveGene=GeneName,ThreeGene))
+oldKnownFusionData = rbind(oldKnownFusionData,oldProm3 %>% mutate(Type='PROMISCUOUS_3',FiveGene='') %>% select(Type,FiveGene,ThreeGene=GeneName))
+View(oldKnownFusionData)
+
+knownFusionChanges = merge(knownFusionData,oldKnownFusionData %>% mutate(IsOld=TRUE),by=c('Type','FiveGene','ThreeGene'),all=T)
+knownFusionChanges = knownFusionChanges %>% mutate(RefDataChanges=ifelse(is.na(IsOld),'NEW_REF',ifelse(is.na(PubMedId),'OLD_REF','MATCH')))
+View(knownFusionChanges)
+
+# de-deup
+knownFusionChanges = knownFusionChanges %>% group_by(Type,FiveGene,ThreeGene,RefDataChanges) %>% count
+View(knownFusionChanges)
+
+
+
+# link to old and new reference data
+#cmpFusionsNew = merge(cmpFusionsNew,knownFusionChanges %>% select(KnownType=Type,GeneNameUp=FiveGene,GeneNameDown=ThreeGene,KnownPairRef=RefDataChanges),
+#                      by=c('KnownType','GeneNameUp','GeneNameDown'),all.x=T)
+
+View(cmpFusionsNew %>% 
+       filter(!(!is.na(KnownTypeOld)&KnownType==KnownTypeOld)) %>%
+       filter(!(is.na(KnownTypeOld)&KnownType=='NONE')) %>%
+       group_by(GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownType,KnownTypeOld) %>% count)
+
+
+View(cmpFusionsNew %>% select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownPairRef,KnownType,KnownTypeOld))
+nrow(cmpFusionsNew %>% filter(!is.na(ReportableOld)))
+nrow(cmpFusionsNew %>% filter(!is.na(ReportableOld)&ReportableOld!=Reportable))
+nrow(cmpFusionsNew %>% filter(!is.na(KnownTypeOld)&as.character(KnownTypeOld)!=as.character(KnownType)))
+
+View(cmpFusionsNew %>% filter(Reportable=='true') %>% group_by(GeneNameUp,GeneNameDown,KnownType,TypeUp,TypeDown) %>% count)
+
+# changes to reportable fusions
+View(cmpFusionsNew %>% filter((!is.na(ReportableOld)&ReportableOld!=Reportable)|(is.na(ReportableOld)&Reportable=='true')) %>% 
+       select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,RefDataChanges,KnownType,KnownTypeOld,SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything()))
+
+View(cmpFusionsNew %>% filter((!is.na(ReportableOld)&ReportableOld!=Reportable)|Reportable=='true') %>% 
+       select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownType,KnownTypeOld,SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything()))
+
+View(cmpFusionsNew %>% filter(!is.na(KnownTypeOld)&KnownTypeOld!=KnownType) %>% 
+       select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownType,KnownTypeOld,SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything()))
+
+
+View(cmpFusionsNew %>% filter(!is.na(KnownTypeOld)&KnownTypeOld!=KnownType) %>% 
+       select(SampleId,GeneNameUp,GeneNameDown,Reportable,ReportableOld,KnownType,KnownTypeOld,SvIdUp,SvIdDown,ClusterId,ResolvedType,PhaseMatched,everything()))
+
+
+
+View(newFusions %>% filter(GeneNameUp=='A4GNT'&GeneNameDown=='ARMC8'))
+View(oldFusions %>% filter(GeneNameUp=='A4GNT'&GeneNameDown=='ARMC8'))
+View(oldFusions %>% filter(SampleId=='CPCT02011051T'&SvIdUp==111))
 
 
 

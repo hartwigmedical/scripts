@@ -17,6 +17,39 @@ load_cancer_types<-function(sourceFile,keepSubtypes=T,minSampleCount=10)
   return (sampleCancerTypes)
 }
 
+convert_to_major_cancer_types<-function(sampleCancerData,minSampleCount)
+{
+  samplesPerCT = sampleCancerData %>% group_by(CancerType) %>% count
+  majorTypes = samplesPerCT %>% filter(n>=minSampleCount)
+  sampleCancerData = sampleCancerData %>% mutate(CancerType=ifelse(CancerType %in% majorTypes$CancerType,as.character(CancerType),'Other'))
+  return (sampleCancerData)
+}
+
+
+# Extract Cancer Type from Database
+
+# 1. Query
+# select sampleId, hmfPatientId, primaryTumorLocation, cancerSubtype
+# from clinical
+# where sampleId in (select sampleId from purity where qcStatus = 'PASS' AND status <> 'NO_TUMOR' and purity >= 0.195);
+
+# 2. Convert commas, remove white space, capitalise
+
+# 3. Headers: SampleId,HmfPatientId,PrimaryTumorLocation,CancerSubtype
+
+sampleData = read.csv('~/data/sample_cancer_types_4500.csv') # taken Jun 15th 2020
+nrow(sampleData) # 4513
+
+# Sample de-dup
+View(sampleData %>% group_by(HmfPatientId) %>% summarise(Samples=n(),FirstSample=first(SampleId),SecondSample=last(SampleId)) %>% filter(Samples>=2))
+sampleDedupSummary = sampleData %>% group_by(HmfPatientId) %>% summarise(Samples=n(),SampleId=first(SampleId))
+nrow(sampleDedupSummary) # 4169
+View(sampleDedupSummary)
+
+
+
+
+
 # load current cancer type assignments for 3784 samples
 sampleCancerTypes = load_cancer_types('~/data/hpc_sample_cancer_types.csv',F,10)
 nrow(sampleCancerTypes)

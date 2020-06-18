@@ -1,5 +1,5 @@
 #########
-## SGLs going to Centromeres or Telomeres
+## SGLs to Centromeres
 
 tcColours = c('powderblue','steelblue2','steelblue3','steelblue','steelblue4','blue')
 
@@ -10,7 +10,6 @@ sampleCancerTypes = load_cancer_types('~/data/hpc_sample_cancer_types.csv',F,10)
 centroLengths = read.csv('~/data/sv/chr_cento_lengths.csv')
 
 
-## Centromeric SGLs
 sglCentros = svData %>% filter(Type=='SGL'&(RepeatClass=='Satellite/centr'|RepeatType=='HSATII'))  
 View(sglCentros)
 
@@ -121,29 +120,35 @@ load_blat_results<-function(blatFile)
 }
 
 tmp = load_blat_results('~/dev/blat/output.csv')
+tmp = read.csv(paste(blatResultsDir,'sgl_centro_results_00.csv',sep=''))
+tmp = load_blat_results(paste(blatResultsDir,'test.csv',sep=''))
+
 View(tmp)
 
-filteredBlatResults_00 = load_blat_results('~/data/sv/sgl_centro_results_00.csv')
-filteredBlatResults_01 = load_blat_results('~/data/sv/sgl_centro_results_01.csv')
+blatResultsDir = '~/data/sv/sgl_blat/'
+
+filteredBlatResults_00 = load_blat_results(paste(blatResultsDir,'sgl_centro_results_00.csv',sep=''))
+filteredBlatResults_01 = load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_01.csv')
 # nrow(filteredBlatResults_01)
 # View(filteredBlatResults_01)
 # some of the first results overlapped with 01
 filteredBlatResults_00 = filteredBlatResults_00 %>% filter(!(QName %in% filteredBlatResults_01$QName))
 filteredBlatResults = rbind(filteredBlatResults_00,filteredBlatResults_01)
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_02.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_03.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_04.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_05.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_06.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_07.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_08.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_09.csv'))
-filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_centro_results_10.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_02.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_03.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_04.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_05.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_06.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_07.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_08.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_09.csv'))
+filteredBlatResults = rbind(filteredBlatResults,load_blat_results('~/data/sv/sgl_blat/sgl_centro_results_10.csv'))
 nrow(filteredBlatResults) # 220K
 
 # check for duplicates
 nrow(filteredBlatResults %>% group_by(QName,TName) %>% count %>% filter(n>1))
-write.csv(filteredBlatResults,'~/data/sv/sgl_centro_blat_results.csv',row.names = F, quote = F)
+write.csv(filteredBlatResults,'~/data/sv/sgl_blat/sgl_centro_blat_results.csv',row.names = F, quote = F)
+filteredBlatResults = read.csv('~/data/sv/sgl_centro_blat_results.csv')
 
 View(filteredBlatResults)
 
@@ -173,7 +178,7 @@ sglCentroData$CentroChr = stri_replace_all_fixed(sglCentroData$CentroChr,'chr','
 
 sglCentroData = sglCentroData %>% filter(SampleId %in% sampleCancerTypes$SampleId)
 
-nrow(sglCentros)
+nrow(sglCentros) # 25K
 View(sglCentros %>% group_by(CentroType) %>% count)
 View(sglCentroData %>% group_by(HighConf) %>% count)
 
@@ -193,7 +198,8 @@ sglCentroSvData = merge(sglCentroData,
 
 View(sglCentroSvData)
 
-# merge in centromere CN changes
+# merge in centromere CN changes (sourced from SvCopyNumberArm.R)
+
 sglCentroSvData = merge(sglCentroSvData,cnChrData %>% select(SampleId,Chromosome,CentroCnP,CentroCnQ,PCentroGain,QCentroGain,CentroCNChg),
                         by.x=c('SampleId','CentroChr'),by.y=c('SampleId','Chromosome'),all.x=T)
 
@@ -424,15 +430,20 @@ for(chr in unique(centroGainSglData$Chromosome))
   results = rbind(results,tmp)
 }
 
+View(results)
+# View(tmp)
+
 results = results %>% mutate(WithSglRate=round(Both/HasSGLs,3),
                              NoSglRate=round(NoHasSGLsWithHasCentroGain/(All-HasSGLs),3))
 
+write.csv(results,'~/data/sv/sgl_blat/sgl_centro_comparison_rates.csv',row.names = F,quote = F)
 View(results %>% select(WithSglRate,NoSglRate,everything()))
 
 resultsPlot = results %>% select(Chromosome=Test,WithSGLs=WithSglRate,WithoutSGLs=NoSglRate)
 resultsPlot = resultsPlot %>% gather('RateOfCentromericGain','Rate',2:3)
 resultsPlot = merge(resultsPlot,chrIndex,by='Chromosome',all.x=T)
 View(resultsPlot)
+View(resultsPlot %>% group_by(Chromosome) %>% summarise(Perc=sum(Rate)))
 
 ## cohort plot
 print(ggplot(resultsPlot, aes(x=reorder(Chromosome,ChrIndex),y=Rate,fill=RateOfCentromericGain))
@@ -470,6 +481,9 @@ for(i in 1:nrow(centroLengths))
 
 View(chrPosBuckets)
 View(chrPosBuckets %>% group_by(Chromosome) %>% count)
+
+View(sglCentroSvData)
+write.csv(sglCentroSvData,'~/data/sv/sgl_blat/sgl_centro_sv_data.csv',row.names = F,quote = F)
 
 data4 = sglCentroSvData %>% filter(CentroChr==ChrStart) %>% mutate(PosBucket=round(PosStart/1e6)) %>% 
   group_by(ChrStart,PosBucket) %>% count
@@ -940,7 +954,7 @@ unbalTrans = unbalTrans %>% group_by(SampleId,Chr,Arm) %>% summarise(UnbalTransC
 View(unbalTrans)
 
 
-nrow(cnChrData)
+nrow(cnChrData) #88K
 View(cnChrData)
 cnChrSvData = merge(cnChrData,unbalTrans %>% filter(Arm=='P') %>% select(SampleId,Chromosome=Chr,UnbalTransP=UnbalTransCount),
                     by=c('SampleId','Chromosome'),all.x=T)
@@ -1020,6 +1034,69 @@ View(cnChrSvData %>% group_by(PCentroGain|QCentroGain,HasSglCentro=SglCentroQ+Sg
 
 View(cnChrSvData %>% filter(!Chromosome %in% c(13,14,15,21,22,'X','Y')) %>% group_by(PCentroGain|QCentroGain,HasFB=FoldbacksQ>0|FoldbacksP>0,HasCMP=CmpEventQ>0|CmpEventP>0,HasSglCentro=SglCentroQ+SglCentroP) %>% count() %>% spread(HasSglCentro,n))
 View(cnChrSvData %>% filter(!Chromosome %in% c(13,14,15,21,22,'X','Y')) %>% group_by(PCentroGain|QCentroGain,HasFB=FoldbacksQ>0|FoldbacksP>0,HasCMP=CmpEventQ>0|CmpEventP>0,HasSglCentro=SglCentroQ+SglCentroP==1) %>% count() %>% spread(HasSglCentro,n))
+
+
+
+##### Functions
+
+calc_fisher_et<-function(allSamples,g1Samples,g2Samples,g1Name,g2Name,log=T,returnDF=F,testLabel='')
+{
+  scAll = nrow(allSamples)
+  scWithG1 = nrow(g1Samples)
+  scWithG2 = nrow(g2Samples)
+  scWithG1WithG2 = nrow(g1Samples %>% filter(SampleId %in% g2Samples$SampleId))
+  scNoG1NoG2 = nrow(allSamples %>% filter(!(SampleId %in% g1Samples$SampleId)&!(SampleId %in% g2Samples$SampleId)))
+  
+  scWithG1NoG2 = nrow(g1Samples %>% filter(!(SampleId %in% g2Samples$SampleId)))
+  scNoG1WithG2 = nrow(g2Samples %>% filter(!(SampleId %in% g1Samples$SampleId)))
+  
+  fishMatrix = rbind(c(scWithG1WithG2,scNoG1WithG2), c(scWithG1NoG2,scNoG1NoG2))
+  
+  # expected count of this Cancer within enriched samples
+  expected = round(scWithG1 * scWithG2 / scAll, 2)
+  fetProb = fisher.test(fishMatrix, alternative="greater")$p.value
+  
+  if(log)
+  {
+    print(sprintf("all=%d with%s=%d with%s=%d both=%d neither=%d with%sNo%s=%d no%sWith%s=%d", 
+                  scAll,g1Name,scWithG1,g2Name,scWithG2,scWithG1WithG2,scNoG1NoG2,
+                  g1Name,g2Name,scWithG1NoG2,g1Name,g2Name,scNoG1WithG2))
+    
+    print(sprintf("expected=%.2f prob=%f",expected, fetProb))
+  }
+  
+  if(returnDF)
+  {
+    result = data.frame(matrix(ncol = 10, nrow = 0))
+    colnames(result) = c('Test','All',g1Name,g2Name,'Both','Neither',
+                         sprintf('With%sNo%s',g1Name,g2Name),sprintf('No%sWith%s',g1Name,g2Name),'Expected','Prob')
+    result[1,1] = testLabel
+    result[1,2] = scAll
+    result[1,3] = scWithG1
+    result[1,4] = scWithG2
+    result[1,5] = scWithG1WithG2
+    result[1,6] = scNoG1NoG2
+    result[1,7] = scWithG1NoG2
+    result[1,8] = scNoG1WithG2
+    result[1,9] = expected
+    result[1,10] = fetProb
+    
+    return (result)
+  }
+  
+  return (fetProb)
+}
+
+
+
+# foldbacks by arm
+fbStart = svData %>% filter(FoldbackLenStart>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrStart,Arm=ArmStart,FoldbackLength=FoldbackLenStart,OtherId=FoldbackLnkStart)
+fbEnd = svData %>% filter(FoldbackLenEnd>=0) %>% select(SampleId,Id,ClusterId,Chr=ChrEnd,Arm=ArmEnd,FoldbackLength=FoldbackLenEnd,OtherId=FoldbackLnkEnd)
+foldbacks = rbind(fbStart,fbEnd)
+View(foldbacks)
+foldbacks = foldbacks %>% mutate(IsChained=(OtherId!=Id),
+                                 SingleBreakend=(OtherId==Id&FoldbackLength==0),
+                                 FoldbackId=ifelse(Id<OtherId,Id,OtherId))
 
 
 

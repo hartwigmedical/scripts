@@ -475,7 +475,7 @@ driverAMPReport<-function(summaryData,fileName)
   dev.off()
 }
 
-driverAMPReport(ampSummary,'driver_amp_new')
+driverAMPReport(ampSummary,'driver_amp_linx_paper')
 
 write.csv(ampSummary,'~/data/sv/drivers/amp_summary.csv',row.names = F, quote = F)
 

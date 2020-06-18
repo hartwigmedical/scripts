@@ -13,6 +13,85 @@ View(utSampleData %>% group_by(AHRMutationType,HasAHRMutation) %>% count)
 
 write.csv(utSampleData %>% select(SampleId), '~/logs/ut_sample_ids.csv',row.names = F,quote = F)
 
+View(utSampleData %>% group_by(SampleId) %>% summarise(MutType=first(AHRMutationType)))
+View(utSampleData %>% group_by(SampleId) %>% summarise(MutType=first(AHRMutationType)) %>% group_by(MutType) %>% count)
+
+
+utGenePanelExp = read.csv('~/data/rna/cohort/isofox_ut.sample_gene_perc_data.csv')
+View(utGenePanelExp)
+
+utAhrExp = utGenePanelExp %>% filter(GeneName=='AHR')
+nrow(utAhrExp)
+View(utAhrExp %>% arrange(TPM))
+View(utAhrExp %>% group_by(SampleId) %>% count)
+utAhrExp = merge(utAhrExp,utSampleData %>% select(SampleId,AHRMutationType),by='SampleId',all.x=T)
+utAhrExp = utAhrExp %>% mutate(AHRMutationType=ifelse(is.na(AHRMutationType),'NONE',as.character(AHRMutationType)))
+
+View(utAhrExp %>% group_by(AHRMutationType) %>% 
+       summarise(Samples=n(),MinTPM=min(TPM),MedianTPM=median(TPM),MaxTPM=max(TPM),
+                 MinPerc=min(CancerPercentile),MedianPerc=median(CancerPercentile),MaxPerc=max(CancerPercentile)))
+
+
+write.csv(utAhrExp %>% arrange(TPM) %>% select(-GeneId), '~/data/rna/cohort/ut_ahr_tpm_vs_cohort.csv',row.names = F, quote = F)
+
+
+## co-occurrence of gene expression with AHR mutation (Fusion and AMP)
+
+utGenePanelExp = merge(utGenePanelExp,utSampleData %>% select(SampleId,AHRMutationType),by='SampleId',all.x=T)
+utGenePanelExp = utGenePanelExp %>% mutate(AHRMutationType=ifelse(is.na(AHRMutationType),'NONE',as.character(AHRMutationType)))
+
+# define high relative expression as >= 90th percentile, low as <= 10th percentile
+View(utGenePanelExp)
+
+# testing
+utGenePanelExp = utGenePanelExp %>% mutate(PercBand=ifelse(CancerPercentile<=10,'Low',ifelse(CancerPercentile>=90,'High','Middle')))
+
+View(genesList)
+geneName='HRAS'
+geneExpData = utGenePanelExp %>% filter(GeneName==geneName)
+nrow(geneExpData)
+mutationType='AMP'
+samplesWithMutation = geneExpData %>% filter(AHRMutationType==mutationType)
+band='High'
+samplesInBand = geneExpData %>% filter(PercBand==band)
+testName=sprintf("%s-%s-%s",geneName,mutationType,band)
+utResults = calc_fisher_et(geneExpData,samplesWithMutation,samplesInBand,"Mutation","Band",log=T,returnDF=T,testLabel=testName)
+View(utResults)
+
+utResults = data.frame()
+
+mutationTypes = c('AMP','FUSION')
+bands = c('High','Low')
+genesList = unique(utGenePanelExp$GeneName)
+
+for(mutationType in mutationTypes)
+{
+  for(band in bands)
+  {
+    for(geneName in genesList)
+    {
+      geneExpData = utGenePanelExp %>% filter(GeneName==geneName)
+      samplesWithMutation = geneExpData %>% filter(AHRMutationType==mutationType)
+      samplesInBand = geneExpData %>% filter(PercBand==band)
+      testName=sprintf("%s-%s-%s",geneName,mutationType,band)
+      geneResult = calc_fisher_et(geneExpData,samplesWithMutation,samplesInBand,"Mutation","Band",log=F,returnDF=T,testLabel=testName)
+      
+      if(nrow(utResults) == 0)
+        utResults = geneResult
+      else
+        utResults = rbind(utResults,geneResult)
+    }
+  }
+}
+
+View(utResults)
+
+
+
+e
+
+
+
 
 # driver catalog
 utDrivers = read.csv('~/data/ut_ahr_driver_catalog.csv')

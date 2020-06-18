@@ -136,7 +136,7 @@ hpcDedupedSamples = read.csv('~/data/sv/hpc_non_dup_sample_ids.csv')
 # View(hpcDedupedSamples)
 #View(highestPurityCohort)
 
-rnaMatchData = load_rna_match_data('~/data/sv/rna/LNX_RNA_DATA.csv')
+rnaMatchData = load_rna_match_data('~/data/rna/fusions/LNX_RNA_DATA.csv')
 
 rnaSampleIds = read.csv('~/data/sv/rna/rna_starfusion_sample_ids.csv')
 
@@ -151,14 +151,14 @@ rnaMatchData = rnaMatchData %>% filter(SampleId!='CPCT02330014T')
 rnaMatchData = rnaMatchData %>% filter(SampleId %in% hpcDedupedSamples$sampleId)
 
 # add RNA biotype to help where no DNA is found
-transExonData = read.csv('~/data/sv/ensembl_trans_exon_data.csv') 
-colnames(transExonData)
-transData = transExonData %>% group_by(GeneId,TransId,StableId=Trans) %>% 
-  summarise(Strand=first(Strand),BioType=first(BioType),IsCanonical=first(CanonicalTranscriptId)==first(TransId),
-            TransStart=first(TransStart),TransEnd=first(TransEnd),CodingStart=first(CodingStart),CodingEnd=first(CodingEnd)) %>% ungroup()
+#transExonData = read.csv('~/data/sv/ensembl_trans_exon_data.csv') 
+#colnames(transExonData)
+#transData = transExonData %>% group_by(GeneId,TransId,StableId=Trans) %>% 
+#  summarise(Strand=first(Strand),BioType=first(BioType),IsCanonical=first(CanonicalTranscriptId)==first(TransId),
+#            TransStart=first(TransStart),TransEnd=first(TransEnd),CodingStart=first(CodingStart),CodingEnd=first(CodingEnd)) %>% ungroup()
 
-View(transData)
-write.csv(transData,'~/data/sv/ensembl_trans_data.csv',row.names=F, quote=F)
+#View(transData)
+#write.csv(transData,'~/data/sv/ensembl_trans_data.csv',row.names=F, quote=F)
 transData = read.csv('~/data/sv/ensembl_trans_data.csv')
 
 # View(transBiotypes)
@@ -174,14 +174,13 @@ rnaMatchData = merge(rnaMatchData,transData %>% mutate(RnaTransIdDown=StableId,R
 # Matching with SVA Fusion data
 
 # load all fusions found for the 630 samples with RNA
-svaRnaFusions = read.csv('~/data/sv/rna/LNX_FUSIONS.csv')
+svaRnaFusions = read.csv('~/data/rna/fusions/LNX_FUSIONS.csv')
 svaRnaFusions = annotate_fusions(svaRnaFusions)
 svaRnaFusions = svaRnaFusions %>% filter(SampleId %in% hpcDedupedSamples$sampleId)
 
 svaRnaFusions = svaRnaFusions %>% filter(PhaseMatched=='true')
 
 nrow(svaRnaFusions) # 12149 -> 10760 (27-11-19), 11652 (08-12-19)
-# 10275 with old priority scheme
 
 #View(svaRnaFusions)
 
@@ -229,8 +228,8 @@ dnaRnaCombinedData = dnaRnaCombinedData %>% filter(!(HasRnaData&RnaPhaseMatched=
 # and filter out if both RNA and DNA are unphased
 dnaRnaCombinedData = dnaRnaCombinedData %>% filter(!(PhaseMatched.x=='false'&RnaPhaseMatched=='false'))
 
-# convert RNA with DNA Support to be classified as RNA only
-dnaRnaCombinedData = dnaRnaCombinedData %>% mutate(MatchType=ifelse(MatchType=='RNA with DNA Support','RNA Only',MatchType))
+# convert RNA with DNA Support to be classified as RNA only - deprecated, see above since is only in OldMatchCategory
+# dnaRnaCombinedData = dnaRnaCombinedData %>% mutate(MatchType=ifelse(MatchType=='RNA with DNA Support','RNA Only',MatchType))
 
 # filter out same-gene fusions
 dnaRnaCombinedData = dnaRnaCombinedData %>% filter(!SameGeneFusion)
