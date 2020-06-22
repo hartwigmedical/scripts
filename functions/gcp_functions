@@ -4,6 +4,10 @@ switch_to_hmf_download_service_account() {
     gcp_set_account "hmf-download@hmf-database.iam.gserviceaccount.com"
 }
 
+switch_to_hmf_ops_service_account() {
+    gcp_set_account "hmf-ops@hmf-database.iam.gserviceaccount.com"
+}
+
 gcp_set_account() {
     local account_name=$1 && shift
     gcloud config set account "${account_name}"
