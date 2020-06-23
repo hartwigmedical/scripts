@@ -28,21 +28,39 @@ use constant BOOLEAN_FIELDS => qw(
     add_to_database add_to_datarequest
 );
 
+## Setup help msg
+my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
+my $HELP_TEXT = <<"HELP";
+
+  Description
+    Parses LIMS text files (derived from excel and MS Access) and 
+    writes to JSON output.
+    
+  Usage
+    $SCRIPT -lims_dir /path/to/in/dir/ -out_json /path/to/out.json
+
+  Required params:
+    -lims_dir <str>  Path to dir with input files (eg /data/ops/lims/prod)
+    -out_json <str>  Path to output json (eg /data/tmp/lims.json)
+    
+HELP
+
+## Get input and setup all paths
 my %opt = ();
 GetOptions (
-    "out_dir=s"  => \$opt{ out_dir },
     "lims_dir=s" => \$opt{ lims_dir },
     "out_json=s" => \$opt{ out_json },
-    "execute"    => \$opt{ execute },
     "debug"      => \$opt{ debug },
     "help|h"     => \$opt{ help },
 ) or die("Error in command line arguments\n");
 
+die $HELP_TEXT if $opt{ help };
+die $HELP_TEXT unless $opt{ lims_dir };
+die $HELP_TEXT unless $opt{ out_json };
+
 my $CNTR_TSV = '/data/ops/lims/prod/center2entity.tsv';
-my $LIMS_DIR = $opt{lims_dir} || '/data/ops/lims/prod';
-my  $OUT_DIR = $opt{out_dir} || $LIMS_DIR;
-my $JSON_OUT = $opt{out_json} || $OUT_DIR . '/lims.json';
-my $BACK_DIR = $OUT_DIR . '/backup';
+my $LIMS_DIR = $opt{lims_dir};
+my $JSON_OUT = $opt{out_json};
 
 my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
 my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
@@ -67,65 +85,22 @@ my @ALL_INPUT_FILES = (
   $PROC_TSV_2017, $LIMS_JSN_2017
 );
 
-## setup help msg
-my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
-my $HELP_TEXT = <<"HELP";
+## Some final checks
 
-  Description
-    Parses LIMS excel/csv files and writes to JSON output.
-    One object in the json is one sample (by unique 
-    sample id/barcode).
-    
-  Usage
-    $SCRIPT -execute
-    
-  Input files that are used
-       centers: $CNTR_TSV
-     cpct lims: $CPCT_CSV
-     subm lims: $SUBM_TSV
-     samp lims: $SAMP_TSV
-     proc lims: $PROC_TSV
-     subm 2019: $SUBM_TSV_2019
-     samp 2019: $SAMP_TSV_2019
-     proc 2019: $PROC_TSV_2019
-     subm 2018: $SUBM_TSV_2018
-     samp 2018: $SAMP_TSV_2018
-     proc 2018: $PROC_TSV_2018
-     proc 2017: $PROC_TSV_2017
-     lims 2017: $LIMS_JSN_2017
-
-  Output files:
-    $JSON_OUT
-    
-  Options (only for testing):
-    -lims_dir <str>  Path to input lims dir ($LIMS_DIR)
-    -out_dir <str>   Path to output dir ($OUT_DIR)
-    -out_json <str>  Path to output json ($JSON_OUT)
-    
-HELP
-
-## ---------- 
-## INPUT CHECKS and BACKUP
-## ----------
-die $HELP_TEXT if $opt{ help };
-die $HELP_TEXT unless $opt{ execute };
-
-foreach ( $BACK_DIR, $OUT_DIR ){
-    die "[ERROR] Dir does not exist ($_)\n" unless -d $_;
+foreach ( $LIMS_DIR ){
+    die "[ERROR] Input dir does not exist ($_)\n" unless -e $_;
+    die "[ERROR] Input dir is not a directory ($_)\n" unless -d $_;
 }
 foreach ( @ALL_INPUT_FILES ){
-    die "[ERROR] File does not exist ($_)\n" unless -f $_;
+    die "[ERROR] Ihput file does not exist ($_)\n" unless -f $_;
 }
 foreach ( $JSON_OUT ){
-    next unless -f $_;
-    copy( $_, "$BACK_DIR" ) or die "[ERROR] Backup of \"$_\" to $BACK_DIR failed: $!";
+    die "[ERROR] Output file exists and is not writable ($_)\n" if ( -f $_ and not -w $_ );
 }
-
     
 ## ---------- 
 ## MAIN
 ## ----------
-
 say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
