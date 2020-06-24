@@ -10,7 +10,7 @@ dir1='/data/common/snpcheck/'
 dir2='/data/gcp/snpcheckvcfupload/'
 gcp_bucket='hmf-snpcheck'
 gcp_subdir='snpcheckvcfs'
-gcp_key="/data/common/dbs/gcp_credentials/hmf-snpcheck"
+gcp_key="/data/common/dbs/gcp_credentials/hmf-ops"
 
 echo ""
 echo "[INFO] Searching for SNPcheck VCFs at ${dir1} (with filter \"${search}\")"
