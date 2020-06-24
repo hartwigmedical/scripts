@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 gcp_url=$1
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-share"
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-ops"
 
 if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
     echo "Usage: $(basename $0) gs://bucket/path/to_file" && exit 1
