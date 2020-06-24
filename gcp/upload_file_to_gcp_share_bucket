@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 file_to_upload=$1 && shift
-bucket='hmf-share'
+bucket='hmf-share-services'
 
 if [[ -z "${file_to_upload}" ]]; then echo "[ERROR] No file provided to upload" && exit 1; fi
 if [[ ! -f "${file_to_upload}" ]]; then echo "[ERROR] Not a file: (${file_to_upload})" && exit 1; fi
