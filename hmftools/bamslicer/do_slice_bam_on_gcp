@@ -14,7 +14,7 @@ fi
 
 bam_slicer_jar=/data/common/tools/bam-slicer_v1.5/bam-slicer.jar
 gcp_sign_url_script="generate_signed_gcp_url.py"
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-ops"
 ref_genome=$(locate_ref_genome_fasta_file)
 
 ## query run info

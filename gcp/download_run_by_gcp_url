@@ -16,7 +16,7 @@ echo "[INFO] Creating directory ${dest_path}"
 mkdir -p "${dest_path}"
 
 echo "[INFO] Switching to service account"
-switch_to_hmf_download_service_account
+switch_to_hmf_ops_service_account
 
 echo "[INFO] Downloading ${gcp_url} to ${download_path}"
 gsutil -u hmf-database -m rsync -r "${gcp_url}" "${dest_path}"

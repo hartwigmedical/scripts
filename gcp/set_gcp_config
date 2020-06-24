@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 gcp_project="hmf-database"
-gcp_account="hmf-download"
+gcp_account="hmf-ops"
 exclude_rgx='hmf-output-\d+|hmf-cram-'
 
 echo "## INFO: Setting GCP project to ${gcp_project} (ignore access WARNING)"

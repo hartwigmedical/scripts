@@ -27,5 +27,5 @@ mkdir -p ${dest_path}
 
 echo "[INFO] Downloading set ${set} from ${run_bucket} to ${download_path}"
 
-switch_to_hmf_download_service_account
+switch_to_hmf_ops_service_account
 gsutil -u hmf-database -m rsync -r gs://${run_bucket}/${set} ${dest_path}
