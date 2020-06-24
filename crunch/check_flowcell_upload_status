@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 flowcells_dir=/data1/illumina_data
-uploadlog_dir=/data/sbpuploadlogs
+uploadlog_dir=/data/bcl_upload_logs
 
 echo "# Checking upload status of flowcells"
 
