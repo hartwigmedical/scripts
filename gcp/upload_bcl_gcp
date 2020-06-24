@@ -21,7 +21,7 @@ api_dir=$2
 
 api_crt="${api_dir}/api.crt"
 api_key="${api_dir}/api.key"
-log_dir="/data/sbpuploadlogs"
+log_dir="/data/bcl_upload_logs"
 log_suffix="GCP_Uploaded.done"
 hostname=$(hostname)
 
