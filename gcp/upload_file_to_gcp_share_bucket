@@ -8,5 +8,5 @@ if [[ ! -f "${file_to_upload}" ]]; then echo "[ERROR] Not a file: (${file_to_upl
 
 echo "[INFO] Uploading file to GCP bucket ${bucket}"
 
-gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-share
+gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil cp -n ${file_to_upload} gs://${bucket}/
