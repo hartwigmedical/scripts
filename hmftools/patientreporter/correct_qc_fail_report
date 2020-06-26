@@ -1,32 +1,31 @@
 #!/usr/bin/env bash
 
-tumor_sample_or_run=$1 && shift
-report=$1 && shift
+tumor_sample_or_run_dir=$1 && shift
+qc_fail_reason=$1 && shift
 comments=$1 && shift
 
-if [[ -z "${tumor_sample_or_run}" ]]; then
-    echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
+if [[ -z "${tumor_sample_or_run_dir}" ]]; then
+    echo "[ERROR] No tumor sample or run dir provided. Exiting" && exit 1;
 fi
 
-if [[ -z "${report}" ]]; then
-    echo "[ERROR] No which qc fail report is provided. Exiting" && exit 1;
+if [[ -z "${qc_fail_reason}" ]]; then
+    echo "[ERROR] No QC fail reason provided. Exiting" && exit 1;
 fi
 
 if [[ -z "${comments}" ]]; then
     echo "[ERROR] No comments provided. Exiting" && exit 1;
 fi
 
-
-if [[ ${report} == "dna" ]]; then
-    dna_yield_insufficient_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "tissue" ]]; then
-    insufficient_tissue_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "post" ]]; then
-    post_analysis_fail_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "low_tumor" ]]; then
-    tumor_molecular_percentage_low_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "below_detection" ]]; then
-    below_detection_threshold_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
-elif [[ ${report} == "lab_failure" ]]; then
-    lab_failure_report ${tumor_sample_or_run} -comments "${comments}" -corrected_report "$@"
+if [[ ${qc_fail_reason} == "insufficient_dna" ]]; then
+    insufficient_dna_report ${tumor_sample_or_run_dir} -comments "${comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "sufficient_tcp_qc_failure" ]]; then
+    sufficient_tcp_qc_failure_report ${tumor_sample_or_run_dir} -comments "${comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "insufficient_tcp_shallow_wgs" ]]; then
+    insufficient_tcp_shallow_wgs_report ${tumor_sample_or_run_dir} -comments "${comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "insufficient_tcp_deep_wgs" ]]; then
+    insufficient_tcp_deep_wgs_report ${tumor_sample_or_run_dir} -comments "${comments}" -corrected_report "$@"
+elif [[ ${qc_fail_reason} == "technical_failure" ]]; then
+    technical_failure_report ${tumor_sample_or_run_dir} -comments "${comments}" -corrected_report "$@"
+else
+    echo "[WARN] Did not recognize QC Fail reason: ${qc_fail_reason}. Skipping"
 fi
