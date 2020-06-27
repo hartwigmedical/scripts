@@ -33,4 +33,4 @@ fi
 # -d = delete files on GS that no longer exist on datastore
 # -e = exclude symlinks to go to GS
 # -r = Recursive
-gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-archive/${remote_archive_dir}
+gsutil -u hmf-database -m rsync -d -r -e ${local_path} gs://hmf-backup-archive/${remote_archive_dir}
