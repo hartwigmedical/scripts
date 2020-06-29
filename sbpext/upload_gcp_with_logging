@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-/data/repos/scripts/sbpext/upload_gcp $1 $2 > $2/logs/upload_$(date +%Y%m%d%H%M) 2>&1
