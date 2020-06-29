@@ -1,6 +1,6 @@
 SELECT
-DISTINCT patientId AS '#patientId'
+    DISTINCT patientId AS '#patientId'
 FROM
-datarequest
-WHERE concatenatedTreatmentType like "%Targeted therapy%"
+    datarequest
+WHERE concatenatedTreatmentType LIKE "%Targeted therapy%"
 ORDER BY 1;
