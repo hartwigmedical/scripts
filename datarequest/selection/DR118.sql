@@ -1,6 +1,6 @@
 SELECT
-DISTINCT patientId AS '#patientId'
+    DISTINCT patientId AS '#patientId'
 FROM
-datarequest
+    datarequest
 WHERE primaryTumorLocation = 'Breast'
 ORDER BY 1;

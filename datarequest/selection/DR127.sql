@@ -1,7 +1,7 @@
 SELECT
-DISTINCT patientId AS '#patientId'
+    DISTINCT patientId AS '#patientId'
 FROM
-datarequest
+    datarequest
 WHERE primaryTumorLocation = 'Prostate'
 AND (preTreatments REGEXP 'Abirateron|Enzalutamide' OR treatment REGEXP 'Abirateron|Enzalutamide')
 ORDER BY 1;
