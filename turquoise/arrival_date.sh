@@ -19,7 +19,7 @@ process_events() {
   
     # Could use the analysis type rather than the sample source to cut out the shallowseq for instance
     jq -cr ".samples | .[] | select(.sample_source != null) | select(.sample_source | test (\"DNA\")) | select(.${field_name} \
-        | test(\"^20.*\")) | select(.sample_name | test(\"^(DRUP|WIDE|CPCT)\")) | {sample_name, ${field_name}, \"label\"}" \
+        | test(\"^2020.*\")) | select(.sample_name | test(\"^(DRUP|WIDE|CPCT)\")) | {sample_name, ${field_name}, \"label\"}" \
         ${input_file} > ${curr_events}
     first=1
     echo "["
@@ -39,4 +39,3 @@ process_events() {
 }
 
 process_events arrival_date arrived | jq '.' > arrived.json
-process_events report_date reported | jq '.' > reported.json
