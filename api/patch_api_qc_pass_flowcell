@@ -4,8 +4,8 @@ flowcell_id=$1 # Full ID not the object ID
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
   echo "---"
-  echo "Usage: $0 <flowcell ID>"
-  echo "Exmpl: $0 HG3NHBGXF"
+  echo "Usage: $(basename $0) <flowcell ID>"
+  echo "Exmpl: $(basename $0) HG3NHBGXF"
   echo "---"
   exit 1
 fi
