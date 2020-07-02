@@ -1,0 +1,34 @@
+#!/bin/bash
+
+flowcell_id=$1 # Full ID not the object ID
+
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
+  echo "---"
+  echo "Usage: $0 <flowcell ID>"
+  echo "Exmpl: $0 HG3NHBGXF"
+  echo "---"
+  exit 1
+fi
+
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+api_dir="/data/common/dbs/api_credentials"
+api_key="${api_dir}/api.key"
+api_crt="${api_dir}/api.crt"
+
+echo "[INFO] Retrieving flowcell object ${flowcell_id}"
+flowcell="$(curl -s --cert-type pem --cert "${api_crt}" --key "${api_key}" -X GET ${api_url}/flowcells?flowcell_id=${flowcell_id})"
+
+if [[ $(echo "${flowcell}" | jq length) -eq 1 ]]; then
+    obj_id=$(echo "${flowcell}" | jq -r .[0].id)
+    obj_name=$(echo "${flowcell}" | jq -r .[0].name)
+    obj_status=$(echo "${flowcell}" | jq -r .[0].status)
+    obj_qc_status=$(echo "${flowcell}" | jq -r .[0].undet_rds_p_pass)
+    if [[ "${obj_qc_status}" == "true" ]]; then
+        echo "[WARN] QC status is already true. Proceed with care."
+    fi
+    echo "[INFO] Execute following to QC PASS flowcell ${flowcell_id} (id:${obj_id} name:${obj_name} status=${obj_status} qc_pass=${obj_qc_status})"
+    echo " http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" PATCH ${api_url}/flowcells/${obj_id} undet_rds_p_pass:=true"
+    echo " http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" POST ${api_url}/flowcells/${obj_id}/recalculate"
+else
+    echo "[ERROR] Unable to retrieve flowcell with provided flowcell_id (${flowcell_id})"
+fi
