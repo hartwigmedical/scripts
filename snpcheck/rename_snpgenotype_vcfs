@@ -23,7 +23,7 @@ mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -na
 
 vcf_count=${#vcfs[@]}
 
-echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember that a sync to gcp is needed to complete rename action)"
+echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember sync_snpcheck_to_gcp is also needed to update at GCP!)"
 for old_vcf_path in "${vcfs[@]}"; do
     old_vcf_name=$(basename "${old_vcf_path}")
     old_dir_path=$( dirname "${old_vcf_path}")
