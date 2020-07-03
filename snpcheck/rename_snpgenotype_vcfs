@@ -24,5 +24,5 @@ vcf_count=${#vcfs[@]}
 echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember sync_snpcheck_to_gcp is also needed to update at GCP!)"
 for old_vcf_path in "${vcfs[@]}"; do
     new_vcf_path=$(echo "${old_vcf_path}" | sed "s/${old_tag}_/${new_tag}_/")
-    echo "mv $old_vcf_path to $new_vcf_path"
+    echo "mv $old_vcf_path $new_vcf_path"
 done
