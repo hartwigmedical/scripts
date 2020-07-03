@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+
+if [[ $# -ne 3 || "${1}" == "-h" || "${1}" == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Locates VCFs and prints the mv commands to perform"
+    echo " Usage: $(basename $0) <barcode> <old_name> <new_name>"
+    echo " Exmpl: $(basename $0) FR123 CPCT02old CPCT02new"
+    echo "-----"
+    exit 1
+fi
+
+barcode=$1 && shift
+old_sample=$1 && shift
+new_sample=$1 && shift
+
+old_tag="${barcode}-${old_sample}"
+new_tag="${barcode}-${new_sample}"
+
+echo "[INFO] OLD tag: $old_tag"
+echo "[INFO] NEW tag: $new_tag"
+echo "[INFO] Searching for vcfs"
+mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -name "${old_tag}_*.vcf")
+
+vcf_count=${#vcfs[@]}
+
+echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember that a sync to gcp is needed to complete rename action)"
+for old_vcf_path in "${vcfs[@]}"; do
+    old_vcf_name=$(basename "${old_vcf_path}")
+    old_dir_path=$( dirname "${old_vcf_path}")
+    new_vcf_path=$(echo "${old_vcf_path}" | sed "s/${old_tag}_/${new_tag}_/")
+    echo "mv $old_vcf_path to $new_vcf_path"
+done
