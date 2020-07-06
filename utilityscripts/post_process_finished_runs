@@ -3,10 +3,10 @@
 health_check_processed_runs
 
 echo "[INFO] Count HealthChecker succeeded"
-health_check_processed_runs | grep "HealthChecker has succeeded for" | wc -l
+health_check_processed_runs | grep -c "HealthChecker has succeeded for"
 
 echo "[INFO] Count analysis purple version"
-health_check_processed_runs | grep "This analysis has been done with purple version=2.43" | wc -l
+health_check_processed_runs | grep -c "This analysis has been done with purple version=2.43"
 
 source_path=/data/gcp/processed_runs
 
