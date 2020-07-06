@@ -11,20 +11,24 @@ timestamp="$(date +%Y%m%d_%H%M)"
 process_events() {
     event_desc="reported"
     prev_events="$(ls ${wd}/${event_desc}_*.events | tail -n1) 2>/dev/null"
-    [[ -e "$prev_events" ]] || touch "${wd}/${event_desc}_0.events"
+    [[ -e "${prev_events}" ]] || touch "${wd}/${event_desc}_0.events"
     prev_events="$(ls ${wd}/${event_desc}_*.events | tail -n1)"
     curr_events="${wd}/${event_desc}_${timestamp}.events"
 
-    cat $1 | awk -F '\t' '$4 ~ '-202' {print $2, $4}' | sort -u > ${curr_events}
-
+    cat ${1} | awk -F '\t' '$4 ~ "-202" {print $2, $4, $5}' | while read sample date report_type; do
+        echo "${sample} $(date -d "${date}" "+%Y-%m-%d")T00:00:00.000000Z[UTC]" ${report_type} >> ${curr_events}
+    done
+            
     first=1
     echo "["
-    diff ${prev_events} ${curr_events} | grep '^>' | sort -u | sed 's/^> //' | while read sample date; do
+    diff <(awk '{print $1}' ${prev_events}) <(awk '{print $1}' ${curr_events}) | grep '^>' | sort -u | sed 's/^> //' | while read sample date report_type; do
         [[ ${first} -ne 1 ]] && echo ","
         [[ ${first} -eq 1 ]] && first=0
-        ts="$(date -d "${date}" "+%Y-%m-%d")T00:00:00:000000Z[UTC]"
+        final_date="$(awk -v sample="${sample}" '$1 == sample {print $2}' < ${curr_events} | tail -n1)"
+        report_type="$(awk -v sample="${sample}" '$1 == sample {print $3}' < ${curr_events} | tail -n1)"
+        labels=$(printf "{\"name\": \"report_type\",\n\"value\": \"%s\"\n}" "${report_type}")
         subject="$(printf "{\"name\": \"${sample}\", \"type\": \"sample\"}")"
-        printf "{\"timestamp\": \"%s\", \"type\": \"reported\", \"subjects\": [%s]}" "${ts}" "${subject}" 
+        printf "{\"timestamp\": \"%s\", \"type\": \"reported\", \"labels\": [%s], \"subjects\": [%s]}" "${final_date}" "$labels" "${subject}" 
     done
     echo "]"
 }
