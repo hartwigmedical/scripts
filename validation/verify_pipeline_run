@@ -81,9 +81,8 @@ main() {
     ## early fail in case pipeline.version does not exist
     file_to_check="pipeline.version"
     url_to_check="${gcp_url}/${file_to_check}"
-    gsutil -q stat "${url_to_check}"
+    msg=$(gsutil ls "${url_to_check}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        msg=$(gsutil -q stat "${url_to_check}" 2>&1)
         echo "[ERROR] Cannot access file (${url_to_check})"
         echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
         echo "[ERROR] Check run contents with: gsutil ls ${gcp_url}"
