@@ -36,6 +36,7 @@ my $output_as_json;
 my @filters = ();
 my $must_match_exact;
 my $use_acceptance;
+my $no_number_formatting;
 
 my $HELP =<<HELP;
 
@@ -74,6 +75,7 @@ my $HELP =<<HELP;
   Output options 
     -delim    <s>  (output delim for tabular output)
     -json          (output as json instead of tabular)
+    -no_format     (do not round and format any numbers)
     
 HELP
 print $HELP and exit(0) if scalar @ARGV == 0 or $ARGV[0] eq '-h' or $ARGV[0] eq '--help';
@@ -88,6 +90,7 @@ GetOptions (
     "acc"       => \$use_acceptance,
     "json"      => \$output_as_json,
     "exact"     => \$must_match_exact,
+    "no_format" => \$no_number_formatting,
 ) or die "Error in command line arguments\n";
 warn "[ERROR] No type given?" and exit(0) unless $type;
 warn "[ERROR] Type ($type) not supported" and exit(0) unless exists $OUT_FIELDS_PER_TYPE{ $type };
@@ -117,18 +120,16 @@ sub readJson{
     my ($type) = @_;
     my $json_file = "$JSONS_HOME/$type.json";
     my $json_obj = jsonFileToObject($json_file);
-    #my $json_txt = read_file( $json_file );
-    #my $json_obj = decode_json( $json_txt );
     
     ## optimize some fields for viewing
     foreach my $obj ( @$json_obj ){
         $obj->{ 'id' } = $obj->{ 'id' } if defined $obj->{ 'id' };
-        $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
-        $obj->{ 'yld' } = format_number( $obj->{ 'yld' } / 1000000, 0 ) if defined $obj->{ 'yld' };
-        $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
-        $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
-        $obj->{ 'time' } =~ s/T.+$// if defined $obj->{ 'time' };
-        $obj->{ 'createTime' } =~ s/T.+$// if defined $obj->{ 'createTime' };
+        unless ( $no_number_formatting ){
+            $obj->{ 'q30' } = sprintf( "%.1f", $obj->{ 'q30' } ) if defined $obj->{ 'q30' };
+            $obj->{ 'yld' } = format_number( $obj->{ 'yld' } / 1000000, 0 ) if defined $obj->{ 'yld' };
+            $obj->{ 'yld_req' } = format_number( $obj->{ 'yld_req' } / 1000000, 0 ) if defined $obj->{ 'yld_req' };
+            $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
+        }
     }
     
     ## Add set info for runs (set info is situated one level deeper)

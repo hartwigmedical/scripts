@@ -19,7 +19,7 @@ if [[ ${pip_count} -lt 1 ]]; then
 fi
 
 ## Define all paths used by script
-find_dirs="/data/cpct/runs/ /data/cpct/reportable_runs/ /data/core/runs/ /data/gcp/processed_runs/ /data/gcp/downloaded_runs/ "
+find_dirs="/data/cpct/runs/ /data/cpct/reportable_runs/ /data/core/runs/ /data/gcp/processed_runs/ "
 find_dirs_fail="/data/gcp/qc_fail_runs"
 download_runs_dir="/data/gcp/downloaded_runs"
 download_script="process_successful_run"
