@@ -50,7 +50,9 @@ ${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${l
 ## get q30/yield data from HMF API
 echo "[INFO] Querying HMF API to get sample status"
 ${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${sam_file}
-${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${sam_json}
+api_samples_json=$(${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -no_format -json)
+total_yield_gbase=$( echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
+echo "${api_samples_json}" > ${sam_json}
 
 ## get entity/run-status from HMF API
 echo "[INFO] Querying HMF API to get run status"
@@ -76,10 +78,12 @@ cat ${sam_file} | grep -v "^#" | cut -f2 > ${bcs_file}
 rm -f ${rep_file}
 echo -e "PROJECT\t${r_name}" >> ${rep_file}
 echo -e "PROJECT\t${r_mail}" >> ${rep_file}
+echo -e "PROJECT\t${d_mail}" >> ${rep_file}
 echo -e "PROJECT\t${p_name}" >> ${rep_file}
 echo -e "PROJECT\t${submission}" >> ${rep_file}
 echo -e "PROJECT\t${hmf_count}" >> ${rep_file}
 echo -e "PROJECT\t${p_type}" >> ${rep_file}
+echo -e "PROJECT\t${total_yield_gbase} GBase" >> ${rep_file}
 
 cat ${sam_file} | grep -v ^# | while read line; do
     subm=$(echo "${line}" | cut -f1)
@@ -95,10 +99,11 @@ done
 
 ## logging
 echo "#           Date = ${date_string}" >> ${log_file}
-echo "#     Submission = ${submission}" >> ${log_file}
+echo "#     Submission = ${submission}"  >> ${log_file}
 echo "#        Project = ${p_name}"      >> ${log_file}
-echo "#    SampleCount = ${hmf_count}"   >> ${log_file}
-echo "#      DataCount = ${api_count}"   >> ${log_file}
+echo "#   Sample Count = ${hmf_count}"   >> ${log_file}
+echo "#     Data Count = ${api_count}"   >> ${log_file}
+echo "#    Yield GBase = ${total_yield_gbase}"  >> ${log_file}
 echo "# Report Contact = ${r_name} (${r_mail})" >> ${log_file}
 echo "#   Data Contact = ${d_name} (${d_mail})" >> ${log_file}
 
