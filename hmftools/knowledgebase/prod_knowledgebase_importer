@@ -25,7 +25,7 @@ civic_variants_file=${input_dir}/civic_01-Nov-2018-VariantSummaries_181127.tsv
 
 transvar_command=transvar
 treatment_type_mapping_file=/data/common/dbs/knowledgebases/treatmentTypes.tsv
-output_dir=/data/common/dbs/knowledgebases/output
+output_dir=/data/common/dbs/knowledgebases/output_prod_new
 
 rm -r ${output_dir}
 java -jar ${knowledgebase_importer_jar} \
