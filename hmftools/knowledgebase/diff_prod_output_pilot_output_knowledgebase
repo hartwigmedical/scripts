@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 path=/data/common/dbs/knowledgebases
-pilot_out=${path}/output_prod_new
+pilot_out=${path}/pilot_output
 prod_out=${path}/output
 
 echo "[INFO] Diffing actionable variants"
