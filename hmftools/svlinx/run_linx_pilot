@@ -8,4 +8,4 @@ output_dir=${run_dir}/linx_pilot/
 credentials=$(locate_pilot_database_credentials)
 linx_jar=$(locate_pilot_linx)
 
-do_run_linx ${run_dir} ${credentials} ${linx_jar} ${output_dir} "$@"
+do_run_linx_pilot ${run_dir} ${credentials} ${linx_jar} ${output_dir} "$@"
