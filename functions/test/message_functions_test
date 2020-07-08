@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+info "info test 1"
+info "info test 2"
+info "info test 3"
+warn "warn test 1"
+error "error test 1"
+
