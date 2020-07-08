@@ -1,19 +1,15 @@
 # Overview 
 
-Script to extract events from LIMS data on `datastore` for bulk loading by `turquoise`. Flow is:
+Scripts to extract events from data on `datastore` for bulk loading by `turquoise`. Flow is:
 
-1. An operator runs an update script that results in the `/data/ops/lims/prod/lims.json` file being written
+1. An operator runs something that updates one of the files of interest
 1. (time passes)
-1. This script is run. It checks for differences between the current data and what was there last time and generates a JSON file
-   for each event type containing all the new events.
-1. The JSON files are pushed to a GCP bucket.
+1. One of these scripts is run, checks for differences and generates a JSON file containing new events
+1. The JSON files are pushed to a GCP bucket
+1. A Turquoise instance is hopefully notified and collects the events from the bucket
 
-That's it for the local flow, then on GCP a Kubernetes `cron` job will pick up the JSON files and push their contents into the
-BigQuery table.
-
-As the script does its own `diff` it keeps track of all old data files. To start from scratch and have it re-publish all events
-from the start of time, just delete the contents of the `data` directory wherever its working directory is and it will push
-everything over again.
+To start from scratch and have all events re-published from all time, delete the relevant contents of 
+the `data` directory and run again.
 
 # Input Data
 
@@ -35,4 +31,9 @@ This script is highly tied to the input data format. The data needs to be well-f
   },
   ...
 ```
+
+# Getting Turqoise to Pick Up Events
+
+`gsutil notification create -t turquoise.storage -f json gs://your_bucket_name`
+
 

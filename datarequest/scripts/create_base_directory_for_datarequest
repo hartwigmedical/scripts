@@ -15,4 +15,4 @@ fi
 
 mkdir -p "${dr_path}"
 
-echo "[DEBUG] Finished creating DR at ${dr_path}"
+echo "[DEBUG] Finished creating DR base directory at ${dr_path}"

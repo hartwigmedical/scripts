@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
 input_file="/data/ops/lims/prod/reporting_db.tsv"
-wd="data"
+wd="$HOME/.turquoise/data"
+out_dir="$HOME/.turquoise"
 
 [[ $# -eq 1 ]] && input_file="${1}"
 [[ ! -e ${wd} ]] && echo "Work dir $wd does not exist, creating" && mkdir ${wd}
@@ -33,4 +34,4 @@ process_events() {
     echo "]"
 }
 
-process_events ${input_file} | jq '.' > reported.json
+process_events ${input_file} | jq '.' > ${out_dir}/reported.json

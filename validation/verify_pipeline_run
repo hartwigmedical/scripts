@@ -57,12 +57,39 @@ main() {
     cd $out_dir || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"
-    script_jobs=("compare_v5_runs" "diff_v5_COLO829v003_runs" "locate_files_test" "load_run_into_reference_validation_sets_db" "patient_report_for_run")
-    sql_jobs=("check_update_time.sql" "compare_metrics.sql" "compare_purity.sql" "counts_variants.sql" "diff_somatic_variants.sql" "diff_sv.sql" "diff_sv_test.sql")
-    for job_file in ${script_jobs[@]} ${sql_jobs[@]}; do 
-        file_path="/data/common/repos/scripts/validation/${job_file}"
-        copy_file "${file_path}" "${jobs_dir}"
+    jobs_source_path="/data/common/repos/scripts/validation/"
+    script_jobs=(
+        "${jobs_source_path}/compare_v5_runs"
+        "${jobs_source_path}/diff_v5_COLO829v003_runs"
+        "/data/common/repos/scripts/hmftools/patientreporter/patient_report_for_run"
+        "/data/common/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
+        "/data/common/repos/scripts/functions/test/locate_files_test"
+    )
+    sql_jobs=(
+        "${jobs_source_path}/check_update_time.sql"
+        "${jobs_source_path}/compare_metrics.sql"
+        "${jobs_source_path}/compare_purity.sql"
+        "${jobs_source_path}/counts_variants.sql"
+        "${jobs_source_path}/diff_somatic_variants.sql"
+        "${jobs_source_path}/diff_sv.sql"
+        "${jobs_source_path}/diff_sv_test.sql"
+    )
+    for job_file_path in "${script_jobs[@]}" "${sql_jobs[@]}"; do
+        copy_file "${job_file_path}" "${jobs_dir}"
     done
+
+    ## early fail in case pipeline.version does not exist
+    file_to_check="pipeline.version"
+    url_to_check="${gcp_url}/${file_to_check}"
+    msg=$(gsutil ls "${url_to_check}" 2>&1)
+    if [[ $? -eq 1 ]]; then
+        echo "[ERROR] Cannot access file (${url_to_check})"
+        echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
+        echo "[ERROR] Check run contents with: gsutil ls ${gcp_url}"
+        exit 1
+    else
+        info "File ${file_to_check} found in bucket so assuming run is complete."
+    fi
 
     download_run_from_gcp "${gcp_url}" "${run_dir}" "${download_log}"
 
@@ -109,10 +136,6 @@ download_run_from_gcp() {
 copy_file() {
     local file_path=$1 && shift
     local target_dir=$1 && shift
-
-    if [[ ! "${job_file}" =~ sql$ ]]; then
-         file_path=$(which ${job_file})
-    fi
 
     if [[ ! -f "${file_path}" ]]; then
         die "File not found (${file_path})"

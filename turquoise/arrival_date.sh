@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 
 input_file="/data/ops/lims/prod/lims.json"
-wd="data"
+wd="$HOME/.turquoise/data"
 tmp_file="$(mktemp -p ${wd} arrived.XXXXX)"
 ref_samples="${wd}/reference_samples.tmp"
 
-ref_out="reference_arrived.json"
-tum_out="arrived.json"
+out_dir="$HOME/.turquoise"
+ref_out="${out_dir}/reference_arrived.json"
+tum_out="${out_dir}/arrived.json"
 
 [[ $# -eq 1 ]] && input_file="$1"
-[[ ! -e $wd ]] && echo "Work dir ${wd} does not exist, creating" && mkdir ${wd}
+[[ ! -e $wd ]] && echo "Work dir ${wd} does not exist, creating" && mkdir -p ${wd}
 
 timestamp="$(date +%Y%m%d_%H%M)"
 

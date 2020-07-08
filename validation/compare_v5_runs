@@ -41,7 +41,8 @@ echo "[INFO] BASE run path: ${base_run_path}"
 echo "[INFO] TEST run path: ${test_run_path}"
 echo "[INFO] BASE version: ${base_pip_vsn}"
 echo "[INFO] TEST version: ${test_pip_vsn}"
-
+echo "[INFO] BASE sample: ${base_tum_sample_name}"
+echo "[INFO] TEST sample: ${test_tum_sample_name}"
 
 echo ""
 echo "===== CRAM CHECK"
@@ -119,8 +120,8 @@ for file in "${test_grm_vcf}" "${base_grm_vcf}" "${test_chord}" "${base_chord}" 
 done
 
 echo "[INFO] Counting somatic small variants"
-test_som_varCount=$(unpigz -c "${test_som_var}" | grep -cv ^#)
-base_som_varCount=$(unpigz -c "${base_som_var}" | grep -cv ^#)
+test_som_var_count=$(unpigz -c "${test_som_var}" | grep -cv ^#)
+base_som_var_count=$(unpigz -c "${base_som_var}" | grep -cv ^#)
 test_som_pass_var_count=$(unpigz -c "${test_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 base_som_pass_var_count=$(unpigz -c "${base_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 
