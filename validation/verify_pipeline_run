@@ -87,9 +87,10 @@ main() {
         echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
         echo "[ERROR] Check run contents with: gsutil ls ${gcp_url}"
         exit 1
+    else
+        info "File ${file_to_check} found in bucket so assuming run is complete."
     fi
 
-    info "File ${file_to_check} found. Moving to actual download."
     download_run_from_gcp "${gcp_url}" "${run_dir}" "${download_log}"
 
     new_run="${run_dir}"
