@@ -19,10 +19,10 @@ fi
 
 for TYPE in "${DB_TYPES[@]}"; do
     API_URL="${BASE_URL}/${TYPE}"
-    if [[ "${TYPE}" == "fastq" ]]; then
-        ## adding bucket filter reduces output significantly
-        API_URL+="?bucket=hmf-fastq-storage"
-    fi
+    ## fastq is the largest type. Add below filter to reduce amount if download takes too long
+    #if [[ "${TYPE}" == "fastq" ]]; then
+    #    API_URL+="?bucket=hmf-fastq-storage"
+    #fi
     OUTPUT_FILE="${JSON_DIR}/${TYPE}.json"
     OUTPUT_FILE_TMP="${JSON_DIR}/tmp_${TYPE}.json.tmp"
 
