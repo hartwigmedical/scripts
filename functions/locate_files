@@ -274,7 +274,12 @@ locate_sage_somatics() {
     local somatic_vcf=""
 
     if [[ -d "${sage_dir}" ]]; then
-        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.post_processed.vcf.gz")
+        # Filtered is added in the official SAGE v2.2 release as of pipeline v5.12
+        somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
+        if [[ -z "${somatic_vcf}" ]]; then
+            # Otherwise fall back on naming used pre pipeline v5.12
+            somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.post_processed.vcf.gz")
+        fi
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
