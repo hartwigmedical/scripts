@@ -2,9 +2,19 @@
 
 source locate_files
 
+# TODO Propagate into PROD upon release of bachelor v1.10
 bachelor_jar=$(locate_pilot_bachelor)
-output_dir=/data/common/dbs/bachelor/pilot
+output_filter_file=/data/common/dbs/bachelor/pilot_bachelor_clinvar_filters.csv
 
-do_create_bachelor_external_db_filters ${bachelor_jar} ${output_dir}
+bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
+clinvar_db_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
+
+echo "[INFO] Running Bachelor ExternalDBFilters - Create Filter File"
+
+java -cp ${bachelor_jar} com.hartwig.hmftools.bachelor.ExternalDBFilters \
+    -xml_config ${bachelor_config} \
+    -clinvar_db_filter_file ${clinvar_db_filter_file} \
+    -output_filter_file ${output_filter_file} \
+    -log_debug
 
 
