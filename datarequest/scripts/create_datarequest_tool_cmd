@@ -37,10 +37,10 @@ main() {
     
     ## quick input checks
     [[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
-    [[ ! -z "${run_mode}" && "${run_mode}" =~ (dna|rna) ]] || die "run-mode incorrect (${run_mode})?"
+    [[ ! -z "${run_mode}" && "${run_mode}" =~ (dna|rna|upload_only|dna_rna) ]] || die "run-mode incorrect (${run_mode})?"
     [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
 
-    ## we need the index of DR to 
+    ## we need the index of DR
     local dr_index=$( echo "${dr_id}" | sed 's/^DR\-//')
     local release_id="${dr_id}"
     local request_id="${dr_index}"
@@ -55,31 +55,46 @@ main() {
     local dr_root_dir="/data/data_archive/datarequests/${dr_id}"
     local dr_release_dir="${dr_root_dir}/DR-${request_id}"
     local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
-    local metadata_tar="${dr_root_dir}/${release_id}.metadata.tar"
-    local uploads="${metadata_tar}:metadata:tar"
+    local uploads_array=()
     local output_cmd_file="${dr_release_dir}/run_datarequest_tool.sh"
-    
+
+    ## find files to upload
+    for i in ${dr_root_dir}/${release_id}.*.tar; do
+        [ -f "$i" ] || break
+        info "Found tar file ${i}, adding to command..."
+        tar_file=$(basename "$i" .tar)
+        tar_type="${tar_file##*.}"
+        uploads_array+=("${i}:${tar_type}:tar")
+    done
+
+    uploads_single_line=$(join_array , ${uploads_array[@]})
+
+    ## check input file existance
     input_files=(
         "${metadata_tsv}"
-        "${metadata_tar}"
         "${api_keystore}"
         "${api_keystore_pw}"
         "${tool_jar}"
     )
 
-    ## check input file existance
     for f in "${input_files[@]}"; do
         if [[ ! -f "${f}" ]]; then
             die "File does not exist (${f})"
         fi
     done
 
+    ## strip potential spaces from email addresses (should be comma separated)
+    gcp_mail=$(echo ${gcp_mail} | sed 's/ //g')
+
     ## some last sanity checks
     [[ -w "${dr_release_dir}" ]] || die "DR release dir not writeable (${dr_release_dir})"
     [[ ! -f "${output_cmd_file}" ]] || die "Output file already exists (${output_cmd_file})"
+    if [[ "${run_mode}" == "upload_only" && "${uploads_single_line}" = "" ]]; then
+        die "Run-mode upload_only, but no tar files specified?"
+    fi
 
     info "Metadata TSV: ${metadata_tsv}"
-    info "Metadata TAR: ${metadata_tar}"
+    info "Tar files selected for upload: ${uploads_single_line}"
     info "Datarequest JAR: ${tool_jar}"
     info "Run Mode: ${run_mode}"
     info "GCP Mail: ${gcp_mail}"
@@ -93,7 +108,9 @@ main() {
     cmd_array+=("-request_id '${request_id}'")
     cmd_array+=("-accounts '${gcp_mail}'")
     cmd_array+=("-metadata_tsv '${metadata_tsv}'")
-    cmd_array+=("-uploads '${uploads}'")
+    if [[ ! "${uploads_single_line}" == "" ]]; then
+        cmd_array+=("-uploads '${uploads_single_line}'")
+    fi
     cmd_array+=("-mode '${run_mode}'")
     cmd_array+=("-skip_login")
 
@@ -116,6 +133,13 @@ main() {
     info " 2) Make sure you are logged in at GCP with correct credentials!"
     info " 3) And then run cmd with: nohup ${output_cmd_file} > ${output_cmd_file}.log &"
     info "Finished with $(basename $0)"
+
+}
+
+join_array() {
+    local IFS="$1";
+    shift;
+    echo "$*";
 }
 
 die() { 
