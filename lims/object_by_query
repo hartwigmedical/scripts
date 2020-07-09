@@ -9,5 +9,5 @@ filter="${obj_key}=${obj_val}"
 objects=$("${query_script}" -type "${obj_type}" -json -filter "$filter" -exact)
 count=$(echo ${objects} | jq 'length')
 
-echo "# Found ${count} object(s) when searching '${obj_type}' with exact filter '${filter}'"
+echo "# Found ${count} object(s) with: ${query_script} -type ${obj_type} -json -filter $filter -exact"
 echo "${objects}" | jq -Sr 'sort'
