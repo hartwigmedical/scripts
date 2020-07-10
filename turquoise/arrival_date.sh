@@ -27,7 +27,7 @@ process_events() {
  
     jq -cr ".samples | .[] | select(.sample_source != null) | select(.ref_sample_id != null) | select(.ref_sample_id | test(\".+\")) \
         | select(.sample_source | test (\"DNA\")) | select(.${field_name} | test(\"^2020.*\")) \
-        | select(.sample_name | test(\"^(DRUP|WIDE|CPCT)\")) | {sample_name, ${field_name}, \"label\", ref_sample_id}" \
+        | select(.sample_name | test(\"^(DRUP|WIDE|CPCT|CORE)\")) | {sample_name, ${field_name}, \"label\", ref_sample_id}" \
         ${input_file} > ${curr_events}
     first=1
     echo "[" > "${tum_out}"
