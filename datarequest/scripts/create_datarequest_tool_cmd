@@ -56,7 +56,7 @@ main() {
     local dr_release_dir="${dr_root_dir}/DR-${request_id}"
     local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
     local uploads_array=()
-    local output_cmd_file="${dr_release_dir}/run_datarequest_tool.sh"
+    local output_cmd_file="${dr_release_dir}/logs/run_datarequest_tool.sh"
 
     ## find files to upload
     for i in ${dr_root_dir}/${release_id}.*.tar; do
@@ -112,7 +112,7 @@ main() {
         cmd_array+=("-uploads '${uploads_single_line}'")
     fi
     cmd_array+=("-mode '${run_mode}'")
-    cmd_array+=("-skip_login")
+    #cmd_array+=("-skip_login")
 
     cmd_single_line=$(echo "${cmd_array[@]}")
 
@@ -130,8 +130,8 @@ main() {
 
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
-    info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 3) And then run cmd with: nohup ${output_cmd_file} > ${output_cmd_file}.log &"
+    #info " 2) Make sure you are logged in at GCP with correct credentials!"
+    info " 2) And then run cmd with: nohup ${output_cmd_file} > ${output_cmd_file}.log &"
     info "Finished with $(basename $0)"
 
 }
