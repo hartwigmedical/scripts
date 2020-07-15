@@ -36,4 +36,6 @@ This script is highly tied to the input data format. The data needs to be well-f
 
 `gsutil notification create -t turquoise.storage -f json gs://your_bucket_name`
 
+Make sure the Turquoise user has `Storage Object Viewer` and `Storage Legacy Bucket Reader` on the bucket.
+
 
