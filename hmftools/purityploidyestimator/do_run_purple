@@ -70,7 +70,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
     -reference ${reference_sample} \
     -tumor ${tumor_sample} \
-    -amber ${run_dir}/amber \
+    -amber ${amber_dir} \
     -cobalt ${run_dir}/cobalt \
     -ref_genome ${ref_genome} \
     -output_dir ${purple_output_dir} \
