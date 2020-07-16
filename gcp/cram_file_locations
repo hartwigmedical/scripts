@@ -1,0 +1,11 @@
+latest_cram_file_locations() {
+    local set=$1
+    local json=/data/ops/api/prod/database/runs.json
+    local run_id=$(jq ".[] | select (.set.name == \"${set}\") | .id" ${json})
+    local ref_sample=$(jq -r ".[] | select (.set.name == \"${set}\") | .set.ref_sample" ${json})
+    local tumor_sample=$(jq -r ".[] | select (.set.name == \"${set}\") | .set.tumor_sample" ${json})
+    local bucket=$(jq -r ".[] | select (.set.name == \"${set}\") | .bucket" ${json})
+    local ref_cram="gs://${bucket}/${set}/${ref_sample}/cram/${ref_sample}.cram"
+    local tumor_cram="gs://${bucket}/${set}/${tumor_sample}/cram/${tumor_sample}.cram"
+    echo "{\"set\":\"$set\", \"ref_sample\":\"$ref_sample\", \"tumor_sample\":\"$tumor_sample\", \"ref_cram\":\"$ref_cram\", \"tumor_cram\":\"$tumor_cram\"},"
+}
