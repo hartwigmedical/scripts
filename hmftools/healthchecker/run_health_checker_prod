@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source locate_files
 source metadata_functions
 
 run_dir=$1 && shift
@@ -15,7 +16,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # Set paths
 metrics_dir=${run_dir}
-amber_dir=${run_dir}/amber
+amber_dir=$(locate_amber_directory ${run_dir})
 purple_dir=${run_dir}/purple
 output_dir=/data/cpct/health_check_logs/
 

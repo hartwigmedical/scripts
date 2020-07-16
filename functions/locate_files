@@ -827,3 +827,20 @@ locate_reporting_db_tsv_pilot() {
     echo ${reporting_db_tsv}
 }
 
+############################################# AMBER ###########################################
+locate_amber_directory() {
+    local run_dir=$1
+    local set=$(basename $run_dir)
+    local amber_dir=/data/cpct/gcp/amber/$set/
+
+    if [[ ! -d $amber_dir ]]; then
+        amber_dir=$run_dir/amber/
+    fi;
+
+    if [[ ! -d $amber_dir ]]; then
+        echo "[ERROR] Unable to locate AMBER directory. Exiting." >&2
+        exit 1
+    fi;
+
+    echo $amber_dir
+}
