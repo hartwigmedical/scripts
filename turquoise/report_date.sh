@@ -16,7 +16,7 @@ process_events() {
     prev_events="$(ls ${wd}/${event_desc}_*.events | tail -n1)"
     curr_events="${wd}/${event_desc}_${timestamp}.events"
 
-    cat ${1} | awk -F '\t' '$4 ~ "-202" {print $2, $4, $5}' | while read sample date report_type; do
+    cat ${1} | awk -F '\t' '$4 ~ "-20" {print $2, $4, $5}' | while read sample date report_type; do
         echo "${sample} $(date -d "${date}" "+%Y-%m-%d")T00:00:00.000000Z[UTC]" ${report_type} >> ${curr_events}
     done
             
