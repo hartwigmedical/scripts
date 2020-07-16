@@ -6,10 +6,6 @@ output_tsv=/data/experiments/wide_germline_carriership_analyses/${yymmdd}_wide_g
 # We assume this script is started from a cronjob rather than a personal terminal, so we need to manually source bashrc.
 source ${HOME}/.bashrc
 
-# TODO Enable once bachelor is upgraded.
-echo "[INFO] temporarily disabled"
-exit 0
-
 sql_file=/data/common/repos/scripts/sql/genomic/wide_germline_carriership.sql
 
 echo "[INFO] Writing WIDE germline carriership analysis to ${output_tsv}"
