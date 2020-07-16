@@ -1,11 +1,11 @@
 
 
 ensemblGeneData = read.csv('~/hmf/resources/ensembl_gene_data.csv')
-knownPairs = read.csv('~/hmf/resources/knownFusionPairs.csv')
+knownPairs = read.csv('~/hmf/resources/known_fusion_data.csv') %>% filter(Type == 'KNOWN_PAIR')
 View(knownPairs)
 
-kpBedInfo = merge(knownPairs,ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='fiveGene',by.y='GeneName',all.x=T)
-kpBedInfo = merge(kpBedInfo,ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='threeGene',by.y='GeneName',all.x=T)
+kpBedInfo = merge(knownPairs,ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='FiveGene',by.y='GeneName',all.x=T)
+kpBedInfo = merge(kpBedInfo,ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='ThreeGene',by.y='GeneName',all.x=T)
 
 
 str(kpBedInfo)
@@ -15,7 +15,7 @@ kpBedInfo = kpBedInfo %>%
   mutate(
     UpChr = factor(UpChr, levels = c(1:22,'X','Y'), ordered = T),
     DownChr = factor(DownChr, levels = c(1:22,'X','Y'), ordered = T),
-    Name=paste(fiveGene,threeGene,sep='-'),
+    Name=paste(FiveGene,ThreeGene,sep='-'),
     ## NOTE THAT WE SUBTRACT 1 FROM START FOR BEDPE FORMAT
     Start1=ifelse(UpStrand==1,UpGeneStart-preGeneBuffer,UpGeneStart) - 1,
     End1=ifelse(UpStrand==1,UpGeneEnd,UpGeneEnd+preGeneBuffer),
