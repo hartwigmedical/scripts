@@ -16,5 +16,6 @@ else
     diff <(jq '.samples' ${prev}) <(jq '.samples' ${input_file}) | grep '>' | sed 's/^>//' | sed -z 's/^/\{/' \
         | sed -z 's/,\([^,]*\)$/\}\1/' | jq '.' > ${out_file}
 fi
+[[ -s ${out_file} ]] || echo "[]" > ${out_file}
 cp ${input_file} ${wd}/lims_${timestamp}.json
 
