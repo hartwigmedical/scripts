@@ -35,7 +35,6 @@ echo "[INFO] Running Bachelor for WIDE Germline Carriership"
 
 java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
-    -skip_enrichment \
     -include_vcf_filtered \
     -germline_vcf ${germline_vcf} \
     -xml_config ${bachelor_xml_config} \
