@@ -1,6 +1,6 @@
-# Overview 
+# Overview
 
-Scripts to extract events from data on `datastore` for bulk loading by `turquoise`. Flow is:
+Extract events from data on `datastore` for bulk loading by `turquoise`. Flow is:
 
 1. An operator runs something that updates one of the files of interest
 1. (time passes)
@@ -11,26 +11,8 @@ Scripts to extract events from data on `datastore` for bulk loading by `turquois
 To start from scratch and have all events re-published from all time, delete the relevant contents of 
 the `data` directory and run again.
 
-# Input Data
-
-This script is highly tied to the input data format. The data needs to be well-formed JSON containing a `samples` object:
-
-```
-# jq '.samples' lims.json
-...
-  "FR03631783": {
-    ...
-    "arrival_date": "2016-04-18",
-    ...
-    "label": "CPCT",
-    ...
-    "report_date": "",
-    "sample_name": "CPCT02020292T",
-    "sample_source": "RNA-TISSUE",
-    ...
-  },
-  ...
-```
+The `reported_date.sh` script is tied to the specific data format of the input file. Beyond that all processing
+happens on Turquoise.
 
 # Getting Turqoise to Pick Up Events
 
