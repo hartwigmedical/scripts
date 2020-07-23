@@ -239,7 +239,7 @@ sub processSample{
         $json_data{ 'entity' } = "$entity";
 
         $json_data{ 'fastq_portal' } = JSON::true;
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
     }
     elsif( $analysis eq 'SingleAnalysis' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
@@ -247,7 +247,7 @@ sub processSample{
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'ref', $q30, $yield, $use_existing_ref );
+        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
@@ -274,6 +274,7 @@ sub processSample{
         }
         
         my $barcode_ref = getValueByKey( $ref_obj, 'sample_id' );
+        my $name_ref = getValueByKey( $ref_obj, 'sample_name' );
         my $yield_ref = getValueByKey( $ref_obj, 'yield' );
         my $submission_ref = getValueByKey( $ref_obj, 'submission' );
         $yield_ref = $yield_ref == 0 ? 1 : $yield_ref * $YIELD_F;
@@ -340,8 +341,8 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         $json_data{ 'priority' } = $priority;
-        addSampleToJsonData( \%json_data, $submission_ref, $barcode_ref, 'ref', $q30, $yield_ref, $use_existing_ref );
-        addSampleToJsonData( \%json_data, $submission, $barcode, 'tumor', $q30, $yield, $use_existing_tum );
+        addSampleToJsonData( \%json_data, $submission_ref, $barcode_ref, $name_ref, 'ref', $q30, $yield_ref, $use_existing_ref );
+        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor', $q30, $yield, $use_existing_tum );
     }
     elsif ( $analysis eq 'Somatic_R' ){
         say "[INFO]   RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)";
@@ -476,9 +477,10 @@ sub addEntityToJsonData{
 }
 
 sub addSampleToJsonData{
-    my ($store, $submission, $barcode, $type, $q30, $yield, $use_existing) = @_;
+    my ($store, $submission, $barcode, $name, $type, $q30, $yield, $use_existing) = @_;
     my %tmp = (
         'barcode'    => "$barcode",
+        'name'       => "$name",
         'submission' => "$submission",
         'type'       => "$type",
         'q30_req'    => int($q30),
