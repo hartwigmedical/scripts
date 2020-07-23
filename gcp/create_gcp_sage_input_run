@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source api_functions
+source metadata_functions
+source gcp_functions
+
+run_dir=$1
+set=$(basename $run_dir)
+
+sample=$(load_tumor_sample_from_metadata ${run_dir})
+normal=$(load_ref_sample_from_metadata ${run_dir})
+
+run_info=$(load_run_info_for_set ${set})
+bucket=$(extract_bucket_from_run_info "${run_info}")
+
+gs_path=gs://${bucket}/${set}
+sample_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*cram/${sample}.cram$")
+normal_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*cram/${normal}.cram$")
+
+echo {\"tumor\":\"${sample_bam}\", \"reference\":\"${normal_bam}\", \"tumorSample\":\"${sample}\", \"referenceSample\":\"${normal}\"},
