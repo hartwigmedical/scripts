@@ -274,38 +274,7 @@ locate_sage_somatics() {
     local somatic_vcf=""
 
     if [[ -d "${sage_dir}" ]]; then
-        # Filtered is added in the official SAGE v2.2 release as of pipeline v5.12
         somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
-        if [[ -z "${somatic_vcf}" ]]; then
-            # Otherwise fall back on naming used pre pipeline v5.12
-            somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.post_processed.vcf.gz")
-        fi
-    fi
-
-    if [[ -z "${somatic_vcf}" ]]; then
-        # SAGE hasn't been rerun yet on all runs so this should be a WARN rather than an ERROR.
-        echo "[WARN] Unable to locate sage somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${somatic_vcf}
-}
-
-locate_strelka_somatics() {
-    local run_dir=$1
-    local somatics_dir_pre_v5=${run_dir}/somaticVariants
-    local somatics_dir_v5=${run_dir}/somatic_caller
-
-    local somatic_vcf=""
-
-    if [[ -d "${somatics_dir_pre_v5}" ]]; then
-        somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name "*sage.vcf.gz")
-        if [[ -z "${somatic_vcf}" ]]; then
-            # TODO: Clean up after sage is rerun for every sample
-            somatic_vcf=$(find -L ${somatics_dir_pre_v5}/*/ -type f -name "*post_processed.vcf.gz")
-        fi
-    elif [[ -d "${somatics_dir_v5}" ]]; then
-        somatic_vcf=$(find -L ${somatics_dir_v5}/ -type f -name "*post_processed.vcf.gz")
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
@@ -328,24 +297,6 @@ locate_purple_somatics() {
 
     if [[ -z "${somatic_vcf}" ]]; then
         echo "[ERROR] Unable to locate purple somatic variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${somatic_vcf}
-}
-
-locate_purple_on_sage_somatics() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple_sage
-
-    local somatic_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        somatic_vcf=$(find -L ${purple_dir} -type f -name "*.purple.somatic.vcf.gz")
-    fi
-
-    if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple on sage somatic variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
@@ -381,16 +332,6 @@ locate_purple_purity() {
     echo ${purple_purity_file}
 }
 
-locate_purple_on_sage_purity() {
-    local run_dir=$1
-    local purple_purity_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.purity.tsv")
-    if [[ -z "${purple_purity_file}" ]]; then
-        echo "[ERROR] Unable to locate purple on sage purity in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_purity_file}
-}
-
 locate_purple_pilot_purity() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -418,16 +359,6 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
-locate_purple_on_sage_qc() {
-    local run_dir=$1
-    local purple_qc_file=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.qc")
-    if [[ -z "${purple_qc_file}" ]]; then
-        echo "[ERROR] Unable to locate purple on sage qc in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_qc_file}
-}
-
 locate_purple_drivers() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
@@ -443,16 +374,6 @@ locate_purple_gene_copynumbers() {
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
     if [[ -z "${purple_gene_copynumbers}" ]]; then
         echo "[ERROR] Unable to locate purple gene copynumbers in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${purple_gene_copynumbers}
-}
-
-locate_purple_on_sage_gene_copynumbers() {
-    local run_dir=$1
-    local purple_gene_copynumbers=$(find -L ${run_dir}/purple_sage/ -type f -name "*.purple.cnv.gene.tsv")
-    if [[ -z "${purple_gene_copynumbers}" ]]; then
-        echo "[ERROR] Unable to locate purple on sage gene copynumbers in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${purple_gene_copynumbers}
@@ -480,16 +401,6 @@ locate_purple_circos_plot() {
     local circos_plot=$(find -L ${run_dir}/purple/plot/ -type f -name "*.circos.png")
     if [[ -z "${circos_plot}" ]]; then
         echo "[ERROR] Unable to locate purple circos plot in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${circos_plot}
-}
-
-locate_purple_on_sage_circos_plot() {
-    local run_dir=$1
-    local circos_plot=$(find -L ${run_dir}/purple_sage/plot/ -type f -name "*.circos.png")
-    if [[ -z "${circos_plot}" ]]; then
-        echo "[ERROR] Unable to locate purple on sage circos plot in ${run_dir}. Exiting." >&2
         exit 1
     fi
     echo ${circos_plot}
@@ -830,12 +741,7 @@ locate_reporting_db_tsv_pilot() {
 ############################################# AMBER ###########################################
 locate_amber_directory() {
     local run_dir=$1
-    local set=$(basename $run_dir)
-    local amber_dir=/data/cpct/gcp/amber/$set/
-
-    if [[ ! -d $amber_dir ]]; then
-        amber_dir=$run_dir/amber/
-    fi;
+    local amber_dir=$run_dir/amber/
 
     if [[ ! -d $amber_dir ]]; then
         echo "[ERROR] Unable to locate AMBER directory. Exiting." >&2
