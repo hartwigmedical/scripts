@@ -17,4 +17,4 @@ gs_path=gs://${bucket}/${set}
 sample_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*cram/${sample}.cram$")
 normal_bam=$(gsutil -u hmf-database ls -r ${gs_path} | grep -Po "[^\s]*cram/${normal}.cram$")
 
-echo {\"tumor\":\"${sample_bam}\", \"reference\":\"${normal_bam}\", \"tumorSample\":\"${sample}\", \"referenceSample\":\"${normal}\"},
+echo {\"set\":\"${set}\", \"tumor_cram\":\"${sample_bam}\", \"reference_cram\":\"${normal_bam}\", \"tumor_sample\":\"${sample}\", \"ref_sample\":\"${normal}\"},
