@@ -45,6 +45,8 @@ if [[ -z "${machine_type}" ]]; then
 fi
 
 echo "[INFO] Creating VM Image '${vm_name}' on hmf-crunch using pipeline image '${image}'"
+echo "[INFO] Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'"
+echo "[INFO] Once the experiment is done, destroy the VM using 'gcloud compute instances delete ${vm_name}'"
 
 gcloud compute --project=hmf-crunch instances create ${vm_name} \
     --zone=europe-west4-a \
@@ -55,6 +57,3 @@ gcloud compute --project=hmf-crunch instances create ${vm_name} \
     --boot-disk-type=pd-standard \
     --boot-disk-device-name=${vm_name} \
     --no-address
-
-# Once VM has been created, you can login using 'gcloud compute ssh ${vm_name}'
-# Once the experiment is done, destroy the VM using 'gcloud compute instances delete ${vm_name}
