@@ -6,10 +6,10 @@ default_machine_type=n1-standard-2
 
 print_usage() {
     echo "Usage: $(basename $0) -n vm_name -i image_name -d disk_size_gb -t machine_type"
-    echo "  -n vm_name      Name of the VM to be created, eg 'kodu-vm'"
+    echo "  -n vm_name        Name of the VM to be created, eg 'kodu-vm'"
     echo "  -i image_name     Name of the image to use. Default=${default_image}. Should exist on hmf-crunch"
-    echo "  -d disk_size_gb     How many GBs to reserve on disk. Default=${default_disk_size_gb}"
-    echo "  -t machine_type     The machine type to create. Default=${default_machine_type}"
+    echo "  -d disk_size_gb   How many GBs to reserve on disk. Default=${default_disk_size_gb}"
+    echo "  -t machine_type   The machine type to create. Default=${default_machine_type}"
     exit 1
 }
 
