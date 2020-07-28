@@ -32,7 +32,9 @@ query_api.pl -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.na
             else 
                 echo "## FAILED: ${run_name} (status=${run_status})"
             fi
-        elif [[ "${run_status}" =~ ^(Waiting|Pending|Processing|Uploading|Downloading)$ ]]; then 
+        elif [[ "${run_status}" =~ ^(Waiting)$ ]]; then
+            echo "## WAITING: ${run_name} (status=${run_status})"
+        elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
             echo "## PROCESSING: ${run_name} (status=${run_status})"
         elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then 
             echo " process_shallow_run ${run_name} # (status=${run_status})"
