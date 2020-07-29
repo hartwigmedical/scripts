@@ -7,7 +7,7 @@ old_name='' # string of current sample name
 new_name='' # string of new sample name
 do_rename_files=''
 do_symlink_files=''
-command_line=$(basename ${0})" $@"
+command_line=$(basename ${0})" $*"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -86,10 +86,10 @@ for old_file in "${files_to_rename[@]}"; do
         echo "[INFO] Symlinking ${old_base} to ${new_base} )"
         ln -s ${old_file} ${new_base}
     elif [[ ${do_rename_files} ]]; then
-        echo "[INFO] Renaming ${old_base} to ${new_base} in ${file_dir}"
+        echo "[INFO] Renaming ${old_base} to ${new_base}"
         mv ${old_file} ${new_file} 
     else
-        echo "[INFO] Would rename ${old_base} to ${new_base} in ${file_dir}"
+        echo "[INFO] Would rename ${old_base} to ${new_base}"
     fi
 done
 
