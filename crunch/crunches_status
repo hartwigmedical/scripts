@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 
-for i in {1,2,3}; do 
+for i in {2,3}; do
     echo "--- Checking crunch${i} -----"
     ssh crunch00${i} check_samplesheets | grep "^#" | grep -P "Rund|CONVERSION|CYCLE"
 done
+
+echo "[INFO] Crunch001 removed -> add back once up and running again"

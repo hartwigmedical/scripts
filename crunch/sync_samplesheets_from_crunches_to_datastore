@@ -3,7 +3,7 @@
 datastore_sheets_dir=/data/samplesheets
 crunch_seq_runs_dir=/data1/illumina_data
 
-for i in {1,2,3}; do
+for i in {2,3}; do
     crunch_name="crunch00${i}"
     echo -e "[INFO] Checking ${crunch_name} for samplesheets"
 
@@ -16,3 +16,5 @@ for i in {1,2,3}; do
         rsync ${crunch_name}:${sheet_path} ${dest_path}
     done
 done
+
+echo "[INFO] Crunch1 removed -> add back once up and running again"

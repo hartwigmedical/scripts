@@ -2,7 +2,7 @@
 
 pull_script="pull_scripts_repo"
 
-for server in crunch00{1,2,3}; do
+for server in crunch00{2,3}; do
     echo "---"
     echo "[INFO] Executing \"${pull_script}\" at server ${server}"
     # Need to configure umask to 0002 which sets permissions of all new files on particular crunch to 664.
@@ -14,3 +14,4 @@ echo "---"
 echo "[INFO] Executing \"${pull_script}\" at server Datastore"
 exec ${pull_script}
 
+echo "[INFO] Crunch1 removed -> add back once up and running again"
