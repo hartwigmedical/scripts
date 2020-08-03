@@ -12,8 +12,7 @@ fi
 na="na"
 
 echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
-    \tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\
-    \tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
+\tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
 for run_dir in "${run_paths[@]}"; do
     ## init variables
