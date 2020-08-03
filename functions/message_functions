@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+# bash caller builtin returns '$line $filename'
+CALLER=$(basename "$(caller | cut -d" " -f2)")
+
+msg() {
+    local msg_type=$1 && shift
+    local msg_content=$* && shift
+    echo "[${msg_type}] $(date +"%y%m%d %T") | $msg_content (${CALLER})"
+}
+
+error() { 
+    msg "ERROR" "$@" >&2
+    exit 1 
+}
+
+warn() { 
+    msg "WARN" "$@" >&2
+}
+
+info() { 
+    msg "INFO" "$@"
+}
+

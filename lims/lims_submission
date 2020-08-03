@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+lims_object "submissions" "submission" "${1}"

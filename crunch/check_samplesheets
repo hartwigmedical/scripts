@@ -16,6 +16,7 @@ for sheet in ${sheets}; do
     curr_host_short=$(echo ${curr_host} | sed 's/crunch00/c/g')
     run_base=$(dirname ${sheet})
     base_calls_dir=${run_base}"/Data/Intensities/BaseCalls/"
+    fastq_out_dir=${run_base}"/Fastq"
     run_name=$(basename ${run_base})
     run_status="Sequencing"
     readme_file=${run_base}"/README"
@@ -66,8 +67,7 @@ for sheet in ${sheets}; do
         echo "# [NOTE] CONVERSION appears to be FINISHED";
         run_status="ConversionDone"
     else
-        local_search_dirs=$(find ${base_calls_dir} -maxdepth 1 -type d | grep -v "L00" | tr "\n" " ")
-        curr_lane=$(find ${local_search_dirs} -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
+        curr_lane=$(find "${fastq_out_dir}" -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
         echo "# [NOTE] CONVERSION appears to be RUNNING (${curr_lane})";
         run_status="Converting (${curr_lane})"
     fi

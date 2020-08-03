@@ -24,7 +24,7 @@ SAMP_NAS_PATH_2019="${NAS_DIR}/${SAMP_FILE_2019}"
 PROC_NAS_PATH_2019="${NAS_DIR}/${PROC_FILE_2019}"
 
 ## File and dir sanity checks
-if ssh nas "[[ ! -d "${NAS_DIR}" ]]"; then echo "[ERROR] Dir does not exist (nas:${NAS_DIR})" && exit 1; fi
+if ssh nas "[[ ! -d '${NAS_DIR}' ]]"; then echo "[ERROR] Dir does not exist (nas:${NAS_DIR})" && exit 1; fi
 for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH_2019}" "${PROC_NAS_PATH_2019}"; do
     if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1; fi
 done
@@ -110,13 +110,13 @@ echo "[INFO]   Converting $(basename ${cpct_target})"
 ${ACC2CSV} --with-header --input "${cpct_target}" --output ${DAY_DIR} --table tblSamples --quote-all false
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] CPCT export to csv FAILED" && exit 1; fi
 mv ${DAY_DIR}/tblSamples.csv ${cpct_txt}
-echo "[INFO]   Converting $(basename ${samp_target}) (sheet "submissions")"
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet submissions)"
 xlsx2csv -d "\t" "${samp_target}" -s 1 | tail -n +5 > ${subm_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SUBM export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $(basename ${samp_target}) (sheet "samples")"
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet samples)"
 xlsx2csv -d "\t" "${samp_target}" -s 2 | tail -n +2 > ${samp_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SAMP export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $(basename ${samp_target}) (sheet "Contact")"
+echo "[INFO]   Converting $(basename ${samp_target}) (sheet Contact)"
 xlsx2csv -d "\t" "${samp_target}" -s 3 | tail -n +1 > ${cont_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] CONT export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $(basename ${proc_target})"
@@ -124,10 +124,10 @@ xlsx2csv -d "\t" "${proc_target}" -s 1 | tail -n +5 > ${proc_txt}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] PROC export to csv FAILED" && exit 1; fi
 
 ## Convert to text format for 2019 files
-echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet "submissions")"
+echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet submissions)"
 xlsx2csv -d "\t" "${samp_target_2019}" -s 1 | tail -n +5 > ${subm_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SUBM export to csv FAILED" && exit 1; fi
-echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet "samples")"
+echo "[INFO]   Converting $(basename ${samp_target_2019}) (sheet samples)"
 xlsx2csv -d "\t" "${samp_target_2019}" -s 2 | tail -n +2 > ${samp_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] SAMP export to csv FAILED" && exit 1; fi
 echo "[INFO]   Converting $(basename ${proc_target_2019})"
@@ -150,12 +150,12 @@ echo "[INFO]   ${proc_latest}"
 ln -sfn ${proc_txt} ${proc_latest}
 
 ## Create latest symlinks for 2019 files
-echo "[INFO]   ${subm_latest}2019"
-ln -sfn ${subm_txt}2019 ${subm_latest}2019
-echo "[INFO]   ${samp_latest}2019"
-ln -sfn ${samp_txt}2019 ${samp_latest}2019
-echo "[INFO]   ${proc_latest}2019"
-ln -sfn ${proc_txt}2019 ${proc_latest}2019
+echo "[INFO]   ${subm_latest_2019}"
+ln -sfn "${subm_txt_2019}" "${subm_latest_2019}"
+echo "[INFO]   ${samp_latest_2019}"
+ln -sfn "${samp_txt_2019}" "${samp_latest_2019}"
+echo "[INFO]   ${proc_latest_2019}"
+ln -sfn "${proc_txt_2019}" "${proc_latest_2019}"
 
 ## Gather some metrics
 echo "[INFO] Stats:"

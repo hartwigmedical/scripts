@@ -21,7 +21,8 @@ my $NA_CHAR = "NA";
 
 my $SSHT_LOC = 'SampleSheet.csv';
 my $RXML_LOC = 'RunInfo.xml';
-my $JSON_LOC = 'Data/Intensities/BaseCalls/Stats/Stats.json';
+my $JSON_LOC1 = 'Data/Intensities/BaseCalls/Stats/Stats.json';
+my $JSON_LOC2 = 'Fastq/Stats/Stats.json';
 my $LANE_KEY = 'ConversionResults';
 my $SMPL_KEY = 'DemuxResults';
 my $READ_KEY = 'ReadMetrics';
@@ -101,9 +102,11 @@ die "[ERROR] Provided run dir does not exist ($RUN_PATH)\n" if defined $RUN_PATH
 die "[ERROR] Provided json does not exist ($JSON_PATH)\n" if defined $JSON_PATH and not -f $JSON_PATH;
 die "[ERROR] Provided xml does not exist ($RXML_PATH)\n" if defined $RXML_PATH and not -f $RXML_PATH;
 
-$JSON_PATH = "$RUN_PATH/$JSON_LOC" if defined $RUN_PATH;
 $RXML_PATH = "$RUN_PATH/$RXML_LOC" if defined $RUN_PATH;
 $SSHT_PATH = "$RUN_PATH/$SSHT_LOC" if (defined $RUN_PATH and not defined $SSHT_PATH);
+
+$JSON_PATH = "$RUN_PATH/$JSON_LOC1" if defined $RUN_PATH;
+$JSON_PATH = "$RUN_PATH/$JSON_LOC2" if not -f $JSON_PATH;
 
 ## -----
 ## MAIN

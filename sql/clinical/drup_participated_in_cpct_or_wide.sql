@@ -17,4 +17,4 @@ ON patients.patientId = id.patientId
 LEFT JOIN
     (SELECT patientId, group_concat(itemValue separator ', ') AS WIDEPNR
      FROM drupEcrf WHERE item ='FLD.WIDEPNR' GROUP BY patientId) wideid
-ON patients.patientId = wideid.patientId
+ON patients.patientId = wideid.patientId WHERE patients.patientId in ("XXX")

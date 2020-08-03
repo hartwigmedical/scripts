@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for i in {1,2,3}; do
+for i in {2,3}; do
     ssh crunch00${i} check_samplesheets | \
     grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+" | \
     while read line; do
@@ -8,3 +8,5 @@ for i in {1,2,3}; do
         echo -e "${fc_date}\t${line}"
     done     
 done | sort -r -k1 -k2 | cut -f2-
+
+echo "[INFO] Crunch001 removed -> add back once up and running again"

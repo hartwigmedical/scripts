@@ -1,12 +1,14 @@
+geneFile = '~/hmf/resources/ensembl_gene_data.hg19.csv'
+outputFile = '~/hmf/resources/KnownFusionPairs.hg19.bedpe'
+#geneFile = '~/hmf/resources/ensembl_gene_data.hg38.csv'
+#outputFile = '~/hmf/resources/KnownFusionPairs.hg38.bedpe'
 
+ensemblGeneData = read.csv(geneFile)
+knownPairs = read.csv('~/hmf/resources/known_fusion_data.csv') %>% filter(Type == 'KNOWN_PAIR')
+#View(knownPairs)
 
-ensemblGeneData = read.csv('~/hmf/resources/ensembl_gene_data.csv')
-knownPairs = read.csv('~/hmf/resources/knownFusionPairs.csv')
-View(knownPairs)
-
-kpBedInfo = merge(knownPairs,ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='fiveGene',by.y='GeneName',all.x=T)
-kpBedInfo = merge(kpBedInfo,ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='threeGene',by.y='GeneName',all.x=T)
-
+kpBedInfo = merge(knownPairs,ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='FiveGene',by.y='GeneName',all.x=T)
+kpBedInfo = merge(kpBedInfo,ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='ThreeGene',by.y='GeneName',all.x=T)
 
 str(kpBedInfo)
 
@@ -15,7 +17,7 @@ kpBedInfo = kpBedInfo %>%
   mutate(
     UpChr = factor(UpChr, levels = c(1:22,'X','Y'), ordered = T),
     DownChr = factor(DownChr, levels = c(1:22,'X','Y'), ordered = T),
-    Name=paste(fiveGene,threeGene,sep='-'),
+    Name=paste(FiveGene,ThreeGene,sep='-'),
     ## NOTE THAT WE SUBTRACT 1 FROM START FOR BEDPE FORMAT
     Start1=ifelse(UpStrand==1,UpGeneStart-preGeneBuffer,UpGeneStart) - 1,
     End1=ifelse(UpStrand==1,UpGeneEnd,UpGeneEnd+preGeneBuffer),
@@ -39,19 +41,4 @@ bedpe = kpBedInfo %>% mutate(
   select(StartChr, StartPositionStart, StartPositionEnd, EndChr, EndPositionStart, EndPositionEnd, Name, Score, StartStrand, EndStrand, UpChr, DownChr) %>%
   arrange(StartChr, StartPositionStart)
 
-write.table(bedpe, file = "~/hmf/resources/gridss_hotspot_breakpoint.bedpe", row.names = F, col.names = F, sep = "\t", quote = F)
-str(bedpe)
-
-#write.csv(kpBedInfo %>% select(UpChr,Start1,End1,DownChr,Start2,End2,Name,Strand1,Strand2,Info),'~/data/sv/known_pairs_bedpe',row.names = F,quote = F)
-
-
-#hotspots = read.csv(file = "~/hmf/resources/StructuralVariantHotspots.hg19.bedpe")
-
-bedpe = hotspots %>%
-  mutate(Start1 = Start1 - 1, Start2 = Start2 - 1, Score = 0) %>%
-  select(Chr1, Start1, End1, Chr2, Start2, End2, Name, Score, Strand1, Strand2) %>%
-  arrange(Chr1, Start1, End2, Chr2, Start2, End2)
-
-
-
-
+write.table(bedpe, file = outputFile, row.names = F, col.names = F, sep = "\t", quote = F)

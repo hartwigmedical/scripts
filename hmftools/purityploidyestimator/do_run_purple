@@ -13,6 +13,12 @@ credentials=$1 && shift
 
 reference_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+amber_dir=$(locate_amber_directory ${run_dir})
+
+if [[ ! -d "${amber_dir}" ]]; then
+    echo "[ERROR] Unable to locate AMBER data. Exiting."
+    exit 1
+fi
 
 if [[ ! -f "${somatic_vcf}" ]]; then
     echo "[ERROR] Unable to locate somatic variants. Exiting."
@@ -64,7 +70,7 @@ java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -circos ${base_path}/tools/circos_v0.69.6/bin/circos \
     -reference ${reference_sample} \
     -tumor ${tumor_sample} \
-    -amber ${run_dir}/amber \
+    -amber ${amber_dir} \
     -cobalt ${run_dir}/cobalt \
     -ref_genome ${ref_genome} \
     -output_dir ${purple_output_dir} \

@@ -8,7 +8,7 @@ set_name=$1 && shift
 type=$1 && shift
 
 if [[ -z "${set_name}" ]] || [[ -z "${type}" ]]; then
-    echo "[ERROR] Not all input parameters provided to $(basename $0)." && exit 1
+    echo "[ERROR] No set name and type provided to $(basename $0)." && exit 1
 fi
 
 gcp_sign_url_script="generate_signed_gcp_url.py"

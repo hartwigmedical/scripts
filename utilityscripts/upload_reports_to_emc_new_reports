@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-nextcloud_dir="STAGING/Reports-KMBP-EMC"
+nextcloud_dir="STAGING/Reports-KMBP-EMC/New reports"
 for report in /data/cpct/patient_reports/*.pdf; do
-    echo "[INFO] Uploading ${report} to Nextcloud for KMBP EMC"
+    echo "[INFO] Uploading ${report} to Nextcloud for KMBP EMC new reports"
     do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
 done
