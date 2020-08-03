@@ -101,9 +101,12 @@ View(rnaFusions)
 
 chimFrags = read.csv(formFilename('~/logs/',sampleId,'chimeric_frags.csv'))
 View(chimFrags) 
+View(chimFrags %>% filter(Type=='REALIGN_CANDIDATE')) 
 
 chimReads = read.csv(formFilename('~/logs/',sampleId,'chimeric_reads.csv'))
 View(chimReads) # 2272
+
+View(chimReads %>% filter(PosStart==39795896|PosEnd==39795896))
 
 View(chimFrags %>% group_by(FusionGroup,Type) %>% count %>% spread(Type,n,fill=0))
 View(chimFrags %>% group_by(Type) %>% count)
@@ -118,18 +121,76 @@ View(rnaFusionsChr %>% filter(SVType=='INV'))
 View(rnaFusionsChr %>% filter(SVType=='INV'&PosUp==PosDown))
 View(rnaFusionsChr %>% filter(SVType=='DEL'&PosUp-PosDown<5e5))
 
-chimReadsChr = read.csv(formFilename('~/logs/',sampleId,'spec_chr.chimeric_reads.csv'))
-View(chimReadsChr)
-View(chimReadsChr %>% group_by(FusionGroup) %>% count)
 
-View(ensemblTransExonData %>% filter(GeneId=='ENSG00000233864'))
-View(ensemblTransExonData %>% filter(TransName=='ENST00000518476'))
-View(ensemblGeneData %>% filter(Chromosome==8&GeneStart>88145481-1e5&GeneEnd>88145481+1e5))
+#####
+## Full sample comparison
+fusionsAll = read.csv(formFilename('~/data/rna/runs/',sampleId,'rel_1.0.fusions.csv'))
+fusionsAll = read.csv(formFilename('~/data/rna/runs/',sampleId,'all.fusions_no_dups.csv'))
+View(fusionsAll)
+View(fusionsAll %>% group_by(CovUp=2**round(log(CoverageUp,2)),CovDown=2**round(log(CoverageDown,2))) %>% count)
+sum(fusionsAll$RealignedFrags)
+View(fusionsAll %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
 
+fusionsAllNew = read.csv(formFilename('~/data/rna/runs/',sampleId,'all.fusions.csv'))
+View(fusionsAllNew)
+View(fusionsAllNew %>% group_by(CovUp=2**round(log(CoverageUp,2)),CovDown=2**round(log(CoverageDown,2))) %>% count)
+sum(fusionsAllNew$RealignedFrags)
+View(fusionsAllNew %>% filter(GeneNameUp=='TMPRSS2'&GeneNameDown=='ERG'))
+
+View(fusionsAll %>% group_by(ChrUp,PosUp,ChrDown,PosDown) %>% count %>% filter(n>1))
+View(fusionsAllNew %>% group_by(ChrUp,PosUp,ChrDown,PosDown) %>% count %>% filter(n>1))
+
+fusionCmp = fusionsAll %>% filter(GeneNameUp!=''&GeneNameDown!='') %>% filter(!(PosUp==106330425&PosDown==106209407)&!(PosUp==23542698&PosDown==22363490)
+                                                                              &!(PosUp==31321936&PosDown==31236813)&!(PosUp==31323216&PosDown==31238108)
+                                                                              &!(PosUp==32546829&PosDown==32520783)&!(PosUp==32726770&PosDown==32629886))
+
+fusionCmp2 = fusionsAllNew %>% filter(GeneNameUp!=''&GeneNameDown!='') %>% filter(!(PosUp==106330425&PosDown==106209407)&!(PosUp==23542698&PosDown==22363490)
+                                                                              &!(PosUp==31321936&PosDown==31236813)&!(PosUp==31323216&PosDown==31238108)
+                                                                              &!(PosUp==32546829&PosDown==32520783)&!(PosUp==32726770&PosDown==32629886))
+fusionCmp = merge(fusionCmp,fusionCmp2 %>% select(GeneNameUp,GeneNameDown,PosUp,PosDown,NewTotalFragments=TotalFragments,NewSplitFrags=SplitFrags,NewRealignedFrags=RealignedFrags,
+                                                     NewDiscordantFrags=DiscordantFrags,NewCoverageUp=CoverageUp,NewCoverageDown=CoverageDown),
+                  by=c('GeneNameUp','GeneNameDown','PosUp','PosDown'),all.x=T)
+
+# diff fragment counts
+View(fusionCmp %>% filter(TotalFragments!=NewTotalFragments) %>% select(FusionId,GeneNameUp,GeneNameDown,ChrUp,ChrDown,PosUp,PosDown,
+                                                                        NewTotalFragments,TotalFragments,NewSplitFrags,SplitFrags,
+                                                                        NewRealignedFrags,RealignedFrags,NewDiscordantFrags,DiscordantFrags,
+                                                                        NewCoverageUp,CoverageUp,NewCoverageDown,CoverageDown,GeneIdUp,GeneIdDown) %>% filter(ChrUp==ChrDown))
+
+# different coverage
+View(fusionCmp %>% filter(CoverageUp!=NewCoverageUp|CoverageDown!=NewCoverageDown) %>% select(FusionId,GeneNameUp,GeneNameDown,ChrUp,ChrDown,PosUp,PosDown,
+                                                                        NewTotalFragments,TotalFragments,NewSplitFrags,SplitFrags,
+                                                                        NewRealignedFrags,RealignedFrags,NewDiscordantFrags,DiscordantFrags,
+                                                                        NewCoverageUp,CoverageUp,NewCoverageDown,CoverageDown,GeneIdUp,GeneIdDown) %>% filter(ChrUp==ChrDown))
+
+fusionsChr = read.csv(formFilename('~/logs/',sampleId,'spec_chr.fusions.csv'))
+View(fusionsChr)
 
 chimFragsChr = read.csv(formFilename('~/logs/',sampleId,'spec_chr.chimeric_frags.csv'))
 View(chimFragsChr)
-View(chimFragsChr %>% filter(ChrStart!=ChrEnd))
+
+
+chimReadsAll = read.csv(formFilename('~/data/rna/runs/',sampleId,'all.chimeric_reads.csv'))
+View(chimReadsAll)
+colnames(fusionCmp)
+View(chimReadsAll %>% filter(!grepl('Id_',FusionGroup)))
+
+chimReadsNoFusion = chimReadsAll %>% filter(!grepl('Id_',FusionGroup))
+View(chimReadsNoFusion %>% group_by(FusionGroup) %>% count)
+View(chimReadsNoFusion)
+View(chimReadsNoFusion %>% filter(grepl('INVALID',FusionGroup)))
+
+View(chimReadsAll %>% filter(ReadId=='NB500901:18:HTYNHBGX2:1:13312:8083:6184'))
+
+chimFragsAllOrig = read.csv(formFilename('~/data/rna/runs/',sampleId,'rel_1.0.chimeric_frags.csv'))
+View(chimFragsAllOrig)
+View(chimFragsAllOrig %>% filter(FusionGroup=='Id_28888'))
+
+chimFragsAll = read.csv(formFilename('~/data/rna/runs/',sampleId,'all.chimeric_frags.csv'))
+View(chimFragsAll)
+View(chimFragsAll %>% filter(FusionGroup))
+View(chimFragsAll %>% filter(!grepl('Id_',FusionGroup)))
+View(chimFragsAll %>% filter(!grepl('Id_',FusionGroup)) %>% group_by(Type,FusionGroup) %>% count)
 
 chimReadsAll = read.csv(formFilename('~/logs/',sampleId,'all.chimeric_reads.csv'))
 View(tmpChm)

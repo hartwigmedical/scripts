@@ -5,7 +5,7 @@ cfData = read.csv('~/data/sv/LNX_CHAIN_FINDER_SVS.csv')
 nrow(cfData)
 View(cfData)
 View(cfData %>% group_by(SampleId) %>% count)
-nrow(cfData %>% group_by(SampleId) %>% count)
+nrow(cfData %>% group_by(SampleId) %>% count) # 1587
 
 cfSamples = cfData %>% group_by(SampleId) %>% count
 View(cfSamples)
@@ -13,7 +13,6 @@ nrow(cfSamples) # 3686 samples
 
 ## link to common Linx data
 cfSvData = read.csv('~/data/sv/chainfinder/LNX_SVS.csv')
-cfSvData = read.csv('~/data/sv/chainfinder/LNX_SVS_PROD.csv')
 cfSvData = cfSvData %>% filter(SampleId %in% cfSamples$SampleId)
 nrow(cfSvData)
 
@@ -196,6 +195,112 @@ View(cfData %>% filter(ClusterCount==1&CfChainId>=0) %>% group_by(ClusterReason,
 
 
 #####
+## Heatmap of cluster vs chain size
+View(cfData %>% filter(CfChainId>0))
+
+View(cfData %>% filter((ClusterCount>=3|CfChainCount>=3)&(CfChainCount==-1|CfChainCount>=3)) %>% 
+       group_by(ClusterSize=ifelse(ClusterCount<=3,ClusterCount,2**round(log(ClusterCount,2))),
+                ChainSize=ifelse(is.na(CfChainCount),0,ifelse(CfChainCount<=3,CfChainCount,2**round(log(CfChainCount,2))))) %>% count %>% spread(ChainSize,n,fill=0))
+
+get_cf_group_size<-function(clusterSize,useLog=F)
+{
+  if(is.na(clusterSize))
+    return (as.character('<3'))
+  if(useLog)
+    return (as.character(2**round(log(clusterSize,2))))
+  
+  if(clusterSize<=2)
+    return ('<3')
+  else if(clusterSize<=4)
+    return (as.character(clusterSize))
+  else if(clusterSize<=8)
+    return (as.character('5-8'))
+  else if(clusterSize<=16)
+    return (as.character('9-16'))
+  else if(clusterSize<=32)
+    return (as.character('17-32'))
+  else if(clusterSize<=64)
+    return (as.character('33-64'))
+  else
+    return (as.character('>64'))
+}
+
+get_cf_group_index<-function(clusterSize)
+{
+  if(clusterSize=='<3')
+    return (0)
+  else if(clusterSize=='3')
+    return (1)
+  else if(clusterSize=='4')
+    return (2)
+  else if(clusterSize=='5-8')
+    return (3)
+  else if(clusterSize=='9-16')
+    return (4)
+  else if(clusterSize=='17-32')
+    return (5)
+  else if(clusterSize=='33-64')
+    return (6)
+  else
+    return (7)
+}
+
+# testing
+print(get_cf_group_size(-1))
+print(get_cf_group_size(0))
+print(get_cf_group_size(1))
+print(get_cf_group_size(-1))
+
+clusterChainCmp = cfData %>% filter(CfChainId==-1|CfChainCount>=3) %>% filter(ClusterCount>=3|CfChainId>0)
+
+clusterChainCmp$LinxClusterSize=apply(clusterChainCmp[,c('ClusterCount'),drop=F], 1, function(x) get_cf_group_size(x[1]))
+clusterChainCmp$CfChainSize=apply(clusterChainCmp[,c('CfChainCount'),drop=F], 1, function(x) get_cf_group_size(x[1]))
+View(clusterChainCmp)
+
+View(clusterChainCmp %>% group_by(LinxClusterSize,CfChainSize) %>% count %>% spread(CfChainSize, n,fill=0))
+
+View(clusterChainCmp %>% group_by(LinxClusterSize=2**round(log(ClusterCount,2)),
+                                  CfChainSize=ifelse(CfChainCount<=0,0,2**round(log(CfChainCount,2)))) %>% count %>% spread(CfChainSize, n,fill=0))
+
+clusterChainSummary = clusterChainCmp %>% group_by(LinxClusterSize,CfChainSize) %>% summarise(Count=n(),CfChainCount=first(CfChainCount),LinxClusterCount=first(ClusterCount))
+View(clusterChainSummary)
+
+clusterChainSummary2 = clusterChainSummary %>% select(LinxClusterSize,CfChainSize,Count) %>%  spread(CfChainSize,Count,fill=0) %>% gather('CfChainSize','Count',2:9)
+clusterChainSummary2$LinxSizeIndex=apply(clusterChainSummary2[,c('LinxClusterSize'),drop=F], 1, function(x) get_cf_group_index(x[1]))
+clusterChainSummary2$CfSizeIndex=apply( clusterChainSummary2[,c('CfChainSize'),drop=F], 1, function(x) get_cf_group_index(x[1]))
+View(clusterChainSummary2)
+
+## Final Plot
+print(ggplot(clusterChainSummary2, aes(x=reorder(LinxClusterSize,LinxSizeIndex),y=reorder(CfChainSize,CfSizeIndex))) 
+      + geom_tile(aes(fill=Count),stat="identity") 
+      + geom_text(aes(label=Count))
+      + scale_fill_gradient(low="white",high="steelblue")
+      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.background = element_blank())
+      + theme(legend.position = "none")
+      + labs(title='Linx vs ChainFinder Clustering', x='Linx Cluster Size',y='ChainFinder Chain Size'))
+
+
+print(ggplot(clusterChainSummary, aes(x=reorder(LinxClusterSize,LinxClusterCount),y=reorder(CfChainSize,CfChainCount))) 
+      + geom_hex(aes(fill=Count),stat="identity") 
+      + geom_text(aes(label=Count))
+      + scale_fill_gradient(low="white",high="steelblue")
+      + labs(title='Linx vs ChainFinder Clustering', x='Linx Cluster Size',y='ChainFinder Chain Size'))
+
+clusterChainCmp = merge(clusterChainCmp,clusterChainSummary %>% select(LinxClusterSize,CfChainSize,Count),by=c('LinxClusterSize','CfChainSize'),all.x=T)
+View(clusterChainCmp %>% select(ClusterCount,CfChainCount,LinxClusterSize,CfChainSize,Count,everything()))
+
+print(ggplot(clusterChainCmp, aes(x=pmin(ClusterCount,64),y=pmin(CfChainCount,64))) 
+      + geom_hex() 
+      #+ scale_x_log10()
+      #+ scale_y_log10()
+      + scale_fill_gradient(low="white",high="steelblue",trans="log10")
+      + labs(title='Linx vs ChainFinder Clustering', x='Linx Cluster Size',y='ChainFinder Chain Size'))
+
+
+
+
+
+#####
 ## Combined Group Data
 #cfGroupData = read.csv('~/data/sv/chainfinder/LNX_CHAIN_FINDER_GROUPS.csv')
 cfGroupData = read.csv('~/data/sv/LNX_CHAIN_FINDER_GROUPS.csv')
@@ -274,6 +379,221 @@ View(cfGroupData %>% filter(Clusters>Chains) %>% summarise(SimpleSVs=sum(SimpleS
                                     SynthDel=sum(grepl(';DEL',ResolvedTypes)|grepl('DEL;',ResolvedTypes)),
                                     SynthDup=sum(grepl(';DUP',ResolvedTypes)|grepl('DUP;',ResolvedTypes)),
                                     DelTI=sum(grepl('DEL_TI',ResolvedTypes))))
+
+
+
+
+
+
+
+#######
+
+## ChainFinder debug and experiments
+
+cfCompareSample = read.csv('~/logs/LNX_CHAIN_FINDER_SVS.csv')
+View(cfCompareSample)
+
+View(cfCompareSample %>% filter(CfSvId==783898|CfSvId==783814))
+
+
+cfCompare100 = read.csv('~/data/sv/chainfinder/LNX_CHAIN_FINDER_SVS.csv')
+View(cfCompare100)
+
+View(cfCompare %>% filter(ClusterCount>100&CfChainId>=0))
+
+
+View(cfData %>% filter(SampleId=='CPCT02120063T'&ChainId>0))
+View(cfData %>% filter(SampleId=='CPCT02120063T'))
+
+
+# longest chained distance
+View(cfCompare100 %>% filter(CfChainId>=0))
+
+cfGroupDataSample = read.csv('~/logs/LNX_CHAIN_FINDER_GROUPS.csv')
+View(cfGroupDataSample)
+
+View(cfGroupData %>% filter(SampleId=='CPCT02120063T'))
+
+
+
+# Local vs Remote
+createClusterArmStats <- function(svData) 
+{
+  rbind(svData %>% mutate(Arm=ArmStart,Chr=ChrStart),svData %>% filter(ChrEnd!=0) %>% mutate(Arm=ArmEnd,Chr=ChrEnd)) %>%
+    group_by(SampleId,ClusterId) %>% mutate(clusterSGLCount=sum(ChrEnd==0)) %>% ungroup() %>%
+    group_by(SampleId,ClusterId,Arm,Chr,ResolvedType,ClusterBreakends=ClusterCount*2-clusterSGLCount) %>% 
+    summarise(LocalCount=sum(ArmEnd==ArmStart&ChrEnd==ChrStart),CrossArmCount=sum(ArmEnd!=ArmStart&ChrEnd==ChrStart),SGLCount=sum(ChrEnd==0),RemoteCount=sum((ArmEnd!=ArmStart|ChrEnd!=ChrStart)&ChrEnd!=0)) %>%
+    mutate(expectedLocalProportion = round((LocalCount+RemoteCount+SGLCount)/ClusterBreakends,4),actualLocalProportion=(round((LocalCount+SGLCount)/(LocalCount+RemoteCount+SGLCount),4)),diff=actualLocalProportion-expectedLocalProportion) %>%
+    mutate(pValue=pmin(ppois(LocalCount+SGLCount,(LocalCount+RemoteCount+SGLCount)*expectedLocalProportion,FALSE,FALSE),ppois(LocalCount+SGLCount,(LocalCount+RemoteCount+SGLCount)*expectedLocalProportion,TRUE,FALSE)))
+}
+
+View(svData %>% filter(SampleId=='CPCT02010022T'))
+View(svData %>% filter(SampleId=='CPCT02010022T') %>% group_by(ClusterId,ClusterCount,ResolvedType) %>% count)
+
+
+clusters = read.csv('~/data/sv/chainfinder/LNX_CLUSTERS_PROD.csv')
+clusters = clusters %>% filter(SampleId %in% cfSampleIds$SampleId)
+View(clusters)
+
+View(clusters %>% filter(SampleId %in% cfSamplesWithChains$SampleId) %>% filter(ClusterCount>100))
+
+View(clusters %>% filter(SampleId %in% cfSamplesWithChains$SampleId) %>% group_by(SampleId) %>% summarise(SvCount=sum(ClusterCount)))
+
+
+
+
+
+# CF Under-Clustering
+View(cfData %>% filter(CfChainId<0) %>% separate(ClusterReason,c('ClusterReason','ClusterSvId',sep='_')) %>%
+       group_by(Type,ClusterReason) %>% count %>% spread(Type,n,fill=0))
+
+View(cfData %>% filter(CfChainId<0) %>% separate(ClusterReason,c('ClusterReason','ClusterSvId',sep='_')) %>%
+       group_by(ClusterReason) %>% count)
+
+
+
+specSvData = svData %>% filter(SampleId=='CPCT02010452T')
+specSvData = svData %>% filter(SampleId=='CPCT02330070T')
+cfSpecCompare = merge(cfData,specSvData %>% select(SampleId,SvId=Id,ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,DBLenStart,DBLenEnd),by=c('SampleId','SvId'),all.x=T)
+View(cfSpecCompare)
+
+View(cfSpecCompare %>% filter(ClusterId %in% c(167,169,172,175,176,208,209)) %>% select(ClusterId,Type,ChrStart,ChrEnd,PosStart,PosEnd,OrientStart,OrientEnd,Ploidy,everything()))
+
+
+svSampleSummary = svData %>% group_by(SampleId) %>% summarise(SvCount=n(),
+                                                              SglCount=sum(Type=='SGL'|Type=='INF'),
+                                                              MaxPloidy=max(Ploidy))
+
+View(svSampleSummary %>% filter(SvCount>100&SvCount<500&SglCount<15&MaxPloidy<20) %>% arrange(SglCount))
+
+write.csv(head(svSampleSummary %>% filter(SvCount>100&SvCount<500&SglCount<15&MaxPloidy<20) %>% arrange(SglCount),100),
+          '~/data/sv/chainfinder/cf_samples.txt',row.names = F,quote = F)
+
+cfSampleIds = read.csv('~/data/sv/chainfinder/cf_samples.txt')
+write.csv(cfSampleIds %>% select(SampleId),'~/data/sv/chainfinder/cf_sample_ids.csv',row.names = F,quote = F)
+
+
+
+
+# CF proximity vs Linx clustering distances
+clusterDistances = cfData %>% filter(CfChainId>0&CfProxDistance>=0) %>%
+  mutate(LinxDistance=ifelse(ProxDistance==0,1,2**round(log(ProxDistance,2))),
+         CfDistance=ifelse(CfProxDistance==0,1,2**round(log(CfProxDistance,2))))
+
+View(cfData %>% filter(CfChainId>0))
+
+
+print(ggplot(clusterDistances %>% 
+               filter(ClusterReason!='LOH_CHAIN'&ClusterReason!='OVERLAP_FOLDBACKS'&ClusterReason!='CONSEC_BREAKS') %>% 
+               group_by(ClusterReason,DistanceBucket=2**round(log(ClusterDistance,2))) %>% count, 
+             aes(x=DistanceBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~ClusterReason)
+      + labs(title = "Clustering Distances in Linx by Clustering Reason"))
+
+
+
+combinedClusterDistances = rbind(cfData %>% filter(CfChainId>0) %>% mutate(Source='CF',ClusterReason='PROXIMITY') %>% 
+                                   select(SampleId,Source,SvId,ClusterReason,ClusterDistance=CfProxDistance),
+                                 cfData %>% filter(ClusterCount>1) %>% mutate(Source='LINX') %>% select(SampleId,Source,SvId,ClusterReason,ClusterDistance=ProxDistance))
+
+View(combinedClusterDistances)
+
+
+
+# much longer tail for Linx's clustering
+print(ggplot(combinedClusterDistances %>% filter(ClusterDistance>0) %>% group_by(Source,DistanceBucket=2**round(log(ClusterDistance,2))) %>% count, 
+             aes(x=DistanceBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~Source)
+      + labs(title = "Clustering Distances Linx vs CF"))
+
+# variety of reason for long-distance clustering in Linx
+View(combinedClusterDistances %>% group_by(Source,ClusterReason) %>% count)
+print(ggplot(combinedClusterDistances %>% 
+               filter(ClusterDistance>0&Source=='LINX'&ClusterReason!='PROXIMITY'&ClusterReason!='LOH_CHAIN'&ClusterReason!='OVERLAP_FOLDBACKS'&ClusterReason!='CONSEC_BREAKS') %>% 
+               group_by(ClusterReason,DistanceBucket=2**round(log(ClusterDistance,2))) %>% count, 
+             aes(x=DistanceBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~ClusterReason)
+      + labs(title = "Clustering Distances in Linx by Clustering Reason"))
+
+
+
+
+
+View(cfData %>% filter((LnxDbLenStart>-500&LnxDbLenStart<0&CfLinkLenStart>0&abs(LnxDbLenStart+CfLinkLenStart)<=2)|
+                         (LnxDbLenEnd>-500&LnxDbLenEnd<0&CfLinkLenEnd>0&abs(LnxDbLenEnd+CfLinkLenEnd)<=2)) %>%
+       select(SampleId,SvId,LnxDbLenStart,CfLinkLenStart,LnxDbLenEnd,CfLinkLenEnd,everything()))
+
+
+cfData = cfData %>% mutate(HasLinkStart=CfLinkLenStart>0,
+                           HasLinkEnd=CfLinkLenEnd>0,
+                           CfLinkDbOverhangMatchStart=HasLinkStart&LnxDbLenStart>-500&LnxDbLenStart<0&abs(LnxDbLenStart+CfLinkLenStart)<=2,
+                           CfLinkDbOverhangMatchEnd=HasLinkEnd&LnxDbLenEnd>-500&LnxDbLenEnd<0&abs(LnxDbLenEnd+CfLinkLenEnd)<=2)
+
+(sum(cfData$HasLinkStart)+sum(cfData$HasLinkEnd))/nrow(cfData %>% filter(CfChainId>0))
+sum(cfData$HasLinkStart)
+
+sum(cfData$HasLinkStart&cfData$CfLinkDbOverhangMatchStart)
+sum(cfData$HasLinkEnd)
+
+sum(cfData$CfLinkDbOverhangMatchStart)/sum(cfData$HasLinkStart)
+sum(cfData$CfLinkDbOverhangMatchEnd)/sum(cfData$HasLinkEnd)
+
+sum(cfData$HasLinkEnd&cfData$CfLinkDbOverhangMatchEnd)
+
+View(cfData %>% filter((LnxDbLenStart>-500&LnxDbLenStart<0&CfLinkLenStart>0&abs(LnxDbLenStart+CfLinkLenStart)<=2)|
+                         (LnxDbLenEnd>-500&LnxDbLenEnd<0&CfLinkLenEnd>0&abs(LnxDbLenEnd+CfLinkLenEnd)<=2)) %>%
+       select(SampleId,SvId,LnxDbLenStart,CfLinkLenStart,LnxDbLenEnd,CfLinkLenEnd,everything()))
+
+
+####
+## Deletion Bridge stats
+
+## Linx DBs
+dbStats = rbind(cfCompare100 %>% filter(CfChainId>=0&DbMatchedStart!='NONE') %>% mutate(IsStart=T) %>% select(SampleId,SvId,DbMatched=DbMatchedStart,LnxDbLen=LnxDbLenStart,CfDbLen=CfDbLenStart),
+                cfCompare100 %>% filter(CfChainId>=0&DbMatchedEnd!='NONE') %>% mutate(IsStart=F) %>% select(SampleId,SvId,DbMatched=DbMatchedEnd,LnxDbLen=LnxDbLenEnd,CfDbLen=CfDbLenEnd))
+
+dbStats = rbind(cfCompare100 %>% filter(LnxDbLenStart>-1000) %>% mutate(Source='LINX') %>% select(SampleId,SvId,CfSvId,Source,DbMatched=DbMatchedStart,DbLen=LnxDbLenStart),
+                cfCompare100 %>% filter(LnxDbLenEnd>-1000) %>% mutate(Source='LINX') %>% select(SampleId,SvId,CfSvId,Source,DbMatched=DbMatchedEnd,DbLen=LnxDbLenEnd),
+                cfCompare100 %>% filter(CfDbLenStart>-1000) %>% mutate(Source='CF') %>% select(SampleId,SvId,CfSvId,Source,DbMatched=DbMatchedStart,DbLen=CfDbLenStart),
+                cfCompare100 %>% filter(CfDbLenEnd>-1000) %>% mutate(Source='CF') %>% select(SampleId,SvId,CfSvId,Source,DbMatched=DbMatchedEnd,DbLen=CfDbLenEnd))
+
+dbStats = dbStats %>% mutate(DbLengthBucket=ifelse(DbLen==0,0,ifelse(DbLen<0,-2**round(log(-DbLen,2)),2**round(log(DbLen,2)))))
+View(dbStats)
+View(dbStats %>% filter(is.na(DbLengthBucket)))
+
+View(dbStats %>% group_by(Source,DbLengthBucket) %>% count %>% spread(Source,n,fill=0))
+View(dbStats %>% group_by(Source) %>% summarise(Total=n(),ZeroDB=sum(DbLen==0),NegDBs=sum(DbLen<0)))
+
+print(ggplot(dbStats %>% filter(DbLengthBucket>0&DbLengthBucket<1e4) %>% group_by(Source,DbLengthBucket) %>% count, aes(x=DbLengthBucket, y=n))
+      + geom_line()
+      + scale_x_log10()
+      + facet_wrap(~Source)
+      + labs(title = "DB Lengths Linx vs CF"))
+
+print(ggplot(dbStats %>% filter(DbLengthBucket<1e3) %>% group_by(Source,DbLengthBucket) %>% count, aes(x=DbLengthBucket, y=n))
+      + geom_line()
+      + facet_wrap(~Source)
+      + labs(title = "DB Lengths Linx vs CF"))
+
+View(dbStats %>% group_by(DbMatched) %>% summarise(Count=n(),
+                                                   OverlapDBs=sum(LnxDbLen>-1000&LnxDbLen<0),
+                                                   LnxAvg=round(mean(LnxDbLen)),LnxMin=min(LnxDbLen),LnxMax=max(LnxDbLen),
+                                                   CfAvg=round(mean(CfDbLen)),CfMin=min(CfDbLen),CfMax=max(CfDbLen))) 
+
+
+
+
+cfSamplesWithChains = cfCompare %>% filter(CfChainId>=0) %>% group_by(SampleId) %>% count
+View(cfSamplesWithChains)
+View(cfCompare %>% filter(SampleId %in% cfSamplesWithChains$SampleId) %>% filter(ClusterCount>100))
+View(cfCompare %>% filter(SampleId %in% cfSamplesWithChains$SampleId) %>% filter(ClusterCount>100))
+
 
 
 

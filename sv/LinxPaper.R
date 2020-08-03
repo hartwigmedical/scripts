@@ -10,6 +10,9 @@ nrow(sampleData) # 4513
 View(sampleData)
 View(sampleData %>% group_by(CancerType) %>% count)
 
+write.csv(sampleData %>% select(SampleId),'~/data/sv/cohort/sample_ids_4512.csv',row.names = F,quote = F)
+write.csv(sampleData,'~/data/sv/cohort/sample_data_4512.csv',row.names = F,quote = F)
+
 # Merge Minor Cancer Types
 sampleData = convert_to_major_cancer_types(sampleData,25)
 
@@ -22,19 +25,40 @@ View(sampleDedupSummary)
 samplesDD = sampleData %>% filter(SampleId %in% sampleDedupSummary$SampleId)
 View(samplesDD)
 
+write.csv(samplesDD,'~/data/sv/cohort/sample_data_dedup.csv',row.names = F,quote = F)
+samplesDD = read.csv('~/data/sv/cohort/sample_data_dedup.csv')
+
 cancerTypeTotals = samplesDD %>% group_by(CancerType) %>% summarise(SampleCount=n())
 View(cancerTypeTotals)
 
-write.csv(sampleData %>% select(SampleId),'~/data/sv/cohort/sample_ids_4512.csv',row.names = F,quote = F)
 
 
 ## Load SV Data
 svData = read.csv('~/data/sv/cohort/LNX_SVS.csv')
+# svData = read.csv('~/data/sv/cohort/logs/LNX_SVS.csv')
 svData = svData %>% filter(SampleId %in% samplesDD$SampleId)
 svData = svData %>% filter(!(ResolvedType %in% c('LOW_VAF','DUP_BE'))) # remove artefect types
 nrow(svData)
 nrow(svData %>% group_by(SampleId) %>% count)
 
+
+get_cluster_size<-function(clusterSize)
+{
+  if(clusterSize<=4)
+    return (as.character(clusterSize))
+  else if(clusterSize<=8)
+    return (as.character('5-8'))
+  else if(clusterSize<=16)
+    return (as.character('9-16'))
+  else if(clusterSize<=32)
+    return (as.character('17-32'))
+  else if(clusterSize<=64)
+    return (as.character('33-64'))
+  else if(clusterSize<=128)
+    return (as.character('65-128'))
+  else
+    return (as.character('>128'))
+}
 
 
 
@@ -45,7 +69,10 @@ clusters = clusters %>% filter(SampleId %in% samplesDD$SampleId)
 nrow(clusters %>% group_by(SampleId) %>% count)
 
 # remove artefect types
+artefects = c('LOW_VAF','DUP_BE')
+excludedTypes = c('INF','PAIR_INF')
 clusters = clusters %>% filter(!(ResolvedType %in% c('LOW_VAF','DUP_BE')))
+View(clusters %>% group_by(ResolvedType) %>% count)
 
 
 #####
@@ -70,7 +97,7 @@ View(links %>% filter(ExonMatch!=''))
 
 View(psdGeneData %>% group_by(SampleId,GeneName) %>% count %>% filter(SampleId=='WIDE01010564T'|SampleId=='WIDE01010575T'))
 
-lineSamples = svData %>% group_by(SampleId) %>% summarise(LineBEs=sum(ResolvedType=='LINE'&LEStart!='None')+sum(ResolvedType=='LINE'&LEEnd!='None'))
+lineSamples = svData %>% group_by(SampleId) %>% summarise(LineBEs=sum(ResolvedType=='LINE'&(LEStart!='None'|LEEnd!='None')))
 nrow(lineSamples)
 View(lineSamples)
 
@@ -105,35 +132,6 @@ print(ggplot(linePsdgSampleData %>% filter(PseudogeneBucket!=0) %>%
       + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
       # + theme(legend.title = element_text(text='Count of Pseudogenes per Sample' ))
       + labs(title = 'LINE Break Junctions vs Pseudogenes per Sample', x = 'LINE Break Junctions', y = 'Percent of Samples',fill='# of Pseudogene Insertions'))
-
-
-View(linePsdgSampleData)
-
-
-write.csv(linePsdgSampleSummary,'~/logs/linePsdgSampleSummary.csv',row.names = F,quote = F)
-
-# 'Count of LINE Break Junctions'
-# add n = sample count
-
-linePsdgSampleSummary = linePsdgSampleSummary %>% group_by(CancerType) %>% mutate(MedianLineBE=median(LineBEs),
-                                                                                  PseudogeneTotal=sum(Pseudogenes)) %>% ungroup()
-linePsdgSampleSummary = merge(linePsdgSampleSummary,cancerTypeTotals,by='CancerType',all.x=T)
-View(linePsdgSampleSummary)
-
-print(ggplot(linePsdgSampleSummary %>% mutate(LineBEs=LineBEs+0.5,CancerTypeLabel=sprintf('%s (n=%d)',CancerType,SampleCount)), 
-             aes(x=reorder(CancerTypeLabel,-MedianLineBE),y=LineBEs))
-      + geom_violin(scale="area",fill="#6baed6")
-      + stat_summary(fun.y="median", geom="point")
-      + scale_y_log10()
-      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
-      + labs(title = "LINE Break Junctions per Sample",y='LINE Break Junctions',x=''))
-
-print(ggplot(linePsdgSampleSummary %>% mutate(Pseudogenes=Pseudogenes+0.5,CancerTypeLabel=sprintf('%s (n=%d)',CancerType,SampleCount)), 
-             aes(x=reorder(CancerTypeLabel,-PseudogeneTotal),y=Pseudogenes))
-      + geom_violin(scale="area",fill="#6baed6")
-      + scale_y_log10()
-      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
-      + labs(title = "Pseudogenes per Sample",y='Pseudogenes',x=''))
 
 
 ## Homozygous Disruptions
@@ -250,10 +248,6 @@ for(gene in homDisTopGenes$Gene)
 # make CN Gain Bucket clear - eg 2-4, 5-8 etc
 # EGFR change y-axis to count rather than percent, and drop Lung
 
-sgls = svData %>% filter(Type=='SGL')
-View(sgls %>% filter(DBLenStart>-1000))
-View(sgls %>% filter(LnkLenStart>0))
-
 
 View(drivers)
 ampDrivers = drivers %>% filter(DriverCategory=='AMP') %>%
@@ -362,29 +356,40 @@ cnGainPlot = driverFactorByGroupPlot(summaryData %>% select(Group=CnGainBucket,S
 #####
 ## COMPLEX Clusters
 
-complexClusters = clusters %>% filter(ResolvedType=='COMPLEX'&ClusterCount>=10)
-complexSVs = svData %>% filter(ResolvedType=='COMPLEX')
-
 # 1. Frequency of complex events per sample
-ccPerSample = complexClusters %>% group_by(SampleId) %>% summarise(SampleCC=n())
-View(ccPerSample)
+complexClusters = clusters %>% filter(ResolvedType=='COMPLEX'&ClusterCount>=3)
+complexClusters = complexClusters %>% mutate(ClusterSize=ifelse(ClusterCount<=4,'3-4',ifelse(ClusterCount<=10,'5-10',ifelse(ClusterCount<=20,'11-20','>20'))))
 
-ccZeroSamples = samplesDD %>% filter(!(SampleId %in% ccPerSample$SampleId)) %>% mutate(SampleCC=0) %>% select(SampleId,SampleCC)
-nrow(ccZeroSamples)
-ccPerSample = rbind(ccPerSample,ccZeroSamples)
+ccSummary = complexClusters %>% group_by(SampleId,ClusterSize) %>% summarise(CountOfClusters=n(),ClusterSizeN=min(ClusterCount)) %>% 
+  group_by(ClusterSize,CountOfClusters=pmin(CountOfClusters,20)) %>% summarise(Count=n(),ClusterSizeN=first(ClusterSizeN))
 
-ccPerSample = ccPerSample %>% mutate(CCBucket=ifelse(SampleCC<=2,as.character(SampleCC),ifelse(SampleCC<=5,'3-5',
-                                              ifelse(SampleCC<=10,'6-10',ifelse(SampleCC<=25,'11-25','>25')))))
-View(ccPerSample %>% group_by(CCBucket) %>% summarise(SampleCC=first(SampleCC),Count=n()))
+View(ccSummary)
 
-print(ggplot(ccPerSample %>% group_by(CCBucket) %>% summarise(SampleCC=first(SampleCC),Count=n()), aes(x=reorder(CCBucket,SampleCC), y=Count))
-      + geom_bar(stat = "identity", colour = "black")
-      + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=9))
-      + labs(title='Number of Complex Clusters per Sample', y='Sample Count',x=''))
+print(ggplot(ccSummary) +
+        geom_bar(aes(x=CountOfClusters,y=Count,fill=reorder(ClusterSize,-ClusterSizeN)),stat='identity',alpha=1) +
+        labs(title='Frequency of Complex Clusters by Size',x='Clusters per Sample',y='# Clusters',fill='SVs per Cluster'))
+
+
+ccSummary2 = complexClusters %>% group_by(SampleId) %>% summarise(CountOfClusters=n(),
+                                                                  Clusters3_4=sum(ClusterSize=='3-4'),
+                                                                  Clusters5_10=sum(ClusterSize=='5-10'),
+                                                                  Clusters11_20=sum(ClusterSize=='11-20'),
+                                                                  Clusters20p=sum(ClusterSize=='>20'))
+View(ccSummary2)
+ccSummary3 = ccSummary2 %>% gather('ClusterSize','ClusterSizeFreq',3:6)
+View(ccSummary3)
+ccSummary4 = ccSummary3 %>% group_by(ClusterSize,CountOfClusters=pmin(CountOfClusters,50)) %>% summarise(ClusterSizeFreq=sum(ClusterSizeFreq))
+ccSummary4 = ccSummary4 %>% mutate(ClusterSizeN=ifelse(ClusterSize=='Clusters3_4',3,ifelse(ClusterSize=='Clusters5_10',5,ifelse(ClusterSize=='Clusters11_20',11,20))),
+                                   ClusterSizeLabel=ifelse(ClusterSize=='Clusters3_4','3-4',ifelse(ClusterSize=='Clusters5_10','5-10',ifelse(ClusterSize=='Clusters11_20','11-20','>20'))))
+View(ccSummary4)
+
+print(ggplot(ccSummary4) +
+        geom_bar(aes(x=CountOfClusters,y=ClusterSizeFreq,fill=reorder(ClusterSizeLabel,-ClusterSizeN)),stat='identity',alpha=1) +
+        labs(title='Frequency of Complex Clusters by Size',x='Clusters per Sample',y='# Clusters',fill='SVs per Cluster'))
+
 
 # 2. Complexity of complex events
+complexSVs = svData %>% filter(ResolvedType=='COMPLEX')
 sampleChrData = rbind(complexSVs %>% select(SampleId,ClusterId,ClusterCount,Chromosome=ChrStart), 
                       complexSVs %>% filter(Type=='BND') %>% select(SampleId,ClusterId,ClusterCount,Chromosome=ChrEnd))
 
@@ -438,88 +443,605 @@ print(ggplot(clusterJcnSummary, aes(reorder(MaxJcn,RelativeJcn),y=Count,fill=Clu
       + labs(title='Amplification in complex events ', y='Cluster Count',x=''))
 
 
-Relative contribution of resolved types by cancer type
-X: cancer type
-Y: % of break junctions resolved as resolved type
-Stack: Resolved type
+## Relative contribution of resolved types by cancer type
+# X: cancer type
+# Y: % of break junctions resolved as resolved type
+# Stack: Resolved type
 
-Relative contribution of resolved types  by sample
-X: sample type (arranged by cancer type and mutational load(
-  Y: % of break junctions resolved as resolved type
-  Y2: Count of break junctions
-  Stack: Resolved type
-  
-  Frequency of drivers vs complexity of event
-  X: Bucketed # of variants per complex event
-  Y: Count of events
-  Stack: # of drivers per event
+svResolvedTypes = svData %>% filter(!(ResolvedType %in% excludedTypes)&ResolvedType!='INS') %>% group_by(SampleId,ResolvedType) %>% summarise(ClusterCount=n())
+nrow(svResolvedTypes)
+
+twoBreakTypes = c('DUP_TI','RECIP_INV_DEL_DUP','RECIP_TRANS','RECIP_INV','DEL_TI','RESOLVED_FOLDBACK','FB_INV_PAIR','RECIP_TRANS_DEL_DUP','RECIP_TRANS_DUPS','RECIP_INV_DUPS','PAIR_OTHER')
+recips = c('RECIP_INV_DEL_DUP','RECIP_TRANS','RECIP_INV','RECIP_TRANS_DEL_DUP','RECIP_TRANS_DUPS','RECIP_INV_DUPS')
+otherPairs = c('DUP_TI','DEL_TI','RESOLVED_FOLDBACK','FB_INV_PAIR','PAIR_OTHER')
+simpleSVs = c('DEL','DUP','INS')
+unbalTrans = c('UNBAL_TRANS','UNBAL_TRANS_TI')
+simpleSVTypes = c('DEL','DUP','INS','SGL_PAIR_DEL','SGL_PAIR_DUP','SIMPLE_GRP','SGL_PAIR_INS')
+unresolvedSVs = c('INV','SGL','INF','PAIR_INF')
+complexTypes = c('DOUBLE_MINUTE','COMPLEX')
+
+get_cluster_type<-function(resolvedType,useSimple=F)
+{
+  if(resolvedType=='LINE')
+  {
+    return (resolvedType)
+  }
+  else if(resolvedType %in% complexTypes)
+  {
+    return ('COMPLEX')
+  }
+  else if(resolvedType %in% simpleSVTypes)
+  {
+    if(useSimple)
+      return ('SIMPLE_SV')
+    else if(resolvedType %in% simpleSVs)
+      return (resolvedType)
+    else
+      return ('OTHER_PAIR')
+  }
+  else if(resolvedType %in% recips)
+  {
+    return ('RECIPROCAL')
+  }
+  else if(resolvedType %in% otherPairs)
+  {
+    return ('OTHER_PAIRS')
+  }
+  else if(resolvedType %in% unbalTrans)
+  {
+    return ('UNBAL_TRANS')
+  }
+  else if(resolvedType %in% unresolvedSVs)
+  {
+    return ('UNRESOLVED')
+  }
+  else
+    return (resolvedType)
+}
+
+# testing
+print(get_cluster_type('COMPLEX'))
+print(get_cluster_type('LINE'))
+print(get_cluster_type('DEL'))
+print(get_cluster_type('DEL',T))
+print(get_cluster_type('DUP',T))
+print(get_cluster_type('UNBAL_TRANS',T))
+print(get_cluster_type('SGL_PAIR_DEL',T))
+print(get_cluster_type('SGL_PAIR_DEL'))
+print(get_cluster_type('RECIP_INV'))
+print(get_cluster_type('DOUBLE_MINUTE'))
+print(get_cluster_type('INF'))
+
+svResolvedTypes$ClusterType = apply(svResolvedTypes[,c('ResolvedType'),drop=F], 1, function(x) get_cluster_type(x[1]))
+View(svResolvedTypes)
+View(svResolvedTypes %>% group_by(ClusterType,ResolvedType) %>% count)
+
+svResolvedTypes = merge(svResolvedTypes,samplesDD %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+svResolvedTypes = merge(svResolvedTypes,cancerTypeTotals,by='CancerType',all.x=T)
+svResolvedTypes = merge(svResolvedTypes,svResolvedTypes %>% group_by(CancerType) %>% summarise(CancerSvTotal=sum(ClusterCount)),by='CancerType',all.x=T)
+
+svResolvedSummary = svResolvedTypes %>% group_by(CancerType,SampleCount,ClusterType,CancerSvTotal) %>% summarise(SvCount=sum(ClusterCount)) %>% 
+  mutate(ClusterTypePercent=round(SvCount/CancerSvTotal,3),
+         CancerLabel=sprintf('%s (n=%d)',CancerType,SampleCount))
+
+svResolvedSummary = merge(svResolvedSummary,ctSampleTotals %>% select(CancerType,MedianSampleSvCount),by='CancerType',all.x=T)
+
+View(svResolvedSummary)
+
+print(ggplot(svResolvedSummary, aes(reorder(CancerLabel,SampleCount),y=ClusterTypePercent,fill=ClusterType))
+      + geom_bar(stat = "identity", colour = "black")
+      + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=9))
+      + theme(legend.title = element_blank())
+      + labs(title='Relative Contribution of Resolved Types by Cancer Type ', y='',x='')
+      + coord_flip())
+
+ctSampleTotals = svResolvedTypes %>% group_by(CancerType,SampleId) %>% summarise(SampleSvTotal=sum(ClusterCount))
+
+ctSampleTotals = merge(ctSampleTotals,ctSampleTotals %>% group_by(CancerType) %>% summarise(SampleCount=n(),MedianSampleSvCount=median(SampleSvTotal)),
+                       by='CancerType',all.x=T)
+View(ctSampleTotals)
+
+ctSampleTotals = ctSampleTotals %>% mutate(CancerLabel=sprintf('%s (n=%d)',CancerType,SampleCount))
+
+print(ggplot(ctSampleTotals,aes(x=reorder(CancerLabel,SampleCount),y=SampleSvTotal))
+      + geom_violin(scale="area",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(title = "",y='',x='')
+      + coord_flip())
+
+
+## Relative contribution of resolved types by sample
+# X: sample type (arranged by cancer type and mutational load
+# Y: % of break junctions resolved as resolved type
+# Y2: Count of break junctions
+# Stack: Resolved type
+
+sampleResolvedTypes = svResolvedTypes %>% group_by(SampleId,ClusterType,CancerType,SampleCount) %>% summarise(ClusterTypeSvTotal=sum(ClusterCount))
+sampleResolvedTypes = merge(sampleResolvedTypes,sampleResolvedTypes %>% group_by(SampleId) %>% summarise(SampleSvTotal=sum(ClusterTypeSvTotal)),by='SampleId',all.x=T)
+View(sampleResolvedTypes)
+View(sampleResolvedTypes %>% group_by(CancerType) %>% count)
+
+sampleResolvedTypes = sampleResolvedTypes %>% mutate(ClusterTypePercent=ClusterTypeSvTotal/SampleSvTotal,
+                                                     SampleLabel=sprintf('%s (SVs=%d)',SampleId,SampleSvTotal))
+
+sampleSvTotals = svResolvedTypes %>% group_by(SampleId,CancerType,SampleCount) %>% summarise(SampleSvTotal=sum(ClusterCount)) %>% ungroup()
+
+print(ggplot(sampleSvTotals
+             # %>% filter(CancerType %in% c('Esophagus','Breast','Prostate','Uterus'))
+             # %>% filter(CancerType %in% c('Uterus','Prostate','Breast'))
+             # %>% filter(CancerType=='Uterus')
+             %>% arrange(-SampleCount) %>% mutate_at(vars(CancerType), funs(factor(., levels=unique(.)))))
+      + geom_bar(aes(x=reorder(SampleId,-SampleSvTotal),y=SampleSvTotal),stat="identity",width=1)
+      + scale_y_log10()
+      + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+              panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(),
+              axis.text.x = element_blank(),axis.title.x = element_blank(),axis.ticks = element_blank(),
+              strip.text.x = element_text(angle = 90, hjust = 1,size=7),
+              panel.spacing.x=unit(0.1, "lines")#, panel.spacing.y=unit(1, "lines")
+              )
+      + labs(title='Relative Contribution of Resolved Types by Sample', x='', y='')
+      + facet_grid(~CancerType, scales="free", space="free")
+)
+
+print(ggplot(sampleResolvedTypes
+             # %>% filter(CancerType %in% c('Esophagus','Breast','Prostate','Uterus'))
+             # %>% filter(CancerType %in% c('Uterus','Prostate','Breast'))
+             # %>% filter(CancerType=='Uterus')
+             %>% arrange(-SampleCount) %>% mutate_at(vars(CancerType), funs(factor(., levels=unique(.)))))
+      + geom_bar(aes(x=reorder(SampleId,-SampleSvTotal),y=ClusterTypePercent,fill=ClusterType),stat="identity",width=1)
+      + theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+              panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(),
+              axis.text.x = element_blank(),axis.title.x = element_blank(),axis.ticks = element_blank(),
+              # strip.text.x = element_text(angle = 90, hjust = 1,size=7),
+              strip.text.x = element_blank(),
+              panel.spacing.x=unit(0.1, "lines")#, panel.spacing.y=unit(1, "lines")
+      )
+      + labs(title='', x='', y='SV % by Cluster Type')
+      # + labs(title='Relative Contribution of Resolved Types by Sample', x='', y='SV % by Cluster Type')
+      + facet_grid(~CancerType, scales="free", space="free")
+)
+
+
+## Frequency of drivers vs complexity of event
+# X: Bucketed # of variants per complex event
+# Y: Count of events
+# Stack: # of drivers per event
+
+View(complexClusters)
+
+driversInComplex = clusters %>% filter(ResolvedType=='COMPLEX') %>% select(SampleId,ClusterId,ClusterCount,Foldbacks,ArmCount,MaxJcn) %>% 
+  mutate(ClusterSize=ifelse(ClusterCount<=2,as.character(ClusterCount),ifelse(ClusterCount<=4,'3-4',ifelse(ClusterCount<=8,'5-8',
+                     ifelse(ClusterCount<=16,'9-16',ifelse(ClusterCount<=32,'17-32',ifelse(ClusterCount<=64,'33-64',ifelse(ClusterCount<=128,'65-128','>128'))))))),
+         HighJcnBucked=ifelse(MaxJcn<=2,'2',ifelse(MaxJcn<=4,'2-4',ifelse(MaxJcn<=8,'4-8','>8'))),
+         HighJcn=MaxJcn>=8)
+
+driversInComplex = merge(driversInComplex,driversInComplex %>% group_by(ClusterSize,HighJcn) %>% summarise(ClusterSizeCounts=n()),by=c('ClusterSize','HighJcn'),all.x=T)
+
+driversByCluster = drivers %>% filter(ClusterId>=0) %>% group_by(SampleId,ClusterId) %>% summarise(DriverCount=n())
+driversInComplex = merge(driversInComplex,driversByCluster,by=c('SampleId','ClusterId'),all.x=T)
+
+driversInComplex = driversInComplex %>% mutate(DriverCountBucket=ifelse(is.na(DriverCount),0,ifelse(DriverCount<=2,as.character(DriverCount),
+                                                                 ifelse(DriverCount<=5,'3-5','>5'))))
+View(driversInComplex)
+View(driversInComplex %>% filter(DriverCount>0) %>% group_by(DriverCountBucket,ClusterSize) %>% count)
+View(driversInComplex %>% filter(DriverCount>0) %>% group_by(DriverCountBucket,ClusterSize) %>% 
+       summarise(Percent=n()/first(ClusterSizeCounts),ClusterCount=first(ClusterCount),DriverCount=first(DriverCount)))
+
+print(ggplot(driversInComplex %>% filter(DriverCount>0) %>% group_by(DriverCountBucket,ClusterSize,HighJcn) %>% 
+               summarise(Percent=n()/first(ClusterSizeCounts),ClusterCount=first(ClusterCount),DriverCount=first(DriverCount)), 
+             aes(reorder(ClusterSize,ClusterCount),y=Percent,fill=reorder(DriverCountBucket,-DriverCount)))
+      + geom_bar(stat="identity", colour="black")
+      + facet_wrap(~HighJcn)
+      + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
+      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=9))
+      + labs(title='Frequency of Drivers vs Complexity of Event', y='% of Clusters with Driver Count',x='Cluster Size'))
+
 
 
 
 #####
-## Cohort Summary
-sampleTotals = clusters %>% group_by(SampleId) %>% summarise(SampleSvCount=sum(ClusterCount))
-View(sampleTotals)
+## BFB Characteristics
 
-clusterSummary = clusters %>% group_by(SampleId,ResolvedType,HasFoldbacks=Foldbacks>0,Replication) %>% 
-  summarise(Clusters=n(),
-            SvCount=sum(ClusterCount),
-            MaxSvCount=max(ClusterCount),
-            MedianSvCount=median(ClusterCount),
-            MaxCN=max(MaxJcn))
 
-View(clusterSummary)
+ampClusters = clusters %>% filter(ResolvedType=='COMPLEX'&MaxJcn>=2)
+ampClusters = merge(ampClusters,samplePloidies %>% select(SampleId,Ploidy),by='SampleId',all.x=T)
+ampClusters = ampClusters %>% mutate(RelativeJcn=round(2*MaxJcn/Ploidy,3))
+nrow(ampClusters)
 
-twoBreakTypes = c('DUP_TI','RECIP_INV_DEL_DUP','RECIP_TRANS','RECIP_INV','DEL_TI','RESOLVED_FOLDBACK','FB_INV_PAIR','RECIP_TRANS_DEL_DUP','RECIP_TRANS_DUPS','RECIP_INV_DUPS','PAIR_OTHER')
-simpleSVs = c('DEL','DUP','INS','SGL_PAIR_DEL','SGL_PAIR_DUP','SIMPLE_GRP','SGL_PAIR_INS')
-unresolvedSVs = c('INV','UNBAL_TRANS','UNBAL_TRANS_TI','SGL','INF','PAIR_INF')
-complexTypes = c('DOUBLE_MINUTE','COMPLEX')
+View(ampClusters %>% select(SampleId,ClusterId,ClusterCount,Foldbacks,MaxJcn,MinJcn,ArmCount,OriginArms,FragmentArms,ShortTIs,everything()))
 
-clusters = clusters %>% mutate(ClusterType=ifelse(ResolvedType=='LINE','LINE',
-                                                  ifelse(ResolvedType %in% complexTypes | ClusterCount>=10,'COMPLEX',
-                                                         ifelse(ResolvedType %in% twoBreakTypes,'TWO_BREAK',
-                                                                ifelse(ResolvedType %in% unresolvedSVs,'UNRESOLVED',
-                                                                       ifelse(ResolvedType %in% simpleSVs,'SIMPLE_SV','UNKONWN'))))))
+View(ampClusters %>% filter(ArmCount==1&!grepl('DM',Annotations)&Ploidy<=3&Foldbacks>=0) %>%
+       select(SampleId,ClusterId,ClusterCount,Foldbacks,RelativeJcn,MaxJcn,MinJcn,ArmCount,OriginArms,FragmentArms,ShortTIs,everything()))
 
-sampleClusterTypes = clusters %>% group_by(SampleId,ClusterType) %>% summarise(ClusterTypeCount=sum(ClusterCount))
-sampleClusterTypes = rbind(sampleClusterTypes,clusters %>% group_by(SampleId,ClusterType='SHORT_TI') %>% summarise(ClusterTypeCount=-sum(ShortTIs)))
-sampleClusterTypes = rbind(sampleClusterTypes,clusters %>% group_by(SampleId,ClusterType='SHORT_DB') %>% summarise(ClusterTypeCount=-sum(ShortDBs)))
-sampleClusterTypes = merge(sampleClusterTypes,sampleTotals,by='SampleId',all.x=T)
-sampleClusterTypes = merge(sampleClusterTypes,sampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
 
-View(sampleClusterTypes)
+View(ampClusters %>% filter(ArmCount==1&OriginArms==1&!grepl('DM',Annotations)&Ploidy<=3&Foldbacks==0) %>%
+       select(SampleId,ClusterId,ClusterCount,Foldbacks,RelativeJcn,MaxJcn,MinJcn,ArmCount,OriginArms,FragmentArms,ShortTIs,everything()))
 
-cancerTypes = unique(sampleData$CancerType)
-# length(cancerTypes)
-plotIndex = 1
-cancerPlots = list()
-topSampleCount=50
+topAmpClusters = head(ampClusters %>% filter(ArmCount==1&OriginArms==1&!grepl('DM',Annotations)&Ploidy<=3&Foldbacks==0) %>% arrange(-MaxJcn),10) %>% 
+  mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_'))
 
-for(cancerType in cancerTypes)
+ampSVs = svData %>% mutate(SampleClusterId=paste(SampleId,ClusterId,sep='_')) %>% filter(SampleClusterId %in% topAmpClusters$SampleClusterId)
+nrow(ampSVs)
+View(ampSVs)
+write.csv(ampSVs %>% group_by(SampleId,ClusterId) %>% summarise(Chromosome=first(ChrStart)) %>% select(SampleId,Chromosome),'~/logs/amp_clusters.csv',row.names = F,quote = F)
+
+View(svData %>% filter(SampleId=='CPCT02020665T'))
+
+
+
+
+
+#####
+## AMP Driver characteristics
+
+## number of 
+View(ampDrivers)
+
+ampDrivers = merge(ampDrivers,clusters %>% select(SampleId,ClusterId,ArmCount),by=c('SampleId','ClusterId'),all.x=T)
+
+View(ampDrivers %>% filter(ClusterId>=0) %>% group_by(Gene,SampleId) %>% summarise(Clusters=n(),
+                                                                                   ArmCount=max(ArmCount),
+                                                                                   Foldbacks=max(Foldbacks)) %>%
+  group_by(Gene) %>% summarise(Samples=n(),
+                               AvgClusters=round(mean(Clusters),1),
+                               AvgArmCount=round(mean(ArmCount),1),
+                               MaxArmCount=max(ArmCount),
+                               AvgFoldbacks=round(mean(Foldbacks),1),
+                               MaxFoldbacks=max(Foldbacks)))
+
+ampSummary = ampDrivers %>% group_by(CancerType,SampleId,Gene,GeneLoc,DriverCategory,CnGainBucket) %>% 
+  summarise(ClusterCount=n(),
+            AmpDM=sum(AmpType=='DM'),
+            AmpArm=sum(AmpType=='GAIN_ARM'),
+            AmpChr=sum(AmpType=='GAIN_CHR'),
+            AmpBFB=sum(AmpType=='BFB'),
+            AmpComplex=sum(AmpType=='COMPLEX'),
+            AmpDup=sum(AmpType=='DUP')) %>% ungroup()
+
+
+
+#####
+## Shard Frequencies
+
+# merge resolved types
+shardExcluded = c('LINE','SGL','INF','PAIR_INF','INV','SGL_PAIR_DUP','SGL_PAIR_DEL','SGL_PAIR_INS','INS')
+recipTypes = c('RECIP_INV_DUPS','RECIP_INV','RECIP_INV_DEL_DUP','RECIP_TRANS_DUPS','RECIP_TRANS_DEL_DUP')
+miscTypes = c('DOUBLE_MINUTE','FB_INV_PAIR','SIMPLE_GRP','RESOLVED_FOLDBACK','PAIR_OTHER')
+
+shardSvSummary = svData %>% 
+  filter(!(ResolvedType %in% shardExcluded)) %>%
+  mutate(ClusterType=ifelse(ResolvedType %in% c('DEL','DEL_TI'),'SYNTHETIC_DEL',
+                            ifelse(ResolvedType %in% c('DUP','DUP_TI'),'SYNTHETIC_DUP',
+                                   ifelse(ResolvedType %in% c('UNBAL_TRANS','UNBAL_TRANS_TI'),'UNBAL_TRANS',
+                                          ifelse(ResolvedType %in% recipTypes,'RECIPROCAL',
+                                                 ifelse(ResolvedType %in% miscTypes,'OTHER',as.character(ResolvedType))))))) %>%
+  mutate(InShard=(ClusterCount>1&(LnkLenStart>0&LnkLenStart<=1e3)|(LnkLenEnd>0&LnkLenEnd<=1e3))) %>%
+  group_by(ClusterType) %>% summarise(TotalSVs=n(),ShardSVs=sum(InShard)) %>% mutate(ShardPercent=round(ShardSVs/TotalSVs,3))
+
+View(shardSvSummary)
+
+plot1 = (ggplot(shardSvSummary,aes(x=reorder(ClusterType,TotalSVs),y=ShardSVs))
+         + geom_bar(stat = "identity")
+         + scale_y_log10()
+         + labs(title = "Shards Counts",x='',y='')
+         + coord_flip())
+
+plot2 = (ggplot(shardSvSummary,aes(x=reorder(ClusterType,TotalSVs),y=ShardPercent))
+      + geom_bar(stat = "identity")
+      # + scale_y_log10()
+      + labs(title = "% of SVs in Shards",x='',y='')
+      + theme(axis.text.y = element_blank(),
+              axis.ticks.y = element_blank())
+      + coord_flip())
+
+# Shard lengths
+shardTIs = links %>% filter(TILength<=1e3)
+shardTIs = shardTIs %>% filter(TILength>0) %>%  # has since been solved
+  filter(!(ResolvedType %in% shardExcluded)) %>%
+  mutate(ClusterType=ifelse(ResolvedType %in% c('DEL','DEL_TI'),'SYNTHETIC_DEL',
+                                                  ifelse(ResolvedType %in% c('DUP','DUP_TI'),'SYNTHETIC_DUP',
+                                                         ifelse(ResolvedType %in% c('UNBAL_TRANS','UNBAL_TRANS_TI'),'UNBAL_TRANS',
+                                                                ifelse(ResolvedType %in% recipTypes,'RECIPROCAL',
+                                                                       ifelse(ResolvedType %in% miscTypes,'OTHER',as.character(ResolvedType)))))))
+shardTIs = merge(shardTIs,shardSvSummary %>% select(ClusterType,TotalSVs),by='ClusterType',all.x=T)
+
+plot3 = ggplot(shardTIs,aes(y=TILength,x=reorder(ClusterType,TotalSVs))) +
+  geom_violin(scale="area",fill="#6baed6") +
+  stat_summary(fun.y="median", geom="point") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10)) +
+  labs(title='Shard Lengths',x='',y='') +
+  theme(axis.text.y = element_blank(),axis.ticks.y = element_blank()) +
+  coord_flip()
+
+# print(plot3)
+plot_grid(plot1,plot2,plot3,nrow=1,ncol=3)
+
+
+##### 
+## ChainFinder Comparison
+
+cfData = read.csv('~/data/sv/LNX_CHAIN_FINDER_SVS.csv')
+nrow(cfData) # 113K
+nrow(cfData %>% group_by(SampleId) %>% count) # 1587
+
+# 1. Heatmap of Linx cluster vs CF chain size
+
+get_cf_group_size<-function(clusterSize,useLog=F)
 {
-  cancerData = sampleClusterTypes %>% filter(CancerType==cancerType) %>% arrange(-SampleSvCount)
-  cancerData = cancerData %>% mutate(SampleLabel=sprintf('%s (%d)',SampleId,SampleSvCount))
+  if(is.na(clusterSize))
+    return (as.character('<3'))
+  if(useLog)
+    return (as.character(2**round(log(clusterSize,2))))
   
-  if(nrow(cancerData) > 0)
+  if(clusterSize<=2)
+    return ('<3')
+  else if(clusterSize<=4)
+    return (as.character(clusterSize))
+  else if(clusterSize<=8)
+    return (as.character('5-8'))
+  else if(clusterSize<=16)
+    return (as.character('9-16'))
+  else if(clusterSize<=32)
+    return (as.character('17-32'))
+  else if(clusterSize<=64)
+    return (as.character('33-64'))
+  else
+    return (as.character('>64'))
+}
+
+get_cf_group_index<-function(clusterSize)
+{
+  if(clusterSize=='<3')
+    return (0)
+  else if(clusterSize=='3')
+    return (1)
+  else if(clusterSize=='4')
+    return (2)
+  else if(clusterSize=='5-8')
+    return (3)
+  else if(clusterSize=='9-16')
+    return (4)
+  else if(clusterSize=='17-32')
+    return (5)
+  else if(clusterSize=='33-64')
+    return (6)
+  else
+    return (7)
+}
+
+clusterChainCmp = cfData %>% filter(CfChainId==-1|CfChainCount>=3) %>% filter(ClusterCount>=3|CfChainId>0)
+clusterChainCmp$LinxClusterSize=apply(clusterChainCmp[,c('ClusterCount'),drop=F], 1, function(x) get_cf_group_size(x[1]))
+clusterChainCmp$CfChainSize=apply(clusterChainCmp[,c('CfChainCount'),drop=F], 1, function(x) get_cf_group_size(x[1]))
+
+clusterChainSummary = clusterChainCmp %>% group_by(LinxClusterSize,CfChainSize) %>% summarise(Count=n(),CfChainCount=first(CfChainCount),LinxClusterCount=first(ClusterCount))
+# View(clusterChainSummary)
+
+clusterChainSummary2 = clusterChainSummary %>% select(LinxClusterSize,CfChainSize,Count) %>%  spread(CfChainSize,Count,fill=0) %>% gather('CfChainSize','Count',2:9)
+clusterChainSummary2$LinxSizeIndex=apply(clusterChainSummary2[,c('LinxClusterSize'),drop=F], 1, function(x) get_cf_group_index(x[1]))
+clusterChainSummary2$CfSizeIndex=apply( clusterChainSummary2[,c('CfChainSize'),drop=F], 1, function(x) get_cf_group_index(x[1]))
+#View(clusterChainSummary2)
+
+# plot 1
+print(ggplot(clusterChainSummary2, aes(x=reorder(LinxClusterSize,LinxSizeIndex),y=reorder(CfChainSize,CfSizeIndex))) 
+      + geom_tile(aes(fill=Count),stat="identity") 
+      + geom_text(aes(label=Count))
+      + scale_fill_gradient(low="white",high="steelblue")
+      + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank(), panel.background = element_blank())
+      + theme(legend.position = "none")
+      + labs(title='Linx vs ChainFinder Clustering', x='Linx Cluster Size',y='ChainFinder Chain Size'))
+
+
+# Clustering Reasons and Proximity
+
+# Plot 1
+combinedDistances = rbind(clusterDistances %>% mutate(Source='LINX') %>% select(ProxDistance,Source),
+                          clusterDistances %>% filter(CfChainId>0) %>% mutate(Source='BOTH') %>% select(ProxDistance,Source))
+
+print(ggplot(combinedDistances,aes(y=ProxDistance,x=Source))
+      + geom_violin(scale="count",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(x='',y='Clustering Distance'))
+
+# Plot 2
+print(ggplot(clusterDistances %>% 
+               mutate(ClusterReason=ifelse(ClusterReason %in% c('LOH_CHAIN','OVERLAP_FOLDBACKS','CONSEC_BREAKS'),'OTHER',as.character(ClusterReason))) %>%
+               filter(ClusterReason!='PROXIMITY'),aes(x=ClusterReason,y=ProxDistance))
+      + geom_violin(scale="count",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(x='',y='Clustering Distance by Reason'))
+
+# Plot 3 Counts by type
+View(cfData %>% group_by(Type) %>% count)
+View(cfData %>% filter(Type=='INV'|Type=='BND') %>% filter(ClusterCount!=2))
+View(cfData %>% filter(Type=='INV'|Type=='BND') %>% filter(OverlapType=='CHAIN-FINDER'))
+
+
+cfData = cfData %>% mutate(OverlapType=ifelse(ClusterCount==1&CfChainCount>=3,'CHAIN-FINDER',
+                                              ifelse(ClusterCount>=3&CfChainId==-1,'LINX',ifelse(ClusterCount==2,'CLUSTER-2','BOTH'))))
+
+print(ggplot(cfData %>% filter(Type!='INS') %>% group_by(Type,OverlapType) %>% count,aes(x=Type,y=n,fill=OverlapType))
+      + geom_bar(stat = "identity")
+      # + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(title='Overlap in Clustering by SV Type',x='',y='SV Count'))
+
+print(ggplot(cfData %>% filter(Type!='INS'&OverlapType!='CLUSTER-2') %>% group_by(Type,OverlapType) %>% count,aes(x=OverlapType,y=n,fill=Type))
+      + geom_bar(stat = "identity")
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(title='Overlap in Clustering by SV Type',x='',y='SV Count'))
+
+# Types and Lengths when Linx doesn't cluster
+cfOnly = cfData %>% filter(ClusterCount==1&CfChainCount>=3&Type!='INS')
+cfOnly = cfOnly %>% mutate(Length=ifelse(Type=='BND',0,PosEnd-PosStart))
+cfOnly = merge(cfOnly,svData %>% select(SampleId,SvId=Id,FSStart,FSEnd),by=c('SampleId','SvId'),all.x=T)
+View(cfOnly)
+nrow(cfOnly)
+View(cfOnly %>% group_by(Type) %>% count)
+View(cfOnly %>% filter(is.na(FSStart)))
+cfOnly = cfOnly %>% filter(!is.na(FSStart)) %>% mutate(Location=ifelse(FSStart=='true'|FSEnd=='true','FragileSite','Other'),
+                                                       IsFoldback=FoldbackLnkStart>=0|FoldbackLnkEnd>=0)
+
+
+print(ggplot(cfOnly %>% filter(Type!='BND'),
+             aes(x=Type,y=Length))
+      + geom_violin(scale="count",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + facet_wrap(~Location)
+      + labs(title='Unclusterted SVs chained by ChainFinder',x='',y='SV Lengths'))
+
+linxOnly = cfData %>% filter(ClusterCount>=3&CfChainId==-1&Type %in% c('DEL','DUP','INV'))
+linxOnly = merge(linxOnly,svData %>% select(SampleId,SvId=Id,FoldbackLnkStart,FoldbackLnkEnd),by=c('SampleId','SvId'),all.x=T)
+linxOnly = linxOnly %>% mutate(Length=PosEnd-PosStart,
+                               IsFoldback=(!is.na(FoldbackLnkStart)&FoldbackLnkStart>=0)|(!is.na(FoldbackLnkEnd)&FoldbackLnkEnd>=0)) %>% filter(Length>0)
+View(linxOnly)
+nrow(linxOnly)
+
+print(ggplot(linxOnly %>% mutate(Type=ifelse(Type=='INV'&IsFoldback,'FOLDBACK',as.character(Type))),aes(x=Type,y=Length))
+      + geom_violin(scale="count",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(title='Clusterted SVs, unchained by ChainFinder',x='',y='SV Lengths'))
+
+
+## CF only for DELs and DUPs follows sample counts of simple DELs and DUPs
+cfSamples = cfData %>% group_by(SampleId) %>% count
+
+cfSvData = svData %>% filter(SampleId %in% cfSamples$SampleId)
+cfSvSamples = cfSvData %>% group_by(SampleId) %>% count
+View(cfSvData %>% group_by(SampleId) %>% count)
+
+cfOnlyDelsDups = cfOnly %>% filter(SampleId %in% cfSvSamples$SampleId) %>% group_by(SampleId) %>% summarise(CfDelCount=sum(Type=='DEL'),CfDupCount=sum(Type=='DUP'))
+View(cfOnlyDelsDups)
+svDelDups = cfSvData %>% filter(Type %in% c('DUP','DEL') & ClusterCount==1) %>% group_by(SampleId) %>% summarise(SimpleDelCount=sum(Type=='DEL'),SimpleDupCount=sum(Type=='DUP'))
+
+delDupsComp = merge(svDelDups,cfOnlyDelsDups,by='SampleId',all=T)
+delDupsComp[is.na(delDupsComp)] = 0
+View(delDupsComp)
+
+print(ggplot(delDupsComp, aes(x=SimpleDelCount, y=CfDelCount))
+      + geom_point()
+      + labs(title = "Simple DELs vs ChainFinder Chained DELs"))
+
+print(ggplot(delDupsComp, aes(x=SimpleDupCount, y=CfDupCount))
+      + geom_point()
+      + labs(title = "Simple DUPs vs ChainFinder Chained DUPs"))
+
+
+get_prox_bucket<-function(distance,asLabel=T)
+{
+  if(distance<=100)
   {
-    print(sprintf('CancerType(%s) has %d records', cancerType, nrow(cancerData)))
-    topSamples = head(cancerData %>% group_by(SampleId) %>% summarise(SampleSvCount=first(SampleSvCount)) %>% arrange(-SampleSvCount),topSampleCount)
-    
-    plot = (ggplot(cancerData %>% filter(SampleId %in% topSamples$SampleId), 
-                   aes(x=reorder(SampleLabel,-SampleSvCount),y=ClusterTypeCount,fill=ClusterType))
-            + geom_bar(stat = "identity", colour = "black")
-            + labs(title=paste('SV Counts by Type for ',cancerType,sep=''), x='', y='SV by Cluster Type')
-            + theme_bw() + theme(panel.grid.minor.x = element_blank(), panel.grid.major.x = element_blank())
-            + theme(panel.grid.minor.y = element_blank(), panel.grid.major.y = element_blank())
-            + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=7)))
-    
-    cancerPlots[[plotIndex]] = plot
-    plotIndex = plotIndex + 1
+    if(asLabel)
+      return ('<0.1K')
+    else
+      return (100)
+  }
+  else if(distance<=5e3)
+  {
+    if(asLabel)
+      return ('0.1-5K')
+    else
+      return (5e3)
+  }
+  else if(distance<=25e3)
+  {
+    if(asLabel)
+      return ('5-25K')
+    else
+      return (25e3)
+  }
+  else if(distance<=1e5)
+  {
+    if(asLabel)
+      return ('25-100K')
+    else
+      return (1e5)
+  }
+  else if(distance<=1e6)
+  {
+    if(asLabel)
+      return ('100K-1M')
+    else
+      return (1e6)
+  }
+  else
+  {
+    if(asLabel)
+      return ('>1M')
+    else
+      return (1e7)
   }
 }
 
-plot_grid(cancerPlots[[1]],cancerPlots[[2]],nrow=2,ncol=1)
-plot_grid(cancerPlots,ncol=1)
+print(get_prox_bucket(250))
+print(get_prox_bucket(1e7))
+print(get_prox_bucket(0,T))
+
+clusterDistances = cfData %>% filter(ClusterCount>=3&Type!='INF'&Type!='SGL')
+
+clusterDistances$ProxDistLabel = apply(clusterDistances[,c('ProxDistance'),drop=F], 1, function(x) get_prox_bucket(x[1]))
+clusterDistances$ProxDistIndex = apply(clusterDistances[,c('ProxDistance'),drop=F], 1, function(x) get_prox_bucket(x[1],F))
+View(clusterDistances)
+clusterDistanceSummary = clusterDistances %>% group_by(ClusterReason,ProxDistLabel,ProxDistIndex) %>% summarise(Linx=n(),ChainFinder=sum(CfChainId>0))
+
+View(clusterDistanceSummary)
+
+combinedDistances2 = rbind(clusterDistances %>% 
+                             mutate(ClusterReason=ifelse(ClusterReason %in% c('LOH_CHAIN','OVERLAP_FOLDBACKS','CONSEC_BREAKS'),'OTHER',as.character(ClusterReason))) %>%
+                             mutate(Source=ClusterReason,ProxDistance=pmax(ProxDistance,1)) %>% select(ProxDistance,Source),
+                          clusterDistances %>% filter(CfChainId>0) %>% mutate(Source='BOTH') %>% select(ProxDistance,Source))
+
+print(ggplot(combinedDistances2,aes(y=ProxDistance,x=Source))
+      + geom_violin(scale="count",fill="#6baed6")
+      + stat_summary(fun.y="median", geom="point")
+      + scale_y_log10()
+      + theme(axis.text.x = element_text(angle = 90, hjust = 1,size=10))
+      + labs(x='',y='Clustering Distance'))
+
+
+combinedDistances2$ProxDistLabel = apply(combinedDistances2[,c('ProxDistance'),drop=F], 1, function(x) get_prox_bucket(x[1]))
+combinedDistances2$ProxDistIndex = apply(combinedDistances2[,c('ProxDistance'),drop=F], 1, function(x) get_prox_bucket(x[1],F))
+clusterDistanceSummary3 = combinedDistances2 %>% group_by(Source,ProxDistLabel,ProxDistIndex) %>% summarise(Count=n())
+View(clusterDistanceSummary3)
+
+ignoreCRs = c('LOH_CHAIN','OVERLAP_FOLDBACKS','CONSEC_BREAKS')
+
+print(ggplot(clusterDistanceSummary3 %>% filter(ProxDistIndex>5e3),aes(x=reorder(ProxDistLabel,ProxDistIndex),y=Count,fill=Source))
+      + geom_bar(stat = "identity",position='dodge')
+      # + scale_y_log10()
+      + labs(title = "Clustering Reasons in Linx vs Chained by CF"))
+
+ignoreCRs = c('LOH_CHAIN','OVERLAP_FOLDBACKS','CONSEC_BREAKS')
+
+print(ggplot(clusterDistanceSummary %>% filter(ClusterReason!='PROXIMITY') %>% filter(!(ClusterReason %in% ignoreCRs)),
+             aes(x=reorder(ProxDistLabel,ProxDistIndex)))
+      + geom_bar(aes(y=LinxCount,color='LinxCount'),stat = "identity",position='dodge')
+      + geom_bar(aes(y=CfCount,color='CfCount'),stat = "identity",position='dodge')
+      # + scale_x_log10()
+      + facet_wrap(~ClusterReason)
+      + labs(title = "Clustering Reasons in Linx vs Chained by CF"))
+
+clusterDistanceSummary2 = clusterDistanceSummary %>% gather('Tool','Count',4:5)
+View(clusterDistanceSummary2)
+
+print(ggplot(clusterDistanceSummary2  %>% filter(ClusterReason=='PROXIMITY') %>% filter(!(ClusterReason %in% ignoreCRs)),
+             aes(x=reorder(ProxDistLabel,ProxDistIndex),y=Count,fill=Tool))
+      + geom_bar(stat='identity',position='dodge')
+      # + scale_y_log10()
+      + facet_wrap(~ClusterReason)
+      + labs(title = "Clustering Reasons in Linx vs Chained by CF"))
+
 
 
 

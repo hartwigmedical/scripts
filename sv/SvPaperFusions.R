@@ -83,6 +83,8 @@ combinedKnownFusions = rbind(combinedKnownFusions,
 View(combinedKnownFusions)
 write.csv(combinedKnownFusions,'~/data/sv/known_fusion_data.csv',row.names = F, quote=F)
 
+knownFusionData = read.csv('~/data/sv/known_fusion_data.csv')
+View(knownFusionData)
 
 # write in old-style format
 write.csv(newKnownPairs %>% select(FiveGene,ThreeGene),'~/data/sv/knownFusionPairs_20200603.csv',row.names = F, quote=F)
@@ -96,7 +98,73 @@ write.csv(expGenes %>% group_by(GeneId,GeneName) %>% count %>% select(GeneId,Gen
           '~/data/sv/fusions/known_gene_ids.csv',row.names = F, quote=F)
 
 
+## check gene names for HG38
+ensemblGeneData = read.csv('~/data/sv/ensembl_gene_data.csv')
+View(ensemblGeneData)
 
+ensemblGeneData38 = read.csv('~/data/ensembl_hg38/ensembl_gene_data.csv')
+View(ensemblGeneData38)
+
+View(knownFusionData %>% group_by(Type) %>% count)
+knownFusionData38 = knownFusionData 
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData %>% select(FiveGene=GeneName,FiveGeneId=GeneId),by='FiveGene',all.x=T)
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData %>% select(ThreeGene=GeneName,ThreeGeneId=GeneId),by='ThreeGene',all.x=T)
+
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(FiveGene=GeneName,FiveGeneId38=GeneId),by='FiveGene',all.x=T)
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(ThreeGene=GeneName,ThreeGeneId38=GeneId),by='ThreeGene',all.x=T)
+
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(FiveGene38=GeneName,FiveGeneId=GeneId),by='FiveGeneId',all.x=T)
+knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(ThreeGene38=GeneName,ThreeGeneId=GeneId),by='ThreeGeneId',all.x=T)
+
+View(knownFusionData38)
+View(knownFusionData38 %>% filter(Type=='KNOWN_PAIR') %>% filter(is.na(FiveGeneId38)|is.na(ThreeGeneId38)) %>% 
+       select(Type,FiveGene,FiveGene38,FiveGeneId,FiveGeneId38,ThreeGene,ThreeGene38,ThreeGeneId,ThreeGeneId38))
+
+
+ampGenes = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/cna/AmplificationTargets.tsv',sep='\t',header = F)
+colnames(ampGenes) = c('gene')
+
+delGenes = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/cna/DeletionTargets.tsv',sep='\t',header = F)
+colnames(delGenes) = c('gene','loca')
+
+dndsGenesOnco = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/dnds/DndsDriverLikelihoodOnco.tsv',sep='\t')
+dndsGenesTsg = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/dnds/DndsDriverLikelihoodTsg.tsv',sep='\t')
+
+View(dndsGenesOnco)
+View(dndsGenesTsg)
+View(ampGenes)
+View(delGenes)
+
+allGenes = rbind(ampGenes,
+                 delGenes %>% select(gene),
+                 dndsGenesOnco %>% select(gene),
+                 dndsGenesTsg %>% select(gene))
+
+allGenes2 = allGenes %>% group_by(gene) %>% count %>% ungroup()
+allGenes2 = allGenes2 %>% select(GeneName=gene)
+View(allGenes2)
+
+allGenes2 = merge(allGenes2,ensemblGeneData %>% select(GeneName,GeneId),by='GeneName',all.x=T)
+
+allGenes2 = merge(allGenes2,ensemblGeneData38 %>% select(GeneName,GeneId38=GeneId),by='GeneName',all.x=T)
+
+allGenes2 = merge(allGenes2,ensemblGeneData38 %>% select(GeneName38=GeneName,GeneId),by='GeneId',all.x=T)
+View(allGenes2)
+View(allGenes2 %>% filter(is.na(GeneId)))
+View(allGenes2 %>% filter(is.na(GeneName38)|is.na(GeneId38)))
+allGeneChanges = allGenes2 %>% filter(is.na(GeneName38)|is.na(GeneId38))
+
+allGeneChanges = merge(allGeneChanges,ensemblGeneData %>% select(GeneId,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneId',all.x=T)
+
+allGeneChangesNameChg = merge(allGeneChanges %>% filter(!is.na(GeneName38)) %>% select(-GeneId38),
+                              ensemblGeneData38 %>% select(GeneName38=GeneName,GeneId38=GeneId,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneName38',all.x=T)
+
+View(allGeneChangesNameChg %>% select(GeneName,GeneName38,GeneId,GeneId38,Chromosome.x,Chromosome.y,GeneStart.x,GeneStart.y,GeneEnd.x,GeneEnd.y,everything()))
+
+allGeneChangesIdChg = merge(allGeneChanges %>% filter(!is.na(GeneId38)) %>% select(-GeneName38),
+                              ensemblGeneData38 %>% select(GeneId38=GeneId,GeneName38=GeneName,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneId38',all.x=T)
+
+View(allGeneChangesIdChg %>% select(GeneName,GeneName38,GeneId,GeneId38,Chromosome.x,Chromosome.y,GeneStart.x,GeneStart.y,GeneEnd.x,GeneEnd.y,everything()))
 
 
 ######
@@ -125,6 +193,27 @@ View(newFusions %>% group_by(KnownType) %>% count)
 nrow(newFusions)
 View(newFusions)
 View(newFusions %>% filter(GeneNameUp=='PAX8'))
+
+View(newFusions %>% filter(SampleId %in% c('CPCT02020618T','CPCT02010478T','CPCT02060225T','CPCT02120095T','CPCT02150021T')))
+
+
+newFusions = merge(newFusions,samplesDD %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+
+igProm = newFusions %>% filter(KnownType=='IG_PROMISCUOUS')
+igProm = merge(igProm,samplesDD %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+View(igProm %>% select(CancerType,GeneNameDown, everything()))
+
+View(newFusions %>% filter(KnownType=='KNOWN_PAIR') %>% 
+       filter(grepl('Raf-like Ras-binding',ProteinsKept)
+              |grepl('Ets domain',ProteinsLost)
+              |grepl('Protein kinase domain',ProteinsLost)
+              |grepl('Epidermal growth factor-like domain',ProteinsLost)
+              |grepl('Ankyrin repeat-containing domain',ProteinsLost)
+              |grepl('Basic-leucine zipper domain',ProteinsLost)
+              |grepl('High mobility group box domain',ProteinsLost)
+              |grepl('Bromodomain',ProteinsLost)) %>% 
+       select(SampleId,CancerType,KnownType,GeneNameUp,GeneNameDown,ProteinsKept,ProteinsLost,everything()))
+
 
 # clean-up
 rm(oldFusions)
