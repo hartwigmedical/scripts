@@ -460,11 +460,14 @@ write.csv(pcawgData2,'~/data/sv/pcawg/pcawg_line_insert_data.csv',row.names = F,
 
 
 compareResults = read.csv('~/data/sv/pcawg/LINE_INSERT_COMPARE.csv')
-compareResults = read.csv('~/data/sv/pcawg/LINE_INSERT_COMPARE_1KQS.csv')
+compareResults = compareResults %>% filter(SampleId %in% pcawgLineSampleIds$SampleId)
+
+#compareResults = read.csv('~/data/sv/pcawg/LINE_INSERT_COMPARE_1KQS.csv')
 View(compareResults)
 View(compareResults %>% group_by(SampleId,MatchType) %>% count %>% spread(MatchType,n,fill=0))
+View(compareResults %>% group_by(MatchType) %>% count)
+View(compareResults %>% group_by(MatchType,InsertType) %>% count %>% spread(MatchType,n,fill=0))
 
-compareResults = compareResults %>% filter(SampleId %in% pcawgLineSampleIds$SampleId)
 View(compareResults %>% group_by(SampleId) %>% count)
 
 lineCompareSamples = compareResults %>% group_by(SampleId,MatchType) %>% count

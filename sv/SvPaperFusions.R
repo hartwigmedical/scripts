@@ -106,21 +106,48 @@ ensemblGeneData38 = read.csv('~/data/ensembl_hg38/ensembl_gene_data.csv')
 View(ensemblGeneData38)
 
 View(knownFusionData %>% group_by(Type) %>% count)
-knownFusionData38 = knownFusionData 
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData %>% select(FiveGene=GeneName,FiveGeneId=GeneId),by='FiveGene',all.x=T)
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData %>% select(ThreeGene=GeneName,ThreeGeneId=GeneId),by='ThreeGene',all.x=T)
 
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(FiveGene=GeneName,FiveGeneId38=GeneId),by='FiveGene',all.x=T)
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(ThreeGene=GeneName,ThreeGeneId38=GeneId),by='ThreeGene',all.x=T)
+kpConverted = rbind(knownFusionData %>% filter(Type=='KNOWN_PAIR') %>% select(GeneName=FiveGene),
+                    knownFusionData %>% filter(Type=='KNOWN_PAIR') %>% select(GeneName=ThreeGene))
 
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(FiveGene38=GeneName,FiveGeneId=GeneId),by='FiveGeneId',all.x=T)
-knownFusionData38 = merge(knownFusionData38,ensemblGeneData38 %>% select(ThreeGene38=GeneName,ThreeGeneId=GeneId),by='ThreeGeneId',all.x=T)
+View(kpConverted)
+kpConverted = kpConverted %>% group_by(GeneName) %>% count %>% ungroup() %>% select(GeneName)
+nrow(kpConverted)
+kpConverted = merge(kpConverted,ensemblGeneData %>% select(GeneId,GeneName),by='GeneName',all.x=T)
+
+# now use geneId and geneName to link to HG38 data
+kpConverted = merge(kpConverted,ensemblGeneData38New %>% select(GeneId,GeneName38=GeneName),by='GeneId',all.x=T)
+kpConverted = merge(kpConverted,ensemblGeneData38New %>% select(GeneName,GeneId38=GeneId),by='GeneName',all.x=T)
+View(kpConverted)
+View(kpConverted %>% filter(is.na(GeneId38)|is.na(GeneName38)))
+kpConverted = kpConverted %>% mutate(GeneName38=ifelse(is.na(GeneName38),as.character(GeneName),as.character(GeneName38)))
+kpConverted = kpConverted %>% mutate(GeneId38=ifelse(is.na(GeneId38),as.character(GeneId),as.character(GeneId38)))
+nrow(kpConverted) #377
+View(kpConverted %>% group_by(GeneName) %>% count)
+
+# filter out duplicate
+kpConverted = kpConverted %>% filter(GeneId38!='ENSG00000286169')
+
+kpConverted = merge(kpConverted,ensemblGeneData38New %>% select(GeneId38=GeneId,Chromosome,GeneStart,GeneEnd,Strand),by='GeneId38',all.x=T)
+View(kpConverted)
+write.csv(kpConverted,'~/data/sv/hg38/known_fusion_pair_genes.csv',row.names=F,quote=F)
+
 
 View(knownFusionData38)
+
 View(knownFusionData38 %>% filter(Type=='KNOWN_PAIR') %>% filter(is.na(FiveGeneId38)|is.na(ThreeGeneId38)) %>% 
        select(Type,FiveGene,FiveGene38,FiveGeneId,FiveGeneId38,ThreeGene,ThreeGene38,ThreeGeneId,ThreeGeneId38))
 
+View(knownFusionData38 %>% filter(Type=='PROMISCUOUS_3') %>% filter(is.na(ThreeGeneId38)) %>% select(Type,ThreeGene,ThreeGene38,ThreeGeneId,ThreeGeneId38))
+View(knownFusionData38 %>% filter(Type=='PROMISCUOUS_5') %>% filter(is.na(FiveGeneId38)) %>% select(Type,FiveGene,FiveGene38,FiveGeneId,FiveGeneId38))
 
+ensemblGeneData38New = read.csv('~/data/sv/ensembl_hg38/ensembl_gene_data.csv')
+View(ensemblGeneData38New)
+View(ensemblGeneData38New %>% group_by(GeneName) %>% count)
+hg38DupNames = ensemblGeneData38New %>% group_by(GeneName) %>% count %>% filter(n>1)
+
+
+## Gene panel
 ampGenes = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/cna/AmplificationTargets.tsv',sep='\t',header = F)
 colnames(ampGenes) = c('gene')
 
@@ -146,9 +173,9 @@ View(allGenes2)
 
 allGenes2 = merge(allGenes2,ensemblGeneData %>% select(GeneName,GeneId),by='GeneName',all.x=T)
 
-allGenes2 = merge(allGenes2,ensemblGeneData38 %>% select(GeneName,GeneId38=GeneId),by='GeneName',all.x=T)
+allGenes2 = merge(allGenes2,ensemblGeneData38New %>% select(GeneName,GeneId38=GeneId),by='GeneName',all.x=T)
 
-allGenes2 = merge(allGenes2,ensemblGeneData38 %>% select(GeneName38=GeneName,GeneId),by='GeneId',all.x=T)
+allGenes2 = merge(allGenes2,ensemblGeneData38New %>% select(GeneName38=GeneName,GeneId),by='GeneId',all.x=T)
 View(allGenes2)
 View(allGenes2 %>% filter(is.na(GeneId)))
 View(allGenes2 %>% filter(is.na(GeneName38)|is.na(GeneId38)))
@@ -157,7 +184,7 @@ allGeneChanges = allGenes2 %>% filter(is.na(GeneName38)|is.na(GeneId38))
 allGeneChanges = merge(allGeneChanges,ensemblGeneData %>% select(GeneId,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneId',all.x=T)
 
 allGeneChangesNameChg = merge(allGeneChanges %>% filter(!is.na(GeneName38)) %>% select(-GeneId38),
-                              ensemblGeneData38 %>% select(GeneName38=GeneName,GeneId38=GeneId,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneName38',all.x=T)
+                              ensemblGeneData38New %>% select(GeneName38=GeneName,GeneId38=GeneId,Chromosome,GeneStart,GeneEnd,EntrezIds,Synonyms),by='GeneName38',all.x=T)
 
 View(allGeneChangesNameChg %>% select(GeneName,GeneName38,GeneId,GeneId38,Chromosome.x,Chromosome.y,GeneStart.x,GeneStart.y,GeneEnd.x,GeneEnd.y,everything()))
 

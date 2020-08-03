@@ -1,14 +1,24 @@
-geneFile = '~/hmf/resources/ensembl_gene_data.hg19.csv'
-outputFile = '~/hmf/resources/KnownFusionPairs.hg19.bedpe'
-#geneFile = '~/hmf/resources/ensembl_gene_data.hg38.csv'
-#outputFile = '~/hmf/resources/KnownFusionPairs.hg38.bedpe'
+# HG37
+geneFile = '~/data/sv/ensembl_gene_data.csv'
+outputFile = '~/data/sv/known_fusion_pairs.hg37.bedpe'
+knownPairs = read.csv('~/data/sv/known_fusion_data.csv') %>% filter(Type == 'KNOWN_PAIR')
+View(knownPairs)
 
-ensemblGeneData = read.csv(geneFile)
-knownPairs = read.csv('~/hmf/resources/known_fusion_data.csv') %>% filter(Type == 'KNOWN_PAIR')
+# HG38 
+geneFile = '~/data/sv/ensembl_hg38/ensembl_gene_data.csv'
+outputFile = '~/data/sv/known_fusion_pairs.hg38.bedpe'
+knownPairs = read.csv('~/data/sv/hg38//known_fusion_data.csv') %>% filter(Type == 'KNOWN_PAIR')
+
 #View(knownPairs)
 
-kpBedInfo = merge(knownPairs,ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='FiveGene',by.y='GeneName',all.x=T)
-kpBedInfo = merge(kpBedInfo,ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='ThreeGene',by.y='GeneName',all.x=T)
+ensemblGeneInfo = read.csv(geneFile)
+#ensemblGeneInfo = ensemblGeneData
+#ensemblGeneInfo = ensemblGeneData38New
+
+kpBedInfo = merge(knownPairs,ensemblGeneInfo %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),by.x='FiveGene',by.y='GeneName',all.x=T)
+kpBedInfo = merge(kpBedInfo,ensemblGeneInfo %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),by.x='ThreeGene',by.y='GeneName',all.x=T)
+
+rm(ensemblGeneInfo)
 
 str(kpBedInfo)
 
@@ -41,4 +51,5 @@ bedpe = kpBedInfo %>% mutate(
   select(StartChr, StartPositionStart, StartPositionEnd, EndChr, EndPositionStart, EndPositionEnd, Name, Score, StartStrand, EndStrand, UpChr, DownChr) %>%
   arrange(StartChr, StartPositionStart)
 
+# View(bedpe)
 write.table(bedpe, file = outputFile, row.names = F, col.names = F, sep = "\t", quote = F)
