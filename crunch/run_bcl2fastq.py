@@ -14,18 +14,18 @@ TMP_RUNNING_FILE='/tmp/bcl2fastq_running'
 ## DEFS
 def ConvertBcl(run_dir):
 
-    LOG_FILE  = run_dir + '/conversionLog.txt';
-    ERR_FILE  = run_dir + '/conversionError.txt';
-    STRT_FILE = run_dir + '/conversionStarted.txt';
-    DONE_FILE = run_dir + '/conversionDone.txt';
-    FQDEL_FILE = run_dir + '/conversionFastqDeleted.txt';
+    LOG_FILE  = run_dir + '/conversionLog.txt'
+    ERR_FILE  = run_dir + '/conversionError.txt'
+    STRT_FILE = run_dir + '/conversionStarted.txt'
+    DONE_FILE = run_dir + '/conversionDone.txt'
+    FQDEL_FILE = run_dir + '/conversionFastqDeleted.txt'
 
     out_dir = run_dir + '/Fastq'
-    METRICS_FILE = out_dir + '/Stats/conversion_metrics_table.txt';
+    METRICS_FILE = out_dir + '/Stats/conversion_metrics_table.txt'
 
     FLOWCELL_ID = os.path.split(run_dir)[-1].split("_")[-1]
-    print "[INFO]   Flowcell ID: " + FLOWCELL_ID
-    print "[INFO]   Output directory: " + out_dir
+    print("[INFO]   Flowcell ID: " + FLOWCELL_ID)
+    print("[INFO]   Output directory: " + out_dir)
  
     os.system( 'touch ' + STRT_FILE )
     os.system( 'echo "[INFO] Started conversion of ' + FLOWCELL_ID + ' ($(date))" >>' + LOG_FILE )
@@ -79,7 +79,7 @@ for search_dir in DATA_DIRS:
     ## Check if conversion is already running
     conversionRunning = os.path.isfile( TMP_RUNNING_FILE )
     if( conversionRunning ):
-        print "[INFO] Skipping conversions because conversion is running (" + TMP_RUNNING_FILE + ")"
+        print("[INFO] Skipping conversions because conversion is running (" + TMP_RUNNING_FILE + ")")
         continue
     else:
         os.system( 'touch ' + TMP_RUNNING_FILE )
@@ -92,10 +92,10 @@ for search_dir in DATA_DIRS:
         conversionDone = os.path.isfile( run_dir + '/conversionDone.txt' )
 
         if( hasSampleSheet and sequencingDone and not conversionStrd and not conversionDone):
-            print "[INFO] Starting conversion for flowcell: " + run_dir
+            print("[INFO] Starting conversion for flowcell: " + run_dir)
             ConvertBcl(run_dir)
         else:
-            print "[INFO] Skipping conversion for flowcell: " + run_dir
+            print("[INFO] Skipping conversion for flowcell: " + run_dir)
 
     ## cleanup tmp file to allow next round of conversions to start later
     os.system( 'rm ' + TMP_RUNNING_FILE )
