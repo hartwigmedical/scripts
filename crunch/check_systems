@@ -16,7 +16,7 @@ function main {
 }
 
 function crunches {
-    for crunch in crunch00{1,2,3}; do 
+    for crunch in crunch00{2,3}; do
         header ${crunch}
         diskUsage "/home"  "ssh ${crunch}"
         diskUsage "/data1" "ssh ${crunch}"
