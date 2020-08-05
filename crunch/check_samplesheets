@@ -63,7 +63,7 @@ for sheet in ${sheets}; do
     ## check conversion status
     if [[ ! -e "${conversion_log_file}" ]]; then
         echo "# [NOTE] CONVERSION not started yet";
-    elif [[ $(($(cat ${conversion_log_file} | wc -l)%2)) -eq 0 ]]; then
+    elif [[ "$(tail -1 ${conversion_log_file})" =~ "Finished" ]]; then
         echo "# [NOTE] CONVERSION appears to be FINISHED";
         run_status="ConversionDone"
     else
