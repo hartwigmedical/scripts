@@ -198,14 +198,14 @@ sub performQC{
             'max_undt' => 8
         },
         'NextSeq' => {
-            'lane_yld' => 8e9,
+            'lane_yld' => 1e9,
             'lane_q30' => 75,
             'samp_yld' => 1e9,
             'samp_q30' => 75,
             'max_undt' => 8
         },
         'NovaSeq' => {
-            'lane_yld' => 100e9,
+            'lane_yld' => 10e9,
             'lane_q30' => 75,
             'samp_yld' => 1e9,
             'samp_q30' => 75,
@@ -269,6 +269,7 @@ sub checkObjectField{
         my $obj = $objects->{$obj_key};
         my $name = $obj->{'name'};
         next if $name eq 'UNDETERMINED';
+        next if $name =~ /^VirtualSample\d+/;
         my $value = 0;
         $value = $obj->{$field} if exists $obj->{$field};
         if ( $value < $min ){
