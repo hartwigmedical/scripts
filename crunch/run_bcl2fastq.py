@@ -9,6 +9,7 @@ DATA_DIRS=[
 ]
 
 BCL2FASTQ_TOOL='/data/fastqconversion/bcl2fastq_v2.20.0.422/bin/bcl2fastq'
+METRICS_TOOL='/data/repos/scripts/crunch/check_bcl2fastq_conversion.pl'
 TMP_RUNNING_FILE='/tmp/bcl2fastq_running'
 
 ## DEFS
@@ -59,7 +60,7 @@ def ConvertBcl(run_dir):
         os.system( 'touch ' + FQDEL_FILE )
 
     ## Collect metrics (creates table format of yield/q30 per object)
-    os.system( "check_bcl2fastq_conversion.pl -run_dir %s 1>>%s 2>&1" % (run_dir, METRICS_FILE) )
+    os.system( "%s -run_dir %s 1>>%s 2>&1" % (METRICS_TOOL, run_dir, METRICS_FILE) )
 
     ## Finishing touch
     os.system( 'echo "[INFO] Finished conversion ($(date))" >>' + LOG_FILE )
