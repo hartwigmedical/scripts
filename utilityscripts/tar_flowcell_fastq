@@ -57,6 +57,6 @@ echo "[INFO] Output files ready (tar=${du_of_tar})"
 echo "[INFO] Inspect content:"
 echo " less ${out_cnt_path}"
 echo "[INFO] Sync output files:"
-echo " rsync -ahP --stats ${out_tar_path} '${out_cnt_path}' '${out_md5_path}' ds:/data/tmp/"
+echo " rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
 echo ""
 
