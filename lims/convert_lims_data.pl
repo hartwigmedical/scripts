@@ -990,7 +990,8 @@ sub getFieldNameTranslations{
       'Report_viral'       => 'report_viral', # Should we add viral info to report
       'Report_pgx'         => 'report_pgx', # Should we add pharmacogenomics info to report
       'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
-      'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id'
+      'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id',
+      'QC_fail_report'     => 'qc_fail_report'
     );
     
     my %translations = (
