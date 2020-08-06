@@ -11,7 +11,7 @@ print_usage(){
     echo " Example:"
     echo "   $(basename $0) -u gs://path/to/run/ -o /path/to/p5_verification_v5.11 -t /path/to/run_v5.10"
     echo " Notes:"
-    echo "   - Run with nohup since this includes downlaoding from GCP"
+    echo "   - Run with nohup since this includes downloading from GCP"
     echo "-----"
     exit 1
 }
