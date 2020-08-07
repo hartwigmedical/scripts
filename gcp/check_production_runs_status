@@ -149,10 +149,10 @@ query_api.pl \
     while read set_name; do
         exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
         if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-            if [[ ${set_name} !=~ "_HMFregVAL_" ]]; then
-                echo "${download_script} ${set_name}"
-            elif [[ ${set_name} =~ "_HMFregVAL_" ]]; then
+            if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
                 echo "# this is a validation run, so can be ignored for production ${set_name}"
+            else
+                echo "${download_script} ${set_name}"
             fi
         fi
     done | sort -r | uniq
