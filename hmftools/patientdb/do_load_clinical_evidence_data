@@ -22,7 +22,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading evidence data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
+java -Xmx8G -Xms4G -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
     -tumor_location_csv ${tumor_location_csv} \
