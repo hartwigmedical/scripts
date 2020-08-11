@@ -6,7 +6,7 @@ source lims_functions
 
 run_dir=$1 && shift
 
-output_dir_data_report=${run_dir}/patient_report
+output_dir_data_report=${run_dir}/patient_report_pilot
 if [[ ! -d "${output_dir_data_report}" ]]; then
     echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
     mkdir ${output_dir_data_report}
