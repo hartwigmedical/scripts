@@ -24,8 +24,9 @@ snv_sig_script=/data/common/repos/scripts/hmftools/sigs/SampleSnvSigs.R
 # SubclonalLikelihood < 0.5  & Ploidy < 1.5
 # Ploidy > 1.5
 
-load_snvs_cmd="java -jar ${sig_analyser} -load_snvs -sample_ids ${sample_id} -log_debug \
-	-db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${output_dir}"
+load_snvs_cmd="java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.loaders.SigDataLoader \
+    -load_snvs -sample_ids ${sample_id} -log_debug \
+    -db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${output_dir}"
 
 echo ${load_snvs_cmd}
 
