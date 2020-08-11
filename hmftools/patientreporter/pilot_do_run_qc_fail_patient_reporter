@@ -5,8 +5,6 @@ source lims_functions
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
 
-output_dir_data_report=/data/cpct/qc_fail_reports_data
-
 if [[ -z "${tumor_sample}" ]]; then
     echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
 fi
@@ -35,5 +33,4 @@ pilot_do_run_base_patient_reporter \
     -ref_sample_barcode ${ref_sample_barcode} \
     -tumor_sample_id ${tumor_sample} \
     -tumor_sample_barcode ${tumor_sample_barcode} \
-    -output_dir_data_report ${output_dir_data_report} \
     "$@"
