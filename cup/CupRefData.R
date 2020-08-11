@@ -1,210 +1,338 @@
 
+#####
+## CUP Reference Data Creation
+
+## SANPLE DATA
 
 ## Create sample cancer type data
 sampleCancerTypes = read.csv('~/data/cup/sample_cancer_types_20200727.csv')
 nrow(sampleCancerTypes) # 4609
 View(sampleCancerTypes)
 
-## write cohort sampleIds
-write.csv(sampleCancerTypes %>% select(SampleId),'~/data/cup/sample_ids_4610.csv',row.names = F,quote = F)
+sampleCancerTypes = sampleCancerTypes %>% filter(!is.na(HmfPatientId)&HmfPatientId!='NULL')
+nrow(sampleCancerTypes) # 4481
 
-## De-deup for reference file creation
-sampleDedupSummary = sampleCancerTypes %>% group_by(HmfPatientId) %>% summarise(Samples=n(),SampleId=first(SampleId))
-nrow(sampleDedupSummary) # 4180
-View(sampleDedupSummary)
+# correct for unset cancer types
+View(sampleCancerTypes %>% filter(is.na(CancerType)|CancerType==''|CancerType=='NULL'))
+sampleCancerTypes = sampleCancerTypes %>% mutate(CancerType=ifelse(CancerType=='NULL','Unknown',as.character(CancerType)))
+View(sampleCancerTypes %>% group_by(CancerType) %>% count)
+View(sampleCancerTypes %>% filter(CancerType=='Unknown') %>% group_by(CancerType) %>% count)
 
-sampleCancerTypesDD = sampleCancerTypes %>% filter(SampleId %in% sampleDedupSummary$SampleId)
-View(sampleCancerTypesDD)
 
+# link to set of major cancer types
 majorCancerTypes = c('Bone/Soft tissue','Neuroendocrine','Biliary','Uterus','Head and neck','Breast','Lung','Colon/Rectum','Prostate','Skin','Urinary tract','Kidney','Ovary',
-                     'Esophagus','Pancreas','Nervous system','Liver','Stomach','Mesothelioma','Lymphoid','Anus','Thyroid','Unknown')
+                     'Esophagus','Pancreas','Nervous system','Liver','Stomach','Mesothelioma','Lymphoid','Thyroid')
 
 
-sampleCancerTypes = sampleCancerTypes %>% mutate(MajorCancerType=ifelse(CancerType %in% majorCancerTypes,as.character(CancerType),'Other'))
+sampleCancerTypes = sampleCancerTypes %>% mutate(OrigCancerType=CancerType,CancerType=ifelse(CancerType %in% majorCancerTypes,as.character(CancerType),'Other'))
 View(sampleCancerTypes)
-View(sampleCancerTypes %>% group_by(MajorCancerType) %>% count)
 
-cancerSampleCounts = sampleCancerTypes %>% group_by(MajorCancerType) %>% summarise(SampleCount=n())
-View(cancerSampleCounts)
+refSampleData = sampleCancerTypes %>% filter(CancerType!='Unknown'&CancerType!='Unknown ')
+nrow(refSampleData) # 4481
+View(refSampleData)
 
-write.csv(sampleCancerTypes %>% select(SampleId,CancerType=MajorCancerType,CancerSubtype),'~/data/cup/cup_sample_data_4610.csv',row.names = F,quote = F)
+## De-deup 
+refSampleDataDD = refSampleData %>% group_by(HmfPatientId) %>% summarise(Samples=n(),SampleId=first(SampleId))
+nrow(refSampleDataDD) # 4178
+View(refSampleDataDD)
+
+refSampleData = refSampleData %>% filter(SampleId %in% refSampleDataDD$SampleId)
+View(refSampleData)
+nrow(refSampleData) # 4178
+
+write.csv(refSampleData,'~/data/cup/ref/cup_ref_sample_data_4178.csv',row.names = F,quote = F)
+
+
+refCancerSampleCounts = refSampleData %>% group_by(CancerType) %>% summarise(SampleCount=n())
+View(refCancerSampleCounts) # 22 distinct types
+write.csv(refCancerSampleCounts,'~/data/cup/ref/cup_ref_cancer_sample_counts.csv',row.names = F,quote = F)
+
+
+## SNV Sample Counts
 
 # strip bucket name from sample counts
 snvSampleCounts = read.csv('~/data/cup/snv_sample_counts_4610.csv')
 ncol(snvSampleCounts)
-snvSampleCounts = snvSampleCounts %>% select(-BucketName,-pancreatic.or.biliary.tract)
-write.csv(snvSampleCounts,'~/data/cup/snv_matrix_data_4610.csv',row.names = F,quote = F)
-snvSampleCounts = read.csv('~/data/cup/snv_sample_counts_4610.csv')
+snvSampleCounts = snvSampleCounts %>% select(-pancreatic.or.biliary.tract)
+snvSampleCounts2 = snvSampleCounts %>% gather('SampleId','SnvCount',2:ncol(snvSampleCounts))
+View(snvSampleCounts2)
 
-# adding a specific sample
-specSampleCounts = read.csv('~/data/cup/snv_test_sample_counts.csv')
+snvSampleCounts2 = snvSampleCounts2 %>% filter(SampleId %in% refSampleData$SampleId)
+refSnvCounts = snvSampleCounts2 %>% group_by(SampleId) %>% summarise(SnvCount=sum(SnvCount))
+nrow(refSnvCounts)
+View(refSnvCounts)
+refSnvSampleCounts = snvSampleCounts2 %>% spread(SampleId,SnvCount,fill=0)
+refSnvSampleCounts = refSnvSampleCounts %>% select(-BucketName)
+ncol(refSnvSampleCounts)
+View(refSnvSampleCounts)
 
-snvSampleCountsExtra = cbind(snvSampleCounts,specSampleCounts %>% select(WIDE01010879T))
-write.csv(snvSampleCountsExtra,'~/data/cup/snv_matrix_data_4610_extras.csv',row.names = F,quote = F)
+write.csv(refSnvSampleCounts,'~/data/cup/ref/snv_ref_matrix_data_4178.csv',row.names = F,quote = F)
 
-## SNV Cosine Similarity
-snvCss = read.csv('~/data/cup/css_data.csv')
-View(snvCss)
+refSnvCounts = merge(refSnvCounts,refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
 
-snvCss = snvCss %>% mutate(CancerSubtype=ifelse(is.na(CancerSubtype),'Other',as.character(CancerSubtype)))
+View(refSnvCounts %>% arrange(CancerType,SnvCount) %>% group_by(CancerType) %>% summarise(Samples=n(),Min=min(SnvCount),Max=max(SnvCount),
+                                                         Median=median(SnvCount),Avg=mean(SnvCount),
+                                                         Rank5=nth(SnvCount,5),
+                                                         Rank10=nth(SnvCount,10),
+                                                         Rank25=nth(SnvCount,25),
+                                                         Rank50=nth(SnvCount,50),
+                                                         Rank100=nth(SnvCount,100)))
+View(refSnvCounts)
+View(cosmicSigs)
 
-## sunmary stats
-snvCss = snvCss %>% arrange(SampleId,-MatchedCancerCss)
+# Signature Fit Percentages by Cancer Type
+refSigFit = fit_to_signatures(refSnvSampleCounts, as.matrix(cosmicSigs, stringsAsFactors=F))
+refFitContributions = as.data.frame(refSigFit$contribution)
+refFitContributions = cbind(rownames(refFitContributions),refFitContributions)
+colnames(refFitContributions) = c('Signature','SigContribution')
+View(refFitContributions[,1:10])
+refFitContributions2 = refFitContributions %>% gather('SampleId','SigContrib',2:ncol(refFitContributions))
+refFitContributions2 = merge(refFitContributions2,refSnvCounts,by='SampleId',all.x=T)
+View(refFitContributions2)
+colnames(refFitContributions2) = c('SampleId','Signature','SigContrib','SampleTotal')
 
-sampleSummary = snvCss %>% group_by(SampleId,CancerType,CancerSubtype,SnvCount) %>% 
-  summarise(TopMatch=first(MatchedCancerType),
-            TopMatch=first(MatchedCancerType),
-            TopCss=first(MatchedCancerCss),
-            TotalMatches=sum(MatchedCancerType!='NONE'))
+refFitContributions2 = refFitContributions2 %>% mutate(SigPercent=pmin(round(SigContrib/SampleTotal,4),1))
+refFitContributions2 = refFitContributions2 %>% mutate(SigName=stri_replace_all_fixed(Signature,'Signature.','Sig'))
 
-sampleSummary = sampleSummary %>% mutate(TopIsSame=as.character(CancerType)==as.character(TopMatch))
-View(sampleSummary)
+View(refFitContributions2 %>% group_by(SampleId) %>% count)
 
-View(sampleSummary %>% group_by(CancerType,CssGroup=ifelse(TopCss>0.2,2**round(log(TopCss,2)),0.2)) %>% count %>% spread(CssGroup,n,fill=0))
+View(refFitContributions2 %>% group_by(SigName) %>% summarise(Max=max(SigContrib),
+                                                              Median=median(SigContrib),
+                                                              Mean=mean(SigContrib),
+                                                              Total=sum(SigContrib),
+                                                              Above10KAnd20Pct=sum(SigContrib>1e4&SigPercent>=0.2),
+                                                              Above25KAnd35Pct=sum(SigContrib>2.5e4&SigPercent>=0.35),
+                                                              Above50KAnd50Pct=sum(SigContrib>5e4&SigPercent>=0.5)))
 
-View(sampleSummary %>% filter(SnvCount<=5e3) %>% group_by(CancerType,CssGroup=ifelse(TopCss>0.2,2**round(log(TopCss,2)),0.2)) %>% count %>% spread(CssGroup,n,fill=0))
-
-ctStats = sampleSummary %>% filter(CancerType!='Other') %>%
-  mutate(SnvCountBucket=ifelse(SnvCount<5e3,'1_MB_<5K',ifelse(SnvCount<2e4,'2_MB_5-20K','3_MB_>20K'))) %>%
-  group_by(CancerType,TopIsSame,SnvCountBucket) %>% count
-
-View(ctStats %>% spread(SnvCountBucket,n,fill=0) %>% mutate(Total=`1_MB_<5K`+`2_MB_5-20K`+`3_MB_>20K`))
+sigsIgnored = c('Sig20','Sig21','Sig22','Sig23','Sig24','Sig25','Sig26','Sig27','Sig28','Sig29','Sig30','Sig14','Sig15')
+write.csv(refFitContributions2 %>% filter(!(SigName %in% sigsIgnored)) %>% 
+            select(SampleId,SigName,SigContrib,SigPercent),'~/data/cup/ref/cup_ref_sig_contribs.csv',row.names = F,quote=F)
 
 
+refSigContribPercentiles = read.csv('~/data/cup/ref/cup_ref_sig_percentiles.csv')
+View(refSigContribPercentiles)
 
-# rm(snvCssAll)
-snvCssAll=snvCss
-nrow(snvCss)
 
-# snvCss = snvCss %>% filter(CSS>=0.95)
+## Sample Purity Data
+refPurityData = read.csv('~/data/cup/purity_data.csv')
+nrow(refPurityData) # 4641
+View(refPurityData)
 
-snvCss = merge(snvCss,sampleCancerTypes %>% select(SampleId,CancerType=MajorCancerType),by='SampleId',all.x=T)
-snvCss = merge(snvCss,sampleCancerTypes %>% select(OtherSampleId=SampleId,OtherCancerType=MajorCancerType),by='OtherSampleId',all.x=T)
-snvCss = snvCss %>% arrange(-CSS)
-snvCss = snvCss %>% filter(!is.na(CancerType)&!is.na(OtherCancerType))
-nrow(snvCss)
-View(head(snvCss,1000) %>% mutate(Same=CancerType==OtherCancerType))
+refPurityData = refPurityData %>% filter(SampleId %in% refSampleData$SampleId)
+nrow(refPurityData) # 4178
+refPurityData = merge(refPurityData,refSnvCounts,by='SampleId',all.x=T)
 
-snvCss = snvCss %>% select(-CancerType1)
-View(snvCss %>% group_by(SampleId,CancerType) %>% count)
+## add in Chord scores
+chordScores = read.csv('~/data/cup/chord_scores.csv')
+chordScores = chordScores %>% filter(SampleId %in% refSampleData$SampleId)
+chordScores = merge(chordScores,refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+nrow(chordScores)
+write.csv(chordScores,'~/data/cup/ref/cup_ref_chord_scores.csv',row.names = F,quote = F)
 
-snvCss = snvCss %>% mutate(CssBucket=ifelse(CSS>=0.99,'Css_99_100',ifelse(CSS>=0.98,'Css_98_99',ifelse(CSS>=0.97,'Css_97_98',ifelse(CSS>=0.96,'Css_96_97','Css_95_96')))))
+View(refPurityData)
+refPurityData = merge(refPurityData,chordScores %>% select(SampleId,ChordHrd=HRD),by='SampleId',all.x=T)
 
-snvSampleData = read.csv('~/data/cup/known_ct_sample_ids.csv')
-snvSampleData = merge(snvSampleData,sampleCancerTypes %>% select(SampleId,MajorCancerType,CancerSubtype),by='SampleId',all.x=T)
-snvSampleData = snvSampleData %>% mutate(MajorCancerType=ifelse(is.na(MajorCancerType),'Other',as.character()))
-View(snvSampleData %>% filter(is.na(MajorCancerType)))
-write.csv(snvSampleData %>% select(SampleId,CancerType=MajorCancerType,CancerSubtype),'~/data/cup/cup_sample_data_3700.csv',row.names = F,quote = F)
+# write for Cuppa to turn into percentiles
+write.csv(refPurityData,'~/data/cup/ref/ref_cup_purity_data.csv',row.names = F,quote = F)
 
-View(snvSampleData)
-View(snvCss)
-View(snvCss %>% filter(is.na(CancerType)))
-View(snvCss %>% filter(is.na(OtherCancerType)))
+refDataPercentiles = read.csv('~/data/cup/ref/cup_ref_sample_trait_percentiles.csv')
+View(refDataPercentiles)
 
-sampleCssBuckets = snvCss %>% group_by(SampleId,CssBucket) %>% summarise(PanCancerCount=n())
-View(sampleCssBuckets)
+refPurityData = merge(refPurityData,refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+View(refPurityData %>% group_by(Gender) %>% count)
 
-snvCssSummary = snvCss %>% group_by(SampleId,CancerType,SampleTotal,OtherCancerType,CssBucket) %>% count %>% spread(OtherCancerType,n,fill=0)
+refPurityCt = refPurityData %>% group_by(CancerType) %>% 
+  summarise(IsFemale=sum(Gender=='FEMALE'),
+            WGD=sum(WholeGenomeDuplication==1))
 
-snvCssSummary = merge(snvCssSummary,sampleCssBuckets,by=c('SampleId','CssBucket'),all.x=T)
-View(snvCssSummary %>% select(SampleId,CancerType,SampleTotal,CssBucket,PanCancerCount,everything()))
+refPurityCt = merge(refPurityCt,refCancerSampleCounts,by='CancerType',all.x=T)
+refPurityCt = refPurityCt %>% mutate(GenderFemalePerc=round(IsFemale/SampleCount,3),
+                                     WGDPerc=round(WGD/SampleCount,3))
 
-View(snvCssSummary %>% select(SampleId,CancerType,SampleTotal,CssBucket,PanCancerCount,everything()) %>% arrange(SampleId,-PanCancerCount))
+View(refPurityCt)
 
-sampleId='CPCT02020619T'
-sampleCss = snvCss %>% filter(SampleId1==sampleId|SampleId2==sampleId)
-View(sampleCss %>% arrange(-CSS))
-
-# percentile summary
-sampleCssSummary = sampleCss %>% 
-  filter(CSS>0.9) %>%
-  mutate(SampleId=sampleId,OtherSampleId=ifelse(SampleId1==sampleId,as.character(SampleId2),as.character(SampleId1)),
-         CancerType=ifelse(SampleId1==sampleId,as.character(CancerType1),as.character(CancerType2)),
-         OtherCancerType=ifelse(SampleId1==sampleId,as.character(CancerType2),as.character(CancerType1)),
-         CssBucket=ifelse(CSS>=0.995,'Css_0.995',ifelse(CSS>=0.99,'Css_0.99',ifelse(CSS>=0.98,'Css_0.98',
-                          ifelse(CSS>=0.97,'Css_0.97',ifelse(CSS>=0.96,'Css_0.96',ifelse(CSS>=0.95,'Css_0.95','Css_0.90'))))))) %>%
-  select(SampleId,CancerType,OtherSampleId,OtherCancerType,CSS,CssBucket)
-
-View(sampleCssSummary)
-View(sampleCssSummary %>% group_by(CancerType,OtherCancerType,CssBucket) %>% count %>% spread(CssBucket,n,fill=0))
-
-## possible mis-classifications
-View(sampleCss %>% filter(CSS>0.99&Sample))
-
+write.csv(refPurityCt,'~/data/cup/ref/cup_ref_sample_trait_rates.csv',row.names=F,quote=F)
 
 ## Drivers
 allDrivers = read.csv('~/data/cup/drivers_4600.csv')
-allDrivers = allDrivers %>% filter(SampleId %in% sampleCancerTypes$SampleId)
-View(allDrivers %>% group_by(SampleId) %>% count)
 
-write.csv(allDrivers %>% filter(Driverlikelihood>=0.8) %>% select(SampleId,Gene,Driver),'~/data/cup/sample_driver_data.csv',row.names = F,quote = F)
-
-
-allDrivers = merge(allDrivers,sampleCancerTypes %>% select(SampleId,CancerType=MajorCancerType,CancerSubtype),by='SampleId',all.x=T)
-View(allDrivers)
-
-driverCtGenes = allDrivers %>% filter(CancerType!='Unknown') %>% group_by(CancerType,Gene,Driver) %>% summarise(SampleCount=round(sum(Driverlikelihood))) %>% filter(SampleCount>0)
-driverCtGenes = merge(driverCtGenes,cancerSampleCounts %>% select(CancerType=MajorCancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
-driverCtGenes = driverCtGenes %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
-View(driverCtGenes)
-
-driverCtGenes2 = allDrivers %>% filter(CancerType!='Unknown') %>% group_by(CancerType,SampleId,Gene) %>% summarise(DriverCount=sum(Driverlikelihood))
-driverCtGenes2 = driverCtGenes2 %>% mutate(DriverCount=pmin(DriverCount,1))
-driverCtGenes2 = driverCtGenes2 %>% group_by(CancerType,Gene) %>% summarise(SampleCount=sum(DriverCount)) %>% filter(SampleCount>0)
-View(driverCtGenes2)
-driverCtGenes2 = merge(driverCtGenes2,cancerSampleCounts %>% select(CancerType=MajorCancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
-driverCtGenes2 = driverCtGenes2 %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
-View(driverCtGenes2)
-driverCtGenes2 = driverCtGenes2 %>% mutate(Driver='ALL')
-
-View(driverCtGenes2 %>% group_by(CancerType) %>% summarise(sum(SampleCount>0)))
-View(driverCtGenes2 %>% group_by(Gene) %>% count)
-View(driverCtGenes2 %>% group_by(CancerType,Gene) %>% summarise(SampleCount=n()) %>% group_by(CancerType) %>% summarise(GeneCount=n()))
-
-driverSigs = rbind(driverCtGenes,driverCtGenes2)
-View(driverSigs)
-
-minCohortPrev = 0.0001;
-
-View(driverSigs %>% filter(SamplePerc>=0.001) %>% filter(Driver=='ALL') %>% group_by(Gene) %>% count)
-
-write.csv(driverSigs %>% filter(SamplePerc>=0.0001) %>% select(CancerType,Gene,Driver,SamplePerc),'~/data/cup/driver_prevalence.csv',row.names = F,quote = F)
-
-write.csv(driverCtGenes2 %>% filter(SamplePerc>0.001) %>% 
-          filter(Gene %in% c('TERT','CDKN2A','BRAF','NRAS','PTEN','TP53','NF1','FAT4','ARID2','APC','MAP2K1','RB1','KMT2B',
-                             'DPYD','B2M','RAC1','PPP6C','IDH1','FAT1','PBRM1','PTPRD','SETD2','BAP1','CDH10','PIK3CA')) %>%
-            select(CancerType,Gene,Driver,SamplePerc),'~/data/cup/driver_prev_test.csv',row.names = F,quote = F)
-
-driverSigs2 = driverSigs %>% select(Gene,Driver,CancerType,SamplePerc) %>% spread(CancerType,SamplePerc,fill=0)
-
-View(driverSigs2 %>% select(Gene,Driver,Breast) %>% filter(Driver=='ALL'&Breast>0.01))
-View(driverSigs2 %>% select(Gene,Driver,Breast,Prostate) %>% filter(Driver=='ALL'&(Breast>0.01|Prostate>0.01)))
-
-View(driverSigs2 %>% select(Gene,Driver,Skin,Lung,Breast,Prostate) %>% filter(Driver=='ALL'&(Skin>0.01|Lung>0.01|Breast>0.01|Prostate>0.01)))
-
-driverSigs3 = driverSigs %>% mutate(SamplePerc=pmax(SamplePerc,0.0001)) %>% select(Gene,Driver,CancerType,SamplePerc) %>% spread(CancerType,SamplePerc,fill=0.0001)
-
-View(driverSigs3 %>% filter(Driver=='ALL'))
+refDriverData = allDrivers %>% filter(SampleId %in% refSampleData$SampleId)
+nrow(refDriverData %>% group_by(SampleId) %>% count) # 4141
 
 
-write.csv(driverSigs2,'~/data/cup/driver_prev_sigs.csv',row.names = F,quote = F)
+refDriverData = merge(refDriverData,refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+View(refDriverData)
 
-View(allDrivers %>% group_by(Category,Driver,Likelihood=0.2*round(Driverlikelihood/0.2)) %>% count)
+refDriverSubtypes = refDriverData %>% group_by(CancerType,Gene,Driver) %>% summarise(SampleCount=round(sum(Driverlikelihood))) %>% filter(SampleCount>0)
+refDriverSubtypes = merge(refDriverSubtypes,cancerSampleCounts %>% select(CancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
+refDriverSubtypes = refDriverSubtypes %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
+View(refDriverSubtypes)
 
-View(allDrivers %>% group_by(Category,Driver,Gene) %>% summarise(SampleCount=n()) %>% group_by(Gene) %>% summarise(Types=n()))
-View(allDrivers %>% group_by(Category,Driver,Gene) %>% summarise(SampleCount=n()))
+refDriverGenes = refDriverData %>% group_by(CancerType,SampleId,Gene) %>% summarise(DriverCount=sum(Driverlikelihood))
+refDriverGenes = refDriverGenes %>% mutate(DriverCount=pmin(DriverCount,1))
+refDriverGenes = refDriverGenes %>% group_by(CancerType,Gene) %>% summarise(SampleCount=sum(DriverCount)) %>% filter(SampleCount>0)
+refDriverGenes = merge(refDriverGenes,refCancerSampleCounts %>% select(CancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
+refDriverGenes = refDriverGenes %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
+refDriverGenes = refDriverGenes %>% mutate(Driver='ALL')
+View(refDriverGenes)
+
+# for now only write driver gene, not the type (ie AMP, DEL etc)
+write.csv(refDriverGenes %>% filter(Driver=='ALL'&SamplePerc>=0.0001) %>% select(CancerType,Gene,Driver,SamplePerc),
+          '~/data/cup/ref/cup_ref_driver_prev_data.csv',row.names = F,quote = F)
 
 
-## SNV Signatures
-leastSqFit = read.csv('~/logs/snv_ut_sample_contribs.csv')
-View(leastSqFit[,1:10])
+## Fusions
+fusions = read.csv('~/data/sv/cohort/LNX_FUSIONS.csv')
+fusions = fusions %>% filter(Reportable=='true')
+fusions = fusions %>% mutate(Fusion=paste(GeneNameUp,GeneNameDown,sep='_'))
+refFusions = fusions %>% filter(SampleId %in% refSampleData$SampleId)
+View(refFusions)
 
-expMaxFit = read.csv('~/logs/snv_ut_emax_sample_contribs.csv')
-View(expMaxFit[,1:10])
+refFusionData = merge(refFusions %>% select(SampleId,Fusion),refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
 
-cosmicSigs = read.csv('~/data/sigs/snv_cosmic_sigs.csv')
-View(cosmicSigs)
+View(refFusionData)
+View(refFusionData %>% group_by(SampleId) %>% count)
 
-cosmicSubset = cosmicSigs %>% select(Signature.2,Signature.4,Signature.6,Signature.7,Signature.13,Signature.17)
-colnames(cosmicSubset) = c('Sig2','Sig4','Sig6','Sig7','Sig13','Sig17')
-write.csv(cosmicSubset,'~/data/cup/cosmic_sig_subset.csv',row.names = F,quote = F)
+refFusionPrev = refFusionData %>% group_by(CancerType,Fusion) %>% summarise(SampleCount=n())
+refFusionPrev = merge(refFusionPrev,refCancerSampleCounts %>% select(CancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
+refFusionPrev = refFusionPrev %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
+View(refFusionPrev)
+
+## Virus Data
+refVirusData = read.csv('~/data/cup/cup_virus_data.csv')
+View(refVirusData)
+
+refVirusData = refVirusData %>% filter(SampleId %in% refSampleData$SampleId)
+refVirusData = merge(refVirusData,virusList,by='VirusName',all.x=T)
+
+# remove duplicates
+refVirusData = refVirusData %>% group_by(SampleId,VirusType) %>% count %>% ungroup() %>% select(-n)
+refVirusData = merge(refVirusData,refSampleData %>% select(SampleId,CancerType),by='SampleId',all.x=T)
+View(refVirusData)
+
+refVirusPrev = refVirusData %>% filter(VirusType!='OTHER') %>% group_by(CancerType,VirusType) %>% summarise(SampleCount=n())
+refVirusPrev = merge(refVirusPrev,refCancerSampleCounts %>% select(CancerType,CancerSampleCount=SampleCount),by='CancerType',all.x=T)
+refVirusPrev = refVirusPrev %>% mutate(SamplePerc=round(SampleCount/CancerSampleCount,6))
+View(refVirusPrev)
+
+#virusList = read.csv('~/data/viral_host_ref.csv')
+#View(virusList)
+
+virusList = virusList %>% mutate(MajorType=ifelse(grepl('Alphapapillo',virus_name)|grepl('papillo',virus_name),'HPV',
+                                                  ifelse(grepl('HBV',virus_name)|grepl('Hepatitis B',virus_name),'HBV',
+                                                         ifelse(grepl('Merkel',virus_name),'MERKEL',
+                                                                ifelse(grepl('adenovirus',virus_name),'AAV',
+                                                                       ifelse(grepl('herpes',virus_name),'HERPES','OTHER'))))))
+virusList = virusList %>% select(VirusName=virus_name,VirusType=MajorType)
+
+# write and treat drivers, fusions and viral insertions the same
+refFusionDrivers = rbind(refDriverGenes %>% mutate(Type='DRIVER') %>% select(CancerType,Gene,Type,SamplePerc),
+                         refFusionPrev %>% mutate(Type='FUSION',Gene=Fusion) %>% select(CancerType,Gene,Type,SamplePerc),
+                         refVirusPrev %>% mutate(Type='VIRUS',Gene=VirusType) %>% select(CancerType,Gene,Type,SamplePerc))
+  
+View(refFusionDrivers)
+write.csv(refFusionDrivers %>% filter(SamplePerc>=0.0001),'~/data/cup/ref/cup_ref_driver_fusion_prev_data.csv',row.names = F,quote = F)
+
+
+
+
+## SVs
+svData = read.csv('~/data/sv/cohort/LNX_SVS.csv')
+View(svData)
+
+# types
+# LINE SV
+# SIMPLE_DEL_20kb-1Mb
+# SIMPLE_DUP_32b-200b
+# SIMPLE_DUP_100kb-5mb
+# Max SV in 1 event
+# Telomeric SGL breakend
+refSvData = svData %>% filter(SampleId %in% refSampleData$SampleId) %>% 
+  mutate(Length=ifelse(Type=='DEL'|Type=='DUP',PosEnd-PosStart,0)) %>%
+  group_by(SampleId) %>%
+  summarise(LINE=sum(ResolvedType=='LINE'),
+            SIMPLE_DEL_20KB_1MB=sum(Type=='DEL'&Length>=2e4&Length<=1e6),
+            SIMPLE_DUP_32B_200B=sum(Type=='DUP'&Length>=32&Length<=200),
+            SIMPLE_DUP_100KB_5MB=sum(Type=='DUP'&Length>=1e5&Length<=5e6),
+            MAX_EVENT_SIZE=max(ClusterCount),
+            TELOMERIC_SGL=sum(Type=='SGL'&(RepeatClass=='Simple_repeat'&(RepeatType=='(TTAGGG)n'|RepeatType=='(CCCTAA)n'))))
+
+nrow(refSvData)
+View(refSvData)
+
+# write for cuppa to generate percentiles
+write.csv(refSvData,'~/data/cup/ref/cup_ref_sv_data.csv',row.names = F,quote=F)
+
+
+# HPV, HBV, Merkel cell, AAV, Herpes
+View(virusList)
+View(virusList %>% group_by(MajorType) %>% count)
+write.csv(virusList,'~/data/cup/virus_types.csv',row.names = F,quote = F)
+
+
+
+######
+## Specific Sample Data Prep
+
+# Purity data
+ssPurityData = read.csv('~/data/cup/samples/cup_purity_raw_test1.csv')
+View(ssPurityData)
+ssPurityData = merge(ssPurityData,ssSnvCounts,by='SampleId',all.x=T)
+write.csv(ssPurityData,'~/data/cup/samples/cup_purity_data_test1.csv',row.names = F,quote = F)
+
+write.csv(ssPurityData %>% mutate(CancerType='Unknown') %>% select(SampleId,CancerType),'~/data/cup/samples/cup_sample_data_test1.csv',row.names = F,quote=F)
+
+# SVs
+ssSvData = read.csv('~/data/cup/samples/sv_data_raw_test1.csv')
+View(ssSvData)
+
+ssSvData = ssSvData %>% mutate(Length=ifelse(Type=='DUP'|Type=='DEL',as.numeric(as.character(PosEnd))-as.numeric(as.character(PosStart)),0))
+
+ssSvSampleData = ssSvData %>% group_by(SampleId) %>%
+  summarise(LINE=sum((LEStart!='NONE'&LEStart!='None')|(LEEnd!='NONE'&LEEnd!='None')),
+            SIMPLE_DEL_20KB_1MB=sum(Type=='DEL'&Length>=2e4&Length<=1e6),
+            SIMPLE_DUP_32B_200B=sum(Type=='DUP'&Length>=32&Length<=200),
+            SIMPLE_DUP_100KB_5MB=sum(Type=='DUP'&Length>=1e5&Length<=5e6),
+            MAX_EVENT_SIZE=max(ClusterCount),
+            TELOMERIC_SGL=sum(Type=='SGL'&(RepeatClass=='Simple_repeat'&(RepeatType=='(TTAGGG)n'|RepeatType=='(CCCTAA)n'))))
+
+View(ssSvSampleData)
+
+write.csv(ssSvSampleData,'~/data/cup/samples/cup_sv_data_test1.csv',row.names = F,quote=F)
+
+
+# SVN counts and sigs
+ssSnvMatrixData = read.csv('~/data/cup/samples/snv_test_sample_counts.csv')
+
+write.csv(ssSnvMatrixData %>% select(-BucketName),'~/data/cup/samples/cup_snv_matrix_data_test1.csv',row.names = F,quote=F)
+
+View(ssSnvCounts)
+
+ssSnvCounts = ssSnvMatrixData %>% gather('SampleId','Count',2:ncol(ssSnvMatrixData))
+ssSnvCounts = ssSnvCounts %>% group_by(SampleId) %>% summarise(SnvCount=sum(Count))
+
+View(ssSnvCounts)
+
+ssSigFit = fit_to_signatures(ssSnvCounts %>% select(-BucketName), as.matrix(cosmicSigs, stringsAsFactors=F))
+ssFitContributions = as.data.frame(ssSigFit$contribution)
+ssFitContributions = cbind(rownames(ssFitContributions),ssFitContributions)
+View(ssFitContributions)
+ssFitContributions2 = ssFitContributions %>% gather('SampleId','SigContrib',2:ncol(ssFitContributions))
+ssFitContributions2 = merge(ssFitContributions2,ssSnvCounts,by='SampleId',all.x=T)
+colnames(ssFitContributions2) = c('SampleId','SigName','SigContrib','SampleTotal')
+ssFitContributions2 = ssFitContributions2 %>% mutate(SigName=stri_replace_all_fixed(SigName,'Signature.','Sig'))
+View(ssFitContributions2)
+
+write.csv(ssFitContributions2 %>% filter(!(SigName %in% sigsIgnored)),'~/data/cup/samples/cup_sig_contribs_test1.csv',row.names = F,quote=F)
+
+
+# SampleId,SigName,SigContrib,SigPercent
+
+
+# Drivers and Fusions
+ssDriverFusions = read.csv('~/data/cup/samples/.csv')
+
+
+
+
+
