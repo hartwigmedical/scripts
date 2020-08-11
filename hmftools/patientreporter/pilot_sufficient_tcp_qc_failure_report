@@ -21,4 +21,4 @@ if [[ ! -d "${output_dir_data_report}" ]]; then
 fi
 
 pilot_do_run_qc_fail_patient_reporter \
-    ${tumor_sample} "sufficient_tcp_qc_failure" -output_dir_data_report ${output_dir_data_report -comments "${comments}" -purple_purity_tsv ${purple_purity_tsv} "$@"
+    ${tumor_sample} "sufficient_tcp_qc_failure" -output_dir_data_report ${output_dir_data_report} -comments "${comments}" -purple_purity_tsv ${purple_purity_tsv} "$@"
