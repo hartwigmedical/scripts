@@ -363,16 +363,24 @@ View(dmData)
 
 View(clusters %>% filter(ClusterId %in% c(61,25)))
 
-
 ensemblGeneData = read.csv('~/data/sv/ensembl_gene_data.csv')
 View(ensemblGeneData)
 
-ensemblGeneData38 = read.csv('~/data/sv/ensembl_hg38_gene_data.csv')
+ensemblGeneData38 = read.csv('~/data/ensembl_hg38/ensembl_gene_data.csv')
 View(ensemblGeneData38)
 
 ensemblTransExonData = read.csv('~/data/sv/ensembl_trans_exon_data.csv')
 View(ensemblTransExonData %>% filter(GeneId=='ENSG00000141510'))
 
+ensemblGeneData38New = read.csv('~/data/sv/ensembl_hg38/ensembl_gene_data.csv')
+View(ensemblGeneData38New)
+
+
+ensemblGeneNames38 = read.csv('~/logs/ensembl_gene_names_hg38.csv')
+View(ensemblGeneNames38 %>% filter(as.character(GeneName)!=as.character(EntrezId)))
+View(ensemblGeneNames38 %>% group_by(GeneId,GeneName) %>% summarise(EntrezIdCount=n(),
+                                                                    EntrezId1=first(EntrezId),
+                                                                    EntrezId2=last(EntrezId)) %>% filter(EntrezIdCount>1))
 
 View(svData %>% filter(Type=='SGL'&ResolvedType=='DUP'))
 
@@ -551,125 +559,6 @@ View(shortLinks %>% filter(TILength<30))
 
 View(shortLinks %>% filter(is.na(DiffMin)))
 
-
-######
-## Double Minutes
-
-dmProd = read.csv('~/data/sv/dm/LNX_DOUBLE_MINUTES_OLD.csv')
-View(dmProd)
-nrow(dmProd) # 603
-nrow(dmProd %>% group_by(SampleId) %>% count) # 537
-dmProdSamples = dmProd %>% group_by(SampleId) %>% count
-write.csv(dmProd %>% group_by(SampleId) %>% count %>% select(SampleId),'~/logs/dm_sample_ids.csv',row.names = F,quote = F)
-
-dmTest = read.csv('~/logs/LNX_DOUBLE_MINUTES.csv')
-View(dmTest)
-
-dmNew = read.csv('~/data/sv/dm/LNX_DOUBLE_MINUTES.csv')
-View(dmNew)
-nrow(dmNew) # 1032
-nrow(dmNew %>% group_by(SampleId) %>% count) # 537
-
-# recommended filters
-View(dmNew %>% filter(ClosedSegLength>=5e3&OpenBreakends==0) %>% arrange(-IntExtMaxJcn))
-
-
-# DMs with no open breakends
-View(dmNew %>% filter(OpenBreakends==0) %>% arrange(-IntExtMaxJcn))
-
-
-dmInDb = read.csv('~/logs/dm_sample_ids_in_db.csv')
-View()
-View(dmProdSamples %>% filter(!(SampleId %in% dmInDb$SampleId)))
-write.csv(dmProdSamples %>% filter(!(SampleId %in% dmInDb$SampleId)))
-# dm = merge(dm,dmDrivers %>% select(SampleId,ClusterId,HasDriver='DRIVER'),by=c('SampleId','ClusterId'),all.x=T)
-
-dmClusters = read.csv('~/logs/LNX_CLUSTERS.csv')
-View(dmClusters)
-
-dmSvs = read.csv('~/data/sv/dm/LNX_SVS.csv')
-View(dmSvs)
-nrow(dmSvs)
-View(dmSvs %>% filter(grepl('MAJOR',ClusterReason)))
-View(dmSvs %>% filter(Annotations!=''))
-
-View(dmSvs %>% filter(grepl('HIGH',ClusterReason)))
-
-highJcnSVs = dmSvs %>% filter(grepl('HIGH',ClusterReason))
-nrow(highJcnSVs)
-
-oldDmSvs = read.csv('~/data/sv/dm/LNX_SVS_PROD.csv')
-
-highJcnSVs = merge(highJcnSVs,oldDmSvs %>% select(SampleId,Id,OldClusterCount=ClusterCount,OldClusterReason=ClusterReason),by=c('SampleId','Id'),all.x=T)
-View(highJcnSVs %>% mutate(Jcn=(JcnMin+JcnMax)*0.5) %>% select(SampleId,Id,ClusterCount,OldClusterCount,ClusterReason,OldClusterReason,ResolvedType,Jcn,everything()))
-
-View(highJcnSVs %>% mutate(Jcn=(JcnMin+JcnMax)*0.5) %>% 
-       filter(ClusterCount!=OldClusterCount) %>%
-       select(SampleId,Id,ClusterCount,OldClusterCount,ClusterReason,OldClusterReason,ResolvedType,Jcn,everything()))
-
-View(highJcnSVs %>% filter(ClusterCount!=OldClusterCount) %>% group_by(SampleId,ClusterId,ClusterCount,OldClusterCount) %>% count)
-
-View(dmSvs %>% filter(Type=='INF'&NearestLen>=0) %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,Jcn,NearestLen,NearestType,DBLenStart,LnkSvStart,LnkLenStart,DMSV,everything()))
-
-View(dmSvs %>% filter(Type=='INF') %>% 
-       mutate(InDB=(DBLenStart==-2000),InTI=(LnkLenStart>=0),ZeroLengthTI=(LnkLenStart==0)) %>%
-       group_by(InDB,InTI,ZeroLengthTI) %>% count)
-
-View(dmSvs %>% filter(Type=='INF'&LnkLenStart>=0) %>% 
-       group_by(TILength=ifelse(LnkLenStart==0,0,2**round(log(LnkLenStart,2)))) %>% count)
-
-dmLinks = read.csv('~/data/sv/dm/LNX_LINKS.csv')
-View(dmLinks)
-zeroLenLinks = dmLinks %>% filter(TILength==0)
-zeroLenLinks = merge(zeroLenLinks,dmSvs %>% select(SampleId,Id1=Id,Type1=Type),by=c('SampleId','Id1'),all.x=T)
-zeroLenLinks = merge(zeroLenLinks,dmSvs %>% select(SampleId,Id2=Id,Type2=Type),by=c('SampleId','Id2'),all.x=T)
-
-View(zeroLenLinks %>% mutate(OtherType=ifelse(Type=='INF',as.character(Type2),as.character(Type))) %>% group_by(OtherType) %>% count)
-View(zeroLenLinks %>% mutate(OtherType=ifelse(Type=='INF',as.character(Type2),as.character(Type)),
-                             ClusterSize=2**round(log(ClusterCount,2))) %>% group_by(OtherType,ClusterSize) %>% count %>% spread(OtherType,n,fill=0))
-
-
-View(zeroLenLinks %>% select(SampleId,Id1,Id2,Type,Type2,ClusterId,ClusterCount,ResolvedType,TILength,PosStart,PosEnd,Jcn,everything()))
-tmpLinks = read.csv('~/logs/LNX_LINKS.csv')
-View(tmpLinks)
-View(tmpLinks %>% mutate(Length=abs(PosStart-PosEnd)))
-
-
-tmpSVs = read.csv('~/logs/LNX_SVS.csv')
-View(tmpSVs)
-View(tmpSVs %>% filter(Annotations!=''))
-
-View(tmpSVs %>% filter(Type=='INF') %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,Jcn,NearestLen,NearestType,DBLenStart,LnkSvStart,LnkLenStart,everything()))
-
-
-View(tmpSVs %>% group_by(SampleId,ChrStart,Pos=PosStart) %>% summarise(SVs=n(),
-                                                                   InfCount=sum(Type=='INF'),
-                                                                   SvId1=first(Id),
-                                                                   SvId2=last(Id),
-                                                                   Type1=first(Type),
-                                                                   Type2=last(Type),
-                                                                   JcnFirst=first((JcnMin+JcnMax)*0.5),
-                                                                   JcnLast=last((JcnMin+JcnMax)*0.5),
-                                                                   AnchorFirst=first(AnchorStart),
-                                                                   AnchorLast=last(AnchorStart),
-                                                                   ) %>% filter(SVs>1&InfCount==1))
-
-View(tmpSVs %>% group_by(SampleId,ChrStart,Pos=ifelse(Type=='INF',PosStart,PosEnd)) %>% summarise(SVs=n(),
-                                                                   InfCount=sum(Type=='INF'),
-                                                                   SvId1=first(Id),
-                                                                   SvId2=last(Id),
-                                                                   Type1=first(Type),
-                                                                   Type2=last(Type),
-                                                                   JcnFirst=first((JcnMin+JcnMax)*0.5),
-                                                                   JcnLast=last((JcnMin+JcnMax)*0.5),
-                                                                   AnchorFirst=first(ifelse(Type=='INF',AnchorStart,AnchorEnd)),
-                                                                   AnchorLast=last(ifelse(Type=='INF',AnchorStart,AnchorEnd))) %>% filter(SVs>1&InfCount==1))
-
-
-gripssData = read.csv('~/logs/LNX_SVS.csv')
-View(gripssData)
-
-View(gripssData %>% filter(grepl('trs',AsmbStart)|grepl('trs',AsmbEnd)) %>% select(SampleId,Id,AsmbStart,AsmbEnd,LnkSvStart,LnkLenStart,LnkSvEnd,LnkLenEnd,everything()))
 
 
 

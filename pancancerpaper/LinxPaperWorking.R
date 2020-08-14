@@ -80,6 +80,98 @@ print(ggplot(clusters %>% filter(ClusterType=='LINE'|ClusterType=='COMPLEX'), ae
 
 
 
+#####
+## Double Minutes
+######
+## Double Minutes
+
+dmGripss = read.csv('~/data/sv/cohort/LNX_DOUBLE_MINUTES.csv')
+View(dmGripss)
+View(dmGripss %>% group_by(DMSvCount,IsDM) %>% count %>% spread(IsDM,n,fill=0))
+
+dmLowJcn = read.csv('~/data/sv/cohort/LNX_DOUBLE_MINUTES_low_jcn.csv')
+View(dmLowJcn)
+View(dmLowJcn %>% filter(IsDM=='true') %>% group_by(DmSVs=2**round(log(DMSvCount,2)),MaxJcn=ifelse(MaxJcn<8,round(MaxJcn),2**round(log(MaxJcn,2)))) %>% count %>% spread(MaxJcn,n,fill=0))
+
+View(dmLowJcn %>% filter(IsDM=='true') %>% group_by(MaxJcn=ifelse(MaxJcn<8,round(MaxJcn),2**round(log(MaxJcn,2)))) %>% count)
+View(dmLowJcn %>% group_by(IsDM,MaxJcn=ifelse(MaxJcn<8,round(MaxJcn),2**round(log(MaxJcn,2)))) %>% count %>% spread(IsDM,n,fill=0))
+
+View(dmLowJcn %>% filter(IsDM=='true') %>% filter(DMSvCount==1))
+View(dmLowJcn %>% filter(IsDM=='true'))
+
+
+dmProd = read.csv('~/data/sv/dm/LNX_DOUBLE_MINUTES_PROD.csv')
+View(dmProd)
+nrow(dmProd) # 603
+nrow(dmProd %>% group_by(SampleId) %>% count) # 537
+dmProdSamples = dmProd %>% group_by(SampleId) %>% count
+write.csv(dmProd %>% group_by(SampleId) %>% count %>% select(SampleId),'~/logs/dm_sample_ids.csv',row.names = F,quote = F)
+
+dmTest = read.csv('~/logs/LNX_DOUBLE_MINUTES.csv')
+View(dmTest)
+
+svTest = read.csv('~/logs/LNX_SVS.csv')
+View(svTest)
+View(svTest %>% filter(SampleId=='CPCT02070102T'&ClusterId %in% c(15,40)))
+
+
+dmNew = read.csv('~/data/sv/dm/LNX_DOUBLE_MINUTES.csv')
+
+View(dmNew)
+nrow(dmNew) # 1032
+nrow(dmNew %>% group_by(SampleId) %>% count) # 537
+
+# recommended filters
+View(dmNew %>% filter(ClosedSegLength>=5e3&OpenBreakends==0) %>% arrange(-IntExtMaxJcn))
+
+
+# DMs with no open breakends
+View(dmNew %>% filter(OpenBreakends==0) %>% arrange(-IntExtMaxJcn))
+
+
+dmInDb = read.csv('~/logs/dm_sample_ids_in_db.csv')
+View()
+View(dmProdSamples %>% filter(!(SampleId %in% dmInDb$SampleId)))
+write.csv(dmProdSamples %>% filter(!(SampleId %in% dmInDb$SampleId)))
+# dm = merge(dm,dmDrivers %>% select(SampleId,ClusterId,HasDriver='DRIVER'),by=c('SampleId','ClusterId'),all.x=T)
+
+dmClusters = read.csv('~/logs/LNX_CLUSTERS.csv')
+View(dmClusters)
+
+dmSvs = read.csv('~/data/sv/dm/LNX_SVS.csv')
+View(dmSvs)
+nrow(dmSvs)
+View(dmSvs %>% filter(grepl('MAJOR',ClusterReason)))
+View(dmSvs %>% filter(Annotations!=''))
+
+View(dmSvs %>% filter(grepl('HIGH',ClusterReason)))
+
+highJcnSVs = dmSvs %>% filter(grepl('HIGH',ClusterReason))
+nrow(highJcnSVs)
+
+oldDmSvs = read.csv('~/data/sv/dm/LNX_SVS_PROD.csv')
+
+highJcnSVs = merge(highJcnSVs,oldDmSvs %>% select(SampleId,Id,OldClusterCount=ClusterCount,OldClusterReason=ClusterReason),by=c('SampleId','Id'),all.x=T)
+View(highJcnSVs %>% mutate(Jcn=(JcnMin+JcnMax)*0.5) %>% select(SampleId,Id,ClusterCount,OldClusterCount,ClusterReason,OldClusterReason,ResolvedType,Jcn,everything()))
+
+View(highJcnSVs %>% mutate(Jcn=(JcnMin+JcnMax)*0.5) %>% 
+       filter(ClusterCount!=OldClusterCount) %>%
+       select(SampleId,Id,ClusterCount,OldClusterCount,ClusterReason,OldClusterReason,ResolvedType,Jcn,everything()))
+
+View(highJcnSVs %>% filter(ClusterCount!=OldClusterCount) %>% group_by(SampleId,ClusterId,ClusterCount,OldClusterCount) %>% count)
+
+View(dmSvs %>% filter(Type=='INF'&NearestLen>=0) %>% select(SampleId,Id,Type,ChrStart,PosStart,OrientStart,Jcn,NearestLen,NearestType,DBLenStart,LnkSvStart,LnkLenStart,DMSV,everything()))
+
+View(dmSvs %>% filter(Type=='INF') %>% 
+       mutate(InDB=(DBLenStart==-2000),InTI=(LnkLenStart>=0),ZeroLengthTI=(LnkLenStart==0)) %>%
+       group_by(InDB,InTI,ZeroLengthTI) %>% count)
+
+View(dmSvs %>% filter(Type=='INF'&LnkLenStart>=0) %>% 
+       group_by(TILength=ifelse(LnkLenStart==0,0,2**round(log(LnkLenStart,2)))) %>% count)
+
+
+
+
 
 #####
 ## Complex Clusters

@@ -23,6 +23,7 @@ rm(ensemblGeneInfo)
 str(kpBedInfo)
 
 preGeneBuffer=10e3
+
 kpBedInfo = kpBedInfo %>%
   mutate(
     UpChr = factor(UpChr, levels = c(1:22,'X','Y'), ordered = T),
@@ -37,6 +38,10 @@ kpBedInfo = kpBedInfo %>%
     ## NOTE WE REVERSE STRAND2
     Strand2=ifelse(DownStrand==1,'-','+'),
     Score=0)
+
+# run for HG38 only
+kpBedInfo = kpBedInfo %>% mutate(UpChr=paste('chr',UpChr,sep=''),DownChr=paste('chr',DownChr,sep=''))
+
 
 bedpe = kpBedInfo %>% mutate(
   StartIsUp = UpChr < DownChr | (UpChr == DownChr & Start1 < Start2),

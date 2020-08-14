@@ -44,44 +44,51 @@ annotate_fusions<-function(fusionData)
 ########################
 ## Fusion Reference Data
 
-newKnownPairs = read.csv('~/data/sv/known_pairs_new.csv',sep='\t')
-View(newKnownPairs)
-nrow(newKnownPairs)
+# create from HMF Fusion Knowledgebase spreadsheet
+knownFusionDataRaw = read.csv('~/data/sv/known_fusion_data_raw.csv')
+View(knownFusionDataRaw)
 
-newProms = read.csv('~/data/sv/promiscuous_genes.csv',sep='\t')
-View(newProms)
-igGenes = read.csv('~/data/sv/ig_fusion_genes.csv')
-View(igGenes)
-exonDelDups = read.csv('~/data/sv/exon_del_dup_genes.csv',sep='\t')
-View(exonDelDups)
-colnames(exonDelDups)
+# HG37
+write.csv(knownFusionDataRaw %>% select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData=OtherData37),
+          '~/data/sv/known_fusion_data_hg37.csv',row.names = F,quote = F)
 
-write.csv(rbind(newKnownPairs %>% select(GeneName=FiveGene),
-                newKnownPairs %>% select(GeneName=ThreeGene)),'~/logs/known_pair_genes.csv',row.names = F,quote = F)
+# HG38 - with gene name conversion
 
-combinedKnownFusions = newKnownPairs %>% mutate(Type='KNOWN_PAIR',PubMedId=as.character(PubMedId),OtherData='') %>% 
-  select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData)
+gene_name_37_to_38<-function(gene)
+{
+  if(gene == 'MLLT4')
+    return ('AFDN')
+  if(gene == 'RP11-356O9.1')
+    return ('AL121790.1')
+  if(gene == 'PPAP2B')
+    return ('PLPP3')
+  if(gene == 'KIAA1524')
+    return ('CIP2A')
+  if(gene == 'LHFP')
+    return ('LHFPL6')
+  if(gene == 'MKL2')
+    return ('MRTFB')
+  if(gene == 'WHSC1L1')
+    return ('NSD3')
+  if(gene == 'CXorf67')
+    return ('EZHIP')
+  if(gene == 'MGEA5')
+    return ('OGA')
+  
+  return (as.character(gene))
+}
+  
+print(gene_name_37_to_38('TEST'))
+print(gene_name_37_to_38('MLLT4'))
 
-View(combinedKnownFusions)
+knownFusionDataRaw$FiveGene38 = apply(knownFusionDataRaw[,c('FiveGene'),drop=F], 1, function(x) gene_name_37_to_38(x[1]))
+knownFusionDataRaw$ThreeGene38 = apply(knownFusionDataRaw[,c('ThreeGene'),drop=F], 1, function(x) gene_name_37_to_38(x[1]))
+View(knownFusionDataRaw)
 
-combinedKnownFusions = rbind(combinedKnownFusions,
-                             newProms %>% filter(Stream=='Up') %>% mutate(Type='PROMISCUOUS_5',FiveGene=GeneName,ThreeGene='',PubMedId='',OtherData='') %>%
-                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
+write.csv(knownFusionDataRaw %>% 
+            select(Type,FiveGene=FiveGene38,ThreeGene=ThreeGene38,CancerTypes,PubMedId,OtherData=OtherData38),
+          '~/data/sv/known_fusion_data_hg38.csv',row.names = F,quote = F)
 
-combinedKnownFusions = rbind(combinedKnownFusions,
-                             newProms %>% filter(Stream=='Down') %>% mutate(Type='PROMISCUOUS_3',FiveGene='',ThreeGene=GeneName,PubMedId='',OtherData='') %>%
-                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
-
-combinedKnownFusions = rbind(combinedKnownFusions,igGenes)
-
-combinedKnownFusions = rbind(combinedKnownFusions,
-                             exonDelDups %>% mutate(Type='EXON_DEL_DUP',PubMedId='',
-                                                    FiveGene=Gene,ThreeGene=Gene,
-                                                    OtherData=sprintf('%s;%d;%d;%d;%d',Transcript,MinFusedExonStart,MaxFusedExonStart,MinFusedExonEnd,MaxFusedExonEnd)) %>%
-                               select(Type,FiveGene,ThreeGene,CancerTypes,PubMedId,OtherData))
-
-View(combinedKnownFusions)
-write.csv(combinedKnownFusions,'~/data/sv/known_fusion_data.csv',row.names = F, quote=F)
 
 knownFusionData = read.csv('~/data/sv/known_fusion_data.csv')
 View(knownFusionData)
@@ -146,6 +153,8 @@ View(ensemblGeneData38New)
 View(ensemblGeneData38New %>% group_by(GeneName) %>% count)
 hg38DupNames = ensemblGeneData38New %>% group_by(GeneName) %>% count %>% filter(n>1)
 
+View(ensemblGeneData38New)
+write.csv(ensemblGeneData38New %>% mutate(Chromosome=paste('chr',Chromosome,sep='')),'~/data/sv/ensembl_hg38/ensembl_gene_data_chr.csv',row.names = F,quote = F)
 
 ## Gene panel
 ampGenes = read.csv('~/hmf/repos/hmftools/hmf-common/src/main/resources/cna/AmplificationTargets.tsv',sep='\t',header = F)

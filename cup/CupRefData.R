@@ -41,7 +41,10 @@ View(refSampleData)
 nrow(refSampleData) # 4178
 
 write.csv(refSampleData,'~/data/cup/ref/cup_ref_sample_data_4178.csv',row.names = F,quote = F)
+refSampleData = read.csv('~/data/cup/ref/cup_ref_sample_data_4178.csv')
+View(refSampleData)
 
+# CPCT02010123T
 
 refCancerSampleCounts = refSampleData %>% group_by(CancerType) %>% summarise(SampleCount=n())
 View(refCancerSampleCounts) # 22 distinct types
@@ -254,7 +257,7 @@ refSvData = svData %>% filter(SampleId %in% refSampleData$SampleId) %>%
             SIMPLE_DEL_20KB_1MB=sum(Type=='DEL'&Length>=2e4&Length<=1e6),
             SIMPLE_DUP_32B_200B=sum(Type=='DUP'&Length>=32&Length<=200),
             SIMPLE_DUP_100KB_5MB=sum(Type=='DUP'&Length>=1e5&Length<=5e6),
-            MAX_EVENT_SIZE=max(ClusterCount),
+            MAX_COMPLEX_SIZE=max(ifelse(ResolvedType=='COMPLEX',ClusterCount,0)),
             TELOMERIC_SGL=sum(Type=='SGL'&(RepeatClass=='Simple_repeat'&(RepeatType=='(TTAGGG)n'|RepeatType=='(CCCTAA)n'))))
 
 nrow(refSvData)
@@ -262,6 +265,12 @@ View(refSvData)
 
 # write for cuppa to generate percentiles
 write.csv(refSvData,'~/data/cup/ref/cup_ref_sv_data.csv',row.names = F,quote=F)
+
+refSvPercentiles = read.csv('~/data/cup/ref/cup_ref_sv_percentiles.csv')
+View(refSvPercentiles)
+
+# check short DUPs
+View(merge(refSvData %>% filter(SIMPLE_DUP_32B_200B>20),refSampleData,by='SampleId',all.x=T))
 
 
 # HPV, HBV, Merkel cell, AAV, Herpes
