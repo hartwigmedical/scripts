@@ -47,9 +47,9 @@ fit_sigs_cmd="java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.fitter.
   -output_dir ${output_dir} \
   -log_debug"
 
-counts_file_01=${sample_id}.sample_counts.${counts_01}.csv
-counts_file_02=${sample_id}.sample_counts.${counts_02}.csv
-counts_file_03=${sample_id}.sample_counts.${counts_03}.csv
+counts_file_01=${output_dir}/${sample_id}.sample_counts.${counts_01}.csv
+counts_file_02=${output_dir}/${sample_id}.sample_counts.${counts_02}.csv
+counts_file_03=${output_dir}/${sample_id}.sample_counts.${counts_03}.csv
 
 ${fit_sigs_cmd} -sample_counts_file ${counts_file_01} -output_file_id ${counts_01}
 ${fit_sigs_cmd} -sample_counts_file ${counts_file_02} -output_file_id ${counts_02}
