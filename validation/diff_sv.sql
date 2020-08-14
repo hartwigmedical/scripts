@@ -7,7 +7,7 @@ SELECT
     TYPE,
     endPosition - startPosition AS len,
     COUNT(*),
-    MAX(ploidy),
+    MAX(junctionCopyNumber),
     MAX(qualScore)
 FROM
     (SELECT 
@@ -18,7 +18,7 @@ FROM
             endChromosome,
             endPosition,
             TYPE,
-            ploidy,
+            junctionCopyNumber,
             qualScore
     FROM
         reference_validation_sets.structuralVariant
@@ -31,7 +31,7 @@ FROM
             endChromosome,
             endPosition,
             TYPE,
-            ploidy,
+            junctionCopyNumber,
             qualScore
     FROM
         pipeline_v5_validation.structuralVariant
