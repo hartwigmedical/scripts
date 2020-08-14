@@ -15,28 +15,42 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-sig_analyser=/data/common/tools/sig_analyser_pilot/sig_analyser.jar
+sig_analyser=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
 cosmic_signatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
-snv_sig_script=/data/common/repos/scripts/hmftools/sigs/SampleSnvSigs.R
 
 # create 3 separate files each with different subclonal and ploidy criteria
 # SubclonalLikelihood >0.5
 # SubclonalLikelihood < 0.5  & Ploidy < 1.5
 # Ploidy > 1.5
 
-load_snvs_cmd="java -jar ${sig_analyser} -load_snvs -sample_ids ${sample_id} -log_debug \
-	-db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} -output_dir ${output_dir}"
+load_snvs_cmd="java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.loaders.SigDataLoader
+  -load_snvs \
+  -sample ${sample_id} \
+  -log_debug \
+  -db_url ${db_url} -db_user ${db_user} -db_pass ${db_pass} \
+  -output_dir ${output_dir}" \
 
 echo ${load_snvs_cmd}
 
-counts_01=${sample_id}_01
-counts_02=${sample_id}_02
-counts_03=${sample_id}_03
+counts_01=subclone_high
+counts_02=subclone_low
+counts_03=ploidy_high
 ${load_snvs_cmd} -subclonal_min 0.5 -output_file_id ${counts_01}
 ${load_snvs_cmd} -subclonal_max 0.5 -ploidy_max 1.5 -output_file_id ${counts_02}
 ${load_snvs_cmd} -ploidy_min 1.5 -output_file_id ${counts_03}
 
-# Rscript SampleSnvSigs.R snv_db_sample_counts.csv snv_cosmic_sigs.csv ./
-Rscript ${snv_sig_script} ${output_dir}/${counts_01}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_01}_snv_sig_allocation.csv
-Rscript ${snv_sig_script} ${output_dir}/${counts_02}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_02}_snv_sig_allocation.csv
-Rscript ${snv_sig_script} ${output_dir}/${counts_03}_sample_counts.csv ${cosmic_signatures} ${output_dir}/${counts_03}_snv_sig_allocation.csv
+# will produce files like: SAMPLE_ID.sample_counts.subclone_high.csv
+
+fit_sigs_cmd="java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter
+  -sample ${sample_id} \
+  -signatures_file ${cosmic_signatures} \
+  -output_dir ${output_dir} \
+  -log_debug"
+
+counts_file_01=${sample_id}.sample_counts.${counts_01}.csv
+counts_file_02=${sample_id}.sample_counts.${counts_02}.csv
+counts_file_03=${sample_id}.sample_counts.${counts_03}.csv
+
+${fit_sigs_cmd} -sample_counts_file ${counts_file_01} -output_file_id ${counts_01}
+${fit_sigs_cmd} -sample_counts_file ${counts_file_02} -output_file_id ${counts_02}
+${fit_sigs_cmd} -sample_counts_file ${counts_file_03} -output_file_id ${counts_03}
