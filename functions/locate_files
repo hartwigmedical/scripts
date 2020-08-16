@@ -423,6 +423,17 @@ locate_purple_pilot_circos_plot() {
 }
 
 ##################################### Structural Variants #####################################
+
+source locate_files
+locate_purple_structural_variants /data/cpct/runs/151125_HMFreg0021_FR10306159_FR10306161_CPCT02030224
+locate_purple_pilot_structural_variants /data/cpct/runs/151125_HMFreg0021_FR10306159_FR10306161_CPCT02030224
+locate_gridss_structural_variants /data/cpct/runs/151125_HMFreg0021_FR10306159_FR10306161_CPCT02030224
+locate_gridss_recovery_candidates /data/cpct/runs/151125_HMFreg0021_FR10306159_FR10306161_CPCT02030224
+
+/data/cpct/runs/200807_HMFregWIDE_FR16612261_FR23586077_WIDE01010922
+
+run_dir=/data/cpct/runs/151125_HMFreg0021_FR10306159_FR10306161_CPCT02030224
+
 locate_purple_structural_variants() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
@@ -470,8 +481,8 @@ locate_gridss_structural_variants() {
         structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
     fi
 
-    if [[ -z "${somatic_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS recovery variants in ${run_dir}. Exiting." >&2
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
@@ -490,7 +501,7 @@ locate_gridss_recovery_candidates() {
         structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
     fi
 
-    if [[ -z "${somatic_vcf}" ]]; then
+    if [[ -z "${structural_vcf}" ]]; then
         echo "[ERROR] Unable to locate GRIDSS recovery variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
