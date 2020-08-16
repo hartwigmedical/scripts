@@ -266,7 +266,6 @@ locate_flagstats() {
 }
 
 ################################# Somatic Variants #################################
-
 locate_sage_somatics() {
     local run_dir=$1
     local sage_dir=${run_dir}/sage
@@ -424,29 +423,31 @@ locate_purple_pilot_circos_plot() {
 }
 
 ##################################### Structural Variants #####################################
-
 locate_purple_structural_variants() {
     local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.ann.vcf.gz")
-    if [[ -z "${structural_vcf}" ]]; then
-        # In pipeline v5.5 we no longer have to annotate purple SVs.
-        structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-        if [[ -z "${structural_vcf}" ]]; then
-            echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
+    local purple_dir=${run_dir}/purple
+    local structural_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        structural_vcf=$(find -L ${purple_dir}/ -type f -name "*.purple.sv.vcf.gz")
     fi
+
+    if [[ -z "${structural_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple structural variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
     echo ${structural_vcf}
 }
 
 locate_purple_pilot_structural_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
-	  local structural_vcf=""
+    local structural_vcf=""
 
-	  if [[ -d "${purple_pilot_dir}" ]]; then
-	      structural_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.sv.ann.vcf.gz")
-	  fi
+    if [[ -d "${purple_pilot_dir}" ]]; then
+        structural_vcf=$(find -L ${purple_pilot_dir}/ -type f -name "*.purple.sv.vcf.gz")
+    fi
 
     if [[ -z "${structural_vcf}" ]]; then
         echo "[ERROR] Unable to locate purple pilot structural variants in ${run_dir}. Exiting." >&2
@@ -456,60 +457,21 @@ locate_purple_pilot_structural_variants() {
     echo ${structural_vcf}
 }
 
-locate_purple_pre_viral_annotate_structural_variants() {
-    local run_dir=$1
-    local structural_vcf=$(find -L ${run_dir}/purple/ -type f -name "*.purple.sv.vcf.gz")
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${structural_vcf}
-}
-
-locate_purple_pilot_pre_viral_annotate_structural_variants() {
-    local run_dir=$1
-    local purple_pilot_dir=${run_dir}/purple_pilot
-    local structural_vcf=""
-
-    if [[ -d "${purple_pilot_dir}" ]]; then
-        structural_vcf=$(find -L ${run_dir}/purple_pilot/ -type f -name "*.purple.sv.vcf.gz")
-    fi
-
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple pilot pre-viral-annotate structural variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${structural_vcf}
-}
 
 locate_gridss_structural_variants() {
     local run_dir=$1
-    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
+    local gridss_dir=${run_dir}/gridss_dir
     local gridss_dir_v5=${run_dir}/structural_caller
 
     local structural_vcf=""
-    if [[ -d "${gridss_dir_pre_v5}" ]]; then
-        local gridss_backport_dir=$(find ${gridss_dir_pre_v5} -mindepth 2 -maxdepth 2 -type d -name "breakpoint_position_backport")
-        if [[ -d "${gridss_backport_dir}" ]]; then
-            structural_vcf=$(find -L ${gridss_backport_dir}/ -type f -name "*.gridss.somatic.vcf.gz.breakpoint_position_backport.vcf.gz")
-        else
-            # Fall back to v4 format which did not require the backport.
-            structural_vcf=$(find -L ${gridss_dir_pre_v5}/ -mindepth 2 -maxdepth 2 -type f -name "*.gridss.somatic.vcf.gz")
-        fi
-    elif [[ -d "${gridss_dir_v5}" ]]; then
-        # Pipeline v5.8+ calls this file "filtered".
-        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
-        if [[ -z "${structural_vcf}" ]]; then
-            structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
-        fi
+    if [[ -d "${gridss_dir}" ]]; then
+        structural_vcf=$(find -L ${gridss_dir}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
     else
-        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Both pre v5 dir and v5 dir not found. Exiting." >&2
-        exit 1
+        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
     fi
 
-    if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
+    if [[ -z "${somatic_vcf}" ]]; then
+        echo "[ERROR] Unable to locate GRIDSS recovery variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
@@ -518,51 +480,22 @@ locate_gridss_structural_variants() {
 
 locate_gridss_recovery_candidates() {
     local run_dir=$1
-    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
+    local gridss_dir=${run_dir}/gridss_dir
     local gridss_dir_v5=${run_dir}/structural_caller
 
-    local sv_recovery_vcf=""
-    if [[ -d "${gridss_dir_pre_v5}" ]]; then
-        sv_recovery_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.somatic.full.vcf.gz")
-    elif [[ -d "${gridss_dir_v5}" ]]; then
-        sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.full.vcf.gz")
-        # File is renamed to below in v5.8+
-        if [[ -z "${sv_recovery_vcf}" ]]; then
-            sv_recovery_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
-        fi
+    local structural_vcf=""
+    if [[ -d "${gridss_dir}" ]]; then
+        structural_vcf=$(find -L ${gridss_dir}/ -type f -name "*.gridss.somatic.vcf.gz")
+    else
+        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.vcf.gz")
     fi
 
-    if [[ -z "${sv_recovery_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS sv recovery candidates in ${run_dir}. Exiting." >&2
+    if [[ -z "${somatic_vcf}" ]]; then
+        echo "[ERROR] Unable to locate GRIDSS recovery variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
-    echo ${sv_recovery_vcf}
-}
-
-locate_gridss_unfiltered_candidates() {
-    local run_dir=$1
-    local gridss_dir_pre_v5=${run_dir}/structuralVariants/gridss
-    local gridss_dir_v5=${run_dir}/structural_caller
-    if [[ -d "${gridss_dir_v5}" ]]; then
-        gridss_ufile1_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
-        gridss_ufile2_v5=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
-    fi
-
-    local sv_unfiltered_vcf=""
-    if [[ -d "${gridss_dir_pre_v5}" ]]; then
-        sv_unfiltered_vcf=$(find -L ${gridss_dir_pre_v5}/*/ -type f -name "*.gridss.vcf.gz")
-    elif [[ -z "${gridss_ufile2_v5}" ]]; then
-        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.unfiltered.vcf.gz")
-    elif [[ -z "${gridss_ufile1_v5}" ]]; then
-        sv_unfiltered_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.filter.final.vcf.gz")
-    fi
-
-    if [[ -z "${sv_unfiltered_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS sv unfiltered candidates in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${sv_unfiltered_vcf}
+    echo ${structural_vcf}
 }
 
 ######################################## LINX ########################################

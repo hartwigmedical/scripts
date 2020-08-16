@@ -1,8 +1,0 @@
-#!/usr/bin/env bash
-
-source locate_files
-
-run_dir=$1 && shift
-input_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
-
-do_run_gridss_repeatmasker_insertion_annotate ${input_vcf}
