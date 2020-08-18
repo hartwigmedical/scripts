@@ -5,7 +5,7 @@ source locate_files
 
 run_dir=$1 && shift
 
-bachelor_jar=/data/common/tools/bachelor_v1.10/bachelor.jar
+bachelor_jar=/data/common/tools/bachelor_pilot/bachelor.jar
 
 # Database details
 credentials=$(locate_wide_germline_carriership_credentials)
