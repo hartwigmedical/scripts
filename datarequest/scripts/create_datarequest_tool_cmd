@@ -131,7 +131,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: nohup ${output_cmd_file} > ${output_cmd_file}.log &"
+    info " 2) And then run cmd with: ${output_cmd_file} > ${output_cmd_file}.log "
     info "Finished with $(basename $0)"
 
 }
