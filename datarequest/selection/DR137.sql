@@ -2,4 +2,4 @@ SELECT
     DISTINCT patientId AS '#patientId'
 FROM
     datarequest
-ORDER BY 1;
+ORDER BY 1 ;
