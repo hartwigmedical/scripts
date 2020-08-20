@@ -12,10 +12,16 @@ mkdir temp_GCP_check
 csvcut -t -e iso-8859-1 -c '#patientId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata.tsv
 
-#!/usr/bin/env bash
+echo ""
+echo "[INFO] NUMBER OF GCP BUCKET:"
+jq '.id' manifest.json
+echo "[INFO] ACCOUNTS RELATED TO MANIFEST:"
+jq '.accounts | .[] | .email' manifest.json
+echo "[INFO] UPLOADED FILES REPRESENTED IN MANIFEST:"
+jq '.bundled | .[] | .gsutilUrl'  manifest.json
 
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
-echo "[INFO] TYPES OF FILES SHARED WITHIN GCP:"
+echo "[INFO] TYPES OF RAW DATA FILES SHARED WITHIN GCP:"
 echo 'NUMBER DNA FILES:'
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="RNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
