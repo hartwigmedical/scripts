@@ -28,9 +28,9 @@ jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="RNA") | .[
 echo 'NUMBER RNA FILES:'
 grep -c 'FASTQ' temp_GCP_check/files_GCP.tsv
 echo 'TOTAL NUMBER OF FILES:'
-jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA" or .[]=="RNA") | .[]' $2 | grep -c "DNA\|FASTQ" > temp_GCP_check/files_GCP.tsv
-cat temp_GCP_check/files_GCP.tsv | wc -l
-echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER IN ACL (SHOULD BE THE SAME AS THE TOTAL NUMBER OF FILES IN THE MANiFEST!!!!):'
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA" or .[]=="RNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
+grep -c "DNA\|FASTQ" temp_GCP_check/files_GCP.tsv
+echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER IN ACL (SHOULD BE THE SAME AS THE TOTAL NUMBER OF FILES IN THE MANIFEST!!!!):'
 dr_id=$( jq '.id' $2 | sed 's/"//g' )
 dr_name="DR-${dr_id}"
 group_id=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
