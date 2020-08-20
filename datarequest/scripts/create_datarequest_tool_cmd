@@ -56,7 +56,9 @@ main() {
     local dr_release_dir="${dr_root_dir}/DR-${request_id}"
     local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
     local uploads_array=()
-    local output_cmd_file="${dr_release_dir}/logs/run_datarequest_tool.sh"
+    local output_cmd_file="${dr_release_dir}/run_datarequest_tool.sh"
+    local bucket_name="hmf-dr-${request_id}"
+
 
     ## find files to upload
     for i in ${dr_root_dir}/${release_id}.*.tar; do
@@ -122,9 +124,12 @@ main() {
     echo "# $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
-    echo "# [CHECK] Verify numbers of samples is metadata file:"  >> "${output_cmd_file}"
-    echo "check_numbers_metadata '${metadata_tsv}' " >> "${output_cmd_file}"
+    echo "# [CHECK] Check numbers of samples is metadata file:"  >> "${output_cmd_file}"
+    echo "check_numbers_metadata ${metadata_tsv} " >> "${output_cmd_file}"
 
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check patients with blacklisted patients:"  >> "${output_cmd_file}"
+    echo "check_patients_blacklisted ${metadata_tsv} " >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     for cmd_line in "${cmd_array[@]}"; do 
@@ -132,13 +137,22 @@ main() {
     done
     echo "" >> "${output_cmd_file}"
 
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check GCP created bucket:"  >> "${output_cmd_file}"
+    echo "check_gcp_hmf_dr_bucket ${bucket_name}" >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check GCP manifest:"  >> "${output_cmd_file}"
+    echo "gsutil cp gs://${bucket_name}/manifest.json ${dr_release_dir}/manifest.json"
+    echo "check_gcp_manifest_with_metadata ${metadata_tsv} ${dr_release_dir}/manifest.json " >> "${output_cmd_file}"
+
     info "Making cmd file executable"
     chmod +x "${output_cmd_file}"
 
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: ${output_cmd_file} > ${output_cmd_file}.log "
+    info " 2) And then run cmd with: ${output_cmd_file} > ${dr_release_dir}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
 
 }

@@ -13,3 +13,6 @@ echo "[INFO] Number of patients (based on study number) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
 echo "[INFO] Number of samples (based on study number) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l
+
+# remove all temporary files
+rm -r temp_number_check
