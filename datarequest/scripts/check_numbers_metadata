@@ -9,10 +9,12 @@ mkdir temp_number_check
 csvcut -t -e iso-8859-1 -c '#patientId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/sampleId_metadata.tsv
 
+echo ""
 echo "[INFO] Number of patients (based on study number) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
 echo "[INFO] Number of samples (based on study number) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l
+echo ""
 
 # remove all temporary files
 rm -r temp_number_check

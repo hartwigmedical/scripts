@@ -10,9 +10,11 @@ else
     csvcut -t -e iso-8859-1 -c '#patientId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/temp_datarequest.tsv
 fi
 
+echo ""
 #wc -l /data/ops/lims/prod/patient_blacklist.tsv
 #wc -l temp_datarequest.tsv
-echo "[INFO] Overlap between blacklisted patients and patients in selected for DR (should be zero):"
+echo "[INFO] Overlap between blacklisted patients and patients selected for DR (should be zero):"
 comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv) | wc -l
+echo ""
 
 rm temp_datarequest.tsv
