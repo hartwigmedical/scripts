@@ -21,14 +21,21 @@ echo "[INFO] UPLOADED FILES REPRESENTED IN MANIFEST:"
 jq '.bundled | .[] | .gsutilUrl' $2
 
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
-echo "[INFO] TYPES OF RAW DATA FILES SHARED WITHIN GCP:"
+echo "[INFO] TYPES OF RAW DATA REPRESENTED IN MANIFEST:"
 echo 'NUMBER DNA FILES:'
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="RNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
 echo 'NUMBER RNA FILES:'
 grep -c 'FASTQ' temp_GCP_check/files_GCP.tsv
-echo ""
+echo 'TOTAL NUMBER OF FILES:'
+jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' manifest.json > temp_GCP_check/files_GCP.tsv
+echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER IN ACL (SHOULD BE THE SAME AS THE TOTAL NUMBER OF FILES IN THE MANiFEST!!!!):'
+dr_id=$( jq  '.id' $2 )
+dr_name="DR-${dr_id}"
+group_id=$( curl --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq '.[] | select(.name=="${dr_name}") | .id')
+curl --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
 
+echo ""
 ########################
 
 if [[ $3 -ne 0 ]]; then
