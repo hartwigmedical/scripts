@@ -32,7 +32,7 @@ if [[ $3 -ne 0 ]]; then
     echo ""
 
     echo "[INFO] Number of patients (based on study number) in metadata file:"
-    cat temp_number_check/patientId_metadata.tsv | wc -l
+    cat temp_GCP_check/patientId_metadata.tsv | wc -l
 
     jq '.data | .[] | select(.samples | .[] | .data | .[] | .tags | .[]=="DNA") | .patientId'  $2 > temp_GCP_check/patientId_DNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/patientId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_DNA_GCP.tsv
@@ -54,7 +54,7 @@ if [[ $3 -ne 0 ]]; then
     #######
 
     echo "[INFO] Number of samples (based on study number) in metadata file:"
-    cat temp_number_check/sampleId_metadata.tsv | wc -l
+    cat temp_GCP_check/sampleId_metadata.tsv | wc -l
 
     jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="DNA") | .sampleId' $2 > temp_GCP_check/sampleId_DNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/sampleId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
@@ -100,7 +100,7 @@ if [[ $4 -ne 0 ]]; then
     echo ""
 
     echo "[INFO] Number of patients (based on study number) in metadata file:"
-    cat temp_number_check/patientId_metadata.tsv | wc -l
+    cat temp_GCP_check/patientId_metadata.tsv | wc -l
 
     jq '.data | .[] | select(.samples | .[] | .data | .[] | .tags | .[]=="RNA") | .patientId'  $2 > temp_GCP_check/patientId_RNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/patientId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
@@ -123,7 +123,7 @@ if [[ $4 -ne 0 ]]; then
     #######
 
     echo "[INFO] Number of samples (based on study number) in metadata file:"
-    cat temp_number_check/sampleId_metadata.tsv | wc -l
+    cat temp_GCP_check/sampleId_metadata.tsv | wc -l
 
     jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="RNA") | .sampleId' $2 > temp_GCP_check/sampleId_RNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/sampleId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
