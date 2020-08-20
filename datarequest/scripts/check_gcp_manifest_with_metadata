@@ -32,8 +32,8 @@ jq '.data | .[] | .samples | .[] | .data | .[] | .tags | .[]' manifest.json > te
 echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER IN ACL (SHOULD BE THE SAME AS THE TOTAL NUMBER OF FILES IN THE MANiFEST!!!!):'
 dr_id=$( jq  '.id' $2 )
 dr_name="DR-${dr_id}"
-group_id=$( curl --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq '.[] | select(.name=="${dr_name}") | .id')
-curl --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
+group_id=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq '.[] | select(.name=="${dr_name}") | .id')
+curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
 
 echo ""
 ########################
