@@ -18,8 +18,7 @@ jq '.id' $2
 echo "[INFO] ACCOUNTS RELATED TO MANIFEST:"
 jq '.accounts | .[] | .email' $2
 echo "[INFO] UPLOADED FILES REPRESENTED IN MANIFEST:"
-jq '.bundled | .[] | .gsutilUrl'
- $2
+jq '.bundled | .[] | .gsutilUrl' $2
 
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
 echo "[INFO] TYPES OF RAW DATA FILES SHARED WITHIN GCP:"
