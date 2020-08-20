@@ -120,6 +120,10 @@ main() {
     info "Writing cmd to cmd file ${output_cmd_file}"
 
     echo "# $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+
+    echo "# [CHECK] Verify numbers of samples is metadata file"  >> "${output_cmd_file}"
+
+
     for cmd_line in "${cmd_array[@]}"; do 
         echo "${cmd_line} \\" >> "${output_cmd_file}"
     done

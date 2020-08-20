@@ -12,6 +12,8 @@ mkdir temp_GCP_check
 csvcut -t -e iso-8859-1 -c '#patientId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' $1  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata.tsv
 
+#!/usr/bin/env bash
+
 
 echo ""
 ###############
