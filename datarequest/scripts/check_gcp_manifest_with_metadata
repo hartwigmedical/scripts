@@ -14,11 +14,11 @@ csvcut -t -e iso-8859-1 -c 'sampleId' $1  | csvformat -T | tail -n +2 | sort | u
 
 echo ""
 echo "[INFO] NUMBER OF GCP BUCKET:"
-jq '.id' manifest.json
+jq '.id' $2
 echo "[INFO] ACCOUNTS RELATED TO MANIFEST:"
-jq '.accounts | .[] | .email' manifest.json
+jq '.accounts | .[] | .email' $2
 echo "[INFO] UPLOADED FILES REPRESENTED IN MANIFEST:"
-jq '.bundled | .[] | .gsutilUrl'  manifest.json
+jq '.bundled | .[] | .gsutilUrl' $2
 
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' $2  > temp_GCP_check/files_GCP.tsv
 echo "[INFO] TYPES OF RAW DATA FILES SHARED WITHIN GCP:"
