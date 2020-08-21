@@ -3,7 +3,7 @@
 source locate_files
 
 patient_reporter_jar=$(locate_prod_patient_reporter)
-output_dir=/data/cpct/patient_reports
+output_dir_report=/data/cpct/patient_reports
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
 tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
@@ -14,7 +14,7 @@ company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
 java -jar ${patient_reporter_jar} \
-    -output_dir ${output_dir} \
+    -output_dir_report ${output_dir_report} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -tumor_location_csv ${tumor_location_csv} \
     -lims_dir ${lims_dir} \

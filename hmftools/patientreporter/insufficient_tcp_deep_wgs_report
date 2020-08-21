@@ -12,5 +12,12 @@ fi
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
+output_dir_data_report=${run_dir}/patient_report_prod_data
+
+if [[ ! -d "${output_dir_data_report}" ]]; then
+    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    mkdir ${output_dir_data_report}
+fi
+
 do_run_qc_fail_patient_reporter \
-    ${tumor_sample} "insufficient_tcp_deep_wgs" -purple_purity_tsv ${purple_purity_tsv} "$@"
+    ${tumor_sample} "insufficient_tcp_deep_wgs" -output_dir_data_report ${output_dir_data_report} -purple_purity_tsv ${purple_purity_tsv} "$@"

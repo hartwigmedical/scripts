@@ -6,6 +6,12 @@ source lims_functions
 
 run_dir=$1 && shift
 
+output_dir_data_report=${run_dir}/patient_report_prod_data
+if [[ ! -d "${output_dir_data_report}" ]]; then
+    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    mkdir ${output_dir_data_report}
+fi
+
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 tumor_sample_barcode=$(load_tumor_sample_barcode_from_metadata ${run_dir})
 
@@ -66,4 +72,5 @@ do_run_base_patient_reporter \
     -knowledgebase_dir ${knowledgebase_dir} \
     -germline_genes_csv ${germline_genes_csv} \
     -sample_summary_tsv ${sample_summary_tsv} \
+    -output_dir_data_report ${output_dir_data_report} \
     "$@"
