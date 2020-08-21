@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 source locate_files
 
 sample=$1 && shift
@@ -6,8 +8,8 @@ credentials=$1 && shift
 patient_db_jar=$1 && shift
 patient_db_jar=/data/common/tools/amber_pilot/amber.jar
 
-snp_vcf=$(find $amber_dir -name *.amber.snp.vcf.gz)
-reference_sample=$(basename $snp_vcf .amber.snp.vcf.gz)
+snp_vcf=$(find ${amber_dir} -name *.amber.snp.vcf.gz)
+reference_sample=$(basename ${snp_vcf} .amber.snp.vcf.gz)
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
