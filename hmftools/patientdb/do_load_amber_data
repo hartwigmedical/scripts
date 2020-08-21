@@ -17,7 +17,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading amber data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberSample \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
     -sample ${sample} \
     -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
     -snpcheck_vcf /data/common/dbs/amber_database/GermlineHetPon.hg19.100x.vcf \
