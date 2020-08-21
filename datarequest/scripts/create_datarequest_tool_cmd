@@ -56,7 +56,9 @@ main() {
     local dr_release_dir="${dr_root_dir}/DR-${request_id}"
     local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
     local uploads_array=()
-    local output_cmd_file="${dr_release_dir}/logs/run_datarequest_tool.sh"
+    local output_cmd_file="${dr_release_dir}/run_datarequest_tool.sh"
+    local bucket_name="hmf-dr-${request_id}"
+
 
     ## find files to upload
     for i in ${dr_root_dir}/${release_id}.*.tar; do
@@ -120,10 +122,42 @@ main() {
     info "Writing cmd to cmd file ${output_cmd_file}"
 
     echo "# $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check numbers of patients & samples is metadata file:"  >> "${output_cmd_file}"
+    echo "check_numbers_metadata ${metadata_tsv} " >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check patients with blacklisted patients:"  >> "${output_cmd_file}"
+    echo "check_patients_blacklisted ${metadata_tsv} " >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [TOOL] Tool to make data available on GCP:"  >> "${output_cmd_file}"
     for cmd_line in "${cmd_array[@]}"; do 
         echo "${cmd_line} \\" >> "${output_cmd_file}"
     done
-    echo "" >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check GCP created bucket:"  >> "${output_cmd_file}"
+    echo "check_gcp_hmf_dr_bucket ${bucket_name}" >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [DOWNLOAD] Download GCP manifest:"  >> "${output_cmd_file}"
+    echo "gsutil cp gs://${bucket_name}/manifest.json ${dr_release_dir}/manifest.json"  >> "${output_cmd_file}"
+    echo "# [CHECK] Check GCP manifest:"  >> "${output_cmd_file}"
+    if [[ ${run_mode} == "upload_only" ]];then
+        echo "check_gcp_manifest_with_metadata ${metadata_tsv} ${dr_release_dir}/manifest.json 0 0" >> "${output_cmd_file}"
+    fi
+    if [[ ${run_mode} == "dna" ]];then
+        echo "check_gcp_manifest_with_metadata ${metadata_tsv} ${dr_release_dir}/manifest.json 1 0" >> "${output_cmd_file}"
+    fi
+    if [[ ${run_mode} == "rna" ]];then
+        echo "check_gcp_manifest_with_metadata ${metadata_tsv} ${dr_release_dir}/manifest.json 0 1" >> "${output_cmd_file}"
+    fi
+    if [[ ${run_mode} == "dna_rna" ]];then
+        echo "check_gcp_manifest_with_metadata ${metadata_tsv} ${dr_release_dir}/manifest.json 1 1" >> "${output_cmd_file}"
+    fi
+    echo ""  >> "${output_cmd_file}"
 
     info "Making cmd file executable"
     chmod +x "${output_cmd_file}"
@@ -131,7 +165,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: ${output_cmd_file} > ${output_cmd_file}.log "
+    info " 2) And then run cmd with: ${output_cmd_file} > ${dr_release_dir}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
 
 }
