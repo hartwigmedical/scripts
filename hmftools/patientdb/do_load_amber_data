@@ -1,9 +1,13 @@
-#!/usr/bin/env bash
+source locate_files
 
 sample=$1 && shift
 amber_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
+patient_db_jar=/data/common/tools/amber_pilot/amber.jar
+
+snp_vcf=$(find $amber_dir -name *.amber.snp.vcf.gz)
+reference_sample=$(basename $snp_vcf .amber.snp.vcf.gz)
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
@@ -14,32 +18,7 @@ echo "[INFO] Loading amber data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
     -sample ${sample} \
-    -amber_dir ${amber_dir} \
-    -bed /data/common/dbs/amber_database/germline_snp.hg19.bed \
+    -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
+    -snpcheck_vcf /data/common/dbs/amber_database/GermlineHetPon.hg19.100x.vcf \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
-
-#source locate_files
-#
-#sample=$1 && shift
-#amber_dir=$1 && shift
-#credentials=$1 && shift
-#patient_db_jar=$1 && shift
-#patient_db_jar=$(locate_pilot_purple)
-#
-#snp_vcf=$(find $amber_dir -name *.amber.snp.vcf.gz)
-#reference_sample=$(basename $snp_vcf .amber.snp.vcf.gz)
-#
-## Database details
-#db_user=$(awk '/^user/ {print $2}' ${credentials})
-#db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-#db_url=$(awk '/^url/ {print $2}' ${credentials})
-#
-#echo "[INFO] Loading amber data for ${sample}"
-#
-#java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadAmberData \
-#    -sample ${sample} \
-#    -amber_snp_vcf ${amber_dir}/${reference_sample}.amber.snp.vcf.gz \
-#    -snpcheck_vcf /data/common/dbs/amber_database/GermlineHetPon.hg19.100x.vcf \
-#    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-#    "$@"
