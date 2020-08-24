@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 
 bachelor_jar=$1 && shift
-output_dir=$1 && shift
+bachelor_config=$1 && shift
+output_filter_file=$1 && shift
 
-bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
 clinvar_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
 
 echo "[INFO] Running Bachelor ExternalDBFilters - Create Filter File"
 
 java -cp ${bachelor_jar} com.hartwig.hmftools.bachelor.ExternalDBFilters \
     -xml_config ${bachelor_config} \
-    -create_filter_file ${clinvar_filter_file} \
-    -output_dir ${output_dir} \
+    -clinvar_db_filter_file ${clinvar_db_filter_file} \
+    -output_filter_file ${output_filter_file} \
     -log_debug

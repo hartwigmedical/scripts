@@ -3,6 +3,7 @@
 source locate_files
 
 bachelor_jar=$(locate_prod_bachelor)
-output_dir=/data/common/dbs/bachelor
+bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
+output_filter_file=/data/common/dbs/bachelor/bachelor_clinvar_filters.csv
 
-do_create_bachelor_external_db_filters ${bachelor_jar} ${output_dir}
+do_create_bachelor_external_db_filters ${bachelor_jar} ${bachelor_config} ${output_dir}
