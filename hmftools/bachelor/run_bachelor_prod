@@ -18,8 +18,7 @@ ref_genome_file=$(locate_ref_genome_fasta_file)
 
 germline_vcf=$(locate_germline_variants ${run_dir} ${sample_ref})
 
-# /COLO829v003T/aligner/COLO829v003T.bam
-tumor_bam_file=${run_dir}/${sample}/aligner/${sample}.bam
+tumor_cram_file=${run_dir}/${sample}/cram/${sample}.cram
 bachelor_output_dir=${run_dir}/bachelor
 purple_dir=${run_dir}/purple
 
@@ -34,7 +33,7 @@ java -Xmx8G -Xms4G -jar ${bachelor_jar} \
     -sample ${sample} \
     -include_vcf_filtered \
     -germline_vcf ${germline_vcf} \
-    -tumor_bam_file ${tumor_bam_file} \
+    -tumor_bam_file ${tumor_cram_file} \
     -purple_data_dir ${purple_dir} \
     -xml_config ${bachelor_xml_config} \
     -ext_filter_file ${clinvar_filters} \
