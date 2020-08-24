@@ -8,4 +8,4 @@ fi
 
 output_dir_data_report=/data/cpct/qc_fail_reports_data/prod
 
-do_run_qc_fail_patient_reporter ${tumor_sample} -output_dir_data_report ${output_dir_data_report} "insufficient_tcp_shallow_wgs" "$@"
+do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_shallow_wgs" -output_dir_data_report ${output_dir_data_report} "$@"
