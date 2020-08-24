@@ -465,13 +465,10 @@ locate_purple_pilot_structural_variants() {
 locate_gridss_structural_variants() {
     local run_dir=$1
     local gridss_dir=${run_dir}/gridss
-    local gridss_dir_v5=${run_dir}/structural_caller
 
     local structural_vcf=""
     if [[ -d "${gridss_dir}" ]]; then
         structural_vcf=$(find -L ${gridss_dir}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
-    else
-        structural_vcf=$(find -L ${gridss_dir_v5}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
