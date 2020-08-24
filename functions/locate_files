@@ -275,7 +275,8 @@ locate_flagstats() {
     echo ${flagstats_file}
 }
 
-################################# Somatic Variants #################################
+########################################### SAGE ##########################################
+
 locate_sage_somatics() {
     local run_dir=$1
     local sage_dir=${run_dir}/sage
@@ -329,7 +330,21 @@ locate_purple_pilot_somatics() {
     echo ${somatic_vcf}
 }
 
-############################################ Purple ##########################################
+############################################ AMBER ###########################################
+
+locate_amber_directory() {
+    local run_dir=$1
+    local amber_dir=${run_dir}/amber/
+
+    if [[ ! -d "${amber_dir}" ]]; then
+        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${amber_dir}
+}
+
+############################################ PURPLE ##########################################
 
 locate_purple_purity() {
     local run_dir=$1
@@ -433,6 +448,7 @@ locate_purple_pilot_circos_plot() {
 }
 
 ##################################### Structural Variants #####################################
+
 locate_purple_structural_variants() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
@@ -466,7 +482,6 @@ locate_purple_pilot_structural_variants() {
 
     echo ${structural_vcf}
 }
-
 
 locate_gridss_structural_variants() {
     local run_dir=$1
@@ -571,7 +586,7 @@ locate_linx_drivers() {
     echo ${drivers_tsv}
 }
 
-########################################### Germline ##########################################
+########################################### GATK ##########################################
 
 locate_germline_variants() {
     local run_dir=$1 && shift
@@ -665,17 +680,4 @@ locate_reporting_db_tsv_pilot() {
         exit 1
     fi
     echo ${reporting_db_tsv}
-}
-
-############################################# AMBER ###########################################
-locate_amber_directory() {
-    local run_dir=$1
-    local amber_dir=$run_dir/amber/
-
-    if [[ ! -d $amber_dir ]]; then
-        echo "[ERROR] Unable to locate AMBER directory. Exiting." >&2
-        exit 1
-    fi;
-
-    echo $amber_dir
 }
