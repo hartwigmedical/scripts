@@ -4,7 +4,7 @@ bachelor_jar=$1 && shift
 bachelor_config=$1 && shift
 output_filter_file=$1 && shift
 
-clinvar_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
+clinvar_db_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
 
 echo "[INFO] Running Bachelor ExternalDBFilters - Create Filter File"
 
