@@ -4,6 +4,10 @@ bachelor_jar=$1 && shift
 bachelor_config=$1 && shift
 output_filter_file=$1 && shift
 
+if [[ -z "${bachelor_jar}" || -z "${bachelor_config}" || -z "${output_filter_file}" ]]; then
+    echo "[ERROR] Invalid input params provided. Exiting" && exit 1
+fi
+
 clinvar_db_filter_file=/data/common/dbs/bachelor/clinvar_snp.vcf.gz
 
 echo "[INFO] Running Bachelor ExternalDBFilters - Create Filter File"
