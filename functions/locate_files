@@ -44,6 +44,9 @@ locate_nextcloud_upload_credentials() {
 }
 
 ##################################### JARS #####################################
+locate_prod_amber() {
+    echo ${base_path}/tools/amber_v3.5/amber.jar
+}
 
 locate_prod_sage() {
     echo ${base_path}/tools/sage_v1.1/sage.jar
