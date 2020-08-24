@@ -6,7 +6,7 @@ echo "[INFO] Count HealthChecker succeeded"
 health_check_processed_runs | grep -c "HealthChecker has succeeded for"
 
 echo "[INFO] Count analysis purple version"
-health_check_processed_runs | grep -c "This analysis has been done with purple version=2.43"
+health_check_processed_runs | grep -c "This analysis has been done with purple version=2.45"
 
 source_path=/data/gcp/processed_runs
 
