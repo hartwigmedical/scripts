@@ -6,6 +6,10 @@ out=$1 && shift
 credentials=$(locate_prod_database_credentials)
 paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
 
+if [[ -z "${out}" ]]; then
+    echo "[ERROR] No output file location provided. Exiting" && exit 1
+fi
+
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
