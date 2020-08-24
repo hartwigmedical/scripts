@@ -56,7 +56,7 @@ locate_prod_purple() {
     echo ${base_path}/tools/purple_v2.43/purple.jar
 }
 
-locate_prod_latest() {
+locate_prod_purple_latest() {
     echo ${base_path}/tools/purple_v2.45/purple.jar
 }
 
@@ -155,6 +155,7 @@ locate_vcftools() {
 }
 
 #################################### Resources #####################################
+
 locate_driver_gene_panel_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.tsv
 }
