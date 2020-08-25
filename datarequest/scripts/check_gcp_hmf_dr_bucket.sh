@@ -19,6 +19,7 @@ while getopts ':b:e:' flag; do
 done
 
 if [[ -z "${bucket_name}" || -z "${gcp_mail}" ]]; then
+    echo "[ERROR] script check_gcp_hmf_dr_bucket did not run, check usage below:"
     print_usage
 fi
 
@@ -31,7 +32,7 @@ echo "[INFO] Persmissions of the bucket"  ${bucket_name}":"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
-for email in ${gcp_mail}
+for email in in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
 email_in_persmissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
 if [[ ${email_in_persmissions} == "" ]]; then
