@@ -45,8 +45,6 @@ jq '.id' ${manifest_json}
 echo ""
 echo "[INFO] ACCOUNTS RELATED TO MANIFEST:"
 jq '.accounts | .[] | .email' ${manifest_json}
-
-echo ""
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
 email_in_manifest=$( jq '.accounts | .[] | .email' ${manifest_json} | grep $email )
@@ -63,13 +61,13 @@ jq '.bundled | .[] | .gsutilUrl' ${manifest_json}
 
 echo ""
 echo "[INFO] TYPES AND NUMBER OF RAW DATA REPRESENTED IN MANIFEST:"
-echo 'NUMBER DNA FILES:'
+echo 'number dna files:'
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="DNA") | .[]' ${manifest_json}  > temp_GCP_check/files_GCP.tsv
 grep -c 'DNA' temp_GCP_check/files_GCP.tsv
-echo 'NUMBER RNA FILES:'
+echo 'number rna files:'
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]=="RNA") | .[]' ${manifest_json}  > temp_GCP_check/files_GCP.tsv
 grep -c 'RNA' temp_GCP_check/files_GCP.tsv
-echo 'TOTAL NUMBER OF FILES:'
+echo 'total number of files:'
 jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]|endswith("NA")) | .[]' ${manifest_json} > temp_GCP_check/files_GCP.tsv
 grep -e "DNA" -e "RNA" -c temp_GCP_check/files_GCP.tsv
 number_files_manifest=$( grep -e "DNA" -e "RNA" -c temp_GCP_check/files_GCP.tsv)
@@ -83,6 +81,7 @@ if [[ ${number_files_manifest} > 0 ]]; then
     curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
     number_files_gcp=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l)
 
+    echo ""
     if [[ ${number_files_manifest} == ${number_files_gcp} ]]; then
         echo "[INFO] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are similar."
         echo ""
@@ -95,7 +94,7 @@ echo ""
 
 ########################
 
-if [[ ${dna_ind} -ne 0 ]]; then
+if [[ ${dna_ind} == 1 ]]; then
     echo ""
 
     echo "[INFO] LOOK AT OVERLAP BETWEEN PATIENTS SELECTED FOR THE DATA REQUEST AND DNA FILES SHARED IN THE GCP MANIFEST"
@@ -190,7 +189,7 @@ if [[ ${dna_ind} -ne 0 ]]; then
 
 ########################
 
-if [[ ${rna_ind} -ne 0 ]]; then
+if [[ ${rna_ind} == 1 ]]; then
 
 
     echo "[INFO] LOOK AT OVERLAP BETWEEN PATIENTS SELECTED FOR THE DATA REQUEST AND RNA FILES SHARED IN THE GCP MANIFEST"
