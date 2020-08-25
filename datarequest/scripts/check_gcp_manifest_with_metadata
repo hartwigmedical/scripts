@@ -52,10 +52,8 @@ do
 email_in_manifest=$( jq '.accounts | .[] | .email' ${manifest_json} | grep $email )
 if [[ ${email_in_manifest} == "" ]]; then
     echo "[ERROR] Account $email not properly added to manifest."
-    echo ""
 else
     echo "[INFO] Account $email correctly in manifest."
-    echo ""
 fi
 done
 
