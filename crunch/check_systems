@@ -21,11 +21,11 @@ function crunches {
         diskUsage "/home"  "ssh ${crunch}"
         diskUsage "/data1" "ssh ${crunch}"
         diskUsage "/data2" "ssh ${crunch}"
-        gitRepVsn "/data/repos/pipeline" "ssh ${crunch}"
-        gitRepVsn "/data/repos/pipeline-test" "ssh ${crunch}"
+        #gitRepVsn "/data/repos/pipeline" "ssh ${crunch}"
+        #gitRepVsn "/data/repos/pipeline-test" "ssh ${crunch}"
         gitRepVsn "/data/repos/scripts" "ssh ${crunch}"
           toolVsn "gsutil" "ssh ${crunch}"
-        gridUsage "ssh ${crunch}"
+        #gridUsage "ssh ${crunch}"
     done
 }
 
@@ -50,9 +50,14 @@ function toolVsn {
 function gitRepVsn {
     local repos_dir=$1
     local cmd_prefix=$2
-    local commit=$(${cmd_prefix} "cd ${repos_dir}; git log --pretty=oneline | head -1")
+    local commit=$(${cmd_prefix} "cd ${repos_dir}; git log | head -1")
     local gittag=$(${cmd_prefix} "cd ${repos_dir}; git describe --tags")
-    echo "GIT: ${repos_dir}: tag ${gittag} and commit ${commit}"
+    local dryrun=$(${cmd_prefix} "cd ${repos_dir}; git pull --dry-run 2>&1 | wc -l")
+    if [[ "${dryrun}" -gt 0 ]]; then
+        echo "REPO: ${repos_dir} is OUTDATED (${commit})"
+    else
+        echo "REPO: ${repos_dir} is at most recent commit"
+    fi
 }
 
 function diskUsage {
