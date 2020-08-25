@@ -77,7 +77,7 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/sv-linx_v1.10/sv-linx.jar
+    echo ${base_path}/tools/sv-linx_v1.11/sv-linx.jar
 }
 
 locate_pilot_linx() {
