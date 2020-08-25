@@ -9,7 +9,7 @@ print_usage(){
     exit 1
 }
 
-while getopts ':b:s:m:e:' flag; do
+while getopts ':b:e:' flag; do
     case "${flag}" in
         i) bucket_name=${OPTARG} ;;
         e) gcp_mail=${OPTARG} ;;
