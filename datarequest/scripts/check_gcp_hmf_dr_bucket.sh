@@ -11,7 +11,7 @@ print_usage(){
 
 while getopts ':b:e:' flag; do
     case "${flag}" in
-        i) bucket_name=${OPTARG} ;;
+        b) bucket_name=${OPTARG} ;;
         e) gcp_mail=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
