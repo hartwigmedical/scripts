@@ -31,7 +31,7 @@ echo "[INFO] Persmissions of the bucket"  ${bucket_name}":"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
-select email in ${gcp_mail}
+for email in ${gcp_mail}
 do
 email_in_persmissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
 if [[ ${email_in_persmissions} == "" ]]; then
