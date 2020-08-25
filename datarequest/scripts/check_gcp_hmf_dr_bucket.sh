@@ -23,19 +23,23 @@ if [[ -z "${bucket_name}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
+
+echo ""
+echo "# [INFO] START check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
+
 echo ""
 echo "[INFO] Files in the bucket" ${bucket_name}":"
 gsutil du -h gs://${bucket_name}/
 echo ""
 
-echo "[INFO] Persmissions of the bucket"  ${bucket_name}":"
+echo "[INFO] Permissions of the bucket"  ${bucket_name}":"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
-email_in_persmissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
-if [[ ${email_in_persmissions} == "" ]]; then
+email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
+if [[ ${email_in_permissions} == "" ]]; then
     echo "[ERROR] Account $email not added to IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
 else echo "[INFO] Permissions account $email set correctly."
 fi
