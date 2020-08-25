@@ -42,11 +42,9 @@ echo ""
 overlap=$( comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv) | wc -l )
 if [[ ${overlap} == 0 ]]; then
     echo "[INFO] No patients in the DR selection are blacklisted."
-    echo ""
 else
     echo "[ERROR] There are patients that are blacklisted included in the DR selection. Please remove those (see below for the IDs)."
     comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv)
-    echo ""
 fi
 echo ""
 

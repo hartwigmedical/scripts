@@ -76,20 +76,22 @@ jq '.data | .[] | .samples | .[] | .data | .[] | .tags | select(.[]|endswith("NA
 grep -e "DNA" -e "RNA" -c temp_GCP_check/files_GCP.tsv
 number_files_manifest=$( grep -e "DNA" -e "RNA" -c temp_GCP_check/files_GCP.tsv)
 
-echo ""
-echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER ACCOUNT(S) IN ACL:'
-dr_id=$( jq '.id' ${manifest_json} | sed 's/"//g' )
-dr_name="DR-${dr_id}"
-group_id=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
-curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
-number_files_gcp=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l)
+if [[ ${number_files_manifest} > 0 ]]; then
+    echo ""
+    echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER ACCOUNT(S) IN ACL:'
+    dr_id=$( jq '.id' ${manifest_json} | sed 's/"//g' )
+    dr_name="DR-${dr_id}"
+    group_id=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
+    curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l
+    number_files_gcp=$( curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key https://api.hartwigmedicalfoundation.nl/hmf/v1/groups/${group_id}/files | jq . | grep file_id | wc -l)
 
-if [[ ${number_files_manifest} == ${number_files_gcp} ]]; then
-    echo "[INFO] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are similar."
-    echo ""
-else
-    echo "[ERROR] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are different. Please check what went wrong"
-    echo ""
+    if [[ ${number_files_manifest} == ${number_files_gcp} ]]; then
+        echo "[INFO] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are similar."
+        echo ""
+    else
+        echo "[ERROR] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are different. Please check what went wrong"
+        echo ""
+    fi
 fi
 echo ""
 
