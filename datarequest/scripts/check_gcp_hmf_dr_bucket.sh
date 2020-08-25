@@ -25,7 +25,7 @@ fi
 
 
 echo ""
-echo "# [START] check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
+echo "[START] check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
 
 echo ""
 echo "[INFO] Files in the bucket" ${bucket_name}":"
