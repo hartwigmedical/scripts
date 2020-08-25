@@ -4,7 +4,7 @@ print_usage(){
     echo "-----"
     echo " Descr: Checks created GCP bucket for DR"
     echo " Usage: $(basename $0) -b <bucket_name> -e <gcp_mail>"
-    echo " Exmpl: $(basename $0) -b 'hmf-dr-XXX' -e 'john@doe.com'"
+    echo " Exmpl: $(basename $0) -b 'hmf-dr-XXX' -e 'john@doe.com jaap@doe.com'"
     echo "-----"
     exit 1
 }
@@ -31,10 +31,13 @@ echo "[INFO] Persmissions of the bucket"  ${bucket_name}":"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
-email_in_persmissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep ${gcp_mail} )
+select email in ${gcp_mail}
+do
+email_in_persmissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
 if [[ ${email_in_persmissions} == "" ]]; then
-    echo "[ERROR] Account(s) not added to IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
-else echo "[INFO] Permissions set correctly."
+    echo "[ERROR] Account $email not added to IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
+else echo "[INFO] Permissions account $email set correctly."
 fi
+done
 echo ""
 
