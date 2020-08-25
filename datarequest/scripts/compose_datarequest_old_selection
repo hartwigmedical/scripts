@@ -3,8 +3,9 @@
 if [[ "$#" -ne 15 ]]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg DR-028)"
-    echo "      - request_name (eg DR-028-update1)"
-    echo "      - request_name_selection (eg DR-028 - request name from where the selection should be used)"
+    echo "      - request_name (eg DR-028-update2)"
+    echo "      - dr_name_selection (eg DR-028 or DR-015)"
+    echo "      - request_name_selection (eg DR-028-update1 or DR-015-update1 - request name from where the selection should be used)"
     echo "      - include_somatics (1 or 0)"
     echo "      - include_germline (1 or 0)"
     echo "      - include_tumor_bam_jsons (1 or 0)"
@@ -22,6 +23,7 @@ fi
 
 dr_name=$1 && shift
 request_name=$1 && shift
+dr_name_selection=$1 && shift
 request_name_selection=$1 && shift
 include_somatics=$1 && shift
 include_germline=$1 && shift
@@ -40,11 +42,13 @@ base_path=/data/data_archive/datarequests
 
 dr_base_path=${base_path}/${dr_name}
 dr_path=${dr_base_path}/${request_name}
-dr_path_selection=${dr_base_path}/${request_name_selection}
+
+dr_path_selection=${base_path}/${dr_name_selection}/${request_name_selection}
 
 echo "[INFO] Composing data request ${request_name} in ${dr_path}"
 echo "[INFO]    dr_name=${dr_name}"
 echo "[INFO]    request_name=${request_name}"
+echo "[INFO]    dr_name_selection=${dr_name_selection}"
 echo "[INFO]    request_name_selection=${request_name_selection}"
 echo "[INFO]    include_somatics=${include_somatics}"
 echo "[INFO]    include_germline=${include_germline}"
