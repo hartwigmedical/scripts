@@ -131,6 +131,9 @@ if [[ ${dna_ind} == 1 ]]; then
     echo ""
     #######
 
+    echo "[INFO] LOOK AT OVERLAP BETWEEN SAMPLES SELECTED FOR THE DATA REQUEST AND DNA FILES SHARED IN THE GCP MANIFEST"
+    echo ""
+
     echo "[INFO] Number of samples (based on study number) in metadata file:"
     cat temp_GCP_check/sampleId_metadata.tsv | wc -l
 
@@ -225,6 +228,9 @@ if [[ ${rna_ind} == 1 ]]; then
     #######
     echo ""
     #######
+
+    echo "[INFO] LOOK AT OVERLAP BETWEEN SAMPLES SELECTED FOR THE DATA REQUEST AND RNA FILES SHARED IN THE GCP MANIFEST"
+    echo ""
 
     echo "[INFO] Number of samples (based on study number) in metadata file:"
     cat temp_GCP_check/sampleId_metadata.tsv | wc -l
