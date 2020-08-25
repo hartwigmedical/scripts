@@ -13,10 +13,13 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
+driver_gene_panel=$(locate_driver_gene_panel_tsv)
+
 java -jar ${patient_reporter_jar} \
     -output_dir_report ${output_dir_report} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -tumor_location_csv ${tumor_location_csv} \
+    -driver_gene_panel ${driver_gene_panel} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
