@@ -23,7 +23,7 @@ if [[ -z "${metadata_tsv}" ]]; then
 fi
 
 echo ""
-echo "# [INFO] START check_numbers_metadata: $(date +"%y%m%d (%T)")"
+echo "[START] check_numbers_metadata: $(date +"%y%m%d (%T)")"
 
 # make dir for temporary files
 mkdir temp_number_check
@@ -37,6 +37,7 @@ echo "[INFO] Number of patients (based on study number) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
 echo "[INFO] Number of samples (based on study number) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l
+echo ""
 echo ""
 
 # remove all temporary files

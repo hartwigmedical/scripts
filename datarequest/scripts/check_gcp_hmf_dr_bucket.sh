@@ -25,7 +25,7 @@ fi
 
 
 echo ""
-echo "# [INFO] START check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
+echo "# [START] check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
 
 echo ""
 echo "[INFO] Files in the bucket" ${bucket_name}":"
@@ -41,8 +41,12 @@ do
 email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
 if [[ ${email_in_permissions} == "" ]]; then
     echo "[ERROR] Account $email not added to IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
-else echo "[INFO] Permissions account $email set correctly."
+    echo ""
+else
+    echo "[INFO] Permissions account $email set correctly."
+    echo ""
 fi
 done
+echo ""
 echo ""
 

@@ -121,7 +121,7 @@ main() {
     info "Constructed cmd: ${cmd_single_line}"
     info "Writing cmd to cmd file ${output_cmd_file}"
 
-    echo "# $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+    echo "# [INFO] CMD created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check numbers of patients & samples is metadata file:"  >> "${output_cmd_file}"
@@ -144,6 +144,8 @@ main() {
     echo ""  >> "${output_cmd_file}"
     echo "# [DOWNLOAD] Download GCP manifest:"  >> "${output_cmd_file}"
     echo "gsutil cp gs://${bucket_name}/manifest.json ${dr_release_dir}/manifest.json"  >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check GCP manifest:"  >> "${output_cmd_file}"
     if [[ ${run_mode} == "upload_only" ]];then
         echo "check_gcp_manifest_with_metadata '${metadata_tsv}' '${dr_release_dir}/manifest.json' 0 0" >> "${output_cmd_file}"
