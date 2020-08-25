@@ -6,7 +6,7 @@ print_usage(){
     echo "-----"
     echo " Descr: Constructs bash command for datarequest tool"
     echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -m <mode> -e <email>"
-    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com'"
+    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com,jaap@doe.com'"
     echo "-----"
     exit 1
 }
@@ -139,7 +139,7 @@ main() {
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check GCP created bucket:"  >> "${output_cmd_file}"
-    echo "check_gcp_hmf_dr_bucket.sh ${bucket_name}" >> "${output_cmd_file}"
+    echo "check_gcp_hmf_dr_bucket.sh ${bucket_name} ${gcp_mail}" >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [DOWNLOAD] Download GCP manifest:"  >> "${output_cmd_file}"

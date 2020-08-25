@@ -4,7 +4,7 @@ print_usage(){
     echo "-----"
     echo " Descr: Checks created GCP bucket for DR"
     echo " Usage: $(basename $0) -b <bucket_name> -e <gcp_mail>"
-    echo " Exmpl: $(basename $0) -b 'hmf-dr-XXX' -e 'john@doe.com jaap@doe.com'"
+    echo " Exmpl: $(basename $0) -b 'hmf-dr-XXX' -e 'john@doe.com,jaap@doe.com'"
     echo "-----"
     exit 1
 }
