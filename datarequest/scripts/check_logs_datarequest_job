@@ -30,9 +30,7 @@ echo ""
 
 number_samples_metadata=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq | wc -l)
 log_job=$( "${request_logs_path}/$( ls ${request_logs_path} | grep 'create' )" )
-
-
-
+chmod u+x ${log_job}
 
 echo "[INFO] PREPARED METADATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l ) >0 ]]; then
