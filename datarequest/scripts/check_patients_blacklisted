@@ -25,7 +25,7 @@ fi
 echo ""
 echo "[START] check_patients_blacklisted: $(date +"%y%m%d (%T)")"
 
-if [[ ${metadata_tsv} != *".sql" ]]; then
+if [[ ${metadata_tsv} != *.sql ]]; then
     csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/temp_datarequest.tsv
 else
     execute_sql_on_prod /data/common/repos/scripts/datarequest/selection/${metadata_tsv} | sort | uniq > temp_datarequest.tsv
