@@ -18,8 +18,11 @@ suppressPackageStartupMessages(library('randomForest'))
 suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/mutSigExtractor')))
 suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD')))
 
-cat("[INFO] R SessionInfo:\n")
-sessionInfo()
+cat("[INFO] Package NamespaceVersions after loading:\n")
+for (pkgName in c("mutSigExtractor", "CHORD")){
+  pkgVsn=getNamespaceVersion(pkgName)[["version"]]
+  cat("[INFO] Package", pkgName, " version", pkgVsn, "\n")
+}
 
 cat("[INFO] CHORD Settings:\n")
 cat("[INFO]   Chord dir:", chordToolDir, "\n")
