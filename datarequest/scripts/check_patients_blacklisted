@@ -25,7 +25,7 @@ fi
 echo ""
 echo "[START] check_patients_blacklisted: $(date +"%y%m%d (%T)")"
 
-if [[ "$metadata_tsv" =~ "sql$" ]]; then
+if [[ "$metadata_tsv" =~ sql$ ]]; then
     execute_sql_on_prod /data/common/repos/scripts/datarequest/selection/${metadata_tsv} | sort | uniq > temp_datarequest.tsv
     awk -F"\t" 'FNR > 1 {print}' temp_datarequest.tsv | sort | uniq > testfile.tmp && mv testfile.tmp temp_datarequest.tsv
 else
@@ -33,8 +33,10 @@ else
 fi
 
 echo ""
-#wc -l /data/ops/lims/prod/patient_blacklist.tsv
-#wc -l temp_datarequest.tsv
+echo "[INFO] number of patients blacklisted:"
+cat /data/ops/lims/prod/patient_blacklist.tsv | wc -l
+echo "[INFO] number of patients selected for DR:"
+cat temp_datarequest.tsv | wc -l
 echo "[INFO] Overlap between blacklisted patients and patients selected for DR:"
 comm -1 -2 <(sort /data/ops/lims/prod/patient_blacklist.tsv) <(sort temp_datarequest.tsv) | wc -l
 echo ""
