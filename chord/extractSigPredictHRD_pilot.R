@@ -38,6 +38,7 @@ signatures <- extractSigsChord(
   vcf.sv = svVcf,
   sample.name = sampleName,
   sv.caller = "gridss",
+  vcf.filters=list(snv="PASS", indel="PASS", sv="PASS")
 )
 cat("[INFO] Performing chord HRD prediction\n")
 prediction <- chordPredict(
