@@ -91,11 +91,11 @@ if [[ ${number_files_manifest} > 0 ]]; then
     fi
 fi
 echo ""
+echo ""
 
 ########################
 
 if [[ ${dna_ind} == 1 ]]; then
-    echo ""
 
     echo "[INFO] LOOK AT OVERLAP BETWEEN PATIENTS SELECTED FOR THE DATA REQUEST AND DNA FILES SHARED IN THE GCP MANIFEST"
     echo ""
@@ -194,7 +194,6 @@ if [[ ${dna_ind} == 1 ]]; then
 
 if [[ ${rna_ind} == 1 ]]; then
 
-
     echo "[INFO] LOOK AT OVERLAP BETWEEN PATIENTS SELECTED FOR THE DATA REQUEST AND RNA FILES SHARED IN THE GCP MANIFEST"
     echo ""
 
@@ -264,8 +263,11 @@ if [[ ${rna_ind} == 1 ]]; then
 
     echo "[INFO] Number of seperate RNA FASTQ files shared within GCP:"
     grep -c 'FASTQ' temp_GCP_check/files_GCP.tsv
+    echo ""
+    echo ""
 
 fi
+
 
 # remove all temporary files
 rm -r temp_GCP_check
