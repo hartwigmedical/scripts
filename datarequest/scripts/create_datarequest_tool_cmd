@@ -118,7 +118,7 @@ main() {
 
     cmd_single_line=$(echo "${cmd_array[@]}")
 
-    info "Constructed cmd: ${cmd_single_line}"
+    #info "Constructed cmd: ${cmd_single_line}"
     info "Writing cmd to cmd file ${output_cmd_file}"
 
     echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
