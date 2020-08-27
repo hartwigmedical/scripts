@@ -69,25 +69,20 @@ do
     email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
     if [[ ${email_in_permissions} == "" ]]; then
         echo "[INFO] Account $email correctly removed as user from gcp bucket."
-        echo ""
     else
         echo "[ERROR] Account $email still registered as user in the bucket ."
-        echo ""
     fi
 done
-
+echo ""
 
 echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 echo ""
 
-group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$release_id" '.[] | select(.name==$release_id) | .id')
+if curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$release_id" '.[] | select(.name==$release_id) | .id'; then
 
-
-if [[ ${group_id} == "" ]]; then
-    echo "[INFO] NO RAW FILES RELATED TO: ${release_id}."
-else
+    group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$release_id" '.[] | select(.name==$release_id) | .id')
     echo ""
     echo "[INFO] REVOKE ACCESS TO ACL OF RAW FILES RELATED TO: ${release_id}."
     echo ""
@@ -98,11 +93,11 @@ else
     
     echo "[INFO] Current number of raw data files with requester account(s) in the ACL:"
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
-    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l)
-    
+
     echo "....Accounts are being removed from ACLs...."
     echo ""
     curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/${group_id}
+    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
         echo "[INFO] No raw data files anymore related to ${release_id}."
         echo ""
@@ -113,6 +108,10 @@ else
     
     echo "[INFO] Updates number of raw data files with requester account(s) in the ACL:"
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
+
+else
+    echo "[INFO] NO RAW FILES RELATED TO: ${release_id}."
+
 fi
 echo ""
 echo ""
