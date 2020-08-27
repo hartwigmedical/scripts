@@ -1,5 +1,7 @@
 #!/usr/bin/Rscript
 
+options(stringsAsFactors=F) # to avoid invalid factor level warning
+
 args <- commandArgs(TRUE)
 
 chordToolDir <- args[1]
