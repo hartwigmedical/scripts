@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Revokes access to data on GCP for a specific DR"
+    echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -e <email>"
+    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -e 'john@doe.com,jaap@doe.com'"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':i:s:e:' flag; do
+    case "${flag}" in
+        i) dr_id=${OPTARG} ;;
+        s) dr_suffix=${OPTARG} ;;
+        e) gcp_mail=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${dr_id}" || -z "${gcp_mail}" ]]; then
+    echo "[ERROR] script revoke_acces_data_gcp did not run, check usage below:"
+    print_usage
+fi
+
+echo ""
+echo "[START] revoke_acces_data_gcp: $(date +"%y%m%d (%T)")"
+
+api_url=$"https://api.hartwigmedicalfoundation.nl"
+api_url_spec=$"${api_url}/hmf/v1/groups"
+api_key=$"/data/common/dbs/api_credentials/api.key"
+api_cert=$"/data/common/dbs/api_credentials/api.crt" 
+
+
+## quick input checks
+[[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
+[[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
+
+## we need the index of DR
+release_id=$"${dr_id}"
+dr_index=$( echo "${dr_id}" | sed 's/^DR\-//')
+request_id=$"${dr_index}"
+
+## reset release/request ids to include suffix if given
+if [[ "${dr_suffix}" != "" ]]; then
+    release_id="${dr_id}-${dr_suffix}"
+    request_id="${dr_index}-${dr_suffix}"
+fi
+
+bucket_name=$"hmf-dr-${request_id}"
+
+echo ""
+echo "[INFO] REVOKE ACCESS TO BUCKET: ${bucket_name}."
+echo ""
+
+echo "[INFO] Accounts related to ${release_id} for which access to the bucket ${bucket_name} will be revoked:"
+echo ${gcp_mail}
+echo ""
+
+echo "[INFO] Current permissions of the bucket ${bucket_name}:"
+gsutil -u hmf-share iam get gs://${bucket_name}/
+echo ""
+
+echo "....Access for accounts is being revoked...."
+for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+do
+    gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
+    email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
+    if [[ ${email_in_permissions} == "" ]]; then
+        echo "[INFO] Account $email correctly removed as user from gcp bucket."
+        echo ""
+    else
+        echo "[ERROR] Account $email still registered as user in the bucket ."
+        echo ""
+    fi
+done
+
+
+echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
+gsutil -u hmf-share iam get gs://${bucket_name}/
+echo ""
+echo ""
+
+group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$release_id" '.[] | select(.name==$release_id) | .id')
+
+
+if [[ ${group_id} == "" ]]; then
+    echo "[INFO] NO RAW FILES RELATED TO: ${release_id}."
+else
+    echo ""
+    echo "[INFO] REVOKE ACCESS TO ACL OF RAW FILES RELATED TO: ${release_id}."
+    echo ""
+    
+    echo "[INFO] Accounts related to ${release_id} for which access to ACL of raw files will be revoked:"
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/members
+    echo ""
+    
+    echo "[INFO] Current number of raw data files with requester account(s) in the ACL:"
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
+    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l)
+    
+    echo "....Accounts are being removed from ACLs...."
+    echo ""
+    curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/${group_id}
+    if [[ ${number_files_gcp} == 0 ]]; then
+        echo "[INFO] No raw data files anymore related to ${release_id}."
+        echo ""
+    else
+        echo "[ERROR] Still ${number_files_gcp} related to ${release_id}. Please check what went wrong"
+        echo ""
+    fi
+    
+    echo "[INFO] Updates number of raw data files with requester account(s) in the ACL:"
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
+fi
+echo ""
+echo ""
