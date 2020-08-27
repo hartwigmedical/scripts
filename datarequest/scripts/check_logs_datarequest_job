@@ -30,7 +30,7 @@ echo ""
 
 number_samples_metadata=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq | wc -l)
 
-log_job_name=$( ls ${request_logs_path} | grep 'create' )
+log_job_name=$( ls ${request_logs_path} | grep 'create' | grep 'log')
 log_job=$"${request_logs_path}${log_job_name}"
 
 echo "[INFO] PREPARED METADATA CHECK"
