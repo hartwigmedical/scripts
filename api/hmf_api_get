@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+api_query=$1 && shift
+
+api_dir="/data/common/dbs/api_credentials"
+api_crt="${api_dir}/api.crt"
+api_key="${api_dir}/api.key"
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+
+if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" ]]; then
+  echo "---"
+  echo "Descr: Runs a GET against HMF API with provided query string and returns JSON."
+  echo "Usage: $(basename $0) \${api_query_string}"
+  echo "   Eg: $(basename $0) 'samples?name=GIAB12878'"
+  echo "       $(basename $0) 'samples?barcode=FR17758478-200806'"
+  echo "       $(basename $0) 'runs/63961'"
+  echo "       $(basename $0) 'entities?name=HMFreg1000'"
+  echo "       all_samples_json=\$($(basename $0) 'samples')"
+  echo "  FYI: Many API fields are not queryable, use query_api.pl instead."
+  echo "       Uses URL ${api_url}"
+  echo "---"
+  exit 1
+fi
+
+http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" GET "${api_url}/${api_query}"

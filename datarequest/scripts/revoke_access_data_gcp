@@ -24,11 +24,9 @@ if [[ -z "${dr_id}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-echo ""
-echo "[START] revoke_acces_data_gcp: $(date +"%y%m%d (%T)")"
 
 api_url=$"https://api.hartwigmedicalfoundation.nl"
-api_url_spec=$"${api_url}/hmf/v1/groups"
+api_url_spec=$"${api_url}/hmf/v1"
 api_key=$"/data/common/dbs/api_credentials/api.key"
 api_cert=$"/data/common/dbs/api_credentials/api.crt" 
 
@@ -50,69 +48,122 @@ fi
 
 bucket_name=$"hmf-dr-${request_id}"
 
+## start with script
 echo ""
-echo "[INFO] REVOKE ACCESS TO BUCKET: ${bucket_name}."
+echo "[START] revoke_acces_data_gcp: $(date +"%y%m%d (%T)")"
 echo ""
 
-echo "[INFO] Accounts related to ${release_id} for which access to the bucket ${bucket_name} will be revoked:"
+echo "[INFO] Accounts inputted in the script for which access to GCP data will try to be be revoked:"
 echo ${gcp_mail}
+echo ""
+
+## check whether the GCP email inputted is similar to the GCP email showed in the manifest of the bucket.
+mkdir temp
+gsutil -q cp gs://${bucket_name}/manifest.json temp/manifest.json
+email_in_manifest=$""
+for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+do
+    temp=$( jq '.accounts | .[] | .email' temp/manifest.json | grep $email )
+    if [[ $temp == "" ]]; then
+         echo "[ERROR] Account $email given as input to the script is not related to bucket ${bucket_name}. Revoking access not possible."
+    fi
+    email_in_manifest+=${temp}
+done
+if [[ ${email_in_manifest} == "" ]]; then
+    echo "[ERROR] None of the account(s) given as input to the script are related to bucket ${bucket_name}. The script will not run further!"
+    echo ""
+    rm -r temp
+    exit
+fi
+rm -r temp
+
+
+
+echo ""
+echo "[INFO] REVOKE ACCESS TO BUCKET: ${bucket_name} RELATED TO: ${release_id}."
 echo ""
 
 echo "[INFO] Current permissions of the bucket ${bucket_name}:"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
-echo "....Access for accounts is being revoked...."
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
-    gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
     email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
     if [[ ${email_in_permissions} == "" ]]; then
-        echo "[INFO] Account $email correctly removed as user from gcp bucket."
+        echo "[ERROR] Account $email not present in current permissions of the bucket, so no revoke needed."
         echo ""
     else
-        echo "[ERROR] Account $email still registered as user in the bucket ."
-        echo ""
-    fi
+        echo "....Access for account $email is being revoked...."
+        gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
+        email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
+        if [[ ${email_in_permissions} == "" ]]; then
+            echo "[INFO] Account $email correctly removed as user from gcp bucket."
+            echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
+            gsutil -u hmf-share iam get gs://${bucket_name}/
+            echo ""
+        else
+            echo "[ERROR] Account $email still registered as user in the bucket."
+            echo ""
+        fi
+     fi
 done
-
-
-echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
-gsutil -u hmf-share iam get gs://${bucket_name}/
-echo ""
 echo ""
 
-group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$release_id" '.[] | select(.name==$release_id) | .id')
 
-
-if [[ ${group_id} == "" ]]; then
+group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups | jq --arg release_id "$release_id" '.[] | select(.name==$release_id) | .id')
+if [[ "${group_id}" == "" ]]; then
     echo "[INFO] NO RAW FILES RELATED TO: ${release_id}."
 else
+
     echo ""
     echo "[INFO] REVOKE ACCESS TO ACL OF RAW FILES RELATED TO: ${release_id}."
     echo ""
-    
-    echo "[INFO] Accounts related to ${release_id} for which access to ACL of raw files will be revoked:"
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/members
+
+    echo "[INFO] Accounts related to ${release_id} for which access to ACL of raw files will be revoked (can only be done on group level!!):"
+    account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
+    email_in_acl_group=$""
+    for account_nr in $account_nrs
+    do
+        curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
+        email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
+        if [[ $( echo ${gcp_mail} | grep $email_acl ) == "" ]]; then
+            echo "[ERROR] Account $email_acl is not inputted in the script, but access will nevertheless be revoked."
+            echo "[INFO] Are you sure you want to continue with the script? Please answer Y or N."
+            read answer
+            if [[ $answer != "Y" ]]; then
+                echo "[ERROR] Script will end."
+                exit
+            fi
+        fi
+        email_in_acl_group+=${email_acl}
+    done
     echo ""
-    
+    for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+    do
+        if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
+                 echo "[ERROR] Account $email not present in group of accounts related to ${release_id} raw files, so no revoke needed."
+        fi
+    done
+    echo ""
+
     echo "[INFO] Current number of raw data files with requester account(s) in the ACL:"
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
-    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l)
-    
-    echo "....Accounts are being removed from ACLs...."
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
     echo ""
-    curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/${group_id}
+
+    echo "....Accounts are being removed from ACLs...."
+    curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/groups/${group_id}
+    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
         echo "[INFO] No raw data files anymore related to ${release_id}."
+        echo "[INFO] Updated number of raw data files with requester account(s) in the ACL:"
+        curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
         echo ""
     else
-        echo "[ERROR] Still ${number_files_gcp} related to ${release_id}. Please check what went wrong"
+        echo "[ERROR] Still ${number_files_gcp} raw files with ACL related to ${release_id}. Please check what went wrong"
         echo ""
     fi
-    
-    echo "[INFO] Updates number of raw data files with requester account(s) in the ACL:"
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
 fi
+
 echo ""
 echo ""
