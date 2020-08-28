@@ -260,6 +260,8 @@ if [[ ${rna_ind} == 1 ]]; then
     echo "[INFO] Number of samples (based on study number) in GCP manifest:"
     cat temp_GCP_check/sampleId_RNA_GCP.tsv | wc -l
 
+    echo "[INFO] Overlap between two files:"
+    comm -1 -2 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
 
     samples_extra_in_metadata=$( comm -2 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l )
     if [[ ${samples_extra_in_metadata} != 0 ]]; then
