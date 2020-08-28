@@ -95,7 +95,7 @@ do
         echo ""
     else
         echo "....Access for account $email is being revoked...."
-        gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
+        gsutil -u hmf-share iam ch -d user:$email gs://${bucket_name}/
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
             echo "[INFO] Account $email correctly removed as user from gcp bucket."
