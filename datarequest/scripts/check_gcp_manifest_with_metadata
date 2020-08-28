@@ -38,9 +38,17 @@ api_cert=$"/data/common/dbs/api_credentials/api.crt"
 # make dir for temporary files
 mkdir temp_GCP_check
 
+
+
 ### Read in patients and samples selected for DR
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata.tsv
+
+rna_ind_tsv=$( echo ${metadata_tsv} | sed -e "s/metadata/metadata.tsv$//" )/logs/rna_ind.tsv
+csvcut -t -e iso-8859-1 -c '#patientId' ${rna_ind_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/patientId_metadata_rna.tsv
+csvcut -t -e iso-8859-1 -c 'sampleId' ${rna_ind_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata_rna.tsv
+
+
 
 echo ""
 echo "[INFO] NUMBER OF GCP BUCKET:"
@@ -202,7 +210,7 @@ if [[ ${rna_ind} == 1 ]]; then
     echo ""
 
     echo "[INFO] Number of patients (based on study number) in metadata file:"
-    cat temp_GCP_check/patientId_metadata.tsv | wc -l
+    cat temp_GCP_check/patientId_metadata_rna.tsv | wc -l
 
     jq '.data | .[] | select(.samples | .[] | .data | .[] | .tags | .[]=="RNA") | .patientId'  ${manifest_json} > temp_GCP_check/patientId_RNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/patientId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/patientId_RNA_GCP.tsv
@@ -211,20 +219,20 @@ if [[ ${rna_ind} == 1 ]]; then
     cat temp_GCP_check/patientId_RNA_GCP.tsv | wc -l
 
     echo "[INFO] Overlap between two files:"
-    comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+    comm -1 -2 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
     echo "[INFO] Number of extra patients in metadata file:"
-    comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-    pt_extra_in_metadata=$( comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l )
+    comm -2 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+    pt_extra_in_metadata=$( comm -2 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l )
     if [[ ${pt_extra_in_metadata} != 0 ]]; then
         echo "[ERROR] More patients in metadata than in GCP manifest. Please check what went wrong. IDs below are in metadata but not in manifest: "
-        comm -2 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+        comm -2 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
     fi
     echo "[INFO] Number of extra patients in GCP manifest:"
-    comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
-    pt_extra_in_manifest=$( comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l)
+    comm -1 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l
+    pt_extra_in_manifest=$( comm -1 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv) | wc -l)
     if [[ ${pt_extra_in_manifest} != 0 ]]; then
         echo "[ERROR] More patients in GCP manifest than in metadata. Please check what went wrong. IDs below are in manifest but not in metadata: "
-        comm -1 -3 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
+        comm -1 -3 <(sort temp_GCP_check/patientId_metadata_rna.tsv) <(sort temp_GCP_check/patientId_RNA_GCP.tsv)
     fi
 
 
@@ -236,7 +244,7 @@ if [[ ${rna_ind} == 1 ]]; then
     echo ""
 
     echo "[INFO] Number of samples (based on study number) in metadata file:"
-    cat temp_GCP_check/sampleId_metadata.tsv | wc -l
+    cat temp_GCP_check/sampleId_metadata_rna.tsv | wc -l
 
     jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="RNA") | .sampleId' ${manifest_json} > temp_GCP_check/sampleId_RNA_GCP.tsv
     sed 's/\"//g' temp_GCP_check/sampleId_RNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_RNA_GCP.tsv
@@ -245,18 +253,18 @@ if [[ ${rna_ind} == 1 ]]; then
     cat temp_GCP_check/sampleId_RNA_GCP.tsv | wc -l
 
     echo "[INFO] Number of extra samples metadata file:"
-    comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
-    samples_extra_in_metadata=$( comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l )
+    comm -2 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
+    samples_extra_in_metadata=$( comm -2 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l )
     if [[ ${samples_extra_in_metadata} != 0 ]]; then
         echo "[ERROR] More samples in metadata than in GCP manifest. Please check what went wrong. IDs below are in metadata but not in manifest: "
-        comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+        comm -2 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
     fi
     echo "[INFO] Number of extra samples in GCP manifest:"
-    comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
-    samples_extra_in_manifest=$( comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l )
+    comm -1 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l
+    samples_extra_in_manifest=$( comm -1 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv) | wc -l )
     if [[ ${samples_extra_in_manifest} != 0 ]]; then
         echo "[ERROR] More samples in GCP manifest than in metadata. Please check what went wrong. IDs below are in manifest but not in metadata: "
-        comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
+        comm -1 -3 <(sort temp_GCP_check/sampleId_metadata_rna.tsv) <(sort temp_GCP_check/sampleId_RNA_GCP.tsv)
     fi
 
     #######
