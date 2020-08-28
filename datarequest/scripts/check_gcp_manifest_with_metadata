@@ -145,7 +145,7 @@ if [[ ${dna_ind} == 1 ]]; then
     sed 's/\"//g' temp_GCP_check/sampleId_DNA_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
     cat temp_GCP_check/sampleId_DNA_GCP.tsv | sort | uniq  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_DNA_GCP.tsv
     echo "[INFO] Number of samples (based on study number) in GCP manifest:"
-    wc -l temp_GCP_check/sampleId_DNA_GCP.tsv
+    cat temp_GCP_check/sampleId_DNA_GCP.tsv | wc -l
 
     echo "[INFO] Overlap between two files:"
     comm -1 -2 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/sampleId_DNA_GCP.tsv) | wc -l
@@ -175,18 +175,18 @@ if [[ ${dna_ind} == 1 ]]; then
     echo "[INFO] Number of seperate DNA files shared within GCP:"
     grep -c 'DNA' temp_GCP_check/files_GCP.tsv
     dna_files=$( grep -c 'DNA' temp_GCP_check/files_GCP.tsv )
-    echo " of which are CRAM (should be 2 times the number of samples: per sample one for tumor and one for normal):"
+    echo "of which are CRAM:"
     grep -c 'CRAM' temp_GCP_check/files_GCP.tsv
     cram_files=$( grep -c 'CRAM' temp_GCP_check/files_GCP.tsv )
     cram_files_splitted=$(expr ${cram_files} / 2)
-    if [[ ${dna_files} != ${cram_files_splitted} ]]; then
-        echo "[ERROR] The number of CRAM files does not match the total number of DNA files shared. Normal/tumor missing of one sample? Please check."
+    if [[ $( cat temp_GCP_check/sampleId_metadata.tsv | wc -l ) != ${cram_files_splitted} ]]; then
+        echo "[ERROR] The number of CRAM files does not match the number of samples shared (should be 2 times the number of samples). Normal/tumor missing of one sample? Please check."
     fi
-    echo " of which are CRAI (should be the same number as CRAM files):"
+    echo "of which are CRAI:"
     grep -c 'CRAI' temp_GCP_check/files_GCP.tsv
     crai_files=$( grep -c 'CRAI' temp_GCP_check/files_GCP.tsv )
     if [[ ${cram_files} != ${crai_files} ]]; then
-        echo "[ERROR] The number of CRAM files does not match the number of CRAI files. CRAM/CRAI missing for one sample? Please check."
+        echo "[ERROR] The number of CRAM files does not match the number of CRAI files (should be the same number). CRAM/CRAI missing for one sample? Please check."
     fi
     echo ""
     echo ""

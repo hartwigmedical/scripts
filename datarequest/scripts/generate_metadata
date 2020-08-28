@@ -42,3 +42,9 @@ do_generate_extra_clinical_data \
     "metadata" \
     ${metadata_tsv} \
     ${prefix}/../sql/${sql}
+
+do_generate_extra_file_in_log \
+    ${patient_selection_tsv} \
+    ${log_dir} \
+    "rna_ind" \
+    "sql_rna_ind.sql"
