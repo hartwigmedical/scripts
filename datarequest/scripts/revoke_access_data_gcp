@@ -95,7 +95,7 @@ do
         echo ""
     else
         echo "....Access for account $email is being revoked...."
-        #gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
+        gsutil -u hmf-share iam ch -d User:$email gs://${bucket_name}/
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
             echo "[INFO] Account $email correctly removed as user from gcp bucket."
@@ -152,7 +152,7 @@ else
     echo ""
 
     echo "....Accounts are being removed from ACLs...."
-    #curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/groups/${group_id}
+    curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/groups/${group_id}
     number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
         echo "[INFO] No raw data files anymore related to ${release_id}."
