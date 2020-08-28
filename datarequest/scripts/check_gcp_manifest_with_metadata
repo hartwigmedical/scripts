@@ -31,7 +31,7 @@ echo ""
 echo "[START] check_gcp_manifest_with_metadata: $(date +"%y%m%d (%T)")"
 
 api_url=$"https://api.hartwigmedicalfoundation.nl"
-api_url_spec=$"${api_url}/hmf/v1/groups"
+api_url_spec=$"${api_url}/hmf/v1"
 api_key=$"/data/common/dbs/api_credentials/api.key"
 api_cert=$"/data/common/dbs/api_credentials/api.crt"
 
@@ -81,9 +81,9 @@ if [[ ${number_files_manifest} > 0 ]]; then
     echo '[INFO] NUMBER OF RAW DATA FILES WITH REQUESTER ACCOUNT(S) IN ACL:'
     dr_id=$( jq '.id' ${manifest_json} | sed 's/"//g' )
     dr_name="DR-${dr_id}"
-    group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec} | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l
-    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/${group_id}/files | jq . | grep file_id | wc -l)
+    group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
+    number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
 
     echo ""
     if [[ ${number_files_manifest} == ${number_files_gcp} ]]; then
