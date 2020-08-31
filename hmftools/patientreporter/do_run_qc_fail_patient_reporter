@@ -31,8 +31,8 @@ fi
 
 if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
     echo "[WARN] Ref sample information is incomplete!"
-    ref_sample=" "
-    ref_sample_barcode=" "
+    ref_sample="N/A"
+    ref_sample_barcode="N/A"
 fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
