@@ -153,7 +153,7 @@ locate_vcftools() {
 #################################### Resources #####################################
 
 locate_driver_gene_panel_tsv() {
-    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.tsv
+    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
 }
 
 locate_hotspot_tsv() {
