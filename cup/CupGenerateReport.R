@@ -20,7 +20,7 @@ sampleId = args[1]
 inputFile = args[2]
 outputDir = args[3]
 
-# sampleId = ''
+# sampleId = 'CPCT02010440T'
 # outputDir = '~/data/cup/reports/'    
 # inputFile = paste('~/data/cup/samples/',sampleId,'.cup.data.csv',sep='')
 
@@ -32,6 +32,8 @@ cupPlotData = cupSampleResults %>% select(Category,DataType,Value,RefCancerType,
 
 cupPlotData = cupPlotData %>% mutate(RefValueLabel=sprintf('%.0f%%',RefValue*100),
                                      DataType=stri_replace_all_fixed(DataType,'_',' '))
+
+# View(cupPlotData)
 
 cupClassData = cupPlotData %>% filter(Category=='CLASSIFIER') %>% mutate(DataLabel=DataType)
 
@@ -47,14 +49,9 @@ colnames(rowIndex) = c("FeatureIndex")
 featureOrder = cbind(featureOrder,rowIndex)
 cupFeatures = merge(cupFeatures,featureOrder %>% select(Value,FeatureIndex),by='Value',all.x=T)
 cupFeatures = cupFeatures %>% mutate(DataLabel=Value)
-#View(cupFeatures %>% group_by(DataType,Value) %>% count)
-
-# for now only show top 15 drivers at most
-topDrivers = head(cupFeatures %>% filter(DataType=='DRIVER') %>% group_by(Value) %>% count,15)
-cupFeatures = cupFeatures %>% filter(DataType!='DRIVER'|Value %in% topDrivers$Value)
 
 cupOtherData = cupPlotData %>% filter(Category!='CLASSIFIER'&Category!='GENDER'&Category!='FEATURE') %>%
-  mutate(DataLabel=ifelse(Category=='SNV_SIG'|Category=='SV',sprintf('%s (%.0f)',DataType,Value),
+  mutate(DataLabel=ifelse(Category=='SNV_SIG'|Category=='SV',sprintf('%s (%.0f)',DataType,as.numeric(as.character(Value))),
                           ifelse(DataType %in% c('PURITY','PLOIDY','MS INDELS TMB','CHORD HRD'),sprintf('%s (%.2f)',DataType,as.numeric(as.character(Value))),
                                  sprintf('%s (%s)',DataType,Value))),
          PercColour=ifelse(RefValue<(-2)|RefValue>2,'high',ifelse(RefValue<0|RefValue>1,'medium',ifelse(RefValue<=0.02|RefValue>=0.98,'low','norm'))))
@@ -78,7 +75,7 @@ summaryPlot = ggplot(cupClassData,aes(x=RefCancerType,y=DataLabel)) +
         axis.text.x.top=element_text(angle=90,hjust=0,size=10,face='bold',family=font),
         axis.ticks.y=element_blank(),
         legend.position='none') +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.ticks.y=element_blank(),axis.text.y=element_text(size=10,face='bold',hjust=1,family=font)) +
   theme(legend.position='none') +
   labs(x='',y='',title='')
@@ -88,7 +85,7 @@ genderPlot = ggplot(cupGender,aes(x=RefCancerType,y=DataLabel)) +
   geom_text(aes(label=RefValueLabel),size=3) +
   scale_colour_manual(values=prevColours) +
   scale_fill_manual(values=prevColours,limits=names(prevColours)) +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.text.x.bottom=element_blank(),axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         axis.text.x=element_blank(),
@@ -103,7 +100,7 @@ featurePlot = ggplot(cupFeatures,aes(x=RefCancerType,y=reorder(DataLabel,-Featur
   theme(axis.text.x.bottom=element_blank(),axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         legend.position='none') +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.ticks.y=element_blank(),axis.text.y=element_text(size=10,face='bold',hjust=1,family=font)) +
   theme(legend.position='none') +
   labs(x='',y='',title='FEATURES')
@@ -116,7 +113,7 @@ svPlot = ggplot(cupOtherData %>% filter(Category=='SV'),aes(x=RefCancerType,y=Da
   theme(axis.text.x.bottom=element_blank(),axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         legend.position='none') +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.ticks.y=element_blank(),axis.text.y=element_text(size=10,face='bold',hjust=1,family=font)) +
   theme(legend.position='none') +
   labs(x='',y='',title='SV')
@@ -129,7 +126,7 @@ sigPlot = ggplot(cupOtherData %>% filter(Category=='SNV_SIG'),aes(x=RefCancerTyp
   theme(axis.text.x.bottom=element_blank(),axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         legend.position='none') +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.ticks.y=element_blank(),axis.text.y=element_text(size=10,face='bold',hjust=1,family=font)) +
   theme(legend.position='none') +
   labs(x='',y='',title='SNV SIGNATURES')
@@ -142,7 +139,7 @@ traitsPlot = ggplot(cupOtherData %>% filter(Category=='SAMPLE_TRAIT'),aes(x=RefC
   theme(axis.text.x.bottom=element_blank(),axis.ticks.x=element_blank(),
         axis.ticks.y=element_blank(),
         legend.position='none') +
-  theme(panel.background = element_blank()) +
+  theme(panel.background = element_blank(),panel.border = element_blank()) +
   theme(axis.ticks.y=element_blank(),axis.text.y=element_text(size=10,face='bold',hjust=1,family=font)) +
   theme(legend.position='none') +
   labs(x='',y='',title='TRAITS')
@@ -156,7 +153,7 @@ featureCount = nrow(cupFeatures %>% group_by(Value) %>% count)
 if(featureCount > featureLimit)
 {
   separateFeaturePlot=T
-  print(sprintf('features(%d) print separately', featureCount, featureHeight))
+  print(sprintf('features(%d) print separately', featureCount))
   plotHeights = c(10,195,45,85,105,85)
 } else
 {
