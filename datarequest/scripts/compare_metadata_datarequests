@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Compare metadata selection of datarequests"
+    echo " Usage: $(basename $0) -m1 <metadata_tsv1> -m2 <metadata_tsv2>"
+    echo " Exmpl: $(basename $0) -m1 '/data/data_archive/datarequests/DR-XXX/DR-XXX/metadata/metadata.tsv' -m1 '/data/data_archive/datarequests/DR-XXX/DR-XXX-update1/metadata/metadata.tsv'"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':m1:m2:' flag; do
+    case "${flag}" in
+        m1) metadata_tsv1=${OPTARG} ;;
+        m2) metadata_tsv2=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${metadata_tsv1}" || -z "${metadata_tsv2}" ]]; then
+    echo "[ERROR] script compare_metadata_datarequests did not run, check usage below:"
+    print_usage
+fi
+
+
+echo ""
+echo "[START] compare_metadata_datarequests: $(date +"%y%m%d (%T)")"
+
+# make dir for temporary files
+mkdir temp_metadata_check
+
+
+echo "[INFO] ANALYSES BASED ON PATIENTID:"
+csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
+csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
+
+echo "[INFO] Number of patients (based on study number!) in metadata1 file:"
+cat temp_GCP_check/metadata1.tsv | wc -l
+echo "[INFO] Number of patients (based on study number!) in metadata2 file::"
+cat temp_GCP_check/metadata2.tsv | wc -l
+
+pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv) | wc -l )
+if [[ ${pt_extra_in_metadata1} != 0 ]]; then
+    echo "[INFO] Number of extra patients in metadata1 file:"
+    comm -2 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv)  | wc -l
+    echo "[ERROR] More patients in metadata1 than in metadata2 file. See IDs below: "
+    comm -2 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv)
+fi
+
+pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv) | wc -l)
+if [[ ${pt_extra_in_metadata2} != 0 ]]; then
+    echo "[INFO] Number of extra patients in metadata2 file:"
+    comm -1 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv) | wc -l
+    echo "[ERROR] More patients in metadata2 than in metadata1 file. See IDs below: "
+    comm -1 -3 <(sort temp_GCP_check/metadata1.tsv) <(sort temp_GCP_check/metadata2.tsv)
+fi
+echo ""
+
+rm -r temp_metadata_check
