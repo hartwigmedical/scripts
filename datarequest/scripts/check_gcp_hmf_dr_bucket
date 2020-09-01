@@ -23,7 +23,7 @@ if [[ -z "${bucket_name}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-
+echo ""
 echo ""
 echo "[START] check_gcp_hmf_dr_bucket: $(date +"%y%m%d (%T)")"
 
