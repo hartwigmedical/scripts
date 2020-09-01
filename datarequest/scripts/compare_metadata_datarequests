@@ -26,6 +26,7 @@ fi
 
 echo ""
 echo "[START] compare_metadata_datarequests: $(date +"%y%m%d (%T)")"
+echo ""
 
 # make dir for temporary files
 mkdir temp_metadata_check
@@ -35,9 +36,9 @@ echo "[INFO] ANALYSES BASED ON patientId:"
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients (based on study number!) in metadata1 file:"
+echo "[INFO] Number of patients in metadata1 file:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients (based on study number!) in metadata2 file::"
+echo "[INFO] Number of patients in metadata2 file::"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
@@ -66,9 +67,9 @@ echo "[INFO] ANALYSES BASED ON hmfPatientId:"
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients (based on study number!) in metadata1 file:"
+echo "[INFO] Number of patients in metadata1 file:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients (based on study number!) in metadata2 file::"
+echo "[INFO] Number of patients in metadata2 file::"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
@@ -95,24 +96,24 @@ echo "[INFO] ANALYSES BASED ON sampleId:"
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients (based on study number!) in metadata1 file:"
+echo "[INFO] Number of samples in metadata1 file:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients (based on study number!) in metadata2 file::"
+echo "[INFO] Number of samples in metadata2 file::"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra patients in metadata1 file:"
+    echo "[INFO] Number of extra samples in metadata1 file:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More patients in metadata1 than in metadata2 file. See IDs below: "
+    echo "[ERROR] More samples in metadata1 than in metadata2 file. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra patients in metadata2 file:"
+    echo "[INFO] Number of extra samples in metadata2 file:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More patients in metadata2 than in metadata1 file. See IDs below: "
+    echo "[ERROR] More samples in metadata2 than in metadata1 file. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
@@ -124,24 +125,24 @@ echo "[INFO] ANALYSES BASED ON hmfSampleId:"
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv1}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata1.tsv
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv2}  | csvformat -T | tail -n +2 | sort | uniq > temp_metadata_check/metadata2.tsv
 
-echo "[INFO] Number of patients (based on study number!) in metadata1 file:"
+echo "[INFO] Number of samples in metadata1 file:"
 cat temp_metadata_check/metadata1.tsv | wc -l
-echo "[INFO] Number of patients (based on study number!) in metadata2 file::"
+echo "[INFO] Number of samples in metadata2 file::"
 cat temp_metadata_check/metadata2.tsv | wc -l
 
 pt_extra_in_metadata1=$( comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l )
 if [[ ${pt_extra_in_metadata1} != 0 ]]; then
-    echo "[INFO] Number of extra patients in metadata1 file:"
+    echo "[INFO] Number of extra samples in metadata1 file:"
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)  | wc -l
-    echo "[ERROR] More patients in metadata1 than in metadata2 file. See IDs below: "
+    echo "[ERROR] More samples in metadata1 than in metadata2 file. See IDs below: "
     comm -2 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 
 pt_extra_in_metadata2=$( comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l)
 if [[ ${pt_extra_in_metadata2} != 0 ]]; then
-    echo "[INFO] Number of extra patients in metadata2 file:"
+    echo "[INFO] Number of extra samples in metadata2 file:"
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv) | wc -l
-    echo "[ERROR] More patients in metadata2 than in metadata1 file. See IDs below: "
+    echo "[ERROR] More samples in metadata2 than in metadata1 file. See IDs below: "
     comm -1 -3 <(sort temp_metadata_check/metadata1.tsv) <(sort temp_metadata_check/metadata2.tsv)
 fi
 echo ""
