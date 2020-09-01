@@ -120,7 +120,7 @@ echo ""
 echo "[INFO] Or directly get reporting info (for ${pdf_name}):"
 echo " cat ${rep_file} | cut -f1 --complement"
 echo ""
-echo "[INFO] And get the aria2 downlaod config with:"
+echo "[INFO] And get the aria2 download config with:"
 echo " nohup gather_submission_aria_config ${submission} > ${out_path}/gather_submission_aria_config.log &"
 echo ""
 
