@@ -40,7 +40,8 @@ if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | 
     log_metadata_name=$( ls ${request_logs_path} | grep 'metadata.log' )
     log_metadata=$"${request_logs_path}${log_metadata_name}"
     lines_metadata_tar_log=$(expr  $( cat ${log_metadata} | wc -l) - 1)
-    echo "[INFO] ${requested_metadata} types of metadata requested"
+    echo "[INFO] ${requested_metadata} types of metadata requested:"
+    cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline"
     #check numbers.
     if [[ ${requested_metadata} != ${entries_metadata} || ${requested_metadata} != ${lines_metadata_tar_log} ]]; then
         echo "[ERROR] The number of types of requested metadata (${requested_metadata}) does not match the number of entries created during the datarequest job (${entries_metadata} (entries) / ${lines_metadata_tar_log} (log check)). Check the log file(s) under: ${request_logs_path}."
