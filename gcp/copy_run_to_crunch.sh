@@ -19,8 +19,8 @@ fi
 echo "[INFO] Copying set ${set} from ${run_bucket} to hmf-crunch"
 
 switch_to_hmf_ops_service_account
-echo "gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/sage/* gs://hmf-sage/$set/"
-echo "gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/amber/* gs://hmf-amber/$set/"
-echo "gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/cobalt/* gs://hmf-cobalt/$set/"
-echo "gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*unfiltered.vcf.gz* gs://hmf-gridss/unfiltered/$set/"
-echo "gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*somatic*.vcf.gz* gs://hmf-gripss/$set/"
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/sage/* gs://hmf-sage/$set/
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/amber/* gs://hmf-amber/$set/
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/cobalt/* gs://hmf-cobalt/$set/
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*unfiltered.vcf.gz* gs://hmf-gridss/unfiltered/$set/
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*somatic*.vcf.gz* gs://hmf-gripss/$set/
