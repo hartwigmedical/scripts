@@ -39,11 +39,9 @@ if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
     echo "Request used for selection:"
     cat ${log_job} | grep "request_name_selection=" | cut -d "=" -f2
     dr_name=$( cat ${log_job} | grep "dr_name=" | cut -d "=" -f2 )
-    request_name=$( cat ${log_job} | grep "request_name=" | cut -d "=" -f2 )
-    request_name=$( echo "${request_name}" | sed 's/^DR\-//' )
+    request_name=$( cat ${log_job} | grep "request_name=" | cut -d "-" -f3 )
     dr_name_selection=$( cat ${log_job} | grep "dr_name_selection=" | cut -d "=" -f2 )
-    request_name_selection=$( cat ${log_job} | grep "request_name_selection=" | cut -d "=" -f2 )
-    request_name_selection=$( echo "${request_name_selection}" | sed 's/^DR\-//' )
+    request_name_selection=$( cat ${log_job} | grep "request_name_selection=" | cut -d "-" -f3 )
     compare_metadata_datarequests -i ${dr_name} -s ${request_name} -j ${dr_name_selection} -t ${request_name_selection}
     echo ""
 fi
