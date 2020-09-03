@@ -26,8 +26,8 @@ if [[ -z "${dr1_id}" || -z "${dr2_id}" ]]; then
 fi
 
 
-echo ""
-echo "[START] compare_metadata_datarequests: $(date +"%y%m%d (%T)")"
+#echo ""
+#echo "[START] compare_metadata_datarequests: $(date +"%y%m%d (%T)")"
 echo ""
 
 # make dir for temporary files
