@@ -33,6 +33,20 @@ number_samples_metadata=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}
 log_job_name=$( ls ${request_logs_path} | grep 'create' | grep 'log')
 log_job=$"${request_logs_path}${log_job_name}"
 
+
+if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
+    echo "[INFO] DATA REQUEST PREPARED FROM OLD SELECTION - EXTRA CHECK DONE:"
+    echo "Request used for selection:"
+    cat ${log_job} | grep "request_name_selection=" | cut -d "=" -f2
+    dr_name=$( cat ${log_job} | grep "dr_name=" | cut -d "=" -f2 )
+    request_name=$( cat ${log_job} | grep "request_name=" | cut -d "=" -f2 )
+    dr_name_selection=$( cat ${log_job} | grep "dr_name_selection=" | cut -d "=" -f2 )
+    request_name_selection=$( cat ${log_job} | grep "request_name_selection=" | cut -d "=" -f2 )
+    compare_metadata_datarequests -i ${dr_name} -s ${request_name} -j ${dr_name_selection} -t ${request_name_selection}
+    echo ""
+fi
+
+
 echo "[INFO] PREPARED METADATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l ) >0 ]]; then
     requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l )
