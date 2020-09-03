@@ -23,6 +23,8 @@ for run in ${process_runs}; do
         mv ${source_path}/${run} /data/cpct/runs/
         echo "[INFO] Create patient report for ${run}"
         patient_report_for_run /data/cpct/runs/${run}
+        echo "[INFO] Copy run to hmf-crunch at GCP"
+        copy_run_to_crunch.sh /data/cpct/runs/${run}
         echo "[INFO] rerun set"
         rerun_processed_set /data/cpct/runs/${run}
     else
