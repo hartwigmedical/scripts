@@ -1,3 +1,5 @@
+#!/usr/bin/env bash
+
 latest_cram_file_locations() {
     local set=$1
     local json=/data/ops/api/prod/database/runs.json
