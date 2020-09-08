@@ -198,7 +198,9 @@ if [[ ${dna_ind} == 1 ]]; then
     crai_files=$( jq '.data | .[] | .samples | .[] |  select( .data | .[] | .tags | .[]=="CRAI") | .sampleId' ${manifest_json} | wc -l )
 
     jq '.data | .[] | .samples | .[] |  select( .data | .[] | .tags | .[]=="CRAM") | .sampleId' ${manifest_json} > temp_GCP_check/sampleId_CRAM_GCP.tsv
+    sed 's/\"//g' temp_GCP_check/sampleId_CRAM_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_CRAM_GCP.tsv
     jq '.data | .[] | .samples | .[] |  select( .data | .[] | .tags | .[]=="CRAI") | .sampleId' ${manifest_json} > temp_GCP_check/sampleId_CRAI_GCP.tsv
+    sed 's/\"//g' temp_GCP_check/sampleId_CRAI_GCP.tsv  > testfile.tmp && mv testfile.tmp temp_GCP_check/sampleId_CRAI_GCP.tsv
     if [[ ${cram_files} > ${crai_files} ]]; then
         echo "[ERROR] More CRAM files than CRAI files (should be the same number). CRAI missing for one sample? Please check. IDs are below:"
         comm -2 -3 <(sort temp_GCP_check/sampleId_CRAM_GCP.tsv) <(sort temp_GCP_check/sampleId_CRAI_GCP.tsv)
