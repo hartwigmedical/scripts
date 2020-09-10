@@ -8,7 +8,7 @@ metadata_dir=$1 && shift
 
 name="post_biopsy_drugs_by_sample"
 
-do_generate_extra_clinical_data \
+do_generate_extra_clinical_data_patient_based \
     ${patient_selection_tsv} \
     ${log_dir} \
     ${name} \
