@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+cram_url=$1 && shift
+cram_index_url=$1 && shift
+slicing_bed=$1 && shift
+output_bam=$1 && shift
+
+if [[ -z "${cram_url}" || -z "${cram_index_url}" || -z "${slicing_bed}" || -z "${output_bam}" ]]; then
+    echo "[ERROR] Not all input params provided. Exiting" && exit 1
+fi
+
+samtools=/data/common/tools/samtools_v1.10/samtools
+ref_genome=$(locate_ref_genome_fasta_file)
+
+echo "[INFO] Creating slice using ${slicing_bed}"
+${samtools} view -T ${ref_genome} \
+    -M "${cram_url}" \
+    -X "${cram_url_index}" \
+    -L "${slicing_bed}" \
+    -o "${output_bam}"
+echo "[INFO] Done creating slice. Written output to ${output_bam}"
+
