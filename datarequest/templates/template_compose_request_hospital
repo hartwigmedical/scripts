@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-dr_name="LUMC"
-request_name="LUMC_request_200303"
-patient_selection_sql="/home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql"
+dr_name="NKI"
+request_name="NKI-request200910"
+patient_selection_sql="/home/sandra/jobs/SQL_scripts/NKI_request200910.sql"
 
 include_somatics=0
 include_germline=0

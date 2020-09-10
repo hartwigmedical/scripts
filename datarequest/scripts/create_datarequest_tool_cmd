@@ -109,7 +109,7 @@ main() {
     cmd_array+=("-Djavax.net.ssl.keyStorePassword=\"\$(cat ${api_keystore_pw})\"")
     cmd_array+=("-jar '${tool_jar}'")
     cmd_array+=("-sbp_api_url '${api_url}'")
-    cmd_array+=("-request_index '${request_index}'")
+    cmd_array+=("-request_id '${request_index}'")
     cmd_array+=("-accounts '${gcp_mail}'")
     cmd_array+=("-metadata_tsv '${metadata_tsv}'")
     if [[ ! "${uploads_single_line}" == "" ]]; then
