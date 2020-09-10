@@ -36,7 +36,7 @@ main() {
     info "Starting with $(basename $0)"
     
     ## quick input checks
-    [[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
+    #[[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
     [[ ! -z "${run_mode}" && "${run_mode}" =~ (dna|rna|upload_only|dna_rna) ]] || die "run-mode incorrect (${run_mode})?"
     [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
 
