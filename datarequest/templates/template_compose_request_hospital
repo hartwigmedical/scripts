@@ -7,5 +7,13 @@ patient_selection_sql="/home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql"
 include_somatics=0
 include_germline=0
 
+include_tumor_patient_treatment_response_metadata=0
+include_treatment_response_clinical_data=0
+include_pre_treatment_clinical_data=0
+
+include_rano_measurement_by_patient=0
+include_tumor_markers_by_patient=0
+
 compose_request_hospital ${dr_name} ${request_name} ${patient_selection_sql} \
-    ${include_somatics} ${include_germline}
+    ${include_somatics} ${include_germline} ${include_tumor_patient_treatment_response_metadata}  ${include_treatment_response_clinical_data} \
+    ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}
