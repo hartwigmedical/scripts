@@ -29,4 +29,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -tumor_location_dir /data/common/dbs/ecrf_dumps_pilot \
     -tumor_location_symlink curated_tumor_locations \
+    -tumor_location_mapping_csv /data/common/dbs/curation/tumor_location_mapping.csv \
+    -treatment_mapping_csv /data/common/dbs/curation/treatment_mapping.csv \
+    -biopsy_mapping_csv /data/common/dbs/curation/biopsy_site_mapping.csv \
     "$@"
