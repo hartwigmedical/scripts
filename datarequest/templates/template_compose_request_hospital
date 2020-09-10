@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-dr_name="NKI"
-request_name="NKI-request200910"
-patient_selection_sql="/home/sandra/jobs/SQL_scripts/NKI_request200910.sql"
+dr_name="nki"
+request_name="nki-request200910"
+patient_selection_sql="/home/sandra/jobs/SQL_scripts/nki_request200910.sql"
 
 include_somatics=0
 include_germline=0
