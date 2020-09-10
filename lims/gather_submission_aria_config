@@ -25,23 +25,30 @@ echo "[INFO] Changing dir to output dir '${output_dir}'"
 cd ${output_dir}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] Unable to change dir to ${output_dir}" && exit 1; fi
 
+non_val_count=$(cat "${runs_json}" | jq '[select(.[].status != "Validated")] | length')
+echo "[INFO] There are ${non_val_count} runs where status != Validated (these will not end up in aria config!)"
+
 echo "[INFO] Creating job file (${create_job})"
-for run_name in $(cat "${runs_json}" | jq '.[].name'); do
+for run_name in $(cat "${runs_json}" | jq -r '.[] | select(.status == "Validated") | .name'); do
     echo "${CREATE_ARIA_SCRIPT} ${run_name}"
 done > "${create_job}"
 chmod +x "${create_job}"
 
-echo "[INFO] Executing job script (this can take a long time, check progress in log '${create_log}')"
-${create_job} > ${create_log} 2>&1
+echo "[INFO] Executing job script (runtime depends on amount of samples, check progress in log '${create_log}')"
+cat ${create_job} | parallel -j5 -I% --max-args 1 % > ${create_log} 2>&1
 
-echo "[INFO] Checking for any non INFO lines from log"
+echo "[INFO] Printing any non INFO lines from log"
 cat ${create_log} | grep -v '\[INFO\]'
 
 echo "[INFO] Concat all run aria.txt files to ${out_config}"
 find ${output_dir} -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
 
-echo "[INFO] Job done. Gathering one URL config to check manually in browser:"
-head -4 "${out_config}"
+echo "[INFO] Action: Check log for errors"
+echo " check_log_file ${out_config}"
 
-echo "[INFO] If all OK, ou can upload final config to Nextcloud with:"
+echo "[INFO] Action: Check one URL manually in browser"
+echo " cat ${out_config} | grep https | tail -1"
+
+echo "[INFO] Action: If all OK you can upload final config to Nextcloud with:"
 echo " upload_files_to_nextcloud_research ${out_config}"
+echo ""
