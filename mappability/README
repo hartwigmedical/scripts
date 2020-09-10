@@ -4,7 +4,7 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 1. Prepare genome
 
     Make sure genome has a dictionary:
-    /data/common/tools/samtools_v1.9/samtools dict GCA_000001405.15_GRCh38_no_alt_analysis_set.fna > GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
+    /data/common/tools/samtools_v1.10/samtools dict GCA_000001405.15_GRCh38_no_alt_analysis_set.fna > GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
 
     Split reference genome into its chromosomes:
     extractRefGenomeChromosomes \
