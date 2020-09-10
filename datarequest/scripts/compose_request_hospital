@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ "$#" -ne 5 ]]; then
+if [[ "$#" -ne 6 ]]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg LUMC)"
     echo "      - request_name (eg LUMC_request_20200303)"

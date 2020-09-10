@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 dr_name="LUMC"
-request_name="LUMC_request_20200303"
+request_name="LUMC_request_200303"
 patient_selection_sql="/home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql"
 
 include_somatics=0
