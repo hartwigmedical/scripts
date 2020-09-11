@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+id_generator_jar=/data/common/tools/hmf-id-generator_pilot/hmf-id-generator.jar
+sample_hashes=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
+credentials=$(locate_prod_database_credentials)
+password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
+
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+java -jar ${id_generator_jar} \
+    -password ${password} \
+    -in "${sample_hashes}" \
+    -out "${sample_hashes}" \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}
