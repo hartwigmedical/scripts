@@ -5,8 +5,9 @@ health_check_processed_runs
 echo "[INFO] Count HealthChecker succeeded"
 health_check_processed_runs | grep -c "HealthChecker has succeeded for"
 
-echo "[INFO] Count analysis purple version"
-health_check_processed_runs | grep -c "This analysis has been done with purple version=2.45"
+purple_version=2.45
+echo "[INFO] Count analysis purple version v${purple_version}"
+health_check_processed_runs | grep -c "This analysis has been done with purple version=${purple_version}"
 
 source_path=/data/gcp/processed_runs
 
@@ -25,7 +26,7 @@ for run in ${process_runs}; do
         patient_report_for_run /data/cpct/runs/${run}
         echo "[INFO] Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
-        echo "[INFO] rerun set"
+        echo "[INFO] Rerun set"
         rerun_processed_set /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
