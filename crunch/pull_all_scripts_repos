@@ -13,5 +13,3 @@ done
 echo "---"
 echo "[INFO] Executing \"${pull_script}\" at server Datastore"
 exec ${pull_script}
-
-echo "[INFO] Crunch1 removed -> add back once up and running again"

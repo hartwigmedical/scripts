@@ -8,5 +8,3 @@ for i in {2,3}; do
         echo -e "${fc_date}\t${line}"
     done     
 done | sort -r -k1 -k2 | cut -f2-
-
-echo "[INFO] Crunch001 removed -> add back once up and running again"
