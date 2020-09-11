@@ -22,7 +22,7 @@ echo "[INFO] Creating aria output dir (${output_dir})"
 mkdir "${output_dir}"
 
 echo "[INFO] Changing dir to output dir '${output_dir}'"
-cd ${output_dir}
+cd ${output_dir} || exit
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] Unable to change dir to ${output_dir}" && exit 1; fi
 
 non_val_count=$(cat "${runs_json}" | jq '[select(.[].status != "Validated")] | length')
@@ -43,8 +43,8 @@ cat ${create_log} | grep -v '\[INFO\]'
 echo "[INFO] Concat all run aria.txt files to ${out_config}"
 find ${output_dir} -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
 
-echo "[INFO] Action: Check log for errors"
-echo " check_log_file ${out_config}"
+echo "[INFO] Action: Double check log for errors"
+echo " check_log_file ${create_log}"
 
 echo "[INFO] Action: Check one URL manually in browser"
 echo " cat ${out_config} | grep https | tail -1"
