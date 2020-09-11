@@ -10,9 +10,8 @@ if [[ -z ${1} || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 flowcell_path=$1
-flowcell_name=$( basename $flowcell_path )
 
-echo "## Start of script $script_name on flowcell path $flowcell_path"
+echo "## Start of script $(basename $0) on flowcell path $flowcell_path"
 
 if [[ ! "$flowcell_path" =~ ^\/ ]]; then
   echo "[EXIT] Please provide full path to flowcell dir ($flowcell_path)" && exit 1
@@ -21,7 +20,7 @@ if [[ ! -d "$flowcell_path" ]]; then
   echo "[EXIT] Provided flowcell dir path does not exist ($flowcell_path)" && exit 1
 fi
 if [[ ! -w $RNA_FASTQ_DIR ]]; then
-  echo "[EXIT] Desitination dir is not writeable ($RNA_FASTQ_DIR)" && exit 1
+  echo "[EXIT] Destination dir is not writeable ($RNA_FASTQ_DIR)" && exit 1
 fi
 
 ## Check samples in LIMS: should be skipped if not RNAseq sample
@@ -41,7 +40,7 @@ check_bcl2fastq_conversion.pl -run_dir "${flowcell_path}" | grep ^SAMPLE | while
   echo "# ---"
   echo "# Checking sample $sample with barcode $barcode"
   find $RNA_FASTQ_DIR -mindepth 1 -maxdepth 1 -name "*${barcode}_*" -printf '# WARNING: Existing DIR found: %p\n'
-  old_fq_dir="$flowcell_path/Data/Intensities/BaseCalls/${project}/${barcode}"
+  old_fq_dir="$flowcell_path/Fastq/${project}/${barcode}"
   new_fq_dir="${RNA_FASTQ_DIR}/${barcode_sample}"
   if [[ ! -d $old_fq_dir ]]; then
     echo "[EXIT] Dir does not exist ($old_fq_dir)" && exit 1;
@@ -49,7 +48,7 @@ check_bcl2fastq_conversion.pl -run_dir "${flowcell_path}" | grep ^SAMPLE | while
     echo "[EXIT] Dir is not writable ($old_fq_dir)" && exit 1;
   elif [[ -e $new_fq_dir && ! -w $new_fq_dir ]]; then
     echo "[EXIT] Dir exists but is not writable ($new_fq_dir)" && exit 1;
-  elif [[ $sample != $lims_sample_name ]]; then
+  elif [[ $sample != "${lims_sample_name}" ]]; then
     echo "[EXIT] Name of sample not same in LIMS ($sample vs $lims_sample_name)" && exit 1;
   fi
   echo " mkdir $new_fq_dir" 
