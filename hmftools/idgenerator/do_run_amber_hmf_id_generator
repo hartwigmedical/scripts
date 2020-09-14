@@ -2,8 +2,9 @@
 
 id_generator_jar=$1 && shift
 credentials=$1 && shift
+sample_hashes_in=$1 && shift
+sample_hashes_out=$1 && shift
 
-sample_hashes=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
 password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
 
 # Database details
@@ -13,6 +14,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 java -jar ${id_generator_jar} \
     -password ${password} \
-    -in "${sample_hashes}" \
-    -out "${sample_hashes}" \
+    -in "${sample_hashes_in}" \
+    -out "${sample_hashes_out}" \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}

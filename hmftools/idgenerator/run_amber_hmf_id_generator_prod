@@ -4,5 +4,7 @@ source locate_files
 
 id_generator_jar=$(locate_pilot_hmf_id_generator)
 credentials=$(locate_prod_database_credentials)
+sample_hashes_in=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
+sample_hashes_out=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
 
-do_run_amber_hmf_id_generator ${id_generator_jar} ${credentials}
+do_run_amber_hmf_id_generator ${id_generator_jar} ${credentials} ${sample_hashes_in} ${sample_hashes_out}
