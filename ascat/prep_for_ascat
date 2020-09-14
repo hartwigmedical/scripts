@@ -31,6 +31,9 @@ if [[ ! -f "${bed}" ]]; then
     cat ${old_amber} | grep -v Chrom | awk '{print $1 "\t" $2 - 1 "\t" $2}' > ${bed}
 fi
 
+echo "[ERROR] BAM slicer no longer supported".
+exit 1
+
 sample_bam=${out_dir}/${sample}.amber.bam
 if [[ ! -f "${sample_bam}" ]]; then
     ${prefix}/../bamslicer/do_slice_bam_on_gcp ${set} ${sample} ${bed} ${sample_bam}

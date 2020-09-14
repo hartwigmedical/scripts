@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+
+prefix=$(dirname $(readlink $0 || echo $0))
+
+sample_selection_tsv=$1 && shift
+log_dir=$1 && shift
+metadata_tsv=$1 && shift
+include_tumor_patient_treatment_response_metadata=$1 && shift
+
+sql=""
+
+if [[ ${include_tumor_patient_treatment_response_metadata} == "1" ]]; then
+    echo "[DEBUG] Generating metadata with tumor, patient and treatment fields"
+    sql="sql_hospital_request_metadata_tumor_patient_treatment.sql"
+else
+    echo "[INFO] Generating metadata for with no clinical fields"
+    sql="sql_hospital_request_metadata_none.sql"
+fi
+
+do_generate_extra_clinical_data_sample_based \
+    ${sample_selection_tsv} \
+    ${log_dir} \
+    "metadata" \
+    ${metadata_tsv} \
+    ${prefix}/../sql/${sql}
+
+do_generate_extra_file_in_log_sample_based \
+    ${sample_selection_tsv} \
+    ${log_dir} \
+    "rna_ind" \
+    ${prefix}/../sql/sql_rna_ind.sql#!/usr/bin/env bash

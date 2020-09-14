@@ -1,74 +1,102 @@
 #!/usr/bin/env bash
 
-if [[ "$#" -ne 5 ]]; then
+if [[ "$#" -ne 6 ]]; then
     echo "Usage: $(basename $0)"
     echo "      - dr_name (eg LUMC)"
-    echo "      - request_name (eg request_20200303)"
-    echo "      - set_selection_sql (eg /home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql)"
+    echo "      - request_name (eg LUMC_request_20200303)"
+    echo "      - sample_selection_sql (eg /home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql)"
     echo "      - include_somatics (1 or 0)"
     echo "      - include_germline (1 or 0)"
+    echo "      - include_tumor_patient_treatment_response_metadata (1 or 0)"
     exit 1
 fi
 
 dr_name=$1 && shift
 request_name=$1 && shift
-set_selection_sql=$1 && shift
+sample_selection_sql=$1 && shift
 include_somatics=$1 && shift
 include_germline=$1 && shift
+include_tumor_patient_treatment_response_metadata=$1 && shift # This will become non-optional at some point.
 
 base_path=/data/data_archive/datarequests
 
 dr_base_path=${base_path}/${dr_name}
 dr_path=${dr_base_path}/${request_name}
 
-echo "[INFO] Composing data request ${request_name} in ${dr_path}"
+echo "[INFO] Composing hospital request ${request_name} in ${dr_path}"
 echo "[INFO]    dr_name=${dr_name}"
 echo "[INFO]    request_name=${request_name}"
-echo "[INFO]    set_selection_sql=${set_selection_sql}"
+echo "[INFO]    sample_selection_sql=${sample_selection_sql}"
 echo "[INFO]    include_somatics=${include_somatics}"
 echo "[INFO]    include_germline=${include_germline}"
+echo "[INFO]    include_tumor_patient_treatment_response_metadata=${include_tumor_patient_treatment_response_metadata}"
+
 
 create_base_directory_for_datarequest ${dr_path}
 if [[ $? = 0 ]]; then
     log_dir=${dr_path}/logs
     mkdir -p ${log_dir}
 
-    echo "[INFO] Selecting patients to include for hospital Request ${request_name}."
-    cp ${set_selection_sql} ${log_dir}/selectSets.sql
-    set_selection_tsv=${log_dir}/selectSets.tsv
-    execute_sql_on_prod ${log_dir}/selectSets.sql > ${set_selection_tsv}
-    set_count=$(grep -cv "^#" ${set_selection_tsv})
-    echo "[INFO] Created ${set_selection_tsv} with ${set_count} sets"
+    echo "[INFO] Selecting patients to include for ${request_name}..."
+    cp ${sample_selection_sql} ${log_dir}/selectSamples.sql
+    sample_selection_tsv=${log_dir}/selectSamples.tsv
+    execute_sql_on_prod ${log_dir}/selectSamples.sql > ${sample_selection_tsv}
+    patient_count=$(grep -cv "^#" ${sample_selection_tsv})
+    echo "[INFO] Created ${sample_selection_tsv} with ${patient_count} samples"
+
+    echo "[INFO] Creating metadata for ${request_name}..."
+    metadata_dir_name=metadata
+    metadata_dir=${dr_path}/${metadata_dir_name}
+    mkdir -p ${metadata_dir}
+    metadata_tsv=${metadata_dir}/metadata.tsv
+    generate_metadata_hospital_request \
+        ${sample_selection_tsv} \
+        ${log_dir} \
+        ${metadata_tsv} \
+        ${include_tumor_patient_treatment_response_metadata}
+
+    if [[ $? = 1 ]]; then
+        # Propogate error upstream to caller of this function.
+        exit 1;
+    fi
+
+    sample_count=$(grep -cv "^#" ${metadata_tsv})
+    echo "[INFO] Created ${metadata_tsv} with ${sample_count} samples"
 
     if [[ ${include_somatics} == "1" ]]; then
-        echo "[INFO] Collecting somatic data for hospital Request ${request_name}."
+        echo "[INFO] Collecting somatic data for ${request_name}..."
         somatic_dir_name=somatics
         somatics_dir=${dr_path}/${somatic_dir_name}
         mkdir -p ${somatics_dir}
-        collect_all_somatic_set_data_for_request ${set_selection_tsv} ${somatics_dir} ${include_germline}
+        collect_all_somatic_set_data_for_request ${metadata_tsv} ${somatics_dir} ${include_germline}
         somatics_sample_count=$(ls ${somatics_dir} | wc -l)
         somatic_tar_file=${dr_base_path}/${request_name}.somatics.tar
-        echo "[INFO] Done collecting somatics for hospital Request. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
+        echo "[INFO] Done collecting somatics for DR. Found ${somatics_sample_count} samples. Creating TAR at ${somatic_tar_file}"
         create_tar_file ${somatic_tar_file} ${dr_path} ./${somatic_dir_name} ${log_dir}/tar_${request_name}_somatics.log
     else
-        echo "[INFO] Skipped somatics collection as not deemed relevant for hospital Request ${request_name}"
+        echo "[INFO] Skipped somatics collection as not deemed relevant for ${request_name}"
     fi
 
     if [[ ${include_germline} == "1" ]]; then
-        echo "[INFO] Collecting germline data for hospital Request ${request_name}..."
+        echo "[INFO] Collecting germline data for ${request_name}..."
         germline_dir_name=germline
         germline_dir=${dr_path}/${germline_dir_name}
         mkdir -p ${germline_dir}
-        collect_all_germline_set_data_for_request ${set_selection_tsv} ${germline_dir}
+        collect_all_germline_set_data_for_request ${metadata_tsv} ${germline_dir}
         germline_sample_count=$(ls ${germline_dir} | wc -l)
         germline_tar_file=${dr_base_path}/${request_name}.germline.tar
-        echo "[INFO] Done collecting germline data for hospital Request. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
+        echo "[INFO] Done collecting germline data for DR. Found ${germline_sample_count} samples. Creating TAR at ${germline_tar_file}"
         create_tar_file ${germline_tar_file} ${dr_path} ./${germline_dir_name} ${log_dir}/tar_${request_name}_germline.log
     else
-        echo "[INFO] Skipped germline collection as not deemed relevant for hospital Request ${request_name}"
+        echo "[INFO] Skipped germline collection as not deemed relevant for ${request_name}"
     fi
 
-    echo "[INFO] Composing hospital Request for ${request_name} completed!"
+    metadata_tar_file=${dr_base_path}/${request_name}.metadata.tar
+    echo "[INFO] Creating metadata TAR file at ${metadata_tar_file}"
+    create_tar_file ${metadata_tar_file} ${dr_path} ./${metadata_dir_name} ${log_dir}/tar_${request_name}_metadata.log
+
+    echo "[INFO] Composing datarequest for ${request_name} completed!"
 else
-    echo "[ERROR] Could not create base directory structure for for hospital Request for ${dr_name}"
+    echo "[ERROR] Could not create base directory structure for DR ${dr_name}"
 fi
+

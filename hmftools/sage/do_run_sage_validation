@@ -22,6 +22,9 @@ snpeff_vcf=${out_dir}/${sample}.snpeff.vcf
 post_vcf=${out_dir}/${sample}.post.vcf.gz
 final_vcf=${out_dir}/${sample}.final.vcf.gz
 
+echo "[ERROR] BAM slicer no longer supported".
+exit 1
+
 if [[ ! -f "${sample_bam}" ]]; then
     ${prefix}/../bamslicer/slice_tumor_sample_bam_bam_on_gcp ${set} ${hotspot_bed} ${sample_bam}
 else

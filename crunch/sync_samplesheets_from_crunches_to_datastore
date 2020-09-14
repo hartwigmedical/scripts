@@ -16,5 +16,3 @@ for i in {2,3}; do
         rsync ${crunch_name}:${sheet_path} ${dest_path}
     done
 done
-
-echo "[INFO] Crunch1 removed -> add back once up and running again"

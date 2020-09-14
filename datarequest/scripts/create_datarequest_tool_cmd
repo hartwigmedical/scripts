@@ -5,7 +5,7 @@ source locate_files
 print_usage(){
     echo "-----"
     echo " Descr: Constructs bash command for datarequest tool"
-    echo " Usage: $(basename $0) -i <dr-id> -s <suffix> -m <mode> -e <email>"
+    echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_email>"
     echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com,jaap@doe.com'"
     echo "-----"
     exit 1
@@ -13,7 +13,7 @@ print_usage(){
 
 while getopts ':i:s:m:e:' flag; do
     case "${flag}" in
-        i) dr_id=${OPTARG} ;;
+        i) dr_name=${OPTARG} ;;
         s) dr_suffix=${OPTARG} ;;
         m) run_mode=${OPTARG} ;;
         e) gcp_mail=${OPTARG} ;;
@@ -22,7 +22,7 @@ while getopts ':i:s:m:e:' flag; do
     esac
 done
 
-if [[ -z "${dr_id}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
+if [[ -z "${dr_name}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
@@ -36,32 +36,34 @@ main() {
     info "Starting with $(basename $0)"
     
     ## quick input checks
-    [[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
+    #[[ ! -z "${dr_name}" && "${dr_name}" =~ ^DR ]] || die "dr-id incorrect (${dr_name})?"
     [[ ! -z "${run_mode}" && "${run_mode}" =~ (dna|rna|upload_only|dna_rna) ]] || die "run-mode incorrect (${run_mode})?"
     [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
 
     ## we need the index of DR
-    local dr_index=$( echo "${dr_id}" | sed 's/^DR\-//')
-    local release_id="${dr_id}"
-    local request_id="${dr_index}"
+    local dr_index=$( echo "${dr_name}" | sed 's/^DR\-//')
+    local request_name="${dr_name}"
+    local request_index="${dr_index}"
 
     ## reset release/request ids to include suffix if given
     if [[ "${dr_suffix}" != "" ]]; then
-        release_id="${dr_id}-${dr_suffix}"
-        request_id="${dr_index}-${dr_suffix}"
+        request_name="${dr_name}-${dr_suffix}"
+        request_index="${dr_index}-${dr_suffix}"
     fi
     
     ## setup path/file variables
-    local dr_root_dir="/data/data_archive/datarequests/${dr_id}"
-    local dr_release_dir="${dr_root_dir}/DR-${request_id}"
-    local metadata_tsv="${dr_release_dir}/metadata/metadata.tsv"
+    local base_path="/data/data_archive/datarequests"
+    local dr_base_path="${base_path}/${dr_name}"
+    local dr_path="${dr_base_path}/${request_name}"
+    local metadata_tsv="${dr_path}/metadata/metadata.tsv"
     local uploads_array=()
-    local output_cmd_file="${dr_release_dir}/logs/run_datarequest_tool.sh"
-    local bucket_name="hmf-dr-${request_id}"
+    local output_cmd_file="${dr_path}/logs/run_datarequest_tool.sh"
+    local bucket_name="hmf-dr-${request_index}"
+
 
 
     ## find files to upload
-    for i in ${dr_root_dir}/${release_id}.*.tar; do
+    for i in ${dr_base_path}/${request_name}.*.tar; do
         [ -f "$i" ] || break
         info "Found tar file ${i}, adding to command..."
         tar_file=$(basename "$i" .tar)
@@ -89,7 +91,7 @@ main() {
     gcp_mail=$(echo ${gcp_mail} | sed 's/ //g')
 
     ## some last sanity checks
-    [[ -w "${dr_release_dir}" ]] || die "DR release dir not writeable (${dr_release_dir})"
+    [[ -w "${dr_path}" ]] || die "DR release dir not writeable (${dr_path})"
     [[ ! -f "${output_cmd_file}" ]] || die "Output file already exists (${output_cmd_file})"
     if [[ "${run_mode}" == "upload_only" && "${uploads_single_line}" = "" ]]; then
         die "Run-mode upload_only, but no tar files specified?"
@@ -107,7 +109,7 @@ main() {
     cmd_array+=("-Djavax.net.ssl.keyStorePassword=\"\$(cat ${api_keystore_pw})\"")
     cmd_array+=("-jar '${tool_jar}'")
     cmd_array+=("-sbp_api_url '${api_url}'")
-    cmd_array+=("-request_id '${request_id}'")
+    cmd_array+=("-request_id '${request_index}'")
     cmd_array+=("-accounts '${gcp_mail}'")
     cmd_array+=("-metadata_tsv '${metadata_tsv}'")
     if [[ ! "${uploads_single_line}" == "" ]]; then
@@ -133,7 +135,7 @@ main() {
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check logs of data request job (where the tertiary analyses data is prepared):"  >> "${output_cmd_file}"
-    echo "check_logs_datarequest_job -m '${metadata_tsv}' -p '${dr_release_dir}/logs/' " >> "${output_cmd_file}"
+    echo "check_logs_datarequest_job -m '${metadata_tsv}' -p '${dr_path}/logs/' " >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [TOOL] Tool to make data available on GCP:"  >> "${output_cmd_file}"
@@ -147,21 +149,21 @@ main() {
 
     echo ""  >> "${output_cmd_file}"
     echo "# [DOWNLOAD] Download GCP manifest:"  >> "${output_cmd_file}"
-    echo "gsutil -q cp gs://${bucket_name}/manifest.json ${dr_release_dir}/manifest.json"  >> "${output_cmd_file}"
+    echo "gsutil -q cp gs://${bucket_name}/manifest.json ${dr_path}/manifest.json"  >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check GCP manifest:"  >> "${output_cmd_file}"
     if [[ ${run_mode} == "upload_only" ]];then
-        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_release_dir}/manifest.json' -e '${gcp_mail}' -d 0 -r 0" >> "${output_cmd_file}"
+        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_path}/manifest.json' -e '${gcp_mail}' -d 0 -r 0" >> "${output_cmd_file}"
     fi
     if [[ ${run_mode} == "dna" ]];then
-        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_release_dir}/manifest.json' -e '${gcp_mail}' -d 1 -r 0" >> "${output_cmd_file}"
+        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_path}/manifest.json' -e '${gcp_mail}' -d 1 -r 0" >> "${output_cmd_file}"
     fi
     if [[ ${run_mode} == "rna" ]];then
-        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_release_dir}/manifest.json' -e '${gcp_mail}' -d 0 -r 1" >> "${output_cmd_file}"
+        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_path}/manifest.json' -e '${gcp_mail}' -d 0 -r 1" >> "${output_cmd_file}"
     fi
     if [[ ${run_mode} == "dna_rna" ]];then
-        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_release_dir}/manifest.json' -e '${gcp_mail}' -d 1 -r 1" >> "${output_cmd_file}"
+        echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_path}/manifest.json' -e '${gcp_mail}' -d 1 -r 1" >> "${output_cmd_file}"
     fi
     echo ""  >> "${output_cmd_file}"
 
@@ -171,7 +173,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: ${output_cmd_file} > ${dr_release_dir}/logs/run_datarequest_tool.sh.log"
+    info " 2) And then run cmd with: ${output_cmd_file} > ${dr_path}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
 
 }

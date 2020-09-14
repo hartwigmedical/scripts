@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 
-dr_name="LUMC"
-request_name="request_20200303"
-patient_selection_sql="/home/sandra/jobs/SQL_scripts/LUMC_request_20200303.sql"
+dr_name="nki"
+request_name="nki-request200910"
+patient_selection_sql="/home/sandra/jobs/SQL_scripts/nki_request200910.sql"
 
 include_somatics=0
 include_germline=0
 
+include_tumor_patient_treatment_response_metadata=0
+
 compose_request_hospital ${dr_name} ${request_name} ${patient_selection_sql} \
-    ${include_somatics} ${include_germline}
+    ${include_somatics} ${include_germline} ${include_tumor_patient_treatment_response_metadata}

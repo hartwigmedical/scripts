@@ -24,6 +24,7 @@ fi
 
 echo ""
 echo "[START] check_numbers_metadata: $(date +"%y%m%d (%T)")"
+echo ""
 
 # make dir for temporary files
 mkdir temp_number_check
@@ -32,7 +33,6 @@ mkdir temp_number_check
 csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/sampleId_metadata.tsv
 
-echo ""
 echo "[INFO] Number of patients (based on study number) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
 echo "[INFO] Number of samples (based on study number) in metadata file:"
@@ -45,8 +45,7 @@ rm temp_number_check/sampleId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'hmfPatientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/patientId_metadata.tsv
 csvcut -t -e iso-8859-1 -c 'hmfSampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_number_check/sampleId_metadata.tsv
 
-echo ""
-echo "[INFO] Number of patients (based on hmfID) in metadata file:"
+echo "[INFO] Number of patients (based on hmfId) in metadata file:"
 cat temp_number_check/patientId_metadata.tsv | wc -l
 echo "[INFO] Number of samples (based on hmfId) in metadata file:"
 cat temp_number_check/sampleId_metadata.tsv | wc -l

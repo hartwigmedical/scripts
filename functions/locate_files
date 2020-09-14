@@ -53,7 +53,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.46/purple.jar
+    echo ${base_path}/tools/purple_v2.47/purple.jar
 }
 
 locate_pilot_purple() {
@@ -156,12 +156,8 @@ locate_driver_gene_panel_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
 }
 
-locate_hotspot_tsv() {
-    echo ${base_path}/dbs/sage/KnownHotspots.tsv
-}
-
 locate_hotspot_vcf() {
-    echo ${base_path}/dbs/sage/KnownHotspots.hg19.vcf.gz
+    echo ${base_path}/dbs/serve/hotspots/KnownHotspots.SERVE.hg19.vcf.gz
 }
 
 locate_pgx_resource_dir() {

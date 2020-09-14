@@ -17,7 +17,7 @@
 
 run_dir=$1 && shift
 
-do_run_purple_pilot ${run_dir} "$@"
+run_purple_pilot ${run_dir} "$@"
 load_somatic_variants_pilot ${run_dir}
 load_structural_variants_pilot ${run_dir}
 run_linx_pilot ${run_dir}

@@ -36,14 +36,14 @@ else
     sql="sql_metadata_none.sql"
 fi
 
-do_generate_extra_clinical_data \
+do_generate_extra_clinical_data_patient_based \
     ${patient_selection_tsv} \
     ${log_dir} \
     "metadata" \
     ${metadata_tsv} \
     ${prefix}/../sql/${sql}
 
-do_generate_extra_file_in_log \
+do_generate_extra_file_in_log_patient_based \
     ${patient_selection_tsv} \
     ${log_dir} \
     "rna_ind" \

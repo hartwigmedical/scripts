@@ -44,6 +44,7 @@ def ConvertBcl(run_dir):
                     os.rename( os.path.join(root, name), os.path.join(root, newname) )
 
     ## Clean up fastq (unless test run or deliberate choice to keep)
+    ## TODO: keep fastq for RNA flowcell
     testRunString = 'TestRuns'
     keepFastqFileName = 'KEEP_FASTQ'
     
