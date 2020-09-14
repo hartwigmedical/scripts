@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-source locate_files
+id_generator_jar=$1 && shift
+credentials=$1 && shift
 
-id_generator_jar=/data/common/tools/hmf-id-generator_pilot/hmf-id-generator.jar
 sample_hashes=/data/common/dbs/idgenerator/hashes/sample_hashes.csv
-credentials=$(locate_prod_database_credentials)
 password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
 
 # Database details

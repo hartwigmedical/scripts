@@ -132,6 +132,14 @@ locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
 
+locate_prod_hmf_id_generator() {
+    echo ${base_path}/tools/hmf-id-generator_v2.4/hmf-id-generator.jar
+}
+
+locate_pilot_hmf_id_generator() {
+    echo ${base_path}/tools/hmf-id-generator_pilot/hmf-id-generator.jar
+}
+
 locate_prod_datarequest() {
     echo ${base_path}/tools/datarequest/datarequest_prod.jar
 }

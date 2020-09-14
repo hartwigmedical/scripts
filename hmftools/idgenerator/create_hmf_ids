@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-password=$(cat /data/common/dbs/idgenerator/credentials/anonimisation_pwd)
-
-run_hmf_id_generator -create_ids -password ${password}

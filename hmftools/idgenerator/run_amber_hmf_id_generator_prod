@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+id_generator_jar=$(locate_pilot_hmf_id_generator)
+credentials=$(locate_prod_database_credentials)
+
+do_run_amber_hmf_id_generator ${id_generator_jar} ${credentials}
