@@ -28,4 +28,4 @@ do_generate_extra_file_in_log_sample_based \
     ${sample_selection_tsv} \
     ${log_dir} \
     "rna_ind" \
-    ${prefix}/../sql/sql_rna_ind.sql#!/usr/bin/env bash
+    ${prefix}/../sql/sql_hospital_request_rna_ind.sql

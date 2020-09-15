@@ -138,6 +138,14 @@ main() {
     echo "check_logs_datarequest_job -m '${metadata_tsv}' -p '${dr_path}/logs/' " >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
+    echo "# [INPUT] Are you sure you want to continue with making the data available on GCP? Please answer Y or N." >> "${output_cmd_file}"
+    echo "read answer" >> "${output_cmd_file}"
+    echo "if [[ $answer != "Y" ]]; then" >> "${output_cmd_file}"
+    echo "     echo '[ERROR] Script will end.'" >> "${output_cmd_file}"
+    echo "     exit" >> "${output_cmd_file}"
+    echo "fi" >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
     echo "# [TOOL] Tool to make data available on GCP:"  >> "${output_cmd_file}"
     for cmd_line in "${cmd_array[@]}"; do 
         echo "${cmd_line} \\" >> "${output_cmd_file}"
@@ -173,7 +181,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: ${output_cmd_file} > ${dr_path}/logs/run_datarequest_tool.sh.log"
+    info " 2) And then run cmd with: ${output_cmd_file} | tee -a ${dr_path}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
 
 }
