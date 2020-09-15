@@ -111,3 +111,8 @@ gridss_files2=$(ls ${run2}/gridss | wc -l)
 echo "[INFO] ${run1}/gridss ls count: ${gridss_files1}"
 echo "[INFO] ${run2}/gridss ls count: ${gridss_files2}"
 
+gripss_files1=$(ls ${run1}/gripss | wc -l)
+gripss_files2=$(ls ${run2}/gripss | wc -l)
+echo "[INFO] ${run1}/gripss ls count: ${gripss_files1}"
+echo "[INFO] ${run2}/gripss ls count: ${gripss_files2}"
+
