@@ -5,7 +5,7 @@ source locate_files
 base_run_path=$1
 test_run_path=$2
 
-tools=(amber bachelor chord cobalt health_checker linx purple sage structural_caller)
+tools=(amber bachelor chord cobalt health_checker linx purple sage gridss)
 
 base_pip_vsn_file="${base_run_path}/pipeline.version"
 test_pip_vsn_file="${test_run_path}/pipeline.version"
