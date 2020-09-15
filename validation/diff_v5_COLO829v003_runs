@@ -101,15 +101,13 @@ purple_files2=$(ls ${run2}/purple | wc -l)
 echo "[INFO] ${run1}/purple ls count: ${purple_files1}"
 echo "[INFO] ${run2}/purple ls count: ${purple_files2}"
 
-# TODO Replace somatic_caller with "sage" upon 5.14 upgrade
-somatic_caller_files1=$(ls ${run1}/somatic_caller | wc -l)
-somatic_caller_files2=$(ls ${run2}/somatic_caller | wc -l)
-echo "[INFO] ${run1}/somatic_caller ls count: ${somatic_caller_files1}"
-echo "[INFO] ${run2}/somatic_caller ls count: ${somatic_caller_files2}"
+sage_files1=$(ls ${run1}/sage | wc -l)
+sage_files2=$(ls ${run2}/sage | wc -l)
+echo "[INFO] ${run1}/somatic_caller ls count: ${sage_files1}"
+echo "[INFO] ${run2}/somatic_caller ls count: ${sage_files2}"
 
-# TODO Replace structural_caller with "gridss" upon 5.14 upgrade
-structural_caller_files1=$(ls ${run1}/structural_caller | wc -l)
-structural_caller_files2=$(ls ${run2}/structural_caller | wc -l)
-echo "[INFO] ${run1}/structural_caller ls count: ${structural_caller_files1}"
-echo "[INFO] ${run2}/structural_caller ls count: ${structural_caller_files2}"
+gridss_files1=$(ls ${run1}/gridss | wc -l)
+gridss_files2=$(ls ${run2}/gridss | wc -l)
+echo "[INFO] ${run1}/gridss ls count: ${gridss_files1}"
+echo "[INFO] ${run2}/gridss ls count: ${gridss_files2}"
 
