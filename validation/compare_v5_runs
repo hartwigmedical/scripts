@@ -113,7 +113,18 @@ echo "[INFO] TEST VIRAL:    ${test_vir_ins}"
 echo "[INFO] BASE BACHELOR: ${base_bach}"
 echo "[INFO] TEST BACHELOR: ${test_bach}"
 
-for file in "${test_grm_vcf}" "${base_grm_vcf}" "${test_chord}" "${base_chord}" "${test_vir_ins}" "${base_vir_ins}" "${test_bach}" "${base_bach}"; do
+files_to_check=(
+    "${test_grm_vcf}"
+    "${base_grm_vcf}"
+    "${test_chord}"
+    "${base_chord}"
+    "${test_vir_ins}"
+    "${base_vir_ins}"
+    "${test_bach}"
+    "${base_bach}"
+)
+
+for file in "${files_to_check[@]}"; do
     if [[ ! -f "${file}" ]]; then
         echo "[WARN] File does not exist ($file)" && exit 1
     fi
