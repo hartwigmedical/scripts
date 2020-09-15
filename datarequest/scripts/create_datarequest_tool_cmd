@@ -59,7 +59,7 @@ main() {
     local uploads_array=()
     local output_cmd_file="${dr_path}/logs/run_datarequest_tool.sh"
     local bucket_name="hmf-dr-${request_index}"
-
+    local answer="$answer"
 
 
     ## find files to upload
@@ -140,7 +140,7 @@ main() {
     echo ""  >> "${output_cmd_file}"
     echo "# [INPUT] Are you sure you want to continue with making the data available on GCP? Please answer Y or N." >> "${output_cmd_file}"
     echo "read answer" >> "${output_cmd_file}"
-    echo "if [[ $answer != "Y" ]]; then" >> "${output_cmd_file}"
+    echo "if [[ $answer != 'Y' ]]; then" >> "${output_cmd_file}"
     echo "     echo '[ERROR] Script will end.'" >> "${output_cmd_file}"
     echo "     exit" >> "${output_cmd_file}"
     echo "fi" >> "${output_cmd_file}"
