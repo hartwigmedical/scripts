@@ -140,7 +140,7 @@ main() {
     echo ""  >> "${output_cmd_file}"
     echo " echo '[INPUT] Are you sure you want to continue with making the data available on GCP? Please answer Y or N.'" >> "${output_cmd_file}"
     echo "read answer" >> "${output_cmd_file}"
-    echo " echo '$answer'" >> "${output_cmd_file}"
+    echo "echo $answer" >> "${output_cmd_file}"
     echo "if [[ $answer != 'Y' ]]; then" >> "${output_cmd_file}"
     echo "     echo '[INFO] Data will not be made available on GCP. Script will end here.'" >> "${output_cmd_file}"
     echo "     exit" >> "${output_cmd_file}"
