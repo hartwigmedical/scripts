@@ -41,6 +41,8 @@ if [[ ${qc_fail_reason} == "post_analysis_fail" || ${qc_fail_reason} == "below_d
 else
     if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
         echo "[WARN] Ref sample information is incomplete!"
+        ref_sample=""
+        ref_sample_barcode=""
     fi
 
     if [[ -z "${tumor_sample_barcode}" ]]; then
