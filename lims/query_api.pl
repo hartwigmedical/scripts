@@ -133,8 +133,8 @@ sub readJson{
             $obj->{ 'undet_rds' } = format_number( $obj->{ 'undet_rds' } / 1000000, 0 ) if defined $obj->{ 'undet_rds' };
         }
     }
-    
-    ## Add set info for runs (set info is situated one level deeper)
+
+    ## Enrich runs
     if ( $type eq 'runs' ){
         foreach my $obj ( @$json_obj ){
             my @keys_to_move = qw( name ref_sample tumor_sample entity_id );
@@ -143,8 +143,8 @@ sub readJson{
             }
         }
     }
-    
-    ## Add extra information for sets/runs from other jsons
+
+    ## Enrich sets/runs/shares for common fields
     if ( $type eq 'sets' or $type eq 'runs' or $type eq 'shares' ){
         my $entities = jsonFileToObject( "$JSONS_HOME/entities.json" );
         my $inis = jsonFileToObject( "$JSONS_HOME/inis.json" );
@@ -156,10 +156,19 @@ sub readJson{
         }
     }
 
+    ## Enrich shares
     if ( $type eq 'shares' ){
         my $sets = jsonFileToObject( "$JSONS_HOME/sets.json" );
         foreach my $obj ( @$json_obj ){
             $obj->{ 'set' } = getFieldValueById( $sets, 'name', $obj->{ 'set_id' } ) if defined $obj->{ 'set_id' };
+        }
+    }
+
+    ## Enrich sequencers
+    if ( $type eq 'sequencers' ){
+        my $platforms = jsonFileToObject( "$JSONS_HOME/platforms.json" );
+        foreach my $obj ( @$json_obj ) {
+            $obj->{ 'platform' } = getFieldValueById($platforms, 'name', $obj->{ 'platform_id' }) if defined $obj->{ 'platform_id' };
         }
     }
 
@@ -198,7 +207,6 @@ sub filterObjects{
     
     foreach my $filter ( keys %filter_counts ){
         my $count = $filter_counts{ $filter };
-        #say "## FILTER: $count filtered away by filter \"$filter\"";
     }
     
     return \@out;
