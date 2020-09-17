@@ -27,6 +27,8 @@ my %OUT_FIELDS_PER_TYPE = (
   'inis'      => [ 'name', 'id' ],
   'shares'    => [ 'entity_id', 'entity', 'set_id', 'set', 'start_time', 'end_time', 'filter', 'id' ],
   'stacks'    => [ 'name', 'revision', 'enabled', 'id' ],
+  'platforms' => [ 'name', 'undetermined_reads_perc_cutoff', 'q30_cutoff', 'sample_yield_cutoff', 'id' ],
+  'sequencers'=> [ 'name', 'platform', 'id' ],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
