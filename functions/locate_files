@@ -536,6 +536,22 @@ locate_linx_reported_fusions() {
     echo ${fusion_tsv}
 }
 
+locate_linx_fusions() {
+    local run_dir=$1
+    local linx_dir=${run_dir}/linx
+    if [[ ! -d "${linx_dir}" ]]; then
+        echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
+        exit 1
+    fi
+
+    local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.fusion.tsv")
+    if [[ -z "${fusion_tsv}" ]]; then
+        echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${fusion_tsv}
+}
+
 locate_linx_disruptions() {
     local run_dir=$1
     local linx_dir=${run_dir}/linx
