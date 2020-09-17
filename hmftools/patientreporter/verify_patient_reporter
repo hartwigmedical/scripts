@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+pilot_report_json=$1 && shift
+prod_report_json=$1 && shift
+
+diff <(jq . ${pilot_report_json}) <(jq . ${prod_report_json})
