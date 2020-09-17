@@ -50,7 +50,8 @@ else
         exit 1;
     fi
 fi
-
+echo ${ref_sample_barcode}
+echo ${ref_sample}
 pilot_do_run_base_patient_reporter \
     -qc_fail \
     -qc_fail_reason ${qc_fail_reason} \
