@@ -40,6 +40,7 @@ fi
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
@@ -61,6 +62,7 @@ pilot_do_run_base_patient_reporter \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
