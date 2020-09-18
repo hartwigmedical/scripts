@@ -101,19 +101,19 @@ def load_json(panel):
     return genes, ids
 
 
-def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleId, vcftools):
+def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
     match_on_rsid = 0
     match_on_location = 0
 
     # Slice VCF on bed file
-    temp_vcf_prefix = outputdir + '/' + sampleId + '_PGx'
-    temp_vcf = outputdir + '/' + sampleId + '_PGx.recode.vcf'
+    temp_vcf_prefix = outputdir + '/' + sampleTID + '_PGx'
+    temp_vcf = outputdir + '/' + sampleTID + '_PGx.recode.vcf'
 
     # Check if output vcf does not already exist
     if os.path.exists(temp_vcf):
         raise IOError("Temporary VCF file " + temp_vcf + ".recode.vcf already exists. Exiting.")
-    subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out',
-                    temp_vcf_prefix, '--recode', '--recode-INFO-all'])
+    subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', temp_vcf_prefix,
+                    '--indv', sampleRID, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
 
     # Read in VCF file
@@ -186,9 +186,13 @@ def process_exceptions(ids_found, panel):
             exceptions = json.load(json_file)
             exceptions = exceptions['exceptions']
             for variant in exceptions:
-                if variant['rsid'] in ids_found['rsid'].tolist():
-                    # get line and index from ids_found
-                    found_var = ids_found[ids_found['rsid'].str.contains(variant['rsid'])]
+                variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
+                if variant['rsid'] in ids_found['rsid'].tolist() or variant_location in ids_found['position_GRCh37'].tolist():
+                    if variant['rsid'] in ids_found['rsid'].tolist():
+                        # get line and index from ids_found
+                        found_var = ids_found[ids_found['rsid'].str.contains(variant['rsid'])]
+                    else:
+                        found_var = ids_found[ids_found['position_GRCh37'].str.contains(variant_location)]
                     # Delete found variant from results if the ref base and alt base are the correctedRefBase
                     if found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
@@ -254,6 +258,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
                                                      'filter'])
+
     for rs in ids_found_in_patient.rsid.tolist():
         rs_ids.pop(rs)
     rs_ids = {key: val for key, val in rs_ids.items() if val not in ids_found_in_patient.position_GRCh37.tolist()}
@@ -290,7 +295,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                            ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
 
         # If all variants are assumed_ref, return reference allele
-        if len(all_ids_in_panel.loc[all_ids_in_panel['filter'] == "NO_CALL"]) == len(all_ids_in_panel):
+        if len(ids_found_in_gene.loc[ids_found_in_gene['filter'] == "NO_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference allele")
             results[gene] = [gene_info['referenceAllele'] + "_HOM"]
         else:
@@ -298,13 +303,13 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             haplotypes_matching = []
             for allele in gene_info['alleles']:
                 severity[allele['alleleName']] = allele['function']
-                variants_sample = list(zip(all_ids_in_panel.rsid.tolist(), all_ids_in_panel.alt_GRCh38.tolist()))
+                variants_sample = list(zip(ids_found_in_gene.rsid.tolist(), ids_found_in_gene.alt_GRCh38.tolist()))
                 if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]):
                     perfect_match = True
                     print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
                     # Now we want to see if we have hetrozygous or homozygous calls
                     allele_status = []
-                    for index, row in all_ids_in_panel.iterrows():
+                    for index, row in ids_found_in_gene.iterrows():
                         if row['ref_GRCh38'] == row['alt_GRCh38']:
                             allele_status.append("HOM")
                         else:
@@ -321,6 +326,9 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                             results[gene].append(gene_info['referenceAllele'] + "_HET")
                         break
                 else:
+                    #print("Processing " + str(allele['alleleName']))
+                    #print(set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]))
+                    #print(set(variants_sample))
                     if set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]) <= \
                             set(variants_sample):
                         print("[INFO] A subset of rsids matches " + str(allele['alleleName']) + " in part")
@@ -430,7 +438,7 @@ def get_bed_file(gene_panel, panel_path, sourcedir):
     return bed_path
 
 
-def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
+def main(vcf, sampleTID, sampleRID, version, panel, requery, outputdir, recreate_bed, vcftools, sourcedir):
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
@@ -494,7 +502,7 @@ def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftoo
                 bed_file = sourcedir + "/pharmgkb_cache/cache_bed.bed"
             if not os.path.exists(bed_file):
                 sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
-        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleID, vcftools)
+        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools)
     else:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
@@ -502,7 +510,7 @@ def main(vcf, sampleID, version, panel, requery, outputdir, recreate_bed, vcftoo
         ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
             convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel)
         if outputdir:
-            out = outputdir + "/" + sampleID
+            out = outputdir + "/" + sampleTID
             all_ids_in_panel.to_csv(out + "_calls.txt", sep='\t', index=False)
             f = open(out + "_genotype.txt", 'w')
             f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
@@ -551,7 +559,8 @@ if __name__ == '__main__':
                                                  'annotations are done on GRCh38, so in the output both reference '
                                                  'genome output is given where possible.')
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
-    parser.add_argument('sampleID', type=str, help='The sample ID of the run')
+    parser.add_argument('sampleTID', type=str, help='The sample ID of the tumor')
+    parser.add_argument('sampleRID', type=str, help='The sample ID of the normal')
     parser.add_argument('version', type=str, help='The version of the tool')
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
     parser.add_argument('--panel', type=str, help='TSV file with the panel variants')
@@ -564,4 +573,4 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    main(args.vcf, args.sampleID, args.version, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
+    main(args.vcf, args.sampleTID, args.sampleRID, args.version, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)

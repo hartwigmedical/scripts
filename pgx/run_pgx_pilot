@@ -29,7 +29,7 @@ pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
-python ${pgx_tool} ${germline_vcf} ${tumor_sample} ${version_pgx_tool} ${output_dir}  \
+python ${pgx_tool} ${germline_vcf} ${tumor_sample} ${ref_sample} ${version_pgx_tool} ${output_dir}  \
     --panel ${pgx_resource_dir}/panelfiles/DPYD.json \
     --sourcedir ${pgx_resource_dir} \
     --vcftools ${vcftools_tool}
