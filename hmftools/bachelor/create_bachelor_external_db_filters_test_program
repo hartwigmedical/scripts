@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+bachelor_jar=$(locate_prod_bachelor)
+bachelor_config=/data/common/dbs/bachelor/test_program.xml
+output_filter_file=/data/common/dbs/bachelor/test_program_clinvar_filters.csv
+
+do_create_bachelor_external_db_filters ${bachelor_jar} ${bachelor_config} ${output_filter_file}
+
