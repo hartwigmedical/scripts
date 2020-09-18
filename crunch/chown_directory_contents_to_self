@@ -7,12 +7,12 @@ function main {
         print_usage
     fi
 
-    chown_directory_contents "${chown_dir}" "root" "root" 
+    ./chown_directory_contents "${chown_dir}" "${USER}" "users" 
 }
 
 print_usage() {
     echo "---"
-    echo " Descr: Recursively chown content in \${directory} to root:root"
+    echo " Descr: Recursively chown content in \${directory} to $USER:users"
     echo " Usage: $(basename ${0}) \${directory}"
     echo "---"
     exit 1
