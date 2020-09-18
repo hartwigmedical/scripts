@@ -7,7 +7,7 @@ function main {
         print_usage
     fi
 
-    ./chown_directory_contents "${chown_dir}" "${USER}" "users" 
+    chown_directory_contents "${chown_dir}" "${USER}" "users" 
 }
 
 print_usage() {
