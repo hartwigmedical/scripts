@@ -37,17 +37,21 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
         exit 1;
     else
         echo "[WARN] Ref sample information is incomplete!"
+
+        pilot_do_run_base_patient_reporter \
+            -qc_fail \
+            -qc_fail_reason ${qc_fail_reason} \
+            -tumor_sample_id ${tumor_sample} \
+            -tumor_sample_barcode ${tumor_sample_barcode} \
+            "$@"
     fi
+else
+    pilot_do_run_base_patient_reporter \
+        -qc_fail \
+        -qc_fail_reason ${qc_fail_reason} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${tumor_sample} \
+        -tumor_sample_barcode ${tumor_sample_barcode} \
+        "$@"
 fi
-
-echo "Ref sample barcode: ${ref_sample_barcode}"
-echo "Ref sample: ${ref_sample}"
-
-pilot_do_run_base_patient_reporter \
-    -qc_fail \
-    -qc_fail_reason ${qc_fail_reason} \
-    -ref_sample_id ${ref_sample} \
-    -ref_sample_barcode ${ref_sample_barcode} \
-    -tumor_sample_id ${tumor_sample} \
-    -tumor_sample_barcode ${tumor_sample_barcode} \
-    "$@"
