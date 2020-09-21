@@ -6,7 +6,7 @@ if [[ -z "${tumor_sample}" ]]; then
     echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
 fi
 
-ref_sample_mandatory=1
+ref_sample_mandatory=0
 output_dir_data_report=/data/cpct/qc_fail_reports_data/pilot
 
 pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_shallow_wgs" ${ref_sample_mandatory}  \
