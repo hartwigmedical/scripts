@@ -6,12 +6,6 @@ source metadata_functions
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
 
-if [[ ${qc_fail_reason} == "post_analysis_fail" || ${qc_fail_reason} == "below_detection_threshold" ]]; then
-    tumor_sample=$(load_tumor_sample_from_metadata ${tumor_sample})
-else
-    tumor_sample=${tumor_sample}
-fi
-
 if [[ -z "${tumor_sample}" ]]; then
     echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
 fi
