@@ -318,16 +318,16 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                         else:
                             allele_status.append("HET")
                         # print(allele_status)
-                        if all(x == allele_status[0] for x in allele_status):
-                            allele_status = allele_status[0]
-                        else:
-                            allele_status = "HOMHET"
-                        # Add to results
-                        results[gene].append(allele['alleleName'] + "_" + str(allele_status))
-                        if allele_status == "HET":
-                            # Assume if perfect match with HET, we are also looking at reference allele
-                            results[gene].append(gene_info['referenceAllele'] + "_HET")
-                        break
+                    if all(x == allele_status[0] for x in allele_status):
+                        allele_status = allele_status[0]
+                    else:
+                        allele_status = "HOMHET"
+                    # Add to results
+                    results[gene].append(allele['alleleName'] + "_" + str(allele_status))
+                    if allele_status == "HET":
+                        # Assume if perfect match with HET, we are also looking at reference allele
+                        results[gene].append(gene_info['referenceAllele'] + "_HET")
+                    break
                 else:
                     #print("Processing " + str(allele['alleleName']))
                     #print(set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]))
