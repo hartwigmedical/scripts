@@ -7,4 +7,4 @@ diff <(jq . ${pilot_report_json}) <(jq . ${prod_report_json})
 
 ## add row number in json file
 # cat {json_file} | jq '.' > {temp_json_file}
-# cat --number {temp_json_file} | head
+# cat --number {temp_json_file}
