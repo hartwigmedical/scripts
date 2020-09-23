@@ -1,5 +1,0 @@
-library(purple)
-context("Common")
-
-
-
