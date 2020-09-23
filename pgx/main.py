@@ -312,7 +312,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                     print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
                     # Now we want to see if we have hetrozygous or homozygous calls
                     allele_status = []
-                    for index, row in ids_found_in_gene.iterrows():
+                    for index, row in vars_found_in_gene.iterrows():
                         if row['ref_GRCh38'] == row['alt_GRCh38']:
                             allele_status.append("HOM")
                         else:
