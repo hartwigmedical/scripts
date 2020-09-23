@@ -9,7 +9,9 @@ write.csv(sampleCancerTypes %>% select(SampleId),'~/data/cup/sample_ids_4610.csv
 
 
 ## Sample Results
-cupSampleId = 'XXXX'
+cupSampleId = 'CPCT02010440T' # Skin
+cupSampleId = 'CPCT02050268T' # Prostate
+cupSampleId = 'CPCT02020492T' # Uterus with HPV
 cupSampleResults = read.csv(paste('~/data/cup/samples/',cupSampleId,'.cup.data.csv',sep=''))
 # colnames(cupSampleResults )
 View(cupSampleResults)
