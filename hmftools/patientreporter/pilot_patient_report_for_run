@@ -6,10 +6,8 @@ source lims_functions
 
 run_dir=$1 && shift
 
-output_dir_data_report=${run_dir}/patient_report_pilot_data
-if [[ ! -d "${output_dir_data_report}" ]]; then
-    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
-    mkdir ${output_dir_data_report}
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -35,6 +33,12 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     echo "  tumor_sample name: ${tumor_sample}"
     echo "  tum sample barcode: ${tumor_sample_barcode}"
     exit 1;
+fi
+
+output_dir_data_report=${run_dir}/patient_report_pilot_data
+if [[ ! -d "${output_dir_data_report}" ]]; then
+    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    mkdir ${output_dir_data_report}
 fi
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})

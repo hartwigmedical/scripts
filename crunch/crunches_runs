@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ "$(hostname)" != "datastore" ]]; then
+    echo "[ERROR] This script is meant to be executed at datastore. Exiting."
+    exit 1
+fi
+
 for i in {2,3}; do
     ssh crunch00${i} check_samplesheets | \
     grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+" | \

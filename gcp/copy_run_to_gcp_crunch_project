@@ -23,4 +23,4 @@ gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/sage/* gs://hmf-sage/${se
 gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/amber/* gs://hmf-amber/${set}/
 gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/cobalt/* gs://hmf-cobalt/${set}/
 gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*unfiltered.vcf.gz* gs://hmf-gridss/unfiltered/${set}/
-gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gridss/*somatic*.vcf.gz* gs://hmf-gripss/${set}/
+gsutil -u hmf-database -m cp gs://${run_bucket}/${set}/gripss/*somatic*.vcf.gz* gs://hmf-gripss/${set}/

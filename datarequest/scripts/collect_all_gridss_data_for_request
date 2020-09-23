@@ -7,8 +7,8 @@ gridss_dir=$1 && shift
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f3 | while read set_name; do
      source_set_path=/data/cpct/runs/${set_name}
-     structural_variants_path=$(locate_gridss_structural_variants ${source_set_path})
-     recovery_candidates_path=$(locate_gridss_recovery_candidates ${source_set_path})
+     structural_variants_path=$(locate_gripss_structural_variants ${source_set_path})
+     recovery_candidates_path=$(locate_gripss_recovery_candidates ${source_set_path})
      unfiltered_candidates_path=$(locate_gridss_unfiltered_candidates ${source_set_path})
 
      dest_set_path=${gridss_dir}/${set_name}

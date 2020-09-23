@@ -484,34 +484,34 @@ locate_purple_pilot_structural_variants() {
     echo ${structural_vcf}
 }
 
-locate_gridss_structural_variants() {
+locate_gripss_structural_variants() {
     local run_dir=$1
-    local gridss_dir=${run_dir}/gridss
+    local gripss_dir=${run_dir}/gripss
 
     local structural_vcf=""
-    if [[ -d "${gridss_dir}" ]]; then
-        structural_vcf=$(find -L ${gridss_dir}/ -type f -name "*.gridss.somatic.filtered.vcf.gz")
+    if [[ -d "${gripss_dir}" ]]; then
+        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.filtered.vcf.gz")
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS structural variants in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate GRIPSS structural variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
     echo ${structural_vcf}
 }
 
-locate_gridss_recovery_candidates() {
+locate_gripss_recovery_candidates() {
     local run_dir=$1
-    local gridss_dir=${run_dir}/gridss
+    local gripss_dir=${run_dir}/gripss
 
     local structural_vcf=""
-    if [[ -d "${gridss_dir}" ]]; then
-        structural_vcf=$(find -L ${gridss_dir}/ -type f -name "*.gridss.somatic.vcf.gz")
+    if [[ -d "${gripss_dir}" ]]; then
+        structural_vcf=$(find -L ${gripss_dir}/ -type f -name "*.gripss.somatic.vcf.gz")
     fi
 
     if [[ -z "${structural_vcf}" ]]; then
-        echo "[ERROR] Unable to locate GRIDSS recovery variants in ${run_dir}. Exiting." >&2
+        echo "[ERROR] Unable to locate GRIPSS recovery variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
