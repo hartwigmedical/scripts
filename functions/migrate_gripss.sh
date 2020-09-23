@@ -7,12 +7,12 @@ output_dir=${run_dir}/gripss
 
 if [[ ! -d ${input_dir} ]]; then
   echo "Input dir does not exist ${run_dir}"
-#  exit 0
+  exit 0
 fi
 
 if [[ -d ${output_dir} ]]; then
   echo "Already migrated ${run_dir}"
-#  exit 0
+  exit 0
 fi
 
 mkdir ${output_dir}
