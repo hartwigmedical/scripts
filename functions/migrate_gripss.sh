@@ -2,7 +2,6 @@
 
 run_dir=$1
 
-run_dir=/data/cpct/runs/151113_HMFreg0018_HMF0218_HMF0219_CPCT02010250/
 input_dir=${run_dir}/gridss
 output_dir=${run_dir}/gripss
 
