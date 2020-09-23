@@ -111,7 +111,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
 
     # Check if output vcf does not already exist
     if os.path.exists(temp_vcf):
-        raise IOError("Temporary VCF file " + temp_vcf + ".recode.vcf already exists. Exiting.")
+        raise IOError("Temporary VCF file " + temp_vcf + " already exists. Exiting.")
     subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', temp_vcf_prefix,
                     '--indv', sampleRID, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
@@ -291,6 +291,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene)]
         perfect_match = False
         severity[gene_info['referenceAllele']] = "Normal Function"
+        severity['Unresolved'] = "Unknown Function"
         drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]),
                            ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
 
@@ -303,7 +304,9 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             haplotypes_matching = []
             for allele in gene_info['alleles']:
                 severity[allele['alleleName']] = allele['function']
-                variants_sample = list(zip(ids_found_in_gene.rsid.tolist(), ids_found_in_gene.alt_GRCh38.tolist()))
+                #variants_sample = list(zip(ids_found_in_gene.rsid.tolist(), ids_found_in_gene.alt_GRCh38.tolist()))
+                vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['filter'] != "NO_CALL"]
+                variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
                 if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]):
                     perfect_match = True
                     print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
@@ -377,23 +380,33 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                               "one")
                         optimal_set.sort(key=lambda x: x[0], reverse=True)
                         for options in optimal_set:
-                            print("[INFO] Option to be tested: " + str(options))
+                            print("[INFO] Option to be tested:")
+                            print("[INFO]\t\t# Matches: " + str(options[0]))
+                            print("[INFO]\t\tSubset: " + str(options[1]))
+                            print("[INFO]\t\tVariants matched for sample and haplotype: " + str(options[2]))
+                            print("[INFO]\t\tVariants in tested haplotype, but not in sample: " + str(options[3]))
+                            print("[INFO]\t\tVariants in sample, not in tested haplotype: " + str(options[4]))
+                        # Here we just pick the top option.
                         if optimal_set[0][0] >= 1:
                             subset = optimal_set[0][1]
-                            for allele in subset:
-                                allele_status = []
-                                rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
-                                found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
-                                for index, row in found_vars.iterrows():
-                                    if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                        allele_status.append("HOM")
+                            # If we have a variant that is in sample or in haplotype that is not matched > undetermined
+                            if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
+                                results[gene].append("Unresolved_Haplotype")
+                            else:
+                                for allele in subset:
+                                    allele_status = []
+                                    rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
+                                    found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
+                                    for index, row in found_vars.iterrows():
+                                        if row['ref_GRCh38'] == row['alt_GRCh38']:
+                                            allele_status.append("HOM")
+                                        else:
+                                            allele_status.append("HET")
+                                    if all(x == allele_status[0] for x in allele_status):
+                                        allele_status = allele_status[0]
                                     else:
-                                        allele_status.append("HET")
-                                if all(x == allele_status[0] for x in allele_status):
-                                    allele_status = allele_status[0]
-                                else:
-                                    allele_status = "HOMHET"
-                                results[gene].append(allele['alleleName'] + "_" + str(allele_status))
+                                        allele_status = "HOMHET"
+                                    results[gene].append(allele['alleleName'] + "_" + str(allele_status))
                         else:
                             sys.exit("[ERROR] No haplotype match was found. Exiting.")
         # If we only find one allele and it is HET, assume we're also dealing with reference allele
