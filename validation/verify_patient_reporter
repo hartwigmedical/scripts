@@ -3,7 +3,7 @@
 pilot_report_json=$1 && shift
 prod_report_json=$1 && shift
 
-diff <(jq . ${pilot_report_json}) <(jq . ${prod_report_json})
+diff <(jq . ${prod_report_json}) <(jq . ${pilot_report_json})
 
 ## add row number in json file
 # cat {json_file} | jq '.' > {temp_json_file}
