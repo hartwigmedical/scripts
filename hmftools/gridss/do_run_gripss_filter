@@ -8,7 +8,7 @@ ref_genome=$(locate_ref_genome_fasta_file)
 gripps_jar=/data/common/tools/gripss_pilot/gripss.jar
 
 java -Xmx16G -Xms4G \
-    -cp ${gripps_jar} com.hartwig.hmftools.gripss.GripssHardFilterApplication.kt \
+    -cp ${gripps_jar} com.hartwig.hmftools.gripss.GripssHardFilterApplicationKt \
     -input_vcf ${input_vcf} \
     -output_vcf ${output_vcf}
 
