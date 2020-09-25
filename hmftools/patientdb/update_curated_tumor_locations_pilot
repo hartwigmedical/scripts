@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+run_clinical_patient_db_pilot -do_curate_tumor_location
