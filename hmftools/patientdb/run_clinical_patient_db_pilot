@@ -28,6 +28,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -db_url ${db_url} \
     -lims_dir /data/ops/lims/prod \
     -curated_tumor_location_csv /data/common/dbs/ecrf_dumps_pilot/curatedTumorLocations.csv \
+    -curated_tumor_location_tsv /data/common/dbs/ecrf_dumps_pilot/curatedTumorLocations.tsv \
     -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.csv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
