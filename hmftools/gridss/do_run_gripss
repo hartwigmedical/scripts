@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 source locate_files
 
-gripps_jar=$1 && shift
 input_vcf=$1 && shift
 output_vcf=$1 && shift
-ref_genome=$(locate_ref_genome_fasta_file)
 
+ref_genome=$(locate_ref_genome_fasta_file)
+gripps_jar=/data/common/tools/gripss_pilot/gripss.jar
 gridss_pon=/data/common/dbs/gridss/pon3792v1/
 single_pon=${gridss_pon}gridss_pon_single_breakend.bed
 paired_pon=${gridss_pon}gridss_pon_breakpoint.bedpe
-paired_hotspot=/data/common/dbs/gripss/gridss_hotspot_breakpoint.bedpe
+paired_hotspot=/data/common/dbs/gripss/KnownFusionPairs.hg19.bedpe
 
 java -Xmx16G -Xms4G \
     -jar ${gripps_jar} \
@@ -19,5 +19,4 @@ java -Xmx16G -Xms4G \
     -breakend_pon ${single_pon} \
     -breakpoint_pon ${paired_pon} \
     -breakpoint_hotspot ${paired_hotspot}
-
 
