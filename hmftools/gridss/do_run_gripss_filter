@@ -12,3 +12,4 @@ java -Xmx16G -Xms4G \
     -input_vcf ${input_vcf} \
     -output_vcf ${output_vcf}
 
+#
