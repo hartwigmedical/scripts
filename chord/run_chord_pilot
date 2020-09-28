@@ -4,6 +4,7 @@ source locate_files
 source metadata_functions
 
 run_dir=$1 && shift
+genome_version=${1:-HG19}
 
 if [[ ! -d "${run_dir}" ]]; then
     echo "[ERROR] ${run_dir} does not exist!" && exit 1
@@ -22,7 +23,13 @@ echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-extractSigPredictHRD_pilot.R ${chord_dir} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+extractSigPredictHRD_pilot.R \
+  "${chord_dir}" \
+  "${working_dir}" \
+  "${sample}" \
+  "${somatic_vcf}" \
+  "${structural_vcf}" \
+  "${genome_version}"
 
 count_files_chord_pilot=$(ls ${working_dir} | wc -l)
 

@@ -9,6 +9,7 @@ chordToolDir <- args[1]
   sampleName <- args[3]
    snvIndVcf <- args[4]
        svVcf <- args[5]
+refGenomeVsn <- args[6] # HG19 or HG38
    sigOutTxt <- paste0( workingDir, '/', sampleName, '_chord_signatures.txt')
    prdOutTxt <- paste0( workingDir, '/', sampleName, '_chord_prediction.txt')
 
@@ -23,7 +24,18 @@ suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD')))
 cat("[INFO] Package NamespaceVersions after loading:\n")
 for (pkgName in c("mutSigExtractor", "CHORD")){
   pkgVsn=getNamespaceVersion(pkgName)[["version"]]
-  cat("[INFO] Package", pkgName, "has version", pkgVsn, "\n")
+  cat("[INFO]   Package", pkgName, "has version", pkgVsn, "\n")
+}
+
+## Convert genome name to BSGenome name
+if (refGenomeVsn == "HG19") {
+  suppressPackageStartupMessages(library(BSgenome.Hsapiens.UCSC.hg19))
+  refGenome <- BSgenome.Hsapiens.UCSC.hg19
+} else if (refGenomeVsn == "HG38") {
+  suppressPackageStartupMessages(library(BSgenome.Hsapiens.UCSC.hg38))
+  refGenome <- BSgenome.Hsapiens.UCSC.hg38
+} else {
+  stop("Unsupported ref genome version: ", refGenomeVsn," (should be HG19 or HG38)\n")
 }
 
 cat("[INFO] CHORD Settings:\n")
@@ -32,6 +44,7 @@ cat("[INFO]   Working dir:", workingDir, "\n")
 cat("[INFO]   Sample name:", sampleName, "\n")
 cat("[INFO]   Somatic SNV/IND vcf:", snvIndVcf, "\n")
 cat("[INFO]   Somatic SV vcf:", svVcf, "\n")
+cat("[INFO]   Ref Genome Version:", refGenomeVsn, "\n")
 cat("[INFO]   Signature out file:", sigOutTxt, "\n")
 cat("[INFO]   Prediction out file:", prdOutTxt, "\n")
 
@@ -43,7 +56,8 @@ signatures <- extractSigsChord(
   vcf.sv = svVcf,
   sample.name = sampleName,
   sv.caller = "gridss",
-  vcf.filters=list(snv="PASS", indel="PASS", sv="PASS")
+  vcf.filters=list(snv="PASS", indel="PASS", sv="PASS"),
+  ref.genome=refGenome
 )
 cat("[INFO] Performing chord HRD prediction\n")
 prediction <- chordPredict(
