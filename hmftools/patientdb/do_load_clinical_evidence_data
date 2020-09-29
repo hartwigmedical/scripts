@@ -8,7 +8,7 @@ credentials=$1 && shift
 patient_db_jar=$1 && shift
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
-tumor_location_csv=/data/common/dbs/ecrf_dumps/curated_tumor_locations
+tumor_location_csv=/data/common/dbs/clinical_data/curated_tumor_locations.csv
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})

@@ -6,7 +6,7 @@ patient_reporter_jar=$(locate_prod_patient_reporter)
 output_dir_report=/data/cpct/patient_reports
 
 reporting_db_tsv=$(locate_reporting_db_tsv)
-tumor_location_csv=/data/common/dbs/ecrf_dumps/curatedTumorLocations.csv
+tumor_location_csv=/data/common/dbs/clinical_data/curated_tumor_locations.csv
 lims_dir=/data/ops/lims/prod
 
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
