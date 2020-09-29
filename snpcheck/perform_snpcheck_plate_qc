@@ -5,11 +5,11 @@ vcf_dir_path=$1
 echo "[INFO] START with $(basename $0)"
 
 if [[ -z "${vcf_dir_path}" || $1 == "-h" || $1 == "--help" ]]; then
-  echo "---"
-  echo " Usage: $(basename $0) \${pathToDirWithVCFs}"
-  echo "    Eg: $(basename $0) /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
-  echo "---"
-  exit 1
+    echo "---"
+    echo " Usage: $(basename $0) \${pathToDirWithVCFs}"
+    echo "    Eg: $(basename $0) /data/common/snpcheck/output/26SNPtaq/S19-0001_20190103_092420_BDF33/"
+    echo "---"
+    exit 1
 fi
 
 if [[ ! -d "${vcf_dir_path}" ]]; then echo "[ERROR] Dir does not exist (${vcf_dir_path})" && exit 1; fi
