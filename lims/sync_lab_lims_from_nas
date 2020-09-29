@@ -23,10 +23,15 @@ PROC_NAS_PATH="${NAS_DIR}/${PROC_FILE}"
 SAMP_NAS_PATH_2019="${NAS_DIR}/${SAMP_FILE_2019}"
 PROC_NAS_PATH_2019="${NAS_DIR}/${PROC_FILE_2019}"
 
-## File and dir sanity checks
+## Sanity checks
+echo "[INFO] Check existance of input files at NAS"
 if ssh nas "[[ ! -d '${NAS_DIR}' ]]"; then echo "[ERROR] Dir does not exist (nas:${NAS_DIR})" && exit 1; fi
 for nas_file_path in "${TEST_NAS_PATH}" "${CPCT_NAS_PATH}" "${SAMP_NAS_PATH}" "${PROC_NAS_PATH}" "${SAMP_NAS_PATH_2019}" "${PROC_NAS_PATH_2019}"; do
-    if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1; fi
+    if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then 
+        echo "[ERROR] File does not exist (nas:${nas_file_path})" && exit 1
+    else
+        echo "[INFO]   OK file present (nas:${nas_file_path})"
+    fi
 done
 for dir_to_check in ${OUT_DIR} ${LAB_DIR} ${SYM_DIR}; do
     if [[ ! -d "${dir_to_check}" ]]; then echo "[ERROR] Dir does not exist (${dir_to_check})" && exit 1; fi
@@ -70,7 +75,7 @@ proc_txt_2019="${proc_target_2019}.tsv"
 proc_latest_2019="${SYM_DIR}/2019_proc"
 
 ## Retrieve files from NAS
-echo "[INFO] Syncing LIMS files from NAS to DATASTORE"
+echo "[INFO] Syncing input files from NAS to DATASTORE"
 echo "[INFO]   SourceDir: nas:${NAS_DIR}"
 echo "[INFO]   TargetDir: ${DAY_DIR}"
 rsync -s "nas:${TEST_NAS_PATH}" ${DAY_DIR}
@@ -135,7 +140,7 @@ xlsx2csv -d "\t" "${proc_target_2019}" -s 1 | tail -n +5 > ${proc_txt_2019}
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] PROC export to csv FAILED" && exit 1; fi
 
 ## Create latest symlinks
-echo "[INFO] Symlinking to latest files (to ${SYM_DIR})"
+echo "[INFO] Symlinking to short name in latest (to ${SYM_DIR})"
 echo "[INFO]   ${test_latest}"
 ln -sfn ${test_txt} ${test_latest}
 echo "[INFO]   ${cpct_latest}"
