@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+
+dir=$1 && shift
+user=$1 && shift
+group=$1 && shift
+what_to_chown=$1 && shift
+
+function main {
+    if [[ -z "${dir}" || -z "${user}" || -z "${group}" ]]; then
+        print_usage
+    elif [[ ! -d "${dir}" ]]; then
+        echo "[ERROR] Is not a directory (${dir})!"
+        print_usage
+    fi
+
+    if [[ "${what_to_chown}" == "contents_only" ]]; then
+        chown_dir_contents
+    elif [[ "${what_to_chown}" == "include_directory" ]]; then
+        chown_dir
+    else
+        echo "[ERROR] Unclear what to chown (${what_to_chown})"
+        exit 1
+    fi
+}
+
+function chown_dir() {
+    echo "[INFO] About to chown ${dir} and contents to ${user}:${group}"
+    read -p "[INFO] Press enter to start chown action"
+    sudo chown -R ${user}:${group} "${dir}"
+}
+
+function chown_dir_contents() {
+    echo "[INFO] Searching content that is not owned by ${user} yet (in ${dir})"
+    count=$(find ${dir} -mindepth 1 -maxdepth 1 \! -user "${user}" | wc -l)
+    echo "[INFO] Found ${count} to chown in ${dir}"
+
+    if [[ "${count}" -gt 0 ]]; then
+        echo "[INFO] Objects to chown (max 20 shown):"
+        find ${dir} -mindepth 1 -maxdepth 1 \! -user "${user}" | head -20
+        read -p "[INFO] Press enter to start chown action"
+        find ${dir} -mindepth 1 -maxdepth 1 \! -user "${user}" -exec sudo chown -R ${user}:${group} {} +
+    fi
+}
+
+function print_usage() {
+    echo "---"
+    echo " Descr: Recursively chown (content of) \${directory} to \${user}:\${group}"
+    echo " Usage: $(basename ${0}) \${directory} \${user} \${group}" \${what_to_chown}
+    echo "    Eg: $(basename ${0}) /path/to/dir root root only_contents"
+    echo "        $(basename ${0}) /path/to/dir root root include_directory"
+    echo "---"
+    exit 1
+}
+
+main

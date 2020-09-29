@@ -4,11 +4,11 @@ dir_to_chown=$1
 
 if [[ -z "${dir_to_chown}" ]]; then
     echo "---"
-    echo " Descr: Recursively chown content in \${directory} to root:root"
+    echo " Descr: Recursively chown \${directory} to $USER:users"
     echo " Usage: $(basename ${0}) \${directory}"
     echo "---"
     exit 1
 fi
 
-chown_directory "${dir_to_chown}" "root" "root" "contents_only"
+chown_directory "${dir_to_chown}" "${USER}" "users" "include_directory"
 
