@@ -22,7 +22,7 @@ cosmic_signatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
 output_dir=/this/does/not/exist
 
 java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
-    -sample ${sampleId} \
+    -sample ${sample} \
     -signatures_file ${cosmic_signatures} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -position_bucket_size 500000 -max_sample_count 20000 \
