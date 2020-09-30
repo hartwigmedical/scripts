@@ -13,4 +13,4 @@ fi
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 credentials=$(locate_prod_database_credentials)
 
- ${sample} ${credentials}do_load_snv_signatures
+do_load_snv_signatures ${sample} ${credentials}
