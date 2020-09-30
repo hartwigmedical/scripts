@@ -6,7 +6,7 @@ patient_reporter_jar=$(locate_pilot_patient_reporter)
 
 output_dir_report=/data/cpct/pilot_reports
 reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
-tumor_location_csv=/data/common/dbs/clinical_data/curated_tumor_locations.csv
+tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
 lims_dir=/data/ops/lims/prod
 
 rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_color.jpeg
@@ -16,7 +16,7 @@ signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.p
 java -jar ${patient_reporter_jar} \
     -output_dir_report ${output_dir_report} \
     -reporting_db_tsv ${reporting_db_tsv} \
-    -tumor_location_csv ${tumor_location_csv} \
+    -tumor_location_tsv ${tumor_location_tsv} \
     -lims_dir ${lims_dir} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
