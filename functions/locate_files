@@ -53,7 +53,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.47/purple.jar
+    echo ${base_path}/tools/purple_v2.48/purple.jar
 }
 
 locate_pilot_purple() {
