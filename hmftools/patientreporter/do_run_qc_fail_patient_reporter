@@ -5,13 +5,10 @@ source metadata_functions
 
 tumor_sample=$1 && shift
 qc_fail_reason=$1 && shift
+ref_sample_mandatory=$1 && shift
 
-if [[ -z "${tumor_sample}" ]]; then
-    echo "[ERROR] No tumor sample provided. Exiting" && exit 1;
-fi
-
-if [[ -z "${qc_fail_reason}" ]]; then
-    echo "[ERROR] No QC fail reason provided. Exiting" && exit 1;
+if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
+    echo "[ERROR] No tumor sample and/or QC fail reason provided. Exiting" && exit 1;
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
@@ -23,12 +20,6 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
     tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
 fi
 
-if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
-    echo "[WARN] Ref sample information is incomplete!"
-    ref_sample="N/A"
-    ref_sample_barcode="N/A"
-fi
-
 if [[ -z "${tumor_sample_barcode}" ]]; then
     echo "[ERROR] Incomplete information for reporter. Exiting"
     echo "  tumor_sample name: ${tumor_sample}"
@@ -36,11 +27,31 @@ if [[ -z "${tumor_sample_barcode}" ]]; then
     exit 1;
 fi
 
-do_run_base_patient_reporter \
-    -qc_fail \
-    -qc_fail_reason ${qc_fail_reason} \
-    -ref_sample_id ${ref_sample} \
-    -ref_sample_barcode ${ref_sample_barcode} \
-    -tumor_sample_id ${tumor_sample} \
-    -tumor_sample_barcode ${tumor_sample_barcode} \
-    "$@"
+if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" ]]; then
+    if [[ ${ref_sample_mandatory} == "1" ]]; then
+        echo "[ERROR] Incomplete information for reporter. Exiting"
+        echo "  ref_sample name: ${ref_sample}"
+        echo "  ref_sample barcode: ${ref_sample_barcode}"
+        echo "  tumor_sample name: ${tumor_sample}"
+        echo "  tumor_sample barcode: ${tumor_sample_barcode}"
+        exit 1;
+    else
+        echo "[WARN] Ref sample information is incomplete!"
+
+        pilot_do_run_base_patient_reporter \
+            -qc_fail \
+            -qc_fail_reason ${qc_fail_reason} \
+            -tumor_sample_id ${tumor_sample} \
+            -tumor_sample_barcode ${tumor_sample_barcode} \
+            "$@"
+    fi
+else
+    pilot_do_run_base_patient_reporter \
+        -qc_fail \
+        -qc_fail_reason ${qc_fail_reason} \
+        -ref_sample_id ${ref_sample} \
+        -ref_sample_barcode ${ref_sample_barcode} \
+        -tumor_sample_id ${tumor_sample} \
+        -tumor_sample_barcode ${tumor_sample_barcode} \
+        "$@"
+fi

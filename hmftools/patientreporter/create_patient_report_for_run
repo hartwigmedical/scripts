@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+output_dir_report=/data/cpct/patient_reports
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+patient_report_for_run ${run_dir} -output_dir_report ${output_dir_report} "$@"
