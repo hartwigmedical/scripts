@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-run_clinical_patient_db_pilot -do_load_raw_ecrf
