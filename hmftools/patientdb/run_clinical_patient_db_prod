@@ -7,4 +7,28 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-do_run_clinical_patient_db_prod -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} "$@"
+patient_db_jar=$(locate_prod_patient_db)
+runs_dir=/data/cpct/runs
+
+# Force UTF-8 to deal with non-standard characters, see DEV-275
+java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
+    -jar ${patient_db_jar} \
+    -runs_dir ${runs_dir} \
+    -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
+    -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
+    -drup_ecrf /data/ecrf/drup_ecrf.xml \
+    -wide_pre_avl_treatment_csv /data/ecrf/wide_pre_avl_treatments.csv \
+    -wide_biopsy_csv /data/ecrf/wide_biopsies.csv \
+    -wide_avl_treatment_csv /data/ecrf/wide_avl_treatments.csv \
+    -wide_response_csv /data/ecrf/wide_responses.csv \
+    -wide_five_days_csv /data/ecrf/wide_five_days.csv \
+    -lims_dir /data/ops/lims/prod \
+    -db_user ${db_user} \
+    -db_pass ${db_pass} \
+    -db_url ${db_url} \
+    -curated_tumor_location_csv /data/common/dbs/clinical_data/curated_tumor_locations.csv \
+    -curated_tumor_location_tsv /data/common/dbs/clinical_data/curated_tumor_locations.tsv \
+    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.csv \
+    -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
+    -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
+    "$@"
