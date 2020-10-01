@@ -6,10 +6,8 @@ source lims_functions
 
 run_dir=$1 && shift
 
-output_dir_data_report=${run_dir}/patient_report_prod_data
-if [[ ! -d "${output_dir_data_report}" ]]; then
-    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
-    mkdir ${output_dir_data_report}
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
@@ -37,9 +35,17 @@ if [[ -z "${ref_sample}" || -z "${ref_sample_barcode}" || -z "${tumor_sample_bar
     exit 1;
 fi
 
+
+output_dir_data_report=${run_dir}/patient_report_prod_data
+if [[ ! -d "${output_dir_data_report}" ]]; then
+    echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
+    mkdir ${output_dir_data_report}
+fi
+
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
 purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
 somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_reported_fusions ${run_dir})
@@ -61,6 +67,7 @@ do_run_base_patient_reporter \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
