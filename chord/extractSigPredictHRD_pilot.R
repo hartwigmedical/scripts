@@ -23,7 +23,7 @@ suppressPackageStartupMessages(load_all(paste0(chordToolDir, '/CHORD')))
 
 cat("[INFO] Package NamespaceVersions after loading:\n")
 for (pkgName in c("mutSigExtractor", "CHORD")){
-  pkgVsn=getNamespaceVersion(pkgName)[["version"]]
+  pkgVsn <- getNamespaceVersion(pkgName)[["version"]]
   cat("[INFO]   Package", pkgName, "has version", pkgVsn, "\n")
 }
 
