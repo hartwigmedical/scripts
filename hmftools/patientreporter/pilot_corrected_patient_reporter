@@ -6,4 +6,4 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-pilot_patient_report_for_run ${run_dir} -corrected_report "$@"
+pilot_create_patient_report_for_run ${run_dir} -corrected_report "$@"

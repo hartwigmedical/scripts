@@ -11,4 +11,4 @@ if [[ -z "${comments}" ]]; then
     echo "[ERROR] No comments provided. Exiting" && exit 1;
 fi
 
-patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "$@"
+create_patient_report_for_run ${run_dir} -comments "${comments}" -corrected_report "$@"
