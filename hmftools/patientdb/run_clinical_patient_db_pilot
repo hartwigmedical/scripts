@@ -20,9 +20,9 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -wide_response_csv /data/ecrf/wide_responses.csv \
     -wide_five_days_csv /data/ecrf/wide_five_days.csv \
     -lims_dir /data/ops/lims/prod \
-    -curated_tumor_location_csv /data/common/dbs/clinical_data/curated_tumor_locations.csv \
-    -curated_tumor_location_tsv /data/common/dbs/clinical_data/curated_tumor_locations.tsv \
-    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.csv \
+    -curated_tumor_location_csv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.csv \
+    -curated_tumor_location_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.tsv \
+    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.csv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
     "$@"
