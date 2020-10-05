@@ -126,6 +126,10 @@ main() {
     echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
+    echo "# [INFO] login to hmf-share project:"  >> "${output_cmd_file}"
+    echo "gcloud config set project hmf-share" >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check numbers of patients & samples is metadata file:"  >> "${output_cmd_file}"
     echo "check_numbers_metadata -m '${metadata_tsv}' " >> "${output_cmd_file}"
 
@@ -182,7 +186,7 @@ main() {
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
     #info " 2) Make sure you are logged in at GCP with correct credentials!"
-    info " 2) And then run cmd with: ${output_cmd_file} | tee -a ${dr_path}/logs/run_datarequest_tool.sh.log"
+    info " 2) And then run cmd with: ${output_cmd_file} |& tee -a ${dr_path}/logs/run_datarequest_tool.sh.log"
     info "Finished with $(basename $0)"
 
 }
