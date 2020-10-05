@@ -130,7 +130,7 @@ main() {
     echo "gcloud config set project hmf-share" >> "${output_cmd_file}"
     echo "echo '[INPUT] Please provide your hmf GCP account address.. '" >> "${output_cmd_file}"
     echo "read answer" >> "${output_cmd_file}"
-    echo "echo 'gcloud config set account $answer'" >> "${output_cmd_file}"
+    echo "gcloud config set account $answer" >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check numbers of patients & samples is metadata file:"  >> "${output_cmd_file}"
