@@ -16,6 +16,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 # reference files
 viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
 known_fusion_data=/data/common/dbs/fusions/known_fusion_data.csv
+driver_gene_panel=$(locate_driver_gene_panel_tsv)
 ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
@@ -46,6 +47,7 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -known_fusion_file ${known_fusion_data} \
     -chaining_sv_limit 0 \
     -check_drivers \
+    -driver_gene_panel ${driver_gene_panel} \
     -write_vis_data \
     "$@"
 
