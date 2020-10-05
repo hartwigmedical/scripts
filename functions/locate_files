@@ -53,7 +53,7 @@ locate_prod_sage() {
 }
 
 locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.47/purple.jar
+    echo ${base_path}/tools/purple_v2.48/purple.jar
 }
 
 locate_pilot_purple() {
@@ -77,7 +77,7 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/sv-linx_v1.10/sv-linx.jar
+    echo ${base_path}/tools/sv-linx_v1.11/sv-linx.jar
 }
 
 locate_pilot_linx() {
@@ -527,7 +527,7 @@ locate_linx_reported_fusions() {
         echo "[ERROR] Unable to locate linx dir for fusions: ${linx_dir}. Exiting" >&2
         exit 1
     fi
-    
+
     local fusion_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.reported_fusion.tsv")
     if [[ -z "${fusion_tsv}" ]]; then
         echo "[ERROR] Unable to locate linx fusions tsv in ${run_dir}. Exiting." >&2
@@ -561,6 +561,22 @@ locate_linx_disruptions() {
     fi
     
     local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.disruptions.tsv")
+    if [[ -z "${disruption_tsv}" ]]; then
+        echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${disruption_tsv}
+}
+
+locate_linx_breakends() {
+    local run_dir=$1
+    local linx_dir=${run_dir}/linx
+    if [[ ! -d "${linx_dir}" ]]; then
+        echo "[ERROR] Unable to locate linx dir for disruptions: ${linx_dir}. Exiting" >&2
+        exit 1
+    fi
+
+    local disruption_tsv=$(find -L ${linx_dir}/ -type f -name "*.linx.breakend.tsv")
     if [[ -z "${disruption_tsv}" ]]; then
         echo "[ERROR] Unable to locate linx disruptions tsv in ${run_dir}. Exiting." >&2
         exit 1

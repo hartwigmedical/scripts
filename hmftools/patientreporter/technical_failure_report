@@ -9,6 +9,8 @@ fi
 ref_sample_mandatory=0
 
 output_dir_data_report=/data/cpct/qc_fail_reports_data/prod
+output_dir_report=/data/cpct/patient_reports
 
 do_run_qc_fail_patient_reporter ${tumor_sample} "technical_failure" ${ref_sample_mandatory} \
-    -output_dir_data_report ${output_dir_data_report} "$@"
+    -output_dir_data_report ${output_dir_data_report} \
+    -output_dir_report ${output_dir_report} "$@"

@@ -14,6 +14,7 @@ ref_sample_mandatory=1
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 output_dir_data_report=${run_dir}/patient_report_prod_data
+output_dir_report=/data/cpct/patient_reports
 
 if [[ ! -d "${output_dir_data_report}" ]]; then
     echo "[INFO] ${output_dir_data_report} does not exist yet, creating..."
@@ -23,4 +24,5 @@ fi
 do_run_qc_fail_patient_reporter \
     ${tumor_sample} "sufficient_tcp_qc_failure" ${ref_sample_mandatory}  \
     -output_dir_data_report ${output_dir_data_report} \
+    -output_dir_report ${output_dir_report} \
     -purple_purity_tsv ${purple_purity_tsv} "$@"
