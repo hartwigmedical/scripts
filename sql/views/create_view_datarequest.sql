@@ -1,7 +1,8 @@
 CREATE OR REPLACE VIEW datarequest AS
 
 SELECT
-	clinical.*, purity AS tumorPurity, qcStatus AS purpleQC, fitMethod AS purpleFitMethod, version AS purpleVersion, metric.sufficientCoverage AS sufficientCoverage
+	clinical.*, purity AS tumorPurity, qcStatus AS purpleQC, fitMethod AS purpleFitMethod,
+	version AS purpleVersion, metric.sufficientCoverage AS sufficientCoverage
 FROM
 	clinical
 	INNER JOIN purity ON purity.sampleId = clinical.sampleId
