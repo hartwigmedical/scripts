@@ -12,7 +12,6 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 java -Dorg.jooq.no-logo=true -cp ${linx_jar} com.hartwig.hmftools.linx.LinxDataLoader \
     -sample ${sample} \
-    -load_linx_data \
     -sv_data_dir ${linx_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
