@@ -19,7 +19,7 @@ while getopts ':m:p:' flag; do
 done
 
 if [[  -z "${metadata_tsv}" || -z "${request_logs_path}" ]]; then
-    echo "[ERROR] script check_logs_datarequest_hjjob did not run, check usage below:"
+    echo "[ERROR] script check_logs_datarequest_job did not run, check usage below:"
     print_usage
 fi
 
@@ -32,6 +32,9 @@ number_samples_metadata=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}
 
 log_job_name=$( ls ${request_logs_path} | grep 'create' | grep 'log')
 log_job=$"${request_logs_path}${log_job_name}"
+
+request_tar_files_path=$( echo ${request_logs_path} | cut -f1,2,3,4,5 -d'/')
+request_name=$( echo ${request_logs_path} | cut -f6 -d'/')
 
 
 if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
@@ -62,6 +65,7 @@ if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | 
     else
         echo "[INFO] The number of types of requested metadata (${requested_metadata}) matches the number of entries created during the datarequest job."
     fi
+    du -sh "${request_tar_files_path}/${request_name}.metadata.tar"
 else
     echo "[INFO] No metadata prepared in datarequest job"
 fi
@@ -91,6 +95,7 @@ if [[ $(cat ${log_job}  | grep "=1" | grep "somatics") != "" ]]; then
     else
         echo "[INFO] The number of samples requested (${number_samples_metadata}) matches the number of somatic entries created during the datarequest job."
     fi
+    du -sh "${request_tar_files_path}/${request_name}.somatics.tar"
 else
     echo "[INFO] No somatic data prepared in datarequest job"
 fi
@@ -111,6 +116,7 @@ if [[ $(cat ${log_job}  | grep "=1" | grep "germline") != "" ]]; then
     else
         echo "[INFO] The number of samples requested (${number_samples_metadata}) matches the number of germline entries created during the datarequest job."
     fi
+    du -sh "${request_tar_files_path}/${request_name}.germline.tar"
 else
     echo "[INFO] No germline data prepared in datarequest job"
 fi
