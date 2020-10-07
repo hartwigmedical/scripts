@@ -5,7 +5,7 @@ iclusion_trial_tsv=$1 && shift
 
 iclusion_api_credentials=/data/common/dbs/iclusion/iclusion_api_credentials
 
-iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})
+iclusion_endpoint=$(awk '/^endpoint/ {print $2}' ${iclusion_api_credentials})"/"
 iclusion_client_id=$(awk '/^client_id/ {print $2}' ${iclusion_api_credentials})
 iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_credentials})
 iclusion_user=$(awk '/^username/ {print $2}' ${iclusion_api_credentials})
