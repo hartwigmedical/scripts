@@ -49,8 +49,8 @@ else
 fi
 
 ## Find flowcells
-for flowcell_path in $(find ${flowcells_dir} -mindepth 1 -maxdepth 1 -type d); do
-    flowcell_name=$( basename ${flowcell_path} )
+find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d | while read flowcell_path; do
+    flowcell_name=$( basename "${flowcell_path}" )
     samplesheet_path="${flowcell_path}/SampleSheet.csv"
     rtacomplete_path="${flowcell_path}/RTAComplete.txt"
     runinfoxml_path="${flowcell_path}/RunInfo.xml"
