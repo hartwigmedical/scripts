@@ -1,4 +1,0 @@
-#!/usr/bin/env bash
-
-# TODO Simplify on patient db v3.48
-run_clinical_patient_db_prod -do_curate_tumor_location
