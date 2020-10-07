@@ -32,6 +32,8 @@ else
     mkdir -p ${output_dir}
 fi
 
+echo "[INFO] Rerun linx for ${sample}"
+
 java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \
     -sv_vcf ${structural_vcf} \

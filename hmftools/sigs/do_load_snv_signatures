@@ -18,6 +18,8 @@ sig_analyser=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
 cosmic_signatures=/data/common/dbs/sigs/snv_cosmic_sigs.csv
 output_dir=/this/does/not/exist
 
+echo "[INFO] Loading sv signatures data for ${sample}"
+
 java -cp ${sig_analyser} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
     -sample ${sample} \
     -signatures_file ${cosmic_signatures} \
