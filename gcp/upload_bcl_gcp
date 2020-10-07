@@ -45,6 +45,7 @@ slack () {
 if [[ -f "${tmp_upload_file}" ]]; then
     echo "[INFO] Uploading in progress, exiting" && exit 0
 else
+    echo "[INFO] Creating tmp file (${tmp_upload_file}) to avoid simultaneous uploads"
     touch "${tmp_upload_file}"
 fi
 
