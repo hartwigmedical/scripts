@@ -75,9 +75,7 @@ proc_txt_2019="${proc_target_2019}.tsv"
 proc_latest_2019="${SYM_DIR}/2019_proc"
 
 ## Retrieve files from NAS
-echo "[INFO] Syncing input files from NAS to DATASTORE"
-echo "[INFO]   SourceDir: nas:${NAS_DIR}"
-echo "[INFO]   TargetDir: ${DAY_DIR}"
+echo "[INFO] Syncing input files from NAS to DATASTORE (${DAY_DIR})"
 rsync -s "nas:${TEST_NAS_PATH}" ${DAY_DIR}
 rsync -s "nas:${CPCT_NAS_PATH}" ${DAY_DIR}
 rsync -s "nas:${SAMP_NAS_PATH}" ${DAY_DIR}
