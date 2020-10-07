@@ -49,8 +49,8 @@ else
     touch "${tmp_upload_file}"
 fi
 
-## Find flowcells
-find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d | while read flowcell_path; do
+## Find potential flowcell directories to upload
+find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read flowcell_path; do
     flowcell_name=$( basename "${flowcell_path}" )
     samplesheet_path="${flowcell_path}/SampleSheet.csv"
     rtacomplete_path="${flowcell_path}/RTAComplete.txt"
