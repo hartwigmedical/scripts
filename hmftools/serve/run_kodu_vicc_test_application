@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+serve_jar=/home/korneel/serve_test_jar/serve.jar
+
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.vicc.ViccTestApplication
