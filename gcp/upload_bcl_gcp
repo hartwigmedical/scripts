@@ -108,15 +108,16 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     echo "[INFO] Executing rsync (${cmd})"
     gcloud auth activate-service-account --key-file ${gcp_cred}
     ${cmd}
-    ## Add two timestamps for Turquoise: One for the sequencer completion and another for the upload completion
-    date --date="@$(stat -c '%Y' ${rtacomplete_path})" "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/RTAComplete.timestamp
-    date "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/BCLUploadComplete.timestamp
 
     if [[ $? -ne 0 ]]; then
         #slack "[WARN] Something wrong with BCL upload \"${flowcell_path}\" on \"${hostname}\""
         echo "[WARN] Something wrong with BCL upload \"${flowcell_path}\" on \"${hostname}\""
         continue
     fi
+
+    ## Add two timestamps for Turquoise: One for the sequencer completion and another for the upload completion
+    date --date="@$(stat -c '%Y' ${rtacomplete_path})" "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/RTAComplete.timestamp
+    date "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/BCLUploadComplete.timestamp
 
     flowcell="$(hmfapi GET ${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id})"
 
