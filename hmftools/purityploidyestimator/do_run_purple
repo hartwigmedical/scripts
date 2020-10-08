@@ -64,7 +64,7 @@ if [[ ! -z "${credentials}" ]]; then
     db_args="-db_enabled -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url}"
 fi
 
-echo "[INFO] Rerun purple for ${tumor_sample}"
+echo "[INFO] Running purple for ${tumor_sample}"
 
 java -Dorg.jooq.no-logo=true -Xmx16G -Xms4G \
     -jar ${purple_jar} \
