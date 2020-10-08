@@ -93,8 +93,13 @@ if [[ ${number_files_manifest} > 0 ]]; then
     dr_name="DR-${dr_id}"
     group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups | jq --arg dr_name "$dr_name" '.[] | select(.name==$dr_name) | .id')
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
+    echo "---Accounts related to group---:"
+    account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
+    for account_nr in $account_nrs
+    do
+        curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
+    done
     number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
-
     echo ""
     if [[ ${number_files_manifest} == ${number_files_gcp} ]]; then
         echo "[INFO] Number of files in manifest and number of files in GCP (with requester account(s) in ACL) are similar."
