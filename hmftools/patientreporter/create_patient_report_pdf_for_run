@@ -8,6 +8,6 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-patient_report_for_run ${run_dir}
+patient_report_for_run ${run_dir} \
     -only_create_pdf \
     -output_dir_report ${output_dir_report} "$@"
