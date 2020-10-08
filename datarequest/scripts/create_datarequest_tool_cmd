@@ -126,7 +126,7 @@ main() {
     echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
-    echo "# [INFO] Select hmf-share project and login as yourself:"  >> "${output_cmd_file}"
+    echo "echo '[START] Select project hmf-share and login as yourself.'" >> "${output_cmd_file}"
     echo "gcloud config set project hmf-share" >> "${output_cmd_file}"
     echo "echo '[INPUT] Please provide your hmf GCP account address.. '" >> "${output_cmd_file}"
     echo "read answer" >> "${output_cmd_file}"
@@ -143,6 +143,10 @@ main() {
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check logs of data request job (where the tertiary analyses data is prepared):"  >> "${output_cmd_file}"
     echo "check_logs_datarequest_job -m '${metadata_tsv}' -p '${dr_path}/logs/' " >> "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [CHECK] Check wether GCP account(s) of requestor(s) exist:"  >> "${output_cmd_file}"
+    echo "check_whether_GCPaccount_exists -e '${gcp_mail}' " >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "echo '[INPUT] Are you sure you want to continue with making the data available on GCP? Please answer Y or N.'" >> "${output_cmd_file}"
