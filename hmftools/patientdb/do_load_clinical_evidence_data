@@ -8,7 +8,7 @@ credentials=$1 && shift
 patient_db_jar=$1 && shift
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
-tumor_location_csv=/data/common/dbs/clinical_data/curated_tumor_locations.csv
+tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
 
 purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
@@ -25,7 +25,7 @@ echo "[INFO] Loading evidence data for ${sample}"
 java -Xmx16G -Xms4G -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -tumor_location_csv ${tumor_location_csv} \
+    -tumor_location_tsv ${tumor_location_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
