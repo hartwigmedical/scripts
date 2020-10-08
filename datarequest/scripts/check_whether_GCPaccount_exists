@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Checks whether GCP accounts exist"
+    echo " Usage: $(basename $0) -e -<gcp_mail> "
+    echo " Exmpl: $(basename $0) -e 'john@doe.com,jaap@doe.com' "
+    echo "-----"
+    exit 1
+}
+
+while getopts ':e:' flag; do
+    case "${flag}" in
+        e) gcp_mail=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[  -z "${gcp_mail}" ]]; then
+    echo "[ERROR] script check_whether_GCPaccount_exists did not run, check usage below:"
+    print_usage
+fi
+
+
+echo ""
+echo "[START] check_whether_GCPaccount_exists: $(date +"%y%m%d (%T)")"
+echo ""
+
+for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+do
+error=$( gsutil -u hmf-share iam ch user:$email:objectViewer gs://hmf-dr-check-accounts/ )
+if [[ "$error" =~ 'BadRequestException: 400'$ ]]; then
+    echo "[ERROR] GCP account $email does not exist. Please contact the requester."
+    echo ""
+else
+    echo "[INFO] GCP account $email exists."
+    gsutil -u hmf-share iam ch -d user:$email gs://hmf-dr-check-accounts/
+    echo ""
+fi
+done
+echo ""
+echo ""
+
+
