@@ -126,6 +126,8 @@ main() {
     echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
+    echo "echo ''" >> "${output_cmd_file}"
+    echo "echo ''" >> "${output_cmd_file}"
     echo "echo '[START] Select project hmf-share and login as yourself.'" >> "${output_cmd_file}"
     echo "gcloud config set project hmf-share" >> "${output_cmd_file}"
     echo "echo '[INPUT] Please provide your hmf GCP account address.. '" >> "${output_cmd_file}"
