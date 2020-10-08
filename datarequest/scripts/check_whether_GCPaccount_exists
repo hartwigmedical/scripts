@@ -28,16 +28,27 @@ echo ""
 
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
-
-error=$( gsutil -u hmf-share iam ch user:$email:objectViewer gs://hmf-dr-check-accounts/ 2>&1)
-if [[ "$error" == *"BadRequestException: 400"* ]]; then
-    echo "[ERROR] GCP account $email does not exist. Please contact the requester."
-    echo ""
-else
-    echo "[INFO] GCP account $email exists."
-    gsutil -u hmf-share iam ch -d user:$email gs://hmf-dr-check-accounts/
-    echo ""
-fi
+    if [[ "email" == *"gserviceaccount.com"* ]]; then
+        error=$( gsutil -u hmf-share iam ch serviceAccount:$email:objectViewer gs://hmf-dr-check-accounts/ 2>&1)
+        if [[ "$error" == *"BadRequestException: 400"* ]]; then
+            echo "[ERROR] GCP service account $email does not exist. Please contact the requester."
+            echo ""
+        else
+            echo "[INFO] GCP service account $email exists."
+            gsutil -u hmf-share iam ch -d serviceAccount:$email gs://hmf-dr-check-accounts/
+            echo ""
+        fi
+    else
+        error=$( gsutil -u hmf-share iam ch user:$email:objectViewer gs://hmf-dr-check-accounts/ 2>&1)
+        if [[ "$error" == *"BadRequestException: 400"* ]]; then
+            echo "[ERROR] GCP account $email does not exist. Please contact the requester."
+            echo ""
+        else
+            echo "[INFO] GCP account $email exists."
+            gsutil -u hmf-share iam ch -d user:$email gs://hmf-dr-check-accounts/
+            echo ""
+        fi
+    fi
 done
 echo ""
 echo ""
