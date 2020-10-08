@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+protect_jar=$(locate_pilot_protect)
+
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+output_dir=${HOME}/tmp
+
+deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
+serve_actionability_dir=/data/common/dbs/serve/actionability
+germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
+tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
+
+purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
+purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
+purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
+purple_somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
+linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
+linx_disruption_tsv=$(locate_linx_breakends ${run_dir})
+linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
+linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
+chord_prediction_txt=$(locate_chord_pilot_prediction ${run_dir})
+
+java -Xmx8G -jar ${protect_jar} \
+    -tumor_sample_id ${tumor_sample} \
+    -output_dir ${output_dir} \
+    -deprecated_actionability_dir ${deprecated_actionability_dir} \
+    -serve_actionability_dir ${serve_actionability_dir} \
+    -tumor_location_tsv ${tumor_location_tsv} \
+    -germline_genes_csv ${germline_genes_csv} \
+    -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
+    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
+    -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -bachelor_tsv ${bachelor_tsv} \
+    -linx_fusion_tsv ${linx_fusion_tsv} \
+    -linx_disruption_tsv ${linx_disruption_tsv} \
+    -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
+    -linx_drivers_tsv ${linx_drivers_tsv} \
+    -chord_prediction_txt ${chord_prediction_txt} \
+    -log_debug \
+    "$@"
