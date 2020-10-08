@@ -22,7 +22,6 @@ if [[  -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-
 echo ""
 echo "[START] check_whether_GCPaccount_exists: $(date +"%y%m%d (%T)")"
 echo ""
