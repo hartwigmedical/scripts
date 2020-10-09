@@ -60,7 +60,7 @@ main() {
     local output_cmd_file="${dr_path}/logs/run_datarequest_tool.sh"
     local bucket_name="hmf-dr-${request_index}"
     local answer='$answer'
-
+    local exitcode='$?'
 
     ## find files to upload
     for i in ${dr_base_path}/${request_name}.*.tar; do
@@ -165,7 +165,7 @@ main() {
         echo "${cmd_line} \\" >> "${output_cmd_file}"
     done
     echo ""  >> "${output_cmd_file}"
-    echo "if [[ $? -ne 0 ]]; then" >> "${output_cmd_file}"
+    echo "if [[ $exitcode -ne 0 ]]; then" >> "${output_cmd_file}"
     echo "  echo 'Running the Data Request tool failed. Please check what went wrong!'" >> "${output_cmd_file}"
     echo "  exit 1" >> "${output_cmd_file}"
     echo "fi" >> "${output_cmd_file}"
