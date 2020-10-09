@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No rundir is provided to $(basename $0). Exiting."
+    exit 1
+fi
+
+# Load metadata
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+# Set paths
+metrics_dir=${run_dir}
+amber_dir=$(locate_amber_directory ${run_dir})
+purple_dir=${run_dir}/purple
+output_dir=/data/tmp
+
+java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.jar \
+    -reference ${ref_sample} \
+    -tumor ${tumor_sample} \
+    -metrics_dir ${metrics_dir} \
+    -amber_dir ${amber_dir} \
+    -purple_dir ${purple_dir} \
+    -output_dir ${output_dir}
