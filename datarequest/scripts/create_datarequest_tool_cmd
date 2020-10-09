@@ -164,6 +164,11 @@ main() {
     for cmd_line in "${cmd_array[@]}"; do 
         echo "${cmd_line} \\" >> "${output_cmd_file}"
     done
+    echo ""  >> "${output_cmd_file}"
+    echo "if [[ $? -ne 0 ]]; then" >> "${output_cmd_file}"
+    echo "  echo 'Running the Data Request tool failed. Please check what went wrong!'" >> "${output_cmd_file}"
+    echo "  exit 1" >> "${output_cmd_file}"
+    echo "fi" >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [CHECK] Check GCP created bucket:"  >> "${output_cmd_file}"
