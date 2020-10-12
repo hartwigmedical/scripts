@@ -67,7 +67,7 @@ pilot_do_run_base_patient_reporter \
     -purple_qc_file ${purple_qc_file} \
     -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
-    -somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_disruption_tsv ${linx_disruption_tsv} \
