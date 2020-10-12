@@ -12,6 +12,7 @@ fi
 ref_sample_mandatory=1
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
+purple_qc_file=$(locate_purple_qc ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 output_dir_data_report=${run_dir}/patient_report_pilot_data
 
@@ -23,4 +24,5 @@ fi
 pilot_do_run_qc_fail_patient_reporter ${tumor_sample} "insufficient_tcp_deep_wgs" ${ref_sample_mandatory}  \
     -output_dir_data_report ${output_dir_data_report} \
     -purple_purity_tsv ${purple_purity_tsv} \
+    -purple_qc_file ${purple_qc_file} \
     "$@"
