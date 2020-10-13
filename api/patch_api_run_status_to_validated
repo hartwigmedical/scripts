@@ -1,40 +1,31 @@
 #!/bin/bash
 
-script_name=$(basename $0)
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_dir="/data/common/dbs/api_credentials"
-api_key="${api_dir}/api.key"
-api_crt="${api_dir}/api.crt"
+source message_functions
+
+run_name=$1
+new_status="Validated"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
   echo "-----"
-  echo "Descr: Prints code to patch run status to \"Validated\""
-  echo "Usage: ${script_name} \$run_name"
-  echo "   Eg: ${script_name} 200101_HMFregXXXX_FR1_FR2_SAMPLE"
+  echo "Descr: Patches run status to ${new_status}"
+  echo "Usage: $(basename $0) \$run_name"
+  echo "   Eg: $(basename $0) 200101_HMFregXXXX_FR123_FR456_SAMPLE"
   echo "-----"
   exit 1
 fi
 
-run_name=$1
+info "Querying api to find run by name (${run_name})"
+set_json=$(hmf_api_get "sets?name=${run_name}")
 
-main () {
-  echo "[INFO] Querying api to find run (${run_name})"
-  result=$(query_api.pl -type runs -filter "name=${run_name}" -exact -json)
-  result_count=$(echo "${result}" | jq length)
+## Make sure only one set is selected
+[[ $(echo "${set_json}" | jq length) -eq 1 ]] || die "Amount of sets found for ${run_name} is not 1"
 
-  if [[ $result_count -ne 1 ]]; then
-    echo "[EXIT] Error: expected one object for ${run_name} but ${result_count} found instead"
-    exit 1
-  else
-    obj=$(echo "${result}" | jq -r .[0])
-    oid=$(echo "${obj}" | jq -r .id) 
-    sts=$(echo "${obj}" | jq -r .status)
-    bkt=$(echo "${obj}" | jq -r .bucket)
+set_oid=$(echo "${set_json}" | jq -r .[0].id)
+run_json=$(hmf_api_get "runs?set_id=${set_oid}")
 
-    echo "[INFO] Found run object (id=${oid} status=${sts} bucket=${bkt})"
-    echo "[INFO] Execute following to PATCH status to Validated"
-    echo "http --ignore-stdin --cert='${api_crt}' --cert-key='${api_key}' PATCH '${api_url}/runs/${oid}' status=Validated"
-  fi
-}
+## Make sure only one run is selected
+[[ $(echo "${run_json}" | jq length) -eq 1 ]] || die "Amount of runs found for ${run_name} is not 1"
 
-main
+## Patch
+run_oid=$(echo "${run_json}" | jq -r .[0].id)
+hmf_api_patch runs "${run_oid}" "status=${new_status}"
