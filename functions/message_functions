@@ -9,16 +9,21 @@ msg() {
     echo "[${msg_type}] $(date +"%y%m%d %T") | $msg_content (${CALLER})"
 }
 
-error() { 
+error() {
     msg "ERROR" "$@" >&2
-    exit 1 
+    exit 1
+}
+
+die() {
+    msg "ERROR" "$@" >&2
+    exit 1
 }
 
 warn() { 
     msg "WARN" "$@" >&2
 }
 
-info() { 
+info() {
     msg "INFO" "$@"
 }
 
