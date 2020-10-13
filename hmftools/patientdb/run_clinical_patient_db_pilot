@@ -22,6 +22,8 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -curated_tumor_location_csv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.csv \
     -curated_tumor_location_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.tsv \
+    -curated_tumor_location_v2_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations_v2.tsv \
+    -tumor_location_v2_mapping_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_v2_mapping.tsv \
     -tumor_location_mapping_csv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.csv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
