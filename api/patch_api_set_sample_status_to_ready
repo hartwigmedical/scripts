@@ -1,46 +1,25 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_cred_dir="/data/common/dbs/api_credentials"
-api_key_file="${api_cred_dir}/api.key"
-api_crt_file="${api_cred_dir}/api.crt"
+source message_functions
+
+sample_barcode=$1
+new_status="Ready"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
-    echo "-----"
-    echo "Descr: Patches target sample status to \"Ready\""
-    echo "Usage: $(basename $0) \$barcode_of_sample"
-    echo "   Eg: $(basename $0) FR111111"
-    echo "-----"
-    exit 1
+  echo "-----"
+  echo "Descr: Patches sample status to ${new_status}"
+  echo "Usage: $(basename $0) \$sample_barcode"
+  echo "   Eg: $(basename $0) FR123456"
+  echo "-----"
+  exit 1
 fi
 
-bc=$1 # sample barcode
+info "Querying api to find sample by barcode (${sample_barcode})"
+sample_json=$(hmf_api_get "samples?barcode=${sample_barcode}")
 
-main () {
-    echo "[INFO] Searching for sample (${bc})"
-    result="$(hmfapi GET ${api_url}/samples?barcode=${bc})"
-    result_count=$(echo "${result}" | jq length)
+## Make sure only one object is selected
+[[ $(echo "${sample_json}" | jq length) -eq 1 ]] || die "Amount of samples found for ${sample_barcode} is not 1"
 
-    if [[ ${result_count} -ne 1 ]]; then
-        echo "[ERROR] Expected one sample for ${bc} but ${result_count} found instead"
-        exit 1
-    else
-        sample=$(echo "${result}" | jq -r .[0])
-        oid=$(echo "${sample}" | jq -r .id)
-        yld=$(echo "${sample}" | jq -r .yld)
-        q30=$(echo "${sample}" | jq -r .q30)
-        sts=$(echo "${sample}" | jq -r .status)
-
-        echo "[INFO] Found sample (barcode=${bc} id=${oid} yield=${yld} q30=${q30} status=${sts})"
-        echo "[INFO] Patching status to Ready"
-        hmfapi PATCH ${api_url}/samples/${oid} status=Ready
-    fi
-}
-
-## Generic api function
-hmfapi () {
-    echo "$@" 1>&2
-    http --ignore-stdin --cert="${api_crt_file}" --cert-key="${api_key_file}" "$@"
-}
-
-main
+## Patch
+sample_oid=$(echo "${sample_json}" | jq -r .[0].id)
+hmf_api_patch samples "${sample_oid}" "status=${new_status}"
