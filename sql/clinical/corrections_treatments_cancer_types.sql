@@ -1,5 +1,6 @@
 # Curation primary tumor location
 select * from clinicalFindings where message ='Failed to curate primary tumor location';
+select * from clinicalFindings where message ='Failed to curate primary tumor location V2';
 
 # Curation pre-treatment
 select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='preTreatmentCuration';
