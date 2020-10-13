@@ -6,7 +6,7 @@ CALLER=$(basename "$(caller | cut -d" " -f2)")
 msg() {
     local msg_type=$1 && shift
     local msg_content=$* && shift
-    echo "[${msg_type}] $(date +"%y%m%d %T") | $msg_content (${CALLER})"
+    echo "[${msg_type}] $(date +'%y%m%d %T') (${CALLER}) - ${msg_content}"
 }
 
 error() {
