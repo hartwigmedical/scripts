@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source metadata_functions
+
 health_check_processed_runs
 
 echo "[INFO] Count HealthChecker succeeded"
@@ -14,6 +16,14 @@ source_path=/data/gcp/processed_runs
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
     patient_id=$(echo ${run} | tr "_" " " | awk '{print $5}')
+
+    # Load run into db when CUPPA report is requested
+    sample_id=$(load_tumor_sample_from_metadata ${run})
+    CUPPA_sample=$(cat /data/ops/lims/prod/CUPPA_samples.tsv | grep -w ${sample_id} | wc -l)
+    if [[ ${CUPPA_sample} -ge 1 ]]; then
+        load_run_into_prod_db ${run}
+    fi
+
     if [[ ${patient_id} == "CORELR02"* || ${patient_id} == "CORERI02"* ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
         mv ${source_path}/${run} /data/core/runs/

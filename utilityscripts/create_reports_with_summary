@@ -7,7 +7,7 @@ process_runs=$(ls ${source_path})
 
 for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
-    summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep -w ${sample_id} | wc -w)
+    summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep -w ${sample_id} | wc -l)
 
     if [[ ${summary_present} -ge 1 ]]; then
         if [[ ${sample_id} == "CORE"* ]]; then
