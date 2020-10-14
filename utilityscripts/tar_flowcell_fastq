@@ -54,7 +54,7 @@ echo "[INFO] Changing dir to out root (${out_root})"
 cd ${out_root} || exit 1
 
 echo "[INFO] Creating md5 file"
-md5sum "${out_tar_path}" > "${out_md5_path}"
+md5sum "${out_tar_name}" > "${out_md5_path}"
 
 echo "[INFO] Output files ready (tar=${du_of_tar})"
 echo "[INFO] Inspect content:"
