@@ -19,7 +19,6 @@ out_root="/data2/processed"
 name_of_dir_to_tar=$(basename ${path_of_dir_to_tar})
 out_tar_name="${YYMMDD}_${name_of_dir_to_tar}_FASTQ"
 out_tar_path="${out_root}/${out_tar_name}.tar"
-tar_log_path="${out_tar_path}.log"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
 
@@ -45,8 +44,7 @@ echo "[INFO] Changing dir"
 cd ${in_root} || exit 1
 
 echo "[INFO] Running tar cmd (${tar_cmd})"
-echo "[INFO] You can check progress in ${tar_log_path}"
-${tar_cmd} > "${tar_log_path}" || exit 1
+${tar_cmd} || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
 echo "[INFO] Creating content file"
