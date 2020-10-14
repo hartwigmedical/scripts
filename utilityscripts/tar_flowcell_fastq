@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
-path_of_dir_to_tar=$1 && shift
+path_of_dir_to_tar=$1
 
+out_root="/data2/processed"
 YYMMDD="$(date '+%y%m%d')"
 
-if [[ -z ${path_of_dir_to_tar} || $1 == "-h" || $1 == "--help" ]]; then
+if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Creates tar of all FASTQ files in provided path (and md5sum)"
     echo " Usage: $(basename $0) /path/to/directory/with/fastq/files"
@@ -14,35 +15,33 @@ if [[ -z ${path_of_dir_to_tar} || $1 == "-h" || $1 == "--help" ]]; then
 fi
 
 in_root=$(dirname ${path_of_dir_to_tar})
-out_root="/data2/processed"
-
-name_of_dir_to_tar=$(basename ${path_of_dir_to_tar})
-out_tar_name="${YYMMDD}_${name_of_dir_to_tar}_FASTQ.tar"
+tar_dir_name=$(basename ${path_of_dir_to_tar})
+out_tar_name="${YYMMDD}_${tar_dir_name}_FASTQ.tar"
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
 
-## some sanity checks
+## sanity checks
 if [[ -e "${out_tar_path}" ]]; then
     echo "[ERROR] Provided output tar file already exists (${out_tar_path})" && exit 1
 fi
 if [[ ! -e "${path_of_dir_to_tar}" ]]; then
-    echo "[ERROR] Provided directory to tar does not exist (${path_of_dir_to_tar})" && exit 1
+    echo "[ERROR] Provided dir to tar does not exist (${path_of_dir_to_tar})" && exit 1
 fi
 if [[ $(find ${path_of_dir_to_tar} -type f -name "*.fastq.gz" | wc -l) -lt 1 ]]; then
-    echo "[ERROR] Provided directory to tar does not contain fastq.gz files (${path_of_dir_to_tar})" && exit 1
+    echo "[ERROR] Provided dir to tar does not contain fastq.gz files (${path_of_dir_to_tar})" && exit 1
 fi
 
-## build tar command
+## construct tar command
 tar_cmd="tar"
 tar_cmd+=" -cf ${out_tar_path}"
-tar_cmd+=" ${name_of_dir_to_tar}"
+tar_cmd+=" ${tar_dir_name}"
 
-## do stuff
+## create output files
 echo "[INFO] Changing dir to in root (${in_root})"
 cd ${in_root} || exit 1
 
-echo "[INFO] Running tar cmd (${tar_cmd})"
+echo "[INFO] Creating tar file"
 ${tar_cmd} || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
@@ -55,11 +54,10 @@ cd ${out_root} || exit 1
 echo "[INFO] Creating md5 file"
 md5sum "${out_tar_name}" > "${out_md5_path}"
 
-echo "[INFO] Output files ready (tar=${du_of_tar})"
-echo "[INFO] Files created:"
-echo "[INFO]   ${out_tar_path}"
-echo "[INFO]   ${out_cnt_path}"
-echo "[INFO]   ${out_md5_path}"
+echo "[INFO] Output files ready:"
+echo "[INFO]  ${out_tar_path} (${du_of_tar})"
+echo "[INFO]  ${out_cnt_path}"
+echo "[INFO]  ${out_md5_path}"
 echo "[INFO] Cmd to sync output files to datastore:"
-echo " rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
+echo "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
 echo ""

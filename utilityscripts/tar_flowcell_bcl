@@ -66,4 +66,3 @@ echo "[INFO]  ${out_md5_path}"
 echo "[INFO] Cmd to sync output files to datastore:"
 echo "  rsync -ahP --stats ${out_tar_path} ${out_cnt_path} ${out_md5_path} ds:/data/tmp/"
 echo ""
-
