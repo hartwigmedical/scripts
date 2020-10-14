@@ -44,7 +44,8 @@ echo "[INFO] Changing dir"
 cd ${in_root} || exit 1
 
 echo "[INFO] Running tar cmd (${tar_cmd})"
-${tar_cmd} || exit 1
+echo "[INFO] You can check progress in ${tar_log_path}"
+${tar_cmd} > "${tar_log_path}" || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
 echo "[INFO] Creating content file"
