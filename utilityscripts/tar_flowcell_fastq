@@ -40,7 +40,7 @@ tar_cmd+=" -cf ${out_tar_path}"
 tar_cmd+=" ${name_of_dir_to_tar}"
 
 ## do stuff
-echo "[INFO] Changing dir"
+echo "[INFO] Changing dir to in root (${in_root})"
 cd ${in_root} || exit 1
 
 echo "[INFO] Running tar cmd (${tar_cmd})"
@@ -49,6 +49,9 @@ du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
 echo "[INFO] Creating content file"
 tar -tf "${out_tar_path}" > "${out_cnt_path}"
+
+echo "[INFO] Changing dir to out root (${out_root})"
+cd ${out_root} || exit 1
 
 echo "[INFO] Creating md5 file"
 md5sum "${out_tar_path}" > "${out_md5_path}"
