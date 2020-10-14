@@ -8,8 +8,9 @@ YYMMDD="$(date '+%y%m%d')"
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Creates tar of all FASTQ files in provided path (and md5sum)"
+    echo "        Output will be written to ${out_root}"
     echo " Usage: $(basename $0) /path/to/directory/with/fastq/files"
-    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/flowcell/Fastq/HMFregXXXX > tar.log &"
+    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG/Fastq/HMFregXXXX > tar.log &"
     echo "---"
     exit 1
 fi

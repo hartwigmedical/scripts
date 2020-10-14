@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 path_of_dir_to_tar=$1
+optional_tag=$2 # Eg HMFregXXXX
 
 out_root="/data2/processed"
 YYMMDD="$(date '+%y%m%d')"
@@ -8,8 +9,10 @@ YYMMDD="$(date '+%y%m%d')"
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Creates tar of flowcell including BCL (excluding Images/Logs/FASTQ)"
-    echo " Usage: $(basename $0) /path/to/flowcell/directory/"
-    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/flowcell/ > tar.log &"
+    echo "        Output will be written to ${out_root}"
+    echo " Usage: $(basename $0) /path/to/flowcell/directory"
+    echo "        $(basename $0) /path/to/flowcell/directory \${optional_tag}"
+    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG \"HMFregXXXX\" > tar.log &"
     echo "---"
     exit 1
 fi
@@ -17,6 +20,9 @@ fi
 in_root=$(dirname ${path_of_dir_to_tar})
 tar_dir_name=$(basename ${path_of_dir_to_tar})
 out_tar_name="${YYMMDD}_${tar_dir_name}_BCL.tar"
+if [[ ! -z "${optional_tag}" && "${optional_tag}" != "" ]]; then
+    out_tar_name="${YYMMDD}_${tar_dir_name}-${optional_tag}_BCL.tar"
+fi
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
