@@ -5,6 +5,9 @@ source metadata_functions
 source_path=/data/cpct/reportable_runs
 process_runs=$(ls ${source_path})
 
+## TODO remove rerun run when all runs are processed with summary
+## create reports and then remove run
+
 for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
     summary_present=$(cat /data/common/dbs/summary_patient_report/summary_samples.tsv | grep -w ${sample_id} | wc -l)
