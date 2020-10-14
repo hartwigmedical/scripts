@@ -17,7 +17,7 @@ process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
     patient_id=$(echo ${run} | tr "_" " " | awk '{print $5}')
 
-    # Load run into db when CUPPA report is requested
+    # Load run into db when CUPPA report is requested without rerun of the data
     sample_id=$(load_tumor_sample_from_metadata ${run})
     CUPPA_sample=$(cat /data/ops/lims/prod/CUPPA_samples.tsv | grep -w ${sample_id} | wc -l)
     if [[ ${CUPPA_sample} -ge 1 ]]; then
