@@ -3,10 +3,10 @@
 LIMS_JSON_FILE="/data/ops/lims/prod/lims.json"
 SUBMISSIONS_JSON="$(cat "${LIMS_JSON_FILE}" | jq -c '.submissions')"
 
-submissions_to_visit=("$@") # optional
+print_count=${1:-10} # optional amount of submissions to print
 
 if [[ "$#" -eq 0 ]]; then
-    submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -100) )
+    submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -${print_count}) )
 fi
 
 for submission in "${submissions_to_visit[@]}"; do
