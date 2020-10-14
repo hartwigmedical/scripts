@@ -19,9 +19,10 @@ out_root="/data2/processed"
 name_of_dir_to_tar=$(basename ${path_of_dir_to_tar})
 out_tar_name="${YYMMDD}_${name_of_dir_to_tar}_FASTQ"
 out_tar_path="${out_root}/${out_tar_name}.tar"
+tar_log_path="${out_tar_path}.log"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
-tar_log_path="${HOME}/logs/${YYMMDD}_create_fastq_tar_${out_tar_name}.log"
+
 
 ## some sanity checks
 if [[ -e "${out_tar_path}" ]]; then
