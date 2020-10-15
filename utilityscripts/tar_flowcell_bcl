@@ -11,7 +11,7 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "        Output will be written to ${out_root}"
     echo " Usage: $(basename $0) /path/to/flowcell/directory"
     echo "        $(basename $0) /path/to/flowcell/directory \${optional_tag}"
-    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG \"HMFregXXXX\" > tar.log &"
+    echo " Exmpl: $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG 'HMFregXXXX'"
     echo "---"
     exit 1
 fi
