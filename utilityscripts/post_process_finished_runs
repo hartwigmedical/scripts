@@ -32,7 +32,7 @@ for run in ${process_runs}; do
     else
         # This is for patients that require a summary (WIDE, some CORE)
         echo "[INFO] Copying set ${run} to /data/cpct/reportable_runs"
-        cp ${source_path}/${run} /data/cpct/reportable_runs/
+        cp -R ${source_path}/${run} /data/cpct/reportable_runs/
         echo "[INFO] Create patient report for ${run}"
         create_patient_report_for_run /data/cpct/reportable_runs/${run}
         if [[ ${patient_id} == "CORE"* ]]; then
