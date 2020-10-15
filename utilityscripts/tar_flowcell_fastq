@@ -38,9 +38,8 @@ if [[ $(find ${path_of_dir_to_tar} -type f -name "*.fastq.gz" | wc -l) -lt 1 ]];
 fi
 
 ## construct tar command
-tar_cmd="tar"
-tar_cmd+=" -cf ${out_tar_path}"
-tar_cmd+=" ${tar_dir_name}"
+find_cmd="find ${tar_dir_name} -name *.fastq.gz"
+tar_cmd="${find_cmd} | tar -cf ${out_tar_path} --files-from -"
 
 ## create output files
 echo "[INFO] Changing dir to in root (${in_root})"
