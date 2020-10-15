@@ -37,16 +37,13 @@ if [[ $(find ${path_of_dir_to_tar} -type f -name "*.fastq.gz" | wc -l) -lt 1 ]];
     echo "[ERROR] Provided dir to tar does not contain fastq.gz files (${path_of_dir_to_tar})" && exit 1
 fi
 
-## construct tar command
-find_cmd="find ${tar_dir_name} -name *.fastq.gz"
-tar_cmd="${find_cmd} | tar -cf ${out_tar_path} --files-from -"
-
 ## create output files
 echo "[INFO] Changing dir to in root (${in_root})"
 cd ${in_root} || exit 1
 
 echo "[INFO] Creating tar file (${out_tar_path})"
-${tar_cmd} || exit 1
+find_cmd="find ${tar_dir_name} -name *.fastq.gz"
+${find_cmd} | tar -cf ${out_tar_path} --files-from - || exit 1
 du_of_tar=$(du -h "${out_tar_path}" | cut -f1)
 
 echo "[INFO] Creating content file (${out_cnt_path})"
