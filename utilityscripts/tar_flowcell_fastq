@@ -1,23 +1,27 @@
 #!/usr/bin/env bash
 
 path_of_dir_to_tar=$1
+optional_tag=$2 # Eg HMFregXXXX
 
 out_root="/data2/processed"
-YYMMDD="$(date '+%y%m%d')"
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Descr: Creates tar of all FASTQ files in provided path (and md5sum)"
     echo "        Output will be written to ${out_root}"
     echo " Usage: $(basename $0) /path/to/directory/with/fastq/files"
-    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG/Fastq/HMFregXXXX > tar.log &"
+    echo "        $(basename $0) /path/to/directory/with/fastq/files \${optional_tag}"
+    echo " Exmpl: nohup $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG/Fastq/HMFregXXXX \"HMFregXXXX-part1\" > tar.log &"
     echo "---"
     exit 1
 fi
 
 in_root=$(dirname ${path_of_dir_to_tar})
 tar_dir_name=$(basename ${path_of_dir_to_tar})
-out_tar_name="${YYMMDD}_${tar_dir_name}_FASTQ.tar"
+out_tar_name="${tar_dir_name}_FASTQ.tar"
+if [[ ! -z "${optional_tag}" && "${optional_tag}" != "" ]]; then
+    out_tar_name="${optional_tag}_FASTQ.tar"
+fi
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"

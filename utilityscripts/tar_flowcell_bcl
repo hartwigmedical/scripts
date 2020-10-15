@@ -4,7 +4,6 @@ path_of_dir_to_tar=$1
 optional_tag=$2 # Eg HMFregXXXX
 
 out_root="/data2/processed"
-YYMMDD="$(date '+%y%m%d')"
 
 if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -19,9 +18,9 @@ fi
 
 in_root=$(dirname ${path_of_dir_to_tar})
 tar_dir_name=$(basename ${path_of_dir_to_tar})
-out_tar_name="${YYMMDD}_${tar_dir_name}_BCL.tar"
+out_tar_name="${tar_dir_name}_BCL.tar"
 if [[ ! -z "${optional_tag}" && "${optional_tag}" != "" ]]; then
-    out_tar_name="${YYMMDD}_${tar_dir_name}-${optional_tag}_BCL.tar"
+    out_tar_name="${optional_tag}_BCL.tar"
 fi
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
