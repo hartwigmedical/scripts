@@ -43,7 +43,7 @@ for run in ${process_runs}; do
             mv ${source_path}/${run} /data/cpct/runs/
             echo "[INFO] Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
-            echo "[INFO] Rerun set"
+            echo "[INFO] Rerun set /data/cpct/runs/${run}"
             rerun_processed_set /data/cpct/runs/${run}
         fi
     fi
