@@ -9,7 +9,7 @@ sambamba_dir=/data/tools/sambamba_v0.6.5
 
 bam_dirname=$(dirname "${in_bam}")
 bam_basename=$(basename "${in_bam}")
-sample_name=$(echo "${bam_basename}" | cut -d"_" -f1)
+sample_name=$(echo "${bam_basename}" | cut -d"." -f1 | cut -d"_" -f1)
 out_dir="${bam_dirname}/${sample_name}_FASTQ"
 
 if [[ "$(hostname)" == "datastore" ]]; then
