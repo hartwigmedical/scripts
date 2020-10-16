@@ -140,11 +140,10 @@ echo ""
 
 echo "## Validated runs with ini ${ini} and pipeline ${pip} that need to be processed"
 validated_runs_json=$(query_api.pl -json -type runs -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=^${pip}" -filter "status=Validated")
-echo "${vaidatedl_runs_json}" | jq -c '.[]' | while read run_json; do
+echo "${validated_runs_json}" | jq -c '.[]' | while read run_json; do
     set_name=$(echo "$run_json" | jq -r '.name')
     exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
-    if [[ ${exists_in_success_run_dirs} < 10 ]]; then
-        entity=$(echo "$run_json" | jq -r '.entity')
+    if [[ ${exists_in_success_run_dirs} == 0 ]]; then
         bucket=$(echo "$run_json" | jq -r '.bucket')
         sample=$(echo "$run_json" | jq -r '.tumor_sample')
         if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
