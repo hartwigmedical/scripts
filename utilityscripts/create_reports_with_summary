@@ -14,12 +14,12 @@ for run in ${process_runs}; do
             echo "[INFO] Create patient report for ${run}"
             create_patient_report_for_run /data/cpct/reportable_runs/${run}
             echo "[INFO] Removing run ${run} from /data/cpct/reportable_runs/"
-            rm -r ${run}
+            rm -r /data/cpct/reportable_runs/${run}
         elif [[ ${sample_id} == "WIDE"* ]]; then
             echo "[INFO] Create patient report for ${run}"
             create_patient_report_for_run /data/cpct/reportable_runs/${run}
             echo "[INFO] Removing run ${run} from /data/cpct/reportable_runs/"
-            rm -r ${run}
+            rm -r /data/cpct/reportable_runs/${run}
         fi
     elif [[ ${summary_present} -eq 0 ]]; then
         echo "No summary present for run ${source_path}/${run}"
