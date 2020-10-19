@@ -4,11 +4,13 @@ source locate_files
 
 patient_db_jar=$(locate_pilot_patient_db)
 runs_dir=/data/cpct/runs
+pipeline_version_file="pipeline.version"
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 # Note that we should only "do_process_wide_clinical_data" in case of pilot.
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
+    -pipeline_version_file ${pipeline_version_file} \
     -runs_dir ${runs_dir} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
