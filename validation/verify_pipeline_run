@@ -53,8 +53,8 @@ main() {
     info "Jobs directory: ${jobs_dir}"
     info "Logs directory: ${logs_dir}"
     
-    mkdir ${out_dir} ${runs_dir} ${run_dir} ${jobs_dir} ${logs_dir} || die "Unable to create dirs"
-    cd ${out_dir} || die "Unable to move to output directory"
+    mkdir "${out_dir}" "${runs_dir}" "${run_dir}" "${jobs_dir}" "${logs_dir}" || die "Unable to create dirs"
+    cd "${out_dir}" || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"
     jobs_source_path="/data/common/repos/scripts/validation/"
@@ -103,13 +103,13 @@ main() {
     find "${new_run}" -name "run.log" -exec grep -Pi "err|warn|exit|excep" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
 
     info "Executing locate_files test"
-    ${jobs_dir}/locate_files_test "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
+    "${jobs_dir}/locate_files_test" "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
 
     info "Executing compare_v5_runs"
-    ${jobs_dir}/compare_v5_runs "${truth_run}" "${new_run}" > "${logs_dir}/compare_v5_runs.log" 2>&1
+    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${logs_dir}/compare_v5_runs.log" 2>&1
 
     info "Executing diff_v5_COLO829v003_runs"
-    ${jobs_dir}/diff_v5_COLO829v003_runs "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
+    "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
 
     info "TODO NEXT:"
     info " 1) Inspect log files in ${logs_dir}"
@@ -122,8 +122,8 @@ download_run_from_gcp() {
     local log_file=$1 && shift
     local check_log="${log_file}.check"
     
-    touch ${log_file}
-    touch ${check_log}
+    touch "${log_file}"
+    touch "${check_log}"
     
     info "Starting download from GCP (you can track progress in log ${log_file})"
     gsutil -m rsync -r "${gcp_url}/" "${run_dir}/" > "${log_file}" 2>&1
@@ -146,9 +146,8 @@ copy_file() {
     else
         info "Copying file ($file_path)"
         cp "${file_path}" "${jobs_dir}"
+        [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
     fi
-    
-    [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
 }
 
 check_metadata_json() {
@@ -170,14 +169,14 @@ check_metadata_json() {
 }
 
 die() { 
-    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
+    echo "[ERROR] $(date +"%y%m%d %T")" "$@" >&2
     exit 1 
 }
 warn() { 
-    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
+    echo "[WARN] $(date +"%y%m%d %T")" "$@" >&2
 }
 info() { 
-    echo "[INFO] $(date +"%y%m%d %T") $@"
+    echo "[INFO] $(date +"%y%m%d %T")" "$@"
 }
 
 main
