@@ -95,6 +95,10 @@ main() {
 
     new_run="${run_dir}"
 
+    metadata_file="${new_run}/metadata.json"
+    info "Checking format of ${metadata_file}"
+    check_metadata_json "${metadata_file}"
+
     info "Looking for anomalies in run.log files"
     find "${new_run}" -name "run.log" -exec grep -Pi "err|warn|exit|excep" {} + | grep -v germline_caller > "${logs_dir}/runlogs_check.txt"
 
@@ -145,6 +149,24 @@ copy_file() {
     fi
     
     [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
+}
+
+check_metadata_json() {
+    local metadata_json=$1 && shift
+    fields_to_check=(
+        '.set'
+        '.reference.sampleName'
+        '.reference.barcode'
+        '.tumor.sampleName'
+        '.tumor.barcode'
+    )
+    for field in ${fields_to_check[*]}; do
+        if [[ $(jq "select(${field} == null)" "${metadata_json}") ]]; then
+            warn "Field ${field} absent metadata (${metadata_json})"
+        else
+            info "OK field found in metadata (${field})"
+        fi
+    done
 }
 
 die() { 
