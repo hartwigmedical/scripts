@@ -24,7 +24,11 @@ load_ref_sample_barcode_from_metadata() {
         # V5 format
         metadata=${run_dir}/metadata.json
         # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
-        ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
+        if [[ $(jq 'select(.reference.barcode != null)' "${metadata}") ]]; then 
+            ref_sample_barcode=$(jq -r '.reference.barcode' ${metadata} | cut -d"_" -f1)
+        elif [[ $(jq 'select(.reference.sampleId != null)' "${metadata}") ]]; then
+            ref_sample_barcode=$(jq -r '.reference.sampleId' ${metadata} | cut -d"_" -f1)
+        fi
     fi
     echo "${ref_sample_barcode}"
 }
@@ -51,7 +55,11 @@ load_tumor_sample_barcode_from_metadata() {
         # V5 format
         metadata=${run_dir}/metadata.json
         # In some situations, real barcode is appended with "_TII" to work around an issue @ SBP - see also DEV-1006
-        tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | tr "_" " " | awk '{print $1}')
+        if [[ $(jq 'select(.tumor.barcode != null)' "${metadata}") ]]; then 
+            tumor_sample_barcode=$(jq -r '.tumor.barcode' ${metadata} | cut -d"_" -f1)
+        elif [[ $(jq 'select(.tumor.sampleId != null)' "${metadata}") ]]; then
+            tumor_sample_barcode=$(jq -r '.tumor.sampleId' ${metadata} | cut -d"_" -f1)
+        fi
     else
          # Pre-V5 format
         metadata=${run_dir}/metadata
