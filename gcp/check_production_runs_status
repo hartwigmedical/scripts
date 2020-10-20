@@ -2,7 +2,7 @@
 
 YYMMDD=$(date +'%y%m%d')
 ini="Somatic.ini"
-pip="v5.14"
+pip="v5.15"
 
 echo "## Production Run Status Check (${YYMMDD} - ${pip})"
 echo ""
@@ -128,8 +128,8 @@ query_api.pl \
                 -filter "pipeline=^${pip}" \
                 -filter "status=Success" -json | jq -r '.[].name' | tail -n 1 )
 
-            exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l);
-		        if [[ ${exists_in_success_run_dirs} == 0 ]]; then
+            exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l)
+            if [[ ${exists_in_success_run_dirs} == 0 ]]; then
                 echo "${download_script} -s ${set_name_for_success_tumor_sample}"
             fi
         else
@@ -139,23 +139,23 @@ query_api.pl \
 echo ""
 
 echo "## Validated runs with ini ${ini} and pipeline ${pip} that need to be processed"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "bucket=hmf-output" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Validated" \
-    -json | jq -r '.[].name' | \
-    while read set_name; do
-        exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
-        if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-            if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
-                echo "# This is a validation run, so can be ignored for production ${set_name}"
-            else
-                echo "${download_script} ${set_name}"
-            fi
+validated_runs_json=$(query_api.pl -json -type runs -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=^${pip}" -filter "status=Validated")
+echo "${validated_runs_json}" | jq -c '.[]' | while read run_json; do
+    set_name=$(echo "$run_json" | jq -r '.name')
+    exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
+    if [[ ${exists_in_success_run_dirs} == 0 ]]; then
+        bucket=$(echo "$run_json" | jq -r '.bucket')
+        sample=$(echo "$run_json" | jq -r '.tumor_sample')
+        if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
+            echo "# This is a validation run, so can be ignored for production ${set_name}"
+        elif [[ "${bucket}" == "hmf-output-services" && ! "${sample}" =~ ^CORE.{8}T ]]; then
+            ## Skipping none-CORE services runs
+            continue
+        else
+            echo "${download_script} ${set_name}"
         fi
-    done | sort -r | uniq
+    fi
+done | sort -r | uniq
 echo ""
 
 echo "## SnpCheck runs with ini ${ini} and pipeline ${pip} that need to be processed"

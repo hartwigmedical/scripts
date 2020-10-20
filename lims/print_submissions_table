@@ -3,11 +3,8 @@
 LIMS_JSON_FILE="/data/ops/lims/prod/lims.json"
 SUBMISSIONS_JSON="$(cat "${LIMS_JSON_FILE}" | jq -c '.submissions')"
 
-submissions_to_visit=("$@") # optional
-
-if [[ "$#" -eq 0 ]]; then
-    submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -100) )
-fi
+print_count=${1:-10} # optional amount of submissions to print
+submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -${print_count}) )
 
 for submission in "${submissions_to_visit[@]}"; do
     obj_json=$(echo "${SUBMISSIONS_JSON}" | jq ".${submission}")
@@ -15,8 +12,6 @@ for submission in "${submissions_to_visit[@]}"; do
     project_type=$(echo "${obj_json}" | jq -r ".project_type")
     expected_sample_count=$(echo "${obj_json}" | jq -r ".sample_count")
     analysis_type=$(echo "${obj_json}" | jq -r ".analysis_type")
-    entity=""
-    bucket=""
 
     ## reset some fields according to project type
     if [[ "${project_type}" == "Human research" ]]; then
@@ -32,25 +27,6 @@ for submission in "${submissions_to_visit[@]}"; do
     else
         project_type="CheckProjectType(${project_type})"
     fi
-    
-    ## retrieve missing info
-    samples_json=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
-    lims_sample_count=$(echo "${samples_json}" | jq 'length')
-    if [[ "${project_type}" == "Cohort" ]]; then
-        entity="NA"
-        bucket="NA"
-        analysis_type="NA"
-    elif [[ "${lims_sample_count}" -gt 0 ]]; then
-        entity=$(echo "${samples_json}" | jq -r '.[-1].entity')
-        bucket=$(query_api.pl -type entities -json | jq -r ".[] | select( .name == \"${entity}\" ) | .bucket")
-    else
-        echo "[WARN] No sample found for ${submission} so unable to retrieve entity and bucket!"
-    fi
-
-    ## perform some sanity checks
-    #echo "[DEBUG] ${submission} ${entity} ${bucket}"
-    if [[ -z "${entity}" || "${entity}" == "null" ]]; then echo "[WARN] No entity found for ${submission}!"; fi
-    if [[ -z "${bucket}" || "${bucket}" == "null" ]]; then echo "[WARN] No bucket found for ${submission}!"; fi
 
     ## output
     printf "%s\t%s\t%s\t%s\t%s\n" \

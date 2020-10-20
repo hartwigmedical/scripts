@@ -4,11 +4,13 @@ source locate_files
 
 patient_db_jar=$(locate_pilot_patient_db)
 runs_dir=/data/cpct/runs
+pipeline_version_file="pipeline.version"
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 # Note that we should only "do_process_wide_clinical_data" in case of pilot.
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
+    -pipeline_version_file ${pipeline_version_file} \
     -runs_dir ${runs_dir} \
     -cpct_ecrf /data/ecrf/cpct_ecrf.xml \
     -cpct_form_status_csv /data/ecrf/cpct_form_status.csv \
@@ -22,6 +24,8 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -curated_tumor_location_csv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.csv \
     -curated_tumor_location_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.tsv \
+    -curated_tumor_location_v2_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations_v2.tsv \
+    -tumor_location_v2_mapping_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_v2_mapping.tsv \
     -tumor_location_mapping_csv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.csv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \

@@ -3,7 +3,7 @@
 source message_functions
 
 run_name=$1
-new_status="Validated"
+new_status="SnpCheck"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
   echo "-----"

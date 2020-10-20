@@ -13,112 +13,103 @@ if [[ ! ${submission} =~ ^HMFreg ]]; then echo "[ERROR] Submission should start 
 
 ## setting up variables
 out_path=${SUBMISSIONS_DIR}'/'${submission}
-lms_file=${out_path}'/lims.txt'
-sam_file=${out_path}'/samples.txt'
-run_file=${out_path}'/runs.txt'
-log_file=${out_path}'/log.txt'
-bcs_file=${out_path}'/barcodes.txt'
-rep_file=${out_path}'/report.txt'
-sub_json=${out_path}'/submission.json'
-flw_file=${out_path}'/flowcells.txt'
-lms_json=$(echo ${lms_file} | sed 's/txt$/json/')
-sam_json=$(echo ${sam_file} | sed 's/txt$/json/')
-run_json=$(echo ${run_file} | sed 's/txt$/json/')
-flw_json=$(echo ${flw_file} | sed 's/txt$/json/')
+lims_file="${out_path}/lims.txt"
+samp_file="${out_path}/samples.txt"
+runs_file="${out_path}/runs.txt"
+ log_file="${out_path}/log.txt"
+barc_file="${out_path}/barcodes.txt"
+repo_file="${out_path}/report.txt"
+subm_json="${out_path}/submission.json"
+flow_file="${out_path}/flowcells.txt"
+lims_json="${lims_file/.txt/.json}"
+samp_json="${samp_file/.txt/.json}"
+runs_json="${runs_file/.txt/.json}"
 date_string=$(date)
 
 ## create dirs
 if [[ -e "${out_path}" ]] ; then echo "[ERROR] Dir exists already (${out_path})"; exit 1; fi
-mkdir -p ${out_path} || exit 1
+mkdir -p "${out_path}" || exit 1
 
 ## gather submission info from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get submission info"
-cat ${HMF_LIMS_JSON} | jq -r ".submissions.${submission}" > ${sub_json}
-p_name=$(cat ${sub_json} | jq -r '.project_name')
-r_name=$(cat ${sub_json} | jq -r '.report_contact_name')
-r_mail=$(cat ${sub_json} | jq -r '.report_contact_email')
-d_name=$(cat ${sub_json} | jq -r '.data_contact_name')
-d_mail=$(cat ${sub_json} | jq -r '.data_contact_email')
-p_type=$(cat ${sub_json} | jq -r '.analysis_type')
+cat "${HMF_LIMS_JSON}" | jq -r ".submissions.${submission}" > "${subm_json}"
+p_name=$(cat "${subm_json}" | jq -r '.project_name')
+r_name=$(cat "${subm_json}" | jq -r '.report_contact_name')
+r_mail=$(cat "${subm_json}" | jq -r '.report_contact_email')
+d_name=$(cat "${subm_json}" | jq -r '.data_contact_name')
+d_mail=$(cat "${subm_json}" | jq -r '.data_contact_email')
+p_type=$(cat "${subm_json}" | jq -r '.analysis_type')
 if [[ -z "${p_name+x}" ]]; then echo "[ERROR] Unable to find project for submission"; exit 1; fi
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${lms_file}
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > ${lms_json}
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > "${lims_file}"
+${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > "${lims_json}"
 
 ## get q30/yield data from HMF API
 echo "[INFO] Querying HMF API to get sample status"
-${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > ${sam_file}
+${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > "${samp_file}"
 api_samples_json=$(${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -no_format -json)
 total_yield_gbase=$( echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
-echo "${api_samples_json}" > ${sam_json}
+echo "${api_samples_json}" > "${samp_json}"
 
 ## get entity/run-status from HMF API
 echo "[INFO] Querying HMF API to get run status"
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > ${run_file}
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > ${run_json}
-
-## get flowcell info from datastore
-echo "[INFO] Querying HMF API to get flowcell status"
-fcids_with_ab=$(find_in_samplesheets "${submission}" | cut -d" " -f5 | cut -d"_" -f4 | sort | uniq)
-fcids=$(for fcid in ${fcids_with_ab[@]}; do fcid="${fcid:1}"; echo "${fcid}"; done)
-fcids_grep_string=$(echo ${fcids} | tr " " "|")
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" > ${flw_file}
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" -json > ${flw_json}
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > "${runs_file}"
+${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > "${runs_json}"
 
 ## get counts to check completeness
-hmf_count=$(cat ${lms_file} | grep -cv "^#")
-api_count=$(cat ${sam_file} | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
+hmf_count=$(cat "${lims_file}" | grep -cv "^#")
+api_count=$(cat "${samp_file}" | grep -v "^#" | awk '$6 ==  "Ready"' | wc -l )
 
 ## setup barcodes file (needed later for fastq file cleanup)
-cat ${sam_file} | grep -v "^#" | cut -f2 > ${bcs_file}
+cat "${samp_file}" | grep -v "^#" | cut -f2 > "${barc_file}"
 
 ## setup reporting info
-rm -f ${rep_file}
-echo -e "PROJECT\t${r_name}" >> ${rep_file}
-echo -e "PROJECT\t${r_mail}" >> ${rep_file}
-echo -e "PROJECT\t${d_mail}" >> ${rep_file}
-echo -e "PROJECT\t${p_name}" >> ${rep_file}
-echo -e "PROJECT\t${submission}" >> ${rep_file}
-echo -e "PROJECT\t${hmf_count}" >> ${rep_file}
-echo -e "PROJECT\t${p_type}" >> ${rep_file}
-echo -e "PROJECT\t${total_yield_gbase} GBase" >> ${rep_file}
+rm -f "${repo_file}"
+echo -e "PROJECT\t${r_name}" >> "${repo_file}"
+echo -e "PROJECT\t${r_mail}" >> "${repo_file}"
+echo -e "PROJECT\t${d_mail}" >> "${repo_file}"
+echo -e "PROJECT\t${p_name}" >> "${repo_file}"
+echo -e "PROJECT\t${submission}" >> "${repo_file}"
+echo -e "PROJECT\t${hmf_count}" >> "${repo_file}"
+echo -e "PROJECT\t${p_type}" >> "${repo_file}"
+echo -e "PROJECT\t${total_yield_gbase} GBase" >> "${repo_file}"
 
-cat ${sam_file} | grep -v ^# | while read line; do
+cat "${samp_file}" | grep -v ^# | while read line; do
     subm=$(echo "${line}" | cut -f1)
     barc=$(echo "${line}" | cut -f2)
     q30=$(echo "${line}" | cut -f3)
     yldR=$(echo "${line}" | cut -f4)
     yld=$(echo "${line}" | cut -f5)
     name=$(echo "${line}" | cut -f7)
-    date=$(cat ${lms_json} | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" )
-    sops=$(cat ${lms_json} | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" )
-    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> ${rep_file}
+    date=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" )
+    sops=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" )
+    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> "${repo_file}"
 done
 
 ## logging
-echo "#           Date = ${date_string}" >> ${log_file}
-echo "#     Submission = ${submission}"  >> ${log_file}
-echo "#        Project = ${p_name}"      >> ${log_file}
-echo "#   Sample Count = ${hmf_count}"   >> ${log_file}
-echo "#     Data Count = ${api_count}"   >> ${log_file}
-echo "#    Yield GBase = ${total_yield_gbase}"  >> ${log_file}
-echo "# Report Contact = ${r_name} (${r_mail})" >> ${log_file}
-echo "#   Data Contact = ${d_name} (${d_mail})" >> ${log_file}
+echo "#           Date = ${date_string}" >> "${log_file}"
+echo "#     Submission = ${submission}"  >> "${log_file}"
+echo "#        Project = ${p_name}"      >> "${log_file}"
+echo "#   Sample Count = ${hmf_count}"   >> "${log_file}"
+echo "#     Data Count = ${api_count}"   >> "${log_file}"
+echo "#    Yield GBase = ${total_yield_gbase}"  >> "${log_file}"
+echo "# Report Contact = ${r_name} (${r_mail})" >> "${log_file}"
+echo "#   Data Contact = ${d_name} (${d_mail})" >> "${log_file}"
 
 ## stdout msg
 pdf_name="${submission}_${p_name}.pdf"
 echo "[INFO] Inspect output files:"
 echo " cd ${out_path}"
 echo " cat ${log_file}"
-echo " cat ${lms_file}"
-echo " cat ${sam_file}"
-echo " cat ${run_file}"
-echo " cat ${flw_file}"
+echo " cat ${lims_file}"
+echo " cat ${samp_file}"
+echo " cat ${runs_file}"
+echo " cat ${flow_file}"
 echo ""
 echo "[INFO] Or directly get reporting info (for ${pdf_name}):"
-echo " cat ${rep_file} | cut -f1 --complement"
+echo " cat ${repo_file} | cut -f1 --complement"
 echo ""
 echo "[INFO] And get the aria2 download config with:"
 echo " nohup gather_submission_aria_config ${submission} > ${out_path}/gather_submission_aria_config.log &"

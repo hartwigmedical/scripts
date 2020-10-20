@@ -153,23 +153,27 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
                 filter = "FILTERED"
             alt = variants['variants/ALT'][i]
             ref = variants['variants/REF'][i]
-            genotype = ""
-            for geno in variants['calldata/GT'][i][0]:
-                if geno == 0:
-                    genotype = genotype + ref
-                elif geno == 1:
-                    genotype = genotype + alt[0]
-                elif geno == 2:
-                    genotype = genotype + alt[1]
-                else:
-                    print(geno)
-                    raise ValueError("Genotype looks weird")
+
+            #print(variants['calldata/GT'][i][0])
+            new_id['variant_annotation'] = variants['variants/ANN_HGVS_c'][i]
+            if variants['calldata/GT'][i][0].tolist() == [0, 1]:
+                new_id['ref_GRCh37'] = ref
+                new_id['alt_GRCh37'] = alt[0]
+            elif variants['calldata/GT'][i][0].tolist() == [1, 1]:
+                new_id['ref_GRCh37'] = alt[0]
+                new_id['alt_GRCh37'] = alt[0]
+            elif variants['calldata/GT'][i][0].tolist() == [1, 2]:
+                new_id['ref_GRCh37'] = alt[0]
+                new_id['alt_GRCh37'] = alt[1]
+            elif variants['calldata/GT'][i][0].tolist() == [0, 0]:
+                new_id['ref_GRCh37'] = ref
+                new_id['alt_GRCh37'] = ref
+                new_id['variant_annotation'] = "REF_CALL"
+            else:
+                print("[ERROR] Genotype not found: " + str(variants['calldata/GT'][i][0].tolist()))
 
             new_id['position_GRCh37'] = str(chr) + ":" + str(pos)
             new_id['rsid'] = ";".join(rs_id_filt)
-            new_id['ref_GRCh37'] = genotype[0]
-            new_id['alt_GRCh37'] = genotype[1]
-            new_id['variant_annotation'] = variants['variants/ANN_HGVS_c'][i]
             new_id['filter'] = filter
             new_id['gene'] = variants['variants/ANN_Gene_Name'][i]
             ids_found_in_patient = ids_found_in_patient.append(new_id, ignore_index=True)
@@ -210,7 +214,12 @@ def process_exceptions(ids_found, panel):
                                                                               str(variant['positionGRCh38'])
                     elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
-                        print("[WARN] What should we do? ref = corAlt, alt = corAlt")
+                        # Add variant_annotation and ref and alt base for hg38
+                        ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
+                        ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['altAlleleGRCh38']
+                        ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
+                        ids_found.at[found_var.index[0], 'position_GRCh38'] = str(variant['chromosome']) + ":" + \
+                                                                              str(variant['positionGRCh38'])
                     else:
                         print("[ERROR] Complete mismatch:")
                         print(found_var)
@@ -253,6 +262,16 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                 ids_found_in_patient.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
                 ids_found_in_patient.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
                 ids_found_in_patient.at[index, 'position_GRCh38'] = ""
+            # Fill in the rsid gaps, if annotation is missing on the location.
+            if 'rsid' in row:
+                if row['rsid'] == '.':
+                    rs_to_paste = '.'
+                    if row['position_GRCh37'] in rs_ids.values():
+                        for rs in rs_ids:
+                            if rs_ids[rs] == row['position_GRCh37']:
+                                rs_to_paste = rs
+                                break
+                    ids_found_in_patient.at[index, 'rsid'] = rs_to_paste
 
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
@@ -296,7 +315,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                            ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
 
         # If all variants are assumed_ref, return reference allele
-        if len(ids_found_in_gene.loc[ids_found_in_gene['filter'] == "NO_CALL"]) == len(ids_found_in_gene):
+        if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference allele")
             results[gene] = [gene_info['referenceAllele'] + "_HOM"]
         else:
@@ -304,8 +323,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             haplotypes_matching = []
             for allele in gene_info['alleles']:
                 severity[allele['alleleName']] = allele['function']
-                #variants_sample = list(zip(ids_found_in_gene.rsid.tolist(), ids_found_in_gene.alt_GRCh38.tolist()))
-                vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['filter'] != "NO_CALL"]
+                vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
                 if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]):
                     perfect_match = True
@@ -317,7 +335,6 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                             allele_status.append("HOM")
                         else:
                             allele_status.append("HET")
-                        # print(allele_status)
                     if all(x == allele_status[0] for x in allele_status):
                         allele_status = allele_status[0]
                     else:
@@ -339,12 +356,15 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
 
             if not perfect_match:
                 if not haplotypes_matching:
-                    sys.exit("[ERROR] No allele match found for " + str(gene))
+                    print("[WARN] No haplotype match found for " + str(gene) + ". Probable cause is that the variant is not in line with previously determined within defined haplotype.")
+                    results[gene].append("Unresolved_Haplotype")
                 else:
                     print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
                     optimal_set = []
                     for k in range(len(haplotypes_matching) + 1, 0, -1):
                         for subset in itertools.combinations(haplotypes_matching, k):
+                            if perfect_match:
+                                continue
                             # See if this combination results in a perfect match, otherwise store the score
                             allele_variants = [x['alleleVariants'] for x in subset]
                             rs_ids_subset = []
