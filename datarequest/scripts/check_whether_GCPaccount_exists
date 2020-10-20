@@ -28,7 +28,7 @@ echo ""
 
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
-    if [[ "email" == *"gserviceaccount.com"* ]]; then
+    if [[ "$email" == *"gserviceaccount.com"* ]]; then
         error=$( gsutil -u hmf-share iam ch serviceAccount:$email:objectViewer gs://hmf-dr-check-accounts/ 2>&1)
         if [[ "$error" == *"BadRequestException: 400"* ]]; then
             echo "[ERROR] GCP service account $email does not exist. Please contact the requester."
