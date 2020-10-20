@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+source api_functions
+source gcp_functions
+
+set=$1 && shift
+relative_file_path="health_checker/run.log"
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+echo "[INFO] Switching to ops"
+switch_to_hmf_ops_service_account
+
+echo "[INFO] Searching for bucket"
+bucket=$(load_intial_run_bucket_for_set ${set})
+if [[ -z "${bucket}" ]]; then
+    echo "[ERROR] No initial run bucket found for set '${set}'. Exiting"
+    exit 1
+fi
+
+file_url="gs://${bucket}/${set}/${relative_file_path}"
+
+echo "[INFO] Performing cat on file url (${file_url})"
+gsutil -u hmf-database cat ${file_url}
