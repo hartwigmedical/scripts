@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
 SUBMISSIONS_DIR="/data/submissions"
-HMF_QUERY_SCRIPT="query_lims.pl"
-API_QUERY_SCRIPT="query_api.pl"
-HMF_LIMS_JSON='/data/ops/lims/prod/lims.json'
+QUERY_LMS_SCRIPT="query_lims.pl"
+QUERY_API_SCRIPT="query_api.pl"
+GATHER_ARIA_SCRIPT="gather_submission_aria_config"
+LIMS_JSON='/data/ops/lims/prod/lims.json'
 submission=$1
 
 ## sanity checks
@@ -12,19 +13,19 @@ if [[ -z "${submission+x}" ]]; then echo "[ERROR] Missing submission id as input
 if [[ ! ${submission} =~ ^HMFreg ]]; then echo "[ERROR] Submission should start with \"HMFreg\""; exit 1; fi
 
 ## setting up variables
-out_path=${SUBMISSIONS_DIR}'/'${submission}
+out_path="${SUBMISSIONS_DIR}/${submission}"
+log_file="${out_path}/log.txt"
+date_string=$(date)
+
 lims_file="${out_path}/lims.txt"
 samp_file="${out_path}/samples.txt"
 runs_file="${out_path}/runs.txt"
- log_file="${out_path}/log.txt"
 barc_file="${out_path}/barcodes.txt"
 repo_file="${out_path}/report.txt"
 subm_json="${out_path}/submission.json"
-flow_file="${out_path}/flowcells.txt"
 lims_json="${lims_file/.txt/.json}"
 samp_json="${samp_file/.txt/.json}"
 runs_json="${runs_file/.txt/.json}"
-date_string=$(date)
 
 ## create dirs
 if [[ -e "${out_path}" ]] ; then echo "[ERROR] Dir exists already (${out_path})"; exit 1; fi
@@ -32,7 +33,7 @@ mkdir -p "${out_path}" || exit 1
 
 ## gather submission info from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get submission info"
-cat "${HMF_LIMS_JSON}" | jq -r ".submissions.${submission}" > "${subm_json}"
+cat "${LIMS_JSON}" | jq -r ".submissions.${submission}" > "${subm_json}"
 p_name=$(cat "${subm_json}" | jq -r '.project_name')
 r_name=$(cat "${subm_json}" | jq -r '.report_contact_name')
 r_mail=$(cat "${subm_json}" | jq -r '.report_contact_email')
@@ -43,20 +44,20 @@ if [[ -z "${p_name+x}" ]]; then echo "[ERROR] Unable to find project for submiss
 
 ## get all samples involved from LAB LIMS
 echo "[INFO] Querying HMF LIMS to get sample list"
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > "${lims_file}"
-${HMF_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -json > "${lims_json}"
+${QUERY_LMS_SCRIPT} -type samples -filter "submission=${submission}" > "${lims_file}"
+${QUERY_LMS_SCRIPT} -type samples -filter "submission=${submission}" -json > "${lims_json}"
 
 ## get q30/yield data from HMF API
 echo "[INFO] Querying HMF API to get sample status"
-${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" > "${samp_file}"
-api_samples_json=$(${API_QUERY_SCRIPT} -type samples -filter "submission=${submission}" -no_format -json)
+${QUERY_API_SCRIPT} -type samples -filter "submission=${submission}" > "${samp_file}"
+api_samples_json=$(${QUERY_API_SCRIPT} -type samples -filter "submission=${submission}" -no_format -json)
 total_yield_gbase=$( echo "${api_samples_json}" | jq '[.[].yld] | add / 1000000000 | floor')
 echo "${api_samples_json}" > "${samp_json}"
 
 ## get entity/run-status from HMF API
 echo "[INFO] Querying HMF API to get run status"
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > "${runs_file}"
-${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > "${runs_json}"
+${QUERY_API_SCRIPT} -type runs -filter "name=${submission}" > "${runs_file}"
+${QUERY_API_SCRIPT} -type runs -filter "name=${submission}" -json > "${runs_json}"
 
 ## get counts to check completeness
 hmf_count=$(cat "${lims_file}" | grep -cv "^#")
@@ -67,15 +68,13 @@ cat "${samp_file}" | grep -v "^#" | cut -f2 > "${barc_file}"
 
 ## setup reporting info
 rm -f "${repo_file}"
-echo -e "PROJECT\t${r_name}" >> "${repo_file}"
-echo -e "PROJECT\t${r_mail}" >> "${repo_file}"
-echo -e "PROJECT\t${d_mail}" >> "${repo_file}"
-echo -e "PROJECT\t${p_name}" >> "${repo_file}"
-echo -e "PROJECT\t${submission}" >> "${repo_file}"
-echo -e "PROJECT\t${hmf_count}" >> "${repo_file}"
-echo -e "PROJECT\t${p_type}" >> "${repo_file}"
-echo -e "PROJECT\t${total_yield_gbase} GBase" >> "${repo_file}"
+pdf_name="${submission}_${p_name}.pdf"
 
+printf '%s\n' "# Project metadata table for report (${pdf_name})" \
+"${r_name}" "${r_mail}" "${d_mail}"  "${p_name}" "${submission}" \
+"${hmf_count}" "${p_type}" "${total_yield_gbase} GBase" "" >> "${repo_file}"
+
+printf '%s\n' "# Sample table for report:" >> "${repo_file}"
 cat "${samp_file}" | grep -v ^# | while read line; do
     subm=$(echo "${line}" | cut -f1)
     barc=$(echo "${line}" | cut -f2)
@@ -85,8 +84,9 @@ cat "${samp_file}" | grep -v ^# | while read line; do
     name=$(echo "${line}" | cut -f7)
     date=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .arrival_date" )
     sops=$(cat "${lims_json}" | jq -r ".[] | select( .sample_id == \"${barc}\" ) | .lab_sop_versions" )
-    echo -e "SAMPLE\t${subm}\t${barc}\t${q30}\t${yldR}\t${yld}\t${name}\t${date}\t${sops}" >> "${repo_file}"
-done
+    printf "%s\t" "${subm}" "${barc}" "${q30}" "${yldR}" "${yld}" "${name}" "${date}"
+    printf "%s\n" "${sops}"
+done >> "${repo_file}"
 
 ## logging
 echo "#           Date = ${date_string}" >> "${log_file}"
@@ -99,26 +99,22 @@ echo "# Report Contact = ${r_name} (${r_mail})" >> "${log_file}"
 echo "#   Data Contact = ${d_name} (${d_mail})" >> "${log_file}"
 
 ## stdout msg
-pdf_name="${submission}_${p_name}.pdf"
 echo "[INFO] Inspect output files:"
 echo " cd ${out_path}"
 echo " cat ${log_file}"
 echo " cat ${lims_file}"
 echo " cat ${samp_file}"
 echo " cat ${runs_file}"
-echo " cat ${flow_file}"
 echo ""
-echo "[INFO] Or directly get reporting info (for ${pdf_name}):"
-echo " cat ${repo_file} | cut -f1 --complement"
+echo "[INFO] And/or get the aria2 download config:"
+echo " nohup ${GATHER_ARIA_SCRIPT} ${submission} > ${out_path}/gather_aria.log &"
 echo ""
-echo "[INFO] And get the aria2 download config with:"
-echo " nohup gather_submission_aria_config ${submission} > ${out_path}/gather_submission_aria_config.log &"
+echo "[INFO] And/or print info for (PDF) report:"
+echo " cat ${repo_file}"
 echo ""
 
-## warn if not complete
+## warn if not potentially complete
 if [[ ${hmf_count} -ne ${api_count} ]]; then
-    echo "[ERROR] There might be missing samples!"
+    echo "[WARN] There might be missing samples!"
     exit 1
 fi
-
-exit 0
