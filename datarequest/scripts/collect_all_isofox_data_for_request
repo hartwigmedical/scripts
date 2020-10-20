@@ -24,8 +24,8 @@ cat ${metadata_tsv} | grep -v "^#" | cut -f2 | while read sample_name; do
             ln -s ${gene_data_csv} ${dest_set_path}
             ln -s ${transcript_data_csv} ${dest_set_path}
             ln -s ${fusions_csv} ${dest_set_path}
-            ln -s ${alt_splice_junc_csv} ${dest_set_path}
-            ln -s ${retained_intron_csv} ${dest_set_path}
+            #ln -s ${alt_splice_junc_csv} ${dest_set_path}
+            #ln -s ${retained_intron_csv} ${dest_set_path}
         else
             echo "[WARN] Either gene or transcript data missing for ${sample_name}"
         fi
