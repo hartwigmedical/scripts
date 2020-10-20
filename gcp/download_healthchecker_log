@@ -28,7 +28,7 @@ if [[ -z "${bucket}" ]]; then
     exit 1
 fi
 
-src_path="gs://${bucket}$/{set}/${tool}/${file}"
+src_path="gs://${bucket}/${set}/${tool}/${file}"
 dst_path="${download_path}/${set}_${tool}_${file}"
 
 echo "[INFO] Downloading file"
