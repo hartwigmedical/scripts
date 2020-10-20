@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+source api_functions
+source gcp_functions
+
+set=$1 && shift
+tool="health_checker"
+file="run.log"
+download_path="/data/gcp/qc_fail_runs"
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided to $(basename $0). Exiting"
+    exit 1
+fi
+
+if [[ ! -d "${download_path}" ]]; then
+    echo "[ERROR] Download path is not a directory (${download_path}). Exiting"
+    exit 1
+fi
+
+echo "[INFO] Switching to ops"
+switch_to_hmf_ops_service_account
+
+echo "[INFO] Searching for bucket"
+bucket=$(load_intial_run_bucket_for_set ${set})
+if [[ -z "${bucket}" ]]; then
+    echo "[ERROR] No initial run bucket found for set '${set}'. Exiting"
+    exit 1
+fi
+
+src_path="gs://${bucket}$/{set}/${tool}/${file}"
+dst_path="${download_path}/${set}_${tool}_${file}"
+
+echo "[INFO] Downloading file"
+gsutil -q -u hmf-database cp ${src_path} ${dst_path}
+
+echo "[INFO] Inspect with:"
+echo " cat ${dst_path} | less"
