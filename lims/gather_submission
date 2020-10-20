@@ -24,7 +24,6 @@ flow_file="${out_path}/flowcells.txt"
 lims_json="${lims_file/.txt/.json}"
 samp_json="${samp_file/.txt/.json}"
 runs_json="${runs_file/.txt/.json}"
-flow_json="${flow_file/.txt/.json}"
 date_string=$(date)
 
 ## create dirs
@@ -58,14 +57,6 @@ echo "${api_samples_json}" > "${samp_json}"
 echo "[INFO] Querying HMF API to get run status"
 ${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" > "${runs_file}"
 ${API_QUERY_SCRIPT} -type runs -filter "name=${submission}" -json > "${runs_json}"
-
-## get flowcell info from datastore
-echo "[INFO] Querying HMF API to get flowcell status"
-fcids_with_ab=$(find_in_samplesheets "${submission}" | cut -d" " -f5 | cut -d"_" -f4 | sort | uniq)
-fcids=$(for fcid in "${fcids_with_ab[@]}"; do fcid="${fcid:1}"; echo "${fcid}"; done)
-fcids_grep_string=$(echo "${fcids}" | tr " " "|")
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" > "${flow_file}"
-${API_QUERY_SCRIPT} -type flowcells -filter "flowcell_id=${fcids_grep_string}" -json > "${flow_json}"
 
 ## get counts to check completeness
 hmf_count=$(cat "${lims_file}" | grep -cv "^#")
