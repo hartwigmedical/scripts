@@ -8,6 +8,4 @@ fi
 
 run_purple_no_db ${run_dir}
 run_linx_no_db ${run_dir}
-# Below can be removed upon pipeline v5.15 upgrade.
-run_chord_pilot ${run_dir}
 load_run_into_prod_db ${run_dir}
