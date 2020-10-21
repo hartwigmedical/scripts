@@ -57,64 +57,71 @@ echo "[INFO] Accounts inputted in the script for which access to GCP data will t
 echo ${gcp_mail}
 echo ""
 
-check_whether_GCPaccount_exists -e ${gcp_mail}
 
-## check whether the GCP email inputted is similar to the GCP email showed in the manifest of the bucket.
-mkdir temp
-gsutil -q cp gs://${bucket_name}/manifest.json temp/manifest.json
-email_in_manifest=$""
-for email in $(echo ${gcp_mail} | sed "s/,/ /g")
-do
-    temp=$( jq '.accounts | .[] | .email' temp/manifest.json | grep $email )
-    if [[ $temp == "" ]]; then
-         echo "[ERROR] Account $email given as input to the script is not related to bucket ${bucket_name}. Revoking access not possible."
-    fi
-    email_in_manifest+=${temp}
-done
-if [[ ${email_in_manifest} == "" ]]; then
-    echo "[ERROR] None of the account(s) given as input to the script are related to bucket ${bucket_name}. The script will not run further!"
+
+### check whether the GCP email inputted is similar to the GCP email showed in the manifest of the bucket.
+#mkdir temp
+#gsutil -q cp gs://${bucket_name}/manifest.json temp/manifest.json
+#email_in_manifest=$""
+#for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+#do
+#    temp=$( jq '.accounts | .[] | .email' temp/manifest.json | grep $email )
+#    if [[ $temp == "" ]]; then
+#         echo "[ERROR] Account $email given as input to the script is not related to bucket ${bucket_name}. Revoking access not possible."
+#    fi
+#    email_in_manifest+=${temp}
+#done
+#if [[ ${email_in_manifest} == "" ]]; then
+#    echo "[ERROR] None of the account(s) given as input to the script are related to bucket ${bucket_name}. The script will not run further."
+#    echo ""
+#    rm -r temp
+#    exit
+#fi
+#rm -r temp
+
+
+
+
+
+error=$( gsutil -u hmf-share iam get gs://${bucket_name}/ 2>&1)
+if [[ "$error" == *"BadRequestException: 404"* ]]; then
+     echo "[ERROR] GCP BUCKET ${bucket_name} DOES NOT EXIST. Access will not be revoked."
+     echo ""
+else
     echo ""
-    rm -r temp
-    exit
-fi
-rm -r temp
-
-
-
-echo ""
-echo "[INFO] REVOKE ACCESS TO BUCKET: ${bucket_name} RELATED TO: ${release_id}."
-echo ""
-
-echo "[INFO] Current permissions of the bucket ${bucket_name}:"
-gsutil -u hmf-share iam get gs://${bucket_name}/
-echo ""
-for email in $(echo ${gcp_mail} | sed "s/,/ /g")
-do
-    email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
-    if [[ ${email_in_permissions} == "" ]]; then
-        echo "[ERROR] Account $email not present in current permissions of the bucket, so no revoke needed."
-        echo ""
-    else
-        echo "....Access for account $email to bucket is being revoked...."
-        gsutil -u hmf-share iam ch -d user:$email gs://${bucket_name}/
+    echo "[INFO] REVOKE ACCESS TO BUCKET: ${bucket_name} RELATED TO: ${release_id}."
+    echo ""
+    echo "[INFO] Current permissions of the bucket ${bucket_name}:"
+    gsutil -u hmf-share iam get gs://${bucket_name}/
+    echo ""
+    for email in $(echo ${gcp_mail} | sed "s/,/ /g")
+    do
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
-            echo "[INFO] Account $email correctly removed as user from gcp bucket."
+            echo "[ERROR] Account $email not present in current permissions of the bucket, so no revoke needed."
             echo ""
         else
-            echo "[ERROR] Account $email still registered as user in the bucket."
-            echo ""
-        fi
-     fi
-done
-echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
-gsutil -u hmf-share iam get gs://${bucket_name}/
-echo ""
+            echo "....Access for account $email to bucket is being revoked...."
+            gsutil -u hmf-share iam ch -d user:$email gs://${bucket_name}/
+            email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
+            if [[ ${email_in_permissions} == "" ]]; then
+                echo "[INFO] Account $email correctly removed as user from gcp bucket."
+                echo ""
+            else
+                echo "[ERROR] Account $email still registered as user in the bucket."
+                echo ""
+            fi
+         fi
+    done
+    echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
+    gsutil -u hmf-share iam get gs://${bucket_name}/
+    echo ""
+fi
 
 
 group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups | jq --arg release_id "$release_id" '.[] | select(.name==$release_id) | .id')
 if [[ "${group_id}" == "" ]]; then
-    echo "[INFO] NO API GROUP (for ACL permissions) RELATED TO: ${release_id}."
+    echo "[ERROR] NO API GROUP (for ACL permissions) RELATED TO: ${release_id}. Access will not be revoked."
 else
 
     echo ""
