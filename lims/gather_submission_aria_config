@@ -26,7 +26,9 @@ cd ${output_dir} || exit
 if [[ ! $? -eq 0 ]]; then echo "[ERROR] Unable to change dir to ${output_dir}" && exit 1; fi
 
 non_val_count=$(cat "${runs_json}" | jq '[select(.[].status != "Validated")] | length')
-echo "[INFO] There are ${non_val_count} runs where status != Validated (these will not end up in aria config!)"
+if [[ "${non_val_count}" -gt 0 ]]; then
+    echo "[WARN] There are ${non_val_count} runs that will be missing in config because status != Validated"
+fi
 
 echo "[INFO] Creating job file (${create_job})"
 for run_name in $(cat "${runs_json}" | jq -r '.[] | select(.status == "Validated") | .name'); do
