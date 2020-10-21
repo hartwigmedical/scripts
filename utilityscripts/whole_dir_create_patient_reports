@@ -8,5 +8,5 @@ fi
 
 for run in ${dir_with_runs}*; do
     echo "[INFO] Create patient report for ${run}"
-    create_patient_report_for_run ${run}
+    #create_patient_report_for_run ${run}
 done
