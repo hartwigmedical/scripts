@@ -4,6 +4,7 @@ SELECT anonymizedSampleMapping.hmfId as hmfSampleId, left(anonymizedSampleMappin
     sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA, setName,
     sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType, baseline.primaryTumorExtraDetails,
+    baseline.doid, baseline.doidTerm,
     baseline.hospital, baseline.gender, baseline.birthYear,
     baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment,
     baseline.preTreatments, baseline.preTreatmentsType, baseline.preTreatmentsMechanism,
