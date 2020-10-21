@@ -79,8 +79,6 @@ do
             echo ""
         else
             echo "[INFO] Account $email correctly added as user:viewer to the gcp bucket."
-            echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
-            gsutil -u hmf-share iam get gs://${bucket_name}/
             echo ""
         fi
         echo ""
@@ -89,6 +87,8 @@ do
         echo ""
      fi
 done
+echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
+gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
 
