@@ -84,7 +84,7 @@ echo ""
 
 
 error=$( gsutil -u hmf-share iam get gs://${bucket_name}/ 2>&1)
-if [[ "$error" == *"BadRequestException: 404"* ]]; then
+if [[ "$error" == *"BucketNotFoundException: 404"* ]]; then
      echo "[ERROR] GCP BUCKET ${bucket_name} DOES NOT EXIST. Access will not be revoked."
      echo ""
 else
