@@ -119,7 +119,8 @@ else
             else
                 account_nr_new=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
             fi
-            curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": $account_nr_new}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
+            echo $account_nr_new
+            curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": "$account_nr_new"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         else
             echo "[ERROR] Account $email already present in API group related to ${release_id}, so no adding needed."
         fi
