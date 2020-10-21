@@ -57,6 +57,8 @@ echo "[INFO] Accounts inputted in the script for which access to GCP data will t
 echo ${gcp_mail}
 echo ""
 
+check_whether_GCPaccount_exists -e ${gcp_mail}
+
 ## check whether the GCP email inputted is similar to the GCP email showed in the manifest of the bucket.
 mkdir temp
 gsutil -q cp gs://${bucket_name}/manifest.json temp/manifest.json
@@ -113,14 +115,14 @@ echo ""
 
 group_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups | jq --arg release_id "$release_id" '.[] | select(.name==$release_id) | .id')
 if [[ "${group_id}" == "" ]]; then
-    echo "[INFO] NO RAW FILES RELATED TO: ${release_id}."
+    echo "[INFO] NO API GROUP (for ACL permissions) RELATED TO: ${release_id}."
 else
 
     echo ""
-    echo "[INFO] REVOKE ACCESS TO ACL OF RAW FILES RELATED TO: ${release_id}."
+    echo "[INFO] DELETE API GROUP (for ACL permissions) RELATED TO: ${release_id}."
     echo ""
 
-    echo "[INFO] Accounts related to ${release_id} for which access to ACL of raw files will be revoked (can only be done on group level!!):"
+    echo "[INFO] Accounts in API group related to ${release_id}:"
     account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
     email_in_acl_group=$""
     for account_nr in $account_nrs
@@ -128,7 +130,7 @@ else
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
         email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
         if [[ $( echo ${gcp_mail} | grep $email_acl ) == "" ]]; then
-            echo "[ERROR] Account $email_acl is not inputted in the script, but access will nevertheless be revoked."
+            echo "[ERROR] Account $email_acl is not inputted in the script, but will also be deleted when API group will be deleted."
             echo "[INFO] Are you sure you want to continue with the script? Please answer Y or N."
             read answer
             if [[ $answer != "Y" ]]; then
@@ -142,28 +144,31 @@ else
     for email in $(echo ${gcp_mail} | sed "s/,/ /g")
     do
         if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
-                 echo "[ERROR] Account $email not present in group of accounts related to ${release_id} raw files, so no revoke needed."
+              echo "[ERROR] Account $email not present in API group related to ${release_id}, so no deletion needed. Script will end."
+              exit
         fi
     done
     echo ""
 
-    echo "[INFO] Current number of raw data files with requester account(s) in the ACL:"
+    echo "[INFO] Current number of raw files with API group related to ${release_id} in the ACL:"
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
     echo ""
 
-    echo "....Accounts are being removed from ACLs...."
-    curl -s --cert ${api_cert} --key ${api_key} /data/common/dbs/sbp_api_credentials/prod/api.key -X DELETE ${api_url_spec}/groups/${group_id}
+    echo "....API group deleted ...."
+    curl -s --cert ${api_cert} --key ${api_key} -X DELETE ${api_url_spec}/groups/${group_id}
     number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
-        echo "[INFO] No raw data files anymore related to ${release_id}."
-        echo "[INFO] Updated number of raw data files with requester account(s) in the ACL:"
+        echo "[INFO] No raw data files anymore with API group related to ${release_id} in the ACL."
+        echo "[INFO] Updated number of raw files with API group related to ${release_id} in the ACL:"
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
         echo ""
     else
-        echo "[ERROR] Still ${number_files_gcp} raw files with ACL related to ${release_id}. Please check what went wrong"
+        echo "[ERROR] Still ${number_files_gcp} of raw files with API group related to ${release_id} in the ACL. Please check what went wrong"
         echo ""
     fi
 fi
 
 echo ""
 echo ""
+
+curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key -X DELETE https://api.hartwigmedicalfoundation.nl/hmf/v1/accounts/123
