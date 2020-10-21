@@ -108,6 +108,7 @@ else
         email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
         email_in_acl_group+=${email_acl}
     done
+    echo ""
 
     for email in $(echo ${gcp_mail} | sed "s/,/ /g")
     do
@@ -118,11 +119,12 @@ else
             else
                 account_nr_new=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
             fi
-            curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": $group_id, "account_id": $account_nr_new}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
+            curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": "$account_nr_new"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         else
             echo "[ERROR] Account $email already present in API group related to ${release_id}, so no adding needed."
         fi
     done
+    echo ""
 
     echo "[INFO] Updated accounts in API group related to ${release_id}:"
     account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
@@ -130,6 +132,7 @@ else
     do
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
     done
+    echo ""
 
     echo "[INFO] Current number of raw files with API group related to ${release_id} in the ACL:"
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
