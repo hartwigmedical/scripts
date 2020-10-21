@@ -114,6 +114,7 @@ else
     do
         if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
             echo "....Adding $email to API group  ...."
+            echo ""
             if [[ $( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | grep $email ) == "" ]]; then
                 account_id=$( curl -s --cert ${api_cert} --key ${api_key} -d '{"email": "$email"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/accounts | jq .[] )
             else
@@ -122,9 +123,9 @@ else
             curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": '$account_id'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         else
             echo "[ERROR] Account $email already present in API group related to ${release_id}, so no adding needed."
+            echo ""
         fi
     done
-    echo ""
 
     echo "[INFO] Updated accounts in API group related to ${release_id}:"
     account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )

@@ -88,7 +88,6 @@ echo ""
 echo "[INFO] Current permissions of the bucket ${bucket_name}:"
 gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
-
 for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
     email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
@@ -96,13 +95,11 @@ do
         echo "[ERROR] Account $email not present in current permissions of the bucket, so no revoke needed."
         echo ""
     else
-        echo "....Access for account $email is being revoked...."
+        echo "....Access for account $email to bucket is being revoked...."
         gsutil -u hmf-share iam ch -d user:$email gs://${bucket_name}/
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
             echo "[INFO] Account $email correctly removed as user from gcp bucket."
-            echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
-            gsutil -u hmf-share iam get gs://${bucket_name}/
             echo ""
         else
             echo "[ERROR] Account $email still registered as user in the bucket."
@@ -110,6 +107,8 @@ do
         fi
      fi
 done
+echo "[INFO] Updated permissions of the bucket ${bucket_name}:"
+gsutil -u hmf-share iam get gs://${bucket_name}/
 echo ""
 
 
@@ -119,7 +118,7 @@ if [[ "${group_id}" == "" ]]; then
 else
 
     echo ""
-    echo "[INFO] DELETE API GROUP (for ACL permissions) RELATED TO: ${release_id}."
+    echo "[INFO] DELETE | OR DELETE USERS FROM - API GROUP (for ACL permissions) RELATED TO: ${release_id}."
     echo ""
 
     echo "[INFO] Accounts in API group related to ${release_id}:"
@@ -129,32 +128,47 @@ else
     do
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
         email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
-        if [[ $( echo ${gcp_mail} | grep $email_acl ) == "" ]]; then
-            echo "[ERROR] Account $email_acl is not inputted in the script, but will also be deleted when API group will be deleted."
-            echo "[INFO] Are you sure you want to continue with the script? Please answer Y or N."
-            read answer
-            if [[ $answer != "Y" ]]; then
-                echo "[ERROR] Script will end."
-                exit
-            fi
-        fi
         email_in_acl_group+=${email_acl}
     done
     echo ""
+
     for email in $(echo ${gcp_mail} | sed "s/,/ /g")
     do
         if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
-              echo "[ERROR] Account $email not present in API group related to ${release_id}, so no deletion needed. Script will end."
-              exit
+            echo "[ERROR] Account $email not present in API group related to ${release_id}, so no deletion needed."
+            echo ""
+        else
+            echo "....Account $email is being removed from the API group...."
+            account_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
+            curl -s --cert ${api_cert} --key ${api_key} -X DELETE ${api_url_spec}/groups/${group_id}/members/${account_id}
+            echo ""
         fi
     done
     echo ""
 
+    echo "[INFO] Updated accounts in API group related to ${release_id}:"
+    account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
+    email_in_acl_group=$""
+    for account_nr in $account_nrs
+    do
+        curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
+        email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
+        email_in_acl_group+=${email_acl}
+    done
+    echo ""
     echo "[INFO] Current number of raw files with API group related to ${release_id} in the ACL:"
     curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
     echo ""
 
-    echo "....API group deleted ...."
+    echo "[INPUT] Do you also want to remove the whole API groep? Please fill in Y or N."
+    read answer
+    if [[ $answer != "Y" ]]; then
+         echo "[ERROR] Script will end without deletion of the API group."
+         exit
+    fi
+    echo ""
+
+    echo "....API group is being deleted ...."
     curl -s --cert ${api_cert} --key ${api_key} -X DELETE ${api_url_spec}/groups/${group_id}
     number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
@@ -163,7 +177,7 @@ else
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
         echo ""
     else
-        echo "[ERROR] Still ${number_files_gcp} of raw files with API group related to ${release_id} in the ACL. Please check what went wrong"
+        echo "[ERROR] Still ${number_files_gcp} of raw files with API group related to ${release_id} in the ACL. API group not deleted. Please check what went wrong"
         echo ""
     fi
 fi
@@ -171,4 +185,3 @@ fi
 echo ""
 echo ""
 
-curl -s --cert /data/common/dbs/api_credentials/api.crt --key /data/common/dbs/api_credentials/api.key -X DELETE https://api.hartwigmedicalfoundation.nl/hmf/v1/accounts/123
