@@ -180,6 +180,7 @@ else
     number_files_gcp=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l)
     if [[ ${number_files_gcp} == 0 ]]; then
         echo "[INFO] No raw data files anymore with API group related to ${release_id} in the ACL."
+        echo ""
         echo "[INFO] Updated number of raw files with API group related to ${release_id} in the ACL:"
         curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
         echo ""
