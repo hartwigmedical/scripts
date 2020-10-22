@@ -8,6 +8,15 @@ DATA_DIRS=[
     '/data1/illumina_data/TestRuns/'
 ]
 
+NEXTSEQ_IDS=[
+    'NB500901',
+    'NB500902'
+]
+
+ISEQ_IDS=[
+    'FS10001173'
+]
+
 BCL2FASTQ_TOOL='/data/fastqconversion/bcl2fastq_v2.20.0.422/bin/bcl2fastq'
 METRICS_TOOL='/data/repos/scripts/crunch/check_bcl2fastq_conversion.pl'
 TMP_RUNNING_FILE='/tmp/bcl2fastq_running'
@@ -72,33 +81,55 @@ def SubDirPath (d):
 
 
 ## MAIN 
-for search_dir in DATA_DIRS:
+for searchDir in DATA_DIRS:
     
     ## Not all machines have all search dirs
-    if( not os.path.exists(search_dir) ):
+    if( not os.path.exists(searchDir) ):
         continue
-    
-    ## Check if conversion is already running
-    conversionRunning = os.path.isfile( TMP_RUNNING_FILE )
-    if( conversionRunning ):
-        print("[INFO] Skipping conversions because conversion is running (" + TMP_RUNNING_FILE + ")")
-        continue
-    else:
-        os.system( 'touch ' + TMP_RUNNING_FILE )
 
     ## now visit each subdir and run conversion if all conditions apply
-    for run_dir in SubDirPath(search_dir):
-        hasSampleSheet = os.path.isfile( run_dir + '/SampleSheet.csv' )
-        sequencingDone = os.path.isfile( run_dir + '/RTAComplete.txt' )
-        conversionStrd = os.path.isfile( run_dir + '/conversionStarted.txt' )
-        conversionDone = os.path.isfile( run_dir + '/conversionDone.txt' )
+    for runDirPath in SubDirPath(searchDir):
 
-        if( hasSampleSheet and sequencingDone and not conversionStrd and not conversionDone):
-            print("[INFO] Starting conversion for flowcell: " + run_dir)
-            ConvertBcl(run_dir)
+        runDirName = os.path.basename(runDirPath)
+        hasSampleSheet = os.path.isfile(runDirPath + '/SampleSheet.csv')
+        sequencingDone = os.path.isfile(runDirPath + '/RTAComplete.txt')
+        conversionStrd = os.path.isfile(runDirPath + '/conversionStarted.txt')
+        conversionDone = os.path.isfile(runDirPath + '/conversionDone.txt')
+
+        ## Check if novaseq conversion is already running
+        if(not hasSampleSheet):
+            print("[INFO] Skipping: no SampleSheet.csv in " + runDirName)
+            continue
+        elif(not sequencingDone):
+            print("[INFO] Skipping: no RTAComplete.txt in " + runDirName)
+            continue
+        elif(conversionDone):
+            print("[INFO] Skipping: conversion already done for " + runDirName)
+            continue
+        elif(conversionStrd):
+            print("[INFO] Skipping: conversion already started for " + runDirName)
+            continue
         else:
-            print("[INFO] Skipping conversion for flowcell: " + run_dir)
+            conversionIsRunning = os.path.isfile( TMP_RUNNING_FILE )
+            sequencerId = runDirName.split("_")[1]
+            platform = "NA"
+            if(sequencerId in ISEQ_IDS or sequencerId in NEXTSEQ_IDS):
+                platform = "IseqOrNextseq"
 
-    ## cleanup tmp file to allow next round of conversions to start later
-    os.system( 'rm ' + TMP_RUNNING_FILE )
-    
+            print("[INFO] Considering conversion for: " + runDirName + " (sequencer=" + sequencerId +", platform=" + platform +")")
+            
+            if(conversionIsRunning and not platform == "IseqOrNextseq"):
+                print("[INFO]   Skipping because another conversion is already running")
+                continue
+            else:
+                if(platform == "IseqOrNextseq"):
+                    print("[INFO]   Starting Iseq/Nextseq conversion")
+                    ConvertBcl(runDirPath)
+                else:
+                    print("[INFO]   Starting non Iseq/Nextseq conversion")
+                    print("[INFO]   Creating " + TMP_RUNNING_FILE)
+                    os.system('touch ' + TMP_RUNNING_FILE)
+                    ConvertBcl(runDirPath)
+                    ## cleanup tmp file to allow next round of conversions to start
+                    print("[INFO] Removing " + TMP_RUNNING_FILE)
+                    os.system( 'rm ' + TMP_RUNNING_FILE )    

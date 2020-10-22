@@ -4,6 +4,7 @@ source locate_files
 source metadata_functions
 
 run_dir=$1 && shift
+genome_version=${1:-HG19}
 
 if [[ ! -d "${run_dir}" ]]; then
     echo "[ERROR] ${run_dir} does not exist!" && exit 1
@@ -11,8 +12,7 @@ fi
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
 
-chord_dir=/data/common/tools/chord_v60.02
-chord_version=60.02
+chord_dir=/data/common/tools/chord_v2.0
 working_dir="${run_dir}/chord"
 mkdir -p ${working_dir}
 
@@ -23,10 +23,16 @@ echo "[INFO] CHORD is using somatic vcf: ${somatic_vcf}"
 echo "[INFO] CHORD is using structural vcf: ${structural_vcf}"
 
 ## R script that produces _chord_signatures.txt and _chord_prediction.txt
-extractSigPredictHRD.R ${chord_dir} ${chord_version} ${working_dir} ${sample} ${somatic_vcf} ${structural_vcf}
+extractSigPredictHRD.R \
+  "${chord_dir}" \
+  "${working_dir}" \
+  "${sample}" \
+  "${somatic_vcf}" \
+  "${structural_vcf}" \
+  "${genome_version}"
 
-file_count=$(ls ${working_dir} | wc -l)
+count_files_chord=$(ls ${working_dir} | wc -l)
 
-if [[ ${file_count} -lt 2 ]]; then
+if [[ ${count_files_chord} -lt 2 ]]; then
     echo "[ERROR] not all files for chord present!"
 fi
