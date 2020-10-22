@@ -16,6 +16,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # Set paths
 metrics_dir=${run_dir}
+flagstat_dir=${run_dir}
 purple_dir=${run_dir}/purple
 output_dir=/data/tmp
 
@@ -23,5 +24,6 @@ java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.ja
     -reference ${ref_sample} \
     -tumor ${tumor_sample} \
     -metrics_dir ${metrics_dir} \
+    -flagstat_dir ${flagstat_dir} \
     -purple_dir ${purple_dir} \
     -output_dir ${output_dir}
