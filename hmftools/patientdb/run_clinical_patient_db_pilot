@@ -24,7 +24,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -curated_tumor_location_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations.tsv \
     -curated_tumor_location_v2_tsv /data/common/dbs/clinical_data/pilot_curated_tumor_locations_v2.tsv \
-    -doid_file /data/common/dbs/knowledgebases/input/doid_181127.owl \
+    -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -tumor_location_v2_mapping_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_v2_mapping.tsv \
     -tumor_location_mapping_csv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.csv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
