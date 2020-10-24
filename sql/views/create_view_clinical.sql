@@ -3,8 +3,8 @@ CREATE OR REPLACE VIEW clinical AS
 SELECT anonymizedSampleMapping.hmfId as hmfSampleId, left(anonymizedSampleMapping.hmfId, 9) as hmfPatientId,
     sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA, setName,
     sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
-    baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType, baseline.primaryTumorExtraDetails,
-    baseline.doid, baseline.doidTerm,
+    baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType,
+    baseline.primaryTumorExtraDetails, doidView.doids,
     baseline.hospital, baseline.gender, baseline.birthYear,
     baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment,
     baseline.preTreatments, baseline.preTreatmentsType, baseline.preTreatmentsMechanism,
@@ -19,6 +19,8 @@ FROM sample
     LEFT JOIN anonymizedSampleMapping on sample.sampleId = anonymizedSampleMapping.sampleId
     LEFT JOIN rna on sample.sampleId = rna.sampleId
     LEFT JOIN baseline ON patient.id = baseline.patientId
+    LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidEntry GROUP BY 1) AS doidView
+        ON patient.id = doidView.patientId
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
     LEFT JOIN
