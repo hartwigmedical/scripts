@@ -30,4 +30,5 @@ java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.ja
     -ref_flagstat_file ${ref_flagstat} \
     -tum_flagstat_file ${tum_flagstat} \
     -purple_dir ${purple_dir} \
+    -do_not_write_evaluation_file \
     -output_dir ${output_dir}
