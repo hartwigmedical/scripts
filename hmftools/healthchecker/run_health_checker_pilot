@@ -15,16 +15,18 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # Set paths
-metrics_dir=${run_dir}
 purple_dir=${run_dir}/purple
-output_dir=/data/cpct/pilot_health_check_logs
 ref_flagstat=$(locate_flagstats "${run_dir}" "${ref_sample}")
 tum_flagstat=$(locate_flagstats "${run_dir}" "${tumor_sample}")
+ref_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${ref_sample}")
+tum_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}")
+output_dir=/data/cpct/pilot_health_check_logs
 
 java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.jar \
     -reference ${ref_sample} \
     -tumor ${tumor_sample} \
-    -metrics_dir ${metrics_dir} \
+    -ref_wgs_metrics_file ${ref_wgs_metrics} \
+    -tum_wgs_metrics_file ${tum_wgs_metrics} \
     -ref_flagstat_file ${ref_flagstat} \
     -tum_flagstat_file ${tum_flagstat} \
     -purple_dir ${purple_dir} \
