@@ -5,14 +5,14 @@ run_dir=$1
 input_dir=${run_dir}/gridss
 output_dir=${run_dir}/gripss
 
-if [[ ! -d ${input_dir} ]]; then
-  echo "Input dir does not exist ${run_dir}"
-  exit 0
+if [[ ! -d "${input_dir}" ]]; then
+    echo "[WARN] Input dir does not exist ${run_dir}"
+    exit 0
 fi
 
-if [[ -d ${output_dir} ]]; then
-  echo "Already migrated ${run_dir}"
-  exit 0
+if [[ -d "${output_dir}" ]]; then
+    echo "[INFO] Already migrated ${run_dir}"
+    exit 0
 fi
 
 mkdir ${output_dir}
@@ -35,7 +35,7 @@ gripss_somatic_index=${gridss_somatic_index//gridss/gripss}
 mv ${gridss_somatic} ${gripss_somatic}
 mv ${gridss_somatic_index} ${gripss_somatic_index}
 
-if [ ! "$(ls -A ${input_dir})" ]; then
+if [[ ! "$(ls -A ${input_dir})" ]]; then
     rm -rf ${input_dir}
 fi
 
