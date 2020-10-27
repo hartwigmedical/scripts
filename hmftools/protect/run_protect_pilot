@@ -17,7 +17,9 @@ output_dir=${HOME}/tmp
 deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
 serve_actionability_dir=/data/common/dbs/serve/actionability
 germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
-tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
+tumor_location_tsv_v1=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
+tumor_location_tsv_v2=/data/common/dbs/clinical_data/pilot_curated_tumor_locations_v2.tsv
+doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
@@ -31,12 +33,20 @@ linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 
+credentials=$(locate_pilot_database_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+
 java -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
     -output_dir ${output_dir} \
     -deprecated_actionability_dir ${deprecated_actionability_dir} \
     -serve_actionability_dir ${serve_actionability_dir} \
-    -tumor_location_tsv ${tumor_location_tsv} \
+    -tumor_location_tsv_v1 ${tumor_location_tsv_v1} \
+    -tumor_location_tsv_v2 ${tumor_location_tsv_v2} \
+    -doid_json ${doid_json} \
     -germline_genes_csv ${germline_genes_csv} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
@@ -49,5 +59,6 @@ java -Xmx8G -jar ${protect_jar} \
     -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
     -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"
