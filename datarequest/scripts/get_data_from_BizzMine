@@ -24,7 +24,7 @@ fi
 
 
 api_url=$"https://api.bizzmine.cloud/collection/DataRequests/"
-api_token=$"/data/common/dbs/api_credentials/bizzmine/api_token"
+api_token=$( cat /data/common/dbs/api_credentials/bizzmine/api_token )
 
 ## quick input checks
 [[ ! -z "${dr_id}" && "${dr_id}" =~ ^DR ]] || die "dr-id incorrect (${dr_id})?"
@@ -36,5 +36,8 @@ echo ""
 echo "[START] get_data_from_BizzMine: $(date +"%y%m%d (%T)")"
 echo ""
 
-datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]')
+
+datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
 curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq .[]
+#curl get -s -H "x-token: d40620cb-a429-477e-8637-78c546a60e50" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/5 | jq '.[] | .DataShared | .[]'
+#curl get -s -H "x-token: d40620cb-a429-477e-8637-78c546a60e50" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/5 | jq '.[] | .DataShared | .[] | {DataShared_Datedataupdateshared, DataShared_GCPaccount1}'
