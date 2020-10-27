@@ -12,7 +12,7 @@ fi
 protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-output_dir=${HOME}/tmp
+output_dir=${run_dir}/protect_pilot
 
 deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
 serve_actionability_dir=/data/common/dbs/serve/actionability
