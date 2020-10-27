@@ -23,7 +23,6 @@ doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_gene_cnv_tsv=$(locate_purple_gene_copynumbers ${run_dir})
 purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
@@ -38,7 +37,6 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-
 java -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
     -output_dir ${output_dir} \
@@ -50,7 +48,6 @@ java -Xmx8G -jar ${protect_jar} \
     -germline_genes_csv ${germline_genes_csv} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
-    -purple_gene_cnv_tsv ${purple_gene_cnv_tsv} \
     -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
