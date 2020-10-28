@@ -55,9 +55,9 @@ jq -r '.[] | "Metadata - patient: " + .DataRequests_DR_3_2_patientdata' <temp.js
 jq -r '.[] | "Metadata - pre treatment: " + .DataRequests_DR_3_2_previoustreatmentdata' <temp.json
 jq -r '.[] | "Metadata - post treatment + response: " + .DataRequests_DR_3_2_postbiopsytreatmentdata' <temp.json
 echo ""
-jq -r '.[] | "DNA - Somatic data: " + .DataRequests_DR_3_3_SomaticanalysesdataDNa' <temp.json
-jq -r '.[] | "DNA - Germline data: " + .DataRequests_DR_3_3_germlineanalysesdataDNa' <temp.json
-jq -r '.[] | "DNA - Raw data (CRAM): " + .DataRequests_DR_3_3_rawdataDNa' <temp.json
-jq -r '.[] | "RNA - Raw data (FASTQ): " + .DataRequests_DR_3_3_rawdataRNa' <temp.json
+jq -r '.[] | "DNA - Somatic data: " + .DataRequests_DR_3_3_SomaticanalysesdataDNA' <temp.json
+jq -r '.[] | "DNA - Germline data: " + .DataRequests_DR_3_3_germlineanalysesdataDNA' <temp.json
+jq -r '.[] | "DNA - Raw data (CRAM): " + .DataRequests_DR_3_3_rawdataDNA' <temp.json
+jq -r '.[] | "RNA - Raw data (FASTQ): " + .DataRequests_DR_3_3_rawdataRNA' <temp.json
 echo ""
 jq -r '.[] | "Other data: " + .DataRequests_DR_3_3_other' <temp.json
