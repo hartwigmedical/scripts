@@ -37,25 +37,27 @@ echo "[START] get_data_from_BizzMine: $(date +"%y%m%d (%T)")"
 echo ""
 
 echo "--- DETAILS DATA ACCESS REQUEST: $release_id ---"
+echo ""
 
 datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} > temp.json
 
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Main applicant - " + .DataRequests_DR_1_2_Mainapplicant[].value + " (" + .DataRequests_1_2_Emailaddress_mainapplicant + ")"'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Main applicant 2 - " + .DataRequests_DR_1_2_Mainapplicant2 + " (" + .DataRequests_1_2_Emailaddress_mainapplicant2 + ")"'
+jq -r '.[] | "Main applicant - " + .DataRequests_DR_1_2_Mainapplicant[].value + " (" + .DataRequests_1_2_Emailaddress_mainapplicant + ")"' <temp.json
+jq -r '.[] | "Main applicant 2 - " + .DataRequests_DR_1_2_Mainapplicant2 + " (" + .DataRequests_1_2_Emailaddress_mainapplicant2 + ")"' <temp.json
 echo ""
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "GCP account download contact - " + .Researchers[].Researchers_13Emailresearcherinvolvedintheproject'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Extra added GCP account of download contact - " + .Extraresearchers[].Extra_researchers_Emailextraresearcherinvolvedintheproject'
+jq -r '.[] | "GCP account download contact - " + .Researchers[].Researchers_13Emailresearcherinvolvedintheproject' <temp.json
+jq -r '.[] | "Extra added GCP account of download contact - " + .Extraresearchers[].Extra_researchers_Emailextraresearcherinvolvedintheproject' <temp.json
 echo ""
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Requested patient selection - " + .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Requested_patientselection_specified'
+jq -r '.[] | "Requested patient selection - " + .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json
 echo ""
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Metadata - tumor: " + .DataRequests_DR_3_2_tumourdata'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Metadata - patient: " + .DataRequests_DR_3_2_patientdata'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Metadata - pre treatment: " + .DataRequests_DR_3_2_previoustreatmentdata'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Metadata - post treatment + response: " + .DataRequests_DR_3_2_postbiopsytreatmentdata'
+jq -r '.[] | "Metadata - tumor: " + .DataRequests_DR_3_2_tumourdata' <temp.json
+jq -r '.[] | "Metadata - patient: " + .DataRequests_DR_3_2_patientdata' <temp.json
+jq -r '.[] | "Metadata - pre treatment: " + .DataRequests_DR_3_2_previoustreatmentdata' <temp.json
+jq -r '.[] | "Metadata - post treatment + response: " + .DataRequests_DR_3_2_postbiopsytreatmentdata' <temp.json
 echo ""
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "DNA - Somatic data: " + .DataRequests_DR_3_3_SomaticanalysesdataDNA'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "DNA - Germline data: " + .DataRequests_DR_3_3_germlineanalysesdataDNA'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "DNA - Raw data (CRAM): " + .DataRequests_DR_3_3_rawdataDNA'
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "RNA - Raw data (FASTQ): " + .DataRequests_DR_3_3_rawdataRNA'
+jq -r '.[] | "DNA - Somatic data: " + .DataRequests_DR_3_3_SomaticanalysesdataDNa' <temp.json
+jq -r '.[] | "DNA - Germline data: " + .DataRequests_DR_3_3_germlineanalysesdataDNa' <temp.json
+jq -r '.[] | "DNA - Raw data (CRAM): " + .DataRequests_DR_3_3_rawdataDNa' <temp.json
+jq -r '.[] | "RNA - Raw data (FASTQ): " + .DataRequests_DR_3_3_rawdataRNa' <temp.json
 echo ""
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} | jq '.[] | "Other data: " + .DataRequests_DR_3_3_other'
+jq -r '.[] | "Other data: " + .DataRequests_DR_3_3_other' <temp.json
