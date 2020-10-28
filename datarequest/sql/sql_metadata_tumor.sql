@@ -7,6 +7,12 @@ SELECT
     hmfSampleId,
     primaryTumorLocation,
     cancerSubtype,
+    primaryTumorLocation,
+    primaryTumorSubLocation,
+    primaryTumorType,
+    primaryTumorSubType,
+    primaryTumorExtraDetails,
+    doids,
     biopsyDate,
     biopsySite,
     biopsyLocation
