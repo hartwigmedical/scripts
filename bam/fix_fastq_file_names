@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+for old in *_.fastq.gz; do 
+    new=$(echo "${old}" | sed 's/_.fastq.gz/_001.fastq.gz/')
+    echo "mv ${old} ${new}"
+done
