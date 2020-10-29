@@ -77,8 +77,7 @@ for seq_dir in "${seq_dirs[@]}"; do
         submission=$(echo ${line} | cut -d" " -f11)
         sample_id=$(echo ${line} | cut -d" " -f9)
         sample_nm=$(echo ${line} | cut -d" " -f10)
-        set_name="NA"
-        status_info="${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
+        status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
             api_sample=$(cat "${API_SAMP_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
             smp_status=$(echo "${api_sample}" | jq -r ".status")
@@ -91,9 +90,9 @@ for seq_dir in "${seq_dirs[@]}"; do
             run_status=$(echo "${api_run}" | jq -r ".status")
             ini_id=$(echo "${api_run}" | jq -r ".ini_id")
             ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
-            status_info="q30=${q30_seq} yld=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}"
+            status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
         fi
-        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}\t${set_name}"
+        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
    done | sort -k1,1 -k3,3
 done
 
