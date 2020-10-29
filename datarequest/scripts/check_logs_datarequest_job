@@ -51,7 +51,7 @@ fi
 
 echo "[INFO] PREPARED METADATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l ) >0 ]]; then
-    requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l )
+    requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "include_tumor_clinical_data" | grep -v "somatics" | grep -v "germline" | wc -l )
     log_metadata_name=$( ls ${request_logs_path} | grep 'metadata.log' )
     log_metadata=$"${request_logs_path}${log_metadata_name}"
     entries_metadata=$( expr $( cat ${log_job} | grep ".metadata.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
@@ -61,13 +61,13 @@ if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | 
         lines_metadata_tar_log=$( expr $( cat ${log_metadata} | wc -l) - 2 )
     fi
     cat ${log_job}  | grep "=1" | grep "include_tumor_clinical_data" | grep -v "somatics" | grep -v "germline"
-    echo "[INFO] $( expr ${requested_metadata} - 1 ) extra types of metadata requested:"
-    cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "include_tumor_clinical_data"
+    echo "[INFO] ${requested_metadata} extra types of metadata requested:"
+    cat ${log_job}  | grep "=1" | grep -v "include_tumor_clinical_data"| grep -v "somatics" | grep -v "germline"
     #check numbers.
     if [[ ${requested_metadata} != ${entries_metadata} || ${requested_metadata} != ${lines_metadata_tar_log} ]]; then
-        echo "[ERROR] The number of types of requested metadata (${requested_metadata}) does not match the number of entries created during the datarequest job (${entries_metadata} (entries) / ${lines_metadata_tar_log} (log check)). Check the log file(s) under: ${request_logs_path}."
+        echo "[ERROR] The number of extra types of requested metadata (${requested_metadata}) does not match the number of entries created during the datarequest job (${entries_metadata} (entries) / ${lines_metadata_tar_log} (log check)). Check the log file(s) under: ${request_logs_path}."
     else
-        echo "[INFO] The number of types of requested metadata (${requested_metadata}) matches the number of entries created during the datarequest job."
+        echo "[INFO] The number of extra types of requested metadata (${requested_metadata}) matches the number of entries created during the datarequest job."
     fi
     du -sh "${request_tar_files_path}/${request_name}.metadata.tar"
 else
