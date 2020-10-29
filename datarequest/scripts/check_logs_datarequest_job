@@ -56,9 +56,9 @@ if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | 
     log_metadata=$"${request_logs_path}${log_metadata_name}"
     entries_metadata=$( expr $( cat ${log_job} | grep ".metadata.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
     lines_metadata_tar_log=$( expr $( cat ${log_metadata} | wc -l) - 1 )
-    if [[ $( cat ${log_job}  | grep "include_patient_clinical_data=0" | wc -l ) >0 ]]; then
-        entries_metadata=$( expr $( echo ${entries_metadata} ) - 1 )
-        lines_metadata_tar_log=$( expr $( echo ${lines_metadata_tar_log}) - 1 )
+    if [[ $( cat ${log_job}  | grep "include_patient_clinical_data=1" | wc -l ) >0 ]]; then
+        entries_metadata=$( expr $( echo ${entries_metadata} ) + 1 )
+        lines_metadata_tar_log=$( expr $( echo ${lines_metadata_tar_log}) + 1 )
     fi
     if [[ $( cat ${log_job}  | grep "include_treatment_response_clinical_data=1" | wc -l ) >0 ]]; then
         entries_metadata=$( expr $( echo ${entries_metadata} ) - 1 )
