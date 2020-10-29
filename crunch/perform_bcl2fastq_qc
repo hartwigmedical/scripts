@@ -6,8 +6,9 @@ ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Fastq"
 API_DIR="/data/ops/api/prod"
-API_SAMPLES_JSON="${API_DIR}/database/samples.json"
+API_SAMP_JSON="${API_DIR}/database/samples.json"
 API_RUNS_JSON="${API_DIR}/database/runs.json"
+API_INIS_JSON="${API_DIR}/database/inis.json"
 REGISTERED_DIR="${API_DIR}/jsons/registered"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
@@ -77,23 +78,22 @@ for seq_dir in "${seq_dirs[@]}"; do
         sample_id=$(echo ${line} | cut -d" " -f9)
         sample_nm=$(echo ${line} | cut -d" " -f10)
         set_name="NA"
-        fc_status_info="${yld_seq} q=${q30_seq}"
+        status_info="${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
-            api_jsn=$(cat "${API_SAMPLES_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
-            api_sts=$(echo "${api_jsn}" | jq -r ".status")
-            api_yld=$(echo "${api_jsn}" | jq -r ".yld")
-            api_req=$(echo "${api_jsn}" | jq -r ".yld_req")
-            api_yld=$((api_yld/1000000000))
-            api_req=$((api_req/1000000000))
+            api_sample=$(cat "${API_SAMP_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
+            smp_status=$(echo "${api_sample}" | jq -r ".status")
+            yld=$(echo "${api_sample}" | jq -r ".yld")
+            req=$(echo "${api_sample}" | jq -r ".yld_req")
+            yld=$((yld/1000000000))
+            req=$((req/1000000000))
             set_name=$(find ${REGISTERED_DIR} -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
-            api_run_jsn=$(cat "${API_RUNS_JSON}" | jq -r --arg set_name "${set_name}" '.[] | select(.set.name == $set_name)')
-            run_sts=$(echo "${api_run_jsn}" | jq -r ".status")
-            api_status_info="(API: yld=${api_yld} req=${api_req} smp=${api_sts} run=${run_sts})"
-        else
-            api_status_info="(run at datastore to add API info)"
+            api_run=$(cat "${API_RUNS_JSON}" | jq -r --arg set_name "${set_name}" '.[] | select(.set.name == $set_name)')
+            run_status=$(echo "${api_run}" | jq -r ".status")
+            ini_id=$(echo "${api_run}" | jq -r ".ini_id")
+            ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
+            status_info="q30=${q30_seq} yld=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}"
         fi
-        final_status_info="${fc_status_info} ${api_status_info}"
-        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${final_status_info}\t${set_name}"
+        echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}\t${set_name}"
    done | sort -k1,1 -k3,3
 done
 
