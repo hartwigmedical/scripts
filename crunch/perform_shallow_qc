@@ -12,13 +12,13 @@ fi
 na="na"
 
 echo -e "#SetName\tTumSample\tPurpleQC\tPurity\tStatus\tAmberQC\tPipelineVsn\tPurpleVsn\
-\tRefCov\tTumCov\tRefReads\tTumReads\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
+\tRefCov\tTumCov\tRefMapPerc\tTumMapPerc\tRefExcl\tTumExcl\tRefDup\tTumDup"
 
 for run_dir in "${run_paths[@]}"; do
     ## init variables
     pip_vsn=${na}; set_name=${na}; ref_sample=${na}
-    ref_cov=${na}; ref_rds=${na}; ref_map=${na}; ref_exc=${na}; ref_dup=${na}
-    tum_cov=${na}; tum_rds=${na}; tum_map=${na}; tum_exc=${na}; tum_dup=${na}
+    ref_cov=${na}; ref_map=${na}; ref_exc=${na}; ref_dup=${na}
+    tum_cov=${na}; tum_map=${na}; tum_exc=${na}; tum_dup=${na}
     purity=${na}; status=${na}; qc_stat=${na}; amb_qc=${na}; pur_vsn=${na}
   
     set_name=$(basename "${run_dir}")
@@ -92,8 +92,6 @@ for run_dir in "${run_paths[@]}"; do
     tum_dup=$(echo "${tum_jsn}" | jq -r '.PCT_EXC_DUPE')
   
     ## gather Flagstat info
-    ref_rds=$(cat ${flg_file_r} | grep 'total ('  | cut -d ' ' -f1)
-    tum_rds=$(cat ${flg_file_t} | grep 'total ('  | cut -d ' ' -f1)
     ref_map=$(cat ${flg_file_r} | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
     tum_map=$(cat ${flg_file_t} | grep 'mapped (' | cut -d '(' -f2 | cut -d":" -f1)
  
@@ -107,9 +105,9 @@ for run_dir in "${run_paths[@]}"; do
     qc_stat=$(cat ${pqc_file} | grep QCStatus | cut -f2)
   
     ## output
-    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" \
         ${set_name} ${tum_sample} ${qc_stat} ${purity} \
         ${status} ${amb_qc} ${pip_vsn} ${pur_vsn} ${ref_cov} ${tum_cov} \
-        ${ref_rds} ${tum_rds} ${ref_map} ${tum_map} \
+        ${ref_map} ${tum_map} \
         ${ref_exc} ${tum_exc} ${ref_dup} ${tum_dup}
 done
