@@ -1,22 +1,63 @@
 #!/usr/bin/env bash
 
 source gcp_functions
+source message_functions
 
-gcp_url=$1 && shift
-download_path=$1 && shift
+gcp_url=''
+download_path=''
+exclude_crams=''
 
-if [[ -z "${gcp_url}" ]]; then echo "[ERROR] No URL provided ($(basename $0)). Exiting" && exit 1; fi
-if [[ -z "${download_path}" ]]; then echo "[ERROR] No download path provided ($(basename $0)). Exiting" && exit 1; fi
-if [[ ! "${gcp_url}" =~ ^gs\: ]]; then echo "[ERROR] URL should start with gs ($(basename $0)). Exiting" && exit 1; fi
+if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Description: Downloads a pipeline run."
+    echo " Usage:"
+    echo "   $(basename $0) -u <url-to-run-in-bucket> -d <download-path>"
+    echo " Options:"
+    echo "   -e  Exclude any Bams/CRAMs"
+    echo "---"
+    exit 1
+fi
+
+while getopts ":u:d:e" opt; do
+  case ${opt} in
+    u)
+      gcp_url=${OPTARG}
+      ;;
+    d)
+      download_path=${OPTARG}
+      ;;
+    e)
+      exclude_crams='true'
+      ;;
+    \?)
+      echo "[ERROR] Invalid option: -${OPTARG}" >&2
+      exit 1
+      ;;
+    :)
+      echo "[ERROR] Option -${OPTARG} requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
+## sanity checks
+[[ -n "${gcp_url}" ]] || die "No URL provided. Exiting"
+[[ -n "${download_path}" ]] || die "No download path provided. Exiting"
+[[ "${gcp_url}" =~ ^gs\: ]] || die "URL should start with 'gs'. Exiting"
 
 set_name=$(basename "${gcp_url}")
 dest_path="${download_path}/${set_name}/"
 
-echo "[INFO] Creating directory ${dest_path}"
+info "Creating directory ${dest_path}"
 mkdir -p "${dest_path}"
 
-echo "[INFO] Switching to service account"
+info "Switching to service account"
 switch_to_hmf_ops_service_account
 
-echo "[INFO] Downloading ${gcp_url} to ${download_path}"
-gsutil -u hmf-database -m rsync -r "${gcp_url}" "${dest_path}"
+info "Starting download of ${gcp_url} to ${download_path}"
+if [[ "$exclude_crams" == "true" ]]; then
+    gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" "${gcp_url}" "${dest_path}"
+else
+    gsutil -u hmf-database -m rsync -r "${gcp_url}" "${dest_path}"
+fi
+info "Finished downloading of ${gcp_url} to ${download_path}"
