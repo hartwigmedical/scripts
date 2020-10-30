@@ -71,6 +71,7 @@ main() {
         "${jobs_source_path}/compare_purity.sql"
         "${jobs_source_path}/counts_variants.sql"
         "${jobs_source_path}/diff_somatic_variants.sql"
+        "${jobs_source_path}/diff_germline_variants.sql"
         "${jobs_source_path}/diff_sv.sql"
         "${jobs_source_path}/diff_sv_test.sql"
     )
