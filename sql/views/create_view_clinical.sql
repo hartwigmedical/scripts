@@ -19,7 +19,7 @@ FROM sample
     LEFT JOIN anonymizedSampleMapping on sample.sampleId = anonymizedSampleMapping.sampleId
     LEFT JOIN rna on sample.sampleId = rna.sampleId
     LEFT JOIN baseline ON patient.id = baseline.patientId
-    LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidEntry GROUP BY 1) AS doidView
+    LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidNode GROUP BY 1) AS doidView
         ON patient.id = doidView.patientId
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
