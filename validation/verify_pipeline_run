@@ -57,7 +57,7 @@ main() {
     cd "${out_dir}" || die "Unable to move to output directory"
 
     info "Gathering script and sql job files"
-    jobs_source_path="/data/common/repos/scripts/validation/"
+    jobs_source_path="/data/common/repos/scripts/validation"
     script_jobs=(
         "${jobs_source_path}/compare_v5_runs"
         "${jobs_source_path}/diff_v5_COLO829v003_runs"
