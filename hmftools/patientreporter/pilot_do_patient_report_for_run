@@ -54,7 +54,7 @@ chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
-germline_genes_csv=/data/common/dbs/germline/reported_germline_genes.csv
+germline_genes_tsv=/data/common/dbs/germline/pilot_reported_germline_genes.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
 
 pilot_do_run_base_patient_reporter \
@@ -74,7 +74,7 @@ pilot_do_run_base_patient_reporter \
     -chord_prediction_txt ${chord_prediction_txt} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -germline_genes_csv ${germline_genes_csv} \
+    -germline_genes_tsv ${germline_genes_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -output_dir_data_report ${output_dir_data_report} \
     -log_debug \
