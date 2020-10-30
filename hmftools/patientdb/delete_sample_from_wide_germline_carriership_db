@@ -8,7 +8,7 @@ if [[ -z "${sample}" ]]; then
     echo "[ERROR] No sample is provided to $(basename $0). Exiting." && exit 1
 fi
 
-credentials=$(locate_pipeline_v5_validation_database_credentials)
+credentials=$(locate_wide_germline_carriership_credentials)
 patient_db_jar=$(locate_prod_patient_db)
 
 do_delete_sample_from_database ${sample} ${credentials} ${patient_db_jar}

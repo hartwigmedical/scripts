@@ -4,6 +4,10 @@ source locate_files
 
 sample=$1 && shift
 
+if [[ -z "${sample}" ]]; then
+    echo "[ERROR] No sample is provided to $(basename $0). Exiting." && exit 1
+fi
+
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
