@@ -11,9 +11,11 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
     echo " Description: Downloads a pipeline run."
     echo " Usage:"
-    echo "   $(basename $0) -u <url-to-run-in-bucket> -d <download-path>"
+    echo "   $(basename "$0") -u <gcp-url> -d <download-path>"
+    echo "   $(basename "$0") -u gs://path/to/run -d /data/gcp/qc_fail_runs"
+    echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs"
     echo " Options:"
-    echo "   -e  Exclude any Bams/CRAMs"
+    echo "   -e  Exclude any BAMs/CRAMs"
     echo "---"
     exit 1
 fi
@@ -41,10 +43,12 @@ while getopts ":u:d:e" opt; do
 done
 
 ## sanity checks
-[[ -n "${gcp_url}" ]] || die "No URL provided. Exiting"
-[[ -n "${download_path}" ]] || die "No download path provided. Exiting"
-[[ "${gcp_url}" =~ ^gs\: ]] || die "URL should start with 'gs'. Exiting"
+[[ -n "${gcp_url}" ]] || die "No URL provided"
+[[ -n "${download_path}" ]] || die "No download path provided"
+[[ -d "${download_path}" ]] || die "Download path is not a directory (${download_path})"
+[[ "${gcp_url}" =~ ^gs\: ]] || die "URL should start with 'gs' (${gcp_url})"
 
+download_path=$(realpath "${download_path}")
 set_name=$(basename "${gcp_url}")
 dest_path="${download_path}/${set_name}/"
 
