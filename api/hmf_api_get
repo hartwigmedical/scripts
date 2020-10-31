@@ -22,4 +22,5 @@ if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" 
   exit 1
 fi
 
-curl --silent --cert "${api_crt}" --key "${api_key}" -H "Content-Type: application/json" -X GET "${api_url}/${api_query}"
+curl --silent --show-error --cert "${api_crt}" --key "${api_key}" \
+ -H "Content-Type: application/json" -X GET "${api_url}/${api_query}"
