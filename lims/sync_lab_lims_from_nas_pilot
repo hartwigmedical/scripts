@@ -81,7 +81,7 @@ accdb_table_to_csv() {
     local accdb_file=$1 && shift
     local table_name=$1 && shift
 
-    info "  Converting $(basename "${accdb_file}") table ${table_name}"
+    info "  Convert $(basename "${accdb_file}") table ${table_name}"
     ${ACC2CSV} --with-header --quote-all false --input "${accdb_file}" --table "${table_name}" --output "${output_dir}"
     [[ $? -eq 0 ]] || die "Accdb conversion to csv FAILED (${table_name})"
     mv "${DAY_DIR}/${table_name}.csv" "${output_csv}"
