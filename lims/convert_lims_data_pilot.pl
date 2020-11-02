@@ -61,28 +61,33 @@ die $HELP_TEXT unless $opt{ out_json };
 my $CNTR_TSV = '/data/ops/lims/prod/center2entity.tsv';
 my $LIMS_DIR = $opt{lims_dir};
 my $JSON_OUT = $opt{out_json};
+my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
 
-my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
-my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
-my $CONT_TSV = $LIMS_DIR . '/latest/lims_cont';
-my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
-my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
+my $ACCESS_SAMPLES_CSV = $LATEST_DIR . '/access_samples.csv';
+my $ACCESS_ACTIONS_CSV = $LATEST_DIR . '/access_actions.csv';
+my $ACCESS_REGISTRATIONS_CSV = $LATEST_DIR . '/access_registrations.csv';
+my $SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
+my $CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
+my $SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
+my $PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 
-## Closed files from previous years
-my $SUBM_TSV_2019 = $LIMS_DIR . '/latest/2019_subm';
-my $SAMP_TSV_2019 = $LIMS_DIR . '/latest/2019_samp';
-my $PROC_TSV_2019 = $LIMS_DIR . '/latest/2019_proc';
-my $SUBM_TSV_2018 = $LIMS_DIR . '/latest/2018_subm';
-my $SAMP_TSV_2018 = $LIMS_DIR . '/latest/2018_samp';
-my $PROC_TSV_2018 = $LIMS_DIR . '/latest/2018_proc';
-my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';    
-my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
+## Files from previous years
+my $SUBM_TSV_2019 = $LATEST_DIR . '/2019_for001_submissions.tsv';
+my $SAMP_TSV_2019 = $LATEST_DIR . '/2019_for001_samples.tsv';
+my $PROC_TSV_2019 = $LATEST_DIR . '/2019_for001_processing.tsv';
+my $SUBM_TSV_2018 = $LATEST_DIR . '/2018_subm';
+my $SAMP_TSV_2018 = $LATEST_DIR . '/2018_samp';
+my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
+my $PROC_TSV_2017 = $LATEST_DIR . '/2017_proc';
+my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 
 my @ALL_INPUT_FILES = ( 
-  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, 
-  $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
-  $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018, 
-  $PROC_TSV_2017, $LIMS_JSN_2017
+    $ACCESS_SAMPLES_CSV, $ACCESS_ACTIONS_CSV, $ACCESS_REGISTRATIONS_CSV,
+    $SUBM_TSV, $SAMP_TSV, $PROC_TSV,
+    $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
+    $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018,
+    $PROC_TSV_2017, $LIMS_JSN_2017,
+    $CNTR_TSV
 );
 
 ## Some final checks
@@ -123,7 +128,7 @@ $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
+$cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
 
 checkContactInfo( $cont_objs );
 
