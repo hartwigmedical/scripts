@@ -1,0 +1,137 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+out_dir=$1 && shift
+
+## setup main variables
+NAS_DIR="/volume1/sync_from_infracom"
+DAY_DIR="${out_dir}/$(date '+%y%m%d')"
+SYM_DIR="${out_dir}/latest"
+ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
+
+ACCESS_FILE="LIMS_v4.5_be.accdb"
+FOR_001_FILE="HMF-FOR-001 Received Samples 2020 v5.7.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process 2020 v4.2.xlsx"
+FOR_001_FILE_2019="HMF-FOR-001 Received Samples 2019 v5.5.xlsx"
+FOR_002_FILE_2019="HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
+
+NAS_FILES=(
+  "${NAS_DIR}/04 Current backend/${ACCESS_FILE}"
+  "${NAS_DIR}/${FOR_001_FILE}"
+  "${NAS_DIR}/${FOR_002_FILE}"
+  "${NAS_DIR}/${FOR_001_FILE_2019}"
+  "${NAS_DIR}/${FOR_002_FILE_2019}"
+)
+
+main() {
+    info "Starting with $(basename $0)"
+
+    dir_exists_and_is_writable "${out_dir}"
+    dir_exists_and_is_writable "${SYM_DIR}"
+
+    mkdir -p "${DAY_DIR}"
+
+    # current files
+    access_source="${DAY_DIR}/${ACCESS_FILE}" # MS Access LIMS
+    for001_source="${DAY_DIR}/${FOR_001_FILE}" # Excel FOR-001
+    for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
+
+    access_samp_txt="${DAY_DIR}/access_samples.csv"
+    access_acti_txt="${DAY_DIR}/access_actions.tsv"
+    access_regi_txt="${DAY_DIR}/access_registration.tsv"
+    for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
+    for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
+    for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
+    for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
+
+    # 2019 files
+    for001_source_2019="${DAY_DIR}/${FOR_001_FILE_2019}"
+    for002_source_2019="${DAY_DIR}/${FOR_002_FILE_2019}"
+    for001_samp_txt_2019="${DAY_DIR}/2019_for001_samples.tsv"
+    for001_subm_txt_2019="${DAY_DIR}/2019_for001_submissions.tsv"
+    for002_proc_txt_2019="${DAY_DIR}/2019_for001_processing.tsv"
+
+    info "Syncing input files from NAS to DATASTORE (${DAY_DIR})"
+    for nas_file_path in "${NAS_FILES[@]}"; do
+      retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
+    done
+
+    info "Converting input files to CSV/TSV"
+    accdb_table_to_csv "${DAY_DIR}" "${access_samp_txt}" "${access_source}" "tblSamples"
+    accdb_table_to_csv "${DAY_DIR}" "${access_acti_txt}" "${access_source}" "tblActions"
+    accdb_table_to_csv "${DAY_DIR}" "${access_regi_txt}" "${access_source}" "tblRegistration"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt}" "${for001_source}" "1" "5"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt}" "${for001_source}" "2" "2"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_cont_txt}" "${for001_source}" "3" "1"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt}" "${for002_source}" "1" "5"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt_2019}" "${for001_source_2019}" "1" "5"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt_2019}" "${for001_source_2019}" "2" "2"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt_2019}" "${for002_source_2019}" "1" "5"
+
+    # Create latest symlinks
+    info "Symlinking to ${SYM_DIR}"
+    find "${DAY_DIR}" -name "*.tsv" -or -name "*.csv" | while read -r txt_file; do
+      symlink_to_latest "${txt_file}" "$SYM_DIR"
+    done
+
+    info "Finished with $(basename $0)"
+}
+
+accdb_table_to_csv() {
+    local output_dir=$1 && shift
+    local output_csv=$1 && shift
+    local accdb_file=$1 && shift
+    local table_name=$1 && shift
+
+    info "  Converting $(basename "${accdb_file}") table ${table_name}"
+    ${ACC2CSV} --with-header --quote-all false --input "${accdb_file}" --table "${table_name}" --output "${output_dir}"
+    [[ $? -eq 0 ]] || die "Accdb conversion to csv FAILED (${table_name})"
+    mv "${DAY_DIR}/${table_name}.csv" "${output_csv}"
+}
+
+excel_sheet_to_tsv() {
+    local output_dir=$1 && shift
+    local output_tsv=$1 && shift
+    local excel_file=$1 && shift
+    local sheet_index=$1 && shift
+    local skip_rows=$1 && shift
+    local excel_name=""
+    excel_name=$(basename "${excel_file}")
+
+    info "  Converting ${excel_name} sheet ${sheet_index} with ${skip_rows} header rows"
+    xlsx2csv -d "\t" "${excel_file}" -s "${sheet_index}" | tail -n +"${skip_rows}" > ${output_tsv}
+    [[ $? -eq 0 ]] || die "Excel conversion to tsv FAILED (${sheet_index})"
+}
+
+symlink_to_latest() {
+    local source_path=$1 && shift
+    local target_dir=$1 && shift
+    local target_path=""
+    target_path="${target_dir}/$(basename ${source_path})"
+
+    ln -sfn "${source_path}" "${target_path}"
+    [[ $? -eq 0 ]] || die "Symlinking FAILED for (${source_path})"
+}
+
+retrieve_file_from_nas() {
+    local source_path=$1 && shift
+    local target_dir=$1 && shift
+
+    if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then
+        die "No such file at NAS (${source_path})"
+    else
+        info "  Rsync file (nas:${nas_file_path})"
+    fi
+
+    rsync -s "nas:${source_path}" "${target_dir}"
+    [[ $? -eq 0 ]] || die "Rsync from nas FAILED for (${source_path})"
+}
+
+dir_exists_and_is_writable() {
+    dir_to_check=$1 && shift
+    [[ -d "${dir_to_check}" ]] || die "Dir does not exist (${dir_to_check})"
+    [[ -w "${dir_to_check}" ]] || die "Dir is not writable (${dir_to_check})"
+}
+
+main
