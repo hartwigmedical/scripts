@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+if [[ -z "$1" || "$1" == "-h" || "$1" == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Wrapper for cram2bam and bam2fastq"
+    echo " Usage: $(basename $0) <CRAM file>"
+    echo " Examp: nohup $(basename $0) <CRAM file> > cram2fastq.log &"
+    echo "-----"
+    exit 1
+fi
+
+cram=$1
+bam=$(echo "${cram}" | sed 's/cram$/bam/')
+
+echo "[INFO] Starting with cram2fastq" 
+
+cram2bam "${cram}"
+
+bam2fastq "${bam}"
+
+echo "[INFO] Finished with cram2fastq" 
