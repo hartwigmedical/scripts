@@ -3,13 +3,18 @@
 run_dir=$1 && shift
 ouputPath=$1 && shift
 
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${ouputPath}" ]]; then
+    echo "[ERROR] No ouput Path provided. Exiting" && exit 1;
+fi
+
 json_file_pilot=$( ls /data/cpct/runs/${run_dir}/patient_report_prod_data/ )
-echo ${json_file_pilot}
 pathFile_pilot=$( ls /data/cpct/runs/${run_dir}/patient_report_prod_data/${json_file_pilot} )
-echo ${pathFile_pilot}
 cat ${pathFile_pilot} | jq '.' > ${ouputPath}"/"${json_file_pilot}"_pilot"
 
 json_file_prod=$( ls /data/cpct/runs/${run_dir}/patient_report_pilot_data/ )
 pathFile_prod=$( ls /data/cpct/runs/${run_dir}/patient_report_pilot_data/${json_file_prod} )
-
 cat ${pathFile_prod} | jq '.' > ${ouputPath}"/"${json_file_prod}"_prod"
