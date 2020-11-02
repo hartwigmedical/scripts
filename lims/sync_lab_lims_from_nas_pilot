@@ -2,11 +2,12 @@
 
 source message_functions
 
-out_dir=$1 && shift
+out_dir=$1 && shift # prod or pilot lims dir
 
 ## setup main variables
-DAY_DIR="${out_dir}/$(date '+%y%m%d')"
-SYM_DIR="${out_dir}/latest"
+LAB_DIR="${out_dir}/lab_files"
+DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
+SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
@@ -28,6 +29,7 @@ main() {
     info "Starting with $(basename $0)"
 
     dir_exists_and_is_writable "${out_dir}"
+    dir_exists_and_is_writable "${LAB_DIR}"
     dir_exists_and_is_writable "${SYM_DIR}"
 
     mkdir -p "${DAY_DIR}"
