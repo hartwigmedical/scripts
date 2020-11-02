@@ -65,7 +65,7 @@ my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
 
 my $ACCESS_SAMPLES_CSV = $LATEST_DIR . '/access_samples.csv';
 my $ACCESS_ACTIONS_CSV = $LATEST_DIR . '/access_actions.csv';
-my $ACCESS_REGISTRATIONS_CSV = $LATEST_DIR . '/access_registrations.csv';
+my $ACCESS_REGISTRATIONS_CSV = $LATEST_DIR . '/access_registration.csv';
 my $SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
 my $CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
 my $SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
