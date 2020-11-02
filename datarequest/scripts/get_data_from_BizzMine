@@ -39,9 +39,9 @@ echo ""
 echo "--- DETAILS DATA ACCESS REQUEST: $release_id ---"
 
 
-datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
+datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
 echo "Bizzmine instance: $datarequest_id"
-curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" https://api.bizzmine.cloud/collection/DataRequests/instance/${datarequest_id} > temp.json
+curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instance/${datarequest_id} > temp.json
 echo ""
 jq -r '.[] | "Main applicant - " + .DataRequests_DR_1_2_Mainapplicant[].value + " " + .DataRequests_1_2_Emailaddress_mainapplicant' <temp.json
 jq -r '.[] | "Main applicant 2 - " + .DataRequests_DR_1_2_Mainapplicant2 + " " + .DataRequests_1_2_Emailaddress_mainapplicant2' <temp.json
@@ -49,8 +49,8 @@ echo ""
 jq -r '.[] | "Which data can be shared - " + .DataRequests_DR_0_0_Whichdata_shared_followingboarddecision.text + " " + .DataRequests_DR_0_0_Partofthedata_shared' <temp.json
 jq -r '.[] | "Due date Licence Agreement - " + .DataRequests_DR_0_0_Duedate_licenceagreement'  <temp.json
 echo ""
-jq -r '.[].Researchers[] | select(.Researchers_13Researcheralsodownloadcontact=="1") | "GCP account download contact - " + .Researchers_13Emailresearcherinvolvedintheproject' <temp.json
-jq -r '.[].Extraresearchers[] | select(.Extra_researchers_Extraresearcheralsodownloadcontact=="1") |  "Extra added GCP account of download contact - " + .Extra_researchers_Emailextraresearcherinvolvedintheproject' <temp.json
+jq -r '.[].Researchers[]? | select(.Researchers_13Researcheralsodownloadcontact=="1") | "GCP account download contact - " + .Researchers_13Emailresearcherinvolvedintheproject' <temp.json
+jq -r '.[].Extraresearchers[]? | select(.Extra_researchers_Extraresearcheralsodownloadcontact=="1") |  "Extra added GCP account of download contact - " + .Extra_researchers_Emailextraresearcherinvolvedintheproject' <temp.json
 echo ""
 jq -r '.[] | "Requested patient selection - " + .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json
 echo ""
@@ -66,6 +66,10 @@ jq -r '.[] | "RNA - Raw data (FASTQ): " + .DataRequests_DR_3_3_rawdataRNA' <temp
 echo ""
 jq -r '.[] | "Other data: " + .DataRequests_DR_3_3_other' <temp.json
 echo ""
+echo "Data shared:"
+jq -r '.[].DataShared[]?'
+echo ""
+
 
 rm temp.json
 
