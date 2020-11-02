@@ -2,8 +2,11 @@
 
 run_dir=$1 && shift
 
-json_file=$( ls ${run_dir}/patient_report_prod_data/ )
-cat ${json_file} | jq '.' > ${json_file}"_temp"
+json_file_pilot=$( ls ${run_dir}/patient_report_prod_data/ )
+pathFile_pilot=$( ${run_dir}/patient_report_prod_data/${json_file_pilot} )
+cat ${pathFile_pilot} | jq '.' > ${pathFile_pilot}"_temp"
 
-json_file=$( ls ${run_dir}/patient_report_pilot_data/ )
-cat ${json_file} | jq '.' > ${json_file}"_temp"
+json_file_prod=$( ls ${run_dir}/patient_report_pilot_data/ )
+pathFile_prod=$( ${run_dir}/patient_report_pilot_data/${json_file_prod} )
+
+cat ${pathFile_prod} | jq '.' > ${pathFile_prod}"_temp"
