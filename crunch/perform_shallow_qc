@@ -53,11 +53,10 @@ for run_dir in "${run_paths[@]}"; do
     aqc_file="${amb_dir}/${tum_sample}.amber.qc"
     vsn_file="${pur_dir}/purple.version"
     pqc_file="${pur_dir}/${tum_sample}.purple.qc"
-    ppu_file="${pur_dir}/${tum_sample}.purple.purity"
+    ppu_file="${pur_dir}/${tum_sample}.purple.purity.tsv"
 
     ## adjust paths if Pv5
     if [[ "${is_pv5}" ]]; then
-        ppu_file="${ppu_file}.tsv"
         wgs_file_r="${ref_dir}/bam_metrics/${ref_sample}.wgsmetrics"
         wgs_file_t="${tum_dir}/bam_metrics/${tum_sample}.wgsmetrics"
         flg_file_r="${ref_dir}/flagstat/${ref_sample}.flagstat"
