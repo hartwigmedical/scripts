@@ -39,8 +39,8 @@ main() {
     for002_source="${DAY_DIR}/${FOR_002_FILE}" # Excel FOR-002
 
     access_samp_txt="${DAY_DIR}/access_samples.csv"
-    access_acti_txt="${DAY_DIR}/access_actions.tsv"
-    access_regi_txt="${DAY_DIR}/access_registration.tsv"
+    access_acti_txt="${DAY_DIR}/access_actions.csv"
+    access_regi_txt="${DAY_DIR}/access_registration.csv"
     for001_samp_txt="${DAY_DIR}/for001_samples.tsv"
     for001_subm_txt="${DAY_DIR}/for001_submissions.tsv"
     for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
