@@ -4,3 +4,6 @@ run_dir=$1 && shift
 
 json_file=$( ls ${run_dir}/patient_report_prod_data/ )
 cat ${json_file} | jq '.' > ${json_file}"_temp"
+
+json_file=$( ls ${run_dir}/patient_report_pilot_data/ )
+cat ${json_file} | jq '.' > ${json_file}"_temp"
