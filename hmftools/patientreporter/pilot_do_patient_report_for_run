@@ -74,7 +74,7 @@ pilot_do_run_base_patient_reporter \
     -chord_prediction_txt ${chord_prediction_txt} \
     -circos_file ${circos_file} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -germline_reporting_tsv ${germline_genes_tsv} \
+    -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -output_dir_data_report ${output_dir_data_report} \
     -log_debug \
