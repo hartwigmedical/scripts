@@ -67,7 +67,7 @@ echo ""
 jq -r '.[] | "Other data: " + .DataRequests_DR_3_3_other' <temp.json
 echo ""
 echo "Data shared:"
-jq -r '.[].DataShared[]?'
+jq -r '.[].DataShared[]?' <temp.json
 echo ""
 
 
