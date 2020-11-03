@@ -305,15 +305,14 @@ sub addIsoAndPrepExperimentIdsToSamples{
             next unless exists $conversion{$action_id};
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
             my $store_key = $conversion{$action_id}{'new_name'};
+            $store{$sample_id}{$store_key} = NACHAR;
+
             if (defined $experiment_dates{$experiment}{$action_id}) {
-                if (exists $store{$sample_id}{$store_key}){
+                if (defined $store{$sample_id}{$store_key}){
                     next;
                 }else{
                     $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
                 }
-            }
-            else {
-                $store{$sample_id}{$store_key} = NACHAR;
             }
         }
     }
