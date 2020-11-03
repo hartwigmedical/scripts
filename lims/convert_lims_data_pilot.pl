@@ -285,10 +285,10 @@ sub addIsoAndPrepExperimentIdsToSamples{
     my %store = %$samples;
 
     my %conversion = (
-        7  => ( 'new_name' = 'iso_start', lims_name => 'Compose blood isolation experiment'),
-        8  => ( 'new_name' = 'iso_start', lims_name => 'Compose tissue isolation experiment'),
-        11 => ( 'new_name' = 'iso_end', lims_name => 'Finished blood isolation experiment'),
-        12 => ( 'new_name' = 'iso_end', lims_name => 'Finished tissue isolation experiment'),
+        7  => { 'new_name' => 'iso_start', lims_name => 'Compose blood isolation experiment'},
+        8  => { 'new_name' => 'iso_start', lims_name => 'Compose tissue isolation experiment'},
+        11 => { 'new_name' => 'iso_end', lims_name => 'Finished blood isolation experiment'},
+        12 => { 'new_name' => 'iso_end', lims_name => 'Finished tissue isolation experiment'},
     );
 
     my %experiment_dates = ();
@@ -303,8 +303,8 @@ sub addIsoAndPrepExperimentIdsToSamples{
     while (my ($sample_id, $sample_obj) = each %store) {
         while (my ($action_id, $action_name) = each %$actions) {
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
+            my $store_key = $conversion{$action_id}{'new_name'};
             if (defined $experiment_dates{$experiment}{$action_id}) {
-                my $store_key = $conversion{$action_id}{'new_name'};
                 $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
             }
             else {
