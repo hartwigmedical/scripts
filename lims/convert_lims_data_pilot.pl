@@ -292,6 +292,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
         my $action_id = $obj->{"action_id"};
         my $date = $obj->{"date"};
         my $experiment = $obj->{"experiment_name"};
+        next if $experiment eq "";
         if (exists $experiment_2_date{$experiment}{$action_id}){
             die "[ERROR] Somehow experiment '$experiment' with action '$action_id' already exists\n";
         }else{
