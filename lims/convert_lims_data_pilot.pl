@@ -296,7 +296,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
         my $action_id = $obj->{"action_id"};
         my $date = $obj->{"date"};
         my $experiment = $obj->{"experiment_name"};
-        next if isSkipValue($experiment)
+        next if isSkipValue($experiment);
         $experiment_dates{$experiment}{$action_id} = $date;
     }
 
