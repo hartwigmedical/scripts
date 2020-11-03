@@ -28,6 +28,13 @@ use constant BOOLEAN_FIELDS => qw(
     add_to_database add_to_datarequest
 );
 
+my %LIMS_ACTIONS = (
+    7  => "iso_start_blood",
+    8  => "iso_finish_blood",
+    11 => "iso_start_tumor",
+    12 => "iso_finish_tumor"
+);
+
 ## Setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP_TEXT = <<"HELP";
@@ -110,12 +117,13 @@ say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
+
 my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $cpct_objs = {}; # will contain objects from MS Access LIMS samples table
-my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
+#my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
 my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
 my $lims_objs = {}; # will contain all sample objects
 
@@ -131,7 +139,7 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
-$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_desc',  1, $ACCESS_ACTIONS_CSV, "," );
+#$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_desc',  1, $ACCESS_ACTIONS_CSV, "," );
 $regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
@@ -140,7 +148,7 @@ $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
-$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $acti_objs, $regi_objs );
+$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs );
 
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
@@ -276,26 +284,11 @@ sub addLabSopStringToSamples{
 }
 
 sub addIsoAndPrepExperimentIdsToSamples{
-    my ($samples, $registrations, $actions) = @_;
+    my ($samples, $registrations) = @_;
     my %store = %$samples;
 
-    # 7,Compose blood isolation experiment
-    # 8,Compose tissue isolation experiment
-    # 11,Finished blood isolation experiment
-    # 12,Finished tissue isolation experiment
-
-    my %action_id_2_action_name = (
-        7 => "iso_start_blood",
-        8 => "iso_finish_blood",
-        11 => "iso_start_tumor",
-        12 => "iso_finish_tumor"
-    );
-
-    my $start_field_name = 'isolation_start_date';
-    my $finish_field_name = 'isolation_finish_date';
-
     my %experiment_2_date = ();
-    while (my ($registration_id,$obj) = each %$registrations){
+    while (my ($registration_id, $obj) = each %$registrations){
         my $action_id = $obj->{"action_id"};
         my $date = $obj->{"date"};
         my $experiment = $obj->{"experiment_name"};
@@ -307,7 +300,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
     }
 
     while (my ($sample_id,$sample_obj) = each %store) {
-        while (my ($action_id,$action_name) = each %action_id_2_action_name) {
+        while (my ($action_id,$action_name) = each %LIMS_ACTIONS) {
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
             if (exists $experiment_2_date{$experiment}{$action_id}) {
                 $store{ $sample_id }{ $action_name } = $experiment_2_date{$experiment}{$action_id};
