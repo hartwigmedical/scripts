@@ -5,6 +5,7 @@ pilot_report_json=$1 && shift
 
 diff <(jq . ${prod_report_json}) <(jq . ${pilot_report_json})
 
+## create_patient_verify_for_run
 ## add row number in json file
 # cat {json_file} | jq '.' > {temp_json_file}
 # cat --number {temp_json_file}
