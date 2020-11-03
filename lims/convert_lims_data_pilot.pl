@@ -131,8 +131,8 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
-$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'sample_id',  1, $ACCESS_ACTIONS_CSV, "," );
-$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'sample_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
+$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_desc',  1, $ACCESS_ACTIONS_CSV, "," );
+$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
 
@@ -278,13 +278,43 @@ sub addLabSopStringToSamples{
 sub addIsoAndPrepExperimentIdsToSamples{
     my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
-    my $sop_field_name = 'isolation_exps';
-    foreach my $id ( keys %store ){
-        if (1) {
-            $store{ $id }{ $sop_field_name } = "test";
+
+    # 7,Compose blood isolation experiment
+    # 8,Compose tissue isolation experiment
+    # 11,Finished blood isolation experiment
+    # 12,Finished tissue isolation experiment
+
+    my %action_id_2_action_name = (
+        7 => "iso_start_blood",
+        8 => "iso_finish_blood",
+        11 => "iso_start_tumor",
+        12 => "iso_finish_tumor"
+    );
+
+    my $start_field_name = 'isolation_start_date';
+    my $finish_field_name = 'isolation_finish_date';
+
+    my %experiment_2_date = ();
+    while (my ($registration_id,$obj) = each %$registrations){
+        my $action_id = $obj->{"action_id"};
+        my $date = $obj->{"date"};
+        my $experiment = $obj->{"experiment_name"};
+        if (exists $experiment_2_date{$experiment}{$action_id}){
+            die "[ERROR] Somehow experiment '$experiment' with action '$action_id' already exists\n";
+        }else{
+            $experiment_2_date{$experiment}{$action_id} = $date;
         }
-        else{
-            $store{ $id }{ $sop_field_name } = NACHAR;
+    }
+
+    while (my ($sample_id,$sample_obj) = each %store) {
+        while (my ($action_id,$action_name) = each %action_id_2_action_name) {
+            my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
+            if (exists $experiment_2_date{$experiment}{$action_id}) {
+                $store{ $sample_id }{ $action_name } = $experiment_2_date{$experiment}{$action_id};
+            }
+            else {
+                $store{ $sample_id }{ $action_name } = NACHAR;
+            }
         }
     }
     return \%store;
@@ -1025,12 +1055,12 @@ sub getFieldNameTranslations{
         'Action_description' => 'action_desc'
     );
 
-    ## columns MS Access table registration ID,Action_ID,Datum,User,Sample_name,Experiment_name
+    ## columns MS Access table registration
     my %REGI_DICT = (
         'ID' => 'registration_id',
         'Action_ID' => 'action_id',
-        'Action_ID' => 'action_id',
         'Datum' => 'date',
+        'User' => 'user',
         'Sample_name' => 'sample_name',
         'Experiment_name' => 'experiment_name',
     );
