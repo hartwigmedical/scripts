@@ -66,10 +66,10 @@ my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
 my $ACCESS_SAMPLES_CSV = $LATEST_DIR . '/access_samples.csv';
 my $ACCESS_ACTIONS_CSV = $LATEST_DIR . '/access_actions.csv';
 my $ACCESS_REGISTRATIONS_CSV = $LATEST_DIR . '/access_registration.csv';
-my $SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
-my $CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
-my $SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
-my $PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
+my $FOR_001_SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
+my $FOR_001_CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
+my $FOR_001_SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
+my $FOR_002_PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 
 ## Files from previous years
 my $SUBM_TSV_2019 = $LATEST_DIR . '/2019_for001_submissions.tsv';
@@ -83,7 +83,7 @@ my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 
 my @ALL_INPUT_FILES = ( 
     $ACCESS_SAMPLES_CSV, $ACCESS_ACTIONS_CSV, $ACCESS_REGISTRATIONS_CSV,
-    $SUBM_TSV, $SAMP_TSV, $PROC_TSV,
+    $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV,
     $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
     $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018,
     $PROC_TSV_2017, $LIMS_JSN_2017,
@@ -114,21 +114,25 @@ my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
-my $cpct_objs = {}; # will contain objects from MS Access LIMS
+my $cpct_objs = {}; # will contain objects from MS Access LIMS samples table
+my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
+my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
 my $lims_objs = {}; # will contain all sample objects
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
-$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
-$cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $CONT_TSV, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
+$cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
+$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'sample_id',  1, $ACCESS_ACTIONS_CSV, "," );
+$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'sample_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
 
@@ -959,7 +963,7 @@ sub getFieldNameTranslations{
       'Sop_tracking_code' => 'lab_sop_versions',
     );
 
-    ## columns CPCT tracking Access table
+    ## columns MS Access table samples
     my %CPCT_DICT = (
       'Coupes_barc'        => 'coupes_barcode',
       'Sampling_date'      => 'sampling_date',
@@ -998,7 +1002,23 @@ sub getFieldNameTranslations{
       'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id',
       'QC_fail_report'     => 'qc_fail_report'
     );
-    
+
+    ## columns MS Access table actions
+    my %ACTI_DICT = (
+        'Action_ID' => 'action_id',
+        'Action_description' => 'action_desc'
+    );
+
+    ## columns MS Access table registration ID,Action_ID,Datum,User,Sample_name,Experiment_name
+    my %REGI_DICT = (
+        'ID' => 'registration_id',
+        'Action_ID' => 'action_id',
+        'Action_ID' => 'action_id',
+        'Datum' => 'date',
+        'Sample_name' => 'sample_name',
+        'Experiment_name' => 'experiment_name',
+    );
+
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
@@ -1008,6 +1028,8 @@ sub getFieldNameTranslations{
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
         'CPCT_CURR' => \%CPCT_DICT,
+        'ACTI_CURR' => \%ACTI_DICT,
+        'REGI_CURR' => \%REGI_DICT,
     );
     
     return \%translations;
