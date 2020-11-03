@@ -284,11 +284,13 @@ sub addIsoAndPrepExperimentIdsToSamples{
     my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
 
+    say "[INFO]   Adding isolation and prep dates to samples";
+
     my %conversion = (
-        7  => { 'new_name' => 'iso_start', lims_name => 'Compose blood isolation experiment'},
-        8  => { 'new_name' => 'iso_start', lims_name => 'Compose tissue isolation experiment'},
-        11 => { 'new_name' => 'iso_end', lims_name => 'Finished blood isolation experiment'},
-        12 => { 'new_name' => 'iso_end', lims_name => 'Finished tissue isolation experiment'},
+        7  => { 'new_name' => 'isolation_start', lims_name => 'Compose blood isolation experiment'},
+        8  => { 'new_name' => 'isolation_start', lims_name => 'Compose tissue isolation experiment'},
+        11 => { 'new_name' => 'isolation_end', lims_name => 'Finished blood isolation experiment'},
+        12 => { 'new_name' => 'isolation_end', lims_name => 'Finished tissue isolation experiment'},
     );
 
     my %experiment_dates = ();
@@ -298,12 +300,14 @@ sub addIsoAndPrepExperimentIdsToSamples{
         my $experiment = $obj->{"experiment_name"};
         next if not defined $experiment or isSkipValue($experiment);
         $experiment_dates{$experiment}{$action_id} = $date;
+        say "--- DEBUG ---";
+        say Dumper($experiment_dates{$experiment});
     }
 
     while (my ($sample_id, $sample_obj) = each %store) {
         while (my ($action_id, $action_name) = each %$actions) {
             next unless exists $conversion{$action_id};
-            my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
+            my $experiment = $sample_obj->{"isolation_exp_id"} || NACHAR;
             my $store_key = $conversion{$action_id}{'new_name'};
             $store{$sample_id}{$store_key} = NACHAR;
 
