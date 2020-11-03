@@ -28,13 +28,6 @@ use constant BOOLEAN_FIELDS => qw(
     add_to_database add_to_datarequest
 );
 
-my %LIMS_ACTIONS = (
-    7  => "iso_start_blood",
-    8  => "iso_finish_blood",
-    11 => "iso_start_tumor",
-    12 => "iso_finish_tumor"
-);
-
 ## Setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP_TEXT = <<"HELP";
@@ -123,7 +116,7 @@ my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $cpct_objs = {}; # will contain objects from MS Access LIMS samples table
-#my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
+my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
 my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
 my $lims_objs = {}; # will contain all sample objects
 
@@ -143,7 +136,7 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
-#$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_desc',  1, $ACCESS_ACTIONS_CSV, "," );
+$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_id',  1, $ACCESS_ACTIONS_CSV, "," );
 $regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
@@ -152,7 +145,7 @@ $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
-$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs );
+$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
 
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
@@ -288,26 +281,27 @@ sub addLabSopStringToSamples{
 }
 
 sub addIsoAndPrepExperimentIdsToSamples{
-    my ($samples, $registrations) = @_;
+    my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
 
-    my %experiment_2_date = ();
+    my %experiment_dates = ();
     while (my ($registration_id, $obj) = each %$registrations){
         my $action_id = $obj->{"action_id"};
         my $date = $obj->{"date"};
         my $experiment = $obj->{"experiment_name"};
         next if $experiment eq "";
-        if (exists $experiment_2_date{$experiment}{$action_id}) {
-            say "[INFO] Experiment '$experiment' with action '$action_id' already exists (will overwrite)";
-        }
-        $experiment_2_date{$experiment}{$action_id} = $date;
+        #if (exists $experiment_2_date{$experiment}{$action_id}) {
+        #    say "[INFO] Experiment '$experiment' with action '$action_id' already exists (will overwrite)";
+        #}
+        $experiment_dates{$experiment}{$action_id} = $date;
     }
 
-    while (my ($sample_id,$sample_obj) = each %store) {
-        while (my ($action_id,$action_name) = each %LIMS_ACTIONS) {
+    while (my ($sample_id, $sample_obj) = each %store) {
+        while (my ($action_id, $action_name) = each %$actions) {
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
-            if (exists $experiment_2_date{$experiment}{$action_id}) {
-                $store{ $sample_id }{ $action_name } = $experiment_2_date{$experiment}{$action_id};
+            #my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
+            if (exists $experiment_dates{$experiment}{$action_id}) {
+                $store{ $sample_id }{ $action_name } = $experiment_dates{$experiment}{$action_id};
             }
             else {
                 $store{ $sample_id }{ $action_name } = NACHAR;
@@ -1017,8 +1011,8 @@ sub getFieldNameTranslations{
       'Yield'              => 'yield',
       'Sample_barcode'     => 'sample_id', # was Sample_ID_(DNA|RNA|Plasma)
       'Pathology_exp'      => 'pathology_exp',
-      'Qiasymphony_exp'    => 'qiasymphony_exp',
-      'Prep'               => 'prep', # was (DNA|RNA)_prep
+      'Qiasymphony_exp'    => 'isolation_exp_id',
+      'Prep'               => 'preparation_exp_id', # was (DNA|RNA)_prep
       'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
@@ -1059,7 +1053,7 @@ sub getFieldNameTranslations{
         'Datum' => 'date',
         'User' => 'user',
         'Sample_name' => 'sample_name',
-        'Experiment_name' => 'experiment_name',
+        'Experiment_name' => 'experiment_id',
     );
 
     my %translations = (
