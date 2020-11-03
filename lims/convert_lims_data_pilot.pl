@@ -140,6 +140,7 @@ $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
+$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $acti_objs, $regi_objs );
 
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
@@ -268,6 +269,21 @@ sub addLabSopStringToSamples{
         }
         else{
             ## fallback to NA default
+            $store{ $id }{ $sop_field_name } = NACHAR;
+        }
+    }
+    return \%store;
+}
+
+sub addIsoAndPrepExperimentIdsToSamples{
+    my ($samples, $registrations, $actions) = @_;
+    my %store = %$samples;
+    my $sop_field_name = 'isolation_exps';
+    foreach my $id ( keys %store ){
+        if (1) {
+            $store{ $id }{ $sop_field_name } = "test";
+        }
+        else{
             $store{ $id }{ $sop_field_name } = NACHAR;
         }
     }
