@@ -309,14 +309,16 @@ sub addIsoAndPrepExperimentIdsToSamples{
             next unless exists $conversion{$action_id};
             my $experiment = $sample_obj->{"isolation_exp_id"} || NACHAR;
             my $store_key = $conversion{$action_id}{'new_name'};
-            $store{$sample_id}{$store_key} = NACHAR;
 
+            # Make sure the field exists
+            if (not defined $store{$sample_id}{$store_key}){
+                $store{$sample_id}{$store_key} = NACHAR;
+            }
+
+            # Fill the field with date if available
             if (defined $experiment_dates{$experiment}{$action_id}) {
-                if (defined $store{$sample_id}{$store_key}){
-                    next;
-                }else{
-                    $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
-                }
+                next if defined $store{$sample_id}{$store_key};
+                $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
             }
         }
     }
