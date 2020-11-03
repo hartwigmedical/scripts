@@ -302,6 +302,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
 
     while (my ($sample_id, $sample_obj) = each %store) {
         while (my ($action_id, $action_name) = each %$actions) {
+            next unless exists $conversion{$action_id};
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
             my $store_key = $conversion{$action_id}{'new_name'};
             if (defined $experiment_dates{$experiment}{$action_id}) {
