@@ -289,36 +289,50 @@ sub addIsoAndPrepExperimentIdsToSamples{
     my %conversion = (
         7  => { 'new_name' => 'isolation_start', lims_name => 'Compose blood isolation experiment'},
         8  => { 'new_name' => 'isolation_start', lims_name => 'Compose tissue isolation experiment'},
-        11 => { 'new_name' => 'isolation_end', lims_name => 'Finished blood isolation experiment'},
-        12 => { 'new_name' => 'isolation_end', lims_name => 'Finished tissue isolation experiment'},
+        #11 => { 'new_name' => 'isolation_end', lims_name => 'Finished blood isolation experiment'},
+        #12 => { 'new_name' => 'isolation_end', lims_name => 'Finished tissue isolation experiment'},
+         5 => { 'new_name' => 'prep_start', lims_name => 'Compose DNA prep experiment'},
+        20 => { 'new_name' => 'prep_start', lims_name => 'Compose RNA prep experiment'},
+        # 9 => { 'new_name' => 'prep_end', lims_name => 'Finished DNA prep experiment'},
+        #29 => { 'new_name' => 'prep_end', lims_name => 'Finished RNA prep experiment'},
+        13 => { 'new_name' => 'snp_start', lims_name => 'Compose SNP experiment'},
+        #17 => { 'new_name' => 'snp_finish', lims_name => 'Finished SNP experiment'},
     );
 
     my %experiment_dates = ();
     while (my ($registration_id, $obj) = each %$registrations){
-        my $action_id = $obj->{"action_id"};
-        my $date = $obj->{"date"};
-        my $experiment = $obj->{"experiment_name"};
-        next if not defined $experiment or isSkipValue($experiment);
-        $experiment_dates{$experiment}{$action_id} = $date;
-        say "--- DEBUG ---";
-        say Dumper($experiment_dates{$experiment});
+        my $act_id = $obj->{"action_id"};
+        my $exp_id = $obj->{"experiment_id"};
+        my $date = $obj->{'date'};
+        next if not defined $exp_id or $exp_id eq "";
+        $experiment_dates{$exp_id}{$act_id} = $date;
     }
 
     while (my ($sample_id, $sample_obj) = each %store) {
         while (my ($action_id, $action_name) = each %$actions) {
             next unless exists $conversion{$action_id};
-            my $experiment = $sample_obj->{"isolation_exp_id"} || NACHAR;
+            my $experiment_id = $sample_obj->{"isolation_exp_id"} || NACHAR;
             my $store_key = $conversion{$action_id}{'new_name'};
 
-            # Make sure the field exists
-            if (not defined $store{$sample_id}{$store_key}){
+            # Make sure the field exists in sample object
+            unless (defined $store{$sample_id}{$store_key}){
                 $store{$sample_id}{$store_key} = NACHAR;
             }
 
             # Fill the field with date if available
-            if (defined $experiment_dates{$experiment}{$action_id}) {
-                next if defined $store{$sample_id}{$store_key};
-                $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
+            if (defined $experiment_dates{$experiment_id}{$action_id}) {
+                my $date = $experiment_dates{$experiment_id}{$action_id};
+
+                my $old = $store{$sample_id}{$store_key};
+                my $new = $date;
+
+                if ($old eq $new){ 
+                    warn "[INFO]   Identical for $sample_id";
+                }
+                elsif ($old ne NACHAR){
+                    warn "[WARN]   $sample_id $store_key: '$old' => '$new' (act:$action_id exp:$experiment_id)";
+                }
+                $store{$sample_id}{$store_key} = $new;
             }
         }
     }
