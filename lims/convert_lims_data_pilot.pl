@@ -284,27 +284,31 @@ sub addIsoAndPrepExperimentIdsToSamples{
     my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
 
+    my %conversion = (
+        7  => ( 'new_name' = 'iso_start', lims_name => 'Compose blood isolation experiment'),
+        8  => ( 'new_name' = 'iso_start', lims_name => 'Compose tissue isolation experiment'),
+        11 => ( 'new_name' = 'iso_end', lims_name => 'Finished blood isolation experiment'),
+        12 => ( 'new_name' = 'iso_end', lims_name => 'Finished tissue isolation experiment'),
+    );
+
     my %experiment_dates = ();
     while (my ($registration_id, $obj) = each %$registrations){
         my $action_id = $obj->{"action_id"};
         my $date = $obj->{"date"};
         my $experiment = $obj->{"experiment_name"};
-        next if $experiment eq "";
-        #if (exists $experiment_2_date{$experiment}{$action_id}) {
-        #    say "[INFO] Experiment '$experiment' with action '$action_id' already exists (will overwrite)";
-        #}
+        next if isSkipValue($experiment)
         $experiment_dates{$experiment}{$action_id} = $date;
     }
 
     while (my ($sample_id, $sample_obj) = each %store) {
         while (my ($action_id, $action_name) = each %$actions) {
             my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
-            #my $experiment = $sample_obj->{"qiasymphony_exp"} || NACHAR;
-            if (exists $experiment_dates{$experiment}{$action_id}) {
-                $store{ $sample_id }{ $action_name } = $experiment_dates{$experiment}{$action_id};
+            if (defined $experiment_dates{$experiment}{$action_id}) {
+                my $store_key = $conversion{$action_id}{'new_name'};
+                $store{$sample_id}{$store_key} = $experiment_dates{$experiment}{$action_id};
             }
             else {
-                $store{ $sample_id }{ $action_name } = NACHAR;
+                $store{$sample_id}{$store_key} = NACHAR;
             }
         }
     }
