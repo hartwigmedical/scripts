@@ -15,7 +15,7 @@ out_dir="${bam_dirname}/${sample_name}_FASTQ"
 
 if [[ "$(hostname)" == "datastore" ]]; then
     picard_dir="/data/common/tools/picard-tools_v1.141"
-    samtools_dir="/data/tools/samtools_v1.10"
+    samtools_dir="/data/common/tools/samtools_v1.10"
 fi
 
 if [[ "${in_bam}" == "-h" || "${in_bam}" == "--help" ]]; then
