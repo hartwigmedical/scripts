@@ -6,8 +6,6 @@ SELECT
     hmfPatientId,
     hmfSampleId,
     primaryTumorLocation,
-    cancerSubtype,
-    primaryTumorLocation,
     primaryTumorSubLocation,
     primaryTumorType,
     primaryTumorSubType,
