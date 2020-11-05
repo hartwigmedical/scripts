@@ -34,7 +34,8 @@ for run in ${process_runs}; do
         echo "[INFO] Copying set ${run} to /data/cpct/reportable_runs"
         cp -R ${source_path}/${run} /data/cpct/reportable_runs/
         echo "[INFO] Create patient report for ${run}"
-        create_patient_report_for_run /data/cpct/reportable_runs/${run}
+        # when pipeline 7.17 in prod move to prod version report
+        pilot_create_patient_report_for_run /data/cpct/reportable_runs/${run}
         if [[ ${patient_id} == "CORE"* ]]; then
             echo "[INFO] Moving set ${run} to /data/core/runs"
             mv ${source_path}/${run} /data/core/runs/
