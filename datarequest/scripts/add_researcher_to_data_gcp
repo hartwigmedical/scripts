@@ -72,18 +72,22 @@ do
     email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
     if [[ ${email_in_permissions} == "" ]]; then
         echo "....Adding account $email to the iam of the bucket...."
-        gsutil -u hmf-share iam ch user:$email:objectViewer gs://${bucket_name}/
+        if [[ "$email" == *"gserviceaccount.com"* ]]; then
+            gsutil -u hmf-share iam ch serviceAccount:$email:objectViewer gs://${bucket_name}/
+        else
+            gsutil -u hmf-share iam ch user:$email:objectViewer gs://${bucket_name}/
+        fi
         email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
         if [[ ${email_in_permissions} == "" ]]; then
             echo "[ERROR] Account $email not added as user in the bucket."
             echo ""
         else
-            echo "[INFO] Account $email correctly added as user:viewer to the gcp bucket."
+            echo "[INFO] Account $email correctly added as viewer to the gcp bucket."
             echo ""
         fi
         echo ""
     else
-        echo "[ERROR] Account $email already present in current permissions of the bucket, so adding to iam not needed."
+        echo "[ERROR] Account $email already present in current permissions of the bucket, so adding to permissions not needed."
         echo ""
      fi
 done
@@ -115,7 +119,7 @@ else
         if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
             echo "....Adding $email to API group  ...."
             if [[ $( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | grep $email ) == "" ]]; then
-                account_id=$( curl -s --cert ${api_cert} --key ${api_key} -d '{"email": "$email"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/accounts | jq .[] )
+                account_id=$( curl -s --cert ${api_cert} --key ${api_key} -d '{"email": '$email'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/accounts | jq .[] )
             else
                 account_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
             fi
