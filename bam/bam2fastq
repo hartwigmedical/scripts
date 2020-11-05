@@ -2,10 +2,11 @@
 
 in_bam=$1 && shift
 
-mem_use=100
-pigz_threads=16
-picard_dir=/data/tools/picard-tools_v1.141
-sambamba_dir=/data/tools/sambamba_v0.6.5
+picard_dir="/data/tools/picard-tools_v1.141"
+samtools_dir="/data/tools/samtools_v1.10"
+
+## use 80 percent of available threads and memory
+threads=$( expr "$(grep -c processor /proc/cpuinfo)" / 10 \* 8)
 
 bam_dirname=$(dirname "${in_bam}")
 bam_basename=$(basename "${in_bam}")
@@ -13,17 +14,15 @@ sample_name=$(echo "${bam_basename}" | cut -d"." -f1 | cut -d"_" -f1)
 out_dir="${bam_dirname}/${sample_name}_FASTQ"
 
 if [[ "$(hostname)" == "datastore" ]]; then
-    mem_use=50
-    pigz_threads=8
-    picard_dir=/data/common/tools/picard-tools_v1.141
-    sambamba_dir=/data/common/tools/sambamba_v0.6.5
+    picard_dir="/data/common/tools/picard-tools_v1.141"
+    samtools_dir="/data/tools/samtools_v1.10"
 fi
 
 if [[ "${in_bam}" == "-h" || "${in_bam}" == "--help" ]]; then
     echo "-----"
     echo " Usage: $(basename $0) <BAM_FILE>"
     echo " Using Picard dir ${picard_dir}"
-    echo " Using Sambamba dir ${sambamba_dir}"
+    echo " Using Samtools dir ${samtools_dir}"
     echo "-----"
     exit 1
 fi
@@ -31,17 +30,17 @@ fi
 ## ---------------
 ## sanity checks
 if [[ ! -d "${picard_dir}" ]]; then echo "[ERROR] Picard dir not found (${picard_dir})"; exit 1; fi
-if [[ ! -d "${sambamba_dir}" ]]; then echo "[ERROR] Sambamba dir not found (${sambamba_dir})"; exit 1; fi
+if [[ ! -d "${samtools_dir}" ]]; then echo "[ERROR] Samtools dir not found (${samtools_dir})"; exit 1; fi
 if [[ ! -f "${in_bam}" ]]; then echo "[ERROR] Bam file not found (${in_bam})"; exit 1; fi
 if [[ ! -w "$(dirname "${out_dir}")" ]]; then echo "[ERROR] Output dir not writable?"; exit 1; fi
 
 ## ---------------
 
 ## Check format of RG/ID tags in header
-correct_lane_count=$(${sambamba_dir}/sambamba view -H "${in_bam}" | grep ^@RG | grep -vcP "_L00[1-8]_" )
+correct_lane_count=$(${samtools_dir}/samtools view -H "${in_bam}" | grep ^@RG | grep -vcP "_L00[1-8]_" )
 if [[ ${correct_lane_count} -gt 1 ]]; then
     echo "[ERROR] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
-    ${sambamba_dir}/sambamba view -H ${in_bam} | grep ^@RG
+    ${samtools_dir}/samtools view -H ${in_bam} | grep ^@RG
     exit 1
 fi
 
@@ -66,7 +65,7 @@ for fastq_path in "${out_dir}"/*fastq; do
 done
 
 echo "[INFO] gzipping fastq files...(using pigz)"
-pigz -p ${pigz_threads} "${out_dir}"/*.fastq
+pigz -p ${threads} "${out_dir}"/*.fastq
 
 echo "[INFO] Output fastq can be found in ${out_dir}"
 ls "${out_dir}"
