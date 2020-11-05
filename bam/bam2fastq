@@ -53,7 +53,7 @@ else
 fi
 
 echo "[INFO] Running SamToFastq for bam file: $(basename "${in_bam}")"
-java -Xmx${mem_use}G -jar "${picard_dir}"/picard.jar SamToFastq ODIR="${out_dir}" OPRG=true RGT=ID NON_PF=true RC=true I="${in_bam}"
+java -Xmx50G -jar "${picard_dir}"/picard.jar SamToFastq ODIR="${out_dir}" OPRG=true RGT=ID NON_PF=true RC=true I="${in_bam}"
 
 echo "[INFO] About to rename fastq files"
 for fastq_path in "${out_dir}"/*fastq; do
