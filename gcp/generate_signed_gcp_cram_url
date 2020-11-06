@@ -12,7 +12,7 @@ if [[ -z "${set_name}" ]] || [[ -z "${type}" ]]; then
 fi
 
 gcp_sign_url_script="generate_signed_gcp_url.py"
-gcp_key_file="/data/common/dbs/gcp_credentials/hmf-ops"
+gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
 
 ## query run info
 run_info=$(load_run_info_for_set ${set_name})
