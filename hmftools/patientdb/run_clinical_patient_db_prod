@@ -17,7 +17,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -curated_tumor_location_tsv /data/common/dbs/clinical_data/curated_tumor_locations.tsv \
-    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.tsv \
+    -tumor_location_mapping_tsv /data/common/dbs/clinical_curation/tumor_location_mapping.tsv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
     "$@"
