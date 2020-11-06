@@ -5,6 +5,6 @@ source locate_files
 serve_jar=$(locate_pilot_serve)
 driver_gene_panel=$(locate_driver_gene_panel_tsv)
 
-java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.vicc.ViccTestApplication
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.vicc.ViccTestApplication \
     -driver_gene_panel ${driver_gene_panel}
 
