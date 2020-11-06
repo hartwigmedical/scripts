@@ -16,7 +16,7 @@ output_dir=${run_dir}/protect_pilot
 
 deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
 serve_actionability_dir=/data/common/dbs/serve/actionability
-germline_reporting_tsv=/data/common/dbs/germline_reporting/pilot_germline_reporting.tsv
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
