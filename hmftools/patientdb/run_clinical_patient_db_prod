@@ -7,7 +7,6 @@ runs_dir=/data/cpct/runs
 pipeline_version_file="pipeline.version"
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
-# TODO Can remove the bogus WIDE input params upon 3.50 upgrade.
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -jar ${patient_db_jar} \
     -pipeline_version_file ${pipeline_version_file} \
@@ -18,14 +17,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -lims_dir /data/ops/lims/prod \
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -curated_tumor_location_tsv /data/common/dbs/clinical_data/curated_tumor_locations.tsv \
-    -curated_tumor_location_v2_tsv /data/common/dbs/clinical_data/curated_tumor_locations_v2.tsv \
-    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.csv \
-    -tumor_location_v2_mapping_tsv /data/common/dbs/clinical_curation/tumor_location_v2_mapping.tsv \
+    -tumor_location_mapping_csv /data/common/dbs/clinical_curation/tumor_location_mapping.tsv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
-    -wide_pre_avl_treatment_csv irrelevant \
-    -wide_biopsy_csv irrelevant \
-    -wide_avl_treatment_csv irrelevant \
-    -wide_response_csv irrelevant \
-    -wide_five_days_csv irrelevant \
     "$@"
