@@ -2,4 +2,4 @@
 
 serve_jar=/home/korneel/serve_test_jar/serve.jar
 
-java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.vicc.ViccTestApplication
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.vicc.ViccTestApplication
