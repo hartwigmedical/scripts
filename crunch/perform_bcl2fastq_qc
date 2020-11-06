@@ -80,7 +80,7 @@ for seq_dir in "${seq_dirs[@]}"; do
         status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
             api_sample=$(cat "${API_SAMP_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
-            smp_status=$(echo "${api_sample}" | jq -r ".status")
+            smp_status=$(echo "${api_sample}" | jq -r ".status" | cut -d" " -f1)
             yld=$(echo "${api_sample}" | jq -r ".yld")
             req=$(echo "${api_sample}" | jq -r ".yld_req")
             yld=$((yld/1000000000))
