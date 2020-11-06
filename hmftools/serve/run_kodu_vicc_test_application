@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 serve_jar=/home/korneel/serve_test_jar/serve.jar
 driver_gene_panel=$(locate_driver_gene_panel_tsv)
 
