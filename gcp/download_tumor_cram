@@ -12,4 +12,4 @@ fi
 biopsy=$(load_tumor_sample_id_for_set "${set}")
 sample="${biopsy}"
 
-do_download_bam_for_sample "${biopsy}" "${set}" "${sample}"
+do_download_cram_for_sample "${biopsy}" "${set}" "${sample}"
