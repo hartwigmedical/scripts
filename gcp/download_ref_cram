@@ -9,7 +9,7 @@ if [[ -z "${set}" ]]; then
     exit 1
 fi
 
-biopsy=$(load_ref_sample_id_for_set "${set}")
-sample="${biopsy}"
+biopsy=$(load_tumor_sample_id_for_set "${set}")
+sample=$(load_ref_sample_id_for_set "${set}")
 
 do_download_cram_for_sample "${biopsy}" "${set}" "${sample}"
