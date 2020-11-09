@@ -16,8 +16,7 @@ if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" 
   echo "       $(basename $0) 'runs/63961'"
   echo "       $(basename $0) 'entities?name=HMFreg1000'"
   echo "       all_samples_json=\$($(basename $0) 'samples')"
-  echo "  FYI: Many API fields are not queryable, use query_api.pl instead."
-  echo "       Uses URL ${api_url}"
+  echo " Note: Uses URL ${api_url} and creds from ${api_dir}"
   echo "---"
   exit 1
 fi
