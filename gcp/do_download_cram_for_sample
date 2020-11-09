@@ -11,7 +11,7 @@ if [[ -z "${biopsy}" ]] || [[ -z "${sample}" ]]; then
     exit 1
 fi
 
-ds_path="/data/gcp/bam_downloads/${sample}"
+ds_path="/data/gcp/cram_downloads/${sample}"
 
 api_request="datasets?biopsy=${biopsy}"
 api_request+="&set=${set}"
