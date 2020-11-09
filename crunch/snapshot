@@ -70,7 +70,7 @@ find_file_in_pipeline_run() {
 function diskUsage {
     local mount=$1
     local df_info=$(df -h "${mount}" | tail -1 | tr -s ' ')
-    local size=$(echo "${df_info}" | cut -d" " -f3)
+    local size=$(echo "${df_info}" | cut -d" " -f2)
     local available=$(echo "${df_info}" | cut -d" " -f4)
     local perc_string=$(echo "${df_info}" | cut -d" " -f5)
     echo "${PREFIX}${mount}: ${perc_string} used with ${available} space left (size=${size})"
