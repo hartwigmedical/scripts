@@ -15,9 +15,9 @@ api_crt_file="${api_cred_dir}/api.crt"
 api_key_file="${api_cred_dir}/api.key"
 
 gcp_url_sign_script="generate_signed_gcp_url.py"
-gcp_key_file="${gcp_cred_dir}/hmf-ops"
+gcp_key_file="${gcp_cred_dir}/hmf-download"
 gcp_project="hmf-database"
-gcp_account="hmf-ops"
+gcp_account="hmf-download"
 
 echo "[INFO] Start of $(basename $0) (${cmd_date})"
 msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
