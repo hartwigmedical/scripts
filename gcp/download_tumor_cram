@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source api_functions
+
+set=$1 && shift
+
+if [[ -z "${set}" ]]; then
+    echo "[ERROR] No set provided. Exiting."
+    exit 1
+fi
+
+biopsy=$(load_tumor_sample_id_for_set "${set}")
+sample="${biopsy}"
+
+do_download_bam_for_sample "${biopsy}" "${set}" "${sample}"
