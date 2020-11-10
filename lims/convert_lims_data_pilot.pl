@@ -287,16 +287,11 @@ sub addIsoAndPrepExperimentIdsToSamples{
     say "[INFO]   Adding isolation and prep dates to samples";
 
     my %conversion = (
-        7  => { 'new_name' => 'isolation_start', lims_name => 'Compose blood isolation experiment'},
-        8  => { 'new_name' => 'isolation_start', lims_name => 'Compose tissue isolation experiment'},
-        #11 => { 'new_name' => 'isolation_end', lims_name => 'Finished blood isolation experiment'},
-        #12 => { 'new_name' => 'isolation_end', lims_name => 'Finished tissue isolation experiment'},
-         5 => { 'new_name' => 'prep_start', lims_name => 'Compose DNA prep experiment'},
-        20 => { 'new_name' => 'prep_start', lims_name => 'Compose RNA prep experiment'},
-        # 9 => { 'new_name' => 'prep_end', lims_name => 'Finished DNA prep experiment'},
-        #29 => { 'new_name' => 'prep_end', lims_name => 'Finished RNA prep experiment'},
-        13 => { 'new_name' => 'snp_start', lims_name => 'Compose SNP experiment'},
-        #17 => { 'new_name' => 'snp_finish', lims_name => 'Finished SNP experiment'},
+        7  => { 'new_name' => 'iso_date', lims_name => 'Compose blood isolation experiment'},
+        8  => { 'new_name' => 'iso_date', lims_name => 'Compose tissue isolation experiment'},
+         5 => { 'new_name' => 'prep_date', lims_name => 'Compose DNA prep experiment'},
+        20 => { 'new_name' => 'prep_date', lims_name => 'Compose RNA prep experiment'},
+        13 => { 'new_name' => 'snp_date', lims_name => 'Compose SNP experiment'},
     );
 
     my %experiment_dates = ();
