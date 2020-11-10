@@ -13,6 +13,9 @@ for i in {2,3}; do
         run_name=$(basename ${run_path})
         dest_path="${datastore_sheets_dir}/${run_name}_SampleSheet.csv"
         echo "[INFO]   Executing rsync for ${run_name}"
-        rsync ${crunch_name}:${sheet_path} ${dest_path}
+        rsync_log_line_count=$(rsync -rtv ${crunch_name}:${sheet_path} ${dest_path} | wc -l)
+        if [[ "${rsync_log_line_count}" -gt 4 ]]; then
+            echo "[INFO]     Synced to ${dest_path}"
+        fi
     done
 done
