@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# bash caller builtin returns '$line $filename'
+caller=$(basename "$(caller | cut -d" " -f2)")
+
 msg() {
     local msg_type=$1 && shift
     local msg_content=$* && shift
@@ -9,8 +12,6 @@ msg() {
 msg_with_caller() {
     local msg_type=$1 && shift
     local msg_content=$* && shift
-    # bash caller builtin returns '$line $filename'
-    caller=$(basename "$(caller | cut -d" " -f2)")
     echo "[${msg_type}] $(date +'%y%m%d %T') (${caller}) - ${msg_content}"
 }
 
