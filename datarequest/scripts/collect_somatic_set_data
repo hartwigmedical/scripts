@@ -8,35 +8,77 @@ include_germline=$1 && shift
 
 set_name=$(basename ${source_set_path})
 dest_set_path=${dest_set_base_path}/${set_name}
+dest_set_path_purple=${dest_set_path}/purple
+dest_set_path_linx=${dest_set_path}/linx
 
 ## init
 mkdir -p ${dest_set_path}
 
+
+## init purple
+mkdir -p ${dest_set_path_purple}
+
 ## Find purple version
 purple_version=$(cat ${source_set_path}/purple/purple.version | grep version)
 
-## start symlinking
+## start symlinking purple outputs
 echo "[DEBUG] Symlinking files for ${set_name} with including germline set to ${include_germline} and having purple '${purple_version}'"
-ln -s ${source_set_path}/purple/purple.version ${dest_set_path}
-ln -s $(locate_purple_drivers ${source_set_path}) ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path}
-ln -s $(locate_purple_gene_copynumbers ${source_set_path}) ${dest_set_path}
-ln -s $(locate_purple_purity ${source_set_path}) ${dest_set_path}
-ln -s ${source_set_path}/purple/*.purple.purity.range.tsv ${dest_set_path}
-ln -s $(locate_purple_qc ${source_set_path}) ${dest_set_path}
-ln -s $(locate_purple_structural_variants ${source_set_path}) ${dest_set_path}
-ln -s $(locate_purple_structural_variants ${source_set_path}).tbi ${dest_set_path}
-ln -s $(locate_purple_circos_plot ${source_set_path}) ${dest_set_path}
-ln -s $(locate_purple_somatics ${source_set_path}) ${dest_set_path}
-ln -s $(locate_purple_somatics ${source_set_path}).tbi ${dest_set_path}
-
+ln -s ${source_set_path}/purple/purple.version ${dest_set_path_purple}
+ln -s $(locate_purple_drivers ${source_set_path}) ${dest_set_path_purple}
+ln -s ${source_set_path}/purple/*.purple.cnv.somatic.tsv ${dest_set_path_purple}
+ln -s $(locate_purple_gene_copynumbers ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_purity ${source_set_path}) ${dest_set_path_purple}
+ln -s ${source_set_path}/purple/*.purple.purity.range.tsv ${dest_set_path_purple}
+ln -s $(locate_purple_qc ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_structural_variants ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_structural_variants ${source_set_path}).tbi ${dest_set_path_purple}
+ln -s $(locate_purple_circos_plot ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_somatics ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_somatics ${source_set_path}).tbi ${dest_set_path_purple}
 expected_file_count=12
+
 if [[ ${include_germline} == "1" ]]; then
-    ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path}
-    expected_file_count=13
+    ln -s ${source_set_path}/purple/*.purple.cnv.germline.tsv ${dest_set_path_purple}
+    expected_file_count=$( expr ${expected_file_count} + 1)
 fi
 
-somatic_file_count=$(ls ${dest_set_path} | wc -l)
+## init linx
+mkdir -p ${dest_set_path_linx}
+
+## Find linx version
+linx_version=$(cat ${source_set_path}/linx/linx.version | grep version)
+
+## start symlinking linx outputs
+echo "[DEBUG] Symlinking linx files for ${set_name} having linx '${linx_version}'"
+ln -s ${source_set_path}/linx/linx.version ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.breakend.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.clusters.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.fusion.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.links.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.svs.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.viral_inserts.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_copy_number.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_fusion.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_gene_exon.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_protein_domain.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_segments.tsv ${dest_set_path_linx}
+ln -s ${source_set_path}/linx/*.linx.vis_sv_data.tsv ${dest_set_path_linx}
+expected_file_count=$( expr ${expected_file_count} + 13)
+
+linx_driver_catalog_file=$(find -L ${source_set_path}/linx -type f -name "*.driver.catalog.tsv")
+if [[ -f "${linx_driver_catalog_file}" ]]; then
+    ln -s ${linx_driver_catalog_file} ${dest_set_path_linx}
+    expected_file_count=$( expr ${expected_file_count} + 1)
+fi
+linx_drivers_file=$(find -L ${source_set_path}/linx -type f -name "*.linx.drivers.tsv")
+if [[ -f "${linx_drivers_file}" ]]; then
+    ln -s ${linx_drivers_file} ${dest_set_path_linx}
+    expected_file_count=$( expr ${expected_file_count} + 1)
+fi
+
+somatic_file_count_purple=$(ls ${dest_set_path_purple} | wc -l)
+somatic_file_count_linx=$(ls ${dest_set_path_linx} | wc -l)
+somatic_file_count=$( expr ${expected_file_count} + ${somatic_file_count_linx})
 
 if [[ ${somatic_file_count} -ne ${expected_file_count} ]]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
