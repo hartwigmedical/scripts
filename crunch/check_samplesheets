@@ -15,7 +15,6 @@ for sheet in ${sheets}; do
     curr_host=$(hostname)
     curr_host_short=$(echo ${curr_host} | sed 's/crunch00/c/g')
     run_base=$(dirname ${sheet})
-    base_calls_dir=${run_base}"/Data/Intensities/BaseCalls/"
     fastq_out_dir=${run_base}"/Fastq"
     run_name=$(basename ${run_base})
     run_status="Sequencing"
@@ -27,7 +26,7 @@ for sheet in ${sheets}; do
     idx_name=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Sample_Name | cut -d":" -f1)
     idx_proj=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Project | cut -d":" -f1)
     idx_desc=$(cat ${sheet} | grep Sample_ID | tr "," "\n" | grep -n Description | cut -d":" -f1)
-    all_projects=$(join_by "," $(cat ${sheet} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f ${idx_proj} | sort | uniq | tr "\n" " "))
+    all_projects=$(join_by "," "$(cat ${sheet} | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d"," -f ${idx_proj} | sort | uniq | tr "\n" " ")")
 
     ## parse RunInfo file
     run_info_file=${run_base}"/RunInfo.xml"
@@ -51,11 +50,11 @@ for sheet in ${sheets}; do
         fi
     else
         ## every platform does things slightly different so need some nasty grepping
-        cycle_count=$(ls ${run_base}/Logs/ | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l)
+        cycle_count=$(ls "${run_base}/Logs/" | grep -Po "(Cycle[\W\_]{1})|(Cycle\d+)" | grep -v "Cycle0" | sort | uniq | wc -l)
     fi
     echo "# [NOTE] CYCLE log count: ${cycle_count} (expected:${expected_cycle_count})"
     if [[ "${expected_cycle_count}" =~ ^[0-9]+$ && "${cycle_count}" -ge "${expected_cycle_count}" ]]; then
-        run_status="SequencingDone"
+        run_status="ReadyForConversion"
     else
         run_status="Sequencing (${cycle_count} of ${expected_cycle_count})"
     fi
@@ -65,7 +64,7 @@ for sheet in ${sheets}; do
         echo "# [NOTE] CONVERSION not started yet";
     elif [[ "$(tail -1 ${conversion_log_file})" =~ "Finished" ]]; then
         echo "# [NOTE] CONVERSION appears to be FINISHED";
-        run_status="ConversionDone"
+        run_status="Converted"
     else
         curr_lane=$(find "${fastq_out_dir}" -name "*fastq.gz" | grep -Po "_L\d{3}" | sort | uniq | tail -1 | sed 's/_//')
         echo "# [NOTE] CONVERSION appears to be RUNNING (${curr_lane})";
@@ -98,4 +97,3 @@ for sheet in ${sheets}; do
         sort -k2,2 -k1,1 | \
         uniq
 done
-
