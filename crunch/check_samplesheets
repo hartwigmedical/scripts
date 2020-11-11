@@ -87,7 +87,7 @@ for sheet in ${sheets}; do
     all_projects_noHMFreg=$(echo "${all_projects}" | sed 's/HMFreg//g')
 
     ## print line that can be pasted directly into RunOverview sheet
-    echo -e "# ${experiment_name}\t${run_name}\t${all_projects_noHMFreg}\t${curr_host_short}\t${run_status}";
+    echo -e "# ${experiment_name}\t${run_name}\t${all_projects_noHMFreg}\t${curr_host_short}\tHMF=${run_status}";
 
     ## print sample-id, sample_name, submission-id, description
     cat ${sheet} | \
