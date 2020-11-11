@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions
+
 if [[ "$(hostname)" != "datastore" ]]; then
     echo "[ERROR] This script is meant to be executed at datastore. Exiting."
     exit 1
@@ -8,8 +10,16 @@ fi
 for i in {2,3}; do
     ssh crunch00${i} check_samplesheets | \
     grep -Po "(X|NO|NS|IS)\d{2}\-.+_.+_.+_.+" | \
-    while read line; do
-        fc_date=$(echo "${line}" | cut -f2 | cut -d"_" -f1)
-        echo -e "${fc_date}\t${line}"
+    while read crunch_info; do
+        fc_run_name=$(echo "${crunch_info}" | cut -f1)
+        fc_dir_name=$(echo "${crunch_info}" | cut -f2)
+        fc_run_date=$(echo "${fc_dir_name}" | cut -d"_" -f1)
+
+        query="flowcells?name=${fc_run_name}"
+        response=$(hmf_api_get "${query}")
+        [[ $(echo "${response}" | jq length) -eq 1 ]] || die "Amount of flowcells found for '${query}' is not 1. Exiting."
+        gcp_status=$(echo "${response}" | jq -r '.[-1].status')
+        gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
+        echo -e "${fc_run_date}\t${crunch_info}\tGCP=${gcp_status} (qc=${gcp_qc})"
     done     
 done | sort -r -k1 -k2 | cut -f2-
