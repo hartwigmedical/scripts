@@ -15,12 +15,12 @@ msg_with_caller() {
 }
 
 error() {
-    msg "ERROR" "$@" >&2
+    msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
 die() {
-    msg "ERROR" "$@" >&2
+    msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
