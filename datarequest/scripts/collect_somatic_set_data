@@ -78,7 +78,7 @@ fi
 
 somatic_file_count_purple=$(ls ${dest_set_path_purple} | wc -l)
 somatic_file_count_linx=$(ls ${dest_set_path_linx} | wc -l)
-somatic_file_count=$( expr ${expected_file_count} + ${somatic_file_count_linx})
+somatic_file_count=$( expr ${somatic_file_count_purple} + ${somatic_file_count_linx})
 
 if [[ ${somatic_file_count} -ne ${expected_file_count} ]]; then
     echo "[WARN]: Mismatch in expected file count. Expected ${expected_file_count} files but got ${somatic_file_count} files for ${set_name}. Please inspect manually!"
