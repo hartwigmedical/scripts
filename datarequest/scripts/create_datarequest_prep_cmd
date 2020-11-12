@@ -35,14 +35,14 @@ main() {
     ## we need the index of DR
     local dr_index=$( echo "${dr_name}" | sed 's/^DR\-//')
     local request_name="${dr_name}"
-    local output_cmd_file="jobs/$(date +"%yy%mm%dd")_create_${dr_name}"
-    local proposed_log_file="logs/$(date +"%yy%mm%dd")_create_${dr_name}.log"
+    local output_cmd_file="jobs/$(date +"%y%m%d")_create_${dr_name}"
+    local proposed_log_file="logs/$(date +"%y%m%d")_create_${dr_name}.log"
 
     ## reset release/request ids to include suffix if given
     if [[ "${dr_suffix}" != "" ]]; then
         request_name="${dr_name}-${dr_suffix}"
-        local output_cmd_file="jobs/$(date +"%yy%mm%dd")_create_${dr_name}_${dr_suffix}"
-        local proposed_log_file="logs/$(date +"%yy%mm%dd")_create_${dr_name}_${dr_suffix}.log"
+        local output_cmd_file="jobs/$(date +"%y%m%d")_create_${dr_name}_${dr_suffix}"
+        local proposed_log_file="logs/$(date +"%y%m%d")_create_${dr_name}_${dr_suffix}.log"
     fi
 
     ## setup general variables
@@ -53,12 +53,29 @@ main() {
     local datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$dr_name" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
     curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instance/${datarequest_id} > temp.json
     local somatics_ind=$( jq -r '.[] | .DataRequests_DR_3_3_SomaticanalysesdataDNA' <temp.json )
+    if [[ "${somatics_ind}" == "" ]]; then
+        somatics_ind=0
+    fi
     local germline_ind=$( jq -r '.[] | .DataRequests_DR_3_3_germlineanalysesdataDNA' <temp.json )
+    if [[ "${germline_ind}" == "" ]]; then
+        germline_ind=0
+    fi
     local tumor_clinical_ind=$( jq -r '.[] | .DataRequests_DR_3_2_tumourdata' <temp.json )
+    if [[ "${tumor_clinical_ind}" == "" ]]; then
+        tumor_clinical_ind=0
+    fi
     local patient_clinical_ind=$( jq -r '.[] | .DataRequests_DR_3_2_patientdata' <temp.json )
+    if [[ "${patient_clinical_ind}" == "" ]]; then
+        patient_clinical_ind=0
+    fi
     local treatment_response_clinical_ind=$( jq -r '.[] | .DataRequests_DR_3_2_postbiopsytreatmentdata' <temp.json )
+    if [[ "${treatment_response_clinical_ind}" == "" ]]; then
+        treatment_response_clinical_ind=0
+    fi
     local pre_treatment_clinical_ind=$( jq -r '.[] | .DataRequests_DR_3_2_previoustreatmentdata' <temp.json )
-
+    if [[ "${pre_treatment_clinical_ind}" == "" ]]; then
+        pre_treatment_clinical_ind=0
+    fi
 
     uploads_single_line=$(join_array , ${uploads_array[@]})
     info "Data Request: ${dr_name}"
@@ -67,19 +84,19 @@ main() {
     ## create the magic
     if [[ "${dr_name_selection}" == "" ]]; then
 
-        cmd_array=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR'${dr_index}'.sql'")
-        cmd_array+=("include_somatics='${somatics_ind}'")
-        cmd_array+=("include_germline='${germline_ind}'")
-        cmd_array+=("include_tumor_clinical_data='${tumor_clinical_ind}'")
+        cmd_array=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'")
+        cmd_array+=("include_somatics=${somatics_ind}")
+        cmd_array+=("include_germline=${germline_ind}")
+        cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
         cmd_array+=("include_patient_clinical_data='${patient_clinical_ind}'")
-        cmd_array+=("include_treatment_response_clinical_data='${treatment_response_clinical_ind}'")
-        cmd_array+=("include_pre_treatment_clinical_data='${pre_treatment_clinical_ind}'")
+        cmd_array+=("include_treatment_response_clinical_data=${treatment_response_clinical_ind}")
+        cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
         cmd_array+=("include_rano_measurement_by_patient=0")
         cmd_array+=("include_tumor_markers_by_patient=0")
-        cmd_array+=('"compose_datarequest ${dr_name} ${request_name} ${patient_selection_sql} \
+        cmd_array+=('compose_datarequest ${dr_name} ${request_name} ${patient_selection_sql} \
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
-        ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}"')
+        ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}')
 
     else
 
@@ -102,13 +119,12 @@ main() {
         cmd_array+=("include_pre_treatment_clinical_data='${pre_treatment_clinical_ind}'")
         cmd_array+=("include_rano_measurement_by_patient=0")
         cmd_array+=("include_tumor_markers_by_patient=0")
-        cmd_array+=('"compose_datarequest ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
+        cmd_array+=('"compose_datarequest_old_selection ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
         ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}"')
 
     fi
-
 
     cmd_single_line=$(echo "${cmd_array[@]}")
 
