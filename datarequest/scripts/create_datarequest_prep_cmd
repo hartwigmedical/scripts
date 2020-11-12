@@ -84,6 +84,8 @@ main() {
     ## create the magic
     if [[ "${dr_name_selection}" == "" ]]; then
 
+        cmd_array=("dr_name=${dr_name}")
+        cmd_array=("request_name=${request_name}")
         cmd_array=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'")
         cmd_array+=("include_somatics=${somatics_ind}")
         cmd_array+=("include_germline=${germline_ind}")
@@ -111,6 +113,10 @@ main() {
         info "Data prep based on old selection ... "
         info "Data Request used for selection: ${request_name_selection}"
 
+        cmd_array=("dr_name=${dr_name}")
+        cmd_array=("request_name=${request_name}")
+        cmd_array=("dr_name_selection=${dr_name_selection}")
+        cmd_array=("request_name_selection=${request_name_selection}")
         cmd_array+=("include_somatics=${somatics_ind}")
         cmd_array+=("include_germline=${germline_ind}")
         cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
@@ -119,10 +125,10 @@ main() {
         cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
         cmd_array+=("include_rano_measurement_by_patient=0")
         cmd_array+=("include_tumor_markers_by_patient=0")
-        cmd_array+=('"compose_datarequest_old_selection ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
+        cmd_array+=('compose_datarequest_old_selection ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
-        ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}"')
+        ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}')
 
     fi
 
