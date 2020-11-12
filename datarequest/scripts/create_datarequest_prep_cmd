@@ -4,7 +4,7 @@ print_usage(){
     echo "-----"
     echo " Descr: Constructs bash command for data prep"
     echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -j <dr_name_selection> -t <dr_suffix_selection> "
-    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1'"
+    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update2' -j 'DR-001' -t 'update1' (-s / -j / -t optional!)"
     echo "-----"
     exit 1
 }
@@ -81,20 +81,30 @@ main() {
     info "Data Request: ${dr_name}"
     info "Update: ${dr_suffix}"
 
+
+
+    info "Writing cmd to cmd file ${output_cmd_file}"
+    
+    echo ""  >> "${output_cmd_file}"
+    echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [TOOL] Template to prep data for datarequest:"  >> "${output_cmd_file}"
+
     ## create the magic
     if [[ "${dr_name_selection}" == "" ]]; then
 
-        cmd_array=("dr_name=${dr_name}")
-        cmd_array+=("request_name=${request_name}")
-        cmd_array+=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'")
-        cmd_array+=("include_somatics=${somatics_ind}")
-        cmd_array+=("include_germline=${germline_ind}")
-        cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
-        cmd_array+=("include_patient_clinical_data=${patient_clinical_ind}")
-        cmd_array+=("include_treatment_response_clinical_data=${treatment_response_clinical_ind}")
-        cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
-        cmd_array+=("include_rano_measurement_by_patient=0")
-        cmd_array+=("include_tumor_markers_by_patient=0")
+      echo "dr_name=${dr_name}" >> "${output_cmd_file}"
+        echo "request_name=${request_name}" >> "${output_cmd_file}"
+        echo "patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'" >> "${output_cmd_file}"
+        echo "include_somatics=${somatics_ind}" >> "${output_cmd_file}"
+        echo "include_germline=${germline_ind}" >> "${output_cmd_file}"
+        echo "include_tumor_clinical_data=${tumor_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_patient_clinical_data=${patient_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_treatment_response_clinical_data=${treatment_response_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_rano_measurement_by_patient=0" >> "${output_cmd_file}"
+        echo "include_tumor_markers_by_patient=0" >> "${output_cmd_file}"
         cmd_array+=('compose_datarequest ${dr_name} ${request_name} ${patient_selection_sql} \
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
@@ -113,18 +123,18 @@ main() {
         info "Data prep based on old selection ... "
         info "Data Request used for selection: ${request_name_selection}"
 
-        cmd_array=("dr_name=${dr_name}")
-        cmd_array+=("request_name=${request_name}")
-        cmd_array+=("dr_name_selection=${dr_name_selection}")
-        cmd_array+=("request_name_selection=${request_name_selection}")
-        cmd_array+=("include_somatics=${somatics_ind}")
-        cmd_array+=("include_germline=${germline_ind}")
-        cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
-        cmd_array+=("include_patient_clinical_data=${patient_clinical_ind}")
-        cmd_array+=("include_treatment_response_clinical_data=${treatment_response_clinical_ind}")
-        cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
-        cmd_array+=("include_rano_measurement_by_patient=0")
-        cmd_array+=("include_tumor_markers_by_patient=0")
+        echo "dr_name=${dr_name}" >> "${output_cmd_file}"
+        echo "request_name=${request_name}" >> "${output_cmd_file}"
+        echo "dr_name_selection=${dr_name_selection}" >> "${output_cmd_file}"
+        echo "request_name_selection=${request_name_selection}" >> "${output_cmd_file}"
+        echo "include_somatics=${somatics_ind}" >> "${output_cmd_file}"
+        echo "include_germline=${germline_ind}" >> "${output_cmd_file}"
+        echo "include_tumor_clinical_data=${tumor_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_patient_clinical_data=${patient_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_treatment_response_clinical_data=${treatment_response_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}" >> "${output_cmd_file}"
+        echo "include_rano_measurement_by_patient=0" >> "${output_cmd_file}"
+        echo "include_tumor_markers_by_patient=0" >> "${output_cmd_file}"
         cmd_array+=('compose_datarequest_old_selection ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
         ${include_somatics} ${include_germline} 0 0 0 0 \
         ${include_tumor_clinical_data} ${include_patient_clinical_data} ${include_treatment_response_clinical_data} \
@@ -133,13 +143,6 @@ main() {
     fi
 
     cmd_single_line=$(echo "${cmd_array[@]}")
-
-    info "Writing cmd to cmd file ${output_cmd_file}"
-
-    echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
-
-    echo ""  >> "${output_cmd_file}"
-    echo "# [TOOL] Template to prep data for datarequest:"  >> "${output_cmd_file}"
     for cmd_line in "${cmd_array[@]}"; do
         echo "${cmd_line} \\" >> "${output_cmd_file}"
     done
@@ -150,6 +153,7 @@ main() {
 
     info "TODO:"
     info " 1) Inspect cmd file: cat ${output_cmd_file}"
+    info " 2) Make sure the sql for selection is available at '/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql' (if needed)"
     info " 2) And then run cmd with: ${output_cmd_file} | tee -a ${proposed_log_file}"
     info "Finished with $(basename $0)"
 
