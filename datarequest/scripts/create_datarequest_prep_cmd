@@ -85,8 +85,8 @@ main() {
     if [[ "${dr_name_selection}" == "" ]]; then
 
         cmd_array=("dr_name=${dr_name}")
-        cmd_array=("request_name=${request_name}")
-        cmd_array=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'")
+        cmd_array+=("request_name=${request_name}")
+        cmd_array+=("patient_selection_sql='/data/common/repos/scripts/datarequest/selection/DR${dr_index}.sql'")
         cmd_array+=("include_somatics=${somatics_ind}")
         cmd_array+=("include_germline=${germline_ind}")
         cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
@@ -114,9 +114,9 @@ main() {
         info "Data Request used for selection: ${request_name_selection}"
 
         cmd_array=("dr_name=${dr_name}")
-        cmd_array=("request_name=${request_name}")
-        cmd_array=("dr_name_selection=${dr_name_selection}")
-        cmd_array=("request_name_selection=${request_name_selection}")
+        cmd_array+=("request_name=${request_name}")
+        cmd_array+=("dr_name_selection=${dr_name_selection}")
+        cmd_array+=("request_name_selection=${request_name_selection}")
         cmd_array+=("include_somatics=${somatics_ind}")
         cmd_array+=("include_germline=${germline_ind}")
         cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
