@@ -17,9 +17,12 @@ for i in {2,3}; do
 
         query="flowcells?name=${fc_run_name}"
         response=$(hmf_api_get "${query}")
-        [[ $(echo "${response}" | jq length) -eq 1 ]] || die "Amount of flowcells found for '${query}' is not 1. Exiting."
-        gcp_status=$(echo "${response}" | jq -r '.[-1].status')
-        gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
-        echo -e "${fc_run_date}\t${crunch_info}\tGCP=${gcp_status} (qc=${gcp_qc})"
+        gcp_info="GCP=Unknown"
+        if [[ $(echo "${response}" | jq length) -eq 1 ]]; then
+            gcp_status=$(echo "${response}" | jq -r '.[-1].status')
+            gcp_qc=$(echo "${response}" | jq -r '.[-1].undet_rds_p_pass')
+            gcp_info="GCP=${gcp_status}(qc=${gcp_qc})"
+        fi
+        echo -e "${fc_run_date}\t${crunch_info},${gcp_info}"
     done     
 done | sort -r -k1 -k2 | cut -f2-
