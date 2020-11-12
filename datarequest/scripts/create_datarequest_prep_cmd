@@ -78,18 +78,18 @@ main() {
     fi
 
     uploads_single_line=$(join_array , ${uploads_array[@]})
-    info "Data Request: ${dr_name}"
-    info "Update: ${dr_suffix}"
 
 
 
-    info "Writing cmd to cmd file ${output_cmd_file}"
     
     echo ""  >> "${output_cmd_file}"
     echo "# [INFO] date cmd created: $(date +"%y%m%d (%T)")" > "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
     echo "# [TOOL] Template to prep data for datarequest:"  >> "${output_cmd_file}"
+
+    info "Data Request: ${dr_name}"
+    info "Update: ${dr_suffix}"
 
     ## create the magic
     if [[ "${dr_name_selection}" == "" ]]; then
@@ -141,6 +141,8 @@ main() {
         ${include_pre_treatment_clinical_data} ${include_rano_measurement_by_patient} ${include_tumor_markers_by_patient}')
 
     fi
+
+    info "Writing cmd to cmd file ${output_cmd_file}"
 
     cmd_single_line=$(echo "${cmd_array[@]}")
     for cmd_line in "${cmd_array[@]}"; do
