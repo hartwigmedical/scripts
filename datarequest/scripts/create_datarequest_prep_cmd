@@ -88,7 +88,7 @@ main() {
         cmd_array+=("include_somatics=${somatics_ind}")
         cmd_array+=("include_germline=${germline_ind}")
         cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
-        cmd_array+=("include_patient_clinical_data='${patient_clinical_ind}'")
+        cmd_array+=("include_patient_clinical_data=${patient_clinical_ind}")
         cmd_array+=("include_treatment_response_clinical_data=${treatment_response_clinical_ind}")
         cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
         cmd_array+=("include_rano_measurement_by_patient=0")
@@ -111,12 +111,12 @@ main() {
         info "Data prep based on old selection ... "
         info "Data Request used for selection: ${request_name_selection}"
 
-        cmd_array+=("include_somatics='${somatics_ind}'")
-        cmd_array+=("include_germline='${germline_ind}'")
-        cmd_array+=("include_tumor_clinical_data='${tumor_clinical_ind}'")
-        cmd_array+=("include_patient_clinical_data='${patient_clinical_ind}'")
-        cmd_array+=("include_treatment_response_clinical_data='${treatment_response_clinical_ind}'")
-        cmd_array+=("include_pre_treatment_clinical_data='${pre_treatment_clinical_ind}'")
+        cmd_array+=("include_somatics=${somatics_ind}")
+        cmd_array+=("include_germline=${germline_ind}")
+        cmd_array+=("include_tumor_clinical_data=${tumor_clinical_ind}")
+        cmd_array+=("include_patient_clinical_data=${patient_clinical_ind}")
+        cmd_array+=("include_treatment_response_clinical_data=${treatment_response_clinical_ind}")
+        cmd_array+=("include_pre_treatment_clinical_data=${pre_treatment_clinical_ind}")
         cmd_array+=("include_rano_measurement_by_patient=0")
         cmd_array+=("include_tumor_markers_by_patient=0")
         cmd_array+=('"compose_datarequest_old_selection ${dr_name} ${request_name} ${dr_name_selection} ${request_name_selection} \
