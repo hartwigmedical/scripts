@@ -35,14 +35,14 @@ main() {
     ## we need the index of DR
     local dr_index=$( echo "${dr_name}" | sed 's/^DR\-//')
     local request_name="${dr_name}"
-    local output_cmd_file="jobs/$(date +"%y%m%d")_create_${dr_name}"
-    local proposed_log_file="logs/$(date +"%y%m%d")_create_${dr_name}.log"
+    local output_cmd_file="jobs/$(date +"%y%m%d")_create_DR${dr_index}"
+    local proposed_log_file="logs/$(date +"%y%m%d")_create_DR${dr_index}.log"
 
     ## reset release/request ids to include suffix if given
     if [[ "${dr_suffix}" != "" ]]; then
         request_name="${dr_name}-${dr_suffix}"
-        local output_cmd_file="jobs/$(date +"%y%m%d")_create_${dr_name}_${dr_suffix}"
-        local proposed_log_file="logs/$(date +"%y%m%d")_create_${dr_name}_${dr_suffix}.log"
+        local output_cmd_file="jobs/$(date +"%y%m%d")_create_DR${dr_index}_${dr_suffix}"
+        local proposed_log_file="logs/$(date +"%y%m%d")_create_DR${dr_index}_${dr_suffix}.log"
     fi
 
     ## setup general variables
