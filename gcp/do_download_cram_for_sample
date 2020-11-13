@@ -18,7 +18,7 @@ api_request+="&set=${set}"
 api_request+="&output=condensed"
 api_request+="&datatype=aligned_reads"
 
-cram_url=$(hmf_api_get "${api_request}" | jq -r ".aligned_reads.${sample}.path")
+cram_url=$(hmf_api_get "${api_request}" | jq -r ".${sample}.path")
 
 if [[ -z "${cram_url}" ]]; then
     echo "[ERROR] $(basename $0) unable to construct gs URL to cram. Exiting"
