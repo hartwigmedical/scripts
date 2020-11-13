@@ -8,6 +8,7 @@ select * from clinicalFindings where message ='Failed to curate ecrf drug. Curat
 select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='treatmentCuration';
 
 # Unused search terms.
+# TODO Update "select * from clinicalFindings where message ='Primary tumor search term not used' and level='primaryTumorCuration';" on patient-db v3.52 upgrade
 select * from clinicalFindings where message ='Tumor location search term not used' and level='tumorLocationCuration';
 
 select * from clinicalFindings where message ='Treatment search term not used' and level='treatmentCuration' ;
