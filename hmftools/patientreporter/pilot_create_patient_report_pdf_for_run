@@ -2,7 +2,7 @@
 
 run_dir=$1 && shift
 
-output_dir_report=/data/cpct/pilot_pdf_reports
+output_dir_report=/data/cpct/pilot_reports
 
 if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
