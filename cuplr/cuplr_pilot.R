@@ -110,7 +110,7 @@ highestType <- colnames(prediction)[apply(prediction,1,which.max)]
 ## Output
 cat("[INFO] Writing output files\n")
 write.table(features, file=featOutTxt, sep="\t")
-write.table(prediction, file=predOutTxt, sep="\t", quote=FALSE, row.names=T)
+write.table(prediction, file=predOutTxt, sep="\t", quote=FALSE, row.names=FALSE)
 writeLines(paste0(highestType, ",", highestScore), highOutTxt)
 cat("[INFO] Output in:", workingDir, "\n")
 
