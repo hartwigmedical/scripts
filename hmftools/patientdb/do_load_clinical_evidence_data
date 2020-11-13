@@ -21,6 +21,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading evidence data for ${sample}"
 
+# TODO Rename tumor_location_tsv to primary_tumor_tsv on upgrade to patient-db v3.52
 java -Xmx16G -Xms4G -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
