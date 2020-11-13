@@ -133,7 +133,7 @@ locate_pilot_protect() {
 }
 
 locate_prod_hmf_id_generator() {
-    echo ${base_path}/tools/hmf-id-generator_v2.5/hmf-id-generator.jar
+    echo ${base_path}/tools/hmf-id-generator_v2.6/hmf-id-generator.jar
 }
 
 locate_pilot_hmf_id_generator() {
