@@ -7,10 +7,15 @@ back_dir="${lims_dir}/backup"
 out_json="${lims_dir}/lims.json"
 log_file="${lims_dir}/update.log"
 
-echo "===== Running $(basename $0) at $(date) =====" 2>&1 | tee -a ${log_file}
+mod_date=$(date -r "${out_json}" "+%Y-%m-%d %H:%M:%S")
+run_date=$(date "+%Y-%m-%d %H:%M:%S")
+
+echo "===== Running $(basename $0) =====" 2>&1 | tee -a ${log_file}
+echo "[INFO] LastMod date: ${mod_date}" 2>&1 | tee -a ${log_file}
+echo "[INFO] Current date: ${run_date}" 2>&1 | tee -a ${log_file}
 
 if [[ -f "${out_json}" ]]; then
-    echo "[INFO] Backing up ${out_json} to ${back_dir}"
+    echo "[INFO] Backing up ${out_json}"
     cp "${out_json}" "${back_dir}"
 fi
 
