@@ -325,10 +325,10 @@ sub addIsoAndPrepExperimentIdsToSamples{
                 my $new = $date;
 
                 if ($old eq $new){ 
-                    warn "[INFO]   Identical for $sample_id";
+                    warn "[INFO]   Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
                 }
                 elsif ($old ne NACHAR){
-                    warn "[WARN]   $sample_id $store_key: '$old' => '$new' (act:$action_id exp:$experiment_id)";
+                    warn "[WARN]   Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
                 }
                 $store{$sample_id}{$store_key} = $new;
             }
