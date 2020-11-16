@@ -774,7 +774,7 @@ sub fixBooleanFields{
 
 sub fixDateFields{
     my ($obj) = @_;
-    my @date_fields = qw( arrival_date sampling_date report_date );
+    my @date_fields = qw( arrival_date sampling_date report_date iso_date prep_date snp_date );
     foreach my $date_field ( @date_fields ){
         
         next unless defined $obj->{ $date_field };
