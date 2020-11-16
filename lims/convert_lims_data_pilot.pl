@@ -287,12 +287,14 @@ sub addIsoAndPrepExperimentIdsToSamples{
 
     say "[INFO]   Adding isolation and prep dates to samples";
 
+    # fields with identical new_name overwrite each other
+    # so if sample has both ID 7 and 8 then last one overwrites first date
     my %conversion = (
-         7 => { 'new_name' => 'iso_date', lims_name => 'Compose blood isolation experiment'},
-         8 => { 'new_name' => 'iso_date', lims_name => 'Compose tissue isolation experiment'},
-         5 => { 'new_name' => 'prep_date', lims_name => 'Compose DNA prep experiment'},
-        20 => { 'new_name' => 'prep_date', lims_name => 'Compose RNA prep experiment'},
-        13 => { 'new_name' => 'snp_date', lims_name => 'Compose SNP experiment'},
+         7 => { 'new_name' => 'isolation_date', lims_name => 'Compose blood isolation experiment'},
+         8 => { 'new_name' => 'isolation_date', lims_name => 'Compose tissue isolation experiment'},
+         5 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose DNA prep experiment'},
+        20 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose RNA prep experiment'},
+        13 => { 'new_name' => 'snpgenotype_date', lims_name => 'Compose SNP experiment'},
     );
 
     my %experiment_dates = ();
@@ -782,7 +784,7 @@ sub fixAddedDateFields{
 
 sub fixDateFields{
     my ($obj) = @_;
-    my @date_fields = qw( arrival_date sampling_date report_date iso_date prep_date snp_date );
+    my @date_fields = qw( arrival_date sampling_date report_date isolation_date libraryprep_date snpgenotype_date );
 
     foreach my $date_field ( @date_fields ){
         
