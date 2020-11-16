@@ -63,18 +63,12 @@ ln -s ${source_set_path}/linx/*.linx.vis_gene_exon.tsv ${dest_set_path_linx}
 ln -s ${source_set_path}/linx/*.linx.vis_protein_domain.tsv ${dest_set_path_linx}
 ln -s ${source_set_path}/linx/*.linx.vis_segments.tsv ${dest_set_path_linx}
 ln -s ${source_set_path}/linx/*.linx.vis_sv_data.tsv ${dest_set_path_linx}
-expected_file_count=$( expr ${expected_file_count} + 13)
-
 linx_driver_catalog_file=$(find -L ${source_set_path}/linx -type f -name "*.driver.catalog.tsv")
-if [[ -f "${linx_driver_catalog_file}" ]]; then
-    ln -s ${linx_driver_catalog_file} ${dest_set_path_linx}
-    expected_file_count=$( expr ${expected_file_count} + 1)
-fi
+ln -s ${linx_driver_catalog_file} ${dest_set_path_linx}
 linx_drivers_file=$(find -L ${source_set_path}/linx -type f -name "*.linx.drivers.tsv")
-if [[ -f "${linx_drivers_file}" ]]; then
-    ln -s ${linx_drivers_file} ${dest_set_path_linx}
-    expected_file_count=$( expr ${expected_file_count} + 1)
-fi
+ln -s ${linx_drivers_file} ${dest_set_path_linx}
+expected_file_count=$( expr ${expected_file_count} + 15)
+
 
 somatic_file_count_purple=$(ls ${dest_set_path_purple} | wc -l)
 somatic_file_count_linx=$(ls ${dest_set_path_linx} | wc -l)
