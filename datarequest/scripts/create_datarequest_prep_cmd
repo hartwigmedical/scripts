@@ -178,4 +178,6 @@ info() {
     echo "[INFO] $(date +"%y%m%d %T") $@"
 }
 
+rm temp.json
+
 main
