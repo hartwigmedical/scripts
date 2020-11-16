@@ -159,6 +159,8 @@ main() {
     info " 2) And then run cmd with: ${output_cmd_file} | tee -a ${proposed_log_file}"
     info "Finished with $(basename $0)"
 
+    rm temp.json
+
 }
 
 join_array() {
@@ -177,7 +179,5 @@ warn() {
 info() {
     echo "[INFO] $(date +"%y%m%d %T") $@"
 }
-
-rm temp.json
 
 main
