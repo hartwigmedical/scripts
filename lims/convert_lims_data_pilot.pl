@@ -146,6 +146,7 @@ $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
 $lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
+$lims_objs = fixVariousFields($lims_objs);
 
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
@@ -215,9 +216,9 @@ sub parseTsvCsv{
         }
         
         ## Checks OK: fix some fields and store object
-        fixDateFields( $obj );
-        fixIntegerFields( $obj );
-        fixBooleanFields( $obj );
+        #fixDateFields( $obj );
+        #fixIntegerFields( $obj );
+        #fixBooleanFields( $obj );
         $store{ $key } = $obj;
     }
     close IN;
@@ -287,8 +288,8 @@ sub addIsoAndPrepExperimentIdsToSamples{
     say "[INFO]   Adding isolation and prep dates to samples";
 
     my %conversion = (
-        7  => { 'new_name' => 'iso_date', lims_name => 'Compose blood isolation experiment'},
-        8  => { 'new_name' => 'iso_date', lims_name => 'Compose tissue isolation experiment'},
+         7 => { 'new_name' => 'iso_date', lims_name => 'Compose blood isolation experiment'},
+         8 => { 'new_name' => 'iso_date', lims_name => 'Compose tissue isolation experiment'},
          5 => { 'new_name' => 'prep_date', lims_name => 'Compose DNA prep experiment'},
         20 => { 'new_name' => 'prep_date', lims_name => 'Compose RNA prep experiment'},
         13 => { 'new_name' => 'snp_date', lims_name => 'Compose SNP experiment'},
@@ -772,9 +773,19 @@ sub fixBooleanFields{
     }
 }
 
+sub fixVariousFields{
+    my ($sample_objects) = @_;
+    while( my($key, $obj) = each %$sample_objects) ){
+        fixDateFields( $obj );
+        fixIntegerFields( $obj );
+        fixBooleanFields( $obj );
+    }
+}
+
 sub fixDateFields{
     my ($obj) = @_;
     my @date_fields = qw( arrival_date sampling_date report_date iso_date prep_date snp_date );
+
     foreach my $date_field ( @date_fields ){
         
         next unless defined $obj->{ $date_field };
