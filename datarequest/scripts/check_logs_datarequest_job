@@ -50,8 +50,8 @@ if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
 fi
 
 echo "[INFO] PREPARED METADATA CHECK"
-if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l ) >0 ]]; then
-    requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | wc -l )
+if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version=" | wc -l ) >0 ]]; then
+    requested_metadata=$( cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version=" |wc -l )
     log_metadata_name=$( ls ${request_logs_path} | grep 'metadata.log' )
     log_metadata=$"${request_logs_path}${log_metadata_name}"
     entries_metadata=$( expr $( cat ${log_job} | grep ".metadata.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
@@ -65,7 +65,7 @@ if [[ $(cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | 
         lines_metadata_tar_log=$( expr $( echo ${lines_metadata_tar_log}) - 1 )
     fi
     echo "[INFO] ${requested_metadata}  types of metadata requested:"
-    cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline"
+    cat ${log_job}  | grep "=1" | grep -v "somatics" | grep -v "germline" | grep -v "version="
     #check numbers.
     if [[ ${requested_metadata} != ${entries_metadata} || ${requested_metadata} != ${lines_metadata_tar_log} ]]; then
         echo "[ERROR] The number of extra types of requested metadata (${requested_metadata}) does not match the number of extra entries created during the datarequest job. Check the log  file(s) (log of the create job and/or tar_DR-XXX_somatics.log) under: ${request_logs_path}."
@@ -127,5 +127,10 @@ if [[ $(cat ${log_job}  | grep "=1" | grep "germline") != "" ]]; then
 else
     echo "[INFO] No germline data prepared in datarequest job"
 fi
+echo ""
+
+echo "[INFO] ERRORS IN LOG FILES:"
+cat ${log_job} | grep 'WARN'
+cat ${log_job} | grep 'ERROR'
 echo ""
 echo ""
