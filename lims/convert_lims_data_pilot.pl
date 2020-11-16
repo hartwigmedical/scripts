@@ -775,11 +775,13 @@ sub fixBooleanFields{
 
 sub fixVariousFields{
     my ($sample_objects) = @_;
-    while( my($key, $obj) = each %$sample_objects) ){
+    my %store = %$sample_objects;
+    while( my($key, $obj) = each %store){
         fixDateFields( $obj );
         fixIntegerFields( $obj );
         fixBooleanFields( $obj );
     }
+    return(\%store);
 }
 
 sub fixDateFields{
