@@ -216,9 +216,9 @@ sub parseTsvCsv{
         }
         
         ## Checks OK: fix some fields and store object
-        #fixDateFields( $obj );
-        #fixIntegerFields( $obj );
-        #fixBooleanFields( $obj );
+        fixDateFields( $obj );
+        fixIntegerFields( $obj );
+        fixBooleanFields( $obj );
         $store{ $key } = $obj;
     }
     close IN;
