@@ -146,8 +146,8 @@ $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
 $lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
-$lims_objs = fixVariousFields($lims_objs);
 
+fixAddedDateFields( $lims_objs );
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
@@ -773,15 +773,11 @@ sub fixBooleanFields{
     }
 }
 
-sub fixVariousFields{
+sub fixAddedDateFields{
     my ($sample_objects) = @_;
-    my %store = %$sample_objects;
-    while( my($key, $obj) = each %store){
+    while( my($key, $obj) = each %$sample_objects){
         fixDateFields( $obj );
-        fixIntegerFields( $obj );
-        fixBooleanFields( $obj );
     }
-    return(\%store);
 }
 
 sub fixDateFields{
