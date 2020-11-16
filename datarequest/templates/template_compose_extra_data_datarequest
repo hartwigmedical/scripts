@@ -2,7 +2,7 @@
 
 # The dr_name should be the number of the specific Data Request (eg DR-028).
 # The request_name should be the name of the specific handout of the Data Request you have prepared, and you want to add this extra data to (at least metadata should be prepared before! (eg DR-028-update1).
-# the custom data name should be the name of the extra data you want to prepare (eg. linx)
+# the custom data name should be the name of the extra data you want to prepare (eg. isofox)
 
 dr_name=DR-XXX
 request_name=DR-XXX
