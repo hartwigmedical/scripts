@@ -1,9 +1,5 @@
 #!/usr/bin/env bash
 
-source locate_files
-
 serve_jar=/home/korneel/serve_test_jar/serve.jar
-driver_gene_panel=$(locate_driver_gene_panel_tsv)
 
-java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.vicc.ViccTestApplication \
-    -driver_gene_panel ${driver_gene_panel}
+java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.vicc.tools.ViccExtractorTestApp
