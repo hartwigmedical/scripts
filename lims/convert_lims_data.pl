@@ -61,28 +61,33 @@ die $HELP_TEXT unless $opt{ out_json };
 my $CNTR_TSV = '/data/ops/lims/prod/center2entity.tsv';
 my $LIMS_DIR = $opt{lims_dir};
 my $JSON_OUT = $opt{out_json};
+my $LATEST_DIR = $LIMS_DIR . "/lab_files/latest";
 
-my $CPCT_CSV = $LIMS_DIR . '/latest/lims_cpct';
-my $SUBM_TSV = $LIMS_DIR . '/latest/lims_subm';
-my $CONT_TSV = $LIMS_DIR . '/latest/lims_cont';
-my $SAMP_TSV = $LIMS_DIR . '/latest/lims_samp';
-my $PROC_TSV = $LIMS_DIR . '/latest/lims_proc';
+my $ACCESS_SAMPLES_CSV = $LATEST_DIR . '/access_samples.csv';
+my $ACCESS_ACTIONS_CSV = $LATEST_DIR . '/access_actions.csv';
+my $ACCESS_REGISTRATIONS_CSV = $LATEST_DIR . '/access_registration.csv';
+my $FOR_001_SUBM_TSV = $LATEST_DIR . '/for001_submissions.tsv';
+my $FOR_001_CONT_TSV = $LATEST_DIR . '/for001_contacts.tsv';
+my $FOR_001_SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
+my $FOR_002_PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 
-## Closed files from previous years
-my $SUBM_TSV_2019 = $LIMS_DIR . '/latest/2019_subm';
-my $SAMP_TSV_2019 = $LIMS_DIR . '/latest/2019_samp';
-my $PROC_TSV_2019 = $LIMS_DIR . '/latest/2019_proc';
-my $SUBM_TSV_2018 = $LIMS_DIR . '/latest/2018_subm';
-my $SAMP_TSV_2018 = $LIMS_DIR . '/latest/2018_samp';
-my $PROC_TSV_2018 = $LIMS_DIR . '/latest/2018_proc';
-my $PROC_TSV_2017 = $LIMS_DIR . '/latest/2017_proc';    
-my $LIMS_JSN_2017 = $LIMS_DIR . '/latest/2017_lims.json'; # non-CPCT pre-2018
+## Files from previous years
+my $SUBM_TSV_2019 = $LATEST_DIR . '/2019_for001_submissions.tsv';
+my $SAMP_TSV_2019 = $LATEST_DIR . '/2019_for001_samples.tsv';
+my $PROC_TSV_2019 = $LATEST_DIR . '/2019_for001_processing.tsv';
+my $SUBM_TSV_2018 = $LATEST_DIR . '/2018_subm';
+my $SAMP_TSV_2018 = $LATEST_DIR . '/2018_samp';
+my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
+my $PROC_TSV_2017 = $LATEST_DIR . '/2017_proc';
+my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 
 my @ALL_INPUT_FILES = ( 
-  $CNTR_TSV, $CPCT_CSV, $SUBM_TSV, $SAMP_TSV, $PROC_TSV, 
-  $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
-  $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018, 
-  $PROC_TSV_2017, $LIMS_JSN_2017
+    $ACCESS_SAMPLES_CSV, $ACCESS_ACTIONS_CSV, $ACCESS_REGISTRATIONS_CSV,
+    $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV,
+    $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
+    $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018,
+    $PROC_TSV_2017, $LIMS_JSN_2017,
+    $CNTR_TSV
 );
 
 ## Some final checks
@@ -105,25 +110,34 @@ say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
+
 my $proc_objs = {}; # will contain objects from InProcess sheet
 my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
-my $cpct_objs = {}; # will contain objects from MS Access LIMS
+my $cpct_objs = {}; # will contain objects from MS Access LIMS samples table
+my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
+my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
 my $lims_objs = {}; # will contain all sample objects
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
-$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
+
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
-$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV, "\t" );
-$cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $CONT_TSV, "\t" );
+
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
+$cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
+
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV, "\t" );
-$cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $CPCT_CSV, "," );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
+
+$cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
+$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_id',  1, $ACCESS_ACTIONS_CSV, "," );
+$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
 
@@ -131,7 +145,9 @@ $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
+$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
 
+fixAddedDateFields( $lims_objs );
 checkDrupStage3Info( $subm_objs, $lims_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
@@ -260,6 +276,62 @@ sub addLabSopStringToSamples{
         else{
             ## fallback to NA default
             $store{ $id }{ $sop_field_name } = NACHAR;
+        }
+    }
+    return \%store;
+}
+
+sub addIsoAndPrepExperimentIdsToSamples{
+    my ($samples, $registrations, $actions) = @_;
+    my %store = %$samples;
+
+    say "[INFO]   Adding isolation and prep dates to samples";
+
+    # fields with identical new_name overwrite each other
+    # so if sample has both ID 7 and 8 then last one overwrites first date
+    my %conversion = (
+         7 => { 'new_name' => 'isolation_date', lims_name => 'Compose blood isolation experiment'},
+         8 => { 'new_name' => 'isolation_date', lims_name => 'Compose tissue isolation experiment'},
+         5 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose DNA prep experiment'},
+        20 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose RNA prep experiment'},
+        13 => { 'new_name' => 'snpgenotype_date', lims_name => 'Compose SNP experiment'},
+    );
+
+    my %experiment_dates = ();
+    while (my ($registration_id, $obj) = each %$registrations){
+        my $act_id = $obj->{"action_id"};
+        my $exp_id = $obj->{"experiment_id"};
+        my $date = $obj->{'date'};
+        next if not defined $exp_id or $exp_id eq "";
+        $experiment_dates{$exp_id}{$act_id} = $date;
+    }
+
+    while (my ($sample_id, $sample_obj) = each %store) {
+        while (my ($action_id, $action_name) = each %$actions) {
+            next unless exists $conversion{$action_id};
+            my $experiment_id = $sample_obj->{"isolation_exp_id"} || NACHAR;
+            my $store_key = $conversion{$action_id}{'new_name'};
+
+            # Make sure the field exists in sample object
+            unless (defined $store{$sample_id}{$store_key}){
+                $store{$sample_id}{$store_key} = NACHAR;
+            }
+
+            # Fill the field with date if available
+            if (defined $experiment_dates{$experiment_id}{$action_id}) {
+                my $date = $experiment_dates{$experiment_id}{$action_id};
+
+                my $old = $store{$sample_id}{$store_key};
+                my $new = $date;
+
+                #if ($old eq $new){ 
+                #    warn "[INFO]   Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
+                #}
+                #elsif ($old ne NACHAR){
+                #    warn "[WARN]   Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
+                #}
+                $store{$sample_id}{$store_key} = $new;
+            }
         }
     }
     return \%store;
@@ -703,9 +775,17 @@ sub fixBooleanFields{
     }
 }
 
+sub fixAddedDateFields{
+    my ($sample_objects) = @_;
+    while( my($key, $obj) = each %$sample_objects){
+        fixDateFields( $obj );
+    }
+}
+
 sub fixDateFields{
     my ($obj) = @_;
-    my @date_fields = qw( arrival_date sampling_date report_date );
+    my @date_fields = qw( arrival_date sampling_date report_date isolation_date libraryprep_date snpgenotype_date );
+
     foreach my $date_field ( @date_fields ){
         
         next unless defined $obj->{ $date_field };
@@ -954,7 +1034,7 @@ sub getFieldNameTranslations{
       'Sop_tracking_code' => 'lab_sop_versions',
     );
 
-    ## columns CPCT tracking Access table
+    ## columns MS Access table samples
     my %CPCT_DICT = (
       'Coupes_barc'        => 'coupes_barcode',
       'Sampling_date'      => 'sampling_date',
@@ -965,8 +1045,8 @@ sub getFieldNameTranslations{
       'Yield'              => 'yield',
       'Sample_barcode'     => 'sample_id', # was Sample_ID_(DNA|RNA|Plasma)
       'Pathology_exp'      => 'pathology_exp',
-      'Qiasymphony_exp'    => 'qiasymphony_exp',
-      'Prep'               => 'prep', # was (DNA|RNA)_prep
+      'Qiasymphony_exp'    => 'isolation_exp_id',
+      'Prep'               => 'preparation_exp_id', # was (DNA|RNA)_prep
       'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
       'Primary_tumor_type' => 'ptum',
       'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
@@ -993,7 +1073,23 @@ sub getFieldNameTranslations{
       'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id',
       'QC_fail_report'     => 'qc_fail_report'
     );
-    
+
+    ## columns MS Access table actions
+    my %ACTI_DICT = (
+        'Action_ID' => 'action_id',
+        'Action_description' => 'action_desc'
+    );
+
+    ## columns MS Access table registration
+    my %REGI_DICT = (
+        'ID' => 'registration_id',
+        'Action_ID' => 'action_id',
+        'Datum' => 'date',
+        'User' => 'user',
+        'Sample_name' => 'sample_name',
+        'Experiment_name' => 'experiment_id',
+    );
+
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
@@ -1003,6 +1099,8 @@ sub getFieldNameTranslations{
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
         'CPCT_CURR' => \%CPCT_DICT,
+        'ACTI_CURR' => \%ACTI_DICT,
+        'REGI_CURR' => \%REGI_DICT,
     );
     
     return \%translations;
