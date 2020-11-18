@@ -204,7 +204,7 @@ sub performQC{
         if ($platform =~ m/^$known_platform/i ){
             say "## Platform string '$platform' determined as $known_platform";
             say "## Setting QC limits for platform $known_platform";
-            $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform };
+            $qc_limits = $QC_LIMITS_PER_PLATFORM{ $known_platform } || die "[ERROR] no key '$known_platform'";
         }
     }
 
