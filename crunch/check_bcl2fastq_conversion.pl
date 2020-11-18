@@ -197,24 +197,24 @@ sub performQC{
     ## determine actual platform in use
     my @possible_platforms = keys %QC_LIMITS_PER_PLATFORM;
     my $qc_limits = ();
-    if ( defined $QC_LIMITS_PER_PLATFORM{ $platform_name } ){
-        say "## Setting QC limits for platform $platform_name";
-        $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform_name };
+    if ( defined $QC_LIMITS_PER_PLATFORM{ $platform } ){
+        say "## Setting QC limits for platform $platform";
+        $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform };
     }else{
-        die "[ERROR] Unable to determine QC limits for platform ($platform_name)\n";
+        die "[ERROR] Unable to determine QC limits for platform ($platform)\n";
     }
 
     ## flowcell checks
     my $undet = $stats->{'undet_perc'};
-    my $max_undet = $qc_limits{ 'max_undetermined' };
+    my $max_undet = $qc_limits->{ 'max_undetermined' };
     if ( $undet > $max_undet ){
         say "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
         $fails += 1;
     }
         
     ## lane and sample checks
-    $fails += checkObjectField( $lanes, 'q30',   $qc_limits{ 'flowcell_q30' } );
-    $fails += checkObjectField( $samps, 'yield', $qc_limits{ 'min_sample_yield' } );
+    $fails += checkObjectField( $lanes, 'q30',   $qc_limits->{ 'flowcell_q30' } );
+    $fails += checkObjectField( $samps, 'yield', $qc_limits->{ 'min_sample_yield' } );
     
     ## conclusion
     my $final_result = "NoQcResult";
