@@ -195,7 +195,7 @@ sub performQC{
     my $identifier = $stats->{'identifier'};
     my $platform = $stats->{'platform'};
        
-    ## determine actual platform in use
+    ## need to determine the exat platform for qc
     my @known_platforms = keys %QC_LIMITS_PER_PLATFORM;
     my $qc_limits = undef;
 
