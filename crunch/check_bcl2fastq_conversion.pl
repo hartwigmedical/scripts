@@ -33,6 +33,7 @@ my @SUM_FIELDS = qw( submission id name yld q30 description );
 my $YIELD_FACTOR = 1e6;
 my $ROUND_DECIMALS = 0;
 
+## These should be in sync with those from api (see: query_api.pl -type platforms)
 my %QC_LIMITS_PER_PLATFORM = (
     'NovaSeq' => {
         'min_flowcell_q30' => 85,
@@ -46,7 +47,7 @@ my %QC_LIMITS_PER_PLATFORM = (
     },
     'ISeq' => {
         'min_flowcell_q30' => 75,
-        'min_sample_q30' => 75,
+        'min_sample_yield' => 1e9,
         'max_undetermined' => 50
     },
     'HiSeq' => {
