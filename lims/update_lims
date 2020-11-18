@@ -19,7 +19,8 @@ if [[ -f "${out_json}" ]]; then
     cp "${out_json}" "${back_dir}"
 fi
 
-${code_dir}/sync_lab_lims_from_nas 2>&1 | tee -a ${log_file}
+echo "[INFO] Starting sync from NAS and conversion to lims json"
+${code_dir}/sync_lab_lims_from_nas "${lims_dir}" 2>&1 | tee -a ${log_file}
 ${code_dir}/convert_lims_data.pl \
     -lims_dir "${lims_dir}" \
     -out_json "${out_json}" \
