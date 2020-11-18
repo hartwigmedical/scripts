@@ -203,11 +203,13 @@ sub performQC{
     foreach my $known_platform (@known_platforms){
         if ($platform =~ m/^$known_platform/i ){
             say "## Platform string '$platform' determined as $known_platform";
+            $platform = $known_platform;
             say "## Setting QC limits for platform $known_platform";
-            $qc_limits = $QC_LIMITS_PER_PLATFORM{ $known_platform } || die "[ERROR] no key '$known_platform'";
+            $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform } || die "[ERROR] no key '$platform'";
         }
     }
 
+    ## in case platform matching went wrong we have no limits set
     if ( not defined $qc_limits ){
         die "[ERROR] Unable to determine QC limits for platform string ($platform)\n";
     }
@@ -221,7 +223,7 @@ sub performQC{
     }
         
     ## lane and sample checks
-    $fails += checkObjectField( $lanes, 'q30',   $qc_limits->{ 'flowcell_q30' } );
+    $fails += checkObjectField( $lanes, 'q30',   $qc_limits->{ 'min_flowcell_q30' } );
     $fails += checkObjectField( $samps, 'yield', $qc_limits->{ 'min_sample_yield' } );
     
     ## conclusion
