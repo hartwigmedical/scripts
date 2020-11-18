@@ -51,7 +51,7 @@ GetOptions (
   "help|h"         => \$opt{ help },
   "verbose"        => \$opt{ verbose }
 ) or die "Error in command line arguments\n";
-my @ids = @ARGV;
+my @sample_ids = @ARGV;
 
 my $HELP =<<HELP;
 
@@ -81,7 +81,7 @@ my $HELP =<<HELP;
 HELP
 
 print $HELP and exit(0) if $opt{ help };
-print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
+print $HELP and exit(0) if scalar(@sample_ids) == 0 and not defined $opt{ samplesheet };
 die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
 ## -----
@@ -92,11 +92,11 @@ say "[INFO] DateTime: $DATETIME";
 
 if ( defined $opt{ samplesheet } ){
   say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
-  my $ssheet_ids = addSamplesFromSamplesheet( $opt{ samplesheet } );
-  push( @ids, @$ssheet_ids );
+  my $ids_to_process = collectSamplesFromSamplesheet( $opt{ samplesheet } );
+  push( @sample_ids, @$ids_to_process );
 }
 
-say "[INFO] InputCount: ".scalar(@ids);
+say "[INFO] InputCount: ".scalar(@sample_ids);
 say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
@@ -104,9 +104,9 @@ my %stats = ();
 my @msg = ();
 my $existingJsons = listExistingJsons($JSON_BASE_DIR, $JSON_DONE_DIR);
 
-foreach my $sample_id ( @ids ){
+foreach my $sample_id ( @sample_ids ){
     say "[INFO] Processing $sample_id";
-    my $return = processSample( $sample_id, $samples, \%stats );
+    my $return = processSampleFromLims( $sample_id, $samples, \%stats );
     $stats{ $return }++;
 }
 
@@ -121,7 +121,7 @@ foreach my $reason ( keys %stats ){
 ## /MAIN
 ## -----
     
-sub addSamplesFromSamplesheet{
+sub collectSamplesFromSamplesheet{
     my ($file) = @_;
     
     my %head = ();
@@ -164,7 +164,7 @@ sub addSamplesFromSamplesheet{
             my $id = $record{ 'Sample_ID' };
             my $name = $record{ 'Sample_Name' };
             my $submission = $record{ 'Sample_Project' };
-            if ( $submission =~ /^HMFregVAL|HMFregGIAB$/ ){
+            if ( $submission eq "HMFregVAL" ){
                 warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
                 next();
             }
@@ -179,7 +179,7 @@ sub addSamplesFromSamplesheet{
     return( \@out );
 }
 
-sub processSample{
+sub processSampleFromLims{
     my ($sample_id, $lims, $stats) = @_;
     my @warn_msg = ();
     if ( not exists $lims->{ $sample_id } ){
