@@ -92,11 +92,11 @@ say "[INFO] DateTime: $DATETIME";
 
 if ( defined $opt{ samplesheet } ){
   say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
-  my $ids_to_process = collectSamplesFromSamplesheet( $opt{ samplesheet } );
-  push( @sample_ids, @$ids_to_process );
+  my $ids = addSamplesFromSamplesheet( $opt{ samplesheet } );
+  push( @ids, @$ssheet_ids );
 }
 
-say "[INFO] InputCount: ".scalar(@sample_ids);
+say "[INFO] InputCount: ".scalar(@ids);
 say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
@@ -104,9 +104,9 @@ my %stats = ();
 my @msg = ();
 my $existingJsons = listExistingJsons($JSON_BASE_DIR, $JSON_DONE_DIR);
 
-foreach my $sample_id ( @sample_ids ){
+foreach my $sample_id ( @ids ){
     say "[INFO] Processing $sample_id";
-    my $return = processSampleFromLims( $sample_id, $samples, \%stats );
+    my $return = processSample( $sample_id, $samples, \%stats );
     $stats{ $return }++;
 }
 
@@ -121,7 +121,7 @@ foreach my $reason ( keys %stats ){
 ## /MAIN
 ## -----
     
-sub collectSamplesFromSamplesheet{
+sub addSamplesFromSamplesheet{
     my ($file) = @_;
     
     my %head = ();
@@ -179,7 +179,7 @@ sub collectSamplesFromSamplesheet{
     return( \@out );
 }
 
-sub processSampleFromLims{
+sub processSample{
     my ($sample_id, $lims, $stats) = @_;
     my @warn_msg = ();
     if ( not exists $lims->{ $sample_id } ){
