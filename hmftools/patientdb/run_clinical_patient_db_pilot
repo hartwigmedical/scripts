@@ -21,7 +21,7 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -wide_avl_treatment_csv /data/ecrf/wide_avl_treatments.csv \
     -wide_response_csv /data/ecrf/wide_responses.csv \
     -wide_five_days_csv /data/ecrf/wide_five_days.csv \
-    -lims_dir /data/ops/lims/pilot \
+    -lims_dir /data/ops/lims/prod \
     -curated_primary_tumor_tsv /data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv \
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -tumor_location_mapping_tsv /data/common/dbs/clinical_curation/pilot_tumor_location_mapping.tsv \
