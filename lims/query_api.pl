@@ -47,7 +47,7 @@ my $HELP =<<HELP;
     (updated regularly by cronjob)
 
     You can manually update the jsons to latest by:
-      - executing "update_api_db"
+      - executing "update_api_db_jsons"
   
   Available tables/types to query:
      $available_types
