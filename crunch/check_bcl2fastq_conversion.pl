@@ -201,7 +201,7 @@ sub performQC{
 
     ## exact platform string varies too much so try to match by regex
     foreach my $known_platform (@known_platforms){
-        if ($known_platform =~ m/^$platform/i ){
+        if ($platform =~ m/^$known_platform/i ){
             say "## Platform string '$platform' determined as $known_platform";
             say "## Setting QC limits for platform $known_platform";
             $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform };
