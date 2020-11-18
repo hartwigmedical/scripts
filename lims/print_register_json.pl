@@ -51,7 +51,7 @@ GetOptions (
   "help|h"         => \$opt{ help },
   "verbose"        => \$opt{ verbose }
 ) or die "Error in command line arguments\n";
-my @sample_ids = @ARGV;
+my @ids = @ARGV;
 
 my $HELP =<<HELP;
 
@@ -81,7 +81,7 @@ my $HELP =<<HELP;
 HELP
 
 print $HELP and exit(0) if $opt{ help };
-print $HELP and exit(0) if scalar(@sample_ids) == 0 and not defined $opt{ samplesheet };
+print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
 die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
 ## -----
@@ -92,8 +92,8 @@ say "[INFO] DateTime: $DATETIME";
 
 if ( defined $opt{ samplesheet } ){
   say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
-  my $ids = addSamplesFromSamplesheet( $opt{ samplesheet } );
-  push( @ids, @$ssheet_ids );
+  my $ids_from_sheet = addSamplesFromSamplesheet( $opt{ samplesheet } );
+  push( @ids, @$ids_from_sheet );
 }
 
 say "[INFO] InputCount: ".scalar(@ids);
