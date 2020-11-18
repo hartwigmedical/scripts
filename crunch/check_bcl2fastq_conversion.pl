@@ -68,7 +68,8 @@ my $HELP =<<HELP;
     flowcell/lane/sample/read metrics
     
   Usage
-    $SCRIPT -run \${run-path} -samplesheet \${samplesheet-path}
+    $SCRIPT -run_dir \${run-path}
+    $SCRIPT -run_dir \${run-path} -samplesheet \${samplesheet-path}
     $SCRIPT -json \${json-path}
     
   Options
