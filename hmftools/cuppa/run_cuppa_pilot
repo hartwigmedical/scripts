@@ -13,26 +13,25 @@ sample_id=$(load_tumor_sample_from_metadata ${run_dir})
 cuppa_jar=$(locate_pilot_cuppa)
 sig_analyser_jar=$(locate_pilot_sig_analyser)
 
-# TODO Check whether we need this param.
-sample_data_dir=${run_dir}/purple
-
 snv_vcf_file=$(locate_purple_somatics ${run_dir})
 sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
 
 cup_ref_dir=/data/experiments/cup/ref
-output_dir=${run_dir}/cuppa_pilot
+working_dir=${run_dir}/cuppa_pilot
 
 echo "[INFO] Running CUPPA analysis pipeline on ${run_dir}"
 echo "[INFO]  - Sample ID: ${sample_id}"
-echo "[INFO]  - CUPPA pipeline output directory: ${output_dir}"
+echo "[INFO]  - CUPPA pipeline output directory: ${working_dir}"
 echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 
-if [[ ! -d ${output_dir} ]]; then
-    echo "[DEBUG] Creating ${output_dir}"
-    mkdir -p ${output_dir}
+if [[ ! -d ${working_dir} ]]; then
+    echo "[DEBUG] Creating ${working_dir}"
+    mkdir -p ${working_dir}
+    cp -r "${run_dir}/purple/*" ${working_dir}/
+    cp -r "${run_dir}/linx/*" ${working_dir}/
 else
-    echo "[DEBUG] Wiping ${output_dir}"
-    rm ${output_dir}/*
+    echo "[DEBUG] Wiping ${working_dir}"
+    rm ${working_dir}/*
 fi
 
 echo "[INFO] Generating SNV and signature data for ${sample_id}"
@@ -46,18 +45,18 @@ java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitt
     -somatic_vcf_file ${snv_vcf_file} \
     -position_bucket_size 500000 -max_sample_count 20000 \
     -upload_to_db false \
-    -output_dir ${output_dir} \
+    -output_dir ${working_dir} \
     -log_debug
 
 echo "[INFO] Running CUPPA for ${sample_id}"
 
 java -jar ${cuppa_jar} \
     -sample_data "${sample_id};Unknown" \
-    -sample_data_dir ${sample_data_dir} \
+    -sample_data_dir ${working_dir} \
     -sample_sv_file ${sv_vcf_file} \
     -sample_somatic_vcf ${snv_vcf_file} \
     -ref_data_dir ${cup_ref_dir} \
-    -output_dir ${output_dir} \
+    -output_dir ${working_dir} \
     -log_debug
 
 # sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
