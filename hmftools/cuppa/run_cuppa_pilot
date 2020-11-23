@@ -67,11 +67,6 @@ java -jar ${cuppa_jar} \
     -output_dir ${output_dir} \
     -log_debug
 
-# sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
-# Rscript ~/scripts/CupGenerateReport.R SAMPLE_001 ~/samples/SAMPLE_001/ ~/samples/SAMPLE_001/
-
-#report_dir=${output_dir}
-#report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
-#cup_input_data=${output_dir}${sample_id}.cup.data.csv
-
-# Rscript ${report_script} ${sample_id} ${cup_input_data} ${report_dir}
+# We write output PDF to the same directory containing the CUPPA output data
+report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
+Rscript ${report_script} ${sample_id} ${output_dir}/ ${output_dir}/
