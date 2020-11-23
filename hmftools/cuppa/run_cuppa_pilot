@@ -24,6 +24,14 @@ echo "[INFO]  - Sample ID: ${sample_id}"
 echo "[INFO]  - CUPPA pipeline output directory: ${output_dir}"
 echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 
+if [[ ! -d ${output_dir} ]]; then
+    echo "[DEBUG] Creating ${output_dir}"
+    mkdir -p ${output_dir}
+else
+    echo "[DEBUG] Wiping ${output_dir}"
+    rm ${output_dir}/*
+fi
+
 echo "[INFO] Generating SNV and signature data for ${sample_id}"
 
 # Run signatures to produce SNV counts, genomic position counts and signature allocations
