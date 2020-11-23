@@ -27,12 +27,14 @@ echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 if [[ ! -d ${working_dir} ]]; then
     echo "[DEBUG] Creating ${working_dir}"
     mkdir -p ${working_dir}
-    cp -r "${run_dir}/purple/*" ${working_dir}/
-    cp -r "${run_dir}/linx/*" ${working_dir}/
 else
     echo "[DEBUG] Wiping ${working_dir}"
     rm ${working_dir}/*
 fi
+
+echo "[DEBUG] Copying required input files to ${working_dir}"
+cp -r "${run_dir}/purple/*" ${working_dir}/
+cp -r "${run_dir}/linx/*" ${working_dir}/
 
 echo "[INFO] Generating SNV and signature data for ${sample_id}"
 
