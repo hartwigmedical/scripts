@@ -29,7 +29,7 @@ if [[ ! -d ${working_dir} ]]; then
     mkdir -p ${working_dir}
 else
     echo "[DEBUG] Wiping ${working_dir}"
-    rm ${working_dir}/*
+    rm -r ${working_dir}/*
 fi
 
 echo "[DEBUG] Copying required input files to ${working_dir}"
