@@ -16,17 +16,15 @@ sig_analyser_jar=$(locate_pilot_sig_analyser)
 snv_vcf_file=$(locate_purple_somatics ${run_dir})
 sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
 
-cup_ref_dir=x
+cup_ref_dir=/data/experiments/cup/ref/
 output_dir=${run_dir}/cuppa_pilot
 
-echo "Not functional yet"
-exit 0
+echo "[INFO] Running CUPPA analysis pipeline on ${run_dir}"
+echo "[INFO]  - Sample ID: ${sample_id}"
+echo "[INFO]  - CUPPA pipeline output directory: ${output_dir}"
+echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 
-echo "CUPPA analysis for ${sample_id}"
-echo "Sample output: ${output_dir}"
-echo "Reference data: ${cup_ref_dir}"
-
-echo "Generating SNV and signature data for ${sample_id}"
+echo "[INFO] Generating SNV and signature data for ${sample_id}"
 
 # Run signatures to produce SNV counts, genomic position counts and signature allocations
 snv_cosmic_sigs=${cup_ref_dir}/snv_cosmic_sigs.csv
@@ -40,6 +38,8 @@ java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitt
     -output_dir ${output_dir} \
     -log_debug
 
+echo "[INFO] Running CUPPA for ${sample_id}"
+
 java -jar ${cuppa_jar} \
     -sample_data "${sample_id};Unknown" \
     -sample_data_dir ${sample_data_dir} \
@@ -48,7 +48,6 @@ java -jar ${cuppa_jar} \
     -ref_data_dir ${cup_ref_dir} \
     -output_dir ${output_dir} \
     -log_debug
-
 
 # sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
 # Rscript ~/scripts/CupGenerateReport.R SAMPLE_001 ~/samples/SAMPLE_001/ ~/samples/SAMPLE_001/
