@@ -18,6 +18,8 @@ sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
 
 cup_ref_dir=/data/experiments/cup/ref
 working_dir=${run_dir}/cuppa_pilot
+data_dir=${working_dir}/data
+output_dir=${working_dir}/output
 
 echo "[INFO] Running CUPPA analysis pipeline on ${run_dir}"
 echo "[INFO]  - Sample ID: ${sample_id}"
@@ -27,14 +29,16 @@ echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 if [[ ! -d ${working_dir} ]]; then
     echo "[DEBUG] Creating ${working_dir}"
     mkdir -p ${working_dir}
+    mkdir -p ${data_dir}
+    mkdir -p ${output_dir}
 else
     echo "[DEBUG] Wiping ${working_dir}"
     rm -r ${working_dir}/*
 fi
 
-echo "[DEBUG] Copying required input files to ${working_dir}"
-cp ${run_dir}/purple/* ${working_dir}/
-cp ${run_dir}/linx/* ${working_dir}/
+echo "[DEBUG] Copying required input files to ${data_dir}"
+cp -r ${run_dir}/purple/* ${data_dir}/
+cp -r ${run_dir}/linx/* ${data_dir}/
 
 echo "[INFO] Generating SNV and signature data for ${sample_id}"
 
@@ -47,18 +51,18 @@ java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitt
     -somatic_vcf_file ${snv_vcf_file} \
     -position_bucket_size 500000 -max_sample_count 20000 \
     -upload_to_db false \
-    -output_dir ${working_dir} \
+    -output_dir ${data_dir} \
     -log_debug
 
 echo "[INFO] Running CUPPA for ${sample_id}"
 
 java -jar ${cuppa_jar} \
     -sample_data "${sample_id};Unknown" \
-    -sample_data_dir ${working_dir} \
+    -sample_data_dir ${data_dir} \
     -sample_sv_file ${sv_vcf_file} \
     -sample_somatic_vcf ${snv_vcf_file} \
     -ref_data_dir ${cup_ref_dir} \
-    -output_dir ${working_dir} \
+    -output_dir ${output_dir} \
     -log_debug
 
 # sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
