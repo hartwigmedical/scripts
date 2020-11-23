@@ -1,0 +1,60 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+sample_id=$(load_tumor_sample_from_metadata ${run_dir})
+cuppa_jar=$(locate_pilot_cuppa)
+sig_analyser_jar=$(locate_pilot_sig_analyser)
+
+snv_vcf_file=$(locate_purple_somatics ${run_dir})
+sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
+
+cup_ref_dir=x
+output_dir=${run_dir}/cuppa_pilot
+
+echo "Not functional yet"
+exit 0
+
+echo "CUPPA analysis for ${sample_id}"
+echo "Sample output: ${output_dir}"
+echo "Reference data: ${cup_ref_dir}"
+
+echo "Generating SNV and signature data for ${sample_id}"
+
+# Run signatures to produce SNV counts, genomic position counts and signature allocations
+snv_cosmic_sigs=${cup_ref_dir}/snv_cosmic_sigs.csv
+
+java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
+    -sample ${sampleId} \
+    -signatures_file ${snv_cosmic_sigs} \
+    -somatic_vcf_file ${snv_vcf_file} \
+    -position_bucket_size 500000 -max_sample_count 20000 \
+    -upload_to_db false \
+    -output_dir ${output_dir} \
+    -log_debug
+
+java -jar ${cuppa_jar} \
+    -sample_data "${sample_id};Unknown" \
+    -sample_data_dir ${sample_data_dir} \
+    -sample_sv_file ${sv_vcf_file} \
+    -sample_somatic_vcf ${snv_vcf_file} \
+    -ref_data_dir ${cup_ref_dir} \
+    -output_dir ${output_dir} \
+    -log_debug
+
+
+# sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
+# Rscript ~/scripts/CupGenerateReport.R SAMPLE_001 ~/samples/SAMPLE_001/ ~/samples/SAMPLE_001/
+
+#report_dir=${output_dir}
+#report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
+#cup_input_data=${output_dir}${sample_id}.cup.data.csv
+
+# Rscript ${report_script} ${sampleId} ${cup_input_data} ${report_dir}

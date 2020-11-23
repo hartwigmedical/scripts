@@ -132,6 +132,14 @@ locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
 
+locate_pilot_cuppa() {
+    echo ${base_path}/tools/cuppa_pilot/cuppa.jar
+}
+
+locate_pilot_sig_analyser() {
+    echo ${base_path}/tools/sig-analyser_pilot/sig-analyser.jar
+}
+
 locate_prod_hmf_id_generator() {
     echo ${base_path}/tools/hmf-id-generator_v2.6/hmf-id-generator.jar
 }
