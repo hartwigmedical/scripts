@@ -33,8 +33,8 @@ else
 fi
 
 echo "[DEBUG] Copying required input files to ${working_dir}"
-cp -r "${run_dir}/purple/*" ${working_dir}/
-cp -r "${run_dir}/linx/*" ${working_dir}/
+cp ${run_dir}/purple/* ${working_dir}/
+cp ${run_dir}/linx/* ${working_dir}/
 
 echo "[INFO] Generating SNV and signature data for ${sample_id}"
 
