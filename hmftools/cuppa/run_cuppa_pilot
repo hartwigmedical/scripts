@@ -29,12 +29,14 @@ echo "[INFO]  - CUPPA Reference data directory: ${cup_ref_dir}"
 if [[ ! -d ${working_dir} ]]; then
     echo "[DEBUG] Creating ${working_dir}"
     mkdir -p ${working_dir}
-    mkdir -p ${data_dir}
-    mkdir -p ${output_dir}
 else
     echo "[DEBUG] Wiping ${working_dir}"
     rm -r ${working_dir}/*
 fi
+
+echo "[DEBUG] Preparing ${working_dir} for usage"
+mkdir -p ${data_dir}
+mkdir -p ${output_dir}
 
 echo "[DEBUG] Copying required input files to ${data_dir}"
 cp -r ${run_dir}/purple/* ${data_dir}/
