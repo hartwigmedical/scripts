@@ -16,7 +16,7 @@ sig_analyser_jar=$(locate_pilot_sig_analyser)
 snv_vcf_file=$(locate_purple_somatics ${run_dir})
 sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
 
-cup_ref_dir=/data/experiments/cup/ref/
+cup_ref_dir=/data/experiments/cup/ref
 output_dir=${run_dir}/cuppa_pilot
 
 echo "[INFO] Running CUPPA analysis pipeline on ${run_dir}"
