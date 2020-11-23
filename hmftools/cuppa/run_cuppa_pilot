@@ -13,6 +13,9 @@ sample_id=$(load_tumor_sample_from_metadata ${run_dir})
 cuppa_jar=$(locate_pilot_cuppa)
 sig_analyser_jar=$(locate_pilot_sig_analyser)
 
+# TODO Check whether we need this param.
+sample_data_dir=${run_dir}/purple
+
 snv_vcf_file=$(locate_purple_somatics ${run_dir})
 sv_vcf_file=$(locate_purple_structural_variants ${run_dir})
 
