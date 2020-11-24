@@ -79,7 +79,7 @@ function log {
 }
 
 function warn {
-    log "[WARN] " "$1"
+    log "WARN" "$1"
 }
 
 function gridUsage {
