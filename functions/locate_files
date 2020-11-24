@@ -238,6 +238,24 @@ locate_pgx_pilot_genotype() {
     echo ${pgx_genotype_txt}
 }
 
+locate_pgx_pilot_vcf() {
+    local run_dir=$1
+    local pgx_dir=${run_dir}/pgx_pilot
+
+    local pgx_vcf=""
+
+    if [[ -d "${pgx_dir}" ]]; then
+        pgx_vcf=$(find -L ${pgx_dir} -type f -name "*_PGx.vcf")
+    fi
+
+    if [[ -z "${pgx_vcf}" ]]; then
+        echo "[ERROR] Unable to locate pgx VCF pilot in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${pgx_vcf}
+}
+
 ################################### WGS METRICS ####################################
 
 locate_wgs_metrics() {
