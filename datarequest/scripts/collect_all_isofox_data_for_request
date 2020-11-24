@@ -6,7 +6,7 @@ metadata_tsv=$1 && shift
 isofox_dir=$1 && shift
 
 cat ${metadata_tsv} | grep -v "^#" | cut -f2 | while read sample_name; do
-    source_set_path=/data/data_archive/rna_seq/200602_isofox/${sample_name}/isofox
+    source_set_path=/data/data_archive/rna_seq/201123_isofox/${sample_name}/isofox
     if [[ -d "${source_set_path}" ]]; then
         dest_set_path=${isofox_dir}/${sample_name}
 
