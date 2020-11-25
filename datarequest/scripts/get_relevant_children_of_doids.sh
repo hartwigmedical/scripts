@@ -28,7 +28,7 @@ echo ""
 
 mkdir temp
 
-all_doids=""
+all_doids=("")
 for input_doid in $(echo ${doids} | sed "s/,/ /g")
 do
     all_doids+=" ${input_doid} "
@@ -40,26 +40,31 @@ do
         all_doids+=" ${row} "
     done
 done
-all_doids=${all_doids} | sort | uniq
+all_doids=($(echo "${all_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
 
 
 execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > temp/doids_database.txt
+echo ""
 
-relevant_doids="("
+relevant_doids=("")
 while IFS= read -r database_doids
 do
-    database_doids=${database_doids} | sort | uniq
-    for doid in $all_doids
+    database_doids=$( echo ${database_doids} | sed 's/,/ /g' )
+    database_doids=($(echo "${database_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+    for doid in ${all_doids[@]}
     do
-        for database_doid in ${database_doids}
+        for database_doid in ${database_doids[@]}
         do
             if [[ ${doid} == ${database_doid} ]]; then
-                relevent_doids+=" ${doid}, "
+                relevant_doids+=" ${doid}, "
             fi
         done
     done
 done < temp/doids_database.txt
-relevant_doids+=")"
-echo ${relevent_doids}
+relevant_doids=${relevant_doids#" "}
+relevant_doids=${relevant_doids%", "}
+relevant_doids="WHERE doids IN (${relevant_doids})"
+echo "SQL WHERE statement to be included for datarequest:"
+echo ${relevant_doids}
 
 rm -r temp
