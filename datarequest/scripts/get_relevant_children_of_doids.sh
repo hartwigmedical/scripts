@@ -29,7 +29,7 @@ echo ""
 
 mkdir temp
 
-execute_sql_on_prod doids_database.sql > temp/doids_database.txt
+execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > temp/doids_database.txt
 
 
 
