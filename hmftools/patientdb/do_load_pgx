@@ -5,7 +5,6 @@ source locate_files
 sample=$1 && shift
 pgx_calls_txt=$1 && shift
 pgx_genotype_txt=$1 && shift
-pgx_vcf=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
@@ -20,6 +19,5 @@ java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientd
     -sample ${sample} \
     -pgx_calls_txt ${pgx_calls_txt} \
     -pgx_genotype_txt ${pgx_genotype_txt} \
-    -pgx_vcf ${pgx_vcf} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
