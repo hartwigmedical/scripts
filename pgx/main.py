@@ -288,12 +288,12 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                 if variant['rsid'] == item:
                     new_id['position_GRCh37'] = rs_ids[item]
                     new_id['rsid'] = item
-                    new_id['ref_GRCh37'] = variant['referenceAllele']
-                    new_id['alt_GRCh37'] = variant['referenceAllele']  # Assuming REF/REF
+                    new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
+                    new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
                     new_id['variant_annotation'] = "REF_CALL"
                     new_id['filter'] = "NO_CALL"
                     new_id['gene'] = gene
-                    new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF
+                    new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
                     new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
                     new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
                     ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
