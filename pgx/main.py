@@ -245,6 +245,11 @@ def process_exceptions(ids_found, panel):
 
 
 def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel):
+    rsid_to_gene_to_haplotype_variant = collections.defaultdict(dict)
+    for gene in haplotypes_info:
+        for variant in haplotypes_info[gene]['variants']:
+            rsid_to_gene_to_haplotype_variant[variant['rsid']][gene] = variant
+
     results = {}
     severity = {}
     drug_info = {}
@@ -261,7 +266,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             else:
                 ids_found_in_patient.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
                 ids_found_in_patient.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
-                ids_found_in_patient.at[index, 'position_GRCh38'] = ""
+
             # Fill in the rsid gaps, if annotation is missing on the location.
             if 'rsid' in row:
                 if row['rsid'] == '.':
@@ -273,6 +278,28 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                                 break
                     ids_found_in_patient.at[index, 'rsid'] = rs_to_paste
 
+            matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
+            GRCh38_locations = {
+                str(variant['chromosome']) + ":" + str(variant['positionGRCh38']) for variant in matching_variants
+            }
+
+            if len(GRCh38_locations) == 1:
+                GRCh38_location = GRCh38_locations.pop()
+                if pd.isna(row['position_GRCh38']):
+                    ids_found_in_patient.at[index, 'position_GRCh38'] = GRCh38_location
+                elif row['position_GRCh38'] != GRCh38_location:
+                    raise ValueError(
+                        "[ERROR] Inconsistent GRCh38 locations for variants:\n"
+                        "location from exceptions: " + row['position_GRCh38'] + "\n"
+                        "location from variants: " + GRCh38_location + "\n"
+                    )
+            elif len(GRCh38_locations) > 1:
+                matching_variants_string = ",".join([str(variant) for variant in matching_variants])
+                raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
+                                 "matching variants: " + matching_variants_string + "\n"
+                                 "GRCh38 locations: " + ", ".join(GRCh38_locations) + "\n")
+
+
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
@@ -283,20 +310,18 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     rs_ids = {key: val for key, val in rs_ids.items() if val not in ids_found_in_patient.position_GRCh37.tolist()}
     for item in rs_ids:
         new_id = {}
-        for gene in haplotypes_info:
-            for variant in haplotypes_info[gene]['variants']:
-                if variant['rsid'] == item:
-                    new_id['position_GRCh37'] = rs_ids[item]
-                    new_id['rsid'] = item
-                    new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
-                    new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
-                    new_id['variant_annotation'] = "REF_CALL"
-                    new_id['filter'] = "NO_CALL"
-                    new_id['gene'] = gene
-                    new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
-                    new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
-                    new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
-                    ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
+        for gene, variant in rsid_to_gene_to_haplotype_variant[item].items():
+            new_id['position_GRCh37'] = rs_ids[item]
+            new_id['rsid'] = item
+            new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
+            new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
+            new_id['variant_annotation'] = "REF_CALL"
+            new_id['filter'] = "NO_CALL"
+            new_id['gene'] = gene
+            new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
+            new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
+            new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+            ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
 
     # Now we want to process all the variants in terms of the alleles
     all_ids_in_panel = pd.concat([ids_found_in_patient, ids_not_found_in_patient], sort=True)
