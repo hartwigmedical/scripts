@@ -22,6 +22,10 @@ use constant FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR => qw(
     report_germline report_germline_level report_viral report_pgx ptum
 );
 
+use constant FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR => qw(
+    tumor_perc
+);
+
 ## These fields will be set to json boolean for json output
 use constant BOOLEAN_FIELDS => qw(
     shallowseq report_germline report_viral report_pgx
@@ -324,12 +328,12 @@ sub addIsoAndPrepExperimentIdsToSamples{
                 my $old = $store{$sample_id}{$store_key};
                 my $new = $date;
 
-                if ($old eq $new){ 
-                    warn "[INFO]   Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
-                }
-                elsif ($old ne NACHAR){
-                    warn "[WARN]   Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
-                }
+                #if ($old eq $new){
+                #    warn "[INFO]   Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
+                #}
+                #elsif ($old ne NACHAR){
+                #    warn "[WARN]   Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
+                #}
                 $store{$sample_id}{$store_key} = $new;
             }
         }
@@ -534,6 +538,16 @@ sub addAccessSamplesToSamples{
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
                 foreach my $field ( FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR ){
+                    if ( exists $ancestor->{ $field } ){
+                        $object->{ $field } = $ancestor->{ $field };
+                    }else{
+                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
+                    }
+                }
+                foreach my $field ( FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR ){
+                    if ( (exists $object->{ $field }) and ($object->{ $field } ne "") ){
+                        next;
+                    }
                     if ( exists $ancestor->{ $field } ){
                         $object->{ $field } = $ancestor->{ $field };
                     }else{
