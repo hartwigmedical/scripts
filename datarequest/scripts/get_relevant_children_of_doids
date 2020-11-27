@@ -2,7 +2,7 @@
 
 print_usage(){
     echo "-----"
-    echo " Descr: Get relevant children of doids"
+    echo " Descr: Get relevant children of doids. IMPORTANT: please select a doid from the three in our documentation (https://hartwigmedical.github.io/documentation/doid.html)."
     echo " Usage: $(basename $0) -d <doids> "
     echo " Exmpl: $(basename $0) -d '1324,14534'"
     echo "-----"
@@ -22,6 +22,19 @@ if [[  -z "${doids}" ]]; then
     print_usage
 fi
 
+for input_doid in $(echo ${doids} | sed "s/,/ /g")
+do
+   if [[ "$input_doid" == "162" ]]; then
+        echo "[INFO] DOID_162 involves all cancers. All samples in the database are children (so no filter needed). Script will end."
+        exit 1
+   fi
+   if [[ "$input_doid" == "0060072" ]]; then
+        echo "[INFO] DOID_0060072 involves all begnign neoplasms and is not a relevant filter. Script will end."
+        exit 1
+   fi
+done
+
+
 echo ""
 echo "[START] get_relevant_children_of_doids: $(date +"%y%m%d (%T)")"
 echo ""
@@ -30,6 +43,10 @@ mkdir temp
 
 execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > temp/doids_database.txt
 echo ""
+
+################## Print info requested doid(s) #################
+
+
 
 ###################
 
@@ -74,4 +91,47 @@ relevant_doids="WHERE doids IN (${relevant_doids})"
 echo ${relevant_doids}
 
 ###################
+
+###################
+
+for input_doid in $(echo ${doids} | sed "s/,/ /g")
+do
+   children_doids=("")
+   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}/children"
+   json_doid=$( curl -s ${url_doid} )
+   for row in $( echo ${json_doid} | jq -r '.[].terms[]? | .iri' )
+   do
+       row=${row#"http://purl.obolibrary.org/obo/DOID_"}
+       children_doids+=" ${row} "
+   done
+   children_doids=($(echo "${children_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+
+    relevant_doids=("")
+    while IFS= read -r database_doids
+    do
+        database_doids=$( echo ${database_doids} | sed 's/,/ /g' )
+        database_doids=($(echo "${database_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+        for database_doid in ${database_doids[@]}
+        do
+          for children_doids in ${children_doids[@]}
+          do
+             if [[ ${database_doid} == ${children_doids} ]]; then
+                  relevant_doids+=" ${database_doid} "
+             fi
+          done
+        done
+    done < temp/doids_database.txt
+done
+
+############
+
+relevant_doids=($(echo "${relevant_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+relevant_doids=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
+echo "SQL WHERE statement to be included for datarequest:"
+relevant_doids="WHERE doids IN (${relevant_doids})"
+echo ${relevant_doids}
+
+###################
+
+
 rm -r temp
