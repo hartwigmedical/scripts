@@ -546,9 +546,9 @@ sub addAccessSamplesToSamples{
                 }
                 foreach my $field ( FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR ){
                     if ( (exists $object->{ $field }) and ($object->{ $field } ne "") ){
+                        ## Field not empty so keep existing content
                         next;
-                    }
-                    if ( exists $ancestor->{ $field } ){
+                    }elsif ( exists $ancestor->{ $field } ){
                         $object->{ $field } = $ancestor->{ $field };
                     }else{
                         die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
