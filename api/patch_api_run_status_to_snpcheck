@@ -6,12 +6,12 @@ run_name=$1
 new_status="SnpCheck"
 
 if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
-  echo "-----"
-  echo "Descr: Patches run status to ${new_status}"
-  echo "Usage: $(basename $0) \$run_name"
-  echo "   Eg: $(basename $0) 200101_HMFregXXXX_FR123_FR456_SAMPLE"
-  echo "-----"
-  exit 1
+    echo "-----"
+    echo "Descr: Patches run status to ${new_status}"
+    echo "Usage: $(basename $0) \$run_name"
+    echo "   Eg: $(basename $0) 200101_HMFregXXXX_FR123_FR456_SAMPLE"
+    echo "-----"
+    exit 1
 fi
 
 info "Querying api to find run by name (${run_name})"

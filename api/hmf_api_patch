@@ -7,12 +7,12 @@ oid=$2 # eg 1000
 patch=$3 # eg status="new-status"
 
 if [[ $# -ne 3 || -z "${class}" || -z "${oid}" || -z "${patch}" ]]; then
-  echo "---"
-  echo "Usage: $(basename $0) \S{object-class} \S{object-id} \S{patch-string}"
-  echo "   Eg: $(basename $0) flowcells 1000 \"status=Failed\""
-  echo " Note: Requires you to press a key before PATCH is applied"
-  echo "---"
-  exit 1
+    echo "---"
+    echo "Usage: $(basename $0) \S{object-class} \S{object-id} \S{patch-string}"
+    echo "   Eg: $(basename $0) flowcells 1000 \"status=Failed\""
+    echo " Note: Requires you to press a key before PATCH is applied"
+    echo "---"
+    exit 1
 fi
 
 api_dir="/data/common/dbs/api_credentials"
@@ -21,19 +21,20 @@ api_key="${api_dir}/api.key"
 api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 
 main () {
-  info "Searching for api object (class=${class}, id=${oid})"
-  result="$(hmfapi GET ${api_url}/${class}/${oid})"
-  [[ $? -eq 0 ]] || die "API GET failed (${api_url}/${class}/${oid})"
-  info "Found object:"
-  echo "$result" | jq '.'
-  info "About to PATCH object with ${patch}"
-  read -r -p "Press y + enter to apply patch..." response
-  if [[ "${response}" == "y" ]]; then
-    info "Patching object with ${patch}"
-    hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
-  else
-    info "Patch cancelled"
-  fi
+    info "Searching for api object (class=${class}, id=${oid})"
+    result="$(hmfapi GET ${api_url}/${class}/${oid})"
+    [[ $? -eq 0 ]] || die "API GET failed (${api_url}/${class}/${oid})"
+
+    info "Found object:"
+    echo "$result" | jq '.'
+    info "About to PATCH object with ${patch}"
+    read -r -p "Press y + enter to apply patch..." response
+    if [[ "${response}" == "y" ]]; then
+        info "Patching object with ${patch}"
+        hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
+    else
+        info "Patch cancelled"
+    fi
 }
 
 hmfapi () {
