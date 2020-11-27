@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+sample_cuppa_report=$1 && shift
+nextcloud_dir="STAGING/CUPPA-reports"
+
+for cuppa_report in /data/experiments/cup/reports/${sample_cuppa_report}_cup_report.pdf; do
+    echo "[INFO] Uploading ${cuppa_report} to Nextcloud for CUPPA reports"
+    do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${cuppa_report}"
+done
