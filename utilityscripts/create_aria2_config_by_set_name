@@ -214,9 +214,12 @@ create_run_specific_files () {
         gsutil -u "${gcp_project}" -q stat "${internal_url}"
         if [[ $? -eq 1 ]]; then
             msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
-            echo "[ERROR] Cannot access file (${internal_url})"
-            echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
-            exit 1
+            #echo "[ERROR] Cannot access file (${internal_url})"
+            #echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
+            #exit 1
+            echo "[WARN] Cannot access file so skipping (${internal_url})"
+            echo "[WARN] ErrCode=${?} ErrMsg=\"${msg}\""
+            continue
         fi
 
         ## get actual pre-signed URL
