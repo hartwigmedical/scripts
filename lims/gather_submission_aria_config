@@ -42,14 +42,14 @@ cat ${create_job} | parallel -j5 -I% --max-args 1 % > ${create_log} 2>&1
 echo "[INFO] Printing any non INFO lines from log"
 cat ${create_log} | grep -v '\[INFO\]'
 
-echo "[INFO] Concat all run aria.txt files to ${out_config}"
+echo "[INFO] Checking log for errors with check_log_file (will print if any found)"
+check_log_file "${create_log}"
+
+echo "[INFO] Joining all run aria.txt files to ${out_config}"
 find ${output_dir} -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
 
-echo "[INFO] Action: Double check log for errors"
-echo " check_log_file ${create_log}"
-
 echo "[INFO] Action: Check one URL manually in browser"
-echo " cat ${out_config} | grep https | tail -1"
+cat "${out_config}" | grep https | tail -1
 
 echo "[INFO] Action: If all OK you can upload final config to Nextcloud with:"
 echo " upload_files_to_nextcloud_research ${out_config}"
