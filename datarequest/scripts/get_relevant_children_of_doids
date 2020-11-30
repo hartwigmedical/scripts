@@ -49,7 +49,7 @@ echo ""
 ###################
 
 echo "----------------------------------------"
-echo "INFO of input doid:"
+echo "INFO of input doid(s):"
 for input_doid in $(echo ${doids} | sed "s/,/ /g")
 do
     url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}"
@@ -109,7 +109,7 @@ relevant_doids_str="WHERE \
 echo ${relevant_doids_str}
 echo ""
 echo "----------------------------------------"
-echo "INFO of input doid + the children at this moment in the databas:"
+echo "INFO of input doid(s) + the children at this moment in the databas:"
 for relevant_doid in ${relevant_doids[@]}
 do
    url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${relevant_doid}"
