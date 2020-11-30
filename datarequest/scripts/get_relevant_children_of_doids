@@ -39,16 +39,29 @@ echo ""
 echo "[START] get_relevant_children_of_doids: $(date +"%y%m%d (%T)")"
 echo ""
 
-mkdir temp
+mkdir doids_temp
 
-execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > temp/doids_database.txt
+execute_sql_on_prod /data/common/repos/scripts/datarequest/sql/doids_database.sql > doids_temp/doids_database.txt
 echo ""
 
 ################## Print info requested doid(s) #################
 
-
-
 ###################
+
+echo "----------------------------------------"
+echo "INFO of input doid:"
+for input_doid in $(echo ${doids} | sed "s/,/ /g")
+do
+    url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}"
+    json_doid=$( curl -s ${url_doid} )
+    echo "--"
+    echo ${json_doid} | jq -r '.label'
+    echo ${json_doid} | jq -r '.iri'
+done
+echo "----------------------------------------"
+echo ""
+
+############
 
 relevant_doids=("")
 while IFS= read -r database_doids
@@ -61,7 +74,7 @@ do
     for database_doid in ${database_doids[@]}
     do
        parent_doids=("")
-       url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${database_doid}/parents"
+       url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${database_doid}/ancestors"
        json_doid=$( curl -s ${url_doid} )
        for row in $( echo ${json_doid} | jq -r '.[].terms[]? | .iri' )
        do
@@ -72,6 +85,7 @@ do
 
        for input_doid in $(echo ${doids} | sed "s/,/ /g")
        do
+          relevant_doids+=" ${input_doid} "
           for parent_doid in ${parent_doids[@]}
           do
              if [[ ${input_doid} == ${parent_doid} ]]; then
@@ -81,57 +95,111 @@ do
         done
     done
 
-    ############
+done < doids_temp/doids_database.txt
 
-done < temp/doids_database.txt
+
 relevant_doids=($(echo "${relevant_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-relevant_doids=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
+relevant_doids_str=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
 echo "SQL WHERE statement to be included for datarequest:"
-relevant_doids="WHERE doids IN (${relevant_doids})"
-echo ${relevant_doids}
-
-###################
-
-###################
-
-for input_doid in $(echo ${doids} | sed "s/,/ /g")
+echo "(note: only of children that are at this moment in the database, so not future proof so should be updated every time new data is shared!)"
+relevant_doids_str="WHERE doids IN (${relevant_doids_str})"
+echo ${relevant_doids_str}
+echo ""
+echo "----------------------------------------"
+echo "INFO of input doid + the children at this moment in the databas:"
+for relevant_doid in ${relevant_doids[@]}
 do
-   children_doids=("")
-   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}/children"
+   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${relevant_doid}"
    json_doid=$( curl -s ${url_doid} )
-   for row in $( echo ${json_doid} | jq -r '.[].terms[]? | .iri' )
-   do
-       row=${row#"http://purl.obolibrary.org/obo/DOID_"}
-       children_doids+=" ${row} "
-   done
-   children_doids=($(echo "${children_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-
-    relevant_doids=("")
-    while IFS= read -r database_doids
-    do
-        database_doids=$( echo ${database_doids} | sed 's/,/ /g' )
-        database_doids=($(echo "${database_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-        for database_doid in ${database_doids[@]}
-        do
-          for children_doids in ${children_doids[@]}
-          do
-             if [[ ${database_doid} == ${children_doids} ]]; then
-                  relevant_doids+=" ${database_doid} "
-             fi
-          done
-        done
-    done < temp/doids_database.txt
+   echo "--"
+   echo ${json_doid} | jq -r '.label'
+   echo ${json_doid} | jq -r '.iri'
 done
+echo "----------------------------------------"
+echo ""
 
-############
+rm -r doids_temp
 
-relevant_doids=($(echo "${relevant_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
-relevant_doids=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
-echo "SQL WHERE statement to be included for datarequest:"
-relevant_doids="WHERE doids IN (${relevant_doids})"
-echo ${relevant_doids}
+
+
 
 ###################
 
-
-rm -r temp
+#
+#
+#children_doids=("")
+#echo "-----"
+#echo "INFO OF DOIDS REQUESTED:"
+#for input_doid in $(echo ${doids} | sed "s/,/ /g")
+#do
+#   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}"
+#   json_doid=$( curl -s ${url_doid} )
+#   echo "--"
+#   echo ${json_doid} | jq -r '.iri'
+#   echo ${json_doid} | jq -r '.label'
+#   ###
+#   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}/children"
+#   json_doid=$( curl -s ${url_doid} )
+#   for row in $( echo ${json_doid} | jq -r '.[].terms[]? | .iri' )
+#   do
+#       row=${row#"http://purl.obolibrary.org/obo/DOID_"}
+#       children_doids+=" ${row} "
+#   done
+#   ###
+#   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${input_doid}/descendants"
+#   json_doid=$( curl -s ${url_doid} )
+#   for row in $( echo ${json_doid} | jq -r '._embedded[]? | .[] | .iri' )
+#   do
+#       row=${row#"http://purl.obolibrary.org/obo/DOID_"}
+#       children_doids+=" ${row} "
+#   done
+#done
+#echo "-----"
+#echo ""
+#children_doids=($(echo "${children_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+#children_doids_str=$( echo "${children_doids[@]}" |  sed "s/ /, /g" )
+#echo "SQL WHERE statement to be included for datarequest (all children (so future proof):"
+#children_doids_str="WHERE doids IN (${children_doids_str})"
+#echo ${children_doids_str}
+#echo ""
+#
+#relevant_doids=("")
+#while IFS= read -r database_doids
+#do
+#    database_doids=$( echo ${database_doids} | sed 's/,/ /g' )
+#    database_doids=($(echo "${database_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+#    for database_doid in ${database_doids[@]}
+#    do
+#       for children_doid in ${children_doids[@]}
+#       do
+#          if [[ "${database_doid}" == "${children_doid}" ]]; then
+#              relevant_doids+=" ${database_doid} "
+#              echo ${database_doid}
+#          fi
+#        done
+#     done
+#done < temp/doids_database.txt
+#
+#############
+#
+#relevant_doids=($(echo "${relevant_doids[@]}" | tr ' ' '\n' | sort -u | tr '\n' ' '))
+#relevant_doids_str=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
+#echo "SQL WHERE statement to be included for datarequest (only children in database)):"
+#relevant_doids_str="WHERE doids IN (${relevant_doids_str})"
+#echo ${relevant_doids_str}
+#echo "-----"
+#echo "INFO OF CHILDREN CURRENTLY IN DATABASE:"
+#for relevant_doid in ${relevant_doids[@]}
+#do
+#   url_doid="https://www.ebi.ac.uk/ols/api/ontologies/doid/terms/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FDOID_${relevant_doid}"
+#   json_doid=$( curl -s ${url_doid} )
+#   echo "--"
+#   echo ${json_doid} | jq -r '.iri'
+#   echo ${json_doid} | jq -r '.label'
+#done
+#echo "-----"
+#echo ""
+#
+####################
+#
+#rm -r temp
