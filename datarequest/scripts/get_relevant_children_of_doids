@@ -103,9 +103,9 @@ relevant_doids_str=$( echo "${relevant_doids[@]}" |  sed "s/ /, /g" )
 echo "SQL WHERE statement to be included for datarequest:"
 echo "(note: only of children that are at this moment in the database, so not future proof so should be updated every time new data is shared!)"
 relevant_doids_str="WHERE \
-                        SUBSTRING_INDEX(doids, ",", 1) IN (${relevant_doids_str}) OR\
-                        SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ",", 2),",",-1) IN (${relevant_doids_str}) OR\
-                        SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ",", 3),",",-1) IN (${relevant_doids_str});"
+                        SUBSTRING_INDEX(doids, ',', 1) IN (${relevant_doids_str}) OR\
+                        SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ',', 2),',',-1) IN (${relevant_doids_str}) OR\
+                        SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ',', 3),',',-1) IN (${relevant_doids_str});"
 echo ${relevant_doids_str}
 echo ""
 echo "----------------------------------------"
