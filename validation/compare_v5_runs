@@ -173,8 +173,11 @@ echo "[INFO] TOOL VERSIONS"
 for tool_name in "${!tool_names[@]}"; do 
     base_vsn=${tool_versions["${tool_name}_BASE"]}
     test_vsn=${tool_versions["${tool_name}_TEST"]}
-    echo "  ${tool_name} BASE=${base_vsn}" 
-    echo "  ${tool_name} TEST=${test_vsn}" 
+    if [[ "${base_vsn}" == "${test_vsn}" ]]; then
+        echo "[INFO]   Identical version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+    else
+        echo "[WARN]   Different version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+    fi
 done
 
 echo ""
