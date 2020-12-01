@@ -100,33 +100,29 @@ base_som_var=$(locate_purple_somatics "${base_run_path}")
    test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")
    base_bach=$(locate_reportable_bachelor_variants "${base_run_path}")
 
-echo "[INFO] BASE GERMLINE: ${base_grm_vcf}"
-echo "[INFO] TEST GERMLINE: ${test_grm_vcf}"
-echo "[INFO] BASE SOMATIC:  ${base_som_var}"
-echo "[INFO] TEST SOMATIC:  ${test_som_var}"
-echo "[INFO] BASE SV:       ${base_sv_var}"
-echo "[INFO] TEST SV:       ${test_sv_var}"
-echo "[INFO] BASE CHORD:    ${base_chord}"
-echo "[INFO] TEST CHORD:    ${test_chord}"
-echo "[INFO] BASE VIRAL:    ${base_vir_ins}"
-echo "[INFO] TEST VIRAL:    ${test_vir_ins}"
-echo "[INFO] BASE BACHELOR: ${base_bach}"
-echo "[INFO] TEST BACHELOR: ${test_bach}"
-
-files_to_check=(
-    "${test_grm_vcf}"
+all_base_files=(
     "${base_grm_vcf}"
-    "${test_chord}"
     "${base_chord}"
-    "${test_vir_ins}"
     "${base_vir_ins}"
-    "${test_bach}"
+    "${base_som_var}"
+    "${base_sv_var}"
     "${base_bach}"
 )
 
-for file in "${files_to_check[@]}"; do
-    if [[ ! -f "${file}" ]]; then
-        echo "[WARN] File does not exist ($file)" && exit 1
+all_test_files=(
+    "${test_grm_vcf}"
+    "${test_chord}"
+    "${test_vir_ins}"
+    "${test_som_var}"
+    "${test_sv_var}"
+    "${test_bach}"
+)
+
+for file in "${all_base_files[@]}" "${all_test_files[@]}"; do
+    if [[ -f "${file}" ]]; then
+        echo "[INFO]   File found ($file)"
+    else
+        echo "[WARN]   File does not exist ($file)" && exit 1
     fi
 done
 

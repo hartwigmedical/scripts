@@ -72,7 +72,7 @@ pdf_name="${submission}_${p_name}.pdf"
 
 printf '%s\n' "# Project metadata table for report (${pdf_name})" \
 "${r_name}" "${r_mail}" "${d_mail}"  "${p_name}" "${submission}" \
-"${hmf_count}" "${p_type}" "${total_yield_gbase} GBase" "" >> "${repo_file}"
+"${api_count}" "${p_type}" "${total_yield_gbase} GBase" "" >> "${repo_file}"
 
 printf '%s\n' "# Sample table for report:" >> "${repo_file}"
 cat "${samp_file}" | grep -v ^# | while read line; do
