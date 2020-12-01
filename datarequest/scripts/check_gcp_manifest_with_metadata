@@ -201,13 +201,12 @@ if [[ ${dna_ind} == 1 ]]; then
     echo "of which are CRAM:"
     cat temp_GCP_check/sampleId_CRAM_GCP.tsv | wc -l
     cram_files=$( cat temp_GCP_check/sampleId_CRAM_GCP.tsv | wc -l )
-    cram_files_splitted=$(expr ${cram_files} / 2)
-    if [[ $( cat temp_GCP_check/sampleId_metadata.tsv | wc -l ) > ${cram_files_splitted} ]]; then
+    if [[ $( cat temp_GCP_check/sampleId_metadata.tsv | wc -l ) > ${cram_files} ]]; then
         echo "[ERROR]  More samples in metadata than CRAM files (CRAM files should be 2 times the number of samples). Normal/tumor missing of one sample? Please check. IDs are below:"
         comm -2 -3 <(sort temp_GCP_check/sampleId_metadata.tsv | uniq ) <(sort temp_GCP_check/sampleId_CRAM_GCP.tsv | uniq )
         sort temp_GCP_check/sampleId_CRAM_GCP.tsv | uniq -c | grep -v '^ *1 ' | sed -e 's/^[[:space:]]*//' | awk /^[1]/
     fi
-    if [[ $( cat temp_GCP_check/sampleId_metadata.tsv | wc -l ) < ${cram_files_splitted} ]]; then
+    if [[ $( cat temp_GCP_check/sampleId_metadata.tsv | wc -l ) < ${cram_files} ]]; then
         echo "[ERROR] More CRAM files than samples in metadata (CRAM files should be 2 times the number of samples). Double CRAM file? Please check. IDs are below:"
         comm -1 -3 <(sort temp_GCP_check/sampleId_metadata.tsv | uniq ) <(sort temp_GCP_check/sampleId_CRAM_GCP.tsv | uniq )
         sort temp_GCP_check/sampleId_CRAM_GCP.tsv | uniq -c | grep -v '^ *1 ' | sed -e 's/^[[:space:]]*//' | awk /^[3-9]/
