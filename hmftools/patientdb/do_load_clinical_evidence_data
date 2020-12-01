@@ -8,7 +8,7 @@ credentials=$1 && shift
 patient_db_jar=$1 && shift
 
 knowledgebase_dir=/data/common/dbs/knowledgebases/output
-tumor_location_tsv=/data/common/dbs/clinical_data/curated_tumor_locations.tsv
+primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
 
 purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
@@ -21,11 +21,10 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading evidence data for ${sample}"
 
-# TODO Rename tumor_location_tsv to primary_tumor_tsv on upgrade to patient-db v3.52
 java -Xmx16G -Xms4G -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadEvidenceData \
     -sample ${sample} \
     -knowledgebase_dir ${knowledgebase_dir} \
-    -tumor_location_tsv ${tumor_location_tsv} \
+    -primary_tumor_tsv ${primary_tumor_tsv} \
     -somatic_variant_vcf ${somatic_variant_vcf} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
