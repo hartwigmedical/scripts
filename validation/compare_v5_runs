@@ -120,6 +120,10 @@ files_to_check=(
     "${base_chord}"
     "${test_vir_ins}"
     "${base_vir_ins}"
+    "${test_som_var}"
+    "${base_som_var}"
+    "${test_sv_var}"
+    "${base_sv_var}"
     "${test_bach}"
     "${base_bach}"
 )
