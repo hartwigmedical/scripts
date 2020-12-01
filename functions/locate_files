@@ -361,7 +361,7 @@ locate_purple_pilot_somatics() {
 
 locate_amber_directory() {
     local run_dir=$1
-    local amber_dir=${run_dir}/amber/
+    local amber_dir=${run_dir}/amber
 
     if [[ ! -d "${amber_dir}" ]]; then
         echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
