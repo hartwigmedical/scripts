@@ -4,7 +4,7 @@ SELECT amberAnonymous.hmfSampleId, left(amberAnonymous.hmfSampleId, 9) as hmfPat
     sample.sampleId, patient.patientIdentifier AS patientId, not(isnull(rna.sampleId)) as hasRNA, setName,
     sample.arrivalDate as sampleArrivalDate, patient.blacklisted, baseline.registrationDate, baseline.informedConsentDate, baseline.deathDate,
     baseline.primaryTumorLocation, baseline.primaryTumorSubLocation, baseline.primaryTumorType, baseline.primaryTumorSubType,
-    baseline.primaryTumorExtraDetails, doidView.doids, snomedView.snomedIds,
+    baseline.primaryTumorExtraDetails, doidView.doids, snomedView.snomedConceptIds,
     baseline.hospital, baseline.gender, baseline.birthYear,
     baseline.hasSystemicPreTreatment, baseline.hasRadiotherapyPreTreatment,
     baseline.preTreatments, baseline.preTreatmentsType, baseline.preTreatmentsMechanism,
@@ -21,7 +21,7 @@ FROM sample
     LEFT JOIN baseline ON patient.id = baseline.patientId
     LEFT JOIN (SELECT patientId, group_concat(doid separator ",") AS doids FROM doidNode GROUP BY 1) AS doidView
         ON patient.id = doidView.patientId
-    LEFT JOIN (SELECT patientId, group_concat(snomedId separator ",") AS snomedIds FROM snomed GROUP BY 1) AS snomedView
+    LEFT JOIN (SELECT patientId, group_concat(snomedConceptId separator ",") AS snomedConceptIds FROM snomed GROUP BY 1) AS snomedView
         ON patient.id = snomedView.patientId
     LEFT JOIN biopsy ON biopsy.sampleId = sample.sampleId
     LEFT JOIN treatment ON treatment.biopsyId = biopsy.id
