@@ -181,7 +181,7 @@ locate_pgx_resource_dir() {
 }
 
 locate_vicc_json() {
-    echo ${base_path}/dbs/vicc/all.json
+    echo ${base_path}/dbs/serve/vicc/all.json
 }
 
 locate_pilot_iclusion_trial_tsv() {
