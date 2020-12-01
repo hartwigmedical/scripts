@@ -1,0 +1,8 @@
+SELECT
+    DISTINCT patientId AS '#patientId'
+FROM
+    datarequest WHERE
+    SUBSTRING_INDEX(doids, ',', 1) IN (3068, 3069, 3070, 3181) OR
+    SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ',', 2),',',-1) IN (3068, 3069, 3070, 3181) OR
+    SUBSTRING_INDEX(SUBSTRING_INDEX(doids, ',', 3),',',-1) IN (3068, 3069, 3070, 3181)
+ORDER BY 1;
