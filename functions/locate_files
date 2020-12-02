@@ -180,10 +180,6 @@ locate_pgx_resource_dir() {
     echo ${base_path}/dbs/pgx/
 }
 
-locate_vicc_json() {
-    echo ${base_path}/dbs/serve/vicc/all.json
-}
-
 locate_pilot_iclusion_trial_tsv() {
     echo ${base_path}/dbs/iclusion/iclusion_trials_pilot.tsv
 }
@@ -192,8 +188,24 @@ locate_prod_iclusion_trial_tsv() {
     echo ${base_path}/dbs/iclusion/iclusion_trials_prod.tsv
 }
 
-locate_pilot_compassionate_use_programs_tsv() {
-    echo ${base_path}/dbs/knowledgebase_generator/compassionate_use_programs.tsv
+locate_vicc_json() {
+    echo ${base_path}/dbs/serve/static_sources/vicc/all.json
+}
+
+locate_compassionate_use_programs_tsv() {
+    echo ${base_path}/dbs/serve/static_sources/compassionate_use/compassionate_use_programs.tsv
+}
+
+locate_docm_tsv() {
+    echo ${base_path}/dbs/serve/static_sources/docm/docm_v3.2.tsv
+}
+
+locate_hartwig_cohort_tsv() {
+    echo ${base_path}/dbs/serve/static_sources/hartwig/hartwig_cohort.tsv
+}
+
+locate_hartwig_curated_tsv() {
+    echo ${base_path}/dbs/serve/static_sources/hartwig/hartwig_curated.tsv
 }
 
 locate_ref_genome_fasta_file() {
