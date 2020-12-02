@@ -6,24 +6,24 @@
 source ${HOME}/.bashrc
 
 echo "[INFO] Archiving Sequencer Archive"
-do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 2982
+do_archive_directory_to_gcp /data/sequencer_archive sequencer_archive 3180
 
 echo "[INFO] Archiving Patient Reports"
-do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 6014
-do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 544
-do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 59
+do_archive_directory_to_gcp /data/cpct/final_reports patient_reports/final 6400
+do_archive_directory_to_gcp /data/cpct/old_cpct_reports patient_reports/old 540
+do_archive_directory_to_gcp /data/core/final_reports patient_reports/core 80
 
 echo "[INFO] Archiving Data Requests"
-do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 111
+do_archive_directory_to_gcp /data/data_archive/datarequests data_requests 125
 
 echo "[INFO] Archiving Submissions"
-do_archive_directory_to_gcp /data/submissions submissions 722
+do_archive_directory_to_gcp /data/submissions submissions 850
 
 echo "[INFO] Archiving Shallow Seq Pipelines"
-do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 1087
+do_archive_directory_to_gcp /data/data_archive/shallow_seq_pipelines shallow_seq_pipelines 1250
 
 echo "[INFO] Archiving SnpCheck Data"
 do_archive_directory_to_gcp /data/common/snpcheck snpcheck 6
 
 echo "[INFO] Archiving Samplesheets"
-do_archive_directory_to_gcp /data/samplesheets samplesheets 2828
+do_archive_directory_to_gcp /data/samplesheets samplesheets 3000
