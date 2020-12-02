@@ -108,12 +108,12 @@ locate_pilot_knowledgebase_importer() {
     echo ${base_path}/tools/knowledgebase-importer_pilot/knowledgebase-importer.jar
 }
 
-locate_prod_vicc_knowledgebase_importer() {
+locate_prod_vicc_importer() {
     echo ${base_path}/tools/vicc-knowledgebase-importer_v1.0/vicc-knowledgebase-importer.jar
 }
 
-locate_pilot_vicc_knowledgebase_importer() {
-    echo ${base_path}/tools/vicc-knowledgebase-importer_pilot/vicc-knowledgebase-importer.jar
+locate_pilot_vicc_importer() {
+    echo ${base_path}/tools/vicc-importer_pilot/vicc-importer.jar
 }
 
 locate_prod_iclusion_importer() {
