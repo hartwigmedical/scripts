@@ -24,7 +24,7 @@ else
     echo "[INFO] Output dir created: ${output_dir}!"
 fi
 
-java -Xms4G -Xmx8G -jar ${serve_jar} \
+java -Xms2G -Xmx8G -jar ${serve_jar} \
     -vicc_json ${vicc_json} \
     -iclusion_trial_tsv ${iclusion_trial_tsv} \
     -docm_tsv ${docm_tsv} \
@@ -34,4 +34,4 @@ java -Xms4G -Xmx8G -jar ${serve_jar} \
     -ref_genome_fasta_file ${ref_genome_fasta_file} \
     -driver_gene_tsv ${driver_gene_tsv} \
     -output_dir ${output_dir} \
-    -skip_hotspot_resolving
+    "$@"

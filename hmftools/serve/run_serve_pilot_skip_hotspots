@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+run_serve_pilot -skip_hotspot_resolving
