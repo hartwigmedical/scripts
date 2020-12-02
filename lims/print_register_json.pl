@@ -195,7 +195,7 @@ sub processSample{
     my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
     my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
-    my $priority   = getPriority( $sample );
+    my $priority   = getPriorityForSample( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
     
     ## reset 0 yield to 1 base in order to avoid samples being ready directly
@@ -439,11 +439,11 @@ sub getValueByKey{
     }
 }
 
-sub getPriority{
-    my ($info, $key) = @_;
+sub getPriorityForSample{
+    my ($sample_info) = @_;
     ## unfortunately cannot err on key absence 
     ## because not all samples have the prio property
-    if ( defined $info->{ 'priority' } and $info->{ 'priority' } =~ /yes/i ){
+    if ( defined $sample_info->{ 'priority' } and $sample_info->{ 'priority' } =~ /yes/i ){
         return $YES_PIPELINE_PRIO;
     }
     else{

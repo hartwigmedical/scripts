@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use POSIX;
 use Data::Dumper;
 use File::Basename;
 use Getopt::Long;
@@ -33,6 +34,8 @@ my %OUT_FIELDS_PER_TYPE = (
   'dateTable'   => [qw(sample_name sampling_date arrival_date)],
 );
 my $available_types = join(", ", sort keys %OUT_FIELDS_PER_TYPE);
+my $last_update_epoch = (stat($LIMS_JSON))[9]; 
+my $last_update = strftime( "%Y-%m-%d %H:%M:%S", localtime($last_update_epoch));
 
 my $HELP_TEXT =<<HELP;
 
@@ -40,6 +43,8 @@ my $HELP_TEXT =<<HELP;
     Parses LIMS JSON file and prints information about the
     requested samples / submissions to screen. Uses regex
     matching of filters by default.
+
+  Updated: $last_update
     
   Usage
     $SCRIPT -type samples
