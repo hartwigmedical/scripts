@@ -17,11 +17,11 @@ driver_gene_tsv=$(locate_driver_gene_panel_tsv)
 output_dir=/data/common/dbs/serve/pilot_output
 
 if [[ -d "${output_dir}" ]]; then
-    echo "[INFO] output dir exist and will be cleaned!"
+    echo "[INFO] Output dir exist and will be cleaned!"
     rm -r ${output_dir}/*
 else
     mkdir -p ${output_dir}
-    echo "[INFO] dir created: ${output_dir}!"
+    echo "[INFO] Output dir created: ${output_dir}!"
 fi
 
 java -Xms4G -Xmx8G -jar ${serve_jar} \
