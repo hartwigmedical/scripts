@@ -55,15 +55,14 @@ my @ids = @ARGV;
 my $HELP =<<HELP;
 
   Description
-    Parses LIMS JSON file and writes JSON(s) to perform 
-    registering in HMF API. It does check whether the to be
-    written JSON already exists in either the output location
-    or the "register done" location.
-    
-    Done location: $JSON_DONE_DIR
+    Creates the JSON(s) to register set/run at HMF API.
+    It checks whether a run already exists in either the
+    "output" or "registered" location:
+      Output = $JSON_BASE_DIR
+      Registered = $JSON_DONE_DIR
     
   Usage
-    $SCRIPT -samplesheet \${samplesheetpath}
+    $SCRIPT -samplesheet \${path-to-samplesheet}
       eg: $SCRIPT -samplesheet /data/run/SampleSheet.csv
     
     $SCRIPT \${sample_id} [\${sample_id2} \${sample_id_n}]
