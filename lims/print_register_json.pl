@@ -13,7 +13,6 @@ use 5.010.000;
 
 my $DATETIME = localtime;
 my $SCRIPT = basename $0;
-my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
 
 my $GER_INI = "SingleSample.ini";
@@ -101,12 +100,10 @@ say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
-my @msg = ();
-my $existingJsons = listExistingJsons($JSON_BASE_DIR, $JSON_DONE_DIR);
 
 foreach my $sample_id ( @ids ){
     say "[INFO] Processing $sample_id";
-    my $return = processSample( $sample_id, $samples, \%stats );
+    my $return = processSample( $sample_id, $samples);
     $stats{ $return }++;
 }
 
@@ -180,13 +177,13 @@ sub addSamplesFromSamplesheet{
 }
 
 sub processSample{
-    my ($sample_id, $lims, $stats) = @_;
+    my ($sample_id, $lims_samples) = @_;
     my @warn_msg = ();
-    if ( not exists $lims->{ $sample_id } ){
+    if ( not exists $lims_samples->{ $sample_id } ){
         warn "[WARN]   RESULT: Sample not present in LIMS ($sample_id)\n";
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
-    my $sample = $lims->{ $sample_id };
+    my $sample = $lims_samples->{ $sample_id };
     
     my $name       = getValueByKey( $sample, 'sample_name' ); # eg CPCT02010000R
     my $barcode    = getValueByKey( $sample, 'sample_id' ); # eg FR12345678
@@ -194,7 +191,6 @@ sub processSample{
     my $submission = getValueByKey( $sample, 'submission' ); # eg HMFregCPCT
     my $analysis   = getValueByKey( $sample, 'analysis_type' ); # eg Somatic_T
     my $entity     = getValueByKey( $sample, 'entity' ); # eg HMFreg0001
-    my $label      = getValueByKey( $sample, 'label' ); # eg CPCT
     my $priority   = getPriorityForSample( $sample );
     my $yield      = getValueByKey( $sample, 'yield' ) * $YIELD_F;
     
@@ -260,12 +256,12 @@ sub processSample{
         if ( exists $sample->{ ref_sample_id } and $sample->{ ref_sample_id } ne "" ){
             ## for somatic samples (biopsy) a ref sample needs to be defined
             my $ref_sample_id = $sample->{ ref_sample_id };
-            $ref_obj = getSomaticRSampleByStringForField( $lims, $ref_sample_id, 'sample_id' );
+            $ref_obj = getSomaticRSampleByStringForField( $lims_samples, $ref_sample_id, 'sample_id' );
         }
         else{
             ## fallback for for CPCT etc the partner can be found by patient name + R
             my $ref_string = $patient.'R';
-            $ref_obj = getSomaticRSampleByStringForField( $lims, $ref_string, 'sample_name' );
+            $ref_obj = getSomaticRSampleByStringForField( $lims_samples, $ref_string, 'sample_name' );
         }
 
         if ( not defined $ref_obj ){
@@ -448,31 +444,6 @@ sub getPriorityForSample{
     }
     else{
         return $NO_PIPELINE_PRIO;
-    }
-}
-
-sub addEntityToJsonData{
-    my ($json_data, $submission, $patient, $dict1, $dict2) = @_;
-    
-    ## CPCT and DRUP are continues: create entity by centerid
-    if ( $patient =~ m/^(CPCT|DRUP|WIDE)(\d{2})(\d{2})(\d{4})$/ ){
-        my ( $umbrella_study, $study_id, $center_id, $patient_id ) = ( $1, $2, $3, $4 );
-        if ( exists $dict1->{$center_id} ){
-            my $center_name = $dict1->{$center_id};
-            $json_data->{ 'entity' } = $umbrella_study."_".$center_name;
-        }
-        else{
-            die "[ERROR] center id not found in hash ($center_id)\n";
-        }
-    }
-    ## otherwise entity must have been set by LAB team in $SUBMISSION_TO_ENTITY_FILE
-    elsif( exists $dict2->{$submission} ){
-        my $entity = $dict2->{$submission};
-        $json_data->{ 'entity' } = $entity;
-    }
-    ## no entity found: should not happen
-    else{
-        die "[ERROR] entity not found for submission ($submission) of patient ($patient)\n";
     }
 }
 
