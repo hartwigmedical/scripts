@@ -18,6 +18,7 @@ my $NA_CHAR = "NA";
 my $GER_INI = "SingleSample.ini";
 my $SOM_INI = "Somatic.ini";
 my $SHA_INI = "ShallowSeq.ini";
+my $RNA_INI = "Rna.ini";
 
 my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples (CPCT/DRUP/WIDE/CORE)
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
@@ -222,12 +223,8 @@ sub processSample{
 
     my $date = localtime->strftime('%y%m%d');
 
-    ## fill json based on analysis type
-    if ( $analysis eq 'RnaAnalysis' ){
-        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
-        return "NoJsonMade_rnaTypeNotSupported";
-    }
-    elsif ( $analysis eq 'BCL' ){
+    ## Setup json content based on analysis type
+    if ( $analysis eq 'BCL' ){
         warn "[WARN]   RESULT: Type $analysis not yet supported\n";
         return "NoJsonMade_bclTypeNotSupported";
     }
@@ -247,6 +244,14 @@ sub processSample{
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
+    }
+    elsif ( $analysis eq 'RnaAnalysis' ){
+        my $set = join( "_", $date, "HMFregRNA", $barcode, $name );
+        say "[INFO]   SET: $set";
+        $json_data{ 'ini' } = "$RNA_INI";
+        $json_data{ 'set_name' } = "$set";
+        $json_data{ 'entity' } = "$entity";
+        addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor-rna', $q30, $yield, $use_existing_ref );
     }
     elsif ( $analysis eq 'Somatic_T' ){
         
