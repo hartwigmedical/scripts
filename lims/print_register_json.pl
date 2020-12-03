@@ -245,7 +245,7 @@ sub processSample{
         $json_data{ 'entity' } = "$entity";
         addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'ref', $q30, $yield, $use_existing_ref );
     }
-    elsif ( $analysis eq 'RnaAnalysis' ){
+    elsif ( $analysis eq 'RNAanalysis' ){
         my $set = join( "_", $date, "HMFregRNA", $barcode, $name );
         say "[INFO]   SET: $set";
         $json_data{ 'ini' } = "$RNA_INI";
