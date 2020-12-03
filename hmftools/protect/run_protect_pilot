@@ -15,7 +15,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 output_dir=${run_dir}/protect_pilot
 
 deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
-serve_actionability_dir=/data/common/dbs/serve/actionability
+serve_actionability_dir=/data/common/dbs/serve/pilot_output
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
