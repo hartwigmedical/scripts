@@ -19,8 +19,8 @@ my $GER_INI = "SingleSample.ini";
 my $SOM_INI = "Somatic.ini";
 my $SHA_INI = "ShallowSeq.ini";
 
-my $Q30_LIM = 75; # q30 limit is currently fixed for all CPCT/DRUP samples
-my $YIELD_F = 1e9; # LAB lims contains yield in Gbase not base
+my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples (CPCT/DRUP/WIDE/CORE)
+my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
 
 ## could make these more fine grained (lower number is higher prio)
 my $NO_PIPELINE_PRIO = 100;
@@ -82,9 +82,7 @@ print $HELP and exit(0) if $opt{ help };
 print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet };
 die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
-## -----
 ## MAIN
-## -----
 say "[INFO] START of script $SCRIPT";
 say "[INFO] DateTime: $DATETIME";
 
@@ -160,11 +158,17 @@ sub addSamplesFromSamplesheet{
             my $id = $record{ 'Sample_ID' };
             my $name = $record{ 'Sample_Name' };
             my $submission = $record{ 'Sample_Project' };
-            if ( $submission eq "HMFregVAL" or $submission eq "HMFregGIAB" ){
+
+            ## VAL and GIAB samples are not present in LIMS so need manual work
+            if ($submission eq "HMFregVAL"){
                 warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
-                next();
             }
-            $data{ $id } = 1;
+            elsif ($submission eq "HMFregGIAB"){
+                warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
+            }
+            else{
+                $data{ $id } = 1;
+            }
         }
     }
     close $samplesheet_fh;
