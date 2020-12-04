@@ -112,8 +112,13 @@ main() {
     info "Executing diff_v5_COLO829v003_runs"
     "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
 
-    info "TODO NEXT:"
-    info " 1) Inspect log files in ${logs_dir}"
+    db_load_script="load_run_into_pipeline_v5_validation_db"
+    info "TODO manual steps:"
+    info " 1) Inspect all log files in ${logs_dir}"
+    info " 2) Execute the \"before\" SQL queries"
+    info " 3) Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &"
+    info " 4) Execute the \"after\" SQL queries"
+    info " 5) Inspect all SQL log files in ${logs_dir}"
     info "Finished with $(basename $0)"
 }
 
