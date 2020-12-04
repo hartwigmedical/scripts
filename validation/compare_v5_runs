@@ -68,8 +68,8 @@ done
 
 echo ""
 echo "===== CRAM Headers CHECK"
-base_header_file="${logs_dir_path}/base_tum_cram_header.txt"
-test_header_file="${logs_dir_path}/test_tum_cram_header.txt"
+base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
+test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
 samtools view -H $base_tum_cram | grep '^@RG' > "${base_header_file}"
 samtools view -H $test_tum_cram | grep '^@RG' > "${test_header_file}"
 if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
