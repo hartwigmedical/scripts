@@ -17,8 +17,8 @@ test_meta_file="${test_run_path}/metadata.json"
 if [[ "$#" -ne 3 ]]; then
     echo "-----"
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
-    echo " Usage: $(basename $0) \$path_to_base_run \$path_to_test_run \$path_to_logs_dir"
-    echo " Examp: $(basename $0) /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 /path/to/logs"
+    echo " Usage: $(basename "$0") \$path_to_base_run \$path_to_test_run \$path_to_logs_dir"
+    echo " Examp: $(basename "$0") /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 /path/to/logs"
     echo "-----"
     exit 1
 fi
@@ -31,19 +31,21 @@ if [[ ! -f "${test_pip_vsn_file}" ]]; then echo "[ERROR] File not found (${test_
 base_pip_vsn=$(cat "${base_pip_vsn_file}")
 test_pip_vsn=$(cat "${test_pip_vsn_file}")
 
-base_ref_sample_name=$(cat "${base_meta_file}" | jq -r '.reference.sampleName')
-test_ref_sample_name=$(cat "${test_meta_file}" | jq -r '.reference.sampleName')
-
-base_tum_sample_name=$(cat "${base_meta_file}" | jq -r '.tumor.sampleName')
-test_tum_sample_name=$(cat "${test_meta_file}" | jq -r '.tumor.sampleName')
+base_ref_sample_name=$(jq -r '.reference.sampleName' "${base_meta_file}")
+test_ref_sample_name=$(jq -r '.reference.sampleName' "${test_meta_file}")
+base_tum_sample_name=$(jq -r '.tumor.sampleName' "${base_meta_file}")
+test_tum_sample_name=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
 base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
 test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
-
 base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
 test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
-
-cram_files=($base_ref_cram $test_ref_cram $base_tum_cram $test_tum_cram)
+cram_files=(
+  "$base_ref_cram"
+  "$test_ref_cram"
+  "$base_tum_cram"
+  "$test_tum_cram"
+)
 
 echo ""
 echo "===== Overview"
@@ -70,12 +72,12 @@ echo ""
 echo "===== CRAM Headers CHECK"
 base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
 test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
-samtools view -H $base_tum_cram | grep '^@RG' > "${base_header_file}"
-samtools view -H $test_tum_cram | grep '^@RG' > "${test_header_file}"
+samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
+samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
 if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
     echo "[INFO] OK Identical CRAM RG lines in headers"
 else
-    echo "[WARN] DIFFERENT CRAM RG lines in headers (see ${truth_header} and ${base_header}"
+    echo "[WARN] DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
 fi
 
 echo ""
@@ -91,13 +93,13 @@ for tool_name in ${tools[*]}; do
         echo "[WARN] DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool ${tool_name}"
     fi
 
-    find ${base_run_path}/${tool_name} -mindepth 1 -maxdepth 1 -type f | \
+    find "${base_run_path}/${tool_name}" -mindepth 1 -maxdepth 1 -type f | \
     grep -vP "(vcf|tbi|gz|log|sh|cram|crai|bam|bai)$" | \
-    while read base_file_path; do 
+    while read -r base_file_path; do
         file_name=$(basename "${base_file_path}"); 
         test_file_path="${test_run_path}/${tool_name}/${file_name}"
-        base_count=$(cat "${base_file_path}" | wc -l)
-        test_count=$(cat "${test_file_path}" | wc -l)
+        base_count=$(wc -l "${base_file_path}")
+        test_count=$(wc -l "${test_file_path}")
         if [[ ${base_count} -eq ${test_count} ]]; then
             echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
         else
@@ -167,25 +169,25 @@ test_grm_var_count=$(unpigz -c "${test_grm_vcf}" | grep -cv ^#)
 base_grm_var_count=$(unpigz -c "${base_grm_vcf}" | grep -cv ^#)
 test_grm_pass_var_count=$(unpigz -c "${test_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 base_grm_pass_var_count=$(unpigz -c "${base_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-test_tool_vsn=$( cat ${test_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
-base_tool_vsn=$( cat ${base_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
+test_tool_vsn=$( awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
+base_tool_vsn=$( awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
 
 declare -A tool_names
 declare -A tool_versions
 
-while read name_vsn_str; do 
+while read -r name_vsn_str; do
     tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
     tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
     tool_names[${tool_name}]="true"
     tool_versions["${tool_name}_BASE"]="${tool_vsn}"
-done < <(cat ${base_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
+done < <(awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
-while read name_vsn_str; do 
+while read -r name_vsn_str; do
     tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
     tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
     tool_names["${tool_name}"]="true"
     tool_versions["${tool_name}_TEST"]="${tool_vsn}"
-done < <(cat ${test_run_path}/run.log | awk '/Versions of tools/,/\]/' | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
+done < <(awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
 echo "[INFO] TOOL VERSIONS"
 for tool_name in "${!tool_names[@]}"; do 
@@ -228,15 +230,15 @@ echo "  BASE SV VAR NON-PON COUNT: ${base_sv_non_pon_var_count}"
 echo "  TEST SV VAR NON-PON COUNT: ${test_sv_non_pon_var_count}"
 
 echo "[INFO] CHORD file content"
-cat ${base_chord} | awk '{print "  BASE: "$0}'
-cat ${test_chord} | awk '{print "  TEST: "$0}'
+awk '{print "  BASE: "$0}' "${base_chord}"
+awk '{print "  TEST: "$0}' "${test_chord}"
 
 echo "[INFO] LINX file content"
-cat ${base_vir_ins} | awk '{print "  BASE: "$0}'
-cat ${test_vir_ins} | awk '{print "  TEST: "$0}'
+awk '{print "  BASE: "$0}' "${base_vir_ins}"
+awk '{print "  TEST: "$0}' "${test_vir_ins}"
 
 echo "[INFO] BACHELOR file content"
-cat ${base_bach} | cut -f 1-2,4-7 | tr "\t" "," | awk '{print "  BASE: "$0}'
-cat ${test_bach} | cut -f 1-2,4-7 | tr "\t" "," | awk '{print "  TEST: "$0}'
+cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "  BASE: "$0}'
+cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "  TEST: "$0}'
 
 echo ""
