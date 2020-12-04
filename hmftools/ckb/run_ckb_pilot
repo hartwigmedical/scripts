@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+ckb_jar=$(locate_pilot_ckb)
+
+ckb_dir=/data/common/dbs/ckb/201127_flex_dump/
+
+clinicalTrialsDir=$( ${ckb_dir}/clinicalTrials )
+drugClassesDir=$( ${ckb_dir}/drugClasses )
+drugsDir=$( ${ckb_dir}/drugs )
+genesDir=$( ${ckb_dir}/genes )
+globalTherapyApprovalStatusesDir=$( ${ckb_dir}/globalTherapyApprovalStatuses )
+indicationsDir=$( ${ckb_dir}/indications )
+molecularProfilesDir=$( ${ckb_dir}/molecularProfiles )
+referencesDir=$( ${ckb_dir}/references )
+therapiesDir=$( ${ckb_dir}/therapies )
+treatmentApproachesDir=$( ${ckb_dir}/treatmentApproaches )
+variantsDir=$( ${ckb_dir}/variants )
+
+java -Xms2G -Xmx8G -jar ${ckb_jar} \
+    -clinical_trials_dir ${clinicalTrialsDir} \
+    -drug_classes_dir ${drugClassesDir} \
+    -drugs_dir ${drugsDir} \
+    -genes_dir ${genesDir} \
+    -global_therapy_approval_statuses_dir ${globalTherapyApprovalStatusesDir} \
+    -indications_dir ${indicationsDir} \
+    -molecular_profiles_dir ${molecularProfilesDir} \
+    -references_dir ${referencesDir} \
+    -therapies_dir ${therapiesDir} \
+    -treatment_approaches_dir ${treatmentApproachesDir} \
+    -variants_dir ${variantsDir} \
+    -log_debug \
+    "$@"

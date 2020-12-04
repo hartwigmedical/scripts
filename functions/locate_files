@@ -128,6 +128,10 @@ locate_pilot_serve() {
     echo ${base_path}/tools/serve_pilot/serve.jar
 }
 
+locate_pilot_ckb() {
+    echo ${base_path}/tools/ckb_importer_pilot/ckb.jar
+}
+
 locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
