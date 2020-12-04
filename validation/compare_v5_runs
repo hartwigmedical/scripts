@@ -35,7 +35,7 @@ base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_n
 test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
 base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
 test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
-cram_files=(base_ref_cram test_ref_cram base_tum_cram test_tum_cram)
+cram_files=($base_ref_cram $test_ref_cram $base_tum_cram $test_tum_cram)
 
 echo ""
 echo "===== Overview"
@@ -50,7 +50,7 @@ echo ""
 echo "===== CRAM existance CHECK"
 for cram_file in ${cram_files[*]}; do
     if [[ -f "${cram_file}" ]]; then
-        echo "[INFO] OK File found (${cram})"
+        echo "[INFO] OK File found (${cram_file})"
     else
         echo "[ERROR] File does not exist (${cram_file})"
         exit 1
