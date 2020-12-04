@@ -98,8 +98,8 @@ for tool_name in ${tools[*]}; do
     while read -r base_file_path; do
         file_name=$(basename "${base_file_path}"); 
         test_file_path="${test_run_path}/${tool_name}/${file_name}"
-        base_count=$(wc -l "${base_file_path}")
-        test_count=$(wc -l "${test_file_path}")
+        base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
+        test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
         if [[ ${base_count} -eq ${test_count} ]]; then
             echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
         else
