@@ -194,7 +194,7 @@ for tool_name in "${!tool_names[@]}"; do
     if [[ "${base_vsn}" == "${test_vsn}" ]]; then
         echo "[INFO]   Identical version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
     else
-        echo "[WARN]   Different version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+        echo "[WARN]   DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
     fi
 done
 
