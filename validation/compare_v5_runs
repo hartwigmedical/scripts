@@ -4,37 +4,45 @@ source locate_files
 
 base_run_path=$1
 test_run_path=$2
+logs_dir_path=$3
 
 tools=(amber bachelor chord cobalt health_checker linx purple sage gridss gripss)
 
 base_pip_vsn_file="${base_run_path}/pipeline.version"
 test_pip_vsn_file="${test_run_path}/pipeline.version"
+
 base_meta_file="${base_run_path}/metadata.json"
 test_meta_file="${test_run_path}/metadata.json"
 
-if [[ "$#" -ne 2 ]]; then 
+if [[ "$#" -ne 3 ]]; then
     echo "-----"
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
-    echo " Usage: $(basename $0) \$path_to_base_run \$path_to_test_run"
-    echo " Examp: $(basename $0) /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9"
+    echo " Usage: $(basename $0) \$path_to_base_run \$path_to_test_run \$path_to_logs_dir"
+    echo " Examp: $(basename $0) /path/to/COLO829v003_v5.8 /path/to/COLO829v003_v5.9 /path/to/logs"
     echo "-----"
     exit 1
 fi
 if [[ ! -d "${base_run_path}" ]]; then echo "[ERROR] Directory not found (${base_run_path})" && exit 1; fi
 if [[ ! -d "${test_run_path}" ]]; then echo "[ERROR] Directory not found (${test_run_path})" && exit 1; fi
+if [[ ! -d "${logs_dir_path}" ]]; then echo "[ERROR] Directory not found (${logs_dir_path})" && exit 1; fi
 if [[ ! -f "${base_pip_vsn_file}" ]]; then echo "[ERROR] File not found (${base_pip_vsn_file})" && exit 1; fi
 if [[ ! -f "${test_pip_vsn_file}" ]]; then echo "[ERROR] File not found (${test_pip_vsn_file})" && exit 1; fi
 
 base_pip_vsn=$(cat "${base_pip_vsn_file}")
 test_pip_vsn=$(cat "${test_pip_vsn_file}")
+
 base_ref_sample_name=$(cat "${base_meta_file}" | jq -r '.reference.sampleName')
 test_ref_sample_name=$(cat "${test_meta_file}" | jq -r '.reference.sampleName')
+
 base_tum_sample_name=$(cat "${base_meta_file}" | jq -r '.tumor.sampleName')
 test_tum_sample_name=$(cat "${test_meta_file}" | jq -r '.tumor.sampleName')
+
 base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
 test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
+
 base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
 test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
+
 cram_files=($base_ref_cram $test_ref_cram $base_tum_cram $test_tum_cram)
 
 echo ""
@@ -45,6 +53,7 @@ echo "[INFO] BASE version: ${base_pip_vsn}"
 echo "[INFO] TEST version: ${test_pip_vsn}"
 echo "[INFO] BASE sample: ${base_tum_sample_name}"
 echo "[INFO] TEST sample: ${test_tum_sample_name}"
+echo "[INFO] Log output dir: ${logs_dir_path}"
 
 echo ""
 echo "===== CRAM existance CHECK"
@@ -59,18 +68,15 @@ done
 
 echo ""
 echo "===== CRAM Headers CHECK"
-base_header="${logs_dir}/cram_header_truth.txt"
-test_header="${logs_dir}/cram_header_new.txt"
-samtools view -H $base_tum_cram| grep '^@RG' > "${base_header}"
-samtools view -H $test_tum_cram| grep '^@RG' > "${test_header}"
-echo "[INFO] Comparing headers of ${$base_tum_cram} and $test_tum_cram"
-if [[ $(diff "${base_header}" "${test_header}" | wc -l) -eq 0 ]]; then
-    echo "[INFO]   OK CRAM headers identical"
+base_header_file="${logs_dir_path}/base_tum_cram_header.txt"
+test_header_file="${logs_dir_path}/test_tum_cram_header.txt"
+samtools view -H $base_tum_cram | grep '^@RG' > "${base_header_file}"
+samtools view -H $test_tum_cram | grep '^@RG' > "${test_header_file}"
+if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
+    echo "[INFO] OK Identical CRAM RG lines in headers"
 else
-    echo "[WARN]   CRAM headers different (check ${truth_header} and ${base_header}"
+    echo "[WARN] DIFFERENT CRAM RG lines in headers (see ${truth_header} and ${base_header}"
 fi
-
-
 
 echo ""
 echo "===== Directory CHECKS"

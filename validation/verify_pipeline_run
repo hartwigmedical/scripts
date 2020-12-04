@@ -107,7 +107,7 @@ main() {
     "${jobs_dir}/locate_files_test" "${new_run}" > "${logs_dir}/locate_files_test.log" 2>&1
 
     info "Executing compare_v5_runs"
-    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" > "${logs_dir}/compare_v5_runs.log" 2>&1
+    "${jobs_dir}/compare_v5_runs" "${truth_run}" "${new_run}" "${logs_dir}" > "${logs_dir}/compare_v5_runs.log" 2>&1
 
     info "Executing diff_v5_COLO829v003_runs"
     "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
