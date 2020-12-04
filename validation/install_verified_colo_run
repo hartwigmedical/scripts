@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Installs a new COLO829T Somatic pipeline in validation data archive"
+    echo " Usage: $(basename $0) -e <experiment_dir> -n <target_name>"
+    echo " Examp: $(basename $0) -e /path/to/YYMMDD_p5_verification_v5.14 YYMMDD_COLO829v003_v5.16"
+    echo " Notes:"
+    echo "   - Run with nohup since this involves moving large files!"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':e:n:' flag; do
+    case "${flag}" in
+        e) exp_dir_path=${OPTARG} ;;
+        n) target_name=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${exp_dir_path}" || -z "${target_name}" ]]; then
+    print_usage
+fi
+
+main() {
+    info "Starting with script $(basename $0)"
+
+    exp_dir_path=$(realpath "${exp_dir_path}")
+    
+    ## some input sanity checks
+    [[ ! "${target_name}" =~ \/ ]] || die "Target name contains a slash (${target_name})"
+    [[ -d "${exp_dir_path}" ]] || die "Experiment dir does not exist (${exp_dir_path})"
+
+    info "Constructing all required variables"
+    target_root="/data/data_archive/validation_data"
+    target_path="${target_root}/pipeline_runs/${target_name}"
+    latest_path="${target_root}/latest_tooling_pipeline_runs/${target_name}"
+
+    runs_dir="${exp_dir_path}/runs"
+    jobs_dir="${exp_dir_path}/jobs"
+    logs_dir="${exp_dir_path}/logs"
+ 
+    info "Selecting latest run in runs dir ${runs_dir}"
+    source_path=$(find "${runs_dir}" -mindepth 1 -maxdepth 1 -type d | tail -1)
+    source_name=$(basename "${source_path}")
+    install_log="${logs_dir}/install.log"
+    
+    ## some more sanity checks
+    [[ -d "${source_path}" ]] || die "No valid source run dir path at critical point (${source_path})"
+    [[ ! -d "${target_path}" ]] || die "Target run dir path already exists (${target_path})"
+
+    info "Metadata:"
+    info " Experiment dir: ${exp_dir_path}"
+    info " Source path: ${source_path}" 
+    info " Target path: ${target_path}" 
+    
+    info " Target path: ${target_path}" 
+
+    info "Move source (${source_path}) to target (${target_path})"
+    echo " mv $source_path $target_path"
+
+    info "Sync without CRAMs from target (${target_path}) to source (${source_path})"
+    echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '$source_path/'"
+
+    info "Sync without CRAMs to latest (${latest_path})"
+    echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '${latest_path}/'"
+
+    info "Load data into reference DB:"
+    load_job=${jobs_dir}/load_run_into_reference_validation_sets_db
+    load_log=${logs_dir}/load_run_into_reference_validation_sets_db.log
+    echo " nohup ${load_job} ${latest_path} > ${load_log} &"
+
+    #info "TODO NEXT:"
+    info "TODO Inspect load log ${load_log}"
+    info "TODO Cleanup previous COLO run from latest_tooling"
+    info "TODO Cleanup CRAMs from previous COLO run in pipeline_runs"
+    info "TODO make sure all is chowned to root:"
+    echo " chown_directory_contents_to_root ${target_root}/pipeline_runs"
+    info "Finished with $(basename $0)"
+}
+
+copy_file() {
+    local file_path=$1 && shift
+    local target_dir=$1 && shift
+
+    if [[ ! -f "${file_path}" ]]; then
+        die "File not found (${file_path})"
+    else
+        info "Copying file ($file_path)"
+        cp "${file_path}" "${jobs_dir}"
+    fi
+    
+    [[ $? -eq 0 ]] || die "Unable to copy file (${file_path}) to dir (${target_dir})"
+}
+
+die() { 
+    echo "[ERROR] $(date +"%y%m%d %T") $@" >&2
+    exit 1 
+}
+warn() { 
+    echo "[WARN] $(date +"%y%m%d %T") $@" >&2
+}
+info() { 
+    echo "[INFO] $(date +"%y%m%d %T") $@"
+}
+
+main
