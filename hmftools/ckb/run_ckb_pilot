@@ -6,17 +6,17 @@ ckb_jar=$(locate_pilot_ckb)
 
 ckb_dir=/data/common/dbs/ckb/201127_flex_dump
 
-clinicalTrialsDir=$( ${ckb_dir}/clinicalTrials )
-drugClassesDir=$( ${ckb_dir}/drugClasses )
-drugsDir=$( ${ckb_dir}/drugs )
-genesDir=$( ${ckb_dir}/genes )
-globalTherapyApprovalStatusesDir=$( ${ckb_dir}/globalTherapyApprovalStatuses )
-indicationsDir=$( ${ckb_dir}/indications )
-molecularProfilesDir=$( ${ckb_dir}/molecularProfiles )
-referencesDir=$( ${ckb_dir}/references )
-therapiesDir=$( ${ckb_dir}/therapies )
-treatmentApproachesDir=$( ${ckb_dir}/treatmentApproaches )
-variantsDir=$( ${ckb_dir}/variants )
+clinicalTrialsDir=${ckb_dir}/clinicalTrials
+drugClassesDir=${ckb_dir}/drugClasses
+drugsDir=${ckb_dir}/drugs
+genesDir=${ckb_dir}/genes
+globalTherapyApprovalStatusesDir=${ckb_dir}/globalTherapyApprovalStatuses
+indicationsDir=${ckb_dir}/indications
+molecularProfilesDir=${ckb_dir}/molecularProfiles
+referencesDir=${ckb_dir}/references
+therapiesDir=${ckb_dir}/therapies
+treatmentApproachesDir=${ckb_dir}/treatmentApproaches
+variantsDir=${ckb_dir}/variants
 
 java -Xms2G -Xmx8G -jar ${ckb_jar} \
     -clinical_trials_dir ${clinicalTrialsDir} \
