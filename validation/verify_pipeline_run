@@ -64,6 +64,7 @@ main() {
         "/data/common/repos/scripts/hmftools/patientreporter/create_patient_report_for_run"
         "/data/common/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
         "/data/common/repos/scripts/functions/test/locate_files_test"
+        "/data/common/repos/scripts/functions/test/run_all_sql_verification_jobs"
     )
     sql_jobs=(
         "${jobs_source_path}/check_update_time.sql"
@@ -115,9 +116,9 @@ main() {
     db_load_script="load_run_into_pipeline_v5_validation_db"
     info "TODO manual steps:"
     info " 1) Inspect all log files in ${logs_dir}"
-    info " 2) Execute the \"before\" SQL queries"
+    info " 2) Execute \"before\" queries (see run_all_sql_verification_jobs in ${jobs_dir})"
     info " 3) Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &"
-    info " 4) Execute the \"after\" SQL queries"
+    info " 4) Execute \"after\" queries (see run_all_sql_verification_jobs in ${jobs_dir})"
     info " 5) Inspect all SQL log files in ${logs_dir}"
     info "Finished with $(basename $0)"
 }
@@ -172,6 +173,17 @@ check_metadata_json() {
             info "OK field found in metadata (${field})"
         fi
     done
+}
+
+print_sql_code() {
+    local output_file=$1 && shift
+    local log_file=$1 && shift
+    echo "find ${jobs_dir} -type f -name \"*.sql\" | while read sql_file ; do"
+    echo "  sql_file_name=\"$(basename $sql_file)\" "
+    echo "  log_file=\"${logs_dir}/before_load_\${sql_file_name}.log\" "
+    echo "  echo \"[INFO] Executing \$sql_file_name (log: \$log_file)\" "
+    echo "  execute_sql_on_prod \"\$sql_file\" > \"\${log_file}\" "
+    echo "done"
 }
 
 die() { 
