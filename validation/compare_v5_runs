@@ -49,13 +49,13 @@ cram_files=(
 
 echo ""
 echo "===== Overview"
+echo "[INFO] LOGS dir path: ${logs_dir_path}"
 echo "[INFO] BASE run path: ${base_run_path}"
 echo "[INFO] TEST run path: ${test_run_path}"
 echo "[INFO] BASE version: ${base_pip_vsn}"
 echo "[INFO] TEST version: ${test_pip_vsn}"
 echo "[INFO] BASE sample: ${base_tum_sample_name}"
 echo "[INFO] TEST sample: ${test_tum_sample_name}"
-echo "[INFO] Log output dir: ${logs_dir_path}"
 
 echo ""
 echo "===== CRAM existance CHECK"
