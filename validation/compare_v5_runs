@@ -31,9 +31,11 @@ base_ref_sample_name=$(cat "${base_meta_file}" | jq -r '.reference.sampleName')
 test_ref_sample_name=$(cat "${test_meta_file}" | jq -r '.reference.sampleName')
 base_tum_sample_name=$(cat "${base_meta_file}" | jq -r '.tumor.sampleName')
 test_tum_sample_name=$(cat "${test_meta_file}" | jq -r '.tumor.sampleName')
-
-test_ref_reads_file="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
-test_tum_reads_file="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
+base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
+test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
+base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
+test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
+cram_files=(base_ref_cram test_ref_cram base_tum_cram test_tum_cram)
 
 echo ""
 echo "===== Overview"
@@ -45,16 +47,30 @@ echo "[INFO] BASE sample: ${base_tum_sample_name}"
 echo "[INFO] TEST sample: ${test_tum_sample_name}"
 
 echo ""
-echo "===== CRAM CHECK"
-echo "[INFO] TEST ref sample CRAM: ${test_ref_reads_file}"
-echo "[INFO] TEST tum sample CRAM: ${test_tum_reads_file}"
-if [[ ! -f "${test_ref_reads_file}" ]]; then
-    echo "[ERROR] File does not exist (${test_ref_reads_file})"
-    exit 1
-elif [[ ! -f "${test_tum_reads_file}" ]]; then
-    echo "[ERROR] File does not exist (${test_tum_reads_file})"
-    exit 1
+echo "===== CRAM existance CHECK"
+for cram_file in ${cram_files[*]}; do
+    if [[ -f "${cram_file}" ]]; then
+        echo "[INFO] OK File found (${cram})"
+    else
+        echo "[ERROR] File does not exist (${cram_file})"
+        exit 1
+    fi
+done
+
+echo ""
+echo "===== CRAM Headers CHECK"
+base_header="${logs_dir}/cram_header_truth.txt"
+test_header="${logs_dir}/cram_header_new.txt"
+samtools view -H $base_tum_cram| grep '^@RG' > "${base_header}"
+samtools view -H $test_tum_cram| grep '^@RG' > "${test_header}"
+echo "[INFO] Comparing headers of ${$base_tum_cram} and $test_tum_cram"
+if [[ $(diff "${base_header}" "${test_header}" | wc -l) -eq 0 ]]; then
+    echo "[INFO]   OK CRAM headers identical"
+else
+    echo "[WARN]   CRAM headers different (check ${truth_header} and ${base_header}"
 fi
+
+
 
 echo ""
 echo "===== Directory CHECKS"
