@@ -4,7 +4,7 @@ source locate_files
 
 run_dir=$1 && shift
 
-input_dir=${run_dir}/linx/
+input_dir=${run_dir}/linx
 
 linx_jar=$(locate_prod_linx)
 
