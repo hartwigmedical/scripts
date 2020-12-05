@@ -591,54 +591,47 @@ sub addAccessSamplesToSamples{
         else{
             warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
         }
-
-        ## All other sample names should follow certain formats
-        if ( $name =~ /^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}/ms ){
-            my ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
-                
-            $object->{ 'label' }   = $study;
-            $object->{ 'patient' } = $patient_id;
-            
-            if ( $is_rna ){
-                $object->{ 'analysis_type' } = "RNAanalysis";
-            }elsif( $tum_or_ref eq 'T' ){
-                $object->{ 'analysis_type' } = "Somatic_T";
-            }elsif( $tum_or_ref eq 'R' ){
-                $object->{ 'analysis_type' } = "Somatic_R";
-            }else{
-                $object->{ 'analysis_type' } = 'Unknown';
-            }
-            
-            ## CORE is handled per case/submission
-            if ( $study eq 'CORE' ){
-                my $submission_id = $object->{ 'submission' };
-                ## specifically check for non-ref samples if submission is defined
-                if ( $submission_id eq '' ){
-                    if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
-                        warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
-                    }
-                    next;
-                }
-                $object->{ 'entity' } = $submission_id;
-                $object->{ 'project_name' } = $submission_id;
-            }
-            ## All other samples are clinical study based (CPCT/DRUP/WIDE)
-            elsif ( exists $centers_dict->{ $center } ){
-                my $centername = $centers_dict->{ $center };
-                my $original_submission = $object->{ 'submission' };
-                my $register_submission = 'HMFreg' . $study;
-                $object->{ 'original_submission' } = $original_submission;
-                $object->{ 'submission' } = $register_submission;
-                $object->{ 'project_name' } = $register_submission;
-                $object->{ 'entity' } = join( "_", $study, $centername );
-            }
-            else {
-                warn "[WARN] SKIPPING sample because not is core and center id unknown \"$center\" (id:$id name:$name)\n";
-                next;
-            }
+        
+        $object->{ 'label' }   = $study;
+        $object->{ 'patient' } = $patient_id;
+        
+        if ( $is_rna ){
+            $object->{ 'analysis_type' } = "RNAanalysis";
+        }elsif( $tum_or_ref eq 'T' ){
+            $object->{ 'analysis_type' } = "Somatic_T";
+        }elsif( $tum_or_ref eq 'R' ){
+            $object->{ 'analysis_type' } = "Somatic_R";
+        }else{
+            $object->{ 'analysis_type' } = 'Unknown';
         }
-        else{
-            warn "[WARN] SKIPPING sample from Access lims because of unknown sample name format (id:$id name:$name)\n" and next;
+            
+        ## CORE is handled per case/submission
+        if ( $study eq 'CORE' ){
+            my $submission_id = $object->{ 'submission' };
+            ## specifically check for non-ref samples if submission is defined
+            if ( $submission_id eq '' ){
+               if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
+                   warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+               }
+               ## we only print warning for non R samples but skip them altogether
+               next;
+            }
+            $object->{ 'entity' } = $submission_id;
+            $object->{ 'project_name' } = $submission_id;
+        }
+        ## All other samples are clinical study based (CPCT/DRUP/WIDE)
+        elsif ( exists $centers_dict->{ $center } ){
+            my $centername = $centers_dict->{ $center };
+            my $original_submission = $object->{ 'submission' };
+            my $register_submission = 'HMFreg' . $study;
+            $object->{ 'original_submission' } = $original_submission;
+            $object->{ 'submission' } = $register_submission;
+            $object->{ 'project_name' } = $register_submission;
+            $object->{ 'entity' } = join( "_", $study, $centername );
+        }
+        else {
+            warn "[WARN] SKIPPING sample because not is core and center id unknown \"$center\" (id:$id name:$name)\n";
+            next;
         }
  
         ## Final sanity checks before storing
