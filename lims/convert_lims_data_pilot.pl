@@ -144,6 +144,7 @@ $acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_id',  1
 $regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
+checkSubmissionInfo( $subm_objs );
 
 $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
@@ -430,6 +431,40 @@ sub checkDrupStage3Info{
     say "[INFO]     Summary: $drup_stage3_count submissions encountered and checked for $expected_cohort";
 }
 
+sub checkSubmissionInfo{
+    my ($submissions) = @_;
+    my @content_fields = qw(project_name submission request project_type sample_count group_id);
+    my %request_options = ("DNA seq only" => 1, "Library prep + DNA seq" => 1, "Library prep + RNA seq" => 1,
+        "SNP check only" => 1, "Somatic Analysis" => 1);
+
+    my %project_type_options = ("Cohort" => 1, "CORE" => 1, "Human research" => 1, "KG production" => 1, "Library prep + DNA seq" => 1,
+        "na" => 1, "non human research" => 1, "Non human research" => 1, "Non-human research" => 1,
+    );
+
+    say "[INFO]   Checking submission information for correctness";
+    foreach my $id (sort keys %$submissions){
+        my $info = $submissions->{$id};
+
+        ## These fields should at the very least have content
+        foreach my $field (@content_fields) {
+            if ($info->{$field} eq "") {
+                say "[WARN] No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)";
+            }
+        }
+
+        ## Check content for some important fields
+        my $request = $info->{request};
+        if ( ! defined $request_options{$request} ){
+            say "[WARN] Unable to read request info for submission \"$id\" (see FOR-001 Shipments tab)";
+        }
+
+        my $project_type = $info->{project_type};
+        if ( ! defined $project_type_options{$project_type} ){
+            say "[WARN] Unable to read project type info for submission \"$id\" (see FOR-001 Shipments tab)";
+        }
+    }
+}
+
 sub checkContactInfo{
     my ($contact_groups) = @_;
     my @name_fields = qw(client_contact_name report_contact_name data_contact_name);
@@ -437,8 +472,6 @@ sub checkContactInfo{
     say "[INFO]   Checking contact group information for completeness";
     foreach my $id (sort keys %$contact_groups){
         my $info = $contact_groups->{$id};
-        my $name = $info->{client_contact_name};
-        my $mail = $info->{client_contact_email};
         
         ## These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
