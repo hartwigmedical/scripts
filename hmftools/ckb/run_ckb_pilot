@@ -4,7 +4,7 @@ source locate_files
 
 ckb_jar=$(locate_pilot_ckb)
 
-ckb_dir=/data/common/dbs/ckb/201127_flex_dump
+ckb_dir=/data/common/dbs/ckb/201204_flex_dump
 
 clinicalTrialsDir=${ckb_dir}/clinicalTrials
 drugClassesDir=${ckb_dir}/drugClasses
