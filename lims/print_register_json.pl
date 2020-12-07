@@ -320,8 +320,10 @@ sub processSample{
 
         ## add suffix to ref barcode if ref needed from other patientId
         if ( $other_ref eq "Yes" ){
-            my $new_barcode_ref = $barcode_ref . "_" . $name;
+            my $new_name_ref = $patient . 'R';
+            my $new_barcode_ref = $barcode_ref . "_" . $new_name_ref;
             push( @warn_msg, "DOUBLE CHECK JSON for $barcode ($name): OtherRef flag is set in LIMS so adding suffix to the REF barcode ($new_barcode_ref)" );
+            $name_ref = $new_name_ref;
             $barcode_ref = $new_barcode_ref;
         }
  
