@@ -39,7 +39,7 @@ echo ""
 echo "--- DETAILS DATA ACCESS REQUEST: $release_id ---"
 
 
-datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
+datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$release_id" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID' )
 echo "Bizzmine instance: $datarequest_id"
 curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instance/${datarequest_id} > temp.json
 echo ""
