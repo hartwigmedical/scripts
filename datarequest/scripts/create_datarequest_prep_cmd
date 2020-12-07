@@ -50,7 +50,7 @@ main() {
 
 
     ## setup BizzMine variables
-    local datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$dr_name" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID | .[]' )
+    local datarequest_id=$( curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instances | jq --arg DR_select "$dr_name" '.[] | select(.DataRequests_DR_1_0_Datarequest_referencenumber==$DR_select) | .DataRequests_DataRequestsID' )
     curl get -s -H "x-token: ${api_token}" -H "x-tenant: hartwigmedicalfoundation" ${api_url}/instance/${datarequest_id} > temp.json
     local somatics_ind=$( jq -r '.[] | .DataRequests_DR_3_3_SomaticanalysesdataDNA' <temp.json )
     if [[ "${somatics_ind}" == "" ]]; then
