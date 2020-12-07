@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Note: This script assumes an account is active in gcloud which has the privileges to make backups in GS.
-#  A service account with this privileges is hmf-archive@hmf-database.iam.gserviceaccount.com
+#  A service account with this privileges is hmf-ops@hmf-database.iam.gserviceaccount.com
 
 local_path=$1 && shift
 remote_archive_dir=$1 && shift
