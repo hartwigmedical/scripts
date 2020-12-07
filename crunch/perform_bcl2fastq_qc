@@ -81,8 +81,7 @@ for seq_dir in "${seq_dirs[@]}"; do
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
             api_sample=$(cat "${API_SAMP_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
             if [[ "$api_sample" == "" ]]; then
-                # Currently R samples for which T is not yet sequenced, are not registered yet
-                status_info="q=${q30_seq} y=${yld_seq} (barcode not registered in API)"
+                status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
             else
                 smp_status=$(echo "${api_sample}" | jq -r ".status" | cut -d" " -f1)
                 yld=$(echo "${api_sample}" | jq -r ".yld")
@@ -91,10 +90,14 @@ for seq_dir in "${seq_dirs[@]}"; do
                 req=$((req/1000000000))
                 set_name=$(find ${REGISTERED_DIR} -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
                 api_run=$(cat "${API_RUNS_JSON}" | jq -r --arg set_name "${set_name}" '.[] | select(.set.name == $set_name)')
-                run_status=$(echo "${api_run}" | jq -r ".status")
-                ini_id=$(echo "${api_run}" | jq -r ".ini_id")
-                ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
-                status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
+                if [[ "$api_run" == "" ]]; then
+                    status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
+                else
+                    run_status=$(echo "${api_run}" | jq -r ".status")
+                    ini_id=$(echo "${api_run}" | jq -r ".ini_id")
+                    ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
+                    status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
+                fi
             fi
         fi
         echo -e "${submission}\t${sample_id}\t${sample_nm}\t${status_info}"
