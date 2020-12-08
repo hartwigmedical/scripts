@@ -225,7 +225,7 @@ sub processSample{
 
     ## Setup json content based on analysis type
     if ( $analysis eq 'BCL' ){
-        warn "[WARN]   RESULT: Type $analysis not yet supported\n";
+        warn "[WARN]   RESULT: Type $analysis not yet supported ($barcode)\n";
         return "NoJsonMade_bclTypeNotSupported";
     }
     elsif ( $analysis eq 'FASTQ' ){
