@@ -605,8 +605,8 @@ sub addAccessSamplesToSamples{
             $object->{ 'analysis_type' } = 'Unknown';
         }
             
-        ## CORE is handled per case/submission
-        if ( $study eq 'CORE' ){
+        ## All CORE except COREDB are handled per case/submission
+        if ( $study eq 'CORE' and $name !~ /^COREDB/ ){
             my $submission_id = $object->{ 'submission' };
             ## specifically check for non-ref samples if submission is defined
             if ( $submission_id eq '' ){
@@ -619,7 +619,7 @@ sub addAccessSamplesToSamples{
             $object->{ 'entity' } = $submission_id;
             $object->{ 'project_name' } = $submission_id;
         }
-        ## All other samples are clinical study based (CPCT/DRUP/WIDE)
+        ## All other samples are clinical study based (CPCT/DRUP/WIDE/COREDB)
         elsif ( exists $centers_dict->{ $center } ){
             my $centername = $centers_dict->{ $center };
             my $original_submission = $object->{ 'submission' };
@@ -630,7 +630,7 @@ sub addAccessSamplesToSamples{
             $object->{ 'entity' } = join( "_", $study, $centername );
         }
         else {
-            warn "[WARN] SKIPPING sample because not is core and center id unknown \"$center\" (id:$id name:$name)\n";
+            warn "[WARN] SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$id name:$name)\n";
             next;
         }
  
