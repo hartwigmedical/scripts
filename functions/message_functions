@@ -15,21 +15,25 @@ msg_with_caller() {
     echo "[${msg_type}] $(date +'%y%m%d %T') (${caller}) - ${msg_content}"
 }
 
-error() {
+error() { # caller=YES STDERR=YES exit=YES
     msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
-die() {
+die() { # caller=YES STDERR=YES exit=YES
     msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
-warn() { 
+debug() { # caller=YES STDERR=YES exit=NO
+    msg_with_caller "DEBUG" "$@" >&2
+}
+
+warn() { # caller=NO STDERR=YES exit=NO
     msg "WARN" "$@" >&2
 }
 
-info() {
+info() { # caller=NO STDERR=NO exit=NO
     msg "INFO" "$@"
 }
 
