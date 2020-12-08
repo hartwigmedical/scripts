@@ -20,7 +20,7 @@ my $SOM_INI = "Somatic.ini";
 my $SHA_INI = "ShallowSeq.ini";
 my $RNA_INI = "Rna.ini";
 
-my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples (CPCT/DRUP/WIDE/CORE)
+my $Q30_LIM = 75; # q30 limit is currently fixed for all MS Access LIMS samples
 my $YIELD_F = 1e9; # LAB lims contains yield in Gbase which needs to be converted to bases
 
 ## could make these more fine grained (lower number is higher prio)
@@ -267,7 +267,7 @@ sub processSample{
             $ref_obj = getSomaticRSampleByStringForField( $lims_samples, $ref_sample_id, 'sample_id' );
         }
         else{
-            ## fallback for for CPCT etc the partner can be found by patient name + R
+            ## for clinical studies the partner sample can be found by patientID + R
             my $ref_string = $patient.'R';
             $ref_obj = getSomaticRSampleByStringForField( $lims_samples, $ref_string, 'sample_name' );
         }
