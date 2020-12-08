@@ -49,10 +49,12 @@ for seq_dir in "${seq_dirs[@]}"; do
     hmfrun_name="$(cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r')"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
     
-    ## anything wrong with any seqrun: exit the whole thing
+    ## If anything not ok: exit
     if [[ ! -d "${seq_dir}" ]]; then
         echo "[ERROR] dir does not exist (${seq_dir})" && exit 1; 
-    elif [[ ! $(cat ${errlog_path} | tail -1 | grep "with 0 errors and") ]]; then 
+    elif [[ ! -f "${errlog_path}" ]]; then
+        echo "[ERROR] Errlog does not exist (${errlog_path})" && exit 1;
+    elif [[ ! $(cat ${errlog_path} | tail -1 | grep "with 0 errors and") ]]; then
         echo "[ERROR] Errlog does not say 0 errors (${errlog_path})" && exit 1; 
     elif [[ -z "${hmfrun_name}" ]]; then
         echo "[ERROR] Have not been able to parse hmfrun_name from sheet (${ssheet_path})" && exit 1; 
