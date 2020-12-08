@@ -498,7 +498,7 @@ sub readSampleSheet{
             my $run_name = $fields[1] || 'NA';
             $output{ 'runname' } = $run_name;
         }
-        elsif ($fields[0] =~ /Application/ ){
+        elsif ($fields[0] =~ /InstrumentType/ ){
             my $platform = $fields[1] || 'NA';
             $output{ 'platform' } = $platform;
         }
