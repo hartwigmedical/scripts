@@ -5,7 +5,7 @@ source locate_files
 print_usage(){
     echo "-----"
     echo " Descr: Constructs bash command for datarequest tool"
-    echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_email>"
+    echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_mail>"
     echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com,jaap@doe.com'"
     echo "-----"
     exit 1
@@ -192,6 +192,11 @@ main() {
     if [[ ${run_mode} == "dna_rna" ]];then
         echo "check_gcp_manifest_with_metadata -m '${metadata_tsv}' -j '${dr_path}/manifest.json' -e '${gcp_mail}' -d 1 -r 1" >> "${output_cmd_file}"
     fi
+
+    echo ""  >> "${output_cmd_file}"
+    echo "# [WRITE] create email that the data has been made available:"  >> "${output_cmd_file}"
+    echo "write_data_available_email -i '${dr_name}' -s '${dr_suffix}' -m '${run_mode}' -e '${gcp_mail}'" >> "${output_cmd_file}"
+
     echo ""  >> "${output_cmd_file}"
 
     info "Making cmd file executable"

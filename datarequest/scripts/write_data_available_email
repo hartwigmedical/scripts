@@ -2,7 +2,7 @@
 print_usage(){
     echo "-----"
     echo " Descr: Write email that the data is available"
-    echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_email>"
+    echo " Usage: $(basename $0) -i <dr_name> -s <dr_suffix> -m <run_mode> -e <gcp_mail>"
     echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -m 'dna' -e 'john@doe.com,jaap@doe.com'"
     echo "-----"
     exit 1
@@ -53,6 +53,8 @@ rna_ind_tsv=${rna_ind_tsv}/logs/rna_ind.tsv
 number_of_samples_rna=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${rna_ind_tsv}  | csvformat -T | tail -n +2 | sort | uniq | wc -l )
 
 
+echo "Dear ,"
+echo ""
 if [[ "${dr_suffix}" != "" ]]; then
     echo "The Hartwig Medical Foundation data for ${dr_name} (${dr_suffix}) is made available on Google Cloud Platform (GCP) for the following account(s) ${gcp_mail}. Please note that for these accounts multi-factor authentication needs to be enabled. "
 else
@@ -64,9 +66,8 @@ if [[ "${run_mode}" == "rna" || "${run_mode}" == "dna_rna" ]]; then
 else
     echo "It contains data of ${number_of_samples} samples."
 fi
-echo""
-echo "Given the size of the data (especially the Aligned readout and RNAseq data), our key challenge is avoid any copying or duplication of the data. We do this by adding users directly to the Access Control List of each file they are allowed to access, and providing a manifest containing the URLs that can be used to download the data.
-The manifest containing the URLs of the data made available to you can be found in the GCP bucket ${bucket_name}. This manifest can be downloaded using the gsutil command (gsutil -u [your-project-here] cp gs://${bucket_name}/manifest.json ./). If you’ve requested somatic/germline/metadata, you can find the tar files in the same bucket (list files in the bucket with gustil -u [your-project-here] ls gs://${bucket_name}/; inspect the sizes of the tar files using gsutil du -h  [your-project-here] gs://${bucket_name}/*.tar).
+echo ""
+echo "Given the size of the data (especially the Aligned readout and RNAseq data), our key challenge is avoid any copying or duplication of the data. We do this by adding users directly to the Access Control List of each file they are allowed to access, and providing a manifest containing the URLs that can be used to download the data. The manifest containing the URLs of the data made available to you can be found in the GCP bucket ${bucket_name}. This manifest can be downloaded using the gsutil command (gsutil -u [your-project-here] cp gs://${bucket_name}/manifest.json ./). If you’ve requested somatic/germline/metadata, you can find the tar files in the same bucket (list files in the bucket with gustil -u [your-project-here] ls gs://${bucket_name}/; inspect the sizes of the tar files using gsutil du -h  [your-project-here] gs://${bucket_name}/*.tar).
 
 Please note that egress of the data (downloading within GCP to outside the europe-west4 region or downloading to outside GCP) will come with costs. Therefore we advise (certainly when also aligned readout and/or RNAseq data is made available) to further process and analyse the licensed data without egress of the data. This can be done in a so-called Virtual Machine on the Google Cloud Platform. Please find more detailed information on how to access the data on GCP at http://docs.hartwigmedicalfoundation.nl.
 
