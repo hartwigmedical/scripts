@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+query_api.pl -type "samples" "$@"
