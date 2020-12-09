@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+OUT_CMD_LOC="/data/tmp"
+
+SINGLESAMPLE_INI_ID=4
+SOMATIC_INI_ID=6
+KG_INI_ID=8
+FASTQ_INI_ID=10
+
+api_cred_dir="/data/common/dbs/api_credentials"
+gcp_cred_dir="/data/common/dbs/gcp_credentials"
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+api_crt_file="${api_cred_dir}/api.crt"
+api_key_file="${api_cred_dir}/api.key"
+gcp_project="hmf-database"
+gcp_account="hmf-ops"
+
+print_usage(){
+    echo "-----"
+    echo " Descr: Searches for data in GCP buckets and print code to cleanup"
+    echo " Usage: $(basename $0) -s \$submission"
+    echo " Examp: $(basename $0) -s HMFregXXXX"
+    echo "-----"
+    exit 1
+}
+
+while getopts ':s:e' flag; do
+    case "${flag}" in
+        s) submission=${OPTARG} ;;
+        e) do_execute=${OPTARG} ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${submission}" ]]; then
+    print_usage
+fi
+
+main() {
+    info "######"
+    info "Starting with script $(basename $0) for submission $submission"
+    info "Setting GCP account ${gcp_account}@${gcp_project}"
+    msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
+    info "  ${msg}"
+
+    yymmdd=$(date "+%y%m%d")
+    cmd_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_rm.sh"
+    log_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_rm.log"
+    api_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_api.sh"
+
+    ## some input sanity checks
+    info "Performing some sanity checks" 
+    [[ ! -f "${cmd_file}" ]] || die "CMD file already exists (${cmd_file})"
+    [[ ! -f "${log_file}" ]] || die "LOG file already exists (${log_file})"
+    [[ ! -f "${api_file}" ]] || die "API file already exists (${api_file})"
+
+    # All while loops use process substitution to avoid subprocesses
+    info "Retrieving runs by set by samples" | tee -a ${log_file}
+    samples_json=$(query_api.pl -type samples -filter "submission=${submission}" -exact -json) 
+    while read sample; do
+        sample_id=$(echo "$sample" | jq -r '.id')
+        sample_barcode=$(echo "$sample" | jq -r '.barcode')
+        echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${api_file}"
+        echo "  hmf_api_patch samples ${sample_id} 'status=Deleted'" >> "${api_file}"
+        sets_json=$(hmf_api_get "sets?sample_id=${sample_id}")
+        while read set; do
+            set_id=$(echo "$set" | jq -r '.id')
+            runs_json=$(hmf_api_get "runs?set_id=${set_id}")
+            while read run; do
+                #debug $run
+                run_id=$(echo "$run" | jq -r '.id')
+                bucket=$(echo "$run" | jq -r '.bucket')
+                name=$(echo "$run" | jq -r '.set.name')
+                state=$(echo "$run" | jq -r '.status')
+                ini_id=$(echo "$run" | jq -r '.ini_id')
+                gs_url="gs://${bucket}/${name}"
+
+                info "Found run $run_id for set $set_id by sample $sample_id"
+                echo "echo '[INFO] Deleting data for run $name'" >> "${cmd_file}"
+                echo "echo '[INFO] Updating api for run $name'" >> "${api_file}"
+                echo "  hmf_api_patch runs ${run_id} 'status=Deleted'" >> "${api_file}"
+
+                if [[ "${ini_id}" == "${FASTQ_INI_ID}" ]]; then
+                    info "  Processing as FASTQ (ini=${ini_id})"
+                    files_api_url="files?run_id=${run_id}"
+                    files_json=$(hmf_api_get "${files_api_url}")
+                    mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
+                    for fastq_file_url in "${all_gs_urls[@]}"; do
+                        process_gs_url "${state}" "${fastq_file_url}" "${cmd_file}"
+                    done
+                elif [[ "${ini_id}" == "${SOMATIC_INI_ID}" || "${ini_id}" == "${SINGLESAMPLE_INI_ID}" || "${ini_id}" == "${KG_INI_ID}" ]]; then
+                    info "  Processing as PIPELINE (ini=${ini_id})"
+                    process_gs_url "${state}" "${gs_url}" "${cmd_file}"
+                else
+                    die "  Run not FASTQ but also not pipeline (ini=${ini_id}): this should not happen!"
+                fi
+            done < <(echo "$runs_json" | jq -c '.[]')
+        done < <(echo "$sets_json" | jq -c '.[]')
+    done < <(echo "$samples_json" | jq -c '.[]')
+
+    info "If all ok you can execute deletion with:"
+    info "  chmod +x (${cmd_file})"
+    info "  chmod +x (${api_file})"
+    info "  nohup ${cmd_file} > ${log_file} &"
+    info "  nohup ${api_file} >> ${log_file} &"
+    info "Finished with $(basename $0)"
+}
+
+process_gs_url() {
+    local state=$1 && shift
+    local gs_url=$1 && shift
+    local out_file=$1 && shift
+    
+    msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
+    if [[ $? -eq 1 ]]; then
+        if [[ "$state" == "Deleted" ]]; then
+            info "  SKIPPING: url not found but status is $state so makes sense (${gs_url})"
+        else
+            warn "  SKIPPING: url not found and run status is not Deleted (${gs_url})"
+        fi
+    else
+        info "  Writing rm command for valid URL ($gs_url)"
+        echo " gsutil rm -r $gs_url" >> "${out_file}"
+    fi
+}
+
+main
