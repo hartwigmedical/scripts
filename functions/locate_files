@@ -129,7 +129,7 @@ locate_pilot_serve() {
 }
 
 locate_pilot_ckb() {
-    echo ${base_path}/tools/ckb_importer_pilot/ckb.jar
+    echo ${base_path}/tools/ckb-importer_pilot/ckb-importer.jar
 }
 
 locate_pilot_protect() {
