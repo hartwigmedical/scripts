@@ -212,7 +212,7 @@ locate_hartwig_curated_tsv() {
     echo ${base_path}/dbs/serve/static_sources/hartwig/hartwig_curated.tsv
 }
 
-locate_ref_genome_fasta_file() {
+locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 

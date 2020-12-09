@@ -12,7 +12,7 @@ if [[ -z "${cram_url}" || -z "${cram_index_url}" || -z "${slicing_bed}" || -z "$
 fi
 
 samtools=/data/common/tools/samtools_v1.10/samtools
-ref_genome=$(locate_ref_genome_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 echo "[INFO] Creating slice using ${slicing_bed}"
 ${samtools} view -T ${ref_genome} \

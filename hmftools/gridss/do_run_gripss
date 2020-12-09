@@ -4,7 +4,7 @@ source locate_files
 input_vcf=$1 && shift
 output_vcf=$1 && shift
 
-ref_genome=$(locate_ref_genome_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 gripps_jar=/data/common/tools/gripss_pilot/gripss.jar
 gridss_pon=/data/common/dbs/gridss/pon3792v1/
 single_pon=${gridss_pon}gridss_pon_single_breakend.bed

@@ -11,7 +11,7 @@ iclusion_client_secret=$(awk '/^client_secret/ {print $2}' ${iclusion_api_creden
 iclusion_user=$(awk '/^username/ {print $2}' ${iclusion_api_credentials})
 iclusion_password=$(awk '/^password/ {print $2}' ${iclusion_api_credentials})
 
-ref_genome=$(locate_ref_genome_fasta_file)
+ref_genome=$(locate_ref_genome_37_fasta_file)
 
 input_dir=/data/common/dbs/knowledgebases/input
 cgi_biomarkers_file=${input_dir}/cgi_biomarkers_per_variant_181127.tsv
