@@ -40,7 +40,7 @@ for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
 email_in_permissions=$( gsutil -u hmf-share iam get gs://${bucket_name}/ | grep $email )
 if [[ ${email_in_permissions} == "" ]]; then
-    echo "[ERROR] Account $email not added to IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
+    echo "[ERROR] Account $email not in IAM GCP bucket. Please add manually in the GUI (role = storage object viewer)."
     echo ""
 else
     echo "[INFO] Permissions account $email set correctly."
