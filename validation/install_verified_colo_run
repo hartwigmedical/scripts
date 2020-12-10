@@ -54,9 +54,7 @@ main() {
     info "Metadata:"
     info " Experiment dir: ${exp_dir_path}"
     info " Source path: ${source_path}" 
-    info " Target path: ${target_path}" 
-    
-    info " Target path: ${target_path}" 
+    info " Target path: ${target_path}"
 
     info "Move source (${source_path}) to target (${target_path})"
     echo " mv $source_path $target_path"
