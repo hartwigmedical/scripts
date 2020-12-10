@@ -31,7 +31,6 @@ main() {
     [[ ! "${target_name}" =~ \/ ]] || die "Target name contains a slash (${target_name})"
     [[ -d "${exp_dir_path}" ]] || die "Experiment dir does not exist (${exp_dir_path})"
 
-    info "Constructing all required variables"
     target_root="/data/data_archive/validation_data"
     target_path="${target_root}/pipeline_runs/${target_name}"
     latest_path="${target_root}/latest_tooling_pipeline_runs/${target_name}"
@@ -49,26 +48,25 @@ main() {
     [[ -d "${source_path}" ]] || die "No valid source run dir path at critical point (${source_path})"
     [[ ! -d "${target_path}" ]] || die "Target run dir path already exists (${target_path})"
 
-    info "Metadata:"
-    info " Experiment dir: ${exp_dir_path}"
-    info " Source path: ${source_path}" 
+    info "Settings:"
+    info " Source path: ${source_path}"
     info " Target path: ${target_path}"
 
-    info "Move source (${source_path}) to target (${target_path})"
+    info "TODO Move source to target:"
     echo " mv $source_path $target_path"
     echo ""
 
-    info "Sync without CRAMs from target (${target_path}) to source (${source_path})"
+    info "TODO Sync without CRAMs from target back to source:"
     echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '$source_path/'"
     echo ""
 
-    info "Sync without CRAMs to latest (${latest_path})"
+    info "TODO Sync without CRAMs to directory with latest"
     echo " rsync -ah --stats --exclude 'COLO829v003R.cram' --exclude 'COLO829v003T.cram' '$target_path/' '${latest_path}/'"
     echo ""
 
-    info "Load data into reference DB:"
     load_job=${jobs_dir}/load_run_into_reference_validation_sets_db
     load_log=${logs_dir}/load_run_into_reference_validation_sets_db.log
+    info "TODO Load data into reference DB:"
     echo " nohup ${load_job} ${latest_path} > ${load_log} &"
     echo ""
 
@@ -82,6 +80,7 @@ main() {
     info "  find <dir-of-previous-version> -name 'COLO829v003[RT].cram' # add -delete for action"
     info "TODO make sure all is chowned to root:"
     echo "  chown_directory_contents_to_root ${target_root}/pipeline_runs"
+
     info "Finished with $(basename $0)"
 }
 
