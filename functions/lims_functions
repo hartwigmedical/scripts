@@ -21,3 +21,9 @@ find_name_for_barcode() {
     local barcode=$1
     query_lims.pl -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[].sample_name'
 }
+
+find_cohort_type() {
+    local barcode=$1
+    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
+    query_lims.pl -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[0].cohort'
+}
