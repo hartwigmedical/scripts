@@ -2,6 +2,11 @@
 
 api_query=$1 && shift
 
+api_dir="/data/common/dbs/api_credentials"
+api_crt="${api_dir}/api.crt"
+api_key="${api_dir}/api.key"
+api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+
 if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" ]]; then
     echo "---"
     echo "Descr: Runs a GET against HMF API with provided query string and returns JSON."
@@ -15,11 +20,6 @@ if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" 
     echo "---"
     exit 1
 fi
-
-api_dir="/data/common/dbs/api_credentials"
-api_crt="${api_dir}/api.crt"
-api_key="${api_dir}/api.key"
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 
 curl --silent --show-error --cert "${api_crt}" --key "${api_key}" \
     -H "Content-Type: application/json" -X GET "${api_url}/${api_query}"
