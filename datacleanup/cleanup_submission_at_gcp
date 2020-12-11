@@ -8,6 +8,7 @@ OUT_CMD_LOC="/data/ops/cleanup"
 SINGLESAMPLE_INI_ID=4
 SOMATIC_INI_ID=6
 KG_INI_ID=8
+SHALLOW_INI_ID=38
 FASTQ_INI_ID=10
 
 api_cred_dir="/data/common/dbs/api_credentials"
@@ -80,25 +81,26 @@ main() {
                 run_status=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
                 gs_url="gs://${bucket}/${run_name}"
+                run_type=$(run_type_by_ini_id "${ini_id}")
 
                 info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
                 echo "echo '[INFO] Deleting data for run $run_name'" >> "${cmd_file}"
 
-                if [[ "${ini_id}" == "${FASTQ_INI_ID}" ]]; then
-                    info "  Processing as FASTQ (ini=${ini_id})"
+                if [[ "${run_type}" == "fastq" ]]; then
+                    info "  Processing as ${run_type} (ini=${ini_id})"
                     echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${cmd_file}"
                     echo " hmf_api_patch samples ${sample_id} 'status=Deleted'" >> "${cmd_file}"
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
                     for fastq_file_url in "${all_gs_urls[@]}"; do
-                        process_gs_url "${run_status}" "${fastq_file_url}" "${cmd_file}"
+                        process_gs_url "${sample_status}" "${fastq_file_url}" "${cmd_file}"
                     done
-                elif [[ "${ini_id}" == "${SOMATIC_INI_ID}" || "${ini_id}" == "${SINGLESAMPLE_INI_ID}" || "${ini_id}" == "${KG_INI_ID}" ]]; then
-                    info "  Processing as PIPELINE (ini=${ini_id})"
+                elif [[ "${run_type}" == "pipeline" ]]; then
+                    info "  Processing as ${run_type} (ini=${ini_id})"
                     process_gs_url "${run_status}" "${gs_url}" "${cmd_file}"
                 else
-                    die "  Run not FASTQ but also not pipeline (ini=${ini_id}): this should not happen!"
+                    die "Run not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
                 fi
                 echo "echo '[INFO] Updating api for run $run_name (id=${run_id})'" >> "${cmd_file}"
                 echo " hmf_api_patch runs ${run_id} 'status=Deleted'" >> "${cmd_file}"
@@ -114,17 +116,40 @@ main() {
     info "Finished with $(basename $0)"
 }
 
+run_type_by_ini_id() {
+    local ini_id=$1 && shift
+
+    local pipeline="pipeline"
+    local fastq="fastq"
+    local unknown="unknown"
+
+    if [[ "$ini_id" == "$FASTQ_INI_ID" ]]; then
+        echo "$fastq"
+    elif [[ "$ini_id" == "$SOMATIC_INI_ID" ]]; then
+        echo "$pipeline"
+    elif [[ "$ini_id" == "$SINGLESAMPLE_INI_ID" ]]; then
+        echo "$pipeline"
+    elif [[ "$ini_id" == "$KG_INI_ID" ]]; then
+        echo "$pipeline"
+    elif [[ "$ini_id" == "$SHALLOW_INI_ID" ]]; then
+        echo "$pipeline"
+    else
+        echo "$unknown"
+    fi
+
+}
+
 process_gs_url() {
-    local run_status=$1 && shift
+    local status=$1 && shift
     local gs_url=$1 && shift
     local out_file=$1 && shift
     
     msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        if [[ "$run_status}" == "Deleted" ]]; then
-            info "  SKIPPING: url not found but run status is ${run_state} so makes sense (${gs_url})"
+        if [[ "$status}" == "Deleted" ]]; then
+            info "  SKIPPING: url not found but object status is ${status} so makes sense (${gs_url})"
         else
-            warn "  SKIPPING: url not found and run status is not Deleted (${gs_url})"
+            warn "  SKIPPING: url not found but object status (${status}) is not Deleted (${gs_url})"
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
