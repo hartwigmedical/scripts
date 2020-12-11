@@ -81,7 +81,7 @@ main() {
                 run_type=$(run_type_by_ini_id "${ini_id}")
 
                 info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
-                echo "echo '[INFO] Deleting data for run $run_name'" >> "${cmd_file}"
+                echo "echo '[INFO] Deleting data for run $run_name (id=${run_id})'" >> "${cmd_file}"
 
                 if [[ "${run_type}" == "fastq" ]]; then
                     info "  Processing as ${run_type} (ini=${ini_id})"
