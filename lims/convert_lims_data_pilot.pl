@@ -1085,7 +1085,7 @@ sub getFieldNameTranslations{
       'Date_of_birth'      => 'date_of_birth',
       'Purity'             => 'purity',
       'ShallowSeq'         => 'shallowseq', # Should we expect a ShallowSeq run
-      'Database'           => 'add_to_database', # Should biopsy be added to SQL DB
+      'in_database'        => 'add_to_database', # Should biopsy be added to SQL DB
       'Data_request'       => 'add_to_datarequest', # Should biopsy be part of DRs
       'Report_date'        => 'report_date',
       'Cohort'             => 'cohort', # What cohort is sample part of
