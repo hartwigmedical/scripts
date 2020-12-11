@@ -11,11 +11,6 @@ KG_INI_ID=8
 SHALLOW_INI_ID=38
 FASTQ_INI_ID=10
 
-api_cred_dir="/data/common/dbs/api_credentials"
-gcp_cred_dir="/data/common/dbs/gcp_credentials"
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_crt_file="${api_cred_dir}/api.crt"
-api_key_file="${api_cred_dir}/api.key"
 gcp_project="hmf-database"
 gcp_account="hmf-ops"
 
@@ -44,6 +39,7 @@ fi
 main() {
     info "######"
     info "Starting with script $(basename $0) for submission $submission"
+
     info "Setting GCP account ${gcp_account}@${gcp_project}"
     msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
     info "  ${msg}"
@@ -52,6 +48,7 @@ main() {
     cmd_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp"
     log_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp.log"
 
+    ## keeping track
     run_count=0
 
     ## some input sanity checks
@@ -153,7 +150,7 @@ process_gs_url() {
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
-        echo " gsutil -u "${gcp_project}" rm -r ${gs_url}" >> "${out_file}"
+        echo " gsutil -u ${gcp_project} rm -r ${gs_url}" >> "${out_file}"
     fi
 }
 
