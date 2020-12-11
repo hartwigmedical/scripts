@@ -65,8 +65,8 @@ main() {
     while read sample; do
         sample_id=$(echo "$sample" | jq -r '.id')
         sample_barcode=$(echo "$sample" | jq -r '.barcode')
+        sample_status=$(echo "$sample" | jq -r '.status')
         sets_json=$(hmf_api_get "sets?sample_id=${sample_id}")
-
 
         while read set; do
             set_id=$(echo "$set" | jq -r '.id')
@@ -77,11 +77,11 @@ main() {
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
-                state=$(echo "$run" | jq -r '.status')
+                run_status=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
                 gs_url="gs://${bucket}/${run_name}"
 
-                info "Found run $run_id for set $set_id by sample $sample_id"
+                info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
                 echo "echo '[INFO] Deleting data for run $run_name'" >> "${cmd_file}"
 
                 if [[ "${ini_id}" == "${FASTQ_INI_ID}" ]]; then
@@ -92,11 +92,11 @@ main() {
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
                     for fastq_file_url in "${all_gs_urls[@]}"; do
-                        process_gs_url "${state}" "${fastq_file_url}" "${cmd_file}"
+                        process_gs_url "${run_status}" "${fastq_file_url}" "${cmd_file}"
                     done
                 elif [[ "${ini_id}" == "${SOMATIC_INI_ID}" || "${ini_id}" == "${SINGLESAMPLE_INI_ID}" || "${ini_id}" == "${KG_INI_ID}" ]]; then
                     info "  Processing as PIPELINE (ini=${ini_id})"
-                    process_gs_url "${state}" "${gs_url}" "${cmd_file}"
+                    process_gs_url "${run_status}" "${gs_url}" "${cmd_file}"
                 else
                     die "  Run not FASTQ but also not pipeline (ini=${ini_id}): this should not happen!"
                 fi
@@ -115,13 +115,13 @@ main() {
 }
 
 process_gs_url() {
-    local run_state=$1 && shift
+    local run_status=$1 && shift
     local gs_url=$1 && shift
     local out_file=$1 && shift
     
     msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        if [[ "$run_state}" == "Deleted" ]]; then
+        if [[ "$run_status}" == "Deleted" ]]; then
             info "  SKIPPING: url not found but run status is ${run_state} so makes sense (${gs_url})"
         else
             warn "  SKIPPING: url not found and run status is not Deleted (${gs_url})"
