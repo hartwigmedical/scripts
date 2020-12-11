@@ -9,5 +9,5 @@ fi
 
 ## Flowcell done at GCP so get info per sample
 for sample_sheet in "${sample_sheets[@]}"; do
-    api_check_samples_of_one_flowcell ${sample_sheet}
-done | sort
+    api_check_samples_of_one_flowcell "${sample_sheet}"
+done
