@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 
-source message_functions
+source message_functions || exit 1
 
-OUT_CMD_LOC="/data/tmp"
+OUT_CMD_LOC="/data/ops/cleanup"
 
+# Need to match ID instead of name in run object
 SINGLESAMPLE_INI_ID=4
 SOMATIC_INI_ID=6
 KG_INI_ID=8
@@ -47,44 +48,46 @@ main() {
     info "  ${msg}"
 
     yymmdd=$(date "+%y%m%d")
-    cmd_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_rm.sh"
-    log_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_rm.log"
-    api_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_api.sh"
+    cmd_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp"
+    log_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp.log"
+
+    run_count=0
 
     ## some input sanity checks
     info "Performing some sanity checks" 
     [[ ! -f "${cmd_file}" ]] || die "CMD file already exists (${cmd_file})"
     [[ ! -f "${log_file}" ]] || die "LOG file already exists (${log_file})"
-    [[ ! -f "${api_file}" ]] || die "API file already exists (${api_file})"
 
     # All while loops use process substitution to avoid subprocesses
-    info "Retrieving runs by set by samples" | tee -a ${log_file}
+    info "Retrieving runs involved (via samples->sets)"
     samples_json=$(query_api.pl -type samples -filter "submission=${submission}" -exact -json) 
+
     while read sample; do
         sample_id=$(echo "$sample" | jq -r '.id')
         sample_barcode=$(echo "$sample" | jq -r '.barcode')
-        echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${api_file}"
-        echo "  hmf_api_patch samples ${sample_id} 'status=Deleted'" >> "${api_file}"
         sets_json=$(hmf_api_get "sets?sample_id=${sample_id}")
+
+
         while read set; do
             set_id=$(echo "$set" | jq -r '.id')
             runs_json=$(hmf_api_get "runs?set_id=${set_id}")
+
             while read run; do
                 #debug $run
                 run_id=$(echo "$run" | jq -r '.id')
+                run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
-                name=$(echo "$run" | jq -r '.set.name')
                 state=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
-                gs_url="gs://${bucket}/${name}"
+                gs_url="gs://${bucket}/${run_name}"
 
                 info "Found run $run_id for set $set_id by sample $sample_id"
-                echo "echo '[INFO] Deleting data for run $name'" >> "${cmd_file}"
-                echo "echo '[INFO] Updating api for run $name'" >> "${api_file}"
-                echo "  hmf_api_patch runs ${run_id} 'status=Deleted'" >> "${api_file}"
+                echo "echo '[INFO] Deleting data for run $run_name'" >> "${cmd_file}"
 
                 if [[ "${ini_id}" == "${FASTQ_INI_ID}" ]]; then
                     info "  Processing as FASTQ (ini=${ini_id})"
+                    echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${cmd_file}"
+                    echo " hmf_api_patch samples ${sample_id} 'status=Deleted'" >> "${cmd_file}"
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
@@ -97,33 +100,35 @@ main() {
                 else
                     die "  Run not FASTQ but also not pipeline (ini=${ini_id}): this should not happen!"
                 fi
+                echo "echo '[INFO] Updating api for run $run_name (id=${run_id})'" >> "${cmd_file}"
+                echo " hmf_api_patch runs ${run_id} 'status=Deleted'" >> "${cmd_file}"
+                ((run_count++))
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')
     done < <(echo "$samples_json" | jq -c '.[]')
 
+    info "A total of ${run_count} runs visited"
     info "If all ok you can execute deletion with:"
-    info "  chmod +x (${cmd_file})"
-    info "  chmod +x (${api_file})"
+    info "  chmod +x ${cmd_file}"
     info "  nohup ${cmd_file} > ${log_file} &"
-    info "  nohup ${api_file} >> ${log_file} &"
     info "Finished with $(basename $0)"
 }
 
 process_gs_url() {
-    local state=$1 && shift
+    local run_state=$1 && shift
     local gs_url=$1 && shift
     local out_file=$1 && shift
     
     msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        if [[ "$state" == "Deleted" ]]; then
-            info "  SKIPPING: url not found but status is $state so makes sense (${gs_url})"
+        if [[ "$run_state}" == "Deleted" ]]; then
+            info "  SKIPPING: url not found but run status is ${run_state} so makes sense (${gs_url})"
         else
             warn "  SKIPPING: url not found and run status is not Deleted (${gs_url})"
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
-        echo " gsutil rm -r $gs_url" >> "${out_file}"
+        echo " gsutil -u "${gcp_project}" rm -r ${gs_url}" >> "${out_file}"
     fi
 }
 
