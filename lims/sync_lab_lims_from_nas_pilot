@@ -11,7 +11,7 @@ SYM_DIR="${LAB_DIR}/latest"
 NAS_DIR="/volume1/sync_from_infracom"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
-ACCESS_FILE="LIMS_v4.5_be.accdb"
+ACCESS_FILE="LIMS_v4.6_be.accdb"
 FOR_001_FILE="HMF-FOR-001 Received Samples 2020 v5.7.xlsx"
 FOR_002_FILE="HMF-FOR-002 Sample in process 2020 v4.2.xlsx"
 FOR_001_FILE_2019="HMF-FOR-001 Received Samples 2019 v5.5.xlsx"
