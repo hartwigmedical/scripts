@@ -44,7 +44,7 @@ internal_crai_url="${internal_cram_url}.crai"
 external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" "$PRESIGN_SECONDS")
 external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" "$PRESIGN_SECONDS")
 
-info "URLs for ${sample_type} sample of biopsy ${biopsy} (valid for ${PRESIGN_SECONDS} seconds):"
+info "URLs for ${sample_type} sample of biopsy ${biopsy_name} (valid for ${PRESIGN_SECONDS} seconds):"
 info "CRAM internal URL: ${internal_cram_url}"
 info "CRAI internal URL: ${internal_crai_url}"
 info "CRAM external URL: ${external_cram_url}"
