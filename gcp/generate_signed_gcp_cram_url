@@ -38,7 +38,7 @@ fi
 # Unfortunately the sign script takes URL without "gs://" prefix
 # Ideally we use gsutil signurl directly but does not work with requester pays buckets
 cram=$(echo "${internal_cram_url}" | sed 's/^gs\:\/\///')
-crai=${cram}.crai
+crai="${cram}.crai"
 
 internal_crai_url="${internal_cram_url}.crai"
 external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" "$PRESIGN_SECONDS")
