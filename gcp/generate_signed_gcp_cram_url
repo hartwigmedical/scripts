@@ -6,8 +6,18 @@ source message_functions
 biopsy_name=$1 && shift # eg WIDE01010001T
 sample_type=$1 && shift # REF or TUM
 
+print_usage(){
+    echo "-----"
+    echo " Descr: Prints presigned CRAM and CRAI URLs by biopsy name"
+    echo " Usage: $(basename $0) \${biopsy-name} \${sample-type}"
+    echo "        $(basename $0) CPCT02010003T REF"
+    echo "        $(basename $0) CPCT02010003T TUM"
+    echo "-----"
+    exit 1
+}
+
 if [[ -z "${biopsy_name}" ]] || [[ -z "${sample_type}" ]]; then
-    die "[ERROR] No biopsy-name and/or sample-type provided to $(basename $0)."
+    print_usage
 fi
 
 gcp_sign_url_script="generate_signed_gcp_url.py"
