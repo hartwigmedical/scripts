@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+run_serve_pilot -vicc_sources cgi,civic
