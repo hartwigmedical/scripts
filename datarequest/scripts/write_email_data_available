@@ -20,7 +20,7 @@ while getopts ':i:s:m:e:' flag; do
 done
 
 if [[ -z "${dr_name}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
-    echo "[ERROR] script write_data_available_email did not run, check usage below:"
+    echo "[ERROR] script write_email_data_available did not run, check usage below:"
     print_usage
 fi
 
@@ -28,7 +28,7 @@ fi
 [[ ! -z "${gcp_mail}" && "${gcp_mail}" =~ \@.+\. ]] || die "gcp_mail incorrect (${gcp_mail})"
 
 echo ""
-echo "[START] write_data_available_email: $(date +"%y%m%d (%T)")"
+echo "[START] write_email_data_available: $(date +"%y%m%d (%T)")"
 echo ""
 
 dr_index=$( echo "${dr_name}" | sed 's/^DR\-//')

@@ -195,7 +195,7 @@ main() {
 
     echo ""  >> "${output_cmd_file}"
     echo "# [WRITE] create email that the data has been made available:"  >> "${output_cmd_file}"
-    echo "write_data_available_email -i '${dr_name}' -s '${dr_suffix}' -m '${run_mode}' -e '${gcp_mail}'" >> "${output_cmd_file}"
+    echo "write_email_data_available -i '${dr_name}' -s '${dr_suffix}' -m '${run_mode}' -e '${gcp_mail}'" >> "${output_cmd_file}"
 
     echo ""  >> "${output_cmd_file}"
 
