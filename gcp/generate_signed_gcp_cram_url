@@ -1,48 +1,37 @@
 #!/usr/bin/env bash
 
 source api_functions
-source locate_files
+source message_functions
 
-set_name=$1 && shift
-# Type can be REF or TUM
-type=$1 && shift
+biopsy_name=$1 && shift # eg WIDE01010001T
+sample_type=$1 && shift # REF or TUM
 
-if [[ -z "${set_name}" ]] || [[ -z "${type}" ]]; then
-    echo "[ERROR] No set name and type provided to $(basename $0)." && exit 1
+if [[ -z "${biopsy_name}" ]] || [[ -z "${sample_type}" ]]; then
+    die "[ERROR] No biopsy-name and/or sample-type provided to $(basename $0)."
 fi
 
 gcp_sign_url_script="generate_signed_gcp_url.py"
 gcp_key_file="/data/common/dbs/gcp_credentials/hmf-download"
+internal_cram_url=""
 
-## query run info
-run_info=$(load_run_info_for_set ${set_name})
-
-## setup all variables
-pipeline=$(extract_pipeline_version_from_run_info "${run_info}")
-
-if [[ ${type} = "REF" ]]; then
-    sample=$(load_ref_sample_id_for_set ${set_name})
+if [[ ${sample_type} = "REF" ]]; then
+    internal_cram_url=$(locate_reference_cram "${biopsy_name}")
+elif [[ ${sample_type} = "TUM" ]]; then
+    internal_cram_url=$(locate_tumor_cram "${biopsy_name}")
 else
-    sample=$(load_tumor_sample_id_for_set ${set_name})
+    die "Provided type needs to be REF or TUM"
 fi
 
-bucket=$(echo ${set_name} | tr A-Z a-z | tr _ -)
-cram_prefix="hmf-cram-${bucket}"
-
-if [[ ${pipeline} = v5* ]]; then
-    cram="${cram_prefix}/${sample}.cram"
-else
-    cram="${cram_prefix}/${sample}_dedup.realigned.cram"
-fi
-
-internal_cram_url="gs://${cram}"
-external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" 172800)
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP CRAM URL: ${internal_cram_url}"
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP CRAM URL: ${external_cram_url}"
-
+# Unfortunately the sign script takes URL without "gs://" prefix
+# Ideally we use gsutil signurl directly but does not work with requester pays buckets
+cram=$(echo "${internal_cram_url}" | sed 's/^gs\:\/\///')
 crai=${cram}.crai
-internal_crai_url="gs://${crai}"
-external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" 172800)
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP INDEX URL: ${internal_crai_url}"
-echo "$(date +"%H:%M:%S") - [INFO ] - GCP INDEX URL: ${external_crai_url}"
 
+internal_crai_url="${internal_cram_url}.crai"
+external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" 172800)
+external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" 172800)
+
+info "CRAM internal URL: ${internal_cram_url}"
+info "CRAI internal URL: ${internal_crai_url}"
+info "CRAM external URL: ${external_cram_url}"
+info "CRAI external URL: ${external_crai_url}"
