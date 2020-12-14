@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source api_functions
-source message_functions
+source api_functions || exit 1
+source message_functions || exit 1
 
 biopsy_name=$1 && shift # eg WIDE01010001T
 sample_type=$1 && shift # REF or TUM
