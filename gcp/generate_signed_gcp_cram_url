@@ -6,12 +6,15 @@ source message_functions
 biopsy_name=$1 && shift # eg WIDE01010001T
 sample_type=$1 && shift # REF or TUM
 
+PRESIGN_SECONDS=172800
+
 print_usage(){
     echo "-----"
     echo " Descr: Prints presigned CRAM and CRAI URLs by biopsy name"
     echo " Usage: $(basename $0) \${biopsy-name} \${sample-type}"
     echo "        $(basename $0) CPCT02010003T REF"
     echo "        $(basename $0) CPCT02010003T TUM"
+    echo "  Note: URLs will be valid for ${PRESIGN_SECONDS} seconds"
     echo "-----"
     exit 1
 }
@@ -38,9 +41,10 @@ cram=$(echo "${internal_cram_url}" | sed 's/^gs\:\/\///')
 crai=${cram}.crai
 
 internal_crai_url="${internal_cram_url}.crai"
-external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" 172800)
-external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" 172800)
+external_cram_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${cram}" "$PRESIGN_SECONDS")
+external_crai_url=$(${gcp_sign_url_script} "${gcp_key_file}" "${crai}" "$PRESIGN_SECONDS")
 
+info "URLs for ${sample_type} sample of biopsy ${biopsy} (valid for ${PRESIGN_SECONDS} seconds):"
 info "CRAM internal URL: ${internal_cram_url}"
 info "CRAI internal URL: ${internal_crai_url}"
 info "CRAM external URL: ${external_cram_url}"
