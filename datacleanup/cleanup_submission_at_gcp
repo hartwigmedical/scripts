@@ -4,12 +4,11 @@ source message_functions || exit 1
 
 OUT_CMD_LOC="/data/ops/cleanup"
 
-# Need to match ID instead of name in run object
-SINGLESAMPLE_INI_ID=4
-SOMATIC_INI_ID=6
-KG_INI_ID=8
-SHALLOW_INI_ID=38
-FASTQ_INI_ID=10
+# Need to match ini by ID in run object
+SIN_INI_ID=4
+SOM_INI_ID=6
+SHA_INI_ID=38
+FAS_INI_ID=10
 
 gcp_project="hmf-database"
 gcp_account="hmf-ops"
@@ -19,14 +18,14 @@ print_usage(){
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
     echo " Examp: $(basename $0) -s HMFregXXXX"
+    echo "  Note: Writes output sh file to ${OUT_CMD_LOC}"
     echo "-----"
     exit 1
 }
 
-while getopts ':s:e' flag; do
+while getopts ':s:' flag; do
     case "${flag}" in
         s) submission=${OPTARG} ;;
-        e) do_execute=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -58,7 +57,8 @@ main() {
 
     # All while loops use process substitution to avoid subprocesses
     info "Retrieving runs involved (via samples->sets)"
-    samples_json=$(query_api.pl -type samples -filter "submission=${submission}" -exact -json) 
+    #samples_json=$(query_api.pl -type samples -filter "submission=${submission}" -exact -json) 
+    samples_json=$(hmf_api_get "samples?submission=${submission}") 
 
     while read sample; do
         sample_id=$(echo "$sample" | jq -r '.id')
@@ -71,7 +71,6 @@ main() {
             runs_json=$(hmf_api_get "runs?set_id=${set_id}")
 
             while read run; do
-                #debug $run
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
@@ -107,8 +106,9 @@ main() {
     done < <(echo "$samples_json" | jq -c '.[]')
 
     info "A total of ${run_count} runs visited"
+    info "Making output cmd file executable (${cmd_file})"
+    chmod +x "${cmd_file}"
     info "If all ok you can execute deletion with:"
-    info "  chmod +x ${cmd_file}"
     info "  nohup ${cmd_file} > ${log_file} &"
     info "Finished with $(basename $0)"
 }
@@ -120,15 +120,13 @@ run_type_by_ini_id() {
     local fastq="fastq"
     local unknown="unknown"
 
-    if [[ "$ini_id" == "$FASTQ_INI_ID" ]]; then
+    if [[ "$ini_id" == "$FAS_INI_ID" ]]; then
         echo "$fastq"
-    elif [[ "$ini_id" == "$SOMATIC_INI_ID" ]]; then
+    elif [[ "$ini_id" == "$SOM_INI_ID" ]]; then
         echo "$pipeline"
-    elif [[ "$ini_id" == "$SINGLESAMPLE_INI_ID" ]]; then
+    elif [[ "$ini_id" == "$SIN_INI_ID" ]]; then
         echo "$pipeline"
-    elif [[ "$ini_id" == "$KG_INI_ID" ]]; then
-        echo "$pipeline"
-    elif [[ "$ini_id" == "$SHALLOW_INI_ID" ]]; then
+    elif [[ "$ini_id" == "$SHA_INI_ID" ]]; then
         echo "$pipeline"
     else
         echo "$unknown"
