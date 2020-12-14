@@ -18,14 +18,14 @@ print_usage(){
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
     echo " Examp: $(basename $0) -s HMFregXXXX"
+    echo "  Note: Writes output sh file to ${OUT_CMD_LOC}"
     echo "-----"
     exit 1
 }
 
-while getopts ':s:e' flag; do
+while getopts ':s:' flag; do
     case "${flag}" in
         s) submission=${OPTARG} ;;
-        e) do_execute=${OPTARG} ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -106,8 +106,9 @@ main() {
     done < <(echo "$samples_json" | jq -c '.[]')
 
     info "A total of ${run_count} runs visited"
+    info "Making output cmd file executable (${cmd_file})"
+    chmod +x "${cmd_file}"
     info "If all ok you can execute deletion with:"
-    info "  chmod +x ${cmd_file}"
     info "  nohup ${cmd_file} > ${log_file} &"
     info "Finished with $(basename $0)"
 }
