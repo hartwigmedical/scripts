@@ -132,8 +132,8 @@ echo ""
 echo "The paperwork for the Hartwig Medical Foundation request $release_id has been finished, meaning we can move on to the data transfer phase."
 echo ""
 echo "Before starting this up please double check the details of your request:
-The licensed data involves metadata (tumor${patient_data}${pre_treatment_data}${post_treatment_data} properties; TSV format)${somatic_data}${germline_data}${rawDNA_data}${rawRNA_data})."
-echo "It includes this patient selection: ${selection}"
+The licensed data involves: metadata (tumor${patient_data}${pre_treatment_data}${post_treatment_data} properties; TSV format)${somatic_data}${germline_data}${rawDNA_data}${rawRNA_data}."
+echo "It includes the patient selection: ${selection}"
 echo ""
 echo "Hartwig Medical Foundation will make the licensed data available through the Google Cloud Platform (GCP). \
 In order to get access to the licensed data the download contact persons as indicated on the Data Access Request form will need to have or to create a GCP account enabling multi-factor authentication. \
