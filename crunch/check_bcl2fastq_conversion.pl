@@ -318,7 +318,7 @@ sub parseJsonInfo{
                 $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
                 $info{ 'samp' }{ $sid }{ 'yield' } += $read->{ Yield };
                 $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
-                $info{ 'indx' }{ $seq }{ 'yield' } += $read->{ Yield };
+                #$info{ 'indx' }{ $seq }{ 'yield' } += $read->{ Yield };
                 
                 $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
                 $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
