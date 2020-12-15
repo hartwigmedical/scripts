@@ -85,7 +85,7 @@ main() {
                 if [[ "${run_type}" == "fastq" ]]; then
                     info "  Processing as ${run_type} (ini=${ini_id})"
                     echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${cmd_file}"
-                    echo " hmf_api_patch samples ${sample_id} 'status=Deleted'" >> "${cmd_file}"
+                    echo " hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
@@ -99,7 +99,7 @@ main() {
                     die "Run not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
                 fi
                 echo "echo '[INFO] Updating api for run $run_name (id=${run_id})'" >> "${cmd_file}"
-                echo " hmf_api_patch runs ${run_id} 'status=Deleted'" >> "${cmd_file}"
+                echo " hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
                 ((run_count++))
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')

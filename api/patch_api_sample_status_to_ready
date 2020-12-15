@@ -22,4 +22,4 @@ sample_json=$(hmf_api_get "samples?barcode=${sample_barcode}")
 
 ## Patch
 sample_oid=$(echo "${sample_json}" | jq -r .[0].id)
-hmf_api_patch samples "${sample_oid}" "status=${new_status}"
+hmf_api_patch -c "samples" -o "${sample_oid}" -f "status" -v "${new_status}"
