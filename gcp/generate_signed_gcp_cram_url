@@ -35,6 +35,9 @@ else
     die "Provided type needs to be REF or TUM"
 fi
 
+# Sanity check (not all samples are linked to a biopsy yet in API)
+[[ "${internal_cram_url}" =~ ^gs ]] ||  die "Incorrect internal CRAM URL for ${sample_type} sample of biopsy ${biopsy_name}"
+
 # Unfortunately the sign script takes URL without "gs://" prefix
 # Ideally we use gsutil signurl directly but does not work with requester pays buckets
 cram=$(echo "${internal_cram_url}" | sed 's/^gs\:\/\///')
