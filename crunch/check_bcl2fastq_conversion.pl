@@ -297,7 +297,7 @@ sub parseJsonInfo{
         foreach my $sample ( @$samples ){
             
             ## Sanity checks
-            die "Field for sample id not found\n" unless deinfed $sample->{ SampleId };
+            die "Field for sample id not found\n" unless defined $sample->{ SampleId };
             die "Field for sample name not found\n" unless defined $sample->{ SampleName };
             die "Field for index seq not found\n" unless defined $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' };
 
