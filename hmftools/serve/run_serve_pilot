@@ -26,6 +26,7 @@ fi
 
 java -Xms2G -Xmx8G -jar ${serve_jar} \
     -vicc_json ${vicc_json} \
+    -vicc_sources cgi,civic \
     -iclusion_trial_tsv ${iclusion_trial_tsv} \
     -docm_tsv ${docm_tsv} \
     -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
