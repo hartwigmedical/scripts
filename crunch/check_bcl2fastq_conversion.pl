@@ -14,7 +14,6 @@ use 5.010.000;
 ## -----
 ## Global variables
 ## -----
-my $DATETIME = localtime;
 my $SCRIPT = basename $0;
 my $OUT_SEP = "\t";
 my $NA_CHAR = "NA";
@@ -23,17 +22,13 @@ my $SSHT_LOC = 'SampleSheet.csv';
 my $RXML_LOC = 'RunInfo.xml';
 my $JSON_LOC1 = 'Data/Intensities/BaseCalls/Stats/Stats.json';
 my $JSON_LOC2 = 'Fastq/Stats/Stats.json';
-my $LANE_KEY = 'ConversionResults';
-my $SMPL_KEY = 'DemuxResults';
-my $READ_KEY = 'ReadMetrics';
-my $BARC_KEY = 'IndexMetrics';
 my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission description );
 my @SUM_FIELDS = qw( submission id name yld q30 description );
 
 my $YIELD_FACTOR = 1e6;
 my $ROUND_DECIMALS = 0;
 
-## These should be in sync with those from api (see: query_api.pl -type platforms)
+## QC limits should be in sync with those from api (see: query_api.pl -type platforms)
 my %QC_LIMITS_PER_PLATFORM = (
     'NovaSeq' => {
         'min_flowcell_q30' => 85,
@@ -270,7 +265,7 @@ sub parseJsonInfo{
     $info{ 'flow' }{ $fid }{ 'id' } = $fid;
     $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
     
-    my $lanes = $raw_json_info->{ $LANE_KEY };
+    my $lanes = $raw_json_info->{'ConversionResults'};
     foreach my $lane ( @$lanes ){
         my $lid = join( "", "lane", $lane->{ LaneNumber } );
         $info{ 'lane' }{ $lid }{ name } = $lid;
@@ -283,7 +278,7 @@ sub parseJsonInfo{
         ## Undetermined info is stored separate from samples in json
         my $undet_id = 'UNDETERMINED';
         my $undet_obj = $lane->{ 'Undetermined' };
-        my $undet_reads = $undet_obj->{ $READ_KEY };
+        my $undet_reads = $undet_obj->{ 'ReadMetrics' };
         my $undet_info = \%{$info{ 'undt' }{ $undet_id }};
         $undet_info->{ 'name' } = $undet_id;
         foreach my $read ( @$undet_reads ){
@@ -297,9 +292,8 @@ sub parseJsonInfo{
             $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
             $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
         }
-        
-        ## sample info stored together at SMPL_KEY key
-        my $samples = $lane->{ $SMPL_KEY };
+
+        my $samples = $lane->{'DemuxResults'};
         foreach my $sample ( @$samples ){
             
             my $sid = $NA_CHAR;
@@ -307,9 +301,9 @@ sub parseJsonInfo{
             ## Reset info for all real samples
             $sid = $sample->{ SampleId } if exists $sample->{ SampleId };
             $info{ 'samp' }{ $sid }{ name } = $sample->{ SampleName } if exists $sample->{ SampleName };
-            $info{ 'samp' }{ $sid }{ 'seq' } = $sample->{ $BARC_KEY }[0]{ 'IndexSequence' } || $NA_CHAR;
+            $info{ 'samp' }{ $sid }{ 'seq' } = $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' } || $NA_CHAR;
             
-            my $reads = $sample->{ $READ_KEY };
+            my $reads = $sample->{ 'ReadMetrics' };
             foreach my $read ( @$reads ){
                 my $rid = join( "", "read", $read->{ ReadNumber } );
                 $info{ 'read' }{ $rid }{ 'name' } = $rid;
@@ -326,8 +320,8 @@ sub parseJsonInfo{
             }
             
             my %bc_mismatch_counts = (
-                'mm0' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '0' },
-                'mm1' => $sample->{ $BARC_KEY }[0]{ 'MismatchCounts' }{ '1' },
+                'mm0' => $sample->{ 'IndexMetrics' }[0]{ 'MismatchCounts' }{ '0' },
+                'mm1' => $sample->{ 'IndexMetrics' }[0]{ 'MismatchCounts' }{ '1' },
             );
             
             my @types = keys %bc_mismatch_counts;
