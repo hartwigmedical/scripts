@@ -2,38 +2,68 @@
 
 source message_functions
 
-class=$1 # eg flowcells
-oid=$2 # eg 1000
-patch=$3 # eg status="new-status"
-
-if [[ $# -ne 3 || -z "${class}" || -z "${oid}" || -z "${patch}" ]]; then
-    echo "---"
-    echo "Usage: $(basename $0) \S{object-class} \S{object-id} \S{patch-string}"
-    echo "   Eg: $(basename $0) flowcells 1000 \"status=Failed\""
-    echo " Note: Requires you to press a key before PATCH is applied"
-    echo "---"
+print_usage(){
+    echo "-----"
+    echo "Descr: Patches one field in one object of HMF API"
+    echo "Usage: $(basename $0) -c \${object-class} -o \${object-id} -f \${patch-field} -v \${patch-value}"
+    echo "Exmpl: $(basename $0) -c flowcells -o 1000 -f \"status\" -v \"Pending\" # asks confirmation by pressing key"
+    echo "       $(basename $0) -c flowcells -o 1000 -f \"status\" -v \"Pending\" -e # does not ask for conformation"
+    echo "Options:"
+    echo "  -e   Do not require to press a key"
+    echo "-----"
     exit 1
-fi
+}
+
+class=''
+oid=''
+patch_field=''
+patch_value=''
+confirmation='true'
+confirmation_key='y'
 
 api_dir="/data/common/dbs/api_credentials"
 api_crt="${api_dir}/api.crt"
 api_key="${api_dir}/api.key"
 api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 
+while getopts ':c:o:f:v:e' flag; do
+    case "${flag}" in
+        c) class=${OPTARG} ;;
+        o) oid=${OPTARG} ;;
+        f) patch_field=${OPTARG} ;;
+        v) patch_value=${OPTARG} ;;
+        e) confirmation='false' ;;
+        *) print_usage >&2
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${class}" || -z "${oid}" || -z "${patch_field}" || -z "${patch_value}" ]]; then
+    print_usage
+fi
+
 main () {
     info "Searching for api object (class=${class}, id=${oid})"
-    result="$(hmfapi GET ${api_url}/${class}/${oid})"
+    api_result="$(hmfapi GET "${api_url}/${class}/${oid}")"
     [[ $? -eq 0 ]] || die "API GET failed (${api_url}/${class}/${oid})"
+    info "Object to be patched: ${api_result}"
 
-    info "Found object:"
-    echo "$result" | jq '.'
+    patch="${patch_field}=${patch_value}"
     info "About to PATCH object with ${patch}"
-    read -r -p "Press y + enter to apply patch..." response
-    if [[ "${response}" == "y" ]]; then
+    if [[ "${confirmation}" == "true" ]]; then
+        info "Press ${confirmation_key} + enter to apply patch..."
+        read -t 10
+        if [[ "${REPLY}" == "${confirmation_key}" ]]; then
+            info "Patching object with ${patch}"
+            hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
+        else
+            info "Patch cancelled"
+        fi
+    elif [[ "${confirmation}" == "false" ]]; then
         info "Patching object with ${patch}"
         hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
     else
-        info "Patch cancelled"
+        die "Unexpected: param confirmation should be true or false"
     fi
 }
 

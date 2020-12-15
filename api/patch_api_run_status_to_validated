@@ -28,4 +28,4 @@ run_json=$(hmf_api_get "runs?set_id=${set_oid}")
 
 ## Patch
 run_oid=$(echo "${run_json}" | jq -r .[0].id)
-hmf_api_patch runs "${run_oid}" "status=${new_status}"
+hmf_api_patch -c "runs" -o "${run_oid}" -f "status" -v "${new_status}"
