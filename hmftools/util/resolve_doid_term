@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 source locate_files
-source metadata_functions
 
 doid=$1 && shift
 
