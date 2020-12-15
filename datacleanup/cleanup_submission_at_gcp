@@ -81,6 +81,9 @@ main() {
                 gs_url="gs://${bucket}/${run_name}"
                 run_type=$(run_type_by_ini_id "${ini_id}")
 
+                # Pre-GCP buckets need possible underscores replaced
+                bucket=${bucket/_/-}
+
                 info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
                 echo "echo '[INFO] Deleting data for run $run_name (id=${run_id})'" >> "${cmd_file}"
 
