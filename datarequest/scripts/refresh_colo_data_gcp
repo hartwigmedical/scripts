@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+echo ""
+gcloud config set project hmf-share
+
 base_path="/data/data_archive/validation_data/latest_tooling_pipeline_runs"
 colo_folder=$( ls ${base_path} | grep "COLO" )
 source_set_path="${base_path}/${colo_folder}"
@@ -8,7 +11,7 @@ dest_base_path="/data/data_archive/datarequests/colo"
 #
 colo_exists=$( ls $dest_base_path | grep ${colo_folder})
 if [[ "$colo_exists" == "" ]]; then
-    echo "[DEBUG] latest version not yet on GCP. Latest version will be added."
+    echo "[DEBUG] latest version not yet on GCP! Previous version will be deleted and newest version will be added to hmf-dr-colo on GCP."
     mkdir ${dest_base_path}/${colo_folder}
     dest_set_base_path="${dest_base_path}/${colo_folder}"
     #
@@ -22,15 +25,16 @@ if [[ "$colo_exists" == "" ]]; then
     
     collect_germline_set_data ${source_set_path} ${dest_set_base_path}/germline
     create_tar_file ${germline_tar_file} ${dest_base_path} ${dest_set_base_path}/germline  ${dest_set_base_path}/tar_${colo_folder}_germline.log
-    
+
+    gsutil -u hmf-share rm gs://hmf-dr-colo/*
     gsutil -u hmf-share cp ${dest_base_path}/*.tar gs://hmf-dr-colo/
-    echo "[INFO] latest version added to GCP."
+    echo "[INFO] latest version added to hmf-dr-colo on GCP."
 else
-    echo "[INFO] latest version already on GCP."
+    echo "[INFO] latest version already in hmf-dr-colo on GCP."
 fi
 
 echo ""
-echo "[INFO] Files in the bucket /hmf-dr-colo/:"
-gsutil du -h gs://hmf-dr-colo/
+echo "[INFO] Files in the bucket hmf-dr-colo:"
+gsutil -u hmf-share du -h gs://hmf-dr-colo/
 echo ""
 
