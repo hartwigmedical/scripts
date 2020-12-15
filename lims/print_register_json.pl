@@ -247,7 +247,10 @@ sub processSample{
     }
     elsif ( $analysis eq 'RNAanalysis' ){
         my $set = join( "_", $date, "HMFregRNA", $barcode, $name );
+        # TODO: remove default 15 GBase yield once yield is correctly set in LIMS for RNA
+        my $default_rna_yield = 15e9;
         say "[INFO]   SET: $set";
+        $yield = $default_rna_yield;
         $json_data{ 'ini' } = "$RNA_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";

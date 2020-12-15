@@ -76,6 +76,8 @@ main() {
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
+                # Pre-GCP buckets need possible underscores replaced
+                bucket=${bucket/_/-}
                 run_status=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
                 gs_url="gs://${bucket}/${run_name}"
