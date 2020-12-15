@@ -57,7 +57,6 @@ main() {
 
     # All while loops use process substitution to avoid subprocesses
     info "Retrieving runs involved (via samples->sets)"
-    #samples_json=$(query_api.pl -type samples -filter "submission=${submission}" -exact -json) 
     samples_json=$(hmf_api_get "samples?submission=${submission}") 
 
     while read sample; do
