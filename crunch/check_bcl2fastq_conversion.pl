@@ -296,12 +296,18 @@ sub parseJsonInfo{
         my $samples = $lane->{'DemuxResults'};
         foreach my $sample ( @$samples ){
             
-            my $sid = $NA_CHAR;
-            
+            ## Sanity checks
+            die "Field for sample id not found\n" unless exists $sample->{ SampleId };
+            die "Field for sample name not found\n" unless exists $sample->{ SampleName };
+            die "Field for index seq not found\n" unless exists $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' };
+
+            my $sid = $sample->{ SampleId };
+            my $snm = $sample->{ SampleName };
+            my $seq = $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' };
+
             ## Reset info for all real samples
-            $sid = $sample->{ SampleId } if exists $sample->{ SampleId };
-            $info{ 'samp' }{ $sid }{ name } = $sample->{ SampleName } if exists $sample->{ SampleName };
-            $info{ 'samp' }{ $sid }{ 'seq' } = $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' } || $NA_CHAR;
+            $info{ 'samp' }{ $sid }{ name } = $snm;
+            $info{ 'samp' }{ $sid }{ 'seq' } = $seq;
             
             my $reads = $sample->{ 'ReadMetrics' };
             foreach my $read ( @$reads ){
