@@ -76,13 +76,12 @@ main() {
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
+                # Pre-GCP buckets need possible underscores replaced
+                bucket=${bucket/_/-}
                 run_status=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
                 gs_url="gs://${bucket}/${run_name}"
                 run_type=$(run_type_by_ini_id "${ini_id}")
-
-                # Pre-GCP buckets need possible underscores replaced
-                bucket=${bucket/_/-}
 
                 info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
                 echo "echo '[INFO] Deleting data for run $run_name (id=${run_id})'" >> "${cmd_file}"
