@@ -83,9 +83,9 @@ echo ""
 
 group_id=253
 echo ""
-echo "[INFO] ADD $gcp_mail to API GROUP (for ACL permissions) RELATED TO hmf-dr-colo."
+echo "[INFO] ADD $gcp_mail to API GROUP (for ACL permissions) RELATED TO ${bucket_name} ."
 echo ""
-echo "[INFO] Current accounts in API group related to hmf-dr-colo:"
+echo "[INFO] Current accounts in API group related to ${bucket_name} :"
 account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 email_in_acl_group=$""
 for account_nr in $account_nrs
@@ -108,12 +108,12 @@ do
         curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": '$account_id'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         echo ""
     else
-        echo "[ERROR] Account $email already present in API group related to hmf-dr-colo, so no adding needed."
+        echo "[ERROR] Account $email already present in API group related to ${bucket_name} , so no adding needed."
         echo ""
     fi
 done
 
-echo "[INFO] Updated accounts in API group related to hmf-dr-colo:"
+echo "[INFO] Updated accounts in API group related to ${bucket_name} :"
 account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 for account_nr in $account_nrs
 do
@@ -121,16 +121,18 @@ do
 done
 echo ""
 
-echo "[INFO] Current number of raw files with API group related to hmf-dr-colo in the ACL:"
-number=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l )
-echo ${number}
-echo "[INFO] Specific colo files:"
-for i in $(seq 1 $number); do
+echo "[INFO] Current number of raw files with API group related to ${bucket_name}  in the ACL:"
+curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
+number=$(expr $( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l ) - 1)
+echo "[INFO] Links to be shared with researcher:"
+echo "URL Bucket = gs://${bucket_name}/"
+echo "URLs to raw data files:"
+for i in $(seq 0 $number); do
     file_number=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq ".[${i}].file_id" )
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/files/${file_number} | jq '.filepath'
+    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/files/${file_number} | jq -r '.filepath'
 done
 echo ""
-echo "[INFO] If you want to revoke access use the script revoke_access_data_GCP with '-i DR-colo' (but never remove the API group!!)."
+echo "[INFO] If you eventually want to revoke access use the script revoke_access_data_GCP with '-i DR-colo' (but never remove the API group!!)."
 
 echo ""
 echo ""
