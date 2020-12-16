@@ -11,7 +11,7 @@ sop_regex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
 lms_sub_jsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -exact -json)
 lms_smp_jsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
-api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -json)
+api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -filter "status!=Unregistered" -json)
 api_rns_jsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
 
 analysis_type=$(echo "${lms_sub_jsn}" | jq -r ".[].analysis_type" )
