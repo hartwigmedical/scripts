@@ -37,6 +37,8 @@ echo ""
 echo "[START] add_researcher_to_colo_data_gcp: $(date +"%y%m%d (%T)")"
 echo ""
 
+refresh_colo_data_gcp
+
 echo "[INFO] Account(s) inputted in the script for which access to colo data on GCP data will tried to be given:"
 echo ${gcp_mail}
 echo ""
