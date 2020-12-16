@@ -39,8 +39,9 @@ main() {
     info "######"
     info "Starting with script $(basename $0) for submission $submission"
 
-    info "Setting GCP account ${gcp_account}@${gcp_project}"
-    msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
+    gcp_account_project="${gcp_account}@${gcp_project}"
+    info "Setting GCP account ${gcp_account_project}"
+    msg=$(gcloud config set account "${gcp_account_project}.iam.gserviceaccount.com" 2>&1)
     info "  ${msg}"
 
     yymmdd=$(date "+%y%m%d")
@@ -83,13 +84,12 @@ main() {
                 gs_url="gs://${bucket}/${run_name}"
                 run_type=$(run_type_by_ini_id "${ini_id}")
 
-                info "Found run $run_id ($run_status) for set $set_id by sample $sample_id ($sample_status)"
-                echo "echo '[INFO] Deleting data for run $run_name (id=${run_id})'" >> "${cmd_file}"
+                run_info="run $run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
+                info "Processing run ${run_info}"
+                echo "echo '[INFO] Performing steps for run ${run_info}'" >> "${cmd_file}"
 
                 if [[ "${run_type}" == "fastq" ]]; then
-                    info "  Processing as ${run_type} (ini=${ini_id})"
-                    echo "echo '[INFO] Updating api for sample ${sample_barcode}'" >> "${cmd_file}"
-                    echo " hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
+                    echo "  hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
@@ -97,13 +97,11 @@ main() {
                         process_gs_url "${sample_status}" "${fastq_file_url}" "${cmd_file}"
                     done
                 elif [[ "${run_type}" == "pipeline" ]]; then
-                    info "  Processing as ${run_type} (ini=${ini_id})"
                     process_gs_url "${run_status}" "${gs_url}" "${cmd_file}"
                 else
-                    die "Run not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
+                    die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
                 fi
-                echo "echo '[INFO] Updating api for run $run_name (id=${run_id})'" >> "${cmd_file}"
-                echo " hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
+                echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
                 ((run_count++))
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')
@@ -155,7 +153,7 @@ process_gs_url() {
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
-        echo " gsutil -u ${gcp_project} rm -r ${gs_url}" >> "${out_file}"
+        echo "  gsutil -u ${gcp_project} rm -r ${gs_url}" >> "${out_file}"
     fi
 }
 
