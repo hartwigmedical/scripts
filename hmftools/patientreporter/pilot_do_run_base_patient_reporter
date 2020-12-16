@@ -20,6 +20,6 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    -config_cohorts_tsv ${cohort_config_tsv} \
+    -cohort_config_tsv ${cohort_config_tsv} \
     -comments "This is a pilot patient report and is not meant for production purpose" \
     "$@"
