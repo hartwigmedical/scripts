@@ -53,7 +53,7 @@ echo ""
 echo "[START] add_researcher_to_data_gcp: $(date +"%y%m%d (%T)")"
 echo ""
 
-echo "[INFO] Accounts inputted in the script for which access to GCP data will tried to be given:"
+echo "[INFO] Account(s) inputted in the script for which access to GCP data will tried to be given:"
 echo ${gcp_mail}
 echo ""
 
