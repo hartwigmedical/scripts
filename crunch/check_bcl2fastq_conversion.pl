@@ -22,8 +22,8 @@ my $SSHT_LOC = 'SampleSheet.csv';
 my $RXML_LOC = 'RunInfo.xml';
 my $JSON_LOC1 = 'Data/Intensities/BaseCalls/Stats/Stats.json';
 my $JSON_LOC2 = 'Fastq/Stats/Stats.json';
-my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission description );
-my @SUM_FIELDS = qw( submission id name yld q30 description );
+my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission seq );
+my @SUM_FIELDS = qw( submission id name yld q30 seq );
 
 my $YIELD_FACTOR = 1e6;
 my $ROUND_DECIMALS = 0;
@@ -264,80 +264,97 @@ sub parseJsonInfo{
     my $fid = $raw_json_info->{ 'Flowcell' };
     $info{ 'flow' }{ $fid }{ 'id' } = $fid;
     $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
-    
+
+    ## First readinf the "unknown barcodes" and add them to "index sequences"    
+    my $unknowns = $raw_json_info->{'UnknownBarcodes'};
+    foreach my $lane ( @$unknowns ){
+        my $lid = join( "", "lane", $lane->{ Lane } );
+        my $barcodes = $lane->{'Barcodes'};
+        foreach my $barcode ( keys %$barcodes ){
+            $info{ indx }{ $barcode }{ name } = $barcode;
+            $info{ indx }{ $barcode }{ seq } = $barcode;
+            $info{ indx }{ $barcode }{ yield } += $barcodes->{ $barcode };
+        }
+    }
+
+    ## Then read samples
     my $lanes = $raw_json_info->{'ConversionResults'};
     foreach my $lane ( @$lanes ){
-        my $lid = join( "", "lane", $lane->{ LaneNumber } );
-        $info{ 'lane' }{ $lid }{ name } = $lid;
+        my $lid = join( "", "lane", $lane->{LaneNumber} );
+        $info{lane}{ $lid }{name} = $lid;
         
-        $info{ 'flow' }{ $fid }{ clust_raw } += $lane->{ TotalClustersRaw };
-        $info{ 'flow' }{ $fid }{ clust_pf } += $lane->{ TotalClustersPF };
-        $info{ 'lane' }{ $lid }{ clust_raw } += $lane->{ TotalClustersRaw };
-        $info{ 'lane' }{ $lid }{ clust_pf } += $lane->{ TotalClustersPF };
+        $info{flow}{ $fid }{clust_raw} += $lane->{TotalClustersRaw};
+        $info{flow}{ $fid }{clust_pf} += $lane->{TotalClustersPF};
+        $info{lane}{ $lid }{clust_raw} += $lane->{TotalClustersRaw};
+        $info{lane}{ $lid }{clust_pf} += $lane->{TotalClustersPF};
         
         ## Undetermined info is stored separate from samples in json
         my $undet_id = 'UNDETERMINED';
-        my $undet_obj = $lane->{ 'Undetermined' };
-        my $undet_reads = $undet_obj->{ 'ReadMetrics' };
-        my $undet_info = \%{$info{ 'undt' }{ $undet_id }};
-        $undet_info->{ 'name' } = $undet_id;
+        my $undet_obj = $lane->{Undetermined};
+        my $undet_reads = $undet_obj->{ReadMetrics};
+        my $undet_info = \%{$info{undt}{ $undet_id }};
+        $undet_info->{name} = $undet_id;
         foreach my $read ( @$undet_reads ){
-            my $rid = join( "", "read", $read->{ ReadNumber } );
-            $undet_info->{ 'yield' } += $read->{ Yield };
-            $undet_info->{ 'yield_q30' } += $read->{ YieldQ30 };
-            $info{ 'flow' }{ $fid }{ 'yield' } += $read->{ Yield };
-            $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
-            $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
-            $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
-            $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
-            $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
+            my $rid = join( "", "read", $read->{ReadNumber} );
+            $undet_info->{yield} += $read->{Yield};
+            $undet_info->{yield_q30} += $read->{YieldQ30};
+            $info{flow}{ $fid }{yield} += $read->{Yield};
+            $info{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
+            $info{lane}{ $lid }{yield} += $read->{Yield};
+            $info{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
+            $info{read}{ $rid }{yield} += $read->{Yield};
+            $info{read}{ $rid }{yield_q30} += $read->{YieldQ30};
         }
 
-        my $samples = $lane->{'DemuxResults'};
+        my $samples = $lane->{DemuxResults};
         foreach my $sample ( @$samples ){
             
             ## Sanity checks
-            die "Field for sample id not found\n" unless defined $sample->{ SampleId };
-            die "Field for sample name not found\n" unless defined $sample->{ SampleName };
-            die "Field for index seq not found\n" unless defined $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' };
+            die "Field for sample id not found\n" unless defined $sample->{SampleId};
+            die "Field for sample name not found\n" unless defined $sample->{SampleName};
+            die "Field for index seq not found\n" unless defined $sample->{IndexMetrics}[0]{IndexSequence};
 
-            my $sid = $sample->{ SampleId };
-            my $snm = $sample->{ SampleName };
-            my $seq = $sample->{ 'IndexMetrics' }[0]{ 'IndexSequence' };
+            my $sid = $sample->{SampleId};
+            my $snm = $sample->{SampleName};
+            my $seq = $sample->{IndexMetrics}[0]{IndexSequence};
 
             ## Reset info for all real samples
-            $info{ 'samp' }{ $sid }{ name } = $snm;
-            $info{ 'samp' }{ $sid }{ 'seq' } = $seq;
+            $info{samp}{ $sid }{name} = $snm;
+            $info{samp}{ $sid }{seq}  = $seq;
             
-            my $reads = $sample->{ 'ReadMetrics' };
+            my $reads = $sample->{ReadMetrics};
             foreach my $read ( @$reads ){
-                my $rid = join( "", "read", $read->{ ReadNumber } );
-                $info{ 'read' }{ $rid }{ 'name' } = $rid;
+                my $rid = join( "", "read", $read->{ReadNumber} );
+                $info{read}{ $rid }{name} = $rid;
+                $info{indx}{ $seq }{name} = $seq;
+                $info{indx}{ $seq }{seq}  = $seq;
                 
-                $info{ 'flow' }{ $fid }{ 'yield' } += $read->{ Yield };
-                $info{ 'lane' }{ $lid }{ 'yield' } += $read->{ Yield };
-                $info{ 'samp' }{ $sid }{ 'yield' } += $read->{ Yield };
-                $info{ 'read' }{ $rid }{ 'yield' } += $read->{ Yield };
-                #$info{ 'indx' }{ $seq }{ 'yield' } += $read->{ Yield };
+                $info{flow}{ $fid }{yield} += $read->{Yield};
+                $info{lane}{ $lid }{yield} += $read->{Yield};
+                $info{samp}{ $sid }{yield} += $read->{Yield};
+                $info{read}{ $rid }{yield} += $read->{Yield};
+                $info{indx}{ $seq }{yield} += $read->{Yield};
                 
-                $info{ 'flow' }{ $fid }{ 'yield_q30' } += $read->{ YieldQ30 };
-                $info{ 'lane' }{ $lid }{ 'yield_q30' } += $read->{ YieldQ30 };
-                $info{ 'samp' }{ $sid }{ 'yield_q30' } += $read->{ YieldQ30 };
-                $info{ 'read' }{ $rid }{ 'yield_q30' } += $read->{ YieldQ30 };
+                $info{flow}{ $fid }{yield_q30} += $read->{YieldQ30};
+                $info{lane}{ $lid }{yield_q30} += $read->{YieldQ30};
+                $info{samp}{ $sid }{yield_q30} += $read->{YieldQ30};
+                $info{read}{ $rid }{yield_q30} += $read->{YieldQ30};
+                $info{indx}{ $seq }{yield_q30} += $read->{YieldQ30};
             }
             
             my %bc_mismatch_counts = (
-                'mm0' => $sample->{ 'IndexMetrics' }[0]{ 'MismatchCounts' }{ '0' },
-                'mm1' => $sample->{ 'IndexMetrics' }[0]{ 'MismatchCounts' }{ '1' },
+                'mm0' => $sample->{IndexMetrics}[0]{MismatchCounts}{0},
+                'mm1' => $sample->{IndexMetrics}[0]{MismatchCounts}{1},
             );
             
             my @types = keys %bc_mismatch_counts;
             foreach my $mm ( @types ){
                 my $count = 0;
                 $count = $bc_mismatch_counts{ $mm } if defined $bc_mismatch_counts{ $mm };
-                $info{ 'flow' }{ $fid }{ $mm } += $count;
-                $info{ 'lane' }{ $lid }{ $mm } += $count;
-                $info{ 'samp' }{ $sid }{ $mm } += $count;
+                $info{flow}{ $fid }{ $mm } += $count;
+                $info{lane}{ $lid }{ $mm } += $count;
+                $info{samp}{ $sid }{ $mm } += $count;
+                $info{indx}{ $seq }{ $mm } += $count;
             }
         }
     }
@@ -348,14 +365,15 @@ sub parseJsonInfo{
             my $obj = $info{ $type }{ $id };
             my $name = $obj->{ 'name' };
             
-            $obj->{ 'q30' } = getPerc( $obj->{ 'yield_q30' }, $obj->{ 'yield' } );
-            $obj->{ 'yld_p' } = getPerc( $obj->{ 'yield' }, $info{ 'flow' }{ $fid }{ 'yield' } );
-            $obj->{ 'flowcell_print' } = $fid;
+            $obj->{q30} = getPerc( $obj->{yield_q30}, $obj->{yield} );
+            $obj->{yld_p} = getPerc( $obj->{yield}, $info{flow}{ $fid }{yield} );
+            $obj->{flowcell_print} = $fid;
 
             $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
             $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, $ROUND_DECIMALS, $YIELD_FACTOR );
             $obj->{ 'id_print' } = $id;
             $obj->{ 'name_print' } = $obj->{ 'name' };
+            $obj->{ 'seq_print' } = $obj->{ 'seq' };
             $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' } );
             
             ## percentage filtered does not exist for samples
@@ -364,6 +382,8 @@ sub parseJsonInfo{
             }
             
             next if $name =~ /read|UNDETERMINED/;
+            next if $type eq "indx";
+
             $obj->{ 'total_reads' } = $obj->{ 'mm0' } + $obj->{ 'mm1' };
             $obj->{ 'mm0_print' } = 0;
             $obj->{ 'mm1_print' } = 0;
@@ -427,11 +447,12 @@ sub printTable {
       $info->{'stats'}{'cycle_string'};
     
     say "#".join( $OUT_SEP, "level", @$fields );
-    printTableForLevel( $info->{'flow'}, $fields, "RUN" );
-    printTableForLevel( $info->{'lane'}, $fields, "LANE" );
-    printTableForLevel( $info->{'samp'}, $fields, "SAMPLE" );
-    printTableForLevel( $info->{'read'}, $fields, "READ" );
-    printTableForLevel( $info->{'undt'}, $fields, "UNDET" );
+    printTableForLevelSortedByName( $info->{'flow'}, $fields, 'RUN' );
+    printTableForLevelSortedByName( $info->{'lane'}, $fields, 'LANE' );
+    printTableForLevelSortedByYield( $info->{'indx'}, $fields, 'INDEX' );
+    printTableForLevelSortedByName( $info->{'samp'}, $fields, 'SAMPLE' );
+    printTableForLevelSortedByName( $info->{'read'}, $fields, 'READ' );
+    printTableForLevelSortedByName( $info->{'undt'}, $fields, 'UNDET' );
 }
 
 sub printSummaryTable{
@@ -457,12 +478,21 @@ sub printSummaryTable{
       $info->{'stats'}{'flowcell_qc'};
       
     say "#".join( $OUT_SEP, @$fields );
-    printTableForLevel( $info->{'samp'}, $fields );
+    printTableForLevelSortedByName( $info->{'samp'}, $fields );
 }
 
-sub printTableForLevel{
+sub printTableForLevelSortedByName{
     my ($info, $fields, $level) = @_;
     foreach my $id ( sort { $info->{$b}{'name'} cmp $info->{$a}{'name'} } keys %$info){
+        my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
+        unshift @output, $level if defined $level;
+        say join( $OUT_SEP, @output );
+    }
+}
+
+sub printTableForLevelSortedByYield{
+    my ($info, $fields, $level) = @_;
+    foreach my $id ( sort { $info->{$b}{'yld_print'} <=> $info->{$a}{'yld_print'} } keys %$info){
         my @output = map( $info->{ $id }{ $_."_print" } || $NA_CHAR, @$fields );
         unshift @output, $level if defined $level;
         say join( $OUT_SEP, @output );
