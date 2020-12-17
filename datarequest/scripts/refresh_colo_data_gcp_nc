@@ -3,10 +3,6 @@
 echo ""
 gcloud config set project hmf-share
 
-echo ""
-echo "[START] REFRESH COLO DATA ON GCP: $(date +"%y%m%d (%T)")"
-echo ""
-
 
 base_path="/data/data_archive/validation_data/latest_tooling_pipeline_runs"
 colo_folder=$( ls ${base_path} | grep "COLO" )
@@ -16,7 +12,9 @@ dest_base_path="/data/data_archive/datarequests/colo"
 #
 colo_exists=$( ls $dest_base_path | grep ${colo_folder})
 if [[ "$colo_exists" == "" ]]; then
-    echo "[DEBUG] latest version not yet on GCP! Previous version will be deleted and newest version will be added to hmf-dr-colo on GCP."
+    echo ""
+    echo "[START] REFRESH COLO DATA ON GCP: $(date +"%y%m%d (%T)")"
+    echo ""
     mkdir ${dest_base_path}/${colo_folder}
     dest_set_base_path="${dest_base_path}/${colo_folder}"
     #
@@ -34,20 +32,27 @@ if [[ "$colo_exists" == "" ]]; then
     gsutil -u hmf-share rm gs://hmf-dr-colo/*
     gsutil -u hmf-share cp ${dest_base_path}/*.tar gs://hmf-dr-colo/
     echo "[INFO] latest version added to hmf-dr-colo on GCP."
+    echo "[INFO] Files in the bucket hmf-dr-colo:"
+    gsutil -u hmf-share du -h gs://hmf-dr-colo/
+    echo ""
+
+    echo ""
+    echo "[START] REFRESH COLO DATA ON NEXT CLOUD: $(date +"%y%m%d (%T)")"
+    echo ""
+    tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file}
+    do_upload_files_to_nextcloud_directory PUBLIC  DR-COLO-Example.tar.gz
+    echo "[INFO] The DR-COLO-Example.tar.gz file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
+    echo ""
 else
-    echo "[INFO] latest version already in hmf-dr-colo on GCP."
+    echo ""
+    echo "[START] NO REFRESH NEEDED, lATEST VERSION ALREADY ON GCP AND NEXTCLOUD."
+    echo ""
+    echo "[INFO] Files in the GCP bucket hmf-dr-colo:"
+    gsutil -u hmf-share du -h gs://hmf-dr-colo/
+    echo ""
+    echo "[INFO] Check NextCloud (PUBLIC/Data-Access-Requests) manually to be sure the DR-COLO-Example.tar.gz file is there with the latest data."
 fi
 
-echo ""
-echo "[INFO] Files in the bucket hmf-dr-colo:"
-gsutil -u hmf-share du -h gs://hmf-dr-colo/
-echo ""
 
-echo ""
-echo "[START] REFRESH COLO DATA ON NEXT CLOUD: $(date +"%y%m%d (%T)")"
-echo ""
 
-tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file}
-do_upload_files_to_nextcloud_directory PUBLIC  DR-COLO-Example.tar.gz
-echo "[INFO] The DR-COLO-Example.tar.gz file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
-echo ""
+
