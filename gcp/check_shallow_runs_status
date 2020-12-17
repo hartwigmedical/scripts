@@ -1,23 +1,20 @@
 #!/usr/bin/env bash
 
-YYMMDD=$(date +'%y%m%d')
+yymmdd=$(date +'%y%m%d')
 archive_path="/data/data_archive/shallow_seq_pipelines"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
+shallow_ini_id="38"
 
 ## query and store
-echo "## ShallowSeq Check (${YYMMDD})"
-query_api.pl -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.name) \(.status) \(.tumor_sample)"' | while read line; do
-    run_name=$(echo "${line}" | cut -d" " -f1)
-    run_status=$(echo "${line}" | cut -d" " -f2)
-    tumor_sample=$(echo "${line}" | cut -d" " -f3)
-    sample_archive_count=$(find ${archive_path} -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
+echo "## ShallowSeq Check (${yymmdd})"
+hmf_api_get "runs?ini_id=${shallow_ini_id}" | jq -c '.[]' | while read run_json; do
+    
+    run_name=$(echo "${run_json}" | jq -r '.set.name')
+    run_status=$(echo "${run_json}" | jq -r '.status')
+    tumor_sample=$(echo "${run_json}" | jq -r '.set.tumor_sample')
 
-    if [[ "${run_name}" =~ "190314-testR" ]]; then 
-        continue
-    elif [[ "${run_name}" =~ "cancerPanel" ]]; then 
-        continue
-    elif [[ "${run_name}" =~ "_HMFregVAL_" ]]; then 
+    if [[ "${run_name}" =~ ShallowTest|cancerPanel|HMFregVAL ]]; then 
         continue
     elif [[ -d "${archive_path}/${run_name}" ]]; then 
         continue
@@ -27,6 +24,7 @@ query_api.pl -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.na
         echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${process_path})"
     else
         if [[ "${run_status}" =~ Failed ]]; then 
+            sample_archive_count=$(find "${archive_path}" -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
             if [[ "${sample_archive_count}" -gt 0 ]]; then 
                 continue
             else 
@@ -44,7 +42,7 @@ query_api.pl -type runs -filter 'ini=ShallowSeq.ini' -json | jq -r '.[] | "\(.na
     fi
 done | sort
 
-job_file="${HOME}/jobs/${YYMMDD}_process_shallow_runs"
+job_file="${HOME}/jobs/${yymmdd}_process_shallow_runs"
 log_file=$(echo "${job_file}" | sed 's/jobs/logs/')
 
 write_job_cmd="$(basename $0) > ${job_file} && chmod +x ${job_file}"
