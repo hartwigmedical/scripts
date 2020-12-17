@@ -47,9 +47,10 @@ main() {
 
     # some input sanity checks
     info "Performing some sanity checks"
-    [[ ! -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
-    [[ ! -f "${rm_cmd_file}" ]] || die "CMD file already exists (${rm_cmd_file})"
-    [[ ! -f "${rm_log_file}" ]] || die "LOG file already exists (${rm_log_file})"
+    [[ -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
+    [[ ! -f "${log_file}" ]] || die "Log file already exists (${log_file})"
+    [[ ! -f "${rm_cmd_file}" ]] || die "Removal cmd file already exists (${rm_cmd_file})"
+    [[ ! -f "${rm_log_file}" ]] || die "Removal log already exists (${rm_log_file})"
 
     # setup output dir
     mkdir -p "${out_path}"
