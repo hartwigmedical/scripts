@@ -18,8 +18,8 @@ print_usage(){
     echo "-----"
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
-    echo " Examp: $(basename $0) -s HMFregXXXX"
-    echo "  Note: Writes output to ${OUT_ROOT}"
+    echo " Examp: nohup $(basename $0) -s HMFregXXXX > \$HOME/logs/tmp.log &"
+    echo "  Note: Writes output cmd and log files to ${OUT_ROOT}"
     echo "-----"
     exit 1
 }
@@ -37,41 +37,42 @@ if [[ -z "${submission}" ]]; then
 fi
 
 main() {
-    info "######"
     info "Starting with script $(basename $0) for submission $submission"
-
-    gcp_account_project="${gcp_account}@${gcp_project}"
-    info "Setting GCP account ${gcp_account_project}"
-    msg=$(gcloud config set account "${gcp_account_project}.iam.gserviceaccount.com" 2>&1)
-    info "  ${msg}"
 
     yymmdd=$(date "+%y%m%d")
     out_path="${OUT_ROOT}/${submission}"
-    cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
-    log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
+    log_file="${out_path}/setup_cleanup_of_${submission}.log"
+    rm_cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
+    rm_log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
 
-    ## keeping track
-    run_count=0
-
-    ## some input sanity checks
+    # some input sanity checks
     info "Performing some sanity checks"
     [[ ! -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
-    [[ ! -f "${cmd_file}" ]] || die "CMD file already exists (${cmd_file})"
-    [[ ! -f "${log_file}" ]] || die "LOG file already exists (${log_file})"
+    [[ ! -f "${rm_cmd_file}" ]] || die "CMD file already exists (${rm_cmd_file})"
+    [[ ! -f "${rm_log_file}" ]] || die "LOG file already exists (${rm_log_file})"
 
     # setup output dir
     mkdir -p "${out_path}"
 
+    info "Starting with script $(basename $0) for submission $submission" >> "${log_file}"
+
+    gcp_account_project="${gcp_account}@${gcp_project}"
+    info "Setting GCP account ${gcp_account_project}" >> "${log_file}"
+    msg=$(gcloud config set account "${gcp_account_project}.iam.gserviceaccount.com" 2>&1)
+    info "  ${msg}" >> "${log_file}"
+
+    # keeping track of runs we will visit
+    run_count=0
+
     # all while loops use process substitution to avoid subprocesses
-    info "Retrieving runs involved (via samples->sets)"
+    info "Retrieving runs involved (via samples->sets)" >> "${log_file}"
     samples_json=$(hmf_api_get "samples?submission=${submission}") 
 
     # add start message to cmd file
-    echo "echo '[INFO] Starting cleanup for submission ${submission}'" >> "${cmd_file}"
+    echo "echo '[INFO] Starting cleanup for submission ${submission}'" >> "${rm_cmd_file}"
 
     while read sample; do
         sample_id=$(echo "$sample" | jq -r '.id')
-        sample_barcode=$(echo "$sample" | jq -r '.barcode')
         sample_status=$(echo "$sample" | jq -r '.status')
         sets_json=$(hmf_api_get "sets?sample_id=${sample_id}")
 
@@ -93,37 +94,41 @@ main() {
                 run_type=$(run_type_by_ini_id "${ini_id}")
 
                 run_info="run $run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
-                info "Processing run ${run_info}"
-                echo "echo '[INFO] Performing steps for run ${run_info}'" >> "${cmd_file}"
+                info "Processing run ${run_info}" >> "${log_file}"
+                echo "echo '[INFO] Performing steps for run ${run_info}'" >> "${rm_cmd_file}"
 
                 if [[ "${run_type}" == "fastq" ]]; then
-                    echo "  hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
+                    echo "  hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
                     for fastq_file_url in "${all_gs_urls[@]}"; do
-                        process_gs_url "${sample_status}" "${fastq_file_url}" "${cmd_file}"
+                        process_gs_url "${sample_status}" "${fastq_file_url}" "${rm_cmd_file}"
                     done
                 elif [[ "${run_type}" == "pipeline" ]]; then
-                    process_gs_url "${run_status}" "${gs_url}" "${cmd_file}"
+                    process_gs_url "${run_status}" "${gs_url}" "${rm_cmd_file}"
                 else
                     die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
                 fi
-                echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${cmd_file}"
+                echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
                 ((run_count++))
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')
     done < <(echo "$samples_json" | jq -c '.[]')
     
     # Finish up cmd file by last echo msg
-    echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${cmd_file}"
+    echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${rm_cmd_file}"
 
-    info "A total of ${run_count} runs visited"
-    info "Making output cmd file executable (${cmd_file})"
-    chmod +x "${cmd_file}"
-    info "If all ok you can execute deletion with:"
-    info "  nohup ${cmd_file} > ${log_file} &"
-    info "Finished with $(basename $0)"
+    info "Making output cmd file executable (${rm_cmd_file})" >> "${log_file}"
+    chmod +x "${rm_cmd_file}"
+
+    info "A total of ${run_count} runs visited" >> "${log_file}"
+
+    info "If all ok you can execute deletion with:" >> "${log_file}"
+    info "  nohup ${rm_cmd_file} > ${rm_log_file} &" >> ${log_file}
+
+    info "Check log file for further actions: ${log_file}"
+    info "Finished with $(basename $0)" >> "${log_file}"
 }
 
 run_type_by_ini_id() {
