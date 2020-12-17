@@ -2,8 +2,8 @@
 
 source message_functions || exit 1
 
-OUT_CMD_LOC="/data/ops/cleanup"
-RM_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
+OUT_ROOT="/data/ops/cleanup"
+GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 
 # Need to match ini by ID in run object
 SIN_INI_ID=4
@@ -19,7 +19,7 @@ print_usage(){
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
     echo " Examp: $(basename $0) -s HMFregXXXX"
-    echo "  Note: Writes output sh file to ${OUT_CMD_LOC}"
+    echo "  Note: Writes output to ${OUT_ROOT}"
     echo "-----"
     exit 1
 }
@@ -46,22 +46,27 @@ main() {
     info "  ${msg}"
 
     yymmdd=$(date "+%y%m%d")
-    cmd_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp"
-    log_file="${OUT_CMD_LOC}/${yymmdd}_cleanup_${submission}_at_gcp.log"
+    out_path="${OUT_ROOT}/${submission}"
+    cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
+    log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
 
     ## keeping track
     run_count=0
 
     ## some input sanity checks
-    info "Performing some sanity checks" 
+    info "Performing some sanity checks"
+    [[ ! -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
     [[ ! -f "${cmd_file}" ]] || die "CMD file already exists (${cmd_file})"
     [[ ! -f "${log_file}" ]] || die "LOG file already exists (${log_file})"
 
-    # All while loops use process substitution to avoid subprocesses
+    # setup output dir
+    mkdir -p "${out_path}"
+
+    # all while loops use process substitution to avoid subprocesses
     info "Retrieving runs involved (via samples->sets)"
     samples_json=$(hmf_api_get "samples?submission=${submission}") 
 
-    # Always start with start message in cmd file
+    # add start message to cmd file
     echo "echo '[INFO] Starting cleanup for submission ${submission}'" >> "${cmd_file}"
 
     while read sample; do
@@ -156,7 +161,7 @@ process_gs_url() {
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
-        echo "  gsutil -u '${gcp_project}' ${RM_CMD_PARAMS} rm -r '${gs_url}'" >> "${out_file}"
+        echo "  gsutil -u '${gcp_project}' ${GSUTIL_CMD_PARAMS} rm -r '${gs_url}'" >> "${out_file}"
     fi
 }
 
