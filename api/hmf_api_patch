@@ -19,7 +19,6 @@ oid=''
 patch_field=''
 patch_value=''
 confirmation='true'
-confirmation_key='y'
 
 api_dir="/data/common/dbs/api_credentials"
 api_crt="${api_dir}/api.crt"
@@ -51,14 +50,10 @@ main () {
     patch="${patch_field}=${patch_value}"
     info "About to PATCH object with ${patch}"
     if [[ "${confirmation}" == "true" ]]; then
-        info "Press ${confirmation_key} + enter to apply patch..."
-        read -t 10
-        if [[ "${REPLY}" == "${confirmation_key}" ]]; then
-            info "Patching object with ${patch}"
-            hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
-        else
-            info "Patch cancelled"
-        fi
+        info "Press [ENTER] to apply patch..."
+        read
+        info "Patching object with ${patch}"
+        hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
     elif [[ "${confirmation}" == "false" ]]; then
         info "Patching object with ${patch}"
         hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
