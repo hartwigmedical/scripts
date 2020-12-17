@@ -3,6 +3,7 @@
 source message_functions || exit 1
 
 OUT_CMD_LOC="/data/ops/cleanup"
+RM_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 
 # Need to match ini by ID in run object
 SIN_INI_ID=4
@@ -77,8 +78,10 @@ main() {
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
-                # Pre-GCP buckets need possible underscores replaced
+
+                # Pre-GCP buckets might still have underscores that need to be replaced
                 bucket=${bucket/_/-}
+
                 run_status=$(echo "$run" | jq -r '.status')
                 ini_id=$(echo "$run" | jq -r '.ini_id')
                 gs_url="gs://${bucket}/${run_name}"
@@ -153,7 +156,7 @@ process_gs_url() {
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)"
-        echo "  gsutil -u ${gcp_project} rm -r ${gs_url}" >> "${out_file}"
+        echo "  gsutil -u '${gcp_project}' ${RM_CMD_PARAMS} rm -r '${gs_url}'" >> "${out_file}"
     fi
 }
 
