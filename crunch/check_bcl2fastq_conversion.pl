@@ -56,6 +56,7 @@ my $RUN_PATH;
 my $JSON_PATH;
 my $RXML_PATH;
 my $SSHT_PATH;
+my $OUT_JSON_PATH;
 
 my $HELP =<<HELP;
 
@@ -74,6 +75,7 @@ my $HELP =<<HELP;
     -round_decimals <i>    Factor to divide all yields with ($ROUND_DECIMALS)
     -samplesheet <s>       Path to SampleSheet.csv file
     -run_info_xml <s>      Path to RunInfo.xml file
+    -json_out <s>          Path to output json file (only written if provided)
     -no_qc                 Skip QC checks
     -summary               Prints extra sample summary table
     -debug                 Prints complete datastructure
@@ -90,6 +92,7 @@ GetOptions (
   "json_path=s"        => \$JSON_PATH,
   "samplesheet=s"      => \$SSHT_PATH,
   "run_info_xml=s"     => \$RXML_PATH,
+  "json_out=s"         => \$OUT_JSON_PATH,
   "sep=s"              => \$OUT_SEP,
   "yield_factor=i"     => \$YIELD_FACTOR,
   "round_decimals=i"   => \$ROUND_DECIMALS,
@@ -129,6 +132,7 @@ if ( $opt{ print_summary } ){
 }
 else{
     printTable( $parsed_info, \@OUT_FIELDS );
+    printJson( $parsed_info, $OUT_JSON_PATH ) if defined $OUT_JSON_PATH;
 }
 
 if ( $opt{ debug } ){
@@ -434,6 +438,17 @@ sub getPerc {
     }
 }
 
+sub printJson {
+    my ($info, $output_file) = @_;
+    
+    my $coder = JSON->new->utf8->canonical;
+    my $json_txt = $coder->encode($info);
+    
+    open my $fh, '>', $output_file or die "Unable to open output file ($output_file): $!\n";
+        print $fh $json_txt;
+    close $fh;
+}
+
 sub printTable {
     my ($info, $fields) = @_;
 
@@ -523,7 +538,7 @@ sub readSampleSheet{
         next if $_ =~ /^[\[\,]/;
         next if $_ eq "";
         my @fields = split( ",", $_);
-		
+
         ## get hmf run id from config line
         if ($fields[0] =~ /Experiment(.)*Name/ ){
             my $run_name = $fields[1] || 'NA';
@@ -550,7 +565,7 @@ sub readSampleSheet{
             my $sample_id = $tmp{ $sample_id_column };
             $output{ 'samples' }{ $sample_id } = \%tmp;
         }
-    }	
+    }
     close FILE;
     
     ## reset return string
