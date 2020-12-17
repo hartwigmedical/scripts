@@ -53,9 +53,12 @@ echo ""
 rm temp_number_check/patientId_metadata.tsv
 rm temp_number_check/sampleId_metadata.tsv
 
-echo "[INFO] Types of primary tumor locations in the metadata (if no metadata / only patient data is requested this will not be shown):"
+echo "[INFO] Types of primary tumor locations and studies in the metadata (if no metadata / only patient data is requested this will not be shown):"
 echo "---- locations/types of tumors ----:"
 csvcut -t -e iso-8859-1 -c 'primaryTumorLocation','primaryTumorSubLocation','primaryTumorType','primaryTumorSubType' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq
+echo ""
+echo "---- studies ----:"
+csvcut -t -e iso-8859-1 -c '#patientId' ${metadata_tsv}  | csvformat -T | tail -n +2 | cut -c1-4 | sort | uniq
 echo ""
 
 # remove all temporary files
