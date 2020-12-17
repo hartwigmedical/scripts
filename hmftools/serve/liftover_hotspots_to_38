@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+
+echo "[WARN] This script is untested yet. Just here for reference"
+exit 0;
+
+### UPDATE CONTIGS WITH CHR
+gunzip -c KnownHotspots.SERVE.37.vcf.gz > KnownHotspots.SERVE.37.chr.vcf
+sed -i 's/^/chr/g' KnownHotspots.SERVE.37.chr.vcf
+sed -i 's/^chr#/#/g' KnownHotspots.SERVE.37.chr.vcf
+
+#Liftover
+java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
+    I=KnownHotspots.SERVE.37.chr.vcf O=KnownHotspots.somatic.hg38.vcf \
+    CHAIN=/home/jon/liftover/hg19ToHg38.over.chain REJECT=rejected_variants.vcf \
+    R=/data/common/refgenomes/Homo_sapiens.GRCh38/Homo_sapiens_assembly38.fasta
+
+#Cleanup
+rm KnownHotspots.SERVE.37.chr.vcf
+rm KnownHotspots.somatic.hg38.vcf.idx
+bgzip KnownHotspots.somatic.hg38.vcf
+tabix KnownHotspots.somatic.hg38.vcf.gz
+
+cp KnownHotspots.SERVE.37.vcf.gz KnownHotspots.somatic.hg19.vcf.gz
+tabix KnownHotspots.somatic.hg19.vcf.gz
