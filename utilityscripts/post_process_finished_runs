@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source lims_functions
+
 health_check_processed_runs
 
 echo "[INFO] Count HealthChecker succeeded"
@@ -13,14 +15,14 @@ source_path=/data/gcp/processed_runs
 
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
-    patient_id=$(echo ${run} | tr "_" " " | awk '{print $5}')
+    cohort=$(find_cohort_type)
 
-    if [[ ${patient_id} == "CORELR02"* || ${patient_id} == "CORERI02"* ]]; then
+    if [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
         mv ${source_path}/${run} /data/core/runs/
         echo "[INFO] Create patient report for ${run}"
         create_patient_report_for_run /data/core/runs/${run}
-    elif [[ ${patient_id} == "CPCT"* || ${patient_id} == "DRUP"* ]]; then
+    elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
         echo "[INFO] Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
         echo "[INFO] Create patient report for ${run}"
@@ -35,10 +37,10 @@ for run in ${process_runs}; do
         cp -R ${source_path}/${run} /data/cpct/reportable_runs/
         echo "[INFO] Create patient report for ${run}"
         create_patient_report_for_run /data/cpct/reportable_runs/${run}
-        if [[ ${patient_id} == "CORE"* ]]; then
+        if [[ ${cohort} == "CORE" || ${cohort} == "CORELR11" || ${cohort} == "CORESC11" ]]; then
             echo "[INFO] Moving set ${run} to /data/core/runs"
             mv ${source_path}/${run} /data/core/runs/
-        elif [[ ${patient_id} == "WIDE"* ]]; then
+        elif [[ ${cohort} == "WIDE" ]]; then
             echo "[INFO] Moving set ${run} to /data/cpct/runs"
             mv ${source_path}/${run} /data/cpct/runs/
             echo "[INFO] Copy run to hmf-crunch at GCP"
