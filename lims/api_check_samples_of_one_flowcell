@@ -49,7 +49,7 @@ main() {
     info "  Output: ${out_log_path}"
     info "  NAS: http://intranet.hartwigmedicalfoundation.nl/${NAS_TARGET_DIR}/${out_log_name}"
     sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -ah "${out_log_path}" "rsyncuser@nas:${NAS_TARGET_LOC}/"
-    info "  Finished with $(basename $0) for ${fc_name}"
+    info "Finished with $(basename $0) for ${fc_name}"
 }
 
 function join_by { local IFS="$1"; shift; echo "$*"; }
