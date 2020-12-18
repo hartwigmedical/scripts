@@ -7,6 +7,7 @@ gcp_url=''
 download_path=''
 exclude_crams=''
 billing_project="hmf-database"
+switch_to_hmf_ops="true"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -15,15 +16,16 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "   $(basename "$0") -u <gcp-url> -d <download-path>"
     echo "   $(basename "$0") -u gs://path/to/run -d /data/gcp/qc_fail_runs"
     echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs"
-    echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs -p hmf-crunch"
+    echo "   $(basename "$0") -e -u gs://path/to/run -d <download-path> -p hmf-crunch -o"
     echo " Options:"
     echo "   -e  Exclude any BAMs/CRAMs"
-    echo "   -p  Set user project to be billed for the download. Default is hmf-database"
+    echo "   -p  Set user project to be billed for the download. Default is hmf-database."
+    echo "   -o  Do not switch to hmf-ops service account"
     echo "---"
     exit 1
 fi
 
-while getopts ":u:d:e:p" opt; do
+while getopts ":u:d:ep:o" opt; do
   case ${opt} in
     u)
       gcp_url=${OPTARG}
@@ -35,7 +37,10 @@ while getopts ":u:d:e:p" opt; do
       exclude_crams='true'
       ;;
     p)
-      billing_project=${OPTARG}
+      billing_project="${OPTARG}"
+      ;;
+    o)
+      switch_to_hmf_ops="false"
       ;;
     \?)
       echo "[ERROR] Invalid option: -${OPTARG}" >&2
@@ -61,8 +66,10 @@ dest_path="${download_path}/${set_name}/"
 info "Creating directory ${dest_path}"
 mkdir -p "${dest_path}"
 
-info "Switching to service account"
-switch_to_hmf_ops_service_account
+if [[ "${switch_to_hmf_ops}" == "true" ]]; then
+    info "Switching to service account"
+    switch_to_hmf_ops_service_account
+fi
 
 info "Starting download of ${gcp_url} to ${download_path}"
 if [[ "$exclude_crams" == "true" ]]; then
