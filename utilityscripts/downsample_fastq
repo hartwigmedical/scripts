@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+source message_functions
 
 main() {
     # fraction is fraction that you keep, expressed in format like "0.25"
@@ -66,19 +67,6 @@ main() {
     rm -rf "${tmp_dir}"
 
     info "Finished ${script_name} for ${fraction}"
-}
-
-die() {
-    echo "[ERROR] $(date +"%y%m%d %T") $*" >&2
-    exit 1
-}
-
-warn() {
-    echo "[WARN] $(date +"%y%m%d %T") $*" >&2
-}
-
-info() {
-    echo "[INFO] $(date +"%y%m%d %T") $*"
 }
 
 main "$@"
