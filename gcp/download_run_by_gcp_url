@@ -6,6 +6,7 @@ source message_functions
 gcp_url=''
 download_path=''
 exclude_crams=''
+billing_project="hmf-database"
 
 if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "---"
@@ -14,13 +15,15 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "   $(basename "$0") -u <gcp-url> -d <download-path>"
     echo "   $(basename "$0") -u gs://path/to/run -d /data/gcp/qc_fail_runs"
     echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs"
+    echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs -p hmf-crunch"
     echo " Options:"
     echo "   -e  Exclude any BAMs/CRAMs"
+    echo "   -p  Set user project to be billed for the download. Default is hmf-database"
     echo "---"
     exit 1
 fi
 
-while getopts ":u:d:e" opt; do
+while getopts ":u:d:e:p" opt; do
   case ${opt} in
     u)
       gcp_url=${OPTARG}
@@ -30,6 +33,9 @@ while getopts ":u:d:e" opt; do
       ;;
     e)
       exclude_crams='true'
+      ;;
+    p)
+      billing_project=${OPTARG}
       ;;
     \?)
       echo "[ERROR] Invalid option: -${OPTARG}" >&2
@@ -60,8 +66,8 @@ switch_to_hmf_ops_service_account
 
 info "Starting download of ${gcp_url} to ${download_path}"
 if [[ "$exclude_crams" == "true" ]]; then
-    gsutil -u hmf-database -m rsync -r -x ".*\.bam$|.*\.cram$" "${gcp_url}" "${dest_path}"
+    gsutil -u "${billing_project}" -m rsync -r -x ".*\.bam$|.*\.cram$" "${gcp_url}" "${dest_path}"
 else
-    gsutil -u hmf-database -m rsync -r "${gcp_url}" "${dest_path}"
+    gsutil -u "${billing_project}" -m rsync -r "${gcp_url}" "${dest_path}"
 fi
 info "Finished downloading of ${gcp_url} to ${download_path}"
