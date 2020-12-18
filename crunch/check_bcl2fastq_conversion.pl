@@ -275,7 +275,7 @@ sub parseJsonInfo{
         my $lid = join( "", "lane", $lane->{ Lane } );
         my $barcodes = $lane->{'Barcodes'};
         foreach my $barcode ( keys %$barcodes ){
-            $info{ indx }{ $barcode }{ name } = $barcode;
+            $info{ indx }{ $barcode }{ name } = 'unknown_index';
             $info{ indx }{ $barcode }{ seq } = $barcode;
             $info{ indx }{ $barcode }{ yield } += $barcodes->{ $barcode };
         }
@@ -330,7 +330,7 @@ sub parseJsonInfo{
             foreach my $read ( @$reads ){
                 my $rid = join( "", "read", $read->{ReadNumber} );
                 $info{read}{ $rid }{name} = $rid;
-                $info{indx}{ $seq }{name} = $seq;
+                $info{indx}{ $seq }{name} = 'known_index';
                 $info{indx}{ $seq }{seq}  = $seq;
                 
                 $info{flow}{ $fid }{yield} += $read->{Yield};
