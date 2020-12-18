@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source lims_functions
+source metadata_functions
 
 health_check_processed_runs
 
@@ -15,7 +16,9 @@ source_path=/data/gcp/processed_runs
 
 process_runs=$(ls ${source_path})
 for run in ${process_runs}; do
-    cohort=$(find_cohort_type)
+    sample_id=$(load_tumor_sample_from_metadata ${run})
+    tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
+    cohort=$(find_cohort_type ${tumor_barcode})
 
     if [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"

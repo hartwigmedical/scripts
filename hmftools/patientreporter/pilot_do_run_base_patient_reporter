@@ -4,7 +4,7 @@ source locate_files
 
 patient_reporter_jar=$(locate_pilot_patient_reporter)
 
-reporting_db_tsv=/data/experiments/patient_reporter_version_7_19_verification/lims/reporting_db.tsv
+reporting_db_tsv=$(locate_reporting_db_tsv_pilot)
 primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
 lims_dir=/data/ops/lims/prod
 
