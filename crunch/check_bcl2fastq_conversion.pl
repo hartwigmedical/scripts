@@ -149,11 +149,19 @@ if ( $opt{ debug } ){
 sub addSamplesheetInfo{
     my ($json_info, $ssht_info, $seq_run) = @_;
 
-    ## add run name: eg X17-0001
+    ## add info to stats (eg hmf_runname could be X17-0001)
+    my $hmf_runname = $ssht_info->{'runname'};
     $json_info->{ 'stats' }{ 'seq_runname' } = $seq_run;
-    $json_info->{ 'stats' }{ 'hmf_runname' } = $ssht_info->{'runname'};
+    $json_info->{ 'stats' }{ 'hmf_runname' } = $hmf_runname;
     $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     $json_info->{ 'stats' }{ 'submissions' } = {};
+    
+    ## override flowcell name with ExperimentName from SampleSheet
+    my @fcids = keys %{$json_info->{'flow'}};
+    die "[ERROR] There should only be one flowcell in json_info" unless scalar @fcids == 1;
+    my $fcid = $fcids[0];
+    $json_info->{ 'flow' }{ $fcid }{ 'name' } = $hmf_runname;
+    $json_info->{ 'flow' }{ $fcid }{ 'name_print' } = $hmf_runname;
     
     ## add sample metadata
     my $samples = $json_info->{ 'samp' };
@@ -202,9 +210,8 @@ sub performQC{
     ## exact platform string varies too much so try to match by regex
     foreach my $known_platform (@known_platforms){
         if ($platform =~ m/^$known_platform/i ){
-            say "## Platform string '$platform' determined as $known_platform";
             $platform = $known_platform;
-            say "## Setting QC limits for platform $known_platform";
+            say "## INFO: using QC limits for platform $known_platform (based on input '$platform')";
             $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform } || die "[ERROR] no key '$platform'";
         }
     }
@@ -412,6 +419,7 @@ sub parseJsonInfo{
     $info{'stats'}{'undet_perc'} = $undet_perc;
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
     $info{'stats'}{'samp_count'} = scalar( keys %{$info{'samp'}} );
+    $info{'stats'}{'indx_count'} = scalar( keys %{$info{'indx'}} );
     $info{'stats'}{'identifier'} = join( "_", keys %{$info{'flow'}} );
     $info{'stats'}{'cycle_string'} = $cycle_string;
 
@@ -452,13 +460,15 @@ sub printJson {
 sub printTable {
     my ($info, $fields) = @_;
 
-    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
-    say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
-    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %s cycles)', 
-      $info->{'stats'}{'identifier'}, 
+    say sprintf '## Settings: YieldFactor=%s, RoundDecimals=%s', 
+      commify($YIELD_FACTOR),
+      commify($ROUND_DECIMALS);
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %d indexes, %s cycles)', 
+      $info->{'stats'}{'seq_runname'}, 
       $info->{'stats'}{'hmf_runname'}, 
       $info->{'stats'}{'lane_count'}, 
       $info->{'stats'}{'samp_count'},
+      $info->{'stats'}{'indx_count'},
       $info->{'stats'}{'cycle_string'};
     
     say "#".join( $OUT_SEP, "level", @$fields );
@@ -477,13 +487,16 @@ sub printSummaryTable{
     map( $_ =~ s/HMFreg//, @submissions );
     my $submissions_string = join( ',', @submissions );
    
-    say sprintf '## YieldFactor: %s', commify($YIELD_FACTOR);
-    say sprintf '## RoundDecimals: %s', commify($ROUND_DECIMALS);
-    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples)', 
+    say sprintf '## Settings: YieldFactor=%s, RoundDecimals=%s', 
+      commify($YIELD_FACTOR),
+      commify($ROUND_DECIMALS);
+    say sprintf '## Flowcell: %s (%s, %d lanes, %d samples, %d indexes, %s cycles)', 
+      $info->{'stats'}{'seq_runname'}, 
       $info->{'stats'}{'hmf_runname'}, 
-      $info->{'stats'}{'identifier'}, 
       $info->{'stats'}{'lane_count'}, 
-      $info->{'stats'}{'samp_count'};
+      $info->{'stats'}{'samp_count'},
+      $info->{'stats'}{'indx_count'},
+      $info->{'stats'}{'cycle_string'};
         
     say sprintf "## RunOverviewInfoLine: %s\t%s\t%s\t%s\t%s", 
       $info->{'stats'}{'hmf_runname'},
