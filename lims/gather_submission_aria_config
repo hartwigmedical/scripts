@@ -50,8 +50,12 @@ echo "[INFO] Joining all run aria.txt files to ${out_config}"
 find "${output_dir}" -mindepth 1 -maxdepth 1 -type f -name "*_*.aria.txt" -exec cat {} \+ > "${out_config}"
 
 echo "[INFO] Writing file sizes to ${out_gcp_du}"
-# Intellij wants you to quote the find cmd: do not do this because du will see all files as one string
-gsutil du -shc $(find "${output_dir}" -name "*.url" -exec cut -f1 {} \;) > "${out_gcp_du}"
+if [[ "$(find "${output_dir}" -name "*_internal_urls.txt" | wc -l)" -lt 1 ]]; then
+    echo "[ERROR] No internal urls files found (should not happen)." && exit 1
+else
+    # Intellij wants you to quote the find cmd: don't do this as du will work only on first file
+    gsutil du -shc $(find "${output_dir}" -name "*_internal_urls.txt" -exec cat {} +) > "${out_gcp_du}"
+fi
 
 echo "[INFO] Action: Check one URL manually in browser"
 cat "${out_config}" | grep https | tail -1
