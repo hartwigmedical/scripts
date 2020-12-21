@@ -64,6 +64,7 @@ main() {
 
     # keeping track of runs we will visit
     run_count=0
+    declare -A runs_visited
 
     # all while loops use process substitution to avoid subprocesses
     info "Retrieving runs involved (via samples->sets)" >> "${log_file}"
@@ -85,6 +86,14 @@ main() {
                 run_id=$(echo "$run" | jq -r '.id')
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
+
+                if [[ $(echo runs_visited["${run_name}"]) == "true" ]]; then
+                    info "  SKIPPING: run already processed ${run_name} (id=${run_id})"
+                    continue
+                fi
+
+                # add to visited runs so we can skip if encountered again
+                runs_visited[${run_name}]="true"
 
                 # Pre-GCP buckets might still have underscores that need to be replaced
                 bucket=${bucket/_/-}
