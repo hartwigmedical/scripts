@@ -177,7 +177,7 @@ locate_driver_gene_panel_tsv() {
 }
 
 locate_hotspot_vcf() {
-    echo ${base_path}/dbs/serve/hotspots/KnownHotspots.SERVE.37.vcf.gz
+    echo ${base_path}/dbs/serve/hotspots/201217/KnownHotspots.SERVE.37.vcf.gz
 }
 
 locate_pgx_resource_dir() {
