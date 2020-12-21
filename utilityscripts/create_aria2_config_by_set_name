@@ -105,10 +105,15 @@ function main() {
         echo "[ERROR] Unknown ini (${ini})" && exit 1
     fi
 
-    ## sanity checks
+    ## output check
+    echo "[INFO] Output files:"
     for output_file in "${output_files[@]}"; do
-        line_count=$(wc -l "${output_file}")
-        echo "[INFO] Output file ${output_file} contains ${line_count} lines"
+        if [[ ! -f "${output_file}" ]]; then
+            echo "[ERROR] Output file ${output_file} not found!" && exit 1
+        else
+            line_count=$(wc -l "${output_file}" | cut -d" " -f1)
+            echo "[INFO]   ${output_file} (${line_count} lines)"
+        fi
     done
 }
 
