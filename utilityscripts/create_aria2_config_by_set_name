@@ -49,8 +49,8 @@ function main() {
     out_md5_all="${name}_runfiles.md5"
     out_aria="${name}.aria.txt"
     out_md5="${name}.md5"
-    out_url_int="${name}_internal.url"
-    out_url_ext="${name}_external.url"
+    out_url_int="${name}_internal_urls.txt"
+    out_url_ext="${name}_external_urls.txt"
 
     echo "[INFO] RunName: ${name}"
     echo "[INFO] RunStat: ${status}"
