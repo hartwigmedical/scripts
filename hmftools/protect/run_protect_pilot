@@ -12,13 +12,13 @@ fi
 protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+# TODO: Resolve patientId -> then resolve doids from /data/common/dbs/clinical_data/curated_primary_tumor.tsv
+primary_tumor_doids=162
 output_dir=${run_dir}/protect_pilot
 
-deprecated_actionability_dir=/data/common/dbs/knowledgebases/output
 serve_actionability_dir=/data/common/dbs/serve/pilot_output
-germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
-primary_tumor_tsv=/data/common/dbs/clinical_data/curated_primary_tumor.tsv
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
+germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
@@ -38,10 +38,9 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 java -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
+    -primary_tumor_doids ${primary_tumor_doids} \
     -output_dir ${output_dir} \
-    -deprecated_actionability_dir ${deprecated_actionability_dir} \
     -serve_actionability_dir ${serve_actionability_dir} \
-    -primary_tumor_tsv ${primary_tumor_tsv} \
     -doid_json ${doid_json} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -purple_purity_tsv ${purple_purity_tsv} \
