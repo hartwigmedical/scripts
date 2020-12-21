@@ -4,6 +4,7 @@ source message_functions || exit 1
 
 OUT_ROOT="/data/ops/cleanup"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
+TRUE=true
 
 # Need to match ini by ID in run object
 SIN_INI_ID=4
@@ -45,8 +46,8 @@ main() {
     rm_cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
     rm_log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
 
-    # some input sanity checks
-    info "Performing some sanity checks"
+    # sanity checks
+    info "Performing sanity checks"
     [[ -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
     [[ ! -f "${log_file}" ]] || die "Log file already exists (${log_file})"
     [[ ! -f "${rm_cmd_file}" ]] || die "Removal cmd file already exists (${rm_cmd_file})"
@@ -63,8 +64,7 @@ main() {
     info "  ${msg}" >> "${log_file}"
 
     # keeping track of runs we will visit
-    run_count=0
-    declare -A runs_visited
+    declare -A processed_runs
 
     # all while loops use process substitution to avoid subprocesses
     info "Retrieving runs involved (via samples->sets)" >> "${log_file}"
@@ -87,15 +87,16 @@ main() {
                 run_name=$(echo "$run" | jq -r '.set.name')
                 bucket=$(echo "$run" | jq -r '.bucket')
 
-                if [[ $(echo runs_visited["${run_name}"]) == "true" ]]; then
-                    info "  SKIPPING: run already processed ${run_name} (id=${run_id})"
+                run_is_already_processed=${processed_runs[${run_id}]}
+                if [[ "${run_is_already_processed}" == "${TRUE}" ]]; then
+                    info "SKIPPING run ${run_id} because already processed (${run_name})" >> "${log_file}"
                     continue
                 fi
 
-                # add to visited runs so we can skip if encountered again
-                runs_visited[${run_name}]="true"
-
-                # Pre-GCP buckets might still have underscores that need to be replaced
+                # add to processed runs so we can skip if encountered again later
+                processed_runs[${run_id}]="${TRUE}"
+                
+                # pre-GCP buckets might still have underscores that need to be replaced
                 bucket=${bucket/_/-}
 
                 run_status=$(echo "$run" | jq -r '.status')
@@ -103,7 +104,7 @@ main() {
                 gs_url="gs://${bucket}/${run_name}"
                 run_type=$(run_type_by_ini_id "${ini_id}")
 
-                run_info="run $run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
+                run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
                 info "Processing run ${run_info}" >> "${log_file}"
                 echo "echo '[INFO] Performing steps for run ${run_info}'" >> "${rm_cmd_file}"
 
@@ -112,31 +113,27 @@ main() {
                     files_api_url="files?run_id=${run_id}"
                     files_json=$(hmf_api_get "${files_api_url}")
                     mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
+                    # fastq files need to be processed one by one since they share the bucket with other fastq files
                     for fastq_file_url in "${all_gs_urls[@]}"; do
-                        process_gs_url "${sample_status}" "${fastq_file_url}" "${rm_cmd_file}"
+                        process_gs_url "${sample_status}" "${fastq_file_url}" "${rm_cmd_file}" "${log_file}"
                     done
                 elif [[ "${run_type}" == "pipeline" ]]; then
-                    process_gs_url "${run_status}" "${gs_url}" "${rm_cmd_file}"
+                    process_gs_url "${run_status}" "${gs_url}" "${rm_cmd_file}" "${log_file}"
                 else
                     die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
                 fi
                 echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
-                ((run_count++))
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')
     done < <(echo "$samples_json" | jq -c '.[]')
     
-    # Finish up cmd file by last echo msg
-    echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${rm_cmd_file}"
-
     info "Making output cmd file executable (${rm_cmd_file})" >> "${log_file}"
+    echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${rm_cmd_file}"
     chmod +x "${rm_cmd_file}"
 
-    info "A total of ${run_count} runs visited" >> "${log_file}"
-
-    info "If all ok you can execute deletion with:" >> "${log_file}"
+    run_count="${#processed_runs[@]}"
+    info "A total of ${run_count} runs were processed. You can execute deletion with:" >> "${log_file}"
     info "  nohup ${rm_cmd_file} > ${rm_log_file} &" >> ${log_file}
-
     info "Check log file for further actions: ${log_file}"
     info "Finished with $(basename $0)" >> "${log_file}"
 }
@@ -166,6 +163,7 @@ process_gs_url() {
     local status=$1 && shift
     local gs_url=$1 && shift
     local out_file=$1 && shift
+    local log_file=$1 && shift
     
     msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
@@ -175,7 +173,7 @@ process_gs_url() {
             warn "  SKIPPING: url not found but object status (${status}) is not Deleted (${gs_url})"
         fi
     else
-        info "  Writing rm command for valid URL ($gs_url)"
+        info "  Writing rm command for valid URL ($gs_url)" >> "${log_file}"
         echo "  gsutil -u '${gcp_project}' ${GSUTIL_CMD_PARAMS} rm -r '${gs_url}'" >> "${out_file}"
     fi
 }
