@@ -26,6 +26,6 @@ for run in ${process_runs}; do
             rm -r /data/cpct/reportable_runs/${run}
         fi
     elif [[ ${summary_present} -eq 0 ]]; then
-        echo "No summary present for run ${source_path}/${run}"
+        echo "[INFO] No summary present for run ${source_path}/${run}"
     fi
 done
