@@ -49,7 +49,8 @@ function main() {
     out_md5_all="${name}_runfiles.md5"
     out_aria="${name}.aria.txt"
     out_md5="${name}.md5"
-    out_url="${name}.url"
+    out_url_int="${name}_internal.url"
+    out_url_ext="${name}_external.url"
 
     echo "[INFO] RunName: ${name}"
     echo "[INFO] RunStat: ${status}"
@@ -67,10 +68,13 @@ function main() {
         echo "[ERROR] Error: unexpected cluster (${cluster})." && exit 1
     fi
 
+    ## create re-usable list of all output files
+    output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
+
     ## cleanup existing files
-    for output_file in "${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url}"; do
+    for output_file in "${output_files[@]}"; do
         if [[ -f "${output_file}" ]]; then
-            echo "[INFO] Deleting existing file (${output_file})" && rm ${output_file};
+            echo "[INFO] Deleting existing file (${output_file})" && rm "${output_file}";
         fi
     done
 
@@ -86,20 +90,24 @@ function main() {
 
     ## create the run type specific subset files
     if [[ ${ini} == "FastQ.ini" ]]; then
-        create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Fastq"
+        create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Fastq"
     elif [[ ${ini} == "Somatic.ini" ]]; then 
-        create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Somatic"
+        create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Somatic"
     elif [[ ${ini} == "SingleSample.ini" ]]; then
-        create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "SingleSample"
+        create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "SingleSample"
     elif [[ ${ini} == "ShallowSeq.ini" ]]; then
-        create_run_specific_files "${files_json}" "${out_md5}" "${out_aria}" "${out_url}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
+        create_run_specific_files "${files_json}" \
+        "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
     else
         echo "[ERROR] Unknown ini (${ini})" && exit 1
     fi
 
-    ## sanity checks on final files
-    for output_file in "${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url}"; do
-        line_count=$(cat "${output_file}" | wc -l)
+    ## sanity checks
+    for output_file in "${output_files[@]}"; do
+        line_count=$(wc -l "${output_file}")
         echo "[INFO] Output file ${output_file} contains ${line_count} lines"
     done
 }
@@ -108,7 +116,8 @@ create_run_specific_files () {
     local json=$1 && shift
     local out_md5=$1 && shift
     local out_aria=$1 && shift
-    local out_url=$1 && shift
+    local out_url_int=$1 && shift
+    local out_url_ext=$1 && shift
     local name=$1 && shift
     local bucket=$1 && shift
     local ref=$1 && shift
@@ -145,7 +154,7 @@ create_run_specific_files () {
         tumor_bam_bai="${tum}/cram/${tum}.cram.crai"
     fi
 
-    mapfile -t all_files < <( echo ${json} | jq -r '.[].filename' )
+    mapfile -t all_files < <( echo "${json}" | jq -r '.[].filename' )
 
     local single_files=(
         "${ref_bam}"
@@ -199,7 +208,6 @@ create_run_specific_files () {
     ## output aria2 config file
     echo "[INFO] Creating ${out_aria} (and selection tmp files)"
     for file_path in "${file_selection[@]}"; do
-        file_name=$(basename "${file_path}")
         file_in_bucket="${bucket}/${name}/${file_path}"
         ## Fastq files are at main level in the bucket
         if [[ ${run_type} == "Fastq" ]]; then
@@ -214,9 +222,6 @@ create_run_specific_files () {
         gsutil -u "${gcp_project}" -q stat "${internal_url}"
         if [[ $? -eq 1 ]]; then
             msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
-            #echo "[ERROR] Cannot access file (${internal_url})"
-            #echo "[ERROR] ErrCode=${?} ErrMsg=\"${msg}\""
-            #exit 1
             echo "[WARN] Cannot access file so skipping (${internal_url})"
             echo "[WARN] ErrCode=${?} ErrMsg=\"${msg}\""
             continue
@@ -225,11 +230,14 @@ create_run_specific_files () {
         ## get actual pre-signed URL
         external_url=$( "${gcp_url_sign_script}" "${gcp_key_file}" "${file_in_bucket}" 604800)
 
-        echo "${external_url}" >> ${out_aria}
-        echo "  dir=${name}" >> ${out_aria}
-        echo "  checksum=md5=${md5sum}" >> ${out_aria}
+        echo "${external_url}" >> "${out_aria}"
+        echo "  dir=${name}" >> "${out_aria}"
+        echo "  checksum=md5=${md5sum}" >> "${out_aria}"
         echo "" >> ${out_aria}
-        echo -e "${internal_url}\t${external_url}" >> ${out_url}
+
+        ## write urls to separate log files
+        echo "${internal_url}" >> "${out_url_int}"
+        echo "${external_url}" >> "${out_url_ext}"
     done
 }
 
