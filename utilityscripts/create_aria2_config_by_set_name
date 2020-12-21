@@ -229,7 +229,7 @@ create_run_specific_files () {
         echo "  dir=${name}" >> ${out_aria}
         echo "  checksum=md5=${md5sum}" >> ${out_aria}
         echo "" >> ${out_aria}
-        echo -e "${file_name}\t${external_url}" >> ${out_url}
+        echo -e "${internal_url}\t${external_url}" >> ${out_url}
     done
 }
 
