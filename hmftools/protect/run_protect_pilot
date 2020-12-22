@@ -36,6 +36,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
+# Can passs "-log_debug" for some additional logging
 java -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
     -primary_tumor_doids ${primary_tumor_doids} \
@@ -54,5 +55,4 @@ java -Xmx8G -jar ${protect_jar} \
     -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
-    -log_debug \
     "$@"
