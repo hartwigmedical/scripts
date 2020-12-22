@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-source metadata_functions
-
 set=$1 && shift
 
 if [[ -z "${set}" ]]; then
@@ -30,10 +28,3 @@ if [[ -d "${processed_set_path}" ]]; then
 fi
 
 cp -r ${downloaded_set_path} ${processed_set_path}
-
-tumor_sample=$(load_tumor_sample_from_metadata ${processed_set_path})
-
-if [[ ${tumor_sample} == "WIDE"* ]]; then
-    echo "[INFO] Running WIDE germline carriership analysis for ${set}"
-    run_bachelor_wide_germline_carriership ${processed_set_path}
-fi
