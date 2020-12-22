@@ -2,6 +2,7 @@
 
 source locate_files
 source metadata_functions
+source lims_functions
 
 run_dir=$1 && shift
 
@@ -12,8 +13,7 @@ fi
 protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-# TODO: Resolve patientId -> then resolve doids from /data/common/dbs/clinical_data/curated_primary_tumor.tsv
-primary_tumor_doids=162
+primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 output_dir=${run_dir}/protect_pilot
 
 serve_actionability_dir=/data/common/dbs/serve/pilot_output
