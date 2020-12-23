@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+source api_functions
+
+biopsy=$1 && shift
+# Type can be REF or TUM
+type=$1 && shift
+
+if [[ -z "${biopsy}" ]] || [[ -z "${type}" ]]; then
+    echo "[ERROR] No biopsy name and type provided to $(basename $0)." && exit 1
+fi
+
+if [[ ${type} = "REF" ]]; then
+    sample=$(echo $biopsy | cut -c1-12)R
+    cram=$(locate_reference_cram ${biopsy})
+else
+    sample=$biopsy
+    cram=$(locate_tumor_cram ${biopsy})
+fi
+
+echo "${sample} ${cram}"
+
+

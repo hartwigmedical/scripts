@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+source gcp_functions
+source message_functions
+
+# Suppress error output with 2> /dev/null or similar to prevent download progress messages from spamming log files etc.
+
+SCRIPT_NAME="$(basename $"0")"
+
+main() {
+    local sample=$1 && shift
+    local cram_url=$1 && shift
+
+    if [[ -z "${sample}" ]] || [[ -z "${cram_url}" ]]; then
+        error "Not all input parameters provided to ${SCRIPT_NAME}. Exiting"
+    fi
+
+    info "Started ${SCRIPT_NAME} for sample ${sample} and cram_url ${cram_url}"
+
+    local download_dir="/data/gcp/cram_downloads/${sample}_cram"
+
+    info "Created destination directory ${download_dir}"
+    mkdir -p "${download_dir}"
+    info "Downloading ${cram_url} to ${download_dir}"
+    gsutil -u hmf-crunch cp "${cram_url}" "${download_dir}/"
+
+    info "Finished download of ${cram_url} to ${download_dir} "
+}
+
+main "$@"
