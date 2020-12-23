@@ -1,0 +1,333 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+SCRIPT_NAME="$(basename $"0")"
+PICARD_JAR="/data/tools/picard-tools_v2.18.27/picard.jar"
+REF_GENOME="/opt/resources/reference_genome/hg19/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+LOCAL_INTERVAL_LIST_FILE="$HOME/intervals.interval_list"
+LOCAL_URLS_FILE="$HOME/urls.txt"
+
+main () {
+    # bucket argument should be the name of a gcp bucket without "gs://".
+    # The bucket needs to contain exome.interval_list, a Picard compatible .interval_list file describing the exome locations.
+    # An example exome.interval_list file can be found on datastore at /data/experiments/exome-coverage/exome.interval_list.
+    # The bucket also needs to contain a urls.txt file where each row consists of a pair
+    # of a sample id and gs url for a cram file. Such pairs are returned by get_cram_url.
+    local bucket=$1 && shift
+    local interval_list_file_name=$1 && shift
+    local urls_file_name=$1 && shift
+
+    if [[ -z "${bucket}" ]] || [[ -z "${interval_list_file_name}" ]] || [[ -z "${urls_file_name}" ]]; then
+        die "Not all input parameters provided to ${SCRIPT_NAME}. Arguments should be bucket, interval_list_file_name and urls_file_name. Exiting"
+    fi
+
+    # sanity checks for the setup of the bucket and VM
+    if [ ! -f "${PICARD_JAR}" ]; then
+        die "Picard jar not found at ${PICARD_JAR}"
+    fi
+
+    if [ ! -f "${REF_GENOME}" ]; then
+        die "Ref genome not found at ${REF_GENOME}"
+    fi
+
+    local bucket_exists
+    bucket_exists="$(bucket_exists "${bucket}")" || exit 1
+    if [ "${bucket_exists}" = "1" ]; then
+        die "Bucket ${bucket} could not be found"
+    fi
+
+    local bucket_interval_list_file
+    local bucket_urls_file
+
+    bucket_interval_list_file="$(get_bucket_interval_list_path "${bucket}" "${interval_list_file_name}")"
+    bucket_urls_file="$(get_bucket_interval_list_path "${bucket}" "${urls_file_name}")"
+
+    lazy_copy_from_bucket "${bucket_interval_list_file}" "${LOCAL_INTERVAL_LIST_FILE}"
+    lazy_copy_from_bucket "${bucket_urls_file}" "${LOCAL_URLS_FILE}"
+    lazy_create_and_upload_wgsmetrics_from_urls_file "${bucket}"
+
+    info "Finished ${SCRIPT_NAME}"
+}
+
+lazy_copy_from_bucket () {
+    local bucket_path=$1 && shift
+    local local_path=$1 && shift
+
+    if [[ -z "${local_path}" ]] || [[ -z "${bucket_path}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local bucket_object_exists
+
+    if [ -f "${local_path}" ]; then
+        info "Found local copy ${local_path}"
+    else
+        # download file from bucket
+        bucket_object_exists="$(bucket_object_exists "${bucket_path}")" || exit 1
+        if [ "${bucket_object_exists}" = "1" ]; then
+            die "Could not find ${bucket_path} in bucket"
+        fi
+        gsutil cp "${bucket_path}" "${local_path}"
+        info "Copied ${bucket_path} to ${local_path}"
+    fi
+}
+
+lazy_create_and_upload_wgsmetrics_from_urls_file () {
+    local bucket=$1 && shift
+
+    if [[ -z "${bucket}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local line
+    local sample
+    local cram_url
+    local bucket_wgsmetrics
+    local bucket_wgsmetrics_exists
+
+    while read -r line || [ -n "${line}" ]; do
+        sample="$(echo "${line}" | awk '{print $1}')" || exit 1
+        cram_url="$(echo "${line}" | awk '{print $2}')" || exit 1
+        bucket_wgsmetrics="$(get_bucket_wgsmetrics_path "${bucket}" "${sample}")" || exit 1
+
+        info "Start processing ${sample}"
+        bucket_wgsmetrics_exists="$(bucket_object_exists "${bucket_wgsmetrics}")" || exit 1
+        if [ "${bucket_wgsmetrics_exists}" = "1" ]; then
+            lazy_create_and_upload_wgsmetrics "${sample}" "${cram_url}" "${bucket}"
+        else
+            echo "Wgsmetrics file for ${sample} already exists in bucket"
+        fi
+    done <"${LOCAL_URLS_FILE}"
+}
+
+lazy_create_and_upload_wgsmetrics () {
+    local sample=$1 && shift
+    local cram_url=$1 && shift
+    local bucket=$1 && shift
+
+    if [[ -z "${sample}" ]] || [[ -z "${cram_url}" ]] || [[ -z "${bucket}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local bucket_wgsmetrics
+    local local_wgsmetrics
+    local local_cram
+    local local_bam
+    local bucket_wgsmetrics_exists
+
+    bucket_wgsmetrics="$(get_bucket_wgsmetrics_path "${bucket}" "${sample}")" || exit 1
+    local_wgsmetrics="$(get_local_wgsmetrics_path "${sample}")" || exit 1
+    local_cram="$(get_local_cram_path "${sample}")" || exit 1
+    local_bam="$(get_local_bam_path "${sample}")" || exit 1
+
+    if [ ! -f "${local_wgsmetrics}" ]; then
+        create_local_wgs_metrics "${sample}" "${cram_url}"
+    fi
+
+    # upload local version
+    gsutil cp "${local_wgsmetrics}" "${bucket_wgsmetrics}"
+
+    bucket_wgsmetrics_exists="$(bucket_object_exists "${bucket_wgsmetrics}")" || exit 1
+    if [ "${bucket_wgsmetrics_exists}" = "0" ]; then
+        # if successful, delete cram and bam data to make space on VM
+        info "Upload successful. Deleting cram and bam files"
+        rm -f "${local_cram}" "${local_bam}"
+    else
+        die "Failed to upload ${local_wgsmetrics} to bucket."
+    fi
+
+    info "Finished processing ${sample}"
+}
+
+create_local_wgs_metrics () {
+    local sample=$1 && shift
+    local cram_url=$1 && shift
+
+    if [[ -z "${sample}" ]] || [[ -z "${cram_url}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local local_bam
+    local local_wgsmetrics
+
+    local_bam="$(get_local_bam_path "${sample}")" || exit 1
+    local_wgsmetrics="$(get_local_wgsmetrics_path "${sample}")" || exit 1
+
+    if [ ! -f "${local_bam}" ]; then
+        create_bam "${sample}" "${cram_url}"
+    fi
+
+    # make actual .wgsmetrics file
+    run_picard "${sample}"
+
+    if [[ ! -f "${local_wgsmetrics}" ]]; then
+        die "Picard run creating ${local_wgsmetrics} failed."
+    fi
+
+    info "Created ${local_wgsmetrics}"
+}
+
+run_picard () {
+    local sample=$1 && shift
+
+    if [[ -z "${sample}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local local_bam
+    local local_wgsmetrics
+
+    local_bam="$(get_local_bam_path "${sample}")" || exit 1
+    local_wgsmetrics="$(get_local_wgsmetrics_path "${sample}")" || exit 1
+
+    info "Start picard run for ${sample}"
+    java -jar ${PICARD_JAR} CollectWgsMetrics \
+        I="${local_bam}" \
+        O="${local_wgsmetrics}" \
+        R="${REF_GENOME}" \
+        INTERVALS="${LOCAL_INTERVAL_LIST_FILE}" \
+        MINIMUM_MAPPING_QUALITY=20 \
+        MINIMUM_BASE_QUALITY=10 \
+        COVERAGE_CAP=250
+
+    info "Finished picard run to create ${local_wgsmetrics}"
+}
+
+create_bam () {
+    local sample=$1 && shift
+    local cram_url=$1 && shift
+
+    if [[ -z "${sample}" ]] || [[ -z "${cram_url}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local local_bam
+    local local_cram
+
+    local_bam="$(get_local_bam_path "${sample}")" || exit 1
+    local_cram="$(get_local_cram_path "${sample}")" || exit 1
+
+    if [ ! -f "${local_cram}" ]; then
+        download_cram "${sample}" "${cram_url}"
+    fi
+
+    info "Start cram2bam for ${sample}"
+    cram2bam "${local_cram}"
+
+    if [[ ! -f "${local_bam}" ]]; then
+        die "Creation of local bam ${local_bam} failed."
+    fi
+
+    info "Created ${local_bam}"
+}
+
+download_cram() {
+    local sample=$1 && shift
+    local cram_url=$1 && shift
+
+    if [[ -z "${sample}" ]] || [[ -z "${cram_url}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    local local_cram
+
+    local_cram="$(get_local_cram_path "${sample}")" || exit 1
+
+    info "Start download_cram_from_url for ${sample}"
+
+    # stderr to /dev/null since else download progress statements spam the log
+    download_cram_from_url "${sample}" "${cram_url}" 2> /dev/null
+    #download_cram_from_url "${sample}" "${cram_url}"
+
+    if [ ! -f "${local_cram}" ]; then
+        die "Failed to download cram file"
+    fi
+}
+
+bucket_object_exists() {
+    # return "0" if exists, "1" if not
+    local bucket_object_path=$1 && shift
+
+    if [[ -z "${bucket_object_path}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "$(gsutil -q stat "${bucket_object_path}"; echo $?)"
+}
+
+bucket_exists() {
+    # return "0" if exists, "1" if not
+    local bucket_path=$1 && shift
+
+    if [[ -z "${bucket_path}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "$(gsutil ls "gs://${bucket}"; echo $?)"
+}
+
+get_bucket_interval_list_path() {
+    local bucket=$1 && shift
+    local interval_list_file_name=$1 && shift
+
+    if [[ -z "${bucket}" ]] || [[ -z "${interval_list_file_name}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "gs://${bucket}/${interval_list_file_name}"
+}
+
+get_bucket_urls_path() {
+    local bucket=$1 && shift
+    local urls_file_name=$1 && shift
+
+    if [[ -z "${bucket}" ]] || [[ -z "${urls_file_name}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "gs://${bucket}/${urls_file_name}"
+}
+
+get_bucket_wgsmetrics_path() {
+    local bucket=$1 && shift
+    local sample=$1 && shift
+
+    if [[ -z "${bucket}" ]] || [[ -z "${sample}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "gs://${bucket}/${sample}.wgsmetrics"
+}
+
+get_local_wgsmetrics_path() {
+    local sample=$1 && shift
+
+    if [[ -z "${sample}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "$HOME/${sample}.wgsmetrics"
+}
+
+get_local_bam_path() {
+    local sample=$1 && shift
+
+    if [[ -z "${sample}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "/data/gcp/cram_downloads/${sample}_cram/${sample}_dedup.realigned.bam"
+}
+
+get_local_cram_path() {
+    local sample=$1 && shift
+
+    if [[ -z "${sample}" ]]; then
+        die "Not all input parameters provided to ${FUNCNAME[*]}. Exiting"
+    fi
+
+    echo "/data/gcp/cram_downloads/${sample}_cram/${sample}_dedup.realigned.cram"
+}
+
+main "$@"
