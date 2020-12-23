@@ -18,7 +18,7 @@ while getopts ':i:' flag; do
 done
 
 if [[ -z "${dr_id}" ]]; then
-    echo "[ERROR] script get_data_from_BizzMine did not run, check usage below:"
+    echo "[ERROR] script get_info_from_BizzMine did not run, check usage below:"
     print_usage
 fi
 
@@ -33,7 +33,7 @@ release_id=$"${dr_id}"
 
 ## start with script
 echo ""
-echo "[START] get_data_from_BizzMine: $(date +"%y%m%d (%T)")"
+echo "[START] get_info_from_BizzMine: $(date +"%y%m%d (%T)")"
 echo ""
 
 echo "--- DETAILS DATA ACCESS REQUEST: $release_id ---"
@@ -46,8 +46,10 @@ echo ""
 jq -r '.[] | "Main applicant - " + .DataRequests_DR_1_2_Mainapplicant[].value + " " + .DataRequests_1_2_Emailaddress_mainapplicant' <temp.json
 jq -r '.[] | "Main applicant 2 - " + .DataRequests_DR_1_2_Mainapplicant2 + " " + .DataRequests_1_2_Emailaddress_mainapplicant2' <temp.json
 echo ""
-jq -r '.[] | "Which data can be shared - " + .DataRequests_DR_0_0_Whichdata_shared_followingboarddecision.text + " " + .DataRequests_DR_0_0_Partofthedata_shared' <temp.json
+jq -r '.[] | "Phase where datarequest is in - " + .DataRequests_PendingSteps'  <temp.json
 jq -r '.[] | "Due date Licence Agreement - " + .DataRequests_DR_0_0_Duedate_licenceagreement'  <temp.json
+jq -r '.[] | "Which data can be shared following the board desiscion - " + .DataRequests_DR_0_0_Whichdata_shared_followingboarddecision.text' <temp.json
+jq -r '.[] | "   specification (only if applicable) - " + .DataRequests_DR_0_0_Partofthedata_shared' <temp.json
 echo ""
 jq -r '.[].Researchers[]? | select(.Researchers_13Researcheralsodownloadcontact=="1") | "GCP account download contact - " + .Researchers_13Emailresearcherinvolvedintheproject' <temp.json
 jq -r '.[].Extraresearchers[]? | select(.Extra_researchers_Extraresearcheralsodownloadcontact=="1") |  "Extra added GCP account of download contact - " + .Extra_researchers_Emailextraresearcherinvolvedintheproject' <temp.json
