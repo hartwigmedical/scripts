@@ -13,9 +13,11 @@ fi
 if [[ ${type} = "REF" ]]; then
     sample=$(echo $biopsy | cut -c1-12)R
     cram=$(locate_reference_cram ${biopsy})
-else
+elif [[ ${type} = "TUM" ]]; then
     sample=$biopsy
     cram=$(locate_tumor_cram ${biopsy})
+else
+    echo "[ERROR] Did not recognize sample type ${type}. Should be REF or TUM"
 fi
 
 echo "${sample} ${cram}"
