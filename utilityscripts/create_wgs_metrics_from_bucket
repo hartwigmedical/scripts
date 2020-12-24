@@ -22,6 +22,8 @@ main () {
         die "Not all input parameters provided to ${SCRIPT_NAME}. Arguments should be bucket, interval_list_file_name and urls_file_name. Exiting"
     fi
 
+    info "Starting with ${SCRIPT_NAME} for bucket ${bucket}"
+
     # sanity checks for the setup of the bucket and VM
     if [ ! -f "${PICARD_JAR}" ]; then
         die "Picard jar not found at ${PICARD_JAR}"
