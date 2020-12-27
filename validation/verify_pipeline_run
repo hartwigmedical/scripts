@@ -64,7 +64,7 @@ main() {
         "/data/common/repos/scripts/hmftools/patientreporter/create_patient_report_for_run"
         "/data/common/repos/scripts/hmftools/patientdb/load_run_into_reference_validation_sets_db"
         "/data/common/repos/scripts/functions/test/locate_files_test"
-        "/data/common/repos/scripts/functions/test/run_all_sql_verification_jobs"
+        "${jobs_source_path}/run_all_sql_verification_jobs"
     )
     sql_jobs=(
         "${jobs_source_path}/check_update_time.sql"
