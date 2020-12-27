@@ -323,11 +323,10 @@ sub parseJsonInfo{
             ## Sanity checks
             die "Field for sample id not found\n" unless defined $sample->{SampleId};
             die "Field for sample name not found\n" unless defined $sample->{SampleName};
-            die "Field for index seq not found\n" unless defined $sample->{IndexMetrics}[0]{IndexSequence};
 
             my $sid = $sample->{SampleId};
             my $snm = $sample->{SampleName};
-            my $seq = $sample->{IndexMetrics}[0]{IndexSequence};
+            my $seq = $sample->{IndexMetrics}[0]{IndexSequence} || $NA_CHAR;
 
             ## Reset info for all real samples
             $info{samp}{ $sid }{name} = $snm;
