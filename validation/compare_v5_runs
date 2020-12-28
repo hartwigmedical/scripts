@@ -85,13 +85,13 @@ echo "===== Directory CHECKS"
 for tool_name in ${tools[*]}; do 
     base_tool_path="${base_run_path}/${tool_name}"
     test_tool_path="${test_run_path}/${tool_name}"
-    base_file_count=$(find "${base_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
-    test_file_count=$(find "${test_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
     if [[ ! -d "${base_tool_path}" ]]; then
         echo "[WARN] Tool directory does not exist so cannot compare (${base_tool_path})"
     elif [[ ! -d "${test_tool_path}" ]]; then
         echo "[WARN] Tool directory does not exist so cannot compare (${test_tool_path})"
     else
+        base_file_count=$(find "${base_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
+        test_file_count=$(find "${test_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
         if [[ ${base_file_count} -ne ${test_file_count} ]]; then
             echo "[WARN] DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool ${tool_name}"
         else
