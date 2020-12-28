@@ -85,27 +85,26 @@ echo "===== Directory CHECKS"
 for tool_name in ${tools[*]}; do 
     base_tool_path="${base_run_path}/${tool_name}"
     test_tool_path="${test_run_path}/${tool_name}"
-    base_file_count=$(find "${base_tool_path}" -maxdepth 1 | wc -l)
-    test_file_count=$(find "${test_tool_path}" -maxdepth 1 | wc -l)
-    if [[ ${base_file_count} -eq ${test_file_count} ]]; then
-        echo "[INFO] Identical file count (${base_file_count}) for tool ${tool_name}"
-    else
+    base_file_count=$(find "${base_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
+    test_file_count=$(find "${test_tool_path}" -mindepth 1 -maxdepth 1 | wc -l)
+    if [[ ${base_file_count} -ne ${test_file_count} ]]; then
         echo "[WARN] DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool ${tool_name}"
+    else
+        echo "[INFO] Identical file count (${base_file_count}) for tool ${tool_name}"
+        find "${base_run_path}/${tool_name}" -mindepth 1 -maxdepth 1 -type f | \
+        grep -vP "(vcf|tbi|gz|log|sh|cram|crai|bam|bai)$" | \
+        while read -r base_file_path; do
+            file_name=$(basename "${base_file_path}");
+            test_file_path="${test_run_path}/${tool_name}/${file_name}"
+            base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
+            test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
+            if [[ ${base_count} -eq ${test_count} ]]; then
+                echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
+            else
+                echo "[WARN]   DIFFERENT line count (${base_count} vs ${test_count}) for file ${file_name}"
+            fi
+        done
     fi
-
-    find "${base_run_path}/${tool_name}" -mindepth 1 -maxdepth 1 -type f | \
-    grep -vP "(vcf|tbi|gz|log|sh|cram|crai|bam|bai)$" | \
-    while read -r base_file_path; do
-        file_name=$(basename "${base_file_path}"); 
-        test_file_path="${test_run_path}/${tool_name}/${file_name}"
-        base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
-        test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
-        if [[ ${base_count} -eq ${test_count} ]]; then
-            echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
-        else
-            echo "[WARN]   DIFFERENT line count (${base_count} vs ${test_count}) for file ${file_name}"
-        fi
-    done
 done
 
 echo ""
