@@ -6,7 +6,7 @@ base_run_path=$1
 test_run_path=$2
 logs_dir_path=$3
 
-tools=(amber bachelor chord cobalt health_checker linx purple sage gridss gripss)
+tools=(amber bachelor chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss)
 
 base_pip_vsn_file="${base_run_path}/pipeline.version"
 test_pip_vsn_file="${test_run_path}/pipeline.version"
