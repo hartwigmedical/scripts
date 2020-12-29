@@ -89,7 +89,7 @@ main() {
 
                 run_is_already_processed=${processed_runs[${run_id}]}
                 if [[ "${run_is_already_processed}" == "${TRUE}" ]]; then
-                    info "SKIPPING run ${run_id} because already processed (${run_name})" >> "${log_file}"
+                    info "Not processing run ${run_id} because already processed (${run_name})" >> "${log_file}"
                     continue
                 fi
 
