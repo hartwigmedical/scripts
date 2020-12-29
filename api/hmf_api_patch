@@ -42,7 +42,7 @@ if [[ -z "${class}" || -z "${oid}" || -z "${patch_field}" || -z "${patch_value}"
 fi
 
 main () {
-    info "Searching for api object (class=${class}, id=${oid})"
+    info "Searching for api object (class=${class}|id=${oid})"
     api_result="$(hmfapi GET "${api_url}/${class}/${oid}")"
     [[ $? -eq 0 ]] || die "API GET failed (${api_url}/${class}/${oid})"
     info "Object to be patched: ${api_result}"
