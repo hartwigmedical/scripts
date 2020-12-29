@@ -13,12 +13,12 @@ if [[ -z "${tumor_sample}" || -z "${qc_fail_reason}" ]]; then
 fi
 
 ref_sample=$(imply_ref_sample_from_tumor_sample ${tumor_sample})
-ref_sample_barcode=$(find_ref_barcode_for_sample_name ${tumor_sample})
-tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+ref_sample_barcode=$(find_ref_barcode_for_sample_name_pilot ${tumor_sample})
+tumor_sample_barcode=$(find_barcode_for_sample_name_pilot ${tumor_sample})
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
     echo "[INFO] Could not find tumor sample barcode from metadata. Attempt to resolve from LIMS."
-    tumor_sample_barcode=$(find_barcode_for_sample_name ${tumor_sample})
+    tumor_sample_barcode=$(find_barcode_for_sample_name_pilot ${tumor_sample})
 fi
 
 if [[ -z "${tumor_sample_barcode}" ]]; then
