@@ -167,10 +167,12 @@ process_gs_url() {
     
     msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
-        if [[ "${status}" == "Deleted" ]]; then
+        deleted_status="Deleted"
+        if [[ "${status}" == "${deleted_status}" ]]; then
             info "  SKIPPING: url not found but object status is ${status} so makes sense (${gs_url})" >> "${log_file}"
         else
-            warn "  SKIPPING: url not found but object status (${status}) is not Deleted (${gs_url})" >> "${log_file}"
+            warn "  SKIPPING: url not found while object status (${status}) is not Deleted (${gs_url})" >> "${log_file}" 2>&1
+            warn "  SKIPPING: url not found while object status (${status}) is not Deleted (${gs_url})"
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)" >> "${log_file}"
