@@ -19,18 +19,6 @@ find_ref_barcode_for_sample_name() {
     query_lims.pl -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].ref_sample_id'
 }
 
-find_barcode_for_sample_name_pilot() {
-    local sample=$1
-    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
-    query_lims_pilot.pl -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].sample_id'
-}
-
-find_ref_barcode_for_sample_name_pilot() {
-    local sample=$1
-    # We take the first record regardless of how many LIMS entries match to a sample name. This is potentially risky.
-    query_lims_pilot.pl -type samples -filter "sample_name=${sample}" -exact -json | jq -r '.[0].ref_sample_id'
-}
-
 find_name_for_barcode() {
     local barcode=$1
     query_lims.pl -type samples -filter "sample_id=${barcode}" -exact -json | jq -r '.[].sample_name'
