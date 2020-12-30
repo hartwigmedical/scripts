@@ -26,7 +26,7 @@ if [[ "$colo_exists" == "" ]]; then
     collect_somatic_set_data ${source_set_path} ${dest_set_base_path}/somatics ${include_germline}
     create_tar_file ${somatic_tar_file} ${dest_base_path} ${dest_set_base_path}/somatics ${dest_set_base_path}/tar_${colo_folder}_somatics.log
     
-    collect_germline_set_data ${source_set_path} ${dest_set_base_path}/germlinecd 2
+    collect_germline_set_data ${source_set_path} ${dest_set_base_path}/germline
     create_tar_file ${germline_tar_file} ${dest_base_path} ${dest_set_base_path}/germline  ${dest_set_base_path}/tar_${colo_folder}_germline.log
 
     #gsutil -u hmf-share rm gs://hmf-dr-colo/*
