@@ -1,5 +1,5 @@
 # Curation primary tumor location
-select * from clinicalFindings where message ='Failed to curate primary tumor location';
+select * from clinicalFindings where message ='Failed to curate primary tumor';
 
 # Curation pre-treatment
 select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='preTreatmentCuration';
@@ -7,9 +7,7 @@ select * from clinicalFindings where message ='Failed to curate ecrf drug. Curat
 # Curation treatment
 select * from clinicalFindings where message ='Failed to curate ecrf drug. Curated list contained no matching entry, or match was ambiguous' and level ='treatmentCuration';
 
-# Unused search terms.
-# TODO Update "select * from clinicalFindings where message ='Primary tumor search term not used' and level='primaryTumorCuration';" on patient-db v3.52 upgrade
-select * from clinicalFindings where message ='Tumor location search term not used' and level='tumorLocationCuration';
+select * from clinicalFindings where message ='Primary tumor search term not used' and level='primaryTumorCuration';
 
 select * from clinicalFindings where message ='Treatment search term not used' and level='treatmentCuration' ;
 
