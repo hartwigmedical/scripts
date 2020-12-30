@@ -26,7 +26,7 @@ if [[ "$colo_exists" == "" ]]; then
     collect_somatic_set_data ${source_set_path} ${dest_set_base_path}/somatics ${include_germline}
     create_tar_file ${somatic_tar_file} ${dest_base_path} ${dest_set_base_path}/somatics ${dest_set_base_path}/tar_${colo_folder}_somatics.log
     
-    collect_germline_set_data ${source_set_path} ${dest_set_base_path}/germline
+    collect_germline_set_data ${source_set_path} ${dest_set_base_path}/germlinecd 2
     create_tar_file ${germline_tar_file} ${dest_base_path} ${dest_set_base_path}/germline  ${dest_set_base_path}/tar_${colo_folder}_germline.log
 
     gsutil -u hmf-share rm gs://hmf-dr-colo/*
@@ -39,10 +39,11 @@ if [[ "$colo_exists" == "" ]]; then
     echo ""
     echo "[START] REFRESH COLO DATA ON NEXT CLOUD: $(date +"%y%m%d (%T)")"
     echo ""
-    #tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file} /at the moment only somatic data since very large file!
-    tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file}
-    do_upload_files_to_nextcloud_directory UPLOAD DR-COLO-Example.tar.gz
-    echo "[INFO] The DR-COLO-Example.tar.gz file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
+    #tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file} // at the moment only somatic data since very large file!
+    #tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file}
+    #do_upload_files_to_nextcloud_directory UPLOAD DR-COLO-Example.tar
+    do_upload_files_to_nextcloud_directory ${somatic_tar_file}
+    echo "[INFO] The ${somatic_tar_file} file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
     echo ""
 else
     echo ""
@@ -51,7 +52,7 @@ else
     echo "[INFO] Files in the GCP bucket hmf-dr-colo:"
     gsutil -u hmf-share du -h gs://hmf-dr-colo/
     echo ""
-    echo "[INFO] Check NextCloud (PUBLIC/Data-Access-Requests) manually to be sure the DR-COLO-Example.tar.gz file is there with the latest data."
+    echo "[INFO] Check NextCloud (PUBLIC/Data-Access-Requests) manually to be sure the file is there with the latest data."
     echo ""
 fi
 
