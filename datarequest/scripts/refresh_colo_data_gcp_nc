@@ -39,7 +39,8 @@ if [[ "$colo_exists" == "" ]]; then
     echo ""
     echo "[START] REFRESH COLO DATA ON NEXT CLOUD: $(date +"%y%m%d (%T)")"
     echo ""
-    tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file}
+    #tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file} ${germline_tar_file} /at the moment only somatic data since very large file!
+    tar -cvf "DR-COLO-Example.tar.gz" ${somatic_tar_file}
     do_upload_files_to_nextcloud_directory UPLOAD DR-COLO-Example.tar.gz
     echo "[INFO] The DR-COLO-Example.tar.gz file has been uploaded on NextCloud to the UPLOAD folder. Please move manually to PUBLIC/Data-Access-Requests."
     echo ""
