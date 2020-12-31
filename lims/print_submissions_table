@@ -1,38 +1,47 @@
 #!/usr/bin/env bash
 
-LIMS_JSON_FILE="/data/ops/lims/prod/lims.json"
-SUBMISSIONS_JSON="$(cat "${LIMS_JSON_FILE}" | jq -c '.submissions')"
+LIMS_JSON="/data/ops/lims/prod/lims.json"
+count=${1:-10} # optional amount of submissions to print
 
-print_count=${1:-10} # optional amount of submissions to print
-submissions_to_visit=( $(echo "${SUBMISSIONS_JSON}" | jq -r 'keys[]' | sort -r | head -${print_count}) )
+# select $count most recent submissions in reverse order
+submissions=$(jq "[.submissions[]] | sort_by(.submission) | .[-${count}:] | reverse[]" "${LIMS_JSON}")
 
-for submission in "${submissions_to_visit[@]}"; do
-    obj_json=$(echo "${SUBMISSIONS_JSON}" | jq ".${submission}")
-    project_name=$(echo "${obj_json}" | jq -r ".project_name")
-    project_type=$(echo "${obj_json}" | jq -r ".project_type")
-    expected_sample_count=$(echo "${obj_json}" | jq -r ".sample_count")
-    analysis_type=$(echo "${obj_json}" | jq -r ".analysis_type")
+# header
+printf "#%s\t%s\t%s\t%s\t%s\n" \
+    "submission" \
+    "project" \
+    "cohort" \
+    "analysis" \
+    "sample_count"
 
-    ## reset some fields according to project type
-    if [[ "${project_type}" == "Human research" ]]; then
-        project_type="HUM-RES"
-    elif [[ "${project_type}" == "non human research" || "${project_type}" == "Non human research" ]]; then
-        project_type="NONHUM-RES"
-    elif [[ "${project_type}" == "KG production" ]]; then
-        project_type="KG"
-    elif [[ "${project_type}" == "CORE" ]]; then
+# process submissions one by one
+echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample_count,.analysis_type] | @tsv' | while read line; do
+    submission=$(echo "${line}" | cut -f1)
+    project=$(echo "${line}" | cut -f2)
+    cohort=$(echo "${line}" | cut -f3)
+    scount=$(echo "${line}" | cut -f4)
+    analysis=$(echo "${line}" | cut -f5)
+
+    # reset some fields according to project type
+    if [[ "${cohort}" == "Human research" ]]; then
+        cohort="HUM-RES"
+    elif [[ "${cohort}" == "non human research" || "${cohort}" == "Non human research" ]]; then
+        cohort="NONHUM-RES"
+    elif [[ "${cohort}" == "KG production" ]]; then
+        cohort="KG"
+    elif [[ "${cohort}" == "CORE" ]]; then
         analysis_type="SomaticAnalysis"
-    elif [[ "${project_type}" == "Cohort" ]]; then
+    elif [[ "${cohort}" == "Cohort" ]]; then
         analysis_type="NA"
     else
-        project_type="CheckProjectType(${project_type})"
+        cohort="CheckProjectType(${cohort})"
     fi
 
-    ## output
+    # output
     printf "%s\t%s\t%s\t%s\t%s\n" \
         "${submission}" \
-        "${project_name}" \
-        "${project_type}" \
-        "${analysis_type}" \
-        "${expected_sample_count}"
+        "${project}" \
+        "${cohort}" \
+        "${analysis}" \
+        "${scount}"
 done
