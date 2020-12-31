@@ -4,6 +4,12 @@ source message_functions
 
 out_dir=$1 && shift # prod or pilot lims dir
 
+if [[ -z "${out_dir}" ]]; then
+    echo "Usage: $(basename $0) /path/to/out/dir"
+    echo "   Eg: $(basename $0) /data/ops/lims/pilot"
+    exit 1
+fi
+
 ## setup main variables
 LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
@@ -12,8 +18,12 @@ NAS_DIR="/volume1/sync_from_infracom"
 ACC2CSV="/data/common/tools/access2csv_v190415/target/appassembler/bin/access2csv"
 
 ACCESS_FILE="LIMS_v4.6_be.accdb"
-FOR_001_FILE="HMF-FOR-001 Received Samples 2020 v5.7.xlsx"
-FOR_002_FILE="HMF-FOR-002 Sample in process 2020 v4.2.xlsx"
+FOR_001_FILE="HMF-FOR-001 Received Samples 2020 v5.9.xlsx"
+FOR_002_FILE="HMF-FOR-002 Sample in process 2020 v4.3.xlsx"
+
+FOR_001_FILE_2020="HMF-FOR-001 Received Samples 2020 v5.8.xlsx"
+FOR_002_FILE_2020="HMF-FOR-002 Sample in process 2020 v4.2.xlsx"
+
 FOR_001_FILE_2019="HMF-FOR-001 Received Samples 2019 v5.5.xlsx"
 FOR_002_FILE_2019="HMF-FOR-002 Sample in process 2019 v4.1.xlsx"
 
@@ -21,6 +31,8 @@ NAS_FILES=(
   "${NAS_DIR}/04 Current backend/${ACCESS_FILE}"
   "${NAS_DIR}/${FOR_001_FILE}"
   "${NAS_DIR}/${FOR_002_FILE}"
+  "${NAS_DIR}/${FOR_001_FILE_2020}"
+  "${NAS_DIR}/${FOR_002_FILE_2020}"
   "${NAS_DIR}/${FOR_001_FILE_2019}"
   "${NAS_DIR}/${FOR_002_FILE_2019}"
 )
@@ -46,18 +58,24 @@ main() {
     for001_cont_txt="${DAY_DIR}/for001_contacts.tsv"
     for002_proc_txt="${DAY_DIR}/for002_processing.tsv"
 
+    for001_source_2020="${DAY_DIR}/${FOR_001_FILE_2020}"
+    for002_source_2020="${DAY_DIR}/${FOR_002_FILE_2020}"
+    for001_samp_txt_2020="${DAY_DIR}/2020_for001_samples.tsv"
+    for001_subm_txt_2020="${DAY_DIR}/2020_for001_submissions.tsv"
+    for002_proc_txt_2020="${DAY_DIR}/2020_for002_processing.tsv"
+
     for001_source_2019="${DAY_DIR}/${FOR_001_FILE_2019}"
     for002_source_2019="${DAY_DIR}/${FOR_002_FILE_2019}"
     for001_samp_txt_2019="${DAY_DIR}/2019_for001_samples.tsv"
     for001_subm_txt_2019="${DAY_DIR}/2019_for001_submissions.tsv"
-    for002_proc_txt_2019="${DAY_DIR}/2019_for001_processing.tsv"
+    for002_proc_txt_2019="${DAY_DIR}/2019_for002_processing.tsv"
 
     info "Syncing input files from NAS to DATASTORE (${DAY_DIR})"
     for nas_file_path in "${NAS_FILES[@]}"; do
       retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
     done
 
-    info "Converting input files to text formats"
+    info "Converting input files to text formats (current files)"
     accdb_table_to_csv "${DAY_DIR}" "${access_samp_txt}" "${access_source}" "tblSamples"
     accdb_table_to_csv "${DAY_DIR}" "${access_acti_txt}" "${access_source}" "tblActions"
     accdb_table_to_csv "${DAY_DIR}" "${access_regi_txt}" "${access_source}" "tblRegistration"
@@ -65,6 +83,13 @@ main() {
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt}" "${for001_source}" "2" "2"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_cont_txt}" "${for001_source}" "3" "1"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt}" "${for002_source}" "1" "5"
+
+    info "Converting input files to text formats (2020 files)"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt_2020}" "${for001_source_2020}" "1" "5"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt_2020}" "${for001_source_2020}" "2" "2"
+    excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt_2020}" "${for002_source_2020}" "1" "5"
+
+    info "Converting input files to text formats (2019 files)"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt_2019}" "${for001_source_2019}" "1" "5"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt_2019}" "${for001_source_2019}" "2" "2"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt_2019}" "${for002_source_2019}" "1" "5"
