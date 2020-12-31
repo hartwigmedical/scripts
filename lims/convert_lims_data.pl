@@ -76,9 +76,12 @@ my $FOR_001_SAMP_TSV = $LATEST_DIR . '/for001_samples.tsv';
 my $FOR_002_PROC_TSV = $LATEST_DIR . '/for002_processing.tsv';
 
 ## Files from previous years
+my $SUBM_TSV_2020 = $LATEST_DIR . '/2020_for001_submissions.tsv';
+my $SAMP_TSV_2020 = $LATEST_DIR . '/2020_for001_samples.tsv';
+my $PROC_TSV_2020 = $LATEST_DIR . '/2020_for002_processing.tsv';
 my $SUBM_TSV_2019 = $LATEST_DIR . '/2019_for001_submissions.tsv';
 my $SAMP_TSV_2019 = $LATEST_DIR . '/2019_for001_samples.tsv';
-my $PROC_TSV_2019 = $LATEST_DIR . '/2019_for001_processing.tsv';
+my $PROC_TSV_2019 = $LATEST_DIR . '/2019_for002_processing.tsv';
 my $SUBM_TSV_2018 = $LATEST_DIR . '/2018_subm';
 my $SAMP_TSV_2018 = $LATEST_DIR . '/2018_samp';
 my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
@@ -88,6 +91,7 @@ my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 my @ALL_INPUT_FILES = ( 
     $ACCESS_SAMPLES_CSV, $ACCESS_ACTIONS_CSV, $ACCESS_REGISTRATIONS_CSV,
     $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV,
+    $SUBM_TSV_2020, $SAMP_TSV_2020, $PROC_TSV_2020,
     $SUBM_TSV_2019, $SAMP_TSV_2019, $PROC_TSV_2019,
     $SUBM_TSV_2018, $SAMP_TSV_2018, $PROC_TSV_2018,
     $PROC_TSV_2017, $LIMS_JSN_2017,
@@ -127,16 +131,19 @@ my $lims_objs = {}; # will contain all sample objects
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2018, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2019, "\t" );
+$proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2020, "\t" );
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $FOR_002_PROC_TSV, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
@@ -1115,8 +1122,8 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
-        'SUBM_2018' => \%SUBM_DICT_2018,
         'SUBM_2019' => \%SUBM_DICT_2019,
+        'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
