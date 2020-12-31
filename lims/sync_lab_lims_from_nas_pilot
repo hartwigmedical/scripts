@@ -75,7 +75,7 @@ main() {
       retrieve_file_from_nas "$nas_file_path" "${DAY_DIR}"
     done
 
-    info "Converting input files to text formats (current files)"
+    info "Converting input files to text formats"
     accdb_table_to_csv "${DAY_DIR}" "${access_samp_txt}" "${access_source}" "tblSamples"
     accdb_table_to_csv "${DAY_DIR}" "${access_acti_txt}" "${access_source}" "tblActions"
     accdb_table_to_csv "${DAY_DIR}" "${access_regi_txt}" "${access_source}" "tblRegistration"
@@ -84,12 +84,12 @@ main() {
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_cont_txt}" "${for001_source}" "3" "1"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt}" "${for002_source}" "1" "5"
 
-    info "Converting input files to text formats (2020 files)"
+    info "Converting input files to text formats (2020)"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt_2020}" "${for001_source_2020}" "1" "5"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt_2020}" "${for001_source_2020}" "2" "2"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt_2020}" "${for002_source_2020}" "1" "5"
 
-    info "Converting input files to text formats (2019 files)"
+    info "Converting input files to text formats (2019)"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_subm_txt_2019}" "${for001_source_2019}" "1" "5"
     excel_sheet_to_tsv "${DAY_DIR}" "${for001_samp_txt_2019}" "${for001_source_2019}" "2" "2"
     excel_sheet_to_tsv "${DAY_DIR}" "${for002_proc_txt_2019}" "${for002_source_2019}" "1" "5"
