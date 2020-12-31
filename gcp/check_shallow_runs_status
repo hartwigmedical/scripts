@@ -23,7 +23,9 @@ hmf_api_get "runs?ini_id=${shallow_ini_id}" | jq -c '.[]' | while read run_json;
     elif [[ -d "${process_path}/${run_name}" ]]; then 
         echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${process_path})"
     else
-        if [[ "${run_status}" =~ Failed ]]; then 
+        if [[ "${run_status}" == "Deleted" ]]; then
+            continue
+        elif [[ "${run_status}" =~ Failed ]]; then
             sample_archive_count=$(find "${archive_path}" -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
             if [[ "${sample_archive_count}" -gt 0 ]]; then 
                 continue
