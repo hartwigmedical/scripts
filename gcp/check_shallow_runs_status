@@ -8,11 +8,12 @@ shallow_ini_id="38"
 
 ## query and store
 echo "## ShallowSeq Check (${yymmdd})"
-hmf_api_get "runs?ini_id=${shallow_ini_id}" | jq -c '.[]' | while read run_json; do
-    
-    run_name=$(echo "${run_json}" | jq -r '.set.name')
-    run_status=$(echo "${run_json}" | jq -r '.status')
-    tumor_sample=$(echo "${run_json}" | jq -r '.set.tumor_sample')
+shallow_runs=$(hmf_api_get "runs?ini_id=${shallow_ini_id}")
+
+echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @tsv' | while read line; do
+    run_name=$(echo "${line}" | cut -f1)
+    run_status=$(echo "${line}" | cut -f2)
+    tumor_sample=$(echo "${line}" | cut -f3)
 
     if [[ "${run_name}" =~ ShallowTest|cancerPanel|HMFregVAL ]]; then 
         continue
