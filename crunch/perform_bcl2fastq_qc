@@ -81,22 +81,28 @@ for seq_dir in "${seq_dirs[@]}"; do
         sample_nm=$(echo ${line} | cut -d" " -f10)
         status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
         if [[ "${HOSTNAME}" == "datastore" ]]; then 
-            api_sample=$(cat "${API_SAMP_JSON}" | jq -r --arg barcode "${sample_id}" '.[] | select(.barcode == $barcode)')
-            if [[ "$api_sample" == "" ]]; then
+            api_sample_tsv=$(hmf_api_get samples?barcode=$sample_id | jq -cr '.[-1] | [.status,.yld,.yld_req] | @tsv')
+            if [[ "${api_sample_tsv}" == "" ]]; then
                 status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
             else
-                smp_status=$(echo "${api_sample}" | jq -r ".status" | cut -d" " -f1)
-                yld=$(echo "${api_sample}" | jq -r ".yld")
-                req=$(echo "${api_sample}" | jq -r ".yld_req")
+                smp_status=$(echo "${api_sample_tsv}" | cut -f1)
+                yld=$(echo "${api_sample_tsv}" | cut -f2)
+                req=$(echo "${api_sample_tsv}" | cut -f3)
+
                 yld=$((yld/1000000000))
                 req=$((req/1000000000))
-                set_name=$(find ${REGISTERED_DIR} -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
-                api_run=$(cat "${API_RUNS_JSON}" | jq -r --arg set_name "${set_name}" '.[] | select(.set.name == $set_name)')
-                if [[ "$api_run" == "" ]]; then
+                set_name=$(find "${REGISTERED_DIR}" -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
+                # Note: unfortunately to find a correct run we need to match ini_id for prod inis
+                # Note: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
+                api_run_tsv=$(
+                    hmf_api_get runs?set_name=${set_name} | \
+                    jq -rc '.[] | select( .ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51) | [.status,.ini_id] | @tsv'
+                )
+                if [[ "${api_run_tsv}" == "" ]]; then
                     status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
                 else
-                    run_status=$(echo "${api_run}" | jq -r ".status")
-                    ini_id=$(echo "${api_run}" | jq -r ".ini_id")
+                    run_status=$(echo "${api_run_tsv}" | cut -f1)
+                    ini_id=$(echo "${api_run_tsv}" | cut -f2)
                     ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
                     status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
                 fi
