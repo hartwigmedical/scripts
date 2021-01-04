@@ -122,8 +122,8 @@ sum_out_path="${rtg_out_path}/summary.txt"
 
 rtg_tsv_out_path="${rtg_out_path}/rtg_summary.tsv"
 rtg_csv_out_path="${rtg_out_path}/rtg_summary.csv"
-wgs_tsv_out_path="${rtg_out_path}/wgs_metrics.tsv"
-wgs_csv_out_path="${rtg_out_path}/wgs_metrics.csv"
+wgs_tsv_out_path="${output_dir}/wgs_metrics.tsv"
+wgs_csv_out_path="${output_dir}/wgs_metrics.csv"
 
 wgs_metrics_count=$(find "${run_path}" -name "*.wgsmetrics" | wc -l)
 if [[ "${wgs_metrics_count}" -eq 1 ]]; then
@@ -147,5 +147,7 @@ echo "[INFO] Reformatting RTGtools vcfeval results into csv/tsv"
 cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace > "${rtg_tsv_out_path}"
 cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace --output-delimiter "," > "${rtg_csv_out_path}"
 
-echo "[INFO] Final output in: ${rtg_tsv_out_path} and ${wgs_tsv_out_path}"
+echo "[INFO] Final output written to:"
+echo "[INFO]   WGSMetrics: ${wgs_tsv_out_path}"
+echo "[INFO]   RTGTools: ${rtg_tsv_out_path}"
 echo "[INFO] Finished with $(basename $0)"
