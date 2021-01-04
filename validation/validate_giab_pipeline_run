@@ -13,12 +13,14 @@ truth_vcf_name='NA12878_GIAB_highconf_IllFB-IllGATKHC-CG-Ion-Solid_ALLCHROM_v3.2
 truth_vcf_path="${truth_dir_path}/${truth_vcf_name}"
 truth_vcf_path_snv=$(echo ${truth_vcf_path} | sed 's/\.vcf\.gz/_SNP\.vcf.\gz/')
 
-## init checks
 if [[ ! -w "${val_base}" ]]; then echo "[ERROR] validation base not writable (${val_base})"; exit 1; fi
 if [[ ! -f "${gatk_path}" ]]; then echo "[ERROR] GATK JAR not available (${gatk_path})"; exit 1; fi
 if [[ ! -f "${ref_genome_fasta}" ]]; then echo "[ERROR] Ref fasta not available (${ref_genome_fasta})"; exit 1; fi
 if [[ ! -f "${truth_vcf_path}" ]]; then echo "[ERROR] truth VCF not available (${truth_vcf_path})"; exit 1; fi
 if [[ ! -f "${truth_bed_path}" ]]; then echo "[ERROR] truth BED not available (${truth_bed_path})"; exit 1; fi
+if [[ ! -d "${rtg_sdf_path}" ]]; then echo "[ERROR] RTG SDF directory not found (${rtg_sdf_path})"; exit 1; fi
+if [[ ! $(command -v datamash) ]]; then echo "[ERROR] Dependency 'datamash' not found"; exit 1; fi
+if [[ ! $(command -v rtg) ]]; then echo "[ERROR] Dependency 'rtg' not found"; exit 1; fi
 
 if [[ $1 == "" || $1 == "-h" || $1 == "--help" ]]; then
     echo "-----"
@@ -36,65 +38,64 @@ run_path=$1 && shift
 ## -----
 if [[ ! -d "${run_path}" ]]; then echo "[ERROR] Provided run path does not exist?"; exit 1; fi
 
-## Name of germline VCF differs betwee Pv4 and Pv5
-input_vcf_path=$(find ${run_path} -wholename "*/germline_caller/*.germline.vcf.gz")
-if [[ ! -f "${input_vcf_path}" ]]; then input_vcf_path=$(find ${run_path} -maxdepth 1 -name "*.annotated.vcf.gz"); fi
+## find input VCF
+input_vcf_path=$(find "${run_path}" -wholename "*/germline_caller/*.germline.vcf.gz")
 if [[ ! -f "${input_vcf_path}" ]]; then echo "[ERROR] No germline VCF found (${run_path})" && exit 1; fi
 
-run_name=$(basename ${run_path})
+run_name=$(basename "${run_path}")
 output_dir="${val_base}/${run_name}_Validation"
 tmp_dir="${output_dir}/tmp"
 
 if [[ -d "${output_dir}" ]]; then echo "[ERROR] output_dir already exists (${output_dir})"; exit 1; fi
 
 echo "[INFO] Creating output dir (${output_dir})"
-mkdir -p ${output_dir}
-mkdir -p ${tmp_dir}
+mkdir -p "${output_dir}"
+mkdir -p "${tmp_dir}"
 echo "[INFO] Copying germline vcf (${input_vcf_path})"
-cp ${input_vcf_path}* ${output_dir}
+cp ${input_vcf_path}* "${output_dir}"
 
 ## -----
 ## VCF preparation
 ## -----
 start_vcf_path="${output_dir}/input.vcf"
-start_vcf_name="$(basename ${start_vcf_path})"
+start_vcf_name="$(basename "${start_vcf_path}")"
 
 if [[ ${input_vcf_path} =~ .vcf$ ]]; then
     echo "[INFO] Copying Germline VCF to ${start_vcf_path}"
-    cp ${input_vcf_path} ${start_vcf_path}
+    cp "${input_vcf_path}" "${start_vcf_path}"
 elif [[ ${input_vcf_path} =~ .gz$ ]]; then
     echo "[INFO] Germline VCF is compressed: gunzippig to ${start_vcf_path}"
-    gunzip -c ${input_vcf_path} > ${start_vcf_path}
+    gunzip -c "${input_vcf_path}" > "${start_vcf_path}"
 else
     echo "[ERROR] Germline VCF of unsupported extension" && exit 1
 fi
 
 echo "[INFO] Running RTGTools bgzip on ${start_vcf_name}"
-rtg bgzip ${start_vcf_path}
+rtg bgzip "${start_vcf_path}"
 start_vcf_path="${start_vcf_path}.gz"
 start_vcf_name="${start_vcf_name}.gz"
 echo "[INFO] Running RTGTools index on ${start_vcf_name}"
-rtg index -f vcf ${start_vcf_path}
+rtg index -f vcf "${start_vcf_path}"
 
 ## -----
 ## Use GATK SelectVariants to separate SNVs and INDELs
 ## -----
 snp_vcf_path="${output_dir}/SNP_${start_vcf_name}"
-snp_vcf_name=$(basename ${snp_vcf_path})
+snp_vcf_name=$(basename "${snp_vcf_path}")
 
 if [[ -f "${snp_vcf_path}" ]]; then
     echo "[INFO] SNP vcf already exist, skipping (${snp_vcf_path})"
 else
     echo "[INFO] Running GATK to create SNP vcf (${snp_vcf_name})"
-    java -Djava.io.tmp_dir=${tmp_dir} -jar ${gatk_path} \
+    java -Djava.io.tmp_dir="${tmp_dir}" -jar "${gatk_path}" \
         -T SelectVariants \
-        -R ${ref_genome_fasta} \
-        -L ${truth_bed_path} \
+        -R "${ref_genome_fasta}" \
+        -L "${truth_bed_path}" \
         --excludeNonVariants \
         --removeUnusedAlternates \
-        -V ${start_vcf_path} \
+        -V "${start_vcf_path}" \
         -selectType SNP \
-        -o ${snp_vcf_path}
+        -o "${snp_vcf_path}"
     if [[ $? -ne 0 ]]; then { echo "[ERROR] GATK SelectVariants Failed"; exit 1; } fi
 fi
 
@@ -118,13 +119,33 @@ call_name=$(echo "${call_name}" | sed 's/\.germline\.vcf\.gz//')
 rtg_out_name="${truth_version}_vs_${call_name}_truthBed";
 rtg_out_path="${output_dir}/${rtg_out_name}"
 sum_out_path="${rtg_out_path}/summary.txt"
-csv_out_path="${rtg_out_path}/summary_transposed.csv"
-tsv_out_path="${rtg_out_path}/summary_transposed.tsv"
+
+rtg_tsv_out_path="${rtg_out_path}/rtg_summary.tsv"
+rtg_csv_out_path="${rtg_out_path}/rtg_summary.csv"
+wgs_tsv_out_path="${rtg_out_path}/wgs_metrics.tsv"
+wgs_csv_out_path="${rtg_out_path}/wgs_metrics.csv"
+
+wgs_metrics_count=$(find "${run_path}" -name "*.wgsmetrics" | wc -l)
+if [[ "${wgs_metrics_count}" -eq 1 ]]; then
+    wgs_metrics_path=$(find "${run_path}" -name "*.wgsmetrics")
+    cat "${wgs_metrics_path}" | grep -A1 GENOME | datamash transpose -W > "${wgs_tsv_out_path}"
+    cat "${wgs_metrics_path}" | grep -A1 GENOME | datamash transpose -W --output-delimiter "," > "${wgs_csv_out_path}"
+else
+    echo "[WARN] Search for wgsmetrics found ${wgs_metrics_count} files"
+fi
 
 echo "[INFO] Running RTGtools vcfeval (${rtg_out_name})"
-rtg vcfeval -t ${rtg_sdf_path} -T 8 --baseline=${truth_vcf_path_snv} --calls=${snp_vcf_path} --bed-regions=${truth_bed_path} -o ${rtg_out_path}
-echo "[INFO] Reformatting RTGtools vcfeval results into csv/tsv"
-cat ${sum_out_path} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold,"$2; print "True-pos,"$3; print "False-pos,"$4; print "False-neg,"$5; print "Precision,"$6; print "Sensitivity,"$7; print "F-measure,"$8 }' > ${csv_out_path}
-cat ${sum_out_path} | grep None | awk -F '[[:space:]][[:space:]]+' '{print "Threshold\t"$2; print "True-pos\t"$3; print "False-pos\t"$4; print "False-neg\t"$5; print "Precision\t"$6; print "Sensitivity\t"$7; print "F-measure\t"$8 }' > ${tsv_out_path}
-echo "[INFO] Final output in: ${tsv_out_path}"
+rtg vcfeval \
+    --template "${rtg_sdf_path}" \
+    --threads=8 \
+    --baseline="${truth_vcf_path_snv}" \
+    --calls="${snp_vcf_path}" \
+    --bed-regions="${truth_bed_path}" \
+    --output "${rtg_out_path}"
 
+echo "[INFO] Reformatting RTGtools vcfeval results into csv/tsv"
+cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace > "${rtg_tsv_out_path}"
+cat "${sum_out_path}" | grep -P "Threshold|None" | datamash transpose --whitespace --output-delimiter "," > "${rtg_csv_out_path}"
+
+echo "[INFO] Final output in: ${rtg_tsv_out_path} and ${wgs_tsv_out_path}"
+echo "[INFO] Finished with $(basename $0)"
