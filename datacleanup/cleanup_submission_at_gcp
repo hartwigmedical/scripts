@@ -49,6 +49,7 @@ main() {
     # sanity checks
     info "Performing sanity checks"
     [[ -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
+    [[ ! -d "${out_path}" ]] || die "Output directory already exists (${out_path})"
     [[ ! -f "${log_file}" ]] || die "Log file already exists (${log_file})"
     [[ ! -f "${rm_cmd_file}" ]] || die "Removal cmd file already exists (${rm_cmd_file})"
     [[ ! -f "${rm_log_file}" ]] || die "Removal log already exists (${rm_log_file})"
