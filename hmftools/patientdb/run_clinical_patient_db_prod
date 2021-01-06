@@ -21,6 +21,3 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
     "$@"
-
-#TODO: remove when curated_primary_tumor.tsv is supported in new patient report 7.19
-cut -f 1,2,3,4,5,6,7,9 /data/common/dbs/clinical_data/curated_primary_tumor.tsv > /data/common/dbs/clinical_data/curated_tumor_locations.tsv
