@@ -45,12 +45,12 @@ do
             echo ""
         else
             echo "[INFO] GCP account $email exists."
-            gmail=$( gsutil -u hmf-share iam get gs://hmf-dr-check-accounts/ | grep gmail | sed 's/        "user://' | sed 's/"//' )
-            if [[ "$gmail" != "" ]]; then
+            gmail=$( gsutil -u hmf-share iam get gs://hmf-dr-check-accounts/ | grep "gmail" | sed 's/        "user://' | sed 's/"//' )
+            if [[ "$gmail" == "" ]]; then
+                gsutil -u hmf-share iam ch -d user:$email gs://hmf-dr-check-accounts/
+            else
                 echo "[ERROR] gmail address related to account; DO NOT MAKE ANY DATA AVAILABLE!!"
                 gsutil -u hmf-share iam ch -d user:$gmail gs://hmf-dr-check-accounts/
-            else
-                gsutil -u hmf-share iam ch -d user:$email gs://hmf-dr-check-accounts/
             fi
             echo ""
         fi
