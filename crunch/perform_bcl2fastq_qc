@@ -44,7 +44,7 @@ cmds_to_execute=()
 for seq_dir in "${seq_dirs[@]}"; do
     ssheet_path="${seq_dir}/${SSHEET_FILE}"
     errlog_path="${seq_dir}/${ERRLOG_FILE}"
-    report_path="${seq_dir}/${REPORT_ROOT}/{Reports,Stats}"
+    report_path="${seq_dir}/${REPORT_ROOT}"
     seqdir_name="$(basename ${seq_dir} | tr -d '\r')"
     hmfrun_name="$(cat ${ssheet_path} | grep -P '^Experiment' | cut -d',' -f 2 | tr -d '\r')"
     nasrun_name="${hmfrun_name}__${seqdir_name}"
@@ -61,8 +61,8 @@ for seq_dir in "${seq_dirs[@]}"; do
     fi
     
     ## store further cmds so we can print all together at the end
-    rsync_cmd="rsync -ah ${report_path} nas:/volume1/web/qc/conversion/${nasrun_name}/"
-    cmds_to_execute+=("${rsync_cmd}")
+    cmds_to_execute+=("rsync -ah ${report_path}/Reports/html/ nas:/volume1/web/qc/conversion/${nasrun_name}/illumina_report/")
+    cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
 done
 
 printHeader "RUN info"
