@@ -101,10 +101,10 @@ purple_files2=$(ls ${run2}/purple | wc -l)
 echo "[INFO] ${run1}/purple ls count: ${purple_files1}"
 echo "[INFO] ${run2}/purple ls count: ${purple_files2}"
 
-sage_files1=$(ls ${run1}/sage | wc -l)
-sage_files2=$(ls ${run2}/sage | wc -l)
-echo "[INFO] ${run1}/sage ls count: ${sage_files1}"
-echo "[INFO] ${run2}/sage ls count: ${sage_files2}"
+sage_files1=$(ls ${run1}/sage_somatic | wc -l)
+sage_files2=$(ls ${run2}/sage_somatic | wc -l)
+echo "[INFO] ${run1}/sage_somatic ls count: ${sage_files1}"
+echo "[INFO] ${run2}/sage_somatic ls count: ${sage_files2}"
 
 gridss_files1=$(ls ${run1}/gridss | wc -l)
 gridss_files2=$(ls ${run2}/gridss | wc -l)
