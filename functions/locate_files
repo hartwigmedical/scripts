@@ -322,12 +322,15 @@ locate_flagstats() {
 
 locate_sage_somatics() {
     local run_dir=$1
-    local sage_dir=${run_dir}/sage
+    local sage_dir_old=${run_dir}/sage
+    local sage_dir=${run_dir}/sage_somatic
 
     local somatic_vcf=""
 
     if [[ -d "${sage_dir}" ]]; then
         somatic_vcf=$(find -L ${sage_dir}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
+    elif [[ -d "${sage_dir_old}" ]]; then
+        somatic_vcf=$(find -L ${sage_dir_old}/ -type f -name "*.sage.somatic.filtered.vcf.gz")
     fi
 
     if [[ -z "${somatic_vcf}" ]]; then
