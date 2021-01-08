@@ -82,7 +82,7 @@ for seq_dir in "${seq_dirs[@]}"; do
         status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
         if [[ "${HOSTNAME}" == "datastore" ]]; then
             api_sample_json=$(hmf_api_get samples?barcode=${sample_id})
-            if [[ "${api_sample_json}" == "" ]]; then
+            if [[ "${api_sample_json}" == "[]" ]]; then
                 status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
             else
                 sample_tsv=$(echo "${api_sample_json}" | jq -cr '.[-1] | [.status,.yld,.yld_req] | @tsv')
