@@ -80,14 +80,15 @@ for seq_dir in "${seq_dirs[@]}"; do
         sample_id=$(echo ${line} | cut -d" " -f9)
         sample_nm=$(echo ${line} | cut -d" " -f10)
         status_info="y=${yld_seq} q=${q30_seq} (rerun at datastore to add API info)"
-        if [[ "${HOSTNAME}" == "datastore" ]]; then 
-            api_sample_tsv=$(hmf_api_get samples?barcode=$sample_id | jq -cr '.[-1] | [.status,.yld,.yld_req] | @tsv')
-            if [[ "${api_sample_tsv}" == "" ]]; then
+        if [[ "${HOSTNAME}" == "datastore" ]]; then
+            api_sample_json=$(hmf_api_get samples?barcode=${sample_id})
+            if [[ "${api_sample_json}" == "" ]]; then
                 status_info="q=${q30_seq} y=${yld_seq} (no sample found in API by barcode!)"
             else
-                smp_status=$(echo "${api_sample_tsv}" | cut -f1)
-                yld=$(echo "${api_sample_tsv}" | cut -f2)
-                req=$(echo "${api_sample_tsv}" | cut -f3)
+                sample_tsv=$(echo "${api_sample_json}" | jq -cr '.[-1] | [.status,.yld,.yld_req] | @tsv')
+                smp_status=$(echo "${sample_tsv}" | cut -f1)
+                yld=$(echo "${sample_tsv}" | cut -f2)
+                req=$(echo "${sample_tsv}" | cut -f3)
 
                 yld=$((yld/1000000000))
                 req=$((req/1000000000))
