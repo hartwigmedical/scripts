@@ -29,6 +29,7 @@ my %OUT_FIELDS_PER_TYPE = (
   'stacks'    => [ 'name', 'revision', 'enabled', 'id' ],
   'platforms' => [ 'name', 'undetermined_reads_perc_cutoff', 'q30_cutoff', 'sample_yield_cutoff', 'id' ],
   'sequencers'=> [ 'name', 'platform', 'id' ],
+  'biopsies'  => [ 'name', 'id' ],
 );
 my $available_types = join( ", ", sort keys %OUT_FIELDS_PER_TYPE );
 
