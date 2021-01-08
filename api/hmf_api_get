@@ -31,5 +31,5 @@ curl --fail --silent --show-error --cert "${api_crt}" --key "${api_key}" \
 if [[ ! $? -eq 0 ]]; then
     api_result_msg=$(curl --silent --show-error --cert "${api_crt}" --key "${api_key}" \
       -H "Content-Type: application/json" -X GET "${api_url}/${api_query}")
-    die "GET failed (${api_result_msg})"
+    die "GET failed for query '${api_query}' (${api_result_msg})"
 fi
