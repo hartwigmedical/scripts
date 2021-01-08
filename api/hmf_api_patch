@@ -5,66 +5,127 @@ source message_functions
 print_usage(){
     echo "-----"
     echo "Descr: Patches one field in one object of HMF API"
-    echo "Usage: $(basename $0) -c \${object-class} -o \${object-id} -f \${patch-field} -v \${patch-value}"
-    echo "Exmpl: $(basename $0) -c flowcells -o 1000 -f \"status\" -v \"Pending\" # asks confirmation by pressing key"
-    echo "       $(basename $0) -c flowcells -o 1000 -f \"status\" -v \"Pending\" -e # does not ask for conformation"
+    echo "Usage: $(basename "$0") -c \${object-class} -o \${object-id} -f \${field-to-patch} -v \${value-to-patch-with}"
+    echo "Exmpl: $(basename "$0") -c flowcells -o 1000 -f status -v Pending"
+    echo "       $(basename "$0") -c fastq -o 1000 -f qc_pass -v false"
+    echo "       $(basename "$0") -c fastq -o 1000 -f bucket -v null"
+    echo "       $(basename "$0") -c samples -o 1000 -f primary_tumor_doids -v 1,4,92"
     echo "Options:"
-    echo "  -e   Do not require to press a key"
+    echo "  -e   Do not require to press a key for confirmation"
+    echo "  -a   Use acceptence environment instead of production"
     echo "-----"
     exit 1
 }
 
-class=''
-oid=''
-patch_field=''
-patch_value=''
-confirmation='true'
+class='' # sets, runs, samples, fastq
+oid='' # object id
+field='' # the field to PATCH
+value='' # the value to PATCH field with
+confirmation='true' # by default script requires key press
+environment='production' # by default script requires key press
 
+unquoted_values='null|true|false'
+quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample'
+unquoted_fields='yld|yld_req|q30|q30_req|qc_pass'
+quoted_array_fields='primary_tumor_doids'
+unquoted_array_fields='no_literal_array_fields_yet'
 api_dir="/data/common/dbs/api_credentials"
-api_crt="${api_dir}/api.crt"
-api_key="${api_dir}/api.key"
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
 
-while getopts ':c:o:f:v:e' flag; do
+while getopts ':c:o:f:v:ea' flag; do
     case "${flag}" in
         c) class=${OPTARG} ;;
         o) oid=${OPTARG} ;;
-        f) patch_field=${OPTARG} ;;
-        v) patch_value=${OPTARG} ;;
+        f) field=${OPTARG} ;;
+        v) value=${OPTARG} ;;
         e) confirmation='false' ;;
+        a) environment='acceptance' ;;
         *) print_usage >&2
         exit 1 ;;
     esac
 done
 
-if [[ -z "${class}" || -z "${oid}" || -z "${patch_field}" || -z "${patch_value}" ]]; then
+if [[ -z "${class}" || -z "${oid}" || -z "${field}" || -z "${value}" ]]; then
     print_usage
 fi
 
+if [[ "${environment}" == "production" ]]; then
+    api_crt="${api_dir}/api.crt"
+    api_key="${api_dir}/api.key"
+    api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+elif [[ "${environment}" == "acceptance" ]]; then
+    api_crt="${api_dir}/acc/api.crt"
+    api_key="${api_dir}/acc/api.key"
+    api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
+else
+    die "Environment should be either production or acceptance"
+fi
+info "Working in ${environment} environment"
+
 main () {
     info "Searching for api object (class=${class}|id=${oid})"
-    api_result="$(hmfapi GET "${api_url}/${class}/${oid}")"
-    [[ $? -eq 0 ]] || die "API GET failed (${api_url}/${class}/${oid})"
-    info "Object to be patched: ${api_result}"
+    object_url="${api_url}/${class}/${oid}"
 
-    patch="${patch_field}=${patch_value}"
-    info "About to PATCH object with ${patch}"
+    # TODO: use hmf_api_get once acceptance environment supported
+    json=$(get_with_curl "${object_url}") || die "API GET failed for ${object_url}. Exit."
+    name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
+    data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
+
+    info "Name of object to be patched: ${name}"
     if [[ "${confirmation}" == "true" ]]; then
+        info "Object: ${object_url}"
+        info "Patch: ${data}"
         info "Press [ENTER] to apply patch..."
-        read
-        info "Patching object with ${patch}"
-        hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
+        read -r
+        patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
     elif [[ "${confirmation}" == "false" ]]; then
-        info "Patching object with ${patch}"
-        hmfapi PATCH "${api_url}/${class}/${oid}" "${patch}"
+        patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
     else
-        die "Unexpected: param confirmation should be true or false"
+        die "Unexpected: param confirmation should always be either true or false"
     fi
 }
 
-hmfapi () {
-  echo "$@" 1>&2
-  http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
+construct_data_json () {
+    local field=$1 && shift
+    local value=$1 && shift
+    local data=""
+    if [[ "${value}" =~ ^(${unquoted_values})$ ]]; then
+        # assuming null/true/false as value are never meant as string
+        data=$(printf '{"%s": %s}' "$field" "${value}")
+    elif [[ "${field}" =~ ^(${unquoted_fields})$ ]]; then
+        data=$(printf '{"%s": %s}' "$field" "${value}")
+    elif [[ "${field}" =~ ^(${quoted_fields})$ ]]; then
+        data=$(printf '{"%s": "%s"}' "$field" "${value}")
+    elif [[ "${field}" =~ ^(${unquoted_array_fields})$ ]]; then
+        data=$(printf '{"%s": [%s]}' "$field" "${value}")
+    elif [[ "${field}" =~ ^(${quoted_array_fields})$ ]]; then
+        data=$(printf '{"%s": ["%s"]}' "$field" "${value//,/\",\"}")
+    else
+        die "Field ${field} is not supported"
+    fi
+    echo "${data}"
+}
+
+get_name_from_object () {
+    local class=$1 && shift
+    local json=$1 && shift
+    if [[ "${class}" == "fastq" ]]; then
+        echo "${json}" | jq '.name_r1'
+    else
+        echo "${json}" | jq '.name'
+    fi
+}
+
+get_with_curl () {
+    local url=$1 && shift
+    curl -f --silent --show-error -X GET "${url}" -H "Content-Type: application/json" --cert-type pem --cert "${api_crt}" --key "${api_key}"
+}
+
+patch_with_curl () {
+    local url=$1 && shift
+    local data=$1 && shift
+    info "Patching object ${url} with ${data}"
+    curl --silent --show-error -X PATCH "${url}" -H "Content-Type: application/json" -H "Accept: application/json" \
+     --cert-type pem --cert "${api_crt}" --key "${api_key}" --data "${data}" > /dev/null
 }
 
 main
