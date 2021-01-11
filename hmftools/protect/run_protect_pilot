@@ -55,4 +55,5 @@ java -Xmx8G -jar ${protect_jar} \
     -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -log_debug \
     "$@"
