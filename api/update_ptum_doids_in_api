@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
+field_idx='7'
+
+yymmdd=$(date +'%y%m%d')
+job="$HOME/jobs/${yymmdd}_update_doids_in_api"
+
+main () {
+    
+    # sanity checks
+    doid_file_is_ok || exit 1
+
+    # action: visit each potential run in API and check for updated in doid file
+    query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)" | \
+    jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv' | while read line; do
+        api_barcode=$(echo "${line}" | cut -f1)
+        api_name=$(echo "${line}" | cut -f2)
+        api_id=$(echo "${line}" | cut -f3)
+        api_doids=$(echo "${line}" | cut -f4)
+        api_doids=$(sort_csv_string "${api_doids}")
+
+        patient=${api_name:0:12}
+        count=$(cat "${doid_file}" | grep -cP ^${patient})
+
+        info "Checking ${api_name}/${api_barcode} (id:${api_id})"
+        info="${patient}"
+        if [[ "${count}" -eq 0 ]]; then
+            warn "  SKIPPING ${info}: not found in doid file (${doid_file})"
+        elif [[ "${count}" -eq 1 ]]; then
+            file_doids=$(get_doids "${patient}")
+            file_doids=$(sort_csv_string "${file_doids}")
+            if [[ "${file_doids}" == "" ]]; then
+                warn "  SKIPPING ${info}: patient line found but no doids present in file (${doid_file})"
+            elif [[ "${file_doids}" == "${api_doids}" ]]; then
+                test=1
+                info "  SKIPPING ${info}: patient line found but doids identical to those in api (${api_doids})"
+            else
+                info "  OK ${info}: updating ${api_doids} to ${file_doids}"
+                #info "  hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}"
+            fi
+        elif [[ "${count}" -gt 1 ]]; then
+            warn "  SKIPPING ${info}: multiple matches in doid file (${doid_file})"
+        else
+            die "Impossible state"
+        fi
+    done
+}
+
+sort_csv_string () {
+    local string=$1 && shift
+    local sorted=$(echo "${string}" | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
+    echo "${sorted}"
+}
+
+doid_file_is_ok () {
+    local expected="doids"
+    local name=$(head -1 "${doid_file}" | cut -f"${field_idx}")
+    if [[ "${name}" != "${expected}" ]]; then
+        die "Input file ${doid_file} does not have correct header (expected:${expected} found:${name})"
+    fi
+}
+
+get_doids () {
+    local patient_id=$1 && shift
+    doids=$(cat "${doid_file}" | grep -P ^${patient} | cut -f7 | sed 's/;/,/g')
+    echo "${doids}"
+}
+
+main
