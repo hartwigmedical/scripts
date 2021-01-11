@@ -40,4 +40,5 @@ java -Xms2G -Xmx8G -jar ${serve_jar} \
     -driver_gene_tsv ${driver_gene_tsv} \
     -known_fusion_file ${known_fusion_data} \
     -output_dir ${output_dir} \
+    -log_debug \
     "$@"
