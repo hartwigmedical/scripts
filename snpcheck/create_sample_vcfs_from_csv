@@ -37,7 +37,7 @@ if [[ ! -f "${DESIGN}" ]]; then echo "[ERROR] Design file does not exist (${DESI
 if [[ ! -d "${OUTDIR}" ]]; then echo "[ERROR] Output dir does not exist (${OUTDIR})?"; exit 1; fi
 
 ## continue with parsing and converting
-experiment_name=$(echo $(basename ${csv_file}) | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//')
+experiment_name=$(echo "$(basename "${csv_file}")" | sed 's/.txt$//' | sed 's/.csv$//' | sed 's/_Results$//')
 plate_name=$(cat ${csv_file} | grep -A1 "^Sample ID" | tail -1 | cut -d, -f2)
 combi_name="${experiment_name}_${plate_name}"
 vcf_out_dir="${OUTDIR}/${combi_name}"
@@ -57,4 +57,3 @@ echo ""
 echo "[TODO] Also copy the results to sync dir"
 echo "  cp -r ${vcf_out_dir} ${GCPDIR}"
 echo ""
-

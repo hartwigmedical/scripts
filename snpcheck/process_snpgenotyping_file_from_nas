@@ -19,7 +19,7 @@ echo "[INFO] Searching for \"${plate_id}*${SUFFIX}\" results file in \"nas:${SOU
 result_files=()
 while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
-done < <(ssh nas find ${SOURCE} -name "${plate_id}*${SUFFIX}" -print0)
+done < <(ssh nas find "${SOURCE}" -name "${plate_id}*${SUFFIX}" -print0)
 if [[ ${#result_files[@]} -eq 0 ]]; then 
     echo "[ERROR] No ${plate_id} ${SUFFIX} files found!" && exit 1
 elif [[ ${#result_files[@]} -gt 1 ]]; then
