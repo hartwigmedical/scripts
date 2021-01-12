@@ -5,8 +5,8 @@ source message_functions || exit 1
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
 
-yymmdd=$(date +'%y%m%d')
-job="$HOME/jobs/${yymmdd}_update_doids_in_api"
+#yymmdd=$(date +'%y%m%d')
+#job="$HOME/jobs/${yymmdd}_update_doids_in_api"
 
 main () {
     
@@ -35,7 +35,6 @@ main () {
             if [[ "${file_doids}" == "" ]]; then
                 warn "  SKIPPING ${info}: patient line found but no doids present in file (${doid_file})"
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
-                test=1
                 info "  SKIPPING ${info}: patient line found but doids identical to those in api (${api_doids})"
             else
                 info "  OK ${info}: updating ${api_doids} to ${file_doids}"
@@ -51,20 +50,20 @@ main () {
 
 sort_csv_string () {
     local string=$1 && shift
-    local sorted=$(echo "${string}" | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//')
-    echo "${sorted}"
+    echo "${string}" | sed -e $'s/,/\\\n/g' | sort -n | tr '\n' ',' | sed 's/.$//'
 }
 
 doid_file_is_ok () {
     local expected="doids"
-    local name=$(head -1 "${doid_file}" | cut -f"${field_idx}")
+    local name=""
+    name=$(head -1 "${doid_file}" | cut -f"${field_idx}")
     if [[ "${name}" != "${expected}" ]]; then
         die "Input file ${doid_file} does not have correct header (expected:${expected} found:${name})"
     fi
 }
 
 get_doids () {
-    local patient_id=$1 && shift
+    local patient=$1 && shift
     doids=$(cat "${doid_file}" | grep -P ^${patient} | cut -f7 | sed 's/;/,/g')
     echo "${doids}"
 }
