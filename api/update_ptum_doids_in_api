@@ -2,12 +2,13 @@
 
 source message_functions || exit 1
 
+out_dir="/data/ops/logs/ptum_doid_update"
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
 
 yymmdd=$(date +'%y%m%d')
-job_file="$HOME/jobs/${yymmdd}_update_doids_in_api.job"
-log_file="$HOME/jobs/${yymmdd}_update_doids_in_api.log"
+job_file="${out_dir}/${yymmdd}_update_doids_in_api.job"
+log_file="${out_dir}/${yymmdd}_update_doids_in_api.log"
 
 main () {
     
@@ -22,8 +23,7 @@ main () {
         api_barcode=$(echo "${line}" | cut -f1)
         api_name=$(echo "${line}" | cut -f2)
         api_id=$(echo "${line}" | cut -f3)
-        api_doids=$(echo "${line}" | cut -f4)
-        api_doids=$(sort_csv_string "${api_doids}")
+        api_doids=$(sort_csv_string "$(echo "${line}" | cut -f4)")
 
         patient=${api_name:0:12}
         count=$(cat "${doid_file}" | grep -cP ^${patient})
@@ -40,13 +40,13 @@ main () {
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
                 info "  SKIPPING ${info}: patient line found but doids identical to those in api (${api_doids})"
             else
-                info "  OK ${info}: updating ${api_doids} to ${file_doids}"
+                info "OK ${info}: can be updated from ${api_doids} to ${file_doids}" | tee -a "${job_file}"
                 echo "hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}" >> "${job_file}"
             fi
         elif [[ "${count}" -gt 1 ]]; then
             warn "  SKIPPING ${info}: multiple matches in doid file (${doid_file})"
         else
-            die "Impossible state: count checking is not done correctly!"
+            die "Impossible state in if/else: check script!"
         fi
     done
     info "Check ${job_file} or run patch update with:"
