@@ -5,13 +5,16 @@ source message_functions || exit 1
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
 
-#yymmdd=$(date +'%y%m%d')
-#job="$HOME/jobs/${yymmdd}_update_doids_in_api"
+yymmdd=$(date +'%y%m%d')
+job_file="$HOME/jobs/${yymmdd}_update_doids_in_api.job"
+log_file="$HOME/jobs/${yymmdd}_update_doids_in_api.log"
 
 main () {
     
     # sanity checks
     doid_file_is_ok || exit 1
+    [[ ! -f "${job_file}" ]] || die "File exists: ${job_file}"
+    [[ ! -f "${log_file}" ]] || die "File exists: ${log_file}"
 
     # action: visit each potential run in API and check for updated in doid file
     query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)" | \
@@ -38,14 +41,16 @@ main () {
                 info "  SKIPPING ${info}: patient line found but doids identical to those in api (${api_doids})"
             else
                 info "  OK ${info}: updating ${api_doids} to ${file_doids}"
-                #info "  hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}"
+                echo "hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}" >> "${job_file}"
             fi
         elif [[ "${count}" -gt 1 ]]; then
             warn "  SKIPPING ${info}: multiple matches in doid file (${doid_file})"
         else
-            die "Impossible state"
+            die "Impossible state: count checking is not done correctly!"
         fi
     done
+    info "Check ${job_file} or run patch update with:"
+    info "nohup ${job_file} > ${log_file} &"
 }
 
 sort_csv_string () {
