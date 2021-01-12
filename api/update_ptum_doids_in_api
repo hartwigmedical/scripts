@@ -40,8 +40,8 @@ main () {
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
                 info "  SKIPPING ${info}: file doids identical to api (${api_doids})"
             else
-                info "OK ${info}: updated doids found ('${api_doids}' to '${file_doids}')"
-                echo "echo 'Updating ${info} from ${api_doids} to ${file_doids}'" >> "${job_file}"
+                info "OK ${info}: doid update found ('${api_doids}' to '${file_doids}')"
+                echo "echo '[INFO] Updating ${info} from ${api_doids} to ${file_doids}'" >> "${job_file}"
                 echo "hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}" >> "${job_file}"
             fi
         elif [[ "${count}" -gt 1 ]]; then
