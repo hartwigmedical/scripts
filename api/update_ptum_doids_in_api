@@ -36,11 +36,12 @@ main () {
             file_doids=$(get_doids "${patient}")
             file_doids=$(sort_csv_string "${file_doids}")
             if [[ "${file_doids}" == "" ]]; then
-                warn "  SKIPPING ${info}: patient line found but no doids present in file (${doid_file})"
+                warn "  SKIPPING ${info}: no doids present in file (${doid_file})"
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
-                info "  SKIPPING ${info}: patient line found but doids identical to those in api (${api_doids})"
+                info "  SKIPPING ${info}: file doids identical to api (${api_doids})"
             else
-                info "OK ${info}: can be updated from ${api_doids} to ${file_doids}" | tee -a "${job_file}"
+                info "OK ${info}: updated doids found ('${api_doids}' to '${file_doids}')"
+                echo "echo 'Updating ${info} from ${api_doids} to ${file_doids}'" >> "${job_file}"
                 echo "hmf_api_patch -c samples -o ${api_id} -f primary_tumor_doids -v ${file_doids}" >> "${job_file}"
             fi
         elif [[ "${count}" -gt 1 ]]; then
