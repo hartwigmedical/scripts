@@ -64,11 +64,11 @@ main () {
             die "Impossible state in if/else: check script!"
         fi
     done
-    info "Making job file executable"
-    chmod +x "${job_file}"
 
     info "${samples_to_update} samples found to be updated of total ${samples_visited} visited"
     if [[ "${samples_to_update}" -gt 0 ]]; then
+        info "Making job file executable"
+        chmod +x "${job_file}"
         info "Check ${job_file} and run patch update with:"
         info "nohup ${job_file} > ${log_file} &"
     fi
