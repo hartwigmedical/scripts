@@ -14,6 +14,9 @@ protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+if [[ -z "${primary_tumor_doids}" ]]; then
+    echo "[ERROR] Could not determine tumor DOIDs for ${tumor_sample}. Exiting" && exit 1;
+fi
 output_dir=${run_dir}/protect_pilot
 
 serve_actionability_dir=/data/common/dbs/serve/pilot_output
