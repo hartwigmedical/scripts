@@ -2,6 +2,14 @@
 
 source message_functions || exit 1
 
+if [[ ! -z "${1}" || "${1}" == "-h" || "${1}" == "--help" ]]; then
+    echo "-----"
+    echo " Descr: Creates a job file with API patches for samples DIODs"
+    echo " Usage: $(basename $0)"
+    echo "-----"
+    exit 1
+fi
+
 out_dir="/data/ops/logs/ptum_doid_update"
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
@@ -16,6 +24,9 @@ main () {
     [[ ! -f "${job_file}" ]] || die "File exists: ${job_file}"
     [[ ! -f "${log_file}" ]] || die "File exists: ${log_file}"
 
+    samples_visited=0
+    samples_to_update=0
+
     # action: visit each target sample in API and check for potential updates in doid file
     query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)" | \
     jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv' | while read line; do
@@ -29,19 +40,23 @@ main () {
 
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
         info "Checking ${sample_info}"
+        samples_visited=$((samples_visited+1))
+
         if [[ "${count}" -eq 0 ]]; then
-            warn "  SKIPPING ${sample_info}: not found in curated doid file (${doid_file})"
+            warn "  SKIPPING ${sample_info}: patient ID missing in file (${doid_file})"
         elif [[ "${count}" -eq 1 ]]; then
             file_doids=$(get_doids "${patient}")
             file_doids=$(sort_csv_string "${file_doids}")
             if [[ "${file_doids}" == "" ]]; then
-                warn "  SKIPPING ${sample_info}: no doids present in curated doid file (${doid_file})"
+                warn "  SKIPPING ${sample_info}: no doids in file (${doid_file})"
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
-                info "  SKIPPING ${sample_info}: file doids identical to api"
+                info "  SKIPPING ${sample_info}: file doids identical to api content"
             else
-                info "OK ${sample_info}: doid update found ('${api_doids}' to '${file_doids}')"
+                info "OK ${sample_info}: doid update ('${api_doids}' to '${file_doids}')"
                 echo "echo '[INFO] Updating ${sample_info}'" >> "${job_file}"
-                echo "hmf_api_patch -c samples -o '${api_id}' -f primary_tumor_doids -v '${file_doids}'" >> "${job_file}"
+                # The -e allows execution without pressing a key
+                echo "hmf_api_patch -e -c samples -o '${api_id}' -f primary_tumor_doids -v '${file_doids}'" >> "${job_file}"
+                samples_to_update=$((samples_to_update+1))
             fi
         elif [[ "${count}" -gt 1 ]]; then
             warn "  SKIPPING ${sample_info}: multiple matches in doid file (${doid_file})"
@@ -49,8 +64,14 @@ main () {
             die "Impossible state in if/else: check script!"
         fi
     done
-    info "Check ${job_file} or run patch update with:"
-    info "nohup ${job_file} > ${log_file} &"
+
+    info "${samples_to_update} samples found to be updated of total ${samples_visited} visited"
+    if [[ "${samples_to_update}" -gt 0 ]]; then
+        info "Making job file executable"
+        chmod +x "${job_file}"
+        info "Check ${job_file} and run patch update with:"
+        info "nohup ${job_file} > ${log_file} &"
+    fi
 }
 
 sort_csv_string () {
