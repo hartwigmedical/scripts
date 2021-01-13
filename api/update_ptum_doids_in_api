@@ -24,6 +24,9 @@ main () {
     [[ ! -f "${job_file}" ]] || die "File exists: ${job_file}"
     [[ ! -f "${log_file}" ]] || die "File exists: ${log_file}"
 
+    samples_visited=0
+    samples_to_update=0
+
     # action: visit each target sample in API and check for potential updates in doid file
     query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)" | \
     jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv' | while read line; do
@@ -37,6 +40,8 @@ main () {
 
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
         info "Checking ${sample_info}"
+        samples_visited=$((samples_visited+1))
+
         if [[ "${count}" -eq 0 ]]; then
             warn "  SKIPPING ${sample_info}: patient ID missing in file (${doid_file})"
         elif [[ "${count}" -eq 1 ]]; then
@@ -51,6 +56,7 @@ main () {
                 echo "echo '[INFO] Updating ${sample_info}'" >> "${job_file}"
                 # The -e allows execution without pressing a key
                 echo "hmf_api_patch -e -c samples -o '${api_id}' -f primary_tumor_doids -v '${file_doids}'" >> "${job_file}"
+                samples_to_update=$((samples_to_update+1))
             fi
         elif [[ "${count}" -gt 1 ]]; then
             warn "  SKIPPING ${sample_info}: multiple matches in doid file (${doid_file})"
@@ -60,8 +66,12 @@ main () {
     done
     info "Making job file executable"
     chmod +x "${job_file}"
-    info "Check ${job_file} or run patch update with:"
-    info "nohup ${job_file} > ${log_file} &"
+
+    info "${samples_to_update} samples found to be updated of total ${samples_visited} visited"
+    if [[ "${samples_to_update}" -gt 0 ]]; then
+        info "Check ${job_file} and run patch update with:"
+        info "nohup ${job_file} > ${log_file} &"
+    fi
 }
 
 sort_csv_string () {
