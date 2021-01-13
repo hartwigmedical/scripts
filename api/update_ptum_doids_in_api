@@ -38,7 +38,7 @@ main () {
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
         info "Checking ${sample_info}"
         if [[ "${count}" -eq 0 ]]; then
-            warn "  SKIPPING ${sample_info}: not found in file (${doid_file})"
+            warn "  SKIPPING ${sample_info}: patient ID missing in file (${doid_file})"
         elif [[ "${count}" -eq 1 ]]; then
             file_doids=$(get_doids "${patient}")
             file_doids=$(sort_csv_string "${file_doids}")
@@ -57,6 +57,8 @@ main () {
             die "Impossible state in if/else: check script!"
         fi
     done
+    info "Making job file executable"
+    chmod +x "${job_file}"
     info "Check ${job_file} or run patch update with:"
     info "nohup ${job_file} > ${log_file} &"
 }
