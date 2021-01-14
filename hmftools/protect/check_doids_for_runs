@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source lims_functions
+source metadata_functions
 
 for run_dir in /data/cpct/runs/*; do
     tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
