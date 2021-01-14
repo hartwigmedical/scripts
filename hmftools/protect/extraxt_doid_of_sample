@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+source lims_functions
+source metadata_functions
+
+tumor_sample=$1 && shift
+
+echo "[INFO] Start extracting doids"
+primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+
+if [[ -z "${primary_tumor_doids}" ]]; then
+    echo "[ERROR] Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting" && exit 1;
+else
+    echo "[INFO] Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
+fi
