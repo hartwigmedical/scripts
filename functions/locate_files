@@ -674,6 +674,18 @@ locate_reportable_bachelor_variants() {
     echo ${reportable_bachelor_tsv}
 }
 
+
+############################################# SAGE ###########################################
+
+locate_sage_germline_variants_pilot() {
+    local run_dir=$1
+    local sage_germline_variants_vcf=$(find -L ${run_dir}/sage_germline/ -type f -name "*.sage.germline.filtered.vcf.gz")
+    if [[ -z "${sage_germline_variants_vcf}" ]]; then
+        echo "[ERROR] Unable to locate SAGE germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${sage_germline_variants_vcf}
+}
 ############################################# CHORD ###########################################
 
 locate_chord_prediction() {
