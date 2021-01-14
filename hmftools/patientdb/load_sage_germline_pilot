@@ -6,9 +6,9 @@ source metadata_functions
 run_dir=$1 && shift
 
 vcf_gz=$(locate_sage_germline_variants_pilot ${run_dir})
-sample=$(load_tumor_sample_from_metadata ${run_dir})
-reference=$(echo sample | cut -c1-12)R
-rna=$(echo $sample | cut -c1-12)RNA
+sample=$(echo vcf_gz | cut -c1-$((${#vcf_gz}-23)))
+reference=$(echo vcf_gz | cut -c1-12)R
+rna=$(echo vcf_gz | cut -c1-12)RNA
 
 credentials=/data/common/dbs/mysql_credentials/pilot
 patient_db_jar=/data/common/tools/purple_pilot/purple.jar
