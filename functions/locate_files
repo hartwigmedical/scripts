@@ -181,7 +181,7 @@ locate_hotspot_vcf() {
 }
 
 locate_germline_hotspot_vcf() {
-    echo ${base_path}/dbs/sage/hotspots/201217/KnownHotspots.germline.hg19.vcf.gz
+    echo ${base_path}/dbs/sage/KnownHotspots.germline.hg19.vcf.gz
 }
 
 locate_pgx_resource_dir() {
