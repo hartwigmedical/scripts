@@ -15,7 +15,7 @@ protect_jar=$(locate_pilot_protect)
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
 primary_tumor_argument=""
-if [[ ! -z "${primary_tumor_doids}" ]]; then
+if [[ -z "${primary_tumor_doids}" ]]; then
     primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
 fi
 output_dir=${run_dir}/protect_pilot
