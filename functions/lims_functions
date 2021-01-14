@@ -49,3 +49,24 @@ get_doids_for_biopsy() {
     doids=$(cat "${doid_file}" | grep -P "^${patient}" | cut -f${column_index})
     echo "${doids}"
 }
+
+get_doids_for_biopsy_pilot() {
+    local biopsy=$1 && shift # eg CPCT02010001T
+    doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
+    column_index=7
+    expected_field="doids"
+    name_regex='^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})[0-9]{4})(T|R){1}[IVX]*$'
+
+    # sanity check on header content
+    header_field=$(cat ${doid_file} | head -1 | cut -f"${column_index}")
+    [[ "${expected_field}" == "${header_field}" ]] || die "Header wrong of $doid_file (expected:${expected_field}, found:${header_field})"
+    [[ "${biopsy}" =~ ${name_regex} ]] || die "Provided biopsy ${biopsy} does not match regex ($name_regex)"
+    patient="${BASH_REMATCH[1]}"
+    # sanity check on match count
+    count="$(cat "${doid_file}" | awk -v patient="${patient}" '$1==patient' | wc -l)"
+    [[ "${count}" < 2 ]] || die "Patient ${patient} matches more than one line in ${doid_file}"
+
+    doids=$(cat "${doid_file}" | grep -P "^${patient}" | cut -f${column_index})
+    echo "${doids}"
+}
+
