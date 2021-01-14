@@ -19,7 +19,7 @@ if [[ -z "${primary_tumor_doids}" ]]; then
 fi
 output_dir=${run_dir}/protect_pilot
 
-serve_actionability_dir=/data/common/dbs/serve/pilot_output
+serve_actionability_dir=/data/common/dbs/serve/output_for_protect
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 
