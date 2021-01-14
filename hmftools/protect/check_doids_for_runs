@@ -16,5 +16,15 @@ for run_dir in /data/cpct/runs/*; do
     fi
 done
 
+for run_dir in /data/core/runs/*; do
+    tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+    primary_tumor_doids=$(get_doids_for_biopsy_pilot ${tumor_sample})
+
+    if [[ -z "${primary_tumor_doids}" ]]; then
+        echo "[ERROR] Could not determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}. Exiting" && exit 1;
+    else
+        echo "[INFO] Could determine tumor DOIDs ${primary_tumor_doids} for ${tumor_sample}"
+    fi
+done
 
 
