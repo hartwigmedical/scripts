@@ -180,6 +180,10 @@ locate_hotspot_vcf() {
     echo ${base_path}/dbs/serve/hotspots/201217/KnownHotspots.somatic.hg19.vcf.gz
 }
 
+locate_germline_hotspot_vcf() {
+    echo ${base_path}/dbs/sage/hotspots/201217/KnownHotspots.germline.hg19.vcf.gz
+}
+
 locate_pgx_resource_dir() {
     echo ${base_path}/dbs/pgx/
 }
