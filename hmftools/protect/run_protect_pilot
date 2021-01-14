@@ -14,8 +14,9 @@ protect_jar=$(locate_pilot_protect)
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
-if [[ -z "${primary_tumor_doids}" ]]; then
-    echo "[ERROR] Could not determine tumor DOIDs for ${tumor_sample}. Exiting" && exit 1;
+primary_tumor_argument=""
+if [[ ! -z "${primary_tumor_doids}" ]]; then
+    primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
 fi
 output_dir=${run_dir}/protect_pilot
 
@@ -42,7 +43,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 # Can passs "-log_debug" for some additional logging
 java -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
-    -primary_tumor_doids ${primary_tumor_doids} \
+    ${primary_tumor_argument} \
     -output_dir ${output_dir} \
     -serve_actionability_dir ${serve_actionability_dir} \
     -doid_json ${doid_json} \
