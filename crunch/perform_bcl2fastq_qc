@@ -6,9 +6,6 @@ ERRLOG_FILE="conversionError.txt"
 SSHEET_FILE="SampleSheet.csv"
 REPORT_ROOT="Fastq"
 API_DIR="/data/ops/api/prod"
-API_SAMP_JSON="${API_DIR}/database/samples.json"
-API_RUNS_JSON="${API_DIR}/database/runs.json"
-API_INIS_JSON="${API_DIR}/database/inis.json"
 REGISTERED_DIR="${API_DIR}/jsons/registered"
 
 if [[ ! $1 || $1 == "-h" || $1 == "--help" ]]; then 
@@ -93,18 +90,17 @@ for seq_dir in "${seq_dirs[@]}"; do
                 yld=$((yld/1000000000))
                 req=$((req/1000000000))
                 set_name=$(find "${REGISTERED_DIR}" -name "*_${sample_id}_*.json" -exec basename {} \; | sort | tail -1 | sed 's#.json##')
-                # Note: unfortunately to find a correct run we need to match ini_id for prod inis
+
                 # Note: 2=CPCT.ini 4=SingleSample.ini 6=Somatic.ini 8=KG.ini 10=Fastq.ini 38=ShallowSeq.ini 51=Rna.ini
                 api_run_tsv=$(
-                    hmf_api_get runs?set_name=${set_name} | \
-                    jq -rc '.[] | select( .ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51) | [.status,.ini_id] | @tsv'
+                    hmf_api_get "runs?set_name=${set_name}" | \
+                    jq -rc '.[] | select( .ini_id==2 or .ini_id==4 or .ini_id==6 or .ini_id==8 or .ini_id==10 or .ini_id==38 or .ini_id==51) | [.status,.ini] | @tsv'
                 )
                 if [[ "${api_run_tsv}" == "" ]]; then
                     status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status} (sample found in API but no run!)"
                 else
                     run_status=$(echo "${api_run_tsv}" | cut -f1)
-                    ini_id=$(echo "${api_run_tsv}" | cut -f2)
-                    ini=$(cat $API_INIS_JSON | jq -r --arg ini_id "${ini_id}" '.[] | select(.id == ($ini_id|tonumber)) | .name' | sed 's/\.ini//')
+                    ini=$(echo "${api_run_tsv}" | cut -f2)
                     status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
                 fi
             fi

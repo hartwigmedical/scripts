@@ -6,12 +6,6 @@ OUT_ROOT="/data/ops/cleanup"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 TRUE=true
 
-# Need to match ini by ID in run object
-SIN_INI_ID=4
-SOM_INI_ID=6
-SHA_INI_ID=38
-FAS_INI_ID=10
-
 gcp_project="hmf-database"
 gcp_account="hmf-ops"
 
@@ -101,9 +95,9 @@ main() {
                 bucket=${bucket/_/-}
 
                 run_status=$(echo "$run" | jq -r '.status')
-                ini_id=$(echo "$run" | jq -r '.ini_id')
+                ini_name=$(echo "$run" | jq -r '.ini')
                 gs_url="gs://${bucket}/${run_name}"
-                run_type=$(run_type_by_ini_id "${ini_id}")
+                run_type=$(run_type_by_ini_name "${ini_name}")
 
                 run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
                 info "Processing run ${run_info}" >> "${log_file}"
@@ -121,7 +115,7 @@ main() {
                 elif [[ "${run_type}" == "pipeline" ]]; then
                     process_gs_url "${run_status}" "${gs_url}" "${rm_cmd_file}" "${log_file}"
                 else
-                    die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_id}): this should not happen!"
+                    die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_name}): this should not happen!"
                 fi
                 echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
             done < <(echo "$runs_json" | jq -c '.[]')
@@ -139,20 +133,20 @@ main() {
     info "Finished with $(basename $0)" >> "${log_file}"
 }
 
-run_type_by_ini_id() {
-    local ini_id=$1 && shift
+run_type_by_ini_name() {
+    local ini_name=$1 && shift
 
     local pipeline="pipeline"
     local fastq="fastq"
     local unknown="unknown"
 
-    if [[ "$ini_id" == "$FAS_INI_ID" ]]; then
+    if [[ "$ini_name" == "FastQ.ini" ]]; then
         echo "$fastq"
-    elif [[ "$ini_id" == "$SOM_INI_ID" ]]; then
+    elif [[ "$ini_name" == "Somatic.ini" ]]; then
         echo "$pipeline"
-    elif [[ "$ini_id" == "$SIN_INI_ID" ]]; then
+    elif [[ "$ini_name" == "SingleSample.ini" ]]; then
         echo "$pipeline"
-    elif [[ "$ini_id" == "$SHA_INI_ID" ]]; then
+    elif [[ "$ini_name" == "ShallowSeq.ini" ]]; then
         echo "$pipeline"
     else
         echo "$unknown"

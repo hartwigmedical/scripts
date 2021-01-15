@@ -4,11 +4,10 @@ yymmdd=$(date +'%y%m%d')
 archive_path="/data/data_archive/shallow_seq_pipelines"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
-shallow_ini_id="38"
 
 ## query and store
 echo "## ShallowSeq Check (${yymmdd})"
-shallow_runs=$(hmf_api_get "runs?ini_id=${shallow_ini_id}")
+shallow_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
 
 echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @tsv' | while read line; do
     run_name=$(echo "${line}" | cut -f1)
