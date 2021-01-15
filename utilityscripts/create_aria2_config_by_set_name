@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 set_name=$1
-cmd_date=$(date +"%F %T")
 
 if [[ -z "${set_name}" ]]; then
     echo "[ERROR] No set provided. Exiting" && exit 1
@@ -19,16 +20,16 @@ gcp_key_file="${gcp_cred_dir}/hmf-ops"
 gcp_project="hmf-database"
 gcp_account="hmf-ops"
 
-echo "[INFO] Start of $(basename $0) (${cmd_date})"
+info "Start of $(basename $0)"
 msg=$(gcloud config set account "${gcp_account}@${gcp_project}.iam.gserviceaccount.com" 2>&1)
-echo "[INFO] ${msg}"
+info "${msg}"
 
 function main() {
     ## check that only one run exists for the set
     runs_json=$(query_api.pl -type runs -filter "name=${set_name}" -exact -json | jq '.')
     runs_count=$(echo "${runs_json}" | jq '. | length')
     if [[ "${runs_count}" -ne 1 ]]; then
-        echo "[ERROR] Only sets supported with exactly one run (found ${runs_count}). Exiting" && exit 1
+        die "Only sets supported with exactly one run (found ${runs_count}). Exiting"
     fi
     run_json=$(echo "${runs_json}" | jq -r '.[-1]')
 
@@ -52,20 +53,20 @@ function main() {
     out_url_int="${name}_internal_urls.txt"
     out_url_ext="${name}_external_urls.txt"
 
-    echo "[INFO] RunName: ${name}"
-    echo "[INFO] RunStat: ${status}"
-    echo "[INFO] IniName: ${ini}"
-    echo "[INFO] TumName: ${tum}"
-    echo "[INFO] RefName: ${ref}"
-    echo "[INFO] PipeVsn: ${pip}"
-    echo "[INFO] Cluster: ${cluster}"
-    echo "[INFO] Bucket:  ${bucket}"
-    echo "[INFO] Entity:  ${entity}"
+    info "RunName: ${name}"
+    info "RunStat: ${status}"
+    info "IniName: ${ini}"
+    info "TumName: ${tum}"
+    info "RefName: ${ref}"
+    info "PipeVsn: ${pip}"
+    info "Cluster: ${cluster}"
+    info "Bucket:  ${bucket}"
+    info "Entity:  ${entity}"
     
     ## sanity check on data location in API
     ## TODO once all at gcp then remove the ini check
     if [[ ${cluster} != "gcp" && ${ini} != "FastQ.ini" ]]; then
-        echo "[ERROR] Error: unexpected cluster (${cluster})." && exit 1
+        die "Error: unexpected cluster (${cluster})."
     fi
 
     ## create re-usable list of all output files
@@ -74,7 +75,7 @@ function main() {
     ## cleanup existing files
     for output_file in "${output_files[@]}"; do
         if [[ -f "${output_file}" ]]; then
-            echo "[INFO] Deleting existing file (${output_file})" && rm "${output_file}";
+            info "Deleting existing file (${output_file})" && rm "${output_file}";
         fi
     done
 
@@ -102,17 +103,17 @@ function main() {
         create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
     else
-        echo "[ERROR] Unknown ini (${ini})" && exit 1
+        die "Unknown ini (${ini})"
     fi
 
     ## output check
-    echo "[INFO] Output files:"
+    info "Output files:"
     for output_file in "${output_files[@]}"; do
         if [[ ! -f "${output_file}" ]]; then
-            echo "[ERROR] Output file ${output_file} not found!" && exit 1
+            die "Output file ${output_file} not found!"
         else
             line_count=$(wc -l "${output_file}" | cut -d" " -f1)
-            echo "[INFO]   ${output_file} (${line_count} lines)"
+            info "  ${output_file} (${line_count} lines)"
         fi
     done
 }
@@ -136,7 +137,7 @@ create_run_specific_files () {
     elif [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
         minor=$(echo "${pip}" | cut -d"." -f2)
     else
-        echo "[ERROR] Pipeline version string has unknow format (${pip})"
+        die "Pipeline version string has unknow format (${pip})"
         exit 1
     fi
  
@@ -207,11 +208,11 @@ create_run_specific_files () {
     elif [[ ${run_type} == "Fastq" ]]; then
         file_selection=("${all_files[@]}")
     else
-        echo "[ERROR] Unknown run type (${run_type})" && exit 1
+        die "Unknown run type (${run_type})"
     fi
 
     ## output aria2 config file
-    echo "[INFO] Creating ${out_aria} (and selection tmp files)"
+    info "Creating ${out_aria} (and selection tmp files)"
     for file_path in "${file_selection[@]}"; do
         file_in_bucket="${bucket}/${name}/${file_path}"
         ## Fastq files are at main level in the bucket
@@ -221,14 +222,14 @@ create_run_specific_files () {
         internal_url="gs://${file_in_bucket}"
         md5_string=$(echo "${json}" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$")
         md5sum=$(echo "${md5_string}" | cut -f1)
-        echo "${md5_string}" >> ${out_md5}
+        echo "${md5_string}" >> "${out_md5}"
 
         ## sanity check on existance of file in bucket
         gsutil -u "${gcp_project}" -q stat "${internal_url}"
         if [[ $? -eq 1 ]]; then
             msg=$(gsutil -u "${gcp_project}" ls "${internal_url}" 2>&1)
-            echo "[WARN] Cannot access file so skipping (${internal_url})"
-            echo "[WARN] ErrCode=${?} ErrMsg=\"${msg}\""
+            warn "Cannot access file so skipping (${internal_url})"
+            warn "ErrCode=${?} ErrMsg=\"${msg}\""
             continue
         fi
 
@@ -238,7 +239,7 @@ create_run_specific_files () {
         echo "${external_url}" >> "${out_aria}"
         echo "  dir=${name}" >> "${out_aria}"
         echo "  checksum=md5=${md5sum}" >> "${out_aria}"
-        echo "" >> ${out_aria}
+        echo "" >> "${out_aria}"
 
         ## write urls to separate log files
         echo "${internal_url}" >> "${out_url_int}"
@@ -249,16 +250,16 @@ create_run_specific_files () {
 create_json_file () {
     local json_text=$1 && shift
     local out_file=$1 && shift
-    echo "[INFO] Creating ${out_file}"
-    echo "${json_text}" | jq '.' > ${out_file}
+    info "Creating ${out_file}"
+    echo "${json_text}" | jq '.' > "${out_file}"
 }
 
 create_md5sums_file () {
     local json_text=$1 && shift
     local out_file=$1 && shift
-    echo "[INFO] Creating ${out_file}"
-    echo "${json_text}" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > ${out_file}
-    echo "${json_text}" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> ${out_file}
+    info "Creating ${out_file}"
+    echo "${json_text}" | jq -r '.[] | select(.directory == "") | .hash + "  " + .filename' > "${out_file}"
+    echo "${json_text}" | jq -r '.[] | select(.directory != "") | .hash + "  " + .directory + "/" + .filename' >> "${out_file}"
 }
 
 main
