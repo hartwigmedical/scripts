@@ -69,8 +69,10 @@ main () {
     name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
-    info "Object with name ${name} to be patched with ${data}"
+    info "About to patch object with name ${name} to be patched with ${data} (${object_url})"
     if [[ "${confirmation}" == "true" ]]; then
+        current_value=$(jq --arg key "${field}" '.$key' <<< "${json}")
+        info "About to replace current field content ${current_value} with ${value}"
         info "Press [ENTER] to apply patch..."
         read -r
         patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
@@ -121,7 +123,6 @@ get_with_curl () {
 patch_with_curl () {
     local url=$1 && shift
     local data=$1 && shift
-    info "Patching object ${url} with ${data}"
     curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
      --cert-type pem --cert "${api_crt}" --key "${api_key}" -X PATCH "${url}" --data "${data}" > /dev/null
 }
