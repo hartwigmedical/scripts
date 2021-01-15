@@ -14,7 +14,6 @@ if [[ $# -ne 1 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-info "Querying api to find sample by barcode (${sample_barcode})"
 sample_json=$(hmf_api_get "samples?barcode=${sample_barcode}")
 
 ## Make sure only one object is selected
