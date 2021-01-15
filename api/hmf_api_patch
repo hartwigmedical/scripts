@@ -71,7 +71,7 @@ main () {
 
     info "About to patch object with name ${name} to be patched with ${data} (${object_url})"
     if [[ "${confirmation}" == "true" ]]; then
-        current_value=$(jq --arg key "${field}" '.$key' <<< "${json}")
+        current_value=$(jq --arg key "${field}" '.[$key]' <<< "${json}")
         info "About to replace current field content ${current_value} with ${value}"
         info "Press [ENTER] to apply patch..."
         read -r
