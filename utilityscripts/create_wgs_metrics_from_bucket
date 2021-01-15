@@ -98,7 +98,7 @@ lazy_create_and_upload_wgsmetrics_from_urls_file () {
         if [ "${bucket_wgsmetrics_exists}" = "1" ]; then
             lazy_create_and_upload_wgsmetrics "${sample}" "${cram_url}" "${bucket}"
         else
-            echo "Wgsmetrics file for ${sample} already exists in bucket"
+            info "Wgsmetrics file for ${sample} already exists in bucket"
         fi
     done <"${LOCAL_URLS_FILE}"
 }
