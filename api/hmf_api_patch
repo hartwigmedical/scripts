@@ -59,10 +59,9 @@ elif [[ "${environment}" == "acceptance" ]]; then
 else
     die "Environment should be either production or acceptance"
 fi
-info "Working in ${environment} environment"
 
 main () {
-    info "Searching for api object (class=${class}|id=${oid})"
+    info "Searching api of ${environment} environment for object (class=${class}|id=${oid})"
     object_url="${api_url}/${class}/${oid}"
 
     # TODO: use hmf_api_get once acceptance environment supported
@@ -70,10 +69,8 @@ main () {
     name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
-    info "Name of object to be patched: ${name}"
+    info "Object with name ${name} to be patched with ${data}"
     if [[ "${confirmation}" == "true" ]]; then
-        info "Object: ${object_url}"
-        info "Patch: ${data}"
         info "Press [ENTER] to apply patch..."
         read -r
         patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
