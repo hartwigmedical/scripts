@@ -101,6 +101,7 @@ for seq_dir in "${seq_dirs[@]}"; do
                 else
                     run_status=$(echo "${api_run_tsv}" | cut -f1)
                     ini=$(echo "${api_run_tsv}" | cut -f2)
+                    ini=${ini/.ini/}
                     status_info="q=${q30_seq} y=${yld_seq}+${yld}/${req} ${smp_status}|${run_status}|${ini}\t$set_name"
                 fi
             fi
