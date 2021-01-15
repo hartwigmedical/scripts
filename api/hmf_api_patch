@@ -69,11 +69,11 @@ main () {
     name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
-    info "About to patch object with name ${name} to be patched with ${data} (${object_url})"
+    info "Config: name=${name} patch=${data}"
     if [[ "${confirmation}" == "true" ]]; then
         current_value=$(jq --arg key "${field}" '.[$key]' <<< "${json}")
-        info "About to replace current field content ${current_value} with ${value}"
-        info "Press [ENTER] to apply patch..."
+        info "Will replace ${current_value} with ${value}"
+        info "Press [ENTER] to apply..."
         read -r
         patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
     elif [[ "${confirmation}" == "false" ]]; then
