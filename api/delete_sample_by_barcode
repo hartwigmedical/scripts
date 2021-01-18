@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+barcode=$1 # sample barcode
+
+main () {
+    echo "[INFO] Searching for sample (${barcode})"
+    result=$(hmf_api_get "samples?barcode=${barcode}")
+    count=$(echo "${result}" | jq length)
+
+    if [[ ${count} -ne 1 ]]; then
+        echo "[ERROR] Number of samples found for barcode ${barcode} not 1 (${count})"
+        exit 1
+    else
+        sample=$(echo "${result}" | jq -r .[0])
+        id=$(echo "${sample}" | jq -r .id)
+        name=$(echo "${sample}" | jq -r .name)
+ 
+        yld=$(echo "${sample}" | jq -r .yld)
+        yld=$((yld/1000000000))
+        q30=$(echo "${sample}" | jq -r .q30)
+
+        info "Found sample (name=${name} barcode=${barcode} id=${id})"
+        info "  Name:  ${name}"
+        info "  Yield: ${yld} GBase"
+        info "  Q30:   ${q30}"
+
+        info "TODO: invalidate all fastq pairs of sample:"
+        fastq_json=$(hmf_api_get "fastq?sample_id=${id}")
+        echo "${fastq_json}" | jq -r .[].id | while read fastq_id; do
+            echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f qc_pass -v false"
+        done
+        info "TODO: Patch sample:"
+        echo " hmf_api_patch -e -c samples -o '${id}' -f status -v Insufficient"
+        echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null"
+        echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null"
+
+        info "TODO: Delete FASTQ from bucket:"
+        echo "${fastq_json}" | jq -cr '.[] | [.bucket, .name_r1, .name_r2] | @tsv' | while read info; do
+            bucket=$(echo "${info}" | cut -f1)
+            name_r1=$(echo "${info}" | cut -f2)
+            name_r2=$(echo "${info}" | cut -f3)
+            if [[ "${bucket}" != "" && "${name_r1}" != "" ]]; then
+                echo " gsutil rm gs://${bucket}/${name_r1}"
+            fi
+            if [[ "${bucket}" != "" && "${name_r2}" != "" ]]; then
+                echo " gsutil rm gs://${bucket}/${name_r2}"
+            fi
+        done
+    fi
+}
+
+main
