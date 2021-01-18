@@ -63,12 +63,6 @@ function main() {
     info "Bucket:  ${bucket}"
     info "Entity:  ${entity}"
     
-    ## sanity check on data location in API
-    ## TODO once all at gcp then remove the ini check
-    if [[ ${cluster} != "gcp" && ${ini} != "FastQ.ini" ]]; then
-        die "Error: unexpected cluster (${cluster})."
-    fi
-
     ## create re-usable list of all output files
     output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
 
