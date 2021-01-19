@@ -84,16 +84,16 @@ function main() {
     create_md5sums_file "${files_json}" "${out_md5_all}"
 
     ## create the run type specific subset files
-    if [[ ${ini} == "FastQ.ini" ]]; then
+    if [[ "${ini}" == "FastQ.ini" || "${ini}" == "Rna.ini" ]]; then
         create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Fastq"
-    elif [[ ${ini} == "Somatic.ini" ]]; then 
+    elif [[ "${ini}" == "Somatic.ini" ]]; then
         create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "Somatic"
-    elif [[ ${ini} == "SingleSample.ini" ]]; then
+    elif [[ "${ini}" == "SingleSample.ini" ]]; then
         create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "SingleSample"
-    elif [[ ${ini} == "ShallowSeq.ini" ]]; then
+    elif [[ "${ini}" == "ShallowSeq.ini" ]]; then
         create_run_specific_files "${files_json}" \
         "${out_md5}" "${out_aria}" "${out_url_int}" "${out_url_ext}" "${name}" "${bucket}" "${ref}" "${tum}" "${pip}" "ShallowSeq"
     else
@@ -133,7 +133,7 @@ create_run_specific_files () {
     elif [[ "${pip}" =~ ^v5\.[0-9]+\.[0-9]+$ ]]; then
         minor=$(echo "${pip}" | cut -d"." -f2)
     else
-        die "Pipeline version string has unknow format (${pip})"
+        die "Pipeline version string has unknown format (${pip})"
         exit 1
     fi
  
@@ -156,7 +156,7 @@ create_run_specific_files () {
         tumor_bam_bai="${tum}/cram/${tum}.cram.crai"
     fi
 
-    mapfile -t all_files < <( echo "${json}" | jq -r '.[].filename' )
+    mapfile -t all_file_paths < <( echo "${json}" | jq -r '.[].filepath' )
 
     local single_files=(
         "${ref_bam}"
@@ -202,7 +202,7 @@ create_run_specific_files () {
     elif [[ ${run_type} == "SingleSample" ]]; then
         file_selection=("${single_files[@]}")
     elif [[ ${run_type} == "Fastq" ]]; then
-        file_selection=("${all_files[@]}")
+        file_selection=("${all_file_paths[@]}")
     else
         die "Unknown run type (${run_type})"
     fi
@@ -210,15 +210,20 @@ create_run_specific_files () {
     ## output aria2 config file
     info "Creating ${out_aria} (and selection tmp files)"
     for file_path in "${file_selection[@]}"; do
+        file_name=$(basename "${file_path}")
         file_in_bucket="${bucket}/${name}/${file_path}"
-        ## Fastq files are at main level in the bucket
-        if [[ ${run_type} == "Fastq" ]]; then
-            file_in_bucket="${bucket}/${file_path}"
-        fi
         internal_url="gs://${file_in_bucket}"
-        md5_string=$(echo "${json}" | jq -r '.[] | .hash + "\t" + .directory + "/" + .filename' | grep -P "${file_path}$")
-        md5sum=$(echo "${md5_string}" | cut -f1)
-        echo "${md5_string}" >> "${out_md5}"
+
+        ## adjust for Fastq files (those already are complete internal gs path)
+        if [[ ${run_type} == "Fastq" ]]; then
+            file_in_bucket=${file_path/gs\:\/\//}
+            internal_url="${file_path}"
+        fi
+
+        ## get file specific md5 hash
+        md5sum=$(echo "${json}" | jq -r --arg url "${internal_url}" '.[] | select(.filepath == $url) | .hash')
+        [[ -n "${md5sum}" ]] || die "Missing md5 hash for file at url (${internal_url})"
+        printf '%s\t%s\n' "${md5sum}" "${file_name}" >> "${out_md5}"
 
         ## sanity check on existance of file in bucket
         gsutil -u "${gcp_project}" -q stat "${internal_url}"
