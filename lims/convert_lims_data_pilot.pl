@@ -608,10 +608,10 @@ sub addAccessSamplesToSamples{
             $object->{ 'analysis_type' } = "Somatic_T";
         }elsif( $tum_or_ref eq 'R' ){
             $object->{ 'analysis_type' } = "Somatic_R";
-        }else{
+        }else {
             $object->{ 'analysis_type' } = 'Unknown';
         }
-            
+
         ## All CORE except COREDB are handled per case/submission
         if ( $study eq 'CORE' and $name !~ /^COREDB/ ){
             my $submission_id = $object->{ 'submission' };
@@ -625,6 +625,19 @@ sub addAccessSamplesToSamples{
             }
             $object->{ 'entity' } = $submission_id;
             $object->{ 'project_name' } = $submission_id;
+
+            ## Set the analysis type for CORE submissions to align with Excel LIMS samples
+            if ( exists $submissions->{ $submission_id } ) {
+                my $submission = $submissions->{ $submission_id };
+                my $project_name = $submission->{ 'project_name' };
+                ## Reset project name for sample (from submission)
+                $object->{ 'project_name' } = $project_name;
+                ## Add an analysis type to submission
+                $submission->{ 'analysis_type' } = "OncoAct";
+            }
+            else{
+                warn "[WARN] Unable to update submission \"$submission_id\" because not found in submissions (id:$id name:$name)\n";
+            }
         }
         ## All other samples are clinical study based (CPCT/DRUP/WIDE/COREDB)
         elsif ( exists $centers_dict->{ $center } ){
