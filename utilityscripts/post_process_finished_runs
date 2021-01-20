@@ -34,6 +34,8 @@ for run in ${process_runs}; do
         create_patient_report_for_run /data/cpct/runs/${run}
         echo "[INFO] Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
+        echo "[INFO] Running PROTECT"
+        run_protect_prod /data/cpct/runs/${run}
         echo "[INFO] Loading run into database"
         load_run_into_prod_db /data/cpct/runs/${run}
     else
@@ -50,6 +52,8 @@ for run in ${process_runs}; do
             mv ${source_path}/${run} /data/cpct/runs/
             echo "[INFO] Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
+            echo "[INFO] Running PROTECT"
+            run_protect_prod /data/cpct/runs/${run}
             echo "[INFO] Loading run into database"
             load_run_into_prod_db /data/cpct/runs/${run}
         fi
