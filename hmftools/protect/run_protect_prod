@@ -8,8 +8,8 @@ if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
 fi
 
-protect_jar=$(locate_pilot_protect)
-output_dir=${run_dir}/protect_pilot
-credentials=$(locate_pilot_database_credentials)
+protect_jar=$(locate_prod_protect)
+output_dir=${run_dir}/protect
+credentials=$(locate_prod_database_credentials)
 
 do_run_protect ${run_dir} ${protect_jar} ${output_dir} ${credentials}

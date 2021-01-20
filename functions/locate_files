@@ -136,6 +136,10 @@ locate_pilot_ckb() {
     echo ${base_path}/tools/ckb-importer_pilot/ckb-importer.jar
 }
 
+locate_prod_protect() {
+    echo ${base_path}/tools/protect_v1.0/protect.jar
+}
+
 locate_pilot_protect() {
     echo ${base_path}/tools/protect_pilot/protect.jar
 }
