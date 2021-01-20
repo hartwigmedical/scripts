@@ -18,6 +18,8 @@ if [[ $# -eq 0 || $1 == "-h" || $1 == "--help" ]]; then
     echo "   $(basename "$0") -e -u gs://path/to/run -d /data/gcp/qc_fail_runs"
     echo "   $(basename "$0") -e -u gs://path/to/run -d <download-path> -p hmf-crunch -o"
     echo " Options:"
+    echo "   -u  GCP url to download from"
+    echo "   -d  Directory to download to"
     echo "   -e  Exclude any BAMs/CRAMs"
     echo "   -p  Set user project to be billed for the download. Default is hmf-database."
     echo "   -o  Do not switch to hmf-ops service account"
