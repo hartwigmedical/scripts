@@ -6,8 +6,9 @@ OUT_ROOT="/data/ops/cleanup"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
 TRUE=true
 
-gcp_project="hmf-database"
-gcp_account="hmf-ops"
+GCP_PROJECT="hmf-database"
+GCP_ACCOUNT="hmf-ops"
+execute_cleanup=false
 
 print_usage(){
     echo "-----"
@@ -19,9 +20,10 @@ print_usage(){
     exit 1
 }
 
-while getopts ':s:' flag; do
+while getopts ':s:e' flag; do
     case "${flag}" in
         s) submission=${OPTARG} ;;
+        e) execute_cleanup=TRUE ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -53,9 +55,9 @@ main() {
 
     info "Starting with script $(basename $0) for submission $submission" >> "${log_file}"
 
-    gcp_account_project="${gcp_account}@${gcp_project}"
-    info "Setting GCP account ${gcp_account_project}" >> "${log_file}"
-    msg=$(gcloud config set account "${gcp_account_project}.iam.gserviceaccount.com" 2>&1)
+    GCP_ACCOUNT_project="${GCP_ACCOUNT}@${GCP_PROJECT}"
+    info "Setting GCP account ${GCP_ACCOUNT_project}" >> "${log_file}"
+    msg=$(gcloud config set account "${GCP_ACCOUNT_project}.iam.gserviceaccount.com" 2>&1)
     info "  ${msg}" >> "${log_file}"
 
     # keeping track of runs we will visit
@@ -121,15 +123,22 @@ main() {
             done < <(echo "$runs_json" | jq -c '.[]')
         done < <(echo "$sets_json" | jq -c '.[]')
     done < <(echo "$samples_json" | jq -c '.[]')
-    
-    info "Making output cmd file executable (${rm_cmd_file})" >> "${log_file}"
     echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${rm_cmd_file}"
+    run_count="${#processed_runs[@]}"
+
+    info "Making output cmd file executable (${rm_cmd_file})" >> "${log_file}"
     chmod +x "${rm_cmd_file}"
 
-    run_count="${#processed_runs[@]}"
-    info "A total of ${run_count} runs were processed. You can execute deletion with:" >> "${log_file}"
-    info "  nohup ${rm_cmd_file} > ${rm_log_file} &" >> ${log_file}
-    info "Check log file for further actions: ${log_file}"
+    info "A total of ${run_count} runs were processed" >> "${log_file}"
+    if [[ "${execute_cleanup}" == TRUE ]]; then
+        info "Executing cleanup file in background (${rm_cmd_file})" >> "${log_file}"
+        rm_err_file="${rm_log_file}.err"
+        nohup "${rm_cmd_file}" 1>"${rm_log_file}" 2>"${rm_err_file}" </dev/null  &
+    else
+        info "You can now execute deletion with:" >> "${log_file}"
+        info "  nohup ${rm_cmd_file} > ${rm_log_file} &" >> ${log_file}
+        info "Check log file for further actions: ${log_file}"
+    fi
     info "Finished with $(basename $0)" >> "${log_file}"
 }
 
@@ -160,7 +169,7 @@ process_gs_url() {
     local out_file=$1 && shift
     local log_file=$1 && shift
     
-    msg=$(gsutil -u "${gcp_project}" ls "${gs_url}" 2>&1)
+    msg=$(gsutil -u "${GCP_PROJECT}" ls "${gs_url}" 2>&1)
     if [[ $? -eq 1 ]]; then
         deleted_status="Deleted"
         if [[ "${status}" == "${deleted_status}" ]]; then
@@ -171,7 +180,7 @@ process_gs_url() {
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)" >> "${log_file}"
-        echo "  gsutil -u ${gcp_project} ${GSUTIL_CMD_PARAMS} rm -r ${gs_url}" >> "${out_file}"
+        echo "  gsutil -u ${GCP_PROJECT} ${GSUTIL_CMD_PARAMS} rm -r ${gs_url}" >> "${out_file}"
     fi
 }
 
