@@ -5,11 +5,11 @@ source metadata_functions
 source lims_functions
 
 run_dir=$1 && shift
-protect_jar=$1 && shift
 output_dir=$1 && shift
+protect_jar=$1 && shift
 credentials=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${protect_jar}" || "${output_dir}" || "${credentials}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" || -z "${credentials}" ]]; then
     echo "[ERROR] Missing input parameters. Exiting" && exit 1;
 fi
 
