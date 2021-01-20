@@ -36,7 +36,7 @@ echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @
             echo "## WAITING: ${run_name} (status=${run_status})"
         elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
             echo "## PROCESSING: ${run_name} (status=${run_status})"
-        elif [[ "${run_status}" =~ ^(Success|Validated)$ ]]; then 
+        elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
             echo " process_shallow_run ${run_name} # (status=${run_status})"
         else 
             echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"

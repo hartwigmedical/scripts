@@ -22,8 +22,8 @@ fi
 find_dirs="/data/cpct/runs/ /data/cpct/reportable_runs/ /data/core/runs/ /data/gcp/processed_runs/ "
 find_dirs_fail="/data/gcp/qc_fail_runs"
 download_runs_dir="/data/gcp/downloaded_runs"
-download_script="process_successful_run"
-download_script_fail="process_qc_fail_run"
+process_script="process_successful_run"
+process_script_fail="process_qc_fail_run"
 download_run_without_bams_script="download_run_without_bams"
 
 full_run_inis="Somatic.ini|CPCT.ini"
@@ -33,18 +33,18 @@ all_tumor_samples_with_valid_run=$(query_api.pl \
     -filter "status=Validated" \
     -json | jq -r '.[].tumor_sample')
 
-all_tumor_samples_with_success_run=$(query_api.pl \
+all_tumor_samples_with_finished_run=$(query_api.pl \
     -type runs \
     -filter "ini=${full_run_inis}" \
     -filter "bucket=hmf-output" \
-    -filter "status=Success" \
+    -filter "status=Finished" \
     -json | jq -r '.[].tumor_sample')
 
 all_tumor_samples_with_processing_run=$(query_api.pl \
     -type runs \
     -filter "ini=${full_run_inis}" \
     -filter "bucket=hmf-output" \
-    -filter "status=Processing|Uploading" \
+    -filter "status=Processing|Uploading|Downloading" \
     -json | jq -r '.[].tumor_sample')
 
 all_tumor_samples_with_waiting_run=$(query_api.pl \
@@ -64,10 +64,10 @@ query_api.pl \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read failed_tumor_sample; do
         tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        tumor_has_success_run=$(echo ${all_tumor_samples_with_success_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
+        tumor_has_finished_run=$(echo ${all_tumor_samples_with_finished_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
         tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
         tumor_has_waiting_run=$(echo ${all_tumor_samples_with_waiting_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_success_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
+        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_finished_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
             bucket_for_failed_tumor_sample=$(query_api.pl \
                 -type runs \
                 -filter "tumor_sample=${failed_tumor_sample}" \
@@ -89,23 +89,23 @@ query_api.pl \
             exists_in_qcfail_run_dirs=$(find ${find_dirs_fail} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l)
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "${download_script_fail} ${set_name_for_failed_tumor_sample}"
+                echo "${process_script_fail} ${set_name_for_failed_tumor_sample}"
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
                 echo "# ${set_name_for_failed_tumor_sample} has failed on ${pip} and is already on datastore ${find_dirs_fail}"
             fi
         else
-            echo "# ${failed_tumor_sample} has Failed on pip ${pip} but also has a Validated/Success/Processing/Waiting run so can be ignored."
+            echo "# ${failed_tumor_sample} has Failed on pip ${pip} but also has a Validated/Finished/Processing/Waiting run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
 
-echo "## Success runs with ini ${ini} and pipeline ${pip} to need to be processed"
+echo "## Finished runs with ini ${ini} and pipeline ${pip} that need to be processed"
 query_api.pl \
     -type runs \
     -filter "ini=${ini}" \
     -filter "bucket=hmf-output" \
     -filter "pipeline=^${pip}" \
-    -filter "status=Success" \
+    -filter "status=Finished" \
     -json | jq -r '.[].tumor_sample' | uniq | \
     while read success_tumor_sample; do
         tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
@@ -117,7 +117,7 @@ query_api.pl \
                 -filter "tumor_sample=${success_tumor_sample}" \
                 -filter "ini=${ini}" \
                 -filter "pipeline=^${pip}" \
-                -filter "status=Success" \
+                -filter "status=Finished" \
                 -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
 
             set_name_for_success_tumor_sample=$(query_api.pl \
@@ -126,14 +126,14 @@ query_api.pl \
                 -filter "ini=${ini}" \
                 -filter "bucket=${bucket_for_success_tumor_sample}" \
                 -filter "pipeline=^${pip}" \
-                -filter "status=Success" -json | jq -r '.[].name' | tail -n 1 )
+                -filter "status=Finished" -json | jq -r '.[].name' | tail -n 1 )
 
             exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l)
             if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "${download_script} -s ${set_name_for_success_tumor_sample}"
+                echo "${download_run_without_bams_script} ${set_name} ${download_runs_dir}"
             fi
         else
-            echo "# ${success_tumor_sample} has Success on pip ${pip} but also has a Validated/Processing/Waiting run so can be ignored."
+            echo "# ${success_tumor_sample} has Finished on pip ${pip} but also has a Validated/Processing/Waiting run so can be ignored."
         fi
     done | sort -r | uniq
 echo ""
@@ -152,39 +152,21 @@ echo "${validated_runs_json}" | jq -c '.[]' | while read run_json; do
             ## Skipping none-CORE services runs
             continue
         else
-            echo "${download_script} ${set_name}"
+            echo "${process_script} ${set_name}"
         fi
     fi
 done | sort -r | uniq
 echo ""
 
-echo "## SnpCheck runs with ini ${ini} and pipeline ${pip} that need to be processed"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "bucket=hmf-output" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=SnpCheck" \
-    -json | jq -r '.[].name' | \
-    while read set_name; do
-        exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
-        if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-            echo "${download_run_without_bams_script} ${set_name} ${download_runs_dir}"
-        else
-            echo "# No action for ${set_name}: already exists on datastore"
-        fi
-    done | sort -r | uniq
-echo ""
-
-echo "## Processing/Uploading runs with ini ${ini} and pipeline ${pip}"
+echo "## Processing/Uploading/Downloading runs with ini ${ini} and pipeline ${pip}"
 query_api.pl \
     -type runs \
     -filter "ini=${ini}" \
     -filter "pipeline=^${pip}" \
-    -filter "status=Processing|Uploading" \
+    -filter "status=Processing|Uploading|Downloading" \
     -json | jq -r '.[].name' | \
     while read set_name; do
-        echo "# ${set_name} is Processing/Uploading on ${pip}"
+        echo "# ${set_name} is Processing/Uploading/Downloading on ${pip}"
     done | sort -r | uniq
 echo ""
 

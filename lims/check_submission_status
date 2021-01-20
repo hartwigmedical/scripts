@@ -21,7 +21,7 @@ rns_api_tot=$(echo "${api_rns_jsn}" | jq 'length')
 
 smp_lms_err=$(echo "${lms_smp_jsn}" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
 smp_api_rdy=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Ready")] | length')
-rns_api_rdy=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="SnpCheck")] | length')
+rns_api_rdy=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="Finished")] | length')
 rns_api_val=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated")] | length')
 
 echo "[INFO] Output type for ${submission} in lims is \"${analysis_type}\""

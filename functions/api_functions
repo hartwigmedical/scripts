@@ -77,7 +77,7 @@ load_run_info_for_set() {
     local run_info=$(query_api.pl -type runs \
         -filter "bucket=hmf-output|hmf-research|hmf-experiments" \
         -filter "ini=PipelineV5.ini|Somatic.ini|CPCT.ini" \
-        -filter "status=Validated|SnpCheck|Success" \
+        -filter "status=Validated|Finished" \
         -filter "name=${set}" | grep -v "^#"
     )
 
