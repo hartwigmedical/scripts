@@ -29,8 +29,7 @@ main () {
 
     # action: visit each target sample in API and check for potential updates in doid file
     samples_json=$(query_api.pl -type samples -json -filter "type=tumor" -filter "name=^(CPCT|DRUP|WIDE|CORE)")
-    
-    echo "echo '[INFO] Starting with patching primary_tumor_doids'" > "${job_file}"
+
     while read line; do
         api_barcode=$(echo "${line}" | cut -f1)
         api_name=$(echo "${line}" | cut -f2)
@@ -66,10 +65,10 @@ main () {
             die "Impossible state in if/else: check script!"
         fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv')
-    echo "echo '[INFO] Finished with patching primary_tumor_doids'" >> "${job_file}"
 
     info "${samples_to_update} samples found to be updated of total ${samples_visited} visited"
     if [[ "${samples_to_update}" -gt 0 ]]; then
+        echo "echo '[INFO] Finished with patching primary_tumor_doids'" >> "${job_file}"
         info "Making job file executable (${job_file})"
         chmod +x "${job_file}"
         info "TODO: Check ${job_file} and execute patch update with:"
