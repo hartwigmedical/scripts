@@ -1,183 +1,143 @@
 #!/usr/bin/env bash
 
-YYMMDD=$(date +'%y%m%d')
-ini="Somatic.ini"
-pip="v5.18"
-
-echo "## Production Run Status Check (${YYMMDD} - ${pip})"
-echo ""
-
-## Param check
-ini_count=$(query_api.pl -type inis -filter "name=${ini}" -exact | grep -cv "^#")
-if [[ ${ini_count} != 1 ]]; then
-    echo "[ERROR] Non-existing ini ${ini})?" && exit 1
-fi
-
-pip_count=$(query_api.pl -type stacks -filter "revision=^${pip}" | grep -cv "^#")
-if [[ ${pip_count} -lt 1 ]]; then
-    echo "[ERROR] Non-existing pipeline version (${pip})?" && exit 1
-fi
-
-## Define all paths used by script
-find_dirs="/data/cpct/runs/ /data/cpct/reportable_runs/ /data/core/runs/ /data/gcp/processed_runs/ "
-find_dirs_fail="/data/gcp/qc_fail_runs"
-download_runs_dir="/data/gcp/downloaded_runs"
+find_dirs=("/data/cpct/runs/" "/data/cpct/reportable_runs/" "/data/core/runs/" "/data/gcp/processed_runs/")
+find_fail_dirs=("/data/gcp/qc_fail_runs")
+download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
 process_script_fail="process_qc_fail_run"
-download_run_without_bams_script="download_run_without_bams"
+download_script="download_run_without_bams"
+pipeline="5.18"
+run_inis="Somatic.ini|CPCT.ini"
 
-full_run_inis="Somatic.ini|CPCT.ini"
-all_tumor_samples_with_valid_run=$(query_api.pl \
-    -type runs \
-    -filter "bucket=hmf-output" \
-    -filter "status=Validated" \
-    -json | jq -r '.[].tumor_sample')
+main () {
+    echo "## Production Run Status Check for ${run_inis} runs on pipeline version ${pipeline} (date=$(date +'%y%m%d'))"
 
-all_tumor_samples_with_finished_run=$(query_api.pl \
-    -type runs \
-    -filter "ini=${full_run_inis}" \
-    -filter "bucket=hmf-output" \
-    -filter "status=Finished" \
-    -json | jq -r '.[].tumor_sample')
+    # Sanity checks
+    check_ini_existance "Somatic.ini"
+    check_ini_existance "CPCT.ini"
+    check_pipeline_version_existance "${pipeline}"
 
-all_tumor_samples_with_processing_run=$(query_api.pl \
-    -type runs \
-    -filter "ini=${full_run_inis}" \
-    -filter "bucket=hmf-output" \
-    -filter "status=Processing|Uploading|Downloading" \
-    -json | jq -r '.[].tumor_sample')
+    # Create all required run collections
+    runs=$(query_api.pl -type runs -filter "bucket=hmf-output" -filter "ini=${run_inis}" -json)
 
-all_tumor_samples_with_waiting_run=$(query_api.pl \
-    -type runs \
-    -filter "ini=${full_run_inis}" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Waiting" \
-    -json | jq -r '.[].tumor_sample')
+    all_vali_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Validated")]')
+    all_fail_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Failed")]')
+    all_fini_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Finished")]')
+    all_proc_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Pending" or .status == "Processing" or .status == "Uploading" or .status == "Downloading")]')
+    all_wait_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Waiting")]')
 
-echo "## Failed runs with ini ${ini} and pipeline ${pip} which are expected to exist on datastore"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "bucket=hmf-output" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Failed" \
-    -json | jq -r '.[].tumor_sample' | uniq | \
-    while read failed_tumor_sample; do
-        tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        tumor_has_finished_run=$(echo ${all_tumor_samples_with_finished_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        tumor_has_waiting_run=$(echo ${all_tumor_samples_with_waiting_run} | tr " " "\n" | grep -cw  ${failed_tumor_sample})
-        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_finished_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
-            bucket_for_failed_tumor_sample=$(query_api.pl \
-                -type runs \
-                -filter "tumor_sample=${failed_tumor_sample}" \
-                -filter "ini=${ini}" \
-                -filter "pipeline=^${pip}" \
-                -filter "status=Failed" \
-                -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+    tumor_samples_with_vali_run=$(get_tumor_samples_from_runs_json "${all_vali_runs}")
+    tumor_samples_with_fini_run=$(get_tumor_samples_from_runs_json "${all_fini_runs}")
+    tumor_samples_with_proc_run=$(get_tumor_samples_from_runs_json "${all_proc_runs}")
+    tumor_samples_with_wait_run=$(get_tumor_samples_from_runs_json "${all_wait_runs}")
 
-            set_name_for_failed_tumor_sample=$(query_api.pl \
-                -type runs \
-                -filter "tumor_sample=${failed_tumor_sample}" \
-                -filter "ini=${ini}" \
-                -filter "bucket=${bucket_for_failed_tumor_sample}" \
-                -filter "pipeline=^${pip}" \
-                -filter "status=Failed" \
-                -json | jq -r '.[].name' | tail -n 1 )
+    current_vali_runs=$(echo "${all_vali_runs}" | jq --arg pip "${pipeline}" '[.[] | select(.version == $pip)]')
+    current_fail_runs=$(echo "${all_fail_runs}" | jq --arg pip "${pipeline}" '[.[] | select(.version == $pip)]')
+    current_fini_runs=$(echo "${all_fini_runs}" | jq --arg pip "${pipeline}" '[.[] | select(.version == $pip)]')
+    current_proc_runs=$(echo "${all_proc_runs}" | jq --arg pip "${pipeline}" '[.[] | select(.version == $pip)]')
+    current_wait_runs=$(echo "${all_wait_runs}" | jq --arg pip "${pipeline}" '[.[] | select(.version == $pip)]')
 
-            exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l);
-            exists_in_qcfail_run_dirs=$(find ${find_dirs_fail} -maxdepth 1 -type d -name "${set_name_for_failed_tumor_sample}" | wc -l)
+    # Now ready to check each status on by one
+    echo ""
+    echo "## Failed runs which are expected to exist on datastore:"
+    while read -r run_info; do
+        sample_name=$(echo "${run_info}" | cut -f1)
+        set_name=$(echo "${run_info}" | cut -f2)
+        bucket=$(echo "${run_info}" | cut -f3)
+
+        has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
+        has_finished_run=$(echo "${tumor_samples_with_fini_run}" | tr " " "\n" | grep -cw "${sample_name}")
+        has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
+        has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
+
+        if [[ ${has_valid_run} == 0 && ${has_finished_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
+            exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l);
+            exists_in_qcfail_run_dirs=$(find "${find_fail_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "${process_script_fail} ${set_name_for_failed_tumor_sample}"
+                echo "${process_script_fail} ${set_name}"
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "# ${set_name_for_failed_tumor_sample} has failed on ${pip} and is already on datastore ${find_dirs_fail}"
+                echo "# ${set_name} has failed on ${pipeline} and is already on datastore ${find_fail_dirs[*]}"
+            else
+                echo "# ${sample_name} has Failed on pipeline ${pipeline} but also has a Validated/Processing/Waiting run so can be ignored."
             fi
-        else
-            echo "# ${failed_tumor_sample} has Failed on pip ${pip} but also has a Validated/Finished/Processing/Waiting run so can be ignored."
         fi
-    done | sort -r | uniq
-echo ""
+    done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')  | sort -r | uniq
 
-echo "## Finished runs with ini ${ini} and pipeline ${pip} that need to be processed"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "bucket=hmf-output" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Finished" \
-    -json | jq -r '.[].tumor_sample' | uniq | \
-    while read success_tumor_sample; do
-        tumor_has_valid_run=$(echo ${all_tumor_samples_with_valid_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
-        tumor_has_processing_run=$(echo ${all_tumor_samples_with_processing_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
-        tumor_has_waiting_run=$(echo ${all_tumor_samples_with_waiting_run} | tr " " "\n" | grep -cw  ${success_tumor_sample})
-        if [[ ${tumor_has_valid_run} == 0 && ${tumor_has_processing_run} == 0 && ${tumor_has_waiting_run} == 0 ]]; then
-            bucket_for_success_tumor_sample=$(query_api.pl \
-                -type runs \
-                -filter "tumor_sample=${success_tumor_sample}" \
-                -filter "ini=${ini}" \
-                -filter "pipeline=^${pip}" \
-                -filter "status=Finished" \
-                -json | jq -r '.[].bucket' | grep "hmf-output" | tail -n 1)
+    echo ""
+    echo "## Finished (but not Validated) runs that need to be processed:"
+    while read -r run_info; do
+        sample_name=$(echo "${run_info}" | cut -f1)
+        set_name=$(echo "${run_info}" | cut -f2)
+        bucket=$(echo "${run_info}" | cut -f3)
 
-            set_name_for_success_tumor_sample=$(query_api.pl \
-                -type runs \
-                -filter "tumor_sample=${success_tumor_sample}" \
-                -filter "ini=${ini}" \
-                -filter "bucket=${bucket_for_success_tumor_sample}" \
-                -filter "pipeline=^${pip}" \
-                -filter "status=Finished" -json | jq -r '.[].name' | tail -n 1 )
+        has_valid_run=$(echo "${tumor_samples_with_vali_run}" | tr " " "\n" | grep -cw "${sample_name}")
+        has_processing_run=$(echo "${tumor_samples_with_proc_run}" | tr " " "\n" | grep -cw "${sample_name}")
+        has_waiting_run=$(echo "${tumor_samples_with_wait_run}" | tr " " "\n" | grep -cw "${sample_name}")
 
-            exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name_for_success_tumor_sample}" | wc -l)
+        if [[ ${has_valid_run} == 0 && ${has_processing_run} == 0 && ${has_waiting_run} == 0 ]]; then
+            exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
             if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-                echo "${download_run_without_bams_script} ${set_name} ${download_runs_dir}"
+                echo "${download_script} ${set_name} ${download_dir}"
             fi
         else
-            echo "# ${success_tumor_sample} has Finished on pip ${pip} but also has a Validated/Processing/Waiting run so can be ignored."
+            echo "# ${sample_name} has Finished on pipeline ${pipeline} but also has a Validated/Processing/Waiting run so can be ignored."
         fi
-    done | sort -r | uniq
-echo ""
+    done < <(echo "${current_fini_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')  | sort -r | uniq
 
-echo "## Validated runs with ini ${ini} and pipeline ${pip} that need to be processed"
-validated_runs_json=$(query_api.pl -json -type runs -filter "ini=${ini}" -filter "bucket=hmf-output" -filter "pipeline=^${pip}" -filter "status=^Validated")
-echo "${validated_runs_json}" | jq -c '.[]' | while read run_json; do
-    set_name=$(echo "$run_json" | jq -r '.name')
-    exists_in_success_run_dirs=$(find ${find_dirs} -maxdepth 1 -type d -name "${set_name}" | wc -l);
-    if [[ ${exists_in_success_run_dirs} == 0 ]]; then
-        bucket=$(echo "$run_json" | jq -r '.bucket')
-        sample=$(echo "$run_json" | jq -r '.tumor_sample')
-        if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
-            echo "# This is a validation run, so can be ignored for production ${set_name}"
-        elif [[ "${bucket}" == "hmf-output-services" && ! "${sample}" =~ ^CORE.{8}T ]]; then
-            ## Skipping none-CORE services runs
-            continue
-        else
-            echo "${process_script} ${set_name}"
+    echo ""
+    echo "## Validated runs that need to be processed:"
+    while read -r run_info; do
+        sample_name=$(echo "${run_info}" | cut -f1)
+        set_name=$(echo "${run_info}" | cut -f2)
+        bucket=$(echo "${run_info}" | cut -f3)
+        exists_in_success_run_dirs=$(find "${find_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l);
+        if [[ ${exists_in_success_run_dirs} == 0 ]]; then
+            if [[ ${set_name} =~ "_HMFregVAL_" ]]; then
+                echo "# This is a validation run, so can be ignored for production ${set_name}"
+            elif [[ "${bucket}" == "hmf-output-services" && ! "${sample_name}" =~ ^CORE.{8}T ]]; then
+                ## Skip none-CORE sequencing services runs
+                continue
+            else
+                echo "${process_script} ${set_name}"
+            fi
         fi
+    done < <(echo "${current_vali_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')
+
+    echo ""
+    echo "## Processing runs:"
+    while read -r set_name; do
+        echo "# ${set_name} is Processing/Uploading/Downloading"
+    done < <(echo "${current_proc_runs}" | jq -cr '.[] | [.name] | @tsv')
+
+    echo ""
+    echo "## Waiting runs:"
+    while read -r set_name; do
+        echo "# ${set_name} is Waiting"
+    done < <(echo "${current_wait_runs}" | jq -cr '.[] | [.name] | @tsv')
+
+    echo ""
+}
+
+get_tumor_samples_from_runs_json () {
+    local runs_json=$1 && shift
+    echo "${runs_json}" | jq -r '.[].tumor_sample' | sort | uniq
+}
+
+check_ini_existance () {
+    local ini=$1 && shift
+    ini_count=$(query_api.pl -type inis -filter "name=${ini}" -exact | grep -cv "^#")
+    if [[ ${ini_count} != 1 ]]; then
+        echo "[ERROR] Non-existing ini ${ini})?" && exit 1
     fi
-done | sort -r | uniq
-echo ""
+}
 
-echo "## Processing/Uploading/Downloading runs with ini ${ini} and pipeline ${pip}"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Processing|Uploading|Downloading" \
-    -json | jq -r '.[].name' | \
-    while read set_name; do
-        echo "# ${set_name} is Processing/Uploading/Downloading on ${pip}"
-    done | sort -r | uniq
-echo ""
+check_pipeline_version_existance () {
+    local version=$1 && shift
+    pip_count=$(query_api.pl -type stacks -filter "revision=v${version}" | grep -cv "^#")
+    if [[ ${pip_count} -lt 1 ]]; then
+        echo "[ERROR] Non-existing pipeline version (${version})?" && exit 1
+    fi
+}
 
-echo "## Waiting runs with ini ${ini} and pipeline ${pip}"
-query_api.pl \
-    -type runs \
-    -filter "ini=${ini}" \
-    -filter "pipeline=^${pip}" \
-    -filter "status=Waiting" \
-    -json | jq -r '.[].name' | \
-    while read set_name; do
-        echo "# ${set_name} is Waiting on ${pip}"
-    done | sort -r | uniq
-echo ""
+main
