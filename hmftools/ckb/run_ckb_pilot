@@ -4,7 +4,7 @@ source locate_files
 
 ckb_jar=$(locate_pilot_ckb)
 
-ckb_dir=/data/common/dbs/ckb/210115_flex_dump
+ckb_dir=/data/common/dbs/ckb/210115_flex_dump/
 
 java -Xms2G -Xmx8G -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \
