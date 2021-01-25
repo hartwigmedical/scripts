@@ -12,24 +12,6 @@ rva_logo=/data/common/dbs/patient_reporter_images/L633_l_testlaboratoria_rva_en_
 company_logo=/data/common/dbs/patient_reporter_images/hartwig_logo.jpg
 signature=/data/common/dbs/patient_reporter_images/signature_edwin_transparant.png
 
-# parse arguments to possibly overwrite lims_dir and primary_tumor_tsv, and put everything else in the OTHER_OPTIONS array
-# adapted from Method #1 from https://stackoverflow.com/a/14203146
-while [[ $# -gt 0 ]]
-do
-key=$1 && shift
-case $key in
-    -lims_dir)
-    lims_dir=$1 && shift
-    ;;
-    -primary_tumor_tsv)
-    primary_tumor_tsv=$1 && shift
-    ;;
-    *)    # unknown option
-    OTHER_OPTIONS+=("$key") # save it in an array for later
-    ;;
-esac
-done
-
 java -jar ${patient_reporter_jar} \
     -reporting_db_tsv ${reporting_db_tsv} \
     -primary_tumor_tsv ${primary_tumor_tsv} \
@@ -37,4 +19,4 @@ java -jar ${patient_reporter_jar} \
     -rva_logo ${rva_logo} \
     -company_logo ${company_logo} \
     -signature ${signature} \
-    "${OTHER_OPTIONS[@]}"
+    "$@"
