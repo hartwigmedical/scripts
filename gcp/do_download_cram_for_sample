@@ -14,7 +14,7 @@ fi
 ds_path="/data/gcp/cram_downloads/${sample}_cram"
 
 api_request="datasets/${biopsy}"
-api_request+="&set=${set}"
+api_request+="?set=${set}"
 api_request+="&output=condensed"
 api_request+="&datatype=aligned_reads"
 
