@@ -140,7 +140,8 @@ In order to get access to the licensed data the download contact persons as indi
 In the data request form you indicated the next persons to be the download contacts(s):"
 jq -r '.[].Researchers[]? | select(.Researchers_13Researcheralsodownloadcontact=="1") | .Researchers_13Nameresearcherinvolvedintheproject + " (" + .Researchers_13Emailresearcherinvolvedintheproject + ")"' <temp.json
 jq -r '.[].Extraresearchers[]? | select(.Extra_researchers_Extraresearcheralsodownloadcontact=="1") | .Extra_researchers_Nameextraresearcherinvolvedintheproject + " (" + .Extra_researchers_Emailextraresearcherinvolvedintheproject + ")"' <temp.json
-echo "Please let us know which one of the aforementioned email addresses are set up as a GCP account with multi-factor authentication enabled. Note: also a service account can be used; read more about this below under ‘Extra information on accessing the data with your GCP account’."
+echo "Please let us know which one of the aforementioned email addresses are set up as a GCP account with multi-factor authentication enabled."
+echo "Note: also a service account can be used; read more about this below under ‘Extra information on accessing the data with your GCP account’."
 echo ""
 echo "[COPY PART ABOUT GCP IN HERE]
 
