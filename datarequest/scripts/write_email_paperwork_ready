@@ -143,7 +143,7 @@ jq -r '.[].Extraresearchers[]? | select(.Extra_researchers_Extraresearcheralsodo
 echo "Please let us know which one of the aforementioned email addresses are set up as a GCP account with multi-factor authentication enabled."
 echo "Note: also a service account can be used; read more about this below under ‘Extra information on accessing the data with your GCP account’."
 echo ""
-echo "[COPY PART ABOUT GCP IN HERE]
+echo "[COPY PART ABOUT GCP IN HERE. See google drive: https://docs.google.com/document/d/1-nQhF3syF-kl5j2Ha2PZoVUzZLFPT_YYG_YG4f5IzGY/edit?usp=sharing]
 
 Please let us know if you have any questions.
 
