@@ -109,6 +109,8 @@ get_name_from_object () {
     local json=$1 && shift
     if [[ "${class}" == "fastq" ]]; then
         echo "${json}" | jq '.name_r1'
+    elif [[ "${class}" == "runs" ]]; then
+        echo "${json}" | jq '.set.name'
     else
         echo "${json}" | jq '.name'
     fi
