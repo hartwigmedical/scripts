@@ -3,8 +3,8 @@
 print_usage(){
     echo "-----"
     echo " Descr: Compare metadata selection of datarequests"
-    echo " Usage: $(basename $0) -i <dr-id1> -s <suffix> -j <dr-id2> -t <suffix>"
-    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -j 'DR-001' -t 'update2' "
+    echo " Usage: $(basename $0) -i <dr-id1> -s <suffix> -j <dr-id2> -t <suffix> | -i <metadata_tsv1>  -j <metadata_tsv2>"
+    echo " Exmpl: $(basename $0) -i 'DR-001' -s 'update1' -j 'DR-001' -t 'update2' | -i '/data/data_archive/datarequests/DR-XXX/DR-XXX/metadata/metadata.tsv' -j '/data/data_archive/datarequests/DR-XXX/DR-XXX/metadata/metadata.tsv'"
     echo "-----"
     exit 1
 }
@@ -33,18 +33,26 @@ echo ""
 # make dir for temporary files
 mkdir temp_metadata_check
 
-request1_id="${dr1_id}"
-if [[ "${dr1_suffix}" != "" ]]; then
-     request1_id="${dr1_id}-${dr1_suffix}"
+if [[ "${dr1_id}" == "DR-"* ]]; then
+    request1_id="${dr1_id}"
+    if [[ "${dr1_suffix}" != "" ]]; then
+         request1_id="${dr1_id}-${dr1_suffix}"
+    fi
+    metadata_tsv1="/data/data_archive/datarequests/${dr1_id}/${request1_id}/metadata/metadata.tsv"
+else
+    metadata_tsv1=${dr1_id}
 fi
-metadata_tsv1="/data/data_archive/datarequests/${dr1_id}/${request1_id}/metadata/metadata.tsv"
 
-request2_id="${dr2_id}"
-if [[ "${dr2_suffix}" != "" ]]; then
-     request2_id="${dr2_id}-${dr2_suffix}"
+
+if [[ "${dr2_id}" == "DR-"* ]]; then
+    request2_id="${dr2_id}"
+    if [[ "${dr2_suffix}" != "" ]]; then
+         request2_id="${dr2_id}-${dr2_suffix}"
+    fi
+    metadata_tsv2="/data/data_archive/datarequests/${dr2_id}/${request2_id}/metadata/metadata.tsv"
+else
+    metadata_tsv2=${dr2_id}
 fi
-metadata_tsv2="/data/data_archive/datarequests/${dr2_id}/${request2_id}/metadata/metadata.tsv"
-
 
 
 echo "[INFO] ANALYSES BASED ON patientId:"
