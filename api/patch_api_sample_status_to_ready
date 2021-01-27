@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source message_functions
+source message_functions || exit 1
 
 sample_barcode=$1
 new_status="Ready"

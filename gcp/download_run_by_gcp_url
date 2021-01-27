@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source gcp_functions
-source message_functions
+source gcp_functions || exit 1
+source message_functions || exit 1
 
 gcp_url=''
 download_path=''

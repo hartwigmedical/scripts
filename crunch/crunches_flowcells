@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-source message_functions
+source message_functions || exit 1
 
 if [[ "$(hostname)" != "datastore" ]]; then
-    echo "[ERROR] This script is meant to be executed at datastore. Exiting."
-    exit 1
+    die "This script is meant to be executed at datastore. Exiting."
 fi
 
 for i in {2,3}; do
