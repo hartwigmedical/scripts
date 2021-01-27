@@ -4,9 +4,16 @@ source locate_files
 
 ckb_jar=$(locate_pilot_ckb)
 
-ckb_dir=/data/common/dbs/ckb/210115_flex_dump
+# Database details
+credentials=$(locate_wide_germline_carriership_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+ckb_dir=/data/common/dbs/ckb/210122_flex_dump
 
 java -Xms2G -Xmx8G -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"
