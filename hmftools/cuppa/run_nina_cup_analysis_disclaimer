@@ -1,0 +1,57 @@
+source locate_files
+
+sampleId=$1
+
+if [[ -z "${sampleId}" ]]; then
+    echo "[ERROR] No sample ID passed. Exiting" && exit 1
+fi
+
+output_dir=/data/experiments/nina_cup_experiments/cup_output_data/sample_data/
+
+# Database details
+credentials=$(locate_prod_database_credentials)
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
+
+echo "Running sig-analyser for ${sampleId}, writing output to ${output_dir}"
+
+# Run signatures to produce SNV counts, genomic position counts and signature allocations
+siga_jar=/data/common/tools/sig-analyser_pilot/sig-analyser.jar
+snv_cosmic_sigs=/data/common/dbs/sigs/snv_cosmic_sigs.csv
+sig_output_dir=/data/experiments/nina_cup_experiments/cup_output_data/sigs/
+
+java -cp ${siga_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
+    -sample ${sampleId} \
+    -signatures_file ${snv_cosmic_sigs} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -position_bucket_size 500000 -max_sample_count 20000 \
+    -upload_to_db false \
+    -output_dir ${sig_output_dir} \
+    -log_debug
+
+sample_snv_counts=${sig_output_dir}${sampleId}.sig.snv_counts.csv
+sample_sig_contribs=${sig_output_dir}${sampleId}.sig.allocation.tsv
+sample_snv_pos_freq_counts=${sig_output_dir}${sampleId}.sig.pos_freq_counts.csv
+
+cuppa_jar=/data/common/tools/cuppa_pilot/cuppa.jar
+
+cup_ref_dir=/data/experiments/cup/ref
+
+# Sample data not sourced from the database
+
+java -jar ${cuppa_jar} \
+    -sample_data "${sampleId};Unknown" \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
+    -ref_data_dir ${cup_ref_dir} \
+    -sample_snv_counts_file ${sample_snv_counts} \
+    -sample_snv_pos_freq_file ${sample_snv_pos_freq_counts} \
+    -output_dir ${output_dir} \
+    -write_similarities \
+    -log_debug
+
+report_dir=/data/experiments/nina_cup_experiments/cup_output_data/reports/
+report_script=/data/common/repos/scripts/hmftools/cuppa/CupGenerateReport_AddDisclaimer.R
+
+# Rscript /data/common/repos/analysis/cup/CupGenerateReport.R <sampleId> ./sample_data/ ./reports/
+Rscript ${report_script} ${sampleId} ${output_dir} ${report_dir} true

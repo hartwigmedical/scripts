@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+# sample command
+# ~/scripts/run_cup_analysis_no_db SAMPLE_001 ~/tools/cuppa.jar ~/tools/sig-analyser.jar ~/samples/SAMPLE_001/ ~/ref/ ~/samples/SAMPLE_001/
+
+sampleId=$1
+cuppa_jar=$2
+sig_analyser_jar=$3
+sample_data_dir=$4
+cup_ref_dir=$5
+output_dir=$6
+
+echo "CUPPA analysis for ${sampleId}"
+echo "Sample input: ${sample_data_dir}"
+echo "Sample output: ${output_dir}"
+echo "Reference data: ${cup_ref_dir}"
+
+echo "Generating SNV and signature data for ${sampleId}"
+
+# Run signatures to produce SNV counts, genomic position counts and signature allocations
+snv_cosmic_sigs=${cup_ref_dir}/snv_cosmic_sigs.csv
+snv_vcf_file=${sample_data_dir}/${sampleId}.purple.somatic.vcf.gz
+
+java -cp ${sig_analyser_jar} com.hartwig.hmftools.sig_analyser.fitter.SampleFitter \
+    -sample ${sampleId} \
+    -signatures_file ${snv_cosmic_sigs} \
+    -somatic_vcf_file ${snv_vcf_file} \
+    -position_bucket_size 500000 -max_sample_count 20000 \
+    -upload_to_db false \
+    -output_dir ${output_dir} \
+    -log_debug
+
+# Sample data files
+sv_vcf_file=${sample_data_dir}/${sampleId}.purple.sv.vcf.gz
+
+java -jar ${cuppa_jar} \
+    -sample_data "${sampleId};Unknown" \
+    -sample_data_dir ${sample_data_dir} \
+    -sample_sv_file ${sv_vcf_file} \
+    -sample_somatic_vcf ${snv_vcf_file} \
+    -ref_data_dir ${cup_ref_dir} \
+    -output_dir ${output_dir} \
+    -log_debug
+
+
+# sample command for PDF report: SampleId /path_to_sample_data/ /output_path/
+# Rscript ~/scripts/CupGenerateReport.R SAMPLE_001 ~/samples/SAMPLE_001/ ~/samples/SAMPLE_001/
+
+#report_dir=${output_dir}
+#report_script=/data/common/repos/analysis/cup/CupGenerateReport.R
+#cup_input_data=${output_dir}${sampleId}.cup.data.csv
+
+# Rscript ${report_script} ${sampleId} ${cup_input_data} ${report_dir}
