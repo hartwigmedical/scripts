@@ -25,8 +25,8 @@ ref_sample=$(load_ref_sample_from_metadata "${run_dir}")
 tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
 
 if [[ -d "${output_dir}" ]]; then
-    rm -r "${output_dir}"
-    info "[INFO] PGX pilot dir exist. PGX dir is just removed and will be replaced"
+    info "PGX pilot dir exist. PGX dir will first be removed and then be replaced"
+    rm -r "${output_dir}" || die "Could not remove existing PGX pilot dir"
 fi
 
 germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")
@@ -38,6 +38,5 @@ vcftools_tool=$(locate_vcftools)
 
 # RUN
 python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
-    --panel "${pgx_resource_dir}/panelfiles/DPYD.json" \
-    --sourcedir "${pgx_resource_dir}" \
-    --vcftools "${vcftools_tool}"
+    --panel "${pgx_resource_dir}/panelfiles/DPYD.json" --sourcedir "${pgx_resource_dir}" \
+    --vcftools "${vcftools_tool}" || die "PGX pilot failed"

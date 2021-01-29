@@ -15,7 +15,7 @@ pgx_requirements=$(locate_pgx_requirements)
 
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
     info "Delete existing PGX venv"
-    rm -r  "${venv_dir}"
+    rm -r  "${venv_dir}" || die "Could not delete existing PGX venv"
 fi
 
 python3 -m venv "${venv_dir}" || die "Could not create PGX venv"
