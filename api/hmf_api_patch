@@ -22,7 +22,7 @@ oid='' # object id
 field='' # the field to PATCH
 value='' # the value to PATCH field with
 confirmation='true' # by default script requires key press
-environment='production' # by default script requires key press
+environment='prod' # by default script requires key press
 
 unquoted_values='null|true|false'
 quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample'
@@ -38,7 +38,7 @@ while getopts ':c:o:f:v:ea' flag; do
         f) field=${OPTARG} ;;
         v) value=${OPTARG} ;;
         e) confirmation='false' ;;
-        a) environment='acceptance' ;;
+        a) environment='acc' ;;
         *) print_usage >&2
         exit 1 ;;
     esac
@@ -48,20 +48,20 @@ if [[ -z "${class}" || -z "${oid}" || -z "${field}" || -z "${value}" ]]; then
     print_usage
 fi
 
-if [[ "${environment}" == "production" ]]; then
+if [[ "${environment}" == "prod" ]]; then
     api_crt="${api_dir}/api.crt"
     api_key="${api_dir}/api.key"
     api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-elif [[ "${environment}" == "acceptance" ]]; then
+elif [[ "${environment}" == "acc" ]]; then
     api_crt="${api_dir}/acc/api.crt"
     api_key="${api_dir}/acc/api.key"
     api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
 else
-    die "Environment should be either production or acceptance"
+    die "Environment should be either prod or acc"
 fi
 
 main () {
-    info "Searching api of ${environment} environment for object (class=${class}|id=${oid})"
+    info "Searching api of for object (class=${class}|id=${oid}|env=${environment})"
     object_url="${api_url}/${class}/${oid}"
 
     # TODO: use hmf_api_get once acceptance environment supported
