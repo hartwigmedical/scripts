@@ -6,9 +6,9 @@ source locate_files
 run_dir=$1 && shift
 
 linx_jar=$(locate_pilot_linx)
-structural_vcf=$(locate_purple_structural_variants ${run_dir})
-purple_dir=${run_dir}/purple
-output_dir=${run_dir}/linx
+structural_vcf=$(locate_purple_pilot_structural_variants ${run_dir})
+purple_dir=${run_dir}/purple_pilot
+output_dir=${run_dir}/linx_pilot
 
 # Load meta data
 sample=$(load_tumor_sample_from_metadata ${run_dir})
