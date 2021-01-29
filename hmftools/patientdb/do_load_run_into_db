@@ -5,6 +5,7 @@ source metadata_functions
 
 run_dir=$1 && shift
 patient_db_jar=$1 && shift
+linx_jar=$1 && shift
 credentials=$1 && shift
 
 ref_sample=$(load_ref_sample_from_metadata ${run_dir})
@@ -17,7 +18,6 @@ chord_prediction_file=$(locate_chord_prediction ${run_dir})
 ref_metrics_file=$(locate_wgs_metrics ${run_dir} ${ref_sample})
 tumor_metrics_file=$(locate_wgs_metrics ${run_dir} ${tumor_sample})
 
-linx_jar=$(locate_prod_linx)
 bachelor_jar=$(locate_prod_bachelor)
 
 do_load_amber_data ${tumor_sample} ${amber_dir} ${credentials} ${patient_db_jar}
