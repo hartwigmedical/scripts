@@ -175,7 +175,7 @@ locate_pilot_datarequest() {
 ################################# NON JAVA TOOLS ###################################
 
 locate_pgx_main() {
-    echo ${base_path}/repos/scripts/pgx/main.py
+    echo ${base_path}/repos/scripts/pgx/src/main.py
 }
 
 locate_vcftools() {
