@@ -612,10 +612,11 @@ def main(vcf, sampleTID, sampleRID, version, panel, requery, outputdir, recreate
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Run pharmacogenomics panel on germline VCF file. The pharmacogenomic '
-                                                 'annotations are done on GRCh38, so in the output both reference '
-                                                 'genome output is given where possible.')
+def parse_args(sys_args):
+    parser = argparse.ArgumentParser(
+        description=('Run pharmacogenomics panel on germline VCF file. The pharmacogenomic annotations are done on '
+                     'GRCh38, so in the output both reference genome output is given where possible.')
+    )
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
     parser.add_argument('sampleTID', type=str, help='The sample ID of the tumor')
     parser.add_argument('sampleRID', type=str, help='The sample ID of the normal')
@@ -623,12 +624,17 @@ if __name__ == '__main__':
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
     parser.add_argument('--panel', type=str, help='TSV file with the panel variants')
     parser.add_argument('--requery', default=False, action='store_true', help='Requery genes in pharmGKB')
-    parser.add_argument('--recreate_bed', default=False, action='store_true', help='Recreate bed-file from JSON files. '
-                                                                                   'If false, the panel file with '
-                                                                                   'extension .bed is searched for.')
+    parser.add_argument(
+        '--recreate_bed', default=False, action='store_true',
+        help='Recreate bed-file from JSON files. If false, the panel file with extension .bed is searched for.'
+    )
     parser.add_argument('--vcftools', type=str, default='vcftools', help="Path to vcftools > 0.1.14 if not in $PATH")
     parser.add_argument('--sourcedir', type=str, default='data', help="Optional path to location of source files")
+    return parser.parse_args(sys_args)
 
-    args = parser.parse_args()
 
-    main(args.vcf, args.sampleTID, args.sampleRID, args.version, args.panel, args.requery, args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
+if __name__ == '__main__':
+    print(sys.argv[1:])
+    args = parse_args(sys.argv[1:])
+    main(args.vcf, args.sampleTID, args.sampleRID, args.version, args.panel, args.requery,
+         args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
