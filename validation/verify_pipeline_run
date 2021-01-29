@@ -114,12 +114,13 @@ main() {
     "${jobs_dir}/diff_v5_COLO829v003_runs" "${truth_run}" "${new_run}" > "${logs_dir}/diff_v5_COLO829v003_runs.log" 2>&1
 
     db_load_script="load_run_into_pipeline_v5_validation_db"
+    sql_query_script="run_all_sql_verification_jobs"
     info "TODO manual steps:"
     info " 1) Inspect all log files in ${logs_dir}"
-    info " 2) Execute \"before\" queries (see run_all_sql_verification_jobs in ${jobs_dir})"
-    info " 3) Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &"
-    info " 4) Execute \"after\" queries (see run_all_sql_verification_jobs in ${jobs_dir})"
-    info " 5) Inspect all SQL log files in ${logs_dir}"
+    info " 2) Execute sql queries (nohup ${sql_query_script} ${jobs_dir} ${logs_dir} before_load > ${logs_dir}/run_all_sql_verification_jobs_before_load.log &)"
+    info " 3) Load into DB (nohup ${db_load_script} ${new_run} > ${logs_dir}/${db_load_script}.log &)"
+    info " 4) Execute sql queries again after load (nohup ${sql_query_script}  ${jobs_dir} ${logs_dir} after_load > ${logs_dir}/run_all_sql_verification_jobs_after_load.log &)"
+    info " 5) Inspect all SQL log files in logs dir (ls ${logs_dir})"
     info "Finished with $(basename $0)"
 }
 
