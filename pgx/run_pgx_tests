@@ -1,4 +1,18 @@
 source locate_files
+source message_functions
+
+info "Run PGX tests"
+
+if [[ $# -eq 0 ]]; then
+  venv_dir=$(locate_pgx_venv_dir)
+else
+  venv_dir=$1 && shift
+fi
+
+# START VIRTUAL ENV
+source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
 pgx_base_dir=$(locate_pgx_dir)
-python -m unittest discover --verbose --start-directory "${pgx_base_dir}"
+python -m unittest discover --verbose --start-directory "${pgx_base_dir}" || die "Some PGX tests failed"
+
+info "PGX tests succeeded"

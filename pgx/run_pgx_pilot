@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 
 source locate_files
+source message_functions
 source metadata_functions
+
+info "Start running PGX pilot script"
 
 run_dir=$1 && shift
 
@@ -10,10 +13,9 @@ if [[ $# -eq 0 ]]; then
 else
   venv_dir=$1 && shift
 fi
-activate_venv="${venv_dir}/bin/activate"
 
 # START VIRTUAL ENV
-source "${activate_venv}"
+source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
 output_dir=${run_dir}/pgx_pilot
 
@@ -24,7 +26,7 @@ tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
 
 if [[ -d "${output_dir}" ]]; then
     rm -r "${output_dir}"
-    echo "[INFO] pgx pilot dir exist. Pgx dir is just removed and will be replaced"
+    info "[INFO] PGX pilot dir exist. PGX dir is just removed and will be replaced"
 fi
 
 germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")

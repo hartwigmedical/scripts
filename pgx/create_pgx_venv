@@ -3,7 +3,7 @@
 source locate_files
 source message_functions
 
-info "Starting creation of pgx venv"
+info "Starting creation of PGX venv"
 
 if [[ $# -eq 0 ]]; then
   venv_dir=$(locate_pgx_venv_dir)
@@ -14,12 +14,12 @@ fi
 pgx_requirements=$(locate_pgx_requirements)
 
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
-    info "Delete existing pgx venv"
+    info "Delete existing PGX venv"
     rm -r  "${venv_dir}"
 fi
 
-python3 -m venv "${venv_dir}" || die "Could not create pgx venv"
-source "${venv_dir}/bin/activate" || die "Could not activate pgx venv"
-pip install -r "${pgx_requirements}" || die "Could not install pgx pip packages"
+python3 -m venv "${venv_dir}" || die "Could not create PGX venv"
+source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
+pip install -r "${pgx_requirements}" || die "Could not install PGX pip packages"
 
-info "Finished creating pgx venv"
+info "Finished creating PGX venv"
