@@ -172,6 +172,8 @@ create_run_specific_files () {
         "${tumor_bam_bai}"
     )
 
+    # TODO: once we hit pipeline v5.19 runs, need to update the driver catalog paths to
+    # TODO: .driver.catalog.germline.tsv and .driver.catalog.somatic.tsv
     local somatic_files=(
         "purple/purple.version"
         "purple/${tum}.driver.catalog.tsv"
