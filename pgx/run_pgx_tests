@@ -1,0 +1,4 @@
+source locate_files
+
+pgx_base_dir=$(locate_pgx_dir)
+python -m unittest discover --verbose --start-directory "${pgx_base_dir}"
