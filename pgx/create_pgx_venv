@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
-source message_functions
+source locate_files || exit 1
+source message_functions || exit 1
 
 info "Starting creation of PGX venv"
 
