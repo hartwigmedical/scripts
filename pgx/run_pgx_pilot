@@ -5,23 +5,29 @@ source metadata_functions
 
 run_dir=$1 && shift
 
+if [[ $# -eq 0 ]]; then
+  venv_dir="/data/common/dbs/pgx/venv/pgx/"
+else
+  venv_dir=$1 && shift
+fi
+activate_venv="${venv_dir}/bin/activate"
+
 # START VIRTUAL ENV
-source /data/common/dbs/pgx/venv/pgx/bin/activate
+source "${activate_venv}"
 
 output_dir=${run_dir}/pgx_pilot
 
-pgx_tool_path=/data/common/tools/ # TODO add the real path when in prod used
 version_pgx_tool=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')
 
-ref_sample=$(load_ref_sample_from_metadata ${run_dir})
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+ref_sample=$(load_ref_sample_from_metadata "${run_dir}")
+tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
 
 if [[ -d "${output_dir}" ]]; then
-    rm -r ${output_dir}
+    rm -r "${output_dir}"
     echo "[INFO] pgx pilot dir exist. Pgx dir is just removed and will be replaced"
 fi
 
-germline_vcf=$(locate_germline_variants ${run_dir} ${ref_sample})
+germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")
 
 # REFERENCES
 pgx_tool=$(locate_pgx_main)
@@ -29,7 +35,7 @@ pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
-python ${pgx_tool} ${germline_vcf} ${tumor_sample} ${ref_sample} ${version_pgx_tool} ${output_dir}  \
-    --panel ${pgx_resource_dir}/panelfiles/DPYD.json \
-    --sourcedir ${pgx_resource_dir} \
-    --vcftools ${vcftools_tool}
+python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
+    --panel "${pgx_resource_dir}/panelfiles/DPYD.json" \
+    --sourcedir "${pgx_resource_dir}" \
+    --vcftools "${vcftools_tool}"

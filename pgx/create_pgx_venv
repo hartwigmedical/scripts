@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source locate_files
+source message_functions
+
+info "Starting creation of pgx venv"
+
+if [[ $# -eq 0 ]]; then
+  venv_dir="/data/common/dbs/pgx/venv/pgx/"
+else
+  venv_dir=$1 && shift
+fi
+
+pgx_requirements=$(locate_pgx_requirements)
+
+if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
+    info "Delete existing pgx venv"
+    rm -r  "${venv_dir}"
+fi
+
+python3 -m venv "${venv_dir}" || die "Could not create pgx venv"
+source "${venv_dir}/bin/activate" || die "Could not activate pgx venv"
+pip install -r "${pgx_requirements}" || die "Could not install pgx pip packages"
+
+info "Finished creating pgx venv"

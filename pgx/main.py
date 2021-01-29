@@ -386,7 +386,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                 else:
                     print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
                     optimal_set = []
-                    for k in range(len(haplotypes_matching) + 1, 0, -1):
+                    for k in range(len(haplotypes_matching) + 1, 0, -1):  # TODO: shouldn't this order be reversed?
                         for subset in itertools.combinations(haplotypes_matching, k):
                             if perfect_match:
                                 continue

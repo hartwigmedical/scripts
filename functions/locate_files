@@ -234,6 +234,10 @@ locate_ref_genome_37_fasta_file() {
 
 ################################### PGX ####################################
 
+locate_pgx_requirements() {
+    echo "${base_path}/repos/scripts/pgx/requirements.txt"
+}
+
 locate_pgx_pilot_calls() {
     local run_dir=$1
     local pgx_dir=${run_dir}/pgx_pilot
