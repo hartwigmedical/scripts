@@ -457,8 +457,12 @@ locate_purple_drivers() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
     if [[ -z "${purple_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
+        # From purple v2.52 onwards driver catalog is now "somatic driver catalog"
+        purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
+        if [[ -z "${purple_driver_tsv}" ]]; then
+            echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+            exit 1
+        fi
     fi
     echo ${purple_driver_tsv}
 }
