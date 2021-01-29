@@ -6,7 +6,7 @@ source metadata_functions
 run_dir=$1 && shift
 
 if [[ $# -eq 0 ]]; then
-  venv_dir="/data/common/dbs/pgx/venv/pgx/"
+  venv_dir=$(locate_pgx_venv_dir)
 else
   venv_dir=$1 && shift
 fi

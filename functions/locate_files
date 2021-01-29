@@ -238,6 +238,10 @@ locate_pgx_dir() {
     echo "${base_path}/repos/scripts/pgx/"
 }
 
+locate_pgx_venv_dir() {
+    echo "$(locate_pgx_resource_dir)/venv/pgx"
+}
+
 locate_pgx_requirements() {
     echo "$(locate_pgx_dir)/requirements.txt"
 }
