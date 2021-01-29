@@ -634,7 +634,6 @@ def parse_args(sys_args):
 
 
 if __name__ == '__main__':
-    print(sys.argv[1:])
     args = parse_args(sys.argv[1:])
     main(args.vcf, args.sampleTID, args.sampleRID, args.version, args.panel, args.requery,
          args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
