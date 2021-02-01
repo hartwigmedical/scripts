@@ -33,10 +33,11 @@ germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")
 
 # REFERENCES
 pgx_tool=$(locate_pgx_main)
+#pgx_tool=$HOME/repos/scripts/pgx/src/main.py
 pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
 # RUN
 python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
-    --panel "${pgx_resource_dir}/panelfiles/DPYD.json" --sourcedir "${pgx_resource_dir}" \
-    --vcftools "${vcftools_tool}" || die "PGX pilot failed"
+    "${pgx_resource_dir}/panelfiles/DPYD.json" "${vcftools_tool}" \
+    --sourcedir "${pgx_resource_dir}" || die "PGX pilot failed"

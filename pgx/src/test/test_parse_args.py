@@ -10,43 +10,47 @@ from pgx.src.main import parse_args
 class TestMain(unittest.TestCase):
     def test_parse_args_representative_example(self):
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
-                     "--panel", "panel_location", "--sourcedir", "path_to_source_files", "--vcftools",
+                     "panel_location", "--sourcedir", "path_to_source_files",
                      "vcftools_location"]
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
             vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
-            outputdir="output_directory", panel="panel_location", requery=False, recreate_bed=False,
+            outputdir="output_directory", panel="panel_location", recreate_bed=False,
             vcftools="vcftools_location", sourcedir="path_to_source_files"
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
     def test_parse_args_defaults(self):
-        arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory"]
+        arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
+                     "panel_location", "vcftools_location"]
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
             vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
-            outputdir="output_directory", panel=None, requery=False, recreate_bed=False,
-            vcftools="vcftools", sourcedir="data"
+            outputdir="output_directory", panel="panel_location", recreate_bed=False,
+            vcftools="vcftools_location", sourcedir="data"
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
     def test_parse_args_no_defaults(self):
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
-                     "--requery", "--panel", "panel_location", "--sourcedir", "path_to_source_files",
-                     "--recreate_bed", "--vcftools", "vcftools_location"]
+                     "panel_location", "--sourcedir", "path_to_source_files",
+                     "--recreate_bed", "vcftools_location"]
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
             vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
-            outputdir="output_directory", panel="panel_location", requery=True, recreate_bed=True,
+            outputdir="output_directory", panel="panel_location", recreate_bed=True,
             vcftools="vcftools_location", sourcedir="path_to_source_files"
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
     def test_parse_args_missing_required_arguments(self):
-        minimum_arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory"]
+        minimum_arguments = [
+            "vcf_file", "tumor_sample_id", "ref_sample_id", "script_version",
+            "output_directory", "panel_location", "vcftools_location"
+        ]
         parse_args(minimum_arguments)
 
         too_few_arguments = deepcopy(minimum_arguments[:-1])
