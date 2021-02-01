@@ -65,7 +65,7 @@ main () {
     done < <(echo "${current_fail_runs}" | jq -cr '.[] | [.tumor_sample,.name,.bucket] | @tsv')  | sort -r | uniq
 
     echo ""
-    echo "## Finished (but not Validated) runs that need to be processed:"
+    echo "## Finished runs (that are not Validated or Failed, probably waiting for SNP genotype VCF):"
     while read -r run_info; do
         sample_name=$(echo "${run_info}" | cut -f1)
         set_name=$(echo "${run_info}" | cut -f2)
