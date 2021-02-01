@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+cp ${run_dir}/linx/WIDE01011202T.linx.fusion.tsv ${run_dir}/linx/WIDE01011202T.linx.fusion_original.tsv
+sed -i "s/likelihood/Likelihood/" ${run_dir}/linx/WIDE01011202T.linx.fusion.tsv
+
+cp ${run_dir}/linx/WIDE01011202T.linx.breakend.tsv  ${run_dir}/linx/WIDE01011202T.linx.breakend_original.tsv
+sed -i "s/id/Id/" ${run_dir}/linx/WIDE01011202T.linx.breakend.tsv
