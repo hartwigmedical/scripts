@@ -267,6 +267,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                 ids_found_in_patient.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
                 ids_found_in_patient.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
 
+        for index, row in ids_found_in_patient.iterrows():
             # Fill in the rsid gaps, if annotation is missing on the location.
             if 'rsid' in row:
                 if row['rsid'] == '.':
@@ -278,14 +279,14 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                                 break
                     ids_found_in_patient.at[index, 'rsid'] = rs_to_paste
 
+        for index, row in ids_found_in_patient.iterrows():
             matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
             GRCh38_locations = {
                 str(variant['chromosome']) + ":" + str(variant['positionGRCh38']) for variant in matching_variants
             }
-
             if len(GRCh38_locations) == 1:
                 GRCh38_location = GRCh38_locations.pop()
-                if pd.isna(row['position_GRCh38']):
+                if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
                     ids_found_in_patient.at[index, 'position_GRCh38'] = GRCh38_location
                 elif row['position_GRCh38'] != GRCh38_location:
                     raise ValueError(
@@ -298,7 +299,6 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                 raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
                                  "matching variants: " + matching_variants_string + "\n"
                                  "GRCh38 locations: " + ", ".join(GRCh38_locations) + "\n")
-
 
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
