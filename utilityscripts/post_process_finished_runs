@@ -19,7 +19,6 @@ for run in ${process_runs}; do
     sample_id=$(load_tumor_sample_from_metadata ${source_path}/${run})
     tumor_barcode=$(find_barcode_for_sample_name ${sample_id})
     cohort=$(find_cohort_type ${tumor_barcode})
-    patch_linx_files ${source_path}/${run}
 
     if [[ -z ${cohort} ]]; then
         echo "[ERROR] Could not resolve cohort for ${run}."
