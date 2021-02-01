@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import allel
 import argparse
 import collections
@@ -22,9 +24,9 @@ def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed
             # Directory already exists
             pass
 
-    haplotypes_info, rs_ids = load_panel_from_json(panel_path)
+    haplotypes_info, rs_id_to_position = load_panel_from_json(panel_path)
 
-    if not haplotypes_info or not rs_ids:
+    if not haplotypes_info or not rs_id_to_position:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
     bed_path = replace_file_extension_of_path(panel_path, "bed")
@@ -35,10 +37,10 @@ def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed
     if not os.path.exists(bed_path):
         sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
 
-    ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_path, outputdir, sampleTID, sampleRID, vcftools)
+    ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_id_to_position, bed_path, outputdir, sampleTID, sampleRID, vcftools)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel_path)
+        convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id_to_position, panel_path)
 
     out = outputdir + "/" + sampleTID
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
@@ -60,7 +62,7 @@ def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel):
+def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id_to_position, panel):
     rsid_to_gene_to_haplotype_variant = collections.defaultdict(dict)
     for gene in haplotypes_info:
         for variant in haplotypes_info[gene]['variants']:
@@ -88,9 +90,9 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
             if 'rsid' in row:
                 if row['rsid'] == '.':
                     rs_to_paste = '.'
-                    if row['position_GRCh37'] in rs_ids.values():
-                        for rs in rs_ids:
-                            if rs_ids[rs] == row['position_GRCh37']:
+                    if row['position_GRCh37'] in rs_id_to_position.values():
+                        for rs in rs_id_to_position:
+                            if rs_id_to_position[rs] == row['position_GRCh37']:
                                 rs_to_paste = rs
                                 break
                     ids_found_in_patient.at[index, 'rsid'] = rs_to_paste
@@ -108,36 +110,37 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
                     raise ValueError(
                         "[ERROR] Inconsistent GRCh38 locations for variants:\n"
                         "location from exceptions: " + row['position_GRCh38'] + "\n"
-                                                                                "location from variants: " + GRCh38_location + "\n"
+                        "location from variants: " + GRCh38_location + "\n"
                     )
             elif len(GRCh38_locations) > 1:
                 matching_variants_string = ",".join([str(variant) for variant in matching_variants])
                 raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
                                  "matching variants: " + matching_variants_string + "\n"
-                                                                                    "GRCh38 locations: " + ", ".join(GRCh38_locations) + "\n")
+                                 "GRCh38 locations: " + ", ".join(GRCh38_locations) + "\n")
 
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
                                                      'filter'])
 
-    for rs in ids_found_in_patient.rsid.tolist():
-        rs_ids.pop(rs)
-    rs_ids = {key: val for key, val in rs_ids.items() if val not in ids_found_in_patient.position_GRCh37.tolist()}
-    for item in rs_ids:
-        new_id = {}
-        for gene, variant in rsid_to_gene_to_haplotype_variant[item].items():
-            new_id['position_GRCh37'] = rs_ids[item]
-            new_id['rsid'] = item
-            new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
-            new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
-            new_id['variant_annotation'] = "REF_CALL"
-            new_id['filter'] = "NO_CALL"
-            new_id['gene'] = gene
-            new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
-            new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
-            new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
-            ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
+    rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
+    positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
+
+    for rs_id, position in rs_id_to_position.items():
+        if rs_id not in rs_ids_found_in_patient and position not in positions_found_in_patient:
+            new_id = {}
+            for gene, variant in rsid_to_gene_to_haplotype_variant[rs_id].items():
+                new_id['position_GRCh37'] = position
+                new_id['rsid'] = rs_id
+                new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
+                new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
+                new_id['variant_annotation'] = "REF_CALL"
+                new_id['filter'] = "NO_CALL"
+                new_id['gene'] = gene
+                new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
+                new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
+                new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
 
     # Now we want to process all the variants in terms of the alleles
     all_ids_in_panel = pd.concat([ids_found_in_patient, ids_not_found_in_patient], sort=True)
@@ -339,7 +342,7 @@ def process_exceptions(ids_found, panel):
     return ids_found
 
 
-def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
+def parse_vcf(vcf, rs_id_to_position, bed_file, outputdir, sampleTID, sampleRID, vcftools):
     match_on_rsid = 0
     match_on_location = 0
 
@@ -379,8 +382,8 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
         else:
             rs_id_filt = [rs_number]
 
-        if any(rs in rs_id_filt for rs in rs_ids) or str(chr) + ":" + str(pos) in rs_ids.values():
-            if any(rs in rs_id_filt for rs in rs_ids):
+        if any(rs in rs_id_filt for rs in rs_id_to_position.keys()) or str(chr) + ":" + str(pos) in rs_id_to_position.values():
+            if any(rs in rs_id_filt for rs in rs_id_to_position.keys()):
                 match_on_rsid += 1
             else:
                 match_on_location += 1
@@ -424,7 +427,7 @@ def parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools):
 def load_panel_from_json(panel):
     """ Load manually annotated JSON panel file """
     haplotypes_info = {}  # Nested dict: gene, haplotype, rsinfo
-    ids = {}
+    rs_id_to_position = {}
 
     try:
         with open(panel, 'r+', encoding='utf-8') as json_file:
@@ -435,13 +438,16 @@ def load_panel_from_json(panel):
                 if gene_info['gene'] not in haplotypes_info:
                     haplotypes_info[gene_info['gene']] = gene_info
                 for variant in gene_info['variants']:
-                    if variant['rsid'] not in ids:
-                        ids[variant['rsid']] = str(variant['chromosome']) + ":" + str(variant['position'])
+                    if variant['rsid'] not in rs_id_to_position:
+                        rs_id_to_position[variant['rsid']] = str(variant['chromosome']) + ":" + str(variant['position'])
 
     except IOError:
         sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
 
-    return haplotypes_info, ids
+    print(haplotypes_info)
+    print(rs_id_to_position)
+
+    return haplotypes_info, rs_id_to_position
 
 
 def create_bed_file(gene_panel, panel_path, sourcedir, bed_path):
