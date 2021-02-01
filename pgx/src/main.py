@@ -78,7 +78,7 @@ def load_json_cache(gene_panel, sourcedir):
     return genes, ids
 
 
-def load_json(panel):
+def load_panel_from_json(panel):
     """ Load manually annotated JSON panel file """
     genes = {}  # Nested dict: gene, haplotype, rsinfo
     ids = {}
@@ -515,7 +515,7 @@ def main(vcf, sampleTID, sampleRID, version, panel, requery, outputdir, recreate
     if panel:
         if panel.endswith('.json'):
             # Load JSON panel file
-            haplotypes_info, rs_ids = load_json(panel)
+            haplotypes_info, rs_ids = load_panel_from_json(panel)
         else:
             # Give in a TSV file with the variants of the panel
             genes, rs_ids = load_panel(panel)
@@ -523,78 +523,41 @@ def main(vcf, sampleTID, sampleRID, version, panel, requery, outputdir, recreate
         # No panel is found, so load the JSON files from the pharmGKB
         gene_panel = ['CFTR', 'CYP2C19', 'CYP2C9', 'CYP2D6', 'CYP3A5', 'CYP4F2', 'DPYD', 'IFNL3', 'SLCO1B1', 'TPMT',
                       'UGT1A1', 'VKORC1']
-
         if requery:
-            print("[INFO] Loading data from pharmGKB")
-            for gene in gene_panel:
-                time.sleep(1)
-                url = "https://api.pharmgkb.org/v1/data/clinicalAnnotation?location.genes.symbol=" + gene
-                print(url)
-                r = requests.get(url)
-                if r.status_code == 200:
-                    with open(sourcedir + '/pharmgkb_cache/' + gene + ".json", 'w') as outfile:
-                        json.dump(r.json(), outfile)
-                elif r.status_code == 404:
-                    print(gene + " not found in pharmGKB API")
-                elif r.status_code == 429:
-                    print("Too many requests per second, please delay querying.")
-                else:
-                    print("Other error: " + r.status_code)
+            query_genes_pharmgkb(gene_panel, sourcedir)
+
         print("[INFO] Reading in stored pharmGKB data")
         genes, rs_ids = load_json_cache(gene_panel, sourcedir)
 
-    if rs_ids != {}:
-        if recreate_bed:
-            if genes:
-                gene_panel = list(genes)
-            elif haplotypes_info:
-                gene_panel = list(haplotypes_info)
-            else:
-                raise ValueError("[ERROR] No genes found for bed-file filtering. Exiting.")
-            bed_file = get_bed_file(gene_panel, panel, sourcedir)
-        else:
-            if panel:
-                bed_file = panel.split(".")
-                bed_file = ".".join(bed_file[0:-1]) + ".bed"
-            else:
-                bed_file = sourcedir + "/pharmgkb_cache/cache_bed.bed"
-            if not os.path.exists(bed_file):
-                sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
-        ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools)
-    else:
+    if rs_ids == {}:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
+
+    if recreate_bed:
+        if genes:
+            gene_panel = list(genes)
+        elif haplotypes_info:
+            gene_panel = list(haplotypes_info)
+        else:
+            raise ValueError("[ERROR] No genes found for bed-file filtering. Exiting.")
+        bed_file = get_bed_file(gene_panel, panel, sourcedir)
+    else:
+        if panel:
+            bed_file = panel.split(".")
+            bed_file = ".".join(bed_file[0:-1]) + ".bed"
+        else:
+            bed_file = sourcedir + "/pharmgkb_cache/cache_bed.bed"
+        if not os.path.exists(bed_file):
+            sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
+    ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_ids, bed_file, outputdir, sampleTID, sampleRID, vcftools)
 
     if haplotypes_info:
         ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
             convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_ids, panel)
-        if outputdir:
-            out = outputdir + "/" + sampleTID
-            all_ids_in_panel.to_csv(out + "_calls.txt", sep='\t', index=False)
-            f = open(out + "_genotype.txt", 'w')
-            f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
-            # Below solution for > Python 3.7
-            # git_describe = subprocess.run(["git", "--git-dir=" +
-            # os.path.dirname(os.path.realpath(__file__)) + "/.git", "describe", "--always"], capture_output=True)
-
-            ####git version is not working
-            # git_describe = subprocess.run(["git", "--git-dir=" + os.path.dirname(os.path.realpath(__file__)) + "/.git",
-            #                                "describe", "--always"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            # git_describe = git_describe.stdout.decode("utf-8").strip()
-            for gene in results:
-                for haplotype in results[gene]:
-                    f.write(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\t" + drug_info[gene][0] + "\t" +
-                            drug_info[gene][1] + "\t" + panel + "\t" +
-                            version + "\n")
-            f.close()
-            # Also copy the bed-filtered VCF file for research purposes
-            copyfile(temp_vcf, out + "_PGx.vcf")
-
-        else:
-            # Should not be executed, as outputdir is now required argument
-            for gene in results:
-                for haplotype in results[gene]:
-                    print(gene + "\t" + haplotype + "\t" + severity[haplotype.split("_")[0]] + "\n")
-
+        out = outputdir + "/" + sampleTID
+        print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
+        print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel, results, severity, version)
+        # Also copy the bed-filtered VCF file for research purposes
+        copyfile(temp_vcf, out + "_PGx.vcf")
     else:
         print(ids_found_in_patient)
 
@@ -612,6 +575,44 @@ def main(vcf, sampleTID, sampleRID, version, panel, requery, outputdir, recreate
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
+def print_calls_to_file(calls_file, all_ids_in_panel):
+    all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
+
+
+def print_haplotypes_to_file(genotype_file, drug_info, panel, results, severity, version):
+    with open(genotype_file, 'w') as f:
+        f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
+        for gene in results:
+            for haplotype in results[gene]:
+                f.write(
+                    gene + "\t" +
+                    haplotype + "\t" +
+                    severity[haplotype.split("_")[0]] + "\t" +
+                    drug_info[gene][0] + "\t" +
+                    drug_info[gene][1] + "\t" +
+                    panel + "\t" +
+                    version + "\n"
+                )
+
+
+def query_genes_pharmgkb(gene_panel, sourcedir):
+    print("[INFO] Loading data from pharmGKB")
+    for gene in gene_panel:
+        time.sleep(1)
+        url = "https://api.pharmgkb.org/v1/data/clinicalAnnotation?location.genes.symbol=" + gene
+        print(url)
+        r = requests.get(url)
+        if r.status_code == 200:
+            with open(sourcedir + '/pharmgkb_cache/' + gene + ".json", 'w') as outfile:
+                json.dump(r.json(), outfile)
+        elif r.status_code == 404:
+            print(gene + " not found in pharmGKB API")
+        elif r.status_code == 429:
+            print("Too many requests per second, please delay querying.")
+        else:
+            print("Other error: " + str(r.status_code))
+
+
 def parse_args(sys_args):
     parser = argparse.ArgumentParser(
         description=('Run pharmacogenomics panel on germline VCF file. The pharmacogenomic annotations are done on '
@@ -622,7 +623,7 @@ def parse_args(sys_args):
     parser.add_argument('sampleRID', type=str, help='The sample ID of the normal')
     parser.add_argument('version', type=str, help='The version of the tool')
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
-    parser.add_argument('--panel', type=str, help='TSV file with the panel variants')
+    parser.add_argument('--panel', type=str, help='Json file with the panel variants')
     parser.add_argument('--requery', default=False, action='store_true', help='Requery genes in pharmGKB')
     parser.add_argument(
         '--recreate_bed', default=False, action='store_true',
