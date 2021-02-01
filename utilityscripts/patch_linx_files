@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 
-run_dir=$1 && shift
+source metadata_functions
 
-cp ${run_dir}/linx/WIDE01011202T.linx.fusion.tsv ${run_dir}/linx/WIDE01011202T.linx.fusion_original.tsv
+run_dir=$1 && shift
+sample_id=$(load_tumor_sample_from_metadata ${run_dir})
+
+cp ${run_dir}/linx/WIDE01011202T.linx.fusion.tsv ${run_dir}/linx/${sample_id}.linx.fusion_original.tsv
 sed -i "s/likelihood/Likelihood/" ${run_dir}/linx/WIDE01011202T.linx.fusion.tsv
 
-cp ${run_dir}/linx/WIDE01011202T.linx.breakend.tsv  ${run_dir}/linx/WIDE01011202T.linx.breakend_original.tsv
+cp ${run_dir}/linx/WIDE01011202T.linx.breakend.tsv  ${run_dir}/linx/${sample_id}.linx.breakend_original.tsv
 sed -i "s/id/Id/" ${run_dir}/linx/WIDE01011202T.linx.breakend.tsv
