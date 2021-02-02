@@ -3,22 +3,29 @@
 source message_functions || exit 1
 
 barcode=$1 # sample barcode
+out_cmd_file=$2 # output file for rm/patch cmds
 
 if [[ -z "${barcode}" ]]; then
     echo "---"
     echo "Descr: Prints commands to patch API records and gsutil commands to delete fastq"
-    echo "Usage: $(basename $0) \$barcode}"
-    echo "   Eg: $(basename $0) 'FR12345678'"
+    echo "Usage: $(basename $0) \${barcode} \${output_cmd_file}"
+    echo "   Eg: $(basename $0) FR12345678"
+    echo "       $(basename $0) FR12345678 ./delete_fastq_for_FR12345678.sh"
     echo "---"
     exit 1
 fi
 
 main () {
-    echo "[INFO] Searching for sample (${barcode})"
+    # input checks
+    [[ -n "${barcode}" ]] || die "No barcode provided?"
+    [[ -n "${out_cmd_file}" ]] || die "No output command file provided?"
+    [[ ! -f "${out_cmd_file}" ]] || die "Output file already exists (${out_cmd_file})"
+
+    info "Searching for sample (${barcode})"
     result=$(hmf_api_get "samples?barcode=${barcode}")
     count=$(echo "${result}" | jq length)
 
-    [[ ${count} -eq 1 ]] || die "[ERROR] Number of samples found for barcode ${barcode} not 1 (${count})"
+    [[ "${count}" -eq 1 ]] || die "Number of samples found for barcode ${barcode} not 1 (${count})"
 
     sample=$(echo "${result}" | jq -r .[0])
     id=$(echo "${sample}" | jq -r .id)
@@ -30,38 +37,45 @@ main () {
     q30=$(echo "${sample}" | jq -r .q30)
 
     info "Found sample (name=${name} barcode=${barcode} status=${status} yld=${yld} q30=${q30} id=${id})"
-    info "Potential patch/cleanup steps:"
 
-    #echo "# Invalidate all runs involved"
     #runs_json=$(hmf_api_get "runs?barcode=${barcode}")
-    #echo "${runs_json}" | jq -r .[].id | while read -r run_id; do
-    #    echo " hmf_api_patch -e -c fastq -o '${run_id}' -f status -v Invalidated"
-    #done
-
-    echo "# Invalidate all fastq pairs of sample"
     fastq_json=$(hmf_api_get "fastq?sample_id=${id}")
-    echo "${fastq_json}" | jq -r .[].id | while read -r fastq_id; do
-        echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f qc_pass -v false"
-        echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null"
-    done
 
-    echo "# Patch sample"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Insufficient Quality'"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null"
-
-    echo "# Delete FASTQ from bucket"
-    echo "${fastq_json}" | jq -cr '.[] | [.bucket, .name_r1, .name_r2] | @tsv' | while read -r info; do
+    # write cmds
+    echo "# Cleanup commands for ${barcode}" > "${out_cmd_file}"
+    echo "# Removals of FASTQ from bucket" >> "${out_cmd_file}"
+    echo "${fastq_json}" | jq -cr '.[] | [.bucket // "NA", .name_r1 // "NA", .name_r2 // "NA"] | @tsv' | while read -r info; do
         bucket=$(echo "${info}" | cut -f1)
         name_r1=$(echo "${info}" | cut -f2)
         name_r2=$(echo "${info}" | cut -f3)
-        if [[ "${bucket}" != "" && "${name_r1}" != "" ]]; then
-            echo " gsutil rm gs://${bucket}/${name_r1}"
+        if [[ "${bucket}" != "NA" && "${name_r1}" != "NA" ]]; then
+            echo " gsutil rm gs://${bucket}/${name_r1}" >> "${out_cmd_file}"
         fi
-        if [[ "${bucket}" != "" && "${name_r2}" != "" ]]; then
-            echo " gsutil rm gs://${bucket}/${name_r2}"
+        if [[ "${bucket}" != "NA" && "${name_r2}" != "NA" ]]; then
+            echo " gsutil rm gs://${bucket}/${name_r2}" >> "${out_cmd_file}"
         fi
     done
+
+    echo "# API Patches for fastq pairs of sample" >> "${out_cmd_file}"
+    echo "${fastq_json}" | jq -r .[].id | while read -r fastq_id; do
+        echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f qc_pass -v false" >> "${out_cmd_file}"
+        echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null" >> "${out_cmd_file}"
+    done
+
+    echo "# API Patches for sample" >> "${out_cmd_file}"
+    echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Insufficient Quality'" >> "${out_cmd_file}"
+    echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null" >> "${out_cmd_file}"
+    echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null" >> "${out_cmd_file}"
+
+    #echo "# API Patches for all runs involved"
+    #echo "${runs_json}" | jq -r .[].id | while read -r run_id; do
+    #    echo " hmf_api_patch -e -c fastq -o '${run_id}' -f status -v Invalidated" >> "${out_cmd_file}"
+    #done
+
+    echo "echo 'Finished with ${barcode}'" >> "${out_cmd_file}"
+    info "Making cmd file ${out_cmd_file} executable"
+    chmod +x "${out_cmd_file}"
+    info "Execute with eg: nohup ${out_cmd_file} > ${out_cmd_file}.log &"
 }
 
 main
