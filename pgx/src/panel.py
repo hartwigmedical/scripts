@@ -1,4 +1,5 @@
-from typing import NamedTuple, Dict, Any, List, Optional
+from collections import defaultdict
+from typing import NamedTuple, Dict, Any, List, Optional, Set
 
 
 class SNP(NamedTuple):
@@ -15,32 +16,46 @@ class SNP(NamedTuple):
 
 class Panel(NamedTuple):
     haplotypes_info: Dict[str, Dict[str, Any]]  # Nested dict: gene, haplotype, rsinfo
-    rs_id_to_snp: Dict[str, SNP]  # Position is expressed as {chromosome number}:{base count}
+    snps: Set[SNP]
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "Panel":
         haplotypes_info = {}
-        rs_id_to_snp = {}
+        snps = set()
         for gene_info in data['genes']:
             if gene_info['genomeBuild'] != "GRCh37":
                 raise ValueError("Exiting, we only support GRCh37, not " + str(data['orientation']))
             if gene_info['gene'] not in haplotypes_info:
                 haplotypes_info[gene_info['gene']] = gene_info
             for variant in gene_info['variants']:
-                rs_id = variant['rsid']
-                if rs_id not in rs_id_to_snp:
-                    rs_id_to_snp[rs_id] = SNP(rs_id, variant['chromosome'], variant['position'])
-        return Panel(haplotypes_info, rs_id_to_snp)
+                snps.add(SNP(variant['rsid'], variant['chromosome'], variant['position']))
+
+        if len({snp.rs_id for snp in snps}) != len(snps):
+            # snps share rs_id but not position
+            rs_id_to_snps = defaultdict(list)
+            for snp in snps:
+                rs_id_to_snps[snp.rs_id].append(snp)
+
+            rs_id_to_duplicate_snps = {rs_id: snps for rs_id, snps in rs_id_to_snps.items() if len(snps) > 1}
+
+            raise ValueError(
+                ("Panel json contains snps with the same rs id but different positions. "
+                 "Duplicates: {rs_id_to_duplicate_snps}").format(
+                    rs_id_to_duplicate_snps=rs_id_to_duplicate_snps
+                )
+            )
+
+        return Panel(haplotypes_info, snps)
 
     def contains_snp_with_position(self, position_string: str) -> bool:
-        for snp in self.rs_id_to_snp.values():
+        for snp in self.snps:
             if snp.matches_position_string(position_string):
                 return True
         return False
 
     def get_snp_with_position(self, position_string: str) -> Optional[SNP]:
         matching_snps = []
-        for snp in self.rs_id_to_snp.values():
+        for snp in self.snps:
             if snp.matches_position_string(position_string):
                 matching_snps.append(snp)
 
@@ -51,8 +66,14 @@ class Panel(NamedTuple):
         else:
             raise ValueError("Multiple snps match position")
 
+    def contains_rs_id(self, rs_id: str) -> bool:
+        return rs_id in self.get_rs_ids()
+
+    def get_rs_ids(self) -> Set[str]:
+        return {snp.rs_id for snp in self.snps}
+
     def is_empty(self) -> bool:
-        return not self.haplotypes_info and not self.rs_id_to_snp
+        return not self.haplotypes_info and not self.snps
 
     def get_genes(self) -> List[str]:
         return list(self.haplotypes_info.keys())

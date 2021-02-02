@@ -123,12 +123,12 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
     rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
-    for rs_id, snp in panel.rs_id_to_snp.items():
-        if rs_id not in rs_ids_found_in_patient and snp.get_position_string() not in positions_found_in_patient:
+    for snp in panel.snps:
+        if snp.rs_id not in rs_ids_found_in_patient and snp.get_position_string() not in positions_found_in_patient:
             new_id = {}
-            for gene, variant in rsid_to_gene_to_haplotype_variant[rs_id].items():
+            for gene, variant in rsid_to_gene_to_haplotype_variant[snp.rs_id].items():
                 new_id['position_GRCh37'] = snp.get_position_string()
-                new_id['rsid'] = rs_id
+                new_id['rsid'] = snp.rs_id
                 new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
                 new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
                 new_id['variant_annotation'] = "REF_CALL"
@@ -357,7 +357,7 @@ def get_ids_found_in_patient_from_variants(variants, panel):
         else:
             rs_id_filter = [rs_number]
 
-        rs_id_filter_to_panel_match_exists = any(rs in rs_id_filter for rs in panel.rs_id_to_snp.keys())
+        rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
         if rs_id_filter_to_panel_match_exists or panel.contains_snp_with_position(f"{chr}:{pos}"):
             if rs_id_filter_to_panel_match_exists:
                 match_on_rsid += 1
