@@ -1,3 +1,5 @@
+from typing import List
+
 import allel
 import argparse
 import collections
@@ -8,6 +10,10 @@ import pandas as pd
 import subprocess
 import sys
 from shutil import copyfile
+
+print(__name__)
+
+from src.panel import Panel
 
 
 def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str, outputdir: str, recreate_bed: bool,
@@ -23,19 +29,19 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
             # Directory already exists
             pass
 
-    haplotypes_info, rs_id_to_position = load_panel_from_json(panel_path)
+    panel = load_panel_from_json(panel_path)
 
-    if not haplotypes_info or not rs_id_to_position:
+    if panel.is_empty():
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
-    bed_file = get_bed_file(panel_path, recreate_bed, haplotypes_info, sourcedir)
+    bed_file = get_bed_file(panel_path, recreate_bed, panel.haplotypes_info, sourcedir)
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools)
 
     variants = get_variants_from_filtered_vcf(filtered_vcf)
-    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, rs_id_to_position)
+    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel.rs_id_to_position)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id_to_position, panel_path)
+        convert_results_into_haplotypes(panel.haplotypes_info, ids_found_in_patient, panel.rs_id_to_position, panel_path)
 
     out = outputdir + "/" + sampleTID
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
@@ -420,7 +426,7 @@ def get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools):
     return filtered_vcf
 
 
-def load_panel_from_json(panel):
+def load_panel_from_json(panel: str) -> Panel:
     """ Load manually annotated JSON panel file """
     haplotypes_info = {}  # Nested dict: gene, haplotype, rsinfo
     rs_id_to_position = {}
@@ -440,10 +446,7 @@ def load_panel_from_json(panel):
     except IOError:
         sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
 
-    print(haplotypes_info)
-    print(rs_id_to_position)
-
-    return haplotypes_info, rs_id_to_position
+    return Panel(haplotypes_info, rs_id_to_position)
 
 
 def get_bed_file(panel_path, recreate_bed, haplotypes_info, sourcedir):
@@ -504,7 +507,7 @@ def print_haplotypes_to_file(genotype_file, drug_info, panel, results, severity,
                 )
 
 
-def parse_args(sys_args):
+def parse_args(sys_args: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=('Run pharmacogenomics panel on germline VCF file. The pharmacogenomic annotations are done on '
                      'GRCh38, so in the output both reference genome output is given where possible.')
@@ -524,7 +527,7 @@ def parse_args(sys_args):
     return parser.parse_args(sys_args)
 
 
-def replace_file_extension_of_path(path, new_file_extension):
+def replace_file_extension_of_path(path: str, new_file_extension: str):
     split_path = path.split(".")
     new_path = ".".join(split_path[0:-1]) + "." + new_file_extension
     return new_path

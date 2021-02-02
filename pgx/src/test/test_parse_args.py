@@ -4,7 +4,7 @@ from copy import deepcopy
 from io import StringIO
 from unittest.mock import patch
 
-from pgx.src.main import parse_args
+from src.main import parse_args
 
 
 class TestMain(unittest.TestCase):

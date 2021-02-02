@@ -33,9 +33,11 @@ germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")
 
 # REFERENCES
 pgx_tool=$(locate_pgx_main)
-#pgx_tool=$HOME/repos/scripts/pgx/src/main.py
+# pgx_tool=$HOME/repos/scripts/pgx/src/main.py
 pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
+
+export PYTHONPATH="${PYTHONPATH}:${pgx_tool}/../.."
 
 # RUN
 python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
