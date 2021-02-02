@@ -32,7 +32,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     if panel.is_empty():
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
-    bed_file = get_bed_file(panel_path, recreate_bed, panel.haplotypes_info, sourcedir)
+    bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools)
 
     variants = get_variants_from_filtered_vcf(filtered_vcf)
@@ -426,32 +426,18 @@ def get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools):
 
 def load_panel_from_json(panel: str) -> Panel:
     """ Load manually annotated JSON panel file """
-    haplotypes_info = {}  # Nested dict: gene, haplotype, rsinfo
-    rs_id_to_position = {}
-
     try:
         with open(panel, 'r+', encoding='utf-8') as json_file:
             data = json.load(json_file)
-            for gene_info in data['genes']:
-                if gene_info['genomeBuild'] != "GRCh37":
-                    sys.exit("Exiting, we only support GRCh37, not " + str(data['orientation']))
-                if gene_info['gene'] not in haplotypes_info:
-                    haplotypes_info[gene_info['gene']] = gene_info
-                for variant in gene_info['variants']:
-                    if variant['rsid'] not in rs_id_to_position:
-                        rs_id_to_position[variant['rsid']] = str(variant['chromosome']) + ":" + str(variant['position'])
-
+            return Panel.from_json(data)
     except IOError:
         sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
 
-    return Panel(haplotypes_info, rs_id_to_position)
 
-
-def get_bed_file(panel_path, recreate_bed, haplotypes_info, sourcedir):
+def get_bed_file(panel_path, recreate_bed, panel, sourcedir):
     bed_file = replace_file_extension_of_path(panel_path, "bed")
     if recreate_bed:
-        genes = list(haplotypes_info.keys())
-        create_bed_file(genes, panel_path, sourcedir, bed_file)
+        create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
     if not os.path.exists(bed_file):
         sys.exit(
             "[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed."
