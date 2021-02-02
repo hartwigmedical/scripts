@@ -1,5 +1,3 @@
-from copy import deepcopy
-
 import allel
 import argparse
 import collections
@@ -12,7 +10,8 @@ import sys
 from shutil import copyfile
 
 
-def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed, vcftools, sourcedir):
+def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str, outputdir: str, recreate_bed: bool,
+         vcftools: str, sourcedir: str):
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 

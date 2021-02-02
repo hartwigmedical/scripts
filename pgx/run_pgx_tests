@@ -9,10 +9,20 @@ else
   venv_dir=$1 && shift
 fi
 
+# pgx_base_dir=$HOME/repos/scripts/pgx/src
+pgx_base_dir=$(locate_pgx_dir)
+
 # START VIRTUAL ENV
 source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
-pgx_base_dir=$(locate_pgx_dir)
 python -m unittest discover --verbose --start-directory "${pgx_base_dir}" || die "Some PGX tests failed"
 
 info "PGX tests succeeded"
+
+mypy_config="${pgx_base_dir}/../mypy.ini"
+
+info "Run PGX type check"
+
+mypy "${pgx_base_dir}" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases || die "PGX type check failed"
+
+info "PGX type succeeded"
