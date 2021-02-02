@@ -11,9 +11,7 @@ import subprocess
 import sys
 from shutil import copyfile
 
-print(__name__)
-
-from src.panel import Panel
+from panel import Panel
 
 
 def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str, outputdir: str, recreate_bed: bool,
