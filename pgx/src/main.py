@@ -36,10 +36,10 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools)
 
     variants = get_variants_from_filtered_vcf(filtered_vcf)
-    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel.rs_id_to_position)
+    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(panel.haplotypes_info, ids_found_in_patient, panel.rs_id_to_position, panel_path)
+        convert_results_into_haplotypes(panel.haplotypes_info, ids_found_in_patient, panel, panel_path)
 
     out = outputdir + "/" + sampleTID
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
@@ -61,7 +61,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id_to_position, panel):
+def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel, panel_path):
     rsid_to_gene_to_haplotype_variant = collections.defaultdict(dict)
     for gene in haplotypes_info:
         for variant in haplotypes_info[gene]['variants']:
@@ -72,7 +72,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     drug_info = {}
 
     # Process the exceptions
-    ids_found_in_patient = process_exceptions(ids_found_in_patient, panel)
+    ids_found_in_patient = process_exceptions(ids_found_in_patient, panel_path)
     # Fill in the GRCh38 gaps, they should be the same as the GRCh37 equivalent
     if not ids_found_in_patient.empty:
         for index, row in ids_found_in_patient.iterrows():
@@ -86,15 +86,13 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
 
         for index, row in ids_found_in_patient.iterrows():
             # Fill in the rsid gaps, if annotation is missing on the location.
-            if 'rsid' in row:
-                if row['rsid'] == '.':
-                    rs_to_paste = '.'
-                    if row['position_GRCh37'] in rs_id_to_position.values():
-                        for rs in rs_id_to_position:
-                            if rs_id_to_position[rs] == row['position_GRCh37']:
-                                rs_to_paste = rs
-                                break
-                    ids_found_in_patient.at[index, 'rsid'] = rs_to_paste
+            if 'rsid' in row.index and row['rsid'] == '.':
+                position_string = row['position_GRCh37']
+                if panel.contains_snp_with_position(position_string):
+                    rs_id = panel.get_snp_with_position(position_string).rs_id
+                else:
+                    rs_id = '.'
+                ids_found_in_patient.at[index, 'rsid'] = rs_id
 
         for index, row in ids_found_in_patient.iterrows():
             matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
@@ -125,11 +123,11 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id
     rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
-    for rs_id, position in rs_id_to_position.items():
-        if rs_id not in rs_ids_found_in_patient and position not in positions_found_in_patient:
+    for rs_id, snp in panel.rs_id_to_snp.items():
+        if rs_id not in rs_ids_found_in_patient and snp.get_position_string() not in positions_found_in_patient:
             new_id = {}
             for gene, variant in rsid_to_gene_to_haplotype_variant[rs_id].items():
-                new_id['position_GRCh37'] = position
+                new_id['position_GRCh37'] = snp.get_position_string()
                 new_id['rsid'] = rs_id
                 new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
                 new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
@@ -341,7 +339,7 @@ def process_exceptions(ids_found, panel):
     return ids_found
 
 
-def get_ids_found_in_patient_from_variants(variants, rs_id_to_position):
+def get_ids_found_in_patient_from_variants(variants, panel):
     match_on_rsid = 0
     match_on_location = 0
     ids_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid',
@@ -351,17 +349,17 @@ def get_ids_found_in_patient_from_variants(variants, rs_id_to_position):
         pos = variants['variants/POS'][i]
 
         if ";" in rs_number:
-            rs_id_filt = []
+            rs_id_filter = []
             cur_rs = rs_number.split(";")
             for rs in cur_rs:
                 if rs.startswith("rs"):
-                    rs_id_filt.append(rs)
+                    rs_id_filter.append(rs)
         else:
-            rs_id_filt = [rs_number]
+            rs_id_filter = [rs_number]
 
-        if any(rs in rs_id_filt for rs in rs_id_to_position.keys()) or str(chr) + ":" + str(
-                pos) in rs_id_to_position.values():
-            if any(rs in rs_id_filt for rs in rs_id_to_position.keys()):
+        rs_id_filter_to_panel_match_exists = any(rs in rs_id_filter for rs in panel.rs_id_to_snp.keys())
+        if rs_id_filter_to_panel_match_exists or panel.contains_snp_with_position(f"{chr}:{pos}"):
+            if rs_id_filter_to_panel_match_exists:
                 match_on_rsid += 1
             else:
                 match_on_location += 1
@@ -392,7 +390,7 @@ def get_ids_found_in_patient_from_variants(variants, rs_id_to_position):
                 print("[ERROR] Genotype not found: " + str(variants['calldata/GT'][i][0].tolist()))
 
             new_id['position_GRCh37'] = str(chr) + ":" + str(pos)
-            new_id['rsid'] = ";".join(rs_id_filt)
+            new_id['rsid'] = ";".join(rs_id_filter)
             new_id['filter'] = filter
             new_id['gene'] = variants['variants/ANN_Gene_Name'][i]
             ids_found_in_patient = ids_found_in_patient.append(new_id, ignore_index=True)
