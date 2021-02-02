@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 path_of_dir_to_tar=$1
-optional_tag=$2 # Eg HMFregXXXX
 
 out_root="/data2/processed"
 
@@ -10,18 +9,28 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo " Descr: Creates tar of flowcell including BCL (excluding Images/Logs/FASTQ)"
     echo "        Output will be written to ${out_root}"
     echo " Usage: $(basename $0) /path/to/flowcell/directory"
-    echo "        $(basename $0) /path/to/flowcell/directory \${optional_tag}"
-    echo " Exmpl: $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG 'HMFregXXXX'"
+    echo "        $(basename $0) /path/to/flowcell/directory"
+    echo " Exmpl: $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG"
     echo "---"
     exit 1
 fi
 
-in_root=$(dirname ${path_of_dir_to_tar})
-tar_dir_name=$(basename ${path_of_dir_to_tar})
-out_tar_name="${tar_dir_name}_BCL.tar"
-if [[ ! -z "${optional_tag}" && "${optional_tag}" != "" ]]; then
-    out_tar_name="${optional_tag}_BCL.tar"
+# Try to get all projects from SampleSheet and add to output file name
+out_tar_name=""
+function join_by { local IFS="$1"; shift; echo "$*"; }
+sample_sheet="${path_of_dir_to_tar}/SampleSheet.csv"
+if [[ -f "${sample_sheet}" ]]; then
+    col_idx=$(grep ^Sample_ID "${sample_sheet}" | tr "," "\n" | grep -n Project | cut -d":" -f1)
+    projects=$(join_by "-" "$(sed -e '1,/Sample_ID/d' "${sample_sheet}" | \
+        grep -vP "^[\,\s]+$" | cut -d"," -f "${col_idx}" | sort | uniq)")
+    out_tar_name="${tar_dir_name}_${projects}_BCL.tar"
+else
+    echo "[WARN] SampleSheet.csv not found (${sample_sheet}) so unable to add project ID to tar name"
+    out_tar_name="${tar_dir_name}_BCL.tar"
 fi
+
+in_root="$(dirname ${path_of_dir_to_tar})"
+tar_dir_name="$(basename ${path_of_dir_to_tar})"
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
