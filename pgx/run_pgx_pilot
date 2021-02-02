@@ -37,7 +37,7 @@ pgx_tool=$(locate_pgx_main)
 pgx_resource_dir=$(locate_pgx_resource_dir)
 vcftools_tool=$(locate_vcftools)
 
-export PYTHONPATH="${PYTHONPATH}:${pgx_tool}/../.."
+export PYTHONPATH="${PYTHONPATH}:${pgx_tool}/../"
 
 # RUN
 python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \

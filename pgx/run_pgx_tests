@@ -12,10 +12,13 @@ fi
 # pgx_base_dir=$HOME/repos/scripts/pgx
 pgx_base_dir=$(locate_pgx_dir)
 
-export PYTHONPATH="${PYTHONPATH}:${pgx_base_dir}"
-
 # START VIRTUAL ENV
 source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
+
+echo $MYPYPATH
+
+export PYTHONPATH="${PYTHONPATH}:${pgx_base_dir}/src/"
+export MYPYPATH="${MYPYPATH}:${pgx_base_dir}/src/"
 
 python -m unittest discover --verbose --start-directory "${pgx_base_dir}" || die "Some PGX tests failed"
 
@@ -25,6 +28,6 @@ mypy_config="${pgx_base_dir}/mypy.ini"
 
 info "Run PGX type check"
 
-mypy "${pgx_base_dir}" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases || die "PGX type check failed"
+mypy "${pgx_base_dir}/src" --config-file "${mypy_config}" --namespace-packages --explicit-package-bases || die "PGX type check failed"
 
 info "PGX type succeeded"
