@@ -32,25 +32,26 @@ main () {
     info "Found sample (name=${name} barcode=${barcode} status=${status} yld=${yld} q30=${q30} id=${id})"
     info "Potential patch/cleanup steps:"
 
-    echo "# invalidate all runs involved"
-    runs_json=$(hmf_api_get "runs?barcode=${barcode}")
-    echo "${runs_json}" | jq -r .[].id | while read run_id; do
-        echo " hmf_api_patch -e -c fastq -o '${run_id}' -f qc_pass -v Invalidated"
-    done
+    #echo "# Invalidate all runs involved"
+    #runs_json=$(hmf_api_get "runs?barcode=${barcode}")
+    #echo "${runs_json}" | jq -r .[].id | while read -r run_id; do
+    #    echo " hmf_api_patch -e -c fastq -o '${run_id}' -f status -v Invalidated"
+    #done
 
-    echo "# invalidate all fastq pairs of sample"
+    echo "# Invalidate all fastq pairs of sample"
     fastq_json=$(hmf_api_get "fastq?sample_id=${id}")
-    echo "${fastq_json}" | jq -r .[].id | while read fastq_id; do
+    echo "${fastq_json}" | jq -r .[].id | while read -r fastq_id; do
         echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f qc_pass -v false"
+        echo " hmf_api_patch -e -c fastq -o '${fastq_id}' -f bucket -v null"
     done
 
     echo "# Patch sample"
-    echo " hmf_api_patch -e -c samples -o '${id}' -f status -v Deleted"
+    echo " hmf_api_patch -e -c samples -o '${id}' -f status -v 'Insufficient Quality'"
     echo " hmf_api_patch -e -c samples -o '${id}' -f yld -v null"
     echo " hmf_api_patch -e -c samples -o '${id}' -f q30 -v null"
 
     echo "# Delete FASTQ from bucket"
-    echo "${fastq_json}" | jq -cr '.[] | [.bucket, .name_r1, .name_r2] | @tsv' | while read info; do
+    echo "${fastq_json}" | jq -cr '.[] | [.bucket, .name_r1, .name_r2] | @tsv' | while read -r info; do
         bucket=$(echo "${info}" | cut -f1)
         name_r1=$(echo "${info}" | cut -f2)
         name_r2=$(echo "${info}" | cut -f3)
