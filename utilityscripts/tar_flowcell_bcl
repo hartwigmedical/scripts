@@ -15,8 +15,11 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-# Try to get all projects from SampleSheet and add to output file name
+in_root=$(dirname "${path_of_dir_to_tar}")
+tar_dir_name=$(basename "${path_of_dir_to_tar}")
 out_tar_name=""
+
+# If possible add all projects from SampleSheet to output file name
 function join_by { local IFS="$1"; shift; echo "$*"; }
 sample_sheet="${path_of_dir_to_tar}/SampleSheet.csv"
 if [[ -f "${sample_sheet}" ]]; then
@@ -29,8 +32,6 @@ else
     out_tar_name="${tar_dir_name}_BCL.tar"
 fi
 
-in_root="$(dirname ${path_of_dir_to_tar})"
-tar_dir_name="$(basename ${path_of_dir_to_tar})"
 out_tar_path="${out_root}/${out_tar_name}"
 out_cnt_path="${out_tar_path}.content"
 out_md5_path="${out_tar_path}.md5"
