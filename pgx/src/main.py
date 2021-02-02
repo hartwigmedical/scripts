@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, DefaultDict, Dict, Any
 
 import allel
 import argparse
@@ -11,7 +11,7 @@ import subprocess
 import sys
 from shutil import copyfile
 
-from panel import Panel
+from panel import Panel, GeneInfo
 
 
 def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str, outputdir: str, recreate_bed: bool,
@@ -39,7 +39,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(panel.haplotypes_info, ids_found_in_patient, panel, panel_path)
+        convert_results_into_haplotypes(ids_found_in_patient, panel, panel_path)
 
     out = outputdir + "/" + sampleTID
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
@@ -61,10 +61,10 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel, panel_path):
-    rsid_to_gene_to_haplotype_variant = collections.defaultdict(dict)
-    for gene in haplotypes_info:
-        for variant in haplotypes_info[gene]['variants']:
+def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
+    rsid_to_gene_to_haplotype_variant: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
+    for gene in panel.haplotypes_info:
+        for variant in panel.haplotypes_info[gene].dict['variants']:
             rsid_to_gene_to_haplotype_variant[variant['rsid']][gene] = variant
 
     results = {}
@@ -145,24 +145,23 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
     all_ids_in_panel = all_ids_in_panel[['gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                          'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'filter']]
 
-    for gene in haplotypes_info:
+    for gene, gene_info in panel.haplotypes_info.items():
         print("[INFO] PROCESSING GENE " + gene)
-        gene_info = haplotypes_info[gene]
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene)]
         perfect_match = False
-        severity[gene_info['referenceAllele']] = "Normal Function"
+        severity[gene_info.dict['referenceAllele']] = "Normal Function"
         severity['Unresolved'] = "Unknown Function"
-        drug_info[gene] = [";".join([x['name'] for x in gene_info['drugs']]),
-                           ";".join(x['url_prescription_info'] for x in gene_info['drugs'])]
+        drug_info[gene] = [";".join([x['name'] for x in gene_info.dict['drugs']]),
+                           ";".join(x['url_prescription_info'] for x in gene_info.dict['drugs'])]
 
         # If all variants are assumed_ref, return reference allele
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference allele")
-            results[gene] = [gene_info['referenceAllele'] + "_HOM"]
+            results[gene] = [gene_info.dict['referenceAllele'] + "_HOM"]
         else:
             results[gene] = []
             haplotypes_matching = []
-            for allele in gene_info['alleles']:
+            for allele in gene_info.dict['alleles']:
                 severity[allele['alleleName']] = allele['function']
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
@@ -170,21 +169,21 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
                     perfect_match = True
                     print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
                     # Now we want to see if we have hetrozygous or homozygous calls
-                    allele_status = []
+                    allele_statuses = []
                     for index, row in vars_found_in_gene.iterrows():
                         if row['ref_GRCh38'] == row['alt_GRCh38']:
-                            allele_status.append("HOM")
+                            allele_statuses.append("HOM")
                         else:
-                            allele_status.append("HET")
-                    if all(x == allele_status[0] for x in allele_status):
-                        allele_status = allele_status[0]
+                            allele_statuses.append("HET")
+                    if all(x == allele_statuses[0] for x in allele_statuses):
+                        allele_status = allele_statuses[0]
                     else:
                         allele_status = "HOMHET"
                     # Add to results
                     results[gene].append(allele['alleleName'] + "_" + str(allele_status))
                     if allele_status == "HET":
                         # Assume if perfect match with HET, we are also looking at reference allele
-                        results[gene].append(gene_info['referenceAllele'] + "_HET")
+                        results[gene].append(gene_info.dict['referenceAllele'] + "_HET")
                     break
                 else:
                     #print("Processing " + str(allele['alleleName']))
@@ -201,7 +200,7 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
                     results[gene].append("Unresolved_Haplotype")
                 else:
                     print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
-                    optimal_set = []
+                    optimal_set: List[List[Any]] = []
                     for k in range(len(haplotypes_matching) + 1, 0, -1):  # TODO: shouldn't this order be reversed?
                         for subset in itertools.combinations(haplotypes_matching, k):
                             if perfect_match:
@@ -216,16 +215,16 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
                                 print("[INFO] Perfect haplotype combination found!")
                                 perfect_match = True
                                 for allele in subset:
-                                    allele_status = []
+                                    allele_statuses = []
                                     rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                            allele_status.append("HOM")
+                                            allele_statuses.append("HOM")
                                         else:
-                                            allele_status.append("HET")
-                                    if all(x == allele_status[0] for x in allele_status):
-                                        allele_status = allele_status[0]
+                                            allele_statuses.append("HET")
+                                    if all(x == allele_statuses[0] for x in allele_statuses):
+                                        allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
                                     results[gene].append(allele['alleleName'] + "_" + str(allele_status))
@@ -255,16 +254,16 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
                                 results[gene].append("Unresolved_Haplotype")
                             else:
                                 for allele in subset:
-                                    allele_status = []
+                                    allele_statuses = []
                                     rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                            allele_status.append("HOM")
+                                            allele_statuses.append("HOM")
                                         else:
-                                            allele_status.append("HET")
-                                    if all(x == allele_status[0] for x in allele_status):
-                                        allele_status = allele_status[0]
+                                            allele_statuses.append("HET")
+                                    if all(x == allele_statuses[0] for x in allele_statuses):
+                                        allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
                                     results[gene].append(allele['alleleName'] + "_" + str(allele_status))
@@ -273,14 +272,14 @@ def convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, panel
         # If we only find one allele and it is HET, assume we're also dealing with reference allele
         if len(results[gene]) == 1:
             if results[gene][0].split("_")[-1] == "HET":
-                results[gene].append(gene_info['referenceAllele'] + "_HET")
+                results[gene].append(gene_info.dict['referenceAllele'] + "_HET")
 
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
 
-def process_exceptions(ids_found, panel):
+def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
     try:
-        panel_exceptions_file = panel.replace(".json", "") + "_exceptions.json"
+        panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
         with open(panel_exceptions_file, 'r+', encoding='utf-8') as json_file:
             exceptions = json.load(json_file)
             exceptions = exceptions['exceptions']
@@ -339,7 +338,7 @@ def process_exceptions(ids_found, panel):
     return ids_found
 
 
-def get_ids_found_in_patient_from_variants(variants, panel):
+def get_ids_found_in_patient_from_variants(variants, panel: Panel) -> pd.DataFrame:
     match_on_rsid = 0
     match_on_location = 0
     ids_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid',
@@ -399,7 +398,7 @@ def get_ids_found_in_patient_from_variants(variants, panel):
     return ids_found_in_patient
 
 
-def get_variants_from_filtered_vcf(filtered_vcf):
+def get_variants_from_filtered_vcf(filtered_vcf: str):
     try:
         variants = allel.read_vcf(filtered_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
                                                         'variants/FILTER', 'variants/ID', 'variants/POS',
@@ -410,7 +409,7 @@ def get_variants_from_filtered_vcf(filtered_vcf):
     return variants
 
 
-def get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools):
+def get_filtered_vcf(vcf: str, bed_file: str, sampleRID: str, sampleTID: str, outputdir: str, vcftools: str):
     filtered_vcf_prefix = outputdir + '/' + sampleTID + '_PGx'
     filtered_vcf = filtered_vcf_prefix + '.recode.vcf'
     # Check if output vcf does not already exist
@@ -432,7 +431,7 @@ def load_panel_from_json(panel: str) -> Panel:
         sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
 
 
-def get_bed_file(panel_path, recreate_bed, panel, sourcedir):
+def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str):
     bed_file = replace_file_extension_of_path(panel_path, "bed")
     if recreate_bed:
         create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
@@ -443,7 +442,7 @@ def get_bed_file(panel_path, recreate_bed, panel, sourcedir):
     return bed_file
 
 
-def create_bed_file(gene_panel, panel_path, sourcedir, bed_path):
+def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
     print("[INFO] Recreating bed-file...")
     header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
@@ -452,14 +451,14 @@ def create_bed_file(gene_panel, panel_path, sourcedir, bed_path):
     covered = []
     transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
     for line in transcripts:
-        line = line.rstrip().split("\t")
-        if line[4] in gene_panel:
-            if line[4] not in covered:
-                bed_regions.append([line[0], line[1], line[2], line[4]])
-                covered.append(line[4])
-    if set(covered) != set(gene_panel):
+        split_line = line.rstrip().split("\t")
+        if split_line[4] in genes_in_panel:
+            if split_line[4] not in covered:
+                bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
+                covered.append(split_line[4])
+    if set(covered) != set(genes_in_panel):
         raise ValueError("[ERROR] Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
-                         + str(covered) + "\nOriginal gene panel:\n" + str(gene_panel))
+                         + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))
 
     with open(bed_path, 'w') as bed:
         bed.write(header)
@@ -469,11 +468,11 @@ def create_bed_file(gene_panel, panel_path, sourcedir, bed_path):
     print("[INFO] Created " + bed_path)
 
 
-def print_calls_to_file(calls_file, all_ids_in_panel):
+def print_calls_to_file(calls_file: str, all_ids_in_panel) -> None:
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(genotype_file, drug_info, panel, results, severity, version):
+def print_haplotypes_to_file(genotype_file: str, drug_info, panel, results, severity, version):
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in results:

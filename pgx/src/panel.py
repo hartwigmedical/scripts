@@ -7,6 +7,13 @@ class SNP(NamedTuple):
     chromosome: int
     position: int
 
+    @classmethod
+    def from_json(cls, data: Dict[str, str]) -> "SNP":
+        rs_id = data['rsid']
+        chromosome = int(data['chromosome'])
+        position = int(data['position'])
+        return SNP(rs_id, chromosome, position)
+
     def get_position_string(self):
         return f"{self.chromosome}:{self.position}"
 
@@ -14,24 +21,29 @@ class SNP(NamedTuple):
         return self.get_position_string() == position_string
 
 
+class GeneInfo(NamedTuple):
+    dict: Dict[str, Any]
+
+
 class Panel(NamedTuple):
-    haplotypes_info: Dict[str, Dict[str, Any]]  # Nested dict: gene, haplotype, rsinfo
+    haplotypes_info: Dict[str, GeneInfo]  # Nested dict: gene, haplotype, rsinfo
     snps: Set[SNP]
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "Panel":
         haplotypes_info = {}
         snps = set()
-        for gene_info in data['genes']:
-            if gene_info['genomeBuild'] != "GRCh37":
-                raise ValueError("Exiting, we only support GRCh37, not " + str(data['orientation']))
-            if gene_info['gene'] not in haplotypes_info:
-                haplotypes_info[gene_info['gene']] = gene_info
-            for variant in gene_info['variants']:
-                snps.add(SNP(variant['rsid'], variant['chromosome'], variant['position']))
+        for gene_info_json in data['genes']:
+            gene_info = GeneInfo(gene_info_json)
+            if gene_info.dict['genomeBuild'] != "GRCh37":
+                raise ValueError("Exiting, we only support GRCh37, not " + str(gene_info.dict['genomeBuild']))
+            if gene_info.dict['gene'] not in haplotypes_info:
+                haplotypes_info[gene_info.dict['gene']] = gene_info
+            for variant in gene_info_json['variants']:
+                snps.add(SNP.from_json(variant))
 
         if len({snp.rs_id for snp in snps}) != len(snps):
-            # snps share rs_id but not position
+            # Error: some snps share rs_id but are different
             rs_id_to_snps = defaultdict(list)
             for snp in snps:
                 rs_id_to_snps[snp.rs_id].append(snp)
@@ -53,7 +65,7 @@ class Panel(NamedTuple):
                 return True
         return False
 
-    def get_snp_with_position(self, position_string: str) -> Optional[SNP]:
+    def get_snp_with_position(self, position_string: str) -> SNP:
         matching_snps = []
         for snp in self.snps:
             if snp.matches_position_string(position_string):
