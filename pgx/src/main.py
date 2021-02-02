@@ -29,15 +29,11 @@ def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed
     if not haplotypes_info or not rs_id_to_position:
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
-    bed_path = replace_file_extension_of_path(panel_path, "bed")
-    if recreate_bed:
-        genes = list(haplotypes_info.keys())
-        create_bed_file(genes, panel_path, sourcedir, bed_path)
+    bed_file = get_bed_file(panel_path, recreate_bed, haplotypes_info, sourcedir)
+    filtered_vcf = get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools)
 
-    if not os.path.exists(bed_path):
-        sys.exit("[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed.")
-
-    ids_found_in_patient, temp_vcf = parse_vcf(vcf, rs_id_to_position, bed_path, outputdir, sampleTID, sampleRID, vcftools)
+    variants = get_variants_from_filtered_vcf(filtered_vcf)
+    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, rs_id_to_position)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
         convert_results_into_haplotypes(haplotypes_info, ids_found_in_patient, rs_id_to_position, panel_path)
@@ -46,16 +42,16 @@ def main(vcf, sampleTID, sampleRID, version, panel_path, outputdir, recreate_bed
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
     print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
     # Also copy the bed-filtered VCF file for research purposes
-    copyfile(temp_vcf, out + "_PGx.vcf")
+    copyfile(filtered_vcf, out + "_PGx.vcf")
 
-    # Clean up temp_vcf
-    if os.path.exists(temp_vcf):
-        if os.path.exists(temp_vcf):
-            os.remove(temp_vcf)
-            print("[INFO] " + temp_vcf + " removed.")
-        if os.path.exists(temp_vcf.replace(".recode.vcf", ".log")):
-            os.remove(temp_vcf.replace(".recode.vcf", ".log"))
-            print("[INFO] " + temp_vcf.replace(".recode.vcf", ".log") + " removed.")
+    # Clean up filtered_vcf
+    if os.path.exists(filtered_vcf):
+        if os.path.exists(filtered_vcf):
+            os.remove(filtered_vcf)
+            print("[INFO] " + filtered_vcf + " removed.")
+        if os.path.exists(filtered_vcf.replace(".recode.vcf", ".log")):
+            os.remove(filtered_vcf.replace(".recode.vcf", ".log"))
+            print("[INFO] " + filtered_vcf.replace(".recode.vcf", ".log") + " removed.")
 
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
@@ -342,33 +338,11 @@ def process_exceptions(ids_found, panel):
     return ids_found
 
 
-def parse_vcf(vcf, rs_id_to_position, bed_file, outputdir, sampleTID, sampleRID, vcftools):
+def get_ids_found_in_patient_from_variants(variants, rs_id_to_position):
     match_on_rsid = 0
     match_on_location = 0
-
-    # Slice VCF on bed file
-    temp_vcf_prefix = outputdir + '/' + sampleTID + '_PGx'
-    temp_vcf = outputdir + '/' + sampleTID + '_PGx.recode.vcf'
-
-    # Check if output vcf does not already exist
-    if os.path.exists(temp_vcf):
-        raise IOError("Temporary VCF file " + temp_vcf + " already exists. Exiting.")
-    subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', temp_vcf_prefix,
-                    '--indv', sampleRID, '--recode', '--recode-INFO-all'])
-    print("[INFO] Subprocess completed.")
-
-    # Read in VCF file
-    try:
-        variants = allel.read_vcf(temp_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                    'variants/FILTER', 'variants/ID', 'variants/POS',
-                                                    'variants/QUAL', 'variants/REF', 'variants/ANN'],
-                                  transformers=allel.ANNTransformer())
-    except IOError:
-        sys.exit("[ERROR] File " + temp_vcf + " not found or cannot be opened.")
-
     ids_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid',
                                                  'variant_annotation', 'gene', 'filter'])
-
     for i, rs_number in enumerate(variants['variants/ID']):
         chr = variants['variants/CHROM'][i]
         pos = variants['variants/POS'][i]
@@ -382,7 +356,8 @@ def parse_vcf(vcf, rs_id_to_position, bed_file, outputdir, sampleTID, sampleRID,
         else:
             rs_id_filt = [rs_number]
 
-        if any(rs in rs_id_filt for rs in rs_id_to_position.keys()) or str(chr) + ":" + str(pos) in rs_id_to_position.values():
+        if any(rs in rs_id_filt for rs in rs_id_to_position.keys()) or str(chr) + ":" + str(
+                pos) in rs_id_to_position.values():
             if any(rs in rs_id_filt for rs in rs_id_to_position.keys()):
                 match_on_rsid += 1
             else:
@@ -395,7 +370,7 @@ def parse_vcf(vcf, rs_id_to_position, bed_file, outputdir, sampleTID, sampleRID,
             alt = variants['variants/ALT'][i]
             ref = variants['variants/REF'][i]
 
-            #print(variants['calldata/GT'][i][0])
+            # print(variants['calldata/GT'][i][0])
             new_id['variant_annotation'] = variants['variants/ANN_HGVS_c'][i]
             if variants['calldata/GT'][i][0].tolist() == [0, 1]:
                 new_id['ref_GRCh37'] = ref
@@ -418,10 +393,32 @@ def parse_vcf(vcf, rs_id_to_position, bed_file, outputdir, sampleTID, sampleRID,
             new_id['filter'] = filter
             new_id['gene'] = variants['variants/ANN_Gene_Name'][i]
             ids_found_in_patient = ids_found_in_patient.append(new_id, ignore_index=True)
-
     print("[INFO] Matches on RS id: " + str(match_on_rsid))
     print("[INFO] Matches on location: " + str(match_on_location))
-    return ids_found_in_patient, temp_vcf
+    return ids_found_in_patient
+
+
+def get_variants_from_filtered_vcf(filtered_vcf):
+    try:
+        variants = allel.read_vcf(filtered_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
+                                                        'variants/FILTER', 'variants/ID', 'variants/POS',
+                                                        'variants/QUAL', 'variants/REF', 'variants/ANN'],
+                                  transformers=allel.ANNTransformer())
+    except IOError:
+        sys.exit("[ERROR] File " + filtered_vcf + " not found or cannot be opened.")
+    return variants
+
+
+def get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools):
+    filtered_vcf_prefix = outputdir + '/' + sampleTID + '_PGx'
+    filtered_vcf = filtered_vcf_prefix + '.recode.vcf'
+    # Check if output vcf does not already exist
+    if os.path.exists(filtered_vcf):
+        raise IOError("Temporary VCF file " + filtered_vcf + " already exists. Exiting.")
+    subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', filtered_vcf_prefix,
+                    '--indv', sampleRID, '--recode', '--recode-INFO-all'])
+    print("[INFO] Subprocess completed.")
+    return filtered_vcf
 
 
 def load_panel_from_json(panel):
@@ -448,6 +445,18 @@ def load_panel_from_json(panel):
     print(rs_id_to_position)
 
     return haplotypes_info, rs_id_to_position
+
+
+def get_bed_file(panel_path, recreate_bed, haplotypes_info, sourcedir):
+    bed_file = replace_file_extension_of_path(panel_path, "bed")
+    if recreate_bed:
+        genes = list(haplotypes_info.keys())
+        create_bed_file(genes, panel_path, sourcedir, bed_file)
+    if not os.path.exists(bed_file):
+        sys.exit(
+            "[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed."
+        )
+    return bed_file
 
 
 def create_bed_file(gene_panel, panel_path, sourcedir, bed_path):
