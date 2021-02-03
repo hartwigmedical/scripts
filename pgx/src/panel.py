@@ -1,6 +1,8 @@
 from collections import defaultdict
 from copy import deepcopy
-from typing import NamedTuple, Dict, Any, List, Optional, Set
+from typing import NamedTuple, Dict, Any, List, Set
+
+from util import get_key_to_multiple_values
 
 
 class SNP(NamedTuple):
@@ -22,11 +24,29 @@ class SNP(NamedTuple):
         return self.get_position_string() == position_string
 
 
+class DrugInfo(NamedTuple):
+    name: str
+    url_prescription_info: str
+
+    @classmethod
+    def from_json(cls, data: Dict[str, Any]) -> "DrugInfo":
+        return DrugInfo(data["name"], data["url_prescription_info"])
+
+
 class GeneInfo(object):
-    def __init__(self, alleles: List[Dict[str, Any]], drugs: List[Dict[str, str]], gene: str, genome_build: str,
+    def __init__(self, alleles: List[Dict[str, Any]], drugs: List[DrugInfo], gene: str, genome_build: str,
                  reference_allele: str, variants: List[Dict[str, Any]]) -> None:
         if genome_build != "GRCh37":
-            raise ValueError("Exiting, we only support GRCh37, not " + str(genome_build))
+            raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
+
+        if self.__drug_names_overlap(drugs):
+            name_to_multiple_drug_infos = self.__get_drug_name_to_multiple_infos(drugs)
+            raise ValueError(
+                ("GeneInfo json contains drug summaries with the same drug name but different summaries. "
+                 "Duplicates: {name_to_multiple_drug_infos}").format(
+                    name_to_multiple_drug_infos=name_to_multiple_drug_infos
+                )
+            )
 
         self.__alleles = deepcopy(alleles)
         self.__drugs = deepcopy(drugs)
@@ -63,7 +83,7 @@ class GeneInfo(object):
         return deepcopy(self.__alleles)
 
     @property
-    def drugs(self) -> List[Dict[str, str]]:
+    def drugs(self) -> List[DrugInfo]:
         return deepcopy(self.__drugs)
 
     @property
@@ -84,31 +104,39 @@ class GeneInfo(object):
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "GeneInfo":
-        alleles = deepcopy(data["alleles"])
-        drugs = deepcopy(data["drugs"])
+        alleles = data["alleles"]
+        drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
         gene = data['gene']
         genome_build = data["genomeBuild"]
         reference_allele = data["referenceAllele"]
-        variants = deepcopy(data["variants"])
+        variants = data["variants"]
         return GeneInfo(alleles, drugs, gene, genome_build, reference_allele, variants)
+
+    @staticmethod
+    def __drug_names_overlap(drug_infos: List[DrugInfo]) -> bool:
+        return len({info.name for info in drug_infos}) != len(drug_infos)
+
+    @staticmethod
+    def __get_drug_name_to_multiple_infos(drug_infos: List[DrugInfo]) -> Dict[str, List[DrugInfo]]:
+        return get_key_to_multiple_values([(info.name, info) for info in drug_infos])
 
 
 class Panel(object):
     def __init__(self, gene_infos: List[GeneInfo], snps: Set[SNP]) -> None:
         if self.__rs_ids_overlap(snps):
-            rs_id_to_duplicate_snps = self.__get_rs_id_to_duplicate_snps(snps)
+            rs_id_to_multiple_snps = self.__get_rs_id_to_multiple_snps(snps)
             raise ValueError(
                 ("Panel json contains snps with the same rs id but different positions. "
-                 "Duplicates: {rs_id_to_duplicate_snps}").format(
-                    rs_id_to_duplicate_snps=rs_id_to_duplicate_snps
+                 "Duplicates: {rs_id_to_multiple_snps}").format(
+                    rs_id_to_multiple_snps=rs_id_to_multiple_snps
                 )
             )
         if self.__gene_names_overlap(gene_infos):
-            gene_name_to_duplicate_infos = self.__get_gene_name_to_duplicate_infos(gene_infos)
+            gene_name_to_multiple_infos = self.__get_gene_name_to_multiple_infos(gene_infos)
             raise ValueError(
                 ("Panel json contains gene summaries with the same gene names but different contents. "
-                 "Duplicates: {gene_name_to_duplicate_infos}").format(
-                    gene_name_to_duplicate_infos=gene_name_to_duplicate_infos
+                 "Duplicates: {gene_name_to_multiple_infos}").format(
+                    gene_name_to_multiple_infos=gene_name_to_multiple_infos
                 )
             )
         self.__gene_infos = deepcopy(gene_infos)
@@ -183,23 +211,13 @@ class Panel(object):
         return len({snp.rs_id for snp in snps}) != len(snps)
 
     @staticmethod
-    def __get_rs_id_to_duplicate_snps(snps: Set[SNP]) -> Dict[str, List[SNP]]:
-        rs_id_to_snps = defaultdict(list)
-        for snp in snps:
-            rs_id_to_snps[snp.rs_id].append(snp)
-        rs_id_to_duplicate_snps = {rs_id: snps for rs_id, snps in rs_id_to_snps.items() if len(snps) > 1}
-        return rs_id_to_duplicate_snps
+    def __get_rs_id_to_multiple_snps(snps: Set[SNP]) -> Dict[str, List[SNP]]:
+        return get_key_to_multiple_values([(snp.rs_id, snp) for snp in snps])
 
     @staticmethod
     def __gene_names_overlap(gene_infos: List[GeneInfo]) -> bool:
         return len({info.gene for info in gene_infos}) != len(gene_infos)
 
     @staticmethod
-    def __get_gene_name_to_duplicate_infos(gene_infos: List[GeneInfo]) -> Dict[str, List[GeneInfo]]:
-        gene_name_to_infos = defaultdict(list)
-        for info in gene_infos:
-            gene_name_to_infos[info.gene].append(info)
-        gene_name_to_duplicate_infos = {gene: info for gene, info in gene_name_to_infos.items() if len(info) > 1}
-        return gene_name_to_duplicate_infos
-
-
+    def __get_gene_name_to_multiple_infos(gene_infos: List[GeneInfo]) -> Dict[str, List[GeneInfo]]:
+        return get_key_to_multiple_values([(info.gene, info) for info in gene_infos])

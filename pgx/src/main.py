@@ -152,8 +152,8 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
         severity[gene_info.reference_allele] = "Normal Function"
         severity['Unresolved'] = "Unknown Function"
         drug_info[gene_info.gene] = [
-            ";".join([x['name'] for x in gene_info.drugs]),
-            ";".join(x['url_prescription_info'] for x in gene_info.drugs)
+            ";".join([drug.name for drug in gene_info.drugs]),
+            ";".join([drug.url_prescription_info for drug in gene_info.drugs])
         ]
 
         # If all variants are assumed_ref, return reference allele
