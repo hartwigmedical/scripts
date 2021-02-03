@@ -22,26 +22,65 @@ class SNP(NamedTuple):
         return self.get_position_string() == position_string
 
 
-class GeneInfo(NamedTuple):
-    # NamedTuple cannot have private variables starting with __
-    u_alleles: List[Dict[str, Any]]  # use .alleles
-    u_drugs: List[Dict[str, str]]  # use .drugs
-    gene: str
-    genome_build: str
-    reference_allele: str
-    u_variants: List[Dict[str, Any]]  # use .variants
+class GeneInfo(object):
+    def __init__(self, alleles: List[Dict[str, Any]], drugs: List[Dict[str, str]], gene: str, genome_build: str,
+                 reference_allele: str, variants: List[Dict[str, Any]]) -> None:
+        if genome_build != "GRCh37":
+            raise ValueError("Exiting, we only support GRCh37, not " + str(genome_build))
+
+        self.__alleles = deepcopy(alleles)
+        self.__drugs = deepcopy(drugs)
+        self.__gene = gene
+        self.__genome_build = genome_build
+        self.__reference_allele = reference_allele
+        self.__variants = deepcopy(variants)
+
+    def __eq__(self, other: object) -> bool:
+        return (
+                isinstance(other, GeneInfo)
+                and self.__alleles == other.__alleles
+                and self.__drugs == other.__drugs
+                and self.__gene == other.__gene
+                and self.__genome_build == other.__genome_build
+                and self.__reference_allele == other.__reference_allele
+                and self.__variants == other.__variants
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"GeneInfo("
+            f"alleles={self.__alleles}, "
+            f"drugs={self.__drugs}, "
+            f"gene={self.__gene}, "
+            f"genome_build={self.__genome_build}, "
+            f"reference_allele={self.__reference_allele}, "
+            f"variants={self.__variants}, "
+            f")"
+        )
 
     @property
     def allelles(self) -> List[Dict[str, Any]]:
-        return deepcopy(self.u_alleles)
+        return deepcopy(self.__alleles)
 
     @property
     def drugs(self) -> List[Dict[str, str]]:
-        return deepcopy(self.u_drugs)
+        return deepcopy(self.__drugs)
+
+    @property
+    def gene(self) -> str:
+        return self.__gene
+
+    @property
+    def genome_build(self) -> str:
+        return self.__genome_build
+
+    @property
+    def reference_allele(self) -> str:
+        return self.__reference_allele
 
     @property
     def variants(self) -> List[Dict[str, Any]]:
-        return deepcopy(self.u_variants)
+        return deepcopy(self.__variants)
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "GeneInfo":
@@ -51,10 +90,6 @@ class GeneInfo(NamedTuple):
         genome_build = data["genomeBuild"]
         reference_allele = data["referenceAllele"]
         variants = deepcopy(data["variants"])
-
-        if genome_build != "GRCh37":
-            raise ValueError("Exiting, we only support GRCh37, not " + str(genome_build))
-
         return GeneInfo(alleles, drugs, gene, genome_build, reference_allele, variants)
 
 
@@ -81,13 +116,18 @@ class Panel(object):
 
     def __eq__(self, other: object) -> bool:
         return (
-                isinstance(other, Panel) and
-                self.__gene_infos == other.__gene_infos and
-                self.__snps == other.__snps
+                isinstance(other, Panel)
+                and self.__gene_infos == other.__gene_infos
+                and self.__snps == other.__snps
         )
 
     def __repr__(self) -> str:
-        return f"Panel(gene_to_gene_info={self.__gene_infos}, snps={self.__snps})"
+        return (
+            f"Panel("
+            f"gene_infos={self.__gene_infos}, "
+            f"snps={self.__snps}, "
+            f")"
+        )
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "Panel":
