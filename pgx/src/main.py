@@ -11,11 +11,11 @@ import subprocess
 import sys
 from shutil import copyfile
 
-from panel import Panel, GeneInfo
+from panel import Panel
 
 
-def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str, outputdir: str, recreate_bed: bool,
-         vcftools: str, sourcedir: str):
+def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
+         recreate_bed: bool, vcftools: str, sourcedir: str):
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
@@ -33,7 +33,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
         sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
 
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
-    filtered_vcf = get_filtered_vcf(vcf, bed_file, sampleRID, sampleTID, outputdir, vcftools)
+    filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
 
     variants = get_variants_from_filtered_vcf(filtered_vcf)
     ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
@@ -41,7 +41,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
         convert_results_into_haplotypes(ids_found_in_patient, panel, panel_path)
 
-    out = outputdir + "/" + sampleTID
+    out = outputdir + "/" + sample_t_id
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
     print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
     # Also copy the bed-filtered VCF file for research purposes
@@ -96,24 +96,24 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
 
         for index, row in ids_found_in_patient.iterrows():
             matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
-            GRCh38_locations = {
+            grch38_locations = {
                 str(variant['chromosome']) + ":" + str(variant['positionGRCh38']) for variant in matching_variants
             }
-            if len(GRCh38_locations) == 1:
-                GRCh38_location = GRCh38_locations.pop()
+            if len(grch38_locations) == 1:
+                grch38_location = grch38_locations.pop()
                 if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
-                    ids_found_in_patient.at[index, 'position_GRCh38'] = GRCh38_location
-                elif row['position_GRCh38'] != GRCh38_location:
+                    ids_found_in_patient.at[index, 'position_GRCh38'] = grch38_location
+                elif row['position_GRCh38'] != grch38_location:
                     raise ValueError(
                         "[ERROR] Inconsistent GRCh38 locations for variants:\n"
                         "location from exceptions: " + row['position_GRCh38'] + "\n"
-                        "location from variants: " + GRCh38_location + "\n"
+                        "location from variants: " + grch38_location + "\n"
                     )
-            elif len(GRCh38_locations) > 1:
+            elif len(grch38_locations) > 1:
                 matching_variants_string = ",".join([str(variant) for variant in matching_variants])
                 raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
                                  "matching variants: " + matching_variants_string + "\n"
-                                 "GRCh38 locations: " + ", ".join(GRCh38_locations) + "\n")
+                                 "GRCh38 locations: " + ", ".join(grch38_locations) + "\n")
 
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
@@ -186,9 +186,9 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                         results[gene].append(gene_info.reference_allele + "_HET")
                     break
                 else:
-                    #print("Processing " + str(allele['alleleName']))
-                    #print(set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]))
-                    #print(set(variants_sample))
+                    # print("Processing " + str(allele['alleleName']))
+                    # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]))
+                    # print(set(variants_sample))
                     if set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]) <= \
                             set(variants_sample):
                         print("[INFO] A subset of rsids matches " + str(allele['alleleName']) + " in part")
@@ -196,7 +196,11 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
 
             if not perfect_match:
                 if not haplotypes_matching:
-                    print("[WARN] No haplotype match found for " + str(gene) + ". Probable cause is that the variant is not in line with previously determined within defined haplotype.")
+                    print(
+                        f"[WARN] No haplotype match found for {gene}. "
+                        f"Probable cause is that the variant is not in line with previously "
+                        f"determined within defined haplotype."
+                    )
                     results[gene].append("Unresolved_Haplotype")
                 else:
                     print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
@@ -285,8 +289,10 @@ def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
             exceptions = exceptions['exceptions']
             for variant in exceptions:
                 variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
-                if variant['rsid'] in ids_found['rsid'].tolist() or variant_location in ids_found['position_GRCh37'].tolist():
-                    if variant['rsid'] in ids_found['rsid'].tolist():
+                variant_location_found = variant_location in ids_found['position_GRCh37'].tolist()
+                rs_id_found = variant['rsid'] in ids_found['rsid'].tolist()
+                if rs_id_found or variant_location_found:
+                    if rs_id_found:
                         # get line and index from ids_found
                         found_var = ids_found[ids_found['rsid'].str.contains(variant['rsid'])]
                     else:
@@ -304,16 +310,18 @@ def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
                         ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
                         ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['referenceAlleleGRCh38']
                         ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'position_GRCh38'] = str(variant['chromosome']) + ":" + \
-                                                                              str(variant['positionGRCh38'])
+                        ids_found.at[found_var.index[0], 'position_GRCh38'] = (
+                                str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                        )
                     elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
                             found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
                         # Add variant_annotation and ref and alt base for hg38
                         ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
                         ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['altAlleleGRCh38']
                         ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'position_GRCh38'] = str(variant['chromosome']) + ":" + \
-                                                                              str(variant['positionGRCh38'])
+                        ids_found.at[found_var.index[0], 'position_GRCh38'] = (
+                                str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                        )
                     else:
                         print("[ERROR] Complete mismatch:")
                         print(found_var)
@@ -363,7 +371,7 @@ def get_ids_found_in_patient_from_variants(variants, panel: Panel) -> pd.DataFra
             else:
                 match_on_location += 1
             new_id = {}
-            if variants['variants/FILTER_PASS'][i] == True:
+            if variants['variants/FILTER_PASS'][i]:
                 filter = "PASS"
             else:
                 filter = "FILTERED"
@@ -409,14 +417,14 @@ def get_variants_from_filtered_vcf(filtered_vcf: str):
     return variants
 
 
-def get_filtered_vcf(vcf: str, bed_file: str, sampleRID: str, sampleTID: str, outputdir: str, vcftools: str):
-    filtered_vcf_prefix = outputdir + '/' + sampleTID + '_PGx'
+def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str):
+    filtered_vcf_prefix = outputdir + '/' + sample_t_id + '_PGx'
     filtered_vcf = filtered_vcf_prefix + '.recode.vcf'
     # Check if output vcf does not already exist
     if os.path.exists(filtered_vcf):
         raise IOError("Temporary VCF file " + filtered_vcf + " already exists. Exiting.")
     subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', filtered_vcf_prefix,
-                    '--indv', sampleRID, '--recode', '--recode-INFO-all'])
+                    '--indv', sample_r_id, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
     return filtered_vcf
 
@@ -437,7 +445,9 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
         create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
     if not os.path.exists(bed_file):
         sys.exit(
-            "[ERROR] Could not locate bed-file. Could it be that it should be (re)created? Retry running with --recreate_bed."
+            "[ERROR] Could not locate bed-file. "
+            "Could it be that it should be (re)created? "
+            "Retry running with --recreate_bed."
         )
     return bed_file
 
@@ -494,8 +504,8 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
                      'GRCh38, so in the output both reference genome output is given where possible.')
     )
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
-    parser.add_argument('sampleTID', type=str, help='The sample ID of the tumor')
-    parser.add_argument('sampleRID', type=str, help='The sample ID of the normal')
+    parser.add_argument('sample_t_id', type=str, help='The sample ID of the tumor')
+    parser.add_argument('sample_r_id', type=str, help='The sample ID of the normal')
     parser.add_argument('version', type=str, help='The version of the tool')
     parser.add_argument('outputdir', type=str, help='Directory to store output of pharmacogenomic analysis')
     parser.add_argument('panel', type=str, help='Json file with the panel variants')
@@ -523,5 +533,5 @@ def compare_collection(a, b):
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
-    main(args.vcf, args.sampleTID, args.sampleRID, args.version, args.panel,
+    main(args.vcf, args.sample_t_id, args.sample_r_id, args.version, args.panel,
          args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)

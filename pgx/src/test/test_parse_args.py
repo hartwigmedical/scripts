@@ -15,7 +15,7 @@ class TestMain(unittest.TestCase):
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
-            vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
+            vcf="vcf_file", sample_t_id="tumor_sample_id", sample_r_id="ref_sample_id", version="script_version",
             outputdir="output_directory", panel="panel_location", recreate_bed=False,
             vcftools="vcftools_location", sourcedir="path_to_source_files"
         )
@@ -27,7 +27,7 @@ class TestMain(unittest.TestCase):
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
-            vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
+            vcf="vcf_file", sample_t_id="tumor_sample_id", sample_r_id="ref_sample_id", version="script_version",
             outputdir="output_directory", panel="panel_location", recreate_bed=False,
             vcftools="vcftools_location", sourcedir="data"
         )
@@ -40,7 +40,7 @@ class TestMain(unittest.TestCase):
         actual_namespace = parse_args(arguments)
 
         expected_namespace = Namespace(
-            vcf="vcf_file", sampleTID="tumor_sample_id", sampleRID="ref_sample_id", version="script_version",
+            vcf="vcf_file", sample_t_id="tumor_sample_id", sample_r_id="ref_sample_id", version="script_version",
             outputdir="output_directory", panel="panel_location", recreate_bed=True,
             vcftools="vcftools_location", sourcedir="path_to_source_files"
         )
