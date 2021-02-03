@@ -32,7 +32,7 @@ class Panel(object):
     @classmethod
     def from_json(cls, data: Json) -> "Panel":
         gene_infos = [GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']]
-        rs_id_infos = {rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.variants}
+        rs_id_infos = {rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos}
         return Panel(gene_infos, rs_id_infos)
 
     def get_gene_infos(self) -> List[GeneInfo]:
@@ -43,14 +43,14 @@ class Panel(object):
 
     def contains_rs_id_with_position(self, position_string: str) -> bool:
         for info in self.__rs_id_infos:
-            if info.start_coordinate_grch37.matches_position_string(position_string):
+            if info.start_coordinate_grch37.get_position_string() == position_string:
                 return True
         return False
 
     def get_rs_id_with_position(self, position_string: str) -> str:
         matching_rs_ids = []
         for info in self.__rs_id_infos:
-            if info.start_coordinate_grch37.matches_position_string(position_string):
+            if info.start_coordinate_grch37.get_position_string() == position_string:
                 matching_rs_ids.append(info.rs_id)
 
         if matching_rs_ids and len(matching_rs_ids) == 1:

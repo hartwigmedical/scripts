@@ -30,7 +30,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     panel = load_panel_from_json(panel_path)
 
     if panel.is_empty():
-        sys.exit("[ERROR] No panel variants are given, no analysis is performed.")
+        sys.exit("[ERROR] No panel is given, so no analysis can be performed.")
 
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
@@ -62,10 +62,10 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
 
 def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
-    rsid_to_gene_to_haplotype_variant: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
+    rsid_to_gene_to_rs_id_info: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene_info in panel.get_gene_infos():
-        for variant in gene_info.variants:
-            rsid_to_gene_to_haplotype_variant[variant.rs_id][gene_info.gene] = variant
+        for rs_id_info in gene_info.rs_id_infos:
+            rsid_to_gene_to_rs_id_info[rs_id_info.rs_id][gene_info.gene] = rs_id_info
 
     results = {}
     severity = {}
@@ -95,9 +95,9 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                 ids_found_in_patient.at[index, 'rsid'] = rs_id
 
         for index, row in ids_found_in_patient.iterrows():
-            matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
+            matching_rs_id_infos = rsid_to_gene_to_rs_id_info[ids_found_in_patient.at[index, 'rsid']].values()
             grch38_locations = {
-                variant.start_coordinate_grch38.get_position_string() for variant in matching_variants
+                rs_id_info.start_coordinate_grch38.get_position_string() for rs_id_info in matching_rs_id_infos
             }
             if len(grch38_locations) == 1:
                 grch38_location = grch38_locations.pop()
@@ -107,12 +107,12 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                     raise ValueError(
                         "[ERROR] Inconsistent GRCh38 locations for variants:\n"
                         "location from exceptions: " + row['position_GRCh38'] + "\n"
-                        "location from variants: " + grch38_location + "\n"
+                        "location from rs id info: " + grch38_location + "\n"
                     )
             elif len(grch38_locations) > 1:
-                matching_variants_string = ",".join([str(variant) for variant in matching_variants])
+                matching_rs_id_infos_string = ",".join([str(rs_id_info) for rs_id_info in matching_rs_id_infos])
                 raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
-                                 "matching variants: " + matching_variants_string + "\n"
+                                 "matching rs id infos: " + matching_rs_id_infos_string + "\n"
                                  "GRCh38 locations: " + ", ".join(grch38_locations) + "\n")
 
     # Generate a list of ids not found in patient
@@ -129,17 +129,17 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
             # TODO: check whether this properly takes variants of more than one base pair, so MNV's etc., into account.
             #       The fact that only a single position is checked is suspicious.
             new_id = {}
-            for gene, variant in rsid_to_gene_to_haplotype_variant[rs_id_info.rs_id].items():
+            for gene, rs_id_info in rsid_to_gene_to_rs_id_info[rs_id_info.rs_id].items():
                 new_id['position_GRCh37'] = rs_id_info.start_coordinate_grch37.get_position_string()
                 new_id['rsid'] = rs_id_info.rs_id
-                new_id['ref_GRCh37'] = variant.reference_allele_grch38
-                new_id['alt_GRCh37'] = variant.reference_allele_grch38  # Assuming REF/REF relative to GRCh38
+                new_id['ref_GRCh37'] = rs_id_info.reference_allele_grch38
+                new_id['alt_GRCh37'] = rs_id_info.reference_allele_grch38  # Assuming REF/REF relative to GRCh38
                 new_id['variant_annotation'] = "REF_CALL"
                 new_id['filter'] = "NO_CALL"
                 new_id['gene'] = gene
-                new_id['ref_GRCh38'] = variant.reference_allele_grch38  # Again assuming REF/REF relative to GRCh38
-                new_id['alt_GRCh38'] = variant.reference_allele_grch38
-                new_id['position_GRCh38'] = variant.start_coordinate_grch38.get_position_string()
+                new_id['ref_GRCh38'] = rs_id_info.reference_allele_grch38  # Again assuming REF/REF relative to GRCh38
+                new_id['alt_GRCh38'] = rs_id_info.reference_allele_grch38
+                new_id['position_GRCh38'] = rs_id_info.start_coordinate_grch38.get_position_string()
                 ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
 
     # Now we want to process all the variants in terms of the alleles
@@ -159,20 +159,20 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
             ";".join([drug.url_prescription_info for drug in gene_info.drugs])
         ]
 
-        # If all variants are assumed_ref, return reference allele
+        # If all variants are assumed_ref, return reference haplotype
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
-            print("[INFO] Found reference allele")
+            print("[INFO] Found reference haplotype")
             results[gene_info.gene] = [gene_info.reference_allele + "_HOM"]
         else:
             results[gene_info.gene] = []
             haplotypes_matching = []
-            for allele in gene_info.allelles:
-                severity[allele['alleleName']] = allele['function']
+            for haplotype in gene_info.haplotypes:
+                severity[haplotype.name] = haplotype.function
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
-                if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]):
+                if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype.variants]):
                     perfect_match = True
-                    print("[INFO] Found 1:1 match with allele " + allele['alleleName'])
+                    print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
                     # Now we want to see if we have hetrozygous or homozygous calls
                     allele_statuses = []
                     for index, row in vars_found_in_gene.iterrows():
@@ -185,25 +185,25 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                     else:
                         allele_status = "HOMHET"
                     # Add to results
-                    results[gene_info.gene].append(allele['alleleName'] + "_" + str(allele_status))
+                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
                     if allele_status == "HET":
-                        # Assume if perfect match with HET, we are also looking at reference allele
+                        # Assume if perfect match with HET, we are also looking at reference haplotype
                         results[gene_info.gene].append(gene_info.reference_allele + "_HET")
                     break
                 else:
-                    # print("Processing " + str(allele['alleleName']))
-                    # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]))
+                    # print("Processing " + str(haplotype['alleleName']))
+                    # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
                     # print(set(variants_sample))
-                    if set([(x['rsid'], x['altAlleleGRCh38']) for x in allele['alleleVariants']]) <= \
+                    if set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype.variants]) <= \
                             set(variants_sample):
-                        print("[INFO] A subset of rsids matches " + str(allele['alleleName']) + " in part")
-                        haplotypes_matching.append(allele)
+                        print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
+                        haplotypes_matching.append(haplotype)
 
             if not perfect_match:
                 if not haplotypes_matching:
                     print(
                         f"[WARN] No haplotype match found for {gene_info.gene}. "
-                        f"Probable cause is that the variant is not in line with previously "
+                        f"Probable cause is that the rs_id_info is not in line with previously "
                         f"determined within defined haplotype."
                     )
                     results[gene_info.gene].append("Unresolved_Haplotype")
@@ -215,7 +215,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                             if perfect_match:
                                 continue
                             # See if this combination results in a perfect match, otherwise store the score
-                            allele_variants = [x['alleleVariants'] for x in subset]
+                            allele_variants = [x.variants for x in subset]
                             rs_ids_subset = []
                             for x in allele_variants:
                                 for var in x:
@@ -223,9 +223,9 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                             if compare_collection(variants_sample, rs_ids_subset):
                                 print("[INFO] Perfect haplotype combination found!")
                                 perfect_match = True
-                                for allele in subset:
+                                for haplotype in subset:
                                     allele_statuses = []
-                                    rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
+                                    rs_ids_in_allele = [x['rsid'] for x in haplotype.variants]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
@@ -236,7 +236,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                                         allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
-                                    results[gene_info.gene].append(allele['alleleName'] + "_" + str(allele_status))
+                                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
                             else:
                                 rs_matched = list(set(variants_sample) & set(rs_ids_subset))
                                 rs_not_in_haplotype = list(set(variants_sample) - set(rs_ids_subset))
@@ -258,13 +258,13 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                         # Here we just pick the top option.
                         if optimal_set[0][0] >= 1:
                             subset = optimal_set[0][1]
-                            # If we have a variant that is in sample or in haplotype that is not matched > undetermined
+                            # If we have a rs_id_info that is in sample or in haplotype that is not matched > undetermined
                             if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
                                 results[gene_info.gene].append("Unresolved_Haplotype")
                             else:
-                                for allele in subset:
+                                for haplotype in subset:
                                     allele_statuses = []
-                                    rs_ids_in_allele = [x['rsid'] for x in allele['alleleVariants']]
+                                    rs_ids_in_allele = [x['rsid'] for x in haplotype.variants]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
@@ -275,10 +275,10 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                                         allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
-                                    results[gene_info.gene].append(allele['alleleName'] + "_" + str(allele_status))
+                                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
                         else:
                             sys.exit("[ERROR] No haplotype match was found. Exiting.")
-        # If we only find one allele and it is HET, assume we're also dealing with reference allele
+        # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
         if len(results[gene_info.gene]) == 1:
             if results[gene_info.gene][0].split("_")[-1] == "HET":
                 results[gene_info.gene].append(gene_info.reference_allele + "_HET")
