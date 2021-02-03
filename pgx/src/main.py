@@ -65,7 +65,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     rsid_to_gene_to_haplotype_variant: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene_info in panel.get_gene_infos():
         for variant in gene_info.variants:
-            rsid_to_gene_to_haplotype_variant[variant['rsid']][gene_info.gene] = variant
+            rsid_to_gene_to_haplotype_variant[variant.rs_id][gene_info.gene] = variant
 
     results = {}
     severity = {}
@@ -97,7 +97,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
         for index, row in ids_found_in_patient.iterrows():
             matching_variants = rsid_to_gene_to_haplotype_variant[ids_found_in_patient.at[index, 'rsid']].values()
             grch38_locations = {
-                str(variant['chromosome']) + ":" + str(variant['positionGRCh38']) for variant in matching_variants
+                variant.start_coordinate_grch38.get_position_string() for variant in matching_variants
             }
             if len(grch38_locations) == 1:
                 grch38_location = grch38_locations.pop()
@@ -123,22 +123,23 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
-    for snp in panel.get_rs_id_infos():
-        if snp.rs_id not in rs_ids_found_in_patient and snp.start_coordinate.get_position_string() not in positions_found_in_patient:
+    for rs_id_info in panel.get_rs_id_infos():
+        if (rs_id_info.rs_id not in rs_ids_found_in_patient and
+                rs_id_info.start_coordinate_grch37.get_position_string() not in positions_found_in_patient):
             # TODO: check whether this properly takes variants of more than one base pair, so MNV's etc., into account.
             #       The fact that only a single position is checked is suspicious.
             new_id = {}
-            for gene, variant in rsid_to_gene_to_haplotype_variant[snp.rs_id].items():
-                new_id['position_GRCh37'] = snp.start_coordinate.get_position_string()
-                new_id['rsid'] = snp.rs_id
-                new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
-                new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
+            for gene, variant in rsid_to_gene_to_haplotype_variant[rs_id_info.rs_id].items():
+                new_id['position_GRCh37'] = rs_id_info.start_coordinate_grch37.get_position_string()
+                new_id['rsid'] = rs_id_info.rs_id
+                new_id['ref_GRCh37'] = variant.reference_allele_grch38
+                new_id['alt_GRCh37'] = variant.reference_allele_grch38  # Assuming REF/REF relative to GRCh38
                 new_id['variant_annotation'] = "REF_CALL"
                 new_id['filter'] = "NO_CALL"
                 new_id['gene'] = gene
-                new_id['ref_GRCh38'] = variant['referenceAlleleGRCh38']  # Again assuming REF/REF relative to GRCh38
-                new_id['alt_GRCh38'] = variant['referenceAlleleGRCh38']
-                new_id['position_GRCh38'] = str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                new_id['ref_GRCh38'] = variant.reference_allele_grch38  # Again assuming REF/REF relative to GRCh38
+                new_id['alt_GRCh38'] = variant.reference_allele_grch38
+                new_id['position_GRCh38'] = variant.start_coordinate_grch38.get_position_string()
                 ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
 
     # Now we want to process all the variants in terms of the alleles
