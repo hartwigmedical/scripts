@@ -28,5 +28,11 @@ or (chromosome = 17 and gene = "TP53" and position < 7579312 and position > 7579
 or (chromosome = 17 and gene ="TP53" and position > 7579590 and position < 7579597 and reported =0)
 
 or (chromosome = 17 and gene = "TP53" and position < 7579700 and position > 7579693 and reported =0)
-or (chromosome = 17 and gene ="TP53" and position > 7579721 and position < 7579728 and reported =0))
+or (chromosome = 17 and gene ="TP53" and position > 7579721 and position < 7579728 and reported =0)
+
+or (chromosome = 17 and gene = "TP53" and position < 7579839 and position > 7579832 and reported =0)
+or (chromosome = 17 and gene ="TP53" and position > 7579940 and position < 7579947 and reported =0)
+
+or (chromosome = 17 and gene = "TP53" and position < 7590695 and position > 7590688 and reported =0)
+or (chromosome = 17 and gene ="TP53" and position > 7590856 and position < 7590863 and reported =0))
 and sampleId in ("XXX");
