@@ -35,8 +35,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
 
-    variants = get_variants_from_filtered_vcf(filtered_vcf)
-    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
+    ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
         convert_results_into_haplotypes(ids_found_in_patient, panel, panel_path)
@@ -44,6 +43,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     out = outputdir + "/" + sample_t_id
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
     print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
+    
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -59,6 +59,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
+
+
+def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
+    variants = get_variants_from_filtered_vcf(filtered_vcf)
+    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
+    return ids_found_in_patient
 
 
 def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
@@ -352,7 +358,7 @@ def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
     return ids_found
 
 
-def get_ids_found_in_patient_from_variants(variants, panel: Panel) -> pd.DataFrame:
+def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> pd.DataFrame:
     match_on_rsid = 0
     match_on_location = 0
     ids_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid',
@@ -412,7 +418,7 @@ def get_ids_found_in_patient_from_variants(variants, panel: Panel) -> pd.DataFra
     return ids_found_in_patient
 
 
-def get_variants_from_filtered_vcf(filtered_vcf: str):
+def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:
     try:
         variants = allel.read_vcf(filtered_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
                                                         'variants/FILTER', 'variants/ID', 'variants/POS',
@@ -423,12 +429,13 @@ def get_variants_from_filtered_vcf(filtered_vcf: str):
     return variants
 
 
-def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str):
+def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str) -> str:
     filtered_vcf_prefix = outputdir + '/' + sample_t_id + '_PGx'
     filtered_vcf = filtered_vcf_prefix + '.recode.vcf'
     # Check if output vcf does not already exist
     if os.path.exists(filtered_vcf):
         raise IOError("Temporary VCF file " + filtered_vcf + " already exists. Exiting.")
+
     subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', filtered_vcf_prefix,
                     '--indv', sample_r_id, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
@@ -445,7 +452,7 @@ def load_panel_from_json(panel: str) -> Panel:
         sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
 
 
-def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str):
+def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str) -> str:
     bed_file = replace_file_extension_of_path(panel_path, "bed")
     if recreate_bed:
         create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
@@ -488,7 +495,7 @@ def print_calls_to_file(calls_file: str, all_ids_in_panel) -> None:
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(genotype_file: str, drug_info, panel, results, severity, version):
+def print_haplotypes_to_file(genotype_file: str, drug_info, panel, results, severity, version) -> None:
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in results:
@@ -524,13 +531,13 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
     return parser.parse_args(sys_args)
 
 
-def replace_file_extension_of_path(path: str, new_file_extension: str):
+def replace_file_extension_of_path(path: str, new_file_extension: str) -> str:
     split_path = path.split(".")
     new_path = ".".join(split_path[0:-1]) + "." + new_file_extension
     return new_path
 
 
-def compare_collection(a, b):
+def compare_collection(a, b) -> bool:
     if collections.Counter(a) == collections.Counter(b):
         return True
     else:
