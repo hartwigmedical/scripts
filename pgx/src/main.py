@@ -170,7 +170,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                 severity[haplotype.name] = haplotype.function
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
-                if set(variants_sample) == set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype.variants]):
+                if set(variants_sample) == set([(x.rs_id, x.alt_allele_grch38) for x in haplotype.variants]):
                     perfect_match = True
                     print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
                     # Now we want to see if we have hetrozygous or homozygous calls
@@ -194,7 +194,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                     # print("Processing " + str(haplotype['alleleName']))
                     # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
                     # print(set(variants_sample))
-                    if set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype.variants]) <= \
+                    if set([(x.rs_id, x.alt_allele_grch38) for x in haplotype.variants]) <= \
                             set(variants_sample):
                         print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
                         haplotypes_matching.append(haplotype)
@@ -219,13 +219,13 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                             rs_ids_subset = []
                             for x in allele_variants:
                                 for var in x:
-                                    rs_ids_subset.append((var['rsid'], var['altAlleleGRCh38']))
+                                    rs_ids_subset.append((var.rs_id, var.alt_allele_grch38))
                             if compare_collection(variants_sample, rs_ids_subset):
                                 print("[INFO] Perfect haplotype combination found!")
                                 perfect_match = True
                                 for haplotype in subset:
                                     allele_statuses = []
-                                    rs_ids_in_allele = [x['rsid'] for x in haplotype.variants]
+                                    rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
@@ -264,7 +264,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                             else:
                                 for haplotype in subset:
                                     allele_statuses = []
-                                    rs_ids_in_allele = [x['rsid'] for x in haplotype.variants]
+                                    rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
                                     found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
                                     for index, row in found_vars.iterrows():
                                         if row['ref_GRCh38'] == row['alt_GRCh38']:
@@ -287,6 +287,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
 
 
 def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
+    # TODO: determine whether I need a separate file for this
     try:
         panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
         with open(panel_exceptions_file, 'r+', encoding='utf-8') as json_file:

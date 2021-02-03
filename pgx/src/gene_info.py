@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Set
 
 from drug_info import DrugInfo, assert_no_overlap_drug_names
 from haplotype import Haplotype

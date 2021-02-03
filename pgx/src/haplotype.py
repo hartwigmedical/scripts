@@ -2,10 +2,11 @@ from copy import deepcopy
 from typing import List, Dict, Any
 
 from json_alias import Json
+from variant import Variant
 
 
 class Haplotype(object):
-    def __init__(self, name: str, function: str, variants: List[Dict[str, str]]) -> None:
+    def __init__(self, name: str, function: str, variants: List[Variant]) -> None:
         # TODO: make sure variants cannot have the same rs id.
         self.__name = name
         self.__function = function
@@ -37,12 +38,12 @@ class Haplotype(object):
         return self.__function
 
     @property
-    def variants(self) -> List[Dict[str, str]]:
+    def variants(self) -> List[Variant]:
         return deepcopy(self.__variants)
 
     @classmethod
     def from_json(cls, data: Json) -> "Haplotype":
         name = data["alleleName"]
         function = data["function"]
-        variants = data["alleleVariants"]
+        variants = [Variant.from_json(variant_json) for variant_json in data["alleleVariants"]]
         return Haplotype(name, function, variants)
