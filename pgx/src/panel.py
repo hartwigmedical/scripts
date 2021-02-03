@@ -23,6 +23,7 @@ class SNP(NamedTuple):
 
 
 class GeneInfo(NamedTuple):
+    # NamedTuple cannot have private variables starting with __
     u_alleles: List[Dict[str, Any]]  # use .alleles
     u_drugs: List[Dict[str, str]]  # use .drugs
     gene: str
@@ -58,12 +59,13 @@ class GeneInfo(NamedTuple):
 
 
 class Panel(NamedTuple):
-    u_haplotypes_info: Dict[str, GeneInfo]  # use .haplotypes_info
+    # NamedTuple cannot have private variables starting with __
+    u_gene_to_gene_info: Dict[str, GeneInfo]  # use .haplotypes_info
     u_snps: Set[SNP]  # use .snps
 
     @property
-    def haplotypes_info(self) -> Dict[str, GeneInfo]:
-        return deepcopy(self.u_haplotypes_info)
+    def gene_to_gene_info(self) -> Dict[str, GeneInfo]:
+        return deepcopy(self.u_gene_to_gene_info)
 
     @property
     def snps(self) -> Set[SNP]:
@@ -71,22 +73,18 @@ class Panel(NamedTuple):
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "Panel":
-        haplotypes_info = {}
+        gene_to_gene_info: Dict[str, GeneInfo] = {}
         snps = set()
         for gene_info_json in data['genes']:
             gene_info = GeneInfo.from_json(gene_info_json)
-            if gene_info.gene not in haplotypes_info:
-                haplotypes_info[gene_info.gene] = gene_info
+            if gene_info.gene in gene_to_gene_info.keys():
+                raise ValueError("Already have gene info for that gene")
+            gene_to_gene_info[gene_info.gene] = gene_info
             for variant in gene_info.variants:
                 snps.add(SNP.from_json(variant))
 
-        if len({snp.rs_id for snp in snps}) != len(snps):
-            # Error: some snps share rs_id but are different
-            rs_id_to_snps = defaultdict(list)
-            for snp in snps:
-                rs_id_to_snps[snp.rs_id].append(snp)
-
-            rs_id_to_duplicate_snps = {rs_id: snps for rs_id, snps in rs_id_to_snps.items() if len(snps) > 1}
+        if cls.__rs_ids_overlap(snps):
+            rs_id_to_duplicate_snps = cls.__get_rs_id_to_duplicate_snps(snps)
 
             raise ValueError(
                 ("Panel json contains snps with the same rs id but different positions. "
@@ -95,7 +93,7 @@ class Panel(NamedTuple):
                 )
             )
 
-        return Panel(haplotypes_info, snps)
+        return Panel(gene_to_gene_info, snps)
 
     def contains_snp_with_position(self, position_string: str) -> bool:
         for snp in self.u_snps:
@@ -123,10 +121,21 @@ class Panel(NamedTuple):
         return {snp.rs_id for snp in self.u_snps}
 
     def is_empty(self) -> bool:
-        return not self.u_haplotypes_info and not self.u_snps
+        return not self.u_gene_to_gene_info and not self.u_snps
 
     def get_genes(self) -> List[str]:
-        return list(self.u_haplotypes_info.keys())
+        return list(self.u_gene_to_gene_info.keys())
 
+    @staticmethod
+    def __rs_ids_overlap(snps: Set[SNP]) -> bool:
+        return len({snp.rs_id for snp in snps}) != len(snps)
+
+    @staticmethod
+    def __get_rs_id_to_duplicate_snps(snps: Set[SNP]) -> Dict[str, List[SNP]]:
+        rs_id_to_snps = defaultdict(list)
+        for snp in snps:
+            rs_id_to_snps[snp.rs_id].append(snp)
+        rs_id_to_duplicate_snps = {rs_id: snps for rs_id, snps in rs_id_to_snps.items() if len(snps) > 1}
+        return rs_id_to_duplicate_snps
 
 
