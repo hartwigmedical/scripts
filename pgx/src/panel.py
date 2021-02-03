@@ -7,9 +7,11 @@ from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 
 
 class Panel(object):
-    def __init__(self, gene_infos: List[GeneInfo], rs_id_infos: Set[RsIdInfo]) -> None:
-        assert_no_overlap_rs_ids(rs_id_infos, "panel json")
+    def __init__(self, gene_infos: List[GeneInfo]) -> None:
+        rs_id_infos = {rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos}
+
         assert_no_overlap_gene_names(gene_infos, "panel json")
+        assert_no_overlap_rs_ids(rs_id_infos, "panel json")
 
         self.__gene_infos = deepcopy(gene_infos)
         self.__rs_id_infos = deepcopy(rs_id_infos)
@@ -32,8 +34,7 @@ class Panel(object):
     @classmethod
     def from_json(cls, data: Json) -> "Panel":
         gene_infos = [GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']]
-        rs_id_infos = {rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos}
-        return Panel(gene_infos, rs_id_infos)
+        return Panel(gene_infos)
 
     def get_gene_infos(self) -> List[GeneInfo]:
         return deepcopy(self.__gene_infos)

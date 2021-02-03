@@ -1,4 +1,4 @@
-from typing import NamedTuple, Dict, Set, List
+from typing import NamedTuple, Dict, List, Collection
 
 from json_alias import Json
 from gene_coordinate import GeneCoordinate
@@ -29,7 +29,7 @@ class RsIdInfo(NamedTuple):
         return info
 
 
-def assert_no_overlap_rs_ids(infos: Set[RsIdInfo], source_name: str) -> None:
+def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:
     if rs_ids_overlap(infos):
         rs_id_to_multiple_infos = get_rs_id_to_multiple_infos(infos)
         raise ValueError(
@@ -41,9 +41,9 @@ def assert_no_overlap_rs_ids(infos: Set[RsIdInfo], source_name: str) -> None:
         )
 
 
-def rs_ids_overlap(infos: Set[RsIdInfo]) -> bool:
+def rs_ids_overlap(infos: Collection[RsIdInfo]) -> bool:
     return len({info.rs_id for info in infos}) != len(infos)
 
 
-def get_rs_id_to_multiple_infos(infos: Set[RsIdInfo]) -> Dict[str, List[RsIdInfo]]:
+def get_rs_id_to_multiple_infos(infos: Collection[RsIdInfo]) -> Dict[str, List[RsIdInfo]]:
     return get_key_to_multiple_values([(info.rs_id, info) for info in infos])

@@ -1,8 +1,8 @@
 from copy import deepcopy
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Collection
 
 from drug_info import DrugInfo, assert_no_overlap_drug_names
-from haplotype import Haplotype
+from haplotype import Haplotype, assert_no_overlap_haplotype_names, assert_no_overlap_haplotype_variant_combinations
 from json_alias import Json
 from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 from util import get_key_to_multiple_values
@@ -11,8 +11,10 @@ from util import get_key_to_multiple_values
 class GeneInfo(object):
     def __init__(self, haplotypes: List[Haplotype], drugs: List[DrugInfo], gene: str, genome_build: str,
                  reference_allele: str, rs_id_infos: Set[RsIdInfo]) -> None:
-        # TODO: make sure that haplotypes cannot have the same name
-        #  and maybe also not the exact same combination of variants
+        # TODO: maybe don't allow the exact same combination of variants for different names
+        assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
+        assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
+
         if genome_build != "GRCh37":
             raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
 
@@ -84,7 +86,7 @@ class GeneInfo(object):
         return GeneInfo(alleles, drugs, gene, genome_build, reference_allele, rs_id_infos)
 
 
-def assert_no_overlap_gene_names(gene_infos: List[GeneInfo], source_name: str) -> None:
+def assert_no_overlap_gene_names(gene_infos: Collection[GeneInfo], source_name: str) -> None:
     if gene_names_overlap(gene_infos):
         gene_name_to_multiple_infos = get_gene_name_to_multiple_infos(gene_infos)
         raise ValueError(
@@ -96,9 +98,9 @@ def assert_no_overlap_gene_names(gene_infos: List[GeneInfo], source_name: str) -
         )
 
 
-def gene_names_overlap(gene_infos: List[GeneInfo]) -> bool:
+def gene_names_overlap(gene_infos: Collection[GeneInfo]) -> bool:
     return len({info.gene for info in gene_infos}) != len(gene_infos)
 
 
-def get_gene_name_to_multiple_infos(gene_infos: List[GeneInfo]) -> Dict[str, List[GeneInfo]]:
+def get_gene_name_to_multiple_infos(gene_infos: Collection[GeneInfo]) -> Dict[str, List[GeneInfo]]:
     return get_key_to_multiple_values([(info.gene, info) for info in gene_infos])

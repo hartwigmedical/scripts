@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Dict
+from typing import NamedTuple, List, Dict, Collection
 
 from json_alias import Json
 from util import get_key_to_multiple_values
@@ -13,7 +13,7 @@ class DrugInfo(NamedTuple):
         return DrugInfo(data["name"], data["url_prescription_info"])
 
 
-def assert_no_overlap_drug_names(drugs: List[DrugInfo], source_name: str) -> None:
+def assert_no_overlap_drug_names(drugs: Collection[DrugInfo], source_name: str) -> None:
     if drug_names_overlap(drugs):
         name_to_multiple_drug_infos = get_drug_name_to_multiple_infos(drugs)
         raise ValueError(
@@ -25,9 +25,9 @@ def assert_no_overlap_drug_names(drugs: List[DrugInfo], source_name: str) -> Non
         )
 
 
-def drug_names_overlap(drug_infos: List[DrugInfo]) -> bool:
+def drug_names_overlap(drug_infos: Collection[DrugInfo]) -> bool:
     return len({info.name for info in drug_infos}) != len(drug_infos)
 
 
-def get_drug_name_to_multiple_infos(drug_infos: List[DrugInfo]) -> Dict[str, List[DrugInfo]]:
+def get_drug_name_to_multiple_infos(drug_infos: Collection[DrugInfo]) -> Dict[str, List[DrugInfo]]:
     return get_key_to_multiple_values([(info.name, info) for info in drug_infos])
