@@ -124,10 +124,12 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
     for snp in panel.get_snps():
-        if snp.rs_id not in rs_ids_found_in_patient and snp.get_position_string() not in positions_found_in_patient:
+        if snp.rs_id not in rs_ids_found_in_patient and snp.coordinate.get_position_string() not in positions_found_in_patient:
+            # TODO: check whether this properly takes variants of more than one base pair, so MNV's etc., into account.
+            #       The fact that only a single position is checked is suspicious.
             new_id = {}
             for gene, variant in rsid_to_gene_to_haplotype_variant[snp.rs_id].items():
-                new_id['position_GRCh37'] = snp.get_position_string()
+                new_id['position_GRCh37'] = snp.coordinate.get_position_string()
                 new_id['rsid'] = snp.rs_id
                 new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
                 new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38

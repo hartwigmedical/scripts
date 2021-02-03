@@ -5,23 +5,32 @@ from typing import NamedTuple, Dict, Any, List, Set
 from util import get_key_to_multiple_values
 
 
-class SNP(NamedTuple):
-    rs_id: str
+class GeneCoordinate(NamedTuple):
     chromosome: int
     position: int
 
     @classmethod
-    def from_json(cls, data: Dict[str, str]) -> "SNP":
-        rs_id = data['rsid']
+    def from_json(cls, data: Dict[str, str]) -> "GeneCoordinate":
         chromosome = int(data['chromosome'])
         position = int(data['position'])
-        return SNP(rs_id, chromosome, position)
+        return GeneCoordinate(chromosome, position)
 
     def get_position_string(self) -> str:
         return f"{self.chromosome}:{self.position}"
 
     def matches_position_string(self, position_string: str) -> bool:
         return self.get_position_string() == position_string
+
+
+class SNP(NamedTuple):
+    rs_id: str
+    coordinate: GeneCoordinate
+
+    @classmethod
+    def from_json(cls, data: Dict[str, str]) -> "SNP":
+        rs_id = data['rsid']
+        coordinate = GeneCoordinate.from_json(data)
+        return SNP(rs_id, coordinate)
 
 
 class DrugInfo(NamedTuple):
@@ -177,14 +186,14 @@ class Panel(object):
 
     def contains_snp_with_position(self, position_string: str) -> bool:
         for snp in self.__snps:
-            if snp.matches_position_string(position_string):
+            if snp.coordinate.matches_position_string(position_string):
                 return True
         return False
 
     def get_snp_with_position(self, position_string: str) -> SNP:
         matching_snps = []
         for snp in self.__snps:
-            if snp.matches_position_string(position_string):
+            if snp.coordinate.matches_position_string(position_string):
                 matching_snps.append(snp)
 
         if matching_snps and len(matching_snps) == 1:
