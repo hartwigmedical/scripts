@@ -4,13 +4,15 @@ from typing import NamedTuple, Dict, Any, List, Set
 
 from util import get_key_to_multiple_values
 
+Json = Any
+
 
 class GeneCoordinate(NamedTuple):
     chromosome: int
     position: int
 
     @classmethod
-    def from_json(cls, data: Dict[str, str]) -> "GeneCoordinate":
+    def from_json(cls, data: Json) -> "GeneCoordinate":
         chromosome = int(data['chromosome'])
         position = int(data['position'])
         return GeneCoordinate(chromosome, position)
@@ -27,7 +29,7 @@ class RsIdInfo(NamedTuple):
     start_coordinate: GeneCoordinate
 
     @classmethod
-    def from_json(cls, data: Dict[str, str]) -> "RsIdInfo":
+    def from_json(cls, data: Json) -> "RsIdInfo":
         rs_id = data['rsid']
         coordinate = GeneCoordinate.from_json(data)
         return RsIdInfo(rs_id, coordinate)
@@ -38,13 +40,13 @@ class DrugInfo(NamedTuple):
     url_prescription_info: str
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]) -> "DrugInfo":
+    def from_json(cls, data: Json) -> "DrugInfo":
         return DrugInfo(data["name"], data["url_prescription_info"])
 
 
 class GeneInfo(object):
     def __init__(self, alleles: List[Dict[str, Any]], drugs: List[DrugInfo], gene: str, genome_build: str,
-                 reference_allele: str, variants: List[Dict[str, Any]]) -> None:
+                 reference_allele: str, variants: List[Dict[str, str]]) -> None:
         if genome_build != "GRCh37":
             raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
 
@@ -108,11 +110,11 @@ class GeneInfo(object):
         return self.__reference_allele
 
     @property
-    def variants(self) -> List[Dict[str, Any]]:
+    def variants(self) -> List[Dict[str, str]]:
         return deepcopy(self.__variants)
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]) -> "GeneInfo":
+    def from_json(cls, data: Json) -> "GeneInfo":
         alleles = data["alleles"]
         drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
         gene = data['gene']
@@ -167,7 +169,7 @@ class Panel(object):
         )
 
     @classmethod
-    def from_json(cls, data: Dict[str, Any]) -> "Panel":
+    def from_json(cls, data: Json) -> "Panel":
         gene_infos: List[GeneInfo] = []
         rs_id_infos = set()
         for gene_info_json in data['genes']:

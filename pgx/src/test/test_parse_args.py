@@ -8,7 +8,7 @@ from main import parse_args
 
 
 class TestMain(unittest.TestCase):
-    def test_parse_args_representative_example(self):
+    def test_parse_args_representative_example(self) -> None:
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
                      "panel_location", "--sourcedir", "path_to_source_files",
                      "vcftools_location"]
@@ -21,7 +21,7 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
-    def test_parse_args_defaults(self):
+    def test_parse_args_defaults(self) -> None:
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
                      "panel_location", "vcftools_location"]
         actual_namespace = parse_args(arguments)
@@ -33,7 +33,7 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
-    def test_parse_args_no_defaults(self):
+    def test_parse_args_no_defaults(self) -> None:
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
                      "panel_location", "--sourcedir", "path_to_source_files",
                      "--recreate_bed", "vcftools_location"]
@@ -46,7 +46,7 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_namespace, actual_namespace)
 
-    def test_parse_args_missing_required_arguments(self):
+    def test_parse_args_missing_required_arguments(self) -> None:
         minimum_arguments = [
             "vcf_file", "tumor_sample_id", "ref_sample_id", "script_version",
             "output_directory", "panel_location", "vcftools_location"
