@@ -63,7 +63,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
 def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
     rsid_to_gene_to_haplotype_variant: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
-    for gene_info in panel.gene_to_gene_info.values():
+    for gene_info in panel.get_gene_infos():
         for variant in gene_info.variants:
             rsid_to_gene_to_haplotype_variant[variant['rsid']][gene_info.gene] = variant
 
@@ -123,7 +123,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
-    for snp in panel.snps:
+    for snp in panel.get_snps():
         if snp.rs_id not in rs_ids_found_in_patient and snp.get_position_string() not in positions_found_in_patient:
             new_id = {}
             for gene, variant in rsid_to_gene_to_haplotype_variant[snp.rs_id].items():
@@ -145,7 +145,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     all_ids_in_panel = all_ids_in_panel[['gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                          'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'filter']]
 
-    for gene_info in panel.gene_to_gene_info.values():
+    for gene_info in panel.get_gene_infos():
         print("[INFO] PROCESSING GENE " + gene_info.gene)
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene_info.gene)]
         perfect_match = False
