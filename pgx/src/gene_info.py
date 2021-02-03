@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Dict, Set, Collection
+from typing import List, Dict, Set, Collection, FrozenSet
 
 from drug_info import DrugInfo, assert_no_overlap_drug_names
 from haplotype import Haplotype, assert_no_overlap_haplotype_names, assert_no_overlap_haplotype_variant_combinations
@@ -10,8 +10,7 @@ from util import get_key_to_multiple_values
 
 class GeneInfo(object):
     def __init__(self, haplotypes: List[Haplotype], drugs: List[DrugInfo], gene: str, genome_build: str,
-                 reference_allele: str, rs_id_infos: Set[RsIdInfo]) -> None:
-        # TODO: maybe don't allow the exact same combination of variants for different names
+                 reference_allele: str, rs_id_infos: FrozenSet[RsIdInfo]) -> None:
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
 
@@ -26,7 +25,7 @@ class GeneInfo(object):
         self.__gene = gene
         self.__genome_build = genome_build
         self.__reference_allele = reference_allele
-        self.__rs_id_infos = deepcopy(rs_id_infos)
+        self.__rs_id_infos = rs_id_infos
 
     def __eq__(self, other: object) -> bool:
         return (
@@ -72,8 +71,8 @@ class GeneInfo(object):
         return self.__reference_allele
 
     @property
-    def rs_id_infos(self) -> Set[RsIdInfo]:
-        return deepcopy(self.__rs_id_infos)
+    def rs_id_infos(self) -> FrozenSet[RsIdInfo]:
+        return self.__rs_id_infos
 
     @classmethod
     def from_json(cls, data: Json) -> "GeneInfo":
@@ -82,7 +81,7 @@ class GeneInfo(object):
         gene = data['gene']
         genome_build = data["genomeBuild"]
         reference_allele = data["referenceAllele"]
-        rs_id_infos = {RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]}
+        rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
         return GeneInfo(alleles, drugs, gene, genome_build, reference_allele, rs_id_infos)
 
 

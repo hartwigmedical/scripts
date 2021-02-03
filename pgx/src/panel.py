@@ -14,7 +14,7 @@ class Panel(object):
         assert_no_overlap_rs_ids(rs_id_infos, "panel json")
 
         self.__gene_infos = deepcopy(gene_infos)
-        self.__rs_id_infos = deepcopy(rs_id_infos)
+        self.__rs_id_infos = rs_id_infos
 
     def __eq__(self, other: object) -> bool:
         return (

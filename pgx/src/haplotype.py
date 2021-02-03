@@ -1,5 +1,4 @@
-from copy import deepcopy
-from typing import Set, Collection, Dict, List, FrozenSet
+from typing import Collection, Dict, List, FrozenSet
 
 from json_alias import Json
 from util import get_key_to_multiple_values
@@ -21,6 +20,9 @@ class Haplotype(object):
             and self.__function == other.__function
             and self.__variants == other.__variants
         )
+
+    def __hash__(self) -> int:
+        return hash((self.__name, self.__function, self.__variants))
 
     def __repr__(self) -> str:
         return (
