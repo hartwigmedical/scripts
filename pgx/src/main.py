@@ -88,8 +88,8 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
             # Fill in the rsid gaps, if annotation is missing on the location.
             if 'rsid' in row.index and row['rsid'] == '.':
                 position_string = row['position_GRCh37']
-                if panel.contains_snp_with_position(position_string):
-                    rs_id = panel.get_snp_with_position(position_string).rs_id
+                if panel.contains_rs_id_with_position(position_string):
+                    rs_id = panel.get_rs_id_with_position(position_string)
                 else:
                     rs_id = '.'
                 ids_found_in_patient.at[index, 'rsid'] = rs_id
@@ -123,13 +123,13 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
     positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
 
-    for snp in panel.get_snps():
-        if snp.rs_id not in rs_ids_found_in_patient and snp.coordinate.get_position_string() not in positions_found_in_patient:
+    for snp in panel.get_rs_id_infos():
+        if snp.rs_id not in rs_ids_found_in_patient and snp.start_coordinate.get_position_string() not in positions_found_in_patient:
             # TODO: check whether this properly takes variants of more than one base pair, so MNV's etc., into account.
             #       The fact that only a single position is checked is suspicious.
             new_id = {}
             for gene, variant in rsid_to_gene_to_haplotype_variant[snp.rs_id].items():
-                new_id['position_GRCh37'] = snp.coordinate.get_position_string()
+                new_id['position_GRCh37'] = snp.start_coordinate.get_position_string()
                 new_id['rsid'] = snp.rs_id
                 new_id['ref_GRCh37'] = variant['referenceAlleleGRCh38']
                 new_id['alt_GRCh37'] = variant['referenceAlleleGRCh38']  # Assuming REF/REF relative to GRCh38
@@ -369,7 +369,7 @@ def get_ids_found_in_patient_from_variants(variants, panel: Panel) -> pd.DataFra
             rs_id_filter = [rs_number]
 
         rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
-        if rs_id_filter_to_panel_match_exists or panel.contains_snp_with_position(f"{chr}:{pos}"):
+        if rs_id_filter_to_panel_match_exists or panel.contains_rs_id_with_position(f"{chr}:{pos}"):
             if rs_id_filter_to_panel_match_exists:
                 match_on_rsid += 1
             else:

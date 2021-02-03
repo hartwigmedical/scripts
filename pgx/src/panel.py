@@ -22,15 +22,15 @@ class GeneCoordinate(NamedTuple):
         return self.get_position_string() == position_string
 
 
-class SNP(NamedTuple):
+class RsIdInfo(NamedTuple):
     rs_id: str
-    coordinate: GeneCoordinate
+    start_coordinate: GeneCoordinate
 
     @classmethod
-    def from_json(cls, data: Dict[str, str]) -> "SNP":
+    def from_json(cls, data: Dict[str, str]) -> "RsIdInfo":
         rs_id = data['rsid']
         coordinate = GeneCoordinate.from_json(data)
-        return SNP(rs_id, coordinate)
+        return RsIdInfo(rs_id, coordinate)
 
 
 class DrugInfo(NamedTuple):
@@ -131,13 +131,13 @@ class GeneInfo(object):
 
 
 class Panel(object):
-    def __init__(self, gene_infos: List[GeneInfo], snps: Set[SNP]) -> None:
-        if self.__rs_ids_overlap(snps):
-            rs_id_to_multiple_snps = self.__get_rs_id_to_multiple_snps(snps)
+    def __init__(self, gene_infos: List[GeneInfo], rs_id_infos: Set[RsIdInfo]) -> None:
+        if self.__rs_ids_overlap(rs_id_infos):
+            rs_id_to_multiple_infos = self.__get_rs_id_to_multiple_infos(rs_id_infos)
             raise ValueError(
-                ("Panel json contains snps with the same rs id but different positions. "
-                 "Duplicates: {rs_id_to_multiple_snps}").format(
-                    rs_id_to_multiple_snps=rs_id_to_multiple_snps
+                ("Panel json contains rs id summaries with the same rs id but different positions. "
+                 "Duplicates: {rs_id_to_multiple_infos}").format(
+                    rs_id_to_multiple_infos=rs_id_to_multiple_infos
                 )
             )
         if self.__gene_names_overlap(gene_infos):
@@ -149,79 +149,79 @@ class Panel(object):
                 )
             )
         self.__gene_infos = deepcopy(gene_infos)
-        self.__snps = deepcopy(snps)
+        self.__rs_id_infos = deepcopy(rs_id_infos)
 
     def __eq__(self, other: object) -> bool:
         return (
                 isinstance(other, Panel)
                 and self.__gene_infos == other.__gene_infos
-                and self.__snps == other.__snps
+                and self.__rs_id_infos == other.__rs_id_infos
         )
 
     def __repr__(self) -> str:
         return (
             f"Panel("
             f"gene_infos={self.__gene_infos}, "
-            f"snps={self.__snps}, "
+            f"rs_id_infos={self.__rs_id_infos}, "
             f")"
         )
 
     @classmethod
     def from_json(cls, data: Dict[str, Any]) -> "Panel":
         gene_infos: List[GeneInfo] = []
-        snps = set()
+        rs_id_infos = set()
         for gene_info_json in data['genes']:
             gene_info = GeneInfo.from_json(gene_info_json)
             gene_infos.append(gene_info)
             for variant in gene_info.variants:
-                snps.add(SNP.from_json(variant))
+                rs_id_infos.add(RsIdInfo.from_json(variant))
 
-        return Panel(gene_infos, snps)
+        return Panel(gene_infos, rs_id_infos)
 
     def get_gene_infos(self) -> List[GeneInfo]:
         return deepcopy(self.__gene_infos)
 
-    def get_snps(self) -> Set[SNP]:
-        return deepcopy(self.__snps)
+    def get_rs_id_infos(self) -> Set[RsIdInfo]:
+        return deepcopy(self.__rs_id_infos)
 
-    def contains_snp_with_position(self, position_string: str) -> bool:
-        for snp in self.__snps:
-            if snp.coordinate.matches_position_string(position_string):
+    def contains_rs_id_with_position(self, position_string: str) -> bool:
+        for info in self.__rs_id_infos:
+            if info.start_coordinate.matches_position_string(position_string):
                 return True
         return False
 
-    def get_snp_with_position(self, position_string: str) -> SNP:
-        matching_snps = []
-        for snp in self.__snps:
-            if snp.coordinate.matches_position_string(position_string):
-                matching_snps.append(snp)
+    def get_rs_id_with_position(self, position_string: str) -> str:
+        matching_rs_ids = []
+        for info in self.__rs_id_infos:
+            if info.start_coordinate.matches_position_string(position_string):
+                matching_rs_ids.append(info.rs_id)
 
-        if matching_snps and len(matching_snps) == 1:
-            return matching_snps.pop()
-        elif not matching_snps:
-            raise ValueError("No snps match position")
+        if matching_rs_ids and len(matching_rs_ids) == 1:
+            return matching_rs_ids.pop()
+        elif not matching_rs_ids:
+            raise ValueError("No rs ids match position")
         else:
-            raise ValueError("Multiple snps match position")
+            raise ValueError("Multiple rs ids match position")
 
     def contains_rs_id(self, rs_id: str) -> bool:
         return rs_id in self.get_rs_ids()
 
     def get_rs_ids(self) -> Set[str]:
-        return {snp.rs_id for snp in self.__snps}
+        return {info.rs_id for info in self.__rs_id_infos}
 
     def is_empty(self) -> bool:
-        return not self.__gene_infos and not self.__snps
+        return not self.__gene_infos and not self.__rs_id_infos
 
     def get_genes(self) -> List[str]:
         return [info.gene for info in self.__gene_infos]
 
     @staticmethod
-    def __rs_ids_overlap(snps: Set[SNP]) -> bool:
-        return len({snp.rs_id for snp in snps}) != len(snps)
+    def __rs_ids_overlap(infos: Set[RsIdInfo]) -> bool:
+        return len({info.rs_id for info in infos}) != len(infos)
 
     @staticmethod
-    def __get_rs_id_to_multiple_snps(snps: Set[SNP]) -> Dict[str, List[SNP]]:
-        return get_key_to_multiple_values([(snp.rs_id, snp) for snp in snps])
+    def __get_rs_id_to_multiple_infos(infos: Set[RsIdInfo]) -> Dict[str, List[RsIdInfo]]:
+        return get_key_to_multiple_values([(info.rs_id, info) for info in infos])
 
     @staticmethod
     def __gene_names_overlap(gene_infos: List[GeneInfo]) -> bool:
