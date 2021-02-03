@@ -64,7 +64,7 @@ def main(vcf: str, sampleTID: str, sampleRID: str, version: str, panel_path: str
 def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
     rsid_to_gene_to_haplotype_variant: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene in panel.haplotypes_info:
-        for variant in panel.haplotypes_info[gene].dict['variants']:
+        for variant in panel.haplotypes_info[gene].variants:
             rsid_to_gene_to_haplotype_variant[variant['rsid']][gene] = variant
 
     results = {}
@@ -149,19 +149,19 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
         print("[INFO] PROCESSING GENE " + gene)
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene)]
         perfect_match = False
-        severity[gene_info.dict['referenceAllele']] = "Normal Function"
+        severity[gene_info.reference_allele] = "Normal Function"
         severity['Unresolved'] = "Unknown Function"
-        drug_info[gene] = [";".join([x['name'] for x in gene_info.dict['drugs']]),
-                           ";".join(x['url_prescription_info'] for x in gene_info.dict['drugs'])]
+        drug_info[gene] = [";".join([x['name'] for x in gene_info.drugs]),
+                           ";".join(x['url_prescription_info'] for x in gene_info.drugs)]
 
         # If all variants are assumed_ref, return reference allele
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference allele")
-            results[gene] = [gene_info.dict['referenceAllele'] + "_HOM"]
+            results[gene] = [gene_info.reference_allele + "_HOM"]
         else:
             results[gene] = []
             haplotypes_matching = []
-            for allele in gene_info.dict['alleles']:
+            for allele in gene_info.allelles:
                 severity[allele['alleleName']] = allele['function']
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
@@ -183,7 +183,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
                     results[gene].append(allele['alleleName'] + "_" + str(allele_status))
                     if allele_status == "HET":
                         # Assume if perfect match with HET, we are also looking at reference allele
-                        results[gene].append(gene_info.dict['referenceAllele'] + "_HET")
+                        results[gene].append(gene_info.reference_allele + "_HET")
                     break
                 else:
                     #print("Processing " + str(allele['alleleName']))
@@ -272,7 +272,7 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
         # If we only find one allele and it is HET, assume we're also dealing with reference allele
         if len(results[gene]) == 1:
             if results[gene][0].split("_")[-1] == "HET":
-                results[gene].append(gene_info.dict['referenceAllele'] + "_HET")
+                results[gene].append(gene_info.reference_allele + "_HET")
 
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
