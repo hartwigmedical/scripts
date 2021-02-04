@@ -12,7 +12,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 ckb_dir=/data/common/dbs/ckb/210129_flex_dump
 
-java -Xms2G -Xmx8G -jar ${ckb_jar} \
+java -Xms2G -Xmx10G -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
