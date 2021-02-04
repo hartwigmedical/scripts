@@ -9,6 +9,16 @@
       "position": "98348885",
       "positionGRCh38": "97883329",
       "annotationGRCh38": "85T>C"
+    },
+    {
+      "rsid": "rs1801270",
+      "gene": "FAKE",
+      "referenceAlleleGRCh38": "T",
+      "altAlleleGRCh38": "C",
+      "chromosome": 5,
+      "position": "98348890",
+      "positionGRCh38": "97883345",
+      "annotationGRCh38": "236T>C"
     }
   ],
   "notes": [

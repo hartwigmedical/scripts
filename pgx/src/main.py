@@ -28,7 +28,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
             pass
 
     # Get configuration
-    panel = load_panel_from_json(panel_path)
+    panel = load_panel(panel_path)
     ref_sequence_differences = get_ref_sequence_differences(panel_path)
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
 
@@ -451,7 +451,7 @@ def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str
     return filtered_vcf
 
 
-def load_panel_from_json(panel: str) -> Panel:
+def load_panel(panel: str) -> Panel:
     """ Load manually annotated JSON panel file """
     try:
         with open(panel, 'r+', encoding='utf-8') as json_file:

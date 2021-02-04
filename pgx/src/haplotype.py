@@ -30,9 +30,9 @@ class Haplotype(object):
     def __repr__(self) -> str:
         return (
             f"Haplotype("
-            f"name={self.__name}, "
-            f"function={self.__function}, "
-            f"variants={self.__variants}, "
+            f"name={self.__name!r}, "
+            f"function={self.__function!r}, "
+            f"variants={self.__variants!r}, "
             f")"
         )
 

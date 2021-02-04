@@ -42,13 +42,13 @@
         },
         {
           "alleleName": "*3",
-          "function": "No Function",
+          "function": "Normal Function",
           "alleleVariants": [
             {
               "rsid": "rs72549303",
               "chromosomeHgvsName": "1898delC",
               "altAllele": "T",
-              "altAlleleGRCh38": "T"
+              "altAlleleGRCh38": "A"
             }
           ]
         }
@@ -91,18 +91,8 @@
           "rsid": "rs72549303",
           "type": "SNV",
           "referenceAllele": "TG",
-          "referenceAlleleGRCh38": "TG",
-          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
-        },
-        {
-          "chromosome": 1,
-          "position": "97544627",
-          "positionGRCh38": "97079071",
-          "rsid": "rs1801268",
-          "type": "SNV",
-          "referenceAllele": "C",
-          "referenceAlleleGRCh38": "C",
-          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+          "referenceAlleleGRCh38": "TC",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017(modified)"
         }
       ],
       "drugs": [
@@ -115,16 +105,11 @@
           "name": "Capecitabine",
           "url_general": "https://www.pharmgkb.org/chemical/PA448771",
           "url_prescription_info": "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"
-        },
-        {
-          "name": "Tegafur",
-          "url_general": "https://www.pharmgkb.org/chemical/PA452620",
-          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA452620/guidelineAnnotation/PA166104944"
         }
       ]
     },
     {
-      "gene": "FAKE_GENE",
+      "gene": "FAKE",
       "orientation": "1",
       "genomeBuild": "GRCh37",
       "chromosome": 5,
@@ -133,7 +118,7 @@
       "alleles": [
         {
           "alleleName": "*4A",
-          "function": "No Function",
+          "function": "Reduced Function",
           "alleleVariants": [
             {
               "rsid": "rs1212125",

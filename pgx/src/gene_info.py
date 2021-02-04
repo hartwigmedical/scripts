@@ -9,8 +9,8 @@ from util import get_key_to_multiple_values
 
 
 class GeneInfo(object):
-    def __init__(self, haplotypes: List[Haplotype], drugs: List[DrugInfo], gene: str, genome_build: str,
-                 reference_haplotype_name: str, rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+    def __init__(self, gene: str, genome_build: str, reference_haplotype_name: str, haplotypes: List[Haplotype],
+                 rs_id_infos: FrozenSet[RsIdInfo], drugs: List[DrugInfo]) -> None:
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
 
@@ -49,12 +49,12 @@ class GeneInfo(object):
     def __repr__(self) -> str:
         return (
             f"GeneInfo("
-            f"haplotypes={self.__haplotypes}, "
-            f"drugs={self.__drugs}, "
-            f"gene={self.__gene}, "
-            f"genome_build={self.__genome_build}, "
-            f"reference_haplotype_name={self.__reference_haplotype_name}, "
-            f"rs_id_infos={self.__rs_id_infos}, "
+            f"gene={self.__gene!r}, "
+            f"genome_build={self.__genome_build!r}, "
+            f"reference_haplotype_name={self.__reference_haplotype_name!r}, "
+            f"haplotypes={self.__haplotypes!r}, "
+            f"rs_id_infos={self.__rs_id_infos!r}, "
+            f"drugs={self.__drugs!r}, "
             f")"
         )
 
@@ -84,13 +84,13 @@ class GeneInfo(object):
 
     @classmethod
     def from_json(cls, data: Json) -> "GeneInfo":
-        alleles = [Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]]
-        drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
         gene = data['gene']
         genome_build = data["genomeBuild"]
         reference_allele = data["referenceAllele"]
         rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
-        return GeneInfo(alleles, drugs, gene, genome_build, reference_allele, rs_id_infos)
+        haplotypes = [Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]]
+        drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
+        return GeneInfo(gene, genome_build, reference_allele, haplotypes, rs_id_infos, drugs)
 
 
 def assert_no_overlap_gene_names(gene_infos: Collection[GeneInfo], source_name: str) -> None:

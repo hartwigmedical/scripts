@@ -22,7 +22,7 @@ class Panel(object):
     def __repr__(self) -> str:
         return (
             f"Panel("
-            f"gene_infos={self.__gene_infos}, "
+            f"gene_infos={self.__gene_infos!r}, "
             f")"
         )
 
