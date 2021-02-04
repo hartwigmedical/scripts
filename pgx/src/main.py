@@ -35,15 +35,16 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
 
+    ref_sequence_differences = get_ref_sequence_differences(panel_path)
     ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
 
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(ids_found_in_patient, panel, panel_path)
+        convert_results_into_haplotypes(ids_found_in_patient, panel, ref_sequence_differences)
 
     out = outputdir + "/" + sample_t_id
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
     print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
-    
+
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -63,11 +64,17 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
 def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
     variants = get_variants_from_filtered_vcf(filtered_vcf)
-    ids_found_in_patient = get_ids_found_in_patient_from_variants(variants, panel)
-    return ids_found_in_patient
+    return get_ids_found_in_patient_from_variants(variants, panel)
 
 
-def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel, panel_path: str):
+def convert_results_into_haplotypes(
+        ids_found_in_patient: pd.DataFrame,
+        panel: Panel,
+        ref_sequence_differences: List[Dict[str, str]]
+):
+    # Process the differences between GRCh37 and GRCh38
+    ids_found_in_patient = process_differences_in_ref_sequence(ids_found_in_patient, ref_sequence_differences)
+
     rsid_to_gene_to_rs_id_info: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene_info in panel.get_gene_infos():
         for rs_id_info in gene_info.rs_id_infos:
@@ -77,8 +84,6 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     severity = {}
     drug_info = {}
 
-    # Process the exceptions
-    ids_found_in_patient = process_exceptions(ids_found_in_patient, panel_path)
     # Fill in the GRCh38 gaps, they should be the same as the GRCh37 equivalent
     if not ids_found_in_patient.empty:
         for index, row in ids_found_in_patient.iterrows():
@@ -292,68 +297,71 @@ def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: P
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
 
-def process_exceptions(ids_found: pd.DataFrame, panel_path) -> pd.DataFrame:
-    # TODO: determine whether I need a separate file for this
+def get_ref_sequence_differences(panel_path: str) -> List[Dict[str, str]]:
+    # TODO: determine whether I need a separate file for this. I think it's a good idea, but not strictly necessary
     try:
         panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
         with open(panel_exceptions_file, 'r+', encoding='utf-8') as json_file:
-            exceptions = json.load(json_file)
-            exceptions = exceptions['exceptions']
-            for variant in exceptions:
-                variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
-                variant_location_found = variant_location in ids_found['position_GRCh37'].tolist()
-                rs_id_found = variant['rsid'] in ids_found['rsid'].tolist()
-                if rs_id_found or variant_location_found:
-                    if rs_id_found:
-                        # get line and index from ids_found
-                        found_var = ids_found[ids_found['rsid'].str.contains(variant['rsid'])]
-                    else:
-                        found_var = ids_found[ids_found['position_GRCh37'].str.contains(variant_location)]
-                    # Delete found variant from results if the ref base and alt base are the correctedRefBase
-                    if found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
-                            found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
-                        ids_found = ids_found.drop(found_var.index[0])
-                    elif found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
-                            found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
-                        print("[WARN] What should we do? ref = corRef, alt = corAlt")
-                    elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
-                            found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
-                        # Change variant_annotation and ref and alt base
-                        ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
-                        ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['referenceAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'position_GRCh38'] = (
-                                str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
-                        )
-                    elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
-                            found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
-                        # Add variant_annotation and ref and alt base for hg38
-                        ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
-                        ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['altAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
-                        ids_found.at[found_var.index[0], 'position_GRCh38'] = (
-                                str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
-                        )
-                    else:
-                        print("[ERROR] Complete mismatch:")
-                        print(found_var)
-                        raise ValueError("[ERROR] Exceptions cannot be processed. Please check. Exiting.")
-                else:
-                    print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
-                          "flipped. Add to table.")
-                    new_id = {'position_GRCh37': str(variant['chromosome']) + ":" + str(variant['position']),
-                              'rsid': variant['rsid'],
-                              'ref_GRCh37': variant['altAlleleGRCh38'],
-                              'alt_GRCh37': variant['altAlleleGRCh38'],
-                              'variant_annotation': variant['annotationGRCh38'],
-                              'filter': "INFERRED_REF_CALL",
-                              'gene': variant['gene'],
-                              'position_GRCh38': str(variant['chromosome']) + ":" + str(variant['positionGRCh38']),
-                              'ref_GRCh38': variant['altAlleleGRCh38'],
-                              'alt_GRCh38': variant['altAlleleGRCh38']}
-                    ids_found = ids_found.append(new_id, ignore_index=True)
+            ref_differences_json = json.load(json_file)
     except IOError:
         sys.exit("[ERROR] Exceptions file not found or cannot be opened.")
+    return ref_differences_json['exceptions']
+
+
+def process_differences_in_ref_sequence(ids_found: pd.DataFrame, rs_ids_with_different_refs: List[Dict[str, str]]) -> pd.DataFrame:
+    for variant in rs_ids_with_different_refs:
+        variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
+        variant_location_found = variant_location in ids_found['position_GRCh37'].tolist()
+        rs_id_found = variant['rsid'] in ids_found['rsid'].tolist()
+        if rs_id_found or variant_location_found:
+            if rs_id_found:
+                # get line and index from ids_found
+                found_var = ids_found[ids_found['rsid'].str.contains(variant['rsid'])]
+            else:
+                found_var = ids_found[ids_found['position_GRCh37'].str.contains(variant_location)]
+            # Delete found variant from results if the ref base and alt base are the correctedRefBase
+            if found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
+                    found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
+                ids_found = ids_found.drop(found_var.index[0])
+            elif found_var['ref_GRCh37'].values == variant['referenceAlleleGRCh38'] and \
+                    found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
+                print("[WARN] What should we do? ref = corRef, alt = corAlt")
+            elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
+                    found_var['alt_GRCh37'].values == variant['referenceAlleleGRCh38']:
+                # Change variant_annotation and ref and alt base
+                ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
+                ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['referenceAlleleGRCh38']
+                ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
+                ids_found.at[found_var.index[0], 'position_GRCh38'] = (
+                        str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                )
+            elif found_var['ref_GRCh37'].values == variant['altAlleleGRCh38'] and \
+                    found_var['alt_GRCh37'].values == variant['altAlleleGRCh38']:
+                # Add variant_annotation and ref and alt base for hg38
+                ids_found.at[found_var.index[0], 'variant_annotation'] = variant['annotationGRCh38']
+                ids_found.at[found_var.index[0], 'ref_GRCh38'] = variant['altAlleleGRCh38']
+                ids_found.at[found_var.index[0], 'alt_GRCh38'] = variant['altAlleleGRCh38']
+                ids_found.at[found_var.index[0], 'position_GRCh38'] = (
+                        str(variant['chromosome']) + ":" + str(variant['positionGRCh38'])
+                )
+            else:
+                print("[ERROR] Complete mismatch:")
+                print(found_var)
+                raise ValueError("[ERROR] Exceptions cannot be processed. Please check. Exiting.")
+        else:
+            print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
+                  "flipped. Add to table.")
+            new_id = {'position_GRCh37': str(variant['chromosome']) + ":" + str(variant['position']),
+                      'rsid': variant['rsid'],
+                      'ref_GRCh37': variant['altAlleleGRCh38'],
+                      'alt_GRCh37': variant['altAlleleGRCh38'],
+                      'variant_annotation': variant['annotationGRCh38'],
+                      'filter': "INFERRED_REF_CALL",
+                      'gene': variant['gene'],
+                      'position_GRCh38': str(variant['chromosome']) + ":" + str(variant['positionGRCh38']),
+                      'ref_GRCh38': variant['altAlleleGRCh38'],
+                      'alt_GRCh38': variant['altAlleleGRCh38']}
+            ids_found = ids_found.append(new_id, ignore_index=True)
 
     return ids_found
 
