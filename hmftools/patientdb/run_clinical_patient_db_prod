@@ -5,6 +5,7 @@ source locate_files
 patient_db_jar=$(locate_prod_patient_db)
 runs_dir=/data/cpct/runs
 pipeline_version_file="pipeline.version"
+reporting_db_tsv=$(locate_reporting_db_tsv)
 
 # Force UTF-8 to deal with non-standard characters, see DEV-275
 java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
@@ -16,8 +17,10 @@ java -Dorg.jooq.no-logo=true -Xmx8G -Xms2G -Dfile.encoding=UTF-8 \
     -drup_ecrf /data/ecrf/drup_ecrf.xml \
     -lims_dir /data/ops/lims/prod \
     -curated_primary_tumor_tsv /data/common/dbs/clinical_data/curated_primary_tumor.tsv \
+    -patient_tumor_curation_status_tsv /data/common/dbs/clinical_data/patient_tumor_curation_status.tsv \
     -doid_json /data/common/dbs/disease_ontology/201015_doid.json \
     -tumor_location_mapping_tsv /data/common/dbs/clinical_curation/tumor_location_mapping.tsv \
     -treatment_mapping_csv /data/common/dbs/clinical_curation/treatment_mapping.csv \
     -biopsy_mapping_csv /data/common/dbs/clinical_curation/biopsy_site_mapping.csv \
+    -reporting_db_tsv ${reporting_db_tsv} \
     "$@"
