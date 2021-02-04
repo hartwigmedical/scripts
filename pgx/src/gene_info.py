@@ -10,7 +10,7 @@ from util import get_key_to_multiple_values
 
 class GeneInfo(object):
     def __init__(self, haplotypes: List[Haplotype], drugs: List[DrugInfo], gene: str, genome_build: str,
-                 reference_allele: str, rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+                 reference_haplotype_name: str, rs_id_infos: FrozenSet[RsIdInfo]) -> None:
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
 
@@ -24,7 +24,7 @@ class GeneInfo(object):
         self.__drugs = deepcopy(drugs)
         self.__gene = gene
         self.__genome_build = genome_build
-        self.__reference_allele = reference_allele
+        self.__reference_haplotype_name = reference_haplotype_name
         self.__rs_id_infos = rs_id_infos
 
     def __eq__(self, other: object) -> bool:
@@ -34,7 +34,7 @@ class GeneInfo(object):
             and self.__drugs == other.__drugs
             and self.__gene == other.__gene
             and self.__genome_build == other.__genome_build
-            and self.__reference_allele == other.__reference_allele
+            and self.__reference_haplotype_name == other.__reference_haplotype_name
             and self.__rs_id_infos == other.__rs_id_infos
         )
 
@@ -45,7 +45,7 @@ class GeneInfo(object):
             f"drugs={self.__drugs}, "
             f"gene={self.__gene}, "
             f"genome_build={self.__genome_build}, "
-            f"reference_allele={self.__reference_allele}, "
+            f"reference_haplotype_name={self.__reference_haplotype_name}, "
             f"rs_id_infos={self.__rs_id_infos}, "
             f")"
         )
@@ -67,8 +67,8 @@ class GeneInfo(object):
         return self.__genome_build
 
     @property
-    def reference_allele(self) -> str:
-        return self.__reference_allele
+    def reference_haplotype_name(self) -> str:
+        return self.__reference_haplotype_name
 
     @property
     def rs_id_infos(self) -> FrozenSet[RsIdInfo]:

@@ -163,7 +163,7 @@ def convert_results_into_haplotypes(
         print("[INFO] PROCESSING GENE " + gene_info.gene)
         ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene_info.gene)]
         perfect_match = False
-        severity[gene_info.reference_allele] = "Normal Function"
+        severity[gene_info.reference_haplotype_name] = "Normal Function"
         severity['Unresolved'] = "Unknown Function"
         drug_info[gene_info.gene] = [
             ";".join([drug.name for drug in gene_info.drugs]),
@@ -173,7 +173,7 @@ def convert_results_into_haplotypes(
         # If all variants are assumed_ref, return reference haplotype
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference haplotype")
-            results[gene_info.gene] = [gene_info.reference_allele + "_HOM"]
+            results[gene_info.gene] = [gene_info.reference_haplotype_name + "_HOM"]
         else:
             results[gene_info.gene] = []
             haplotypes_matching = []
@@ -199,7 +199,7 @@ def convert_results_into_haplotypes(
                     results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
                     if allele_status == "HET":
                         # Assume if perfect match with HET, we are also looking at reference haplotype
-                        results[gene_info.gene].append(gene_info.reference_allele + "_HET")
+                        results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
                     break
                 else:
                     # print("Processing " + str(haplotype['alleleName']))
@@ -292,7 +292,7 @@ def convert_results_into_haplotypes(
         # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
         if len(results[gene_info.gene]) == 1:
             if results[gene_info.gene][0].split("_")[-1] == "HET":
-                results[gene_info.gene].append(gene_info.reference_allele + "_HET")
+                results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
 
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
