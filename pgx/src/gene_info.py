@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Dict, Set, Collection, FrozenSet
+from typing import List, Dict, Collection, FrozenSet
 
 from drug_info import DrugInfo, assert_no_overlap_drug_names
 from haplotype import Haplotype, assert_no_overlap_haplotype_names, assert_no_overlap_haplotype_variant_combinations
@@ -19,6 +19,14 @@ class GeneInfo(object):
 
         assert_no_overlap_drug_names(drugs, f"GeneInfo json for {gene}")
         assert_no_overlap_rs_ids(rs_id_infos, f"GeneInfo json for {gene}")
+
+        rs_ids_in_haplotypes = {variant.rs_id for haplotype in haplotypes for variant in haplotype.variants}
+        rs_ids_with_info = {info.rs_id for info in rs_id_infos}
+        if not rs_ids_in_haplotypes.issubset(rs_ids_with_info):
+            rs_ids_without_info = rs_ids_in_haplotypes.difference(rs_ids_with_info)
+            raise ValueError(
+                f"No info available for some of the rs ids in the haplotypes. Rs ids: {rs_ids_without_info}"
+            )
 
         self.__haplotypes = deepcopy(haplotypes)
         self.__drugs = deepcopy(drugs)

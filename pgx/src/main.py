@@ -27,28 +27,30 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
             # Directory already exists
             pass
 
+    # Get configuration
     panel = load_panel_from_json(panel_path)
+    ref_sequence_differences = get_ref_sequence_differences(panel_path)
+    bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
 
     if panel.is_empty():
         sys.exit("[ERROR] No panel is given, so no analysis can be performed.")
 
-    bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
+    # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-
-    ref_sequence_differences = get_ref_sequence_differences(panel_path)
     ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
 
+    # Compute output from input data
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
         convert_results_into_haplotypes(ids_found_in_patient, panel, ref_sequence_differences)
 
+    # Output
     out = outputdir + "/" + sample_t_id
     print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
     print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
-
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
-    # Clean up filtered_vcf
+    # Clean up
     if os.path.exists(filtered_vcf):
         if os.path.exists(filtered_vcf):
             os.remove(filtered_vcf)
@@ -298,9 +300,8 @@ def convert_results_into_haplotypes(
 
 
 def get_ref_sequence_differences(panel_path: str) -> List[Dict[str, str]]:
-    # TODO: determine whether I need a separate file for this. I think it's a good idea, but not strictly necessary
+    panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
     try:
-        panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
         with open(panel_exceptions_file, 'r+', encoding='utf-8') as json_file:
             ref_differences_json = json.load(json_file)
     except IOError:

@@ -1,0 +1,20 @@
+{
+  "exceptions": [
+    {
+      "rsid": "rs1801265",
+      "gene": "DPYD",
+      "referenceAlleleGRCh38": "A",
+      "altAlleleGRCh38": "G",
+      "chromosome": 1,
+      "position": "98348885",
+      "positionGRCh38": "97883329",
+      "annotationGRCh38": "85T>C"
+    }
+  ],
+  "notes": [
+    "exceptions states the rs ids that point to a location on the genome that has a different reference base in GRCh37 and GRCh38.",
+    "While processing the variants, the variants that are stated in exceptions should be flipped (if reference call, include in results and if hom alt in results, delete and assume ref call).",
+    "referenceAlleleGRCh38 states the base that is in the reference haplotype and is considered 'low risk'",
+    "altAlleleGRCh38 states the alternative base that should be checked in the variant calls."
+  ]
+}

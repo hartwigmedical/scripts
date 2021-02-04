@@ -9,6 +9,9 @@ class Haplotype(object):
     def __init__(self, name: str, function: str, variants: FrozenSet[Variant]) -> None:
         assert_no_overlap_variant_rs_ids(variants, f"haplotype {name}")
 
+        if not variants:
+            raise ValueError("Haplotype without variants is not allowed")
+
         self.__name = name
         self.__function = function
         self.__variants = variants

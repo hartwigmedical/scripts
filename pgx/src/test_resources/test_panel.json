@@ -1,0 +1,168 @@
+{
+  "jsonVersion": "0.2",
+  "modificationDate": "Oct 22, 2019 10:28",
+  "genes": [
+    {
+      "gene": "DPYD",
+      "orientation": "-1",
+      "genomeBuild": "GRCh37",
+      "chromosome": 1,
+      "canonicalTranscript": "ENST00000370192",
+      "referenceAllele": "*1",
+      "alleles": [
+        {
+          "alleleName": "*2A",
+          "function": "No Function",
+          "alleleVariants": [
+            {
+              "rsid": "rs3918290",
+              "chromosomeHgvsName": "1905+1G>A",
+              "altAllele": "T",
+              "altAlleleGRCh38": "T"
+            }
+          ]
+        },
+        {
+          "alleleName": "*2B",
+          "function": "No Function",
+          "alleleVariants": [
+            {
+              "rsid": "rs3918290",
+              "chromosomeHgvsName": "1905+1G>A",
+              "altAllele": "T",
+              "altAlleleGRCh38": "T"
+            },
+            {
+              "rsid": "rs1801159",
+              "chromosomeHgvsName": "1627A>G",
+              "altAllele": "C",
+              "altAlleleGRCh38": "C"
+            }
+          ]
+        },
+        {
+          "alleleName": "*3",
+          "function": "No Function",
+          "alleleVariants": [
+            {
+              "rsid": "rs72549303",
+              "chromosomeHgvsName": "1898delC",
+              "altAllele": "T",
+              "altAlleleGRCh38": "T"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "chromosome": 1,
+          "position": "97915614",
+          "positionGRCh38": "97450058",
+          "rsid": "rs3918290",
+          "type": "SNV",
+          "referenceAllele": "C",
+          "referenceAlleleGRCh38": "C",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+        },
+        {
+          "chromosome": 1,
+          "position": "98205966",
+          "positionGRCh38": "97740410",
+          "rsid": "rs72549309",
+          "type": "DEL",
+          "referenceAllele": "GATGA",
+          "referenceAlleleGRCh38": "GATGA",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+        },
+        {
+          "chromosome": 1,
+          "position": "97981395",
+          "positionGRCh38": "97515839",
+          "rsid": "rs1801159",
+          "type": "SNV",
+          "referenceAllele": "T",
+          "referenceAlleleGRCh38": "T",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+        },
+        {
+          "chromosome": 1,
+          "position": "97915621",
+          "positionGRCh38": "97450065",
+          "rsid": "rs72549303",
+          "type": "SNV",
+          "referenceAllele": "TG",
+          "referenceAlleleGRCh38": "TG",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+        },
+        {
+          "chromosome": 1,
+          "position": "97544627",
+          "positionGRCh38": "97079071",
+          "rsid": "rs1801268",
+          "type": "SNV",
+          "referenceAllele": "C",
+          "referenceAlleleGRCh38": "C",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
+        }
+      ],
+      "drugs": [
+        {
+          "name": "5-Fluorouracil",
+          "url_general": "https://www.pharmgkb.org/chemical/PA128406956",
+          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"
+        },
+        {
+          "name": "Capecitabine",
+          "url_general": "https://www.pharmgkb.org/chemical/PA448771",
+          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"
+        },
+        {
+          "name": "Tegafur",
+          "url_general": "https://www.pharmgkb.org/chemical/PA452620",
+          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA452620/guidelineAnnotation/PA166104944"
+        }
+      ]
+    },
+    {
+      "gene": "FAKE_GENE",
+      "orientation": "1",
+      "genomeBuild": "GRCh37",
+      "chromosome": 5,
+      "canonicalTranscript": "ENST00000111111",
+      "referenceAllele": "*1",
+      "alleles": [
+        {
+          "alleleName": "*4A",
+          "function": "No Function",
+          "alleleVariants": [
+            {
+              "rsid": "rs1212125",
+              "chromosomeHgvsName": "FAKE_NAME",
+              "altAllele": "C",
+              "altAlleleGRCh38": "C"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "chromosome": 1,
+          "position": "97915617",
+          "positionGRCh38": "97450060",
+          "rsid": "rs1212125",
+          "type": "SNV",
+          "referenceAllele": "T",
+          "referenceAlleleGRCh38": "T",
+          "source": "Made up"
+        }
+      ],
+      "drugs": [
+        {
+          "name": "Aspirin",
+          "url_general": "https://www.pharmgkb.org/some_url",
+          "url_prescription_info": "https://www.pharmgkb.org/some_other_url"
+        }
+      ]
+    }
+  ]
+}
