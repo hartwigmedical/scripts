@@ -17,5 +17,5 @@ def get_panel_test_resource() -> Path:
     return get_test_resources_dir() / "test_panel.json"
 
 
-def get_panel_exceptions_test_resource() -> Path:
+def get_ref_sequence_differences_test_resource() -> Path:
     return get_test_resources_dir() / "test_panel_exceptions.json"

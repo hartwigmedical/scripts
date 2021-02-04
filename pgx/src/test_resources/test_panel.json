@@ -56,7 +56,7 @@
       "variants": [
         {
           "chromosome": 1,
-          "position": "97915614",
+          "position": 97915614,
           "positionGRCh38": "97450058",
           "rsid": "rs3918290",
           "type": "SNV",

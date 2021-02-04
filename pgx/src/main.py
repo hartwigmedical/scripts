@@ -19,6 +19,9 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
+    # TODO: make this separate argument from script, or put it in the same file as the panel
+    ref_sequence_differences_path = panel_path.replace(".json", "") + "_exceptions.json"
+
     # Check if output dir exists, create if it does not
     if not os.path.exists(outputdir):
         try:
@@ -29,7 +32,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get configuration
     panel = load_panel(panel_path)
-    ref_sequence_differences = get_ref_sequence_differences(panel_path)
+    ref_sequence_differences = load_ref_sequence_differences(ref_sequence_differences_path)
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
 
     if panel.is_empty():
@@ -299,16 +302,6 @@ def convert_results_into_haplotypes(
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
 
-def get_ref_sequence_differences(panel_path: str) -> List[Dict[str, str]]:
-    panel_exceptions_file = panel_path.replace(".json", "") + "_exceptions.json"
-    try:
-        with open(panel_exceptions_file, 'r+', encoding='utf-8') as json_file:
-            ref_differences_json = json.load(json_file)
-    except IOError:
-        sys.exit("[ERROR] Exceptions file not found or cannot be opened.")
-    return ref_differences_json['exceptions']
-
-
 def process_differences_in_ref_sequence(ids_found: pd.DataFrame, rs_ids_with_different_refs: List[Dict[str, str]]) -> pd.DataFrame:
     for variant in rs_ids_with_different_refs:
         variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
@@ -451,14 +444,23 @@ def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str
     return filtered_vcf
 
 
-def load_panel(panel: str) -> Panel:
+def load_ref_sequence_differences(ref_differences_path: str) -> List[Dict[str, str]]:
+    try:
+        with open(ref_differences_path, 'r+', encoding='utf-8') as json_file:
+            ref_differences_json = json.load(json_file)
+            return ref_differences_json['exceptions']
+    except IOError:
+        sys.exit(f"[ERROR] Ref sequences file {ref_differences_path} not found or cannot be opened.")
+
+
+def load_panel(panel_path: str) -> Panel:
     """ Load manually annotated JSON panel file """
     try:
-        with open(panel, 'r+', encoding='utf-8') as json_file:
+        with open(panel_path, 'r+', encoding='utf-8') as json_file:
             data = json.load(json_file)
             return Panel.from_json(data)
     except IOError:
-        sys.exit("[ERROR] File " + panel + " not found or cannot be opened.")
+        sys.exit(f"[ERROR] Panel file {panel_path} not found or cannot be opened.")
 
 
 def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str) -> str:

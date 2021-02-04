@@ -4,10 +4,10 @@ from drug_info import DrugInfo
 from gene_coordinate import GeneCoordinate
 from gene_info import GeneInfo
 from haplotype import Haplotype
-from main import load_panel
+from main import load_panel, load_ref_sequence_differences
 from panel import Panel
 from rs_id_info import RsIdInfo
-from test_resources.test_resource import get_panel_test_resource
+from test_resources.test_resource import get_panel_test_resource, get_ref_sequence_differences_test_resource
 from variant import Variant
 
 
@@ -53,6 +53,35 @@ class TestLoadConfig(unittest.TestCase):
         panel_expected = Panel(gene_infos_expected)
 
         self.assertEqual(panel_expected, panel)
+
+    def test_load_ref_sequence_differences(self) -> None:
+        ref_seq_diff_path = get_ref_sequence_differences_test_resource()
+        ref_seq_differences = load_ref_sequence_differences(str(ref_seq_diff_path))
+
+        ref_seq_differences_expected = [
+            {
+                'rsid': 'rs1801265',
+                'gene': 'DPYD',
+                'referenceAlleleGRCh38': 'A',
+                'altAlleleGRCh38': 'G',
+                'chromosome': 1,
+                'position': '98348885',
+                'positionGRCh38': '97883329',
+                'annotationGRCh38': '85T>C'
+            },
+            {
+                'rsid': 'rs1801270',
+                'gene': 'FAKE',
+                'referenceAlleleGRCh38': 'T',
+                'altAlleleGRCh38': 'C',
+                'chromosome': 5,
+                'position': '98348890',
+                'positionGRCh38': '97883345',
+                'annotationGRCh38': '236T>C'
+            }
+        ]
+
+        self.assertEqual(ref_seq_differences_expected, ref_seq_differences)
 
 
 if __name__ == '__main__':
