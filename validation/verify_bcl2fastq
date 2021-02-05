@@ -1,0 +1,109 @@
+#!/usr/bin/env bash
+
+wd=".."
+
+iseq_base="20191213_FFSMP021_61_BPG80712-1606"
+iseq_test="210203_PG80712-1606_v1.3"
+nova_base="191218_A00624_0074_BHYKK5DSXX"
+nova_test="210203_HYKK5DSXX_v1.3"
+
+md5_iseq_base="${wd}/baseline/${iseq_base}/${iseq_base}_fastq.md5"
+md5_nova_base="${wd}/baseline/${nova_base}/${nova_base}_fastq.md5"
+md5_iseq_test="${wd}/runs/${iseq_test}/md5s"
+md5_nova_test="${wd}/runs/${nova_test}/md5s"
+
+stats_iseq_base="${wd}/baseline/${iseq_base}/Stats.json"
+stats_nova_base="${wd}/baseline/${nova_base}/Stats.json"
+stats_iseq_test="${wd}/runs/${iseq_test}/Stats.json"
+stats_nova_test="${wd}/runs/${nova_test}/Stats.json"
+
+main() {
+    file_exists "${md5_iseq_base}"
+    file_exists "${md5_iseq_test}"
+    file_exists "${md5_nova_test}"
+    file_exists "${md5_nova_test}"
+    file_exists "${stats_iseq_base}"
+    file_exists "${stats_iseq_test}"
+    file_exists "${stats_nova_base}"
+    file_exists "${stats_nova_test}"
+
+    info "-----"
+    info "Comparing ISEQ MD5"
+    compare_md5_files "${md5_iseq_base}" "${md5_iseq_test}"
+    
+    info "-----"
+    info "Comparing NOVA MD5"
+    compare_md5_files "${md5_nova_base}" "${md5_nova_test}"
+
+    info "-----"
+    info "Comparing ISEQ Stats"
+    compare_stats "${stats_iseq_base}" "${stats_iseq_test}"
+
+    info "-----"
+    info "Comparing NOVA Stats"
+    compare_stats "${stats_nova_base}" "${stats_nova_test}"
+}
+
+file_exists (){
+    [[ -f "${1}" ]] || die "File does not exist ($1)"
+}
+
+compare_stats() {
+    local base_file=$1 && shift
+    local test_file=$1 && shift
+    info "BASE: $base_file" 
+    info "TEST: $test_file" 
+    diff_count=$(diff <(jq 'del(.UnknownBarcodes)' $base_file) <(jq 'del(.UnknownBarcodes)' $test_file) | wc -l)
+    info "DIFF: $diff_count"
+    if [[ "$diff_count" -ne 0 ]]; then
+        warn "Diff was not empty!!"
+        warn "Run the following cmd to run diff:"
+        warn echo "diff <(jq 'del(.UnknownBarcodes)' $base_file) <(jq 'del(.UnknownBarcodes)' $test_file)"
+    fi
+    nr_of_lines=10
+    
+    unknown_diff_count=$(diff \
+        <(jq '.UnknownBarcodes[].Barcodes | keys' $base_file | head -$number_of_lines) \
+        <(jq '.UnknownBarcodes[].Barcodes | keys' $test_file | head -$nr_of_lines) \
+    | wc -l)
+    info "UNKNOWN DIFF: $unknown_diff_count"
+    
+    info "First $nr_of_lines lines of BASE .UnknownBarcodes"
+    cat $base_file | jq '.UnknownBarcodes' | head -$nr_of_lines
+    info "First $nr_of_lines lines of TEST .UnknownBarcodes"
+    cat $test_file | jq '.UnknownBarcodes' | head -$nr_of_lines
+}
+
+compare_md5_files() {
+    local base_file=$1 && shift
+    local test_file=$1 && shift
+
+    info "Comparing ${base_file} with ${test_file}"
+
+    cat "${base_file}" | while read line; do
+        md5=$(echo "${line}" | tr -s ' ' | cut -d" " -f1)
+        file=$(echo "${line}" | tr -s ' ' | cut -d" " -f2)
+        count=$(cat "${test_file}" | grep -c "${md5}")
+        if [[ $count -ne 1 ]]; then
+            warn "FAIL md5 (${md5}) not found for file $file"
+        else
+            info "OK exact md5 (${md5}) found for file $file"
+        fi
+    done
+}
+
+die() {
+    echo "[ERROR] $@" >&2
+    exit 1
+}
+
+warn() {
+    echo "[WARN] $@" >&2
+}
+
+info() {
+    echo "[INFO] $@"
+}
+
+main
+
