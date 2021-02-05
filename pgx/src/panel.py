@@ -9,7 +9,7 @@ from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 class Panel(object):
     def __init__(self, gene_infos: List[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "panel json")
-        assert_no_overlap_rs_ids(self.__get_rs_id_infos_from_gene_infos(gene_infos), "panel json")
+        self.__assert_genes_do_not_share_rs_ids(gene_infos)
 
         self.__gene_infos = deepcopy(gene_infos)
 
@@ -35,7 +35,7 @@ class Panel(object):
         return deepcopy(self.__gene_infos)
 
     def get_rs_id_infos(self) -> Set[RsIdInfo]:
-        return self.__get_rs_id_infos_from_gene_infos(self.__gene_infos)
+        return set(self.__get_rs_id_infos_from_gene_infos(self.__gene_infos))
 
     def contains_rs_id_with_position(self, position_string: str) -> bool:
         for info in self.get_rs_id_infos():
@@ -68,6 +68,10 @@ class Panel(object):
     def get_genes(self) -> List[str]:
         return [info.gene for info in self.__gene_infos]
 
+    @classmethod
+    def __assert_genes_do_not_share_rs_ids(cls, gene_infos: List[GeneInfo]) -> None:
+        assert_no_overlap_rs_ids(cls.__get_rs_id_infos_from_gene_infos(gene_infos), "panel json")
+
     @staticmethod
-    def __get_rs_id_infos_from_gene_infos(gene_infos: List[GeneInfo]) -> Set[RsIdInfo]:
-        return {rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos}
+    def __get_rs_id_infos_from_gene_infos(gene_infos: List[GeneInfo]) -> List[RsIdInfo]:
+        return [rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos]
