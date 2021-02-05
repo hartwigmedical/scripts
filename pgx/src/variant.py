@@ -20,13 +20,11 @@ class Variant(NamedTuple):
 def assert_no_overlap_variant_rs_ids(variants: Collection[Variant], source_name: str) -> None:
     if rs_ids_of_variants_overlap(variants):
         rs_id_to_multiple_variants = get_rs_id_to_multiple_variants(variants)
-        raise ValueError(
-            ("The {source_name} contains variants with the same rs_id but different summaries. "
-             "Duplicates: {rs_id_to_multiple_variants}").format(
-                source_name=source_name,
-                rs_id_to_multiple_variants=rs_id_to_multiple_variants
-            )
+        error_msg = (
+            f"The {source_name} contains variants with the same rs_id but different summaries. "
+            f"Duplicates: {rs_id_to_multiple_variants}"
         )
+        raise ValueError(error_msg)
 
 
 def rs_ids_of_variants_overlap(variants: Collection[Variant]) -> bool:

@@ -59,13 +59,11 @@ class Haplotype(object):
 def assert_no_overlap_haplotype_names(haplotypes: Collection[Haplotype], source_name: str) -> None:
     if names_of_haplotypes_overlap(haplotypes):
         name_to_multiple_haplotypes = get_name_to_multiple_haplotypes(haplotypes)
-        raise ValueError(
-            ("The {source_name} contains haplotypes with the same name but different summaries. "
-             "Duplicates: {name_to_multiple_haplotypes}").format(
-                source_name=source_name,
-                name_to_multiple_haplotypes=name_to_multiple_haplotypes
-            )
+        error_msg = (
+            f"The {source_name} contains haplotypes with the same name but different summaries. " 
+            f"Duplicates: {name_to_multiple_haplotypes}"
         )
+        raise ValueError(error_msg)
 
 
 def names_of_haplotypes_overlap(haplotypes: Collection[Haplotype]) -> bool:
@@ -79,13 +77,11 @@ def get_name_to_multiple_haplotypes(haplotypes: Collection[Haplotype]) -> Dict[s
 def assert_no_overlap_haplotype_variant_combinations(haplotypes: Collection[Haplotype], source_name: str) -> None:
     if variant_combinations_of_haplotypes_overlap(haplotypes):
         variant_combination_to_multiple_haplotypes = get_variant_combination_to_multiple_haplotypes(haplotypes)
-        raise ValueError(
-            ("The {source_name} contains haplotypes with the same variaant combination but different names. "
-             "Duplicates: {variant_combination_to_multiple_haplotypes}").format(
-                source_name=source_name,
-                variant_combination_to_multiple_haplotypes=variant_combination_to_multiple_haplotypes
-            )
+        error_msg = (
+            f"The {source_name} contains haplotypes with the same variaant combination but different names. "
+            f"Duplicates: {variant_combination_to_multiple_haplotypes}"
         )
+        raise ValueError(error_msg)
 
 
 def variant_combinations_of_haplotypes_overlap(haplotypes: Collection[Haplotype]) -> bool:

@@ -106,6 +106,12 @@
           "url_general": "https://www.pharmgkb.org/chemical/PA448771",
           "url_prescription_info": "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"
         }
+      ],
+      "refSeqDifferenceAnnotations": [
+        {
+          "rsid": "rs72549303",
+          "annotationGRCh38": "6744GA>CA"
+        }
       ]
     },
     {
@@ -147,6 +153,8 @@
           "url_general": "https://www.pharmgkb.org/some_url",
           "url_prescription_info": "https://www.pharmgkb.org/some_other_url"
         }
+      ],
+      "refSeqDifferenceAnnotations": [
       ]
     }
   ]

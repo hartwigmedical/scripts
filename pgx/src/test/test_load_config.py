@@ -1,4 +1,5 @@
 import unittest
+from typing import Dict
 
 from drug_info import DrugInfo
 from gene_coordinate import GeneCoordinate
@@ -36,6 +37,7 @@ class TestLoadConfig(unittest.TestCase):
             DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
             DrugInfo("Capecitabine", "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"),
         ]
+        dpyd_rs_id_to_difference_annotations = {"rs72549303": "6744GA>CA"}
         fake_haplotypes_expected = [
             Haplotype("*4A", "Reduced Function", frozenset({fake_variant})),
         ]
@@ -45,10 +47,11 @@ class TestLoadConfig(unittest.TestCase):
         fake_drugs_expected = [
             DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url")
         ]
+        fake_rs_id_to_difference_annotations: Dict[str, str] = {}
 
         gene_infos_expected = [
-            GeneInfo("DPYD", "GRCh37", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected, dpyd_drugs_expected),
-            GeneInfo("FAKE", "GRCh37", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected, fake_drugs_expected),
+            GeneInfo("DPYD", "GRCh37", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected, dpyd_drugs_expected, dpyd_rs_id_to_difference_annotations),
+            GeneInfo("FAKE", "GRCh37", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected, fake_drugs_expected, fake_rs_id_to_difference_annotations),
         ]
         panel_expected = Panel(gene_infos_expected)
 

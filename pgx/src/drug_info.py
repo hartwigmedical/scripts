@@ -16,13 +16,11 @@ class DrugInfo(NamedTuple):
 def assert_no_overlap_drug_names(drugs: Collection[DrugInfo], source_name: str) -> None:
     if drug_names_overlap(drugs):
         name_to_multiple_drug_infos = get_drug_name_to_multiple_infos(drugs)
-        raise ValueError(
-            ("The {source_name} contains drug summaries with the same drug name but different summaries. "
-             "Duplicates: {name_to_multiple_drug_infos}").format(
-                source_name=source_name,
-                name_to_multiple_drug_infos=name_to_multiple_drug_infos
-            )
+        error_msg = (
+            f"The {source_name} contains drug summaries with the same drug name but different summaries. "
+            f"Duplicates: {name_to_multiple_drug_infos}"
         )
+        raise ValueError(error_msg)
 
 
 def drug_names_overlap(drug_infos: Collection[DrugInfo]) -> bool:

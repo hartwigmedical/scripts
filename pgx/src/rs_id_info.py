@@ -32,13 +32,11 @@ class RsIdInfo(NamedTuple):
 def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:
     if rs_ids_overlap(infos):
         rs_id_to_multiple_infos = get_rs_id_to_multiple_infos(infos)
-        raise ValueError(
-            ("The {source_name} contains rs id summaries with the same rs id but different positions. "
-             "Duplicates: {rs_id_to_multiple_infos}").format(
-                source_name=source_name,
-                rs_id_to_multiple_infos=rs_id_to_multiple_infos
-            )
+        error_msg = (
+            f"The {source_name} contains rs id summaries with the same rs id but different positions. "
+            f"Duplicates: {rs_id_to_multiple_infos}"
         )
+        raise ValueError(error_msg)
 
 
 def rs_ids_overlap(infos: Collection[RsIdInfo]) -> bool:
