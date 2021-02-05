@@ -6,7 +6,7 @@ download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
 process_script_fail="process_qc_fail_run"
 download_script="download_run_without_bams"
-pipeline="5.18"
+pipeline="5.19"
 run_inis="Somatic.ini|CPCT.ini"
 
 main () {
