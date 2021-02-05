@@ -53,25 +53,25 @@ compare_stats() {
     local test_file=$1 && shift
     info "BASE: $base_file" 
     info "TEST: $test_file" 
-    diff_count=$(diff <(jq 'del(.UnknownBarcodes)' $base_file) <(jq 'del(.UnknownBarcodes)' $test_file) | wc -l)
+    diff_count=$(diff <(jq 'del(.UnknownBarcodes)' "${base_file}") <(jq 'del(.UnknownBarcodes)' "${test_file}") | wc -l)
     info "DIFF: $diff_count"
     if [[ "$diff_count" -ne 0 ]]; then
         warn "Diff was not empty!!"
         warn "Run the following cmd to run diff:"
-        warn echo "diff <(jq 'del(.UnknownBarcodes)' $base_file) <(jq 'del(.UnknownBarcodes)' $test_file)"
+        warn "diff <(jq 'del(.UnknownBarcodes)' '${base_file}') <(jq 'del(.UnknownBarcodes)' '${test_file}')"
     fi
     nr_of_lines=10
     
     unknown_diff_count=$(diff \
-        <(jq '.UnknownBarcodes[].Barcodes | keys' $base_file | head -$number_of_lines) \
-        <(jq '.UnknownBarcodes[].Barcodes | keys' $test_file | head -$nr_of_lines) \
+        <(jq '.UnknownBarcodes[].Barcodes | keys' "${base_file}" | head -$nr_of_lines) \
+        <(jq '.UnknownBarcodes[].Barcodes | keys' "${test_file}" | head -$nr_of_lines) \
     | wc -l)
     info "UNKNOWN DIFF: $unknown_diff_count"
     
     info "First $nr_of_lines lines of BASE .UnknownBarcodes"
-    cat $base_file | jq '.UnknownBarcodes' | head -$nr_of_lines
+    jq '.UnknownBarcodes' "${base_file}" | head -$nr_of_lines
     info "First $nr_of_lines lines of TEST .UnknownBarcodes"
-    cat $test_file | jq '.UnknownBarcodes' | head -$nr_of_lines
+    jq '.UnknownBarcodes' "${test_file}" | head -$nr_of_lines
 }
 
 compare_md5_files() {
@@ -80,29 +80,29 @@ compare_md5_files() {
 
     info "Comparing ${base_file} with ${test_file}"
 
-    cat "${base_file}" | while read line; do
+    while read -r line; do
         md5=$(echo "${line}" | tr -s ' ' | cut -d" " -f1)
         file=$(echo "${line}" | tr -s ' ' | cut -d" " -f2)
-        count=$(cat "${test_file}" | grep -c "${md5}")
+        count=$(grep -c "${md5}" "${test_file}")
         if [[ $count -ne 1 ]]; then
             warn "FAIL md5 (${md5}) not found for file $file"
         else
             info "OK exact md5 (${md5}) found for file $file"
         fi
-    done
+    done < <(cat "${base_file}")
 }
 
 die() {
-    echo "[ERROR] $@" >&2
+    echo "[ERROR]" "$@" >&2
     exit 1
 }
 
 warn() {
-    echo "[WARN] $@" >&2
+    echo "[WARN]" "$@" >&2
 }
 
 info() {
-    echo "[INFO] $@"
+    echo "[INFO]" "$@"
 }
 
 main
