@@ -19,9 +19,6 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
 
-    # TODO: make this separate argument from script, or put it in the same file as the panel
-    ref_sequence_differences_path = panel_path.replace(".json", "") + "_exceptions.json"
-
     # Check if output dir exists, create if it does not
     if not os.path.exists(outputdir):
         try:
@@ -32,7 +29,6 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get configuration
     panel = load_panel(panel_path)
-    ref_sequence_differences = load_ref_sequence_differences(ref_sequence_differences_path)
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
 
     if panel.is_empty():
@@ -44,7 +40,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Compute output from input data
     ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(ids_found_in_patient, panel, ref_sequence_differences)
+        convert_results_into_haplotypes(ids_found_in_patient, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
@@ -74,11 +70,10 @@ def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
 
 def convert_results_into_haplotypes(
         ids_found_in_patient: pd.DataFrame,
-        panel: Panel,
-        ref_sequence_differences: List[Dict[str, str]]
+        panel: Panel
 ):
     # Process the differences between GRCh37 and GRCh38
-    ids_found_in_patient = process_differences_in_ref_sequence(ids_found_in_patient, ref_sequence_differences)
+    ids_found_in_patient = process_differences_in_ref_sequence(ids_found_in_patient, panel)
 
     rsid_to_gene_to_rs_id_info: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene_info in panel.get_gene_infos():
@@ -302,8 +297,9 @@ def convert_results_into_haplotypes(
     return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
 
 
-def process_differences_in_ref_sequence(ids_found: pd.DataFrame, rs_ids_with_different_refs: List[Dict[str, str]]) -> pd.DataFrame:
-    for variant in rs_ids_with_different_refs:
+def process_differences_in_ref_sequence(ids_found: pd.DataFrame, panel: Panel) -> pd.DataFrame:
+    ref_sequence_differences = panel.get_ref_seq_differences()
+    for variant in ref_sequence_differences:
         variant_location = str(variant['chromosome']) + ":" + str(variant['position'])
         variant_location_found = variant_location in ids_found['position_GRCh37'].tolist()
         rs_id_found = variant['rsid'] in ids_found['rsid'].tolist()
