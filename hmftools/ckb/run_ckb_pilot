@@ -10,7 +10,7 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-ckb_dir=/data/common/dbs/ckb/210129_flex_dump
+ckb_dir=/data/common/dbs/ckb/210205_flex_dump
 
 java -Xms2G -Xmx8G -jar ${ckb_jar} \
     -cbk_dir ${ckb_dir} \
