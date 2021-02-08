@@ -93,6 +93,16 @@
           "referenceAllele": "TG",
           "referenceAlleleGRCh38": "TC",
           "source": "PharmGKB DPYD allele definition table, April 10, 2017(modified)"
+        },
+        {
+          "chromosome": 1,
+          "position": "98348885",
+          "positionGRCh38": "97883329",
+          "rsid": "rs1801265",
+          "type": "SNV",
+          "referenceAllele": "G",
+          "referenceAlleleGRCh38": "A",
+          "source": "PharmGKB DPYD allele definition table, April 10, 2017"
         }
       ],
       "drugs": [
@@ -111,6 +121,10 @@
         {
           "rsid": "rs72549303",
           "annotationGRCh38": "6744GA>CA"
+        },
+        {
+          "rsid": "rs1801265",
+          "annotationGRCh38": "85T>C"
         }
       ]
     },
@@ -155,6 +169,53 @@
         }
       ],
       "refSeqDifferenceAnnotations": [
+      ]
+    },
+    {
+      "gene": "FAKE2",
+      "orientation": "1",
+      "genomeBuild": "GRCh37",
+      "chromosome": 16,
+      "canonicalTranscript": "ENST00000122111",
+      "referenceAllele": "*1",
+      "alleles": [
+        {
+          "alleleName": "*4A",
+          "function": "Reduced Function",
+          "alleleVariants": [
+            {
+              "rsid": "rs1212127",
+              "chromosomeHgvsName": "FAKE_NAME",
+              "altAllele": "T",
+              "altAlleleGRCh38": "C"
+            }
+          ]
+        }
+      ],
+      "variants": [
+        {
+          "chromosome": 16,
+          "position": "97915617",
+          "positionGRCh38": "97450060",
+          "rsid": "rs1212127",
+          "type": "SNV",
+          "referenceAllele": "C",
+          "referenceAlleleGRCh38": "T",
+          "source": "Made up"
+        }
+      ],
+      "drugs": [
+        {
+          "name": "Aspirin",
+          "url_general": "https://www.pharmgkb.org/some_url",
+          "url_prescription_info": "https://www.pharmgkb.org/some_other_url"
+        }
+      ],
+      "refSeqDifferenceAnnotations": [
+        {
+          "rsid": "rs1212127",
+          "annotationGRCh38": "1324T>C"
+        }
       ]
     }
   ]

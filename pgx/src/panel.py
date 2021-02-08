@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import List, Set, FrozenSet, Optional
+from typing import List, Set, FrozenSet, Optional, Dict, Any
 
 from gene_info import GeneInfo, assert_no_overlap_gene_names
 from json_alias import Json
@@ -10,6 +10,7 @@ class Panel(object):
     def __init__(self, gene_infos: List[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "panel json")
         self.__assert_genes_do_not_share_rs_ids(gene_infos)
+        self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos)
 
         self.__gene_infos = deepcopy(gene_infos)
 
@@ -30,6 +31,25 @@ class Panel(object):
     def from_json(cls, data: Json) -> "Panel":
         gene_infos = [GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']]
         return Panel(gene_infos)
+
+    def get_ref_seq_differences(self) -> List[Json]:
+        results = []
+        for gene_info in self.__gene_infos:
+            for rs_id_info in gene_info.rs_id_infos:
+                if rs_id_info.reference_allele_grch37 != rs_id_info.reference_allele_grch38:
+                    ref_seq_difference = {
+                        'rsid': rs_id_info.rs_id,
+                        'gene': gene_info.gene,
+                        'referenceAlleleGRCh38': rs_id_info.reference_allele_grch38,
+                        'altAlleleGRCh38': rs_id_info.reference_allele_grch37,
+                        'chromosome': rs_id_info.start_coordinate_grch38.chromosome,
+                        'position': str(rs_id_info.start_coordinate_grch37.position),
+                        'positionGRCh38': str(rs_id_info.start_coordinate_grch38.position),
+                        'annotationGRCh38': gene_info.get_ref_sequence_difference_annotation(rs_id_info.rs_id)
+                    }
+                    results.append(ref_seq_difference)
+        results.sort(key=lambda diff: (diff["gene"], diff["position"]))
+        return results
 
     def get_gene_infos(self) -> List[GeneInfo]:
         return deepcopy(self.__gene_infos)
@@ -73,5 +93,16 @@ class Panel(object):
         assert_no_overlap_rs_ids(cls.__get_rs_id_infos_from_gene_infos(gene_infos), "panel json")
 
     @staticmethod
+    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: List[GeneInfo]) -> None:
+        for gene_info in gene_infos:
+            for rs_id_info in gene_info.rs_id_infos:
+                if rs_id_info.start_coordinate_grch37.chromosome != rs_id_info.start_coordinate_grch38.chromosome:
+                    error_msg = (
+                        f"Panel only supports rs ids where the GRCh37 and GRCh38 positions are on the same chromosome."
+                    )
+                    raise ValueError(error_msg)
+
+    @staticmethod
     def __get_rs_id_infos_from_gene_infos(gene_infos: List[GeneInfo]) -> List[RsIdInfo]:
         return [rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos]
+
