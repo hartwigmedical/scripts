@@ -81,36 +81,21 @@ class TestLoadConfig(unittest.TestCase):
         ref_seq_differences = panel.get_ref_seq_differences()
 
         ref_seq_differences_expected = [
-            {
-                'rsid': 'rs72549303',
-                'gene': 'DPYD',
-                'referenceAlleleGRCh38': 'TC',
-                'altAlleleGRCh38': 'TG',
-                'chromosome': 1,
-                'position': '97915621',
-                'positionGRCh38': '97450065',
-                'annotationGRCh38': '6744GA>CA'
-            },
-            {
-                'rsid': 'rs1801265',
-                'gene': 'DPYD',
-                'referenceAlleleGRCh38': 'A',
-                'altAlleleGRCh38': 'G',
-                'chromosome': 1,
-                'position': '98348885',
-                'positionGRCh38': '97883329',
-                'annotationGRCh38': '85T>C'
-            },
-            {
-                'rsid': 'rs1212127',
-                'gene': 'FAKE2',
-                'referenceAlleleGRCh38': 'T',
-                'altAlleleGRCh38': 'C',
-                'chromosome': 16,
-                'position': '97915617',
-                'positionGRCh38': '97450060',
-                'annotationGRCh38': '1324T>C'
-            }
+            (
+                RsIdInfo('rs72549303', 'TG', 'TC', GeneCoordinate(1, 97915621), GeneCoordinate(1, 97450065)),
+                'DPYD',
+                '6744GA>CA'
+            ),
+            (
+                RsIdInfo('rs1801265', 'G', 'A', GeneCoordinate(1, 98348885), GeneCoordinate(1, 97883329)),
+                'DPYD',
+                '85T>C'
+            ),
+            (
+                RsIdInfo('rs1212127', 'C', 'T', GeneCoordinate(16, 97915617), GeneCoordinate(16, 97450060)),
+                'FAKE2',
+                '1324T>C'
+            ),
         ]
 
         self.assertEqual(ref_seq_differences_expected, ref_seq_differences)

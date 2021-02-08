@@ -1,6 +1,6 @@
 import itertools
 from copy import deepcopy
-from typing import List, Set, FrozenSet, Optional, Dict, Any
+from typing import List, Set, FrozenSet, Optional, Dict, Any, Tuple
 
 from gene_info import GeneInfo, assert_no_overlap_gene_names
 from json_alias import Json
@@ -33,23 +33,16 @@ class Panel(object):
         gene_infos = [GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']]
         return Panel(gene_infos)
 
-    def get_ref_seq_differences(self) -> List[Json]:
+    def get_ref_seq_differences(self) -> List[Tuple[RsIdInfo, str, str]]:
         results = []
         for gene_info in self.__gene_infos:
             for rs_id_info in gene_info.rs_id_infos:
                 if rs_id_info.reference_allele_grch37 != rs_id_info.reference_allele_grch38:
-                    ref_seq_difference = {
-                        'rsid': rs_id_info.rs_id,
-                        'gene': gene_info.gene,
-                        'referenceAlleleGRCh38': rs_id_info.reference_allele_grch38,
-                        'altAlleleGRCh38': rs_id_info.reference_allele_grch37,
-                        'chromosome': rs_id_info.start_coordinate_grch38.chromosome,
-                        'position': str(rs_id_info.start_coordinate_grch37.position),
-                        'positionGRCh38': str(rs_id_info.start_coordinate_grch38.position),
-                        'annotationGRCh38': gene_info.get_ref_sequence_difference_annotation(rs_id_info.rs_id)
-                    }
-                    results.append(ref_seq_difference)
-        results.sort(key=lambda diff: (diff["gene"], diff["position"]))
+                    annotation = gene_info.get_ref_sequence_difference_annotation(rs_id_info.rs_id)
+                    results.append((rs_id_info, gene_info.gene, annotation))
+        results.sort(key=lambda diff: (diff[1], diff[2]))
+
+        assert_no_overlap_rs_ids([diff[0] for diff in results], "get_ref_seq_differences")
         return results
 
     def get_gene_infos(self) -> List[GeneInfo]:
