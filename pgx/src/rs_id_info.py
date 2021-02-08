@@ -28,6 +28,13 @@ class RsIdInfo(NamedTuple):
         )
         return info
 
+    def is_compatible(self, other: "RsIdInfo") -> bool:
+        if self.rs_id == other.rs_id:
+            return self == other
+        else:
+            return (self.start_coordinate_grch37 != other.start_coordinate_grch37 and
+                    self.start_coordinate_grch38 != other.start_coordinate_grch38)
+
 
 def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:
     if rs_ids_overlap(infos):

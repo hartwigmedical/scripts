@@ -1,3 +1,4 @@
+import itertools
 from copy import deepcopy
 from typing import List, Set, FrozenSet, Optional, Dict, Any
 
@@ -9,7 +10,7 @@ from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 class Panel(object):
     def __init__(self, gene_infos: List[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "panel json")
-        self.__assert_genes_do_not_share_rs_ids(gene_infos)
+        self.__assert_all_rs_id_infos_compatible(gene_infos)
         self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos)
 
         self.__gene_infos = deepcopy(gene_infos)
@@ -55,7 +56,7 @@ class Panel(object):
         return deepcopy(self.__gene_infos)
 
     def get_rs_id_infos(self) -> Set[RsIdInfo]:
-        return set(self.__get_rs_id_infos_from_gene_infos(self.__gene_infos))
+        return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
 
     def contains_rs_id_with_position(self, position_string: str) -> bool:
         for info in self.get_rs_id_infos():
@@ -88,10 +89,6 @@ class Panel(object):
     def get_genes(self) -> List[str]:
         return [info.gene for info in self.__gene_infos]
 
-    @classmethod
-    def __assert_genes_do_not_share_rs_ids(cls, gene_infos: List[GeneInfo]) -> None:
-        assert_no_overlap_rs_ids(cls.__get_rs_id_infos_from_gene_infos(gene_infos), "panel json")
-
     @staticmethod
     def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: List[GeneInfo]) -> None:
         for gene_info in gene_infos:
@@ -103,6 +100,11 @@ class Panel(object):
                     raise ValueError(error_msg)
 
     @staticmethod
-    def __get_rs_id_infos_from_gene_infos(gene_infos: List[GeneInfo]) -> List[RsIdInfo]:
-        return [rs_id_info for gene_info in gene_infos for rs_id_info in gene_info.rs_id_infos]
+    def __assert_all_rs_id_infos_compatible(gene_infos: List[GeneInfo]) -> None:
+        for left_gene_info, right_gene_info in itertools.combinations(gene_infos, 2):
+            for left_info in left_gene_info.rs_id_infos:
+                for right_info in right_gene_info.rs_id_infos:
+                    if not left_info.is_compatible(right_info):
+                        error_msg = f"Incompatible rs id infos in panel. left: {left_info}, right: {right_info}"
+                        raise ValueError(error_msg)
 

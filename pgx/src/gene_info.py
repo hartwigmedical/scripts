@@ -1,3 +1,4 @@
+import itertools
 from copy import deepcopy
 from typing import List, Dict, Collection, FrozenSet
 
@@ -18,11 +19,11 @@ class GeneInfo(object):
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
         assert_no_overlap_drug_names(drugs, f"GeneInfo json for {gene}")
-        assert_no_overlap_rs_ids(rs_id_infos, f"GeneInfo json for {gene}")
         self.__assert_info_exists_for_all_rs_ids_in_haplotypes(haplotypes, rs_id_infos)
         self.__assert_rs_ids_with_ref_seq_differences_match_annotations(
             rs_id_infos, rs_id_to_ref_seq_difference_annotation
         )
+        self.__assert_rs_id_infos_compatible(rs_id_infos)
 
         self.__gene = gene
         self.__genome_build = genome_build
@@ -135,6 +136,13 @@ class GeneInfo(object):
                 f"Only annotation: {rs_ids_with_only_annotation}"
             )
             raise ValueError(error_msg)
+
+    @staticmethod
+    def __assert_rs_id_infos_compatible(rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+        for left, right in itertools.combinations(rs_id_infos, 2):
+            if not left.is_compatible(right):
+                error_msg = f"Incompatible rs id infos in gene info. left: {left}, right: {right}"
+                raise ValueError(error_msg)
 
 
 def assert_no_overlap_gene_names(gene_infos: Collection[GeneInfo], source_name: str) -> None:
