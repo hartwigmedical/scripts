@@ -8,7 +8,7 @@ health_check_processed_runs
 echo "[INFO] Count HealthChecker succeeded"
 health_check_processed_runs | grep -c "HealthChecker has succeeded for"
 
-purple_version=2.51
+purple_version=2.52
 echo "[INFO] Count analysis purple version v${purple_version}"
 health_check_processed_runs | grep -c "This analysis has been done with purple version=${purple_version}"
 
