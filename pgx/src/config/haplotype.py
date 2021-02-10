@@ -1,8 +1,8 @@
 from typing import Collection, Dict, List, FrozenSet
 
-from json_alias import Json
-from util import get_key_to_multiple_values
-from variant import Variant, assert_no_overlap_variant_rs_ids
+from base.json_alias import Json
+from base.util import get_key_to_multiple_values
+from config.variant import Variant, assert_no_overlap_variant_rs_ids
 
 
 class Haplotype(object):

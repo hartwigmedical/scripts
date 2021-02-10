@@ -1,15 +1,15 @@
-from typing import List, Dict, Any
-
-import allel
 import argparse
 import json
 import os
-import pandas as pd
 import subprocess
 import sys
 from shutil import copyfile
+from typing import List, Dict, Any
 
-from panel import Panel
+import allel
+import pandas as pd
+
+from config.panel import Panel
 from pgx_analysis import create_pgx_analysis
 
 
@@ -203,7 +203,7 @@ def print_calls_to_file(calls_file: str, all_ids_in_panel: pd.DataFrame) -> None
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(genotype_file: str, drug_info, panel, results, severity, version) -> None:
+def print_haplotypes_to_file(genotype_file: str, drug_info, panel_path, results, severity, version) -> None:
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in results:
@@ -214,7 +214,7 @@ def print_haplotypes_to_file(genotype_file: str, drug_info, panel, results, seve
                     severity[haplotype.split("_")[0]] + "\t" +
                     drug_info[gene][0] + "\t" +
                     drug_info[gene][1] + "\t" +
-                    panel + "\t" +
+                    panel_path + "\t" +
                     version + "\n"
                 )
 

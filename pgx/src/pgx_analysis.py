@@ -5,7 +5,7 @@ from typing import DefaultDict, Dict, Any, List
 
 import pandas as pd
 
-from panel import Panel
+from config.panel import Panel
 
 
 def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):

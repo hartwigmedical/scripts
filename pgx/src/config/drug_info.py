@@ -1,7 +1,7 @@
 from typing import NamedTuple, List, Dict, Collection
 
-from json_alias import Json
-from util import get_key_to_multiple_values
+from base.json_alias import Json
+from base.util import get_key_to_multiple_values
 
 
 class DrugInfo(NamedTuple):

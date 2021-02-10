@@ -2,11 +2,12 @@ import itertools
 from copy import deepcopy
 from typing import List, Dict, Collection, FrozenSet
 
-from drug_info import DrugInfo, assert_no_overlap_drug_names
-from haplotype import Haplotype, assert_no_overlap_haplotype_names, assert_no_overlap_haplotype_variant_combinations
-from json_alias import Json
-from rs_id_info import RsIdInfo
-from util import get_key_to_multiple_values
+from base.json_alias import Json
+from base.util import get_key_to_multiple_values
+from config.drug_info import DrugInfo, assert_no_overlap_drug_names
+from config.haplotype import Haplotype, assert_no_overlap_haplotype_names, \
+    assert_no_overlap_haplotype_variant_combinations
+from config.rs_id_info import RsIdInfo
 
 
 class GeneInfo(object):
@@ -25,6 +26,7 @@ class GeneInfo(object):
         )
         self.__assert_rs_id_infos_compatible(rs_id_infos)
         self.__assert_rs_id_infos_match_chrosome(rs_id_infos, chromosome)
+        self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(rs_id_infos)
 
         self.__gene = gene
         self.__chromosome = chromosome
@@ -169,6 +171,15 @@ class GeneInfo(object):
                     f"Rs id and gene disagree on chromosome, "
                     f"'{info.start_coordinate_grch38.chromosome}' vs '{chromosome}'. "
                     f"Rs id info: {info}"
+                )
+                raise ValueError(error_msg)
+
+    @staticmethod
+    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+        for rs_id_info in rs_id_infos:
+            if rs_id_info.start_coordinate_grch37.chromosome != rs_id_info.start_coordinate_grch38.chromosome:
+                error_msg = (
+                    f"Panel only supports rs ids where the GRCh37 and GRCh38 positions are on the same chromosome."
                 )
                 raise ValueError(error_msg)
 

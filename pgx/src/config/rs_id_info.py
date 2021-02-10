@@ -1,8 +1,8 @@
 from typing import NamedTuple, Dict, List, Collection
 
-from json_alias import Json
-from gene_coordinate import GeneCoordinate
-from util import get_key_to_multiple_values
+from base.gene_coordinate import GeneCoordinate
+from base.json_alias import Json
+from base.util import get_key_to_multiple_values
 
 
 class RsIdInfo(NamedTuple):

@@ -2,14 +2,14 @@ import itertools
 from copy import deepcopy
 from typing import List, Set, Tuple
 
-from gene_info import GeneInfo, assert_no_overlap_gene_names
-from json_alias import Json
-from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
+from base.json_alias import Json
+from config.gene_info import GeneInfo, assert_no_overlap_gene_names
+from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 
 
 class Panel(object):
     def __init__(self, gene_infos: List[GeneInfo]) -> None:
-        assert_no_overlap_gene_names(gene_infos, "panel json")
+        assert_no_overlap_gene_names(gene_infos, "config json")
         self.__assert_all_rs_id_infos_compatible(gene_infos)
         self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos)
 
@@ -98,6 +98,6 @@ class Panel(object):
             for left_info in left_gene_info.rs_id_infos:
                 for right_info in right_gene_info.rs_id_infos:
                     if not left_info.is_compatible(right_info):
-                        error_msg = f"Incompatible rs id infos in panel. left: {left_info}, right: {right_info}"
+                        error_msg = f"Incompatible rs id infos in config. left: {left_info}, right: {right_info}"
                         raise ValueError(error_msg)
 

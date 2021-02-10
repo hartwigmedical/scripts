@@ -7,7 +7,7 @@ from unittest.mock import patch
 from main import parse_args
 
 
-class TestMain(unittest.TestCase):
+class TestParseArgs(unittest.TestCase):
     def test_parse_args_representative_example(self) -> None:
         arguments = ["vcf_file", "tumor_sample_id", "ref_sample_id", "script_version", "output_directory",
                      "panel_location", "--sourcedir", "path_to_source_files",
