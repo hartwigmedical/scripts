@@ -1,6 +1,6 @@
 import itertools
 from copy import deepcopy
-from typing import List, Set, FrozenSet, Optional, Dict, Any, Tuple
+from typing import List, Set, Tuple
 
 from gene_info import GeneInfo, assert_no_overlap_gene_names
 from json_alias import Json

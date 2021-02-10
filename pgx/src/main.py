@@ -39,8 +39,9 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
 
     # Compute output from input data
-    ids_found_in_patient, results, severity, all_ids_in_panel, drug_info = \
-        convert_results_into_haplotypes(ids_found_in_patient, panel)
+    results, severity, all_ids_in_panel, drug_info = convert_results_into_haplotypes(
+        ids_found_in_patient, panel
+    )
 
     # Output
     out = outputdir + "/" + sample_t_id
@@ -68,10 +69,7 @@ def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
     return get_ids_found_in_patient_from_variants(variants, panel)
 
 
-def convert_results_into_haplotypes(
-        ids_found_in_patient: pd.DataFrame,
-        panel: Panel
-):
+def convert_results_into_haplotypes(ids_found_in_patient: pd.DataFrame, panel: Panel):
     # Process the differences between GRCh37 and GRCh38
     ids_found_in_patient = process_differences_in_ref_sequence(ids_found_in_patient, panel)
 
@@ -294,7 +292,7 @@ def convert_results_into_haplotypes(
             if results[gene_info.gene][0].split("_")[-1] == "HET":
                 results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
 
-    return ids_found_in_patient, results, severity, all_ids_in_panel, drug_info
+    return results, severity, all_ids_in_panel, drug_info
 
 
 def process_differences_in_ref_sequence(ids_found: pd.DataFrame, panel: Panel) -> pd.DataFrame:

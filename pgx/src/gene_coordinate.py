@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 
 class GeneCoordinate(NamedTuple):
-    chromosome: int
+    chromosome: str
     position: int
 
     def get_position_string(self) -> str:

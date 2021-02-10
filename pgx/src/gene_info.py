@@ -5,13 +5,13 @@ from typing import List, Dict, Collection, FrozenSet
 from drug_info import DrugInfo, assert_no_overlap_drug_names
 from haplotype import Haplotype, assert_no_overlap_haplotype_names, assert_no_overlap_haplotype_variant_combinations
 from json_alias import Json
-from rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
+from rs_id_info import RsIdInfo
 from util import get_key_to_multiple_values
 
 
 class GeneInfo(object):
-    def __init__(self, gene: str, genome_build: str, reference_haplotype_name: str, haplotypes: List[Haplotype],
-                 rs_id_infos: FrozenSet[RsIdInfo], drugs: List[DrugInfo],
+    def __init__(self, gene: str, chromosome: str, genome_build: str, reference_haplotype_name: str,
+                 haplotypes: List[Haplotype], rs_id_infos: FrozenSet[RsIdInfo], drugs: List[DrugInfo],
                  rs_id_to_ref_seq_difference_annotation: Dict[str, str]) -> None:
         if genome_build != "GRCh37":
             raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
@@ -24,8 +24,10 @@ class GeneInfo(object):
             rs_id_infos, rs_id_to_ref_seq_difference_annotation
         )
         self.__assert_rs_id_infos_compatible(rs_id_infos)
+        self.__assert_rs_id_infos_match_chrosome(rs_id_infos, chromosome)
 
         self.__gene = gene
+        self.__chromosome = chromosome
         self.__genome_build = genome_build
         self.__reference_haplotype_name = reference_haplotype_name
         self.__haplotypes = deepcopy(haplotypes)
@@ -37,6 +39,7 @@ class GeneInfo(object):
         return (
             isinstance(other, GeneInfo)
             and self.__gene == other.__gene
+            and self.__chromosome == other.__chromosome
             and self.__genome_build == other.__genome_build
             and self.__reference_haplotype_name == other.__reference_haplotype_name
             and self.__haplotypes == other.__haplotypes
@@ -49,6 +52,7 @@ class GeneInfo(object):
         return (
             f"GeneInfo("
             f"gene={self.__gene!r}, "
+            f"chromosome={self.__chromosome!r}, "
             f"genome_build={self.__genome_build!r}, "
             f"reference_haplotype_name={self.__reference_haplotype_name!r}, "
             f"haplotypes={self.__haplotypes!r}, "
@@ -61,6 +65,10 @@ class GeneInfo(object):
     @property
     def gene(self) -> str:
         return self.__gene
+
+    @property
+    def chromosome(self) -> str:
+        return self.__chromosome
 
     @property
     def genome_build(self) -> str:
@@ -84,18 +92,20 @@ class GeneInfo(object):
 
     @classmethod
     def from_json(cls, data: Json) -> "GeneInfo":
-        gene = data['gene']
-        genome_build = data["genomeBuild"]
-        reference_allele = data["referenceAllele"]
+        gene = str(data['gene'])
+        chromosome = str(data['chromosome'])
+        genome_build = str(data["genomeBuild"])
+        reference_allele = str(data["referenceAllele"])
         rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
         haplotypes = [Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]]
         drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
         rs_id_to_ref_seq_difference_annotation = {
-            annotation_json["rsid"]: annotation_json["annotationGRCh38"]
+            str(annotation_json["rsid"]): str(annotation_json["annotationGRCh38"])
             for annotation_json in data["refSeqDifferenceAnnotations"]
         }
         gene_info = GeneInfo(
             gene,
+            chromosome,
             genome_build,
             reference_allele,
             haplotypes,
@@ -142,6 +152,24 @@ class GeneInfo(object):
         for left, right in itertools.combinations(rs_id_infos, 2):
             if not left.is_compatible(right):
                 error_msg = f"Incompatible rs id infos in gene info. left: {left}, right: {right}"
+                raise ValueError(error_msg)
+
+    @staticmethod
+    def __assert_rs_id_infos_match_chrosome(rs_id_infos: FrozenSet[RsIdInfo], chromosome: str) -> None:
+        for info in rs_id_infos:
+            if info.start_coordinate_grch37.chromosome != chromosome:
+                error_msg = (
+                    f"Rs id and gene disagree on chromosome, "
+                    f"'{info.start_coordinate_grch37.chromosome}' vs '{chromosome}'. "
+                    f"Rs id info: {info}"
+                )
+                raise ValueError(error_msg)
+            if info.start_coordinate_grch38.chromosome != chromosome:
+                error_msg = (
+                    f"Rs id and gene disagree on chromosome, "
+                    f"'{info.start_coordinate_grch38.chromosome}' vs '{chromosome}'. "
+                    f"Rs id info: {info}"
+                )
                 raise ValueError(error_msg)
 
 

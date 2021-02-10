@@ -151,7 +151,7 @@
       ],
       "variants": [
         {
-          "chromosome": 1,
+          "chromosome": 5,
           "position": "97915617",
           "positionGRCh38": "97450060",
           "rsid": "rs1212125",

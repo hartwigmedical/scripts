@@ -29,11 +29,11 @@ class TestLoadConfig(unittest.TestCase):
             Haplotype("*3", "Normal Function", frozenset({dpyd_three_variant})),
         ]
         dpyd_rs_id_infos_expected = frozenset({
-            RsIdInfo("rs3918290", "C", "C", GeneCoordinate(1, 97915614), GeneCoordinate(1, 97450058)),
-            RsIdInfo("rs72549309", "GATGA", "GATGA", GeneCoordinate(1, 98205966), GeneCoordinate(1, 97740410)),
-            RsIdInfo("rs1801159", "T", "T", GeneCoordinate(1, 97981395), GeneCoordinate(1, 97515839)),
-            RsIdInfo("rs72549303", "TG", "TC", GeneCoordinate(1, 97915621), GeneCoordinate(1, 97450065)),
-            RsIdInfo("rs1801265", "G", "A", GeneCoordinate(1, 98348885), GeneCoordinate(1, 97883329)),
+            RsIdInfo("rs3918290", "C", "C", GeneCoordinate("1", 97915614), GeneCoordinate("1", 97450058)),
+            RsIdInfo("rs72549309", "GATGA", "GATGA", GeneCoordinate("1", 98205966), GeneCoordinate("1", 97740410)),
+            RsIdInfo("rs1801159", "T", "T", GeneCoordinate("1", 97981395), GeneCoordinate("1", 97515839)),
+            RsIdInfo("rs72549303", "TG", "TC", GeneCoordinate("1", 97915621), GeneCoordinate("1", 97450065)),
+            RsIdInfo("rs1801265", "G", "A", GeneCoordinate("1", 98348885), GeneCoordinate("1", 97883329)),
         })
         dpyd_drugs_expected = [
             DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
@@ -47,7 +47,7 @@ class TestLoadConfig(unittest.TestCase):
             Haplotype("*4A", "Reduced Function", frozenset({fake_variant})),
         ]
         fake_rs_id_infos_expected = frozenset({
-            RsIdInfo("rs1212125", "T", "T", GeneCoordinate(1, 97915617), GeneCoordinate(1, 97450060)),
+            RsIdInfo("rs1212125", "T", "T", GeneCoordinate("5", 97915617), GeneCoordinate("5", 97450060)),
         })
         fake_drugs_expected = [
             DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url")
@@ -58,7 +58,7 @@ class TestLoadConfig(unittest.TestCase):
             Haplotype("*4A", "Reduced Function", frozenset({fake2_variant})),
         ]
         fake2_rs_id_infos_expected = frozenset({
-            RsIdInfo("rs1212127", "C", "T", GeneCoordinate(16, 97915617), GeneCoordinate(16, 97450060)),
+            RsIdInfo("rs1212127", "C", "T", GeneCoordinate("16", 97915617), GeneCoordinate("16", 97450060)),
         })
         fake2_drugs_expected = [
             DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url")
@@ -66,9 +66,12 @@ class TestLoadConfig(unittest.TestCase):
         fake2_rs_id_to_difference_annotations: Dict[str, str] = {"rs1212127": "1324T>C"}
 
         gene_infos_expected = [
-            GeneInfo("DPYD", "GRCh37", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected, dpyd_drugs_expected, dpyd_rs_id_to_difference_annotations),
-            GeneInfo("FAKE", "GRCh37", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected, fake_drugs_expected, fake_rs_id_to_difference_annotations),
-            GeneInfo("FAKE2", "GRCh37", "*1", fake2_haplotypes_expected, fake2_rs_id_infos_expected, fake2_drugs_expected, fake2_rs_id_to_difference_annotations),
+            GeneInfo("DPYD", "1", "GRCh37", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected,
+                     dpyd_drugs_expected, dpyd_rs_id_to_difference_annotations),
+            GeneInfo("FAKE", "5", "GRCh37", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected,
+                     fake_drugs_expected, fake_rs_id_to_difference_annotations),
+            GeneInfo("FAKE2", "16", "GRCh37", "*1", fake2_haplotypes_expected, fake2_rs_id_infos_expected,
+                     fake2_drugs_expected, fake2_rs_id_to_difference_annotations),
         ]
         panel_expected = Panel(gene_infos_expected)
 
@@ -82,17 +85,17 @@ class TestLoadConfig(unittest.TestCase):
 
         ref_seq_differences_expected = [
             (
-                RsIdInfo('rs72549303', 'TG', 'TC', GeneCoordinate(1, 97915621), GeneCoordinate(1, 97450065)),
+                RsIdInfo('rs72549303', 'TG', 'TC', GeneCoordinate("1", 97915621), GeneCoordinate("1", 97450065)),
                 'DPYD',
                 '6744GA>CA'
             ),
             (
-                RsIdInfo('rs1801265', 'G', 'A', GeneCoordinate(1, 98348885), GeneCoordinate(1, 97883329)),
+                RsIdInfo('rs1801265', 'G', 'A', GeneCoordinate("1", 98348885), GeneCoordinate("1", 97883329)),
                 'DPYD',
                 '85T>C'
             ),
             (
-                RsIdInfo('rs1212127', 'C', 'T', GeneCoordinate(16, 97915617), GeneCoordinate(16, 97450060)),
+                RsIdInfo('rs1212127', 'C', 'T', GeneCoordinate("16", 97915617), GeneCoordinate("16", 97450060)),
                 'FAKE2',
                 '1324T>C'
             ),
