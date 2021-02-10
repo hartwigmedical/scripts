@@ -714,6 +714,7 @@ locate_sage_germline_variants_pilot() {
     fi
     echo ${sage_germline_variants_vcf}
 }
+
 ############################################# CHORD ###########################################
 
 locate_chord_prediction() {
@@ -734,6 +735,18 @@ locate_chord_pilot_prediction() {
         exit 1
     fi
     echo ${chord_prediction_file}
+}
+
+########################################### PROTECT ##########################################
+
+locate_protect_evidence() {
+    local run_dir=$1
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect/ -type f -name "*.protect.tsv")
+    if [[ -z "${protect_evidence_tsv}" ]]; then
+        echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${protect_evidence_tsv}
 }
 
 ############################################# LIMS ###########################################
