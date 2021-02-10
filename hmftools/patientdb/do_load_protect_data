@@ -11,6 +11,9 @@ db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading PROTECT data for ${sample}"
+echo ${protect_evidence_tsv}
+echo ${credentials}
+echo ${patient_db_jar}
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadProtectData \
     -sample ${sample} \
