@@ -32,10 +32,6 @@ locate_pipeline_v5_validation_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
 }
 
-locate_wide_germline_carriership_credentials() {
-    echo ${base_path}/dbs/mysql_credentials/wide_germline_carriership
-}
-
 locate_ckb_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/ckb_db_pilot
 }
