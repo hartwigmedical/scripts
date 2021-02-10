@@ -172,11 +172,20 @@ create_run_specific_files () {
         "${tumor_bam_bai}"
     )
 
-    # TODO: once we hit pipeline v5.19 runs, need to update the driver catalog paths to
-    # TODO: .driver.catalog.germline.tsv and .driver.catalog.somatic.tsv
+    # Get correct driver catalog paths depending on the pipeline version.
+    if [[ "${minor}" -lt 19 ]]; then
+      driver_cat_paths=(
+      "purple/${tum}.driver.catalog.tsv"
+      )
+    else
+      driver_cat_paths=(
+      "purple/${tum}.driver.catalog.germline.tsv"
+      "purple/${tum}.driver.catalog.somatic.tsv"
+      )
+    fi
+
     local somatic_files=(
         "purple/purple.version"
-        "purple/${tum}.driver.catalog.tsv"
         "purple/${tum}.purple.cnv.somatic.tsv"
         "purple/${tum}.purple.cnv.gene.tsv"
         "purple/${tum}.purple.purity.tsv"
@@ -194,6 +203,7 @@ create_run_specific_files () {
         "${tumor_bam_bai}"
         "${ref}/germline_caller/${ref}.germline.vcf.gz"
         "${ref}/germline_caller/${ref}.germline.vcf.gz.tbi"
+        ${driver_cat_paths[@]}
     )
 
     ## select file collection
