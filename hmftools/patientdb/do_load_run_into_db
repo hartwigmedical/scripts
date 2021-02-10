@@ -28,8 +28,7 @@ do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${p
 do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}
 do_load_chord_data ${tumor_sample} ${chord_prediction_file} ${credentials} ${patient_db_jar}
-# TODO Add below command on upgrade to patient db v3.57
-# do_load_protect_evidence ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
+do_load_protect_evidence ${tumor_sample} ${protect_evidence_tsv} ${credentials} ${patient_db_jar}
 do_load_bachelor_data ${tumor_sample} ${run_dir}/bachelor ${credentials} ${bachelor_jar}
 do_load_snv_signatures ${tumor_sample} ${credentials}
 
