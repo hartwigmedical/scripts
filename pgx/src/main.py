@@ -9,6 +9,8 @@ from typing import List, Dict, Any
 import allel
 import pandas as pd
 
+from base.gene_coordinate import GeneCoordinate
+from call_data import Grch37Call, Grch37CallData
 from config.panel import Panel
 from pgx_analysis import create_pgx_analysis
 
@@ -69,20 +71,19 @@ def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
 def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> pd.DataFrame:
     match_on_rsid = 0
     match_on_location = 0
-    ids_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid',
-                                                 'variant_annotation', 'gene', 'filter'])
+    filtered_calls = []
     for i, rs_number in enumerate(variants['variants/ID']):
-        chr = variants['variants/CHROM'][i]
-        pos = variants['variants/POS'][i]
+        chr = str(variants['variants/CHROM'][i])
+        pos = int(variants['variants/POS'][i])
 
         if ";" in rs_number:
             rs_id_filter = []
             cur_rs = rs_number.split(";")
             for rs in cur_rs:
                 if rs.startswith("rs"):
-                    rs_id_filter.append(rs)
+                    rs_id_filter.append(str(rs))
         else:
-            rs_id_filter = [rs_number]
+            rs_id_filter = [str(rs_number)]
 
         rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
         if rs_id_filter_to_panel_match_exists or panel.contains_rs_id_with_position(f"{chr}:{pos}"):
@@ -90,39 +91,37 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
                 match_on_rsid += 1
             else:
                 match_on_location += 1
-            new_id = {}
             if variants['variants/FILTER_PASS'][i]:
                 filter = "PASS"
             else:
                 filter = "FILTERED"
-            alt = variants['variants/ALT'][i]
-            ref = variants['variants/REF'][i]
-
-            # print(variants['calldata/GT'][i][0])
-            new_id['variant_annotation'] = variants['variants/ANN_HGVS_c'][i]
-            if variants['calldata/GT'][i][0].tolist() == [0, 1]:
-                new_id['ref_GRCh37'] = ref
-                new_id['alt_GRCh37'] = alt[0]
-            elif variants['calldata/GT'][i][0].tolist() == [1, 1]:
-                new_id['ref_GRCh37'] = alt[0]
-                new_id['alt_GRCh37'] = alt[0]
-            elif variants['calldata/GT'][i][0].tolist() == [1, 2]:
-                new_id['ref_GRCh37'] = alt[0]
-                new_id['alt_GRCh37'] = alt[1]
-            elif variants['calldata/GT'][i][0].tolist() == [0, 0]:
-                new_id['ref_GRCh37'] = ref
-                new_id['alt_GRCh37'] = ref
-                new_id['variant_annotation'] = "REF_CALL"
+            alts = [str(allele) for allele in variants['variants/ALT'][i]]
+            ref = str(variants['variants/REF'][i])
+            variant_annotation = str(variants['variants/ANN_HGVS_c'][i])
+            gene = str(variants['variants/ANN_Gene_Name'][i])
+            genotype = variants['calldata/GT'][i][0].tolist()
+            if genotype == [0, 1]:
+                alleles = (ref, alts[0])
+            elif genotype == [1, 1]:
+                alleles = (alts[0], alts[0])
+            elif genotype == [1, 2]:
+                alleles = (alts[0], alts[1])
+            elif genotype == [0, 0]:
+                alleles = (ref, ref)
+                variant_annotation = "REF_CALL"
             else:
-                print("[ERROR] Genotype not found: " + str(variants['calldata/GT'][i][0].tolist()))
+                error_msg = f"[ERROR] Genotype not found: {genotype}"
+                raise ValueError(error_msg)
 
-            new_id['position_GRCh37'] = str(chr) + ":" + str(pos)
-            new_id['rsid'] = ";".join(rs_id_filter)
-            new_id['filter'] = filter
-            new_id['gene'] = variants['variants/ANN_Gene_Name'][i]
-            ids_found_in_patient = ids_found_in_patient.append(new_id, ignore_index=True)
+            call = Grch37Call(GeneCoordinate(chr, pos), alleles, gene, tuple(rs_id_filter), variant_annotation, filter)
+            filtered_calls.append(call)
+
     print("[INFO] Matches on RS id: " + str(match_on_rsid))
     print("[INFO] Matches on location: " + str(match_on_location))
+
+    filtered_call_data = Grch37CallData(tuple(filtered_calls))
+    ids_found_in_patient = filtered_call_data.get_data_frame()
+
     return ids_found_in_patient
 
 
