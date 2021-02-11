@@ -17,11 +17,11 @@ from pgx_analysis import create_pgx_analysis
 class TestPgxAnalysis(unittest.TestCase):
     @classmethod
     def __get_example_panel(cls) -> Panel:
-        dpyd_two_a_variant = Variant("rs3918290", "T", "T")
-        dpyd_two_b_variant = Variant("rs1801159", "C", "C")
-        dpyd_three_variant = Variant("rs72549303", "T", "A")
-        fake_variant = Variant("rs1212125", "C", "C")
-        fake2_variant = Variant("rs1212127", "T", "C")
+        dpyd_two_a_variant = Variant("rs3918290", "T")
+        dpyd_two_b_variant = Variant("rs1801159", "C")
+        dpyd_three_variant = Variant("rs72549303", "TG")
+        fake_variant = Variant("rs1212125", "C")
+        fake2_variant = Variant("rs1212127", "C")
 
         dpyd_haplotypes = (
             Haplotype("*2A", "No Function", frozenset({dpyd_two_a_variant})),
@@ -33,7 +33,6 @@ class TestPgxAnalysis(unittest.TestCase):
             RsIdInfo("rs72549309", "GATGA", "GATGA", GeneCoordinate("1", 98205966), GeneCoordinate("1", 97740410)),
             RsIdInfo("rs1801159", "T", "T", GeneCoordinate("1", 97981395), GeneCoordinate("1", 97515839)),
             RsIdInfo("rs72549303", "TG", "TC", GeneCoordinate("1", 97915621), GeneCoordinate("1", 97450065)),
-            RsIdInfo("rs1801265", "G", "A", GeneCoordinate("1", 98348885), GeneCoordinate("1", 97883329)),
         })
         dpyd_drugs = (
             DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
@@ -41,8 +40,8 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         dpyd_rs_id_to_difference_annotations = {
             "rs72549303": "6744GA>CA",
-            "rs1801265": "85T>C",
         }
+        
         fake_haplotypes = (
             Haplotype("*4A", "Reduced Function", frozenset({fake_variant})),
         )
@@ -75,16 +74,55 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         return Panel(gene_infos)
 
-    @unittest.skip("WIP")
     def test_empty(self) -> None:
         panel = self.__get_example_panel()
         ids_found_in_patient = Grch37CallData(tuple())
         results, severity, all_ids_in_panel, drug_info = create_pgx_analysis(ids_found_in_patient, panel)
-        print(results)
-        print(severity)
-        print(all_ids_in_panel)
-        print(drug_info)
-        self.fail("WIP")
+
+        results_expected = {"DPYD": ["*3_HOM"], "FAKE": ["*1_HOM"], "FAKE2": ["*4A_HOM"]}
+        self.assertEqual(results_expected, results)
+
+        severity_expected = {
+            '*1': 'Normal Function',
+            'Unresolved': 'Unknown Function',
+            '*2A': 'No Function',
+            '*2B': 'No Function',
+            '*3': 'Normal Function',
+            '*4A': 'Reduced Function'
+        }
+        self.assertEqual(severity_expected, severity)
+
+        columns_expected = [
+            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
+            'rsid', 'variant_annotation', 'filter'
+        ]
+        all_ids_in_panel_expected = pd.DataFrame(
+            [
+                ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "INFERRED_REF_CALL"),
+                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "INFERRED_REF_CALL"),
+                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
+                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
+            ], columns=columns_expected
+        )
+        pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
+
+        drug_info_expected = {
+            'DPYD': [
+                '5-Fluorouracil;Capecitabine',
+                'https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963'
+            ],
+            'FAKE': [
+                'Aspirin',
+                'https://www.pharmgkb.org/some_other_url'
+            ],
+            'FAKE2': [
+                'Aspirin',
+                'https://www.pharmgkb.org/some_other_url'
+            ]
+        }
+        self.assertEqual(drug_info_expected, drug_info)
 
 
 if __name__ == '__main__':

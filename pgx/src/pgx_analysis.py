@@ -99,7 +99,7 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
 
     for gene_info in panel.get_gene_infos():
         print("[INFO] PROCESSING GENE " + gene_info.gene)
-        ids_found_in_gene = all_ids_in_panel[all_ids_in_panel['gene'].str.contains(gene_info.gene)]
+        ids_found_in_gene = all_ids_in_panel.loc[all_ids_in_panel['gene'] == gene_info.gene]
         perfect_match = False
         severity[gene_info.reference_haplotype_name] = "Normal Function"
         severity['Unresolved'] = "Unknown Function"
@@ -119,7 +119,7 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
                 severity[haplotype.name] = haplotype.function
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
-                if set(variants_sample) == set([(x.rs_id, x.alt_allele_grch38) for x in haplotype.variants]):
+                if set(variants_sample) == set([(x.rs_id, x.variant_allele) for x in haplotype.variants]):
                     perfect_match = True
                     print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
                     # Now we want to see if we have hetrozygous or homozygous calls
@@ -143,7 +143,7 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
                     # print("Processing " + str(haplotype['alleleName']))
                     # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
                     # print(set(variants_sample))
-                    if set([(x.rs_id, x.alt_allele_grch38) for x in haplotype.variants]) <= \
+                    if set([(x.rs_id, x.variant_allele) for x in haplotype.variants]) <= \
                             set(variants_sample):
                         print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
                         haplotypes_matching.append(haplotype)
@@ -168,7 +168,7 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
                             rs_ids_subset = []
                             for x in allele_variants:
                                 for var in x:
-                                    rs_ids_subset.append((var.rs_id, var.alt_allele_grch38))
+                                    rs_ids_subset.append((var.rs_id, var.variant_allele))
                             if compare_collection(variants_sample, rs_ids_subset):
                                 print("[INFO] Perfect haplotype combination found!")
                                 perfect_match = True
@@ -248,9 +248,9 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
         if rs_id_found or variant_location_found:
             if rs_id_found:
                 # get line and index from ids_found
-                found_var = ids_found_df[ids_found_df['rsid'].str.contains(rs_id_info.rs_id)]
+                found_var = ids_found_df.loc[ids_found_df['rsid'] == rs_id_info.rs_id]
             else:
-                found_var = ids_found_df[ids_found_df['position_GRCh37'].str.contains(variant_location_grch37)]
+                found_var = ids_found_df.loc[ids_found_df['position_GRCh37'] == variant_location_grch37]
             # Delete found variant from results if the ref base and alt base are the correctedRefBase
 
             found_ref_allele = found_var['ref_GRCh37'].values

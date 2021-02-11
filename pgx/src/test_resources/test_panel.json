@@ -47,8 +47,8 @@
             {
               "rsid": "rs72549303",
               "chromosomeHgvsName": "1898delC",
-              "altAllele": "T",
-              "altAlleleGRCh38": "A"
+              "altAllele": "TC",
+              "altAlleleGRCh38": "TG"
             }
           ]
         }

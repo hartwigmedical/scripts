@@ -17,11 +17,11 @@ class TestLoadConfig(unittest.TestCase):
         panel_path = get_panel_test_resource()
         panel = load_panel(str(panel_path))
 
-        dpyd_two_a_variant = Variant("rs3918290", "T", "T")
-        dpyd_two_b_variant = Variant("rs1801159", "C", "C")
-        dpyd_three_variant = Variant("rs72549303", "T", "A")
-        fake_variant = Variant("rs1212125", "C", "C")
-        fake2_variant = Variant("rs1212127", "T", "C")
+        dpyd_two_a_variant = Variant("rs3918290", "T")
+        dpyd_two_b_variant = Variant("rs1801159", "C")
+        dpyd_three_variant = Variant("rs72549303", "TG")
+        fake_variant = Variant("rs1212125", "C")
+        fake2_variant = Variant("rs1212127", "C")
 
         dpyd_haplotypes_expected = (
             Haplotype("*2A", "No Function", frozenset({dpyd_two_a_variant})),

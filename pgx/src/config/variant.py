@@ -6,15 +6,13 @@ from base.util import get_key_to_multiple_values
 
 class Variant(NamedTuple):
     rs_id: str
-    alt_allele_grch37: str
-    alt_allele_grch38: str
+    variant_allele: str
 
     @classmethod
     def from_json(cls, data: Json) -> "Variant":
         rs_id = str(data["rsid"])
-        alt_allele_grch37 = str(data["altAllele"])
-        alt_allele_grch38 = str(data["altAlleleGRCh38"])
-        return Variant(rs_id, alt_allele_grch37, alt_allele_grch38)
+        variant_allele = str(data["altAlleleGRCh38"])
+        return Variant(rs_id, variant_allele)
 
 
 def assert_no_overlap_variant_rs_ids(variants: Collection[Variant], source_name: str) -> None:
