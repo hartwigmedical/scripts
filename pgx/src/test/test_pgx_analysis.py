@@ -4,6 +4,7 @@ from typing import Dict
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
+from call_data import Grch37CallData
 from config.drug_info import DrugInfo
 from config.gene_info import GeneInfo
 from config.haplotype import Haplotype
@@ -77,7 +78,7 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_empty(self) -> None:
         panel = self.__get_example_panel()
-        ids_found_in_patient = pd.DataFrame()
+        ids_found_in_patient = Grch37CallData(tuple())
         results, severity, all_ids_in_panel, drug_info = create_pgx_analysis(ids_found_in_patient, panel)
         print(results)
         print(severity)

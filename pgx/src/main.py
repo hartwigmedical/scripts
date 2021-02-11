@@ -63,12 +63,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> pd.DataFrame:
+def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> Grch37CallData:
     variants = get_variants_from_filtered_vcf(filtered_vcf)
     return get_ids_found_in_patient_from_variants(variants, panel)
 
 
-def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> pd.DataFrame:
+def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
     match_on_rsid = 0
     match_on_location = 0
     filtered_calls = []
@@ -119,10 +119,7 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
     print("[INFO] Matches on RS id: " + str(match_on_rsid))
     print("[INFO] Matches on location: " + str(match_on_location))
 
-    filtered_call_data = Grch37CallData(tuple(filtered_calls))
-    ids_found_in_patient = filtered_call_data.get_data_frame()
-
-    return ids_found_in_patient
+    return Grch37CallData(tuple(filtered_calls))
 
 
 def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:

@@ -5,12 +5,13 @@ from typing import DefaultDict, Dict, Any, List
 
 import pandas as pd
 
+from call_data import Grch37CallData
 from config.panel import Panel
 
 
-def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
+def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
     # Process the differences between GRCh37 and GRCh38
-    ids_found_in_patient = process_differences_in_ref_sequence(ids_found_in_patient, panel)
+    ids_found_in_patient_df = process_differences_in_ref_sequence(ids_found_in_patient, panel)
 
     rsid_to_gene_to_rs_id_info: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
     for gene_info in panel.get_gene_infos():
@@ -22,17 +23,17 @@ def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
     drug_info = {}
 
     # Fill in the GRCh38 gaps, they should be the same as the GRCh37 equivalent
-    if not ids_found_in_patient.empty:
-        for index, row in ids_found_in_patient.iterrows():
+    if not ids_found_in_patient_df.empty:
+        for index, row in ids_found_in_patient_df.iterrows():
             if 'ref_GRCh38' in row:
                 if pd.isna(row['ref_GRCh38']):
-                    ids_found_in_patient.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
-                    ids_found_in_patient.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
+                    ids_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
+                    ids_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
             else:
-                ids_found_in_patient.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
-                ids_found_in_patient.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
+                ids_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
+                ids_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
 
-        for index, row in ids_found_in_patient.iterrows():
+        for index, row in ids_found_in_patient_df.iterrows():
             # Fill in the rsid gaps, if annotation is missing on the location.
             if 'rsid' in row.index and row['rsid'] == '.':
                 position_string = row['position_GRCh37']
@@ -40,17 +41,17 @@ def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
                     rs_id = panel.get_rs_id_with_position(position_string)
                 else:
                     rs_id = '.'
-                ids_found_in_patient.at[index, 'rsid'] = rs_id
+                ids_found_in_patient_df.at[index, 'rsid'] = rs_id
 
-        for index, row in ids_found_in_patient.iterrows():
-            matching_rs_id_infos = rsid_to_gene_to_rs_id_info[ids_found_in_patient.at[index, 'rsid']].values()
+        for index, row in ids_found_in_patient_df.iterrows():
+            matching_rs_id_infos = rsid_to_gene_to_rs_id_info[ids_found_in_patient_df.at[index, 'rsid']].values()
             grch38_locations = {
                 rs_id_info.start_coordinate_grch38.get_position_string() for rs_id_info in matching_rs_id_infos
             }
             if len(grch38_locations) == 1:
                 grch38_location = grch38_locations.pop()
                 if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
-                    ids_found_in_patient.at[index, 'position_GRCh38'] = grch38_location
+                    ids_found_in_patient_df.at[index, 'position_GRCh38'] = grch38_location
                 elif row['position_GRCh38'] != grch38_location:
                     raise ValueError(
                         "[ERROR] Inconsistent GRCh38 locations for variants:\n"
@@ -68,8 +69,8 @@ def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
                                                      'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
                                                      'filter'])
 
-    rs_ids_found_in_patient = set(ids_found_in_patient.rsid.tolist())
-    positions_found_in_patient = set(ids_found_in_patient.position_GRCh37.tolist())
+    rs_ids_found_in_patient = set(ids_found_in_patient_df.rsid.tolist())
+    positions_found_in_patient = set(ids_found_in_patient_df.position_GRCh37.tolist())
 
     for rs_id_info in panel.get_rs_id_infos():
         if (rs_id_info.rs_id not in rs_ids_found_in_patient and
@@ -91,7 +92,7 @@ def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
                 ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
 
     # Now we want to process all the variants in terms of the alleles
-    all_ids_in_panel = pd.concat([ids_found_in_patient, ids_not_found_in_patient], sort=True)
+    all_ids_in_panel = pd.concat([ids_found_in_patient_df, ids_not_found_in_patient], sort=True)
     all_ids_in_panel = all_ids_in_panel.sort_values(by='position_GRCh37').reset_index(drop=True)
     all_ids_in_panel = all_ids_in_panel[['gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
                                          'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'filter']]
@@ -234,41 +235,42 @@ def create_pgx_analysis(ids_found_in_patient: pd.DataFrame, panel: Panel):
     return results, severity, all_ids_in_panel, drug_info
 
 
-def process_differences_in_ref_sequence(ids_found: pd.DataFrame, panel: Panel) -> pd.DataFrame:
+def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel) -> pd.DataFrame:
+    ids_found_df = ids_found.get_data_frame()
     for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
         variant_location_grch37 = rs_id_info.start_coordinate_grch37.get_position_string()
         variant_location_grch38 = rs_id_info.start_coordinate_grch38.get_position_string()
         ref_allele_grch37 = rs_id_info.reference_allele_grch37
         ref_allele_grch38 = rs_id_info.reference_allele_grch38
 
-        variant_location_found = variant_location_grch37 in ids_found['position_GRCh37'].tolist()
-        rs_id_found = rs_id_info.rs_id in ids_found['rsid'].tolist()
+        variant_location_found = variant_location_grch37 in ids_found_df['position_GRCh37'].tolist()
+        rs_id_found = rs_id_info.rs_id in ids_found_df['rsid'].tolist()
         if rs_id_found or variant_location_found:
             if rs_id_found:
                 # get line and index from ids_found
-                found_var = ids_found[ids_found['rsid'].str.contains(rs_id_info.rs_id)]
+                found_var = ids_found_df[ids_found_df['rsid'].str.contains(rs_id_info.rs_id)]
             else:
-                found_var = ids_found[ids_found['position_GRCh37'].str.contains(variant_location_grch37)]
+                found_var = ids_found_df[ids_found_df['position_GRCh37'].str.contains(variant_location_grch37)]
             # Delete found variant from results if the ref base and alt base are the correctedRefBase
 
             found_ref_allele = found_var['ref_GRCh37'].values
             found_alt_allele = found_var['alt_GRCh37'].values
             if found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch38:
-                ids_found = ids_found.drop(found_var.index[0])
+                ids_found_df = ids_found_df.drop(found_var.index[0])
             elif found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch37:
                 raise NotImplementedError("What should we do? ref = corRef, alt = corAlt")
             elif found_ref_allele == ref_allele_grch37 and found_alt_allele == ref_allele_grch38:
                 # Change variant_annotation and ref and alt base
-                ids_found.at[found_var.index[0], 'variant_annotation'] = annotation
-                ids_found.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch38
-                ids_found.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
-                ids_found.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
+                ids_found_df.at[found_var.index[0], 'variant_annotation'] = annotation
+                ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch38
+                ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
+                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
             elif found_ref_allele == ref_allele_grch37 and found_alt_allele == ref_allele_grch37:
                 # Add variant_annotation and ref and alt base for hg38
-                ids_found.at[found_var.index[0], 'variant_annotation'] = annotation
-                ids_found.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch37
-                ids_found.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
-                ids_found.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
+                ids_found_df.at[found_var.index[0], 'variant_annotation'] = annotation
+                ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch37
+                ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
+                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
             else:
                 print("[ERROR] Complete mismatch:")
                 print(found_var)
@@ -286,9 +288,9 @@ def process_differences_in_ref_sequence(ids_found: pd.DataFrame, panel: Panel) -
                       'position_GRCh38': variant_location_grch38,
                       'ref_GRCh38': ref_allele_grch37,
                       'alt_GRCh38': ref_allele_grch37}
-            ids_found = ids_found.append(new_id, ignore_index=True)
+            ids_found_df = ids_found_df.append(new_id, ignore_index=True)
 
-    return ids_found
+    return ids_found_df
 
 
 def compare_collection(a, b) -> bool:
