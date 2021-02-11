@@ -41,7 +41,7 @@ class TestPgxAnalysis(unittest.TestCase):
         dpyd_rs_id_to_difference_annotations = {
             "rs72549303": "6744GA>CA",
         }
-        
+
         fake_haplotypes = (
             Haplotype("*4A", "Reduced Function", frozenset({fake_variant})),
         )
@@ -77,20 +77,10 @@ class TestPgxAnalysis(unittest.TestCase):
     def test_empty(self) -> None:
         panel = self.__get_example_panel()
         ids_found_in_patient = Grch37CallData(tuple())
-        results, severity, all_ids_in_panel, drug_info = create_pgx_analysis(ids_found_in_patient, panel)
+        results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
         results_expected = {"DPYD": ["*3_HOM"], "FAKE": ["*1_HOM"], "FAKE2": ["*4A_HOM"]}
         self.assertEqual(results_expected, results)
-
-        severity_expected = {
-            '*1': 'Normal Function',
-            'Unresolved': 'Unknown Function',
-            '*2A': 'No Function',
-            '*2B': 'No Function',
-            '*3': 'Normal Function',
-            '*4A': 'Reduced Function'
-        }
-        self.assertEqual(severity_expected, severity)
 
         columns_expected = [
             'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
@@ -107,22 +97,6 @@ class TestPgxAnalysis(unittest.TestCase):
             ], columns=columns_expected
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
-
-        drug_info_expected = {
-            'DPYD': [
-                '5-Fluorouracil;Capecitabine',
-                'https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963'
-            ],
-            'FAKE': [
-                'Aspirin',
-                'https://www.pharmgkb.org/some_other_url'
-            ],
-            'FAKE2': [
-                'Aspirin',
-                'https://www.pharmgkb.org/some_other_url'
-            ]
-        }
-        self.assertEqual(drug_info_expected, drug_info)
 
 
 if __name__ == '__main__':

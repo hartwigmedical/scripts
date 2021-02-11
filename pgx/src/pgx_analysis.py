@@ -1,7 +1,7 @@
 import collections
 import itertools
 import sys
-from typing import DefaultDict, Dict, Any, List
+from typing import DefaultDict, Dict, Any, List, Tuple
 
 import pandas as pd
 
@@ -9,7 +9,7 @@ from call_data import Grch37CallData
 from config.panel import Panel
 
 
-def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
+def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
     # Process the differences between GRCh37 and GRCh38
     ids_found_in_patient_df = process_differences_in_ref_sequence(ids_found_in_patient, panel)
 
@@ -19,8 +19,6 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
             rsid_to_gene_to_rs_id_info[rs_id_info.rs_id][gene_info.gene] = rs_id_info
 
     results = {}
-    severity = {}
-    drug_info = {}
 
     # Fill in the GRCh38 gaps, they should be the same as the GRCh37 equivalent
     if not ids_found_in_patient_df.empty:
@@ -101,12 +99,6 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
         print("[INFO] PROCESSING GENE " + gene_info.gene)
         ids_found_in_gene = all_ids_in_panel.loc[all_ids_in_panel['gene'] == gene_info.gene]
         perfect_match = False
-        severity[gene_info.reference_haplotype_name] = "Normal Function"
-        severity['Unresolved'] = "Unknown Function"
-        drug_info[gene_info.gene] = [
-            ";".join([drug.name for drug in gene_info.drugs]),
-            ";".join([drug.url_prescription_info for drug in gene_info.drugs])
-        ]
 
         # If all variants are assumed_ref, return reference haplotype
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
@@ -116,7 +108,6 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
             results[gene_info.gene] = []
             haplotypes_matching = []
             for haplotype in gene_info.haplotypes:
-                severity[haplotype.name] = haplotype.function
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
                 variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
                 if set(variants_sample) == set([(x.rs_id, x.variant_allele) for x in haplotype.variants]):
@@ -232,7 +223,7 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel):
             if results[gene_info.gene][0].split("_")[-1] == "HET":
                 results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
 
-    return results, severity, all_ids_in_panel, drug_info
+    return results, all_ids_in_panel
 
 
 def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel) -> pd.DataFrame:
@@ -293,7 +284,7 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
     return ids_found_df
 
 
-def compare_collection(a, b) -> bool:
+def compare_collection(a: List[Tuple[str, str]], b: List[Tuple[str, str]]) -> bool:
     if collections.Counter(a) == collections.Counter(b):
         return True
     else:

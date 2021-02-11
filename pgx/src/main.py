@@ -40,12 +40,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
 
     # Compute output from input data
-    results, severity, all_ids_in_panel, drug_info = create_pgx_analysis(ids_found_in_patient, panel)
+    results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
-    print_calls_to_file(out + "_calls.txt", all_ids_in_panel)
-    print_haplotypes_to_file(out + "_genotype.txt", drug_info, panel_path, results, severity, version)
+    print_calls_to_file(all_ids_in_panel, out + "_calls.txt")
+    print_haplotypes_to_file(results, out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -195,21 +195,41 @@ def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, 
     print("[INFO] Created " + bed_path)
 
 
-def print_calls_to_file(calls_file: str, all_ids_in_panel: pd.DataFrame) -> None:
+def print_calls_to_file(all_ids_in_panel: pd.DataFrame, calls_file: str) -> None:
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(genotype_file: str, drug_info, panel_path, results, severity, version) -> None:
+def print_haplotypes_to_file(results: Dict[str, List[str]], genotype_file: str, panel: Panel,
+                             panel_path: str, version: str) -> None:
+    # TODO: make this more clean.
+    gene_to_haplotype_to_severity = {}
+    for gene_info in panel.get_gene_infos():
+        haplotype_to_severity = {
+            gene_info.reference_haplotype_name: "Normal Function",
+            'Unresolved': "Unknown Function"
+        }
+        for haplotype in gene_info.haplotypes:
+            haplotype_to_severity[haplotype.name] = haplotype.function
+
+        gene_to_haplotype_to_severity[gene_info.gene] = haplotype_to_severity
+
+    gene_to_drug_info = {}
+    for gene_info in panel.get_gene_infos():
+        gene_to_drug_info[gene_info.gene] = [
+            ";".join([drug.name for drug in gene_info.drugs]),
+            ";".join([drug.url_prescription_info for drug in gene_info.drugs])
+        ]
+
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in results:
-            for haplotype in results[gene]:
+            for haplotype_call in results[gene]:
                 f.write(
                     gene + "\t" +
-                    haplotype + "\t" +
-                    severity[haplotype.split("_")[0]] + "\t" +
-                    drug_info[gene][0] + "\t" +
-                    drug_info[gene][1] + "\t" +
+                    haplotype_call + "\t" +
+                    gene_to_haplotype_to_severity[gene][haplotype_call.split("_")[0]] + "\t" +
+                    gene_to_drug_info[gene][0] + "\t" +
+                    gene_to_drug_info[gene][1] + "\t" +
                     panel_path + "\t" +
                     version + "\n"
                 )
