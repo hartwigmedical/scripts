@@ -1,6 +1,6 @@
 import itertools
 from copy import deepcopy
-from typing import List, Dict, Collection, FrozenSet
+from typing import List, Dict, Collection, FrozenSet, Tuple
 
 from base.json_alias import Json
 from base.util import get_key_to_multiple_values
@@ -12,7 +12,7 @@ from config.rs_id_info import RsIdInfo
 
 class GeneInfo(object):
     def __init__(self, gene: str, chromosome: str, genome_build: str, reference_haplotype_name: str,
-                 haplotypes: List[Haplotype], rs_id_infos: FrozenSet[RsIdInfo], drugs: List[DrugInfo],
+                 haplotypes: Tuple[Haplotype, ...], rs_id_infos: FrozenSet[RsIdInfo], drugs: Tuple[DrugInfo, ...],
                  rs_id_to_ref_seq_difference_annotation: Dict[str, str]) -> None:
         if genome_build != "GRCh37":
             raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
@@ -32,9 +32,9 @@ class GeneInfo(object):
         self.__chromosome = chromosome
         self.__genome_build = genome_build
         self.__reference_haplotype_name = reference_haplotype_name
-        self.__haplotypes = deepcopy(haplotypes)
+        self.__haplotypes = haplotypes
         self.__rs_id_infos = rs_id_infos
-        self.__drugs = deepcopy(drugs)
+        self.__drugs = drugs
         self.__rs_id_to_ref_seq_difference_annotation = deepcopy(rs_id_to_ref_seq_difference_annotation)
 
     def __eq__(self, other: object) -> bool:
@@ -81,16 +81,16 @@ class GeneInfo(object):
         return self.__reference_haplotype_name
 
     @property
-    def haplotypes(self) -> List[Haplotype]:
-        return deepcopy(self.__haplotypes)
+    def haplotypes(self) -> Tuple[Haplotype, ...]:
+        return self.__haplotypes
 
     @property
     def rs_id_infos(self) -> FrozenSet[RsIdInfo]:
         return self.__rs_id_infos
 
     @property
-    def drugs(self) -> List[DrugInfo]:
-        return deepcopy(self.__drugs)
+    def drugs(self) -> Tuple[DrugInfo, ...]:
+        return self.__drugs
 
     @classmethod
     def from_json(cls, data: Json) -> "GeneInfo":
@@ -99,8 +99,8 @@ class GeneInfo(object):
         genome_build = str(data["genomeBuild"])
         reference_allele = str(data["referenceAllele"])
         rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
-        haplotypes = [Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]]
-        drugs = [DrugInfo.from_json(drug_json) for drug_json in data["drugs"]]
+        haplotypes = tuple([Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]])
+        drugs = tuple([DrugInfo.from_json(drug_json) for drug_json in data["drugs"]])
         rs_id_to_ref_seq_difference_annotation = {
             str(annotation_json["rsid"]): str(annotation_json["annotationGRCh38"])
             for annotation_json in data["refSeqDifferenceAnnotations"]
@@ -122,7 +122,7 @@ class GeneInfo(object):
 
     @staticmethod
     def __assert_info_exists_for_all_rs_ids_in_haplotypes(
-            haplotypes: List[Haplotype], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+            haplotypes: Tuple[Haplotype, ...], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
         rs_ids_in_haplotypes = {variant.rs_id for haplotype in haplotypes for variant in haplotype.variants}
         rs_ids_with_info = {info.rs_id for info in rs_id_infos}
         if not rs_ids_in_haplotypes.issubset(rs_ids_with_info):
