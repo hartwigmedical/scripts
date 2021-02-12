@@ -5,7 +5,6 @@ source locate_files
 serve_jar=$(locate_pilot_serve)
 
 vicc_json=$(locate_vicc_json)
-iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
 docm_tsv=$(locate_docm_tsv)
 hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
 hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
@@ -17,7 +16,7 @@ ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file)
 driver_gene_tsv=$(locate_driver_gene_panel_tsv)
 known_fusion_data=/data/common/dbs/fusions/known_fusion_data.csv
 
-output_dir=/data/common/dbs/serve/pilot_output
+output_dir=/data/common/dbs/serve/pilot_output_public_only
 
 if [[ -d "${output_dir}" ]]; then
     echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
@@ -27,12 +26,12 @@ else
     echo "[INFO] Output dir created: ${output_dir}!"
 fi
 
+#-use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
+#    -use_docm -docm_tsv ${docm_tsv} \
+#    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+#    -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
+
 java -Xms2G -Xmx8G -jar ${serve_jar} \
-    -use_vicc -vicc_json ${vicc_json} -vicc_sources cgi,civic \
-    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} \
-    -use_docm -docm_tsv ${docm_tsv} \
-    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
-    -use_hartwig_curated -hartwig_curated_tsv ${hartwig_curated_tsv} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -ref_genome_version ${ref_genome_version} \
     -ref_genome_fasta_file ${ref_genome_fasta_file} \
