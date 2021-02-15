@@ -21,10 +21,10 @@ for run in ${process_runs}; do
     cohort=$(find_cohort_type ${tumor_barcode})
 
     # do some jobs for all runs
-    echo "[INFO] Patch corrects headers for linx files"
-    patch_linx_files ${source_path}/${run}
     echo "[INFO] Running PROTECT"
     run_protect_prod ${source_path}/${run}
+    echo "[INFO] Patch corrects headers for linx files"
+    patch_linx_files ${source_path}/${run}
 
     if [[ -z ${cohort} ]]; then
         echo "[ERROR] Could not resolve cohort for ${run}."
