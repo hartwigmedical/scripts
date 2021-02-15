@@ -559,22 +559,19 @@ sub addAccessSamplesToSamples{
         if ( $is_tissue ){
             if ( exists $tissue_samples_by_coupe{ $ancestor_coupe } ){
                 my $ancestor = $tissue_samples_by_coupe{ $ancestor_coupe };
+
+                my $id_field = 'sample_id';
+                die "[ERROR] No $id_field field at ancestor sample (coupe=$ancestor_coupe).\n" unless exists $ancestor->{$id_field};
+                $object->{ "source_barcode" } = $ancestor->{$id_field};
+
                 foreach my $field ( FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR ){
-                    if ( exists $ancestor->{ $field } ){
-                        $object->{ $field } = $ancestor->{ $field };
-                    }else{
-                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
-                    }
+                    die "[ERROR] No $field field at ancestor sample (coupe=$ancestor_coupe).\n" unless exists $ancestor->{$field};
+                    $object->{ $field } = $ancestor->{ $field };
                 }
                 foreach my $field ( FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR ){
-                    if ( (exists $object->{ $field }) and ($object->{ $field } ne "") ){
-                        ## Field not empty so keep existing content
-                        next;
-                    }elsif ( exists $ancestor->{ $field } ){
-                        $object->{ $field } = $ancestor->{ $field };
-                    }else{
-                        die "[ERROR] Trying to copy field (\"$field\") from ancestor sample but field does not exist.\n";
-                    }
+                    next if (exists $object->{ $field }) and ($object->{ $field } ne "");
+                    die "[ERROR] No $field field at ancestor sample (coupe=$ancestor_coupe).\n" unless exists $ancestor->{$field};
+                    $object->{ $field } = $ancestor->{ $field };
                 }
             }
         
