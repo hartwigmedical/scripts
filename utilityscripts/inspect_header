@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
 input_file=$1
+delim_char="\t"
 
 if [[ -z "${input_file}" ]]; then
     echo "[ERROR] No input file provided. Exiting" && exit 1
 fi
 
-delim_char=${2:-"\t"}
+if [[ -n "$2" ]]; then
+    delim_char=$2
+elif [[ "${input_file}" =~ .csv$ ]]; then
+    delim_char=","
+fi
 
 ## retrieve header line
-field_string=$(cat ${input_file} | grep -v "^##" | grep -v "^\*" | head -1 | tr "${delim_char}" " ");
+field_string=$(grep -v "^##" "${input_file}" | grep -v "^\*" | head -1 | tr "${delim_char}" " ");
 
 ## convert into array
 header_fields=(${field_string})
