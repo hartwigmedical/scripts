@@ -27,14 +27,21 @@ main () {
     request="${api_url}/${api_query}"
     api_curl "${request}" 2>/dev/null
     
-    # if first time failed: rerun 
-    if [[ ! $? -eq 0 ]]; then
-        api_curl "${request}" 2>/dev/null
+    # if first try fails: rerun and write error log to file
+    if [[ $? -eq 0 ]]; then
+        exit 0
+    else
+        tmp_err="/tmp/$(basename $0)_fail_$(date '+%Y%m%d_%H%M%S').err"
+        api_curl "${request}" 2>"${tmp_err}"
     fi
 
-    # if second time failed: give up
-    if [[ ! $? -eq 0 ]]; then
-        die "GET query failed '${api_query}'"
+    # if second try also fails: give up
+    if [[ $? -eq 0 ]]; then
+        exit 0
+    else
+        err_msg=$(cat ${tmp_err})
+        rm "${tmp_err}"
+        die "GET query '${api_query}' failed (${err_msg})"
     fi
 }
 
