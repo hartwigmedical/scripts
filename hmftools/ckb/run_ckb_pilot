@@ -2,7 +2,7 @@
 
 source locate_files
 
-ckb_jar=$(locate_pilot_ckb)
+ckb_jar=$(locate_pilot_ckb_importer)
 
 # Database details
 credentials=$(locate_ckb_pilot_database_credentials)
