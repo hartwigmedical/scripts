@@ -1,12 +1,13 @@
 import collections
 import itertools
 import sys
-from typing import DefaultDict, Dict, Any, List, Tuple
+from typing import DefaultDict, Dict, Any, List, Tuple, Optional
 
 import pandas as pd
 
 from call_data import Grch37CallData
 from config.panel import Panel
+from config.rs_id_info import RsIdInfo
 
 
 def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
@@ -234,19 +235,13 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
         ref_allele_grch37 = rs_id_info.reference_allele_grch37
         ref_allele_grch38 = rs_id_info.reference_allele_grch38
 
-        variant_location_found = variant_location_grch37 in ids_found_df['position_GRCh37'].tolist()
-        rs_id_found = rs_id_info.rs_id in ids_found_df['rsid'].tolist()
-        if rs_id_found or variant_location_found:
-            if rs_id_found:
-                # get line and index from ids_found
-                found_var = ids_found_df.loc[ids_found_df['rsid'] == rs_id_info.rs_id]
-            else:
-                found_var = ids_found_df.loc[ids_found_df['position_GRCh37'] == variant_location_grch37]
-            # Delete found variant from results if the ref base and alt base are the correctedRefBase
+        found_var = get_matching_variant_in_patient(ids_found_df, rs_id_info)
 
+        if found_var is not None:
             found_ref_allele = found_var['ref_GRCh37'].values
             found_alt_allele = found_var['alt_GRCh37'].values
             if found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch38:
+                # Delete found variant from results if the ref base and alt base are the correctedRefBase
                 ids_found_df = ids_found_df.drop(found_var.index[0])
             elif found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch37:
                 raise NotImplementedError("What should we do? ref = corRef, alt = corAlt")
@@ -282,6 +277,46 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
             ids_found_df = ids_found_df.append(new_id, ignore_index=True)
 
     return ids_found_df
+
+
+def get_matching_variant_in_patient(ids_found_df: pd.DataFrame, rs_id_info: RsIdInfo) -> Optional[pd.DataFrame]:
+    variant_location_grch37 = rs_id_info.start_coordinate_grch37.get_position_string()
+    if rs_id_info.rs_id in ids_found_df['rsid'].tolist():
+        found_var_by_rs_id = ids_found_df.loc[ids_found_df['rsid'] == rs_id_info.rs_id]
+    else:
+        found_var_by_rs_id = None
+
+    if variant_location_grch37 in ids_found_df['position_GRCh37'].tolist():
+        found_var_by_location = ids_found_df.loc[ids_found_df['position_GRCh37'] == variant_location_grch37]
+    else:
+        found_var_by_location = None
+
+    # TODO: (maybe) make this smart enough to also handle MNV's etc.
+
+    if found_var_by_rs_id is not None and found_var_by_location is not None:
+        if found_var_by_rs_id.equals(found_var_by_location):
+            found_var = found_var_by_rs_id
+        else:
+            error_msg = f"Rs id and position match with different variants: rs_id_info={rs_id_info}."
+            raise ValueError(error_msg)
+    elif found_var_by_rs_id is not None and found_var_by_location is None:
+        # found_var = found_var_by_rs_id
+        error_msg = (f"[WARN] Matched ref seq difference by rs id, but not position: "
+                     f"variant_location_grch37={variant_location_grch37}, rs id={rs_id_info.rs_id}")
+        raise ValueError(error_msg)
+    elif found_var_by_rs_id is None and found_var_by_location is not None:
+        found_var = found_var_by_location
+        print(f"[WARN] Matched ref seq difference by position, but not rs id: "
+              f"variant_location_grch37={variant_location_grch37}, rs id={rs_id_info.rs_id}")
+    else:
+        # found_var_by_rs_id is None and found_var_by_location is None
+        found_var = None
+
+    if found_var is not None and found_var.shape[0] != 1:
+        error_msg = f"Multiple variants match with rs id info: rs_id_info={rs_id_info}"
+        raise ValueError(error_msg)
+
+    return found_var
 
 
 def compare_collection(a: List[Tuple[str, str]], b: List[Tuple[str, str]]) -> bool:
