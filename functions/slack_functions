@@ -17,8 +17,7 @@ slack () {
   data_json="{'username':'${usr} (${caller} at ${host})','attachments': [{'text':'${msg}','color':'${col}','attachment_type':'default'}]}"
   response=$(curl -s -X POST -H 'Content-type: application/json' --data "${data_json}" "${url}")
   if [[ ! "$response" == "ok" ]]; then
-    echo "[ERROR] Sending of slack msg was not ok (response: ${response})"
-    exit 1
+    echo "[ERROR] Sending of slack msg was not ok (response: ${response})" >&2
   fi
 }
 
