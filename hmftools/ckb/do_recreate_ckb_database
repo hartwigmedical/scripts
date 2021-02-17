@@ -4,7 +4,7 @@ credentials=$1 && shift
 ckb_db=$1 && shift
 
 # Resources
-ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_db.sql
+ckb_database_sql=/data/common/dbs/ckb/sql_database/generate_ckb_database.sql
 
 # Database details
 db_user=$(awk '/^user/ {print $2}' ${credentials})
