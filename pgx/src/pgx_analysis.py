@@ -238,8 +238,8 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
         found_var = get_matching_variant_in_patient(ids_found_df, rs_id_info)
 
         if found_var is not None:
-            found_ref_allele = found_var['ref_GRCh37'].values
-            found_alt_allele = found_var['alt_GRCh37'].values
+            found_ref_allele = found_var['ref_GRCh37'].iat[0]
+            found_alt_allele = found_var['alt_GRCh37'].iat[0]
             if found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch38:
                 # Delete found variant from results if the ref base and alt base are the correctedRefBase
                 ids_found_df = ids_found_df.drop(found_var.index[0])
@@ -258,9 +258,18 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
                 ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
                 ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
             else:
-                print("[ERROR] Complete mismatch:")
-                print(found_var)
-                raise ValueError("[ERROR] Exceptions cannot be processed. Please check. Exiting.")
+                # Not completely sure what should happen, so try something and print warning
+                new_annotation = found_var["variant_annotation"].iat[0] + "?"
+                ids_found_df.at[found_var.index[0], 'variant_annotation'] = new_annotation
+                if found_alt_allele == ref_allele_grch38:
+                    ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_alt_allele
+                    ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_ref_allele
+                else:
+                    ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_ref_allele
+                    ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_alt_allele
+                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
+                print(f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
+                      f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, annotation={new_annotation}")
         else:
             print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
                   "flipped. Add to table.")

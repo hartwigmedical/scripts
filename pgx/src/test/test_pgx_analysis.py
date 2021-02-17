@@ -13,6 +13,11 @@ from config.rs_id_info import RsIdInfo
 from config.variant import Variant
 from pgx_analysis import create_pgx_analysis
 
+ALL_IDS_IN_PANEL_COLUMNS = [
+    'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
+    'rsid', 'variant_annotation', 'filter'
+]
+
 
 class TestPgxAnalysis(unittest.TestCase):
     @classmethod
@@ -79,10 +84,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ids_found_in_patient = Grch37CallData(tuple())
         results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
-        columns_expected = [
-            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-            'rsid', 'variant_annotation', 'filter'
-        ]
         all_ids_in_panel_expected = pd.DataFrame(
             [
                 ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "INFERRED_REF_CALL"),
@@ -91,7 +92,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
                 ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=columns_expected
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
 
@@ -107,10 +108,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
-        columns_expected = [
-            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-            'rsid', 'variant_annotation', 'filter'
-        ]
         all_ids_in_panel_expected = pd.DataFrame(
             [
                 ("FAKE2", "16:97915617", "T", "T", "16:97450060", "T", "T", "rs1212127", "REF_CALL", "NO_CALL"),
@@ -119,7 +116,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
                 ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=columns_expected
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
 
@@ -137,10 +134,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
-        columns_expected = [
-            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-            'rsid', 'variant_annotation', 'filter'
-        ]
         all_ids_in_panel_expected = pd.DataFrame(
             [
                 ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs1212127", "1324T>C", "PASS"),
@@ -149,7 +142,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "674A>G", "PASS"),
                 ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
                 ("FAKE", "5:97915617", "T", "C", "5:97450060", "T", "C", "rs1212125", "1005T>C", "PASS"),
-            ], columns=columns_expected
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
 
@@ -164,10 +157,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
-        columns_expected = [
-            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-            'rsid', 'variant_annotation', 'filter'
-        ]
         all_ids_in_panel_expected = pd.DataFrame(
             [
                 ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "PASS"),
@@ -176,7 +165,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
                 ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=columns_expected
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
 
@@ -191,10 +180,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
 
-        columns_expected = [
-            'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-            'rsid', 'variant_annotation', 'filter'
-        ]
         all_ids_in_panel_expected = pd.DataFrame(
             [
                 ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs1212127", "1324T>C", "PASS"),
@@ -203,11 +188,57 @@ class TestPgxAnalysis(unittest.TestCase):
                 ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
                 ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=columns_expected
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
         )
         pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
 
         results_expected = {"DPYD": ['*3_HET', '*1_HET'], "FAKE": ["*1_HOM"], "FAKE2": ['*4A_HET', '*1_HET']}
+        self.assertEqual(results_expected, results)
+
+    def test_single_different_allele_on_ref_seq_differences(self) -> None:
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("C", "A"), "FAKE2", ("rs1212127",), "1324C>A", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("AC", "TC"), "DPYD", ("rs72549303",), "6744CT>GT", "PASS"),
+        ))
+        results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
+
+        all_ids_in_panel_expected = pd.DataFrame(
+            [
+                ("FAKE2", "16:97915617", "C", "A", "16:97450060", "C", "A", "rs1212127", "1324C>A?", "PASS"),
+                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97915621", "AC", "TC", "1:97450065", "TC", "AC", "rs72549303", "6744CT>GT?", "PASS"),
+                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
+                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
+
+        results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
+        self.assertEqual(results_expected, results)
+
+    def test_double_different_allele_on_ref_seq_differences(self) -> None:
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("A", "G"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT", "PASS"),
+        ))
+        results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
+
+        all_ids_in_panel_expected = pd.DataFrame(
+            [
+                ("FAKE2", "16:97915617", "A", "G", "16:97450060", "A", "G", "rs1212127", "1324C>T?", "PASS"),
+                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97915621", "AC", "AG", "1:97450065", "AC", "AG", "rs72549303", "6744CT>GT?", "PASS"),
+                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
+                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
+
+        results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
         self.assertEqual(results_expected, results)
 
     @unittest.skip("WIP")
@@ -221,8 +252,6 @@ class TestPgxAnalysis(unittest.TestCase):
         #   Bunch of errors
         #   Going deep on "no perfect haplotype" logic
         #   Unexpected allele for ref seq difference
-        #   Only match known position, not rs_id for ref seq diff
-        #   Ref call on ref seq difference
         self.fail("WIP")
 
 
