@@ -1,13 +1,8 @@
 #!/usr/bin/env bash
 
-## Desc: Uploads flowcell BCL level data to the storage bucket
+source slack_functions || exit 1
 
-## TODO move slack code to all servers that will need it
-#source /data/common/dbs/slack/slack_functions.sh
-
-## server specific flowcell location
 flowcells_dir="/data1/illumina_data"
-
 bucket="bcl-input-prod"
 gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
 
@@ -35,12 +30,6 @@ hmfapi () {
     http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
 }
 
-## Generic function that posts a message to slack channel
-slack () {
-    local msg=$1 && shift
-    hmf_slack_default "${msg}" > /dev/null
-}
-
 ## Run once at a time
 if [[ -f "${tmp_upload_file}" ]]; then
     echo "[INFO] Uploading in progress, exiting" && exit 0
@@ -49,9 +38,10 @@ else
     touch "${tmp_upload_file}"
 fi
 
+
 ## Find potential flowcell directories to upload
-find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read flowcell_path; do
-    flowcell_name=$( basename "${flowcell_path}" )
+find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -not -name "MyRun" | while read -r flowcell_path; do
+    flowcell_name=$(basename "${flowcell_path}")
     samplesheet_path="${flowcell_path}/SampleSheet.csv"
     rtacomplete_path="${flowcell_path}/RTAComplete.txt"
     runinfoxml_path="${flowcell_path}/RunInfo.xml"
@@ -67,10 +57,10 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
         continue
     fi
 
-    flowcell_id=$(xmllint --xpath "/RunInfo/Run/Flowcell/text()" ${runinfoxml_path})
-    sequencer=$(echo ${flowcell_name} | cut -d '_' -f2)
-    index=$(echo ${flowcell_name} | cut -d '_' -f3)
-    experiment_name=$(grep ExperimentName ${samplesheet_path} | cut -d "," -f2)
+    flowcell_id=$(xmllint --xpath "/RunInfo/Run/Flowcell/text()" "${runinfoxml_path}")
+    sequencer=$(echo "${flowcell_name}" | cut -d '_' -f2)
+    index=$(echo "${flowcell_name}" | cut -d '_' -f3)
+    experiment_name=$(grep ExperimentName "${samplesheet_path}" | cut -d "," -f2)
 
     echo "[INFO] Working on path \"${flowcell_path}\""
     echo "[INFO]   Hostname: ${hostname}"
@@ -79,8 +69,15 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     echo "[INFO]   Flowcell Name: ${flowcell_name}"
     echo "[INFO]   Experiment Name: ${experiment_name}"
 
+    flowcell_info="name=${experiment_name}|fcid=${flowcell_id}|host=${hostname}"
+
+    slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+    slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+
     if [[ -z "${flowcell_id}" ]]; then
-        echo "[WARN] Flowcell ${flowcell_name} on ${hostname} is missing flowcell_id: skipping"
+        msg="[WARN] Flowcell is somehow missing flowcell_id (${flowcell_info})"
+        echo "[WARN] ${msg}"
+        slack_warn "${msg}"
         continue
     fi
 
@@ -91,65 +88,72 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
         if [[ $(echo "${flowcell}" | jq length) -eq 0 ]]; then
             flowcell_by_name="$(hmfapi GET "${api_url}/hmf/v1/flowcells?name=${experiment_name}")"
             if [[ $(echo "${flowcell_by_name}" | jq length) -eq 0 ]]; then
-                echo "[INFO] Registering new flowcell in API (${flowcell_id}|${flowcell_name})"
+                echo "[INFO] Registering new flowcell in API (${flowcell_info})"
+                slack_info "Registering new flowcell in API (${flowcell_info})"
                 hmfapi POST "${api_url}/hmf/v1/flowcells" name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" status=Sequencing > /dev/null;
             else
-                echo "[WARN] Unable to POST flowcell: has new ID (${flowcell_id}) but name already exists in API (${flowcell_name})!"
+                msg "Unable to POST flowcell because name already exists in API (${flowcell_info})!"
+                echo "[WARN] ${msg}"
+                slack_warn "${msg}"
             fi
         fi
         continue
     fi
 
-    echo "[INFO] Flowcell ${flowcell_name} is ready for uploading BCL"
-    find ${flowcell_path} -name '*.bcl.gz' -or -name '*.cbcl' -or -name '*.bcl.bgzf' | grep bcl > /dev/null
+    echo "[INFO] Flowcell is ready for uploading BCL (${flowcell_info})"
+    find "${flowcell_path}" -name '*.bcl.gz' -or -name '*.cbcl' -or -name '*.bcl.bgzf' | grep bcl > /dev/null
     if [[ $? -ne 0 ]]; then
-        #slack "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
-        echo "${flowcell_name} on ${hostname} is ready but has no BCL files, this probably means that the sequencer has failed"
+        msg="Flowcell is ready but has no BCL files, this probably means that the sequencer has failed (${flowcell_info})"
+        echo "[WARN] ${msg}"
+        slack_warn "${msg}"
         continue
     fi
 
     ## setup rsync cmd excluding un-used and post-sequencing-generated files
+    echo "[INFO] Starting BCL upload (${flowcell_info})"
+    slack_info "Starting BCL upload (${flowcell_info})"
     gs_path="gs://${bucket}/${flowcell_name}"
-    cmd="gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x \".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*\" ${flowcell_path} ${gs_path}"
-    echo "[INFO] Executing rsync (${cmd})"
-    gcloud auth activate-service-account --key-file ${gcp_cred}
-    ${cmd}
-
+    gcloud auth activate-service-account --key-file "${gcp_cred}"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
     if [[ $? -ne 0 ]]; then
-        #slack "[WARN] Something wrong with BCL upload \"${flowcell_path}\" on \"${hostname}\""
-        echo "[WARN] Something wrong with BCL upload \"${flowcell_path}\" on \"${hostname}\""
+        msg="Something went wrong with BCL upload of '${flowcell_path}' (${flowcell_info})"
+        echo "[WARN] ${msg}"
+        slack_warn "${msg}"
         continue
     fi
 
     ## Add two timestamps for Turquoise: One for the sequencer completion and another for the upload completion
-    date --date="@$(stat -c '%Y' ${rtacomplete_path})" "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/RTAComplete.timestamp
-    date "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - ${gs_path}/BCLUploadComplete.timestamp
+    date --date="@$(stat -c '%Y' "${rtacomplete_path}")" "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - "${gs_path}/RTAComplete.timestamp"
+    date "+%Y-%m-%d %H:%M:%S %z" | gsutil cp - "${gs_path}/BCLUploadComplete.timestamp"
 
-    flowcell="$(hmfapi GET ${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id})"
+    flowcell="$(hmfapi GET "${api_url}/hmf/v1/flowcells?flowcell_id=${flowcell_id}")"
 
     if [[ $(echo "${flowcell}" | jq length) -eq 1 ]]; then
         api_id=$(echo "${flowcell}" | jq -r .[0].id);
         status=$(echo "${flowcell}" | jq -r .[0].status);
 
-        echo "[INFO] Found existing flowcell at ${api_url} (api_id:${api_id}|status=${status})"
+        echo "[INFO] Found existing flowcell at ${api_url} (${flowcell_info}|api_id=${api_id}|status=${status})"
 
         if [[ "${status}" == "Testing" ]]; then
             echo "[INFO] Flowcell status is Testing"
         elif [[ "${status}" == "Sequencing" ]]; then
-            echo "[INFO] PATCH flowcell status to Pending (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})"
-            hmfapi PATCH ${api_url}/hmf/v1/flowcells/${api_id} status=Pending index="${index}" sequencer="${sequencer}" bucket="${bucket}" > /dev/null;
+            msg="Patching flowcell status to Pending (${flowcell_info}|api_id=${api_id})|status=${status}"
+            echo "[INFO] ${msg}"
+            slack_info "${msg}"
+            hmfapi PATCH "${api_url}/hmf/v1/flowcells/${api_id}" status=Pending index="${index}" sequencer="${sequencer}" bucket="${bucket}" > /dev/null;
         else
-            #slack "[WARN] Would try invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})";
-            echo "[WARN] SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})";
+            msg="SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})"
+            echo "[WARN] ${msg}"
+            slack_warn "${msg}"
             continue
         fi
     else
         echo "[INFO] POST flowcell (${flowcell_id}) to ${api_url} and set pending because BCL has been uploaded"
-        hmfapi POST ${api_url}/hmf/v1/flowcells name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" bucket="${bucket}" status=Pending
+        hmfapi POST "${api_url}/hmf/v1/flowcells" name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" bucket="${bucket}" status=Pending
     fi
 
     echo "[INFO] BCL of flowcell ${flowcell_name} is uploaded from ${hostname} and is ready for bcl2fastq conversion"
-    echo $(date) > ${log_file}
+    date > "${log_file}"
 done
 
 echo "[INFO] Removing ${tmp_upload_file}"
