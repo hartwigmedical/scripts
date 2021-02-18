@@ -56,6 +56,7 @@ protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv
+pipeline_version_file=$( ${run_dir}/pipeline.version)
 
 pilot_do_run_base_patient_reporter \
     -ref_sample_id ${ref_sample} \
@@ -77,5 +78,6 @@ pilot_do_run_base_patient_reporter \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -sample_summary_tsv ${sample_summary_tsv} \
     -output_dir_data_report ${output_dir_data_report} \
+    -pipeline_version_file ${pipeline_version_file} \
     -log_debug \
     "$@"
