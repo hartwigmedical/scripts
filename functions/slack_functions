@@ -1,13 +1,22 @@
 #!/usr/bin/env bash
 
-# TODO: make url file configurable
-source /data/common/dbs/slack/slack_channel_urls.txt || exit 1
+source message_functions || exit 1
 
 # Downstream scripts should normally only use functions slack_info and slack_warn
-# Some markdown(-like) code is allowed (see https://api.slack.com/reference/surfaces/formatting)
+# Some markdown code is allowed (see https://api.slack.com/reference/surfaces/formatting)
 
 caller=$(basename "$(caller | cut -d" " -f2)")
 host=$(hostname)
+
+if [[ -z "${SLACK_DEFAULT_URL}" || -z "${SLACK_TESTING_URL}" ]]; then
+  if [[ -f "/data/dbs/slack/slack_webhook_urls" ]]; then
+    source "/data/dbs/slack/slack_webhook_urls"
+  elif [[ -f "/data/common/dbs/slack/slack_webhook_urls" ]]; then
+    source "/data/common/dbs/slack/slack_webhook_urls"
+  fi
+fi
+[[ -n "${SLACK_DEFAULT_URL}" ]] || warn "Missing required ENV variable SLACK_DEFAULT_URL"
+[[ -n "${SLACK_TESTING_URL}" ]] || warn "Missing required ENV variable SLACK_TESTING_URL"
 
 slack () {
   local url="$1" && shift
@@ -24,7 +33,7 @@ slack () {
 slack_test () {
   local msg="${1:-NoMessageProvided}" && shift
   local usr="${1:-TestBot}" && shift
-  local url="${hmf_slack_testing_url}" # currently sourced from file
+  local url="${SLACK_TESTING_URL}" # currently sourced from file
   local col="#000000" # black
 
   slack "${url}" "${usr}" "${msg}" "${col}"
@@ -33,7 +42,7 @@ slack_test () {
 slack_info () {
   local msg="${1:-NoMessageProvided}" && shift
   local usr="${1:-InfoBot}" && shift
-  local url="${hmf_slack_default_url}" # currently sourced from file
+  local url="${SLACK_DEFAULT_URL}" # currently sourced from file
   local col="#0000FF" # blue
 
   slack "${url}" "${usr}" "${msg}" "${col}"
@@ -42,7 +51,7 @@ slack_info () {
 slack_warn () {
   local msg="${1:-NoMessageProvided}" && shift
   local usr="${1:-WarnBot}" && shift
-  local url="${hmf_slack_default_url}" # currently sourced from file
+  local url="${SLACK_DEFAULT_URL}" # currently sourced from file
   local col="#FF0000" # red
 
   slack "${url}" "${usr}" "${msg}" "${col}"
