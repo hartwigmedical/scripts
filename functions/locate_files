@@ -367,6 +367,24 @@ locate_purple_somatics() {
     echo ${somatic_vcf}
 }
 
+locate_purple_germline_variants() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
+}
+
 locate_purple_pilot_somatics() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -382,6 +400,24 @@ locate_purple_pilot_somatics() {
     fi
 
     echo ${somatic_vcf}
+}
+
+locate_purple_pilot_germline_variants() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple_pilot
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
 }
 
 ############################################ AMBER ###########################################
