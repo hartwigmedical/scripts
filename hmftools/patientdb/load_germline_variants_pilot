@@ -12,4 +12,4 @@ germline_vcf=$(locate_purple_pilot_germline_variants ${run_dir})
 credentials=$(locate_pilot_database_credentials)
 patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_somatic_variants ${sample} ${ref_sample} ${germline_vcf} ${credentials} ${patient_db_jar} "$@"
+do_load_germline_variants ${sample} ${ref_sample} ${germline_vcf} ${credentials} ${patient_db_jar} "$@"
