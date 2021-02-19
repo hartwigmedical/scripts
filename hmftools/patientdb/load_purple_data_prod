@@ -11,3 +11,26 @@ credentials=$(locate_prod_database_credentials)
 patient_db_jar=$(locate_prod_purple)
 
 do_load_purple_data ${sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
+
+
+load_linx_data_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+
+
+load_bachelor_data_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+
+
+load_chord_data_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+load_purple_data_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+load_somatic_variants_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+load_germline_variants_prod /data/cpct/pipeline_v5_19_rerun_data/CPCT02010003T
+
+nohup find /data/cpct/pipeline_v5_19_rerun_data -maxdepth 1 -mindepth 1 -type d | xargs -I DIR --max-procs=3 load_purple_data_prod DIR &
+
+
+nohup ./reloadGermline.sh > germling.log &
+
+
+nohup ./reloadChord.sh > chord.log &
+nohup ./reloadSomatics.sh > somatics.log &
+nohup ./reloadLinx.sh > linx.log &
+nohup ./reloadSV.sh > sv.log &
