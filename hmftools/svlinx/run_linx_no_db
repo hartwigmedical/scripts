@@ -21,7 +21,6 @@ ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv
 line_elements=/data/common/dbs/sv/line_elements.csv
 replication_origins=/data/common/dbs/sv/heli_rep_origins.bed
-ref_genome=$(locate_ref_genome_37_fasta_file)
 
 if [[ -d "${output_dir}" ]]; then
     linx_files=$(find ${output_dir} -type f -name "*linx*")
@@ -38,7 +37,6 @@ java -Xmx8G -Xms4G -jar ${linx_jar} \
     -sample ${sample} \
     -sv_vcf ${structural_vcf} \
     -purple_dir ${purple_dir} \
-    -ref_genome ${ref_genome} \
     -output_dir ${output_dir} \
     -fragile_site_file ${fragile_sites} \
     -line_element_file ${line_elements} \
