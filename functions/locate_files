@@ -212,6 +212,10 @@ locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 
+locate_umi_resource_dir() {
+    echo ${base_path}/dbs/umi/
+}
+
 ################################### PGX ####################################
 
 locate_pgx_dir() {
@@ -278,6 +282,20 @@ locate_pgx_pilot_vcf() {
     fi
 
     echo ${pgx_vcf}
+}
+
+################################### PGX ####################################
+
+locate_umi_dir() {
+    echo "${base_path}/repos/scripts/umi/"
+}
+
+locate_umi_venv_dir() {
+    echo "$(locate_umi_resource_dir)/venv/umi"
+}
+
+locate_umi_requirements() {
+    echo "$(locate_umi_dir)/requirements.txt"
 }
 
 ################################### WGS METRICS ####################################
