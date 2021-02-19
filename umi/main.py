@@ -5,6 +5,8 @@ import sys
 
 from typing import List
 
+import pysam as pysam
+
 # set up logging
 logging.basicConfig(
     format='%(asctime)s %(levelname)-8s %(message)s',
@@ -13,6 +15,14 @@ logging.basicConfig(
 
 
 def main(input_bam: str, output_bam: str) -> None:
+    bam_file = pysam.AlignmentFile(input_bam, "rb")
+
+    counter = 0
+    for read in bam_file:
+        print(read)
+        counter += 1
+        if counter > 10:
+            break
     print("hello")
 
 
