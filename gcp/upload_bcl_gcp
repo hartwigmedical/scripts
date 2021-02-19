@@ -71,8 +71,8 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
 
     flowcell_info="name=${experiment_name}|fcid=${flowcell_id}|host=${hostname}"
 
-    slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
-    slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+    #slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+    #slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
 
     if [[ -z "${flowcell_id}" ]]; then
         msg="[WARN] Flowcell is somehow missing flowcell_id (${flowcell_info})"
