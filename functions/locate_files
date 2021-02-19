@@ -158,6 +158,10 @@ locate_pgx_main() {
     echo "$(locate_pgx_dir)/src/main.py"
 }
 
+locate_umi_main() {
+    echo "$(locate_umi_dir)/main.py"
+}
+
 locate_vcftools() {
     echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
 }
