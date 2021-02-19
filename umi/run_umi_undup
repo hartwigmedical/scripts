@@ -4,13 +4,15 @@ source locate_files || exit 1
 source message_functions || exit 1
 source metadata_functions || exit 1
 
+SCRIPT_NAME="$(basename "$0")"
+
 info "Start running UMI script"
 
 input_bam=$1 && shift
 output_bam=$1 && shift
 
 if [[ -z "${output_bam}" ]]; then
-  die "Not enough arguments to ${FUNCNAME[0]}"
+  die "Not enough arguments to ${SCRIPT_NAME}"
 fi
 
 # sanity checks
