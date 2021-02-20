@@ -137,9 +137,8 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
         if [[ "${status}" == "Testing" ]]; then
             echo "[INFO] Flowcell status is Testing"
         elif [[ "${status}" == "Sequencing" ]]; then
-            msg="Patching flowcell (api_id:${api_id}) status to Pending (${flowcell_info})"
+            msg="Patching flowcell (id:${api_id}) status to Pending (${flowcell_info})"
             echo "[INFO] ${msg}"
-            slack_info "${msg}"
             hmfapi PATCH "${api_url}/hmf/v1/flowcells/${api_id}" status=Pending index="${index}" sequencer="${sequencer}" bucket="${bucket}" > /dev/null;
         else
             msg="SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell with id ${api_id} (${flowcell_info})"
