@@ -69,7 +69,7 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     echo "[INFO]   Flowcell Name: ${flowcell_name}"
     echo "[INFO]   Experiment Name: ${experiment_name}"
 
-    flowcell_info="${experiment_name}|${flowcell_id}|${hostname}"
+    flowcell_info="${experiment_name}|${flowcell_id}"
 
     #slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
     #slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
