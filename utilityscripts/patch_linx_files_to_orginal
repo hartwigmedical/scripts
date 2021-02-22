@@ -9,4 +9,4 @@ rm ${run_dir}/linx/${sample_id}.linx.fusion.tsv
 mv ${run_dir}/linx/${sample_id}.linx.fusion_original.tsv ${run_dir}/linx/${sample_id}.linx.fusion.tsv
 
 rm ${run_dir}/linx/${sample_id}.linx.breakend.tsv
-cp ${run_dir}/linx/${sample_id}.linx.breakend_original.tsv ${run_dir}/linx/${sample_id}.linx.breakend.tsv
+mv ${run_dir}/linx/${sample_id}.linx.breakend_original.tsv ${run_dir}/linx/${sample_id}.linx.breakend.tsv
