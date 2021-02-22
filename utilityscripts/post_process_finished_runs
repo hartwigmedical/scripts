@@ -41,6 +41,7 @@ for run in ${process_runs}; do
         echo "[INFO] Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
         echo "[INFO] Loading run into database"
+        patch_linx_files_to_orginal /data/cpct/runs/${run}
         load_run_into_prod_db /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
