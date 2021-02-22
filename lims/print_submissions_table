@@ -7,10 +7,11 @@ count=${1:-10} # optional amount of submissions to print
 submissions=$(jq "[.submissions[]] | sort_by(.submission) | .[-${count}:] | reverse[]" "${LIMS_JSON}")
 
 # header
-printf "#%s\t%s\t%s\t%s\t%s\n" \
+printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
     "submission" \
     "project" \
     "cohort" \
+    "details" \
     "analysis" \
     "sample_count"
 
@@ -21,6 +22,7 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     cohort=$(echo "${line}" | cut -f3)
     scount=$(echo "${line}" | cut -f4)
     analysis=$(echo "${line}" | cut -f5)
+    details=""
 
     # reset some fields according to project type
     if [[ "${cohort}" == "Human research" ]]; then
@@ -31,6 +33,14 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
         cohort="KG"
     elif [[ "${cohort}" == "CORE" ]]; then
         analysis="SomaticAnalysis"
+        scount=1 # For CORE we only add the tumor sample to SampleOverview
+        sample_json=$(query_lims.pl -type samples -filter "submission=${submission}" -filter "analysis_type=Somatic_T" -json)
+        if [[ $(jq 'length' <<< "$sample_json") -gt 0 ]]; then
+            sample_name=$(echo "${sample_json}" | jq -r '.[-1].sample_name')
+            details="${sample_name}"
+        else
+            details="CoreSampleNotFound"
+        fi
     elif [[ "${cohort}" == "Cohort" ]]; then
         analysis="NA"
     else
@@ -38,10 +48,11 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     fi
 
     # output
-    printf "%s\t%s\t%s\t%s\t%s\n" \
+    printf "%s\t%s\t%s\t%s\t%s\t%s\n" \
         "${submission}" \
         "${project}" \
         "${cohort}" \
+        "${details}" \
         "${analysis}" \
         "${scount}"
 done
