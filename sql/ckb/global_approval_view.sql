@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW globalApproval AS (
 
 SELECT
-    therapyName AS treatment, cancerType, tumorProfile, approvalStatus, approvalAuthority
+    DISTINCT therapyName AS treatment, cancerType, tumorProfile, approvalStatus, approvalAuthority
 FROM globalApprovalStatus
 INNER JOIN therapy ON therapy.id = globalApprovalStatus.therapyId
 INNER JOIN (SELECT DISTINCT ckbIndicationId, name AS cancerType FROM indication)
