@@ -9,7 +9,9 @@ if [[ -z $1 || $1 == "-h" || $1 == "--help" ]]; then
     echo "        Output will be written to ${out_root}"
     echo " Usage: $(basename $0) /path/to/flowcell/directory"
     echo "        $(basename $0) /path/to/flowcell/directory"
+    echo "        $(basename $0) /path/to/flowcell/directory /path/to/store/output"
     echo " Exmpl: $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG"
+    echo "        $(basename $0) /data1/illumina_data/201013_NB500901_0281_AHKYLCBGXG /data/tmp"
     echo "---"
     exit 1
 fi
