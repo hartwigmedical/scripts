@@ -20,7 +20,7 @@ fi
 input_file_extension=${input_bam##*.}
 [[ "${input_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${input_file_extension}"
 output_file_extension=${output_bam##*.}
-[[ "${output_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${output_file_extension}"
+[[ "${output_file_extension}" = "bam" ]] || die "Output bam is not a bam file: extension=${output_file_extension}"
 
 #if [[ -f "${output_bam}" ]]; then
 #  rm -r "${output_bam}" || die "Could not delete existing output bam"
