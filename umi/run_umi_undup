@@ -1,0 +1,43 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+info "Start running UMI script"
+
+input_bam=$1 && shift
+output_bam=$1 && shift
+
+if [[ -z "${output_bam}" ]]; then
+  die "Not enough arguments to ${SCRIPT_NAME}"
+fi
+
+# sanity checks
+[[ -f "${input_bam}" ]] || die "Input bam does not exist"
+# checks file extensions
+input_file_extension=${input_bam##*.}
+[[ "${input_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${input_file_extension}"
+output_file_extension=${output_bam##*.}
+[[ "${output_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${output_file_extension}"
+
+#if [[ -f "${output_bam}" ]]; then
+#  rm -r "${output_bam}" || die "Could not delete existing output bam"
+#fi
+
+if [[ $# -eq 0 ]]; then
+  venv_dir=$(locate_umi_venv_dir)
+else
+  venv_dir=$1 && shift
+fi
+
+# START VIRTUAL ENV
+source "${venv_dir}/bin/activate" || die "Could not activate UMI venv"
+
+umi_main=$(locate_umi_main)
+
+export PYTHONPATH="${PYTHONPATH}:${umi_main}/../"
+
+# RUN
+python "${umi_main}" "${input_bam}" "${output_bam}" || die "UMI pilot failed"

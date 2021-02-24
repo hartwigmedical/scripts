@@ -69,10 +69,10 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     echo "[INFO]   Flowcell Name: ${flowcell_name}"
     echo "[INFO]   Experiment Name: ${experiment_name}"
 
-    flowcell_info="name=${experiment_name}|fcid=${flowcell_id}|host=${hostname}"
+    flowcell_info="${experiment_name}|${flowcell_id}"
 
-    slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
-    slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+    #slack_warn "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
+    #slack_info "[DEBUG/TEST] Working on flowcell (${flowcell_info})"
 
     if [[ -z "${flowcell_id}" ]]; then
         msg="[WARN] Flowcell is somehow missing flowcell_id (${flowcell_info})"
@@ -132,17 +132,16 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
         api_id=$(echo "${flowcell}" | jq -r .[0].id);
         status=$(echo "${flowcell}" | jq -r .[0].status);
 
-        echo "[INFO] Found existing flowcell at ${api_url} (${flowcell_info}|api_id=${api_id}|status=${status})"
+        echo "[INFO] Found existing flowcell at ${api_url} with id ${api_id} and status ${status} (${flowcell_info})"
 
         if [[ "${status}" == "Testing" ]]; then
             echo "[INFO] Flowcell status is Testing"
         elif [[ "${status}" == "Sequencing" ]]; then
-            msg="Patching flowcell status to Pending (${flowcell_info}|api_id=${api_id})|status=${status}"
+            msg="Patching flowcell (id:${api_id}) status to Pending (${flowcell_info})"
             echo "[INFO] ${msg}"
-            slack_info "${msg}"
             hmfapi PATCH "${api_url}/hmf/v1/flowcells/${api_id}" status=Pending index="${index}" sequencer="${sequencer}" bucket="${bucket}" > /dev/null;
         else
-            msg="SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell (fcid:${flowcell_id}|api_id:${api_id}|host:${hostname})"
+            msg="SKIPPING. Would do invalid flowcell transition from ${status} to Pending, check flowcell with id ${api_id} (${flowcell_info})"
             echo "[WARN] ${msg}"
             slack_warn "${msg}"
             continue

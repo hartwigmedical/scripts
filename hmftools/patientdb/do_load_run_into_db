@@ -13,6 +13,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 amber_dir=$(locate_amber_directory ${run_dir})
 somatic_vcf=$(locate_purple_somatics ${run_dir})
+germline_vcf=$(locate_purple_germline_variants ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})
 protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
@@ -24,6 +25,7 @@ bachelor_jar=$(locate_prod_bachelor)
 do_load_amber_data ${tumor_sample} ${amber_dir} ${credentials} ${patient_db_jar}
 do_load_purple_data ${tumor_sample} ${run_dir}/purple ${credentials} ${patient_db_jar}
 do_load_somatic_variants ${tumor_sample} ${ref_sample} ${somatic_vcf} ${credentials} ${patient_db_jar}
+do_load_germline_variants ${tumor_sample} ${ref_sample} ${germline_vcf} ${credentials} ${patient_db_jar}
 do_load_structural_variants ${tumor_sample} ${structural_vcf} ${credentials} ${patient_db_jar}
 do_load_linx_data ${tumor_sample} ${run_dir}/linx ${credentials} ${linx_jar}
 do_load_metrics_data ${tumor_sample} ${ref_metrics_file} ${tumor_metrics_file} ${credentials} ${patient_db_jar}

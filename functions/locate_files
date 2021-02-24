@@ -158,6 +158,10 @@ locate_pgx_main() {
     echo "$(locate_pgx_dir)/src/main.py"
 }
 
+locate_umi_main() {
+    echo "$(locate_umi_dir)/main.py"
+}
+
 locate_vcftools() {
     echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
 }
@@ -210,6 +214,10 @@ locate_hartwig_curated_tsv() {
 
 locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+}
+
+locate_umi_resource_dir() {
+    echo ${base_path}/dbs/umi/
 }
 
 ################################### PGX ####################################
@@ -278,6 +286,20 @@ locate_pgx_pilot_vcf() {
     fi
 
     echo ${pgx_vcf}
+}
+
+################################### PGX ####################################
+
+locate_umi_dir() {
+    echo "${base_path}/repos/scripts/umi/"
+}
+
+locate_umi_venv_dir() {
+    echo "$(locate_umi_resource_dir)/venv/umi"
+}
+
+locate_umi_requirements() {
+    echo "$(locate_umi_dir)/requirements.txt"
 }
 
 ################################### WGS METRICS ####################################

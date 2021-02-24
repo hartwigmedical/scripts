@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+source locate_files || exit 1
+source message_functions || exit 1
+
+info "Starting creation of UMI venv"
+
+if [[ $# -eq 0 ]]; then
+  venv_dir=$(locate_umi_venv_dir)
+else
+  venv_dir=$1 && shift
+fi
+
+umi_requirements=$(locate_umi_requirements)
+
+if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
+    info "Delete existing UMI venv"
+    rm -r  "${venv_dir}" || die "Could not delete existing UMI venv"
+fi
+
+python3 -m venv "${venv_dir}" || die "Could not create UMI venv"
+source "${venv_dir}/bin/activate" || die "Could not activate UMI venv"
+pip install -r "${umi_requirements}" || die "Could not install UMI pip packages"
+
+info "Finished creating UMI venv"
