@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
-info "Start running UMI script"
+info "Start running UMI undup script"
 
 input_bam=$1 && shift
 output_bam=$1 && shift
@@ -40,4 +40,4 @@ umi_main=$(locate_umi_main)
 export PYTHONPATH="${PYTHONPATH}:${umi_main}/../"
 
 # RUN
-python "${umi_main}" "${input_bam}" "${output_bam}" || die "UMI pilot failed"
+python "${umi_main}" "${input_bam}" "${output_bam}" || die "UMI undup failed"
