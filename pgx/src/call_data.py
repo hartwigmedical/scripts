@@ -3,6 +3,7 @@ from typing import NamedTuple, Tuple
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
+from dataframe_format import GRCH37_DATAFRAME_COLUMNS
 
 
 class Grch37Call(NamedTuple):
@@ -15,8 +16,6 @@ class Grch37Call(NamedTuple):
 
 
 class Grch37CallData(object):
-    DATAFRAME_COLUMNS = ['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid', 'variant_annotation', 'gene', 'filter']
-
     def __init__(self, calls: Tuple[Grch37Call, ...]) -> None:
         self.__calls = calls
 
@@ -34,7 +33,7 @@ class Grch37CallData(object):
         )
 
     def get_data_frame(self) -> pd.DataFrame:
-        data_frame = pd.DataFrame(columns=self.DATAFRAME_COLUMNS)
+        data_frame = pd.DataFrame(columns=GRCH37_DATAFRAME_COLUMNS)
         for call in self.__calls:
             new_id = {
                 'position_GRCh37': call.start_coordinate.get_position_string(),

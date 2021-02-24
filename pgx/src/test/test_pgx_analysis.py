@@ -212,21 +212,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         with self.assertRaises(ValueError):
             create_pgx_analysis(ids_found_in_patient, panel)
-        #
-        # all_ids_in_panel_expected = pd.DataFrame(
-        #     [
-        #         ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs939535", "1324T>C", "PASS"),
-        #         ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-        #         ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs4020942", "6744GA>CA", "PASS"),
-        #         ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-        #         ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-        #         ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-        #     ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        # )
-        # pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
-        #
-        # results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
-        # self.assertEqual(results_expected, results)
 
     def test_wrong_position_on_ref_seq_differences(self) -> None:
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except positions are incorrect"""
@@ -341,7 +326,7 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
-    def test_known_variants_with_incorrect_details(self) -> None:
+    def test_known_variants_with_incorrect_or_missing_rs_id(self) -> None:
         """Known variants (not ref seq differences) with incorrect or unknown rs id"""
         panel = self.__get_example_panel()
         ids_found_in_patient = Grch37CallData((
@@ -355,7 +340,7 @@ class TestPgxAnalysis(unittest.TestCase):
             create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_known_variant_with_incorrect_position(self) -> None:
-        """Known variants (not ref seq differences) with incorrect position"""
+        """Known variants (not ref seq differences), with one incorrect position"""
         panel = self.__get_example_panel()
         ids_found_in_patient = Grch37CallData((
             Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
@@ -367,14 +352,26 @@ class TestPgxAnalysis(unittest.TestCase):
         with self.assertRaises(ValueError):
             create_pgx_analysis(ids_found_in_patient, panel)
 
+    def test_known_variant_with_incorrect_chromosome(self) -> None:
+        """Known variants (not ref seq differences), with one incorrect chromosome"""
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("3", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+        ))
+        with self.assertRaises(ValueError):
+            create_pgx_analysis(ids_found_in_patient, panel)
+
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
-        # TODO: what happens when multiple choices would work. Preference for *2B over *2A-*5 separately, for instance.
+        # TODO:
+        #   More than two haplotypes
+        #   What happens when multiple choices would work. Preference for *2B over *2A-*5 separately, for instance.
         #   More complicated ambiguity?
-        #   Known variant with empty rs_id
-        #   Known variant with 'incorrect' rs_id
-        #   Known variant with incorrect position (other chromosome?)
-        #   HOMHET
+        #   HOMHET (probably make impossible, but handle situation properly)
         #   Bunch of errors
         #   Going deep on "no perfect haplotype" logic
         #   MNV at ref seq difference
