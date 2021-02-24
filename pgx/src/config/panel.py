@@ -56,18 +56,18 @@ class Panel(object):
                 return True
         return False
 
-    def get_rs_id_with_position(self, position_string: str) -> str:
-        matching_rs_ids = []
+    def get_rs_id_info_with_position(self, position_string: str) -> RsIdInfo:
+        matching_rs_id_infos = []
         for info in self.get_rs_id_infos():
             if info.start_coordinate_grch37.get_position_string() == position_string:
-                matching_rs_ids.append(info.rs_id)
+                matching_rs_id_infos.append(info)
 
-        if matching_rs_ids and len(matching_rs_ids) == 1:
-            return matching_rs_ids.pop()
-        elif not matching_rs_ids:
-            raise ValueError("No rs ids match position")
+        if matching_rs_id_infos and len(matching_rs_id_infos) == 1:
+            return matching_rs_id_infos.pop()
+        elif not matching_rs_id_infos:
+            raise ValueError("No rs id infos match position")
         else:
-            raise ValueError("Multiple rs ids match position")
+            raise ValueError("Multiple rs id infos match position")
 
     def contains_rs_id(self, rs_id: str) -> bool:
         return rs_id in self.get_rs_ids()
@@ -99,4 +99,6 @@ class Panel(object):
                     if not left_info.is_compatible(right_info):
                         error_msg = f"Incompatible rs id infos in config. left: {left_info}, right: {right_info}"
                         raise ValueError(error_msg)
+
+
 

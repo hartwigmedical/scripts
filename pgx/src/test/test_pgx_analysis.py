@@ -203,29 +203,30 @@ class TestPgxAnalysis(unittest.TestCase):
     def test_wrong_rs_id_on_ref_seq_differences(self) -> None:
         """
         At reference sequence differences: heterozygous between ref GRCh37 and GRCh38,
-        and incorrect rs_id provided
+        and incorrect rs id provided
         """
         panel = self.__get_example_panel()
         ids_found_in_patient = Grch37CallData((
             Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs939535",), "1324C>T", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs4020942",), "6744CA>GA", "PASS"),
         ))
-        results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
-
-        all_ids_in_panel_expected = pd.DataFrame(
-            [
-                ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs939535", "1324T>C", "PASS"),
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs4020942", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
-
-        results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
-        self.assertEqual(results_expected, results)
+        with self.assertRaises(ValueError):
+            create_pgx_analysis(ids_found_in_patient, panel)
+        #
+        # all_ids_in_panel_expected = pd.DataFrame(
+        #     [
+        #         ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs939535", "1324T>C", "PASS"),
+        #         ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
+        #         ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs4020942", "6744GA>CA", "PASS"),
+        #         ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
+        #         ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
+        #         ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
+        #     ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        # )
+        # pd.testing.assert_frame_equal(all_ids_in_panel_expected, all_ids_in_panel)
+        #
+        # results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
+        # self.assertEqual(results_expected, results)
 
     def test_wrong_position_on_ref_seq_differences(self) -> None:
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except positions are incorrect"""
@@ -233,6 +234,16 @@ class TestPgxAnalysis(unittest.TestCase):
         ids_found_in_patient = Grch37CallData((
             Grch37Call(GeneCoordinate("16", 97915618), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915623), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
+        ))
+        with self.assertRaises(ValueError):
+            create_pgx_analysis(ids_found_in_patient, panel)
+
+    def test_wrong_chromosome_on_ref_seq_differences(self) -> None:
+        """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except chromosomes are incorrect"""
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("7", 97915617), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("8", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
             create_pgx_analysis(ids_found_in_patient, panel)
@@ -330,6 +341,32 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
+    def test_known_variants_with_incorrect_details(self) -> None:
+        """Known variants (not ref seq differences) with incorrect or unknown rs id"""
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs27384",), "1005T>C", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", (".",), "35G>A", "PASS"),  # missing
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+        ))
+        with self.assertRaises(ValueError):
+            create_pgx_analysis(ids_found_in_patient, panel)
+
+    def test_known_variant_with_incorrect_position(self) -> None:
+        """Known variants (not ref seq differences) with incorrect position"""
+        panel = self.__get_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 6778543), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+        ))
+        with self.assertRaises(ValueError):
+            create_pgx_analysis(ids_found_in_patient, panel)
+
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO: what happens when multiple choices would work. Preference for *2B over *2A-*5 separately, for instance.
@@ -340,7 +377,9 @@ class TestPgxAnalysis(unittest.TestCase):
         #   HOMHET
         #   Bunch of errors
         #   Going deep on "no perfect haplotype" logic
-        #   Unexpected allele for ref seq difference
+        #   MNV at ref seq difference
+        #   MNV somewhere else
+        #   Filter MNV from source file in or out?
         self.fail("WIP")
 
 
