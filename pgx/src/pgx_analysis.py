@@ -62,6 +62,13 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel) -> T
                 raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
                                  "matching rs id infos: " + matching_rs_id_infos_string + "\n"
                                  "GRCh38 locations: " + ", ".join(grch38_locations) + "\n")
+            else:
+                # No matching known rs ids
+                if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
+                    ids_found_in_patient_df.at[index, 'position_GRCh38'] = "UNKNOWN"
+
+    if pd.isna(ids_found_in_patient_df).any(axis=None):
+        raise ValueError(f"Unhandled NaN values:\n{ids_found_in_patient_df}")
 
     # Generate a list of ids not found in patient
     ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
@@ -268,8 +275,11 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
                     ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_ref_allele
                     ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_alt_allele
                 ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
-                print(f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
-                      f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, annotation={new_annotation}")
+                print(
+                    f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
+                    f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, "
+                    f"annotation={new_annotation}"
+                )
         else:
             print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
                   "flipped. Add to table.")
