@@ -1,104 +1,34 @@
 import collections
 import itertools
 import sys
-from typing import DefaultDict, Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional
 
 import pandas as pd
 
 from call_data import Grch37CallData
 from config.panel import Panel
 from config.rs_id_info import RsIdInfo
+from dataframe_format import COMBINED_DATAFRAME_COLUMNS
 
 
-def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
-    # Process the differences between GRCh37 and GRCh38
-    ids_found_in_patient_df = process_differences_in_ref_sequence(ids_found_in_patient, panel)
+def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
+    panel_calls_found_in_patient_df = process_differences_in_ref_sequence(call_data, panel)
 
-    rsid_to_gene_to_rs_id_info: DefaultDict[str, Dict[str, Any]] = collections.defaultdict(dict)
-    for gene_info in panel.get_gene_infos():
-        for rs_id_info in gene_info.rs_id_infos:
-            rsid_to_gene_to_rs_id_info[rs_id_info.rs_id][gene_info.gene] = rs_id_info
+    assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df, panel)
 
-    results = {}
+    if pd.isna(panel_calls_found_in_patient_df).any(axis=None):
+        raise ValueError(f"Unhandled NaN values:\n{panel_calls_found_in_patient_df}")
 
-    # Fill in the GRCh38 gaps, they should be the same as the GRCh37 equivalent
-    if not ids_found_in_patient_df.empty:
-        for index, row in ids_found_in_patient_df.iterrows():
-            if 'ref_GRCh38' in row:
-                if pd.isna(row['ref_GRCh38']):
-                    ids_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
-                    ids_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
-            else:
-                ids_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
-                ids_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
-
-        for index, row in ids_found_in_patient_df.iterrows():
-            # Fill in the rsid gaps, if annotation is missing on the location.
-            if 'rsid' in row.index and row['rsid'] == '.':
-                position_string = row['position_GRCh37']
-                if panel.contains_rs_id_with_position(position_string):
-                    rs_id = panel.get_rs_id_with_position(position_string)
-                else:
-                    rs_id = '.'
-                ids_found_in_patient_df.at[index, 'rsid'] = rs_id
-
-        for index, row in ids_found_in_patient_df.iterrows():
-            matching_rs_id_infos = rsid_to_gene_to_rs_id_info[ids_found_in_patient_df.at[index, 'rsid']].values()
-            grch38_locations = {
-                rs_id_info.start_coordinate_grch38.get_position_string() for rs_id_info in matching_rs_id_infos
-            }
-            if len(grch38_locations) == 1:
-                grch38_location = grch38_locations.pop()
-                if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
-                    ids_found_in_patient_df.at[index, 'position_GRCh38'] = grch38_location
-                elif row['position_GRCh38'] != grch38_location:
-                    raise ValueError(
-                        "[ERROR] Inconsistent GRCh38 locations for variants:\n"
-                        "location from exceptions: " + row['position_GRCh38'] + "\n"
-                        "location from rs id info: " + grch38_location + "\n"
-                    )
-            elif len(grch38_locations) > 1:
-                matching_rs_id_infos_string = ",".join([str(rs_id_info) for rs_id_info in matching_rs_id_infos])
-                raise ValueError("[ERROR] Inconsistent GRCh38 locations for variants:\n"
-                                 "matching rs id infos: " + matching_rs_id_infos_string + "\n"
-                                 "GRCh38 locations: " + ", ".join(grch38_locations) + "\n")
-
-    # Generate a list of ids not found in patient
-    ids_not_found_in_patient = pd.DataFrame(columns=['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
-                                                     'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'gene',
-                                                     'filter'])
-
-    rs_ids_found_in_patient = set(ids_found_in_patient_df.rsid.tolist())
-    positions_found_in_patient = set(ids_found_in_patient_df.position_GRCh37.tolist())
-
-    for rs_id_info in panel.get_rs_id_infos():
-        if (rs_id_info.rs_id not in rs_ids_found_in_patient and
-                rs_id_info.start_coordinate_grch37.get_position_string() not in positions_found_in_patient):
-            # TODO: check whether this properly takes variants of more than one base pair, so MNV's etc., into account.
-            #       The fact that only a single position is checked is suspicious.
-            new_id = {}
-            for gene, rs_id_info in rsid_to_gene_to_rs_id_info[rs_id_info.rs_id].items():
-                new_id['position_GRCh37'] = rs_id_info.start_coordinate_grch37.get_position_string()
-                new_id['rsid'] = rs_id_info.rs_id
-                new_id['ref_GRCh37'] = rs_id_info.reference_allele_grch38
-                new_id['alt_GRCh37'] = rs_id_info.reference_allele_grch38  # Assuming REF/REF relative to GRCh38
-                new_id['variant_annotation'] = "REF_CALL"
-                new_id['filter'] = "NO_CALL"
-                new_id['gene'] = gene
-                new_id['ref_GRCh38'] = rs_id_info.reference_allele_grch38  # Again assuming REF/REF relative to GRCh38
-                new_id['alt_GRCh38'] = rs_id_info.reference_allele_grch38
-                new_id['position_GRCh38'] = rs_id_info.start_coordinate_grch38.get_position_string()
-                ids_not_found_in_patient = ids_not_found_in_patient.append(new_id, ignore_index=True)
+    panel_calls_for_patient = get_panel_calls_for_patient(panel_calls_found_in_patient_df, panel)
 
     # Now we want to process all the variants in terms of the alleles
-    all_ids_in_panel = pd.concat([ids_found_in_patient_df, ids_not_found_in_patient], sort=True)
-    all_ids_in_panel = all_ids_in_panel.sort_values(by='position_GRCh37').reset_index(drop=True)
-    all_ids_in_panel = all_ids_in_panel[['gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38',
-                                         'ref_GRCh38', 'alt_GRCh38', 'rsid', 'variant_annotation', 'filter']]
+    results = {}
 
     for gene_info in panel.get_gene_infos():
         print("[INFO] PROCESSING GENE " + gene_info.gene)
-        ids_found_in_gene = all_ids_in_panel.loc[all_ids_in_panel['gene'] == gene_info.gene]
+        # TODO: is this safe? to filter by gene like this? what if the name is different?
+        #       then again, how else can I determine what variants belong to what gene?
+        ids_found_in_gene = panel_calls_for_patient.loc[panel_calls_for_patient['gene'] == gene_info.gene]
         perfect_match = False
 
         # If all variants are assumed_ref, return reference haplotype
@@ -224,7 +154,88 @@ def create_pgx_analysis(ids_found_in_patient: Grch37CallData, panel: Panel) -> T
             if results[gene_info.gene][0].split("_")[-1] == "HET":
                 results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
 
-    return results, all_ids_in_panel
+    return results, panel_calls_for_patient
+
+
+def get_panel_calls_for_patient(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> pd.DataFrame:
+    panel_calls_not_found_in_patient_df_df = get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df, panel)
+    panel_calls_for_patient = pd.concat(
+        [panel_calls_found_in_patient_df, panel_calls_not_found_in_patient_df_df], sort=True
+    )
+    panel_calls_for_patient = panel_calls_for_patient.sort_values(by='position_GRCh37').reset_index(drop=True)
+    panel_calls_for_patient = panel_calls_for_patient[list(COMBINED_DATAFRAME_COLUMNS)]
+    return panel_calls_for_patient
+
+
+def get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> pd.DataFrame:
+    rs_ids_found_in_patient = set(panel_calls_found_in_patient_df.rsid.tolist())
+    positions_found_in_patient = set(panel_calls_found_in_patient_df.position_GRCh37.tolist())
+    calls_not_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
+    for gene_info in panel.get_gene_infos():
+        for rs_id_info in gene_info.rs_id_infos:
+            if (rs_id_info.rs_id not in rs_ids_found_in_patient and
+                    rs_id_info.start_coordinate_grch37.get_position_string() not in positions_found_in_patient):
+                # TODO: check whether this properly takes variants of more than one base pair,
+                #       so MNV's etc., into account. The fact that only a single position is checked is suspicious.
+                # Assuming REF/REF relative to GRCh38
+                new_id = {
+                    'position_GRCh37': rs_id_info.start_coordinate_grch37.get_position_string(),
+                    'rsid': rs_id_info.rs_id,
+                    'ref_GRCh37': rs_id_info.reference_allele_grch38,
+                    'alt_GRCh37': rs_id_info.reference_allele_grch38,
+                    'variant_annotation': "REF_CALL",
+                    'filter': "NO_CALL",
+                    'gene': gene_info.gene,
+                    'ref_GRCh38': rs_id_info.reference_allele_grch38,
+                    'alt_GRCh38': rs_id_info.reference_allele_grch38,
+                    'position_GRCh38': rs_id_info.start_coordinate_grch38.get_position_string()
+                }
+                calls_not_found_in_patient_df = calls_not_found_in_patient_df.append(new_id, ignore_index=True)
+    return calls_not_found_in_patient_df
+
+
+def assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> None:
+    if not panel_calls_found_in_patient_df.empty:
+        for index, row in panel_calls_found_in_patient_df.iterrows():
+            # Fill in empty alleles GRCh38
+            if 'ref_GRCh38' not in row or pd.isna(row['ref_GRCh38']):
+                panel_calls_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
+                panel_calls_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
+
+            # Check against panel and fill in empty fields when possible
+            if panel.contains_rs_id_with_position(row['position_GRCh37']):
+                panel_rs_id_info = panel.get_rs_id_info_with_position(row['position_GRCh37'])
+
+                if row['rsid'] == '.':
+                    panel_calls_found_in_patient_df.at[index, 'rsid'] = panel_rs_id_info.rs_id
+                elif row['rsid'] != panel_rs_id_info.rs_id:
+                    error_msg = (
+                        f"Rs id from input file matches different rs id from panel based on GRCh37 position\n:"
+                        f"position GRCh37={row['position_GRCh37']}, rs id input file={row['rsid']}, "
+                        f"rs id from panel={panel_rs_id_info.rs_id}"
+                    )
+                    raise ValueError(error_msg)
+
+                panel_grch38_position = panel_rs_id_info.start_coordinate_grch38.get_position_string()
+                if 'position_GRCh38' not in row or pd.isna(row['position_GRCh38']):
+                    panel_calls_found_in_patient_df.at[index, 'position_GRCh38'] = panel_grch38_position
+                elif row['position_GRCh38'] != panel_grch38_position:
+                    error_msg = (
+                        f"[ERROR] Inconsistent GRCh38 locations for variants:\n" 
+                        f"location from exceptions: {row['position_GRCh38']}\n" 
+                        f"location from rs id info: {panel_grch38_position}\n"
+                    )
+                    raise ValueError(error_msg)
+            elif pd.isna(row['rsid']) or not panel.contains_rs_id(row['rsid']):
+                # No matching known rs ids
+                if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
+                    panel_calls_found_in_patient_df.at[index, 'position_GRCh38'] = "UNKNOWN"
+            else:
+                error_msg = (
+                    f"[ERROR] Match rs id info from panel on rs id but not position:\n" 
+                    f"rs id: {row['rsid']}, input file position: {row['position_GRCh37']}"
+                )
+                raise ValueError(error_msg)
 
 
 def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel) -> pd.DataFrame:
@@ -268,8 +279,11 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
                     ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_ref_allele
                     ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_alt_allele
                 ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
-                print(f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
-                      f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, annotation={new_annotation}")
+                print(
+                    f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
+                    f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, "
+                    f"annotation={new_annotation}"
+                )
         else:
             print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
                   "flipped. Add to table.")

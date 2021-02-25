@@ -5,7 +5,7 @@ source message_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
-info "Start running UMI script"
+info "Start running UMI undup script"
 
 input_bam=$1 && shift
 output_bam=$1 && shift
@@ -20,7 +20,7 @@ fi
 input_file_extension=${input_bam##*.}
 [[ "${input_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${input_file_extension}"
 output_file_extension=${output_bam##*.}
-[[ "${output_file_extension}" = "bam" ]] || die "Input bam is not a bam file: extension=${output_file_extension}"
+[[ "${output_file_extension}" = "bam" ]] || die "Output bam is not a bam file: extension=${output_file_extension}"
 
 #if [[ -f "${output_bam}" ]]; then
 #  rm -r "${output_bam}" || die "Could not delete existing output bam"
@@ -40,4 +40,4 @@ umi_main=$(locate_umi_main)
 export PYTHONPATH="${PYTHONPATH}:${umi_main}/../"
 
 # RUN
-python "${umi_main}" "${input_bam}" "${output_bam}" || die "UMI pilot failed"
+python "${umi_main}" "${input_bam}" "${output_bam}" || die "UMI undup failed"
