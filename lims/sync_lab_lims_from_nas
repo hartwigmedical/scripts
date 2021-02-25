@@ -11,6 +11,7 @@ if [[ -z "${out_dir}" ]]; then
 fi
 
 ## setup main variables
+NAS_PW_LOC="/data/common/dbs/nas_credentials/rsyncuser"
 LAB_DIR="${out_dir}/lab_files"
 DAY_DIR="${LAB_DIR}/$(date '+%y%m%d')"
 SYM_DIR="${LAB_DIR}/latest"
@@ -43,6 +44,7 @@ main() {
     dir_exists_and_is_writable "${out_dir}"
     dir_exists_and_is_writable "${LAB_DIR}"
     dir_exists_and_is_writable "${SYM_DIR}"
+    file_exists "${NAS_PW_LOC}"
 
     mkdir -p "${DAY_DIR}"
 
@@ -134,28 +136,29 @@ symlink_to_latest() {
     local target_path=""
     target_path="${target_dir}/$(basename ${source_path})"
 
-    ln -sfn "${source_path}" "${target_path}"
-    [[ $? -eq 0 ]] || die "Symlinking FAILED for (${source_path})"
+    ln -sfn "${source_path}" "${target_path}" || die "Symlink FAILED (${source_path})"
 }
 
 retrieve_file_from_nas() {
     local source_path=$1 && shift
     local target_dir=$1 && shift
-
     if ssh nas "[[ ! -f '${nas_file_path}' ]]"; then
         die "No such file at NAS (${source_path})"
     else
-        info "  Rsync file (nas:${nas_file_path})"
+        info "  Sync file (nas:${nas_file_path})"
     fi
-
-    rsync -s "nas:${source_path}" "${target_dir}"
-    [[ $? -eq 0 ]] || die "Rsync from nas FAILED for (${source_path})"
+    sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -s "rsyncuser@nas:${source_path}" "${target_dir}" || die "Rsync FAILED (${source_path})"
 }
 
 dir_exists_and_is_writable() {
     dir_to_check=$1 && shift
     [[ -d "${dir_to_check}" ]] || die "Dir does not exist (${dir_to_check})"
     [[ -w "${dir_to_check}" ]] || die "Dir is not writable (${dir_to_check})"
+}
+
+file_exists() {
+    file_to_check=$1 && shift
+    [[ -f "${file_to_check}" ]] || die "File does not exist (${file_to_check})"
 }
 
 main
