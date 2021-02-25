@@ -1,7 +1,7 @@
 CREATE OR REPLACE VIEW trials AS (
 
 SELECT DISTINCT
-	profileName, clinicalTrial.updateDate AS trialUpdateDate, clinicalTrial.nctId, title, phase, recruitment, gender,
+	profileName AS tumorProfile, clinicalTrial.updateDate AS trialUpdateDate, clinicalTrial.nctId, title, phase, recruitment, gender,
 	group_concat(DISTINCT ageGroup) AS ageGroups,
 	group_concat(DISTINCT country) AS countries
 FROM ckbEntry
