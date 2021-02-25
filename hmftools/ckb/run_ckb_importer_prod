@@ -2,10 +2,10 @@
 
 source locate_files
 
-ckb_jar=$(locate_pilot_ckb_importer)
+ckb_jar=$(locate_prod_ckb_importer)
 
 # Database details
-credentials=$(locate_ckb_pilot_database_credentials)
+credentials=$(locate_ckb_database_credentials)
 db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})

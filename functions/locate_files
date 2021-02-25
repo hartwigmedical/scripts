@@ -32,6 +32,10 @@ locate_pipeline_v5_validation_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
 }
 
+locate_ckb_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/ckb_db
+}
+
 locate_ckb_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/ckb_db_pilot
 }
@@ -106,6 +110,10 @@ locate_prod_iclusion_importer() {
 
 locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
+}
+
+locate_prod_ckb_importer() {
+    echo ${base_path}/tools/ckb-importer_v1.0/ckb-importer.jar
 }
 
 locate_pilot_ckb_importer() {
@@ -210,6 +218,10 @@ locate_hartwig_cohort_tsv() {
 
 locate_hartwig_curated_tsv() {
     echo ${base_path}/dbs/serve/static_sources/hartwig/hartwig_curated.tsv
+}
+
+locate_ckb_flex_data_dir() {
+    echo ${base_path}/dbs/ckb/210219_flex_dump
 }
 
 locate_ref_genome_37_fasta_file() {

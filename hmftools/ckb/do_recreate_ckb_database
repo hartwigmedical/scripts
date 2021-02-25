@@ -11,6 +11,6 @@ db_user=$(awk '/^user/ {print $2}' ${credentials})
 db_pass=$(awk '/^pass/ {print $2}' ${credentials})
 db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-echo "[INFO] Rebuilding CKB db ${db_url} using ${ckb_database_sql}"
+echo "[INFO] Rebuilding CKB db '${db_url}' using ${ckb_database_sql}"
 
 mysql ${ckb_db} --user=${db_user} --password=${db_pass} < ${ckb_database_sql}
