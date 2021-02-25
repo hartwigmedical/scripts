@@ -2,7 +2,7 @@ CREATE OR REPLACE VIEW actionability AS (
 
 SELECT
     profileName AS tumorProfile, therapyName AS treatment, name AS cancerType, termId AS cancerTypeId,
-    evidenceType, responseType, ampCapAscoEvidenceLevel, approvalStatus, efficacyEvidence
+    evidenceType, responseType, ampCapAscoEvidenceLevel, approvalStatus, efficacyEvidence, description
 FROM ckbEntry
 INNER JOIN evidence ON evidence.ckbEntryId = ckbEntry.id
 INNER JOIN therapyEvidence ON therapyEvidence.evidenceId = evidence.id
