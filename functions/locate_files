@@ -507,9 +507,21 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
-locate_purple_drivers() {
+locate_purple_drivers_somatic() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
+
+    if [[ -z "${purple_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${purple_driver_tsv}
+}
+
+locate_purple_drivers_germline() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
 
     if [[ -z "${purple_driver_tsv}" ]]; then
         echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
@@ -703,7 +715,7 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [[ -z "${drivers_tsv}" ]]; then
-        drivers_tsv=$(locate_purple_drivers ${run_dir})
+        drivers_tsv=$(locate_purple_drivers_somatic ${run_dir})
         if [[ -z "${drivers_tsv}" ]]; then
             echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
             exit 1

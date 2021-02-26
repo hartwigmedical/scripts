@@ -43,7 +43,7 @@ fi
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_driver_catalog_tsv=$(locate_purple_drivers ${run_dir})
+purple_driver_catalog_tsv=$(locate_purple_drivers_somatic ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
 bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
