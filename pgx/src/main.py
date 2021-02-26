@@ -12,7 +12,7 @@ import pandas as pd
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37Call, Grch37CallData
 from config.panel import Panel
-from pgx_analysis import create_pgx_analysis
+from pgx_analysis import PgxAnalyser
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
@@ -40,7 +40,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    gene_to_haplotype_calls, all_ids_in_panel = create_pgx_analysis(call_data, panel)
+    gene_to_haplotype_calls, all_ids_in_panel = PgxAnalyser.create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id

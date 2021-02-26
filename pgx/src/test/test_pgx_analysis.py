@@ -11,7 +11,7 @@ from config.haplotype import Haplotype
 from config.panel import Panel
 from config.rs_id_info import RsIdInfo
 from config.variant import Variant
-from pgx_analysis import create_pgx_analysis
+from pgx_analysis import PgxAnalyser
 
 ALL_IDS_IN_PANEL_COLUMNS = [
     'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
@@ -129,7 +129,7 @@ class TestPgxAnalysis(unittest.TestCase):
         """No variants wrt GRCh37"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData(tuple())
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -154,7 +154,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915614), ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -181,7 +181,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -205,7 +205,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("16", 97915617), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -229,7 +229,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", (".",), "1324C>T", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", (".",), "6744CA>GA", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -257,7 +257,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs4020942",), "6744CA>GA", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_wrong_position_on_ref_seq_differences(self) -> None:
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except positions are incorrect"""
@@ -267,7 +267,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915623), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_wrong_chromosome_on_ref_seq_differences(self) -> None:
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except chromosomes are incorrect"""
@@ -277,7 +277,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("8", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_position_of_other_variant_on_ref_seq_differences(self) -> None:
         """
@@ -289,7 +289,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 98205966), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_single_different_allele_on_ref_seq_differences(self) -> None:
         """At reference sequence differences: single allele that is ref GRCh37 or GRCh38, other allele is neither"""
@@ -298,7 +298,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("16", 97915617), ("C", "A"), "FAKE2", ("rs1212127",), "1324C>A", "PASS"),  # with ref GRCh37
             Grch37Call(GeneCoordinate("1", 97915621), ("AC", "TC"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),  # with ref GRCh38
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -322,7 +322,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("16", 97915617), ("A", "G"), "FAKE2", ("rs1212127",), "1324C>A;1324C>G", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -347,7 +347,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 2488242), ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS"),  # unknown
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -378,7 +378,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("3", 18473423), ("T", "C"), ".", ("rs2492932",), "12T>C", "PASS"),  # unknown
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_known_variants_with_incorrect_or_missing_rs_id(self) -> None:
         """Known variants (not ref seq differences) with incorrect or unknown rs id"""
@@ -391,7 +391,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_known_variant_with_incorrect_position(self) -> None:
         """Known variants (not ref seq differences), with one incorrect position"""
@@ -404,7 +404,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_known_variant_with_incorrect_chromosome(self) -> None:
         """Known variants (not ref seq differences), with one incorrect chromosome"""
@@ -417,7 +417,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
-            create_pgx_analysis(ids_found_in_patient, panel)
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
     def test_more_than_two_haplotypes_present(self) -> None:
         """More than two haplotypes are present, specifically three"""
@@ -426,7 +426,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
             Grch37Call(GeneCoordinate("1", 97912838), ("AGT", "AGT"), "DPYD", ("rs2938101",), "293A>AGT", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -450,7 +450,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -474,7 +474,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
@@ -498,7 +498,7 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
-        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
