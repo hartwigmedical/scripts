@@ -68,7 +68,7 @@ pilot_do_run_base_patient_reporter \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
     -purple_driver_catalog_somatic_tsv ${purple_driver_catalog_somatic_tsv} \
-    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv}
+    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
