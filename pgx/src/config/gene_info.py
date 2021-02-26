@@ -11,8 +11,9 @@ from config.rs_id_info import RsIdInfo
 
 
 class GeneInfo(object):
+    """This object is meant to be immutable"""
     def __init__(self, gene: str, chromosome: str, genome_build: str, reference_haplotype_name: str,
-                 haplotypes: Tuple[Haplotype, ...], rs_id_infos: FrozenSet[RsIdInfo], drugs: Tuple[DrugInfo, ...],
+                 haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo], drugs: FrozenSet[DrugInfo],
                  rs_id_to_ref_seq_difference_annotation: Dict[str, str]) -> None:
         if genome_build != "GRCh37":
             raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
@@ -50,6 +51,18 @@ class GeneInfo(object):
             and self.__rs_id_to_ref_seq_difference_annotation == other.__rs_id_to_ref_seq_difference_annotation
         )
 
+    def __hash__(self) -> int:
+        return hash((
+            self.__gene,
+            self.__chromosome,
+            self.__genome_build,
+            self.__reference_haplotype_name,
+            self.__haplotypes,
+            self.__rs_id_infos,
+            self.__drugs,
+            tuple(sorted(self.__rs_id_to_ref_seq_difference_annotation.items())),
+        ))
+
     def __repr__(self) -> str:
         return (
             f"GeneInfo("
@@ -81,7 +94,7 @@ class GeneInfo(object):
         return self.__reference_haplotype_name
 
     @property
-    def haplotypes(self) -> Tuple[Haplotype, ...]:
+    def haplotypes(self) -> FrozenSet[Haplotype]:
         return self.__haplotypes
 
     @property
@@ -89,7 +102,7 @@ class GeneInfo(object):
         return self.__rs_id_infos
 
     @property
-    def drugs(self) -> Tuple[DrugInfo, ...]:
+    def drugs(self) -> FrozenSet[DrugInfo]:
         return self.__drugs
 
     @classmethod
@@ -99,8 +112,8 @@ class GeneInfo(object):
         genome_build = str(data["genomeBuild"])
         reference_allele = str(data["referenceAllele"])
         rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
-        haplotypes = tuple([Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]])
-        drugs = tuple([DrugInfo.from_json(drug_json) for drug_json in data["drugs"]])
+        haplotypes = frozenset({Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]})
+        drugs = frozenset({DrugInfo.from_json(drug_json) for drug_json in data["drugs"]})
         rs_id_to_ref_seq_difference_annotation = {
             str(annotation_json["rsid"]): str(annotation_json["annotationGRCh38"])
             for annotation_json in data["refSeqDifferenceAnnotations"]
@@ -122,7 +135,7 @@ class GeneInfo(object):
 
     @staticmethod
     def __assert_info_exists_for_all_rs_ids_in_haplotypes(
-            haplotypes: Tuple[Haplotype, ...], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+            haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
         rs_ids_in_haplotypes = {variant.rs_id for haplotype in haplotypes for variant in haplotype.variants}
         rs_ids_with_info = {info.rs_id for info in rs_id_infos}
         if not rs_ids_in_haplotypes.issubset(rs_ids_with_info):

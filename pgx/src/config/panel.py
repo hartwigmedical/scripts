@@ -1,5 +1,5 @@
 import itertools
-from typing import List, Set, Tuple
+from typing import List, Set, Tuple, FrozenSet
 
 from base.json_alias import Json
 from config.gene_info import GeneInfo, assert_no_overlap_gene_names
@@ -7,7 +7,7 @@ from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 
 
 class Panel(object):
-    def __init__(self, gene_infos: Tuple[GeneInfo, ...]) -> None:
+    def __init__(self, gene_infos: FrozenSet[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "config json")
         self.__assert_all_rs_id_infos_compatible(gene_infos)
         self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos)
@@ -29,7 +29,7 @@ class Panel(object):
 
     @classmethod
     def from_json(cls, data: Json) -> "Panel":
-        gene_infos = tuple([GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']])
+        gene_infos = frozenset({GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']})
         return Panel(gene_infos)
 
     def get_ref_seq_differences(self) -> List[Tuple[RsIdInfo, str, str]]:
@@ -44,8 +44,8 @@ class Panel(object):
         assert_no_overlap_rs_ids([diff[0] for diff in results], "get_ref_seq_differences")
         return results
 
-    def get_gene_infos(self) -> List[GeneInfo]:
-        return list(self.__gene_infos)
+    def get_gene_infos(self) -> Set[GeneInfo]:
+        return set(self.__gene_infos)
 
     def get_rs_id_infos(self) -> Set[RsIdInfo]:
         return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
@@ -78,11 +78,11 @@ class Panel(object):
     def is_empty(self) -> bool:
         return not self.__gene_infos
 
-    def get_genes(self) -> List[str]:
-        return [info.gene for info in self.__gene_infos]
+    def get_genes(self) -> Set[str]:
+        return {info.gene for info in self.__gene_infos}
 
     @staticmethod
-    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: Tuple[GeneInfo, ...]) -> None:
+    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: FrozenSet[GeneInfo]) -> None:
         for gene_info in gene_infos:
             for rs_id_info in gene_info.rs_id_infos:
                 if rs_id_info.start_coordinate_grch37.chromosome != rs_id_info.start_coordinate_grch38.chromosome:
@@ -92,7 +92,7 @@ class Panel(object):
                     raise ValueError(error_msg)
 
     @staticmethod
-    def __assert_all_rs_id_infos_compatible(gene_infos: Tuple[GeneInfo, ...]) -> None:
+    def __assert_all_rs_id_infos_compatible(gene_infos: FrozenSet[GeneInfo]) -> None:
         for left_gene_info, right_gene_info in itertools.combinations(gene_infos, 2):
             for left_info in left_gene_info.rs_id_infos:
                 for right_info in right_gene_info.rs_id_infos:

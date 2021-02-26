@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 
 import allel
 import pandas as pd
@@ -169,7 +169,7 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
     return bed_file
 
 
-def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
+def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
     print("[INFO] Recreating bed-file...")
     header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
@@ -182,7 +182,7 @@ def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, 
         if split_line[4] in genes_in_panel and split_line[4] not in covered:
             bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
             covered.append(split_line[4])
-    if set(covered) != set(genes_in_panel):
+    if set(covered) != genes_in_panel:
         raise ValueError("[ERROR] Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
                          + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))
 
@@ -198,7 +198,7 @@ def print_calls_to_file(all_ids_in_panel: pd.DataFrame, calls_file: str) -> None
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(results: Dict[str, List[str]], genotype_file: str, panel: Panel,
+def print_haplotypes_to_file(results: Dict[str, Set[str]], genotype_file: str, panel: Panel,
                              panel_path: str, version: str) -> None:
     # TODO: make this more clean.
     gene_to_haplotype_to_severity = {}
@@ -214,15 +214,19 @@ def print_haplotypes_to_file(results: Dict[str, List[str]], genotype_file: str, 
 
     gene_to_drug_info = {}
     for gene_info in panel.get_gene_infos():
+        sorted_drugs = sorted(
+            [drug for drug in gene_info.drugs],
+            key=lambda info: (info.name, info.url_prescription_info)
+        )
         gene_to_drug_info[gene_info.gene] = [
-            ";".join([drug.name for drug in gene_info.drugs]),
-            ";".join([drug.url_prescription_info for drug in gene_info.drugs])
+            ";".join([drug.name for drug in sorted_drugs]),
+            ";".join([drug.url_prescription_info for drug in sorted_drugs])
         ]
 
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
-        for gene in results:
-            for haplotype_call in results[gene]:
+        for gene in sorted(list(results.keys())):
+            for haplotype_call in sorted(list(results[gene])):
                 f.write(
                     gene + "\t" +
                     haplotype_call + "\t" +

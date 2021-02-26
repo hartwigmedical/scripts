@@ -28,55 +28,55 @@ class TestPgxAnalysis(unittest.TestCase):
         fake_variant = Variant("rs1212125", "C")
         fake2_variant = Variant("rs1212127", "C")
 
-        dpyd_haplotypes = (
+        dpyd_haplotypes = frozenset({
             Haplotype("*2A", "No Function", frozenset({dpyd_two_a_variant})),
             Haplotype("*2B", "No Function", frozenset({dpyd_two_a_variant, dpyd_two_b_variant})),
             Haplotype("*3", "Normal Function", frozenset({dpyd_three_variant})),
-        )
+        })
         dpyd_rs_id_infos = frozenset({
             RsIdInfo("rs3918290", "C", "C", GeneCoordinate("1", 97915614), GeneCoordinate("1", 97450058)),
             RsIdInfo("rs72549309", "GATGA", "GATGA", GeneCoordinate("1", 98205966), GeneCoordinate("1", 97740410)),
             RsIdInfo("rs1801159", "T", "T", GeneCoordinate("1", 97981395), GeneCoordinate("1", 97515839)),
             RsIdInfo("rs72549303", "TG", "TC", GeneCoordinate("1", 97915621), GeneCoordinate("1", 97450065)),
         })
-        dpyd_drugs = (
+        dpyd_drugs = frozenset({
             DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
             DrugInfo("Capecitabine", "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"),
-        )
+        })
         dpyd_rs_id_to_difference_annotations = {
             "rs72549303": "6744GA>CA",
         }
 
-        fake_haplotypes = (
+        fake_haplotypes = frozenset({
             Haplotype("*4A", "Reduced Function", frozenset({fake_variant})),
-        )
+        })
         fake_rs_id_infos = frozenset({
             RsIdInfo("rs1212125", "T", "T", GeneCoordinate("5", 97915617), GeneCoordinate("5", 97450060)),
         })
-        fake_drugs = (
+        fake_drugs = frozenset({
             DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url"),
-        )
+        })
         fake_rs_id_to_difference_annotations: Dict[str, str] = {}
 
-        fake2_haplotypes = (
+        fake2_haplotypes = frozenset({
             Haplotype("*4A", "Reduced Function", frozenset({fake2_variant})),
-        )
+        })
         fake2_rs_id_infos = frozenset({
             RsIdInfo("rs1212127", "C", "T", GeneCoordinate("16", 97915617), GeneCoordinate("16", 97450060)),
         })
-        fake2_drugs = (
+        fake2_drugs = frozenset({
             DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url"),
-        )
+        })
         fake2_rs_id_to_difference_annotations: Dict[str, str] = {"rs1212127": "1324T>C"}
 
-        gene_infos = (
+        gene_infos = frozenset({
             GeneInfo("DPYD", "1", "GRCh37", "*1", dpyd_haplotypes, dpyd_rs_id_infos,
                      dpyd_drugs, dpyd_rs_id_to_difference_annotations),
             GeneInfo("FAKE", "5", "GRCh37", "*1", fake_haplotypes, fake_rs_id_infos,
                      fake_drugs, fake_rs_id_to_difference_annotations),
             GeneInfo("FAKE2", "16", "GRCh37", "*1", fake2_haplotypes, fake2_rs_id_infos,
                      fake2_drugs, fake2_rs_id_to_difference_annotations),
-        )
+        })
         return Panel(gene_infos)
 
     @classmethod
@@ -101,8 +101,9 @@ class TestPgxAnalysis(unittest.TestCase):
             RsIdInfo("rs2938101", "A", "A", GeneCoordinate("1", 97912838), GeneCoordinate("1", 97453984)),
         ]
 
-        included_dpyd_haplotypes = tuple(
-            [haplotype for haplotype in possible_dpyd_haplotypes if haplotype.name in included_haplotypes]
+        # use a set to cause the order of haplotypes to be random, to make sure this order will not matter.
+        included_dpyd_haplotypes = frozenset(
+            {haplotype for haplotype in possible_dpyd_haplotypes if haplotype.name in included_haplotypes}
         )
         included_dpyd_rs_ids = {"rs72549303"}.union(
             {variant.rs_id for haplotype in included_dpyd_haplotypes for variant in haplotype.variants}
@@ -110,18 +111,18 @@ class TestPgxAnalysis(unittest.TestCase):
         included_dpyd_rs_id_infos = frozenset(
             {rs_id_info for rs_id_info in possible_rs_id_infos if rs_id_info.rs_id in included_dpyd_rs_ids}
         )
-        dpyd_drugs = (
+        dpyd_drugs = frozenset({
             DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
             DrugInfo("Capecitabine", "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"),
-        )
+        })
         dpyd_rs_id_to_difference_annotations = {
             "rs72549303": "6744GA>CA",
         }
 
-        gene_infos = (
+        gene_infos = frozenset({
             GeneInfo("DPYD", "1", "GRCh37", "*1", included_dpyd_haplotypes, included_dpyd_rs_id_infos,
                      dpyd_drugs, dpyd_rs_id_to_difference_annotations),
-        )
+        })
         return Panel(gene_infos)
 
     def test_empty(self) -> None:
@@ -142,7 +143,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ["*3_HOM"], "FAKE": ["*1_HOM"], "FAKE2": ["*4A_HOM"]}
+        results_expected = {"DPYD": {"*3_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*4A_HOM"}}
         self.assertEqual(results_expected, results)
 
     def test_hom_ref(self) -> None:
@@ -167,7 +168,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ["*1_HOM"], "FAKE": ["*1_HOM"], "FAKE2": ["*1_HOM"]}
+        results_expected = {"DPYD": {"*1_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*1_HOM"}}
         self.assertEqual(results_expected, results)
 
     def test_heterozygous(self) -> None:
@@ -194,7 +195,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ["*2B_HET", "*3_HET"], "FAKE": ["*4A_HET", "*1_HET"], "FAKE2": ["*4A_HET", "*1_HET"]}
+        results_expected = {"DPYD": {"*2B_HET", "*3_HET"}, "FAKE": {"*4A_HET", "*1_HET"}, "FAKE2": {"*4A_HET", "*1_HET"}}
         self.assertEqual(results_expected, results)
 
     def test_ref_call_on_ref_seq_differences(self) -> None:
@@ -218,7 +219,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ["*3_HOM"], "FAKE": ["*1_HOM"], "FAKE2": ["*4A_HOM"]}
+        results_expected = {"DPYD": {"*3_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*4A_HOM"}}
         self.assertEqual(results_expected, results)
 
     def test_only_position_match_on_ref_seq_differences(self) -> None:
@@ -242,7 +243,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ['*3_HET', '*1_HET'], "FAKE": ["*1_HOM"], "FAKE2": ['*4A_HET', '*1_HET']}
+        results_expected = {"DPYD": {'*3_HET', '*1_HET'}, "FAKE": {"*1_HOM"}, "FAKE2": {'*4A_HET', '*1_HET'}}
         self.assertEqual(results_expected, results)
 
     def test_wrong_rs_id_on_ref_seq_differences(self) -> None:
@@ -311,7 +312,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
+        results_expected = {"DPYD": {'Unresolved_Haplotype'}, "FAKE": {"*1_HOM"}, "FAKE2": {'Unresolved_Haplotype'}}
         self.assertEqual(results_expected, results)
 
     def test_double_different_allele_on_ref_seq_differences(self) -> None:
@@ -335,7 +336,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": ['Unresolved_Haplotype'], "FAKE": ["*1_HOM"], "FAKE2": ['Unresolved_Haplotype']}
+        results_expected = {"DPYD": {'Unresolved_Haplotype'}, "FAKE": {"*1_HOM"}, "FAKE2": {'Unresolved_Haplotype'}}
         self.assertEqual(results_expected, results)
 
     def test_unknown_variants(self) -> None:
@@ -365,9 +366,9 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
         results_expected = {
-            "DPYD": ['Unresolved_Haplotype'],
-            "FAKE": ["*4A_HET", "*1_HET"],
-            "FAKE2": ['Unresolved_Haplotype'],
+            "DPYD": {'Unresolved_Haplotype'},
+            "FAKE": {"*4A_HET", "*1_HET"},
+            "FAKE2": {'Unresolved_Haplotype'},
         }
         self.assertEqual(results_expected, results)
 
@@ -429,14 +430,37 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
         results_expected = {
-            "DPYD": ['*2A_HET', '*3_HOM', '*7_HOM'],
+            "DPYD": {'*2A_HET', '*3_HOM', '*7_HOM'},
+        }
+        self.assertEqual(results_expected, results)
+
+    def test_ambiguous_haplotype_with_clear_winner(self) -> None:
+        """Ambiguous haplotype, where the simpler possibility should be preferred"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs1801159",), "6744GA>CA", "PASS"),
+        ))
+        results, panel_calls_for_patient = create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'*2B_HOM'},
         }
         self.assertEqual(results_expected, results)
 
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   More than two haplotypes
         #   What happens when multiple choices would work. Preference for *2B over *2A-*5 separately, for instance.
         #   More complicated ambiguity?
         #   HOMHET (probably make impossible, but handle situation properly, so write test for it)

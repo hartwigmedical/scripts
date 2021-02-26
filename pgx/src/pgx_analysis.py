@@ -1,7 +1,7 @@
 import collections
 import itertools
 import sys
-from typing import Dict, Any, List, Tuple, Optional
+from typing import Dict, Any, List, Tuple, Optional, Set
 
 import pandas as pd
 
@@ -11,7 +11,7 @@ from config.rs_id_info import RsIdInfo
 from dataframe_format import COMBINED_DATAFRAME_COLUMNS
 
 
-def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, List[str]], pd.DataFrame]:
+def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[str]], pd.DataFrame]:
     panel_calls_found_in_patient_df = process_differences_in_ref_sequence(call_data, panel)
 
     assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df, panel)
@@ -34,9 +34,9 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
         # If all variants are assumed_ref, return reference haplotype
         if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
             print("[INFO] Found reference haplotype")
-            results[gene_info.gene] = [gene_info.reference_haplotype_name + "_HOM"]
+            haplotypes = {gene_info.reference_haplotype_name + "_HOM"}
         else:
-            results[gene_info.gene] = []
+            haplotypes = set()
             haplotypes_matching = []
             for haplotype in gene_info.haplotypes:
                 vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
@@ -56,10 +56,10 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
                     else:
                         allele_status = "HOMHET"
                     # Add to results
-                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
+                    haplotypes.add(haplotype.name + "_" + str(allele_status))
                     if allele_status == "HET":
                         # Assume if perfect match with HET, we are also looking at reference haplotype
-                        results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
+                        haplotypes.add(gene_info.reference_haplotype_name + "_HET")
                     break
                 else:
                     # print("Processing " + str(haplotype['alleleName']))
@@ -77,7 +77,7 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
                         f"Probable cause is that the rs_id_info is not in line with previously "
                         f"determined within defined haplotype."
                     )
-                    results[gene_info.gene].append("Unresolved_Haplotype")
+                    haplotypes = {"Unresolved_Haplotype"}
                 else:
                     print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
                     optimal_set: List[List[Any]] = []
@@ -107,7 +107,7 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
                                         allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
-                                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
+                                    haplotypes.add(haplotype.name + "_" + str(allele_status))
                             else:
                                 rs_matched = list(set(variants_sample) & set(rs_ids_subset))
                                 rs_not_in_haplotype = list(set(variants_sample) - set(rs_ids_subset))
@@ -131,7 +131,7 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
                             subset = optimal_set[0][1]
                             # If we have a rs_id_info that is in sample or in haplotype that is not matched > undetermined
                             if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
-                                results[gene_info.gene].append("Unresolved_Haplotype")
+                                haplotypes = {"Unresolved_Haplotype"}
                             else:
                                 for haplotype in subset:
                                     allele_statuses = []
@@ -146,13 +146,16 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
                                         allele_status = allele_statuses[0]
                                     else:
                                         allele_status = "HOMHET"
-                                    results[gene_info.gene].append(haplotype.name + "_" + str(allele_status))
+                                    haplotypes.add(haplotype.name + "_" + str(allele_status))
                         else:
                             sys.exit("[ERROR] No haplotype match was found. Exiting.")
         # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
-        if len(results[gene_info.gene]) == 1:
-            if results[gene_info.gene][0].split("_")[-1] == "HET":
-                results[gene_info.gene].append(gene_info.reference_haplotype_name + "_HET")
+        if len(haplotypes) == 1:
+            (single_haplotype,) = haplotypes
+            if single_haplotype.split("_")[-1] == "HET":
+                haplotypes.add(gene_info.reference_haplotype_name + "_HET")
+
+        results[gene_info.gene] = haplotypes
 
     return results, panel_calls_for_patient
 
@@ -285,6 +288,7 @@ def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel)
                     f"annotation={new_annotation}"
                 )
         else:
+            # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
             print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
                   "flipped. Add to table.")
             new_id = {'position_GRCh37': variant_location_grch37,
