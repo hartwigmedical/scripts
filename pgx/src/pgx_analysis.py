@@ -17,7 +17,7 @@ def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[s
     assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df, panel)
 
     if pd.isna(panel_calls_found_in_patient_df).any(axis=None):
-        raise ValueError(f"Unhandled NaN values:\n{panel_calls_found_in_patient_df}")
+        raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_found_in_patient_df}")
 
     panel_calls_for_patient = get_panel_calls_for_patient(panel_calls_found_in_patient_df, panel)
 

@@ -37,10 +37,10 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-    ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
+    call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
+    results, all_ids_in_panel = create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
@@ -63,12 +63,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> Grch37CallData:
+def get_call_data(filtered_vcf: str, panel: Panel) -> Grch37CallData:
     variants = get_variants_from_filtered_vcf(filtered_vcf)
-    return get_ids_found_in_patient_from_variants(variants, panel)
+    return get_call_data_from_variants(variants, panel)
 
 
-def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
+def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
     match_on_rsid = 0
     match_on_location = 0
     filtered_calls = []
@@ -85,6 +85,7 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
         else:
             rs_id_filter = [str(rs_number)]
 
+        # TODO: make this correct for MNV's as well, if in the right spot
         rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
         if rs_id_filter_to_panel_match_exists or panel.contains_rs_id_with_position(f"{chr}:{pos}"):
             if rs_id_filter_to_panel_match_exists:
@@ -124,10 +125,9 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
 
 def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:
     try:
-        variants = allel.read_vcf(filtered_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                        'variants/FILTER', 'variants/ID', 'variants/POS',
-                                                        'variants/QUAL', 'variants/REF', 'variants/ANN'],
-                                  transformers=allel.ANNTransformer())
+        field_names = ['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM', 'variants/FILTER', 'variants/ID', 
+                       'variants/POS', 'variants/QUAL', 'variants/REF', 'variants/ANN']
+        variants = allel.read_vcf(filtered_vcf, fields=field_names, transformers=allel.ANNTransformer())
     except IOError:
         sys.exit("[ERROR] File " + filtered_vcf + " not found or cannot be opened.")
     return variants
@@ -179,10 +179,9 @@ def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, 
     transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
     for line in transcripts:
         split_line = line.rstrip().split("\t")
-        if split_line[4] in genes_in_panel:
-            if split_line[4] not in covered:
-                bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
-                covered.append(split_line[4])
+        if split_line[4] in genes_in_panel and split_line[4] not in covered:
+            bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
+            covered.append(split_line[4])
     if set(covered) != set(genes_in_panel):
         raise ValueError("[ERROR] Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
                          + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))

@@ -70,9 +70,9 @@ class Panel(object):
             raise ValueError("Multiple rs id infos match position")
 
     def contains_rs_id(self, rs_id: str) -> bool:
-        return rs_id in self.get_rs_ids()
+        return rs_id in self.__get_rs_ids()
 
-    def get_rs_ids(self) -> Set[str]:
+    def __get_rs_ids(self) -> Set[str]:
         return {info.rs_id for info in self.get_rs_id_infos()}
 
     def is_empty(self) -> bool:
