@@ -40,12 +40,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    results, all_ids_in_panel = create_pgx_analysis(call_data, panel)
+    gene_to_haplotype_calls, all_ids_in_panel = create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
     print_calls_to_file(all_ids_in_panel, out + "_calls.txt")
-    print_haplotypes_to_file(results, out + "_genotype.txt", panel, panel_path, version)
+    print_haplotypes_to_file(gene_to_haplotype_calls, out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -198,7 +198,7 @@ def print_calls_to_file(all_ids_in_panel: pd.DataFrame, calls_file: str) -> None
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(results: Dict[str, Set[str]], genotype_file: str, panel: Panel,
+def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[str]], genotype_file: str, panel: Panel,
                              panel_path: str, version: str) -> None:
     # TODO: make this more clean.
     gene_to_haplotype_to_severity = {}
@@ -225,8 +225,8 @@ def print_haplotypes_to_file(results: Dict[str, Set[str]], genotype_file: str, p
 
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
-        for gene in sorted(list(results.keys())):
-            for haplotype_call in sorted(list(results[gene])):
+        for gene in sorted(list(gene_to_haplotype_calls.keys())):
+            for haplotype_call in sorted(list(gene_to_haplotype_calls[gene])):
                 f.write(
                     gene + "\t" +
                     haplotype_call + "\t" +

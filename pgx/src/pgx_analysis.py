@@ -1,13 +1,13 @@
 import collections
-import itertools
-import sys
-from typing import Dict, Any, List, Tuple, Optional, Set
+from copy import deepcopy
+from typing import Dict, List, Tuple, Optional, Set, FrozenSet, DefaultDict
 
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37CallData, FullCall, AnnotatedAllele, Grch37Call
 from config.gene_info import GeneInfo
+from config.haplotype import Haplotype
 from config.panel import Panel
 from config.rs_id_info import RsIdInfo
 from config.variant import Variant
@@ -15,167 +15,116 @@ from dataframe_format import COMBINED_DATAFRAME_COLUMNS
 
 
 def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[str]], pd.DataFrame]:
-    panel_calls_found_in_patient_df = get_panel_calls_found_in_patient_df(call_data, panel)
-
-    if pd.isna(panel_calls_found_in_patient_df).any(axis=None):
-        raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_found_in_patient_df}")
+    full_calls = get_full_calls(call_data, panel)
 
     # Now we want to process all the variants in terms of the alleles
-    results = {}
+    gene_to_haplotype_calls = {}
     for gene_info in panel.get_gene_infos():
         print("[INFO] PROCESSING GENE " + gene_info.gene)
-        # TODO: is this safe? to filter by gene like this? what if the name is different?
-        #       then again, how else can I determine what variants belong to what gene?
-        #       Maybe get gene chromosome and positions from bed file and use them to filter.
-        #       But then the format of the dataframe is annoying for filtering,
-        #       because chrom and position are combined in a single column
-        ids_found_in_gene = panel_calls_found_in_patient_df.loc[panel_calls_found_in_patient_df['gene'] == gene_info.gene]
+        gene_to_haplotype_calls[gene_info.gene] = get_haplotypes_call(full_calls, gene_info)
 
-        results[gene_info.gene] = get_haplotypes(ids_found_in_gene, gene_info)
+    panel_calls_for_patient = get_panel_calls_for_patient(full_calls, panel)
 
-    panel_calls_for_patient = get_panel_calls_for_patient(panel_calls_found_in_patient_df, panel)
+    if pd.isna(panel_calls_for_patient).any(axis=None):
+        raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_for_patient}")
 
-    return results, panel_calls_for_patient
+    return gene_to_haplotype_calls, panel_calls_for_patient
 
 
-# def get_haplotypes_alternative(ids_found_in_gene: pd.DataFrame, gene_info: GeneInfo) -> Set[str]:
-#     variant_to_count = {}
-#     for row in ids_found_in_gene.iterrows():
-#         # Note that row.rs_id can include multiple rs ids separated by ;
-#         # TODO: make solution cleaner
-#         variant_to_count[Variant(row["rsid"], Variant)]
+def get_haplotypes_call(full_calls: List[FullCall], gene_info: GeneInfo) -> Set[str]:
+    full_calls_for_gene = [call for call in full_calls if call.gene == gene_info.gene]
+    try:
+        variant_to_count: DefaultDict[Variant, int] = collections.defaultdict(int)
+        for call in full_calls_for_gene:
+            assert_handleable_call(call)
+            rs_id = call.rs_ids[0]
+            for annotated_allele in call.annotated_alleles:
+                if annotated_allele.is_variant_vs_grch38 is None:
+                    error_msg = f"Unknown variant: allele={annotated_allele}"
+                    raise ValueError(error_msg)
+                if annotated_allele.is_variant_vs_grch38:
+                    variant_to_count[Variant(rs_id, annotated_allele.allele)] += 1
 
+        explaining_haplotype_combinations = get_explaining_haplotype_combinations(variant_to_count, gene_info.haplotypes)
 
-def get_haplotypes(ids_found_in_gene: pd.DataFrame, gene_info: GeneInfo) -> Set[str]:
-    perfect_match = False
-    if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
-        # If all variants are assumed_ref, return reference haplotype
-        print("[INFO] Found reference haplotype")
-        haplotypes = {gene_info.reference_haplotype_name + "_HOM"}
-    else:
-        haplotypes = set()
-        haplotypes_matching = []
-        for haplotype in gene_info.haplotypes:
-            vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
-            variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
-            if set(variants_sample) == set([(x.rs_id, x.variant_allele) for x in haplotype.variants]):
-                perfect_match = True
-                print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
-                # Now we want to see if we have hetrozygous or homozygous calls
-                allele_statuses = []
-                for index, row in vars_found_in_gene.iterrows():
-                    if row['ref_GRCh38'] == row['alt_GRCh38']:
-                        allele_statuses.append("HOM")
-                    else:
-                        allele_statuses.append("HET")
-                if all(x == allele_statuses[0] for x in allele_statuses):
-                    allele_status = allele_statuses[0]
-                else:
-                    allele_status = "HOMHET"
-                # Add to results
-                haplotypes.add(haplotype.name + "_" + str(allele_status))
-                if allele_status == "HET":
-                    # Assume if perfect match with HET, we are also looking at reference haplotype
-                    haplotypes.add(gene_info.reference_haplotype_name + "_HET")
-                break
+        if not explaining_haplotype_combinations:
+            error_msg = f"No explaining haplotype combinations"
+            raise ValueError(error_msg)
+
+        minimal_explaining_haplotype_combination = get_minimal_haplotype_combination(explaining_haplotype_combinations)
+
+        haplotype_to_count: DefaultDict[str, int] = collections.defaultdict(int)
+        for haplotype in minimal_explaining_haplotype_combination:
+            haplotype_to_count[haplotype] += 1
+
+        haplotype_calls = set()
+        for haplotype, count in haplotype_to_count.items():
+            if count == 1:
+                haplotype_calls.add(haplotype + "_HET")
+            elif count == 2:
+                haplotype_calls.add(haplotype + "_HOM")
             else:
-                # print("Processing " + str(haplotype['alleleName']))
-                # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
-                # print(set(variants_sample))
-                if set([(x.rs_id, x.variant_allele) for x in haplotype.variants]) <= \
-                        set(variants_sample):
-                    print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
-                    haplotypes_matching.append(haplotype)
+                error_msg = f"Impossible count for haplotype: haplotype={haplotype}, count={count}"
+                raise ValueError(error_msg)
 
-        if not perfect_match:
-            if not haplotypes_matching:
-                print(
-                    f"[WARN] No haplotype match found for {gene_info.gene}. "
-                    f"Probable cause is that the rs_id_info is not in line with previously "
-                    f"determined within defined haplotype."
-                )
-                haplotypes = {"Unresolved_Haplotype"}
-            else:
-                print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
-                optimal_set: List[List[Any]] = []
-                for k in range(len(haplotypes_matching) + 1, 0, -1):  # TODO: shouldn't this order be reversed?
-                    for subset in itertools.combinations(haplotypes_matching, k):
-                        if perfect_match:
-                            continue
-                        # See if this combination results in a perfect match, otherwise store the score
-                        allele_variants = [x.variants for x in subset]
-                        rs_ids_subset = []
-                        for x in allele_variants:
-                            for var in x:
-                                rs_ids_subset.append((var.rs_id, var.variant_allele))
-                        if compare_collection(variants_sample, rs_ids_subset):
-                            print("[INFO] Perfect haplotype combination found!")
-                            perfect_match = True
-                            for haplotype in subset:
-                                allele_statuses = []
-                                rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
-                                found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
-                                for index, row in found_vars.iterrows():
-                                    if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                        allele_statuses.append("HOM")
-                                    else:
-                                        allele_statuses.append("HET")
-                                if all(x == allele_statuses[0] for x in allele_statuses):
-                                    allele_status = allele_statuses[0]
-                                else:
-                                    allele_status = "HOMHET"
-                                haplotypes.add(haplotype.name + "_" + str(allele_status))
-                        else:
-                            rs_matched = list(set(variants_sample) & set(rs_ids_subset))
-                            rs_not_in_haplotype = list(set(variants_sample) - set(rs_ids_subset))
-                            rs_not_found = list(set(rs_ids_subset) - set(variants_sample))
-                            optimal_set.append([len(rs_matched), subset, rs_matched, rs_not_found,
-                                                rs_not_in_haplotype])
-                if not perfect_match:
-                    # Get best scoring set and give as result
-                    print("[INFO] No perfect match found. Start testing all possible combinations and choose best "
-                          "one")
-                    optimal_set.sort(key=lambda x: x[0], reverse=True)
-                    for options in optimal_set:
-                        print("[INFO] Option to be tested:")
-                        print("[INFO]\t\t# Matches: " + str(options[0]))
-                        print("[INFO]\t\tSubset: " + str(options[1]))
-                        print("[INFO]\t\tVariants matched for sample and haplotype: " + str(options[2]))
-                        print("[INFO]\t\tVariants in tested haplotype, but not in sample: " + str(options[3]))
-                        print("[INFO]\t\tVariants in sample, not in tested haplotype: " + str(options[4]))
-                    # Here we just pick the top option.
-                    if optimal_set[0][0] >= 1:
-                        subset = optimal_set[0][1]
-                        # If we have a rs_id_info that is in sample or in haplotype that is not matched > undetermined
-                        if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
-                            haplotypes = {"Unresolved_Haplotype"}
-                        else:
-                            for haplotype in subset:
-                                allele_statuses = []
-                                rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
-                                found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
-                                for index, row in found_vars.iterrows():
-                                    if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                        allele_statuses.append("HOM")
-                                    else:
-                                        allele_statuses.append("HET")
-                                if all(x == allele_statuses[0] for x in allele_statuses):
-                                    allele_status = allele_statuses[0]
-                                else:
-                                    allele_status = "HOMHET"
-                                haplotypes.add(haplotype.name + "_" + str(allele_status))
-                    else:
-                        sys.exit("[ERROR] No haplotype match was found. Exiting.")
-    # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
-    if len(haplotypes) == 1:
-        (single_haplotype,) = haplotypes
-        if single_haplotype.split("_")[-1] == "HET":
-            haplotypes.add(gene_info.reference_haplotype_name + "_HET")
-    return haplotypes
+        called_haplotypes_count = sum(haplotype_to_count.values())
+
+        if called_haplotypes_count == 0:
+            haplotype_calls.add(gene_info.reference_haplotype_name + "_HOM")
+        elif called_haplotypes_count == 1:
+            haplotype_calls.add(gene_info.reference_haplotype_name + "_HET")
+
+        return haplotype_calls
+
+    except ValueError as e:
+        print(f"[Error] Cannot resolve haplotype for gene {gene_info.gene}. Error: {e}")
+        return {"Unresolved_Haplotype"}
 
 
-def get_panel_calls_for_patient(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> pd.DataFrame:
+def get_explaining_haplotype_combinations(
+        variant_to_count: DefaultDict[Variant, int], haplotypes: FrozenSet[Haplotype]) -> Set[Tuple[str, ...]]:
+    """
+    Gets combinations of haplotypes that explain all variants in the stated amounts. Uses recursion.
+    Always makes sure that the haplotypes in a haplotype combination are ordered alphabetically to
+    ensure that each haplotype combination exists only once in the result set.
+    """
+    if any(count < 0 for count in variant_to_count.values()):
+        return set()
+    if all(count == 0 for count in variant_to_count.values()):
+        return {tuple()}
+
+    result_set = set()
+    for haplotype in haplotypes:
+        reduced_variant_to_count = deepcopy(variant_to_count)
+        for variant in haplotype.variants:
+            reduced_variant_to_count[variant] -= 1
+            
+        combinations_for_reduced_variant_set = get_explaining_haplotype_combinations(
+            reduced_variant_to_count, haplotypes
+        )
+        for combination in combinations_for_reduced_variant_set:
+            result_set.add(tuple(sorted(list(combination) + [haplotype.name])))
+
+    return result_set
+
+
+def get_minimal_haplotype_combination(explaining_haplotype_combinations: Set[Tuple[str, ...]]) -> Tuple[str, ...]:
+    min_haplotype_count = min(len(combination) for combination in explaining_haplotype_combinations)
+    minimal_explaining_haplotype_combinations = {
+        combination for combination in explaining_haplotype_combinations if len(combination) == min_haplotype_count
+    }
+    if len(minimal_explaining_haplotype_combinations) > 1:
+        error_msg = (f"No unique minimal explaining haplotype combination: "
+                     f"options={minimal_explaining_haplotype_combinations}")
+        raise ValueError(error_msg)
+    minimal_explaining_haplotype_combination = minimal_explaining_haplotype_combinations.pop()
+    return minimal_explaining_haplotype_combination
+
+
+def get_panel_calls_for_patient(full_calls: List[FullCall], panel: Panel) -> pd.DataFrame:
+    panel_calls_found_in_patient_df = get_dataframe_from_full_calls(full_calls)
     panel_calls_not_found_in_patient_df_df = get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df, panel)
+
     panel_calls_for_patient = pd.concat(
         [panel_calls_found_in_patient_df, panel_calls_not_found_in_patient_df_df], sort=True
     )
@@ -211,41 +160,8 @@ def get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df: pd.DataFr
     return calls_not_found_in_patient_df
 
 
-def get_panel_calls_found_in_patient_df(grch37_call_data: Grch37CallData, panel: Panel) -> pd.DataFrame:
-    # panel_calls_found_in_patient_df = process_differences_in_ref_sequence(call_data, panel)
-
-    handled_grch37_start_coordinates: Set[GeneCoordinate] = set()
-    handled_grch37_rs_ids: Set[str] = set()
-    full_calls_from_grch37_calls = []
-
-    for grch37_call in grch37_call_data.calls:
-        full_call = get_full_call_from_grch37_call(grch37_call, panel)
-
-        for rs_id in full_call.rs_ids:
-            if rs_id != ".":
-                if rs_id in handled_grch37_rs_ids:
-                    error_msg = (f"Call for rs id that has already been handled:\n"
-                                 f"call={grch37_call}\n"
-                                 f"handled_rs_ids={handled_grch37_rs_ids}")
-                    raise ValueError(error_msg)
-                handled_grch37_rs_ids.add(rs_id)
-
-        if full_call.start_coordinate_grch37 in handled_grch37_start_coordinates:
-            error_msg = (f"Call for position that has already been handled:\n"
-                         f"call={grch37_call}\n"
-                         f"handled_coords={handled_grch37_start_coordinates}")
-            raise ValueError(error_msg)
-        handled_grch37_start_coordinates.add(full_call.start_coordinate_grch37)
-        full_calls_from_grch37_calls.append(full_call)
-
-    # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
-    # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
-    inferred_ref_calls = get_inferred_ref_calls(panel, handled_grch37_start_coordinates, handled_grch37_rs_ids)
-
-    full_calls = full_calls_from_grch37_calls + inferred_ref_calls
-
-    # make pandas dataframe
-    panel_calls_found_in_patient_df_alt = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
+def get_dataframe_from_full_calls(full_calls: List[FullCall]) -> pd.DataFrame:
+    panel_calls_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
     for full_call in full_calls:
         grch37_alleles = [
             annotated.allele for annotated in full_call.annotated_alleles if not annotated.is_variant_vs_grch37
@@ -274,9 +190,38 @@ def get_panel_calls_found_in_patient_df(grch37_call_data: Grch37CallData, panel:
                   'position_GRCh38': position_grch38,
                   'ref_GRCh38': grch38_alleles[0],
                   'alt_GRCh38': grch38_alleles[1]}
-        panel_calls_found_in_patient_df_alt = panel_calls_found_in_patient_df_alt.append(new_id, ignore_index=True)
+        panel_calls_found_in_patient_df = panel_calls_found_in_patient_df.append(new_id, ignore_index=True)
+    return panel_calls_found_in_patient_df
 
-    return panel_calls_found_in_patient_df_alt
+
+def get_full_calls(grch37_call_data: Grch37CallData, panel: Panel) -> List[FullCall]:
+    handled_grch37_start_coordinates: Set[GeneCoordinate] = set()
+    handled_grch37_rs_ids: Set[str] = set()
+    full_calls_from_grch37_calls = []
+    for grch37_call in grch37_call_data.calls:
+        full_call = get_full_call_from_grch37_call(grch37_call, panel)
+
+        for rs_id in full_call.rs_ids:
+            if rs_id != ".":
+                if rs_id in handled_grch37_rs_ids:
+                    error_msg = (f"Call for rs id that has already been handled:\n"
+                                 f"call={grch37_call}\n"
+                                 f"handled_rs_ids={handled_grch37_rs_ids}")
+                    raise ValueError(error_msg)
+                handled_grch37_rs_ids.add(rs_id)
+
+        if full_call.start_coordinate_grch37 in handled_grch37_start_coordinates:
+            error_msg = (f"Call for position that has already been handled:\n"
+                         f"call={grch37_call}\n"
+                         f"handled_coords={handled_grch37_start_coordinates}")
+            raise ValueError(error_msg)
+        handled_grch37_start_coordinates.add(full_call.start_coordinate_grch37)
+        full_calls_from_grch37_calls.append(full_call)
+    # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
+    # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
+    inferred_ref_calls = get_inferred_ref_calls(panel, handled_grch37_start_coordinates, handled_grch37_rs_ids)
+    full_calls = full_calls_from_grch37_calls + inferred_ref_calls
+    return full_calls
 
 
 def get_inferred_ref_calls(panel: Panel, handled_grch37_start_coordinates: Set[GeneCoordinate],
@@ -294,8 +239,8 @@ def get_inferred_ref_calls(panel: Panel, handled_grch37_start_coordinates: Set[G
                 raise ValueError(error_msg)
 
             annotated_alleles = (
-                AnnotatedAllele(rs_id_info.reference_allele_grch37, True, False),
-                AnnotatedAllele(rs_id_info.reference_allele_grch37, True, False),
+                AnnotatedAllele(rs_id_info.reference_allele_grch37, False, True),
+                AnnotatedAllele(rs_id_info.reference_allele_grch37, False, True),
             )
             full_call = FullCall(
                 rs_id_info.start_coordinate_grch37,
@@ -399,6 +344,18 @@ def get_annotated_alleles_from_rs_id_info(
     )
 
 
+def assert_handleable_call(call: FullCall) -> None:
+    if len(call.rs_ids) > 1:
+        error_msg = f"Call has more than one rs id: rs ids={call.rs_ids}, call={call}"
+        raise ValueError(error_msg)
+    if len(call.rs_ids) < 1:
+        error_msg = f"Call has zero rs ids: call={call}"
+        raise ValueError(error_msg)
+    if call.rs_ids[0] == ".":
+        error_msg = f"Call has unknown rs id: call={call}"
+        raise ValueError(error_msg)
+
+
 def assert_rs_id_call_matches_info(rs_ids_call: Tuple[str, ...], rs_ids_info: Tuple[str, ...]) -> None:
     if rs_ids_call != (".",) and rs_ids_call != rs_ids_info:
         # TODO: make this more flexible, if necessary
@@ -418,10 +375,3 @@ def assert_alleles_in_expected_order(annotated_alleles: Tuple[AnnotatedAllele, A
         error_msg = (f"Alleles are in unexpected order, alt before ref: "
                      f"alleles=({annotated_alleles[0]},{annotated_alleles[0]})")
         raise ValueError(error_msg)
-
-
-def compare_collection(a: List[Tuple[str, str]], b: List[Tuple[str, str]]) -> bool:
-    if collections.Counter(a) == collections.Counter(b):
-        return True
-    else:
-        return False

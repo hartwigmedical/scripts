@@ -490,12 +490,11 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
-    @unittest.skip("WIP")
     def test_ambiguous_haplotype_with_clear_winner_mix(self) -> None:
-        """Ambiguous heterozygous haplotype, where the simpler possibility should be preferred"""
+        """Ambiguous mix of homozygous and heterozygous haplotype, where the simplest possibility should be preferred"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "C"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
             Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
@@ -503,7 +502,7 @@ class TestPgxAnalysis(unittest.TestCase):
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
                 ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
             ], columns=ALL_IDS_IN_PANEL_COLUMNS
@@ -514,12 +513,10 @@ class TestPgxAnalysis(unittest.TestCase):
             "DPYD": {'*2B_HET', '*2A_HET'},
         }
         self.assertEqual(results_expected, results)
-        self.fail("WIP")
 
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   Preference for *2B over *2A-*5 separately, for instance. (check whether succeeding test is luck or not)
         #   More complicated ambiguity?
         #   HOMHET (probably make impossible, but handle situation properly, so write test for it)
         #   Going deep on "no perfect haplotype" logic (short circuit, just don't give a call if anything goes wrong)
