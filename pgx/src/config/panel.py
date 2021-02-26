@@ -44,6 +44,19 @@ class Panel(object):
         assert_no_overlap_rs_ids([diff[0] for diff in results], "get_ref_seq_differences")
         return results
 
+    def has_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> bool:
+        return self.get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)
+
+    def get_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> str:
+        return self.get_gene_info(gene).get_ref_sequence_difference_annotation(rs_id)
+
+    def get_gene_info(self, gene: str) -> GeneInfo:
+        matching_gene_infos = [gene_info for gene_info in self.__gene_infos if gene_info.gene == gene]
+        if len(matching_gene_infos) == 1:
+            return matching_gene_infos[0]
+        else:
+            raise ValueError(f"Not exactly one matching gene info in panel: gene={gene}")
+
     def get_gene_infos(self) -> Set[GeneInfo]:
         return set(self.__gene_infos)
 

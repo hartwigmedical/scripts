@@ -5,159 +5,173 @@ from typing import Dict, Any, List, Tuple, Optional, Set
 
 import pandas as pd
 
-from call_data import Grch37CallData
+from base.gene_coordinate import GeneCoordinate
+from call_data import Grch37CallData, FullCall, AnnotatedAllele, Grch37Call
+from config.gene_info import GeneInfo
 from config.panel import Panel
 from config.rs_id_info import RsIdInfo
+from config.variant import Variant
 from dataframe_format import COMBINED_DATAFRAME_COLUMNS
 
 
 def create_pgx_analysis(call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[str]], pd.DataFrame]:
-    panel_calls_found_in_patient_df = process_differences_in_ref_sequence(call_data, panel)
-
-    assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df, panel)
+    panel_calls_found_in_patient_df = get_panel_calls_found_in_patient_df(call_data, panel)
 
     if pd.isna(panel_calls_found_in_patient_df).any(axis=None):
         raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_found_in_patient_df}")
 
-    panel_calls_for_patient = get_panel_calls_for_patient(panel_calls_found_in_patient_df, panel)
-
     # Now we want to process all the variants in terms of the alleles
     results = {}
-
     for gene_info in panel.get_gene_infos():
         print("[INFO] PROCESSING GENE " + gene_info.gene)
         # TODO: is this safe? to filter by gene like this? what if the name is different?
         #       then again, how else can I determine what variants belong to what gene?
-        ids_found_in_gene = panel_calls_for_patient.loc[panel_calls_for_patient['gene'] == gene_info.gene]
-        perfect_match = False
+        #       Maybe get gene chromosome and positions from bed file and use them to filter.
+        #       But then the format of the dataframe is annoying for filtering,
+        #       because chrom and position are combined in a single column
+        ids_found_in_gene = panel_calls_found_in_patient_df.loc[panel_calls_found_in_patient_df['gene'] == gene_info.gene]
 
-        # If all variants are assumed_ref, return reference haplotype
-        if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
-            print("[INFO] Found reference haplotype")
-            haplotypes = {gene_info.reference_haplotype_name + "_HOM"}
-        else:
-            haplotypes = set()
-            haplotypes_matching = []
-            for haplotype in gene_info.haplotypes:
-                vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
-                variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
-                if set(variants_sample) == set([(x.rs_id, x.variant_allele) for x in haplotype.variants]):
-                    perfect_match = True
-                    print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
-                    # Now we want to see if we have hetrozygous or homozygous calls
-                    allele_statuses = []
-                    for index, row in vars_found_in_gene.iterrows():
-                        if row['ref_GRCh38'] == row['alt_GRCh38']:
-                            allele_statuses.append("HOM")
-                        else:
-                            allele_statuses.append("HET")
-                    if all(x == allele_statuses[0] for x in allele_statuses):
-                        allele_status = allele_statuses[0]
-                    else:
-                        allele_status = "HOMHET"
-                    # Add to results
-                    haplotypes.add(haplotype.name + "_" + str(allele_status))
-                    if allele_status == "HET":
-                        # Assume if perfect match with HET, we are also looking at reference haplotype
-                        haplotypes.add(gene_info.reference_haplotype_name + "_HET")
-                    break
-                else:
-                    # print("Processing " + str(haplotype['alleleName']))
-                    # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
-                    # print(set(variants_sample))
-                    if set([(x.rs_id, x.variant_allele) for x in haplotype.variants]) <= \
-                            set(variants_sample):
-                        print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
-                        haplotypes_matching.append(haplotype)
+        results[gene_info.gene] = get_haplotypes(ids_found_in_gene, gene_info)
 
-            if not perfect_match:
-                if not haplotypes_matching:
-                    print(
-                        f"[WARN] No haplotype match found for {gene_info.gene}. "
-                        f"Probable cause is that the rs_id_info is not in line with previously "
-                        f"determined within defined haplotype."
-                    )
-                    haplotypes = {"Unresolved_Haplotype"}
-                else:
-                    print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
-                    optimal_set: List[List[Any]] = []
-                    for k in range(len(haplotypes_matching) + 1, 0, -1):  # TODO: shouldn't this order be reversed?
-                        for subset in itertools.combinations(haplotypes_matching, k):
-                            if perfect_match:
-                                continue
-                            # See if this combination results in a perfect match, otherwise store the score
-                            allele_variants = [x.variants for x in subset]
-                            rs_ids_subset = []
-                            for x in allele_variants:
-                                for var in x:
-                                    rs_ids_subset.append((var.rs_id, var.variant_allele))
-                            if compare_collection(variants_sample, rs_ids_subset):
-                                print("[INFO] Perfect haplotype combination found!")
-                                perfect_match = True
-                                for haplotype in subset:
-                                    allele_statuses = []
-                                    rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
-                                    found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
-                                    for index, row in found_vars.iterrows():
-                                        if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                            allele_statuses.append("HOM")
-                                        else:
-                                            allele_statuses.append("HET")
-                                    if all(x == allele_statuses[0] for x in allele_statuses):
-                                        allele_status = allele_statuses[0]
-                                    else:
-                                        allele_status = "HOMHET"
-                                    haplotypes.add(haplotype.name + "_" + str(allele_status))
-                            else:
-                                rs_matched = list(set(variants_sample) & set(rs_ids_subset))
-                                rs_not_in_haplotype = list(set(variants_sample) - set(rs_ids_subset))
-                                rs_not_found = list(set(rs_ids_subset) - set(variants_sample))
-                                optimal_set.append([len(rs_matched), subset, rs_matched, rs_not_found,
-                                                    rs_not_in_haplotype])
-                    if not perfect_match:
-                        # Get best scoring set and give as result
-                        print("[INFO] No perfect match found. Start testing all possible combinations and choose best "
-                              "one")
-                        optimal_set.sort(key=lambda x: x[0], reverse=True)
-                        for options in optimal_set:
-                            print("[INFO] Option to be tested:")
-                            print("[INFO]\t\t# Matches: " + str(options[0]))
-                            print("[INFO]\t\tSubset: " + str(options[1]))
-                            print("[INFO]\t\tVariants matched for sample and haplotype: " + str(options[2]))
-                            print("[INFO]\t\tVariants in tested haplotype, but not in sample: " + str(options[3]))
-                            print("[INFO]\t\tVariants in sample, not in tested haplotype: " + str(options[4]))
-                        # Here we just pick the top option.
-                        if optimal_set[0][0] >= 1:
-                            subset = optimal_set[0][1]
-                            # If we have a rs_id_info that is in sample or in haplotype that is not matched > undetermined
-                            if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
-                                haplotypes = {"Unresolved_Haplotype"}
-                            else:
-                                for haplotype in subset:
-                                    allele_statuses = []
-                                    rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
-                                    found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
-                                    for index, row in found_vars.iterrows():
-                                        if row['ref_GRCh38'] == row['alt_GRCh38']:
-                                            allele_statuses.append("HOM")
-                                        else:
-                                            allele_statuses.append("HET")
-                                    if all(x == allele_statuses[0] for x in allele_statuses):
-                                        allele_status = allele_statuses[0]
-                                    else:
-                                        allele_status = "HOMHET"
-                                    haplotypes.add(haplotype.name + "_" + str(allele_status))
-                        else:
-                            sys.exit("[ERROR] No haplotype match was found. Exiting.")
-        # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
-        if len(haplotypes) == 1:
-            (single_haplotype,) = haplotypes
-            if single_haplotype.split("_")[-1] == "HET":
-                haplotypes.add(gene_info.reference_haplotype_name + "_HET")
-
-        results[gene_info.gene] = haplotypes
+    panel_calls_for_patient = get_panel_calls_for_patient(panel_calls_found_in_patient_df, panel)
 
     return results, panel_calls_for_patient
+
+
+# def get_haplotypes_alternative(ids_found_in_gene: pd.DataFrame, gene_info: GeneInfo) -> Set[str]:
+#     variant_to_count = {}
+#     for row in ids_found_in_gene.iterrows():
+#         # Note that row.rs_id can include multiple rs ids separated by ;
+#         # TODO: make solution cleaner
+#         variant_to_count[Variant(row["rsid"], Variant)]
+
+
+def get_haplotypes(ids_found_in_gene: pd.DataFrame, gene_info: GeneInfo) -> Set[str]:
+    perfect_match = False
+    if len(ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] == "REF_CALL"]) == len(ids_found_in_gene):
+        # If all variants are assumed_ref, return reference haplotype
+        print("[INFO] Found reference haplotype")
+        haplotypes = {gene_info.reference_haplotype_name + "_HOM"}
+    else:
+        haplotypes = set()
+        haplotypes_matching = []
+        for haplotype in gene_info.haplotypes:
+            vars_found_in_gene = ids_found_in_gene.loc[ids_found_in_gene['variant_annotation'] != "REF_CALL"]
+            variants_sample = list(zip(vars_found_in_gene.rsid.tolist(), vars_found_in_gene.alt_GRCh38.tolist()))
+            if set(variants_sample) == set([(x.rs_id, x.variant_allele) for x in haplotype.variants]):
+                perfect_match = True
+                print("[INFO] Found 1:1 match with haplotype " + haplotype.name)
+                # Now we want to see if we have hetrozygous or homozygous calls
+                allele_statuses = []
+                for index, row in vars_found_in_gene.iterrows():
+                    if row['ref_GRCh38'] == row['alt_GRCh38']:
+                        allele_statuses.append("HOM")
+                    else:
+                        allele_statuses.append("HET")
+                if all(x == allele_statuses[0] for x in allele_statuses):
+                    allele_status = allele_statuses[0]
+                else:
+                    allele_status = "HOMHET"
+                # Add to results
+                haplotypes.add(haplotype.name + "_" + str(allele_status))
+                if allele_status == "HET":
+                    # Assume if perfect match with HET, we are also looking at reference haplotype
+                    haplotypes.add(gene_info.reference_haplotype_name + "_HET")
+                break
+            else:
+                # print("Processing " + str(haplotype['alleleName']))
+                # print(set([(x['rsid'], x['altAlleleGRCh38']) for x in haplotype['alleleVariants']]))
+                # print(set(variants_sample))
+                if set([(x.rs_id, x.variant_allele) for x in haplotype.variants]) <= \
+                        set(variants_sample):
+                    print("[INFO] A subset of rsids matches " + str(haplotype.name) + " in part")
+                    haplotypes_matching.append(haplotype)
+
+        if not perfect_match:
+            if not haplotypes_matching:
+                print(
+                    f"[WARN] No haplotype match found for {gene_info.gene}. "
+                    f"Probable cause is that the rs_id_info is not in line with previously "
+                    f"determined within defined haplotype."
+                )
+                haplotypes = {"Unresolved_Haplotype"}
+            else:
+                print("[INFO] Test all possible combinations of haplotypes to see if a perfect match can be found")
+                optimal_set: List[List[Any]] = []
+                for k in range(len(haplotypes_matching) + 1, 0, -1):  # TODO: shouldn't this order be reversed?
+                    for subset in itertools.combinations(haplotypes_matching, k):
+                        if perfect_match:
+                            continue
+                        # See if this combination results in a perfect match, otherwise store the score
+                        allele_variants = [x.variants for x in subset]
+                        rs_ids_subset = []
+                        for x in allele_variants:
+                            for var in x:
+                                rs_ids_subset.append((var.rs_id, var.variant_allele))
+                        if compare_collection(variants_sample, rs_ids_subset):
+                            print("[INFO] Perfect haplotype combination found!")
+                            perfect_match = True
+                            for haplotype in subset:
+                                allele_statuses = []
+                                rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
+                                found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
+                                for index, row in found_vars.iterrows():
+                                    if row['ref_GRCh38'] == row['alt_GRCh38']:
+                                        allele_statuses.append("HOM")
+                                    else:
+                                        allele_statuses.append("HET")
+                                if all(x == allele_statuses[0] for x in allele_statuses):
+                                    allele_status = allele_statuses[0]
+                                else:
+                                    allele_status = "HOMHET"
+                                haplotypes.add(haplotype.name + "_" + str(allele_status))
+                        else:
+                            rs_matched = list(set(variants_sample) & set(rs_ids_subset))
+                            rs_not_in_haplotype = list(set(variants_sample) - set(rs_ids_subset))
+                            rs_not_found = list(set(rs_ids_subset) - set(variants_sample))
+                            optimal_set.append([len(rs_matched), subset, rs_matched, rs_not_found,
+                                                rs_not_in_haplotype])
+                if not perfect_match:
+                    # Get best scoring set and give as result
+                    print("[INFO] No perfect match found. Start testing all possible combinations and choose best "
+                          "one")
+                    optimal_set.sort(key=lambda x: x[0], reverse=True)
+                    for options in optimal_set:
+                        print("[INFO] Option to be tested:")
+                        print("[INFO]\t\t# Matches: " + str(options[0]))
+                        print("[INFO]\t\tSubset: " + str(options[1]))
+                        print("[INFO]\t\tVariants matched for sample and haplotype: " + str(options[2]))
+                        print("[INFO]\t\tVariants in tested haplotype, but not in sample: " + str(options[3]))
+                        print("[INFO]\t\tVariants in sample, not in tested haplotype: " + str(options[4]))
+                    # Here we just pick the top option.
+                    if optimal_set[0][0] >= 1:
+                        subset = optimal_set[0][1]
+                        # If we have a rs_id_info that is in sample or in haplotype that is not matched > undetermined
+                        if len(optimal_set[0][3]) > 0 or len(optimal_set[0][4]) > 0:
+                            haplotypes = {"Unresolved_Haplotype"}
+                        else:
+                            for haplotype in subset:
+                                allele_statuses = []
+                                rs_ids_in_allele = [x.rs_id for x in haplotype.variants]
+                                found_vars = ids_found_in_gene[ids_found_in_gene['rsid'].isin(rs_ids_in_allele)]
+                                for index, row in found_vars.iterrows():
+                                    if row['ref_GRCh38'] == row['alt_GRCh38']:
+                                        allele_statuses.append("HOM")
+                                    else:
+                                        allele_statuses.append("HET")
+                                if all(x == allele_statuses[0] for x in allele_statuses):
+                                    allele_status = allele_statuses[0]
+                                else:
+                                    allele_status = "HOMHET"
+                                haplotypes.add(haplotype.name + "_" + str(allele_status))
+                    else:
+                        sys.exit("[ERROR] No haplotype match was found. Exiting.")
+    # If we only find one haplotype and it is HET, assume we're also dealing with reference haplotype
+    if len(haplotypes) == 1:
+        (single_haplotype,) = haplotypes
+        if single_haplotype.split("_")[-1] == "HET":
+            haplotypes.add(gene_info.reference_haplotype_name + "_HET")
+    return haplotypes
 
 
 def get_panel_calls_for_patient(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> pd.DataFrame:
@@ -197,153 +211,213 @@ def get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df: pd.DataFr
     return calls_not_found_in_patient_df
 
 
-def assert_compliance_to_panel_and_fill_in_missing_values(panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> None:
-    if not panel_calls_found_in_patient_df.empty:
-        for index, row in panel_calls_found_in_patient_df.iterrows():
-            # Fill in empty alleles GRCh38
-            if 'ref_GRCh38' not in row or pd.isna(row['ref_GRCh38']):
-                panel_calls_found_in_patient_df.at[index, 'ref_GRCh38'] = row['ref_GRCh37']
-                panel_calls_found_in_patient_df.at[index, 'alt_GRCh38'] = row['alt_GRCh37']
+def get_panel_calls_found_in_patient_df(grch37_call_data: Grch37CallData, panel: Panel) -> pd.DataFrame:
+    # panel_calls_found_in_patient_df = process_differences_in_ref_sequence(call_data, panel)
 
-            # Check against panel and fill in empty fields when possible
-            if panel.contains_rs_id_with_position(row['position_GRCh37']):
-                panel_rs_id_info = panel.get_rs_id_info_with_position(row['position_GRCh37'])
+    handled_grch37_start_coordinates: Set[GeneCoordinate] = set()
+    handled_grch37_rs_ids: Set[str] = set()
+    full_calls_from_grch37_calls = []
 
-                if row['rsid'] == '.':
-                    panel_calls_found_in_patient_df.at[index, 'rsid'] = panel_rs_id_info.rs_id
-                elif row['rsid'] != panel_rs_id_info.rs_id:
-                    error_msg = (
-                        f"Rs id from input file matches different rs id from panel based on GRCh37 position\n:"
-                        f"position GRCh37={row['position_GRCh37']}, rs id input file={row['rsid']}, "
-                        f"rs id from panel={panel_rs_id_info.rs_id}"
-                    )
+    for grch37_call in grch37_call_data.calls:
+        full_call = get_full_call_from_grch37_call(grch37_call, panel)
+
+        for rs_id in full_call.rs_ids:
+            if rs_id != ".":
+                if rs_id in handled_grch37_rs_ids:
+                    error_msg = (f"Call for rs id that has already been handled:\n"
+                                 f"call={grch37_call}\n"
+                                 f"handled_rs_ids={handled_grch37_rs_ids}")
                     raise ValueError(error_msg)
+                handled_grch37_rs_ids.add(rs_id)
 
-                panel_grch38_position = panel_rs_id_info.start_coordinate_grch38.get_position_string()
-                if 'position_GRCh38' not in row or pd.isna(row['position_GRCh38']):
-                    panel_calls_found_in_patient_df.at[index, 'position_GRCh38'] = panel_grch38_position
-                elif row['position_GRCh38'] != panel_grch38_position:
-                    error_msg = (
-                        f"[ERROR] Inconsistent GRCh38 locations for variants:\n" 
-                        f"location from exceptions: {row['position_GRCh38']}\n" 
-                        f"location from rs id info: {panel_grch38_position}\n"
-                    )
-                    raise ValueError(error_msg)
-            elif pd.isna(row['rsid']) or not panel.contains_rs_id(row['rsid']):
-                # No matching known rs ids
-                if 'position_GRCh38' not in row.index or pd.isna(row['position_GRCh38']):
-                    panel_calls_found_in_patient_df.at[index, 'position_GRCh38'] = "UNKNOWN"
-            else:
-                error_msg = (
-                    f"[ERROR] Match rs id info from panel on rs id but not position:\n" 
-                    f"rs id: {row['rsid']}, input file position: {row['position_GRCh37']}"
-                )
+        if full_call.start_coordinate_grch37 in handled_grch37_start_coordinates:
+            error_msg = (f"Call for position that has already been handled:\n"
+                         f"call={grch37_call}\n"
+                         f"handled_coords={handled_grch37_start_coordinates}")
+            raise ValueError(error_msg)
+        handled_grch37_start_coordinates.add(full_call.start_coordinate_grch37)
+        full_calls_from_grch37_calls.append(full_call)
+
+    # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
+    # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
+    inferred_ref_calls = get_inferred_ref_calls(panel, handled_grch37_start_coordinates, handled_grch37_rs_ids)
+
+    full_calls = full_calls_from_grch37_calls + inferred_ref_calls
+
+    # make pandas dataframe
+    panel_calls_found_in_patient_df_alt = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
+    for full_call in full_calls:
+        grch37_alleles = [
+            annotated.allele for annotated in full_call.annotated_alleles if not annotated.is_variant_vs_grch37
+        ] + [
+            annotated.allele for annotated in full_call.annotated_alleles if annotated.is_variant_vs_grch37
+        ]
+        grch38_alleles = [
+            annotated.allele for annotated in full_call.annotated_alleles if not annotated.is_variant_vs_grch38
+        ] + [
+            annotated.allele for annotated in full_call.annotated_alleles if annotated.is_variant_vs_grch38
+        ]
+
+        position_grch38 = (
+            full_call.start_coordinate_grch38.get_position_string()
+            if full_call.start_coordinate_grch38 is not None
+            else "UNKNOWN"
+        )
+
+        new_id = {'position_GRCh37': full_call.start_coordinate_grch37.get_position_string(),
+                  'rsid': ";".join(list(full_call.rs_ids)),
+                  'ref_GRCh37': grch37_alleles[0],
+                  'alt_GRCh37': grch37_alleles[1],
+                  'variant_annotation': full_call.variant_annotation,
+                  'filter': full_call.filter,
+                  'gene': full_call.gene,
+                  'position_GRCh38': position_grch38,
+                  'ref_GRCh38': grch38_alleles[0],
+                  'alt_GRCh38': grch38_alleles[1]}
+        panel_calls_found_in_patient_df_alt = panel_calls_found_in_patient_df_alt.append(new_id, ignore_index=True)
+
+    return panel_calls_found_in_patient_df_alt
+
+
+def get_inferred_ref_calls(panel: Panel, handled_grch37_start_coordinates: Set[GeneCoordinate],
+                           handled_grch37_rs_ids: Set[str]) -> List[FullCall]:
+    # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
+    # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
+    inferred_ref_calls = []
+    for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
+        if rs_id_info.start_coordinate_grch37 not in handled_grch37_start_coordinates:
+            # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
+            if rs_id_info.rs_id in handled_grch37_rs_ids:
+                error_msg = (f"Have seen rs id of ref seq difference, but not location. "
+                             f"Indicates mismatch between input file and panel."
+                             f"rs_id_info={rs_id_info}")
                 raise ValueError(error_msg)
 
+            annotated_alleles = (
+                AnnotatedAllele(rs_id_info.reference_allele_grch37, True, False),
+                AnnotatedAllele(rs_id_info.reference_allele_grch37, True, False),
+            )
+            full_call = FullCall(
+                rs_id_info.start_coordinate_grch37,
+                rs_id_info.start_coordinate_grch38,
+                annotated_alleles,
+                gene,
+                (rs_id_info.rs_id,),
+                annotation,
+                "INFERRED_REF_CALL",
+            )
+            inferred_ref_calls.append(full_call)
+    return inferred_ref_calls
 
-def process_differences_in_ref_sequence(ids_found: Grch37CallData, panel: Panel) -> pd.DataFrame:
-    ids_found_df = ids_found.get_data_frame()
-    for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
-        variant_location_grch37 = rs_id_info.start_coordinate_grch37.get_position_string()
-        variant_location_grch38 = rs_id_info.start_coordinate_grch38.get_position_string()
-        ref_allele_grch37 = rs_id_info.reference_allele_grch37
-        ref_allele_grch38 = rs_id_info.reference_allele_grch38
 
-        found_var = get_matching_variant_in_patient(ids_found_df, rs_id_info)
+def get_full_call_from_grch37_call(grch37_call: Grch37Call, panel: Panel) -> FullCall:
+    gene = grch37_call.gene
+    assert_gene_in_panel(gene, panel)
 
-        if found_var is not None:
-            found_ref_allele = found_var['ref_GRCh37'].iat[0]
-            found_alt_allele = found_var['alt_GRCh37'].iat[0]
-            if found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch38:
-                # Delete found variant from results if the ref base and alt base are the correctedRefBase
-                ids_found_df = ids_found_df.drop(found_var.index[0])
-            elif found_ref_allele == ref_allele_grch38 and found_alt_allele == ref_allele_grch37:
-                raise NotImplementedError("What should we do? ref = corRef, alt = corAlt")
-            elif found_ref_allele == ref_allele_grch37 and found_alt_allele == ref_allele_grch38:
-                # Change variant_annotation and ref and alt base
-                ids_found_df.at[found_var.index[0], 'variant_annotation'] = annotation
-                ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch38
-                ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
-                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
-            elif found_ref_allele == ref_allele_grch37 and found_alt_allele == ref_allele_grch37:
-                # Add variant_annotation and ref and alt base for hg38
-                ids_found_df.at[found_var.index[0], 'variant_annotation'] = annotation
-                ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = ref_allele_grch37
-                ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = ref_allele_grch37
-                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
-            else:
-                # Not completely sure what should happen, so try something and print warning
-                new_annotation = found_var["variant_annotation"].iat[0] + "?"
-                ids_found_df.at[found_var.index[0], 'variant_annotation'] = new_annotation
-                if found_alt_allele == ref_allele_grch38:
-                    ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_alt_allele
-                    ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_ref_allele
-                else:
-                    ids_found_df.at[found_var.index[0], 'ref_GRCh38'] = found_ref_allele
-                    ids_found_df.at[found_var.index[0], 'alt_GRCh38'] = found_alt_allele
-                ids_found_df.at[found_var.index[0], 'position_GRCh38'] = variant_location_grch38
-                print(
-                    f"[WARN] Unexpected allele in ref seq difference. Check whether annotation is correct: "
-                    f"rs id info={rs_id_info}, found alleles={[found_ref_allele, found_alt_allele]}, "
-                    f"annotation={new_annotation}"
-                )
+    start_coordinate_grch37 = grch37_call.start_coordinate
+
+    # determine annotated_alleles, start_coordinate_grch38 and rs_ids
+    rs_ids: Tuple[str, ...]
+    start_coordinate_grch38: Optional[GeneCoordinate]
+    if panel.contains_rs_id_with_position(start_coordinate_grch37.get_position_string()):
+        rs_id_info = panel.get_rs_id_info_with_position(start_coordinate_grch37.get_position_string())
+        assert_rs_id_call_matches_info(grch37_call.rs_ids, (rs_id_info.rs_id,))
+
+        annotated_alleles = get_annotated_alleles_from_rs_id_info(rs_id_info, grch37_call)
+        assert_alleles_in_expected_order(annotated_alleles)
+
+        start_coordinate_grch38 = rs_id_info.start_coordinate_grch38
+        if grch37_call.rs_ids == (".",) and rs_id_info is not None:
+            rs_ids = (rs_id_info.rs_id,)
         else:
-            # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
-            print("[INFO] Exception variant not found in this patient. This means ref/ref call, but should be "
-                  "flipped. Add to table.")
-            new_id = {'position_GRCh37': variant_location_grch37,
-                      'rsid': rs_id_info.rs_id,
-                      'ref_GRCh37': ref_allele_grch37,
-                      'alt_GRCh37': ref_allele_grch37,
-                      'variant_annotation': annotation,
-                      'filter': "INFERRED_REF_CALL",
-                      'gene': gene,
-                      'position_GRCh38': variant_location_grch38,
-                      'ref_GRCh38': ref_allele_grch37,
-                      'alt_GRCh38': ref_allele_grch37}
-            ids_found_df = ids_found_df.append(new_id, ignore_index=True)
-
-    return ids_found_df
-
-
-def get_matching_variant_in_patient(ids_found_df: pd.DataFrame, rs_id_info: RsIdInfo) -> Optional[pd.DataFrame]:
-    variant_location_grch37 = rs_id_info.start_coordinate_grch37.get_position_string()
-    if rs_id_info.rs_id in ids_found_df['rsid'].tolist():
-        found_var_by_rs_id = ids_found_df.loc[ids_found_df['rsid'] == rs_id_info.rs_id]
+            rs_ids = grch37_call.rs_ids
+    elif any(panel.contains_rs_id(rs_id) for rs_id in grch37_call.rs_ids):
+        error_msg = (
+            f"[ERROR] Match rs id info from panel on an rs id but not position:\n"
+            f"rs ids: {grch37_call.rs_ids}, input file position: {start_coordinate_grch37}"
+        )
+        raise ValueError(error_msg)
     else:
-        found_var_by_rs_id = None
+        # unknown variant
+        annotated_alleles = (
+            AnnotatedAllele(grch37_call.alleles[0], None, None),
+            AnnotatedAllele(grch37_call.alleles[1], None, None)
+        )
+        start_coordinate_grch38 = None
+        rs_ids = grch37_call.rs_ids
 
-    if variant_location_grch37 in ids_found_df['position_GRCh37'].tolist():
-        found_var_by_location = ids_found_df.loc[ids_found_df['position_GRCh37'] == variant_location_grch37]
-    else:
-        found_var_by_location = None
+    # determine variant annotation and filter
+    if len(rs_ids) > 1 and any(panel.has_ref_seq_difference_annotation(gene, rs_id) for rs_id in rs_ids):
+        error_msg = f"One of multiple rs ids is of a ref seq difference, so not sure how to annotate {rs_ids}"
+        raise ValueError(error_msg)
+    elif len(rs_ids) == 1 and panel.has_ref_seq_difference_annotation(gene, rs_ids[0]):
+        ref_call_due_to_ref_sequence_difference = all(
+            annotated.is_variant_vs_grch37 and not annotated.is_variant_vs_grch38 for annotated in annotated_alleles
+        )
+        all_variants_ref_to_grch37_or_grch38 = all(
+            not annotated.is_variant_vs_grch37 or not annotated.is_variant_vs_grch38 for annotated in annotated_alleles
+        )
 
-    # TODO: (maybe) make this smart enough to also handle MNV's etc.
-
-    if found_var_by_rs_id is not None and found_var_by_location is not None:
-        if found_var_by_rs_id.equals(found_var_by_location):
-            found_var = found_var_by_rs_id
+        if ref_call_due_to_ref_sequence_difference:
+            variant_annotation = "REF_CALL"
+            filter = "NO_CALL"
+        elif all_variants_ref_to_grch37_or_grch38:
+            variant_annotation = panel.get_ref_seq_difference_annotation(gene, rs_ids[0])
+            filter = grch37_call.filter
         else:
-            error_msg = f"Rs id and position match with different variants: rs_id_info={rs_id_info}."
-            raise ValueError(error_msg)
-    elif found_var_by_rs_id is not None and found_var_by_location is None:
-        # found_var = found_var_by_rs_id
-        error_msg = (f"[WARN] Matched ref seq difference by rs id, but not position: "
-                     f"variant_location_grch37={variant_location_grch37}, rs id={rs_id_info.rs_id}")
-        raise ValueError(error_msg)
-    elif found_var_by_rs_id is None and found_var_by_location is not None:
-        found_var = found_var_by_location
-        print(f"[WARN] Matched ref seq difference by position, but not rs id: "
-              f"variant_location_grch37={variant_location_grch37}, rs id={rs_id_info.rs_id}")
+            variant_annotation = grch37_call.variant_annotation + "?"
+            filter = grch37_call.filter
+            print(
+                f"[WARN] Unexpected allele in ref seq difference location. Check whether annotation is correct: "
+                f"found alleles=({annotated_alleles[0]}, {annotated_alleles[1]}), "
+                f"annotation={variant_annotation}"
+            )
     else:
-        # found_var_by_rs_id is None and found_var_by_location is None
-        found_var = None
+        # no ref seq differences involved
+        variant_annotation = grch37_call.variant_annotation
+        filter = grch37_call.filter
 
-    if found_var is not None and found_var.shape[0] != 1:
-        error_msg = f"Multiple variants match with rs id info: rs_id_info={rs_id_info}"
+    full_call = FullCall(
+        start_coordinate_grch37, start_coordinate_grch38, annotated_alleles, gene, rs_ids, variant_annotation, filter,
+    )
+    return full_call
+
+
+def get_annotated_alleles_from_rs_id_info(
+        rs_id_info: RsIdInfo, grch37_call: Grch37Call) -> Tuple[AnnotatedAllele, AnnotatedAllele]:
+    return (
+        AnnotatedAllele(
+            grch37_call.alleles[0],
+            grch37_call.alleles[0] != rs_id_info.reference_allele_grch37,
+            grch37_call.alleles[0] != rs_id_info.reference_allele_grch38,
+            ),
+        AnnotatedAllele(
+            grch37_call.alleles[1],
+            grch37_call.alleles[1] != rs_id_info.reference_allele_grch37,
+            grch37_call.alleles[1] != rs_id_info.reference_allele_grch38,
+            )
+    )
+
+
+def assert_rs_id_call_matches_info(rs_ids_call: Tuple[str, ...], rs_ids_info: Tuple[str, ...]) -> None:
+    if rs_ids_call != (".",) and rs_ids_call != rs_ids_info:
+        # TODO: make this more flexible, if necessary
+        error_msg = (f"Given rs id does not match rs id from panel: "
+                     f"from call={rs_ids_call}, from panel={rs_ids_info}")
         raise ValueError(error_msg)
 
-    return found_var
+
+def assert_gene_in_panel(gene: str, panel: Panel) -> None:
+    if gene not in panel.get_genes():
+        error_msg = f"Call for unknown gene:\ngene={gene}"
+        raise ValueError(error_msg)
+
+
+def assert_alleles_in_expected_order(annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]) -> None:
+    if annotated_alleles[0].is_variant_vs_grch37 and not annotated_alleles[1].is_variant_vs_grch37:
+        error_msg = (f"Alleles are in unexpected order, alt before ref: "
+                     f"alleles=({annotated_alleles[0]},{annotated_alleles[0]})")
+        raise ValueError(error_msg)
 
 
 def compare_collection(a: List[Tuple[str, str]], b: List[Tuple[str, str]]) -> bool:

@@ -130,6 +130,9 @@ class GeneInfo(object):
         )
         return gene_info
 
+    def has_ref_sequence_difference_annotation(self, rs_id: str) -> bool:
+        return rs_id in self.__rs_id_to_ref_seq_difference_annotation.keys()
+
     def get_ref_sequence_difference_annotation(self, rs_id: str) -> str:
         return self.__rs_id_to_ref_seq_difference_annotation[rs_id]
 
