@@ -13,6 +13,9 @@ ensemblGeneData38 = read.csv(paste0(ensemblPath38,'ensembl_gene_data.csv'))
 View(ensemblGeneData37)
 View(ensemblGeneData38)
 
+ensemblTransExonData37 = read.csv(paste0(ensemblPath37,'ensembl_trans_exon_data.csv'))
+ensemblTransExonData38 = read.csv(paste0(ensemblPath38,'ensembl_trans_exon_data.csv'))
+
 rawFusionData = read.csv(rawFusionFile,sep='\t')
 rawFusionData = rawFusionData %>% arrange(Type)
 View(rawFusionData)
@@ -39,23 +42,45 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
                     ensemblGeneData %>% select(GeneName,UpChr=Chromosome,UpStrand=Strand,UpGeneStart=GeneStart,UpGeneEnd=GeneEnd),
                     by.x='FiveGene',by.y='GeneName',all.x=T)
   
-  # use specified IG gene ranges
-  igKnownGenes = fusionData %>% filter(Type == 'IG_KNOWN_PAIR')
-  
-  # example: IG_RANGE=-1;2;89890568;90274235, or IG_RANGE=-1;2;89890568;90274235 DOWN_GENE_DOWNSTREAM_DISTANCE=500000
-  igKnownGenes = fusionData %>% filter(Type == 'IG_KNOWN_PAIR') %>% separate(Overrides,c('IgRangeData','OtherInfo'),sep=' ') %>% select(-OtherInfo)
-  igKnownGenes = igKnownGenes %>% mutate(IgRangeData=stri_replace_all_fixed(IgRangeData,'IG_RANGE=',''))
-  igKnownGenes = igKnownGenes %>% separate(IgRangeData,c('UpStrand','UpChr','UpGeneStart','UpGeneEnd'),sep=';')
-  igKnownGenes = igKnownGenes %>% mutate(UpStrand=as.numeric(UpStrand),UpGeneStart=as.numeric(UpGeneStart),UpGeneEnd=as.numeric(UpGeneEnd))
-  
-  kpBedInfo = rbind(kpBedInfo,igKnownGenes)
-  
   kpBedInfo = merge(kpBedInfo,
                     ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),
                     by.x='ThreeGene',by.y='GeneName',all.x=T)
   
+  # use specified IG gene ranges and write both orientations
+  igKnownGenes = fusionData %>% filter(Type == 'IG_KNOWN_PAIR')
+  
+  # example: IG_RANGE=-1;2;89890568;90274235, or IG_RANGE=-1;2;89890568;90274235 DOWN_GENE_DOWNSTREAM_DISTANCE=500000
+  igKnownGenes = fusionData %>% filter(Type == 'IG_KNOWN_PAIR') %>% separate(Overrides,c('IgRangeData','DownstreamDistance'),sep=' ')
+  igKnownGenes = igKnownGenes %>% mutate(IgRangeData=stri_replace_all_fixed(IgRangeData,'IG_RANGE=',''))
+  igKnownGenes = igKnownGenes %>% separate(IgRangeData,c('UpStrand','UpChr','UpGeneStart','UpGeneEnd'),sep=';')
+  igKnownGenes = igKnownGenes %>% mutate(UpStrand=as.numeric(UpStrand),UpGeneStart=as.numeric(UpGeneStart),UpGeneEnd=as.numeric(UpGeneEnd))
+
+  igKnownGenes = merge(igKnownGenes,
+                       ensemblGeneData %>% select(GeneName,DownChr=Chromosome,DownStrand=Strand,DownGeneStart=GeneStart,DownGeneEnd=GeneEnd),
+                       by.x='ThreeGene',by.y='GeneName',all.x=T)
+  
+  igKnownGenes = igKnownGenes %>% mutate(DownstreamDistance=ifelse(is.na(DownstreamDistance),'0',stri_replace_all_fixed(DownstreamDistance,'DOWN_GENE_DOWNSTREAM_DISTANCE=','')),
+                                         DownstreamDistance=ifelse(is.na(DownstreamDistance),0,as.numeric(DownstreamDistance)))
+  
+  igKnownGenesDownstream = igKnownGenes %>% filter(DownstreamDistance>0) %>% 
+    mutate(DownGeneStartNew=ifelse(DownStrand==1,DownGeneEnd,DownGeneStart-DownstreamDistance),
+           DownGeneEndNew=ifelse(DownStrand==1,DownGeneEnd+DownstreamDistance,DownGeneStart),
+           DownGeneStart=DownGeneStartNew,
+           DownGeneEnd=DownGeneEndNew,
+           DownStrand=ifelse(DownStrand==1,-1,1)) %>%
+    select(-DownGeneStartNew,-DownGeneEndNew)
+  
+  igKnownGenes = rbind(igKnownGenes,igKnownGenesDownstream)
+  
+  igKnownGenesReverseOrient = igKnownGenes %>% mutate(UpStrand=ifelse(UpStrand==1,-1,1))
+  
+  igKnownGenes = rbind(igKnownGenes,igKnownGenesReverseOrient)
+  View(igKnownGenes)
+  
+  kpBedInfo = rbind(kpBedInfo,igKnownGenes %>% select(-DownstreamDistance))
+
   View(kpBedInfo)
-  # str(kpBedInfo)
+  #str(kpBedInfo)
   
   preGeneBuffer=10e3
   
@@ -70,7 +95,7 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
       Start2=ifelse(DownStrand==1,DownGeneStart-preGeneBuffer,DownGeneStart) - 1,
       End2=ifelse(DownStrand==1,DownGeneEnd,DownGeneEnd+preGeneBuffer),
       Strand1=ifelse(UpStrand==1,'+','-'),
-      ## NOTE WE REVERSE STRAND2
+      ## REVERSE STRAND2 since for the downstream genes the orientation is opposite to upstream (ie +ve strand = -ve orientation and vice versa)
       Strand2=ifelse(DownStrand==1,'-','+'),
       Score=0)
   
@@ -104,8 +129,6 @@ create_bedpe_file(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene
                   paste0(outputDir,'known_fusions.38_',fileVersion,'.bedpe'))
 
 ## GRIPSS BED files (37 and 38) for high-confidence promiscuous gene exon ranges
-ensemblTransExonData37 = read.csv(paste0(ensemblPath37,'ensembl_trans_exon_data.csv'))
-ensemblTransExonData38 = read.csv(paste0(ensemblPath38,'ensembl_trans_exon_data.csv'))
 View(ensemblTransExonData37 %>% filter(TransName=='ENST00000288602'))
 
 
