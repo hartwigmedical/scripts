@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+# Downstream scripts should normally only use functions slack_info and slack_warn
+# Some markdown code is allowed (see https://api.slack.com/reference/surfaces/formatting)
+
+caller=$(basename "$(caller | cut -d" " -f2)")
+host=$(hostname)
+
+if [[ -z "${SLACK_DEFAULT_URL}" || -z "${SLACK_TESTING_URL}" ]]; then
+  if [[ -f "/data/dbs/slack/slack_webhook_urls" ]]; then
+    source "/data/dbs/slack/slack_webhook_urls"
+  elif [[ -f "/data/common/dbs/slack/slack_webhook_urls" ]]; then
+    source "/data/common/dbs/slack/slack_webhook_urls"
+  fi
+fi
+[[ -n "${SLACK_DEFAULT_URL}" ]] || warn "Missing required ENV variable SLACK_DEFAULT_URL"
+[[ -n "${SLACK_TESTING_URL}" ]] || warn "Missing required ENV variable SLACK_TESTING_URL"
+
+slack () {
+  local url="$1" && shift
+  local usr="$1" && shift
+  local msg="$1" && shift
+  local col="$1" && shift # color
+  data_json="{'username':'${usr} (on behalf of ${caller}@${host})','attachments': [{'text':'${msg}','color':'${col}','attachment_type':'default'}]}"
+  response=$(curl -s -X POST -H 'Content-type: application/json' --data "${data_json}" "${url}")
+  if [[ ! "$response" == "ok" ]]; then
+    echo "[ERROR] Sending of slack msg was not ok (response: ${response})" >&2
+  fi
+}
+
+slack_test () {
+  local msg="${1:-NoMessageProvided}" && shift
+  local usr="${1:-TestBot}" && shift
+  local url="${SLACK_TESTING_URL}" # currently sourced from file
+  local col="#000000" # black
+
+  slack "${url}" "${usr}" "${msg}" "${col}"
+}
+
+slack_info () {
+  local msg="${1:-NoMessageProvided}" && shift
+  local usr="${1:-InfoBot}" && shift
+  local url="${SLACK_DEFAULT_URL}" # currently sourced from file
+  local col="#0000FF" # blue
+
+  slack "${url}" "${usr}" "${msg}" "${col}"
+}
+
+slack_warn () {
+  local msg="${1:-NoMessageProvided}" && shift
+  local usr="${1:-WarnBot}" && shift
+  local url="${SLACK_DEFAULT_URL}" # currently sourced from file
+  local col="#FF0000" # red
+
+  slack "${url}" "${usr}" "${msg}" "${col}"
+}

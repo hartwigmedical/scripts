@@ -18,11 +18,11 @@ new_tag="${barcode}-${new_sample}"
 
 echo "[INFO] OLD tag: $old_tag"
 echo "[INFO] NEW tag: $new_tag"
-mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -name "${old_tag}_*.vcf")
+mapfile -t vcfs < <(find /data/common/snpcheck/ /data/gcp/snpcheckvcfupload/ -name "${old_tag}_*.vcf" -or -name "${old_tag}-Duplo_*.vcf")
 vcf_count=${#vcfs[@]}
 
-echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember sync_snpcheck_to_gcp is also needed to update at GCP!)"
+echo "[INFO] Printing rename code for ${vcf_count} VCFs (remember to sync to GCP afterwards!)"
 for old_vcf_path in "${vcfs[@]}"; do
-    new_vcf_path=$(echo "${old_vcf_path}" | sed "s/${old_tag}_/${new_tag}_/")
+    new_vcf_path=${old_vcf_path/${old_tag}/${new_tag}}
     echo "mv $old_vcf_path $new_vcf_path"
 done

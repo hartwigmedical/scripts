@@ -32,6 +32,10 @@ locate_pipeline_v5_validation_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/pipeline_v5_validation
 }
 
+locate_ckb_database_credentials() {
+    echo ${base_path}/dbs/mysql_credentials/ckb_db
+}
+
 locate_ckb_pilot_database_credentials() {
     echo ${base_path}/dbs/mysql_credentials/ckb_db_pilot
 }
@@ -77,7 +81,7 @@ locate_pilot_patient_db() {
 }
 
 locate_prod_linx() {
-    echo ${base_path}/tools/sv-linx_v1.13/sv-linx.jar
+    echo ${base_path}/tools/sv-linx_v1.14/sv-linx.jar
 }
 
 locate_pilot_linx() {
@@ -106,6 +110,10 @@ locate_prod_iclusion_importer() {
 
 locate_pilot_iclusion_importer() {
     echo ${base_path}/tools/iclusion-importer_pilot/iclusion-importer.jar
+}
+
+locate_prod_ckb_importer() {
+    echo ${base_path}/tools/ckb-importer_v1.0/ckb-importer.jar
 }
 
 locate_pilot_ckb_importer() {
@@ -158,6 +166,10 @@ locate_pgx_main() {
     echo "$(locate_pgx_dir)/src/main.py"
 }
 
+locate_umi_main() {
+    echo "$(locate_umi_dir)/main.py"
+}
+
 locate_vcftools() {
     echo ${base_path}/tools/vcftools_v0.1.14/bin/vcftools
 }
@@ -208,8 +220,16 @@ locate_hartwig_curated_tsv() {
     echo ${base_path}/dbs/serve/static_sources/hartwig/hartwig_curated.tsv
 }
 
+locate_ckb_flex_data_dir() {
+    echo ${base_path}/dbs/ckb/210226_flex_dump
+}
+
 locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
+}
+
+locate_umi_resource_dir() {
+    echo ${base_path}/dbs/umi/
 }
 
 ################################### PGX ####################################
@@ -278,6 +298,20 @@ locate_pgx_pilot_vcf() {
     fi
 
     echo ${pgx_vcf}
+}
+
+################################### PGX ####################################
+
+locate_umi_dir() {
+    echo "${base_path}/repos/scripts/umi/"
+}
+
+locate_umi_venv_dir() {
+    echo "$(locate_umi_resource_dir)/venv/umi"
+}
+
+locate_umi_requirements() {
+    echo "$(locate_umi_dir)/requirements.txt"
 }
 
 ################################### WGS METRICS ####################################
@@ -367,6 +401,24 @@ locate_purple_somatics() {
     echo ${somatic_vcf}
 }
 
+locate_purple_germline_variants() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
+}
+
 locate_purple_pilot_somatics() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -382,6 +434,24 @@ locate_purple_pilot_somatics() {
     fi
 
     echo ${somatic_vcf}
+}
+
+locate_purple_pilot_germline_variants() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple_pilot
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
 }
 
 ############################################ AMBER ###########################################
@@ -437,17 +507,27 @@ locate_purple_qc() {
     echo ${purple_qc_file}
 }
 
-locate_purple_drivers() {
+locate_purple_drivers_somatic() {
     local run_dir=$1
-    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.tsv")
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
+
     if [[ -z "${purple_driver_tsv}" ]]; then
-        # From purple v2.52 onwards driver catalog is now "somatic driver catalog"
-        purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
-        if [[ -z "${purple_driver_tsv}" ]]; then
-            echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
-            exit 1
-        fi
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
     fi
+
+    echo ${purple_driver_tsv}
+}
+
+locate_purple_drivers_germline() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
+
+    if [[ -z "${purple_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
     echo ${purple_driver_tsv}
 }
 
@@ -635,7 +715,7 @@ locate_linx_drivers() {
 
     local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
     if [[ -z "${drivers_tsv}" ]]; then
-        drivers_tsv=$(locate_purple_drivers ${run_dir})
+        drivers_tsv=$(locate_purple_drivers_somatic ${run_dir})
         if [[ -z "${drivers_tsv}" ]]; then
             echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
             exit 1

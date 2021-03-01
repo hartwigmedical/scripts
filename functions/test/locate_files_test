@@ -39,7 +39,7 @@ if [[ $? = 0 ]]; then echo "[INFO]  Purple Purity: ${purple_purity}"; fi
 purple_qc=$(locate_purple_qc ${run_dir})
 if [[ $? = 0 ]]; then echo "[INFO]  Purple QC: ${purple_qc}"; fi
 
-purple_drivers=$(locate_purple_drivers ${run_dir})
+purple_drivers=$(locate_purple_drivers_somatic ${run_dir})
 if [[ $? = 0 ]]; then echo "[INFO]  Purple Drivers: ${purple_drivers}"; fi
 
 purple_gene_copynumbers=$(locate_purple_gene_copynumbers ${run_dir})

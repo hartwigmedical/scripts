@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Set
 
 import allel
 import pandas as pd
@@ -12,7 +12,7 @@ import pandas as pd
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37Call, Grch37CallData
 from config.panel import Panel
-from pgx_analysis import create_pgx_analysis
+from pgx_analysis import PgxAnalyser
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
@@ -37,15 +37,15 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-    ids_found_in_patient = get_ids_found_in_patient(filtered_vcf, panel)
+    call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    results, all_ids_in_panel = create_pgx_analysis(ids_found_in_patient, panel)
+    gene_to_haplotype_calls, all_ids_in_panel = PgxAnalyser.create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
     print_calls_to_file(all_ids_in_panel, out + "_calls.txt")
-    print_haplotypes_to_file(results, out + "_genotype.txt", panel, panel_path, version)
+    print_haplotypes_to_file(gene_to_haplotype_calls, out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -63,12 +63,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def get_ids_found_in_patient(filtered_vcf: str, panel: Panel) -> Grch37CallData:
+def get_call_data(filtered_vcf: str, panel: Panel) -> Grch37CallData:
     variants = get_variants_from_filtered_vcf(filtered_vcf)
-    return get_ids_found_in_patient_from_variants(variants, panel)
+    return get_call_data_from_variants(variants, panel)
 
 
-def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
+def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
     match_on_rsid = 0
     match_on_location = 0
     filtered_calls = []
@@ -85,6 +85,7 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
         else:
             rs_id_filter = [str(rs_number)]
 
+        # TODO: make this correct for MNV's as well, if in the right spot
         rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
         if rs_id_filter_to_panel_match_exists or panel.contains_rs_id_with_position(f"{chr}:{pos}"):
             if rs_id_filter_to_panel_match_exists:
@@ -124,10 +125,9 @@ def get_ids_found_in_patient_from_variants(variants: Dict[str, Any], panel: Pane
 
 def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:
     try:
-        variants = allel.read_vcf(filtered_vcf, fields=['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM',
-                                                        'variants/FILTER', 'variants/ID', 'variants/POS',
-                                                        'variants/QUAL', 'variants/REF', 'variants/ANN'],
-                                  transformers=allel.ANNTransformer())
+        field_names = ['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM', 'variants/FILTER', 'variants/ID', 
+                       'variants/POS', 'variants/QUAL', 'variants/REF', 'variants/ANN']
+        variants = allel.read_vcf(filtered_vcf, fields=field_names, transformers=allel.ANNTransformer())
     except IOError:
         sys.exit("[ERROR] File " + filtered_vcf + " not found or cannot be opened.")
     return variants
@@ -169,7 +169,7 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
     return bed_file
 
 
-def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
+def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
     print("[INFO] Recreating bed-file...")
     header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
@@ -179,11 +179,10 @@ def create_bed_file(genes_in_panel: List[str], panel_path: str, sourcedir: str, 
     transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
     for line in transcripts:
         split_line = line.rstrip().split("\t")
-        if split_line[4] in genes_in_panel:
-            if split_line[4] not in covered:
-                bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
-                covered.append(split_line[4])
-    if set(covered) != set(genes_in_panel):
+        if split_line[4] in genes_in_panel and split_line[4] not in covered:
+            bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
+            covered.append(split_line[4])
+    if set(covered) != genes_in_panel:
         raise ValueError("[ERROR] Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
                          + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))
 
@@ -199,7 +198,7 @@ def print_calls_to_file(all_ids_in_panel: pd.DataFrame, calls_file: str) -> None
     all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(results: Dict[str, List[str]], genotype_file: str, panel: Panel,
+def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[str]], genotype_file: str, panel: Panel,
                              panel_path: str, version: str) -> None:
     # TODO: make this more clean.
     gene_to_haplotype_to_severity = {}
@@ -215,15 +214,19 @@ def print_haplotypes_to_file(results: Dict[str, List[str]], genotype_file: str, 
 
     gene_to_drug_info = {}
     for gene_info in panel.get_gene_infos():
+        sorted_drugs = sorted(
+            [drug for drug in gene_info.drugs],
+            key=lambda info: (info.name, info.url_prescription_info)
+        )
         gene_to_drug_info[gene_info.gene] = [
-            ";".join([drug.name for drug in gene_info.drugs]),
-            ";".join([drug.url_prescription_info for drug in gene_info.drugs])
+            ";".join([drug.name for drug in sorted_drugs]),
+            ";".join([drug.url_prescription_info for drug in sorted_drugs])
         ]
 
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
-        for gene in results:
-            for haplotype_call in results[gene]:
+        for gene in sorted(list(gene_to_haplotype_calls.keys())):
+            for haplotype_call in sorted(list(gene_to_haplotype_calls[gene])):
                 f.write(
                     gene + "\t" +
                     haplotype_call + "\t" +
