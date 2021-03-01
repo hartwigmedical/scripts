@@ -585,6 +585,47 @@ locate_purple_pilot_circos_plot() {
     echo ${circos_plot}
 }
 
+
+############################################ PURPLE Germline ##########################################
+
+locate_purple_germline() {
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple
+
+    local germline_vcf=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
+    fi
+
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${germline_vcf}
+}
+
+locate_purple_germline_drivers() {
+
+    local run_dir=$1
+    local purple_dir=${run_dir}/purple
+
+    local purple_germline_driver_tsv=""
+
+    if [[ -d "${purple_dir}" ]]; then
+        purple_germline_driver_tsv=$(find -L ${purple_dir} -type f -name "*.driver.catalog.germline.tsv")
+    fi
+
+    if [[ -z "${purple_germline_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple germline driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${purple_germline_driver_tsv}
+}
+
+
 ##################################### Structural Variants #####################################
 
 locate_purple_structural_variants() {
@@ -747,6 +788,7 @@ locate_germline_variants() {
 
     echo ${germline_vcf}
 }
+
 
 ########################################### Bachelor ##########################################
 
