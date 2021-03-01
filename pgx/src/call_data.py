@@ -1,8 +1,9 @@
-from typing import NamedTuple, Tuple
+from typing import NamedTuple, Tuple, Optional
 
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
+from dataframe_format import GRCH37_DATAFRAME_COLUMNS
 
 
 class Grch37Call(NamedTuple):
@@ -15,36 +16,34 @@ class Grch37Call(NamedTuple):
 
 
 class Grch37CallData(object):
-    DATAFRAME_COLUMNS = ['position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'rsid', 'variant_annotation', 'gene', 'filter']
-
     def __init__(self, calls: Tuple[Grch37Call, ...]) -> None:
-        self.__calls = calls
+        self.calls = calls
 
     def __eq__(self, other: object) -> bool:
         return (
                 isinstance(other, Grch37CallData)
-                and self.__calls == other.__calls
+                and self.calls == other.calls
         )
 
     def __repr__(self) -> str:
         return (
             f"Grch37CallData("
-            f"calls={self.__calls!r}, "
+            f"calls={self.calls!r}, "
             f")"
         )
 
-    def get_data_frame(self) -> pd.DataFrame:
-        data_frame = pd.DataFrame(columns=self.DATAFRAME_COLUMNS)
-        for call in self.__calls:
-            new_id = {
-                'position_GRCh37': call.start_coordinate.get_position_string(),
-                'ref_GRCh37': call.alleles[0],
-                'alt_GRCh37': call.alleles[1],
-                'rsid': ";".join(list(call.rs_ids)),
-                'variant_annotation': call.variant_annotation,
-                'gene': call.gene,
-                'filter': call.filter,
-            }
-            data_frame = data_frame.append(new_id, ignore_index=True)
 
-        return data_frame
+class AnnotatedAllele(NamedTuple):
+    allele: str
+    is_variant_vs_grch37: Optional[bool]  # is None if unknown
+    is_variant_vs_grch38: Optional[bool]  # is None if unknown
+
+
+class FullCall(NamedTuple):
+    start_coordinate_grch37: GeneCoordinate
+    start_coordinate_grch38: Optional[GeneCoordinate]  # is None if unknown
+    annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]  # The order should be the same as it was in vcf file
+    gene: str
+    rs_ids: Tuple[str, ...]
+    variant_annotation: str
+    filter: str

@@ -48,7 +48,7 @@ cram_files=(
 )
 
 echo ""
-echo "===== Overview"
+echo "[INFO] ===== Overview"
 echo "[INFO] LOGS dir path: ${logs_dir_path}"
 echo "[INFO] BASE run path: ${base_run_path}"
 echo "[INFO] TEST run path: ${test_run_path}"
@@ -58,7 +58,7 @@ echo "[INFO] BASE sample: ${base_tum_sample_name}"
 echo "[INFO] TEST sample: ${test_tum_sample_name}"
 
 echo ""
-echo "===== CRAM existance CHECK"
+echo "[INFO] ===== CRAM existance CHECK"
 for cram_file in ${cram_files[*]}; do
     if [[ -f "${cram_file}" ]]; then
         echo "[INFO] OK File found (${cram_file})"
@@ -69,7 +69,7 @@ for cram_file in ${cram_files[*]}; do
 done
 
 echo ""
-echo "===== CRAM Headers CHECK"
+echo "[INFO] ===== CRAM Headers CHECK"
 base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
 test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
 samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
@@ -81,7 +81,7 @@ else
 fi
 
 echo ""
-echo "===== Directory CHECKS"
+echo "[INFO] ===== Directory CHECKS"
 for tool_name in ${tools[*]}; do 
     base_tool_path="${base_run_path}/${tool_name}"
     test_tool_path="${test_run_path}/${tool_name}"
@@ -114,7 +114,7 @@ for tool_name in ${tools[*]}; do
 done
 
 echo ""
-echo "===== File CHECKS"
+echo "[INFO] ===== File CHECKS"
 echo "[INFO] Locating all relevant files"
 test_grm_vcf=$(locate_germline_variants "${test_run_path}" "${test_ref_sample_name}")
 base_grm_vcf=$(locate_germline_variants "${base_run_path}" "${base_ref_sample_name}")
@@ -200,50 +200,37 @@ for tool_name in "${!tool_names[@]}"; do
     test_vsn=${tool_versions["${tool_name}_TEST"]}
     if [[ "${base_vsn}" == "${test_vsn}" ]]; then
         echo "[INFO]   Identical version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+    elif [[ "${base_vsn}" == "" ]]; then
+        echo "[WARN]   NEW tool ${tool_name} v${test_vsn}"
     else
         echo "[WARN]   DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
     fi
 done
 
 echo ""
-echo "===== File content CHECKS"
-
-echo "[INFO] PIPELINE VERSION"
-echo "  BASE: ${base_pip_vsn}"
-echo "  TEST: ${test_pip_vsn}"
-
-echo "[INFO] TOOL VERSIONS"
-echo "  BASE: ${base_tool_vsn}"
-echo "  TEST: ${test_tool_vsn}"
+echo "[INFO] ===== Variant count CHECKS"
 
 echo "[INFO] GERMLINE file checks"
-echo "  BASE VAR TOTAL COUNT: ${base_grm_var_count}"
-echo "  TEST VAR TOTAL COUNT: ${test_grm_var_count}"
-echo "  BASE VAR PASS COUNT: ${base_grm_pass_var_count}"
-echo "  TEST VAR PASS COUNT: ${test_grm_pass_var_count}"
+echo "[INFO]   Germline total variant count ${base_grm_var_count} (base) vs ${test_grm_var_count} (test)"
+echo "[INFO]   Germline PASS variant count ${base_grm_pass_var_count} (base) vs ${test_grm_pass_var_count} (test)"
 
 echo "[INFO] PURPLE file checks"
-echo "  BASE VAR TOTAL COUNT: ${base_som_var_count}"
-echo "  TEST VAR TOTAL COUNT: ${test_som_var_count}"
-echo "  BASE VAR PASS COUNT: ${base_som_pass_var_count}"
-echo "  TEST VAR PASS COUNT: ${test_som_pass_var_count}"
-echo "  BASE SV VAR TOTAL COUNT: ${base_sv_var_count}"
-echo "  TEST SV VAR TOTAL COUNT: ${test_sv_var_count}"
-echo "  BASE SV VAR PASS COUNT: ${base_sv_pass_var_count}"
-echo "  TEST SV VAR PASS COUNT: ${test_sv_pass_var_count}"
-echo "  BASE SV VAR NON-PON COUNT: ${base_sv_non_pon_var_count}"
-echo "  TEST SV VAR NON-PON COUNT: ${test_sv_non_pon_var_count}"
+echo "[INFO]   PURPLE total variant count ${base_som_var_count} (base) vs ${test_som_var_count} (test)"
+echo "[INFO]   PURPLE PASS variant count ${base_som_pass_var_count} (base) vs ${test_som_pass_var_count} (test)"
+echo "[INFO]   PURPLE SV total variant count ${base_sv_var_count} (base) vs ${test_sv_var_count} (test)"
+echo "[INFO]   PURPLE SV PASS variant count ${base_sv_pass_var_count} (base) vs ${test_sv_pass_var_count} (test)"
+echo "[INFO]   PURPLE SV NON-PON variant count ${base_sv_non_pon_var_count} (base) vs ${test_sv_non_pon_var_count} (test)"
 
 echo "[INFO] CHORD file content"
-awk '{print "  BASE: "$0}' "${base_chord}"
-awk '{print "  TEST: "$0}' "${test_chord}"
+awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
+awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
 
 echo "[INFO] LINX file content"
-awk '{print "  BASE: "$0}' "${base_vir_ins}"
-awk '{print "  TEST: "$0}' "${test_vir_ins}"
+awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
+awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
 
 echo "[INFO] BACHELOR file content"
-cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "  BASE: "$0}'
-cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "  TEST: "$0}'
+cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
+cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
 
 echo ""

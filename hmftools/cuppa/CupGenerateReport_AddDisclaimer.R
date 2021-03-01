@@ -48,7 +48,7 @@ cupPlotData = cupSampleResults %>% select(Category,ResultType,DataType,Value,Ref
 cupPlotData = cupPlotData %>% mutate(RefValueLabel=sprintf('%.0f%%',RefValue*100),
                                      DataType=stri_replace_all_fixed(DataType,'_',' '))
 
-cupClassData = cupPlotData %>% filter(Category=='CLASSIFIER') %>% mutate(DataLabel=DataType)
+cupClassData = cupPlotData %>% filter(Category=='CLASSIFIER'|Category=='COMBINED') %>% mutate(DataLabel=DataType)
 
 cupGender = cupPlotData  %>% filter(DataType=='GENDER') %>% 
   mutate(DataLabel=sprintf('SEX (%s)',Value),
