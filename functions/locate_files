@@ -221,7 +221,7 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/dbs/ckb/210219_flex_dump
+    echo ${base_path}/dbs/ckb/210226_flex_dump
 }
 
 locate_ref_genome_37_fasta_file() {
