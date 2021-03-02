@@ -724,10 +724,16 @@ sub addExcelSamplesToSamples{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
             ## TODO remove once shallowseq column is built into lims FOR-001
-            ## Harcode Somatic_T samples to not run in shallow mode
-            ## Harcode Somatic_T samples to not use existing ref data
+            ## Hardcode Somatic_T samples to not run in shallow mode
+            ## Hardcode Somatic_T samples to not use existing ref data
             $row_info->{ 'shallowseq' } = 0;
             $row_info->{ 'other_ref' } = 0;
+
+            ## TODO remove once project HMFreg1197 has finished
+            ## HMFreg1197 needs shallowseq while not supported
+            if ( $submission eq 'HMFreg1197' ){
+                $row_info->{ 'shallowseq' } = 1;
+            }
             
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
