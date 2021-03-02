@@ -34,7 +34,7 @@ sample_snv_counts=${sig_output_dir}${sampleId}.sig.snv_counts.csv
 sample_sig_contribs=${sig_output_dir}${sampleId}.sig.allocation.tsv
 sample_snv_pos_freq_counts=${sig_output_dir}${sampleId}.sig.pos_freq_counts.csv
 
-cuppa_jar=/data/common/tools/cuppa_pilot/cuppa.jar
+cuppa_jar=/data/common/tools/cuppa_v1.3/cuppa.jar
 
 cup_ref_dir=/data/experiments/cup/ref
 
@@ -42,6 +42,7 @@ cup_ref_dir=/data/experiments/cup/ref
 
 java -jar ${cuppa_jar} \
     -sample_data "${sampleId};Unknown" \
+    -categories DNA \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -ref_data_dir ${cup_ref_dir} \
     -sample_snv_counts_file ${sample_snv_counts} \
