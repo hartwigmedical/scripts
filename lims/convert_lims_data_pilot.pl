@@ -26,10 +26,15 @@ use constant FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR => qw(
     tumor_perc
 );
 
-## These fields will be set to json boolean for json output
+## These fields will be actively set to boolean for json output
 use constant BOOLEAN_FIELDS => qw(
     shallowseq report_germline report_viral report_pgx
     add_to_database add_to_datarequest
+);
+
+## These fields will be actively set to integer for json output
+use constant INTEGER_FIELDS => qw(
+    yield q30
 );
 
 ## Setup help msg
@@ -210,7 +215,7 @@ sub parseTsvCsv{
             $next_value = NACHAR if not defined $next_value;
             $raw_object{ $field } = $next_value;
         }
-        
+
         my $obj = selectAndRenameFields( \%raw_object, $fields );
         my $key = $obj->{ $store_field_name } || NACHAR;
         my $source = $obj->{ 'sample_source' } || NACHAR;
@@ -225,7 +230,7 @@ sub parseTsvCsv{
         if ( $should_be_unique and $reason_not_to_store ){
             warn "[WARN] SKIPPING sample (name: $name) for reason: $reason_not_to_store\n" and next;
         }
-        
+
         ## Checks OK: fix some fields and store object
         fixDateFields( $obj );
         fixIntegerFields( $obj );
@@ -791,9 +796,10 @@ sub addExcelSamplesToSamples{
 
 sub fixIntegerFields{
     my ($obj) = @_;
-    foreach my $key ( keys %$obj ){
-        if ( $obj->{ $key } =~ /^\d+$/ ){
-            $obj->{ $key } = $obj->{ $key } + 0;
+    foreach my $key ( INTEGER_FIELDS ){
+        ## make sure all integer values are stored as such for json export
+        if ( exists $obj->{$key} and $obj->{$key} =~ /^\d+$/ ){
+            $obj->{$key} = $obj->{$key} + 0;
         }
     }
 }
