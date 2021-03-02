@@ -81,30 +81,23 @@ echo ""
 echo "[INFO] PREPARED SOMATIC DATA CHECK"
 if [[ $(cat ${log_job}  | grep "=1" | grep "somatics") != "" ]]; then
     cat ${log_job} | grep ". Found" | grep "samples" | grep "somatics"
-    if [[ $(cat ${log_job}  | grep "=1" | grep "germline") != "" ]]; then
-        entries_somatic=$( expr $( cat ${log_job} | grep ".somatics.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
-        calc_somatic=$( expr ${entries_somatic} / 31 )
-        log_somatic_name=$( ls ${request_logs_path} | grep 'somatics.log' )
-        log_somatic=$"${request_logs_path}${log_somatic_name}"
-        lines_somatic_tar_log=$(expr  $( cat ${log_somatic} | wc -l) - 1)
-        calc_somatic_tar_log=$(expr  ${lines_somatic_tar_log} / 31)
-        echo "[INFO] ${number_samples_metadata} number of samples requested"
-        echo "[INFO] 31 entries per sample."
-    else
-        entries_somatic=$( expr $( cat ${log_job} | grep ".somatics.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
-        calc_somatic=$( expr ${entries_somatic} / 30 )
-        log_somatic_name=$( ls ${request_logs_path} | grep 'somatics.log' )
-        log_somatic=$"${request_logs_path}${log_somatic_name}"
-        lines_somatic_tar_log=$(expr  $( cat ${log_somatic} | wc -l) - 1)
-        calc_somatic_tar_log=$(expr  ${lines_somatic_tar_log} / 30 )
-        echo "[INFO] ${number_samples_metadata} number of samples requested"
-        echo "[INFO] 30 entries per sample."
-    fi
+    entries_somatic=$( expr $( cat ${log_job} | grep ".somatics.tar" | grep "entries"| sed -nr 's/.*( |^)([0-9]+) entries.*/\2/p' ) - 1 )
+    calc_somatic=$( expr ${entries_somatic} / 30 )
+    log_somatic_name=$( ls ${request_logs_path} | grep 'somatics.log' )
+    log_somatic=$"${request_logs_path}${log_somatic_name}"
+    lines_somatic_tar_log=$(expr  $( cat ${log_somatic} | wc -l) - 1)
+    calc_somatic_tar_log=$(expr  ${lines_somatic_tar_log} / 30 )
+    echo "[INFO] ${number_samples_metadata} number of samples requested"
+    echo "[INFO] 30 entries per sample."
     #check numbers.
     if [[ ${number_samples_metadata} != ${calc_somatic} || ${number_samples_metadata} != ${calc_somatic_tar_log} ]]; then
         echo "[ERROR] The number of samples requested (${number_samples_metadata}) does not match the number of somatic entries created during the datarequest job (${calc_somatic} (${entries_somatic} entries log) / ${calc_somatic_tar_log} (${lines_somatic_tar_log} entries tar log)). Check the log file(s) under: ${request_logs_path}."
     else
         echo "[INFO] The number of samples requested (${number_samples_metadata}) matches the number of somatic entries created during the datarequest job."
+    fi
+    if [[ $(cat ${log_somatic} | grep germline) != "" ]]; then
+        echo "[ERROR] In the somatic data there is a file  included with germline in the name, please check below:"
+        cat ${log_somatic} | grep germline
     fi
     du -sh "${request_tar_files_path}/${request_name}.somatics.tar"
 else
