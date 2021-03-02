@@ -29,25 +29,26 @@ class StringCollector(object):
 
 
 class BaseRestClient(object):
-    def __init__(self, server='http://rest.ensembl.org', reqs_per_sec=15):
+    def __init__(self, server, reqs_per_sec, max_wait_time=30):
         self.server = server
         self.reqs_per_sec = reqs_per_sec
+        self.max_wait_time = max_wait_time
         self._req_count = 0
         self._last_req = 0
         self._wait_lock = Lock()
         self._wait_time_owed = 0
 
-    def perform_rest_action(self, endpoint, hdrs=None, params=None):
+    def perform_rest_action(self, endpoint, headers=None, params=None):
         self._wait_lock.acquire()
         self._do_rate_limiting()
 
         self._wait_lock.release()
 
-        if hdrs is None:
-            hdrs = {}
+        if headers is None:
+            headers = {}
 
-        if 'Content-Type' not in hdrs:
-            hdrs['Content-Type'] = 'application/json'
+        if 'Content-Type' not in headers:
+            headers['Content-Type'] = 'application/json'
 
         if params:
             request_url = self.server + endpoint + '?' + urlencode(params)
@@ -57,7 +58,7 @@ class BaseRestClient(object):
         data = None
 
         try:
-            request = Request(request_url, headers=hdrs)
+            request = Request(request_url, headers=headers)
             logging.debug("Send request to url: {request_url}".format(request_url=request_url))
             response = urlopen(request)
             content = response.read()
@@ -70,12 +71,13 @@ class BaseRestClient(object):
                 logging.error("Recoverable error for request: " + request_url + "\nerror: " + repr(e))
                 if 'Retry-After' in e.headers:
                     retry = e.headers['Retry-After']
+                    logging.info("Retry after: {retry}".format(retry=retry))
                     self._wait_time_owed += float(retry) + 1
-                    return self.perform_rest_action(endpoint, hdrs, params)
+                    return self.perform_rest_action(endpoint, headers, params)
             elif e.code == 503:
                 logging.error("Maybe recoverable error for request: " + request_url + "\nerror: " + repr(e))
                 self._wait_time_owed += 5
-                return self.perform_rest_action(endpoint, hdrs, params)
+                return self.perform_rest_action(endpoint, headers, params)
             else:
                 logging.error("Fatal error for request: " + request_url + "\nerror: " + repr(e))
                 raise ValueError(
@@ -97,15 +99,41 @@ class BaseRestClient(object):
 
         # do waiting
         while self._wait_time_owed > 0:
-            sleep_time = self._wait_time_owed
-            logging.debug("Sleep {sleep_time} seconds".format(sleep_time=sleep_time))
-            time.sleep(sleep_time)
-            self._wait_time_owed -= sleep_time
+            # enforce maximum wait time
+            intended_wait_time = self._wait_time_owed
+            actual_sleep_time = min(intended_wait_time, self.max_wait_time)
+            logging.debug(
+                "Sleep {actual_sleep_time} seconds, reduce owed wait by {intended_wait_time} seconds".format(
+                    actual_sleep_time=actual_sleep_time, intended_wait_time=intended_wait_time
+                )
+            )
+            time.sleep(actual_sleep_time)
+            self._wait_time_owed -= intended_wait_time
 
 
 class EnsemblRestClient(object):
     def __init__(self, reqs_per_sec=15):
         self._rest_client = BaseRestClient('http://rest.ensembl.org', reqs_per_sec)
+
+    def get_coordinate_to_translated_position_and_sequences(
+            self, species, coordinates, source_coordinate_system, target_coordinate_system, 
+            warning_collector, max_workers=None
+    ):
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            coordinate_to_future = {
+                coordinate: executor.submit(
+                    self.get_translated_position_and_sequences, species, coordinate,
+                    source_coordinate_system, target_coordinate_system, warning_collector
+                )
+                for coordinate in coordinates
+            }
+            coordinate_to_result = {}
+            for coordinate, future in coordinate_to_future.items():
+                try:
+                    coordinate_to_result[coordinate] = future.result()
+                except Exception as e:
+                    warning_collector.add(e)
+            return coordinate_to_result
 
     def get_symbol_to_gene_overview(self, species, symbols, warning_collector, max_workers=None):
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
@@ -140,6 +168,22 @@ class EnsemblRestClient(object):
             return None
         else:
             return self._request_variants(species, overview["id"])
+
+    def get_translated_position_and_sequences(
+            self, species, coordinate, source_coordinate_system, target_coordinate_system, warning_collector):
+        logging.info("Start with getting translation for coordinate {coordinate}".format(coordinate=coordinate))
+        sequence_pad_size = 5
+
+        chrom, position = coordinate
+        translated_position = self._request_translated_position(
+            species, chrom, position, source_coordinate_system, target_coordinate_system, warning_collector
+        )
+        target_sequence = self._request_sequence(
+            species, chrom, translated_position - sequence_pad_size, translated_position + sequence_pad_size,
+            target_coordinate_system)
+        source_sequence = self._request_sequence(
+            species, chrom, position - sequence_pad_size, position + sequence_pad_size, source_coordinate_system)
+        return translated_position, source_sequence, target_sequence
 
     def _select_unique_gene_overview(self, gene_overviews, species, symbol, warning_collector):
         if not gene_overviews:
@@ -186,6 +230,108 @@ class EnsemblRestClient(object):
             ).format(species=species, symbol=symbol, gene_overviews_string=gene_overviews_string)
             warning_collector.add(choice_warning)
             return None
+
+    def _request_translated_position(self, species, chrom, pos, source_coordinate_system, target_coordinate_system, warning_collector):
+        try:
+            target_start, target_end = self._request_translated_range(
+                species, chrom, pos, pos, source_coordinate_system, target_coordinate_system, warning_collector
+            )
+
+            assert target_start == target_end, "Translated start and end are different"
+            return target_start
+        except AssertionError as e:
+            warning_collector.add(str(e))
+            try:
+                offset = 10
+                adjusted_source_start = pos - offset
+                adjusted_source_end = pos + offset
+                adjusted_target_start, adjusted_target_end = self._request_translated_range(
+                    species, chrom, adjusted_source_start, adjusted_source_end,
+                    source_coordinate_system, target_coordinate_system, warning_collector
+                )
+                assert adjusted_target_start + offset == adjusted_target_end - offset, \
+                    "Estimated translated start and end are different"
+                return adjusted_target_start + offset
+            except AssertionError as e:
+                warning_collector.add(str(e))
+                offset = 5
+                adjusted_source_start = pos - offset
+                adjusted_source_end = pos + offset
+                adjusted_target_start, adjusted_target_end = self._request_translated_range(
+                    species, chrom, adjusted_source_start, adjusted_source_end,
+                    source_coordinate_system, target_coordinate_system, warning_collector
+                )
+                assert adjusted_target_start + offset == adjusted_target_end - offset, \
+                    "Second estimated translated start and end are different"
+                return adjusted_target_start + offset
+
+    def _request_translated_range(self, species, chrom, start, end, source_coordinate_system, target_coordinate_system,
+                                  warning_collector):
+        answer = self._rest_client.perform_rest_action(
+            endpoint="/map/{0}/{1}/{2}:{3}..{4}:1/{5}".format(
+                species, source_coordinate_system, chrom, start, end, target_coordinate_system),
+            headers={"Content-Type": "application/json"}
+        )
+        mappings = answer["mappings"]
+        assert mappings, "No mappings available: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        assert len(mappings) == 1, "More than one mapping: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        source_answer = mappings[0]["original"]
+        target_answer = mappings[0]["mapped"]
+        assert source_answer["assembly"] == source_coordinate_system, "Incorrect source coord system: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        assert source_answer["seq_region_name"] == chrom, "Incorrect source chrom: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        assert source_answer["strand"] == 1, "Incorrect source strand: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        assert target_answer["assembly"] == target_coordinate_system, "Incorrect target coord system: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+        assert target_answer["seq_region_name"] == chrom, "Incorrect target chrom: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer)
+
+        if target_answer["strand"] != 1:
+            warning_collector.add("Incorrect target strand: {chrom}:{start}-{end}\nanswer={answer}".format(
+            chrom=chrom, start=start, end=end, answer=answer))
+
+        if source_answer["start"] == start and source_answer["end"] == end:
+            return target_answer["start"], target_answer["end"]
+        else:
+            estimated_real_target_start = target_answer["start"] - (source_answer["start"] - start)
+            estimated_real_target_end = target_answer["end"] + (end - source_answer["end"])
+            warning = "\n".join([
+                "Could not translate intended range precisely:",
+                "Intended source range: {chrom}:{start}-{end}".format(chrom=chrom, start=start, end=end),
+                "Realized source range: {source_seq_region_name}:{source_start}-{source_end}".format(
+                    source_seq_region_name=source_answer["seq_region_name"],
+                    source_start=source_answer["start"],
+                    source_end=source_answer["end"],
+                ),
+                "Realized target range: {target_seq_region_name}:{target_start}-{target_end}".format(
+                    target_seq_region_name=target_answer["seq_region_name"],
+                    target_start=target_answer["start"],
+                    target_end=target_answer["end"],
+                ),
+                "Estimated real target range: {target_seq_region_name}:{target_start}-{target_end}".format(
+                    target_seq_region_name=target_answer["seq_region_name"],
+                    target_start=estimated_real_target_start,
+                    target_end=estimated_real_target_end,
+                ),
+                "Estimation potentially correct: {correct}".format(
+                    correct=(estimated_real_target_end - estimated_real_target_start == end - start))
+            ])
+
+            warning_collector.add(warning)
+            return estimated_real_target_start, estimated_real_target_end
+
+    def _request_sequence(self, species, chrom, start, end, coordinate_system):
+        answer = self._rest_client.perform_rest_action(
+            endpoint="/sequence/region/{0}/{1}:{2}..{3}:1".format(
+                species, chrom, start, end),
+            headers={"Content-Type": "application/json"},
+            params={"coord_system_version": coordinate_system}
+        )
+        return answer["seq"]
 
     def _request_ensembl_ids(self, species, symbol):
         answers = self._rest_client.perform_rest_action(
@@ -258,30 +404,58 @@ def print_variants(species, symbols):
         print(warning)
 
 
-def main():
+def determine_gene_ids_and_canonical_names(input_file):
     species = "human"
-
-    if len(sys.argv) == 2:
-        input_file = sys.argv[1]
-    else:
-        raise SyntaxError("Requires one argument: input_file")
-
     with open(input_file) as f:
         symbols = f.read().splitlines()
-
     logging.debug((", ".join([symbol for symbol in symbols])).encode("ascii"))
-    # symbols = ['ABCB1']
-    # symbols = ['BRAF']
-    # symbols = ['ADGRB3']
-    # symbols = ['BAI3']
-    # symbols = ['AKT3']
-    # symbols = ['ALB']
-    # symbols = ['BABAM1']
-    # symbols = ['H3F3B']
-    # symbols = ['MLL2']
-    #
     print_gene_id_and_name(species, symbols)
 
 
+def get_coordinate_to_translated_position_and_sequences(
+        species, coordinates, source_coordinate_system, target_coordinate_system):
+    client = EnsemblRestClient(reqs_per_sec=5)
+    warning_collector = StringCollector()
+    range_to_translated_region = client.get_coordinate_to_translated_position_and_sequences(
+        species, coordinates, source_coordinate_system, target_coordinate_system, warning_collector
+    )
+    return range_to_translated_region, warning_collector
+
+
+def translate_coordinates(input_file):
+    species = "human"
+    with open(input_file) as f:
+        lines = f.read().splitlines()
+
+    source_coordinate_system, target_coordinate_system = lines[0].split("\t")
+    coordinates = [tuple(line.split("\t")) for line in lines[1:]]
+    cast_coordinates = [(chrom, int(pos)) for chrom, pos in coordinates]
+
+    coordinate_to_translated_position_and_sequences, warning_collector = get_coordinate_to_translated_position_and_sequences(
+        species, cast_coordinates, source_coordinate_system, target_coordinate_system
+    )
+
+    for coord, translation in sorted(coordinate_to_translated_position_and_sequences.items(), key=lambda pair: pair[0]):
+        chrom, pos = coord
+        translated_pos, source_seq, target_seq = translation
+        print("\t".join([chrom, str(pos), str(translated_pos), source_seq, target_seq]))
+
+    for warning in warning_collector.get_all():
+        print(warning)
+
+def main(request_type, input_file):
+    if request_type == "c":
+        determine_gene_ids_and_canonical_names(input_file)
+    elif request_type == "t":
+        translate_coordinates(input_file)
+    else:
+        raise SyntaxError("Unknown type")
+
+
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) == 3:
+        request_type = sys.argv[1]
+        input_file = sys.argv[2]
+    else:
+        raise SyntaxError("Requires two arguments: type_of_query and input_file")
+    main(request_type, input_file)
