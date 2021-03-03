@@ -92,6 +92,8 @@ class TestPgxAnalysis(unittest.TestCase):
             Haplotype("*3", "Normal Function", frozenset({dpyd_three_variant})),
             Haplotype("*5", "Normal Function", frozenset({dpyd_five_variant})),
             Haplotype("*7", "Normal Function", frozenset({dpyd_seven_variant})),
+            Haplotype("*9", "Normal Function", frozenset({dpyd_two_a_variant, dpyd_three_variant})),
+            Haplotype("*10", "Normal Function", frozenset({dpyd_three_variant, dpyd_five_variant})),
         ]
         possible_rs_id_infos = [
             RsIdInfo("rs3918290", "C", "C", GeneCoordinate("1", 97915614), GeneCoordinate("1", 97450058)),
@@ -100,6 +102,10 @@ class TestPgxAnalysis(unittest.TestCase):
             RsIdInfo("rs72549303", "TG", "TC", GeneCoordinate("1", 97915621), GeneCoordinate("1", 97450065)),
             RsIdInfo("rs2938101", "A", "A", GeneCoordinate("1", 97912838), GeneCoordinate("1", 97453984)),
         ]
+
+        unknown_haplotypes = included_haplotypes.difference({haplotype.name for haplotype in possible_dpyd_haplotypes})
+        if unknown_haplotypes:
+            raise ValueError(f"Not all dpyd haplotype names recognized: unknown={unknown_haplotypes}")
 
         # use a set to cause the order of haplotypes to be random, to make sure this order will not matter.
         included_dpyd_haplotypes = frozenset(
@@ -514,14 +520,92 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
+    def test_complicated_ambiguous_haplotype_with_a_clear_winner(self) -> None:
+        """Ambiguous set of haplotypes, with no haplotype that is simplest"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10", "*7"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97912838), ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97912838", "AGT", "AGT", "1:97453984", "AGT", "AGT", "rs2938101", "301A>AGT", "PASS"),
+                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
+                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'*2B_HET', '*9_HET', "*7_HOM"},
+        }
+        self.assertEqual(results_expected, results)
+
+    def test_ambiguous_homozygous_haplotype_with_a_less_clear_winner(self) -> None:
+        """Ambiguous set of homozygous haplotypes, with winning haplotype that might not be ideal"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "PASS"),
+                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'*10_HET', '*2B_HET', '*9_HET'},
+        }
+        self.assertEqual(results_expected, results)
+
+    def test_ambiguous_heterozygous_haplotype_without_a_clear_winner(self) -> None:
+        """
+        Ambiguous set of heterozygous haplotypes, with no haplotype that is simplest.
+        Could  be {*2A_HET,*10_HET}, {*5_HET,*9_HET} or {*3_HET,*2B_HET}
+        """
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "C", "T", "1:97450058", "C", "T", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
+                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'Unresolved_Haplotype'},
+        }
+        self.assertEqual(results_expected, results)
+
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   More complicated ambiguity?
-        #   HOMHET (probably make impossible, but handle situation properly, so write test for it)
         #   Going deep on "no perfect haplotype" logic (short circuit, just don't give a call if anything goes wrong)
+        #       Unexpected base etc.?
+        #       Only half of haplotype?
+        #       MNV that includes known position? Maybe later
         #   Bunch of errors
-        #   Is there an error for when ref and alt are in wrong order for normal heterozygous call?
+        #   Is there an error for when ref and alt are in wrong order for normal heterozygous call? Should there be?
         #   Call with multiple rs id's
         #   (Maybe do MNV stuff after SAGE Germline stuff)
         #   MNV at ref seq difference
