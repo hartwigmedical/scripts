@@ -1,5 +1,7 @@
 CREATE OR REPLACE VIEW trialsTherapies AS (
 
-select distinct clinicalTrial.updateDate as clinicalTrialUpdateDate, nctId, therapy.updateDate as therapyUpdateDate, therapyName, description  from clinicalTrial
-left join therapyClinicalTrial on clinicalTrial.id=therapyClinicalTrial.clinicalTrialId
-left join therapy on therapyClinicalTrial.therapyId=therapy.id)
+SELECT DISTINCT
+    clinicalTrial.updateDate AS clinicalTrialUpdateDate, nctId, therapy.updateDate AS therapyUpdateDate, therapyName, description
+FROM clinicalTrial
+LEFT JOIN therapyClinicalTrial ON clinicalTrial.id = therapyClinicalTrial.clinicalTrialId
+LEFT JOIN therapy ON therapyClinicalTrial.therapyId = therapy.id)
