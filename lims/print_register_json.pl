@@ -84,8 +84,7 @@ print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet }
 die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
 ## MAIN
-say "[INFO] START of script $SCRIPT";
-say "[INFO] DateTime: $DATETIME";
+say "[INFO] START of script $SCRIPT ($DATETIME)";
 
 if ( defined $opt{ samplesheet } ){
   say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
@@ -291,34 +290,36 @@ sub processSample{
         if ( $needs_shallow ){
             say "[INFO]   ShallowSeq flag set in LIMS";
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
-            my $status_query = "query_api.pl -type runs -filter \"ini=ShallowSeq.ini\" -filter \"name=$match_string\" -json | jq -r '.[-1].status'";
-            my $run_status = `$status_query`;
-            my $dir_exists = `find $SHALLOW_RUNS_DIR -maxdepth 1 -type d -name "*$match_string" | wc -l`;
-            my $jsn_exists = `find $JSON_DONE_DIR -maxdepth 1 -type f -name "*$match_string.json" | wc -l`;
 
-            chomp($run_status);
-            chomp($dir_exists);
-            chomp($jsn_exists);
-            
-            if ( $run_status eq "Waiting" ){
-                warn "[WARN]   RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)\n";
-                return "NoJsonMade_ShallowExtraSeq";
+            my $api_shallow_runs = decode_json(`hmf_api_get 'runs?ini=ShallowSeq.ini5&barcode=$barcode'`);
+            my $run_status = '';
+            if ( scalar @$api_shallow_runs > 0 ) {
+                my $most_recent_api_run = $api_shallow_runs->[-1];
+                my $run_name = $most_recent_api_run->{set}->{name};
+                if ($run_name =~ /$match_string/) {
+                    $run_status = $most_recent_api_run->{status};
+                }
             }
-            elsif ( $dir_exists ){
-                say "[INFO]   ShallowSeq run dir found locally for $match_string: going for full Somatic mode";
-            }
-            elsif ( $jsn_exists ){
-                say "[INFO]   ShallowSeq json found for $match_string: going for full Somatic mode";
-            }
-            else{
-                say "[INFO]   No ShallowSeq run/json found yet for $match_string: going for ShallowSeq mode";
+
+            if ( $run_status eq "" ){
+                say "[INFO]   No ShallowSeq run found in api for $match_string: going for ShallowSeq mode";
                 $yield = 35 * $YIELD_F;
                 $yield_ref = $yield;
                 $entity = 'HMF_SHALLOWSEQ';
                 $set = join( "_", $date, "ShallowSeq", $barcode_ref, $barcode, $name );
                 $ini = $SHA_INI;
                 $priority = $YES_PIPELINE_PRIO;
-           }
+            }
+            elsif ( $run_status eq "Waiting" ){
+                warn "[WARN]   RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)\n";
+                return "NoJsonMade_ShallowExtraSeq";
+            }
+            elsif ( $run_status eq "Finished" ){
+                say "[INFO]   ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode";
+            }
+            else{
+                die "[ERROR]   ShallowSeq with status $run_status found for $match_string: no idea what to do";
+            }
         }
 
         ## add suffix to ref barcode if ref needed from other patientId
@@ -331,21 +332,21 @@ sub processSample{
         }
  
         ## check if barcode already exists in HMF API
-        my $tum_exists = `query_api.pl -type samples -filter "barcode=$barcode" -exact | grep -v Unregistered | grep -cv ^#`;
+        my $tum_exists = `hmf_api_get 'samples?barcode=$barcode' | jq 'select(.[].status != "Unregistered") | length'`;
+        my $ref_exists = `hmf_api_get 'samples?barcode=$barcode_ref' | jq 'select(.[].status != "Unregistered") | length'`;
         chomp($tum_exists);
-        my $ref_exists = `query_api.pl -type samples -filter "barcode=$barcode_ref" -exact | grep -v Unregistered | grep -cv ^#`;
         chomp($ref_exists);
         
         if ( $tum_exists ){
-            push( @warn_msg, "TUM barcode ($barcode) for sample ($name) already exists in HMF API (so use_existing flag was added!)" );
+            say "[INFO]   TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)";
             $use_existing_tum = 1;
         }        
         if ( $ref_exists ){
-            push( @warn_msg, "REF barcode ($barcode_ref) for sample ($name) already exists in HMF API (so use_existing flag was added!)" );
+            say "[INFO]   REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)";
             $use_existing_ref = 1;
         }
         
-        say "[INFO]   SET: $set";
+        say "[INFO]   Set name constructed to $set";
         $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
