@@ -291,7 +291,7 @@ sub processSample{
             say "[INFO]   ShallowSeq flag set in LIMS";
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
 
-            my $api_shallow_runs = decode_json(`hmf_api_get 'runs?ini=ShallowSeq.ini5&barcode=$barcode'`);
+            my $api_shallow_runs = decode_json(`hmf_api_get 'runs?ini=ShallowSeq.ini&barcode=$barcode'`);
             my $run_status = '';
             if ( scalar @$api_shallow_runs > 0 ) {
                 my $most_recent_api_run = $api_shallow_runs->[-1];
