@@ -22,11 +22,12 @@ class GeneInfo(object):
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
         assert_no_overlap_drug_names(drugs, f"GeneInfo json for {gene}")
         self.__assert_info_exists_for_all_rs_ids_in_haplotypes(haplotypes, rs_id_infos)
+        self.__assert_variants_in_haplotypes_compatible_with_rs_id_infos(haplotypes, rs_id_infos)
         self.__assert_rs_ids_with_ref_seq_differences_match_annotations(
             rs_id_infos, rs_id_to_ref_seq_difference_annotation
         )
         self.__assert_rs_id_infos_compatible(rs_id_infos)
-        self.__assert_rs_id_infos_match_chrosome(rs_id_infos, chromosome)
+        self.__assert_rs_id_infos_match_chromosome(rs_id_infos, chromosome)
         self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(rs_id_infos)
 
         self.__gene = gene
@@ -172,7 +173,7 @@ class GeneInfo(object):
                 raise ValueError(error_msg)
 
     @staticmethod
-    def __assert_rs_id_infos_match_chrosome(rs_id_infos: FrozenSet[RsIdInfo], chromosome: str) -> None:
+    def __assert_rs_id_infos_match_chromosome(rs_id_infos: FrozenSet[RsIdInfo], chromosome: str) -> None:
         for info in rs_id_infos:
             if info.start_coordinate_grch37.chromosome != chromosome:
                 error_msg = (
@@ -196,6 +197,21 @@ class GeneInfo(object):
                 error_msg = (
                     f"Panel only supports rs ids where the GRCh37 and GRCh38 positions are on the same chromosome."
                 )
+                raise ValueError(error_msg)
+
+    @staticmethod
+    def __assert_variants_in_haplotypes_compatible_with_rs_id_infos(
+            haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
+        variants = {variant for haplotype in haplotypes for variant in haplotype.variants}
+        for variant in variants:
+            matching_rs_id_infos = [rs_id_info for rs_id_info in rs_id_infos if rs_id_info.rs_id == variant.rs_id]
+            if len(matching_rs_id_infos) != 1:
+                error_msg = (f"Unexpected number of rs id infos match rs id with variant from haplotype:\n"
+                             f"variant={variant}, matches={matching_rs_id_infos}")
+                raise ValueError(error_msg)
+            if variant.variant_allele == matching_rs_id_infos[0].reference_allele_grch38:
+                error_msg = (f"Allele of variant matches reference allele from rs id info:\n"
+                             f"variant={variant}, rs_id_info={matching_rs_id_infos[0]}")
                 raise ValueError(error_msg)
 
 

@@ -710,14 +710,9 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   Make sure that MNV's (mostly) work with variants output, but not with haplotype calling!!! (before SAGE GERMLINE!)
-        #   Make sure ref seq differences can only be single alleles? should I? for now, probably yes.
         #   Bunch of errors
         #   SAGE GERMLINE as input
-        #   (Maybe do "MNV instead of SNV" stuff after SAGE Germline stuff)
-        #   MNV covering ref seq difference. Many possibilities for what should happen...
-        #   MNV covering somewhere else. No haplotype?
-        #   Currently filtering MNV from source file in or out? Which should it be?
+        #   (Maybe improve MNV handling after SAGE Germline stuff)
         self.fail("WIP")
 
 

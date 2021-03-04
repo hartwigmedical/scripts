@@ -66,7 +66,7 @@ class Grch37CallTranslator(object):
                 rs_ids = grch37_call.rs_ids
         elif any(panel.contains_rs_id(rs_id) for rs_id in grch37_call.rs_ids):
             error_msg = (
-                f"[ERROR] Match rs id info from panel on an rs id but not position:\n"
+                f"Match rs id info from panel on an rs id but not position:\n"
                 f"rs ids: {grch37_call.rs_ids}, input file position: {start_coordinate_grch37}"
             )
             raise ValueError(error_msg)

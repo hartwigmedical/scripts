@@ -46,33 +46,23 @@ class Panel(object):
         return results
 
     def has_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> bool:
-        return self.get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)
+        return self.__get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)
 
     def get_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> str:
-        return self.get_gene_info(gene).get_ref_sequence_difference_annotation(rs_id)
-
-    def get_gene_info(self, gene: str) -> GeneInfo:
-        matching_gene_infos = [gene_info for gene_info in self.__gene_infos if gene_info.gene == gene]
-        if len(matching_gene_infos) == 1:
-            return matching_gene_infos[0]
-        else:
-            raise ValueError(f"Not exactly one matching gene info in panel: gene={gene}")
+        return self.__get_gene_info(gene).get_ref_sequence_difference_annotation(rs_id)
 
     def get_gene_infos(self) -> Set[GeneInfo]:
         return set(self.__gene_infos)
 
-    def get_rs_id_infos(self) -> Set[RsIdInfo]:
-        return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
-
     def contains_rs_id_with_grch37_coordinate(self, grch37_coordinate: GeneCoordinate) -> bool:
-        for info in self.get_rs_id_infos():
+        for info in self.__get_rs_id_infos():
             if info.start_coordinate_grch37 == grch37_coordinate:
                 return True
         return False
 
     def contains_matching_rs_id_info(
             self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> bool:
-        for info in self.get_rs_id_infos():
+        for info in self.__get_rs_id_infos():
             if (info.start_coordinate_grch37 == grch37_coordinate
                     and info.reference_allele_grch37 == grch37_reference_allele):
                 return True
@@ -81,7 +71,7 @@ class Panel(object):
     def get_matching_rs_id_info(
             self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> RsIdInfo:
         matching_rs_id_infos = []
-        for info in self.get_rs_id_infos():
+        for info in self.__get_rs_id_infos():
             if (info.start_coordinate_grch37 == grch37_coordinate
                     and info.reference_allele_grch37 == grch37_reference_allele):
                 matching_rs_id_infos.append(info)
@@ -96,14 +86,24 @@ class Panel(object):
     def contains_rs_id(self, rs_id: str) -> bool:
         return rs_id in self.__get_rs_ids()
 
-    def __get_rs_ids(self) -> Set[str]:
-        return {info.rs_id for info in self.get_rs_id_infos()}
-
     def is_empty(self) -> bool:
         return not self.__gene_infos
 
     def get_genes(self) -> Set[str]:
         return {info.gene for info in self.__gene_infos}
+
+    def __get_gene_info(self, gene: str) -> GeneInfo:
+        matching_gene_infos = [gene_info for gene_info in self.__gene_infos if gene_info.gene == gene]
+        if len(matching_gene_infos) == 1:
+            return matching_gene_infos[0]
+        else:
+            raise ValueError(f"Not exactly one matching gene info in panel: gene={gene}")
+
+    def __get_rs_ids(self) -> Set[str]:
+        return {info.rs_id for info in self.__get_rs_id_infos()}
+
+    def __get_rs_id_infos(self) -> Set[RsIdInfo]:
+        return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
 
     @staticmethod
     def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: FrozenSet[GeneInfo]) -> None:

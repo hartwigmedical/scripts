@@ -84,7 +84,7 @@ class FullCall(NamedTuple):
     reference_allele_grch37: str
     start_coordinate_grch38: Optional[GeneCoordinate]  # is None if unknown
     reference_allele_grch38: Optional[str]  # is None if unknown
-    annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]  # The order should be the same as it was in vcf file TODO: fix this after SAGE germline
+    annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]  # The order is (grch37_ref, grch37_alt) when there is one of each
     gene: str
     rs_ids: Tuple[str, ...]
     variant_annotation: str

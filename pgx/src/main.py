@@ -33,7 +33,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
 
     if panel.is_empty():
-        sys.exit("[ERROR] No panel is given, so no analysis can be performed.")
+        raise ValueError("No panel is given, so no analysis can be performed.")
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
@@ -107,7 +107,7 @@ def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch3
                 alleles = (reference_allele, reference_allele)
                 variant_annotation = "REF_CALL"
             else:
-                error_msg = f"[ERROR] Genotype not found: {genotype}"
+                error_msg = f"Genotype not found: {genotype}"
                 raise ValueError(error_msg)
 
             call = Grch37Call(
@@ -117,7 +117,7 @@ def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch3
                 gene,
                 rs_ids,
                 variant_annotation,
-                filter_type
+                filter_type,
             )
             filtered_calls.append(call)
 
@@ -144,7 +144,7 @@ def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:
                        'variants/POS', 'variants/QUAL', 'variants/REF', 'variants/ANN']
         variants = allel.read_vcf(filtered_vcf, fields=field_names, transformers=allel.ANNTransformer())
     except IOError:
-        sys.exit("[ERROR] File " + filtered_vcf + " not found or cannot be opened.")
+        raise FileNotFoundError("File " + filtered_vcf + " not found or cannot be opened.")
     return variants
 
 
@@ -168,7 +168,7 @@ def load_panel(panel_path: str) -> Panel:
             data = json.load(json_file)
             return Panel.from_json(data)
     except IOError:
-        sys.exit(f"[ERROR] Panel file {panel_path} not found or cannot be opened.")
+        raise FileNotFoundError(f"Panel file {panel_path} not found or cannot be opened.")
 
 
 def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str) -> str:
@@ -176,8 +176,8 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
     if recreate_bed:
         create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
     if not os.path.exists(bed_file):
-        sys.exit(
-            "[ERROR] Could not locate bed-file. "
+        raise FileNotFoundError(
+            "Could not locate bed-file. "
             "Could it be that it should be (re)created? "
             "Retry running with --recreate_bed."
         )
@@ -198,7 +198,7 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
             bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
             covered.append(split_line[4])
     if set(covered) != genes_in_panel:
-        raise ValueError("[ERROR] Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
+        raise ValueError("Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
                          + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))
 
     with open(bed_path, 'w') as bed:

@@ -4,12 +4,16 @@ import pandas as pd
 
 from call_data import Grch37CallData, FullCall
 from config.panel import Panel
-from dataframe_format import COMBINED_DATAFRAME_COLUMNS
 from grch37_call_translator import Grch37CallTranslator
 from haplotype_caller import HaplotypeCaller
 
 
 class PgxAnalyser(object):
+    CALLS_DATAFRAME_COLUMNS = (
+        'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
+        'rsid', 'variant_annotation', 'filter'
+    )
+
     @classmethod
     def create_pgx_analysis(cls, call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[str]], pd.DataFrame]:
         full_calls = Grch37CallTranslator.get_full_calls(call_data, panel)
@@ -32,13 +36,13 @@ class PgxAnalyser(object):
             [panel_calls_found_in_patient_df, panel_calls_not_found_in_patient_df], sort=True
         )
         panel_calls_for_patient_df = panel_calls_for_patient_df.sort_values(by='position_GRCh37').reset_index(drop=True)
-        panel_calls_for_patient_df = panel_calls_for_patient_df[list(COMBINED_DATAFRAME_COLUMNS)]
+        panel_calls_for_patient_df = panel_calls_for_patient_df[list(cls.CALLS_DATAFRAME_COLUMNS)]
         return panel_calls_for_patient_df
 
     @classmethod
     def __get_calls_found_in_patient_df(cls, full_calls: Tuple[FullCall, ...]) -> pd.DataFrame:
         # TODO: add ref alleles to data frame?
-        panel_calls_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
+        panel_calls_found_in_patient_df = pd.DataFrame(columns=cls.CALLS_DATAFRAME_COLUMNS)
         for full_call in full_calls:
             grch37_alleles = [
                 annotated.allele for annotated in full_call.annotated_alleles
@@ -81,7 +85,7 @@ class PgxAnalyser(object):
             coordinate for full_call in full_calls for coordinate in full_call.get_relevant_grch37_coordinates()
         }
 
-        calls_not_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
+        calls_not_found_in_patient_df = pd.DataFrame(columns=cls.CALLS_DATAFRAME_COLUMNS)
         for gene_info in panel.get_gene_infos():
             for rs_id_info in gene_info.rs_id_infos:
                 grch37_coordinates_partially_handled = bool(rs_id_info.get_relevant_grch37_coordinates().intersection(
