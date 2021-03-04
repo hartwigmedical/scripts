@@ -32,11 +32,16 @@ class RsIdInfo(NamedTuple):
         if self.rs_id == other.rs_id:
             return self == other
         else:
-            return (self.start_coordinate_grch37 != other.start_coordinate_grch37 and
-                    self.start_coordinate_grch38 != other.start_coordinate_grch38)
+            return (
+                not self.get_relevant_grch37_coordinates().intersection(other.get_relevant_grch37_coordinates())
+                and not self.get_relevant_grch38_coordinates().intersection(other.get_relevant_grch38_coordinates())
+            )
 
     def get_relevant_grch37_coordinates(self) -> Set[GeneCoordinate]:
         return get_covered_coordinates(self.start_coordinate_grch37, self.reference_allele_grch37)
+
+    def get_relevant_grch38_coordinates(self) -> Set[GeneCoordinate]:
+        return get_covered_coordinates(self.start_coordinate_grch38, self.reference_allele_grch38)
 
 
 def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:

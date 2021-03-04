@@ -698,8 +698,8 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
+        #   Change column names of dataframe to make more sense and add ref alleles
         #   Bunch of errors
-        #   Change column names of dataframe to make more sense
         #   SAGE GERMLINE as input
         #   (Maybe improve MNV handling after SAGE Germline stuff)
         self.fail("WIP")
