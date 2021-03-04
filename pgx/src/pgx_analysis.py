@@ -39,14 +39,18 @@ class PgxAnalyser(object):
         panel_calls_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
         for full_call in full_calls:
             grch37_alleles = [
-                annotated.allele for annotated in full_call.annotated_alleles if not annotated.is_variant_vs_grch37
+                annotated.allele for annotated in full_call.annotated_alleles
+                if annotated.is_annotated() and not annotated.is_variant_vs_grch37
             ] + [
-                annotated.allele for annotated in full_call.annotated_alleles if annotated.is_variant_vs_grch37
+                annotated.allele for annotated in full_call.annotated_alleles
+                if not annotated.is_annotated() or annotated.is_variant_vs_grch37
             ]
             grch38_alleles = [
-                annotated.allele for annotated in full_call.annotated_alleles if not annotated.is_variant_vs_grch38
+                annotated.allele for annotated in full_call.annotated_alleles
+                if annotated.is_annotated() and not annotated.is_variant_vs_grch38
             ] + [
-                annotated.allele for annotated in full_call.annotated_alleles if annotated.is_variant_vs_grch38
+                annotated.allele for annotated in full_call.annotated_alleles
+                if not annotated.is_annotated() or annotated.is_variant_vs_grch38
             ]
 
             position_grch38 = (

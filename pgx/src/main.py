@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Dict, Any, Set
+from typing import List, Dict, Any, Set, Tuple
 
 import allel
 import pandas as pd
@@ -72,32 +72,26 @@ def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch3
     match_on_rsid = 0
     match_on_location = 0
     filtered_calls = []
-    for i, rs_number in enumerate(variants['variants/ID']):
+    for i, rs_ids_string in enumerate(variants['variants/ID']):
         chr = str(variants['variants/CHROM'][i])
         pos = int(variants['variants/POS'][i])
+        ref = str(variants['variants/REF'][i])
 
-        if ";" in rs_number:
-            rs_id_filter = []
-            cur_rs = rs_number.split(";")
-            for rs in cur_rs:
-                if rs.startswith("rs"):
-                    rs_id_filter.append(str(rs))
-        else:
-            rs_id_filter = [str(rs_number)]
+        rs_ids = get_rs_ids_from_string(rs_ids_string)
+        relevant_coordinates = get_relevant_coordinates(chr, pos, ref)
 
-        # TODO: make this correct for MNV's as well, if in the right spot
-        rs_id_filter_to_panel_match_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_id_filter)
-        if rs_id_filter_to_panel_match_exists or panel.contains_rs_id_with_position(f"{chr}:{pos}"):
-            if rs_id_filter_to_panel_match_exists:
+        rs_id_match_to_panel_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_ids)
+        coordinate_match_to_panel_exists = any(panel.contains_rs_id_with_coordinate(coord) for coord in relevant_coordinates)
+        if rs_id_match_to_panel_exists or coordinate_match_to_panel_exists:
+            if rs_id_match_to_panel_exists:
                 match_on_rsid += 1
-            else:
+            if coordinate_match_to_panel_exists:
                 match_on_location += 1
             if variants['variants/FILTER_PASS'][i]:
                 filter = "PASS"
             else:
                 filter = "FILTERED"
             alts = [str(allele) for allele in variants['variants/ALT'][i]]
-            ref = str(variants['variants/REF'][i])
             variant_annotation = str(variants['variants/ANN_HGVS_c'][i])
             gene = str(variants['variants/ANN_Gene_Name'][i])
             genotype = variants['calldata/GT'][i][0].tolist()
@@ -114,13 +108,24 @@ def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch3
                 error_msg = f"[ERROR] Genotype not found: {genotype}"
                 raise ValueError(error_msg)
 
-            call = Grch37Call(GeneCoordinate(chr, pos), alleles, gene, tuple(rs_id_filter), variant_annotation, filter)
+            call = Grch37Call(GeneCoordinate(chr, pos), ref, alleles, gene, tuple(rs_ids), variant_annotation, filter)
             filtered_calls.append(call)
 
     print("[INFO] Matches on RS id: " + str(match_on_rsid))
     print("[INFO] Matches on location: " + str(match_on_location))
 
     return Grch37CallData(tuple(filtered_calls))
+
+
+def get_rs_ids_from_string(rs_ids_string: str) -> Tuple[str, ...]:
+    if ";" in rs_ids_string:
+        return tuple(str(rs) for rs in rs_ids_string.split(";") if rs.startswith("rs"))
+    else:
+        return (str(rs_ids_string),)
+
+
+def get_relevant_coordinates(chromosome: str, position: int, ref_allele: str) -> Tuple[GeneCoordinate, ...]:
+    return tuple(GeneCoordinate(chromosome, position + i) for i in range(len(ref_allele)))
 
 
 def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:

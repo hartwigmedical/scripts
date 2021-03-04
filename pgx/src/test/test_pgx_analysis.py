@@ -156,9 +156,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """All haplotypes are  *1_HOM"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("T", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("T", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -181,11 +181,11 @@ class TestPgxAnalysis(unittest.TestCase):
         """All haplotypes are heterozygous. Both variant/ref and variant/variant"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -208,8 +208,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -232,8 +232,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """At reference sequence differences: heterozygous between ref GRCh37 and GRCh38, and no rs_id provided"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", (".",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", (".",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", (".",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", (".",), "6744CA>GA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -259,8 +259,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs939535",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs4020942",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs939535",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs4020942",), "6744CA>GA", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -269,8 +269,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except positions are incorrect"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915618), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915623), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915618), "C", ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915623), "TG", ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -279,8 +279,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38, except chromosomes are incorrect"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("7", 97915617), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
-            Grch37Call(GeneCoordinate("8", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("7", 97915617), "C", ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("8", 97915621), "TG", ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -291,8 +291,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
-            Grch37Call(GeneCoordinate("1", 98205966), ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "C"), "FAKE2", ("rs1212127",), "REF_CALL", "PASS"),
+            Grch37Call(GeneCoordinate("1", 98205966), "TG", ("TG", "TG"), "DPYD", ("rs72549303",), "REF_CALL", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -301,8 +301,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """At reference sequence differences: single allele that is ref GRCh37 or GRCh38, other allele is neither"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "A"), "FAKE2", ("rs1212127",), "1324C>A", "PASS"),  # with ref GRCh37
-            Grch37Call(GeneCoordinate("1", 97915621), ("AC", "TC"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),  # with ref GRCh38
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "A"), "FAKE2", ("rs1212127",), "1324C>A", "PASS"),  # with ref GRCh37
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("AC", "TC"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),  # with ref GRCh38
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -325,8 +325,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """At reference sequence differences: both alleles not ref GRCh37 or GRCh38"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("A", "G"), "FAKE2", ("rs1212127",), "1324C>A;1324C>G", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("A", "G"), "FAKE2", ("rs1212127",), "1324C>A;1324C>G", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -349,9 +349,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Variants that are completely unknown, including with unknown rs id"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 39593405), ("A", "G"), "FAKE2", ("rs1949223",), "384C>T", "PASS"),  # unknown
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 2488242), ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS"),  # unknown
+            Grch37Call(GeneCoordinate("16", 39593405), "A", ("A", "G"), "FAKE2", ("rs1949223",), "384C>T", "PASS"),  # unknown
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 2488242), "AC", ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS"),  # unknown
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -380,8 +380,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """Variants that are of an unknown gene"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("3", 18473423), ("T", "C"), ".", ("rs2492932",), "12T>C", "PASS"),  # unknown
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("3", 18473423), "T", ("T", "C"), ".", ("rs2492932",), "12T>C", "PASS"),  # unknown
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -390,11 +390,11 @@ class TestPgxAnalysis(unittest.TestCase):
         """Known variants (not ref seq differences) with incorrect or unknown rs id"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs27384",), "1005T>C", "PASS"),  # incorrect
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", (".",), "35G>A", "PASS"),  # missing
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs27384",), "1005T>C", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", (".",), "35G>A", "PASS"),  # missing
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -403,11 +403,11 @@ class TestPgxAnalysis(unittest.TestCase):
         """Known variants (not ref seq differences), with one incorrect position"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 6778543), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 6778543), "C", ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -416,11 +416,11 @@ class TestPgxAnalysis(unittest.TestCase):
         """Known variants (not ref seq differences), with one incorrect chromosome"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("3", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs1212127",), "1324C>T", "PASS"),
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("3", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -429,11 +429,11 @@ class TestPgxAnalysis(unittest.TestCase):
         """Multiple rs ids when panel says there should be one"""
         panel = self.__get_wide_example_panel()
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127", "rs394832"), "1324C>T", "PASS"),  # incorrect
-            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290", "rs202093"), "35G>A", "PASS"),  # incorrect
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+            Grch37Call(GeneCoordinate("16", 97915617), "C", ("C", "T"), "FAKE2", ("rs1212127", "rs394832"), "1324C>T", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("5", 97915617), "T", ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290", "rs202093"), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
         ))
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
@@ -442,8 +442,8 @@ class TestPgxAnalysis(unittest.TestCase):
         """More than two haplotypes are present, specifically three"""
         panel = self.__get_narrow_example_panel({"*2A", "*3", "*7"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97912838), ("AGT", "AGT"), "DPYD", ("rs2938101",), "293A>AGT", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97912838), "A", ("AGT", "AGT"), "DPYD", ("rs2938101",), "293A>AGT", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -465,9 +465,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Ambiguous homozygous haplotype, where the simpler possibility should be preferred"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -489,9 +489,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Ambiguous heterozygous haplotype, where the simpler possibility should be preferred"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -513,9 +513,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Ambiguous mix of homozygous and heterozygous haplotype, where the simplest possibility should be preferred"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -537,10 +537,10 @@ class TestPgxAnalysis(unittest.TestCase):
         """Ambiguous set of haplotypes, with no haplotype that is simplest"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10", "*7"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97912838), ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97912838), "A", ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -563,9 +563,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Ambiguous set of homozygous haplotypes, with winning haplotype that might not be ideal"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TG"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TG"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -590,9 +590,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B", "*3", "*9", "*10"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -614,9 +614,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """No haplotype call because of unexpected base at known variant location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "A"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "A"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -638,9 +638,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """No haplotype call because of missing half of haplotype. One half is present twice, other once"""
         panel = self.__get_narrow_example_panel({"*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -663,9 +663,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts before this location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915613), ("CT", "CT"), "DPYD", (".",), "9212GC>CT", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915613), "GC", ("CT", "CT"), "DPYD", (".",), "9212GC>CT", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -689,9 +689,9 @@ class TestPgxAnalysis(unittest.TestCase):
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts at this location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
-            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "C", ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -713,7 +713,8 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   No haplotype when MNV instead of SNV! (before SAGE GERMLINE!)
+        #   Make sure that MNV's (mostly) work with variants output, but not with haplotype calling!!! (before SAGE GERMLINE!)
+        #   Make sure ref seq differences can only be single alleles? should I? for now, probably yes.
         #   Bunch of errors
         #   SAGE GERMLINE as input
         #   (Maybe do "MNV instead of SNV" stuff after SAGE Germline stuff)

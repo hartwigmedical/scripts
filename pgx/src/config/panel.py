@@ -1,6 +1,7 @@
 import itertools
 from typing import List, Set, Tuple, FrozenSet
 
+from base.gene_coordinate import GeneCoordinate
 from base.json_alias import Json
 from config.gene_info import GeneInfo, assert_no_overlap_gene_names
 from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
@@ -63,16 +64,16 @@ class Panel(object):
     def get_rs_id_infos(self) -> Set[RsIdInfo]:
         return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
 
-    def contains_rs_id_with_position(self, position_string: str) -> bool:
+    def contains_rs_id_with_coordinate(self, coordinate: GeneCoordinate) -> bool:
         for info in self.get_rs_id_infos():
-            if info.start_coordinate_grch37.get_position_string() == position_string:
+            if info.start_coordinate_grch37 == coordinate:
                 return True
         return False
 
-    def get_rs_id_info_with_position(self, position_string: str) -> RsIdInfo:
+    def get_rs_id_info_with_coordinate(self, coordinate: GeneCoordinate) -> RsIdInfo:
         matching_rs_id_infos = []
         for info in self.get_rs_id_infos():
-            if info.start_coordinate_grch37.get_position_string() == position_string:
+            if info.start_coordinate_grch37 == coordinate:
                 matching_rs_id_infos.append(info)
 
         if matching_rs_id_infos and len(matching_rs_id_infos) == 1:
