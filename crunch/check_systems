@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 MAX_DF_PERC=95
+NA="NA"
 
 function main {
     if [[ ! "$(hostname)" =~ datastore ]]; then
@@ -9,8 +10,9 @@ function main {
 
     title "SYSTEMS CHECK"
     header "datastore"
-    diskUsage "/data"
     diskUsage "/home"
+    diskUsage "/data"
+    toolVsn "gsutil" ""
     crunches
     echo ""
 }
@@ -21,11 +23,8 @@ function crunches {
         diskUsage "/home"  "ssh ${crunch}"
         diskUsage "/data1" "ssh ${crunch}"
         diskUsage "/data2" "ssh ${crunch}"
-        #gitRepVsn "/data/repos/pipeline" "ssh ${crunch}"
-        #gitRepVsn "/data/repos/pipeline-test" "ssh ${crunch}"
         gitRepVsn "/data/repos/scripts" "ssh ${crunch}"
           toolVsn "gsutil" "ssh ${crunch}"
-        #gridUsage "ssh ${crunch}"
     done
 }
 
@@ -42,17 +41,20 @@ function header {
 function toolVsn {
     local tool_name=$1
     local cmd_prefix=$2
-    local version=$(${cmd_prefix} "${tool_name} --version")
-    local location=$(${cmd_prefix} "which ${tool_name}")
-    echo "TOOL: ${tool_name} is at version ${version} (${location})"
+    local version=${NA}
+    local location=${NA}
+    version=$(${cmd_prefix} "${tool_name}" --version)
+    location=$(${cmd_prefix} which "${tool_name}")
+    echo "TOOL: ${version} (${location})"
 }
 
 function gitRepVsn {
     local repos_dir=$1
     local cmd_prefix=$2
-    local commit=$(${cmd_prefix} "cd ${repos_dir}; git log | head -1")
-    local gittag=$(${cmd_prefix} "cd ${repos_dir}; git describe --tags")
-    local dryrun=$(${cmd_prefix} "cd ${repos_dir}; git pull --dry-run 2>&1 | wc -l")
+    local commit=${NA}
+    local dryrun=${NA}
+    commit=$(${cmd_prefix} "cd ${repos_dir}; git log | head -1")
+    dryrun=$(${cmd_prefix} "cd ${repos_dir}; git pull --dry-run 2>&1 | wc -l")
     if [[ "${dryrun}" -gt 0 ]]; then
         echo "REPO: ${repos_dir} is OUTDATED (${commit})"
     else
@@ -63,12 +65,15 @@ function gitRepVsn {
 function diskUsage {
     local mount=$1
     local cmd_prefix=$2
-    local available=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4)
-    local percentage_string=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5)
-    local percentage=$(echo ${percentage_string} | sed 's/\%//g')
+    local available=${NA}
+    local percentage_string=${NA}
+    local percentage=${NA}
+    available=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 4)
+    percentage_string=$(${cmd_prefix} df -h "${mount}" | tail -1 | tr -s ' ' | cut -d" " -f 5)
+    percentage=${percentage_string/\%/}
     echo "${percentage_string} used with ${available} space left for mount ${mount}"
     if [[ "${percentage}" -gt "${MAX_DF_PERC}" ]]; then
-        warn "Disk usage (${percentage_string}) for mount ${mount} higher than ${MAX_DF_PERC}!"
+        warn "Disk usage (${percentage}%) for mount ${mount} higher than ${MAX_DF_PERC}!"
     fi
 }
 
@@ -80,15 +85,6 @@ function log {
 
 function warn {
     log "WARN" "$1"
-}
-
-function gridUsage {
-    local prefix=$1
-    local job_count=$(${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | wc -l")
-    local err_count=$(${prefix} "qstat -u \"*\" | grep -v ^job-ID | grep -v ^\-\- | \
-      tr -s ' ' | tr \" \" \"\\t\" | awk '\$5 ~ \"E\"' | wc -l" 
-    )
-    echo "[INFO] SGE job count: ${job_count} (${err_count} in error state)"
 }
 
 main
