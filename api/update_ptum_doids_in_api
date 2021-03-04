@@ -36,10 +36,15 @@ main () {
         api_id=$(echo "${line}" | cut -f3)
         api_doids=$(sort_csv_string "$(echo "${line}" | cut -f4)")
 
-        patient=${api_name:0:12}
-        count=$(cat "${doid_file}" | grep -cP ^${patient})
+        # API also contains some test samples that should be skipped
+        if [[ "${api_name}" == "CPCT12345678T" || "${api_name}" == "CPCT11111111T" ]]; then
+            continue
+        fi
 
+        patient=${api_name:0:12}
+        count=$(grep -cP "^${patient}" "${doid_file}")
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
+
         info "Checking ${sample_info}"
         samples_visited=$((samples_visited+1))
 
