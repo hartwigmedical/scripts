@@ -11,7 +11,7 @@ if [[ ! -z "${1}" || "${1}" == "-h" || "${1}" == "--help" ]]; then
 fi
 
 out_dir="/data/ops/logs/ptum_doid_update"
-doid_file="/data/common/dbs/clinical_data/pilot_curated_primary_tumor.tsv"
+doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
 
 yymmdd=$(date +'%y%m%d')
