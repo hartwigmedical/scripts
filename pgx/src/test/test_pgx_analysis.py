@@ -425,6 +425,19 @@ class TestPgxAnalysis(unittest.TestCase):
         with self.assertRaises(ValueError):
             PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
+    def test_known_variant_with_multiple_rs_ids_not_matching_panel(self) -> None:
+        """Multiple rs ids when panel says there should be one"""
+        panel = self.__get_wide_example_panel()
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("16", 97915617), ("C", "T"), "FAKE2", ("rs1212127", "rs394832"), "1324C>T", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("5", 97915617), ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TG", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), ("C", "T"), "DPYD", ("rs3918290", "rs202093"), "35G>A", "PASS"),  # incorrect
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS"),
+        ))
+        with self.assertRaises(ValueError):
+            PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
     def test_more_than_two_haplotypes_present(self) -> None:
         """More than two haplotypes are present, specifically three"""
         panel = self.__get_narrow_example_panel({"*2A", "*3", "*7"})
@@ -597,20 +610,116 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
+    def test_unresolved_haplotype_because_of_unexpected_base(self) -> None:
+        """No haplotype call because of unexpected base at known variant location"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "A"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "T", "A", "1:97450058", "T", "A", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'Unresolved_Haplotype'},
+        }
+        self.assertEqual(results_expected, results)
+
+    def test_unresolved_haplotype_because_of_only_half_of_haplotype(self) -> None:
+        """No haplotype call because of missing half of haplotype. One half is present twice, other once"""
+        panel = self.__get_narrow_example_panel({"*2B"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
+                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'Unresolved_Haplotype'},
+        }
+        self.assertEqual(results_expected, results)
+
+    @unittest.skip("WIP")
+    def test_unresolved_haplotype_because_mnv_covers_snv_starting_early(self) -> None:
+        """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts before this location"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915613), ("CT", "CT"), "DPYD", (".",), "9212GC>CT", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915613", "CT", "CT", "UNKNOWN", "CT", "CT", ".", "9212GC>CT", "PASS"),
+                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'Unresolved_Haplotype'},
+        }
+        self.assertEqual(results_expected, results)
+        self.fail("WIP")
+
+    @unittest.skip("WIP")
+    def test_unresolved_haplotype_because_mnv_covers_snv_starting_there(self) -> None:
+        """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts at this location"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = Grch37CallData((
+            Grch37Call(GeneCoordinate("1", 97915614), ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97981395), ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915621), ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
+        ))
+        results, panel_calls_for_patient = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        panel_calls_for_patient_expected = pd.DataFrame(
+            [
+                ("DPYD", "1:97915614", "TC", "TC", "1:97450058", "TC", "TC", ".", "9212CG>TC", "PASS"),  # TODO: maybe GRCh38 should be unknown
+                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
+                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
+            ], columns=ALL_IDS_IN_PANEL_COLUMNS
+        )
+        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
+
+        results_expected = {
+            "DPYD": {'Unresolved_Haplotype'},
+        }
+        self.assertEqual(results_expected, results)
+        self.fail("WIP")
+
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   Going deep on "no perfect haplotype" logic (short circuit, just don't give a call if anything goes wrong)
-        #       Unexpected base etc.?
-        #       Only half of haplotype?
-        #       MNV that includes known position? Maybe later
+        #   No haplotype when MNV instead of SNV! (before SAGE GERMLINE!)
         #   Bunch of errors
-        #   Is there an error for when ref and alt are in wrong order for normal heterozygous call? Should there be?
-        #   Call with multiple rs id's
-        #   (Maybe do MNV stuff after SAGE Germline stuff)
-        #   MNV at ref seq difference
-        #   MNV somewhere else
-        #   Filter MNV from source file in or out?
+        #   SAGE GERMLINE as input
+        #   (Maybe do "MNV instead of SNV" stuff after SAGE Germline stuff)
+        #   MNV covering ref seq difference. Many possibilities for what should happen...
+        #   MNV covering somewhere else. No haplotype?
+        #   Currently filtering MNV from source file in or out? Which should it be?
         self.fail("WIP")
 
 
