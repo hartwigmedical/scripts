@@ -40,12 +40,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    gene_to_haplotype_calls, panel_calls_for_patient_df = PgxAnalyser.create_pgx_analysis(call_data, panel)
+    pgx_report = PgxAnalyser.create_pgx_report(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
-    print_calls_to_file(panel_calls_for_patient_df, out + "_calls.txt")
-    print_haplotypes_to_file(gene_to_haplotype_calls, out + "_genotype.txt", panel, panel_path, version)
+    print_calls_to_file(pgx_report.get_panel_calls_df(), out + "_calls.txt")
+    print_haplotypes_to_file(pgx_report.get_gene_to_haplotype_calls(), out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 

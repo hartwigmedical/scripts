@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Dict, Tuple, Set
 
 import pandas as pd
@@ -8,6 +9,34 @@ from grch37_call_translator import Grch37CallTranslator
 from haplotype_caller import HaplotypeCaller
 
 
+class PgxReport(object):
+    def __init__(self, gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]], panel_calls_df: pd.DataFrame) -> None:
+        self.__gene_to_haplotype_calls = gene_to_haplotype_calls
+        self.__panel_calls_df = panel_calls_df
+
+    def __eq__(self, other: object) -> bool:
+        return (
+            isinstance(other, PgxReport)
+            and self.__gene_to_haplotype_calls == other.__gene_to_haplotype_calls
+            and self.__panel_calls_df.equals(other.__panel_calls_df)
+        )
+
+    def __repr__(self) -> str:
+        return (
+            f"PgxAnalysis("
+            f"gene_to_haplotype_calls={self.__gene_to_haplotype_calls!r}, "
+            f"panel_calls_df=\n{self.__panel_calls_df!r}\n"
+            f")"
+        )
+
+    def get_gene_to_haplotype_calls(self) -> Dict[str, Set[HaplotypeCall]]:
+        return deepcopy(self.__gene_to_haplotype_calls)
+
+    def get_panel_calls_df(self) -> pd.DataFrame:
+        # TODO: add ref alleles to data frame?
+        return deepcopy(self.__panel_calls_df)
+
+
 class PgxAnalyser(object):
     CALLS_DATAFRAME_COLUMNS = (
         'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
@@ -15,8 +44,7 @@ class PgxAnalyser(object):
     )
 
     @classmethod
-    def create_pgx_analysis(
-            cls, call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[HaplotypeCall]], pd.DataFrame]:
+    def create_pgx_report(cls, call_data: Grch37CallData, panel: Panel) -> PgxReport:
         full_calls = Grch37CallTranslator.get_full_calls(call_data, panel)
 
         gene_to_haplotype_calls = HaplotypeCaller.get_gene_to_haplotypes_call(full_calls, panel)
@@ -25,11 +53,10 @@ class PgxAnalyser(object):
         if pd.isna(panel_calls_for_patient_df).any(axis=None):
             raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_for_patient_df}")
 
-        return gene_to_haplotype_calls, panel_calls_for_patient_df
+        return PgxReport(gene_to_haplotype_calls, panel_calls_for_patient_df)
 
     @classmethod
     def __get_panel_calls_for_patient_df(cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> pd.DataFrame:
-        # TODO: add ref alleles to data frame?
         panel_calls_found_in_patient_df = cls.__get_calls_found_in_patient_df(full_calls)
         panel_calls_not_found_in_patient_df = cls.__get_calls_not_found_in_patient_df(full_calls, panel)
 
