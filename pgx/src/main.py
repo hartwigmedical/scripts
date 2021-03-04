@@ -7,12 +7,11 @@ from shutil import copyfile
 from typing import List, Dict, Any, Set, Tuple
 
 import allel
-import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37Call, Grch37CallData, HaplotypeCall
+from call_data import Grch37Call, Grch37CallData
 from config.panel import Panel
-from pgx_analysis import PgxAnalyser
+from pgx_analysis import PgxAnalyser, PgxAnalysis
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
@@ -40,12 +39,12 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    pgx_report = PgxAnalyser.create_pgx_report(call_data, panel)
+    pgx_analysis = PgxAnalyser.create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
-    print_calls_to_file(pgx_report.get_panel_calls_df(), out + "_calls.txt")
-    print_haplotypes_to_file(pgx_report.get_gene_to_haplotype_calls(), out + "_genotype.txt", panel, panel_path, version)
+    print_calls_to_file(pgx_analysis, out + "_calls.txt")
+    print_haplotypes_to_file(pgx_analysis, out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
 
@@ -209,12 +208,12 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
     print("[INFO] Created " + bed_path)
 
 
-def print_calls_to_file(panel_calls_for_patient_df: pd.DataFrame, calls_file: str) -> None:
-    panel_calls_for_patient_df.to_csv(calls_file, sep='\t', index=False)
+def print_calls_to_file(pgx_analysis: PgxAnalysis, calls_file: str) -> None:
+    pgx_analysis.get_panel_calls_df().to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]], genotype_file: str, panel: Panel,
-                             panel_path: str, version: str) -> None:
+def print_haplotypes_to_file(
+        pgx_analysis: PgxAnalysis, genotype_file: str, panel: Panel, panel_path: str, version: str) -> None:
     gene_to_drug_info = {}
     for gene_info in panel.get_gene_infos():
         sorted_drugs = sorted(
@@ -226,6 +225,7 @@ def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[HaplotypeCal
             ";".join([drug.url_prescription_info for drug in sorted_drugs])
         )
 
+    gene_to_haplotype_calls = pgx_analysis.get_gene_to_haplotype_calls()
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in sorted(list(gene_to_haplotype_calls.keys())):
