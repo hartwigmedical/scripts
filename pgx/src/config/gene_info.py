@@ -12,12 +12,9 @@ from config.rs_id_info import RsIdInfo
 
 class GeneInfo(object):
     """This object is meant to be immutable"""
-    def __init__(self, gene: str, chromosome: str, genome_build: str, reference_haplotype_name: str,
+    def __init__(self, gene: str, chromosome: str, reference_haplotype_name: str,
                  haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo], drugs: FrozenSet[DrugInfo],
                  rs_id_to_ref_seq_difference_annotation: Dict[str, str]) -> None:
-        if genome_build != "GRCh37":
-            raise ValueError("Exiting, we only support GRCh37, not " + genome_build)
-
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
         assert_no_overlap_drug_names(drugs, f"GeneInfo json for {gene}")
@@ -32,7 +29,6 @@ class GeneInfo(object):
 
         self.__gene = gene
         self.__chromosome = chromosome
-        self.__genome_build = genome_build
         self.__reference_haplotype_name = reference_haplotype_name
         self.__haplotypes = haplotypes
         self.__rs_id_infos = rs_id_infos
@@ -44,7 +40,6 @@ class GeneInfo(object):
             isinstance(other, GeneInfo)
             and self.__gene == other.__gene
             and self.__chromosome == other.__chromosome
-            and self.__genome_build == other.__genome_build
             and self.__reference_haplotype_name == other.__reference_haplotype_name
             and self.__haplotypes == other.__haplotypes
             and self.__rs_id_infos == other.__rs_id_infos
@@ -56,7 +51,6 @@ class GeneInfo(object):
         return hash((
             self.__gene,
             self.__chromosome,
-            self.__genome_build,
             self.__reference_haplotype_name,
             self.__haplotypes,
             self.__rs_id_infos,
@@ -69,7 +63,6 @@ class GeneInfo(object):
             f"GeneInfo("
             f"gene={self.__gene!r}, "
             f"chromosome={self.__chromosome!r}, "
-            f"genome_build={self.__genome_build!r}, "
             f"reference_haplotype_name={self.__reference_haplotype_name!r}, "
             f"haplotypes={self.__haplotypes!r}, "
             f"rs_id_infos={self.__rs_id_infos!r}, "
@@ -85,10 +78,6 @@ class GeneInfo(object):
     @property
     def chromosome(self) -> str:
         return self.__chromosome
-
-    @property
-    def genome_build(self) -> str:
-        return self.__genome_build
 
     @property
     def reference_haplotype_name(self) -> str:
@@ -110,7 +99,6 @@ class GeneInfo(object):
     def from_json(cls, data: Json) -> "GeneInfo":
         gene = str(data['gene'])
         chromosome = str(data['chromosome'])
-        genome_build = str(data["genomeBuild"])
         reference_allele = str(data["referenceAllele"])
         rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
         haplotypes = frozenset({Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]})
@@ -122,7 +110,6 @@ class GeneInfo(object):
         gene_info = GeneInfo(
             gene,
             chromosome,
-            genome_build,
             reference_allele,
             haplotypes,
             rs_id_infos,

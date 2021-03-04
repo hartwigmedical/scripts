@@ -70,11 +70,11 @@ class TestPgxAnalysis(unittest.TestCase):
         fake2_rs_id_to_difference_annotations: Dict[str, str] = {"rs1212127": "1324T>C"}
 
         gene_infos = frozenset({
-            GeneInfo("DPYD", "1", "GRCh37", "*1", dpyd_haplotypes, dpyd_rs_id_infos,
+            GeneInfo("DPYD", "1", "*1", dpyd_haplotypes, dpyd_rs_id_infos,
                      dpyd_drugs, dpyd_rs_id_to_difference_annotations),
-            GeneInfo("FAKE", "5", "GRCh37", "*1", fake_haplotypes, fake_rs_id_infos,
+            GeneInfo("FAKE", "5", "*1", fake_haplotypes, fake_rs_id_infos,
                      fake_drugs, fake_rs_id_to_difference_annotations),
-            GeneInfo("FAKE2", "16", "GRCh37", "*1", fake2_haplotypes, fake2_rs_id_infos,
+            GeneInfo("FAKE2", "16", "*1", fake2_haplotypes, fake2_rs_id_infos,
                      fake2_drugs, fake2_rs_id_to_difference_annotations),
         })
         return Panel(gene_infos)
@@ -126,7 +126,7 @@ class TestPgxAnalysis(unittest.TestCase):
         }
 
         gene_infos = frozenset({
-            GeneInfo("DPYD", "1", "GRCh37", "*1", included_dpyd_haplotypes, included_dpyd_rs_id_infos,
+            GeneInfo("DPYD", "1", "*1", included_dpyd_haplotypes, included_dpyd_rs_id_infos,
                      dpyd_drugs, dpyd_rs_id_to_difference_annotations),
         })
         return Panel(gene_infos)
@@ -699,6 +699,7 @@ class TestPgxAnalysis(unittest.TestCase):
     def test_ambiguous_call(self) -> None:
         # TODO:
         #   Bunch of errors
+        #   Change column names of dataframe to make more sense
         #   SAGE GERMLINE as input
         #   (Maybe improve MNV handling after SAGE Germline stuff)
         self.fail("WIP")

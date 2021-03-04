@@ -66,11 +66,11 @@ class TestLoadConfig(unittest.TestCase):
         fake2_rs_id_to_difference_annotations: Dict[str, str] = {"rs1212127": "1324T>C"}
 
         gene_infos_expected = frozenset({
-            GeneInfo("DPYD", "1", "GRCh37", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected,
+            GeneInfo("DPYD", "1", "*1", dpyd_haplotypes_expected, dpyd_rs_id_infos_expected,
                      dpyd_drugs_expected, dpyd_rs_id_to_difference_annotations),
-            GeneInfo("FAKE", "5", "GRCh37", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected,
+            GeneInfo("FAKE", "5", "*1", fake_haplotypes_expected, fake_rs_id_infos_expected,
                      fake_drugs_expected, fake_rs_id_to_difference_annotations),
-            GeneInfo("FAKE2", "16", "GRCh37", "*1", fake2_haplotypes_expected, fake2_rs_id_infos_expected,
+            GeneInfo("FAKE2", "16", "*1", fake2_haplotypes_expected, fake2_rs_id_infos_expected,
                      fake2_drugs_expected, fake2_rs_id_to_difference_annotations),
         })
         panel_expected = Panel(gene_infos_expected)
