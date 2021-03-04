@@ -4,7 +4,7 @@ from typing import Dict, Set
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37CallData, Grch37Call
+from call_data import Grch37CallData, Grch37Call, HaplotypeCall
 from config.drug_info import DrugInfo
 from config.gene_info import GeneInfo
 from config.haplotype import Haplotype
@@ -14,8 +14,8 @@ from config.variant import Variant
 from pgx_analysis import PgxAnalyser
 
 ALL_IDS_IN_PANEL_COLUMNS = [
-    'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-    'rsid', 'variant_annotation', 'filter'
+    "gene", "position_GRCh37", "ref_GRCh37", "alt_GRCh37", "position_GRCh38", "ref_GRCh38", "alt_GRCh38",
+    "rsid", "variant_annotation", "filter"
 ]
 
 
@@ -149,7 +149,9 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {"*3_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*4A_HOM"}}
+        results_expected = {
+            "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
+        }
         self.assertEqual(results_expected, results)
 
     def test_hom_ref(self) -> None:
@@ -174,7 +176,9 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {"*1_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*1_HOM"}}
+        results_expected = {
+            "DPYD": {HaplotypeCall("*1", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*1", 2)}
+        }
         self.assertEqual(results_expected, results)
 
     def test_heterozygous(self) -> None:
@@ -201,7 +205,11 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {"*2B_HET", "*3_HET"}, "FAKE": {"*4A_HET", "*1_HET"}, "FAKE2": {"*4A_HET", "*1_HET"}}
+        results_expected = {
+            "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*3", 1)},
+            "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
+            "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
+        }
         self.assertEqual(results_expected, results)
 
     def test_ref_call_on_ref_seq_differences(self) -> None:
@@ -225,7 +233,9 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {"*3_HOM"}, "FAKE": {"*1_HOM"}, "FAKE2": {"*4A_HOM"}}
+        results_expected = {
+            "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
+        }
         self.assertEqual(results_expected, results)
 
     def test_only_position_match_on_ref_seq_differences(self) -> None:
@@ -249,7 +259,11 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {'*3_HET', '*1_HET'}, "FAKE": {"*1_HOM"}, "FAKE2": {'*4A_HET', '*1_HET'}}
+        results_expected = {
+            "DPYD": {HaplotypeCall("*3", 1), HaplotypeCall("*1", 1)},
+            "FAKE": {HaplotypeCall("*1", 2)},
+            "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
+        }
         self.assertEqual(results_expected, results)
 
     def test_wrong_rs_id_on_ref_seq_differences(self) -> None:
@@ -318,7 +332,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {'Unresolved_Haplotype'}, "FAKE": {"*1_HOM"}, "FAKE2": {'Unresolved_Haplotype'}}
+        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()}
         self.assertEqual(results_expected, results)
 
     def test_double_different_allele_on_ref_seq_differences(self) -> None:
@@ -342,7 +356,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {"DPYD": {'Unresolved_Haplotype'}, "FAKE": {"*1_HOM"}, "FAKE2": {'Unresolved_Haplotype'}}
+        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()}
         self.assertEqual(results_expected, results)
 
     def test_unknown_variants(self) -> None:
@@ -369,11 +383,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-            "FAKE": {"*4A_HET", "*1_HET"},
-            "FAKE2": {'Unresolved_Haplotype'},
-        }
+        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()}
         self.assertEqual(results_expected, results)
 
     def test_unknown_gene(self) -> None:
@@ -456,9 +466,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*2A_HET', '*3_HOM', '*7_HOM'},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*2A", 1), HaplotypeCall("*3", 2), HaplotypeCall("*7", 2)}}
         self.assertEqual(results_expected, results)
 
     def test_ambiguous_haplotype_with_clear_winner_homozygous(self) -> None:
@@ -480,9 +488,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*2B_HOM'},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*2B", 2)}}
         self.assertEqual(results_expected, results)
 
     def test_ambiguous_haplotype_with_clear_winner_heterozygous(self) -> None:
@@ -504,9 +510,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*2B_HET', '*1_HET'},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*1", 1)}}
         self.assertEqual(results_expected, results)
 
     def test_ambiguous_haplotype_with_clear_winner_mix(self) -> None:
@@ -528,9 +532,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*2B_HET', '*2A_HET'},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*2A", 1)}}
         self.assertEqual(results_expected, results)
 
     def test_complicated_ambiguous_haplotype_with_a_clear_winner(self) -> None:
@@ -554,9 +556,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*2B_HET', '*9_HET', "*7_HOM"},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1), HaplotypeCall("*7", 2)}}
         self.assertEqual(results_expected, results)
 
     def test_ambiguous_homozygous_haplotype_with_a_less_clear_winner(self) -> None:
@@ -578,9 +578,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'*10_HET', '*2B_HET', '*9_HET'},
-        }
+        results_expected = {"DPYD": {HaplotypeCall("*10", 1), HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1)}}
         self.assertEqual(results_expected, results)
 
     def test_ambiguous_heterozygous_haplotype_without_a_clear_winner(self) -> None:
@@ -605,9 +603,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-        }
+        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         self.assertEqual(results_expected, results)
 
     def test_unresolved_haplotype_because_of_unexpected_base(self) -> None:
@@ -629,9 +625,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-        }
+        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         self.assertEqual(results_expected, results)
 
     def test_unresolved_haplotype_because_of_only_half_of_haplotype(self) -> None:
@@ -653,9 +647,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-        }
+        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         self.assertEqual(results_expected, results)
 
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_early(self) -> None:
@@ -677,9 +669,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-        }
+        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         self.assertEqual(results_expected, results)
 
     # @unittest.skip("WIP")
@@ -702,9 +692,7 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, panel_calls_for_patient)
 
-        results_expected = {
-            "DPYD": {'Unresolved_Haplotype'},
-        }
+        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         self.assertEqual(results_expected, results)
 
     @unittest.skip("WIP")
@@ -716,5 +704,5 @@ class TestPgxAnalysis(unittest.TestCase):
         self.fail("WIP")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

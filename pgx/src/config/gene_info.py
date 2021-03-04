@@ -137,6 +137,21 @@ class GeneInfo(object):
     def get_ref_sequence_difference_annotation(self, rs_id: str) -> str:
         return self.__rs_id_to_ref_seq_difference_annotation[rs_id]
 
+    def get_haplotype_function(self, haplotype_name: str) -> str:
+        # TODO: make string constant into constant or enum
+        if haplotype_name == self.__reference_haplotype_name:
+            return "Normal Function"
+        else:
+            return self.__get_haplotype(haplotype_name).function
+
+    def __get_haplotype(self, haplotype_name: str) -> Haplotype:
+        matching_haplotypes = [haplotype for haplotype in self.__haplotypes if haplotype.name == haplotype_name]
+        assert len(matching_haplotypes) == 1, (
+            f"No unique haplotype with name: {haplotype_name} for gene {self.gene}:\n"
+            f"matching_haplotypes={matching_haplotypes}"
+        )
+        return matching_haplotypes[0]
+
     @staticmethod
     def __assert_info_exists_for_all_rs_ids_in_haplotypes(
             haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo]) -> None:

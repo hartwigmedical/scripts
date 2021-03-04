@@ -10,7 +10,7 @@ import allel
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37Call, Grch37CallData
+from call_data import Grch37Call, Grch37CallData, HaplotypeCall
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser
 
@@ -213,39 +213,39 @@ def print_calls_to_file(panel_calls_for_patient_df: pd.DataFrame, calls_file: st
     panel_calls_for_patient_df.to_csv(calls_file, sep='\t', index=False)
 
 
-def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[str]], genotype_file: str, panel: Panel,
+def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]], genotype_file: str, panel: Panel,
                              panel_path: str, version: str) -> None:
-    # TODO: make this more clean.
-    gene_to_haplotype_to_severity = {}
-    for gene_info in panel.get_gene_infos():
-        haplotype_to_severity = {
-            gene_info.reference_haplotype_name: "Normal Function",
-            'Unresolved': "Unknown Function"
-        }
-        for haplotype in gene_info.haplotypes:
-            haplotype_to_severity[haplotype.name] = haplotype.function
-
-        gene_to_haplotype_to_severity[gene_info.gene] = haplotype_to_severity
-
     gene_to_drug_info = {}
     for gene_info in panel.get_gene_infos():
         sorted_drugs = sorted(
             [drug for drug in gene_info.drugs],
             key=lambda info: (info.name, info.url_prescription_info)
         )
-        gene_to_drug_info[gene_info.gene] = [
+        gene_to_drug_info[gene_info.gene] = (
             ";".join([drug.name for drug in sorted_drugs]),
             ";".join([drug.url_prescription_info for drug in sorted_drugs])
-        ]
+        )
 
     with open(genotype_file, 'w') as f:
         f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
         for gene in sorted(list(gene_to_haplotype_calls.keys())):
-            for haplotype_call in sorted(list(gene_to_haplotype_calls[gene])):
+            if gene_to_haplotype_calls[gene]:
+                for haplotype_call in sorted(list(gene_to_haplotype_calls[gene]), key=lambda call: call.haplotype_name):
+                    f.write(
+                        gene + "\t" +
+                        str(haplotype_call) + "\t" +
+                        panel.get_haplotype_function(gene, haplotype_call.haplotype_name) + "\t" +
+                        gene_to_drug_info[gene][0] + "\t" +
+                        gene_to_drug_info[gene][1] + "\t" +
+                        panel_path + "\t" +
+                        version + "\n"
+                    )
+            else:
+                # TODO: make these strings into constants?
                 f.write(
                     gene + "\t" +
-                    haplotype_call + "\t" +
-                    gene_to_haplotype_to_severity[gene][haplotype_call.split("_")[0]] + "\t" +
+                    'Unresolved Haplotype' + "\t" +
+                    "Unknown Function" + "\t" +
                     gene_to_drug_info[gene][0] + "\t" +
                     gene_to_drug_info[gene][1] + "\t" +
                     panel_path + "\t" +

@@ -2,7 +2,7 @@ import collections
 from copy import deepcopy
 from typing import Dict, Set, DefaultDict, FrozenSet, Tuple
 
-from call_data import FullCall
+from call_data import FullCall, HaplotypeCall
 from config.gene_info import GeneInfo
 from config.haplotype import Haplotype
 from config.panel import Panel
@@ -11,7 +11,8 @@ from config.variant import Variant
 
 class HaplotypeCaller(object):
     @classmethod
-    def get_gene_to_haplotypes_call(cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> Dict[str, Set[str]]:
+    def get_gene_to_haplotypes_call(
+            cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> Dict[str, Set[HaplotypeCall]]:
         gene_to_haplotype_calls = {}
         for gene_info in panel.get_gene_infos():
             print("[INFO] PROCESSING GENE " + gene_info.gene)
@@ -19,7 +20,7 @@ class HaplotypeCaller(object):
         return gene_to_haplotype_calls
 
     @classmethod
-    def __get_haplotypes_call(cls, full_calls: Tuple[FullCall, ...], gene_info: GeneInfo) -> Set[str]:
+    def __get_haplotypes_call(cls, full_calls: Tuple[FullCall, ...], gene_info: GeneInfo) -> Set[HaplotypeCall]:
         full_calls_for_gene = [call for call in full_calls if call.gene == gene_info.gene]
         try:
             variant_to_count: DefaultDict[Variant, int] = collections.defaultdict(int)
@@ -49,26 +50,23 @@ class HaplotypeCaller(object):
     
             haplotype_calls = set()
             for haplotype, count in haplotype_to_count.items():
-                if count == 1:
-                    haplotype_calls.add(haplotype + "_HET")
-                elif count == 2:
-                    haplotype_calls.add(haplotype + "_HOM")
+                if count == 1 or count == 2:
+                    haplotype_calls.add(HaplotypeCall(haplotype, count))
                 else:
                     error_msg = f"Impossible count for haplotype: haplotype={haplotype}, count={count}"
                     raise ValueError(error_msg)
     
             called_haplotypes_count = sum(haplotype_to_count.values())
-    
             if called_haplotypes_count == 0:
-                haplotype_calls.add(gene_info.reference_haplotype_name + "_HOM")
+                haplotype_calls.add(HaplotypeCall(gene_info.reference_haplotype_name, 2))
             elif called_haplotypes_count == 1:
-                haplotype_calls.add(gene_info.reference_haplotype_name + "_HET")
+                haplotype_calls.add(HaplotypeCall(gene_info.reference_haplotype_name, 1))
     
             return haplotype_calls
     
-        except ValueError as e:
-            print(f"[Error] Cannot resolve haplotype for gene {gene_info.gene}. Error: {e}")
-            return {"Unresolved_Haplotype"}
+        except Exception as e:
+            print(f"[ERROR] Cannot resolve haplotype for gene {gene_info.gene}. Error: {e}")
+            return set()
 
     @classmethod
     def __get_explaining_haplotype_combinations(

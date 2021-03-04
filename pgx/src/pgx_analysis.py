@@ -2,7 +2,7 @@ from typing import Dict, Tuple, Set
 
 import pandas as pd
 
-from call_data import Grch37CallData, FullCall
+from call_data import Grch37CallData, FullCall, HaplotypeCall
 from config.panel import Panel
 from grch37_call_translator import Grch37CallTranslator
 from haplotype_caller import HaplotypeCaller
@@ -15,7 +15,8 @@ class PgxAnalyser(object):
     )
 
     @classmethod
-    def create_pgx_analysis(cls, call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[str]], pd.DataFrame]:
+    def create_pgx_analysis(
+            cls, call_data: Grch37CallData, panel: Panel) -> Tuple[Dict[str, Set[HaplotypeCall]], pd.DataFrame]:
         full_calls = Grch37CallTranslator.get_full_calls(call_data, panel)
 
         gene_to_haplotype_calls = HaplotypeCaller.get_gene_to_haplotypes_call(full_calls, panel)
@@ -60,12 +61,12 @@ class PgxAnalyser(object):
             ]
 
             position_grch38 = (
-                full_call.start_coordinate_grch38.get_position_string()
+                str(full_call.start_coordinate_grch38)
                 if full_call.start_coordinate_grch38 is not None
                 else "UNKNOWN"
             )
 
-            new_id = {'position_GRCh37': full_call.start_coordinate_grch37.get_position_string(),
+            new_id = {'position_GRCh37': str(full_call.start_coordinate_grch37),
                       'rsid': ";".join(list(full_call.rs_ids)),
                       'ref_GRCh37': grch37_alleles[0],
                       'alt_GRCh37': grch37_alleles[1],
@@ -93,7 +94,7 @@ class PgxAnalyser(object):
                 if rs_id_info.rs_id not in rs_ids_found_in_patient and not grch37_coordinates_partially_handled:
                     # Assuming REF/REF relative to GRCh38
                     new_id = {
-                        'position_GRCh37': rs_id_info.start_coordinate_grch37.get_position_string(),
+                        'position_GRCh37': str(rs_id_info.start_coordinate_grch37),
                         'rsid': rs_id_info.rs_id,
                         'ref_GRCh37': rs_id_info.reference_allele_grch38,
                         'alt_GRCh37': rs_id_info.reference_allele_grch38,
@@ -102,7 +103,7 @@ class PgxAnalyser(object):
                         'gene': gene_info.gene,
                         'ref_GRCh38': rs_id_info.reference_allele_grch38,
                         'alt_GRCh38': rs_id_info.reference_allele_grch38,
-                        'position_GRCh38': rs_id_info.start_coordinate_grch38.get_position_string()
+                        'position_GRCh38': str(rs_id_info.start_coordinate_grch38)
                     }
                     calls_not_found_in_patient_df = calls_not_found_in_patient_df.append(new_id, ignore_index=True)
         return calls_not_found_in_patient_df
