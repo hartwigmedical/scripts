@@ -40,11 +40,11 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     call_data = get_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    gene_to_haplotype_calls, all_ids_in_panel = PgxAnalyser.create_pgx_analysis(call_data, panel)
+    gene_to_haplotype_calls, panel_calls_for_patient_df = PgxAnalyser.create_pgx_analysis(call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
-    print_calls_to_file(all_ids_in_panel, out + "_calls.txt")
+    print_calls_to_file(panel_calls_for_patient_df, out + "_calls.txt")
     print_haplotypes_to_file(gene_to_haplotype_calls, out + "_genotype.txt", panel, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copyfile(filtered_vcf, out + "_PGx.vcf")
@@ -73,42 +73,52 @@ def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch3
     match_on_location = 0
     filtered_calls = []
     for i, rs_ids_string in enumerate(variants['variants/ID']):
-        chr = str(variants['variants/CHROM'][i])
-        pos = int(variants['variants/POS'][i])
-        ref = str(variants['variants/REF'][i])
+        chromosome = str(variants['variants/CHROM'][i])
+        position = int(variants['variants/POS'][i])
+        reference_allele = str(variants['variants/REF'][i])
 
         rs_ids = get_rs_ids_from_string(rs_ids_string)
-        relevant_coordinates = get_relevant_coordinates(chr, pos, ref)
+        relevant_coordinates = get_relevant_coordinates(chromosome, position, reference_allele)
 
         rs_id_match_to_panel_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_ids)
-        coordinate_match_to_panel_exists = any(panel.contains_rs_id_with_coordinate(coord) for coord in relevant_coordinates)
+        coordinate_match_to_panel_exists = any(
+            panel.contains_rs_id_with_grch37_coordinate(coord) for coord in relevant_coordinates
+        )
         if rs_id_match_to_panel_exists or coordinate_match_to_panel_exists:
             if rs_id_match_to_panel_exists:
                 match_on_rsid += 1
             if coordinate_match_to_panel_exists:
                 match_on_location += 1
             if variants['variants/FILTER_PASS'][i]:
-                filter = "PASS"
+                filter_type = "PASS"
             else:
-                filter = "FILTERED"
+                filter_type = "FILTERED"
             alts = [str(allele) for allele in variants['variants/ALT'][i]]
             variant_annotation = str(variants['variants/ANN_HGVS_c'][i])
             gene = str(variants['variants/ANN_Gene_Name'][i])
             genotype = variants['calldata/GT'][i][0].tolist()
             if genotype == [0, 1]:
-                alleles = (ref, alts[0])
+                alleles = (reference_allele, alts[0])
             elif genotype == [1, 1]:
                 alleles = (alts[0], alts[0])
             elif genotype == [1, 2]:
                 alleles = (alts[0], alts[1])
             elif genotype == [0, 0]:
-                alleles = (ref, ref)
+                alleles = (reference_allele, reference_allele)
                 variant_annotation = "REF_CALL"
             else:
                 error_msg = f"[ERROR] Genotype not found: {genotype}"
                 raise ValueError(error_msg)
 
-            call = Grch37Call(GeneCoordinate(chr, pos), ref, alleles, gene, tuple(rs_ids), variant_annotation, filter)
+            call = Grch37Call(
+                GeneCoordinate(chromosome, position),
+                reference_allele,
+                alleles,
+                gene,
+                rs_ids,
+                variant_annotation,
+                filter_type
+            )
             filtered_calls.append(call)
 
     print("[INFO] Matches on RS id: " + str(match_on_rsid))
@@ -199,8 +209,8 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
     print("[INFO] Created " + bed_path)
 
 
-def print_calls_to_file(all_ids_in_panel: pd.DataFrame, calls_file: str) -> None:
-    all_ids_in_panel.to_csv(calls_file, sep='\t', index=False)
+def print_calls_to_file(panel_calls_for_patient_df: pd.DataFrame, calls_file: str) -> None:
+    panel_calls_for_patient_df.to_csv(calls_file, sep='\t', index=False)
 
 
 def print_haplotypes_to_file(gene_to_haplotype_calls: Dict[str, Set[str]], genotype_file: str, panel: Panel,

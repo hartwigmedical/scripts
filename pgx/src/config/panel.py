@@ -64,16 +64,26 @@ class Panel(object):
     def get_rs_id_infos(self) -> Set[RsIdInfo]:
         return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
 
-    def contains_rs_id_with_coordinate(self, coordinate: GeneCoordinate) -> bool:
+    def contains_rs_id_with_grch37_coordinate(self, grch37_coordinate: GeneCoordinate) -> bool:
         for info in self.get_rs_id_infos():
-            if info.start_coordinate_grch37 == coordinate:
+            if info.start_coordinate_grch37 == grch37_coordinate:
                 return True
         return False
 
-    def get_rs_id_info_with_coordinate(self, coordinate: GeneCoordinate) -> RsIdInfo:
+    def contains_matching_rs_id_info(
+            self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> bool:
+        for info in self.get_rs_id_infos():
+            if (info.start_coordinate_grch37 == grch37_coordinate
+                    and info.reference_allele_grch37 == grch37_reference_allele):
+                return True
+        return False
+
+    def get_matching_rs_id_info(
+            self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> RsIdInfo:
         matching_rs_id_infos = []
         for info in self.get_rs_id_infos():
-            if info.start_coordinate_grch37 == coordinate:
+            if (info.start_coordinate_grch37 == grch37_coordinate
+                    and info.reference_allele_grch37 == grch37_reference_allele):
                 matching_rs_id_infos.append(info)
 
         if matching_rs_id_infos and len(matching_rs_id_infos) == 1:
@@ -113,6 +123,3 @@ class Panel(object):
                     if not left_info.is_compatible(right_info):
                         error_msg = f"Incompatible rs id infos in config. left: {left_info}, right: {right_info}"
                         raise ValueError(error_msg)
-
-
-

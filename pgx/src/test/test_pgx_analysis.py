@@ -658,7 +658,6 @@ class TestPgxAnalysis(unittest.TestCase):
         }
         self.assertEqual(results_expected, results)
 
-    @unittest.skip("WIP")
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_early(self) -> None:
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts before this location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
@@ -682,14 +681,13 @@ class TestPgxAnalysis(unittest.TestCase):
             "DPYD": {'Unresolved_Haplotype'},
         }
         self.assertEqual(results_expected, results)
-        self.fail("WIP")
 
-    @unittest.skip("WIP")
+    # @unittest.skip("WIP")
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_there(self) -> None:
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts at this location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
         ids_found_in_patient = Grch37CallData((
-            Grch37Call(GeneCoordinate("1", 97915614), "C", ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS"),
+            Grch37Call(GeneCoordinate("1", 97915614), "CG", ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS"),
             Grch37Call(GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS"),
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
@@ -697,7 +695,7 @@ class TestPgxAnalysis(unittest.TestCase):
 
         panel_calls_for_patient_expected = pd.DataFrame(
             [
-                ("DPYD", "1:97915614", "TC", "TC", "1:97450058", "TC", "TC", ".", "9212CG>TC", "PASS"),  # TODO: maybe GRCh38 should be unknown
+                ("DPYD", "1:97915614", "TC", "TC", "UNKNOWN", "TC", "TC", ".", "9212CG>TC", "PASS"),
                 ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
                 ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
             ], columns=ALL_IDS_IN_PANEL_COLUMNS
@@ -708,7 +706,6 @@ class TestPgxAnalysis(unittest.TestCase):
             "DPYD": {'Unresolved_Haplotype'},
         }
         self.assertEqual(results_expected, results)
-        self.fail("WIP")
 
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:

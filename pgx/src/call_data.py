@@ -1,14 +1,12 @@
-from typing import NamedTuple, Tuple, Optional
-
-import pandas as pd
+from typing import NamedTuple, Tuple, Optional, Set
 
 from base.gene_coordinate import GeneCoordinate
-from dataframe_format import GRCH37_DATAFRAME_COLUMNS
+from base.util import get_covered_coordinates
 
 
 class Grch37Call(NamedTuple):
     start_coordinate: GeneCoordinate
-    ref_call: str
+    ref_allele: str
     alleles: Tuple[str, str]  # The order is (ref, alt) when there is one of each
     gene: str
     rs_ids: Tuple[str, ...]
@@ -83,9 +81,14 @@ class AnnotatedAllele(object):
 
 class FullCall(NamedTuple):
     start_coordinate_grch37: GeneCoordinate
+    reference_allele_grch37: str
     start_coordinate_grch38: Optional[GeneCoordinate]  # is None if unknown
-    annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]  # The order should be the same as it was in vcf file
+    reference_allele_grch38: Optional[str]  # is None if unknown
+    annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]  # The order should be the same as it was in vcf file TODO: fix this after SAGE germline
     gene: str
     rs_ids: Tuple[str, ...]
     variant_annotation: str
     filter: str
+
+    def get_relevant_grch37_coordinates(self) -> Set[GeneCoordinate]:
+        return get_covered_coordinates(self.start_coordinate_grch37, self.reference_allele_grch37)

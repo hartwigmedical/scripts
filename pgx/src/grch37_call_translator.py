@@ -8,8 +8,8 @@ from config.rs_id_info import RsIdInfo
 
 class Grch37CallTranslator(object):
     @classmethod
-    def get_full_calls(cls, grch37_call_data: Grch37CallData, panel: Panel) -> List[FullCall]:
-        handled_grch37_start_coordinates: Set[GeneCoordinate] = set()
+    def get_full_calls(cls, grch37_call_data: Grch37CallData, panel: Panel) -> Tuple[FullCall, ...]:
+        handled_grch37_coordinates: Set[GeneCoordinate] = set()
         handled_grch37_rs_ids: Set[str] = set()
         full_calls_from_grch37_calls = []
         for grch37_call in grch37_call_data.calls:
@@ -24,18 +24,20 @@ class Grch37CallTranslator(object):
                         raise ValueError(error_msg)
                     handled_grch37_rs_ids.add(rs_id)
 
-            if full_call.start_coordinate_grch37 in handled_grch37_start_coordinates:
-                error_msg = (f"Call for position that has already been handled:\n"
+            relevant_grch37_coordinates = full_call.get_relevant_grch37_coordinates()
+            if relevant_grch37_coordinates.intersection(handled_grch37_coordinates):
+                error_msg = (f"Call involves at least one position that has already been handled:\n"
                              f"call={grch37_call}\n"
-                             f"handled_coords={handled_grch37_start_coordinates}")
+                             f"handled_coords={handled_grch37_coordinates}")
                 raise ValueError(error_msg)
-            handled_grch37_start_coordinates.add(full_call.start_coordinate_grch37)
+            handled_grch37_coordinates.update(relevant_grch37_coordinates)
+
             full_calls_from_grch37_calls.append(full_call)
         # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
         # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
-        inferred_ref_calls = cls.__get_inferred_ref_calls(panel, handled_grch37_start_coordinates, handled_grch37_rs_ids)
+        inferred_ref_calls = cls.__get_inferred_ref_calls(panel, handled_grch37_coordinates, handled_grch37_rs_ids)
         full_calls = full_calls_from_grch37_calls + inferred_ref_calls
-        return full_calls
+        return tuple(full_calls)
 
     @classmethod
     def __get_full_call_from_grch37_call(cls, grch37_call: Grch37Call, panel: Panel) -> FullCall:
@@ -43,19 +45,21 @@ class Grch37CallTranslator(object):
         cls.__assert_gene_in_panel(gene, panel)
 
         start_coordinate_grch37 = grch37_call.start_coordinate
+        reference_allele_grch37 = grch37_call.ref_allele
 
-        # determine annotated_alleles, start_coordinate_grch38 and rs_ids
+        # determine annotated_alleles, start_coordinate_grch38, reference_allele_grch38 and rs_ids
         start_coordinate_grch38: Optional[GeneCoordinate]
+        reference_allele_grch38: Optional[str]
         rs_ids: Tuple[str, ...]
-        # TODO: make this handle MNV properly. Take ref base or size of ref base into account for match
-        if panel.contains_rs_id_with_coordinate(start_coordinate_grch37):
-            rs_id_info = panel.get_rs_id_info_with_coordinate(start_coordinate_grch37)
+        if panel.contains_matching_rs_id_info(start_coordinate_grch37, reference_allele_grch37):
+            rs_id_info = panel.get_matching_rs_id_info(start_coordinate_grch37, reference_allele_grch37)
             cls.__assert_rs_id_call_matches_info(grch37_call.rs_ids, (rs_id_info.rs_id,))
 
             annotated_alleles = cls.__get_annotated_alleles_from_rs_id_info(rs_id_info, grch37_call)
             cls.__assert_alleles_in_expected_order(annotated_alleles)
 
             start_coordinate_grch38 = rs_id_info.start_coordinate_grch38
+            reference_allele_grch38 = rs_id_info.reference_allele_grch38
             if grch37_call.rs_ids == (".",) and rs_id_info is not None:
                 rs_ids = (rs_id_info.rs_id,)
             else:
@@ -73,10 +77,10 @@ class Grch37CallTranslator(object):
                 AnnotatedAllele(grch37_call.alleles[1], None, None),
             )
             start_coordinate_grch38 = None
+            reference_allele_grch38 = None
             rs_ids = grch37_call.rs_ids
 
         # determine variant annotation and filter
-        # TODO: make this handle MNV/ref base for call properly
         if len(rs_ids) == 1 and panel.has_ref_seq_difference_annotation(gene, rs_ids[0]):
             ref_call_due_to_ref_sequence_difference = all(
                 annotated.is_annotated() and annotated.is_variant_vs_grch37 and not annotated.is_variant_vs_grch38
@@ -89,13 +93,13 @@ class Grch37CallTranslator(object):
 
             if ref_call_due_to_ref_sequence_difference:
                 variant_annotation = "REF_CALL"
-                filter = "NO_CALL"
+                filter_type = "NO_CALL"
             elif all_variants_ref_to_grch37_or_grch38:
                 variant_annotation = panel.get_ref_seq_difference_annotation(gene, rs_ids[0])
-                filter = grch37_call.filter
+                filter_type = grch37_call.filter
             else:
                 variant_annotation = grch37_call.variant_annotation + "?"
-                filter = grch37_call.filter
+                filter_type = grch37_call.filter
                 print(
                     f"[WARN] Unexpected allele in ref seq difference location. Check whether annotation is correct: "
                     f"found alleles=({annotated_alleles[0]}, {annotated_alleles[1]}), "
@@ -107,24 +111,22 @@ class Grch37CallTranslator(object):
         else:
             # no ref seq differences involved
             variant_annotation = grch37_call.variant_annotation
-            filter = grch37_call.filter
+            filter_type = grch37_call.filter
 
         full_call = FullCall(
-            start_coordinate_grch37, start_coordinate_grch38, annotated_alleles, gene, rs_ids, variant_annotation, filter,
+            start_coordinate_grch37, reference_allele_grch37, start_coordinate_grch38, reference_allele_grch38,
+            annotated_alleles, gene, rs_ids, variant_annotation, filter_type,
         )
         return full_call
 
     @classmethod
-    def __get_inferred_ref_calls(cls, panel: Panel, handled_grch37_start_coordinates: Set[GeneCoordinate],
+    def __get_inferred_ref_calls(cls, panel: Panel, handled_grch37_coordinates: Set[GeneCoordinate],
                                  handled_grch37_rs_ids: Set[str]) -> List[FullCall]:
         # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
         # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
         inferred_ref_calls = []
         for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
-            if rs_id_info.start_coordinate_grch37 not in handled_grch37_start_coordinates:
-                # TODO: adjust this so that it never calls an inferred ref cal at an SNV location
-                #  when there was an MNV covering that position instead
-
+            if not rs_id_info.get_relevant_grch37_coordinates().intersection(handled_grch37_coordinates):
                 # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
                 if rs_id_info.rs_id in handled_grch37_rs_ids:
                     error_msg = (f"Have seen rs id of ref seq difference, but not location. "
@@ -138,7 +140,9 @@ class Grch37CallTranslator(object):
                 )
                 full_call = FullCall(
                     rs_id_info.start_coordinate_grch37,
+                    rs_id_info.reference_allele_grch37,
                     rs_id_info.start_coordinate_grch38,
+                    rs_id_info.reference_allele_grch38,
                     annotated_alleles,
                     gene,
                     (rs_id_info.rs_id,),

@@ -1,6 +1,6 @@
 import collections
 from copy import deepcopy
-from typing import List, Dict, Set, DefaultDict, FrozenSet, Tuple
+from typing import Dict, Set, DefaultDict, FrozenSet, Tuple
 
 from call_data import FullCall
 from config.gene_info import GeneInfo
@@ -11,7 +11,7 @@ from config.variant import Variant
 
 class HaplotypeCaller(object):
     @classmethod
-    def get_gene_to_haplotypes_call(cls, full_calls: List[FullCall], panel: Panel) -> Dict[str, Set[str]]:
+    def get_gene_to_haplotypes_call(cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> Dict[str, Set[str]]:
         gene_to_haplotype_calls = {}
         for gene_info in panel.get_gene_infos():
             print("[INFO] PROCESSING GENE " + gene_info.gene)
@@ -19,7 +19,7 @@ class HaplotypeCaller(object):
         return gene_to_haplotype_calls
 
     @classmethod
-    def __get_haplotypes_call(cls, full_calls: List[FullCall], gene_info: GeneInfo) -> Set[str]:
+    def __get_haplotypes_call(cls, full_calls: Tuple[FullCall, ...], gene_info: GeneInfo) -> Set[str]:
         full_calls_for_gene = [call for call in full_calls if call.gene == gene_info.gene]
         try:
             variant_to_count: DefaultDict[Variant, int] = collections.defaultdict(int)
@@ -33,13 +33,15 @@ class HaplotypeCaller(object):
                     if annotated_allele.is_variant_vs_grch38:
                         variant_to_count[Variant(rs_id, annotated_allele.allele)] += 1
     
-            explaining_haplotype_combinations = cls.__get_explaining_haplotype_combinations(variant_to_count, gene_info.haplotypes)
+            explaining_haplotype_combinations = cls.__get_explaining_haplotype_combinations(
+                variant_to_count, gene_info.haplotypes)
     
             if not explaining_haplotype_combinations:
                 error_msg = f"No explaining haplotype combinations"
                 raise ValueError(error_msg)
     
-            minimal_explaining_haplotype_combination = cls.__get_minimal_haplotype_combination(explaining_haplotype_combinations)
+            minimal_explaining_haplotype_combination = cls.__get_minimal_haplotype_combination(
+                explaining_haplotype_combinations)
     
             haplotype_to_count: DefaultDict[str, int] = collections.defaultdict(int)
             for haplotype in minimal_explaining_haplotype_combination:
@@ -96,7 +98,8 @@ class HaplotypeCaller(object):
         return result_set
 
     @classmethod
-    def __get_minimal_haplotype_combination(cls, explaining_haplotype_combinations: Set[Tuple[str, ...]]) -> Tuple[str, ...]:
+    def __get_minimal_haplotype_combination(
+            cls, explaining_haplotype_combinations: Set[Tuple[str, ...]]) -> Tuple[str, ...]:
         min_haplotype_count = min(len(combination) for combination in explaining_haplotype_combinations)
         minimal_explaining_haplotype_combinations = {
             combination for combination in explaining_haplotype_combinations if len(combination) == min_haplotype_count

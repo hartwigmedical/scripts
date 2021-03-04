@@ -1,8 +1,8 @@
-from typing import NamedTuple, Dict, List, Collection
+from typing import NamedTuple, Dict, List, Collection, Set
 
 from base.gene_coordinate import GeneCoordinate
 from base.json_alias import Json
-from base.util import get_key_to_multiple_values
+from base.util import get_key_to_multiple_values, get_covered_coordinates
 
 
 class RsIdInfo(NamedTuple):
@@ -34,6 +34,9 @@ class RsIdInfo(NamedTuple):
         else:
             return (self.start_coordinate_grch37 != other.start_coordinate_grch37 and
                     self.start_coordinate_grch38 != other.start_coordinate_grch38)
+
+    def get_relevant_grch37_coordinates(self) -> Set[GeneCoordinate]:
+        return get_covered_coordinates(self.start_coordinate_grch37, self.reference_allele_grch37)
 
 
 def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:

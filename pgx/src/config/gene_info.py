@@ -1,6 +1,6 @@
 import itertools
 from copy import deepcopy
-from typing import List, Dict, Collection, FrozenSet, Tuple
+from typing import List, Dict, Collection, FrozenSet
 
 from base.json_alias import Json
 from base.util import get_key_to_multiple_values

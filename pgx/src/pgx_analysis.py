@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple, Set
+from typing import Dict, Tuple, Set
 
 import pandas as pd
 
@@ -15,27 +15,29 @@ class PgxAnalyser(object):
         full_calls = Grch37CallTranslator.get_full_calls(call_data, panel)
 
         gene_to_haplotype_calls = HaplotypeCaller.get_gene_to_haplotypes_call(full_calls, panel)
-        panel_calls_for_patient = cls.__get_panel_calls_for_patient(full_calls, panel)
+        panel_calls_for_patient_df = cls.__get_panel_calls_for_patient_df(full_calls, panel)
 
-        if pd.isna(panel_calls_for_patient).any(axis=None):
-            raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_for_patient}")
+        if pd.isna(panel_calls_for_patient_df).any(axis=None):
+            raise ValueError(f"This should never happen: Unhandled NaN values:\n{panel_calls_for_patient_df}")
 
-        return gene_to_haplotype_calls, panel_calls_for_patient
+        return gene_to_haplotype_calls, panel_calls_for_patient_df
 
     @classmethod
-    def __get_panel_calls_for_patient(cls, full_calls: List[FullCall], panel: Panel) -> pd.DataFrame:
-        panel_calls_found_in_patient_df = cls.__get_dataframe_from_full_calls(full_calls)
-        panel_calls_not_found_in_patient_df_df = cls.__get_calls_not_found_in_patient_df(panel_calls_found_in_patient_df, panel)
+    def __get_panel_calls_for_patient_df(cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> pd.DataFrame:
+        # TODO: add ref alleles to data frame?
+        panel_calls_found_in_patient_df = cls.__get_calls_found_in_patient_df(full_calls)
+        panel_calls_not_found_in_patient_df = cls.__get_calls_not_found_in_patient_df(full_calls, panel)
 
-        panel_calls_for_patient = pd.concat(
-            [panel_calls_found_in_patient_df, panel_calls_not_found_in_patient_df_df], sort=True
+        panel_calls_for_patient_df = pd.concat(
+            [panel_calls_found_in_patient_df, panel_calls_not_found_in_patient_df], sort=True
         )
-        panel_calls_for_patient = panel_calls_for_patient.sort_values(by='position_GRCh37').reset_index(drop=True)
-        panel_calls_for_patient = panel_calls_for_patient[list(COMBINED_DATAFRAME_COLUMNS)]
-        return panel_calls_for_patient
+        panel_calls_for_patient_df = panel_calls_for_patient_df.sort_values(by='position_GRCh37').reset_index(drop=True)
+        panel_calls_for_patient_df = panel_calls_for_patient_df[list(COMBINED_DATAFRAME_COLUMNS)]
+        return panel_calls_for_patient_df
 
     @classmethod
-    def __get_dataframe_from_full_calls(cls, full_calls: List[FullCall]) -> pd.DataFrame:
+    def __get_calls_found_in_patient_df(cls, full_calls: Tuple[FullCall, ...]) -> pd.DataFrame:
+        # TODO: add ref alleles to data frame?
         panel_calls_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
         for full_call in full_calls:
             grch37_alleles = [
@@ -73,16 +75,18 @@ class PgxAnalyser(object):
         return panel_calls_found_in_patient_df
 
     @classmethod
-    def __get_calls_not_found_in_patient_df(cls, panel_calls_found_in_patient_df: pd.DataFrame, panel: Panel) -> pd.DataFrame:
-        rs_ids_found_in_patient = set(panel_calls_found_in_patient_df.rsid.tolist())
-        positions_found_in_patient = set(panel_calls_found_in_patient_df.position_GRCh37.tolist())
+    def __get_calls_not_found_in_patient_df(cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> pd.DataFrame:
+        rs_ids_found_in_patient = {rs_id for full_call in full_calls for rs_id in full_call.rs_ids if rs_id != "."}
+        grch37_coordinates_covered_by_found_calls = {
+            coordinate for full_call in full_calls for coordinate in full_call.get_relevant_grch37_coordinates()
+        }
+
         calls_not_found_in_patient_df = pd.DataFrame(columns=COMBINED_DATAFRAME_COLUMNS)
         for gene_info in panel.get_gene_infos():
             for rs_id_info in gene_info.rs_id_infos:
-                if (rs_id_info.rs_id not in rs_ids_found_in_patient and
-                        rs_id_info.start_coordinate_grch37.get_position_string() not in positions_found_in_patient):
-                    # TODO: check whether this properly takes variants of more than one base pair,
-                    #       so MNV's etc., into account. The fact that only a single position is checked is suspicious.
+                grch37_coordinates_partially_handled = bool(rs_id_info.get_relevant_grch37_coordinates().intersection(
+                    grch37_coordinates_covered_by_found_calls))
+                if rs_id_info.rs_id not in rs_ids_found_in_patient and not grch37_coordinates_partially_handled:
                     # Assuming REF/REF relative to GRCh38
                     new_id = {
                         'position_GRCh37': rs_id_info.start_coordinate_grch37.get_position_string(),
