@@ -1,4 +1,4 @@
-from typing import NamedTuple, Tuple, Optional, Set
+from typing import NamedTuple, Tuple, Optional, Set, FrozenSet
 
 from base.gene_coordinate import GeneCoordinate
 from base.util import get_covered_coordinates
@@ -18,26 +18,8 @@ class Grch37Call(NamedTuple):
     filter: str
 
 
-class Grch37CallData(object):
-    def __init__(self, calls: Tuple[Grch37Call, ...]) -> None:
-        self.__calls = calls
-
-    def __eq__(self, other: object) -> bool:
-        return (
-                isinstance(other, Grch37CallData)
-                and self.__calls == other.__calls
-        )
-
-    def __repr__(self) -> str:
-        return (
-            f"Grch37CallData("
-            f"calls={self.__calls!r}, "
-            f")"
-        )
-
-    @property
-    def calls(self) -> Tuple[Grch37Call, ...]:
-        return self.__calls
+class Grch37CallData(NamedTuple):
+    calls: FrozenSet[Grch37Call]
 
 
 class AnnotatedAllele(object):

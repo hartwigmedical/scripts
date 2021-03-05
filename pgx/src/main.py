@@ -4,16 +4,14 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Dict, Any, Set, Tuple, FrozenSet
+from typing import List, Set, FrozenSet
 
-import allel
 import pandas as pd
 
-from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37Call, Grch37CallData, FullCall
+from call_data import FullCall
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
-
+from vcf_reader import VcfReader
 
 CALLS_DATAFRAME_COLUMNS = (
     'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
@@ -43,10 +41,10 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-    call_data = get_call_data(filtered_vcf, panel)
+    grch37_call_data = VcfReader.get_grch37_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    pgx_analysis = PgxAnalyser.create_pgx_analysis(call_data, panel)
+    pgx_analysis = PgxAnalyser.create_pgx_analysis(grch37_call_data, panel)
 
     # Output
     out = outputdir + "/" + sample_t_id
@@ -67,91 +65,6 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
-
-
-def get_call_data(filtered_vcf: str, panel: Panel) -> Grch37CallData:
-    variants = get_variants_from_filtered_vcf(filtered_vcf)
-    return get_call_data_from_variants(variants, panel)
-
-
-def get_call_data_from_variants(variants: Dict[str, Any], panel: Panel) -> Grch37CallData:
-    match_on_rsid = 0
-    match_on_location = 0
-    filtered_calls = []
-    for i, rs_ids_string in enumerate(variants['variants/ID']):
-        chromosome = str(variants['variants/CHROM'][i])
-        position = int(variants['variants/POS'][i])
-        reference_allele = str(variants['variants/REF'][i])
-
-        rs_ids = get_rs_ids_from_string(rs_ids_string)
-        relevant_coordinates = get_relevant_coordinates(chromosome, position, reference_allele)
-
-        rs_id_match_to_panel_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_ids)
-        coordinate_match_to_panel_exists = any(
-            panel.contains_rs_id_with_grch37_coordinate(coord) for coord in relevant_coordinates
-        )
-        if rs_id_match_to_panel_exists or coordinate_match_to_panel_exists:
-            if rs_id_match_to_panel_exists:
-                match_on_rsid += 1
-            if coordinate_match_to_panel_exists:
-                match_on_location += 1
-            if variants['variants/FILTER_PASS'][i]:
-                filter_type = "PASS"
-            else:
-                filter_type = "FILTERED"
-            alts = [str(allele) for allele in variants['variants/ALT'][i]]
-            variant_annotation = str(variants['variants/ANN_HGVS_c'][i])
-            gene = str(variants['variants/ANN_Gene_Name'][i])
-            genotype = variants['calldata/GT'][i][0].tolist()
-            if genotype == [0, 1]:
-                alleles = (reference_allele, alts[0])
-            elif genotype == [1, 1]:
-                alleles = (alts[0], alts[0])
-            elif genotype == [1, 2]:
-                alleles = (alts[0], alts[1])
-            elif genotype == [0, 0]:
-                alleles = (reference_allele, reference_allele)
-                variant_annotation = "REF_CALL"
-            else:
-                error_msg = f"Genotype not found: {genotype}"
-                raise ValueError(error_msg)
-
-            call = Grch37Call(
-                GeneCoordinate(chromosome, position),
-                reference_allele,
-                alleles,
-                gene,
-                rs_ids,
-                variant_annotation,
-                filter_type,
-            )
-            filtered_calls.append(call)
-
-    print("[INFO] Matches on RS id: " + str(match_on_rsid))
-    print("[INFO] Matches on location: " + str(match_on_location))
-
-    return Grch37CallData(tuple(filtered_calls))
-
-
-def get_rs_ids_from_string(rs_ids_string: str) -> Tuple[str, ...]:
-    if ";" in rs_ids_string:
-        return tuple(str(rs) for rs in rs_ids_string.split(";") if rs.startswith("rs"))
-    else:
-        return (str(rs_ids_string),)
-
-
-def get_relevant_coordinates(chromosome: str, position: int, ref_allele: str) -> Tuple[GeneCoordinate, ...]:
-    return tuple(GeneCoordinate(chromosome, position + i) for i in range(len(ref_allele)))
-
-
-def get_variants_from_filtered_vcf(filtered_vcf: str) -> Dict[str, Any]:
-    try:
-        field_names = ['samples', 'calldata/GT', 'variants/ALT', 'variants/CHROM', 'variants/FILTER', 'variants/ID', 
-                       'variants/POS', 'variants/QUAL', 'variants/REF', 'variants/ANN']
-        variants = allel.read_vcf(filtered_vcf, fields=field_names, transformers=allel.ANNTransformer())
-    except IOError:
-        raise FileNotFoundError("File " + filtered_vcf + " not found or cannot be opened.")
-    return variants
 
 
 def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str) -> str:
