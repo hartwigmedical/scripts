@@ -1,5 +1,6 @@
 from typing import NamedTuple, Tuple, Optional, Set, FrozenSet
 
+from base.filter import Filter
 from base.gene_coordinate import GeneCoordinate
 from base.util import get_covered_coordinates
 
@@ -11,7 +12,7 @@ class Grch37Call(NamedTuple):
     gene: str
     rs_ids: Tuple[str, ...]
     variant_annotation: str
-    filter: str
+    filter: Filter
 
 
 class Grch37CallData(NamedTuple):
@@ -78,7 +79,7 @@ class FullCall(NamedTuple):
     gene: str
     rs_ids: Tuple[str, ...]
     variant_annotation: str
-    filter: str
+    filter: Filter
 
     def get_relevant_grch37_coordinates(self) -> Set[GeneCoordinate]:
         return get_covered_coordinates(self.start_coordinate_grch37, self.reference_allele_grch37)

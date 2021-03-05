@@ -1,6 +1,8 @@
 from copy import deepcopy
 from typing import Dict, Set, FrozenSet
 
+from base.constants import REF_CALL_ANNOTATION_STRING
+from base.filter import Filter
 from call_data import Grch37CallData, FullCall, HaplotypeCall
 from config.panel import Panel
 from grch37_call_translator import Grch37CallTranslator
@@ -68,7 +70,6 @@ class PgxAnalyser(object):
                 if rs_id_info.rs_id not in rs_ids_found_in_patient and not grch37_coordinates_partially_handled:
                     # Assuming REF/REF relative to GRCh38
 
-                    # TODO: make strings into constants or similar
                     grch38_ref_full_call = FullCall(
                         rs_id_info.start_coordinate_grch37,
                         rs_id_info.reference_allele_grch37,
@@ -77,8 +78,8 @@ class PgxAnalyser(object):
                         (rs_id_info.reference_allele_grch38, rs_id_info.reference_allele_grch38),
                         gene_info.gene,
                         (rs_id_info.rs_id,),
-                        "REF_CALL",
-                        "NO_CALL"
+                        REF_CALL_ANNOTATION_STRING,
+                        Filter.NO_CALL
                     )
                     grch38_ref_full_calls.add(grch38_ref_full_call)
         return frozenset(grch38_ref_full_calls)

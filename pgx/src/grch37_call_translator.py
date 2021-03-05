@@ -1,5 +1,7 @@
 from typing import Set, Tuple, Optional, FrozenSet
 
+from base.constants import REF_CALL_ANNOTATION_STRING
+from base.filter import Filter
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37CallData, FullCall, AnnotatedAllele, Grch37Call
 from config.panel import Panel
@@ -93,8 +95,8 @@ class Grch37CallTranslator(object):
             )
 
             if ref_call_due_to_ref_sequence_difference:
-                variant_annotation = "REF_CALL"
-                filter_type = "NO_CALL"
+                variant_annotation = REF_CALL_ANNOTATION_STRING
+                filter_type = Filter.NO_CALL
             elif all_variants_ref_to_grch37_or_grch38:
                 variant_annotation = panel.get_ref_seq_difference_annotation(gene, rs_ids[0])
                 filter_type = grch37_call.filter
@@ -144,7 +146,7 @@ class Grch37CallTranslator(object):
                     gene,
                     (rs_id_info.rs_id,),
                     annotation,
-                    "INFERRED_REF_CALL",
+                    Filter.INFERRED_REF_CALL,
                 )
                 inferred_ref_calls.add(full_call)
         return frozenset(inferred_ref_calls)

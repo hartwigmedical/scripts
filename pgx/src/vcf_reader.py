@@ -2,6 +2,8 @@ from typing import Dict, Any, Tuple
 
 import allel
 
+from base.constants import REF_CALL_ANNOTATION_STRING
+from base.filter import Filter
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37CallData, Grch37Call
 from config.panel import Panel
@@ -22,11 +24,6 @@ class VcfReader(object):
         SAMPLE_FIELD_NAME, GENOTYPE_FIELD_NAME, ALT_ALLELE_FIELD_NAME, CHROMOSOME_FIELD_NAME, FILTER_FIELD_NAME,
         RS_IDS_FIELD_NAME, POSITION_FIELD_NAME, QUALITY_FIELD_NAME, REF_ALLELE_FIELD_NAME, ANNOTATION_FIELD_NAME,
     ]
-
-    FILTER_PASS_STRING = "PASS"
-    FILTER_FAIL_STRING = "FILTERED"
-
-    REF_CALL_ANNOTATION_STRING = "REF_CALL"
 
     RS_ID_SEPARATOR = ";"
 
@@ -66,9 +63,9 @@ class VcfReader(object):
                 if coordinate_match_to_panel_exists:
                     match_on_location += 1
                 if variants[f"{cls.FILTER_FIELD_NAME}_PASS"][i]:
-                    filter_type = cls.FILTER_PASS_STRING
+                    filter_type = Filter.PASS
                 else:
-                    filter_type = cls.FILTER_FAIL_STRING
+                    filter_type = Filter.FILTERED
                 alts = [str(allele) for allele in variants[cls.ALT_ALLELE_FIELD_NAME][i]]
                 variant_annotation = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_HGVS_c"][i])
                 gene = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_Gene_Name"][i])
@@ -81,7 +78,7 @@ class VcfReader(object):
                     alleles = (alts[0], alts[1])
                 elif genotype == [0, 0]:
                     alleles = (reference_allele, reference_allele)
-                    variant_annotation = cls.REF_CALL_ANNOTATION_STRING
+                    variant_annotation = REF_CALL_ANNOTATION_STRING
                 else:
                     error_msg = f"Genotype not found: {genotype}"
                     raise ValueError(error_msg)

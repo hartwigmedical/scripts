@@ -2,6 +2,7 @@ import itertools
 from copy import deepcopy
 from typing import List, Dict, Collection, FrozenSet
 
+from base.constants import NORMAL_FUNCTION_STRING
 from base.json_alias import Json
 from base.util import get_key_to_multiple_values
 from config.drug_info import DrugInfo, assert_no_overlap_drug_names
@@ -125,9 +126,8 @@ class GeneInfo(object):
         return self.__rs_id_to_ref_seq_difference_annotation[rs_id]
 
     def get_haplotype_function(self, haplotype_name: str) -> str:
-        # TODO: make string constant into constant or enum
         if haplotype_name == self.__reference_haplotype_name:
-            return "Normal Function"
+            return NORMAL_FUNCTION_STRING
         else:
             return self.__get_haplotype(haplotype_name).function
 

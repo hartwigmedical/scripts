@@ -2,6 +2,7 @@ from typing import FrozenSet
 
 import pandas as pd
 
+from base.constants import UNKNOWN_FUNCTION_STRING
 from base.gene_coordinate import GeneCoordinate
 from call_data import FullCall, HaplotypeCall
 from config.panel import Panel
@@ -82,7 +83,7 @@ class GenotypeReporter(object):
                 cls.ALT_ALLELE_GRCH38_COLUMN_NAME: grch38_alleles[1],
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(list(full_call.rs_ids)),
                 cls.ANNOTATION_COLUMN_NAME: full_call.variant_annotation,
-                cls.FILTER_COLUMN_NAME: full_call.filter,
+                cls.FILTER_COLUMN_NAME: full_call.filter.name,
             }
             data_frame = data_frame.append(new_id, ignore_index=True)
 
@@ -116,9 +117,7 @@ class HaplotypeReporter(object):
     HAPLOTYPE_HOMOZYGOUS_SUFFIX = "_HOM"
     HAPLOTYPE_HETEROZYGOUS_SUFFIX = "_HET"
 
-    # TODO: make xome of these strings into constants or enums?
     UNRESOLVED_HAPLOTYPE_STRING = "Unresolved Haplotype"
-    UNKNOWN_FUNCTION_STRING = "Unknown Function"
 
     TSV_SEPARATOR = "\t"
     DRUG_SEPARATOR = ";"
@@ -156,7 +155,7 @@ class HaplotypeReporter(object):
                 lines.append(cls.TSV_SEPARATOR.join([
                     gene,
                     cls.UNRESOLVED_HAPLOTYPE_STRING,
-                    cls.UNKNOWN_FUNCTION_STRING,
+                    UNKNOWN_FUNCTION_STRING,
                     gene_to_drug_info[gene][0],
                     gene_to_drug_info[gene][1],
                     panel_path,
