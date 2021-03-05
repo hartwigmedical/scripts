@@ -4,14 +4,14 @@ from typing import Dict, Set
 import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37CallData, Grch37Call, HaplotypeCall
+from call_data import Grch37CallData, Grch37Call, HaplotypeCall, FullCall
 from config.drug_info import DrugInfo
 from config.gene_info import GeneInfo
 from config.haplotype import Haplotype
 from config.panel import Panel
 from config.rs_id_info import RsIdInfo
 from config.variant import Variant
-from pgx_analysis import PgxAnalyser
+from pgx_analysis import PgxAnalyser, PgxAnalysis
 
 ALL_IDS_IN_PANEL_COLUMNS = [
     "gene", "position_GRCh37", "ref_GRCh37", "alt_GRCh37", "position_GRCh38", "ref_GRCh38", "alt_GRCh38",
@@ -149,10 +149,38 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {
+        gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "INFERRED_REF_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", "INFERRED_REF_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_hom_ref(self) -> None:
         """All haplotypes are  *1_HOM"""
@@ -176,10 +204,37 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {
+        gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*1", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*1", 2)}
         }
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("T", "T"), "FAKE2", ("rs1212127",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_heterozygous(self) -> None:
         """All haplotypes are heterozygous. Both variant/ref and variant/variant"""
@@ -205,12 +260,39 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {
+        gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*3", 1)},
             "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
             "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
         }
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "674A>G", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "T"), "FAKE2", ("rs1212127",), "1324T>C", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ref_call_on_ref_seq_differences(self) -> None:
         """Explicit ref calls wrt GRCh37 at differences between GRCh37 and GRCh38"""
@@ -233,10 +315,37 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {
+        gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_only_position_match_on_ref_seq_differences(self) -> None:
         """At reference sequence differences: heterozygous between ref GRCh37 and GRCh38, and no rs_id provided"""
@@ -259,12 +368,39 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {
+        gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 1), HaplotypeCall("*1", 1)},
             "FAKE": {HaplotypeCall("*1", 2)},
             "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
         }
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "T"), "FAKE2", ("rs1212127",), "1324T>C", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_wrong_rs_id_on_ref_seq_differences(self) -> None:
         """
@@ -332,8 +468,37 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
+            "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("AC", "TC"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC?", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "A"), "FAKE2", ("rs1212127",), "1324C>A?", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_double_different_allele_on_ref_seq_differences(self) -> None:
         """At reference sequence differences: both alleles not ref GRCh37 or GRCh38"""
@@ -356,8 +521,37 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
+            "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC?", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("A", "G"), "FAKE2", ("rs1212127",), "1324C>A;1324C>G?", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_unknown_variants(self) -> None:
         """Variants that are completely unknown, including with unknown rs id"""
@@ -383,8 +577,45 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
+            "DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 2488242), "AC", None, None,
+                ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "INFERRED_REF_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "T"), "DPYD", ("rs1801159",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 98205966), "GATGA", GeneCoordinate("1", 97740410), "GATGA",
+                ("GATGA", "GATGA"), "DPYD", ("rs72549309",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("16", 39593405), "A", None, None,
+                ("A", "G"), "FAKE2", ("rs1949223",), "384C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
+                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", "INFERRED_REF_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
+                ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_unknown_gene(self) -> None:
         """Variants that are of an unknown gene"""
@@ -466,8 +697,25 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*2A", 1), HaplotypeCall("*3", 2), HaplotypeCall("*7", 2)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {
+            "DPYD": {HaplotypeCall("*2A", 1), HaplotypeCall("*3", 2), HaplotypeCall("*7", 2)}
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97912838), "A", GeneCoordinate("1", 97453984), "A",
+                ("AGT", "AGT"), "DPYD", ("rs2938101",), "293A>AGT", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "INFERRED_REF_CALL",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ambiguous_haplotype_with_clear_winner_homozygous(self) -> None:
         """Ambiguous homozygous haplotype, where the simpler possibility should be preferred"""
@@ -488,8 +736,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*2B", 2)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 2)}}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ambiguous_haplotype_with_clear_winner_heterozygous(self) -> None:
         """Ambiguous heterozygous haplotype, where the simpler possibility should be preferred"""
@@ -510,8 +773,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*1", 1)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*1", 1)}}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ambiguous_haplotype_with_clear_winner_mix(self) -> None:
         """Ambiguous mix of homozygous and heterozygous haplotype, where the simplest possibility should be preferred"""
@@ -532,8 +810,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*2A", 1)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*2A", 1)}}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_complicated_ambiguous_haplotype_with_a_clear_winner(self) -> None:
         """Ambiguous set of haplotypes, with no haplotype that is simplest"""
@@ -556,8 +849,29 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1), HaplotypeCall("*7", 2)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {
+            "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1), HaplotypeCall("*7", 2)}
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97912838), "A", GeneCoordinate("1", 97453984), "A",
+                ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ambiguous_homozygous_haplotype_with_a_less_clear_winner(self) -> None:
         """Ambiguous set of homozygous haplotypes, with winning haplotype that might not be ideal"""
@@ -578,8 +892,25 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected = {"DPYD": {HaplotypeCall("*10", 1), HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1)}}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected = {
+            "DPYD": {HaplotypeCall("*10", 1), HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1)}
+        }
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_ambiguous_heterozygous_haplotype_without_a_clear_winner(self) -> None:
         """
@@ -603,8 +934,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_unresolved_haplotype_because_of_unexpected_base(self) -> None:
         """No haplotype call because of unexpected base at known variant location"""
@@ -625,8 +971,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "A"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_unresolved_haplotype_because_of_only_half_of_haplotype(self) -> None:
         """No haplotype call because of missing half of haplotype. One half is present twice, other once"""
@@ -647,8 +1008,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_early(self) -> None:
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts before this location"""
@@ -669,8 +1045,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915613), "GC", None, None,
+                ("CT", "CT"), "DPYD", (".",), "9212GC>CT", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     # @unittest.skip("WIP")
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_there(self) -> None:
@@ -692,8 +1083,23 @@ class TestPgxAnalysis(unittest.TestCase):
         )
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
-        results_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        self.assertEqual(results_expected, pgx_analysis.get_gene_to_haplotype_calls())
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = (
+            FullCall(
+                GeneCoordinate("1", 97915614), "CG", None, None,
+                ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", "NO_CALL",
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
+            ),
+        )
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:

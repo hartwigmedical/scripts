@@ -55,9 +55,6 @@ class Grch37CallTranslator(object):
             rs_id_info = panel.get_matching_rs_id_info(start_coordinate_grch37, reference_allele_grch37)
             cls.__assert_rs_id_call_matches_info(grch37_call.rs_ids, (rs_id_info.rs_id,))
 
-            annotated_alleles = cls.__get_annotated_alleles_from_rs_id_info(rs_id_info, grch37_call)
-            cls.__assert_alleles_in_expected_order(annotated_alleles)
-
             start_coordinate_grch38 = rs_id_info.start_coordinate_grch38
             reference_allele_grch38 = rs_id_info.reference_allele_grch38
             if grch37_call.rs_ids == (".",) and rs_id_info is not None:
@@ -72,22 +69,25 @@ class Grch37CallTranslator(object):
             raise ValueError(error_msg)
         else:
             # unknown variant
-            annotated_alleles = (
-                AnnotatedAllele(grch37_call.alleles[0], None, None),
-                AnnotatedAllele(grch37_call.alleles[1], None, None),
-            )
             start_coordinate_grch38 = None
             reference_allele_grch38 = None
             rs_ids = grch37_call.rs_ids
 
         # determine variant annotation and filter
         if len(rs_ids) == 1 and panel.has_ref_seq_difference_annotation(gene, rs_ids[0]):
+            annotated_alleles = (
+                AnnotatedAllele.from_alleles(grch37_call.alleles[0], reference_allele_grch37, reference_allele_grch38),
+                AnnotatedAllele.from_alleles(grch37_call.alleles[1], reference_allele_grch37, reference_allele_grch38),
+            )
             ref_call_due_to_ref_sequence_difference = all(
-                annotated.is_annotated() and annotated.is_variant_vs_grch37 and not annotated.is_variant_vs_grch38
+                annotated.is_variant_vs_grch37
+                and annotated.is_annotated_vs_grch38()
+                and not annotated.is_variant_vs_grch38
                 for annotated in annotated_alleles
             )
             all_variants_ref_to_grch37_or_grch38 = all(
-                annotated.is_annotated() and not annotated.is_variant_vs_grch37 or not annotated.is_variant_vs_grch38
+                not annotated.is_variant_vs_grch37
+                or (annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38)
                 for annotated in annotated_alleles
             )
 
@@ -115,7 +115,7 @@ class Grch37CallTranslator(object):
 
         full_call = FullCall(
             start_coordinate_grch37, reference_allele_grch37, start_coordinate_grch38, reference_allele_grch38,
-            annotated_alleles, gene, rs_ids, variant_annotation, filter_type,
+            grch37_call.alleles, gene, rs_ids, variant_annotation, filter_type,
         )
         return full_call
 
@@ -134,16 +134,12 @@ class Grch37CallTranslator(object):
                                  f"rs_id_info={rs_id_info}")
                     raise ValueError(error_msg)
 
-                annotated_alleles = (
-                    AnnotatedAllele(rs_id_info.reference_allele_grch37, False, True),
-                    AnnotatedAllele(rs_id_info.reference_allele_grch37, False, True),
-                )
                 full_call = FullCall(
                     rs_id_info.start_coordinate_grch37,
                     rs_id_info.reference_allele_grch37,
                     rs_id_info.start_coordinate_grch38,
                     rs_id_info.reference_allele_grch38,
-                    annotated_alleles,
+                    (rs_id_info.reference_allele_grch37, rs_id_info.reference_allele_grch37),
                     gene,
                     (rs_id_info.rs_id,),
                     annotation,
@@ -151,22 +147,6 @@ class Grch37CallTranslator(object):
                 )
                 inferred_ref_calls.append(full_call)
         return inferred_ref_calls
-
-    @classmethod
-    def __get_annotated_alleles_from_rs_id_info(
-            cls, rs_id_info: RsIdInfo, grch37_call: Grch37Call) -> Tuple[AnnotatedAllele, AnnotatedAllele]:
-        return (
-            AnnotatedAllele(
-                grch37_call.alleles[0],
-                grch37_call.alleles[0] != rs_id_info.reference_allele_grch37,
-                grch37_call.alleles[0] != rs_id_info.reference_allele_grch38,
-                ),
-            AnnotatedAllele(
-                grch37_call.alleles[1],
-                grch37_call.alleles[1] != rs_id_info.reference_allele_grch37,
-                grch37_call.alleles[1] != rs_id_info.reference_allele_grch38,
-                )
-        )
 
     @classmethod
     def __assert_rs_id_call_matches_info(cls, rs_ids_call: Tuple[str, ...], rs_ids_info: Tuple[str, ...]) -> None:
@@ -180,17 +160,4 @@ class Grch37CallTranslator(object):
     def __assert_gene_in_panel(cls, gene: str, panel: Panel) -> None:
         if gene not in panel.get_genes():
             error_msg = f"Call for unknown gene:\ngene={gene}"
-            raise ValueError(error_msg)
-
-    @classmethod
-    def __assert_alleles_in_expected_order(cls, annotated_alleles: Tuple[AnnotatedAllele, AnnotatedAllele]) -> None:
-        alleles_in_unexpected_order = (
-            annotated_alleles[0].is_annotated()
-            and annotated_alleles[1].is_annotated()
-            and annotated_alleles[0].is_variant_vs_grch37
-            and not annotated_alleles[1].is_variant_vs_grch37
-        )
-        if alleles_in_unexpected_order:
-            error_msg = (f"Alleles are in unexpected order, alt before ref: "
-                         f"alleles=({annotated_alleles[0]},{annotated_alleles[1]})")
             raise ValueError(error_msg)

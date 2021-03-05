@@ -14,9 +14,11 @@ class PgxAnalysis(object):
         'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
         'rsid', 'variant_annotation', 'filter'
     )
-    
+
     def __init__(self, all_full_calls: Tuple[FullCall, ...],
                  gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]]) -> None:
+        # TODO: maybe full calls in a frozenset instead of tuple, since maybe order shouldn't matter,
+        #  and duplicates shouldn't be possible anyway
         self.__all_full_calls = all_full_calls
         self.__gene_to_haplotype_calls = gene_to_haplotype_calls
 
@@ -46,21 +48,21 @@ class PgxAnalysis(object):
 
     def __get_data_frame_from_full_calls(cls, full_calls: Tuple[FullCall, ...]) -> pd.DataFrame:
         # TODO: add ref alleles to data frame?
+        # TODO: do sorting of data frame here
         data_frame = pd.DataFrame(columns=cls.CALLS_DATAFRAME_COLUMNS)
         for full_call in full_calls:
+            annotated_alleles = full_call.get_annotated_alleles()
             grch37_alleles = ([
-                annotated.allele for annotated in full_call.annotated_alleles
-                if annotated.is_annotated() and not annotated.is_variant_vs_grch37
+                annotated.allele for annotated in annotated_alleles if not annotated.is_variant_vs_grch37
             ] + [
-                annotated.allele for annotated in full_call.annotated_alleles
-                if not annotated.is_annotated() or annotated.is_variant_vs_grch37
+                annotated.allele for annotated in annotated_alleles if annotated.is_variant_vs_grch37
             ])
             grch38_alleles = ([
-                annotated.allele for annotated in full_call.annotated_alleles
-                if annotated.is_annotated() and not annotated.is_variant_vs_grch38
+                annotated.allele for annotated in annotated_alleles
+                if annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38
             ] + [
-                annotated.allele for annotated in full_call.annotated_alleles
-                if not annotated.is_annotated() or annotated.is_variant_vs_grch38
+                annotated.allele for annotated in annotated_alleles
+                if not annotated.is_annotated_vs_grch38() or annotated.is_variant_vs_grch38
             ])
 
             position_grch38 = (
@@ -122,11 +124,6 @@ class PgxAnalyser(object):
                 )
                 if rs_id_info.rs_id not in rs_ids_found_in_patient and not grch37_coordinates_partially_handled:
                     # Assuming REF/REF relative to GRCh38
-                    annotated_allele = AnnotatedAllele(
-                        rs_id_info.reference_allele_grch38,
-                        rs_id_info.reference_allele_grch37 != rs_id_info.reference_allele_grch38,
-                        False
-                    )
 
                     # TODO: make strings into constants or similar
                     grch38_ref_full_call = FullCall(
@@ -134,7 +131,7 @@ class PgxAnalyser(object):
                         rs_id_info.reference_allele_grch37,
                         rs_id_info.start_coordinate_grch38,
                         rs_id_info.reference_allele_grch38,
-                        (annotated_allele, annotated_allele),
+                        (rs_id_info.reference_allele_grch38, rs_id_info.reference_allele_grch38),
                         gene_info.gene,
                         (rs_id_info.rs_id,),
                         "REF_CALL",
