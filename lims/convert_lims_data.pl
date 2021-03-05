@@ -16,26 +16,13 @@ use 5.01000;
 use constant EMPTY => q{ };
 use constant NACHAR => 'NA';
 
-## These fields are copied from ancestor sample
-## in case they are not set at DNA/RNA sample
-use constant FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR => qw(
-    report_germline report_germline_level report_viral report_pgx ptum
-);
-
-use constant FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR => qw(
-    tumor_perc
-);
-
+## These fields will be copied from ancestor sample in case absent in DNA/RNA sample
+use constant FIELDS_TO_COPY_FROM_TISSUE_ANCESTOR => qw(report_germline report_germline_level report_viral report_pgx ptum);
+use constant FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR => qw(tumor_perc);
 ## These fields will be actively set to boolean for json output
-use constant BOOLEAN_FIELDS => qw(
-    shallowseq report_germline report_viral report_pgx
-    add_to_database add_to_datarequest
-);
-
+use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx add_to_database add_to_datarequest);
 ## These fields will be actively set to integer for json output
-use constant INTEGER_FIELDS => qw(
-    yield q30
-);
+use constant INTEGER_FIELDS => qw(yield q30);
 
 ## Setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
@@ -116,9 +103,7 @@ foreach ( $JSON_OUT ){
     die "[ERROR] Output file exists and is not writable ($_)\n" if ( -f $_ and not -w $_ );
 }
 
-## ----------
 ## MAIN
-## ----------
 say "[INFO] START with \"$SCRIPT\"";
 
 my $name_dict = getFieldNameTranslations();
@@ -129,8 +114,8 @@ my $subm_objs = {}; # will contain objects from Received-Samples shipments sheet
 my $cont_objs = {}; # will contain objects from Received-Samples contact sheet
 my $samp_objs = {}; # will contain objects from Received-Samples samples sheet
 my $cpct_objs = {}; # will contain objects from MS Access LIMS samples table
-my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
-my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
+#my $acti_objs = {}; # will contain objects from MS Access LIMS actions table
+#my $regi_objs = {}; # will contain objects from MS Access LIMS registration table
 my $lims_objs = {}; # will contain all sample objects
 
 $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0, $PROC_TSV_2017, "\t" );
@@ -152,8 +137,8 @@ $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
-$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_id',  1, $ACCESS_ACTIONS_CSV, "," );
-$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
+#$acti_objs = parseTsvCsv( $acti_objs, $name_dict->{'ACTI_CURR'}, 'action_id',  1, $ACCESS_ACTIONS_CSV, "," );
+#$regi_objs = parseTsvCsv( $regi_objs, $name_dict->{'REGI_CURR'}, 'registration_id',  1, $ACCESS_REGISTRATIONS_CSV, "," );
 
 checkContactInfo( $cont_objs );
 
@@ -161,7 +146,7 @@ $subm_objs = addContactInfoToSubmissions( $subm_objs, $cont_objs );
 $lims_objs = addExcelSamplesToSamples( $lims_objs, $samp_objs, $subm_objs );
 $lims_objs = addAccessSamplesToSamples( $lims_objs, $cpct_objs, $subm_objs, $cntr_dict );
 $lims_objs = addLabSopStringToSamples( $lims_objs, $proc_objs );
-$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
+#$lims_objs = addIsoAndPrepExperimentIdsToSamples( $lims_objs, $regi_objs, $acti_objs );
 
 fixAddedDateFields( $lims_objs );
 checkDrupStage3Info( $subm_objs, $lims_objs );
@@ -297,6 +282,7 @@ sub addLabSopStringToSamples{
     return \%store;
 }
 
+# Switched off and will probably no longer be used (will wait for LAMA to mature)
 sub addIsoAndPrepExperimentIdsToSamples{
     my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
