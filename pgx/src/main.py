@@ -146,7 +146,7 @@ def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: 
 
 
 def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: str, sample_t_id: str,
-        panel_path: str, version: str) -> None:
+                            panel_path: str, version: str) -> None:
     genotype_file = f"{outputdir}/{sample_t_id}_genotype.txt"
     if os.path.exists(genotype_file):
         raise IOError(f"Genotype output file {genotype_file} already exists. Exiting.")

@@ -61,7 +61,7 @@ class AnnotatedAllele(object):
     @property
     def is_variant_vs_grch38(self) -> bool:
         if self.__is_variant_vs_grch38 is None:
-            raise ValueError("Cannot get is_variant_vs_grch38 for unannotated allele")
+            raise ValueError("Cannot get is_variant_vs_grch38 if it is None")
         return self.__is_variant_vs_grch38
 
     def is_annotated_vs_grch38(self) -> bool:
@@ -99,7 +99,7 @@ class FullCall(NamedTuple):
         )
         if alleles_in_unexpected_order:
             error_msg = (f"Alleles are in unexpected order, alt before ref: "
-                         f"alleles=({annotated_alleles[0]},{annotated_alleles[1]})")
+                         f"alleles=({annotated_alleles[0]}, {annotated_alleles[1]})")
             raise ValueError(error_msg)
 
 

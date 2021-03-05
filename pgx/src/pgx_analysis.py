@@ -1,8 +1,6 @@
 from copy import deepcopy
 from typing import Dict, Set, FrozenSet
 
-import pandas as pd
-
 from call_data import Grch37CallData, FullCall, HaplotypeCall
 from config.panel import Panel
 from grch37_call_translator import Grch37CallTranslator
