@@ -10,8 +10,8 @@ from pgx_analysis import PgxAnalysis
 
 class PgxReporter(object):
     CALLS_TSV_COLUMNS = (
-        'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-        'rsid', 'variant_annotation', 'filter'
+        "gene", "position_GRCh37", "ref_GRCh37", "alt_GRCh37", "position_GRCh38", "ref_GRCh38", "alt_GRCh38",
+        "rsid", "variant_annotation", "filter"
     )
     GENOTYPE_TSV_COLUMNS = (
         "gene", "haplotype", "function", "linked_drugs", "url_prescription_info", "panel_version", "repo_version")
@@ -56,7 +56,7 @@ class PgxReporter(object):
                 # TODO: make these strings into constants or enums?
                 lines.append(cls.TSV_SEPARATOR.join([
                     gene,
-                    'Unresolved Haplotype',
+                    "Unresolved Haplotype",
                     "Unknown Function",
                     gene_to_drug_info[gene][0],
                     gene_to_drug_info[gene][1],
@@ -98,16 +98,16 @@ class PgxReporter(object):
             )
 
             new_id = {
-                'position_GRCh37': cls.__get_coordinate_string(full_call.start_coordinate_grch37),
-                'rsid': cls.RS_ID_SEPARATOR.join(list(full_call.rs_ids)),
-                'ref_GRCh37': grch37_alleles[0],
-                'alt_GRCh37': grch37_alleles[1],
-                'variant_annotation': full_call.variant_annotation,
-                'filter': full_call.filter,
-                'gene': full_call.gene,
-                'position_GRCh38': position_grch38,
-                'ref_GRCh38': grch38_alleles[0],
-                'alt_GRCh38': grch38_alleles[1]
+                "position_GRCh37": cls.__get_coordinate_string(full_call.start_coordinate_grch37),
+                "rsid": cls.RS_ID_SEPARATOR.join(list(full_call.rs_ids)),
+                "ref_GRCh37": grch37_alleles[0],
+                "alt_GRCh37": grch37_alleles[1],
+                "variant_annotation": full_call.variant_annotation,
+                "filter": full_call.filter,
+                "gene": full_call.gene,
+                "position_GRCh38": position_grch38,
+                "ref_GRCh38": grch38_alleles[0],
+                "alt_GRCh38": grch38_alleles[1]
             }
             data_frame = data_frame.append(new_id, ignore_index=True)
 
