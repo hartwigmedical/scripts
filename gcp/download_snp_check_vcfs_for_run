@@ -10,12 +10,13 @@ download_path=${2:-/data/gcp/tmp}
 [[ -n "${set}" ]] || die "No set provided to $(basename $0). Exiting"
 [[ -n "${download_path}" ]] || die "No download path provided to $(basename $0). Exiting"
 
-info "Searching for run by set (${set})"
+info "Starting with $0 (${set})"
+info "Searching for run by set"
 run_bucket=$(load_intial_run_bucket_for_set ${set})
 
 [[ -n "${run_bucket}" ]] || die "No initial run bucket found for set '${set}'. Exiting"
 
-info "Collecting sample info by set (${set})"
+info "Collecting sample info by set"
 set_api_info=$(hmf_api_get "sets?name=${set}")
 ref_sample=$(echo "${set_api_info}" | jq -r '.[-1].samples[] | select(.type == "ref") | .name')
 tum_sample=$(echo "${set_api_info}" | jq -r '.[-1].samples[] | select(.type == "tumor") | .name')
@@ -29,7 +30,7 @@ tum_vcf_tgt_path="${download_path}/${set}_${tum_sample}_snp_genotype_output.vcf"
 info "Switching to hmf-ops service account"
 switch_to_hmf_ops_service_account
 
-info "Downloading snp genotype vcfs from set ${set} to ${download_path}"
+info "Downloading snp genotype vcfs to ${download_path}"
 gsutil -u hmf-database -m cp "gs://${ref_vcf_src_path}" "${ref_vcf_tgt_path}" || die "Download of ref VCF failed"
 gsutil -u hmf-database -m cp "gs://${tum_vcf_src_path}" "${tum_vcf_tgt_path}" || die "Download of tum VCF failed"
 
