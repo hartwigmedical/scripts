@@ -1,8 +1,6 @@
 import unittest
 from typing import Dict, Set
 
-import pandas as pd
-
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37CallData, Grch37Call, HaplotypeCall, FullCall
 from config.drug_info import DrugInfo
@@ -12,11 +10,6 @@ from config.panel import Panel
 from config.rs_id_info import RsIdInfo
 from config.variant import Variant
 from pgx_analysis import PgxAnalyser, PgxAnalysis
-
-ALL_IDS_IN_PANEL_COLUMNS = [
-    "gene", "position_GRCh37", "ref_GRCh37", "alt_GRCh37", "position_GRCh38", "ref_GRCh38", "alt_GRCh38",
-    "rsid", "variant_annotation", "filter"
-]
 
 
 class TestPgxAnalysis(unittest.TestCase):
@@ -137,18 +130,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ids_found_in_patient = Grch37CallData(tuple())
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "INFERRED_REF_CALL"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "INFERRED_REF_CALL"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
@@ -191,18 +172,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915614), "C", ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "T", "T", "16:97450060", "T", "T", "rs1212127", "REF_CALL", "NO_CALL"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*1", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*1", 2)}
@@ -248,18 +217,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "T", "1:97450058", "C", "T", "rs3918290", "35G>A", "PASS"),
-                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "674A>G", "PASS"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs1212127", "1324T>C", "PASS"),
-                ("FAKE", "5:97915617", "T", "C", "5:97450060", "T", "C", "rs1212125", "1005T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*3", 1)},
             "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
@@ -303,18 +260,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "PASS"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
@@ -355,18 +300,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TG", "TC"), "DPYD", (".",), "6744CA>GA", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "C", "T", "16:97450060", "T", "C", "rs1212127", "1324T>C", "PASS"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 1), HaplotypeCall("*1", 1)},
@@ -456,18 +389,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "AC", "TC", "1:97450065", "TC", "AC", "rs72549303", "6744CT>GT;6744CT>GC?", "PASS"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "C", "A", "16:97450060", "C", "A", "rs1212127", "1324C>A?", "PASS"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
             "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
         }
@@ -508,18 +429,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("AC", "AG"), "DPYD", ("rs72549303",), "6744CT>GT;6744CT>GC", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "AC", "AG", "1:97450065", "AC", "AG", "rs72549303", "6744CT>GT;6744CT>GC?", "PASS"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:97915617", "A", "G", "16:97450060", "A", "G", "rs1212127", "1324C>A;1324C>G?", "PASS"),
-                ("FAKE", "5:97915617", "T", "T", "5:97450060", "T", "T", "rs1212125", "REF_CALL", "NO_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
             "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
@@ -562,20 +471,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 2488242), "AC", ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS"),  # unknown
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:2488242", "AC", "AG", "UNKNOWN", "AC", "AG", ".", "9213CT>GT", "PASS"),
-                ("DPYD", "1:97915614", "C", "C", "1:97450058", "C", "C", "rs3918290", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "INFERRED_REF_CALL"),
-                ("DPYD", "1:97981395", "T", "T", "1:97515839", "T", "T", "rs1801159", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:98205966", "GATGA", "GATGA", "1:97740410", "GATGA", "GATGA", "rs72549309", "REF_CALL", "NO_CALL"),
-                ("FAKE2", "16:39593405", "A", "G", "UNKNOWN", "A", "G", "rs1949223", "384C>T", "PASS"),
-                ("FAKE2", "16:97915617", "C", "C", "16:97450060", "C", "C", "rs1212127", "1324T>C", "INFERRED_REF_CALL"),
-                ("FAKE", "5:97915617", "T", "C", "5:97450060", "T", "C", "rs1212125", "1005T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
             "DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()}
@@ -687,15 +582,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97912838", "AGT", "AGT", "1:97453984", "AGT", "AGT", "rs2938101", "293A>AGT", "PASS"),
-                ("DPYD", "1:97915614", "C", "T", "1:97450058", "C", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "INFERRED_REF_CALL"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2A", 1), HaplotypeCall("*3", 2), HaplotypeCall("*7", 2)}
         }
@@ -726,15 +612,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 2)}}
         all_full_calls_expected = frozenset({
             FullCall(
@@ -762,15 +639,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "T", "1:97450058", "C", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*1", 1)}}
         all_full_calls_expected = frozenset({
@@ -800,15 +668,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*2A", 1)}}
         all_full_calls_expected = frozenset({
             FullCall(
@@ -837,16 +696,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97912838), "A", ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97912838", "AGT", "AGT", "1:97453984", "AGT", "AGT", "rs2938101", "301A>AGT", "PASS"),
-                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1), HaplotypeCall("*7", 2)}
@@ -882,15 +731,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TG", "TG", "1:97450065", "TG", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*10", 1), HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1)}
         }
@@ -924,15 +764,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "C", "T", "1:97450058", "C", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TG", "TC", "1:97450065", "TC", "TG", "rs72549303", "6744GA>CA", "PASS"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         all_full_calls_expected = frozenset({
             FullCall(
@@ -960,15 +791,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "T", "A", "1:97450058", "T", "A", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         all_full_calls_expected = frozenset({
@@ -998,15 +820,6 @@ class TestPgxAnalysis(unittest.TestCase):
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "T", "T", "1:97450058", "T", "T", "rs3918290", "9213C>T", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "T", "C", "1:97515839", "T", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
-
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         all_full_calls_expected = frozenset({
             FullCall(
@@ -1034,15 +847,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915613", "CT", "CT", "UNKNOWN", "CT", "CT", ".", "9212GC>CT", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         all_full_calls_expected = frozenset({
@@ -1072,15 +876,6 @@ class TestPgxAnalysis(unittest.TestCase):
             Grch37Call(GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744GA>CA", "PASS"),
         ))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
-
-        panel_calls_for_patient_expected = pd.DataFrame(
-            [
-                ("DPYD", "1:97915614", "TC", "TC", "UNKNOWN", "TC", "TC", ".", "9212CG>TC", "PASS"),
-                ("DPYD", "1:97915621", "TC", "TC", "1:97450065", "TC", "TC", "rs72549303", "REF_CALL", "NO_CALL"),
-                ("DPYD", "1:97981395", "C", "C", "1:97515839", "C", "C", "rs1801159", "293T>C", "PASS"),
-            ], columns=ALL_IDS_IN_PANEL_COLUMNS
-        )
-        pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
         all_full_calls_expected = frozenset({

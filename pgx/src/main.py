@@ -4,14 +4,21 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Dict, Any, Set, Tuple
+from typing import List, Dict, Any, Set, Tuple, FrozenSet
 
 import allel
+import pandas as pd
 
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37Call, Grch37CallData
+from call_data import Grch37Call, Grch37CallData, FullCall
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
+
+
+CALLS_DATAFRAME_COLUMNS = (
+    'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
+    'rsid', 'variant_annotation', 'filter'
+)
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
@@ -209,7 +216,66 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
 
 
 def print_calls_to_file(pgx_analysis: PgxAnalysis, calls_file: str) -> None:
-    pgx_analysis.get_panel_calls_df().to_csv(calls_file, sep='\t', index=False)
+    get_panel_calls_df(pgx_analysis).to_csv(calls_file, sep='\t', index=False)
+
+
+def get_panel_calls_df(pgx_analysis: PgxAnalysis) -> pd.DataFrame:
+    return get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls())
+
+
+def get_calls_data_frame_from_full_calls(full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
+    # TODO: add ref alleles to data frame?
+    data_frame = pd.DataFrame(columns=CALLS_DATAFRAME_COLUMNS)
+    for full_call in full_calls:
+        annotated_alleles = full_call.get_annotated_alleles()
+
+        grch37_ref_alleles = [annotated.allele for annotated in annotated_alleles if not annotated.is_variant_vs_grch37]
+        grch37_variant_alleles = [annotated.allele for annotated in annotated_alleles if annotated.is_variant_vs_grch37]
+        grch37_alleles = grch37_ref_alleles + grch37_variant_alleles
+
+        grch38_ref_alleles = [
+            annotated.allele for annotated in annotated_alleles
+            if annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38
+        ]
+        grch38_variant_alleles = [
+            annotated.allele for annotated in annotated_alleles
+            if not annotated.is_annotated_vs_grch38() or annotated.is_variant_vs_grch38
+        ]
+        grch38_alleles = (grch38_ref_alleles + grch38_variant_alleles)
+
+        position_grch38 = (
+            str(full_call.start_coordinate_grch38)
+            if full_call.start_coordinate_grch38 is not None
+            else "UNKNOWN"
+        )
+
+        new_id = {
+            'position_GRCh37': str(full_call.start_coordinate_grch37),
+            'rsid': ";".join(list(full_call.rs_ids)),
+            'ref_GRCh37': grch37_alleles[0],
+            'alt_GRCh37': grch37_alleles[1],
+            'variant_annotation': full_call.variant_annotation,
+            'filter': full_call.filter,
+            'gene': full_call.gene,
+            'position_GRCh38': position_grch38,
+            'ref_GRCh38': grch38_alleles[0],
+            'alt_GRCh38': grch38_alleles[1]
+        }
+        data_frame = data_frame.append(new_id, ignore_index=True)
+
+    if pd.isna(data_frame).any(axis=None):
+        raise ValueError(f"This should never happen: Unhandled NaN values:\n{data_frame}")
+
+    data_frame = sort_call_data_frame(data_frame)
+
+    return data_frame
+
+
+def sort_call_data_frame(data_frame: pd.DataFrame) -> pd.DataFrame:
+    data_frame["chromosome"] = (data_frame["position_GRCh37"]).str.split(pat=":", n=1, expand=True).iloc[:, 0]
+    data_frame = data_frame.sort_values(by=["chromosome", "position_GRCh37"]).reset_index(drop=True)
+    data_frame = data_frame.loc[:, CALLS_DATAFRAME_COLUMNS]
+    return data_frame
 
 
 def print_haplotypes_to_file(

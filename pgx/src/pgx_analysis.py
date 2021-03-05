@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Tuple, Set, FrozenSet
+from typing import Dict, Set, FrozenSet
 
 import pandas as pd
 
@@ -10,15 +10,8 @@ from haplotype_caller import HaplotypeCaller
 
 
 class PgxAnalysis(object):
-    CALLS_DATAFRAME_COLUMNS = (
-        'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-        'rsid', 'variant_annotation', 'filter'
-    )
-
     def __init__(self, all_full_calls: FrozenSet[FullCall],
                  gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]]) -> None:
-        # TODO: maybe full calls in a frozenset instead of tuple, since maybe order shouldn't matter,
-        #  and duplicates shouldn't be possible anyway
         self.__all_full_calls = all_full_calls
         self.__gene_to_haplotype_calls = gene_to_haplotype_calls
 
@@ -42,55 +35,6 @@ class PgxAnalysis(object):
 
     def get_gene_to_haplotype_calls(self) -> Dict[str, Set[HaplotypeCall]]:
         return deepcopy(self.__gene_to_haplotype_calls)
-
-    def get_panel_calls_df(self) -> pd.DataFrame:
-        return self.__get_data_frame_from_full_calls(self.__all_full_calls)
-
-    def __get_data_frame_from_full_calls(cls, full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
-        # TODO: add ref alleles to data frame?
-        # TODO: do sorting of data frame here
-        data_frame = pd.DataFrame(columns=cls.CALLS_DATAFRAME_COLUMNS)
-        for full_call in full_calls:
-            annotated_alleles = full_call.get_annotated_alleles()
-            grch37_alleles = ([
-                annotated.allele for annotated in annotated_alleles if not annotated.is_variant_vs_grch37
-            ] + [
-                annotated.allele for annotated in annotated_alleles if annotated.is_variant_vs_grch37
-            ])
-            grch38_alleles = ([
-                annotated.allele for annotated in annotated_alleles
-                if annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38
-            ] + [
-                annotated.allele for annotated in annotated_alleles
-                if not annotated.is_annotated_vs_grch38() or annotated.is_variant_vs_grch38
-            ])
-
-            position_grch38 = (
-                str(full_call.start_coordinate_grch38)
-                if full_call.start_coordinate_grch38 is not None
-                else "UNKNOWN"
-            )
-
-            new_id = {'position_GRCh37': str(full_call.start_coordinate_grch37),
-                      'rsid': ";".join(list(full_call.rs_ids)),
-                      'ref_GRCh37': grch37_alleles[0],
-                      'alt_GRCh37': grch37_alleles[1],
-                      'variant_annotation': full_call.variant_annotation,
-                      'filter': full_call.filter,
-                      'gene': full_call.gene,
-                      'position_GRCh38': position_grch38,
-                      'ref_GRCh38': grch38_alleles[0],
-                      'alt_GRCh38': grch38_alleles[1]}
-            data_frame = data_frame.append(new_id, ignore_index=True)
-
-        if pd.isna(data_frame).any(axis=None):
-            raise ValueError(f"This should never happen: Unhandled NaN values:\n{data_frame}")
-
-        data_frame["chromosome"] = (data_frame["position_GRCh37"]).str.split(pat=":", n=1, expand=True).iloc[:, 0]
-
-        data_frame = data_frame.sort_values(by=["chromosome", "position_GRCh37"]).reset_index(drop=True)
-
-        return data_frame.loc[:, cls.CALLS_DATAFRAME_COLUMNS]
 
 
 class PgxAnalyser(object):
