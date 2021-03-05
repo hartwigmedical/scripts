@@ -4,19 +4,12 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Set, FrozenSet
+from typing import List, Set, Tuple
 
-import pandas as pd
-
-from call_data import FullCall
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
+from pgx_reporter import PgxReporter
 from vcf_reader import VcfReader
-
-CALLS_DATAFRAME_COLUMNS = (
-    'gene', 'position_GRCh37', 'ref_GRCh37', 'alt_GRCh37', 'position_GRCh38', 'ref_GRCh38', 'alt_GRCh38',
-    'rsid', 'variant_annotation', 'filter'
-)
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
@@ -40,44 +33,51 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
         raise ValueError("No panel is given, so no analysis can be performed.")
 
     # Get data for patient
-    filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
+    filtered_vcf, filtered_vcf_log = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
     grch37_call_data = VcfReader.get_grch37_call_data(filtered_vcf, panel)
 
     # Compute output from input data
     pgx_analysis = PgxAnalyser.create_pgx_analysis(grch37_call_data, panel)
 
     # Output
-    out = outputdir + "/" + sample_t_id
-    print_calls_to_file(pgx_analysis, out + "_calls.txt")
-    print_haplotypes_to_file(pgx_analysis, out + "_genotype.txt", panel, panel_path, version)
+    # TODO: maybe change file names of tsv files to .tsv
+    print_calls_to_file(pgx_analysis, outputdir, sample_t_id)
+    print_genotypes_to_file(pgx_analysis, panel, outputdir, sample_t_id, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
-    copyfile(filtered_vcf, out + "_PGx.vcf")
+    copy_filtered_vcf_file(filtered_vcf, outputdir, sample_t_id)
 
     # Clean up
     if os.path.exists(filtered_vcf):
         if os.path.exists(filtered_vcf):
             os.remove(filtered_vcf)
-            print("[INFO] " + filtered_vcf + " removed.")
-        if os.path.exists(filtered_vcf.replace(".recode.vcf", ".log")):
-            os.remove(filtered_vcf.replace(".recode.vcf", ".log"))
-            print("[INFO] " + filtered_vcf.replace(".recode.vcf", ".log") + " removed.")
+            print(f"[INFO] {filtered_vcf} removed.")
+        if os.path.exists(filtered_vcf_log):
+            os.remove(filtered_vcf_log)
+            print(f"[INFO] {filtered_vcf_log} removed.")
 
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str) -> str:
-    filtered_vcf_prefix = outputdir + '/' + sample_t_id + '_PGx'
-    filtered_vcf = filtered_vcf_prefix + '.recode.vcf'
+def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str,
+                     sample_t_id: str, outputdir: str, vcftools: str) -> Tuple[str, str]:
+    filtered_vcf_prefix = f"{outputdir}/{sample_t_id}_PGx"
+    filtered_vcf = f"{filtered_vcf_prefix}.recode.vcf"
+    filtered_vcf_log = f"{filtered_vcf_prefix}.log"
     # Check if output vcf does not already exist
-    if os.path.exists(filtered_vcf):
-        raise IOError("Temporary VCF file " + filtered_vcf + " already exists. Exiting.")
+    if os.path.exists(filtered_vcf) or os.path.exists(filtered_vcf_log):
+        raise IOError(f"Temporary VCF file {filtered_vcf} already exists. Exiting.")
 
     subprocess.run([vcftools, '--gzvcf', vcf, '--bed', bed_file, '--out', filtered_vcf_prefix,
                     '--indv', sample_r_id, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
-    return filtered_vcf
+
+    if not os.path.exists(filtered_vcf) or not os.path.exists(filtered_vcf_log):
+        error_msg = f"Filtered vcf or log of filtering does not exist"
+        raise FileNotFoundError(error_msg)
+
+    return filtered_vcf, filtered_vcf_log
 
 
 def load_panel(panel_path: str) -> Panel:
@@ -106,130 +106,63 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
 def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
     print("[INFO] Recreating bed-file...")
-    header = 'track name="' + panel_path + '" description="Bed file generated from ' + panel_path + \
-             ' with HMF_PGx main.py"\n'
+    header = (
+        f'track name="{panel_path}" description="Bed file generated from {panel_path} with HMF_PGx main.py"\n'
+    )
     bed_regions = []  # chrom, start, end, gene
     covered = []
-    transcripts = open(sourcedir + "/all_genes.37.tsv", 'r')
+    transcripts = open(f"{sourcedir}/all_genes.37.tsv", 'r')
     for line in transcripts:
         split_line = line.rstrip().split("\t")
         if split_line[4] in genes_in_panel and split_line[4] not in covered:
             bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
             covered.append(split_line[4])
     if set(covered) != genes_in_panel:
-        raise ValueError("Missing genes from the gene panel in the transcript list. Please check:\nCovered:\n"
-                         + str(covered) + "\nOriginal gene panel:\n" + str(genes_in_panel))
+        error_msg = (
+            f"Missing genes from the gene panel in the transcript list. Please check:\n"
+            f"Covered:\n"
+            f"{covered}\n"
+            f"Original gene panel:\n"
+            f"{genes_in_panel}"
+        )
+        raise ValueError(error_msg)
 
     with open(bed_path, 'w') as bed:
         bed.write(header)
         for entry in bed_regions:
             bed.write("\t".join(entry) + "\n")
 
-    print("[INFO] Created " + bed_path)
+    print(f"[INFO] Created {bed_path}")
 
 
-def print_calls_to_file(pgx_analysis: PgxAnalysis, calls_file: str) -> None:
-    get_panel_calls_df(pgx_analysis).to_csv(calls_file, sep='\t', index=False)
+def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: str) -> None:
+    calls_file = f"{outputdir}/{sample_t_id}_calls.txt"
+    if os.path.exists(calls_file):
+        raise IOError(f"Calls output file {calls_file} already exists. Exiting.")
+    with open(calls_file, 'w') as f:
+        f.write(PgxReporter.get_calls_tsv_text(pgx_analysis))
+    if not os.path.exists(calls_file):
+        raise FileNotFoundError(f"Failed to write calls output file {calls_file}")
 
 
-def get_panel_calls_df(pgx_analysis: PgxAnalysis) -> pd.DataFrame:
-    return get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls())
-
-
-def get_calls_data_frame_from_full_calls(full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
-    # TODO: add ref alleles to data frame?
-    data_frame = pd.DataFrame(columns=CALLS_DATAFRAME_COLUMNS)
-    for full_call in full_calls:
-        annotated_alleles = full_call.get_annotated_alleles()
-
-        grch37_ref_alleles = [annotated.allele for annotated in annotated_alleles if not annotated.is_variant_vs_grch37]
-        grch37_variant_alleles = [annotated.allele for annotated in annotated_alleles if annotated.is_variant_vs_grch37]
-        grch37_alleles = grch37_ref_alleles + grch37_variant_alleles
-
-        grch38_ref_alleles = [
-            annotated.allele for annotated in annotated_alleles
-            if annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38
-        ]
-        grch38_variant_alleles = [
-            annotated.allele for annotated in annotated_alleles
-            if not annotated.is_annotated_vs_grch38() or annotated.is_variant_vs_grch38
-        ]
-        grch38_alleles = (grch38_ref_alleles + grch38_variant_alleles)
-
-        position_grch38 = (
-            str(full_call.start_coordinate_grch38)
-            if full_call.start_coordinate_grch38 is not None
-            else "UNKNOWN"
-        )
-
-        new_id = {
-            'position_GRCh37': str(full_call.start_coordinate_grch37),
-            'rsid': ";".join(list(full_call.rs_ids)),
-            'ref_GRCh37': grch37_alleles[0],
-            'alt_GRCh37': grch37_alleles[1],
-            'variant_annotation': full_call.variant_annotation,
-            'filter': full_call.filter,
-            'gene': full_call.gene,
-            'position_GRCh38': position_grch38,
-            'ref_GRCh38': grch38_alleles[0],
-            'alt_GRCh38': grch38_alleles[1]
-        }
-        data_frame = data_frame.append(new_id, ignore_index=True)
-
-    if pd.isna(data_frame).any(axis=None):
-        raise ValueError(f"This should never happen: Unhandled NaN values:\n{data_frame}")
-
-    data_frame = sort_call_data_frame(data_frame)
-
-    return data_frame
-
-
-def sort_call_data_frame(data_frame: pd.DataFrame) -> pd.DataFrame:
-    data_frame["chromosome"] = (data_frame["position_GRCh37"]).str.split(pat=":", n=1, expand=True).iloc[:, 0]
-    data_frame = data_frame.sort_values(by=["chromosome", "position_GRCh37"]).reset_index(drop=True)
-    data_frame = data_frame.loc[:, CALLS_DATAFRAME_COLUMNS]
-    return data_frame
-
-
-def print_haplotypes_to_file(
-        pgx_analysis: PgxAnalysis, genotype_file: str, panel: Panel, panel_path: str, version: str) -> None:
-    gene_to_drug_info = {}
-    for gene_info in panel.get_gene_infos():
-        sorted_drugs = sorted(
-            [drug for drug in gene_info.drugs],
-            key=lambda info: (info.name, info.url_prescription_info)
-        )
-        gene_to_drug_info[gene_info.gene] = (
-            ";".join([drug.name for drug in sorted_drugs]),
-            ";".join([drug.url_prescription_info for drug in sorted_drugs])
-        )
-
-    gene_to_haplotype_calls = pgx_analysis.get_gene_to_haplotype_calls()
+def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: str, sample_t_id: str,
+        panel_path: str, version: str) -> None:
+    genotype_file = f"{outputdir}/{sample_t_id}_genotype.txt"
+    if os.path.exists(genotype_file):
+        raise IOError(f"Genotype output file {genotype_file} already exists. Exiting.")
     with open(genotype_file, 'w') as f:
-        f.write("gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n")
-        for gene in sorted(list(gene_to_haplotype_calls.keys())):
-            if gene_to_haplotype_calls[gene]:
-                for haplotype_call in sorted(list(gene_to_haplotype_calls[gene]), key=lambda call: call.haplotype_name):
-                    f.write(
-                        gene + "\t" +
-                        str(haplotype_call) + "\t" +
-                        panel.get_haplotype_function(gene, haplotype_call.haplotype_name) + "\t" +
-                        gene_to_drug_info[gene][0] + "\t" +
-                        gene_to_drug_info[gene][1] + "\t" +
-                        panel_path + "\t" +
-                        version + "\n"
-                    )
-            else:
-                # TODO: make these strings into constants?
-                f.write(
-                    gene + "\t" +
-                    'Unresolved Haplotype' + "\t" +
-                    "Unknown Function" + "\t" +
-                    gene_to_drug_info[gene][0] + "\t" +
-                    gene_to_drug_info[gene][1] + "\t" +
-                    panel_path + "\t" +
-                    version + "\n"
-                )
+        f.write(PgxReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version))
+    if not os.path.exists(genotype_file):
+        raise FileNotFoundError(f"Failed to write calls output file {genotype_file}")
+
+
+def copy_filtered_vcf_file(filtered_vcf: str, outputdir: str, sample_t_id: str) -> None:
+    destination_path = f"{outputdir}/{sample_t_id}_PGx.vcf"
+    if os.path.exists(destination_path):
+        raise IOError(f"Copied filtered vcf file {destination_path} already exists. Exiting.")
+    copyfile(filtered_vcf, destination_path)
+    if not os.path.exists(destination_path):
+        raise FileNotFoundError(f"Failed to copy filtered vcf file {destination_path}")
 
 
 def parse_args(sys_args: List[str]) -> argparse.Namespace:
