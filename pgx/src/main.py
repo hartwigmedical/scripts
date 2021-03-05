@@ -8,7 +8,7 @@ from typing import List, Set, Tuple
 
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
-from pgx_reporter import PgxReporter
+from pgx_reporter import HaplotypeReporter, GenotypeReporter
 from vcf_reader import VcfReader
 
 
@@ -140,7 +140,7 @@ def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: 
     if os.path.exists(calls_file):
         raise IOError(f"Calls output file {calls_file} already exists. Exiting.")
     with open(calls_file, 'w') as f:
-        f.write(PgxReporter.get_calls_tsv_text(pgx_analysis))
+        f.write(GenotypeReporter.get_calls_tsv_text(pgx_analysis))
     if not os.path.exists(calls_file):
         raise FileNotFoundError(f"Failed to write calls output file {calls_file}")
 
@@ -151,7 +151,7 @@ def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: 
     if os.path.exists(genotype_file):
         raise IOError(f"Genotype output file {genotype_file} already exists. Exiting.")
     with open(genotype_file, 'w') as f:
-        f.write(PgxReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version))
+        f.write(HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version))
     if not os.path.exists(genotype_file):
         raise FileNotFoundError(f"Failed to write calls output file {genotype_file}")
 

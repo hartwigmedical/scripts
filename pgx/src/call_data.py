@@ -4,10 +4,6 @@ from base.gene_coordinate import GeneCoordinate
 from base.util import get_covered_coordinates
 
 
-HAPLOTYPE_HOMOZYGOUS_SUFFIX = "_HOM"
-HAPLOTYPE_HETEROZYGOUS_SUFFIX = "_HET"
-
-
 class Grch37Call(NamedTuple):
     start_coordinate: GeneCoordinate
     ref_allele: str
@@ -125,12 +121,6 @@ class HaplotypeCall(object):
 
     def __hash__(self) -> int:
         return hash((self.__haplotype_name, self.__count))
-
-    def __str__(self) -> str:
-        if self.__count == 2:
-            return self.haplotype_name + HAPLOTYPE_HOMOZYGOUS_SUFFIX
-        else:
-            return self.haplotype_name + HAPLOTYPE_HETEROZYGOUS_SUFFIX
 
     def __repr__(self) -> str:
         return (
