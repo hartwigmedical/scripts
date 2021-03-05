@@ -1,9 +1,9 @@
 from copy import deepcopy
-from typing import Dict, Tuple, Set
+from typing import Dict, Tuple, Set, FrozenSet
 
 import pandas as pd
 
-from call_data import Grch37CallData, FullCall, HaplotypeCall, AnnotatedAllele
+from call_data import Grch37CallData, FullCall, HaplotypeCall
 from config.panel import Panel
 from grch37_call_translator import Grch37CallTranslator
 from haplotype_caller import HaplotypeCaller
@@ -15,7 +15,7 @@ class PgxAnalysis(object):
         'rsid', 'variant_annotation', 'filter'
     )
 
-    def __init__(self, all_full_calls: Tuple[FullCall, ...],
+    def __init__(self, all_full_calls: FrozenSet[FullCall],
                  gene_to_haplotype_calls: Dict[str, Set[HaplotypeCall]]) -> None:
         # TODO: maybe full calls in a frozenset instead of tuple, since maybe order shouldn't matter,
         #  and duplicates shouldn't be possible anyway
@@ -37,7 +37,7 @@ class PgxAnalysis(object):
             f")"
         )
 
-    def get_all_full_calls(self) -> Tuple[FullCall, ...]:
+    def get_all_full_calls(self) -> FrozenSet[FullCall]:
         return self.__all_full_calls
 
     def get_gene_to_haplotype_calls(self) -> Dict[str, Set[HaplotypeCall]]:
@@ -46,7 +46,7 @@ class PgxAnalysis(object):
     def get_panel_calls_df(self) -> pd.DataFrame:
         return self.__get_data_frame_from_full_calls(self.__all_full_calls)
 
-    def __get_data_frame_from_full_calls(cls, full_calls: Tuple[FullCall, ...]) -> pd.DataFrame:
+    def __get_data_frame_from_full_calls(cls, full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
         # TODO: add ref alleles to data frame?
         # TODO: do sorting of data frame here
         data_frame = pd.DataFrame(columns=cls.CALLS_DATAFRAME_COLUMNS)
@@ -86,7 +86,11 @@ class PgxAnalysis(object):
         if pd.isna(data_frame).any(axis=None):
             raise ValueError(f"This should never happen: Unhandled NaN values:\n{data_frame}")
 
-        return data_frame
+        data_frame["chromosome"] = (data_frame["position_GRCh37"]).str.split(pat=":", n=1, expand=True).iloc[:, 0]
+
+        data_frame = data_frame.sort_values(by=["chromosome", "position_GRCh37"]).reset_index(drop=True)
+
+        return data_frame.loc[:, cls.CALLS_DATAFRAME_COLUMNS]
 
 
 class PgxAnalyser(object):
@@ -99,23 +103,20 @@ class PgxAnalyser(object):
 
     @classmethod
     def get_all_full_calls(
-            cls, full_calls_found_in_patient: Tuple[FullCall, ...], panel: Panel) -> Tuple[FullCall, ...]:
+            cls, full_calls_found_in_patient: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
         full_calls_not_found_in_patient = cls.__get_full_calls_not_found_in_patient(full_calls_found_in_patient, panel)
-        all_full_calls = tuple(sorted(
-            list(full_calls_found_in_patient) + list(full_calls_not_found_in_patient),
-            key=lambda call: call.start_coordinate_grch37
-        ))
+        all_full_calls = full_calls_found_in_patient.union(full_calls_not_found_in_patient)
         return all_full_calls
 
     @classmethod
     def __get_full_calls_not_found_in_patient(
-            cls, full_calls: Tuple[FullCall, ...], panel: Panel) -> Tuple[FullCall, ...]:
+            cls, full_calls: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
         rs_ids_found_in_patient = {rs_id for full_call in full_calls for rs_id in full_call.rs_ids if rs_id != "."}
         grch37_coordinates_covered_by_found_calls = {
             coordinate for full_call in full_calls for coordinate in full_call.get_relevant_grch37_coordinates()
         }
 
-        grch38_ref_full_calls = []
+        grch38_ref_full_calls = set()
         for gene_info in panel.get_gene_infos():
             for rs_id_info in gene_info.rs_id_infos:
                 grch37_coordinates_partially_handled = bool(
@@ -137,5 +138,5 @@ class PgxAnalyser(object):
                         "REF_CALL",
                         "NO_CALL"
                     )
-                    grch38_ref_full_calls.append(grch38_ref_full_call)
-        return tuple(grch38_ref_full_calls)
+                    grch38_ref_full_calls.add(grch38_ref_full_call)
+        return frozenset(grch38_ref_full_calls)

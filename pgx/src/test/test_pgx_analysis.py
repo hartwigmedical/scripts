@@ -153,7 +153,7 @@ class TestPgxAnalysis(unittest.TestCase):
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
 
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
@@ -178,7 +178,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -207,7 +207,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*1", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*1", 2)}
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "PASS",
@@ -232,7 +232,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -265,7 +265,7 @@ class TestPgxAnalysis(unittest.TestCase):
             "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
             "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "T"), "DPYD", ("rs3918290",), "35G>A", "PASS",
@@ -290,7 +290,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -318,7 +318,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*3", 2)}, "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": {HaplotypeCall("*4A", 2)}
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
@@ -343,7 +343,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -373,7 +373,7 @@ class TestPgxAnalysis(unittest.TestCase):
             "FAKE": {HaplotypeCall("*1", 2)},
             "FAKE2": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)},
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
@@ -398,7 +398,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -471,7 +471,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
             "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
@@ -496,7 +496,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -524,7 +524,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
             "DPYD": set(), "FAKE": {HaplotypeCall("*1", 2)}, "FAKE2": set()
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "C"), "DPYD", ("rs3918290",), "REF_CALL", "NO_CALL",
@@ -549,7 +549,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "T"), "FAKE", ("rs1212125",), "REF_CALL", "NO_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -578,9 +578,8 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {
-            "DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()
-        }
-        all_full_calls_expected = (
+            "DPYD": set(), "FAKE": {HaplotypeCall("*4A", 1), HaplotypeCall("*1", 1)}, "FAKE2": set()}
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 2488242), "AC", None, None,
                 ("AC", "AG"), "DPYD", (".",), "9213CT>GT", "PASS",
@@ -613,7 +612,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
                 ("T", "C"), "FAKE", ("rs1212125",), "1005T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -700,7 +699,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2A", 1), HaplotypeCall("*3", 2), HaplotypeCall("*7", 2)}
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97912838), "A", GeneCoordinate("1", 97453984), "A",
                 ("AGT", "AGT"), "DPYD", ("rs2938101",), "293A>AGT", "PASS",
@@ -713,7 +712,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
                 ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", "INFERRED_REF_CALL",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -737,7 +736,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 2)}}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -750,7 +749,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -774,7 +773,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*1", 1)}}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -787,7 +786,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -811,7 +810,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected = {"DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*2A", 1)}}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -824,7 +823,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -852,7 +851,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1), HaplotypeCall("*7", 2)}
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97912838), "A", GeneCoordinate("1", 97453984), "A",
                 ("AGT", "AGT"), "DPYD", ("rs2938101",), "301A>AGT", "PASS",
@@ -869,7 +868,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -895,7 +894,7 @@ class TestPgxAnalysis(unittest.TestCase):
         gene_to_haplotype_calls_expected = {
             "DPYD": {HaplotypeCall("*10", 1), HaplotypeCall("*2B", 1), HaplotypeCall("*9", 1)}
         }
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -908,7 +907,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -935,7 +934,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("C", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -948,7 +947,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -972,7 +971,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("T", "A"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -985,7 +984,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -1009,7 +1008,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
                 ("T", "T"), "DPYD", ("rs3918290",), "9213C>T", "PASS",
@@ -1022,7 +1021,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("T", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -1046,7 +1045,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915613), "GC", None, None,
                 ("CT", "CT"), "DPYD", (".",), "9212GC>CT", "PASS",
@@ -1059,7 +1058,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
@@ -1084,7 +1083,7 @@ class TestPgxAnalysis(unittest.TestCase):
         pd.testing.assert_frame_equal(panel_calls_for_patient_expected, pgx_analysis.get_panel_calls_df())
 
         gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
-        all_full_calls_expected = (
+        all_full_calls_expected = frozenset({
             FullCall(
                 GeneCoordinate("1", 97915614), "CG", None, None,
                 ("TC", "TC"), "DPYD", (".",), "9212CG>TC", "PASS",
@@ -1097,7 +1096,7 @@ class TestPgxAnalysis(unittest.TestCase):
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
                 ("C", "C"), "DPYD", ("rs1801159",), "293T>C", "PASS",
             ),
-        )
+        })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 

@@ -1,17 +1,16 @@
-from typing import List, Set, Tuple, Optional
+from typing import List, Set, Tuple, Optional, FrozenSet
 
 from base.gene_coordinate import GeneCoordinate
 from call_data import Grch37CallData, FullCall, AnnotatedAllele, Grch37Call
 from config.panel import Panel
-from config.rs_id_info import RsIdInfo
 
 
 class Grch37CallTranslator(object):
     @classmethod
-    def get_full_calls(cls, grch37_call_data: Grch37CallData, panel: Panel) -> Tuple[FullCall, ...]:
+    def get_full_calls(cls, grch37_call_data: Grch37CallData, panel: Panel) -> FrozenSet[FullCall]:
         handled_grch37_coordinates: Set[GeneCoordinate] = set()
         handled_grch37_rs_ids: Set[str] = set()
-        full_calls_from_grch37_calls = []
+        full_calls_from_grch37_calls = set()
         for grch37_call in grch37_call_data.calls:
             full_call = cls.__get_full_call_from_grch37_call(grch37_call, panel)
 
@@ -32,12 +31,14 @@ class Grch37CallTranslator(object):
                 raise ValueError(error_msg)
             handled_grch37_coordinates.update(relevant_grch37_coordinates)
 
-            full_calls_from_grch37_calls.append(full_call)
+            full_calls_from_grch37_calls.add(full_call)
+
+
         # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
         # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
         inferred_ref_calls = cls.__get_inferred_ref_calls(panel, handled_grch37_coordinates, handled_grch37_rs_ids)
-        full_calls = full_calls_from_grch37_calls + inferred_ref_calls
-        return tuple(full_calls)
+        full_calls = frozenset(full_calls_from_grch37_calls.union(inferred_ref_calls))
+        return full_calls
 
     @classmethod
     def __get_full_call_from_grch37_call(cls, grch37_call: Grch37Call, panel: Panel) -> FullCall:
@@ -121,10 +122,10 @@ class Grch37CallTranslator(object):
 
     @classmethod
     def __get_inferred_ref_calls(cls, panel: Panel, handled_grch37_coordinates: Set[GeneCoordinate],
-                                 handled_grch37_rs_ids: Set[str]) -> List[FullCall]:
+                                 handled_grch37_rs_ids: Set[str]) -> FrozenSet[FullCall]:
         # The "inferred ref" calls are calls for ref seq differences that do not correspond to grch37 calls.
         # This means that they were ref vs GRCh37 and therefore variant calls vs GRCh38
-        inferred_ref_calls = []
+        inferred_ref_calls = set()
         for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
             if not rs_id_info.get_relevant_grch37_coordinates().intersection(handled_grch37_coordinates):
                 # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
@@ -145,8 +146,8 @@ class Grch37CallTranslator(object):
                     annotation,
                     "INFERRED_REF_CALL",
                 )
-                inferred_ref_calls.append(full_call)
-        return inferred_ref_calls
+                inferred_ref_calls.add(full_call)
+        return frozenset(inferred_ref_calls)
 
     @classmethod
     def __assert_rs_id_call_matches_info(cls, rs_ids_call: Tuple[str, ...], rs_ids_info: Tuple[str, ...]) -> None:
