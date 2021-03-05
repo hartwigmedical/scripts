@@ -13,7 +13,12 @@ if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" ]]; then
 fi
 
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
-primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+if [[ ${tumor_sample} == "COLO"* ]]; then
+    primary_tumor_doids="8923"
+else
+    primary_tumor_doids=$(get_doids_for_biopsy ${tumor_sample})
+fi
+
 primary_tumor_argument=""
 if [[ ! -z "${primary_tumor_doids}" ]]; then
     primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
