@@ -7,9 +7,8 @@ source lims_functions
 run_dir=$1 && shift
 output_dir=$1 && shift
 protect_jar=$1 && shift
-credentials=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" || -z "${credentials}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" ]]; then
     echo "[ERROR] Missing input parameters. Exiting" && exit 1;
 fi
 
@@ -40,10 +39,6 @@ linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 
-db_user=$(awk '/^user/ {print $2}' ${credentials})
-db_pass=$(awk '/^pass/ {print $2}' ${credentials})
-db_url=$(awk '/^url/ {print $2}' ${credentials})
-
 java -Xms2G -Xmx8G -jar ${protect_jar} \
     -tumor_sample_id ${tumor_sample} \
     ${primary_tumor_argument} \
@@ -61,6 +56,5 @@ java -Xms2G -Xmx8G -jar ${protect_jar} \
     -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
     -linx_drivers_tsv ${linx_drivers_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
-    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     -log_debug \
     "$@"
