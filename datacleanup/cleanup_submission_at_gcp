@@ -8,7 +8,7 @@ TRUE=true
 
 GCP_PROJECT="hmf-database"
 GCP_ACCOUNT="hmf-ops"
-execute_cleanup=false
+do_execute_cleanup=false
 
 print_usage(){
     echo "-----"
@@ -23,7 +23,7 @@ print_usage(){
 while getopts ':s:e' flag; do
     case "${flag}" in
         s) submission=${OPTARG} ;;
-        e) execute_cleanup=TRUE ;;
+        e) do_execute_cleanup=TRUE ;;
         *) print_usage
         exit 1 ;;
     esac
@@ -36,11 +36,10 @@ fi
 main() {
     info "Starting with script $(basename $0) for submission $submission"
 
-    yymmdd=$(date "+%y%m%d")
     out_path="${OUT_ROOT}/${submission}"
-    log_file="${out_path}/setup_cleanup_of_${submission}.log"
-    rm_cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
-    rm_log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
+    log_file="${out_path}/setup.log"
+    rm_cmd_file="${out_path}/cleanup_at_gcp"
+    rm_log_file="${out_path}/cleanup_at_gcp.log"
 
     # sanity checks
     info "Performing sanity checks"
@@ -130,7 +129,7 @@ main() {
     chmod +x "${rm_cmd_file}"
 
     info "A total of ${run_count} runs were processed" >> "${log_file}"
-    if [[ "${execute_cleanup}" == TRUE ]]; then
+    if [[ "${do_execute_cleanup}" == TRUE ]]; then
         info "Executing cleanup file in background (${rm_cmd_file})" >> "${log_file}"
         rm_err_file="${rm_log_file}.err"
         nohup "${rm_cmd_file}" 1>"${rm_log_file}" 2>"${rm_err_file}" </dev/null  &
@@ -173,10 +172,10 @@ process_gs_url() {
     if [[ $? -eq 1 ]]; then
         deleted_status="Deleted"
         if [[ "${status}" == "${deleted_status}" ]]; then
-            info "  SKIPPING: url not valid but object status is ${status} so makes sense (${gs_url})" >> "${log_file}"
+            info "  SKIPPING: file not found but object status is ${status} so makes sense (${gs_url})" >> "${log_file}"
         else
-            warn "  SKIPPING: url not valid while object status (${status}) is not Deleted (${gs_url})" >> "${log_file}" 2>&1
-            warn "  SKIPPING: url not valid while object status (${status}) is not Deleted (${gs_url})"
+            warn "  SKIPPING: file not found while object status (${status}) is not 'Deleted' (${gs_url})" >> "${log_file}" 2>&1
+            warn "  SKIPPING: file not found while object status (${status}) is not 'Deleted' (${gs_url})"
         fi
     else
         info "  Writing rm command for valid URL ($gs_url)" >> "${log_file}"
