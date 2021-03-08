@@ -57,13 +57,13 @@ specified_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselect
 doid_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
 if [[ "${specified_selection}" != "" ]]; then
     if [[ "${doid_selection}" != "" ]]; then
-        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection + " (doid code(s)) & " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
+        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection + " & " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
     else
         selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
     fi
 else
     if [[ "${doid_selection}" != "" ]]; then
-        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection  + " (doid code(s))"' <temp.json)
+        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
     else
         selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text' <temp.json)
     fi
