@@ -12,25 +12,18 @@ if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     exit 1
 fi
 
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_dir="/data/common/dbs/api_credentials"
-api_key="${api_dir}/api.key"
-api_crt="${api_dir}/api.crt"
-
 info "Searching flowcell by flowcell id ${flowcell_id}"
 flowcell="$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")"
 
-if [[ $(echo "${flowcell}" | jq length) -eq 1 ]]; then
-    obj_id=$(echo "${flowcell}" | jq -r .[0].id)
-    obj_name=$(echo "${flowcell}" | jq -r .[0].name)
-    obj_status=$(echo "${flowcell}" | jq -r .[0].status)
-    obj_qc_status=$(echo "${flowcell}" | jq -r .[0].undet_rds_p_pass)
-    if [[ "${obj_qc_status}" == "true" ]]; then
-        warn "QC status is already true. Proceed with care."
-    fi
-    info "Execute following to QC PASS flowcell ${flowcell_id} (id:${obj_id} name:${obj_name} status=${obj_status} qc_pass=${obj_qc_status})"
-    echo " http --ignore-stdin --cert=${api_crt} --cert-key=${api_key} PATCH ${api_url}/flowcells/${obj_id} undet_rds_p_pass:=true"
-    echo " http --ignore-stdin --cert=${api_crt} --cert-key=${api_key} POST ${api_url}/flowcells/${obj_id}/recalculate"
-else
-    die "Unable to retrieve flowcell with provided flowcell_id (${flowcell_id})"
-fi
+[[ $(echo "${flowcell}" | jq length) -eq 1 ]] || die "Unable to find exactly one flowcell with provided flowcell_id (${flowcell_id})"
+
+oid=$(echo "${flowcell}" | jq -r .[0].id)
+name=$(echo "${flowcell}" | jq -r .[0].name)
+status=$(echo "${flowcell}" | jq -r .[0].status)
+qc_status=$(echo "${flowcell}" | jq -r .[0].undet_rds_p_pass)
+info_string="${name}|${flowcell_id}|${status}|${qc_status}|${oid}"
+
+[[ "${status}" == "Converted" ]] || die "Cannot qc pass flowcell because status is not 'Converted' (${info_string})"
+
+info "Setting flowcell QC to PASS (${info_string})"
+hmf_api_patch -c "flowcells" -o "${oid}" -f "undet_rds_p_pass" -v "true"

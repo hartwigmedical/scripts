@@ -61,25 +61,32 @@ else
 fi
 
 main () {
-    info "Searching api of for object (class=${class}|id=${oid}|env=${environment})"
-    object_url="${api_url}/${class}/${oid}"
+    info "Checking api for object (class=${class}|id=${oid}|env=${environment})"
+    object_location="${class}/${oid}"
 
     # TODO: use hmf_api_get once acceptance environment supported
-    json=$(get_with_curl "${object_url}") || die "API GET failed for ${object_url}. Exit."
+    json=$(get_with_curl "${object_location}") || die "API GET failed for ${object_location}. Exit."
     name=$(get_name_from_object "${class}" "${json}") || die "Unable to get name from object json. Exit."
     data=$(construct_data_json "${field}" "${value}") || die "Unable to construct the patch json. Exit."
 
-    info "Config: name=${name} patch=${data}"
+    info_string="name=${name}|class=${class}|id=${oid}|env=${environment}"
+    info "About to patch object (${info_string}) with '${data}'"
     if [[ "${confirmation}" == "true" ]]; then
         current_value=$(jq --arg key "${field}" '.[$key]' <<< "${json}")
         info "Will replace ${current_value} with ${value}"
         info "Press [ENTER] to apply..."
-        read -r
-        patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
+        read -r -s
+        patch_with_curl "${object_location}" "${data}" || die "API PATCH failed"
     elif [[ "${confirmation}" == "false" ]]; then
-        patch_with_curl "${object_url}" "${data}" || die "API PATCH failed"
+        patch_with_curl "${object_location}" "${data}" || die "API PATCH failed"
     else
         die "Unexpected: param confirmation should always be either true or false"
+    fi
+
+    # Handle special cases
+    if [[ "${class}" == "flowcells" && "${field}" == "undet_rds_p_pass" ]]; then
+        info "Recalculating sample yields for flowcell (${info_string})"
+        post_with_curl_without_data "flowcells/${oid}/recalculate"
     fi
 }
 
@@ -108,25 +115,31 @@ get_name_from_object () {
     local class=$1 && shift
     local json=$1 && shift
     if [[ "${class}" == "fastq" ]]; then
-        echo "${json}" | jq '.name_r1'
+        jq -r '.name_r1' <<< "${json}"
     elif [[ "${class}" == "runs" ]]; then
-        echo "${json}" | jq '.set.name'
+        jq -r '.set.name' <<< "${json}"
     else
-        echo "${json}" | jq '.name'
+        jq -r '.name' <<< "${json}"
     fi
 }
 
 get_with_curl () {
-    local url=$1 && shift
+    local object_location=$1 && shift
     curl -f --silent --show-error -H "Content-Type: application/json" \
-    --cert-type pem --cert "${api_crt}" --key "${api_key}" -X GET "${url}"
+    --cert-type pem --cert "${api_crt}" --key "${api_key}" -X GET "${api_url}/${object_location}"
 }
 
 patch_with_curl () {
-    local url=$1 && shift
+    local object_location=$1 && shift
     local data=$1 && shift
     curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
-     --cert-type pem --cert "${api_crt}" --key "${api_key}" -X PATCH "${url}" --data "${data}" > /dev/null
+     --cert-type pem --cert "${api_crt}" --key "${api_key}" -X PATCH "${api_url}/${object_location}" --data "${data}" > /dev/null
+}
+
+post_with_curl_without_data () {
+    local object_location=$1 && shift
+    curl --silent --show-error \
+     --cert-type pem --cert "${api_crt}" --key "${api_key}" -X POST "${api_url}/${object_location}" > /dev/null
 }
 
 main
