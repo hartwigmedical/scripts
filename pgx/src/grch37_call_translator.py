@@ -82,7 +82,7 @@ class Grch37CallTranslator(object):
                 AnnotatedAllele.from_alleles(grch37_call.alleles[0], reference_allele_grch37, reference_allele_grch38),
                 AnnotatedAllele.from_alleles(grch37_call.alleles[1], reference_allele_grch37, reference_allele_grch38),
             )
-            ref_call_due_to_ref_sequence_difference = all(
+            grch38_ref_call_due_to_ref_sequence_difference = all(
                 annotated.is_variant_vs_grch37
                 and annotated.is_annotated_vs_grch38()
                 and not annotated.is_variant_vs_grch38
@@ -94,9 +94,9 @@ class Grch37CallTranslator(object):
                 for annotated in annotated_alleles
             )
 
-            if ref_call_due_to_ref_sequence_difference:
+            if grch38_ref_call_due_to_ref_sequence_difference:
                 variant_annotation = REF_CALL_ANNOTATION_STRING
-                filter_type = Filter.NO_CALL
+                filter_type = Filter.PASS_BUT_REF_GRCH38
             elif all_variants_ref_to_grch37_or_grch38:
                 variant_annotation = panel.get_ref_seq_difference_annotation(gene, rs_ids[0])
                 filter_type = grch37_call.filter
@@ -146,7 +146,7 @@ class Grch37CallTranslator(object):
                     gene,
                     (rs_id_info.rs_id,),
                     annotation,
-                    Filter.INFERRED_REF_CALL,
+                    Filter.INFERRED_GRCH37_REF_CALL,
                 )
                 inferred_ref_calls.add(full_call)
         return frozenset(inferred_ref_calls)

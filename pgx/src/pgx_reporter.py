@@ -1,4 +1,4 @@
-from typing import FrozenSet
+from typing import FrozenSet, Dict
 
 import pandas as pd
 
@@ -11,28 +11,29 @@ from pgx_analysis import PgxAnalysis
 
 class GenotypeReporter(object):
     GENE_COLUMN_NAME = "gene"
+    CHROMOSOME_COLUMN_NAME = "chromosome"
     POSITION_GRCH37_COLUMN_NAME = "position_GRCh37"
-    REF_ALLELE_GRCH37_COLUMN_NAME = "ref_GRCh37"
-    ALT_ALLELE_GRCH37_COLUMN_NAME = "alt_GRCh37"
     POSITION_GRCH38_COLUMN_NAME = "position_GRCh38"
+    REF_ALLELE_GRCH37_COLUMN_NAME = "ref_GRCh37"
     REF_ALLELE_GRCH38_COLUMN_NAME = "ref_GRCh38"
-    ALT_ALLELE_GRCH38_COLUMN_NAME = "alt_GRCh38"
+    FIRST_ALLELE_COLUMN_NAME = "allele1"
+    SECOND_ALLELE_COLUMN_NAME = "allele2"
     RS_IDS_COLUMN_NAME = "rsid"
     ANNOTATION_COLUMN_NAME = "variant_annotation"
     FILTER_COLUMN_NAME = "filter"
-    CALLS_TSV_COLUMNS = (
-        GENE_COLUMN_NAME,
-        POSITION_GRCH37_COLUMN_NAME, REF_ALLELE_GRCH37_COLUMN_NAME, ALT_ALLELE_GRCH37_COLUMN_NAME,
-        POSITION_GRCH38_COLUMN_NAME, REF_ALLELE_GRCH38_COLUMN_NAME, ALT_ALLELE_GRCH38_COLUMN_NAME,
+    NEW_CALLS_TSV_COLUMNS = (
+        GENE_COLUMN_NAME, CHROMOSOME_COLUMN_NAME,
+        POSITION_GRCH37_COLUMN_NAME, POSITION_GRCH38_COLUMN_NAME,
+        REF_ALLELE_GRCH37_COLUMN_NAME, REF_ALLELE_GRCH38_COLUMN_NAME,
+        FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
         RS_IDS_COLUMN_NAME, ANNOTATION_COLUMN_NAME, FILTER_COLUMN_NAME,
     )
-    CHROMOSOME_COLUMN_NAME = "chromosome"
 
     UNKNOWN_POSITION_STRING = "UNKNOWN"
+    UNKNOWN_REF_ALLELE_STRING = "UNKNOWN"
 
     TSV_SEPARATOR = "\t"
     RS_ID_SEPARATOR = ";"
-    COORDINATE_SEPARATOR = ":"
 
     @classmethod
     def get_calls_tsv_text(cls, pgx_analysis: PgxAnalysis) -> str:
@@ -44,44 +45,35 @@ class GenotypeReporter(object):
 
     @classmethod
     def __get_calls_data_frame_from_full_calls(cls, full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
-        # TODO: add ref alleles to data frame?
-        data_frame = pd.DataFrame(columns=cls.CALLS_TSV_COLUMNS)
+        data_frame = pd.DataFrame(columns=cls.NEW_CALLS_TSV_COLUMNS)
         for full_call in full_calls:
-            annotated_alleles = full_call.get_annotated_alleles()
+            assert (
+                    full_call.start_coordinate_grch38 is None
+                    or full_call.start_coordinate_grch37.chromosome == full_call.start_coordinate_grch38.chromosome), \
+                f"Chromosomes of two coordinates are different: call={full_call}"
 
-            grch37_ref_alleles = [
-                annotated.allele for annotated in annotated_alleles if not annotated.is_variant_vs_grch37
-            ]
-            grch37_variant_alleles = [
-                annotated.allele for annotated in annotated_alleles if annotated.is_variant_vs_grch37
-            ]
-            grch37_alleles = grch37_ref_alleles + grch37_variant_alleles
-
-            grch38_ref_alleles = [
-                annotated.allele for annotated in annotated_alleles
-                if annotated.is_annotated_vs_grch38() and not annotated.is_variant_vs_grch38
-            ]
-            grch38_variant_alleles = [
-                annotated.allele for annotated in annotated_alleles
-                if not annotated.is_annotated_vs_grch38() or annotated.is_variant_vs_grch38
-            ]
-            grch38_alleles = (grch38_ref_alleles + grch38_variant_alleles)
-
+            sorted_alleles = sorted(full_call.alleles)
             position_grch38 = (
-                cls.__get_coordinate_string(full_call.start_coordinate_grch38)
+                str(full_call.start_coordinate_grch38.position)
                 if full_call.start_coordinate_grch38 is not None
                 else cls.UNKNOWN_POSITION_STRING
             )
+            reference_allele_grch38 = (
+                full_call.reference_allele_grch38
+                if full_call.reference_allele_grch38 is not None
+                else cls.UNKNOWN_REF_ALLELE_STRING
+            )
 
-            new_id = {
+            new_id: Dict[str, str] = {
                 cls.GENE_COLUMN_NAME: full_call.gene,
-                cls.POSITION_GRCH37_COLUMN_NAME: cls.__get_coordinate_string(full_call.start_coordinate_grch37),
-                cls.REF_ALLELE_GRCH37_COLUMN_NAME: grch37_alleles[0],
-                cls.ALT_ALLELE_GRCH37_COLUMN_NAME: grch37_alleles[1],
+                cls.CHROMOSOME_COLUMN_NAME: full_call.start_coordinate_grch37.chromosome,
+                cls.POSITION_GRCH37_COLUMN_NAME: str(full_call.start_coordinate_grch37.position),
                 cls.POSITION_GRCH38_COLUMN_NAME: position_grch38,
-                cls.REF_ALLELE_GRCH38_COLUMN_NAME: grch38_alleles[0],
-                cls.ALT_ALLELE_GRCH38_COLUMN_NAME: grch38_alleles[1],
-                cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(list(full_call.rs_ids)),
+                cls.REF_ALLELE_GRCH37_COLUMN_NAME: full_call.reference_allele_grch37,
+                cls.REF_ALLELE_GRCH38_COLUMN_NAME: reference_allele_grch38,
+                cls.FIRST_ALLELE_COLUMN_NAME: sorted_alleles[0],
+                cls.SECOND_ALLELE_COLUMN_NAME: sorted_alleles[1],
+                cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
                 cls.ANNOTATION_COLUMN_NAME: full_call.variant_annotation,
                 cls.FILTER_COLUMN_NAME: full_call.filter.name,
             }
@@ -96,18 +88,10 @@ class GenotypeReporter(object):
 
     @classmethod
     def __sort_call_data_frame(cls, data_frame: pd.DataFrame) -> pd.DataFrame:
-        grch37_positions = data_frame[cls.POSITION_GRCH37_COLUMN_NAME]
-        data_frame[cls.CHROMOSOME_COLUMN_NAME] = (
-            grch37_positions.str.split(pat=cls.COORDINATE_SEPARATOR, n=1, expand=True).iloc[:, 0]
-        )
         data_frame = data_frame.sort_values(
             by=[cls.CHROMOSOME_COLUMN_NAME, cls.POSITION_GRCH37_COLUMN_NAME]).reset_index(drop=True)
-        data_frame = data_frame.loc[:, cls.CALLS_TSV_COLUMNS]
+        data_frame = data_frame.loc[:, cls.NEW_CALLS_TSV_COLUMNS]
         return data_frame
-
-    @classmethod
-    def __get_coordinate_string(cls, coordinate: GeneCoordinate) -> str:
-        return f"{coordinate.chromosome}{cls.COORDINATE_SEPARATOR}{coordinate.position}"
 
 
 class HaplotypeReporter(object):
@@ -139,9 +123,9 @@ class HaplotypeReporter(object):
 
         header = cls.TSV_SEPARATOR.join(cls.GENOTYPE_TSV_COLUMNS)
         lines = [header]
-        for gene in sorted(list(gene_to_haplotype_calls.keys())):
+        for gene in sorted(gene_to_haplotype_calls.keys()):
             if gene_to_haplotype_calls[gene]:
-                for haplotype_call in sorted(list(gene_to_haplotype_calls[gene]), key=lambda call: call.haplotype_name):
+                for haplotype_call in sorted(gene_to_haplotype_calls[gene], key=lambda call: call.haplotype_name):
                     lines.append(cls.TSV_SEPARATOR.join([
                         gene,
                         cls.__get_haplotype_call_string(haplotype_call),
