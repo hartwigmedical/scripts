@@ -48,10 +48,9 @@ metadata_tsv="${dr_path}/metadata/metadata.tsv"
 # number of samples:
 number_of_samples=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n +2 | sort | uniq | wc -l )
 suffix_remove=$"/metadata/metadata.tsv"
-rna_ind_tsv=${metadata_tsv%"$suffix_remove"}
-rna_ind_tsv=${rna_ind_tsv}/logs/rna_ind.tsv
-number_of_samples_rna=$( csvcut -t -e iso-8859-1 -c 'sampleId' ${rna_ind_tsv}  | csvformat -T | tail -n +2 | sort | uniq | wc -l )
-
+rna_ind=${metadata_tsv%"$suffix_remove"}
+rna_ind=${rna_ind}/manifest.json
+number_of_samples_rna=$( jq '.data | .[] | .samples | .[] | select(.data | .[] | .tags | .[]=="RNA") | .sampleId'  ${rna_ind}  | sort | uniq | wc -l )
 
 echo "Dear ,"
 echo ""
