@@ -851,6 +851,16 @@ locate_protect_evidence() {
     echo ${protect_evidence_tsv}
 }
 
+locate_protect_evidence_pilot() {
+    local run_dir=$1
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
+    if [[ -z "${protect_evidence_tsv}" ]]; then
+        echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${protect_evidence_tsv}
+}
+
 ############################################# LIMS ###########################################
 
 locate_reporting_db_tsv() {
