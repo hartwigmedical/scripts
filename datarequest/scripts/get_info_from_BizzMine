@@ -53,7 +53,22 @@ echo ""
 jq -r '.[].Researchers[]? | select(.Researchers_13Researcheralsodownloadcontact=="1") | "GCP account download contact - " + .Researchers_13Emailresearcherinvolvedintheproject' <temp.json
 jq -r '.[].Extraresearchers[]? | select(.Extra_researchers_Extraresearcheralsodownloadcontact=="1") |  "Extra added GCP account of download contact - " + .Extra_researchers_Emailextraresearcherinvolvedintheproject' <temp.json
 echo ""
-jq -r '.[] | "Requested patient selection - " + .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json
+specified_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
+doid_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
+if [[ "${specified_selection}" != "" ]]; then
+    if [[ "${doid_selection}" != "" ]]; then
+        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Doids_requested_patientselection + " (doid code(s)) & " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
+    else
+        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Requested_patientselection_specified + " (doid code(s))"' <temp.json)
+    fi
+else
+    if [[ "${doid_selection}" != "" ]]; then
+        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text + " " + .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
+    else
+        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text' <temp.json)
+    fi
+fi
+echo "Requested patient selection - ${selection}"
 echo ""
 jq -r '.[] | "Metadata - tumor: " + .DataRequests_DR_3_2_tumourdata' <temp.json
 jq -r '.[] | "Metadata - patient: " + .DataRequests_DR_3_2_patientdata' <temp.json
