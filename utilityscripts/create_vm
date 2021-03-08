@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+SCRIPT_NAME="$(basename "$0")"
+
+main() {
+  info "Started ${SCRIPT_NAME}"
+
+  corecount="2"  # default argument
+  disksize="200GB"  # default argument
+
+  UNRECOGNIZED=()
+  while [[ $# -gt 0 ]]
+  do
+    key="$1" && shift
+
+    case $key in
+      -n|--name)
+        name="$1" && shift;;
+      -p|--project)
+        project="$1" && shift;;
+      -c|--corecount)  # optional
+        corecount="$1" && shift;;
+      -d|--disksize)  # optional
+        disksize="$1" && shift;;
+      *)
+        UNRECOGNIZED+=("$1");;
+    esac
+  done
+
+  # sanity checks
+  [[ ${#UNRECOGNIZED[@]} -eq 0 ]] || die "Unrecognized options to ${SCRIPT_NAME}: options=${UNRECOGNIZED[*]}"
+  [[ -n ${name} ]] || die "Variable 'name' has not been set"
+  [[ -n ${project} ]] || die "Variable 'project' has not been set"
+
+  info "Creating VM ${name} in ${project}"
+  if [[ ${project} == "hmf-crunch" ]]; then
+    gcloud compute instances create "${name}" \
+      --project="hmf-crunch" \
+      --zone="europe-west4-a" \
+      --machine-type="n1-standard-${corecount}" \
+      --image-project="hmf-pipeline-development" \
+      --image-family="base-image" \
+      --boot-disk-size="${disksize}" \
+      --boot-disk-type="pd-standard" \
+      --boot-disk-device-name="${name}" \
+      --service-account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com" \
+      --no-address \
+      --scopes="cloud-platform" || die "Could not create VM ${name}"
+  elif [[ ${project} == "hmf-pipeline-development" ]]; then
+    gcloud compute instances create "${name}" \
+      --project="hmf-pipeline-development" \
+      --zone="europe-west4-a" \
+      --machine-type="n1-standard-${corecount}" \
+      --image-project="hmf-pipeline-development" \
+      --image-family="base-image" \
+      --boot-disk-size="${disksize}" \
+      --boot-disk-type="pd-standard" \
+      --boot-disk-device-name="${name}" \
+      --scopes="cloud-platform" || die "Could not create VM ${name}"
+  else
+    die "Unrecognized project name ${project}"
+  fi
+  info "Finished creation of VM ${name} in ${project}"
+}
+
+main "$@"
