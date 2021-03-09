@@ -99,8 +99,8 @@ main() {
                 run_type=$(run_type_by_ini_name "$ini_name")
 
                 run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
-                info "Processing run $run_info" >> "$log_file"
-                echo "echo '[INFO] Performing steps for run $run_info'" >> "$rm_cmd_file"
+                info "  Processing run $run_info" >> "$log_file"
+                echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
 
                 if [[ "$run_type" == "fastq" ]]; then
                     echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
@@ -177,6 +177,7 @@ process_gs_url() {
             warn "  SKIPPING: no file found at url while object status ($status) is not 'Deleted' ($gs_url)"
         fi
     else
+        info "  OK file found at url so writing rm cmd ($gs_url)"
         echo "  gsutil -q -u $GCP_PROJECT $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
     fi
 }
