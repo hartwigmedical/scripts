@@ -16,11 +16,11 @@ if [[ -z "${input_path}" ]]; then
     echo "[ERROR] No input path provided. Exiting" && exit 1;
 fi
 
-json_file_pilot=$( ls ${input_path}/${run_dir}/patient_report_pilot_data/ )
-path_file_pilot=$( ls ${input_path}/${run_dir}/patient_report_pilot_data/${json_file_pilot} )
-cat ${path_file_pilot} | jq '.' > "${output_path}/${json_file_pilot}_pilot"
-
-cat --number "${output_path}/${json_file_pilot}_pilot" > "${output_path}/${json_file_pilot}_pilot_numbers"
+#json_file_pilot=$( ls ${input_path}/${run_dir}/patient_report_pilot_data/ )
+#path_file_pilot=$( ls ${input_path}/${run_dir}/patient_report_pilot_data/${json_file_pilot} )
+#cat ${path_file_pilot} | jq '.' > "${output_path}/${json_file_pilot}_pilot"
+#
+#cat --number "${output_path}/${json_file_pilot}_pilot" > "${output_path}/${json_file_pilot}_pilot_numbers"
 
 json_file_prod=$( ls ${input_path}/${run_dir}/patient_report_prod_data/ )
 path_file_prod=$( ls ${input_path}/${run_dir}/patient_report_prod_data/${json_file_prod} )
