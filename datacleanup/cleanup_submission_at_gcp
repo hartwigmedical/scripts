@@ -14,8 +14,10 @@ print_usage(){
     echo "-----"
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
+    echo "        $(basename $0) -s \$submission -e"
     echo " Examp: nohup $(basename $0) -s HMFregXXXX > \$HOME/logs/tmp.log &"
-    echo "  Note: Writes output cmd and log files to $OUT_ROOT"
+    echo " Notes: 1) Writes all log files to $OUT_ROOT"
+    echo "        2) CAUTION with param -e (this automatically executes deletion)"
     echo "-----"
     exit 1
 }
@@ -107,19 +109,20 @@ main() {
                     files_api_url="files?run_id=$run_id"
                     files_json=$(hmf_api_get "$files_api_url")
                     mapfile -t all_gs_urls < <( echo "$files_json" | jq -r '.[].filepath' )
-                    # fastq files need to be processed one by one since they share the bucket with other fastq files
                     for fastq_file_url in "${all_gs_urls[@]}"; do
+                        # fastq files need to be processed one by one since they share their bucket with other fastq files
                         process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
                     done
                 elif [[ "$run_type" == "pipeline" ]]; then
                     process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
                 else
-                    die "Run somehow not FASTQ and NOT pipeline (type=$run_type, ini=$ini_name): this should not happen!"
+                    die "Run somehow not FASTQ and also not pipeline (ini=$ini_name): this should not happen! ($run_info)"
                 fi
                 echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
             done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
         done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
-    done < <(echo "$samples_json" | jq -cr '.[] | [.id, .status] | @tsv')
+    done < <(echo "$samples_json" | jq -cr '.[] | [.id,.status] | @tsv')
+    # ^ a tsv line is generated for each while loop iteration to keep amount of jq calls down
 
     echo "echo '[INFO] Finished cleanup for submission $submission'" >> "$rm_cmd_file"
     run_count="${#processed_runs[@]}"
