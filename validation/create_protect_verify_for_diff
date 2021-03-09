@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+output_path=$1 && shift
+input_path=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${output_path}" ]]; then
+    echo "[ERROR] No output path provided. Exiting" && exit 1;
+fi
+
+if [[ -z "${input_path}" ]]; then
+    echo "[ERROR] No input path provided. Exiting" && exit 1;
+fi
+
+protect_prod_tsv=$( ls ${input_path}/${run_dir}/protect/ )
+protect_prod_tsv_path=$( ls ${input_path}/${run_dir}/protect/${protect_prod_tsv} )
+cat ${protect_prod_tsv_path} | awk -F '\t' '{print $2, $3, $4, $5, $6, $7, $8, $9}'  > "${output_path}/${protect_prod_tsv}_prod_actionability"
+cat ${protect_prod_tsv_path} | awk -F '\t' '{print $1}'  > "${output_path}/${protect_prod_tsv}_prod_events"
+
+protect_pilot_tsv=$( ls ${input_path}/${run_dir}/protect_pilot/ )
+protect_pilot_tsv_path=$( ls ${input_path}/${run_dir}/protect_pilot/${protect_pilot_tsv} )
+cat ${protect_pilot_tsv_path} | awk -F '\t' '{print $2, $3, $4, $5, $6, $7, $8, $9}'  > "${output_path}/${protect_pilot_tsv}_pilot_actionability"
+cat ${protect_pilot_tsv_path} | awk -F '\t' '{print $1}'  > "${output_path}/${protect_pilot_tsv}_pilot_events"
