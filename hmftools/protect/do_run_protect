@@ -30,8 +30,10 @@ germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.ts
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_driver_catalog_tsv=$(locate_purple_drivers_somatic ${run_dir})
+purple_driver_catalog_somatic_tsv=$(locate_purple_drivers_somatic ${run_dir})
+purple_driver_catalog_germline_tsv=$(locate_purple_drivers_germline ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatics ${run_dir})
+purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 bachelor_tsv=$(locate_reportable_bachelor_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
 linx_breakend_tsv=$(locate_linx_breakends ${run_dir})
@@ -48,8 +50,10 @@ java -Xms2G -Xmx8G -jar ${protect_jar} \
     -germline_reporting_tsv ${germline_reporting_tsv} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
-    -purple_driver_catalog_tsv ${purple_driver_catalog_tsv} \
+    -purple_driver_catalog_somatic_tsv ${purple_driver_catalog_somatic_tsv} \
+    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
+    -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -bachelor_tsv ${bachelor_tsv} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
