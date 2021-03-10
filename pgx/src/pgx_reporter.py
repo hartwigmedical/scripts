@@ -1,9 +1,9 @@
-from typing import FrozenSet, Dict
+from typing import FrozenSet, Dict, Union
 
 import pandas as pd
 
 from base.constants import UNKNOWN_FUNCTION_STRING
-from base.gene_coordinate import GeneCoordinate
+from base.util import get_chromosome_name_to_index
 from call_data import FullCall, HaplotypeCall
 from config.panel import Panel
 from pgx_analysis import PgxAnalysis
@@ -28,6 +28,7 @@ class GenotypeReporter(object):
         FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
         RS_IDS_COLUMN_NAME, ANNOTATION_COLUMN_NAME, FILTER_COLUMN_NAME,
     )
+    CHROMOSOME_INDEX_NAME = "chromosome_index"
 
     UNKNOWN_POSITION_STRING = "UNKNOWN"
     UNKNOWN_REF_ALLELE_STRING = "UNKNOWN"
@@ -64,10 +65,10 @@ class GenotypeReporter(object):
                 else cls.UNKNOWN_REF_ALLELE_STRING
             )
 
-            new_id: Dict[str, str] = {
+            new_id: Dict[str, Union[str, int]] = {
                 cls.GENE_COLUMN_NAME: full_call.gene,
                 cls.CHROMOSOME_COLUMN_NAME: full_call.start_coordinate_grch37.chromosome,
-                cls.POSITION_GRCH37_COLUMN_NAME: str(full_call.start_coordinate_grch37.position),
+                cls.POSITION_GRCH37_COLUMN_NAME: full_call.start_coordinate_grch37.position,
                 cls.POSITION_GRCH38_COLUMN_NAME: position_grch38,
                 cls.REF_ALLELE_GRCH37_COLUMN_NAME: full_call.reference_allele_grch37,
                 cls.REF_ALLELE_GRCH38_COLUMN_NAME: reference_allele_grch38,
@@ -88,8 +89,11 @@ class GenotypeReporter(object):
 
     @classmethod
     def __sort_call_data_frame(cls, data_frame: pd.DataFrame) -> pd.DataFrame:
+        data_frame.loc[:, cls.CHROMOSOME_INDEX_NAME] = (
+            data_frame.loc[:, cls.CHROMOSOME_COLUMN_NAME].map(get_chromosome_name_to_index())
+        )
         data_frame = data_frame.sort_values(
-            by=[cls.CHROMOSOME_COLUMN_NAME, cls.POSITION_GRCH37_COLUMN_NAME]).reset_index(drop=True)
+            by=[cls.CHROMOSOME_INDEX_NAME, cls.POSITION_GRCH37_COLUMN_NAME]).reset_index(drop=True)
         data_frame = data_frame.loc[:, cls.NEW_CALLS_TSV_COLUMNS]
         return data_frame
 
@@ -108,6 +112,15 @@ class HaplotypeReporter(object):
 
     @classmethod
     def get_genotype_tsv_text(cls, pgx_analysis: PgxAnalysis, panel: Panel, panel_path: str, version: str) -> str:
+        gene_to_haplotype_calls = pgx_analysis.get_gene_to_haplotype_calls()
+
+        genes_in_analysis = set(gene_to_haplotype_calls.keys())
+        assert genes_in_analysis == panel.get_genes(), (
+            f"Gene lists inconsistent.\n"
+            f"From analysis={sorted(list(genes_in_analysis))}\n"
+            f"From panel={sorted(list(panel.get_genes()))}"
+        )
+
         gene_to_drug_info = {}
         for gene_info in panel.get_gene_infos():
             sorted_drugs = sorted(
@@ -118,8 +131,6 @@ class HaplotypeReporter(object):
                 cls.DRUG_SEPARATOR.join([drug.name for drug in sorted_drugs]),
                 cls.DRUG_SEPARATOR.join([drug.url_prescription_info for drug in sorted_drugs])
             )
-
-        gene_to_haplotype_calls = pgx_analysis.get_gene_to_haplotype_calls()
 
         header = cls.TSV_SEPARATOR.join(cls.GENOTYPE_TSV_COLUMNS)
         lines = [header]

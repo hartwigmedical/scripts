@@ -1003,8 +1003,8 @@ class TestPgxAnalysis(unittest.TestCase):
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
-    @unittest.skip("WIP")
-    def test_ambiguous_call(self) -> None:
+    @unittest.skip("TODO")
+    def test_todo(self) -> None:
         # TODO:
         #   Check coverage
         #   Write a few tests for reporters
