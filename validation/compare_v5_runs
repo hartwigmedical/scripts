@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
+source message_functions || exit 1
+source locate_files || die "Unable to source locate_files"
 
 base_run_path=$1
 test_run_path=$2
@@ -22,215 +23,224 @@ if [[ "$#" -ne 3 ]]; then
     echo "-----"
     exit 1
 fi
-if [[ ! -d "${base_run_path}" ]]; then echo "[ERROR] Directory not found (${base_run_path})" && exit 1; fi
-if [[ ! -d "${test_run_path}" ]]; then echo "[ERROR] Directory not found (${test_run_path})" && exit 1; fi
-if [[ ! -d "${logs_dir_path}" ]]; then echo "[ERROR] Directory not found (${logs_dir_path})" && exit 1; fi
-if [[ ! -f "${base_pip_vsn_file}" ]]; then echo "[ERROR] File not found (${base_pip_vsn_file})" && exit 1; fi
-if [[ ! -f "${test_pip_vsn_file}" ]]; then echo "[ERROR] File not found (${test_pip_vsn_file})" && exit 1; fi
+[[ -d "${base_run_path}" ]] || die "Directory not found (${base_run_path})"
+[[ -d "${test_run_path}" ]] || die "Directory not found (${test_run_path})"
+[[ -d "${logs_dir_path}" ]] || die "Directory not found (${logs_dir_path})"
+[[ -f "${base_pip_vsn_file}" ]] || die "File not found (${base_pip_vsn_file})"
+[[ -f "${test_pip_vsn_file}" ]] || die "File not found (${test_pip_vsn_file})"
 
-base_pip_vsn=$(cat "${base_pip_vsn_file}")
-test_pip_vsn=$(cat "${test_pip_vsn_file}")
+main () {
+    base_pip_vsn=$(cat "${base_pip_vsn_file}")
+    test_pip_vsn=$(cat "${test_pip_vsn_file}")
 
-base_ref_sample_name=$(jq -r '.reference.sampleName' "${base_meta_file}")
-test_ref_sample_name=$(jq -r '.reference.sampleName' "${test_meta_file}")
-base_tum_sample_name=$(jq -r '.tumor.sampleName' "${base_meta_file}")
-test_tum_sample_name=$(jq -r '.tumor.sampleName' "${test_meta_file}")
+    base_ref_sample_name=$(jq -r '.reference.sampleName' "${base_meta_file}")
+    test_ref_sample_name=$(jq -r '.reference.sampleName' "${test_meta_file}")
+    base_tum_sample_name=$(jq -r '.tumor.sampleName' "${base_meta_file}")
+    test_tum_sample_name=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
-test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
-base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
-test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
-cram_files=(
-  "$base_ref_cram"
-  "$test_ref_cram"
-  "$base_tum_cram"
-  "$test_tum_cram"
-)
+    base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
+    test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
+    base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
+    test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
+    cram_files=(
+      "$base_ref_cram"
+      "$test_ref_cram"
+      "$base_tum_cram"
+      "$test_tum_cram"
+    )
 
-echo ""
-echo "[INFO] ===== Overview"
-echo "[INFO] LOGS dir path: ${logs_dir_path}"
-echo "[INFO] BASE run path: ${base_run_path}"
-echo "[INFO] TEST run path: ${test_run_path}"
-echo "[INFO] BASE version: ${base_pip_vsn}"
-echo "[INFO] TEST version: ${test_pip_vsn}"
-echo "[INFO] BASE sample: ${base_tum_sample_name}"
-echo "[INFO] TEST sample: ${test_tum_sample_name}"
+    header "Overview"
+    info "LOGS dir path: ${logs_dir_path}"
+    info "BASE run path: ${base_run_path}"
+    info "TEST run path: ${test_run_path}"
+    info "BASE version: ${base_pip_vsn}"
+    info "TEST version: ${test_pip_vsn}"
+    info "BASE sample: ${base_tum_sample_name}"
+    info "TEST sample: ${test_tum_sample_name}"
 
-echo ""
-echo "[INFO] ===== CRAM existance CHECK"
-for cram_file in ${cram_files[*]}; do
-    if [[ -f "${cram_file}" ]]; then
-        echo "[INFO] OK File found (${cram_file})"
-    else
-        echo "[ERROR] File does not exist (${cram_file})"
-        exit 1
-    fi
-done
-
-echo ""
-echo "[INFO] ===== CRAM Headers CHECK"
-base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
-test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
-samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
-samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
-if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
-    echo "[INFO] OK Identical CRAM RG lines in headers"
-else
-    echo "[WARN] DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
-fi
-
-echo ""
-echo "[INFO] ===== Directory CHECKS"
-for tool_name in ${tools[*]}; do 
-    base_tool_path="${base_run_path}/${tool_name}"
-    test_tool_path="${test_run_path}/${tool_name}"
-    if [[ ! -d "${base_tool_path}" ]]; then
-        echo "[WARN] Tool directory does not exist so cannot compare (${base_tool_path})"
-    elif [[ ! -d "${test_tool_path}" ]]; then
-        echo "[WARN] Tool directory does not exist so cannot compare (${test_tool_path})"
-    else
-        base_file_count=$(find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
-        test_file_count=$(find "$(readlink -f "${test_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
-        if [[ ${base_file_count} -ne ${test_file_count} ]]; then
-            echo "[WARN] DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool ${tool_name}"
+    header "CRAM check"
+    for cram_file in ${cram_files[*]}; do
+        if [[ -f "${cram_file}" ]]; then
+            info "  OK File found (${cram_file})"
         else
-            echo "[INFO] Identical file count (${base_file_count}) for tool ${tool_name}"
+            warn "  File does not exist (${cram_file})"
         fi
-        find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -type f | \
-        grep -vP "(vcf|tbi|gz|log|sh|cram|crai|bam|bai)$" | \
-        while read -r base_file_path; do
-            file_name=$(basename "${base_file_path}");
-            test_file_path="${test_run_path}/${tool_name}/${file_name}"
-            base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
-            test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
-            if [[ ${base_count} -eq ${test_count} ]]; then
-                echo "[INFO]   Identical line count (${base_count}) for file ${file_name}"
+    done
+
+    base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
+    test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
+    samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
+    samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
+    if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
+        info "  OK Identical CRAM RG lines in headers"
+    else
+        warn "  DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
+    fi
+
+    header "DIRECTORY check"
+    for tool_name in ${tools[*]}; do
+        info "Checking directory $tool_name"
+        base_tool_path="${base_run_path}/${tool_name}"
+        test_tool_path="${test_run_path}/${tool_name}"
+        if [[ ! -d "${base_tool_path}" ]]; then
+            warn "  Tool directory does not exist in base so cannot compare (${base_tool_path})"
+        elif [[ ! -d "${test_tool_path}" ]]; then
+            warn "  Tool directory does not exist in test so cannot compare (${test_tool_path})"
+        else
+            base_file_count=$(find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
+            test_file_count=$(find "$(readlink -f "${test_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
+            if [[ ${base_file_count} -ne ${test_file_count} ]]; then
+                warn "  DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool directory (${tool_name})"
             else
-                echo "[WARN]   DIFFERENT line count (${base_count} vs ${test_count}) for file ${file_name}"
+                info "  OK Identical file count (${base_file_count}) for tool directory (${tool_name})"
             fi
-        done
-    fi
-done
+            find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -type f | \
+            grep -vP "\.(vcf|tbi|gz|log|sh|cram|crai|bam|bai|bak)$" | \
+            while read -r base_file_path; do
+                file_name=$(basename "${base_file_path}");
+                file_path="${tool_name}/${file_name}"
+                test_file_path="${test_run_path}/${file_path}"
+                base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
+                test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
+                if [[ ${base_count} -eq ${test_count} ]]; then
+                    info "  OK Identical line count (${base_count}) for file (${file_path})"
+                else
+                    warn "  DIFFERENT line count (${base_count} vs ${test_count}) for file (${file_path})"
+                fi
 
-echo ""
-echo "[INFO] ===== File CHECKS"
-echo "[INFO] Locating all relevant files"
-test_grm_vcf=$(locate_germline_variants "${test_run_path}" "${test_ref_sample_name}")
-base_grm_vcf=$(locate_germline_variants "${base_run_path}" "${base_ref_sample_name}")
-  test_chord=$(locate_chord_prediction "${test_run_path}")
-  base_chord=$(locate_chord_prediction "${base_run_path}")
-test_vir_ins=$(locate_linx_viral_insertions "${test_run_path}")
-base_vir_ins=$(locate_linx_viral_insertions "${base_run_path}")
-test_som_var=$(locate_purple_somatics "${test_run_path}")
-base_som_var=$(locate_purple_somatics "${base_run_path}")
- test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
- base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
-   test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")
-   base_bach=$(locate_reportable_bachelor_variants "${base_run_path}")
+                # special handling of txt output files
+                if [[ "$base_file_path" =~ (csv|tsv|txt)$ ]]; then
+                    files_are_identical=$(diff --report-identical-files "$base_file_path" "$test_file_path")
+                    if [[ -n "$files_are_identical" ]]; then
+                        info "  OK Identical diff for file (${file_path})"
+                    else
+                        warn "  DIFFERENCES found for file (${file_path})"
+                    fi
+                fi
+            done
+        fi
+    done
 
-all_base_files=(
-    "${base_grm_vcf}"
-    "${base_chord}"
-    "${base_vir_ins}"
-    "${base_som_var}"
-    "${base_sv_var}"
-    "${base_bach}"
-)
+    test_grm_vcf=$(locate_germline_variants "${test_run_path}" "${test_ref_sample_name}")
+    base_grm_vcf=$(locate_germline_variants "${base_run_path}" "${base_ref_sample_name}")
+      test_chord=$(locate_chord_prediction "${test_run_path}")
+      base_chord=$(locate_chord_prediction "${base_run_path}")
+    test_vir_ins=$(locate_linx_viral_insertions "${test_run_path}")
+    base_vir_ins=$(locate_linx_viral_insertions "${base_run_path}")
+    test_som_var=$(locate_purple_somatics "${test_run_path}")
+    base_som_var=$(locate_purple_somatics "${base_run_path}")
+     test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
+     base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
+       test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")
+       base_bach=$(locate_reportable_bachelor_variants "${base_run_path}")
 
-all_test_files=(
-    "${test_grm_vcf}"
-    "${test_chord}"
-    "${test_vir_ins}"
-    "${test_som_var}"
-    "${test_sv_var}"
-    "${test_bach}"
-)
+    all_base_files=(
+        "${base_grm_vcf}"
+        "${base_chord}"
+        "${base_vir_ins}"
+        "${base_som_var}"
+        "${base_sv_var}"
+        "${base_bach}"
+    )
 
-for file in "${all_base_files[@]}" "${all_test_files[@]}"; do
-    if [[ -f "${file}" ]]; then
-        echo "[INFO]   File found ($file)"
-    else
-        echo "[WARN]   File does not exist ($file)" && exit 1
-    fi
-done
+    all_test_files=(
+        "${test_grm_vcf}"
+        "${test_chord}"
+        "${test_vir_ins}"
+        "${test_som_var}"
+        "${test_sv_var}"
+        "${test_bach}"
+    )
 
-echo "[INFO] Counting somatic small variants"
-test_som_var_count=$(unpigz -c "${test_som_var}" | grep -cv ^#)
-base_som_var_count=$(unpigz -c "${base_som_var}" | grep -cv ^#)
-test_som_pass_var_count=$(unpigz -c "${test_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_som_pass_var_count=$(unpigz -c "${base_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    info "  Checking file existence"
+    for file in "${all_base_files[@]}" "${all_test_files[@]}"; do
+        [[ -f "${file}" ]] || die "  File does not exist ($file)"
+    done
+    info "  OK All expected files found"
 
-echo "[INFO] Counting somatic structural variants"
-test_sv_var_count=$(unpigz -c "${test_sv_var}" | grep -cv ^#)
-base_sv_var_count=$(unpigz -c "${base_sv_var}" | grep -cv ^#)
-test_sv_pass_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_sv_pass_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-test_sv_non_pon_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
-base_sv_non_pon_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+    info "  Counting somatic small variants"
+    test_som_var_count=$(unpigz -c "${test_som_var}" | grep -cv ^#)
+    base_som_var_count=$(unpigz -c "${base_som_var}" | grep -cv ^#)
+    test_som_pass_var_count=$(unpigz -c "${test_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    base_som_pass_var_count=$(unpigz -c "${base_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
 
-echo "[INFO] Counting germline variants"
-test_grm_var_count=$(unpigz -c "${test_grm_vcf}" | grep -cv ^#)
-base_grm_var_count=$(unpigz -c "${base_grm_vcf}" | grep -cv ^#)
-test_grm_pass_var_count=$(unpigz -c "${test_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-base_grm_pass_var_count=$(unpigz -c "${base_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-test_tool_vsn=$( awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
-base_tool_vsn=$( awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | paste -s -d '|')
+    info "  Counting somatic structural variants"
+    test_sv_var_count=$(unpigz -c "${test_sv_var}" | grep -cv ^#)
+    base_sv_var_count=$(unpigz -c "${base_sv_var}" | grep -cv ^#)
+    test_sv_pass_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    base_sv_pass_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    test_sv_non_pon_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+    base_sv_non_pon_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
 
-declare -A tool_names
-declare -A tool_versions
+    info "  Counting germline variants"
+    test_grm_var_count=$(unpigz -c "${test_grm_vcf}" | grep -cv ^#)
+    base_grm_var_count=$(unpigz -c "${base_grm_vcf}" | grep -cv ^#)
+    test_grm_pass_var_count=$(unpigz -c "${test_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    base_grm_pass_var_count=$(unpigz -c "${base_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    test_grm_var_count=0
+    base_grm_var_count=0
+    test_grm_pass_var_count=0
+    base_grm_pass_var_count=0
 
-while read -r name_vsn_str; do
-    tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
-    tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
-    tool_names[${tool_name}]="true"
-    tool_versions["${tool_name}_BASE"]="${tool_vsn}"
-done < <(awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
+    declare -A tool_names
+    declare -A tool_versions
 
-while read -r name_vsn_str; do
-    tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
-    tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
-    tool_names["${tool_name}"]="true"
-    tool_versions["${tool_name}_TEST"]="${tool_vsn}"
-done < <(awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
+    while read -r name_vsn_str; do
+        tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
+        tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
+        tool_names[${tool_name}]="true"
+        tool_versions["${tool_name}_BASE"]="${tool_vsn}"
+    done < <(awk '/Versions of tools/,/\]/' "${base_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
-echo "[INFO] TOOL VERSIONS"
-for tool_name in "${!tool_names[@]}"; do 
-    base_vsn=${tool_versions["${tool_name}_BASE"]}
-    test_vsn=${tool_versions["${tool_name}_TEST"]}
-    if [[ "${base_vsn}" == "${test_vsn}" ]]; then
-        echo "[INFO]   Identical version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
-    elif [[ "${base_vsn}" == "" ]]; then
-        echo "[WARN]   NEW tool ${tool_name} v${test_vsn}"
-    else
-        echo "[WARN]   DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
-    fi
-done
+    while read -r name_vsn_str; do
+        tool_name=$(echo "${name_vsn_str}" | cut -d":" -f1)
+        tool_vsn=$(echo "${name_vsn_str}" | cut -d":" -f2)
+        tool_names["${tool_name}"]="true"
+        tool_versions["${tool_name}_TEST"]="${tool_vsn}"
+    done < <(awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
-echo ""
-echo "[INFO] ===== Variant count CHECKS"
+    header "TOOL VERSIONS check"
 
-echo "[INFO] GERMLINE file checks"
-echo "[INFO]   Germline total variant count ${base_grm_var_count} (base) vs ${test_grm_var_count} (test)"
-echo "[INFO]   Germline PASS variant count ${base_grm_pass_var_count} (base) vs ${test_grm_pass_var_count} (test)"
+    for tool_name in "${!tool_names[@]}"; do
+        base_vsn=${tool_versions["${tool_name}_BASE"]}
+        test_vsn=${tool_versions["${tool_name}_TEST"]}
+        if [[ "${base_vsn}" == "${test_vsn}" ]]; then
+            info "  OK identical tool version for tool ${tool_name} (${base_vsn})"
+        elif [[ "${base_vsn}" == "" ]]; then
+            warn "  NEW tool ${tool_name} v${test_vsn} found"
+        else
+            warn "  DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+        fi
+    done
 
-echo "[INFO] PURPLE file checks"
-echo "[INFO]   PURPLE total variant count ${base_som_var_count} (base) vs ${test_som_var_count} (test)"
-echo "[INFO]   PURPLE PASS variant count ${base_som_pass_var_count} (base) vs ${test_som_pass_var_count} (test)"
-echo "[INFO]   PURPLE SV total variant count ${base_sv_var_count} (base) vs ${test_sv_var_count} (test)"
-echo "[INFO]   PURPLE SV PASS variant count ${base_sv_pass_var_count} (base) vs ${test_sv_pass_var_count} (test)"
-echo "[INFO]   PURPLE SV NON-PON variant count ${base_sv_non_pon_var_count} (base) vs ${test_sv_non_pon_var_count} (test)"
+    header "VARIANT COUNT check"
 
-echo "[INFO] CHORD file content"
-awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
-awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
+    info "GERMLINE file checks"
+    info "  Germline total variant count ${base_grm_var_count} (base) vs ${test_grm_var_count} (test)"
+    info "  Germline PASS variant count ${base_grm_pass_var_count} (base) vs ${test_grm_pass_var_count} (test)"
 
-echo "[INFO] LINX file content"
-awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
-awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
+    info "PURPLE file checks"
+    info "  PURPLE total variant count ${base_som_var_count} (base) vs ${test_som_var_count} (test)"
+    info "  PURPLE PASS variant count ${base_som_pass_var_count} (base) vs ${test_som_pass_var_count} (test)"
+    info "  PURPLE SV total variant count ${base_sv_var_count} (base) vs ${test_sv_var_count} (test)"
+    info "  PURPLE SV PASS variant count ${base_sv_pass_var_count} (base) vs ${test_sv_pass_var_count} (test)"
+    info "  PURPLE SV NON-PON variant count ${base_sv_non_pon_var_count} (base) vs ${test_sv_non_pon_var_count} (test)"
 
-echo "[INFO] BACHELOR file content"
-cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
-cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
+    info "CHORD file content"
+    awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
+    awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
 
-echo ""
+    info "LINX file content"
+    awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
+    awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
+
+    info "BACHELOR file content"
+    cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
+    cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
+}
+
+header () {
+    info "===== $1 ====="
+}
+
+main
