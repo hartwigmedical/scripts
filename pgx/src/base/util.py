@@ -24,3 +24,10 @@ def replace_file_extension_of_path(path: str, new_file_extension: str) -> str:
     split_path = path.split(".")
     new_path = ".".join(split_path[0:-1]) + "." + new_file_extension
     return new_path
+
+
+def get_chromosome_name_to_index() -> Dict[str, int]:
+    chromosome_index_map = {str(i): i for i in range(1, 23)}
+    chromosome_index_map["X"] = 23
+    chromosome_index_map["Y"] = 24
+    return chromosome_index_map
