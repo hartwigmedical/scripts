@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-nextcloud_dir="STAGING/Reports-ALEA/Reports-TODO"
-for report in /data/cpct/patient_reports/*.pdf; do
-    echo "[INFO] Uploading ${report} to Nextcloud for Reports ALEA TODO"
-    do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${report}"
-done

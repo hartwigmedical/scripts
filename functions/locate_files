@@ -221,7 +221,7 @@ locate_hartwig_curated_tsv() {
 }
 
 locate_ckb_flex_data_dir() {
-    echo ${base_path}/dbs/ckb/210226_flex_dump
+    echo ${base_path}/dbs/ckb/210305_flex_dump
 }
 
 locate_ref_genome_37_fasta_file() {
@@ -844,6 +844,16 @@ locate_chord_pilot_prediction() {
 locate_protect_evidence() {
     local run_dir=$1
     local protect_evidence_tsv=$(find -L ${run_dir}/protect/ -type f -name "*.protect.tsv")
+    if [[ -z "${protect_evidence_tsv}" ]]; then
+        echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+    echo ${protect_evidence_tsv}
+}
+
+locate_protect_evidence_pilot() {
+    local run_dir=$1
+    local protect_evidence_tsv=$(find -L ${run_dir}/protect_pilot/ -type f -name "*.protect.tsv")
     if [[ -z "${protect_evidence_tsv}" ]]; then
         echo "[ERROR] Unable to locate PROTECT evidence tsv in ${run_dir}. Exiting." >&2
         exit 1

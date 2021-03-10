@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+run_dir=$1 && shift
+
+if [[ -z "${run_dir}" ]]; then
+    echo "[ERROR] No run dir provided. Exiting" && exit 1;
+fi
+
+nextcloud_dir="STAGING/Subclonality"
+for plot in /data/cpct/runs/${run_dir}/purple/plot/*.somatic.clonality.png; do
+    echo "[INFO] Uploading ${plot} to Nextcloud for Subclonality"
+    do_upload_files_to_nextcloud_directory "${nextcloud_dir}" "${plot}"
+done

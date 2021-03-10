@@ -109,13 +109,13 @@ specified_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselect
 doid_selection=$( jq -r '.[] | .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
 if [[ "${specified_selection}" != "" ]]; then
     if [[ "${doid_selection}" != "" ]]; then
-        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Doids_requested_patientselection (DOID codes) + " & " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
+        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection + " & " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
     else
-        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
+        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Requested_patientselection_specified' <temp.json)
     fi
 else
     if [[ "${doid_selection}" != "" ]]; then
-        selection=$( jq -r '.[] | .DataRequests_DR_3_1_Doids_requested_patientselection (DOID codes)' <temp.json)
+        selection=$( jq -r '.[] | "tumor and/or treatment specific: " + .DataRequests_DR_3_1_Doids_requested_patientselection' <temp.json)
     else
         selection=$( jq -r '.[] | .DataRequests_DR_3_1_Requested_patientselection.text' <temp.json)
     fi
@@ -133,7 +133,7 @@ echo "The paperwork for the Hartwig Medical Foundation request $release_id has b
 echo ""
 echo "Before starting this up please double check the details of your request:
 The licensed data involves: metadata (tumor${patient_data}${pre_treatment_data}${post_treatment_data} properties; TSV format)${somatic_data}${germline_data}${rawDNA_data}${rawRNA_data}."
-echo "It includes the patient selection: ${selection}"
+echo "It includes the patient selection -  ${selection}."
 echo ""
 echo "Hartwig Medical Foundation will make the licensed data available through the Google Cloud Platform (GCP). \
 In order to get access to the licensed data the download contact persons as indicated on the Data Access Request form will need to have or to create a GCP account enabling multi-factor authentication. \

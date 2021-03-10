@@ -142,7 +142,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_REF_CALL,
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_GRCH37_REF_CALL,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -154,7 +154,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
-                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", Filter.INFERRED_REF_CALL,
+                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", Filter.INFERRED_GRCH37_REF_CALL,
             ),
             FullCall(
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
@@ -187,7 +187,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -199,7 +199,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
-                ("T", "T"), "FAKE2", ("rs1212127",), "REF_CALL", Filter.NO_CALL,
+                ("T", "T"), "FAKE2", ("rs1212127",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
@@ -518,7 +518,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_REF_CALL,
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_GRCH37_REF_CALL,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -534,7 +534,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("16", 97915617), "C", GeneCoordinate("16", 97450060), "T",
-                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", Filter.INFERRED_REF_CALL,
+                ("C", "C"), "FAKE2", ("rs1212127",), "1324T>C", Filter.INFERRED_GRCH37_REF_CALL,
             ),
             FullCall(
                 GeneCoordinate("5", 97915617), "T", GeneCoordinate("5", 97450060), "T",
@@ -673,7 +673,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_REF_CALL,
+                ("TG", "TG"), "DPYD", ("rs72549303",), "6744GA>CA", Filter.INFERRED_GRCH37_REF_CALL,
             ),
         })
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
@@ -700,7 +700,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -731,7 +731,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -762,7 +762,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -899,7 +899,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -930,7 +930,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -961,7 +961,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -993,7 +993,7 @@ class TestPgxAnalysis(unittest.TestCase):
             ),
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
-                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.NO_CALL,
+                ("TC", "TC"), "DPYD", ("rs72549303",), "REF_CALL", Filter.PASS_BUT_REF_GRCH38,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
@@ -1006,8 +1006,9 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   Have centralized location for filter and REF_CALL strings, and maybe other string constants as well
-        #   Change column names of dataframe to make more sense and add ref alleles
+        #   Change column names of genotype dataframe to make more sense and add ref alleles
+        #   Check coverage
+        #   Write a few tests for reporters
         #   Bunch of errors
         #   SAGE GERMLINE as input
         #   (Maybe improve MNV handling after SAGE Germline stuff)

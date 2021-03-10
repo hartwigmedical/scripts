@@ -8,138 +8,140 @@ TRUE=true
 
 GCP_PROJECT="hmf-database"
 GCP_ACCOUNT="hmf-ops"
-execute_cleanup=false
+do_execute_cleanup=false
 
 print_usage(){
     echo "-----"
     echo " Descr: Searches for data in GCP buckets and print code to cleanup"
     echo " Usage: $(basename $0) -s \$submission"
+    echo "        $(basename $0) -s \$submission -e"
     echo " Examp: nohup $(basename $0) -s HMFregXXXX > \$HOME/logs/tmp.log &"
-    echo "  Note: Writes output cmd and log files to ${OUT_ROOT}"
+    echo " Notes: 1) Writes all log files to $OUT_ROOT"
+    echo "        2) CAUTION with param -e (this automatically executes deletion)"
     echo "-----"
     exit 1
 }
 
 while getopts ':s:e' flag; do
-    case "${flag}" in
+    case "$flag" in
         s) submission=${OPTARG} ;;
-        e) execute_cleanup=TRUE ;;
+        e) do_execute_cleanup=TRUE ;;
         *) print_usage
         exit 1 ;;
     esac
 done
 
-if [[ -z "${submission}" ]]; then
+if [[ -z "$submission" ]]; then
     print_usage
 fi
 
 main() {
-    info "Starting with script $(basename $0) for submission $submission"
+    info "Starting with $(basename $0) ($submission)"
 
-    yymmdd=$(date "+%y%m%d")
-    out_path="${OUT_ROOT}/${submission}"
-    log_file="${out_path}/setup_cleanup_of_${submission}.log"
-    rm_cmd_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp"
-    rm_log_file="${out_path}/${yymmdd}_cleanup_${submission}_at_gcp.log"
+    out_path="$OUT_ROOT/$submission"
+    log_file="$out_path/setup.log"
+    rm_cmd_file="$out_path/cleanup_at_gcp"
+    rm_log_file="$out_path/cleanup_at_gcp.log"
 
     # sanity checks
     info "Performing sanity checks"
-    [[ -w "${OUT_ROOT}" ]] || die "Out root not writable (${OUT_ROOT})"
-    [[ ! -d "${out_path}" ]] || die "Output directory already exists (${out_path})"
-    [[ ! -f "${log_file}" ]] || die "Log file already exists (${log_file})"
-    [[ ! -f "${rm_cmd_file}" ]] || die "Removal cmd file already exists (${rm_cmd_file})"
-    [[ ! -f "${rm_log_file}" ]] || die "Removal log already exists (${rm_log_file})"
+    [[ -w "$OUT_ROOT" ]] || die "Out root not writable ($OUT_ROOT)"
+    [[ ! -d "$out_path" ]] || die "Output directory already exists ($out_path)"
+    [[ ! -f "$log_file" ]] || die "Log file already exists ($log_file)"
+    [[ ! -f "$rm_cmd_file" ]] || die "Removal cmd file already exists ($rm_cmd_file)"
+    [[ ! -f "$rm_log_file" ]] || die "Removal log already exists ($rm_log_file)"
 
     # setup output dir
-    mkdir -p "${out_path}"
+    mkdir -p "$out_path"
 
-    info "Starting with script $(basename $0) for submission $submission" >> "${log_file}"
+    info "Starting with $(basename $0) ($submission)" >> "$log_file"
 
     GCP_ACCOUNT_project="${GCP_ACCOUNT}@${GCP_PROJECT}"
-    info "Setting GCP account ${GCP_ACCOUNT_project}" >> "${log_file}"
+    info "Switching to GCP service account $GCP_ACCOUNT_project" >> "$log_file"
     msg=$(gcloud config set account "${GCP_ACCOUNT_project}.iam.gserviceaccount.com" 2>&1)
-    info "  ${msg}" >> "${log_file}"
+    info "  $msg" >> "$log_file"
 
     # keeping track of runs we will visit
     declare -A processed_runs
 
     # all while loops use process substitution to avoid subprocesses
-    info "Retrieving runs involved (via samples->sets)" >> "${log_file}"
-    samples_json=$(hmf_api_get "samples?submission=${submission}") 
+    info "Retrieving runs involved (via samples->sets)" >> "$log_file"
+    samples_json=$(hmf_api_get "samples?submission=$submission")
 
     # add start message to cmd file
-    echo "echo '[INFO] Starting cleanup for submission ${submission}'" >> "${rm_cmd_file}"
+    echo "echo '[INFO] Starting cleanup for submission $submission'" >> "$rm_cmd_file"
 
-    while read sample; do
-        sample_id=$(echo "$sample" | jq -r '.id')
-        sample_status=$(echo "$sample" | jq -r '.status')
-        sets_json=$(hmf_api_get "sets?sample_id=${sample_id}")
+    while read -r sample; do
+        sample_id=$(echo "$sample" | cut -f1)
+        sample_status=$(echo "$sample" | cut -f2)
 
-        while read set; do
-            set_id=$(echo "$set" | jq -r '.id')
-            runs_json=$(hmf_api_get "runs?set_id=${set_id}")
+        sets_json=$(hmf_api_get "sets?sample_id=$sample_id")
+        while read -r set; do
+            set_id=$(echo "$set" | cut -f1)
 
-            while read run; do
-                run_id=$(echo "$run" | jq -r '.id')
-                run_name=$(echo "$run" | jq -r '.set.name')
-                bucket=$(echo "$run" | jq -r '.bucket')
+            runs_json=$(hmf_api_get "runs?set_id=$set_id")
+            while read -r run; do
+                run_id=$(echo "$run" | cut -f1)
+                run_name=$(echo "$run" | cut -f2)
+                bucket=$(echo "$run" | cut -f3)
+                run_status=$(echo "$run" | cut -f4)
+                ini_name=$(echo "$run" | cut -f5)
 
-                run_is_already_processed=${processed_runs[${run_id}]}
-                if [[ "${run_is_already_processed}" == "${TRUE}" ]]; then
-                    info "Not processing run ${run_id} because already processed (${run_name})" >> "${log_file}"
+                run_is_already_processed=${processed_runs[$run_id]}
+                if [[ "$run_is_already_processed" == "$TRUE" ]]; then
+                    info "Not processing run $run_id because already processed ($run_name)" >> "$log_file"
                     continue
                 fi
 
                 # add to processed runs so we can skip if encountered again later
-                processed_runs[${run_id}]="${TRUE}"
-                
-                # pre-GCP buckets might still have underscores that need to be replaced
-                bucket=${bucket/_/-}
+                processed_runs[$run_id]="$TRUE"
 
-                run_status=$(echo "$run" | jq -r '.status')
-                ini_name=$(echo "$run" | jq -r '.ini')
-                gs_url="gs://${bucket}/${run_name}"
-                run_type=$(run_type_by_ini_name "${ini_name}")
+                bucket=${bucket/_/-}
+                gs_url="gs://$bucket/$run_name"
+                run_type=$(run_type_by_ini_name "$ini_name")
 
                 run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
-                info "Processing run ${run_info}" >> "${log_file}"
-                echo "echo '[INFO] Performing steps for run ${run_info}'" >> "${rm_cmd_file}"
+                info "  Processing run $run_info" >> "$log_file"
+                echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
 
-                if [[ "${run_type}" == "fastq" ]]; then
-                    echo "  hmf_api_patch -c 'samples' -o '${sample_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
-                    files_api_url="files?run_id=${run_id}"
-                    files_json=$(hmf_api_get "${files_api_url}")
-                    mapfile -t all_gs_urls < <( echo ${files_json} | jq -r '.[].filepath' )
-                    # fastq files need to be processed one by one since they share the bucket with other fastq files
+                if [[ "$run_type" == "fastq" ]]; then
+                    echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
+                    files_api_url="files?run_id=$run_id"
+                    files_json=$(hmf_api_get "$files_api_url")
+                    mapfile -t all_gs_urls < <( echo "$files_json" | jq -r '.[].filepath' )
                     for fastq_file_url in "${all_gs_urls[@]}"; do
-                        process_gs_url "${sample_status}" "${fastq_file_url}" "${rm_cmd_file}" "${log_file}"
+                        # fastq files need to be processed one by one since they share their bucket with other fastq files
+                        process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
                     done
-                elif [[ "${run_type}" == "pipeline" ]]; then
-                    process_gs_url "${run_status}" "${gs_url}" "${rm_cmd_file}" "${log_file}"
+                elif [[ "$run_type" == "pipeline" ]]; then
+                    process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
                 else
-                    die "Run somehow not FASTQ and NOT pipeline (type=${run_type}, ini=${ini_name}): this should not happen!"
+                    die "Run somehow not FASTQ and also not pipeline (ini=$ini_name): this should not happen! ($run_info)"
                 fi
-                echo "  hmf_api_patch -c 'runs' -o '${run_id}' -f 'status' -v 'Deleted' -e" >> "${rm_cmd_file}"
-            done < <(echo "$runs_json" | jq -c '.[]')
-        done < <(echo "$sets_json" | jq -c '.[]')
-    done < <(echo "$samples_json" | jq -c '.[]')
-    echo "echo '[INFO] Finished cleanup for submission ${submission}'" >> "${rm_cmd_file}"
+                echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
+            done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
+        done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
+    done < <(echo "$samples_json" | jq -cr '.[] | [.id,.status] | @tsv')
+    # ^ a tsv line is generated for each while loop iteration to keep amount of jq calls down
+
+    echo "echo '[INFO] Finished cleanup for submission $submission'" >> "$rm_cmd_file"
     run_count="${#processed_runs[@]}"
 
-    info "Making output cmd file executable (${rm_cmd_file})" >> "${log_file}"
-    chmod +x "${rm_cmd_file}"
+    info "Making cleanup cmd file executable ($rm_cmd_file)" >> "$log_file"
+    chmod +x "$rm_cmd_file"
 
-    info "A total of ${run_count} runs were processed" >> "${log_file}"
-    if [[ "${execute_cleanup}" == TRUE ]]; then
-        info "Executing cleanup file in background (${rm_cmd_file})" >> "${log_file}"
+    info "A total of $run_count runs were processed" >> "$log_file"
+    if [[ "$do_execute_cleanup" == TRUE ]]; then
+        info "Configured for automatic cleanup so executing cleanup file ($rm_cmd_file)" >> "$log_file"
         rm_err_file="${rm_log_file}.err"
-        nohup "${rm_cmd_file}" 1>"${rm_log_file}" 2>"${rm_err_file}" </dev/null  &
+        $rm_cmd_file >"$rm_log_file" 2>"$rm_err_file"
     else
-        info "You can now execute deletion with:" >> "${log_file}"
-        info "  nohup ${rm_cmd_file} > ${rm_log_file} &" >> ${log_file}
-        info "Check log file for further actions: ${log_file}"
+        info "You can now execute deletion with:" >> "$log_file"
+        info "  nohup $rm_cmd_file > $rm_log_file &" >> "$log_file"
+        info "Check log file for further actions: $log_file"
     fi
-    info "Finished with $(basename $0)" >> "${log_file}"
+    info "Finished with $(basename $0) ($submission)" >> "$log_file"
+    info "Finished with $(basename $0) ($submission)"
 }
 
 run_type_by_ini_name() {
@@ -160,7 +162,6 @@ run_type_by_ini_name() {
     else
         echo "$unknown"
     fi
-
 }
 
 process_gs_url() {
@@ -169,18 +170,18 @@ process_gs_url() {
     local out_file=$1 && shift
     local log_file=$1 && shift
     
-    msg=$(gsutil -u "${GCP_PROJECT}" ls "${gs_url}" 2>&1)
+    msg=$(gsutil -u "$GCP_PROJECT" ls "$gs_url" 2>&1)
     if [[ $? -eq 1 ]]; then
         deleted_status="Deleted"
-        if [[ "${status}" == "${deleted_status}" ]]; then
-            info "  SKIPPING: url not valid but object status is ${status} so makes sense (${gs_url})" >> "${log_file}"
+        if [[ "$status" == "$deleted_status" ]]; then
+            info "  SKIPPING: no file found at url but object status is $status so makes sense ($gs_url)" >> "$log_file"
         else
-            warn "  SKIPPING: url not valid while object status (${status}) is not Deleted (${gs_url})" >> "${log_file}" 2>&1
-            warn "  SKIPPING: url not valid while object status (${status}) is not Deleted (${gs_url})"
+            warn "  SKIPPING: no file found at url while object status ($status) is not 'Deleted' ($gs_url)" >> "$log_file" 2>&1
+            warn "  SKIPPING: no file found at url while object status ($status) is not 'Deleted' ($gs_url)"
         fi
     else
-        info "  Writing rm command for valid URL ($gs_url)" >> "${log_file}"
-        echo "  gsutil -u ${GCP_PROJECT} ${GSUTIL_CMD_PARAMS} rm -r ${gs_url}" >> "${out_file}"
+        info "  OK file found at url so writing rm cmd ($gs_url)"
+        echo "  gsutil -q -u $GCP_PROJECT $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
     fi
 }
 
