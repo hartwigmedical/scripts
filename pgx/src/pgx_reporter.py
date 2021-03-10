@@ -21,12 +21,15 @@ class GenotypeReporter(object):
     RS_IDS_COLUMN_NAME = "rsid"
     ANNOTATION_COLUMN_NAME = "variant_annotation"
     FILTER_COLUMN_NAME = "filter"
+    PANEL_VERSION_COLUMN_NAME = "panel_version"
+    TOOL_VERSION_COLUMN_NAME = "repo_version"
     NEW_CALLS_TSV_COLUMNS = (
         GENE_COLUMN_NAME, CHROMOSOME_COLUMN_NAME,
         POSITION_GRCH37_COLUMN_NAME, POSITION_GRCH38_COLUMN_NAME,
         REF_ALLELE_GRCH37_COLUMN_NAME, REF_ALLELE_GRCH38_COLUMN_NAME,
         FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
         RS_IDS_COLUMN_NAME, ANNOTATION_COLUMN_NAME, FILTER_COLUMN_NAME,
+        PANEL_VERSION_COLUMN_NAME, TOOL_VERSION_COLUMN_NAME,
     )
     CHROMOSOME_INDEX_NAME = "chromosome_index"
 
@@ -37,15 +40,19 @@ class GenotypeReporter(object):
     RS_ID_SEPARATOR = ";"
 
     @classmethod
-    def get_calls_tsv_text(cls, pgx_analysis: PgxAnalysis) -> str:
-        return str(cls.__get_panel_calls_df(pgx_analysis).to_csv(sep=cls.TSV_SEPARATOR, index=False))
+    def get_calls_tsv_text(cls, pgx_analysis: PgxAnalysis, panel_path: str, version: str) -> str:
+        text = str(
+            cls.__get_panel_calls_df(pgx_analysis, panel_path, version).to_csv(sep=cls.TSV_SEPARATOR, index=False)
+        )
+        return text
 
     @classmethod
-    def __get_panel_calls_df(cls, pgx_analysis: PgxAnalysis) -> pd.DataFrame:
-        return cls.__get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls())
+    def __get_panel_calls_df(cls, pgx_analysis: PgxAnalysis, panel_path: str, version: str) -> pd.DataFrame:
+        return cls.__get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls(), panel_path, version)
 
     @classmethod
-    def __get_calls_data_frame_from_full_calls(cls, full_calls: FrozenSet[FullCall]) -> pd.DataFrame:
+    def __get_calls_data_frame_from_full_calls(
+            cls, full_calls: FrozenSet[FullCall], panel_path: str, version: str) -> pd.DataFrame:
         data_frame = pd.DataFrame(columns=cls.NEW_CALLS_TSV_COLUMNS)
         for full_call in full_calls:
             assert (
@@ -77,6 +84,8 @@ class GenotypeReporter(object):
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
                 cls.ANNOTATION_COLUMN_NAME: full_call.variant_annotation,
                 cls.FILTER_COLUMN_NAME: full_call.filter.name,
+                cls.PANEL_VERSION_COLUMN_NAME: panel_path,
+                cls.TOOL_VERSION_COLUMN_NAME: version,
             }
             data_frame = data_frame.append(new_id, ignore_index=True)
 

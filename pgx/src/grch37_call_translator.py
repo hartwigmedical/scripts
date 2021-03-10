@@ -130,7 +130,6 @@ class Grch37CallTranslator(object):
         inferred_ref_calls = set()
         for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
             if not rs_id_info.get_relevant_grch37_coordinates().intersection(handled_grch37_coordinates):
-                # TODO: rename INFERRED_REF_CALL to INFERRED_CALL or something
                 if rs_id_info.rs_id in handled_grch37_rs_ids:
                     error_msg = (f"Have seen rs id of ref seq difference, but not location. "
                                  f"Indicates mismatch between input file and panel."

@@ -1006,10 +1006,15 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("TODO")
     def test_todo(self) -> None:
         # TODO:
-        #   Check coverage
-        #   Write a few tests for reporters
-        #   Bunch of errors
+        #   Check coverage:
+        #       Looks alright. Missing a bunch of errors, most of main.py and most of vcf_reader
+        #   Bunch of errors?
+        #   Should we test vcf_reader?
         #   SAGE GERMLINE as input
+        #   Adjust panel.json
+        #       Remove unnecessary bits
+        #       Maybe remove per-rs_id_info chromosome and just use the gene_info one for everything.
+        #       Add name and use it and json_version for panel version in output files instead of panel path
         #   (Maybe improve MNV handling after SAGE Germline stuff)
         self.fail("WIP")
 

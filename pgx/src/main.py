@@ -42,7 +42,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Output
     # TODO: maybe change file names of tsv files to .tsv
-    print_calls_to_file(pgx_analysis, outputdir, sample_t_id)
+    print_calls_to_file(pgx_analysis, outputdir, sample_t_id, panel_path, version)
     print_genotypes_to_file(pgx_analysis, panel, outputdir, sample_t_id, panel_path, version)
     # Also copy the bed-filtered VCF file for research purposes
     copy_filtered_vcf_file(filtered_vcf, outputdir, sample_t_id)
@@ -136,12 +136,13 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
     print(f"[INFO] Created {bed_path}")
 
 
-def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: str) -> None:
+def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: str,
+                        panel_path: str, version: str) -> None:
     calls_file = f"{outputdir}/{sample_t_id}_calls.txt"
     if os.path.exists(calls_file):
         raise IOError(f"Calls output file {calls_file} already exists. Exiting.")
     with open(calls_file, 'w') as f:
-        f.write(GenotypeReporter.get_calls_tsv_text(pgx_analysis))
+        f.write(GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version))
     if not os.path.exists(calls_file):
         raise FileNotFoundError(f"Failed to write calls output file {calls_file}")
 
