@@ -42,29 +42,20 @@ main () {
     test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
     base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
     test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
-    cram_files=(
-      "$base_ref_cram"
-      "$test_ref_cram"
-      "$base_tum_cram"
-      "$test_tum_cram"
-    )
+    cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
 
-    header "Overview"
-    info "LOGS dir path: ${logs_dir_path}"
-    info "BASE run path: ${base_run_path}"
-    info "TEST run path: ${test_run_path}"
-    info "BASE version: ${base_pip_vsn}"
-    info "TEST version: ${test_pip_vsn}"
-    info "BASE sample: ${base_tum_sample_name}"
-    info "TEST sample: ${test_tum_sample_name}"
+    header "Settings"
+    info "  Logs dir: ${logs_dir_path}"
+    info "  Base dir: ${base_run_path}"
+    info "  Test dir: ${test_run_path}"
+    info "  Base version: ${base_pip_vsn}"
+    info "  Test version: ${test_pip_vsn}"
+    info "  Base sample: ${base_tum_sample_name}"
+    info "  Test sample: ${test_tum_sample_name}"
 
     header "CRAM check"
     for cram_file in ${cram_files[*]}; do
-        if [[ -f "${cram_file}" ]]; then
-            info "  OK File found (${cram_file})"
-        else
-            warn "  File does not exist (${cram_file})"
-        fi
+        [[ -f "${cram_file}" ]] || warn "  File does not exist (${cram_file})"
     done
 
     base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
@@ -94,9 +85,14 @@ main () {
             else
                 info "  OK Identical file count (${base_file_count}) for tool directory (${tool_name})"
             fi
-            find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -type f | \
-            grep -vP "\.(vcf|tbi|gz|log|sh|cram|crai|bam|bai|bak)$" | \
-            while read -r base_file_path; do
+
+            # vcf tbi gz log sh cram crai bam bai bak)
+            find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -type f \
+                -not -name "*.cram" -not -name "*.crai" \
+                -not -name "*.bam" -not -name "*.bai" \
+                -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
+                -not -name "*.sh" -not -name "*.log" -not -name "*.bak" \
+            | while read -r base_file_path; do
                 file_name=$(basename "${base_file_path}");
                 file_path="${tool_name}/${file_name}"
                 test_file_path="${test_run_path}/${file_path}"
