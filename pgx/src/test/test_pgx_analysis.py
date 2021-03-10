@@ -1006,7 +1006,6 @@ class TestPgxAnalysis(unittest.TestCase):
     @unittest.skip("WIP")
     def test_ambiguous_call(self) -> None:
         # TODO:
-        #   Change column names of genotype dataframe to make more sense and add ref alleles
         #   Check coverage
         #   Write a few tests for reporters
         #   Bunch of errors

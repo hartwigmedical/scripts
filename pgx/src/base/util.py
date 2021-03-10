@@ -17,3 +17,10 @@ def get_key_to_multiple_values(key_value_pairs: List[Tuple[S, T]]) -> Dict[S, Li
 
 def get_covered_coordinates(start_coordinate: GeneCoordinate, allele: str) -> Set[GeneCoordinate]:
     return {GeneCoordinate(start_coordinate.chromosome, start_coordinate.position + i) for i in range(len(allele))}
+
+
+def replace_file_extension_of_path(path: str, new_file_extension: str) -> str:
+    assert "." in path, f"Path does not contain point to signal file extension: path={path}"
+    split_path = path.split(".")
+    new_path = ".".join(split_path[0:-1]) + "." + new_file_extension
+    return new_path

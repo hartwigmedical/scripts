@@ -6,6 +6,7 @@ import sys
 from shutil import copyfile
 from typing import List, Set, Tuple
 
+from base.util import replace_file_extension_of_path
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
 from pgx_reporter import HaplotypeReporter, GenotypeReporter
@@ -111,12 +112,12 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
     )
     bed_regions = []  # chrom, start, end, gene
     covered = []
-    transcripts = open(f"{sourcedir}/all_genes.37.tsv", 'r')
-    for line in transcripts:
-        split_line = line.rstrip().split("\t")
-        if split_line[4] in genes_in_panel and split_line[4] not in covered:
-            bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
-            covered.append(split_line[4])
+    with open(f"{sourcedir}/all_genes.37.tsv", 'r') as transcripts:
+        for line in transcripts:
+            split_line = line.rstrip().split("\t")
+            if split_line[4] in genes_in_panel and split_line[4] not in covered:
+                bed_regions.append([split_line[0], split_line[1], split_line[2], split_line[4]])
+                covered.append(split_line[4])
     if set(covered) != genes_in_panel:
         error_msg = (
             f"Missing genes from the gene panel in the transcript list. Please check:\n"
@@ -183,12 +184,6 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
     )
     parser.add_argument('--sourcedir', type=str, default='data', help="Optional path to location of source files")
     return parser.parse_args(sys_args)
-
-
-def replace_file_extension_of_path(path: str, new_file_extension: str) -> str:
-    split_path = path.split(".")
-    new_path = ".".join(split_path[0:-1]) + "." + new_file_extension
-    return new_path
 
 
 if __name__ == '__main__':
