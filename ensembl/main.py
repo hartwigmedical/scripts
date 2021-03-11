@@ -255,7 +255,7 @@ class EnsemblRestClient(object):
             except AssertionError as e:
                 warning_collector.add(str(e))
                 try:
-                    offset = 20
+                    offset = 30
                     adjusted_source_start = pos - offset
                     adjusted_source_end = pos + offset
                     adjusted_target_start, adjusted_target_end = self._request_translated_range(
@@ -267,7 +267,7 @@ class EnsemblRestClient(object):
                     return adjusted_target_start + offset
                 except AssertionError as e:
                     warning_collector.add(str(e))
-                    offset = 40
+                    offset = 100
                     adjusted_source_start = pos - offset
                     adjusted_source_end = pos + offset
                     adjusted_target_start, adjusted_target_end = self._request_translated_range(
