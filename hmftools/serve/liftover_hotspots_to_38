@@ -6,8 +6,12 @@ if [[ ! -d "${working_dir}" ]]; then
     echo "[ERROR] No existing working dir passed. Exiting" && exit 1
 fi
 
-echo "[INFO] Running 38 hotspot liftover on ${working_dir}"
 input_37_hotspots_gz=${working_dir}/KnownHotspots.SERVE.37.vcf.gz
+if [[ ! -f "${input_37_hotspots_gz}" ]]; then
+    echo "[ERROR] Cannot locate ${input_37_hotspots_gz}. Exiting" && exit 1
+fi
+
+echo "[INFO] Running 38 hotspot liftover on ${working_dir}"
 tmp_37_hotspots=${working_dir}/KnownHotspots.somatic.hg19.vcf
 target_38_hotspots=${working_dir}/KnownHotspots.somatic.hg38.vcf
 
