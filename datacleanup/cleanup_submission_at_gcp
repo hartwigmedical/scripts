@@ -44,7 +44,7 @@ main() {
     rm_log_file="$out_path/cleanup_at_gcp.log"
 
     # sanity checks
-    info "Performing sanity checks"
+    info "  Performing sanity checks"
     [[ -w "$OUT_ROOT" ]] || die "Out root not writable ($OUT_ROOT)"
     [[ ! -d "$out_path" ]] || die "Output directory already exists ($out_path)"
     [[ ! -f "$log_file" ]] || die "Log file already exists ($log_file)"
@@ -61,71 +61,28 @@ main() {
     msg=$(gcloud config set account "${GCP_ACCOUNT_project}.iam.gserviceaccount.com" 2>&1)
     info "  $msg" >> "$log_file"
 
-    # keeping track of runs we will visit
-    declare -A processed_runs
-
-    # all while loops use process substitution to avoid subprocesses
-    info "Retrieving runs involved (via samples->sets)" >> "$log_file"
+    info "Retrieving samples by submission" >> "$log_file"
     samples_json=$(hmf_api_get "samples?submission=$submission")
 
-    # add start message to cmd file
+    # add start message to final cleanup cmd file
     echo "echo '[INFO] Starting cleanup for submission $submission'" >> "$rm_cmd_file"
 
+    run_count=0
     while read -r sample; do
         sample_id=$(echo "$sample" | cut -f1)
         sample_status=$(echo "$sample" | cut -f2)
-
-        sets_json=$(hmf_api_get "sets?sample_id=$sample_id")
-        while read -r set; do
-            set_id=$(echo "$set" | cut -f1)
-
-            runs_json=$(hmf_api_get "runs?set_id=$set_id")
-            while read -r run; do
-                run_id=$(echo "$run" | cut -f1)
-                run_name=$(echo "$run" | cut -f2)
-                bucket=$(echo "$run" | cut -f3)
-                run_status=$(echo "$run" | cut -f4)
-                ini_name=$(echo "$run" | cut -f5)
-
-                run_is_already_processed=${processed_runs[$run_id]}
-                if [[ "$run_is_already_processed" == "$TRUE" ]]; then
-                    info "Not processing run $run_id because already processed ($run_name)" >> "$log_file"
-                    continue
-                fi
-
-                # add to processed runs so we can skip if encountered again later
-                processed_runs[$run_id]="$TRUE"
-
-                bucket=${bucket/_/-}
-                gs_url="gs://$bucket/$run_name"
-                run_type=$(run_type_by_ini_name "$ini_name")
-
-                run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
-                info "  Processing run $run_info" >> "$log_file"
-                echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
-
-                if [[ "$run_type" == "fastq" ]]; then
-                    echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
-                    files_api_url="files?run_id=$run_id"
-                    files_json=$(hmf_api_get "$files_api_url")
-                    mapfile -t all_gs_urls < <( echo "$files_json" | jq -r '.[].filepath' )
-                    for fastq_file_url in "${all_gs_urls[@]}"; do
-                        # fastq files need to be processed one by one since they share their bucket with other fastq files
-                        process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
-                    done
-                elif [[ "$run_type" == "pipeline" ]]; then
-                    process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
-                else
-                    die "Run somehow not FASTQ and also not pipeline (ini=$ini_name): this should not happen! ($run_info)"
-                fi
-                echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
-            done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
-        done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
+        if [[ "${sample_status}" == "Unregistered" ]]; then
+            # Unregistered samples have not sets/runs linked
+            info "Processing unregistered sample (id=$sample_id)" >> "$log_file"
+            process_unregistered_sample "$sample_id" "$rm_cmd_file" "$log_file"
+        else
+            # Registered samples always have sets/runs linked
+            info "Processing registered sample (id=$sample_id)" >> "$log_file"
+            count=$(process_runs_for_sample "$sample_id" "$rm_cmd_file" "$log_file")
+            run_count=$((run_count + count))
+        fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.id,.status] | @tsv')
-    # ^ a tsv line is generated for each while loop iteration to keep amount of jq calls down
-
     echo "echo '[INFO] Finished cleanup for submission $submission'" >> "$rm_cmd_file"
-    run_count="${#processed_runs[@]}"
 
     info "Making cleanup cmd file executable ($rm_cmd_file)" >> "$log_file"
     chmod +x "$rm_cmd_file"
@@ -138,10 +95,94 @@ main() {
     else
         info "You can now execute deletion with:" >> "$log_file"
         info "  nohup $rm_cmd_file > $rm_log_file &" >> "$log_file"
-        info "Check log file for further actions: $log_file"
+        info "  Check log file for further actions: $log_file"
     fi
     info "Finished with $(basename $0) ($submission)" >> "$log_file"
     info "Finished with $(basename $0) ($submission)"
+}
+
+process_runs_for_sample() {
+    local sample_id=$1 && shift
+    local cmd_file=$1 && shift
+    local log_file=$1 && shift
+    sets_json=$(hmf_api_get "sets?sample_id=$sample_id")
+
+    # keeping track of runs we will visit
+    declare -A processed_runs
+
+    while read -r set; do
+        set_id=$(echo "$set" | cut -f1)
+
+        runs_json=$(hmf_api_get "runs?set_id=$set_id")
+        while read -r run; do
+            run_id=$(echo "$run" | cut -f1)
+            run_name=$(echo "$run" | cut -f2)
+            bucket=$(echo "$run" | cut -f3)
+            bucket=${bucket/_/-} # fix for old API records
+            run_status=$(echo "$run" | cut -f4)
+            ini_name=$(echo "$run" | cut -f5)
+
+            run_is_already_processed=${processed_runs[$run_id]}
+            if [[ "$run_is_already_processed" == "$TRUE" ]]; then
+                info "Not processing run $run_id because already processed ($run_name)" >> "$log_file"
+                continue
+            fi
+
+            # add to processed runs so we can skip if encountered again later (Somatic runs have two samples)
+            processed_runs[$run_id]="$TRUE"
+
+            gs_url="gs://$bucket/$run_name"
+            run_type=$(run_type_by_ini_name "$ini_name")
+
+            run_info="$run_id ($run_status) of type $run_type for set $set_id by sample $sample_id ($sample_status)"
+            info "  Processing run $run_info" >> "$log_file"
+            echo "echo '[INFO] Executing steps for run $run_info'" >> "$rm_cmd_file"
+
+            if [[ "$run_type" == "fastq" ]]; then
+                echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
+                files_api_url="files?run_id=$run_id"
+                files_json=$(hmf_api_get "$files_api_url")
+                mapfile -t all_gs_urls < <( echo "$files_json" | jq -r '.[].filepath' )
+                for fastq_file_url in "${all_gs_urls[@]}"; do
+                    process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
+                done
+            elif [[ "$run_type" == "pipeline" ]]; then
+                process_gs_url "$run_status" "$gs_url" "$rm_cmd_file" "$log_file"
+            else
+                die "Run somehow not FASTQ and also not pipeline (ini=$ini_name): this should not happen! ($run_info)"
+            fi
+            echo "  hmf_api_patch -c 'runs' -o '$run_id' -f 'status' -v 'Deleted' -e" >> "$rm_cmd_file"
+        done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
+    done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
+
+    run_count="${#processed_runs[@]}"
+    echo "$run_count"
+}
+
+process_unregistered_sample() {
+    local sample_id=$1 && shift
+    local cmd_file=$1 && shift
+    local log_file=$1 && shift
+    fastq_json=$(hmf_api_get "fastq?sample_id=$sample_id")
+
+    while read -r fastq; do
+        bucket=$(echo "$fastq" | cut -f1)
+        name_r1=$(echo "$fastq" | cut -f2)
+        name_r2=$(echo "$fastq" | cut -f3)
+        bucket=${bucket/_/-} # fix for old API records
+
+        fastq_file_url="gs://$bucket/$name_r1"
+        process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
+
+        # Existence of R2 FASTQ files depends on sequencer run mode (only with paired end)
+        if [[ -n "$name_r2" ]]; then
+            fastq_file_url="gs://$bucket/$name_r2"
+            process_gs_url "$sample_status" "$fastq_file_url" "$rm_cmd_file" "$log_file"
+        fi
+
+    done < <(echo "$fastq_json" | jq -cr '.[] | [.bucket,.name_r1,.name_r2] | @tsv')
+
+    echo "  hmf_api_patch -c 'samples' -o '$sample_id' -f 'status' -v 'Deleted' -e" >> "$cmd_file"
 }
 
 run_type_by_ini_name() {
@@ -180,7 +221,7 @@ process_gs_url() {
             warn "  SKIPPING: no file found at url while object status ($status) is not 'Deleted' ($gs_url)"
         fi
     else
-        info "  OK file found at url so writing rm cmd ($gs_url)"
+        info "  OK file found at url so writing rm cmd ($gs_url)" >> "$log_file"
         echo "  gsutil -q -u $GCP_PROJECT $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
     fi
 }
