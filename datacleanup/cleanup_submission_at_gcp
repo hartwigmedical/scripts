@@ -4,7 +4,6 @@ source message_functions || exit 1
 
 OUT_ROOT="/data/ops/cleanup"
 GSUTIL_CMD_PARAMS="-m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1"
-TRUE=true
 
 GCP_PROJECT="hmf-database"
 GCP_ACCOUNT="hmf-ops"
@@ -67,7 +66,7 @@ main() {
     # add start message to final cleanup cmd file
     echo "echo '[INFO] Starting cleanup for submission $submission'" >> "$rm_cmd_file"
 
-    run_count=0
+    processed_ids=""
     while read -r sample; do
         sample_id=$(echo "$sample" | cut -f1)
         sample_status=$(echo "$sample" | cut -f2)
@@ -78,8 +77,7 @@ main() {
         else
             # Registered samples always have sets/runs linked
             info "Processing registered sample (id=$sample_id)" >> "$log_file"
-            count=$(process_runs_for_sample "$sample_id" "$rm_cmd_file" "$log_file")
-            run_count=$((run_count + count))
+            processed_ids=$(process_runs_for_sample "$sample_id" "$rm_cmd_file" "$log_file" "$processed_ids")
         fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.id,.status] | @tsv')
     echo "echo '[INFO] Finished cleanup for submission $submission'" >> "$rm_cmd_file"
@@ -87,6 +85,7 @@ main() {
     info "Making cleanup cmd file executable ($rm_cmd_file)" >> "$log_file"
     chmod +x "$rm_cmd_file"
 
+    run_count=$(echo "$processed_ids" | tr " " "\n" | grep -c "ID:")
     info "A total of $run_count runs were processed" >> "$log_file"
     if [[ "$do_execute_cleanup" == TRUE ]]; then
         info "Configured for automatic cleanup so executing cleanup file ($rm_cmd_file)" >> "$log_file"
@@ -105,10 +104,8 @@ process_runs_for_sample() {
     local sample_id=$1 && shift
     local cmd_file=$1 && shift
     local log_file=$1 && shift
+    local processed_ids=$1 && shift
     sets_json=$(hmf_api_get "sets?sample_id=$sample_id")
-
-    # keeping track of runs we will visit
-    declare -A processed_runs
 
     while read -r set; do
         set_id=$(echo "$set" | cut -f1)
@@ -122,14 +119,15 @@ process_runs_for_sample() {
             run_status=$(echo "$run" | cut -f4)
             ini_name=$(echo "$run" | cut -f5)
 
-            run_is_already_processed=${processed_runs[$run_id]}
-            if [[ "$run_is_already_processed" == "$TRUE" ]]; then
-                info "Not processing run $run_id because already processed ($run_name)" >> "$log_file"
+            id_present=$(echo "$processed_ids" | grep -c "ID:$run_id ")
+            if [[ "$id_present" -gt 0 ]]; then
+                info "  Not processing run $run_id because already processed ($run_name)" >> "$log_file"
                 continue
             fi
 
-            # add to processed runs so we can skip if encountered again later (Somatic runs have two samples)
-            processed_runs[$run_id]="$TRUE"
+            # Really ugly way to keep track of IDs that we already visited (Somatic runs have two samples)
+            # Bash only supports references from v4.3 so need to work with expanding string
+            processed_ids+="ID:$run_id " # the space is important!
 
             gs_url="gs://$bucket/$run_name"
             run_type=$(run_type_by_ini_name "$ini_name")
@@ -155,8 +153,7 @@ process_runs_for_sample() {
         done < <(echo "$runs_json" | jq -cr '.[] | [.id,.set.name,.bucket,.status,.ini] | @tsv')
     done < <(echo "$sets_json" | jq -cr '.[] | [.id] | @tsv')
 
-    run_count="${#processed_runs[@]}"
-    echo "$run_count"
+    echo "$processed_ids"
 }
 
 process_unregistered_sample() {
@@ -225,5 +222,7 @@ process_gs_url() {
         echo "  gsutil -q -u $GCP_PROJECT $GSUTIL_CMD_PARAMS rm -r $gs_url" >> "$out_file"
     fi
 }
+
+function join_by { local IFS="$1"; shift; echo "$*"; }
 
 main
