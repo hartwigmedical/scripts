@@ -16,7 +16,7 @@ gunzip -c ${input_37_hotspots_gz} > ${tmp_37_hotspots}
 sed -i 's/^/chr/g' ${tmp_37_hotspots}
 sed -i 's/^chr#/#/g' ${tmp_37_hotspots}
 
-echo "[INFO] Running Picard LiftOver on ${input_37_hotspots_gz}"
+echo "[INFO] Running Picard LiftOver on ${tmp_37_hotspots}"
 java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
     I=${tmp_37_hotspots} \
     O=${target_38_hotspots} \
