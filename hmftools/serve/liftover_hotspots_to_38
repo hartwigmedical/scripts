@@ -1,24 +1,33 @@
 #!/usr/bin/env bash
 
-echo "[WARN] This script is untested yet. Just here for reference"
-exit 0;
+working_dir=$1 && shift
+
+if [[ ! -d "${working_dir}" ]]; then
+    echo "[ERROR] No existing working dir passed. Exiting" && exit 1
+fi
+
+input_37_hotspots_gz=${working_dir}/KnownHotspots.SERVE.37.vcf.gz
+target_37_hotspots=${working_dir}/KnownHotspots.somatic.hg19.vcf
+target_38_hotspots=${working_dir}/KnownHotspots.somatic.hg38.vcf
 
 ### UPDATE CONTIGS WITH CHR
-gunzip -c KnownHotspots.SERVE.37.vcf.gz > KnownHotspots.SERVE.37.chr.vcf
-sed -i 's/^/chr/g' KnownHotspots.SERVE.37.chr.vcf
-sed -i 's/^chr#/#/g' KnownHotspots.SERVE.37.chr.vcf
+gunzip -c ${input_37_hotspots_gz} > ${target_37_hotspots}
+sed -i 's/^/chr/g' ${target_37_hotspots}
+sed -i 's/^chr#/#/g' ${target_37_hotspots}
 
 #Liftover
 java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
-    I=KnownHotspots.SERVE.37.chr.vcf O=KnownHotspots.somatic.hg38.vcf \
-    CHAIN=/home/jon/liftover/hg19ToHg38.over.chain REJECT=rejected_variants.vcf \
+    I=${target_37_hotspots} \
+    O=${target_38_hotspots} \
+    CHAIN=/data/common/refgenomes/liftover/hg19ToHg38.over.chain \
+    REJECT=${working_dir}/rejected_variants.vcf \
     R=/data/common/refgenomes/Homo_sapiens.GRCh38/Homo_sapiens_assembly38.fasta
 
 #Cleanup
-rm KnownHotspots.SERVE.37.chr.vcf
-rm KnownHotspots.somatic.hg38.vcf.idx
-bgzip KnownHotspots.somatic.hg38.vcf
-tabix KnownHotspots.somatic.hg38.vcf.gz
+rm ${target_37_hotspots}
+rm ${target_38_hotspots}.idx
+bgzip ${target_38_hotspots}
+tabix ${target_38_hotspots}.gz
 
-cp KnownHotspots.SERVE.37.vcf.gz KnownHotspots.somatic.hg19.vcf.gz
-tabix KnownHotspots.somatic.hg19.vcf.gz
+cp ${input_37_hotspots_gz} ${target_37_hotspots}.gz
+tabix ${target_37_hotspots}.gz
