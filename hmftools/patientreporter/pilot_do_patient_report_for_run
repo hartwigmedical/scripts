@@ -54,7 +54,7 @@ linx_viral_insertion_tsv=$(locate_linx_viral_insertions ${run_dir})
 linx_drivers_tsv=$(locate_linx_drivers ${run_dir})
 chord_prediction_txt=$(locate_chord_prediction ${run_dir})
 circos_file=$(locate_purple_circos_plot ${run_dir})
-protect_evidence_tsv=$(locate_protect_evidence_pilot ${run_dir})
+protect_evidence_tsv=$(locate_protect_evidence ${run_dir})
 
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 sample_summary_tsv=/data/common/dbs/summary_patient_report/summary_samples.tsv

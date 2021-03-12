@@ -254,16 +254,45 @@ class EnsemblRestClient(object):
                 return adjusted_target_start + offset
             except AssertionError as e:
                 warning_collector.add(str(e))
-                offset = 5
-                adjusted_source_start = pos - offset
-                adjusted_source_end = pos + offset
-                adjusted_target_start, adjusted_target_end = self._request_translated_range(
-                    species, chrom, adjusted_source_start, adjusted_source_end,
-                    source_coordinate_system, target_coordinate_system, warning_collector
-                )
-                assert adjusted_target_start + offset == adjusted_target_end - offset, \
-                    "Second estimated translated start and end are different"
-                return adjusted_target_start + offset
+                try:
+                    offset = 30
+                    adjusted_source_start = pos - offset
+                    adjusted_source_end = pos + offset
+                    adjusted_target_start, adjusted_target_end = self._request_translated_range(
+                        species, chrom, adjusted_source_start, adjusted_source_end,
+                        source_coordinate_system, target_coordinate_system, warning_collector
+                    )
+                    assert adjusted_target_start + offset == adjusted_target_end - offset, \
+                        "Second estimated translated start and end are different"
+                    return adjusted_target_start + offset
+                except AssertionError as e:
+                    warning_collector.add(str(e))
+                    try:
+                        offset = 100
+                        adjusted_source_start = pos - offset
+                        adjusted_source_end = pos + offset
+                        adjusted_target_start, adjusted_target_end = self._request_translated_range(
+                            species, chrom, adjusted_source_start, adjusted_source_end,
+                            source_coordinate_system, target_coordinate_system, warning_collector
+                        )
+                        assert adjusted_target_start + offset == adjusted_target_end - offset, \
+                            "Second estimated translated start and end are different"
+                        return adjusted_target_start + offset
+                    except AssertionError as e:
+                        warning_collector.add(str(e))
+                        try:
+                            offset = 300
+                            adjusted_source_start = pos - offset
+                            adjusted_source_end = pos + offset
+                            adjusted_target_start, adjusted_target_end = self._request_translated_range(
+                                species, chrom, adjusted_source_start, adjusted_source_end,
+                                source_coordinate_system, target_coordinate_system, warning_collector
+                            )
+                            assert adjusted_target_start + offset == adjusted_target_end - offset, \
+                                "Second estimated translated start and end are different"
+                            return adjusted_target_start + offset
+                        except AssertionError as e:
+                            warning_collector.add(str(e))
 
     def _request_translated_range(self, species, chrom, start, end, source_coordinate_system, target_coordinate_system,
                                   warning_collector):
