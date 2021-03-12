@@ -4,19 +4,28 @@ source message_functions || exit 1
 
 samplesheet_path=$1
 
-API_SCRIPT="query_api.pl"
 LOG_OUT_LOC="/data/ops/logs/flowcell_sample_checks"
 NAS_TARGET_DIR="overviews/flowcellsamplechecks"
 NAS_TARGET_LOC="/volume1/web/${NAS_TARGET_DIR}"
 NAS_PW_LOC="/data/common/dbs/nas_credentials/rsyncuser"
 
+if [[ -z "$samplesheet_path" ]]; then
+    info "Run with: $(basename $0) /path/to/SampleSheet.csv"
+    exit 1
+fi
+
 main() {
+
+    [[ -f "$samplesheet_path" ]] || die "Provided SampleSheet does not exist ($samplesheet_path)"
     fc_dir_name=$(basename "${samplesheet_path}" | sed 's#_SampleSheet.csv##')
     fc_fcid=${fc_dir_name: -9}
     fc_date=${fc_dir_name:0:6}
-    fc_name=$(${API_SCRIPT} -type flowcells -filter "flowcell_id=${fc_fcid}" -json | jq -r '.[-1].name')
+    fc_name=$(hmf_api_get "flowcells?flowcell_id=${fc_fcid}" | jq -r '.[-1].name')
+
+    [[ -n "$fc_name" ]] || die "No name defined for flowcell ID (${fc_fcid})"
+    [[ "$fc_name" != 'null' ]] || die "No name found for flowcell ID (${fc_fcid})"
     
-    info "Performing $(basename $0) for ${fc_name}"
+    info "Checking samples for flowcell ${fc_name}"
 
     out_log_name="$(date "+%y%m%d")_flowcell_sample_check_${fc_name}.log"
     out_log_path="${LOG_OUT_LOC}/${out_log_name}"
@@ -24,30 +33,30 @@ main() {
     [[ ! -f "${out_log_path}" ]] || die "File exists (${out_log_path})"
     
     ## find index of Sample_ID column
-    idx_id=$(cat "${samplesheet_path}" | grep Sample_ID | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
-   
-    ## collect all barcodes from SampleSheet 
+    idx_id=$(grep Sample_ID "${samplesheet_path}" | tr "," "\n" | grep -n Sample_ID | cut -d":" -f1)
+
+    ## collect all barcodes from SampleSheet
     mapfile -t barcodes < <(cat "${samplesheet_path}" | sed -e '1,/Sample_ID/d' | grep -vP "^[\,\s]+$" | cut -d',' -f"${idx_id}" | sort | uniq)
-    barcode_regex_string=$(join_by "|" "${barcodes[@]}")
 
     info "  Input: ${samplesheet_path}"
-
-    samples=$(${API_SCRIPT} -type samples -filter "barcode=${barcode_regex_string}" -json)
-    runs=$(${API_SCRIPT} -type runs -filter "name=${barcode_regex_string}" -json)
-
     for barcode in ${barcodes[*]}; do
-        sample=$(echo "${samples}" | jq --arg BARCODE "${barcode}" '[.[] | select(.barcode == $BARCODE)]' | jq '.[-1]')
-        run=$(echo "${runs}" | jq --arg BARCODE "${barcode}" '[.[] | select(.name|contains($BARCODE))]' | jq '.[-1]')
-        is_ready="Not_Ready"
-        if [[ "$(echo "${sample}" | jq -r '.status')" == "Ready" ]]; then
-            is_ready="Yes_Ready"
+        sample=$(hmf_api_get "samples?barcode=${barcode}" | jq '.[-1]')
+        sample_status=$(jq -r '.status' <<< "${sample}")
+        run=$(hmf_api_get "runs?barcode=${barcode}" | jq '.[-1]')
+        state="NA"
+        if [[ "${sample_status}" == "Ready" ]]; then
+            state="Yes_Ready"
+        else
+            state="Not_Ready"
         fi
-        smp_info=$(echo "${sample}" | jq --arg IS_READY "${is_ready}" -r '[.submission, .barcode, .q30, .yld_req, .yld, $IS_READY, .status, .name] | @tsv')
-        run_info=$(echo "${run}" | jq -r '[.ini, .status, .id] | @tsv' | tr "\t" "|")
+        smp_info=$(jq --arg STATE "${state}" -r '[.submission, .barcode, .q30, .yld_req, .yld, $STATE, .status, .name] | @tsv' <<< "${sample}")
+        run_info=$(jq -r '[.ini, .status, .id] | @tsv' <<< "${run}" | tr "\t" "|")
         echo -e "${fc_date}\t${fc_name}\t${fc_fcid}\t${smp_info}\t${run_info}"
     done | sort -k9 >> "${out_log_path}"
+    not_ready_count=$(grep -cv Yes_Ready "${out_log_path}")
     info "  Output: ${out_log_path}"
     info "  NAS: http://intranet.hartwigmedicalfoundation.nl/${NAS_TARGET_DIR}/${out_log_name}"
+    info "  Amount of samples not ready: $not_ready_count"
     sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -ah "${out_log_path}" "rsyncuser@nas:${NAS_TARGET_LOC}/"
     info "Finished with $(basename $0) for ${fc_name}"
 }
