@@ -40,7 +40,7 @@ main() {
     logs_dir="${exp_dir_path}/logs"
  
     info "Selecting latest run in runs dir ${runs_dir}"
-    source_path=$(find "${runs_dir}" -mindepth 1 -maxdepth 1 -type d | tail -1)
+    source_path=$(find "${runs_dir}" -mindepth 1 -maxdepth 1 -type d -name "*COLO829*" | tail -1)
     #source_name=$(basename "${source_path}")
     #install_log="${logs_dir}/install.log"
     
