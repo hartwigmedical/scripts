@@ -9,7 +9,7 @@ process_path="/data/gcp/shallow_runs"
 echo "## ShallowSeq Check (${yymmdd})"
 shallow_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
 
-echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @tsv' | while read line; do
+echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @tsv' | while read -r line; do
     run_name=$(echo "${line}" | cut -f1)
     run_status=$(echo "${line}" | cut -f2)
     tumor_sample=$(echo "${line}" | cut -f3)
@@ -45,7 +45,7 @@ echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @
 done | sort
 
 job_file="${HOME}/jobs/${yymmdd}_process_shallow_runs"
-log_file=$(echo "${job_file}" | sed 's/jobs/logs/')
+log_file="${job_file//jobs/logs}"
 
 write_job_cmd="$(basename $0) > ${job_file} && chmod +x ${job_file}"
 execute_job_cmd="nohup ${job_file} > ${log_file} &"
