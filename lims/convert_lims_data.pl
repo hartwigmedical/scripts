@@ -11,6 +11,7 @@ use JSON::XS;
 use Text::CSV;
 use File::Copy;
 use Email::Valid;
+use POSIX qw(strftime);
 use 5.01000;
 
 use constant EMPTY => q{ };
@@ -23,6 +24,9 @@ use constant FIELDS_TO_MAYBE_COPY_FROM_TISSUE_ANCESTOR => qw(tumor_perc);
 use constant BOOLEAN_FIELDS => qw(shallowseq report_germline report_viral report_pgx add_to_database add_to_datarequest);
 ## These fields will be actively set to integer for json output
 use constant INTEGER_FIELDS => qw(yield q30);
+
+## Disable stdout buffering
+$| = 1;
 
 ## Setup help msg
 my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
@@ -104,7 +108,7 @@ foreach ( $JSON_OUT ){
 }
 
 ## MAIN
-say "[INFO] START with \"$SCRIPT\"";
+sayInfo("Starting with $SCRIPT");
 
 my $name_dict = getFieldNameTranslations();
 my $cntr_dict = parseDictFile( $CNTR_TSV, 'center2centername' );
@@ -153,7 +157,7 @@ checkDrupStage3Info( $subm_objs, $lims_objs );
 
 printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
 
-say "[INFO] DONE with \"$SCRIPT\"";
+sayInfo("Finished with $SCRIPT");
 
 ## ----------
 ## /MAIN
@@ -169,7 +173,7 @@ sub parseTsvCsv{
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
 
-    say "[INFO]   Parsing input file $file";
+    sayInfo("  Parsing input file $file");
     open IN, "<", $file or die "Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
@@ -180,7 +184,7 @@ sub parseTsvCsv{
     my $header_misses_field = 0;
     foreach my $field (keys %$fields) {
         if ( not exists $fields_map{ $field } ){
-            warn "[WARN] Missing header field ($field) in file ($file)\n";
+            sayWarn("Missing header field ($field) in file ($file)");
             $header_misses_field = 1;
         }
     }
@@ -213,7 +217,7 @@ sub parseTsvCsv{
         next if isSkipValue( $key );
         my $reason_not_to_store = checkKeyToStore( \%store, $key );
         if ( $should_be_unique and $reason_not_to_store ){
-            warn "[WARN] SKIPPING sample (name: $name) for reason: $reason_not_to_store\n" and next;
+            sayWarn("SKIPPING sample (name: $name) for reason: $reason_not_to_store") and next;
         }
 
         ## Checks OK: fix some fields and store object
@@ -240,7 +244,7 @@ sub selectAndRenameFields{
 
 sub readJson{
     my ($json_file) = @_;
-    say "[INFO]   Parsing input json file $json_file";
+    sayInfo("  Parsing input json file $json_file");
     my $json_txt = read_file( $json_file );
     my $json_obj = decode_json( $json_txt );
     return( $json_obj );
@@ -256,7 +260,7 @@ sub printLimsToJson{
     my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
 
-    say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
+    sayInfo("  Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)");
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
     print $lims_json_fh $lims_txt;
     close $lims_json_fh;
@@ -287,7 +291,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
     my ($samples, $registrations, $actions) = @_;
     my %store = %$samples;
 
-    say "[INFO]   Adding isolation and prep dates to samples";
+    sayInfo("  Adding isolation and prep dates to samples");
 
     # fields with identical new_name overwrite each other
     # so if sample has both ID 7 and 8 then last one overwrites first date
@@ -327,10 +331,10 @@ sub addIsoAndPrepExperimentIdsToSamples{
                 my $new = $date;
 
                 #if ($old eq $new){
-                #    warn "[INFO]   Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
+                #    sayWarn "  Found another $store_key date for $sample_id but identical (act:$action_id exp:$experiment_id)";
                 #}
                 #elsif ($old ne NACHAR){
-                #    warn "[WARN]   Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
+                #    sayWarn "  Found another $store_key date for $sample_id which is different (old:'$old' => new:'$new', act:$action_id exp:$experiment_id)";
                 #}
                 $store{$sample_id}{$store_key} = $new;
             }
@@ -341,7 +345,7 @@ sub addIsoAndPrepExperimentIdsToSamples{
 
 sub parseDictFile{
     my ($file, $fileType) = @_;
-    say "[INFO]   Parsing input dictionary file $file";
+    sayInfo("  Parsing input dictionary file $file");
     my %store = ();
 
     open my $dict_fh, "<", $file or die "$!: Unable to open file ($file)\n";
@@ -365,7 +369,7 @@ sub parseDictFile{
 sub addContactInfoToSubmissions{
     my ($submissions, $contact_groups) = @_;
     my @fields = qw( report_contact_name report_contact_email data_contact_name data_contact_email );
-    say "[INFO]   Adding contact group information to submissions";
+    sayInfo("  Adding contact group information to submissions");
     my %store = %{$submissions};
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
@@ -384,12 +388,12 @@ sub addContactInfoToSubmissions{
                 }
             }
             else{
-                warn "[WARN] Submission \"$submission_id\" has group ID \"$group_id\" but not found in contact groups (check Contact tab of FOR-001)\n";
+                sayWarn("Submission \"$submission_id\" has group ID \"$group_id\" but not found in contact groups (check Contact tab of FOR-001)");
                 next;
             }
         }
         else{
-            warn "[WARN] No Group ID field in place for submission $submission_id\n";
+            sayWarn("No Group ID field in place for submission $submission_id");
             next;
         }
     }
@@ -401,7 +405,7 @@ sub checkDrupStage3Info{
     my $drup_stage3_count = 0;
     my $expected_cohort = 'DRUPstage3';
 
-    say "[INFO]   Checking $expected_cohort submissions";
+    sayInfo("  Checking $expected_cohort submissions");
     while (my ($id,$obj) = each %$submissions){
         my $project_type = $obj->{'project_type'};
         my $project_name = $obj->{'project_name'};
@@ -419,20 +423,20 @@ sub checkDrupStage3Info{
             next unless $sample->{'analysis_type'} eq 'Somatic_T';
             my $cohort = $sample->{'cohort'};
             if ( $cohort ne $expected_cohort ){
-                say "[WARN]     Found sample for submission $id with incorrect cohort (name:$sample_name id:$barcode cohort:$cohort)";
+                sayWarn("    Found sample for submission $id with incorrect cohort (name:$sample_name id:$barcode cohort:$cohort)");
             }
             $sample_count++;
         }
-        say "[WARN]     Found no samples for $expected_cohort submission $id!" if $sample_count < 1;
+        sayWarn("    Found no samples for $expected_cohort submission $id!") if $sample_count < 1;
     }
-    say "[INFO]     Summary: $drup_stage3_count submissions encountered and checked for $expected_cohort";
+    sayInfo("    Summary: $drup_stage3_count submissions encountered and checked for $expected_cohort");
 }
 
 sub checkContactInfo{
     my ($contact_groups) = @_;
     my @name_fields = qw(client_contact_name report_contact_name data_contact_name);
     my @mail_fields = qw(report_contact_email data_contact_email);
-    say "[INFO]   Checking contact group information for completeness";
+    sayInfo("  Checking contact group information for completeness");
     foreach my $id (sort keys %$contact_groups){
         my $info = $contact_groups->{$id};
         my $name = $info->{client_contact_name};
@@ -441,7 +445,7 @@ sub checkContactInfo{
         ## These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
-                say "[WARN] No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)";
+                sayWarn("No content in field \"$field\" for contact group ID \"$id\" (see FOR-001 Contacts tab)");
             }
         }
         ## These fields should contain only (valid) email addresses
@@ -452,7 +456,7 @@ sub checkContactInfo{
                     next;
                 }
                 elsif( not Email::Valid->address($address) ){
-                    say "[WARN] No valid email address ($address) in field \"$field\"for contact group ID \"$id\" (see FOR-001 Contacts tab)";
+                    sayWarn("No valid email address ($address) in field \"$field\"for contact group ID \"$id\" (see FOR-001 Contacts tab)");
                 }
             }
         }
@@ -468,7 +472,7 @@ sub addAccessSamplesToSamples{
     my %tissue_samples_by_coupe = ();
 
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
-    say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
+    sayInfo("  Get blood and tissue sample info for later enrichment of DNA/RNA samples");
     foreach my $main_id ( sort keys %$objects ){
         my $row_info = $objects->{$main_id};
         my $source = $row_info->{ 'sample_source' };
@@ -481,21 +485,21 @@ sub addAccessSamplesToSamples{
         ## Add to temporary mappings (used later on to enrich DNA/RNA samples)
         if ( $source eq 'BLOOD' and not isSkipValue($name) ){
             if ( exists $blood_samples_by_name{ $name } and $failed ){
-                warn "[WARN]     Exclude mapping for BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
+                sayWarn("    Exclude mapping for BLOOD sample with name \"$name\" and id \"$id\" because status is failed");
             }else{
                 $blood_samples_by_name{ $name } = $row_info;
             }
         }
         elsif ( $source eq 'TISSUE' and not isSkipValue($coupe) ){
             if ( exists $tissue_samples_by_coupe{ $coupe } and $failed ){
-                warn "[WARN]     Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed";
+                sayWarn("    Exclude mapping for TISSUE sample with coupe barcode \"$coupe\" and id \"$id\" because status is failed");
             }else{
                 $tissue_samples_by_coupe{ $coupe } = $row_info;
             }
         }
         elsif ( $source eq 'DNA-BLOOD' and not isSkipValue($name) ){
             if ( exists $dna_blood_samples_by_name{ $name } and $failed ){
-                warn "[WARN]     Exclude mapping for DNA-BLOOD sample with name \"$name\" and id \"$id\" because status is failed";
+                sayWarn("    Exclude mapping for DNA-BLOOD sample with name \"$name\" and id \"$id\" because status is failed");
             }else{
                 $dna_blood_samples_by_name{ $name } = $row_info;
             }
@@ -522,7 +526,7 @@ sub addAccessSamplesToSamples{
 
         ## Source of a sample must be TISSUE or BLOOD or PLASMA (with possible DNA or RNA prefix for derivatives)
         unless ( $source =~ /^((DNA|RNA)\-)?(PLASMA|TISSUE|BLOOD)$/ ){
-            warn "[WARN] SKIPPING sample: unable to parse source (\"$source\") for sample (\"$name\"). Need to fix this!\n" and next;
+            sayWarn("SKIPPING sample: unable to parse source (\"$source\") for sample (\"$name\"). Need to fix this!") and next;
         }
 
         ## Skip particular cases of weird historic sample naming or absent name
@@ -542,7 +546,7 @@ sub addAccessSamplesToSamples{
             ($patient_id, $study, $center, $tum_or_ref) = ($1, $2, $3, $4);
         }
         else{
-            warn "[WARN] SKIPPING MS Access sample ($name) because name does not fit $name_regex\n";
+            sayWarn("SKIPPING MS Access sample ($name) because name does not fit $name_regex");
             next;
         }
 
@@ -584,7 +588,7 @@ sub addAccessSamplesToSamples{
             # DNA-BLOOD samples are not enriched from BLOOD ancestor sample
         }
         else{
-            warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
+            sayWarn("Expected either tissue of blood sample but found neither (id:$id name:$name)");
         }
 
         $object->{ 'label' }   = $study;
@@ -606,7 +610,7 @@ sub addAccessSamplesToSamples{
             ## specifically check for non-ref samples if submission is defined
             if ( $submission_id eq '' ){
                 if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
-                    warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+                    sayWarn("SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)");
                 }
                 ## we only print warning for non R samples but skip them altogether
                 next;
@@ -624,7 +628,7 @@ sub addAccessSamplesToSamples{
                 $submission->{ 'analysis_type' } = "OncoAct";
             }
             else{
-                warn "[WARN] Unable to update submission \"$submission_id\" because not found in submissions (id:$id name:$name)\n";
+                sayWarn("Unable to update submission \"$submission_id\" because not found in submissions (id:$id name:$name)");
             }
         }
         ## All other samples are clinical study based (CPCT/DRUP/WIDE/COREDB)
@@ -638,7 +642,7 @@ sub addAccessSamplesToSamples{
             $object->{ 'entity' } = join( "_", $study, $centername );
         }
         else {
-            warn "[WARN] SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$id name:$name)\n";
+            sayWarn("SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$id name:$name)");
             next;
         }
 
@@ -648,11 +652,11 @@ sub addAccessSamplesToSamples{
         my @fields_to_check = qw( analysis_type submission );
         foreach my $field ( @fields_to_check ){
             if ( not exists $object->{ $field } or not defined $object->{ $field } or $object->{ $field } eq NACHAR ){
-                warn "[WARN] SKIPPING sample because field $field is not present (id:$id name:$name)\n";
+                sayWarn("SKIPPING sample because field $field is not present (id:$id name:$name)");
                 $all_fields_ok = 0;
             }
             elsif ( $object->{ $field } eq NACHAR or $object->{ $field } eq "" ){
-                warn "[WARN] SKIPPING sample because $field is not defined (id:$id name:$name)\n";
+                sayWarn("SKIPPING sample because $field is not defined (id:$id name:$name)");
                 $all_fields_ok = 0;
             }
         }
@@ -661,7 +665,7 @@ sub addAccessSamplesToSamples{
         ## Store sample unless key not OK
         my $reason_not_to_store = checkKeyToStore( \%store, $id );
         if ( $reason_not_to_store ){
-            warn "[WARN] SKIPPING for reason: $reason_not_to_store" and next;
+            sayWarn("SKIPPING for reason: $reason_not_to_store") and next;
         }
         $store{ $id } = $object;
     }
@@ -681,9 +685,9 @@ sub addExcelSamplesToSamples{
         my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
         next if isSkipValue( $sample_name );
 
-        my $sample_id = $row_info->{ 'sample_id' } or warn "[WARN] SKIPPING sample ($sample_name): No sample_id found" and next;
-        my $submission = $row_info->{ 'submission' } or warn "[WARN] SKIPPING sample ($sample_name): No submission found" and next;
-        my $analysis_type = $row_info->{ 'analysis_type' } or warn "[WARN] SKIPPING sample ($sample_name): No analysis_type found" and next;
+        my $sample_id = $row_info->{ 'sample_id' } or sayWarn("SKIPPING sample ($sample_name): No sample_id found") and next;
+        my $submission = $row_info->{ 'submission' } or sayWarn("SKIPPING sample ($sample_name): No submission found") and next;
+        my $analysis_type = $row_info->{ 'analysis_type' } or sayWarn("SKIPPING sample ($sample_name): No analysis_type found") and next;
 
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
@@ -741,7 +745,7 @@ sub addExcelSamplesToSamples{
             $row_info->{ 'analysis_type' } = $analysis_type;
         }
         else {
-            warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
+            sayWarn("SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)");
             next;
         }
 
@@ -768,16 +772,16 @@ sub addExcelSamplesToSamples{
 
         ## checks before storing
         my $regex = '^[0-9a-zA-Z\-]*$';
-        warn "[WARN] SKIPPING sample ($sample_name): sample_name contains unacceptable chars\n" and next if $sample_name !~ /$regex/;
-        warn "[WARN] SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars\n" and next if $sample_id !~ /$regex/;
-        warn "[WARN] SKIPPING sample ($sample_name): no submission defined for sample\n" and next unless $row_info->{ 'submission' };
-        warn "[WARN] SKIPPING sample ($sample_name): no analysis type defined for sample\n" and next unless $row_info->{ 'analysis_type' };
-        warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };
+        sayWarn("SKIPPING sample ($sample_name): sample_name contains unacceptable chars") and next if $sample_name !~ /$regex/;
+        sayWarn("SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars") and next if $sample_id !~ /$regex/;
+        sayWarn("SKIPPING sample ($sample_name): no submission defined for sample") and next unless $row_info->{ 'submission' };
+        sayWarn("SKIPPING sample ($sample_name): no analysis type defined for sample") and next unless $row_info->{ 'analysis_type' };
+        sayWarn("SKIPPING sample ($sample_name): no project name defined for sample") and next unless $row_info->{ 'project_name' };
 
         ## store at uniqe id
         my $reason_not_to_store = checkKeyToStore( \%store, $unique );
         if ( $reason_not_to_store ){
-            warn "[WARN] SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store" and next;
+            sayWarn("SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store") and next;
         }
         $store{ $unique } = $row_info;
 
@@ -807,7 +811,7 @@ sub fixBooleanFields{
         }elsif ( $value =~ m/^false$/i ){
             $obj->{ $key } = JSON::XS::false;
         }else{
-            warn "[WARN] Unexpected value ($value) in boolean field ($key)\n"
+            sayWarn("Unexpected value ($value) in boolean field ($key)");
         }
     }
 }
@@ -844,21 +848,21 @@ sub fixDateFields{
         }
         elsif ( $old_date =~ /^(\d{2})(\d{2})(\d{2})$/ ){
             ## format unclear so need for checks
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check\n" if ($1 < 8) or ($1 > 20);
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
+            sayWarn("Date \"$old_date\" in \"$date_field\" has unexpected year ($identifier): please check") if ($1 < 8) or ($1 > 20);
+            sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
             $new_date = join( "-", "20" . $1, $2, $3 );
         }
         elsif ( $old_date =~ /^(\d{2})-(\d{2})-(\d{4})$/ ){
             ## dd-mm-yyyy
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
+            sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
             $new_date = join( "-", $3, $2, $1 );
         }
         elsif ( $old_date =~ /^(\d{4})-(\d{2})-(\d{2})$/ ){
             ## case yyyy-mm-dd already ok
-            warn "[WARN] Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix\n" if $2 > 12;
+            sayWarn("Date \"$old_date\" in \"$date_field\" has impossible month ($identifier): please fix") if $2 > 12;
         }
         else{
-            warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
+            sayWarn("Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix");
         }
 
         ## store new format using reference to original location
@@ -877,7 +881,7 @@ sub getMonthIndexByName{
         return $mapping{ $month_name };
     }
     else{
-        warn "[WARN] Unknown Month name ($month_name): kept as-is but please fix\n";
+        sayWarn("Unknown Month name ($month_name): kept as-is but please fix");
         return $month_name;
     }
 }
@@ -892,7 +896,7 @@ sub parseExcelSheet{
     my $trans = $config->{ 'trans' };
     my $sheet = $config->{ 'sheet' };
 
-    say "[INFO] Loading excel file $excel sheet \"$sheet\"";
+    sayInfo("Loading excel file $excel sheet '$sheet'");
     my $workbook = Spreadsheet::XLSX->new( $excel ) or die "[ERROR] Unable to load excel file $excel: $!\n";
     my $sheet_obj = $workbook->worksheet( $sheet ) or die "[ERROR] Unable to read sheet \"$sheet\" from file $excel: $!\n";
 
@@ -955,9 +959,19 @@ sub checkKeyToStore{
 sub checkDefined{
     my ( $key, $hash) = @_;
     if ( not defined $hash->{$key} ){
-        warn "[WARN] Value $key is not defined in:\n";
+        sayWarn("Value $key is not defined in:");
         print Dumper $hash;
     }
+}
+
+sub sayInfo{
+    my ($msg) = @_;
+    say "[INFO] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg;
+}
+
+sub sayWarn{
+    my ($msg) = @_;
+    warn "[WARN] " . (strftime "%y%m%d %H:%M:%S", localtime) . " - " . $msg . "\n";
 }
 
 sub getFieldNameTranslations{
