@@ -29,16 +29,16 @@ my $SCRIPT  = `basename $0`; chomp( $SCRIPT );
 my $HELP_TEXT = <<"HELP";
 
   Description
-    Parses LIMS text files (derived from excel and MS Access) and 
+    Parses LIMS text files (derived from excel and MS Access) and
     writes to JSON output.
-    
+
   Usage
     $SCRIPT -lims_dir /path/to/in/dir/ -out_json /path/to/out.json
 
   Required params:
     -lims_dir <str>  Path to dir with input files (eg /data/ops/lims/prod)
     -out_json <str>  Path to output json (eg /data/tmp/lims.json)
-    
+
 HELP
 
 ## Get input and setup all paths
@@ -80,7 +80,7 @@ my $PROC_TSV_2018 = $LATEST_DIR . '/2018_proc';
 my $PROC_TSV_2017 = $LATEST_DIR . '/2017_proc';
 my $LIMS_JSN_2017 = $LATEST_DIR . '/2017_lims.json'; # excel LIMS pre-2018
 
-my @ALL_INPUT_FILES = ( 
+my @ALL_INPUT_FILES = (
     $ACCESS_SAMPLES_CSV, $ACCESS_ACTIONS_CSV, $ACCESS_REGISTRATIONS_CSV,
     $FOR_001_SUBM_TSV, $FOR_001_SAMP_TSV, $FOR_002_PROC_TSV,
     $SUBM_TSV_2020, $SAMP_TSV_2020, $PROC_TSV_2020,
@@ -102,7 +102,7 @@ foreach ( @ALL_INPUT_FILES ){
 foreach ( $JSON_OUT ){
     die "[ERROR] Output file exists and is not writable ($_)\n" if ( -f $_ and not -w $_ );
 }
-    
+
 ## MAIN
 say "[INFO] START with \"$SCRIPT\"";
 
@@ -155,27 +155,27 @@ printLimsToJson( $lims_objs, $subm_objs, $cont_objs, $JSON_OUT );
 
 say "[INFO] DONE with \"$SCRIPT\"";
 
-## ---------- 
+## ----------
 ## /MAIN
 ## ----------
 
 
 
-## ---------- 
+## ----------
 ## SUBs
 ## ----------
 sub parseTsvCsv{
     my ($objects, $fields, $store_field_name, $should_be_unique, $file, $sep) = @_;
     my $csv = Text::CSV->new({ binary => 1, auto_diag => 1, sep_char => $sep });
     my %store = %$objects;
-    
+
     say "[INFO]   Parsing input file $file";
     open IN, "<", $file or die "Unable to open file ($file): $!\n";
     my $header_line = <IN>; chomp($header_line);
     die "[ERROR] Cannot parse line ($header_line)\n" unless $csv->parse($header_line);
     my @header_fields = $csv->fields();
     my %fields_map = map { $_ => 1 } @header_fields;
-    
+
     ## Checking header content
     my $header_misses_field = 0;
     foreach my $field (keys %$fields) {
@@ -187,13 +187,13 @@ sub parseTsvCsv{
     if ( $header_misses_field ){
         print Dumper \%fields_map and die "[ERROR] Header incomplete ($file)\n";
     }
-    
+
     ## Header OK: continue reading in all data lines
     while ( <IN> ){
         chomp;
         die "[ERROR] Cannot parse line ($_)\n" unless $csv->parse($_);
         my @values = $csv->fields();
-        
+
         my %raw_object = ();
         foreach my $field ( @header_fields ){
             my $next_value = shift @values;
@@ -205,11 +205,11 @@ sub parseTsvCsv{
         my $key = $obj->{ $store_field_name } || NACHAR;
         my $source = $obj->{ 'sample_source' } || NACHAR;
         my $name = $obj->{ 'sample_name' } || "SampleNameUnknown";
-        
+
         if ( $source eq 'BLOOD' ){
             $key = $name;
         }
-        
+
         next if isSkipValue( $key );
         my $reason_not_to_store = checkKeyToStore( \%store, $key );
         if ( $should_be_unique and $reason_not_to_store ){
@@ -223,7 +223,7 @@ sub parseTsvCsv{
         $store{ $key } = $obj;
     }
     close IN;
-    
+
     return \%store;
 }
 
@@ -255,10 +255,10 @@ sub printLimsToJson{
     my %lims = ( 'samples' => $samples, 'submissions' => $submissions, 'contact_groups' => $contact_groups );
     my $coder = JSON::XS->new->utf8->canonical;
     my $lims_txt = $coder->encode(\%lims);
-    
+
     say "[INFO]   Writing output to $lims_file ($cont_count contact groups, $subm_count submissions and $samp_count samples)";
     open my $lims_json_fh, '>', $lims_file or die "Unable to open output file ($lims_file): $!\n";
-        print $lims_json_fh $lims_txt;
+    print $lims_json_fh $lims_txt;
     close $lims_json_fh;
 }
 
@@ -292,9 +292,9 @@ sub addIsoAndPrepExperimentIdsToSamples{
     # fields with identical new_name overwrite each other
     # so if sample has both ID 7 and 8 then last one overwrites first date
     my %conversion = (
-         7 => { 'new_name' => 'isolation_date', lims_name => 'Compose blood isolation experiment'},
-         8 => { 'new_name' => 'isolation_date', lims_name => 'Compose tissue isolation experiment'},
-         5 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose DNA prep experiment'},
+        7 => { 'new_name' => 'isolation_date', lims_name => 'Compose blood isolation experiment'},
+        8 => { 'new_name' => 'isolation_date', lims_name => 'Compose tissue isolation experiment'},
+        5 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose DNA prep experiment'},
         20 => { 'new_name' => 'libraryprep_date', lims_name => 'Compose RNA prep experiment'},
         13 => { 'new_name' => 'snpgenotype_date', lims_name => 'Compose SNP experiment'},
     );
@@ -343,7 +343,7 @@ sub parseDictFile{
     my ($file, $fileType) = @_;
     say "[INFO]   Parsing input dictionary file $file";
     my %store = ();
-    
+
     open my $dict_fh, "<", $file or die "$!: Unable to open file ($file)\n";
     while ( <$dict_fh> ){
         next if /^#/ms;
@@ -358,7 +358,7 @@ sub parseDictFile{
         }
     }
     close $dict_fh;
-    
+
     return \%store;
 }
 
@@ -369,7 +369,7 @@ sub addContactInfoToSubmissions{
     my %store = %{$submissions};
     foreach my $submission_id (sort keys %store){
         my $submission = $store{$submission_id};
-        
+
         if( exists $submission->{ 'report_contact_email' } ){
             ## skip records from the time when contact info was entered in shipments tab
             next;
@@ -437,7 +437,7 @@ sub checkContactInfo{
         my $info = $contact_groups->{$id};
         my $name = $info->{client_contact_name};
         my $mail = $info->{client_contact_email};
-        
+
         ## These fields should at the very least have content
         foreach my $field (@name_fields, @mail_fields){
             if ( $info->{$field} eq "" ){
@@ -460,7 +460,7 @@ sub checkContactInfo{
 }
 
 sub addAccessSamplesToSamples{
-    
+
     my ($lims, $objects, $submissions, $centers_dict) = @_;
     my %store = %{$lims};
     my %blood_samples_by_name = ();
@@ -470,8 +470,8 @@ sub addAccessSamplesToSamples{
     ## First gather info of certain samples to enrich DNA/RNA samples with later on
     say "[INFO]   Get blood and tissue sample info for later enrichment of DNA/RNA samples";
     foreach my $main_id ( sort keys %$objects ){
-        my $row_info = $objects->{$main_id};    
-        my $source = $row_info->{ 'sample_source' };        
+        my $row_info = $objects->{$main_id};
+        my $source = $row_info->{ 'sample_source' };
         my $id     = $row_info->{ 'sample_id' }; # is field "Sample_barcode" in Access LIMS
         my $name   = $row_info->{ 'sample_name' };
         my $coupe  = $row_info->{ 'coupes_barcode' };
@@ -501,41 +501,41 @@ sub addAccessSamplesToSamples{
             }
         }
     }
-    
-    ## Now read through all samples again to store all samples 
+
+    ## Now read through all samples again to store all samples
     ## and enrich DNA and RNA samples with info from their ancestor samples
     while ( my($id, $object) = each %$objects ){
-        
+
         my $name    = $object->{ 'sample_name' };
         my $patient = $object->{ 'patient' };
         my $source  = $object->{ 'sample_source' };
         my $coupe   = $object->{ 'coupes_barcode' } || NACHAR;
-        
+
         (my $ancestor_coupe = $coupe) =~ s/(_DNA|_RNA)$//;
         my $is_dna = $source =~ /^DNA/ ? 1 : 0;
         my $is_rna = $source =~ /^RNA/ ? 1 : 0;
         my $is_blood = $source =~ /BLOOD$/ ? 1 : 0;
         my $is_tissue = $source =~ /TISSUE$/ ? 1 : 0;
-        
+
         ## Only store DNA/RNA samples (all samples should have DNA derivative in LIMS)
         next unless ($is_dna or $is_rna);
-        
+
         ## Source of a sample must be TISSUE or BLOOD or PLASMA (with possible DNA or RNA prefix for derivatives)
         unless ( $source =~ /^((DNA|RNA)\-)?(PLASMA|TISSUE|BLOOD)$/ ){
             warn "[WARN] SKIPPING sample: unable to parse source (\"$source\") for sample (\"$name\"). Need to fix this!\n" and next;
         }
-        
+
         ## Skip particular cases of weird historic sample naming or absent name
         next if not $name or isSkipValue( $name );
         next if $name =~ /^(CPCT\d{8}|DRUP\d{8}|PMC\d{6})A/ms;
         next if $name =~ /^(PMC\d{6})(T|R){1}/ms;
 
-        ## From here on a sample should be one of 
+        ## From here on a sample should be one of
         ## CPCT/DRUP/WIDE/COREDB or "other" CORE
         my $name_regex = '^((CPCT|DRUP|WIDE|CORE)[0-9A-Z]{2}([0-9A-Z]{2})\d{4})(T|R){1}';
         my $patient_id = "";
         my $study = "";
-        my $center = ""; 
+        my $center = "";
         my $tum_or_ref = "";
 
         if ( $name =~ /$name_regex/ms ){
@@ -565,14 +565,14 @@ sub addAccessSamplesToSamples{
                     $object->{ $field } = $ancestor->{ $field };
                 }
             }
-        
+
             ## If ref_sample_id absent: find blood counterpart by name
             my $ref_sample_id = $object->{ 'ref_sample_id' };
             if ( $ref_sample_id eq "" ){
                 my $patient_string = $object->{ 'patient' };
                 $patient_string =~ s/\-//g; # string this point still with dashes
                 my $ref_sample_name = $patient_string . 'R';
-                
+
                 if ( exists $dna_blood_samples_by_name{ $ref_sample_name } ){
                     my $ref_sample = $dna_blood_samples_by_name{ $ref_sample_name };
                     $ref_sample_id = $ref_sample->{ 'sample_id' };
@@ -586,10 +586,10 @@ sub addAccessSamplesToSamples{
         else{
             warn "[WARN] Expected either tissue of blood sample but found neither (id:$id name:$name)\n";
         }
-        
+
         $object->{ 'label' }   = $study;
         $object->{ 'patient' } = $patient_id;
-        
+
         if ( $is_rna ){
             $object->{ 'analysis_type' } = "RNAanalysis";
         }elsif( $tum_or_ref eq 'T' ){
@@ -605,11 +605,11 @@ sub addAccessSamplesToSamples{
             my $submission_id = $object->{ 'submission' };
             ## specifically check for non-ref samples if submission is defined
             if ( $submission_id eq '' ){
-               if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
-                   warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
-               }
-               ## we only print warning for non R samples but skip them altogether
-               next;
+                if ( $object->{ 'analysis_type' } ne 'Somatic_R' ){
+                    warn "[WARN] SKIPPING CORE sample because of incorrect submission id \"$submission_id\" (id:$id name:$name)\n";
+                }
+                ## we only print warning for non R samples but skip them altogether
+                next;
             }
             $object->{ 'entity' } = $submission_id;
             $object->{ 'project_name' } = $submission_id;
@@ -641,7 +641,7 @@ sub addAccessSamplesToSamples{
             warn "[WARN] SKIPPING sample because is not CORE but center ID is unknown \"$center\" (id:$id name:$name)\n";
             next;
         }
- 
+
         ## Final sanity checks before storing
         my $all_fields_ok = 1;
         ## Some fields need to be set for downstream tools not to crash!
@@ -657,7 +657,7 @@ sub addAccessSamplesToSamples{
             }
         }
         next if not $all_fields_ok;
-        
+
         ## Store sample unless key not OK
         my $reason_not_to_store = checkKeyToStore( \%store, $id );
         if ( $reason_not_to_store ){
@@ -665,19 +665,19 @@ sub addAccessSamplesToSamples{
         }
         $store{ $id } = $object;
     }
-    
+
     return \%store;
 }
 
 sub addExcelSamplesToSamples{
-    
+
     my ($lims, $objects, $shipments) = @_;
     my %store = %{$lims};
     my %name2id = ();
-    
+
     ## open file and check header before reading data lines
-    while ( my($sample_id, $row_info) = each %$objects ){        
-        
+    while ( my($sample_id, $row_info) = each %$objects ){
+
         my $sample_name = $row_info->{ 'sample_name' } or die "No sample_name in row_info";
         next if isSkipValue( $sample_name );
 
@@ -688,7 +688,7 @@ sub addExcelSamplesToSamples{
         $row_info->{ 'label' } = 'RESEARCH';
         $row_info->{ 'patient' } = $row_info->{ 'sample_name' };
         $row_info->{ 'entity' } = $row_info->{ 'submission' };
-        
+
         ## check data analysis type and set accordingly
         if ( $analysis_type =~ /^(Somatic_R|Somatic_T|SingleAnalysis|FASTQ|BCL|LabOnly)$/ ){
             ## Already final status so no further action
@@ -720,7 +720,7 @@ sub addExcelSamplesToSamples{
             if ( $submission eq 'HMFreg1197' ){
                 $row_info->{ 'shallowseq' } = 1;
             }
-            
+
         }
         elsif ( $analysis_type eq 'GermlineBFX' or $analysis_type eq 'Germline' ){
             ## GermlineBFX is the old term, SingleAnalysis the new
@@ -744,15 +744,15 @@ sub addExcelSamplesToSamples{
             warn "[WARN] SKIPPING sample ($sample_name): has unknown analysis type ($analysis_type)\n";
             next;
         }
-        
+
         ## add submission info and parse KG
         if ( exists $shipments->{ $submission } ){
             my $sub = $shipments->{ $submission };
             my $project_name = $sub->{ 'project_name' };
             $row_info->{ 'project_name' } = $project_name;
-            
+
             if ( $sub->{ 'project_type' } eq 'KG production' ){
-                
+
                 my @dvo_parts = split( /\-/, $project_name );
                 my $center = uc( $dvo_parts[0] );
                 $row_info->{ 'entity' } = 'KG_' . $center;
@@ -772,17 +772,17 @@ sub addExcelSamplesToSamples{
         warn "[WARN] SKIPPING sample ($sample_name): sample_id ($sample_id) contains unacceptable chars\n" and next if $sample_id !~ /$regex/;
         warn "[WARN] SKIPPING sample ($sample_name): no submission defined for sample\n" and next unless $row_info->{ 'submission' };
         warn "[WARN] SKIPPING sample ($sample_name): no analysis type defined for sample\n" and next unless $row_info->{ 'analysis_type' };
-        warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };        
-        
+        warn "[WARN] SKIPPING sample ($sample_name): no project name defined for sample\n" and next unless $row_info->{ 'project_name' };
+
         ## store at uniqe id
         my $reason_not_to_store = checkKeyToStore( \%store, $unique );
         if ( $reason_not_to_store ){
             warn "[WARN] SKIPPING sample with name \"$sample_name\" for reason: $reason_not_to_store" and next;
         }
         $store{ $unique } = $row_info;
-        
+
     }
-    
+
     return \%store;
 }
 
@@ -824,17 +824,17 @@ sub fixDateFields{
     my @date_fields = qw( arrival_date sampling_date report_date isolation_date libraryprep_date snpgenotype_date );
 
     foreach my $date_field ( @date_fields ){
-        
+
         next unless defined $obj->{ $date_field };
         my $old_date = $obj->{ $date_field };
         my $new_date = $old_date;
         my $identifier = $obj->{ 'sample_name' };
-        
+
         ## date is not always filled in so skip NA fields
         next if isSkipValue( $old_date );
-        
+
         ## Convert all date strings to same format yyyy-mm-dd (eg 2017-01-31)
-        if( $old_date =~ /^\w+ (\w{3}) (\d{2}) \d+:\d+:\d+ \w+ (\d{4})$/ ){ 
+        if( $old_date =~ /^\w+ (\w{3}) (\d{2}) \d+:\d+:\d+ \w+ (\d{4})$/ ){
             ## eg Tue Apr 23 00:00:00 CEST 2019
             my $month_name = $1;
             my $day = $2;
@@ -860,7 +860,7 @@ sub fixDateFields{
         else{
             warn "[WARN] Date string \"$old_date\" in field \"$date_field\" has unknown format for sample ($identifier): kept string as-is but please fix\n";
         }
-        
+
         ## store new format using reference to original location
         $obj->{ $date_field } = $new_date;
     }
@@ -868,7 +868,7 @@ sub fixDateFields{
 
 sub getMonthIndexByName{
     my ($month_name) = @_;
-    my %mapping = ( 
+    my %mapping = (
         "Jan" => "01", "Feb" => "02", "Mar" => "03", "Apr" => "04",
         "May" => "05", "Jun" => "06", "Jul" => "07", "Aug" => "08",
         "Sep" => "09", "Oct" => "10", "Nov" => "11", "Dec" => "12"
@@ -884,28 +884,28 @@ sub getMonthIndexByName{
 
 sub parseExcelSheet{
     my ($config) = @_;
-    
+
     my $excel = $config->{ 'excel' };
     my $h_val = $config->{ 'h_val' };
     my $h_col = $config->{ 'h_col' };
     my $h_row = $config->{ 'h_row' };
     my $trans = $config->{ 'trans' };
     my $sheet = $config->{ 'sheet' };
-    
+
     say "[INFO] Loading excel file $excel sheet \"$sheet\"";
     my $workbook = Spreadsheet::XLSX->new( $excel ) or die "[ERROR] Unable to load excel file $excel: $!\n";
     my $sheet_obj = $workbook->worksheet( $sheet ) or die "[ERROR] Unable to read sheet \"$sheet\" from file $excel: $!\n";
-    
+
     my @header = ();
     my $max_row = $sheet_obj->{'MaxRow'};
     my $max_col = $sheet_obj->{'MaxCol'};
-    
+
     ## check if header exist where it should be
     my $first_val = EMPTY;
     my $first_cel = $sheet_obj->get_cell( $h_row, $h_col );
     $first_val = $first_cel->unformatted() if defined $first_cel;
     die "[ERROR] Header value ($h_val) cannot be found at set location ($excel)\n" unless $first_val eq $h_val;
-    
+
     ## now read header values for later storage
     foreach my $col ( $h_col .. $max_col ){
         my $cell = $sheet_obj->get_cell( $h_row, $col );
@@ -914,7 +914,7 @@ sub parseExcelSheet{
         $cell_val = $trans->{ $cell_val } if defined $trans->{ $cell_val };
         push( @header, $cell_val );
     }
-    
+
     return( \@header, $sheet_obj, $max_row, $max_col );
 }
 
@@ -929,9 +929,9 @@ sub isSkipValue{
 }
 
 sub checkKeyToStore{
-    my ($store, $key) = @_;    
+    my ($store, $key) = @_;
     my $failReason = 0;
-    
+
     if ( not defined $key ){
         $failReason = "key variable is not defined";
     }
@@ -948,167 +948,167 @@ sub checkKeyToStore{
     elsif ( exists $store->{ $key } ){
         $failReason = "duplicate key that should be unique (key: $key)";
     }
-    
+
     return $failReason;
 }
 
 sub checkDefined{
-	my ( $key, $hash) = @_;
-	if ( not defined $hash->{$key} ){
-		warn "[WARN] Value $key is not defined in:\n";
-	    print Dumper $hash;
-	}
+    my ( $key, $hash) = @_;
+    if ( not defined $hash->{$key} ){
+        warn "[WARN] Value $key is not defined in:\n";
+        print Dumper $hash;
+    }
 }
 
 sub getFieldNameTranslations{
     ## columns contact sheet in current FOR-001
     my %CONT_DICT = (
-      "Group_ID"               => 'group_id',
-      "Client_contact_name"    => 'client_contact_name',
-      "Client_contact_email"   => 'client_contact_email',
-      "On_behalf_of_client_name"  => 'on_behalf_of_client_contact_name',
-      "On_behalf_of_client_email" => 'on_behalf_of_client_contact_email',
-      "Report_contact_name"    => 'report_contact_name',
-      "Report_contact_email"   => 'report_contact_email',
-      "Data_contact_name"      => 'data_contact_name',
-      "Data_contact_email"     => 'data_contact_email',
-      "Lab_contact_name"       => 'lab_contact_name',
-      "Lab_contact_email"      => 'lab_contact_email',
+        "Group_ID"               => 'group_id',
+        "Client_contact_name"    => 'client_contact_name',
+        "Client_contact_email"   => 'client_contact_email',
+        "On_behalf_of_client_name"  => 'on_behalf_of_client_contact_name',
+        "On_behalf_of_client_email" => 'on_behalf_of_client_contact_email',
+        "Report_contact_name"    => 'report_contact_name',
+        "Report_contact_email"   => 'report_contact_email',
+        "Data_contact_name"      => 'data_contact_name',
+        "Data_contact_email"     => 'data_contact_email',
+        "Lab_contact_name"       => 'lab_contact_name',
+        "Lab_contact_email"      => 'lab_contact_email',
     );
-    
+
     ## columns shipments sheet in 2018 rest lims (FOR-001)
     my %SUBM_DICT_2018 = (
-      "Arrival_date"      => 'arrival_date',
-      "Project_name"      => 'project_name',
-      "HMF_reg"           => 'submission',
-      "Requested_product" => 'request',
-      "Product_category"  => 'project_type',
-      "Sample_count"      => 'sample_count',
-      "Lab_is_finished"   => 'has_lab_finished',
-      "TAT_lab"           => 'turn_around_time',
-      "Contact_name"      => 'report_contact_name',
-      "Contact_email"     => 'report_contact_email',
-      "Remarks"           => 'remarks',
-      "Storage_status"    => 'lab_storage_status',
+        "Arrival_date"      => 'arrival_date',
+        "Project_name"      => 'project_name',
+        "HMF_reg"           => 'submission',
+        "Requested_product" => 'request',
+        "Product_category"  => 'project_type',
+        "Sample_count"      => 'sample_count',
+        "Lab_is_finished"   => 'has_lab_finished',
+        "TAT_lab"           => 'turn_around_time',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
+        "Remarks"           => 'remarks',
+        "Storage_status"    => 'lab_storage_status',
     );
 
     ## columns shipments sheet in 2019 rest lims (FOR-001)
     my %SUBM_DICT_2019 = (
-      "Arrival_date"      => 'arrival_date',
-      "Project_name"      => 'project_name',
-      "HMF_reg"           => 'submission',
-      "Requested_product" => 'request',
-      "Product_category"  => 'project_type',
-      "Sample_count"      => 'sample_count',
-      "Lab_is_finished"   => 'has_lab_finished',
-      "Group_ID"          => 'group_id',
-      "TAT_lab"           => 'turn_around_time',
-      "Contact_name"      => 'report_contact_name',
-      "Contact_email"     => 'report_contact_email',
-      "Portal_contact_name" => 'data_contact_name',
-      "Portal_contact_email" => 'data_contact_email',
-      "Remarks"           => 'remarks',
-      "Storage_status"    => 'lab_storage_status',
+        "Arrival_date"      => 'arrival_date',
+        "Project_name"      => 'project_name',
+        "HMF_reg"           => 'submission',
+        "Requested_product" => 'request',
+        "Product_category"  => 'project_type',
+        "Sample_count"      => 'sample_count',
+        "Lab_is_finished"   => 'has_lab_finished',
+        "Group_ID"          => 'group_id',
+        "TAT_lab"           => 'turn_around_time',
+        "Contact_name"      => 'report_contact_name',
+        "Contact_email"     => 'report_contact_email',
+        "Portal_contact_name" => 'data_contact_name',
+        "Portal_contact_email" => 'data_contact_email',
+        "Remarks"           => 'remarks',
+        "Storage_status"    => 'lab_storage_status',
     );
-    
+
     ## columns shipments sheet in rest lims (FOR-001)
     my %SUBM_DICT = (
-      "Arrival_date"      => 'arrival_date',
-      "Project_name"      => 'project_name',
-      "HMF_reg"           => 'submission',
-      "Requested_product" => 'request',
-      "Product_category"  => 'project_type',
-      "Sample_count"      => 'sample_count',
-      "Lab_is_finished"   => 'has_lab_finished',
-      "Group_ID"          => 'group_id',
-      "Remarks"           => 'remarks',
+        "Arrival_date"      => 'arrival_date',
+        "Project_name"      => 'project_name',
+        "HMF_reg"           => 'submission',
+        "Requested_product" => 'request',
+        "Product_category"  => 'project_type',
+        "Sample_count"      => 'sample_count',
+        "Lab_is_finished"   => 'has_lab_finished',
+        "Group_ID"          => 'group_id',
+        "Remarks"           => 'remarks',
     );
 
     ## columns samples sheet in 2018 rest lims (FOR-001)
     my %SAMP_DICT_2018 = (
-      "Sample_ID"         => 'sample_id',
-      "Sample_name"       => 'sample_name',
-      "DNA_conc"          => 'conc',
-      "Yield"             => 'yield',
-      "Q30"               => 'q30',
-      "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'ref_sample_id',
-      "HMF_reg"           => 'submission',
-      "SNP_required"      => 'is_snp_required',
-      "SNP_exp"           => 'snp_experiment_id',
-      "Requested_product" => 'request',
-      "State"             => 'lab_status', # lab status
-      "Primary_tumor_type"=> 'ptum',
-      "Priority"          => 'priority', 
-      "Arival_date"       => 'arrival_date',
-      "Remarks"           => 'remarks',
+        "Sample_ID"         => 'sample_id',
+        "Sample_name"       => 'sample_name',
+        "DNA_conc"          => 'conc',
+        "Yield"             => 'yield',
+        "Q30"               => 'q30',
+        "Analysis_type"     => 'analysis_type',
+        "Partner_sample"    => 'ref_sample_id',
+        "HMF_reg"           => 'submission',
+        "SNP_required"      => 'is_snp_required',
+        "SNP_exp"           => 'snp_experiment_id',
+        "Requested_product" => 'request',
+        "State"             => 'lab_status', # lab status
+        "Primary_tumor_type"=> 'ptum',
+        "Priority"          => 'priority',
+        "Arival_date"       => 'arrival_date',
+        "Remarks"           => 'remarks',
     );
 
     ## columns samples sheet in CURRENT rest lims (FOR-001)
     my %SAMP_DICT = (
-      "Sample_ID"         => 'sample_id',
-      "Sample_name"       => 'sample_name',
-      "DNA_conc"          => 'conc',
-      "Yield"             => 'yield',
-      "Q30"               => 'q30',
-      "Analysis_type"     => 'analysis_type',
-      "Partner_sample"    => 'ref_sample_id',
-      "HMF_reg"           => 'submission',
-      "SNP_required"      => 'is_snp_required',
-      "SNP_exp"           => 'snp_experiment_id',
-      "Requested_product" => 'request',
-      "State"             => 'lab_status', # lab status
-      "Priority"          => 'priority', 
-      "Arrival_date"      => 'arrival_date',
-      "Remarks"           => 'remarks',
+        "Sample_ID"         => 'sample_id',
+        "Sample_name"       => 'sample_name',
+        "DNA_conc"          => 'conc',
+        "Yield"             => 'yield',
+        "Q30"               => 'q30',
+        "Analysis_type"     => 'analysis_type',
+        "Partner_sample"    => 'ref_sample_id',
+        "HMF_reg"           => 'submission',
+        "SNP_required"      => 'is_snp_required',
+        "SNP_exp"           => 'snp_experiment_id',
+        "Requested_product" => 'request',
+        "State"             => 'lab_status', # lab status
+        "Priority"          => 'priority',
+        "Arrival_date"      => 'arrival_date',
+        "Remarks"           => 'remarks',
     );
 
     ## columns In Process sheet (HMF-FOR-002)
     my %PROC_DICT = (
-      'Sample_ID'         => 'sample_id', # eg FR12345678
-      'Sample_name'       => 'sample_name', # eg CPCT1234567R
-      'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
-      'Sop_tracking_code' => 'lab_sop_versions',
+        'Sample_ID'         => 'sample_id', # eg FR12345678
+        'Sample_name'       => 'sample_name', # eg CPCT1234567R
+        'Diluted_library'   => 'library_id', # eg FR12345678 (THIS WAS "barcode_3nm")
+        'Sop_tracking_code' => 'lab_sop_versions',
     );
 
     ## columns MS Access table samples
     my %CPCT_DICT = (
-      'Coupes_barc'        => 'coupes_barcode',
-      'Sampling_date'      => 'sampling_date',
-      'Arrival_HMF'        => 'arrival_date',
-      'Patient_name'       => 'patient',
-      'Sample_name'        => 'sample_name',
-      'Source'             => 'sample_source',
-      'Yield'              => 'yield',
-      'Sample_barcode'     => 'sample_id', # was Sample_ID_(DNA|RNA|Plasma)
-      'Pathology_exp'      => 'pathology_exp',
-      'Qiasymphony_exp'    => 'isolation_exp_id',
-      'Prep'               => 'preparation_exp_id', # was (DNA|RNA)_prep
-      'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
-      'Primary_tumor_type' => 'ptum',
-      'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
-      'Conc'               => 'conc', # was (DNA|RNA)_conc
-      'Final_lab_status'   => 'lab_status',
-      'Status_prep'        => 'prep_status',
-      'Remarks'            => 'lab_remarks',
-      'Other_Ref'          => 'other_ref',
-      'Sample_ID_DNA_ref'  => 'ref_sample_id',
-      'Hospital_patient_ID'=> 'hospital_patient_id',
-      'Report_germline'    => 'report_germline',
-      'Report_germline_level' => 'report_germline_level',
-      'Submission_number'  => 'submission',
-      'Date_of_birth'      => 'date_of_birth',
-      'Purity'             => 'purity',
-      'ShallowSeq'         => 'shallowseq', # Should we expect a ShallowSeq run
-      'in_database'        => 'add_to_database', # Should biopsy be added to SQL DB
-      'Data_request'       => 'add_to_datarequest', # Should biopsy be part of DRs
-      'Report_date'        => 'report_date',
-      'Cohort'             => 'cohort', # What cohort is sample part of
-      'Report_viral'       => 'report_viral', # Should we add viral info to report
-      'Report_pgx'         => 'report_pgx', # Should we add pharmacogenomics info to report
-      'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
-      'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id',
-      'QC_fail_report'     => 'qc_fail_report'
+        'Coupes_barc'        => 'coupes_barcode',
+        'Sampling_date'      => 'sampling_date',
+        'Arrival_HMF'        => 'arrival_date',
+        'Patient_name'       => 'patient',
+        'Sample_name'        => 'sample_name',
+        'Source'             => 'sample_source',
+        'Yield'              => 'yield',
+        'Sample_barcode'     => 'sample_id', # was Sample_ID_(DNA|RNA|Plasma)
+        'Pathology_exp'      => 'pathology_exp',
+        'Qiasymphony_exp'    => 'isolation_exp_id',
+        'Prep'               => 'preparation_exp_id', # was (DNA|RNA)_prep
+        'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
+        'Primary_tumor_type' => 'ptum',
+        'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
+        'Conc'               => 'conc', # was (DNA|RNA)_conc
+        'Final_lab_status'   => 'lab_status',
+        'Status_prep'        => 'prep_status',
+        'Remarks'            => 'lab_remarks',
+        'Other_Ref'          => 'other_ref',
+        'Sample_ID_DNA_ref'  => 'ref_sample_id',
+        'Hospital_patient_ID'=> 'hospital_patient_id',
+        'Report_germline'    => 'report_germline',
+        'Report_germline_level' => 'report_germline_level',
+        'Submission_number'  => 'submission',
+        'Date_of_birth'      => 'date_of_birth',
+        'Purity'             => 'purity',
+        'ShallowSeq'         => 'shallowseq', # Should we expect a ShallowSeq run
+        'in_database'        => 'add_to_database', # Should biopsy be added to SQL DB
+        'Data_request'       => 'add_to_datarequest', # Should biopsy be part of DRs
+        'Report_date'        => 'report_date',
+        'Cohort'             => 'cohort', # What cohort is sample part of
+        'Report_viral'       => 'report_viral', # Should we add viral info to report
+        'Report_pgx'         => 'report_pgx', # Should we add pharmacogenomics info to report
+        'Hospital_PA_sample_ID' => 'hospital_pa_sample_id',
+        'Matching_other_HMF_patient_ID' => 'matching_other_HMF_patient_id',
+        'QC_fail_report'     => 'qc_fail_report'
     );
 
     ## columns MS Access table actions
@@ -1139,6 +1139,6 @@ sub getFieldNameTranslations{
         'ACTI_CURR' => \%ACTI_DICT,
         'REGI_CURR' => \%REGI_DICT,
     );
-    
+
     return \%translations;
 }
