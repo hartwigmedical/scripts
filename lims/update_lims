@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 lims_dir="/data/ops/lims/prod"
 code_dir="/data/common/repos/scripts/lims"
 
@@ -11,17 +13,17 @@ mod_date=$(date -r "${out_json}" "+%Y-%m-%d %H:%M:%S")
 run_date=$(date "+%Y-%m-%d %H:%M:%S")
 
 echo "===== Running $(basename $0) =====" 2>&1 | tee -a ${log_file}
-echo "[INFO] LastMod date: ${mod_date}" 2>&1 | tee -a ${log_file}
-echo "[INFO] Current date: ${run_date}" 2>&1 | tee -a ${log_file}
+info "LastMod date: ${mod_date}" 2>&1 | tee -a ${log_file}
+info "Current date: ${run_date}" 2>&1 | tee -a ${log_file}
 
 if [[ -f "${out_json}" ]]; then
-    echo "[INFO] Backing up ${out_json}"
+    info "Backing up ${out_json}"
     cp "${out_json}" "${back_dir}"
 fi
 
-echo "[INFO] Syncing files from NAS to datastore"
+info "Syncing files from NAS to datastore"
 ${code_dir}/sync_lab_lims_from_nas "${lims_dir}" 2>&1 | tee -a ${log_file}
-echo "[INFO] Converting LIMS files to ${out_json}"
+info "Converting LIMS files to ${out_json}"
 ${code_dir}/convert_lims_data.pl \
     -lims_dir "${lims_dir}" \
     -out_json "${out_json}" \
