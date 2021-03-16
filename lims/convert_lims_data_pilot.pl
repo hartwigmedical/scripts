@@ -136,8 +136,8 @@ $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
 
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2018'}, 'sample_id',  1, $SAMP_TSV_2018, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
-$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2019'}, 'sample_id',  1, $SAMP_TSV_2019, "\t" );
+$samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_2020'}, 'sample_id',  1, $SAMP_TSV_2020, "\t" );
 $samp_objs = parseTsvCsv( $samp_objs, $name_dict->{'SAMP_CURR'}, 'sample_id',  1, $FOR_001_SAMP_TSV, "\t" );
 
 $cpct_objs = parseTsvCsv( $cpct_objs, $name_dict->{'CPCT_CURR'}, 'sample_id',  1, $ACCESS_SAMPLES_CSV, "," );
@@ -713,16 +713,13 @@ sub addExcelSamplesToSamples{
             else{
                 $row_info->{ 'analysis_type' } = 'Somatic_R';
             }
-            ## TODO remove once shallowseq column is built into lims FOR-001
-            ## Hardcode Somatic_T samples to not run in shallow mode
-            ## Hardcode Somatic_T samples to not use existing ref data
-            $row_info->{ 'shallowseq' } = 0;
-            $row_info->{ 'other_ref' } = 0;
 
-            ## TODO remove once project HMFreg1197 has finished
-            ## HMFreg1197 needs shallowseq while not supported
-            if ( $submission eq 'HMFreg1197' ){
-                $row_info->{ 'shallowseq' } = 1;
+            ## Hardcode Somatic_T samples to not use existing ref data for FOR-001 samples
+            $row_info->{ 'other_ref' } = "";
+
+            ## Hardcode old Somatic_T samples to not run in shallow mode (config was added only in FOR-001 v5.10)
+            if ( not exists $row_info->{ 'shallowseq' }) {
+                $row_info->{ 'shallowseq' } = JSON::XS::false;
             }
 
         }
@@ -1038,7 +1035,7 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    ## columns samples sheet in 2018 rest lims (FOR-001)
+    ## columns samples sheet in 2018 FOR-001
     my %SAMP_DICT_2018 = (
         "Sample_ID"         => 'sample_id',
         "Sample_name"       => 'sample_name',
@@ -1058,24 +1055,31 @@ sub getFieldNameTranslations{
         "Remarks"           => 'remarks',
     );
 
-    ## columns samples sheet in CURRENT rest lims (FOR-001)
-    my %SAMP_DICT = (
-        "Sample_ID"         => 'sample_id',
-        "Sample_name"       => 'sample_name',
-        "DNA_conc"          => 'conc',
-        "Yield"             => 'yield',
-        "Q30"               => 'q30',
-        "Analysis_type"     => 'analysis_type',
-        "Partner_sample"    => 'ref_sample_id',
-        "HMF_reg"           => 'submission',
-        "SNP_required"      => 'is_snp_required',
-        "SNP_exp"           => 'snp_experiment_id',
-        "Requested_product" => 'request',
-        "State"             => 'lab_status', # lab status
-        "Priority"          => 'priority',
-        "Arrival_date"      => 'arrival_date',
-        "Remarks"           => 'remarks',
+    ## columns samples sheet in 2019 FOR-001
+    my %SAMP_DICT_2019 = (
+        "Sample_ID"           => 'sample_id',
+        "Sample_name"         => 'sample_name',
+        "DNA_conc"            => 'conc',
+        "Yield"               => 'yield',
+        "Q30"                 => 'q30',
+        "Analysis_type"       => 'analysis_type',
+        "Partner_sample"      => 'ref_sample_id',
+        "HMF_reg"             => 'submission',
+        "SNP_required"        => 'is_snp_required',
+        "SNP_exp"             => 'snp_experiment_id',
+        "Requested_product"   => 'request',
+        "State"               => 'lab_status', # lab status
+        "Priority"            => 'priority',
+        "Arrival_date"        => 'arrival_date',
+        "Remarks"             => 'remarks',
     );
+
+    ## columns samples sheet 2020 FOR-001 is identical to 2019
+    my %SAMP_DICT_2020 = %SAMP_DICT_2019;
+
+    ## columns samples sheet CURRENT FOR-001 has extra ShallowSeq field
+    my %SAMP_DICT = %SAMP_DICT_2020;
+    $SAMP_DICT{"ShallowSeq_required"} = 'shallowseq';
 
     ## columns In Process sheet (HMF-FOR-002)
     my %PROC_DICT = (
@@ -1147,6 +1151,8 @@ sub getFieldNameTranslations{
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
+        'SAMP_2020' => \%SAMP_DICT_2020,
+        'SAMP_2019' => \%SAMP_DICT_2019,
         'SAMP_2018' => \%SAMP_DICT_2018,
         'PROC_CURR' => \%PROC_DICT,
         'CPCT_CURR' => \%CPCT_DICT,
