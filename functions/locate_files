@@ -746,7 +746,7 @@ locate_linx_viral_insertions() {
     echo ${viral_insertion_tsv}
 }
 
-locate_linx_drivers() {
+locate_linx_driver_catalog() {
     local run_dir=$1
     local linx_dir=${run_dir}/linx
     if [[ ! -d "${linx_dir}" ]]; then
@@ -754,15 +754,15 @@ locate_linx_drivers() {
         exit 1
     fi
 
-    local drivers_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
-    if [[ -z "${drivers_tsv}" ]]; then
-        drivers_tsv=$(locate_purple_drivers_somatic ${run_dir})
-        if [[ -z "${drivers_tsv}" ]]; then
+    local driver_catalog_tsv=$(find -L ${linx_dir}/ -type f -name "*.driver.catalog.tsv")
+    if [[ -z "${driver_catalog_tsv}" ]]; then
+        driver_catalog_tsv=$(locate_purple_drivers_somatic ${run_dir})
+        if [[ -z "${driver_catalog_tsv}" ]]; then
             echo "[ERROR] Unable to locate either linx drivers catalog tsv or purple driver catalog tsv in ${run_dir}. Exiting." >&2
             exit 1
         fi
     fi
-    echo ${drivers_tsv}
+    echo ${driver_catalog_tsv}
 }
 
 ########################################### GATK ##########################################

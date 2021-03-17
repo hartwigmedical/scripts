@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# TODO: File can go once linx_driver_catalog_tsv param change is in production!
+
 source locate_files
 source metadata_functions
 source lims_functions
@@ -58,7 +60,7 @@ java -Xms2G -Xmx8G -jar ${protect_jar} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
-    -linx_drivers_tsv ${linx_driver_catalog_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -log_debug \
     "$@"
