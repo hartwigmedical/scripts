@@ -75,7 +75,7 @@ pilot_do_run_base_patient_reporter \
     -linx_fusion_tsv ${linx_fusion_tsv} \
     -linx_breakend_tsv ${linx_breakend_tsv} \
     -linx_viral_insertion_tsv ${linx_viral_insertion_tsv} \
-    -linx_drivers_tsv ${linx_driver_catalog_tsv} \
+    -linx_driver_catalog_tsv ${linx_driver_catalog_tsv} \
     -chord_prediction_txt ${chord_prediction_txt} \
     -circos_file ${circos_file} \
     -protect_evidence_tsv ${protect_evidence_tsv} \
