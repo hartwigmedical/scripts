@@ -78,8 +78,9 @@ main () {
         elif [[ ! -d "${test_tool_path}" ]]; then
             warn "  Tool directory does not exist in test so cannot compare (${test_tool_path})"
         else
-            base_file_count=$(find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
-            test_file_count=$(find "$(readlink -f "${test_tool_path}")" -mindepth 1 -maxdepth 1 | wc -l)
+            # expect file/dir count to be equal excluding potential symlinks (-not -type l)
+            base_file_count=$(find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -not -type l | wc -l)
+            test_file_count=$(find "$(readlink -f "${test_tool_path}")" -mindepth 1 -maxdepth 1 -not -type l | wc -l)
             if [[ ${base_file_count} -ne ${test_file_count} ]]; then
                 warn "  DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool directory (${tool_name})"
             else
