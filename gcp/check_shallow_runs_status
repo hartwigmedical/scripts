@@ -44,8 +44,9 @@ echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @
     fi
 done | sort
 
-job_file="/data/ops/jobs/${yymmdd}_process_shallow_runs"
-log_file="/data/ops/job_logs/logs}"
+job_name="${yymmdd}_process_shallow_runs"
+job_file="/data/ops/jobs/${job_name}"
+log_file="/data/ops/job_logs/${job_name}"
 
 write_job_cmd="$(basename $0) > ${job_file} && chmod +x ${job_file}"
 execute_job_cmd="nohup ${job_file} > ${log_file} &"
