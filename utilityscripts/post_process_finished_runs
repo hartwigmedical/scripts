@@ -24,7 +24,6 @@ for run in ${process_runs}; do
     echo "[INFO] Running PROTECT"
     run_protect_prod ${source_path}/${run}
     echo "[INFO] Patch corrects headers for linx files"
-    patch_linx_files ${source_path}/${run}
 
     if [[ -z ${cohort} ]]; then
         echo "[ERROR] Could not resolve cohort for ${run}."
@@ -41,7 +40,6 @@ for run in ${process_runs}; do
         echo "[INFO] Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
         echo "[INFO] Loading run into database"
-        patch_linx_files_to_orginal /data/cpct/runs/${run}
         load_run_into_prod_db /data/cpct/runs/${run}
     else
         # This is for patients that require a summary (WIDE, some CORE)
@@ -58,7 +56,6 @@ for run in ${process_runs}; do
             echo "[INFO] Copy run to hmf-crunch at GCP"
             copy_run_to_gcp_crunch_project ${run}
             echo "[INFO] Loading run into database"
-            patch_linx_files_to_orginal /data/cpct/runs/${run}
             load_run_into_prod_db /data/cpct/runs/${run}
         fi
     fi
