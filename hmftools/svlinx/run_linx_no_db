@@ -15,7 +15,7 @@ sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 # reference files
 viral_hosts_csv=/data/common/dbs/sv/viral_host_ref.csv
-known_fusion_data=/data/common/dbs/fusions/known_fusion_data.csv
+known_fusion_data=$(locate_known_fusion_data_csv)
 driver_gene_panel=$(locate_driver_gene_panel_tsv)
 ensembl_data_dir=/data/common/dbs/ensembl_data_cache
 fragile_sites=/data/common/dbs/sv/fragile_sites_hmf.csv

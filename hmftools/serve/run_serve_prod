@@ -15,7 +15,7 @@ missing_doids_mapping_tsv=/data/common/dbs/serve/curation/missing_doids_mapping.
 ref_genome_version=37
 ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file)
 driver_gene_tsv=$(locate_driver_gene_panel_tsv)
-known_fusion_data=/data/common/dbs/fusions/known_fusion_data.csv
+known_fusion_file=$(locate_known_fusion_data_csv)
 
 output_dir=/data/common/dbs/serve/prod_output
 
@@ -37,6 +37,6 @@ java -Xms2G -Xmx8G -jar ${serve_jar} \
     -ref_genome_version ${ref_genome_version} \
     -ref_genome_fasta_file ${ref_genome_fasta_file} \
     -driver_gene_tsv ${driver_gene_tsv} \
-    -known_fusion_file ${known_fusion_data} \
+    -known_fusion_file ${known_fusion_file} \
     -output_dir ${output_dir} \
     "$@"
