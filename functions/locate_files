@@ -419,24 +419,6 @@ locate_purple_somatics() {
     echo ${somatic_vcf}
 }
 
-locate_purple_germline_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple
-
-    local germline_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
-    fi
-
-    if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${germline_vcf}
-}
-
 locate_purple_pilot_somatics() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
@@ -452,24 +434,6 @@ locate_purple_pilot_somatics() {
     fi
 
     echo ${somatic_vcf}
-}
-
-locate_purple_pilot_germline_variants() {
-    local run_dir=$1
-    local purple_dir=${run_dir}/purple_pilot
-
-    local germline_vcf=""
-
-    if [[ -d "${purple_dir}" ]]; then
-        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
-    fi
-
-    if [[ -z "${germline_vcf}" ]]; then
-        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${germline_vcf}
 }
 
 ############################################ AMBER ###########################################
@@ -537,18 +501,6 @@ locate_purple_drivers_somatic() {
     echo ${purple_driver_tsv}
 }
 
-locate_purple_drivers_germline() {
-    local run_dir=$1
-    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
-
-    if [[ -z "${purple_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${purple_driver_tsv}
-}
-
 locate_purple_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
@@ -604,9 +556,9 @@ locate_purple_pilot_circos_plot() {
 }
 
 
-############################################ PURPLE Germline ##########################################
+######################################## PURPLE Germline ########################################
 
-locate_purple_germline() {
+locate_purple_germline_variants() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
 
@@ -624,25 +576,35 @@ locate_purple_germline() {
     echo ${germline_vcf}
 }
 
-locate_purple_germline_drivers() {
-
+locate_purple_pilot_germline_variants() {
     local run_dir=$1
-    local purple_dir=${run_dir}/purple
+    local purple_dir=${run_dir}/purple_pilot
 
-    local purple_germline_driver_tsv=""
+    local germline_vcf=""
 
     if [[ -d "${purple_dir}" ]]; then
-        purple_germline_driver_tsv=$(find -L ${purple_dir} -type f -name "*.driver.catalog.germline.tsv")
+        germline_vcf=$(find -L ${purple_dir} -type f -name "*.purple.germline.vcf.gz")
     fi
 
-    if [[ -z "${purple_germline_driver_tsv}" ]]; then
-        echo "[ERROR] Unable to locate purple germline driver catalog in ${run_dir}. Exiting." >&2
+    if [[ -z "${germline_vcf}" ]]; then
+        echo "[ERROR] Unable to locate purple germline variants in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
-    echo ${purple_germline_driver_tsv}
+    echo ${germline_vcf}
 }
 
+locate_purple_drivers_germline() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
+
+    if [[ -z "${purple_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${purple_driver_tsv}
+}
 
 ##################################### Structural Variants #####################################
 
@@ -820,19 +782,6 @@ locate_reportable_bachelor_variants() {
         reportable_bachelor_tsv=/data/common/dbs/bachelor/empty.reportable_germline_variant.tsv
     fi
     echo ${reportable_bachelor_tsv}
-}
-
-
-############################################# SAGE ###########################################
-
-locate_sage_germline_variants_pilot() {
-    local run_dir=$1
-    local sage_germline_variants_vcf=$(find -L ${run_dir}/sage_germline/ -type f -name "*.sage.germline.filtered.vcf.gz")
-    if [[ -z "${sage_germline_variants_vcf}" ]]; then
-        echo "[ERROR] Unable to locate SAGE germline variants in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-    echo ${sage_germline_variants_vcf}
 }
 
 ############################################# CHORD ###########################################
