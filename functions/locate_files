@@ -378,9 +378,23 @@ locate_flagstats() {
     echo ${flagstats_file}
 }
 
+############################################# AMBER ###########################################
+
+locate_amber_directory() {
+    local run_dir=$1
+    local amber_dir=${run_dir}/amber
+
+    if [[ ! -d "${amber_dir}" ]]; then
+        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${amber_dir}
+}
+
 ########################################### SAGE ##########################################
 
-locate_sage_somatics() {
+locate_sage_somatic_variants() {
     local run_dir=$1
     local sage_dir_old=${run_dir}/sage
     local sage_dir=${run_dir}/sage_somatic
@@ -401,7 +415,7 @@ locate_sage_somatics() {
     echo ${somatic_vcf}
 }
 
-locate_purple_somatics() {
+locate_purple_somatic_variants() {
     local run_dir=$1
     local purple_dir=${run_dir}/purple
 
@@ -419,7 +433,7 @@ locate_purple_somatics() {
     echo ${somatic_vcf}
 }
 
-locate_purple_pilot_somatics() {
+locate_purple_pilot_somatic_variants() {
     local run_dir=$1
     local purple_pilot_dir=${run_dir}/purple_pilot
     local somatic_vcf=""
@@ -434,20 +448,6 @@ locate_purple_pilot_somatics() {
     fi
 
     echo ${somatic_vcf}
-}
-
-############################################ AMBER ###########################################
-
-locate_amber_directory() {
-    local run_dir=$1
-    local amber_dir=${run_dir}/amber
-
-    if [[ ! -d "${amber_dir}" ]]; then
-        echo "[ERROR] Unable to locate AMBER directory in ${run_dir}. Exiting." >&2
-        exit 1
-    fi
-
-    echo ${amber_dir}
 }
 
 ############################################ PURPLE ##########################################
@@ -554,7 +554,6 @@ locate_purple_pilot_circos_plot() {
 
     echo ${circos_plot}
 }
-
 
 ######################################## PURPLE Germline ########################################
 
@@ -747,7 +746,7 @@ locate_linx_driver_catalog() {
 
 ########################################### GATK ##########################################
 
-locate_germline_variants() {
+locate_gatk_germline_variants() {
     local run_dir=$1 && shift
     local ref_sample=$1 && shift
 

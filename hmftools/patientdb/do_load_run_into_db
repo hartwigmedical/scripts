@@ -12,7 +12,7 @@ ref_sample=$(load_ref_sample_from_metadata ${run_dir})
 tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 
 amber_dir=$(locate_amber_directory ${run_dir})
-somatic_vcf=$(locate_purple_somatics ${run_dir})
+somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
 germline_vcf=$(locate_purple_germline_variants ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 chord_prediction_file=$(locate_chord_prediction ${run_dir})

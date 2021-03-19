@@ -22,7 +22,7 @@ clinvar_filters=/data/common/dbs/bachelor/test_program_clinvar_filters.csv
 bachelor_xml_config=/data/common/dbs/bachelor/test_program.xml
 ref_genome_file=$(locate_ref_genome_37_fasta_file)
 
-germline_vcf=$(locate_germline_variants ${run_dir} ${sample_ref})
+germline_vcf=$(locate_gatk_germline_variants ${run_dir} ${sample_ref})
 
 bachelor_output_dir=${run_dir}/bachelor_test_program
 

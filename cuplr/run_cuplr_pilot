@@ -21,14 +21,14 @@ mkdir -p ${working_dir}
 
 echo "[INFO] Determining run file locations"
 ## TODO: make functions in locate_files for all missing
-somatic_vcf=$(locate_purple_somatics ${run_dir})
+somatic_vcf=$(locate_purple_somatic_variants ${run_dir})
 structural_vcf=$(locate_purple_structural_variants ${run_dir})
 purple_purity=$(locate_purple_purity ${run_dir})
 purple_cnv="${run_dir}/purple/${tum_sample}.purple.cnv.somatic.tsv"
 linx_fus="${run_dir}/linx/${tum_sample}.linx.fusion.tsv"
 linx_ins="${run_dir}/linx/${tum_sample}.linx.viral_inserts.tsv"
 linx_vis="${run_dir}/linx/${tum_sample}.linx.vis_sv_data.tsv"
-germline_vcf=$(locate_germline_variants ${run_dir} ${ref_sample})
+germline_vcf=$(locate_gatk_germline_variants ${run_dir} ${ref_sample})
 
 cuplr_pilot.R \
   "${tool_dir}" \

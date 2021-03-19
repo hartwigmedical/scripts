@@ -29,7 +29,7 @@ if [[ -d "${output_dir}" ]]; then
     rm -r "${output_dir}" || die "Could not remove existing PGX pilot dir"
 fi
 
-germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}")
+germline_vcf=$(locate_gatk_germline_variants "${run_dir}" "${ref_sample}")
 
 # REFERENCES
 pgx_tool=$(locate_pgx_main)

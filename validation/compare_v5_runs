@@ -118,14 +118,14 @@ main () {
         fi
     done
 
-    test_grm_vcf=$(locate_germline_variants "${test_run_path}" "${test_ref_sample_name}")
-    base_grm_vcf=$(locate_germline_variants "${base_run_path}" "${base_ref_sample_name}")
+    test_grm_vcf=$(locate_gatk_germline_variants "${test_run_path}" "${test_ref_sample_name}")
+    base_grm_vcf=$(locate_gatk_germline_variants "${base_run_path}" "${base_ref_sample_name}")
       test_chord=$(locate_chord_prediction "${test_run_path}")
       base_chord=$(locate_chord_prediction "${base_run_path}")
     test_vir_ins=$(locate_linx_viral_insertions "${test_run_path}")
     base_vir_ins=$(locate_linx_viral_insertions "${base_run_path}")
-    test_som_var=$(locate_purple_somatics "${test_run_path}")
-    base_som_var=$(locate_purple_somatics "${base_run_path}")
+    test_som_var=$(locate_purple_somatic_variants "${test_run_path}")
+    base_som_var=$(locate_purple_somatic_variants "${base_run_path}")
      test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
      base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
        test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")

@@ -8,7 +8,7 @@ purple_output=${run_dir}/purple
 
 purple_jar=$(locate_prod_purple)
 credentials=$(locate_prod_database_credentials)
-somatic_vcf=$(locate_sage_somatics ${run_dir})
+somatic_vcf=$(locate_sage_somatic_variants ${run_dir})
 structural_vcf=$(locate_gripss_structural_variants ${run_dir})
 sv_recovery_vcf=$(locate_gripss_recovery_candidates ${run_dir})
 

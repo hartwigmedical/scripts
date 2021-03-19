@@ -10,7 +10,7 @@ tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
 purple_output=${run_dir}/purple_pilot
 
 purple_jar=$(locate_pilot_purple)
-somatic_vcf=$(locate_sage_somatics ${run_dir})
+somatic_vcf=$(locate_sage_somatic_variants ${run_dir})
 structural_vcf=/data/cpct/gcp/gridss/$set/${tumor_sample}.gridss.somatic.filtered.vcf.gz
 sv_recovery_vcf=/data/cpct/gcp/gridss/$set/${tumor_sample}.gridss.somatic.vcf.gz
 credentials=$(locate_pilot_database_credentials)

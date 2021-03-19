@@ -22,8 +22,8 @@ mkdir -p ${dest_set_path_gatk}
 
 ## gather germline info
 echo "[DEBUG] Symlinking gatk germline VCF (and tbi index) for ${set_name}"
-ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}) ${dest_set_path_gatk}
-ln -s $(locate_germline_variants ${source_set_path} ${ref_sample}).tbi ${dest_set_path_gatk}
+ln -s $(locate_gatk_germline_variants ${source_set_path} ${ref_sample}) ${dest_set_path_gatk}
+ln -s $(locate_gatk_germline_variants ${source_set_path} ${ref_sample}).tbi ${dest_set_path_gatk}
 expected_file_count=2
 
 ## init purple

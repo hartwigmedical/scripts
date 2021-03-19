@@ -33,8 +33,8 @@ ln -s $(locate_purple_qc ${source_set_path}) ${dest_set_path_purple}
 ln -s $(locate_purple_structural_variants ${source_set_path}) ${dest_set_path_purple}
 ln -s $(locate_purple_structural_variants ${source_set_path}).tbi ${dest_set_path_purple}
 ln -s $(locate_purple_circos_plot ${source_set_path}) ${dest_set_path_purple}
-ln -s $(locate_purple_somatics ${source_set_path}) ${dest_set_path_purple}
-ln -s $(locate_purple_somatics ${source_set_path}).tbi ${dest_set_path_purple}
+ln -s $(locate_purple_somatic_variants ${source_set_path}) ${dest_set_path_purple}
+ln -s $(locate_purple_somatic_variants ${source_set_path}).tbi ${dest_set_path_purple}
 expected_file_count=12
 
 ## init linx
