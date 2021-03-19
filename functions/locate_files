@@ -180,6 +180,10 @@ locate_driver_gene_panel_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
 }
 
+locate_known_fusion_data_csv() {
+    echo ${base_path}/dbs/fusions/known_fusion_data.csv
+}
+
 locate_hotspot_vcf() {
     echo ${base_path}/dbs/serve/hotspots/210315/KnownHotspots.somatic.hg19.vcf.gz
 }
@@ -224,12 +228,22 @@ locate_ckb_flex_data_dir() {
     echo ${base_path}/dbs/ckb/210312_flex_dump
 }
 
+############################### REF GENOME #################################
+
 locate_ref_genome_37_fasta_file() {
     echo ${base_path}/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta
 }
 
-locate_umi_resource_dir() {
-    echo ${base_path}/dbs/umi/
+locate_ref_genome_38_fasta_file() {
+    echo ${base_path}/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+}
+
+locate_ref_genome_37_to_38_chain() {
+    echo ${base_path}/refgenomes/liftover/hg19ToHg38.over.chain
+}
+
+locate_ref_genome_38_to_37_chain() {
+    echo ${base_path}/refgenomes/liftover/hg38ToHg19.over.chain
 }
 
 ################################### PGX ####################################
