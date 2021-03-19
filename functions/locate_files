@@ -314,10 +314,14 @@ locate_pgx_pilot_vcf() {
     echo ${pgx_vcf}
 }
 
-################################### PGX ####################################
+##################################### UMI ##########################################
 
 locate_umi_dir() {
     echo "${base_path}/repos/scripts/umi/"
+}
+
+locate_umi_resource_dir() {
+    echo "${base_path}/dbs/umi/"
 }
 
 locate_umi_venv_dir() {
