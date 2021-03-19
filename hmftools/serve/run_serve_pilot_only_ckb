@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+serve_jar=$(locate_pilot_serve)
+
+ckb_dir=$(locate_ckb_flex_data_dir)
+vicc_json=$(locate_vicc_json)
+iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
+docm_tsv=$(locate_docm_tsv)
+hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
+hartwig_curated_tsv=$(locate_hartwig_curated_tsv)
+
+missing_doids_mapping_tsv=/data/common/dbs/serve/curation/missing_doids_mapping.tsv
+
+ref_genome_version=37
+ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file)
+driver_gene_tsv=$(locate_driver_gene_panel_tsv)
+known_fusion_data=/data/common/dbs/fusions/known_fusion_data.csv
+
+output_dir=/data/common/dbs/serve/pilot_output
+
+if [[ -d "${output_dir}" ]]; then
+    echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
+    rm -r ${output_dir}/*
+else
+    mkdir -p ${output_dir}
+    echo "[INFO] Output dir created: ${output_dir}!"
+fi
+
+java -Xms2G -Xmx8G -jar ${serve_jar} \
+    -use_ckb -ckb_dir ${ckb_dir} \
+    -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
+    -ref_genome_version ${ref_genome_version} \
+    -ref_genome_fasta_file ${ref_genome_fasta_file} \
+    -driver_gene_tsv ${driver_gene_tsv} \
+    -known_fusion_file ${known_fusion_data} \
+    -output_dir ${output_dir} \
+    "$@"
