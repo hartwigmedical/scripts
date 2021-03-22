@@ -6,9 +6,9 @@ source locate_files
 run_dir=$1 && shift
 
 sample=$(load_tumor_sample_from_metadata ${run_dir})
-linx_dir=${run_dir}/linx_pilot/
+linx_dir=${run_dir}/linx
 
 credentials=$(locate_pilot_database_credentials)
-linx_jar=$(locate_pilot_linx)
+patient_db_jar=$(locate_pilot_patient_db)
 
-do_load_linx_data ${sample} ${linx_dir} ${credentials} ${linx_jar} "$@"
+do_load_linx_data_pilot ${sample} ${linx_dir} ${credentials} ${patient_db_jar} "$@"
