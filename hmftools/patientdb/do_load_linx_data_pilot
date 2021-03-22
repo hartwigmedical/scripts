@@ -12,7 +12,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading linx data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${linx_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadLinxData \
     -sample ${sample} \
     -sv_data_dir ${linx_dir} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
