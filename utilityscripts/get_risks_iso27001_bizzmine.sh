@@ -3,24 +3,24 @@
 print_usage(){
     echo "-----"
     echo " Descr: Get risks iso27001 from BizzMine"
-    echo " Usage: $(basename $0) -i <dr-id>"
-    echo " Exmpl: $(basename $0) -i 'DR-001'"
+    echo " Usage: $(basename $0)"
+    echo " Exmpl: $(basename $0)"
     echo "-----"
     exit 1
 }
 
-while getopts ':i:' flag; do
-    case "${flag}" in
-        i) dr_id=${OPTARG} ;;
-        *) print_usage
-        exit 1 ;;
-    esac
-done
-
-if [[ -z "${dr_id}" ]]; then
-    echo "[ERROR] script get_risks_iso27001_BizzMine did not run, check usage below:"
-    print_usage
-fi
+#while getopts ':i:' flag; do
+#    case "${flag}" in
+#        i) dr_id=${OPTARG} ;;
+#        *) print_usage
+#        exit 1 ;;
+#    esac
+#done
+#
+#if [[ -z "${dr_id}" ]]; then
+#    echo "[ERROR] script get_risks_iso27001_BizzMine did not run, check usage below:"
+#    print_usage
+#fi
 
 
 api_url=$"https://api.bizzmine.cloud/collection/RiskAnalyses/"
