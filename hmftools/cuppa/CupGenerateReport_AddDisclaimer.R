@@ -48,9 +48,11 @@ cupPlotData = cupSampleResults %>% select(Category,ResultType,DataType,Value,Ref
 cupPlotData = cupPlotData %>% mutate(RefValueLabel=sprintf('%.0f%%',RefValue*100),
                                      DataType=stri_replace_all_fixed(DataType,'_',' '))
 
-cupClassData = cupPlotData %>% filter(Category=='CLASSIFIER'|Category=='COMBINED') %>% mutate(DataLabel=DataType)
+  ## not show GENDER CLASSIFIER on CUP report
+cupClassData = cupPlotData %>% filter(Category=='CLASSIFIER'|Category=='COMBINED') %>% filter(DataType!='GENDER') %>% mutate(DataLabel=DataType)
 
-cupGender = cupPlotData  %>% filter(DataType=='GENDER') %>% 
+  ## make sure data in SEX is not overwritten with GENDER CLASSIFIER data
+cupGender = cupPlotData  %>% filter(DataType=='GENDER'&Category=='SAMPLE_TRAIT') %>% 
   mutate(DataLabel=sprintf('SEX (%s)',Value),
          PrevColour=ifelse(RefValue==0,'high',ifelse(RefValue<=0.02,'low','norm')))
 
