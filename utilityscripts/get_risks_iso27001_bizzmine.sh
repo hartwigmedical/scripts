@@ -44,12 +44,15 @@ for annex in "${annexes[@]}"; do
   echo ${annex}
   annex=$( echo ${annex:0:4} | sed -e 's/^[[:space:]]*//' )
   n_head_annex=$( cat annexes.txt | grep "${annex}" | wc -l )
-  echo -n "- number of risks under head annex: "; echo ${n_head_annex}
+  perc=$( awk 'BEGIN{printf "%.0f\n",'${n_head_annex}'/'${n_risks}'*100}' )
+  echo -n "- number of risks under head annex: "; echo -n ${n_head_annex}; echo " ("${perc}"%)"
   if [ $( cat annexes.txt | grep "${annex}" | wc -l ) != 0 ]; then
       echo "- divided over (sub)annexes"
       cat annexes.txt | grep "${annex}" | sort | uniq > sub_annexes.txt
       while read sub_annex; do
-         echo -n "     "${sub_annex}; echo ": "$( cat annexes.txt | grep "${sub_annex}" | wc -l)
+         n_sub_annex=$( cat annexes.txt | grep "${sub_annex}" | wc -l )
+         perc=$( awk 'BEGIN{printf "%.0f\n",'${n_sub_annex}'/'${n_risks}'*100}' )
+         echo -n "     "${sub_annex}": "; echo -n ${n_sub_annex}; echo " ("${perc}"%)"
       done <sub_annexes.txt
   fi
 done
