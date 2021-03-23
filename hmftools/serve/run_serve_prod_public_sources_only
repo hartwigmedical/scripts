@@ -13,8 +13,8 @@ missing_doids_mapping_tsv=/data/common/dbs/serve/curation/missing_doids_mapping.
 
 ref_genome_version=37
 ref_genome_fasta_file=$(locate_ref_genome_37_fasta_file)
-driver_gene_tsv=$(locate_driver_gene_panel_tsv)
-known_fusion_file=$(locate_known_fusion_data_csv)
+driver_gene_tsv=$(locate_driver_gene_panel_37_tsv)
+known_fusion_file=$(locate_known_fusion_data_37_csv)
 
 output_dir=/data/common/dbs/serve/prod_output_public_only
 

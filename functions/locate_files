@@ -176,7 +176,7 @@ locate_vcftools() {
 
 #################################### Resources #####################################
 
-locate_driver_gene_panel_tsv() {
+locate_driver_gene_panel_37_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
 }
 
@@ -184,7 +184,7 @@ locate_driver_gene_panel_38_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg38.tsv
 }
 
-locate_known_fusion_data_csv() {
+locate_known_fusion_data_37_csv() {
     echo ${base_path}/dbs/fusions/known_fusion_data.csv
 }
 

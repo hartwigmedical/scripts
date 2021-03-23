@@ -11,9 +11,9 @@ ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
 ref_genome_37_to_38_chain=$(locate_ref_genome_37_to_38_chain)
 ref_genome_38_to_37_chain=$(locate_ref_genome_38_to_37_chain)
 
-driver_gene_37_tsv=$(locate_driver_gene_panel_tsv)
+driver_gene_37_tsv=$(locate_driver_gene_panel_37_tsv)
 driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
-known_fusion_37_file=$(locate_known_fusion_data_csv)
+known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 output_dir=/data/common/dbs/serve/pilot_output
