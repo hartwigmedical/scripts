@@ -180,8 +180,16 @@ locate_driver_gene_panel_tsv() {
     echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
 }
 
+locate_driver_gene_panel_38_tsv() {
+    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg38.tsv
+}
+
 locate_known_fusion_data_csv() {
     echo ${base_path}/dbs/fusions/known_fusion_data.csv
+}
+
+locate_known_fusion_data_38_csv() {
+    echo ${base_path}/dbs/fusions/known_fusion_data.38_v3.csv
 }
 
 locate_hotspot_vcf() {
