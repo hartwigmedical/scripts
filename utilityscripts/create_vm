@@ -9,6 +9,7 @@ main() {
 
   corecount="2"  # default argument
   disksize="200GB"  # default argument
+  vm_type="n1-standard"  # default argument
 
   UNRECOGNIZED=()
   while [[ $# -gt 0 ]]
@@ -24,6 +25,8 @@ main() {
         corecount="$1" && shift;;
       -d|--disksize)  # optional
         disksize="$1" && shift;;
+      -t|--type)  # optional
+        vm_type="$1" && shift;;
       *)
         UNRECOGNIZED+=("$1");;
     esac
@@ -39,7 +42,7 @@ main() {
     gcloud compute instances create "${name}" \
       --project="hmf-crunch" \
       --zone="europe-west4-a" \
-      --machine-type="n1-standard-${corecount}" \
+      --machine-type="${vm_type}-${corecount}" \
       --image-project="hmf-pipeline-development" \
       --image-family="base-image" \
       --boot-disk-size="${disksize}" \
@@ -52,7 +55,7 @@ main() {
     gcloud compute instances create "${name}" \
       --project="hmf-pipeline-development" \
       --zone="europe-west4-a" \
-      --machine-type="n1-standard-${corecount}" \
+      --machine-type="${vm_type}-${corecount}" \
       --image-project="hmf-pipeline-development" \
       --image-family="base-image" \
       --boot-disk-size="${disksize}" \
