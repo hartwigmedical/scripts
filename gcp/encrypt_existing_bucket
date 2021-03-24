@@ -5,6 +5,6 @@ KEY="projects/hmf-database/locations/europe-west4/keyRings/hmf-database/cryptoKe
 set -e
 
 [[ $# -ne 2 ]] && echo "USAGE: $0 [source_bucket] [project]" && exit 1
-
+source_bucket="gs://${1#gs://}"
 gsutil kms encryption -w -k $KEY ${source_bucket}
 gsutil -m rewrite -O -k ${source_bucket}/**
