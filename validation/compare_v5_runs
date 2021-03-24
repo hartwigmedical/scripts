@@ -7,14 +7,6 @@ base_run_path=$1
 test_run_path=$2
 logs_dir_path=$3
 
-tools=(amber bachelor chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss protect)
-
-base_pip_vsn_file="${base_run_path}/pipeline.version"
-test_pip_vsn_file="${test_run_path}/pipeline.version"
-
-base_meta_file="${base_run_path}/metadata.json"
-test_meta_file="${test_run_path}/metadata.json"
-
 if [[ "$#" -ne 3 ]]; then
     echo "-----"
     echo " Descr: Compares a selection of files from two Somatic pipeline runs"
@@ -23,103 +15,55 @@ if [[ "$#" -ne 3 ]]; then
     echo "-----"
     exit 1
 fi
-[[ -d "${base_run_path}" ]] || die "Directory not found (${base_run_path})"
-[[ -d "${test_run_path}" ]] || die "Directory not found (${test_run_path})"
-[[ -d "${logs_dir_path}" ]] || die "Directory not found (${logs_dir_path})"
-[[ -f "${base_pip_vsn_file}" ]] || die "File not found (${base_pip_vsn_file})"
-[[ -f "${test_pip_vsn_file}" ]] || die "File not found (${test_pip_vsn_file})"
+
+base_run_path=$(readlink -f "${base_run_path}")
+test_run_path=$(readlink -f "${test_run_path}")
+
+base_pip_vsn_file="${base_run_path}/pipeline.version"
+test_pip_vsn_file="${test_run_path}/pipeline.version"
+
+base_meta_file="${base_run_path}/metadata.json"
+test_meta_file="${test_run_path}/metadata.json"
 
 main () {
+    die_unless_dir_exists "${base_run_path}"
+    die_unless_dir_exists "${test_run_path}"
+    die_unless_dir_exists "${logs_dir_path}"
+
+    die_unless_file_exists "${base_pip_vsn_file}"
+    die_unless_file_exists "${test_pip_vsn_file}"
+    die_unless_file_exists "${base_meta_file}"
+    die_unless_file_exists "${test_meta_file}"
+
     base_pip_vsn=$(cat "${base_pip_vsn_file}")
     test_pip_vsn=$(cat "${test_pip_vsn_file}")
+    base_ref_sample=$(jq -r '.reference.sampleName' "${base_meta_file}")
+    test_ref_sample=$(jq -r '.reference.sampleName' "${test_meta_file}")
+    base_tum_sample=$(jq -r '.tumor.sampleName' "${base_meta_file}")
+    test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-    base_ref_sample_name=$(jq -r '.reference.sampleName' "${base_meta_file}")
-    test_ref_sample_name=$(jq -r '.reference.sampleName' "${test_meta_file}")
-    base_tum_sample_name=$(jq -r '.tumor.sampleName' "${base_meta_file}")
-    test_tum_sample_name=$(jq -r '.tumor.sampleName' "${test_meta_file}")
+    tool_dirs_to_check=(amber bachelor chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss protect)
+    files_to_diff=("protect/${test_tum_sample}.protect.tsv")
 
-    base_ref_cram="${base_run_path}/${base_ref_sample_name}/cram/${base_ref_sample_name}.cram"
-    test_ref_cram="${test_run_path}/${test_ref_sample_name}/cram/${test_ref_sample_name}.cram"
-    base_tum_cram="${base_run_path}/${base_tum_sample_name}/cram/${base_tum_sample_name}.cram"
-    test_tum_cram="${test_run_path}/${test_tum_sample_name}/cram/${test_tum_sample_name}.cram"
-    cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
+    print_header "Settings"
+    info "  LOGS DIR: ${logs_dir_path}"
+    info "  BASE DIR: ${base_run_path}"
+    info "  TEST DIR: ${test_run_path}"
+    info "  BASE version: ${base_pip_vsn}"
+    info "  TEST version: ${test_pip_vsn}"
+    info "  BASE sample: ${base_tum_sample}"
+    info "  TEST sample: ${test_tum_sample}"
 
-    header "Settings"
-    info "  Logs dir: ${logs_dir_path}"
-    info "  Base dir: ${base_run_path}"
-    info "  Test dir: ${test_run_path}"
-    info "  Base version: ${base_pip_vsn}"
-    info "  Test version: ${test_pip_vsn}"
-    info "  Base sample: ${base_tum_sample_name}"
-    info "  Test sample: ${test_tum_sample_name}"
+    [[ "${base_tum_sample}" == "${test_tum_sample}" ]] || die "Tumor sample names differ (not supported due to file naming)"
+    [[ "${base_ref_sample}" == "${test_ref_sample}" ]] || die "Reference sample names differ (not supported due to file naming)"
 
-    header "CRAM check"
-    for cram_file in ${cram_files[*]}; do
-        [[ -f "${cram_file}" ]] || warn "  File does not exist (${cram_file})"
-    done
+    base_ref_cram="${base_run_path}/${base_ref_sample}/cram/${base_ref_sample}.cram"
+    test_ref_cram="${test_run_path}/${test_ref_sample}/cram/${test_ref_sample}.cram"
+    base_tum_cram="${base_run_path}/${base_tum_sample}/cram/${base_tum_sample}.cram"
+    test_tum_cram="${test_run_path}/${test_tum_sample}/cram/${test_tum_sample}.cram"
 
-    base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
-    test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
-    samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
-    samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
-    if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
-        info "  OK Identical CRAM RG lines in headers"
-    else
-        warn "  DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
-    fi
-
-    header "DIRECTORY check"
-    for tool_name in ${tools[*]}; do
-        info "Checking directory $tool_name"
-        base_tool_path="${base_run_path}/${tool_name}"
-        test_tool_path="${test_run_path}/${tool_name}"
-        if [[ ! -d "${base_tool_path}" ]]; then
-            warn "  Tool directory does not exist in base so cannot compare (${base_tool_path})"
-        elif [[ ! -d "${test_tool_path}" ]]; then
-            warn "  Tool directory does not exist in test so cannot compare (${test_tool_path})"
-        else
-            # expect file/dir count to be equal excluding potential symlinks (-not -type l) and backup files (*.bak)
-            base_file_count=$(find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
-            test_file_count=$(find "$(readlink -f "${test_tool_path}")" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
-            if [[ ${base_file_count} -ne ${test_file_count} ]]; then
-                warn "  DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool directory (${tool_name})"
-            else
-                info "  OK Identical file count (${base_file_count}) for tool directory (${tool_name})"
-            fi
-
-            # vcf tbi gz log sh cram crai bam bai bak)
-            find "$(readlink -f "${base_tool_path}")" -mindepth 1 -maxdepth 1 -type f \
-                -not -name "*.cram" -not -name "*.crai" \
-                -not -name "*.bam" -not -name "*.bai" \
-                -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
-                -not -name "*.sh" -not -name "*.log" -not -name "*.bak" \
-            | while read -r base_file_path; do
-                file_name=$(basename "${base_file_path}");
-                file_path="${tool_name}/${file_name}"
-                test_file_path="${test_run_path}/${file_path}"
-                base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
-                test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
-                if [[ ${base_count} -eq ${test_count} ]]; then
-                    info "  OK Identical line count (${base_count}) for file (${file_path})"
-                else
-                    warn "  DIFFERENT line count (${base_count} vs ${test_count}) for file (${file_path})"
-                fi
-
-                # special handling of txt output files
-                if [[ "$base_file_path" =~ (csv|tsv|txt)$ ]]; then
-                    files_are_identical=$(diff --report-identical-files "$base_file_path" "$test_file_path")
-                    if [[ -n "$files_are_identical" ]]; then
-                        info "  OK Identical diff for file (${file_path})"
-                    else
-                        warn "  DIFFERENCES found for file (${file_path})"
-                    fi
-                fi
-            done
-        fi
-    done
-
-    test_grm_vcf=$(locate_gatk_germline_variants "${test_run_path}" "${test_ref_sample_name}")
-    base_grm_vcf=$(locate_gatk_germline_variants "${base_run_path}" "${base_ref_sample_name}")
+    test_grm_vcf=$(locate_gatk_germline_variants "${test_run_path}" "${test_ref_sample}")
+    base_grm_vcf=$(locate_gatk_germline_variants "${base_run_path}" "${base_ref_sample}")
       test_chord=$(locate_chord_prediction "${test_run_path}")
       base_chord=$(locate_chord_prediction "${base_run_path}")
     test_vir_ins=$(locate_linx_viral_insertions "${test_run_path}")
@@ -131,54 +75,176 @@ main () {
        test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")
        base_bach=$(locate_reportable_bachelor_variants "${base_run_path}")
 
-    all_base_files=(
-        "${base_grm_vcf}"
-        "${base_chord}"
-        "${base_vir_ins}"
-        "${base_som_var}"
-        "${base_sv_var}"
-        "${base_bach}"
-    )
+    all_cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
+    all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}" "${base_bach}")
+    all_test_files=("${test_grm_vcf}" "${test_chord}" "${test_vir_ins}" "${test_som_var}" "${test_sv_var}" "${test_bach}")
 
-    all_test_files=(
-        "${test_grm_vcf}"
-        "${test_chord}"
-        "${test_vir_ins}"
-        "${test_som_var}"
-        "${test_sv_var}"
-        "${test_bach}"
-    )
-
-    info "  Checking file existence"
-    for file in "${all_base_files[@]}" "${all_test_files[@]}"; do
-        [[ -f "${file}" ]] || die "  File does not exist ($file)"
+    print_header "REQUIRED FILES EXISTENCE check"
+    all_crams_present="TRUE"
+    for file in "${all_base_files[@]}" "${all_test_files[@]}" "${all_cram_files[@]}"; do
+        if [[ -f "${file}" ]]; then
+            info "  OK file found (${file})"
+        elif [[ "${file}" =~ .cram$ ]]; then
+            info_and_warn "  Expected CRAM not found (${file})"
+            all_crams_present="FALSE"
+        else
+            die "  File does not exist ($file)"
+        fi
     done
-    info "  OK All expected files found"
 
-    info "  Counting somatic small variants"
-    test_som_var_count=$(unpigz -c "${test_som_var}" | grep -cv ^#)
-    base_som_var_count=$(unpigz -c "${base_som_var}" | grep -cv ^#)
-    test_som_pass_var_count=$(unpigz -c "${test_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-    base_som_pass_var_count=$(unpigz -c "${base_som_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    print_header "CRAM print_header check"
+    if [[ "${all_crams_present}" == "TRUE" ]]; then
 
-    info "  Counting somatic structural variants"
-    test_sv_var_count=$(unpigz -c "${test_sv_var}" | grep -cv ^#)
-    base_sv_var_count=$(unpigz -c "${base_sv_var}" | grep -cv ^#)
-    test_sv_pass_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-    base_sv_pass_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-    test_sv_non_pon_var_count=$(unpigz -c "${test_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
-    base_sv_non_pon_var_count=$(unpigz -c "${base_sv_var}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+        base_header_file="${logs_dir_path}/cram_header_base_tum.txt"
+        test_header_file="${logs_dir_path}/cram_header_test_tum.txt"
+        samtools view -H "${base_tum_cram}" | grep '^@RG' > "${base_header_file}"
+        samtools view -H "${test_tum_cram}" | grep '^@RG' > "${test_header_file}"
+        if [[ $(diff "${base_header_file}" "${test_header_file}" | wc -l) -eq 0 ]]; then
+            info "  OK Identical CRAM RG lines in headers"
+        else
+            info_and_warn "  DIFFERENT CRAM RG lines in headers (see ${base_header_file} and ${test_header_file}"
+        fi
+    else
+        info "  NOTE: not all CRAMs were present so skipping CRAM specific checks"
+    fi
 
-    info "  Counting germline variants"
-    test_grm_var_count=$(unpigz -c "${test_grm_vcf}" | grep -cv ^#)
-    base_grm_var_count=$(unpigz -c "${base_grm_vcf}" | grep -cv ^#)
-    test_grm_pass_var_count=$(unpigz -c "${test_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-    base_grm_pass_var_count=$(unpigz -c "${base_grm_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
-    test_grm_var_count=0
-    base_grm_var_count=0
-    test_grm_pass_var_count=0
-    base_grm_pass_var_count=0
+    print_header "PER TOOL DIRECTORY check"
+    for tool_name in ${tool_dirs_to_check[*]}; do
+        check_tool_directory "${base_run_path}" "${test_run_path}" "${tool_name}"
+    done
 
+    print_header "FILE DIFF check (only for subset of files)"
+    for rel_file_path in ${files_to_diff[*]}; do
+        diff_file "${base_run_path}" "${test_run_path}" "${rel_file_path}"
+    done
+
+    print_header "TOOL VERSIONS check"
+    check_tool_versions_from_run_log "${base_run_path}" "${test_run_path}"
+
+    print_header "VCF VARIANT COUNT check"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.somatic.vcf.gz" "INCLUDE_ALL"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.somatic.vcf.gz" "ONLY_PASS"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.sv.vcf.gz" "INCLUDE_ALL"
+    diff_vcf "${base_run_path}" "${test_run_path}" "purple/${base_tum_sample}.purple.sv.vcf.gz" "NO_PON"
+    diff_vcf "${base_run_path}" "${test_run_path}" "${base_ref_sample}/germline_caller/${base_ref_sample}.germline.vcf.gz" "ONLY_PASS"
+
+    print_header "FILE CONTENTS prints"
+    info "CHORD file content"
+    awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
+    awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
+    info "LINX file content"
+    awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
+    awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
+    info "BACHELOR file content"
+    cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
+    cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
+
+    info "Finished with $(basename $0)"
+}
+
+diff_vcf () {
+    local base_run_path=$1 && shift
+    local test_run_path=$1 && shift
+    local rel_file_path=$1 && shift
+    local filter=$1 && shift
+
+    base_count=0
+    test_count=0
+
+    # prefix name with * to allow match in case of run path is absolute
+    base_vcf=$(find "${base_run_path}" -wholename "*${rel_file_path}")
+    test_vcf=$(find "${test_run_path}" -wholename "*${rel_file_path}")
+    die_unless_file_exists "${base_vcf}"
+    die_unless_file_exists "${test_vcf}"
+
+    if [[ "${filter}" == "INCLUDE_ALL" ]]; then
+        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | wc -l)
+        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | wc -l)
+    elif [[ "${filter}" == "ONLY_PASS" ]]; then
+        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | awk '$7 == "PASS"' | wc -l)
+    elif [[ "${filter}" == "NO_PON" ]]; then
+        base_count=$(unpigz -c "${base_vcf}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+        test_count=$(unpigz -c "${test_vcf}" | grep -v ^# | awk '$7 != "PON"' | wc -l)
+    else
+        die "Unknown filter (${filter})"
+    fi
+
+    if [[ "${base_count}" -eq "${test_count}" ]]; then
+        info "  OK Identical variant count (${base_count}) for VCF file (${rel_file_path}) using filter ${filter}"
+    else
+        info_and_warn "  DIFFERENT variant count (${base_count} vs ${test_count}) for VCF file (${rel_file_path}) using filter ${filter}"
+    fi
+}
+
+diff_file () {
+    local base_run_path=$1 && shift
+    local test_run_path=$1 && shift
+    local rel_file_path=$1 && shift
+
+    # prefix name with * to allow match in case of run path is absolute
+    base_file_path=$(find "${base_run_path}" -wholename "*${rel_file_path}")
+    test_file_path=$(find "${test_run_path}" -wholename "*${rel_file_path}")
+    [[ -n "${base_file_path}" ]] || die "NO ${rel_file_path} found in BASE run"
+    [[ -n "${test_file_path}" ]] || die "NO ${rel_file_path} found in TEST run"
+
+    diff_result=$(diff "$base_file_path" "$test_file_path" | wc -l)
+    if [[ "$diff_result" == 0 ]]; then
+        info "  OK Identical diff for file (${file_path})"
+    else
+        info_and_warn "  DIFFERENCES found for file (${file_path})"
+    fi
+}
+
+check_tool_directory () {
+    local base_run_path=$1 && shift
+    local test_run_path=$1 && shift
+    local tool_name=$1 && shift
+
+    info "Checking directory $tool_name"
+
+    base_tool_path="${base_run_path}/${tool_name}"
+    test_tool_path="${test_run_path}/${tool_name}"
+
+    if [[ ! -d "${base_tool_path}" ]]; then
+        info_and_warn "  Directory does not exist so cannot compare (${base_tool_path})"
+        return
+    elif [[ ! -d "${test_tool_path}" ]]; then
+        info_and_warn "  Directory does not exist so cannot compare (${test_tool_path})"
+        return
+    fi
+
+    # expect file/dir count to be equal excluding potential symlinks (-not -type l) and backup files (*.bak)
+    base_file_count=$(find "${base_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
+    test_file_count=$(find "${test_tool_path}" -mindepth 1 -maxdepth 1 -not -type l -not -name "*.bak" | wc -l)
+    if [[ ${base_file_count} -ne ${test_file_count} ]]; then
+        info_and_warn "  DIFFERENT file count (${base_file_count} vs ${test_file_count}) for tool directory (${tool_name})"
+    else
+        info "  OK Identical file count (${base_file_count}) for tool directory (${tool_name})"
+    fi
+
+    find "${base_tool_path}" -mindepth 1 -maxdepth 1 -type f \
+        -not -name "*.cram" -not -name "*.crai" \
+        -not -name "*.bam" -not -name "*.bai" \
+        -not -name "*.sh" -not -name "*.log" -not -name "*.bak" \
+        -not -name "*.vcf" -not -name "*.tbi" -not -name "*.gz" \
+    | while read -r base_file_path; do
+        file_name=$(basename "${base_file_path}");
+        file_path="${tool_name}/${file_name}"
+        test_file_path="${test_run_path}/${file_path}"
+        base_count=$(wc -l "${base_file_path}" | cut -d" " -f1)
+        test_count=$(wc -l "${test_file_path}" | cut -d" " -f1)
+        if [[ ${base_count} -eq ${test_count} ]]; then
+            info "  OK Identical line count (${base_count}) for file (${file_path})"
+        else
+            info_and_warn "  DIFFERENT line count (${base_count} vs ${test_count}) for file (${file_path})"
+        fi
+    done
+}
+
+check_tool_versions_from_run_log () {
+    local base_run_path=$1 && shift
+    local test_run_path=$1 && shift
     declare -A tool_names
     declare -A tool_versions
 
@@ -196,47 +262,30 @@ main () {
         tool_versions["${tool_name}_TEST"]="${tool_vsn}"
     done < <(awk '/Versions of tools/,/\]/' "${test_run_path}/run.log" | awk 'NR>2 {print last} {last=$0}' | cut -d" " -f5,6 | sed 's/ //g')
 
-    header "TOOL VERSIONS check"
-
     for tool_name in "${!tool_names[@]}"; do
         base_vsn=${tool_versions["${tool_name}_BASE"]}
         test_vsn=${tool_versions["${tool_name}_TEST"]}
         if [[ "${base_vsn}" == "${test_vsn}" ]]; then
             info "  OK identical tool version for tool ${tool_name} (${base_vsn})"
         elif [[ "${base_vsn}" == "" ]]; then
-            warn "  NEW tool ${tool_name} v${test_vsn} found"
+            info_and_warn "  NEW tool ${tool_name} v${test_vsn} found"
         else
-            warn "  DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
+            info_and_warn "  DIFFERENT version for tool ${tool_name} v${base_vsn} -> v${test_vsn}"
         fi
     done
-
-    header "VARIANT COUNT check"
-
-    info "GERMLINE file checks"
-    info "  Germline total variant count ${base_grm_var_count} (base) vs ${test_grm_var_count} (test)"
-    info "  Germline PASS variant count ${base_grm_pass_var_count} (base) vs ${test_grm_pass_var_count} (test)"
-
-    info "PURPLE file checks"
-    info "  PURPLE total variant count ${base_som_var_count} (base) vs ${test_som_var_count} (test)"
-    info "  PURPLE PASS variant count ${base_som_pass_var_count} (base) vs ${test_som_pass_var_count} (test)"
-    info "  PURPLE SV total variant count ${base_sv_var_count} (base) vs ${test_sv_var_count} (test)"
-    info "  PURPLE SV PASS variant count ${base_sv_pass_var_count} (base) vs ${test_sv_pass_var_count} (test)"
-    info "  PURPLE SV NON-PON variant count ${base_sv_non_pon_var_count} (base) vs ${test_sv_non_pon_var_count} (test)"
-
-    info "CHORD file content"
-    awk '{print "[INFO]   BASE: "$0}' "${base_chord}"
-    awk '{print "[INFO]   TEST: "$0}' "${test_chord}"
-
-    info "LINX file content"
-    awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
-    awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
-
-    info "BACHELOR file content"
-    cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
-    cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
 }
 
-header () {
+die_unless_dir_exists () {
+    dir_path=$1 && shift
+    [[ -d "${dir_path}" ]] || die "Directory not found (${dir_path})"
+}
+
+die_unless_file_exists () {
+    file_path=$1 && shift
+    [[ -f "${file_path}" ]] || die "File not found (${file_path})"
+}
+
+print_header () {
     info "===== $1 ====="
 }
 
