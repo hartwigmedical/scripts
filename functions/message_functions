@@ -10,30 +10,36 @@ msg() {
 }
 
 msg_with_caller() {
+    # caller = script from which function is called
     local msg_type=$1 && shift
     local msg_content=$* && shift
     echo "[${msg_type}] $(date +'%y%m%d %T') (${caller}) - ${msg_content}"
 }
 
-error() { # caller=YES STDERR=YES exit=YES
+error() {
     msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
-die() { # caller=YES STDERR=YES exit=YES
+die() {
     msg_with_caller "ERROR" "$@" >&2
     exit 1
 }
 
-debug() { # caller=YES STDERR=YES exit=NO
+debug() {
     msg_with_caller "DEBUG" "$@" >&2
 }
 
-warn() { # caller=NO STDERR=YES exit=NO
+warn() {
     msg "WARN" "$@" >&2
 }
 
-info() { # caller=NO STDERR=NO exit=NO
+info() {
     msg "INFO" "$@"
+}
+
+info_and_warn() {
+    msg "INFO" "$@"
+    msg "WARN" "$@" >&2
 }
 
