@@ -6,19 +6,5 @@ set -e
 
 [[ $# -ne 2 ]] && echo "USAGE: $0 [source_bucket] [project]" && exit 1
 
-source_bucket_name="${1#gs://}"
-source_bucket="gs://${source_bucket_name}"
-tmp_bucket_name="${source_bucket_name}_kms_tmp"
-tmp_bucket="gs://${tmp_bucket_name}"
-
-"$(dirname $0)/make_bucket" -n $tmp_bucket_name -p $2
-
-gsutil -m cp -r ${source_bucket}/* ${tmp_bucket}/
 gsutil kms encryption -w -k $KEY ${source_bucket}
-gsutil -m cp -r ${tmp_bucket}/* ${source_bucket}/
-
-echo "Encryption configuration on ${source_bucket}:"
-gsutil kms encryption ${source_bucket}
-
-echo "Round-trip copy complete."
-echo "Please inspect staging bucket ${tmp_bucket} and delete now if satisfied."
+gsutil -m rewrite -O -k ${source_bucket}/**
