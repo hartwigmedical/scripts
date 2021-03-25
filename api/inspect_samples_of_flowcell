@@ -1,0 +1,43 @@
+#!/bin/bash
+
+source message_functions || exit 1
+
+flowcell_id=$1 # full flowcell ID (not object ID)
+
+if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo "Usage: $(basename $0) <flowcell ID>"
+    echo "Exmpl: $(basename $0) HG3NHBGXF"
+    echo "---"
+    exit 1
+fi
+
+info "Searching flowcell by flowcell id ${flowcell_id}"
+flowcell="$(hmf_api_get "flowcells?flowcell_id=${flowcell_id}")"
+
+[[ $(echo "${flowcell}" | jq length) -eq 1 ]] || die "Unable to find exactly one flowcell with provided flowcell_id (${flowcell_id})"
+
+oid=$(echo "${flowcell}" | jq -r .[0].id)
+name=$(echo "${flowcell}" | jq -r .[0].name)
+status=$(echo "${flowcell}" | jq -r .[0].status)
+qc_status=$(echo "${flowcell}" | jq -r .[0].undet_rds_p_pass)
+info_string="${name}|${flowcell_id}|${status}|${qc_status}|${oid}"
+
+#[[ "${status}" == "Converted" ]] || die "Cannot qc pass flowcell because status is not 'Converted' (${info_string})"
+
+info "Retrieving samples for flowcell (${info_string})"
+samples=$(hmf_api_get "samples?flowcell_id=${oid}")
+sample_count=$(echo "${samples}" | jq 'length')
+info "Found $sample_count samples:"
+
+echo "${samples}" | jq -r '.[].barcode' | while read info; do
+    barcode=$(echo "${info}" | cut -f1)
+    name=$(echo "${info}" | cut -f2)
+    status=$(echo "${info}" | cut -f3)
+    all_runs=$(hmf_api_get "runs?barcode=$barcode")
+    val_runs=$(echo "$all_runs" | jq '[.[] | select(.status == "Validated")]')
+    all_count=$(echo "${all_runs}" | jq 'length')
+    val_count=$(echo "${val_runs}" | jq 'length')
+    info "  $barcode has $val_count Validated runs of $all_count total (name=$name|status=$status)"
+done < <(echo "${samples}" | jq -cr '.[] | [.barcode,.name,.status] | @tsv')
+
