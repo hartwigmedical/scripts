@@ -45,7 +45,11 @@ if [[ $( cat ${log_job} | grep "request_name_selection=" | wc -l ) >0 ]]; then
     request_nameX=$( cat ${log_job} | grep "request_name=" | cut -d "-" -f3,4,5 )
     dr_name_selection=$( cat ${log_job} | grep "dr_name_selection=" | cut -d "=" -f2 )
     request_name_selection=$( cat ${log_job} | grep "request_name_selection=" | cut -d "-" -f3,4,5 )
-    compare_metadata_datarequests -i ${dr_name} -s ${request_nameX} -j ${dr_name_selection} -t ${request_name_selection}
+    if [[ ${request_name_selection} == "" ]]; then
+        compare_metadata_datarequests -i ${dr_name} -s ${request_nameX} -j ${dr_name_selection}
+    else
+        compare_metadata_datarequests -i ${dr_name} -s ${request_nameX} -j ${dr_name_selection} -t ${request_name_selection}
+    fi
     echo ""
 fi
 
