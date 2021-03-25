@@ -22,35 +22,42 @@ my $SSHT_LOC = 'SampleSheet.csv';
 my $RXML_LOC = 'RunInfo.xml';
 my $JSON_LOC1 = 'Data/Intensities/BaseCalls/Stats/Stats.json';
 my $JSON_LOC2 = 'Fastq/Stats/Stats.json';
-my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission seq );
-my @SUM_FIELDS = qw( submission id name yld q30 seq );
-
-my $YIELD_FACTOR = 1e6;
-my $ROUND_DECIMALS = 0;
+my @OUT_FIELDS = qw( flowcell yld q30 pf yld_p mm0 mm1 id name submission index1 index2 );
+my @SUM_FIELDS = qw( submission id name yld q30 index1 index2 );
+my $ROUND_DECIMALS = 1; # Q30 with one decimal by default
 
 ## QC limits should be in sync with those from api (see: query_api.pl -type platforms)
-my %QC_LIMITS_PER_PLATFORM = (
+my %SETTINGS_PER_PLATFORM = (
     'NovaSeq' => {
+        'platform_name' => "NOVASEQ",
         'min_flowcell_q30' => 85,
         'min_sample_yield' => 1e9,
-        'max_undetermined' => 8
+        'max_undetermined' => 8,
+        'yield_factor'     => 1e6
     },
     'NextSeq' => {
+        'platform_name' => "NEXTSEQ",
         'min_flowcell_q30' => 75,
         'min_sample_yield' => 1e9,
-        'max_undetermined' => 50
+        'max_undetermined' => 50,
+        'yield_factor'     => 1e6
     },
     'ISeq' => {
+        'platform_name' => "ISEQ",
         'min_flowcell_q30' => 75,
         'min_sample_yield' => 1e9,
-        'max_undetermined' => 50
+        'max_undetermined' => 50,
+        'yield_factor'     => 1
     },
     'HiSeq' => {
+        'platform_name' => "HISEQ",
         'min_flowcell_q30' => 75,
         'min_sample_yield' => 1e9,
-        'max_undetermined' => 8
+        'max_undetermined' => 8,
+        'yield_factor'     => 1e6
     },
 );
+my @KNOWN_PLATFORMS = keys %SETTINGS_PER_PLATFORM;
 
 my $RUN_PATH;
 my $JSON_PATH;
@@ -71,8 +78,8 @@ my $HELP =<<HELP;
     
   Options
     -sep <s>               Output sep (default = <TAB>)
-    -yield_factor <i>      Factor to divide all yields with ($YIELD_FACTOR)
-    -round_decimals <i>    Factor to divide all yields with ($ROUND_DECIMALS)
+    -yield_factor <i>      Factor to divide all yields with (default present per platform)
+    -round_decimals <i>    Decimals to keep for q30 (default: $ROUND_DECIMALS)
     -samplesheet <s>       Path to SampleSheet.csv file
     -run_info_xml <s>      Path to RunInfo.xml file
     -json_out <s>          Path to output json file (only written if provided)
@@ -94,8 +101,8 @@ GetOptions (
   "run_info_xml=s"     => \$RXML_PATH,
   "json_out=s"         => \$OUT_JSON_PATH,
   "sep=s"              => \$OUT_SEP,
-  "yield_factor=i"     => \$YIELD_FACTOR,
   "round_decimals=i"   => \$ROUND_DECIMALS,
+  "yield_factor=i"     => \$opt{ yield_factor },
   "no_qc"              => \$opt{ no_qc },
   "summary"            => \$opt{ print_summary },
   "debug"              => \$opt{ debug },
@@ -120,12 +127,20 @@ $JSON_PATH = "$RUN_PATH/$JSON_LOC2" if not -f $JSON_PATH;
 
 my $seq_run = basename $RUN_PATH;
 my $ssht_info = readSampleSheet( $SSHT_PATH );
+
+## Need to make sure we know the exact platform
+my $platform = determinePlatformByString($ssht_info->{'platform'}, \@KNOWN_PLATFORMS);
+my $SETTINGS = $SETTINGS_PER_PLATFORM{$platform};
+$SETTINGS->{yield_factor} = $opt{yield_factor} if defined $opt{yield_factor};
+my $YIELD_FACTOR = $SETTINGS->{yield_factor};
+
 my $json_info = readJson( $JSON_PATH );
 my $rxml_info = readXml( $RXML_PATH );
 my $parsed_info = parseJsonInfo( $json_info, $rxml_info );
+$parsed_info->{stats}{platform} = $platform;
 
 addSamplesheetInfo( $parsed_info, $ssht_info, $seq_run );
-performQC( $parsed_info ) unless $opt{ no_qc };
+performQC( $parsed_info, $SETTINGS) unless $opt{ no_qc };
 
 if ( $opt{ print_summary } ){
     printSummaryTable( $parsed_info, \@SUM_FIELDS );
@@ -153,7 +168,6 @@ sub addSamplesheetInfo{
     my $hmf_runname = $ssht_info->{'runname'};
     $json_info->{ 'stats' }{ 'seq_runname' } = $seq_run;
     $json_info->{ 'stats' }{ 'hmf_runname' } = $hmf_runname;
-    $json_info->{ 'stats' }{ 'platform' } = $ssht_info->{'platform'};
     $json_info->{ 'stats' }{ 'submissions' } = {};
     
     ## override flowcell name with ExperimentName from SampleSheet
@@ -192,34 +206,32 @@ sub readJson{
     return( $json_obj );
 }
 
+sub determinePlatformByString {
+    my ($platform, $known_platforms) = @_;
+    my $final_platform = "";
+
+    ## exact platform string varies too much so try to match by regex
+    foreach my $known (@$known_platforms) {
+        if ($platform =~ m/^$known/i) {
+            $final_platform = $known;
+            say "## INFO: platform configured to $known (based on input '$platform')";
+        }
+    }
+
+    if ($final_platform eq "") {
+        die "[ERROR] Unable to determine platform from string ($platform)\n";
+    }
+    return $final_platform;
+}
+
 sub performQC{
-    my ($info) = @_;
+    my ($info, $qc_limits) = @_;
    
     my $stats = $info->{'stats'};
     my $samps = $info->{'samp'};
     my $lanes = $info->{'lane'};
     my $fails = 0;
-    
     my $identifier = $stats->{'identifier'};
-    my $platform = $stats->{'platform'};
-       
-    ## need to determine the exat platform for qc
-    my @known_platforms = keys %QC_LIMITS_PER_PLATFORM;
-    my $qc_limits = undef;
-
-    ## exact platform string varies too much so try to match by regex
-    foreach my $known_platform (@known_platforms){
-        if ($platform =~ m/^$known_platform/i ){
-            $platform = $known_platform;
-            say "## INFO: using QC limits for platform $known_platform (based on input '$platform')";
-            $qc_limits = $QC_LIMITS_PER_PLATFORM{ $platform } || die "[ERROR] no key '$platform'";
-        }
-    }
-
-    ## in case platform matching went wrong we have no limits set
-    if ( not defined $qc_limits ){
-        die "[ERROR] Unable to determine QC limits for platform string ($platform)\n";
-    }
 
     ## flowcell checks
     my $undet = $stats->{'undet_perc'};
@@ -283,7 +295,10 @@ sub parseJsonInfo{
         my $barcodes = $lane->{'Barcodes'};
         foreach my $barcode ( keys %$barcodes ){
             $info{ indx }{ $barcode }{ name } = 'IndexFromUnknown';
-            $info{ indx }{ $barcode }{ seq } = $barcode;
+            my $seq1 = (split(/\+/, $barcode))[0] || $NA_CHAR;
+            my $seq2 = (split(/\+/, $barcode))[1] || $NA_CHAR;
+            $info{ indx }{ $barcode }{ index1 } = $seq1;
+            $info{ indx }{ $barcode }{ index2 } = $seq2;
             $info{ indx }{ $barcode }{ yield } += $barcodes->{ $barcode };
         }
     }
@@ -328,16 +343,21 @@ sub parseJsonInfo{
             my $snm = $sample->{SampleName};
             my $seq = $sample->{IndexMetrics}[0]{IndexSequence} || $NA_CHAR;
 
+            my $seq1 = (split(/\+/, $seq))[0] || $NA_CHAR; # in case of one sample there is no first index
+            my $seq2 = (split(/\+/, $seq))[1] || $NA_CHAR; # in case of single index there is no second index
+
             ## Reset info for all real samples
             $info{samp}{ $sid }{name} = $snm;
-            $info{samp}{ $sid }{seq}  = $seq;
+            $info{samp}{ $sid }{index1}  = $seq1;
+            $info{samp}{ $sid }{index2}  = $seq2;
             
             my $reads = $sample->{ReadMetrics};
             foreach my $read ( @$reads ){
                 my $rid = join( "", "read", $read->{ReadNumber} );
                 $info{read}{ $rid }{name} = $rid;
                 $info{indx}{ $seq }{name} = 'IndexFromSample';
-                $info{indx}{ $seq }{seq}  = $seq;
+                $info{indx}{ $seq }{index1}  = $seq1;
+                $info{indx}{ $seq }{index2}  = $seq2;
                 
                 $info{flow}{ $fid }{yield} += $read->{Yield};
                 $info{lane}{ $lid }{yield} += $read->{Yield};
@@ -379,18 +399,20 @@ sub parseJsonInfo{
             $obj->{yld_p} = getPerc( $obj->{yield}, $info{flow}{ $fid }{yield} );
             $obj->{flowcell_print} = $fid;
 
-            $obj->{ 'q30_print' } = round( $obj->{ 'q30' } );
-            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, $ROUND_DECIMALS, $YIELD_FACTOR );
+            $obj->{ 'q30_print' } = round( $obj->{ 'q30' }, $ROUND_DECIMALS, 1 );
+            $obj->{ 'yld_print' } = round( $obj->{ 'yield' }, 0, $YIELD_FACTOR );
             $obj->{ 'id_print' } = $id;
             $obj->{ 'name_print' } = $obj->{ 'name' };
-            $obj->{ 'seq_print' } = $obj->{ 'seq' };
-            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' } );
+            $obj->{ 'index1_print' } = $obj->{ 'index1' };
+            $obj->{ 'index2_print' } = $obj->{ 'index2' };
+            $obj->{ 'yld_p_print' } = round( $obj->{ 'yld_p' }, $ROUND_DECIMALS, 1 );
             
             ## percentage filtered does not exist for samples
             if ( exists $obj->{ 'clust_pf' } ){
-                $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ) );
+                $obj->{'pf_print'} = round( getPerc( $obj->{'clust_pf'}, $obj->{'clust_raw'} ), $ROUND_DECIMALS );
             }
-            
+
+            ## some types do not have mismatch stats so skipping those from here
             next if $name =~ /read|UNDETERMINED/;
             next if $type eq "indx";
 
@@ -398,8 +420,8 @@ sub parseJsonInfo{
             $obj->{ 'mm0_print' } = 0;
             $obj->{ 'mm1_print' } = 0;
             if ( $obj->{ 'total_reads' } != 0 ){
-                $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ) );
-                $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ) );
+                $obj->{ 'mm0_print' } = round( getPerc( $obj->{ 'mm0' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
+                $obj->{ 'mm1_print' } = round( getPerc( $obj->{ 'mm1' }, $obj->{ 'total_reads' } ), $ROUND_DECIMALS );
             }
             
         }
@@ -408,8 +430,8 @@ sub parseJsonInfo{
     ## Collect some general stats/info
     my $undet_perc = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, $ROUND_DECIMALS, $YIELD_FACTOR ), 
+      round( $info{'flow'}{$fid}{'yield'}, 0, $YIELD_FACTOR ),
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, $YIELD_FACTOR ),
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'},
       $cycle_string,
@@ -591,7 +613,7 @@ sub round{
     if ( not defined $number ){
         return $NA_CHAR;
     }
-    $decimal = 1 unless defined $decimal;
+    $decimal = 0 unless defined $decimal;
     $factor = 1 unless defined $factor;
     my $rounded = sprintf("%.".$decimal."f", $number/$factor);
     return( $rounded );
