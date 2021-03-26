@@ -55,7 +55,7 @@ main() {
     done | sort -k9 >> "${out_log_path}"
     not_ready_count=$(grep -cv Yes_Ready "${out_log_path}")
     info "  Output: ${out_log_path}"
-    info "  NAS: http://intranet.hartwigmedicalfoundation.nl/${NAS_TARGET_DIR}/${out_log_name}"
+    info "  NAS: https://hmf-nas.synology.me/${NAS_TARGET_DIR}/${out_log_name}"
     info "  Amount of samples not ready: $not_ready_count"
     sshpass -p "$(cat "${NAS_PW_LOC}")" rsync -ah "${out_log_path}" "rsyncuser@nas:${NAS_TARGET_LOC}/"
     info "Finished with $(basename $0) for ${fc_name}"

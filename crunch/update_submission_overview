@@ -24,7 +24,7 @@ echo "[INFO] Starting task ${task_id} ($YYMMDD)"
 echo "[INFO]   Finding all submissions in ${ds_src_dir}"
 dirs_to_sync=$(find ${ds_src_dir} -mindepth 1 -maxdepth 1 -type d -regextype posix-extended -regex ".*/HMFreg[0-9]{4}$")
 
-echo "[INFO]   Syncing logs from datastore to NAS intranet (to ${nas_tgt_dir})"
+echo "[INFO]   Syncing logs from datastore to NAS (to ${nas_tgt_dir})"
 sshpass -p "$(cat ${pwd_loc})" rsync -ah \
   --omit-dir-times \
   --exclude "*/data/" \
@@ -43,7 +43,7 @@ sshpass -p "$(cat ${pwd_loc})" rsync -trh \
   "rsyncuser@nas:${nas_reports_source}/" \
   "${ds_reports_target}/"
 
-echo "[INFO]   Syncing back pdfs from Datastore to NAS intranet (to ${nas_reports_target})"
+echo "[INFO]   Syncing back pdfs from Datastore to NAS (to ${nas_reports_target})"
 sshpass -p "$(cat ${pwd_loc})" rsync -trh \
   --omit-dir-times \
   --include '*.pdf' \
