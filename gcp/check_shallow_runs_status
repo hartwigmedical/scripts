@@ -9,7 +9,7 @@ process_path="/data/gcp/shallow_runs"
 current_pipeline_version="5.21"
 
 echo "===== Running $(basename $0) ====="
-info "Checking ShallowSeq runs for pipeline v${current_pipeline_version} (${yymmdd})"
+info "Checking ShallowSeq runs for pipeline v${current_pipeline_version}"
 
 # Waiting runs have no version in API so filter on version later
 all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
