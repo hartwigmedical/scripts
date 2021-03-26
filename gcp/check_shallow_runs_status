@@ -1,62 +1,82 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 yymmdd=$(date +'%y%m%d')
-archive_path="/data/data_archive/shallow_seq_pipelines"
+reported_tsv="/data/ops/lims/prod/shallow_seq_purity.tsv"
 qcfail_path="/data/gcp/qc_fail_runs"
 process_path="/data/gcp/shallow_runs"
+current_pipeline_version="5.21"
 
-## query and store
-echo "## ShallowSeq Check (${yymmdd})"
-shallow_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
+echo "===== Running $(basename $0) ====="
+info "Checking ShallowSeq runs for pipeline v${current_pipeline_version} (${yymmdd})"
 
-echo "${shallow_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_sample] | @tsv' | while read -r line; do
+# Waiting runs have no version in API so filter on version later
+all_runs=$(hmf_api_get "runs?ini=ShallowSeq.ini")
+
+to_mention=() # gets comment msg appended
+to_process=() # gets actual processing commands appended
+
+while read -r line; do
     run_name=$(echo "${line}" | cut -f1)
     run_status=$(echo "${line}" | cut -f2)
-    tumor_sample=$(echo "${line}" | cut -f3)
+    tumor_name=$(echo "${line}" | cut -f3)
+    run_version=$(echo "${line}" | cut -f4)
 
-    if [[ "${run_name}" =~ ShallowTest|cancerPanel|HMFregVAL ]]; then 
+    barcode=$(echo "${run_name}" | cut -d"_" -f4)
+    reported=$(grep "${tumor_name}" "${reported_tsv}" | grep "${barcode}" | wc -l)
+
+    if [[ "${reported}" -gt 0 ]]; then
         continue
-    elif [[ -d "${archive_path}/${run_name}" ]]; then 
+    elif [[ "${run_name}" =~ ShallowTest|cancerPanel|HMFregVAL ]]; then
         continue
-    elif [[ -d "${qcfail_path}/${run_name}" ]]; then 
-        echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${qcfail_path})"
-    elif [[ -d "${process_path}/${run_name}" ]]; then 
-        echo "## DOWNLOADED: ${run_name} (status=${run_status}, location=${process_path})"
+    elif [[ "${run_status}" == "Deleted" ]]; then
+        continue
+    elif [[ -d "${qcfail_path}/${run_name}" ]]; then
+        to_mention+=("DOWNLOADED ${run_name} found in ${qcfail_path}")
+    elif [[ -d "${process_path}/${run_name}" ]]; then
+        to_mention+=("DOWNLOADED ${run_name} found in ${process_path}")
+    elif [[ "${run_status}" == "Waiting" ]]; then
+        to_mention+=("WAITING: ${run_name} (status=${run_status})")
+    elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
+        to_mention+=("PROCESSING: ${run_name} (status=${run_status})")
+    elif [[ -n "${run_version}" && "${run_version}" != "${current_pipeline_version}" ]]; then
+        continue
+    elif [[ "${run_status}" == "Failed" ]]; then
+        to_mention+=("FAILED ${run_name} (status=${run_status})")
+    elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
+        to_process+=(" process_shallow_run ${run_name} # (status=${run_status})")
     else
-        if [[ "${run_status}" == "Deleted" ]]; then
-            continue
-        elif [[ "${run_status}" =~ Failed ]]; then
-            sample_archive_count=$(find "${archive_path}" -mindepth 1 -maxdepth 1 -type d -name "*_${tumor_sample}" | wc -l)
-            if [[ "${sample_archive_count}" -gt 0 ]]; then 
-                continue
-            else 
-                echo "## FAILED: ${run_name} (status=${run_status})"
-            fi
-        elif [[ "${run_status}" =~ ^(Waiting)$ ]]; then
-            echo "## WAITING: ${run_name} (status=${run_status})"
-        elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
-            echo "## PROCESSING: ${run_name} (status=${run_status})"
-        elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
-            echo " process_shallow_run ${run_name} # (status=${run_status})"
-        else 
-            echo "## UNKNOWN status for run: ${run_name} (status=${run_status})"
-        fi
+        to_mention+=("UNKNOWN status for run: ${run_name} (status=${run_status})")
     fi
-done | sort
+done < <(echo "${all_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_name,.version] | @tsv')
 
-job_name="${yymmdd}_process_shallow_runs"
-job_file="/data/ops/jobs/${job_name}"
-log_file="/data/ops/job_logs/${job_name}"
+process_count="${#to_process[*]}"
+mention_count="${#to_mention[*]}"
 
-write_job_cmd="$(basename $0) > ${job_file} && chmod +x ${job_file}"
-execute_job_cmd="nohup ${job_file} > ${log_file} &"
+info "Found ${mention_count} runs to mention and ${process_count} to process"
+if [[ "${mention_count}" -gt 0 ]]; then
+    printf '[INFO] %s\n' "${to_mention[@]}" | sort
+fi
 
-echo "## ---"
-echo "## Potential followup steps to process ready runs:"
-echo "## Create job: ${write_job_cmd}"
-echo "##    Run job: ${execute_job_cmd}"
+if [[ "${process_count}" -gt 0 ]]; then
+    job_name="${yymmdd}_${USER}_process_shallow_runs"
+    job_file="/data/ops/jobs/${job_name}"
+    log_file="/data/ops/job_logs/${job_name}"
 
-if [[ -f "${job_file}" ]]; then
-    echo "## WARNING: job file already exists (${job_file})"
+    if [[ -f "${job_file}" ]]; then
+        warn "Overwriting job file (${job_file})"
+    fi
+    echo "# ShallowSeq processing ${yymmdd} (${process_count} to process)" > "${job_file}"
+    printf ' %s\n' "${to_process[@]}" | sort >> "${job_file}"
+    chmod +x "${job_file}"
+    execute_job_cmd="nohup ${job_file} > ${log_file} &"
+
+    info "Check the job file (${job_file})"
+    info "Or start processing with:"
+    echo "  ${execute_job_cmd}"
+    if [[ -f "${log_file}" ]]; then
+        warn "log file already exists (${log_file})!!!!"
+    fi
 fi
 
