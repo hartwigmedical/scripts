@@ -92,7 +92,7 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
                 slack_info "Registering new flowcell in API (${flowcell_info})"
                 hmfapi POST "${api_url}/hmf/v1/flowcells" name="${experiment_name}" sequencer="${sequencer}" index="${index}" flowcell_id="${flowcell_id}" status=Sequencing > /dev/null;
             else
-                msg "Unable to POST flowcell because name already exists in API (${flowcell_info})!"
+                msg="Unable to POST flowcell because name already exists in API (${flowcell_info})!"
                 echo "[WARN] ${msg}"
                 slack_warn "${msg}"
             fi
@@ -114,7 +114,7 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
     slack_info "Starting BCL upload (${flowcell_info})"
     gs_path="gs://${bucket}/${flowcell_name}"
     gcloud auth activate-service-account --key-file "${gcp_cred}"
-    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
+    gsutil -m -o GSUtil:parallel_process_count=7 -o GSUtil:parallel_thread_count=1 rsync -r -x ".*Fastq.*|.*Logs.*|.*Images.*|.*Config.*|.*PeriodicSaveRates.*|.*fastq\.gz|.*BaseCalls/[^L].*" "${flowcell_path}" "${gs_path}"
     if [[ $? -ne 0 ]]; then
         msg="Something went wrong with BCL upload of '${flowcell_path}' (${flowcell_info})"
         echo "[WARN] ${msg}"
