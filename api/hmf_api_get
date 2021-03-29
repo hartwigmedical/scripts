@@ -41,8 +41,9 @@ main () {
         rm "${tmp_err}"
         exit 0
     else
-        # if still not ok: retrieve error and quit
+        # if still not ok: append request to error log and quit
         err_msg=$(cat "${tmp_err}")
+        info "API request that failed: ${request}" >>"${tmp_err}"
         die "GET query '${api_query}' failed (${err_msg})"
     fi
 }
