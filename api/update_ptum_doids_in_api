@@ -47,25 +47,25 @@ main () {
         samples_visited=$((samples_visited+1))
 
         if [[ "${count}" -eq 0 ]]; then
-            warn "  SKIPPING ${sample_info}: patient ID missing in file (${doid_file})"
+            warn "SKIPPING: patient ID missing in file (${doid_file}) for ${sample_info}"
+        elif [[ "${count}" -gt 1 ]]; then
+            warn "SKIPPING: multiple matches in doid file (${doid_file}) for ${sample_info}"
         elif [[ "${count}" -eq 1 ]]; then
             file_doids=$(get_doids "${patient}")
             file_doids=$(sort_csv_string "${file_doids}")
             if [[ "${file_doids}" == "" ]]; then
-                warn "  SKIPPING ${sample_info}: no doids in file (${doid_file})"
+                warn "SKIPPING: no doids present in file (${doid_file}) for ${sample_info}"
             elif [[ "${file_doids}" == "${api_doids}" ]]; then
-                info "  SKIPPING ${sample_info}: file doids identical to api content"
+                info "SKIPPING: identical doids for ${sample_info}"
             else
-                info "OK ${sample_info}: doid update ('${api_doids}' to '${file_doids}')"
+                info "OK: doid update possible ('${api_doids}' to '${file_doids}') for ${sample_info}"
                 echo "echo '[INFO] Updating ${sample_info}'" >> "${job_file}"
                 # The -e allows execution without pressing a key
                 echo "hmf_api_patch -e -c samples -o '${api_id}' -f primary_tumor_doids -v '${file_doids}'" >> "${job_file}"
                 samples_to_update=$((samples_to_update+1))
             fi
-        elif [[ "${count}" -gt 1 ]]; then
-            warn "  SKIPPING ${sample_info}: multiple matches in doid file (${doid_file})"
         else
-            die "Impossible state in if/else: check script!"
+            die "Impossible state reached in if/else: check conditions!"
         fi
     done < <(echo "$samples_json" | jq -cr '.[] | [.barcode,.name,.id,(.primary_tumor_doids | join(","))] | @tsv')
 
@@ -74,7 +74,7 @@ main () {
         echo "echo '[INFO] Finished with patching primary_tumor_doids'" >> "${job_file}"
         info "Making job file executable (${job_file})"
         chmod +x "${job_file}"
-        info "TODO: Check ${job_file} and execute patch update with:"
+        info "TODO: Check ${job_file} and execute patches with:"
         info "  nohup ${job_file} > ${log_file} &"
     fi
 }
