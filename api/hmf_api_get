@@ -35,12 +35,14 @@ main () {
         api_curl "${request}" 2>"${tmp_err}"
     fi
 
-    # if second try also fails: give up
+    # second try
     if [[ $? -eq 0 ]]; then
+        # if ok: remove earlier error log and proceed
+        rm "${tmp_err}"
         exit 0
     else
-        err_msg=$(cat ${tmp_err})
-        rm "${tmp_err}"
+        # if still not ok: retrieve error and quit
+        err_msg=$(cat "${tmp_err}")
         die "GET query '${api_query}' failed (${err_msg})"
     fi
 }
