@@ -44,8 +44,6 @@ main () {
         patient=${api_name:0:12}
         count=$(grep -cP "^${patient}" "${doid_file}")
         sample_info="${api_barcode} (name:${api_name} id:${api_id})"
-
-        info "Checking ${sample_info}"
         samples_visited=$((samples_visited+1))
 
         if [[ "${count}" -eq 0 ]]; then
