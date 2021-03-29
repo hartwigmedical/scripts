@@ -130,7 +130,7 @@ $proc_objs = parseTsvCsv( $proc_objs, $name_dict->{'PROC_CURR'}, 'sample_id',  0
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2018'}, 'submission', 0, $SUBM_TSV_2018, "\t" );
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2019'}, 'submission', 0, $SUBM_TSV_2019, "\t" );
-$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
+$subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_2020'}, 'submission', 0, $SUBM_TSV_2020, "\t" );
 
 $subm_objs = parseTsvCsv( $subm_objs, $name_dict->{'SUBM_CURR'}, 'submission', 0, $FOR_001_SUBM_TSV, "\t" );
 $cont_objs = parseTsvCsv( $cont_objs, $name_dict->{'CONT_CURR'}, 'group_id',   1, $FOR_001_CONT_TSV, "\t" );
@@ -1023,6 +1023,19 @@ sub getFieldNameTranslations{
     );
 
     ## columns shipments sheet in rest lims (FOR-001)
+    my %SUBM_DICT_2020 = (
+        "Arrival_date"      => 'arrival_date',
+        "Project_name"      => 'project_name',
+        "HMF_reg"           => 'submission',
+        "Requested_product" => 'request',
+        "Product_category"  => 'project_type',
+        "Sample_count"      => 'sample_count',
+        "Lab_is_finished"   => 'has_lab_finished',
+        "Group_ID"          => 'group_id',
+        "Remarks"           => 'remarks',
+    );
+
+    ## columns shipments sheet in rest lims (FOR-001)
     my %SUBM_DICT = (
         "Arrival_date"      => 'arrival_date',
         "Project_name"      => 'project_name',
@@ -1149,6 +1162,7 @@ sub getFieldNameTranslations{
     my %translations = (
         'CONT_CURR' => \%CONT_DICT,
         'SUBM_CURR' => \%SUBM_DICT,
+        'SUBM_2020' => \%SUBM_DICT_2020,
         'SUBM_2019' => \%SUBM_DICT_2019,
         'SUBM_2018' => \%SUBM_DICT_2018,
         'SAMP_CURR' => \%SAMP_DICT,
