@@ -16,11 +16,11 @@ printf "#%s\t%s\t%s\t%s\t%s\t%s\n" \
     "sample_count"
 
 # process submissions one by one
-echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample_count,.analysis_type] | @tsv' | while read line; do
+echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample_count,.analysis_type] | @tsv' | while read -r line; do
     submission=$(echo "${line}" | cut -f1)
     project=$(echo "${line}" | cut -f2)
     cohort=$(echo "${line}" | cut -f3)
-    scount=$(echo "${line}" | cut -f4)
+    sample_count=$(echo "${line}" | cut -f4)
     analysis=$(echo "${line}" | cut -f5)
     details=""
 
@@ -31,9 +31,15 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
         cohort="NONHUM-RES"
     elif [[ "${cohort}" == "KG production" ]]; then
         cohort="KG"
+    elif [[ "${cohort}" == "Cohort" ]]; then
+        if [[ "${project}" =~ ^DRUP ]]; then
+            cohort="DRUP-STAGE3"
+        else
+            cohort="UnknownCohort"
+        fi
     elif [[ "${cohort}" == "CORE" ]]; then
         analysis="SomaticAnalysis"
-        scount=1 # For CORE we only add the tumor sample to SampleOverview
+        sample_count=1 # For CORE we only add the tumor sample to SampleOverview
         sample_json=$(query_lims.pl -type samples -filter "submission=${submission}" -filter "analysis_type=Somatic_T" -json)
         if [[ $(jq 'length' <<< "$sample_json") -gt 0 ]]; then
             sample_name=$(echo "${sample_json}" | jq -r '.[-1].sample_name')
@@ -54,5 +60,5 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
         "${cohort}" \
         "${details}" \
         "${analysis}" \
-        "${scount}"
+        "${sample_count}"
 done
