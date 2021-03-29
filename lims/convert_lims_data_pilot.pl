@@ -1032,6 +1032,7 @@ sub getFieldNameTranslations{
         "Sample_count"      => 'sample_count',
         "Lab_is_finished"   => 'has_lab_finished',
         "Group_ID"          => 'group_id',
+        "Total_yield_required" => 'total_yield_required',
         "Remarks"           => 'remarks',
     );
 
