@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source message_functions || exit 1
+
 submission=$1
 
 if [[ -z "${submission}" ]]; then
@@ -9,12 +11,12 @@ fi
 submission_dir="/data/submissions/${submission}"
 sop_regex='QC[0-9]+V[0-9]+-SEQ[0-9]+V[0-9]+'
 
-lms_sub_jsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -exact -json)
+lms_sub_jsn=$(query_lims.pl -type submissions -filter "submission=${submission}" -exact -json | jq '.[-1]')
 lms_smp_jsn=$(query_lims.pl -type samples -filter "submission=${submission}" -json)
 api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -filter "status!=Unregistered" -json)
 api_rns_jsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
 
-analysis_type=$(echo "${lms_sub_jsn}" | jq -r ".[].analysis_type" )
+analysis_type=$(echo "${lms_sub_jsn}" | jq -r ".analysis_type" )
 smp_lms_tot=$(echo "${lms_smp_jsn}" | jq 'length')
 smp_api_tot=$(echo "${api_smp_jsn}" | jq 'length')
 rns_api_tot=$(echo "${api_rns_jsn}" | jq 'length')
@@ -24,29 +26,52 @@ smp_api_rdy=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Ready")] | 
 rns_api_rdy=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="Finished")] | length')
 rns_api_val=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated")] | length')
 
-echo "[INFO] Output type for ${submission} in lims is \"${analysis_type}\""
-echo "[INFO] ${smp_lms_tot} LMS samples total (of which ${smp_lms_err} failed)"
-echo "[INFO] ${smp_api_tot} BFX samples total"
-echo "[INFO] ${smp_api_rdy} BFX samples ready"
-echo "[INFO] ${rns_api_tot} BFX runs total"
-echo "[INFO] ${rns_api_rdy} BFX runs finished"
-echo "[INFO] ${rns_api_val} BFX runs validated"
+info "Output type for ${submission} in lims is \"${analysis_type}\""
+info "${smp_lms_tot} LMS samples total (of which ${smp_lms_err} failed)"
+info "${smp_api_tot} BFX samples total"
+info "${smp_api_rdy} BFX samples ready"
+info "${rns_api_tot} BFX runs total"
+info "${rns_api_rdy} BFX runs finished"
+info "${rns_api_val} BFX runs validated"
 echo ""
-echo "[INFO] Inspect further:"
+
+info "Commands for further inspection:"
 echo "  query_lims.pl -type samples -filter submission=${submission}"
 echo "  query_api.pl -type samples -filter submission=${submission}"
 echo "  query_api.pl -type runs -filter name=${submission}"
 echo ""
-echo "[INFO] Or gather submission if all is ready and ok:"
-echo "  gather_submission ${submission}"
-echo ""
 
-## print warnings last
-if [[ -d "${submission_dir}" ]]; then echo "[WARN] Submission directory already exists (${submission_dir})"; fi
+## check that submission has not already been processed
+warnings_found="FALSE"
+if [[ -d "${submission_dir}" ]]; then
+    warn "Submission directory already exists (${submission_dir})"
+    warnings_found="TRUE"
+fi
+
+## check that all samples have valid SOP string
 if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then echo "[WARN] Not all runs in API are status Validated!"; fi
 echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed") | .lab_sop_versions' | while read smp_sop_str; do
     ## Note to self: no quoted regex since bash 3.2
     if [[ ! "${smp_sop_str}" =~ ${sop_regex} ]]; then
-        echo "[WARN] Found sample with incomplete SOP string (${smp_sop_str} does not match ${sop_regex})!"
+        warn "Found sample with incomplete SOP string (${smp_sop_str} does not match ${sop_regex})!"
+        warnings_found="TRUE"
+        continue
     fi
 done
+
+## check for total yield if present at submission object in lims
+required_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") then .total_yield_required else 0 end' )
+samples=$(hmf_api_get "samples?submission=${submission}")
+measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready") | .yld] | add')
+measured_yield_gbase=$((measured_yield / 1000000000))
+if [[ "${measured_yield_gbase}" -lt "${required_yield}" ]]; then
+    warn "TOTAL YIELD INSUFFICIENT: Submission requires ${required_yield} GBase but only has ${measured_yield_gbase} GBase!"
+    warnings_found="TRUE"
+fi
+
+## If all OK print cmd to process further
+if [[ "${warnings_found}" == "FALSE" ]]; then
+    info "Or gather submission if all is ready and ok:"
+    echo "  gather_submission ${submission}"
+    echo ""
+fi
