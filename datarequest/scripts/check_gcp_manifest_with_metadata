@@ -52,11 +52,11 @@ csvcut -t -e iso-8859-1 -c 'sampleId' ${metadata_tsv}  | csvformat -T | tail -n 
 #csvcut -t -e iso-8859-1 -c 'sampleId' ${rna_ind_tsv}  | csvformat -T | tail -n +2 | sort | uniq > temp_GCP_check/sampleId_metadata_rna.tsv
 
 ### now ids from API, although not ideal
-hmf_api_get runs?ini=Rna.ini | jq -rc '.[] | [.set.tumor_sample, .bucket] | @tsv' | grep -v hmf-fastq-rna |  cut -f1 | grep -v null  | sed 's/\(^............\).*/\1/' | sort | uniq > temp_GCP_check/temp.tsv
+hmf_api_get runs?ini=Rna.ini | jq -rc '.[] | select(.status=="Finished") | [.set.tumor_sample, .bucket] | @tsv' | grep -v hmf-fastq-rna |  cut -f1 | grep -v null  | sed 's/\(^............\).*/\1/' | sort | uniq > temp_GCP_check/temp.tsv
 comm -1 -2 <(sort temp_GCP_check/patientId_metadata.tsv) <(sort temp_GCP_check/temp.tsv)  > temp_GCP_check/patientId_metadata_rna.tsv
 rm temp_GCP_check/temp.tsv
 #
-hmf_api_get runs?ini=Rna.ini | jq -rc '.[] | [.set.tumor_sample, .bucket] | @tsv' | grep -v hmf-fastq-rna |  cut -f1 | grep -v null  | sort | uniq > temp_GCP_check/temp.tsv
+hmf_api_get runs?ini=Rna.ini | jq -rc '.[] | select(.status=="Finished") | [.set.tumor_sample, .bucket] | @tsv' | grep -v hmf-fastq-rna |  cut -f1 | grep -v null  | sort | uniq > temp_GCP_check/temp.tsv
 comm -1 -2 <(sort temp_GCP_check/sampleId_metadata.tsv) <(sort temp_GCP_check/temp.tsv)  > temp_GCP_check/sampleId_metadata_rna.tsv
 rm temp_GCP_check/temp.tsv
 
