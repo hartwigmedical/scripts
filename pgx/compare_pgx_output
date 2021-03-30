@@ -1,0 +1,65 @@
+#!/usr/bin/env bash
+
+original=false
+skip_vcf=false
+
+while [[ $# -gt 0 ]]
+do
+key=$1 && shift
+case $key in
+    -o|--original)
+    original=true
+    ;;
+    -s|--skip-vcf)
+    skip_vcf=true
+    ;;
+    *)    # unknown option
+    OTHER_OPTIONS+=("$key") # save it in an array for later
+    ;;
+esac
+done
+
+echo "RUN PGX PILOT"
+
+if [ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]; then
+    echo "[ERROR] Unrecognized options! : ${OTHER_OPTIONS[*]}"
+    exit 1
+fi
+
+base_dir="/data/experiments/pharmagenomics/test_runs"
+echo "Subdirs: $(ls "${base_dir}")"
+
+ls "${base_dir}" | xargs -n 1 -P 10 -I {} ~/repos/scripts/pgx/run_pgx_pilot "${base_dir}"/{}
+
+echo "COMPARE PGX OUTPUT"
+for subdir in "${base_dir}"/*
+do
+    echo "Comparing for ${subdir}"
+    output_dir="${subdir}/pgx_pilot"
+
+    if [ ${original} = true ] ; then
+        control_dir="/data/cpct/runs/$(basename "${subdir}")/pgx_pilot"
+    else
+        control_dir="${subdir}/pgx_pilot_control"
+    fi
+
+    echo "Comparing ${output_dir} to ${control_dir}"
+
+    if ${skip_vcf}; then
+      ls_ignore="*.vcf"
+    else
+      ls_ignore="*.very_fake_name"
+    fi
+    file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u )
+    for file_name in $(echo ${file_names})
+    do
+        echo "Diff for ${file_name}"
+        actual_file="${output_dir}/${file_name}"
+        control_file="${control_dir}/${file_name}"
+        [[ -f "${actual_file}" ]] || echo "[ERROR] Cannot find file ${actual_file}"
+        [[ -f "${control_file}" ]] || echo "[ERROR] Cannot find file ${control_file}"
+        diff "${actual_file}" "${control_file}"
+    done
+done
+
+echo "DONE"
