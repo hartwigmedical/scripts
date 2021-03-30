@@ -15,12 +15,10 @@ pgx_base_dir=$(locate_pgx_dir)
 # START VIRTUAL ENV
 source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
-echo $MYPYPATH
-
 export PYTHONPATH="${PYTHONPATH}:${pgx_base_dir}/src/"
 export MYPYPATH="${MYPYPATH}:${pgx_base_dir}/src/"
 
-python -m unittest discover --verbose --start-directory "${pgx_base_dir}" || die "Some PGX tests failed"
+python -m unittest discover --buffer --verbose --start-directory "${pgx_base_dir}" || die "Some PGX tests failed"
 
 info "PGX tests succeeded"
 

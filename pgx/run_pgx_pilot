@@ -21,15 +21,16 @@ output_dir=${run_dir}/pgx_pilot
 
 version_pgx_tool=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')
 
-ref_sample=$(load_ref_sample_from_metadata "${run_dir}")
-tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}")
+ref_sample=$(load_ref_sample_from_metadata "${run_dir}") || die "Could not get ref sample from metadata"
+tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
 
 if [[ -d "${output_dir}" ]]; then
     info "PGX pilot dir exist. PGX dir will first be removed and then be replaced"
     rm -r "${output_dir}" || die "Could not remove existing PGX pilot dir"
 fi
 
-germline_vcf=$(locate_gatk_germline_variants "${run_dir}" "${ref_sample}")
+germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}") || die "Could not get germline vcf path"
+# germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
 
 # REFERENCES
 pgx_tool=$(locate_pgx_main)
