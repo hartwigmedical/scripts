@@ -19,14 +19,13 @@ class GeneInfo(object):
         assert_no_overlap_haplotype_names(haplotypes, f"gene info for {gene}")
         assert_no_overlap_haplotype_variant_combinations(haplotypes, f"gene info for {gene}")
         assert_no_overlap_drug_names(drugs, f"GeneInfo json for {gene}")
+        self.__assert_rs_id_infos_compatible(rs_id_infos)
+        self.__assert_rs_id_infos_match_chromosome(rs_id_infos, chromosome)
         self.__assert_info_exists_for_all_rs_ids_in_haplotypes(haplotypes, rs_id_infos)
         self.__assert_variants_in_haplotypes_compatible_with_rs_id_infos(haplotypes, rs_id_infos)
         self.__assert_rs_ids_with_ref_seq_differences_match_annotations(
             rs_id_infos, rs_id_to_ref_seq_difference_annotation
         )
-        self.__assert_rs_id_infos_compatible(rs_id_infos)
-        self.__assert_rs_id_infos_match_chromosome(rs_id_infos, chromosome)
-        self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(rs_id_infos)
 
         self.__gene = gene
         self.__chromosome = chromosome
@@ -101,7 +100,9 @@ class GeneInfo(object):
         gene = str(data['gene'])
         chromosome = str(data['chromosome'])
         reference_allele = str(data["referenceAllele"])
-        rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json, chromosome) for rs_id_info_json in data["variants"]})
+        rs_id_infos = frozenset({
+            RsIdInfo.from_json(rs_id_info_json, chromosome) for rs_id_info_json in data["variants"]
+        })
         haplotypes = frozenset({Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]})
         drugs = frozenset({DrugInfo.from_json(drug_json) for drug_json in data["drugs"]})
         rs_id_to_ref_seq_difference_annotation = {
@@ -193,24 +194,15 @@ class GeneInfo(object):
                 raise ValueError(error_msg)
 
     @staticmethod
-    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(rs_id_infos: FrozenSet[RsIdInfo]) -> None:
-        for rs_id_info in rs_id_infos:
-            if rs_id_info.start_coordinate_grch37.chromosome != rs_id_info.start_coordinate_grch38.chromosome:
-                error_msg = (
-                    f"Panel only supports rs ids where the GRCh37 and GRCh38 positions are on the same chromosome."
-                )
-                raise ValueError(error_msg)
-
-    @staticmethod
     def __assert_variants_in_haplotypes_compatible_with_rs_id_infos(
             haplotypes: FrozenSet[Haplotype], rs_id_infos: FrozenSet[RsIdInfo]) -> None:
         variants = {variant for haplotype in haplotypes for variant in haplotype.variants}
         for variant in variants:
             matching_rs_id_infos = [rs_id_info for rs_id_info in rs_id_infos if rs_id_info.rs_id == variant.rs_id]
-            if len(matching_rs_id_infos) != 1:
-                error_msg = (f"Unexpected number of rs id infos match rs id with variant from haplotype:\n"
-                             f"variant={variant}, matches={matching_rs_id_infos}")
-                raise ValueError(error_msg)
+            assert len(matching_rs_id_infos) == 1, (
+                f"Unexpected number of rs id infos match rs id with variant from haplotype:\n"
+                f"variant={variant}, matches={matching_rs_id_infos}"
+            )
             if variant.variant_allele == matching_rs_id_infos[0].reference_allele_grch38:
                 error_msg = (f"Allele of variant matches reference allele from rs id info:\n"
                              f"variant={variant}, rs_id_info={matching_rs_id_infos[0]}")

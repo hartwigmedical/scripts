@@ -975,7 +975,6 @@ class TestPgxAnalysis(unittest.TestCase):
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
-    # @unittest.skip("WIP")
     def test_unresolved_haplotype_because_mnv_covers_snv_starting_there(self) -> None:
         """Unresolved haplotype because MNV covers where SNV was expected, where MNV starts at this location"""
         panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
@@ -1014,6 +1013,9 @@ class TestPgxAnalysis(unittest.TestCase):
         #       Fix missing intron variant
         #       Test more broadly whether this works and gives expected calls and haplotypes.
         #           How?
+        #           Focus on validation samples, and whether we still get those outcomes
+        #               Use full DPYD panel and check whether full calls are the same as in the validation
+        #               Use SOC panel and check whether calls are directly the same
         #   Use panel name and version in output files instead of panel path
         #   Change names of output files to tsv instead of txt
         #   Check coverage:
