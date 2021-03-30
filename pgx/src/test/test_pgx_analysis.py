@@ -1008,9 +1008,9 @@ class TestPgxAnalysis(unittest.TestCase):
         # TODO:
         #   SAGE GERMLINE as input
         #   Adjust panel.json
+        #       Add name and use it and json_version for panel version in output files instead of panel path
         #       Maybe remove per-rs_id_info chromosome and just use the gene_info one for everything.
         #       Remove unnecessary bits
-        #       Add name and use it and json_version for panel version in output files instead of panel path
         #   Check coverage:
         #       Looks alright. Missing a bunch of errors, most of main.py and most of vcf_reader
         #       Maybe add coverage or something to run_pgx_tests

@@ -70,7 +70,6 @@ class AnnotatedAllele(object):
 
 
 class FullCall(NamedTuple):
-    # The order of annotated_alleles is (grch37_ref, grch37_alt) when there is one of each
     start_coordinate_grch37: GeneCoordinate
     reference_allele_grch37: str
     start_coordinate_grch38: Optional[GeneCoordinate]  # is None if unknown
