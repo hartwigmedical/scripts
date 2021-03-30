@@ -71,7 +71,9 @@ class TestPgxAnalysis(unittest.TestCase):
             GeneInfo("FAKE2", "16", "*1", fake2_haplotypes, fake2_rs_id_infos,
                      fake2_drugs, fake2_rs_id_to_difference_annotations),
         })
-        return Panel(gene_infos)
+        name = "WideTestPanel"
+        version = "1.0"
+        return Panel(name, version, gene_infos)
 
     @classmethod
     def __get_narrow_example_panel(cls, included_haplotypes: Set[str]) -> Panel:
@@ -123,7 +125,9 @@ class TestPgxAnalysis(unittest.TestCase):
             GeneInfo("DPYD", "1", "*1", included_dpyd_haplotypes, included_dpyd_rs_id_infos,
                      dpyd_drugs, dpyd_rs_id_to_difference_annotations),
         })
-        return Panel(gene_infos)
+        name = "NarrowTestPanel"
+        version = "1.0"
+        return Panel(name, version, gene_infos)
 
     def test_empty(self) -> None:
         """No variants wrt GRCh37"""
@@ -1007,10 +1011,11 @@ class TestPgxAnalysis(unittest.TestCase):
     def test_todo(self) -> None:
         # TODO:
         #   SAGE GERMLINE as input
-        #   Adjust panel.json
-        #       Add name and use it and json_version for panel version in output files instead of panel path
-        #       Maybe remove per-rs_id_info chromosome and just use the gene_info one for everything.
-        #       Remove unnecessary bits
+        #       Fix missing intron variant
+        #       Test more broadly whether this works and gives expected calls and haplotypes.
+        #           How?
+        #   Use panel name and version in output files instead of panel path
+        #   Change names of output files to tsv instead of txt
         #   Check coverage:
         #       Looks alright. Missing a bunch of errors, most of main.py and most of vcf_reader
         #       Maybe add coverage or something to run_pgx_tests

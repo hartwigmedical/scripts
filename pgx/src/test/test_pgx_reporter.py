@@ -72,7 +72,9 @@ class TestPgxAnalysis(unittest.TestCase):
             GeneInfo("FAKE2", "16", "*1", fake2_haplotypes, fake2_rs_id_infos,
                      fake2_drugs, fake2_rs_id_to_difference_annotations),
         })
-        return Panel(gene_infos)
+        name = "WideTestPanel"
+        version = "1.1"
+        return Panel(name, version, gene_infos)
 
     def test_genotype_reporter_empty(self) -> None:
         pgx_analysis = PgxAnalysis(frozenset(), {})
@@ -116,7 +118,7 @@ class TestPgxAnalysis(unittest.TestCase):
 
     def test_haplotype_reporter_empty(self) -> None:
         pgx_analysis = PgxAnalysis(frozenset(), {})
-        panel = Panel(frozenset())
+        panel = Panel("EmptyPanel", "0.3", frozenset())
         panel_path = "some/panel/path.json"
         version = "V1"
         result = HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version)

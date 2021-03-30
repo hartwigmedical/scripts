@@ -8,29 +8,45 @@ from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 
 
 class Panel(object):
-    def __init__(self, gene_infos: FrozenSet[GeneInfo]) -> None:
+    def __init__(self, name: str, version: str, gene_infos: FrozenSet[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "config json")
         self.__assert_all_rs_id_infos_compatible(gene_infos)
 
+        self.__name = name
+        self.__version = version
         self.__gene_infos = gene_infos
 
     def __eq__(self, other: object) -> bool:
         return (
             isinstance(other, Panel)
+            and self.__name == other.__name
+            and self.__version == other.__version
             and self.__gene_infos == other.__gene_infos
         )
 
     def __repr__(self) -> str:
         return (
             f"Panel("
+            f"name={self.__name!r}, "
+            f"version={self.__version!r}, "
             f"gene_infos={self.__gene_infos!r}, "
             f")"
         )
 
     @classmethod
     def from_json(cls, data: Json) -> "Panel":
+        name = str(data["panelName"])
+        version = str(data["panelVersion"])
         gene_infos = frozenset({GeneInfo.from_json(gene_info_json) for gene_info_json in data['genes']})
-        return Panel(gene_infos)
+        return Panel(name, version, gene_infos)
+
+    @property
+    def name(self) -> str:
+        return self.__name
+
+    @property
+    def version(self) -> str:
+        return self.__version
 
     def get_ref_seq_differences(self) -> List[Tuple[RsIdInfo, str, str]]:
         results = []

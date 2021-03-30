@@ -73,7 +73,9 @@ class TestLoadConfig(unittest.TestCase):
             GeneInfo("FAKE2", "16", "*1", fake2_haplotypes_expected, fake2_rs_id_infos_expected,
                      fake2_drugs_expected, fake2_rs_id_to_difference_annotations),
         })
-        panel_expected = Panel(gene_infos_expected)
+        name_expected = "fake_panel"
+        version_expected = "0.2"
+        panel_expected = Panel(name_expected, version_expected, gene_infos_expected)
 
         self.assertEqual(panel_expected, panel)
 
