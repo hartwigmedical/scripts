@@ -13,12 +13,12 @@ class RsIdInfo(NamedTuple):
     start_coordinate_grch38: GeneCoordinate
 
     @classmethod
-    def from_json(cls, data: Json) -> "RsIdInfo":
+    def from_json(cls, data: Json, chromosome: str) -> "RsIdInfo":
         rs_id = str(data['rsid'])
         reference_allele_grch37 = str(data['referenceAllele'])
         reference_allele_grch38 = str(data['referenceAlleleGRCh38'])
-        start_coordinate_grch37 = GeneCoordinate(str(data['chromosome']), int(data['position']))
-        start_coordinate_grch38 = GeneCoordinate(str(data['chromosome']), int(data['positionGRCh38']))
+        start_coordinate_grch37 = GeneCoordinate(chromosome, int(data['position']))
+        start_coordinate_grch38 = GeneCoordinate(chromosome, int(data['positionGRCh38']))
         info = RsIdInfo(
             rs_id,
             reference_allele_grch37,

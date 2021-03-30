@@ -1013,6 +1013,7 @@ class TestPgxAnalysis(unittest.TestCase):
         #       Add name and use it and json_version for panel version in output files instead of panel path
         #   Check coverage:
         #       Looks alright. Missing a bunch of errors, most of main.py and most of vcf_reader
+        #       Maybe add coverage or something to run_pgx_tests
         #   Bunch of errors?
         #       Not that useful, maybe. Maybe eventually.
         #   Should we test vcf_reader?

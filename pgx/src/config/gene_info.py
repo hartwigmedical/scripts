@@ -101,7 +101,7 @@ class GeneInfo(object):
         gene = str(data['gene'])
         chromosome = str(data['chromosome'])
         reference_allele = str(data["referenceAllele"])
-        rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json) for rs_id_info_json in data["variants"]})
+        rs_id_infos = frozenset({RsIdInfo.from_json(rs_id_info_json, chromosome) for rs_id_info_json in data["variants"]})
         haplotypes = frozenset({Haplotype.from_json(haplotype_json) for haplotype_json in data["alleles"]})
         drugs = frozenset({DrugInfo.from_json(drug_json) for drug_json in data["drugs"]})
         rs_id_to_ref_seq_difference_annotation = {
