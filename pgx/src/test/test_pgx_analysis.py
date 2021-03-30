@@ -1030,5 +1030,5 @@ class TestPgxAnalysis(unittest.TestCase):
         self.fail("WIP")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

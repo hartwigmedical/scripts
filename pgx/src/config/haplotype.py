@@ -27,7 +27,7 @@ class Haplotype(object):
     def __hash__(self) -> int:
         return hash((self.__name, self.__function, self.__variants))
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"Haplotype("
             f"name={self.__name!r}, "

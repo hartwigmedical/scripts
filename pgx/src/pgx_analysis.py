@@ -22,7 +22,7 @@ class PgxAnalysis(object):
             and self.__gene_to_haplotype_calls == other.__gene_to_haplotype_calls
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"PgxAnalysis("
             f"all_full_calls={self.__all_full_calls!r}, "

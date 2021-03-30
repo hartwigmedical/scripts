@@ -24,7 +24,7 @@ class Panel(object):
             and self.__gene_infos == other.__gene_infos
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"Panel("
             f"name={self.__name!r}, "

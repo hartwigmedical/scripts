@@ -151,5 +151,5 @@ class TestPgxAnalysis(unittest.TestCase):
         self.assertEqual(result_expected, result)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     unittest.main()

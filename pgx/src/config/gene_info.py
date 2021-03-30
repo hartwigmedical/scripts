@@ -58,7 +58,7 @@ class GeneInfo(object):
             tuple(sorted(self.__rs_id_to_ref_seq_difference_annotation.items())),
         ))
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"GeneInfo("
             f"gene={self.__gene!r}, "

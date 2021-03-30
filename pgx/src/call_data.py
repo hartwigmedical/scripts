@@ -34,7 +34,7 @@ class AnnotatedAllele(object):
         )
         return AnnotatedAllele(allele, is_grch37_variant, is_grch38_variant)
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object) -> bool:  # pragma: no cover
         return (
                 isinstance(other, AnnotatedAllele)
                 and self.__allele == other.__allele
@@ -42,7 +42,7 @@ class AnnotatedAllele(object):
                 and self.__is_variant_vs_grch38 == other.__is_variant_vs_grch38
         )
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"AnnotatedAllele("
             f"allele={self.__allele!r}, "
@@ -122,7 +122,7 @@ class HaplotypeCall(object):
     def __hash__(self) -> int:
         return hash((self.__haplotype_name, self.__count))
 
-    def __repr__(self) -> str:
+    def __repr__(self) -> str:  # pragma: no cover
         return (
             f"HaplotypeCall("
             f"{self.__haplotype_name!r}, "

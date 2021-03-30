@@ -80,18 +80,6 @@ class TestLoadConfig(unittest.TestCase):
 
         self.assertEqual(panel_expected, panel)
 
-    def test_gene_info_repr_no_error(self) -> None:
-        """Repr method of GeneInfo"""
-        gene = "FAKE"
-        chromosome = "X"
-        reference_haplotype_name = "*1"
-        haplotypes: FrozenSet[Haplotype] = frozenset()
-        rs_id_infos: FrozenSet[RsIdInfo] = frozenset()
-        drugs: FrozenSet[DrugInfo] = frozenset()
-        rs_id_to_ref_seq_difference_annotation: Dict[str, str] = dict()
-        repr(GeneInfo(gene, chromosome, reference_haplotype_name, haplotypes, rs_id_infos,
-                      drugs, rs_id_to_ref_seq_difference_annotation))
-
     def test_gene_info_with_overlapping_haplotype_names(self) -> None:
         """Error when haplotype name used multiple times for gene"""
         gene = "FAKE"
@@ -104,8 +92,10 @@ class TestLoadConfig(unittest.TestCase):
         variant2 = Variant("rs394934", "T")
 
         rs_id_infos = frozenset([
-            RsIdInfo(variant1.rs_id, "C", "C", GeneCoordinate(chromosome, 4994545), GeneCoordinate(chromosome, 2993823)),
-            RsIdInfo(variant2.rs_id, "G", "G", GeneCoordinate(chromosome, 3993842), GeneCoordinate(chromosome, 2949923)),
+            RsIdInfo(variant1.rs_id, "C", "C",
+                     GeneCoordinate(chromosome, 4994545), GeneCoordinate(chromosome, 2993823)),
+            RsIdInfo(variant2.rs_id, "G", "G",
+                     GeneCoordinate(chromosome, 3993842), GeneCoordinate(chromosome, 2949923)),
         ])
 
         haplotypes1 = frozenset([
@@ -314,6 +304,94 @@ class TestLoadConfig(unittest.TestCase):
             GeneInfo(gene, chromosome, reference_haplotype_name, haplotypes, rs_id_infos,
                      drugs, non_empty_rs_id_to_ref_seq_difference_annotation)
 
+    def test_haplotype_with_repeat_rs_ids(self) -> None:
+        """Error when haplotype has multiple variants with the same rs id"""
+        name = "*5"
+        function = "No Function"
 
-if __name__ == '__main__':
+        non_clashing_variants = frozenset([Variant("rs88293", "A"), Variant("rs39492", "T")])
+        clashing_variants = frozenset([Variant("rs88293", "A"), Variant("rs88293", "T")])
+
+        Haplotype(name, function, non_clashing_variants)
+        with self.assertRaises(ValueError):
+            Haplotype(name, function, clashing_variants)
+
+    def test_empty_haplotype(self) -> None:
+        """Error when haplotype has no variants"""
+        name = "*5"
+        function = "No Function"
+
+        variants = frozenset([Variant("rs88293", "A"), Variant("rs39492", "T")])
+        empty_variants: FrozenSet[Variant] = frozenset()
+
+        Haplotype(name, function, variants)
+        with self.assertRaises(ValueError):
+            Haplotype(name, function, empty_variants)
+
+    def test_panel_with_repeat_gene_names(self) -> None:
+        """Error when panel has info for gene multiple times"""
+        name = "FakePanel"
+        version = "1.0"
+
+        gene1 = "FAKE"
+        chromosome1 = "X"
+        gene2 = "OTHER"
+        chromosome2 = "15"
+
+        reference_haplotype_name = "*1"
+        haplotypes: FrozenSet[Haplotype] = frozenset()
+        rs_id_infos: FrozenSet[RsIdInfo] = frozenset()
+        drugs: FrozenSet[DrugInfo] = frozenset()
+        rs_id_to_ref_seq_difference_annotation: Dict[str, str] = dict()
+
+        gene_info1 = GeneInfo(gene1, chromosome1, reference_haplotype_name, haplotypes,
+                              rs_id_infos, drugs, rs_id_to_ref_seq_difference_annotation)
+        gene_info2 = GeneInfo(gene2, chromosome2, reference_haplotype_name, haplotypes,
+                              rs_id_infos, drugs, rs_id_to_ref_seq_difference_annotation)
+        gene_info3 = GeneInfo(gene1, chromosome2, reference_haplotype_name, haplotypes,
+                              rs_id_infos, drugs, rs_id_to_ref_seq_difference_annotation)
+        gene_infos_without_repeat = frozenset([gene_info1, gene_info2])
+        gene_infos_with_repeat = frozenset([gene_info1, gene_info3])
+
+        Panel(name, version, gene_infos_without_repeat)
+        with self.assertRaises(ValueError):
+            Panel(name, version, gene_infos_with_repeat)
+
+    def test_panel_with_overlapping_rs_id_infos_for_different_genes(self) -> None:
+        """Error when panel has overlapping rs id infos for different genes, but not when they are exactly the same"""
+        name = "FakePanel"
+        version = "1.0"
+
+        gene1 = "FAKE"
+        gene2 = "OTHER"
+
+        chromosome = "X"
+        reference_haplotype_name = "*1"
+        haplotypes: FrozenSet[Haplotype] = frozenset()
+        drugs: FrozenSet[DrugInfo] = frozenset()
+        rs_id_to_ref_seq_difference_annotation: Dict[str, str] = dict()
+
+        rs_id_info1 = RsIdInfo("rs294924", "AT", "AT",
+                               GeneCoordinate(chromosome, 499593), GeneCoordinate(chromosome, 399483))
+        rs_id_info2 = RsIdInfo("rs3949923", "C", "C",
+                               GeneCoordinate(chromosome, 293993), GeneCoordinate(chromosome, 1388323))
+        rs_id_info3 = RsIdInfo("rs12993", "GG", "GG",
+                               GeneCoordinate(chromosome, 499592), GeneCoordinate(chromosome, 399482))
+
+        rs_id_infos1 = frozenset([rs_id_info1])
+        rs_id_infos2 = frozenset([rs_id_info1, rs_id_info2])
+        rs_id_infos3 = frozenset([rs_id_info3])
+        gene_info1 = GeneInfo(gene1, chromosome, reference_haplotype_name, haplotypes,
+                              rs_id_infos1, drugs, rs_id_to_ref_seq_difference_annotation)
+        gene_info2 = GeneInfo(gene2, chromosome, reference_haplotype_name, haplotypes,
+                              rs_id_infos2, drugs, rs_id_to_ref_seq_difference_annotation)
+        gene_info3 = GeneInfo(gene2, chromosome, reference_haplotype_name, haplotypes,
+                              rs_id_infos3, drugs, rs_id_to_ref_seq_difference_annotation)
+
+        Panel(name, version, frozenset([gene_info1, gene_info2]))
+        with self.assertRaises(ValueError):
+            Panel(name, version, frozenset([gene_info1, gene_info3]))
+
+
+if __name__ == '__main__':  # pragma: no cover
     unittest.main()
