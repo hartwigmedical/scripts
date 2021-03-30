@@ -11,7 +11,6 @@ class Panel(object):
     def __init__(self, gene_infos: FrozenSet[GeneInfo]) -> None:
         assert_no_overlap_gene_names(gene_infos, "config json")
         self.__assert_all_rs_id_infos_compatible(gene_infos)
-        self.__assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos)
 
         self.__gene_infos = gene_infos
 
@@ -108,16 +107,6 @@ class Panel(object):
 
     def __get_rs_id_infos(self) -> Set[RsIdInfo]:
         return {rs_id_info for gene_info in self.__gene_infos for rs_id_info in gene_info.rs_id_infos}
-
-    @staticmethod
-    def __assert_gene_locations_each_rs_id_info_agree_on_chromosome(gene_infos: FrozenSet[GeneInfo]) -> None:
-        for gene_info in gene_infos:
-            for rs_id_info in gene_info.rs_id_infos:
-                if rs_id_info.start_coordinate_grch37.chromosome != rs_id_info.start_coordinate_grch38.chromosome:
-                    error_msg = (
-                        f"Panel only supports rs ids where the GRCh37 and GRCh38 positions are on the same chromosome."
-                    )
-                    raise ValueError(error_msg)
 
     @staticmethod
     def __assert_all_rs_id_infos_compatible(gene_infos: FrozenSet[GeneInfo]) -> None:
