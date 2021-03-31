@@ -4,4 +4,4 @@ source locate_files
 
 serve_jar=$(locate_pilot_serve)
 
-java -Xmx8G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.ckb.tools.CkbExtractorTestApp
+java -Xmx12G -cp ${serve_jar} com.hartwig.hmftools.serve.sources.ckb.tools.CkbExtractorTestApp
