@@ -30,7 +30,6 @@ my $YES_PIPELINE_PRIO = 99;
 my $LIMS_IN_FILE = '/data/ops/lims/prod/lims.json';
 my $JSON_BASE_DIR = '/data/ops/api/prod/jsons';
 my $JSON_DONE_DIR = '/data/ops/api/prod/jsons/registered';
-my $SHALLOW_RUNS_DIR = '/data/data_archive/shallow_seq_pipelines';
 my $USE_EXISTING_REF = 0;
 my $USE_EXISTING_TUM = 0;
 my $FORCE_OUTPUT = 0;
@@ -40,16 +39,17 @@ my $FORCE_OUTPUT = 0;
 ## -----
 my %opt = ();
 GetOptions (
-  "samplesheet=s"  => \$opt{ samplesheet },
-  "outdir=s"       => \$JSON_BASE_DIR,
-  "donedir=s"      => \$JSON_DONE_DIR,
-  "limsjson=s"     => \$LIMS_IN_FILE,
-  "useExistingRef" => \$USE_EXISTING_REF,
-  "useExistingTum" => \$USE_EXISTING_TUM,
-  "forceOutput"    => \$FORCE_OUTPUT,
-  "debug"          => \$opt{ debug },
-  "help|h"         => \$opt{ help },
-  "verbose"        => \$opt{ verbose }
+    "samplesheet=s"  => \$opt{ samplesheet },
+    "outdir=s"       => \$JSON_BASE_DIR,
+    "donedir=s"      => \$JSON_DONE_DIR,
+    "limsjson=s"     => \$LIMS_IN_FILE,
+    "useExistingRef" => \$USE_EXISTING_REF,
+    "useExistingTum" => \$USE_EXISTING_TUM,
+    "forceOutput"    => \$FORCE_OUTPUT,
+    "experiment"     => \$opt{ as_experiment },
+    "debug"          => \$opt{ debug },
+    "help|h"         => \$opt{ help },
+    "verbose"        => \$opt{ verbose }
 ) or die "Error in command line arguments\n";
 my @ids = @ARGV;
 
@@ -71,11 +71,12 @@ my $HELP =<<HELP;
       eg: $SCRIPT FR11111111 FR22222222 FR33333333
     
   Options
-    -outdir <string>   [$JSON_BASE_DIR]
-    -limsjson <string> [$LIMS_IN_FILE] 
+    -outdir <s>        [$JSON_BASE_DIR]
+    -limsjson <s>      [$LIMS_IN_FILE]
     -useExistingRef    (add use_existing_sample flag for ref sample in json)
     -useExistingTum    (add use_existing_sample flag for tum sample in json)
     -forceOutput       (write json even if sample already has run in $JSON_DONE_DIR)
+    -experiment <s>    (resets submission to HMFregVAL and entity to HMF_EXPERIMENT)
 
 HELP
 
@@ -84,31 +85,31 @@ print $HELP and exit(0) if scalar(@ids) == 0 and not defined $opt{ samplesheet }
 die "[ERROR] JSON output dir is not writeable ($JSON_BASE_DIR)?\n" unless -w $JSON_BASE_DIR;
 
 ## MAIN
-say "[INFO] START of script $SCRIPT ($DATETIME)";
+sayInfo("START of script $SCRIPT ($DATETIME)");
 
 if ( defined $opt{ samplesheet } ){
-  say "[INFO] Reading SampleSheet file ($opt{ samplesheet })";
-  my $ids_from_sheet = addSamplesFromSamplesheet( $opt{ samplesheet } );
-  push( @ids, @$ids_from_sheet );
+    sayInfo("Reading SampleSheet file ($opt{ samplesheet })");
+    my $ids_from_sheet = addSamplesFromSamplesheet( $opt{ samplesheet } );
+    push( @ids, @$ids_from_sheet );
 }
 
-say "[INFO] InputCount: ".scalar(@ids);
-say "[INFO] Reading LIMS file ($LIMS_IN_FILE)";
+sayInfo("InputCount: ".scalar(@ids));
+sayInfo("Reading LIMS file ($LIMS_IN_FILE)");
 my $lims = readJson( $LIMS_IN_FILE );
 my $samples = $lims->{ 'samples' };
 my %stats = ();
 
 foreach my $sample_id ( @ids ){
-    say "[INFO] Processing $sample_id";
+    sayInfo("Processing $sample_id");
     my $return = processSample( $sample_id, $samples);
     $stats{ $return }++;
 }
 
-say "[STAT] -----";
+sayInfo("STATS -----")  ;
 
 foreach my $reason ( keys %stats ){
     my $count = $stats{ $reason };
-    say "[STAT]   $reason = $count";
+    sayInfo("Stats:   $reason = $count");
 }
 
 ## -----
@@ -161,10 +162,10 @@ sub addSamplesFromSamplesheet{
 
             ## VAL and GIAB samples are not present in LIMS so need manual work
             if ($submission eq "HMFregVAL"){
-                warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
+                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             elsif ($submission eq "HMFregGIAB"){
-                warn "[WARN] SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)\n";
+                sayWarn("SKIPPING sample ($name, $id) because of unsupported submission in SampleSheet ($submission)");
             }
             else{
                 $data{ $id } = 1;
@@ -174,7 +175,7 @@ sub addSamplesFromSamplesheet{
     close $samplesheet_fh;
     
     my $hmfRunName = $head{ 'ExperimentName' } || $NA_CHAR;
-    say "[INFO] Found run $hmfRunName in SampleSheet";
+    sayInfo("Found run $hmfRunName in SampleSheet");
     my @out = sort keys %data;
     return( \@out );
 }
@@ -183,7 +184,7 @@ sub processSample{
     my ($sample_id, $lims_samples) = @_;
     my @warn_msg = ();
     if ( not exists $lims_samples->{ $sample_id } ){
-        warn "[WARN]   RESULT: Sample not present in LIMS ($sample_id)\n";
+        sayWarn("  RESULT: Sample not present in LIMS ($sample_id)");
         return "NoJsonMade_sampleDoesNotExistsInLims";
     }
     my $sample = $lims_samples->{ $sample_id };
@@ -202,6 +203,13 @@ sub processSample{
     if ( $yield == 0 and $name !~ /^VirtualSample\d+/ ){
         $yield = 1;
     }
+
+    ## overwrite submission and entity in case of experiment
+    ## this also makes sure output goes to experiment bucket via entity
+    if ( $opt{'as_experiment'} ){
+        $submission = 'HMFregVAL';
+        $entity = 'HMF_EXPERIMENT';
+    }
     
     my $use_existing_ref = $USE_EXISTING_REF;
     my $use_existing_tum = $USE_EXISTING_TUM;
@@ -217,19 +225,19 @@ sub processSample{
     
     ## init the json info
     my %json_data = ();
-    
-    say "[INFO]   NAME=$name, ENTITY=$entity, ANALYSIS:$analysis";
+
+    sayInfo("  NAME=$name, ENTITY=$entity, ANALYSIS:$analysis");
 
     my $date = localtime->strftime('%y%m%d');
 
     ## Setup json content based on analysis type
     if ( $analysis eq 'BCL' ){
-        warn "[WARN]   RESULT: Type $analysis not yet supported ($barcode)\n";
+        sayWarn("  RESULT: Type $analysis not yet supported ($barcode)");
         return "NoJsonMade_bclTypeNotSupported";
     }
     elsif ( $analysis eq 'FASTQ' ){
         my $set = join("_", $date, $submission, $barcode, $name );
-        say "[INFO]   SET: $set";
+        sayInfo("  SET: $set");
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
 
@@ -238,7 +246,7 @@ sub processSample{
     }
     elsif( $analysis eq 'SingleAnalysis' ){
         my $set = join( "_", $date, $submission, $barcode, $name );
-        say "[INFO]   SET: $set";
+        sayInfo("  SET: $set");
         $json_data{ 'ini' } = "$GER_INI";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
@@ -248,7 +256,7 @@ sub processSample{
         my $set = join( "_", $date, "HMFregRNA", $barcode, $name );
         # TODO: remove default 15 GBase yield once yield is correctly set in LIMS for RNA
         my $default_rna_yield = 15e9;
-        say "[INFO]   SET: $set";
+        sayInfo("  SET: $set");
         $yield = $default_rna_yield;
         $json_data{ 'ini' } = "$RNA_INI";
         $json_data{ 'set_name' } = "$set";
@@ -275,7 +283,7 @@ sub processSample{
         }
 
         if ( not defined $ref_obj ){
-            warn "[WARN]   RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)\n";
+            sayWarn("  RESULT: SKIPPING because somatic R not found for input T (PATIENT=$patient)");
             return "NoJsonMade_RnotFoundForSomaticT";
         }
         
@@ -288,7 +296,7 @@ sub processSample{
 
         ## adjust content in case of ShallowSeq
         if ( $needs_shallow ){
-            say "[INFO]   ShallowSeq flag set in LIMS";
+            sayInfo("  ShallowSeq flag set in LIMS");
             my $match_string = join( "_", "ShallowSeq", $barcode_ref, $barcode, $name );
 
             my $api_shallow_runs = decode_json(`hmf_api_get 'runs?ini=ShallowSeq.ini&barcode=$barcode'`);
@@ -311,11 +319,11 @@ sub processSample{
                 $priority = $YES_PIPELINE_PRIO;
             }
             elsif ( $run_status eq "Waiting" ){
-                warn "[WARN]   RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)\n";
+                sayWarn("  RESULT: SKIPPING because run found for $match_string with status $run_status (so assuming extra seq)");
                 return "NoJsonMade_ShallowExtraSeq";
             }
             elsif ( $run_status eq "Finished" ){
-                say "[INFO]   ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode";
+                sayInfo("  ShallowSeq run with status $run_status found for $match_string: going for full Somatic mode");
             }
             else{
                 die "[ERROR]   ShallowSeq with status $run_status found for $match_string: no idea what to do";
@@ -338,15 +346,15 @@ sub processSample{
         chomp($ref_exists);
         
         if ( $tum_exists ){
-            say "[INFO]   TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)";
+            sayInfo("  TUM barcode ($barcode) already exists in HMF API (so will add use_existing flag)");
             $use_existing_tum = 1;
         }        
         if ( $ref_exists ){
-            say "[INFO]   REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)";
+            sayInfo("  REF barcode ($barcode_ref) already exists in HMF API (so will add use_existing flag)");
             $use_existing_ref = 1;
         }
-        
-        say "[INFO]   Set name constructed to $set";
+
+        sayInfo("  Set name constructed to $set");
         $json_data{ 'ini' } = "$ini";
         $json_data{ 'set_name' } = "$set";
         $json_data{ 'entity' } = "$entity";
@@ -355,11 +363,11 @@ sub processSample{
         addSampleToJsonData( \%json_data, $submission, $barcode, $name, 'tumor', $q30, $yield, $use_existing_tum );
     }
     elsif ( $analysis eq 'Somatic_R' ){
-        say "[INFO]   RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)";
+        sayInfo("  RESULT for $sample_id: SKIPPING because is somatic ref sample ($name)");
         return "NoJsonMade_isSomaticR";
     }
     else{
-        warn "[WARN]   RESULT for $sample_id: Somehow no (correct) analysis type ($analysis) was defined for input\n";
+        sayWarn("  RESULT for $sample_id: Somehow no (correct) analysis type ($analysis) was defined for input");
         return "NoJsonMade_hasWrongAnalsisType";
     }
 
@@ -379,7 +387,7 @@ sub processSample{
                 push( @warn_msg, "Existing run for $sample_id ($existing_json) but output json enforced" );
             }
             else{
-                warn "[WARN]   RESULT for $sample_id ($name): SKIPPING because set json exists ($existing_json)\n";
+                sayWarn("  RESULT for $sample_id ($name): SKIPPING because set json exists ($existing_json)");
                 return "NoJsonMade_setJsonAlreadyExists";
             }
         }
@@ -388,13 +396,13 @@ sub processSample{
     ## print any stored warnings now
     if ( scalar @warn_msg ){
         foreach my $msg ( @warn_msg ){
-            warn "[WARN]   $msg\n";
+            sayWarn("  $msg");
         }
     }
     
     ## all checks were OK: print config file
     printSetJson( \%json_data, $json_path );
-    say "[INFO]   RESULT for $sample_id: OK";
+    sayInfo("  RESULT for $sample_id: OK");
     return "OK_JSON_MADE";
 }
 
@@ -411,7 +419,7 @@ sub printSetJson{
     my ($data, $out_path) = @_;
     my $json_obj = JSON->new->allow_nonref;
     my $json_txt = $json_obj->pretty->encode( $data );
-    say "[INFO]   Writing json ($out_path)";
+    sayInfo("  Writing json ($out_path)");
     open OUT, '>', $out_path or die "Unable to open output file ($out_path): $!\n";
         print OUT $json_txt;
     close OUT;
@@ -433,7 +441,7 @@ sub getSomaticRSampleByStringForField{
             return $info->{ $sample_id };
         }
     }
-    warn "[WARN] $search_string not found in field $search_field of any record\n";
+    sayWarn("$search_string not found in field $search_field of any record");
     return(undef);
 }
 
@@ -475,5 +483,15 @@ sub addSampleToJsonData{
         $tmp{ 'use_existing_sample' } = JSON::true;
     }
     push( @{$store->{ 'samples' }}, \%tmp );
+}
+
+sub sayInfo{
+    my ($msg) = @_;
+    say "[INFO] $msg"
+}
+
+sub sayWarn{
+    my ($msg) = @_;
+    warn "[WARN] $msg\n"
 }
 
