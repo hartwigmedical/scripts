@@ -3,7 +3,7 @@
 source message_functions || exit 1
 
 print_usage(){
-    echo "-----"
+    echo ""
     echo "Descr: Patches one field in one object of HMF API"
     echo "Usage: $(basename "$0") -c \${object-class} -o \${object-id} -f \${field-to-patch} -v \${value-to-patch-with}"
     echo "Exmpl: $(basename "$0") -c flowcells -o 1000 -f status -v Pending"
@@ -12,8 +12,8 @@ print_usage(){
     echo "       $(basename "$0") -c samples -o 1000 -f primary_tumor_doids -v 1,4,92"
     echo "Options:"
     echo "  -e   Do not require to press a key for confirmation"
-    echo "  -a   Use acceptence environment instead of production"
-    echo "-----"
+    echo "  -a   Use acceptance environment instead of production"
+    echo ""
     exit 1
 }
 
@@ -48,6 +48,7 @@ if [[ -z "${class}" || -z "${oid}" || -z "${field}" || -z "${value}" ]]; then
     print_usage
 fi
 
+# no default for api credentials and url to avoid using wrong env as much as possible
 if [[ "${environment}" == "prod" ]]; then
     api_crt="${api_dir}/api.crt"
     api_key="${api_dir}/api.key"

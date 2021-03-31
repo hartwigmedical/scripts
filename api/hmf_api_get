@@ -2,49 +2,71 @@
 
 source message_functions || exit 1
 
-api_query=$1 && shift
+print_usage(){
+    self=$(basename $0)
+    echo ""
+    echo "Descr: Runs a GET query against HMF API"
+    echo "Usage: $self [-a] \${query}"
+    echo "Exmpl: $self 'samples?name=GIAB12878'"
+    echo "       $self 'samples?barcode=FR17758478-200806'"
+    echo "       $self 'samples?name=name&type=tumor'"
+    echo "       $self 'runs/63961'"
+    echo "       $self -a 'samples'"
+    echo "       $self 'runs?ini=ShallowSeq.ini'"
+    echo "Options:"
+    echo "   -a  Use acceptance environment instead of production"
+    echo ""
+    exit 1
+}
 
 api_dir="/data/common/dbs/api_credentials"
-api_crt="${api_dir}/api.crt"
-api_key="${api_dir}/api.key"
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+environment='prod'
 
-if [[ -z "${api_query}" || "${api_query}" == "-h" || "${api_query}" == "--help" ]]; then
-    echo "---"
-    echo "Descr: Runs a GET against HMF API with provided query string and returns JSON."
-    echo "Usage: $(basename $0) \${api_query_string}"
-    echo "   Eg: $(basename $0) 'samples?name=GIAB12878'"
-    echo "       $(basename $0) 'samples?barcode=FR17758478-200806'"
-    echo "       $(basename $0) 'runs/63961'"
-    echo "       $(basename $0) 'entities?name=HMFreg1000'"
-    echo "       all_samples_json=\$($(basename $0) 'samples')"
-    echo " Note: Uses URL ${api_url} and creds from ${api_dir}"
-    echo "---"
-    exit 1
+while getopts ':a' flag; do
+    case "${flag}" in
+        a) environment='acc' && shift ;;
+        *) print_usage >&2
+        exit 1 ;;
+    esac
+done
+query=$1 && shift
+
+# no default for api credentials and url to avoid using wrong env as much as possible
+if [[ "${environment}" == "prod" ]]; then
+    api_crt="${api_dir}/api.crt"
+    api_key="${api_dir}/api.key"
+    api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+elif [[ "${environment}" == "acc" ]]; then
+    api_crt="${api_dir}/acc/api.crt"
+    api_key="${api_dir}/acc/api.key"
+    api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
+else
+    die "Environment should be either prod or acc"
 fi
 
 main () {
-    request="${api_url}/${api_query}"
-    api_curl "${request}" 2>/dev/null
-    
-    # if first try fails: rerun and write error log to file
-    if [[ $? -eq 0 ]]; then
-        exit 0
-    else
-        tmp_err="/tmp/$(basename $0)_fail_$(date '+%Y%m%d_%H%M%S').err"
-        api_curl "${request}" 2>"${tmp_err}"
-    fi
+    [[ -n "${query}" ]] || print_usage
+    request="${api_url}/${query}"
 
-    # second try
-    if [[ $? -eq 0 ]]; then
-        # if ok: remove earlier error log and proceed
-        rm "${tmp_err}"
-        exit 0
+    # first try
+    if ! api_curl "${request}" 2>/dev/null
+    then
+        # first try not ok: try again writing stderr to tmp file for later inspection
+        tmp_err="/tmp/$(basename "$0")_fail_$(date '+%Y%m%d_%H%M%S').err"
+        if ! api_curl "${request}" 2>"${tmp_err}"
+        then
+            # second try also not ok: append failing request to error log and quit
+            err_msg=$(cat "${tmp_err}")
+            info "API request that failed: ${request}" >>"${tmp_err}"
+            die "GET query '${query}' failed on '${err_msg}' (see also ${tmp_err})"
+        else
+            # second try ok: remove error log and done
+            rm "${tmp_err}"
+            exit 0
+        fi
     else
-        # if still not ok: append request to error log and quit
-        err_msg=$(cat "${tmp_err}")
-        info "API request that failed: ${request}" >>"${tmp_err}"
-        die "GET query '${api_query}' failed (${err_msg})"
+        # first try ok: done
+        exit 0
     fi
 }
 
