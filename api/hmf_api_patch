@@ -22,7 +22,7 @@ oid='' # object id
 field='' # the field to PATCH
 value='' # the value to PATCH field with
 confirmation='true' # by default script requires key press
-environment='prod' # by default script requires key press
+environment='prod' # by default uses production instead of acceptance
 
 unquoted_values='null|true|false'
 quoted_fields='name|barcode|status|submission|bucket|ref_sample|tumor_sample'
