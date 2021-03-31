@@ -26,7 +26,7 @@ else
     echo "[INFO] Output dir created: ${output_dir}!"
 fi
 
-java -Xms2G -Xmx8G -jar ${serve_jar} \
+java -Xms2G -Xmx16G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
