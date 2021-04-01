@@ -13,13 +13,13 @@ function main(){
         echo "${type_path}"
 
         for version_path in $(find ${type_path} -mindepth 1 -maxdepth 1 -type d | sort); do
-            version_name=$(basename ${version_path})
+            version_name=$(basename "${version_path}")
             echo "  ${version_path}"
 
-            for data_path in $(find ${version_path} -mindepth 1 -maxdepth 1 -type d | sort); do
-                data_name=$(basename ${data_path})
+            for data_path in $(find "${version_path}" -mindepth 1 -maxdepth 1 -type d | sort); do
+                data_name=$(basename "${data_path}")
                 if [[ ${data_name} == "fastq" ]]; then
-                    if [[ ${print_rsync} == "true" && ($(ls ${data_path} | wc -l) -gt 0) ]]; then
+                    if [[ ${print_rsync} == "true" && (-d "${data_path}") ]]; then
                         dst_path="/data2/pipelineinput/${version_name}_${data_name}"
                         log_path="${LOG_DIR}/rsync_to_${dst_server}.log"
                         echo "    nohup rsync -ahPL --dry-run --stats ${data_path}/ ${dst_server}:${dst_path}/ > ${log_path} &"
@@ -30,13 +30,17 @@ function main(){
     done
   
     print_title "PIPELINE DIRS"
-    ls -d1 ${ROOT_DIR}/*pipeline*
+    find "${ROOT_DIR}" -maxdepth 1 -type d -name "*pipeline*" | while read -r pdir; do
+        most_recent=$(find "${pdir}" -maxdepth 1 -type d | tail -1)
+        echo "${pdir}"
+        echo "  NEWEST: ${most_recent}"
+    done
     echo ""
 }
 
 print_usage(){
     echo ""
-    echo "Usage: $(basename $0) [-rsync] [-s <server>]"
+    echo "Usage: $(basename "$0") [-rsync] [-s <server>]"
     echo "  -r        print rsync commands to screen"
     echo "  -s <str>  servername in rsync command (eg c1 or crunch001)"
     echo ""
