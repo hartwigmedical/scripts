@@ -6,6 +6,8 @@ source metadata_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
+STANDARD_PANEL_NAME="DPYD.json"
+
 main() {
   info "Started ${SCRIPT_NAME}"
 
@@ -15,7 +17,7 @@ main() {
   local optional_recreate_bed_arg
 
   venv_dir=$(locate_pgx_venv_dir)  # default argument
-  panel_name="DPYD.json"  # default argument
+  panel_name="${STANDARD_PANEL_NAME}"  # default argument
   optional_recreate_bed_arg=""  # default argument
 
   while [[ $# -gt 0 ]]
@@ -49,7 +51,12 @@ main() {
   # START VIRTUAL ENV
   source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
-  local output_dir=${run_dir}/pgx_pilot
+  if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
+    local output_dir_name="pgx_pilot"
+  else
+    local output_dir_name="pgx_pilot_alt"
+  fi
+  local output_dir="${run_dir}/${output_dir_name}"
 
   local version_pgx_tool
   version_pgx_tool=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')

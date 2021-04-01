@@ -47,10 +47,16 @@ echo "COMPARE PGX OUTPUT"
 for subdir in "${base_dir}"/*
 do
     echo "Comparing for ${subdir}"
-    output_dir="${subdir}/pgx_pilot"
+    if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
+      output_dir_name="pgx_pilot"
+    else
+      output_dir_name="pgx_pilot_alt"
+    fi
+
+    output_dir="${subdir}/${output_dir_name}"
 
     if [ ${original} = true ] ; then
-        control_dir="/data/cpct/runs/$(basename "${subdir}")/pgx_pilot"
+        control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
     else
         control_dir="${subdir}/pgx_pilot_control"
     fi
