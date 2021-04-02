@@ -33,50 +33,53 @@ while read -r line; do
     elif [[ "${run_status}" == "Deleted" ]]; then
         continue
     elif [[ -d "${qcfail_path}/${run_name}" ]]; then
-        to_mention+=("DOWNLOADED ${run_name} found in ${qcfail_path}")
+        to_mention+=("  DOWNLOADED: ${run_name} found in ${qcfail_path}")
     elif [[ -d "${process_path}/${run_name}" ]]; then
-        to_mention+=("DOWNLOADED ${run_name} found in ${process_path}")
+        to_mention+=("  DOWNLOADED: ${run_name} found in ${process_path}")
     elif [[ "${run_status}" == "Waiting" ]]; then
-        to_mention+=("WAITING: ${run_name} (status=${run_status})")
+        to_mention+=("  WAITING: ${run_name} (status=${run_status})")
     elif [[ "${run_status}" =~ ^(Pending|Processing|Uploading|Downloading)$ ]]; then
-        to_mention+=("PROCESSING: ${run_name} (status=${run_status})")
+        to_mention+=("  PROCESSING: ${run_name} (status=${run_status})")
     elif [[ -n "${run_version}" && "${run_version}" != "${current_pipeline_version}" ]]; then
         continue
     elif [[ "${run_status}" == "Failed" ]]; then
-        to_mention+=("FAILED ${run_name} (status=${run_status})")
+        to_mention+=("  FAILED: ${run_name} (status=${run_status})")
     elif [[ "${run_status}" =~ ^(Finished|Validated)$ ]]; then
+        to_mention+=("  FINISHED: ${run_name} (status=${run_status})")
         to_process+=(" process_shallow_run ${run_name} # (status=${run_status})")
     else
-        to_mention+=("UNKNOWN status for run: ${run_name} (status=${run_status})")
+        to_mention+=("  UNKNOWN STATUS: ${run_name} (status=${run_status})")
     fi
 done < <(echo "${all_runs}" | jq -rc '.[] | [.set.name,.status,.set.tumor_name,.version] | @tsv')
 
-process_count="${#to_process[*]}"
-mention_count="${#to_mention[*]}"
+to_process_count="${#to_process[*]}"
+to_mention_count="${#to_mention[*]}"
 
-info "Found ${mention_count} runs to mention and ${process_count} to process"
-if [[ "${mention_count}" -gt 0 ]]; then
+info "Found ${to_mention_count} runs to mention and ${to_process_count} finished to be processed further"
+if [[ "${to_mention_count}" -gt 0 ]]; then
     printf '[INFO] %s\n' "${to_mention[@]}" | sort
 fi
 
-if [[ "${process_count}" -gt 0 ]]; then
+if [[ "${to_process_count}" -gt 0 ]]; then
     job_name="${yymmdd}_${USER}_process_shallow_runs"
     job_file="/data/ops/jobs/${job_name}"
     log_file="/data/ops/logs/${job_name}"
 
     if [[ -f "${job_file}" ]]; then
-        warn "Overwriting job file (${job_file})"
+        warn "Overwriting job file ${job_file}"
     fi
-    echo "# ShallowSeq processing ${yymmdd} (${process_count} to process)" > "${job_file}"
+    echo "# ShallowSeq processing ${yymmdd}" > "${job_file}"
     printf ' %s\n' "${to_process[@]}" | sort >> "${job_file}"
     chmod +x "${job_file}"
     execute_job_cmd="nohup ${job_file} > ${log_file} &"
 
-    info "Check the job file (${job_file})"
-    info "Or start processing with:"
+    info "Check contents of job file ${job_file}"
+    info "Or start processing a total of ${to_process_count} runs with:"
     echo "  ${execute_job_cmd}"
     if [[ -f "${log_file}" ]]; then
         warn "log file already exists (${log_file})!!!!"
     fi
 fi
+
+echo ""
 
