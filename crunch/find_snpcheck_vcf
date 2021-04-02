@@ -13,15 +13,22 @@ gcp_subdir='snpcheckvcfs'
 gcp_key="/data/common/dbs/gcp_credentials/hmf-ops"
 
 echo ""
-echo "[INFO] Searching for SNPcheck VCFs at ${dir1} (with filter '${search}')"
+local_count1=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
+echo "# Found ${local_count1} local VCFs in archive at datastore (${dir1})"
 find ${dir1} -name "*${search}*.vcf"
 echo ""
 
-echo "[INFO] Searching for SNPcheck VCFs at ${dir2} (with filter '${search}')"
+local_count2=$(find ${dir2} -name "*${search}*.vcf" | wc -l)
+echo "# Found ${local_count2} local VCFs in sync location at datastore (${dir2})"
 find ${dir2} -name "*${search}*.vcf"
 echo ""
 
-echo "[INFO] Searching SNPcheck VCFs at GCP bucket ${gcp_bucket} (with filter '${search}')"
+if [[ "${local_count2}" -lt 1 ]]; then
+    echo "[WARN] Skipping GCP bucket check because no VCF found in ${dir2} (gs://${gcp_bucket})"
+    exit 0
+fi
+
+echo "# Listing remote VCFs at GCP (${gcp_bucket})"
 gcloud auth activate-service-account --no-user-output-enabled --key-file "${gcp_key}"
 gsutil ls -r gs://${gcp_bucket}/${gcp_subdir}/** | grep "${search}"
 echo ""
