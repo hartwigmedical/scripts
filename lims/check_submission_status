@@ -41,14 +41,14 @@ echo "  query_api.pl -type samples -filter submission=${submission}"
 echo "  query_api.pl -type runs -filter name=${submission}"
 echo ""
 
-## check that submission has not already been processed
+## Sanity checks
+info "Performing sanity checks"
 warnings_found="FALSE"
 if [[ -d "${submission_dir}" ]]; then
     warn "Submission directory already exists (${submission_dir})"
     warnings_found="TRUE"
 fi
 
-## check that all samples have valid SOP string
 while read -r smp_sop_str; do
     ## Note to self: no quoted regex since bash 3.2
     if [[ ! "${smp_sop_str}" =~ ${sop_regex} ]]; then
@@ -58,7 +58,6 @@ while read -r smp_sop_str; do
     fi
 done < <(echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed") | .lab_sop_versions')
 
-## Check total yield of submission if requirement is present in lims
 required_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") then .total_yield_required else 0 end' )
 samples=$(hmf_api_get "samples?submission=${submission}")
 measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready") | .yld] | add')
@@ -66,9 +65,10 @@ measured_yield_gbase=$((measured_yield / 1000000000))
 if [[ "${measured_yield_gbase}" -lt "${required_yield}" ]]; then
     warn "TOTAL YIELD INSUFFICIENT: Submission requires ${required_yield} GBase but only has ${measured_yield_gbase} GBase!"
     warnings_found="TRUE"
+else
+    info "Total yield sufficient: required was ${required_yield} GBase and measured is ${measured_yield_gbase} GBase"
 fi
 
-## Make sure all runs are Validated
 if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then
     warn "Not all runs in API have status Validated!"
     warnings_found="TRUE"
@@ -76,7 +76,7 @@ fi
 
 ## If all OK print cmd to process further
 if [[ "${warnings_found}" == "TRUE" ]]; then
-    warn "Warnings encountered during check!"
+    warn "Warnings encountered during check. Fix these first!"
 else
     info "Gather submission if all is ok:"
     echo "  gather_submission ${submission}"
