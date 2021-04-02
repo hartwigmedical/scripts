@@ -4,43 +4,94 @@ source locate_files || exit 1
 source message_functions || exit 1
 source metadata_functions || exit 1
 
-info "Start running PGX pilot script"
+SCRIPT_NAME="$(basename "$0")"
 
-run_dir=$1 && shift
+STANDARD_PANEL_NAME="DPYD.json"
 
-if [[ $# -eq 0 ]]; then
-  venv_dir=$(locate_pgx_venv_dir)
-else
-  venv_dir=$1 && shift
-fi
+main() {
+  info "Started ${SCRIPT_NAME}"
 
-# START VIRTUAL ENV
-source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
+  local run_dir
+  local venv_dir
+  local panel_name
+  local optional_recreate_bed_arg
 
-output_dir=${run_dir}/pgx_pilot
+  venv_dir=$(locate_pgx_venv_dir)  # default argument
+  panel_name="${STANDARD_PANEL_NAME}"  # default argument
+  optional_recreate_bed_arg=""  # default argument
 
-version_pgx_tool=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')
+  while [[ $# -gt 0 ]]
+  do
+  key="$1" && shift
+  case $key in
+      -r|--rundir)
+      run_dir="$1" && shift
+      ;;
+      -v|--venv)
+      venv_dir="$1" && shift  # optional argument
+      ;;
+      -p|--panel)
+      panel_name="$1" && shift  # optional argument
+      ;;
+      -b|--recreate_bed)
+      optional_recreate_bed_arg="--recreate_bed"  # optional argument
+      ;;
+      *)    # unknown option
+      OTHER_OPTIONS+=("$key") # save it in an array for later
+      ;;
+  esac
+  done
 
-ref_sample=$(load_ref_sample_from_metadata "${run_dir}") || die "Could not get ref sample from metadata"
-tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
+  # sanity checks
+  [[ "${#OTHER_OPTIONS[@]}" -eq 0 ]] || die "Unrecognized options! : ${OTHER_OPTIONS[*]}"
+  [[ -n ${run_dir} ]] || die "Variable 'rundir' has not been set."
+  [[ -n ${venv_dir} ]] || die "Variable 'venv' has not been set. Consider using the default argument."
+  [[ -n ${panel_name} ]] || die "Variable 'panel' has not been set. Consider using the default argument."
 
-if [[ -d "${output_dir}" ]]; then
-    info "PGX pilot dir exist. PGX dir will first be removed and then be replaced"
-    rm -r "${output_dir}" || die "Could not remove existing PGX pilot dir"
-fi
+  # START VIRTUAL ENV
+  source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
-germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}") || die "Could not get germline vcf path"
-# germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
+  if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
+    local output_dir_name="pgx_pilot"
+  else
+    local output_dir_name="pgx_pilot_alt"
+  fi
+  local output_dir="${run_dir}/${output_dir_name}"
 
-# REFERENCES
-pgx_tool=$(locate_pgx_main)
-# pgx_tool=$HOME/repos/scripts/pgx/src/main.py
-pgx_resource_dir=$(locate_pgx_resource_dir)
-vcftools_tool=$(locate_vcftools)
+  local version_pgx_tool
+  version_pgx_tool=$(echo "pilot" | tr "_" " " | tr "v" " "| awk '{print $1}')
 
-export PYTHONPATH="${PYTHONPATH}:${pgx_tool}/../"
+  local ref_sample
+  ref_sample=$(load_ref_sample_from_metadata "${run_dir}") || die "Could not get ref sample from metadata"
+  local tumor_sample
+  tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
 
-# RUN
-python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
-    "${pgx_resource_dir}/panelfiles/DPYD.json" "${vcftools_tool}" \
-    --sourcedir "${pgx_resource_dir}" || die "PGX pilot failed"
+  # local germline_vcf
+  # germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}") || die "Could not get germline vcf path"
+  germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
+
+  # REFERENCES
+  local pgx_tool
+  pgx_tool=$(locate_pgx_main) || die "Could not get pgx tool path"
+  # pgx_tool=$HOME/repos/scripts/pgx/src/main.py
+  local pgx_resource_dir
+  pgx_resource_dir=$(locate_pgx_resource_dir) || die "Could not get pgx resource dir"
+  local vcftools_tool
+  vcftools_tool=$(locate_vcftools) || die "Could not get vcftools path"
+
+  export PYTHONPATH="${PYTHONPATH}:${pgx_tool}/../"
+
+  if [[ -d "${output_dir}" ]]; then
+      info "PGX pilot dir exist. PGX dir will first be removed and then be replaced"
+      rm -r "${output_dir}" || die "Could not remove existing PGX pilot dir"
+  fi
+
+  # RUN
+  python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
+      "${pgx_resource_dir}/panelfiles/${panel_name}" "${vcftools_tool}" \
+      --sourcedir "${pgx_resource_dir}" ${optional_recreate_bed_arg}|| die "PGX pilot failed"
+
+  info "Finished ${SCRIPT_NAME}"
+}
+
+main "$@"

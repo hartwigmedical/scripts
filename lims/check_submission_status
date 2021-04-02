@@ -49,17 +49,16 @@ if [[ -d "${submission_dir}" ]]; then
 fi
 
 ## check that all samples have valid SOP string
-if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then echo "[WARN] Not all runs in API are status Validated!"; fi
-echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed") | .lab_sop_versions' | while read smp_sop_str; do
+while read -r smp_sop_str; do
     ## Note to self: no quoted regex since bash 3.2
     if [[ ! "${smp_sop_str}" =~ ${sop_regex} ]]; then
         warn "Found sample with incomplete SOP string (${smp_sop_str} does not match ${sop_regex})!"
         warnings_found="TRUE"
         continue
     fi
-done
+done < <(echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed") | .lab_sop_versions')
 
-## check for total yield if present at submission object in lims
+## Check total yield of submission if requirement is present in lims
 required_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") then .total_yield_required else 0 end' )
 samples=$(hmf_api_get "samples?submission=${submission}")
 measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready") | .yld] | add')
@@ -69,9 +68,17 @@ if [[ "${measured_yield_gbase}" -lt "${required_yield}" ]]; then
     warnings_found="TRUE"
 fi
 
+## Make sure all runs are Validated
+if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then
+    warn "Not all runs in API have status Validated!"
+    warnings_found="TRUE"
+fi
+
 ## If all OK print cmd to process further
-if [[ "${warnings_found}" == "FALSE" ]]; then
-    info "Or gather submission if all is ready and ok:"
+if [[ "${warnings_found}" == "TRUE" ]]; then
+    warn "Warnings encountered during check!"
+else
+    info "Gather submission if all is ok:"
     echo "  gather_submission ${submission}"
     echo ""
 fi
