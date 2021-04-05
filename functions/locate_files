@@ -177,15 +177,15 @@ locate_vcftools() {
 #################################### Resources #####################################
 
 locate_driver_gene_panel_37_tsv() {
-    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg19.tsv
+    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.37.tsv
 }
 
 locate_driver_gene_panel_38_tsv() {
-    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.hg38.tsv
+    echo ${base_path}/dbs/driver_gene_panel/DriverGenePanel.38.tsv
 }
 
 locate_known_fusion_data_37_csv() {
-    echo ${base_path}/dbs/fusions/known_fusion_data.csv
+    echo ${base_path}/dbs/fusions/known_fusion_data.37_v3.csv
 }
 
 locate_known_fusion_data_38_csv() {
@@ -193,11 +193,11 @@ locate_known_fusion_data_38_csv() {
 }
 
 locate_hotspot_vcf() {
-    echo ${base_path}/dbs/serve/hotspots/210315/KnownHotspots.somatic.hg19.vcf.gz
+    echo ${base_path}/dbs/serve/hotspots/210315/KnownHotspots.somatic.37.vcf.gz
 }
 
 locate_germline_hotspot_vcf() {
-    echo ${base_path}/dbs/sage/KnownHotspots.germline.hg19.vcf.gz
+    echo ${base_path}/dbs/sage/KnownHotspots.germline.37.vcf.gz
 }
 
 locate_pgx_resource_dir() {
