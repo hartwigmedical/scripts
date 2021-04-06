@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+source locate_files
+
 output_dir=$1 && shift
 
 if [[ ! -d "${output_dir}" ]]; then
@@ -13,9 +15,16 @@ echo "[INFO] Writing HPC file to ${hpc_tsv} using ${hpc_create_sql}"
 execute_sql_on_prod ${hpc_create_sql} > ${hpc_tsv}
 
 paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
+credentials=$(locate_prod_database_credentials)
 
-echo "[INFO] Running paddle exoniic variant application with output dir '${output_dir}'"
+# Database details
+db_user=$(awk '/^user/ {print $2}' ${credentials})
+db_pass=$(awk '/^pass/ {print $2}' ${credentials})
+db_url=$(awk '/^url/ {print $2}' ${credentials})
 
-java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleExonicVariantsApplication  \
+echo "[INFO] Running paddle exonic variant application with output dir '${output_dir}'"
+
+java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleExonicVariantsApplicationKt  \
     -output_dir ${output_dir} \
-    -hpc_tsv ${hpc_tsv}
+    -hpc_tsv ${hpc_tsv} \
+    -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
