@@ -1,1 +1,1 @@
-select sampleId, purity from purity where sampleId in (select sampleId from hpc);
+select sampleId, purity from purity where sampleId in (select sampleId from hpc) limit 10;
