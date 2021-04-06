@@ -7,7 +7,7 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
     /data/common/tools/samtools_v1.10/samtools dict GCA_000001405.15_GRCh38_no_alt_analysis_set.fna > GCA_000001405.15_GRCh38_no_alt_analysis_set.dict
 
     Split reference genome into its chromosomes:
-    extractRefGenomeChromosomes \
+    extract_ref_genome_chromosomes \
         /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna \
         /data/common/refgenomes/Homo_sapiens.GRCh38.no.alt/chr/
 
@@ -26,7 +26,6 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
 
     Strip some random AC thing:
     sed 's/  AC//' GRCh38_no_alt_analysis_set.mappability  > GRCh38_no_alt_analysis_set.gem
-
 
 3. Run gccount
 
