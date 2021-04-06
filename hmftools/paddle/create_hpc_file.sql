@@ -1,0 +1,1 @@
+select sampleId, purity from purity where sampleId in (select sampleId from hpc);
