@@ -65,6 +65,6 @@ echo "[INFO] Action: If all OK you can upload final config to Nextcloud with:"
 echo " upload_files_to_nextcloud_research ${out_config}"
 
 if [[ "${non_info_count}" -gt 0 ]]; then
-    echo "[WARNING] Non-info lines were encountered in log. Process with caution!!"
+    echo "[WARNING] Non-info lines were encountered in log. Proceed with caution!!"
 fi
 echo ""
