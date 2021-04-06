@@ -52,6 +52,12 @@ find "${flowcells_dir}" -mindepth 1 -maxdepth 1 -type d -not -name "TestRuns" -n
         continue
     fi
 
+    if [[ ! -f "${runinfoxml_path}" ]]; then
+        ## we need the run info xml file to get exact flowcell ID
+        echo "[WARN] Flowcell ${flowcell_name} on ${hostname} is missing RunInfo file (${runinfoxml_path}): skipping"
+        continue
+    fi
+
     if [[ ! -f "${samplesheet_path}" ]]; then
         echo "[WARN] Flowcell ${flowcell_name} on ${hostname} is missing SampleSheet (${samplesheet_path}): skipping"
         continue
