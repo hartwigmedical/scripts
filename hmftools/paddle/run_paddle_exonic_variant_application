@@ -9,10 +9,10 @@ if [[ ! -d "${output_dir}" ]]; then
 fi
 
 hpc_tsv=${output_dir}/hpc.tsv
-hpc_create_sql=/data/common/repos/scripts/hmftools/paddle/create_hpc_file.sql
+hpc_select_samples_sql=/data/common/repos/scripts/hmftools/paddle/select_hpc_samples.sql
 
-echo "[INFO] Writing HPC file to ${hpc_tsv} using ${hpc_create_sql}"
-execute_sql_on_prod ${hpc_create_sql} > ${hpc_tsv}
+echo "[INFO] Writing HPC file to ${hpc_tsv} using ${hpc_select_samples_sql}"
+execute_sql_on_prod ${hpc_select_samples_sql} > ${hpc_tsv}
 
 paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
 credentials=$(locate_prod_database_credentials)
