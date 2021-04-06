@@ -24,24 +24,24 @@ mkdir "${output_dir}" || exit 1
 
 echo "[INFO] Changing dir to output dir (${output_dir})"
 cd "${output_dir}" || exit 1
-if [[ ! $? -eq 0 ]]; then echo "[ERROR] Unable to change dir to ${output_dir}" && exit 1; fi
 
-non_val_count=$(cat "${runs_json}" | jq '[select(.[].status != "Validated")] | length')
+non_val_count=$(jq '[select(.[].status != "Validated")] | length' "${runs_json}")
 if [[ "${non_val_count}" -gt 0 ]]; then
     echo "[WARN] There are ${non_val_count} runs that will be missing in config because status != Validated"
 fi
 
 echo "[INFO] Creating job file (${create_job})"
-for run_name in $(cat "${runs_json}" | jq -r '.[] | select(.status == "Validated") | .name'); do
+for run_name in $(jq -r '.[] | select(.status == "Validated") | .name' "${runs_json}"); do
     echo "${CREATE_ARIA_SCRIPT} ${run_name}"
 done > "${create_job}"
 chmod +x "${create_job}"
 
 echo "[INFO] Executing job script (runtime depends on amount of samples, check progress in log '${create_log}')"
-cat "${create_job}" | parallel -j5 -I% --max-args 1 % > "${create_log}" 2>&1
+parallel -j5 -I% --max-args 1 % < "${create_job}" > "${create_log}" 2>&1
 
 echo "[INFO] Printing any non INFO lines from log"
-cat "${create_log}" | grep -v '\[INFO\]'
+grep -v '\[INFO\]' "${create_log}"
+non_info_count=$(grep -vc '\[INFO\]' "${create_log}")
 
 echo "[INFO] Double checking log for errors with check_log_file (will print if any found)"
 check_log_file "${create_log}"
@@ -54,12 +54,17 @@ if [[ "$(find "${output_dir}" -name "*_internal_urls.txt" | wc -l)" -lt 1 ]]; th
     echo "[ERROR] No internal urls files found (should not happen)." && exit 1
 else
     # Intellij wants you to quote the find cmd: don't do this as du will work only on first file
+    # shellcheck disable=SC2046
     gsutil du -shc $(find "${output_dir}" -name "*_internal_urls.txt" -exec cat {} +) > "${out_gcp_du}"
 fi
 
 echo "[INFO] Action: Check one URL manually in browser"
-cat "${out_config}" | grep https | tail -1
+grep https "${out_config}" | tail -1
 
 echo "[INFO] Action: If all OK you can upload final config to Nextcloud with:"
 echo " upload_files_to_nextcloud_research ${out_config}"
+
+if [[ "${non_info_count}" -gt 0 ]]; then
+    echo "[WARNING] Non-info lines were encountered in log. Process with caution!!"
+fi
 echo ""
