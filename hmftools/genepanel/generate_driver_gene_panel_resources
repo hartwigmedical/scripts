@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+output_dir=$1 && shift
+
+if [[ ! -d "${output_dir}" ]]; then
+    echo "[ERROR] Output dir does not exist. Exiting" && exit 1;
+fi
+
+driver_gene_panel_37_tsv=$(locate_driver_gene_panel_37_tsv)
+clinvar_37_vcf=/data/common/dbs/sage/clinvar.37.vcf.gz
+clinvar_38_vcf=/data/common/dbs/sage/clinvar.38.vcf.gz
+
+# Can use any jar since tool lives in hmf-common
+any_hmf_jar=$(locate_patient_db_pilot)
+
+java -cp ${any_hmf_jar} com.hartwig.hmftools.common.drivercatalog.panel.DriverGenePanelConversion \
+    -driver_gene_panel_37_tsv ${driver_gene_panel_37_tsv} \
+    -clinvar_37_vcf ${clinvar_37_vcf} \
+    -clinvar_38_vcf ${clinvar_38_vcf} \
+    -output_dir ${output_dir}
