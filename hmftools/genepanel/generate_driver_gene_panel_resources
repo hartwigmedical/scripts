@@ -13,7 +13,7 @@ clinvar_37_vcf=/data/common/dbs/sage/clinvar.37.vcf.gz
 clinvar_38_vcf=/data/common/dbs/sage/clinvar.38.vcf.gz
 
 # Can use any jar since tool lives in hmf-common
-any_hmf_jar=$(locate_patient_db_pilot)
+any_hmf_jar=$(locate_pilot_patient_db)
 
 java -cp ${any_hmf_jar} com.hartwig.hmftools.common.drivercatalog.panel.DriverGenePanelConversion \
     -driver_gene_panel_37_tsv ${driver_gene_panel_37_tsv} \
