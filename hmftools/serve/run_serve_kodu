@@ -42,4 +42,5 @@ java -Xms2G -Xmx16G -jar ${serve_jar} \
     -known_fusion_38_file ${known_fusion_38_file} \
     -refseq_tsv ${ref_seq_tsv} \
     -output_dir ${output_dir} \
+    -log_debug \
     "$@"
