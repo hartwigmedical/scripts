@@ -4,5 +4,5 @@ FROM
 datarequest
 WHERE
 primaryTumorLocation='Skin'
-AND cancerSubtype='Melanoma'
+AND primaryTumorType='Melanoma'
 ORDER BY 1;
