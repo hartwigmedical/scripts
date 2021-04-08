@@ -19,7 +19,7 @@ driver_gene_38_tsv=$(locate_driver_gene_panel_38_tsv)
 known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
-output_dir=/home/korneel/serve/kodu_output/
+output_dir=/home/korneel/serve/kodu_output
 
 if [[ -d "${output_dir}" ]]; then
     echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
