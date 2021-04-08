@@ -10,6 +10,7 @@ main() {
   corecount="2"  # default argument
   disksize="200GB"  # default argument
   vm_type="n1-standard"  # default argument
+  pre_emptible_arg=""  # default argument
 
   UNRECOGNIZED=()
   while [[ $# -gt 0 ]]
@@ -27,6 +28,8 @@ main() {
         disksize="$1" && shift;;
       -t|--type)  # optional
         vm_type="$1" && shift;;
+      -e|--preemptible)  # optional
+        pre_emptible_arg="--preemptible";;
       *)
         UNRECOGNIZED+=("$1");;
     esac
@@ -50,7 +53,8 @@ main() {
       --boot-disk-device-name="${name}" \
       --service-account="hmf-crunch@hmf-crunch.iam.gserviceaccount.com" \
       --no-address \
-      --scopes="cloud-platform" || die "Could not create VM ${name}"
+      --scopes="cloud-platform" \
+      ${pre_emptible_arg} || die "Could not create VM ${name}"
   elif [[ ${project} == "hmf-pipeline-development" ]]; then
     gcloud compute instances create "${name}" \
       --project="hmf-pipeline-development" \
@@ -61,7 +65,8 @@ main() {
       --boot-disk-size="${disksize}" \
       --boot-disk-type="pd-standard" \
       --boot-disk-device-name="${name}" \
-      --scopes="cloud-platform" || die "Could not create VM ${name}"
+      --scopes="cloud-platform" \
+      ${pre_emptible_arg} || die "Could not create VM ${name}"
   else
     die "Unrecognized project name ${project}"
   fi
