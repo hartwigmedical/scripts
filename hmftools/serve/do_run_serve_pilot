@@ -18,6 +18,8 @@ known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 output_dir=/data/common/dbs/serve/pilot_output
 
+refSeqMatch=/data/common/dbs/serve/static_sources/refseq/refseq_to_canonicalTranscript.tsv
+
 if [[ -d "${output_dir}" ]]; then
     echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
     rm -r ${output_dir}/*
@@ -26,7 +28,7 @@ else
     echo "[INFO] Output dir created: ${output_dir}!"
 fi
 
-java -Xms2G -Xmx16G -jar ${serve_jar} \
+java -Xms2G -Xmx20G -jar ${serve_jar} \
     -missing_doids_mapping_tsv ${missing_doids_mapping_tsv} \
     -ref_genome_37_fasta_file ${ref_genome_37_fasta_file} \
     -ref_genome_38_fasta_file ${ref_genome_38_fasta_file} \
@@ -37,4 +39,5 @@ java -Xms2G -Xmx16G -jar ${serve_jar} \
     -known_fusion_37_file ${known_fusion_37_file} \
     -known_fusion_38_file ${known_fusion_38_file} \
     -output_dir ${output_dir} \
+    -refseq_tsv ${refSeqMatch} \
     "$@"
