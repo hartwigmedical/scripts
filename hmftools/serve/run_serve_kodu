@@ -22,8 +22,10 @@ known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 output_dir=/home/korneel/serve/kodu_output
 
 if [[ -d "${output_dir}" ]]; then
-    echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
-    rm -r ${output_dir}/*
+    if [[ ! "$(ls -A $DIR)" ]]; then
+        echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
+        rm -r ${output_dir}/*
+    fi
 else
     mkdir -p ${output_dir}
     echo "[INFO] Output dir created: ${output_dir}!"
