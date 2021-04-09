@@ -110,14 +110,15 @@ for seq_dir in "${seq_dirs[@]}"; do
    done | sort -k1,1 -k3,3
 done
 
+if [[ ${HOSTNAME} != "datastore" ]]; then
+    for seq_run in "${seq_runs[@]}"; do
+        cmds_to_execute+=("archive_flowcell_to_datastore ${seq_run}")
+    done
+fi
+
 printHeader "Extra actions"
 for cmd in "${cmds_to_execute[@]}"; do
     echo ${cmd}
 done
-
-if [[ ${HOSTNAME} != "datastore" ]]; then
-    rsync_cmd=$(rsync_seqruns_to_datastore ${seq_dirs[@]} | grep -v 'INFO')
-    echo ${rsync_cmd}
-fi
 
 echo ""
