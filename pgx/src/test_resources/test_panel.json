@@ -82,11 +82,11 @@
       "drugs": [
         {
           "name": "5-Fluorouracil",
-          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"
+          "url_prescription_info": "https://www.source_url.org/5-Fluorouracil"
         },
         {
           "name": "Capecitabine",
-          "url_prescription_info": "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"
+          "url_prescription_info": "https://www.source_url.org/Capecitabine"
         }
       ],
       "refSeqDifferenceAnnotations": [
@@ -128,7 +128,7 @@
       "drugs": [
         {
           "name": "Aspirin",
-          "url_prescription_info": "https://www.pharmgkb.org/some_other_url"
+          "url_prescription_info": "https://www.source_url.org/Aspirin"
         }
       ],
       "refSeqDifferenceAnnotations": [
@@ -162,7 +162,7 @@
       "drugs": [
         {
           "name": "Aspirin",
-          "url_prescription_info": "https://www.pharmgkb.org/some_other_url"
+          "url_prescription_info": "https://www.source_url.org/Aspirin"
         }
       ],
       "refSeqDifferenceAnnotations": [
