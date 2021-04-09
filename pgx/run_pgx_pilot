@@ -66,7 +66,7 @@ main() {
   local tumor_sample
   tumor_sample=$(load_tumor_sample_from_metadata "${run_dir}") || die "Could not get tumor sample from metadata"
 
-  # local germline_vcf
+  local germline_vcf
   # germline_vcf=$(locate_germline_variants "${run_dir}" "${ref_sample}") || die "Could not get germline vcf path"
   germline_vcf=$(locate_purple_germline_variants "${run_dir}") || die "Could not get purple germline vcf path"
 
@@ -89,7 +89,7 @@ main() {
   # RUN
   python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
       "${pgx_resource_dir}/panelfiles/${panel_name}" "${vcftools_tool}" \
-      --sourcedir "${pgx_resource_dir}" ${optional_recreate_bed_arg}|| die "PGX pilot failed"
+      --transcript_tsv "${pgx_resource_dir}/panelfiles/all_genes.37.tsv" ${optional_recreate_bed_arg}|| die "PGX pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
 }

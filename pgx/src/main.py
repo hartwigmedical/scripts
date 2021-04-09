@@ -14,10 +14,9 @@ from vcf_reader import VcfReader
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
-         recreate_bed: bool, vcftools: str, sourcedir: str) -> None:
+         recreate_bed: bool, vcftools: str, transcript_tsv_path: str) -> None:
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
-
     # Check if output dir exists, create if it does not
     if not os.path.exists(outputdir):
         try:
@@ -28,7 +27,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get configuration
     panel = load_panel(panel_path)
-    bed_file = get_bed_file(panel_path, recreate_bed, panel, sourcedir)
+    bed_file = get_bed_file(panel_path, recreate_bed, panel, transcript_tsv_path)
 
     if panel.is_empty():
         raise ValueError("No panel is given, so no analysis can be performed.")
@@ -91,10 +90,10 @@ def load_panel(panel_path: str) -> Panel:
         raise FileNotFoundError(f"Panel file {panel_path} not found or cannot be opened.")
 
 
-def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: str) -> str:
+def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_tsv_path: str) -> str:
     bed_file = replace_file_extension_of_path(panel_path, "bed")
     if recreate_bed:
-        create_bed_file(panel.get_genes(), panel_path, sourcedir, bed_file)
+        create_bed_file(panel.get_genes(), panel_path, transcript_tsv_path, bed_file)
     if not os.path.exists(bed_file):
         raise FileNotFoundError(
             "Could not locate bed-file. "
@@ -104,7 +103,7 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, sourcedir: s
     return bed_file
 
 
-def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, bed_path: str) -> None:
+def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_path: str, bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
     print("[INFO] Recreating bed-file...")
     header = (
@@ -112,7 +111,7 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, sourcedir: str, b
     )
     bed_regions = []  # chrom, start, end, gene
     covered = []
-    with open(f"{sourcedir}/all_genes.37.tsv", 'r') as transcripts:
+    with open(transcript_tsv_path, 'r') as transcripts:
         for line in transcripts:
             split_line = line.rstrip().split("\t")
             if split_line[4] in genes_in_panel and split_line[4] not in covered:
@@ -183,11 +182,14 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         '--recreate_bed', default=False, action='store_true',
         help='Recreate bed-file from JSON files. If false, the panel file with extension .bed is searched for.'
     )
-    parser.add_argument('--sourcedir', type=str, default='data', help="Optional path to location of source files")
+    parser.add_argument(
+        '--transcript_tsv', type=str, default='/data/common/dbs/pgx/all_genes.37.tsv',
+        help="Optional path to tsv file containing gene transcripts"
+    )
     return parser.parse_args(sys_args)
 
 
 if __name__ == '__main__':
     args = parse_args(sys.argv[1:])
     main(args.vcf, args.sample_t_id, args.sample_r_id, args.version, args.panel,
-         args.outputdir, args.recreate_bed, args.vcftools, args.sourcedir)
+         args.outputdir, args.recreate_bed, args.vcftools, args.transcript_tsv)
