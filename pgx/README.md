@@ -1,8 +1,10 @@
 # HMF_PGx README
 
 HMF_PGx is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
-It imports curated variants from a JSON file and inspects their presence the germline VCF. It creates two output files:
-* [sample]_genotype.txt; contains on each line a determined genotype of the sample for a specific gene
+It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in the germline VCF. 
+
+It creates two output files:
+* [sample]_genotype.txt; contains on each line a determined genotype of the sample for a specific gene.
 * [sample]_calls.txt; contains all the variants from the JSON file and their respective calls and filters.
  
 ## Installation
@@ -31,7 +33,7 @@ Remember to source the virtualenv before running `main.py`.
 ```
 
 ####Arguments
-* `vcf`: (Required) Path to germline VCF file of sample. For instance the germline vcf output from PURPLE
+* `vcf`: (Required) Path to germline VCF file of sample. For instance the germline vcf output from PURPLE. Calls should be wrt v37.
 * `sample_t_id`: (Required) The tumor sample ID of the run.
 * `sample_r_id`: (Required) The ref sample ID of the run.
 * `version`: (Required) The version of the tool.
@@ -45,5 +47,7 @@ Remember to source the virtualenv before running `main.py`.
   The path to the cached bed file is the path to the panel file, except with ".json" replaced by ".bed"
 * `--transcript_tsv`: (Optional, default=/data/common/dbs/pgx/all_genes.37.tsv) 
   If the bed file should be recreated, then this argument is required. 
-  This file should be a tsv file that describes transcripts for genes in GRCh37, including the genes in the panel JSON.
+  This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
+
+
 
