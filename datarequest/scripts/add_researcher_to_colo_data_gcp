@@ -22,10 +22,8 @@ if [[ -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-api_url=$"https://api.hartwigmedicalfoundation.nl"
+api_url=$"http://api.prod-1"
 api_url_spec=$"${api_url}/hmf/v1"
-api_key=$"/data/common/dbs/api_credentials/api.key"
-api_cert=$"/data/common/dbs/api_credentials/api.crt"
 bucket_name="hmf-dr-colo"
 
 
@@ -86,12 +84,12 @@ echo ""
 echo "[INFO] ADD $gcp_mail to API GROUP (for ACL permissions) RELATED TO ${bucket_name} ."
 echo ""
 echo "[INFO] Current accounts in API group related to ${bucket_name} :"
-account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
+account_nrs=$( curl -s ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 email_in_acl_group=$""
 for account_nr in $account_nrs
 do
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
-    email_acl=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
+    curl -s ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
+    email_acl=$( curl -s ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//' )
     email_in_acl_group+=${email_acl}
 done
 echo ""
@@ -100,12 +98,12 @@ for email in $(echo ${gcp_mail} | sed "s/,/ /g")
 do
     if [[ $( echo ${email_in_acl_group} | grep $email ) == "" ]]; then
         echo "....Adding $email to API group  ...."
-        if [[ $( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | grep $email ) == "" ]]; then
-            account_id=$( curl -s --cert ${api_cert} --key ${api_key} -d '{"email": "'$email'"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/accounts | jq .[] )
+        if [[ $( curl -s ${api_url_spec}/accounts | grep $email ) == "" ]]; then
+            account_id=$( curl -s -d '{"email": "'$email'"}' -H "Content-Type: application/json" -X POST ${api_url_spec}/accounts | jq .[] )
         else
-            account_id=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
+            account_id=$( curl -s ${api_url_spec}/accounts | jq --arg email_select "$email" '.[] | select(.email==$email_select) | .id' )
         fi
-        curl -s --cert ${api_cert} --key ${api_key} -d '{"group_id": "$group_id", "account_id": '$account_id'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
+        curl -s -d '{"group_id": "$group_id", "account_id": '$account_id'}' -H "Content-Type: application/json" -X POST ${api_url_spec}/groups/${group_id}/members
         echo ""
     else
         echo "[ERROR] Account $email already present in API group related to ${bucket_name} , so no adding needed."
@@ -114,22 +112,22 @@ do
 done
 
 echo "[INFO] Updated accounts in API group related to ${bucket_name} :"
-account_nrs=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
+account_nrs=$( curl -s ${api_url_spec}/groups/${group_id}/members | jq '.[] | .account_id' )
 for account_nr in $account_nrs
 do
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
+    curl -s ${api_url_spec}/accounts/${account_nr} | jq '.email' | sed -e 's/^"//' -e 's/"$//'
 done
 echo ""
 
 echo "[INFO] Current number of raw files with API group related to ${bucket_name}  in the ACL:"
-curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
-number=$(expr $( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l ) - 1)
+curl -s ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l
+number=$(expr $( curl -s ${api_url_spec}/groups/${group_id}/files | jq . | grep file_id | wc -l ) - 1)
 echo "[INFO] Links to be shared with researcher:"
 echo "URL Bucket = gs://${bucket_name}/"
 echo "URLs to raw data files:"
 for i in $(seq 0 $number); do
-    file_number=$( curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/groups/${group_id}/files | jq ".[${i}].file_id" )
-    curl -s --cert ${api_cert} --key ${api_key} ${api_url_spec}/files/${file_number} | jq -r '.filepath'
+    file_number=$( curl -s ${api_url_spec}/groups/${group_id}/files | jq ".[${i}].file_id" )
+    curl -s ${api_url_spec}/files/${file_number} | jq -r '.filepath'
 done
 echo ""
 echo "[INFO] If you eventually want to revoke access use the script revoke_access_data_GCP with '-i DR-colo' (but never remove the API group!!)."

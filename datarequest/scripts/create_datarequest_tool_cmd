@@ -26,7 +26,7 @@ if [[ -z "${dr_name}" || -z "${run_mode}" || -z "${gcp_mail}" ]]; then
     print_usage
 fi
 
-api_url="https://api.hartwigmedicalfoundation.nl"
+api_url="http://api.prod-1"
 tool_jar_symlink="$(locate_prod_datarequest)"
 tool_jar="$(readlink -f "${tool_jar_symlink}")"
 api_keystore="/data/common/dbs/api_credentials/api.jks"

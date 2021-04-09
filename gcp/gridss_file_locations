@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 api_cred_dir="/data/common/dbs/api_credentials"
-api_crt_file="${api_cred_dir}/api.crt"
-api_key_file="${api_cred_dir}/api.key"
 
 latest_gridss_run_details () {
   local set=$1
@@ -24,7 +22,7 @@ latest_gridss_file_locations() {
   local set=$1
   local run_details=$(latest_gridss_run_details $set)
   local run_id=$(echo $run_details | cut -f 1 -d " ")
-  local file_data=$(curl -v --cert-type pem --cert ${api_crt_file} --key ${api_key_file} "https://api.hartwigmedicalfoundation.nl/hmf/v1/files?run_id=${run_id}")
+  local file_data=$(curl -v "http://api.prod-1/hmf/v1/files?run_id=${run_id}")
   local unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "gridss(.unfiltered)?.vcf.gz$" | uniq)
   if [[ $unfiltered_vcf == "" ]]; then
     unfiltered_vcf=$(echo $file_data | jq -r '.[] | select(.filepath | endswith("vcf.gz")) | .filepath' | grep -P "structural_caller/(.*).filter.final.vcf.gz$" | uniq)

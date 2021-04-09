@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 
 api_cred_dir="/data/common/dbs/api_credentials"
-api_crt="${api_cred_dir}/api.crt"
-api_key="${api_cred_dir}/api.key"
-api_url='https://api.hartwigmedicalfoundation.nl/hmf/v1'
+api_url='http://api.prod-1/hmf/v1'
 
 hmfapi () {
     http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
@@ -21,7 +19,7 @@ barcode=$1 && shift
 fastq_dir=$1 && shift
 
 sample_name=""
-sample_id=$(curl -s --cert-type pem --cert "${api_crt}" --key "${api_key}" "${api_url}/samples?barcode=${barcode}" | jq '.[].id')
+sample_id=$(curl -s "${api_url}/samples?barcode=${barcode}" | jq '.[].id')
 
 if [[ -z "${sample_id}" ]]; then
     echo "[ERROR] Barcode not found at API (${barcode})" && exit 1
@@ -49,6 +47,5 @@ done
 
 echo "[INFO] Registering sample"
 curl -s --header "Content-type: application/json" \
-    --cert-type pem -X PATCH \
-    --cert "${api_crt}" --key "${api_key}" \
+    -X PATCH \
     -d '{"name": "'${sample_name}'", "status": "Pending_QC"}' "${api_url}/samples/${sample_id}"

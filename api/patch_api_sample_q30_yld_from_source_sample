@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 
-api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
-api_cred_dir="/data/common/dbs/api_credentials"
-api_key_file="${api_cred_dir}/api.key"
-api_crt_file="${api_cred_dir}/api.crt"
+api_url="http://api.prod-1/hmf/v1"
 
 if [[ "$#" -ne 2 ]]; then
     echo "-----"
@@ -55,7 +52,7 @@ main () {
 ## Generic api function
 hmfapi () {
     echo "$@" 1>&2
-    http --ignore-stdin --cert="${api_crt_file}" --cert-key="${api_key_file}" "$@"
+    http --ignore-stdin "$@"
 }
 
 main
