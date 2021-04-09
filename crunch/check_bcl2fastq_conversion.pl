@@ -45,7 +45,7 @@ my %SETTINGS_PER_PLATFORM = (
     'ISeq' => {
         'platform_name' => "ISEQ",
         'min_flowcell_q30' => 75,
-        'min_sample_yield' => 1e9,
+        'min_sample_yield' => 1e6,
         'max_undetermined' => 50,
         'yield_factor'     => 1
     },
@@ -74,7 +74,7 @@ my $HELP =<<HELP;
   Usage
     $SCRIPT -run_dir \${run-path}
     $SCRIPT -run_dir \${run-path} -samplesheet \${samplesheet-path}
-    $SCRIPT -json \${json-path}
+    $SCRIPT -json_path \${json-path}
     
   Options
     -sep <s>               Output sep (default = <TAB>)
@@ -237,7 +237,7 @@ sub performQC{
     my $undet = $stats->{'undet_perc'};
     my $max_undet = $qc_limits->{ 'max_undetermined' };
     if ( $undet > $max_undet ){
-        say "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
+        warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
         $fails += 1;
     }
         
@@ -254,7 +254,7 @@ sub performQC{
     else{
         $final_result = "FAIL";
         warn "## WARNING Some checks failed, inspect before proceeding (for $identifier)\n";
-        say "## FINAL QC RESULT: FAIL (for $identifier)";
+        say "## FINAL QC RESULT: FAIL ($fails failures for $identifier)";
     }
     $stats->{'flowcell_qc'} = $final_result;
 }
@@ -270,7 +270,7 @@ sub checkObjectField{
         my $value = 0;
         $value = $obj->{$field} if exists $obj->{$field};
         if ( $value < $min ){
-            say "## WARNING $field for $name too low: $value < $min";
+            warn "## WARNING $field for $name too low: $value < $min\n";
             $fails += 1;
         }
     }
@@ -429,9 +429,10 @@ sub parseJsonInfo{
     
     ## Collect some general stats/info
     my $undet_perc = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    my $run_overview_yield_factor = 1e6; # always report the run info in MBase
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
-      round( $info{'flow'}{$fid}{'yield'}, 0, $YIELD_FACTOR ),
-      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, $YIELD_FACTOR ),
+      round( $info{'flow'}{$fid}{'yield'}, 0, $run_overview_yield_factor ),
+      round( $info{'undt'}{'UNDETERMINED'}{'yield'}, 0, $run_overview_yield_factor ),
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'},
       $cycle_string,
