@@ -40,10 +40,10 @@ Remember to source the virtualenv before running `main.py`.
     * Panel with common DPYD haplotypes and variants (`/data/panelfiles/DPYD.json`).
     * Smaller panel for DPYD with haplotypes and haplotypes restricted to those in SOC tests (`/data/panelfiles/min_DPYD.json`).
 * `vcftools`: (Required) Path to VCFtools >= 0.1.14 (to allow for VCF v4.2).
-* `--recreate_bed`: To filter the VCF to the genes of interest, we use a transcript file and vcftools to filter on bed. 
+* `--recreate_bed`: (Optional, default=False) To filter the VCF to the genes of interest, we use a transcript file and vcftools to filter on bed. 
   Use this argument to regenerate the bed-file. If not given, the cached bed-file is used. 
   The path to the cached bed file is the path to the panel file, except with ".json" replaced by ".bed"
-* `--sourcedir`: If the bed file should be recreated, then this argument is required, 
-  and it should point to a directory containing all_genes.37.tsv, 
-  which is a file that describes exon locations for genes in GRCh37.
+* `--transcript_tsv`: (Optional, default=/data/common/dbs/pgx/all_genes.37.tsv) 
+  If the bed file should be recreated, then this argument is required. 
+  This file should be a tsv file that describes transcripts for genes in GRCh37, including the genes in the panel JSON.
 
