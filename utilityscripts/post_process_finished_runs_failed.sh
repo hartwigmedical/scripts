@@ -29,13 +29,9 @@ for run in ${process_runs}; do
     elif [[ ${cohort} == "CORELR02" || ${cohort} == "CORERI02" ]]; then
         echo "[INFO] Moving set ${run} to /data/core/runs"
         mv ${source_path}/${run} /data/core/runs/
-        echo "[INFO] Create patient report for ${run}"
-        create_patient_report_for_run /data/core/runs/${run}
     elif [[ ${cohort} == "CPCT" || ${cohort} == "CPCTpancreas" || ${cohort} == "DRUP" || ${cohort} == "DRUPstage3" || ${cohort} == "COREDB" ]]; then
         echo "[INFO] Moving set ${run} to /data/cpct/runs"
         mv ${source_path}/${run} /data/cpct/runs/
-        echo "[INFO] Create patient report for ${run}"
-        create_patient_report_for_run /data/cpct/runs/${run}
         echo "[INFO] Copy run to hmf-crunch at GCP"
         copy_run_to_gcp_crunch_project ${run}
         echo "[INFO] Loading run into database"
@@ -44,8 +40,6 @@ for run in ${process_runs}; do
         # This is for patients that require a summary (WIDE, some CORE)
         echo "[INFO] Copying set ${run} to /data/cpct/reportable_runs"
         cp -R ${source_path}/${run} /data/cpct/reportable_runs/
-        echo "[INFO] Create patient report for ${run}"
-        create_patient_report_for_run /data/cpct/reportable_runs/${run}
         if [[ ${cohort} == "CORE" || ${cohort} == "CORELR11" || ${cohort} == "CORESC11" ]]; then
             echo "[INFO] Moving set ${run} to /data/core/runs"
             mv ${source_path}/${run} /data/core/runs/
