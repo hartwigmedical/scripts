@@ -1,3 +1,3 @@
 select primaryTumorLocation, primaryTumorSubLocation, primaryTumorType, primaryTumorSubType, primaryTumorExtraDetails, doids
-from datarequest
+from clinical
 where primaryTumorLocation ="XXX"
