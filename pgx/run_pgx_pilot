@@ -6,7 +6,8 @@ source metadata_functions || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 
-STANDARD_PANEL_NAME="DPYD.json"
+FULL_DPYD_PANEL_NAME="DPYD.json"
+MINIMAL_DPYD_PANEL_NAME="min_DPYD.json"
 
 main() {
   info "Started ${SCRIPT_NAME}"
@@ -17,7 +18,7 @@ main() {
   local optional_recreate_bed_arg
 
   venv_dir=$(locate_pgx_venv_dir)  # default argument
-  panel_name="${STANDARD_PANEL_NAME}"  # default argument
+  panel_name="${FULL_DPYD_PANEL_NAME}"  # default argument
   optional_recreate_bed_arg=""  # default argument
 
   while [[ $# -gt 0 ]]
@@ -51,10 +52,12 @@ main() {
   # START VIRTUAL ENV
   source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
 
-  if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
+  if [[ "${panel_name}" == "${FULL_DPYD_PANEL_NAME}" ]]; then
     local output_dir_name="pgx_pilot"
+  elif [[ "${panel_name}" == "${MINIMAL_DPYD_PANEL_NAME}" ]]; then
+    local output_dir_name="pgx_pilot_min"
   else
-    local output_dir_name="pgx_pilot_alt"
+    die "Unrecognized panel name ${panel_name}. Known panel names: '${FULL_DPYD_PANEL_NAME}', '${MINIMAL_DPYD_PANEL_NAME}'"
   fi
   local output_dir="${run_dir}/${output_dir_name}"
 
@@ -89,7 +92,8 @@ main() {
   # RUN
   python "${pgx_tool}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${version_pgx_tool}" "${output_dir}"  \
       "${pgx_resource_dir}/panelfiles/${panel_name}" "${vcftools_tool}" \
-      --transcript_tsv "${pgx_resource_dir}/panelfiles/all_genes.37.tsv" ${optional_recreate_bed_arg}|| die "PGX pilot failed"
+      --transcript_tsv "${pgx_resource_dir}/panelfiles/all_genes.37.tsv" ${optional_recreate_bed_arg} \
+      || die "PGX pilot failed"
 
   info "Finished ${SCRIPT_NAME}"
 }
