@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+vm_name=""
+image_name="pipeline5-5-22-202104121213"
+image_project="hmf-pipeline-development"
+zone="europe-west4-a"
+machine_type="n1-standard-2"
+disk_type="pd-ssd"
+disk_size="200G"
+extra_params=("--service-account" "hmf-crunch@hmf-crunch.iam.gserviceaccount.com" "--no-address")
+
+current_project=$(gcloud config get-value project) || die "Unable to get-value project"
+
+print_usage() {
+    script=$(basename "$0")
+    echo ""
+    echo "Descr: Creates a VM in your current project (${current_project})"
+    echo "Usage: ${script} -n <NAME> [options]"
+    echo "Examp: ${script} -n ${USER}-test-vm"
+    echo "       ${script} -n ${USER}-test-vm -m n1-standard-16"
+    echo "       ${script} -n ${USER}-test-vm -m n1-standard-32 -i my-image-name -p my-image-project"
+    echo "Options:"
+    echo "      -i image_name       Image name [${image_name}]"
+    echo "      -p image_project    Image project [${image_project}]"
+    echo "      -m machine_type     VM machine type [${machine_type}]"
+    echo "      -s disk_size        VM boot disk size [${disk_size}]"
+    echo "      -t disk_type        VM boot disk type [${disk_type}]"
+    echo "      -x                  Provide VM with internet and do not use hmf-crunch service account"
+    echo "                          (WARNING: only use this for dev and when not using patient data!)"
+    echo "See also:"
+    echo "      https://cloud.google.com/compute/docs/disks"
+    echo "      https://cloud.google.com/compute/docs/machine-types"
+    echo "      https://cloud.google.com/sdk/gcloud/reference/compute/instances/create"
+    echo "      gcloud compute images list | grep pipeline"
+    echo ""
+    exit 1
+}
+
+while getopts ':n:p:i:m:s:t:x' flag; do
+    case "${flag}" in
+        n) vm_name=${OPTARG} ;;
+        i) image_name=${OPTARG} ;;
+        p) image_project=${OPTARG} ;;
+        m) machine_type=${OPTARG} ;;
+        s) disk_size=${OPTARG} ;;
+        t) disk_type=${OPTARG} ;;
+        x) extra_params=() ;;
+        *) print_usage
+        exit 1 ;;
+    esac
+done
+
+if [[ -z "${vm_name}" || "$1" == "-h" || "$1" == "--help" ]]; then
+    print_usage
+fi
+
+info "Settings:"
+info "  Config: ${machine_type} ${disk_size}"
+info "  Access: gcloud compute ssh ${vm_name}"
+info "  Delete: gcloud compute instances delete --zone ${zone} -q ${vm_name}"
+info "  Params: ${extra_params[*]}"
+info "   Image: ${image_name} in ${image_project}"
+info "      VM: ${vm_name} in ${current_project}"
+
+info "Press [ENTER] to start creating VM..."
+read -r -s
+
+info "Start creating VM instance ${vm_name}"
+gcloud compute instances create "${vm_name}" \
+--image "${image_name}" \
+--image-project "${image_project}" \
+--machine-type "${machine_type}" \
+--boot-disk-type "${disk_type}" \
+--boot-disk-size "${disk_size}" \
+--scopes storage-full \
+--no-restart-on-failure \
+--zone "${zone}" \
+"${extra_params[@]}" || die "Something went wrong when creating the image"
+
+info "Finished creating VM instance ${vm_name}"
