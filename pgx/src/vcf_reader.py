@@ -65,7 +65,7 @@ class VcfReader(object):
                 if variants[f"{cls.FILTER_FIELD_NAME}_PASS"][i]:
                     filter_type = Filter.PASS
                 else:
-                    raise ValueError(f"Call not PASS at {chromosome}:{position}")
+                    continue
                 alts = [str(allele) for allele in variants[cls.ALT_ALLELE_FIELD_NAME][i]]
                 variant_annotation = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_HGVS_c"][i])
                 gene = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_Gene_Name"][i])
