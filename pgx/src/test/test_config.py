@@ -37,8 +37,8 @@ class TestLoadConfig(unittest.TestCase):
             RsIdInfo("rs1801265", "G", "A", GeneCoordinate("1", 98348885), GeneCoordinate("1", 97883329)),
         })
         dpyd_drugs_expected = frozenset({
-            DrugInfo("5-Fluorouracil", "https://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939"),
-            DrugInfo("Capecitabine", "https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963"),
+            DrugInfo("5-Fluorouracil", "https://www.source_url.org/5-Fluorouracil"),
+            DrugInfo("Capecitabine", "https://www.source_url.org/Capecitabine"),
         })
         dpyd_rs_id_to_difference_annotations = {
             "rs72549303": "6744GA>CA",
@@ -51,7 +51,7 @@ class TestLoadConfig(unittest.TestCase):
             RsIdInfo("rs1212125", "T", "T", GeneCoordinate("5", 97915617), GeneCoordinate("5", 97450060)),
         })
         fake_drugs_expected = frozenset({
-            DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url"),
+            DrugInfo("Aspirin", "https://www.source_url.org/Aspirin"),
         })
         fake_rs_id_to_difference_annotations: Dict[str, str] = {}
 
@@ -62,7 +62,7 @@ class TestLoadConfig(unittest.TestCase):
             RsIdInfo("rs1212127", "C", "T", GeneCoordinate("16", 97915617), GeneCoordinate("16", 97450060)),
         })
         fake2_drugs_expected = frozenset({
-            DrugInfo("Aspirin", "https://www.pharmgkb.org/some_other_url"),
+            DrugInfo("Aspirin", "https://www.source_url.org/Aspirin"),
         })
         fake2_rs_id_to_difference_annotations: Dict[str, str] = {"rs1212127": "1324T>C"}
 

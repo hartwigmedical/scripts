@@ -62,11 +62,6 @@ for seq_dir in "${seq_dirs[@]}"; do
     cmds_to_execute+=("rsync -ah ${report_path}/Stats/conversion_metrics_table.txt nas:/volume1/web/qc/conversion/${nasrun_name}/hmf_report.txt")
 done
 
-printHeader "RUN info"
-for seq_dir in "${seq_dirs[@]}"; do
-    ${PARSE_SCRIPT} -run_dir "${seq_dir}" -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
-done | sort -r
-
 printHeader "SAMPLE info"
 for seq_dir in "${seq_dirs[@]}"; do
     ${PARSE_SCRIPT} -run_dir "${seq_dir}" | grep ^SAMPLE | while read line; do
@@ -110,14 +105,20 @@ for seq_dir in "${seq_dirs[@]}"; do
    done | sort -k1,1 -k3,3
 done
 
+printHeader "RUN info"
+for seq_dir in "${seq_dirs[@]}"; do
+    ${PARSE_SCRIPT} -run_dir "${seq_dir}" -summary | grep -P "^## RunOverview" | sed 's#\#\#\ RunOverviewInfoLine\:\ ##g'
+done | sort -r
+
+if [[ ${HOSTNAME} != "datastore" ]]; then
+    for seq_run in "${seq_runs[@]}"; do
+        cmds_to_execute+=("archive_flowcell_to_datastore ${seq_run}")
+    done
+fi
+
 printHeader "Extra actions"
 for cmd in "${cmds_to_execute[@]}"; do
     echo ${cmd}
 done
-
-if [[ ${HOSTNAME} != "datastore" ]]; then
-    rsync_cmd=$(rsync_seqruns_to_datastore ${seq_dirs[@]} | grep -v 'INFO')
-    echo ${rsync_cmd}
-fi
 
 echo ""
