@@ -33,7 +33,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
         raise ValueError("No panel is given, so no analysis can be performed.")
 
     # Get data for patient
-    filtered_vcf, filtered_vcf_log = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
+    filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
     grch37_call_data = VcfReader.get_grch37_call_data(filtered_vcf, panel)
 
     # Compute output from input data
@@ -48,20 +48,15 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Clean up
     if os.path.exists(filtered_vcf):
-        if os.path.exists(filtered_vcf):
-            os.remove(filtered_vcf)
-            print(f"[INFO] {filtered_vcf} removed.")
-        if os.path.exists(filtered_vcf_log):
-            os.remove(filtered_vcf_log)
-            print(f"[INFO] {filtered_vcf_log} removed.")
+        os.remove(filtered_vcf)
+        print(f"[INFO] {filtered_vcf} removed.")
 
     # TODO: add genes CYP2D6, CYP3A4, CYP3A5
 
     print("[INFO] ## PHARMACOGENOMICS ANALYSIS FINISHED\n")
 
 
-def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str,
-                     sample_t_id: str, outputdir: str, vcftools: str) -> Tuple[str, str]:
+def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str) -> str:
     filtered_vcf_prefix = f"{outputdir}/{sample_t_id}_PGx"
     filtered_vcf = f"{filtered_vcf_prefix}.recode.vcf"
     filtered_vcf_log = f"{filtered_vcf_prefix}.log"
@@ -73,11 +68,15 @@ def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str,
                     '--indv', sample_r_id, '--recode', '--recode-INFO-all'])
     print("[INFO] Subprocess completed.")
 
-    if not os.path.exists(filtered_vcf) or not os.path.exists(filtered_vcf_log):
-        error_msg = f"Filtered vcf or log of filtering does not exist"
+    if os.path.exists(filtered_vcf_log):
+        os.remove(filtered_vcf_log)
+        print(f"[INFO] {filtered_vcf_log} removed.")
+
+    if not os.path.exists(filtered_vcf):
+        error_msg = f"Filtered vcf does not exist"
         raise FileNotFoundError(error_msg)
 
-    return filtered_vcf, filtered_vcf_log
+    return filtered_vcf
 
 
 def load_panel(panel_path: str) -> Panel:
