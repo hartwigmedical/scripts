@@ -41,8 +41,8 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Output
     # TODO: maybe change file names of tsv files to .tsv
-    print_calls_to_file(pgx_analysis, outputdir, sample_t_id, panel_path, version)
-    print_genotypes_to_file(pgx_analysis, panel, outputdir, sample_t_id, panel_path, version)
+    print_calls_to_file(pgx_analysis, outputdir, sample_t_id, panel.get_id(), version)
+    print_genotypes_to_file(pgx_analysis, panel, outputdir, sample_t_id, panel.get_id(), version)
     # Also copy the bed-filtered VCF file for research purposes
     copy_filtered_vcf_file(filtered_vcf, outputdir, sample_t_id)
 
@@ -135,23 +135,23 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_pa
 
 
 def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: str,
-                        panel_path: str, version: str) -> None:
+                        panel_id: str, version: str) -> None:
     calls_file = f"{outputdir}/{sample_t_id}_calls.txt"
     if os.path.exists(calls_file):
         raise IOError(f"Calls output file {calls_file} already exists. Exiting.")
     with open(calls_file, 'w') as f:
-        f.write(GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version))
+        f.write(GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_id, version))
     if not os.path.exists(calls_file):
         raise FileNotFoundError(f"Failed to write calls output file {calls_file}")
 
 
 def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: str, sample_t_id: str,
-                            panel_path: str, version: str) -> None:
+                            panel_id: str, version: str) -> None:
     genotype_file = f"{outputdir}/{sample_t_id}_genotype.txt"
     if os.path.exists(genotype_file):
         raise IOError(f"Genotype output file {genotype_file} already exists. Exiting.")
     with open(genotype_file, 'w') as f:
-        f.write(HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version))
+        f.write(HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_id, version))
     if not os.path.exists(genotype_file):
         raise FileNotFoundError(f"Failed to write calls output file {genotype_file}")
 

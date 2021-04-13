@@ -111,6 +111,9 @@ class Panel(object):
         gene_info = self.__get_gene_info(gene)
         return gene_info.get_haplotype_function(haplotype_name)
 
+    def get_id(self) -> str:
+        return f"{self.__name}_v{self.__version}"
+
     def __get_gene_info(self, gene: str) -> GeneInfo:
         matching_gene_infos = [gene_info for gene_info in self.__gene_infos if gene_info.gene == gene]
         if len(matching_gene_infos) == 1:

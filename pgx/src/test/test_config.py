@@ -80,6 +80,12 @@ class TestLoadConfig(unittest.TestCase):
 
         self.assertEqual(panel_expected, panel)
 
+    def test_panel_name_from_json(self) -> None:
+        panel_path = get_panel_test_resource()
+        panel = load_panel(str(panel_path))
+        expected_panel_id = "fake_panel_v0.2"
+        self.assertEqual(expected_panel_id, panel.get_id())
+
     def test_gene_info_with_overlapping_haplotype_names(self) -> None:
         """Error when haplotype name used multiple times for gene"""
         gene = "FAKE"

@@ -40,19 +40,19 @@ class GenotypeReporter(object):
     RS_ID_SEPARATOR = ";"
 
     @classmethod
-    def get_calls_tsv_text(cls, pgx_analysis: PgxAnalysis, panel_path: str, version: str) -> str:
+    def get_calls_tsv_text(cls, pgx_analysis: PgxAnalysis, panel_id: str, version: str) -> str:
         text = str(
-            cls.__get_panel_calls_df(pgx_analysis, panel_path, version).to_csv(sep=cls.TSV_SEPARATOR, index=False)
+            cls.__get_panel_calls_df(pgx_analysis, panel_id, version).to_csv(sep=cls.TSV_SEPARATOR, index=False)
         )
         return text
 
     @classmethod
-    def __get_panel_calls_df(cls, pgx_analysis: PgxAnalysis, panel_path: str, version: str) -> pd.DataFrame:
-        return cls.__get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls(), panel_path, version)
+    def __get_panel_calls_df(cls, pgx_analysis: PgxAnalysis, panel_id: str, version: str) -> pd.DataFrame:
+        return cls.__get_calls_data_frame_from_full_calls(pgx_analysis.get_all_full_calls(), panel_id, version)
 
     @classmethod
     def __get_calls_data_frame_from_full_calls(
-            cls, full_calls: FrozenSet[FullCall], panel_path: str, version: str) -> pd.DataFrame:
+            cls, full_calls: FrozenSet[FullCall], panel_id: str, version: str) -> pd.DataFrame:
         data_frame = pd.DataFrame(columns=cls.NEW_CALLS_TSV_COLUMNS)
         for full_call in full_calls:
             assert (
@@ -84,7 +84,7 @@ class GenotypeReporter(object):
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
                 cls.ANNOTATION_COLUMN_NAME: full_call.variant_annotation,
                 cls.FILTER_COLUMN_NAME: full_call.filter.name,
-                cls.PANEL_VERSION_COLUMN_NAME: panel_path,
+                cls.PANEL_VERSION_COLUMN_NAME: panel_id,
                 cls.TOOL_VERSION_COLUMN_NAME: version,
             }
             data_frame = data_frame.append(new_id, ignore_index=True)
@@ -120,7 +120,7 @@ class HaplotypeReporter(object):
     DRUG_SEPARATOR = ";"
 
     @classmethod
-    def get_genotype_tsv_text(cls, pgx_analysis: PgxAnalysis, panel: Panel, panel_path: str, version: str) -> str:
+    def get_genotype_tsv_text(cls, pgx_analysis: PgxAnalysis, panel: Panel, panel_id: str, version: str) -> str:
         gene_to_haplotype_calls = pgx_analysis.get_gene_to_haplotype_calls()
 
         genes_in_analysis = set(gene_to_haplotype_calls.keys())
@@ -152,7 +152,7 @@ class HaplotypeReporter(object):
                         panel.get_haplotype_function(gene, haplotype_call.haplotype_name),
                         gene_to_drug_info[gene][0],
                         gene_to_drug_info[gene][1],
-                        panel_path,
+                        panel_id,
                         version,
                     ]))
             else:
@@ -162,7 +162,7 @@ class HaplotypeReporter(object):
                     UNKNOWN_FUNCTION_STRING,
                     gene_to_drug_info[gene][0],
                     gene_to_drug_info[gene][1],
-                    panel_path,
+                    panel_id,
                     version,
                 ]))
         text = "\n".join(lines) + "\n"
