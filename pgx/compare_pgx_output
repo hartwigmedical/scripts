@@ -50,7 +50,7 @@ do
     if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
       output_dir_name="pgx_pilot"
     else
-      output_dir_name="pgx_pilot_alt"
+      output_dir_name="pgx_pilot_min"
     fi
 
     output_dir="${subdir}/${output_dir_name}"
@@ -58,7 +58,7 @@ do
     if [ ${original} = true ] ; then
         control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
     else
-        control_dir="${subdir}/pgx_pilot_control"
+        control_dir="${subdir}/${output_dir_name}_control"
     fi
 
     echo "Comparing ${output_dir} to ${control_dir}"
