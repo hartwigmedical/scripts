@@ -52,7 +52,7 @@ class Panel(object):
         results = []
         for gene_info in self.__gene_infos:
             for rs_id_info in gene_info.rs_id_infos:
-                if rs_id_info.reference_allele_grch37 != rs_id_info.reference_allele_grch38:
+                if rs_id_info.reference_allele_v37 != rs_id_info.reference_allele_v38:
                     annotation = gene_info.get_ref_sequence_difference_annotation(rs_id_info.rs_id)
                     results.append((rs_id_info, gene_info.gene, annotation))
         results.sort(key=lambda diff: (diff[1], diff[2]))
@@ -69,26 +69,26 @@ class Panel(object):
     def get_gene_infos(self) -> Set[GeneInfo]:
         return set(self.__gene_infos)
 
-    def contains_rs_id_with_grch37_coordinate(self, grch37_coordinate: GeneCoordinate) -> bool:
+    def contains_rs_id_with_v37_coordinate(self, v37_coordinate: GeneCoordinate) -> bool:
         for info in self.__get_rs_id_infos():
-            if info.start_coordinate_grch37 == grch37_coordinate:
+            if info.start_coordinate_v37 == v37_coordinate:
                 return True
         return False
 
     def contains_matching_rs_id_info(
-            self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> bool:
+            self, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> bool:
         for info in self.__get_rs_id_infos():
-            if (info.start_coordinate_grch37 == grch37_coordinate
-                    and info.reference_allele_grch37 == grch37_reference_allele):
+            if (info.start_coordinate_v37 == v37_coordinate
+                    and info.reference_allele_v37 == v37_reference_allele):
                 return True
         return False
 
     def get_matching_rs_id_info(
-            self, grch37_coordinate: GeneCoordinate, grch37_reference_allele: str) -> RsIdInfo:
+            self, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> RsIdInfo:
         matching_rs_id_infos = []
         for info in self.__get_rs_id_infos():
-            if (info.start_coordinate_grch37 == grch37_coordinate
-                    and info.reference_allele_grch37 == grch37_reference_allele):
+            if (info.start_coordinate_v37 == v37_coordinate
+                    and info.reference_allele_v37 == v37_reference_allele):
                 matching_rs_id_infos.append(info)
 
         if matching_rs_id_infos and len(matching_rs_id_infos) == 1:

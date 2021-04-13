@@ -34,10 +34,10 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-    grch37_call_data = VcfReader.get_grch37_call_data(filtered_vcf, panel)
+    v37_call_data = VcfReader.get_v37_call_data(filtered_vcf, panel)
 
     # Compute output from input data
-    pgx_analysis = PgxAnalyser.create_pgx_analysis(grch37_call_data, panel)
+    pgx_analysis = PgxAnalyser.create_pgx_analysis(v37_call_data, panel)
 
     # Output
     # TODO: maybe change file names of tsv files to .tsv
@@ -168,7 +168,7 @@ def copy_filtered_vcf_file(filtered_vcf: str, outputdir: str, sample_t_id: str) 
 def parse_args(sys_args: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=('Run pharmacogenomics panel on germline VCF file. The pharmacogenomic annotations are done on '
-                     'GRCh38, so in the output both reference genome output is given where possible.')
+                     'v38, so in the output both reference genome output is given where possible.')
     )
     parser.add_argument('vcf', type=str, help='VCF file to use for pharmacogenomics analysis')
     parser.add_argument('sample_t_id', type=str, help='The sample ID of the tumor')

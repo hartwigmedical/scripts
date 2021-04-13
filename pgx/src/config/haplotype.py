@@ -50,9 +50,9 @@ class Haplotype(object):
 
     @classmethod
     def from_json(cls, data: Json) -> "Haplotype":
-        name = str(data["alleleName"])
+        name = str(data["haplotypeName"])
         function = str(data["function"])
-        variants = frozenset({Variant.from_json(variant_json) for variant_json in data["alleleVariants"]})
+        variants = frozenset({Variant.from_json(variant_json) for variant_json in data["haplotypeVariants"]})
         return Haplotype(name, function, variants)
 
 

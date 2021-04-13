@@ -61,9 +61,9 @@ class HaplotypeCaller(object):
 
         called_haplotypes_count = sum(haplotype_to_count.values())
         if called_haplotypes_count == 0:
-            haplotype_calls.add(HaplotypeCall(gene_info.reference_haplotype_name, 2))
+            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 2))
         elif called_haplotypes_count == 1:
-            haplotype_calls.add(HaplotypeCall(gene_info.reference_haplotype_name, 1))
+            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 1))
 
         return haplotype_calls
 
@@ -75,10 +75,10 @@ class HaplotypeCaller(object):
             cls.__assert_handleable_call(call)
             rs_id = call.rs_ids[0]
             for annotated_allele in call.get_annotated_alleles():
-                if annotated_allele.is_variant_vs_grch38 is None:
+                if annotated_allele.is_variant_vs_v38 is None:
                     error_msg = f"Unknown variant: allele={annotated_allele}"
                     raise ValueError(error_msg)
-                if annotated_allele.is_variant_vs_grch38:
+                if annotated_allele.is_variant_vs_v38:
                     variant_to_count[Variant(rs_id, annotated_allele.allele)] += 1
         return variant_to_count
 

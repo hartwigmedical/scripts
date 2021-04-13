@@ -5,78 +5,78 @@
     {
       "gene": "DPYD",
       "chromosome": 1,
-      "referenceAllele": "*1",
-      "alleles": [
+      "wildTypeHaplotype": "*1",
+      "haplotypes": [
         {
-          "alleleName": "*2A",
+          "haplotypeName": "*2A",
           "function": "No Function",
-          "alleleVariants": [
+          "haplotypeVariants": [
             {
               "rsid": "rs3918290",
-              "altAlleleGRCh38": "T"
+              "altAlleleV38": "T"
             }
           ]
         },
         {
-          "alleleName": "*2B",
+          "haplotypeName": "*2B",
           "function": "No Function",
-          "alleleVariants": [
+          "haplotypeVariants": [
             {
               "rsid": "rs3918290",
-              "altAlleleGRCh38": "T"
+              "altAlleleV38": "T"
             },
             {
               "rsid": "rs1801159",
-              "altAlleleGRCh38": "C"
+              "altAlleleV38": "C"
             }
           ]
         },
         {
-          "alleleName": "*3",
+          "haplotypeName": "*3",
           "function": "Normal Function",
-          "alleleVariants": [
+          "haplotypeVariants": [
             {
               "rsid": "rs72549303",
-              "altAlleleGRCh38": "TG"
+              "altAlleleV38": "TG"
             }
           ]
         }
       ],
       "variants": [
         {
-          "position": 97915614,
-          "positionGRCh38": "97450058",
+          "positionV37": 97915614,
+          "positionV38": "97450058",
           "rsid": "rs3918290",
-          "referenceAllele": "C",
-          "referenceAlleleGRCh38": "C"
+          "referenceAlleleV37": "C",
+          "referenceAlleleV38": "C"
         },
         {
-          "position": "98205966",
-          "positionGRCh38": "97740410",
+          "positionV37": "98205966",
+          "positionV38": "97740410",
           "rsid": "rs72549309",
-          "referenceAllele": "GATGA",
-          "referenceAlleleGRCh38": "GATGA"
+          "referenceAlleleV37": "GATGA",
+          "referenceAlleleV38": "GATGA"
         },
         {
-          "position": "97981395",
-          "positionGRCh38": "97515839",
+          "positionV37": "97981395",
+          "positionV38": "97515839",
           "rsid": "rs1801159",
-          "referenceAllele": "T",
-          "referenceAlleleGRCh38": "T"
+          "referenceAlleleV37": "T",
+          "referenceAlleleV38": "T"
         },
         {
-          "position": "97915621",
-          "positionGRCh38": "97450065",
+          "positionV37": "97915621",
+          "positionV38": "97450065",
           "rsid": "rs72549303",
-          "referenceAllele": "TG",
-          "referenceAlleleGRCh38": "TC"
+          "referenceAlleleV37": "TG",
+          "referenceAlleleV38": "TC"
         },
         {
-          "position": "98348885",
-          "positionGRCh38": "97883329",
+          "positionV37": "98348885",
+          "positionV38": "97883329",
           "rsid": "rs1801265",
-          "referenceAllele": "G",
-          "referenceAlleleGRCh38": "A"
+          "referenceAlleleV37": "G",
+          "referenceAlleleV38": "A"
         }
       ],
       "drugs": [
@@ -92,37 +92,37 @@
       "refSeqDifferenceAnnotations": [
         {
           "rsid": "rs72549303",
-          "annotationGRCh38": "6744GA>CA"
+          "annotationV38": "6744GA>CA"
         },
         {
           "rsid": "rs1801265",
-          "annotationGRCh38": "85T>C"
+          "annotationV38": "85T>C"
         }
       ]
     },
     {
       "gene": "FAKE",
       "chromosome": 5,
-      "referenceAllele": "*1",
-      "alleles": [
+      "wildTypeHaplotype": "*1",
+      "haplotypes": [
         {
-          "alleleName": "*4A",
+          "haplotypeName": "*4A",
           "function": "Reduced Function",
-          "alleleVariants": [
+          "haplotypeVariants": [
             {
               "rsid": "rs1212125",
-              "altAlleleGRCh38": "C"
+              "altAlleleV38": "C"
             }
           ]
         }
       ],
       "variants": [
         {
-          "position": "97915617",
-          "positionGRCh38": "97450060",
+          "positionV37": "97915617",
+          "positionV38": "97450060",
           "rsid": "rs1212125",
-          "referenceAllele": "T",
-          "referenceAlleleGRCh38": "T"
+          "referenceAlleleV37": "T",
+          "referenceAlleleV38": "T"
         }
       ],
       "drugs": [
@@ -137,26 +137,26 @@
     {
       "gene": "FAKE2",
       "chromosome": 16,
-      "referenceAllele": "*1",
-      "alleles": [
+      "wildTypeHaplotype": "*1",
+      "haplotypes": [
         {
-          "alleleName": "*4A",
+          "haplotypeName": "*4A",
           "function": "Reduced Function",
-          "alleleVariants": [
+          "haplotypeVariants": [
             {
               "rsid": "rs1212127",
-              "altAlleleGRCh38": "C"
+              "altAlleleV38": "C"
             }
           ]
         }
       ],
       "variants": [
         {
-          "position": "97915617",
-          "positionGRCh38": "97450060",
+          "positionV37": "97915617",
+          "positionV38": "97450060",
           "rsid": "rs1212127",
-          "referenceAllele": "C",
-          "referenceAlleleGRCh38": "T"
+          "referenceAlleleV37": "C",
+          "referenceAlleleV38": "T"
         }
       ],
       "drugs": [
@@ -168,7 +168,7 @@
       "refSeqDifferenceAnnotations": [
         {
           "rsid": "rs1212127",
-          "annotationGRCh38": "1324T>C"
+          "annotationV38": "1324T>C"
         }
       ]
     }

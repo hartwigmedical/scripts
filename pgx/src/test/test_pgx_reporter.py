@@ -83,7 +83,7 @@ class TestPgxAnalysis(unittest.TestCase):
         result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version)
 
         result_expected = (
-            "gene\tchromosome\tposition_GRCh37\tposition_GRCh38\tref_GRCh37\tref_GRCh38\t"
+            "gene\tchromosome\tposition_v37\tposition_v38\tref_v37\tref_v38\t"
             "allele1\tallele2\trsid\tvariant_annotation\tfilter\tpanel_version\trepo_version\n"
         )
         self.assertEqual(result_expected, result)
@@ -95,11 +95,11 @@ class TestPgxAnalysis(unittest.TestCase):
             FullCall(GeneCoordinate("1", 15), "C", None, None, ("C", "CAG"),
                      "DPYD", ("rs536",), "25A>C;25A>G", Filter.PASS),
             FullCall(GeneCoordinate("X", 15), "TT", GeneCoordinate("X", 40), "AA", ("TT", "TT"),
-                     "GENE", ("rs23",), "627AA>TT", Filter.INFERRED_GRCH37_REF_CALL),
+                     "GENE", ("rs23",), "627AA>TT", Filter.INFERRED_V37_REF_CALL),
             FullCall(GeneCoordinate("2", 154663), "T", GeneCoordinate("2", 40565464), "T", ("T", "T"),
                      "BRAF", ("rs154", "rs8839"), "REF_CALL", Filter.NO_CALL),
             FullCall(GeneCoordinate("15", 24113), "A", GeneCoordinate("15", 684633), "T", ("T", "T"),
-                     ".", ("rs462", "rs9820", "rs536"), "REF_CALL", Filter.PASS_BUT_REF_GRCH38),
+                     ".", ("rs462", "rs9820", "rs536"), "REF_CALL", Filter.PASS_BUT_REF_V38),
         })
         pgx_analysis = PgxAnalysis(all_full_calls, {})
         panel_path = "some/panel/path.json"
@@ -107,12 +107,12 @@ class TestPgxAnalysis(unittest.TestCase):
         result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version)
 
         result_expected = (
-            "gene\tchromosome\tposition_GRCh37\tposition_GRCh38\tref_GRCh37\tref_GRCh38\tallele1\tallele2\trsid\tvariant_annotation\tfilter\tpanel_version\trepo_version\n"
+            "gene\tchromosome\tposition_v37\tposition_v38\tref_v37\tref_v38\tallele1\tallele2\trsid\tvariant_annotation\tfilter\tpanel_version\trepo_version\n"
             "DPYD\t1\t5\t25\tA\tA\tC\tG\t.\t25A>C;25A>G\tPASS\tsome/panel/path.json\tV1\n"
             "DPYD\t1\t15\tUNKNOWN\tC\tUNKNOWN\tC\tCAG\trs536\t25A>C;25A>G\tPASS\tsome/panel/path.json\tV1\n"
             "BRAF\t2\t154663\t40565464\tT\tT\tT\tT\trs154;rs8839\tREF_CALL\tNO_CALL\tsome/panel/path.json\tV1\n"
-            ".\t15\t24113\t684633\tA\tT\tT\tT\trs462;rs9820;rs536\tREF_CALL\tPASS_BUT_REF_GRCH38\tsome/panel/path.json\tV1\n"
-            "GENE\tX\t15\t40\tTT\tAA\tTT\tTT\trs23\t627AA>TT\tINFERRED_GRCH37_REF_CALL\tsome/panel/path.json\tV1\n"
+            ".\t15\t24113\t684633\tA\tT\tT\tT\trs462;rs9820;rs536\tREF_CALL\tPASS_BUT_REF_V38\tsome/panel/path.json\tV1\n"
+            "GENE\tX\t15\t40\tTT\tAA\tTT\tTT\trs23\t627AA>TT\tINFERRED_V37_REF_CALL\tsome/panel/path.json\tV1\n"
         )
         self.assertEqual(result_expected, result)
 

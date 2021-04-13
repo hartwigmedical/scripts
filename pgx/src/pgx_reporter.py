@@ -12,10 +12,10 @@ from pgx_analysis import PgxAnalysis
 class GenotypeReporter(object):
     GENE_COLUMN_NAME = "gene"
     CHROMOSOME_COLUMN_NAME = "chromosome"
-    POSITION_GRCH37_COLUMN_NAME = "position_GRCh37"
-    POSITION_GRCH38_COLUMN_NAME = "position_GRCh38"
-    REF_ALLELE_GRCH37_COLUMN_NAME = "ref_GRCh37"
-    REF_ALLELE_GRCH38_COLUMN_NAME = "ref_GRCh38"
+    POSITION_V37_COLUMN_NAME = "position_v37"
+    POSITION_V38_COLUMN_NAME = "position_v38"
+    REF_ALLELE_V37_COLUMN_NAME = "ref_v37"
+    REF_ALLELE_V38_COLUMN_NAME = "ref_v38"
     FIRST_ALLELE_COLUMN_NAME = "allele1"
     SECOND_ALLELE_COLUMN_NAME = "allele2"
     RS_IDS_COLUMN_NAME = "rsid"
@@ -25,8 +25,8 @@ class GenotypeReporter(object):
     TOOL_VERSION_COLUMN_NAME = "repo_version"
     NEW_CALLS_TSV_COLUMNS = (
         GENE_COLUMN_NAME, CHROMOSOME_COLUMN_NAME,
-        POSITION_GRCH37_COLUMN_NAME, POSITION_GRCH38_COLUMN_NAME,
-        REF_ALLELE_GRCH37_COLUMN_NAME, REF_ALLELE_GRCH38_COLUMN_NAME,
+        POSITION_V37_COLUMN_NAME, POSITION_V38_COLUMN_NAME,
+        REF_ALLELE_V37_COLUMN_NAME, REF_ALLELE_V38_COLUMN_NAME,
         FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
         RS_IDS_COLUMN_NAME, ANNOTATION_COLUMN_NAME, FILTER_COLUMN_NAME,
         PANEL_VERSION_COLUMN_NAME, TOOL_VERSION_COLUMN_NAME,
@@ -56,29 +56,29 @@ class GenotypeReporter(object):
         data_frame = pd.DataFrame(columns=cls.NEW_CALLS_TSV_COLUMNS)
         for full_call in full_calls:
             assert (
-                    full_call.start_coordinate_grch38 is None
-                    or full_call.start_coordinate_grch37.chromosome == full_call.start_coordinate_grch38.chromosome), \
+                    full_call.start_coordinate_v38 is None
+                    or full_call.start_coordinate_v37.chromosome == full_call.start_coordinate_v38.chromosome), \
                 f"Chromosomes of two coordinates are different: call={full_call}"
 
             sorted_alleles = sorted(full_call.alleles)
-            position_grch38 = (
-                str(full_call.start_coordinate_grch38.position)
-                if full_call.start_coordinate_grch38 is not None
+            position_v38 = (
+                str(full_call.start_coordinate_v38.position)
+                if full_call.start_coordinate_v38 is not None
                 else cls.UNKNOWN_POSITION_STRING
             )
-            reference_allele_grch38 = (
-                full_call.reference_allele_grch38
-                if full_call.reference_allele_grch38 is not None
+            reference_allele_v38 = (
+                full_call.reference_allele_v38
+                if full_call.reference_allele_v38 is not None
                 else cls.UNKNOWN_REF_ALLELE_STRING
             )
 
             new_id: Dict[str, Union[str, int]] = {
                 cls.GENE_COLUMN_NAME: full_call.gene,
-                cls.CHROMOSOME_COLUMN_NAME: full_call.start_coordinate_grch37.chromosome,
-                cls.POSITION_GRCH37_COLUMN_NAME: full_call.start_coordinate_grch37.position,
-                cls.POSITION_GRCH38_COLUMN_NAME: position_grch38,
-                cls.REF_ALLELE_GRCH37_COLUMN_NAME: full_call.reference_allele_grch37,
-                cls.REF_ALLELE_GRCH38_COLUMN_NAME: reference_allele_grch38,
+                cls.CHROMOSOME_COLUMN_NAME: full_call.start_coordinate_v37.chromosome,
+                cls.POSITION_V37_COLUMN_NAME: full_call.start_coordinate_v37.position,
+                cls.POSITION_V38_COLUMN_NAME: position_v38,
+                cls.REF_ALLELE_V37_COLUMN_NAME: full_call.reference_allele_v37,
+                cls.REF_ALLELE_V38_COLUMN_NAME: reference_allele_v38,
                 cls.FIRST_ALLELE_COLUMN_NAME: sorted_alleles[0],
                 cls.SECOND_ALLELE_COLUMN_NAME: sorted_alleles[1],
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
@@ -102,7 +102,7 @@ class GenotypeReporter(object):
             data_frame.loc[:, cls.CHROMOSOME_COLUMN_NAME].map(get_chromosome_name_to_index())
         )
         data_frame = data_frame.sort_values(
-            by=[cls.CHROMOSOME_INDEX_NAME, cls.POSITION_GRCH37_COLUMN_NAME]).reset_index(drop=True)
+            by=[cls.CHROMOSOME_INDEX_NAME, cls.POSITION_V37_COLUMN_NAME]).reset_index(drop=True)
         data_frame = data_frame.loc[:, cls.NEW_CALLS_TSV_COLUMNS]
         return data_frame
 

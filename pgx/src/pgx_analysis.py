@@ -3,9 +3,9 @@ from typing import Dict, Set, FrozenSet
 
 from base.constants import REF_CALL_ANNOTATION_STRING
 from base.filter import Filter
-from call_data import Grch37CallData, FullCall, HaplotypeCall
+from call_data import V37CallData, FullCall, HaplotypeCall
 from config.panel import Panel
-from grch37_call_translator import Grch37CallTranslator
+from v37_call_translator import V37CallTranslator
 from haplotype_caller import HaplotypeCaller
 
 
@@ -39,8 +39,8 @@ class PgxAnalysis(object):
 
 class PgxAnalyser(object):
     @classmethod
-    def create_pgx_analysis(cls, call_data: Grch37CallData, panel: Panel) -> PgxAnalysis:
-        full_calls_found_in_patient = Grch37CallTranslator.get_full_calls(call_data, panel)
+    def create_pgx_analysis(cls, call_data: V37CallData, panel: Panel) -> PgxAnalysis:
+        full_calls_found_in_patient = V37CallTranslator.get_full_calls(call_data, panel)
         all_full_calls = cls.get_all_full_calls(full_calls_found_in_patient, panel)
         gene_to_haplotype_calls = HaplotypeCaller.get_gene_to_haplotypes_call(all_full_calls, panel)
         return PgxAnalysis(all_full_calls, gene_to_haplotype_calls)
@@ -56,30 +56,30 @@ class PgxAnalyser(object):
     def __get_full_calls_not_found_in_patient(
             cls, full_calls: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
         rs_ids_found_in_patient = {rs_id for full_call in full_calls for rs_id in full_call.rs_ids if rs_id != "."}
-        grch37_coordinates_covered_by_found_calls = {
-            coordinate for full_call in full_calls for coordinate in full_call.get_relevant_grch37_coordinates()
+        v37_coordinates_covered_by_found_calls = {
+            coordinate for full_call in full_calls for coordinate in full_call.get_relevant_v37_coordinates()
         }
 
-        grch38_ref_full_calls = set()
+        v38_ref_full_calls = set()
         for gene_info in panel.get_gene_infos():
             for rs_id_info in gene_info.rs_id_infos:
-                grch37_coordinates_partially_handled = bool(
-                    rs_id_info.get_relevant_grch37_coordinates().intersection(
-                        grch37_coordinates_covered_by_found_calls)
+                v37_coordinates_partially_handled = bool(
+                    rs_id_info.get_relevant_v37_coordinates().intersection(
+                        v37_coordinates_covered_by_found_calls)
                 )
-                if rs_id_info.rs_id not in rs_ids_found_in_patient and not grch37_coordinates_partially_handled:
-                    # Assuming REF/REF relative to GRCh38
+                if rs_id_info.rs_id not in rs_ids_found_in_patient and not v37_coordinates_partially_handled:
+                    # Assuming REF/REF relative to v38
 
-                    grch38_ref_full_call = FullCall(
-                        rs_id_info.start_coordinate_grch37,
-                        rs_id_info.reference_allele_grch37,
-                        rs_id_info.start_coordinate_grch38,
-                        rs_id_info.reference_allele_grch38,
-                        (rs_id_info.reference_allele_grch38, rs_id_info.reference_allele_grch38),
+                    v38_ref_full_call = FullCall(
+                        rs_id_info.start_coordinate_v37,
+                        rs_id_info.reference_allele_v37,
+                        rs_id_info.start_coordinate_v38,
+                        rs_id_info.reference_allele_v38,
+                        (rs_id_info.reference_allele_v38, rs_id_info.reference_allele_v38),
                         gene_info.gene,
                         (rs_id_info.rs_id,),
                         REF_CALL_ANNOTATION_STRING,
                         Filter.NO_CALL
                     )
-                    grch38_ref_full_calls.add(grch38_ref_full_call)
-        return frozenset(grch38_ref_full_calls)
+                    v38_ref_full_calls.add(v38_ref_full_call)
+        return frozenset(v38_ref_full_calls)

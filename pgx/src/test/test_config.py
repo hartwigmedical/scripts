@@ -243,7 +243,7 @@ class TestLoadConfig(unittest.TestCase):
             GeneInfo(gene, chromosome, reference_haplotype_name, non_empty_haplotypes, rs_id_infos,
                      drugs, rs_id_to_ref_seq_difference_annotation)
 
-    def test_gene_info_with_variant_that_is_ref_grch38(self) -> None:
+    def test_gene_info_with_variant_that_is_ref_v38(self) -> None:
         """Error when gene info has variant where variant allele is the ref allele"""
         gene = "FAKE"
         chromosome = "X"

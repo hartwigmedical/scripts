@@ -11,7 +11,7 @@ class Variant(NamedTuple):
     @classmethod
     def from_json(cls, data: Json) -> "Variant":
         rs_id = str(data["rsid"])
-        variant_allele = str(data["altAlleleGRCh38"])
+        variant_allele = str(data["altAlleleV38"])
         return Variant(rs_id, variant_allele)
 
 

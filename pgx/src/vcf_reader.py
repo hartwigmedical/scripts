@@ -5,7 +5,7 @@ import allel
 from base.constants import REF_CALL_ANNOTATION_STRING
 from base.filter import Filter
 from base.gene_coordinate import GeneCoordinate
-from call_data import Grch37CallData, Grch37Call
+from call_data import V37CallData, V37Call
 from config.panel import Panel
 
 
@@ -28,7 +28,7 @@ class VcfReader(object):
     RS_ID_SEPARATOR = ";"
 
     @classmethod
-    def get_grch37_call_data(cls, filtered_vcf: str, panel: Panel) -> Grch37CallData:
+    def get_v37_call_data(cls, filtered_vcf: str, panel: Panel) -> V37CallData:
         variants = cls.__get_variants_from_filtered_vcf(filtered_vcf)
         return cls.__get_call_data_from_variants(variants, panel)
 
@@ -42,7 +42,7 @@ class VcfReader(object):
         return variants
 
     @classmethod
-    def __get_call_data_from_variants(cls, variants: Optional[Dict[str, Any]], panel: Panel) -> Grch37CallData:
+    def __get_call_data_from_variants(cls, variants: Optional[Dict[str, Any]], panel: Panel) -> V37CallData:
         match_on_rsid = 0
         match_on_location = 0
         filtered_calls = set()
@@ -57,7 +57,7 @@ class VcfReader(object):
 
                 rs_id_match_to_panel_exists = any(panel.contains_rs_id(rs_id) for rs_id in rs_ids)
                 coordinate_match_to_panel_exists = any(
-                    panel.contains_rs_id_with_grch37_coordinate(coord) for coord in relevant_coordinates
+                    panel.contains_rs_id_with_v37_coordinate(coord) for coord in relevant_coordinates
                 )
                 if rs_id_match_to_panel_exists or coordinate_match_to_panel_exists:
                     if rs_id_match_to_panel_exists:
@@ -86,7 +86,7 @@ class VcfReader(object):
                         error_msg = f"Genotype not found: {genotype}"
                         raise ValueError(error_msg)
 
-                    call = Grch37Call(
+                    call = V37Call(
                         GeneCoordinate(chromosome, position),
                         reference_allele,
                         alleles,
@@ -100,7 +100,7 @@ class VcfReader(object):
         print("[INFO] Matches on RS id: " + str(match_on_rsid))
         print("[INFO] Matches on location: " + str(match_on_location))
 
-        return Grch37CallData(frozenset(filtered_calls))
+        return V37CallData(frozenset(filtered_calls))
 
     @classmethod
     def __get_rs_ids_from_string(cls, rs_ids_string: str) -> Tuple[str, ...]:
