@@ -106,7 +106,8 @@ class GenotypeReporter(object):
             data_frame.loc[:, cls.CHROMOSOME_COLUMN_NAME].map(get_chromosome_name_to_index())
         )
         data_frame = data_frame.sort_values(
-            by=[cls.CHROMOSOME_INDEX_NAME, cls.POSITION_V37_COLUMN_NAME]).reset_index(drop=True)
+            by=[cls.CHROMOSOME_INDEX_NAME, cls.POSITION_V37_COLUMN_NAME, cls.REF_ALLELE_V37_COLUMN_NAME]
+        ).reset_index(drop=True)
         data_frame = data_frame.loc[:, cls.NEW_CALLS_TSV_COLUMNS]
         return data_frame
 

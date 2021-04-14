@@ -692,7 +692,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -723,7 +723,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -754,7 +754,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -891,7 +891,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -922,7 +922,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("T", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -953,7 +953,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -984,7 +984,7 @@ class TestPgxAnalysis(unittest.TestCase):
             V37Call(
                 GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
             V37Call(
-                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS,),
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
         }))
         pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
 
@@ -997,6 +997,80 @@ class TestPgxAnalysis(unittest.TestCase):
             FullCall(
                 GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
                 ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS, "REF_CALL", Filter.PASS,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS, "293T>C", Filter.PASS,
+            ),
+        })
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
+
+    def test_overlapping_mnv_and_snv(self) -> None:
+        """Overlapping SNV and unrecognized MNV do not cause errors"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = V37CallData(frozenset({
+            V37Call(
+                GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9212C>T", Filter.PASS),
+            V37Call(
+                GeneCoordinate("1", 97915614), "CG", ("CG", "TC"), "DPYD", (".",), "9212CG>TC", Filter.PASS),  # unknown
+            V37Call(
+                GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
+            V37Call(
+                GeneCoordinate("1", 97915621), "TG", ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS),
+        }))
+        pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = frozenset({
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9212C>T", Filter.PASS, "9212C>T", Filter.PASS,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915614), "CG", None, None,
+                ("CG", "TC"), "DPYD", (".",), "9212CG>TC", Filter.PASS, "9212CG>TC?", Filter.UNKNOWN,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TC", "TC"), "DPYD", ("rs72549303",), "6744CA>GA", Filter.PASS, "REF_CALL", Filter.PASS,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",
+                ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS, "293T>C", Filter.PASS,
+            ),
+        })
+        pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
+        self.assertEqual(pgx_analysis_expected, pgx_analysis)
+
+    def test_overlapping_mnv_and_snv_at_ref_seq_difference(self) -> None:
+        """Overlapping SNV and unrecognized MNV at ref seq difference do not cause error"""
+        panel = self.__get_narrow_example_panel({"*2A", "*5", "*2B"})
+        ids_found_in_patient = V37CallData(frozenset({
+            V37Call(
+                GeneCoordinate("1", 97915614), "C", ("T", "T"), "DPYD", ("rs3918290",), "9212C>T", Filter.PASS),
+            V37Call(
+                GeneCoordinate("1", 97981395), "T", ("C", "C"), "DPYD", ("rs1801159",), "293T>C", Filter.PASS),
+            V37Call(
+                GeneCoordinate("1", 97915621), "TG", ("TG", "AC"), "DPYD", ("rs72549303",), "6744CA>GT", Filter.PASS),
+            V37Call(
+                GeneCoordinate("1", 97915622), "G", ("C", "C"), "DPYD", (".",), "6744C>G", Filter.PASS),  # unknown
+        }))
+        pgx_analysis = PgxAnalyser.create_pgx_analysis(ids_found_in_patient, panel)
+
+        gene_to_haplotype_calls_expected: Dict[str, Set[HaplotypeCall]] = {"DPYD": set()}
+        all_full_calls_expected = frozenset({
+            FullCall(
+                GeneCoordinate("1", 97915614), "C", GeneCoordinate("1", 97450058), "C",
+                ("T", "T"), "DPYD", ("rs3918290",), "9212C>T", Filter.PASS, "9212C>T", Filter.PASS,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915621), "TG", GeneCoordinate("1", 97450065), "TC",
+                ("TG", "AC"), "DPYD", ("rs72549303",), "6744CA>GT", Filter.PASS, '6744CA>GT?', Filter.UNKNOWN,
+            ),
+            FullCall(
+                GeneCoordinate("1", 97915622), "G", None, None,
+                ("C", "C"), "DPYD", (".",), "6744C>G", Filter.PASS, "6744C>G?", Filter.UNKNOWN,
             ),
             FullCall(
                 GeneCoordinate("1", 97981395), "T", GeneCoordinate("1", 97515839), "T",

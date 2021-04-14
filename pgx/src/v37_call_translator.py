@@ -27,10 +27,12 @@ class V37CallTranslator(object):
 
             relevant_v37_coordinates = full_call.get_relevant_v37_coordinates()
             if relevant_v37_coordinates.intersection(handled_v37_coordinates):
-                error_msg = (f"Call involves at least one position that has already been handled:\n"
-                             f"call={v37_call}\n"
-                             f"handled_coords={handled_v37_coordinates}")
-                raise ValueError(error_msg)
+                warning_msg = (
+                    f"[WARN] Call involves at least one position that has already been handled:\n"
+                    f"call={v37_call}\n"
+                    f"handled_coords={handled_v37_coordinates}"
+                )
+                print(warning_msg)
             handled_v37_coordinates.update(relevant_v37_coordinates)
 
             full_calls_from_v37_calls.add(full_call)
