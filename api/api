@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+class=$1
+filter_input=$2 # optional
+filter_field=$3 # optional
+json=""
+
+if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo "Usage: $(basename $0) <class> [<optional-filter-string>]"
+    echo "Exmpl: $(basename $0) flowcells HG3NHBGXF"
+    echo "       $(basename $0) flowcells"
+    echo "       $(basename $0) samples FR30729512"
+    echo "       $(basename $0) samples COREDB010110T name"
+    echo "       $(basename $0) runs 210409_HMFregCORE_FR30729505_FR30729512_COREDB010110"
+    echo "---"
+    exit 1
+fi
+
+# Setup filter variables
+if [[ -n "${filter_field}" ]]; then
+    filter_field="${filter_field}"
+elif [[ "${class}" == "samples" ]]; then
+    filter_field="barcode"
+elif [[ "${class}" == "runs" ]]; then
+    filter_field="set_name"
+elif [[ "${class}" == "flowcells" ]]; then
+    filter_field="flowcell_id"
+else
+    die "Unsupported class (${class})"
+fi
+
+# Retrieve json
+if [[ -n "${filter_input}" ]]; then
+    json=$(hmf_api_get "${class}?${filter_field}=${filter_input}") || die "Unable to get json (with filter)"
+else
+    json=$(hmf_api_get "${class}") || die "Unable to get json (without filter)"
+fi
+
+# Print results
+if [[ "${class}" == "samples" ]]; then
+    jq -r '.[] | [.barcode, .name, .status, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "runs" ]]; then
+    jq -r '.[] | [.set.name, .ini, .bucket, .status, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "flowcells" ]]; then
+    jq -r '.[] | [.flowcell_id, .name, .status, .id] | @tsv' <<< "${json}"
+fi
