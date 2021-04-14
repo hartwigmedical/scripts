@@ -3,6 +3,7 @@ from typing import List, Set, Tuple, FrozenSet
 
 from base.gene_coordinate import GeneCoordinate
 from base.json_alias import Json
+from call_data import V37Call
 from config.gene_info import GeneInfo, assert_no_overlap_gene_names
 from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
 
@@ -53,8 +54,8 @@ class Panel(object):
         for gene_info in self.__gene_infos:
             for rs_id_info in gene_info.rs_id_infos:
                 if rs_id_info.reference_allele_v37 != rs_id_info.reference_allele_v38:
-                    annotation = gene_info.get_ref_sequence_difference_annotation(rs_id_info.rs_id)
-                    results.append((rs_id_info, gene_info.gene, annotation))
+                    annotation_v38 = gene_info.get_ref_sequence_difference_annotation_v38(rs_id_info.rs_id)
+                    results.append((rs_id_info, gene_info.gene, annotation_v38))
         results.sort(key=lambda diff: (diff[1], diff[2]))
 
         assert_no_overlap_rs_ids([diff[0] for diff in results], "get_ref_seq_differences")
@@ -64,7 +65,7 @@ class Panel(object):
         return self.__get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)
 
     def get_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> str:
-        return self.__get_gene_info(gene).get_ref_sequence_difference_annotation(rs_id)
+        return self.__get_gene_info(gene).get_ref_sequence_difference_annotation_v38(rs_id)
 
     def get_gene_infos(self) -> Set[GeneInfo]:
         return set(self.__gene_infos)
@@ -75,13 +76,25 @@ class Panel(object):
                 return True
         return False
 
-    def contains_matching_rs_id_info(
+    def contains_rs_id_with_v37_coordinate_and_reference_allel(
             self, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> bool:
         for info in self.__get_rs_id_infos():
             if (info.start_coordinate_v37 == v37_coordinate
                     and info.reference_allele_v37 == v37_reference_allele):
                 return True
         return False
+
+    def contains_rs_id_matching_v37_call(self, v37_call: V37Call) -> bool:
+        if self.contains_rs_id_with_v37_coordinate_and_reference_allel(v37_call.start_coordinate, v37_call.ref_allele):
+            return True
+        elif any(self.contains_rs_id(rs_id) for rs_id in v37_call.rs_ids):
+            error_msg = (
+                f"Match v37 call with rs id info from panel on an rs id but not position:\n"
+                f"rs ids: {v37_call.rs_ids}, input file position: {v37_call.start_coordinate}"
+            )
+            raise ValueError(error_msg)
+        else:
+            return False
 
     def get_matching_rs_id_info(
             self, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> RsIdInfo:

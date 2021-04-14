@@ -77,7 +77,8 @@ class FullCall(NamedTuple):
     alleles: Tuple[str, str]
     gene: str
     rs_ids: Tuple[str, ...]
-    variant_annotation: str
+    variant_annotation_v37: str
+    variant_annotation_v38: str
     filter: Filter
 
     def get_relevant_v37_coordinates(self) -> Set[GeneCoordinate]:

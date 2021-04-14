@@ -53,7 +53,7 @@ class V37CallTranslator(object):
         start_coordinate_v38: Optional[GeneCoordinate]
         reference_allele_v38: Optional[str]
         rs_ids: Tuple[str, ...]
-        if panel.contains_matching_rs_id_info(start_coordinate_v37, reference_allele_v37):
+        if panel.contains_rs_id_matching_v37_call(v37_call):
             rs_id_info = panel.get_matching_rs_id_info(start_coordinate_v37, reference_allele_v37)
             cls.__assert_rs_id_call_matches_info(v37_call.rs_ids, (rs_id_info.rs_id,))
 
@@ -63,12 +63,6 @@ class V37CallTranslator(object):
                 rs_ids = (rs_id_info.rs_id,)
             else:
                 rs_ids = v37_call.rs_ids
-        elif any(panel.contains_rs_id(rs_id) for rs_id in v37_call.rs_ids):
-            error_msg = (
-                f"Match rs id info from panel on an rs id but not position:\n"
-                f"rs ids: {v37_call.rs_ids}, input file position: {start_coordinate_v37}"
-            )
-            raise ValueError(error_msg)
         else:
             # unknown variant
             start_coordinate_v38 = None
@@ -94,30 +88,34 @@ class V37CallTranslator(object):
             )
 
             if v38_ref_call_due_to_ref_sequence_difference:
-                variant_annotation = REF_CALL_ANNOTATION_STRING
+                variant_annotation_v38 = REF_CALL_ANNOTATION_STRING
                 filter_type = Filter.PASS_BUT_REF_V38
             elif all_variants_ref_to_v37_or_v38:
-                variant_annotation = panel.get_ref_seq_difference_annotation(v37_call.gene, rs_ids[0])
+                variant_annotation_v38 = panel.get_ref_seq_difference_annotation(v37_call.gene, rs_ids[0])
                 filter_type = v37_call.filter
             else:
-                variant_annotation = v37_call.variant_annotation + "?"
+                variant_annotation_v38 = v37_call.variant_annotation + "?"
                 filter_type = v37_call.filter
                 print(
                     f"[WARN] Unexpected allele in ref seq difference location. Check whether annotation is correct: "
                     f"found alleles=({annotated_alleles[0]}, {annotated_alleles[1]}), "
-                    f"annotation={variant_annotation}"
+                    f"annotation={variant_annotation_v38}"
                 )
         elif len(rs_ids) > 1 and any(panel.has_ref_seq_difference_annotation(v37_call.gene, rs_id) for rs_id in rs_ids):
             error_msg = f"One of multiple rs ids is of a ref seq difference, so not sure how to annotate {rs_ids}"
             raise ValueError(error_msg)
-        else:
-            # no ref seq differences involved
-            variant_annotation = v37_call.variant_annotation
+        elif panel.contains_rs_id_matching_v37_call(v37_call):
+            # known variant and no ref seq differences involved
+            variant_annotation_v38 = v37_call.variant_annotation
             filter_type = v37_call.filter
+        else:
+            # unknown variant, no ref seq difference involved
+            variant_annotation_v38 = v37_call.variant_annotation + "?"
+            filter_type = Filter.V37_PASS_BUT_UNKNOWN
 
         full_call = FullCall(
             start_coordinate_v37, reference_allele_v37, start_coordinate_v38, reference_allele_v38,
-            v37_call.alleles, v37_call.gene, rs_ids, variant_annotation, filter_type,
+            v37_call.alleles, v37_call.gene, rs_ids, v37_call.variant_annotation, variant_annotation_v38, filter_type,
         )
         return full_call
 
@@ -127,7 +125,7 @@ class V37CallTranslator(object):
         # The "inferred ref" calls are calls for ref seq differences that do not correspond to v37 calls.
         # This means that they were ref vs v37 and therefore variant calls vs v38
         inferred_ref_calls = set()
-        for rs_id_info, gene, annotation in panel.get_ref_seq_differences():
+        for rs_id_info, gene, annotation_v38 in panel.get_ref_seq_differences():
             if not rs_id_info.get_relevant_v37_coordinates().intersection(handled_v37_coordinates):
                 if rs_id_info.rs_id in handled_v37_rs_ids:
                     error_msg = (f"Have seen rs id of ref seq difference, but not location. "
@@ -143,7 +141,8 @@ class V37CallTranslator(object):
                     (rs_id_info.reference_allele_v37, rs_id_info.reference_allele_v37),
                     gene,
                     (rs_id_info.rs_id,),
-                    annotation,
+                    REF_CALL_ANNOTATION_STRING,
+                    annotation_v38,
                     Filter.INFERRED_V37_REF_CALL,
                 )
                 inferred_ref_calls.add(full_call)

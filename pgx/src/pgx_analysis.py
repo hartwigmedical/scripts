@@ -68,7 +68,7 @@ class PgxAnalyser(object):
                         v37_coordinates_covered_by_found_calls)
                 )
                 if rs_id_info.rs_id not in rs_ids_found_in_patient and not v37_coordinates_partially_handled:
-                    # Assuming REF/REF relative to v38
+                    # Assuming REF/REF relative to both v37 and v38
 
                     v38_ref_full_call = FullCall(
                         rs_id_info.start_coordinate_v37,
@@ -79,7 +79,8 @@ class PgxAnalyser(object):
                         gene_info.gene,
                         (rs_id_info.rs_id,),
                         REF_CALL_ANNOTATION_STRING,
-                        Filter.NO_CALL
+                        REF_CALL_ANNOTATION_STRING,
+                        Filter.NO_CALL,
                     )
                     v38_ref_full_calls.add(v38_ref_full_call)
         return frozenset(v38_ref_full_calls)

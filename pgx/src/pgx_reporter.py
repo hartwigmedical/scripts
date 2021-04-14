@@ -19,7 +19,8 @@ class GenotypeReporter(object):
     FIRST_ALLELE_COLUMN_NAME = "allele1"
     SECOND_ALLELE_COLUMN_NAME = "allele2"
     RS_IDS_COLUMN_NAME = "rsid"
-    ANNOTATION_COLUMN_NAME = "variant_annotation"
+    ANNOTATION_V37_COLUMN_NAME = "variant_annotation_v37"
+    ANNOTATION_V38_COLUMN_NAME = "variant_annotation_v38"
     FILTER_COLUMN_NAME = "filter"
     PANEL_VERSION_COLUMN_NAME = "panel_version"
     TOOL_VERSION_COLUMN_NAME = "repo_version"
@@ -28,7 +29,7 @@ class GenotypeReporter(object):
         POSITION_V37_COLUMN_NAME, POSITION_V38_COLUMN_NAME,
         REF_ALLELE_V37_COLUMN_NAME, REF_ALLELE_V38_COLUMN_NAME,
         FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
-        RS_IDS_COLUMN_NAME, ANNOTATION_COLUMN_NAME, FILTER_COLUMN_NAME,
+        RS_IDS_COLUMN_NAME, ANNOTATION_V37_COLUMN_NAME, ANNOTATION_V38_COLUMN_NAME, FILTER_COLUMN_NAME,
         PANEL_VERSION_COLUMN_NAME, TOOL_VERSION_COLUMN_NAME,
     )
     CHROMOSOME_INDEX_NAME = "chromosome_index"
@@ -82,7 +83,8 @@ class GenotypeReporter(object):
                 cls.FIRST_ALLELE_COLUMN_NAME: sorted_alleles[0],
                 cls.SECOND_ALLELE_COLUMN_NAME: sorted_alleles[1],
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
-                cls.ANNOTATION_COLUMN_NAME: full_call.variant_annotation,
+                cls.ANNOTATION_V37_COLUMN_NAME: full_call.variant_annotation_v37,
+                cls.ANNOTATION_V38_COLUMN_NAME: full_call.variant_annotation_v38,
                 cls.FILTER_COLUMN_NAME: full_call.filter.name,
                 cls.PANEL_VERSION_COLUMN_NAME: panel_id,
                 cls.TOOL_VERSION_COLUMN_NAME: version,
