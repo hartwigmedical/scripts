@@ -53,6 +53,8 @@ main() {
     # setup output dir
     mkdir -p "$out_path"
 
+    # write startup msg to both stdout and log file for tracking when using parallel execution
+    info "Starting with $(basename $0) ($submission)"
     info "Starting with $(basename $0) ($submission)" >> "$log_file"
 
     GCP_ACCOUNT_project="${GCP_ACCOUNT}@${GCP_PROJECT}"
