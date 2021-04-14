@@ -18,8 +18,6 @@ known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 output_dir=/data/common/dbs/serve/pilot_output
 
-ref_seq_tsv=/data/common/dbs/serve/static_sources/refseq/refseq_to_canonicalTranscript.tsv
-
 if [[ -d "${output_dir}" ]]; then
     echo "[INFO] Output dir '${output_dir}' exist and will be cleaned!"
     rm -r ${output_dir}/*
@@ -39,5 +37,4 @@ java -Xms2G -Xmx25G -jar ${serve_jar} \
     -known_fusion_37_file ${known_fusion_37_file} \
     -known_fusion_38_file ${known_fusion_38_file} \
     -output_dir ${output_dir} \
-    -refseq_tsv ${ref_seq_tsv} \
     "$@"

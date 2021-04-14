@@ -7,7 +7,6 @@ ckb_dir=$(locate_ckb_flex_data_dir)
 serve_jar=/home/korneel/serve/serve.jar
 
 missing_doids_mapping_tsv=/data/common/dbs/serve/curation/missing_doids_mapping.tsv
-ref_seq_tsv=/data/common/dbs/serve/static_sources/refseq/refseq_to_canonicalTranscript.tsv
 
 ref_genome_37_fasta_file=$(locate_ref_genome_37_fasta_file)
 ref_genome_38_fasta_file=$(locate_ref_genome_38_fasta_file)
@@ -42,7 +41,6 @@ java -Xms2G -Xmx16G -jar ${serve_jar} \
     -driver_gene_38_tsv ${driver_gene_38_tsv} \
     -known_fusion_37_file ${known_fusion_37_file} \
     -known_fusion_38_file ${known_fusion_38_file} \
-    -refseq_tsv ${ref_seq_tsv} \
     -output_dir ${output_dir} \
     -log_debug \
     "$@"
