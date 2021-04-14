@@ -75,7 +75,7 @@ class HaplotypeCaller(object):
             cls.__assert_handleable_call(call)
             rs_id = call.rs_ids[0]
             for annotated_allele in call.get_annotated_alleles():
-                if annotated_allele.is_variant_vs_v38 is None:
+                if not annotated_allele.is_annotated_vs_v38:
                     error_msg = f"Unknown variant: allele={annotated_allele}"
                     raise ValueError(error_msg)
                 if annotated_allele.is_variant_vs_v38:
