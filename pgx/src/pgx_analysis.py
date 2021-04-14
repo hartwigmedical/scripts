@@ -79,6 +79,7 @@ class PgxAnalyser(object):
                         gene_info.gene,
                         (rs_id_info.rs_id,),
                         REF_CALL_ANNOTATION_STRING,
+                        Filter.NO_CALL,
                         REF_CALL_ANNOTATION_STRING,
                         Filter.NO_CALL,
                     )

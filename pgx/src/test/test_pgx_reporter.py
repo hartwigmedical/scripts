@@ -78,50 +78,50 @@ class TestPgxReporter(unittest.TestCase):
 
     def test_genotype_reporter_empty(self) -> None:
         pgx_analysis = PgxAnalysis(frozenset(), {})
-        panel_path = "some/panel/path.json"
+        panel_id = "Panel_v0.2"
         version = "V1"
-        result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version)
+        result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_id, version)
 
         result_expected = (
             "gene\tchromosome\tposition_v37\tposition_v38\tref_v37\tref_v38\t"
-            "allele1\tallele2\trsid\tvariant_annotation_v37\tvariant_annotation_v38\tfilter\tpanel_version\trepo_version\n"
+            "allele1\tallele2\trsid\tvariant_annotation_v37\tfilter_v37\tvariant_annotation_v38\tfilter_v38\tpanel_version\trepo_version\n"
         )
         self.assertEqual(result_expected, result)
 
     def test_genotype_reporter_non_empty(self) -> None:
         all_full_calls = frozenset({
             FullCall(GeneCoordinate("1", 5), "A", GeneCoordinate("1", 25), "A", ("G", "C"),
-                     "DPYD", (".",), "25A>C;25A>G", "25A>C;25A>G", Filter.PASS),
+                     "DPYD", (".",), "25A>C;25A>G", Filter.PASS, "25A>C;25A>G", Filter.PASS),
             FullCall(GeneCoordinate("1", 15), "C", None, None, ("C", "CAG"),
-                     "DPYD", ("rs536",), "35A>C;35A>G", "35A>C;35A>G?", Filter.PASS),
+                     "DPYD", ("rs536",), "35A>C;35A>G", Filter.PASS, "35A>C;35A>G?", Filter.UNKNOWN),
             FullCall(GeneCoordinate("X", 15), "TT", GeneCoordinate("X", 40), "AA", ("TT", "TT"),
-                     "GENE", ("rs23",), "REF_CALL", "627AA>TT", Filter.INFERRED_V37_REF_CALL),
+                     "GENE", ("rs23",), "REF_CALL", Filter.NO_CALL, "627AA>TT", Filter.PASS),
             FullCall(GeneCoordinate("2", 154663), "T", GeneCoordinate("2", 40565464), "T", ("T", "T"),
-                     "BRAF", ("rs154", "rs8839"), "REF_CALL", "REF_CALL", Filter.NO_CALL),
+                     "BRAF", ("rs154", "rs8839"), "REF_CALL", Filter.NO_CALL, "REF_CALL", Filter.NO_CALL),
             FullCall(GeneCoordinate("15", 24113), "A", GeneCoordinate("15", 684633), "T", ("T", "T"),
-                     ".", ("rs462", "rs9820", "rs536"), "29482A>T", "REF_CALL", Filter.PASS_BUT_REF_V38),
+                     ".", ("rs462", "rs9820", "rs536"), "29482A>T", Filter.PASS, "REF_CALL", Filter.NO_CALL),
         })
         pgx_analysis = PgxAnalysis(all_full_calls, {})
-        panel_path = "some/panel/path.json"
+        panel_id = "Panel_v0.2"
         version = "V1"
-        result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_path, version)
+        result = GenotypeReporter.get_calls_tsv_text(pgx_analysis, panel_id, version)
 
         result_expected = (
-            "gene\tchromosome\tposition_v37\tposition_v38\tref_v37\tref_v38\tallele1\tallele2\trsid\tvariant_annotation_v37\tvariant_annotation_v38\tfilter\tpanel_version\trepo_version\n"
-            "DPYD\t1\t5\t25\tA\tA\tC\tG\t.\t25A>C;25A>G\t25A>C;25A>G\tPASS\tsome/panel/path.json\tV1\n"
-            "DPYD\t1\t15\tUNKNOWN\tC\tUNKNOWN\tC\tCAG\trs536\t35A>C;35A>G\t35A>C;35A>G?\tPASS\tsome/panel/path.json\tV1\n"
-            "BRAF\t2\t154663\t40565464\tT\tT\tT\tT\trs154;rs8839\tREF_CALL\tREF_CALL\tNO_CALL\tsome/panel/path.json\tV1\n"
-            ".\t15\t24113\t684633\tA\tT\tT\tT\trs462;rs9820;rs536\t29482A>T\tREF_CALL\tPASS_BUT_REF_V38\tsome/panel/path.json\tV1\n"
-            "GENE\tX\t15\t40\tTT\tAA\tTT\tTT\trs23\tREF_CALL\t627AA>TT\tINFERRED_V37_REF_CALL\tsome/panel/path.json\tV1\n"
+            "gene\tchromosome\tposition_v37\tposition_v38\tref_v37\tref_v38\tallele1\tallele2\trsid\tvariant_annotation_v37\tfilter_v37\tvariant_annotation_v38\tfilter_v38\tpanel_version\trepo_version\n"
+            "DPYD\t1\t5\t25\tA\tA\tC\tG\t.\t25A>C;25A>G\tPASS\t25A>C;25A>G\tPASS\tPanel_v0.2\tV1\n"
+            "DPYD\t1\t15\tUNKNOWN\tC\tUNKNOWN\tC\tCAG\trs536\t35A>C;35A>G\tPASS\t35A>C;35A>G?\tUNKNOWN\tPanel_v0.2\tV1\n"
+            "BRAF\t2\t154663\t40565464\tT\tT\tT\tT\trs154;rs8839\tREF_CALL\tNO_CALL\tREF_CALL\tNO_CALL\tPanel_v0.2\tV1\n"
+            ".\t15\t24113\t684633\tA\tT\tT\tT\trs462;rs9820;rs536\t29482A>T\tPASS\tREF_CALL\tNO_CALL\tPanel_v0.2\tV1\n"
+            "GENE\tX\t15\t40\tTT\tAA\tTT\tTT\trs23\tREF_CALL\tNO_CALL\t627AA>TT\tPASS\tPanel_v0.2\tV1\n"
         )
         self.assertEqual(result_expected, result)
 
     def test_haplotype_reporter_empty(self) -> None:
         pgx_analysis = PgxAnalysis(frozenset(), {})
         panel = Panel("EmptyPanel", "0.3", frozenset())
-        panel_path = "some/panel/path.json"
+        panel_id = "Panel_v0.2"
         version = "V1"
-        result = HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version)
+        result = HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_id, version)
 
         result_expected = "gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n"
         self.assertEqual(result_expected, result)
@@ -135,18 +135,18 @@ class TestPgxReporter(unittest.TestCase):
         }
         pgx_analysis = PgxAnalysis(frozenset(), gene_to_haplotype_calls)
         panel = self.__get_wide_example_panel()
-        panel_path = "some/panel/path.json"
+        panel_id = "Panel_v0.2"
         version = "V1"
-        result = HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_path, version)
+        result = HaplotypeReporter.get_genotype_tsv_text(pgx_analysis, panel, panel_id, version)
 
         result_expected = (
             "gene\thaplotype\tfunction\tlinked_drugs\turl_prescription_info\tpanel_version\trepo_version\n"
-            "DPYD\t*2A_HET\tNo Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tsome/panel/path.json\tV1\n"
-            "DPYD\t*2B_HOM\tNo Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tsome/panel/path.json\tV1\n"
-            "DPYD\t*3_HET\tNormal Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tsome/panel/path.json\tV1\n"
-            "FAKE\tUnresolved Haplotype\tUnknown Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tsome/panel/path.json\tV1\n"
-            "FAKE2\t*1_HET\tNormal Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tsome/panel/path.json\tV1\n"
-            "FAKE2\t*4A_HET\tReduced Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tsome/panel/path.json\tV1\n"
+            "DPYD\t*2A_HET\tNo Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tPanel_v0.2\tV1\n"
+            "DPYD\t*2B_HOM\tNo Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tPanel_v0.2\tV1\n"
+            "DPYD\t*3_HET\tNormal Function\t5-Fluorouracil;Capecitabine\thttps://www.pharmgkb.org/chemical/PA128406956/guidelineAnnotation/PA166104939;https://www.pharmgkb.org/chemical/PA448771/guidelineAnnotation/PA166104963\tPanel_v0.2\tV1\n"
+            "FAKE\tUnresolved Haplotype\tUnknown Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tPanel_v0.2\tV1\n"
+            "FAKE2\t*1_HET\tNormal Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tPanel_v0.2\tV1\n"
+            "FAKE2\t*4A_HET\tReduced Function\tAspirin\thttps://www.pharmgkb.org/some_other_url\tPanel_v0.2\tV1\n"
         )
         self.assertEqual(result_expected, result)
 

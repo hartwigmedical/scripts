@@ -21,15 +21,16 @@ class GenotypeReporter(object):
     RS_IDS_COLUMN_NAME = "rsid"
     ANNOTATION_V37_COLUMN_NAME = "variant_annotation_v37"
     ANNOTATION_V38_COLUMN_NAME = "variant_annotation_v38"
-    FILTER_COLUMN_NAME = "filter"
+    FILTER_V37_COLUMN_NAME = "filter_v37"
+    FILTER_V38_COLUMN_NAME = "filter_v38"
     PANEL_VERSION_COLUMN_NAME = "panel_version"
     TOOL_VERSION_COLUMN_NAME = "repo_version"
     NEW_CALLS_TSV_COLUMNS = (
         GENE_COLUMN_NAME, CHROMOSOME_COLUMN_NAME,
         POSITION_V37_COLUMN_NAME, POSITION_V38_COLUMN_NAME,
         REF_ALLELE_V37_COLUMN_NAME, REF_ALLELE_V38_COLUMN_NAME,
-        FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME,
-        RS_IDS_COLUMN_NAME, ANNOTATION_V37_COLUMN_NAME, ANNOTATION_V38_COLUMN_NAME, FILTER_COLUMN_NAME,
+        FIRST_ALLELE_COLUMN_NAME, SECOND_ALLELE_COLUMN_NAME, RS_IDS_COLUMN_NAME,
+        ANNOTATION_V37_COLUMN_NAME, FILTER_V37_COLUMN_NAME, ANNOTATION_V38_COLUMN_NAME, FILTER_V38_COLUMN_NAME,
         PANEL_VERSION_COLUMN_NAME, TOOL_VERSION_COLUMN_NAME,
     )
     CHROMOSOME_INDEX_NAME = "chromosome_index"
@@ -84,8 +85,9 @@ class GenotypeReporter(object):
                 cls.SECOND_ALLELE_COLUMN_NAME: sorted_alleles[1],
                 cls.RS_IDS_COLUMN_NAME: cls.RS_ID_SEPARATOR.join(full_call.rs_ids),
                 cls.ANNOTATION_V37_COLUMN_NAME: full_call.variant_annotation_v37,
+                cls.FILTER_V37_COLUMN_NAME: full_call.filter_v37.name,
                 cls.ANNOTATION_V38_COLUMN_NAME: full_call.variant_annotation_v38,
-                cls.FILTER_COLUMN_NAME: full_call.filter.name,
+                cls.FILTER_V38_COLUMN_NAME: full_call.filter_v38.name,
                 cls.PANEL_VERSION_COLUMN_NAME: panel_id,
                 cls.TOOL_VERSION_COLUMN_NAME: version,
             }
