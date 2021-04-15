@@ -257,7 +257,7 @@ locate_ref_genome_38_to_37_chain() {
 ################################### PGX ####################################
 
 locate_pgx_dir() {
-    echo "${base_path}/repos/scripts/pgx/"
+    echo "${base_path}/repos/scripts/peach/"
 }
 
 locate_pgx_venv_dir() {

@@ -9,8 +9,8 @@ else
   venv_dir=$1 && shift
 fi
 
-# peach_repo_base_dir=$HOME/repos/scripts/pgx
-peach_repo_base_dir=$(locate_pgx_dir)
+peach_repo_base_dir=$HOME/repos/scripts/peach
+# peach_repo_base_dir=$(locate_pgx_dir)
 
 # START VIRTUAL ENV
 source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
