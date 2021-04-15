@@ -261,7 +261,7 @@ locate_pgx_dir() {
 }
 
 locate_pgx_venv_dir() {
-    echo "$(locate_pgx_resource_dir)/venv/pgx"
+    echo "$(locate_pgx_resource_dir)/venv/peach"
 }
 
 locate_pgx_requirements() {
