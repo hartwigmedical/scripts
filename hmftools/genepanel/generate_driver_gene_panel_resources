@@ -1,22 +1,14 @@
 #!/usr/bin/env bash
 
-source locate_files
+driver_gene_panel_37_tsv=$HOME/hmf/tmp/new_driver_gene_panel_37_tsv
 
-output_dir=$1 && shift
-
-if [[ ! -d "${output_dir}" ]]; then
-    echo "[ERROR] Output dir does not exist. Exiting" && exit 1;
+if [[ ! -f ${driver_gene_panel_37_tsv} ]]; then
+    echo "[ERROR]: No driver gene panel found at ${driver_gene_panel_37_tsv}"
 fi
 
-driver_gene_panel_37_tsv=$(locate_driver_gene_panel_37_tsv)
-clinvar_37_vcf=/data/common/dbs/sage/clinvar.37.vcf.gz
-clinvar_38_vcf=/data/common/dbs/sage/clinvar.38.vcf.gz
-
-# Can use any jar since tool lives in hmf-common
-any_hmf_jar=$(locate_pilot_patient_db)
+any_hmf_jar=$HOME/hmf/repos/hmftools/patient-db/target/patient-db-3.59-jar-with-dependencies.jar
+resource_repo_dir=$HOME/hmf/repos/common-resources-public
 
 java -cp ${any_hmf_jar} com.hartwig.hmftools.common.drivercatalog.panel.DriverGenePanelConversion \
-    -driver_gene_panel_37_tsv ${driver_gene_panel_37_tsv} \
-    -clinvar_37_vcf ${clinvar_37_vcf} \
-    -clinvar_38_vcf ${clinvar_38_vcf} \
-    -output_dir ${output_dir}
+    -new_driver_gene_panel_37_tsv ${driver_gene_panel_37_tsv} \
+    -resource_repo_dir ${resource_repo_dir}
