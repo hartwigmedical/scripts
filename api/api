@@ -8,13 +8,15 @@ filter_field=$3 # optional
 json=""
 
 if [[ -z "$class" || $1 == "-h" || $1 == "--help" ]]; then
+    script=$(basename "$0")
     echo "---"
-    echo "Usage: $(basename $0) <class> [<optional-filter-string>]"
-    echo "Exmpl: $(basename $0) flowcells HG3NHBGXF"
-    echo "       $(basename $0) flowcells"
-    echo "       $(basename $0) samples FR30729512"
-    echo "       $(basename $0) samples COREDB010110T name"
-    echo "       $(basename $0) runs 210409_HMFregCORE_FR30729505_FR30729512_COREDB010110"
+    echo "Usage: $script <class> [<optional-filter-string>]"
+    echo "Exmpl: $script flowcells HG3NHBGXF"
+    echo "       $script flowcells"
+    echo "       $script samples FR30729512"
+    echo "       $script samples COREDB010110T name"
+    echo "       $script runs 210409_HMFregCORE_FR30729505_FR30729512_COREDB010110"
+    echo "NOTE: not using a filter can take a while since as then all objects are retrieved."
     echo "---"
     exit 1
 fi
@@ -22,14 +24,12 @@ fi
 # Setup filter variables
 if [[ -n "${filter_field}" ]]; then
     filter_field="${filter_field}"
-elif [[ "${class}" == "samples" ]]; then
-    filter_field="barcode"
 elif [[ "${class}" == "runs" ]]; then
     filter_field="set_name"
-elif [[ "${class}" == "flowcells" ]]; then
-    filter_field="flowcell_id"
+elif [[ "${class}" =~ ^(sets|samples|flowcells|platforms|sequencers|inis|entities|biopsies)$ ]]; then
+    filter_field="name"
 else
-    die "Unsupported class (${class})"
+    die "Class ${class} is not supported."
 fi
 
 # Retrieve json
@@ -40,10 +40,35 @@ else
 fi
 
 # Print results
-if [[ "${class}" == "samples" ]]; then
-    jq -r '.[] | [.barcode, .name, .status, .id] | @tsv' <<< "${json}"
+if [[ "${class}" == "flowcells" ]]; then
+    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\n" flowcell_id name q30 yld undet_yld status id
+    jq -r '.[] | [.flowcell_id, .name, .q30, .yld, .undet_rds_p, .status, .id] | @tsv' <<< "${json}" \
+    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
+elif [[ "${class}" == "samples" ]]; then
+    printf "#%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n" submission barcode q30 yld_req yld status name type id
+    jq -r '.[] | [.submission, .barcode, .q30, .yld_req, .yld, .status, .name, .type, .id] | @tsv' <<< "${json}" \
+    | awk 'BEGIN{ FS=OFS="\t" }NR>0{ $3=sprintf("%.1f",$3); $4=sprintf("%.0f",$4/1e9); $5=sprintf("%.0f",$5/1e9) }1'
 elif [[ "${class}" == "runs" ]]; then
-    jq -r '.[] | [.set.name, .ini, .bucket, .status, .id] | @tsv' <<< "${json}"
-elif [[ "${class}" == "flowcells" ]]; then
-    jq -r '.[] | [.flowcell_id, .name, .status, .id] | @tsv' <<< "${json}"
+    printf "#%s\t%s\t%s\t%s\t%s\t%s\n" name ini status version bucket id
+    jq -r '.[] | [.set.name, .ini, .status, .version, .bucket, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "platforms" ]]; then
+    printf "#%s\t%s\t%s\t%s\t%s\n" name max_undet min_q30 min_sample_yield id
+    jq -r '.[] | [.name, .undetermined_reads_perc_cutoff, .q30_cutoff, .sample_yield_cutoff, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "sets" ]]; then
+    printf "#%s\t%s\t%s\t%s\t%s\n" name entity ref_sample tumor_sample id
+    jq -r '.[] | [.name, .entity, .ref_sample, .tumor_sample, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "entities" ]]; then
+    printf "#%s\t%s\t%s\t%s\n" name bucket add_to_db id
+    jq -r '.[] | [.name, .bucket, .add_to_db, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "inis" ]]; then
+    printf "#%s\t%s\n" name id
+    jq -r '.[] | [.name, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "sequencers" ]]; then
+    printf "#%s\t%s\t%s\n" name platform id
+    jq -r '.[] | [.name, .platform, .id] | @tsv' <<< "${json}"
+elif [[ "${class}" == "biopsies" ]]; then
+    printf "#%s\t%s\n" name id
+    jq -r '.[] | [.name, .id] | @tsv' <<< "${json}"
+else
+    die "Class ${class} is not supported"
 fi
