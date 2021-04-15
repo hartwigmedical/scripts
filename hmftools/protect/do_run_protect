@@ -7,8 +7,9 @@ source lims_functions
 run_dir=$1 && shift
 output_dir=$1 && shift
 protect_jar=$1 && shift
+serve_actionability_dir=$1 && shift
 
-if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" ]]; then
+if [[ -z "${run_dir}" || -z "${output_dir}" || -z "${protect_jar}" || -z "${serve_actionability_dir}" ]]; then
     echo "[ERROR] Missing input parameters. Exiting" && exit 1;
 fi
 
@@ -24,7 +25,6 @@ if [[ ! -z "${primary_tumor_doids}" ]]; then
     primary_tumor_argument="-primary_tumor_doids ${primary_tumor_doids}"
 fi
 
-serve_actionability_dir=/data/common/dbs/serve/prod_output
 doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 germline_reporting_tsv=/data/common/dbs/germline_reporting/germline_reporting.tsv
 
