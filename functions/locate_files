@@ -162,8 +162,8 @@ locate_pilot_datarequest() {
 
 ################################# NON JAVA TOOLS ###################################
 
-locate_pgx_main() {
-    echo "$(locate_pgx_dir)/src/main.py"
+locate_peach_main() {
+    echo "$(locate_peach_repo_dir)/src/main.py"
 }
 
 locate_umi_main() {
@@ -200,7 +200,7 @@ locate_germline_hotspot_vcf() {
     echo ${base_path}/dbs/sage/KnownHotspots.germline.37.vcf.gz
 }
 
-locate_pgx_resource_dir() {
+locate_peach_resource_dir() {
     echo ${base_path}/dbs/peach/
 }
 
@@ -254,80 +254,80 @@ locate_ref_genome_38_to_37_chain() {
     echo ${base_path}/refgenomes/liftover/hg38ToHg19.over.chain
 }
 
-################################### PGX ####################################
+################################### PEACH ####################################
 
-locate_pgx_dir() {
+locate_peach_repo_dir() {
     echo "${base_path}/repos/scripts/peach/"
 }
 
-locate_pgx_venv_dir() {
-    echo "$(locate_pgx_resource_dir)/venv/peach"
+locate_peach_venv_dir() {
+    echo "$(locate_peach_resource_dir)/venv/peach"
 }
 
-locate_pgx_requirements() {
-    echo "$(locate_pgx_dir)/requirements.txt"
+locate_peach_requirements() {
+    echo "$(locate_peach_repo_dir)/requirements.txt"
 }
 
-locate_pgx_pilot_output_dir() {
+locate_peach_pilot_output_dir() {
     local run_dir=$1
     echo "${run_dir}/peach_pilot"
 }
 
-locate_pgx_pilot_calls() {
+locate_peach_pilot_calls() {
     local run_dir=$1
-    local pgx_output_dir
-    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir
+    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
-    local pgx_calls_txt=""
+    local peach_pilot_calls_tsv=""
 
-    if [[ -d "${pgx_output_dir}" ]]; then
-        pgx_calls_txt=$(find -L ${pgx_output_dir} -type f -name "*.peach.calls.tsv")
+    if [[ -d "${peach_pilot_output_dir}" ]]; then
+        peach_pilot_calls_tsv=$(find -L "${peach_pilot_output_dir}" -type f -name "*.peach.calls.tsv")
     fi
 
-    if [[ -z "${pgx_calls_txt}" ]]; then
-        echo "[ERROR] Unable to locate pilot pgx calls in ${run_dir}. Exiting." >&2
+    if [[ -z "${peach_pilot_calls_tsv}" ]]; then
+        echo "[ERROR] Unable to locate pilot PEACH calls tsv in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
-    echo ${pgx_calls_txt}
+    echo "${peach_pilot_calls_tsv}"
 }
 
-locate_pgx_pilot_genotype() {
+locate_peach_pilot_genotype() {
     local run_dir=$1
-    local pgx_output_dir
-    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir
+    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
-    local pgx_genotype_txt=""
+    local peach_pilot_genotype_tsv=""
 
-    if [[ -d "${pgx_output_dir}" ]]; then
-        pgx_genotype_txt=$(find -L ${pgx_output_dir} -type f -name "*.peach.genotype.tsv")
+    if [[ -d "${peach_pilot_output_dir}" ]]; then
+        peach_pilot_genotype_tsv=$(find -L "${peach_pilot_output_dir}" -type f -name "*.peach.genotype.tsv")
     fi
 
-    if [[ -z "${pgx_genotype_txt}" ]]; then
-        echo "[ERROR] Unable to locate pgx genotype pilot in ${run_dir}. Exiting." >&2
+    if [[ -z "${peach_pilot_genotype_tsv}" ]]; then
+        echo "[ERROR] Unable to locate pilot PEACH genotype tsv in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
-    echo ${pgx_genotype_txt}
+    echo "${peach_pilot_genotype_tsv}"
 }
 
-locate_pgx_pilot_vcf() {
+locate_peach_pilot_vcf() {
     local run_dir=$1
-    local pgx_output_dir
-    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
+    local peach_pilot_output_dir
+    peach_pilot_output_dir=$(locate_peach_pilot_output_dir "${run_dir}")
 
-    local pgx_vcf=""
+    local peach_pilot_vcf=""
 
-    if [[ -d "${pgx_output_dir}" ]]; then
-        pgx_vcf=$(find -L ${pgx_output_dir} -type f -name "*.peach.filtered.vcf")
+    if [[ -d "${peach_pilot_output_dir}" ]]; then
+        peach_pilot_vcf=$(find -L "${peach_pilot_output_dir}" -type f -name "*.peach.filtered.vcf")
     fi
 
-    if [[ -z "${pgx_vcf}" ]]; then
-        echo "[ERROR] Unable to locate pgx VCF pilot in ${run_dir}. Exiting." >&2
+    if [[ -z "${peach_pilot_vcf}" ]]; then
+        echo "[ERROR] Unable to locate pilot PEACH VCF file in ${run_dir}. Exiting." >&2
         exit 1
     fi
 
-    echo ${pgx_vcf}
+    echo "${peach_pilot_vcf}"
 }
 
 ##################################### UMI ##########################################

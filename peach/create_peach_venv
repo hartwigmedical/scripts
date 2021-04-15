@@ -6,12 +6,12 @@ source message_functions || exit 1
 info "Starting creation of PEACH venv"
 
 if [[ $# -eq 0 ]]; then
-  venv_dir=$(locate_pgx_venv_dir)
+  venv_dir=$(locate_peach_venv_dir)
 else
   venv_dir=$1 && shift
 fi
 
-peach_requirements=$(locate_pgx_requirements)
+peach_requirements=$(locate_peach_requirements)
 
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
     info "Delete existing PEACH venv"
