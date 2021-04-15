@@ -7,8 +7,8 @@ and UMI-tools group has grouped reads by UMI.
 If you want to run the code, please generate a local Python 3 venv and install the requirements:
 
 ```bash
-$ python3 -m venv [path/to/new/virtual/environment, for example: ./pgx]
-$ source [path/to/new/venv, for example: ./pgx/bin/activate]
+$ python3 -m venv [path/to/new/virtual/environment, for example: ./umi]
+$ source [path/to/new/venv, for example: ./umi/bin/activate]
 (ensembl) $ pip install -r requirements.txt
 ```
 

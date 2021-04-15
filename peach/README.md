@@ -11,9 +11,9 @@ It creates two output files:
 If you want to run PEACH, please generate a local Python 3 venv and install the requirements:
 
 ```bash
-$ python3 -m venv [path/to/new/virtual/environment, for example: ./pgx]
-$ source [path/to/new/venv, for example: ./pgx/bin/activate]
-(pgx) $ pip install -r requirements.txt
+$ python3 -m venv [path/to/new/virtual/environment, for example: ./peach]
+$ source [path/to/new/venv, for example: ./peach/bin/activate]
+(peach) $ pip install -r requirements.txt
 ```
 
 ## Usage
@@ -21,7 +21,7 @@ Remember to source the virtualenv before running `main.py`.
 
 ####Example usage
 ```
-(pgx) $ python main.py input.vcf.gz \
+(peach) $ python main.py input.vcf.gz \
     COLO829T \
     COLO829R \
     1.0 \
@@ -45,7 +45,7 @@ Remember to source the virtualenv before running `main.py`.
 * `--recreate_bed`: (Optional, default=False) To filter the VCF to the genes of interest, we use a transcript file and vcftools to filter on bed. 
   Use this argument to regenerate the bed-file. If not given, the cached bed-file is used. 
   The path to the cached bed file is the path to the panel file, except with ".json" replaced by ".bed"
-* `--transcript_tsv`: (Optional, default=/data/common/dbs/pgx/all_genes.37.tsv) 
+* `--transcript_tsv`: (Optional, default=/data/common/dbs/peach/all_genes.37.tsv) 
   If the bed file should be recreated, then this argument is required. 
   This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
 
