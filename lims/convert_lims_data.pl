@@ -268,6 +268,7 @@ sub printLimsToJson{
 
 sub addLabSopStringToSamples{
     my ($samples, $inprocess) = @_;
+    sayInfo("  Adding SOP string information to samples");
     my %store = %$samples;
     my $sop_field_name = 'lab_sop_versions';
     foreach my $id ( keys %store ){
