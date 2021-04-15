@@ -57,7 +57,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
 
 def get_filtered_vcf(vcf: str, bed_file: str, sample_r_id: str, sample_t_id: str, outputdir: str, vcftools: str) -> str:
-    filtered_vcf_prefix = f"{outputdir}/{sample_t_id}_PGx"
+    filtered_vcf_prefix = f"{outputdir}/{sample_t_id}.peach.temp"
     filtered_vcf = f"{filtered_vcf_prefix}.recode.vcf"
     filtered_vcf_log = f"{filtered_vcf_prefix}.log"
     # Check if output vcf does not already exist
@@ -136,7 +136,7 @@ def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_pa
 
 def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: str,
                         panel_id: str, version: str) -> None:
-    calls_file = f"{outputdir}/{sample_t_id}_calls.txt"
+    calls_file = f"{outputdir}/{sample_t_id}.peach.calls.tsv"
     if os.path.exists(calls_file):
         raise IOError(f"Calls output file {calls_file} already exists. Exiting.")
     with open(calls_file, 'w') as f:
@@ -147,7 +147,7 @@ def print_calls_to_file(pgx_analysis: PgxAnalysis, outputdir: str, sample_t_id: 
 
 def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: str, sample_t_id: str,
                             panel_id: str, version: str) -> None:
-    genotype_file = f"{outputdir}/{sample_t_id}_genotype.txt"
+    genotype_file = f"{outputdir}/{sample_t_id}.peach.genotype.tsv"
     if os.path.exists(genotype_file):
         raise IOError(f"Genotype output file {genotype_file} already exists. Exiting.")
     with open(genotype_file, 'w') as f:
@@ -157,7 +157,7 @@ def print_genotypes_to_file(pgx_analysis: PgxAnalysis, panel: Panel, outputdir: 
 
 
 def copy_filtered_vcf_file(filtered_vcf: str, outputdir: str, sample_t_id: str) -> None:
-    destination_path = f"{outputdir}/{sample_t_id}_PGx.vcf"
+    destination_path = f"{outputdir}/{sample_t_id}.peach.filtered.vcf"
     if os.path.exists(destination_path):
         raise IOError(f"Copied filtered vcf file {destination_path} already exists. Exiting.")
     copyfile(filtered_vcf, destination_path)

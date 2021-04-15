@@ -275,7 +275,7 @@ locate_pgx_pilot_calls() {
     local pgx_calls_txt=""
 
     if [[ -d "${pgx_dir}" ]]; then
-        pgx_calls_txt=$(find -L ${pgx_dir} -type f -name "*_calls.txt")
+        pgx_calls_txt=$(find -L ${pgx_dir} -type f -name "*.peach.calls.tsv")
     fi
 
     if [[ -z "${pgx_calls_txt}" ]]; then
@@ -293,7 +293,7 @@ locate_pgx_pilot_genotype() {
     local pgx_genotype_txt=""
 
     if [[ -d "${pgx_dir}" ]]; then
-        pgx_genotype_txt=$(find -L ${pgx_dir} -type f -name "*_genotype.txt")
+        pgx_genotype_txt=$(find -L ${pgx_dir} -type f -name "*.peach.genotype.tsv")
     fi
 
     if [[ -z "${pgx_genotype_txt}" ]]; then
@@ -311,7 +311,7 @@ locate_pgx_pilot_vcf() {
     local pgx_vcf=""
 
     if [[ -d "${pgx_dir}" ]]; then
-        pgx_vcf=$(find -L ${pgx_dir} -type f -name "*_PGx.vcf")
+        pgx_vcf=$(find -L ${pgx_dir} -type f -name "*.peach.filtered.vcf")
     fi
 
     if [[ -z "${pgx_vcf}" ]]; then
