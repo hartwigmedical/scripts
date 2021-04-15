@@ -75,8 +75,8 @@ main() {
 
   # REFERENCES
   local peach_main
-  # peach_main=$(locate_pgx_main) || die "Could not get PEACH main.py path"
-  peach_main=$HOME/repos/scripts/peach/src/main.py
+  peach_main=$(locate_pgx_main) || die "Could not get PEACH main.py path"
+  # peach_main=$HOME/repos/scripts/peach/src/main.py
   local peach_resource_dir
   peach_resource_dir=$(locate_pgx_resource_dir) || die "Could not get PEACH resource dir"
   local vcftools_tool
