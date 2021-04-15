@@ -34,8 +34,10 @@ echo "${submissions}" | jq -rc '[.submission,.project_name,.project_type,.sample
     elif [[ "${cohort}" == "Cohort" ]]; then
         if [[ "${project}" =~ ^DRUP ]]; then
             cohort="DRUP-STAGE3"
+            analysis="NA"
+            sample_count="NA"
         else
-            cohort="UnknownCohort"
+            cohort="UnsupportedCohort"
         fi
     elif [[ "${cohort}" == "CORE" ]]; then
         analysis="SomaticAnalysis"
