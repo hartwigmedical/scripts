@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-RUN_PEACH_LOCATION="$HOME/repos/scripts/pgx/run_pgx_pilot"  # adjust this if needed
+RUN_PEACH_LOCATION="$HOME/repos/scripts/pgx/run_peach_pilot"  # adjust this if needed
 FULL_PANEL_NAME="DPYD.json"
 
 original=false  # default argument
