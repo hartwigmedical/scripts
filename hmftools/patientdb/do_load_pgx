@@ -3,8 +3,8 @@
 source locate_files
 
 sample=$1 && shift
-pgx_calls_txt=$1 && shift
-pgx_genotype_txt=$1 && shift
+peach_calls_tsv=$1 && shift
+peach_genotype_tsv=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
@@ -17,7 +17,7 @@ echo "[INFO] Loading pgx data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadPgxData \
     -sample ${sample} \
-    -pgx_calls_txt ${pgx_calls_txt} \
-    -pgx_genotype_txt ${pgx_genotype_txt} \
+    -pgx_calls_txt ${peach_calls_tsv} \
+    -pgx_genotype_txt ${peach_genotype_tsv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
