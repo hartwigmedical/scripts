@@ -201,7 +201,7 @@ locate_germline_hotspot_vcf() {
 }
 
 locate_pgx_resource_dir() {
-    echo ${base_path}/dbs/pgx/
+    echo ${base_path}/dbs/peach/
 }
 
 locate_pilot_iclusion_trial_tsv() {
