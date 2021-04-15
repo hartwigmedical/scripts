@@ -3,7 +3,7 @@
 source locate_files || exit 1
 source message_functions || exit 1
 
-info "Starting creation of PGX venv"
+info "Starting creation of PEACH venv"
 
 if [[ $# -eq 0 ]]; then
   venv_dir=$(locate_pgx_venv_dir)
@@ -11,15 +11,15 @@ else
   venv_dir=$1 && shift
 fi
 
-pgx_requirements=$(locate_pgx_requirements)
+peach_requirements=$(locate_pgx_requirements)
 
 if [[ -d "${venv_dir}" ]] || [[ -f "${venv_dir}" ]]; then
-    info "Delete existing PGX venv"
-    rm -r  "${venv_dir}" || die "Could not delete existing PGX venv"
+    info "Delete existing PEACH venv"
+    rm -r  "${venv_dir}" || die "Could not delete existing PEACH venv"
 fi
 
-python3 -m venv "${venv_dir}" || die "Could not create PGX venv"
-source "${venv_dir}/bin/activate" || die "Could not activate PGX venv"
-pip install -r "${pgx_requirements}" || die "Could not install PGX pip packages"
+python3 -m venv "${venv_dir}" || die "Could not create PEACH venv"
+source "${venv_dir}/bin/activate" || die "Could not activate PEACH venv"
+pip install -r "${peach_requirements}" || die "Could not install PEACH pip packages"
 
-info "Finished creating PGX venv"
+info "Finished creating PEACH venv"

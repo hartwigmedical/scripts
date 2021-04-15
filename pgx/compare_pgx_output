@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-RUN_PGX_LOCATION="$HOME/repos/scripts/pgx/run_pgx_pilot"  # adjust this if needed
+RUN_PEACH_LOCATION="$HOME/repos/scripts/pgx/run_pgx_pilot"  # adjust this if needed
+FULL_PANEL_NAME="DPYD.json"
 
 original=false  # default argument
 skip_vcf=false  # default argument
@@ -30,7 +31,7 @@ case $key in
 esac
 done
 
-echo "RUN PGX PILOT"
+echo "RUN PEACH PILOT"
 
 if [ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]; then
     echo "[ERROR] Unrecognized options! : ${OTHER_OPTIONS[*]}"
@@ -41,16 +42,16 @@ base_dir="/data/experiments/pharmagenomics/test_runs"
 echo "Subdirs: $(ls "${base_dir}")"
 
 ls "${base_dir}" | xargs -n 1 -P 10 -I {} \
-    "${RUN_PGX_LOCATION}" --rundir "${base_dir}"/{} ${optional_panel_arg} ${optional_recreate_bed_arg}
+    "${RUN_PEACH_LOCATION}" --rundir "${base_dir}"/{} ${optional_panel_arg} ${optional_recreate_bed_arg}
 
-echo "COMPARE PGX OUTPUT"
+echo "COMPARE PEACH OUTPUT"
 for subdir in "${base_dir}"/*
 do
     echo "Comparing for ${subdir}"
-    if [[ "${panel_name}" == "${STANDARD_PANEL_NAME}" ]]; then
-      output_dir_name="pgx_pilot"
+    if [[ "${panel_name}" == "${FULL_PANEL_NAME}" ]]; then
+      output_dir_name="peach_pilot_full"
     else
-      output_dir_name="pgx_pilot_min"
+      output_dir_name="peach_pilot"
     fi
 
     output_dir="${subdir}/${output_dir_name}"

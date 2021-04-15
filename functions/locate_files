@@ -268,14 +268,20 @@ locate_pgx_requirements() {
     echo "$(locate_pgx_dir)/requirements.txt"
 }
 
+locate_pgx_pilot_output_dir() {
+    local run_dir=$1
+    echo "${run_dir}/peach_pilot"
+}
+
 locate_pgx_pilot_calls() {
     local run_dir=$1
-    local pgx_dir=${run_dir}/pgx_pilot
+    local pgx_output_dir
+    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
 
     local pgx_calls_txt=""
 
-    if [[ -d "${pgx_dir}" ]]; then
-        pgx_calls_txt=$(find -L ${pgx_dir} -type f -name "*.peach.calls.tsv")
+    if [[ -d "${pgx_output_dir}" ]]; then
+        pgx_calls_txt=$(find -L ${pgx_output_dir} -type f -name "*.peach.calls.tsv")
     fi
 
     if [[ -z "${pgx_calls_txt}" ]]; then
@@ -288,12 +294,13 @@ locate_pgx_pilot_calls() {
 
 locate_pgx_pilot_genotype() {
     local run_dir=$1
-    local pgx_dir=${run_dir}/pgx_pilot
+    local pgx_output_dir
+    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
 
     local pgx_genotype_txt=""
 
-    if [[ -d "${pgx_dir}" ]]; then
-        pgx_genotype_txt=$(find -L ${pgx_dir} -type f -name "*.peach.genotype.tsv")
+    if [[ -d "${pgx_output_dir}" ]]; then
+        pgx_genotype_txt=$(find -L ${pgx_output_dir} -type f -name "*.peach.genotype.tsv")
     fi
 
     if [[ -z "${pgx_genotype_txt}" ]]; then
@@ -306,12 +313,13 @@ locate_pgx_pilot_genotype() {
 
 locate_pgx_pilot_vcf() {
     local run_dir=$1
-    local pgx_dir=${run_dir}/pgx_pilot
+    local pgx_output_dir
+    pgx_output_dir=$(locate_pgx_pilot_output_dir "${run_dir}")
 
     local pgx_vcf=""
 
-    if [[ -d "${pgx_dir}" ]]; then
-        pgx_vcf=$(find -L ${pgx_dir} -type f -name "*.peach.filtered.vcf")
+    if [[ -d "${pgx_output_dir}" ]]; then
+        pgx_vcf=$(find -L ${pgx_output_dir} -type f -name "*.peach.filtered.vcf")
     fi
 
     if [[ -z "${pgx_vcf}" ]]; then
