@@ -1,6 +1,6 @@
-# HMF_PGx README
+# PEACH
 
-HMF_PGx is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
+Pharmacogenetic Evaluator And Caller of Haplotypes (PEACH) is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
 It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in the germline VCF. 
 
 It creates two output files:
@@ -8,7 +8,7 @@ It creates two output files:
 * [sample]_calls.txt; contains all the variants from the JSON file and their respective calls and filters.
  
 ## Installation
-If you want to run the code, please generate a local Python 3 venv and install the requirements:
+If you want to run PEACH, please generate a local Python 3 venv and install the requirements:
 
 ```bash
 $ python3 -m venv [path/to/new/virtual/environment, for example: ./pgx]
@@ -36,7 +36,7 @@ Remember to source the virtualenv before running `main.py`.
 * `vcf`: (Required) Path to germline VCF file of sample. For instance the germline vcf output from PURPLE. Calls should be wrt v37.
 * `sample_t_id`: (Required) The tumor sample ID of the run.
 * `sample_r_id`: (Required) The ref sample ID of the run.
-* `version`: (Required) The version of the tool.
+* `version`: (Required) The version of PEACH.
 * `outputdir`: (Required) Directory to write the output to.
 * `panel`: (Required) A Curated JSON file that contains the variants and haplotypes to test on. Different options are available for a panel file:
     * Panel with common DPYD haplotypes and variants (`/data/panelfiles/DPYD.json`).
