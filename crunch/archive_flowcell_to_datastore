@@ -22,7 +22,7 @@ flowcell_dir=$(realpath "${flowcell_dir}")
 [[ -d "${flowcell_dir}" ]] || die "Directory not found (${flowcell_dir})"
 
 # perform sync
-info "Syncing ${flowcell_dir} to datastore (only prints final stats)"
+info "Starting sync of ${flowcell_dir} to datastore (excluding BCL and images)"
 rsync -trh \
   --exclude "*.bcl.gz" \
   --exclude "*.cbcl" \
@@ -32,6 +32,6 @@ rsync -trh \
   --exclude "*Read*Cycle*.log" \
   --exclude "*RTALogs/*FileCopyLog*.tsv" \
   --exclude "*RTALogs/*GlobalLog*.tsv" \
-  --stats \
-"${flowcell_dir}" "${target_dir}" || die "Rsync failed"
+  --info=progress2 \
+"${flowcell_dir}" "${target_dir}" || die "Rsync of '${flowcell_dir}' failed!"
 info "Finished syncing ${flowcell_dir}"
