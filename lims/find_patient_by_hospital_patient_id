@@ -3,7 +3,7 @@
 patient_id=$1 && shift
 
 if [[ -z "${patient_id}" ]]; then
-    echo "[ERROR] No pathology id passed to function. Exiting" && exit 1;
+    echo "[ERROR] No hospital patient id passed to function. Exiting" && exit 1;
 fi
 
 query_lims.pl -json -type samples -filter "hospital_patient_id=${patient_id}" | grep sample_name
