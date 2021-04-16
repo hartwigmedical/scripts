@@ -5,7 +5,7 @@ source locate_files
 output_dir=/data/common/dbs/serve/prod_output_public_only
 
 if [[ -d "${output_dir}" ]]; then
-    if [[ ! "$(ls -A ${output_dir})" ]]; then
+    if [[ "$(ls -A ${output_dir})" ]]; then
         echo "[INFO] Output dir '${output_dir}' exists and will be cleaned!"
         rm -r ${output_dir}/*
     fi

@@ -19,7 +19,7 @@ known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 output_dir=/data/common/dbs/serve/pilot_output
 
 if [[ -d "${output_dir}" ]]; then
-    if [[ ! "$(ls -A ${output_dir})" ]]; then
+    if [[ "$(ls -A ${output_dir})" ]]; then
         echo "[INFO] Output dir '${output_dir}' exists and will be cleaned!"
         rm -r ${output_dir}/*
     fi
