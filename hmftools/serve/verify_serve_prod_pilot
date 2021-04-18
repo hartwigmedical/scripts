@@ -4,7 +4,7 @@ pilot_dir=/data/common/dbs/serve/pilot_output
 prod_dir=/data/common/dbs/serve/prod_output
 
 echo "[INFO] Verfiy actionable charateristics"
-diff ${prod_dir}/ActionableSignatures.37.tsv ${pilot_dir}/ActionableCharacteristics.37.tsv
+diff ${prod_dir}/ActionableCharacteristics.37.tsv ${pilot_dir}/ActionableCharacteristics.37.tsv
 
 echo "[INFO] Verfiy actionable fusions"
 diff ${prod_dir}/ActionableFusions.37.tsv ${pilot_dir}/ActionableFusions.37.tsv
