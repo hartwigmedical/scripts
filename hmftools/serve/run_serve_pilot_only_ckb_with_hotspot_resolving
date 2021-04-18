@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-
-source locate_files
-
-ckb_dir=$(locate_ckb_flex_data_dir)
-
-do_run_serve_pilot -use_ckb -ckb_dir ${ckb_dir} "$@"
