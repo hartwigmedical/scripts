@@ -12,8 +12,8 @@ if [[ ! -f "${input_37_hotspots_gz}" ]]; then
 fi
 
 echo "[INFO] Running 38 hotspot liftover on ${working_dir}"
-tmp_37_hotspots=${working_dir}/KnownHotspots.somatic.hg19.vcf
-target_38_hotspots=${working_dir}/KnownHotspots.somatic.hg38.vcf
+tmp_37_hotspots=${working_dir}/KnownHotspots.somatic.37.vcf
+target_38_hotspots=${working_dir}/KnownHotspots.somatic.38.vcf
 
 echo "[INFO] Updating contigs with CHR"
 gunzip -c ${input_37_hotspots_gz} > ${tmp_37_hotspots}
