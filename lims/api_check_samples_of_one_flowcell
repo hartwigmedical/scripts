@@ -4,7 +4,7 @@ source message_functions || exit 1
 
 samplesheet_path=$1
 
-LOG_OUT_LOC="/data/ops/logs/flowcell_sample_checks"
+LOG_OUT_LOC="/data/ops/recurrent/flowcell_sample_checks"
 NAS_TARGET_DIR="overviews/flowcellsamplechecks"
 NAS_TARGET_LOC="/volume1/web/${NAS_TARGET_DIR}"
 NAS_PW_LOC="/data/common/dbs/nas_credentials/rsyncuser"
