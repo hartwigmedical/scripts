@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# This R script has all paths hardcoded, so check the script in case in doubt where it will read from and write to
+Rscript /data/common/tools/paddle_pilot/dnds.R
