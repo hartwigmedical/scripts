@@ -2,25 +2,28 @@
 
 in_bam=$1 && shift
 
-picard_dir="/data/tools/picard-tools_v1.141"
-samtools_dir="/data/tools/samtools_v1.10"
+## use 90 percent of available threads
+threads=$(($(nproc) * 9 / 10))
+samtools_dir="/opt/tools/samtools/1.10"
+picard_dir="/opt/tools/picard-tools_v1.141"
 
-## use 80 percent of available threads and memory
-threads=$( expr "$(grep -c processor /proc/cpuinfo)" / 10 \* 8)
+## reset paths for use at datastore/crunch server
+if [[ "$(hostname)" == "datastore" ]]; then
+    picard_dir="/data/common/tools/picard-tools_v1.141"
+    samtools_dir="/data/common/tools/samtools_v1.10"
+elif [[ "$(hostname)" =~ ^crunch ]]; then
+    picard_dir="/data/tools/picard-tools_v1.141"
+    samtools_dir="/data/tools/samtools_v1.10"
+fi
 
 bam_dirname=$(dirname "${in_bam}")
 bam_basename=$(basename "${in_bam}")
 sample_name=$(echo "${bam_basename}" | cut -d"." -f1 | cut -d"_" -f1)
 out_dir="${bam_dirname}/${sample_name}_FASTQ"
 
-if [[ "$(hostname)" == "datastore" ]]; then
-    picard_dir="/data/common/tools/picard-tools_v1.141"
-    samtools_dir="/data/common/tools/samtools_v1.10"
-fi
-
 if [[ "${in_bam}" == "-h" || "${in_bam}" == "--help" ]]; then
     echo "-----"
-    echo " Usage: $(basename $0) <BAM_FILE>"
+    echo " Usage: $(basename "$0") <BAM_FILE>"
     echo " Using Picard dir ${picard_dir}"
     echo " Using Samtools dir ${samtools_dir}"
     echo "-----"
@@ -40,7 +43,7 @@ if [[ ! -w "$(dirname "${out_dir}")" ]]; then echo "[ERROR] Output dir not writa
 correct_lane_count=$(${samtools_dir}/samtools view -H "${in_bam}" | grep ^@RG | grep -vcP "_L00[1-8]_" )
 if [[ ${correct_lane_count} -gt 1 ]]; then
     echo "[ERROR] There are RG ID header lines in BAM without the expected pattern (_L00[1-8]_):"
-    ${samtools_dir}/samtools view -H ${in_bam} | grep ^@RG
+    ${samtools_dir}/samtools view -H "${in_bam}" | grep ^@RG
     exit 1
 fi
 

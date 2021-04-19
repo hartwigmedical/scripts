@@ -13,7 +13,7 @@ cram=$1
 threads=$(($(nproc) * 9 / 10))
 samtools="/opt/tools/samtools/1.10/samtools" # GCP VMs path
 
-## reset paths for use at datastore server
+## reset paths for use at datastore/crunch server
 if [[ "$(hostname)" == "datastore" ]]; then
     samtools="/data/common/tools/samtools_v1.10/samtools"
 elif [[ "$(hostname)" =~ ^crunch ]]; then
