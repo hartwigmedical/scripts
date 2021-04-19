@@ -4,7 +4,7 @@ find_dirs=("/data/cpct/runs/" "/data/cpct/reportable_runs/" "/data/core/runs/" "
 find_fail_dirs=("/data/gcp/qc_fail_runs")
 download_dir="/data/gcp/downloaded_runs"
 process_script="process_successful_run"
-process_script_fail="process_qc_fail_run"
+inspect_healthchecker_failed_run="inspect_healthchecker_log_at_gcp"
 download_script="download_run_without_bams"
 pipeline="5.21"
 run_inis="Somatic.ini|CPCT.ini"
@@ -55,7 +55,7 @@ main () {
             exists_in_qcfail_run_dirs=$(find "${find_fail_dirs[@]}" -maxdepth 1 -type d -name "${set_name}" | wc -l)
 
             if [[ ${exists_in_success_run_dirs} == 0 && ${exists_in_qcfail_run_dirs} == 0 ]]; then
-                echo "${process_script_fail} ${set_name}"
+                echo "${inspect_healthchecker_failed_run} ${set_name}"
             elif [[ ${exists_in_success_run_dirs} == 0 ]]; then
                 echo "# ${set_name} has failed on ${pipeline} and is already on datastore ${find_fail_dirs[*]}"
             else
