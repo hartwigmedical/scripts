@@ -1,11 +1,11 @@
 # PEACH
 
-Pharmacogenetic Evaluator And Caller of Haplotypes (PEACH) is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
-It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in the germline VCF. 
+**P**harmacogenetic **E**valuator **A**nd **C**aller of **H**aplotypes (PEACH) is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
+It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in a germline VCF. 
 
 It creates two output files:
-* [sample]_genotype.txt; contains on each line a determined genotype of the sample for a specific gene.
-* [sample]_calls.txt; contains all the variants from the JSON file and their respective calls and filters.
+* [sample].peach.genotype.tsv; contains on each line a determined genotype of the sample for a specific gene, expressed in terms of haplotypes.
+* [sample].peach.calls.tsv; contains all the variants from the JSON file and their respective calls and filters.
  
 ## Installation
 If you want to run PEACH, please generate a local Python 3 venv and install the requirements:
