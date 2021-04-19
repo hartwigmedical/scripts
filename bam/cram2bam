@@ -9,13 +9,15 @@ fi
 
 cram=$1
 
-## use 80 percent of available threads
-threads=$( expr $(grep -c processor /proc/cpuinfo) / 10 \* 8)
-samtools="/data/tools/samtools_v1.10/samtools"
+## use 90 percent of available threads
+threads=$(($(nproc) * 9 / 10))
+samtools="/opt/tools/samtools/1.10/samtools" # GCP VMs path
 
 ## reset paths for use at datastore server
 if [[ "$(hostname)" == "datastore" ]]; then
     samtools="/data/common/tools/samtools_v1.10/samtools"
+elif [[ "$(hostname)" =~ ^crunch ]]; then
+    samtools="/data/tools/samtools_v1.10/samtools"
 fi
 
 main() {
