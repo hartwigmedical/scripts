@@ -23,5 +23,5 @@ paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
 
 echo "[INFO] Running paddle driver application with work dir '${work_dir}'"
 
-java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleDndsApplicationKt  \
+java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleDriverApplicationKt  \
     -work_dir ${work_dir}
