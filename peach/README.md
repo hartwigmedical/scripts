@@ -16,6 +16,9 @@ It creates two output files:
   + [Mandatory Arguments](#mandatory-arguments)
   + [Optional Arguments](#optional-arguments)
 * [Input](#input)
+  + [VCF](#VCF)
+  + [JSON](#JSON)
+  + [Transcript TSV](#Transcript TSV)
   + [Datastore file locations](#Datastore file locations)
 * [Output](#output)
   + [Genotype TSV file](#Genotype TSV file)
@@ -66,7 +69,14 @@ recreate_bed | False | To filter the VCF to the genes of interest, we use a tran
 transcript_tsv | None | If the bed file should be recreated, then this argument is required. This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
 
 ##Input
-TODO: describe format panel json? also refer to example in repo. Maybe refer to some requirements for VCF 
+###VCF
+TODO: write, give required fields
+
+###JSON
+TODO: write and refer to example json
+
+###Transcript TSV
+TODO: write or give link
 
 ####Datastore file locations 
 (Only relevant for internal use)
@@ -93,8 +103,6 @@ panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken 
 repo_version | 1.0 | Version of PEACH.
 
 ####Calls TSV file
-TODO: give specifics
-
 Name: `[sample_t_id].peach.calls.tsv`
 
 Column | Example Value | Description
@@ -120,4 +128,14 @@ TODO: better description special/missing values
 ##Algorithm
 TODO: describe algorithm steps and provide details for each step
 
+###Read Variant Calls
+TODO: write
 
+###Match Variants to JSON
+TODO: write
+
+###Infer Haplotypes
+TODO: write
+
+###Produce Output
+TODO: write
