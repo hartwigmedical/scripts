@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+work_dir=/data/experiments/kodu_paddle_test/test_cohort
+
+run_paddle_exonic_variant_application ${work_dir}
+run_paddle_dndscv ${work_dir}
+run_paddle_driver_application ${work_dir}
