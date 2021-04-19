@@ -92,7 +92,7 @@ main() {
   # RUN
   python "${peach_main}" "${germline_vcf}" "${tumor_sample}" "${ref_sample}" "${peach_version}" "${output_dir}"  \
       "${peach_resource_dir}/panelfiles/${panel_name}" "${vcftools_tool}" \
-      --transcript_tsv "${peach_resource_dir}/panelfiles/all_genes.37.tsv" ${optional_recreate_bed_arg} \
+      --transcript_tsv "${peach_resource_dir}/all_genes.37.tsv" ${optional_recreate_bed_arg} \
       || die "PEACH pilot failed"
 
   info "Finished ${SCRIPT_NAME}"

@@ -4,9 +4,8 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Set, Tuple
+from typing import List, Set
 
-from base.util import replace_file_extension_of_path
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
 from pgx_reporter import HaplotypeReporter, GenotypeReporter
@@ -90,7 +89,7 @@ def load_panel(panel_path: str) -> Panel:
 
 
 def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_tsv_path: str) -> str:
-    bed_file = replace_file_extension_of_path(panel_path, "bed")
+    bed_file = f"{panel_path}.bed"
     if recreate_bed:
         create_bed_file(panel.get_genes(), panel_path, transcript_tsv_path, bed_file)
     if not os.path.exists(bed_file):
@@ -182,7 +181,7 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         help='Recreate bed-file from JSON files. If false, the panel file with extension .bed is searched for.'
     )
     parser.add_argument(
-        '--transcript_tsv', type=str, default='/data/common/dbs/pgx/all_genes.37.tsv',
+        '--transcript_tsv', type=str, default='/data/common/dbs/peach/all_genes.37.tsv',
         help="Optional path to tsv file containing gene transcripts"
     )
     return parser.parse_args(sys_args)

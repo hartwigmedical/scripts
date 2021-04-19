@@ -1,11 +1,11 @@
 # PEACH
 
-Pharmacogenetic Evaluator And Caller of Haplotypes (PEACH) is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
-It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in the germline VCF. 
+**P**harmacogenetic **E**valuator **A**nd **C**aller of **H**aplotypes (PEACH) is a pharmacogenomics tool developed for the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5).
+It imports haplotypes and related variants from a curated JSON file, and inspects the presence of these variants in a germline VCF. 
 
 It creates two output files:
-* [sample]_genotype.txt; contains on each line a determined genotype of the sample for a specific gene.
-* [sample]_calls.txt; contains all the variants from the JSON file and their respective calls and filters.
+* [sample].peach.genotype.tsv; contains on each line a determined genotype of the sample for a specific gene, expressed in terms of haplotypes.
+* [sample].peach.calls.tsv; contains all the variants from the JSON file and their respective calls and filters.
  
 ## Installation
 If you want to run PEACH, please generate a local Python 3 venv and install the requirements:
@@ -44,7 +44,7 @@ Remember to source the virtualenv before running `main.py`.
 * `vcftools`: (Required) Path to VCFtools >= 0.1.14 (to allow for VCF v4.2).
 * `--recreate_bed`: (Optional, default=False) To filter the VCF to the genes of interest, we use a transcript file and vcftools to filter on bed. 
   Use this argument to regenerate the bed-file. If not given, the cached bed-file is used. 
-  The path to the cached bed file is the path to the panel file, except with ".json" replaced by ".bed"
+  The path to the cached bed file is "{path/to/panel/json}.bed".
 * `--transcript_tsv`: (Optional, default=/data/common/dbs/peach/all_genes.37.tsv) 
   If the bed file should be recreated, then this argument is required. 
   This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
