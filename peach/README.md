@@ -44,7 +44,7 @@ Remember to source the virtualenv before running `main.py`.
 * `vcftools`: (Required) Path to VCFtools >= 0.1.14 (to allow for VCF v4.2).
 * `--recreate_bed`: (Optional, default=False) To filter the VCF to the genes of interest, we use a transcript file and vcftools to filter on bed. 
   Use this argument to regenerate the bed-file. If not given, the cached bed-file is used. 
-  The path to the cached bed file is the path to the panel file, except with ".json" replaced by ".bed"
+  The path to the cached bed file is "{path/to/panel/json}.bed".
 * `--transcript_tsv`: (Optional, default=/data/common/dbs/peach/all_genes.37.tsv) 
   If the bed file should be recreated, then this argument is required. 
   This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
