@@ -181,7 +181,7 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         help='Recreate bed-file from JSON files. If false, the panel file with extension .bed is searched for.'
     )
     parser.add_argument(
-        '--transcript_tsv', type=str, default='/data/common/dbs/pgx/all_genes.37.tsv',
+        '--transcript_tsv', type=str, default='/data/common/dbs/peach/all_genes.37.tsv',
         help="Optional path to tsv file containing gene transcripts"
     )
     return parser.parse_args(sys_args)
