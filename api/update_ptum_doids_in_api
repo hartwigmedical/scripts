@@ -10,7 +10,7 @@ if [[ ! -z "${1}" || "${1}" == "-h" || "${1}" == "--help" ]]; then
     exit 1
 fi
 
-out_dir="/data/ops/logs/ptum_doid_update"
+out_dir="/data/ops/recurrent/ptum_doid_update"
 doid_file="/data/common/dbs/clinical_data/curated_primary_tumor.tsv"
 field_idx='7'
 
