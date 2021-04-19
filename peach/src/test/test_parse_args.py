@@ -29,7 +29,7 @@ class TestParseArgs(unittest.TestCase):
         expected_namespace = Namespace(
             vcf="vcf_file", sample_t_id="tumor_sample_id", sample_r_id="ref_sample_id", version="script_version",
             outputdir="output_directory", panel="panel_location", recreate_bed=False,
-            vcftools="vcftools_location", transcript_tsv="/data/common/dbs/pgx/all_genes.37.tsv"
+            vcftools="vcftools_location", transcript_tsv=None
         )
         self.assertEqual(expected_namespace, actual_namespace)
 

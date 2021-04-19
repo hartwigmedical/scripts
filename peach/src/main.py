@@ -4,7 +4,7 @@ import os
 import subprocess
 import sys
 from shutil import copyfile
-from typing import List, Set
+from typing import List, Set, Optional
 
 from config.panel import Panel
 from pgx_analysis import PgxAnalyser, PgxAnalysis
@@ -13,7 +13,7 @@ from vcf_reader import VcfReader
 
 
 def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path: str, outputdir: str,
-         recreate_bed: bool, vcftools: str, transcript_tsv_path: str) -> None:
+         recreate_bed: bool, vcftools: str, transcript_tsv_path: Optional[str]) -> None:
     """ Run pharmacogenomics analysis on sample """
     print("\n[INFO] ## START PHARMACOGENOMICS ANALYSIS")
     # Check if output dir exists, create if it does not
@@ -88,7 +88,7 @@ def load_panel(panel_path: str) -> Panel:
         raise FileNotFoundError(f"Panel file {panel_path} not found or cannot be opened.")
 
 
-def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_tsv_path: str) -> str:
+def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_tsv_path: Optional[str]) -> str:
     bed_file = f"{panel_path}.bed"
     if recreate_bed:
         create_bed_file(panel.get_genes(), panel_path, transcript_tsv_path, bed_file)
@@ -101,8 +101,15 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_t
     return bed_file
 
 
-def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_path: str, bed_path: str) -> None:
+def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_path: Optional[str], bed_path: str) -> None:
     """ Generate bed file from gene panel and save as panel_path.bed """
+    if transcript_tsv_path is None:
+        error_msg = (
+            f"Cannot create bed file when transcript tsv has not been provided.\n"
+            f"Please add path to transcript tsv as command line argument."
+        )
+        raise ValueError(error_msg)
+
     print("[INFO] Recreating bed-file...")
     header = (
         f'track name="{panel_path}" description="Bed file generated from {panel_path} with HMF_PGx main.py"\n'
@@ -181,8 +188,7 @@ def parse_args(sys_args: List[str]) -> argparse.Namespace:
         help='Recreate bed-file from JSON files. If false, the panel file with extension .bed is searched for.'
     )
     parser.add_argument(
-        '--transcript_tsv', type=str, default='/data/common/dbs/peach/all_genes.37.tsv',
-        help="Optional path to tsv file containing gene transcripts"
+        '--transcript_tsv', type=str, default=None, help="Optional path to tsv file containing gene transcripts"
     )
     return parser.parse_args(sys_args)
 
