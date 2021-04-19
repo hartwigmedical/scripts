@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+
+work_dir=$1 && shift
+
+if [[ -z "${work_dir}" ]]; then
+    echo "[ERROR] No work dir passed. Exiting!" && exit 1
+fi
+
+# The driver application assumes hardcoded paths for below
+if [[ ! -f "${work_dir}/mutationalLoad.tsv" ]]; then
+    echo "[ERROR] No mutational load input file found in ${work_dir}. Exiting!" && exit 1
+fi
+
+if [[ ! -f "${work_dir}/HmfRefCDSCv.tsv" ]]; then
+    echo "[ERROR] No CDSCv file found in ${work_dir}. Exiting!" && exit 1
+fi
+
+if [[ ! -f "${work_dir}/DndsMutations.tsv" ]]; then
+    echo "[ERROR] No DNDS mutations file found in ${work_dir}. Exiting!" && exit 1
+fi
+
+paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
+
+echo "[INFO] Running paddle driver application with work dir '${work_dir}'"
+
+java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleDndsApplicationKt  \
+    -work_dir ${work_dir}

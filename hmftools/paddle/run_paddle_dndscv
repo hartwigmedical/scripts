@@ -6,6 +6,7 @@ if [[ -z "${work_dir}" ]]; then
     echo "[ERROR] No work dir passed. Exiting!" && exit 1
 fi
 
+# The dNdScv R script assumes hardcoded paths for below
 if [[ ! -d "${work_dir}/somatics" ]]; then
     echo "[ERROR] No somatics dir found in ${work_dir}. Exiting!" && exit 1
 fi
