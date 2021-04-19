@@ -1,4 +1,17 @@
 #!/usr/bin/env bash
 
-# This R script has all paths hardcoded, so check the script in case in doubt where it will read from and write to
-Rscript /data/common/tools/paddle_pilot/dnds.R
+work_dir=$1 && shift
+
+if [[ -z "${work_dir}" ]]; then
+    echo "[ERROR] No work dir passed. Exiting!" && exit 1
+fi
+
+if [[ ! -d "${work_dir}/somatics" ]]; then
+    echo "[ERROR] No somatics dir found in ${work_dir}. Exiting!" && exit 1
+fi
+
+if [[ ! -f "${work_dir}/mutationalLoad.tsv" ]]; then
+    echo "[ERROR] No mutational load input file found in ${work_dir}. Exiting!" && exit 1
+fi
+
+Rscript /data/common/tools/paddle_pilot/dnds.R ${work_dir}
