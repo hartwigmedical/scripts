@@ -8,11 +8,11 @@ if [[ ! -d "${output_dir}" ]]; then
     echo "[ERROR] Output dir not a directory. Exiting" && exit 1;
 fi
 
-hpc_tsv=${output_dir}/hpc.tsv
-hpc_select_samples_sql=/data/common/repos/scripts/hmftools/paddle/select_hpc_samples.sql
+cohort_tsv=${output_dir}/cohort.tsv
+cohort_select_samples_sql=/data/common/repos/scripts/hmftools/paddle/select_dnds_example_samples.sql
 
-echo "[INFO] Writing HPC file to ${hpc_tsv} using ${hpc_select_samples_sql}"
-execute_sql_on_prod ${hpc_select_samples_sql} > ${hpc_tsv}
+echo "[INFO] Writing cohort file to ${cohort_tsv} using ${cohort_select_samples_sql}"
+execute_sql_on_prod ${cohort_select_samples_sql} > ${cohort_tsv}
 
 paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
 credentials=$(locate_prod_database_credentials)
@@ -26,5 +26,5 @@ echo "[INFO] Running paddle exonic variant application with output dir '${output
 
 java -cp ${paddle_jar} com.hartwig.hmftools.paddle.PaddleExonicVariantsApplicationKt  \
     -output_dir ${output_dir} \
-    -hpc_tsv ${hpc_tsv} \
+    -cohort_tsv ${cohort_tsv} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
