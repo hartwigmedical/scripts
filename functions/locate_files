@@ -517,6 +517,18 @@ locate_purple_drivers_somatic() {
     echo ${purple_driver_tsv}
 }
 
+purple_somatic_driver_catalog() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.somatic.tsv")
+
+    if [[ -z "${purple_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${purple_driver_tsv}
+}
+
 locate_purple_gene_copynumbers() {
     local run_dir=$1
     local purple_gene_copynumbers=$(find -L ${run_dir}/purple/ -type f -name "*.purple.cnv.gene.tsv")
@@ -610,6 +622,18 @@ locate_purple_pilot_germline_variants() {
 }
 
 locate_purple_drivers_germline() {
+    local run_dir=$1
+    local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
+
+    if [[ -z "${purple_driver_tsv}" ]]; then
+        echo "[ERROR] Unable to locate purple driver catalog in ${run_dir}. Exiting." >&2
+        exit 1
+    fi
+
+    echo ${purple_driver_tsv}
+}
+
+purple_germline_driver_catalog() {
     local run_dir=$1
     local purple_driver_tsv=$(find -L ${run_dir}/purple/ -type f -name "*.driver.catalog.germline.tsv")
 

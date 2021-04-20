@@ -31,8 +31,8 @@ doid_json=/data/common/dbs/disease_ontology/201015_doid.json
 
 purple_purity_tsv=$(locate_purple_purity ${run_dir})
 purple_qc_file=$(locate_purple_qc ${run_dir})
-purple_driver_catalog_somatic_tsv=$(locate_purple_drivers_somatic ${run_dir})
-purple_driver_catalog_germline_tsv=$(locate_purple_drivers_germline ${run_dir})
+purple_somatic_driver_catalog_tsv=$(purple_somatic_driver_catalog ${run_dir})
+purple_germline_driver_catalog_tsv=$(purple_germline_driver_catalog ${run_dir})
 purple_somatic_variant_vcf=$(locate_purple_somatic_variants ${run_dir})
 purple_germline_variant_vcf=$(locate_purple_germline_variants ${run_dir})
 linx_fusion_tsv=$(locate_linx_fusions ${run_dir})
@@ -48,8 +48,8 @@ java -Xms2G -Xmx8G -jar ${protect_jar} \
     -doid_json ${doid_json} \
     -purple_purity_tsv ${purple_purity_tsv} \
     -purple_qc_file ${purple_qc_file} \
-    -purple_driver_catalog_somatic_tsv ${purple_driver_catalog_somatic_tsv} \
-    -purple_driver_catalog_germline_tsv ${purple_driver_catalog_germline_tsv} \
+    -purple_somatic_driver_catalog_tsv ${purple_somatic_driver_catalog_tsv} \
+    -purple_germline_driver_catalog_tsv ${purple_germline_driver_catalog_tsv} \
     -purple_somatic_variant_vcf ${purple_somatic_variant_vcf} \
     -purple_germline_variant_vcf ${purple_germline_variant_vcf} \
     -linx_fusion_tsv ${linx_fusion_tsv} \
