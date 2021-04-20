@@ -10,19 +10,21 @@ from config.panel import Panel
 
 
 class VcfReader(object):
-    ALT_ALLELE_FIELD_NAME = "variants/ALT"
-    ANNOTATION_FIELD_NAME = "variants/ANN"
     CHROMOSOME_FIELD_NAME = "variants/CHROM"
-    FILTER_FIELD_NAME = "variants/FILTER"
-    GENOTYPE_FIELD_NAME = "calldata/GT"
     POSITION_FIELD_NAME = "variants/POS"
-    REF_ALLELE_FIELD_NAME = "variants/REF"
     RS_IDS_FIELD_NAME = "variants/ID"
+    REF_ALLELE_FIELD_NAME = "variants/REF"
+    ALT_ALLELE_FIELD_NAME = "variants/ALT"
+    FILTER_FIELD_NAME = "variants/FILTER"
+    ANNOTATION_FIELD_NAME = "variants/ANN"
+    GENOTYPE_FIELD_NAME = "calldata/GT"
     SAMPLE_FIELD_NAME = "samples"
     FIELD_NAMES = [
-        SAMPLE_FIELD_NAME, GENOTYPE_FIELD_NAME, ALT_ALLELE_FIELD_NAME, CHROMOSOME_FIELD_NAME, FILTER_FIELD_NAME,
-        RS_IDS_FIELD_NAME, POSITION_FIELD_NAME, REF_ALLELE_FIELD_NAME, ANNOTATION_FIELD_NAME,
+        CHROMOSOME_FIELD_NAME, POSITION_FIELD_NAME, RS_IDS_FIELD_NAME, REF_ALLELE_FIELD_NAME, ALT_ALLELE_FIELD_NAME,
+        FILTER_FIELD_NAME, ANNOTATION_FIELD_NAME, GENOTYPE_FIELD_NAME, SAMPLE_FIELD_NAME,
     ]
+    VARIANT_ANNOTATION_FIELD_NAME = f"{ANNOTATION_FIELD_NAME}_HGVS_c"
+    GENE_FIELD_NAME = f"{ANNOTATION_FIELD_NAME}_Gene_Name"
 
     RS_ID_SEPARATOR = ";"
 
@@ -71,8 +73,8 @@ class VcfReader(object):
                         # Ignore all calls with filter != PASS
                         continue
                     alts = [str(allele) for allele in variants[cls.ALT_ALLELE_FIELD_NAME][i]]
-                    variant_annotation = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_HGVS_c"][i])
-                    gene = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_Gene_Name"][i])
+                    variant_annotation = str(variants[cls.VARIANT_ANNOTATION_FIELD_NAME][i])
+                    gene = str(variants[cls.GENE_FIELD_NAME][i])
                     genotype = variants[cls.GENOTYPE_FIELD_NAME][i][sample_index].tolist()
                     if genotype == [0, 1]:
                         alleles = (reference_allele, alts[0])
