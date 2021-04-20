@@ -1,6 +1,6 @@
 # PEACH
 
-**P**harmacogenetic **E**valuator **A**nd **C**aller of **H**aplotypes (PEACH) is a pharmacogenomics tool developed for 
+**P**harmacogenomic **E**valuator **A**nd **C**aller of **H**aplotypes (PEACH) is a pharmacogenomics tool developed for 
 the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipeline5). 
 It imports haplotypes and related variants from a curated JSON file, reports the presence of these variants in a 
 germline VCF, and infers the simplest combination of haplotypes that explains the presence of these variants. 
@@ -70,7 +70,13 @@ transcript_tsv | None | If the bed file should be recreated, then this argument 
 
 ##Input
 ###VCF
-TODO: write, give required fields
+PEACH has been designed to work with VCF files that follow the VCF Version 4.2 format, see 
+[specification](https://samtools.github.io/hts-specs/VCFv4.2.pdf). In addition to the required fields, 
+each row should contain an annotation field "ANN", as described in 
+[annotation format specification](http://snpeff.sourceforge.net/VCFannotationformat_v1.0.pdf), that contains
+the subsections "Gene Name" and "HGVS.c". One of the samples in the VCF should have a label 
+equal to the `sample_r_id` argument,
+and the "GT" sub-field for this sample should be included and filled in with diploid calls.
 
 ###JSON
 TODO: write and refer to example json
