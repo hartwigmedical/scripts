@@ -5,16 +5,17 @@ ensemblPath37 = '~/data/ensembl_hg37/'
 ensemblPath38 = '~/data/ensembl_hg38/'
 outputDir = '~/data/fusion_ref/'
 fileVersion = 'v3'
-rawFusionFile = '~/Downloads/HMF Fusion Knowledgebase - Main.tsv'
+
+# export from Google sheet and move & rename
+# mv ~/Downloads/HMF\ Fusion\ Knowledgebase\ -\ Main-2.tsv ./HmfKnownFusionSheet.tsv
+#rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet.tsv')
+rawFusionFile = paste0(outputDir,'HmfKnownFusionSheet_20210419.tsv')
 
 ensemblGeneData37 = read.csv(paste0(ensemblPath37,'ensembl_gene_data.csv'))
 ensemblGeneData38 = read.csv(paste0(ensemblPath38,'ensembl_gene_data.csv'))
 
 View(ensemblGeneData37)
 View(ensemblGeneData38)
-
-ensemblTransExonData37 = read.csv(paste0(ensemblPath37,'ensembl_trans_exon_data.csv'))
-ensemblTransExonData38 = read.csv(paste0(ensemblPath38,'ensembl_trans_exon_data.csv'))
 
 rawFusionData = read.csv(rawFusionFile,sep='\t')
 rawFusionData = rawFusionData %>% arrange(Type)
@@ -75,7 +76,7 @@ create_bedpe_file<-function(fusionData,ensemblGeneData,isRef38,outputFile)
   igKnownGenesReverseOrient = igKnownGenes %>% mutate(UpStrand=ifelse(UpStrand==1,-1,1))
   
   igKnownGenes = rbind(igKnownGenes,igKnownGenesReverseOrient)
-  View(igKnownGenes)
+  # View(igKnownGenes)
   
   kpBedInfo = rbind(kpBedInfo,igKnownGenes %>% select(-DownstreamDistance))
 
@@ -128,8 +129,26 @@ create_bedpe_file(rawFusionData %>% select(Type,FiveGene,ThreeGene,Overrides),en
 create_bedpe_file(rawFusionData %>% select(Type,FiveGene=FiveGeneRef38,ThreeGene=ThreeGeneRef38,Overrides=OverridesRef38),ensemblGeneData38,T,
                   paste0(outputDir,'known_fusions.38_',fileVersion,'.bedpe'))
 
+
+# scp known_fusion_data* datastore:/data/common/dbs/fusions/
+# scp known_fusions*bedpe datastore:/data/common/dbs/fusions/
+
+# copy to GCP
+# gsutil -m cp known_fusion_data.37_v3.csv gs://common-resources/knowledgebases/37/known_fusion_data.csv
+# gsutil -m cp known_fusion_data.38_v3.csv gs://common-resources/knowledgebases/38/known_fusion_data.csv
+# gsutil -m cp known_fusions.37_v3.bedpe gs://common-resources/knowledgebases/37/known_fusions.bedpe
+# gsutil -m cp known_fusions.38_v3.bedpe gs://common-resources/knowledgebases/38/known_fusions.bedpe
+
 ## GRIPSS BED files (37 and 38) for high-confidence promiscuous gene exon ranges
-View(ensemblTransExonData37 %>% filter(TransName=='ENST00000288602'))
+## decided not to use these
+
+ensemblTransExonData37 = read.csv(paste0(ensemblPath37,'ensembl_trans_exon_data.csv'))
+ensemblTransExonData38 = read.csv(paste0(ensemblPath38,'ensembl_trans_exon_data.csv'))
+
+View(ensemblTransExonData37)
+canonicalTrans = ensemblTransExonData37 %>% group_by(GeneId,TransId) %>% summarise(ExonCount=n(),IsCanonical=first(CanonicalTranscriptId)==first(TransId))
+View(canonicalTrans %>% group_by(GeneId) %>% summarise(TransCount=n(),CanonicalCount=sum(IsCanonical)))
+
 
 
 create_bed_file<-function(fusionData,ensemblGeneData,ensemblTransExonData,isRef38,outputFile)

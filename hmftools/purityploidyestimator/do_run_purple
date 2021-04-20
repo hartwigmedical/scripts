@@ -51,7 +51,7 @@ if [[ -z "$(hostname | grep datastore)" ]]; then
     base_path="/data"
 fi
 
-gc_profile=${base_path}/dbs/gc/GC_profile.1000bp.cnp
+gc_profile=${base_path}/dbs/gc_profiles/GC_profile.1000bp.37.cnp
 ref_genome=$(locate_ref_genome_37_fasta_file)
 somatic_hotspot_vcf=$(locate_hotspot_vcf)
 germline_hotspot_vcf=$(locate_germline_hotspot_vcf)
