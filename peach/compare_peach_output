@@ -3,6 +3,7 @@
 RUN_PEACH_LOCATION="$HOME/repos/scripts/peach/run_peach_pilot"  # adjust this if needed
 FULL_PANEL_NAME="DPYD.json"
 
+base_dir="/data/experiments/pharmagenomics/test_runs"  # default argument
 original=false  # default argument
 skip_vcf=false  # default argument
 optional_panel_arg=""  # default argument
@@ -12,6 +13,9 @@ while [[ $# -gt 0 ]]
 do
 key=$1 && shift
 case $key in
+    -d|--basedir)
+    base_dir="$1" && shift  # optional argument
+    ;;
     -o|--original)
     original=true  # optional argument
     ;;
@@ -38,47 +42,51 @@ if [ ! "${#OTHER_OPTIONS[@]}" -eq 0 ]; then
     exit 1
 fi
 
-base_dir="/data/experiments/pharmagenomics/test_runs"
 echo "Subdirs: $(ls "${base_dir}")"
 
 ls "${base_dir}" | xargs -n 1 -P 10 -I {} \
     "${RUN_PEACH_LOCATION}" --rundir "${base_dir}"/{} ${optional_panel_arg} ${optional_recreate_bed_arg}
 
+if [[ "${panel_name}" == "${FULL_PANEL_NAME}" ]]; then
+  output_dir_name="peach_pilot_full"
+else
+  output_dir_name="peach_pilot"
+fi
+
 echo "COMPARE PEACH OUTPUT"
 for subdir in "${base_dir}"/*
 do
     echo "Comparing for ${subdir}"
-    if [[ "${panel_name}" == "${FULL_PANEL_NAME}" ]]; then
-      output_dir_name="peach_pilot_full"
+
+    if [[ -d ${subdir} ]]; then
+      output_dir="${subdir}/${output_dir_name}"
+
+      if [ ${original} = true ] ; then
+          control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
+      else
+          control_dir="${subdir}/${output_dir_name}_control"
+      fi
+
+      echo "Comparing ${output_dir} to ${control_dir}"
+
+      if ${skip_vcf}; then
+        ls_ignore="*.vcf"
+      else
+        ls_ignore="*.very_fake_name"
+      fi
+      file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u )
+      for file_name in $(echo ${file_names})
+      do
+          echo "Diff for ${file_name}"
+          actual_file="${output_dir}/${file_name}"
+          control_file="${control_dir}/${file_name}"
+          [[ -f "${actual_file}" ]] || echo "[ERROR] Cannot find file ${actual_file}"
+          [[ -f "${control_file}" ]] || echo "[ERROR] Cannot find file ${control_file}"
+          diff "${actual_file}" "${control_file}"
+      done
     else
-      output_dir_name="peach_pilot"
+      echo "Is not a directory: ${subdir}"
     fi
-
-    output_dir="${subdir}/${output_dir_name}"
-
-    if [ ${original} = true ] ; then
-        control_dir="/data/cpct/runs/$(basename "${subdir}")/${output_dir_name}"
-    else
-        control_dir="${subdir}/${output_dir_name}_control"
-    fi
-
-    echo "Comparing ${output_dir} to ${control_dir}"
-
-    if ${skip_vcf}; then
-      ls_ignore="*.vcf"
-    else
-      ls_ignore="*.very_fake_name"
-    fi
-    file_names=$({ ls -I "${ls_ignore}" "${output_dir}" & ls -I "${ls_ignore}" "${control_dir}";} | sort -u )
-    for file_name in $(echo ${file_names})
-    do
-        echo "Diff for ${file_name}"
-        actual_file="${output_dir}/${file_name}"
-        control_file="${control_dir}/${file_name}"
-        [[ -f "${actual_file}" ]] || echo "[ERROR] Cannot find file ${actual_file}"
-        [[ -f "${control_file}" ]] || echo "[ERROR] Cannot find file ${control_file}"
-        diff "${actual_file}" "${control_file}"
-    done
 done
 
 echo "DONE"
