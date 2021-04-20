@@ -40,20 +40,22 @@ class PgxAnalysis(object):
 class PgxAnalyser(object):
     @classmethod
     def create_pgx_analysis(cls, call_data: V37CallData, panel: Panel) -> PgxAnalysis:
-        full_calls_found_in_patient = V37CallTranslator.get_full_calls(call_data, panel)
-        all_full_calls = cls.get_all_full_calls(full_calls_found_in_patient, panel)
+        full_calls_found_in_patient_v37 = V37CallTranslator.get_full_calls(call_data, panel)
+        all_full_calls = cls.get_all_full_calls(full_calls_found_in_patient_v37, panel)
         gene_to_haplotype_calls = HaplotypeCaller.get_gene_to_haplotypes_call(all_full_calls, panel)
         return PgxAnalysis(all_full_calls, gene_to_haplotype_calls)
 
     @classmethod
     def get_all_full_calls(
-            cls, full_calls_found_in_patient: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
-        full_calls_not_found_in_patient = cls.__get_full_calls_not_found_in_patient(full_calls_found_in_patient, panel)
-        all_full_calls = full_calls_found_in_patient.union(full_calls_not_found_in_patient)
+            cls, full_calls_found_in_patient_v37: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
+        full_calls_not_found_in_patient_v37 = cls.__get_full_calls_not_found_in_patient_v37(
+            full_calls_found_in_patient_v37, panel
+        )
+        all_full_calls = full_calls_found_in_patient_v37.union(full_calls_not_found_in_patient_v37)
         return all_full_calls
 
     @classmethod
-    def __get_full_calls_not_found_in_patient(
+    def __get_full_calls_not_found_in_patient_v37(
             cls, full_calls: FrozenSet[FullCall], panel: Panel) -> FrozenSet[FullCall]:
         rs_ids_found_in_patient = {rs_id for full_call in full_calls for rs_id in full_call.rs_ids if rs_id != "."}
         v37_coordinates_covered_by_found_calls = {

@@ -105,7 +105,7 @@ class V37CallTranslator(object):
         elif panel.contains_rs_id_matching_v37_call(v37_call):
             # known variant and no ref seq differences involved
             variant_annotation_v38 = v37_call.variant_annotation
-            filter_type_v38 = v37_call.filter
+            filter_type_v38 = Filter.PASS
         else:
             # unknown variant, no ref seq difference involved
             variant_annotation_v38 = v37_call.variant_annotation + "?"
