@@ -78,6 +78,8 @@ the subsections "Gene Name" and "HGVS.c". One of the samples in the VCF should h
 equal to the `sample_r_id` argument,
 and the "GT" sub-field for this sample should be included and filled in with diploid calls.
 
+The calls in the VCF should be with respect to a v37 reference genome.
+
 ### JSON
 For an example of a valid panel JSON (with fake data), see 
 [example](https://github.com/hartwigmedical/scripts/blob/master/peach/src/test_resources/test_panel.json).
@@ -144,6 +146,15 @@ TODO: Describe output VCF. Also in other parts of Readme?
 ## Algorithm
 TODO: describe algorithm steps and provide details for each step
 
+In broad strokes:
+* Extract relevant calls wrt from VCF, where relevance is determined by the panel JSON. 
+  These calls will be with respect to a v37 reference genome.
+* Use information from the panel JSON to translate this set of calls wrt v37 into the corresponding set of calls wrt v38, where possible.
+* For each gene:
+  + Determine for each variant how often each alt allele occurs.
+  + Determine the unique simplest combination of haplotypes that completely explains that combination of alt alleles and counts.
+If there is no unique simplest combination of haplotypes that completely explains the combination of alt alleles and counts, then declare "Unresolved Haplotype".
+
 ### Preparation
 First, the panel JSON is loaded and checked for consistency. 
 
@@ -168,16 +179,41 @@ More specifically, a call is added for a panel variant when there are no observe
 * The variant rs id matches one of the calls rs id's.
 * The covered positions of the variant (partially) match the covered positions of the call.
 
-The observed and unobserved V37 calls together form the list of calls that will be considered by PEACH.
+The observed and inferred V37 calls together form the list of calls that will be considered by PEACH, 
+which we will call the *combined V37 calls*.
 
-### Add V38 Information to Calls
+TODO: annotation and filter
+
+### Add Panel Information to Calls
 TODO: write
 
+For each of the combined V37 calls, an attempt is made to find a variant in the panel JSON that has the same v37 position and reference allele.
 
+If succesful:
+* If the rs id of the call has not been set, then it is set to the value from the panel JSON.
+* The correct annotation and filter wrt v38 are determined.
 
+TODO: details
+
+If unsuccesful:
+* Set annotation and filter wrt v38 as "UNKNOWN".
+
+TODO: more?
+
+Let's call these calls with both v37 and v38 details *full calls*.
 
 ### Infer Haplotypes
 TODO: write
+
+Haplotypes are called for each gene separately. First, collect the full calls that correspond to that gene. 
+Second, extract the alt alleles wrt v38 from these full calls, 
+and count the number of times each combination of position (v38) and alt allele (v38) occurs.
+Third, use recursive descent to determine all haplotype combinations that perfectly explain all of these variants.
+If there are no such combinations, then no haplotypes can be called for this gene. 
+If such combinations do exist, then the fourth step is to determine the length of
+each valid haplotype combination contains, where the *length* homozygous haplotype calls count as two haplotypes. 
+
+TODO: example
 
 ### Produce Output
 TODO: write
