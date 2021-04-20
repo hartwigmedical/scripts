@@ -39,7 +39,6 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
     pgx_analysis = PgxAnalyser.create_pgx_analysis(v37_call_data, panel)
 
     # Output
-    # TODO: maybe change file names of tsv files to .tsv
     print_calls_to_file(pgx_analysis, outputdir, sample_t_id, panel.get_id(), version)
     print_genotypes_to_file(pgx_analysis, panel, outputdir, sample_t_id, panel.get_id(), version)
     # Also copy the bed-filtered VCF file for research purposes

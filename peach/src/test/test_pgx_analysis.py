@@ -1080,29 +1080,6 @@ class TestPgxAnalysis(unittest.TestCase):
         pgx_analysis_expected = PgxAnalysis(all_full_calls_expected, gene_to_haplotype_calls_expected)
         self.assertEqual(pgx_analysis_expected, pgx_analysis)
 
-    @unittest.skip("TODO")
-    def test_todo(self) -> None:
-        # TODO:
-        #   SAGE GERMLINE as input
-        #       Fix missing intron variant
-        #       Test more broadly whether this works and gives expected calls and haplotypes.
-        #           How?
-        #           Focus on validation samples, and whether we still get those outcomes
-        #               Use full DPYD panel and check whether full calls are the same as in the validation
-        #               Use SOC panel and check whether calls are directly the same
-        #   Use panel name and version in output files instead of panel path
-        #   Change names of output files to tsv instead of txt
-        #   Check coverage:
-        #       Looks alright. Missing a bunch of errors, most of main.py and most of vcf_reader
-        #       Maybe add coverage or something to run_peach_tests
-        #   Bunch of errors?
-        #       Not that useful, maybe. Maybe eventually.
-        #   Should we test vcf_reader?
-        #       Not that useful, since there is no guarantee that the file that it uses stays as it was,
-        #       and it uses a library for the actual reading anyway.
-        #   (Maybe improve MNV handling after SAGE Germline stuff)
-        self.fail("WIP")
-
 
 if __name__ == "__main__":  # pragma: no cover
     unittest.main()
