@@ -1,11 +1,11 @@
 import itertools
-from typing import List, Set, Tuple, FrozenSet
+from typing import Set, FrozenSet
 
 from base.gene_coordinate import GeneCoordinate
 from base.json_alias import Json
 from call_data import V37Call
 from config.gene_info import GeneInfo, assert_no_overlap_gene_names
-from config.rs_id_info import RsIdInfo, assert_no_overlap_rs_ids
+from config.rs_id_info import RsIdInfo
 
 
 class Panel(object):
@@ -48,18 +48,6 @@ class Panel(object):
     @property
     def version(self) -> str:
         return self.__version
-
-    def get_ref_seq_differences(self) -> List[Tuple[RsIdInfo, str, str]]:
-        results = []
-        for gene_info in self.__gene_infos:
-            for rs_id_info in gene_info.rs_id_infos:
-                if rs_id_info.reference_allele_v37 != rs_id_info.reference_allele_v38:
-                    annotation_v38 = gene_info.get_ref_sequence_difference_annotation_v38(rs_id_info.rs_id)
-                    results.append((rs_id_info, gene_info.gene, annotation_v38))
-        results.sort(key=lambda diff: (diff[1], diff[2]))
-
-        assert_no_overlap_rs_ids([diff[0] for diff in results], "get_ref_seq_differences")
-        return results
 
     def has_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> bool:
         return self.__get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)

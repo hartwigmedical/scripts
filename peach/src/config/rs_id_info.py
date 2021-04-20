@@ -1,8 +1,8 @@
-from typing import NamedTuple, Dict, List, Collection, Set
+from typing import NamedTuple, Set
 
 from base.gene_coordinate import GeneCoordinate
 from base.json_alias import Json
-from base.util import get_key_to_multiple_values, get_covered_coordinates
+from base.util import get_covered_coordinates
 
 
 class RsIdInfo(NamedTuple):
@@ -42,21 +42,3 @@ class RsIdInfo(NamedTuple):
 
     def get_relevant_v38_coordinates(self) -> Set[GeneCoordinate]:
         return get_covered_coordinates(self.start_coordinate_v38, self.reference_allele_v38)
-
-
-def assert_no_overlap_rs_ids(infos: Collection[RsIdInfo], source_name: str) -> None:
-    if rs_ids_overlap(infos):
-        rs_id_to_multiple_infos = get_rs_id_to_multiple_infos(infos)
-        error_msg = (
-            f"The {source_name} contains rs id summaries with the same rs id but different positions. "
-            f"Duplicates: {rs_id_to_multiple_infos}"
-        )
-        raise ValueError(error_msg)
-
-
-def rs_ids_overlap(infos: Collection[RsIdInfo]) -> bool:
-    return len({info.rs_id for info in infos}) != len(infos)
-
-
-def get_rs_id_to_multiple_infos(infos: Collection[RsIdInfo]) -> Dict[str, List[RsIdInfo]]:
-    return get_key_to_multiple_values([(info.rs_id, info) for info in infos])

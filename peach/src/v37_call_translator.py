@@ -37,12 +37,7 @@ class V37CallTranslator(object):
 
             full_calls_from_v37_calls.add(full_call)
 
-        # The "inferred ref" calls are calls for ref seq differences that do not correspond to v37 calls.
-        # This means that they were ref vs v37 and therefore variant calls vs v38
-        inferred_ref_calls = cls.__get_inferred_ref_calls(panel, handled_v37_coordinates, handled_v37_rs_ids)
-
-        full_calls = frozenset(full_calls_from_v37_calls.union(inferred_ref_calls))
-        return full_calls
+        return frozenset(full_calls_from_v37_calls)
 
     @classmethod
     def __get_full_call_from_v37_call(cls, v37_call: V37Call, panel: Panel) -> FullCall:
@@ -127,36 +122,6 @@ class V37CallTranslator(object):
             v37_call.variant_annotation, v37_call.filter, variant_annotation_v38, filter_type_v38,
         )
         return full_call
-
-    @classmethod
-    def __get_inferred_ref_calls(cls, panel: Panel, handled_v37_coordinates: Set[GeneCoordinate],
-                                 handled_v37_rs_ids: Set[str]) -> FrozenSet[FullCall]:
-        # The "inferred ref" calls are calls for ref seq differences that do not correspond to v37 calls.
-        # This means that they were ref vs v37 and therefore variant calls vs v38
-        inferred_ref_calls = set()
-        for rs_id_info, gene, annotation_v38 in panel.get_ref_seq_differences():
-            if not rs_id_info.get_relevant_v37_coordinates().intersection(handled_v37_coordinates):
-                if rs_id_info.rs_id in handled_v37_rs_ids:
-                    error_msg = (f"Have seen rs id of ref seq difference, but not location. "
-                                 f"Indicates mismatch between input file and panel."
-                                 f"rs_id_info={rs_id_info}")
-                    raise ValueError(error_msg)
-
-                full_call = FullCall(
-                    rs_id_info.start_coordinate_v37,
-                    rs_id_info.reference_allele_v37,
-                    rs_id_info.start_coordinate_v38,
-                    rs_id_info.reference_allele_v38,
-                    (rs_id_info.reference_allele_v37, rs_id_info.reference_allele_v37),
-                    gene,
-                    (rs_id_info.rs_id,),
-                    REF_CALL_ANNOTATION_STRING,
-                    Filter.NO_CALL,
-                    annotation_v38,
-                    Filter.INFERRED_PASS,
-                )
-                inferred_ref_calls.add(full_call)
-        return frozenset(inferred_ref_calls)
 
     @classmethod
     def __assert_rs_id_call_matches_info(cls, rs_ids_call: Tuple[str, ...], rs_ids_info: Tuple[str, ...]) -> None:
