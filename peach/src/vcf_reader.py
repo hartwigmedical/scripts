@@ -16,21 +16,20 @@ class VcfReader(object):
     FILTER_FIELD_NAME = "variants/FILTER"
     GENOTYPE_FIELD_NAME = "calldata/GT"
     POSITION_FIELD_NAME = "variants/POS"
-    QUALITY_FIELD_NAME = "variants/QUAL"
     REF_ALLELE_FIELD_NAME = "variants/REF"
     RS_IDS_FIELD_NAME = "variants/ID"
     SAMPLE_FIELD_NAME = "samples"
     FIELD_NAMES = [
         SAMPLE_FIELD_NAME, GENOTYPE_FIELD_NAME, ALT_ALLELE_FIELD_NAME, CHROMOSOME_FIELD_NAME, FILTER_FIELD_NAME,
-        RS_IDS_FIELD_NAME, POSITION_FIELD_NAME, QUALITY_FIELD_NAME, REF_ALLELE_FIELD_NAME, ANNOTATION_FIELD_NAME,
+        RS_IDS_FIELD_NAME, POSITION_FIELD_NAME, REF_ALLELE_FIELD_NAME, ANNOTATION_FIELD_NAME,
     ]
 
     RS_ID_SEPARATOR = ";"
 
     @classmethod
-    def get_v37_call_data(cls, filtered_vcf: str, panel: Panel) -> V37CallData:
+    def get_v37_call_data(cls, filtered_vcf: str, panel: Panel, sample_r_id: str) -> V37CallData:
         variants = cls.__get_variants_from_filtered_vcf(filtered_vcf)
-        return cls.__get_call_data_from_variants(variants, panel)
+        return cls.__get_call_data_from_variants(variants, panel, sample_r_id)
 
     @classmethod
     def __get_variants_from_filtered_vcf(cls, filtered_vcf: str) -> Optional[Dict[str, Any]]:
@@ -42,11 +41,13 @@ class VcfReader(object):
         return variants
 
     @classmethod
-    def __get_call_data_from_variants(cls, variants: Optional[Dict[str, Any]], panel: Panel) -> V37CallData:
+    def __get_call_data_from_variants(cls, variants: Optional[Dict[str, Any]], panel: Panel,
+                                      sample_r_id: str) -> V37CallData:
         match_on_rsid = 0
         match_on_location = 0
         filtered_calls = set()
         if variants is not None:
+            sample_index = variants[cls.SAMPLE_FIELD_NAME].tolist().index(sample_r_id)
             for i, rs_ids_string in enumerate(variants[cls.RS_IDS_FIELD_NAME]):
                 chromosome = str(variants[cls.CHROMOSOME_FIELD_NAME][i])
                 position = int(variants[cls.POSITION_FIELD_NAME][i])
@@ -72,7 +73,7 @@ class VcfReader(object):
                     alts = [str(allele) for allele in variants[cls.ALT_ALLELE_FIELD_NAME][i]]
                     variant_annotation = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_HGVS_c"][i])
                     gene = str(variants[f"{cls.ANNOTATION_FIELD_NAME}_Gene_Name"][i])
-                    genotype = variants[cls.GENOTYPE_FIELD_NAME][i][0].tolist()
+                    genotype = variants[cls.GENOTYPE_FIELD_NAME][i][sample_index].tolist()
                     if genotype == [0, 1]:
                         alleles = (reference_allele, alts[0])
                     elif genotype == [1, 1]:

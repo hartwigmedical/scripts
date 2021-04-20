@@ -33,7 +33,7 @@ def main(vcf: str, sample_t_id: str, sample_r_id: str, version: str, panel_path:
 
     # Get data for patient
     filtered_vcf = get_filtered_vcf(vcf, bed_file, sample_r_id, sample_t_id, outputdir, vcftools)
-    v37_call_data = VcfReader.get_v37_call_data(filtered_vcf, panel)
+    v37_call_data = VcfReader.get_v37_call_data(filtered_vcf, panel, sample_r_id)
 
     # Compute output from input data
     pgx_analysis = PgxAnalyser.create_pgx_analysis(v37_call_data, panel)
