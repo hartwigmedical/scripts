@@ -101,7 +101,7 @@ def get_bed_file(panel_path: str, recreate_bed: bool, panel: Panel, transcript_t
 
 
 def create_bed_file(genes_in_panel: Set[str], panel_path: str, transcript_tsv_path: Optional[str], bed_path: str) -> None:
-    """ Generate bed file from gene panel and save as panel_path.bed """
+    """ Generate bed file from gene panel """
     if transcript_tsv_path is None:
         error_msg = (
             f"Cannot create bed file when transcript tsv has not been provided.\n"
