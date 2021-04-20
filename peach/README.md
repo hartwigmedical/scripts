@@ -79,7 +79,14 @@ equal to the `sample_r_id` argument,
 and the "GT" sub-field for this sample should be included and filled in with diploid calls.
 
 ###JSON
-TODO: write and refer to example json
+For an example of a valid panel JSON, see 
+[example](https://github.com/hartwigmedical/scripts/blob/master/peach/src/test_resources/test_panel.json).
+All fields in the example JSON are required. Additional fields are ignored. 
+Relevant differences between the v37 and v38 reference sequences for a gene can be included as an entry in the "variants" field
+of that gene where the "referenceAlleleV37" and "referenceAlleleV38" fields are different. The set of rs id's with such entries 
+should be equal to the set of rs id's with entries in the "refSeqDifferenceAnnotations" field of that gene.
+
+PEACH does not (properly) support panel JSON files that contain (partially) overlapping genes.
 
 ###Transcript TSV
 TODO: write or give link
@@ -133,6 +140,13 @@ TODO: better description special/missing values
 
 ##Algorithm
 TODO: describe algorithm steps and provide details for each step
+
+###Restrictions
+TODO: write
+
+PEACH does not support calling for multiple (partially) overlapping genes. 
+If one wishes to attain results for (partially) overlapping genes anyway, 
+split them across separate panel JSON files and run PEACH multiple times.
 
 ###Read Variant Calls
 TODO: write
