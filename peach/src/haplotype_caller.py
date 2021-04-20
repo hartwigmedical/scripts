@@ -22,7 +22,7 @@ class HaplotypeCaller(object):
     @classmethod
     def __get_haplotypes_call(cls, full_calls: FrozenSet[FullCall], gene_info: GeneInfo) -> Set[HaplotypeCall]:
         try:
-            variant_to_count = cls.get_variant_to_count_for_gene(full_calls, gene_info.gene)
+            variant_to_count = cls.__get_variant_to_count_for_gene(full_calls, gene_info.gene)
 
             explaining_haplotype_combinations = cls.__get_explaining_haplotype_combinations(
                 variant_to_count, gene_info.haplotypes)
@@ -34,7 +34,7 @@ class HaplotypeCaller(object):
             minimal_explaining_haplotype_combination = cls.__get_minimal_haplotype_combination(
                 explaining_haplotype_combinations)
 
-            haplotype_calls = cls.get_haplotype_calls_from_haplotype_names(
+            haplotype_calls = cls.__get_haplotype_calls_from_haplotype_names(
                 minimal_explaining_haplotype_combination, gene_info
             )
 
@@ -45,30 +45,7 @@ class HaplotypeCaller(object):
             return set()
 
     @classmethod
-    def get_haplotype_calls_from_haplotype_names(
-            cls, haplotype_name_combination: Tuple[str, ...], gene_info: GeneInfo) -> Set[HaplotypeCall]:
-        haplotype_to_count: DefaultDict[str, int] = collections.defaultdict(int)
-        for haplotype in haplotype_name_combination:
-            haplotype_to_count[haplotype] += 1
-
-        haplotype_calls = set()
-        for haplotype, count in haplotype_to_count.items():
-            if count == 1 or count == 2:
-                haplotype_calls.add(HaplotypeCall(haplotype, count))
-            else:
-                error_msg = f"Impossible count for haplotype: haplotype={haplotype}, count={count}"
-                raise ValueError(error_msg)
-
-        called_haplotypes_count = sum(haplotype_to_count.values())
-        if called_haplotypes_count == 0:
-            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 2))
-        elif called_haplotypes_count == 1:
-            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 1))
-
-        return haplotype_calls
-
-    @classmethod
-    def get_variant_to_count_for_gene(cls, full_calls: FrozenSet[FullCall], gene: str) -> DefaultDict[Variant, int]:
+    def __get_variant_to_count_for_gene(cls, full_calls: FrozenSet[FullCall], gene: str) -> DefaultDict[Variant, int]:
         full_calls_for_gene = {call for call in full_calls if call.gene == gene}
         variant_to_count: DefaultDict[Variant, int] = collections.defaultdict(int)
         for call in full_calls_for_gene:
@@ -122,6 +99,29 @@ class HaplotypeCaller(object):
             raise ValueError(error_msg)
         minimal_explaining_haplotype_combination = minimal_explaining_haplotype_combinations.pop()
         return minimal_explaining_haplotype_combination
+
+    @classmethod
+    def __get_haplotype_calls_from_haplotype_names(
+            cls, haplotype_name_combination: Tuple[str, ...], gene_info: GeneInfo) -> Set[HaplotypeCall]:
+        haplotype_to_count: DefaultDict[str, int] = collections.defaultdict(int)
+        for haplotype in haplotype_name_combination:
+            haplotype_to_count[haplotype] += 1
+
+        haplotype_calls = set()
+        for haplotype, count in haplotype_to_count.items():
+            if count == 1 or count == 2:
+                haplotype_calls.add(HaplotypeCall(haplotype, count))
+            else:
+                error_msg = f"Impossible count for haplotype: haplotype={haplotype}, count={count}"
+                raise ValueError(error_msg)
+
+        called_haplotypes_count = sum(haplotype_to_count.values())
+        if called_haplotypes_count == 0:
+            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 2))
+        elif called_haplotypes_count == 1:
+            haplotype_calls.add(HaplotypeCall(gene_info.wild_type_haplotype_name, 1))
+
+        return haplotype_calls
 
     @classmethod
     def __assert_handleable_call(cls, call: FullCall) -> None:
