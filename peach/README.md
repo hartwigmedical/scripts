@@ -37,7 +37,7 @@ $ source [path/to/new/venv, for example: ./peach/bin/activate]
 ## Arguments
 Remember to source the virtualenv before running `main.py`.
 
-####Example Usage
+#### Example Usage
 ```
 (peach) $ python main.py \
     input.vcf.gz \
@@ -51,7 +51,7 @@ Remember to source the virtualenv before running `main.py`.
     --transcript_tsv /path/to/transcript_tsv
 ```
 
-###Mandatory Arguments
+### Mandatory Arguments
 Argument | Description
 ---|---
 vcf | Path to germline VCF file of sample. For instance the germline VCF output from PURPLE. Calls should be wrt v37.
@@ -62,14 +62,14 @@ outputdir | Directory to write the output to.
 panel | Path to a JSON file that contains the variants and haplotypes to test on.
 vcftools | Path to [VCFtools](http://vcftools.sourceforge.net/) >= 0.1.14 (to allow for VCF v4.2).
 
-###Optional Arguments
+### Optional Arguments
 Argument | Default | Description
 ---|---|---
 recreate_bed | N/A | To filter the VCF to the genes of interest, we use a transcript file and VCFTools to filter on a bed file. Use this argument to regenerate the bed file. If not given, the cached bed-file is used. The path to the cached bed file is "{path/to/panel/json}.bed".
 transcript_tsv | None | If the bed file should be recreated, then this argument is required. This file should be a tsv file that describes transcripts for genes wrt v37, including the genes in the panel JSON.
 
-##Input
-###VCF
+## Input
+### VCF
 PEACH has been designed to work with VCF files that follow the VCF Version 4.2 format, see 
 [specification](https://samtools.github.io/hts-specs/VCFv4.2.pdf). In addition to the required fields, 
 each row should contain an annotation field "ANN", as described in 
@@ -78,7 +78,7 @@ the subsections "Gene Name" and "HGVS.c". One of the samples in the VCF should h
 equal to the `sample_r_id` argument,
 and the "GT" sub-field for this sample should be included and filled in with diploid calls.
 
-###JSON
+### JSON
 For an example of a valid panel JSON (with fake data), see 
 [example](https://github.com/hartwigmedical/scripts/blob/master/peach/src/test_resources/test_panel.json).
 All fields in the example JSON are required. Additional fields are ignored. 
@@ -89,10 +89,10 @@ should be equal to the set of rs id's with entries in the "refSeqDifferenceAnnot
 PEACH does not (properly) support panel JSON files that contain (partially) overlapping genes.
 Variants in a panel JSON file are not allowed to (partially) overlap.
 
-###Transcript TSV
+### Transcript TSV
 TODO: write or give link
 
-####Datastore file locations 
+#### Datastore file locations 
 (Only relevant for internal use)
 
 Panel:
@@ -101,9 +101,9 @@ Panel:
 
 Transcript tsv: `/data/common/dbs/peach/all_genes.37.tsv`
 
-##Output
+## Output
 PEACH outputs two TSV files. One contains genotypes/haplotypes for each gene, the other contains calls for all of the variants from the panel JSON.
-####Genotype TSV file
+#### Genotype TSV file
 Name: `[sample_t_id].peach.genotype.tsv`
 
 Column | Example Value | Description
@@ -116,7 +116,7 @@ url_prescription_info | https://www.some_url.com/5-Fluoracil;https://www.some_ot
 panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken from fields in the JSON.
 repo_version | 1.0 | Version of PEACH.
 
-####Calls TSV file
+#### Calls TSV file
 Name: `[sample_t_id].peach.calls.tsv`
 
 Column | Example Value | Description
@@ -141,10 +141,10 @@ TODO: better description special/missing values
 
 TODO: Describe output VCF. Also in other parts of Readme?
 
-##Algorithm
+## Algorithm
 TODO: describe algorithm steps and provide details for each step
 
-###Preparation
+### Preparation
 First, the panel JSON is loaded and checked for consistency. 
 
 If the `--recreate_bed` argument was passed, 
@@ -152,7 +152,7 @@ then the bed file corresponding to the panel JSON is (re)created.
 To this end, for each gene in the panel JSON, corresponding positions are extracted from the transcript TSV such that 
 the range between those start and end positions covers the entire gene.
 
-###Get Variant Calls V37
+### Get Variant Calls V37
 Using VCFtools, the input VCF is filtered on the ranges in the bed file and on the sample name `sample_r_id`. 
 The filtered VCF is read, and it is compared to the variants in the panel JSON file. 
 Calls are ignored when none of the following are true:
@@ -170,17 +170,19 @@ More specifically, a call is added for a panel variant when there are no observe
 
 The observed and unobserved V37 calls together form the list of calls that will be considered by PEACH.
 
-###Add V38 Information to Calls
+### Add V38 Information to Calls
 TODO: write
 
 
-###Infer Haplotypes
+
+
+### Infer Haplotypes
 TODO: write
 
-###Produce Output
+### Produce Output
 TODO: write
 
-###Restrictions
+### Restrictions
 TODO: write
 
 PEACH does not support calling for multiple (partially) overlapping genes.
@@ -188,3 +190,5 @@ If one wishes to attain results for (partially) overlapping genes anyway,
 split them across separate panel JSON files and run PEACH multiple times.
 
 Variants in a panel JSON file are not allowed to (partially) overlap.
+
+Differences in reference sequence between v37 and v38 should not be entered as MNV's, but as separate SNV's.
