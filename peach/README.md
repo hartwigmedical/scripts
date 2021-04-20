@@ -87,6 +87,7 @@ of that gene where the "referenceAlleleV37" and "referenceAlleleV38" fields are 
 should be equal to the set of rs id's with entries in the "refSeqDifferenceAnnotations" field of that gene.
 
 PEACH does not (properly) support panel JSON files that contain (partially) overlapping genes.
+Variants in a panel JSON file are not allowed to (partially) overlap.
 
 ###Transcript TSV
 TODO: write or give link
@@ -144,8 +145,6 @@ TODO: Describe output VCF. Also in other parts of Readme?
 TODO: describe algorithm steps and provide details for each step
 
 ###Preparation
-TODO: write
-
 First, the panel JSON is loaded and checked for consistency. 
 
 If the `--recreate_bed` argument was passed, 
@@ -153,17 +152,27 @@ then the bed file corresponding to the panel JSON is (re)created.
 To this end, for each gene in the panel JSON, corresponding positions are extracted from the transcript TSV such that 
 the range between those start and end positions covers the entire gene.
 
-###Read Variant Calls
+###Get Variant Calls V37
 Using VCFtools, the input VCF is filtered on the ranges in the bed file and on the sample name `sample_r_id`. 
-The filtered VFC is read, and it is compared to the variants in the panel JSON file. 
-Variants are kept when at least one of the following is true:
-* At least one of the rs id's of the variant matches an rs id from the panel JSON.
-* At least one of the positions of the variant matches at least one of the positions of the variants in the panel JSON.
-In this comparison, the positions of a variant are the positions of the bases in the reference allele.
+The filtered VCF is read, and it is compared to the variants in the panel JSON file. 
+Calls are ignored when none of the following are true:
+* At least one of the rs id's of the call matches an rs id from the panel JSON.
+* At least one of the covered positions of the call matches at least one of the covered positions of the variants in the panel JSON.
+In this comparison, the *covered positions* of a call or a variant are the positions of the bases in the reference allele.
 
-###Match Variants to panel JSON
+Let's call the remaining variants the *observed V37 calls*. 
 
+For each variant in the panel JSON for which there are no matching calls in the observed V37 call, 
+a call is created that is homozygously the reference allele, an *inferred V37 call*. 
+More specifically, a call is added for a panel variant when there are no observed V37 calls such that either:
+* The variant rs id matches one of the calls rs id's.
+* The covered positions of the variant (partially) match the covered positions of the call.
+
+The observed and unobserved V37 calls together form the list of calls that will be considered by PEACH.
+
+###Add V38 Information to Calls
 TODO: write
+
 
 ###Infer Haplotypes
 TODO: write
@@ -177,3 +186,5 @@ TODO: write
 PEACH does not support calling for multiple (partially) overlapping genes.
 If one wishes to attain results for (partially) overlapping genes anyway,
 split them across separate panel JSON files and run PEACH multiple times.
+
+Variants in a panel JSON file are not allowed to (partially) overlap.
