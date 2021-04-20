@@ -41,8 +41,8 @@ Followed instructions from https://github.com/CancerGenome/rn5_mappability
     Execute:
     ./gccount -conf gcp.conf
 
-    Add chr to output (for HG38):
-    sed 's/^/chr/g' GC_profile.cnp > GC_profile.hg38.no_alt.1000bp.cnp
+    Add chr to output (for v38):
+    sed 's/^/chr/g' GC_profile.cnp > GC_profile.1000bp.38.cnp
 
 
 4. Create BED file (if necessary)
