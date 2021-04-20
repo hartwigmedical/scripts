@@ -23,7 +23,11 @@ slack () {
   local usr="$1" && shift
   local msg="$1" && shift
   local col="$1" && shift # color
-  data_json="{'username':'${usr} (on behalf of ${caller}@${host})','attachments': [{'text':'${msg}','color':'${col}','attachment_type':'default'}]}"
+  msg=$(echo "$msg" | tr '"' "'") # double quotes not allowed
+  data_json=$(
+      printf '{"username":"%s (on behalf of %s@%s)","attachments": [{"text":"%s","color":"%s","attachment_type":"default"}]}' \
+     "$usr" "$caller" "$host" "$msg" "$col"
+  )
   response=$(curl -s -X POST -H 'Content-type: application/json' --data "${data_json}" "${url}")
   if [[ ! "$response" == "ok" ]]; then
     echo "[ERROR] Sending of slack msg was not ok (response: ${response})" >&2
