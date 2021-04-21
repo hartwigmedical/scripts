@@ -37,10 +37,10 @@ my $HELP_TEXT = <<"HELP";
     writes to JSON output.
 
   Usage
-    $SCRIPT -lims_dir /path/to/in/dir/ -out_json /path/to/out.json
+    $SCRIPT -lims_dir /data/ops/lims/pilot -out_json /data/ops/lims/pilot/lims.json
 
   Required params:
-    -lims_dir <str>  Path to dir with input files (eg /data/ops/lims/prod)
+    -lims_dir <str>  Path to input dir (eg /data/ops/lims/pilot)
     -out_json <str>  Path to output json (eg /data/tmp/lims.json)
 
 HELP
@@ -1119,6 +1119,7 @@ sub getFieldNameTranslations{
         'Prep'               => 'preparation_exp_id', # was (DNA|RNA)_prep
         'Purity_shallow'     => 'purity_shallow', # was Purity_shallow_(1|2|3)
         'Primary_tumor_type' => 'ptum',
+        'Biopsy_site'        => 'biopsy_site',
         'tumor_'             => 'tumor_perc', # % in tumor_% is absent in export
         'Conc'               => 'conc', # was (DNA|RNA)_conc
         'Final_lab_status'   => 'lab_status',
