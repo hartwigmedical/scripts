@@ -6,7 +6,7 @@ run_dir=$1 && shift
 output_path=$1 && shift
 input_path=$1 && shift
 
-tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${input_path}/${run_dir})
 
 if [[ -z "${run_dir}" ]]; then
     echo "[ERROR] No run dir provided. Exiting" && exit 1;
