@@ -199,33 +199,31 @@ Homozygous alt or heterozygous observed call. | From HGVS.c field in ANN in VCF 
 Homozygous reference observed call. | REF_CALL | PASS
 Inferred call. | REF_CALL | NO_CALL
 
-### Add Panel Information to Calls
-TODO: write
-
+### Annotate Calls with Panel Information
 For each of the combined v37 calls, an attempt is made to find a variant in the panel JSON that has the same v37 position and reference allele.
 
 If succesful:
 * If the rs id of the call has not been set, then it is set to the value from the panel JSON.
 * The reference allele and position wrt v38 are determined from the panel JSON.
 
-TODO: details
-
 If unsuccesful:
 * Set reference allele and position wrt v38 as "UNKNOWN".
 
-The correct annotation and filter wrt v38 are determined according to the following table, 
-where the first matching condition determines the chosen values:
+Also, the correct annotation and filter wrt v38 are determined according to the following table, 
+where an asterisk (*) indicates that any value is allowed:
 
-Condition | Variant Annotation V38 | Filter V38
----|---|---
-No matching variant in panel JSON (so also not inferred call). | Variant Annotation V37 + "?" | UNKNOWN
-Inferred call where reference alleles v37 and v38 are identical. | REF_CALL | NO_CALL
-Inferred call where reference alleles v37 and v38 are different. | From "refSeqDifferenceAnnotations" field in panel JSON | INFERRED_PASS
-Observed call that is homozygous reference wrt v38. | REF_CALL | PASS
-Observed call that is not homozygous reference wrt v38 and where reference alleles v37 and v38 are identical. | Variant Annotation V37 | PASS
+Matches variant in panel JSON | Type of call | Call is homozygous reference wrt v38 | Reference alleles v37 and v38 are identical | All alleles are reference with v37 or v38 | Variant Annotation V38 | Filter V38
+---|---|---|---|---|---|---
+False|*|*|*|*|Variant Annotation V37 + "?"|UNKNOWN
+True|Inferred|True|*|*|REF_CALL|NO_CALL
+True|Inferred|False|*|*|From "refSeqDifferenceAnnotations" field in panel JSON|INFERRED_PASS
+True|Observed|True|*|*|REF_CALL|PASS
+True|Observed|False|True|*|Variant Annotation V37|PASS
+True|Observed|False|False|True|From "refSeqDifferenceAnnotations" field in panel JSON|PASS
+True|Observed|False|False|False|Variant Annotation V37 + "?"|UNKNOWN
 
-
-TODO: more?
+Note that an asterisk does not indicate that every value is actually possible. 
+For instance, calls that do not match any variants from the panel JSON can only be observed calls, not inferred calls.
 
 Let's call these calls with both v37 and v38 details *full calls*.
 
