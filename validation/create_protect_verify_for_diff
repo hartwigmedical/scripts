@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#!/usr/bin/env bash
+source metadata_functions
 
 run_dir=$1 && shift
 output_path=$1 && shift
