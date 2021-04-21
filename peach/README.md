@@ -99,7 +99,7 @@ PEACH does not (properly) support panel JSON files that contain (partially) over
 Variants in a panel JSON file are not allowed to (partially) overlap.
 
 ### Transcript TSV
-TODO: write or give link
+TODO: write or provide link
 
 #### Datastore file locations 
 (Only relevant for internal use)
@@ -147,8 +147,6 @@ filter_v38 | NO_CALL | Has value PASS, NO_CALL, UNKNOWN or INFERRED_PASS. See [A
 panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken from fields in the JSON.
 repo_version | 1.0 | Version of PEACH.
 
-TODO: better description special/missing values
-
 ### Filtered VCF
 Name: `[sample_t_id].filtered.vcf`
 
@@ -156,8 +154,6 @@ The result of filtering the input VFC by sample id `sample_r_id` and by a bed fi
 See [Get Variant Calls V37](#get-variant-calls-v37) for a more detailed explanation.
 
 ## Algorithm
-TODO: describe algorithm steps and provide details for each step
-
 In broad strokes:
 * Extract relevant calls wrt from VCF, where relevance is determined by the panel JSON. 
   These calls will be with respect to a v37 reference genome.
@@ -233,23 +229,37 @@ For instance, calls that do not match any variants from the panel JSON can only 
 
 Let's call these calls with both v37 and v38 details *full calls*.
 
+TODO: example ref seq difference?
+
 ### Infer Haplotypes
-TODO: write
+The goal is to find the simplest combination of haplotypes that explains the called variants. 
 
-TODO: describe goal
+Sometimes, more than one combination of haplotypes could explain these calls. 
+As an example, consider the DPYD gene and two variants for that gene: c.1905+1G>A and c.1627A>G. 
+Separately, these variants form the haplotypes *2A and *5, and the haplotype *2B consists of both of these variants together.
+A haplotype can contain multiple variants if these variants have a tendency to be inherited together.
+If each variant is called once and if all of these variants and haplotypes are included in the panel JSON, then, to take this combined inheritance into account, 
+PEACH prefers to call the haplotype combination as *2B_HET/*1_HET and not as *2A_HET/*5_HET. 
+If you want PEACH to call *2A_HET/*5_HET instead of *2B_HET/*1_HET in this situation, then simply don't include *2B in the panel JSON.
 
+To make this more precise, define the *length* of a haplotype combination as the total number of non-wild-type
+haplotypes in the combination, where homozygous haplotype calls are counted as 2. 
+PEACH will always attempt to call the unique haplotype combination of minimum length that explain all of the variant calls.
+If there are no haplotype combinations that explain all of the variant calls, 
+or if there is more than one combination of the same minimum length, 
+then the haplotype combination for that gene is called as "Unresolved Haplotype".
+
+#### Haplotype calling algorithm 
 Haplotypes are called for each gene separately. First, collect the full calls that correspond to that gene. 
 Then, extract the alt alleles wrt v38 from these full calls, 
 and count the number of times each combination of position (v38) and alt allele (v38) occurs.
 Use recursive descent to determine all haplotype combinations that perfectly explain all of these variants.
 If there are no such combinations, then no haplotype combination can be called for this gene. 
 If such combinations do exist, then the next step is to determine the length of
-each valid haplotype combination, where the *length* is the number of haplotypes in the combination 
-if homozygous haplotype calls count as two haplotypes. Find the minimum length of the valid haplotype combinations, 
+each valid haplotype combination. Find the minimum length of the valid haplotype combinations, 
 and select the haplotype combinations whose length is equal to this minimum. 
 If precisely one such haplotype combination exists, then this combination will be called for this gene.
 If more than one haplotype combination of minimum length exists, then no haplotype combination is called for this gene.
-
 
 TODO: example
 
