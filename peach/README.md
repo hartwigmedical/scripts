@@ -26,10 +26,12 @@ It creates two output files:
 * [Algorithm](#algorithm)
 
 ## Installation
-If you want to run PEACH, please generate a local Python 3 venv and install the requirements:
+PEACH has been designed to work with Python 3.6.
+
+If you want to run PEACH, please generate a local Python 3.6 venv and install the requirements:
 
 ```bash
-$ python3 -m venv [path/to/new/virtual/environment, for example: ./peach]
+$ python3.6 -m venv [path/to/new/virtual/environment, for example: ./peach]
 $ source [path/to/new/venv, for example: ./peach/bin/activate]
 (peach) $ pip install -r requirements.txt
 ```
