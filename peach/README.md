@@ -5,9 +5,9 @@ the [Hartwig Medical Foundation pipeline](https://github.com/hartwigmedical/pipe
 It imports haplotypes and related variants from a curated JSON file, reports the presence of these variants in a 
 germline VCF, and infers the simplest combination of haplotypes that explains the presence of these variants. 
 
-It creates two output files:
+The two main output files are:
 * A file that contains the determined genotype of the sample for each gene in the JSON, expressed in terms of haplotypes.
-* A file that contains all of the variants from the JSON file and their respective calls and filters.
+* A file that contains calls for all of the positions of variants in the JSON file, including annotation and filters wrt both v37 and v38 reference genomes.
 
 ## Contents
 
@@ -107,7 +107,7 @@ Transcript tsv: `/data/common/dbs/peach/all_genes.37.tsv`
 
 ## Output
 PEACH outputs two TSV files. One contains genotypes/haplotypes for each gene, the other contains calls for all of the variants from the panel JSON.
-#### Genotype TSV file
+### Genotype TSV file
 Name: `[sample_t_id].peach.genotype.tsv`
 
 Column | Example Value | Description
@@ -116,11 +116,11 @@ gene | DPYD | Gene for which this haplotype is called.
 haplotype | *1_HOM | Haplotype from JSON, including whether it is homozygous (HOM) or heterozygous (HET). If no haplotype could be called, has value "Unresolved Haplotype".
 function | No function | Functionality of this haplotype. Wild type has function "Normal Function". If no haplotype could be called, has value "Unknown Function".
 linked_drugs | 5-Fluoracil;Capecitabine | Drugs for which this haplotype is relevant, separated by ";".
-url_prescription_info | https://www.some_url.com/5-Fluoracil;https://www.some_other_url.com/Capecitabine | For each listed drug, a url with information on how to translate abnormal haplotype function into an appropriate treatment adjustement.
+url_prescription_info | https://www.some_url.com/5-Fluoracil;https://www.some_other_url.com/Capecitabine | For each listed drug, a url with information on how to translate abnormal haplotype function into an appropriate treatment adjustement. Separated by ";".
 panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken from fields in the JSON.
 repo_version | 1.0 | Version of PEACH.
 
-#### Calls TSV file
+### Calls TSV file
 Name: `[sample_t_id].peach.calls.tsv`
 
 Column | Example Value | Description
@@ -133,7 +133,7 @@ ref_v37 | G | Reference allele wrt v37.
 ref_v38 | A | Reference allele wrt v38. If v37 info could not be translated into its v38 equivalent, has value "UNKNOWN".
 allele1 | A | First of the called alleles. Order of alleles is lexicographical order.
 allele2 | A | Second of the called alleles. Order of alleles is lexicographical order.
-rsid | rs1801265 | Rs id(s) of variant. If more than one, then they are separated by ";". Taken from VCF if available. If not, taken from matching variant in panel JSON, if possible. If not, has value ".".
+rsid | rs1801265 | Rs id(s) of variant. If more than one, then they are separated by ";". Taken from VCF if available. If not, taken from matching variant in panel JSON, if match exists. If not, has value ".".
 variant_annotation_v37 | 85C>T | Variant annotation wrt v37. See TODO for details.
 filter_v37 | PASS | Has value PASS or NO_CALL. See TODO for details.
 variant_annotation_v38 | REF_CALL | Variant annotation wrt v38. See TODO for details.
@@ -143,7 +143,11 @@ repo_version | 1.0 | Version of PEACH.
 
 TODO: better description special/missing values
 
-TODO: Describe output VCF. Also in other parts of Readme?
+### Filtered VCF
+Name: `[sample_t_id].filtered.vcf`
+
+The result of filtering the input VFC by sample id `sample_r_id` and by a bed file with ranges for genes from the JSON.
+See [Get Variant Calls V37](#get-variant-calls-v37) for a more detailed explanation.
 
 ## Algorithm
 TODO: describe algorithm steps and provide details for each step
@@ -156,6 +160,7 @@ In broad strokes:
   + Determine for each variant how often each alt allele occurs.
   + Determine the unique simplest combination of haplotypes that completely explains that combination of alt alleles and counts.
 If there is no unique simplest combination of haplotypes that completely explains the combination of alt alleles and counts, then declare "Unresolved Haplotype".
+* Create output files.
 
 ### Preparation
 First, the panel JSON is loaded and checked for consistency. 
@@ -167,6 +172,8 @@ the range between those start and end positions covers the entire gene.
 
 ### Get Variant Calls V37
 Using VCFtools, the input VCF is filtered on the ranges in the bed file and on the sample name `sample_r_id`. 
+The resulting file is included in the output as `[sample_t_id].peach.filtered.vcf`.
+
 The filtered VCF is read, and it is compared to the variants in the panel JSON file. 
 Calls are ignored when none of the following are true:
 * At least one of the rs id's of the call matches an rs id from the panel JSON.
@@ -207,18 +214,22 @@ Let's call these calls with both v37 and v38 details *full calls*.
 ### Infer Haplotypes
 TODO: write
 
+TODO: describe goal
+
 Haplotypes are called for each gene separately. First, collect the full calls that correspond to that gene. 
-Second, extract the alt alleles wrt v38 from these full calls, 
+Then, extract the alt alleles wrt v38 from these full calls, 
 and count the number of times each combination of position (v38) and alt allele (v38) occurs.
-Third, use recursive descent to determine all haplotype combinations that perfectly explain all of these variants.
-If there are no such combinations, then no haplotypes can be called for this gene. 
-If such combinations do exist, then the fourth step is to determine the length of
-each valid haplotype combination contains, where the *length* homozygous haplotype calls count as two haplotypes. 
+Use recursive descent to determine all haplotype combinations that perfectly explain all of these variants.
+If there are no such combinations, then no haplotype combination can be called for this gene. 
+If such combinations do exist, then the next step is to determine the length of
+each valid haplotype combination, where the *length* is the number of haplotypes in the combination 
+if homozygous haplotype calls count as two haplotypes. Find the minimum length of the valid haplotype combinations, 
+and select the haplotype combinations whose length is equal to this minimum. 
+If precisely one such haplotype combination exists, then this combination will be called for this gene.
+If more than one haplotype combination of minimum length exists, then no haplotype combination is called for this gene.
+
 
 TODO: example
-
-### Produce Output
-TODO: write
 
 ### Restrictions
 TODO: write
@@ -229,4 +240,4 @@ split them across separate panel JSON files and run PEACH multiple times.
 
 Variants in a panel JSON file are not allowed to (partially) overlap.
 
-Differences in reference sequence between v37 and v38 should not be entered as MNV's, but as separate SNV's.
+Differences in reference sequence between v37 and v38 that are MNV's should not be entered as MNV's, but as separate SNV's.
