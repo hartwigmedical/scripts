@@ -17,22 +17,25 @@ api_smp_jsn=$(query_api.pl -type samples -filter "submission=${submission}" -fil
 api_rns_jsn=$(query_api.pl -type runs -filter "name=${submission}" -json)
 
 analysis_type=$(echo "${lms_sub_jsn}" | jq -r ".analysis_type" )
+project_name=$(echo "${lms_sub_jsn}" | jq -r ".project_name" )
 smp_lms_tot=$(echo "${lms_smp_jsn}" | jq 'length')
-smp_api_tot=$(echo "${api_smp_jsn}" | jq 'length')
-rns_api_tot=$(echo "${api_rns_jsn}" | jq 'length')
-
 smp_lms_err=$(echo "${lms_smp_jsn}" | jq -c '[.[] | select(.lab_status=="Failed")] | length')
-smp_api_rdy=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Ready")] | length')
-rns_api_rdy=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="Finished")] | length')
-rns_api_val=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated")] | length')
 
-info "Output type for ${submission} in lims is \"${analysis_type}\""
-info "${smp_lms_tot} LMS samples total (of which ${smp_lms_err} failed)"
-info "${smp_api_tot} BFX samples total"
-info "${smp_api_rdy} BFX samples ready"
-info "${rns_api_tot} BFX runs total"
-info "${rns_api_rdy} BFX runs finished"
-info "${rns_api_val} BFX runs validated"
+smp_tot=$(echo "${api_smp_jsn}" | jq 'length')
+rns_tot=$(echo "${api_rns_jsn}" | jq 'length')
+smp_rdy=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Ready")] | length')
+smp_del=$(echo "${api_smp_jsn}" | jq -c '[.[] | select(.status=="Deleted")] | length')
+rns_dne=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated" or .status=="Failed" or .status=="Finished")] | length')
+rns_val=$(echo "${api_rns_jsn}" | jq -c '[.[] | select(.status=="Validated")] | length')
+smp_dne=$((smp_rdy + smp_del))
+
+info "Checking submission ${submission} (project '${project_name}', output '${analysis_type}')"
+info "${smp_lms_tot} LMS samples total (of which ${smp_lms_err} failed during lab process)"
+info "${smp_tot} API samples total"
+info "${smp_dne} API samples finished (${smp_rdy} ready and ${smp_del} deleted)"
+info "${rns_tot} API runs total"
+info "${rns_dne} API runs finished"
+info "${rns_val} API runs validated"
 echo ""
 
 info "Commands for further inspection:"
@@ -42,11 +45,18 @@ echo "  query_api.pl -type runs -filter name=${submission}"
 echo ""
 
 ## Sanity checks
-info "Performing sanity checks"
 warnings_found="FALSE"
+info "Performing various sanity checks.."
 if [[ -d "${submission_dir}" ]]; then
     warn "Submission directory already exists (${submission_dir})"
     warnings_found="TRUE"
+fi
+
+if [[ "${analysis_type}" == "FASTQ" ]]; then
+    if [[ "${smp_rdy}" -lt 1 ]]; then
+        warn "Output type is FASTQ but no samples are Ready!"
+        warnings_found="TRUE"
+    fi
 fi
 
 while read -r smp_sop_str; do
@@ -58,27 +68,27 @@ while read -r smp_sop_str; do
     fi
 done < <(echo "${lms_smp_jsn}" | jq -r '.[] | select( .lab_status != "Failed") | .lab_sop_versions')
 
-required_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") then .total_yield_required else 0 end' )
+req_yield=$(echo "${lms_sub_jsn}" | jq -r '. | if has("total_yield_required") and .total_yield_required != "" then .total_yield_required else 0 end' )
 samples=$(hmf_api_get "samples?submission=${submission}")
-measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready") | .yld] | add')
+measured_yield=$(echo "${samples}" | jq '[.[] | select(.status=="Ready" or .status=="Deleted") | .yld] | add')
 measured_yield_gbase=$((measured_yield / 1000000000))
-if [[ "${measured_yield_gbase}" -lt "${required_yield}" ]]; then
-    warn "TOTAL YIELD INSUFFICIENT: Submission requires ${required_yield} GBase but only has ${measured_yield_gbase} GBase!"
+if [[ "${measured_yield_gbase}" -lt "${req_yield}" ]]; then
+    warn "INSUFFICIENT YIELD: Submission requires ${req_yield} GBase but currently has ${measured_yield_gbase} GBase!"
     warnings_found="TRUE"
 else
-    info "Total yield sufficient: required was ${required_yield} GBase and measured is ${measured_yield_gbase} GBase"
+    info "Yield is sufficient: required ${req_yield} and measured ${measured_yield_gbase} GBase"
 fi
 
-if [[ ! "${rns_api_val}" -eq "${rns_api_tot}" ]]; then
+if [[ ! "${rns_val}" -eq "${rns_tot}" ]]; then
     warn "Not all runs in API have status Validated!"
     warnings_found="TRUE"
 fi
 
 ## If all OK print cmd to process further
 if [[ "${warnings_found}" == "TRUE" ]]; then
-    warn "Warnings encountered during check. Fix these first!"
+    warn "Warnings encountered during check. Check these first!"
 else
-    info "Gather submission if all is ok:"
+    info "If all OK then continue with gather step:"
     echo "  gather_submission ${submission}"
     echo ""
 fi
