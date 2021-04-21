@@ -19,11 +19,11 @@ if [[ -z "${input_path}" ]]; then
 fi
 
 protect_prod_tsv=$( ls ${input_path}/${run_dir}/protect/ )
-protect_prod_tsv_path=$( ls ${input_path}/${run_dir}/protect/${protect_prod_tsv} | grep ".protect.tsv")
+protect_prod_tsv_path=$( find ${input_path}/${run_dir}/protect/${protect_prod_tsv}/*.protect.tsv)
 cat ${protect_prod_tsv_path} | awk -F '\t' '{print $2, $3, $4, $5, $6, $7, $8, $9}'  > "${output_path}/${protect_prod_tsv}_prod_actionability"
 cat ${protect_prod_tsv_path} | awk -F '\t' '{print $1}'  > "${output_path}/${protect_prod_tsv}_prod_events"
 
 protect_pilot_tsv=$( ls ${input_path}/${run_dir}/protect_pilot/ )
-protect_pilot_tsv_path=$( ls ${input_path}/${run_dir}/protect_pilot/${protect_pilot_tsv} | grep ".protect.tsv")
+protect_pilot_tsv_path=$( find ${input_path}/${run_dir}/protect_pilot/${protect_pilot_tsv}/*.protect.tsv)
 cat ${protect_pilot_tsv_path} | awk -F '\t' '{print $2, $3, $4, $5, $6, $7, $8, $9}'  > "${output_path}/${protect_pilot_tsv}_pilot_actionability"
 cat ${protect_pilot_tsv_path} | awk -F '\t' '{print $1}'  > "${output_path}/${protect_pilot_tsv}_pilot_events"
