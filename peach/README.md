@@ -7,7 +7,7 @@ germline VCF, and infers the simplest combination of haplotypes that explains th
 
 The two main output files are:
 * A file that contains the determined genotype of the sample for each gene in the JSON, expressed in terms of haplotypes.
-* A file that contains calls for all of the positions of variants in the JSON file, including annotation and filters wrt both v37 and v38 reference genomes.
+* A file that contains calls for all positions of variants in the JSON file, including annotation and filters wrt both v37 and v38 reference genomes.
 
 ## Contents
 
@@ -24,6 +24,11 @@ The two main output files are:
   + [Genotype TSV file](#genotype-tsv-file)
   + [Calls TSV file](#calls-tsv-file)
 * [Algorithm](#algorithm)
+  + [Preparation](#preparation)
+  + [Get Variant Calls V37](#get-variant-calls-v37)
+  + [Annotate Calls with Panel Information](#annotate-calls-with-panel-information)
+  + [Infer Haplotypes](#infer-haplotypes)
+  + [Restrictions](#restrictions)
 
 ## Installation
 PEACH has been designed to work with Python 3.6.
@@ -106,7 +111,8 @@ Panel:
 Transcript tsv: `/data/common/dbs/peach/all_genes.37.tsv`
 
 ## Output
-PEACH outputs two TSV files. One contains genotypes/haplotypes for each gene, the other contains calls for all of the variants from the panel JSON.
+PEACH outputs two TSV files. One contains genotypes/haplotypes for each gene, the other contains calls for all variants from the panel JSON.
+PEACH also outputs a VCF file that is a filtered version of the input VCF.
 ### Genotype TSV file
 Name: `[sample_t_id].peach.genotype.tsv`
 
@@ -116,7 +122,7 @@ gene | DPYD | Gene for which this haplotype is called.
 haplotype | *1_HOM | Haplotype from JSON, including whether it is homozygous (HOM) or heterozygous (HET). If no haplotype could be called, has value "Unresolved Haplotype".
 function | No function | Functionality of this haplotype. Wild type has function "Normal Function". If no haplotype could be called, has value "Unknown Function".
 linked_drugs | 5-Fluoracil;Capecitabine | Drugs for which this haplotype is relevant, separated by ";".
-url_prescription_info | https://www.some_url.com/5-Fluoracil;https://www.some_other_url.com/Capecitabine | For each listed drug, a url with information on how to translate abnormal haplotype function into an appropriate treatment adjustement. Separated by ";".
+url_prescription_info | https://www.some_url.com/5-Fluoracil;https://www.some_other_url.com/Capecitabine | For each listed drug, a url with information on how to translate abnormal haplotype function into an appropriate treatment adjustment. Separated by ";".
 panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken from fields in the JSON.
 repo_version | 1.0 | Version of PEACH.
 
@@ -134,10 +140,10 @@ ref_v38 | A | Reference allele wrt v38. If v37 info could not be translated into
 allele1 | A | First of the called alleles. Order of alleles is lexicographical order.
 allele2 | A | Second of the called alleles. Order of alleles is lexicographical order.
 rsid | rs1801265 | Rs id(s) of variant. If more than one, then they are separated by ";". Taken from VCF if available. If not, taken from matching variant in panel JSON, if match exists. If not, has value ".".
-variant_annotation_v37 | 85C>T | Variant annotation wrt v37. See TODO for details.
-filter_v37 | PASS | Has value PASS or NO_CALL. See TODO for details.
-variant_annotation_v38 | REF_CALL | Variant annotation wrt v38. See TODO for details.
-filter_v38 | NO_CALL | Has value PASS, NO_CALL, UNKNOWN or INFERRED_PASS. See TODO for details.
+variant_annotation_v37 | 85C>T | Variant annotation wrt v37. See [Get Variant Calls V37](#get-variant-calls-v37) for details.
+filter_v37 | PASS | Has value PASS or NO_CALL. See [Get Variant Calls V37](#get-variant-calls-v37) for details.
+variant_annotation_v38 | REF_CALL | Variant annotation wrt v38. See [Annotate Calls with Panel Information](#annotate-calls-with-panel-information) for details.
+filter_v38 | NO_CALL | Has value PASS, NO_CALL, UNKNOWN or INFERRED_PASS. See [Annotate Calls with Panel Information](#annotate-calls-with-panel-information) for details.
 panel_version | DPYDpanel_v1.3 | Name and version of panel JSON. Both are taken from fields in the JSON.
 repo_version | 1.0 | Version of PEACH.
 
@@ -178,7 +184,7 @@ The filtered VCF is read, and it is compared to the variants in the panel JSON f
 Calls are ignored when none of the following are true:
 * At least one of the rs id's of the call matches an rs id from the panel JSON.
 * At least one of the covered positions of the call matches at least one of the covered positions of the variants in the panel JSON.
-In this comparison, the *covered positions* of a call or a variant are the positions of the bases in the reference allele.
+In this comparison, the *covered positions* of a call or variant are the positions of the bases in the reference allele.
 
 Let's call the remaining variants the *observed v37 calls*. 
 
@@ -202,12 +208,12 @@ Inferred call. | REF_CALL | NO_CALL
 ### Annotate Calls with Panel Information
 For each of the combined v37 calls, an attempt is made to find a variant in the panel JSON that has the same v37 position and reference allele.
 
-If succesful:
-* If the rs id of the call has not been set, then it is set to the value from the panel JSON.
-* The reference allele and position wrt v38 are determined from the panel JSON.
+If successful:
+* If the rs id of the call has not been set, then it is set to the value from the matching variant.
+* The reference allele and position wrt v38 are determined from the matching variant.
 
-If unsuccesful:
-* Set reference allele and position wrt v38 as "UNKNOWN".
+If unsuccessful:
+* Set reference allele and position wrt v38 to "UNKNOWN".
 
 Also, the correct annotation and filter wrt v38 are determined according to the following table, 
 where an asterisk (*) indicates that any value is allowed:
