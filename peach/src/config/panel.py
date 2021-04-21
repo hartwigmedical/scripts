@@ -49,10 +49,16 @@ class Panel(object):
     def version(self) -> str:
         return self.__version
 
-    def has_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> bool:
+    def has_ref_seq_difference_annotation(
+            self, gene: str, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> bool:
+        if not self.contains_rs_id_with_v37_coordinate_and_reference_allele(v37_coordinate, v37_reference_allele):
+            return False
+        rs_id = self.get_matching_rs_id_info(v37_coordinate, v37_reference_allele).rs_id
         return self.__get_gene_info(gene).has_ref_sequence_difference_annotation(rs_id)
 
-    def get_ref_seq_difference_annotation(self, gene: str, rs_id: str) -> str:
+    def get_ref_seq_difference_annotation(
+            self, gene: str, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> str:
+        rs_id = self.get_matching_rs_id_info(v37_coordinate, v37_reference_allele).rs_id
         return self.__get_gene_info(gene).get_ref_sequence_difference_annotation_v38(rs_id)
 
     def get_gene_infos(self) -> Set[GeneInfo]:
@@ -64,7 +70,7 @@ class Panel(object):
                 return True
         return False
 
-    def contains_rs_id_with_v37_coordinate_and_reference_allel(
+    def contains_rs_id_with_v37_coordinate_and_reference_allele(
             self, v37_coordinate: GeneCoordinate, v37_reference_allele: str) -> bool:
         for info in self.__get_rs_id_infos():
             if (info.start_coordinate_v37 == v37_coordinate
@@ -73,7 +79,7 @@ class Panel(object):
         return False
 
     def contains_rs_id_matching_v37_call(self, v37_call: V37Call) -> bool:
-        if self.contains_rs_id_with_v37_coordinate_and_reference_allel(v37_call.start_coordinate, v37_call.ref_allele):
+        if self.contains_rs_id_with_v37_coordinate_and_reference_allele(v37_call.start_coordinate, v37_call.ref_allele):
             return True
         elif any(self.contains_rs_id(rs_id) for rs_id in v37_call.rs_ids):
             error_msg = (

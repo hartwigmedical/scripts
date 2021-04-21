@@ -76,7 +76,8 @@ class PgxAnalyser(object):
                         annotation_v38 = REF_CALL_ANNOTATION_STRING
                         filter_v38 = Filter.NO_CALL
                     else:
-                        annotation_v38 = panel.get_ref_seq_difference_annotation(gene_info.gene, rs_id_info.rs_id)
+                        annotation_v38 = panel.get_ref_seq_difference_annotation(
+                            gene_info.gene, rs_id_info.start_coordinate_v37, rs_id_info.reference_allele_v37)
                         filter_v38 = Filter.INFERRED_PASS
 
                     v38_ref_full_call = FullCall(

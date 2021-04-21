@@ -43,15 +43,12 @@ class V37CallTranslator(object):
     def __get_full_call_from_v37_call(cls, v37_call: V37Call, panel: Panel) -> FullCall:
         cls.__assert_gene_in_panel(v37_call.gene, panel)
 
-        start_coordinate_v37 = v37_call.start_coordinate
-        reference_allele_v37 = v37_call.ref_allele
-
-        # determine annotated_alleles, start_coordinate_v38, reference_allele_v38 and rs_ids
+        # determine start_coordinate_v38, reference_allele_v38 and rs_ids
         start_coordinate_v38: Optional[GeneCoordinate]
         reference_allele_v38: Optional[str]
         rs_ids: Tuple[str, ...]
         if panel.contains_rs_id_matching_v37_call(v37_call):
-            rs_id_info = panel.get_matching_rs_id_info(start_coordinate_v37, reference_allele_v37)
+            rs_id_info = panel.get_matching_rs_id_info(v37_call.start_coordinate, v37_call.ref_allele)
             cls.__assert_rs_id_call_matches_info(v37_call.rs_ids, (rs_id_info.rs_id,))
 
             start_coordinate_v38 = rs_id_info.start_coordinate_v38
@@ -67,12 +64,12 @@ class V37CallTranslator(object):
             rs_ids = v37_call.rs_ids
 
         annotated_alleles = (
-            AnnotatedAllele.from_alleles(v37_call.alleles[0], reference_allele_v37, reference_allele_v38),
-            AnnotatedAllele.from_alleles(v37_call.alleles[1], reference_allele_v37, reference_allele_v38),
+            AnnotatedAllele.from_alleles(v37_call.alleles[0], v37_call.ref_allele, reference_allele_v38),
+            AnnotatedAllele.from_alleles(v37_call.alleles[1], v37_call.ref_allele, reference_allele_v38),
         )
 
         # determine variant annotation v38 and filter v38
-        if len(rs_ids) == 1 and panel.has_ref_seq_difference_annotation(v37_call.gene, rs_ids[0]):
+        if panel.has_ref_seq_difference_annotation(v37_call.gene, v37_call.start_coordinate, v37_call.ref_allele):
             v38_ref_call_due_to_ref_sequence_difference = all(
                 annotated.is_variant_vs_v37
                 and annotated.is_annotated_vs_v38()
@@ -89,7 +86,8 @@ class V37CallTranslator(object):
                 variant_annotation_v38 = REF_CALL_ANNOTATION_STRING
                 filter_type_v38 = Filter.PASS
             elif all_variants_ref_to_v37_or_v38:
-                variant_annotation_v38 = panel.get_ref_seq_difference_annotation(v37_call.gene, rs_ids[0])
+                variant_annotation_v38 = panel.get_ref_seq_difference_annotation(
+                    v37_call.gene, v37_call.start_coordinate, v37_call.ref_allele)
                 filter_type_v38 = Filter.PASS
             else:
                 variant_annotation_v38 = v37_call.variant_annotation + "?"
@@ -99,9 +97,6 @@ class V37CallTranslator(object):
                     f"found alleles=({annotated_alleles[0]}, {annotated_alleles[1]}), "
                     f"annotation={variant_annotation_v38}"
                 )
-        elif len(rs_ids) > 1 and any(panel.has_ref_seq_difference_annotation(v37_call.gene, rs_id) for rs_id in rs_ids):
-            error_msg = f"One of multiple rs ids is of a ref seq difference, so not sure how to annotate {rs_ids}"
-            raise ValueError(error_msg)
         elif panel.contains_rs_id_matching_v37_call(v37_call):
             # known variant and no ref seq differences involved
             variant_annotation_v38 = v37_call.variant_annotation
@@ -117,7 +112,7 @@ class V37CallTranslator(object):
             )
 
         full_call = FullCall(
-            start_coordinate_v37, reference_allele_v37, start_coordinate_v38, reference_allele_v38,
+            v37_call.start_coordinate, v37_call.ref_allele, start_coordinate_v38, reference_allele_v38,
             v37_call.alleles, v37_call.gene, rs_ids,
             v37_call.variant_annotation, v37_call.filter, variant_annotation_v38, filter_type_v38,
         )
