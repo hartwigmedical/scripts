@@ -180,32 +180,50 @@ Calls are ignored when none of the following are true:
 * At least one of the covered positions of the call matches at least one of the covered positions of the variants in the panel JSON.
 In this comparison, the *covered positions* of a call or a variant are the positions of the bases in the reference allele.
 
-Let's call the remaining variants the *observed V37 calls*. 
+Let's call the remaining variants the *observed v37 calls*. 
 
-For each variant in the panel JSON for which there are no matching calls in the observed V37 call, 
-a call is created that is homozygously the reference allele, an *inferred V37 call*. 
-More specifically, a call is added for a panel variant when there are no observed V37 calls such that either:
+For each variant in the panel JSON for which there are no matching calls in the observed v37 call, 
+a call is created that is homozygously the reference allele, an *inferred v37 call*. 
+More specifically, a call is added for a panel variant when there are no observed v37 calls such that either:
 * The variant rs id matches one of the calls rs id's.
 * The covered positions of the variant (partially) match the covered positions of the call.
 
-The observed and inferred V37 calls together form the list of calls that will be considered by PEACH, 
-which we will call the *combined V37 calls*.
+The observed and inferred v37 calls together form the list of calls that will be considered by PEACH, 
+which we will call the *combined v37 calls*.
 
-TODO: annotation and filter
+The annotation and filter of the combined v37 calls are determined in the following way:
+
+Condition | Variant Annotation V37 | Filter V37
+---|---|---
+Homozygous alt or heterozygous observed call. | From HGVS.c field in ANN in VCF | PASS  
+Homozygous reference observed call. | REF_CALL | PASS
+Inferred call. | REF_CALL | NO_CALL
 
 ### Add Panel Information to Calls
 TODO: write
 
-For each of the combined V37 calls, an attempt is made to find a variant in the panel JSON that has the same v37 position and reference allele.
+For each of the combined v37 calls, an attempt is made to find a variant in the panel JSON that has the same v37 position and reference allele.
 
 If succesful:
 * If the rs id of the call has not been set, then it is set to the value from the panel JSON.
-* The correct annotation and filter wrt v38 are determined.
+* The reference allele and position wrt v38 are determined from the panel JSON.
 
 TODO: details
 
 If unsuccesful:
-* Set annotation and filter wrt v38 as "UNKNOWN".
+* Set reference allele and position wrt v38 as "UNKNOWN".
+
+The correct annotation and filter wrt v38 are determined according to the following table, 
+where the first matching condition determines the chosen values:
+
+Condition | Variant Annotation V38 | Filter V38
+---|---|---
+No matching variant in panel JSON (so also not inferred call). | Variant Annotation V37 + "?" | UNKNOWN
+Inferred call where reference alleles v37 and v38 are identical. | REF_CALL | NO_CALL
+Inferred call where reference alleles v37 and v38 are different. | From "refSeqDifferenceAnnotations" field in panel JSON | INFERRED_PASS
+Observed call that is homozygous reference wrt v38. | REF_CALL | PASS
+Observed call that is not homozygous reference wrt v38 and where reference alleles v37 and v38 are identical. | Variant Annotation V37 | PASS
+
 
 TODO: more?
 
