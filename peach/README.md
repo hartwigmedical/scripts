@@ -91,12 +91,15 @@ The calls in the VCF should be with respect to a v37 reference genome.
 For an example of a valid panel JSON (with fake data), see 
 [example](https://github.com/hartwigmedical/scripts/blob/master/peach/src/test_resources/test_panel.json).
 All fields in the example JSON are required. Additional fields are ignored. 
-Relevant differences between the v37 and v38 reference sequences for a gene can be included as an entry in the "variants" field
+Relevant differences between the v37 and v38 reference sequences for a gene should be included as an entry in the "variants" field
 of that gene where the "referenceAlleleV37" and "referenceAlleleV38" fields are different. The set of rs id's with such entries 
-should be equal to the set of rs id's with entries in the "refSeqDifferenceAnnotations" field of that gene.
+has to be equal to the set of rs id's with entries in the "refSeqDifferenceAnnotations" field of that gene.
+This ensures that the variant annotation for variants at these locations can be translated to v38 properly
 
 PEACH does not (properly) support panel JSON files that contain (partially) overlapping genes.
 Variants in a panel JSON file are not allowed to (partially) overlap.
+
+TODO: describe meaning of fields?
 
 ### Transcript TSV
 TODO: write or provide link
@@ -154,7 +157,11 @@ The result of filtering the input VFC by sample id `sample_r_id` and by a bed fi
 See [Get Variant Calls V37](#get-variant-calls-v37) for a more detailed explanation.
 
 ## Algorithm
-In broad strokes:
+Haplotypes are commonly defined wrt a v38 reference genome. 
+Since PEACH accepts VCF files wrt v37 as input, this requires a translation of v37 calls to v38 calls.
+PEACH extracts the required knowledge of the difference between these reference genomes from the information in the panel JSON.
+
+In broad strokes, PEACH does the following:
 * Extract relevant calls wrt from VCF, where relevance is determined by the panel JSON. 
   These calls will be with respect to a v37 reference genome.
 * Use information from the panel JSON to translate this set of calls wrt v37 into the corresponding set of calls wrt v38, where possible.
@@ -226,6 +233,8 @@ True|Observed|False|False|False|Variant Annotation V37 + "?"|UNKNOWN
 
 Note that an asterisk does not indicate that every value is actually possible. 
 For instance, calls that do not match any variants from the panel JSON can only be observed calls, not inferred calls.
+Furthermore, if there is no matching variant in the panel JSON, then PEACH does not know what the correct v38 reference allele is, 
+so it would be unknown whether the reference alleles wrt v37 and v38 are identical. 
 
 Let's call these calls with both v37 and v38 details *full calls*.
 
@@ -249,7 +258,7 @@ If there are no haplotype combinations that explain all of the variant calls,
 or if there is more than one combination of the same minimum length, 
 then the haplotype combination for that gene is called as "Unresolved Haplotype".
 
-#### Haplotype calling algorithm 
+#### Haplotype Calling Algorithm 
 Haplotypes are called for each gene separately. First, collect the full calls that correspond to that gene. 
 Then, extract the alt alleles wrt v38 from these full calls, 
 and count the number of times each combination of position (v38) and alt allele (v38) occurs.
@@ -261,11 +270,9 @@ and select the haplotype combinations whose length is equal to this minimum.
 If precisely one such haplotype combination exists, then this combination will be called for this gene.
 If more than one haplotype combination of minimum length exists, then no haplotype combination is called for this gene.
 
-TODO: example
+TODO: example?
 
 ### Restrictions
-TODO: write
-
 PEACH does not support calling for multiple (partially) overlapping genes.
 If one wishes to attain results for (partially) overlapping genes anyway,
 split them across separate panel JSON files and run PEACH multiple times.
