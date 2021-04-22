@@ -6,8 +6,8 @@ flowcells_dir="/data1/illumina_data"
 bucket="bcl-input-prod"
 gcp_cred="/data/dbs/gcp_credentials/bcl-input-prod"
 
-if [[ "$#" -ne 2 ]]; then
-    echo "Usage: $(basename $0) api_url api_dir"
+if [[ "$#" -ne 1 ]]; then
+    echo "Usage: $(basename $0) api_url"
     exit 1
 fi
 
