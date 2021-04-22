@@ -9,6 +9,7 @@ use Getopt::Long;
 use File::Slurp;
 use JSON;
 use XML::Simple;
+use List::Util qw/sum/;
 use 5.010.000;
 
 ## -----
@@ -283,23 +284,28 @@ sub parseJsonInfo{
 
     ## Reading phase
     my @cycle_counts = map( $_->{NumCycles}, @{$run_xml_info->{Run}{Reads}{Read}});
+    my @read_cycle_counts = map( $_->{IsIndexedRead} eq "N" ? $_->{NumCycles} : (), @{$run_xml_info->{Run}{Reads}{Read}});
+    my $total_non_index_cycle_count = sum(@read_cycle_counts);
+
     my $cycle_string = join( "|", @cycle_counts);
     my $fid = $raw_json_info->{ 'Flowcell' };
     $info{ 'flow' }{ $fid }{ 'id' } = $fid;
     $info{ 'flow' }{ $fid }{ 'name' } = $raw_json_info->{ 'RunId' };
 
-    ## First readinf the "unknown barcodes" and add them to "index sequences"    
+    ## First reading the "unknown barcodes" and add them to "index sequences"
     my $unknowns = $raw_json_info->{'UnknownBarcodes'};
     foreach my $lane ( @$unknowns ){
         my $lid = join( "", "lane", $lane->{ Lane } );
-        my $barcodes = $lane->{'Barcodes'};
-        foreach my $barcode ( keys %$barcodes ){
-            $info{ indx }{ $barcode }{ name } = 'IndexFromUnknown';
-            my $seq1 = (split(/\+/, $barcode))[0] || $NA_CHAR;
-            my $seq2 = (split(/\+/, $barcode))[1] || $NA_CHAR;
-            $info{ indx }{ $barcode }{ index1 } = $seq1;
-            $info{ indx }{ $barcode }{ index2 } = $seq2;
-            $info{ indx }{ $barcode }{ yield } += $barcodes->{ $barcode };
+        my $unknown_barcodes = $lane->{'Barcodes'};
+        foreach my $bc ( keys %$unknown_barcodes ){
+            $info{ indx }{ $bc }{ name } = 'IndexFromUnknown';
+            my $seq1 = (split(/\+/, $bc))[0] || $NA_CHAR;
+            my $seq2 = (split(/\+/, $bc))[1] || $NA_CHAR;
+            $info{ indx }{ $bc }{ index1 } = $seq1;
+            $info{ indx }{ $bc }{ index2 } = $seq2;
+            # Unlike actual samples, the unknowns are reported as cluster counts instead of yield
+            # So need to calculate the yield using non-index cycle counts from RunInfo.xml
+            $info{ indx }{ $bc }{ yield } += $unknown_barcodes->{ $bc } * $total_non_index_cycle_count;
         }
     }
 
