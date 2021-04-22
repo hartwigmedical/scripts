@@ -28,6 +28,7 @@ The two main output files are:
   + [Get Variant Calls V37](#get-variant-calls-v37)
   + [Annotate Calls with Panel Information](#annotate-calls-with-panel-information)
   + [Infer Haplotypes](#infer-haplotypes)
+  + [Examples](#examples)
   + [Restrictions](#restrictions)
 
 ## Installation
@@ -99,8 +100,6 @@ This ensures that the variant annotation for variants at these locations can be 
 PEACH does not (properly) support panel JSON files that contain (partially) overlapping genes.
 Variants in a panel JSON file are not allowed to (partially) overlap.
 
-TODO: describe meaning of fields?
-
 ### Transcript TSV
 TODO: write or provide link
 
@@ -159,7 +158,7 @@ See [Get Variant Calls V37](#get-variant-calls-v37) for a more detailed explanat
 ## Algorithm
 Haplotypes are commonly defined wrt a v38 reference genome. 
 Since PEACH accepts VCF files wrt v37 as input, this requires a translation of v37 calls to v38 calls.
-PEACH extracts the required knowledge of the difference between these reference genomes from the information in the panel JSON.
+PEACH extracts the required knowledge of the differences between these reference genomes from the information in the panel JSON.
 
 In broad strokes, PEACH does the following:
 * Extract relevant calls wrt from VCF, where relevance is determined by the panel JSON. 
@@ -238,8 +237,6 @@ so it would be unknown whether the reference alleles wrt v37 and v38 are identic
 
 Let's call these calls with both v37 and v38 details *full calls*.
 
-TODO: example ref seq difference?
-
 ### Infer Haplotypes
 The goal is to find the simplest combination of haplotypes that explains the called variants. 
 
@@ -258,6 +255,10 @@ If there are no haplotype combinations that explain all of the variant calls,
 or if there is more than one combination of the same minimum length, 
 then the haplotype combination for that gene is called as "Unresolved Haplotype".
 
+The only valid haplotype combination of length 0 is the homozygous wild type haplotype,
+valid haplotype combinations of length 1 always include precisely one heterozygous wild type haplotype call,
+and valid haplotype combinations of length at least 2 do not contain any calls for the wild type haplotype.
+
 #### Haplotype Calling Algorithm 
 Haplotypes are called for each gene separately. First, collect the full calls that correspond to that gene. 
 Then, extract the alt alleles wrt v38 from these full calls, 
@@ -270,7 +271,98 @@ and select the haplotype combinations whose length is equal to this minimum.
 If precisely one such haplotype combination exists, then this combination will be called for this gene.
 If more than one haplotype combination of minimum length exists, then no haplotype combination is called for this gene.
 
-TODO: example?
+### Examples
+The data in these examples will be the completely fictional.
+The examples will focus on fairly "standard" situations, and they will exclude all information that is not necessary to understand these situations. 
+For details on non-standard situations, see the more detailed subsections of the [Algorithm](#algorithm) section.
+
+Suppose that the panel JSON contains the following variants and haplotypes for the fictional gene FAKE,
+and that FAKE is the only gene in the panel JSON.
+
+Rs Id|Reference Allele V37|Reference Allele V38|V38 Annotation for Reference Sequence Difference
+---|---|---|---
+rs1|A|A|N/A
+rs2|TA|GC|c.6543GC>TA
+rs3|GG|GG|N/A
+
+Haplotype|Variants (Rs Id: Variant Allele wrt v38)
+---|---
+*1 (wild type)|None
+*2|rs1: T
+*3|rs2: TA
+*4|rs3: G
+*5|rs1: T, rs3: G
+
+#### No Calls
+If there are no calls wrt v37 in the VCF, then the full calls are:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37|Variant Annotation V38|Filter V38
+---|---|---|---|---|---|---
+rs1|A|A|REF_CALL|NO_CALL|REF_CALL|NO_CALL
+rs2|TA|TA|REF_CALL|NO_CALL|c.6543GC>TA|INFERRED_CALL
+rs3|GG|GG|REF_CALL|NO_CALL|REF_CALL|NO_CALL
+
+The only valid haplotype combination that explains these variants is *3_HOM, 
+so this is the haplotype combination that is called for FAKE.
+
+#### Homozygous Wild Type
+Suppose that the v37 calls are the following:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37
+---|---|---|---|---
+rs1|A|A|c.8483A>T|PASS
+rs2|GC|GC|c.6543TA>GC|PASS
+rs3|GG|GG|c.4838GG>G|PASS
+
+In this case, the full calls are:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37|Variant Annotation V38|Filter V38
+---|---|---|---|---|---|---
+rs1|A|A|REF_CALL|PASS|REF_CALL|PASS
+rs2|GC|GC|c.6543TA>GC|PASS|REF_CALL|PASS
+rs3|GG|GG|REF_CALL|PASS|REF_CALL|PASS
+
+The only valid haplotype combination is *1_HOM, so this haplotype combination is called for FAKE.
+
+#### Heterozygous Wild Type
+Suppose that the v37 calls are the following:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37
+---|---|---|---|---
+rs1|A|A|c.8483A>T|PASS
+rs2|TA|GC|c.6543TA>GC|PASS
+rs3|GG|GG|c.4838GG>G|PASS
+
+The full calls are:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37|Variant Annotation V38|Filter V38
+---|---|---|---|---|---|---
+rs1|A|A|REF_CALL|PASS|REF_CALL|PASS
+rs2|GC|TA|c.6543TA>GC|PASS|c.6543GC>TA|PASS
+rs3|GG|GG|REF_CALL|PASS|REF_CALL|PASS
+
+The only valid haplotype combination for FAKE is *3_HET/*1_HET, so this haplotype combination is called.
+
+#### Multiple Valid Haplotypes
+Suppose that the v37 calls are the following:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37
+---|---|---|---|---
+rs1|A|T|c.8483A>T|PASS
+rs2|GC|GC|c.6543TA>GC|PASS
+rs3|G|G|c.4838GG>G|PASS
+
+The resulting full calls are:
+
+Rs Id|Allele1|Allele2|Variant Annotation V37|Filter V37|Variant Annotation V38|Filter V38
+---|---|---|---|---|---|---
+rs1|A|T|c.8483A>T|PASS|c.8483A>T|PASS
+rs2|GC|GC|c.6543TA>GC|PASS|REF_CALL|PASS
+rs3|G|G|c.4838GG>G|PASS|c.4838GG>G|PASS
+
+The valid haplotype combinations are *2_HET/*4_HOM and *4_HET/*5_HET. 
+These combinations have lengths 3 and 2, respectively, so the second combination is preferred.
+The called haplotype combination for FAKE is *4_HET/*5_HET.
 
 ### Restrictions
 PEACH does not support calling for multiple (partially) overlapping genes.
@@ -278,5 +370,3 @@ If one wishes to attain results for (partially) overlapping genes anyway,
 split them across separate panel JSON files and run PEACH multiple times.
 
 Variants in a panel JSON file are not allowed to (partially) overlap.
-
-Differences in reference sequence between v37 and v38 that are MNV's should not be entered as MNV's, but as separate SNV's.
