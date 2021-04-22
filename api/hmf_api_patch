@@ -50,12 +50,10 @@ fi
 
 # no default for api credentials and url to avoid using wrong env as much as possible
 if [[ "${environment}" == "prod" ]]; then
-    api_crt="${api_dir}/api.crt"
-    api_key="${api_dir}/api.key"
-    api_url="https://api.hartwigmedicalfoundation.nl/hmf/v1"
+    api_url="http://api.prod-1/hmf/v1"
 elif [[ "${environment}" == "acc" ]]; then
-    api_crt="${api_dir}/acc/api.crt"
-    api_key="${api_dir}/acc/api.key"
+    api_crt="--cert ${api_dir}/acc/api.crt"
+    api_key="--key ${api_dir}/acc/api.key"
     api_url="https://api.acc.hartwigmedicalfoundation.nl/hmf/v1"
 else
     die "Environment should be either prod or acc"
@@ -127,20 +125,20 @@ get_name_from_object () {
 get_with_curl () {
     local object_location=$1 && shift
     curl -f --silent --show-error -H "Content-Type: application/json" \
-    --cert-type pem --cert "${api_crt}" --key "${api_key}" -X GET "${api_url}/${object_location}"
+      --cert-type pem ${api_crt} ${api_key} -X GET "${api_url}/${object_location}"
 }
 
 patch_with_curl () {
     local object_location=$1 && shift
     local data=$1 && shift
     curl --silent --show-error -H "Content-Type: application/json" -H "Accept: application/json" \
-     --cert-type pem --cert "${api_crt}" --key "${api_key}" -X PATCH "${api_url}/${object_location}" --data "${data}" > /dev/null
+      --cert-type pem ${api_crt} ${api_key} -X PATCH "${api_url}/${object_location}" --data "${data}" > /dev/null
 }
 
 post_with_curl_without_data () {
     local object_location=$1 && shift
     curl --silent --show-error \
-     --cert-type pem --cert "${api_crt}" --key "${api_key}" -X POST "${api_url}/${object_location}" > /dev/null
+      --cert-type pem ${api_crt} ${api_key} -X POST "${api_url}/${object_location}" > /dev/null
 }
 
 main

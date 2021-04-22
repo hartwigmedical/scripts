@@ -25,10 +25,8 @@ if [[ -z "${dr_id}" || -z "${gcp_mail}" ]]; then
 fi
 
 
-api_url=$"https://api.hartwigmedicalfoundation.nl"
+api_url=$"http://api.prod-1"
 api_url_spec=$"${api_url}/hmf/v1"
-api_key=$"/data/common/dbs/api_credentials/api.key"
-api_cert=$"/data/common/dbs/api_credentials/api.crt" 
 
 
 ## quick input checks
