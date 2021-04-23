@@ -4,6 +4,9 @@ source message_functions || exit 1
 
 classes='sequencers|platforms|inis|entities|flowcells|samples|runs|sets|biopsies'
 
+# allows autocomplete of script commands
+complete -W "$(echo "${classes}" | tr "|" " ")" "$(basename "$0")"
+
 print_usage(){
     script=$(basename "$0")
     echo "---"
