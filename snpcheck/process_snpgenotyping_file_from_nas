@@ -21,9 +21,9 @@ while IFS=  read -r -d $'\0'; do
     result_files+=("$REPLY")
 done < <(ssh nas find "${SOURCE}" -name "${plate_id}*${SUFFIX}" -print0)
 if [[ ${#result_files[@]} -eq 0 ]]; then 
-    echo "[ERROR] No ${plate_id} ${SUFFIX} files found!" && exit 1
+    echo "[ERROR] No file found for '${plate_id}'!" && exit 1
 elif [[ ${#result_files[@]} -gt 1 ]]; then
-    echo "[ERROR] More than 1 ${plate_id} ${SUFFIX} files found!" && exit 1
+    echo "[ERROR] More than 1 file found for '${plate_id}'!" && exit 1
 fi
 
 ## sync and process
