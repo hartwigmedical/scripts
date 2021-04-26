@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files
+source io_functions
 
 output_dir=/data/common/dbs/serve/pilot_output_hartwig_cohort_only
 
