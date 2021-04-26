@@ -1,34 +1,36 @@
 #!/usr/bin/env bash
 
+source message_functions
+
 pilot_dir=/data/common/dbs/serve/pilot_output
 prod_dir=/data/common/dbs/serve/prod_output
 
-echo "[INFO] Verfiy actionable charateristics"
+info "Verfiy actionable charateristics"
 diff ${prod_dir}/ActionableCharacteristics.37.tsv ${pilot_dir}/ActionableCharacteristics.37.tsv
 
-echo "[INFO] Verfiy actionable fusions"
+info "Verfiy actionable fusions"
 diff ${prod_dir}/ActionableFusions.37.tsv ${pilot_dir}/ActionableFusions.37.tsv
 
-echo "[INFO] Verfiy actionable genes"
+info "Verfiy actionable genes"
 diff ${prod_dir}/ActionableGenes.37.tsv ${pilot_dir}/ActionableGenes.37.tsv
 
-echo "[INFO] Verfiy actionable hotspots"
+info "Verfiy actionable hotspots"
 diff ${prod_dir}/ActionableHotspots.37.tsv ${pilot_dir}/ActionableHotspots.37.tsv
 
-echo "[INFO] Verfiy actionable ranges"
+info "Verfiy actionable ranges"
 diff ${prod_dir}/ActionableRanges.37.tsv ${pilot_dir}/ActionableRanges.37.tsv
 
-echo "[INFO] Verfiy known codons"
+info "Verfiy known codons"
 diff ${prod_dir}/KnownCodons.SERVE.37.tsv ${pilot_dir}/KnownCodons.SERVE.37.tsv
 
-echo "[INFO] Verfiy known copy numbers"
+info "Verfiy known copy numbers"
 diff ${prod_dir}/KnownCopyNumbers.SERVE.37.tsv ${pilot_dir}/KnownCopyNumbers.SERVE.37.tsv
 
-echo "[INFO] Verfiy known exons"
+info "Verfiy known exons"
 diff ${prod_dir}/KnownExons.SERVE.37.tsv ${pilot_dir}/KnownExons.SERVE.37.tsv
 
-echo "[INFO] Verfiy known fusion pairs"
+info "Verfiy known fusion pairs"
 diff ${prod_dir}/KnownFusionPairs.SERVE.37.tsv ${pilot_dir}/KnownFusionPairs.SERVE.37.tsv
 
-echo "[INFO] Verfiy known hotspots"
+info "Verfiy known hotspots"
 zdiff ${prod_dir}/KnownHotspots.SERVE.37.vcf.gz ${pilot_dir}/KnownHotspots.SERVE.37.vcf.gz

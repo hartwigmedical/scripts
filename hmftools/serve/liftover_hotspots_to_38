@@ -1,26 +1,28 @@
 #!/usr/bin/env bash
 
+source message_functions
+
 working_dir=$1 && shift
 
 if [[ ! -d "${working_dir}" ]]; then
-    echo "[ERROR] No existing working dir passed. Exiting" && exit 1
+    error "No existing working dir passed. Exiting"
 fi
 
 input_37_hotspots_gz=${working_dir}/KnownHotspots.SERVE.37.vcf.gz
 if [[ ! -f "${input_37_hotspots_gz}" ]]; then
-    echo "[ERROR] Cannot locate ${input_37_hotspots_gz}. Exiting" && exit 1
+    error "Cannot locate ${input_37_hotspots_gz}. Exiting"
 fi
 
-echo "[INFO] Running 38 hotspot liftover on ${working_dir}"
+info "Running 38 hotspot liftover on ${working_dir}"
 tmp_37_hotspots=${working_dir}/KnownHotspots.somatic.37.vcf
 target_38_hotspots=${working_dir}/KnownHotspots.somatic.38.vcf
 
-echo "[INFO] Updating contigs with CHR"
+info "Updating contigs with CHR"
 gunzip -c ${input_37_hotspots_gz} > ${tmp_37_hotspots}
 sed -i 's/^/chr/g' ${tmp_37_hotspots}
 sed -i 's/^chr#/#/g' ${tmp_37_hotspots}
 
-echo "[INFO] Running Picard LiftOver on ${tmp_37_hotspots}"
+info "Running Picard LiftOver on ${tmp_37_hotspots}"
 java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
     I=${tmp_37_hotspots} \
     O=${target_38_hotspots} \
@@ -28,16 +30,16 @@ java -jar /data/common/tools/picard-tools_v2.18.27/picard.jar LiftoverVcf \
     REJECT=${working_dir}/rejected_variants.vcf \
     R=/data/common/refgenomes/Homo_sapiens.GRCh38/Homo_sapiens_assembly38.fasta
 
-echo "[INFO] Cleaning up temporary files"
+info "Cleaning up temporary files"
 rm ${tmp_37_hotspots}
 rm ${target_38_hotspots}.idx
 
 final_37_hotspots_gz=${tmp_37_hotspots}.gz
-echo "[INFO] Writing ref genome v37 hotspots to ${final_37_hotspots_gz}"
+info "Writing ref genome v37 hotspots to ${final_37_hotspots_gz}"
 cp ${input_37_hotspots_gz} ${final_37_hotspots_gz}
 tabix ${final_37_hotspots_gz}
 
 final_38_hotspots_gz=${target_38_hotspots}.gz
-echo "[INFO] Writing ref genome v38 hotspots to ${final_38_hotspots_gz}"
+info "Writing ref genome v38 hotspots to ${final_38_hotspots_gz}"
 bgzip ${target_38_hotspots}
 tabix ${final_38_hotspots_gz}

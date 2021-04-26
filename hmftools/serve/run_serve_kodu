@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 source locate_files
+source io_functions
 
 ckb_dir=$(locate_ckb_flex_data_dir)
 
@@ -19,16 +20,7 @@ known_fusion_37_file=$(locate_known_fusion_data_37_csv)
 known_fusion_38_file=$(locate_known_fusion_data_38_csv)
 
 output_dir=/home/korneel/serve/kodu_output
-
-if [[ -d "${output_dir}" ]]; then
-    if [[ "$(ls -A ${output_dir})" ]]; then
-        echo "[INFO] Output dir '${output_dir}' exists and will be cleaned!"
-        rm -r ${output_dir}/*
-    fi
-else
-    mkdir -p ${output_dir}
-    echo "[INFO] Output dir created: ${output_dir}!"
-fi
+create_or_cleanup_dir ${output_dir}
 
 java -Xms2G -Xmx16G -jar ${serve_jar} \
     -use_ckb -ckb_dir ${ckb_dir} \

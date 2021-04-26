@@ -5,7 +5,7 @@ source io_functions
 
 output_dir=/data/common/dbs/serve/pilot_output_hartwig_cohort_only
 
-enforce_empty_dir ${output_dir}
+create_or_cleanup_dir ${output_dir}
 
 hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
 
