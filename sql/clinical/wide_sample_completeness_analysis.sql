@@ -24,3 +24,4 @@ select count(distinct sampleId, treatmentGiven) AS samples, 'treatment given at 
 union
 # samples with treatment responses
 select count(distinct sampleId) AS samples, 'with treatment responses' AS category from treatmentResponse inner join sample on treatmentResponse.patientId=sample.patientId where sampleId like '%WIDE%' AND measurementDone = "yes";
+
