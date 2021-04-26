@@ -3,7 +3,7 @@
 source locate_files
 source io_functions
 
-output_dir=/data/common/dbs/serve/pilot_output_hartwig_cohort_only
+output_dir=/data/common/dbs/serve/pilot_output_kodu_test_37_38
 
 create_or_cleanup_dir ${output_dir}
 
