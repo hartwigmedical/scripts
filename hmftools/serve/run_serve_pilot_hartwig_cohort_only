@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+source locate_files
+
+output_dir=/data/common/dbs/serve/pilot_output_hartwig_cohort_only
+
+enforce_empty_dir ${output_dir}
+
+hartwig_cohort_tsv=$(locate_hartwig_cohort_tsv)
+
+do_run_serve_pilot \
+    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+    -output_dir ${output_dir} \
+    "$@"

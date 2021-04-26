@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+enforce_empty_dir() {
+    local dir=$1 && shift
+    if [[ -d "${dir}" ]]; then
+        if [[ "$(ls -A ${dir})" ]]; then
+            info "Dir '${dir}' exists and will be cleaned!"
+            rm -r ${dir}/*
+        fi
+    else
+        mkdir -p ${dir}
+        info "Dir created: ${dir}!"
+    fi
+}
