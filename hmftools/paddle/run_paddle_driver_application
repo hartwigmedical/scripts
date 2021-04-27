@@ -19,7 +19,7 @@ if [[ ! -f "${work_dir}/DndsMutations.tsv" ]]; then
     echo "[ERROR] No DNDS mutations file found in ${work_dir}. Exiting!" && exit 1
 fi
 
-paddle_jar=/data/common/tools/paddle_pilot/paddle.jar
+paddle_jar=/data/common/tools/paddle_v1.0/paddle.jar
 
 echo "[INFO] Running paddle driver application with work dir '${work_dir}'"
 

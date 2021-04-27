@@ -15,4 +15,4 @@ if [[ ! -f "${work_dir}/mutationalLoad.tsv" ]]; then
     echo "[ERROR] No mutational load input file found in ${work_dir}. Exiting!" && exit 1
 fi
 
-Rscript /data/common/tools/paddle_pilot/dnds.R ${work_dir}
+Rscript /data/common/tools/paddle_v1.0/dnds.R ${work_dir}
