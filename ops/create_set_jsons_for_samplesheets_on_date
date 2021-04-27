@@ -15,25 +15,25 @@ if [[ -f "${register_log}" ]]; then echo "[ERROR] Log already exists: ${register
 echo "[INFO] JsonCreation started with input date: ${ssheet_date}"
 
 ## Actual work
-for ssheet in ${SHEETS_LOC}/${ssheet_date}_*_SampleSheet*; do 
-    echo ${ssheet}; 
-    print_register_json.pl -samplesheet ${ssheet};
-done > ${create_log}
+for ssheet in ${SHEETS_LOC}/${ssheet_date}_*_SampleSheet*; do
+    echo "${ssheet}";
+    print_register_json.pl -samplesheet "${ssheet}";
+done > "${create_log}"
 
 ## Reporting further actions to screen
 echo "[INFO] JsonCreation done and log written to: ${create_log}"
-if [[ $( cat ${create_log} | grep -Pc "\d{8}T[IVX]+" ) -gt 0 ]]; then
+if [[ $( cat "${create_log}" | grep -Pc "\d{6}T[IVX]+" ) -gt 0 ]]; then
     ## multiple biopsies usually need R from bam2fastq
     echo "[WARN]  ATTENTION: Found T[IVX]+ samples so might need to adjust R barcode"
-    cat ${create_log} | grep -P "\d{8}T[IVX]+" | grep Somatic_T
+    cat "${create_log}" | grep -P "\d{6}T[IVX]+" | grep Somatic_T
 fi
 
 ## Samples/barcodes that already exist in HMF API already have the use_existing flag
 ## but in case a barcode is re-used at the same register batch then manual adjustment is needed
 for dup_bc in $( cat ${JSONS_LOC}/*json | jq -r '.samples[].barcode' | sort | uniq -d ); do
    echo "[WARN] Found duplicate barcode (${dup_bc}): make sure the use_existing flag is set correctly on second one:"; 
-   find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read ready_json; do
-       if [[ $(grep -c "${dup_bc}" ${ready_json}) -gt 0 ]]; then
+   find ${JSONS_LOC} -maxdepth 1 -name "*json" | while read -r ready_json; do
+       if [[ $(grep -c "${dup_bc}" "${ready_json}") -gt 0 ]]; then
            echo "[WARN]   ${ready_json}"
        fi
    done
