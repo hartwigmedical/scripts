@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 
-api_cred_dir="/data/common/dbs/api_credentials"
 api_url='http://api.prod-1/hmf/v1'
 
 hmfapi () {
-    http --ignore-stdin --cert="${api_crt}" --cert-key="${api_key}" "$@"
+    http --ignore-stdin "$@"
 }
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
