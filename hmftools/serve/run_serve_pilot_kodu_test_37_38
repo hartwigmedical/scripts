@@ -10,8 +10,8 @@ create_or_cleanup_dir ${output_dir}
 hartwig_cohort_tsv=$HOME/serve/test_cohort.tsv
 iclusion_trial_tsv=$(locate_prod_iclusion_trial_tsv)
 
-#-use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
+#    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} \
 do_run_serve_pilot \
-    -use_iclusion -iclusion_trial_tsv ${iclusion_trial_tsv} \
+    -use_hartwig_cohort -hartwig_cohort_tsv ${hartwig_cohort_tsv} \
     -output_dir ${output_dir} \
     "$@"
