@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+source message_functions
+
+vcf=$1 && shift
+
+if [[ ! -f ${vcf} ]]; then
+    error "VCF file does not exist: '${vcf}'"
+fi
+
+do_snpeff_annotate GRCh37.75 ${vcf}
