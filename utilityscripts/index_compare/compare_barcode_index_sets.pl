@@ -46,7 +46,7 @@ my @header = qw(result dist1 dist2 distance idx1_tag1 idx1_seq1 idx1_tag2 idx1_s
 open(my $OUT_FH, '>', $out_file) or die $!;
 say $OUT_FH '##' . " Input file1: $file1";
 say $OUT_FH '##' . " Input file2: $file2";
-say $OUT_FH '##' . " Minimal distance: $MIN_DISTANCE";
+say $OUT_FH '##' . " Minimal distances for $success_str: $MIN_DISTANCE";
 say $OUT_FH '#' . join("\t", @header);
 foreach my $index1 (@$indexes1){
     foreach my $index2 (@$indexes2){
