@@ -122,7 +122,7 @@ locate_pilot_ckb_importer() {
 }
 
 locate_prod_serve() {
-    echo ${base_path}/tools/serve_v1.2/serve.jar
+    echo ${base_path}/tools/serve_v1.3/serve.jar
 }
 
 locate_pilot_serve() {
