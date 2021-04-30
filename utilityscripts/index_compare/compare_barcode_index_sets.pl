@@ -27,7 +27,7 @@ my $HELP =<<HELP;
     #i7name i5name i7seq i5seq
     IDT8_i7_1 IDT8_I5_1 CTGATCGT GCGCATAT
   Example output (written to $out_file)
-    #result dist_s1 dist_s2 dist_total i1_t1 i1_s1 i1_t2 i1_s2 i2_t1 i2_s1 i2_t2 i2_s2
+    #result dist1 dist2 distance idx1_tag1 idx1_seq1 idx1_tag2 idx1_seq2 idx2_tag1 idx2_seq1 idx2_tag2 idx2_seq2
     OK 5 3 8 F498_LCH588 CTGCGGAT CZ-0379-LL_A AGATAACC IDT8_i7_384 CGACCATT IDT8_I5_384 TGATAGGC
 
 HELP
@@ -42,7 +42,7 @@ say "[INFO] Comparing $file1 with $file2";
 my $indexes1 = read_indexes_tsv($file1);
 my $indexes2 = read_indexes_tsv($file2);
 
-my @header = qw(result dist_s1 dist_s2 dist_total i1_t1 i1_s1 i1_t2 i1_s2 i2_t1 i2_s1 i2_t2 i2_s2);
+my @header = qw(result dist1 dist2 distance idx1_tag1 idx1_seq1 idx1_tag2 idx1_seq2 idx2_tag1 idx2_seq1 idx2_tag2 idx2_seq2);
 open(my $OUT_FH, '>', $out_file) or die $!;
 say $OUT_FH '##' . " Input file1: $file1";
 say $OUT_FH '##' . " Input file2: $file2";
