@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 
 source message_functions || exit 1
+source locate_files || exit 1
 
 SCRIPT_NAME="$(basename "$0")"
 PICARD_JAR="/data/tools/picard-tools_v2.18.27/picard.jar"
-REF_GENOME="/opt/resources/reference_genome/37/Homo_sapiens.GRCh37.GATK.illumina.fasta"
+REF_GENOME=$(locate_ref_genome_37_fasta_file)
 LOCAL_INTERVAL_LIST_FILE="$HOME/intervals.interval_list"
 LOCAL_URLS_FILE="$HOME/urls.txt"
 

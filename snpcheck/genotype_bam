@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
+source locate_files || exit 1
+
 GATK_JAR='/data/common/tools/gatk_v3.8.0/GenomeAnalysisTK.jar'
-REF_FASTA='/data/common/refgenomes/Homo_sapiens.GRCh37.GATK.illumina/Homo_sapiens.GRCh37.GATK.illumina.fasta'
+REF_FASTA=$(locate_ref_genome_37_fasta_file)
 DESIGN_DIR=$( dirname $0 )
 
 designs=( 
