@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-
-source locate_files
-
-bachelor_jar=$(locate_pilot_bachelor)
-bachelor_config=/data/common/dbs/bachelor/bachelor_hmf.xml
-output_filter_file=/data/common/dbs/bachelor/pilot_bachelor_clinvar_filters.csv
-
-do_create_bachelor_external_db_filters ${bachelor_jar} ${bachelor_config} ${output_filter_file}

@@ -197,10 +197,6 @@ locate_hotspot_vcf() {
     echo ${base_path}/dbs/serve/hotspots/210315/KnownHotspots.somatic.37.vcf.gz
 }
 
-locate_germline_hotspot_vcf() {
-    echo ${base_path}/dbs/sage/KnownHotspots.germline.37.vcf.gz
-}
-
 locate_peach_resource_dir() {
     echo ${base_path}/dbs/peach/
 }
