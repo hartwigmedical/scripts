@@ -6,7 +6,6 @@ sample=$1 && shift
 amber_dir=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
-patient_db_jar=$(locate_prod_amber)
 
 snp_vcf=$(find ${amber_dir} -name *.amber.snp.vcf.gz)
 reference_sample=$(basename ${snp_vcf} .amber.snp.vcf.gz)

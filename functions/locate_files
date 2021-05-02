@@ -49,22 +49,6 @@ locate_nextcloud_upload_credentials() {
 
 ##################################### JARS #####################################
 
-locate_prod_amber() {
-    echo ${base_path}/tools/amber_v3.5/amber.jar
-}
-
-locate_prod_sage() {
-    echo ${base_path}/tools/sage_v1.1/sage.jar
-}
-
-locate_prod_purple() {
-    echo ${base_path}/tools/purple_v2.52/purple.jar
-}
-
-locate_pilot_purple() {
-    echo ${base_path}/tools/purple_pilot/purple.jar
-}
-
 locate_prod_bachelor() {
     echo ${base_path}/tools/bachelor_v1.12/bachelor.jar
 }
@@ -193,10 +177,6 @@ locate_known_fusion_data_38_csv() {
     echo ${base_path}/dbs/fusions/known_fusion_data.38_v3.csv
 }
 
-locate_hotspot_vcf() {
-    echo ${base_path}/dbs/serve/hotspots/210315/KnownHotspots.somatic.37.vcf.gz
-}
-
 locate_peach_resource_dir() {
     echo ${base_path}/dbs/peach/
 }
@@ -254,7 +234,7 @@ locate_ref_genome_38_to_37_chain() {
 ################################### PEACH ####################################
 
 locate_peach_repo_dir() {
-    echo "${base_path}/repos/scripts/peach/"
+    echo "${base_path}/repos/scripts/peach"
 }
 
 locate_peach_venv_dir() {
@@ -330,11 +310,11 @@ locate_peach_pilot_vcf() {
 ##################################### UMI ##########################################
 
 locate_umi_dir() {
-    echo "${base_path}/repos/scripts/umi/"
+    echo "${base_path}/repos/scripts/umi"
 }
 
 locate_umi_resource_dir() {
-    echo "${base_path}/dbs/umi/"
+    echo "${base_path}/dbs/umi"
 }
 
 locate_umi_venv_dir() {
