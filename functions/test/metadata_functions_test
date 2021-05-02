@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 
-source metadata_functions
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No run dir configured. Exiting"
-    exit 1
+    echo "[ERROR] No run dir configured. Exiting" && exit 1
 fi
 
 echo "[INFO] Testing metadata functions on ${run_dir}"

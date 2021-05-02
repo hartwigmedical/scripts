@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source api_functions
+source api_functions || exit 1
 
 set=$1
 

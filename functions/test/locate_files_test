@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
@@ -89,27 +89,3 @@ if [[ $? = 0 ]]; then echo "[INFO]  CHORD Prediction File: ${chord_prediction}";
 
 protect_evidence=$(locate_protect_evidence ${run_dir})
 if [[ $? = 0 ]]; then echo "[INFO]  PROTECT Evidence: ${protect_evidence}"; fi
-
-echo ""
-echo "[INFO] Files that are generated in pilot setting"
-
-peach_pilot_calls=$(locate_peach_pilot_calls ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  PEACH Pilot Calls: ${peach_pilot_calls}"; fi
-
-peach_pilot_genotype=$(locate_peach_pilot_genotype ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  PEACH Pilot Genotype: ${peach_pilot_genotype}"; fi
-
-purple_pilot_somatic_variants=$(locate_purple_pilot_somatic_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Somatic VCF: ${purple_pilot_somatic_variants}"; fi
-
-purple_pilot_purity=$(locate_purple_pilot_purity ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Purity: ${purple_pilot_purity}"; fi
-
-purple_pilot_gene_copynumbers=$(locate_purple_pilot_gene_copynumbers ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Gene Copy Numbers: ${purple_pilot_gene_copynumbers}"; fi
-
-purple_pilot_circos_plot=$(locate_purple_pilot_circos_plot ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Circos Plot: ${purple_pilot_circos_plot}"; fi
-
-purple_pilot_structural_variants=$(locate_purple_pilot_structural_variants ${run_dir})
-if [[ $? = 0 ]]; then echo "[INFO]  Purple Pilot Structural VCF: ${purple_pilot_structural_variants}"; fi
