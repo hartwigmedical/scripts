@@ -42,7 +42,7 @@ main () {
     base_tum_sample=$(jq -r '.tumor.sampleName' "${base_meta_file}")
     test_tum_sample=$(jq -r '.tumor.sampleName' "${test_meta_file}")
 
-    tool_dirs_to_check=(amber bachelor chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss protect)
+    tool_dirs_to_check=(amber chord cobalt health_checker linx purple sage_germline sage_somatic gridss gripss protect)
     files_to_diff=("protect/${test_tum_sample}.protect.tsv")
 
     print_header "Settings"
@@ -72,12 +72,10 @@ main () {
     base_som_var=$(locate_purple_somatic_variants "${base_run_path}")
      test_sv_var=$(locate_purple_structural_variants "${test_run_path}")
      base_sv_var=$(locate_purple_structural_variants "${base_run_path}")
-       test_bach=$(locate_reportable_bachelor_variants "${test_run_path}")
-       base_bach=$(locate_reportable_bachelor_variants "${base_run_path}")
 
     all_cram_files=("$base_ref_cram" "$test_ref_cram" "$base_tum_cram" "$test_tum_cram")
-    all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}" "${base_bach}")
-    all_test_files=("${test_grm_vcf}" "${test_chord}" "${test_vir_ins}" "${test_som_var}" "${test_sv_var}" "${test_bach}")
+    all_base_files=("${base_grm_vcf}" "${base_chord}" "${base_vir_ins}" "${base_som_var}" "${base_sv_var}")
+    all_test_files=("${test_grm_vcf}" "${test_chord}" "${test_vir_ins}" "${test_som_var}" "${test_sv_var}")
 
     print_header "REQUIRED FILES EXISTENCE check"
     all_crams_present="TRUE"
@@ -135,9 +133,6 @@ main () {
     info "LINX file content"
     awk '{print "[INFO]   BASE: "$0}' "${base_vir_ins}"
     awk '{print "[INFO]   TEST: "$0}' "${test_vir_ins}"
-    info "BACHELOR file content"
-    cut -f 1-2,4-7 "${base_bach}" | tr "\t" "," | awk '{print "[INFO]   BASE: "$0}'
-    cut -f 1-2,4-7 "${test_bach}" | tr "\t" "," | awk '{print "[INFO]   TEST: "$0}'
 
     info "Finished with $(basename $0)"
 }
