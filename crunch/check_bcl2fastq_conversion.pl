@@ -238,7 +238,7 @@ sub performQC{
     my $undet = $stats->{'undet_perc'};
     my $max_undet = $qc_limits->{ 'max_undetermined' };
     if ( $undet > $max_undet ){
-        warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)";
+        warn "## WARNING Percentage undetermined ($undet) too high (max=$max_undet)\n";
         $fails += 1;
     }
         
@@ -434,7 +434,7 @@ sub parseJsonInfo{
     }
     
     ## Collect some general stats/info
-    my $undet_perc = round( getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'}) );
+    my $undet_perc = getPerc( $info{'undt'}{'UNDETERMINED'}{'yield'}, $info{'flow'}{$fid}{'yield'});
     my $run_overview_yield_factor = 1e6; # always report the run info in MBase
     $info{'stats'}{'run_overview_string'} = sprintf "%s\t%s\t%s\t%s\t%s\t%s", 
       round( $info{'flow'}{$fid}{'yield'}, 0, $run_overview_yield_factor ),
@@ -442,7 +442,7 @@ sub parseJsonInfo{
       $info{'flow'}{$fid}{'q30_print'},
       $info{'flow'}{$fid}{'pf_print'},
       $cycle_string,
-      $undet_perc . '%';
+      round($undet_perc,1) . '%';
       
     $info{'stats'}{'undet_perc'} = $undet_perc;
     $info{'stats'}{'lane_count'} = scalar( keys %{$info{'lane'}} );
