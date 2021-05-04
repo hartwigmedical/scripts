@@ -333,7 +333,7 @@ locate_umi_requirements() {
     echo "$(locate_umi_dir)/requirements.txt"
 }
 
-################################### WGS METRICS ####################################
+#####################################  METRICS ######################################
 
 locate_wgs_metrics() {
     local run_dir=$1 && shift
