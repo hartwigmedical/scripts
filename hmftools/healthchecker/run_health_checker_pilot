@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 
-source locate_files
-source metadata_functions
+source locate_files || exit 1
+source metadata_functions || exit 1
 
 run_dir=$1 && shift
 
 if [[ -z "${run_dir}" ]]; then
-    echo "[ERROR] No rundir is provided to $(basename $0). Exiting."
-    exit 1
+    echo "[ERROR] No rundir is provided to $(basename $0). Exiting." && exit 1
 fi
 
 # Load metadata
@@ -20,7 +19,6 @@ ref_flagstat=$(locate_flagstats "${run_dir}" "${ref_sample}")
 tum_flagstat=$(locate_flagstats "${run_dir}" "${tumor_sample}")
 ref_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${ref_sample}")
 tum_wgs_metrics=$(locate_wgs_metrics "${run_dir}" "${tumor_sample}")
-output_dir=/data/cpct/pilot_health_check_logs
 
 java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.jar \
     -reference ${ref_sample} \
@@ -30,5 +28,4 @@ java -Xmx8G -Xms4G -jar /data/common/tools/healthchecker_pilot/health-checker.ja
     -ref_flagstat_file ${ref_flagstat} \
     -tum_flagstat_file ${tum_flagstat} \
     -purple_dir ${purple_dir} \
-    -do_not_write_evaluation_file \
-    -output_dir ${output_dir}
+    -do_not_write_evaluation_file
