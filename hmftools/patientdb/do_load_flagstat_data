@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 sample=$1 && shift
-ref_flagstats_file=$1 && shift
-tumor_flagstats_file=$1 && shift
+ref_flagstat_file=$1 && shift
+tumor_flagstat_file=$1 && shift
 credentials=$1 && shift
 patient_db_jar=$1 && shift
 
@@ -15,7 +15,7 @@ echo "[INFO] Loading flagstats data for ${sample}"
 
 java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
     -sample ${sample} \
-    -ref_flagstats_file ${ref_flagstats_file} \
-    -tumor_flagstats_file ${tumor_flagstats_file} \
+    -ref_flagstat_file ${ref_flagstat_file} \
+    -tumor_flagstat_file ${tumor_flagstat_file} \
     -db_user ${db_user} -db_pass ${db_pass} -db_url ${db_url} \
     "$@"
