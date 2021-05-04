@@ -4,5 +4,5 @@ SELECT SUBSTRING_INDEX(group_concat(purity.sampleId ORDER BY purity DESC, id ASC
 FROM purity
     INNER JOIN amberPatient ON purity.sampleId = amberPatient.sampleId
     INNER JOIN metric ON purity.sampleId = metric.sampleId
-WHERE qcStatus = 'PASS' and sufficientCoverage = 1
+WHERE qcStatus = 'PASS' and sufficientCoverage = 1 AND contamination <= 0.1
 GROUP BY patientId;
