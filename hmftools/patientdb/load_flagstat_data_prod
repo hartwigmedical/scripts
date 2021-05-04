@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source locate_files
+source metadata_functions
+
+run_dir=$1 && shift
+
+ref_sample=$(load_ref_sample_from_metadata ${run_dir})
+tumor_sample=$(load_tumor_sample_from_metadata ${run_dir})
+
+ref_flagstats_file=$(locate_flagstats ${run_dir} ${ref_sample})
+tumor_flagstats_file=$(locate_flagstats ${run_dir} ${tumor_sample})
+
+credentials=$(locate_prod_database_credentials)
+patient_db_jar=$(locate_prod_patient_db)
+
+echo "[WARN] Loading flagstats not yet supported in prod. Coming in patient-db v3.50!"
+exit 1
+
+# do_load_flagstat_data ${tumor_sample} ${ref_flagstats_file} ${tumor_flagstats_file} ${credentials} ${patient_db_jar}

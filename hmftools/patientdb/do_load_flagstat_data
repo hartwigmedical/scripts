@@ -13,7 +13,7 @@ db_url=$(awk '/^url/ {print $2}' ${credentials})
 
 echo "[INFO] Loading flagstats data for ${sample}"
 
-java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatsData \
+java -Dorg.jooq.no-logo=true -cp ${patient_db_jar} com.hartwig.hmftools.patientdb.LoadFlagstatData \
     -sample ${sample} \
     -ref_flagstats_file ${ref_flagstats_file} \
     -tumor_flagstats_file ${tumor_flagstats_file} \
