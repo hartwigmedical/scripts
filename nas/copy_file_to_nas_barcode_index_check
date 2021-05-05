@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-nas_path="/volume1/web/playground"
+nas_path="/volume1/web/playground/barcode_index_check"
 
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
     echo " Descr: Copies file to NAS ${nas_path}"

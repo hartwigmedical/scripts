@@ -1,15 +1,11 @@
 #!/usr/bin/env bash
 
+nas_path="/volume1/bfx/upload"
+
 if [[ -z "$1" || $1 == "-h" || $1 == "--help" ]]; then
-    echo "---"
-    echo " Usage: $(basename $0) \${file}"
-    echo "---"
+    echo " Descr: Copies file to NAS ${nas_path}"
+    echo " Usage: $(basename "$0") \${path-to-file}"
     exit 1
 fi
 
-file=$1 && shift
-
-nas_path="nas:/volume1/machines/BFX/upload"
-
-echo "[INFO] Copying ${file} to ${nas_path}"
-scp ${file} ${nas_path}/
+copy_file_to_nas "$1" "${nas_path}"

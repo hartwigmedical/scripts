@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+if [[ "$#" -ne 2 || $1 == "-h" || $1 == "--help" ]]; then
+    echo "---"
+    echo " Usage: $(basename $0) \${local-file-path} \${nas-dir-path}"
+    echo " Exmpl: $(basename $0) /path/to/file /volume1/web/playground"
+    echo "---"
+    exit 1
+fi
+
+file_path=$1 && shift
+nas_path=$1 && shift
+
+[[ -f "${file_path}" ]] || die "File to copy not found (${file_path})"
+[[ $(ssh nas ls "${nas_path}") ]] || die "Target directory not found at NAS (${nas_path})"
+
+info "Copying ${file_path} to ${nas_path}"
+scp "${file_path}" "nas:${nas_path}"
