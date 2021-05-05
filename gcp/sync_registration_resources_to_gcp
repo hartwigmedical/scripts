@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 
+BUCKET="gs://registration-resources-prod-1"
+
 echo "[INFO] Syncing registration resources to GCP!"
 
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
-gsutil -m rsync -d /data/samplesheets gs://hmf-registration-resources/samplesheets
-gsutil -m rsync -d /data/ops/lims/prod gs://hmf-registration-resources/lims/prod
+gsutil -m rsync -d /data/samplesheets ${BUCKET}/samplesheets
+gsutil -m rsync -d /data/ops/lims/prod ${BUCKET}/lims/prod
 
-gsutil -m cp -n gs://hmf-registration-resources/jsons_and_logs/jsons/registered/* /data/ops/api/prod/jsons/registered/
-gsutil -m cp -n gs://hmf-registration-resources/jsons_and_logs/logs/* /data/ops/api/prod/logs/
+gsutil -m cp -n ${BUCKET}/jsons_and_logs/jsons/registered/* /data/ops/api/prod/jsons/registered/
+gsutil -m cp -n ${BUCKET}/jsons_and_logs/logs/* /data/ops/api/prod/logs/

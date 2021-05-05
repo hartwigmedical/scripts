@@ -23,7 +23,7 @@ main () {
     all_vali_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Validated")]')
     all_fail_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Failed")]')
     all_fini_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Finished")]')
-    all_proc_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Pending" or .status == "Processing" or .status == "Uploading" or .status == "Downloading")]')
+    all_proc_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Pending" or .status == "Processing")]')
     all_wait_runs=$(echo "${runs}" | jq '[.[] | select(.status == "Waiting")]')
 
     tumor_samples_with_vali_run=$(get_tumor_samples_from_runs_json "${all_vali_runs}")
