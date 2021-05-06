@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+source message_functions || exit 1
+
+BUCKET="gs://registration-resources-prod-1"
+
+info "Syncing registered JSONs and logs from GCP"
+
+gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
+gsutil rsync ${BUCKET}/jsons_and_logs/jsons/registered/ /data/ops/api/prod/jsons/registered/
+gsutil rsync ${BUCKET}/jsons_and_logs/logs/ /data/ops/api/prod/logs/
+
+info "Registered JSONs and logs synchronised"
