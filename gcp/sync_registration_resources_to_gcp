@@ -6,7 +6,9 @@ echo "[INFO] Syncing registration resources to GCP!"
 
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m rsync /data/samplesheets ${BUCKET}/samplesheets
-gsutil -m rsync /data/ops/lims/prod/*.tsv ${BUCKET}/lims/prod
+gsutil -m cp /data/ops/lims/prod/*.tsv ${BUCKET}/lims/prod
 gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/lims/prod
 
-gsutil -m rsync ${BUCKET}/jsons_and_logs/jsons/registered/* /data/ops/api/prod/jsons/registered/
+gsutil -m rsync ${BUCKET}/jsons_and_logs/jsons/registered/ /data/ops/api/prod/jsons/registered/
+
+echo "[INFO] Registration resource sync to GCP complete"
