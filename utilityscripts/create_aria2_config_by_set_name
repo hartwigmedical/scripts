@@ -52,7 +52,7 @@ function main() {
     out_aria="${name}.aria.txt"
     out_md5="${name}.md5"
     out_url_int="${name}_internal_urls.txt"
-    out_url_ext="${name}_urls.txt"
+    out_url_ext="${name}_external_urls.txt"
 
     ## create re-usable list of all output files
     output_files=("${out_jsn_all}" "${out_md5_all}" "${out_aria}" "${out_md5}" "${out_url_int}" "${out_url_ext}")
