@@ -2,9 +2,18 @@
 
 source message_functions || exit 1
 
+command -v hmf_api_get > /dev/null || die "Dependency hmf_api_get not found"
+command -v jq > /dev/null || die "Dependency jq not found"
+
 set_name=$1
 
-[[ -n "${set_name}" ]] || die "Provide set name."
+if [[ -z "${set_name}" ]]; then
+    echo "-----"
+    echo " Usage: $(basename "$0") \${set-name}"
+    echo " Exmpl: $(basename "$0") 210319_HMFregCORE_FR30729774_FR23588534_COREDB010063"
+    echo "-----"
+    exit 1
+fi
 
 credentials_dir="/data/common/dbs/gcp_credentials"
 key_file="${credentials_dir}/hmf-ops"
