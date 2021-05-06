@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 
-source message_functions || exit 1
+set -e
+source message_functions
 
 BUCKET="gs://registration-resources-prod-1"
 
 info "Syncing registration resources to GCP!"
-
 gcloud auth activate-service-account --key-file /data/common/dbs/gcp_credentials/hmf-ops
 gsutil -m rsync /data/samplesheets ${BUCKET}/samplesheets
-gsutil -m cp /data/ops/lims/prod/*.tsv ${BUCKET}/lims/prod
-gsutil cp /data/ops/lims/prod/lims.json ${BUCKET}/lims/prod
-
+gsutil -m cp /data/ops/lims/prod/* ${BUCKET}/lims
 info "Registration resource sync to GCP complete"
