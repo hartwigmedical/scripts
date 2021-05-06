@@ -19,7 +19,7 @@ info "${msg}"
 
 function main() {
     ## make sure only one run exists for the set
-    runs_json=$(hmf_api_get "runs?set_name=${set_name}")
+    runs_json=$(hmf_api_get "runs?set_name=${set_name}" | jq -c '[.[] | select(.ini != "Rerun.ini")]') || die "Unable to get run (${set_name})"
     runs_count=$(jq '. | length' <<< "${runs_json}")
     if [[ "${runs_count}" -ne 1 ]]; then
         die "Only sets supported with exactly one run (found ${runs_count}). Exiting"
