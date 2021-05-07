@@ -242,7 +242,7 @@ locate_ref_genome_38_to_37_chain() {
 ################################### PEACH ####################################
 
 locate_peach_repo_dir() {
-    echo "${base_path}/repos/scripts/peach"
+    echo "${base_path}/repos/peach"
 }
 
 locate_peach_venv_dir() {
